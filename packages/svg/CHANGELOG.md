@@ -1,5 +1,81 @@
 # @weasel-js/svg
 
+## 1.5.1
+
+### Patch Changes
+
+- 894a52c: A conic gradient now survives an SVG round-trip. SVG has no element for one, so it serializes as a `<wzl:conicGradient>` def in `urn:weasel-js:svg` — declared on the root only when a document holds a paint that needs it — and parses back to the same fill. Previously the fill was omitted from `<defs>` with a warning and the `url(#id)` reference dangled, so the shape vanished in every viewer, weasel's own included.
+  
+  Every reference to a paint SVG cannot express now carries SVG's paint fallback after it (`fill="url(#grad0) #ff0000"`), taken from the paint kind's `colorOf`, or `none` when it has none. A registered kind writing its own `toSvg` gets that envelope without doing anything. On import, a fallback beside a reference this package cannot resolve — Inkscape's mesh gradients, say — is read as a flat fill instead of being dropped with a warning.
+- 626bace: A gradient now names the space its stops blend through. `interpolate` on any of
+  the three gradient kinds takes `'rgb'` (the default, and what every other vector
+  format means by a gradient), `'oklab'`, or `'oklch'` — which travels around the
+  hue wheel, so red to blue stays saturated instead of passing through a muddy
+  purple. Alpha is linear in every space.
+  
+  The blend is paid for once, in the 256-texel ramp the shader samples, so a
+  perceptual gradient costs a batched frame nothing over an sRGB one. The space is
+  part of the ramp atlas key: the same stops under two spaces take two rows.
+  
+  `sampleGradientStops` and `sampleResolvedStops` take the space as a third
+  argument, `bindRamp` as an optional third, and `GradientEditor` grows an
+  sRGB / OKLab / OKLCh switch (`spaceSwitch={false}` hides it). `@weasel-js/svg`
+  writes `wzl:interpolate` on the gradient's own element and reads it back; a
+  renderer that ignores it still paints the gradient, in sRGB.
+- 86be3eb: A sixth paint kind: `mesh-gradient`, PDF's shading types 6 and 7. A mesh is a
+  set of curved quadrilateral patches, each carrying a color at every corner, so
+  its color field bends where the three gradients can only run straight. Twelve
+  control points make a Coons patch and sixteen a tensor patch, which is the only
+  difference between them.
+  
+  It is registered through `registerPaintKind` rather than built into the
+  renderer, so every slot it uses is one a consumer's own kind can use. The paint
+  is rasterized once into a 256-texel bake the shader samples — forward, the way
+  every renderer that draws these works, because a paint has to answer "what color
+  is this fragment" and inverting a bicubic per fragment does not. Corner colors
+  blend through `interpolate`, as a gradient's stops do.
+  
+  `@weasel-js/svg` writes it as `<wzl:meshGradient>` with every patch's points in
+  full — not SVG's abandoned `<meshgradient>`, whose implicit edge sharing gives a
+  reader a way to be quietly wrong — and reads it back. A renderer that skips the
+  def paints the fallback color beside the reference.
+  
+  `MeshEditor` in `@weasel-js/ui` edits the corner colors and the blend space, and
+  `PaintInput` renders it: before this, a mesh in that control fell through to the
+  color field, which wrote a solid back over it.
+- d2b8390: `serializeSvg` now reports through `onWarn` what the document cannot carry the way weasel draws it, where it used to drop it silently: a stroke aligned `inner` or `outer` (SVG has no stroke alignment, so it is written centered), text that wraps at its box width (SVG text does not wrap), and text aligned to the center or bottom of its box (SVG text has no box). Weasel reads the last two back from their `data-weasel-*` attributes; other viewers draw them unwrapped and top-aligned. Each message is reported once per call. `SvgStroke` gains `align` so a bridge from a kit `Stroke` can pass it through and have the loss reported. Additive.
+  
+  labkit's annotation export passes a mark's stroke alignment through, so it is reported too.
+- 20bd67b: An `<image>`'s source rect and flip now survive SVG. `SvgImageNode` gains `source` (the part of the bitmap to draw, as fractions of its width and height) and `flipX` / `flipY`. With any of them set, the serializer writes a `<g data-weasel-image>` around a nested `<svg>` viewport at the box, whose `viewBox` is the source window over a unit-square `<image>`, with the flip as a mirror about that window's center. That is plain SVG 1.1, so every viewer crops and mirrors it the way weasel draws it, and `parseSvg` reads the group back as one image node. An image with neither still writes a plain `<image>`. Additive.
+- 5fbec37: `parseSvg` now reads a document's own `<marker>` when a stroke references one the marker registry has no entry for, instead of warning and dropping it. The new `ParseResult.markers` holds a `MarkerEntry` for each: its geometry and paint, `refX` / `refY` as the anchor, the viewBox, `markerWidth` / `markerHeight` and `markerUnits` folded into the size, and `orient` as the orientation (`context-stroke` reads as the line's own paint). Keys are the marker's id plus a hash of what it draws, so two files with the same id never collide, and the strokes in `nodes` name those keys. Nothing draws them until they are registered; `unpackSvgFiles` registers them itself. A reference the document does not define still warns and is dropped.
+  
+  A marker def written on export now keeps its entry's solid fill and outline colors and a fixed `orient`, where it used to write every marker as `context-stroke` pointing `auto`. It writes `orient="auto-start-reverse"` rather than `auto`, because weasel turns every start marker around, and a start arrowhead in another viewer used to point back into its line.
+- cba02cc: A text node's vertical alignment now survives an SVG round-trip. `SvgTextNode` gains `verticalAlign`, written as `data-weasel-vertical-align` beside `data-weasel-width` / `data-weasel-height` and read back by `parseSvg`; `svgNodesToKitDrafts` carries it onto the `kit:text` leaf's `data.verticalAlign`. Previously an export dropped it and a re-import came back top-aligned. Other SVG readers still draw the text at the top of its box, since SVG text has no box to align within. Additive.
+- Updated dependencies [f644eac]
+- Updated dependencies [b984947]
+- Updated dependencies [72fde09]
+- Updated dependencies [e9051ac]
+- Updated dependencies [626bace]
+- Updated dependencies [f4049be]
+- Updated dependencies [86be3eb]
+- Updated dependencies [51372f1]
+- Updated dependencies [2a63f31]
+- Updated dependencies [66e0e10]
+- Updated dependencies [8b79c20]
+- Updated dependencies [f663199]
+- Updated dependencies [a7519a1]
+- Updated dependencies [187593e]
+- Updated dependencies [08a3aec]
+- Updated dependencies [f9feecc]
+- Updated dependencies [c0fa540]
+- Updated dependencies [21ce23e]
+- Updated dependencies [ff17dd7]
+- Updated dependencies [29f6ed0]
+- Updated dependencies [fb6d8e5]
+- Updated dependencies [ca7c737]
+  - @weasel-js/core@1.5.1
+  - @weasel-js/geom@1.5.1
+
 ## 1.5.0
 
 ### Patch Changes

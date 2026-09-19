@@ -1,5 +1,206 @@
 # @weasel-js/labkit
 
+## 1.5.1
+
+### Patch Changes
+
+- 7ebfd0f: Controls can be set to auto. Shift-click a row in a labkit control panel — or
+  click the pin dot beside its label — and the field stops holding a pinned
+  value: the instrument decides instead, and the control draws ghosted at what it
+  decided.
+  
+  `auto` is a value you write anywhere a config value goes, so `setConfig('gap',
+  auto)` and a trial's seed config both work. A schema starts a field unpinned
+  with `.initial(auto)`, attaches a resolver with `.auto(fn)`, and opts a field
+  out entirely with `.manual()` — for a value the instrument cannot receive as
+  `undefined`. The sentinel is normalized into a per-trial set of unpinned paths
+  at every boundary, so nothing stores or serializes it, and the last pinned
+  value stays where it is: un-pinning is lossless, and Reset returns a trial to
+  the auto paths it opened on.
+  
+  This adds API. Property rows in `@weasel-js/ui` take `auto` and `onAutoChange`;
+  a `Select`'s trigger and an alpha range read new color and border hooks that
+  default to what they already rendered; a control renderer's argument gains two
+  fields.
+  
+  One thing to know before upgrading: a control panel row now contains a second
+  button, the pin dot, named `Pin <label>`. A test querying a row's own control
+  loosely — `getByRole('button', { name: /Gap/ })` — will start matching both.
+  Match the control's exact accessible name, or exclude a name beginning `Pin `.
+- d16e0bd: A lab has a second pane region, `aside`, which holds sidebar sections on the far
+  side of the workspace from the sidebar, with its own resizable seam, width and
+  fold state. `LabAsideRegion` mounts it under a bare `LabShell`. `Split` takes
+  `side: 'end'` to put its sidebar after the content.
+  
+  forge's CSS Vars panel moves out of each trial and into the lab's aside, where
+  it shows the focused trial and names it.
+- eb4c4c4: labkit re-exports weasel-ui's `Input` and `InputProps` from its main entry.
+  
+  forge's CSS Vars panel shows each variable as one row: its name as written, in
+  monospace, over a single field holding the value, with the color swatch inside
+  the field for a color and a Reset button beside it once overridden. The
+  Theme/Story tabs are flat and full height, and they stay at the top with the
+  filter while the list scrolls. The list is no longer capped at 60% of the
+  viewport; it fills the aside.
+- 006cafb: A config node's `validate` now receives the instrument's whole config as its
+  second argument, so its errors can depend on the value being validated. This is
+  additive: a validator that takes only the leaf keeps working.
+  
+  forge keeps each config's validation errors apart. Two trials of one story used
+  to share a single errors map, replaced by whichever frame answered last; each
+  trial now reads the errors its own config produced.
+- ff10b99: A lab now tracks a focused trial: `focusedTrialId` on the lab context names the
+  trial last pointed at or focused, counting focus that moved into a frame inside
+  it, and a trial that `addTrial` or `cloneTrial` opens takes it. `focusTrial`
+  sets it. With more than one trial open, the focused one draws its border in the
+  accent color. `swapTrial(id, instrumentName, options)` puts a fresh trial of
+  another instrument in a trial's place, keeping its tile size and sidebar width.
+  
+  forge's story tree uses both: clicking a story runs it in the focused trial, and
+  Shift-click or Shift+Enter opens another trial. Cmd- and Ctrl-click are left to
+  the browser. The tree's text is a step larger.
+- bd41197: labkit re-exports weasel-ui's `Select` and `SelectProps`, beside the other ui
+  controls it passes through. forge's header globals (Mode, Font, Weight, Width,
+  Italic) now use it in place of native selects, each sized to its widest option.
+- 39b0cd4: `LabShell`'s header lines its controls up at one height and one middle by
+  default. A toolbar placed in the header takes the header's control height rather
+  than the compact 22px trial toolbars use, and drops the strip's padding, border
+  and background. `<Lab>`'s color-mode toggle runs at the control height instead of
+  its small size.
+- 97f3252: labkit gains `Specimen`: one page of the kit's controls and chrome, each in a small
+  working state, as a preview surface for a theme. It covers weasel-ui's buttons,
+  toggles, fields and pickers, property panels and rows, overlays, lists, tool chrome,
+  and editors and plots, and labkit's own toolbar, status bar, sidebars, legend, job
+  progress, zoom and scale readouts, floating panel and split. Popovers, dialogs and
+  toasts portal into the page, so they take the theme the page is under.
+  `SPECIMEN_SECTIONS` names its sections; the `labkit/Specimen` story renders it.
+- 1b2c417: A config section can lay out its own rows: `.section(label, { layout, pack })` puts
+  every row under that heading in the given label layout and grid packing, over the
+  panel's `layout` and `pack`. Say it on any one node in the section; the resolved
+  `SectionSpec` carries both. Other sections keep the panel's.
+  
+  forge's Globals section in a trial's Settings now uses `{ layout: 'inline', pack:
+  'pairs' }`: two globals to a row, each with its label beside its dropdown.
+- cb5c172: `SelectRow` renders weasel-ui's `Select` rather than a native `<select>`, so a
+  property row's dropdown opens the same listbox as every other weasel select. Its
+  props are unchanged: an unchosen or unknown value still shows the placeholder. Code
+  that drove the row as a native select — `selectOption`, or a `change` event on it —
+  now opens the trigger and picks an option instead.
+  
+  `Select` gains `variant: 'bare'`, which drops the box for a select set in other
+  chrome, and reads its value alignment from `--wzl-select-align`. An inline property
+  row sets that to `right`, keeping its values against the chevron.
+  
+  labkit's config panels and forge's trial Settings pick up the change through
+  `SelectRow`.
+- c6f21e5: The last sidebar section in a pane now runs to the bottom of that pane and drops
+  its bottom rule. A short last section used to stop at its content, and its rule
+  over the empty pane beneath read as a second, empty zone.
+- 313fe15: A saved snapshot now remembers which fields were auto. Loading it restores that
+  set along with the config and state, so a field the snapshot had pinned comes
+  back pinned instead of being overwritten by the resolver. Snapshots saved by an
+  earlier version have no such record and load as before, leaving the trial's
+  current auto fields alone. Additive: `SavedSnapshot` gains an optional `auto`.
+- d2b8390: `serializeSvg` now reports through `onWarn` what the document cannot carry the way weasel draws it, where it used to drop it silently: a stroke aligned `inner` or `outer` (SVG has no stroke alignment, so it is written centered), text that wraps at its box width (SVG text does not wrap), and text aligned to the center or bottom of its box (SVG text has no box). Weasel reads the last two back from their `data-weasel-*` attributes; other viewers draw them unwrapped and top-aligned. Each message is reported once per call. `SvgStroke` gains `align` so a bridge from a kit `Stroke` can pass it through and have the loss reported. Additive.
+  
+  labkit's annotation export passes a mark's stroke alignment through, so it is reported too.
+- a39a885: Themes are now authored as layered definitions and built by an engine, published as `@weasel-js/theme/engine`: seeds, generated ramps and scales, semantic rules (a step, an offset from another semantic, the first step that clears a contrast target, a reference), components and pins, any of which can vary by axis. `derive` produces a theme's tokens for one selection with provenance and validation issues, and `bake` folds every selection into a runtime `Theme`. weasel's own theme is `themes/weasel.json`, every value pinned, and emits the same CSS declarations as before. `toDTCG` in `@weasel-js/theme/engine` writes a theme back out as a DTCG document, with aliases written as paths through their type group (`{color.gray-800}`) so DTCG tools resolve them. A pin or component whose whole value is `{seeds.name}` takes that seed's value. labkit's interstellar theme is now `interstellar.theme.json`, a definition extending weasel.
+  
+  **Breaking.** A theme varies by *axes* rather than modes, and `mode` is one axis:
+  
+  - `resolveTheme(theme, selection?)` and `applyTheme(el, theme, selection?)` take `{ mode: 'light' }` instead of `'light'`; a missing axis takes its default. `applyTheme` stamps one `data-wzl-<axis>` attribute per axis.
+  - `<ThemeProvider selection={{ mode }}>` replaces `mode`, and `useTheme()` returns `selection` instead of `mode`.
+  - `Theme` holds `axes` and `tokens` (each token plain or `{ by: 'mode', dark, light }`) instead of `defaultMode`, `tokens` and `modes`. Read an axis default with `themeAxes(theme).mode.default`.
+  - `defineTheme` takes `{ name, extends?, axes?, components?, pins? }`, where a pin or component is a value or `{ value, type, alpha, description }` and references are written `{token}` (not `{color.token}`). It throws on a definition with rules; bake those with the engine. `extends` is a `Theme`: passing a definition's name (`'weasel'`) throws and says to pass the `Theme`.
+  - A theme that redeclares an axis its parent declares keeps the parent's values: the child's entries for a shared value and the child's default win, and a value only the parent has still resolves through the parent. A DTCG document with only a `dark` mode now resolves `light` from the theme it extends.
+  - `THEMES.<name>.modes.<mode>` is now `THEMES.<name>.selections['mode=<mode>']`. `THEME_SOURCES` holds definitions, `BAKED_THEMES` is new, and `TokenInput` and `ThemeSource` are removed.
+  - `GeneratedTheme.defaultMode` is replaced by `axes`.
+  - `tokens.css`'s `:root` declarations and `TOKEN_MANIFEST`'s rows are in layer order — ramps, scales, semantics, components, then other pins. The values are unchanged, but token browsers list them in the new order.
+- 5e79d5b: weasel-ui gains `TokenPanel`, which edits a set of design tokens by type. It files
+  tokens into collapsible sections (Color, Type, Size, Motion, Depth, Other), draws a
+  color group of three or more as one row of swatches sized to fit — picking a swatch
+  opens that token's editor — and gives each type its control: a number that keeps its
+  unit for dimensions, durations and numbers, the nine weights for a font weight, a
+  curve beside a `cubic-bezier()`, a swatch beside a color, and text for the rest. An
+  overridden token offers Reset. `tokenCategory` and `inferTokenType`, which reads a
+  DTCG type off a value, are exported beside it. labkit re-exports all of them.
+  
+  forge's CSS Vars panel is now a `TokenPanel`. The Theme tab takes each token's type
+  and group from the theme's manifest; the Story tab uses the manifest for a token it
+  knows and infers the rest, and which sections are collapsed persists with the lab.
+- 70e9fad: Every `--wzl-*` custom property the components read is now one a theme declares,
+  or a documented override hook. A read of a name nothing declared resolved to
+  nothing, which silently dropped the whole declaration it sat in.
+  
+  What changes on screen, in labkit's lab switcher: its menu items take the body
+  font size instead of inheriting the title's, the trigger turns the accent color
+  on hover, and the menu's shadow, like the floating workspace panel's, now takes
+  its color from `--wzl-shadow` so it follows the theme and mode. The menu stacks
+  at `--wzl-z-overlay`. In `@weasel-js/ui`, the disclosure chevron eases with
+  `--wzl-ease-out-cubic` and a property card's remove button reads `--wzl-danger`
+  directly; both render as before.
+- Updated dependencies [7ebfd0f]
+- Updated dependencies [f644eac]
+- Updated dependencies [894a52c]
+- Updated dependencies [b984947]
+- Updated dependencies [72fde09]
+- Updated dependencies [e9051ac]
+- Updated dependencies [9893d53]
+- Updated dependencies [626bace]
+- Updated dependencies [776e8b9]
+- Updated dependencies [2adcc06]
+- Updated dependencies [f4049be]
+- Updated dependencies [e99c441]
+- Updated dependencies [86be3eb]
+- Updated dependencies [51372f1]
+- Updated dependencies [075f88a]
+- Updated dependencies [a5ff296]
+- Updated dependencies [2a63f31]
+- Updated dependencies [66e0e10]
+- Updated dependencies [8b79c20]
+- Updated dependencies [f663199]
+- Updated dependencies [b1bf884]
+- Updated dependencies [a7519a1]
+- Updated dependencies [187593e]
+- Updated dependencies [08a3aec]
+- Updated dependencies [f9feecc]
+- Updated dependencies [cb5c172]
+- Updated dependencies
+- Updated dependencies [b5e7a17]
+- Updated dependencies [c0fa540]
+- Updated dependencies [d2b8390]
+- Updated dependencies [20bd67b]
+- Updated dependencies [5fbec37]
+- Updated dependencies [cba02cc]
+- Updated dependencies [21ce23e]
+- Updated dependencies [dda4172]
+- Updated dependencies [a39a885]
+- Updated dependencies [55b5524]
+- Updated dependencies [045998f]
+- Updated dependencies [56cad3a]
+- Updated dependencies [f9f41e2]
+- Updated dependencies [fa56d1e]
+- Updated dependencies [272ab0d]
+- Updated dependencies [ff17dd7]
+- Updated dependencies [b49c1e7]
+- Updated dependencies [272ab0d]
+- Updated dependencies [5e79d5b]
+- Updated dependencies [70e9fad]
+- Updated dependencies [b40b4ee]
+- Updated dependencies [c7545c4]
+- Updated dependencies [15b5eca]
+- Updated dependencies [0c46089]
+- Updated dependencies [29f6ed0]
+- Updated dependencies [fb6d8e5]
+- Updated dependencies [ca7c737]
+  - @weasel-js/ui@1.5.1
+  - @weasel-js/core@1.5.1
+  - @weasel-js/svg@1.5.1
+  - @weasel-js/theme@1.5.1
+  - @weasel-js/kernel3d@1.5.1
+  - @weasel-js/loupe@1.5.1
+  - @weasel-js/geom@1.5.1
+
 ## 1.5.0
 
 ### Minor Changes

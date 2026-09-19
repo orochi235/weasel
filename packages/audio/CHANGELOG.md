@@ -1,5 +1,7 @@
 # @weasel-js/audio
 
+## 1.5.1
+
 ## 1.5.0
 
 ### Patch Changes

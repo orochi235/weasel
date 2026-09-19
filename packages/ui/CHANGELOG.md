@@ -1,5 +1,221 @@
 # @weasel-js/ui
 
+## 1.5.1
+
+### Patch Changes
+
+- 7ebfd0f: Controls can be set to auto. Shift-click a row in a labkit control panel — or
+  click the pin dot beside its label — and the field stops holding a pinned
+  value: the instrument decides instead, and the control draws ghosted at what it
+  decided.
+  
+  `auto` is a value you write anywhere a config value goes, so `setConfig('gap',
+  auto)` and a trial's seed config both work. A schema starts a field unpinned
+  with `.initial(auto)`, attaches a resolver with `.auto(fn)`, and opts a field
+  out entirely with `.manual()` — for a value the instrument cannot receive as
+  `undefined`. The sentinel is normalized into a per-trial set of unpinned paths
+  at every boundary, so nothing stores or serializes it, and the last pinned
+  value stays where it is: un-pinning is lossless, and Reset returns a trial to
+  the auto paths it opened on.
+  
+  This adds API. Property rows in `@weasel-js/ui` take `auto` and `onAutoChange`;
+  a `Select`'s trigger and an alpha range read new color and border hooks that
+  default to what they already rendered; a control renderer's argument gains two
+  fields.
+  
+  One thing to know before upgrading: a control panel row now contains a second
+  button, the pin dot, named `Pin <label>`. A test querying a row's own control
+  loosely — `getByRole('button', { name: /Gap/ })` — will start matching both.
+  Match the control's exact accessible name, or exclude a name beginning `Pin `.
+- 9893d53: forge honors Storybook's conditional controls: an argType's `if` naming another arg
+  — truthy by default, or with `truthy: false`, `exists`, `eq` or `neq` — shows that
+  control only while the condition holds, through labkit's `showIf`. A condition on a
+  global is ignored, since a story's config does not carry the lab's globals.
+  
+  weasel-ui's CurveEditor story shows its grid divisions control only while Show grid
+  is on.
+- 626bace: A gradient now names the space its stops blend through. `interpolate` on any of
+  the three gradient kinds takes `'rgb'` (the default, and what every other vector
+  format means by a gradient), `'oklab'`, or `'oklch'` — which travels around the
+  hue wheel, so red to blue stays saturated instead of passing through a muddy
+  purple. Alpha is linear in every space.
+  
+  The blend is paid for once, in the 256-texel ramp the shader samples, so a
+  perceptual gradient costs a batched frame nothing over an sRGB one. The space is
+  part of the ramp atlas key: the same stops under two spaces take two rows.
+  
+  `sampleGradientStops` and `sampleResolvedStops` take the space as a third
+  argument, `bindRamp` as an optional third, and `GradientEditor` grows an
+  sRGB / OKLab / OKLCh switch (`spaceSwitch={false}` hides it). `@weasel-js/svg`
+  writes `wzl:interpolate` on the gradient's own element and reads it back; a
+  renderer that ignores it still paints the gradient, in sRGB.
+- 776e8b9: Add five Platonic-solid glyphs, `d4`, `d6`, `d8`, `d12` and `d20`, named for
+  the die each solid makes. They are drawn with a finer outline than the rest of
+  the set, and finer inner edges still.
+  
+  Export `ICON_GROUPS`, which files every glyph in `ICON_PATHS` under the family
+  it was drawn in, so an icon picker can section itself instead of listing ~200
+  names flat. The old "state and instrument" family is split into playback,
+  state and instrument, and `filter` now sits with the actions.
+  
+  `curvePulseTrain` is now one line that steps up and down along its baseline.
+  It used to draw a full-width baseline under three separate pulses, closing
+  each one into a rectangle.
+- 2adcc06: An inline property row's select now fills the space beside its label and sets its
+  value against the chevron. Sized to its longest option, each select started at a
+  different point, so a column of them scattered their values.
+- e99c441: Center a `KeySequence` separator (the `+` in `⌘ + K`) vertically on the keys.
+  It used to sit on the row's bottom edge, below the middle of the keys beside it.
+- 86be3eb: A sixth paint kind: `mesh-gradient`, PDF's shading types 6 and 7. A mesh is a
+  set of curved quadrilateral patches, each carrying a color at every corner, so
+  its color field bends where the three gradients can only run straight. Twelve
+  control points make a Coons patch and sixteen a tensor patch, which is the only
+  difference between them.
+  
+  It is registered through `registerPaintKind` rather than built into the
+  renderer, so every slot it uses is one a consumer's own kind can use. The paint
+  is rasterized once into a 256-texel bake the shader samples — forward, the way
+  every renderer that draws these works, because a paint has to answer "what color
+  is this fragment" and inverting a bicubic per fragment does not. Corner colors
+  blend through `interpolate`, as a gradient's stops do.
+  
+  `@weasel-js/svg` writes it as `<wzl:meshGradient>` with every patch's points in
+  full — not SVG's abandoned `<meshgradient>`, whose implicit edge sharing gives a
+  reader a way to be quietly wrong — and reads it back. A renderer that skips the
+  def paints the fallback color beside the reference.
+  
+  `MeshEditor` in `@weasel-js/ui` edits the corner colors and the blend space, and
+  `PaintInput` renders it: before this, a mesh in that control fell through to the
+  color field, which wrote a solid back over it.
+- 075f88a: `PaintField` edits a whole `FillStyle` from one control slot: a swatch naming
+  the kind it holds, and a popover holding `PaintInput`. `PaintInput`'s kind bar
+  and stop editor do not fit a property row's control column, which is why a
+  `paint` leaf in `PrefsForm` used to render a `ColorField` — reading a gradient's
+  first stop and writing a solid back, so touching the control lost the paint.
+  That leaf now renders `PaintField`, and a gradient survives being edited.
+  
+  `paintPreviewCss` turns any paint into a CSS `background`, for swatches and
+  chips. Gradients are sampled through their own blend space rather than handed
+  over as stops, so an OKLCh gradient previews as itself instead of as the sRGB
+  blend of its ends.
+- a5ff296: `PaintInput` no longer flattens a registered paint kind that has no `Editor` into a solid color. It shows the kind's label with "no editor" and leaves the paint alone; before, touching the color field in its place replaced the paint with `{ fill: 'solid' }`. Register an `Editor` on the kind to make it editable.
+- b1bf884: The property readout's default width is `2.8em` instead of `calc(5em - 24px)`, so it scales with the readout's font size rather than subtracting a fixed 24px. At the kit's own size the two are within a fraction of a pixel. `--wzl-property-readout-w` still overrides it.
+- a7519a1: Remove the `pointer` dep. **Breaking:** `DepSchema` no longer has a `pointer`
+  entry, `useStandardActions` no longer takes a `pointer` option, and the fixed
+  deps bag handed to an action that declares no `requires` no longer carries it.
+  
+  Nothing in the kit declared or read it, and `<SceneCanvas>` never supplied a
+  value, so an action reading `deps.pointer` was already getting `undefined`. An
+  action that wants the pointer reads it from its invocation context
+  (`ctx.world`), and code outside an action can still use `usePointerContext()`,
+  which is unchanged.
+- cb5c172: `SelectRow` renders weasel-ui's `Select` rather than a native `<select>`, so a
+  property row's dropdown opens the same listbox as every other weasel select. Its
+  props are unchanged: an unchosen or unknown value still shows the placeholder. Code
+  that drove the row as a native select — `selectOption`, or a `change` event on it —
+  now opens the trigger and picks an option instead.
+  
+  `Select` gains `variant: 'bare'`, which drops the box for a select set in other
+  chrome, and reads its value alignment from `--wzl-select-align`. An inline property
+  row sets that to `right`, keeping its values against the chevron.
+  
+  labkit's config panels and forge's trial Settings pick up the change through
+  `SelectRow`.
+- `Select` gains `triggerId`, which puts an id on the trigger button. React Aria
+  puts a plain `id` on the wrapper element, which is not labelable, so an outer
+  `<label for>` had nothing to point at: the label fell through to whatever
+  labelable element came first inside the row. `SelectRow` passes it, so a
+  property row's `<label>` owns its select again rather than the ⓘ help button
+  beside it.
+- b5e7a17: `BandEditor`, `Timeline` and the curve editor's keyframe layer now snap through one shared `snapToNearest` and one 6px radius. No behavior change; `snapToNearest` and `snapTime` are exported from the same places as before.
+- b49c1e7: Stop a click near a `ToggleRow`'s pin dot from selecting the row's first option.
+  
+  The row was a `<label>`, and a label passes a click on its text to its first
+  control — for a segmented toggle, the first segment. A near-miss on the 7px
+  dot, or any click on the row's name, pinned the row to that option instead of
+  toggling auto, so an unpinned toggle could look impossible to return to auto.
+  `PropertyRow` now takes `group`, which renders the row as a `<div>` for a
+  control made of several elements, and `ToggleRow` sets it. The pin dot also
+  takes clicks within 5px of its edge.
+- 272ab0d: `TokenPanel` gains `density`. `tight` puts a token on one line — name, control,
+  Reset — with the names on a fixed rail so the values read down the panel as a
+  column, and caps the field instead of letting it span the panel. A stacked row
+  spends 41px and a 595px-wide field on a six-character value, which a set of
+  ninety tokens cannot afford. `normal` stays the default, so nothing already
+  using the panel moves.
+  
+  The theme editor's Seeds, Components and Pins layers ask for `tight`.
+- 5e79d5b: weasel-ui gains `TokenPanel`, which edits a set of design tokens by type. It files
+  tokens into collapsible sections (Color, Type, Size, Motion, Depth, Other), draws a
+  color group of three or more as one row of swatches sized to fit — picking a swatch
+  opens that token's editor — and gives each type its control: a number that keeps its
+  unit for dimensions, durations and numbers, the nine weights for a font weight, a
+  curve beside a `cubic-bezier()`, a swatch beside a color, and text for the rest. An
+  overridden token offers Reset. `tokenCategory` and `inferTokenType`, which reads a
+  DTCG type off a value, are exported beside it. labkit re-exports all of them.
+  
+  forge's CSS Vars panel is now a `TokenPanel`. The Theme tab takes each token's type
+  and group from the theme's manifest; the Story tab uses the manifest for a token it
+  knows and infers the rest, and which sections are collapsed persists with the lab.
+- 70e9fad: Every `--wzl-*` custom property the components read is now one a theme declares,
+  or a documented override hook. A read of a name nothing declared resolved to
+  nothing, which silently dropped the whole declaration it sat in.
+  
+  What changes on screen, in labkit's lab switcher: its menu items take the body
+  font size instead of inheriting the title's, the trigger turns the accent color
+  on hover, and the menu's shadow, like the floating workspace panel's, now takes
+  its color from `--wzl-shadow` so it follows the theme and mode. The menu stacks
+  at `--wzl-z-overlay`. In `@weasel-js/ui`, the disclosure chevron eases with
+  `--wzl-ease-out-cubic` and a property card's remove button reads `--wzl-danger`
+  directly; both render as before.
+- b40b4ee: Move `<Transport>`'s time readout to the end of the strip
+  
+  The playhead readout sat second, before the loop toggle and the rate slider, so
+  every frame's rewrite reflowed both of them and the controls visibly vibrated
+  during playback. It now comes last, with `margin-inline-start: auto` and
+  `text-align: end` so it grows leftward into the slack rather than pushing the
+  mode toggle that `<Timeline>` renders beside it. `tabular-nums` alone could not
+  fix this: it equalizes digit width, not digit count, so crossing 10s still
+  reflowed.
+  
+  Also adds a `Live` Storybook story binding `<AnimatedTimeline>` to a running
+  handle — the existing Timeline stories render the transport with inert
+  defaults, so its buttons did nothing there.
+- c7545c4: Clicking a property row's label reaches its control again when the row has a `description`. `PropertyRow`'s `<label>` had no `for`, so it belonged to the first labelable element inside it, the ⓘ help button; `CheckboxRow`, `TextRow`, `NumberRow`, `SelectRow` and `ColorRow` now point it at their control. `ColorRow`'s opacity slider is named `<label> opacity`. A direct `PropertyRow` with a `description` should pass `htmlFor` for the same reason.
+- 15b5eca: `ToggleBar`, `ActionsBar` and `OptionsBar` segments now take their height from the bar. Inside a labkit page, labkit's default button height used to win instead, so a `size="sm"` bar drew 24px segments in a 17px track and clipped their labels.
+- 0c46089: Every property row's control is named after the row's label: `SliderRow`'s slider and readout, and the fields in `NumberRow`, `TextRow`, `SelectRow`, `ColorRow` and `CheckboxRow`. `ToggleRow`'s segments are named after their options, inside a group named after the row. `PropertyRow`'s `<label>` labels only the first input inside it. On a slider row that is the numeric readout, on any row with a `description` it is the ⓘ help button, and on a toggle row it is the first segment. So the range input had no name, a described row's control lost its name, and a toggle's first segment took the row's name.
+- Updated dependencies [f644eac]
+- Updated dependencies [894a52c]
+- Updated dependencies [b984947]
+- Updated dependencies [72fde09]
+- Updated dependencies [e9051ac]
+- Updated dependencies [626bace]
+- Updated dependencies [f4049be]
+- Updated dependencies [86be3eb]
+- Updated dependencies [51372f1]
+- Updated dependencies [2a63f31]
+- Updated dependencies [66e0e10]
+- Updated dependencies [8b79c20]
+- Updated dependencies [f663199]
+- Updated dependencies [a7519a1]
+- Updated dependencies [187593e]
+- Updated dependencies [08a3aec]
+- Updated dependencies [f9feecc]
+- Updated dependencies [c0fa540]
+- Updated dependencies [d2b8390]
+- Updated dependencies [20bd67b]
+- Updated dependencies [5fbec37]
+- Updated dependencies [cba02cc]
+- Updated dependencies [21ce23e]
+- Updated dependencies [ff17dd7]
+- Updated dependencies [29f6ed0]
+- Updated dependencies [fb6d8e5]
+- Updated dependencies [ca7c737]
+  - @weasel-js/core@1.5.1
+  - @weasel-js/svg@1.5.1
+  - @weasel-js/font@1.5.1
+  - @weasel-js/modes@1.5.1
+
 ## 1.5.0
 
 ### Minor Changes
