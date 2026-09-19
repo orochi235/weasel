@@ -91,13 +91,13 @@ export async function runStory(
   mod: Record<string, unknown>,
   exportName: string,
   file: string,
-  root: string,
+  autoTitle: string,
   { setup, viewport }: RunStoryOptions = {},
 ): Promise<void> {
   leftover?.();
   let story: ReturnType<typeof loadStories>[number] | undefined;
   try {
-    story = loadStories(mod, file, root, setup?.parameters).find((s) => s.exportName === exportName);
+    story = loadStories(mod, autoTitle, setup?.parameters).find((s) => s.exportName === exportName);
   } catch (error) {
     throw phased('load', error);
   }

@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { indexFile } from './indexFile';
 
-const ROOT = '/repo';
 const FILE = '/repo/packages/ui/src/Slider.stories.tsx';
 
-const ids = (code: string, file = FILE) => indexFile(code, file, ROOT).map((e) => [e.id, e.name]);
+const ids = (code: string, file = FILE) => indexFile(code, file, 'ui/Auto').map((e) => [e.id, e.name]);
 
 describe('indexFile', () => {
   it('indexes a native meta and its stories', () => {
@@ -14,7 +13,7 @@ export default meta({ title: 'ui/Slider' });
 export const Basic = story({ render: () => null });
 export const WithName = story({ name: 'Custom name', render: () => null });
 `;
-    expect(indexFile(code, FILE, ROOT)).toEqual([
+    expect(indexFile(code, FILE, 'ui/Auto')).toEqual([
       { id: 'ui-slider--basic', title: 'ui/Slider', name: 'Basic', exportName: 'Basic', file: FILE },
       { id: 'ui-slider--withname', title: 'ui/Slider', name: 'Custom name', exportName: 'WithName', file: FILE },
     ]);
@@ -115,12 +114,12 @@ export const Shown = {};
     expect(ids(code)).toEqual([['ui-tag--shown', 'Shown']]);
   });
 
-  it('titles from the path when the meta names none', () => {
+  it('titles with the auto title when the meta names none', () => {
     const code = `
 export default {};
 export const Basic = {};
 `;
-    expect(indexFile(code, FILE, ROOT)[0]?.title).toBe('packages/ui/src/Slider');
+    expect(indexFile(code, FILE, 'ui/Auto')[0]?.title).toBe('ui/Auto');
   });
 
   it('gives a file without a default export no entries', () => {
@@ -150,6 +149,6 @@ export const Basic = { render: () => <div /> };
 export default { title: '!!!' };
 export const Basic = {};
 `;
-    expect(() => indexFile(code, FILE, ROOT)).toThrow(FILE);
+    expect(() => indexFile(code, FILE, 'ui/Auto')).toThrow(FILE);
   });
 });

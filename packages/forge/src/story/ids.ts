@@ -35,11 +35,3 @@ export function storyNameFromExport(exportName: string): string {
     .replace(/ +/g, ' ')
     .trim();
 }
-
-/** A title for a file whose meta names none: its path under `root`, minus `.stories.tsx`.
- *  Not Storybook's auto-title, so such a story's id differs between the two tools. */
-export function titleFromFile(file: string, root: string): string {
-  const prefix = `${root.replace(/\/$/, '')}/`;
-  const relative = file.startsWith(prefix) ? file.slice(prefix.length) : file;
-  return relative.replace(/\.stories\.[jt]sx?$/, '');
-}

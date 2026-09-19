@@ -49,8 +49,8 @@ describe('storybook shims', () => {
     expect(await resolveFrom(s, 'storybook/preview-api')).not.toBe(SOURCE_SHIM);
   });
 
-  // Needs `npm run build -w @weasel-js/forge`; CI runs the tests before it builds.
-  it.runIf(existsSync(BUILT_PLUGIN))('resolves the published shim from the built plugin with no aliases', async () => {
+  // Needs `npm run build -w @weasel-js/forge`. CI reruns this file after its build with FORGE_BUILT=1, so a missing dist fails there.
+  it.runIf(existsSync(BUILT_PLUGIN) || process.env.FORGE_BUILT === '1')('resolves the published shim from the built plugin with no aliases', async () => {
     const built = (await import(pathToFileURL(BUILT_PLUGIN).href)) as { forge: typeof forge };
     const s = await start(built.forge({ stories: [] }), []);
     expect(await resolveFrom(s, 'storybook/preview-api')).toBe(BUILT_SHIM);

@@ -16,7 +16,7 @@ describe('loadNativeModule', () => {
   };
 
   it('loads each branded story export', () => {
-    const stories = loadNativeModule(mod, '/repo/src/Slider.stories.tsx', '/repo');
+    const stories = loadNativeModule(mod, 'Slider');
     expect(stories.map((s) => [s.id, s.name, s.layout])).toEqual([
       ['ui-slider--basic', 'Basic', 'padded'],
       ['ui-slider--withname', 'Custom name', 'fullscreen'],
@@ -24,17 +24,16 @@ describe('loadNativeModule', () => {
   });
 
   it('gives a config-less story an empty schema and no initial state', () => {
-    const [, second] = loadNativeModule(mod, '/repo/src/Slider.stories.tsx', '/repo');
+    const [, second] = loadNativeModule(mod, 'Slider');
     expect(second?.config.defaults()).toEqual({});
     expect(second?.initialState).toBeNull();
   });
 
-  it('titles a story from its path when the meta names none', () => {
+  it('titles its stories with the auto title when the meta names none', () => {
     const [only] = loadNativeModule(
       { default: meta({}), A: story({ render: () => null }) },
-      '/repo/packages/ui/src/Button.stories.tsx',
-      '/repo',
+      'ui/Button',
     );
-    expect(only?.title).toBe('packages/ui/src/Button');
+    expect(only?.title).toBe('ui/Button');
   });
 });

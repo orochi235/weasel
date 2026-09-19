@@ -10,11 +10,12 @@ import {
   useState,
 } from 'react';
 import type { Globals, Layout, Viewport } from '../protocol/messages';
-import { storyId, storyNameFromExport, titleFromFile } from '../story/ids';
+import { storyId, storyNameFromExport } from '../story/ids';
 import type { Decorator, LoadedStory, PlayContext, StoryContext } from '../story/types';
 import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } from './argsContext';
 import { type ArgType, argsToSchema, type ControlMatchers } from './argsToSchema';
 import { isPlainObject } from './isPlainObject';
+import { withUnsent } from './portSafe';
 
 type Args = Record<string, unknown>;
 type CsfContext = {
@@ -131,15 +132,17 @@ function Scoped({
   );
 }
 
-/** Normalizes a Component Story Format module. `parameters` are the project's, under the meta's and each story's. */
+/**
+ * Normalizes a Component Story Format module. `autoTitle` titles the stories when the meta names no title;
+ * `parameters` are the project's, under the meta's and each story's.
+ */
 export function loadCsfModule(
   mod: Record<string, unknown>,
-  file: string,
-  root: string,
+  autoTitle: string,
   projectParameters: Record<string, unknown> = {},
 ): LoadedStory[] {
   const meta = (isPlainObject(mod.default) ? mod.default : {}) as Annotations;
-  const title = meta.title ?? titleFromFile(file, root);
+  const title = meta.title ?? autoTitle;
   const stories: LoadedStory[] = [];
 
   for (const [exportName, value] of Object.entries(mod)) {
@@ -166,8 +169,12 @@ export function loadCsfModule(
     const renderFn: CsfRender | undefined =
       spec.render ?? meta.render ?? (component ? (a) => createElement(component, a) : undefined);
 
+    const withArgs = (config: Args): Args =>
+      Object.fromEntries(
+        Object.entries(withoutUndefined(config)).map(([key, value]) => [key, key in args ? withUnsent(value, args[key]) : value]),
+      );
     const csfContext = (config: unknown, globals: Globals, local: LocalArgs = {}): CsfContext => ({
-      args: withoutUndefined({ ...args, ...withoutUndefined(config as Args), ...appliedLocal(local, config as Args) }),
+      args: withoutUndefined({ ...args, ...withArgs(config as Args), ...appliedLocal(local, config as Args) }),
       globals,
       parameters,
       title,

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import type { Logger, Plugin, ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types';
 import { hoistPages, writePages } from './build';
+import { autoTitle } from './autoTitle';
 import { html } from './html';
 import { indexFile } from './indexFile';
 import { storybookShims } from './storybookShims';
@@ -55,7 +56,7 @@ export function forge(options: ForgeOptions): Plugin[] {
     const path = relative(root, file).split(sep).join('/');
     return !path.split('/').includes('node_modules') && options.stories.some((pattern) => matchesGlob(path, pattern));
   };
-  const read = (file: string) => indexFile(readFileSync(file, 'utf8'), file, root);
+  const read = (file: string) => indexFile(readFileSync(file, 'utf8'), file, autoTitle(file, root, options.stories));
   const logError = (err: unknown) => logger?.error(`[forge] ${err instanceof Error ? err.message : String(err)}`);
   /** A file that fails to parse stays in the map with no entries, so an edit that fixes it re-indexes it. */
   const files = (): Map<string, IndexEntry[]> => {
@@ -106,7 +107,7 @@ import index from 'virtual:forge/index.js';
 import importers from 'virtual:forge/importers.js';
 import setup from 'virtual:forge/frame-config.js';
 
-mountFrame({ index, importers, root: ${JSON.stringify(root)}, setup });
+mountFrame({ index, importers, setup });
 `,
   };
 

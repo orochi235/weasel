@@ -1275,21 +1275,6 @@ controls. It runs beside Storybook today.
   workshop cannot draw it into any of those; the frame has to produce the
   picture and send it back.
 
-- **(P2) A CSF arg that holds a function gets no control at all.**
-  `argsToSchema` (`packages/forge/src/csf/argsToSchema.ts`) skips any arg that
-  fails `isPortSafe`, because a function cannot cross the frame's message port.
-  An object or array with one function inside loses its whole control:
-  JobProgress's `job`, Lab's `instruments`, and Powerline's `segments`, where
-  Storybook offered an object control. Send the port-safe fields as config and
-  merge the functions back in from the arg's original value inside the frame.
-
-- **(P2) forge titles an untitled story file differently from Storybook.**
-  `titleFromFile` (`packages/forge/src/story/ids.ts`) uses the file's path under
-  the vite root. Storybook titles it relative to its stories glob, collapses
-  `Button/Button.stories.tsx` to `Button`, and drops `index`, so the story's id
-  and link differ between the two tools. Every story file in the repo sets an
-  explicit `title` today, so nothing breaks yet; port Storybook's auto-title
-  rules the way `storyId` already ports its id rules.
 
 - **(P2) Two copies of `@weasel-js/theme` in a published forge install.**
   labkit's `tsup.config.ts` bundles every `@weasel-js` package except core
@@ -1303,10 +1288,6 @@ controls. It runs beside Storybook today.
   `<style id="wzl-themes">`. Inside the repo, aliases resolve both to source,
   so this appears only against the packed packages.
 
-- **(P3) forge's built-shim resolution test never runs in CI.** The last case in
-  `packages/forge/src/csf/shims/alias.test.ts` runs only when forge's `dist`
-  exists, and `.github/workflows/ci.yml` runs vitest before `npm run build`. Run
-  it after the build step, or in the consumer smoke test.
 
 - **(P3) A forge story with a `viewport` reloads its frame once when first
   opened.** The instrument built before the frame's `ready` message has no

@@ -12,6 +12,8 @@ export interface FrameImporters {
 
 export interface FrameIndexEntry {
   id: string;
+  /** The story's title as indexed, which titles the file's stories when its meta names none. */
+  title: string;
   file: string;
   exportName: string;
 }
@@ -19,19 +21,22 @@ export interface FrameIndexEntry {
 export interface MountFrameOptions {
   index: readonly FrameIndexEntry[];
   importers: FrameImporters;
-  root: string;
   setup?: FrameSetup;
-  load?: (mod: Record<string, unknown>, file: string, root: string, parameters?: Record<string, unknown>) => LoadedStory[];
+  load?: (mod: Record<string, unknown>, autoTitle: string, parameters?: Record<string, unknown>) => LoadedStory[];
 }
 
-/** The default `load`: a module whose default export is a forge `meta` is native, anything else is CSF under `parameters`. */
+/**
+ * The default `load`: a module whose default export is a forge `meta` is native, anything else is CSF under
+ * `parameters`. `autoTitle` titles the stories when the meta names no title.
+ */
 export function loadStories(
   mod: Record<string, unknown>,
-  file: string,
-  root: string,
+  autoTitle: string,
   parameters?: Record<string, unknown>,
 ): LoadedStory[] {
-  return isNative(mod.default, 'meta') ? loadNativeModule(mod, file, root) : loadCsfModule(mod, file, root, parameters);
+  return isNative(mod.default, 'meta')
+    ? loadNativeModule(mod, autoTitle)
+    : loadCsfModule(mod, autoTitle, parameters);
 }
 
 function waitForPort(): Promise<MessagePort> {
@@ -58,7 +63,7 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
     const importer = options.importers[entry.file];
     if (!importer) throw new Error(`No importer for ${entry.file}`);
     const mod = await importer();
-    const stories = (options.load ?? loadStories)(mod, entry.file, options.root, options.setup?.parameters);
+    const stories = (options.load ?? loadStories)(mod, entry.title, options.setup?.parameters);
     const story = stories.find((s) => s.exportName === entry.exportName);
     if (!story) throw new Error(`${entry.file} has no story export "${entry.exportName}"`);
     startFrame({ story, channel, container: document.getElementById('root') ?? document.body, setup: options.setup });

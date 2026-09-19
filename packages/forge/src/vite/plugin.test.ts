@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { existsSync, globSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, globSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer as createHttpServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -71,9 +71,9 @@ describe('forge vite plugin', () => {
 
   const entry = async (name: string) => (await server.pluginContainer.load(`\0virtual:forge/${name}`)) as string;
 
-  it('mounts the frame with the vite root and its own stylesheet', async () => {
+  it('mounts the frame with its own stylesheet', async () => {
     const code = await entry('frame-entry.js');
-    expect(code).toContain(`root: ${JSON.stringify(root)}`);
+    expect(code).toContain('mountFrame({ index, importers, setup });');
     expect(code).toContain(`import '@weasel-js/forge/frame.css';`);
     expect(code).not.toContain('loadNativeModule');
   });
@@ -101,6 +101,25 @@ describe('forge vite plugin', () => {
     writeFileSync(join(root, 'c.stories.tsx'), story('ui/C', 'Third'));
     await expect.poll(async () => (await loadIndex()).length, { timeout: 5000, interval: 50 }).toBe(4);
     expect((await loadIndex()).at(-1)?.id).toBe('ui-c--third');
+  });
+
+  it("titles a file whose meta names none the way Storybook does, relative to its glob's directory", async () => {
+    mkdirSync(join(root, 'Button'));
+    writeFileSync(join(root, 'Button', 'Button.stories.tsx'), 'export default {};\nexport const Primary = {};\n');
+    const nested = await createServer({
+      root,
+      configFile: false,
+      plugins: [forge({ stories: ['*/*.stories.tsx'] })],
+      server: { middlewareMode: true, ws: false },
+      appType: 'custom',
+      logLevel: 'silent',
+    });
+    try {
+      const index = ((await nested.ssrLoadModule('virtual:forge/index.js')) as { default: IndexEntry[] }).default;
+      expect(index.map((e) => [e.id, e.title])).toEqual([['button--primary', 'Button']]);
+    } finally {
+      await nested.close();
+    }
   });
 
   it('checks an added file against the globs without re-globbing the tree', async () => {
