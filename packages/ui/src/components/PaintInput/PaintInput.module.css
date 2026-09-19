@@ -10,3 +10,9 @@
 .unset {
   opacity: 0.55;
 }
+
+/* A kind with no editor: named, not editable. */
+.noEditor {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}

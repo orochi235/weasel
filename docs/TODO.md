@@ -406,15 +406,6 @@ Core five + Crop shipped. Remaining:
   which is the same trade as the entry above.
 
 
-- **(P2) A registered paint kind with no `Editor` is flattened to a solid by
-  `PaintInput`.** The body falls through its built-in branches to a `ColorField`
-  whose `onChange` writes `{ fill: 'solid', color }`, so opening the control on a
-  consumer's kind and touching it destroys the paint — the same defect the
-  `PrefsForm` paint leaf had, one layer up. The kit's own kinds are all covered
-  now (`mesh-gradient` was the last one), which is exactly why nothing fails:
-  only a consumer hits it. The fix is a branch that refuses to edit a paint it
-  has no editor for rather than editing it wrongly.
-
 - **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner
   colors and the blend space; a patch's twelve control points are only reachable
   by writing the paint by hand, which is where gradients were before

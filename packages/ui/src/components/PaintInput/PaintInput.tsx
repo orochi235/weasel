@@ -193,6 +193,12 @@ export function PaintInput(props: PaintInputProps): ReactElement {
     if (isMeshPaint(value)) {
       return <MeshEditor value={value} onInput={onInput} onChange={onChange} />;
     }
+    const kind = kindOf(value);
+    if (kind !== 'solid') {
+      // Editing a paint this control cannot represent would overwrite it, so
+      // a kind with no editor is shown and left alone.
+      return <div className={s.noEditor}>{entry?.label ?? kind}: no editor</div>;
+    }
     return (
       <ColorField
         value={currentColor()}
