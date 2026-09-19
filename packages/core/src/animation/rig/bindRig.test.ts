@@ -69,8 +69,8 @@ describe('bindRig', () => {
     const { scene, upper } = armScene();
     const rig = bindRig({ scene, skeleton: ARM, bindings: { upper } });
     // Mirror about x = 100: the arm now points -x from the same shoulder.
-    const mirror = mat3.multiply(mat3.translate(mat3.identity(), 100, 0), mat3.scale(mat3.identity(), -1, 1));
-    rig.pose({}, mat3.multiply(mirror, mat3.translate(mat3.identity(), -100, 0)));
+    const mirror = mat3.multiply(mat3.translated(mat3.identity(), 100, 0), mat3.scaled(mat3.identity(), -1, 1));
+    rig.pose({}, mat3.multiply(mirror, mat3.translated(mat3.identity(), -100, 0)));
     const p = where(scene, upper);
     expect(p.x + p.width / 2).toBeCloseTo(75, 4);
     expect(p.y + p.height / 2).toBeCloseTo(100, 4);

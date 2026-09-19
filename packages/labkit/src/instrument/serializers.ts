@@ -13,7 +13,7 @@ import type { Instrument, InstrumentList } from './types';
  */
 export function unruledConfigSchema(
   // biome-ignore lint/suspicious/noExplicitAny: instruments are stored contravariantly; see InstrumentList
-  instrument: Instrument<any, any, any>,
+  instrument: Instrument<any, any, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
 ): ResolvedConfig | undefined {
   return instrument.config ? resolveConfigSchema(instrument.config, []) : undefined;
 }
