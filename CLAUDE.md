@@ -162,8 +162,7 @@ hand-roll it too, and that is a defect regardless of how well the demo runs.
 
 Bypassing a system is acceptable in exactly two cases: the example is trivial
 enough that the system is genuinely out of scope, or the bypass *is* the point
-and the demo's own blurb says so (the side-scroller load test does). Anything
-else gets rebuilt on the system.
+and the demo's own blurb says so. Anything else gets rebuilt on the system.
 
 Demos under `apps/site/demos/` are **terse and single-purpose** — each one exists to show a specific kit feature in the smallest plausible form. If a demo accumulates code that isn't directly pertinent to the feature it's demonstrating (custom hit-testers when defaults exist, hand-rolled adapter wiring, per-consumer index inversions), treat that as a signal that the kit's defaults / helpers should absorb the boilerplate. Being able to trim a demo or a simple consumer use-case is a legitimate driver for kit changes — there's limited value in showing consumers how to reimplement parts of the kit they could just find in source.
 

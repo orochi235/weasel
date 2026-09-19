@@ -18,7 +18,7 @@ import type { SoundName } from './sfx';
 import { WORLD } from './worldLevel';
 
 /** How long a bonk callout stays up. */
-const BONK_CALLOUT_TTL = 0.9;
+const OW_CALLOUT_TTL = 0.9;
 const COINS_PER_LIFE = 5;
 const HEALTHCARE_CALLOUT_TTL = 1.6;
 /** Seconds of screen shake after a first or second bonk. */
@@ -93,6 +93,17 @@ export const freshGame = (): GameRefs => ({
   callouts: [],
 });
 
+/** Every hit the player takes says so, from just above the player's head. */
+function sayOw(g: GameRefs): void {
+  const { x, y } = g.player.body;
+  g.callouts = pushCallout(g.callouts, {
+    text: 'ow',
+    anchor: { kind: 'world', at: { x, y: y - BODY_H / 2 } },
+    bornAt: g.elapsed,
+    ttl: OW_CALLOUT_TTL,
+  });
+}
+
 /** One fixed step of simulation. Mutates `g` in place. */
 export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
   g.player = stepBody(g.player, WORLD, step, STEP);
@@ -104,6 +115,7 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
     g.player = { ...g.player, body: { ...g.player.body, vy: -300 } };
     hooks.sound('hurt');
     hooks.duck();
+    sayOw(g);
   }
 
   g.elapsed += STEP;
@@ -114,12 +126,7 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
   // this step — walking under a `?` block never sets it.
   if (g.player.bonk && g.outcome === 'playing') {
     const at = { x: (g.player.bonk.cx + 0.5) * TILE, y: (g.player.bonk.cy + 0.5) * TILE };
-    g.callouts = pushCallout(g.callouts, {
-      text: 'ow',
-      anchor: { kind: 'world', at },
-      bornAt: g.elapsed,
-      ttl: BONK_CALLOUT_TTL,
-    });
+    sayOw(g);
     hooks.soundAt('hurt', at, 0.7);
     g.shake = SHAKE_DURATION;
     g.lives--;
@@ -158,6 +165,7 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
       };
       hooks.sound('hurt');
       hooks.duck();
+      sayOw(g);
     }
   }
 
@@ -168,6 +176,7 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
     g.camera = createCamera(WORLD.spawn);
     g.invuln = INVULN;
     hooks.sound('hurt');
+    sayOw(g);
   }
 
   if (g.lives <= 0 && g.outcome === 'playing') {

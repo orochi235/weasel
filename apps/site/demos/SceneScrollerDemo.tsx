@@ -2,19 +2,24 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SceneCanvas,
   WeaselProvider,
+  blur,
   createParallaxLayer,
+  createSlew,
   defaultDrawOne,
+  rectPath,
   textCommandFromRuns,
   useAnimator,
   useHandTool,
   useScene,
   useTools,
 } from '@weasel-js/core';
-import type { Dims, DrawCommand, RectPose, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
+import type { Dims, DrawCommand, Effect, LayerGroup, RectPose, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import { CAM_SCALE, cameraView, followCamera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
 import { COLORS, drawBackdrop, drawCallouts, drawEnding } from './platformer/skin';
-import { createEnemies } from './platformer/entities';
+import { createEnemies, ENEMY_H, ENEMY_W } from './platformer/entities';
+import { BODY_H, BODY_W } from './platformer/physics';
+import { usePlatformerAudio } from './platformer/usePlatformerAudio';
 import { usePlatformerInput } from './platformer/useInput';
 import {
   boneNodes,
@@ -28,7 +33,6 @@ import {
 import {
   advanceWorld,
   freshGame,
-  NO_HOOKS,
   POLE,
   SHAKE_DURATION,
   SHAKE_MAGNITUDE,
@@ -39,6 +43,11 @@ import {
 const W = 720;
 const H = 405;
 const DIMS: Dims = { width: W, height: H };
+
+/** The concussion blur, in px of radius. Each knock adds `perHit` and the
+ *  total clears at a fixed rate, so one knock is gone in `clearSeconds` and
+ *  knocks landing before it clears stack, up to `max`. */
+const BONK_BLUR = { perHit: 6, clearSeconds: 6, riseSeconds: 0.12, max: 18 };
 
 export function SceneScrollerDemo() {
   const [run, setRun] = useState(0);
@@ -81,16 +90,49 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
   const canvas = useRef<SceneCanvasApi | null>(null);
   const initialView = useMemo(() => cameraView(game.current.camera, DIMS), []);
 
+  // `impact` is what the knocks have added and not yet cleared; `blur` follows
+  // it with a short rise so a knock doesn't snap on. Both are stepped by the
+  // frame loop and read by the group's effects thunk, so the blur costs no render.
+  const { impact, blur: blurRadius } = useMemo(() => ({
+    impact: createSlew({ fall: BONK_BLUR.perHit / BONK_BLUR.clearSeconds }),
+    blur: createSlew({ rise: BONK_BLUR.perHit / BONK_BLUR.riseSeconds }),
+  }), []);
+  const sound = usePlatformerAudio(animator, () => {
+    impact.value = Math.min(impact.value + BONK_BLUR.perHit, BONK_BLUR.max);
+  });
+  const { hooks, beginFrame, endFrame, stats: soundStats } = sound;
+
+  // The world is the three parallax bands and the scene, consecutive in the
+  // stack below, so a knock blurs them as one buffer and leaves the HUD sharp.
+  // A scene with layers draws as one canvas layer per scene layer, so the group
+  // names those rather than the slot.
+  const layerGroups = useMemo<LayerGroup[]>(() => [{
+    id: 'world',
+    layers: ['backdrop-far', 'backdrop-mid', 'backdrop-near', 'scene:tiles', 'scene:entities', 'scene:player'],
+    effects: (): Effect[] => {
+      // No passes between knocks, so the offscreen buffer is never allocated.
+      return blurRadius.value > 0 ? blur({ radius: blurRadius.value }) : [];
+    },
+  }], [blurRadius]);
+
+  // The debug layer's `draw` runs outside React, so the checkbox mirrors its
+  // state into a ref rather than closing over `showBoxes` directly.
+  const [showBoxes, setShowBoxes] = useState(false);
+  const showBoxesRef = useRef(false);
+  useEffect(() => {
+    showBoxesRef.current = showBoxes;
+  }, [showBoxes]);
+
   const frameMs = useRef(0);
-  const [stats, setStats] = useState({ frame: 0, nodes: 0, writes: 0 });
+  const [stats, setStats] = useState({ frame: 0, nodes: 0, writes: 0, voices: 0, steps: 0, spread: 0 });
   const writes = useRef(0);
   useEffect(() => {
     const id = window.setInterval(
-      () => setStats({ frame: frameMs.current, nodes: scene.nodes.size, writes: writes.current }),
+      () => setStats({ frame: frameMs.current, nodes: scene.nodes.size, writes: writes.current, ...soundStats() }),
       200,
     );
     return () => window.clearInterval(id);
-  }, [scene]);
+  }, [scene, soundStats]);
 
   useEffect(() => animator.keepAlive(), [animator]);
 
@@ -104,16 +146,15 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
 
       const g = game.current;
       g.camera = followCamera(g.camera, g.player.body, DIMS, WORLD, frame);
-      if (g.outcome !== 'playing') stepEnding(g, frame, NO_HOOKS);
+      beginFrame(g);
+      impact.step(frame);
+      blurRadius.target = impact.value;
+      blurRadius.step(frame);
 
-      if (running && g.outcome === 'playing') {
-        advanceWorld(
-          g,
-          frame,
-          input,
-          NO_HOOKS,
-        );
-      }
+      if (g.outcome !== 'playing') stepEnding(g, frame, hooks.current);
+      const simulating = running && g.outcome === 'playing';
+      if (simulating) advanceWorld(g, frame, input, hooks.current);
+      endFrame(g, simulating);
 
       // A simulation step is not an edit, so it records nothing: one notify
       // and one repaint per frame, however many nodes moved.
@@ -133,7 +174,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
           }
         : v);
     });
-  }, [animator, running, input, scene]);
+  }, [animator, running, input, scene, hooks, beginFrame, endFrame, impact, blurRadius]);
 
   const layers = useMemo(() => {
     const band = (name: 'far' | 'mid' | 'near', pan: number): RenderLayer<unknown> =>
@@ -165,6 +206,26 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       },
     };
 
+    // World space, since the camera is the canvas view: the boxes are drawn
+    // where the bodies are and the view projects them.
+    const debug: RenderLayer<unknown> = {
+      id: 'debug',
+      label: 'Collision boxes',
+      draw: (): DrawCommand[] => {
+        if (!showBoxesRef.current) return [];
+        const g = game.current;
+        const box = (x: number, y: number, w: number, h: number, color: string): DrawCommand => ({
+          kind: 'path',
+          path: rectPath(x - w / 2, y - h / 2, w, h),
+          stroke: { width: 1 / CAM_SCALE, paint: { fill: 'solid', color } },
+        });
+        return [
+          box(g.player.body.x, g.player.body.y, BODY_W, BODY_H, COLORS.debugPlayer),
+          ...g.enemies.filter((e) => e.alive).map((e) => box(e.x, e.y, ENEMY_W, ENEMY_H, COLORS.debugEnemy)),
+        ];
+      },
+    };
+
     const callouts: RenderLayer<unknown> = {
       id: 'callouts',
       label: 'Callouts',
@@ -182,7 +243,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       },
     };
 
-    return { far: band('far', 0.2), mid: band('mid', 0.45), near: band('near', 0.7), hud, callouts, ending };
+    return { far: band('far', 0.2), mid: band('mid', 0.45), near: band('near', 0.7), debug, hud, callouts, ending };
   }, []);
 
   /** Insert forty enemies mid-run — the retained-tree counterpart to the load
@@ -197,6 +258,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       })),
     );
     g.enemies = [...g.enemies, ...extra];
+    sound.swarm(extra);
     scene.untracked(() => {
       entityNodes([], extra)
         .filter((n) => String(n.id).startsWith('enemy:'))
@@ -217,8 +279,13 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         <button className="ckd-btn ckd-btn--text" onClick={() => setRunning((r) => !r)}>
           {running ? 'click to pause' : 'click to start'}
         </button>
+        <button className="ckd-btn" onClick={sound.enableAudio} disabled={sound.audioState === 'running'}>
+          {sound.audioState === 'running' ? 'audio on' : 'enable audio'}
+        </button>
+        <button className="ckd-btn" onClick={sound.toggleMusic} aria-pressed={sound.musicOn}>
+          {sound.musicOn ? 'music off' : 'music on'}
+        </button>
         <button className="ckd-btn" onClick={onRestart}>restart</button>
-        <button className="ckd-btn" onClick={swarm}>swarm +40</button>
         <span className="ckd-readout">zoom {CAM_SCALE}x</span>
       </div>
       <SceneCanvas
@@ -231,27 +298,41 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         tools={tools}
         ref={canvas}
         defaultView={initialView}
+        layerGroups={layerGroups}
         layers={{
           scene: { drawOne: defaultDrawOne, cull: true },
           far: { layer: layers.far, before: 'scene' },
           mid: { layer: layers.mid, before: 'scene' },
           near: { layer: layers.near, before: 'scene' },
-          hud: { layer: layers.hud, after: 'scene' },
+          debug: { layer: layers.debug, after: 'scene' },
+          hud: { layer: layers.hud, after: 'debug' },
           callouts: { layer: layers.callouts, after: 'hud' },
           ending: { layer: layers.ending, after: 'callouts' },
           selectionOverlay: null,
         }}
       />
       <div className="ckd-toolbar">
+        <label className="ckd-field">
+          <input
+            type="checkbox"
+            checked={showBoxes}
+            onChange={(e) => setShowBoxes(e.target.checked)}
+          />
+          collision boxes
+        </label>
+        <button className="ckd-btn" onClick={swarm}>swarm +40</button>
         <span className="ckd-readout">frame {stats.frame.toFixed(1)} ms</span>
         <span className="ckd-readout">nodes {stats.nodes}</span>
         <span className="ckd-readout">frames committed {stats.writes}</span>
+        <span className="ckd-readout">voices {stats.voices}</span>
+        <span className="ckd-readout">footsteps {stats.steps}</span>
+        <span className="ckd-readout">steady-state jitter {stats.spread.toFixed(1)} ms</span>
       </div>
       <div className="ckd-hint">
-        The same platformer as the side-scroller load test, built the way the
-        engine intends: every tile, coin, enemy and bone is a scene node, and the
-        camera is the canvas view rather than a projection each layer applies
-        itself. Arrow keys or WASD to move, space to jump.
+        A platformer built as a load test for the animation timeline, the audio
+        engine and the scene graph: every tile, coin, enemy and bone is a scene
+        node, and the camera is the canvas view. Arrow keys or WASD to move,
+        space to jump.
       </div>
     </div>
   );

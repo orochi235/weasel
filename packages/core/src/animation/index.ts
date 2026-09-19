@@ -28,6 +28,7 @@ export {
 } from './poseHelpers';
 export * from './wrappers';
 export { momentum, type MomentumOptions } from './behaviors/momentum';
+export { createSlew, slewToward, type Slew, type SlewRates } from './slew';
 export {
   ColorOverrideRegistry,
   type ColorOverride, type ColorOverrideFn, type VertexColorChannel,

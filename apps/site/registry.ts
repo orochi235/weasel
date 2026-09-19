@@ -335,22 +335,12 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/RigDemo.tsx',
   },
   {
-    id: 'side-scroller',
+    id: 'scene-scroller',
     title: 'Side-scroller',
     category: 'Animation',
     description:
-      "A platformer, built as a load test rather than a showcase: it changes animation state every few frames, fires overlapping one-shots continuously, and never lets the clock idle. The player is an eleven-joint rig posed by cross-faded `SampledTrack<Pose>` clips — the run cycle plays on a real `animator.timeline` whose time scale tracks ground speed, while jump and fall are seeked by vertical velocity rather than played, so a short hop and a long drop both read correctly. Footsteps are an `EventTrack` on that looping timeline whose events `book` against the audio engine's clock, so each lands at its true sub-frame time rather than on the frame that noticed it — the timeline-to-audio bridge under the heaviest load it will ever see. Every sound is synthesized into an `AudioBuffer` at load, so the demo ships no assets. The scene graph is off entirely; every visual is a custom render layer projecting through a camera held in a ref, which keeps a 60 Hz loop out of React state.",
-    hint: 'Arrow keys or WASD to move, space to jump. Enable audio first — Web Audio needs a gesture. Reach the flagpole to end the run.',
-    load: () => import('./demos/SideScrollerDemo').then((m) => m.SideScrollerDemo),
-    path: 'apps/site/demos/SideScrollerDemo.tsx',
-  },
-  {
-    id: 'scene-scroller',
-    title: 'Side-scroller (scene graph)',
-    category: 'Animation',
-    description:
-      "The side-scroller load test rebuilt on the scene graph, as the twin that shows the engine rather than routing around it. Every tile, coin, enemy, goal and bone is a leaf node drawn by the kit's built-in painters, and the camera *is* the canvas `view` — so the parallax bands are `createParallaxLayer` doing its own job rather than `deriveParallaxView` called by hand, and scene nodes project through the same transform for free. The static half of the world is where retained mode pays: 122 tile nodes are inserted once and never touched, and `nodeMemo` keeps a frame that leaves them alone from costing anything, where the immediate-mode twin rebuilds every visible tile's draw commands every frame. The moving half is where it charges: ~27 poses are rewritten per frame inside `scene.untracked`, which records nothing, since a simulation step is not an edit, and notifies once. The camera costs nothing on top of that: it is written straight to the canvas handle with `setView`, so a 60 Hz pan is zero React renders. The player rig is the honest gap: `resolveSkeleton` is still flattened onto eleven independent bone nodes every frame rather than expressed as parenting, which the scene tree now supports.",
-    hint: 'Arrow keys or WASD to move, space to jump, flagpole to finish. Compare the frame readout with the load-test side-scroller — and hit swarm +40 to insert forty nodes mid-run.',
+      "A platformer built as a load test rather than a showcase: it changes animation state every few frames, fires overlapping one-shots continuously, and never lets the clock idle. Every tile, coin, enemy, goal and bone is a scene node drawn by the kit's built-in painters, and the camera *is* the canvas `view`, written straight to the canvas handle with `setView`, so a 60 Hz pan is zero React renders and the parallax bands are `createParallaxLayer` doing its own job. The static half of the world is where retained mode pays: 122 tile nodes are inserted once and never touched, and `nodeMemo` keeps a frame that leaves them alone from costing anything. The moving half is ~27 poses rewritten per frame inside `scene.untracked`, which records nothing, since a simulation step is not an edit, and notifies once. The player is an eleven-joint rig posed by cross-faded `SampledTrack<Pose>` clips. Footsteps are an `EventTrack` on a looping run-cycle timeline whose time scale tracks ground speed, and each step `book`s against the audio engine's clock, so it lands at its true sub-frame time rather than on the frame that noticed it. Every sound is synthesized into an `AudioBuffer` at load, so the demo ships no assets. A head knock blurs the world through a `LayerGroup` and leaves the HUD sharp. The player rig is the honest gap: `resolveSkeleton` is still flattened onto eleven independent bone nodes every frame rather than expressed as parenting, which the scene tree now supports.",
+    hint: 'Arrow keys or WASD to move, space to jump. Enable audio first — Web Audio needs a gesture. Reach the flagpole to end the run, and hit swarm +40 to insert forty nodes mid-run.',
     load: () => import('./demos/SceneScrollerDemo').then((m) => m.SceneScrollerDemo),
     path: 'apps/site/demos/SceneScrollerDemo.tsx',
   },
