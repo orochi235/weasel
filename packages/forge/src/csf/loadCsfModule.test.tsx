@@ -148,6 +148,20 @@ describe('loadCsfModule', () => {
     });
   });
 
+  it('renders an arg holding a function with config over its sent part and the function put back', () => {
+    const renderFn = vi.fn((_args: Record<string, unknown>) => null);
+    const cancel = () => {};
+    const [story] = loadCsfModule(
+      { default: { title: 'ui/Job', args: { job: { done: 1, cancel } } }, A: { render: renderFn } },
+      FILE,
+      ROOT,
+    );
+    if (!story) throw new Error('no story');
+    expect(story.config.defaults()).toEqual({ job: { done: 1 } });
+    show(story, ctxFor(story, { config: { job: { done: 7 } } }));
+    expect(renderFn.mock.calls[0]?.[0]).toEqual({ job: { done: 7, cancel } });
+  });
+
   it("renders the meta's component with args when neither story nor meta has a render", () => {
     const [story] = loadCsfModule({ default: { title: 'ui/Button', component: Button }, Primary: { args: { label: 'Go' } } }, FILE, ROOT);
     if (!story) throw new Error('no story');

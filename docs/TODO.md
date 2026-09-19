@@ -1300,14 +1300,6 @@ controls. It runs beside Storybook today.
   workshop cannot draw it into any of those; the frame has to produce the
   picture and send it back.
 
-- **(P2) A CSF arg that holds a function gets no control at all.**
-  `argsToSchema` (`packages/forge/src/csf/argsToSchema.ts`) skips any arg that
-  fails `isPortSafe`, because a function cannot cross the frame's message port.
-  An object or array with one function inside loses its whole control:
-  JobProgress's `job`, Lab's `instruments`, and Powerline's `segments`, where
-  Storybook offered an object control. Send the port-safe fields as config and
-  merge the functions back in from the arg's original value inside the frame.
-
 - **(P2) Two trials of one forge story can show each other's validation
   errors.** The answer book (`packages/forge/src/shell/answers.ts`) keeps hidden
   paths per config but only one `errors` map per story, replaced by whichever

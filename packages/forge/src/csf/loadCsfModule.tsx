@@ -15,6 +15,7 @@ import type { Decorator, LoadedStory, PlayContext, StoryContext } from '../story
 import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } from './argsContext';
 import { type ArgType, argsToSchema, type ControlMatchers } from './argsToSchema';
 import { isPlainObject } from './isPlainObject';
+import { withUnsent } from './portSafe';
 
 type Args = Record<string, unknown>;
 type CsfContext = {
@@ -166,8 +167,12 @@ export function loadCsfModule(
     const renderFn: CsfRender | undefined =
       spec.render ?? meta.render ?? (component ? (a) => createElement(component, a) : undefined);
 
+    const withArgs = (config: Args): Args =>
+      Object.fromEntries(
+        Object.entries(withoutUndefined(config)).map(([key, value]) => [key, key in args ? withUnsent(value, args[key]) : value]),
+      );
     const csfContext = (config: unknown, globals: Globals, local: LocalArgs = {}): CsfContext => ({
-      args: withoutUndefined({ ...args, ...withoutUndefined(config as Args), ...appliedLocal(local, config as Args) }),
+      args: withoutUndefined({ ...args, ...withArgs(config as Args), ...appliedLocal(local, config as Args) }),
       globals,
       parameters,
       title,

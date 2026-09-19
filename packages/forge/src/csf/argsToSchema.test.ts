@@ -30,9 +30,14 @@ describe('argsToSchema', () => {
       expect(Object.keys(schema.nodes)).toEqual(['n']);
     });
 
-    it('omits object and array args that hold a function, which cannot cross the port', () => {
-      const schema = argsToSchema({ job: { done: 1, cancel: () => {} }, instruments: [{ defaults: () => ({}) }], n: 1 }, {});
-      expect(Object.keys(schema.nodes)).toEqual(['n']);
+    it('gives an object or array arg holding a function a json leaf of the part that crosses the port', () => {
+      const schema = argsToSchema({ job: { done: 1, cancel: () => {} }, instruments: [{ id: 'a', defaults: () => ({}) }] }, {});
+      expect(shape(schema.nodes.job as ConfigNode<unknown>)).toEqual({ kind: 'json', default: { done: 1 } });
+      expect(shape(schema.nodes.instruments as ConfigNode<unknown>)).toEqual({ kind: 'json', default: [{ id: 'a' }] });
+      expect(shape(leaf({ job: { done: 1, cancel: () => {} } }, { job: { control: 'object' } }, 'job'))).toEqual({
+        kind: 'json',
+        default: { done: 1 },
+      });
     });
 
     it('keeps defaults exactly', () => {

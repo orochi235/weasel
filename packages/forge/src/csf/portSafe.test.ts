@@ -1,6 +1,6 @@
 import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
-import { isPortSafe } from './portSafe';
+import { isPortSafe, portSafePart, withUnsent } from './portSafe';
 
 class Color {
   r = 1;
@@ -78,5 +78,71 @@ describe('isPortSafe', () => {
     expect(isPortSafe(a)).toBe(true);
     a.fn = () => 1;
     expect(isPortSafe(a)).toBe(false);
+  });
+});
+
+describe('portSafePart', () => {
+  const cancel = () => {};
+
+  it('keeps a port-safe value whole', () => {
+    const value = { a: [1, { b: 'c' }] };
+    expect(portSafePart(value)).toEqual({ value });
+  });
+
+  it('drops the fields of a plain object that cannot cross, recursively', () => {
+    expect(portSafePart({ done: 1, cancel, nested: { n: 2, fn: cancel }, icon: createElement('b') })).toEqual({
+      value: { done: 1, nested: { n: 2 } },
+    });
+  });
+
+  it('holds null where an array member cannot cross, so positions survive', () => {
+    expect(portSafePart([{ id: 'a', render: cancel }, cancel, 3])).toEqual({ value: [{ id: 'a' }, null, 3] });
+  });
+
+  it('has no part for a function, an element, a class instance, or an object with keys a clone drops', () => {
+    expect(portSafePart(cancel)).toBeNull();
+    expect(portSafePart(createElement('b'))).toBeNull();
+    expect(portSafePart(new Color())).toBeNull();
+    expect(portSafePart({ a: 1, [Symbol('s')]: cancel })).toBeNull();
+    expect(portSafePart(new Map([['k', cancel]]))).toBeNull();
+  });
+
+  it('terminates on a cycle through an unsafe value', () => {
+    const a: Record<string, unknown> = { n: 1, cancel };
+    a.self = a;
+    expect(portSafePart(a)).toEqual({ value: { n: 1 } });
+  });
+});
+
+describe('withUnsent', () => {
+  const cancel = () => {};
+  const render = () => null;
+
+  it('puts back the fields the part dropped, taking every sent field as sent', () => {
+    const original = { done: 1, cancel, nested: { n: 2, fn: cancel } };
+    expect(withUnsent({ done: 5, nested: { n: 9 } }, original)).toEqual({ done: 5, cancel, nested: { n: 9, fn: cancel } });
+  });
+
+  it('fills array placeholders and dropped fields of members from the original', () => {
+    const original = [{ id: 'a', render }, cancel];
+    const out = withUnsent([{ id: 'b' }, null, { id: 'new' }], original) as unknown[];
+    expect(out).toEqual([{ id: 'b', render }, cancel, { id: 'new' }]);
+    expect(out[1]).toBe(cancel);
+  });
+
+  it('leaves out a port-safe field the sent value no longer has', () => {
+    expect(withUnsent({}, { done: 1, cancel })).toEqual({ cancel });
+  });
+
+  it('returns the sent value when the original was port-safe or the shapes differ', () => {
+    expect(withUnsent({ a: 2 }, { a: 1 })).toEqual({ a: 2 });
+    expect(withUnsent('text', { a: 1, cancel })).toBe('text');
+    expect(withUnsent([1], { cancel })).toEqual([1]);
+  });
+
+  it('round-trips a part back to the original', () => {
+    const original = { status: 'running', done: 0, failures: [{ index: 3 }], start: cancel, cancel };
+    const part = portSafePart(original);
+    expect(withUnsent(structuredClone(part?.value), original)).toEqual(original);
   });
 });

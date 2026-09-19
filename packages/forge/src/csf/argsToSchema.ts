@@ -1,6 +1,6 @@
 import { type ConfigNode, type ConfigSchema, type ConfigShape, f } from '@weasel-js/labkit/config';
 import { isPlainObject } from './isPlainObject';
-import { isPortSafe } from './portSafe';
+import { portSafePart } from './portSafe';
 
 /** Storybook's conditional control: shown only while an arg, or a global, meets the test. */
 export type ArgCondition = ({ arg: string } | { global: string }) & {
@@ -135,9 +135,10 @@ export function argsToSchema(
   const nodes: Record<string, Leaf> = {};
   for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes)])) {
     const has = key in args;
-    const value = args[key];
-    // Functions, elements, and anything holding one reach `render` in `args`, but no control can carry them across the port.
-    if (has && !isPortSafe(value)) continue;
+    // A control carries only what crosses the port; the frame puts the rest back from `args` (`withUnsent`).
+    const part = has ? portSafePart(args[key]) : null;
+    if (has && !part) continue;
+    const value = part?.value;
     const argType = argTypes[key];
     const control = argType ? controlOf(argType) : false;
 
