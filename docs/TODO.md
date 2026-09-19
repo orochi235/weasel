@@ -1333,13 +1333,6 @@ controls. It runs beside Storybook today.
   exists, and `.github/workflows/ci.yml` runs vitest before `npm run build`. Run
   it after the build step, or in the consumer smoke test.
 
-- **(P3) The workshop replaces a story's instrument for answers no trial is
-  showing.** `useStoryRegistry` (`packages/forge/src/shell/useStoryRegistry.ts`)
-  bumps a story's revision whenever its answer book changes, whichever config the
-  answer was for, so a late answer for a config no open trial holds still
-  rebuilds the instrument and costs one more config/answer round trip with the
-  frame. Bump only when the changed config is one an open trial holds.
-
 - **(P3) A forge story with a `viewport` reloads its frame once when first
   opened.** The instrument built before the frame's `ready` message has no
   `stage`, and the one built after it does. labkit's `Trial`

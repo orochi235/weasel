@@ -99,4 +99,28 @@ describe('useStoryRegistry under a lab', () => {
     expect(screen.queryByLabelText('Size')).toBeNull();
     frame.close();
   });
+
+  it('keeps the instrument when an answer arrives for a config no trial holds', async () => {
+    const instruments: unknown[] = [];
+    function Spy() {
+      const registry = useStoryRegistry([a], options);
+      instruments.push(registry.instruments[0]);
+      return <Lab instruments={registry.instruments} defaultInstrument={a.id} />;
+    }
+    const view = render(<Spy />);
+    const { frame, received } = connectFrame(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
+    frame.send(conditional);
+    await flush();
+    const settled = instruments.at(-1);
+    const sent = received.length;
+    frame.send({
+      type: 'answers',
+      answers: { configKey: stableStringify({ show: false, size: 4 }), hidden: ['size'], errors: {} },
+    });
+    await flush();
+    expect(instruments.at(-1)).toBe(settled);
+    expect(received.length).toBe(sent);
+    expect(screen.getByLabelText('Size')).toBeTruthy();
+    frame.close();
+  });
 });

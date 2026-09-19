@@ -65,7 +65,7 @@ function mismatchMessage(mismatch: Mismatch): string {
 }
 
 export function FrameView(props: FrameViewProps) {
-  const { entry, frameUrl, descriptionKey, ctx } = props;
+  const { entry, frameUrl, answers, descriptionKey, ctx } = props;
   const labGlobals = useContext(StoryGlobalsContext);
   const pins = (ctx.config as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY];
   const globals = useMemo(() => effectiveGlobals(labGlobals, pins), [labGlobals, pins]);
@@ -151,6 +151,8 @@ export function FrameView(props: FrameViewProps) {
   };
 
   useEffect(() => () => closeLink(link), []);
+
+  useEffect(() => answers.hold(ctx.config), [answers, ctx.config]);
 
   useEffect(() => {
     const current = link.current;
