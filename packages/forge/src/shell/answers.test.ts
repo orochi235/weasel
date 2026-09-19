@@ -9,7 +9,7 @@ describe('createAnswerBook', () => {
   it('shows every node and reports no errors before any answer', () => {
     const book = createAnswerBook();
     expect(book.hidden('d', config)).toBe(false);
-    expect(book.errors('d')).toEqual([]);
+    expect(book.errors('d', config)).toEqual([]);
   });
 
   it('hides a recorded path and everything beneath it, for that config only', () => {
@@ -28,12 +28,14 @@ describe('createAnswerBook', () => {
     expect(book.hidden('d', { ...config, $globals: { mode: 'dark' } })).toBe(true);
   });
 
-  it('keeps the latest errors per path', () => {
+  it('keeps each config’s errors apart, so one trial never shows another’s', () => {
     const book = createAnswerBook();
+    const other = { d: 1 };
     book.record({ configKey: key, hidden: [], errors: { d: ['too big'] } });
-    expect(book.errors('d')).toEqual(['too big']);
-    book.record({ configKey: stableStringify({ d: 1 }), hidden: [], errors: {} });
-    expect(book.errors('d')).toEqual([]);
+    book.record({ configKey: stableStringify(other), hidden: [], errors: {} });
+    expect(book.errors('d', config)).toEqual(['too big']);
+    expect(book.errors('d', { ...config, $globals: { mode: 'dark' } })).toEqual(['too big']);
+    expect(book.errors('d', other)).toEqual([]);
   });
 
   it('forgets the oldest config past 50', () => {
@@ -47,6 +49,7 @@ describe('createAnswerBook', () => {
   it('notifies subscribers when a config’s answer changes, until they unsubscribe', () => {
     const book = createAnswerBook();
     const fn = vi.fn();
+    book.hold(config);
     const off = book.subscribe(fn);
     book.record({ configKey: key, hidden: ['d'], errors: {} });
     off();
@@ -57,10 +60,29 @@ describe('createAnswerBook', () => {
   it('stays quiet for an answer that shows nothing new for its config', () => {
     const book = createAnswerBook();
     const fn = vi.fn();
+    book.hold(config);
     book.subscribe(fn);
     book.record({ configKey: key, hidden: [], errors: {} });
     book.record({ configKey: key, hidden: ['d'], errors: { d: ['too big'] } });
     book.record({ configKey: key, hidden: ['d'], errors: { d: ['too big'] } });
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps an answer for a config no trial holds without notifying, until one holds it', () => {
+    const book = createAnswerBook();
+    const fn = vi.fn();
+    book.subscribe(fn);
+    book.record({ configKey: key, hidden: ['d'], errors: {} });
+    expect(fn).not.toHaveBeenCalled();
+    expect(book.hidden('d', config)).toBe(true);
+
+    const first = book.hold(config);
+    const second = book.hold({ ...config, $globals: { mode: 'dark' } });
+    first();
+    book.record({ configKey: key, hidden: [], errors: {} });
+    expect(fn).toHaveBeenCalledTimes(1);
+    second();
+    book.record({ configKey: key, hidden: ['d'], errors: {} });
     expect(fn).toHaveBeenCalledTimes(1);
   });
 });

@@ -309,7 +309,11 @@ export const f = {
   group: <const S extends ConfigShape>(children: S): GroupNode<S> => new GroupNode(children),
 
   /** A leaf of a kind a lab supplies the control for, through `controls`. */
-  custom: <T>(kind: string, def: T, validate?: (leaf: PrefLeaf) => string[]): CustomNode<T> =>
+  custom: <T>(
+    kind: string,
+    def: T,
+    validate?: (leaf: PrefLeaf, config: Record<string, unknown>) => string[],
+  ): CustomNode<T> =>
     new CustomNode(kind, def, {}, validate ? { validate } : {}),
 
   /** Collect leaves and groups into an instrument's config. */

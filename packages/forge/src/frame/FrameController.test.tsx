@@ -393,6 +393,21 @@ describe('startFrame', () => {
       expect(of('vars').at(-1)?.vars.map((v) => v.name)).toContain('--fg-t-late');
     });
 
+    it('rescans when an attribute a stylesheet selects on changes outside any input', async () => {
+      const modes = document.createElement('style');
+      modes.textContent = ':root { --fg-t-ink: red; } :root[data-wzl-mode="dark"] { --fg-t-ink: white; }';
+      document.head.append(modes);
+      const { shell, of } = start(styled!);
+      shell.send(empty);
+      await settle(150);
+      expect(ink(of('vars').at(-1)?.vars)?.value).toBe('red');
+      document.documentElement.setAttribute('data-wzl-mode', 'dark');
+      await settle(150);
+      document.documentElement.removeAttribute('data-wzl-mode');
+      modes.remove();
+      expect(ink(of('vars').at(-1)?.vars)?.value).toBe('white');
+    });
+
     it('removes its override style when stopped', async () => {
       const { shell } = start(styled!);
       shell.send(empty);

@@ -1289,19 +1289,6 @@ controls. It runs beside Storybook today.
   Storybook offered an object control. Send the port-safe fields as config and
   merge the functions back in from the arg's original value inside the frame.
 
-- **(P2) Two trials of one forge story can show each other's validation
-  errors.** The answer book (`packages/forge/src/shell/answers.ts`) keeps hidden
-  paths per config but only one `errors` map per story, replaced by whichever
-  frame answered last, and `useStoryRegistry` makes one book per story. Key
-  errors by config the way `hidden` already is.
-
-- **(P2) labkit's `validate` never sees the value it validates.**
-  `NodeOptions.validate` (`packages/labkit/src/config/types.ts`) receives a
-  resolved `PrefLeaf`, which holds the schema's `default` but no current value,
-  and nothing in labkit or ui calls it. forge calls it inside the frame
-  (`packages/forge/src/protocol/schema.ts`), so its per-path errors cannot depend
-  on the config. `validate` needs the live value, or the config, passed in.
-
 - **(P2) forge titles an untitled story file differently from Storybook.**
   `titleFromFile` (`packages/forge/src/story/ids.ts`) uses the file's path under
   the vite root. Storybook titles it relative to its stories glob, collapses
@@ -1327,13 +1314,6 @@ controls. It runs beside Storybook today.
   exists, and `.github/workflows/ci.yml` runs vitest before `npm run build`. Run
   it after the build step, or in the consumer smoke test.
 
-- **(P3) The workshop replaces a story's instrument for answers no trial is
-  showing.** `useStoryRegistry` (`packages/forge/src/shell/useStoryRegistry.ts`)
-  bumps a story's revision whenever its answer book changes, whichever config the
-  answer was for, so a late answer for a config no open trial holds still
-  rebuilds the instrument and costs one more config/answer round trip with the
-  frame. Bump only when the changed config is one an open trial holds.
-
 - **(P3) A forge story with a `viewport` reloads its frame once when first
   opened.** The instrument built before the frame's `ready` message has no
   `stage`, and the one built after it does. labkit's `Trial`
@@ -1350,21 +1330,13 @@ controls. It runs beside Storybook today.
   aside open. Which pane overflows, and why the trial split does not clamp to
   its tile, is not yet known.
 
-- **(P3) forge's CSS Vars panel can show the other mode's values after the OS
-  color scheme changes.** With the Mode global on `auto`, `followScheme`
-  (`apps/forge/mode.ts`) applies the theme again when `prefers-color-scheme`
-  flips, but that change arrives from no globals message, and the frame's
-  `MutationObserver` (`packages/forge/src/frame/FrameController.tsx`) watches only
-  `style` and `class` attributes, so the `data-wzl-mode` write never makes the
-  frame report its CSS variables again. Report after a scheme-driven apply, or
-  widen the observer's filter.
-
-- **(P3) forge keeps every open story's frame mounted.** Browsers cap WebGL
-  contexts per renderer process, and a same-origin iframe usually shares its
-  parent's, so many canvas-heavy trials open at once can exhaust them. Nothing in
-  `packages/forge/src/shell/FrameView.tsx` unmounts a frame whose trial is out of
-  view. Its config and state already live in the trial, so unmounting loses
-  nothing.
+- **(P3) Check forge's out-of-view frame unmounting in a browser.** `FrameView`
+  (`packages/forge/src/shell/FrameView.tsx`) drops a trial's iframe once its host
+  is more than half a viewport outside the viewport (`IntersectionObserver`,
+  `rootMargin: '50%'`) and reloads it on return. Tested only against a stubbed
+  observer: confirm in the dev app that scrolling a trial away and back reloads
+  its story with the trial's config and state, and that the margin keeps a small
+  scroll from reloading it.
 
 ---
 

@@ -488,3 +488,73 @@ describe('FrameView under a story registry', () => {
     expect(lists.at(-1)).toBe(settled);
   });
 });
+
+describe('FrameView out of view', () => {
+  let observers: { cb: IntersectionObserverCallback; targets: Element[] }[] = [];
+  const setInView = (isIntersecting: boolean) =>
+    act(() => {
+      for (const o of observers) {
+        o.cb(
+          o.targets.map((target) => ({ target, isIntersecting }) as IntersectionObserverEntry),
+          o as unknown as IntersectionObserver,
+        );
+      }
+    });
+
+  afterEach(() => {
+    observers = [];
+    vi.unstubAllGlobals();
+  });
+
+  function stubIntersectionObserver() {
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        cb: IntersectionObserverCallback;
+        targets: Element[] = [];
+        constructor(cb: IntersectionObserverCallback) {
+          this.cb = cb;
+          observers.push(this);
+        }
+        observe(target: Element) {
+          this.targets.push(target);
+        }
+        unobserve(target: Element) {
+          this.targets = this.targets.filter((t) => t !== target);
+        }
+        disconnect() {
+          this.targets = [];
+          observers = observers.filter((o) => o !== this);
+        }
+      },
+    );
+  }
+
+  it('unmounts the frame while its trial is out of view and resumes it with the trial’s config and state', async () => {
+    stubIntersectionObserver();
+    const { view, frame } = mount();
+    frame.send(ready);
+    await flush();
+    frame.send({ type: 'setConfig', path: 'label', value: 'renamed' });
+    frame.send({ type: 'setState', state: { n: 3 } });
+    await flush();
+
+    setInView(false);
+    expect(view.container.querySelector('iframe')).toBeNull();
+
+    setInView(true);
+    const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
+    expect(iframe).not.toBeNull();
+    expect(iframe.hasAttribute('data-pending')).toBe(true);
+    const back = connect(iframe);
+    back.frame.send(ready);
+    await flush();
+    expect(back.received).toEqual([{ type: 'init', config: { label: 'renamed' }, state: { n: 3 }, globals }]);
+  });
+
+  it('keeps the frame mounted where the browser has no IntersectionObserver', () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    const { view } = mount();
+    expect(view.container.querySelector('iframe.fg-frame-view')).not.toBeNull();
+  });
+});
