@@ -49,11 +49,15 @@ let cycleHits = 0;
  * `depOf` supplies each dependency — its node, the pose it is painted at, and
  * its own path; one it cannot resolve reaches `derivePath` as `undefined`.
  * `childrenOf` answers a node whose `dependsOn` is `'children'`.
+ *
+ * `memoSlot` separates a `depOf` that answers different poses than the scene's
+ * own — the memo key cannot see which lookup filled it.
  */
 export function resolveDerivedPath<TPose>(
   node: PathDerivingNode<TPose>,
   depOf: (id: NodeId) => DerivedDep<TPose> | undefined,
   childrenOf: (id: NodeId) => readonly NodeId[],
+  memoSlot: string = SLOT,
 ): Path | null {
   const derivePath = node.derivePath;
   if (derivePath === undefined) return null;
@@ -66,7 +70,7 @@ export function resolveDerivedPath<TPose>(
   resolving.add(node.id);
   const hitsBefore = cycleHits;
   try {
-    const value = nodeMemo(node, SLOT, node.pose, () =>
+    const value = nodeMemo(node, memoSlot, node.pose, () =>
       derivePath(node as never, ids.map((id) => depOf(id))),
     );
     if (cycleHits !== hitsBefore) dropPoseKeyedMemoSlots(node);

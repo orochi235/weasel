@@ -699,11 +699,6 @@ intercepting the press that drags the body.
   compare is not closed over any of those. Deciding this means deciding what a
   derivation is allowed to read, not just how a pose is compared.
 
-- **(P3) `scenePoseLookup` does not honor `SceneSlotConfig.toPose`**, which
-  `buildSceneLayer` shims onto the live adapter's `getPose`. A consumer using it
-  would paint dependencies at poses `derivePath` never saw. (It does now resolve
-  overrides and derived poses — it is `effectivePose` against the scene.)
-
 - **(P3) `Scene<TData, TLayer, TPose>` is contravariant in `TPose`** via
   `clipFromPose` and `derivePath`, so no concretely-typed scene satisfies the
   action-facing `Scene<unknown, string, unknown>`. Pre-dates `derivePath` —
