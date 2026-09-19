@@ -22,6 +22,7 @@ export { SPRITE_STRIDE } from './DrawCommand';
 export { frameRect, type SpriteSheet } from './spriteSheet';
 export { mat3, type Mat3 } from './math/mat3';
 export { viewToMat3, type View as ViewLike } from './math/viewToMat3';
+export { cullDrawCommands, type CullRect } from './cullDrawCommands';
 export { tessellate, type TessellateOptions } from 'features/paths/tessellate/tessellate';
 export { tessellateStroke, type StrokeOptions } from 'features/paths/tessellate/stroke';
 export {

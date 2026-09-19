@@ -53,7 +53,7 @@ import {
   drawLayers, isLayerPainted,
   type Dims, type LayerCommandCache, type LayerGroup, type RenderLayer,
 } from 'core/layers/render';
-import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
+import { WeaselRenderer, viewToMat3, cullDrawCommands, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
@@ -160,6 +160,18 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
    * The move-overlay ghost (drag preview) is not post-processed.
    */
   postProcess?: (cmds: DrawCommand[], view: View, dims: Dims) => DrawCommand[];
+  /**
+   * Drop commands that cannot reach the view before they reach the renderer,
+   * so an off-screen node costs its painter and nothing after. Applied last,
+   * after `postProcess`, to the `dims` rectangle under `view`; see
+   * `cullDrawCommands` for what it can and cannot bound.
+   *
+   * Off by default because it makes the layer's world-space output depend on
+   * the view: anything that draws this layer once and shows the result under
+   * another view — a cache keyed without `view`, a consumer re-wrapping the
+   * commands — would show the first view's cull.
+   */
+  cull?: boolean;
 }
 
 /** Selection-overlay slot config — passed through to `createSelectionOverlayLayer`,
@@ -604,6 +616,10 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
     ((obj: TNode) => (adapter ? adapter.getPose(obj.id) : (obj as unknown as TPose)));
   const drawOne = cfg.drawOne;
   const postProcess = cfg.postProcess;
+  const finish = cfg.cull
+    ? (cmds: DrawCommand[], view: View, dims: Dims): DrawCommand[] =>
+      cullDrawCommands(cmds, viewToMat3(view), { x: 0, y: 0, width: dims.width, height: dims.height })
+    : (cmds: DrawCommand[]): DrawCommand[] => cmds;
   return {
     id: slot?.id ?? 'scene',
     label: slot ? `Scene: ${slot.forLayer}` : 'Scene',
@@ -649,7 +665,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           slot?.forLayer,
           cfg.derivedPathOf as Parameters<typeof buildSceneTree>[4],
         );
-        return postProcess ? postProcess(tree, view, dims) : tree;
+        return finish(postProcess ? postProcess(tree, view, dims) : tree, view, dims);
       }
       // Flat fallback — keep existing body verbatim. (Per-layer slotting only
       // applies on the hierarchical path; a flat adapter has no scene layers,
@@ -673,7 +689,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
         }
       }
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
-      return postProcess ? postProcess(children, view, dims) : children;
+      return finish(postProcess ? postProcess(children, view, dims) : children, view, dims);
     },
   };
 }

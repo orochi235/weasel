@@ -3,6 +3,7 @@ import {
   SceneCanvas,
   WeaselProvider,
   createParallaxLayer,
+  defaultDrawOne,
   textCommandFromRuns,
   useAnimator,
   useHandTool,
@@ -239,6 +240,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         ref={canvas}
         defaultView={initialView}
         layers={{
+          scene: { drawOne: defaultDrawOne, cull: true },
           far: { layer: layers.far, before: 'scene' },
           mid: { layer: layers.mid, before: 'scene' },
           near: { layer: layers.near, before: 'scene' },

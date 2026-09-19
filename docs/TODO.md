@@ -927,10 +927,16 @@ What it surfaced:
   `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`. Converting the
   platformer's eleven bones to parenting is not done.
 
-- **(P3) No view-bounds culling.** All 254 nodes paint every frame regardless of
-  the viewport; the immediate twin windows tiles to visible rows and columns.
-  `renderOrder()` plus the view bounds is enough to close this, and it is the
-  one place the immediate version is structurally ahead.
+- **(P3) View-bounds culling is opt-in and stops short of the painter.** The
+  scene slot's `cull` option (`layers={{ scene: { cull: true } }}`, on in the
+  side-scroller demo) drops commands outside the view via `cullDrawCommands`,
+  but only after every node's `drawOne` has run, so an off-screen node still
+  pays its painter. It is opt-in because it makes the scene layer's
+  world-space output view-dependent, which a cache keyed without `view` would
+  serve under the wrong camera. `<SceneViewCanvas>` / `<MinimapCanvas>`
+  (`sceneViewRender.ts`) do not cull at all. Text and shader commands are never
+  culled — nothing bounds them cheaply. The demo's frame time with culling on
+  has not been measured in a browser.
 
 Two predictions the demo **disproved**, recorded so they are not re-raised: the
 sprite-sheet gap closed independently (`ImageDrawCommand.source` / `flipX` /
