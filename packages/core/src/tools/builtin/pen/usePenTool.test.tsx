@@ -2,6 +2,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePenTool, type PenScratch } from './usePenTool';
 import type { PolygonPath } from 'features/paths/types';
+import { pathFromD } from 'features/paths/pathFromD';
+import { pathToAnchors } from 'features/paths/anchors';
+import { hitTestArea } from 'canvas/deps/hitTestArea';
+import { resolveEditablePathOf } from 'canvas/deps/editAnchors';
+import type { Scene } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
@@ -36,11 +41,17 @@ function setup(over: {
   autoSelect?: boolean;
   autoCommitOnClose?: boolean;
   closeHitRadius?: number;
+  anchorSnapRadius?: number;
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
   /** Uniform view scale, to exercise the zoom-relative close-hit radius. */
   scale?: number;
+  /** Paths already in the scene, in world coords, keyed by node id and
+   *  listed front-to-back. */
+  paths?: Record<string, PolygonPath>;
+  /** Replace the stand-in deps with real ones. */
+  deps?: Record<string, unknown>;
 } = {}) {
-  const { scale = 1, ...toolOpts } = over;
+  const { scale = 1, paths = {}, deps: depsOver, ...toolOpts } = over;
   const adapter = makeAdapter();
   const wrapPath = vi.fn((path: PolygonPath, opts: { closed: boolean }): Pose => ({
     kind: 'path', path, closed: opts.closed,
@@ -51,8 +62,24 @@ function setup(over: {
   // how `penPreviewLayer` reads the in-progress path.
   const scratch = tool.initScratch!() as PenScratch;
 
+  const scene = { ...paths };
+  // Stand-ins for the two deps the pen reads existing paths through. The
+  // area query answers by anchor-in-rect, so a box the pen sizes wrongly
+  // finds nothing.
+  const hitTestArea = vi.fn((b: { x: number; y: number; width: number; height: number }) =>
+    Object.keys(scene).filter((id) => {
+      const c = scene[id].coords;
+      for (let i = 0; i + 1 < c.length; i += 2) {
+        if (c[i] >= b.x && c[i] <= b.x + b.width && c[i + 1] >= b.y && c[i + 1] <= b.y + b.height) return true;
+      }
+      return false;
+    }));
+  const applyEdit = vi.fn((id: string, path: unknown) => { scene[id] = path as PolygonPath; });
   const deps = {
     view: { get: () => ({ x: 0, y: 0, scale: { x: scale, y: scale } }), set: () => {} },
+    areaSelect: { hitTestArea },
+    editAnchors: { getEditablePath: (id: string) => scene[id] ?? null, applyEdit },
+    ...depsOver,
   } as unknown as ActionDeps;
 
   const actionOf = (id: string): Action => {
@@ -81,7 +108,7 @@ function setup(over: {
   });
 
   return {
-    tool, adapter, wrapPath, scratch, actionOf,
+    tool, adapter, wrapPath, scratch, actionOf, scene, applyEdit,
 
     /** A plain click — the `pen.placeAnchor` binding. */
     click(x: number, y: number) { fire('pen.placeAnchor', { pressX: x, pressY: y }); },
@@ -475,6 +502,210 @@ describe('usePenTool', () => {
       const p = setup();
       p.click(12, 18);
       expect(p.scratch.current!.anchors).toEqual([{ x: 12, y: 18 }]);
+    });
+  });
+
+  describe('continuing an existing open path', () => {
+    const poly = (d: string) => pathFromD(d) as PolygonPath;
+    const pointsOf = (path: unknown) =>
+      pathToAnchors(path as PolygonPath).anchors.map((sub) => sub.map((a) => [a.x, a.y]));
+
+    it('pressing the last anchor picks the path up, and later clicks append to that node', () => {
+      const p = setup({ paths: { n1: poly('M 0 0 L 100 0 L 100 100') } });
+      p.click(102, 97);
+      expect(p.scratch.current!.anchors.map((a) => [a.x, a.y])).toEqual([[0, 0], [100, 0], [100, 100]]);
+      p.click(200, 100);
+      p.enter();
+      expect(p.adapter.addNode).not.toHaveBeenCalled();
+      expect(p.applyEdit).toHaveBeenCalledOnce();
+      expect(p.applyEdit.mock.calls[0][0]).toBe('n1');
+      expect(pointsOf(p.scene.n1)).toEqual([[[0, 0], [100, 0], [100, 100], [200, 100]]]);
+      expect(p.adapter.setSelection).toHaveBeenCalledWith(['n1']);
+      expect(p.scratch.current).toBeNull();
+    });
+
+    it('pressing the first anchor prepends, keeping the path running the way it did', () => {
+      const p = setup({ paths: { n1: poly('M 0 0 C 30 0 70 0 100 0 L 100 100') } });
+      p.click(1, 1);
+      p.click(-50, 0);
+      p.enter();
+      const { anchors } = pathToAnchors(p.scene.n1);
+      expect(anchors[0].map((a) => [a.x, a.y])).toEqual([[-50, 0], [0, 0], [100, 0], [100, 100]]);
+      // The curve survives both reversals unchanged.
+      expect(anchors[0][1].outHandle).toEqual({ x: 30, y: 0 });
+      expect(anchors[0][2].inHandle).toEqual({ x: 70, y: 0 });
+    });
+
+    it('clicking the far end closes the continued path onto itself', () => {
+      const p = setup({ paths: { n1: poly('M 0 0 L 100 0') } });
+      p.click(100, 0);
+      p.click(100, 100);
+      p.click(0, 1);
+      expect(p.applyEdit).toHaveBeenCalledOnce();
+      expect(Array.from(p.scene.n1.commands).at(-1)).toBe(4 /* Z */);
+      expect(pointsOf(p.scene.n1)).toEqual([[[0, 0], [100, 0], [100, 100]]]);
+    });
+
+    it('leaves the node\'s other subpaths and fill rule alone', () => {
+      const original = { ...poly('M 0 0 L 10 0 L 10 10 Z M 50 50 L 60 50'), fillRule: 'evenodd' as const };
+      const p = setup({ paths: { n1: original } });
+      p.click(60, 50);
+      p.click(60, 60);
+      p.enter();
+      expect(pointsOf(p.scene.n1)).toEqual([[[0, 0], [10, 0], [10, 10]], [[50, 50], [60, 50], [60, 60]]]);
+      expect(pathToAnchors(p.scene.n1).closed).toEqual([true, false]);
+      expect(p.scene.n1.fillRule).toBe('evenodd');
+    });
+
+    it('finishing without adding anything writes nothing', () => {
+      const p = setup({ paths: { n1: poly('M 0 0 L 100 0') } });
+      p.click(100, 0);
+      p.enter();
+      expect(p.applyEdit).not.toHaveBeenCalled();
+      expect(p.adapter.addNode).not.toHaveBeenCalled();
+      expect(p.scratch.current).toBeNull();
+    });
+
+    it('Escape drops the pick-up without touching the node', () => {
+      const p = setup({ paths: { n1: poly('M 0 0 L 100 0') } });
+      p.click(100, 0);
+      p.click(200, 0);
+      p.escape();
+      expect(p.applyEdit).not.toHaveBeenCalled();
+      p.click(300, 300);
+      p.click(400, 300);
+      p.enter();
+      // The next path is a new node, not a continuation.
+      expect(p.adapter.addNode).toHaveBeenCalledOnce();
+      expect(p.applyEdit).not.toHaveBeenCalled();
+    });
+
+    it('dragging from the endpoint picks the path up and pulls that anchor\'s handle', () => {
+      const p = setup({ paths: { n1: poly('M 0 0 L 100 0') } });
+      p.drag({ x: 100, y: 0 }, { x: 150, y: 0 });
+      expect(p.scratch.current!.anchors).toHaveLength(2);
+      expect(p.scratch.current!.anchors[1].outHandle).toEqual({ x: 150, y: 0 });
+      p.click(200, 50);
+      p.enter();
+      expect(p.applyEdit).toHaveBeenCalledOnce();
+      const [sub] = pathToAnchors(p.scene.n1).anchors;
+      expect(sub.map((a) => [a.x, a.y])).toEqual([[0, 0], [100, 0], [200, 50]]);
+      expect(sub[1].outHandle).toEqual({ x: 150, y: 0 });
+    });
+
+    it('only picks up from idle — mid-path, an endpoint press places an anchor', () => {
+      const p = setup({ paths: { n1: poly('M 0 0 L 100 0') } });
+      p.click(300, 300);
+      p.click(100, 0);
+      p.enter();
+      expect(p.applyEdit).not.toHaveBeenCalled();
+      expect(p.adapter.addNode).toHaveBeenCalledOnce();
+    });
+
+    it('ignores closed subpaths and interior anchors', () => {
+      const p = setup({ paths: { n1: poly('M 0 0 L 100 0 L 100 100 Z'), n2: poly('M 200 0 L 300 0 L 300 100') } });
+      p.click(0, 0);
+      expect(p.scratch.current!.anchors).toHaveLength(1);
+      p.escape();
+      p.click(300, 0);
+      expect(p.scratch.current!.anchors).toHaveLength(1);
+    });
+
+    it('finds a kit path node through the real area query', () => {
+      // The shape the kit's own pen commits: a rect pose over a pose-local
+      // `data.path`, stroked, no fill.
+      const node = {
+        id: 'k', kind: 'leaf' as const, layer: 'default', parent: null,
+        pose: { x: 40, y: 40, width: 100, height: 50 },
+        data: { path: poly('M 0 0 L 100 0 L 100 50'), fill: null, stroke: { color: '#000', width: 2 } },
+      };
+      const scene = {
+        layers: [{ id: 'default' }],
+        renderOrder: () => ['k'],
+        renderOrderNodes: () => [node],
+        get: (id: string) => (id === 'k' ? node : undefined),
+        overrides: { get: () => undefined },
+      } as unknown as Scene<unknown, string, unknown>;
+      const applyEdit = vi.fn();
+      const p = setup({
+        deps: {
+          areaSelect: { hitTestArea: (b: Parameters<typeof hitTestArea>[1]) => hitTestArea(scene, b) },
+          editAnchors: { getEditablePath: (id: string) => resolveEditablePathOf(scene.get(id as never) as never), applyEdit },
+        },
+      });
+      p.click(143, 88);
+      expect(p.scratch.current!.anchors.map((a) => [a.x, a.y])).toEqual([[40, 40], [140, 40], [140, 90]]);
+      p.click(200, 90);
+      p.enter();
+      expect(applyEdit).toHaveBeenCalledOnce();
+      expect(applyEdit.mock.calls[0][0]).toBe('k');
+    });
+
+    it('the pick-up radius is screen px, like the close radius', () => {
+      const p = setup({ scale: 4, paths: { n1: poly('M 0 0 L 100 0') } });
+      // 3 world units at 4x is 12 screen px — outside the default 8.
+      p.click(103, 0);
+      expect(p.scratch.current!.anchors).toHaveLength(1);
+      p.escape();
+      p.click(101, 0);
+      expect(p.scratch.current!.anchors).toHaveLength(2);
+    });
+  });
+
+  describe('snapping to existing anchors', () => {
+    const poly = (d: string) => pathFromD(d) as PolygonPath;
+    const paths = { n1: poly('M 0 0 L 100 0 L 100 100 Z'), n2: poly('M 300 0 L 400 0 L 500 0') };
+
+    it('a click near an existing anchor lands exactly on it', () => {
+      const p = setup({ paths });
+      p.click(-50, -50);
+      p.click(103, 96);
+      expect(p.scratch.current!.anchors[1]).toEqual({ x: 100, y: 100 });
+    });
+
+    it('snaps to interior anchors too, and starts a new path on one from idle', () => {
+      const p = setup({ paths });
+      p.click(402, 3);
+      expect(p.scratch.current!.anchors).toEqual([{ x: 400, y: 0 }]);
+      expect(p.scratch.continuing).toBeNull();
+    });
+
+    it('snaps the smooth-anchor base point at drag start', () => {
+      const p = setup({ paths });
+      p.click(-50, -50);
+      p.drag({ x: 97, y: 2 }, { x: 150, y: 50 });
+      expect(p.scratch.current!.anchors[1]).toMatchObject({ x: 100, y: 0 });
+    });
+
+    it('beats grid snapping, which still applies away from anchors', () => {
+      const grid = (q: { x: number; y: number }) => ({ x: Math.round(q.x / 30) * 30, y: Math.round(q.y / 30) * 30 });
+      const p = setup({ paths, snapPoint: grid });
+      p.click(-50, -50);
+      p.click(96, 104);
+      expect(p.scratch.current!.anchors[1]).toEqual({ x: 100, y: 100 });
+      // 6px off an anchor at 1x: outside the default radius, so the grid wins.
+      p.click(206, 0);
+      expect(p.scratch.current!.anchors[2]).toEqual({ x: 210, y: 0 });
+    });
+
+    it('measures the radius in screen px', () => {
+      const p = setup({ paths, scale: 4 });
+      p.click(-50, -50);
+      p.click(103, 100);
+      expect(p.scratch.current!.anchors[1]).toEqual({ x: 103, y: 100 });
+      p.click(101, 100);
+      expect(p.scratch.current!.anchors[2]).toEqual({ x: 100, y: 100 });
+    });
+
+    it('anchorSnapRadius sets the radius; 0 turns snapping off', () => {
+      const wide = setup({ paths, anchorSnapRadius: 20 });
+      wide.click(-50, -50);
+      wide.click(115, 100);
+      expect(wide.scratch.current!.anchors[1]).toEqual({ x: 100, y: 100 });
+      const off = setup({ paths, anchorSnapRadius: 0 });
+      off.click(-50, -50);
+      off.click(101, 100);
+      expect(off.scratch.current!.anchors[1]).toEqual({ x: 101, y: 100 });
     });
   });
 });
