@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import s from './BandEditor.module.css';
+import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
 import { clamp01, resolveScale, type BandScale } from './scale';
 import {
   bandBounds,
@@ -50,9 +51,6 @@ export interface BandEditorProps<T> {
   label?: ReactNode;
   className?: string;
 }
-
-/** Snap radius, in track pixels. */
-const SNAP_PX = 6;
 
 /** One arrow-key step, as a fraction of the track. */
 const KEY_STEP = 0.01;
@@ -136,17 +134,7 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
     if (!snap || altKey || !ticks || ticks.length === 0) return unit;
     const width = trackWidth();
     if (width === 0) return unit;
-    let best = unit;
-    let bestDistance = SNAP_PX / width;
-    for (const tick of ticks) {
-      const tickUnit = toUnit(tick.at);
-      const distance = Math.abs(tickUnit - unit);
-      if (distance <= bestDistance) {
-        bestDistance = distance;
-        best = tickUnit;
-      }
-    }
-    return best;
+    return snapToNearest(unit, ticks.map((tick) => toUnit(tick.at)), SNAP_RADIUS_PX / width);
   };
 
   // No pointer capture: a band body is a `<button>` whose content the consumer

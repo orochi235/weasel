@@ -10,7 +10,7 @@
 import type { ReactNode } from 'react';
 import { cubicBezierEasing, resolveEasing, type EasingFn, type Keyframe } from '@weasel-js/core';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
-import { snapToNearest } from './snap';
+import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
 import s from './CurveEditor.module.css';
 import type {
   CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx, PlotPoint,
@@ -61,7 +61,6 @@ const SAMPLES_PER_SEGMENT = 16;
 const KEY_HIT_PX = 8;
 const HANDLE_HIT_PX = 8;
 const CURVE_HIT_PX = 6;
-const DEFAULT_SNAP_PX = 6;
 const KEY_HALF = 4.5;
 const HANDLE_RADIUS = 3.5;
 const SHIFT_MULTIPLIER = 10;
@@ -123,7 +122,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
   const id = cfg.id ?? 'keyframes';
   const label = cfg.label ?? 'Curve';
   const formatX = cfg.formatX ?? ((x: number) => String(Math.round(x)));
-  const snapRadiusPx = cfg.snapRadiusPx ?? DEFAULT_SNAP_PX;
+  const snapRadiusPx = cfg.snapRadiusPx ?? SNAP_RADIUS_PX;
 
   // A live handle drag is previewed straight from its control points: a
   // fresh spec per pointermove through `resolveEasing` would leave one

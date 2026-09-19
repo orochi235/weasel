@@ -1143,16 +1143,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `.lk-shell` is `height: 100vh`.** A lab mounted anywhere but the viewport top overflows by its own offset. Harmless on the dev page, wrong in general.
 
-- **(P3) `snapToNearest` and `BandEditor`'s `snapped` are the same function.**
-  `CurveEditor/snap.ts` (which `Timeline` and `createKeyframeLayer` use) and
-  `BandEditor.tsx:134` carry the same algorithm, the same 6px radius and the
-  same alt-to-defeat convention. `BandEditor/scale.ts:1`
-  declines to generalize on the grounds that doing so "is a job for a second
-  consumer that needs one", which is reasoning this repo bans. Relatedly there
-  is no `--wzl-handle-*` token: Timeline's dope-sheet `.key` (9px), CurveEditor's
-  endpoint (10px) and `createKeyframeLayer`'s key (9px) are all 45°-rotated
-  squares sized independently.
-
+- **(P3) There is no `--wzl-handle-*` token.** Timeline's dope-sheet `.key`
+  (9px), CurveEditor's endpoint (10px) and `createKeyframeLayer`'s key (9px)
+  are all 45°-rotated squares sized independently. A CSS token only reaches the
+  first: `createKeyframeLayer` sizes its diamond with SVG `x`/`y`/`width`/`height`
+  attributes from `KEY_HALF`, which its hit test also reads, so sharing a token
+  means moving that geometry into CSS (SVG2 geometry properties) or reading the
+  token back in JS.
 
 - **(P3) Typed units stop at linear factors.** `SelectionPanel` and `PrefsForm`
   read `12mm` into a unit leaf through `UnitField`, and `prefUnit` builds the

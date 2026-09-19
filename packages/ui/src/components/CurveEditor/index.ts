@@ -26,7 +26,7 @@ export {
   type KeyframeLayerState,
 } from './createKeyframeLayer';
 
-export { snapToNearest } from './snap';
+export { snapToNearest } from '../../snap';
 
 export {
   LayeredCurveEditor,

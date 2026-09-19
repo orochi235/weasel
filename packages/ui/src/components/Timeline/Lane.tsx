@@ -3,12 +3,9 @@ import { openPointerSession, type EventTrack, type Keyframe, type PointerSession
 import { ChevronIcon } from '../../icons';
 import s from './Timeline.module.css';
 import { createTimeScale, spanPercent, toPercent, type TimeWindow } from './timeScale';
-import { snapTime } from './keys';
+import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
 import { LaneGraph } from './LaneGraph';
 import type { LaneRow } from './lanes';
-
-/** Snap radius, in track pixels. */
-const SNAP_PX = 6;
 
 /** One arrow-key step, in ms; shift multiplies by ten. */
 const KEY_STEP_MS = 10;
@@ -69,7 +66,7 @@ export function Lane(props: LaneProps): ReactElement {
   const snapPxToMs = (): number => {
     const width = trackRef.current?.getBoundingClientRect().width ?? 0;
     const scale = createTimeScale(win, width);
-    return scale.toMs(SNAP_PX) - scale.toMs(0);
+    return scale.toMs(SNAP_RADIUS_PX) - scale.toMs(0);
   };
 
   // Only a numeric sampled row has an honest value axis to graph.
@@ -85,7 +82,7 @@ export function Lane(props: LaneProps): ReactElement {
     // has to cross into ruler space to snap and back out to commit.
     const at = (ev: { clientX: number; altKey: boolean }): number => {
       const raw = Math.max(0, msAt(ev.clientX));
-      return ev.altKey ? raw : snapTime(raw + row.offset, snapTimes, snapPxToMs()) - row.offset;
+      return ev.altKey ? raw : snapToNearest(raw + row.offset, snapTimes, snapPxToMs()) - row.offset;
     };
 
     setDrag({ keyIndex: i, t: times[i] });
