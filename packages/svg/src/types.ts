@@ -11,7 +11,9 @@
  * single `matrix(a b c d e f)` on the `<g>`.
  */
 
-import type { Path, FillStyle, Stroke, StyledRun, TextStyle } from '@weasel-js/core';
+import type {
+  Path, FillStyle, MarkerEntry, Stroke, StrokeAlign, StyledRun, TextStyle, TextVerticalAlign,
+} from '@weasel-js/core';
 
 /**
  * Opaque pass-through bag for namespaced XML content.
@@ -88,6 +90,10 @@ export interface SvgStroke {
    * attribute may render with longer miters than the source SVG intended.
    */
   miterLimit?: number;
+  /** The kit stroke's `align`. SVG has no stroke alignment, so the serializer
+   *  writes the stroke centered and says so through `onWarn`; the parser
+   *  never sets it. */
+  align?: StrokeAlign;
   /** `marker-start` / `marker-mid` / `marker-end`, as the bare `url(#id)` key. */
   markerStart?: string;
   markerMid?: string;
@@ -159,6 +165,10 @@ export interface SvgTextNode {
   runs?: StyledRun[];
   /** Node-wide typography. Defaults applied at render time via `resolveTextStyle`. */
   style?: TextStyle;
+  /** Where the laid-out text sits inside the box — `kit:text`'s
+   *  `data.verticalAlign`. SVG text has no box to align in, so this rides in
+   *  `data-weasel-vertical-align` and other readers draw the text top-aligned. */
+  verticalAlign?: TextVerticalAlign;
   /**
    * Node-wide glyph paint, the `FillStyle` / `Stroke` a kit text node holds
    * in `data.fill` / `data.stroke`. Not `SvgPaint`, which is the path
@@ -187,6 +197,12 @@ export interface SvgTextNode {
  * a reference and only resolves when something downstream loads it.
  *
  * SVG's `preserveAspectRatio` is not modeled; the box is taken literally.
+ *
+ * With a `source` rect or a flip, the element is written as a `<g
+ * data-weasel-image>` holding a nested `<svg>` viewport at the box, whose
+ * `viewBox` is the source window over a unit-square `<image>` — plain SVG 1.1,
+ * which any reader crops and mirrors the same way, and which `parseSvg` reads
+ * back as one image node.
  */
 export interface SvgImageNode {
   kind: 'image';
@@ -195,6 +211,15 @@ export interface SvgImageNode {
   y: number;
   width: number;
   height: number;
+  /** The part of the bitmap drawn into the box, as fractions of the bitmap's
+   *  width and height from its top-left. Omitted draws the whole bitmap.
+   *  Fractions rather than bitmap pixels because this package never decodes
+   *  the image, so it cannot know its size. */
+  source?: { x: number; y: number; width: number; height: number };
+  /** Mirror the drawn region within the box, as `ImageDrawCommand` does. The
+   *  box does not move. */
+  flipX?: boolean;
+  flipY?: boolean;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;
   /** Element-level rotation in **radians**, pivoting around the unrotated
@@ -239,6 +264,13 @@ export interface ParseResult {
   height?: number;
   /** Text content of the first `<title>` child of `<svg>`, when present. */
   title?: string;
+  /**
+   * An entry for each document `<marker>` a stroke references under a key the
+   * marker registry does not know, keyed as the strokes in `nodes` now name
+   * them. Nothing draws them until they are registered (`registerMarker`),
+   * which `unpackSvgFiles` does.
+   */
+  markers?: MarkerEntry[];
 }
 
 /** Options for {@link serializeSvg}. */
@@ -249,9 +281,11 @@ export interface SerializeOptions {
    */
   viewBox?: { x: number; y: number; width: number; height: number };
   /**
-   * Called for paint that can't be expressed in SVG and is dropped — a
-   * conic gradient, or a pattern carrying a `TextureHandle` instead of a
-   * `TilePatternSpec`. Without this the loss is silent.
+   * Called for what the document cannot carry the way weasel draws it: a
+   * paint SVG cannot express (a pattern carrying a `TextureHandle` instead of
+   * a `TilePatternSpec`), a stroke aligned off its edge, text that wraps or
+   * sits lower than the top of its box. Each message is said once per call.
+   * Without this the loss is silent.
    */
   onWarn?: (message: string) => void;
   /** Emit `width="..."` on the root `<svg>`. */

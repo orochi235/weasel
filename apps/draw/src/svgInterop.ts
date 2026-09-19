@@ -162,8 +162,7 @@ function objPaintToSvg(fill: FillStyle): SvgPaint {
   return { kind: 'gradient', paint: fill };
 }
 
-/** Lower an object's stroke onto an `SvgStroke`. SVG has no stroke
- *  alignment, so `align` is dropped. */
+/** Lower an object's stroke onto an `SvgStroke`. */
 function objStrokeToSvg(stroke: Stroke | null): SvgStroke | undefined {
   const paint = stroke?.paint;
   if (stroke === null || paint === undefined) return undefined;
@@ -176,6 +175,7 @@ function objStrokeToSvg(stroke: Stroke | null): SvgStroke | undefined {
     ...(stroke.join !== undefined ? { join: stroke.join } : {}),
     ...(stroke.dash !== undefined ? { dash: stroke.dash } : {}),
     ...(stroke.miterLimit !== undefined ? { miterLimit: stroke.miterLimit } : {}),
+    ...(stroke.align !== undefined ? { align: stroke.align } : {}),
   };
 }
 

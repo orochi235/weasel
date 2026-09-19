@@ -183,10 +183,12 @@ Sites to change:
   `<defs>` child. Add `marker` to the allow-list. `parse.ts:38` `IGNORED_TAGS` likewise, for a
   `<marker>` outside `<defs>`.
 
-**An imported `<marker>` we have no key for warns and drops**, matching how every other
-unmodeled def behaves today. The entry model above is deliberately general enough to *hold* an
-imported marker — geometry, independent paints, anchor, orientation — so ingesting one later is
-a parser change, not a redesign.
+**An imported `<marker>` we have no key for is read into an entry** (`ParseResult.markers`),
+keyed by its id plus a hash of what it draws, and `unpackSvgFiles` registers it. The viewBox,
+`refX`/`refY` and `markerUnits` fold into the geometry, which is why an entry is minted per
+reference: a `userSpaceOnUse` marker's size depends on the referencing stroke, and an
+`orient="auto"` marker at a start is turned around because the kit always reverses starts.
+Export writes `orient="auto-start-reverse"` for the same reason.
 
 ## Other enumeration sites
 

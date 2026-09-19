@@ -5,7 +5,7 @@
  * label. Gradient paints are gathered into a single `<defs>` block.
  */
 
-import type { Path, Stroke } from '@weasel-js/core';
+import type { Path, Stroke, StrokeAlign } from '@weasel-js/core';
 import { boundsOfPath, SCRIPT_METRICS } from '@weasel-js/core';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
@@ -67,7 +67,14 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
   }
 
   const defsXml = registry.toDefsXml(opts.onWarn);
-  const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces)).join('');
+  // Once per message: a hundred inner-aligned strokes are one fact.
+  const said = new Set<string>();
+  const warn: Warn = (m) => {
+    if (!opts.onWarn || said.has(m)) return;
+    said.add(m);
+    opts.onWarn(m);
+  };
+  const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces, warn)).join('');
 
   // `<title>` goes immediately inside `<svg>` per SVG-spec convention; it's
   // an accessibility hook and (for our purposes) a stable place to round-trip
@@ -176,43 +183,76 @@ function registerMarkers(
   }
 }
 
-function nodeXml(node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {
-  if (node.kind === 'group') return groupXml(node, registry, namespaces);
-  if (node.kind === 'text') return textXml(node, registry, namespaces);
+type Warn = (message: string) => void;
+
+function nodeXml(
+  node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
+): string {
+  if (node.kind === 'group') return groupXml(node, registry, namespaces, warn);
+  if (node.kind === 'text') return textXml(node, registry, namespaces, warn);
   if (node.kind === 'image') return imageXml(node, namespaces);
-  return pathXml(node, registry, namespaces);
+  return pathXml(node, registry, namespaces, warn);
+}
+
+/** SVG 1.1 has no stroke alignment; SVG 2's `stroke-alignment` never shipped
+ *  in a browser. */
+function warnStrokeAlign(align: StrokeAlign | undefined, warn: Warn): void {
+  if (align && align !== 'center') {
+    warn(`a stroke aligned "${align}" of its edge is written centered: SVG has no stroke alignment`);
+  }
 }
 
 /**
  * Emit an `<image>`. `preserveAspectRatio="none"` is unconditional: the node
  * carries a literal box and nothing else, so letting a viewer letterbox it
  * would place the pixels somewhere the model never said.
+ *
+ * A source rect or a flip takes the cropped form described on `SvgImageNode`.
+ * The nested `<svg>` cannot carry the rotation itself — SVG 1.1 gives it no
+ * `transform` — so the rotation, opacity and meta go on the wrapping `<g>`.
  */
 function imageXml(node: SvgImageNode, namespaces: Record<string, string>): string {
-  const attrs: string[] = [
-    `href="${escapeAttr(node.href)}"`,
-    `x="${trimNumber(node.x)}"`,
-    `y="${trimNumber(node.y)}"`,
-    `width="${trimNumber(node.width)}"`,
-    `height="${trimNumber(node.height)}"`,
-    `preserveAspectRatio="none"`,
-  ];
+  const box = `x="${trimNumber(node.x)}" y="${trimNumber(node.y)}"`
+    + ` width="${trimNumber(node.width)}" height="${trimNumber(node.height)}"`;
+  const outer: string[] = [];
   if (node.opacity != null && node.opacity !== 1) {
-    attrs.push(`opacity="${trimNumber(node.opacity)}"`);
+    outer.push(`opacity="${trimNumber(node.opacity)}"`);
   }
   if (node.rotation != null && node.rotation !== 0) {
     const cx = node.x + node.width / 2;
     const cy = node.y + node.height / 2;
     const deg = (node.rotation * 180) / Math.PI;
-    attrs.push(`transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`);
+    outer.push(`transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`);
   }
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const metaEls = metaElementsXml(node.meta, namespaces);
-  if (metaEls) return `<image ${attrs.join(' ')}${metaAttrs}>${metaEls}</image>`;
-  return `<image ${attrs.join(' ')}${metaAttrs}/>`;
+  const href = `href="${escapeAttr(node.href)}"`;
+
+  if (!node.source && !node.flipX && !node.flipY) {
+    const attrs = [href, box, 'preserveAspectRatio="none"', ...outer].join(' ');
+    if (metaEls) return `<image ${attrs}${metaAttrs}>${metaEls}</image>`;
+    return `<image ${attrs}${metaAttrs}/>`;
+  }
+
+  const src = node.source ?? { x: 0, y: 0, width: 1, height: 1 };
+  const viewBox = [src.x, src.y, src.width, src.height].map(trimNumber).join(' ');
+  // A mirror about the source window's center, so the flipped image still
+  // fills exactly the window the viewport shows.
+  const flip = node.flipX || node.flipY
+    ? ` transform="matrix(${node.flipX ? -1 : 1} 0 0 ${node.flipY ? -1 : 1}`
+      + ` ${trimNumber(node.flipX ? 2 * src.x + src.width : 0)}`
+      + ` ${trimNumber(node.flipY ? 2 * src.y + src.height : 0)})"`
+    : '';
+  const head = ['<g data-weasel-image="true"', ...outer].join(' ');
+  return `${head}${metaAttrs}>`
+    + `<svg ${box} viewBox="${viewBox}" preserveAspectRatio="none">`
+    + `<image ${href} x="0" y="0" width="1" height="1" preserveAspectRatio="none"${flip}/>`
+    + `</svg>${metaEls}</g>`;
 }
 
-function groupXml(node: SvgGroupNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {
+function groupXml(
+  node: SvgGroupNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
+): string {
   const attrs: string[] = [];
   if (node.transform) {
     const m = formatMatrix(node.transform);
@@ -227,11 +267,13 @@ function groupXml(node: SvgGroupNode, registry: PaintServerRegistry, namespaces:
   const head = attrs.length > 0
     ? `<g ${attrs.join(' ')}${metaAttrs}>`
     : `<g${metaAttrs}>`;
-  const body = node.children.map((c) => nodeXml(c, registry, namespaces)).join('');
+  const body = node.children.map((c) => nodeXml(c, registry, namespaces, warn)).join('');
   return `${head}${body}${metaElementsXml(node.meta, namespaces)}</g>`;
 }
 
-function pathXml(node: SvgPathNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {
+function pathXml(
+  node: SvgPathNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
+): string {
   const attrs: string[] = [`d="${serializePathD(node.path)}"`];
   const fillAttrs = paintAttrs(node.fill, 'fill', registry);
   for (const a of fillAttrs) attrs.push(a);
@@ -241,7 +283,7 @@ function pathXml(node: SvgPathNode, registry: PaintServerRegistry, namespaces: R
     attrs.push(`fill-rule="evenodd"`);
   }
   if (node.stroke) {
-    const strokeAttrs = strokeAttrsFor(node.stroke, registry);
+    const strokeAttrs = strokeAttrsFor(node.stroke, registry, warn);
     for (const a of strokeAttrs) attrs.push(a);
   } else {
     attrs.push('stroke="none"');
@@ -306,11 +348,12 @@ function strokeWidthAttrs(width: number | { px: number }): string[] {
   return [`stroke-width="${trimNumber(width.px)}"`, 'vector-effect="non-scaling-stroke"'];
 }
 
-function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegistry): string[] {
+function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegistry, warn: Warn): string[] {
   const paint = stroke?.paint;
   if (!stroke || !paint) return [];
   const width = stroke.width ?? 1;
   if (!((typeof width === 'object' ? width.px : width) > 0)) return [];
+  warnStrokeAlign(stroke.align, warn);
   const attrs: string[] = [];
   if ('color' in paint) {
     attrs.push(`stroke="${paint.color}"`);
@@ -342,7 +385,8 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegist
   return attrs;
 }
 
-function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry): string[] {
+function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry, warn: Warn): string[] {
+  warnStrokeAlign(stroke.align, warn);
   // `SvgStroke.opacity` and the paint's own `opacity` are two models of one
   // SVG attribute, and parse fills in both. Emitting each would write
   // `stroke-opacity` twice, which is not well-formed XML at all.
@@ -438,7 +482,9 @@ function rotateAboutCenter(
  * model) in `data-weasel-*` attributes so they round-trip through the parser
  * losslessly.
  */
-function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {
+function textXml(
+  node: SvgTextNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
+): string {
   const attrs: string[] = [
     `x="${trimNumber(node.x + anchorOffset(node.style, node.width))}"`,
     `y="${trimNumber(node.y)}"`,
@@ -476,7 +522,16 @@ function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: R
   if (decoration) attrs.push(`text-decoration="${decoration}"`);
   // SVG text never wraps, so this is for weasel's own reader, beside the box
   // width it wraps at.
-  if (style?.wrap) attrs.push('data-weasel-wrap="true"');
+  if (style?.wrap) {
+    attrs.push('data-weasel-wrap="true"');
+    warn('text that wraps at its box width is written unwrapped: SVG text does not wrap, so other'
+      + ' readers draw one line per hard break (weasel reads the wrap back)');
+  }
+  if (node.verticalAlign && node.verticalAlign !== 'top') {
+    attrs.push(`data-weasel-vertical-align="${node.verticalAlign}"`);
+    warn(`text aligned to the ${node.verticalAlign} of its box is written top-aligned: SVG text has`
+      + ' no box, so other readers draw it at the top (weasel reads the alignment back)');
+  }
   // Note: `lineHeight` is NOT emitted here. The bridge layer (svgInterop)
   // lifts it into `meta.wd.attrs['line-height']`, which `metaAttrsXml`
   // below emits as `wd:line-height="..."`. There is no compat write of
@@ -494,7 +549,7 @@ function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: R
       attrs.push(`fill="${registry.ref(node.fill)}"`);
     }
   }
-  for (const a of coreStrokeAttrs(node.stroke, registry)) attrs.push(a);
+  for (const a of coreStrokeAttrs(node.stroke, registry, warn)) attrs.push(a);
   if (node.opacity != null && node.opacity !== 1) {
     attrs.push(`opacity="${trimNumber(node.opacity)}"`);
   }
@@ -506,14 +561,14 @@ function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: R
   }
 
   const body = node.runs && node.runs.length > 0
-    ? node.runs.map((r) => runXml(r, registry)).join('')
+    ? node.runs.map((r) => runXml(r, registry, warn)).join('')
     : escapeText(node.text);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const metaEls = metaElementsXml(node.meta, namespaces);
   return `<text ${attrs.join(' ')}${metaAttrs}>${body}${metaEls}</text>`;
 }
 
-function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerRegistry): string {
+function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerRegistry, warn: Warn): string {
   const attrs: string[] = [];
   if (run.bold) attrs.push(`font-weight="700"`);
   if (run.italic) attrs.push(`font-style="italic"`);
@@ -554,7 +609,7 @@ function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerR
       attrs.push(`fill="${registry.ref(run.fill)}"`);
     }
   }
-  for (const a of coreStrokeAttrs(run.stroke, registry)) attrs.push(a);
+  for (const a of coreStrokeAttrs(run.stroke, registry, warn)) attrs.push(a);
   const head = attrs.length > 0 ? `<tspan ${attrs.join(' ')}>` : '<tspan>';
   return `${head}${escapeText(run.text)}</tspan>`;
 }

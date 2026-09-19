@@ -30,6 +30,8 @@ import {
   createInsertOp,
   dwarn,
   fillToBoundsFrame,
+  getMarker,
+  registerMarker,
   resolveTextStyle,
   solid,
   type FillStyle,
@@ -208,6 +210,7 @@ export function svgNodesToKitDrafts(
         data: {
           text: n.text,
           ...(n.style ? { style: n.style } : {}),
+          ...(n.verticalAlign ? { verticalAlign: n.verticalAlign } : {}),
           ...(n.runs ? { runs: n.runs.map((r) => runInBoxFrame(r, box)) } : {}),
           // `!== undefined`, not a truthiness test: `null` is the document
           // saying `fill="none"`, and absent takes the painter's default.
@@ -319,6 +322,9 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
       const text = await readFileText(file);
       const parsed = parseSvg(text);
       for (const w of parsed.warnings) dwarn('ingest', `svg "${file.name}":`, w);
+      // Keyed by what they draw, so one already registered is this same
+      // marker and re-registering it would only churn the paint memo.
+      for (const m of parsed.markers ?? []) if (getMarker(m.id) === undefined) registerMarker(m);
       let drafts = svgNodesToKitDrafts(parsed.nodes, freshSvgNodeId);
       if (drafts.length === 0) {
         console.warn(`weasel ingest: svg "${file.name}" parsed to no drawable nodes`);

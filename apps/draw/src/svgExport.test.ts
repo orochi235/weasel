@@ -13,6 +13,7 @@ import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel
 import { solid, strokeOf } from '@weasel-js/core';
 import type { FillStyle, Stroke, StyledRun } from '@weasel-js/core';
 import {
+  sceneToSvgString,
   selectionToSvgString,
   selectionToClipboardSvgString,
   clipboardSnapshotRootIds,
@@ -405,5 +406,28 @@ describe('gradient fills', () => {
     expect(fill.from.y).toBeCloseTo(0.5);
     expect(fill.to.x).toBeCloseTo(1);
     expect(fill.to.y).toBeCloseTo(0.5);
+  });
+});
+
+describe('what the SVG cannot carry', () => {
+  it('reports an inner-aligned stroke through onWarn instead of dropping it silently', () => {
+    const scene = fakeScene({
+      r: {
+        kind: 'leaf',
+        pose: { x: 0, y: 0, width: 10, height: 10 },
+        data: {
+          path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+          fill: solid('#ff0000'),
+          stroke: { paint: solid('#000000'), width: 2, align: 'inner' },
+        },
+      },
+    }, ['r']);
+    const warnings: string[] = [];
+    sceneToSvgString(scene, {
+      filename: 'a', paperSize: 'letter' as never, paperWidth: 100, paperHeight: 100,
+      backgroundColor: '#ffffff', onWarn: (w) => warnings.push(w),
+    });
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('inner');
   });
 });

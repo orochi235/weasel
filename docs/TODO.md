@@ -434,15 +434,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) Promote `ShaderDrawCommand` past `@experimental`.** Three uses now exercise it (plasma / ripple / voronoi panels), which is enough to have validated the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
 
-- **(P3) An imported `<marker>` we have no key for warns and drops.**
-  `@weasel-js/svg`'s import path (`parse.ts:535`) only round-trips a
-  `marker-start` / `marker-mid` / `marker-end` value it recognizes by key; an
-  unfamiliar one warns through `onWarn` and its geometry is discarded. The
-  entry model (`MarkerEntry`, `packages/core/src/core/strokeMarkers.ts`) is
-  already general enough to hold one — geometry, independent paints, an
-  anchor, an orientation — so ingesting it later is a parser change, not a
-  redesign. See `docs/superpowers/specs/2026-08-30-stroke-markers-design.md`.
-
 - **(P3) No marker icons.** `defaultNodeProperties`'s `markerStart` /
   `markerMid` / `markerEnd` leaves use a labelled `select`, where the sibling
   stroke enums (`cap`, `join`, `align`, `dash`) are icon toggles — authoring
@@ -490,13 +481,6 @@ Core five + Crop shipped. Remaining:
   box under any convention and needs a rule of its own. The outline tier makes
   this *easier*: reading font bytes gives access to both tables directly
   instead of to whichever one Chrome chose to expose. Recorded 2026-07-31.
-
-- **(P3) A `kit:text` node's `verticalAlign` does not survive SVG.**
-  `data.verticalAlign` landed 2026-09-08 — the painter forwards it and
-  `textLineBoxes` shifts the silhouette to match — but `SvgTextNode` has no
-  field for it and `serialize.ts` writes no attribute, so an export drops it and
-  a re-import reads back top-aligned. The pair `data-weasel-width` /
-  `data-weasel-height` already occupy is where it belongs.
 
 - **(P3) `apps/draw` cannot author unfilled text.** `TextObj.fill` is
   `FillStyle | undefined`, so WeaselDraw's own model has no way to say "no
@@ -1041,9 +1025,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   walk, because a bare-adapter consumer has no selection parent-folding to fold
   them back in.
 
-  One that is not settled: stroke align, clip and text layout genuinely cannot
-  round-trip through SVG 1.1, but the exporter does not say so out loud, and
-  silently dropping them is the part worth fixing.
+- **(P3) A container's clip never reaches SVG.** `SvgGroupNode` has no clip
+  slot, so no bridge can hand one to `serializeSvg`, and WeaselDraw's groups
+  carry none to hand. Unlike stroke alignment and wrapped text — which the
+  serializer now reports through `onWarn` — SVG 1.1 can carry a clip, as a
+  `<clipPath>` def and `clip-path` on the `<g>`, so this wants the slot and its
+  parse side rather than a warning.
 
 - **(P2) What the cascade audit turned up outside its own pattern.** All found
   2026-08-29 while collapsing, none of them an instance of the duplication the
@@ -1053,10 +1040,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `layer.visible` through `SceneSource.isPainted`, and `toJSON` carries a user
   layer's `kind` and `name`.
 
-  Open: `<image>` flip and source-rect never serialize; they live on the renderer's
-  `ImageCommand`, and expressing them wants a wider `SvgImageNode` on both the
-  write and the parse side. `packages/{labkit,modes,d3,paint}` never import
-  `geom` at all, and `ui` only from a story.
+  Open: `packages/{labkit,modes,d3,paint}` never import `geom` at all, and `ui`
+  only from a story. And `SvgImageNode` now carries a source rect and flips
+  through SVG, but `kit:image`'s `data.image` has no field for either, so
+  `svgNodesToKitDrafts` drops them on the way into a scene.
 
 - **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
 

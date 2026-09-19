@@ -7,7 +7,7 @@
  */
 
 import { getPaintKind, getMarker } from '@weasel-js/core';
-import type { FillStyle, GradStop, GradientUnits, MarkerEntry } from '@weasel-js/core';
+import type { FillStyle, GradStop, GradientUnits, MarkerEntry, MarkerPaint } from '@weasel-js/core';
 import { parsePaintAttr } from './color';
 import { trimNumber } from './transform';
 import { patternXml } from './patterns';
@@ -327,9 +327,8 @@ export class PaintServerRegistry {
 
   // Marker keys referenced by any stroke, in first-use order. The `<defs>`
   // id is the marker key itself, not a minted counter id: `parseSvg` reads a
-  // `marker-end="url(#id)"` fragment back as the marker key directly (it
-  // never inspects the `<marker>` element), so a synthetic id would come
-  // back unresolvable and warn on round-trip.
+  // `marker-end="url(#id)"` fragment back as the marker key directly when the
+  // registry knows it, so a synthetic id would come back as a stranger.
   private markerKeys: string[] = [];
   private markerKeySet = new Set<string>();
 
@@ -384,7 +383,7 @@ export class PaintServerRegistry {
     for (const key of this.markerKeys) {
       const entry = getMarker(key);
       if (!entry) continue;
-      parts.push(entry.toSvg ? entry.toSvg(key, entry) : defaultMarkerXml(key, entry));
+      parts.push(entry.toSvg ? entry.toSvg(key, entry) : defaultMarkerXml(key, entry, onWarn));
     }
     parts.push('</defs>');
     return parts.join('');
@@ -392,20 +391,46 @@ export class PaintServerRegistry {
 }
 
 /** The `<marker>` def for an entry with no `toSvg` of its own. */
-function defaultMarkerXml(id: string, entry: MarkerEntry): string {
+function defaultMarkerXml(id: string, entry: MarkerEntry, onWarn?: (m: string) => void): string {
   const path = entry.path({ size: 1, stroke: { paint: { fill: 'solid', color: '#000' } } });
   const d = serializePathD(path);
-  const fill = entry.fill === 'none' ? 'none' : 'context-stroke';
+  const fill = markerPaintAttrs('fill', entry.fill, id, onWarn);
   const outline = entry.outline
-    ? ` stroke="context-stroke" stroke-width="${entry.outline.width}" stroke-linecap="round" stroke-linejoin="round"`
+    ? ` ${markerPaintAttrs('stroke', entry.outline.paint, id, onWarn)} stroke-width="${trimNumber(entry.outline.width)}"`
+      + ' stroke-linecap="round" stroke-linejoin="round"'
     : '';
+  // The kit turns every start marker around, which is what SVG 2 spells
+  // `auto-start-reverse`; plain `auto` would point a start head into the line.
+  const orient = typeof entry.orient === 'number'
+    ? trimNumber((entry.orient * 180) / Math.PI)
+    : 'auto-start-reverse';
   // `overflow="visible"` overrides the UA default of `hidden`, which would
   // otherwise clip the arrowhead to the marker's viewport.
   return (
     `<marker id="${id}" markerUnits="strokeWidth" markerWidth="8" markerHeight="8"` +
-    ` refX="0" refY="0" orient="auto" overflow="visible">` +
-    `<path d="${d}" fill="${fill}"${outline}/></marker>`
+    ` refX="0" refY="0" orient="${orient}" overflow="visible">` +
+    `<path d="${d}" ${fill}${outline}/></marker>`
   );
+}
+
+/** A marker paint as `fill` / `stroke` attributes. `'line'` is SVG 2's
+ *  `context-stroke`; a paint server has no `<defs>` slot from here, so it
+ *  falls back to the line's paint and says so. */
+function markerPaintAttrs(
+  attr: 'fill' | 'stroke',
+  paint: MarkerPaint | undefined,
+  id: string,
+  onWarn?: (m: string) => void,
+): string {
+  if (paint === 'none') return `${attr}="none"`;
+  if (paint === undefined || paint === 'line') return `${attr}="context-stroke"`;
+  if ('color' in paint && (paint.fill === undefined || paint.fill === 'solid')) {
+    return paint.opacity != null && paint.opacity !== 1
+      ? `${attr}="${paint.color}" ${attr}-opacity="${trimNumber(paint.opacity)}"`
+      : `${attr}="${paint.color}"`;
+  }
+  onWarn?.(`marker "${id}" ${attr} is a paint server, which a <marker> def cannot reference here; written as the line's paint`);
+  return `${attr}="context-stroke"`;
 }
 
 /** One paint server's `<defs>` entry: the built-in mapping, else the kind's

@@ -27,6 +27,7 @@ function toSvgStroke(stroke: Stroke): SvgStroke {
     ...(stroke.join ? { join: stroke.join } : {}),
     ...(stroke.dash ? { dash: [...stroke.dash] } : {}),
     ...(stroke.miterLimit != null ? { miterLimit: stroke.miterLimit } : {}),
+    ...(stroke.align ? { align: stroke.align } : {}),
   };
 }
 
