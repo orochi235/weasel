@@ -14,7 +14,7 @@ import { CAM_SCALE, cameraView, followCamera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
 import { COLORS, drawBackdrop, drawCallouts, drawEnding } from './platformer/skin';
 import { createEnemies } from './platformer/entities';
-import { consumeJumpPress, usePlatformerInput } from './platformer/useInput';
+import { usePlatformerInput } from './platformer/useInput';
 import {
   boneNodes,
   entityNodes,
@@ -112,12 +112,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         advanceWorld(
           g,
           frame,
-          () => ({
-            left: input.current.left,
-            right: input.current.right,
-            jumpHeld: input.current.jumpHeld,
-            jumpPressed: consumeJumpPress(input),
-          }),
+          input,
           NO_HOOKS,
         );
       }

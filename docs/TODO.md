@@ -786,10 +786,6 @@ What it surfaced:
   Worth doing when a consumer wants two canvases under one toolbar; isolation
   covers two canvases that simply coexist.
 
-- **(P2) No key-state poll.** `key-held` gives edges; the dispatcher's held set
-  tracks claims rather than physical keys and is not exported. Every character
-  controller will rewrite `platformer/useInput.ts`'s reconstruction.
-
 - **No tiled-content layer primitive exists** (the P3 under Tiling) — the run
   cycle and the parallax bands are second sites wanting it.
 

@@ -1,87 +1,74 @@
 import { describe, it, expect } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { useRef } from 'react';
-import { WeaselProvider, useActionsRegistry, useGestureDispatcher } from '@weasel-js/core';
-import { usePlatformerInput, type HeldInput } from '../platformer/useInput';
-
-// `usePlatformerInput` only registers the `platformer.hold` action into the
-// registry — routing window keydown/keyup into it is the gesture
-// dispatcher's job, which `<SceneCanvas>` mounts in the real app.
-// `<WeaselProvider>` alone doesn't mount one, so the harness mounts the same
-// public `useGestureDispatcher` hook directly, the way SceneCanvas-free
-// dispatcher tests elsewhere in the kit do.
-function MountDispatcher() {
-  const registry = useActionsRegistry();
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  useGestureDispatcher({ canvasRef, actions: registry!, toolsById: new Map() });
-  return null;
-}
-
-function Harness({ onReady }: { onReady: (ref: { current: HeldInput }) => void }) {
-  const input = usePlatformerInput();
-  onReady(input);
-  return (
-    <>
-      <MountDispatcher />
-      <div data-testid="harness" />
-    </>
-  );
-}
+import { usePlatformerInput } from '../platformer/useInput';
+import type { Input } from '../platformer/physics';
 
 function mount() {
-  let ref!: { current: HeldInput };
-  render(
-    <WeaselProvider>
-      <Harness onReady={(r) => { ref = r; }} />
-    </WeaselProvider>,
-  );
-  return ref;
+  let read!: () => Input;
+  function Harness() {
+    read = usePlatformerInput();
+    return null;
+  }
+  render(<Harness />);
+  return () => read();
 }
 
-const key = (type: 'keydown' | 'keyup', k: string) =>
+const key = (type: 'keydown' | 'keyup', code: string, init: KeyboardEventInit = {}) => {
+  let e!: KeyboardEvent;
   act(() => {
-    window.dispatchEvent(new KeyboardEvent(type, { key: k, bubbles: true }));
+    e = new KeyboardEvent(type, { code, key: code, bubbles: true, cancelable: true, ...init });
+    window.dispatchEvent(e);
   });
+  return e;
+};
+
+const NONE: Input = { left: false, right: false, jumpHeld: false, jumpPressed: false };
 
 describe('usePlatformerInput', () => {
   it('starts with nothing held', () => {
-    const input = mount();
-    expect(input.current).toEqual({ left: false, right: false, jumpHeld: false, jumpPressed: false });
+    expect(mount()()).toEqual(NONE);
   });
 
   it('tracks a held direction from keydown to keyup', () => {
-    const input = mount();
+    const step = mount();
     key('keydown', 'ArrowRight');
-    expect(input.current.right).toBe(true);
+    expect(step().right).toBe(true);
     key('keyup', 'ArrowRight');
-    expect(input.current.right).toBe(false);
+    expect(step().right).toBe(false);
   });
 
-  it('accepts the WASD aliases', () => {
-    const input = mount();
-    key('keydown', 'a');
-    expect(input.current.left).toBe(true);
-    key('keyup', 'a');
-    key('keydown', 'd');
-    expect(input.current.right).toBe(true);
+  it('accepts the WASD positions', () => {
+    const step = mount();
+    key('keydown', 'KeyA');
+    expect(step().left).toBe(true);
+    key('keyup', 'KeyA');
+    key('keydown', 'KeyD');
+    expect(step().right).toBe(true);
   });
 
-  it('holds jump on space', () => {
-    const input = mount();
-    key('keydown', ' ');
-    expect(input.current.jumpHeld).toBe(true);
-    key('keyup', ' ');
-    expect(input.current.jumpHeld).toBe(false);
+  it('reports a jump press to exactly one step, and the hold for as long as it lasts', () => {
+    const step = mount();
+    key('keydown', 'Space');
+    expect(step()).toMatchObject({ jumpHeld: true, jumpPressed: true });
+    key('keydown', 'Space', { repeat: true });
+    expect(step()).toMatchObject({ jumpHeld: true, jumpPressed: false });
+    key('keyup', 'Space');
+    expect(step().jumpHeld).toBe(false);
+  });
+
+  it('keeps the keys it owns from scrolling the page', () => {
+    mount();
+    expect(key('keydown', 'Space').defaultPrevented).toBe(true);
+    expect(key('keydown', 'ArrowUp').defaultPrevented).toBe(true);
   });
 
   it('clears everything on window blur so a held key cannot stick', () => {
-    const input = mount();
+    const step = mount();
     key('keydown', 'ArrowLeft');
-    key('keydown', ' ');
-    expect(input.current.left).toBe(true);
+    key('keydown', 'Space');
     act(() => {
       window.dispatchEvent(new Event('blur'));
     });
-    expect(input.current).toEqual({ left: false, right: false, jumpHeld: false, jumpPressed: false });
+    expect(step()).toEqual(NONE);
   });
 });

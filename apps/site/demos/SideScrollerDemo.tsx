@@ -31,7 +31,7 @@ import {
   type WorldHooks,
 } from './platformer/world';
 import { PLAYER_SKELETON } from './platformer/skeleton';
-import { consumeJumpPress, usePlatformerInput } from './platformer/useInput';
+import { usePlatformerInput } from './platformer/useInput';
 import { registerSounds, type SoundName } from './platformer/sfx';
 import { CLIPS } from './platformer/clips';
 import { footstepTrack } from './platformer/footsteps';
@@ -66,13 +66,6 @@ const WORLD_LAYERS = [
   'backdrop-far', 'backdrop-mid', 'backdrop-near', 'tiles', 'entities', 'player',
 ];
 
-/**
- * `usePlatformerInput` registers its action via `useAction`, which no-ops
- * without an `ActionsProvider` above it in the tree — and `<SceneCanvas>`'s
- * own provider is a descendant of this component, not an ancestor. So the
- * hook (and everything that reads its result) has to live inside
- * `<WeaselProvider>`, not alongside it.
- */
 export function SideScrollerDemo() {
   return (
     <WeaselProvider>
@@ -433,12 +426,7 @@ function SideScrollerDemoInner() {
       advanceWorld(
         g,
         frame,
-        () => ({
-          left: input.current.left,
-          right: input.current.right,
-          jumpHeld: input.current.jumpHeld,
-          jumpPressed: consumeJumpPress(input),
-        }),
+        input,
         hooks.current,
       );
 

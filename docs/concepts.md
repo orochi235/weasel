@@ -413,6 +413,12 @@ for tools whose activation key is set by the host caller (Lasso, Eyedropper);
 the `useKeybindings` effect picks those up and appends entries to the
 consolidated `tool.activate` action's bindings dynamically.
 
+A `key-held` binding is an edge — a press opens an invocation, the release
+closes it — and a key only reaches it if the binding wins the route. A game loop
+asking "is Left down this step?" wants neither: `useKeyState()` /
+`createKeyState()` poll which physical keys (`KeyboardEvent.code`) are down,
+whatever the bindings claim, and `take(code)` hands out each fresh press once.
+
 ### Hover cursors predict the drag route
 
 While no gesture is in flight, the dispatcher's hover-cursor pump (in
