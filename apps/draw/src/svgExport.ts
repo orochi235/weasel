@@ -120,6 +120,8 @@ export interface SceneToSvgOptions {
   /** Background fill. Emitted as a leading `<path>` filling the viewBox.
    *  Omitted when the color is white (`#ffffff` / `#fff`). */
   backgroundColor: string;
+  /** Told what the SVG cannot carry the way the canvas draws it. */
+  onWarn?: (message: string) => void;
 }
 
 /**
@@ -176,11 +178,14 @@ export function sceneToSvgString<TLayer extends string>(
 
   nodes.push(...sceneToSvgNodes(sceneSourceOf(scene)));
 
-  return serializeSvg(nodes, docToSerializeOptions({
-    title: opts.filename,
-    size: { width: opts.paperWidth, height: opts.paperHeight },
-    paperSize: opts.paperSize,
-  }));
+  return serializeSvg(nodes, {
+    ...docToSerializeOptions({
+      title: opts.filename,
+      size: { width: opts.paperWidth, height: opts.paperHeight },
+      paperSize: opts.paperSize,
+    }),
+    ...(opts.onWarn ? { onWarn: opts.onWarn } : {}),
+  });
 }
 
 /**

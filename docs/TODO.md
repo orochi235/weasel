@@ -1071,9 +1071,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   walk, because a bare-adapter consumer has no selection parent-folding to fold
   them back in.
 
-  One that is not settled: stroke align, clip and text layout genuinely cannot
-  round-trip through SVG 1.1, but the exporter does not say so out loud, and
-  silently dropping them is the part worth fixing.
+- **(P3) A container's clip never reaches SVG.** `SvgGroupNode` has no clip
+  slot, so no bridge can hand one to `serializeSvg`, and WeaselDraw's groups
+  carry none to hand. Unlike stroke alignment and wrapped text — which the
+  serializer now reports through `onWarn` — SVG 1.1 can carry a clip, as a
+  `<clipPath>` def and `clip-path` on the `<g>`, so this wants the slot and its
+  parse side rather than a warning.
 
 - **(P2) What the cascade audit turned up outside its own pattern.** All found
   2026-08-29 while collapsing, none of them an instance of the duplication the

@@ -12,7 +12,7 @@
  */
 
 import type {
-  Path, FillStyle, MarkerEntry, Stroke, StyledRun, TextStyle, TextVerticalAlign,
+  Path, FillStyle, MarkerEntry, Stroke, StrokeAlign, StyledRun, TextStyle, TextVerticalAlign,
 } from '@weasel-js/core';
 
 /**
@@ -90,6 +90,10 @@ export interface SvgStroke {
    * attribute may render with longer miters than the source SVG intended.
    */
   miterLimit?: number;
+  /** The kit stroke's `align`. SVG has no stroke alignment, so the serializer
+   *  writes the stroke centered and says so through `onWarn`; the parser
+   *  never sets it. */
+  align?: StrokeAlign;
   /** `marker-start` / `marker-mid` / `marker-end`, as the bare `url(#id)` key. */
   markerStart?: string;
   markerMid?: string;
@@ -277,9 +281,11 @@ export interface SerializeOptions {
    */
   viewBox?: { x: number; y: number; width: number; height: number };
   /**
-   * Called for paint that can't be expressed in SVG and is dropped — a
-   * conic gradient, or a pattern carrying a `TextureHandle` instead of a
-   * `TilePatternSpec`. Without this the loss is silent.
+   * Called for what the document cannot carry the way weasel draws it: a
+   * paint SVG cannot express (a pattern carrying a `TextureHandle` instead of
+   * a `TilePatternSpec`), a stroke aligned off its edge, text that wraps or
+   * sits lower than the top of its box. Each message is said once per call.
+   * Without this the loss is silent.
    */
   onWarn?: (message: string) => void;
   /** Emit `width="..."` on the root `<svg>`. */

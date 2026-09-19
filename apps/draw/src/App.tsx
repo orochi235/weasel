@@ -868,6 +868,7 @@ function Toolbar({
             paperWidth: paper.width,
             paperHeight: paper.height,
             backgroundColor,
+            onWarn: (w) => console.warn('[svg export]', w),
           });
           const safe = filename.trim() || DEFAULT_FILENAME;
           downloadSvg(svg, /\.svg$/i.test(safe) ? safe : `${safe}.svg`);
