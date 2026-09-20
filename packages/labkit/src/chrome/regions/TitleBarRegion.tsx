@@ -32,7 +32,7 @@ function renderEntry(c: TrialContribution, ctx: TrialChromeContext): ReactNode {
       onPointerDown={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <Icon size={14} />
+      <Icon size={16} />
     </button>
   );
 }

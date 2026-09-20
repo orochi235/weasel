@@ -98,7 +98,9 @@ export const BASE = {
     <path d="${resetArc}"/>
     <path d="${resetHead}"/>`,
 
-  close: `<path d="M5 5 15 15M15 5 5 15" stroke-width="1.75"/>`,
+  // Arms reach the set's 3..17 margin: at 5..15 the X carried half the box
+  // its neighbours do and read as a smaller glyph at the same `size`.
+  close: `<path d="M3.4 3.4 16.6 16.6M16.6 3.4 3.4 16.6" stroke-width="1.9"/>`,
 
   save: `
     <path d="M4 12.6v2.9A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-2.9"/>
