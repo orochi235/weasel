@@ -287,9 +287,8 @@ export function Lab(props: LabProps) {
     storageKey === undefined ? openUnstoredLab(props) : openStoredLab(props, storageKey, storage),
   );
   if (!opened) {
-    return props.fallback !== undefined ? (
-      <>{props.fallback}</>
-    ) : (
+    if (props.fallback !== undefined) return props.fallback;
+    return (
       <LabFallback title={props.title} mode={props.mode} pages={props.pages} path={props.path} />
     );
   }

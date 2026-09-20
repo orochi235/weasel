@@ -26,8 +26,7 @@ export interface LabSwitcherProps {
  *  lost their extension still resolves to the same page. */
 export function currentPage(path: string, pages: readonly LabPage[]): number {
   const here = path
-    .split('?')[0]!
-    .split('#')[0]!
+    .replace(/[?#].*$/, '')
     .replace(/\/$/, '')
     .replace(/\.html$/, '');
   return pages.findIndex((p) => here.endsWith(p.href.replace(/\.html$/, '')));

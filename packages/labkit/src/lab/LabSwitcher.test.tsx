@@ -77,7 +77,7 @@ describe('<LabSwitcher>', () => {
   it('stays a plain heading when there is nowhere to switch to', () => {
     // A disclosure arrow promising a menu of the page you are already on is
     // worse than no control.
-    render(<LabSwitcher title="corpus stats" pages={[PAGES[1]!]} path="/stats" />);
+    render(<LabSwitcher title="corpus stats" pages={PAGES.slice(1, 2)} path="/stats" />);
     expect(screen.getByRole('heading', { name: 'corpus stats' })).toBeInTheDocument();
     expect(screen.queryByRole('button')).toBeNull();
   });
