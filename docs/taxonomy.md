@@ -484,8 +484,14 @@ they fit.
 - **Foundation** (nothing kit-internal depends on these): `viewport`, `scene`,
   `selection`. Of these, `viewport` is core infrastructure (lives under `packages/core/src/core/`
   — every canvas needs a `View`, so it's not optional in any meaningful sense);
-  `scene` is also core; `selection` is a protocol-shaped feature (lives under
-  `packages/core/src/features/`) that most editor-style apps will pull in.
+  `scene` is also core; `selection` is split, and deliberately. Its protocol —
+  `SelectionApi`, `useSelection`, `ChromeState`, `MULTI_RESIZE_TARGET_ID` —
+  is core (`packages/core/src/core/selection/`), because affordances and tools
+  both read it and the layering runs `core` → `affordances` → `tools` →
+  `features`. What sits in `packages/core/src/features/selection/` is the part
+  built *on* that protocol: the overlay render layers, and the ambient
+  `SelectionContext`. The feature barrel covers those two and says so; moving
+  the protocol up to join them would invert the layering.
 - **Mid-layer** (depend on foundation): `groups` (scene + selection), `grid`
   (viewport), `focus` (nothing internal), `paths`, `patterns`, `text`.
 - **Gestures** (depend on foundation + adapter contracts): `useDragRect`,

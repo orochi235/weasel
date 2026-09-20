@@ -1,7 +1,15 @@
 # selection
 
 Two unrelated things that both concern selection: the **overlay render layers**
-and an **ambient context** for publishing selection to non-canvas UI.
+and an **ambient context** for publishing selection to non-canvas UI. Both go
+out through `index.ts`; `packages/core/src/index.ts` reaches them only there.
+
+The selection *protocol* is not here. `SelectionApi`, `useSelection`,
+`ChromeState` and `MULTI_RESIZE_TARGET_ID` live in
+[`../../core/selection`](../../core/selection), below this directory, because
+affordances and tools read them and the layering runs `core` → `affordances` →
+`tools` → `features`. Both directories are named `selection` and neither is
+the wrong place; this one is what is built *on* the protocol.
 
 ## `overlay.ts` — drawing the selection
 

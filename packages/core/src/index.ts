@@ -400,8 +400,8 @@ export {
   SelectionContextProviderIfRoot,
   useSelectionContext,
   usePublishSelection,
-} from './features/selection/SelectionContext';
-export type { SelectionContextValue } from './features/selection/SelectionContext';
+} from './features/selection';
+export type { SelectionContextValue } from './features/selection';
 
 // --- @experimental Pointer ambient context (2026-05-16) ---------------------
 export {
@@ -529,14 +529,14 @@ export {
   createSelectionOutlineLayer,
   createSelectionHandlesLayer,
   createSelectionOverlayLayer,
-} from './features/selection/overlay';
+} from './features/selection';
 export type {
   ComposeSelectionPoseOpts,
   SelectionOutlineLayerOpts,
   SelectionHandlesLayerOpts,
   SelectionOverlayLayerOpts,
   SelectionHandleStyle,
-} from './features/selection/overlay';
+} from './features/selection';
 
 // ─── Text rendering / editing ───────────────────────────────────────────────
 export * from './features/text';
