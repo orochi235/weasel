@@ -1,4 +1,4 @@
-import type { PrefLeaf, PrefNumberFormat } from '@weasel-js/ui';
+import type { PrefLeaf, PrefNumberFormat, PrefNumberUnit } from '@weasel-js/ui';
 import { type Auto, isAuto } from './auto';
 import type {
   Annotations,
@@ -140,6 +140,16 @@ export class NumberNode extends BaseNode<number> {
     return this.ann({ format });
   }
 
+  /**
+   * Store the value in one unit and edit it in another — radians stored,
+   * degrees typed. `min`, `max` and `step` are declared in the stored unit
+   * alongside the value, and convert with it. `prefUnit` builds one from a
+   * `UnitSystem`.
+   */
+  unit(unit: PrefNumberUnit): this {
+    return this.ann({ unit });
+  }
+
   /** Force a slider even without both bounds. */
   slider(): this {
     return this.ann({ control: 'slider' });
@@ -180,6 +190,12 @@ export class StringNode extends BaseNode<string> {
 
 export class ColorNode extends BaseNode<string> {
   readonly kind = 'color';
+
+  /** The value carries alpha as `#rrggbbaa`, and the row gets an opacity
+   *  track beside the swatch. */
+  alpha(): this {
+    return this.ann({ alpha: true });
+  }
 }
 
 export class EnumNode<T extends string> extends BaseNode<T> {
@@ -313,8 +329,7 @@ export const f = {
     kind: string,
     def: T,
     validate?: (leaf: PrefLeaf, config: Record<string, unknown>) => string[],
-  ): CustomNode<T> =>
-    new CustomNode(kind, def, {}, validate ? { validate } : {}),
+  ): CustomNode<T> => new CustomNode(kind, def, {}, validate ? { validate } : {}),
 
   /** Collect leaves and groups into an instrument's config. */
   schema<S extends ConfigShape>(nodes: S): ConfigSchema<InferConfig<S>> {
