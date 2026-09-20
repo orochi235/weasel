@@ -19,3 +19,4 @@ export {
   intersectRayAabb, intersectRayPlane, transformAabb, aabbAround,
   type Ray, type Aabb,
 } from './ray3';
+export { PORT_REACH, portControls, portCurvePoints, cubicAt } from './portCurve3';

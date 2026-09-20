@@ -1335,10 +1335,8 @@ export type {
   UseSceneTextEditReturn,
 } from './features/text/useSceneTextEdit';
 export type { SnapPattern } from './layout/strategies/snapPoint';
-export type {
-  Vec2,
-  Rect,
-} from './core/geometry/polygonHitTestRect';
+export type { Vec2 } from './core/geometry/vec2';
+export type { Rect } from './core/geometry/polygonHitTestRect';
 // `Pt` is the local-only point-shape alias used by `snapPoint`; surface it so
 // custom snap behaviors can name the same shape rather than redeclaring it.
 export type { Pt } from './layout/strategies/snapPoint';

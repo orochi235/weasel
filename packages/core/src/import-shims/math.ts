@@ -33,7 +33,7 @@ export {
   PATH_Z,
   pathCommandCoordCount,
 } from 'core/geometry/path';
-export type { Vec2 } from 'core/geometry/polygonHitTestRect';
+export type { Vec2 } from 'core/geometry/vec2';
 export type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 export { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 export {
