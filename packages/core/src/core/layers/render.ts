@@ -58,7 +58,15 @@ function reportLayerFailure({ layerId, error }: LayerDrawFailure): void {
 export interface LayerGroup {
   /** Names the group in warnings; not a layer id and never drawn. */
   id: string;
-  /** Member layer ids. Order here is ignored — the render order decides. */
+  /**
+   * Member layer ids. Order here is ignored — the render order decides.
+   *
+   * A name claims that layer and every layer under it in the `:` namespace, so
+   * `'scene'` covers the `scene:<layerId>` layers a scene with declared layers
+   * draws as — the same set `before`/`after: 'scene'` anchors against. The
+   * separator is required: `'scene'` does not reach `scenery`. A name matching
+   * no layer being drawn is warned about rather than ignored.
+   */
   layers: readonly string[];
   /**
    * Passes over the group's combined pixels, in order. A thunk is re-read on
@@ -249,7 +257,7 @@ export function drawLayers<TData>(
     }
   }
 
-  const groupOf = groupMembership(groups);
+  const groupOf = groupMembership(groups, layerById.keys());
   const bracketed = new Set<LayerGroup>();
   let run: { group: LayerGroup; children: DrawCommand[] } | null = null;
 
@@ -294,24 +302,46 @@ export function drawLayers<TData>(
   return out;
 }
 
-/** Layer id → the group that owns it. First claim wins, so a second one is a
- *  declaration bug rather than a silent reassignment. */
+/**
+ * Layer id → the group that owns it.
+ *
+ * A member name claims the layer of that exact id and every layer under it in
+ * the `:` namespace, so `'scene'` claims the whole split scene slot. First
+ * claim wins across groups, so a second one is a declaration bug rather than a
+ * silent reassignment; the same group naming a layer twice — `['scene',
+ * 'scene:tiles']` — is redundant, not a conflict, and passes quietly.
+ */
 function groupMembership(
   groups: readonly LayerGroup[] | undefined,
+  layerIds: Iterable<string>,
 ): Map<string, LayerGroup> | null {
   if (!groups || groups.length === 0) return null;
+  const stack = [...layerIds];
   const byLayer = new Map<string, LayerGroup>();
   for (const group of groups) {
-    for (const id of group.layers) {
-      const claimed = byLayer.get(id);
-      if (claimed) {
-        console.warn(
-          `[weasel] layer "${id}" is claimed by layer groups "${claimed.id}" and ` +
-          `"${group.id}"; it stays in "${claimed.id}".`,
-        );
-        continue;
+    for (const name of group.layers) {
+      let matched = false;
+      for (const id of stack) {
+        if (id !== name && !id.startsWith(`${name}:`)) continue;
+        matched = true;
+        const claimed = byLayer.get(id);
+        if (claimed === group) continue;
+        if (claimed) {
+          console.warn(
+            `[weasel] layer "${id}" is claimed by layer groups "${claimed.id}" and ` +
+            `"${group.id}"; it stays in "${claimed.id}".`,
+          );
+          continue;
+        }
+        byLayer.set(id, group);
       }
-      byLayer.set(id, group);
+      if (!matched) {
+        console.warn(
+          `[weasel] layer group "${group.id}" names "${name}", which matches no layer ` +
+          'being drawn, so it groups nothing. Check the id against the layer stack — a ' +
+          'scene with declared layers draws as "scene:<layerId>", which "scene" covers.',
+        );
+      }
     }
   }
   return byLayer;
