@@ -90,6 +90,12 @@
   --wzl-slider-track-mix: 18%;
   /* Accent proportion in a range thumb, as a color-mix percentage — not a color. */
   --wzl-slider-thumb-mix: 70%;
+  /* Edge of a draggable handle on a plot or timeline — a keyframe diamond, a timeline key, an event mark. The default rank; -sm and -lg are the two deliberate departures from it. */
+  --wzl-handle-size: 9px;
+  /* A handle that is drawn but not draggable — a locked or pinned point. Smaller so it reads as inert next to a live one. */
+  --wzl-handle-size-sm: 7px;
+  /* A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with. */
+  --wzl-handle-size-lg: 10px;
   /* Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default. */
   --wzl-field-pad-x: 8px;
   /* Backdrop blur radius for frosted surfaces. Pairs with glass-tint. */

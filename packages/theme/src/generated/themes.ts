@@ -59,6 +59,9 @@ export type TokenName =
   | '--wzl-gray-700'
   | '--wzl-gray-800'
   | '--wzl-gray-900'
+  | '--wzl-handle-size'
+  | '--wzl-handle-size-lg'
+  | '--wzl-handle-size-sm'
   | '--wzl-leading'
   | '--wzl-leading-snug'
   | '--wzl-leading-tight'
@@ -189,6 +192,9 @@ export const THEMES = {
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-mix': "18%",
         '--wzl-slider-thumb-mix': "70%",
+        '--wzl-handle-size': "9px",
+        '--wzl-handle-size-sm': "7px",
+        '--wzl-handle-size-lg': "10px",
         '--wzl-field-pad-x': "8px",
         '--wzl-glass-blur': "3px",
         '--wzl-font-size-2xs': "9px",
@@ -291,6 +297,9 @@ export const THEMES = {
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-mix': "18%",
         '--wzl-slider-thumb-mix': "70%",
+        '--wzl-handle-size': "9px",
+        '--wzl-handle-size-sm': "7px",
+        '--wzl-handle-size-lg': "10px",
         '--wzl-field-pad-x': "8px",
         '--wzl-glass-blur': "3px",
         '--wzl-font-size-2xs': "9px",
@@ -783,6 +792,21 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "value": "70%",
         "type": "dimension",
         "description": "Accent proportion in a range thumb, as a color-mix percentage — not a color."
+      },
+      "handle-size": {
+        "value": "9px",
+        "type": "dimension",
+        "description": "Edge of a draggable handle on a plot or timeline — a keyframe diamond, a timeline key, an event mark. The default rank; -sm and -lg are the two deliberate departures from it."
+      },
+      "handle-size-sm": {
+        "value": "7px",
+        "type": "dimension",
+        "description": "A handle that is drawn but not draggable — a locked or pinned point. Smaller so it reads as inert next to a live one."
+      },
+      "handle-size-lg": {
+        "value": "10px",
+        "type": "dimension",
+        "description": "A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with."
       },
       "field-pad-x": {
         "value": "8px",
@@ -1374,6 +1398,21 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "type": "dimension",
         "value": "70%",
         "description": "Accent proportion in a range thumb, as a color-mix percentage — not a color."
+      },
+      "handle-size": {
+        "type": "dimension",
+        "value": "9px",
+        "description": "Edge of a draggable handle on a plot or timeline — a keyframe diamond, a timeline key, an event mark. The default rank; -sm and -lg are the two deliberate departures from it."
+      },
+      "handle-size-sm": {
+        "type": "dimension",
+        "value": "7px",
+        "description": "A handle that is drawn but not draggable — a locked or pinned point. Smaller so it reads as inert next to a live one."
+      },
+      "handle-size-lg": {
+        "type": "dimension",
+        "value": "10px",
+        "description": "A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with."
       },
       "field-pad-x": {
         "type": "dimension",

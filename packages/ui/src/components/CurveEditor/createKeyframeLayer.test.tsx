@@ -8,6 +8,7 @@ import {
   type KeyframeLayerState,
 } from './createKeyframeLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
+import { handleSize } from '../../handles';
 
 // Plot is 200×100 over t 0..1000, value 0..10; jsdom's svg rect sits at the
 // origin, so client coords are plot coords: x = t / 5, y = 100 - value * 10.
@@ -63,6 +64,30 @@ describe('createKeyframeLayer — rendering', () => {
     const d = document.querySelector('[data-curve-element="curve"]')!.getAttribute('d')!;
     expect(d.startsWith('M0.00,100.00')).toBe(true);
     expect(d.endsWith('L200.00,50.00')).toBe(true);
+  });
+
+  // The diamond's size is an SVG geometry attribute, readable here; the token
+  // behind it is not, because jsdom resolves no var(). Asserting the attribute
+  // against `handleSize` stands in for the visual claim that a keyframe key and
+  // a timeline key are one size.
+  it('draws each key at the default handle rank, centred on its point', () => {
+    render(<Harness />);
+    const edge = handleSize('--wzl-handle-size');
+    for (const k of document.querySelectorAll('rect[data-keyframe-index]')) {
+      expect(Number(k.getAttribute('width'))).toBe(edge);
+      expect(Number(k.getAttribute('height'))).toBe(edge);
+      const [, cx, cy] = /rotate\(45 ([\d.]+) ([\d.]+)\)/.exec(k.getAttribute('transform')!)!;
+      expect(Number(k.getAttribute('x'))).toBeCloseTo(Number(cx) - edge / 2);
+      expect(Number(k.getAttribute('y'))).toBeCloseTo(Number(cy) - edge / 2);
+    }
+  });
+
+  it('gives the drag ghost the same geometry as the key it stands for', () => {
+    render(<Harness />);
+    down(100, 0);
+    move(120, 10);
+    const ghost = document.querySelector('[data-keyframe-ghost]')!;
+    expect(Number(ghost.getAttribute('width'))).toBe(handleSize('--wzl-handle-size'));
   });
 
   it('labels the plot as a group, not an image, so its keys stay reachable', () => {

@@ -11,7 +11,6 @@
   --curve-fill: color-mix(in srgb, var(--curve-line) 30%, transparent);
   --curve-anchor-fill: var(--wzl-surface);
   --curve-anchor-stroke: var(--curve-line);
-  --curve-anchor-radius: 4;
   --curve-anchor-active-fill: var(--curve-line);
   --curve-pinned-fill: var(--wzl-fg-subtle);
 }

@@ -76,9 +76,9 @@
 .key, .eventMark {
   position: absolute;
   top: 50%;
-  width: 9px;
-  height: 9px;
-  margin-left: -4.5px;
+  width: var(--wzl-handle-size);
+  height: var(--wzl-handle-size);
+  margin-left: calc(var(--wzl-handle-size) / -2);
   background: var(--wzl-fg-muted);
   cursor: ew-resize;
 }
@@ -96,9 +96,9 @@
 .keyGhost, .eventGhost {
   position: absolute;
   top: 50%;
-  width: 9px;
-  height: 9px;
-  margin-left: -4.5px;
+  width: var(--wzl-handle-size);
+  height: var(--wzl-handle-size);
+  margin-left: calc(var(--wzl-handle-size) / -2);
   background: var(--wzl-accent-soft);
   border: 1px dashed var(--wzl-accent-strong);
   pointer-events: none;
