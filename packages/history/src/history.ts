@@ -112,8 +112,8 @@ export interface History {
    *  (i.e. the last element is what `undo()` would pop next); `redo` is
    *  also oldest→newest from the user's perspective (i.e. the *first*
    *  element is what `redo()` would pop next — see implementation note).
-   *  Callers should treat the arrays as immutable. */
-  entries(): { undo: HistoryEntry[]; redo: HistoryEntry[] };
+   *  Freshly built on each call, and readonly so that stays true. */
+  entries(): { undo: readonly HistoryEntry[]; redo: readonly HistoryEntry[] };
   /** Walk the history forward/back until exactly `n` entries are on the
    *  undo stack (0 ≤ n ≤ entries().undo.length + entries().redo.length).
    *  Equivalent to repeated `undo()`/`redo()` calls but doesn't bother

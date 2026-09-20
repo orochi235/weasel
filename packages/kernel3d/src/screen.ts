@@ -17,15 +17,9 @@ import {
   type Vec3,
 } from '@weasel-js/geom/3d';
 
-/** A pane's rectangle in CSS pixels, relative to the client. */
-export interface ViewportRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
-/** A screen rectangle in the shape core's `Bounds` uses. */
+/** A screen rectangle in CSS pixels, in the shape core's `Bounds` uses. Both
+ *  a pane's own rect and a projected world box are this — one spelling, so the
+ *  two never need converting between. */
 export interface ScreenBox {
   x: number;
   y: number;
@@ -42,21 +36,21 @@ export interface ChromeBox extends ScreenBox {
 /** Screen point (y down, rect-relative) to normalized device coordinates (y up). */
 export function screenToNdc(
   point: { x: number; y: number },
-  rect: ViewportRect,
+  rect: ScreenBox,
 ): { x: number; y: number } {
   return {
-    x: ((point.x - rect.x) / rect.w) * 2 - 1,
-    y: 1 - ((point.y - rect.y) / rect.h) * 2,
+    x: ((point.x - rect.x) / rect.width) * 2 - 1,
+    y: 1 - ((point.y - rect.y) / rect.height) * 2,
   };
 }
 
 export function ndcToScreen(
   ndc: { x: number; y: number },
-  rect: ViewportRect,
+  rect: ScreenBox,
 ): { x: number; y: number } {
   return {
-    x: rect.x + (ndc.x * 0.5 + 0.5) * rect.w,
-    y: rect.y + (1 - (ndc.y * 0.5 + 0.5)) * rect.h,
+    x: rect.x + (ndc.x * 0.5 + 0.5) * rect.width,
+    y: rect.y + (1 - (ndc.y * 0.5 + 0.5)) * rect.height,
   };
 }
 
@@ -70,18 +64,18 @@ export function ndcToScreen(
  */
 export function rayThroughScreenPoint(
   point: { x: number; y: number },
-  rect: ViewportRect,
+  rect: ScreenBox,
   viewProjection: Mat4,
   eye: Vec3,
 ): Ray | null {
   const inv = invert(viewProjection);
   if (!inv) return null;
   const ndc = screenToNdc(point, rect);
-  const near = transformPoint(inv, [ndc.x, ndc.y, -1]);
-  const far = transformPoint(inv, [ndc.x, ndc.y, 1]);
+  const near = transformPoint(inv, { x: ndc.x, y: ndc.y, z: -1 });
+  const far = transformPoint(inv, { x: ndc.x, y: ndc.y, z: 1 });
   const direction = normalize(sub(far, near));
   // normalize answers zero for a non-finite difference, which is no direction.
-  if (direction[0] === 0 && direction[1] === 0 && direction[2] === 0) return null;
+  if (direction.x === 0 && direction.y === 0 && direction.z === 0) return null;
   return { origin: eye, direction };
 }
 
@@ -119,15 +113,15 @@ const EDGE_BITS = [1, 2, 4] as const;
 export function projectAabbToScreen(
   box: Aabb,
   viewProjection: Mat4,
-  rect: ViewportRect,
+  rect: ScreenBox,
 ): ScreenBox | null {
   const corners: Clip[] = [];
   for (let i = 0; i < 8; i++) {
-    const corner: Vec3 = [
-      i & 1 ? box.max[0] : box.min[0],
-      i & 2 ? box.max[1] : box.min[1],
-      i & 4 ? box.max[2] : box.min[2],
-    ];
+    const corner: Vec3 = {
+      x: i & 1 ? box.max.x : box.min.x,
+      y: i & 2 ? box.max.y : box.min.y,
+      z: i & 4 ? box.max.z : box.min.z,
+    };
     corners.push(transformPoint4(viewProjection, corner));
   }
 

@@ -45,7 +45,7 @@ export interface Journal {
   redo(): void;
   canUndo(): boolean;
   canRedo(): boolean;
-  entries(): { undo: HistoryEntry[]; redo: HistoryEntry[] };
+  entries(): { undo: readonly HistoryEntry[]; redo: readonly HistoryEntry[] };
 
   // Lifecycle
   commit(label: string): void;

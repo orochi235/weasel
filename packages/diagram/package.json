@@ -21,7 +21,8 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "@weasel-js/core": "1.5.1"
+    "@weasel-js/core": "1.5.1",
+    "@weasel-js/geom": "1.5.1"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

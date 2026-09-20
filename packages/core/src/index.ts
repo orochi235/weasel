@@ -727,7 +727,6 @@ export {
   pathToAnchors,
   pointInPath,
   translatePath,
-  translatePolygonInPlace,
   scalePathToBounds,
   pathInPoseFrame,
   pathInWorld,
@@ -1204,7 +1203,7 @@ export type {
   ShaderProgramHandle,
   ShaderUniform,
   Effect,
-  Mat3,
+  GlMat3,
   ImageMinification,
   SpriteSheet,
   RenderTarget,
@@ -1228,9 +1227,10 @@ export { viewToMat3 } from './renderer';
 // slot's `cull` option runs, for a custom layer to run over its own output.
 export { cullDrawCommands, type CullRect } from './renderer';
 
-// The renderer's 3x3 matrix namespace — the 9-element column-major form
-// `resolveSkeleton` hands back, distinct from `@weasel-js/geom`'s 6-element
-// affine `Mat3`.
+// The renderer's 3x3 matrix namespace, operating on `GlMat3` — the 9-element
+// column-major `Float32Array` a GL uniform upload wants. `mat3.toAffine` and
+// `mat3.fromAffine` convert to and from `@weasel-js/geom`'s 6-element `Mat3`,
+// which is what an `SvgGroupNode.transform` already is.
 export { mat3 } from './renderer';
 
 // MSDF font registration — consumers register (family, variant, metrics
@@ -1267,7 +1267,7 @@ export type {
   OutlineSource,
   OutlineVariant,
   OutlineStatus,
-  OutlineFontStyle,
+  FontStyle,
   LocalFontOutlinesResult,
 } from '@weasel-js/font';
 export type { TextureHandle } from '@weasel-js/paint';
@@ -1335,10 +1335,5 @@ export type {
   UseSceneTextEditReturn,
 } from './features/text/useSceneTextEdit';
 export type { SnapPattern } from './layout/strategies/snapPoint';
-export type {
-  Vec2,
-  Rect,
-} from './core/geometry/polygonHitTestRect';
-// `Pt` is the local-only point-shape alias used by `snapPoint`; surface it so
-// custom snap behaviors can name the same shape rather than redeclaring it.
-export type { Pt } from './layout/strategies/snapPoint';
+export type { Vec2 } from './core/geometry/vec2';
+export type { Rect } from './core/geometry/polygonHitTestRect';

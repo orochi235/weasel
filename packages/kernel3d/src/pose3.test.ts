@@ -6,26 +6,35 @@ import { createTestScene, type TestData, type TestLayer } from './testScene';
 
 describe('aabbOfPose', () => {
   it('carries a unit primitive to where its pose puts it', () => {
-    const box = aabbOfPose(pose3([3, 1, -2]));
-    expect(box.min).toEqual([2.5, 0.5, -2.5]);
-    expect(box.max).toEqual([3.5, 1.5, -1.5]);
+    const box = aabbOfPose(pose3({ x: 3, y: 1, z: -2 }));
+    expect(box.min).toEqual({ x: 2.5, y: 0.5, z: -2.5 });
+    expect(box.max).toEqual({ x: 3.5, y: 1.5, z: -1.5 });
   });
 
   it('scales before translating', () => {
-    const box = aabbOfPose(pose3([0, 0, 0], [4, 1, 1]));
-    expect(box.max[0] - box.min[0]).toBeCloseTo(4, 9);
-    expect(box.max[1] - box.min[1]).toBeCloseTo(1, 9);
+    const box = aabbOfPose(pose3({ x: 0, y: 0, z: 0 }, { x: 4, y: 1, z: 1 }));
+    expect(box.max.x - box.min.x).toBeCloseTo(4, 9);
+    expect(box.max.y - box.min.y).toBeCloseTo(1, 9);
   });
 
   it('widens under rotation — an AABB cannot be oriented', () => {
-    const spun = aabbOfPose(pose3([0, 0, 0], [1, 1, 1], quatFromAxisAngle([0, 0, 1], Math.PI / 4)));
-    expect(spun.max[0]).toBeCloseTo(Math.SQRT1_2, 9);
+    const spun = aabbOfPose(
+      pose3(
+        { x: 0, y: 0, z: 0 },
+        { x: 1, y: 1, z: 1 },
+        quatFromAxisAngle({ x: 0, y: 0, z: 1 }, Math.PI / 4),
+      ),
+    );
+    expect(spun.max.x).toBeCloseTo(Math.SQRT1_2, 9);
   });
 
   it('takes the local box it is given', () => {
-    const tall = aabbOfPose(pose3([0, 0, 0]), { min: [-0.5, -3, -0.5], max: [0.5, 3, 0.5] });
-    expect(tall.max[1] - tall.min[1]).toBeCloseTo(6, 9);
-    expect(UNIT_CUBE.max[1] - UNIT_CUBE.min[1]).toBe(1);
+    const tall = aabbOfPose(pose3({ x: 0, y: 0, z: 0 }), {
+      min: { x: -0.5, y: -3, z: -0.5 },
+      max: { x: 0.5, y: 3, z: 0.5 },
+    });
+    expect(tall.max.y - tall.min.y).toBeCloseTo(6, 9);
+    expect(UNIT_CUBE.max.y - UNIT_CUBE.min.y).toBe(1);
   });
 });
 
@@ -34,7 +43,11 @@ describe('a quaternion pose in core Scene', () => {
     const scene = createTestScene();
     const id = [...scene.renderOrder()][0];
     const before = scene.get(id)!.pose;
-    const after = pose3([9, 9, 9], [2, 2, 2], quatFromAxisAngle([0, 1, 0], 1));
+    const after = pose3(
+      { x: 9, y: 9, z: 9 },
+      { x: 2, y: 2, z: 2 },
+      quatFromAxisAngle({ x: 0, y: 1, z: 0 }, 1),
+    );
 
     scene.setPose(id, after);
     expect(scene.get(id)!.pose).toEqual(after);
@@ -50,7 +63,11 @@ describe('a quaternion pose in core Scene', () => {
   it('survives toJSON and sceneFromJSON with its quaternion intact', () => {
     const scene = createTestScene();
     const id = [...scene.renderOrder()][0];
-    const turned = pose3([1.5, 0.5, -3], [2, 0.5, 1], quatFromAxisAngle([0.3, 1, 0], 0.9));
+    const turned = pose3(
+      { x: 1.5, y: 0.5, z: -3 },
+      { x: 2, y: 0.5, z: 1 },
+      quatFromAxisAngle({ x: 0.3, y: 1, z: 0 }, 0.9),
+    );
     scene.setPose(id, turned);
 
     const json = JSON.parse(JSON.stringify(scene.toJSON()));

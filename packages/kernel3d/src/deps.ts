@@ -42,7 +42,6 @@ import {
   projectAabbToScreen,
   rayThroughScreenPoint,
   type ScreenBox,
-  type ViewportRect,
 } from './screen';
 
 export interface Viewport3d {
@@ -85,7 +84,7 @@ export interface World3d<TData, TLayer extends string> {
   up?: Vec3;
 }
 
-const DEFAULT_UP: Vec3 = [0, 1, 0];
+const DEFAULT_UP: Vec3 = { x: 0, y: 1, z: 0 };
 
 function boundsOfNode<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
@@ -94,13 +93,14 @@ function boundsOfNode<TData, TLayer extends string>(
   return world.bounds ? world.bounds(node) : aabbOfPose(node.pose);
 }
 
-/** The pane, in the coordinate space the host's points arrive in. */
-function rectOf(viewport: Viewport3d): ViewportRect {
+/** The pane, in the coordinate space the host's points arrive in. The origin
+ *  defaults to the client origin — a host that fills the window passes none. */
+function rectOf(viewport: Viewport3d): ScreenBox {
   return {
     x: viewport.originX ?? 0,
     y: viewport.originY ?? 0,
-    w: viewport.width,
-    h: viewport.height,
+    width: viewport.width,
+    height: viewport.height,
   };
 }
 
@@ -144,23 +144,23 @@ function onPlane(
 
 /** The world box containing `points`. */
 function aabbOfPoints(points: readonly Vec3[]): Aabb {
-  const min: [number, number, number] = [Infinity, Infinity, Infinity];
-  const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+  const min = { x: Infinity, y: Infinity, z: Infinity };
+  const max = { x: -Infinity, y: -Infinity, z: -Infinity };
   for (const p of points) {
-    for (let i = 0; i < 3; i++) {
-      if (p[i] < min[i]) min[i] = p[i];
-      if (p[i] > max[i]) max[i] = p[i];
+    for (const axis of ['x', 'y', 'z'] as const) {
+      if (p[axis] < min[axis]) min[axis] = p[axis];
+      if (p[axis] > max[axis]) max[axis] = p[axis];
     }
   }
   return { min, max };
 }
 
 function pointOnRay(ray: Ray, t: number): Vec3 {
-  return [
-    ray.origin[0] + ray.direction[0] * t,
-    ray.origin[1] + ray.direction[1] * t,
-    ray.origin[2] + ray.direction[2] * t,
-  ];
+  return {
+    x: ray.origin.x + ray.direction.x * t,
+    y: ray.origin.y + ray.direction.y * t,
+    z: ray.origin.z + ray.direction.z * t,
+  };
 }
 
 function overlaps(a: ScreenBox, b: ScreenBox): boolean {
@@ -269,7 +269,8 @@ export function createInsert(opts: {
   const minExtent = opts.minExtent ?? 0.25;
   // The two axes the up axis is not, so a footprint reads the same whichever
   // way up the world is.
-  const axes: [number, number] = up[1] !== 0 ? [0, 2] : up[0] !== 0 ? [1, 2] : [0, 1];
+  const axes: readonly ['x' | 'y' | 'z', 'x' | 'y' | 'z'] =
+    up.y !== 0 ? ['x', 'z'] : up.x !== 0 ? ['y', 'z'] : ['x', 'y'];
 
   return {
     commit(bounds, extras) {
@@ -297,7 +298,7 @@ export function createInsert(opts: {
         minV = Math.min(minV, h[v]); maxV = Math.max(maxV, h[v]);
       }
 
-      const center: [number, number, number] = [0, 0, 0];
+      const center = { x: 0, y: 0, z: 0 };
       center[u] = (minU + maxU) / 2;
       center[v] = (minV + maxV) / 2;
       return opts.mint(
@@ -332,7 +333,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
 ): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
   const up = world.up ?? DEFAULT_UP;
-  const upAxis = up[1] !== 0 ? 1 : up[0] !== 0 ? 0 : 2;
+  const upAxis = up.y !== 0 ? 'y' : up.x !== 0 ? 'x' : 'z';
   const specialized = new WeakMap<object, PoseDescriptor<Pose3, Node3d<TData, TLayer>>>();
 
   // A drag whose camera stops casting rays mid-gesture keeps moving through the
@@ -341,7 +342,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   function castableViewport(): Viewport3d | null {
     const vp = world.viewport();
     const rect = rectOf(vp);
-    if (rayAt(vp, { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 })) lastCastable = vp;
+    if (rayAt(vp, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 })) lastCastable = vp;
     return lastCastable;
   }
 
@@ -474,11 +475,11 @@ export function createPoseDescriptor<TData, TLayer extends string>(
         if (anchorT === null) return pose;
 
         const delta = sub(pointOnRay(ray, t), pointOnRay(anchorRay, anchorT));
-        const position: [number, number, number] = [
-          pose.position[0] + delta[0],
-          pose.position[1] + delta[1],
-          pose.position[2] + delta[2],
-        ];
+        const position = {
+          x: pose.position.x + delta.x,
+          y: pose.position.y + delta.y,
+          z: pose.position.z + delta.z,
+        };
         position[upAxis] = pose.position[upAxis];
         return { ...pose, position };
       },

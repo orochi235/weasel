@@ -25,11 +25,15 @@ export {
 } from './paint';
 export {
   srgbU8ToOklab,
+  srgbFloatToOklab,
   oklabToSrgbU8,
   lerpOklab,
   oklabToOklch,
   oklchToOklab,
   lerpOklch,
   lerpColorArray,
+  oklchDegToHex,
+  hexToOklchDeg,
   type ColorSpace,
+  type OklchDeg,
 } from './colorSpaces';

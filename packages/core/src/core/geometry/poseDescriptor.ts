@@ -108,6 +108,11 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
     width: a.width + (b.width - a.width) * t,
     height: a.height + (b.height - a.height) * t,
   }),
+  // `Bounds` carries an optional `rotation`, and `withRotation` writes into
+  // it — so reading it back has to be the same channel, or a pose reports
+  // itself unrotated to `useResize` and to port placement while painting
+  // rotated.
+  getRotation: (p) => p.rotation ?? 0,
   withRotation: (p, rotation) => ({ ...p, rotation }),
 };
 

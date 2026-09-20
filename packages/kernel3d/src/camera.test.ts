@@ -11,33 +11,33 @@ import {
 import { normalize, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { rayThroughScreenPoint } from './screen';
 
-const RECT = { x: 0, y: 0, w: 800, h: 600 };
+const RECT = { x: 0, y: 0, width: 800, height: 600 };
 
 function expectVecClose(a: Vec3, b: Vec3, digits = 6) {
-  for (let i = 0; i < 3; i++) expect(a[i]).toBeCloseTo(b[i], digits);
+  for (const axis of ['x', 'y', 'z'] as const) expect(a[axis]).toBeCloseTo(b[axis], digits);
 }
 
 describe('cameraEye', () => {
   it('sits down +z at yaw zero', () => {
     const cam = createCamera({ distance: 5 });
-    expectVecClose(cameraEye(cam), [0, 0, 5]);
+    expectVecClose(cameraEye(cam), { x: 0, y: 0, z: 5 });
   });
 
   it('swings to +x at a quarter turn of yaw', () => {
     const cam = createCamera({ distance: 5, yaw: Math.PI / 2 });
-    expectVecClose(cameraEye(cam), [5, 0, 0], 5);
+    expectVecClose(cameraEye(cam), { x: 5, y: 0, z: 0 }, 5);
   });
 
   it('rises with pitch', () => {
     const cam = createCamera({ distance: 5, pitch: Math.PI / 6 });
     const eye = cameraEye(cam);
-    expect(eye[1]).toBeCloseTo(2.5, 5);
-    expect(eye[2]).toBeCloseTo(5 * Math.cos(Math.PI / 6), 5);
+    expect(eye.y).toBeCloseTo(2.5, 5);
+    expect(eye.z).toBeCloseTo(5 * Math.cos(Math.PI / 6), 5);
   });
 
   it('orbits around the target, not the origin', () => {
-    const cam = createCamera({ distance: 5, target: [10, 0, 0] });
-    expectVecClose(cameraEye(cam), [10, 0, 5]);
+    const cam = createCamera({ distance: 5, target: { x: 10, y: 0, z: 0 } });
+    expectVecClose(cameraEye(cam), { x: 10, y: 0, z: 5 });
   });
 });
 
@@ -56,15 +56,15 @@ describe('orbitBy', () => {
 
   it('leaves the eye off the up axis at full pitch, so lookAt stays defined', () => {
     const eye = cameraEye(orbitBy(createCamera({ distance: 5 }), 0, 10));
-    const horizontal = Math.hypot(eye[0], eye[2]);
+    const horizontal = Math.hypot(eye.x, eye.z);
     expect(horizontal).toBeGreaterThan(0);
   });
 
   it('does not move the target or the distance', () => {
-    const before = createCamera({ distance: 7, target: [1, 2, 3] });
+    const before = createCamera({ distance: 7, target: { x: 1, y: 2, z: 3 } });
     const after = orbitBy(before, 1, 0.2);
     expect(after.distance).toBe(7);
-    expect(after.target).toEqual([1, 2, 3]);
+    expect(after.target).toEqual({ x: 1, y: 2, z: 3 });
   });
 });
 
@@ -85,9 +85,9 @@ describe('dollyBy', () => {
 
 describe('cameraViewProjection', () => {
   it('aims the center-screen ray from the eye at the target', () => {
-    const cam: Camera3d = createCamera({ distance: 5, yaw: 0.7, pitch: 0.4, target: [1, 0, -2] });
+    const cam: Camera3d = createCamera({ distance: 5, yaw: 0.7, pitch: 0.4, target: { x: 1, y: 0, z: -2 } });
     const eye = cameraEye(cam);
-    const vp = cameraViewProjection(cam, RECT.w / RECT.h);
+    const vp = cameraViewProjection(cam, RECT.width / RECT.height);
     const ray = rayThroughScreenPoint({ x: 400, y: 300 }, RECT, vp, eye)!;
     expectVecClose(ray.direction, normalize(sub(cam.target, eye)), 4);
   });

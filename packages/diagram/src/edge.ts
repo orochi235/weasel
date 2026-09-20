@@ -27,6 +27,7 @@ import {
   type SceneRegistry,
   type Vec2,
 } from '@weasel-js/core';
+import { portCurvePoints } from '@weasel-js/geom';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
 import { portOf, portsOf, type PortsOptions } from './ports';
 import type { Port } from './types';
@@ -120,16 +121,16 @@ function isHorizontal(normal: Vec2 | null | undefined): boolean {
 
 /** How far a bezier reaches along each end's normal, as a fraction of the
  *  straight-line distance between the two points it joins. */
-const BEZIER_REACH = 0.4;
-
 /**
  * A smooth route, sampled into points.
  *
  * Each leg is a cubic that leaves along the departing end's normal and arrives
  * against the receiving one's, which is what makes a bezier edge read as
- * plugged into its port rather than aimed at it. Sampled rather than emitted
- * as curve commands so every router returns the same thing; `edgePath` is free
- * to emit curves later without changing the contract.
+ * plugged into its port rather than aimed at it. The rule is `portCurvePoints`
+ * in `@weasel-js/geom`, which states it over loose components so the 3D kernel
+ * can route by the same one. Sampled rather than emitted as curve commands so
+ * every router returns the same thing; `edgePath` is free to emit curves later
+ * without changing the contract.
  */
 export const bezier: Router = (req) => {
   const stops = [req.from.point, ...req.waypoints, req.to.point];
@@ -137,35 +138,20 @@ export const bezier: Router = (req) => {
   for (let i = 1; i < stops.length; i++) {
     const a = stops[i - 1]!;
     const b = stops[i]!;
-    const reach = Math.hypot(b.x - a.x, b.y - a.y) * BEZIER_REACH;
     const outN = i === 1 ? req.from.normal : null;
     const inN = i === stops.length - 1 ? req.to.normal : null;
-    const c1 = outN === null || outN === undefined
-      ? { x: a.x + (b.x - a.x) * BEZIER_REACH, y: a.y + (b.y - a.y) * BEZIER_REACH }
-      : { x: a.x + outN.x * reach, y: a.y + outN.y * reach };
-    const c2 = inN === null || inN === undefined
-      ? { x: b.x - (b.x - a.x) * BEZIER_REACH, y: b.y - (b.y - a.y) * BEZIER_REACH }
-      : { x: b.x + inN.x * reach, y: b.y + inN.y * reach };
-    for (let s = 1; s <= BEZIER_SAMPLES; s++) {
-      out.push(cubicAt(a, c1, c2, b, s / BEZIER_SAMPLES));
-    }
+    const leg = portCurvePoints(
+      a.x, a.y, b.x, b.y,
+      outN == null ? null : [outN.x, outN.y],
+      inN == null ? null : [inN.x, inN.y],
+      BEZIER_SAMPLES,
+    );
+    for (const [x, y] of leg) out.push({ x, y });
   }
   return out;
 };
 
 const BEZIER_SAMPLES = 16;
-
-function cubicAt(p0: Vec2, p1: Vec2, p2: Vec2, p3: Vec2, t: number): Vec2 {
-  const u = 1 - t;
-  const a = u * u * u;
-  const b = 3 * u * u * t;
-  const c = 3 * u * t * t;
-  const d = t * t * t;
-  return {
-    x: a * p0.x + b * p1.x + c * p2.x + d * p3.x,
-    y: a * p0.y + b * p1.y + c * p2.y + d * p3.y,
-  };
-}
 
 /** The routers this package ships. A consumer's own go in the same shape. */
 export const ROUTERS: Readonly<Record<string, Router>> = Object.freeze({

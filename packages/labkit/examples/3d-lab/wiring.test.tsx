@@ -107,7 +107,7 @@ function harnessOf(): Harness {
     scene: createSolidScene(),
     picks: [],
     viewport: { camera: createCamera({}), width: WIDTH, height: HEIGHT },
-    camera: { current: createCamera({ distance: 14, pitch: 0.45, target: [0, 0.5, 0] }) },
+    camera: { current: createCamera({ distance: 14, pitch: 0.45, target: { x: 0, y: 0.5, z: 0 } }) },
   };
 }
 

@@ -7,7 +7,7 @@ import type { FillStyle, Stroke } from '@weasel-js/paint';
 import type { TextStyle } from '@weasel-js/text';
 import type { ResolvedRun } from '@weasel-js/text';
 import type { TextVerticalAlign } from '@weasel-js/text';
-import type { Mat3 } from './math/mat3';
+import type { GlMat3 } from './math/mat3';
 import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgram';
 import type { Effect } from './effects/types';
 
@@ -63,7 +63,7 @@ export interface PathDrawCommand {
  *  is how a container node's transform reaches its descendants. */
 export interface GroupDrawCommand {
   kind: 'group';
-  transform?: Mat3;
+  transform?: GlMat3;
   alpha?: number;
   /**
    * Optional 4×5 color matrix (row-major, 20 numbers) — `out = M₄ₓ₄ * in + bias`.

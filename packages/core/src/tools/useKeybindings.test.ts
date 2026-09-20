@@ -314,7 +314,7 @@ describe('useKeybindings', () => {
   });
 
   describe('isToolEligible gate', () => {
-    // `Tool.capabilities` used to describe an intent the runtime never
+    // `ToolDef.capabilities` used to describe an intent the runtime never
     // enforced: `ToolPalette` greyed an ineligible tool's button while its
     // keyboard shortcut still activated it, and once active its routes ran
     // unfiltered (audit 3.10). Activation now consults the same predicate.

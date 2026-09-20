@@ -23,7 +23,7 @@ export function boundsOfTestNode(node: TestNode): Aabb {
   const s = node.pose.scale;
   return aabbAround(
     node.pose.position,
-    0.5 * Math.max(Math.abs(s[0]), Math.abs(s[1]), Math.abs(s[2])),
+    0.5 * Math.max(Math.abs(s.x), Math.abs(s.y), Math.abs(s.z)),
   );
 }
 
@@ -31,9 +31,19 @@ export function createTestScene(): TestScene {
   return createScene<TestData, TestLayer, Pose3>({
     systemLayers: [{ id: 'solids' }],
     initial: [
-      { kind: 'leaf', layer: 'solids', pose: pose3([-2.2, 0.5, 0]), data: {} },
-      { kind: 'leaf', layer: 'solids', pose: pose3([0, 0.5, 0], [1.4, 1.4, 1.4]), data: { round: true } },
-      { kind: 'leaf', layer: 'solids', pose: pose3([2.2, 0.75, -1], [1, 1.5, 1]), data: {} },
+      { kind: 'leaf', layer: 'solids', pose: pose3({ x: -2.2, y: 0.5, z: 0 }), data: {} },
+      {
+        kind: 'leaf',
+        layer: 'solids',
+        pose: pose3({ x: 0, y: 0.5, z: 0 }, { x: 1.4, y: 1.4, z: 1.4 }),
+        data: { round: true },
+      },
+      {
+        kind: 'leaf',
+        layer: 'solids',
+        pose: pose3({ x: 2.2, y: 0.75, z: -1 }, { x: 1, y: 1.5, z: 1 }),
+        data: {},
+      },
     ],
   });
 }

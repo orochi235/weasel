@@ -20,7 +20,7 @@ import { gradientForBounds } from './gradient';
 import { bumpNodeMemoGeneration } from './scene/nodeMemo';
 import type { ComponentType } from 'react';
 import type { FillPoseBox } from './fillInPoseFrame';
-import type { Mat3 } from '../renderer/math/mat3';
+import type { GlMat3 } from '../renderer/math/mat3';
 import type { ShaderProgram } from '../renderer/shaders/ShaderProgram';
 
 /** A compiled GL program. A paint kind gets one from
@@ -67,7 +67,7 @@ export interface PaintBindContext {
    * an axis. Nothing the paint draws there means anything, so `bind` should
    * return `null` and draw nothing.
    */
-  spaceInverse(units: GradientUnits | undefined): Mat3 | null;
+  spaceInverse(units: GradientUnits | undefined): GlMat3 | null;
   /**
    * Bake a stop ramp into the frame's ramp atlas, bind that atlas to a texture
    * unit, and return the `v` the ramp's own row sits at — every ramp in a

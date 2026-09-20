@@ -10,15 +10,6 @@ export { screenToWorld, worldToScreen } from './canvasCoords';
 export type { StageProps } from './Stage';
 export { fitStage, Stage } from './Stage';
 export type { CanvasLayerDescriptor } from './useLayerScheduler';
-export type { OrbitHandlers, OrbitView, UseOrbitOptions, Vec3 } from './useOrbit';
-export {
-  clampPitch,
-  orbitAfterDrag,
-  orbitAfterWheel,
-  PITCH_LIMIT,
-  useOrbit,
-  wrapYaw,
-} from './useOrbit';
 export type { PanZoomHandlers, UsePanZoomOptions } from './usePanZoom';
 export { usePanZoom } from './usePanZoom';
 export type { ViewportSize, WorldFrame, WorldSpec } from './worldSpec';

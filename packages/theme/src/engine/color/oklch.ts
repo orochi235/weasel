@@ -1,36 +1,16 @@
-import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbU8ToOklab } from '@weasel-js/paint';
+import { hexToOklchDeg, oklchDegToHex, srgbU8ToOklab, type OklchDeg } from '@weasel-js/paint';
 
-/** A color in OKLCH: lightness 0–1, chroma, hue in degrees. */
-export interface Lch {
-  readonly L: number;
-  readonly C: number;
-  readonly H: number;
-}
-
-const clamp255 = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+/** A color in OKLCH: lightness 0–1, chroma, hue in degrees. paint's own type,
+ *  under the name this engine has always called it. */
+export type Lch = OklchDeg;
 
 export function hexToRgb(hex: string): [number, number, number] {
   const n = Number.parseInt(hex.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-/**
- * OKLCH → `#rrggbb`. Over-saturated requests come back at the gamut boundary:
- * paint's `oklabToSrgbU8` clips chroma at constant lightness, which is what lets
- * `chromaCap` below find a hue's ceiling by asking for far more than exists.
- */
-export function toHex(L: number, C: number, H: number): string {
-  const [l, a, b] = oklchToOklab(L, C, (H * Math.PI) / 180);
-  const [r, g, bl] = oklabToSrgbU8(l, a, b);
-  return `#${[r, g, bl].map((v) => clamp255(v).toString(16).padStart(2, '0')).join('')}`;
-}
-
-export function toLch(hex: string): Lch {
-  const [r, g, b] = hexToRgb(hex);
-  const [L, A, B] = srgbU8ToOklab(r, g, b);
-  const [l, c, h] = oklabToOklch(L, A, B);
-  return { L: l, C: c, H: (((h * 180) / Math.PI) % 360 + 360) % 360 };
-}
+export const toHex = oklchDegToHex;
+export const toLch: (hex: string) => Lch = hexToOklchDeg;
 
 /** The most chroma this hue can carry at this lightness, inside sRGB. */
 export function chromaCap(L: number, H: number): number {

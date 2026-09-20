@@ -18,7 +18,7 @@
 
 import { registerPaintKind, asPaint, type PaintBindContext, type PaintProgram } from '../../core/paintKinds';
 import { resolveColor, rgbaToHex } from '../../renderer/math/color';
-import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbU8ToOklab } from '@weasel-js/paint';
+import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import { registerProgram } from '../../renderer/shaders/registerProgram';
 import type { ColorSpace, FillStyle, GradientUnits } from '@weasel-js/paint';
 import type { FillPoseBox } from '../../core/fillInPoseFrame';
@@ -69,7 +69,7 @@ function asMesh(fill: FillStyle): MeshGradientFill {
  */
 function shifted(color: string, dL: number, cScale: number, dHueDeg: number): string {
   const [r, g, b, a] = resolveColor(color);
-  const [L, A, B] = srgbU8ToOklab(r * 255, g * 255, b * 255);
+  const [L, A, B] = srgbFloatToOklab(r, g, b);
   const [, C, h] = oklabToOklch(L, A, B);
   const [nL, nA, nB] = oklchToOklab(
     Math.min(1, Math.max(0, L + dL)),

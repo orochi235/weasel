@@ -181,7 +181,7 @@ describe('per-kind claims', () => {
 
 describe('body predicates do not survive an exclusive claim', () => {
   const dblOn = (affordance: unknown): InputEvent => ({
-    kind: 'doubleclick', worldX: 0, worldY: 0,
+    kind: 'doubleclick', x: 0, y: 0,
     altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
     bodyTarget: 'selected-body',
     affordance,

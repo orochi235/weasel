@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder, polygonFromPoints, rectPath } from './builder';
 import { boundsOfPath } from './bounds';
-import { scalePathToBounds, translatePath, translatePolygonInPlace } from './transform';
+import { scalePathToBounds, translatePath } from './transform';
 
 describe('translatePath', () => {
   it('translates a RectPath without allocating coords', () => {
@@ -26,17 +26,6 @@ describe('translatePath', () => {
     const t = translatePath(p, 1, 2);
     if (t.kind !== 'polygon') throw new Error('expected polygon');
     expect(Array.from(t.coords)).toEqual([1, 2, 11, 2, 21, 12, 31, 12]);
-  });
-});
-
-describe('translatePolygonInPlace', () => {
-  it('mutates the same coord buffer and returns it', () => {
-    const p = polygonFromPoints([{ x: 1, y: 2 }, { x: 3, y: 4 }, { x: 5, y: 6 }]);
-    const buf = p.coords;
-    const ret = translatePolygonInPlace(p, 10, 20);
-    expect(ret).toBe(p);
-    expect(p.coords).toBe(buf);
-    expect(Array.from(p.coords)).toEqual([11, 22, 13, 24, 15, 26]);
   });
 });
 

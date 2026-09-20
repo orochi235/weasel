@@ -38,22 +38,6 @@ function translatePolygonCopy(path: PolygonPath, dx: number, dy: number): Polygo
 }
 
 /**
- * Translate a polygon path's coords *in place*. Returns the same
- * `PolygonPath` reference. Use only for transient overlay buffers — never
- * for committed scene state, which must remain immutable for React.
- */
-export function translatePolygonInPlace(path: PolygonPath, dx: number, dy: number): PolygonPath {
-  const { commands, coords } = path;
-  forEachSegment(commands, coords, (cmd, ci) => {
-    for (let k = 0, len = pathCommandCoordCount(cmd); k < len; k += 2) {
-      coords[ci + k] += dx;
-      coords[ci + k + 1] += dy;
-    }
-  });
-  return path;
-}
-
-/**
  * Scale a path's coords so its current AABB maps to `target`. Resize
  * interactions use this to make a polygon follow a corner-handle drag.
  *

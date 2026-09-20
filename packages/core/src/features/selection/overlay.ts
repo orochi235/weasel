@@ -22,7 +22,7 @@
  */
 
 import type { DrawCommand } from '../../renderer';
-import { mat3, type Mat3 } from '../../renderer';
+import { mat3, type GlMat3 } from '../../renderer';
 import type { NodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
 import { unionAABB } from 'core/geometry/unionBounds';
@@ -333,7 +333,7 @@ function resolveHandles(opts?: SelectionHandleStyle): ResolvedHandles {
  * GL helper: build the matrix `translate(cx, cy) * rotate(θ) * translate(-cx, -cy)`
  * used to wrap rotated outline / handle commands.
  */
-function rotateAroundMat3(cx: number, cy: number, theta: number): Mat3 {
+function rotateAroundMat3(cx: number, cy: number, theta: number): GlMat3 {
   const c = Math.cos(theta);
   const s = Math.sin(theta);
   // Composed in column-major (matches mat3 helpers): T(cx,cy) · R(θ) · T(-cx,-cy).
@@ -344,7 +344,7 @@ function rotateAroundMat3(cx: number, cy: number, theta: number): Mat3 {
     c, s, 0,
     -s, c, 0,
     tx, ty, 1,
-  ]) as Mat3;
+  ]) as GlMat3;
 }
 
 /** GL helper: emit a closed rect path (kind:'rect'). */
@@ -557,7 +557,7 @@ function rotationHandleCommands(
   if (rotation !== 0) {
     const c = Math.cos(rotation);
     const s = Math.sin(rotation);
-    const rot = new Float32Array([c, s, 0, -s, c, 0, 0, 0, 1]) as Mat3;
+    const rot = new Float32Array([c, s, 0, -s, c, 0, 0, 0, 1]) as GlMat3;
     transform = mat3.multiply(transform, rot);
   }
   return [

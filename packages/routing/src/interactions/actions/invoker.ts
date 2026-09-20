@@ -139,6 +139,10 @@ export interface InvocationCtx {
      * per-sample stylus state when the browser reported it.
      * Accumulated by the dispatcher on every `pointermove` pump event.
      * Available only during `onMove` and `onEnd` calls (not on `start`).
+     *
+     * During `onMove` this is the dispatcher's live accumulator, and it grows
+     * under you — read it, don't retain it. On `onEnd` it is a snapshot, so
+     * that is where an action that keeps the trail should take it.
      * Used by `lassoSelectAction` to build its polygon vertex list and by
      * `insertAction`'s pencil kind to carry the freehand stroke.
      */
@@ -146,7 +150,11 @@ export interface InvocationCtx {
   };
   wheel?: { deltaX: number; deltaY: number; deltaZ: number };
   multiTouch?: {
+    /** Canvas-local CSS pixels — see `MultitouchEvent.centroid`. Neither
+     *  `world` nor `screen`: it is the space `zoomAt` anchors in, so passing
+     *  it through `clientToWorld` removes the canvas origin twice. */
     centroid: Point2;
+    /** Distance between the two primary pointers, in CSS pixels. */
     spread: number;
     rotation: number;
     /**
@@ -158,6 +166,7 @@ export interface InvocationCtx {
     pinch?: {
       startSpread: number;
       currentSpread: number;
+      /** Canvas-local, same as the enclosing `centroid`. */
       centroid: Point2;
     };
   };

@@ -7,7 +7,7 @@
  * flattened first, so the fraction is arc length along the drawn shape rather
  * than a curve parameter, which is what makes 0.5 look like the middle.
  */
-import type { Vec2 } from 'core/geometry/polygonHitTestRect';
+import type { Vec2 } from 'core/geometry/vec2';
 import type { Path } from 'core/geometry/path';
 import { extractPolylines } from './tessellate/polyline';
 

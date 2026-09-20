@@ -3,7 +3,7 @@
  *  transpose and the one three.js `toArray()` emits. */
 
 import { SINGULAR_RATIO } from '../scalar';
-import { cross, dot, len, normalize, sub, type Quat, type Vec3 } from './vec3';
+import { cross, dot, len, normalize, sub, vec3, type Quat, type Vec3 } from './vec3';
 
 /** 16 numbers, column-major. */
 export type Mat4 = readonly number[];
@@ -29,7 +29,7 @@ export function transformPoint4(
   m: Mat4,
   p: Vec3,
 ): readonly [number, number, number, number] {
-  const [x, y, z] = p;
+  const { x, y, z } = p;
   return [
     m[0] * x + m[4] * y + m[8] * z + m[12],
     m[1] * x + m[5] * y + m[9] * z + m[13],
@@ -42,8 +42,8 @@ export function transformPoint4(
  *  plane (w = 0) comes back non-finite. */
 export function transformPoint(m: Mat4, p: Vec3): Vec3 {
   const [x, y, z, w] = transformPoint4(m, p);
-  if (w === 1) return [x, y, z];
-  return [x / w, y / w, z / w];
+  if (w === 1) return vec3(x, y, z);
+  return vec3(x / w, y / w, z / w);
 }
 
 /** Inverse, or null when the matrix is singular, non-finite, or too
@@ -115,13 +115,13 @@ export function compose(position: Vec3, rotation: Quat, scaling: Vec3): Mat4 {
   const wx = w * x2;
   const wy = w * y2;
   const wz = w * z2;
-  const [sx, sy, sz] = scaling;
+  const { x: sx, y: sy, z: sz } = scaling;
 
   return [
     (1 - (yy + zz)) * sx, (xy + wz) * sx, (xz - wy) * sx, 0,
     (xy - wz) * sy, (1 - (xx + zz)) * sy, (yz + wx) * sy, 0,
     (xz + wy) * sz, (yz - wx) * sz, (1 - (xx + yy)) * sz, 0,
-    position[0], position[1], position[2], 1,
+    position.x, position.y, position.z, 1,
   ];
 }
 
@@ -143,12 +143,12 @@ export function lookAt(eye: Vec3, target: Vec3, up: Vec3): Mat4 {
   const back = normalize(sub(eye, target));
   const side = cross(up, back);
   // |side| is |up| times the sine of the angle between up and the view.
-  const right = len(side) > SINGULAR_RATIO * len(up) ? normalize(side) : ([0, 0, 0] as const);
+  const right = len(side) > SINGULAR_RATIO * len(up) ? normalize(side) : vec3(0, 0, 0);
   const trueUp = cross(back, right);
   return [
-    right[0], trueUp[0], back[0], 0,
-    right[1], trueUp[1], back[1], 0,
-    right[2], trueUp[2], back[2], 0,
+    right.x, trueUp.x, back.x, 0,
+    right.y, trueUp.y, back.y, 0,
+    right.z, trueUp.z, back.z, 0,
     -dot(right, eye), -dot(trueUp, eye), -dot(back, eye), 1,
   ];
 }

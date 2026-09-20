@@ -5,25 +5,17 @@
  * need to collapse `transform=` onto leaf geometry at parse time.
  */
 
-import { invert } from '@weasel-js/geom';
+import { invert, multiply } from '@weasel-js/geom';
 import type { Matrix } from './types';
 import { IDENTITY_MATRIX } from './types';
 
-/** Multiply two 2x3 affine matrices (a then b applied to a column vector). */
-export function multiply(a: Matrix, b: Matrix): Matrix {
-  // [a0 a2 a4] [b0 b2 b4]
-  // [a1 a3 a5] [b1 b3 b5]
-  return [
-    a[0] * b[0] + a[2] * b[1],
-    a[1] * b[0] + a[3] * b[1],
-    a[0] * b[2] + a[2] * b[3],
-    a[1] * b[2] + a[3] * b[3],
-    a[0] * b[4] + a[2] * b[5] + a[4],
-    a[1] * b[4] + a[3] * b[5] + a[5],
-  ];
-}
+/** Compose two 2x3 affines, `a` then `b` applied to a column vector. The
+ *  kernel's own composition — `Matrix` is `Mat3`, so nothing converts. */
+export { multiply };
 
-/** Apply a 2x3 affine to a 2D point. */
+/** Apply a 2x3 affine to a 2D point. The `{x, y}` spelling the rest of this
+ *  package works in; geom's `applyToPoint` returns the same numbers as a
+ *  tuple. */
 export function applyMatrix(m: Matrix, x: number, y: number): { x: number; y: number } {
   return { x: m[0] * x + m[2] * y + m[4], y: m[1] * x + m[3] * y + m[5] };
 }
@@ -125,10 +117,9 @@ export function parseTransform(
  * has collapsed through it, and the local transform has no frame to live in.
  */
 export function rebaseTransform(ctm: Matrix, local: Matrix): Matrix | null {
-  const inv = invert([...ctm]);
+  const inv = invert(ctm);
   if (!inv) return null;
-  const [a, b, c, d, e, f] = inv;
-  return multiply(multiply(ctm, local), [a, b, c, d, e, f]);
+  return multiply(multiply(ctm, local), inv);
 }
 
 /** Try to factor `m` as "rotation by theta about (cx, cy)". Returns the

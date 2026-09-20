@@ -91,7 +91,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const dispatcher = dispatcherRef.current;
 
   const [camera, setCamera] = useState<Camera3d>(() =>
-    createCamera({ distance: 14, pitch: 0.45, yaw: 0.6, target: [0, 0.5, 0] }),
+    createCamera({ distance: 14, pitch: 0.45, yaw: 0.6, target: { x: 0, y: 0.5, z: 0 } }),
   );
   const [selection, setSelection] = useState<readonly NodeId[]>([]);
 
@@ -259,7 +259,10 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
           return scene.add({
             kind: 'leaf',
             layer: 'solids',
-            pose: pose3([center[0], height / 2, center[2]], [width, height, depth]),
+            pose: pose3(
+              { x: center.x, y: height / 2, z: center.z },
+              { x: width, y: height, z: depth },
+            ),
             data: { kind: 'box', color: '#c49a3f' },
           });
         },

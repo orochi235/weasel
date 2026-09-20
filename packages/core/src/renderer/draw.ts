@@ -21,7 +21,7 @@ import type { GLTextureCache } from './cache/GLTextureCache';
 import type { GLImageCache } from './cache/GLImageCache';
 import type { GradientRampAtlas } from './cache/GradientRampAtlas';
 import type { ShaderProgram } from './shaders/ShaderProgram';
-import { mat3, type Mat3 } from './math/mat3';
+import { mat3, type GlMat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
 import { tessellate } from 'features/paths/tessellate/tessellate';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
@@ -99,7 +99,7 @@ export interface DrawContext {
   /** World→screen transform for the frame, when the caller supplied one.
    *  Only `units: 'world'` gradients read it; absent, they fall back to
    *  screen space. See `WeaselRenderer.render`. */
-  viewMatrix?: Mat3;
+  viewMatrix?: GlMat3;
   /** Offscreen buffers for group effects. Absent when a caller drives
    *  `dispatch` without a renderer behind it, in which case a group's
    *  `effects` are skipped and its children draw straight through — the same
@@ -160,7 +160,7 @@ interface UploadedUniforms {
 }
 
 const FRAME_UPLOADS = new WeakMap<DrawContext, WeakMap<ShaderProgram, UploadedUniforms>>();
-const FRAME_PROJ = new WeakMap<DrawContext, Mat3>();
+const FRAME_PROJ = new WeakMap<DrawContext, GlMat3>();
 
 function uploadedFor(ctx: DrawContext, prog: ShaderProgram): UploadedUniforms {
   let byProgram = FRAME_UPLOADS.get(ctx);
@@ -222,7 +222,7 @@ function setAlphaUniform(ctx: DrawContext, prog: ShaderProgram, alpha: number): 
 const BATCH_MODEL = mat3.identity();
 
 /** The screen→clip matrix depends only on the frame's dimensions. */
-function projFor(ctx: DrawContext): Mat3 {
+function projFor(ctx: DrawContext): GlMat3 {
   let proj = FRAME_PROJ.get(ctx);
   if (!proj) {
     proj = mat3.screenToClip(ctx.widthCss, ctx.heightCss);
@@ -1037,7 +1037,7 @@ function ramp(
  * steps, and the pair have to agree: a radial gradient goes through that one
  * and a linear one through this.
  */
-function gradientMap(ctx: DrawContext, units: GradientUnits | undefined): Mat3 | null {
+function gradientMap(ctx: DrawContext, units: GradientUnits | undefined): GlMat3 | null {
   const inverse = gradientSpaceInverse(ctx, units);
   return inverse && mat3.multiply(inverse, ctx.state.transform);
 }
@@ -1047,7 +1047,7 @@ function gradientMap(ctx: DrawContext, units: GradientUnits | undefined): Mat3 |
  * left for the atlas row `stageRamps` fills in.
  */
 function linearRampUV(
-  g: Mat3, fill: Extract<FillStyle, { fill: 'linear-gradient' }>,
+  g: GlMat3, fill: Extract<FillStyle, { fill: 'linear-gradient' }>,
 ): GradientUV {
   const dx = fill.to.x - fill.from.x;
   const dy = fill.to.y - fill.from.y;
@@ -1065,7 +1065,7 @@ function linearRampUV(
 /** The gradient-space point scaled so its distance from the center *is* the
  *  ramp position, which is what makes the shader's half a `length`. */
 function radialRampUV(
-  g: Mat3, fill: Extract<FillStyle, { fill: 'radial-gradient' }>,
+  g: GlMat3, fill: Extract<FillStyle, { fill: 'radial-gradient' }>,
 ): GradientUV {
   // The floor is `gradFill`'s own `max(u_gradRadius, 0.0001)`.
   const k = 1 / Math.max(fill.radius, 1e-4);
@@ -1084,7 +1084,7 @@ function radialRampUV(
  * `fract` that follows takes care of the wrap either way.
  */
 function conicRampUV(
-  g: Mat3, fill: Extract<FillStyle, { fill: 'conic-gradient' }>,
+  g: GlMat3, fill: Extract<FillStyle, { fill: 'conic-gradient' }>,
 ): GradientUV {
   const cos = Math.cos(fill.angle);
   const sin = Math.sin(fill.angle);
@@ -1287,7 +1287,7 @@ function drawPathFillVColor(
 
 function setProjAndModel(
   ctx: DrawContext, prog: ShaderProgram,
-  model: Mat3 = ctx.state.transform,
+  model: GlMat3 = ctx.state.transform,
 ): void {
   const gl = ctx.gl;
   const uploaded = uploadedFor(ctx, prog);
@@ -1430,7 +1430,7 @@ function textureSize(source: HTMLImageElement | ImageBitmap): [number, number] {
  * a missing view is not worth a thrown frame. `null` when the space has no
  * inverse; a paint measured in it draws nothing.
  */
-function gradientSpaceInverse(ctx: DrawContext, units: GradientUnits | undefined): Mat3 | null {
+function gradientSpaceInverse(ctx: DrawContext, units: GradientUnits | undefined): GlMat3 | null {
   if (units === 'local') return mat3.invert(ctx.state.transform);
   if (units === 'world' && ctx.viewMatrix) return mat3.invert(ctx.viewMatrix);
   return mat3.identity();

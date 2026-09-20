@@ -21,7 +21,7 @@
  * tier.
  */
 
-import type { OutlineFontStyle } from './OutlineFace';
+import type { FontStyle } from '../fontStyle';
 import { createOpenTypeParser } from './opentypeParser';
 import { registerFontOutlines } from './outlineRegistry';
 
@@ -80,7 +80,7 @@ const WEIGHT_WORDS: readonly (readonly [string, number])[] = [
  * registers under a variant nothing asks for; it cannot mis-paint anything,
  * because resolution is an exact-match lookup that simply misses.
  */
-export function parseFontStyle(style: string): { weight: number; style: OutlineFontStyle } {
+export function parseFontStyle(style: string): { weight: number; style: FontStyle } {
   const s = style.toLowerCase();
   const italic = s.includes('italic') || s.includes('oblique');
   const weight = WEIGHT_WORDS.find(([word]) => s.includes(word))?.[1] ?? 400;

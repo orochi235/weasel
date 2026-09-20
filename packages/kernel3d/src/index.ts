@@ -18,7 +18,7 @@ export {
 export { UNIT_CUBE, pose3, poseMatrix, aabbOfPose, type Pose3 } from './pose3';
 export {
   screenToNdc, ndcToScreen, rayThroughScreenPoint, projectAabbToScreen,
-  type ChromeBox, type ScreenBox, type ViewportRect,
+  type ChromeBox, type ScreenBox,
 } from './screen';
 export {
   screenBoxOf, createNodeAtPoint, createAreaSelect, createSnap, createInsert,

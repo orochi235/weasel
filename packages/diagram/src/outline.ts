@@ -9,7 +9,10 @@
  */
 import { PathBuilder, polygonFromPoints, rectPath, type Path } from '@weasel-js/core/math';
 
-/** An axis-aligned box, in the shape `PoseDescriptor.getBounds` returns. */
+/** An axis-aligned box. This is `PoseDescriptor.getBounds`'s return shape
+ *  minus its optional `rotation`, deliberately: an outline is built in the
+ *  shape's own unrotated frame, and the caller reads rotation separately
+ *  through `getRotation` and applies it to the finished path. */
 export interface Bounds {
   x: number;
   y: number;

@@ -20,11 +20,14 @@ export interface Pose3 {
 /** The box a primitive occupies before its pose. A unit primitive centred on
  *  its own origin — which is what the kernel assumes nothing about — is
  *  `UNIT_CUBE`. */
-export const UNIT_CUBE: Aabb = { min: [-0.5, -0.5, -0.5], max: [0.5, 0.5, 0.5] };
+export const UNIT_CUBE: Aabb = {
+  min: { x: -0.5, y: -0.5, z: -0.5 },
+  max: { x: 0.5, y: 0.5, z: 0.5 },
+};
 
 export function pose3(
   position: Vec3,
-  scale: Vec3 = [1, 1, 1],
+  scale: Vec3 = { x: 1, y: 1, z: 1 },
   rotation: Quat = quatIdentity(),
 ): Pose3 {
   return { position, rotation, scale };

@@ -676,8 +676,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       if (result === 'unhandled') {
         dispatch({
           kind: 'contextmenu',
-          worldX: down.worldX,
-          worldY: down.worldY,
+          x: down.worldX,
+          y: down.worldY,
+          clientX: down.clientX,
+          clientY: down.clientY,
           ...shared,
         } as InputEvent);
       }
@@ -1154,7 +1156,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       )?.action.cursor;
       // A drag's hint first; failing that, what a click here would do.
       const cursor = dragCursor ?? dispatcherNow().resolveOnly(
-        { kind: 'click', worldX: w.x, worldY: w.y, pressX: w.x, pressY: w.y, ...where },
+        { kind: 'click', x: w.x, y: w.y, pressX: w.x, pressY: w.y, ...where },
         ctx,
       )?.action.cursor;
       applyHoverCursor(cursor ?? null);
@@ -1297,8 +1299,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           ctrlKey: e.ctrlKey,
           metaKey: e.metaKey,
           shiftKey: e.shiftKey,
-          worldX: wClick.x,
-          worldY: wClick.y,
+          x: wClick.x,
+          y: wClick.y,
+          clientX: e.clientX,
+          clientY: e.clientY,
           pressX: down.worldX,
           pressY: down.worldY,
           ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
@@ -1324,8 +1328,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
             ctrlKey: e.ctrlKey,
             metaKey: e.metaKey,
             shiftKey: e.shiftKey,
-            worldX: wClick.x,
-            worldY: wClick.y,
+            x: wClick.x,
+            y: wClick.y,
+            clientX: e.clientX,
+            clientY: e.clientY,
             ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
             ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
             ...(down.bodyKind !== undefined ? { bodyKind: down.bodyKind } : {}),
@@ -1405,8 +1411,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
-        worldX: w.x,
-        worldY: w.y,
+        x: w.x,
+        y: w.y,
+        clientX: e.clientX,
+        clientY: e.clientY,
         ...(affordance !== undefined ? { affordance } : {}),
         ...(menuBody?.body !== undefined ? { bodyTarget: menuBody.body } : {}),
         ...(menuBody?.kind !== undefined ? { bodyKind: menuBody.kind } : {}),

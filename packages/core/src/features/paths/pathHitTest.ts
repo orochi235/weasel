@@ -12,7 +12,8 @@
 import { forEachSegment, pointInPolygon, segmentsCross } from '@weasel-js/geom';
 import { pointInPath, type PointInPathOptions } from './hitTest';
 import { flattenCubic, flattenQuadratic, DEFAULT_FLATTEN_TOLERANCE } from './flatten';
-import type { Vec2, Rect } from 'core/geometry/polygonHitTestRect';
+import type { Vec2 } from 'core/geometry/vec2';
+import type { Rect } from 'core/geometry/polygonHitTestRect';
 import {
   PATH_M,
   PATH_L,

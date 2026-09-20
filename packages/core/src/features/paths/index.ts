@@ -64,7 +64,6 @@ export {
 } from 'core/geometry/polygonHitTestRect';
 export {
   translatePath,
-  translatePolygonInPlace,
   scalePathToBounds,
 } from './transform';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './pathInWorld';

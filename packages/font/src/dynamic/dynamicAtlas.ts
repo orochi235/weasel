@@ -13,6 +13,7 @@
  * layout advances the pen but emits no quad).
  */
 
+import type { FontStyle } from '../fontStyle';
 import type { BmFont, BmFontChar } from '../FontAtlas';
 import type { GlyphTextureSink } from '../textureSink';
 // `fallback.ts` imports nothing, so this edge cannot close a cycle; keep it
@@ -39,7 +40,7 @@ export const DEFAULT_BAKE_BUDGET = 16;
 export interface DynamicFace {
   family: string;
   weight: number;
-  style: 'normal' | 'italic';
+  style: FontStyle;
   /** BmFont-shaped view consumed by layoutRuns; charMap grows lazily. */
   font: BmFont;
   /** Char record for `cp`, measured on first request (advance always valid
@@ -178,7 +179,7 @@ export function unregisterCanvasFont(family: string): void {
  * through registerCanvasFont + resolveFontVariant.
  */
 export function getDynamicFace(
-  family: string, weight: number, style: 'normal' | 'italic',
+  family: string, weight: number, style: FontStyle,
 ): DynamicFace {
   const key = `${family}|${weight}|${style}`;
   const existing = faces.get(key);

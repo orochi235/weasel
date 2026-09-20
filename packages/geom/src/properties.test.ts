@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { cubicBounds, cubicEvalAt, elevateQuadraticToCubic } from './curve';
 import { flattenCubic } from './flatten';
-import { identity, invert, multiply, applyToPoint, rotateAboutPoint, boxToBox } from './mat3';
+import { identity, invert, multiply, applyToPoint, rotateAboutPoint, boxToBox, type Mat3 } from './mat3';
 import { approxEq } from './scalar';
 import { boundsOfCoords, boxContainsPoint } from './box';
 import { transformCoords } from './affine';
@@ -102,7 +102,7 @@ describe('mat3', () => {
   it('m · invert(m) is the identity', () => {
     const r = rng(6);
     for (let i = 0; i < RUNS; i++) {
-      const m = [
+      const m: Mat3 = [
         (r() - 0.5) * 20, (r() - 0.5) * 20,
         (r() - 0.5) * 20, (r() - 0.5) * 20,
         (r() - 0.5) * 2000, (r() - 0.5) * 2000,
@@ -143,7 +143,8 @@ describe('mat3', () => {
   it('transformCoords agrees with applyToPoint', () => {
     const r = rng(9);
     for (let i = 0; i < RUNS; i++) {
-      const m = Array.from({ length: 6 }, () => (r() - 0.5) * 20);
+      const c = () => (r() - 0.5) * 20;
+      const m: Mat3 = [c(), c(), c(), c(), c(), c()];
       const coords = Array.from({ length: 10 }, () => (r() - 0.5) * 2000);
       const out = transformCoords(coords, m);
       for (let k = 0; k < coords.length; k += 2) {
