@@ -1,8 +1,5 @@
 import { forEachSegment, rectToContour } from '@weasel-js/geom';
 import {
-  type Path,
-  type PolygonPath,
-  type RectPath,
   PATH_M,
   PATH_L,
   PATH_Z,
@@ -11,7 +8,8 @@ import {
   DEFAULT_FLATTEN_TOLERANCE,
   flattenCubicWithArcLen,
   flattenQuadraticWithArcLen,
-} from '@weasel-js/core';
+} from '@weasel-js/geom';
+import type { Path, PolygonPath, RectPath } from '../../../core/geometry/path';
 
 export interface Polyline {
   /** Interleaved x,y vertices (length = 2 × point count). */
