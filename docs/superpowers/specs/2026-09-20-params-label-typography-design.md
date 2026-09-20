@@ -52,6 +52,20 @@ one row — with no prop drilling and no `!important`.
 consumer that changes nothing sees one change only — pair-cell labels stop being the
 exception.
 
+### Declare the defaults inside `:where()`
+
+`:where(.panel) { --wzl-params-label-case: uppercase; … }`, not `.panel { … }`. `:where()`
+contributes no specificity, so *any* consumer selector beats it and overriding never turns
+into a specificity fight or an `!important`.
+
+This is not hypothetical. The runtime theme sheet emits
+`[data-wzl-theme][data-wzl-mode][data-wzl-density]` — (0,3,0) — and a consumer override
+written at the same (0,3,0) ties and loses on source order, because adopted stylesheets
+cascade after the document's own. A consumer hit exactly that when the density axis
+landed: its token override stopped applying and the app silently fell back to the default
+density, with nothing in the console. Defaults a consumer is *expected* to replace must be
+cheap to outrank, and `:where()` is how this repo already does that in `theme/base.less`.
+
 ### Width is what makes alignment real
 
 `text-align` does nothing while a label box is only as wide as its text, which is what
