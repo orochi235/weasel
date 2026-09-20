@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { ANGLE_RADIANS, prefUnit } from '@weasel-js/core';
 import { PropertyRow } from '@weasel-js/ui';
 import { useState } from 'react';
 import { f } from '../config/builder';
@@ -222,6 +223,46 @@ export const Nested: Story = {
   render: () => {
     const schema = resolveConfigSchema(nested, []);
     const [config, setConfig] = useState<Record<string, unknown>>(nested.defaults());
+    return (
+      <>
+        <ControlPanel
+          schema={schema}
+          config={config}
+          setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+        />
+        <pre>{JSON.stringify(config, null, 2)}</pre>
+      </>
+    );
+  },
+};
+
+const degrees = prefUnit(ANGLE_RADIANS, 'deg', { precision: 1 });
+
+const presentation = f.schema({
+  x: f.number(120).label('X').pair('Offset'),
+  y: f.number(-40).label('Y').pair('Offset'),
+  spin: f
+    .number(Math.PI / 4)
+    .range(0, Math.PI * 2)
+    .unit(degrees)
+    .label('Rotation'),
+  nudge: f
+    .number(Math.PI / 180)
+    .input()
+    .unit(degrees)
+    .label('Nudge'),
+  tint: f.color('#3a86ffcc').alpha().label('Tint'),
+  opaque: f.color('#3a86ff').label('Grid'),
+});
+
+/** The three presentation fields a leaf can declare: `pair` puts `X` and `Y`
+ *  on one row the pair names, `unit` stores radians and edits degrees, and
+ *  `alpha` gives the swatch an opacity track and stores `#rrggbbaa`. The dump
+ *  shows what each control actually wrote. */
+export const Presentation: Story = {
+  render: () => {
+    const schema = resolveConfigSchema(presentation, []);
+    const [config, setConfig] = useState<Record<string, unknown>>(presentation.defaults());
     return (
       <>
         <ControlPanel

@@ -6,7 +6,9 @@ import {
   NumberRow,
   type PrefGroup,
   type PrefLeaf,
+  type PrefNumber,
   type PrefNumberFormat,
+  type PrefNumberUnit,
   type PropertyAlign,
   type PropertyDensity,
   PropertyGroup,
@@ -14,6 +16,8 @@ import {
   type PropertyListPack,
   PropertyRow,
   type PropertyRowLayout,
+  prefDisplayBounds,
+  Select,
   SelectRow,
   SliderRow,
   TextRow,
@@ -238,6 +242,58 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     );
   };
 
+  /**
+   * The leaf at `path` if it may share a row with its neighbours: `pair` is
+   * presentational, so a leaf whose control the lab draws itself, or one whose
+   * control needs the whole row, keeps its own row instead.
+   */
+  const pairable = (path: string): { leaf: PrefLeaf; pair: string } | undefined => {
+    const found = schemaNodeAtPath(resolved.group, path);
+    if (!found || !isPrefLeaf(found)) return undefined;
+    const pair = extra<string>(found, 'pair');
+    if (pair === undefined) return undefined;
+    if (!isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden))
+      return undefined;
+    if (renderers?.[path] ?? resolved.renderers[path] ?? renderers?.[found.kind]) return undefined;
+    if (!isBuiltinToolPref(found)) return undefined;
+    if (found.kind === 'paint' || found.kind === 'object' || isSliderLeaf(found)) return undefined;
+    return { leaf: found, pair };
+  };
+
+  /** A run of sibling paths as rows, merging each run of adjacent leaves
+   *  sharing a `pair` id into one row named by the pair. */
+  const rowsFor = (paths: readonly string[], rows: Rows): ReactNode[] => {
+    const out: ReactNode[] = [];
+    for (let i = 0; i < paths.length; ) {
+      const head = pairable(paths[i]);
+      if (!head) {
+        out.push(node(paths[i], rows));
+        i += 1;
+        continue;
+      }
+      const { pair } = head;
+      const cells = [{ path: paths[i], leaf: head.leaf }];
+      let j = i + 1;
+      for (; j < paths.length; j += 1) {
+        const next = pairable(paths[j]);
+        if (!next || next.pair !== pair) break;
+        cells.push({ path: paths[j], leaf: next.leaf });
+      }
+      out.push(
+        <PairedRow
+          key={paths[i]}
+          label={pair}
+          cells={cells}
+          shown={shown}
+          setConfig={setConfig}
+          layout={rows.layout}
+        />,
+      );
+      i = j;
+    }
+    return out;
+  };
+
   /** One group's children: its loose nodes, then its sections. */
   const body = (group: PrefGroup, at: string, rows: Rows): ReactNode => {
     const sections = resolved.sections.filter((s) => s.at === at);
@@ -245,7 +301,10 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     const paths = Object.keys(group.children).map((key) => (at === '' ? key : `${at}.${key}`));
     return (
       <>
-        {paths.filter((p) => !sectioned.has(p)).map((p) => node(p, rows))}
+        {rowsFor(
+          paths.filter((p) => !sectioned.has(p)),
+          rows,
+        )}
         {sections.map((section) => {
           const inner = sectionRows(section, rows);
           return (
@@ -254,7 +313,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
               title={section.label}
               {...fold(sectionKey(section), section.collapsed, inner.grid)}
             >
-              {section.paths.map((p) => node(p, inner))}
+              {rowsFor(section.paths, inner)}
             </PropertyGroup>
           );
         })}
@@ -351,11 +410,17 @@ function ControlRow<TC extends Record<string, unknown>>({
   // place its resolved value can be read. Every other control renders its own
   // value, and repeating it there says it twice and wraps the narrow slot.
   const readsItsOwnValue = !isSliderLeaf(leaf);
+  // A readout says what the control would say, so it reads in the display
+  // unit: a radian in a row that edits degrees is a different number.
+  const readoutValue =
+    leaf.kind === 'number' && typeof resolvedValue === 'number'
+      ? numberField(leaf, resolvedValue).shown
+      : resolvedValue;
   const autoReadout = !isAutoRow
     ? undefined
     : resolvedValue === undefined || readsItsOwnValue
       ? 'auto'
-      : `auto · ${String(resolvedValue)}`;
+      : `auto · ${String(readoutValue)}`;
   const autoProps = { auto: isAutoRow, onAutoChange, 'data-auto-path': canAuto ? path : undefined };
 
   useEffect(() => {
@@ -385,22 +450,20 @@ function ControlRow<TC extends Record<string, unknown>>({
 
   switch (leaf.kind) {
     case 'number': {
-      const min = extra<number>(leaf, 'min');
-      const max = extra<number>(leaf, 'max');
-      const step = extra<number>(leaf, 'step');
-      const suffix = extra<string>(leaf, 'suffix');
+      const field = numberField(leaf, read<number>());
+      const suffix = extra<string>(leaf, 'suffix') ?? field.unit?.suffix;
       const notation = extra<PrefNumberFormat>(leaf, 'format');
-      if (extra<string>(leaf, 'control') === 'slider' && min !== undefined && max !== undefined) {
+      if (isSliderLeaf(leaf)) {
         return (
           <SliderRow
             label={label}
-            value={read<number>()}
-            min={min}
-            max={max}
-            step={step}
+            value={field.shown}
+            min={field.min as number}
+            max={field.max as number}
+            step={field.step}
             notation={notation}
             unit={suffix}
-            onChange={write}
+            onChange={(n) => write(field.store(n))}
             readout={autoReadout}
             layout={layout}
             span={wide}
@@ -412,17 +475,15 @@ function ControlRow<TC extends Record<string, unknown>>({
       // NumberRow commits every keystroke and does not clamp, so the bounds a
       // schema declares are enforced here — an instrument should never be
       // handed a config value outside the range it asked for.
-      const lo = min ?? Number.NEGATIVE_INFINITY;
-      const hi = max ?? Number.POSITIVE_INFINITY;
       return (
         <NumberRow
           label={label}
-          value={read<number>()}
-          min={min}
-          max={max}
-          step={step}
+          value={field.shown}
+          min={field.min}
+          max={field.max}
+          step={field.step}
           unit={suffix}
-          onChange={(n) => write(Math.min(hi, Math.max(lo, n)))}
+          onChange={(n) => write(field.store(n))}
           readout={autoReadout}
           layout={layout}
           description={description}
@@ -474,18 +535,31 @@ function ControlRow<TC extends Record<string, unknown>>({
           {...autoProps}
         />
       );
-    case 'color':
+    case 'color': {
+      // `ColorRow` takes alpha as a number beside a `#rrggbb` swatch, so an
+      // `#rrggbbaa` value has to be split going in and rejoined coming out —
+      // handed whole to the swatch, the browser cannot parse it and the first
+      // edit writes back black.
+      const common = {
+        label,
+        readout: autoReadout,
+        layout,
+        description,
+        ...autoProps,
+      };
+      if (extra<boolean>(leaf, 'alpha') !== true)
+        return <ColorRow {...common} value={read<string>()} onChange={write} />;
+      const { rgb, alpha } = splitHexAlpha(read<string>());
       return (
         <ColorRow
-          label={label}
-          value={read<string>()}
-          onChange={write}
-          readout={autoReadout}
-          layout={layout}
-          description={description}
-          {...autoProps}
+          {...common}
+          value={rgb}
+          onChange={(next) => write(joinHexAlpha(next, alpha))}
+          alpha={alpha}
+          onAlphaChange={(next) => write(joinHexAlpha(rgb, next))}
         />
       );
+    }
     case 'paint':
     case 'object':
       // Declined: a hex swatch would write a solid over a gradient, and a flat
@@ -521,9 +595,7 @@ function UnwiredRow({
   );
 }
 
-/** Text writes are debounced so typing does not re-run the instrument on every
- *  keystroke, which means the row is locally controlled between commits and has
- *  to notice when the config changes underneath it. */
+/** A text row whose writes are debounced — see {@link useDebouncedText}. */
 function DebouncedTextRow({
   leaf,
   label,
@@ -549,7 +621,253 @@ function DebouncedTextRow({
   onAutoChange?: (next: boolean) => void;
   'data-auto-path'?: string;
 }) {
-  const debounceMs = extra<number>(leaf, 'debounceMs') ?? 150;
+  const text = useDebouncedText(
+    value,
+    write as (v: string) => void,
+    extra<number>(leaf, 'debounceMs') ?? 150,
+  );
+
+  return (
+    <TextRow
+      label={label}
+      readout={readout}
+      layout={layout}
+      span={span}
+      description={description}
+      auto={auto}
+      onAutoChange={onAutoChange}
+      data-auto-path={autoPath}
+      value={text.local}
+      placeholder={extra<string>(leaf, 'placeholder')}
+      maxLength={extra<number>(leaf, 'maxLength')}
+      onChange={text.type}
+    />
+  );
+}
+
+/**
+ * A number leaf's field in the unit it is edited in: what the control shows,
+ * the bounds it shows them against, and what a typed number stores once it is
+ * clamped and converted back. Without a `unit` this is what the leaf declares,
+ * unchanged.
+ */
+function numberField(
+  leaf: PrefLeaf,
+  value: number,
+): {
+  unit: PrefNumberUnit | undefined;
+  min: number | undefined;
+  max: number | undefined;
+  step: number | undefined;
+  shown: number;
+  store: (shown: number) => number;
+} {
+  const unit = extra<PrefNumberUnit>(leaf, 'unit');
+  // `min`, `max` and `step` are declared in the stored unit alongside the
+  // value, so they convert with it — a leaf storing radians and showing
+  // degrees would otherwise clamp typed degrees against 0..6.28.
+  const bounds = unit
+    ? prefDisplayBounds(leaf as PrefNumber)
+    : {
+        min: extra<number>(leaf, 'min'),
+        max: extra<number>(leaf, 'max'),
+        step: extra<number>(leaf, 'step'),
+      };
+  const lo = bounds.min ?? Number.NEGATIVE_INFINITY;
+  const hi = bounds.max ?? Number.POSITIVE_INFINITY;
+  return {
+    unit,
+    min: bounds.min,
+    max: bounds.max,
+    step: bounds.step,
+    shown: unit ? unit.toDisplay(value) : value,
+    store: (shown) => {
+      const clamped = Math.min(hi, Math.max(lo, shown));
+      return unit ? unit.fromDisplay(clamped) : clamped;
+    },
+  };
+}
+
+/** `#rgb`, `#rgba`, `#rrggbb` or `#rrggbbaa` as the `#rrggbb` an
+ *  `<input type="color">` can hold and the 0..1 alpha beside it. Anything else
+ *  reads as opaque black, which is what the input would show for it anyway. */
+function splitHexAlpha(value: string): { rgb: string; alpha: number } {
+  const digits = /^#([0-9a-f]{3,8})$/i.exec(value?.trim() ?? '')?.[1];
+  const twice = (s: string): string =>
+    s
+      .split('')
+      .map((c) => c + c)
+      .join('');
+  const byte = (s: string): number => Number.parseInt(s, 16) / 255;
+  switch (digits?.length) {
+    case 3:
+      return { rgb: `#${twice(digits)}`, alpha: 1 };
+    case 4:
+      return { rgb: `#${twice(digits.slice(0, 3))}`, alpha: byte(twice(digits.slice(3))) };
+    case 6:
+      return { rgb: `#${digits}`, alpha: 1 };
+    case 8:
+      return { rgb: `#${digits.slice(0, 6)}`, alpha: byte(digits.slice(6)) };
+    default:
+      return { rgb: '#000000', alpha: 1 };
+  }
+}
+
+/** A `#rrggbb` and a 0..1 alpha back into the `#rrggbbaa` the config holds. */
+function joinHexAlpha(rgb: string, alpha: number): string {
+  const byte = Math.max(0, Math.min(255, Math.round(alpha * 255)));
+  return `${rgb}${byte.toString(16).padStart(2, '0')}`;
+}
+
+/** One cell of a paired row, with its path and the leaf it draws. */
+interface PairCellSpec {
+  path: string;
+  leaf: PrefLeaf;
+}
+
+/**
+ * Leaves sharing a `pair` id, side by side on one row the pair names — the
+ * compact `X` / `Y` idiom `SelectionPanel` draws for the same annotation.
+ *
+ * The cells are bare controls: a row holds one label column, so each leaf's
+ * own name stays with its control as the accessible name and its description
+ * as a title. For the same reason the row carries no pin dot — a dot names one
+ * path, and this row has several.
+ */
+function PairedRow<TC extends Record<string, unknown>>({
+  label,
+  cells,
+  shown,
+  setConfig,
+  layout,
+}: {
+  label: string;
+  cells: readonly PairCellSpec[];
+  shown: TC;
+  setConfig: (path: string, value: unknown) => void;
+  layout?: PropertyRowLayout;
+}) {
+  return (
+    <PropertyRow group label={label} layout={layout}>
+      {cells.map(({ path, leaf }) => (
+        <PairCell
+          key={path}
+          leaf={leaf}
+          value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
+          write={(value) => setConfig(path, value)}
+        />
+      ))}
+    </PropertyRow>
+  );
+}
+
+/** The control a paired cell holds, without the row chrome a whole row of its
+ *  own would bring. */
+function PairCell({
+  leaf,
+  value,
+  write,
+}: {
+  leaf: PrefLeaf;
+  value: unknown;
+  write: (value: unknown) => void;
+}) {
+  const name = leaf.name;
+  const title = leaf.description;
+  const text = useDebouncedText(
+    typeof value === 'string' ? value : '',
+    write,
+    extra<number>(leaf, 'debounceMs') ?? 150,
+  );
+  switch (leaf.kind) {
+    case 'number': {
+      const field = numberField(leaf, typeof value === 'number' ? value : 0);
+      return (
+        <input
+          type="number"
+          aria-label={name}
+          title={title}
+          value={field.shown}
+          min={field.min}
+          max={field.max}
+          step={field.step}
+          onChange={(e) => {
+            const n = Number(e.target.value);
+            if (e.target.value !== '' && Number.isFinite(n)) write(field.store(n));
+          }}
+        />
+      );
+    }
+    case 'boolean':
+      return (
+        <input
+          type="checkbox"
+          aria-label={name}
+          title={title}
+          checked={value === true}
+          onChange={(e) => write(e.target.checked)}
+        />
+      );
+    case 'string':
+      return (
+        <input
+          type="text"
+          aria-label={name}
+          title={title}
+          value={text.local}
+          placeholder={extra<string>(leaf, 'placeholder')}
+          maxLength={extra<number>(leaf, 'maxLength')}
+          onChange={(e) => text.type(e.target.value)}
+        />
+      );
+    case 'color': {
+      // The alpha track needs a row of its own to sit under, so a paired
+      // swatch edits the color and carries the stored alpha through untouched.
+      const { rgb, alpha } = splitHexAlpha(typeof value === 'string' ? value : '');
+      const carriesAlpha = extra<boolean>(leaf, 'alpha') === true;
+      return (
+        <input
+          type="color"
+          aria-label={name}
+          title={title}
+          value={rgb}
+          onChange={(e) =>
+            write(carriesAlpha ? joinHexAlpha(e.target.value, alpha) : e.target.value)
+          }
+        />
+      );
+    }
+    case 'enum': {
+      const options = extra<readonly { value: string; label: string }[]>(leaf, 'options') ?? [];
+      // `Select` takes no `title`, so the cell's help hangs off a wrapper.
+      return (
+        <span title={title}>
+          <Select<string>
+            variant="bare"
+            aria-label={name}
+            options={options}
+            selectedKey={typeof value === 'string' ? value : null}
+            onSelectionChange={write}
+          />
+        </span>
+      );
+    }
+    default:
+      // Unreachable: `pairable` admits only the kinds above.
+      return null;
+  }
+}
+
+/**
+ * Live text held locally between debounced commits, so typing does not re-run
+ * the instrument on every keystroke. Locally controlled between commits, which
+ * means it has to notice the value changing underneath it.
+ */
+function useDebouncedText(
+  value: string,
+  write: (value: string) => void,
+  debounceMs: number,
+): { local: string; type: (next: string) => void } {
   const [local, setLocal] = useState(value);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastExternal = useRef(value);
@@ -568,29 +886,17 @@ function DebouncedTextRow({
     [],
   );
 
-  return (
-    <TextRow
-      label={label}
-      readout={readout}
-      layout={layout}
-      span={span}
-      description={description}
-      auto={auto}
-      onAutoChange={onAutoChange}
-      data-auto-path={autoPath}
-      value={local}
-      placeholder={extra<string>(leaf, 'placeholder')}
-      maxLength={extra<number>(leaf, 'maxLength')}
-      onChange={(next) => {
-        setLocal(next);
-        if (timer.current) clearTimeout(timer.current);
-        const commit = () => {
-          lastExternal.current = next;
-          write(next);
-        };
-        if (debounceMs === 0) commit();
-        else timer.current = setTimeout(commit, debounceMs);
-      }}
-    />
-  );
+  return {
+    local,
+    type: (next) => {
+      setLocal(next);
+      if (timer.current) clearTimeout(timer.current);
+      const commit = () => {
+        lastExternal.current = next;
+        write(next);
+      };
+      if (debounceMs === 0) commit();
+      else timer.current = setTimeout(commit, debounceMs);
+    },
+  };
 }

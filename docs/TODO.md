@@ -317,6 +317,17 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 - **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Selector matching is the missing piece; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
 
+- **(P3) The marker builders are not on a barrel.** `circlePath`, `squarePath`,
+  `linePath` and `rectMarkerPath` live in
+  `packages/core/src/features/paths/markers.ts`, which nothing re-exports, so a
+  consumer building overlay chrome reimplements the sample loop. The module's
+  own docstring already frames them as the shared math for "selection chrome,
+  anchor markers, rubber-band rects, and similar transient/decorative
+  geometry" — that is consumer surface as much as kit surface. Export them, and
+  add the `roundRectPath(x, y, w, h, r, cornerSamples?)` that is missing
+  entirely (`grep roundRect` finds only a `ctx.roundRect` inside the canvas2d
+  `renderLabel`), returning `PolygonPath` like its siblings.
+
 ### Pathfinder follow-ups (post-v1)
 
 Core five + Crop shipped. Remaining:
@@ -373,6 +384,17 @@ Core five + Crop shipped. Remaining:
   gradients are not (their ramp is 1-D, so 256 covers any size). The bake is
   keyed by paint identity in a `WeakMap`, so a size-aware bake would need the
   draw scale in the key — `packages/core/src/features/meshPaint/bake.ts`.
+
+- **(P3) `flattenTolerance` does not reach `<Canvas>` or `<SceneCanvas>`.**
+  `WeaselRendererOptions.flattenTolerance` is the knob that keeps curve
+  flattening correct when the world unit is not a pixel: the default
+  `DEFAULT_FLATTEN_TOLERANCE = 0.5` is a path-local length, so a scene authored
+  in feet or inches flattens a sub-unit curve to a four-vertex diamond and a
+  consumer works around it by pre-sampling its own polygons. The headless path
+  already solves this — `renderSceneToPixels` takes `flattenTolerancePx` and
+  divides by the render scale — but nothing in `packages/core/src/canvas/`
+  forwards it to the on-screen renderer, so every React consumer is pinned to
+  0.5. Add it to `CanvasProps` and thread it to the renderer construction.
 
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
@@ -509,7 +531,22 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/core/src/features/text/atlas/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs.
 
-- **(P3) eric `labelHelpers.ts` deletion check.** Investigate whether eric (`~/src/eric`) can delete its local `labelHelpers.ts` after the text world-unit pass landed. If consumer-side world-unit helpers still cover gaps the primitives don't (e.g. world↔screen pad conversion at the call site), capture the remaining gap as a follow-up primitive proposal.
+- **(P2) `{ px }` screen-pixel units for `fontSize` and `letterSpacing`.**
+  `Stroke.width` and `MarkerRef.size` already take `number | { px: number }`
+  (`packages/paint/src/paint.ts:168`), resolved against the accumulated
+  transform scale at draw time by `resolveStrokeWidth`
+  (`packages/core/src/features/paths/tessellate/stroke.ts`), so a stroke holds
+  its on-screen thickness as the view zooms with no call-site arithmetic.
+  `TextStyle.fontSize` and `letterSpacing` (`packages/text/src/textStyle.ts`)
+  are world-units-only, so every label that wants to stay legible under zoom
+  divides by the scale by hand before building the command. The kit does it to
+  itself in `paintedCursorLayer.ts` and `useDispatcherOverlayLayer.ts`, both
+  computing `(view.scale.x + view.scale.y) / 2` to un-scale chrome. Widen both
+  fields and resolve them in `resolveTextStyle` — the single funnel all three
+  of `textCommand`, `textCommandFromRuns` and `textCommandFromPose` pass
+  through — taking the mean transform scale the way `resolveStrokeWidth` does.
+  `ResolvedTextStyle` keeps a plain `number`, so layout, measurement and the
+  edit overlay are untouched.
 
 - **(P3) Small caps and `text-transform` have no run spelling.** The two
   remaining gaps in the run style model after the superscript pass. Both are
@@ -685,14 +722,6 @@ limit. A platformer in `apps/site/demos/` is a deliberate exception to the
 terse, single-purpose demo convention: an exception, not a precedent.
 
 What it surfaced:
-
-- **(P2) A `LayerGroup` member named `scene` matches nothing once the slot
-  splits.** A scene with declared layers draws as one canvas layer per scene
-  layer (`scene:<layerId>`), so a group listing `scene` silently groups nothing
-  from it; slot anchoring (`before: 'scene'`) resolves the same name fine. The
-  demo names `scene:tiles`, `scene:entities` and `scene:player` by hand. Either
-  `scene` should expand to the whole split slot in a group, or a member that
-  matches no layer should warn.
 
 - **(P2) Convert the platformer's eleven bones to parenting.** The rig is
   still resolved to world matrices and flattened onto independent bone nodes
@@ -925,16 +954,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   sits in a two-column grid with nowhere obvious to put a paragraph. Wants a
   browser to decide the shape, not a guess.
 
-- **(P3) `ControlPanel` ignores three `Pref*` presentation fields.** `control:
-  'switch'` draws a checkbox and `control: 'radio'` draws a segmented
-  `ToggleRow`; both are reasonable renderings, and `PrefsForm` honors the
-  distinction. `pair` is not honored at all. Two more were deliberately kept out
-  of the builder rather than shipped inert, because ignoring them corrupts a
-  value rather than an appearance: `unit` (a number stored in radians and
-  displayed in degrees would be edited raw) and `alpha` (`ColorRow` takes alpha
-  as a separate 0..1 value, so an `#rrggbbaa` default truncates on first edit).
-  Honoring those two means teaching `ControlPanel` a hex-alpha split and a unit
-  conversion.
+- **(P3) `ControlPanel` draws `control: 'switch'` as a checkbox.** `PrefsForm`
+  draws a `<Switch>` for the same leaf. `BooleanNode.toggle()` documents the
+  difference; closing it needs a `SwitchRow` among `@weasel-js/ui`'s property
+  rows.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
@@ -948,13 +971,32 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   content. So this is a choice between the two mounts, not a CSS fix; the
   storybook browser project is what checks either one.
 
-- **(P3) There is no `--wzl-handle-*` token.** Timeline's dope-sheet `.key`
-  (9px), CurveEditor's endpoint (10px) and `createKeyframeLayer`'s key (9px)
-  are all 45°-rotated squares sized independently. A CSS token only reaches the
-  first: `createKeyframeLayer` sizes its diamond with SVG `x`/`y`/`width`/`height`
-  attributes from `KEY_HALF`, which its hit test also reads, so sharing a token
-  means moving that geometry into CSS (SVG2 geometry properties) or reading the
-  token back in JS.
+- **(P3) Two CurveEditor handles are still literals.** The `--wzl-handle-size`
+  family covers the 45°-rotated squares; the round ranks did not fold into it,
+  because a radius is not a diamond edge. The plain anchor circle (`r={4}` in
+  `createFunctionLayer`) and the bezier control handle (`HANDLE_RADIUS = 3.5` in
+  `createKeyframeLayer`) are the two left. Either add `--wzl-handle-dot-size`
+  for the round ranks or restate the family in terms of diameter — it is a
+  visual call that wants a browser.
+
+- **(P2) The ten consumer override hooks are declared only in a build script.**
+  `--wzl-property-readout-w`, `--wzl-swatch-size`, `--wzl-number-field-width`,
+  `--wzl-timeline-label-w` and six others are read with a fallback and
+  deliberately declared by no theme, so they appear in neither `tokens.css`, the
+  generated manifest, nor any doc. The list lives in `HOOKS` in
+  `scripts/check-token-reads.ts`, which exists to stop them failing the
+  undeclared-read check — so a consumer restyling the kit finds them by reading
+  kit CSS. The open decision is where they belong: a documented section of the
+  token manifest carrying a `hook` type, or a generated appendix to `tokens.css`
+  as commented-out declarations.
+
+- **(P3) The slider mix tokens are read bare while the size tokens beside them
+  carry defaults.** `range.module.css` and `Slider/Slider.module.css` read
+  `--wzl-slider-track-mix` and `--wzl-slider-thumb-mix` with no fallback inside
+  a `color-mix`, so an unset one invalidates the whole `background` and the
+  thumb paints nothing. `--wzl-slider-track-h` and `--wzl-slider-thumb-size`
+  took fallbacks on those same rules for exactly that failure; the mix half did
+  not, so the two halves of one rule disagree about how they degrade.
 
 - **(P3) Typed units stop at linear factors.** `SelectionPanel` and `PrefsForm`
   read `12mm` into a unit leaf through `UnitField`, and `prefUnit` builds the

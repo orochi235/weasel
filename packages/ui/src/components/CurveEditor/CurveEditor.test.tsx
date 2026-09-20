@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { CurveEditor, type ControlPoint } from './CurveEditor';
+import { handleSize } from '../../handles';
 
 describe('CurveEditor — rendering', () => {
   it('renders an SVG with the configured width and height', () => {
@@ -460,6 +461,34 @@ describe('CurveEditor — endpoint constraints', () => {
       clientX: 0, clientY: 100, pointerId: 9, shiftKey: true,
     });
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  // The drawn size is an SVG geometry attribute, so it is readable here; the
+  // token it comes from is not, because jsdom resolves no var(). Asserting the
+  // attribute against `handleSize` stands in for the visual claim that an
+  // endpoint and a locked point are the two off-default handle ranks.
+  it('draws endpoint and locked diamonds at the handle ranks the theme sets', () => {
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5, locked: true }, { x: 1, y: 1 }]}
+        onInput={() => {}}
+        width={200}
+        height={100}
+      />,
+    );
+    const marks = container.querySelectorAll('rect[data-anchor-index]');
+    expect(marks.length).toBe(3);
+    const edge = (el: Element) => Number(el.getAttribute('width'));
+    expect(edge(marks[0])).toBe(handleSize('--wzl-handle-size-lg'));
+    expect(edge(marks[2])).toBe(handleSize('--wzl-handle-size-lg'));
+    expect(edge(marks[1])).toBe(handleSize('--wzl-handle-size-sm'));
+    for (const m of marks) {
+      expect(m.getAttribute('height')).toBe(m.getAttribute('width'));
+      // Centered on its point: the rotate() origin is the point itself.
+      const [, cx, cy] = /rotate\(45 ([\d.]+) ([\d.]+)\)/.exec(m.getAttribute('transform')!)!;
+      expect(Number(m.getAttribute('x'))).toBeCloseTo(Number(cx) - edge(m) / 2);
+      expect(Number(m.getAttribute('y'))).toBeCloseTo(Number(cy) - edge(m) / 2);
+    }
   });
 
   it('renders pinned endpoints with the pinned visual class', () => {

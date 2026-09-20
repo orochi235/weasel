@@ -1,5 +1,6 @@
 export { THEMES, THEME_SOURCES, BAKED_THEMES, type TokenName, type GeneratedTheme } from './generated/themes';
 export { TOKEN_MANIFEST, type TokenManifestEntry } from './generated/manifest';
+export { tokenPx } from './tokenPx';
 
 export { defineTheme, weaselTheme, type Theme, type ThemeInput } from './theme';
 export { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';

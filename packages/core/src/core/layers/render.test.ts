@@ -404,10 +404,57 @@ describe('layer groups', () => {
     expect(out).toEqual([{ kind: 'group', effects: fx, children: [a, c] }]);
   });
 
-  it('ignores a named layer that is not in the stack', () => {
+  it('drops a named layer that is not in the stack, and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const a = cmd('#a');
     const out = run([screenLayer('a', [a])], [{ id: 'world', layers: ['a', 'ghost'], effects: fx }]);
     expect(out).toEqual([{ kind: 'group', effects: fx, children: [a] }]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain('ghost');
+    warn.mockRestore();
+  });
+
+  it('claims every layer under a member naming a namespace, and does not warn', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const t = cmd('#t'), e = cmd('#e'), p = cmd('#p');
+    const out = run(
+      [screenLayer('scene:tiles', [t]), screenLayer('scene:entities', [e]), screenLayer('scene:player', [p])],
+      [{ id: 'world', layers: ['scene'], effects: fx }],
+    );
+    expect(out).toEqual([{ kind: 'group', effects: fx, children: [t, e, p] }]);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('claims both a layer and the namespace it heads', () => {
+    const s = cmd('#s'), t = cmd('#t');
+    const out = run(
+      [screenLayer('scene', [s]), screenLayer('scene:tiles', [t])],
+      [{ id: 'world', layers: ['scene'], effects: fx }],
+    );
+    expect(out).toEqual([{ kind: 'group', effects: fx, children: [s, t] }]);
+  });
+
+  it('takes one group naming a layer both ways as redundant, not as a conflict', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const t = cmd('#t');
+    const out = run(
+      [screenLayer('scene:tiles', [t])],
+      [{ id: 'world', layers: ['scene', 'scene:tiles'], effects: fx }],
+    );
+    expect(out).toEqual([{ kind: 'group', effects: fx, children: [t] }]);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('does not treat a shared prefix without the separator as a namespace', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const a = cmd('#a');
+    const out = run([screenLayer('scenery', [a])], [{ id: 'world', layers: ['scene'], effects: fx }]);
+    expect(out).toEqual([a]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain('scene');
+    warn.mockRestore();
   });
 
   it('brackets each run separately and warns when a group is not consecutive', () => {
