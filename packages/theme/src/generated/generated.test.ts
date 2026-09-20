@@ -117,7 +117,7 @@ describe('generated manifest.ts', () => {
     expect(line).toMatchObject({ type: 'color', group: 'line' });
   });
 
-  it('carries descriptions through for the Storybook panel', () => {
+  it('carries descriptions through for the CSS-vars panel', () => {
     const tb = TOKEN_MANIFEST.find((t) => t.name === '--wzl-tb-height');
     expect(tb?.description).toMatch(/toolbar/i);
   });

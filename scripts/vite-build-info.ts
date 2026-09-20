@@ -2,7 +2,7 @@
  * Build-time identity for anything bundled out of this repo: which kit
  * version the code came from, and when it was compiled.
  *
- * In-repo apps, dev servers, storybook, and vitest all resolve `@weasel-js/*`
+ * In-repo apps, dev servers, forge, and vitest all resolve `@weasel-js/*`
  * to package *source* via `weaselAliases`, so the version baked into each
  * package's published `dist` never reaches them. Every config that builds kit
  * source therefore has to re-apply the same defines — hence one helper rather

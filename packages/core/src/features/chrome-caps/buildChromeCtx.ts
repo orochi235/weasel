@@ -8,8 +8,8 @@
  * Sources are passed as plain getters / values rather than the live
  * objects they come from. This keeps `chrome-caps` from depending on
  * React, the dispatcher's concrete type, or `ChromeState`'s bounds
- * machinery — the same builder works from a test harness, a Storybook
- * fixture, or `<SceneCanvas>`.
+ * machinery — the same builder works from a test harness, a forge
+ * story, or `<SceneCanvas>`.
  */
 
 import type { NodeId } from '../../core/scene/types';

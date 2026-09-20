@@ -85,7 +85,7 @@ export function findUndeclaredReads(
   return out;
 }
 
-const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-demo', 'dist-examples', 'storybook-static', 'generated']);
+const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-demo', 'dist-examples', 'generated']);
 const isSource = (name: string) =>
   /\.(css|less|ts|tsx)$/.test(name) && !/\.(test|spec|stories)\.(ts|tsx)$/.test(name) && !name.endsWith('.d.ts');
 

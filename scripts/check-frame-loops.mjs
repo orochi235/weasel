@@ -23,7 +23,7 @@ const ALLOWED = new Map([
   ['packages/forge/src/test/runStory.ts', 'not a loop: a story test waits for one painted frame before checking faults'],
 ]);
 
-const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-examples', 'storybook-static', 'examples']);
+const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-examples', 'examples']);
 const isSource = (name) =>
   /\.(ts|tsx)$/.test(name) &&
   !/\.(test|spec|stories)\.(ts|tsx)$/.test(name) &&

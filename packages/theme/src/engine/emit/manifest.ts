@@ -25,7 +25,7 @@ export function emitManifest({ baked }: EmitInput): string {
     '',
     '/** Every token of the default theme at its default selection, described.',
     ' *  Meant for tooling that presents the token set — docs pages, token',
-    ' *  browsers, the Storybook CSS-vars addon — not for resolving values at',
+    ' *  browsers, forge\'s CSS-vars panel — not for resolving values at',
     ' *  runtime. */',
     'export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [',
     rows.join('\n'),
