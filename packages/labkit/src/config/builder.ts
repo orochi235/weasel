@@ -313,8 +313,7 @@ export const f = {
     kind: string,
     def: T,
     validate?: (leaf: PrefLeaf, config: Record<string, unknown>) => string[],
-  ): CustomNode<T> =>
-    new CustomNode(kind, def, {}, validate ? { validate } : {}),
+  ): CustomNode<T> => new CustomNode(kind, def, {}, validate ? { validate } : {}),
 
   /** Collect leaves and groups into an instrument's config. */
   schema<S extends ConfigShape>(nodes: S): ConfigSchema<InferConfig<S>> {

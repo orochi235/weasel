@@ -20,6 +20,9 @@
   },
   "linter": {
     "enabled": true,
+    // react is only a peerDependency here, and biome's domain auto-detection does not
+    // read those — so the react rules, useExhaustiveDependencies above all, stayed off.
+    "domains": { "react": "recommended" },
     "rules": {
       "preset": "recommended",
       "style": {

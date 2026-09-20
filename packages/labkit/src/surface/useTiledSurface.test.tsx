@@ -450,7 +450,7 @@ describe('useTiledSurface', () => {
       const stops = [340, 370, 400, 400, 400];
       let call = 0;
       vi.spyOn(b, 'getBoundingClientRect').mockImplementation(() => {
-        const left = stops[Math.min(call++, stops.length - 1)]!;
+        const left = stops[Math.min(call++, stops.length - 1)] ?? 0;
         return {
           left,
           top: 0,
