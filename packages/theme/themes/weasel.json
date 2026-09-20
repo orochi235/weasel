@@ -448,6 +448,21 @@
       "type": "dimension",
       "description": "Accent proportion in a range thumb, as a color-mix percentage — not a color."
     },
+    "handle-size": {
+      "value": "9px",
+      "type": "dimension",
+      "description": "Edge of a draggable handle on a plot or timeline — a keyframe diamond, a timeline key, an event mark. The default rank; -sm and -lg are the two deliberate departures from it."
+    },
+    "handle-size-sm": {
+      "value": "7px",
+      "type": "dimension",
+      "description": "A handle that is drawn but not draggable — a locked or pinned point. Smaller so it reads as inert next to a live one."
+    },
+    "handle-size-lg": {
+      "value": "10px",
+      "type": "dimension",
+      "description": "A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with."
+    },
     "field-pad-x": {
       "value": "8px",
       "type": "dimension",

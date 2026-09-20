@@ -10,6 +10,7 @@
 import type { ReactNode } from 'react';
 import { cubicBezierEasing, resolveEasing, type EasingFn, type Keyframe } from '@weasel-js/core';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
+import { handleHalf } from '../../handles';
 import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
 import s from './CurveEditor.module.css';
 import type {
@@ -61,7 +62,7 @@ const SAMPLES_PER_SEGMENT = 16;
 const KEY_HIT_PX = 8;
 const HANDLE_HIT_PX = 8;
 const CURVE_HIT_PX = 6;
-const KEY_HALF = 4.5;
+const KEY_HALF = handleHalf('--wzl-handle-size');
 const HANDLE_RADIUS = 3.5;
 const SHIFT_MULTIPLIER = 10;
 const HANDLE_STEP = 0.01;

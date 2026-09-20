@@ -9,14 +9,14 @@ const lookup = lookupOf(child);
 describe('countTokens', () => {
   it("counts weasel's own tokens and the pins over generated ones", () => {
     const counts = countTokens(weasel, derive(weasel, { mode: 'dark' }, lookup));
-    expect(counts).toMatchObject({ overridden: 23, total: 100 });
+    expect(counts).toMatchObject({ overridden: 23, total: 103 });
     expect(counts.layers).toEqual({
       seeds: { count: 0, pinned: 0 },
       ramps: { count: 23, pinned: 23 },
       scales: { count: 0, pinned: 0 },
       semantics: { count: 11, pinned: 0 },
       components: { count: 0, pinned: 0 },
-      pins: { count: 89, pinned: 23 },
+      pins: { count: 92, pinned: 23 },
     });
   });
 

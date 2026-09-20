@@ -8,6 +8,7 @@
 import type { ReactNode } from 'react';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
+import { handleHalf } from '../../handles';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
 import type {
@@ -114,6 +115,8 @@ export interface FunctionLayerState {
 }
 
 const SAMPLES_PER_SEGMENT = 16;
+const ENDPOINT_HALF = handleHalf('--wzl-handle-size-lg');
+const LOCKED_HALF = handleHalf('--wzl-handle-size-sm');
 const ANCHOR_SNAP_PX = 12;
 const CURVE_HIT_PX = 8;
 /** An arrow-key nudge, as a fraction of the range; shift takes ten. */
@@ -268,7 +271,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
           ].filter(Boolean).join(' ');
           const renderAsDiamond = isEndpoint || locked;
           if (renderAsDiamond) {
-            const half = locked ? 3.55 : 5;
+            const half = locked ? LOCKED_HALF : ENDPOINT_HALF;
             return (
               <rect
                 key={i}
