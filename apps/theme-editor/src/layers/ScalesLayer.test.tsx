@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { ThemeDefinition } from '@weasel-js/theme';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { deriveDraft } from '../theme/draft';
-import { lookupOf, spaced, weasel } from '../theme/fixtures';
+import { lookupOf, spaced } from '../theme/fixtures';
 import { ScalesLayer } from './ScalesLayer';
 
 describe('<ScalesLayer>', () => {
@@ -66,8 +66,9 @@ describe('<ScalesLayer>', () => {
   });
 
   it('says so when the theme has no scales', () => {
-    const lookup = lookupOf();
-    render(<ScalesLayer draft={weasel} derived={deriveDraft(weasel, lookup, {})} lookup={lookup} highlight={[]} onChange={vi.fn()} />);
-    expect(screen.getByText('weasel has no scales.')).toBeInTheDocument();
+    const bare: ThemeDefinition = { name: 'bare', axes: { mode: { default: 'light', values: { light: {} } } } };
+    const lookup = lookupOf(bare);
+    render(<ScalesLayer draft={bare} derived={deriveDraft(bare, lookup, {})} lookup={lookup} highlight={[]} onChange={vi.fn()} />);
+    expect(screen.getByText('bare has no scales.')).toBeInTheDocument();
   });
 });

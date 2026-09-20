@@ -18,6 +18,10 @@ if (typeof document !== 'undefined' && !document.getElementById('fg-google-fonts
 const asLabMode = (picked: unknown): LabMode =>
   picked === 'light' || picked === 'dark' ? picked : 'auto';
 
+const DENSITIES = ['compact', 'comfortable', 'roomy'];
+const asDensity = (picked: unknown): string =>
+  typeof picked === 'string' && DENSITIES.includes(picked) ? picked : 'comfortable';
+
 const labkitRoot: Decorator = (story, ctx) =>
   ctx.title.startsWith('labkit/') ? (
     <LabRoot mode={asLabMode(ctx.globals.mode)}>{story()}</LabRoot>
@@ -28,7 +32,7 @@ const labkitRoot: Decorator = (story, ctx) =>
 const FONT_STYLE_ID = 'fg-font-globals';
 
 const applyGlobals = followScheme((globals, root, mode) => {
-  applyTheme(root, weaselTheme, { mode });
+  applyTheme(root, weaselTheme, { mode, density: asDensity(globals.density) });
   const doc = root.ownerDocument;
   let style = doc.getElementById(FONT_STYLE_ID);
   if (!style) {
@@ -42,7 +46,7 @@ const applyGlobals = followScheme((globals, root, mode) => {
 export default defineFrameConfig({
   decorators: [labkitRoot],
   applyGlobals,
-  cssVarsScope: ':is(:root, [data-wzl-theme], [data-wzl-mode])',
+  cssVarsScope: ':is(:root, [data-wzl-theme], [data-wzl-mode], [data-wzl-density])',
   parameters: {
     layout: 'padded',
     controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },

@@ -34,11 +34,6 @@ export interface WorkbenchProps {
 }
 
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-const MODE_ONLY = 'DTCG export supports a mode axis only';
-const exportProblem = (e: unknown) => {
-  const message = (e as Error).message;
-  return message.startsWith(MODE_ONLY) ? `${MODE_ONLY}.` : message;
-};
 const selectionText = (s: Selection) => Object.values(s).join(', ') || 'every selection';
 
 function IssueList({ title, issues }: { title: string; issues: readonly IssueReport[] }) {
@@ -313,7 +308,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
                   download(exportFile(kind, draft, lookup));
                   setExportError(null);
                 } catch (e) {
-                  setExportError(exportProblem(e));
+                  setExportError((e as Error).message);
                 }
               }}
             >

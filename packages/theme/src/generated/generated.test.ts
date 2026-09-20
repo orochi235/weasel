@@ -25,7 +25,7 @@ describe('generated themes.ts', () => {
   });
 
   it('sizes the type ramp per density and leaves the spacing ladder alone', () => {
-    const at = (d: string) => THEMES.weasel.selections[`mode=dark,density=${d}`];
+    const at = (d: 'compact' | 'comfortable' | 'roomy') => THEMES.weasel.selections[`mode=dark,density=${d}`];
     expect([at('compact'), at('comfortable'), at('roomy')].map((s) => s['--wzl-font-size-md'])).toEqual(['11px', '13px', '15px']);
     expect([at('compact'), at('comfortable'), at('roomy')].map((s) => s['--wzl-control-h'])).toEqual(['20px', '24px', '28px']);
     expect([at('compact'), at('comfortable'), at('roomy')].map((s) => s['--wzl-space-4'])).toEqual(['8px', '8px', '8px']);
