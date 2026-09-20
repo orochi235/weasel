@@ -5,3 +5,26 @@
 .lk-control-panel {
   padding: 0;
 }
+
+// A cell in a paired row, with the caption naming the knob it holds. Case,
+// tracking, alignment and width come from the --wzl-params-label-* properties,
+// which inherit across the CSS-module boundary that keeps PropertyPanel's row
+// label class out of reach from here.
+.lk-pair-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-3, 6px);
+  min-width: 0;
+}
+
+.lk-pair-label {
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+  text-align: var(--wzl-params-label-align, start);
+  inline-size: var(--wzl-params-label-width, auto);
+  white-space: nowrap;
+}

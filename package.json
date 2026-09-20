@@ -55,6 +55,7 @@
     "check:token-reads": "tsx scripts/check-token-reads.ts",
     "check:spacing": "tsx scripts/check-spacing.ts",
     "check:controls": "tsx scripts/check-controls.ts",
+    "check:labels": "tsx scripts/check-labels.ts",
     "check:test-projects": "node scripts/check-test-projects.mjs",
     "check:forge-boundary": "node scripts/check-forge-boundary.mjs",
     "check:forge-stories": "node packages/forge/scripts/check-stories.ts",

@@ -389,6 +389,7 @@ UI words have specific referents — don't conflate them:
 - **scene** — the kit-owned tree (`Scene<TData, TLayer, TPose>`). Logical, not visual. Don't say "scene" when you mean "document" or "canvas".
 - **group** — a structural `ContainerNode` (`kind: 'container'`). The real Cmd+G group; `group`/`ungroup` create/dissolve a container and reparent the selection under it; round-trips to SVG `<g>`. Persistent and id-bearing. **Not** a membership list — there is no membership "group" type (the old `Group`/`GroupAdapter` was removed in 2026-06).
 - **selection** — the transient, immutable set of active ids (`SelectionApi.get()`/`set()`). "Operate on these N as a unit" with no persistence and no id; not a scene entity. Don't reintroduce a persistent membership-list "group" — a saved selection is just a consumer-held `string[]` passed to `selection.set`. See `docs/taxonomy.md` ("Group vs Selection — not the same axis").
+- **params** — the settings-editing surfaces as a family: `PropertyPanel`, `Prefs` and labkit's `ControlPanel`. Not a component. The `--wzl-params-label-*` properties are named for it; see `docs/conventions.md` ("Panel labels").
 
 When positioning HUDs / overlays, pick the right anchor: "inside the workspace" means `.wd-canvas-host`'s rect, not the canvas's.
 

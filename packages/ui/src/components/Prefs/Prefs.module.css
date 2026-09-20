@@ -59,14 +59,8 @@
   font-size: var(--wzl-font-size-sm);
   font-weight: var(--wzl-font-weight-bold);
   color: var(--wzl-fg);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.subpanel .groupTitle {
-  font-size: var(--wzl-font-size-sm);
-  text-transform: none;
-  letter-spacing: 0;
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wider));
+  text-transform: var(--wzl-params-label-case, uppercase);
 }
 
 .groupDesc {
@@ -93,11 +87,17 @@
 }
 
 .rowLabel {
-  flex: 1 1 auto;
+  /* Not grown: the row's space-between already pushes the control to the end,
+     and a growing label would swallow any width the panel gives its track. */
+  flex: 0 1 auto;
+  inline-size: var(--wzl-params-label-width, auto);
   min-width: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: var(--wzl-params-label-align, start);
   gap: var(--wzl-space-2);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
 }
 
 /* Description affordance — quiet until hovered/focused. */
@@ -189,13 +189,15 @@
 .objectLabel {
   font-size: var(--wzl-font-size-sm);
   opacity: 0.75;
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
 }
 
 .objectGroup {
   margin: var(--wzl-space-2) 0 0;
   font-size: var(--wzl-font-size-xs);
   font-weight: var(--wzl-font-weight-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
   opacity: 0.55;
 }

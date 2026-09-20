@@ -200,11 +200,20 @@
   font-size: var(--wzl-font-size-sm);
   line-height: var(--wzl-leading-snug);
   color: var(--wzl-fg-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
   display: flex;
   align-items: center;
+  justify-content: var(--wzl-params-label-align, start);
   gap: var(--wzl-space-3);
+}
+
+/* A label track, only where a row runs label-beside-control: a stacked row's
+   label already spans the row, and a width there would narrow it instead. */
+.rowInline > .rowLabel,
+.rowColor:not(.rowBlock) > .rowLabel,
+.rowCheckbox:not(.rowBlock) > .rowLabel {
+  inline-size: var(--wzl-params-label-width, auto);
 }
 
 .readout {
@@ -622,7 +631,7 @@
   grid-row: 3;
 }
 
-/* ── Checkbox variant: label-first inline layout, no uppercase label. */
+/* ── Checkbox variant: label-first inline layout. */
 .rowCheckbox {
   flex-direction: row;
   align-items: var(--wzl-prop-row-align, center);
@@ -721,8 +730,8 @@
   font-family: var(--wzl-font-display);
   font-weight: var(--wzl-font-weight-light);
   font-size: var(--wzl-font-size-sm);
-  letter-spacing: var(--wzl-tracking-wider);
-  text-transform: uppercase;
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wider));
+  text-transform: var(--wzl-params-label-case, uppercase);
   color: var(--wzl-fg-subtle);
 }
 
@@ -805,8 +814,8 @@
   font-size: var(--wzl-font-size-sm);
   line-height: var(--wzl-leading-tight);
   color: var(--wzl-fg);
-  text-transform: uppercase;
-  letter-spacing: var(--wzl-tracking-wider);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wider));
   margin: 0;
   padding: var(--wzl-space-3) 0 var(--wzl-space-2);
   display: flex;
@@ -919,8 +928,8 @@
   font-size: var(--wzl-font-size);
   line-height: var(--wzl-leading-tight);
   color: var(--wzl-fg);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
 }
 
 .cardPrimary {

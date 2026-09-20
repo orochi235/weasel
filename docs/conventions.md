@@ -163,3 +163,28 @@ What deliberately does *not* follow density: icons and drawn glyphs (a chevron,
 a checkmark, a switch track), slider tracks and thumbs, and handles — those have
 their own tokens or are artwork. Scaling them with the type ramp makes them
 blurry rather than bigger.
+
+### Panel labels
+
+Labels on the params surfaces — `PropertyPanel`, `Prefs` and labkit's
+`ControlPanel` — take their case, tracking, alignment and width from four
+custom properties. Set any of them on an ancestor and every label beneath
+follows; nothing needs outranking, because no rule declares them — each label
+reads its default as a `var()` fallback.
+
+| Property | Default | Reaches |
+|---|---|---|
+| `--wzl-params-label-case` | `uppercase` | every label and title |
+| `--wzl-params-label-tracking` | `--wzl-tracking-wide` on rows, `-wider` on titles | every label and title |
+| `--wzl-params-label-align` | `start` | row labels |
+| `--wzl-params-label-width` | `auto` | row labels beside their control |
+
+Alignment does nothing until a width gives the label room: at `auto` a label is
+exactly as wide as its text. Give a panel a width and its labels form one
+column. A stacked row with a readout on its label line keeps the label at the
+start whatever the alignment, because the readout holds the end.
+
+Custom properties are the mechanism because they inherit across the CSS-module
+boundary: labkit's Less cannot name `PropertyPanel`'s label class, and before
+this it restated the recipe by hand. `npm run check:labels` fails on a label in
+those three surfaces that sets its case or tracking any other way.
