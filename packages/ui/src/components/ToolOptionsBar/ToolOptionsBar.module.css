@@ -62,3 +62,11 @@
   background: var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
 }
+
+/* A schema-drawn control sits on the line as-is; the cell exists only to keep
+   it from being squeezed by the row's flex context. */
+.cell {
+  display: flex;
+  align-items: center;
+  flex: none;
+}

@@ -72,13 +72,15 @@ function prevEnabledIndex(items: readonly RovingItem[], from: number): number {
  *
  * Backs `ActionsBar`, `OptionsBar`, and `ToggleBar`.
  *
- * **When a bar should not use this.** Only when the bar owns its items. A
- * container of arbitrary compound controls — a number field, a select, a
+ * **When a bar should not use this.** What decides it is the items, not who
+ * owns them. A container of compound controls — a number field, a select, a
  * color field — must leave the arrow keys alone, because those controls edit
  * their own value with them; taking the arrows over would break the control
- * to navigate between controls. `ToolOptionsBar` is that case and keeps plain
- * DOM tab order. A bar whose items are all simple buttons is the case this
- * hook is for.
+ * to navigate between controls. `ToolOptionsBar` is that case: it draws its
+ * own controls from a tool's schema now rather than taking arbitrary
+ * children, and a schema-drawn number field eats arrows exactly as a
+ * hand-placed one did, so it keeps plain DOM tab order. A bar whose items are
+ * all simple buttons is the case this hook is for.
  *
  * With every item disabled there is no tab stop and the bar drops out of the
  * tab order entirely.

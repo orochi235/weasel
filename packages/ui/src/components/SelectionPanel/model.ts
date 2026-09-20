@@ -67,7 +67,7 @@ export function classifyKind(
   return 'unknown';
 }
 
-function isGroup(n: ToolPrefLeaf | ToolPrefGroup): n is ToolPrefGroup {
+export function isGroup(n: ToolPrefLeaf | ToolPrefGroup): n is ToolPrefGroup {
   return !('kind' in n);
 }
 
@@ -100,7 +100,7 @@ function flatten(schema: ToolPrefGroup): PanelSection[] {
 }
 
 /** Merge consecutive leaves sharing a `pair` id into one labeled row. */
-function pairRows(leaves: readonly PanelLeaf[]): PanelRow[] {
+export function pairRows(leaves: readonly PanelLeaf[]): PanelRow[] {
   const rows: PanelRow[] = [];
   for (const item of leaves) {
     const pair = item.leaf.pair;

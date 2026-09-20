@@ -458,13 +458,23 @@ Core five + Crop shipped. Remaining:
   properly means baking the metrics into the atlas JSON in
   `packages/font/scripts/gen-font.ts`, not just reading them at runtime.
 
-- **(P3) `ToolOptionsBar` is not driven by tool prefs.** Its first tenant
-  (draw's `CharacterOptions`) is hand-assembled. A tool declaring a
-  `ToolPrefGroup` for its options and having the bar render it the way
-  `SelectionPanel` renders node properties is the obvious next step. Once its
-  children are bar-owned rather than arbitrary consumer controls, it can adopt
-  `useRovingTabIndex` — the opt-out documented on that hook is exactly this
-  case.
+- **(P3) draw's `CharacterOptions` is still hand-assembled.** The kit half
+  landed: `ToolOptionsBar` takes a `ToolPrefGroup` and draws it through
+  `SelectionPanel/renderLeaf`, so the leaf → control mapping is decided once
+  for both surfaces. What is left is declaring the text run's options as a
+  group (`useTextTool.options`, mirroring `usePenTool.prefs`) and mapping
+  `RangeStyle` onto it.
+
+  Two things do not survive the move as-is, and the first is a decision:
+  **the five flags lose their glyphs.** A flag run draws `icon ?? short`, and
+  the icon set has nothing for bold/italic/underline/strikethrough/overline —
+  so overline's ruled `O` becomes a plain letter unless those five glyphs get
+  drawn first. Second, `script` (added-wins exclusivity over two mutually
+  exclusive values) and `fill` (a gradient shows as mixed rather than as some
+  solid color) each need a renderer passed on `renderers`; the schema cannot
+  say either. `useRovingTabIndex` stays opted out either way — a
+  schema-drawn number field eats arrow keys exactly as a hand-placed one
+  does, which is now written on the hook.
 
 - **(P3) `ToggleBar.module.css` is a near-copy of the segmented-control
   styles.** The `ActionsBar` / `OptionsBar` duplication closed 2026-08-15 —
