@@ -229,6 +229,20 @@ element and is fine. `build-tokens.ts` now redeclares any token whose reference 
 mode semantic inside every mode block, so authoring one is safe — but hand-written CSS is not
 covered, and jsdom resolves neither `var()` nor `color-mix()`, so only a browser can tell you.
 
+**A consumer overriding a theme token at matching specificity loses silently.** `applyTheme`
+emits one flat rule carrying the whole resolved token set on
+`[data-wzl-theme='x'][data-wzl-mode='dark'][data-wzl-density='comfortable']` — (0,3,0). The
+build-time emitter behind `tokens.css` is a different path that splits per axis and tops out at
+(0,2,0), so grepping the generated file finds no such selector and makes this look untrue. A
+consumer restated the type scale on `:root [data-wzl-theme][data-wzl-mode]` — also (0,3,0) — and
+lost the tie on source order, since an adopted stylesheet comes after every author sheet. The app
+fell back to the default density everywhere with no console warning: chrome text at 13px where
+15px was intended, read with `getComputedStyle`. It looked like one panel being small rather than
+a dead token block, because the app's own rem rules were unaffected. A consumer picks the axis
+(`selection={{ density: 'roomy' }}`) instead of restating its numbers, and a kit default meant to
+be overridden either sits in `:where()` or is read as a `var()` fallback, so there is no tie to
+lose.
+
 **`theme/base.less` element defaults live in `:where()` on purpose.** Bare `button` nested under
 `.lk-root` is specificity (0,1,1) and outranks every component class. Don't unwrap them. The flip
 side bites too: because `:where()` carries no specificity, its `height: var(--wzl-control-h)`
