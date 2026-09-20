@@ -34,6 +34,9 @@ export interface PropertyGroupProps extends PropertyMetricProps {
   onCollapsedChange?: (next: boolean) => void;
   children: ReactNode;
   className?: string;
+  /** Take the whole width of a packed grid, like `<PropertyRow span>`: a group
+   *  lays its own rows out, so half a column leaves them overlapping. */
+  span?: boolean;
   /** How rows pack into the 2-column grid — see `<PropertyList pack>`. */
   pack?: PropertyListPack;
 }
@@ -56,6 +59,7 @@ export function PropertyGroup({
   onCollapsedChange,
   children,
   className,
+  span,
   pack = 'auto-color',
   density,
   align,
@@ -74,7 +78,7 @@ export function PropertyGroup({
   };
 
   const base = `${s.group}${pack === 'pairs' ? ` ${s.groupPairs}` : pack === 'one-up' ? ` ${s.groupOneUp}` : ''}`;
-  const cls = propertyMetricClass(base, { density, align }, className);
+  const cls = propertyMetricClass(span ? `${base} ${s.span}` : base, { density, align }, className);
   const heading = (
     <h3 className={s.groupTitle}>
       <hr />
