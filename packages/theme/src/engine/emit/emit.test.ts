@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { ThemeDefinition } from '../../definition';
+import { TOKEN_HOOKS } from '../../hooks';
 import { bake } from '../bake';
 import { axisDependencies } from '../deps';
 import { derive } from '../derive';
@@ -254,8 +255,25 @@ describe('emitCss with a ramp whose steps vary by axis', () => {
 describe('emitManifest', () => {
   it('lists the default theme’s tokens in order with resolved default values', () => {
     const text = emitManifest(input(E));
-    expect(text).toContain("  { name: '--wzl-surface', type: \"color\", group: \"surface\", defaultValue: \"#111111\", description: \"The page.\" },");
+    expect(text).toContain("  { name: '--wzl-surface', type: \"color\", group: \"surface\", defaultValue: \"#111111\", description: \"The page.\", hook: false },");
     expect(text.indexOf("'--wzl-surface'")).toBeLessThan(text.indexOf("'--wzl-ink'"));
+  });
+
+  it('writes every override hook after the tokens, marked as one', () => {
+    const text = emitManifest(input(E));
+    const first = TOKEN_HOOKS[0];
+    expect(text).toContain(`  { name: '--wzl-${first.name}',`);
+    for (const hook of TOKEN_HOOKS) {
+      expect(text, hook.name).toContain(`'--wzl-${hook.name}', type: ${JSON.stringify(hook.type)}`);
+      expect(text.indexOf(`'--wzl-${hook.name}'`), hook.name).toBeGreaterThan(
+        text.indexOf("'--wzl-surface'"),
+      );
+    }
+    // The fallback is the hook's whole contract: no theme declares it, so this
+    // is the value in force until a consumer sets one.
+    const swatch = TOKEN_HOOKS.find((h) => h.name === 'swatch-size')!;
+    expect(swatch.value).toBe('28px');
+    expect(text).toContain(`defaultValue: "28px", description: ${JSON.stringify(swatch.description)}, hook: true`);
   });
 });
 

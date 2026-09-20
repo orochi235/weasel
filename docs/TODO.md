@@ -982,17 +982,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   for the round ranks or restate the family in terms of diameter — it is a
   visual call that wants a browser.
 
-- **(P2) The ten consumer override hooks are declared only in a build script.**
-  `--wzl-property-readout-w`, `--wzl-swatch-size`, `--wzl-number-field-width`,
-  `--wzl-timeline-label-w` and six others are read with a fallback and
-  deliberately declared by no theme, so they appear in neither `tokens.css`, the
-  generated manifest, nor any doc. The list lives in `HOOKS` in
-  `scripts/check-token-reads.ts`, which exists to stop them failing the
-  undeclared-read check — so a consumer restyling the kit finds them by reading
-  kit CSS. The open decision is where they belong: a documented section of the
-  token manifest carrying a `hook` type, or a generated appendix to `tokens.css`
-  as commented-out declarations.
-
 - **(P3) The slider mix tokens are read bare while the size tokens beside them
   carry defaults.** `range.module.css` and `Slider/Slider.module.css` read
   `--wzl-slider-track-mix` and `--wzl-slider-thumb-mix` with no fallback inside

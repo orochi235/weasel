@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BAKED_THEMES, THEME_SOURCES, THEMES } from './themes';
+import { TOKEN_HOOKS } from '../hooks';
 import { TOKEN_MANIFEST } from './manifest';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -120,5 +121,26 @@ describe('generated manifest.ts', () => {
   it('carries descriptions through for the CSS-vars panel', () => {
     const tb = TOKEN_MANIFEST.find((t) => t.name === '--wzl-tb-height');
     expect(tb?.description).toMatch(/toolbar/i);
+  });
+
+  it('carries every override hook, marked and described', () => {
+    for (const hook of TOKEN_HOOKS) {
+      const row = TOKEN_MANIFEST.find((t) => t.name === `--wzl-${hook.name}`);
+      expect(row, hook.name).toMatchObject({
+        hook: true,
+        defaultValue: hook.value,
+        description: hook.description,
+      });
+    }
+    expect(TOKEN_MANIFEST.filter((t) => t.hook)).toHaveLength(TOKEN_HOOKS.length);
+  });
+
+  it('declares no hook in tokens.css', () => {
+    // The whole contract: a `:root` declaration would outrank the in-CSS
+    // fallback, and `check:token-reads` would stop requiring one. The manifest
+    // is where a hook is declared; the stylesheet must stay silent about it.
+    for (const hook of TOKEN_HOOKS) {
+      expect(css, hook.name).not.toMatch(new RegExp(`--wzl-${hook.name}\\s*:`));
+    }
   });
 });

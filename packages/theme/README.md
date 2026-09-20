@@ -103,6 +103,31 @@ Token names are the definition's keys: `fg-muted` becomes `--wzl-fg-muted`, and
 a reference in a pin's value is written `{fg-muted}`, while a semantic's `ref`
 names the token bare (`"ref": "gray-800"`).
 
+## Override hooks
+
+Ten custom properties resize kit components and **no theme declares them**:
+`--wzl-swatch-size`, `--wzl-timeline-label-w`, `--wzl-number-field-width` and
+the rest. Kit CSS reads each one with a fallback, so setting it on any
+container is what changes it, and leaving it alone takes the fallback:
+
+```css
+.dense-panel { --wzl-swatch-size: 20px; --wzl-number-field-width: 6ch; }
+```
+
+They are declared in `src/hooks.ts` and land in `TOKEN_MANIFEST` with
+`hook: true`, which is where to find the current list, each one's fallback and
+what it sizes:
+
+```ts
+import { TOKEN_MANIFEST } from '@weasel-js/theme';
+const hooks = TOKEN_MANIFEST.filter((t) => t.hook);
+```
+
+They stay out of `tokens.css` on purpose. A `:root` value would outrank the
+fallback written beside every read, so the two would have to agree forever, and
+`npm run check:token-reads` would stop requiring that the fallback be there at
+all. Adding a hook means adding it to `src/hooks.ts` and regenerating.
+
 ## Licenses
 
 Code is MIT. The two bundled fonts are SIL Open Font License 1.1 — see `NOTICE`
