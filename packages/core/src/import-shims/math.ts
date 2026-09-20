@@ -11,49 +11,52 @@
 // across a package boundary and emits no binding for it. These re-export from
 // leaf modules rather than from `features/paths`, whose own barrel reaches the
 // pen preview and the path-editing overlay layers.
+//
+// One leaf reaching this package's own barrel is enough to undo all of it:
+// `pointAlongPath` alone pulled nine chunks and a megabyte of canvas here
+// until `tessellate/polyline` stopped doing that (a6eb682b). `npm run
+// check:react-free` is what notices, and it reads the built closure — no
+// arrangement of these lines can be trusted on its own.
 
 export type {
-	Path,
-	PathFillRule,
-	PolygonPath,
-	RectPath,
-} from "core/geometry/path";
+  Path,
+  PathFillRule,
+  PolygonPath,
+  RectPath,
+} from 'core/geometry/path';
 export {
-	PATH_C,
-	PATH_CMD_LENGTHS,
-	PATH_L,
-	PATH_M,
-	PATH_Q,
-	PATH_Z,
-	pathCommandCoordCount,
-} from "core/geometry/path";
-export type { Vec2 } from "core/geometry/polygonHitTestRect";
-export type { PoseDescriptor } from "core/geometry/poseDescriptor";
-export { translatePoseViaDescriptor } from "core/geometry/poseDescriptor";
+  PATH_C,
+  PATH_CMD_LENGTHS,
+  PATH_L,
+  PATH_M,
+  PATH_Q,
+  PATH_Z,
+  pathCommandCoordCount,
+} from 'core/geometry/path';
+export type { Vec2 } from 'core/geometry/polygonHitTestRect';
+export type { PoseDescriptor } from 'core/geometry/poseDescriptor';
+export { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 export {
-	PathBuilder,
-	polygonFromPoints,
-	polylineFromPoints,
-	rectPath,
-} from "features/paths/builder";
+  PathBuilder,
+  polygonFromPoints,
+  polylineFromPoints,
+  rectPath,
+} from 'features/paths/builder';
 export {
-	DEFAULT_FLATTEN_TOLERANCE,
-	flattenCubic,
-	flattenCubicWithArcLen,
-	flattenQuadratic,
-	flattenQuadraticWithArcLen,
-} from "features/paths/flatten";
-// `pointAlongPath` is deliberately absent. It reaches
-// `features/paths/tessellate/polyline`, which imports this package's own
-// barrel — one self-reference that pulls React, the canvas and a megabyte of
-// chunk into anything importing it. Nothing in the layout half needs it.
-export { createSimulation } from "features/simulation/createSimulation";
+  DEFAULT_FLATTEN_TOLERANCE,
+  flattenCubic,
+  flattenCubicWithArcLen,
+  flattenQuadratic,
+  flattenQuadraticWithArcLen,
+} from 'features/paths/flatten';
+export { pointAlongPath } from 'features/paths/pathAt';
+export { createSimulation } from 'features/simulation/createSimulation';
 export type {
-	Simulation,
-	SimulationCore,
-	SimulationForce,
-	SimulationNode,
-	SimulationOptions,
-} from "features/simulation/types";
-export { AUTO_POSE_DESCRIPTOR } from "interactions/actions/resize/autoPoseDescriptor";
-export { rotatePoint } from "interactions/actions/rotate/geometry";
+  Simulation,
+  SimulationCore,
+  SimulationForce,
+  SimulationNode,
+  SimulationOptions,
+} from 'features/simulation/types';
+export { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+export { rotatePoint } from 'interactions/actions/rotate/geometry';
