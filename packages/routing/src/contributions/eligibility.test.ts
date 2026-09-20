@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { liveScope } from './eligibility';
 import type { Eligibility } from './types';
 
-const state = { focusedId: 'hand', heldTriggers: new Set<string>() };
+const state = { focusedId: 'hand' };
 
 describe('liveScope', () => {
   it('gives the focused entry active scope', () => {
@@ -31,7 +31,7 @@ describe('liveScope', () => {
   it('prefers hotkey over active when both conditions are live', () => {
     // The hand tool, focused AND space-held. The dispatcher walks hotkey first,
     // so reporting 'active' here would change which tier its bindings land in.
-    const held = { focusedId: 'hand', heldTriggers: new Set(['space']) };
+    const held = { focusedId: 'hand', engagedIds: new Set(['hand']) };
     expect(liveScope('hand', { focus: true, offhand: 'space' }, held)).toBe('hotkey');
   });
 
@@ -41,7 +41,7 @@ describe('liveScope', () => {
 });
 
 describe('liveScope honors the capability filter', () => {
-  const focused = { focusedId: 'pen', heldTriggers: new Set<string>() };
+  const focused = { focusedId: 'pen' };
 
   it('withholds scope from an entry the active mode disallows', () => {
     const e: Eligibility = { focus: true, capabilities: ['creates-paths'] };
@@ -65,11 +65,10 @@ describe('liveScope honors the capability filter', () => {
 });
 
 describe('liveScope reads the host-reported hotkey engagement', () => {
-  // The held-key stack is tracked by entry id, not by trigger key, until a
-  // declared `offhand` wires itself. Both roads reach the hotkey tier.
+  // The held-key stack is tracked by entry id, not by trigger key: a declared
+  // `offhand` reaches this tier through `tool.offhand`, which pushes the id.
   const engaged = {
     focusedId: 'hand',
-    heldTriggers: new Set<string>(),
     engagedIds: new Set(['hand']),
   };
 

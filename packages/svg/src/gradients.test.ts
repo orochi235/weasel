@@ -96,9 +96,9 @@ describe('gradient collection', () => {
 
   it('still warns about a <defs> child it cannot model', () => {
     const r = parseSvg(
-      `<svg xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="c"/></defs></svg>`,
+      `<svg xmlns="http://www.w3.org/2000/svg"><defs><filter id="f"/></defs></svg>`,
     );
-    expect(r.warnings).toContain('unsupported <defs> child: <clipPath>');
+    expect(r.warnings).toContain('unsupported <defs> child: <filter>');
   });
 });
 

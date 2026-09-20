@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useScene } from '@weasel-js/core';
+import { asNodeId, useScene } from '@weasel-js/core';
 import { d3Bind } from './bind';
 
 interface Datum {
@@ -248,5 +248,34 @@ describe('d3Bind selection — filter / each', () => {
       sel = binding.join();
     });
     expect(() => sel!.transition()).toThrow(/animator/);
+  });
+});
+
+describe('d3Bind — the diff is scoped to the target layer', () => {
+  it('leaves another layer and containers on this one alone', () => {
+    const { result } = renderHook(() =>
+      useScene<{ label: string }, 'graph' | 'other', Pose>({
+        systemLayers: [{ id: 'graph' }, { id: 'other' }],
+        initial: [],
+      }),
+    );
+    const scene = result.current;
+    const pose = { x: 0, y: 0, width: 10, height: 10 };
+    act(() => {
+      scene.add({ id: asNodeId('elsewhere'), kind: 'leaf', layer: 'other', pose, data: { label: 'E' } });
+      scene.add({ id: asNodeId('box'), kind: 'container', layer: 'graph', pose, data: { label: 'C' } });
+      scene.add({ id: asNodeId('stale'), kind: 'leaf', layer: 'graph', pose, data: { label: 'S' } });
+    });
+
+    act(() => {
+      d3Bind(scene, [{ id: 'a', label: 'A', x: 0 }] as Datum[], { key: (d) => d.id, layer: 'graph' })
+        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
+        .join();
+    });
+
+    expect(scene.get(asNodeId('elsewhere'))).toBeDefined();
+    expect(scene.get(asNodeId('box'))).toBeDefined();
+    expect(scene.get(asNodeId('stale'))).toBeUndefined();
+    expect(scene.get(asNodeId('a'))).toBeDefined();
   });
 });

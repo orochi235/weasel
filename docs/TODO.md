@@ -128,14 +128,6 @@ Priority tags:
   result is known while the default can still be suppressed, and a paste no
   binding wanted stays the page's.
 
-- **(P3) `EligibilityState.heldTriggers` is unexercised in production.**
-  `Eligibility.offhand` names a trigger key and `liveScope` resolves it, but
-  nothing populates `heldTriggers` — `tool.offhand`'s invoker still reports
-  engagement by pushing a tool *id* onto the hotkey stack, which
-  `engagedIds` reads. So the declaration registers the binding while the id
-  keeps carrying the tier. Retiring `engagedIds` means changing
-  `tool.offhand`'s contract. Recorded 2026-08-10.
-
 - **(P3) The action pipeline's coordinates are 2D, so another kernel can't
   reuse it.** World points arrive as `{x, y}` or flat scalars in
   `InvocationCtx`, the dep payloads, the pick functions and
@@ -197,11 +189,6 @@ Priority tags:
 All four arcs of `docs/superpowers/specs/2026-09-03-cursor-system-design.md`
 have shipped. What remains:
 
-- **(P3) Inserting an anchor borrows the pen tool's cursor.** Alt over a
-  segment in path-edit mode shows `{ glyph: 'pen' }`, the same glyph as the pen
-  tool, because there is no pen-with-a-plus glyph. Drawing one needs proofing
-  at 1× and 2× like the rest of the set (see "Drawing icons" in CLAUDE.md).
-  The cursor is declared in `insertPathAnchor.ts`.
 - **(P3) The `bucket` glyph is parked.** Three attempts failed to read at 24px —
   a tapered pail with a spout is a pencil silhouette, and the handle that would
   fix it wants a sketch rather than another guess. Nothing is blocked: no fill
@@ -868,13 +855,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   walk, because a bare-adapter consumer has no selection parent-folding to fold
   them back in.
 
-- **(P3) A container's clip never reaches SVG.** `SvgGroupNode` has no clip
-  slot, so no bridge can hand one to `serializeSvg`, and WeaselDraw's groups
-  carry none to hand. Unlike stroke alignment and wrapped text — which the
-  serializer now reports through `onWarn` — SVG 1.1 can carry a clip, as a
-  `<clipPath>` def and `clip-path` on the `<g>`, so this wants the slot and its
-  parse side rather than a warning.
-
 - **(P2) What the cascade audit turned up outside its own pattern.** All found
   2026-08-29 while collapsing, none of them an instance of the duplication the
   audit was hunting, so each wants its own decision.
@@ -914,11 +894,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `ControlPanel`.** `PropertyGroup` has no description slot, and its heading
   sits in a two-column grid with nowhere obvious to put a paragraph. Wants a
   browser to decide the shape, not a guess.
-
-- **(P3) `ControlPanel` draws `control: 'switch'` as a checkbox.** `PrefsForm`
-  draws a `<Switch>` for the same leaf. `BooleanNode.toggle()` documents the
-  difference; closing it needs a `SwitchRow` among `@weasel-js/ui`'s property
-  rows.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
@@ -1024,7 +999,6 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 - **(P3) Exit transitions.** Fade before remove — schedule the tween, emit Delete on tween end.
 - **(P3) Chained transitions.** `.transition().transition()`; the animator's loop primitive already sequences, the chain just needs to thread it.
 - **(P3) Typed `data` payload.** `.data(fn)` returns `Record<string, unknown>`; the binding could carry the data type through the chain for autocompletion.
-- **(P3) Indexed diff.** `join()` walks the scene O(n) per call; a key map is faster on large datasets.
 - **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
   (`useWheelZoomTool` / `useHandTool` / `useViewAnimation`; `useDragGesture`).
   Worth building only for d3 semantics the kit genuinely lacks, not for parity —

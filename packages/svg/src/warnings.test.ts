@@ -19,13 +19,34 @@ describe('warnings', () => {
     expect(warnings).toEqual([]);
   });
 
-  it('warns on <clipPath>', () => {
+  it('reads a <clipPath> without warning', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg">
       <clipPath id="clip"><rect x="0" y="0" width="5" height="5"/></clipPath>
       <rect x="0" y="0" width="10" height="10"/>
     </svg>`;
     const { warnings } = parseSvg(svg);
-    expect(warnings.some((w) => /clipPath/i.test(w))).toBe(true);
+    expect(warnings).toEqual([]);
+  });
+
+  it('warns on a multi-shape <clipPath>, and clips nothing', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg">
+      <clipPath id="clip">
+        <rect x="0" y="0" width="5" height="5"/>
+        <rect x="6" y="0" width="5" height="5"/>
+      </clipPath>
+      <g clip-path="url(#clip)"><rect x="0" y="0" width="10" height="10"/></g>
+    </svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    expect(warnings.some((w) => /single-shape clip/.test(w))).toBe(true);
+    expect((nodes[0] as { clip?: unknown }).clip).toBeUndefined();
+  });
+
+  it('warns on a clip-path pointing at nothing', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg">
+      <g clip-path="url(#absent)"><rect x="0" y="0" width="10" height="10"/></g>
+    </svg>`;
+    const { warnings } = parseSvg(svg);
+    expect(warnings.some((w) => /no <clipPath>/.test(w))).toBe(true);
   });
 
   it('warns on <filter>', () => {

@@ -20,6 +20,8 @@ import {
   Select,
   SelectRow,
   SliderRow,
+  Switch,
+  SwitchRow,
   TextRow,
   ToggleRow,
 } from '@weasel-js/ui';
@@ -491,9 +493,10 @@ function ControlRow<TC extends Record<string, unknown>>({
         />
       );
     }
-    case 'boolean':
+    case 'boolean': {
+      const Row = extra<string>(leaf, 'control') === 'switch' ? SwitchRow : CheckboxRow;
       return (
-        <CheckboxRow
+        <Row
           label={label}
           value={read<boolean>()}
           onChange={write}
@@ -503,6 +506,7 @@ function ControlRow<TC extends Record<string, unknown>>({
           {...autoProps}
         />
       );
+    }
     case 'enum': {
       const options = extra<readonly { value: string; label: string }[]>(leaf, 'options') ?? [];
       const segmented = extra<string>(leaf, 'control') === 'radio';
@@ -799,7 +803,9 @@ function PairCell({
       );
     }
     case 'boolean':
-      return (
+      return extra<string>(leaf, 'control') === 'switch' ? (
+        <Switch aria-label={name} isSelected={value === true} onChange={write} />
+      ) : (
         <input
           type="checkbox"
           aria-label={name}

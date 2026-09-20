@@ -54,20 +54,17 @@ export function d3Bind<TData, TLayer extends string, TPose>(
       const updateIndices: number[] = [];
       const exitIds: NodeId[] = [];
 
-      const sceneLeafIdsOnLayer = new Set<NodeId>();
-      for (const node of scene.nodes.values()) {
-        if (node.kind === 'leaf' && node.layer === layer) {
-          sceneLeafIdsOnLayer.add(node.id);
-        }
-      }
-
       data.forEach((_, i) => {
-        if (sceneLeafIdsOnLayer.has(dataKeys[i])) updateIndices.push(i);
-        else enterIndices.push(i);
+        const existing = scene.get(dataKeys[i]);
+        if (existing && existing.kind === 'leaf' && existing.layer === layer) {
+          updateIndices.push(i);
+        } else {
+          enterIndices.push(i);
+        }
       });
-      sceneLeafIdsOnLayer.forEach((id) => {
-        if (!dataKeySet.has(id)) exitIds.push(id);
-      });
+      for (const node of scene.nodesOnLayer(layer)) {
+        if (node.kind === 'leaf' && !dataKeySet.has(node.id)) exitIds.push(node.id);
+      }
 
       // Snapshot prior poses for nodes that will be updated. Captured BEFORE the
       // batch mutates them so `.transition()` can interpolate from prior → new.

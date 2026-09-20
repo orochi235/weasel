@@ -607,7 +607,7 @@
   order: 1;
 }
 
-.rowCheckbox input[type='checkbox'] {
+.rowCheckbox input[type='checkbox']:not([role='switch']) {
   accent-color: var(--wzl-accent);
   width: 14px;
   height: 14px;

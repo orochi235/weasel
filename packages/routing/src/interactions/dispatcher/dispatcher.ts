@@ -477,7 +477,6 @@ export interface Dispatcher {
 // createDispatcher
 // ---------------------------------------------------------------------------
 
-const EMPTY_TRIGGERS: ReadonlySet<string> = new Set<string>();
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
 
 /**
@@ -746,7 +745,6 @@ export function createDispatcher(opts?: {
       : undefined;
     const result: ScopedBinding[] = scopeBindings(ordered, {
       focusedId: ctx.activeToolId,
-      heldTriggers: EMPTY_TRIGGERS,
       engagedIds: new Set(ctx.hotkeyStack),
       ...(allows ? { allows } : {}),
     });

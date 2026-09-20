@@ -943,11 +943,14 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     gen: number;
     ids?: NodeId[];
     nodes?: Node<TData, TLayer, TPose>[];
+    byLayer?: Map<TLayer, Node<TData, TLayer, TPose>[]>;
   } = { gen: 0 };
 
   function invalidateOrder(): void {
     structureGeneration++;
   }
+
+  const EMPTY_NODES: readonly Node<TData, TLayer, TPose>[] = [];
 
   function currentOrderCache(): typeof orderCache {
     if (orderCache.gen !== structureGeneration) {
@@ -1161,6 +1164,21 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     renderOrderNodes() {
       const c = currentOrderCache();
       return (c.nodes ??= renderOrderNodesInternal());
+    },
+
+    nodesOnLayer(layer) {
+      const c = currentOrderCache();
+      let byLayer = c.byLayer;
+      if (!byLayer) {
+        byLayer = new Map();
+        for (const node of (c.nodes ??= renderOrderNodesInternal())) {
+          let bucket = byLayer.get(node.layer);
+          if (!bucket) byLayer.set(node.layer, (bucket = []));
+          bucket.push(node);
+        }
+        c.byLayer = byLayer;
+      }
+      return byLayer.get(layer) ?? EMPTY_NODES;
     },
 
     add(spec) {

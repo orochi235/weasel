@@ -28,6 +28,7 @@ import { anchorOffset } from './textAnchor';
 import { parsePaintAttr } from './color';
 import { collectGradients, type GradientTable } from './gradients';
 import { collectPatterns } from './patterns';
+import { collectElementsByTag } from './elements';
 import { deriveStyle, EMPTY_STYLE, ownProp, resolveCurrentColor, type StyleContext } from './cascade';
 
 // Every tag set here is compared against a lowercased `tagName`.
@@ -39,7 +40,7 @@ const SUPPORTED_LEAF_TAGS = new Set([
 const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
 
 const IGNORED_TAGS = new Set([
-  'defs', 'lineargradient', 'radialgradient', 'pattern', 'marker',
+  'defs', 'lineargradient', 'radialgradient', 'pattern', 'marker', 'clippath',
   'title', 'desc', 'metadata',
 ]);
 
@@ -81,7 +82,8 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   const gradients = collectGradients(root, onWarn);
   for (const [id, paint] of collectPatterns(root, onWarn)) gradients.set(id, paint);
   const rootStyle = deriveStyle(EMPTY_STYLE, root);
-  const nodes = parseChildren(root, IDENTITY_MATRIX, rootStyle, gradients, onWarn, uriToPrefix);
+  const clips = collectClipPaths(root, onWarn);
+  const nodes = parseChildren(root, IDENTITY_MATRIX, rootStyle, gradients, clips, onWarn, uriToPrefix);
   const markers = ingestMarkers(root, nodes, gradients, onWarn);
 
   const result: ParseResult = { nodes, warnings };
@@ -233,11 +235,74 @@ function collectElementMeta(
   return Object.keys(meta).length > 0 ? meta : undefined;
 }
 
+/** Element-id → the outline of a `<clipPath>` def, in the document's own
+ *  user space. */
+type ClipTable = ReadonlyMap<string, Path>;
+
+/**
+ * Lower every `<clipPath>` in the document to one outline.
+ *
+ * SVG unions a `<clipPath>`'s shapes and a `Path` carries a single outline,
+ * so only a one-shape def is modeled; the rest warn and clip nothing, which
+ * shows the whole group rather than hiding it.
+ */
+function collectClipPaths(root: Element, onWarn: (m: string) => void): ClipTable {
+  const out = new Map<string, Path>();
+  for (const [id, el] of collectElementsByTag(root, new Set(['clippath']))) {
+    const units = el.getAttribute('clipPathUnits');
+    if (units && units !== 'userSpaceOnUse') {
+      onWarn(`<clipPath id="${id}"> uses clipPathUnits="${units}", which is not modeled`);
+      continue;
+    }
+    const shapes: Element[] = [];
+    for (let i = 0; i < el.children.length; i++) {
+      if (SUPPORTED_LEAF_TAGS.has(el.children[i].tagName.toLowerCase())) shapes.push(el.children[i]);
+    }
+    if (shapes.length !== 1) {
+      onWarn(
+        `<clipPath id="${id}"> holds ${shapes.length} shapes the kit can lower;`
+        + ' only a single-shape clip is modeled, so it clips nothing',
+      );
+      continue;
+    }
+    const shape = shapes[0];
+    const local = parseTransform(shape.getAttribute('transform'), onWarn);
+    const path = lowerLeaf(shape, shape.tagName.toLowerCase(), local, onWarn);
+    if (path) out.set(id, path);
+  }
+  return out;
+}
+
+/** The outline a `clip-path` attribute names, in the element's own user space
+ *  — the space `ctm` maps into, which is also where its children's geometry
+ *  lands. */
+function clipFor(
+  el: Element,
+  ctm: Matrix,
+  clips: ClipTable,
+  onWarn: (m: string) => void,
+): Path | undefined {
+  const attr = el.getAttribute('clip-path');
+  if (!attr || attr === 'none') return undefined;
+  const ref = /^url\(\s*#([^)\s]+)\s*\)$/.exec(attr.trim());
+  if (!ref) {
+    onWarn(`clip-path="${attr}" is not a url(#id) reference; the clip is dropped`);
+    return undefined;
+  }
+  const path = clips.get(ref[1]);
+  if (!path) {
+    onWarn(`clip-path references #${ref[1]}, which no <clipPath> in the document defines`);
+    return undefined;
+  }
+  return transformPath(path, ctm);
+}
+
 function parseChildren(
   parent: Element,
   ctm: Matrix,
   style: StyleContext,
   gradients: GradientTable,
+  clips: ClipTable,
   onWarn: (m: string) => void,
   uriToPrefix: Map<string, string>,
 ): SvgNode[] {
@@ -248,7 +313,7 @@ function parseChildren(
     // (DOM gives SVG-native elements `http://www.w3.org/2000/svg`.)
     const ns = el.namespaceURI;
     if (ns && ns !== 'http://www.w3.org/2000/svg') continue;
-    const node = parseElement(el, ctm, style, gradients, onWarn, uriToPrefix);
+    const node = parseElement(el, ctm, style, gradients, clips, onWarn, uriToPrefix);
     if (node) {
       if (Array.isArray(node)) out.push(...node);
       else out.push(node);
@@ -262,6 +327,7 @@ function parseElement(
   ctm: Matrix,
   style: StyleContext,
   gradients: GradientTable,
+  clips: ClipTable,
   onWarn: (m: string) => void,
   uriToPrefix: Map<string, string>,
 ): SvgNode | SvgNode[] | null {
@@ -279,9 +345,11 @@ function parseElement(
     const local = parseTransform(el.getAttribute('transform'), onWarn);
     const childCtm = multiply(ctm, local);
     const childStyle = deriveStyle(style, el);
-    const children = parseChildren(el, childCtm, childStyle, gradients, onWarn, uriToPrefix);
+    const children = parseChildren(el, childCtm, childStyle, gradients, clips, onWarn, uriToPrefix);
     const opacity = readOpacityAttr(el, 'opacity');
     const group: SvgNode = { kind: 'group', children };
+    const clip = clipFor(el, childCtm, clips, onWarn);
+    if (clip) group.clip = clip;
     if (opacity != null) group.opacity = opacity;
     const meta = collectElementMeta(el, uriToPrefix);
     if (meta) group.meta = meta;
@@ -297,7 +365,7 @@ function parseElement(
     if (el.hasAttribute('viewBox')) {
       onWarn('nested <svg> viewBox is not modeled; its children are not rescaled');
     }
-    return parseChildren(el, multiply(ctm, offset), childStyle, gradients, onWarn, uriToPrefix);
+    return parseChildren(el, multiply(ctm, offset), childStyle, gradients, clips, onWarn, uriToPrefix);
   }
   if (tag === 'text') {
     const textNode = parseTextElement(el, ctm, style, gradients, onWarn);

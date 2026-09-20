@@ -7,7 +7,7 @@
  */
 
 import { getPaintKind, getMarker } from '@weasel-js/core';
-import type { FillStyle, GradStop, GradientUnits, MarkerEntry, MarkerPaint } from '@weasel-js/core';
+import type { FillStyle, GradStop, GradientUnits, MarkerEntry, MarkerPaint, Path } from '@weasel-js/core';
 import { parsePaintAttr } from './color';
 import { trimNumber } from './transform';
 import { patternXml } from './patterns';
@@ -102,8 +102,9 @@ export function collectGradients(svg: Element, onWarn?: (m: string) => void): Gr
   return out;
 }
 
-/** Paint servers and `<marker>` aside, a `<defs>` child is something this
- *  package does not model (`<clipPath>`, a `<use>` template). Say so once here. */
+/** Paint servers, `<marker>` and `<clipPath>` aside, a `<defs>` child is
+ *  something this package does not model (a `<use>` template, a `<filter>`).
+ *  Say so once here. */
 function warnUnsupportedDefsChildren(svg: Element, onWarn?: (m: string) => void): void {
   if (!onWarn) return;
   const defs = svg.getElementsByTagName('defs');
@@ -113,7 +114,7 @@ function warnUnsupportedDefsChildren(svg: Element, onWarn?: (m: string) => void)
       const child = root.children[i];
       const tag = child.tagName.toLowerCase();
       if (GRADIENT_TAGS.has(tag) || GRADIENT_TAGS.has(localName(tag))) continue;
-      if (tag === 'pattern' || tag === 'marker') continue;
+      if (tag === 'pattern' || tag === 'marker' || tag === 'clippath') continue;
       onWarn(`unsupported <defs> child: <${child.tagName}>`);
     }
   }
@@ -332,6 +333,11 @@ export class PaintServerRegistry {
   private markerKeys: string[] = [];
   private markerKeySet = new Set<string>();
 
+  // Clip paths, in first-use order. Identity, not value: two groups clipped by
+  // equal outlines get a def each, which costs bytes and misleads nobody.
+  private clips: Path[] = [];
+  private clipIds = new Map<Path, string>();
+
   register(paint: FillStyle): string {
     const existing = this.byPaint.get(paint);
     if (existing) return existing;
@@ -373,9 +379,22 @@ export class PaintServerRegistry {
     return key;
   }
 
-  /** Emit `<defs>...</defs>` XML for every registered paint server and marker. */
+  /** Mint (or recall) the `<defs>` id for a clip outline. */
+  clipId(path: Path): string {
+    const existing = this.clipIds.get(path);
+    if (existing) return existing;
+    const id = `clip${this.clips.length}`;
+    this.clipIds.set(path, id);
+    this.clips.push(path);
+    return id;
+  }
+
+  /** Emit `<defs>...</defs>` XML for every registered paint server, marker
+   *  and clip path. */
   toDefsXml(onWarn?: (m: string) => void): string {
-    if (this.order.length === 0 && this.markerKeys.length === 0) return '';
+    if (this.order.length === 0 && this.markerKeys.length === 0 && this.clips.length === 0) {
+      return '';
+    }
     const parts: string[] = ['<defs>'];
     for (const paint of this.order) {
       parts.push(paintServerXml(this.byPaint.get(paint)!, paint, onWarn));
@@ -384,6 +403,13 @@ export class PaintServerRegistry {
       const entry = getMarker(key);
       if (!entry) continue;
       parts.push(entry.toSvg ? entry.toSvg(key, entry) : defaultMarkerXml(key, entry, onWarn));
+    }
+    for (const path of this.clips) {
+      parts.push(
+        `<clipPath id="${this.clipIds.get(path)!}">`
+        + `<path d="${serializePathD(path)}"/>`
+        + '</clipPath>',
+      );
     }
     parts.push('</defs>');
     return parts.join('');
