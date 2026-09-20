@@ -17,6 +17,10 @@ at every boundary, so nothing stores or serializes it, and the last pinned
 value stays where it is: un-pinning is lossless, and Reset returns a trial to
 the auto paths it opened on.
 
+A panel is uncontrolled unless it is handed the set: `<ControlPanel>` without
+an `auto` prop keeps the unpinned paths itself, so the dots work in a harness
+that only stores values and the sentinel never reaches its `setConfig`.
+
 This adds API. Property rows in `@weasel-js/ui` take `auto` and `onAutoChange`;
 a `Select`'s trigger and an alpha range read new color and border hooks that
 default to what they already rendered; a control renderer's argument gains two

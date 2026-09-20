@@ -101,13 +101,17 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
    *  dotted path when the section sits inside one — or a group's own path. */
   onCollapse?: (key: string, collapsed: boolean) => void;
   /** Dotted paths currently unpinned. A row in this set draws ghosted and its
-   *  dot reads as auto. Omitted, every row still takes a dot and still writes
-   *  the sentinel; no row reads back as auto until the owner tracks the set. */
+   *  dot reads as auto, and the dot writes the sentinel back through
+   *  `setConfig`. Omitted, the panel keeps the set itself: the dots still work
+   *  and the sentinel never reaches `setConfig`, which would otherwise store it
+   *  as the row's value. */
   auto?: ReadonlySet<string>;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
   className?: string;
 }
+
+const NO_AUTO: ReadonlySet<string> = new Set();
 
 /** Render an instrument's config schema as a stack of controls, each writing
  *  back through `setConfig`. Built on the property rows, so a lab's controls
@@ -125,11 +129,32 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   collapse,
   collapsed,
   onCollapse,
-  auto,
+  auto: given,
   showHidden = false,
   className,
 }: ControlPanelProps<TC>) {
   const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
+
+  // An owner that tracks the set decides what a dot means; one that does not
+  // gets a panel that decides for itself, because the alternative is handing it
+  // a sentinel it would write into the config as though it were a value.
+  const [ownAuto, setOwnAuto] = useState<ReadonlySet<string>>(NO_AUTO);
+  const auto = given ?? ownAuto;
+  const setRowAuto = (path: string, next: boolean, value: unknown): void => {
+    if (given) {
+      setConfig(path, next ? autoValue : value);
+      return;
+    }
+    setOwnAuto((prev) => {
+      const now = new Set(prev);
+      if (next) now.add(path);
+      else now.delete(path);
+      return now;
+    });
+    // Pinning keeps whatever the row was showing, the same value the controlled
+    // path writes back.
+    if (!next) setConfig(path, value);
+  };
 
   // What the instrument is reading. A row draws and reports from this rather
   // than calling its own resolver against the raw config, which would disagree
@@ -198,6 +223,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
           pack={rows.pack}
           layout={rows.layout}
           auto={auto}
+          setRowAuto={setRowAuto}
           toggles={toggles.current}
         />
       );
@@ -269,6 +295,7 @@ interface ControlRowProps<TC extends Record<string, unknown>> {
   pack: ControlPack;
   layout?: PropertyRowLayout;
   auto?: ReadonlySet<string>;
+  setRowAuto: (path: string, next: boolean, value: unknown) => void;
   toggles: Map<string, () => void>;
 }
 
@@ -301,6 +328,7 @@ function ControlRow<TC extends Record<string, unknown>>({
   pack,
   layout,
   auto,
+  setRowAuto,
   toggles,
 }: ControlRowProps<TC>) {
   const write = (value: unknown): void => setConfig(path, value);
@@ -317,7 +345,7 @@ function ControlRow<TC extends Record<string, unknown>>({
   // a handle sitting at the pinned number while the readout says something else
   // reads as a rendering bug. Pinning then keeps what you were looking at.
   const value = resolvedValue ?? pinned;
-  const setAuto = (next: boolean): void => write(next ? autoValue : value);
+  const setAuto = (next: boolean): void => setRowAuto(path, next, value);
   const onAutoChange = canAuto ? setAuto : undefined;
   // A slider's handle is a position, not a number, so the readout is the only
   // place its resolved value can be read. Every other control renders its own
