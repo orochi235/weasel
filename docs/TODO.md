@@ -136,8 +136,6 @@ Priority tags:
   keeps carrying the tier. Retiring `engagedIds` means changing
   `tool.offhand`'s contract. Recorded 2026-08-10.
 
-- **(P3) Promote `hitExistingGate` to gate select-tool's move/resize paths.** Deferred from `docs/specs/2026-05-05-drag-insert-primitive-design.md`. Different responsibility (gating mutation gestures rather than insertion), different gesture surface, so it wants its own design pass rather than an extension of this one.
-
 - **(P3) The action pipeline's coordinates are 2D, so another kernel can't
   reuse it.** World points arrive as `{x, y}` or flat scalars in
   `InvocationCtx`, the dep payloads, the pick functions and
@@ -310,8 +308,17 @@ Core five + Crop shipped. Remaining:
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
 - **(P3) Boolean ops on stroked paths.** Treat a stroke as a filled region, then clip. Blocked on stroke-to-fill (round/bevel/miter joins, end caps — its own design problem).
-- **(P3) Pathfinder against text glyphs.** Needs glyph-to-path extraction.
-- **(P3) "Create Outlines".** The destructive text→path conversion every vector editor has: replace a text node with the path geometry of its glyphs, giving up editability. Shares the glyph-to-path extraction above, but is a command in its own right.
+- **(P3) Pathfinder against text glyphs.** The boolean ops take a `Path`, and
+  `glyphOutline(family, weight, style, codepoint)` in
+  `packages/font/src/outline/outlineRegistry.ts` returns a glyph's SVG `d`,
+  so `pathFromD` covers the extraction. What is left is the run walk: laying
+  out the string, placing each glyph's path at its pen position and scaling
+  units-per-em to font size, then unioning the result before the op.
+- **(P3) "Create Outlines".** The destructive text→path conversion every
+  vector editor has: replace a text node with the path geometry of its
+  glyphs, giving up editability. Same run walk as the pathfinder entry
+  above, plus the scene surgery — one undoable batch that deletes the text
+  node and inserts a path node carrying the union.
 
 ---
 
@@ -490,7 +497,7 @@ Core five + Crop shipped. Remaining:
   the same size either way (52933 → 52934 bytes), since identical content
   already collapsed to one scoped hash.
 
-- **(P3) Complex-script text shaping (HarfBuzz).** `packages/core/src/features/text/atlas/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs.
+- **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs.
 
 - **(P2) `{ px }` screen-pixel units for `fontSize` and `letterSpacing`.**
   `Stroke.width` and `MarkerRef.size` already take `number | { px: number }`
@@ -531,7 +538,7 @@ Core five + Crop shipped. Remaining:
   as a bug rather than a limitation. Either give `LayoutLine` a per-run y or
   leave it narrow and say so in its header. Recorded 2026-08-30.
 
-- **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/core/src/features/text/runs.ts:64`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
+- **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 
 ---
 
@@ -627,7 +634,6 @@ intercepting the press that drags the body.
 - **(P3) `tileGrid.childPoses` still arranges by sorted id.** Drops, swaps and occupancy go by where a child's pose sits, but the resting arrangement assigns cells in id order — so the source reflow that runs when a child leaves a grid re-sorts the leftovers and undoes any earlier swap among them. Either `childPoses` compacts in current cell order, or the grid keeps an explicit cell assignment.
 - **(P3) Z-order walk doesn't cross non-container ancestors.** Open question: when a deep layout container is BELOW (in z) a shallow layout container that shares the dragged point, today the deepest wins — debate whether real z-order across the whole tree (flat painter's order) should win instead.
 - **(P3) Tile-grid overflow policy.** Children beyond `cols * rows` are skipped from `childPoses`. Scroll, grow-grid, and rejection are the three policies worth designing between.
-- **(P3) Strategy-aware drop regions.** A layout could expose `dropRegion(container) → Bounds` extending beyond visible bounds for forgiveness (e.g. row layouts catching pointers slightly past the row's end).
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
 - **(P3) Animated reflow transitions.** Sibling reflow is snap-to-target in v1. Smooth interpolation likely needs a `useAnimatedReflow` hook over the animation primitive.
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
@@ -888,12 +894,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) Reconcile `BandEditor` with `Slider`.** `BandEditor` (bands: a contiguous tiling of an axis, seams draggable, each band carrying a payload) ships alongside `Slider` (a thumb list on an axis, `constraint: 'ordered'`, `onAddThumb`/`onRemoveThumb`, `renderTrack`). Under a contiguous tiling the two are the same control — N seams determine N+1 bands, so seams *are* an ordered thumb list — and they were kept separate deliberately: bridging them means teaching `Slider` about the region *between* thumbs (payload, hit-testing, selection), which is the wider change the reconciliation actually requires. The other trigger is `Slider` needing a non-linear axis. A third option arrived with `windease` 1.0 (2026-08-20): its `LayoutStrategy` is public API — `layout()` returns placements plus affordances, `reduce()` folds a gutter drag into strategy state — so a band control is a strategy you write rather than a control you build, and it brings widened gutter grab targets, `affects` for lock suppression, and — as of 1.2.0 — keyboard-operable gutters with it (`role="separator"` with the value triple, arrows plus Home/End, each keypress synthesized into the same drag event the pointer sends so the strategy clamps once). It ships no band strategy of its own: the two built-ins are `gridStrategy` and `stripStrategy`, and strip is `LayoutStrategy<void>` whose gutters are single-child `resize-x` affordances writing pixel `placement.size`. Mapping domain values onto seams is still the consumer's. Note `Slider` is the former `RangePicker`; its spec carries a banner saying so.
 
-- **(P3) windease follow-ups, now that labkit is on it.** `labkit` depends on `windease ^1.2.1` (`~/src/windease`, `orochi235/windease` — a browser window manager: nodes with capabilities, pure `LayoutStrategy` functions, DnD, JSON snapshots) and `Workspace.tsx` tiles through its `gridStrategy` and `Store`. `TrialBody.tsx` is on it too, as a two-pane `stripStrategy` giving the trial sidebar its seam. `gridDims.ts` is gone, as the evaluation predicted: `gridStrategy` auto-balances to `ceil(sqrt(n))` on its own.
-
-  What is left is the one live bug the adoption knowingly took on, in `hints.render: 'flow'` — a pane that reflows without resizing fires no observer, so keyboard navigation reads a stale rect until the child set changes. Flow is the mode where a host keeps its own CSS grid and takes only the gestures; what it gives up is everything downstream of the strategy (placements, affordances, `unplaced`, `overflowMode`, `hints.sizing`, the settle animation).
-
-  Versioning stays a caret range, not lockstep: windease is a separate repo with its own release cadence, and a changesets `fixed` group cannot span repos anyway. The risk a range carries is the one to watch — windease shipping a breaking major that labkit's `^` silently declines to follow.
-
 - **(P3) The color literals with no token equivalent.** Arc 4 tokenized what had a token and
   left the rest rather than inventing a mapping — `check-design-tokens` covers size, weight,
   radius and the stray danger reds, but not color generally, for that reason. What remains is
@@ -980,7 +980,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) Palette presets / recently-used colors.**
 - **(P3) Multi-page documents.**
-- **(P3) Richer text style controls** (font, size, weight pickers).
+- **(P3) A numeric font-weight picker.** `CharacterOptions` has the rest of
+  the strip — `FontFamilySelect`, Size, Tracking, Baseline shift, Scale, a
+  `ColorField` and the flag toggles. Weight is the gap: it is derived from
+  the bold flag (`style.bold ? 700 : 400`), so a family's 300 or 600 face
+  cannot be asked for.
 
 ---
 
