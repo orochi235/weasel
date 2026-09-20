@@ -179,15 +179,17 @@
    tight block rather than a label + a separate horizontal strip. Also
    bottom-align the track within the row so paired rows in a 2-col grid
    keep their tracks lined up even when one label wraps to two lines. */
-.row:has(> input[type='range']) {
+/* Stacked rows only: `:has()` carries its argument's specificity, so on an inline
+   row this outranks `.rowInline`'s space-between and packs label and track to the
+   right edge. */
+.row:not(.rowInline):has(> input[type='range']) {
   justify-content: flex-end;
 }
 
-.row:has(> input[type='range']) > .rowLabel {
+.row:not(.rowInline):has(> input[type='range']) > .rowLabel {
   /* Baseline-align (not center) so the readout input doesn't inflate the
      label-group height past the text baseline. */
   align-items: baseline;
-  justify-content: space-between;
   gap: var(--wzl-space-2);
   margin-bottom: -4px;
 }
