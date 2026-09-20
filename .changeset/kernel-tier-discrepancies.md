@@ -30,7 +30,9 @@ carry their world point as `x`/`y`, matching every other kind in `InputEvent`;
 lands at the origin. All three now also carry `clientX`/`clientY`, so a
 context-menu action can finally read `ctx.screen` — the case that surface was
 added for. The renderer's `Mat3` is `GlMat3`, freeing `Mat3` to mean geom's
-affine in a file that imports from both. `@weasel-js/font` exports `FontStyle`
+affine in a file that imports from both. `translatePolygonInPlace` is
+gone: it was the one sanctioned writer into a committed path's coord buffer,
+documented as overlay-only, and nothing called it. `@weasel-js/font` exports `FontStyle`
 in place of `OutlineFontStyle`. `@weasel-js/labkit` no longer exports
 `useOrbit`, `OrbitView`, `Vec3` or their helpers: `@weasel-js/kernel3d` owns
 the orbit camera and `@weasel-js/geom/3d` owns `Vec3`. `ToolCtx.screenPoint`

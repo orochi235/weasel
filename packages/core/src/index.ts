@@ -727,7 +727,6 @@ export {
   pathToAnchors,
   pointInPath,
   translatePath,
-  translatePolygonInPlace,
   scalePathToBounds,
   pathInPoseFrame,
   pathInWorld,
