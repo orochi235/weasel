@@ -237,7 +237,7 @@
   height: var(--wzl-control-h-sm);
   line-height: calc(var(--wzl-control-h-sm) - 4px);
   border: 1px solid transparent;
-  padding: 1px 0
+  padding: 1px 0;
 }
 
 /* ⓘ help affordance beside a row label. Every dimension is stated because a
@@ -628,7 +628,7 @@
      inline row: a column of settings is read down its labels, and a box that
      leads its own row puts each label at a different indent. */
   justify-content: space-between;
-  gap: var(--wzl-space-4)
+  gap: var(--wzl-space-4);
   cursor: pointer;
 }
 
