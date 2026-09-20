@@ -18,7 +18,7 @@ const entry = (id: string, actionId: string): Contribution => ({
 describe('mergeContributions', () => {
   it('keeps bundle order, so the first bundle still wins a tie', () => {
     const merged = mergeContributions([entry('a', 'a.click')], [entry('b', 'b.click')]);
-    const scoped = scopeBindings(merged, { focusedId: null, heldTriggers: new Set() });
+    const scoped = scopeBindings(merged, { focusedId: null });
     expect(scoped.map((s) => s.binding.actionId)).toEqual(['a.click', 'b.click']);
   });
 

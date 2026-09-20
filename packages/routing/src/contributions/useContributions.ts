@@ -17,8 +17,6 @@ import { liveScope } from './eligibility';
 import type { Contribution, OverlayPosition } from './types';
 import { isDev } from '../devFlag';
 
-const NO_TRIGGERS: ReadonlySet<string> = new Set<string>();
-
 export interface UseContributionsOptions<TOverlay = unknown> {
   /** Every registry entry, in declaration order. Order decides which of two
    *  same-specificity bindings in one scope tier wins. */
@@ -106,7 +104,7 @@ export function useContributions<TOverlay = unknown>(
     }
     return {
       ordered,
-      state: { focusedId: focusedRef.current, heldTriggers: NO_TRIGGERS, engagedIds },
+      state: { focusedId: focusedRef.current, engagedIds },
     };
   }, []);
 

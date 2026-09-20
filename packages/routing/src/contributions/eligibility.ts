@@ -5,10 +5,9 @@ import type { Eligibility } from './types';
 /** What the registry knows at dispatch time. */
 export interface EligibilityState {
   focusedId: string | null;
-  heldTriggers: ReadonlySet<string>;
-  /** Ids the host reports as hotkey-engaged. A declared `offhand` registers
-   *  the binding, but `tool.offhand`'s invoker still reports engagement by
-   *  pushing an id — this retires only if that contract changes. */
+  /** Ids the host reports as hotkey-engaged. A held `offhand` trigger reaches
+   *  here the same way a palette pick does: the `tool.offhand` action pushes
+   *  the tool's id onto the active-tool context's hotkey stack. */
   engagedIds?: ReadonlySet<string>;
   /** Whether the active mode allows these capability tags. Omitted → allow. */
   allows?: (tags: readonly CapabilityTag[]) => boolean;
@@ -26,7 +25,6 @@ export function liveScope(
   const tags = eligibility.capabilities;
   if (tags && tags.length > 0 && state.allows && !state.allows(tags)) return null;
   if (state.engagedIds?.has(id)) return 'hotkey';
-  if (eligibility.offhand && state.heldTriggers.has(eligibility.offhand)) return 'hotkey';
   if (eligibility.focus && state.focusedId === id) return 'active';
   if (eligibility.always || eligibility.claimed) return 'ambient';
   return null;

@@ -138,14 +138,6 @@ Priority tags:
   result is known while the default can still be suppressed, and a paste no
   binding wanted stays the page's.
 
-- **(P3) `EligibilityState.heldTriggers` is unexercised in production.**
-  `Eligibility.offhand` names a trigger key and `liveScope` resolves it, but
-  nothing populates `heldTriggers` — `tool.offhand`'s invoker still reports
-  engagement by pushing a tool *id* onto the hotkey stack, which
-  `engagedIds` reads. So the declaration registers the binding while the id
-  keeps carrying the tier. Retiring `engagedIds` means changing
-  `tool.offhand`'s contract. Recorded 2026-08-10.
-
 - **(P3) Promote `hitExistingGate` to gate select-tool's move/resize paths.** Deferred from `docs/specs/2026-05-05-drag-insert-primitive-design.md`. Different responsibility (gating mutation gestures rather than insertion), different gesture surface, so it wants its own design pass rather than an extension of this one.
 
 - **(P3) The action pipeline's coordinates are 2D, so another kernel can't

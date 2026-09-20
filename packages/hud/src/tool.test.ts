@@ -74,7 +74,6 @@ describe('createHudContribution eligibility', () => {
     // "ambient" slot — the entry's own declaration is what puts it there.
     const scoped = scopeBindings([createHudContribution()], {
       focusedId: 'rect',
-      heldTriggers: new Set<string>(),
     });
     expect(scoped).toHaveLength(7);
     expect(new Set(scoped.map((s) => s.scope))).toEqual(new Set(['ambient']));
