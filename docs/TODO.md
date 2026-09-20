@@ -968,14 +968,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   token manifest carrying a `hook` type, or a generated appendix to `tokens.css`
   as commented-out declarations.
 
-- **(P3) The slider mix tokens are read bare while the size tokens beside them
-  carry defaults.** `range.module.css` and `Slider/Slider.module.css` read
-  `--wzl-slider-track-mix` and `--wzl-slider-thumb-mix` with no fallback inside
-  a `color-mix`, so an unset one invalidates the whole `background` and the
-  thumb paints nothing. `--wzl-slider-track-h` and `--wzl-slider-thumb-size`
-  took fallbacks on those same rules for exactly that failure; the mix half did
-  not, so the two halves of one rule disagree about how they degrade.
-
 - **(P3) Typed units stop at linear factors.** `SelectionPanel` and `PrefsForm`
   read `12mm` into a unit leaf through `UnitField`, and `prefUnit` builds the
   leaf's unit from a `UnitSystem`. A compound value (`5ft 3in`) does not parse,
