@@ -13,7 +13,9 @@ export type {
   EffectCardListItem,
   EffectCardListProps,
   EffectCardProps,
+  IconProps,
   InputProps,
+  JogProps,
   LayerStackItem,
   LayerStackProps,
   NumberRowProps,
@@ -47,8 +49,10 @@ export {
   CurveField,
   EffectCard,
   EffectCardList,
+  Icon,
   Input,
   inferTokenType,
+  Jog,
   LayerStack,
   NumberRow,
   PropertyGroup,
@@ -64,6 +68,20 @@ export {
   ToggleBar,
   ToggleRow,
   TokenPanel,
+} from '@weasel-js/ui';
+
+// Glyphs, for chrome that labels its controls with one. Same reason as above: a consumer
+// building on labkit should not need `@weasel-js/ui` in its manifest to draw a play button.
+export {
+  CloseIcon,
+  CollapseIcon,
+  ExpandIcon,
+  PauseIcon,
+  PlayIcon,
+  ResetIcon,
+  StepBackIcon,
+  StepForwardIcon,
+  StopIcon,
 } from '@weasel-js/ui';
 export type {
   Annotation,
