@@ -723,11 +723,16 @@ terse, single-purpose demo convention: an exception, not a precedent.
 
 What it surfaced:
 
-- **(P2) Convert the platformer's eleven bones to parenting.** The rig is
-  still resolved to world matrices and flattened onto independent bone nodes
-  every frame, though the scene tree now composes rigid poses as a transform
-  hierarchy. Only a rig scaling `scaleX`/`scaleY` separately must stay
-  flattened: see `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
+- **(P3) A rig's mirror lives in the pose data, not in a container.** The
+  platformer's eleven bones are parented now, under
+  `RIGID_POSE_COMPOSITION` — but `facing` used to be a `scaleX: -1` in the
+  rig-to-world matrix, and `RectPose` carries no scale term, so
+  `apps/site/demos/platformer/boneRig.ts` conjugates the chain instead:
+  mirroring negates every local rotation and every local x offset. That is
+  exact for a rigid chain and it is the only move available, but every
+  consumer mirroring a rig has to rediscover it. The engine could carry it —
+  either a pose composition with a reflection term, or a rig-side
+  `mirrorPose(pose)` beside `blendPoses`.
 
 - **(P3) One actions registry still routes input to one canvas.**
   `<WeaselProvider isolate>` gives each canvas its own scope, and a second
