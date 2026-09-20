@@ -618,34 +618,22 @@ intercepting the press that drags the body.
   its own placeholder pose. Closing it means giving the adapter surface a
   dependency read, which is a bigger decision than picking.
 
-- **(P2) Value-compare the resolved poses in `resolveDerivedPath`.**
-  Invalidation is pushed by the scene today, which is closed only under the
-  triggers someone enumerated — the arc's reviews found three rounds of misses
-  (ancestor moves, removal, a dependency appearing). Comparing the resolved
-  poses by *value* needs no push at all for those cases. Not the reference
-  comparison the seam rejects: an override mutates its buffer in place, which
-  defeats reference equality but not value equality.
+- **(P3) `derivePose` still rides on pushed invalidation alone.**
+  `resolveDerivedPath` re-resolves its dependencies on a memo hit and compares
+  their poses by value (`packages/core/src/core/scene/poseSnapshot.ts`), so a
+  dependency that moved with nothing pushed behind it — an ancestor's frame
+  moving, a removal, a dependency appearing, a lookup answering poses of its
+  own — is noticed without a trigger for it. `derivedPoseIn` in
+  `effectivePose.ts` is not: it memoizes on the deriving node's own authored
+  pose and waits to be told. The same treatment fits, at a comparable price —
+  the compare took a 750-edge frame of paths from 0.0863ms to 0.2757ms
+  (`tests/perf/bench/derived-path.bench.ts`).
 
-  **Measured, and the cost is not the obstacle.** `tests/perf/bench/derived-path.bench.ts`
-  runs a frame of derived paths against the diagram shapes a hand-authored
-  document reaches, then the same frame plus the resolve-and-compare pass a
-  value check needs before it can decide to skip:
-
-  | diagram            | frame now | with value compare |     added |
-  | ------------------ | --------: | -----------------: | --------: |
-  | 20 nodes, 30 edges |  0.0042ms |           0.0056ms |  0.0014ms |
-  | 100 nodes, 150 e.  |  0.0189ms |           0.0236ms |  0.0047ms |
-  | 500 nodes, 750 e.  |  0.0918ms |           0.1168ms |  0.0250ms |
-
-  A quarter more of a pass that is itself well under a tenth of a 16.7ms frame,
-  so "unmeasured cost" is no longer the reason to wait.
-
-  **What is left is that it cannot replace push invalidation, only back it
-  up.** A derivation is handed `DerivedDep`, so it can read a dependency's
-  `data`, its `layer` and its resolved `path` — which is why the scene
-  invalidates on `kit:setData` and `kit:setLayer` at all. A pose-only value
-  compare is not closed over any of those. Deciding this means deciding what a
-  derivation is allowed to read, not just how a pose is compared.
+  Either way the pull covers poses only. A derivation is handed `DerivedDep`,
+  so it can read a dependency's `data` and its `layer` too, which is why the
+  scene invalidates on `kit:setData` and `kit:setLayer` at all. Widening the
+  pull to those means deciding what a derivation is allowed to read, not just
+  how a pose is compared.
 
 - **(P3) `Scene<TData, TLayer, TPose>` is contravariant in `TPose`** via
   `clipFromPose` and `derivePath`, so no concretely-typed scene satisfies the

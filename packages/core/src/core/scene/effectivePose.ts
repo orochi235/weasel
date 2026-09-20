@@ -135,18 +135,36 @@ function depIn<TPose>(
 ): DerivedDep<TPose> | undefined {
   const node = source.get(id);
   if (node === undefined) return undefined;
-  return {
-    node: node as unknown as Node<unknown, string, TPose>,
-    pose: poseIn(source, node, reading),
-    get path(): Path | null {
-      return resolveDerivedPath(
-        node,
-        (depId) => depIn(source, depId, reading),
-        (depId) => source.childrenOf(depId),
-        PATH_SLOT[reading],
-      );
-    },
-  };
+  return new SceneDep(source, node, reading);
+}
+
+/**
+ * A class rather than an object literal with a `get path()`: one of these is
+ * built per dependency per derived node per frame, and an own accessor costs
+ * an order of magnitude more to define than a prototype one does to inherit.
+ */
+class SceneDep<TPose> implements DerivedDep<TPose> {
+  readonly node: Node<unknown, string, TPose>;
+  readonly pose: TPose;
+
+  constructor(
+    private readonly source: PoseSource<TPose>,
+    private readonly posed: PosedNode<TPose>,
+    private readonly reading: Reading,
+  ) {
+    this.node = posed as unknown as Node<unknown, string, TPose>;
+    this.pose = poseIn(source, posed, reading);
+  }
+
+  get path(): Path | null {
+    const { source, reading } = this;
+    return resolveDerivedPath(
+      this.posed,
+      (depId) => depIn(source, depId, reading),
+      (depId) => source.childrenOf(depId),
+      PATH_SLOT[reading],
+    );
+  }
 }
 
 function poseIn<TPose>(

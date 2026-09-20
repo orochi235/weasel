@@ -1,18 +1,18 @@
 /**
- * What a frame of derived paths costs, and what value-comparing the
- * dependencies would add to it.
+ * What a frame of derived paths costs now that the resolver value-compares its
+ * dependencies.
  *
- * Invalidation is pushed by the scene today: a `setPose` drops the dependent's
- * memo slot, and every other frame is a memo hit. That is closed only under
- * the triggers someone enumerated. Comparing the resolved dependency poses by
- * *value* would instead be closed under whatever `derivePath` actually read —
- * at the cost of resolving every dependency's pose on every frame, for every
- * derived node, whether anything moved or not.
+ * `resolveDerivedPath` re-resolves every dependency on a memo hit and compares
+ * the poses against the ones the cached path was drawn from, so a dependency
+ * that moved with nothing pushed behind it is still noticed. The first suite
+ * is that frame: the steady state, where nothing moved and every node keeps
+ * its path.
  *
- * These two measure exactly that difference on the same scene: the frame as it
- * runs now, and the extra resolve-and-compare pass a value check would need
- * before it could decide to skip. The pass here is the *floor* on that cost —
- * it walks and compares and nothing else.
+ * The second is the floor the same pass could reach — it reads each pose
+ * straight off the scene and compares four named fields, where the resolver
+ * builds a `DerivedDep` per dependency and compares an opaque `TPose`
+ * structurally. The gap between them is what generality over the pose type
+ * costs.
  */
 import { bench, describe } from 'vitest';
 import { derivedDepOf, effectivePose } from 'core/scene/effectivePose';
@@ -33,7 +33,7 @@ function frameOf(nodes: number, edges: number) {
   return { scene, edgeIds, depOf, childrenOf };
 }
 
-describe('a frame of derived paths — memo hit, as it runs now', () => {
+describe('a frame of derived paths — memo hit, value-comparing the deps', () => {
   for (const [nodes, edges] of SHAPES) {
     const { scene, edgeIds, depOf, childrenOf } = frameOf(nodes, edges);
     // Prime the memo, so the timed iterations are the steady state.
@@ -44,11 +44,11 @@ describe('a frame of derived paths — memo hit, as it runs now', () => {
   }
 });
 
-describe('the same frame, plus resolving and value-comparing every dependency', () => {
+describe('the floor: the same frame, comparing named fields off the scene', () => {
   for (const [nodes, edges] of SHAPES) {
     const { scene, edgeIds, depOf, childrenOf } = frameOf(nodes, edges);
     for (const id of edgeIds) resolveDerivedPath(scene.get(id)! as never, depOf, childrenOf);
-    // What a value check would hold from the previous frame.
+    // What the check holds from the previous frame.
     const last = new Map<NodeId, BenchPose[]>();
     bench(`${nodes} nodes, ${edges} edges`, () => {
       for (const id of edgeIds) {

@@ -30,20 +30,41 @@ export function sceneDepLookup<TData, TLayer extends string, TPose>(
   toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
 ): (id: NodeId) => DerivedDep<TPose> | undefined {
   if (toPose === undefined) return (id) => derivedDepOf(scene, id);
-  const slot = memoSlotFor(toPose);
-  const childrenOf = (id: NodeId): readonly NodeId[] => scene.childrenOf(id);
-  const lookup = (id: NodeId): DerivedDep<TPose> | undefined => {
-    const node = scene.get(id);
-    if (node === undefined) return undefined;
-    return {
-      node: node as unknown as Node<unknown, string, TPose>,
-      pose: toPose(node),
-      get path(): Path | null {
-        return resolveDerivedPath(node, lookup, childrenOf, slot);
-      },
-    };
+  const ctx: SlotLookup<TPose> = {
+    at: toPose as (node: unknown) => TPose,
+    slot: memoSlotFor(toPose),
+    childrenOf: (id: NodeId) => scene.childrenOf(id),
+    lookup: (id: NodeId) => {
+      const node = scene.get(id);
+      return node === undefined ? undefined : new SlotDep(node, ctx);
+    },
   };
-  return lookup;
+  return ctx.lookup;
+}
+
+interface SlotLookup<TPose> {
+  at: (node: unknown) => TPose;
+  slot: string;
+  childrenOf: (id: NodeId) => readonly NodeId[];
+  lookup: (id: NodeId) => DerivedDep<TPose> | undefined;
+}
+
+/** A class, not an object literal with a `get path()` — see `SceneDep` in
+ *  `core/scene/effectivePose.ts` for why. */
+class SlotDep<TPose> implements DerivedDep<TPose> {
+  readonly node: Node<unknown, string, TPose>;
+  readonly pose: TPose;
+
+  constructor(posed: unknown, private readonly ctx: SlotLookup<TPose>) {
+    this.node = posed as Node<unknown, string, TPose>;
+    this.pose = ctx.at(posed);
+  }
+
+  get path(): Path | null {
+    return resolveDerivedPath(
+      this.node as never, this.ctx.lookup, this.ctx.childrenOf, this.ctx.slot,
+    );
+  }
 }
 
 /** `(node) => the path it derives`, read through {@link sceneDepLookup}. */
