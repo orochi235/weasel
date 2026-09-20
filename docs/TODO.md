@@ -486,23 +486,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs.
 
-- **(P2) `{ px }` screen-pixel units for `fontSize` and `letterSpacing`.**
-  `Stroke.width` and `MarkerRef.size` already take `number | { px: number }`
-  (`packages/paint/src/paint.ts:168`), resolved against the accumulated
-  transform scale at draw time by `resolveStrokeWidth`
-  (`packages/core/src/features/paths/tessellate/stroke.ts`), so a stroke holds
-  its on-screen thickness as the view zooms with no call-site arithmetic.
-  `TextStyle.fontSize` and `letterSpacing` (`packages/text/src/textStyle.ts`)
-  are world-units-only, so every label that wants to stay legible under zoom
-  divides by the scale by hand before building the command. The kit does it to
-  itself in `paintedCursorLayer.ts` and `useDispatcherOverlayLayer.ts`, both
-  computing `(view.scale.x + view.scale.y) / 2` to un-scale chrome. Widen both
-  fields and resolve them in `resolveTextStyle` — the single funnel all three
-  of `textCommand`, `textCommandFromRuns` and `textCommandFromPose` pass
-  through — taking the mean transform scale the way `resolveStrokeWidth` does.
-  `ResolvedTextStyle` keeps a plain `number`, so layout, measurement and the
-  edit overlay are untouched.
-
 - **(P3) Small caps and `text-transform` have no run spelling.** The two
   remaining gaps in the run style model after the superscript pass. Both are
   harder than they look and for different reasons. `text-transform` breaks the
@@ -626,10 +609,6 @@ intercepting the press that drags the body.
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
 - **(P3) Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle.
 - **(P3) Configurable layout hit-test order.** v1 uses top-most container under the dragged center. Innermost-regardless-of-z and explicit-drop-region are the other two modes worth having.
-
-### Tiling
-
-- **(P3) Tiled-content layer primitive.** Surfaced 2026-05-17 by the ParallaxDemo loop work (`4c0e98ef`). The demo's local `tiledProject` helper walks every visible copy of a shape along a periodic x axis, giving seamless infinite-pan looping for free. Generalized shape: a `createTiledLayer<TData>({ source, period, axis? })` wrapper that takes any RenderLayer and produces a periodic version, with `tiledProject(visStart, visEnd, period)` as a public helper. Composes cleanly with `createParallaxLayer`. Open questions: 2D wrap (`period: number | { x, y }`); period as a function of view/dims vs constant; per-shape vs per-layer period. Demo today: `apps/site/demos/ParallaxDemo.tsx`. Likely lives at `packages/core/src/features/tiling/` or alongside `createParallaxLayer` in `packages/core/src/features/parallax/`.
 
 ### Units
 

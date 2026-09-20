@@ -6,7 +6,7 @@
  */
 
 import type { Path, Stroke, StrokeAlign } from '@weasel-js/core';
-import { boundsOfPath, SCRIPT_METRICS } from '@weasel-js/core';
+import { boundsOfPath, resolveScreenLength, SCRIPT_METRICS } from '@weasel-js/core';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
@@ -501,7 +501,9 @@ function textXml(
   ];
 
   const style = node.style;
-  if (style?.fontSize != null) attrs.push(`font-size="${trimNumber(style.fontSize)}"`);
+  // SVG user space has no camera, so a `{ px }` size writes as that many
+  // user units — the reading it already has at scale 1.
+  if (style?.fontSize != null) attrs.push(`font-size="${trimNumber(resolveScreenLength(style.fontSize, 1))}"`);
   if (style?.fontFamily) attrs.push(`font-family="${escapeAttr(style.fontFamily)}"`);
   if (style?.fontWeight != null) attrs.push(`font-weight="${String(style.fontWeight)}"`);
   if (style?.fontStyle && style.fontStyle !== 'normal') attrs.push(`font-style="${style.fontStyle}"`);
@@ -520,7 +522,7 @@ function textXml(
     if (anchor !== 'start') attrs.push(`text-anchor="${anchor}"`);
   }
   if (style?.letterSpacing != null && style.letterSpacing !== 0) {
-    attrs.push(`letter-spacing="${trimNumber(style.letterSpacing)}"`);
+    attrs.push(`letter-spacing="${trimNumber(resolveScreenLength(style.letterSpacing, 1))}"`);
   }
   const decoration = textDecorationValue(style?.underline, style?.strikethrough, style?.overline);
   if (decoration) attrs.push(`text-decoration="${decoration}"`);
@@ -589,7 +591,7 @@ function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerR
     ? SCRIPT_METRICS[run.script].size
     : undefined;
   const scale = run.fontScale ?? presetScale;
-  if (run.fontSize != null) attrs.push(`font-size="${trimNumber(run.fontSize)}"`);
+  if (run.fontSize != null) attrs.push(`font-size="${trimNumber(resolveScreenLength(run.fontSize, 1))}"`);
   else if (scale != null) attrs.push(`font-size="${trimNumber(scale * 100)}%"`);
   // Same story for `baseline-shift`: an SVG percentage resolves against the
   // parent's font size, which is the unit `baselineShift` is already in.
@@ -602,7 +604,7 @@ function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerR
   // *override* (distinct from "inherit the node's letterSpacing") per the
   // runs model's additive-flags contract — emit it whenever it's set.
   if (run.letterSpacing != null) {
-    attrs.push(`letter-spacing="${trimNumber(run.letterSpacing)}"`);
+    attrs.push(`letter-spacing="${trimNumber(resolveScreenLength(run.letterSpacing, 1))}"`);
   }
   const runDecoration = textDecorationValue(run.underline, run.strikethrough, run.overline);
   if (runDecoration) attrs.push(`text-decoration="${runDecoration}"`);

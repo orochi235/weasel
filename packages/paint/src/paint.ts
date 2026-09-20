@@ -151,7 +151,26 @@ export type MarkerKey = KitMarkerKey | (string & {});
  * `markerUnits` in the idiom this codebase already resolves at draw time.
  * Omitted, the marker is one stroke width per unit.
  */
-export type MarkerRef = MarkerKey | { key: MarkerKey; size?: number | { px: number } };
+export type MarkerRef = MarkerKey | { key: MarkerKey; size?: ScreenLength };
+
+/**
+ * A length the author states either in world units (a plain number) or in
+ * screen pixels (`{ px }`), resolved against the accumulated transform scale
+ * wherever it is consumed — so a `{ px }` length holds its on-screen size as
+ * the view zooms, with no call-site arithmetic.
+ */
+export type ScreenLength = number | { px: number };
+
+/**
+ * Resolve a {@link ScreenLength} to world units. A non-finite or zero scale
+ * has no world to divide into, so the pixel count passes through unchanged
+ * rather than becoming `Infinity`.
+ */
+export function resolveScreenLength(value: ScreenLength, scale: number): number {
+  if (typeof value === 'number') return value;
+  if (!Number.isFinite(scale) || scale === 0) return value.px;
+  return value.px / scale;
+}
 
 /** Stroke style: a FillStyle plus structural line parameters. */
 export interface Stroke {
@@ -165,7 +184,7 @@ export interface Stroke {
   /** World units, or `{ px }` for screen pixels — resolved against the
    *  accumulated transform scale at draw time, so it holds its on-screen
    *  thickness as the view zooms. */
-  width?: number | { px: number };
+  width?: ScreenLength;
   /** Per `CanvasRenderingContext2D.setLineDash` — empty/omitted = solid. */
   dash?: number[];
   /** Marker at the first vertex of each open subpath, rotated to point back

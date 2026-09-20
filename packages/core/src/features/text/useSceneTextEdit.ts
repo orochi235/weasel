@@ -26,6 +26,7 @@ import { asNodeId } from '../../core/scene/types';
 import { effectivePose } from '../../core/scene/effectivePose';
 import type { Scene } from '../../core/scene/types';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
+import { resolveScreenLength } from '@weasel-js/paint';
 import { clientToCanvas } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
@@ -203,7 +204,12 @@ export function useSceneTextEdit<
         y: originY + (view ? (pose.y - view.y) * view.scale.y : pose.y),
         width: pose.width,
         height: pose.height,
-        fontSize: style?.fontSize ?? optsRef.current.defaultFontSize ?? 16,
+        // Against `zoom`, the same factor the overlay scales back up by, so a
+        // `{ px }` size arrives on screen at the pixel count it names.
+        fontSize: resolveScreenLength(
+          style?.fontSize ?? optsRef.current.defaultFontSize ?? 16,
+          zoom,
+        ),
         zoom,
         verticalAlign: optsRef.current.getVerticalAlign
           ? optsRef.current.getVerticalAlign(node.data)

@@ -155,3 +155,20 @@ describe('resolveRuns', () => {
     expect(resolveRuns([], style)).toEqual([]);
   });
 });
+
+describe('resolveRuns screen-pixel sizes', () => {
+  it("divides a run's own `{ px }` fontSize by the view scale", () => {
+    const style = resolveTextStyle({ fontSize: 10 });
+    expect(resolveRuns([{ text: 'a', fontSize: { px: 24 } }], style, 4)[0].fontSize).toBe(6);
+  });
+
+  it("divides a run's own `{ px }` letterSpacing by the view scale", () => {
+    const style = resolveTextStyle({});
+    expect(resolveRuns([{ text: 'a', letterSpacing: { px: 8 } }], style, 4)[0].letterSpacing).toBe(2);
+  });
+
+  it('inherits the style size already resolved, not re-divided', () => {
+    const style = resolveTextStyle({ fontSize: { px: 24 } }, undefined, 4);
+    expect(resolveRuns([{ text: 'a' }], style, 4)[0].fontSize).toBe(6);
+  });
+});

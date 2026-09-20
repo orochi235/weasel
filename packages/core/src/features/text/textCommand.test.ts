@@ -5,7 +5,7 @@
  * sourced from the resolved style, (3) style defaults flow through.
  */
 import { describe, it, expect } from 'vitest';
-import { textCommand } from './textCommand';
+import { textCommand, textCommandFromPose, textCommandFromRuns } from './textCommand';
 
 describe('textCommand', () => {
   it('emits a `text` DrawCommand with the given position and text', () => {
@@ -73,5 +73,39 @@ describe('textCommand', () => {
     const cmd = textCommand(0, 0, 'x');
     if (cmd.kind !== 'text') throw new Error('unreachable');
     expect(cmd.verticalAlign).toBeUndefined();
+  });
+});
+
+describe('screen-pixel sizes', () => {
+  it('resolves a `{ px }` fontSize against the scale the builder is given', () => {
+    const cmd = textCommand(0, 0, 'x', { fontSize: { px: 24 } }, undefined, undefined, undefined, undefined, undefined, 3);
+    if (cmd.kind !== 'text') throw new Error('unreachable');
+    expect(cmd.runs[0].fontSize).toBe(8);
+  });
+
+  it('resolves a `{ px }` letterSpacing the same way', () => {
+    const cmd = textCommand(0, 0, 'x', { letterSpacing: { px: 6 } }, undefined, undefined, undefined, undefined, undefined, 2);
+    if (cmd.kind !== 'text') throw new Error('unreachable');
+    expect(cmd.runs[0].letterSpacing).toBe(3);
+  });
+
+  it('resolves a run-level `{ px }` fontSize through textCommandFromRuns', () => {
+    const cmd = textCommandFromRuns(0, 0, [{ text: 'x', fontSize: { px: 32 } }], undefined, undefined, undefined, undefined, undefined, undefined, 4);
+    if (cmd.kind !== 'text') throw new Error('unreachable');
+    expect(cmd.runs[0].fontSize).toBe(8);
+  });
+
+  it('resolves a pose `{ px }` fontSize through textCommandFromPose', () => {
+    const cmd = textCommandFromPose(
+      { x: 0, y: 0, width: 100, height: 20, text: 'x', style: { fontSize: { px: 24 } } },
+      6,
+    );
+    expect(cmd.runs[0].fontSize).toBe(4);
+  });
+
+  it('leaves the command carrying the authored style, unresolved', () => {
+    const cmd = textCommand(0, 0, 'x', { fontSize: { px: 24 } }, undefined, undefined, undefined, undefined, undefined, 3);
+    if (cmd.kind !== 'text') throw new Error('unreachable');
+    expect(cmd.style.fontSize).toEqual({ px: 24 });
   });
 });

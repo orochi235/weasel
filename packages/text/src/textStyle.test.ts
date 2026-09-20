@@ -126,3 +126,27 @@ describe('new typography keys', () => {
     expect(s.strikethrough).toBe(true);
   });
 });
+
+describe('resolveTextStyle screen-pixel sizes', () => {
+  it('divides a `{ px }` fontSize by the view scale', () => {
+    expect(resolveTextStyle({ fontSize: { px: 24 } }, undefined, 3).fontSize).toBe(8);
+  });
+
+  it('divides a `{ px }` letterSpacing by the view scale', () => {
+    expect(resolveTextStyle({ letterSpacing: { px: 5 } }, undefined, 2).letterSpacing).toBe(2.5);
+  });
+
+  it('leaves a world-unit size alone at any scale', () => {
+    expect(resolveTextStyle({ fontSize: 18 }, undefined, 7).fontSize).toBe(18);
+  });
+
+  it('defaults the scale to 1, reading a `{ px }` size as world units', () => {
+    expect(resolveTextStyle({ fontSize: { px: 20 } }).fontSize).toBe(20);
+  });
+
+  it('holds its screen size as the scale changes', () => {
+    const a = resolveTextStyle({ fontSize: { px: 16 } }, undefined, 2).fontSize * 2;
+    const b = resolveTextStyle({ fontSize: { px: 16 } }, undefined, 8).fontSize * 8;
+    expect(a).toBeCloseTo(b);
+  });
+});

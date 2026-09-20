@@ -1,6 +1,6 @@
 import type { Path } from '@weasel-js/core';
-import type { Stroke } from '@weasel-js/paint';
-import { alignedStrokeRect } from '@weasel-js/paint';
+import type { ScreenLength, Stroke } from '@weasel-js/paint';
+import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
 import type { Mesh } from '../../../renderer/cache/mesh';
 import { extractPolylines, type Polyline } from './polyline';
 import { trimPolyline } from './trim';
@@ -44,10 +44,8 @@ interface Seg {
 /** Resolve a stroke width to world units. A number is already world units;
  *  `{ px }` is screen pixels divided by the accumulated scale, so it holds its
  *  on-screen thickness as the view zooms. */
-export function resolveStrokeWidth(width: number | { px: number }, scale: number): number {
-  if (typeof width === 'number') return width;
-  if (!Number.isFinite(scale) || scale === 0) return width.px;
-  return width.px / scale;
+export function resolveStrokeWidth(width: ScreenLength, scale: number): number {
+  return resolveScreenLength(width, scale);
 }
 
 /**

@@ -37,6 +37,7 @@ import {
   type FillStyle,
   type IngestCtx,
   type Op,
+  type ScreenLength,
   type Stroke,
   type StyledRun,
   type TextStyle,
@@ -285,18 +286,20 @@ function scaleTextData(
   if (scale === 1 || typeof data.text !== 'string') return data;
   const style = (data.style ?? {}) as TextStyle;
   // A run's own `fontSize` is absolute and overrides the node's, so it needs
-  // the same scale. `fontScale` is relative and rides the node's for free.
+  // the same scale. `fontScale` is relative and rides the node's for free, and
+  // a `{ px }` size is pinned to the screen, so the fit clamp never touches it.
+  const scaleSize = (v: ScreenLength): ScreenLength => (typeof v === 'number' ? v * scale : v);
   const runs = data.runs as StyledRun[] | undefined;
   return {
     ...data,
     ...(runs
       ? {
         runs: runs.map((r) => (r.fontSize !== undefined
-          ? { ...r, fontSize: r.fontSize * scale }
+          ? { ...r, fontSize: scaleSize(r.fontSize) }
           : r)),
       }
       : {}),
-    style: { ...style, fontSize: resolveTextStyle(style).fontSize * scale },
+    style: { ...style, fontSize: scaleSize(style.fontSize ?? resolveTextStyle(style).fontSize) },
   };
 }
 

@@ -9,6 +9,9 @@ export interface MeasureTextBoundsOpts {
   maxWidth?: number;
   /** Overrides `style`'s `lineHeight` multiplier for this measurement. */
   lineHeight?: number;
+  /** View scale any `{ px }` size in `style` resolves against. Default 1,
+   *  which measures a `{ px }` size as that many world units. */
+  scale?: number;
 }
 
 /**
@@ -32,8 +35,8 @@ export function measureTextBounds(
   style?: TextStyle,
   opts?: MeasureTextBoundsOpts,
 ): { width: number; height: number } {
-  const resolved = resolveTextStyle(style);
-  const runs = resolveRuns([{ text }], resolved);
+  const resolved = resolveTextStyle(style, undefined, opts?.scale);
+  const runs = resolveRuns([{ text }], resolved, opts?.scale);
   const { bounds } = cachedLayoutRuns(runs, {
     maxWidth: opts?.maxWidth ?? Infinity,
     lineHeight: opts?.lineHeight ?? resolved.lineHeight,

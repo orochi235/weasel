@@ -14,9 +14,11 @@ export type {
   Stroke,
   StrokeDashStyle,
   Region,
+  ScreenLength,
 } from './paint';
 export {
   alignedStrokeRect,
+  resolveScreenLength,
   STROKE_DASH_RATIOS,
   dashForStrokeStyle,
   strokeDashStyleOf,
