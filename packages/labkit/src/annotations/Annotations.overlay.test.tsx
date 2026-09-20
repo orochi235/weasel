@@ -146,6 +146,26 @@ describe('<AnnotationTargets>', () => {
     expect(boxes[1]?.style.getPropertyValue('--lk-anno-h')).toBe('100px');
   });
 
+  it('takes input while a mark tool is held, and passes it through otherwise', () => {
+    const drawing = render(<Harness toolId="rect" />, { wrapper: StrictMode });
+    act(() => {
+      vi.advanceTimersByTime(64);
+    });
+    expect(drawing.container.querySelector('.lk-annotate__input')?.hasAttribute('data-idle')).toBe(
+      false,
+    );
+    drawing.unmount();
+
+    // `pointer` is in the rail but not in the tool map: the instrument under the overlay stays clickable.
+    const idle = render(<Harness toolId="pointer" />, { wrapper: StrictMode });
+    act(() => {
+      vi.advanceTimersByTime(64);
+    });
+    expect(idle.container.querySelector('.lk-annotate__input')?.hasAttribute('data-idle')).toBe(
+      true,
+    );
+  });
+
   it('lands the boxes in the surface container, not among the instrument DOM', () => {
     const { container } = render(<Harness />, { wrapper: StrictMode });
     act(() => {

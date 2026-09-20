@@ -15,7 +15,7 @@ import {
 import { TOKEN_MANIFEST } from '@weasel-js/theme';
 import { useCallback, useMemo, useState } from 'react';
 import { useCssOverrides } from './overrides';
-import { useTrialFrame } from './trialFrames';
+import { useTrialFrame } from '../trialFrames';
 
 type Tab = 'theme' | 'story';
 

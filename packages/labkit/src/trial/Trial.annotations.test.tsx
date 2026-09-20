@@ -55,7 +55,16 @@ const plain = defineInstrument<Record<string, never>, Record<string, never>>({
 describe('an instrument that declares annotations', () => {
   it('gets a drawing palette', () => {
     render(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
-    for (const label of ['Select', 'Freehand', 'Line', 'Arrow', 'Rectangle', 'Ellipse', 'Text']) {
+    for (const label of [
+      'Interact',
+      'Select',
+      'Freehand',
+      'Line',
+      'Arrow',
+      'Rectangle',
+      'Ellipse',
+      'Text',
+    ]) {
       expect(screen.getByRole('button', { name: label })).toBeTruthy();
     }
   });
@@ -65,9 +74,9 @@ describe('an instrument that declares annotations', () => {
     expect(screen.getByTestId('pane').dataset.marks).toBe('0');
   });
 
-  it('starts in select, so a first click does not draw', () => {
+  it('starts in interact, so a first click reaches the instrument', () => {
     render(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
-    expect(screen.getByRole('button', { name: 'Select' }).getAttribute('aria-current')).toBe(
+    expect(screen.getByRole('button', { name: 'Interact' }).getAttribute('aria-current')).toBe(
       'true',
     );
   });
@@ -106,7 +115,7 @@ describe('the annotation tool', () => {
     act(() => labRef?.addTrial('Annotating'));
     const panes = screen.getAllByTestId('pane');
     expect(panes).toHaveLength(2);
-    for (const p of panes) expect(p.dataset.tool).toBe('select');
+    for (const p of panes) expect(p.dataset.tool).toBe('pointer');
 
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Rectangle' }));

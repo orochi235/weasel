@@ -981,25 +981,18 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 in its own iframe ("frame"), and the workshop shows it as a lab trial with
 controls. It is the only story runner in the repo.
 
-- **(P2) Nothing checks accessibility any more.** Storybook ran axe through
-  `@storybook/addon-a11y`; retiring it took that with it, and nothing in
-  `packages/forge` replaces it — the repo's axe coverage is zero, not reduced.
-  The story's DOM lives in the frame, so the check has to run there, with the
-  results sent to the workshop over the frame's message channel.
-
 - **(P3) Storybook's secondary-panel addon has no forge equivalent.** It pinned
   a second addon panel into a fixed column beside the first, so controls and
   CSS vars could be read at once. forge tiles its panels through labkit's
   `Workspace`, which may already cover it — check before building anything.
   (The CSS-vars addon does have an equivalent: `packages/forge/src/shell/cssVars/`.)
 
-- **(P2) labkit annotations cannot capture a forge story.** A labkit annotation
-  target hands the export a `base()` picture of itself, as an SVG string, an
-  image, or a canvas (`CaptureSource` in `packages/labkit/src/annotations/types.ts`),
-  and `storyInstrument` (`packages/forge/src/shell/storyInstrument.tsx`) declares
-  no `annotations` at all. The story is DOM inside another document, so the
-  workshop cannot draw it into any of those; the frame has to produce the
-  picture and send it back.
+- **(P3) A captured forge story loses what `:root`, `html` and `body` style.**
+  The frame serializes its story into a `<foreignObject>` whose root is a
+  `<div>` (`packages/forge/src/frame/capture.ts`), so a rule hanging off those
+  three selectors does not reach the clone. Custom properties are restated on
+  the capture root, which covers theme tokens; a page background or a body
+  font is still lost, and so is any font or image the document did not inline.
 
 
 - **(P3) A forge story with a `viewport` reloads its frame once when first
