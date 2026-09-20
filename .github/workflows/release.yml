@@ -52,6 +52,9 @@ jobs:
       # checks this on the PR, but the release path accepts
       # `workflow_dispatch`, which bypasses that entirely.
       - run: npm run check:bumps
+      # A package missing from the `fixed` group versions on its own, which the
+      # release path would then publish as a sibling that disagrees.
+      - run: npm run check:lockstep
       # OIDC cannot create a package, so a workspace that has never been
       # published fails at PUT with E404 — after its siblings are already out,
       # because `changeset publish` is not atomic. Both 1.4.0-pre releases

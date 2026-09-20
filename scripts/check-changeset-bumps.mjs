@@ -11,7 +11,7 @@
  * The level is part of the marker so that approving a `minor` does not
  * silently authorize a later edit to `major`.
  *
- * Why this exists: all thirteen packages are in one changesets `fixed` group,
+ * Why this exists: every published package is in one changesets `fixed` group,
  * so a single bump anywhere moves every package. weasel reached 1.0.0 on
  * 2026-08-12 by accident that way — two `major` changesets sat in
  * `.changeset/` for days until a release about something else consumed them.

@@ -34,9 +34,12 @@ jobs:
       - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       # Refuses any changeset bump above `patch` without a sign-off marker.
-      # All thirteen packages share one `fixed` group, so one bump moves every
-      # package — which is how 0.8.0 became 1.0.0 by accident on 2026-08-12.
+      # Every published package shares one `fixed` group, so one bump moves them
+      # all — which is how 0.8.0 became 1.0.0 by accident on 2026-08-12.
       - run: npm run check:bumps
+      # And that the group is still the whole set: it is a hand-written list of
+      # names, so a new package omitted from it versions on its own in silence.
+      - run: npm run check:lockstep
       # A package that has never been published cannot be published by the
       # release job's OIDC token — it needs one manual publish first. Warn
       # here rather than fail: the PR that adds a package is legitimately the
