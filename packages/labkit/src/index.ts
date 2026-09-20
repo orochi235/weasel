@@ -2,6 +2,8 @@
 // `@weasel-js/ui`; labkit re-exports them so chrome built on labkit needs no
 // direct ui dependency. Named, not `export *` — a star re-export of an external
 // package emits no binding in the bundle.
+// The playback glyphs ride along for the same reason: chrome that labels a control with
+// one should not need `@weasel-js/ui` in its manifest to draw a play button.
 export type {
   ButtonProps,
   ButtonSize,
@@ -45,43 +47,38 @@ export type {
 export {
   Button,
   CheckboxRow,
+  CloseIcon,
+  CollapseIcon,
   ColorRow,
   CurveField,
   EffectCard,
   EffectCardList,
+  ExpandIcon,
   Icon,
   Input,
   inferTokenType,
   Jog,
   LayerStack,
   NumberRow,
+  PauseIcon,
+  PlayIcon,
   PropertyGroup,
   PropertyList,
   PropertyPanel,
   PropertyRow,
   PropertySpan,
+  ResetIcon,
   Select,
   SelectRow,
   SliderRow,
+  StepBackIcon,
+  StepForwardIcon,
+  StopIcon,
   Subpanel,
   TextRow,
   ToggleBar,
   ToggleRow,
   TokenPanel,
-} from '@weasel-js/ui';
-
-// Glyphs, for chrome that labels its controls with one. Same reason as above: a consumer
-// building on labkit should not need `@weasel-js/ui` in its manifest to draw a play button.
-export {
-  CloseIcon,
-  CollapseIcon,
-  ExpandIcon,
-  PauseIcon,
-  PlayIcon,
-  ResetIcon,
-  StepBackIcon,
-  StepForwardIcon,
-  StopIcon,
 } from '@weasel-js/ui';
 export type {
   Annotation,
