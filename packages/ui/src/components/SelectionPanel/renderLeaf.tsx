@@ -89,7 +89,7 @@ export type PropertyRenderer = (ctx: PropertyRenderContext) => ReactNode;
  * One leaf with its context built but nothing rendered yet.
  *
  * Deferring the render is what lets a run of sibling flags become one bar:
- * whether a leaf joins its neighbours is a fact about the run, which no leaf
+ * whether a leaf joins its neighbors is a fact about the run, which no leaf
  * rendering itself can see.
  */
 export interface LeafCell {
