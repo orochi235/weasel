@@ -251,6 +251,101 @@ console.log(
   console.log(`[smoke] declaration audit OK — ${PACKAGES.length} packages declare what they import.`);
 }
 
+// A @weasel-js peer is a package the consumer must resolve exactly once: it
+// owns something whose identity matters — core's registries, theme's React
+// context and its `wzl-themes` stylesheet handle. Bundling one into a
+// dependent's dist ships a second copy, and both failures are silent. Core's
+// reads an empty registry; theme's gives `useThemeOptional` a context the
+// app's own `ThemeProvider` never wrote to, so `<LabShell>` wraps a second
+// provider over the app's theme. Nothing else in the gate sees either: inside
+// the repo aliases resolve both copies to the same source, and the smoke tree
+// packs every package whether or not it was inlined.
+{
+  const problems = [];
+  for (const name of PACKAGES) {
+    const pkgDir = join(repoRoot, 'packages', name);
+    let manifest;
+    try {
+      manifest = JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8'));
+    } catch {
+      continue;
+    }
+    const peers = Object.keys(manifest.peerDependencies ?? {}).filter((d) =>
+      d.startsWith('@weasel-js/'),
+    );
+    if (peers.length === 0) continue;
+
+    // Runtime-only: a type-only peer legitimately never reaches the JS.
+    const runtime = new Set();
+    const walkSrc = async (dir) => {
+      let entries;
+      try {
+        entries = await readdir(dir, { withFileTypes: true });
+      } catch {
+        return;
+      }
+      for (const e of entries) {
+        const child = join(dir, e.name);
+        if (e.isDirectory()) await walkSrc(child);
+        else if (/\.tsx?$/.test(e.name) && !/\.(test|stories|bench)\.tsx?$/.test(e.name)) {
+          const text = await readFile(child, 'utf8');
+          for (const [, , clause, spec] of text.matchAll(
+            /^[ \t]*(import|export)\b([^;*]*?)from\s*['"](@weasel-js\/[^'"]+)['"]/gm,
+          )) {
+            const trimmed = clause.trim();
+            if (/^type\b/.test(trimmed)) continue;
+            const named = trimmed.match(/^\{([\s\S]*)\}$/);
+            if (named && named[1].split(',').every((x) => !x.trim() || /^type\s/.test(x.trim()))) {
+              continue;
+            }
+            runtime.add(spec.split('/').slice(0, 2).join('/'));
+          }
+        }
+      }
+    };
+    await walkSrc(join(pkgDir, 'src'));
+
+    const externalized = new Set();
+    const walkDist = async (dir) => {
+      let entries;
+      try {
+        entries = await readdir(dir, { withFileTypes: true });
+      } catch {
+        return;
+      }
+      for (const e of entries) {
+        const child = join(dir, e.name);
+        if (e.isDirectory()) await walkDist(child);
+        else if (e.name.endsWith('.js')) {
+          const text = await readFile(child, 'utf8');
+          for (const [, spec] of text.matchAll(
+            /^\s*(?:import|export)\b[^;'"]*?from\s*['"](@weasel-js\/[^'"]+)['"]/gm,
+          )) {
+            externalized.add(spec.split('/').slice(0, 2).join('/'));
+          }
+        }
+      }
+    };
+    await walkDist(join(pkgDir, 'dist'));
+
+    for (const peer of peers) {
+      if (runtime.has(peer) && !externalized.has(peer)) {
+        problems.push(`${manifest.name}: ${peer} is a peer it imports at runtime, but its dist JS inlines it`);
+      }
+    }
+  }
+
+  if (problems.length) {
+    fail(
+      'packages inline a @weasel-js peer into their own dist — a consumer holding both\n' +
+        'gets two copies of a package whose identity is the whole point:',
+      problems.join('\n') +
+        '\n\nCheck the package\'s tsup `noExternal`, and its .d.ts pipeline beside it.',
+    );
+  }
+  console.log('[smoke] peer-externalization audit OK — no package inlines a @weasel-js peer.');
+}
+
 // ── Phase 2: pack + extract into a node_modules tree outside the repo ──────
 const workDir = await mkdtemp(join(tmpdir(), 'weasel-smoke-'));
 const tarballDir = join(workDir, 'tarballs');
@@ -385,7 +480,7 @@ await writeFile(
     `type _View = DepSchema['view'];\n` +
     `type _Scene = DepSchema['scene'];\n` +
     `type _Hist = DepSchema['history'];\n` +
-    `type _Ptr = DepSchema['pointer'];\n` +
+    `type _Tool = DepSchema['activeTool'];\n` +
     `const _k: keyof DepSchema = 'selection';\n` +
     // The re-export and the direct import must be the SAME type. If core
     // inlined a private copy of history's declarations instead of importing
@@ -434,7 +529,7 @@ await writeFile(
     `const _augKey: keyof DepSchema = 'smokeDep';\n` +
     `declare const _augAction: Action;\n` +
     `const _augRequires: readonly DepName[] = ['smokeDep', ..._augAction.requires ?? []];\n` +
-    `export type { _Sel, _View, _Scene, _Hist, _Ptr, _M, _G, _S, _O, _Ui, _Hud, _UiSubpath, _Augmented };\n` +
+    `export type { _Sel, _View, _Scene, _Hist, _Tool, _M, _G, _S, _O, _Ui, _Hud, _UiSubpath, _Augmented };\n` +
     `export const _key = _k;\n` +
     `export const _augK = _augKey;\n` +
     `export const _augR = _augRequires;\n` +

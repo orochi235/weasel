@@ -1,7 +1,9 @@
 # Singleton-bearing packages belong in `peerDependencies`
 
 **Shipped.** `font` is a peer of `core`, `hud` and `text`; `core` is a peer of
-`svg` and `labkit`, and the `d3` / `hud` / `ui` ranges are exact.
+`svg` and `labkit`, and the `d3` / `hud` / `ui` ranges are exact. `theme` is a
+peer of `labkit`, added later — see the row below for what the original test
+missed.
 
 For whoever picks up weasel's packaging next. It assumes you know what a
 module-global registry is and nothing else about this arc.
@@ -36,12 +38,24 @@ reason.
 The test is whether duplication changes *behavior* or only wastes memory.
 A registry that consumer code writes into fails the test; a memo does not.
 
-**Must be peers — they hold registries consumers write into:**
+**Must be peers — their module state has identity:**
 
 | package | state |
 |---|---|
 | `@weasel-js/font` | registered faces, outline slots, dynamic atlas, fallback policy, glyph-ready subscribers |
 | `@weasel-js/core` | content handlers, paint kinds, shape painters, markers, program registry, svg/image handler seams |
+| `@weasel-js/theme` | the `ThemeContext` object, and `applyTheme`'s handle on the `wzl-themes` stylesheet |
+
+Theme is the row the original "registry consumers write into" test missed: a
+React context is neither a registry nor a memo, and nothing writes into it. A
+second copy still breaks coordination, because `useContext` matches on the
+context *object*. Labkit bundled its own copy, so `<LabShell>`'s
+`useThemeOptional()` could not see the `ThemeProvider` an app mounted from the
+installed package — it read `null` and wrapped a second provider over the app's
+own theme. Where `adoptedStyleSheets` is missing, both copies also append their
+own `<style id="wzl-themes">`. The general form of the test is **does a second
+copy have an identity the first one's callers are comparing against** —
+registry, context object, symbol, class used with `instanceof`.
 
 **No change needed on their own account** — their only module state is caches
 and warn-dedup, where a second copy costs memory and a repeated warning:
@@ -76,13 +90,15 @@ verifies that advertised export paths exist in the tarball.
 - **Peer ranges are exact.** Changesets rewrites an exact peer range in the
   same pass that bumps the group, so a dependent never sees an out-of-range
   peer and no release escalates to a major on its account.
-- **`labkit` externalizes core rather than inlining it.** Its `tsup` and `.d.ts`
-  builds keep every other weasel sibling bundled and let `@weasel-js/core`
-  through as an external specifier, so there is something to peer and a consumer
-  resolves one copy. Its own smoke test checks both directions: no sibling
-  specifier in `dist`, and core's specifier present — an inlined core resolves,
-  bundles and renders against its own registries, which is the state no other
-  gate can see.
+- **`labkit` externalizes core and theme rather than inlining them.** Its `tsup`
+  and `.d.ts` builds keep every other weasel sibling bundled and let those two
+  through as external specifiers, so there is something to peer and a consumer
+  resolves one copy. `test:smoke:consumer`'s peer-externalization audit is what
+  holds it: for every package, a `@weasel-js` peer it imports at runtime must
+  appear as an external specifier in its own `dist` JS. An inlined peer
+  resolves, bundles and renders against its own copy, which is the state no
+  other gate can see — in the repo, aliases resolve both copies to the same
+  source, and the smoke tree packs every package whether or not it was inlined.
 - **No devDependency pairing.** npm links workspace siblings regardless; the
   three pre-existing peers build today without one.
 

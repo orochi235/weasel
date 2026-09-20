@@ -31,7 +31,8 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   // react/react-dom are peers; the rest are third-party libs declared as labkit
-  // dependencies. @weasel-js/core is a peer too — see noExternal below.
+  // dependencies. @weasel-js/core and @weasel-js/theme are peers too — see
+  // noExternal below.
   external: [
     'react',
     'react-dom',
@@ -40,8 +41,10 @@ export default defineConfig({
     'polygon-clipping',
     '@weasel-js/core',
     /^@weasel-js\/core\//,
+    '@weasel-js/theme',
+    /^@weasel-js\/theme\//,
   ],
-  // Bundle labkit's weasel siblings into its dist — but never the core.
+  // Bundle labkit's weasel siblings into its dist — but never core or theme.
   //
   // Core owns module-global registries (content handlers, paint kinds, shape
   // painters, markers, programs). Inlining it ships a second set, and a consumer
@@ -51,10 +54,18 @@ export default defineConfig({
   // peer to make npm say so at install time.
   // See docs/proposals/2026-08-31-singleton-packages-as-peers.md.
   //
+  // Theme is the same shape for a different reason: it owns a React context and
+  // the `wzl-themes` stylesheet's module-scoped handle. A second copy gives
+  // `useThemeOptional` a context the app's own `ThemeProvider` never wrote to,
+  // so it reads null and `<LabShell>` wraps a second provider over the app's
+  // theme — and where `adoptedStyleSheets` is missing, both copies append their
+  // own `<style id="wzl-themes">`.
+  //
   // The lookahead has to cover subpaths as well as the bare specifier: the
-  // bundled siblings import `@weasel-js/core/patterns-builtin`, and matching
-  // only `@weasel-js/core` would inline that one.
-  noExternal: [/^@weasel-js\/(?!core(?:$|\/))/],
+  // bundled siblings import `@weasel-js/core/patterns-builtin` and labkit
+  // imports `@weasel-js/theme/react`, and matching only the bare names would
+  // inline those.
+  noExternal: [/^@weasel-js\/(?!(?:core|theme)(?:$|\/))/],
   splitting: true,
   treeshake: true,
 });

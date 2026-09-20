@@ -62,10 +62,10 @@ const input = Object.fromEntries(
 
 // Third-party libs are declared labkit deps (and react* are peers): keep them as
 // external `import` statements in the emitted types instead of inlining them.
-// @weasel-js/core is external for the same reason it is in tsup.config.ts — it
-// is an exact peer, resolved once at the consumer. The rest of @weasel-js/* is
-// redirected to built declarations by the alias plugin and inlined, matching
-// the JS bundle.
+// @weasel-js/core and @weasel-js/theme are external for the same reason they
+// are in tsup.config.ts — both are exact peers, resolved once at the consumer.
+// The rest of @weasel-js/* is redirected to built declarations by the alias
+// plugin and inlined, matching the JS bundle.
 const external = [
   /^react($|\/)/,
   /^react-dom($|\/)/,
@@ -74,6 +74,7 @@ const external = [
   'polygon-clipping',
   /^zustand($|\/)/,
   /^@weasel-js\/core($|\/)/,
+  /^@weasel-js\/theme($|\/)/,
 ];
 
 /**
@@ -95,9 +96,9 @@ function requireBuilt(entries: ReturnType<typeof weaselDtsAliases>): void {
 }
 
 // labkit's own modules must reach each other through source, not through the
-// `.d.ts` this build is producing; core is excluded because it stays an
-// external specifier in the output rather than being inlined.
-const DTS_EXCLUDE = ['@weasel-js/labkit', '@weasel-js/core'];
+// `.d.ts` this build is producing; core and theme are excluded because they
+// stay external specifiers in the output rather than being inlined.
+const DTS_EXCLUDE = ['@weasel-js/labkit', '@weasel-js/core', '@weasel-js/theme'];
 
 // Only packages labkit's manifests reach: a package built after labkit (forge
 // depends on labkit) would otherwise be required before it can exist.
