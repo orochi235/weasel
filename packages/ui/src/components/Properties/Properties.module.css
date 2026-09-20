@@ -701,6 +701,15 @@
   padding: var(--wzl-prop-group-pad, 6px 10px 8px);
 }
 
+/* Group help text: spans the grid, sits above the rows it describes. */
+.note {
+  grid-column: 1 / -1;
+  margin: 0 0 var(--wzl-prop-group-title-gap, 4px);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+  line-height: 1.35;
+}
+
 .groupTitle {
   display: grid;
   grid-template-columns: 1fr auto 1fr;

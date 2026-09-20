@@ -145,6 +145,21 @@ export function PropertySpan({ children, className }: PropertySpanProps) {
   return <div className={className ? `${s.span} ${className}` : s.span}>{children}</div>;
 }
 
+/** Props for `<PropertyNote>`. */
+export interface PropertyNoteProps {
+  children: ReactNode;
+  className?: string;
+}
+
+/**
+ * Muted paragraph that spans both columns of the grid — a group's help text,
+ * sitting above the rows it describes rather than beside one of them.
+ * `<PropertyRow description>` covers the per-row case.
+ */
+export function PropertyNote({ children, className }: PropertyNoteProps) {
+  return <p className={className ? `${s.note} ${className}` : s.note}>{children}</p>;
+}
+
 /** Which control shape a row holds, which decides its intrinsic layout. */
 export type PropertyRowVariant = 'default' | 'color' | 'checkbox';
 /** Whether a row's label sits above its control or beside it. */

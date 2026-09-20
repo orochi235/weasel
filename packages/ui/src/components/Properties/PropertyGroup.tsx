@@ -4,6 +4,7 @@ import s from './Properties.module.css';
 import {
   type PropertyListPack,
   type PropertyMetricProps,
+  PropertyNote,
   propertyMetricClass,
 } from './PropertyPanel';
 
@@ -11,6 +12,9 @@ import {
 export interface PropertyGroupProps extends PropertyMetricProps {
   /** Title rendered between two rules at the top of the group. */
   title: ReactNode;
+  /** Help text for the whole group, drawn under the title and above the
+   *  rows. `<PropertyRow description>` covers the per-row case. */
+  description?: ReactNode;
   /** When true the group renders nothing — useful for conditional sections. */
   hidden?: boolean;
   /**
@@ -44,6 +48,7 @@ export interface PropertyGroupProps extends PropertyMetricProps {
  */
 export function PropertyGroup({
   title,
+  description,
   hidden,
   collapsible,
   defaultCollapsed,
@@ -92,6 +97,7 @@ export function PropertyGroup({
       ) : (
         heading
       )}
+      {description !== undefined && description !== '' && <PropertyNote>{description}</PropertyNote>}
       <div id={bodyId} className={s.groupBody} hidden={folded}>
         {children}
       </div>

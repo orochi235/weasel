@@ -482,6 +482,24 @@ describe('<ControlPanel> format', () => {
   });
 });
 
+describe('<ControlPanel> group descriptions', () => {
+  it('draws a named group’s describe() above its rows', () => {
+    const schema = resolveConfigSchema(
+      f.schema({
+        grid: f
+          .group({ cellSize: f.number(20) })
+          .label('Grid')
+          .describe('How the background lattice is spaced.'),
+      }),
+      [],
+    );
+    render(<ControlPanel schema={schema} config={{ grid: { cellSize: 20 } }} setConfig={vi.fn()} />);
+    const note = screen.getByText('How the background lattice is spaced.');
+    const field = screen.getByLabelText('Cell size');
+    expect(note.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
 describe('<ControlPanel> section layout', () => {
   const schema = resolveConfigSchema(
     f.schema({

@@ -238,7 +238,12 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     // empty `PrefGroup.name` — so it contributes its rows and no chrome.
     if (found.name === '') return <Fragment key={path}>{body(found, path, rows)}</Fragment>;
     return (
-      <PropertyGroup key={path} title={found.name} {...fold(path, undefined, rows.grid)}>
+      <PropertyGroup
+        key={path}
+        title={found.name}
+        description={found.description}
+        {...fold(path, undefined, rows.grid)}
+      >
         {body(found, path, rows)}
       </PropertyGroup>
     );

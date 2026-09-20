@@ -90,3 +90,38 @@ describe('PropertyGroup collapse', () => {
     expect(screen.getByDisplayValue('typed')).toBeInTheDocument();
   });
 });
+
+describe('PropertyGroup description', () => {
+  it('renders the description between the heading and the rows', () => {
+    const { container } = render(
+      <PropertyGroup title="Aqua" description="How the highlight is drawn.">
+        <div>child</div>
+      </PropertyGroup>,
+    );
+    const note = screen.getByText('How the highlight is drawn.');
+    const body = screen.getByText('child').parentElement;
+    // Outside the grid body, so the paragraph is not a grid item competing
+    // with the two control columns.
+    expect(note.parentElement).not.toBe(body);
+    expect(note.compareDocumentPosition(body as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(container.firstChild).toContainElement(note);
+  });
+
+  it('renders no description paragraph when none is given', () => {
+    const { container } = render(
+      <PropertyGroup title="Aqua">
+        <div>child</div>
+      </PropertyGroup>,
+    );
+    expect(container.querySelector('p')).toBeNull();
+  });
+
+  it('keeps the description visible while the rows are folded away', () => {
+    render(
+      <PropertyGroup title="Aqua" description="Still here." defaultCollapsed>
+        <div>child</div>
+      </PropertyGroup>,
+    );
+    expect(screen.getByText('Still here.')).toBeVisible();
+  });
+});

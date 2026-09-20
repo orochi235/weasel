@@ -254,9 +254,8 @@ export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
     return this.with({ ...this.annotations, name }, this.options);
   }
 
-  /** Longer help text. Carried on the resolved `PrefGroup`, where weasel-ui's
-   *  `PrefsForm` draws it under the heading; `ControlPanel` has no place for
-   *  it yet and shows the heading alone. */
+  /** Longer help text. Carried on the resolved `PrefGroup`; both weasel-ui's
+   *  `PrefsForm` and `ControlPanel` draw it under the heading. */
   describe(description: string): GroupNode<S> {
     return this.with({ ...this.annotations, description }, this.options);
   }
