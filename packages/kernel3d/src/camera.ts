@@ -30,11 +30,11 @@ export interface Camera3d {
 export const MAX_PITCH = Math.PI / 2 - 0.01;
 const MIN_DISTANCE = 0.5;
 const MAX_DISTANCE = 500;
-const UP: Vec3 = [0, 1, 0];
+const UP: Vec3 = { x: 0, y: 1, z: 0 };
 
 export function createCamera(init: Partial<Camera3d>): Camera3d {
   return {
-    target: init.target ?? [0, 0, 0],
+    target: init.target ?? { x: 0, y: 0, z: 0 },
     yaw: init.yaw ?? 0,
     pitch: init.pitch ?? 0,
     distance: init.distance ?? 10,
@@ -47,11 +47,11 @@ export function createCamera(init: Partial<Camera3d>): Camera3d {
 export function cameraEye(camera: Camera3d): Vec3 {
   const { target, yaw, pitch, distance } = camera;
   const horizontal = Math.cos(pitch) * distance;
-  return [
-    target[0] + horizontal * Math.sin(yaw),
-    target[1] + Math.sin(pitch) * distance,
-    target[2] + horizontal * Math.cos(yaw),
-  ];
+  return {
+    x: target.x + horizontal * Math.sin(yaw),
+    y: target.y + Math.sin(pitch) * distance,
+    z: target.z + horizontal * Math.cos(yaw),
+  };
 }
 
 export function cameraView(camera: Camera3d): Mat4 {

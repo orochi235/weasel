@@ -52,19 +52,24 @@ describe('2D and 3D agree on a plane', () => {
     it(name, () => {
       const flat2 = points2(a[0], a[1], b[0], b[1], outN, inN, 8).flat();
       const flat3 = points3(
-        [a[0], a[1], 0],
-        [b[0], b[1], 0],
-        outN ? [outN[0], outN[1], 0] : null,
-        inN ? [inN[0], inN[1], 0] : null,
+        { x: a[0], y: a[1], z: 0 },
+        { x: b[0], y: b[1], z: 0 },
+        outN ? { x: outN[0], y: outN[1], z: 0 } : null,
+        inN ? { x: inN[0], y: inN[1], z: 0 } : null,
         8,
       );
-      expect(flat3.every((p) => p[2] === 0)).toBe(true);
-      expect(flat3.flatMap((p) => [p[0], p[1]])).toEqual(flat2);
+      expect(flat3.every((p) => p.z === 0)).toBe(true);
+      expect(flat3.flatMap((p) => [p.x, p.y])).toEqual(flat2);
     });
   }
 
   it('leaves the plane when a normal does', () => {
-    const [c1] = portControls3([0, 0, 0], [10, 0, 0], [0, 0, 1], null);
-    expect(c1).toEqual([0, 0, 4]);
+    const [c1] = portControls3(
+      { x: 0, y: 0, z: 0 },
+      { x: 10, y: 0, z: 0 },
+      { x: 0, y: 0, z: 1 },
+      null,
+    );
+    expect(c1).toEqual({ x: 0, y: 0, z: 4 });
   });
 });

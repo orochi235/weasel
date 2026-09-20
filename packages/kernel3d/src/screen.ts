@@ -77,11 +77,11 @@ export function rayThroughScreenPoint(
   const inv = invert(viewProjection);
   if (!inv) return null;
   const ndc = screenToNdc(point, rect);
-  const near = transformPoint(inv, [ndc.x, ndc.y, -1]);
-  const far = transformPoint(inv, [ndc.x, ndc.y, 1]);
+  const near = transformPoint(inv, { x: ndc.x, y: ndc.y, z: -1 });
+  const far = transformPoint(inv, { x: ndc.x, y: ndc.y, z: 1 });
   const direction = normalize(sub(far, near));
   // normalize answers zero for a non-finite difference, which is no direction.
-  if (direction[0] === 0 && direction[1] === 0 && direction[2] === 0) return null;
+  if (direction.x === 0 && direction.y === 0 && direction.z === 0) return null;
   return { origin: eye, direction };
 }
 
@@ -123,11 +123,11 @@ export function projectAabbToScreen(
 ): ScreenBox | null {
   const corners: Clip[] = [];
   for (let i = 0; i < 8; i++) {
-    const corner: Vec3 = [
-      i & 1 ? box.max[0] : box.min[0],
-      i & 2 ? box.max[1] : box.min[1],
-      i & 4 ? box.max[2] : box.min[2],
-    ];
+    const corner: Vec3 = {
+      x: i & 1 ? box.max.x : box.min.x,
+      y: i & 2 ? box.max.y : box.min.y,
+      z: i & 4 ? box.max.z : box.min.z,
+    };
     corners.push(transformPoint4(viewProjection, corner));
   }
 

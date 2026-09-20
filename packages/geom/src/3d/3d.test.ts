@@ -23,7 +23,7 @@ import {
 } from './index';
 
 function expectVecClose(a: Vec3, b: Vec3, digits = 6) {
-  for (let i = 0; i < 3; i++) expect(a[i]).toBeCloseTo(b[i], digits);
+  for (const axis of ['x', 'y', 'z'] as const) expect(a[axis]).toBeCloseTo(b[axis], digits);
 }
 
 function expectMatClose(a: Mat4, b: Mat4, digits = 6) {
@@ -32,24 +32,24 @@ function expectMatClose(a: Mat4, b: Mat4, digits = 6) {
 
 describe('vector algebra', () => {
   it('adds, subtracts and scales componentwise', () => {
-    expectVecClose(add([1, 2, 3], [4, 5, 6]), [5, 7, 9]);
-    expectVecClose(sub([4, 5, 6], [1, 2, 3]), [3, 3, 3]);
-    expectVecClose(scale([1, 2, 3], 2), [2, 4, 6]);
+    expectVecClose(add({ x: 1, y: 2, z: 3 }, { x: 4, y: 5, z: 6 }), { x: 5, y: 7, z: 9 });
+    expectVecClose(sub({ x: 4, y: 5, z: 6 }, { x: 1, y: 2, z: 3 }), { x: 3, y: 3, z: 3 });
+    expectVecClose(scale({ x: 1, y: 2, z: 3 }, 2), { x: 2, y: 4, z: 6 });
   });
 
   it('computes dot, cross and length', () => {
-    expect(dot([1, 2, 3], [4, 5, 6])).toBe(32);
-    expectVecClose(cross([1, 0, 0], [0, 1, 0]), [0, 0, 1]);
-    expect(len([3, 4, 0])).toBe(5);
+    expect(dot({ x: 1, y: 2, z: 3 }, { x: 4, y: 5, z: 6 })).toBe(32);
+    expectVecClose(cross({ x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }), { x: 0, y: 0, z: 1 });
+    expect(len({ x: 3, y: 4, z: 0 })).toBe(5);
   });
 
   it('keeps the direction of a tiny vector', () => {
-    expectVecClose(normalize([1e-10, 0, 0]), [1, 0, 0]);
+    expectVecClose(normalize({ x: 1e-10, y: 0, z: 0 }), { x: 1, y: 0, z: 0 });
   });
 
   it('normalizes to unit length, and leaves a zero vector alone', () => {
-    expectVecClose(normalize([0, 5, 0]), [0, 1, 0]);
-    expectVecClose(normalize([0, 0, 0]), [0, 0, 0]);
+    expectVecClose(normalize({ x: 0, y: 5, z: 0 }), { x: 0, y: 1, z: 0 });
+    expectVecClose(normalize({ x: 0, y: 0, z: 0 }), { x: 0, y: 0, z: 0 });
   });
 });
 
@@ -75,24 +75,24 @@ describe('perspective', () => {
 
 describe('lookAt', () => {
   it('puts a target in front of the eye down -z', () => {
-    const view = lookAt([0, 0, 5], [0, 0, 0], [0, 1, 0]);
-    expectVecClose(transformPoint(view, [0, 0, 0]), [0, 0, -5]);
+    const view = lookAt({ x: 0, y: 0, z: 5 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+    expectVecClose(transformPoint(view, { x: 0, y: 0, z: 0 }), { x: 0, y: 0, z: -5 });
   });
 
   it('keeps up pointing up', () => {
-    const view = lookAt([0, 0, 5], [0, 0, 0], [0, 1, 0]);
-    const above = transformPoint(view, [0, 1, 0]);
-    expect(above[1]).toBeGreaterThan(0);
+    const view = lookAt({ x: 0, y: 0, z: 5 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+    const above = transformPoint(view, { x: 0, y: 1, z: 0 });
+    expect(above.y).toBeGreaterThan(0);
   });
 
   it('orients a tiny view the way it orients a unit one', () => {
-    const tiny = lookAt([0, 0, 5e-10], [0, 0, 0], [0, 1, 0]);
-    const unit = lookAt([0, 0, 5], [0, 0, 0], [0, 1, 0]);
+    const tiny = lookAt({ x: 0, y: 0, z: 5e-10 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+    const unit = lookAt({ x: 0, y: 0, z: 5 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
     for (const i of [0, 1, 2, 4, 5, 6, 8, 9, 10]) expect(tiny[i]).toBeCloseTo(unit[i], 9);
   });
 
   it('has no orientation, and so no inverse, when up is parallel to the view to within rounding', () => {
-    const view = lookAt([1e-13, 5, 0], [0, 0, 0], [0, 1, 0]);
+    const view = lookAt({ x: 1e-13, y: 5, z: 0 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
     expect(invert(view)).toBeNull();
   });
 });
@@ -105,7 +105,10 @@ describe('matrix arithmetic', () => {
   });
 
   it('inverts back to identity', () => {
-    const m = multiply(perspective(1, 1.5, 0.1, 100), lookAt([3, 4, 5], [0, 1, 0], [0, 1, 0]));
+    const m = multiply(
+      perspective(1, 1.5, 0.1, 100),
+      lookAt({ x: 3, y: 4, z: 5 }, { x: 0, y: 1, z: 0 }, { x: 0, y: 1, z: 0 }),
+    );
     const inv = invert(m);
     expect(inv).not.toBeNull();
     expectMatClose(multiply(m, inv!), identity(), 5);
@@ -159,96 +162,107 @@ describe('matrix arithmetic', () => {
     // A far plane at 1e10 unprojects to w = 1e-10.
     const m = [...identity()];
     m[15] = 1e-10;
-    expectVecClose(transformPoint(m, [1, 2, 3]).map((v) => v / 1e10) as unknown as Vec3, [1, 2, 3]);
+    const p = transformPoint(m, { x: 1, y: 2, z: 3 });
+    expectVecClose({ x: p.x / 1e10, y: p.y / 1e10, z: p.z / 1e10 }, { x: 1, y: 2, z: 3 });
   });
 
   it('composes position, rotation and scale', () => {
-    const q = quatFromAxisAngle([0, 0, 1], Math.PI / 2);
-    const m = compose([1, 2, 3], q, [2, 2, 2]);
+    const q = quatFromAxisAngle({ x: 0, y: 0, z: 1 }, Math.PI / 2);
+    const m = compose({ x: 1, y: 2, z: 3 }, q, { x: 2, y: 2, z: 2 });
     // The x axis, scaled by 2 and turned a quarter turn about z, then translated.
-    expectVecClose(transformPoint(m, [1, 0, 0]), [1, 4, 3], 5);
+    expectVecClose(transformPoint(m, { x: 1, y: 0, z: 0 }), { x: 1, y: 4, z: 3 }, 5);
   });
 });
 
 describe('intersectRayAabb', () => {
-  const min: Vec3 = [-1, -1, -1];
-  const max: Vec3 = [1, 1, 1];
+  const min: Vec3 = { x: -1, y: -1, z: -1 };
+  const max: Vec3 = { x: 1, y: 1, z: 1 };
 
   it('hits a box dead ahead at the near face', () => {
-    const t = intersectRayAabb({ origin: [0, 0, 5], direction: [0, 0, -1] }, min, max);
+    const t = intersectRayAabb({ origin: { x: 0, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1 } }, min, max);
     expect(t).toBeCloseTo(4, 6);
   });
 
   it('misses a box off to the side', () => {
-    expect(intersectRayAabb({ origin: [5, 0, 5], direction: [0, 0, -1] }, min, max)).toBeNull();
+    expect(intersectRayAabb({ origin: { x: 5, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1 } }, min, max)).toBeNull();
   });
 
   it('misses a box behind the ray', () => {
-    expect(intersectRayAabb({ origin: [0, 0, 5], direction: [0, 0, 1] }, min, max)).toBeNull();
+    expect(intersectRayAabb({ origin: { x: 0, y: 0, z: 5 }, direction: { x: 0, y: 0, z: 1 } }, min, max)).toBeNull();
   });
 
   it('hits from inside the box at t=0', () => {
-    const t = intersectRayAabb({ origin: [0, 0, 0], direction: [0, 0, -1] }, min, max);
+    const t = intersectRayAabb({ origin: { x: 0, y: 0, z: 0 }, direction: { x: 0, y: 0, z: -1 } }, min, max);
     expect(t).toBeCloseTo(0, 6);
   });
 
   it('hits along a tiny, unnormalized direction', () => {
-    const t = intersectRayAabb({ origin: [0, 0, 5], direction: [0, 0, -1e-10] }, min, max);
+    const t = intersectRayAabb({ origin: { x: 0, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1e-10 } }, min, max);
     expect(t).toBeCloseTo(4e10, -1);
   });
 
   it('hits along a slab boundary it runs parallel to', () => {
-    const t = intersectRayAabb({ origin: [1, 0, 5], direction: [0, 0, -1] }, min, max);
+    const t = intersectRayAabb({ origin: { x: 1, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1 } }, min, max);
     expect(t).toBeCloseTo(4, 6);
   });
 
   it('survives an axis-parallel ray that never enters a slab', () => {
-    expect(intersectRayAabb({ origin: [5, 0, 0], direction: [0, 1, 0] }, min, max)).toBeNull();
+    expect(intersectRayAabb({ origin: { x: 5, y: 0, z: 0 }, direction: { x: 0, y: 1, z: 0 } }, min, max)).toBeNull();
   });
 });
 
 describe('intersectRayPlane', () => {
   it('hits the ground plane below the ray', () => {
-    const t = intersectRayPlane({ origin: [0, 5, 0], direction: [0, -1, 0] }, [0, 1, 0], 0);
+    const t = intersectRayPlane({ origin: { x: 0, y: 5, z: 0 }, direction: { x: 0, y: -1, z: 0 } }, { x: 0, y: 1, z: 0 }, 0);
     expect(t).toBeCloseTo(5, 6);
   });
 
   it('hits along a tiny, unnormalized direction', () => {
-    const t = intersectRayPlane({ origin: [0, 5, 0], direction: [0, -1e-10, 0] }, [0, 1, 0], 0);
+    const t = intersectRayPlane({ origin: { x: 0, y: 5, z: 0 }, direction: { x: 0, y: -1e-10, z: 0 } }, { x: 0, y: 1, z: 0 }, 0);
     expect(t).toBeCloseTo(5e10, -1);
   });
 
   it('calls a ray parallel to within rounding parallel', () => {
     expect(
-      intersectRayPlane({ origin: [0, 5, 0], direction: [1, -1e-13, 0] }, [0, 1, 0], 0),
+      intersectRayPlane({ origin: { x: 0, y: 5, z: 0 }, direction: { x: 1, y: -1e-13, z: 0 } }, { x: 0, y: 1, z: 0 }, 0),
     ).toBeNull();
   });
 
   it('returns null for a ray parallel to the plane', () => {
-    expect(intersectRayPlane({ origin: [0, 5, 0], direction: [1, 0, 0] }, [0, 1, 0], 0)).toBeNull();
+    expect(intersectRayPlane({ origin: { x: 0, y: 5, z: 0 }, direction: { x: 1, y: 0, z: 0 } }, { x: 0, y: 1, z: 0 }, 0)).toBeNull();
   });
 
   it('returns null when the plane is behind the ray', () => {
-    expect(intersectRayPlane({ origin: [0, 5, 0], direction: [0, 1, 0] }, [0, 1, 0], 0)).toBeNull();
+    expect(intersectRayPlane({ origin: { x: 0, y: 5, z: 0 }, direction: { x: 0, y: 1, z: 0 } }, { x: 0, y: 1, z: 0 }, 0)).toBeNull();
   });
 });
 describe('transformAabb', () => {
-  const unit = { min: [-0.5, -0.5, -0.5] as Vec3, max: [0.5, 0.5, 0.5] as Vec3 };
+  const unit = {
+    min: { x: -0.5, y: -0.5, z: -0.5 } as Vec3,
+    max: { x: 0.5, y: 0.5, z: 0.5 } as Vec3,
+  };
 
   it('translates a box without changing its size', () => {
-    const box = transformAabb(compose([3, 0, -2], [0, 0, 0, 1], [1, 1, 1]), unit);
-    expect(box.min[0]).toBeCloseTo(2.5, 9);
-    expect(box.max[0]).toBeCloseTo(3.5, 9);
-    expect(box.max[2] - box.min[2]).toBeCloseTo(1, 9);
+    const box = transformAabb(
+      compose({ x: 3, y: 0, z: -2 }, [0, 0, 0, 1], { x: 1, y: 1, z: 1 }),
+      unit,
+    );
+    expect(box.min.x).toBeCloseTo(2.5, 9);
+    expect(box.max.x).toBeCloseTo(3.5, 9);
+    expect(box.max.z - box.min.z).toBeCloseTo(1, 9);
   });
 
   it('widens under rotation rather than rotating', () => {
     const spun = transformAabb(
-      compose([0, 0, 0], quatFromAxisAngle([0, 0, 1], Math.PI / 4), [1, 1, 1]),
+      compose(
+        { x: 0, y: 0, z: 0 },
+        quatFromAxisAngle({ x: 0, y: 0, z: 1 }, Math.PI / 4),
+        { x: 1, y: 1, z: 1 },
+      ),
       unit,
     );
-    expect(spun.max[0]).toBeCloseTo(Math.SQRT1_2, 9);
-    expect(spun.max[1]).toBeCloseTo(Math.SQRT1_2, 9);
-    expect(spun.max[2]).toBeCloseTo(0.5, 9);
+    expect(spun.max.x).toBeCloseTo(Math.SQRT1_2, 9);
+    expect(spun.max.y).toBeCloseTo(Math.SQRT1_2, 9);
+    expect(spun.max.z).toBeCloseTo(0.5, 9);
   });
 });

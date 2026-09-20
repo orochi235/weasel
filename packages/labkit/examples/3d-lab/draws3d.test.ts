@@ -62,7 +62,7 @@ describe('applyFeedDelta', () => {
   it('rebuilds from empty on a reset', () => {
     const scene = createSolidScene();
     const draws = new Map<NodeId, SolidRecord>([
-      ['stale' as NodeId, { committed: pose3([0, 0, 0]), pose: pose3([0, 0, 0]), kind: 'box', color: '#fff' }],
+      ['stale' as NodeId, { committed: pose3({ x: 0, y: 0, z: 0 }), pose: pose3({ x: 0, y: 0, z: 0 }), kind: 'box', color: '#fff' }],
     ]);
     applyFeedDelta(draws, createPoseFeed(scene).read());
 
@@ -98,7 +98,7 @@ describe('solidsToDraw', () => {
 
     const id = firstId(scene);
     const committed = scene.get(id)!.pose;
-    const moved = pose3([5, 0.5, -3]);
+    const moved = pose3({ x: 5, y: 0.5, z: -3 });
     scene.overrides.set(id, { pose: moved });
     scene.overrides.commit();
     applyFeedDelta(draws, feed.read());
@@ -118,7 +118,7 @@ describe('solidsToDraw', () => {
     applyFeedDelta(draws, feed.read());
 
     const id = firstId(scene);
-    scene.overrides.set(id, { pose: pose3([5, 0.5, -3]) });
+    scene.overrides.set(id, { pose: pose3({ x: 5, y: 0.5, z: -3 }) });
     scene.overrides.commit();
     applyFeedDelta(draws, feed.read());
     scene.overrides.clearAll();
@@ -133,7 +133,7 @@ describe('solidsToDraw', () => {
     const draws = new Map<NodeId, SolidRecord>();
     applyFeedDelta(draws, feed.read());
 
-    scene.overrides.set(firstId(scene), { pose: pose3([5, 0.5, -3]) });
+    scene.overrides.set(firstId(scene), { pose: pose3({ x: 5, y: 0.5, z: -3 }) });
     scene.overrides.commit();
     applyFeedDelta(draws, feed.read());
 
@@ -149,7 +149,7 @@ describe('solidsToDraw', () => {
  */
 describe('a frame drawn mid-drag', () => {
   const viewport = () => ({
-    camera: createCamera({ distance: 14, pitch: 0.45, yaw: 0.6, target: [0, 0.5, 0] as const }),
+    camera: createCamera({ distance: 14, pitch: 0.45, yaw: 0.6, target: { x: 0, y: 0.5, z: 0 } }),
     width: 800,
     height: 600,
   });
@@ -216,7 +216,7 @@ describe('a frame drawn mid-drag', () => {
     applyFeedDelta(draws, feed.read());
 
     const [ghost] = solidsToDraw(draws, new Set<NodeId>()).filter((s) => s.ghost);
-    expect(ghost.pose.position[0]).not.toBeCloseTo(before.position[0], 3);
-    expect(ghost.pose.position[1]).toBeCloseTo(before.position[1], 6);
+    expect(ghost.pose.position.x).not.toBeCloseTo(before.position.x, 3);
+    expect(ghost.pose.position.y).toBeCloseTo(before.position.y, 6);
   });
 });

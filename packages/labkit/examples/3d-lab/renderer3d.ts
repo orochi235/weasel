@@ -322,10 +322,10 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
         for (const ghost of ghosts) {
           const { min, max } = aabbOfSolid(ghost.pose, ghost.kind);
           const corners = [
-            [min[0], max[2]],
-            [max[0], max[2]],
-            [max[0], min[2]],
-            [min[0], min[2]],
+            [min.x, max.z],
+            [max.x, max.z],
+            [max.x, min.z],
+            [min.x, min.z],
           ];
           for (let i = 0; i < 4; i++) {
             const a = corners[i];

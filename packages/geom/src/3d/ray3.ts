@@ -20,7 +20,7 @@ export function intersectRayAabb(ray: Ray, min: Vec3, max: Vec3): number | null 
   let tMin = Number.NEGATIVE_INFINITY;
   let tMax = Number.POSITIVE_INFINITY;
 
-  for (let axis = 0; axis < 3; axis++) {
+  for (const axis of ['x', 'y', 'z'] as const) {
     const o = ray.origin[axis];
     const d = ray.direction[axis];
     // Any other direction, however short, divides to an honest (possibly infinite) t.
@@ -56,17 +56,17 @@ export function intersectRayPlane(ray: Ray, normal: Vec3, offset: number): numbe
  * otherwise is how a hit test starts missing its own geometry.
  */
 export function transformAabb(m: Mat4, local: Aabb): Aabb {
-  let min: Vec3 = [Infinity, Infinity, Infinity];
-  let max: Vec3 = [-Infinity, -Infinity, -Infinity];
+  let min: Vec3 = { x: Infinity, y: Infinity, z: Infinity };
+  let max: Vec3 = { x: -Infinity, y: -Infinity, z: -Infinity };
   for (let i = 0; i < 8; i++) {
-    const corner: Vec3 = [
-      i & 1 ? local.max[0] : local.min[0],
-      i & 2 ? local.max[1] : local.min[1],
-      i & 4 ? local.max[2] : local.min[2],
-    ];
+    const corner: Vec3 = {
+      x: i & 1 ? local.max.x : local.min.x,
+      y: i & 2 ? local.max.y : local.min.y,
+      z: i & 4 ? local.max.z : local.min.z,
+    };
     const p = transformPoint(m, corner);
-    min = [Math.min(min[0], p[0]), Math.min(min[1], p[1]), Math.min(min[2], p[2])];
-    max = [Math.max(max[0], p[0]), Math.max(max[1], p[1]), Math.max(max[2], p[2])];
+    min = { x: Math.min(min.x, p.x), y: Math.min(min.y, p.y), z: Math.min(min.z, p.z) };
+    max = { x: Math.max(max.x, p.x), y: Math.max(max.y, p.y), z: Math.max(max.z, p.z) };
   }
   return { min, max };
 }
@@ -74,7 +74,7 @@ export function transformAabb(m: Mat4, local: Aabb): Aabb {
 /** The box centred on `center` reaching `radius` along every axis. */
 export function aabbAround(center: Vec3, radius: number): Aabb {
   return {
-    min: [center[0] - radius, center[1] - radius, center[2] - radius],
-    max: [center[0] + radius, center[1] + radius, center[2] + radius],
+    min: { x: center.x - radius, y: center.y - radius, z: center.z - radius },
+    max: { x: center.x + radius, y: center.y + radius, z: center.z + radius },
   };
 }

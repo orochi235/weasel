@@ -36,7 +36,7 @@ export type SolidNode = SceneNode<SolidData, SolidLayer, Pose3>;
 export function aabbOfSolid(pose: Pose3, kind: SolidKind): Aabb {
   if (kind === 'sphere') {
     const radius = 0.5 * Math.max(
-      Math.abs(pose.scale[0]), Math.abs(pose.scale[1]), Math.abs(pose.scale[2]),
+      Math.abs(pose.scale.x), Math.abs(pose.scale.y), Math.abs(pose.scale.z),
     );
     return aabbAround(pose.position, radius);
   }
@@ -50,19 +50,19 @@ export function createSolidScene(): SolidScene {
       {
         kind: 'leaf',
         layer: 'solids',
-        pose: pose3([-2.2, 0.5, 0]),
+        pose: pose3({ x: -2.2, y: 0.5, z: 0 }),
         data: { kind: 'box', color: '#e06c4f' },
       },
       {
         kind: 'leaf',
         layer: 'solids',
-        pose: pose3([0, 0.5, 0], [1.4, 1.4, 1.4]),
+        pose: pose3({ x: 0, y: 0.5, z: 0 }, { x: 1.4, y: 1.4, z: 1.4 }),
         data: { kind: 'sphere', color: '#4f9de0' },
       },
       {
         kind: 'leaf',
         layer: 'solids',
-        pose: pose3([2.2, 0.75, -1], [1, 1.5, 1]),
+        pose: pose3({ x: 2.2, y: 0.75, z: -1 }, { x: 1, y: 1.5, z: 1 }),
         data: { kind: 'box', color: '#6fbf73' },
       },
     ],
