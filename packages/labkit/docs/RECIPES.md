@@ -132,7 +132,18 @@ the theme the lab is in:
 **Tokens are scoped to `.lk-root`**, which `<LabShell>` applies — `<Lab>`
 renders one for you. A labkit component mounted outside that root (a bare
 `<ControlPanel>` in your own pane, say) resolves no tokens at all, and the same
-silent fallback applies.
+silent fallback applies. Wrap it in `<LabRoot>`, which is that element on its
+own: the tokens, the font stack, the box-sizing reset, the element defaults a
+lab's bare markup is styled by, and a theme when your app has not applied one.
+
+```tsx
+import { LabRoot, ControlPanel } from '@weasel-js/labkit';
+import '@weasel-js/labkit/styles.css';
+
+<LabRoot>
+  <ControlPanel {...props} />
+</LabRoot>;
+```
 
 **Component class names are not public API.** Every component takes a
 `className`; add your own class through it and style that. Selectors written

@@ -1,10 +1,8 @@
-import { ThemeProvider, useThemeOptional } from '@weasel-js/theme/react';
 import type { ReactNode } from 'react';
 import type { LabMode } from '../state/types';
-import { interstellarTheme } from '../theme/interstellar';
+import { LabRoot } from './LabRoot';
 import type { LabPage } from './LabSwitcher';
 import { LabSwitcher } from './LabSwitcher';
-import { useResolvedMode } from './useSystemMode';
 
 /** Props for `<LabShell>`. */
 export interface LabShellProps {
@@ -36,13 +34,8 @@ export function LabShell({
   pages,
   path,
 }: LabShellProps) {
-  const resolved = useResolvedMode(mode);
-  const outer = useThemeOptional();
-
-  const shell = (
-    // Overlays portal here rather than to the themed wrapper above: `.lk-root`
-    // carries the element defaults a lab's bare markup is styled by.
-    <div className="lk-root lk-shell" data-wzl-portal-host="">
+  return (
+    <LabRoot mode={mode} className="lk-shell">
       <header className="lk-shell-header">
         {pages && pages.length > 0 ? (
           <LabSwitcher title={title} pages={pages} path={path} className="lk-shell-title" />
@@ -53,16 +46,6 @@ export function LabShell({
       </header>
       <main className="lk-shell-body">{children}</main>
       {footer && <footer className="lk-shell-footer">{footer}</footer>}
-    </div>
-  );
-
-  // Inside <Lab> the theme is already applied on `.lk-lab`; wrapping again
-  // would only add a div.
-  return outer ? (
-    shell
-  ) : (
-    <ThemeProvider theme={interstellarTheme} selection={{ mode: resolved }}>
-      {shell}
-    </ThemeProvider>
+    </LabRoot>
   );
 }
