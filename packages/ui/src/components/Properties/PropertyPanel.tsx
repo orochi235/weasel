@@ -409,7 +409,7 @@ export function SliderRow({
       span={span}
       label={label}
       readout={
-        readout ?? (
+        boxedReadout(readout) ?? (
           <EditableReadout
             name={nameOf(label)}
             value={value}
@@ -449,6 +449,25 @@ export function SliderRow({
         }}
       />
     </PropertyRow>
+  );
+}
+
+/**
+ * A replacement readout in the box `EditableReadout` would have occupied.
+ *
+ * A row that can go auto swaps its editable readout for a word, and the label
+ * is a flex line: an input is taller than bare text — a text input's inner
+ * editor will not shrink to a line-height below the font's own content area —
+ * so the swap moved the label's baseline, and the whole row with it. Only the
+ * rows that own an `EditableReadout` need this; giving every text readout the
+ * box moves the rows that never had an input.
+ */
+function boxedReadout(readout: ReactNode): ReactNode {
+  if (typeof readout !== 'string' && typeof readout !== 'number') return readout;
+  return (
+    <span className={s.readoutGroup}>
+      <span className={s.readoutText}>{readout}</span>
+    </span>
   );
 }
 

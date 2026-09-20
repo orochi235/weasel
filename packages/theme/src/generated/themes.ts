@@ -18,6 +18,8 @@ export type TokenName =
   | '--wzl-border-strong'
   | '--wzl-border-w'
   | '--wzl-control-h'
+  | '--wzl-control-h-sm'
+  | '--wzl-control-h-xs'
   | '--wzl-curve-color'
   | '--wzl-curve-width'
   | '--wzl-danger'
@@ -39,6 +41,7 @@ export type TokenName =
   | '--wzl-font-size'
   | '--wzl-font-size-2xs'
   | '--wzl-font-size-lg'
+  | '--wzl-font-size-md'
   | '--wzl-font-size-sm'
   | '--wzl-font-size-xl'
   | '--wzl-font-size-xs'
@@ -62,6 +65,7 @@ export type TokenName =
   | '--wzl-handle-size'
   | '--wzl-handle-size-lg'
   | '--wzl-handle-size-sm'
+  | '--wzl-icon-button-size'
   | '--wzl-leading'
   | '--wzl-leading-snug'
   | '--wzl-leading-tight'
@@ -80,6 +84,14 @@ export type TokenName =
   | '--wzl-slider-thumb-size'
   | '--wzl-slider-track-h'
   | '--wzl-slider-track-mix'
+  | '--wzl-space-1'
+  | '--wzl-space-2'
+  | '--wzl-space-3'
+  | '--wzl-space-4'
+  | '--wzl-space-5'
+  | '--wzl-space-6'
+  | '--wzl-space-7'
+  | '--wzl-space-8'
   | '--wzl-space-lg'
   | '--wzl-space-md'
   | '--wzl-space-sm'
@@ -125,9 +137,9 @@ export interface GeneratedTheme {
 export const THEMES = {
   "weasel": {
     name: "weasel",
-    axes: {"mode":{"default":"dark","values":{"dark":{"scheme":"dark"},"light":{"scheme":"light"}}}},
+    axes: {"mode":{"default":"dark","values":{"dark":{"scheme":"dark"},"light":{"scheme":"light"}}},"density":{"default":"comfortable","values":{"compact":{},"comfortable":{},"roomy":{}}}},
     selections: {
-      'mode=dark': {
+      'mode=dark,density=compact': {
         '--wzl-gray-50': "#f5f5f6",
         '--wzl-gray-100': "#e6e7e9",
         '--wzl-gray-200': "#c9cbcf",
@@ -151,6 +163,137 @@ export const THEMES = {
         '--wzl-swatch-citron': "#d5d23a",
         '--wzl-swatch-rose': "#fa4590",
         '--wzl-swatch-violet': "#955cf9",
+        '--wzl-font-size-2xs': "7px",
+        '--wzl-font-size-xs': "8px",
+        '--wzl-font-size-sm': "9px",
+        '--wzl-font-size-md': "11px",
+        '--wzl-font-size-lg': "14px",
+        '--wzl-font-size-xl': "17px",
+        '--wzl-space-1': "2px",
+        '--wzl-space-2': "4px",
+        '--wzl-space-3': "6px",
+        '--wzl-space-4': "8px",
+        '--wzl-space-5': "10px",
+        '--wzl-space-6': "12px",
+        '--wzl-space-7': "14px",
+        '--wzl-space-8': "16px",
+        '--wzl-surface': "#181a1e",
+        '--wzl-surface-raised': "#25272c",
+        '--wzl-surface-sunken': "#0e0f12",
+        '--wzl-fg': "#e6e7e9",
+        '--wzl-fg-muted': "#9ea1a8",
+        '--wzl-fg-subtle': "#6f737b",
+        '--wzl-border': "#25272c",
+        '--wzl-border-strong': "#6f737b",
+        '--wzl-accent-fg': "#5841b8",
+        '--wzl-fg-inverse': "#0e0f12",
+        '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
+        '--wzl-danger-base': "#d94a3f",
+        '--wzl-warning-base': "#d99a3f",
+        '--wzl-success-base': "#2ec27e",
+        '--wzl-fg-on-accent': "#f5f5f6",
+        '--wzl-line-subtle': "rgba(230, 231, 233, 0.1)",
+        '--wzl-line': "rgba(230, 231, 233, 0.2)",
+        '--wzl-line-strong': "rgba(230, 231, 233, 0.4)",
+        '--wzl-curve-color': "#5841b8",
+        '--wzl-accent': "#2e1f7a",
+        '--wzl-accent-hover': "#5841b8",
+        '--wzl-danger': "#d94a3f",
+        '--wzl-warning': "#d99a3f",
+        '--wzl-success': "#2ec27e",
+        '--wzl-focus-ring': "#5841b8",
+        '--wzl-glass-tint': "#2e1f7a",
+        '--wzl-surface-hover': "rgba(230, 231, 233, 0.1)",
+        '--wzl-surface-pressed': "rgba(230, 231, 233, 0.18)",
+        '--wzl-radius-sm': "3px",
+        '--wzl-radius-md': "5px",
+        '--wzl-radius-lg': "14px",
+        '--wzl-radius-pill': "999px",
+        '--wzl-border-w': "1px",
+        '--wzl-line-width': "2px",
+        '--wzl-curve-width': "3px",
+        '--wzl-tb-height': "24px",
+        '--wzl-control-h-xs': "16px",
+        '--wzl-control-h-sm': "18px",
+        '--wzl-control-h': "20px",
+        '--wzl-icon-button-size': "20px",
+        '--wzl-slider-track-h': "4px",
+        '--wzl-slider-thumb-size': "8px",
+        '--wzl-slider-track-mix': "18%",
+        '--wzl-slider-thumb-mix': "70%",
+        '--wzl-handle-size': "9px",
+        '--wzl-handle-size-sm': "7px",
+        '--wzl-handle-size-lg': "10px",
+        '--wzl-field-pad-x': "8px",
+        '--wzl-glass-blur': "3px",
+        '--wzl-font-size': "11px",
+        '--wzl-tracking-none': "0",
+        '--wzl-tracking-wide': "0.06em",
+        '--wzl-tracking-wider': "0.08em",
+        '--wzl-z-toolbar': "10",
+        '--wzl-z-overlay': "20",
+        '--wzl-z-modal': "30",
+        '--wzl-leading-tight': "1",
+        '--wzl-leading-snug': "1.2",
+        '--wzl-leading': "1.4",
+        '--wzl-backdrop': "none",
+        '--wzl-motion-fast': "120ms",
+        '--wzl-motion-medium': "240ms",
+        '--wzl-ease-in-cubic': "cubic-bezier(0.32, 0, 0.67, 0)",
+        '--wzl-ease-out-cubic': "cubic-bezier(0.33, 1, 0.68, 1)",
+        '--wzl-ease-in-out-cubic': "cubic-bezier(0.65, 0, 0.35, 1)",
+        '--wzl-ease-out-back': "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        '--wzl-font-ui': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-display': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-body': "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
+        '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+        '--wzl-font-weight-light': "200",
+        '--wzl-font-weight-normal': "300",
+        '--wzl-font-weight-medium': "350",
+        '--wzl-font-weight-bold': "400",
+        '--wzl-space-xs': "4px",
+        '--wzl-space-sm': "8px",
+        '--wzl-space-md': "12px",
+        '--wzl-space-lg': "16px",
+      },
+      'mode=dark,density=comfortable': {
+        '--wzl-gray-50': "#f5f5f6",
+        '--wzl-gray-100': "#e6e7e9",
+        '--wzl-gray-200': "#c9cbcf",
+        '--wzl-gray-300': "#9ea1a8",
+        '--wzl-gray-400': "#6f737b",
+        '--wzl-gray-500': "#4d5058",
+        '--wzl-gray-600': "#383b42",
+        '--wzl-gray-700': "#25272c",
+        '--wzl-gray-800': "#181a1e",
+        '--wzl-gray-900': "#0e0f12",
+        '--wzl-accent-soft': "#1d1454",
+        '--wzl-accent-base': "#2e1f7a",
+        '--wzl-accent-strong': "#5841b8",
+        '--wzl-swatch-fuchsia': "#f641f7",
+        '--wzl-swatch-green': "#48e628",
+        '--wzl-swatch-sky': "#36bff2",
+        '--wzl-swatch-amber': "#e69628",
+        '--wzl-swatch-teal': "#3ee1cb",
+        '--wzl-swatch-red': "#f75034",
+        '--wzl-swatch-blue': "#407ef7",
+        '--wzl-swatch-citron': "#d5d23a",
+        '--wzl-swatch-rose': "#fa4590",
+        '--wzl-swatch-violet': "#955cf9",
+        '--wzl-font-size-2xs': "9px",
+        '--wzl-font-size-xs': "10px",
+        '--wzl-font-size-sm': "11px",
+        '--wzl-font-size-md': "13px",
+        '--wzl-font-size-lg': "16px",
+        '--wzl-font-size-xl': "20px",
+        '--wzl-space-1': "2px",
+        '--wzl-space-2': "4px",
+        '--wzl-space-3': "6px",
+        '--wzl-space-4': "8px",
+        '--wzl-space-5': "10px",
+        '--wzl-space-6': "12px",
+        '--wzl-space-7': "14px",
+        '--wzl-space-8': "16px",
         '--wzl-surface': "#181a1e",
         '--wzl-surface-raised': "#25272c",
         '--wzl-surface-sunken': "#0e0f12",
@@ -187,7 +330,10 @@ export const THEMES = {
         '--wzl-line-width': "2px",
         '--wzl-curve-width': "3px",
         '--wzl-tb-height': "28px",
+        '--wzl-control-h-xs': "18px",
+        '--wzl-control-h-sm': "20px",
         '--wzl-control-h': "24px",
+        '--wzl-icon-button-size': "22px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-mix': "18%",
@@ -197,16 +343,7 @@ export const THEMES = {
         '--wzl-handle-size-lg': "10px",
         '--wzl-field-pad-x': "8px",
         '--wzl-glass-blur': "3px",
-        '--wzl-font-size-2xs': "9px",
-        '--wzl-font-size-xs': "10px",
-        '--wzl-font-size-sm': "11px",
         '--wzl-font-size': "13px",
-        '--wzl-font-size-lg': "16px",
-        '--wzl-font-size-xl': "20px",
-        '--wzl-space-xs': "4px",
-        '--wzl-space-sm': "8px",
-        '--wzl-space-md': "12px",
-        '--wzl-space-lg': "16px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
         '--wzl-tracking-wider': "0.08em",
@@ -231,8 +368,12 @@ export const THEMES = {
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
         '--wzl-font-weight-bold': "400",
+        '--wzl-space-xs': "4px",
+        '--wzl-space-sm': "8px",
+        '--wzl-space-md': "12px",
+        '--wzl-space-lg': "16px",
       },
-      'mode=light': {
+      'mode=dark,density=roomy': {
         '--wzl-gray-50': "#f5f5f6",
         '--wzl-gray-100': "#e6e7e9",
         '--wzl-gray-200': "#c9cbcf",
@@ -256,6 +397,254 @@ export const THEMES = {
         '--wzl-swatch-citron': "#d5d23a",
         '--wzl-swatch-rose': "#fa4590",
         '--wzl-swatch-violet': "#955cf9",
+        '--wzl-font-size-2xs': "10px",
+        '--wzl-font-size-xs': "12px",
+        '--wzl-font-size-sm': "13px",
+        '--wzl-font-size-md': "15px",
+        '--wzl-font-size-lg': "18px",
+        '--wzl-font-size-xl': "23px",
+        '--wzl-space-1': "2px",
+        '--wzl-space-2': "4px",
+        '--wzl-space-3': "6px",
+        '--wzl-space-4': "8px",
+        '--wzl-space-5': "10px",
+        '--wzl-space-6': "12px",
+        '--wzl-space-7': "14px",
+        '--wzl-space-8': "16px",
+        '--wzl-surface': "#181a1e",
+        '--wzl-surface-raised': "#25272c",
+        '--wzl-surface-sunken': "#0e0f12",
+        '--wzl-fg': "#e6e7e9",
+        '--wzl-fg-muted': "#9ea1a8",
+        '--wzl-fg-subtle': "#6f737b",
+        '--wzl-border': "#25272c",
+        '--wzl-border-strong': "#6f737b",
+        '--wzl-accent-fg': "#5841b8",
+        '--wzl-fg-inverse': "#0e0f12",
+        '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
+        '--wzl-danger-base': "#d94a3f",
+        '--wzl-warning-base': "#d99a3f",
+        '--wzl-success-base': "#2ec27e",
+        '--wzl-fg-on-accent': "#f5f5f6",
+        '--wzl-line-subtle': "rgba(230, 231, 233, 0.1)",
+        '--wzl-line': "rgba(230, 231, 233, 0.2)",
+        '--wzl-line-strong': "rgba(230, 231, 233, 0.4)",
+        '--wzl-curve-color': "#5841b8",
+        '--wzl-accent': "#2e1f7a",
+        '--wzl-accent-hover': "#5841b8",
+        '--wzl-danger': "#d94a3f",
+        '--wzl-warning': "#d99a3f",
+        '--wzl-success': "#2ec27e",
+        '--wzl-focus-ring': "#5841b8",
+        '--wzl-glass-tint': "#2e1f7a",
+        '--wzl-surface-hover': "rgba(230, 231, 233, 0.1)",
+        '--wzl-surface-pressed': "rgba(230, 231, 233, 0.18)",
+        '--wzl-radius-sm': "3px",
+        '--wzl-radius-md': "5px",
+        '--wzl-radius-lg': "14px",
+        '--wzl-radius-pill': "999px",
+        '--wzl-border-w': "1px",
+        '--wzl-line-width': "2px",
+        '--wzl-curve-width': "3px",
+        '--wzl-tb-height': "32px",
+        '--wzl-control-h-xs': "22px",
+        '--wzl-control-h-sm': "24px",
+        '--wzl-control-h': "28px",
+        '--wzl-icon-button-size': "26px",
+        '--wzl-slider-track-h': "4px",
+        '--wzl-slider-thumb-size': "8px",
+        '--wzl-slider-track-mix': "18%",
+        '--wzl-slider-thumb-mix': "70%",
+        '--wzl-handle-size': "9px",
+        '--wzl-handle-size-sm': "7px",
+        '--wzl-handle-size-lg': "10px",
+        '--wzl-field-pad-x': "8px",
+        '--wzl-glass-blur': "3px",
+        '--wzl-font-size': "15px",
+        '--wzl-tracking-none': "0",
+        '--wzl-tracking-wide': "0.06em",
+        '--wzl-tracking-wider': "0.08em",
+        '--wzl-z-toolbar': "10",
+        '--wzl-z-overlay': "20",
+        '--wzl-z-modal': "30",
+        '--wzl-leading-tight': "1",
+        '--wzl-leading-snug': "1.2",
+        '--wzl-leading': "1.4",
+        '--wzl-backdrop': "none",
+        '--wzl-motion-fast': "120ms",
+        '--wzl-motion-medium': "240ms",
+        '--wzl-ease-in-cubic': "cubic-bezier(0.32, 0, 0.67, 0)",
+        '--wzl-ease-out-cubic': "cubic-bezier(0.33, 1, 0.68, 1)",
+        '--wzl-ease-in-out-cubic': "cubic-bezier(0.65, 0, 0.35, 1)",
+        '--wzl-ease-out-back': "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        '--wzl-font-ui': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-display': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-body': "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
+        '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+        '--wzl-font-weight-light': "200",
+        '--wzl-font-weight-normal': "300",
+        '--wzl-font-weight-medium': "350",
+        '--wzl-font-weight-bold': "400",
+        '--wzl-space-xs': "4px",
+        '--wzl-space-sm': "8px",
+        '--wzl-space-md': "12px",
+        '--wzl-space-lg': "16px",
+      },
+      'mode=light,density=compact': {
+        '--wzl-gray-50': "#f5f5f6",
+        '--wzl-gray-100': "#e6e7e9",
+        '--wzl-gray-200': "#c9cbcf",
+        '--wzl-gray-300': "#9ea1a8",
+        '--wzl-gray-400': "#6f737b",
+        '--wzl-gray-500': "#4d5058",
+        '--wzl-gray-600': "#383b42",
+        '--wzl-gray-700': "#25272c",
+        '--wzl-gray-800': "#181a1e",
+        '--wzl-gray-900': "#0e0f12",
+        '--wzl-accent-soft': "#1d1454",
+        '--wzl-accent-base': "#2e1f7a",
+        '--wzl-accent-strong': "#5841b8",
+        '--wzl-swatch-fuchsia': "#f641f7",
+        '--wzl-swatch-green': "#48e628",
+        '--wzl-swatch-sky': "#36bff2",
+        '--wzl-swatch-amber': "#e69628",
+        '--wzl-swatch-teal': "#3ee1cb",
+        '--wzl-swatch-red': "#f75034",
+        '--wzl-swatch-blue': "#407ef7",
+        '--wzl-swatch-citron': "#d5d23a",
+        '--wzl-swatch-rose': "#fa4590",
+        '--wzl-swatch-violet': "#955cf9",
+        '--wzl-font-size-2xs': "7px",
+        '--wzl-font-size-xs': "8px",
+        '--wzl-font-size-sm': "9px",
+        '--wzl-font-size-md': "11px",
+        '--wzl-font-size-lg': "14px",
+        '--wzl-font-size-xl': "17px",
+        '--wzl-space-1': "2px",
+        '--wzl-space-2': "4px",
+        '--wzl-space-3': "6px",
+        '--wzl-space-4': "8px",
+        '--wzl-space-5': "10px",
+        '--wzl-space-6': "12px",
+        '--wzl-space-7': "14px",
+        '--wzl-space-8': "16px",
+        '--wzl-surface': "#f5f5f6",
+        '--wzl-surface-raised': "#e6e7e9",
+        '--wzl-surface-sunken': "#c9cbcf",
+        '--wzl-fg': "#0e0f12",
+        '--wzl-fg-muted': "#383b42",
+        '--wzl-fg-subtle': "#4d5058",
+        '--wzl-border': "#c9cbcf",
+        '--wzl-border-strong': "#4d5058",
+        '--wzl-accent-fg': "#2e1f7a",
+        '--wzl-fg-inverse': "#f5f5f6",
+        '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
+        '--wzl-danger-base': "#d94a3f",
+        '--wzl-warning-base': "#d99a3f",
+        '--wzl-success-base': "#2ec27e",
+        '--wzl-fg-on-accent': "#f5f5f6",
+        '--wzl-line-subtle': "rgba(14, 15, 18, 0.1)",
+        '--wzl-line': "rgba(14, 15, 18, 0.2)",
+        '--wzl-line-strong': "rgba(14, 15, 18, 0.4)",
+        '--wzl-curve-color': "#5841b8",
+        '--wzl-accent': "#2e1f7a",
+        '--wzl-accent-hover': "#5841b8",
+        '--wzl-danger': "#d94a3f",
+        '--wzl-warning': "#d99a3f",
+        '--wzl-success': "#2ec27e",
+        '--wzl-focus-ring': "#5841b8",
+        '--wzl-glass-tint': "#2e1f7a",
+        '--wzl-surface-hover': "rgba(14, 15, 18, 0.1)",
+        '--wzl-surface-pressed': "rgba(14, 15, 18, 0.18)",
+        '--wzl-radius-sm': "3px",
+        '--wzl-radius-md': "5px",
+        '--wzl-radius-lg': "14px",
+        '--wzl-radius-pill': "999px",
+        '--wzl-border-w': "1px",
+        '--wzl-line-width': "2px",
+        '--wzl-curve-width': "3px",
+        '--wzl-tb-height': "24px",
+        '--wzl-control-h-xs': "16px",
+        '--wzl-control-h-sm': "18px",
+        '--wzl-control-h': "20px",
+        '--wzl-icon-button-size': "20px",
+        '--wzl-slider-track-h': "4px",
+        '--wzl-slider-thumb-size': "8px",
+        '--wzl-slider-track-mix': "18%",
+        '--wzl-slider-thumb-mix': "70%",
+        '--wzl-handle-size': "9px",
+        '--wzl-handle-size-sm': "7px",
+        '--wzl-handle-size-lg': "10px",
+        '--wzl-field-pad-x': "8px",
+        '--wzl-glass-blur': "3px",
+        '--wzl-font-size': "11px",
+        '--wzl-tracking-none': "0",
+        '--wzl-tracking-wide': "0.06em",
+        '--wzl-tracking-wider': "0.08em",
+        '--wzl-z-toolbar': "10",
+        '--wzl-z-overlay': "20",
+        '--wzl-z-modal': "30",
+        '--wzl-leading-tight': "1",
+        '--wzl-leading-snug': "1.2",
+        '--wzl-leading': "1.4",
+        '--wzl-backdrop': "none",
+        '--wzl-motion-fast': "120ms",
+        '--wzl-motion-medium': "240ms",
+        '--wzl-ease-in-cubic': "cubic-bezier(0.32, 0, 0.67, 0)",
+        '--wzl-ease-out-cubic': "cubic-bezier(0.33, 1, 0.68, 1)",
+        '--wzl-ease-in-out-cubic': "cubic-bezier(0.65, 0, 0.35, 1)",
+        '--wzl-ease-out-back': "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        '--wzl-font-ui': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-display': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-body': "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
+        '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+        '--wzl-font-weight-light': "200",
+        '--wzl-font-weight-normal': "300",
+        '--wzl-font-weight-medium': "350",
+        '--wzl-font-weight-bold': "400",
+        '--wzl-space-xs': "4px",
+        '--wzl-space-sm': "8px",
+        '--wzl-space-md': "12px",
+        '--wzl-space-lg': "16px",
+      },
+      'mode=light,density=comfortable': {
+        '--wzl-gray-50': "#f5f5f6",
+        '--wzl-gray-100': "#e6e7e9",
+        '--wzl-gray-200': "#c9cbcf",
+        '--wzl-gray-300': "#9ea1a8",
+        '--wzl-gray-400': "#6f737b",
+        '--wzl-gray-500': "#4d5058",
+        '--wzl-gray-600': "#383b42",
+        '--wzl-gray-700': "#25272c",
+        '--wzl-gray-800': "#181a1e",
+        '--wzl-gray-900': "#0e0f12",
+        '--wzl-accent-soft': "#1d1454",
+        '--wzl-accent-base': "#2e1f7a",
+        '--wzl-accent-strong': "#5841b8",
+        '--wzl-swatch-fuchsia': "#f641f7",
+        '--wzl-swatch-green': "#48e628",
+        '--wzl-swatch-sky': "#36bff2",
+        '--wzl-swatch-amber': "#e69628",
+        '--wzl-swatch-teal': "#3ee1cb",
+        '--wzl-swatch-red': "#f75034",
+        '--wzl-swatch-blue': "#407ef7",
+        '--wzl-swatch-citron': "#d5d23a",
+        '--wzl-swatch-rose': "#fa4590",
+        '--wzl-swatch-violet': "#955cf9",
+        '--wzl-font-size-2xs': "9px",
+        '--wzl-font-size-xs': "10px",
+        '--wzl-font-size-sm': "11px",
+        '--wzl-font-size-md': "13px",
+        '--wzl-font-size-lg': "16px",
+        '--wzl-font-size-xl': "20px",
+        '--wzl-space-1': "2px",
+        '--wzl-space-2': "4px",
+        '--wzl-space-3': "6px",
+        '--wzl-space-4': "8px",
+        '--wzl-space-5': "10px",
+        '--wzl-space-6': "12px",
+        '--wzl-space-7': "14px",
+        '--wzl-space-8': "16px",
         '--wzl-surface': "#f5f5f6",
         '--wzl-surface-raised': "#e6e7e9",
         '--wzl-surface-sunken': "#c9cbcf",
@@ -292,7 +681,10 @@ export const THEMES = {
         '--wzl-line-width': "2px",
         '--wzl-curve-width': "3px",
         '--wzl-tb-height': "28px",
+        '--wzl-control-h-xs': "18px",
+        '--wzl-control-h-sm': "20px",
         '--wzl-control-h': "24px",
+        '--wzl-icon-button-size': "22px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-mix': "18%",
@@ -302,16 +694,7 @@ export const THEMES = {
         '--wzl-handle-size-lg': "10px",
         '--wzl-field-pad-x': "8px",
         '--wzl-glass-blur': "3px",
-        '--wzl-font-size-2xs': "9px",
-        '--wzl-font-size-xs': "10px",
-        '--wzl-font-size-sm': "11px",
         '--wzl-font-size': "13px",
-        '--wzl-font-size-lg': "16px",
-        '--wzl-font-size-xl': "20px",
-        '--wzl-space-xs': "4px",
-        '--wzl-space-sm': "8px",
-        '--wzl-space-md': "12px",
-        '--wzl-space-lg': "16px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
         '--wzl-tracking-wider': "0.08em",
@@ -336,6 +719,127 @@ export const THEMES = {
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
         '--wzl-font-weight-bold': "400",
+        '--wzl-space-xs': "4px",
+        '--wzl-space-sm': "8px",
+        '--wzl-space-md': "12px",
+        '--wzl-space-lg': "16px",
+      },
+      'mode=light,density=roomy': {
+        '--wzl-gray-50': "#f5f5f6",
+        '--wzl-gray-100': "#e6e7e9",
+        '--wzl-gray-200': "#c9cbcf",
+        '--wzl-gray-300': "#9ea1a8",
+        '--wzl-gray-400': "#6f737b",
+        '--wzl-gray-500': "#4d5058",
+        '--wzl-gray-600': "#383b42",
+        '--wzl-gray-700': "#25272c",
+        '--wzl-gray-800': "#181a1e",
+        '--wzl-gray-900': "#0e0f12",
+        '--wzl-accent-soft': "#1d1454",
+        '--wzl-accent-base': "#2e1f7a",
+        '--wzl-accent-strong': "#5841b8",
+        '--wzl-swatch-fuchsia': "#f641f7",
+        '--wzl-swatch-green': "#48e628",
+        '--wzl-swatch-sky': "#36bff2",
+        '--wzl-swatch-amber': "#e69628",
+        '--wzl-swatch-teal': "#3ee1cb",
+        '--wzl-swatch-red': "#f75034",
+        '--wzl-swatch-blue': "#407ef7",
+        '--wzl-swatch-citron': "#d5d23a",
+        '--wzl-swatch-rose': "#fa4590",
+        '--wzl-swatch-violet': "#955cf9",
+        '--wzl-font-size-2xs': "10px",
+        '--wzl-font-size-xs': "12px",
+        '--wzl-font-size-sm': "13px",
+        '--wzl-font-size-md': "15px",
+        '--wzl-font-size-lg': "18px",
+        '--wzl-font-size-xl': "23px",
+        '--wzl-space-1': "2px",
+        '--wzl-space-2': "4px",
+        '--wzl-space-3': "6px",
+        '--wzl-space-4': "8px",
+        '--wzl-space-5': "10px",
+        '--wzl-space-6': "12px",
+        '--wzl-space-7': "14px",
+        '--wzl-space-8': "16px",
+        '--wzl-surface': "#f5f5f6",
+        '--wzl-surface-raised': "#e6e7e9",
+        '--wzl-surface-sunken': "#c9cbcf",
+        '--wzl-fg': "#0e0f12",
+        '--wzl-fg-muted': "#383b42",
+        '--wzl-fg-subtle': "#4d5058",
+        '--wzl-border': "#c9cbcf",
+        '--wzl-border-strong': "#4d5058",
+        '--wzl-accent-fg': "#2e1f7a",
+        '--wzl-fg-inverse': "#f5f5f6",
+        '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
+        '--wzl-danger-base': "#d94a3f",
+        '--wzl-warning-base': "#d99a3f",
+        '--wzl-success-base': "#2ec27e",
+        '--wzl-fg-on-accent': "#f5f5f6",
+        '--wzl-line-subtle': "rgba(14, 15, 18, 0.1)",
+        '--wzl-line': "rgba(14, 15, 18, 0.2)",
+        '--wzl-line-strong': "rgba(14, 15, 18, 0.4)",
+        '--wzl-curve-color': "#5841b8",
+        '--wzl-accent': "#2e1f7a",
+        '--wzl-accent-hover': "#5841b8",
+        '--wzl-danger': "#d94a3f",
+        '--wzl-warning': "#d99a3f",
+        '--wzl-success': "#2ec27e",
+        '--wzl-focus-ring': "#5841b8",
+        '--wzl-glass-tint': "#2e1f7a",
+        '--wzl-surface-hover': "rgba(14, 15, 18, 0.1)",
+        '--wzl-surface-pressed': "rgba(14, 15, 18, 0.18)",
+        '--wzl-radius-sm': "3px",
+        '--wzl-radius-md': "5px",
+        '--wzl-radius-lg': "14px",
+        '--wzl-radius-pill': "999px",
+        '--wzl-border-w': "1px",
+        '--wzl-line-width': "2px",
+        '--wzl-curve-width': "3px",
+        '--wzl-tb-height': "32px",
+        '--wzl-control-h-xs': "22px",
+        '--wzl-control-h-sm': "24px",
+        '--wzl-control-h': "28px",
+        '--wzl-icon-button-size': "26px",
+        '--wzl-slider-track-h': "4px",
+        '--wzl-slider-thumb-size': "8px",
+        '--wzl-slider-track-mix': "18%",
+        '--wzl-slider-thumb-mix': "70%",
+        '--wzl-handle-size': "9px",
+        '--wzl-handle-size-sm': "7px",
+        '--wzl-handle-size-lg': "10px",
+        '--wzl-field-pad-x': "8px",
+        '--wzl-glass-blur': "3px",
+        '--wzl-font-size': "15px",
+        '--wzl-tracking-none': "0",
+        '--wzl-tracking-wide': "0.06em",
+        '--wzl-tracking-wider': "0.08em",
+        '--wzl-z-toolbar': "10",
+        '--wzl-z-overlay': "20",
+        '--wzl-z-modal': "30",
+        '--wzl-leading-tight': "1",
+        '--wzl-leading-snug': "1.2",
+        '--wzl-leading': "1.4",
+        '--wzl-backdrop': "none",
+        '--wzl-motion-fast': "120ms",
+        '--wzl-motion-medium': "240ms",
+        '--wzl-ease-in-cubic': "cubic-bezier(0.32, 0, 0.67, 0)",
+        '--wzl-ease-out-cubic': "cubic-bezier(0.33, 1, 0.68, 1)",
+        '--wzl-ease-in-out-cubic': "cubic-bezier(0.65, 0, 0.35, 1)",
+        '--wzl-ease-out-back': "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        '--wzl-font-ui': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-display': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-body': "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
+        '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+        '--wzl-font-weight-light': "200",
+        '--wzl-font-weight-normal': "300",
+        '--wzl-font-weight-medium': "350",
+        '--wzl-font-weight-bold': "400",
+        '--wzl-space-xs': "4px",
+        '--wzl-space-sm': "8px",
+        '--wzl-space-md': "12px",
+        '--wzl-space-lg': "16px",
       },
     },
   },
@@ -356,6 +860,22 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
             "scheme": "light"
           }
         }
+      },
+      "density": {
+        "default": "comfortable",
+        "values": {
+          "compact": {},
+          "comfortable": {},
+          "roomy": {}
+        }
+      }
+    },
+    "seeds": {
+      "ui-base": {
+        "by": "density",
+        "compact": 11,
+        "comfortable": 13,
+        "roomy": 15
       }
     },
     "ramps": {
@@ -426,6 +946,51 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
           "minDistance": 0.22,
           "order": "farthest"
         }
+      }
+    },
+    "scales": {
+      "font-size": {
+        "steps": [
+          "2xs",
+          "xs",
+          "sm",
+          "md",
+          "lg",
+          "xl"
+        ],
+        "base": "{seeds.ui-base}",
+        "factors": [
+          0.66,
+          0.77,
+          0.85,
+          1,
+          1.23,
+          1.54
+        ],
+        "description": "Chrome type ramp. Hand-tuned factors rather than a ratio: the small end is compressed because chrome text stops being legible before a geometric ramp stops shrinking.",
+        "describe": {
+          "2xs": "Shortcut keys and index badges. The floor for chrome text.",
+          "xs": "Tool-button labels under an icon.",
+          "sm": "Chrome labels, status readouts, section headings.",
+          "md": "Controls and body text.",
+          "lg": "Panel and dialog titles.",
+          "xl": "The largest chrome text — a lab or app title."
+        }
+      },
+      "space": {
+        "steps": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ],
+        "base": 2,
+        "step": 2,
+        "description": "Spacing ladder, 2px rungs. Invariant across density: the rungs are finer than any density factor could resolve without rounding two of them onto the same pixel."
       }
     },
     "semantics": {
@@ -764,14 +1329,94 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "description": "Drawn data curves. Heavier than structural lines so data reads as primary content."
       },
       "tb-height": {
-        "value": "28px",
-        "type": "dimension",
-        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+        "by": "density",
+        "compact": {
+          "value": "24px",
+          "type": "dimension",
+          "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+        },
+        "comfortable": {
+          "value": "28px",
+          "type": "dimension",
+          "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+        },
+        "roomy": {
+          "value": "32px",
+          "type": "dimension",
+          "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+        }
+      },
+      "control-h-xs": {
+        "by": "density",
+        "compact": {
+          "value": "16px",
+          "type": "dimension",
+          "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+        },
+        "comfortable": {
+          "value": "18px",
+          "type": "dimension",
+          "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+        },
+        "roomy": {
+          "value": "22px",
+          "type": "dimension",
+          "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+        }
+      },
+      "control-h-sm": {
+        "by": "density",
+        "compact": {
+          "value": "18px",
+          "type": "dimension",
+          "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+        },
+        "comfortable": {
+          "value": "20px",
+          "type": "dimension",
+          "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+        },
+        "roomy": {
+          "value": "24px",
+          "type": "dimension",
+          "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+        }
       },
       "control-h": {
-        "value": "24px",
-        "type": "dimension",
-        "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+        "by": "density",
+        "compact": {
+          "value": "20px",
+          "type": "dimension",
+          "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+        },
+        "comfortable": {
+          "value": "24px",
+          "type": "dimension",
+          "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+        },
+        "roomy": {
+          "value": "28px",
+          "type": "dimension",
+          "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+        }
+      },
+      "icon-button-size": {
+        "by": "density",
+        "compact": {
+          "value": "20px",
+          "type": "dimension",
+          "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+        },
+        "comfortable": {
+          "value": "22px",
+          "type": "dimension",
+          "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+        },
+        "roomy": {
+          "value": "26px",
+          "type": "dimension",
+          "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+        }
       },
       "slider-track-h": {
         "value": "4px",
@@ -818,51 +1463,10 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "type": "dimension",
         "description": "Backdrop blur radius for frosted surfaces. Pairs with glass-tint."
       },
-      "font-size-2xs": {
-        "value": "9px",
-        "type": "dimension",
-        "description": "Shortcut keys and index badges. The floor for chrome text."
-      },
-      "font-size-xs": {
-        "value": "10px",
-        "type": "dimension",
-        "description": "Tool-button labels under an icon."
-      },
-      "font-size-sm": {
-        "value": "11px",
-        "type": "dimension",
-        "description": "Chrome labels, status readouts, section headings."
-      },
       "font-size": {
-        "value": "13px",
+        "value": "{font-size-md}",
         "type": "dimension",
         "description": "Controls and body text."
-      },
-      "font-size-lg": {
-        "value": "16px",
-        "type": "dimension",
-        "description": "Panel and dialog titles."
-      },
-      "font-size-xl": {
-        "value": "20px",
-        "type": "dimension",
-        "description": "The largest chrome text — a lab or app title."
-      },
-      "space-xs": {
-        "value": "4px",
-        "type": "dimension"
-      },
-      "space-sm": {
-        "value": "8px",
-        "type": "dimension"
-      },
-      "space-md": {
-        "value": "12px",
-        "type": "dimension"
-      },
-      "space-lg": {
-        "value": "16px",
-        "type": "dimension"
       },
       "tracking-none": {
         "value": "0",
@@ -1012,6 +1616,26 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       "font-weight-bold": {
         "value": 400,
         "type": "fontWeight"
+      },
+      "space-xs": {
+        "value": "{space-2}",
+        "type": "dimension",
+        "description": "Alias for space-2. The t-shirt names name every other rung of the ladder."
+      },
+      "space-sm": {
+        "value": "{space-4}",
+        "type": "dimension",
+        "description": "Alias for space-4. The t-shirt names name every other rung of the ladder."
+      },
+      "space-md": {
+        "value": "{space-6}",
+        "type": "dimension",
+        "description": "Alias for space-6. The t-shirt names name every other rung of the ladder."
+      },
+      "space-lg": {
+        "value": "{space-8}",
+        "type": "dimension",
+        "description": "Alias for space-8. The t-shirt names name every other rung of the ladder."
       }
     }
   }
@@ -1033,6 +1657,14 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
           "light": {
             "scheme": "light"
           }
+        }
+      },
+      "density": {
+        "default": "comfortable",
+        "values": {
+          "compact": {},
+          "comfortable": {},
+          "roomy": {}
         }
       }
     },
@@ -1130,6 +1762,146 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       "swatch-violet": {
         "type": "color",
         "value": "#955cf9"
+      },
+      "font-size-2xs": {
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "7px",
+          "description": "Shortcut keys and index badges. The floor for chrome text."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "9px",
+          "description": "Shortcut keys and index badges. The floor for chrome text."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "10px",
+          "description": "Shortcut keys and index badges. The floor for chrome text."
+        }
+      },
+      "font-size-xs": {
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "8px",
+          "description": "Tool-button labels under an icon."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "10px",
+          "description": "Tool-button labels under an icon."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "12px",
+          "description": "Tool-button labels under an icon."
+        }
+      },
+      "font-size-sm": {
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "9px",
+          "description": "Chrome labels, status readouts, section headings."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "11px",
+          "description": "Chrome labels, status readouts, section headings."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "13px",
+          "description": "Chrome labels, status readouts, section headings."
+        }
+      },
+      "font-size-md": {
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "11px",
+          "description": "Controls and body text."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "13px",
+          "description": "Controls and body text."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "15px",
+          "description": "Controls and body text."
+        }
+      },
+      "font-size-lg": {
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "14px",
+          "description": "Panel and dialog titles."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "16px",
+          "description": "Panel and dialog titles."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "18px",
+          "description": "Panel and dialog titles."
+        }
+      },
+      "font-size-xl": {
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "17px",
+          "description": "The largest chrome text — a lab or app title."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "20px",
+          "description": "The largest chrome text — a lab or app title."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "23px",
+          "description": "The largest chrome text — a lab or app title."
+        }
+      },
+      "space-1": {
+        "type": "dimension",
+        "value": "2px"
+      },
+      "space-2": {
+        "type": "dimension",
+        "value": "4px"
+      },
+      "space-3": {
+        "type": "dimension",
+        "value": "6px"
+      },
+      "space-4": {
+        "type": "dimension",
+        "value": "8px"
+      },
+      "space-5": {
+        "type": "dimension",
+        "value": "10px"
+      },
+      "space-6": {
+        "type": "dimension",
+        "value": "12px"
+      },
+      "space-7": {
+        "type": "dimension",
+        "value": "14px"
+      },
+      "space-8": {
+        "type": "dimension",
+        "value": "16px"
       },
       "surface": {
         "by": "mode",
@@ -1370,14 +2142,94 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "description": "Drawn data curves. Heavier than structural lines so data reads as primary content."
       },
       "tb-height": {
-        "type": "dimension",
-        "value": "28px",
-        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "24px",
+          "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "28px",
+          "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "32px",
+          "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+        }
+      },
+      "control-h-xs": {
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "16px",
+          "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "18px",
+          "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "22px",
+          "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+        }
+      },
+      "control-h-sm": {
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "18px",
+          "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "20px",
+          "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "24px",
+          "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+        }
       },
       "control-h": {
-        "type": "dimension",
-        "value": "24px",
-        "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "20px",
+          "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "24px",
+          "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "28px",
+          "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+        }
+      },
+      "icon-button-size": {
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "20px",
+          "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "22px",
+          "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "26px",
+          "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+        }
       },
       "slider-track-h": {
         "type": "dimension",
@@ -1424,51 +2276,10 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "value": "3px",
         "description": "Backdrop blur radius for frosted surfaces. Pairs with glass-tint."
       },
-      "font-size-2xs": {
-        "type": "dimension",
-        "value": "9px",
-        "description": "Shortcut keys and index badges. The floor for chrome text."
-      },
-      "font-size-xs": {
-        "type": "dimension",
-        "value": "10px",
-        "description": "Tool-button labels under an icon."
-      },
-      "font-size-sm": {
-        "type": "dimension",
-        "value": "11px",
-        "description": "Chrome labels, status readouts, section headings."
-      },
       "font-size": {
         "type": "dimension",
-        "value": "13px",
+        "value": "{font-size-md}",
         "description": "Controls and body text."
-      },
-      "font-size-lg": {
-        "type": "dimension",
-        "value": "16px",
-        "description": "Panel and dialog titles."
-      },
-      "font-size-xl": {
-        "type": "dimension",
-        "value": "20px",
-        "description": "The largest chrome text — a lab or app title."
-      },
-      "space-xs": {
-        "type": "dimension",
-        "value": "4px"
-      },
-      "space-sm": {
-        "type": "dimension",
-        "value": "8px"
-      },
-      "space-md": {
-        "type": "dimension",
-        "value": "12px"
-      },
-      "space-lg": {
-        "type": "dimension",
-        "value": "16px"
       },
       "tracking-none": {
         "type": "dimension",
@@ -1618,6 +2429,26 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       "font-weight-bold": {
         "type": "fontWeight",
         "value": 400
+      },
+      "space-xs": {
+        "type": "dimension",
+        "value": "{space-2}",
+        "description": "Alias for space-2. The t-shirt names name every other rung of the ladder."
+      },
+      "space-sm": {
+        "type": "dimension",
+        "value": "{space-4}",
+        "description": "Alias for space-4. The t-shirt names name every other rung of the ladder."
+      },
+      "space-md": {
+        "type": "dimension",
+        "value": "{space-6}",
+        "description": "Alias for space-6. The t-shirt names name every other rung of the ladder."
+      },
+      "space-lg": {
+        "type": "dimension",
+        "value": "{space-8}",
+        "description": "Alias for space-8. The t-shirt names name every other rung of the ladder."
       }
     }
   }

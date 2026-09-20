@@ -15,10 +15,11 @@ const EXPECTED_NAMES = [
   'accent-soft', 'accent-base', 'accent-strong',
   'danger-base', 'warning-base', 'success-base',
   'radius-sm', 'radius-md', 'radius-lg', 'radius-pill', 'border-w', 'line-width', 'curve-width',
-  'tb-height', 'control-h', 'glass-blur',
+  'tb-height', 'control-h-xs', 'control-h-sm', 'control-h', 'icon-button-size', 'glass-blur',
   'slider-track-h', 'slider-thumb-size', 'slider-track-mix', 'slider-thumb-mix', 'field-pad-x',
   'handle-size', 'handle-size-sm', 'handle-size-lg',
-  'font-size-2xs', 'font-size-xs', 'font-size-sm', 'font-size', 'font-size-lg', 'font-size-xl',
+  'font-size-2xs', 'font-size-xs', 'font-size-sm', 'font-size-md', 'font-size-lg', 'font-size-xl', 'font-size',
+  'space-1', 'space-2', 'space-3', 'space-4', 'space-5', 'space-6', 'space-7', 'space-8',
   'space-xs', 'space-sm', 'space-md', 'space-lg',
   'tracking-none', 'tracking-wide', 'tracking-wider',
   'z-toolbar', 'z-overlay', 'z-modal',
@@ -52,5 +53,21 @@ describe('weasel theme definition', () => {
   it('derives with no issues in any mode', () => {
     expect(derive(weasel, { mode: 'dark' }).issues).toEqual([]);
     expect(derive(weasel, { mode: 'light' }).issues).toEqual([]);
+  });
+
+  it('derives with no issues at every density', () => {
+    for (const density of ['compact', 'comfortable', 'roomy']) {
+      expect(derive(weasel, { mode: 'dark', density }).issues).toEqual([]);
+    }
+  });
+
+  // Every rung distinct at every density: the factors are close enough at the small
+  // end that a smaller base rounds two of them onto the same pixel.
+  it('keeps every rank of the type ramp distinct at every density', () => {
+    for (const density of ['compact', 'comfortable', 'roomy']) {
+      const tokens = derive(weasel, { mode: 'dark', density }).tokens;
+      const ranks = ['2xs', 'xs', 'sm', 'md', 'lg', 'xl'].map((r) => tokens[`font-size-${r}`].value);
+      expect(new Set(ranks).size).toBe(ranks.length);
+    }
   });
 });

@@ -12,12 +12,12 @@
 
 .tabs[data-orientation="vertical"] {
   flex-direction: row;
-  gap: 12px;
+  gap: var(--wzl-space-6);
 }
 
 .list {
   display: flex;
-  gap: 2px;
+  gap: var(--wzl-space-1);
   border-bottom: 1px solid var(--wzl-border);
 }
 
@@ -25,12 +25,12 @@
   flex-direction: column;
   border-bottom: none;
   border-right: 1px solid var(--wzl-border);
-  padding-right: 8px;
+  padding-right: var(--wzl-space-4);
 }
 
 .tab {
   position: relative;
-  padding: 6px 10px;
+  padding: var(--wzl-space-3) var(--wzl-space-5);
   background: transparent;
   border: none;
   color: var(--wzl-fg-muted);
@@ -79,7 +79,7 @@
 }
 
 .panel {
-  padding: 12px 0;
+  padding: var(--wzl-space-6) 0;
   outline: none;
 }
 

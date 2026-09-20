@@ -3,7 +3,7 @@
   flex-direction: column;
   width: 100%;
   min-width: 0;
-  gap: 4px;
+  gap: var(--wzl-space-2);
 }
 
 .frame {
@@ -64,7 +64,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
+  width: var(--wzl-control-h-xs);
   flex: 1;
   background: transparent;
   border: none;

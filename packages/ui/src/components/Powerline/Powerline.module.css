@@ -6,7 +6,7 @@
 
 .matrix {
   display: grid;
-  gap: 12px;
+  gap: var(--wzl-space-6);
 }
 
 /* Reset Badge's opinionated text defaults — Powerline segments should pick up

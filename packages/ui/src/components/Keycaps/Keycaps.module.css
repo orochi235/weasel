@@ -1,7 +1,7 @@
 /* Keystroke "key cap" styling — each modifier and key in its own bordered chip. */
 .keys,
 .key {
-  --key-h: 18px;
+  --key-h: var(--wzl-control-h-xs);
 }
 
 .keys {
@@ -39,7 +39,7 @@
   justify-content: center;
   box-sizing: border-box;
   height: var(--key-h);
-  padding: 0 4px;
+  padding: 0 var(--wzl-space-2);
   /* Light face, slightly-darker-than-face border, dark glyph — reads as
      a real keycap rather than a recessed slot in the panel. */
   background: var(--wzl-fg, #e6e7e9);
@@ -70,13 +70,13 @@
    they modify in a stack. */
 .key[data-kind='modifier'] {
   min-width: 26px;
-  padding: 0 6px;
+  padding: 0 var(--wzl-space-3);
 }
 
 /* Tab / Enter / Space — actual wide keys on a real keyboard. */
 .key[data-kind='wide'] {
   min-width: 32px;
-  padding: 0 8px;
+  padding: 0 var(--wzl-space-4);
 }
 
 /* Optional/inverted (default variant): face flips to dark; legend drops

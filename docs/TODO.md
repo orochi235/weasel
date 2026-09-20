@@ -761,6 +761,17 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P2) DTCG export carries one axis, so density is flattened out of it.**
+  `toDTCG` writes mode and, for every other axis, that axis's default branch
+  only — a theme round-tripped through DTCG comes back with its `compact` and
+  `roomy` values gone. DTCG has one variant dimension and no standard second, so
+  carrying both means choosing an encoding: each axis combination as its own
+  named mode (`selectionKey` already produces those names, and `loadDTCG` would
+  have to parse them back), or a documented extension. The theme editor's export
+  is the only consumer. Nothing loses data today because nothing imports a
+  density-varying document, but a designer editing tokens in Figma and syncing
+  back would silently drop two densities.
+
 - **(P2) Whether an anchor should set a ramp's chroma peak directly.** Today an
   anchor sets `peak = anchor C · max / e`, with `e` the envelope at the anchor's
   position, so an anchor on an end step whose bias is near 0 leaves `e` tiny and

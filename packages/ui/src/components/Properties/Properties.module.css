@@ -59,7 +59,7 @@
      standalone Input. Mapped here, on the container, so one declaration moves
      every field in the panel — and read from the container-level name so a
      density set further up is not shadowed by this declaration. */
-  --wzl-field-h: var(--wzl-prop-field-h, 20px);
+  --wzl-field-h: var(--wzl-prop-field-h, var(--wzl-control-h-sm));
   --wzl-field-pad-x: var(--wzl-prop-field-pad-x, 6px);
 }
 
@@ -188,7 +188,7 @@
      label-group height past the text baseline. */
   align-items: baseline;
   justify-content: space-between;
-  gap: 4px;
+  gap: var(--wzl-space-2);
   margin-bottom: -4px;
 }
 
@@ -202,7 +202,7 @@
   letter-spacing: 0.05em;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .readout {
@@ -220,6 +220,24 @@
 .readoutAfter {
   flex: 0 0 auto;
   margin-left: 0;
+}
+
+/* Bare readout text — the word a row shows while it is auto — carrying
+   `.readoutInput`'s box, inside `.readoutGroup` just as the input is. The label
+   is a baseline-aligned flex line, so anything taller above the baseline drags
+   the whole line, label included, down with it: an input's border and padding
+   did that for 3.5px on every pin toggle. Both states have to be the same box
+   *and* the same nesting, because the group's own strut is 5px of the height. */
+.readoutText {
+  display: inline-block;
+  /* The input's content box, not its line-height: a text input's inner editor
+     will not shrink to a line-height below the font's own content area, so it
+     renders 16px of content where a span renders 11px. Stating the height on
+     both and filling it here is what makes the two boxes agree. */
+  height: var(--wzl-control-h-sm);
+  line-height: calc(var(--wzl-control-h-sm) - 4px);
+  border: 1px solid transparent;
+  padding: 1px 0
 }
 
 /* ⓘ help affordance beside a row label. Every dimension is stated because a
@@ -328,6 +346,9 @@
   border-radius: var(--wzl-radius-sm);
   padding: 1px 0;
   margin: 0;
+  /* Stated rather than left to the control's intrinsic size, which `.readoutText`
+     cannot reproduce — see the note there. */
+  height: var(--wzl-control-h-sm);
   /* The fit is the widest value in `ch`, which is one digit; the box is border-box, so its border
      comes back on top, with half a `ch` for a glyph wider than a digit. */
   width: max(
@@ -379,7 +400,7 @@
 }
 
 .fieldUnitGroup .readoutUnit {
-  margin-left: 4px;
+  margin-left: var(--wzl-space-2);
 }
 
 /* Symbol units (e.g. `<sup>°</sup>`) lean on the browser's native super
@@ -399,7 +420,7 @@
   /* Label on the left edge, field on the right: fields of different widths
      still line up as one rail down the column. */
   justify-content: space-between;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .rowInline .rowLabel {
@@ -539,7 +560,7 @@
   grid-template-columns: 1fr auto;
   grid-template-rows: auto;
   align-content: var(--wzl-prop-row-align-content, end);
-  column-gap: 8px;
+  column-gap: var(--wzl-space-4);
   row-gap: 0;
   min-width: 0;
 }
@@ -552,8 +573,7 @@
   min-width: 0;
 }
 
-/* 36×24, hairline border, no padding. Padding: 0 is important — the native
-   <input type="color"> in some browsers (esp. Chrome) inflates beyond its
+/* Padding: 0 is important — the native <input type="color"> in some browsers (esp. Chrome) inflates beyond its
    declared box when given padding, which expands the grid row and pushes
    the paired slider track out of bottom alignment. */
 .rowColor input[type='color'] {
@@ -562,7 +582,7 @@
   align-self: var(--wzl-prop-row-align, center);
   box-sizing: border-box;
   width: 36px;
-  height: 18px;
+  height: var(--wzl-control-h-xs);
   background: transparent;
   border: 0;
   border-radius: var(--wzl-radius-sm);
@@ -600,7 +620,7 @@
   grid-row: 3;
 }
 
-/* ── Checkbox variant: control-first inline layout, no uppercase label. */
+/* ── Checkbox variant: label-first inline layout, no uppercase label. */
 .rowCheckbox {
   flex-direction: row;
   align-items: var(--wzl-prop-row-align, center);
@@ -608,7 +628,7 @@
      inline row: a column of settings is read down its labels, and a box that
      leads its own row puts each label at a different indent. */
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--wzl-space-4)
   cursor: pointer;
 }
 
@@ -639,7 +659,7 @@
 .toggleButton {
   flex: 1;
   height: 26px;
-  padding: 0 8px;
+  padding: 0 var(--wzl-space-4);
   background: rgba(0, 0, 0, 0.25);
   color: var(--wzl-fg-muted);
   border: 0;
@@ -685,7 +705,7 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   margin: 0 0 var(--wzl-prop-group-title-gap, 4px);
   font-family: var(--wzl-font-display);
   font-weight: var(--wzl-font-weight-light);
@@ -777,10 +797,10 @@
   text-transform: uppercase;
   letter-spacing: var(--wzl-tracking-wider);
   margin: 0;
-  padding: 6px 0 4px;
+  padding: var(--wzl-space-3) 0 var(--wzl-space-2);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--wzl-space-4);
 }
 
 .subpanelTitle > span {
@@ -841,8 +861,8 @@
 .cardHead {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  padding: 2px 10px;
+  gap: var(--wzl-space-4);
+  padding: var(--wzl-space-1) var(--wzl-space-5);
   cursor: pointer;
   user-select: none;
 }
@@ -857,7 +877,7 @@
   justify-content: center;
   color: var(--wzl-fg-muted);
   cursor: grab;
-  padding: 0 2px;
+  padding: 0 var(--wzl-space-1);
 }
 
 .cardHandle:active {
@@ -874,7 +894,7 @@
   align-items: baseline;
   justify-content: center;
   min-width: 14px;
-  padding: 0 2px;
+  padding: 0 var(--wzl-space-1);
   color: var(--wzl-effect-card-accent, var(--wzl-fg-muted));
   font-size: var(--wzl-font-size);
   font-weight: var(--wzl-font-weight-bold);
@@ -901,7 +921,7 @@
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
-  padding: 2px 6px;
+  padding: var(--wzl-space-1) var(--wzl-space-3);
   margin-left: auto;
 }
 
@@ -913,7 +933,7 @@
 }
 
 .cardHead .cardPrimary ~ .cardRemove {
-  margin-left: 4px;
+  margin-left: var(--wzl-space-2);
 }
 
 .cardRemove {
@@ -921,8 +941,8 @@
   color: var(--wzl-fg-muted);
   border: 1px solid transparent;
   border-radius: var(--wzl-radius-sm);
-  width: 22px;
-  height: 22px;
+  width: var(--wzl-icon-button-size);
+  height: var(--wzl-icon-button-size);
   font-size: var(--wzl-font-size);
   cursor: pointer;
   display: inline-flex;
@@ -937,7 +957,7 @@
 }
 
 .cardBody {
-  padding: 4px 12px 12px;
+  padding: var(--wzl-space-2) var(--wzl-space-6) var(--wzl-space-6);
   border-top: 1px solid var(--wzl-border);
 }
 
@@ -945,7 +965,7 @@
 .cardList {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .cardListWrap {
@@ -956,7 +976,7 @@
   height: 0;
   border-top: 2px solid var(--wzl-accent);
   border-radius: var(--wzl-radius-sm);
-  margin: 2px 0;
+  margin: var(--wzl-space-1) 0;
   box-shadow: 0 0 6px color-mix(in srgb, var(--wzl-accent) 60%, transparent);
 }
 
@@ -967,7 +987,7 @@
   line-height: var(--wzl-leading);
   color: var(--wzl-fg-muted);
   text-align: center;
-  padding: 16px 12px;
+  padding: var(--wzl-space-8) var(--wzl-space-6);
   border: 1px dashed var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
 }

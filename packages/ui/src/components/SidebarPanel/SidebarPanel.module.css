@@ -1,7 +1,7 @@
 .panel {
   /* Vertical only: the body spans the panel's full width, and the title row's
      own controls carry the horizontal inset. */
-  padding: 8px 0;
+  padding: var(--wzl-space-4) 0;
   background: var(--wzl-surface);
   color: var(--wzl-fg);
 }
@@ -18,18 +18,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: var(--wzl-space-2);
   padding: 0;
 }
 
 .titleButton {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--wzl-space-2);
   flex: 1 1 auto;
   background: transparent;
   border: 0;
-  padding: 4px 8px;
+  padding: var(--wzl-space-2) var(--wzl-space-4);
   cursor: pointer;
   color: inherit;
   font: inherit;
@@ -51,7 +51,7 @@
 .hideButton {
   background: transparent;
   border: 0;
-  padding: 0 8px;
+  padding: 0 var(--wzl-space-4);
   font-size: var(--wzl-font-size);
   line-height: 1;
   color: var(--wzl-fg-muted);
@@ -62,7 +62,7 @@
 }
 
 .panel.collapsed {
-  padding-bottom: 4px;
+  padding-bottom: var(--wzl-space-2);
 }
 
 .body {

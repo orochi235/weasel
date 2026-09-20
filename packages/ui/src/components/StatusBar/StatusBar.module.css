@@ -1,9 +1,9 @@
 .bar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--wzl-space-8);
   flex-shrink: 0;
-  padding: 4px 12px;
+  padding: var(--wzl-space-2) var(--wzl-space-6);
   font-family: var(--wzl-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);

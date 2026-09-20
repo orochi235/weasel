@@ -43,8 +43,31 @@ describe('toDTCG', () => {
     expect(valueOf(toDTCG(kid).primitives, 'dimension', 'radius-md')).toBe('9px');
   });
 
-  it('refuses a theme with an axis other than mode', () => {
-    const t = defineTheme({ name: 'd', axes: { density: { default: 'a', values: { a: {}, b: {} } } }, pins: { gap: { by: 'density', a: '1px', b: '2px' } } });
-    expect(() => toDTCG(t)).toThrow(/mode/);
+  // DTCG carries one variant dimension, so a second axis cannot be written. Exporting
+  // its default branch loses the others; refusing the export loses the whole document.
+  it('writes a non-mode axis at its default branch and drops the rest', () => {
+    const t = defineTheme({
+      name: 'd',
+      axes: { density: { default: 'a', values: { a: {}, b: {} } } },
+      pins: { gap: { by: 'density', a: { value: '1px', type: 'dimension' }, b: { value: '2px', type: 'dimension' } } },
+    });
+    expect(valueOf(toDTCG(t).primitives, 'dimension', 'gap')).toBe('1px');
+  });
+
+  it('keeps mode varying underneath a flattened non-mode axis', () => {
+    const t = defineTheme({
+      name: 'd',
+      axes: { density: { default: 'a', values: { a: {}, b: {} } } },
+      pins: {
+        edge: {
+          by: 'density',
+          a: { by: 'mode', dark: { value: '1px', type: 'dimension' }, light: { value: '3px', type: 'dimension' } },
+          b: { value: '9px', type: 'dimension' },
+        },
+      },
+    });
+    const doc = toDTCG(t);
+    expect(valueOf(doc.modes.dark, 'dimension', 'edge')).toBe('1px');
+    expect(valueOf(doc.modes.light, 'dimension', 'edge')).toBe('3px');
   });
 });

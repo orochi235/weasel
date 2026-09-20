@@ -4,14 +4,14 @@
 .jog {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--wzl-space-2);
   color: var(--wzl-fg);
 }
 
 .scrub {
   flex: 1 1 auto;
   min-width: 80px;
-  margin-inline: 4px;
+  margin-inline: var(--wzl-space-2);
 }
 
 .readout {

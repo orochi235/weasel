@@ -11,6 +11,22 @@
           "scheme": "light"
         }
       }
+    },
+    "density": {
+      "default": "comfortable",
+      "values": {
+        "compact": {},
+        "comfortable": {},
+        "roomy": {}
+      }
+    }
+  },
+  "seeds": {
+    "ui-base": {
+      "by": "density",
+      "compact": 11,
+      "comfortable": 13,
+      "roomy": 15
     }
   },
   "ramps": {
@@ -81,6 +97,51 @@
         "minDistance": 0.22,
         "order": "farthest"
       }
+    }
+  },
+  "scales": {
+    "font-size": {
+      "steps": [
+        "2xs",
+        "xs",
+        "sm",
+        "md",
+        "lg",
+        "xl"
+      ],
+      "base": "{seeds.ui-base}",
+      "factors": [
+        0.66,
+        0.77,
+        0.85,
+        1,
+        1.23,
+        1.54
+      ],
+      "description": "Chrome type ramp. Hand-tuned factors rather than a ratio: the small end is compressed because chrome text stops being legible before a geometric ramp stops shrinking.",
+      "describe": {
+        "2xs": "Shortcut keys and index badges. The floor for chrome text.",
+        "xs": "Tool-button labels under an icon.",
+        "sm": "Chrome labels, status readouts, section headings.",
+        "md": "Controls and body text.",
+        "lg": "Panel and dialog titles.",
+        "xl": "The largest chrome text — a lab or app title."
+      }
+    },
+    "space": {
+      "steps": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "base": 2,
+      "step": 2,
+      "description": "Spacing ladder, 2px rungs. Invariant across density: the rungs are finer than any density factor could resolve without rounding two of them onto the same pixel."
     }
   },
   "semantics": {
@@ -419,14 +480,94 @@
       "description": "Drawn data curves. Heavier than structural lines so data reads as primary content."
     },
     "tb-height": {
-      "value": "28px",
-      "type": "dimension",
-      "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+      "by": "density",
+      "compact": {
+        "value": "24px",
+        "type": "dimension",
+        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+      },
+      "comfortable": {
+        "value": "28px",
+        "type": "dimension",
+        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+      },
+      "roomy": {
+        "value": "32px",
+        "type": "dimension",
+        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+      }
+    },
+    "control-h-xs": {
+      "by": "density",
+      "compact": {
+        "value": "16px",
+        "type": "dimension",
+        "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+      },
+      "comfortable": {
+        "value": "18px",
+        "type": "dimension",
+        "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+      },
+      "roomy": {
+        "value": "22px",
+        "type": "dimension",
+        "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+      }
+    },
+    "control-h-sm": {
+      "by": "density",
+      "compact": {
+        "value": "18px",
+        "type": "dimension",
+        "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+      },
+      "comfortable": {
+        "value": "20px",
+        "type": "dimension",
+        "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+      },
+      "roomy": {
+        "value": "24px",
+        "type": "dimension",
+        "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+      }
     },
     "control-h": {
-      "value": "24px",
-      "type": "dimension",
-      "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+      "by": "density",
+      "compact": {
+        "value": "20px",
+        "type": "dimension",
+        "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+      },
+      "comfortable": {
+        "value": "24px",
+        "type": "dimension",
+        "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+      },
+      "roomy": {
+        "value": "28px",
+        "type": "dimension",
+        "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+      }
+    },
+    "icon-button-size": {
+      "by": "density",
+      "compact": {
+        "value": "20px",
+        "type": "dimension",
+        "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+      },
+      "comfortable": {
+        "value": "22px",
+        "type": "dimension",
+        "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+      },
+      "roomy": {
+        "value": "26px",
+        "type": "dimension",
+        "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+      }
     },
     "slider-track-h": {
       "value": "4px",
@@ -473,51 +614,10 @@
       "type": "dimension",
       "description": "Backdrop blur radius for frosted surfaces. Pairs with glass-tint."
     },
-    "font-size-2xs": {
-      "value": "9px",
-      "type": "dimension",
-      "description": "Shortcut keys and index badges. The floor for chrome text."
-    },
-    "font-size-xs": {
-      "value": "10px",
-      "type": "dimension",
-      "description": "Tool-button labels under an icon."
-    },
-    "font-size-sm": {
-      "value": "11px",
-      "type": "dimension",
-      "description": "Chrome labels, status readouts, section headings."
-    },
     "font-size": {
-      "value": "13px",
+      "value": "{font-size-md}",
       "type": "dimension",
       "description": "Controls and body text."
-    },
-    "font-size-lg": {
-      "value": "16px",
-      "type": "dimension",
-      "description": "Panel and dialog titles."
-    },
-    "font-size-xl": {
-      "value": "20px",
-      "type": "dimension",
-      "description": "The largest chrome text — a lab or app title."
-    },
-    "space-xs": {
-      "value": "4px",
-      "type": "dimension"
-    },
-    "space-sm": {
-      "value": "8px",
-      "type": "dimension"
-    },
-    "space-md": {
-      "value": "12px",
-      "type": "dimension"
-    },
-    "space-lg": {
-      "value": "16px",
-      "type": "dimension"
     },
     "tracking-none": {
       "value": "0",
@@ -667,6 +767,26 @@
     "font-weight-bold": {
       "value": 400,
       "type": "fontWeight"
+    },
+    "space-xs": {
+      "value": "{space-2}",
+      "type": "dimension",
+      "description": "Alias for space-2. The t-shirt names name every other rung of the ladder."
+    },
+    "space-sm": {
+      "value": "{space-4}",
+      "type": "dimension",
+      "description": "Alias for space-4. The t-shirt names name every other rung of the ladder."
+    },
+    "space-md": {
+      "value": "{space-6}",
+      "type": "dimension",
+      "description": "Alias for space-6. The t-shirt names name every other rung of the ladder."
+    },
+    "space-lg": {
+      "value": "{space-8}",
+      "type": "dimension",
+      "description": "Alias for space-8. The t-shirt names name every other rung of the ladder."
     }
   }
 }

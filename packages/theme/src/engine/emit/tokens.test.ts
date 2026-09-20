@@ -21,7 +21,8 @@ describe('generateTokens', () => {
     const result = generateTokens([{ ...weasel, semantics: { ...weasel.semantics, probe } }]);
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.problems).toHaveLength(2);
+    // One per selection: every mode crossed with every density.
+    expect(result.problems).toHaveLength(6);
     expect(result.problems.every((p) => p.includes('contrast-unmet'))).toBe(true);
   });
 

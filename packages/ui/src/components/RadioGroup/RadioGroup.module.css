@@ -1,14 +1,14 @@
 .group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   font-family: var(--wzl-font-ui);
   color: var(--wzl-fg);
 }
 
 .group[data-orientation="horizontal"] {
   flex-direction: row;
-  gap: 16px;
+  gap: var(--wzl-space-8);
 }
 
 .legend {
@@ -20,7 +20,7 @@
 .radio {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   cursor: pointer;
   font-size: var(--wzl-font-size);
   color: var(--wzl-fg);

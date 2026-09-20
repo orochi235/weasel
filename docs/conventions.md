@@ -126,3 +126,40 @@ a reference in a pin's value is written `{fg-muted}`, while a semantic's `ref`
 names the token bare (`"ref": "gray-800"`). A value that differs per axis is written
 `{ by: 'mode', dark: …, light: … }`; an `alpha` on a reference emits
 `color-mix()` in CSS and a computed `rgba()` in JS.
+
+### Sizing
+
+Sizes are baked px, never `calc()` against a root variable. `tokenPx()` is how a
+size reaches drawing code — SVG geometry attributes, canvas, WebGL — and it
+parses a plain px length, throwing rather than guessing. A `calc()` token would
+have no number for it to read. The same reason rules out `rem`: text that scales
+inside boxes that don't is worse than neither scaling.
+
+Scaling is therefore a **theme axis**, not arithmetic. `density` —
+`compact` / `comfortable` / `roomy` — varies `seeds.ui-base`, which the
+`font-size` scale derives its whole ramp from, along with `control-h` and
+`tb-height`. Set it with `applyTheme(el, theme, { density })`, which stamps
+`data-wzl-density` and publishes the matching block. `tokenPx(name, resolved)`
+follows, because `resolveTheme` resolves at a selection.
+
+The type ramp uses `factors` rather than a `ratio`: its small end is compressed
+on purpose, because chrome text stops being legible before a geometric ramp
+stops shrinking.
+
+Spacing is the `space-1` … `space-8` ladder, 2px rungs. `space-xs/sm/md/lg` are
+aliases for rungs 2/4/6/8. It does not vary by density — the rungs are finer
+than any density factor could resolve without rounding two of them onto the same
+pixel. `npm run check:spacing` fails on a `gap`/`padding`/`margin` px literal in
+`packages/ui/src` that has a rung.
+
+Control heights are four ranks, `control-h-xs` / `-sm` / `control-h` /
+`tb-height` — 18/20/24/28 at `comfortable`. A control box sizes itself from one
+of them, never from a literal: a literal is what left `Button` at 24px in every
+density while its label grew. `npm run check:controls` fails on a
+`height`/`min-height`/`block-size` literal in `packages/ui/src` that equals a
+rank.
+
+What deliberately does *not* follow density: icons and drawn glyphs (a chevron,
+a checkmark, a switch track), slider tracks and thumbs, and handles — those have
+their own tokens or are artwork. Scaling them with the type ramp makes them
+blurry rather than bigger.

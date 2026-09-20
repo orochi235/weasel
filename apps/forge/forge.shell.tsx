@@ -15,6 +15,15 @@ export default defineShellConfig({
         { value: 'dark', label: 'Dark' },
       ],
     },
+    density: {
+      label: 'Density',
+      default: 'comfortable',
+      options: [
+        { value: 'compact', label: 'Compact' },
+        { value: 'comfortable', label: 'Comfortable' },
+        { value: 'roomy', label: 'Roomy' },
+      ],
+    },
     ...FONT_GLOBALS,
   },
 });

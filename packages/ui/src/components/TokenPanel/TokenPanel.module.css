@@ -34,7 +34,7 @@
 .family {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--wzl-space-1);
   min-width: 0;
 }
 
@@ -97,6 +97,7 @@
 .curve {
   flex-shrink: 0;
   width: 24px;
+  /* Square easing-curve artwork: not-a-control */
   height: 24px;
   color: var(--wzl-fg);
 }
@@ -136,7 +137,7 @@
    down the panel as a column. A stacked row spends its height on the name and
    lets the field take the whole width, which a set of ninety cannot afford. */
 .tight .sectionBody {
-  gap: 2px;
+  gap: var(--wzl-space-1);
   padding-block-end: var(--wzl-space-xs);
 }
 
@@ -170,7 +171,7 @@
   grid-template-columns: 11rem minmax(0, 1fr);
   align-items: center;
   column-gap: var(--wzl-space-xs);
-  row-gap: 2px;
+  row-gap: var(--wzl-space-1);
 }
 
 .tight .family > .row {

@@ -57,9 +57,10 @@ describe('theme store', () => {
     const probe = { ramp: 'gray', contrast: { min: 30, against: ['surface'] } };
     const result = store.write('weasel', { ...weasel.definition, semantics: { ...weasel.definition.semantics, probe } }, weasel.hash);
     if (result.status !== 'saved') throw new Error(result.status);
-    expect(result.issues.map((r) => r.issue.kind)).toEqual(['contrast-unmet', 'contrast-unmet']);
+    // One per selection: every mode crossed with every density.
+    expect(result.issues.map((r) => r.issue.kind)).toEqual(Array(6).fill('contrast-unmet'));
     expect(result.regenerated).toBe(false);
-    expect(result.problems).toHaveLength(2);
+    expect(result.problems).toHaveLength(6);
     expect(existsSync(at('generated/tokens.css'))).toBe(false);
     expect(JSON.parse(readFileSync(at('themes/weasel.json'), 'utf8')).semantics.probe).toEqual(probe);
   });

@@ -1,10 +1,10 @@
 .trigger {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   inline-size: 100%;
   min-inline-size: 0;
-  padding: 1px 6px 1px 1px;
+  padding: 1px var(--wzl-space-3) 1px 1px;
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   background: var(--wzl-surface);
@@ -25,8 +25,9 @@
 }
 
 .swatch {
+  /* A paint preview at a fixed 26:18 aspect, not a control box. */
   inline-size: 26px;
-  block-size: 18px;
+  block-size: 18px; /* not-a-control */
   flex: 0 0 auto;
   border-radius: calc(var(--wzl-radius-sm) - var(--wzl-border-w));
   /* Checker under the paint, so a translucent one reads as translucent. */
@@ -59,7 +60,7 @@
 
 .body {
   inline-size: 240px;
-  padding: 8px;
+  padding: var(--wzl-space-4);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-md);
   background: var(--wzl-surface-raised);

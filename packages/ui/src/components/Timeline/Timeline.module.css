@@ -38,7 +38,7 @@
 .lane {
   display: flex;
   align-items: stretch;
-  min-height: 20px;
+  min-height: var(--wzl-control-h-sm);
   border-bottom: 1px solid var(--wzl-line-subtle);
 }
 
@@ -48,9 +48,9 @@
   flex: 0 0 var(--wzl-timeline-label-w, 120px);
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding-inline: 6px;
-  padding-inline-start: calc(6px + var(--depth, 0) * 12px);
+  gap: var(--wzl-space-2);
+  padding-inline: var(--wzl-space-3);
+  padding-inline-start: calc(var(--wzl-space-3) + var(--depth, 0) * var(--wzl-space-6));
   font-size: var(--wzl-font-size);
   color: var(--wzl-fg);
   overflow: hidden;
@@ -126,7 +126,7 @@
 /* A graph lane's value labels hang off the track's start edge into the label
    column, so the lane's own label ellipsizes before it reaches them. */
 .lane[data-graph='true'] .laneLabel {
-  padding-inline-end: calc(6px + var(--wzl-timeline-value-axis-w, 32px));
+  padding-inline-end: calc(var(--wzl-space-3) + var(--wzl-timeline-value-axis-w, 32px));
 }
 
 .nestedBar {
@@ -141,8 +141,8 @@
 .transport {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 6px;
+  gap: var(--wzl-space-4);
+  padding: var(--wzl-space-2) var(--wzl-space-3);
   border-bottom: 1px solid var(--wzl-border);
   background: var(--wzl-surface-raised);
 }
@@ -151,8 +151,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
-  padding: 2px 6px;
+  min-width: var(--wzl-icon-button-size);
+  padding: var(--wzl-space-1) var(--wzl-space-3);
   /* Sits on `--wzl-surface-raised`, so a transparent fill and a border that
      close in value leave it reading as text rather than as a control. */
   background: var(--wzl-surface);
@@ -176,8 +176,8 @@
 .transportRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-inline-end: 6px;
+  gap: var(--wzl-space-4);
+  padding-inline-end: var(--wzl-space-3);
   border-bottom: 1px solid var(--wzl-border);
   background: var(--wzl-surface-raised);
 }
@@ -197,7 +197,7 @@
   font-variant-numeric: tabular-nums;
   color: var(--wzl-fg-muted);
 }
-.rate { display: inline-flex; align-items: center; gap: 6px; color: var(--wzl-fg-muted); }
+.rate { display: inline-flex; align-items: center; gap: var(--wzl-space-3); color: var(--wzl-fg-muted); }
 .rateSlider { width: 88px; }
 
 /* The detents carry no labels in a bar this dense, so the chosen rate is said
@@ -223,7 +223,7 @@
   line-height: var(--wzl-leading-snug);
 }
 
-.label { padding: 4px 6px; color: var(--wzl-fg-muted); }
+.label { padding: var(--wzl-space-2) var(--wzl-space-3); color: var(--wzl-fg-muted); }
 
 .body { display: flex; align-items: stretch; }
 .gutter { box-sizing: border-box; flex: 0 0 var(--wzl-timeline-label-w, 120px); border-right: 1px solid var(--wzl-border); }
@@ -239,8 +239,8 @@
 .inspector {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 6px;
+  gap: var(--wzl-space-4);
+  padding: var(--wzl-space-2) var(--wzl-space-3);
   border-top: 1px solid var(--wzl-border);
   background: var(--wzl-surface-raised);
 }
@@ -255,7 +255,7 @@
 .segment[aria-current='true'] { background: var(--wzl-accent-soft); }
 .segment:focus-visible { outline: 2px solid var(--wzl-focus-ring); outline-offset: -2px; }
 
-.easingPicker { display: inline-flex; align-items: center; gap: 6px; }
+.easingPicker { display: inline-flex; align-items: center; gap: var(--wzl-space-3); }
 .easingLabel { font-variant-numeric: tabular-nums; color: var(--wzl-fg-muted); }
 
 .easingPreview {

@@ -10,11 +10,25 @@ const here = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(resolve(here, 'tokens.css'), 'utf8');
 
 describe('generated themes.ts', () => {
-  const dark = THEMES.weasel.selections['mode=dark'];
-  const light = THEMES.weasel.selections['mode=light'];
+  const dark = THEMES.weasel.selections['mode=dark,density=comfortable'];
+  const light = THEMES.weasel.selections['mode=light,density=comfortable'];
 
-  it('exposes both modes of the weasel theme', () => {
-    expect(Object.keys(THEMES.weasel.selections).sort()).toEqual(['mode=dark', 'mode=light']);
+  it('exposes every mode and density of the weasel theme', () => {
+    expect(Object.keys(THEMES.weasel.selections).sort()).toEqual([
+      'mode=dark,density=comfortable',
+      'mode=dark,density=compact',
+      'mode=dark,density=roomy',
+      'mode=light,density=comfortable',
+      'mode=light,density=compact',
+      'mode=light,density=roomy',
+    ]);
+  });
+
+  it('sizes the type ramp per density and leaves the spacing ladder alone', () => {
+    const at = (d: 'compact' | 'comfortable' | 'roomy') => THEMES.weasel.selections[`mode=dark,density=${d}`];
+    expect([at('compact'), at('comfortable'), at('roomy')].map((s) => s['--wzl-font-size-md'])).toEqual(['11px', '13px', '15px']);
+    expect([at('compact'), at('comfortable'), at('roomy')].map((s) => s['--wzl-control-h'])).toEqual(['20px', '24px', '28px']);
+    expect([at('compact'), at('comfortable'), at('roomy')].map((s) => s['--wzl-space-4'])).toEqual(['8px', '8px', '8px']);
   });
 
   it('resolves aliases to literals', () => {

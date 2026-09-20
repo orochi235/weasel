@@ -9,7 +9,7 @@
    * bottom, hugging the corner. Top corners override back to column so
    * DOM-first still hugs the top edge. */
   flex-direction: column-reverse;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   max-width: 360px;
   outline: none;
 }
@@ -27,7 +27,7 @@
   view-transition-class: wzl-toast;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   border-left: 3px solid var(--toast-accent);
@@ -35,7 +35,7 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   color: var(--wzl-fg);
   font-family: var(--wzl-font-ui);
-  padding: 10px 12px;
+  padding: var(--wzl-space-5) var(--wzl-space-6);
   outline: none;
 }
 
@@ -63,7 +63,7 @@
 
 .description {
   display: block;
-  margin-top: 2px;
+  margin-top: var(--wzl-space-1);
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
 }
@@ -75,7 +75,7 @@
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-lg);
   line-height: 1;
-  padding: 2px 4px;
+  padding: var(--wzl-space-1) var(--wzl-space-2);
   cursor: pointer;
   border-radius: var(--wzl-radius-sm);
 }

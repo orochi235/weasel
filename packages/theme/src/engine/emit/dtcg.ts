@@ -14,12 +14,16 @@ export interface DtcgExport {
   readonly modes: Record<string, Record<string, Group>>;
 }
 
-const modeOnly = (theme: string, what: string) => new Error(`DTCG export supports a mode axis only; ${theme} ${what}`);
-
 /**
  * A theme's own tokens as a DTCG document `loadDTCG` reads back. `extends` is
  * not carried; pass it to `loadDTCG`. Every mode the chain declares is written,
  * so a token that leaves one out still falls through to the parent on the way back.
+ *
+ * DTCG has one variant dimension and no standard way to name a second, so mode
+ * is the only axis exported: a token varying by any other axis is written at
+ * that axis's default value and its other branches are dropped. Round-tripping
+ * a theme through DTCG therefore flattens it to the default selection of every
+ * non-mode axis.
  */
 export function toDTCG(theme: Theme): DtcgExport {
   const axes = themeAxes(theme);
@@ -50,22 +54,36 @@ export function toDTCG(theme: Theme): DtcgExport {
     };
   };
 
-  const branches = (name: string, v: Varying<RawToken>): [string, RawToken][] => {
+  /** Every non-mode axis collapsed to its default branch, so only mode is left varying. */
+  const flatten = (v: Varying<RawToken>): Varying<RawToken> | undefined => {
+    if (!isByAxis(v)) return v;
+    if (v.by === 'mode') {
+      const out: Record<string, unknown> = { by: 'mode' };
+      for (const [mode, x] of Object.entries(v)) {
+        if (mode === 'by') continue;
+        const inner = flatten(x as Varying<RawToken>);
+        if (inner !== undefined) out[mode] = inner;
+      }
+      return out as Varying<RawToken>;
+    }
+    const fallback = axes[v.by]?.default;
+    const chosen = fallback !== undefined ? v[fallback] : undefined;
+    return chosen === undefined ? undefined : flatten(chosen as Varying<RawToken>);
+  };
+
+  const branches = (v: Varying<RawToken>): [string, RawToken][] => {
     if (!isByAxis(v)) return [];
-    if (v.by !== 'mode') throw modeOnly(`"${name}"`, `varies by ${v.by}`);
-    return Object.entries(v).flatMap(([mode, x]) => {
-      if (mode === 'by') return [];
-      if (isByAxis(x)) throw modeOnly(`"${name}"`, `varies by ${x.by} inside mode`);
-      return [[mode, x as RawToken]];
-    });
+    return Object.entries(v).flatMap(([mode, x]) => (mode === 'by' ? [] : [[mode, x as RawToken] as [string, RawToken]]));
   };
 
   const modes: Record<string, Record<string, Group>> = {};
   for (const mode of Object.keys(axes.mode?.values ?? {})) modes[mode] = {};
   const primitives: Record<string, Group> = {};
-  for (const [name, v] of Object.entries(theme.tokens)) {
+  for (const [name, raw] of Object.entries(theme.tokens)) {
+    const v = flatten(raw);
+    if (v === undefined) continue;
     if (!isByAxis(v)) put(primitives, name, v);
-    else for (const [mode, t] of branches(name, v)) put((modes[mode] ??= {}), name, t);
+    else for (const [mode, t] of branches(v)) put((modes[mode] ??= {}), name, t);
   }
 
   return { name: theme.name, ...(axes.mode ? { defaultMode: axes.mode.default } : {}), primitives, modes };

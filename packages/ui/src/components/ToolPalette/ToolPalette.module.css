@@ -1,11 +1,11 @@
 .palette {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--wzl-space-2);
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
-  padding: 4px;
+  padding: var(--wzl-space-2);
   user-select: none;
 }
 .palette.horizontal {
@@ -27,9 +27,9 @@
 }
 .palette:not(.horizontal) .separator {
   height: 1px;
-  margin: 2px 0;
+  margin: var(--wzl-space-1) 0;
 }
 .palette.horizontal .separator {
   width: 1px;
-  margin: 0 2px;
+  margin: 0 var(--wzl-space-1);
 }

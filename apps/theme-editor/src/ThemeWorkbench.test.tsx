@@ -1,9 +1,10 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ThemeDefinition } from '@weasel-js/theme';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ThemeWorkbench, type WorkbenchProps } from './ThemeWorkbench';
 import type { ThemeApi } from './theme/api';
-import { spaced, weasel } from './theme/fixtures';
+import { weasel } from './theme/fixtures';
 import { removePin, setPin } from './theme/model';
 import type { PutResult, StoredTheme } from './theme/store';
 
@@ -34,7 +35,7 @@ describe('<ThemeWorkbench>', () => {
 
   it('reports how many own tokens a pin overrides, and each layer in the rail', () => {
     renderBench();
-    expect(screen.getByText('23 of 103 overridden')).toBeInTheDocument();
+    expect(screen.getByText('23 of 115 overridden')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Ramps/ })).toHaveTextContent('23 pinned');
   });
 
@@ -79,12 +80,20 @@ describe('<ThemeWorkbench>', () => {
   });
 
   it('says why an export fails, in the dialog', async () => {
-    const theme: StoredTheme = { name: 'spaced', hash: 'h1', emits: true, definition: spaced };
-    renderBench({ themes: [theme], stored: theme, start: { definition: spaced, baseHash: 'h1' } });
+    // Derives fine; only the CSS emitter rejects two axes carrying a color scheme.
+    const twoSchemes: ThemeDefinition = {
+      name: 'two-schemes',
+      axes: {
+        mode: { default: 'dark', values: { dark: { scheme: 'dark' }, light: { scheme: 'light' } } },
+        paper: { default: 'plain', values: { plain: { scheme: 'light' } } },
+      },
+    };
+    const theme: StoredTheme = { name: 'two-schemes', hash: 'h1', emits: true, definition: twoSchemes };
+    renderBench({ themes: [theme], stored: theme, start: { definition: twoSchemes, baseHash: 'h1' } });
     await userEvent.click(screen.getByRole('button', { name: 'Export' }));
     const dialog = await screen.findByRole('dialog');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'DTCG' }));
-    expect(within(dialog).getByRole('status')).toHaveTextContent('DTCG export supports a mode axis only.');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Emitted CSS' }));
+    expect(within(dialog).getByRole('status')).toHaveTextContent('only one axis may carry a color scheme, but mode and paper do');
   });
 
   it('offers to reload when the file moved on since the draft began', async () => {

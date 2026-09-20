@@ -14,7 +14,7 @@ const REF = /^\{([^}]+)\}$/;
 const HEX = /^#[0-9a-f]{6}$/i;
 const UNTYPED = 'unknown';
 /** The ramp and scale fields that take `by` and `{seeds.name}`. Descriptions are text and are never settled. */
-const PARAMS = ['kind', 'steps', 'lightness', 'curve', 'hue', 'chroma', 'anchor', 'gates', 'anchors', 'base', 'step', 'ratio'];
+const PARAMS = ['kind', 'steps', 'lightness', 'curve', 'hue', 'chroma', 'anchor', 'gates', 'anchors', 'base', 'step', 'ratio', 'factors'];
 
 const has = (o: object, key: string) => Object.hasOwn(o, key);
 
@@ -99,6 +99,15 @@ class Reader {
   optNum(x: unknown, path: string): number | undefined;
   optNum(x: unknown, path: string, fallback?: number): number | undefined {
     return x === undefined ? fallback : this.num(x, path);
+  }
+
+  optNums(x: unknown, path: string): number[] | undefined {
+    if (x === undefined) return undefined;
+    if (!Array.isArray(x)) {
+      this.fail(path, 'expected an array of numbers');
+      return undefined;
+    }
+    return x.map((v, i) => this.num(v, `${path}.${i}`));
   }
 
   record(x: unknown, path: string): Record<string, unknown> {
@@ -187,9 +196,11 @@ function scaleValues(name: string, s: Record<string, unknown>, steps: readonly s
   const base = read.num(s.base, `${path}.base`);
   const step = read.optNum(s.step, `${path}.step`);
   const ratio = read.optNum(s.ratio, `${path}.ratio`);
+  const factors = read.optNums(s.factors, `${path}.factors`);
   if (!read.ok) return undefined;
   try {
-    return { values: scale(steps, { base, step, ratio }), rule: step !== undefined ? 'linear' : 'geometric' };
+    const rule = factors !== undefined ? 'factors' : step !== undefined ? 'linear' : 'geometric';
+    return { values: scale(steps, { base, step, ratio, factors }), rule };
   } catch (e) {
     issues.push({ kind: 'invalid', path, message: (e as Error).message });
     return undefined;

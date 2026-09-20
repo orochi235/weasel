@@ -16,9 +16,37 @@ describe('font-size scale', () => {
     expect(tokenValue('font-size-2xs')).toBe('9px');
     expect(tokenValue('font-size-xs')).toBe('10px');
     expect(tokenValue('font-size-sm')).toBe('11px');
-    expect(tokenValue('font-size')).toBe('13px');
+    expect(tokenValue('font-size-md')).toBe('13px');
     expect(tokenValue('font-size-lg')).toBe('16px');
     expect(tokenValue('font-size-xl')).toBe('20px');
+  });
+
+  // The bare name is the ramp's middle rung, kept because it is what the chrome
+  // writes. It has to stay an alias: a literal here would not follow density.
+  it('aliases the bare name to the middle rung', () => {
+    expect(tokenValue('font-size')).toBe('var(--wzl-font-size-md)');
+  });
+});
+
+describe('space ladder', () => {
+  it('runs in 2px rungs', () => {
+    expect(['1', '2', '3', '4', '5', '6', '7', '8'].map((r) => tokenValue(`space-${r}`))).toEqual([
+      '2px',
+      '4px',
+      '6px',
+      '8px',
+      '10px',
+      '12px',
+      '14px',
+      '16px',
+    ]);
+  });
+
+  it('keeps the t-shirt names on every other rung', () => {
+    expect(tokenValue('space-xs')).toBe('var(--wzl-space-2)');
+    expect(tokenValue('space-sm')).toBe('var(--wzl-space-4)');
+    expect(tokenValue('space-md')).toBe('var(--wzl-space-6)');
+    expect(tokenValue('space-lg')).toBe('var(--wzl-space-8)');
   });
 });
 
