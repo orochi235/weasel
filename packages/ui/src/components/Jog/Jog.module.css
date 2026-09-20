@@ -1,0 +1,30 @@
+/* A row of transport controls on the panel surface, sized to sit in a bar
+ * beside a title or a caption rather than to own a strip of its own. */
+
+.jog {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--wzl-fg);
+}
+
+.scrub {
+  flex: 1 1 auto;
+  min-width: 80px;
+  margin-inline: 4px;
+}
+
+.readout {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+  white-space: pre;
+}
+
+.caption {
+  overflow: hidden;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -737,6 +737,20 @@ describe('<ControlPanel> auto', () => {
     expect(setConfig).toHaveBeenCalledWith('gap', auto);
   });
 
+  it('keeps the sentinel out of a config it is not given an auto set for', async () => {
+    const setConfig = vi.fn();
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
+        config={{ gap: 12 }}
+        setConfig={setConfig}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /Gap/ }));
+    expect(setConfig).not.toHaveBeenCalled();
+    expect(screen.getByText('auto')).toBeInTheDocument();
+  });
+
   it('writes the pinned value back when the dot un-autos a row', async () => {
     const setConfig = vi.fn();
     render(
