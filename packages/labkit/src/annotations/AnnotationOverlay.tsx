@@ -226,6 +226,9 @@ export function AnnotationOverlay({
         ref={setInput}
         className="lk-annotate__input"
         data-annotation-target={id}
+        // Pass-through while the rail holds a tool that makes no marks, so the
+        // instrument under the overlay stays clickable.
+        data-idle={annotationToolInfo(activeToolId) ? undefined : ''}
         role="application"
         aria-label={`Annotations on ${id}`}
         // biome-ignore lint/a11y/noNoninteractiveTabindex: role="application" IS the interactive case — a region with its own keymap. The rule's allowed-role list stops at the native widget roles and does not include it, and the gesture dispatcher listens on this element, so without focus no tool's keyboard binding ever fires.

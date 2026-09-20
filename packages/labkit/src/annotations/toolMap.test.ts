@@ -6,8 +6,12 @@ import type { AnnotationKind } from './types';
 const KINDS: AnnotationKind[] = ['stroke', 'line', 'arrow', 'rect', 'ellipse', 'text'];
 
 describe('the annotation tool table', () => {
-  it('offers one tool per mark kind, plus select', () => {
-    expect(ANNOTATION_TOOLS.map((t) => t.id)).toEqual(['select', ...KINDS]);
+  it('offers one tool per mark kind, plus pointer and select', () => {
+    expect(ANNOTATION_TOOLS.map((t) => t.id)).toEqual(['pointer', 'select', ...KINDS]);
+  });
+
+  it('gives pointer no entry at all, which is what leaves the overlay idle', () => {
+    expect(annotationToolInfo('pointer')).toBeUndefined();
   });
 
   it('only names weasel tools SceneCanvas will mount', () => {
@@ -15,9 +19,9 @@ describe('the annotation tool table', () => {
     // being built in should fail here rather than in a silent no-op palette.
     const mountable = new Set<string>([...KIT_SHAPE_KINDS, 'select']);
     for (const t of ANNOTATION_TOOLS) {
-      expect(mountable, `${t.id} maps to a tool the kit does not mount`).toContain(
-        annotationToolInfo(t.id)?.weaselTool,
-      );
+      const info = annotationToolInfo(t.id);
+      if (!info) continue;
+      expect(mountable, `${t.id} maps to a tool the kit does not mount`).toContain(info.weaselTool);
     }
   });
 

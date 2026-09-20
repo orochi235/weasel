@@ -1097,13 +1097,12 @@ controls. It is the only story runner in the repo.
   `Workspace`, which may already cover it — check before building anything.
   (The CSS-vars addon does have an equivalent: `packages/forge/src/shell/cssVars/`.)
 
-- **(P2) labkit annotations cannot capture a forge story.** A labkit annotation
-  target hands the export a `base()` picture of itself, as an SVG string, an
-  image, or a canvas (`CaptureSource` in `packages/labkit/src/annotations/types.ts`),
-  and `storyInstrument` (`packages/forge/src/shell/storyInstrument.tsx`) declares
-  no `annotations` at all. The story is DOM inside another document, so the
-  workshop cannot draw it into any of those; the frame has to produce the
-  picture and send it back.
+- **(P3) A captured forge story loses what `:root`, `html` and `body` style.**
+  The frame serializes its story into a `<foreignObject>` whose root is a
+  `<div>` (`packages/forge/src/frame/capture.ts`), so a rule hanging off those
+  three selectors does not reach the clone. Custom properties are restated on
+  the capture root, which covers theme tokens; a page background or a body
+  font is still lost, and so is any font or image the document did not inline.
 
 
 - **(P3) A forge story with a `viewport` reloads its frame once when first

@@ -6,6 +6,7 @@ import { type AnswerBook, createAnswerBook } from './answers';
 import type { GlobalDeclarations } from './globals';
 import { type Ready, readyKey } from './readyKey';
 import { storyInstrument } from './storyInstrument';
+import type { TrialFrames } from './trialFrames';
 
 export interface StoryRegistry {
   instruments: InstrumentList;
@@ -18,6 +19,7 @@ interface Built {
   ready: Ready | undefined;
   frameUrl: string;
   globals: GlobalDeclarations;
+  frames: TrialFrames | undefined;
   revision: number;
   instrument: Instrument<unknown, unknown>;
 }
@@ -39,9 +41,9 @@ const pruned = <V>(map: ReadonlyMap<string, V>, ids: Set<string>): ReadonlyMap<s
  */
 export function useStoryRegistry(
   index: readonly IndexEntry[],
-  options: { frameUrl: string; globals?: GlobalDeclarations },
+  options: { frameUrl: string; globals?: GlobalDeclarations; frames?: TrialFrames },
 ): StoryRegistry {
-  const { frameUrl, globals = NO_GLOBALS } = options;
+  const { frameUrl, globals = NO_GLOBALS, frames } = options;
   const [readies, setReadies] = useState<ReadonlyMap<string, Ready>>(() => new Map());
   // Bumped when a story's frame answers something new. labkit's panel re-reads the answer book only when
   // the trial's config changes, and replacing the instrument is what refills it.
@@ -80,6 +82,7 @@ export function useStoryRegistry(
         held.ready === ready &&
         held.frameUrl === frameUrl &&
         held.globals === globals &&
+        held.frames === frames &&
         held.revision === revision
           ? held
           : {
@@ -87,15 +90,16 @@ export function useStoryRegistry(
               ready,
               frameUrl,
               globals,
+              frames,
               revision,
-              instrument: storyInstrument({ entry, ready, answers, frameUrl, onReady, globals }),
+              instrument: storyInstrument({ entry, ready, answers, frameUrl, onReady, globals, ...(frames ? { frames } : {}) }),
             };
       built.set(entry.id, kept);
       return kept.instrument;
     });
     const unchanged = list.length === previous.list.length && list.every((i, n) => i === previous.list[n]);
     return { built, books, list: unchanged ? previous.list : list };
-  }, [index, readies, revisions, frameUrl, globals, onReady]);
+  }, [index, readies, revisions, frameUrl, globals, frames, onReady]);
 
   useLayoutEffect(() => {
     committed.current = cache;

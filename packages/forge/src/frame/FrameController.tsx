@@ -12,6 +12,7 @@ import {
 import { answerSchema, describeSchema } from '../protocol/schema';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
 import { runAxe } from './a11y';
+import { captureElement } from './capture';
 import { createOverrides, resolveCssVar, scanCssVars } from './cssVars';
 import { StoryHost } from './StoryHost';
 
@@ -160,6 +161,14 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     }
   };
 
+  const picture = (id: string) => {
+    try {
+      send({ type: 'capture', id, ok: true, picture: captureElement(wrapper) });
+    } catch (error) {
+      send({ type: 'capture', id, ok: false, message: error instanceof Error ? error.message : String(error) });
+    }
+  };
+
   const off = channel.on((msg) => {
     switch (msg.type) {
       case 'init':
@@ -205,6 +214,9 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
         break;
       case 'a11y.run':
         void audit(msg.id);
+        break;
+      case 'capture.run':
+        picture(msg.id);
         break;
     }
   });

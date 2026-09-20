@@ -53,6 +53,10 @@ export interface A11yReport {
   inapplicable: number;
 }
 
+/** A picture of the story the frame can put in a message: labkit's `CaptureSource` without the canvas,
+ *  which no structured clone carries. */
+export type CapturedPicture = { kind: 'svg'; markup: string } | { kind: 'image'; src: string };
+
 export type ToFrame =
   | { type: 'init'; config: unknown; state: unknown; globals: Globals }
   | { type: 'config'; config: unknown }
@@ -61,7 +65,9 @@ export type ToFrame =
   | { type: 'vars.set'; name: string; value: string | null }
   | { type: 'play' }
   /** Run axe over the story's own subtree. Answered by `a11y` carrying the same `id`. */
-  | { type: 'a11y.run'; id: string };
+  | { type: 'a11y.run'; id: string }
+  /** Serialize the story's own subtree as a picture. Answered by `capture` carrying the same `id`. */
+  | { type: 'capture.run'; id: string };
 
 export type FromFrame =
   | { type: 'ready'; schema: SchemaDescription; layout: Layout; viewport: Viewport | null }
@@ -75,6 +81,8 @@ export type FromFrame =
   | { type: 'played'; ok: boolean; message?: string }
   | { type: 'a11y'; id: string; ok: true; report: A11yReport }
   | { type: 'a11y'; id: string; ok: false; message: string }
+  | { type: 'capture'; id: string; ok: true; picture: CapturedPicture }
+  | { type: 'capture'; id: string; ok: false; message: string }
   /** `seq`, on a render fault only: how many `init`/`config`/`state`/`globals` messages the frame had received. */
   | { type: 'fault'; phase: FaultPhase; message: string; stack?: string; seq?: number };
 

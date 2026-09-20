@@ -2,6 +2,7 @@ import type { BuiltinToolId } from '@weasel-js/core';
 import {
   ArrowIcon,
   EllipseIcon,
+  HandIcon,
   LineIcon,
   PencilIcon,
   RectIcon,
@@ -34,6 +35,8 @@ const TOOLS: Record<string, AnnotationToolInfo> = {
  *  Ids share the lab's contribution namespace with its own `tools`, and the
  *  lab's tool slot holds whichever is active. */
 export const ANNOTATION_TOOLS: readonly TrialTool[] = [
+  // Not in `TOOLS`: an id the map does not carry is what leaves the overlay idle.
+  { id: 'pointer', label: 'Interact', icon: HandIcon, group: 'annotate' },
   { id: 'select', label: 'Select', icon: SelectIcon, group: 'annotate' },
   { id: 'stroke', label: 'Freehand', icon: PencilIcon, group: 'annotate' },
   { id: 'line', label: 'Line', icon: LineIcon, group: 'annotate' },

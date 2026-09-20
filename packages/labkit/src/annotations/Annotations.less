@@ -8,6 +8,10 @@
   width: var(--lk-anno-w);
   height: var(--lk-anno-h);
   z-index: 2;
+
+  &[data-idle] {
+    pointer-events: none;
+  }
 }
 
 // The sidebar list of marks. One row per mark: what it is, where it is, what

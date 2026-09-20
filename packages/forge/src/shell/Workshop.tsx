@@ -46,8 +46,8 @@ function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
 
 export function Workshop({ index, frameUrl, config, stories = [], storageKey, storage }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
-  const registry = useStoryRegistry(index, { frameUrl, globals: declarations });
   const [frames] = useState(createTrialFrames);
+  const registry = useStoryRegistry(index, { frameUrl, globals: declarations, frames });
   const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
   const reportLabValues = useCallback(
     (next: Globals) => setLabValues((prev) => (stableStringify(prev) === stableStringify(next) ? prev : next)),
