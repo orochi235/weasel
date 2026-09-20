@@ -251,6 +251,13 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  path never reads ambient density at all). */
   dpr?: number;
 
+  /** Flatness tolerance for curve tessellation, in world units. Forwarded to
+   *  `WeaselRendererOptions.flattenTolerance`. Leave unset for the cached
+   *  default (`DEFAULT_FLATTEN_TOLERANCE`, 0.5); a scene whose world unit is
+   *  not a pixel — feet, inches, millimetres — needs a value scaled to its
+   *  unit or sub-unit curves flatten to a handful of vertices. */
+  flattenTolerance?: number;
+
   /** The version of whatever content this canvas draws, sampled at paint time
    *  and reported by {@link CanvasExtensionApi.getPaintedVersion}.
    *  `<SceneCanvas>` wires this to `scene.getVersion`. Chrome that must not
@@ -777,6 +784,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     width,
     height,
     dpr: dprProp,
+    flattenTolerance,
     contentVersion,
     syncPaint = false,
     adapter: adapterProp,
@@ -1381,10 +1389,12 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const paintInputsRef = useRef({
     layers: layersWithDebug, width, height, debugSink,
     dpr: dprProp, layerVisibility, layerOrder, layerGroups, shaders,
+    flattenTolerance,
   });
   paintInputsRef.current = {
     layers: layersWithDebug, width, height, debugSink,
     dpr: dprProp, layerVisibility, layerOrder, layerGroups, shaders,
+    flattenTolerance,
   };
 
   const paint = useCallback((): boolean => {
@@ -1394,6 +1404,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const {
       layers: paintLayers, width: w, height: h, debugSink: sink,
       dpr: dprIn, layerVisibility: vis, layerOrder: order,
+      flattenTolerance: paintFlattenTolerance,
       layerGroups: groups, shaders: paintShaders,
     } = paintInputsRef.current;
 
@@ -1425,6 +1436,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           width: w,
           height: h,
           dpr,
+          flattenTolerance: paintFlattenTolerance,
         });
       } catch {
         // Test env or context creation failure — bail silently.
@@ -1442,6 +1454,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         renderer.resize({ width: w, height: h, dpr });
         lastResizeRef.current = { w, h, dpr };
       }
+      renderer.setFlattenTolerance(paintFlattenTolerance);
     }
 
     renderer.setTarget(rect ? { origin: { x: rect.x, y: rect.y } } : null);
@@ -1474,7 +1487,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // commit as the DOM.
   useLayoutEffect(() => {
     requestRedraw();
-  }, [layersWithDebug, width, height, viewProp, debugSink, dprProp,
+  }, [layersWithDebug, width, height, viewProp, debugSink, dprProp, flattenTolerance,
       layerVisibility, layerOrder, layerGroups, shaderIdKey, syncPaint,
       viewChromeState, getIsVisible, requestRedraw]);
 

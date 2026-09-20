@@ -862,7 +862,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // highlights the pressed node here). `matchSpec` routes the two copies
       // to disjoint spec kinds — `pointerDown` matches only this one, `drag`
       // only the buffered one — so a single press never fires both.
-      dispatch({ ...ev, stage: 'press' });
+      //
+      // Withheld once a second pointer is down: this press belongs to the
+      // multitouch channel under the MULTI-POINTER POLICY below, which clears
+      // the buffered copy for the same reason. Without this a pinch's second
+      // finger ran `select.pick` and moved the selection under the gesture.
+      if (held.size < 2) dispatch({ ...ev, stage: 'press' });
 
       // Arm long-press for touch / pen only, and only for a lone pointer —
       // a second finger means a multi-touch gesture, not a long-press.

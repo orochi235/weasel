@@ -387,6 +387,23 @@ describe('useGestureDispatcher', () => {
       expect(spy).toHaveBeenCalledTimes(1);
     });
 
+    it('does not fire for a second finger landing on the canvas', () => {
+      // A pointer that is part of a pinch must not also act on its own: the
+      // multitouch channel claims it, and `select.pick` changing the selection
+      // under a two-finger gesture is what that failed to prevent.
+      const spy = vi.fn();
+      const { container } = render(
+        <Harness><Probe actionDef={pressAction(spy)} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1 }); });
+      expect(spy).toHaveBeenCalledTimes(1);
+      act(() => { fire(canvas, 'pointerdown', { clientX: 90, clientY: 10, pointerId: 2 }); });
+      expect(spy).toHaveBeenCalledTimes(1);
+      act(() => { fire(canvas, 'pointerdown', { clientX: 50, clientY: 90, pointerId: 3 }); });
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+
     it('fires exactly once for a press that becomes a drag', () => {
       // The eager press dispatch and the buffered drag dispatch come from one
       // physical pointerdown. If the spec kinds overlapped, this would be 2.

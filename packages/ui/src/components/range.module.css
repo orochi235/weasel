@@ -26,7 +26,7 @@
   border-radius: var(--wzl-radius-sm);
   background: var(
     --wzl-range-track-bg,
-    color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-mix), transparent)
+    color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-mix, 18%), transparent)
   );
 }
 
@@ -35,7 +35,7 @@
   border-radius: var(--wzl-radius-sm);
   background: var(
     --wzl-range-track-bg,
-    color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-mix), transparent)
+    color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-mix, 18%), transparent)
   );
 }
 
@@ -46,7 +46,7 @@
   height: var(--wzl-slider-thumb-size, 8px);
   border: none;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-mix), transparent);
+  background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-mix, 70%), transparent);
   /* Centres an 8px thumb on a 4px track. Webkit does not centre it for you. */
   margin-top: calc((var(--wzl-slider-track-h, 4px) - var(--wzl-slider-thumb-size, 8px)) / 2);
 }
@@ -56,7 +56,7 @@
   height: var(--wzl-slider-thumb-size, 8px);
   border: none;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-mix), transparent);
+  background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-mix, 70%), transparent);
 }
 
 .range:focus-visible {

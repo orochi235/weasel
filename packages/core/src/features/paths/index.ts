@@ -26,6 +26,7 @@ export {
   starPath,
   linePath,
 } from './builder';
+export { circlePath, squarePath, rectMarkerPath, roundRectPath } from './markers';
 export { boundsOfPath } from './bounds';
 export { countPathAnchors, pathToAnchors, anchorsToPath, isAnchorSmooth, nearestSegmentT, type PenAnchor } from './anchors';
 export {

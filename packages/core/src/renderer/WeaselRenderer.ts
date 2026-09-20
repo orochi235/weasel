@@ -191,7 +191,7 @@ export class WeaselRenderer {
    *  with effects asks, so a canvas without them pays no memory. */
   private readonly effectTargets: EffectTargets;
   private readonly imageMinification: ImageMinification;
-  private readonly flattenTolerance?: number;
+  private flattenTolerance?: number;
   private readonly bakeBudget: number;
   private readonly textOutlineMinScreenSize: number;
   private contextLost = false;
@@ -578,6 +578,12 @@ export class WeaselRenderer {
     // stroke ribbons from tessellateStroke). Done after all draws complete
     // so we never delete a buffer that's still bound to a pending draw.
     this.meshCache.freeTransient();
+  }
+
+  /** Change the curve-flattening tolerance after construction. `undefined`
+   *  restores the cached `DEFAULT_FLATTEN_TOLERANCE` route. */
+  setFlattenTolerance(tolerance: number | undefined): void {
+    this.flattenTolerance = tolerance;
   }
 
   resize(dims: { width: number; height: number; dpr: number }): void {

@@ -61,12 +61,47 @@ export function rectMarkerPath(x: number, y: number, width: number, height: numb
   };
 }
 
-/** Open line segment from (ax, ay) to (bx, by). No close. */
-export function linePath(ax: number, ay: number, bx: number, by: number): PolygonPath {
-  return {
-    kind: 'polygon',
-    commands: new Uint8Array([PATH_M, PATH_L]),
-    coords: new Float32Array([ax, ay, bx, by]),
-    fillRule: 'nonzero',
-  };
+/**
+ * Axis-aligned rounded rectangle. Top-left at (x, y); `r` is clamped to half
+ * the shorter side. Each corner is `cornerSamples` line segments, matching
+ * `circlePath`'s polygonal approximation — the default 8 gives the same
+ * angular resolution as `circlePath`'s 32.
+ */
+export function roundRectPath(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  r: number,
+  cornerSamples = 8,
+): PolygonPath {
+  const radius = Math.max(0, Math.min(r, Math.min(width, height) / 2));
+  if (radius === 0) return rectMarkerPath(x, y, width, height);
+
+  const HALF_PI = Math.PI / 2;
+  // Corner centers paired with the arc's start angle, walked clockwise in
+  // screen space from the top-left.
+  const corners: Array<[number, number, number]> = [
+    [x + radius, y + radius, Math.PI],
+    [x + width - radius, y + radius, -HALF_PI],
+    [x + width - radius, y + height - radius, 0],
+    [x + radius, y + height - radius, HALF_PI],
+  ];
+
+  const perCorner = cornerSamples + 1;
+  const count = corners.length * perCorner;
+  const cmds = new Uint8Array(count + 1);
+  const coords = new Float32Array(count * 2);
+  let i = 0;
+  for (const [cx, cy, start] of corners) {
+    for (let s = 0; s <= cornerSamples; s++) {
+      const theta = start + (s / cornerSamples) * HALF_PI;
+      cmds[i] = i === 0 ? PATH_M : PATH_L;
+      coords[i * 2] = cx + radius * Math.cos(theta);
+      coords[i * 2 + 1] = cy + radius * Math.sin(theta);
+      i++;
+    }
+  }
+  cmds[count] = PATH_Z;
+  return { kind: 'polygon', commands: cmds, coords, fillRule: 'nonzero' };
 }

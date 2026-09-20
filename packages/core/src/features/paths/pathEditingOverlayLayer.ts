@@ -27,7 +27,8 @@ import type { Path, PolygonPath } from './types';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
 import { pathToAnchors } from './anchors';
-import { circlePath, linePath, rectMarkerPath, squarePath } from './markers';
+import { linePath } from './builder';
+import { circlePath, rectMarkerPath, squarePath } from './markers';
 
 interface View { x: number; y: number; scale: { x: number; y: number } }
 
@@ -144,7 +145,7 @@ export function createPathEditingOverlayLayer(
             const [hx, hy] = w2s(a.inHandle.x, a.inHandle.y, view);
             out.push({
               kind: 'path',
-              path: linePath(ax, ay, hx, hy),
+              path: linePath({ x: ax, y: ay }, { x: hx, y: hy }),
               stroke: { paint: { fill: 'solid', color: style.handleStroke }, width: 1 },
             });
             out.push({
@@ -157,7 +158,7 @@ export function createPathEditingOverlayLayer(
             const [hx, hy] = w2s(a.outHandle.x, a.outHandle.y, view);
             out.push({
               kind: 'path',
-              path: linePath(ax, ay, hx, hy),
+              path: linePath({ x: ax, y: ay }, { x: hx, y: hy }),
               stroke: { paint: { fill: 'solid', color: style.handleStroke }, width: 1 },
             });
             out.push({
