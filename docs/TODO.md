@@ -872,16 +872,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   (`packages/ui/src/overlays/portalHost.tsx`) to the provider once RAC exports it.
   Still absent from RAC's index at 1.21.1, checked 2026-09-08.
 
-- **(P2) labkit's loupe drives itself with plain listeners, not bindings.** The
-  gesture grammar already has every gesture it needs — `keyHeld` with a free key
-  arg, `wheel` with a direction arg, `click` with a target
-  (`packages/gestures/src/grammar/gestures.ts:11-24`) — but a labkit trial does
-  not route input through the dispatcher, so `packages/labkit/src/loupe/useLoupe.ts`
-  attaches `pointermove`, `keydown`/`keyup` and a capture-phase `wheel` by hand,
-  the last of which has to run ahead of `usePanZoom` and stop propagation to do
-  it. They are all in that one hook so this is a single rewrite once trial input
-  goes through the dispatcher; the loupe is the reason to want that, not a
-  reason to build it first.
+- **(P3) The grammar names no hover gesture.** The loupe now routes its peek key
+  and its wheel through the dispatcher, but aiming the lens is still a plain
+  `pointermove` listener in `packages/labkit/src/loupe/useLoupe.ts`, because
+  `GESTURE_DESCRIPTORS` has no continuous-motion entry. Every other consumer that
+  wants to follow the pointer without a press — a coordinate readout, an
+  eyedropper preview, a hover ruler — hand-attaches the same listener. Adding one
+  is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
+  action, and `docs/taxonomy.md` would need to say what a hover binding claims.
 
 - **(P2) Things that look duplicated in this engine and are not.** Left from the
   2026-08-29 duplicated-cascade audit, whose findings all landed — `git log` and

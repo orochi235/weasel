@@ -5,6 +5,8 @@ import {
   type LoupePoint,
 } from '@weasel-js/loupe';
 import { type RefObject, useCallback, useEffect, useReducer, useRef } from 'react';
+import type { LoupeInputApi } from './loupeActions';
+import { WHEEL_RATE } from './loupeActions';
 import type { ResolvedLoupe } from './types';
 
 /** Options for {@link useLoupe}. */
@@ -32,21 +34,21 @@ export interface LoupeState {
   setFactor: (factor: number) => void;
   /** Sample what the lens shows at a point inside it. */
   pick: (p?: LoupePoint) => string | null;
+  /** What `<LoupeGestures>` drives the lens through. Stable for the life of
+   *  the hook, so registering the actions on it does not churn. */
+  input: LoupeInputApi;
 }
 
-/** How fast the wheel walks the magnification. Gentler than the pan-zoom
- *  wheel: the lens' whole range is one order of magnitude. */
-const WHEEL_RATE = 0.002;
-
 /**
- * Binds `@weasel-js/loupe`'s model to a host element and drives it from the
- * pointer, the peek key and the wheel.
+ * Binds `@weasel-js/loupe`'s model to a host element and tracks the pointer
+ * across it.
  *
- * These are plain listeners rather than gesture bindings because labkit trials
- * do not route input through the dispatcher — see the loupe entry under
- * "Selection, actions & UI panels" in `docs/TODO.md`. They are all in this one
- * hook so that when trial input does go through it, this is the only file to
- * rewrite.
+ * The peek key and the wheel are not here: they are `loupe.peek` and
+ * `loupe.magnify`, routed through the gesture dispatcher that
+ * `<LoupeGestures>` mounts on the same host. Aiming stays a plain listener
+ * because a hover is not a gesture the grammar names — `GESTURE_DESCRIPTORS`
+ * has no continuous-motion entry, and inventing one to carry the lens' aim
+ * would be an input taxonomy change, not a loupe change.
  */
 export function useLoupe({ capability, hostRef, enabled, sample }: UseLoupeOptions): LoupeState {
   const [, bump] = useReducer((n: number) => n + 1, 0);
@@ -128,53 +130,30 @@ export function useLoupe({ capability, hostRef, enabled, sample }: UseLoupeOptio
       overRef.current = false;
       bump();
     };
-    const onWheel = (e: WheelEvent): void => {
-      if (!shown()) return;
-      // Ahead of the stack's own pan-zoom, which is a React handler on this same
-      // element: capture runs first, and stopping propagation keeps the event
-      // from reaching React's root listener at all.
-      e.preventDefault();
-      e.stopPropagation();
-      model.setFactor(model.factor * Math.exp(-e.deltaY * WHEEL_RATE));
-    };
 
     host.addEventListener('pointermove', onPointerMove);
     host.addEventListener('pointerleave', onPointerLeave);
-    host.addEventListener('wheel', onWheel, { capture: true, passive: false });
     return () => {
       host.removeEventListener('pointermove', onPointerMove);
       host.removeEventListener('pointerleave', onPointerLeave);
-      host.removeEventListener('wheel', onWheel, { capture: true });
     };
   }, [hostRef, model, shown]);
 
-  const peekKey = capability.peekKey;
-  useEffect(() => {
-    if (peekKey == null) return;
-    const setPeeking = (next: boolean): void => {
-      if (peekingRef.current === next) return;
-      peekingRef.current = next;
-      bump();
+  const inputRef = useRef<LoupeInputApi | null>(null);
+  if (inputRef.current === null) {
+    inputRef.current = {
+      shown,
+      setPeeking: (on) => {
+        if (peekingRef.current === on) return;
+        peekingRef.current = on;
+        bump();
+      },
+      magnifyBy: (deltaY) => {
+        const m = modelRef.current;
+        if (m) m.setFactor(m.factor * Math.exp(-deltaY * WHEEL_RATE));
+      },
     };
-    const onKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === peekKey) setPeeking(true);
-    };
-    const onKeyUp = (e: KeyboardEvent): void => {
-      if (e.key === peekKey) setPeeking(false);
-    };
-    // A key held while the window loses focus never sends its keyup, so the
-    // peek would stay on until the key was pressed and released again.
-    const onBlur = (): void => setPeeking(false);
-
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    window.addEventListener('blur', onBlur);
-    return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
-      window.removeEventListener('blur', onBlur);
-    };
-  }, [peekKey]);
+  }
 
   return {
     visible: shown(),
@@ -185,5 +164,6 @@ export function useLoupe({ capability, hostRef, enabled, sample }: UseLoupeOptio
     setMode: model.setMode,
     setFactor: model.setFactor,
     pick: model.pick,
+    input: inputRef.current,
   };
 }

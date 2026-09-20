@@ -12,7 +12,9 @@ This directory binds that model to a labkit trial and draws it.
 | File | Role |
 |---|---|
 | `types.ts` | `LoupeCapability`, and `resolveLoupe` filling in every default |
-| `useLoupe.ts` | The model over a host element, plus all of the input |
+| `useLoupe.ts` | The model over a host element, and pointer aiming |
+| `loupeActions.ts` | `loupe.peek` and `loupe.magnify`, as `Action` descriptors |
+| `LoupeGestures.tsx` | Registers those and mounts the dispatcher on the host |
 | `TrialLoupe.tsx` | Picks the painter and mounts the lens |
 | `LoupeBubble.tsx` | The circular clip, positioned on the aim |
 | `CanvasLoupe.tsx` | Painter for a `<CanvasStack>` |
@@ -44,6 +46,16 @@ StrictMode mounts / unmounts / mounts every effect — so disposing in the
 cleanup leaves a magnifier that draws but silently ignores every aim. It owns
 no resources; unmounting only reports the lens gone.
 
-**The wheel has to be taken from pan/zoom by hand.** `usePanZoom` is a React
-handler on the same element, so the lens listens in the capture phase and stops
-propagation. See the loupe entry in `docs/TODO.md` for what replaces this.
+**The wheel is taken from pan/zoom by declining it, not by capturing it.**
+`loupe.magnify`'s `enabled` returns a disabled reason while the lens is down, so
+the dispatcher leaves the event unhandled and `usePanZoom` — a React handler on
+the same element — sees it as usual. While the lens is up the action fires, the
+dispatcher stops propagation, and React's root listener never runs.
+
+**Aiming is a plain listener because a hover is not a gesture.**
+`GESTURE_DESCRIPTORS` names no continuous-motion gesture, so `pointermove` /
+`pointerleave` stay hand-attached in `useLoupe`. Everything else routes.
+
+**`<LoupeGestures>` mounts outside the visibility gate.** Hold-to-peek is what
+raises a lens that is down; gate its registration on `loupe.visible` and the
+peek key stops working entirely.

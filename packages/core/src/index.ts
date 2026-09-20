@@ -222,7 +222,7 @@ export { createDispatcher, // The precedence rule itself, so reflection surfaces
   specificity } from '@weasel-js/routing';
 export { useGestureDispatcher } from '@weasel-js/routing/react';
 export type { Dispatcher, DispatcherContext, InputEvent, BindingScope, ScopedBinding, MatchResult, ResolveOnlyResult, ResolvedCandidate, ResolveAllOptions } from '@weasel-js/routing';
-export type { UseGestureDispatcherOptions } from '@weasel-js/routing/react';
+export type { UseGestureDispatcherOptions, DispatcherChannels } from '@weasel-js/routing/react';
 
 // ─── Scheduling: the visibility gate every weasel frame loop runs behind ────
 export { useVisibleRaf } from './scheduling/useVisibleRaf';

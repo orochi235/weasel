@@ -148,6 +148,21 @@ export interface ViewIdResolver {
   end(pointerId: number): void;
 }
 
+/** Per-channel switches for the listeners `useGestureDispatcher` attaches to
+ *  the canvas element. Omitted or `true` attaches the channel. */
+export interface DispatcherChannels {
+  /** `pointerdown`, hover `pointermove`, `pointerleave` — press, drag, click,
+   *  long-press, multi-touch and the hover-cursor pump. */
+  pointer?: boolean;
+  /** `wheel`. */
+  wheel?: boolean;
+  /** `contextmenu`. Off leaves the browser's native menu in place. */
+  contextMenu?: boolean;
+  /** OS drop on the element plus `paste` on the window. Off leaves the
+   *  element a non-drop-target and stops `weasel-dropover` being applied. */
+  ingest?: boolean;
+}
+
 /** Options for `useGestureDispatcher`: the element to listen on, the actions
  *  and tools in play, and the hooks that turn raw DOM events into the world
  *  coordinates and hit targets bindings match against. */
@@ -284,6 +299,23 @@ export interface UseGestureDispatcherOptions {
   getRuleCtx?: () => import('../../eligibility').RuleCtx | undefined;
 
   /**
+   * Which of the canvas element's input channels to attach. Every one
+   * defaults to `true`; naming a channel `false` leaves its listeners
+   * unattached, so the element behaves as if the dispatcher were not there.
+   *
+   * A mount that binds two gestures should not also have to take the rest of
+   * the pipeline's side effects: `contextMenu` suppresses the native menu
+   * unconditionally, and `ingest` makes the element a valid drop target and
+   * styles it while an OS drag hovers. `@weasel-js/labkit`'s loupe mounts on
+   * a lab's own canvas host for a wheel and a held key, and turning the other
+   * three off is what keeps right-click and file drops working there.
+   *
+   * The window keyboard channel is `keyboard` instead of an entry here,
+   * because `<SceneCanvas enableKeybindings>` drives it.
+   */
+  channels?: DispatcherChannels;
+
+  /**
    * Routing for a canvas hosting more than one view: the non-root dispatch
    * records to choose between, read fresh per event, and the resolver that
    * chooses. Omit for a single view — then every event runs on the record the
@@ -377,7 +409,14 @@ function computeMultiTouchGeometry(
  * providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onDoubleClick, views } = opts;
+  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onDoubleClick, views, channels } = opts;
+  // Read out as four booleans, not the object: the attach effect depends on
+  // them, and an inline `channels={{...}}` would re-bind every listener on
+  // every render.
+  const pointerChannel = channels?.pointer !== false;
+  const wheelChannel = channels?.wheel !== false;
+  const contextMenuChannel = channels?.contextMenu !== false;
+  const ingestChannel = channels?.ingest !== false;
   const onDoubleClickRef = useRef(onDoubleClick);
   onDoubleClickRef.current = onDoubleClick;
   const activeTool = useActiveToolContext();
@@ -1454,16 +1493,20 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // when `keyboard: false` disables gesture key dispatch.
     window.addEventListener('keydown', scheduleHoverCursorRefresh);
     window.addEventListener('keyup', scheduleHoverCursorRefresh);
-    canvas?.addEventListener('pointerleave', onHoverPointerLeave);
-    canvas?.addEventListener('wheel', onWheel, { passive: false });
-    canvas?.addEventListener('pointerdown', onPointerDown);
-    canvas?.addEventListener('pointermove', onHoverMove);
-    canvas?.addEventListener('contextmenu', onContextMenu);
-    canvas?.addEventListener('dragenter', onDragOver);
-    canvas?.addEventListener('dragover', onDragOver);
-    canvas?.addEventListener('dragleave', onDragLeave);
-    canvas?.addEventListener('drop', onDrop);
-    window.addEventListener('paste', onPaste);
+    if (pointerChannel) {
+      canvas?.addEventListener('pointerleave', onHoverPointerLeave);
+      canvas?.addEventListener('pointerdown', onPointerDown);
+      canvas?.addEventListener('pointermove', onHoverMove);
+    }
+    if (wheelChannel) canvas?.addEventListener('wheel', onWheel, { passive: false });
+    if (contextMenuChannel) canvas?.addEventListener('contextmenu', onContextMenu);
+    if (ingestChannel) {
+      canvas?.addEventListener('dragenter', onDragOver);
+      canvas?.addEventListener('dragover', onDragOver);
+      canvas?.addEventListener('dragleave', onDragLeave);
+      canvas?.addEventListener('drop', onDrop);
+      window.addEventListener('paste', onPaste);
+    }
 
     // -----------------------------------------------------------------------
     // Cleanup
@@ -1487,6 +1530,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.removeEventListener('dragleave', onDragLeave);
       canvas?.removeEventListener('drop', onDrop);
       window.removeEventListener('paste', onPaste);
+      // Detach is unconditional: a channel turned off mid-life must still
+      // have whatever it attached while it was on taken back off.
       canvas?.classList.remove(DROPOVER_CLASS);
       clearHoverCursor();
       cancelAllLongPress();
@@ -1497,5 +1542,5 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       held.clear();
       for (const d of allDispatchers()) d.cancelAll('cancel');
     };
-  }, [enabled, keyboard, canvasRef]);
+  }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, contextMenuChannel, ingestChannel]);
 }

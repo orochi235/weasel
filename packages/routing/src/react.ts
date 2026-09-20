@@ -9,7 +9,7 @@
  */
 export { useGestureDispatcher } from './interactions/dispatcher/useGestureDispatcher';
 export type {
-  UseGestureDispatcherOptions, DispatcherViewTarget, ViewIdResolver,
+  UseGestureDispatcherOptions, DispatcherChannels, DispatcherViewTarget, ViewIdResolver,
 } from './interactions/dispatcher/useGestureDispatcher';
 
 export { ActionsProvider, ActionsScope, useActionsRegistry, useAction } from './interactions/actions/ActionsProvider';

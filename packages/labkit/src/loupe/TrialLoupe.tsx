@@ -1,3 +1,4 @@
+import { WeaselProvider } from '@weasel-js/core';
 import { type RefObject, useContext, useMemo } from 'react';
 import { CanvasStackContext } from '../canvas/CanvasStackContext';
 import type { WorldSpec } from '../canvas/worldSpec';
@@ -6,6 +7,7 @@ import { CanvasLoupe } from './CanvasLoupe';
 import { sampleStack } from './canvasLens';
 import { DomLoupe } from './DomLoupe';
 import { LoupeBubble } from './LoupeBubble';
+import { LoupeGestures } from './LoupeGestures';
 import type { ResolvedLoupe } from './types';
 import { useHostSize } from './useHostSize';
 import { useLoupe } from './useLoupe';
@@ -59,35 +61,48 @@ export function TrialLoupe({
   const measured = useHostSize(host);
   const size = surface?.size ?? measured;
 
-  if (!loupe.visible) return null;
+  // The gestures mount outside the visibility gate: hold-to-peek is what
+  // raises a lens that is down, so its binding has to be live while it is.
+  // One isolated scope per loupe, for the reason `<AnnotationOverlay>` gives
+  // — an actions registry holds one dispatcher.
+  const gestures = (
+    <WeaselProvider isolate>
+      <LoupeGestures hostRef={host} input={loupe.input} peekKey={capability.peekKey ?? null} />
+    </WeaselProvider>
+  );
+
+  if (!loupe.visible) return gestures;
 
   return (
-    <LoupeBubble aim={loupe.aim} diameter={capability.diameter}>
-      {capability.render ? (
-        <DomLoupe
-          aim={loupe.aim}
-          factor={loupe.factor}
-          mode={loupe.mode}
-          diameter={capability.diameter}
-          size={size}
-          view={view}
-          frame={stack?.frame}
-          state={state}
-          config={config}
-          render={capability.render}
-        />
-      ) : surface && stack ? (
-        <CanvasLoupe
-          aim={loupe.aim}
-          factor={loupe.factor}
-          mode={loupe.mode}
-          diameter={capability.diameter}
-          surface={surface}
-          view={stack.view}
-          frame={stack.frame}
-          worldSpec={worldSpec}
-        />
-      ) : null}
-    </LoupeBubble>
+    <>
+      {gestures}
+      <LoupeBubble aim={loupe.aim} diameter={capability.diameter}>
+        {capability.render ? (
+          <DomLoupe
+            aim={loupe.aim}
+            factor={loupe.factor}
+            mode={loupe.mode}
+            diameter={capability.diameter}
+            size={size}
+            view={view}
+            frame={stack?.frame}
+            state={state}
+            config={config}
+            render={capability.render}
+          />
+        ) : surface && stack ? (
+          <CanvasLoupe
+            aim={loupe.aim}
+            factor={loupe.factor}
+            mode={loupe.mode}
+            diameter={capability.diameter}
+            surface={surface}
+            view={stack.view}
+            frame={stack.frame}
+            worldSpec={worldSpec}
+          />
+        ) : null}
+      </LoupeBubble>
+    </>
   );
 }
