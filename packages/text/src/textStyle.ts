@@ -10,7 +10,8 @@
  * `StyledRun.fill` / `.stroke` override them per range.
  */
 
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { FillStyle, ScreenLength, Stroke } from '@weasel-js/paint';
+import { resolveScreenLength } from '@weasel-js/paint';
 
 /**
  * Horizontal alignment. `start` / `end` resolve against the reading direction;
@@ -39,8 +40,12 @@ export function resolveAlign(
 
 /** User-facing text style. All fields optional; defaults applied at render time via `resolveTextStyle`. */
 export interface TextStyle {
-  /** Font size in world units. Default 16. */
-  fontSize?: number;
+  /**
+   * World units, or `{ px }` for screen pixels — resolved against the view
+   * scale passed to {@link resolveTextStyle}, so a label pinned this way
+   * stays the same size on screen as the view zooms. Default 16.
+   */
+  fontSize?: ScreenLength;
   /** Default `'sans-serif'`. */
   fontFamily?: string;
   /** Default 400. */
@@ -72,8 +77,9 @@ export interface TextStyle {
   selectionBackground?: string;
   /** Selection text color paired with `selectionBackground`. Default: inherits text color. */
   selectionColor?: string;
-  /** Extra advance added after each glyph, in world units. Default 0. */
-  letterSpacing?: number;
+  /** Extra advance added after each glyph. World units, or `{ px }` for
+   *  screen pixels, like {@link TextStyle.fontSize}. Default 0. */
+  letterSpacing?: ScreenLength;
   /** Default `false`. */
   underline?: boolean;
   /** Default `false`. */
@@ -167,11 +173,20 @@ export interface TextPaint {
   stroke?: Stroke | null;
 }
 
-/** Fill in a partial `TextStyle` with defaults from `DEFAULT_TEXT_STYLE`,
- *  taking the glyph paint from the node rather than from the style. */
+/**
+ * Fill in a partial `TextStyle` with defaults from `DEFAULT_TEXT_STYLE`,
+ * taking the glyph paint from the node rather than from the style.
+ *
+ * `scale` is the view scale any `{ px }` size resolves against — the same
+ * mean-of-the-axes factor `resolveStrokeWidth` takes. It has to be applied
+ * here, at the entry to layout, rather than at draw time: a screen-pixel size
+ * changes the glyph advances, the wrap points and the measured bounds, and
+ * everything downstream of `ResolvedTextStyle` reads a plain world number.
+ */
 export function resolveTextStyle(
   style?: TextStyle,
   paint?: TextPaint,
+  scale = 1,
 ): ResolvedTextStyle {
   const fill = paint?.fill === undefined ? DEFAULT_TEXT_STYLE.fill : paint.fill;
   const stroke = paint?.stroke ?? undefined;
@@ -196,7 +211,7 @@ export function resolveTextStyle(
     selectionBackground = defaultSelectionBackground(caretColor);
   }
   return {
-    fontSize: style.fontSize ?? DEFAULT_TEXT_STYLE.fontSize,
+    fontSize: resolveScreenLength(style.fontSize ?? DEFAULT_TEXT_STYLE.fontSize, scale),
     fontFamily: style.fontFamily ?? DEFAULT_TEXT_STYLE.fontFamily,
     fontWeight: style.fontWeight ?? DEFAULT_TEXT_STYLE.fontWeight,
     fontStyle: style.fontStyle ?? DEFAULT_TEXT_STYLE.fontStyle,
@@ -208,7 +223,7 @@ export function resolveTextStyle(
     caretColor,
     selectionBackground,
     selectionColor: style.selectionColor ?? null,
-    letterSpacing: style.letterSpacing ?? DEFAULT_TEXT_STYLE.letterSpacing,
+    letterSpacing: resolveScreenLength(style.letterSpacing ?? DEFAULT_TEXT_STYLE.letterSpacing, scale),
     underline: style.underline ?? DEFAULT_TEXT_STYLE.underline,
     strikethrough: style.strikethrough ?? DEFAULT_TEXT_STYLE.strikethrough,
     overline: style.overline ?? DEFAULT_TEXT_STYLE.overline,

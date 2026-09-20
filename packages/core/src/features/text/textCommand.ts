@@ -10,6 +10,11 @@
  *
  * `paint` is the node's `data.fill` / `data.stroke`. A caller with no node —
  * a HUD widget, a debug overlay — states its color on the run instead.
+ *
+ * `scale` is the view scale a `{ px }` `fontSize` or `letterSpacing` resolves
+ * against — for a world-space layer, the mean of `view.scale.x` and
+ * `view.scale.y`. It has to be applied here and not at draw time, because a
+ * screen-pixel size moves the glyph advances and so the wrap points.
  */
 
 import type { DrawCommand, TextDrawCommand } from '../../renderer';
@@ -29,13 +34,14 @@ export function textCommandFromRuns(
   verticalAlign?: TextVerticalAlign,
   paint?: TextPaint,
   width?: number,
+  scale = 1,
 ): DrawCommand {
-  const resolved = resolveTextStyle(style, paint);
+  const resolved = resolveTextStyle(style, paint, scale);
   return {
     kind: 'text',
     x,
     y,
-    runs: resolveRuns(runs, resolved),
+    runs: resolveRuns(runs, resolved, scale),
     align: resolveAlign(resolved.align, resolved.direction),
     maxWidth,
     style: style ?? {},
@@ -59,8 +65,11 @@ export function textCommand(
   verticalAlign?: TextVerticalAlign,
   paint?: TextPaint,
   width?: number,
+  scale = 1,
 ): DrawCommand {
-  return textCommandFromRuns(x, y, [{ text }], style, maxWidth, height, verticalAlign, paint, width);
+  return textCommandFromRuns(
+    x, y, [{ text }], style, maxWidth, height, verticalAlign, paint, width, scale,
+  );
 }
 
 /**
@@ -68,8 +77,8 @@ export function textCommand(
  * come from `textPoseLayoutInput`, so the renderer lays it out into exactly
  * the lines `layoutTextPose` reports for the same pose.
  */
-export function textCommandFromPose(pose: TextPose): TextDrawCommand {
-  const { runs, opts } = textPoseLayoutInput(pose);
+export function textCommandFromPose(pose: TextPose, scale = 1): TextDrawCommand {
+  const { runs, opts } = textPoseLayoutInput(pose, scale);
   return {
     kind: 'text',
     x: pose.x,

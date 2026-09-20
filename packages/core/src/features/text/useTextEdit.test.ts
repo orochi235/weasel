@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { overlayTop, useTextEdit } from './useTextEdit';
 import type { UseTextEditOptions } from './useTextEdit';
 import type { StyledRun } from '@weasel-js/text';
+import { resolveScreenLength } from '@weasel-js/paint';
 import { MIXED } from './runs/rangeStyle';
 import type { TextStyle } from '@weasel-js/text';
 
@@ -805,7 +806,7 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
 function makeTrackingHarness(
   runs: StyledRun[],
   style: TextStyle,
-  screenFontSize = style.fontSize ?? 16,
+  screenFontSize = resolveScreenLength(style.fontSize ?? 16, 1),
 ) {
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -882,7 +883,7 @@ function makeZoomedHarness(runs: StyledRun[], style: TextStyle, zoom: number) {
       y: 20,
       width: 200,
       height: 40,
-      fontSize: style.fontSize ?? 16,
+      fontSize: resolveScreenLength(style.fontSize ?? 16, 1),
       zoom,
     }),
     setText: () => {},

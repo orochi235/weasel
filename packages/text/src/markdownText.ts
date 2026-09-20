@@ -1,3 +1,4 @@
+import { resolveScreenLength } from '@weasel-js/paint';
 import { markdownToRuns, type StyledRun } from './runs';
 
 export type { StyledRun };
@@ -49,7 +50,8 @@ export function layoutMarkdown(
   }
 
   function processSegment(segRun: StyledRun) {
-    const effectiveSize = segRun.fontSize ?? fontSize;
+    // Already a screen-pixel layout, so a run's `{ px }` size is its size.
+    const effectiveSize = resolveScreenLength(segRun.fontSize ?? fontSize, 1);
     lineMaxSize = Math.max(lineMaxSize, effectiveSize);
 
     if (maxWidth === Infinity) {
@@ -173,7 +175,7 @@ export function createMarkdownRenderer(
     let lineY = y;
     for (const line of layout.lines) {
       for (const run of line.runs) {
-        const effSize = run.fontSize ?? fontSize;
+        const effSize = resolveScreenLength(run.fontSize ?? fontSize, 1);
         _ctx.font = buildFont(effSize, run.bold ?? false, run.italic ?? false, fontOpts);
         _ctx.fillStyle = fontOpts.color
           ?? (run.italic && !run.bold ? 'rgba(255, 255, 255, 0.7)' : '#FFFFFF');
@@ -188,7 +190,7 @@ export function createMarkdownRenderer(
     let lineY = y;
     for (const line of layout.lines) {
       for (const run of line.runs) {
-        const effSize = run.fontSize ?? fontSize;
+        const effSize = resolveScreenLength(run.fontSize ?? fontSize, 1);
         _ctx.font = buildFont(effSize, run.bold ?? false, run.italic ?? false, fontOpts);
         const lineOffset = (layout.width - line.width) / 2;
         _ctx.strokeText(run.text, x + lineOffset + run.x, lineY);

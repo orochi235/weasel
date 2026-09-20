@@ -39,7 +39,10 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
   return {
     id,
     label,
-    draw: () => {
+    draw: (_data, view) => {
+      // A world-space layer, so a `{ px }` size in a pose's style resolves
+      // against the live camera. Radial in effect — one factor for both axes.
+      const scale = (view.scale.x + view.scale.y) / 2;
       const children: DrawCommand[] = [];
       for (const node of getTexts()) {
         if (isHidden?.(node)) continue;
@@ -51,7 +54,7 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
             `synchronized with \`text\`.`,
           );
         }
-        const textCmd = textCommandFromPose(pose);
+        const textCmd = textCommandFromPose(pose, scale);
         if (clipToBounds) {
           children.push({
             kind: 'group',

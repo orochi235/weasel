@@ -638,6 +638,7 @@ export {
 export {
   alignedStrokeRect,
   dashForStrokeStyle,
+  resolveScreenLength,
   strokeDashStyleOf,
   STROKE_DASH_RATIOS,
 } from '@weasel-js/paint';
@@ -657,6 +658,7 @@ export type {
   KitMarkerKey,
   MarkerKey,
   MarkerRef,
+  ScreenLength,
 } from '@weasel-js/paint';
 export {
   isGradientFill,

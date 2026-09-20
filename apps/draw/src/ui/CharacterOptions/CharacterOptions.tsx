@@ -14,7 +14,8 @@
  * — a toggle button, unlike the `Switch` the panel reaches for, has a real
  * ARIA tri-state.
  */
-import { MIXED, SCRIPT_METRICS } from '@weasel-js/core';
+import { MIXED, resolveScreenLength, SCRIPT_METRICS } from '@weasel-js/core';
+import type { ScreenLength } from '@weasel-js/core';
 import type { RangeStyle, RunStylePatch, StyledRun } from '@weasel-js/core';
 import { ColorField, FontFamilySelect, NumberField, ToggleBar } from '@weasel-js/ui';
 import s from './CharacterOptions.module.css';
@@ -138,7 +139,7 @@ export function CharacterOptions({ style, onPatch }: CharacterOptionsProps) {
       <NumericOption
         label="Size"
         abbr="Size"
-        value={style.fontSize}
+        value={worldSize(style.fontSize)}
         min={1}
         step={1}
         onCommit={(fontSize) => onPatch({ fontSize })}
@@ -148,7 +149,7 @@ export function CharacterOptions({ style, onPatch }: CharacterOptionsProps) {
         // The typographic term, and short enough for a strip. "Tracking"
         // stays the accessible name.
         abbr="VA"
-        value={style.letterSpacing}
+        value={worldSize(style.letterSpacing)}
         step={0.1}
         onCommit={(letterSpacing) => onPatch({ letterSpacing })}
       />
@@ -184,6 +185,12 @@ export function CharacterOptions({ style, onPatch }: CharacterOptionsProps) {
       />
     </div>
   );
+}
+
+/** The strip edits world units, so a `{ px }` size shows its pixel count and
+ *  commits back as a plain number — editing one converts it. */
+function worldSize(v: ScreenLength | typeof MIXED | undefined): number | typeof MIXED | undefined {
+  return v === undefined || v === MIXED ? v : resolveScreenLength(v, 1);
 }
 
 /** `NumberField` bound to one possibly-`MIXED` numeric key. React Aria's

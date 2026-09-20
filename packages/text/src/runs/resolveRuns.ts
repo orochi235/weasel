@@ -22,6 +22,7 @@
  */
 
 import type { FillStyle, Stroke } from '@weasel-js/paint';
+import { resolveScreenLength } from '@weasel-js/paint';
 import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 
@@ -93,10 +94,13 @@ function numericWeight(w: number | string): number {
 }
 
 /** Resolve each run's styling against the node's text style, filling in
- *  everything the run left inherited. */
+ *  everything the run left inherited. `viewScale` resolves a run's own
+ *  `{ px }` size or spacing; the inherited ones arrived already resolved on
+ *  `style`. */
 export function resolveRuns(
   runs: readonly StyledRun[],
   style: ResolvedTextStyle,
+  viewScale = 1,
 ): ResolvedRun[] {
   const out: ResolvedRun[] = [];
   const baseWeight = numericWeight(style.fontWeight);
@@ -111,7 +115,9 @@ export function resolveRuns(
       fontFamily: run.fontFamily ?? style.fontFamily,
       // An absolute size wins over a relative one; naming both is a consumer
       // saying "this size exactly", which a multiplier cannot improve on.
-      fontSize: run.fontSize ?? style.fontSize * scale,
+      fontSize: run.fontSize !== undefined
+        ? resolveScreenLength(run.fontSize, viewScale)
+        : style.fontSize * scale,
       fontWeight: run.bold ? 700 : baseWeight,
       fontStyle: run.italic ? 'italic' : style.fontStyle,
       fill: run.fill ?? style.fill,
@@ -120,7 +126,9 @@ export function resolveRuns(
       ...((run.stroke ?? style.stroke) !== undefined
         ? { stroke: run.stroke ?? style.stroke }
         : {}),
-      letterSpacing: run.letterSpacing ?? style.letterSpacing,
+      letterSpacing: run.letterSpacing !== undefined
+        ? resolveScreenLength(run.letterSpacing, viewScale)
+        : style.letterSpacing,
       // `||`, not `??`: run-level decorations are additive over the node style.
       underline: run.underline || style.underline,
       strikethrough: run.strikethrough || style.strikethrough,

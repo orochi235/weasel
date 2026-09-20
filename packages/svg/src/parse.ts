@@ -22,7 +22,7 @@ import type {
 } from './types';
 import type { StyledRun, TextStyle, TextPaint, FillStyle, Stroke } from '@weasel-js/core';
 import { multiply, parseTransform, decomposeRotation, rebaseTransform, rotationComponent, isIdentity } from './transform';
-import { boundsOfPath, layoutRuns, resolveRuns, resolveTextStyle } from '@weasel-js/core';
+import { boundsOfPath, layoutRuns, resolveRuns, resolveScreenLength, resolveTextStyle } from '@weasel-js/core';
 import { IDENTITY_MATRIX } from './types';
 import { anchorOffset } from './textAnchor';
 import { parsePaintAttr } from './color';
@@ -972,7 +972,7 @@ function parseTextElement(
   const leafStyle = deriveStyle(style, el);
   const textStyle = readTextStyle(leafStyle, onWarn);
   const textPaint = readTextPaint(leafStyle, gradients, onWarn, isNonScalingStroke(el));
-  const fontSize = textStyle.fontSize ?? 16;
+  const fontSize = resolveScreenLength(textStyle.fontSize ?? 16, 1);
   const lineHeight = textStyle.lineHeight ?? 1.2;
 
   const dominantBaseline = el.getAttribute('dominant-baseline');

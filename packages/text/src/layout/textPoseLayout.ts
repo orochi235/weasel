@@ -27,15 +27,20 @@ export interface TextPoseLayoutInput {
  * The resolved runs and layout options for `pose`. A text draw command built
  * from these lays out, in the renderer, into exactly the lines
  * {@link layoutTextPose} reports.
+ *
+ * `scale` is the view scale a `{ px }` `fontSize` or `letterSpacing` resolves
+ * against. Everything past this point is world units, so a caller that
+ * measures, hit-tests or paints one pose has to pass the same scale to each
+ * or they disagree.
  */
-export function textPoseLayoutInput(pose: TextPose): TextPoseLayoutInput {
-  const style = resolveTextStyle(pose.style, { fill: pose.fill, stroke: pose.stroke });
+export function textPoseLayoutInput(pose: TextPose, scale = 1): TextPoseLayoutInput {
+  const style = resolveTextStyle(pose.style, { fill: pose.fill, stroke: pose.stroke }, scale);
   // Empty runs are not a styling, so they fall back to the plain string
   // rather than lay out nothing.
   const source = pose.runs && pose.runs.length > 0 ? pose.runs : pose.text;
   return {
     style,
-    runs: resolveRuns(toRuns(source), style),
+    runs: resolveRuns(toRuns(source), style, scale),
     opts: {
       maxWidth: style.wrap ? pose.width : Infinity,
       alignWidth: pose.width,
@@ -56,8 +61,8 @@ export interface TextPoseLayout {
 }
 
 /** The lines `pose` lays out into, and where they sit in world space. */
-export function layoutTextPose(pose: TextPose): TextPoseLayout {
-  const { runs, opts } = textPoseLayoutInput(pose);
+export function layoutTextPose(pose: TextPose, scale = 1): TextPoseLayout {
+  const { runs, opts } = textPoseLayoutInput(pose, scale);
   const laid = cachedLayoutRuns(runs, opts);
   return {
     laid,

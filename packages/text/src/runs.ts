@@ -9,7 +9,7 @@
  * (300/500/900) are out of scope for slice 1.
  */
 
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { FillStyle, ScreenLength, Stroke } from '@weasel-js/paint';
 
 /** A span of text with its own styling, as authored. Fields left absent
  *  inherit from the node's text style — this is the difference between a run
@@ -19,12 +19,15 @@ export interface StyledRun {
   bold?: boolean;
   italic?: boolean;
   fontFamily?: string;
-  fontSize?: number;
+  /** World units, or `{ px }` for screen pixels — resolved against the view
+   *  scale `resolveRuns` is given, like `TextStyle.fontSize`. */
+  fontSize?: ScreenLength;
   fill?: FillStyle;
   /** Outline over this run's glyphs. Overrides the node's own `data.stroke`;
    *  absent inherits it. Only painted on the outline tier. */
   stroke?: Stroke;
-  letterSpacing?: number;
+  /** World units, or `{ px }` for screen pixels. */
+  letterSpacing?: ScreenLength;
   underline?: boolean;
   strikethrough?: boolean;
   /** Draw a rule above this run's ascent. Additive over the node style. */
