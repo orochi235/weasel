@@ -461,6 +461,12 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  structural edit, so repeat calls hand back the same array — a snapshot,
    *  not a live view, and not yours to mutate. */
   renderOrderNodes(): readonly Node<TData, TLayer, TPose>[];
+  /** The nodes on one layer, in render order. Cached alongside
+   *  {@link Scene.renderOrderNodes} until a structural edit, so a caller that
+   *  only cares about one layer pays the tree walk once rather than once per
+   *  call. A snapshot, not a live view, and not yours to mutate. An unknown
+   *  layer id yields an empty array. */
+  nodesOnLayer(layer: TLayer): readonly Node<TData, TLayer, TPose>[];
 
   // Mutations (all auto-undoable)
   add(spec: AddNodeSpec<TData, TLayer, TPose>): NodeId;

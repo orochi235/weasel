@@ -1067,7 +1067,6 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 - **(P3) Exit transitions.** Fade before remove — schedule the tween, emit Delete on tween end.
 - **(P3) Chained transitions.** `.transition().transition()`; the animator's loop primitive already sequences, the chain just needs to thread it.
 - **(P3) Typed `data` payload.** `.data(fn)` returns `Record<string, unknown>`; the binding could carry the data type through the chain for autocompletion.
-- **(P3) Indexed diff.** `join()` walks the scene O(n) per call; a key map is faster on large datasets.
 - **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
   (`useWheelZoomTool` / `useHandTool` / `useViewAnimation`; `useDragGesture`).
   Worth building only for d3 semantics the kit genuinely lacks, not for parity —

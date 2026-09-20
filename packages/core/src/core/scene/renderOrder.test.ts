@@ -315,3 +315,38 @@ describe('renderOrder — caching invalidates on exactly the structural edits', 
     agree(s, 'after loading an empty snapshot');
   });
 });
+
+describe('nodesOnLayer', () => {
+  it('matches filtering renderOrderNodes, on a random scene', () => {
+    for (const seed of [1, 7, 23]) {
+      const s = randomScene(seed, 4, 60);
+      for (const layer of s.layers) {
+        expect(s.nodesOnLayer(layer.id).map((n) => n.id), `seed ${seed} / ${layer.id}`).toEqual(
+          s.renderOrderNodes().filter((n) => n.layer === layer.id).map((n) => n.id),
+        );
+      }
+    }
+  });
+
+  it('yields an empty array for a layer with no nodes, and for an unknown one', () => {
+    const s = sceneWithLayers(2);
+    s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 0 } });
+    expect(s.nodesOnLayer('L1')).toEqual([]);
+    expect(s.nodesOnLayer('nope')).toEqual([]);
+  });
+
+  it('survives a pose edit and invalidates on a structural one', () => {
+    const s = sceneWithLayers(2);
+    const a = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 0 } });
+    const before = s.nodesOnLayer('L0');
+    s.setPose(a, { x: 5, y: 5, width: 1, height: 1 });
+    expect(s.nodesOnLayer('L0')).toBe(before);
+
+    s.setLayer(a, 'L1');
+    expect(s.nodesOnLayer('L0')).toEqual([]);
+    expect(s.nodesOnLayer('L1').map((n) => n.id)).toEqual([a]);
+
+    s.remove(a);
+    expect(s.nodesOnLayer('L1')).toEqual([]);
+  });
+});
