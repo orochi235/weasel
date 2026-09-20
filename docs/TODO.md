@@ -317,17 +317,6 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 - **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Selector matching is the missing piece; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
 
-- **(P3) The marker builders are not on a barrel.** `circlePath`, `squarePath`,
-  `linePath` and `rectMarkerPath` live in
-  `packages/core/src/features/paths/markers.ts`, which nothing re-exports, so a
-  consumer building overlay chrome reimplements the sample loop. The module's
-  own docstring already frames them as the shared math for "selection chrome,
-  anchor markers, rubber-band rects, and similar transient/decorative
-  geometry" — that is consumer surface as much as kit surface. Export them, and
-  add the `roundRectPath(x, y, w, h, r, cornerSamples?)` that is missing
-  entirely (`grep roundRect` finds only a `ctx.roundRect` inside the canvas2d
-  `renderLabel`), returning `PolygonPath` like its siblings.
-
 ### Pathfinder follow-ups (post-v1)
 
 Core five + Crop shipped. Remaining:
