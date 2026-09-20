@@ -1,13 +1,14 @@
 // apps/site/demos/platformer/sceneWorld.ts
-import { asNodeId, mat3, resolveSkeleton, solid } from '@weasel-js/core';
+import { asNodeId, solid } from '@weasel-js/core';
 import type {
-  FillStyle, Mat3, NodeId, RectPose, Scene, TextStyle, TextVerticalAlign,
+  FillStyle, NodeId, RectPose, Scene, TextStyle, TextVerticalAlign,
 } from '@weasel-js/core';
+import { boneLocalPoses } from './boneRig';
 import { resolvePose } from './animState';
 import { COIN_R, ENEMY_H, ENEMY_W, type Coin, type Enemy } from './entities';
 import { BALL_R, flagY, POLE_WIDTH, type Flagpole } from './flagpole';
-import { ONEWAY, QUESTION, SOLID, SPIKE, TILE, tileAt, type Level, type Vec2 } from './level';
-import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON, ROOT_TO_FOOT } from './skeleton';
+import { ONEWAY, QUESTION, SOLID, SPIKE, TILE, tileAt, type Level } from './level';
+import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON } from './skeleton';
 import { COLORS } from './skin';
 import { POLE, type GameRefs } from './world';
 
@@ -22,10 +23,12 @@ export type WorldLayer = 'tiles' | 'entities' | 'player';
 
 export interface WorldNodeSpec {
   id: NodeId;
-  kind: 'leaf';
+  kind: 'leaf' | 'container';
   layer: WorldLayer;
   pose: RectPose;
   data: WorldData;
+  parent?: NodeId;
+  clipFromPose?: () => null;
 }
 
 const leaf = (id: string, layer: WorldLayer, pose: RectPose, data: WorldData): WorldNodeSpec => ({
@@ -130,24 +133,31 @@ export function entityNodes(coins: Coin[], enemies: Enemy[]): WorldNodeSpec[] {
 const boneColor = (name: string): string =>
   name === 'torso' || name === 'hip' ? COLORS.torso : name === 'head' ? COLORS.head : COLORS.limb;
 
-/** One node per bone. The rig is a transform hierarchy and the scene tree is
- *  not, so the joints resolve to world matrices and are flattened onto
- *  independent nodes every frame — see the demo's own note. */
+/** One node per bone, parented the way the joints are: a bone's pose is local
+ *  to the bone it hangs off, and `RIGID_POSE_COMPOSITION` on the canvas is
+ *  what turns that into world. `syncScene` writes eleven local poses a frame
+ *  and never resolves a matrix.
+ *
+ *  A bone with children has to be a container to have any, and a container
+ *  with no `clipFromPose` clips its descendants to its own silhouette — which
+ *  for a bone is a box a few units wide. `() => null` is how a frame says it
+ *  groups without clipping. */
 export function boneNodes(): WorldNodeSpec[] {
-  return PLAYER_SKELETON.joints.map((j) =>
-    leaf(`bone:${j.name}`, 'player',
-      { x: 0, y: 0, width: BONE_LENGTH[j.name], height: BONE_WIDTH[j.name], rotation: 0 },
-      { shape: j.name === 'head' ? 'ellipse' : 'rect', fill: solid(boneColor(j.name)) }),
+  const hasChild = new Set(
+    PLAYER_SKELETON.joints.map((j) => j.parent).filter((p): p is string => p != null),
   );
-}
-
-/** Rig space → world: the root sits at the player's feet, and facing mirrors x. */
-function placement(at: Vec2, facing: 1 | -1): Mat3 {
-  const m = new Float32Array(9) as Mat3;
-  m[0] = facing; m[1] = 0; m[2] = 0;
-  m[3] = 0; m[4] = 1; m[5] = 0;
-  m[6] = at.x; m[7] = at.y - ROOT_TO_FOOT; m[8] = 1;
-  return m;
+  return PLAYER_SKELETON.joints.map((j) => ({
+    id: boneId(j.name),
+    kind: hasChild.has(j.name) ? ('container' as const) : ('leaf' as const),
+    layer: 'player' as const,
+    pose: { x: 0, y: 0, width: BONE_LENGTH[j.name], height: BONE_WIDTH[j.name], rotation: 0 },
+    data: {
+      shape: j.name === 'head' ? ('ellipse' as const) : ('rect' as const),
+      fill: solid(boneColor(j.name)),
+    },
+    ...(j.parent != null ? { parent: boneId(j.parent) } : {}),
+    ...(hasChild.has(j.name) ? { clipFromPose: () => null } : {}),
+  }));
 }
 
 const OFFSCREEN: RectPose = { x: -1e5, y: -1e5, width: 0, height: 0 };
@@ -194,26 +204,13 @@ export function syncScene(scene: Scene<WorldData, WorldLayer, RectPose>, g: Game
     scene.setPose(FLAG_ID, { x: POLE.x - TILE * 0.9, y, width: TILE * 0.9, height: TILE * 0.62 });
   }
 
-  const joints = resolveSkeleton(PLAYER_SKELETON, resolvePose(g.anim));
-  const root = placement(
+  const locals = boneLocalPoses(
+    resolvePose(g.anim),
     { x: g.player.body.x, y: g.player.body.y + g.player.body.h / 2 },
     g.player.body.facing,
   );
-  for (const j of PLAYER_SKELETON.joints) {
-    const m = joints.get(j.name);
-    const id = boneId(j.name);
-    if (!m || !scene.get(id)) continue;
-    const world = mat3.multiply(root, m);
-    const len = BONE_LENGTH[j.name];
-    const [ox, oy] = mat3.apply(world, 0, 0);
-    const [tx, ty] = mat3.apply(world, len, 0);
-    const wid = BONE_WIDTH[j.name];
-    scene.setPose(id, {
-      x: (ox + tx) / 2 - len / 2,
-      y: (oy + ty) / 2 - wid / 2,
-      width: len,
-      height: wid,
-      rotation: Math.atan2(ty - oy, tx - ox),
-    });
+  for (const [name, pose] of locals) {
+    const id = boneId(name);
+    if (scene.get(id)) scene.setPose(id, pose);
   }
 }

@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { WeaselProvider } from '@weasel-js/core';
 import { type RefObject, StrictMode, useRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { LoupeGestures } from './LoupeGestures';
 import { resolveLoupe } from './types';
 import { type LoupeState, useLoupe } from './useLoupe';
 
@@ -15,18 +17,29 @@ interface HarnessProps {
 }
 
 /** Reports the loupe's state as text, which is every assertion jsdom can make
- *  about a magnifier — that the lens shows the right region is a screenshot. */
+ *  about a magnifier — that the lens shows the right region is a screenshot.
+ *
+ *  Mounts `<LoupeGestures>` the way `<TrialLoupe>` does, so the key and wheel
+ *  cases below exercise the real dispatcher route rather than a stand-in. */
 function Harness({ enabled = true, seen, sample, ...rest }: HarnessProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const capability = resolveLoupe(rest);
   const loupe = useLoupe({
     hostRef: hostRef as RefObject<HTMLElement | null>,
     enabled,
     sample,
-    capability: resolveLoupe(rest),
+    capability,
   });
   seen?.(loupe);
   return (
     <div ref={hostRef} data-testid="host">
+      <WeaselProvider isolate>
+        <LoupeGestures
+          hostRef={hostRef as RefObject<HTMLElement | null>}
+          input={loupe.input}
+          peekKey={capability.peekKey ?? null}
+        />
+      </WeaselProvider>
       <span data-testid="visible">{String(loupe.visible)}</span>
       <span data-testid="aim">{`${loupe.aim.x},${loupe.aim.y}`}</span>
       <span data-testid="factor">{loupe.factor}</span>
@@ -94,6 +107,7 @@ describe('useLoupe', () => {
     act(() => {
       fireEvent.keyDown(window, { key: 'Alt' });
     });
+    expect(read('visible')).toBe('true');
     act(() => {
       fireEvent.blur(window);
     });
@@ -146,6 +160,49 @@ describe('useLoupe', () => {
       host.dispatchEvent(wheel);
     });
     expect(wheel.defaultPrevented).toBe(true);
+  });
+
+  it('stops a claimed wheel reaching the pan-zoom handler above it', () => {
+    // The real handler is React's, delegated to the root container, so what
+    // decides whether pan-zoom runs is whether the event bubbles past the
+    // host — `defaultPrevented` says nothing about that. A listener on an
+    // ancestor is the proxy for React's root one.
+    const above = vi.fn();
+    const { container } = render(<Harness />);
+    container.addEventListener('wheel', above);
+
+    const host = screen.getByTestId('host');
+    move(40, 25);
+    act(() => {
+      host.dispatchEvent(
+        new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }),
+      );
+    });
+    expect(above).not.toHaveBeenCalled();
+
+    fireEvent.pointerLeave(host);
+    act(() => {
+      host.dispatchEvent(
+        new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }),
+      );
+    });
+    expect(above).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the native context menu and file drops to the lab', () => {
+    // The dispatcher suppresses `contextmenu` unconditionally and makes its
+    // element a drop target; the loupe mounts with both channels off, so a
+    // lab that turns a magnifier on keeps its right-click and its drops.
+    render(<Harness />);
+    const host = screen.getByTestId('host');
+    move(40, 25);
+
+    const menu = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    act(() => {
+      host.dispatchEvent(menu);
+    });
+    expect(menu.defaultPrevented).toBe(false);
+    expect(host.classList.contains('weasel-dropover')).toBe(false);
   });
 
   it('reports the color under the aim', () => {

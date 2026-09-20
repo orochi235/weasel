@@ -6,6 +6,10 @@ export type { DomLoupeProps } from './DomLoupe';
 export { DomLoupe } from './DomLoupe';
 export type { LoupeBubbleProps } from './LoupeBubble';
 export { LoupeBubble } from './LoupeBubble';
+export type { LoupeGesturesProps } from './LoupeGestures';
+export { LoupeGestures } from './LoupeGestures';
+export type { LoupeInputApi } from './loupeActions';
+export { createLoupeActions, LOUPE_MAGNIFY_ID, LOUPE_PEEK_ID } from './loupeActions';
 export type { TrialLoupeProps } from './TrialLoupe';
 export { TrialLoupe } from './TrialLoupe';
 export type {

@@ -6,8 +6,9 @@
  * outlived its themes.
  *
  * The exception is an override hook: a property a component reads, with a
- * fallback, purely so a consumer can set it on a container. Those are listed
- * in `HOOKS` and must carry the fallback.
+ * fallback, purely so a consumer can set it on a container. Those are declared
+ * in `packages/theme/src/hooks.ts`, which is also what puts them in the token
+ * manifest, and they must carry the fallback.
  *
  * Runs under tsx so theme modules resolve through the root tsconfig's paths to
  * source, with no build first.
@@ -16,20 +17,12 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { TOKEN_HOOKS } from '../packages/theme/src/hooks';
 
-/** Override hooks: read with a fallback, declared by no theme on purpose. */
-export const HOOKS = new Set([
-  '--wzl-disclosure-gap',
-  '--wzl-disclosure-target',
-  '--wzl-number-field-width',
-  '--wzl-prefs-column-width',
-  '--wzl-prop-number-width',
-  '--wzl-prop-text-width',
-  '--wzl-property-readout-w',
-  '--wzl-swatch-size',
-  '--wzl-timeline-label-w',
-  '--wzl-timeline-value-axis-w',
-]);
+/** Override hooks: read with a fallback, declared by no theme on purpose. The
+ *  list is the theme package's, so the checker and the token manifest cannot
+ *  disagree about which names are hooks. */
+export const HOOKS = new Set(TOKEN_HOOKS.map((h) => `--wzl-${h.name}`));
 
 export interface SourceFile {
   readonly path: string;
@@ -130,7 +123,7 @@ if (invokedDirectly) {
   const offenders = findUndeclaredReads(files, await themeTokens(root, files));
   for (const o of offenders) console.error(`${o.file}:${o.line}  ${o.name}  ${o.reason}`);
   if (offenders.length > 0) {
-    console.error(`\n${offenders.length} --wzl-* read(s) nothing declares. Point them at a theme token, or add a real override hook to HOOKS in scripts/check-token-reads.ts.`);
+    console.error(`\n${offenders.length} --wzl-* read(s) nothing declares. Point them at a theme token, or add a real override hook to TOKEN_HOOKS in packages/theme/src/hooks.ts.`);
     process.exit(1);
   }
   console.log(`token reads: clean (${files.length} files)`);

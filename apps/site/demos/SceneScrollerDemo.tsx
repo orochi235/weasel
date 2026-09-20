@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  RIGID_POSE_COMPOSITION,
   SceneCanvas,
   WeaselProvider,
   blur,
@@ -291,6 +292,10 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         height={H}
         className="ckd-canvas"
         scene={scene}
+        // The player's eleven bones are a parented chain, so a bone's pose is
+        // local to the bone it hangs off. Everything else in this scene is a
+        // root, where local and world are the same value.
+        poseComposition={RIGID_POSE_COMPOSITION}
         selectionMode="none"
         animator={animator}
         tools={tools}

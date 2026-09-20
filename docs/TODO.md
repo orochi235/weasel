@@ -644,11 +644,16 @@ terse, single-purpose demo convention: an exception, not a precedent.
 
 What it surfaced:
 
-- **(P2) Convert the platformer's eleven bones to parenting.** The rig is
-  still resolved to world matrices and flattened onto independent bone nodes
-  every frame, though the scene tree now composes rigid poses as a transform
-  hierarchy. Only a rig scaling `scaleX`/`scaleY` separately must stay
-  flattened: see `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
+- **(P3) A rig's mirror lives in the pose data, not in a container.** The
+  platformer's eleven bones are parented now, under
+  `RIGID_POSE_COMPOSITION` — but `facing` used to be a `scaleX: -1` in the
+  rig-to-world matrix, and `RectPose` carries no scale term, so
+  `apps/site/demos/platformer/boneRig.ts` conjugates the chain instead:
+  mirroring negates every local rotation and every local x offset. That is
+  exact for a rigid chain and it is the only move available, but every
+  consumer mirroring a rig has to rediscover it. The engine could carry it —
+  either a pose composition with a reflection term, or a rig-side
+  `mirrorPose(pose)` beside `blendPoses`.
 
 - **(P3) One actions registry still routes input to one canvas.**
   `<WeaselProvider isolate>` gives each canvas its own scope, and a second
@@ -793,16 +798,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   (`packages/ui/src/overlays/portalHost.tsx`) to the provider once RAC exports it.
   Still absent from RAC's index at 1.21.1, checked 2026-09-08.
 
-- **(P2) labkit's loupe drives itself with plain listeners, not bindings.** The
-  gesture grammar already has every gesture it needs — `keyHeld` with a free key
-  arg, `wheel` with a direction arg, `click` with a target
-  (`packages/gestures/src/grammar/gestures.ts:11-24`) — but a labkit trial does
-  not route input through the dispatcher, so `packages/labkit/src/loupe/useLoupe.ts`
-  attaches `pointermove`, `keydown`/`keyup` and a capture-phase `wheel` by hand,
-  the last of which has to run ahead of `usePanZoom` and stop propagation to do
-  it. They are all in that one hook so this is a single rewrite once trial input
-  goes through the dispatcher; the loupe is the reason to want that, not a
-  reason to build it first.
+- **(P3) The grammar names no hover gesture.** The loupe now routes its peek key
+  and its wheel through the dispatcher, but aiming the lens is still a plain
+  `pointermove` listener in `packages/labkit/src/loupe/useLoupe.ts`, because
+  `GESTURE_DESCRIPTORS` has no continuous-motion entry. Every other consumer that
+  wants to follow the pointer without a press — a coordinate readout, an
+  eyedropper preview, a hover ruler — hand-attaches the same listener. Adding one
+  is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
+  action, and `docs/taxonomy.md` would need to say what a hover binding claims.
 
 - **(P2) Things that look duplicated in this engine and are not.** Left from the
   2026-08-29 duplicated-cascade audit, whose findings all landed — `git log` and
@@ -881,17 +884,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `createKeyframeLayer`) are the two left. Either add `--wzl-handle-dot-size`
   for the round ranks or restate the family in terms of diameter — it is a
   visual call that wants a browser.
-
-- **(P2) The ten consumer override hooks are declared only in a build script.**
-  `--wzl-property-readout-w`, `--wzl-swatch-size`, `--wzl-number-field-width`,
-  `--wzl-timeline-label-w` and six others are read with a fallback and
-  deliberately declared by no theme, so they appear in neither `tokens.css`, the
-  generated manifest, nor any doc. The list lives in `HOOKS` in
-  `scripts/check-token-reads.ts`, which exists to stop them failing the
-  undeclared-read check — so a consumer restyling the kit finds them by reading
-  kit CSS. The open decision is where they belong: a documented section of the
-  token manifest carrying a `hook` type, or a generated appendix to `tokens.css`
-  as commented-out declarations.
 
 - **(P3) Typed units stop at linear factors.** `SelectionPanel` and `PrefsForm`
   read `12mm` into a unit leaf through `UnitField`, and `prefUnit` builds the
