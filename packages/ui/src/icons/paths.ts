@@ -27,7 +27,8 @@ export const ICON_PATHS = {
   play: `<path d="M7.6 5.2 15.6 10 7.6 14.8Z"/>`,
   pause: `<path d="M7.8 5.2v9.6M12.2 5.2v9.6"/>`,
   stop: `<rect x="5.6" y="5.6" width="8.8" height="8.8" rx="1.4"/>`,
-  step: `<path d="M6.4 5.4 13 10 6.4 14.6Z"/><path d="M15.2 5.4v9.2"/>`,
+  stepBack: `<path d="M13.6 5.4 7 10 13.6 14.6Z"/><path d="M4.8 5.4v9.2"/>`,
+  stepForward: `<path d="M6.4 5.4 13 10 6.4 14.6Z"/><path d="M15.2 5.4v9.2"/>`,
 
   // State
   lock: `<rect x="4.6" y="9" width="10.8" height="8" rx="1.6"/><path d="M7.2 9V6.6a2.8 2.8 0 0 1 5.6 0V9"/>`,
@@ -387,7 +388,8 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
       'play',
       'pause',
       'stop',
-      'step',
+      'stepBack',
+      'stepForward',
     ],
   },
   {

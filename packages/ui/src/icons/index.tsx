@@ -35,7 +35,10 @@ export const SnapshotIcon = (p: IconProps) => <Icon name="snapshot" {...p} />;
 export const PlayIcon = (p: IconProps) => <Icon name="play" {...p} />;
 export const PauseIcon = (p: IconProps) => <Icon name="pause" {...p} />;
 export const StopIcon = (p: IconProps) => <Icon name="stop" {...p} />;
-export const StepIcon = (p: IconProps) => <Icon name="step" {...p} />;
+export const StepBackIcon = (p: IconProps) => <Icon name="stepBack" {...p} />;
+export const StepForwardIcon = (p: IconProps) => <Icon name="stepForward" {...p} />;
+/** @deprecated Use {@link StepForwardIcon}; `step` alone stopped naming a direction. */
+export const StepIcon = StepForwardIcon;
 export const CrosshairIcon = (p: IconProps) => <Icon name="crosshair" {...p} />;
 export const FullscreenIcon = (p: IconProps) => <Icon name="fullscreen" {...p} />;
 export const CompareIcon = (p: IconProps) => <Icon name="compare" {...p} />;

@@ -83,7 +83,8 @@ const STATE = {
   play: `<path d="${playTri}"/>`,
   pause: `<path d="M7.8 5.2v9.6M12.2 5.2v9.6"/>`,
   stop: `<rect x="5.6" y="5.6" width="8.8" height="8.8" rx="1.4"/>`,
-  step: `<path d="M6.4 5.4 13 10 6.4 14.6Z"/><path d="M15.2 5.4v9.2"/>`,
+  stepForward: `<path d="M6.4 5.4 13 10 6.4 14.6Z"/><path d="M15.2 5.4v9.2"/>`,
+  stepBack: `<path d="M13.6 5.4 7 10 13.6 14.6Z"/><path d="M4.8 5.4v9.2"/>`,
 
   // view
   crosshair: `
@@ -185,7 +186,7 @@ const STATE = {
 };
 
 const SPLIT = {
-  playback: ['play', 'pause', 'stop', 'step'],
+  playback: ['play', 'pause', 'stop', 'stepBack', 'stepForward'],
   status: [
     'lock', 'unlock', 'visible', 'hidden', 'pin',
     'info', 'warning', 'error', 'busy',
