@@ -504,13 +504,10 @@ function worldPointOf(event: InputEvent): { x: number; y: number } | undefined {
   switch (event.kind) {
     case 'pointerdown':
     case 'longpress':
-      return event.x !== undefined && event.y !== undefined ? { x: event.x, y: event.y } : undefined;
     case 'click':
     case 'doubleclick':
     case 'contextmenu':
-      return event.worldX !== undefined && event.worldY !== undefined
-        ? { x: event.worldX, y: event.worldY }
-        : undefined;
+      return event.x !== undefined && event.y !== undefined ? { x: event.x, y: event.y } : undefined;
     default:
       return undefined;
   }
@@ -637,11 +634,16 @@ export function createDispatcher(opts?: {
       base.key = { key: event.key, repeat: false };
     } else if (event.kind === 'wheel') {
       base.wheel = { deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: 0 };
-    } else if (event.kind === 'pointerdown' || event.kind === 'click') {
-      // A click's own world point is `worldX`/`worldY` — the release — with
-      // the press as the fallback for a consumer that wired neither.
-      const sx = event.kind === 'pointerdown' ? (event.x ?? 0) : (event.worldX ?? event.pressX ?? 0);
-      const sy = event.kind === 'pointerdown' ? (event.y ?? 0) : (event.worldY ?? event.pressY ?? 0);
+    } else if (
+      event.kind === 'pointerdown'
+      || event.kind === 'click'
+      || event.kind === 'doubleclick'
+      || event.kind === 'contextmenu'
+    ) {
+      // A click's own world point is `x`/`y` — the release — with the press
+      // as the fallback for a consumer that wired neither.
+      const sx = event.x ?? (event.kind === 'click' ? event.pressX : undefined) ?? 0;
+      const sy = event.y ?? (event.kind === 'click' ? event.pressY : undefined) ?? 0;
       base.world = { x: sx, y: sy };
       const affordance = event.kind === 'pointerdown' ? (event.affordance as AffordanceHit | undefined) : undefined;
       base.drag = {
@@ -658,7 +660,12 @@ export function createDispatcher(opts?: {
       const origin = gestureId ? dragOrigins.get(gestureId) : undefined;
       const ox = origin?.x ?? cx;
       const oy = origin?.y ?? cy;
-      const points = gestureId ? dragPoints.get(gestureId) : undefined;
+      // Live accumulator during the drag — copying it on every move would be
+      // quadratic — but a snapshot on the last event, because `onEnd` is where
+      // an action is entitled to keep the trail, and the dispatcher clears the
+      // accumulator the moment it returns.
+      const live = gestureId ? dragPoints.get(gestureId) : undefined;
+      const points = live && event.kind === 'pointerup' ? [...live] : live;
       // Screen-space delta — populated when both the event and origin carry
       // client coords. View-mutating drag actions must read this rather than
       // the world `delta` (world deltas are self-referential mid-pan).
@@ -1015,8 +1022,8 @@ export function createDispatcher(opts?: {
             };
           } else if (event.kind === 'click' || event.kind === 'doubleclick') {
             params = {
-              worldX: event.worldX,
-              worldY: event.worldY,
+              worldX: event.x,
+              worldY: event.y,
               affordance: event.affordance,
               // Press point as well as release point — an action that places
               // geometry at the click wants the former. See `ClickEvent`.
@@ -1028,8 +1035,8 @@ export function createDispatcher(opts?: {
             };
           } else if (event.kind === 'contextmenu' || event.kind === 'longpress') {
             params = {
-              worldX: event.kind === 'contextmenu' ? event.worldX : event.x,
-              worldY: event.kind === 'contextmenu' ? event.worldY : event.y,
+              worldX: event.x,
+              worldY: event.y,
               affordance: event.affordance,
               bodyTarget: event.bodyTarget,
               mods: modifiersOf(event),

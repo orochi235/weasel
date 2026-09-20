@@ -12,11 +12,11 @@
  *                                              m10*x + m11*y + ty]`.
  */
 
-import { invert as invertAffine } from '@weasel-js/geom';
+import { invert as invertAffine, type Mat3 as Affine } from '@weasel-js/geom';
 
-export type Mat3 = Float32Array;
+export type GlMat3 = Float32Array;
 
-function create(a: number, b: number, c: number, d: number, tx: number, ty: number): Mat3 {
+function create(a: number, b: number, c: number, d: number, tx: number, ty: number): GlMat3 {
   // Column-major:
   //   col 0: (a, b, 0)
   //   col 1: (c, d, 0)
@@ -24,11 +24,11 @@ function create(a: number, b: number, c: number, d: number, tx: number, ty: numb
   return new Float32Array([a, b, 0, c, d, 0, tx, ty, 1]);
 }
 
-function identity(): Mat3 {
+function identity(): GlMat3 {
   return create(1, 0, 0, 1, 0, 0);
 }
 
-function multiply(out: Mat3, m: Mat3): Mat3 {
+function multiply(out: GlMat3, m: GlMat3): GlMat3 {
   // out := out · m  (right-multiply by m).
   const a = out[0], b = out[1];
   const c = out[3], d = out[4];
@@ -49,25 +49,39 @@ function multiply(out: Mat3, m: Mat3): Mat3 {
 
 /** `m · T(tx, ty)`: composes onto `m`, where `@weasel-js/geom`'s `translate`
  *  constructs a fresh matrix. */
-function translated(m: Mat3, tx: number, ty: number): Mat3 {
+function translated(m: GlMat3, tx: number, ty: number): GlMat3 {
   const t = create(1, 0, 0, 1, tx, ty);
   return multiply(m, t);
 }
 
 /** `m · S(sx, sy)`: composes onto `m`, where geom's `scale` constructs one. */
-function scaled(m: Mat3, sx: number, sy: number): Mat3 {
+function scaled(m: GlMat3, sx: number, sy: number): GlMat3 {
   const s = create(sx, 0, 0, sy, 0, 0);
   return multiply(m, s);
 }
 
-/** Inverse of an affine matrix, or `null` when `@weasel-js/geom`'s `invert`
- *  finds it singular — the same rule, read through this layout. */
-function invert(m: Mat3): Mat3 | null {
-  const inv = invertAffine([m[0], m[1], m[3], m[4], m[6], m[7]]);
-  return inv && create(inv[0], inv[1], inv[2], inv[3], inv[4], inv[5]);
+/** This layout read as the kernel's 6-element affine. The two carry the same
+ *  logical order, so the conversion is a repack and nothing else — it exists
+ *  so the repack has a name instead of appearing inline at each crossing. */
+function toAffine(m: GlMat3): Affine {
+  return [m[0], m[1], m[3], m[4], m[6], m[7]];
 }
 
-function apply(m: Mat3, x: number, y: number): [number, number] {
+/** The kernel's affine in this layout. The inverse of {@link toAffine}, and
+ *  what an `SvgGroupNode.transform` (also a kernel affine) becomes on its way
+ *  to a `GroupDrawCommand`. */
+function fromAffine(a: Affine): GlMat3 {
+  return create(a[0], a[1], a[2], a[3], a[4], a[5]);
+}
+
+/** Inverse of an affine matrix, or `null` when `@weasel-js/geom`'s `invert`
+ *  finds it singular — the same rule, read through this layout. */
+function invert(m: GlMat3): GlMat3 | null {
+  const inv = invertAffine(toAffine(m));
+  return inv && fromAffine(inv);
+}
+
+function apply(m: GlMat3, x: number, y: number): [number, number] {
   const a = m[0], b = m[1];
   const c = m[3], d = m[4];
   const tx = m[6], ty = m[7];
@@ -79,7 +93,7 @@ function apply(m: Mat3, x: number, y: number): [number, number] {
  * into clip space (-1..1 on X, 1..-1 on Y — note Y flip so screen-down
  * matches clip-down).
  */
-function screenToClip(width: number, height: number): Mat3 {
+function screenToClip(width: number, height: number): GlMat3 {
   return create(
     2 / width,                       // a
     0,                               // b
@@ -96,16 +110,18 @@ function screenToClip(width: number, height: number): Mat3 {
  * scales. Rotation-invariant. Under non-uniform scale it is between the two
  * axes and exact on neither — the same compromise `meanScale` documents.
  */
-function meanScaleOf(m: Mat3): number {
+function meanScaleOf(m: GlMat3): number {
   return Math.sqrt(Math.abs(m[0] * m[4] - m[1] * m[3]));
 }
 
 /** The renderer's 3x3 matrix operations, as one namespace. These work on the
  *  9-element `Float32Array` form the GL uniform upload wants — distinct from
- *  `@weasel-js/geom`'s 6-element affine `Mat3`, though the logical element
+ *  `@weasel-js/geom`'s 6-element affine `GlMat3`, though the logical element
  *  order is the same. */
 export const mat3 = {
   identity,
+  toAffine,
+  fromAffine,
   multiply,
   translated,
   scaled,

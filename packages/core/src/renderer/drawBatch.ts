@@ -30,7 +30,7 @@
  */
 
 import type { Mesh } from './cache/mesh';
-import type { Mat3 } from './math/mat3';
+import type { GlMat3 } from './math/mat3';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { PAINT_MODE_PLAIN, WHITE_SLOT, packSlot } from './shaders/batchFill';
 
@@ -213,7 +213,7 @@ export class DrawBatch {
    * cover it and the batch draws at `u_model` identity.
    */
   pushRect(
-    x: number, y: number, w: number, h: number, m: Mat3,
+    x: number, y: number, w: number, h: number, m: GlMat3,
     r: number, g: number, b: number, a: number,
   ): void {
     this.reserve(4, 6);
@@ -247,7 +247,7 @@ export class DrawBatch {
    * bitmap within the run.
    */
   pushQuad(
-    x: number, y: number, w: number, h: number, m: Mat3,
+    x: number, y: number, w: number, h: number, m: GlMat3,
     u0: number, v0: number, u1: number, v1: number,
     post: number, slot: number,
   ): void {
@@ -291,7 +291,7 @@ export class DrawBatch {
    */
   pushGlyph(
     x0: number, y0: number, x1: number, y1: number,
-    baselineY: number, tanItalic: number, m: Mat3,
+    baselineY: number, tanItalic: number, m: GlMat3,
     u0: number, v0: number, u1: number, v1: number,
     r: number, g: number, b: number, a: number,
     slot: number, mode: number,
@@ -333,7 +333,7 @@ export class DrawBatch {
    * edge texel, which is what the gradient shader's own `clamp` did.
    */
   pushGradientRect(
-    x: number, y: number, w: number, h: number, m: Mat3,
+    x: number, y: number, w: number, h: number, m: GlMat3,
     uv: GradientUV, post: number, slot: number, mode: number,
     r: number, g: number, b: number, a: number,
   ): void {
@@ -364,7 +364,7 @@ export class DrawBatch {
   /** `pushMesh` for a mesh filled by a gradient — see `pushGradientRect` for
    *  what `uv`, `post` and `mode` carry. */
   pushGradientMesh(
-    mesh: Mesh, m: Mat3,
+    mesh: Mesh, m: GlMat3,
     uv: GradientUV, post: number, slot: number, mode: number,
     r: number, g: number, b: number, a: number,
   ): void {
@@ -401,7 +401,7 @@ export class DrawBatch {
    * index buffer is uploaded per flush rather than written once.
    */
   pushMesh(
-    mesh: Mesh, m: Mat3,
+    mesh: Mesh, m: GlMat3,
     r: number, g: number, b: number, a: number,
   ): void {
     const src = mesh.vertices;

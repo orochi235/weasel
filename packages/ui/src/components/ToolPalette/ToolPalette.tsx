@@ -62,10 +62,11 @@ export interface ToolPaletteProps {
    *  omitted, falls back to `tool.keybinding` (legacy path). */
   lookupShortcut?: (toolId: string) => ShortcutInput | undefined;
   /**
-   * Optional mode registry. When provided, tools whose `capabilities` do not
-   * match the current mode are rendered greyed-out, aria-disabled, and their
-   * onClick is suppressed. When omitted, all tools are treated as eligible
-   * (preserves existing behaviour in consumers that haven't wired a registry).
+   * Optional mode registry. When provided, tools whose
+   * `eligibility.capabilities` do not match the current mode are rendered
+   * greyed-out, aria-disabled, and their onClick is suppressed. When omitted,
+   * all tools are treated as eligible (preserves existing behavior in
+   * consumers that haven't wired a registry).
    */
   modeRegistry?: ModeRegistry;
   /**

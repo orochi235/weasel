@@ -19,6 +19,7 @@ import { transformPath } from './shapes';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, ParseOptions, ParseResult,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
+  ScreenLength,
 } from './types';
 import type { StyledRun, TextStyle, TextPaint, FillStyle, Stroke } from '@weasel-js/core';
 import { multiply, parseTransform, decomposeRotation, rebaseTransform, rotationComponent, isIdentity } from './transform';
@@ -1318,7 +1319,7 @@ function ingestMarkers(
 
   const resolve = (
     stroke: { markerStart?: unknown; markerMid?: unknown; markerEnd?: unknown },
-    width: number | { px: number } | undefined,
+    width: ScreenLength | undefined,
   ): void => {
     const w = width === undefined ? 1 : typeof width === 'number' ? width : width.px;
     for (const [field, role, attr] of MARKER_FIELDS) {

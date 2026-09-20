@@ -1,4 +1,4 @@
-import { mat3, type Mat3 } from '../math/mat3';
+import { mat3, type GlMat3 } from '../math/mat3';
 
 /** Row-major 4×5 color matrix identity. */
 export const IDENTITY_COLOR_MATRIX = new Float32Array([
@@ -9,7 +9,7 @@ export const IDENTITY_COLOR_MATRIX = new Float32Array([
 ]);
 
 export interface GroupFrame {
-  transform?: Mat3;
+  transform?: GlMat3;
   alpha?: number;
   /** Row-major 4×5 color matrix (20 floats). Absent leaves the stack unchanged. */
   colorMatrix?: Float32Array | number[];
@@ -44,11 +44,11 @@ function compose4x5(outer: Float32Array, inner: Float32Array): Float32Array {
 }
 
 export class GroupState {
-  private transformStack: Mat3[] = [mat3.identity()];
+  private transformStack: GlMat3[] = [mat3.identity()];
   private alphaStack: number[] = [1];
   private colorMatrixStack: Float32Array[] = [IDENTITY_COLOR_MATRIX];
 
-  get transform(): Mat3 {
+  get transform(): GlMat3 {
     return this.transformStack[this.transformStack.length - 1];
   }
 

@@ -57,7 +57,7 @@ export function buildToolActivateBindings(
  *  callers (palette, toolbar) reach the same effect via
  *  `registry.trigger('tool.activate', { toolId })`.
  *
- *  `isEligible` gates activation on the tool's `capabilities` vs the active
+ *  `isEligible` gates activation on the tool's `eligibility.capabilities` vs the active
  *  mode — the same predicate `ToolPalette` uses to grey a button out. It has
  *  to live in the invoker rather than in `Action.eligible` because eligibility
  *  here is per-TOOL (read off `params.toolId`), while `Action.eligible` is a
@@ -74,7 +74,7 @@ export function makeToolActivateAction(
       const toolId = params?.toolId as string | undefined;
       if (!activeTool || !toolId) return;
       // Greyed out in the palette ⇒ not reachable by shortcut either. Before
-      // this, `Tool.capabilities` described an intent the runtime never
+      // this, `ToolDef.capabilities` described an intent the runtime never
       // enforced: in text-edit mode the palette greyed the pen button while
       // `P` still activated pen.
       if (isEligible && !isEligible(toolId)) return;

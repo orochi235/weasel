@@ -181,18 +181,25 @@ export interface ClickEvent extends EventModifiers {
    * Forwarded into action params so click invokers can act on the click's
    * position without their own pointer-listener plumbing.
    */
-  worldX?: number;
-  worldY?: number;
+  x?: number;
+  y?: number;
+  /**
+   * Client/screen-space coordinates of the release, straight off the DOM
+   * event. What an action that has to place DOM at the pointer reads, via
+   * `InvocationCtx.screen`.
+   */
+  clientX?: number;
+  clientY?: number;
   /**
    * World-space coordinates of the *press* that opened this click, as opposed
-   * to `worldX`/`worldY`, which are the release. The two differ by up to the
+   * to `x`/`y`, which are the release. The two differ by up to the
    * drag threshold (4px screen).
    *
    * Actions that place geometry at the click want this one — a click's
    * location reads as where the user put the pointer down, and pinning to the
    * press point keeps a snapped coordinate stable against the small drift
    * between press and release. Absent when the `clientToWorld` thunk isn't
-   * wired, same as `worldX`/`worldY`.
+   * wired, same as `x`/`y`.
    */
   pressX?: number;
   pressY?: number;
@@ -209,12 +216,14 @@ export interface ClickEvent extends EventModifiers {
   bodyKind?: BodyKind;
 }
 
-/** A double click. `worldX`/`worldY` carry the same meaning as on {@link ClickEvent}. */
+/** A double click. `x`/`y` carry the same meaning as on {@link ClickEvent}. */
 export interface DoubleClickEvent extends EventModifiers {
   kind: 'doubleclick';
   target?: unknown;
-  worldX?: number;
-  worldY?: number;
+  x?: number;
+  y?: number;
+  clientX?: number;
+  clientY?: number;
   /** Affordance the originating press landed on, replayed from it. */
   affordance?: unknown;
   bodyTarget?: BodyTarget;
@@ -226,8 +235,12 @@ export interface ContextMenuEvent extends EventModifiers {
   kind: 'contextmenu';
   target?: unknown;
   /** World-space position of the request. */
-  worldX?: number;
-  worldY?: number;
+  x?: number;
+  y?: number;
+  /** Client/screen-space position of the request. A context menu is the
+   *  canonical "place DOM at the pointer" case, so this is the one it needs. */
+  clientX?: number;
+  clientY?: number;
   affordance?: unknown;
   bodyTarget?: BodyTarget;
   bodyKind?: BodyKind;
@@ -254,15 +267,21 @@ export interface MultitouchEvent extends EventModifiers {
   kind: 'multitouch';
   fingers: number;
   /**
-   * Centroid of active pointers in screen space. Populated by
-   * `useGestureDispatcher` on the pointermove-pump of a running multitouch
-   * handle (updated each frame). Absent on the initial pointerdown-triggered
-   * multitouch event.
+   * Centroid of active pointers in **canvas-local** CSS pixels — client
+   * coordinates with the canvas's bounding-rect origin already subtracted,
+   * which is the space `zoomAt` anchors in. Not client coords, and not world:
+   * calling `clientToWorld` on it subtracts the canvas origin a second time.
+   *
+   * Populated by `useGestureDispatcher` on the pointermove-pump of a running
+   * multitouch handle (updated each frame). Absent on the initial
+   * pointerdown-triggered multitouch event.
    */
   centroid?: { x: number; y: number };
   /**
-   * Distance between the two primary pointers (screen space). Populated on
-   * move-pump events alongside `centroid`. Absent on the initial event.
+   * Distance between the two primary pointers, in CSS pixels. A distance is
+   * origin-free, so it reads the same in client and canvas-local space.
+   * Populated on move-pump events alongside `centroid`. Absent on the initial
+   * event.
    */
   spread?: number;
 }

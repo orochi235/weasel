@@ -56,7 +56,8 @@ export type {
   OutlineFontOptions,
   OutlineStatus,
 } from './outline/outlineRegistry';
-export type { OutlineFace, OutlineParser, OutlineFontStyle } from './outline/OutlineFace';
+export type { OutlineFace, OutlineParser } from './outline/OutlineFace';
+export type { FontStyle } from './fontStyle';
 export {
   enableLocalFontOutlines,
   canQueryLocalFonts,

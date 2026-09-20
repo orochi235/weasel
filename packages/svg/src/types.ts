@@ -11,8 +11,10 @@
  * single `matrix(a b c d e f)` on the `<g>`.
  */
 
+import { identity, type Mat3 } from '@weasel-js/geom';
 import type {
-  Path, FillStyle, MarkerEntry, Stroke, StrokeAlign, StyledRun, TextStyle, TextVerticalAlign,
+  Path, FillStyle, MarkerEntry, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
+  TextVerticalAlign,
 } from '@weasel-js/core';
 
 /**
@@ -51,13 +53,21 @@ export interface NamespacedElement {
 }
 
 /**
- * 2x3 affine matrix in column-major form (SVG's `matrix(a b c d e f)`
- * order). Maps `[x', y'] = [a*x + c*y + e, b*x + d*y + f]`.
+ * 2x3 affine matrix in SVG's `matrix(a b c d e f)` order, mapping
+ * `[x', y'] = [a*x + c*y + e, b*x + d*y + f]`.
+ *
+ * The same order the kernel's affine tier uses, so this is that type under
+ * the name the SVG spec gives it — not a parallel one. An `SvgGroupNode`'s
+ * transform and a geom `Mat3` are interchangeable without a conversion.
  */
-export type Matrix = readonly [number, number, number, number, number, number];
+export type Matrix = Mat3;
+
+/** Re-exported so this package's own stroke widths are namable beside the
+ *  rest of the SVG model. It is core's type; there is no second one. */
+export type { ScreenLength };
 
 /** Identity matrix — useful as a default in tests / constructors. */
-export const IDENTITY_MATRIX: Matrix = [1, 0, 0, 1, 0, 0];
+export const IDENTITY_MATRIX: Matrix = identity();
 
 /**
  * FillStyle description in the SVG sense — either explicit `none`, a solid
@@ -74,9 +84,9 @@ export type SvgPaint =
 export interface SvgStroke {
   paint: SvgPaint;
   /** World units, or `{ px }` for a width that holds its rendered thickness
-   *  however the document is scaled — SVG's `vector-effect="non-scaling-stroke"`,
-   *  and the same unit system as the kit's `Stroke.width`. */
-  width: number | { px: number };
+   *  however the document is scaled — SVG's `vector-effect="non-scaling-stroke"`.
+   *  Literally the kit's own unit, not a second spelling of it. */
+  width: ScreenLength;
   opacity?: number;
   /** `stroke-linecap`. Default per SVG spec is `'butt'`. */
   cap?: 'butt' | 'round' | 'square';

@@ -3,15 +3,15 @@ import {
   lookAt, multiply, perspective, transformPoint4, type Aabb, type Mat4, type Vec3,
 } from '@weasel-js/geom/3d';
 import {
-  ndcToScreen, projectAabbToScreen, rayThroughScreenPoint, screenToNdc, type ViewportRect,
+  ndcToScreen, projectAabbToScreen, rayThroughScreenPoint, screenToNdc, type ScreenBox,
 } from './screen';
 
-const RECT: ViewportRect = { x: 0, y: 0, w: 400, h: 300 };
+const RECT: ScreenBox = { x: 0, y: 0, width: 400, height: 300 };
 const NEAR = 0.1;
 
 function cameraAt(eye: Vec3, target: Vec3 = { x: 0, y: 0, z: 0 }): Mat4 {
   return multiply(
-    perspective(Math.PI / 4, RECT.w / RECT.h, NEAR, 100),
+    perspective(Math.PI / 4, RECT.width / RECT.height, NEAR, 100),
     lookAt(eye, target, { x: 0, y: 1, z: 0 }),
   );
 }
@@ -19,7 +19,7 @@ function cameraAt(eye: Vec3, target: Vec3 = { x: 0, y: 0, z: 0 }): Mat4 {
 /** What the lab did before this package: drop every corner behind the camera
  *  rather than clip the edge. Kept so the near-plane test has something to be
  *  a fix *of* — an assertion that passes against both is not a fix. */
-function projectByDroppingCorners(box: Aabb, vp: Mat4, rect: ViewportRect) {
+function projectByDroppingCorners(box: Aabb, vp: Mat4, rect: ScreenBox) {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, any = false;
   for (let i = 0; i < 8; i++) {
     const corner: Vec3 = {
@@ -45,7 +45,7 @@ describe('screenToNdc / ndcToScreen', () => {
   });
 
   it('is rect-relative, so a pane offset moves the origin', () => {
-    const offset: ViewportRect = { x: 50, y: 20, w: 400, h: 300 };
+    const offset: ScreenBox = { x: 50, y: 20, width: 400, height: 300 };
     expect(screenToNdc({ x: 250, y: 170 }, offset)).toEqual({ x: 0, y: 0 });
   });
 });
@@ -84,14 +84,14 @@ describe('rayThroughScreenPoint', () => {
   });
 
   it('casts no ray through a pane with no area', () => {
-    expect(rayThroughScreenPoint({ x: 0, y: 150 }, { x: 0, y: 0, w: 0, h: 300 }, vp, eye)).toBeNull();
+    expect(rayThroughScreenPoint({ x: 0, y: 150 }, { x: 0, y: 0, width: 0, height: 300 }, vp, eye)).toBeNull();
   });
 
   it('casts the same ray through a world scaled down by 1e-10', () => {
     const k = 1e-10;
     const tinyEye: Vec3 = { x: 0, y: 0, z: 5 * k };
     const tinyVp = multiply(
-      perspective(Math.PI / 4, RECT.w / RECT.h, NEAR * k, 100 * k),
+      perspective(Math.PI / 4, RECT.width / RECT.height, NEAR * k, 100 * k),
       lookAt(tinyEye, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }),
     );
     const unit = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, vp, eye)!;
@@ -104,7 +104,7 @@ describe('rayThroughScreenPoint', () => {
 
   it('casts the same ray whatever the far plane', () => {
     const farVp = multiply(
-      perspective(Math.PI / 4, RECT.w / RECT.h, NEAR, 1e10),
+      perspective(Math.PI / 4, RECT.width / RECT.height, NEAR, 1e10),
       lookAt(eye, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }),
     );
     const unit = rayThroughScreenPoint({ x: 350, y: 50 }, RECT, vp, eye)!;
@@ -135,7 +135,7 @@ describe('projectAabbToScreen', () => {
   it('projects a world scaled down by 1e-10 onto the same rectangle', () => {
     const k = 1e-10;
     const tinyVp = multiply(
-      perspective(Math.PI / 4, RECT.w / RECT.h, NEAR * k, 100 * k),
+      perspective(Math.PI / 4, RECT.width / RECT.height, NEAR * k, 100 * k),
       lookAt({ x: 0, y: 0, z: 3 * k }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }),
     );
     const tinyCube: Aabb = {
@@ -167,8 +167,8 @@ describe('projectAabbToScreen', () => {
     // The box surrounds the viewport, so its screen rect must too.
     expect(clipped!.x).toBeLessThanOrEqual(0);
     expect(clipped!.y).toBeLessThanOrEqual(0);
-    expect(clipped!.x + clipped!.width).toBeGreaterThanOrEqual(RECT.w);
-    expect(clipped!.y + clipped!.height).toBeGreaterThanOrEqual(RECT.h);
+    expect(clipped!.x + clipped!.width).toBeGreaterThanOrEqual(RECT.width);
+    expect(clipped!.y + clipped!.height).toBeGreaterThanOrEqual(RECT.height);
     // And the old behaviour must not have managed that, or this proves nothing.
     expect(dropped!.width).toBeLessThan(clipped!.width);
   });

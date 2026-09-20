@@ -4,7 +4,7 @@ import type { RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import type { GroupDrawCommand } from '../../renderer';
 import { viewToMat3 } from '../../renderer';
-import { mat3, type Mat3 } from '../../renderer/math/mat3';
+import { mat3, type GlMat3 } from '../../renderer/math/mat3';
 
 const OUTER: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 600, height: 400 };
@@ -191,7 +191,7 @@ describe('viewport draw', () => {
   it('draws a world point where reproject says it lands', () => {
     const group = outerGroup([MARKER]);
     const inner = group.children[0] as GroupDrawCommand;
-    const composed = mat3.multiply(new Float32Array(group.transform!) as Mat3, inner.transform!);
+    const composed = mat3.multiply(new Float32Array(group.transform!) as GlMat3, inner.transform!);
     const world = { x: 300, y: 250 };
     const [sx, sy] = mat3.apply(composed, world.x, world.y);
     const back = viewportOf([MARKER]).reproject(OUTER, DIMS, { x: sx, y: sy })!;

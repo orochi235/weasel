@@ -50,7 +50,8 @@
  */
 
 import { notifyGlyphReady } from '../glyphReady';
-import type { OutlineFace, OutlineFontStyle, OutlineParser } from './OutlineFace';
+import type { OutlineFace, OutlineParser } from './OutlineFace';
+import type { FontStyle } from '../fontStyle';
 import { openTypeParser } from './opentypeParser';
 
 /**
@@ -70,7 +71,7 @@ export type OutlineSource =
  *  400, style `'normal'`. */
 export interface OutlineVariant {
   weight?: number;
-  style?: OutlineFontStyle;
+  style?: FontStyle;
 }
 
 /** Options for registering an outline font. */
@@ -86,7 +87,7 @@ export type OutlineStatus = 'idle' | 'loading' | 'ready' | 'failed';
 interface FaceSlot {
   family: string;
   weight: number;
-  style: OutlineFontStyle;
+  style: FontStyle;
   source: OutlineSource;
   parser: OutlineParser;
   status: OutlineStatus;
@@ -99,11 +100,11 @@ interface FaceSlot {
 
 let slots = new Map<string, FaceSlot>();
 
-function slotKey(family: string, weight: number, style: OutlineFontStyle): string {
+function slotKey(family: string, weight: number, style: FontStyle): string {
   return `${family}|${weight}|${style}`;
 }
 
-function normalize(v: OutlineVariant): { weight: number; style: OutlineFontStyle } {
+function normalize(v: OutlineVariant): { weight: number; style: FontStyle } {
   return { weight: v.weight ?? 400, style: v.style ?? 'normal' };
 }
 
@@ -156,14 +157,14 @@ export function unregisterFontOutlines(family: string, variant: OutlineVariant =
  * `outlineStatus` for the narrower "can it right now".
  */
 export function hasFontOutlines(
-  family: string, weight = 400, style: OutlineFontStyle = 'normal',
+  family: string, weight = 400, style: FontStyle = 'normal',
 ): boolean {
   return slots.has(slotKey(family, weight, style));
 }
 
 /** Load state of a registered face; `null` when nothing is registered. */
 export function outlineStatus(
-  family: string, weight = 400, style: OutlineFontStyle = 'normal',
+  family: string, weight = 400, style: FontStyle = 'normal',
 ): OutlineStatus | null {
   return slots.get(slotKey(family, weight, style))?.status ?? null;
 }
@@ -171,7 +172,7 @@ export function outlineStatus(
 /** Every registered outline face and its load state — the enumeration a
  *  debug overlay or font picker needs, mirroring `listFonts`. */
 export function listFontOutlines(): readonly {
-  family: string; weight: number; style: OutlineFontStyle; status: OutlineStatus;
+  family: string; weight: number; style: FontStyle; status: OutlineStatus;
 }[] {
   return [...slots.values()]
     .map(({ family, weight, style, status }) => ({ family, weight, style, status }))
@@ -237,7 +238,7 @@ function closeOne(contour: string): string {
 export function glyphOutline(
   family: string,
   weight: number,
-  style: OutlineFontStyle,
+  style: FontStyle,
   cp: number,
 ): string | null {
   const slot = slots.get(slotKey(family, weight, style));
@@ -282,7 +283,7 @@ export function glyphOutline(
 export function outlineMetrics(
   family: string,
   weight: number,
-  style: OutlineFontStyle,
+  style: FontStyle,
 ): OutlineFace | null {
   const slot = slots.get(slotKey(family, weight, style));
   if (!slot) return null;

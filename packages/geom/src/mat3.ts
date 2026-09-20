@@ -2,7 +2,7 @@
  * 2D affine transforms in canvas/DOMMatrix order: [a, b, c, d, e, f].
  *   x' = a·x + c·y + e
  *   y' = b·x + d·y + f
- * Represented as a 6-element number[] (f64). The affine tier of the kernel.
+ * Represented as a readonly 6-tuple (f64). The affine tier of the kernel.
  *
  * Convention alignment: the renderer already has a `Mat3` in
  * `src/renderer/math/mat3.ts`. That one is a 9-element column-major
@@ -15,7 +15,7 @@
  */
 import { SINGULAR_RATIO } from './scalar';
 
-export type Mat3 = number[];
+export type Mat3 = readonly [number, number, number, number, number, number];
 
 /** The transform that leaves a point where it is. */
 export function identity(): Mat3 {

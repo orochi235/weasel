@@ -24,7 +24,7 @@ describe('Tool.bindings (additive)', () => {
   });
 });
 
-describe('Tool.capabilities', () => {
+describe('Tool.eligibility.capabilities', () => {
   it('accepts CapabilityTag[] and is optional', () => {
     const tagged: Tool = { id: 'a', eligibility: { focus: true, capabilities: ['creates-selection'] as CapabilityTag[] } };
     const untagged: Tool = { id: 'b', eligibility: { focus: true } };

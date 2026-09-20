@@ -51,7 +51,7 @@
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import {
   resolveFontVariant, resolveGlyphFallback, glyphOutline,
-  type ResolveResult, type BmFontChar, type BmFont,
+  type ResolveResult, type BmFontChar, type BmFont, type FontStyle,
 } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
@@ -99,7 +99,7 @@ export interface LaidOutGroup {
   family: string;
   /** Resolved variant — matches the registered atlas and the texture-cache key. */
   weight: number;
-  style: 'normal' | 'italic';
+  style: FontStyle;
   /** Gap between the request and the resolved match. Drives shader uniforms. */
   synthetic: { bold: boolean; italic: boolean };
   /** Which glyph source (and therefore shader/texture) this group binds:
@@ -388,7 +388,7 @@ function strokeKey(s: Stroke | undefined): string {
 function groupKey(
   family: string,
   weight: number,
-  style: 'normal' | 'italic',
+  style: FontStyle,
   synthetic: { bold: boolean; italic: boolean },
   fill: FillStyle | null,
   stroke: Stroke | undefined,

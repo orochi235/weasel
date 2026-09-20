@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createViewportLayer, mat3 } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
-import type { DrawCommand, GroupDrawCommand, Mat3 } from '@weasel-js/core/renderer';
+import type { DrawCommand, GroupDrawCommand, GlMat3 } from '@weasel-js/core/renderer';
 import {
   makeRandomScene,
   pipView,
@@ -57,13 +57,13 @@ const MINIMAP_VIEW: View = { x: -100, y: -100, scale: { x: 0.18, y: 0.18 } };
 
 /** Every rect a command tree paints, in outer-canvas screen pixels — group
  *  transforms composed the way the renderer composes them. */
-function paintedRects(cmds: readonly DrawCommand[], parent: Mat3 = mat3.identity()) {
+function paintedRects(cmds: readonly DrawCommand[], parent: GlMat3 = mat3.identity()) {
   const out: { x: number; y: number; w: number; h: number }[] = [];
   for (const c of cmds) {
     if (c.kind === 'group') {
       const g = c as GroupDrawCommand;
       const m = g.transform
-        ? mat3.multiply(new Float32Array(parent) as Mat3, g.transform)
+        ? mat3.multiply(new Float32Array(parent) as GlMat3, g.transform)
         : parent;
       out.push(...paintedRects(g.children, m));
     } else if (c.kind === 'path' && c.path.kind === 'rect') {

@@ -114,12 +114,15 @@ describe('portsOf — the geometry seam', () => {
     expect(ports[0]!.point).toEqual({ x: 50, y: 0 });
   });
 
-  it('takes a descriptor that reports no rotation at face value', () => {
+  // `RECT_POSE_DESCRIPTOR` writes a rotation through `withRotation`, so it has
+  // to read one back through `getRotation`. While it did not, a node wired to
+  // it painted rotated and put its ports on the unrotated compass points.
+  it('turns the ports when the descriptor reports a rotation', () => {
     const turned: Rect = { ...POSE, rotation: Math.PI / 2 };
     const ports = portsOf(node({ diagram: {} }), turned, {
       geometry: RECT_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
     });
-    expect(ports[0]!.point).toEqual({ x: 50, y: 0 });
+    expect(at(ports[0]!.point)).toEqual({ x: 70, y: 20 });
   });
 });
 

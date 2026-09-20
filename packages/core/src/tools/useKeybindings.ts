@@ -20,7 +20,7 @@ export interface UseKeybindingsOptions {
   /**
    * Gate for keyboard tool activation: return false to refuse a tool the
    * active mode doesn't allow. `<SceneCanvas>` wires this from
-   * `getActiveMode` + each tool's `capabilities`, using the same predicate
+   * `getActiveMode` + each tool's `eligibility.capabilities`, using the same predicate
    * `ToolPalette` uses to grey a button out — so the grey-out becomes a
    * guarantee rather than a hint.
    *

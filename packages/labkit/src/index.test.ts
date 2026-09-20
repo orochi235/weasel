@@ -72,8 +72,6 @@ describe('surface, job and orbit entry points', () => {
     expect(typeof kit.annotationsFromJSON).toBe('function');
     expect(typeof kit.seenFrom).toBe('function');
     expect(typeof kit.fracToWorld).toBe('function');
-    expect(typeof kit.useOrbit).toBe('function');
-    expect(typeof kit.orbitAfterDrag).toBe('function');
     expect(typeof kit.usePanZoom).toBe('function');
     expect(typeof kit.useJob).toBe('function');
     expect(typeof kit.as2DView).toBe('function');

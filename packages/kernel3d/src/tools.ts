@@ -35,6 +35,11 @@ export const orbitAction: Action = {
           if (!dep || !origin) return;
           // `drag.delta` runs from the drag origin, not the previous move, so
           // this composes against the camera as it was when the drag began.
+          //
+          // The fallback is only sound here because a 3D host's `clientToWorld`
+          // is identity (see `overlays.ts`), so the world delta already is the
+          // client one. Don't copy this pair to a host with a 2D view — there
+          // the two spaces differ by the zoom.
           const delta = move.drag?.screenDelta ?? move.drag?.delta;
           if (!delta) return;
           dep.set(orbitBy(origin, -delta.x * ORBIT_RATE, delta.y * ORBIT_RATE));

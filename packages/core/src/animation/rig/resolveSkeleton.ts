@@ -1,4 +1,4 @@
-import { mat3, type Mat3 } from '../../renderer/math/mat3';
+import { mat3, type GlMat3 } from '../../renderer/math/mat3';
 import type { JointTransform, Pose, Skeleton } from './types';
 
 /** bind + delta, field by field. Scale is multiplicative, the rest additive. */
@@ -13,11 +13,11 @@ function compose(bind: JointTransform, delta: Partial<JointTransform> | undefine
   };
 }
 
-/** TRS as a Mat3: translate * rotate * scale, applied to a column vector. */
-function toMat3(t: JointTransform): Mat3 {
+/** TRS as a GlMat3: translate * rotate * scale, applied to a column vector. */
+function toMat3(t: JointTransform): GlMat3 {
   const c = Math.cos(t.rotation);
   const s = Math.sin(t.rotation);
-  const m = new Float32Array(9) as Mat3;
+  const m = new Float32Array(9) as GlMat3;
   m[0] = c * t.scaleX;  m[1] = s * t.scaleX;  m[2] = 0;
   m[3] = -s * t.scaleY; m[4] = c * t.scaleY;  m[5] = 0;
   m[6] = t.x;           m[7] = t.y;           m[8] = 1;
@@ -33,8 +33,8 @@ function toMat3(t: JointTransform): Mat3 {
  * because that failure is otherwise invisible until a limb renders in the wrong
  * place.
  */
-export function resolveSkeleton(skeleton: Skeleton, pose: Pose): Map<string, Mat3> {
-  const out = new Map<string, Mat3>();
+export function resolveSkeleton(skeleton: Skeleton, pose: Pose): Map<string, GlMat3> {
+  const out = new Map<string, GlMat3>();
   for (const joint of skeleton.joints) {
     const local = toMat3(compose(joint.bind, pose[joint.name]));
     if (joint.parent == null) {

@@ -16,7 +16,22 @@ function linearToSrgbByte(c: number): number {
   return Math.round(v * 255);
 }
 
-/** Convert an 8-bit sRGB triple to OKLab. */
+/** 0..1 float channel to the 8-bit index the LUTs are cut for. Rounds and
+ *  clamps; `& 0xff` would truncate, and wrap anything out of range. */
+const f2u = (v: number): number => Math.max(0, Math.min(255, Math.round(v * 255)));
+
+/**
+ * Convert a 0..1 float sRGB triple to OKLab — the renderer's own color space,
+ * and what a caller holding a `resolveColor` result has. Rounds into the u8
+ * grid the way every other float→u8 crossing in this file does, rather than
+ * leaving each caller to pick a convention.
+ */
+export function srgbFloatToOklab(r: number, g: number, b: number): [number, number, number] {
+  return srgbU8ToOklab(f2u(r), f2u(g), f2u(b));
+}
+
+/** Convert an 8-bit sRGB triple to OKLab. Channels are indices into a 256-entry
+ *  LUT: pass integers, or `srgbFloatToOklab` for 0..1 floats. */
 export function srgbU8ToOklab(r: number, g: number, b: number): [number, number, number] {
   const rl = SRGB_TO_LINEAR[r & 0xff];
   const gl = SRGB_TO_LINEAR[g & 0xff];
@@ -139,7 +154,6 @@ export function lerpOklch(
  *  rather than through it. */
 export type ColorSpace = 'rgb' | 'oklab' | 'oklch';
 
-const f2u = (v: number): number => Math.max(0, Math.min(255, Math.round(v * 255)));
 const u2f = (v: number): number => v / 255;
 
 /** Lerp a flat RGBA color array `from` toward `to`. Inputs are 0..1
@@ -200,4 +214,44 @@ export function lerpColorArray(
     out[k + 3] = from[k + 3] + (to[k + 3] - from[k + 3]) * t;
   }
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// OKLCh in degrees
+// ---------------------------------------------------------------------------
+
+/**
+ * OKLCh with the hue in **degrees**, and `#rrggbb` on the other side.
+ *
+ * The helpers above take radians, because that is what the math wants. Every
+ * consumer that authors colors — a theme ramp, a palette generator — wants
+ * degrees and a hex string, and two packages independently built the same
+ * wrapper before this existed.
+ */
+export interface OklchDeg {
+  readonly L: number;
+  readonly C: number;
+  /** 0..360. */
+  readonly H: number;
+}
+
+const hex2 = (v: number): string => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+
+/**
+ * OKLCh (hue in degrees) to `#rrggbb`. Over-saturated requests come back at
+ * the gamut boundary: `oklabToSrgbU8` clips chroma at constant lightness, which
+ * is what lets a caller find a hue's ceiling by asking for far more than exists.
+ */
+export function oklchDegToHex(L: number, C: number, hueDeg: number): string {
+  const [l, a, b] = oklchToOklab(L, C, (hueDeg * Math.PI) / 180);
+  const [r, g, bl] = oklabToSrgbU8(l, a, b);
+  return `#${hex2(r)}${hex2(g)}${hex2(bl)}`;
+}
+
+/** `#rrggbb` to OKLCh with the hue wrapped into 0..360. */
+export function hexToOklchDeg(hex: string): OklchDeg {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const [L, A, B] = srgbU8ToOklab((n >> 16) & 255, (n >> 8) & 255, n & 255);
+  const [l, c, h] = oklabToOklch(L, A, B);
+  return { L: l, C: c, H: ((((h * 180) / Math.PI) % 360) + 360) % 360 };
 }

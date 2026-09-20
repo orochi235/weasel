@@ -1,7 +1,7 @@
 import type { Path } from 'features/paths/types';
 import type { Stroke } from '@weasel-js/paint';
 import { SPRITE_STRIDE, type DrawCommand } from './DrawCommand';
-import { mat3, type Mat3 } from './math/mat3';
+import { mat3, type GlMat3 } from './math/mat3';
 
 /** A screen-space rectangle, CSS pixels. */
 export interface CullRect {
@@ -36,7 +36,7 @@ const DEFAULT_MITER_LIMIT = 4;
  */
 export function cullDrawCommands(
   cmds: DrawCommand[],
-  transform: Mat3,
+  transform: GlMat3,
   rect: CullRect,
 ): DrawCommand[] {
   const box = {
@@ -50,7 +50,7 @@ export function cullDrawCommands(
 
 interface Box { minX: number; minY: number; maxX: number; maxY: number }
 
-function cullList(cmds: DrawCommand[], m: Mat3, box: Box): DrawCommand[] {
+function cullList(cmds: DrawCommand[], m: GlMat3, box: Box): DrawCommand[] {
   let out: DrawCommand[] | null = null;
   for (let i = 0; i < cmds.length; i++) {
     const cmd = cmds[i];
@@ -65,7 +65,7 @@ function cullList(cmds: DrawCommand[], m: Mat3, box: Box): DrawCommand[] {
   return out ?? cmds;
 }
 
-function cullOne(cmd: DrawCommand, m: Mat3, box: Box): DrawCommand | null {
+function cullOne(cmd: DrawCommand, m: GlMat3, box: Box): DrawCommand | null {
   switch (cmd.kind) {
     case 'group': {
       if (cmd.effects && cmd.effects.length > 0) return cmd;
@@ -85,7 +85,7 @@ function cullOne(cmd: DrawCommand, m: Mat3, box: Box): DrawCommand | null {
   }
 }
 
-function pathMisses(path: Path, stroke: Stroke | undefined, m: Mat3, box: Box): boolean {
+function pathMisses(path: Path, stroke: Stroke | undefined, m: GlMat3, box: Box): boolean {
   let minX: number, minY: number, maxX: number, maxY: number;
   if (path.kind === 'rect') {
     minX = Math.min(path.x, path.x + path.width);
@@ -112,7 +112,7 @@ function pathMisses(path: Path, stroke: Stroke | undefined, m: Mat3, box: Box): 
 /** How far outside the geometry a stroke can paint, in the path's own units.
  *  A full width rather than half covers `'outer'` alignment, which the
  *  renderer draws as a doubled ribbon; the miter limit covers every join. */
-function strokeReach(stroke: Stroke, m: Mat3): number {
+function strokeReach(stroke: Stroke, m: GlMat3): number {
   const w = stroke.width ?? 1;
   let width = typeof w === 'number' ? w : w.px / (mat3.meanScaleOf(m) || 1);
   if (stroke.vertexWidths) {
@@ -122,7 +122,7 @@ function strokeReach(stroke: Stroke, m: Mat3): number {
   return Math.abs(width) * spike;
 }
 
-function spritesMiss(sprites: Float32Array, m: Mat3, box: Box): boolean {
+function spritesMiss(sprites: Float32Array, m: GlMat3, box: Box): boolean {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (let i = 0; i + SPRITE_STRIDE <= sprites.length; i += SPRITE_STRIDE) {
     const x0 = sprites[i], y0 = sprites[i + 1];
@@ -136,7 +136,7 @@ function spritesMiss(sprites: Float32Array, m: Mat3, box: Box): boolean {
 
 /** True when the local rect, taken through `m`, lies wholly outside `box`.
  *  Any NaN makes every comparison false, so the command is kept. */
-function quadMisses(x0: number, y0: number, x1: number, y1: number, m: Mat3, box: Box): boolean {
+function quadMisses(x0: number, y0: number, x1: number, y1: number, m: GlMat3, box: Box): boolean {
   const [ax, ay] = mat3.apply(m, x0, y0);
   const [bx, by] = mat3.apply(m, x1, y0);
   const [cx, cy] = mat3.apply(m, x1, y1);
