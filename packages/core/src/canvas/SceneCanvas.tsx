@@ -776,6 +776,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     shaders?: ShaderProgramHandle[];
 
     /**
+     * Flatness tolerance for curve tessellation, in world units. Forwarded
+     * directly to `<Canvas flattenTolerance={...} />`. See
+     * `CanvasProps.flattenTolerance` for details.
+     */
+    flattenTolerance?: number;
+
+    /**
      * FillStyle applied to the full canvas behind the scene. Accepts the kit's
      * `FillStyle` union (solid / pattern / linear-gradient / radial-gradient /
      * conic-gradient) so consumers don't have to author a background node
@@ -918,6 +925,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     views: viewDescriptors,
     children,
     shaders,
+    flattenTolerance,
     backgroundFill,
     cursorCoordsHud,
     pickHud,
@@ -2048,6 +2056,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       {...(viewProp !== undefined ? { view: viewProp } : { defaultView })}
       onViewChange={notifyViewChange}
       shaders={shaders}
+      flattenTolerance={flattenTolerance}
       // onBackgroundClick is intentionally NOT wired here. The `clearSelection`
       // action binding in the select tool handles "click on empty background clears
       // selection" for all SceneCanvas consumers. Wiring a separate background-click

@@ -1160,6 +1160,19 @@ describe('flattenTolerance option', () => {
     expect(rec.calls.map((c) => c.name)).toContain('deleteVertexArray');
   });
 
+  it('setFlattenTolerance changes the route after construction', () => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
+    r.render([{ kind: 'path', path: POLYGON_CURVED, ...UNBATCHABLE } as DrawCommand]);
+    expect(rec.calls.map((c) => c.name)).not.toContain('deleteVertexArray');
+
+    const after = makeGLRecorder();
+    const r2 = new WeaselRenderer({ gl: after.gl, width: 100, height: 100, dpr: 1 });
+    r2.setFlattenTolerance(0.01);
+    r2.render([{ kind: 'path', path: POLYGON_CURVED, ...UNBATCHABLE } as DrawCommand]);
+    expect(after.calls.map((c) => c.name)).toContain('deleteVertexArray');
+  });
+
   it('default path (no option) keeps the persistent cache route', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });

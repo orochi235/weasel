@@ -374,17 +374,6 @@ Core five + Crop shipped. Remaining:
   keyed by paint identity in a `WeakMap`, so a size-aware bake would need the
   draw scale in the key — `packages/core/src/features/meshPaint/bake.ts`.
 
-- **(P3) `flattenTolerance` does not reach `<Canvas>` or `<SceneCanvas>`.**
-  `WeaselRendererOptions.flattenTolerance` is the knob that keeps curve
-  flattening correct when the world unit is not a pixel: the default
-  `DEFAULT_FLATTEN_TOLERANCE = 0.5` is a path-local length, so a scene authored
-  in feet or inches flattens a sub-unit curve to a four-vertex diamond and a
-  consumer works around it by pre-sampling its own polygons. The headless path
-  already solves this — `renderSceneToPixels` takes `flattenTolerancePx` and
-  divides by the render scale — but nothing in `packages/core/src/canvas/`
-  forwards it to the on-screen renderer, so every React consumer is pinned to
-  0.5. Add it to `CanvasProps` and thread it to the renderer construction.
-
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
   `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in
