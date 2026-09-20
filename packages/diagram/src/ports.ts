@@ -12,7 +12,7 @@ import {
   rotatePoint,
   type PoseDescriptor,
   type Vec2,
-} from '@weasel-js/core';
+} from '@weasel-js/core/math';
 import { outlinePolyline, rayHit } from './onOutline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
 import type { Port, PortAnchor, PortSpec } from './types';

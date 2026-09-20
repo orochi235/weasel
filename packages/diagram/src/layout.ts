@@ -22,7 +22,7 @@
  * order the first run produced and computes the same slots. `force` is an
  * iterative relaxation and makes no such claim — re-running it keeps relaxing.
  */
-import type { Vec2 } from '@weasel-js/core';
+import type { Vec2 } from '@weasel-js/core/math';
 import type { Graph, GraphNode } from './graph';
 import type { Bounds } from './outline';
 

@@ -7,7 +7,7 @@
  * built in world coordinates from the bounds it is given, the same way the
  * kit's own `clipFromPose` factories are.
  */
-import { PathBuilder, polygonFromPoints, rectPath, type Path } from '@weasel-js/core';
+import { PathBuilder, polygonFromPoints, rectPath, type Path } from '@weasel-js/core/math';
 
 /** An axis-aligned box, in the shape `PoseDescriptor.getBounds` returns. */
 export interface Bounds {

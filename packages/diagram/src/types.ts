@@ -1,4 +1,4 @@
-import type { Vec2 } from '@weasel-js/core';
+import type { Vec2 } from '@weasel-js/core/math';
 import type { Outline } from './outline';
 
 /**

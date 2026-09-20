@@ -8,7 +8,7 @@
  * space. So the point is cast back onto the outline along the ray from the
  * node's center, which is the direction an edge leaves anyway.
  */
-import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, flattenCubic, type Path } from '@weasel-js/core';
+import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, flattenCubic, type Path } from '@weasel-js/core/math';
 import { outlinePath, type Bounds, type Outline } from './outline';
 import type { Port } from './types';
 

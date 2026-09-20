@@ -32,6 +32,10 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
+    "./math": {
+      "import": "./dist/math.js",
+      "types": "./dist/math.d.ts"
+    },
     "./move": {
       "import": "./dist/move.js",
       "types": "./dist/move.d.ts"

@@ -17,6 +17,7 @@ export default defineConfig({
   },
   entry: {
     index: 'src/index.ts',
+    math: 'src/import-shims/math.ts',
     move: 'src/import-shims/move.ts',
     resize: 'src/import-shims/resize.ts',
     insert: 'src/import-shims/insert.ts',

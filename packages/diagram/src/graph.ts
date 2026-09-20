@@ -11,7 +11,7 @@
  * sits is here too, because a re-layout that ignores where things already are
  * scrambles a diagram the author has arranged.
  */
-import { AUTO_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core';
+import { AUTO_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core/math';
 import { diagramEdgeOf } from './edge';
 import type { Bounds } from './outline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
