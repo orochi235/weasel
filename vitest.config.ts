@@ -7,6 +7,9 @@ import { traitSchemasPlugin } from './apps/draw/vite-plugin-trait-schemas';
 import { forgeAliases, frameConfig as forgeFrameConfig, stories as forgeStories } from './apps/forge/viteShared';
 import { forgeTest } from './packages/forge/src/vite/forgeTest';
 import { weaselDefines } from './scripts/vite-build-info';
+import { demoTimestamps } from './scripts/vite-demo-timestamps';
+import { demoSources } from './scripts/vite-demo-sources';
+import { changelogs } from './scripts/vite-changelogs';
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
@@ -40,11 +43,33 @@ export default defineConfig({
           setupFiles: ['./vitest.setup.ts'],
           include: [
             'packages/core/src/**/*.test.{ts,tsx}',
-            'apps/site/**/*.test.{ts,tsx}',
             'tests/e2e/helpers/**/*.test.{ts,tsx}',
             'tests/perf/lib/**/*.test.{ts,tsx}',
             'typedoc/**/*.test.mjs',
           ],
+          exclude: ['**/*.smoke.test.{ts,tsx}', '**/node_modules/**'],
+        },
+      },
+      {
+        ...shared,
+        // The demo site reads three virtual modules that only exist because
+        // `vite.config.ts` wires their plugins. Vitest does not inherit that
+        // config, so without these the site's own shell — `registry.ts`,
+        // `Releases.tsx` — cannot be imported by a test at all, which is why
+        // it went uncovered. Its own project rather than a glob on `core`, so
+        // 400-odd core files don't pay for reading every CHANGELOG.
+        plugins: [
+          react(),
+          demoTimestamps({ root: __dirname }),
+          demoSources({ root: __dirname }),
+          changelogs({ root: __dirname }),
+        ],
+        test: {
+          name: 'site',
+          environment: 'jsdom',
+          globals: true,
+          setupFiles: ['./vitest.setup.ts'],
+          include: ['apps/site/**/*.test.{ts,tsx}'],
           exclude: ['**/*.smoke.test.{ts,tsx}', '**/node_modules/**'],
         },
       },
