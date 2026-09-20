@@ -18,16 +18,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P3) A second finger still fires `pointerDown`-spec bindings.** Found while
-  giving each pointer its own gesture channel (2026-08-01).
-  `onPointerDown` dispatches the eager `stage: 'press'` copy
-  before the multitouch claim runs, so starting a pinch runs `select.pick` for
-  the second finger and can change the selection under the gesture. Pre-existing
-  — the press dispatch was always unconditional — and out of scope for the
-  gestureId fix, but it's the same family of bug: a pointer that is part of a
-  pinch shouldn't be acting on its own. Fix is probably to defer the press
-  dispatch by a frame, or to re-dispatch a cancel for claimed pointers.
-
 - **(P3) Long-press has no feedback.** No haptic, no visual "press is
   registering" affordance during the 500ms hold. Users get no signal that
   holding will do something. Recorded 2026-08-02, alongside the `longPress`
