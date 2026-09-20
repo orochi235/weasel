@@ -58,6 +58,7 @@ export { VERSION } from './version';
 export * from './features/grid';
 export * from './features/viewports';
 export * from './features/parallax';
+export * from './features/tiling';
 export * from './features/simulation';
 export * from './features/poseRun';
 export * from './features/overlays';

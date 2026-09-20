@@ -7,6 +7,7 @@ import {
   useHandTool,
   useTools,
   createParallaxLayer,
+  createTiledLayer,
   ellipsePath,
   polygonFromPoints,
 } from '@weasel-js/core';
@@ -21,33 +22,15 @@ const W = 600, H = 400;
 
 interface Shape { x: number; y: number; w: number; h: number; color: string }
 
-// Yield every visible copy of `shapes`, tiled with period `period` along the
-// x axis, in world coords — `drawOneLayer` applies the plane's inner view.
-// For a layer that wants to loop seamlessly: pan in either direction keeps
-// producing new copies because we walk every integer `k` whose copy
-// `(s.x + k*period)` overlaps the visible world range.
-function tiled(
-  shapes: Shape[],
-  v: View,
-  dims: { width: number; height: number },
-  period: number,
-): Shape[] {
-  const visStart = v.x;
-  const visEnd = v.x + dims.width / v.scale.x;
-  const out: Shape[] = [];
-  for (const s of shapes) {
-    const kMin = Math.ceil((visStart - s.w - s.x) / period);
-    const kMax = Math.floor((visEnd - s.x) / period);
-    for (let k = kMin; k <= kMax; k++) out.push({ ...s, x: s.x + k * period });
-  }
-  return out;
-}
-
-function paintRects(id: string, shapes: Shape[], period: number): RenderLayer<unknown> {
+// Each painter draws its shapes once, in the cell `[0, period)`.
+// `createTiledLayer` below is what repeats them: it redraws the painter per
+// visible copy through a shifted view, so panning loops forever and no painter
+// carries wrap-around bookkeeping of its own.
+function paintRects(id: string, shapes: Shape[]): RenderLayer<unknown> {
   return {
     id, label: id, space: 'world',
-    draw: (_d, v, dims): DrawCommand[] =>
-      tiled(shapes, v, dims, period).map((s) => ({
+    draw: (): DrawCommand[] =>
+      shapes.map((s) => ({
         kind: 'path',
         path: { kind: 'rect', x: s.x, y: s.y, width: s.w, height: s.h },
         fill: { fill: 'solid', color: s.color },
@@ -57,11 +40,11 @@ function paintRects(id: string, shapes: Shape[], period: number): RenderLayer<un
 
 // Clouds: four overlapping ellipses inside the bbox — three across the
 // bottom and one smaller bump up top.
-function paintClouds(id: string, shapes: Shape[], period: number): RenderLayer<unknown> {
+function paintClouds(id: string, shapes: Shape[]): RenderLayer<unknown> {
   return {
     id, label: id, space: 'world',
-    draw: (_d, v, dims): DrawCommand[] =>
-      tiled(shapes, v, dims, period).flatMap((s) => {
+    draw: (): DrawCommand[] =>
+      shapes.flatMap((s) => {
         const puffs = [
           { x: s.x,              y: s.y + s.h * 0.35, width: s.w * 0.45, height: s.h * 0.65 },
           { x: s.x + s.w * 0.55, y: s.y + s.h * 0.30, width: s.w * 0.45, height: s.h * 0.70 },
@@ -78,11 +61,11 @@ function paintClouds(id: string, shapes: Shape[], period: number): RenderLayer<u
 }
 
 // Hills: half-sine bump across the top, flat bottom.
-function paintHills(id: string, shapes: Shape[], period: number): RenderLayer<unknown> {
+function paintHills(id: string, shapes: Shape[]): RenderLayer<unknown> {
   return {
     id, label: id, space: 'world',
-    draw: (_d, v, dims): DrawCommand[] =>
-      tiled(shapes, v, dims, period).map((s) => {
+    draw: (): DrawCommand[] =>
+      shapes.map((s) => {
         const N = 16;
         const pts: { x: number; y: number }[] = [];
         for (let i = 0; i <= N; i++) {
@@ -106,11 +89,11 @@ function paintHills(id: string, shapes: Shape[], period: number): RenderLayer<un
 // Trees: triangle foliage on top + small brown trunk at the bottom-center.
 // Foliage takes 75% of the bbox height; trunk fills the remaining 25%.
 const TRUNK_COLOR = '#5a3a1f';
-function paintTrees(id: string, shapes: Shape[], period: number): RenderLayer<unknown> {
+function paintTrees(id: string, shapes: Shape[]): RenderLayer<unknown> {
   return {
     id, label: id, space: 'world',
-    draw: (_d, v, dims): DrawCommand[] =>
-      tiled(shapes, v, dims, period).flatMap((s) => {
+    draw: (): DrawCommand[] =>
+      shapes.flatMap((s) => {
         const foliageH = s.h * 0.75;
         const trunkH = s.h - foliageH;
         const trunkW = s.w * 0.25;
@@ -181,7 +164,9 @@ function ParallaxDemoInner() {
   const sky = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-sky', label: 'Sky',
-      source: [paintClouds('sky-shapes', SKY, 1000)],
+      source: [createTiledLayer<unknown>({
+        id: 'sky-tiled', label: 'Sky', source: [paintClouds('sky-shapes', SKY)], period: 1000,
+      })],
       pan: 0.1,
       ...(zoomParallax ? { zoom: 0 } : {}),
     }),
@@ -190,7 +175,9 @@ function ParallaxDemoInner() {
   const hills = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-hills', label: 'Hills',
-      source: [paintHills('hills-shapes', HILLS, 1140)],
+      source: [createTiledLayer<unknown>({
+        id: 'hills-tiled', label: 'Hills', source: [paintHills('hills-shapes', HILLS)], period: 1140,
+      })],
       pan: 0.4,
       ...(zoomParallax ? { zoom: 0.3 } : {}),
     }),
@@ -199,7 +186,12 @@ function ParallaxDemoInner() {
   const ground = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-ground', label: 'Ground',
-      source: [paintRects('ground-shapes', GROUND, 1600)],
+      source: [createTiledLayer<unknown>({
+        id: 'ground-tiled', label: 'Ground', source: [paintRects('ground-shapes', GROUND)],
+        // The one rect starts 200 units left of the cell, so the lattice has
+        // to be told or the copy left of the view never draws.
+        period: 1600, bleed: 200,
+      })],
       pan: 1.0,
       ...(zoomParallax ? { zoom: 1 } : {}),
     }),
@@ -208,7 +200,9 @@ function ParallaxDemoInner() {
   const foreground = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-foreground', label: 'Foreground',
-      source: [paintTrees('fg-shapes', FOREGROUND, 640)],
+      source: [createTiledLayer<unknown>({
+        id: 'fg-tiled', label: 'Foreground', source: [paintTrees('fg-shapes', FOREGROUND)], period: 640,
+      })],
       pan: 1.3,
       ...(zoomParallax ? { zoom: 1.5 } : {}),
     }),
