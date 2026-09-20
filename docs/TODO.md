@@ -208,11 +208,6 @@ Priority tags:
 All four arcs of `docs/superpowers/specs/2026-09-03-cursor-system-design.md`
 have shipped. What remains:
 
-- **(P3) Inserting an anchor borrows the pen tool's cursor.** Alt over a
-  segment in path-edit mode shows `{ glyph: 'pen' }`, the same glyph as the pen
-  tool, because there is no pen-with-a-plus glyph. Drawing one needs proofing
-  at 1× and 2× like the rest of the set (see "Drawing icons" in CLAUDE.md).
-  The cursor is declared in `insertPathAnchor.ts`.
 - **(P3) The `bucket` glyph is parked.** Three attempts failed to read at 24px —
   a tapered pail with a spout is a pencil silhouette, and the handle that would
   fix it wants a sketch rather than another guess. Nothing is blocked: no fill

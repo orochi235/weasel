@@ -32,7 +32,7 @@ import {
  *  radius, so the two regions meet without a gap. */
 const SEGMENT_HIT_PX = 8;
 
-const INSERT_CURSOR: CursorSpec = { glyph: 'pen', fallback: 'crosshair' };
+const INSERT_CURSOR: CursorSpec = { glyph: 'penPlus', fallback: 'crosshair' };
 
 function segmentUnder(
   deps: ActionDeps | undefined,

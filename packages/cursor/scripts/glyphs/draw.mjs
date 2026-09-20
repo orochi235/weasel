@@ -32,6 +32,43 @@ const pen = {
   ],
 };
 
+// ── penPlus ──────────────────────────────────────────────────────────────
+// The pen, plus a badge that says "this adds one". Inserting an anchor is the
+// pen's own act, so the nib has to be the same nib — a different drawing would
+// read as a different tool.
+//
+// The nib runs along the anti-diagonal, so it occupies the band
+// 18 <= x + y <= 28 and leaves nothing on the diagonal for a badge. Shifting
+// it 2 up and 2 left drops the band to 14..24 and buys the badge its corner;
+// the shapes set pays the same price with a short-armed crosshair.
+const PEN_SHIFT = -2;
+const shift = (d) =>
+  d.replace(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g,
+    (_, x, y) => `${n(Number(x) + PEN_SHIFT)} ${n(Number(y) + PEN_SHIFT)}`);
+
+// A filled cross, not two crossed bars: at badge size an outline is a ring of
+// single pixels around a hole, which is the shapes set's lesson.
+const plus = (cx, cy, arm, half) =>
+  [
+    [cx - half, cy - arm], [cx + half, cy - arm], [cx + half, cy - half],
+    [cx + arm, cy - half], [cx + arm, cy + half], [cx + half, cy + half],
+    [cx + half, cy + arm], [cx - half, cy + arm], [cx - half, cy + half],
+    [cx - arm, cy + half], [cx - arm, cy - half], [cx - half, cy - half],
+  ].map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${n(x)} ${n(y)}`).join(' ') + ' Z';
+
+// Centre on the diagonal at 17.5: the badge's nearest tips sit at x + y = 31,
+// 4.95 clear of the nib's 24, which is 2.35 once both halos are spent. Its far
+// tips reach 21.5, inside the 22.7 the halo leaves.
+const penPlus = {
+  box: 24,
+  hotspot: [3, 17],
+  paths: [
+    { role: 'ink', d: shift(pen.paths[0].d) },
+    { role: 'detail', d: shift(pen.paths[1].d), width: pen.paths[1].width },
+    { role: 'ink', d: plus(17.5, 17.5, 4, 1.4) },
+  ],
+};
+
 // ── bucket ───────────────────────────────────────────────────────────────
 // Parked. Three attempts failed to read at 24px: a plain tapered pail is a
 // pencil silhouette, and the handle that would fix it needs geometry worth
@@ -73,4 +110,4 @@ const brush = {
   paths: [{ role: 'stroke', d: circle(12, 12, BRUSH_R), width: 1.6 }],
 };
 
-export const DRAW = { pencil, pen, eyedropper, brush };
+export const DRAW = { pencil, pen, penPlus, eyedropper, brush };

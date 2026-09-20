@@ -3,7 +3,7 @@ import { GLYPHS } from './glyphs';
 import { haloFitsInBox, rotationFitsInBox } from './types';
 
 const NAMES = [
-  'pencil', 'pen', 'eyedropper', 'brush',
+  'pencil', 'pen', 'penPlus', 'eyedropper', 'brush',
   'crosshairRect', 'crosshairEllipse', 'crosshairLine', 'crosshairStar', 'crosshairPolygon',
   'resize', 'rotate',
 ] as const;
@@ -12,7 +12,7 @@ const NAMES = [
  *  is a cross plus a bar — both measure or point rather than depict, so
  *  neither has a fill to assert. */
 const SILHOUETTE = [
-  'pencil', 'pen', 'eyedropper',
+  'pencil', 'pen', 'penPlus', 'eyedropper',
   'crosshairRect', 'crosshairEllipse', 'crosshairStar', 'crosshairPolygon',
   'resize', 'rotate',
 ] as const;
