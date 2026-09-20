@@ -132,6 +132,7 @@ function metaElementsXml(meta: NamespaceMeta | undefined, namespaces: Record<str
 function registerPaintServers(nodes: SvgNode[], registry: PaintServerRegistry): void {
   for (const n of nodes) {
     if (n.kind === 'group') {
+      if (n.clip) registry.clipId(n.clip);
       registerPaintServers(n.children, registry);
     } else if (n.kind === 'path') {
       if (n.fill.kind === 'gradient') registry.register(n.fill.paint);
@@ -257,6 +258,9 @@ function groupXml(
   if (node.transform) {
     const m = formatMatrix(node.transform);
     if (m) attrs.push(`transform="${m}"`);
+  }
+  if (node.clip) {
+    attrs.push(`clip-path="url(#${registry.clipId(node.clip)})"`);
   }
   if (node.opacity != null && node.opacity !== 1) {
     attrs.push(`opacity="${trimNumber(node.opacity)}"`);

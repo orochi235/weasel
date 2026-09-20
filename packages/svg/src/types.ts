@@ -131,6 +131,12 @@ export interface SvgGroupNode {
   kind: 'group';
   children: SvgNode[];
   transform?: Matrix;
+  /** Clips the group's contents. Serializes to a `<clipPath>` def plus
+   *  `clip-path="url(#id)"`, and lives in the same space as `children` —
+   *  SVG applies the group's own `transform` to the clip as well.
+   *  A `<clipPath>` of more than one shape parses back as no clip: SVG
+   *  unions them and a `Path` holds one outline. */
+  clip?: Path;
   opacity?: number;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;

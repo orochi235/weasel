@@ -11,7 +11,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseSvg, serializeSvg, type SvgImageNode, type SvgNode } from './index';
-import { resolveAlign } from '@weasel-js/core';
+import { resolveAlign, type Path } from '@weasel-js/core';
 import * as F from './__fixtures__/fixtures';
 
 interface NormalizedPath {
@@ -34,6 +34,7 @@ interface NormalizedGroup {
   kind: 'group';
   children: NormalizedNode[];
   transform?: number[];
+  clip?: { commands: number[]; coords: number[] };
   opacity?: number;
 }
 
@@ -66,6 +67,25 @@ function round(n: number): number {
   return Math.round(n * 1000) / 1000;
 }
 
+/** A bare outline — a clip carries no paint, so only its geometry matters. */
+function normalizeOutline(path: Path): { commands: number[]; coords: number[] } {
+  if (path.kind === 'rect') {
+    return {
+      commands: [0, 1, 1, 1, 4],
+      coords: [
+        path.x, path.y,
+        path.x + path.width, path.y,
+        path.x + path.width, path.y + path.height,
+        path.x, path.y + path.height,
+      ].map(round),
+    };
+  }
+  return {
+    commands: Array.from(path.commands as Uint8Array),
+    coords: Array.from(path.coords as Float32Array).map(round),
+  };
+}
+
 function normalize(node: SvgNode): NormalizedNode {
   if (node.kind === 'group') {
     const out: NormalizedGroup = {
@@ -73,6 +93,7 @@ function normalize(node: SvgNode): NormalizedNode {
       children: node.children.map(normalize),
     };
     if (node.transform) out.transform = Array.from(node.transform).map(round);
+    if (node.clip) out.clip = normalizeOutline(node.clip);
     if (node.opacity != null) out.opacity = round(node.opacity);
     return out;
   }
@@ -164,6 +185,33 @@ describe('round-trip', () => {
   it('nested SVG <g> with transforms', () => {
     const { a, b } = roundTrip(F.NESTED_GROUPS_SVG);
     expect(b).toEqual(a);
+  });
+
+  it('a clipped group, under a transform', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">`
+      + `<clipPath id="c"><rect x="10" y="10" width="30" height="20"/></clipPath>`
+      + `<g transform="translate(5 7)" clip-path="url(#c)">`
+      + `<rect x="0" y="0" width="50" height="50" fill="#123456"/>`
+      + `</g></svg>`;
+    const { a, b, warnings } = roundTrip(svg);
+    expect(warnings).toEqual([]);
+    expect(b).toEqual(a);
+    // The group's transform is collapsed onto its children, so the clip is
+    // baked into the same space they land in: (10,10) shifted by (5,7).
+    const group = a[0] as NormalizedGroup;
+    expect(group.clip?.coords.slice(0, 2)).toEqual([15, 17]);
+  });
+
+  it('serializes a clip as a <clipPath> def the group references', () => {
+    const out = serializeSvg([
+      {
+        kind: 'group',
+        clip: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+        children: [],
+      },
+    ]);
+    expect(out).toContain('<clipPath id="clip0">');
+    expect(out).toContain('clip-path="url(#clip0)"');
   });
 
   it('gradient-filled path', () => {
