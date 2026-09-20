@@ -1,6 +1,6 @@
 .field {
   display: grid;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   grid-column: 1 / -1;
   box-sizing: border-box;
 }
@@ -22,7 +22,7 @@
 
 .actions {
   display: flex;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   justify-self: start;
 }
 
@@ -31,7 +31,7 @@
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg);
-  padding: 4px 10px;
+  padding: var(--wzl-space-2) var(--wzl-space-5);
   font-size: var(--wzl-font-size-sm);
   cursor: pointer;
 }

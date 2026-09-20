@@ -2,7 +2,7 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   min-inline-size: 0;
 }
 

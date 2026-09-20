@@ -49,6 +49,8 @@ export interface ScaleDef {
   readonly step?: NumberParam;
   /** Geometric: `base × ratio^i`. */
   readonly ratio?: NumberParam;
+  /** Explicit: `base × factors[i]`, one per step. For a ramp no single rule fits. */
+  readonly factors?: Varying<readonly NumberParam[]>;
   readonly description?: string;
   readonly describe?: Readonly<Record<string, string>>;
 }

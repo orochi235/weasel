@@ -10,7 +10,7 @@
 .root {
   display: inline-flex;
   height: var(--tb-h, var(--wzl-control-h, 24px));
-  padding: 2px;
+  padding: var(--wzl-space-1);
   background: linear-gradient(
     180deg,
     rgba(0, 0, 0, 0.18) 0%,
@@ -35,7 +35,7 @@
   min-width: 0;
   /* The track's stretch sizes a segment; without this, labkit's :where(button) height wins and overflows a small bar. */
   height: auto;
-  padding: 0 12px;
+  padding: 0 var(--wzl-space-6);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -142,7 +142,7 @@
 }
 
 .size_sm .segment {
-  padding: 0 8px;
+  padding: 0 var(--wzl-space-4);
   font-size: var(--wzl-font-size-sm);
 }
 
@@ -155,11 +155,11 @@
   background: none;
   border-radius: 0;
   box-shadow: none;
-  gap: 2px;
+  gap: var(--wzl-space-1);
 }
 
 .variant_minimal .segment {
-  padding: 0 4px;
+  padding: 0 var(--wzl-space-2);
   font-size: var(--wzl-font-size-sm);
   font-weight: var(--wzl-font-weight-medium);
   line-height: 1.4;

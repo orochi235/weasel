@@ -13,9 +13,9 @@
 .root {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   height: var(--wzl-tb-height, 28px);
-  padding: 0 8px;
+  padding: 0 var(--wzl-space-4);
   background: var(--wzl-surface);
   border-bottom: 1px solid var(--wzl-border);
   color: var(--wzl-fg);
@@ -35,7 +35,7 @@
 .controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   flex: 1 1 auto;
   min-width: 0;
   height: 100%;

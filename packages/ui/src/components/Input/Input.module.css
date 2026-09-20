@@ -3,13 +3,13 @@
   flex-direction: column;
   width: 100%;
   min-width: 0;
-  gap: 4px;
+  gap: var(--wzl-space-2);
 }
 
 .frame {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   height: var(--wzl-field-h, var(--wzl-control-h));
   padding: 0 var(--wzl-field-pad-x);
   background: var(--wzl-surface-sunken);

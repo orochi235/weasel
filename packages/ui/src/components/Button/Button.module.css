@@ -47,7 +47,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   border: none;
   border-radius: var(--btn-radius);
   font-family: var(--wzl-font-ui);

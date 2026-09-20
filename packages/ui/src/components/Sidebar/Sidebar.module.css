@@ -1,7 +1,7 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--wzl-space-2);
   background: var(--wzl-surface);
   color: var(--wzl-fg);
 }

@@ -29,6 +29,26 @@
   --wzl-swatch-citron: #d5d23a;
   --wzl-swatch-rose: #fa4590;
   --wzl-swatch-violet: #955cf9;
+  /* Shortcut keys and index badges. The floor for chrome text. */
+  --wzl-font-size-2xs: 9px;
+  /* Tool-button labels under an icon. */
+  --wzl-font-size-xs: 10px;
+  /* Chrome labels, status readouts, section headings. */
+  --wzl-font-size-sm: 11px;
+  /* Controls and body text. */
+  --wzl-font-size-md: 13px;
+  /* Panel and dialog titles. */
+  --wzl-font-size-lg: 16px;
+  /* The largest chrome text — a lab or app title. */
+  --wzl-font-size-xl: 20px;
+  --wzl-space-1: 2px;
+  --wzl-space-2: 4px;
+  --wzl-space-3: 6px;
+  --wzl-space-4: 8px;
+  --wzl-space-5: 10px;
+  --wzl-space-6: 12px;
+  --wzl-space-7: 14px;
+  --wzl-space-8: 16px;
   --wzl-surface: var(--wzl-gray-800);
   --wzl-surface-raised: var(--wzl-gray-700);
   --wzl-surface-sunken: var(--wzl-gray-900);
@@ -100,22 +120,8 @@
   --wzl-field-pad-x: 8px;
   /* Backdrop blur radius for frosted surfaces. Pairs with glass-tint. */
   --wzl-glass-blur: 3px;
-  /* Shortcut keys and index badges. The floor for chrome text. */
-  --wzl-font-size-2xs: 9px;
-  /* Tool-button labels under an icon. */
-  --wzl-font-size-xs: 10px;
-  /* Chrome labels, status readouts, section headings. */
-  --wzl-font-size-sm: 11px;
   /* Controls and body text. */
-  --wzl-font-size: 13px;
-  /* Panel and dialog titles. */
-  --wzl-font-size-lg: 16px;
-  /* The largest chrome text — a lab or app title. */
-  --wzl-font-size-xl: 20px;
-  --wzl-space-xs: 4px;
-  --wzl-space-sm: 8px;
-  --wzl-space-md: 12px;
-  --wzl-space-lg: 16px;
+  --wzl-font-size: var(--wzl-font-size-md);
   --wzl-tracking-none: 0;
   /* Uppercase section headings. */
   --wzl-tracking-wide: 0.06em;
@@ -149,6 +155,14 @@
   --wzl-font-weight-normal: 300;
   --wzl-font-weight-medium: 350;
   --wzl-font-weight-bold: 400;
+  /* Alias for space-2. The t-shirt names name every other rung of the ladder. */
+  --wzl-space-xs: var(--wzl-space-2);
+  /* Alias for space-4. The t-shirt names name every other rung of the ladder. */
+  --wzl-space-sm: var(--wzl-space-4);
+  /* Alias for space-6. The t-shirt names name every other rung of the ladder. */
+  --wzl-space-md: var(--wzl-space-6);
+  /* Alias for space-8. The t-shirt names name every other rung of the ladder. */
+  --wzl-space-lg: var(--wzl-space-8);
 }
 
 [data-wzl-theme='weasel'][data-wzl-mode='dark'],
@@ -191,4 +205,43 @@
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
   --wzl-surface-hover: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
+}
+
+[data-wzl-theme='weasel'][data-wzl-density='compact'],
+[data-wzl-density='compact'] {
+  --wzl-font-size-2xs: 7px;
+  --wzl-font-size-xs: 8px;
+  --wzl-font-size-sm: 9px;
+  --wzl-font-size-md: 11px;
+  --wzl-font-size-lg: 14px;
+  --wzl-font-size-xl: 17px;
+  --wzl-tb-height: 24px;
+  --wzl-control-h: 20px;
+  --wzl-font-size: var(--wzl-font-size-md);
+}
+
+[data-wzl-theme='weasel'][data-wzl-density='comfortable'],
+[data-wzl-density='comfortable'] {
+  --wzl-font-size-2xs: 9px;
+  --wzl-font-size-xs: 10px;
+  --wzl-font-size-sm: 11px;
+  --wzl-font-size-md: 13px;
+  --wzl-font-size-lg: 16px;
+  --wzl-font-size-xl: 20px;
+  --wzl-tb-height: 28px;
+  --wzl-control-h: 24px;
+  --wzl-font-size: var(--wzl-font-size-md);
+}
+
+[data-wzl-theme='weasel'][data-wzl-density='roomy'],
+[data-wzl-density='roomy'] {
+  --wzl-font-size-2xs: 10px;
+  --wzl-font-size-xs: 12px;
+  --wzl-font-size-sm: 13px;
+  --wzl-font-size-md: 15px;
+  --wzl-font-size-lg: 18px;
+  --wzl-font-size-xl: 23px;
+  --wzl-tb-height: 32px;
+  --wzl-control-h: 28px;
+  --wzl-font-size: var(--wzl-font-size-md);
 }

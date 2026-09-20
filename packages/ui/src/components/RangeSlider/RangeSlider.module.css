@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 4px;
+  gap: var(--wzl-space-2);
   font-family: var(--wzl-font-ui);
   color: var(--wzl-fg);
 }
@@ -18,7 +18,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--wzl-space-4);
 }
 
 .label {

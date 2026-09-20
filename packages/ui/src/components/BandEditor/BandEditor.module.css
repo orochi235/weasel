@@ -5,7 +5,7 @@
   touch-action: none;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--wzl-space-1);
 }
 
 .label {
@@ -57,7 +57,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 0 4px;
+  padding: 0 var(--wzl-space-2);
   margin: 0;
   background: var(--wzl-surface-raised);
   border: 1px solid var(--wzl-border);

@@ -3,7 +3,7 @@
   flex-direction: column;
   width: 100%;
   min-width: 0;
-  gap: 4px;
+  gap: var(--wzl-space-2);
 }
 
 .frame {

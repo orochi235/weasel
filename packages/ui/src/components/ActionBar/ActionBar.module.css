@@ -11,7 +11,7 @@
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
-  padding: 2px;
+  padding: var(--wzl-space-1);
   user-select: none;
 }
 

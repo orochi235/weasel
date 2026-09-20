@@ -1,7 +1,7 @@
 .checkbox {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   cursor: pointer;
   font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size);

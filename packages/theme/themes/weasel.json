@@ -11,6 +11,22 @@
           "scheme": "light"
         }
       }
+    },
+    "density": {
+      "default": "comfortable",
+      "values": {
+        "compact": {},
+        "comfortable": {},
+        "roomy": {}
+      }
+    }
+  },
+  "seeds": {
+    "ui-base": {
+      "by": "density",
+      "compact": 11,
+      "comfortable": 13,
+      "roomy": 15
     }
   },
   "ramps": {
@@ -81,6 +97,51 @@
         "minDistance": 0.22,
         "order": "farthest"
       }
+    }
+  },
+  "scales": {
+    "font-size": {
+      "steps": [
+        "2xs",
+        "xs",
+        "sm",
+        "md",
+        "lg",
+        "xl"
+      ],
+      "base": "{seeds.ui-base}",
+      "factors": [
+        0.66,
+        0.77,
+        0.85,
+        1,
+        1.23,
+        1.54
+      ],
+      "description": "Chrome type ramp. Hand-tuned factors rather than a ratio: the small end is compressed because chrome text stops being legible before a geometric ramp stops shrinking.",
+      "describe": {
+        "2xs": "Shortcut keys and index badges. The floor for chrome text.",
+        "xs": "Tool-button labels under an icon.",
+        "sm": "Chrome labels, status readouts, section headings.",
+        "md": "Controls and body text.",
+        "lg": "Panel and dialog titles.",
+        "xl": "The largest chrome text \u2014 a lab or app title."
+      }
+    },
+    "space": {
+      "steps": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "base": 2,
+      "step": 2,
+      "description": "Spacing ladder, 2px rungs. Invariant across density: the rungs are finer than any density factor could resolve without rounding two of them onto the same pixel."
     }
   },
   "semantics": {
@@ -178,7 +239,7 @@
       "dark": {
         "ref": "accent-strong",
         "type": "color",
-        "description": "Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces."
+        "description": "Accent for foreground use \u2014 text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces."
       },
       "light": {
         "ref": "accent-base",
@@ -196,7 +257,7 @@
       "light": {
         "ref": "gray-50",
         "type": "color",
-        "description": "Flips with the mode — see the dark layer."
+        "description": "Flips with the mode \u2014 see the dark layer."
       }
     },
     "shadow": {
@@ -204,7 +265,7 @@
       "dark": {
         "value": "rgba(0, 0, 0, 0.6)",
         "type": "color",
-        "description": "Elevation. Always darker than any surface — never derived from fg, which is near-white on dark."
+        "description": "Elevation. Always darker than any surface \u2014 never derived from fg, which is near-white on dark."
       },
       "light": {
         "value": "rgba(0, 0, 0, 0.18)",
@@ -338,7 +399,7 @@
       "value": "{fg}",
       "type": "color",
       "alpha": 0.1,
-      "description": "Hover wash over a raised surface. Same formula as line-subtle, different job — do not collapse them."
+      "description": "Hover wash over a raised surface. Same formula as line-subtle, different job \u2014 do not collapse them."
     },
     "surface-pressed": {
       "value": "{fg}",
@@ -349,7 +410,7 @@
     "swatch-fuchsia": {
       "value": "#f641f7",
       "type": "color",
-      "description": "First of ten categorical spot colors for plotting, status and data viz. Take them in sequence: the order is farthest-point over hue, so the first N are as separated as N colors can be (first three 87° apart, all ten 32°). Mode-invariant on purpose — a series keeps its color when the mode flips, which is why they are tuned for a dark surface and clear only 1.5:1 on a light one."
+      "description": "First of ten categorical spot colors for plotting, status and data viz. Take them in sequence: the order is farthest-point over hue, so the first N are as separated as N colors can be (first three 87\u00b0 apart, all ten 32\u00b0). Mode-invariant on purpose \u2014 a series keeps its color when the mode flips, which is why they are tuned for a dark surface and clear only 1.5:1 on a light one."
     },
     "swatch-green": {
       "value": "#48e628",
@@ -402,7 +463,7 @@
     "radius-pill": {
       "value": "999px",
       "type": "dimension",
-      "description": "Fully rounded ends — segmented controls, progress tracks."
+      "description": "Fully rounded ends \u2014 segmented controls, progress tracks."
     },
     "border-w": {
       "value": "1px",
@@ -411,7 +472,7 @@
     "line-width": {
       "value": "2px",
       "type": "dimension",
-      "description": "Structural lines — gridlines, dividers, axes."
+      "description": "Structural lines \u2014 gridlines, dividers, axes."
     },
     "curve-width": {
       "value": "3px",
@@ -419,14 +480,40 @@
       "description": "Drawn data curves. Heavier than structural lines so data reads as primary content."
     },
     "tb-height": {
-      "value": "28px",
-      "type": "dimension",
-      "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+      "by": "density",
+      "compact": {
+        "value": "24px",
+        "type": "dimension",
+        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+      },
+      "comfortable": {
+        "value": "28px",
+        "type": "dimension",
+        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+      },
+      "roomy": {
+        "value": "32px",
+        "type": "dimension",
+        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+      }
     },
     "control-h": {
-      "value": "24px",
-      "type": "dimension",
-      "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+      "by": "density",
+      "compact": {
+        "value": "20px",
+        "type": "dimension",
+        "description": "Height of an interactive control \u2014 button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+      },
+      "comfortable": {
+        "value": "24px",
+        "type": "dimension",
+        "description": "Height of an interactive control \u2014 button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+      },
+      "roomy": {
+        "value": "28px",
+        "type": "dimension",
+        "description": "Height of an interactive control \u2014 button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+      }
     },
     "slider-track-h": {
       "value": "4px",
@@ -441,27 +528,27 @@
     "slider-track-mix": {
       "value": "18%",
       "type": "dimension",
-      "description": "Accent proportion in a range track, as a color-mix percentage — not a color. Mixed into a real property, never into another custom property."
+      "description": "Accent proportion in a range track, as a color-mix percentage \u2014 not a color. Mixed into a real property, never into another custom property."
     },
     "slider-thumb-mix": {
       "value": "70%",
       "type": "dimension",
-      "description": "Accent proportion in a range thumb, as a color-mix percentage — not a color."
+      "description": "Accent proportion in a range thumb, as a color-mix percentage \u2014 not a color."
     },
     "handle-size": {
       "value": "9px",
       "type": "dimension",
-      "description": "Edge of a draggable handle on a plot or timeline — a keyframe diamond, a timeline key, an event mark. The default rank; -sm and -lg are the two deliberate departures from it."
+      "description": "Edge of a draggable handle on a plot or timeline \u2014 a keyframe diamond, a timeline key, an event mark. The default rank; -sm and -lg are the two deliberate departures from it."
     },
     "handle-size-sm": {
       "value": "7px",
       "type": "dimension",
-      "description": "A handle that is drawn but not draggable — a locked or pinned point. Smaller so it reads as inert next to a live one."
+      "description": "A handle that is drawn but not draggable \u2014 a locked or pinned point. Smaller so it reads as inert next to a live one."
     },
     "handle-size-lg": {
       "value": "10px",
       "type": "dimension",
-      "description": "A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with."
+      "description": "A handle that is a category of its own rather than one of a row \u2014 a curve's endpoint. Larger so it separates from the handles it sits in line with."
     },
     "field-pad-x": {
       "value": "8px",
@@ -473,51 +560,10 @@
       "type": "dimension",
       "description": "Backdrop blur radius for frosted surfaces. Pairs with glass-tint."
     },
-    "font-size-2xs": {
-      "value": "9px",
-      "type": "dimension",
-      "description": "Shortcut keys and index badges. The floor for chrome text."
-    },
-    "font-size-xs": {
-      "value": "10px",
-      "type": "dimension",
-      "description": "Tool-button labels under an icon."
-    },
-    "font-size-sm": {
-      "value": "11px",
-      "type": "dimension",
-      "description": "Chrome labels, status readouts, section headings."
-    },
     "font-size": {
-      "value": "13px",
+      "value": "{font-size-md}",
       "type": "dimension",
       "description": "Controls and body text."
-    },
-    "font-size-lg": {
-      "value": "16px",
-      "type": "dimension",
-      "description": "Panel and dialog titles."
-    },
-    "font-size-xl": {
-      "value": "20px",
-      "type": "dimension",
-      "description": "The largest chrome text — a lab or app title."
-    },
-    "space-xs": {
-      "value": "4px",
-      "type": "dimension"
-    },
-    "space-sm": {
-      "value": "8px",
-      "type": "dimension"
-    },
-    "space-md": {
-      "value": "12px",
-      "type": "dimension"
-    },
-    "space-lg": {
-      "value": "16px",
-      "type": "dimension"
     },
     "tracking-none": {
       "value": "0",
@@ -568,12 +614,12 @@
     "motion-fast": {
       "value": "120ms",
       "type": "duration",
-      "description": "Micro-interactions — hover, focus, pressed."
+      "description": "Micro-interactions \u2014 hover, focus, pressed."
     },
     "motion-medium": {
       "value": "240ms",
       "type": "duration",
-      "description": "Entrances and exits — toasts, popovers, panels."
+      "description": "Entrances and exits \u2014 toasts, popovers, panels."
     },
     "ease-in-cubic": {
       "value": [
@@ -667,6 +713,26 @@
     "font-weight-bold": {
       "value": 400,
       "type": "fontWeight"
+    },
+    "space-xs": {
+      "value": "{space-2}",
+      "type": "dimension",
+      "description": "Alias for space-2. The t-shirt names name every other rung of the ladder."
+    },
+    "space-sm": {
+      "value": "{space-4}",
+      "type": "dimension",
+      "description": "Alias for space-4. The t-shirt names name every other rung of the ladder."
+    },
+    "space-md": {
+      "value": "{space-6}",
+      "type": "dimension",
+      "description": "Alias for space-6. The t-shirt names name every other rung of the ladder."
+    },
+    "space-lg": {
+      "value": "{space-8}",
+      "type": "dimension",
+      "description": "Alias for space-8. The t-shirt names name every other rung of the ladder."
     }
   }
 }

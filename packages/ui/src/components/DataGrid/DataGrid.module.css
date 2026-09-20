@@ -12,7 +12,7 @@
 .table th,
 .table td {
   text-align: left;
-  padding: 3px 6px;
+  padding: 3px var(--wzl-space-3);
   vertical-align: middle;
 }
 .table tbody tr {
@@ -46,7 +46,7 @@
 .empty {
   color: var(--wzl-fg-muted);
   font-style: italic;
-  padding: 8px 0;
+  padding: var(--wzl-space-4) 0;
   text-align: center;
 }
 

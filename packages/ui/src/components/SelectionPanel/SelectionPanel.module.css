@@ -8,8 +8,8 @@
 .header {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  padding: 8px 0;
+  gap: var(--wzl-space-4);
+  padding: var(--wzl-space-4) 0;
   border-block-end: 1px solid var(--wzl-border);
 }
 
@@ -24,7 +24,7 @@
 }
 
 .section {
-  padding: 6px 0 8px;
+  padding: var(--wzl-space-3) 0 var(--wzl-space-4);
   border-block-end: 1px solid var(--wzl-border);
 }
 
@@ -33,7 +33,7 @@
 }
 
 .sectionTitle {
-  margin: 0 0 6px;
+  margin: 0 0 var(--wzl-space-3);
   font-size: var(--wzl-font-size-xs);
   font-weight: var(--wzl-font-weight-bold);
   text-transform: uppercase;
@@ -44,7 +44,7 @@
 .row {
   display: grid;
   grid-template-columns: 64px 1fr;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   align-items: center;
   margin-block-end: 5px;
 }
@@ -56,7 +56,7 @@
 .rowControls {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   align-items: center;
   min-inline-size: 0;
 }
@@ -66,7 +66,7 @@
 .namedField {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--wzl-space-2);
   min-inline-size: 0;
 }
 
@@ -135,7 +135,7 @@
 
 /* A `block` leaf that renders its own rows — an object leaf's fields. */
 .objectLeaf {
-  margin-block: 8px 4px;
+  margin-block: var(--wzl-space-4) var(--wzl-space-2);
 }
 
 .objectLeaf .sectionTitle {
@@ -144,9 +144,9 @@
 
 /* Fields under a heading inside an object read as belonging to it. */
 .objectGroup {
-  padding-inline-start: 8px;
+  padding-inline-start: var(--wzl-space-4);
   border-inline-start: 1px solid var(--wzl-border);
-  margin-block-end: 4px;
+  margin-block-end: var(--wzl-space-2);
 }
 
 /* `InlineRange` owns the track; the row only says how it shares the space. */
