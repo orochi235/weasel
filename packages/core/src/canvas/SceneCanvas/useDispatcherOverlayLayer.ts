@@ -21,7 +21,7 @@
  * user-visible result is identical.
  */
 import { useEffect, useMemo, useReducer, useRef } from 'react';
-import { viewToMat3, type DrawCommand, type PathDrawCommand } from '../../renderer';
+import type { DrawCommand, PathDrawCommand } from '../../renderer';
 import type { Stroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
@@ -256,24 +256,19 @@ export function useDispatcherOverlayLayer(args: {
           }
 
           if (ov.kind === 'polyline') {
-            // The one overlay drawn in world coordinates rather than projected
-            // here: a cut line and a connector both thicken with the zoom,
-            // which is how they read before this layer owned their paint.
-            // Marquee and lasso chrome holds its CSS-pixel weight instead.
             const stroke =
               roles[ov.role] ??
               { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash };
+            const screenPts: { x: number; y: number }[] = [];
+            for (const pt of ov.points) {
+              const [sx, sy] = worldToScreen(pt.x, pt.y, t);
+              screenPts.push({ x: sx, y: sy });
+            }
             out.push({
-              kind: 'group',
-              transform: viewToMat3(view),
-              children: [
-                {
-                  kind: 'path',
-                  path: polylineFromPoints(ov.points),
-                  stroke,
-                } satisfies PathDrawCommand,
-              ],
-            });
+              kind: 'path',
+              path: polylineFromPoints(screenPts),
+              stroke,
+            } satisfies PathDrawCommand);
             continue;
           }
         }

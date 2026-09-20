@@ -159,13 +159,6 @@ Priority tags:
   ordinary type hygiene, not a blocker. Findings in
   `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
 
-- **(P3) A `'polyline'` overlay is drawn in world coordinates; every other one
-  is projected.** A cut line and a connector thicken with the zoom, while
-  marquee and lasso chrome holds its CSS-pixel weight. That is what both did
-  before the layer owned their paint, and it survived the move unchanged rather
-  than being decided. One place to fix it now instead of two:
-  `useDispatcherOverlayLayer`'s `'polyline'` branch.
-
 - **(P3) `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.**
   Not a stale consumer: `<Lab>` is the trial runtime — it requires a non-empty
   `instruments` list, seeds a trial, and renders `children` into the header
