@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findOffenders } from './check-design-tokens';
+import { findOffenders, rootTokenValues } from './check-design-tokens';
 
 describe('findOffenders', () => {
   it('flags a raw font-size', () => {
@@ -66,5 +66,22 @@ describe('findOffenders', () => {
 
   it('flags a stray danger color even on an allowlisted file', () => {
     expect(findOffenders('theme/base.less', '.x { color: #ff5b5b; }')).toHaveLength(1);
+  });
+});
+
+describe('rootTokenValues', () => {
+  // Each density block restates the whole size scale, so reading the file
+  // straight through leaves the last one standing and every authored fallback
+  // gets vetted against `roomy` instead of the default.
+  it('takes the :root value over a later block that restates it', () => {
+    const css = [
+      ':root {',
+      '  --wzl-font-size-sm: 11px;',
+      '}',
+      "[data-wzl-density='roomy'] {",
+      '  --wzl-font-size-sm: 13px;',
+      '}',
+    ].join('\n');
+    expect(rootTokenValues(css)['--wzl-font-size-sm']).toBe('11px');
   });
 });

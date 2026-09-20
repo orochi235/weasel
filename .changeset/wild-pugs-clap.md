@@ -1,6 +1,7 @@
 ---
 '@weasel-js/theme': patch
 '@weasel-js/ui': patch
+'@weasel-js/labkit': patch
 ---
 
 Derive the type ramp from one number, and add a `density` axis that scales it.
@@ -37,3 +38,8 @@ Also adopts the ladder across `packages/ui`: 189 `gap`/`padding`/`margin` px
 literals became rungs and the frozen control boxes became ranks.
 `npm run check:spacing` and `npm run check:controls` keep them there; a
 rank-sized box that is really artwork opts out with a `not-a-control` comment.
+
+`check:design-tokens` now reads the scale from `:root` alone. Each density block
+restates the whole scale, so reading the stylesheet straight through left
+`roomy` standing and vetted every authored fallback against a value no unset
+document shows.

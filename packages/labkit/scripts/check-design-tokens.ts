@@ -31,15 +31,28 @@ const TOKENS_CSS = join(ROOT, TOKENS_REL);
 const SCALE_TOKEN = /(--wzl-(?:font-size|font-weight|radius)[\w-]*)\s*:\s*([^;]+);/g;
 
 /**
- * The size, weight and radius scales, read from the generated theme so this
- * check can't itself drift from the tokens it enforces.
+ * The size, weight and radius scales as `:root` declares them. Every density
+ * block restates the whole scale, so reading the file straight through leaves
+ * `roomy` standing and vets authored fallbacks against a value no unset
+ * document ever shows.
  */
-export function readTokenValues(file: string = TOKENS_CSS): Record<string, string> {
+export function rootTokenValues(css: string): Record<string, string> {
+  const open = css.indexOf(':root');
+  const brace = open === -1 ? -1 : css.indexOf('{', open);
+  const root = brace === -1 ? '' : css.slice(brace + 1, css.indexOf('}', brace));
   const values: Record<string, string> = {};
-  for (const [, token, value] of readFileSync(file, 'utf8').matchAll(SCALE_TOKEN)) {
+  for (const [, token, value] of root.matchAll(SCALE_TOKEN)) {
     if (token && value && !value.includes('var(')) values[token] = value.trim();
   }
   return values;
+}
+
+/**
+ * The scales, read from the generated theme so this check can't itself drift
+ * from the tokens it enforces.
+ */
+export function readTokenValues(file: string = TOKENS_CSS): Record<string, string> {
+  return rootTokenValues(readFileSync(file, 'utf8'));
 }
 
 const TOKEN_VALUES = readTokenValues();
