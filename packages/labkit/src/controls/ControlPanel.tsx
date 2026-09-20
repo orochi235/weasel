@@ -23,6 +23,7 @@ import {
   Switch,
   SwitchRow,
   TextRow,
+  ToggleBar,
   ToggleRow,
 } from '@weasel-js/ui';
 import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
@@ -242,6 +243,10 @@ export function ControlPanel<TC extends Record<string, unknown>>({
         key={path}
         title={found.name}
         description={found.description}
+        // A nested group is a block of rows, not a control: half of a
+        // two-column grid leaves it laying its own rows out inside a cell,
+        // which overlaps them.
+        span
         {...fold(path, undefined, rows.grid)}
       >
         {body(found, path, rows)}
@@ -294,6 +299,9 @@ export function ControlPanel<TC extends Record<string, unknown>>({
           shown={shown}
           setConfig={setConfig}
           layout={rows.layout}
+          // A segmented cell carries every choice at once, so a pair holding
+          // one needs the whole row the way a segmented row of its own does.
+          span={cells.some(({ leaf }) => extra<string>(leaf, 'control') === 'radio')}
         />,
       );
       i = j;
@@ -749,22 +757,29 @@ function PairedRow<TC extends Record<string, unknown>>({
   shown,
   setConfig,
   layout,
+  span,
 }: {
   label: string;
   cells: readonly PairCellSpec[];
   shown: TC;
   setConfig: (path: string, value: unknown) => void;
   layout?: PropertyRowLayout;
+  span?: boolean;
 }) {
   return (
-    <PropertyRow group label={label} layout={layout}>
+    <PropertyRow group span={span} label={label} layout={layout}>
       {cells.map(({ path, leaf }) => (
-        <PairCell
-          key={path}
-          leaf={leaf}
-          value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
-          write={(value) => setConfig(path, value)}
-        />
+        // The row is named by the pair, so a cell that shares it says which
+        // knob it is — without a caption a paired switch reads only to a
+        // screen reader. A cell whose leaf is deliberately unnamed keeps none.
+        <span key={path} className="lk-pair-cell">
+          {leaf.name ? <span className="lk-pair-label">{leaf.name}</span> : null}
+          <PairCell
+            leaf={leaf}
+            value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
+            write={(value) => setConfig(path, value)}
+          />
+        </span>
       ))}
     </PropertyRow>
   );
@@ -850,6 +865,21 @@ function PairCell({
     }
     case 'enum': {
       const options = extra<readonly { value: string; label: string }[]>(leaf, 'options') ?? [];
+      // A leaf that asked to be segmented stays segmented when it shares a row:
+      // the choice is the control's shape, not a whole row's worth of chrome.
+      if (extra<string>(leaf, 'control') === 'radio') {
+        return (
+          <span title={title}>
+            <ToggleBar<string>
+              ariaLabel={name}
+              size="sm"
+              value={typeof value === 'string' ? value : null}
+              onChange={(next) => next !== null && write(next)}
+              items={options.map((o) => ({ value: o.value, label: o.label }))}
+            />
+          </span>
+        );
+      }
       // `Select` takes no `title`, so the cell's help hangs off a wrapper.
       return (
         <span title={title}>

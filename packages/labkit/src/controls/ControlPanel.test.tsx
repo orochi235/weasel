@@ -1004,9 +1004,13 @@ describe('<ControlPanel> pair', () => {
     const row = screen.getByText('Offset').closest('div') as HTMLElement;
     expect(within(row).getByLabelText('X')).toHaveValue(10);
     expect(within(row).getByLabelText('Y')).toHaveValue(20);
-    // The pair names the row, so neither leaf's own name is drawn beside it.
-    expect(screen.queryByText('X')).toBeNull();
-    expect(screen.queryByText('Y')).toBeNull();
+  });
+
+  it('captions each cell of a pair with its own name, so a paired switch is not left unnamed', () => {
+    render(<ControlPanel schema={paired()} config={config} setConfig={vi.fn()} />);
+    const row = screen.getByText('Offset').closest('div') as HTMLElement;
+    expect(within(row).getByText('X')).toHaveClass('lk-pair-label');
+    expect(within(row).getByText('Y')).toHaveClass('lk-pair-label');
   });
 
   it('writes each cell of a paired row to its own path', () => {
@@ -1014,6 +1018,23 @@ describe('<ControlPanel> pair', () => {
     render(<ControlPanel schema={paired()} config={config} setConfig={setConfig} />);
     fireEvent.change(screen.getByLabelText('Y'), { target: { value: '30' } });
     expect(setConfig).toHaveBeenCalledWith('y', 30);
+  });
+
+  it('keeps a segmented leaf segmented when it shares a row, and gives that row the width', () => {
+    const schema = resolveConfigSchema(
+      f.schema({
+        camera: f.enum<'2d' | '3d'>('3d', ['2d', '3d']).radio().label('').pair('Camera'),
+        hold: f.boolean(true).toggle().label('Hold front').pair('Camera'),
+      }),
+      [],
+    );
+    render(
+      <ControlPanel schema={schema} config={{ camera: '3d', hold: true }} setConfig={vi.fn()} />,
+    );
+    const row = screen.getByText('Camera').closest('div') as HTMLElement;
+    expect(within(row).getByRole('radio', { name: '2d' })).toBeInTheDocument();
+    expect(within(row).queryByRole('combobox')).toBeNull();
+    expect(row.className).toMatch(/span/);
   });
 
   it('leaves an unpaired sibling on its own row', () => {
