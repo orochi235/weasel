@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Toolbar } from './Toolbar';
 
 const meta: Meta<typeof Toolbar> = {

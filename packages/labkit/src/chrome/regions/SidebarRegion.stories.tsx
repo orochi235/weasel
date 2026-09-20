@@ -1,5 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect } from 'storybook/test';
+import type { Meta, StoryObj } from '@weasel-js/forge';
+import { expect } from '@weasel-js/forge/play';
+import { LabRoot } from '../../lab/LabRoot';
 import type { SidebarSlotContext } from '../types';
 import { SidebarRegion } from './SidebarRegion';
 
@@ -17,7 +18,7 @@ const ctx: SidebarSlotContext = { collapsedSections: {}, setSectionCollapsed: ()
 // jsdom has no layout, so this runs in the browser story projects.
 export const LastSectionFillsItsPane: Story = {
   render: () => (
-    <div className="lk-root">
+    <LabRoot>
       <div className="lk-lab__aside" data-testid="pane" style={{ height: 400 }}>
         <SidebarRegion
           ctx={ctx}
@@ -27,7 +28,7 @@ export const LastSectionFillsItsPane: Story = {
           ]}
         />
       </div>
-    </div>
+    </LabRoot>
   ),
   play: async ({ canvasElement }) => {
     const pane = canvasElement.querySelector('[data-testid="pane"]') as HTMLElement;

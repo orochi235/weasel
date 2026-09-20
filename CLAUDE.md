@@ -214,12 +214,13 @@ asked for that key — never that a rule defines it, and a class whose rule was 
 as present. The hash is per stylesheet, so an assertion can still tell *which* module a class came
 from; to know a rule survives, read the stylesheet or check it in a browser.
 
-**Storybook's theme global does not switch weasel's theme.** `tokens.css` keys its mode blocks
-off `[data-wzl-mode]`, which `applyTheme` writes. `&globals=theme:dark` sets `data-theme`, which
-nothing reads, so a "both themes" check driven from the URL verifies one theme twice — whichever
-`prefers-color-scheme` reports. labkit stories switch via the lab header's Auto/Light/Dark
-buttons; bare `@weasel-js/ui` stories need `data-wzl-mode` set by hand, and otherwise render on
-the `:root` dark default in both modes.
+**Only `[data-wzl-mode]` switches the theme — an attribute named anything else is inert.**
+`tokens.css` keys its mode blocks off it, and `applyTheme` is what writes it. forge's `mode`
+global goes through `applyTheme` onto the frame's `<html>`, so every story in the workshop,
+bare `@weasel-js/ui` included, follows Auto/Light/Dark without a decorator of its own. A story
+that sets `data-theme`, or wraps itself to restate the mode, is either doing nothing or
+verifying one mode twice — Storybook's `theme` global was the original source of that, and both
+it and the workarounds it needed are gone.
 
 **A `var()` inside a custom property is substituted where that property is declared.** So
 `--wzl-x: 0 1px 3px var(--wzl-shadow)` in `:root` bakes in the default mode's shadow and

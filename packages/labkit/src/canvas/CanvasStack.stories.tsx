@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { CanvasStack } from './CanvasStack';

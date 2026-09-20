@@ -79,7 +79,7 @@ export function WeaselDemos() {
           <p>Domain-agnostic 2D scene-graph hooks for React + canvas.</p>
           <p><a href="./api/">API reference →</a></p>
           <p><a href="./api-gestures/">weasel-gestures API →</a></p>
-          <p><a href="./docs/ui/storybook/">UI storybook →</a></p>
+          <p><a href="./docs/ui/forge/">Component workshop →</a></p>
           <p><a href="./draw/">WeaselDraw →</a></p>
           <p><a href="./draw/#/dev/toolkits">Toolkit builder →</a></p>
           <p className="ckd-sidebar-hint">

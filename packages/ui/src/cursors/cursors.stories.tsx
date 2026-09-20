@@ -7,7 +7,7 @@
  * calls. A story that redrew the glyphs would agree with the package right up
  * until it stopped.
  */
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import {
   bakeCursor,
   chromeLineWidthScale,

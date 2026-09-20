@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useArgs } from 'storybook/preview-api';
+import type { Meta, StoryObj } from '@weasel-js/forge';
+import { useArgs } from '@weasel-js/forge/preview-api';
 import { Slider, type Thumb } from './Slider';
 import { paintGradientTrack } from '../../paintGradientTrack';
 import { oklchToHex } from '../../color/oklch';

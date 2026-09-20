@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Powerline } from './Powerline';
 import type { EdgeCap } from '../Badge/bases/edgeProfiles';
 import s from './Powerline.module.css';

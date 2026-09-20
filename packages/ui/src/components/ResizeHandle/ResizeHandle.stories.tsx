@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ResizeHandle } from './ResizeHandle';
 import { Sidebar } from '../Sidebar';
 import { SidebarPanel } from '../SidebarPanel';

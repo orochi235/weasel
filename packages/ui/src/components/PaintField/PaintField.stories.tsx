@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { FillStyle } from '@weasel-js/core';
 import { PaintField } from './PaintField';
 

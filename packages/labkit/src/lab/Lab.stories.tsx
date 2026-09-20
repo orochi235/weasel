@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect } from 'react';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';

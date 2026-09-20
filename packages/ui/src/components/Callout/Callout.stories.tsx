@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useRef, useState } from 'react';
 import { Pressable } from 'react-aria-components';
 import { Callout, CalloutTrigger } from './Callout';

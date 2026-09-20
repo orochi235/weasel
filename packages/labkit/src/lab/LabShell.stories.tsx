@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, within } from 'storybook/test';
+import type { Meta, StoryObj } from '@weasel-js/forge';
+import { expect, within } from '@weasel-js/forge/play';
 import { Select, ToggleBar } from '../passthrough/weasel-ui';
 import { Toolbar } from '../primitives/Toolbar';
 import { LabShell } from './LabShell';

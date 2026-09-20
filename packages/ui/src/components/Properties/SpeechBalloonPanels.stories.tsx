@@ -3,7 +3,7 @@
 // effect bodies, subpanels, and accent-tinted effect cards look the same as
 // the SB reference, we've captured the styling correctly.
 
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import {
   CheckboxRow,

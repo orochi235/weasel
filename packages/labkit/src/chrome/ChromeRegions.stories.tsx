@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { CrosshairIcon, HandIcon, PencilIcon, SnapshotIcon } from '@weasel-js/ui';
 import type { ConfigField } from '../controls/types';
 import type { Instrument } from '../instrument/types';

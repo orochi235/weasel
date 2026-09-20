@@ -1,5 +1,15 @@
 export { f } from '@weasel-js/labkit/config';
 export { defineFrameConfig, defineShellConfig, type ShellConfig } from './config';
+export type { ArgType } from './csf/argsToSchema';
+export type {
+  ArgsOf,
+  CsfDecorator,
+  CsfPlayContext,
+  CsfStep,
+  CsfStoryContext,
+  Meta,
+  StoryObj,
+} from './csf/types';
 export type { FrameSetup } from './frame/FrameController';
 export type { GlobalDeclaration, GlobalDeclarations } from './shell/globals';
 export { meta, story } from './story/define';

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import {
   CheckboxRow,
@@ -14,7 +14,7 @@ import {
   ToggleRow,
 } from './PropertyPanel';
 
-// Args common to most stories — exposed as Storybook controls so the
+// Args common to most stories — exposed as controls so the
 // title, pack mode, and container width can be tweaked live.
 interface DemoArgs {
   title: string;

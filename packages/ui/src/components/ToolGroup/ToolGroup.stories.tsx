@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ToolGroup } from './ToolGroup';
 import { ToolButton } from '../ToolButton';
 

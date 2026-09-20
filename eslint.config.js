@@ -47,7 +47,6 @@ export default [
       '**/dist/**',
       '**/dist-*/**',
       '**/node_modules/**',
-      '**/storybook-static/**',
       '**/*.d.ts',
     ],
   },

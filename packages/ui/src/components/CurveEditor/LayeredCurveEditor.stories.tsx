@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   LayeredCurveEditor,
@@ -102,7 +102,7 @@ function TwoLayersDemo() {
 // the contour spline (purple) covers [b, halfWidth]. The seam at x=b
 // is held C0 — the two layers' seam anchors share y, kept in sync by
 // the consumer inside `onLayerChange`. A third draggable handle layer
-// lets the user adjust b live; a Storybook slider provides the initial
+// lets the user adjust b live; a control slider provides the initial
 // value.
 
 const HALF_WIDTH = 1.0;
@@ -298,7 +298,7 @@ function RimContourDemo(args: RimContourArgs) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Storybook plumbing
+// Story plumbing
 // ─────────────────────────────────────────────────────────────────────
 
 function StoryRoot({ children }: { children: ReactNode }) {

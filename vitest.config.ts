@@ -1,8 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+import { resolve } from 'node:path';
 import { playwright } from '@vitest/browser-playwright';
 import { weaselAliases } from './scripts/vite-aliases';
 import { traitSchemasPlugin } from './apps/draw/vite-plugin-trait-schemas';
@@ -10,14 +8,12 @@ import { forgeAliases, frameConfig as forgeFrameConfig, stories as forgeStories 
 import { forgeTest } from './packages/forge/src/vite/forgeTest';
 import { weaselDefines } from './scripts/vite-build-info';
 
-const storybookDir = dirname(fileURLToPath(new URL('./.storybook/main.ts', import.meta.url)));
-
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
 // Default `npm test` runs the jsdom projects (core, weasel-ui, WeaselDraw,
 // smoke). `npm run check:test-projects` fails the build on a test file no
-// project's glob reaches. Heavy projects (storybook browser tests) are opt-in via
-// `npm run test:stories`. Shared concerns (jsdom env, setup, alias map) live
+// project's glob reaches. The browser project (`forge-stories`) is opt-in via
+// `npm run test:stories:forge`. Shared concerns (jsdom env, setup, alias map) live
 // in the per-project block — vitest doesn't currently inherit `resolve` or
 // `test` keys from the top-level config when `projects` is set.
 const shared = {
@@ -134,29 +130,9 @@ export default defineConfig({
           ],
         },
       },
-      // Runs every CSF story as a Vitest test. Requires Playwright
-      // (`@playwright/test` + a browser install). Opt-in via
-      // `npm run test:stories`; not in `test`, `test:unit` or CI, because it
-      // pulls Playwright and ~250 MB of browser only to prove every story mounts.
-      {
-        plugins: [
-          react(),
-          storybookTest({ configDir: storybookDir }),
-        ],
-        resolve: shared.resolve,
-        test: {
-          name: 'storybook',
-          browser: {
-            enabled: true,
-            provider: playwright(),
-            headless: true,
-            instances: [{ browser: 'chromium' }],
-          },
-        },
-      },
       // Every story — native and CSF — rendered and played through forge's frame, with the workshop's
       // frame setup. Opt-in via `npm run test:stories:forge`; kept out of `test`, `test:unit` and CI
-      // for the same reason as `storybook` above.
+      // because it pulls Playwright and ~250 MB of browser only to prove every story mounts.
       {
         plugins: [
           react(),

@@ -2,19 +2,27 @@
  * Find style rules that a labkit class and a weasel-ui CSS module both set at
  * identical specificity — where injection order, not intent, picks the winner.
  *
- * Usage: node scripts/find-css-ties.mjs <storybook-url> [story-id ...]
- *   node scripts/find-css-ties.mjs http://localhost:6006 labkit-lab-fullchrome--all-chrome
- * With no story ids, every story titled `labkit/…` is checked.
+ * Usage: node scripts/find-css-ties.mjs <forge-url> [story-id ...]
+ *   npm run dev:forge, then
+ *   node scripts/find-css-ties.mjs http://localhost:5174 labkit-lab-fullchrome--all-chrome
+ * With no story ids, every story titled `labkit/…` is checked. Ids are read
+ * from forge's own indexer rather than over HTTP, so this needs no endpoint
+ * the workshop does not already serve.
  *
  * Each page is seeded with a known collision first. A run that cannot find its
  * own canary reports the story as BROKEN rather than clean — an earlier version
  * of this probe reported "no collisions" against a plainly visible defect twice.
  */
+import { resolve } from 'node:path';
+import { globSync, readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
+import { stories } from '../apps/forge/viteShared.ts';
+import { autoTitle } from '../packages/forge/src/vite/autoTitle.ts';
+import { indexFile } from '../packages/forge/src/vite/indexFile.ts';
 
 const [base, ...only] = process.argv.slice(2);
 if (!base) {
-  console.error('usage: node scripts/find-css-ties.mjs <storybook-url> [story-id ...]');
+  console.error('usage: node scripts/find-css-ties.mjs <forge-url> [story-id ...]');
   process.exit(2);
 }
 
@@ -102,12 +110,12 @@ function collectTies() {
   return found;
 }
 
-const index = await (await fetch(`${base}/index.json`)).json();
-const ids = only.length
-  ? only
-  : Object.entries(index.entries)
-      .filter(([, v]) => v.title.startsWith('labkit/'))
-      .map(([id]) => id);
+const repoRoot = resolve(import.meta.dirname, '..');
+const entries = [...new Set(stories.flatMap((pattern) => globSync(pattern, { cwd: repoRoot })))]
+  .map((file) => resolve(repoRoot, file))
+  .sort()
+  .flatMap((file) => indexFile(readFileSync(file, 'utf8'), file, autoTitle(file, repoRoot, stories)));
+const ids = only.length ? only : entries.filter((e) => e.title.startsWith('labkit/')).map((e) => e.id);
 
 const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -120,7 +128,7 @@ for (const id of ids) {
   n++;
   const page = await context.newPage();
   try {
-    await page.goto(`${base}/iframe.html?id=${id}&viewMode=story`, {
+    await page.goto(`${base}/frame.html#${id}`, {
       waitUntil: 'networkidle',
       timeout: 30000,
     });

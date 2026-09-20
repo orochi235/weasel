@@ -2,12 +2,10 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/labkit/styles.css';
 import './frame.css';
 import { type Decorator, defineFrameConfig } from '@weasel-js/forge';
-import { interstellarTheme } from '@weasel-js/labkit';
+import { type LabMode, LabRoot } from '@weasel-js/labkit';
 import { applyTheme, weaselTheme } from '@weasel-js/theme';
-import { ThemeProvider } from '@weasel-js/theme/react';
-import type { ReactNode } from 'react';
 import { fontRule, GOOGLE_FONTS_HREF } from './fonts';
-import { followScheme, useResolvedMode } from './mode';
+import { followScheme } from './mode';
 
 if (typeof document !== 'undefined' && !document.getElementById('fg-google-fonts')) {
   const link = document.createElement('link');
@@ -17,16 +15,15 @@ if (typeof document !== 'undefined' && !document.getElementById('fg-google-fonts
   document.head.append(link);
 }
 
-function LabkitRoot({ picked, children }: { picked: unknown; children: ReactNode }) {
-  return (
-    <ThemeProvider theme={interstellarTheme} selection={{ mode: useResolvedMode(picked) }} className="lk-root">
-      {children}
-    </ThemeProvider>
-  );
-}
+const asLabMode = (picked: unknown): LabMode =>
+  picked === 'light' || picked === 'dark' ? picked : 'auto';
 
 const labkitRoot: Decorator = (story, ctx) =>
-  ctx.title.startsWith('labkit/') ? <LabkitRoot picked={ctx.globals.mode}>{story()}</LabkitRoot> : story();
+  ctx.title.startsWith('labkit/') ? (
+    <LabRoot mode={asLabMode(ctx.globals.mode)}>{story()}</LabRoot>
+  ) : (
+    story()
+  );
 
 const FONT_STYLE_ID = 'fg-font-globals';
 

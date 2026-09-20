@@ -14,11 +14,17 @@ const SPEC = /(?:from\s+|import\s*\(\s*|import\s+|vi\.mock\(\s*|import\.meta\.gl
 export function findViolations({ labkitExports, files }) {
   const published = new Set(labkitExports);
   const within = (pkg, path) => path === pkg || path.startsWith(`${pkg}/`);
+  // A story is an input to the workshop, not part of labkit's library: no tsup
+  // entry reaches one and none ships in the tarball. It is typed and driven by
+  // the runner that renders it, which is forge — so the direction that would
+  // otherwise be a layering inversion is the correct one here.
+  const isStory = (path) => /\.stories\.tsx?$/.test(path);
   const problems = [];
   for (const { path, source } of files) {
     for (const [, spec] of source.matchAll(SPEC)) {
       const target = spec.startsWith('.') ? posix.join(posix.dirname(path), spec) : null;
       if (within('packages/labkit', path)) {
+        if (isStory(path)) continue;
         if (/^@weasel-js\/forge(\/|$)/.test(spec) || (target && within('packages/forge', target))) {
           problems.push(`${path} imports forge: ${spec}`);
         }

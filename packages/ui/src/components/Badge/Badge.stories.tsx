@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { applyToPoint, invert } from '@weasel-js/geom';
 import { Badge } from './Badge';
 import { ToggleBar as KitToggleBar } from '../ToggleBar/ToggleBar';

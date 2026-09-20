@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { localStorageAdapter } from '../state/adapters';
 import { Persistence } from '../state/Persistence';
 import { FloatingPanel } from './FloatingPanel';

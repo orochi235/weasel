@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { TokenName } from '@weasel-js/theme';
 import { useTheme } from '@weasel-js/theme/react';
 import {

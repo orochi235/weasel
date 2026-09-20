@@ -969,7 +969,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   and breaks another: `LabFit.stories`' `WrappedNoReset*` cases, a host that
   never set `html, body, #root { height: 100% }`, then size the lab to its
   content. So this is a choice between the two mounts, not a CSS fix; the
-  storybook browser project is what checks either one.
+  `forge-stories` browser project is what checks either one.
 
 - **(P3) Two CurveEditor handles are still literals.** The `--wzl-handle-size`
   family covers the 45°-rotated squares; the round ranks did not fold into it,
@@ -1003,16 +1003,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   leaf's unit from a `UnitSystem`. A compound value (`5ft 3in`) does not parse,
   a unit with an offset (°C) cannot be a table entry, and `formatUnit` still
   has no callers.
-
-- **(P2) `LabShell` is the only thing that applies labkit's style scope.**
-  `.lk-root` carries the tokens, the fonts, the box-sizing reset and every
-  element default under `:where(.lk-root)`, and it is written in exactly one
-  place (`packages/labkit/src/lab/LabShell.tsx:27`). A consumer mounting a
-  labkit piece on its own — klieg renders `Workspace` bare, sherpa renders
-  `ControlPanel` bare — gets no tokens and rebuilds the contract from its own
-  stylesheet, as the labkit Storybook frame does
-  (`.storybook/preview.tsx:275`). A `LabkitRoot` mount component was designed
-  and rejected, so the answer is a different shape.
 
 - **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a colour of
   its own.** Asked for: move the default treatment off "the aqua" and save it
@@ -1058,10 +1048,6 @@ The `api`/`attrs`/`layers` taxonomy is documented; provider and wrapper roles ar
 
 Rollback path is small: split `layers` into `layers: FooLayers` (provider) + `wrappers: FooWrappers` (slot-keyed transformers). The other field names (`api`, `attrs`) stay.
 
-### Barrel-hygiene rollout
-
-- **(P2) selection** — *Pending design review.* Protocol-shaped; no `index.ts`; ambient `SelectionContextProvider` is `@experimental` with open questions about its barrel placement. Don't migrate mechanically.
-
 ### weasel-den deferrals
 
 From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.md` first** — the spec's `{ registry, alwaysOn, keybindings }` pack shape was superseded by core's `Contribution` + `mergeContributions`, and its convenience layer shipped inside core as `ToolBundle`. The items below are what survives that.
@@ -1103,22 +1089,19 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 
 `@weasel-js/forge` is the component workshop built on labkit: each story renders
 in its own iframe ("frame"), and the workshop shows it as a lab trial with
-controls. It runs beside Storybook today.
+controls. It is the only story runner in the repo.
 
-- **(P2) Retire Storybook.** Both setups still ship: `.storybook/`,
-  `packages/ui/.storybook/`, the `storybook` and `@storybook/*` dev dependencies
-  in the root `package.json`, the `storybook` vitest project behind
-  `npm run test:stories` (which `prepublishOnly` runs), and the Storybook build in
-  `.github/workflows/pages.yml`. Move `test:stories` and the Pages build onto
-  forge, delete both `.storybook` directories and the custom addons under
-  `.storybook/addons/`, uninstall the packages, and point the two remaining
-  `storybook/test` imports at forge's shims or `@testing-library`.
+- **(P2) Nothing checks accessibility any more.** Storybook ran axe through
+  `@storybook/addon-a11y`; retiring it took that with it, and nothing in
+  `packages/forge` replaces it — the repo's axe coverage is zero, not reduced.
+  The story's DOM lives in the frame, so the check has to run there, with the
+  results sent to the workshop over the frame's message channel.
 
-- **(P2) forge has no accessibility panel.** Storybook runs axe through
-  `@storybook/addon-a11y` (`.storybook/main.ts`); nothing in `packages/forge`
-  checks accessibility. The story's DOM lives in the frame, so the check has to
-  run there, with the results sent to the workshop over the frame's message
-  channel.
+- **(P3) Storybook's secondary-panel addon has no forge equivalent.** It pinned
+  a second addon panel into a fixed column beside the first, so controls and
+  CSS vars could be read at once. forge tiles its panels through labkit's
+  `Workspace`, which may already cover it — check before building anything.
+  (The CSS-vars addon does have an equivalent: `packages/forge/src/shell/cssVars/`.)
 
 - **(P2) labkit annotations cannot capture a forge story.** A labkit annotation
   target hands the export a `base()` picture of itself, as an SVG string, an
@@ -1127,19 +1110,6 @@ controls. It runs beside Storybook today.
   no `annotations` at all. The story is DOM inside another document, so the
   workshop cannot draw it into any of those; the frame has to produce the
   picture and send it back.
-
-
-- **(P2) Two copies of `@weasel-js/theme` in a published forge install.**
-  labkit's `tsup.config.ts` bundles every `@weasel-js` package except core
-  (`noExternal`), so labkit's `dist` carries its own `ThemeProvider`, while
-  forge and a consumer's frame config import the installed
-  `@weasel-js/theme`. The two copies have separate React contexts: a
-  `ThemeProvider` from the installed package, like the `labkitRoot` decorator in
-  `apps/forge/forge.frame.tsx`, is invisible to `LabShell`'s `useThemeOptional()`,
-  which then wraps a second provider with its own mode. Each copy also keeps its
-  own stylesheet; where `adoptedStyleSheets` is missing, both append a
-  `<style id="wzl-themes">`. Inside the repo, aliases resolve both to source,
-  so this appears only against the packed packages.
 
 
 - **(P3) A forge story with a `viewport` reloads its frame once when first

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 /**
  * Side-by-side comparison used by row stories to show block + inline layouts
  * at the same time. Not a stories file — name has no .stories. suffix so
- * Storybook's glob skips it.
+ * The story glob skips it.
  */
 export function SideBySide({ block, inline }: { block: ReactNode; inline: ReactNode }) {
   const labelStyle = {

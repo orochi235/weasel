@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Tabs, TabList, Tab, TabPanel } from './Tabs';
 
 const meta: Meta<typeof Tabs> = {

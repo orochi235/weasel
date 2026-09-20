@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { CSSProperties, ReactElement } from 'react';
 import { KeyCap, type KeyCapVariant, type KeyCapProps } from './Keycap';
 import {
@@ -34,10 +34,10 @@ function relabel(label: string, platform: Platform, legend: LegendStyle): string
 }
 
 interface StoryArgs extends KeyCapProps {
-  /** Storybook-only — substitutes the input modifier or named-key glyph
+  /** Story-only — substitutes the input modifier or named-key glyph
    *  for the platform-native form via `keySpecsFromMods` / `keySpecFromKey`. */
   platform?: Platform;
-  /** Storybook-only — `auto` (default) picks the per-entry, per-platform
+  /** Story-only — `auto` (default) picks the per-entry, per-platform
    *  label; `symbol` and `text` force one form across the board. */
   legend?: LegendStyle;
 }

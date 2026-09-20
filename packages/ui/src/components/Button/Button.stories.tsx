@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
 import { Button, type ButtonVariant, type ButtonSize } from './Button';
 import { ToggleBar as KitToggleBar } from '../ToggleBar/ToggleBar';

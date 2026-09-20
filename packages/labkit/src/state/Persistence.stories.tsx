@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
+import { expect, userEvent, waitFor, within } from '@weasel-js/forge/play';
 import { useState } from 'react';
-import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { createIndexedDbAdapter } from './adapters';
 import { Persistence } from './Persistence';
 import { usePersistedState } from './usePersistedState';
@@ -64,11 +64,11 @@ export const SurvivesARemountInIndexedDb: StoryObj<typeof Remountable> = {
   args: { database: `labkit-story-${Date.now()}` },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await waitFor(() => expect(canvas.getByLabelText('tab')).toHaveTextContent('shape'));
+    await waitFor(() => expect(canvas.getByLabelText('tab').textContent).toBe('shape'));
     await userEvent.click(canvas.getByText('choose color'));
     await userEvent.click(canvas.getByText('remount'));
     await waitFor(() => expect(canvas.queryByLabelText('tab')).toBeNull());
-    await waitFor(() => expect(canvas.getByLabelText('tab')).toHaveTextContent('color'), {
+    await waitFor(() => expect(canvas.getByLabelText('tab').textContent).toBe('color'), {
       timeout: 3000,
     });
   },

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { SidebarPanel } from './SidebarPanel';
 import { Sidebar } from '../Sidebar';
 
@@ -25,7 +25,7 @@ export const Closeable: Story = {
   args: { onToggleCollapse: () => {}, onHide: () => {} },
 };
 
-// Drive collapse + hide state locally so storybook users can click both
+// Drive collapse + hide state locally so a reader can click both
 // affordances and see them in action.
 function InteractiveSidebarPanel() {
   const [collapsed, setCollapsed] = useState(false);

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Focusable } from 'react-aria-components';
 import { Tooltip, TooltipTrigger } from './Tooltip';
 

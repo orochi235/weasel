@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Specimen } from './Specimen';
 
 const meta: Meta<typeof Specimen> = {

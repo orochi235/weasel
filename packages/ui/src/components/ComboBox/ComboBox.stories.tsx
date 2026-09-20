@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { ComboBox, ComboBoxItem } from './ComboBox';
 import { useAsyncOptions } from '../../useAsyncOptions';

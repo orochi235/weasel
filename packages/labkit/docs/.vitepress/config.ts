@@ -12,8 +12,8 @@ export default defineConfig({
       { text: 'Recipes', link: '/RECIPES' },
       { text: 'Agent Guide', link: '/AGENTS' },
       {
-        text: 'Storybook',
-        link: 'https://orochi235.github.io/weasel/docs/ui/storybook/',
+        text: 'Workshop',
+        link: 'https://orochi235.github.io/weasel/docs/ui/forge/',
       },
     ],
     sidebar: [

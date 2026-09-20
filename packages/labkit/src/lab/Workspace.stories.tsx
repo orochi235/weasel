@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Workspace } from './Workspace';
 
 const meta: Meta<typeof Workspace> = {

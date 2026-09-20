@@ -50,4 +50,16 @@ describe('forge boundary check', () => {
   it('flags a relative import from labkit that lands inside forge', () => {
     expect(check('packages/labkit/src/a.ts', sideEffect('../../forge/src/index'))).toHaveLength(1);
   });
+
+  // A story is an input to the workshop rather than part of labkit's library —
+  // no tsup entry reaches one and none ships in the tarball — so it is typed by
+  // the runner that renders it.
+  it('allows a labkit story to import forge', () => {
+    expect(check('packages/labkit/src/a.stories.tsx', typeImport('@weasel-js/forge'))).toEqual([]);
+    expect(check('packages/labkit/src/a.stories.tsx', staticImport('@weasel-js/forge/play'))).toEqual([]);
+  });
+
+  it('still flags a non-story labkit module importing forge', () => {
+    expect(check('packages/labkit/src/a.tsx', typeImport('@weasel-js/forge'))).toHaveLength(1);
+  });
 });

@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ANGLE_RADIANS, prefUnit } from '@weasel-js/core';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { PropertyRow } from '@weasel-js/ui';
 import { useState } from 'react';
 import { f } from '../config/builder';

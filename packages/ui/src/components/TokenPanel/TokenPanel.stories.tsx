@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useCallback, useState } from 'react';
 import { TokenPanel } from './TokenPanel';
 import type { TokenEntry } from './tokenTypes';

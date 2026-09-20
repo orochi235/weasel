@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { PrefsForm, type PrefRenderContext } from './PrefsForm';
 import { PrefsDialog } from './PrefsDialog';
 import type { PrefGroup } from './schema';

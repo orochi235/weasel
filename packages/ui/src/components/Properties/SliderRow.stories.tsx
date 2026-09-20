@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { type ReactNode, useState } from 'react';
 import { SliderRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';

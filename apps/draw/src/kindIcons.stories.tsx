@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { BooleanOp } from '@weasel-js/core';
 import { ToolIcon } from './kindIcons';
 import type { ToolKind } from './poseUpdate';

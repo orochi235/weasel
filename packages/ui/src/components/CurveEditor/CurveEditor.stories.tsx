@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { CurveEditor, type ControlPoint } from './CurveEditor';
 
 /**
- * Storybook wrapper that owns the value state and forwards all visual
+ * Story wrapper that owns the value state and forwards all visual
  * props to `<CurveEditor>`. Stories drive `props` via `args`, so the
  * Controls addon's UI exposes every toggle live.
  */

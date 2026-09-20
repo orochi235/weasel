@@ -9,7 +9,6 @@ on:
     paths:
       - 'apps/**'
       - 'packages/**'
-      - '.storybook/**'
       - 'scripts/**'
       - 'public/**'
       - 'package.json'
@@ -50,8 +49,8 @@ jobs:
       - run: npm run build:demo
       - run: npm run build:draw
       - run: mkdir -p dist-demo/draw && cp -R dist-draw/. dist-demo/draw/
-      - run: npm run build-storybook -- -o dist-demo/docs/ui/storybook
-      # The forge workshop (base `/weasel/docs/ui/forge/`) beside Storybook, reading the same stories.
+      # The forge workshop (base `/weasel/docs/ui/forge/`) — the component workshop,
+      # reading every story in the repo.
       - run: npm run build:forge
       - run: mkdir -p dist-demo/docs/ui/forge && cp -R dist-forge/. dist-demo/docs/ui/forge/
       # labkit's VitePress docs (base `/weasel/labkit/`) served under /labkit.

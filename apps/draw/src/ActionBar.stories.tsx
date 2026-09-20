@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ActionsProvider } from '@weasel-js/core';
 import { ActionBar, type ActionBarProps } from './ActionBar';
 import './app.css';
@@ -8,7 +8,7 @@ import './app.css';
 // importing it at story load mirrors the live app's chrome so the
 // component looks right in isolation. The pathfinder strip is rendered by
 // the kit's `<ActionBar group="pathfinder"/>` and reads the ambient
-// ActionsRegistry; in storybook we wrap in `<ActionsProvider>` so the
+// ActionsRegistry; in a story we wrap in `<ActionsProvider>` so the
 // component mounts without warnings — no boolean actions are registered,
 // so that strip renders empty in stories.
 
@@ -92,7 +92,7 @@ export const WithSelection: Story = {
   },
 };
 
-// Interactive variant lets the storybook user toggle the grid/snap state
+// Interactive variant lets the reader toggle the grid/snap state
 // buttons and see the active styling, without wiring real ops.
 function InteractiveActionBar(args: ActionBarProps) {
   const [grid, setGrid] = useState(args.gridVisible);

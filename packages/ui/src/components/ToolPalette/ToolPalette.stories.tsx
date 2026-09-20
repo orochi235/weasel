@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { ToolPalette } from './ToolPalette';
 import type { AnyTool, ToolsApi } from '@weasel-js/core';

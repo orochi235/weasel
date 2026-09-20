@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Icon } from './Icon';
 import { ICON_GROUPS } from './paths';
 import {
@@ -71,11 +71,10 @@ export const ToolIconsAtProofSize: StoryObj = { render: () => <ToolSheet size={1
 /**
  * Both theme modes at once.
  *
- * Storybook's theme global does not switch weasel's theme — `tokens.css` keys
- * its mode blocks off `data-wzl-mode`, which nothing in a bare `@weasel-js/ui`
- * story sets, so every other story here renders on the `:root` dark default in
- * both modes. These two panels set it by hand, which is the only way to see an
- * icon against the surface it will actually sit on.
+ * The workshop's mode global applies one mode to the whole frame, so every
+ * other story here shows an icon against one surface at a time. These two
+ * panels set `data-wzl-mode` per panel, which is the only way to see both at
+ * once.
  */
 export const BothModes: StoryObj = {
   render: () => (

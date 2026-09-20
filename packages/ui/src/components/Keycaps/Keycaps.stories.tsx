@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { CSSProperties, ReactElement } from 'react';
 import { KeySequence, type KeySpec, type KeySequenceProps } from './Keycaps';
 import {
@@ -34,10 +34,10 @@ function relabelKeys(keys: readonly KeySpec[] | undefined, platform: Platform, l
 }
 
 interface StoryArgs extends KeySequenceProps {
-  /** Storybook-only — substitutes every key's modifier glyph for the
+  /** Story-only — substitutes every key's modifier glyph for the
    *  platform-native form. */
   platform?: Platform;
-  /** Storybook-only — symbol form (⌘ / ⌥ / ↵) vs text form
+  /** Story-only — symbol form (⌘ / ⌥ / ↵) vs text form
    *  (Cmd / Option / Enter). */
   legend?: LegendStyle;
 }

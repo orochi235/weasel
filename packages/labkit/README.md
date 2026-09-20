@@ -340,13 +340,13 @@ npm run build          # dist/ for publish
 npm run docs:dev       # VitePress on docs/ (docs:build to render it)
 ```
 
-Storybook is built at the repo root: `npm run storybook` from there covers every
-package.
+The forge workshop runs at the repo root: `npm run dev:forge` from there covers
+every package's stories, labkit's included.
 
 ## Documentation
 
 - [Docs site](https://orochi235.github.io/weasel/labkit/)
 - [Recipes](https://orochi235.github.io/weasel/labkit/RECIPES) — composition patterns
 - [Agent guide](https://orochi235.github.io/weasel/labkit/AGENTS) — a map of the source
-- [Storybook](https://orochi235.github.io/weasel/docs/ui/storybook/)
+- [Component workshop](https://orochi235.github.io/weasel/docs/ui/forge/)
 - [Design spec](https://github.com/orochi235/weasel/blob/main/packages/labkit/docs/superpowers/specs/2026-04-26-labkit-design.md)

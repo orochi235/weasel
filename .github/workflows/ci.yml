@@ -63,10 +63,10 @@ jobs:
       # labkit carries its own biome config + class-prefix check (its tests run
       # in the `labkit` vitest project below).
       - run: npm run lint -w @weasel-js/labkit
-      # Skip the `storybook` and `forge-stories` vitest projects. Both spin up headless
-      # Chromium and render every story as a browser test on every push — pulls
-      # Playwright + ~250 MB of browser, adds wall-clock time, and exists only to
-      # validate that stories can mount. Run the real test projects only.
+      # Skip the `forge-stories` vitest project. It spins up headless Chromium and
+      # renders every story as a browser test — pulls Playwright + ~250 MB of
+      # browser, adds wall-clock time, and exists only to validate that stories
+      # can mount. Run the real test projects only.
       # A test file no project's include glob reaches is collected by nobody
       # and says nothing about it. Runs before the suite so an orphan surfaces
       # as its own failure rather than as a suspiciously small pass count.
@@ -75,12 +75,13 @@ jobs:
       - run: npx vitest run --project=core --project=weasel-ui --project=draw --project=labkit --project=forge
       - run: npm run build
       # labkit bundles its weasel siblings into its dist; build it after them so
-      # their built output is what it inlines. `@weasel-js/core` is the one it
-      # does not inline — it is an exact peer, resolved at the consumer.
+      # their built output is what it inlines. `@weasel-js/core` and
+      # `@weasel-js/theme` are the two it does not inline — both are exact peers,
+      # resolved at the consumer.
       - run: npm run build -w @weasel-js/labkit
       # The suite above runs before any dist exists, so it skips forge's check
-      # that the built plugin resolves the published Storybook shim. Rerun that
-      # file now; FORGE_BUILT makes a missing dist a failure rather than a skip.
+      # that the built plugin resolves its published shims. Rerun that file now;
+      # FORGE_BUILT makes a missing dist a failure rather than a skip.
       - run: npx vitest run --project=forge packages/forge/src/csf/shims/alias.test.ts
         env:
           FORGE_BUILT: '1'
@@ -112,6 +113,6 @@ jobs:
       # catch any of this; it inherits the repo tsconfig paths.
       # See scripts/smoke-consumer-bundle.mjs.
       - run: npm run test:smoke:consumer
-      # `npm run build-storybook` removed — pages.yml already builds Storybook on every
-      # main-branch push that touches user-visible source, so this CI step was a slow
-      # duplicate. If a story breaks, pages.yml surfaces it.
+      # No story build here — pages.yml already builds the forge workshop on every
+      # main-branch push that touches user-visible source, so a CI step would be a
+      # slow duplicate. If a story breaks, pages.yml surfaces it.

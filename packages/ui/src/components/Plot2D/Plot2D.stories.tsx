@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useRef } from 'react';
 import { Plot2D, type Plot2DHandle } from './Plot2D';
 

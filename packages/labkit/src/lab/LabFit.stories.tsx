@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@weasel-js/forge';
+import { expect, userEvent, waitFor, within } from '@weasel-js/forge/play';
 import { type ReactNode, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { expect, userEvent, waitFor, within } from 'storybook/test';
 import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
 import type { Instrument } from '../instrument/types';
@@ -9,7 +9,7 @@ import { Lab } from './Lab';
 import './LabFit.stories.less';
 
 // A lab must fit whatever it is mounted in without scrolling. jsdom cannot see
-// layout, so these run in the storybook vitest project's real browser.
+// layout, so these run in the forge-stories vitest project's real browser.
 
 const Stub: Instrument = {
   name: 'Stub',
@@ -43,7 +43,7 @@ const VIEWPORTS = {
 
 type Host = 'reset' | 'wrapped' | 'framed';
 
-// Storybook wraps every story in divs of its own, so a fixture that needs a
+// The frame wraps every story in divs of its own, so a fixture that needs a
 // known ancestor chain builds that chain directly on <body> and portals into it.
 function BodyHost({ host, children }: { host: Host; children: ReactNode }) {
   const [mount, setMount] = useState<HTMLElement | null>(null);
