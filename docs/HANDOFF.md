@@ -1,40 +1,7 @@
-# Live: the gradient arc — branch `gradient-arc`, worktree `/Users/mike/src/weasel-gradient-arc`
+# Retained from the gradient arc — merged into `main`
 
-Four threads, all committed there, **none pushed and nothing merged**; `main` has
-not seen any of it. `git log --oneline main..gradient-arc` is the list.
-
-Mike asked for all four in one overnight pass, picking them off a menu of
-gradient-arc follow-ups. They are done. What is left is his call on merging, and
-the follow-ups below.
-
-## What landed
-
-**The stale TODO and the JSON question.** The pattern-fills entry still said conic
-gradients export as nothing; that shipped in `894a52c2` this afternoon. The
-proposal's open question about the scene-serialization path is answered rather
-than open: `Scene.toJSON` copies node `data` through untouched, so a paint of any
-kind round-trips as JSON with no slot and no namespace.
-
-**A gradient's blend space.** `interpolate` on all three gradient kinds —
-`'rgb'` (default), `'oklab'`, `'oklch'`. Baked into the ramp, so a perceptual
-gradient costs a batched frame nothing; the space is part of the ramp atlas key.
-`sampleGradientStops` / `sampleResolvedStops` take it as a trailing argument,
-`GradientEditor` grows a switch, and `@weasel-js/svg` carries it as
-`wzl:interpolate` on the gradient's own element with no fallback color, because a
-foreign renderer still paints the gradient — in sRGB.
-
-**`PaintField`.** A swatch in a property row that opens `PaintInput` in a popover.
-The `PrefsForm` paint leaf used to render a `ColorField`, which read a gradient's
-first stop and wrote a solid back. Proofed in chromium in both modes, which is what
-the retired TODO entry said it needed.
-
-**One `stroke-and-fill` demo** replacing `gradients`, `pattern-playground`,
-`vertex-colors` and `vertex-widths`, built by a subagent on the kit's own systems.
-
-**A `mesh-gradient` paint kind** — PDF shading types 6 and 7, registered through
-`registerPaintKind` rather than built into the renderer, with `MeshEditor`, a
-`paintMesh` glyph, and `<wzl:meshGradient>` round-tripping through
-`@weasel-js/svg`.
+The branch and its worktree are gone; `git log` carries what landed. What is kept
+here is the part the tree does not explain on its own.
 
 ## Decisions made in conversation that the code does not explain
 
@@ -75,21 +42,6 @@ Every editor callback for one emits `FillStyle`, not its own type.
 **`eslint-disable` for a rule this repo does not configure fails the lint run.**
 `react/no-array-index-key` is not installed here.
 
-## Next, if he wants it
-
-`docs/TODO.md` carries three new entries from the mesh work: a **(P2)** that
-`PaintInput` flattens any registered kind with no `Editor` to a solid (the kit's
-own kinds are all covered, so only a consumer hits it), on-canvas handles for a
-patch's control points, and the fixed 256-texel bake. The demo consolidation left
-its own entry: `tests/visual/stroke-and-fill.spec.ts` has **no committed baseline**,
-and a missing baseline writes itself and passes, so it asserts nothing until
-someone runs it against a browser once.
-
-## Verifying
-
-`npx tsc --noEmit` from the worktree root, `npx vitest run --project=core`,
-`npx vitest run --project=weasel-ui`, `npm run lint`, `npm run check:bumps`. All
-green as of the last commit on the branch; a full `npm test` was started after it.
 
 # Retained from completed work — the theme editor and palette lab
 
