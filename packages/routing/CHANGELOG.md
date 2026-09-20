@@ -1,5 +1,50 @@
 # @weasel-js/routing
 
+## 1.5.1
+
+### Patch Changes
+
+- 4f9fd3b: labkit's loupe routes its peek key and its wheel through the gesture dispatcher, as the `loupe.peek` and `loupe.magnify` actions, instead of attaching `keydown`/`keyup`/`blur` on the window and a capture-phase `wheel` on the host. Taking the wheel from a lab's pan/zoom is now the dispatcher's ordinary rule — `loupe.magnify`'s `enabled` declines while the lens is down, so the event goes unhandled and falls through, and while the lens is up the dispatcher stops propagation before React's root listener runs. Aiming the lens stays a plain `pointermove` listener: the gesture grammar names no hover.
+  
+  `useGestureDispatcher` takes `channels`, switching off any of the four listener groups it attaches to its element — `pointer`, `wheel`, `contextMenu`, `ingest`. Every one defaults on, so nothing changes for a caller that omits it. A mount that wants one gesture should not also have to take the rest of the pipeline's side effects: `contextMenu` suppresses the native menu unconditionally, and `ingest` makes the element a file-drop target. The loupe mounts with three of the four off, which is what keeps right-click and drops working on a lab that turns a magnifier on.
+  
+  `<LoupeGestures>`, `createLoupeActions` and `LoupeInputApi` are new on `@weasel-js/labkit/loupe`; `useLoupe`'s returned state carries a new `input` member that `<LoupeGestures>` drives the lens through.
+- ed05c54: Withhold the eager `stage: 'press'` dispatch from a pointer that lands while
+  another is already down. `pointerDown`-spec bindings fired for a pinch's second
+  finger, so starting a two-finger gesture could run `select.pick` and change the
+  selection under it. The multi-pointer policy already cleared that pointer's
+  buffered drag press for the same reason; the eager copy was left unconditional.
+- 2a63f31: Alt+clicking a segment of the path being edited now inserts an anchor where you clicked, and the pen cursor shows while Alt is held over a segment. A straight segment stays straight; a curve is split without changing its shape. The closing edge of a closed path can be split too, the new anchor becomes the selected one, and the click has to land within 8 screen pixels of the path — so the reach no longer changes with zoom. Before this, the split only worked on curves: a straight edge came back as a curve, and the closing edge could not be split at all.
+  
+  Every anchor edit (drag, nudge, delete, cut, insert) can now be undone. Before, `SceneCanvas` recorded these edits as operations with no inverse, and undoing one threw an error.
+  
+  Additive: `Action.enabled` gets a second, optional argument — the world point of the click or press being routed. When it returns disabled for that point, the dispatcher tries the next binding, and the hover cursor is not shown there. The hover cursor now also comes from the action a click would run, when the action a drag would run has no cursor. `nearestSegmentT` gets an optional `closed` argument and returns an exact parameter instead of the nearest of 32 samples. `segmentAt` is new. The `SceneCanvas` adapter gains `setData`.
+- a7519a1: Remove the `pointer` dep. **Breaking:** `DepSchema` no longer has a `pointer`
+  entry, `useStandardActions` no longer takes a `pointer` option, and the fixed
+  deps bag handed to an action that declares no `requires` no longer carries it.
+  
+  Nothing in the kit declared or read it, and `<SceneCanvas>` never supplied a
+  value, so an action reading `deps.pointer` was already getting `undefined`. An
+  action that wants the pointer reads it from its invocation context
+  (`ctx.world`), and code outside an action can still use `usePointerContext()`,
+  which is unchanged.
+- d963d14: `EligibilityState.heldTriggers` is gone. Nothing populated it: a declared
+  `Eligibility.offhand` already reaches the hotkey tier by id, because the
+  `tool.offhand` action the declaration registers pushes the tool's id onto the
+  active-tool context's hotkey stack, and `engagedIds` is what `liveScope`
+  reads. Populating the set instead would have given the same tier a second
+  source of truth — raw key state tracked beside the gesture that already owns
+  the hold — with release order to reconcile between them.
+  
+  `offhand` is untouched. Construct `EligibilityState` without the field; a
+  consumer reading it has to read `engagedIds` instead.
+- Updated dependencies [b6a5eed]
+- Updated dependencies [229a16a]
+  - @weasel-js/cursor@1.5.1
+  - @weasel-js/history@1.5.1
+  - @weasel-js/gestures@1.5.1
+  - @weasel-js/modes@1.5.1
+
 ## 1.5.0
 
 ### Patch Changes

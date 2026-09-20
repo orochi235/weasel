@@ -1,5 +1,59 @@
 # @weasel-js/d3
 
+## 1.5.1
+
+### Patch Changes
+
+- edb825a: `Scene.nodesOnLayer(layer)` returns one layer's nodes in render order, cached
+  beside `renderOrderNodes()` until the next structural edit — so a pose tween,
+  which fires per frame, does not throw the walk away.
+  
+  `d3Bind(...).join()` uses it. The diff used to scan every node in the scene on
+  every call to find the leaves on its own layer; it now classifies enter and
+  update with `scene.get` and scans only the target layer for exits. The
+  semantics are unchanged: a leaf on the target layer whose key is absent from
+  the data still exits, and nodes on other layers and containers are still left
+  alone.
+- Updated dependencies [5769e02]
+- Updated dependencies [f644eac]
+- Updated dependencies [9becb93]
+- Updated dependencies [b984947]
+- Updated dependencies [7e9a230]
+- Updated dependencies [72fde09]
+- Updated dependencies [e9051ac]
+- Updated dependencies [626bace]
+- Updated dependencies [f4049be]
+- Updated dependencies [432b143]
+- Updated dependencies [4f9fd3b]
+- Updated dependencies [91973a7]
+- Updated dependencies [86be3eb]
+- Updated dependencies [51372f1]
+- Updated dependencies [2a63f31]
+- Updated dependencies [66e0e10]
+- Updated dependencies [8b79c20]
+- Updated dependencies [b6a5eed]
+- Updated dependencies [98ad39c]
+- Updated dependencies [67f3867]
+- Updated dependencies [f663199]
+- Updated dependencies [a80e8db]
+- Updated dependencies [a7519a1]
+- Updated dependencies [187593e]
+- Updated dependencies [08a3aec]
+- Updated dependencies [d963d14]
+- Updated dependencies [edb825a]
+- Updated dependencies [229a16a]
+- Updated dependencies [f9feecc]
+- Updated dependencies [b981856]
+- Updated dependencies [0662a2d]
+- Updated dependencies [c0fa540]
+- Updated dependencies [21ce23e]
+- Updated dependencies [ff17dd7]
+- Updated dependencies [f2b8d57]
+- Updated dependencies [29f6ed0]
+- Updated dependencies [fb6d8e5]
+- Updated dependencies [ca7c737]
+  - @weasel-js/core@1.5.1
+
 ## 1.5.0
 
 ### Patch Changes

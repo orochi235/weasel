@@ -1,5 +1,55 @@
 # @weasel-js/paint
 
+## 1.5.1
+
+### Patch Changes
+
+- f644eac: The sRGB ↔ OKLab/OKLCH conversions (`srgbU8ToOklab`, `oklabToOklch`, `lerpOklch` and the rest) now live in `@weasel-js/paint`. `@weasel-js/core` still exports every one of them, so no import changes.
+- 626bace: A gradient now names the space its stops blend through. `interpolate` on any of
+  the three gradient kinds takes `'rgb'` (the default, and what every other vector
+  format means by a gradient), `'oklab'`, or `'oklch'` — which travels around the
+  hue wheel, so red to blue stays saturated instead of passing through a muddy
+  purple. Alpha is linear in every space.
+  
+  The blend is paid for once, in the 256-texel ramp the shader samples, so a
+  perceptual gradient costs a batched frame nothing over an sRGB one. The space is
+  part of the ramp atlas key: the same stops under two spaces take two rows.
+  
+  `sampleGradientStops` and `sampleResolvedStops` take the space as a third
+  argument, `bindRamp` as an optional third, and `GradientEditor` grows an
+  sRGB / OKLab / OKLCh switch (`spaceSwitch={false}` hides it). `@weasel-js/svg`
+  writes `wzl:interpolate` on the gradient's own element and reads it back; a
+  renderer that ignores it still paints the gradient, in sRGB.
+- b981856: Accept `{ px }` screen-pixel sizes for `fontSize` and `letterSpacing`
+  
+  `TextStyle.fontSize`, `TextStyle.letterSpacing` and their `StyledRun`
+  counterparts now take `number | { px: number }`, the spelling `Stroke.width`
+  and `MarkerRef.size` already had. A `{ px }` size holds its on-screen size as
+  the view zooms, so a label no longer divides by the view scale at the call
+  site.
+  
+  The unit is one type and one resolver now: `ScreenLength` and
+  `resolveScreenLength` live in `@weasel-js/paint`, which both core and text
+  already depend on, and `resolveStrokeWidth` delegates to it.
+  
+  Resolution happens at the entry to layout, not at draw time. A screen-pixel
+  size changes the glyph advances and so the wrap points and the measured
+  bounds, so `resolveTextStyle`, `resolveRuns`, `textPoseLayoutInput`,
+  `layoutTextPose`, `measureTextBounds` and the three command builders
+  (`textCommand`, `textCommandFromRuns`, `textCommandFromPose`) each take the
+  view scale, defaulting to 1. `ResolvedTextStyle` and `ResolvedRun` keep plain
+  world numbers, so everything downstream is unchanged.
+  
+  `createTextLayer` passes the mean of `view.scale.x` and `view.scale.y`, so
+  non-scene text gets this with no consumer change. The `kit:text` node painter
+  deliberately does not: it memoizes on `(data, pose)` to keep the renderer's
+  layout cache hitting across frames, and keying that on the live camera would
+  miss on every zoom frame.
+  
+  SVG serialization writes a `{ px }` size as that many user units — SVG user
+  space has no camera — and the fit clamp on import leaves one alone, since a
+  screen-pinned size is not the file's to scale.
+
 ## 1.5.0
 
 ## 1.4.4

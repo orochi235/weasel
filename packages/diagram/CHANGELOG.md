@@ -1,5 +1,74 @@
 # @weasel-js/diagram
 
+## 1.5.1
+
+### Patch Changes
+
+- a80e8db: `@weasel-js/diagram/layout` and `@weasel-js/core/math` are new subpaths that a
+  Node process can import: measuring a box from its rows, ranking a graph,
+  relaxing one under forces, and finding where on a box's perimeter an edge
+  should leave, with no React in the module graph. A server rendering a diagram
+  needed all of that and could not have it — the diagram barrel reaches `live`
+  (a hook) and `connect` (an interaction), and core's reaches the canvas.
+  
+  `layout` exports `measureBody`/`sizeToBody`, `layered`/`ranksOf`/`backEdges`,
+  `force`, `tree`, `COMPASS` and the rest of `ports`, `outline` and `onOutline`.
+  A caller with its own nodes and edges implements `Graph` — an interface, not a
+  class — over what it already has, so `buildGraph`, which reads one out of a
+  scene, is not needed and is not there. The routers stay behind: they live with
+  the scene registry, and they are typed in `Vec2`, so a consumer routing in
+  three dimensions cannot call them regardless.
+  
+  The seven modules behind it now import `@weasel-js/core/math` rather than the
+  core barrel. Every symbol they took is in the subpath, so this narrows what
+  they ask for rather than moving anything.
+  
+  `scripts/check-react-free.mjs` (`npm run check:react-free`) walks each entry's
+  **built** closure, through sibling packages' `exports` maps, and fails on a
+  React specifier. Sources cannot answer this question: `core/math` re-exports
+  nineteen leaf modules that each import only numbers, and its first build still
+  pulled a megabyte of canvas — one leaf reached core's own barrel, and
+  `splitting: true` put the result in a chunk the entry imported.
+- Updated dependencies [5769e02]
+- Updated dependencies [f644eac]
+- Updated dependencies [9becb93]
+- Updated dependencies [b984947]
+- Updated dependencies [7e9a230]
+- Updated dependencies [72fde09]
+- Updated dependencies [e9051ac]
+- Updated dependencies [626bace]
+- Updated dependencies [f4049be]
+- Updated dependencies [432b143]
+- Updated dependencies [4f9fd3b]
+- Updated dependencies [91973a7]
+- Updated dependencies [86be3eb]
+- Updated dependencies [51372f1]
+- Updated dependencies [2a63f31]
+- Updated dependencies [66e0e10]
+- Updated dependencies [8b79c20]
+- Updated dependencies [b6a5eed]
+- Updated dependencies [98ad39c]
+- Updated dependencies [67f3867]
+- Updated dependencies [f663199]
+- Updated dependencies [a80e8db]
+- Updated dependencies [a7519a1]
+- Updated dependencies [187593e]
+- Updated dependencies [08a3aec]
+- Updated dependencies [d963d14]
+- Updated dependencies [edb825a]
+- Updated dependencies [229a16a]
+- Updated dependencies [f9feecc]
+- Updated dependencies [b981856]
+- Updated dependencies [0662a2d]
+- Updated dependencies [c0fa540]
+- Updated dependencies [21ce23e]
+- Updated dependencies [ff17dd7]
+- Updated dependencies [f2b8d57]
+- Updated dependencies [29f6ed0]
+- Updated dependencies [fb6d8e5]
+- Updated dependencies [ca7c737]
+  - @weasel-js/core@1.5.1
+
 ## 1.5.0
 
 ### Patch Changes
