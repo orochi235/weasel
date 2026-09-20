@@ -25,6 +25,7 @@ export type {
   ToolPrefStringControl as PrefStringControl,
 } from '@weasel-js/core';
 
+import type { UnitTable } from '../../format/number';
 import type { ToolPrefGroup, ToolPrefLeaf, ToolPrefNumber, ToolPrefNumberUnit as PrefNumberUnitType } from '@weasel-js/core';
 
 /**
@@ -54,7 +55,7 @@ export function prefDisplayBounds(
 
 /** What a unit leaf's field reads as typed text: its `accepts` table, and its
  *  `suffix` as the display unit itself. */
-export function prefUnitAccepts(unit: PrefNumberUnitType): Readonly<Record<string, number>> {
+export function prefUnitAccepts(unit: PrefNumberUnitType): Readonly<UnitTable> {
   return unit.suffix === undefined ? { ...unit.accepts } : { [unit.suffix]: 1, ...unit.accepts };
 }
 

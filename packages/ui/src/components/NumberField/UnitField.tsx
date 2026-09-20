@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { formatNumber, parseNumber } from '../../format/number';
+import { formatNumber, parseNumber, type UnitTable } from '../../format/number';
 import { fieldClasses } from '../Field/Field';
 import s from './NumberField.module.css';
 
@@ -15,7 +15,7 @@ export interface UnitFieldProps {
   step?: number;
   /** Units a person may type, each mapped to the factor that turns a number
    *  in it into the unit the field shows: `{ mm: 0.1, cm: 1 }`. */
-  accepts?: Readonly<Record<string, number>>;
+  accepts?: Readonly<UnitTable>;
   placeholder?: string;
   /** Render with no box until focused, as {@link NumberField}'s `ghost` does. */
   ghost?: boolean;

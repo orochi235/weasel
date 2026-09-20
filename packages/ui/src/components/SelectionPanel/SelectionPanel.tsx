@@ -478,7 +478,9 @@ function renderBuiltin(
               }}
             />
             <span className={s.sliderReadout} aria-hidden="true">
-              {known ? `${display}${p.unit?.suffix ?? ''}` : '—'}
+              {known
+                ? (p.unit?.format?.(stored as number) ?? `${display}${p.unit?.suffix ?? ''}`)
+                : '—'}
             </span>
           </>
         );

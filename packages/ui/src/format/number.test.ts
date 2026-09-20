@@ -166,3 +166,45 @@ describe('parseNumber with units', () => {
     expect(parseNumber('mm', metricInCm)).toBeNaN();
   });
 });
+
+describe('parseNumber with compound values', () => {
+  const imperialInInches = { in: 1, ft: 12, yd: 36 };
+  const metricInCm = { mm: 0.1, cm: 1, m: 100 };
+
+  it('sums a run of unit-suffixed terms', () => {
+    expect(parseNumber('5ft 3in', imperialInInches)).toBe(63);
+    expect(parseNumber('1m 20cm', metricInCm)).toBe(120);
+    expect(parseNumber('1yd 2ft 3in', imperialInInches)).toBe(63);
+  });
+
+  it('reads a compound value with no space between terms', () => {
+    expect(parseNumber('5ft3in', imperialInInches)).toBe(63);
+  });
+
+  it('carries the leading sign across the whole value', () => {
+    expect(parseNumber('-5ft 3in', imperialInInches)).toBe(-63);
+  });
+
+  it('is NaN when a term carries no unit', () => {
+    expect(parseNumber('5ft 3', imperialInInches)).toBeNaN();
+    expect(parseNumber('5 3in', imperialInInches)).toBeNaN();
+  });
+
+  it('is NaN when a term names a unit the field does not accept', () => {
+    expect(parseNumber('5ft 3in', metricInCm)).toBeNaN();
+  });
+});
+
+describe('parseNumber with offset units', () => {
+  // A field showing degC that also accepts K, which puts zero elsewhere.
+  const inDegC = { degC: 1, K: { factor: 1, offset: -273.15 } };
+
+  it('applies the offset to a single term', () => {
+    expect(parseNumber('0K', inDegC)).toBeCloseTo(-273.15, 9);
+    expect(parseNumber('20degC', inDegC)).toBe(20);
+  });
+
+  it('is NaN for a compound value whose terms disagree about zero', () => {
+    expect(parseNumber('1K 2degC', inDegC)).toBeNaN();
+  });
+});

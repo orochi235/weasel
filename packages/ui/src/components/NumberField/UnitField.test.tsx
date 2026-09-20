@@ -70,3 +70,29 @@ describe('UnitField', () => {
     expect(onChange).toHaveBeenLastCalledWith(1.5);
   });
 });
+
+describe('UnitField compound values', () => {
+  const imperialInInches = { in: 1, ft: 12, yd: 36 };
+
+  it('commits a compound value as one number', async () => {
+    const onChange = vi.fn();
+    render(
+      <UnitField value={12} onChange={onChange} accepts={imperialInInches} aria-label="Length" />,
+    );
+    const input = screen.getByLabelText('Length');
+    fireEvent.change(input, { target: { value: '5ft 3in' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith(63);
+  });
+
+  it('leaves the value alone when a term carries no unit', () => {
+    const onChange = vi.fn();
+    render(
+      <UnitField value={12} onChange={onChange} accepts={imperialInInches} aria-label="Length" />,
+    );
+    const input = screen.getByLabelText('Length');
+    fireEvent.change(input, { target: { value: '5ft 3' } });
+    fireEvent.blur(input);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});

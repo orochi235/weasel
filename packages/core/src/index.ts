@@ -437,12 +437,13 @@ export type { CreateChildrenLayerOpts } from './features/groups/children';
 export {
   resolveUnit,
   formatUnit,
+  unitScale,
   ANGLE_RADIANS,
   IMPERIAL_INCHES,
   METRIC_MM,
   PIXELS,
 } from './core/units';
-export type { Unit, UnitSystem, UnitValue } from './core/units';
+export type { Unit, UnitEntry, UnitScale, UnitSystem, UnitValue } from './core/units';
 
 // ─── Affordances: cross-tool hittable chrome (resize/rotate handles) ────────
 export {

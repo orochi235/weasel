@@ -1,6 +1,12 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
 import { TOOL_PREF_KINDS, isBuiltinToolPref, prefUnit } from './prefs';
-import { ANGLE_RADIANS, METRIC_MM } from 'core/units';
+import { ANGLE_RADIANS, METRIC_MM, type UnitSystem } from 'core/units';
+
+/** Temperature is the smallest system whose units disagree about zero. */
+const TEMPERATURE_K: UnitSystem = {
+  base: 'K',
+  units: { K: 1, degC: { factor: 1, offset: 273.15 } },
+};
 import type {
   ToolPref,
   ToolPrefKind,
@@ -104,5 +110,29 @@ describe('prefUnit', () => {
 
   it('throws on a display unit the system does not have', () => {
     expect(() => prefUnit(METRIC_MM, 'ft')).toThrow(/unknown unit 'ft'/);
+  });
+
+  it('converts through an offset in both directions', () => {
+    const c = prefUnit(TEMPERATURE_K, 'degC', { precision: 2 });
+    expect(c.toDisplay(273.15)).toBe(0);
+    expect(c.toDisplay(373.15)).toBe(100);
+    expect(c.fromDisplay(0)).toBeCloseTo(273.15, 9);
+  });
+
+  it('accepts an offset unit as a scale rather than a bare factor', () => {
+    const c = prefUnit(TEMPERATURE_K, 'degC');
+    // Typing `0K` into a field showing degC is −273.15, not 0 — which a bare
+    // factor cannot say.
+    expect(c.accepts?.K).toEqual({ factor: 1, offset: -273.15 });
+    // A pure scale stays a bare number, so the common table reads as one.
+    expect(prefUnit(METRIC_MM, 'cm').accepts?.mm).toBe(0.1);
+  });
+
+  it('formats a stored value in the display unit', () => {
+    const cm = prefUnit(METRIC_MM, 'cm');
+    expect(cm.format?.(25)).toBe('2.5cm');
+    expect(prefUnit(ANGLE_RADIANS, 'deg', { precision: 1, suffix: '°' }).format?.(Math.PI)).toBe(
+      '180°',
+    );
   });
 });

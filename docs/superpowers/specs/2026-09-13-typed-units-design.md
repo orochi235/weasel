@@ -41,8 +41,10 @@ only to grid snapping, so a pref unit has to hand-write its own conversion.
 
 ### Out of scope
 
-- Compound values (`5ft 3in`), and units with an offset (°C/°F): the tables are
-  linear factors by design.
+- Mixed-unit arithmetic (`50% + 2ft`), per-axis units, and per-subobject scale:
+  each is its own design problem, and all three are in `docs/TODO.md`. Compound
+  values and offset units were out of scope here and landed later — a table
+  entry is `number | { factor, offset }` and `5ft 3in` parses.
 - `ControlPanel` in labkit ignores `unit` entirely, and `NumberRow`'s `unit` is
   a display label. Both are recorded in `docs/TODO.md`.
 

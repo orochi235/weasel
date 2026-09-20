@@ -6,6 +6,8 @@ import {
   IMPERIAL_INCHES,
   METRIC_MM,
   PIXELS,
+  unitScale,
+  type UnitSystem,
 } from './units';
 
 describe('resolveUnit', () => {
@@ -98,5 +100,33 @@ describe('ANGLE_RADIANS', () => {
     expect(resolveUnit({ value: 180, unit: 'deg' }, ANGLE_RADIANS)).toBeCloseTo(Math.PI);
     expect(resolveUnit({ value: 0.5, unit: 'turn' }, ANGLE_RADIANS)).toBeCloseTo(Math.PI);
     expect(ANGLE_RADIANS.base).toBe('rad');
+  });
+});
+
+describe('affine units', () => {
+  // Temperature is the reason an entry cannot be a bare factor: °C and K share
+  // a degree size and disagree about where zero sits.
+  const TEMPERATURE_K: UnitSystem = {
+    base: 'K',
+    units: { K: 1, degC: { factor: 1, offset: 273.15 }, degF: { factor: 5 / 9, offset: 255.372_222_222 } },
+  };
+
+  it('resolves a tagged value through an offset', () => {
+    expect(resolveUnit({ value: 0, unit: 'degC' }, TEMPERATURE_K)).toBeCloseTo(273.15, 6);
+    expect(resolveUnit({ value: 100, unit: 'degC' }, TEMPERATURE_K)).toBeCloseTo(373.15, 6);
+  });
+
+  it('formats a base value back through an offset', () => {
+    expect(formatUnit(373.15, 'degC', TEMPERATURE_K, { suffix: false })).toBe('100');
+    expect(formatUnit(273.15, 'degF', TEMPERATURE_K, { precision: 0, suffix: false })).toBe('32');
+  });
+
+  it('reads a bare number entry as a factor with no offset', () => {
+    expect(unitScale(METRIC_MM, 'cm')).toEqual({ factor: 10, offset: 0 });
+    expect(unitScale(TEMPERATURE_K, 'degC')).toEqual({ factor: 1, offset: 273.15 });
+  });
+
+  it('throws on a unit the system does not carry', () => {
+    expect(() => unitScale(METRIC_MM, 'mi')).toThrow(/unknown unit 'mi'/);
   });
 });

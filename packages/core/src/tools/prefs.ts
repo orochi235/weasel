@@ -7,7 +7,8 @@
 // boolean, string, enum, plus rendering hints — so it's a clean
 // structural subset of whatever a host app already has.
 
-import type { Unit, UnitSystem } from 'core/units';
+import { formatUnit, unitScale } from 'core/units';
+import type { Unit, UnitEntry, UnitScale, UnitSystem } from 'core/units';
 
 /** The value types a built-in pref leaf can hold. */
 export type ToolPrefKind =
@@ -60,10 +61,13 @@ export interface ToolPrefNumberUnit {
   fromDisplay: (display: number) => number;
   /** Shown after the input, e.g. `'°'`. */
   suffix?: string;
-  /** Suffixes a person may type, each mapped to the factor that turns a
+  /** Suffixes a person may type, each mapped to the scale that turns a
    *  number in that unit into a display number: `{ mm: 0.1, cm: 1 }` for a
-   *  field showing centimeters. */
-  accepts?: Readonly<Record<string, number>>;
+   *  field showing centimeters. A unit that disagrees with the display unit
+   *  about zero carries an `offset` as well. */
+  accepts?: Readonly<Record<string, UnitEntry>>;
+  /** The stored value as display text, suffix included. */
+  format?: (stored: number) => string;
 }
 
 /**
@@ -77,23 +81,37 @@ export function prefUnit(
   display: Unit,
   opts?: { precision?: number; suffix?: string },
 ): ToolPrefNumberUnit {
-  const factor = system.units[display];
-  if (factor === undefined) {
-    const known = Object.keys(system.units).join(', ') || '(none)';
-    throw new Error(
-      `prefUnit: unknown unit '${display}' (system base: '${system.base}', known units: ${known})`,
-    );
+  let self: Required<UnitScale>;
+  try {
+    self = unitScale(system, display);
+  } catch (e) {
+    throw new Error(`prefUnit: ${e instanceof Error ? e.message : String(e)}`);
   }
   const scale = opts?.precision === undefined ? undefined : 10 ** opts.precision;
   const suffix = opts?.suffix ?? display;
-  const accepts: Record<string, number> = { [suffix]: 1 };
-  for (const [name, f] of Object.entries(system.units)) accepts[name] = f / factor;
+  const accepts: Record<string, UnitEntry> = { [suffix]: 1 };
+  for (const name of Object.keys(system.units)) {
+    const other = unitScale(system, name);
+    // A number typed in `name` reaches display units through base:
+    // `(n * factor + offset - self.offset) / self.factor`.
+    const factor = other.factor / self.factor;
+    const offset = (other.offset - self.offset) / self.factor;
+    accepts[name] = offset === 0 ? factor : { factor, offset };
+  }
+  const toDisplay = (stored: number) => {
+    const shown = (stored - self.offset) / self.factor;
+    return scale === undefined ? shown : Math.round(shown * scale) / scale;
+  };
   return {
-    toDisplay: (stored) =>
-      scale === undefined ? stored / factor : Math.round((stored / factor) * scale) / scale,
-    fromDisplay: (shown) => shown * factor,
+    toDisplay,
+    fromDisplay: (shown) => shown * self.factor + self.offset,
     suffix,
     accepts,
+    format: (stored) =>
+      `${formatUnit(stored, display, system, {
+        precision: opts?.precision ?? 2,
+        suffix: false,
+      })}${suffix}`,
   };
 }
 

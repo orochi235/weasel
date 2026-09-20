@@ -896,11 +896,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   for the round ranks or restate the family in terms of diameter — it is a
   visual call that wants a browser.
 
-- **(P3) Typed units stop at linear factors.** `SelectionPanel` and `PrefsForm`
-  read `12mm` into a unit leaf through `UnitField`, and `prefUnit` builds the
-  leaf's unit from a `UnitSystem`. A compound value (`5ft 3in`) does not parse,
-  a unit with an offset (°C) cannot be a table entry, and `formatUnit` still
-  has no callers.
 
 - **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a colour of
   its own.** Asked for: move the default treatment off "the aqua" and save it

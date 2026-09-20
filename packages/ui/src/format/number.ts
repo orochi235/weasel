@@ -56,15 +56,15 @@ export function formatCompact(value: number, decimals = 0): string {
  * name is read first: the longest match wins, exact case before any case, and
  * a unit beats a magnitude suffix, so with `m` accepted `2m` is `2 * units.m`.
  */
-export function parseNumber(text: string, units?: Readonly<Record<string, number>>): number {
+export function parseNumber(text: string, units?: Readonly<UnitTable>): number {
   if (units) {
     const trimmed = text.trim();
     const name = unitSuffixOf(trimmed, units);
     if (name !== undefined) {
-      const n = parseNumber(trimmed.slice(0, -name.length));
-      const factor = units[name]!;
-      // Divided by the reciprocal below 1: 12 * 0.1 is 1.2000000000000002, 12 / 10 is 1.2.
-      return factor < 1 ? n / (1 / factor) : n * factor;
+      const terms = compoundTermsOf(trimmed, units);
+      if (terms !== undefined && terms.length > 1) return compoundValue(terms, trimmed, units);
+      const { factor, offset } = scaleOf(units[name]!);
+      return scaled(parseNumber(trimmed.slice(0, -name.length)), factor) + offset;
     }
   }
   let t = text.trim().replace(MINUS_SIGN, '-');
@@ -76,8 +76,68 @@ export function parseNumber(text: string, units?: Readonly<Record<string, number
   return Number(exponent === undefined ? t : `${t}e${exponent}`);
 }
 
+/** One unit's conversion into the shown unit: a bare factor, or a scale that
+ *  also moves zero. Structurally the kit's `UnitEntry`, kept local so this
+ *  formatting helper stays free of the scene vocabulary. */
+export type UnitTableEntry = number | { factor: number; offset?: number };
+/** Suffixes a person may type, each mapped to its conversion. */
+export type UnitTable = Record<string, UnitTableEntry>;
+
+/** Divided by the reciprocal below 1: 12 * 0.1 is 1.2000000000000002, 12 / 10 is 1.2. */
+function scaled(n: number, factor: number): number {
+  return factor < 1 ? n / (1 / factor) : n * factor;
+}
+
+/** A unit table entry's scale, with the bare-factor shorthand widened. */
+function scaleOf(entry: UnitTableEntry): { factor: number; offset: number } {
+  return typeof entry === 'number'
+    ? { factor: entry, offset: 0 }
+    : { factor: entry.factor, offset: entry.offset ?? 0 };
+}
+
+/**
+ * The unit names in `text`, in reading order, when every one of them closes a
+ * `<number><unit>` term — which is what tells `5ft 3in` from a malformed
+ * `5ft 3`. Undefined when the text is not a run of whole terms.
+ */
+function compoundTermsOf(text: string, units: Readonly<UnitTable>): string[] | undefined {
+  const names: string[] = [];
+  let rest = text.trimEnd();
+  while (rest !== '') {
+    const name = unitSuffixOf(rest, units);
+    if (name === undefined) return undefined;
+    names.push(name);
+    const before = rest.slice(0, -name.length);
+    const m = /(\d+(?:\.\d+)?|\.\d+)\s*$/.exec(before);
+    if (!m) return undefined;
+    rest = before.slice(0, m.index).trimEnd();
+    // A sign leads the whole value, so it ends the walk rather than a term.
+    if (rest === '-' || rest === '+' || rest === MINUS_SIGN) rest = '';
+  }
+  return names.length === 0 ? undefined : names.reverse();
+}
+
+/**
+ * `5ft 3in` as one number in the shown unit. Every term scales and they sum;
+ * a leading sign carries across all of them, so `-5ft 3in` is −63in and not
+ * −57. Offsets have no meaning in a sum — 1K + 2degC is not a temperature —
+ * so a term carrying one makes the whole value unreadable.
+ */
+function compoundValue(names: string[], text: string, units: Readonly<UnitTable>): number {
+  const digits = text.match(/\d+(?:\.\d+)?|\.\d+/g);
+  if (!digits || digits.length !== names.length) return Number.NaN;
+  const sign = /^\s*[-\u2212]/.test(text) ? -1 : 1;
+  let total = 0;
+  for (const [i, name] of names.entries()) {
+    const { factor, offset } = scaleOf(units[name]!);
+    if (offset !== 0) return Number.NaN;
+    total += scaled(Number(digits[i]), factor);
+  }
+  return sign * total;
+}
+
 /** The longest unit name `text` ends with — exact case first, then any case. */
-function unitSuffixOf(text: string, units: Readonly<Record<string, number>>): string | undefined {
+function unitSuffixOf(text: string, units: Readonly<UnitTable>): string | undefined {
   const names = Object.keys(units).filter((n) => n !== '').sort((a, b) => b.length - a.length);
   const lower = text.toLowerCase();
   return names.find((n) => text.endsWith(n)) ?? names.find((n) => lower.endsWith(n.toLowerCase()));

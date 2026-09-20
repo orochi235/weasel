@@ -7,18 +7,48 @@
  * as base units) or a `{ value, unit }` tag that's resolved against a
  * `UnitSystem` at the API boundary. Internals never see units.
  *
- * Linear factors only. No per-axis units. No mixed-unit arithmetic.
+ * An entry is affine — `base = value * factor + offset` — so a scale that
+ * puts zero somewhere else (degC against K) is expressible. No per-axis
+ * units. No mixed-unit arithmetic.
  */
 
 /** A unit name (e.g. `'in'`, `'ft'`, `'mm'`). Looked up in a `UnitSystem`. */
 export type Unit = string;
 
-/** Conversion table mapping unit names to factors against a base unit. */
+/** What one unit is worth in base units: `base = value * factor + offset`. */
+export interface UnitScale {
+  factor: number;
+  /** Where this unit puts zero, in base units. Absent is 0 — a pure scale. */
+  offset?: number;
+}
+
+/** One unit's conversion. A bare number is the `{ factor }` shorthand. */
+export type UnitEntry = number | UnitScale;
+
+/** Conversion table mapping unit names to their scale against a base unit. */
 export interface UnitSystem {
   /** Name of the base unit, e.g. 'in'. All conversions resolve to this. */
   base: Unit;
-  /** Factor to multiply a value in `unit` by to get base units. base unit's factor is 1. */
-  units: Record<Unit, number>;
+  /** How to reach base units from each unit. The base unit's entry is 1. */
+  units: Record<Unit, UnitEntry>;
+}
+
+/**
+ * One unit's scale, with the bare-number shorthand widened and the offset
+ * defaulted — what every conversion in the kit reads. Throws if the system
+ * does not carry the unit.
+ */
+export function unitScale(unitSystem: UnitSystem, unit: Unit): Required<UnitScale> {
+  const entry = unitSystem.units[unit];
+  if (entry === undefined) {
+    const known = Object.keys(unitSystem.units).join(', ') || '(none)';
+    throw new Error(
+      `unknown unit '${unit}' (system base: '${unitSystem.base}', known units: ${known})`,
+    );
+  }
+  return typeof entry === 'number'
+    ? { factor: entry, offset: 0 }
+    : { factor: entry.factor, offset: entry.offset ?? 0 };
 }
 
 /** Value at a unit-aware API boundary: bare number (in base units) or `{ value, unit }` tag. */
@@ -36,14 +66,8 @@ export function resolveUnit(v: UnitValue, unitSystem?: UnitSystem): number {
       `resolveUnit: tagged value { value: ${v.value}, unit: '${v.unit}' } requires a UnitSystem`,
     );
   }
-  const factor = unitSystem.units[v.unit];
-  if (factor === undefined) {
-    const known = Object.keys(unitSystem.units).join(', ') || '(none)';
-    throw new Error(
-      `resolveUnit: unknown unit '${v.unit}' (system base: '${unitSystem.base}', known units: ${known})`,
-    );
-  }
-  return v.value * factor;
+  const { factor, offset } = scaleOrThrow('resolveUnit', unitSystem, v.unit);
+  return v.value * factor + offset;
 }
 
 /**
@@ -57,22 +81,25 @@ export function formatUnit(
   unitSystem: UnitSystem,
   opts?: { precision?: number; suffix?: boolean },
 ): string {
-  const factor = unitSystem.units[displayUnit];
-  if (factor === undefined) {
-    const known = Object.keys(unitSystem.units).join(', ') || '(none)';
-    throw new Error(
-      `formatUnit: unknown unit '${displayUnit}' (system base: '${unitSystem.base}', known units: ${known})`,
-    );
-  }
+  const { factor, offset } = scaleOrThrow('formatUnit', unitSystem, displayUnit);
   const precision = opts?.precision ?? 2;
   const suffix = opts?.suffix ?? true;
-  const display = baseValue / factor;
+  const display = (baseValue - offset) / factor;
   // Trim trailing zeros (and a dangling decimal point) without losing precision.
   let s = display.toFixed(precision);
   if (s.includes('.')) {
     s = s.replace(/0+$/, '').replace(/\.$/, '');
   }
   return suffix ? `${s}${displayUnit}` : s;
+}
+
+/** `unitScale`, with the caller's name in front of the message. */
+function scaleOrThrow(caller: string, unitSystem: UnitSystem, unit: Unit): Required<UnitScale> {
+  try {
+    return unitScale(unitSystem, unit);
+  } catch (e) {
+    throw new Error(`${caller}: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }
 
 /** Imperial unit system with base 'in'. */
