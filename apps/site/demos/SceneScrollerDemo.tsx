@@ -104,11 +104,9 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
 
   // The world is the three parallax bands and the scene, consecutive in the
   // stack below, so a knock blurs them as one buffer and leaves the HUD sharp.
-  // A scene with layers draws as one canvas layer per scene layer, so the group
-  // names those rather than the slot.
   const layerGroups = useMemo<LayerGroup[]>(() => [{
     id: 'world',
-    layers: ['backdrop-far', 'backdrop-mid', 'backdrop-near', 'scene:tiles', 'scene:entities', 'scene:player'],
+    layers: ['backdrop-far', 'backdrop-mid', 'backdrop-near', 'scene'],
     effects: (): Effect[] => {
       // No passes between knocks, so the offscreen buffer is never allocated.
       return blurRadius.value > 0 ? blur({ radius: blurRadius.value }) : [];
