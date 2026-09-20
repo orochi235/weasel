@@ -302,12 +302,19 @@ persisted *history* is the lenient path: `kit:add` warns and restores the node
 without its `derivePath`, keeping `dependsOn`, so it paints its authored
 appearance rather than vanishing.
 
-**Invalidation is pushed by the scene, not pulled by comparison.** A pose
-override mutates its buffer in place rather than replacing the reference —
+**Invalidation is pushed by the scene and pulled by the path resolver.** A
+pose override mutates its buffer in place rather than replacing the reference —
 which is what a drag does — so no reference-keyed memo can observe an endpoint
 moving. The scene keeps a reverse index and drops its dependents' pose-keyed
 memo slots wherever a dependency's pose can change, transitively, including on
-undo. Nothing in the paint path watches for it.
+undo. On top of that, `resolveDerivedPath` re-resolves its dependencies on a
+memo hit and compares their poses *by value* against the ones the cached path
+was drawn from, so a dependency that moved with nothing pushed behind it — a
+paint-time `toPose` of your own, say — still re-routes. That pull covers poses
+only: a derivation reading a dependency's `data` or `layer` rides on the push.
+
+`derivePose` has no such pull, so a pose derived from a pose is pushed
+invalidation alone.
 
 **Deleting a node deletes everything that derives from it**, transitively,
 including those nodes' own subtrees, as one undo entry. A dependent is not a
@@ -336,8 +343,8 @@ poses and `Scene` stores them absolutely.
 ### Deriving a pose
 
 `derivePose` is the same machinery driving a node's **pose** rather than its
-path — same `dependsOn`, same registry-keyed serialization, same push
-invalidation. The difference is reach: a derived path is resolved at paint time
+path — same `dependsOn`, same registry-keyed serialization, pushed
+invalidation only. The difference is reach: a derived path is resolved at paint time
 and reaches only the painter, while a derived pose is what the node *is* at, so
 it feeds bounds, hit-testing, selection chrome, snapping and layout.
 

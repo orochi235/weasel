@@ -27,10 +27,17 @@ type DerivePath = (
   deps: readonly (DerivedDep<RectPose> | undefined)[],
 ) => Path | null;
 
-/** A dependency as the derive callbacks now receive it. The node is a stand-in:
- *  nothing in these fixtures reads it. */
-const dep = (p: RectPose | undefined): DerivedDep<RectPose> | undefined =>
-  p === undefined ? undefined : { node: {} as never, pose: p, path: null };
+/** A dependency as the derive callbacks now receive it. The node is a
+ *  stand-in — nothing in these fixtures reads it — but one per pose object,
+ *  because `resolveDerivedPath` compares the identity it was handed and a real
+ *  lookup answers a stable node per id. */
+const standIns = new WeakMap<RectPose, object>();
+const dep = (p: RectPose | undefined): DerivedDep<RectPose> | undefined => {
+  if (p === undefined) return undefined;
+  let node = standIns.get(p);
+  if (node === undefined) { node = {}; standIns.set(p, node); }
+  return { node: node as never, pose: p, path: null };
+};
 
 type Data = { label?: string };
 type GradientData = { fill: FillStyle };
@@ -391,6 +398,21 @@ describe('the scene slot derives against its own toPose', () => {
     const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne, toPose: lowered }, scene);
     expect(slot.derivedPathOf!(node, pose(0))).toEqual(linePath({ x: 0, y: 7 }, { x: 100, y: 7 }));
     expect(resolveDerivedPath(node, sceneDepLookup(scene), (id) => scene.childrenOf(id))).toBe(plain);
+  });
+
+  it('follows a toPose whose answer changed with no scene edit behind it', () => {
+    // The scene pushes invalidation for edits it performs, and this is not
+    // one: the slot's own offset moved. The resolver notices by comparing the
+    // resolved poses against the ones it drew from.
+    const { scene, edge } = makeEdgeScene();
+    const offset = { y: 7 };
+    const shifted = (n: Node<Data, 'main', RectPose>): RectPose => ({ ...n.pose, y: n.pose.y + offset.y });
+    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne, toPose: shifted }, scene);
+    const node = scene.get(edge)!;
+    expect(slot.derivedPathOf!(node, pose(0))).toEqual(linePath({ x: 0, y: 7 }, { x: 100, y: 7 }));
+
+    offset.y = 40;
+    expect(slot.derivedPathOf!(node, pose(0))).toEqual(linePath({ x: 0, y: 40 }, { x: 100, y: 40 }));
   });
 });
 

@@ -6,14 +6,22 @@
  * route it labels, and `effectivePose` is what resolves it. The render walk's
  * wrapper stays in `canvas/derivedPath.ts`.
  *
- * Invalidation here is *pushed* by the scene, never pulled: a pose override
- * mutates its buffer in place, so no comparison this module could make would
- * see a dependency move. The memo is keyed on the node's own pose because that
- * is the slot `dropPoseKeyedMemoSlots` clears.
+ * Invalidation is both pushed and pulled. The scene pushes — dropping the
+ * dependent's memo slot on the edits it performs — and on a memo hit this
+ * module re-resolves the dependencies and compares their poses *by value*
+ * against the ones the cached path was drawn from. The pull is what covers a
+ * dependency that moved with no scene edit behind it: a lookup answering poses
+ * of its own (`sceneDepLookup(scene, toPose)`), an ancestor's frame moving, a
+ * dependency appearing or going away. Value, not reference: a pose override
+ * mutates its buffer in place, so the reference never moves.
+ *
+ * The pull covers poses only. A derivation is handed each dependency's whole
+ * node, so one reading `data` or `layer` still rides on the scene's push.
  */
 import type { Path } from 'core/geometry/path';
 import { dependencyIdsOf } from './dependents';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
+import { samePoseValue, snapshotPose } from './poseSnapshot';
 import type { DerivedDep, NodeId } from './types';
 
 const SLOT = 'kit:derivedPath';
@@ -30,6 +38,15 @@ export interface PathDerivingNode<TPose> {
     node: never,
     deps: readonly (DerivedDep<TPose> | undefined)[],
   ) => Path | null;
+}
+
+/** A cached path, with what it was drawn from: each dependency's node — an
+ *  identity, so a restored clone is a different one — and a copy of the pose
+ *  it resolved to. */
+interface PathMemo<TPose> {
+  nodes: (object | undefined)[];
+  poses: (TPose | undefined)[];
+  path: Path | null;
 }
 
 /** Ids whose path is on the stack. A dependency graph is meant to be acyclic
@@ -70,12 +87,54 @@ export function resolveDerivedPath<TPose>(
   resolving.add(node.id);
   const hitsBefore = cycleHits;
   try {
-    const value = nodeMemo(node, memoSlot, node.pose, () =>
-      derivePath(node as never, ids.map((id) => depOf(id))),
-    );
+    let computed = false;
+    const record = nodeMemo<PathMemo<TPose>>(node, memoSlot, node.pose, () => {
+      computed = true;
+      return draw(node, derivePath, ids.map(depOf), { nodes: [], poses: [], path: null });
+    });
+    // Mutating the record in place is what updates the memo slot, which holds
+    // this object.
+    if (!computed && !matches(record, ids, depOf)) {
+      draw(node, derivePath, ids.map(depOf), record);
+    }
     if (cycleHits !== hitsBefore) dropPoseKeyedMemoSlots(node);
-    return value;
+    return record.path;
   } finally {
     resolving.delete(node.id);
   }
+}
+
+/** Run `derivePath` against `deps` and record what it was run against. */
+function draw<TPose>(
+  node: PathDerivingNode<TPose>,
+  derivePath: NonNullable<PathDerivingNode<TPose>['derivePath']>,
+  deps: readonly (DerivedDep<TPose> | undefined)[],
+  into: PathMemo<TPose>,
+): PathMemo<TPose> {
+  into.path = derivePath(node as never, deps);
+  into.nodes.length = 0;
+  into.poses.length = 0;
+  for (const dep of deps) {
+    into.nodes.push(dep?.node);
+    into.poses.push(dep === undefined ? undefined : snapshotPose(dep.pose));
+  }
+  return into;
+}
+
+/** Whether the dependencies still resolve to the same nodes at the same poses
+ *  the record was drawn from. Resolves them one at a time rather than taking
+ *  an array: this is the hit path, and it walks every derived node's every
+ *  dependency on every frame. */
+function matches<TPose>(
+  record: PathMemo<TPose>,
+  ids: readonly NodeId[],
+  depOf: (id: NodeId) => DerivedDep<TPose> | undefined,
+): boolean {
+  if (record.nodes.length !== ids.length) return false;
+  for (let i = 0; i < ids.length; i++) {
+    const dep = depOf(ids[i]);
+    if (record.nodes[i] !== (dep === undefined ? undefined : dep.node)) return false;
+    if (dep !== undefined && !samePoseValue(record.poses[i], dep.pose)) return false;
+  }
+  return true;
 }
