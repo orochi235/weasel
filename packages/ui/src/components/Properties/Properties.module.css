@@ -59,7 +59,7 @@
      standalone Input. Mapped here, on the container, so one declaration moves
      every field in the panel — and read from the container-level name so a
      density set further up is not shadowed by this declaration. */
-  --wzl-field-h: var(--wzl-prop-field-h, 20px);
+  --wzl-field-h: var(--wzl-prop-field-h, var(--wzl-control-h-sm));
   --wzl-field-pad-x: var(--wzl-prop-field-pad-x, 6px);
 }
 
@@ -542,8 +542,7 @@
   min-width: 0;
 }
 
-/* 36×24, hairline border, no padding. Padding: 0 is important — the native
-   <input type="color"> in some browsers (esp. Chrome) inflates beyond its
+/* Padding: 0 is important — the native <input type="color"> in some browsers (esp. Chrome) inflates beyond its
    declared box when given padding, which expands the grid row and pushes
    the paired slider track out of bottom alignment. */
 .rowColor input[type='color'] {
@@ -552,7 +551,7 @@
   align-self: var(--wzl-prop-row-align, center);
   box-sizing: border-box;
   width: 36px;
-  height: 18px;
+  height: var(--wzl-control-h-xs);
   background: transparent;
   border: 0;
   border-radius: var(--wzl-radius-sm);
@@ -919,8 +918,8 @@
   color: var(--wzl-fg-muted);
   border: 1px solid transparent;
   border-radius: var(--wzl-radius-sm);
-  width: 22px;
-  height: 22px;
+  width: var(--wzl-icon-button-size);
+  height: var(--wzl-icon-button-size);
   font-size: var(--wzl-font-size);
   cursor: pointer;
   display: inline-flex;

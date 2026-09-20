@@ -97,6 +97,7 @@
 .curve {
   flex-shrink: 0;
   width: 24px;
+  /* Square easing-curve artwork: not-a-control */
   height: 24px;
   color: var(--wzl-fg);
 }

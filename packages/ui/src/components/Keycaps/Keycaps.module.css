@@ -1,7 +1,7 @@
 /* Keystroke "key cap" styling — each modifier and key in its own bordered chip. */
 .keys,
 .key {
-  --key-h: 18px;
+  --key-h: var(--wzl-control-h-xs);
 }
 
 .keys {

@@ -25,8 +25,9 @@
 }
 
 .swatch {
+  /* A paint preview at a fixed 26:18 aspect, not a control box. */
   inline-size: 26px;
-  block-size: 18px;
+  block-size: 18px; /* not-a-control */
   flex: 0 0 auto;
   border-radius: calc(var(--wzl-radius-sm) - var(--wzl-border-w));
   /* Checker under the paint, so a translucent one reads as translucent. */

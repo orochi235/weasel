@@ -18,6 +18,8 @@ export type TokenName =
   | '--wzl-border-strong'
   | '--wzl-border-w'
   | '--wzl-control-h'
+  | '--wzl-control-h-sm'
+  | '--wzl-control-h-xs'
   | '--wzl-curve-color'
   | '--wzl-curve-width'
   | '--wzl-danger'
@@ -63,6 +65,7 @@ export type TokenName =
   | '--wzl-handle-size'
   | '--wzl-handle-size-lg'
   | '--wzl-handle-size-sm'
+  | '--wzl-icon-button-size'
   | '--wzl-leading'
   | '--wzl-leading-snug'
   | '--wzl-leading-tight'
@@ -210,7 +213,10 @@ export const THEMES = {
         '--wzl-line-width': "2px",
         '--wzl-curve-width': "3px",
         '--wzl-tb-height': "24px",
+        '--wzl-control-h-xs': "16px",
+        '--wzl-control-h-sm': "18px",
         '--wzl-control-h': "20px",
+        '--wzl-icon-button-size': "20px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-mix': "18%",
@@ -324,7 +330,10 @@ export const THEMES = {
         '--wzl-line-width': "2px",
         '--wzl-curve-width': "3px",
         '--wzl-tb-height': "28px",
+        '--wzl-control-h-xs': "18px",
+        '--wzl-control-h-sm': "20px",
         '--wzl-control-h': "24px",
+        '--wzl-icon-button-size': "22px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-mix': "18%",
@@ -438,7 +447,10 @@ export const THEMES = {
         '--wzl-line-width': "2px",
         '--wzl-curve-width': "3px",
         '--wzl-tb-height': "32px",
+        '--wzl-control-h-xs': "22px",
+        '--wzl-control-h-sm': "24px",
         '--wzl-control-h': "28px",
+        '--wzl-icon-button-size': "26px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-mix': "18%",
@@ -552,7 +564,10 @@ export const THEMES = {
         '--wzl-line-width': "2px",
         '--wzl-curve-width': "3px",
         '--wzl-tb-height': "24px",
+        '--wzl-control-h-xs': "16px",
+        '--wzl-control-h-sm': "18px",
         '--wzl-control-h': "20px",
+        '--wzl-icon-button-size': "20px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-mix': "18%",
@@ -666,7 +681,10 @@ export const THEMES = {
         '--wzl-line-width': "2px",
         '--wzl-curve-width': "3px",
         '--wzl-tb-height': "28px",
+        '--wzl-control-h-xs': "18px",
+        '--wzl-control-h-sm': "20px",
         '--wzl-control-h': "24px",
+        '--wzl-icon-button-size': "22px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-mix': "18%",
@@ -780,7 +798,10 @@ export const THEMES = {
         '--wzl-line-width': "2px",
         '--wzl-curve-width': "3px",
         '--wzl-tb-height': "32px",
+        '--wzl-control-h-xs': "22px",
+        '--wzl-control-h-sm': "24px",
         '--wzl-control-h': "28px",
+        '--wzl-icon-button-size': "26px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-mix': "18%",
@@ -1325,6 +1346,42 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
           "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
         }
       },
+      "control-h-xs": {
+        "by": "density",
+        "compact": {
+          "value": "16px",
+          "type": "dimension",
+          "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+        },
+        "comfortable": {
+          "value": "18px",
+          "type": "dimension",
+          "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+        },
+        "roomy": {
+          "value": "22px",
+          "type": "dimension",
+          "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+        }
+      },
+      "control-h-sm": {
+        "by": "density",
+        "compact": {
+          "value": "18px",
+          "type": "dimension",
+          "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+        },
+        "comfortable": {
+          "value": "20px",
+          "type": "dimension",
+          "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+        },
+        "roomy": {
+          "value": "24px",
+          "type": "dimension",
+          "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+        }
+      },
       "control-h": {
         "by": "density",
         "compact": {
@@ -1341,6 +1398,24 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
           "value": "28px",
           "type": "dimension",
           "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+        }
+      },
+      "icon-button-size": {
+        "by": "density",
+        "compact": {
+          "value": "20px",
+          "type": "dimension",
+          "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+        },
+        "comfortable": {
+          "value": "22px",
+          "type": "dimension",
+          "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+        },
+        "roomy": {
+          "value": "26px",
+          "type": "dimension",
+          "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
         }
       },
       "slider-track-h": {
@@ -2084,6 +2159,42 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
           "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
         }
       },
+      "control-h-xs": {
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "16px",
+          "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "18px",
+          "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "22px",
+          "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+        }
+      },
+      "control-h-sm": {
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "18px",
+          "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "20px",
+          "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "24px",
+          "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+        }
+      },
       "control-h": {
         "by": "density",
         "compact": {
@@ -2100,6 +2211,24 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
           "type": "dimension",
           "value": "28px",
           "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+        }
+      },
+      "icon-button-size": {
+        "by": "density",
+        "compact": {
+          "type": "dimension",
+          "value": "20px",
+          "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+        },
+        "comfortable": {
+          "type": "dimension",
+          "value": "22px",
+          "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+        },
+        "roomy": {
+          "type": "dimension",
+          "value": "26px",
+          "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
         }
       },
       "slider-track-h": {

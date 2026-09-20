@@ -67,8 +67,8 @@
 
 .close {
   flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
+  width: var(--wzl-icon-button-size);
+  height: var(--wzl-icon-button-size);
   display: inline-flex;
   align-items: center;
   justify-content: center;

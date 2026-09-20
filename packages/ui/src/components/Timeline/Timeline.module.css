@@ -38,7 +38,7 @@
 .lane {
   display: flex;
   align-items: stretch;
-  min-height: 20px;
+  min-height: var(--wzl-control-h-sm);
   border-bottom: 1px solid var(--wzl-line-subtle);
 }
 
@@ -151,7 +151,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
+  min-width: var(--wzl-icon-button-size);
   padding: var(--wzl-space-1) var(--wzl-space-3);
   /* Sits on `--wzl-surface-raised`, so a transparent fill and a border that
      close in value leave it reading as text rather than as a control. */

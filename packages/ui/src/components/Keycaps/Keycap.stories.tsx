@@ -244,7 +244,7 @@ export const KeyboardLayouts: Story = {
 function KeyboardLayout({ platform, legend, font }: { platform: Platform; legend: LegendStyle; font?: string }): ReactElement {
   // ANSI TKL layout.
   //
-  // Geometry: 1u = 18px (matches `.key[data-kind='square']` width); the
+  // Geometry: 1u is the keycap rank itself, so the layout follows density; the
   // flex row carries `gap: 3px` between siblings. A n-unit key's width
   // is `n * U + (n - 1) * GAP` — that's the formula `unit(n)`. Using
   // it for both KeyCaps AND Spacers makes every element occupy exactly
@@ -260,9 +260,8 @@ function KeyboardLayout({ platform, legend, font }: { platform: Platform; legend
   //   bottom:   2.25 + 10×1 + 2.75 = 15                    ✓
   //   modifier: 7×1.25 + 6.25 = 15 (ANSI Win/Linux)        ✓
   //             — macOS: trailing spacer pads the short row to 15
-  const U = 18;
   const GAP = 3;
-  const unit = (n: number) => n * U + (n - 1) * GAP;
+  const unit = (n: number) => `calc(${n} * var(--wzl-control-h-xs) + ${(n - 1) * GAP}px)`;
 
   const shift = keySpecsFromMods([{ name: 'shift' }], { platform, legend })[0].label;
   const ctrl = keySpecsFromMods([{ name: 'ctrl' }], { platform, legend })[0].label;
@@ -421,6 +420,6 @@ function KeyboardBlock({
   );
 }
 
-function Spacer({ width, height }: { width: number; height?: number }): ReactElement {
-  return <span aria-hidden style={{ display: 'inline-block', width, height: height ?? 18 }} />;
+function Spacer({ width, height }: { width: number | string; height?: number | string }): ReactElement {
+  return <span aria-hidden style={{ display: 'inline-block', width, height: height ?? 'var(--wzl-control-h-xs)' }} />;
 }

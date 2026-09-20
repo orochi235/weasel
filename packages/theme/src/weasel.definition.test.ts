@@ -15,7 +15,7 @@ const EXPECTED_NAMES = [
   'accent-soft', 'accent-base', 'accent-strong',
   'danger-base', 'warning-base', 'success-base',
   'radius-sm', 'radius-md', 'radius-lg', 'radius-pill', 'border-w', 'line-width', 'curve-width',
-  'tb-height', 'control-h', 'glass-blur',
+  'tb-height', 'control-h-xs', 'control-h-sm', 'control-h', 'icon-button-size', 'glass-blur',
   'slider-track-h', 'slider-thumb-size', 'slider-track-mix', 'slider-thumb-mix', 'field-pad-x',
   'handle-size', 'handle-size-sm', 'handle-size-lg',
   'font-size-2xs', 'font-size-xs', 'font-size-sm', 'font-size-md', 'font-size-lg', 'font-size-xl', 'font-size',

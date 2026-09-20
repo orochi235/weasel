@@ -100,8 +100,14 @@
   --wzl-curve-width: 3px;
   /* Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges. */
   --wzl-tb-height: 28px;
+  /* Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm. */
+  --wzl-control-h-xs: 18px;
+  /* Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control. */
+  --wzl-control-h-sm: 20px;
   /* Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in. */
   --wzl-control-h: 24px;
+  /* Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes. */
+  --wzl-icon-button-size: 22px;
   /* Height of a linear range track. The kit's single-thumb ranges all wear this; Slider's default 24px canvas track does not. */
   --wzl-slider-track-h: 4px;
   /* Diameter of a linear range thumb. */
@@ -216,7 +222,10 @@
   --wzl-font-size-lg: 14px;
   --wzl-font-size-xl: 17px;
   --wzl-tb-height: 24px;
+  --wzl-control-h-xs: 16px;
+  --wzl-control-h-sm: 18px;
   --wzl-control-h: 20px;
+  --wzl-icon-button-size: 20px;
   --wzl-font-size: var(--wzl-font-size-md);
 }
 
@@ -229,7 +238,10 @@
   --wzl-font-size-lg: 16px;
   --wzl-font-size-xl: 20px;
   --wzl-tb-height: 28px;
+  --wzl-control-h-xs: 18px;
+  --wzl-control-h-sm: 20px;
   --wzl-control-h: 24px;
+  --wzl-icon-button-size: 22px;
   --wzl-font-size: var(--wzl-font-size-md);
 }
 
@@ -242,6 +254,9 @@
   --wzl-font-size-lg: 18px;
   --wzl-font-size-xl: 23px;
   --wzl-tb-height: 32px;
+  --wzl-control-h-xs: 22px;
+  --wzl-control-h-sm: 24px;
   --wzl-control-h: 28px;
+  --wzl-icon-button-size: 26px;
   --wzl-font-size: var(--wzl-font-size-md);
 }

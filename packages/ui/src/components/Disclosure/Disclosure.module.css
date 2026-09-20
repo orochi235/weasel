@@ -11,8 +11,8 @@
      which is under every pointer-size guideline there is. Stated as a minimum
      so a larger mark grows the target with it rather than being shrunk to fit
      — a flex item's default `flex-shrink: 1` would otherwise crush it. */
-  min-width: var(--wzl-disclosure-target, 20px);
-  min-height: var(--wzl-disclosure-target, 20px);
+  min-width: var(--wzl-disclosure-target, var(--wzl-control-h-sm));
+  min-height: var(--wzl-disclosure-target, var(--wzl-control-h-sm));
   padding: 0;
   border: 0;
   border-radius: var(--wzl-radius-sm);

@@ -83,7 +83,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
+  width: var(--wzl-icon-button-size);
   background: transparent;
   border: none;
   border-left: 1px solid var(--wzl-border);

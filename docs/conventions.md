@@ -151,3 +151,15 @@ aliases for rungs 2/4/6/8. It does not vary by density — the rungs are finer
 than any density factor could resolve without rounding two of them onto the same
 pixel. `npm run check:spacing` fails on a `gap`/`padding`/`margin` px literal in
 `packages/ui/src` that has a rung.
+
+Control heights are four ranks, `control-h-xs` / `-sm` / `control-h` /
+`tb-height` — 18/20/24/28 at `comfortable`. A control box sizes itself from one
+of them, never from a literal: a literal is what left `Button` at 24px in every
+density while its label grew. `npm run check:controls` fails on a
+`height`/`min-height`/`block-size` literal in `packages/ui/src` that equals a
+rank.
+
+What deliberately does *not* follow density: icons and drawn glyphs (a chevron,
+a checkmark, a switch track), slider tracks and thumbs, and handles — those have
+their own tokens or are artwork. Scaling them with the type ramp makes them
+blurry rather than bigger.
