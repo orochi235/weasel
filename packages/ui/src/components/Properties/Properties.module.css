@@ -212,6 +212,24 @@
   margin-left: auto;
 }
 
+/* Bare readout text — the word a row shows while it is auto — carrying
+   `.readoutInput`'s box, inside `.readoutGroup` just as the input is. The label
+   is a baseline-aligned flex line, so anything taller above the baseline drags
+   the whole line, label included, down with it: an input's border and padding
+   did that for 3.5px on every pin toggle. Both states have to be the same box
+   *and* the same nesting, because the group's own strut is 5px of the height. */
+.readoutText {
+  display: inline-block;
+  /* The input's content box, not its line-height: a text input's inner editor
+     will not shrink to a line-height below the font's own content area, so it
+     renders 16px of content where a span renders 11px. Stating the height on
+     both and filling it here is what makes the two boxes agree. */
+  height: var(--wzl-control-h-sm);
+  line-height: calc(var(--wzl-control-h-sm) - 4px);
+  border: 1px solid transparent;
+  padding: 1px 0;
+}
+
 /* ⓘ help affordance beside a row label. Every dimension is stated because a
    host app's bare-element defaults can be authored at zero specificity —
    labkit's `:where(.lk-root) :where(button)` sets `height: var(--wzl-control-h)`
@@ -318,6 +336,9 @@
   border-radius: var(--wzl-radius-sm);
   padding: 1px 0;
   margin: 0;
+  /* Stated rather than left to the control's intrinsic size, which `.readoutText`
+     cannot reproduce — see the note there. */
+  height: var(--wzl-control-h-sm);
   /* The fit is the widest value in `ch`, which is one digit; the box is border-box, so its border
      comes back on top, with half a `ch` for a glyph wider than a digit. */
   width: max(
