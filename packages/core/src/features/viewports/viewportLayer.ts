@@ -1,7 +1,7 @@
 import type { DrawCommand, GroupDrawCommand } from '../../renderer';
 import { drawOneLayer, type Dims, type RenderLayer } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
-import { mat3, type Mat3 } from '../../renderer/math/mat3';
+import { mat3, type GlMat3 } from '../../renderer/math/mat3';
 import type { ResolvableView } from './viewResolver';
 
 /**
@@ -156,7 +156,7 @@ export function createViewportLayer<TData, TSource = TData>(
       for (const layer of sourceAt()) {
         for (const c of drawOneLayer(layer, innerData, v, innerDims)) children.push(c);
       }
-      const transform: Mat3 = mat3.translated(mat3.identity(), b.x, b.y);
+      const transform: GlMat3 = mat3.translated(mat3.identity(), b.x, b.y);
       const group: GroupDrawCommand = {
         kind: 'group',
         transform,

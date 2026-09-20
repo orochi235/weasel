@@ -7,6 +7,7 @@
  * variants for the fallback chain.
  */
 
+import type { FontStyle } from './fontStyle';
 import { notifyGlyphReady } from './glyphReady';
 import { parseBmFont, type BmFont } from './FontAtlas';
 import type { GlyphTextureSink } from './textureSink';
@@ -30,10 +31,9 @@ export interface FontEntry {
 /** Which face within a family. Defaults to weight 400, style `'normal'`. */
 export interface FontVariant {
   weight?: number;
-  style?: 'normal' | 'italic';
+  style?: FontStyle;
 }
 
-type FontStyle = 'normal' | 'italic';
 
 let registry = new Map<string, Map<string, FontEntry>>();
 

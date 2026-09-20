@@ -7,8 +7,7 @@
  * site reads better than a pair of arguments does.
  */
 
-/** A 2D point or vector. */
-export interface Vec2 {
-  x: number;
-  y: number;
-}
+/** A 2D point or vector. `@weasel-js/routing` declares this shape as `Point2`
+ *  for the dispatcher surface; the two names are one type, so a value crosses
+ *  between an action's `ctx.world` and a kit geometry call unconverted. */
+export type { Point2 as Vec2 } from '@weasel-js/routing';

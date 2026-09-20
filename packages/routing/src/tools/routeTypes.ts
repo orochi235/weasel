@@ -17,7 +17,9 @@ import type { CursorSpec } from '@weasel-js/cursor';
  */
 export interface ToolDef<TScratch = void, TOverlay = unknown> {
   id: string;
-  /** Capability tags for modality eligibility. Forwarded onto `Tool.capabilities`. */
+  /** Capability tags for modality eligibility. `defineTool` forwards these
+   *  onto `Tool.eligibility.capabilities`, which is where every gate reads
+   *  them — the assembled `Tool` carries no `capabilities` of its own. */
   capabilities?: CapabilityTag[];
   /**
    * Actions this tool owns and needs registered while it is in the tools

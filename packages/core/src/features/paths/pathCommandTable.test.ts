@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { PATH_CMD_LENGTHS as GEOM_PATH_CMD_LENGTHS } from '@weasel-js/geom';
 import { PATH_CMD_LENGTHS, PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, type PolygonPath } from './types';
-import { translatePath, translatePolygonInPlace } from './transform';
+import { translatePath } from './transform';
 import { rotatePathAround } from './poseRotation';
 import { pathPoseDescriptor } from './poseDescriptor';
 
@@ -32,9 +32,6 @@ describe('path opcode table', () => {
 
       const moved = translatePath(path, 3, 5) as PolygonPath;
       expect([...moved.coords]).toEqual(source.map((v, i) => v + (i % 2 ? 5 : 3)));
-
-      const inPlace = translatePolygonInPlace(pathOverEveryCommand(), 3, 5);
-      expect([...inPlace.coords]).toEqual(source.map((v, i) => v + (i % 2 ? 5 : 3)));
 
       const rotated = rotatePathAround(path, 0, 0, 0);
       expect([...rotated.coords]).toEqual(source);

@@ -42,9 +42,15 @@ export function sign(n: number): -1 | 0 | 1 {
 
 /**
  * Magnitude-scaled approximate equality. Two values are equal when their
- * absolute difference is within EPS scaled by the larger magnitude. This is
- * the ONLY equality the kernel uses on computed coordinates — never `===`,
+ * absolute difference is within EPS scaled by the larger magnitude. Every
+ * comparison of two *computed coordinates* goes through this — never `===`,
  * never an f64-tight literal.
+ *
+ * The exception is a guard against an exact algebraic value that a formula
+ * produces bit-for-bit: a homogeneous `w === 1`, a ray's `d === 0`. Those are
+ * testing a branch, not comparing coordinates, and `geom/3d` has two of them
+ * (`mat4.ts`, `ray3.ts`). Widening one to `approxEq` would change which branch
+ * runs, not how precisely it runs.
  */
 export function approxEq(a: number, b: number, eps: number = EPS): boolean {
   if (a === b) return true;   // also the only way two infinities compare equal

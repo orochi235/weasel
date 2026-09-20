@@ -95,6 +95,6 @@
   // core silently breaks them otherwise. The Playwright suites under
   // tests/e2e, the rest of tests/perf and tests/visual drive the app over a wire and
   // don't.
-  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/history/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/labkit/src", "packages/labkit/examples/schema-lab", "packages/labkit/examples/3d-lab", "packages/audio/src", "packages/kernel3d/src", "packages/forge/src"],
+  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/history/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/labkit/src", "packages/labkit/examples/schema-lab", "packages/labkit/examples/3d-lab", "packages/audio/src", "packages/kernel3d/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src"],
   "exclude": ["node_modules", "dist"]
 }

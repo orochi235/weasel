@@ -10,6 +10,7 @@ import { boundsOfPath, resolveScreenLength, SCRIPT_METRICS } from '@weasel-js/co
 import type {
   Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
+  ScreenLength,
 } from './types';
 import { IDENTITY_MATRIX } from './types';
 import { serializePathD } from './path-serializer';
@@ -347,7 +348,7 @@ function paintAttrs(
  * transform scale here to resolve it against, and picking one would bake a
  * single zoom level into the document.
  */
-function strokeWidthAttrs(width: number | { px: number }): string[] {
+function strokeWidthAttrs(width: ScreenLength): string[] {
   if (typeof width === 'number') return [`stroke-width="${trimNumber(width)}"`];
   return [`stroke-width="${trimNumber(width.px)}"`, 'vector-effect="non-scaling-stroke"'];
 }

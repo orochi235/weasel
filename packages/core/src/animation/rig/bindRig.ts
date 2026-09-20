@@ -1,7 +1,7 @@
 import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import type { NodeId, PoseOverride, PoseOverrides } from '../../core/scene/types';
 import { AUTO_POSE_DESCRIPTOR } from '../../interactions/actions/resize/autoPoseDescriptor';
-import { mat3, type Mat3 } from '../../renderer/math/mat3';
+import { mat3, type GlMat3 } from '../../renderer/math/mat3';
 import { resolveSkeleton } from './resolveSkeleton';
 import type { Pose, Skeleton } from './types';
 
@@ -20,15 +20,15 @@ export interface RigApplyContext<TPose> {
    *  bind pose. */
   rest: TPose;
   /** The joint's world transform at the bind pose. */
-  restWorld: Mat3;
+  restWorld: GlMat3;
   /** `world * inverse(restWorld)`: the motion since the bind pose, in world
    *  space. Carrying `rest` by it is what welding the node to the joint means. */
-  fromRest: Mat3;
+  fromRest: GlMat3;
 }
 
 /** Turns a joint's world transform into a pose for one bound node. The only
  *  part of a rig that knows the scene's pose shape. */
-export type RigApply<TPose> = (world: Mat3, ctx: RigApplyContext<TPose>) => TPose;
+export type RigApply<TPose> = (world: GlMat3, ctx: RigApplyContext<TPose>) => TPose;
 
 export interface BindRigOptions<TPose> {
   scene: RigScene<TPose>;
@@ -51,9 +51,9 @@ export interface Rig {
    * commit them. The per-frame write. `root` places the rig in the world, and
    * may mirror it.
    */
-  pose(pose: Pose, root?: Mat3): void;
+  pose(pose: Pose, root?: GlMat3): void;
   /** The joint world transforms the last `pose` resolved, root applied. */
-  world(): ReadonlyMap<string, Mat3>;
+  world(): ReadonlyMap<string, GlMat3>;
   /** Write the current frame into the bound nodes' document poses as one
    *  undo entry, and drop the overrides. Later frames stay relative to the
    *  bind-time rest, so baking does not compound. */
@@ -94,8 +94,8 @@ interface Bound<TPose> {
   node: NodeId;
   joint: string;
   rest: TPose;
-  restWorld: Mat3;
-  restInverse: Mat3;
+  restWorld: GlMat3;
+  restInverse: GlMat3;
   entry: PoseOverride<TPose>;
 }
 
@@ -123,7 +123,7 @@ export function bindRig<TPose>(options: BindRigOptions<TPose>): Rig {
     }
   }
 
-  let world: ReadonlyMap<string, Mat3> = restWorlds;
+  let world: ReadonlyMap<string, GlMat3> = restWorlds;
   let installed = false;
 
   const release = () => {
@@ -138,7 +138,7 @@ export function bindRig<TPose>(options: BindRigOptions<TPose>): Rig {
       const local = resolveSkeleton(skeleton, pose);
       if (root) for (const [name, m] of local) local.set(name, mat3.multiply(root, m));
       world = local;
-      const fromRest = new Map<string, Mat3>();
+      const fromRest = new Map<string, GlMat3>();
       for (const b of bound) {
         const w = local.get(b.joint)!;
         let delta = fromRest.get(b.joint);

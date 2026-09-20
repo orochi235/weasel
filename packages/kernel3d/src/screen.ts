@@ -17,15 +17,9 @@ import {
   type Vec3,
 } from '@weasel-js/geom/3d';
 
-/** A pane's rectangle in CSS pixels, relative to the client. */
-export interface ViewportRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
-/** A screen rectangle in the shape core's `Bounds` uses. */
+/** A screen rectangle in CSS pixels, in the shape core's `Bounds` uses. Both
+ *  a pane's own rect and a projected world box are this — one spelling, so the
+ *  two never need converting between. */
 export interface ScreenBox {
   x: number;
   y: number;
@@ -42,21 +36,21 @@ export interface ChromeBox extends ScreenBox {
 /** Screen point (y down, rect-relative) to normalized device coordinates (y up). */
 export function screenToNdc(
   point: { x: number; y: number },
-  rect: ViewportRect,
+  rect: ScreenBox,
 ): { x: number; y: number } {
   return {
-    x: ((point.x - rect.x) / rect.w) * 2 - 1,
-    y: 1 - ((point.y - rect.y) / rect.h) * 2,
+    x: ((point.x - rect.x) / rect.width) * 2 - 1,
+    y: 1 - ((point.y - rect.y) / rect.height) * 2,
   };
 }
 
 export function ndcToScreen(
   ndc: { x: number; y: number },
-  rect: ViewportRect,
+  rect: ScreenBox,
 ): { x: number; y: number } {
   return {
-    x: rect.x + (ndc.x * 0.5 + 0.5) * rect.w,
-    y: rect.y + (1 - (ndc.y * 0.5 + 0.5)) * rect.h,
+    x: rect.x + (ndc.x * 0.5 + 0.5) * rect.width,
+    y: rect.y + (1 - (ndc.y * 0.5 + 0.5)) * rect.height,
   };
 }
 
@@ -70,7 +64,7 @@ export function ndcToScreen(
  */
 export function rayThroughScreenPoint(
   point: { x: number; y: number },
-  rect: ViewportRect,
+  rect: ScreenBox,
   viewProjection: Mat4,
   eye: Vec3,
 ): Ray | null {
@@ -119,7 +113,7 @@ const EDGE_BITS = [1, 2, 4] as const;
 export function projectAabbToScreen(
   box: Aabb,
   viewProjection: Mat4,
-  rect: ViewportRect,
+  rect: ScreenBox,
 ): ScreenBox | null {
   const corners: Clip[] = [];
   for (let i = 0; i < 8; i++) {

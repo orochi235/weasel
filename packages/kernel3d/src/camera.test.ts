@@ -11,7 +11,7 @@ import {
 import { normalize, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { rayThroughScreenPoint } from './screen';
 
-const RECT = { x: 0, y: 0, w: 800, h: 600 };
+const RECT = { x: 0, y: 0, width: 800, height: 600 };
 
 function expectVecClose(a: Vec3, b: Vec3, digits = 6) {
   for (const axis of ['x', 'y', 'z'] as const) expect(a[axis]).toBeCloseTo(b[axis], digits);
@@ -87,7 +87,7 @@ describe('cameraViewProjection', () => {
   it('aims the center-screen ray from the eye at the target', () => {
     const cam: Camera3d = createCamera({ distance: 5, yaw: 0.7, pitch: 0.4, target: { x: 1, y: 0, z: -2 } });
     const eye = cameraEye(cam);
-    const vp = cameraViewProjection(cam, RECT.w / RECT.h);
+    const vp = cameraViewProjection(cam, RECT.width / RECT.height);
     const ray = rayThroughScreenPoint({ x: 400, y: 300 }, RECT, vp, eye)!;
     expectVecClose(ray.direction, normalize(sub(cam.target, eye)), 4);
   });

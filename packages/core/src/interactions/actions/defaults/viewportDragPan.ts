@@ -51,6 +51,28 @@ interface DragPanScratch {
   lastScreen: { x: number; y: number };
 }
 
+/**
+ * Rebuild the client-pixel drag delta from the world one, for an event source
+ * that supplied no `clientX`/`clientY`.
+ *
+ * A world delta is self-referential mid-pan — its two ends were measured under
+ * different views — so it cannot simply be scaled. Undoing each end against the
+ * view that produced it recovers the client delta exactly, since
+ * `world = (client - origin) / scale + view` and neither the canvas origin nor
+ * the scale moves during a pan.
+ */
+function screenDeltaFromWorld(
+  drag: NonNullable<InvocationCtx['drag']>,
+  scratch: DragPanScratch,
+): { x: number; y: number } {
+  const v0 = scratch.startView;
+  const now = scratch.view.get();
+  return {
+    x: (drag.current.x - now.x - (drag.start.x - v0.x)) * v0.scale.x,
+    y: (drag.current.y - now.y - (drag.start.y - v0.y)) * v0.scale.y,
+  };
+}
+
 /** Binding params `viewport.dragPan` understands. `useHandTool` supplies both;
  *  a bare binding supplies neither and pans both axes with no coasting. */
 export interface DragPanParams {
@@ -121,13 +143,7 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
           // position offset by the just-applied pan, halving the apparent
           // movement on every subsequent pointermove. Screen coords come
           // straight from the DOM event and don't drift.
-          //
-          // Fall back to world `delta` only when the dispatcher didn't get
-          // clientX/clientY on the event (legacy harnesses); in that case
-          // panning at scale 1 still works approximately, and zoom-scale
-          // panning will exhibit the lag bug. The fallback exists so old
-          // test fixtures continue to compile.
-          const screen = moveCtx.drag.screenDelta ?? moveCtx.drag.delta;
+          const screen = moveCtx.drag.screenDelta ?? screenDeltaFromWorld(moveCtx.drag, scratch);
           // An axis lock drops the other component of the *cumulative* delta,
           // so the locked axis never moves however the pointer wanders.
           const screenDx = scratch.axis === 'y' ? 0 : screen.x;

@@ -1,5 +1,5 @@
 /** Axis-aligned box as [minX, minY, maxX, maxY]. */
-export type Box = [number, number, number, number];
+export type Box = readonly [number, number, number, number];
 
 /** An axis-aligned rectangle in object form. `Box` is the tuple form; this is
  *  the one that survives being read by a human. */

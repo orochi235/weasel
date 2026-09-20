@@ -42,7 +42,6 @@ import {
   projectAabbToScreen,
   rayThroughScreenPoint,
   type ScreenBox,
-  type ViewportRect,
 } from './screen';
 
 export interface Viewport3d {
@@ -94,13 +93,14 @@ function boundsOfNode<TData, TLayer extends string>(
   return world.bounds ? world.bounds(node) : aabbOfPose(node.pose);
 }
 
-/** The pane, in the coordinate space the host's points arrive in. */
-function rectOf(viewport: Viewport3d): ViewportRect {
+/** The pane, in the coordinate space the host's points arrive in. The origin
+ *  defaults to the client origin — a host that fills the window passes none. */
+function rectOf(viewport: Viewport3d): ScreenBox {
   return {
     x: viewport.originX ?? 0,
     y: viewport.originY ?? 0,
-    w: viewport.width,
-    h: viewport.height,
+    width: viewport.width,
+    height: viewport.height,
   };
 }
 
@@ -342,7 +342,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   function castableViewport(): Viewport3d | null {
     const vp = world.viewport();
     const rect = rectOf(vp);
-    if (rayAt(vp, { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 })) lastCastable = vp;
+    if (rayAt(vp, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 })) lastCastable = vp;
     return lastCastable;
   }
 

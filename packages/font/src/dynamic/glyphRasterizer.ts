@@ -34,6 +34,8 @@
  * mip levels blend across glyph rects).
  */
 
+import type { FontStyle } from '../fontStyle';
+
 export const BAKE_SIZE = 48;
 export const PAD = 8;
 
@@ -52,15 +54,15 @@ export interface RasterizedGlyph {
 }
 
 export interface GlyphRasterizer {
-  faceMetrics(family: string, weight: number, style: 'normal' | 'italic'): FaceMetrics;
+  faceMetrics(family: string, weight: number, style: FontStyle): FaceMetrics;
   rasterize(
-    family: string, weight: number, style: 'normal' | 'italic', codepoint: number,
+    family: string, weight: number, style: FontStyle, codepoint: number,
   ): RasterizedGlyph;
 }
 
 type Canvas2D = OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
 
-function cssFontString(weight: number, style: 'normal' | 'italic', family: string): string {
+function cssFontString(weight: number, style: FontStyle, family: string): string {
   return `${style === 'italic' ? 'italic ' : ''}${weight} ${BAKE_SIZE}px ${JSON.stringify(family)}`;
 }
 
@@ -78,7 +80,7 @@ export function createCanvasRasterizer(): GlyphRasterizer {
   const ctx = canvas.getContext('2d', { willReadFrequently: true }) as Canvas2D | null;
   if (!ctx) throw new Error('weasel DynamicGlyphAtlas: 2D context unavailable');
 
-  function setFont(family: string, weight: number, style: 'normal' | 'italic'): void {
+  function setFont(family: string, weight: number, style: FontStyle): void {
     ctx!.font = cssFontString(weight, style, family);
     ctx!.textBaseline = 'alphabetic';
     ctx!.textAlign = 'left';

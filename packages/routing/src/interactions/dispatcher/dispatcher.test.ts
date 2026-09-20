@@ -969,7 +969,7 @@ describe('immediate params for affordance-carrying kinds', () => {
   it('a contextmenu invoker sees world coords and the affordance', () => {
     const params = paramsFor(
       { kind: 'contextMenu' },
-      { kind: 'contextmenu', worldX: 3, worldY: 4, affordance, ...noMods } as unknown as InputEvent,
+      { kind: 'contextmenu', x: 3, y: 4, affordance, ...noMods },
     );
     expect(params).toMatchObject({ worldX: 3, worldY: 4, affordance });
   });
@@ -977,7 +977,7 @@ describe('immediate params for affordance-carrying kinds', () => {
   it('a longpress invoker sees world coords and the affordance', () => {
     const params = paramsFor(
       { kind: 'longPress' },
-      { kind: 'longpress', x: 3, y: 4, affordance, ...noMods } as unknown as InputEvent,
+      { kind: 'longpress', x: 3, y: 4, affordance, ...noMods },
     );
     expect(params).toMatchObject({ worldX: 3, worldY: 4, affordance });
   });
@@ -985,7 +985,7 @@ describe('immediate params for affordance-carrying kinds', () => {
   it('a wheel invoker sees the affordance alongside the deltas', () => {
     const params = paramsFor(
       { kind: 'wheel', direction: 'down' },
-      { kind: 'wheel', deltaX: 0, deltaY: 10, clientX: 1, clientY: 2, affordance, ...noMods } as unknown as InputEvent,
+      { kind: 'wheel', deltaX: 0, deltaY: 10, clientX: 1, clientY: 2, affordance, ...noMods },
     );
     expect(params).toMatchObject({ deltaX: 0, deltaY: 10, clientX: 1, clientY: 2, affordance });
   });
@@ -993,7 +993,7 @@ describe('immediate params for affordance-carrying kinds', () => {
   it('a doubleclick invoker sees the affordance', () => {
     const params = paramsFor(
       { kind: 'doubleClick' },
-      { kind: 'doubleclick', worldX: 3, worldY: 4, affordance, ...noMods } as unknown as InputEvent,
+      { kind: 'doubleclick', x: 3, y: 4, affordance, ...noMods },
     );
     expect(params).toMatchObject({ worldX: 3, worldY: 4, affordance });
   });
@@ -1001,7 +1001,7 @@ describe('immediate params for affordance-carrying kinds', () => {
   it('a click invoker keeps its press point', () => {
     const params = paramsFor(
       { kind: 'click' },
-      { kind: 'click', worldX: 3, worldY: 4, pressX: 1, pressY: 2, affordance, ...noMods } as unknown as InputEvent,
+      { kind: 'click', x: 3, y: 4, pressX: 1, pressY: 2, affordance, ...noMods },
     );
     expect(params).toMatchObject({ worldX: 3, worldY: 4, pressX: 1, pressY: 2, affordance });
   });
@@ -1027,7 +1027,7 @@ describe('invocation coordinates', () => {
   it('fills ctx.screen from the event\u2019s client point, not its world point', () => {
     const ctx = ctxFor(
       { kind: 'drag' },
-      { kind: 'pointerdown', x: 50, y: 60, clientX: 150, clientY: 160, ...noMods } as unknown as InputEvent,
+      { kind: 'pointerdown', x: 50, y: 60, clientX: 150, clientY: 160, ...noMods },
     );
     expect(ctx.world).toEqual({ x: 50, y: 60 });
     expect(ctx.screen).toEqual({ x: 150, y: 160 });
@@ -1036,7 +1036,7 @@ describe('invocation coordinates', () => {
   it('leaves ctx.screen unset when the event carries no client point', () => {
     const ctx = ctxFor(
       { kind: 'drag' },
-      { kind: 'pointerdown', x: 50, y: 60, ...noMods } as unknown as InputEvent,
+      { kind: 'pointerdown', x: 50, y: 60, ...noMods },
     );
     expect(ctx.world).toEqual({ x: 50, y: 60 });
     expect(ctx.screen).toBeUndefined();
@@ -1045,15 +1045,30 @@ describe('invocation coordinates', () => {
   it('gives a click\u2019s ctx the click\u2019s own world point', () => {
     const ctx = ctxFor(
       { kind: 'click' },
-      { kind: 'click', worldX: 3, worldY: 4, pressX: 1, pressY: 2, ...noMods } as unknown as InputEvent,
+      { kind: 'click', x: 3, y: 4, pressX: 1, pressY: 2, ...noMods },
     );
     expect(ctx.world).toEqual({ x: 3, y: 4 });
   });
+
+  // Placing a menu at the pointer is the canonical use for `ctx.screen`, and
+  // for a while the click family declared no client coords at all — so the one
+  // kind that needs it was the one kind that could never read it.
+  it.each(['click', 'doubleclick', 'contextmenu'] as const)(
+    'fills ctx.screen for a %s',
+    (kind) => {
+      const ctx = ctxFor(
+        { kind: kind === 'doubleclick' ? 'doubleClick' : kind === 'contextmenu' ? 'contextMenu' : 'click' },
+        { kind, x: 3, y: 4, clientX: 103, clientY: 104, ...noMods },
+      );
+      expect(ctx.world).toEqual({ x: 3, y: 4 });
+      expect(ctx.screen).toEqual({ x: 103, y: 104 });
+    },
+  );
 });
 
 describe('enabled() sees where the event landed', () => {
   const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
-  const click = { kind: 'click', worldX: 3, worldY: 4, pressX: 1, pressY: 2, ...noMods } as unknown as InputEvent;
+  const click: InputEvent = { kind: 'click', x: 3, y: 4, pressX: 1, pressY: 2, ...noMods };
 
   it('hands a click’s world point to the gate', () => {
     const enabled = vi.fn().mockReturnValue(true);
@@ -1066,7 +1081,7 @@ describe('enabled() sees where the event landed', () => {
     const enabled = vi.fn().mockReturnValue(true);
     const action: Action = { ...ongoingAction('probe', { kind: 'drag' }), enabled };
     createDispatcher().handleInput(
-      { kind: 'pointerdown', x: 50, y: 60, ...noMods } as unknown as InputEvent,
+      { kind: 'pointerdown', x: 50, y: 60, ...noMods },
       makeCtx({ actions: makeRegistry([action]) }),
     );
     expect(enabled.mock.calls[0][1]).toEqual({ x: 50, y: 60 });
@@ -1096,8 +1111,8 @@ describe('enabled() sees where the event landed', () => {
       invoker: { timing: 'immediate', run: far },
     };
     const ctx = makeCtx({ actions: makeRegistry([onlyNearOrigin, fallback]) });
-    const altClick = (x: number, y: number) =>
-      ({ kind: 'click', worldX: x, worldY: y, ...noMods, altKey: true }) as unknown as InputEvent;
+    const altClick = (x: number, y: number): InputEvent =>
+      ({ kind: 'click', x, y, ...noMods, altKey: true });
     const dispatcher = createDispatcher();
     dispatcher.handleInput(altClick(3, 4), ctx);
     expect(near).not.toHaveBeenCalled();

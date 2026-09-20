@@ -1,3 +1,4 @@
+import type { Vec2 } from 'core/geometry/vec2';
 import { createTransformOp } from 'core/ops/transform';
 import type { LayoutSnap, LayoutStrategy } from '../types';
 import { nearestWithin } from '../snaps';
@@ -15,14 +16,11 @@ export interface SnapPointOptions<TPose> {
   snap?: LayoutSnap<TPose>;
 }
 
-/** A point in world coordinates. */
-export type Pt = { x: number; y: number };
-
 function buildPoints(
   bounds: { x: number; y: number; width: number; height: number },
   pattern: SnapPattern,
   gridSpacing: number,
-): Pt[] {
+): Vec2[] {
   switch (pattern) {
     case 'corners':
       return [
@@ -41,7 +39,7 @@ function buildPoints(
     case 'center':
       return [{ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }];
     case 'grid': {
-      const out: Pt[] = [];
+      const out: Vec2[] = [];
       const cols = Math.floor(bounds.width / gridSpacing);
       const rows = Math.floor(bounds.height / gridSpacing);
       for (let j = 0; j <= rows; j++) {
@@ -57,7 +55,7 @@ function buildPoints(
 /** Layout strategy that leaves children where they are but offers a fixed set
  *  of points — corners, edge midpoints, center, or a grid — for a dragged
  *  child to land on. */
-export function snapPoint<TPose extends Pt>(
+export function snapPoint<TPose extends Vec2>(
   opts: SnapPointOptions<TPose>,
 ): LayoutStrategy<TPose> {
   const gridSpacing = opts.gridSpacing ?? 50;

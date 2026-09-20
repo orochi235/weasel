@@ -5,13 +5,13 @@ import { openLabStore } from './openLabStore';
 import { createLabStore } from './store';
 import { as2DView, DEFAULT_VIEW, normalize2DView, withZoom } from './view';
 
-interface OrbitView {
+interface ArbitraryTrialView {
   yaw: number;
   pitch: number;
   distance: number;
 }
 
-const orbit: OrbitView = { yaw: 1.1, pitch: 0.3, distance: 9 };
+const orbit: ArbitraryTrialView = { yaw: 1.1, pitch: 0.3, distance: 9 };
 
 describe('as2DView', () => {
   it('accepts the 2D shape', () => {
@@ -54,7 +54,7 @@ describe('a trial view labkit does not interpret', () => {
 
     store.getState().updateTrialView('w1', orbit);
 
-    expect(store.getState().trials[0]?.view as OrbitView).toEqual(orbit);
+    expect(store.getState().trials[0]?.view as ArbitraryTrialView).toEqual(orbit);
   });
 
   it('round-trips that view through persistence', async () => {
@@ -76,7 +76,7 @@ describe('a trial view labkit does not interpret', () => {
       storageKey: 'view-b',
       storage: createMemoryAdapter(backing),
     });
-    expect(hydrated.store.getState().trials[0]?.view as OrbitView).toEqual(orbit);
+    expect(hydrated.store.getState().trials[0]?.view as ArbitraryTrialView).toEqual(orbit);
   });
 });
 

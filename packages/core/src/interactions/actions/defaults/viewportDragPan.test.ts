@@ -27,6 +27,9 @@ function makeDecayView(initial?: View) {
   return { view, calls };
 }
 
+/** A drag ctx the way the dispatcher builds one from a DOM pointer event: the
+ *  client delta present, which is the only thing the pan reads. The world
+ *  `delta` is carried along at the same numbers and never consulted. */
 function makeCtx(view: ViewApi, drag?: { delta: { x: number; y: number } }): InvocationCtx {
   return {
     world: { x: 0, y: 0 },
@@ -34,8 +37,13 @@ function makeCtx(view: ViewApi, drag?: { delta: { x: number; y: number } }): Inv
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: { view },
     drag: drag
-      ? { start: { x: 0, y: 0 }, current: { x: drag.delta.x, y: drag.delta.y }, delta: drag.delta }
-      : { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 } },
+      ? {
+          start: { x: 0, y: 0 },
+          current: { x: drag.delta.x, y: drag.delta.y },
+          delta: drag.delta,
+          screenDelta: drag.delta,
+        }
+      : { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 }, screenDelta: { x: 0, y: 0 } },
   };
 }
 
@@ -184,6 +192,52 @@ describe('viewportDragPanAction invoker', () => {
       handle.onMove?.(ctx);
     }).not.toThrow();
     expect(mockSet).not.toHaveBeenCalled();
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+// The no-client-coords event source
+// ---------------------------------------------------------------------------
+
+describe('viewportDragPanAction without screenDelta', () => {
+  /** One pointermove from an event source that reports only world coords, the
+   *  way a consumer-synthesized `InputEvent` does. The world point is what the
+   *  emitter would compute under the view as it stands *now* — which is what
+   *  makes a raw world delta unusable mid-pan. */
+  function move(view: ViewApi & { _value: View }, clientDx: number, clientDy: number): InvocationCtx {
+    const v = view._value;
+    return {
+      world: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: { view },
+      drag: {
+        start: { x: 0, y: 0 },
+        current: { x: clientDx / v.scale.x + v.x, y: clientDy / v.scale.y + v.y },
+        delta: { x: clientDx / v.scale.x + v.x, y: clientDy / v.scale.y + v.y },
+      },
+    };
+  }
+
+  it('pans by the same amount as an equivalent client-coord drag, at 2x zoom', () => {
+    const view = makeView({ x: 0, y: 0, scale: { x: 2, y: 2 } });
+    const handle = getOngoingInvoker(viewportDragPanAction).start(makeCtx(view));
+
+    handle.onMove!(move(view, 100, 100));
+    expect(view._value.x).toBe(-50);
+    expect(view._value.y).toBe(-50);
+  });
+
+  it('keeps tracking the pointer across moves instead of stalling', () => {
+    const view = makeView({ x: 0, y: 0, scale: { x: 2, y: 2 } });
+    const handle = getOngoingInvoker(viewportDragPanAction).start(makeCtx(view));
+
+    handle.onMove!(move(view, 100, 0));
+    handle.onMove!(move(view, 200, 0));
+    // 200 client px at 2x is 100 world units of camera travel. Reading the
+    // world delta straight through would have divided by the zoom twice and
+    // then stuck, because the view it was measured against had already moved.
+    expect(view._value.x).toBe(-100);
   });
 });
 

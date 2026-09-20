@@ -34,10 +34,12 @@ export {
   type ColorOverride, type ColorOverrideFn, type VertexColorChannel,
 } from './colorRegistry';
 export {
-  srgbU8ToOklab, oklabToSrgbU8,
+  srgbU8ToOklab, srgbFloatToOklab, oklabToSrgbU8,
   lerpOklab, oklabToOklch, oklchToOklab, lerpOklch,
   lerpColorArray,
-  type ColorSpace,
+  // Degrees + `#rrggbb`, the form a palette or theme ramp authors in.
+  oklchDegToHex, hexToOklchDeg,
+  type ColorSpace, type OklchDeg,
 } from '@weasel-js/paint';
 export {
   tweenVertexColors, springVertexColors, cycleVertexColors, staggerVertexColors,

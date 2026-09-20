@@ -43,7 +43,7 @@ import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
 import { GradientRampAtlas } from './cache/GradientRampAtlas';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
-import type { Mat3 } from './math/mat3';
+import type { GlMat3 } from './math/mat3';
 import {
   dispatch, flushBatch, OUTLINE_MIN_SCREEN_PX, type DrawContext,
 } from './draw';
@@ -520,7 +520,7 @@ export class WeaselRenderer {
    * it — every other command carries its own transform in the stream, so
    * callers with no view concept can keep calling `render(commands)`.
    */
-  render(commands: DrawCommand[], viewMatrix?: Mat3): void {
+  render(commands: DrawCommand[], viewMatrix?: GlMat3): void {
     if (this.contextLost || this.disposed) return;
     const gl = this.gl;
     // Free GL resources whose Mesh was GC'd since the last frame. Done here
