@@ -828,6 +828,42 @@ a:hover { text-decoration: underline; }
   color: var(--ckd-faint);
 }
 
+.ckd-release-pkg.is-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+}
+.ckd-release-pkg.is-filter:hover {
+  border-color: var(--ckd-accent);
+  color: var(--ckd-text);
+}
+.ckd-release-pkg.is-filter.is-on {
+  border-color: var(--ckd-accent);
+  background: var(--ckd-accent);
+  color: var(--ckd-surface);
+}
+/* Digits sit in a proportional face here, so the counts jitter without this. */
+.ckd-release-pkg-n {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.66;
+}
+
+.ckd-release-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 14px;
+}
+.ckd-release-matched {
+  margin: 8px 0 0;
+  color: var(--ckd-muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
 .ckd-release-title {
   margin: 0;
   font-size: 15px;
