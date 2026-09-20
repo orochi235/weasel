@@ -224,23 +224,30 @@ export function PropertyRow({
     { density, align },
     className,
   );
+  // A stacked row reads label, readout, control down the column, so its readout
+  // belongs on the label line. An inline row would put a value of changing width
+  // in front of the control, which then moves under the pointer as it changes.
+  const trailing = resolved === 'inline' && readout != null;
   const head = (
     <span className={s.rowLabel}>
       {label}
       {description ? <PropertyRowHelp label={label} description={description} /> : null}
       {onAutoChange ? <PinDot auto={auto ?? false} label={label} onChange={onAutoChange} /> : null}
-      {readout != null && <em className={s.readout}>{readout}</em>}
+      {readout != null && !trailing && <em className={s.readout}>{readout}</em>}
     </span>
   );
+  const tail = trailing ? <em className={`${s.readout} ${s.readoutAfter}`}>{readout}</em> : null;
   return group ? (
     <div className={cls} data-auto-path={autoPath}>
       {head}
       {children}
+      {tail}
     </div>
   ) : (
     <label className={cls} htmlFor={htmlFor} data-auto-path={autoPath}>
       {head}
       {children}
+      {tail}
     </label>
   );
 }

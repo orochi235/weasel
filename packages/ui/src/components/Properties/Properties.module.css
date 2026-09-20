@@ -212,6 +212,16 @@
   margin-left: auto;
 }
 
+/*
+ * An inline row's readout, which the row draws after the control rather than
+ * beside the label: its width changes with the value, and anything after it on
+ * the row would be shoved sideways on every update.
+ */
+.readoutAfter {
+  flex: 0 0 auto;
+  margin-left: 0;
+}
+
 /* ⓘ help affordance beside a row label. Every dimension is stated because a
    host app's bare-element defaults can be authored at zero specificity —
    labkit's `:where(.lk-root) :where(button)` sets `height: var(--wzl-control-h)`
@@ -594,17 +604,12 @@
 .rowCheckbox {
   flex-direction: row;
   align-items: var(--wzl-prop-row-align, center);
+  /* Label on the leading edge and box on the trailing one, like every other
+     inline row: a column of settings is read down its labels, and a box that
+     leads its own row puts each label at a different indent. */
+  justify-content: space-between;
   gap: 8px;
   cursor: pointer;
-}
-
-.rowCheckbox .rowLabel {
-  text-transform: none;
-  letter-spacing: normal;
-  font-size: var(--wzl-font-size);
-  color: var(--wzl-fg);
-  /* Place the label after the checkbox visually. */
-  order: 1;
 }
 
 .rowCheckbox input[type='checkbox']:not([role='switch']) {
@@ -621,9 +626,6 @@
   align-items: var(--wzl-prop-row-align, start);
 }
 
-.rowCheckbox.rowBlock .rowLabel {
-  order: 0;
-}
 
 /* ── Segmented toggle group ───────────────────────────────────── */
 .toggle {
