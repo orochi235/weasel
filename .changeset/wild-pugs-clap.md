@@ -28,5 +28,12 @@ axis's default branch and drops the others, since DTCG carries one variant
 dimension. Round-tripping a theme through DTCG now flattens it to the default
 selection of every non-mode axis.
 
+Control heights follow density too, through three new ranks — `control-h-xs`
+(18px), `control-h-sm` (20px) and `icon-button-size` (22px), each landing on a
+value already in wide use so nothing moves at the default density. Without them
+`Button` sat at 24px in every density while its label grew.
+
 Also adopts the ladder across `packages/ui`: 189 `gap`/`padding`/`margin` px
-literals became rungs, and `npm run check:spacing` keeps them there.
+literals became rungs and the frozen control boxes became ranks.
+`npm run check:spacing` and `npm run check:controls` keep them there; a
+rank-sized box that is really artwork opts out with a `not-a-control` comment.
