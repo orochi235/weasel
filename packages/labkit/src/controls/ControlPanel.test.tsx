@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TOOL_PREF_KINDS, type ToolPrefKind } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/ui';
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { auto } from '../config/auto';
 import { f } from '../config/builder';
@@ -949,5 +950,158 @@ describe('<ControlPanel> shift-click', () => {
         new PointerEvent('pointerdown', { bubbles: true, cancelable: true, shiftKey: true }),
       );
     expect(setConfig).toHaveBeenCalledWith('gap', 24);
+  });
+});
+
+describe('<ControlPanel> pair', () => {
+  const paired = () =>
+    resolveConfigSchema(
+      f.schema({
+        x: f.number(10).label('X').pair('Offset'),
+        y: f.number(20).label('Y').pair('Offset'),
+        scale: f.number(1).label('Scale'),
+      }),
+      [],
+    );
+  const config = { x: 10, y: 20, scale: 1 };
+
+  it('draws two leaves sharing a pair id as one row named by the pair', () => {
+    render(<ControlPanel schema={paired()} config={config} setConfig={vi.fn()} />);
+    const row = screen.getByText('Offset').closest('div') as HTMLElement;
+    expect(within(row).getByLabelText('X')).toHaveValue(10);
+    expect(within(row).getByLabelText('Y')).toHaveValue(20);
+    // The pair names the row, so neither leaf's own name is drawn beside it.
+    expect(screen.queryByText('X')).toBeNull();
+    expect(screen.queryByText('Y')).toBeNull();
+  });
+
+  it('writes each cell of a paired row to its own path', () => {
+    const setConfig = vi.fn();
+    render(<ControlPanel schema={paired()} config={config} setConfig={setConfig} />);
+    fireEvent.change(screen.getByLabelText('Y'), { target: { value: '30' } });
+    expect(setConfig).toHaveBeenCalledWith('y', 30);
+  });
+
+  it('leaves an unpaired sibling on its own row', () => {
+    render(<ControlPanel schema={paired()} config={config} setConfig={vi.fn()} />);
+    const row = screen.getByText('Offset').closest('div') as HTMLElement;
+    expect(within(row).queryByLabelText('Scale')).toBeNull();
+    expect(screen.getByLabelText('Scale')).toHaveValue(1);
+  });
+});
+
+describe('<ControlPanel> unit', () => {
+  const degrees = {
+    toDisplay: (stored: number) => (stored * 180) / Math.PI,
+    fromDisplay: (shown: number) => (shown * Math.PI) / 180,
+    suffix: '°',
+  };
+  const angle = (node: ReturnType<typeof f.number>, stored: number, setConfig = vi.fn()) => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ angle: node.label('Angle') }), [])}
+        config={{ angle: stored }}
+        setConfig={setConfig}
+      />,
+    );
+    return setConfig;
+  };
+
+  it('shows a radians-backed number in its display unit', () => {
+    angle(f.number(0).input().unit(degrees), Math.PI / 2);
+    expect((screen.getByLabelText('Angle') as HTMLInputElement).value).toBe('90');
+  });
+
+  it('stores a typed display value back in the canonical unit', () => {
+    const setConfig = angle(f.number(0).input().unit(degrees), Math.PI / 2);
+    fireEvent.change(screen.getByLabelText('Angle'), { target: { value: '45' } });
+    expect(setConfig.mock.calls[0][0]).toBe('angle');
+    expect(setConfig.mock.calls[0][1] as number).toBeCloseTo(Math.PI / 4, 10);
+  });
+
+  it('round-trips a value edited away and back', () => {
+    // Live config, because the corruption this guards against only shows on
+    // the second edit: what the field stores has to read back as what it showed.
+    function Live() {
+      const [config, setConfig] = useState<Record<string, unknown>>({ angle: Math.PI / 2 });
+      return (
+        <ControlPanel
+          schema={resolveConfigSchema(
+            f.schema({ angle: f.number(0).input().unit(degrees).label('Angle') }),
+            [],
+          )}
+          config={config}
+          setConfig={(path, value) => setConfig((prev) => ({ ...prev, [path]: value }))}
+        />
+      );
+    }
+    render(<Live />);
+    const field = () => screen.getByLabelText('Angle') as HTMLInputElement;
+    expect(field().value).toBe('90');
+    fireEvent.change(field(), { target: { value: '45' } });
+    expect(field().value).toBe('45');
+    fireEvent.change(field(), { target: { value: '90' } });
+    expect(field().value).toBe('90');
+  });
+
+  it('converts a slider’s bounds into the display unit', () => {
+    angle(f.number(0).range(0, Math.PI).unit(degrees), Math.PI / 2);
+    const slider = screen.getByRole('slider') as HTMLInputElement;
+    expect(slider.min).toBe('0');
+    expect(slider.max).toBe('180');
+    expect(slider.value).toBe('90');
+  });
+
+  it('clamps a typed value against the bounds in display space', () => {
+    // 100 is inside 0..180 degrees and outside 0..π radians, so clamping
+    // against the stored bounds would cut a legal angle down to π.
+    const setConfig = angle(f.number(0).range(0, Math.PI).input().unit(degrees), Math.PI / 2);
+    fireEvent.change(screen.getByLabelText('Angle'), { target: { value: '100' } });
+    expect(setConfig.mock.calls[0][1] as number).toBeCloseTo((100 * Math.PI) / 180, 10);
+  });
+});
+
+describe('<ControlPanel> color alpha', () => {
+  const panel = (setConfig = vi.fn(), stored = '#336699cc') => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(
+          f.schema({ tint: f.color('#000000ff').alpha().label('Tint') }),
+          [],
+        )}
+        config={{ tint: stored }}
+        setConfig={setConfig}
+      />,
+    );
+    return setConfig;
+  };
+
+  it('splits the stored hex into a swatch and an alpha track', () => {
+    panel();
+    expect((screen.getByLabelText('Tint') as HTMLInputElement).value).toBe('#336699');
+    expect((screen.getByLabelText('Tint opacity') as HTMLInputElement).value).toBe('0.8');
+  });
+
+  it('keeps the stored alpha when the swatch moves', () => {
+    const setConfig = panel();
+    fireEvent.change(screen.getByLabelText('Tint'), { target: { value: '#00ff00' } });
+    expect(setConfig).toHaveBeenCalledWith('tint', '#00ff00cc');
+  });
+
+  it('keeps the stored color when the alpha track moves', () => {
+    const setConfig = panel();
+    fireEvent.change(screen.getByLabelText('Tint opacity'), { target: { value: '0.5' } });
+    expect(setConfig).toHaveBeenCalledWith('tint', '#33669980');
+  });
+
+  it('leaves a color leaf without alpha as a bare swatch', () => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ tint: f.color('#336699').label('Tint') }), [])}
+        config={{ tint: '#336699' }}
+        setConfig={vi.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText('Tint opacity')).toBeNull();
   });
 });

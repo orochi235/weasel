@@ -1,4 +1,10 @@
-import type { PrefGroup, PrefLeaf, PrefNumberFormat, PrefRenderer } from '@weasel-js/ui';
+import type {
+  PrefGroup,
+  PrefLeaf,
+  PrefNumberFormat,
+  PrefNumberUnit,
+  PrefRenderer,
+} from '@weasel-js/ui';
 
 /**
  * Renders the control cell for one config leaf. Identical to weasel-ui's
@@ -27,6 +33,11 @@ export interface Annotations {
   suffix?: string;
   /** How a number's value is shown. `compact` abbreviates from a thousand up. */
   format?: PrefNumberFormat;
+  /** Display-unit conversion for a number stored in a canonical unit — the
+   *  value, its bounds and its step all convert at the control's edge. */
+  unit?: PrefNumberUnit;
+  /** A color leaf's value carries alpha (`#rrggbbaa`) and its row edits it. */
+  alpha?: boolean;
   control?: string;
   options?: readonly ConfigOption[];
   placeholder?: string;
