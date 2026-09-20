@@ -26,13 +26,42 @@ export interface ConfigAnswers {
   errors: Record<string, string[]>;
 }
 
+/** One element axe faulted on, inside the frame's own document. */
+export interface A11yNode {
+  /** The CSS selectors, outermost first, that reach the element in the frame. */
+  target: readonly string[];
+  html: string;
+  failureSummary?: string;
+}
+
+/** One axe rule's outcome on the story, with the elements it names. */
+export interface A11yFinding {
+  id: string;
+  impact: 'minor' | 'moderate' | 'serious' | 'critical' | null;
+  help: string;
+  helpUrl: string;
+  description: string;
+  nodes: readonly A11yNode[];
+}
+
+/** What axe found on one story: the rules it failed, and the ones it could not decide. */
+export interface A11yReport {
+  violations: readonly A11yFinding[];
+  incomplete: readonly A11yFinding[];
+  /** Rules that passed, and rules no element on the page could be judged by. */
+  passes: number;
+  inapplicable: number;
+}
+
 export type ToFrame =
   | { type: 'init'; config: unknown; state: unknown; globals: Globals }
   | { type: 'config'; config: unknown }
   | { type: 'state'; state: unknown }
   | { type: 'globals'; globals: Globals }
   | { type: 'vars.set'; name: string; value: string | null }
-  | { type: 'play' };
+  | { type: 'play' }
+  /** Run axe over the story's own subtree. Answered by `a11y` carrying the same `id`. */
+  | { type: 'a11y.run'; id: string };
 
 export type FromFrame =
   | { type: 'ready'; schema: SchemaDescription; layout: Layout; viewport: Viewport | null }
@@ -44,6 +73,8 @@ export type FromFrame =
   | { type: 'size'; width: number; height: number }
   | { type: 'vars'; vars: CssVarReport[] }
   | { type: 'played'; ok: boolean; message?: string }
+  | { type: 'a11y'; id: string; ok: true; report: A11yReport }
+  | { type: 'a11y'; id: string; ok: false; message: string }
   /** `seq`, on a render fault only: how many `init`/`config`/`state`/`globals` messages the frame had received. */
   | { type: 'fault'; phase: FaultPhase; message: string; stack?: string; seq?: number };
 

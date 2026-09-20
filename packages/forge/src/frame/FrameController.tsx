@@ -11,6 +11,7 @@ import {
 } from '../protocol/messages';
 import { answerSchema, describeSchema } from '../protocol/schema';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
+import { runAxe } from './a11y';
 import { createOverrides, resolveCssVar, scanCssVars } from './cssVars';
 import { StoryHost } from './StoryHost';
 
@@ -151,6 +152,14 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     }
   };
 
+  const audit = async (id: string) => {
+    try {
+      send({ type: 'a11y', id, ok: true, report: await runAxe(wrapper) });
+    } catch (error) {
+      send({ type: 'a11y', id, ok: false, message: error instanceof Error ? error.message : String(error) });
+    }
+  };
+
   const off = channel.on((msg) => {
     switch (msg.type) {
       case 'init':
@@ -193,6 +202,9 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
       }
       case 'play':
         void play();
+        break;
+      case 'a11y.run':
+        void audit(msg.id);
         break;
     }
   });

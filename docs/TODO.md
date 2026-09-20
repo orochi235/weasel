@@ -1091,12 +1091,6 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 in its own iframe ("frame"), and the workshop shows it as a lab trial with
 controls. It is the only story runner in the repo.
 
-- **(P2) Nothing checks accessibility any more.** Storybook ran axe through
-  `@storybook/addon-a11y`; retiring it took that with it, and nothing in
-  `packages/forge` replaces it — the repo's axe coverage is zero, not reduced.
-  The story's DOM lives in the frame, so the check has to run there, with the
-  results sent to the workshop over the frame's message channel.
-
 - **(P3) Storybook's secondary-panel addon has no forge equivalent.** It pinned
   a second addon panel into a fixed column beside the first, so controls and
   CSS vars could be read at once. forge tiles its panels through labkit's

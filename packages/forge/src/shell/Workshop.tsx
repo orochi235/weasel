@@ -3,8 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ShellConfig } from '../config';
 import { type Globals, stableStringify } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
+import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
-import { createTrialFrames, TrialFramesContext } from './cssVars/trialFrames';
+import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
@@ -56,6 +57,7 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
     () => [
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
       CSS_VARS_SECTION,
+      A11Y_SECTION,
       ...(Object.keys(declarations).length > 0
         ? [{ id: 'fg-globals', region: 'header', render: () => <GlobalsToolbar declarations={declarations} /> } as const]
         : []),

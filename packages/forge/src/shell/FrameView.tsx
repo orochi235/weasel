@@ -14,9 +14,10 @@ import {
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
 import { useCssOverrides } from './cssVars/overrides';
-import { TrialFramesContext } from './cssVars/trialFrames';
+
 import { effectiveGlobals, GLOBALS_KEY, isGlobalsPath, storyConfig } from './globals';
 import { type Ready, readyKey } from './readyKey';
+import { type A11yOutcome, TrialFramesContext } from './trialFrames';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 
 export interface FrameViewProps {
@@ -30,6 +31,8 @@ export interface FrameViewProps {
 }
 
 const START_TIMEOUT_MS = 10_000;
+/** Distinguishes one frame request from the next; only ever compared, never read. */
+let requests = 0;
 /** How far past the viewport a frame stays mounted, so a small scroll back does not reload it. */
 const IN_VIEW_MARGIN = '50%';
 
@@ -69,11 +72,19 @@ interface Link {
   inputs: number;
   /** Takes this link's channel out of the trial's frame registry. */
   disconnect: () => void;
+  /** Requests waiting on an answer carrying the same id. */
+  pending: Map<string, (outcome: A11yOutcome) => void>;
+  /** Whether the frame has said it rendered; before that there is no story to ask anything about. */
+  hasRendered: boolean;
+  /** Requests held until it has. */
+  queued: (() => void)[];
 }
 
 function closeLink(link: RefObject<Link | null>): void {
   if (!link.current) return;
   clearTimeout(link.current.timer);
+  for (const resolve of link.current.pending.values()) resolve({ ok: false, message: 'The frame went away' });
+  link.current.pending.clear();
   link.current.disconnect();
   link.current.channel.close();
   link.current = null;
@@ -131,6 +142,8 @@ export function FrameView(props: FrameViewProps) {
       }
       case 'rendered':
         setPending(false);
+        current.hasRendered = true;
+        for (const ask of current.queued.splice(0)) ask();
         break;
       case 'setConfig':
         // The pins belong to the trial; a story cannot see them, so it cannot set them either.
@@ -146,6 +159,13 @@ export function FrameView(props: FrameViewProps) {
       case 'vars':
         if (trialId) frames?.report(trialId, msg.vars);
         break;
+      case 'a11y': {
+        const outcome: A11yOutcome = msg.ok ? { ok: true, report: msg.report } : { ok: false, message: msg.message };
+        if (trialId) frames?.reportA11y(trialId, outcome);
+        current.pending.get(msg.id)?.(outcome);
+        current.pending.delete(msg.id);
+        break;
+      }
       case 'fault':
         // A newer input is already on its way to the frame, which faults again if it still throws.
         if (msg.phase === 'render' && msg.seq !== undefined && msg.seq < current.inputs) break;
@@ -168,8 +188,27 @@ export function FrameView(props: FrameViewProps) {
         setFault({ phase: 'protocol', message: mismatchMessage(mismatch) });
       },
     });
-    const disconnect = frames && trialId ? frames.connect(trialId, channel.send) : () => {};
-    const current: Link = { channel, timer, awaiting: null, sent: null, inputs: 0, disconnect };
+    const waiting = new Map<string, (outcome: A11yOutcome) => void>();
+    const audit = (): Promise<A11yOutcome> =>
+      new Promise((resolve) => {
+        const id = `a11y-${(requests += 1)}`;
+        waiting.set(id, resolve);
+        const ask = () => channel.send({ type: 'a11y.run', id });
+        if (current.hasRendered) ask();
+        else current.queued.push(ask);
+      });
+    const disconnect = frames && trialId ? frames.connect(trialId, { send: channel.send, audit }) : () => {};
+    const current: Link = {
+      channel,
+      timer,
+      awaiting: null,
+      sent: null,
+      inputs: 0,
+      disconnect,
+      pending: waiting,
+      hasRendered: false,
+      queued: [],
+    };
     link.current = current;
     channel.on((msg) => receive(current, msg));
     target.postMessage({ type: PORT_HANDOFF }, location.origin, [port2]);
