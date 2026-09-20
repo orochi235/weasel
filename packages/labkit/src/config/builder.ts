@@ -164,8 +164,7 @@ export class NumberNode extends BaseNode<number> {
 export class BooleanNode extends BaseNode<boolean> {
   readonly kind = 'boolean';
 
-  /** Ask for a switch. `ControlPanel` still draws a checkbox; weasel-ui's
-   *  `PrefsForm` honors the distinction. */
+  /** Ask for a switch rather than a checkbox. */
   toggle(): this {
     return this.ann({ control: 'switch' });
   }

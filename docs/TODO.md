@@ -954,11 +954,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   sits in a two-column grid with nowhere obvious to put a paragraph. Wants a
   browser to decide the shape, not a guess.
 
-- **(P3) `ControlPanel` draws `control: 'switch'` as a checkbox.** `PrefsForm`
-  draws a `<Switch>` for the same leaf. `BooleanNode.toggle()` documents the
-  difference; closing it needs a `SwitchRow` among `@weasel-js/ui`'s property
-  rows.
-
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
 - **(P3) `.lk-shell` falls back to the viewport's height.** It is `height:

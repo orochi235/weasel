@@ -28,6 +28,7 @@ export type {
   PropertySpanProps,
   SelectRowProps,
   SliderRowProps,
+  SwitchRowProps,
   TextRowProps,
   ToggleRowProps,
 } from './PropertyPanel';
@@ -41,6 +42,7 @@ export {
   PropertySpan,
   SelectRow,
   SliderRow,
+  SwitchRow,
   TextRow,
   ToggleRow,
 } from './PropertyPanel';

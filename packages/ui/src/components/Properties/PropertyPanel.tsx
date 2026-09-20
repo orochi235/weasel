@@ -16,6 +16,7 @@ import { Tooltip, TooltipTrigger } from '../Tooltip';
 import shared from '../range.module.css';
 import s from './Properties.module.css';
 import { Select } from '../Select';
+import { Switch } from '../Switch';
 
 /**
  * How much room a container gives its rows — gaps, padding, and field height,
@@ -696,6 +697,56 @@ export function CheckboxRow({
         aria-label={nameOf(label)}
         checked={value === true}
         onChange={(e) => onChange(e.target.checked)}
+      />
+    </PropertyRow>
+  );
+}
+
+/** Props for `<SwitchRow>`. */
+export interface SwitchRowProps extends Omit<CheckboxRowProps, 'value'> {
+  /** Absent reads as off. */
+  value: boolean | undefined;
+}
+
+/**
+ * A boolean switch — the same row as `<CheckboxRow>`, drawn as an on/off
+ * toggle. Reach for it where the change takes effect immediately, and for
+ * a checkbox where it is submitted with a form.
+ */
+export function SwitchRow({
+  label,
+  readout,
+  value,
+  onChange,
+  layout,
+  span,
+  description,
+  density,
+  align,
+  auto,
+  onAutoChange,
+  'data-auto-path': autoPath,
+}: SwitchRowProps) {
+  return (
+    <PropertyRow
+      // The switch renders its own <label>, so the row may not be one.
+      group
+      span={span}
+      label={label}
+      readout={readout}
+      variant="checkbox"
+      layout={layout}
+      description={description}
+      density={density}
+      align={align}
+      auto={auto}
+      onAutoChange={onAutoChange}
+      data-auto-path={autoPath}
+    >
+      <Switch
+        aria-label={nameOf(label)}
+        isSelected={value === true}
+        onChange={onChange}
       />
     </PropertyRow>
   );

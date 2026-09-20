@@ -180,6 +180,22 @@ describe('<ControlPanel> schema', () => {
     expect(setConfig).toHaveBeenCalledWith('showGrid', false);
   });
 
+  it('draws a switch for a toggle() leaf and a checkbox for a plain one', () => {
+    const setConfig = vi.fn();
+    const schema = resolveConfigSchema(
+      f.schema({ showGrid: f.boolean(true), snap: f.boolean(true).toggle() }),
+      [],
+    );
+    render(
+      <ControlPanel schema={schema} config={{ showGrid: true, snap: false }} setConfig={setConfig} />,
+    );
+    expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeInTheDocument();
+    const sw = screen.getByRole('switch', { name: 'Snap' });
+    expect(sw).toBeInTheDocument();
+    fireEvent.click(sw);
+    expect(setConfig).toHaveBeenCalledWith('snap', true);
+  });
+
   it('picks a slider for a bounded number and an input for an open one', () => {
     const schema = resolveConfigSchema(
       f.schema({ a: f.number(5).range(0, 10), b: f.number(5) }),

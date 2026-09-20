@@ -10,6 +10,7 @@ import {
   PropertyRow,
   SelectRow,
   SliderRow,
+  SwitchRow,
   TextRow,
   ToggleRow,
 } from './PropertyPanel';
@@ -297,6 +298,21 @@ describe('CheckboxRow', () => {
     render(<CheckboxRow label="Visible" value={false} onChange={onChange} />);
     fireEvent.click(screen.getByRole('checkbox'));
     expect(onChange).toHaveBeenCalledWith(true);
+  });
+});
+
+describe('SwitchRow', () => {
+  it('exposes a switch, not a checkbox, and toggles it', () => {
+    const onChange = vi.fn();
+    render(<SwitchRow label="Snap to grid" value={false} onChange={onChange} />);
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    fireEvent.click(screen.getByRole('switch', { name: 'Snap to grid' }));
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+
+  it('reflects an absent value as off', () => {
+    render(<SwitchRow label="Snap to grid" value={undefined} onChange={() => {}} />);
+    expect(screen.getByRole('switch')).not.toBeChecked();
   });
 });
 
