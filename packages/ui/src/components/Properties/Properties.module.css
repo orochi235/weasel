@@ -1047,8 +1047,8 @@
    read `AUTO` in one row and `auto` in the next. An auto row's readout is a
    word, not a number, so it takes the label recipe and both rows read alike. */
 .rowAuto .readout {
-  font-style: italic;
-  color: var(--wzl-fg-subtle);
+  font-size: var(--wzl-font-size-xs);
+  color: var(--wzl-secondary-fg, var(--wzl-fg-subtle));
   text-transform: var(--wzl-params-label-case, uppercase);
   letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
 }
