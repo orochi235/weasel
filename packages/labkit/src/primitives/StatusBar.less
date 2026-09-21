@@ -1,6 +1,10 @@
 .lk-status-bar {
   display: flex;
   align-items: center;
+  /* One line, always. A bar that grows a second line takes it from the canvas
+     above it, and a readout that changes width would do that on and off as it
+     ticks. Too narrow for its contents clips them instead. */
+  overflow: hidden;
   gap: var(--wzl-space-md);
   padding: var(--wzl-space-xs) var(--wzl-space-sm);
   background: var(--wzl-surface-raised);
@@ -13,6 +17,8 @@
 .lk-status-bar-section {
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
+  min-width: 0;
   gap: var(--wzl-space-xs);
   padding: 0 var(--wzl-space-xs);
   border-right: 1px solid var(--wzl-line-subtle);

@@ -1,6 +1,7 @@
 .lk-fps-meter {
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   gap: var(--wzl-space-xs);
   font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-sm);
@@ -9,6 +10,10 @@
 
 .lk-fps-meter-value {
   color: var(--wzl-fg);
-  min-width: 2.5ch;
+  /* Sized for the widest rate it can hold rather than the one it holds now:
+     a 240Hz display reads three digits, and a readout that grows into them
+     pushes whatever shares its row. */
+  min-width: 3ch;
+  font-variant-numeric: tabular-nums;
   text-align: right;
 }

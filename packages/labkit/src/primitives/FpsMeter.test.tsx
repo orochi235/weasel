@@ -9,8 +9,16 @@ describe('FpsMeter', () => {
 
   test('renders an FPS label', () => {
     render(<FpsMeter />);
-    expect(screen.getByText(/fps/i)).toBeInTheDocument();
+    expect(screen.getByText('FPS')).toBeInTheDocument();
   });
+
+  /* The label and the rate are separate elements so the rate can hold a fixed
+     width; a text query spanning both would go back to matching one box. */
+  const rate = (): HTMLElement => {
+    const el = document.querySelector('.lk-fps-meter-value');
+    if (!el) throw new Error('no rate readout');
+    return el as HTMLElement;
+  };
 
   test('uses lk-fps-meter class', () => {
     const { container } = render(<FpsMeter />);
@@ -31,7 +39,7 @@ describe('FpsMeter', () => {
       raf?.(16.67);
       raf?.(33.34);
     });
-    expect(screen.getByText(/FPS\s+\d+/)).toBeInTheDocument();
+    expect(rate().textContent).toMatch(/^\d+$/);
 
     vi.unstubAllGlobals();
   });
@@ -59,7 +67,7 @@ describe('FpsMeter', () => {
       run(16.67);
       run(33.34);
     });
-    const before = screen.getByText(/FPS\s+\d+/).textContent;
+    const before = rate().textContent;
 
     // An hour hidden. The frame that lands on resume is not a 60-minute frame,
     // and must not enter the rolling average as one.
@@ -74,7 +82,7 @@ describe('FpsMeter', () => {
       run(3_600_016.67);
     });
 
-    expect(screen.getByText(/FPS\s+\d+/).textContent).toBe(before);
+    expect(rate().textContent).toBe(before);
 
     setHidden(false);
     vi.unstubAllGlobals();

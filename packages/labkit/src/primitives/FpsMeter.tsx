@@ -42,7 +42,12 @@ export function FpsMeter() {
 
   return (
     <div className="lk-fps-meter" ref={rootRef}>
-      <span className="lk-fps-meter-value">FPS {fps}</span>
+      <span className="lk-fps-meter-label">FPS</span>
+      {/* The number is its own cell because it is the only part that changes:
+          in one box with the label, every digit it gains or loses resizes the
+          readout, and the status bar it sits in wraps to a second line and
+          back — which in a small trial resizes the window. */}
+      <span className="lk-fps-meter-value">{fps}</span>
     </div>
   );
 }
