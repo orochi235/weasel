@@ -110,7 +110,7 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
     return this.opt({ unpinned: true });
   }
 
-  /** Never auto. The row takes no pin dot and ignores the gesture. */
+  /** Never auto. The row's label does not toggle. */
   manual(): this {
     return this.opt({ manual: true });
   }

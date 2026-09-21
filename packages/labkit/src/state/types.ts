@@ -126,7 +126,7 @@ export interface TrialStateHandle<TS, TC> {
   setState: (next: TS | ((prev: TS) => TS)) => void;
   config: TC;
   /** The config as stored, before any auto path is resolved. What the control
-   *  panel renders, so a ghosted control sits at the value it pins back to. */
+   *  panel renders, so an auto row pins back to the value it was holding. */
   raw: TC;
   /** Dotted paths this trial has unpinned. */
   auto: ReadonlySet<string>;

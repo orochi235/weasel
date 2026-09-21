@@ -291,57 +291,21 @@
    not thirty dots; revealed by the row, and permanent once the row is auto.
    Every box dimension is stated for the same reason `.help` states them — a
    host's zero-specificity bare-element defaults would otherwise size it. */
-.pin {
-  flex: 0 0 auto;
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--wzl-accent);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  line-height: 1;
+/* The row's label is also its pin, so it says so when pointed at — the same
+   dotted underline a compact `<Select>` puts under its value. */
+.autoToggle {
   cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--wzl-motion-fast) var(--wzl-ease-out-cubic);
+  border-radius: var(--wzl-radius-sm);
 }
 
-/* A 7px dot is too small to hit reliably. The halo stops 1px short of the label
-   row's 6px gap, so it never takes a click meant for a neighbor. */
-.pin {
-  position: relative;
+.autoToggle:hover {
+  text-decoration: underline dotted;
+  text-underline-offset: 0.25em;
 }
 
-.pin::before {
-  content: '';
-  position: absolute;
-  inset: -5px;
-  border-radius: 50%;
-}
-
-.row:hover .pin,
-.row:focus-within .pin,
-.pin:focus-visible,
-.pinAuto {
-  opacity: 1;
-}
-
-.pinAuto {
-  background: transparent;
-  box-shadow: inset 0 0 0 1.2px var(--wzl-fg-subtle);
-}
-
-.pin:focus-visible {
+.autoToggle:focus-visible {
   outline: 2px solid var(--wzl-focus-ring);
   outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pin {
-    transition: none;
-  }
 }
 
 /* Single always-rendered <input> styled to read as a text label until focused. */
@@ -1012,73 +976,27 @@
   border-radius: var(--wzl-radius-sm);
 }
 
-/* An auto row: the value is not pinned, so the control draws as a ghost of
-   itself and gives up its color. Accent is redefined as a custom property on
-   the row rather than overridden rule by rule, so every descendant that reads
-   it — the range track and thumb, the checkbox's `accent-color`, the readout —
-   goes muted together. */
-.rowAuto {
-  --wzl-accent: var(--wzl-fg-subtle);
-  --wzl-accent-hover: var(--wzl-fg-subtle);
-  /* `range.module.css` paints the track from this hook, so the dashes have to
-     be set here rather than on the element, whose background sits behind it. */
-  --wzl-range-track-bg: repeating-linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--wzl-fg-subtle) 45%, transparent) 0 4px,
-    transparent 4px 7px
-  );
-  /* Same reason: the kit `<Select>`'s visible box is its trigger, and the class
-     a row hands it lands on the wrapper above that. */
-  --wzl-select-fg: var(--wzl-fg-subtle);
-  --wzl-select-border: 1px dashed var(--wzl-fg-subtle);
+/* An auto row: the value is not pinned, and the row says only that. The
+   control is hidden rather than removed, so the row keeps the height and the
+   width it has while pinned and nothing below it moves on the toggle —
+   `visibility` and not `opacity`, because a hidden control must also be out of
+   reach of the pointer and the tab ring. The label and the readout are what
+   stays: everything else in the row is the control. */
+.rowAuto > :not(.rowLabel):not(.readout) {
+  visibility: hidden;
 }
 
 .rowAuto > .rowLabel {
   color: var(--wzl-fg-subtle);
 }
 
+/* A stacked row's readout sits inside the label and an inline row's sits after
+   the control, so the label's case reached one and not the other: the same word
+   read `AUTO` in one row and `auto` in the next. An auto row's readout is a
+   word, not a number, so it takes the label recipe and both rows read alike. */
 .rowAuto .readout {
   font-style: italic;
   color: var(--wzl-fg-subtle);
-}
-
-.rowAuto input[type='range']::-webkit-slider-thumb {
-  background: transparent;
-  box-shadow: inset 0 0 0 1.5px var(--wzl-fg-subtle);
-}
-
-.rowAuto input[type='range']::-moz-range-thumb {
-  background: transparent;
-  box-shadow: inset 0 0 0 1.5px var(--wzl-fg-subtle);
-}
-
-/* `.select` is the kit `<Select>`, which renders a button rather than a
-   native select; the element selector covers a raw one passed to a bare row. */
-.rowAuto select,
-.rowAuto input[type='number'] {
-  border-style: dashed;
-  color: var(--wzl-fg-subtle);
-  font-style: italic;
-}
-
-/* The kit `<Select>` takes its color and border from the hooks above; only the
-   inherited font-style is the wrapper's to set. */
-.rowAuto .select {
-  font-style: italic;
-}
-
-/* The swatch keeps its color — that IS the value — so only its frame carries
-   the state. `.rowColor` is named to beat `.rowColor input[type='color']`,
-   which sets `border: 0`. */
-.rowColor.rowAuto input[type='color'] {
-  border: 1px dashed var(--wzl-fg-subtle);
-}
-
-/* `.row` is named alongside `.rowAuto` to reach (0,3,1) and tie with
-   `.row input[type='text']:not(.readoutInput)`, which sets the color and the
-   solid border this has to replace; the tie falls this way on source order. */
-.row.rowAuto input[type='text'] {
-  border-style: dashed;
-  color: var(--wzl-fg-subtle);
-  font-style: italic;
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
 }

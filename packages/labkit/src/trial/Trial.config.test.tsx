@@ -218,7 +218,7 @@ describe('a config written as auto', () => {
     const { container } = render(<Lab instruments={[instrument]} defaultInstrument="Ghosted" />);
     expect(screen.getByRole('button', { name: /Gap/ })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByRole('button', { name: /Width/ })).toHaveAttribute('aria-pressed', 'true');
-    // 432 / 24. A ghosted control draws what the resolver decided rather than
+    // 432 / 24. An auto row holds what the resolver decided rather than
     // the pinned 12 underneath it, and un-pinning writes back what it drew.
     expect((container.querySelector('input[type=range]') as HTMLInputElement).value).toBe('18');
   });

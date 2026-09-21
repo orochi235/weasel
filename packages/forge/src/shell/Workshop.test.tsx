@@ -7,9 +7,9 @@ import type { IndexEntry } from '../story/types';
 import { connectFrame, flush, installResizeObserver } from './labHarness';
 import { Workshop } from './Workshop';
 
-/** The row's own control rather than its pin dot, which is a button too and is
- *  named `Pin <label>` — a bare `/Mode/` matches both. */
-const notThePinDot = (label: string) => (name: string) =>
+/** The row's own control rather than the label beside it, which is a button too
+ *  — it toggles auto — and is named `Pin <label>`; a bare `/Mode/` matches both. */
+const notTheAutoToggle = (label: string) => (name: string) =>
   name.includes(label) && !name.startsWith('Pin ');
 
 installResizeObserver();
@@ -111,14 +111,14 @@ describe('Workshop', () => {
 
     const trialB = screen.getByRole('region', { name: 'Trial X / B' });
     act(() => {
-      fireEvent.click(within(trialB).getByRole('button', { name: notThePinDot('Mode') }));
+      fireEvent.click(within(trialB).getByRole('button', { name: notTheAutoToggle('Mode') }));
     });
     fireEvent.click(within(await screen.findByRole('listbox')).getByRole('option', { name: 'Dark' }));
     await flush();
 
     const toolbar = screen.getByRole('toolbar', { name: 'Globals' });
     act(() => {
-      fireEvent.click(within(toolbar).getByRole('button', { name: notThePinDot('Mode') }));
+      fireEvent.click(within(toolbar).getByRole('button', { name: notTheAutoToggle('Mode') }));
     });
     fireEvent.click(within(await screen.findByRole('listbox')).getByRole('option', { name: 'Light' }));
     await flush();

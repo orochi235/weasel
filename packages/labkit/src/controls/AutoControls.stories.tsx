@@ -37,7 +37,7 @@ const schema = f.schema({
 
 const resolved = resolveConfigSchema(schema, []);
 
-/** Every path the panel will draw ghosted, except the `.manual()` one. */
+/** Every path the panel will draw as auto, except the `.manual()` one. */
 const EVERY_AUTO = ['gap', 'cols', 'wave', 'mode', 'showGrid', 'title', 'tint'];
 
 function Panel({ start }: { start: readonly string[] }) {
@@ -73,16 +73,16 @@ function Pair() {
 }
 
 /**
- * Both states of every row kind, side by side. What to look at: an auto row's
- * control keeps no accent color, its readout reads `auto · 18 px` rather than a
- * number, and the pin dot appears only under the pointer — except on an auto
- * row, where it stays. `Seed` is `.manual()` and takes no dot at all.
+ * Both states of every row kind, side by side. What to look at: an auto row
+ * shows no control at all — only its label and the word `auto` — and still
+ * takes exactly the room it took while pinned, so nothing below it moves on
+ * the toggle. `Seed` is `.manual()` and does not toggle.
  */
 export const BothStates: Story = {
   render: () => <Pair />,
 };
 
-/** One panel to shift-click around in: the handle must not move as it toggles. */
+/** One panel to click labels around in: the row must not resize as it toggles. */
 export const Interactive: Story = {
   render: () => <Panel start={['gap']} />,
 };

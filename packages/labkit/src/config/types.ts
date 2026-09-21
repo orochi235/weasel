@@ -123,15 +123,15 @@ export interface NodeOptions extends BranchOptions {
   render?: ControlRenderer;
   /** Errors for this leaf under `config`, the instrument's whole config. */
   validate?: (leaf: PrefLeaf, config: Record<string, unknown>) => string[];
-  /** Computes this leaf's value while it is auto. Attaching one is what lets
-   *  the ghosted control draw a real value and keeps the instrument off
+  /** Computes this leaf's value while it is auto. Attaching one is what gives
+   *  the row a real value to pin back to and keeps the instrument off
    *  `?? compute()`. */
   autoResolve?: (config: Record<string, unknown>) => unknown;
   /** The leaf starts auto rather than pinned at its default. Set by
    *  `.initial(auto)`. */
   unpinned?: boolean;
-  /** The leaf can never be auto: the row takes no pin dot and ignores the
-   *  gesture. For a value the instrument cannot receive as `undefined`. */
+  /** The leaf can never be auto: the row's label does not toggle. For a value
+   *  the instrument cannot receive as `undefined`. */
   manual?: boolean;
 }
 

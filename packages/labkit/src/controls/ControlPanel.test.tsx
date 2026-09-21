@@ -693,7 +693,7 @@ describe('<ControlPanel> nested groups', () => {
 });
 
 describe('<ControlPanel> auto', () => {
-  it('renders a pin dot whether or not it was given a set of auto paths', () => {
+  it('renders a label toggle whether or not it was given a set of auto paths', () => {
     render(
       <ControlPanel
         schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
@@ -726,7 +726,7 @@ describe('<ControlPanel> auto', () => {
     expect(setConfig).toHaveBeenCalledWith('gap', 12);
   });
 
-  it("reads the resolver for an auto row's readout", () => {
+  it('reads out the bare word, resolver or not', () => {
     render(
       <ControlPanel
         schema={resolveConfigSchema(
@@ -743,19 +743,8 @@ describe('<ControlPanel> auto', () => {
         setConfig={() => {}}
       />,
     );
-    expect(screen.getByText('auto · 18')).toBeInTheDocument();
-  });
-
-  it('reads "auto" alone for a path with no resolver', () => {
-    render(
-      <ControlPanel
-        schema={resolveConfigSchema(f.schema({ cols: f.number(3).range(0, 8) }), [])}
-        config={{ cols: 3 }}
-        auto={new Set(['cols'])}
-        setConfig={() => {}}
-      />,
-    );
     expect(screen.getByText('auto')).toBeInTheDocument();
+    expect(screen.queryByText(/auto · /)).toBeNull();
   });
 
   it('writes the sentinel when the dot turns a row auto', async () => {
@@ -812,11 +801,11 @@ describe('<ControlPanel> auto', () => {
     expect(screen.queryByRole('button', { name: /Seed/ })).toBeNull();
   });
 
-  it('reports what the instrument reads when a resolver depends on another auto path', () => {
+  it('draws what the instrument reads when a resolver depends on another auto path', () => {
     // `width` is auto with no resolver, so the instrument sees `undefined` and
     // `gap` resolves from that. Re-running gap's resolver against the raw
-    // config would instead read the pinned 640 and report a number nobody got.
-    render(
+    // config would instead read the pinned 640 and draw a number nobody got.
+    const { container } = render(
       <ControlPanel
         schema={resolveConfigSchema(
           f.schema({
@@ -824,7 +813,7 @@ describe('<ControlPanel> auto', () => {
             gap: f
               .number(12)
               .range(0, 48)
-              .auto((c) => (c.width === undefined ? -1 : (c.width as number) / 64)),
+              .auto((c) => (c.width === undefined ? 5 : (c.width as number) / 64)),
           }),
           [],
         )}
@@ -833,27 +822,7 @@ describe('<ControlPanel> auto', () => {
         setConfig={() => {}}
       />,
     );
-    expect(screen.getByText('auto · -1')).toBeInTheDocument();
-    expect(screen.queryByText('auto · 10')).toBeNull();
-  });
-
-  it('does not repeat a resolved value the control itself already shows', () => {
-    render(
-      <ControlPanel
-        schema={resolveConfigSchema(
-          f.schema({ caption: f.string('typed').auto(() => 'eight across') }),
-          [],
-        )}
-        config={{ caption: 'typed' }}
-        auto={new Set(['caption'])}
-        setConfig={() => {}}
-      />,
-    );
-    // The field below the readout is already showing it, and the readout slot
-    // is one narrow column — a long string wraps it onto two lines.
-    expect(screen.getByText('auto')).toBeInTheDocument();
-    expect(screen.queryByText(/auto · /)).toBeNull();
-    expect(screen.getByDisplayValue('eight across')).toBeInTheDocument();
+    expect(container.querySelector('input[type=range]')).toHaveValue('5');
   });
 
   it('draws an auto control at the resolved value, not the value underneath it', () => {
@@ -899,7 +868,7 @@ describe('<ControlPanel> auto', () => {
   });
 
   // Every kind, because the panel wraps some rows before rendering them and a
-  // wrapper that drops the auto props leaves that kind silently unghosted.
+  // wrapper that drops the auto props leaves that kind silently pinned.
   it.each([
     ['number', f.number(3).range(0, 8)],
     ['slider', f.number(3).range(0, 8).slider()],
@@ -908,7 +877,7 @@ describe('<ControlPanel> auto', () => {
     ['radio', f.enum('a', ['a', 'b']).radio()],
     ['string', f.string('hi')],
     ['color', f.color('#3a86ff')],
-  ])('marks a %s row auto and gives it a dot and a path', (_kind, node) => {
+  ])('marks a %s row auto and gives it a label toggle', (_kind, node) => {
     const { container } = render(
       <ControlPanel
         schema={resolveConfigSchema(f.schema({ thing: node.label('Thing') }), [])}
@@ -917,73 +886,8 @@ describe('<ControlPanel> auto', () => {
         setConfig={() => {}}
       />,
     );
-    const row = container.querySelector('[data-auto-path="thing"]');
-    expect(row).not.toBeNull();
-    expect(row?.className).toMatch(/rowAuto/);
+    expect(container.querySelector('[class*=rowAuto]')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Pin Thing' })).toBeInTheDocument();
-  });
-});
-
-describe('<ControlPanel> shift-click', () => {
-  const panel = (props = {}) =>
-    render(
-      <ControlPanel
-        schema={resolveConfigSchema(f.schema({ gap: f.number(12).range(0, 48) }), [])}
-        config={{ gap: 12 }}
-        auto={new Set()}
-        setConfig={() => {}}
-        {...props}
-      />,
-    );
-
-  it('toggles a row on shift-pointerdown and suppresses the control it landed on', () => {
-    const setConfig = vi.fn();
-    const { container } = panel({ setConfig });
-    const track = container.querySelector('input[type=range]') as HTMLInputElement;
-    const ev = new PointerEvent('pointerdown', { bubbles: true, cancelable: true, shiftKey: true });
-    track.dispatchEvent(ev);
-
-    expect(setConfig).toHaveBeenCalledWith('gap', auto);
-    // A PROXY, not the real claim. jsdom synthesizes neither a label's click
-    // retargeting nor a range input's drag, so "the slider did not move" cannot
-    // fail here. What is assertable is that the default was suppressed; the
-    // browser half is covered by the story.
-    expect(ev.defaultPrevented).toBe(true);
-  });
-
-  it('leaves an ordinary pointerdown alone', () => {
-    const setConfig = vi.fn();
-    const { container } = panel({ setConfig });
-    container
-      .querySelector('input[type=range]')
-      ?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
-    expect(setConfig).not.toHaveBeenCalled();
-  });
-
-  it('ignores shift-pointerdown on a manual row', () => {
-    const setConfig = vi.fn();
-    const { container } = panel({
-      schema: resolveConfigSchema(f.schema({ seed: f.number(1).manual().range(0, 8) }), []),
-      config: { seed: 1 },
-      setConfig,
-    });
-    container
-      .querySelector('input')
-      ?.dispatchEvent(
-        new PointerEvent('pointerdown', { bubbles: true, cancelable: true, shiftKey: true }),
-      );
-    expect(setConfig).not.toHaveBeenCalled();
-  });
-
-  it('pins a shift-clicked auto row back at its stored value', () => {
-    const setConfig = vi.fn();
-    const { container } = panel({ config: { gap: 24 }, auto: new Set(['gap']), setConfig });
-    container
-      .querySelector('input[type=range]')
-      ?.dispatchEvent(
-        new PointerEvent('pointerdown', { bubbles: true, cancelable: true, shiftKey: true }),
-      );
-    expect(setConfig).toHaveBeenCalledWith('gap', 24);
   });
 });
 

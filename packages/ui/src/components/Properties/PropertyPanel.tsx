@@ -11,7 +11,6 @@ import { Focusable } from 'react-aria-components';
 import { dlog } from '../../dlog';
 import { formatCompact, formatNumber, parseNumber } from '../../format/number';
 import type { PrefNumberFormat } from '../Prefs/schema';
-import { PinDot } from './PinDot';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import shared from '../range.module.css';
 import s from './Properties.module.css';
@@ -196,15 +195,16 @@ export interface PropertyRowProps extends PropertyMetricProps {
    *  member has to carry its own name. */
   group?: boolean;
   className?: string;
-  /** The row is auto: its value is not pinned and the owner computes it. Draws
-   *  the control ghosted and colorless. */
+  /** The row is auto: its value is not pinned and the owner computes it. The
+   *  control is hidden — its box kept, so the row does not resize — and the
+   *  row reads out the word instead. */
   auto?: boolean;
-  /** Given, the row carries a pin dot that toggles `auto`. Omitted, the row can
-   *  show an auto state but not change it. */
+  /** Given, the row's label toggles `auto` when it is clicked. Omitted, the row
+   *  can show an auto state but not change it.
+   *
+   *  The label then names that toggle, so a control passed as `children` has to
+   *  carry its own accessible name — every row in this module does. */
   onAutoChange?: (next: boolean) => void;
-  /** Marks the row's element for a panel-level gesture handler. `PropertyRow`
-   *  does not spread unknown props, so this is declared rather than inherited. */
-  'data-auto-path'?: string;
 }
 
 /** The label-plus-control frame every typed row below is built from. Use it
@@ -224,7 +224,6 @@ export function PropertyRow({
   align,
   auto,
   onAutoChange,
-  'data-auto-path': autoPath,
 }: PropertyRowProps) {
   const variantClass = variant === 'color' ? s.rowColor : variant === 'checkbox' ? s.rowCheckbox : '';
   // Each variant already lays out one way; a class is only needed for the
@@ -245,25 +244,72 @@ export function PropertyRow({
   const trailing = resolved === 'inline' && readout != null;
   const head = (
     <span className={s.rowLabel}>
-      {label}
+      {onAutoChange ? (
+        <AutoToggle auto={auto ?? false} label={label} onChange={onAutoChange} />
+      ) : (
+        label
+      )}
       {description ? <PropertyRowHelp label={label} description={description} /> : null}
-      {onAutoChange ? <PinDot auto={auto ?? false} label={label} onChange={onAutoChange} /> : null}
       {readout != null && !trailing && <em className={s.readout}>{readout}</em>}
     </span>
   );
   const tail = trailing ? <em className={`${s.readout} ${s.readoutAfter}`}>{readout}</em> : null;
   return group ? (
-    <div className={cls} data-auto-path={autoPath}>
+    <div className={cls}>
       {head}
       {children}
       {tail}
     </div>
   ) : (
-    <label className={cls} htmlFor={htmlFor} data-auto-path={autoPath}>
+    <label className={cls} htmlFor={htmlFor}>
       {head}
       {children}
       {tail}
     </label>
+  );
+}
+
+/**
+ * A row's label, doubling as the control for whether the row is auto: clicking
+ * it hands the value back to whoever computes it, or takes it back.
+ *
+ * Pressed means pinned, to match the name — an auto row is the unpressed one.
+ */
+function AutoToggle({
+  auto,
+  label,
+  onChange,
+}: {
+  auto: boolean;
+  label: ReactNode;
+  onChange: (next: boolean) => void;
+}) {
+  const name = typeof label === 'string' ? label : 'this setting';
+  const toggle = (e: { preventDefault: () => void; stopPropagation: () => void }) => {
+    // The wrapping <label> would otherwise actuate the row's control.
+    e.preventDefault();
+    e.stopPropagation();
+    onChange(!auto);
+  };
+  return (
+    // A span, not a button: a <button> is a labelable element, so inside the
+    // row's <label> it would take the row's name off the actual control.
+    <span
+      role="button"
+      tabIndex={0}
+      className={s.autoToggle}
+      aria-pressed={!auto}
+      aria-label={`Pin ${name}`}
+      onClick={toggle}
+      onKeyDown={(e) => {
+        // A native button gives Enter and Space for free; a span gives neither,
+        // and Space would scroll the panel.
+        if (e.key === 'Enter' || e.key === ' ') toggle(e);
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {label}
+    </span>
   );
 }
 
@@ -354,7 +400,7 @@ export interface SliderRowProps extends PropertyMetricProps {
   format?: (value: number) => ReactNode;
   /**
    * Static text in place of the editable readout. Use it when the row is not
-   * showing a number a caller could type back — an auto row's `auto · 18`, say,
+   * showing a number a caller could type back — an auto row's `auto`, say,
    * which an editable field would seed a draft with and then fail to parse.
    */
   readout?: ReactNode;
@@ -372,10 +418,8 @@ export interface SliderRowProps extends PropertyMetricProps {
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
   auto?: boolean;
-  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  /** Toggles `auto` from the row's label — see `<PropertyRow onAutoChange>`. */
   onAutoChange?: (next: boolean) => void;
-  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
-  'data-auto-path'?: string;
 }
 
 /** A bounded number edited by dragging, with a live readout whose precision
@@ -399,7 +443,6 @@ export function SliderRow({
   align,
   auto,
   onAutoChange,
-  'data-auto-path': autoPath,
 }: SliderRowProps) {
   // Default readout precision tracks `step`: integer steps → 0 decimals,
   // 0.1 → 1 decimal, 0.05/0.02/0.01 → 2 decimals, 0.005 → 3, etc. Callers
@@ -445,7 +488,6 @@ export function SliderRow({
       align={align}
       auto={auto}
       onAutoChange={onAutoChange}
-      data-auto-path={autoPath}
     >
       <input
         ref={range}
@@ -605,10 +647,8 @@ export interface ColorRowProps extends PropertyMetricProps {
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
   auto?: boolean;
-  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  /** Toggles `auto` from the row's label — see `<PropertyRow onAutoChange>`. */
   onAutoChange?: (next: boolean) => void;
-  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
-  'data-auto-path'?: string;
 }
 
 /** A color swatch, optionally with an alpha slider beneath it. */
@@ -629,7 +669,6 @@ export function ColorRow({
   align,
   auto,
   onAutoChange,
-  'data-auto-path': autoPath,
 }: ColorRowProps) {
   const showAlpha = alpha != null;
   const liveColor = onInput ?? onChange;
@@ -651,7 +690,6 @@ export function ColorRow({
       align={align}
       auto={auto}
       onAutoChange={onAutoChange}
-      data-auto-path={autoPath}
       htmlFor={id}
     >
       <input
@@ -695,10 +733,8 @@ export interface CheckboxRowProps extends PropertyMetricProps {
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
   auto?: boolean;
-  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  /** Toggles `auto` from the row's label — see `<PropertyRow onAutoChange>`. */
   onAutoChange?: (next: boolean) => void;
-  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
-  'data-auto-path'?: string;
 }
 
 /** A boolean checkbox. */
@@ -714,7 +750,6 @@ export function CheckboxRow({
   align,
   auto,
   onAutoChange,
-  'data-auto-path': autoPath,
 }: CheckboxRowProps) {
   const id = useId();
   return (
@@ -729,7 +764,6 @@ export function CheckboxRow({
       align={align}
       auto={auto}
       onAutoChange={onAutoChange}
-      data-auto-path={autoPath}
       htmlFor={id}
     >
       <input
@@ -766,7 +800,6 @@ export function SwitchRow({
   align,
   auto,
   onAutoChange,
-  'data-auto-path': autoPath,
 }: SwitchRowProps) {
   return (
     <PropertyRow
@@ -782,7 +815,6 @@ export function SwitchRow({
       align={align}
       auto={auto}
       onAutoChange={onAutoChange}
-      data-auto-path={autoPath}
     >
       <Switch
         aria-label={nameOf(label)}
@@ -809,10 +841,8 @@ export interface TextRowProps extends PropertyMetricProps {
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
   auto?: boolean;
-  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  /** Toggles `auto` from the row's label — see `<PropertyRow onAutoChange>`. */
   onAutoChange?: (next: boolean) => void;
-  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
-  'data-auto-path'?: string;
 }
 
 /** A single-line text input. */
@@ -830,7 +860,6 @@ export function TextRow({
   align,
   auto,
   onAutoChange,
-  'data-auto-path': autoPath,
 }: TextRowProps) {
   const id = useId();
   return (
@@ -844,7 +873,6 @@ export function TextRow({
       align={align}
       auto={auto}
       onAutoChange={onAutoChange}
-      data-auto-path={autoPath}
       htmlFor={id}
     >
       <input
@@ -895,10 +923,8 @@ export interface NumberRowProps extends PropertyMetricProps {
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
   auto?: boolean;
-  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  /** Toggles `auto` from the row's label — see `<PropertyRow onAutoChange>`. */
   onAutoChange?: (next: boolean) => void;
-  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
-  'data-auto-path'?: string;
 }
 
 /** A number typed directly. Reach for `<SliderRow>` when the range matters
@@ -921,7 +947,6 @@ export function NumberRow({
   align,
   auto,
   onAutoChange,
-  'data-auto-path': autoPath,
 }: NumberRowProps) {
   const live = onInput ?? onChange;
   const field = useCommitListener(onInput && ((raw) => {
@@ -960,7 +985,6 @@ export function NumberRow({
       align={align}
       auto={auto}
       onAutoChange={onAutoChange}
-      data-auto-path={autoPath}
       htmlFor={id}
     >
       {unit == null ? (
@@ -997,10 +1021,8 @@ export interface SelectRowProps<T extends string> extends PropertyMetricProps {
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
   auto?: boolean;
-  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  /** Toggles `auto` from the row's label — see `<PropertyRow onAutoChange>`. */
   onAutoChange?: (next: boolean) => void;
-  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
-  'data-auto-path'?: string;
 }
 
 /** A dropdown over a fixed set of choices. Prefer `<ToggleRow>` when there
@@ -1019,7 +1041,6 @@ export function SelectRow<T extends string>({
   align,
   auto,
   onAutoChange,
-  'data-auto-path': autoPath,
 }: SelectRowProps<T>) {
   const chosen = options.some((opt) => opt.value === value);
   const id = useId();
@@ -1034,7 +1055,6 @@ export function SelectRow<T extends string>({
       align={align}
       auto={auto}
       onAutoChange={onAutoChange}
-      data-auto-path={autoPath}
       htmlFor={id}
     >
       <Select<T>
@@ -1068,10 +1088,8 @@ export interface ToggleRowProps<T extends string> extends PropertyMetricProps {
   span?: boolean;
   /** The row is auto — see `<PropertyRow auto>`. */
   auto?: boolean;
-  /** Toggles `auto` from a pin dot — see `<PropertyRow onAutoChange>`. */
+  /** Toggles `auto` from the row's label — see `<PropertyRow onAutoChange>`. */
   onAutoChange?: (next: boolean) => void;
-  /** Marks the row for a panel-level gesture handler — see `<PropertyRow data-auto-path>`. */
-  'data-auto-path'?: string;
 }
 
 /** A segmented control: the same choice as a select, with every option
@@ -1089,7 +1107,6 @@ export function ToggleRow<T extends string>({
   align,
   auto,
   onAutoChange,
-  'data-auto-path': autoPath,
 }: ToggleRowProps<T>) {
   return (
     <PropertyRow
@@ -1103,7 +1120,6 @@ export function ToggleRow<T extends string>({
       align={align}
       auto={auto}
       onAutoChange={onAutoChange}
-      data-auto-path={autoPath}
     >
       <div className={s.toggle} role="group" aria-label={nameOf(label)}>
         {options.map((opt) => {

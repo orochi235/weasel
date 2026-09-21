@@ -7,8 +7,6 @@ export type {
   SubpanelProps,
 } from './EffectCard';
 export { EffectCard, EffectCardList, Subpanel } from './EffectCard';
-export type { PinDotProps } from './PinDot';
-export { PinDot } from './PinDot';
 export type { PropertyGroupProps } from './PropertyGroup';
 export { PropertyGroup } from './PropertyGroup';
 export type {

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, createEvent, fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -612,7 +612,7 @@ describe('rows with no value', () => {
 });
 
 describe('auto rows', () => {
-  it('marks an auto row and renders its dot only when it can be toggled', () => {
+  it('marks an auto row and makes its label the toggle only when it can be toggled', () => {
     const { rerender, container } = render(
       <PropertyRow label="Gap" auto onAutoChange={() => {}}>
         <input />
@@ -638,29 +638,47 @@ describe('auto rows', () => {
     expect(screen.getByText('auto · 18 px')).toBeInTheDocument();
   });
 
-  it('puts the dot before the readout, so live text stays last in the row', () => {
+  it('puts the label before the readout, so live text stays last in the row', () => {
     const { container } = render(
       <PropertyRow label="Gap" auto readout="auto · 18 px" onAutoChange={() => {}}>
         <input />
       </PropertyRow>,
     );
     const kids = [...(container.querySelector('label > span')?.children ?? [])];
-    const dot = kids.findIndex((el) => el.getAttribute('aria-label') === 'Pin Gap');
+    const toggle = kids.findIndex((el) => el.getAttribute('aria-label') === 'Pin Gap');
     const readout = kids.findIndex((el) => el.tagName === 'EM');
-    expect(dot).toBeGreaterThanOrEqual(0);
-    expect(dot).toBeLessThan(readout);
+    expect(toggle).toBeGreaterThanOrEqual(0);
+    expect(toggle).toBeLessThan(readout);
   });
 
-  it('puts data-auto-path on the row element for a panel-level gesture handler', () => {
-    const { container } = render(
-      <PropertyRow label="Gap" data-auto-path="grid.gap" onAutoChange={() => {}}>
+  it('toggles auto when the label is clicked', () => {
+    const onAutoChange = vi.fn();
+    render(
+      <PropertyRow label="Gap" htmlFor="gap" onAutoChange={onAutoChange}>
+        <input id="gap" />
+      </PropertyRow>,
+    );
+    const click = createEvent.click(screen.getByRole('button', { name: 'Pin Gap' }));
+    fireEvent(screen.getByRole('button', { name: 'Pin Gap' }), click);
+    expect(onAutoChange).toHaveBeenCalledWith(true);
+    // The row is a <label>, so the click would otherwise land on the control
+    // as well. jsdom runs no label activation of its own, which makes the
+    // obvious assertion — that the input stayed unfocused — pass either way;
+    // what the browser reads is the prevented default.
+    expect(click.defaultPrevented).toBe(true);
+  });
+
+  it('gives the label back when the row cannot go auto', () => {
+    render(
+      <PropertyRow label="Gap">
         <input />
       </PropertyRow>,
     );
-    expect(container.querySelector('label')?.getAttribute('data-auto-path')).toBe('grid.gap');
+    expect(screen.queryByRole('button', { name: 'Pin Gap' })).toBeNull();
+    expect(screen.getByText('Gap')).toBeInTheDocument();
   });
 
-  it('leaves a row label naming its control, not the pin dot beside it', () => {
+  it('leaves a row label naming its control, not the toggle it doubles as', () => {
     const { container } = render(
       <SliderRow
         label="Gap"

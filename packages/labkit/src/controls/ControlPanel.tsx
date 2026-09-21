@@ -107,11 +107,11 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
   /** A fold moved. The key is a section's label — prefixed by its group's
    *  dotted path when the section sits inside one — or a group's own path. */
   onCollapse?: (key: string, collapsed: boolean) => void;
-  /** Dotted paths currently unpinned. A row in this set draws ghosted and its
-   *  dot reads as auto, and the dot writes the sentinel back through
-   *  `setConfig`. Omitted, the panel keeps the set itself: the dots still work
-   *  and the sentinel never reaches `setConfig`, which would otherwise store it
-   *  as the row's value. */
+  /** Dotted paths currently unpinned. A row in this set hides its control and
+   *  reads out `auto`, and clicking its label writes the sentinel back through
+   *  `setConfig`. Omitted, the panel keeps the set itself: the labels still
+   *  toggle and the sentinel never reaches `setConfig`, which would otherwise
+   *  store it as the row's value. */
   auto?: ReadonlySet<string>;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
@@ -171,28 +171,6 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     [resolved, config, auto],
   );
 
-  const listRef = useRef<HTMLDivElement>(null);
-  const toggles = useRef(new Map<string, () => void>());
-  // Capture phase, because `PropertyRow` is a <label>: a bubbled handler runs
-  // after the browser has already begun a range drag or a native control's
-  // activation, so the shift-click moves the very value it was meant to unpin.
-  useEffect(() => {
-    const host = listRef.current;
-    if (!host) return;
-    const onDown = (e: PointerEvent) => {
-      if (!e.shiftKey) return;
-      const row = (e.target as HTMLElement | null)?.closest('[data-auto-path]');
-      const path = row?.getAttribute('data-auto-path');
-      const toggle = path ? toggles.current.get(path) : undefined;
-      if (!toggle) return;
-      e.preventDefault();
-      e.stopPropagation();
-      toggle();
-    };
-    host.addEventListener('pointerdown', onDown, true);
-    return () => host.removeEventListener('pointerdown', onDown, true);
-  }, []);
-
   const gridPack = gridOf(pack);
   // A section that declares how it opens is foldable whether or not the lab
   // asked for folds — there is nothing else for the declaration to mean.
@@ -231,7 +209,6 @@ export function ControlPanel<TC extends Record<string, unknown>>({
           layout={rows.layout}
           auto={auto}
           setRowAuto={setRowAuto}
-          toggles={toggles.current}
         />
       );
     }
@@ -337,16 +314,14 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   };
 
   return (
-    <div ref={listRef}>
-      <PropertyList
-        pack={gridPack}
-        density={density}
-        align={align}
-        className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}
-      >
-        {body(resolved.group, '', { pack, layout, grid: gridPack })}
-      </PropertyList>
-    </div>
+    <PropertyList
+      pack={gridPack}
+      density={density}
+      align={align}
+      className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}
+    >
+      {body(resolved.group, '', { pack, layout, grid: gridPack })}
+    </PropertyList>
   );
 }
 
@@ -370,7 +345,6 @@ interface ControlRowProps<TC extends Record<string, unknown>> {
   layout?: PropertyRowLayout;
   auto?: ReadonlySet<string>;
   setRowAuto: (path: string, next: boolean, value: unknown) => void;
-  toggles: Map<string, () => void>;
 }
 
 /** Whether this leaf draws as a slider, mirroring the condition the `number`
@@ -403,7 +377,6 @@ function ControlRow<TC extends Record<string, unknown>>({
   layout,
   auto,
   setRowAuto,
-  toggles,
 }: ControlRowProps<TC>) {
   const write = (value: unknown): void => setConfig(path, value);
   const fallback = extra<unknown>(leaf, 'default');
@@ -421,30 +394,9 @@ function ControlRow<TC extends Record<string, unknown>>({
   const value = resolvedValue ?? pinned;
   const setAuto = (next: boolean): void => setRowAuto(path, next, value);
   const onAutoChange = canAuto ? setAuto : undefined;
-  // A slider's handle is a position, not a number, so the readout is the only
-  // place its resolved value can be read. Every other control renders its own
-  // value, and repeating it there says it twice and wraps the narrow slot.
-  const readsItsOwnValue = !isSliderLeaf(leaf);
-  // A readout says what the control would say, so it reads in the display
-  // unit: a radian in a row that edits degrees is a different number.
-  const readoutValue =
-    leaf.kind === 'number' && typeof resolvedValue === 'number'
-      ? numberField(leaf, resolvedValue).shown
-      : resolvedValue;
-  const autoReadout = !isAutoRow
-    ? undefined
-    : resolvedValue === undefined || readsItsOwnValue
-      ? 'auto'
-      : `auto · ${String(readoutValue)}`;
-  const autoProps = { auto: isAutoRow, onAutoChange, 'data-auto-path': canAuto ? path : undefined };
-
-  useEffect(() => {
-    if (!canAuto) return;
-    toggles.set(path, () => setAuto(!isAutoRow));
-    return () => {
-      toggles.delete(path);
-    };
-  });
+  // An auto row hides its control, so the word is all the row has to say.
+  const autoReadout = isAutoRow ? 'auto' : undefined;
+  const autoProps = { auto: isAutoRow, onAutoChange };
 
   // Most specific wins, and within a tier the lab's entry beats the
   // instrument's: controls[path] -> node .render -> controls[kind] -> built-in.
@@ -624,7 +576,6 @@ function DebouncedTextRow({
   readout,
   auto,
   onAutoChange,
-  'data-auto-path': autoPath,
 }: {
   leaf: PrefLeaf;
   label: string;
@@ -636,7 +587,6 @@ function DebouncedTextRow({
   readout?: ReactNode;
   auto?: boolean;
   onAutoChange?: (next: boolean) => void;
-  'data-auto-path'?: string;
 }) {
   const text = useDebouncedText(
     value,
@@ -653,7 +603,6 @@ function DebouncedTextRow({
       description={description}
       auto={auto}
       onAutoChange={onAutoChange}
-      data-auto-path={autoPath}
       value={text.local}
       placeholder={extra<string>(leaf, 'placeholder')}
       maxLength={extra<number>(leaf, 'maxLength')}
@@ -748,8 +697,8 @@ interface PairCellSpec {
  *
  * The cells are bare controls: a row holds one label column, so each leaf's
  * own name stays with its control as the accessible name and its description
- * as a title. For the same reason the row carries no pin dot — a dot names one
- * path, and this row has several.
+ * as a title. For the same reason the row's label does not toggle auto — it
+ * names one path, and this row has several.
  */
 function PairedRow<TC extends Record<string, unknown>>({
   label,

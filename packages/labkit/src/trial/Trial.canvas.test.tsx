@@ -93,16 +93,20 @@ describe('an auto config path', () => {
       render: () => null,
       canvas: { layers: [{ id: 'main', draw }] },
     });
-    render(<Lab instruments={[instrument as Instrument]} defaultInstrument="Auto" />);
+    const { container } = render(
+      <Lab instruments={[instrument as Instrument]} defaultInstrument="Auto" />,
+    );
     await new Promise((r) => requestAnimationFrame(() => r(null)));
 
     expect(draw).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ config: { gap: 18 } }),
     );
-    // The panel is handed the raw config, but a ghosted control draws what the
-    // resolver decided — a handle at 12 under a readout saying 18 reads as a bug.
-    expect(screen.getByRole('slider', { name: 'Gap' })).toHaveValue('18');
+    // The panel is handed the raw config, but an auto row holds what the
+    // resolver decided, so pinning it keeps the number the instrument drew.
+    // The row hides its control while auto, which takes it out of the
+    // accessibility tree — so this reads the element rather than the role.
+    expect(container.querySelector('input[type=range]')).toHaveValue('18');
   });
 });
 
