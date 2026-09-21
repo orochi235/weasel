@@ -23,6 +23,29 @@
   box-sizing: border-box;
 }
 
+/* A panel is chrome: a drag across it should move a slider, not paint a
+   selection over its labels. What the family shows as a value stays copyable,
+   and a field stays one — Safari carries `none` into an input's caret. */
+.panel,
+.list,
+.row,
+.group,
+.subpanel,
+.card,
+.cardList {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.readout,
+.readoutInput,
+.row input:not([type='range']):not([type='checkbox']):not([type='radio']),
+.row textarea,
+.row [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* ── Container metrics ──────────────────────────────────────────────
    Every spacing number the family lays out with is read from a `--wzl-prop-*`
    custom property with its own value as the fallback, so a consumer can move
