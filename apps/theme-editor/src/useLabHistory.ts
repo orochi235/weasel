@@ -28,6 +28,15 @@ function snapshotOp<T>(prev: T, next: T, coalesceKey: string): Op {
   };
 }
 
+/** The input types that carry a browser undo stack of their own. A bare `<input>` is one. */
+const TEXT_INPUT = /^(?:|text|search|url|email|tel|password|number)$/;
+
+function editsText(element: HTMLElement | null): boolean {
+  if (!element) return false;
+  if (element.isContentEditable || element.tagName === 'TEXTAREA') return true;
+  return element.tagName === 'INPUT' && TEXT_INPUT.test((element as HTMLInputElement).type.toLowerCase());
+}
+
 export interface LabHistory<T> {
   state: T;
   /** Replace the state. `key` groups a drag into one undo entry. */
@@ -67,9 +76,10 @@ export function useLabHistory<T>(initial: T): LabHistory<T> {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      // A text field owns its own undo; don't steal it.
-      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      // A text field owns its own undo; don't steal it. Every other control — a
+      // range, a checkbox, a swatch — has none, and holds the focus right after
+      // the edit you meant to undo.
+      if (editsText(e.target as HTMLElement | null)) return;
       const accel = e.metaKey || e.ctrlKey;
       if (!accel || e.key.toLowerCase() !== 'z') return;
       e.preventDefault();
