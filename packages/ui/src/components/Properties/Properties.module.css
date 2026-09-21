@@ -395,7 +395,7 @@
 .readoutAfter .readoutUnit {
   position: absolute;
   top: 100%;
-  right: 0;
+  right: 1px;
   margin-top: -3px;
   line-height: 1;
   text-transform: uppercase;
