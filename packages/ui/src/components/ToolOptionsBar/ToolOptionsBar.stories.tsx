@@ -18,14 +18,39 @@ export const Empty: Story = {
   render: () => <ToolOptionsBar />,
 };
 
+const STYLE_TOGGLES = [
+  { key: 'bold', label: 'B', ariaLabel: 'Bold' },
+  { key: 'italic', label: 'I', ariaLabel: 'Italic' },
+  { key: 'underline', label: 'U', ariaLabel: 'Underline' },
+] as const;
+
 export const OneControlGroup: Story = {
-  render: () => (
-    <ToolOptionsBar label="Text">
-      <Button size="sm" variant="ghost" iconOnly ariaLabel="Bold">B</Button>
-      <Button size="sm" variant="ghost" iconOnly ariaLabel="Italic">I</Button>
-      <Button size="sm" variant="ghost" iconOnly ariaLabel="Underline">U</Button>
-    </ToolOptionsBar>
-  ),
+  render: () => {
+    const [on, setOn] = useState<ReadonlySet<string>>(new Set());
+    const toggle = (key: string) =>
+      setOn((prev) => {
+        const next = new Set(prev);
+        if (!next.delete(key)) next.add(key);
+        return next;
+      });
+    return (
+      <ToolOptionsBar label="Text">
+        {STYLE_TOGGLES.map(({ key, label, ariaLabel }) => (
+          <Button
+            key={key}
+            size="sm"
+            variant="ghost"
+            iconOnly
+            ariaLabel={ariaLabel}
+            pressed={on.has(key)}
+            onClick={() => toggle(key)}
+          >
+            {label}
+          </Button>
+        ))}
+      </ToolOptionsBar>
+    );
+  },
 };
 
 // Contents exceed the row's width — the controls slot scrolls

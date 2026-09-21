@@ -207,7 +207,7 @@
 }
 .variant_ghost::before { display: none; }
 
-.variant_ghost:hover:not(:disabled) {
+.variant_ghost:hover:not(:disabled):not(.pressed) {
   background: var(--wzl-surface-hover);
 }
 
