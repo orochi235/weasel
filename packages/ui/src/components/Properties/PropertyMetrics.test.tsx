@@ -58,6 +58,7 @@ describe('density and align classes', () => {
       '--wzl-prop-field-pad-x',
       '--wzl-prop-row-align',
       '--wzl-prop-row-align-content',
+      '--wzl-prop-row-align-text',
     ]) {
       expect(sheet, `${token} is never read`).toContain(`var(${token},`);
     }

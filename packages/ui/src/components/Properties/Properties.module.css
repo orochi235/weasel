@@ -142,26 +142,34 @@
    Two names, because a color row aligns twice: its items within their grid row,
    and the whole grid within the row's box. They agree except at `baseline`,
    which `align-content` does not take — there the grid goes to the top and the
-   items find the label's baseline inside it. */
+   items find the label's baseline inside it.
+
+   A row whose label and control are both one line of text reads a third:
+   centering two runs of different sizes leaves their baselines apart, so there
+   `center` means `baseline`. */
 
 .alignStart {
   --wzl-prop-row-align: start;
   --wzl-prop-row-align-content: start;
+  --wzl-prop-row-align-text: start;
 }
 
 .alignCenter {
   --wzl-prop-row-align: center;
   --wzl-prop-row-align-content: center;
+  --wzl-prop-row-align-text: baseline;
 }
 
 .alignEnd {
   --wzl-prop-row-align: end;
   --wzl-prop-row-align-content: end;
+  --wzl-prop-row-align-text: end;
 }
 
 .alignBaseline {
   --wzl-prop-row-align: baseline;
   --wzl-prop-row-align-content: start;
+  --wzl-prop-row-align-text: baseline;
 }
 
 /* ── Row ────────────────────────────────────────────────────────
@@ -484,7 +492,7 @@
    checkbox or a swatch has no baseline of its own and would hang off the line
    instead. */
 .rowInline:has(> .select) {
-  align-items: var(--wzl-prop-row-align, baseline);
+  align-items: var(--wzl-prop-row-align-text, baseline);
 }
 
 /* A select sized to its longest option starts wherever that width leaves it, so
