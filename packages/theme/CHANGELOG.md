@@ -1,5 +1,130 @@
 # @weasel-js/theme
 
+## 1.5.2
+
+### Patch Changes
+
+- 24a2dae: Close the places where two tiers spelled one concept differently.
+  
+  **A fixed pan bug.** `viewport.dragPan` fell back from `drag.screenDelta` to
+  the world `drag.delta` and then divided by the zoom anyway, panning at
+  1/scale² for any event source that supplies no `clientX`/`clientY` — which is
+  every synthesized `InputEvent`, since those fields are optional. It now
+  reconstructs the client delta exactly, by undoing each end of the world delta
+  against the view that produced it.
+  
+  **Breaking, renames.** `ClickEvent`, `DoubleClickEvent` and `ContextMenuEvent`
+  carry their world point as `x`/`y`, matching every other kind in `InputEvent`;
+  `worldX`/`worldY` are gone, and a consumer who set `x`/`y` no longer silently
+  lands at the origin. All three now also carry `clientX`/`clientY`, so a
+  context-menu action can finally read `ctx.screen` — the case that surface was
+  added for. The renderer's `Mat3` is `GlMat3`, freeing `Mat3` to mean geom's
+  affine in a file that imports from both. `translatePolygonInPlace` is
+  gone: it was the one sanctioned writer into a committed path's coord buffer,
+  documented as overlay-only, and nothing called it. `@weasel-js/font` exports `FontStyle`
+  in place of `OutlineFontStyle`. `@weasel-js/labkit` no longer exports
+  `useOrbit`, `OrbitView`, `Vec3` or their helpers: `@weasel-js/kernel3d` owns
+  the orbit camera and `@weasel-js/geom/3d` owns `Vec3`. `ToolCtx.screenPoint`
+  was declared and never written by anything; it is gone.
+  
+  **Breaking, types narrowed.** geom's `Mat3` and `Box` are readonly tuples,
+  matching the reason `geom/3d` already gives for its own. `History.entries()`
+  returns `readonly` arrays, which is what its docstring always asked callers to
+  assume.
+  
+  **One type where there were two.** `@weasel-js/svg`'s `Matrix` is geom's
+  `Mat3`, and its duplicate `multiply` is geom's; `SvgStroke.width` is
+  `ScreenLength` rather than that union written out again. `kernel3d`'s
+  `ViewportRect` is `ScreenBox` — one rectangle spelling instead of `w`/`h`
+  beside `width`/`height` eight lines apart. The renderer's `View` is routing's.
+  Core's `Vec2` is routing's `Point2`, and `Pt` is gone from the barrel.
+  
+  **Additions.** `oklchDegToHex` / `hexToOklchDeg` / `OklchDeg` in
+  `@weasel-js/paint` — the degrees-and-hex form `@weasel-js/ui` and
+  `@weasel-js/theme` had each built for themselves. `srgbFloatToOklab`, for
+  callers holding 0..1 floats; feeding those to `srgbU8ToOklab` truncated where
+  paint's own internal conversion rounds. `mat3.toAffine` / `mat3.fromAffine`
+  name the repack between the GL layout and geom's.
+  
+  **Corrections.** `RECT_POSE_DESCRIPTOR` implements `getRotation`, so a pose it
+  rotated no longer reports itself unrotated to `useResize` and to diagram's port
+  placement. `ToolDef.capabilities` is documented as reaching
+  `Tool.eligibility.capabilities`, which is where it actually goes — following
+  the old text gave `undefined`, and `eligibleForMode` turns that into a tool
+  that vanishes from every mode. `MultitouchEvent.centroid` is documented as
+  canvas-local, which is what the dispatcher hands over. `drag.points` is a
+  snapshot on `onEnd` rather than the dispatcher's live accumulator.
+  
+  `tsconfig.json` now typechecks `packages/routing`, `cursor`, `bidi` and
+  `loupe`, which it had never included.
+- ae2a424: Every property row stands on the same floor.
+  
+  A row was as tall as whatever it held — 16px around a switch, 20 around a
+  field, 24 around a `<Select>` — so a column of mixed rows set its own line
+  spacing row by row and read as ragged. `.row` now carries a `min-height` of
+  `--wzl-prop-row-h`, which defaults to the panel's own field height and so
+  follows `density`. Taller content still grows its row; this only stops a short
+  one from collapsing beside the field it sits next to.
+  
+  Three field-family controls were reading a standalone control's height token
+  rather than the panel's, and overshot or undershot the rows around them:
+  
+  - A kit `<Select>` in a row took `--wzl-control-h` (24px at the default
+    density, against a 20px field). Its trigger now reads `--wzl-select-h`, a new
+    hook defaulting to `--wzl-control-h`, which the property list points at the
+    field height.
+  - A segmented `ToggleRow`'s buttons were a hard-coded 26px, and did not move
+    with `density` at all.
+  - A slider row's readout was pinned to `--wzl-control-h-sm`, so a `tight` panel
+    kept comfortable-sized readouts.
+- 3978e84: File danger, warning and success under one `status` group.
+  
+  Each stood alone with two tokens — its base and its semantic — and a token
+  panel draws a color group as one row of swatches only from three colors up, so
+  the six status colors took six rows between the ramps. The manifest emitter now
+  maps those three prefixes onto one group name; nothing else reads the old ones.
+- 8081a6b: Derive the type ramp from one number, and add a `density` axis that scales it.
+  
+  Sizes were unrelated px pins, so there was nothing to turn: raising
+  `--wzl-font-size` grew glyphs while `--wzl-control-h` stayed 24px and every gap
+  stayed put. The type ramp now derives from `seeds.ui-base` through a new
+  `factors` rule on a scale (`base × factors[i]`, alongside the existing `step`
+  and `ratio`), and `density` — `compact` / `comfortable` / `roomy` — varies that
+  seed along with `control-h` and `tb-height`. Set it with
+  `applyTheme(el, theme, { density })`.
+  
+  Sizes stay baked px rather than `calc()` against a root variable, because
+  `tokenPx()` feeds SVG, canvas and WebGL geometry and has to read a real number.
+  
+  **Additive, with one behavior change.** Every existing token keeps its computed
+  value at the default selection; `--wzl-font-size` and `--wzl-space-{xs,sm,md,lg}`
+  are now aliases (`var(--wzl-font-size-md)`, `var(--wzl-space-2)` …) rather than
+  literals, which computes identically but is no longer a literal string if you
+  read the declaration rather than the computed value. New: `--wzl-font-size-md`
+  and the `--wzl-space-1` … `--wzl-space-8` ladder in 2px rungs.
+  
+  `toDTCG` no longer refuses a theme with an axis besides `mode`; it exports that
+  axis's default branch and drops the others, since DTCG carries one variant
+  dimension. Round-tripping a theme through DTCG now flattens it to the default
+  selection of every non-mode axis.
+  
+  Control heights follow density too, through three new ranks — `control-h-xs`
+  (18px), `control-h-sm` (20px) and `icon-button-size` (22px), each landing on a
+  value already in wide use so nothing moves at the default density. Without them
+  `Button` sat at 24px in every density while its label grew.
+  
+  Also adopts the ladder across `packages/ui`: 189 `gap`/`padding`/`margin` px
+  literals became rungs and the frozen control boxes became ranks.
+  `npm run check:spacing` and `npm run check:controls` keep them there; a
+  rank-sized box that is really artwork opts out with a `not-a-control` comment.
+  
+  `check:design-tokens` now reads the scale from `:root` alone. Each density block
+  restates the whole scale, so reading the stylesheet straight through left
+  `roomy` standing and vetted every authored fallback against a value no unset
+  document shows.
+- Updated dependencies [24a2dae]
+  - @weasel-js/paint@1.5.2
+
 ## 1.5.1
 
 ### Patch Changes

@@ -1,5 +1,143 @@
 # Changelog
 
+## 1.5.2
+
+### Patch Changes
+
+- 1c695cb: `derivePose` now notices a dependency that moved with nothing pushed behind it.
+  The memo is keyed on the deriving node's own authored pose, which only changes
+  when someone pushes an invalidation — so an ancestor's frame moving, a removal,
+  a dependency appearing, or a lookup answering poses of its own all left the
+  derived pose stale. It now records what it derived from and re-checks it by
+  value on a memo hit, the way `resolveDerivedPath` already did. The compare both
+  paths use is shared in `depMemo.ts`.
+- 24a2dae: Close the places where two tiers spelled one concept differently.
+  
+  **A fixed pan bug.** `viewport.dragPan` fell back from `drag.screenDelta` to
+  the world `drag.delta` and then divided by the zoom anyway, panning at
+  1/scale² for any event source that supplies no `clientX`/`clientY` — which is
+  every synthesized `InputEvent`, since those fields are optional. It now
+  reconstructs the client delta exactly, by undoing each end of the world delta
+  against the view that produced it.
+  
+  **Breaking, renames.** `ClickEvent`, `DoubleClickEvent` and `ContextMenuEvent`
+  carry their world point as `x`/`y`, matching every other kind in `InputEvent`;
+  `worldX`/`worldY` are gone, and a consumer who set `x`/`y` no longer silently
+  lands at the origin. All three now also carry `clientX`/`clientY`, so a
+  context-menu action can finally read `ctx.screen` — the case that surface was
+  added for. The renderer's `Mat3` is `GlMat3`, freeing `Mat3` to mean geom's
+  affine in a file that imports from both. `translatePolygonInPlace` is
+  gone: it was the one sanctioned writer into a committed path's coord buffer,
+  documented as overlay-only, and nothing called it. `@weasel-js/font` exports `FontStyle`
+  in place of `OutlineFontStyle`. `@weasel-js/labkit` no longer exports
+  `useOrbit`, `OrbitView`, `Vec3` or their helpers: `@weasel-js/kernel3d` owns
+  the orbit camera and `@weasel-js/geom/3d` owns `Vec3`. `ToolCtx.screenPoint`
+  was declared and never written by anything; it is gone.
+  
+  **Breaking, types narrowed.** geom's `Mat3` and `Box` are readonly tuples,
+  matching the reason `geom/3d` already gives for its own. `History.entries()`
+  returns `readonly` arrays, which is what its docstring always asked callers to
+  assume.
+  
+  **One type where there were two.** `@weasel-js/svg`'s `Matrix` is geom's
+  `Mat3`, and its duplicate `multiply` is geom's; `SvgStroke.width` is
+  `ScreenLength` rather than that union written out again. `kernel3d`'s
+  `ViewportRect` is `ScreenBox` — one rectangle spelling instead of `w`/`h`
+  beside `width`/`height` eight lines apart. The renderer's `View` is routing's.
+  Core's `Vec2` is routing's `Point2`, and `Pt` is gone from the barrel.
+  
+  **Additions.** `oklchDegToHex` / `hexToOklchDeg` / `OklchDeg` in
+  `@weasel-js/paint` — the degrees-and-hex form `@weasel-js/ui` and
+  `@weasel-js/theme` had each built for themselves. `srgbFloatToOklab`, for
+  callers holding 0..1 floats; feeding those to `srgbU8ToOklab` truncated where
+  paint's own internal conversion rounds. `mat3.toAffine` / `mat3.fromAffine`
+  name the repack between the GL layout and geom's.
+  
+  **Corrections.** `RECT_POSE_DESCRIPTOR` implements `getRotation`, so a pose it
+  rotated no longer reports itself unrotated to `useResize` and to diagram's port
+  placement. `ToolDef.capabilities` is documented as reaching
+  `Tool.eligibility.capabilities`, which is where it actually goes — following
+  the old text gave `undefined`, and `eligibleForMode` turns that into a tool
+  that vanishes from every mode. `MultitouchEvent.centroid` is documented as
+  canvas-local, which is what the dispatcher hands over. `drag.points` is a
+  snapshot on `onEnd` rather than the dispatcher's live accumulator.
+  
+  `tsconfig.json` now typechecks `packages/routing`, `cursor`, `bidi` and
+  `loupe`, which it had never included.
+- 564deb4: Take typed units past linear factors.
+  
+  A unit table entry is now `number | { factor, offset }`, so a scale that
+  disagrees with the base about where zero sits — degC against K — is
+  expressible; a bare number stays the shorthand for a pure factor, so every
+  existing table reads as it did. `unitScale(system, unit)` is the one reader
+  that widens the shorthand and defaults the offset, and `resolveUnit` /
+  `formatUnit` both go through it.
+  
+  `parseNumber` reads a compound value: `5ft 3in` is 63in, a leading sign carries
+  across every term, and a term with no unit (or a unit the field does not
+  accept) leaves the value unreadable rather than half-read. Offsets have no
+  meaning in a sum, so a compound value takes pure scales only.
+  
+  `prefUnit` converts through offsets in both directions and now returns a
+  `format`, which is what the SelectionPanel slider readout draws — `formatUnit`
+  had no callers before this.
+- 8ffd746: State the port-curve rule once, in `@weasel-js/geom`.
+  
+  A routed edge leaves a port along its normal and arrives at the next against
+  that port's normal, with the controls reaching 0.4 of the straight-line
+  distance. That rule lived inside `@weasel-js/diagram`'s `bezier` router with
+  its reach constant module-private, so a 3D consumer had no way to share even
+  the number.
+  
+  It is now `portControls` / `portCurvePoints` / `PORT_REACH`, exported from
+  both `@weasel-js/geom` and `@weasel-js/geom/3d`. One implementation over loose
+  components sits behind both, so the two dimensions cannot disagree: every
+  operation in it is closed on the plane z = 0, and a planar problem answered
+  through the 3D entry returns the same numbers, not an approximation. Each
+  barrel wraps it in its own tier's currency — scalars for 2D, matching
+  `cubicEvalAt`, and `Vec3` for 3D.
+  
+  `bezier` is unchanged in behavior; it calls through. `@weasel-js/diagram` now
+  declares the `@weasel-js/geom` peer it had been importing without.
+  
+  Also moves `Vec2`'s declaration out of `core/geometry/polygonHitTestRect.ts`,
+  a polygon-versus-rect hit-testing helper it had been an incidental local in,
+  into `core/geometry/vec2.ts`. No API change — the barrel exports the same
+  type from a place you would look for it.
+- 37e8105: Eight character-styling glyphs, and a text tool that declares its own options.
+  
+  `bold`, `italic`, `underline`, `strikethrough`, `overline`, `superscript`,
+  `subscript` and `code` join the icon set. The five flags are letterforms
+  wearing the treatment they apply, because that is what the controls they label
+  replaced.
+  
+  `useTextTool.options` declares the character half of text styling as a
+  `ToolPrefGroup`, keyed by `StyledRun` field, so a host reads a `RangeStyle`
+  into it and writes a `RunStylePatch` back with no name mapping. `short` moves
+  from `ToolPrefBoolean` to every leaf: it is the label any surface too narrow
+  for `name` shows, and `name` stays the accessible name.
+  
+  `ToolOptionsBar` labels a bare value box — a number or a string — and leaves
+  every other control to say what it is, and it sizes fields and opacity tracks
+  for one line rather than for a panel column.
+- 6d79849: Compact a tile grid's resting arrangement in current cell order rather than by
+  sorted id. Drops, swaps and occupancy already went by where a child's pose sits,
+  so the reflow that ran when a child left the grid re-sorted the survivors and
+  undid any earlier swap among them. Children sitting in no cell still sort last,
+  by id, so a grid nobody has arranged yet fills the same way it did.
+- Updated dependencies [24a2dae]
+- Updated dependencies [15b798e]
+- Updated dependencies [8ffd746]
+- Updated dependencies [ad6c351]
+  - @weasel-js/routing@1.5.2
+  - @weasel-js/gestures@1.5.2
+  - @weasel-js/geom@1.5.2
+  - @weasel-js/paint@1.5.2
+  - @weasel-js/font@1.5.2
+  - @weasel-js/text@1.5.2
+  - @weasel-js/history@1.5.2
+  - @weasel-js/cursor@1.5.2
+
 ## 1.5.1
 
 ### Patch Changes
