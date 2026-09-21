@@ -71,6 +71,13 @@ const MOD_BY_PLATFORM: Record<LogicalMod, Record<Platform, Record<LegendStyle, s
   },
 };
 
+/** Every label {@link keySpecsFromMods} can produce, on any platform and legend. */
+export const MODIFIER_LABELS: ReadonlySet<string> = new Set(
+  Object.values(MOD_BY_PLATFORM).flatMap((byPlatform) =>
+    Object.values(byPlatform).flatMap((byLegend) => Object.values(byLegend)),
+  ),
+);
+
 /** Detect the user's OS from the browser environment. UA sniffing — not
  *  100% reliable, but adequate for picking a modifier-glyph convention.
  *  Falls back to `'macos'` (matches the kit's docs convention) when

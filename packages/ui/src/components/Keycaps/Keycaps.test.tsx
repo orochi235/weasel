@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import { KeyCap } from './Keycap';
 import { KeySequence } from './Keycaps';
+import { keySpecFromKey, keySpecsFromMods, type Platform } from './keySpecsFromMods';
 
 describe('KeyCap', () => {
   it('renders the label as a <kbd>', () => {
@@ -153,6 +154,19 @@ describe('KeySequence', () => {
     );
     expect(container.textContent).toBe('⌘+K');
   });
+
+  it.each<Platform>(['macos', 'windows', 'linux'])(
+    'sorts and separates %s modifier labels, in every legend',
+    (platform) => {
+      for (const legend of ['auto', 'symbol', 'text'] as const) {
+        const [alt, mod, meta] = keySpecsFromMods([{ name: 'alt' }, { name: 'mod' }, { name: 'meta' }], { platform, legend });
+        const b = keySpecFromKey('b', { platform, legend });
+        const { container, unmount } = render(<KeySequence keys={[{ label: 'A' }, alt, b, mod, meta]} separator="+" />);
+        expect(container.textContent).toBe(`${alt.label}${mod.label}${meta.label}+AB`);
+        unmount();
+      }
+    },
+  );
 
   it('forwards `font` to every KeyCap', () => {
     const { container } = render(

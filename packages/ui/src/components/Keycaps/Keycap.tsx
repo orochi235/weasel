@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import s from './Keycaps.module.css';
+import { MODIFIER_LABELS } from './keySpecsFromMods';
 
-const MODIFIER_GLYPHS = new Set(['⌘', '⇪', '⌥', '⌃', '⇧']);
 const WIDE_GLYPHS = new Set(['⇥', '↵', '␣']);
 
 /**
@@ -15,7 +15,7 @@ export type KeycapKind = 'modifier' | 'wide' | 'square';
  * than one character get the wider forms.
  */
 export function inferKeycapKind(label: string): KeycapKind {
-  if (MODIFIER_GLYPHS.has(label)) return 'modifier';
+  if (label === '⇪' || MODIFIER_LABELS.has(label)) return 'modifier';
   if (WIDE_GLYPHS.has(label)) return 'wide';
   if (label.length > 1) return 'wide';
   return 'square';
