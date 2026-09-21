@@ -6,13 +6,13 @@
 // tsup inlines every transitively-used `@weasel-js/*` package (`noExternal` in
 // tsup.config.ts) and the dts pipeline inlines their types (scripts/build-dts.mts),
 // so a downstream consumer installs only the third-party deps (react*, zustand,
-// earcut, …). `@weasel-js/core` is the exception: it is an exact PEER, kept as an
-// external specifier, because it owns module-global registries and a second copy
-// of them is a blank canvas with no diagnostic. See
-// docs/proposals/2026-08-31-singleton-packages-as-peers.md.
+// earcut, …). `@weasel-js/core` and `@weasel-js/theme` are the exceptions: exact
+// PEERS, kept as external specifiers, because each owns module-global state (core
+// its registries, theme its React context and stylesheet handle) and a second copy
+// fails silently. See docs/proposals/2026-08-31-singleton-packages-as-peers.md.
 //
-// So this guards a promise with two halves — everything but core is inlined, and
-// core never is:
+// So this guards a promise with two halves — everything but the peers is inlined,
+// and the peers never are:
 //
 //   1. Bundle resolves. Relocate the built `dist` OUTSIDE the repo into a temp
 //      `node_modules/@weasel-js/labkit`, then esbuild-bundle a consumer that
@@ -24,8 +24,8 @@
 //      it and this exits non-zero. (Mirrors the core's
 //      scripts/smoke-consumer-bundle.mjs.)
 //
-//   2. No `@weasel-js` specifier other than core survives in dist — in `.js` OR
-//      `.d.ts` — and core's DOES, in both. The bundle check (1) only exercises
+//   2. No `@weasel-js` specifier other than a peer's survives in dist — in `.js`
+//      OR `.d.ts` — and every peer's DOES, in both. The bundle check (1) only exercises
 //      runtime JS, and it marks core external, so neither half of this is
 //      reachable from it: a leaked sibling would resolve inside the smoke tree if
 //      it were merely mismarked, and an INLINED core resolves perfectly while
@@ -63,11 +63,12 @@ try {
   process.exit(1);
 }
 
-// --- Check 2: dist externalizes core and nothing else under @weasel-js ---
+// --- Check 2: dist externalizes the peers and nothing else under @weasel-js ---
 // Matches `from '@weasel-js/…'`, `require('@weasel-js/…')`, `import('@weasel-js/…')`.
 const LEAK_RE = /(?:from|require\(|import\()\s*['"](@weasel-js\/[^'"]+)['"]/;
-// The one specifier dist is supposed to carry, bare or subpath.
-const CORE_RE = /^@weasel-js\/core(?:\/|$)/;
+// The specifiers dist is supposed to carry, bare or subpath.
+const PEERS = ['core', 'theme'];
+const peerOf = (spec) => PEERS.find((p) => spec === `@weasel-js/${p}` || spec.startsWith(`@weasel-js/${p}/`));
 async function walk(dir) {
   const out = [];
   for (const ent of await readdir(dir, { withFileTypes: true })) {
@@ -125,16 +126,15 @@ function stripComments(text) {
 }
 
 const leaks = [];
-let coreInJs = 0;
-let coreInDts = 0;
+const peerCounts = Object.fromEntries(PEERS.map((p) => [p, { js: 0, dts: 0 }]));
 for (const file of await walk(distDir)) {
   const text = await readFile(file, 'utf8');
   stripComments(text).forEach((line, i) => {
     const m = LEAK_RE.exec(line);
     if (!m) return;
-    if (CORE_RE.test(m[1])) {
-      if (file.endsWith('.d.ts')) coreInDts += 1;
-      else coreInJs += 1;
+    const peer = peerOf(m[1]);
+    if (peer) {
+      peerCounts[peer][file.endsWith('.d.ts') ? 'dts' : 'js'] += 1;
       return;
     }
     leaks.push(`${file.slice(pkgRoot.length + 1)}:${i + 1}: ${line.trim()}`);
@@ -142,7 +142,7 @@ for (const file of await walk(distDir)) {
 }
 if (leaks.length) {
   console.error(
-    '[smoke] dist leaks @weasel-js specifiers other than the core peer (these should be inlined):\n',
+    `[smoke] dist leaks @weasel-js specifiers other than the peers (${PEERS.join(', ')}) — these should be inlined:\n`,
   );
   console.error(leaks.join('\n'));
   console.error(
@@ -151,22 +151,22 @@ if (leaks.length) {
   process.exit(1);
 }
 
-// The inverse, and the one that matters more: core INLINED is the silent
+// The inverse, and the one that matters more: a peer INLINED is the silent
 // failure. It resolves, it bundles, it renders — against its own second copy of
-// the registries. Tracked separately for JS and `.d.ts` because the two
+// the state. Tracked separately for JS and `.d.ts` because the two
 // pipelines externalize independently (tsup.config.ts vs scripts/build-dts.mts),
 // and a bundle that duplicates core at runtime while emitting correct-looking
 // types is the worst of the states to be in.
-if (coreInJs === 0 || coreInDts === 0) {
+for (const [peer, { js, dts }] of Object.entries(peerCounts)) {
+  if (js > 0 && dts > 0) continue;
   console.error(
-    '[smoke] dist does not import @weasel-js/core — it was INLINED, so a consumer\n' +
-      "holding both labkit and core gets two copies of core's registries (content\n" +
-      'handlers, paint kinds, shape painters, markers, programs). Registering into\n' +
-      'one and reading the other paints nothing, with no error.\n',
+    `[smoke] dist does not import @weasel-js/${peer} — it was INLINED, so a consumer\n` +
+      `holding both labkit and ${peer} gets two copies of its module state, and one\n` +
+      'copy reads what the other never wrote, with no error.\n',
   );
   console.error(
-    `  dist JS   : ${coreInJs} external core specifier(s) — check \`noExternal\`/\`external\` in tsup.config.ts\n` +
-      `  dist .d.ts: ${coreInDts} external core specifier(s) — check DTS_EXCLUDE/\`external\` in scripts/build-dts.mts`,
+    `  dist JS   : ${js} external ${peer} specifier(s) — check \`noExternal\`/\`external\` in tsup.config.ts\n` +
+      `  dist .d.ts: ${dts} external ${peer} specifier(s) — check DTS_EXCLUDE/\`external\` in scripts/build-dts.mts`,
   );
   process.exit(1);
 }
@@ -277,7 +277,8 @@ if (missing.size) {
 }
 
 console.log(
-  `[smoke] OK — ${jsEntries.length} labkit entries bundle against the core peer alone; ` +
-    'no other @weasel-js specifiers in dist (js+dts); core stays external ' +
-    `(${coreInJs} js, ${coreInDts} dts); every CSS module's stylesheet shipped.`,
+  `[smoke] OK — ${jsEntries.length} labkit entries bundle against the peers alone; ` +
+    'no other @weasel-js specifiers in dist (js+dts); peers stay external ' +
+    `(${PEERS.map((p) => `${p} ${peerCounts[p].js} js/${peerCounts[p].dts} dts`).join(', ')}); ` +
+    "every CSS module's stylesheet shipped.",
 );
