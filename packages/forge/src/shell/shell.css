@@ -186,7 +186,7 @@
 }
 
 .fg-tree__item[aria-current='true'] {
-  color: var(--wzl-accent);
+  color: var(--wzl-accent-fg);
 }
 
 /* Drawn with borders rather than a glyph, which would join the item's accessible name. */

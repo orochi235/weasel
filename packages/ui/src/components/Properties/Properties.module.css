@@ -259,7 +259,7 @@
 .readout {
   font-style: normal;
   font-weight: var(--wzl-font-weight-medium);
-  color: var(--wzl-accent);
+  color: var(--wzl-accent-fg);
   margin-left: auto;
 }
 
@@ -363,7 +363,7 @@
   /* Force leading-tight — the label parent inherits 1.2, which would make the
      input box ~3px taller than the speech-balloons reference. */
   line-height: var(--wzl-leading-tight);
-  color: var(--wzl-accent);
+  color: var(--wzl-accent-fg);
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--wzl-radius-sm);

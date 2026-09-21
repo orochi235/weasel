@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findUndeclaredReads } from './check-token-reads';
+import { findAccentFillAsText, findUndeclaredReads } from './check-token-reads';
 
 const THEME = new Set(['--wzl-fg', '--wzl-surface']);
 const HOOKS = new Set(['--wzl-swatch-size']);
@@ -55,5 +55,25 @@ describe('findUndeclaredReads', () => {
   it('flags an override hook read without one', () => {
     const out = run([{ path: 'packages/ui/a.css', source: '.g { width: var(--wzl-swatch-size); }' }]);
     expect(out.map((o) => o.reason)).toEqual(['override hook read without a fallback']);
+  });
+});
+
+describe('findAccentFillAsText', () => {
+  const run = (source: string) => findAccentFillAsText([{ path: 'packages/ui/a.css', source }]);
+
+  it('flags text painted with an accent fill token, with its line', () => {
+    expect(run('.x {\n  color: var(--wzl-accent);\n}')).toEqual([
+      { file: 'packages/ui/a.css', line: 2, name: '--wzl-accent', reason: 'text painted with an accent fill; use --wzl-accent-fg' },
+    ]);
+    expect(run('.x { color: var(--wzl-accent-strong); }')).toHaveLength(1);
+  });
+
+  it('accepts accent-fg as text and accent fills on fill properties', () => {
+    expect(run('.x { color: var(--wzl-accent-fg); }')).toEqual([]);
+    expect(run('.x { background-color: var(--wzl-accent); border-color: var(--wzl-accent); accent-color: var(--wzl-accent); }')).toEqual([]);
+  });
+
+  it('ignores a commented-out declaration', () => {
+    expect(run('/* color: var(--wzl-accent); */')).toEqual([]);
   });
 });

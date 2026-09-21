@@ -99,7 +99,7 @@
   height: auto;
   background: transparent;
   border-color: transparent;
-  color: var(--wzl-accent);
+  color: var(--wzl-accent-fg);
   font-weight: var(--wzl-font-weight-medium);
 }
 

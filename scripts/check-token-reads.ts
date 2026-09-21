@@ -78,6 +78,24 @@ export function findUndeclaredReads(
   return out;
 }
 
+/** The accent tokens are fills; `--wzl-accent-fg` is the accent for text. Kept
+ *  apart so a toned surface can rebind fills translucent without fading its text. */
+const ACCENT_FILL_AS_TEXT = /(?<![\w-])color\s*:\s*var\(\s*(--wzl-accent(?:-base|-strong|-hover)?)\s*[,)]/g;
+
+export function findAccentFillAsText(files: readonly SourceFile[]): Offender[] {
+  const out: Offender[] = [];
+  for (const { path, source } of files) {
+    stripComments(source)
+      .split('\n')
+      .forEach((line, i) => {
+        for (const [, name] of line.matchAll(ACCENT_FILL_AS_TEXT)) {
+          out.push({ file: path, line: i + 1, name, reason: 'text painted with an accent fill; use --wzl-accent-fg' });
+        }
+      });
+  }
+  return out;
+}
+
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-demo', 'dist-examples', 'generated']);
 const isSource = (name: string) =>
   /\.(css|less|ts|tsx)$/.test(name) && !/\.(test|spec|stories)\.(ts|tsx)$/.test(name) && !name.endsWith('.d.ts');
@@ -121,10 +139,12 @@ if (invokedDirectly) {
   const dirs = ['packages', 'apps'].map((d) => join(root, d));
   const files = dirs.flatMap((d) => [...walk(d)]).map((f) => ({ path: relative(root, f), source: readFileSync(f, 'utf8') }));
   const offenders = findUndeclaredReads(files, await themeTokens(root, files));
-  for (const o of offenders) console.error(`${o.file}:${o.line}  ${o.name}  ${o.reason}`);
+  const misused = findAccentFillAsText(files);
+  for (const o of [...offenders, ...misused]) console.error(`${o.file}:${o.line}  ${o.name}  ${o.reason}`);
   if (offenders.length > 0) {
     console.error(`\n${offenders.length} --wzl-* read(s) nothing declares. Point them at a theme token, or add a real override hook to TOKEN_HOOKS in packages/theme/src/hooks.ts.`);
-    process.exit(1);
   }
+  if (misused.length > 0) console.error(`\n${misused.length} text color(s) read an accent fill token.`);
+  if (offenders.length + misused.length > 0) process.exit(1);
   console.log(`token reads: clean (${files.length} files)`);
 }
