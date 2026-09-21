@@ -45,6 +45,31 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     description: 'Width of a NumberField’s input.',
   },
   {
+    name: 'params-label-align',
+    type: 'string',
+    value: 'start',
+    description: 'Text alignment of row labels in PropertyPanel, Prefs and labkit’s ControlPanel.',
+  },
+  {
+    name: 'params-label-case',
+    type: 'string',
+    value: 'uppercase',
+    description: 'text-transform of every label and title in PropertyPanel, Prefs and labkit’s ControlPanel.',
+  },
+  {
+    name: 'params-label-tracking',
+    type: 'dimension',
+    value: 'var(--wzl-tracking-wide)',
+    description:
+      'Letter spacing of every label and title in PropertyPanel, Prefs and labkit’s ControlPanel. Unset, rows take --wzl-tracking-wide and titles --wzl-tracking-wider.',
+  },
+  {
+    name: 'params-label-width',
+    type: 'dimension',
+    value: 'auto',
+    description: 'Inline size of row labels in PropertyPanel, Prefs and labkit’s ControlPanel.',
+  },
+  {
     name: 'prefs-column-width',
     type: 'dimension',
     value: '300px',
@@ -74,6 +99,19 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     type: 'dimension',
     value: '2.8em',
     description: 'Minimum width of a Properties row’s value readout.',
+  },
+  {
+    name: 'select-border',
+    type: 'border',
+    value: '1px solid var(--wzl-border)',
+    description:
+      'Border of a Select’s trigger. Unset, a boxed trigger draws --wzl-border and a bare one a transparent border of the same width.',
+  },
+  {
+    name: 'select-fg',
+    type: 'color',
+    value: 'var(--wzl-fg)',
+    description: 'Text color of a Select’s trigger.',
   },
   {
     name: 'swatch-size',
