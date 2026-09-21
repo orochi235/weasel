@@ -68,7 +68,8 @@ try {
 const LEAK_RE = /(?:from|require\(|import\()\s*['"](@weasel-js\/[^'"]+)['"]/;
 // The specifiers dist is supposed to carry, bare or subpath.
 const PEERS = ['core', 'theme'];
-const peerOf = (spec) => PEERS.find((p) => spec === `@weasel-js/${p}` || spec.startsWith(`@weasel-js/${p}/`));
+const peerOf = (spec) =>
+  PEERS.find((p) => spec === `@weasel-js/${p}` || spec.startsWith(`@weasel-js/${p}/`));
 async function walk(dir) {
   const out = [];
   for (const ent of await readdir(dir, { withFileTypes: true })) {
