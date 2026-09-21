@@ -79,8 +79,54 @@
   flex: 0 0 auto;
 }
 
-.popover {
+/* `indicator='underline'`: the value carries the affordance itself. A text
+   decoration rather than a border, so it hugs the word and adds nothing to the
+   box — the row's height and the value's width are the same either way. */
+.underlined .value {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--wzl-fg-subtle);
+  text-underline-offset: 0.25em;
+  transition: text-decoration-color var(--wzl-motion-fast);
+}
+
+.underlined .trigger:hover .value,
+.underlined .trigger[data-focus-visible] .value {
+  text-decoration-style: solid;
+  text-decoration-color: var(--wzl-fg-muted);
+}
+
+.underlined[data-open] .value {
+  text-decoration-style: solid;
+  text-decoration-color: var(--wzl-accent);
+}
+
+.underlined .value[data-placeholder] {
+  text-decoration-color: var(--wzl-fg-subtle);
+}
+
+/* Nothing sits beside the value, so the row's gap and the padding kept for a
+   caret are the value's to spend. */
+.underlined .trigger,
+.plain .trigger {
+  gap: 0;
+}
+
+.bare.underlined .trigger,
+.bare.plain .trigger {
+  padding: 0;
+}
+
+/* A list that hangs below its trigger takes the trigger's width, so the two
+   read as one control. One that opens over it is already tied to the trigger
+   by its selected row — widening it to match would only add blank rule beside
+   the labels. `data-align` is set on exactly the ones that do. */
+.popover:not([data-align]) {
   min-width: var(--trigger-width);
+}
+
+.popover {
   max-height: inherit;
   outline: none;
 }
@@ -107,6 +153,19 @@
   cursor: pointer;
   color: var(--wzl-fg);
   outline: none;
+}
+
+.optionLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A trigger that sets its value against its end edge gets a list that does the
+   same, so the row that opened over the value stays on top of it. */
+.popover[data-align='end'] .option {
+  justify-content: flex-end;
 }
 
 .option[data-focused] {
@@ -144,6 +203,11 @@
 .fit .trigger {
   display: grid;
   grid-template-columns: auto auto;
+}
+
+.fit.underlined .trigger,
+.fit.plain .trigger {
+  grid-template-columns: auto;
 }
 
 .fit .value,

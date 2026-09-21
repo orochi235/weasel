@@ -115,6 +115,39 @@ describe('Select', () => {
     });
   });
 
+  /** The caret is a real element, so its presence is a real claim. The
+   *  underline is a CSS rule on a class the module proxy answers to either
+   *  way — what these assert is which one the component asked for. */
+  describe('indicator', () => {
+    const root = (container: HTMLElement) => container.querySelector('[data-rac]') as HTMLElement;
+
+    it('draws a caret on a boxed select', () => {
+      const { container } = render(<Select label="Color" options={OPTIONS} />);
+      expect(container.querySelector(`.${s.chevron}`)).not.toBeNull();
+      expect(root(container).classList.contains(s.underlined)).toBe(false);
+    });
+
+    it('underlines the value instead on a bare one, where the caret costs more', () => {
+      const { container } = render(<Select label="Color" options={OPTIONS} variant="bare" />);
+      expect(container.querySelector(`.${s.chevron}`)).toBeNull();
+      expect(root(container).classList.contains(s.underlined)).toBe(true);
+    });
+
+    it("takes an explicit indicator over the variant's own", () => {
+      const { container } = render(
+        <Select label="Color" options={OPTIONS} variant="bare" indicator="chevron" />,
+      );
+      expect(container.querySelector(`.${s.chevron}`)).not.toBeNull();
+      expect(root(container).classList.contains(s.underlined)).toBe(false);
+    });
+
+    it('says nothing at all for indicator="none"', () => {
+      const { container } = render(<Select label="Color" options={OPTIONS} indicator="none" />);
+      expect(container.querySelector(`.${s.chevron}`)).toBeNull();
+      expect(root(container).classList.contains(s.plain)).toBe(true);
+    });
+  });
+
   describe('textValue', () => {
     /** React Aria warns per row when it can't read a string off the
      *  children. Each row draws a check mark beside its label, so it never

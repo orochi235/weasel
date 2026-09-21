@@ -89,3 +89,40 @@ export const Controlled: Story = {
     return <Wrap />;
   },
 };
+
+/**
+ * A select set in a row of other chrome. `variant='bare'` drops the box and,
+ * with it, the caret: 10px of caret is a tenth of a value this narrow, and the
+ * value carries the affordance itself — dotted at rest, solid under the
+ * pointer. The second row right-aligns its value, which the list follows.
+ */
+export const InARow: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 260 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span>Wave</span>
+        <Select aria-label="Wave" variant="bare" defaultSelectedKey="g" options={COLORS} />
+      </div>
+      <div
+        style={{ display: 'flex', alignItems: 'center', gap: 8, ['--wzl-select-align' as string]: 'right' }}
+      >
+        <span>Wave</span>
+        <Select aria-label="Wave, right-aligned" variant="bare" defaultSelectedKey="g" options={COLORS} />
+      </div>
+    </div>
+  ),
+};
+
+/**
+ * Where the list lands. `over` (the default) puts the selected row on the
+ * trigger, so choosing what is already chosen moves nothing; `below` hangs the
+ * list under the trigger and takes its width.
+ */
+export const PopupPlacement: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 24 }}>
+      <Select label="Over (default)" options={COLORS} defaultSelectedKey="g" />
+      <Select label="Below" popup="below" options={COLORS} defaultSelectedKey="g" />
+    </div>
+  ),
+};
