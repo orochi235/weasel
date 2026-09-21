@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { expect } from '@weasel-js/forge/play';
 import { useState } from 'react';
 import { Select, SelectItem } from './Select';
 
@@ -28,6 +29,15 @@ export const ExplicitChildren: Story = {
       <SelectItem id="b" isDisabled>Blue (unavailable)</SelectItem>
     </Select>
   ),
+  // The trigger needs `overflow: hidden` for its ellipsis, which turns the line
+  // box into a clip: a line-height under the font's own leading cuts the
+  // ascenders and descenders off "Green". jsdom resolves neither of them, so
+  // this has to run in a browser.
+  play: async ({ canvasElement }) => {
+    const value = canvasElement.querySelector('button > span');
+    if (!value) throw new Error('no trigger value');
+    expect(value.scrollHeight).toBe(value.clientHeight);
+  },
 };
 
 /** The two rows differ only in `width`. `fit` takes what its widest option —

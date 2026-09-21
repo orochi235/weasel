@@ -48,6 +48,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* The ellipsis needs `overflow: hidden`, which makes the line box a clip —
+     the trigger's `line-height: 1` would cut this text's ascenders and
+     descenders off. `normal` is the font's own leading, so it never can. */
+  line-height: normal;
 }
 
 /* `variant='bare'`: no box. The focus ring moves to an outline, since there is no border to recolor. */
