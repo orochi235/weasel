@@ -43,6 +43,8 @@ export type {
   TokenCategory,
   TokenEntry,
   TokenPanelProps,
+  TokenScale,
+  TokenScaleRule,
 } from '@weasel-js/ui';
 export {
   Button,
@@ -67,6 +69,7 @@ export {
   PropertyPanel,
   PropertyRow,
   PropertySpan,
+  refitScale,
   ResetIcon,
   Select,
   SelectRow,

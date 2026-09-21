@@ -133,6 +133,83 @@
   outline-offset: -2px;
 }
 
+/* A group of sizes: its name over a grid of steps, each labeled by what its name adds. */
+.scale {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-1);
+  min-width: 0;
+}
+
+.scaleHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+  min-width: 0;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr));
+  gap: var(--wzl-space-1) var(--wzl-space-xs);
+}
+
+.rule {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-xs) var(--wzl-space-sm);
+  min-width: 0;
+}
+
+.ruleLabel {
+  color: var(--wzl-fg-subtle);
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-2xs);
+}
+
+.rule .number {
+  flex: 0 1 5ch;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stepLabel {
+  overflow: hidden;
+  text-align: end;
+  color: var(--wzl-fg-subtle);
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-2xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.step[data-overridden] .stepLabel {
+  color: var(--wzl-accent-fg);
+}
+
+.stepEdit {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-1);
+  min-width: 0;
+}
+
+.step > .stepEdit + .stepEdit {
+  margin-block-start: var(--wzl-space-1);
+}
+
+.stepEdit .number {
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
 /* Tight: a token to a line, with the names on a fixed rail so the values read
    down the panel as a column. A stacked row spends its height on the name and
    lets the field take the whole width, which a set of ninety cannot afford. */
@@ -163,6 +240,13 @@
 
 .tight .unit {
   font-variant-numeric: tabular-nums;
+}
+
+.tight .scale {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  align-items: start;
+  column-gap: var(--wzl-space-xs);
 }
 
 /* Grid rather than a row, so a picked swatch's editor still spans the full width. */

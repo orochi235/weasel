@@ -2,7 +2,7 @@ import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { FromFrame } from '../../protocol/messages';
+import type { FromFrame, ToFrame } from '../../protocol/messages';
 import { describeSchema } from '../../protocol/schema';
 import type { IndexEntry } from '../../story/types';
 import { connectFrame, flush, installResizeObserver } from '../labHarness';
@@ -66,6 +66,36 @@ describe('CssVarsPanel', () => {
     await flush();
     expect(setsOf(received).at(-1)).toEqual({ type: 'vars.set', name: '--wzl-gray-50', value: null });
     expect(token.getByRole('textbox')).toHaveValue('#f5f5f6');
+  });
+
+  it('regenerates every step of a theme scale from a new base, with the theme’s own rule', async () => {
+    location.hash = '#/x--a';
+    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { received } = await openTrial('A');
+    const font = row(vars(), 'font');
+    const base = font.getByRole('textbox', { name: 'font base' });
+    expect(base).toHaveValue('13');
+    expect(font.getByRole('textbox', { name: '--wzl-font-size-2xs factor' })).toHaveValue('0.66');
+
+    act(() => {
+      fireEvent.change(base, { target: { value: '15' } });
+      fireEvent.blur(base);
+    });
+    await flush();
+    const sets = setsOf(received) as Extract<ToFrame, { type: 'vars.set' }>[];
+    expect(Object.fromEntries(sets.map((m) => [m.name, m.value]))).toEqual({
+      '--wzl-font-size-2xs': '10px',
+      '--wzl-font-size-xs': '12px',
+      '--wzl-font-size-sm': '13px',
+      '--wzl-font-size-md': '15px',
+      '--wzl-font-size-lg': '18px',
+      '--wzl-font-size-xl': '23px',
+    });
+    expect(font.getByRole('textbox', { name: 'font base' })).toHaveValue('15');
+
+    fireEvent.click(font.getByRole('button', { name: 'Reset font' }));
+    await flush();
+    expect(font.getByRole('textbox', { name: 'font base' })).toHaveValue('13');
   });
 
   it('files the theme’s tokens into collapsible sections, with the gray ramp as one row of swatches', async () => {

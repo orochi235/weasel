@@ -14,6 +14,41 @@ export interface TokenEntry {
   description?: string;
 }
 
+/** How a scale's steps follow from its base: one multiplier per step, a constant ratio, or a constant step. */
+export type TokenScaleRule =
+  | { kind: 'factors'; factors: readonly number[] }
+  | { kind: 'ratio'; ratio: number }
+  | { kind: 'step'; step: number };
+
+/** A group whose steps are generated from a base, so the panel edits the base and the rule rather than each step. */
+export interface TokenScale {
+  /** The generated tokens, smallest first. Anything else in the group draws as an ordinary step. */
+  tokens: readonly string[];
+  base: number;
+  rule: TokenScaleRule;
+}
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * The same scale under another rule, fitted to the amounts its steps have now.
+ * A ratio or step counts from the first step, so switching to one moves the
+ * base there.
+ */
+export function refitScale(scale: TokenScale, kind: TokenScaleRule['kind'], amounts: readonly number[]): TokenScale {
+  const first = amounts[0] ?? scale.base;
+  const last = amounts.at(-1) ?? first;
+  const spans = Math.max(1, amounts.length - 1);
+  switch (kind) {
+    case 'factors':
+      return { ...scale, rule: { kind, factors: amounts.map((a) => (scale.base ? round2(a / scale.base) : 1)) } };
+    case 'ratio':
+      return { ...scale, base: first, rule: { kind, ratio: first > 0 ? round2((last / first) ** (1 / spans)) : 1 } };
+    case 'step':
+      return { ...scale, base: first, rule: { kind, step: round2((last - first) / spans) } };
+  }
+}
+
 export type TokenCategory = 'color' | 'type' | 'size' | 'motion' | 'depth' | 'other';
 
 /** The panel's sections, in the order it draws them. */

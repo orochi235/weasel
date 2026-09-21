@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { toHex } from './color';
 import { TokenPanel } from './TokenPanel';
-import type { TokenEntry } from './tokenTypes';
+import type { TokenEntry, TokenScale } from './tokenTypes';
 
 vi.mock('./color', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./color')>();
@@ -67,6 +67,100 @@ describe('TokenPanel', () => {
     expect(field).toHaveValue('#e6e7e9');
     fireEvent.change(field, { target: { value: '#000000' } });
     expect(onChange).toHaveBeenCalledWith('--wzl-gray-100', '#000000');
+  });
+
+  it('draws a size scale of three or more as one grid, labeling each step by what its name adds', () => {
+    const onChange = vi.fn();
+    const scale: TokenEntry[] = [
+      { name: '--wzl-radius-sm', type: 'dimension', group: 'radius', value: '3px' },
+      { name: '--wzl-radius-md', type: 'dimension', group: 'radius', value: '5px', overridden: true },
+      { name: '--wzl-radius-lg', type: 'dimension', group: 'radius', value: '14px' },
+      { name: '--wzl-radius', type: 'dimension', group: 'radius', value: '4px' },
+    ];
+    render(<TokenPanel tokens={scale} onChange={onChange} />);
+    const family = within(screen.getByRole('group', { name: 'radius' }));
+    expect(screen.queryByRole('group', { name: '--wzl-radius-sm' })).toBeNull();
+    expect(family.getByText('sm')).toBeInTheDocument();
+    expect(family.getByText('lg')).toBeInTheDocument();
+    expect(family.getAllByText('radius')).toHaveLength(2);
+    expect(family.getAllByText('px')).toHaveLength(1);
+
+    const md = family.getByRole('textbox', { name: '--wzl-radius-md value' });
+    expect(md).toHaveValue('5');
+    act(() => {
+      fireEvent.change(md, { target: { value: '6' } });
+      fireEvent.blur(md);
+    });
+    expect(onChange).toHaveBeenCalledWith('--wzl-radius-md', '6px');
+
+    fireEvent.click(family.getByRole('button', { name: 'Reset radius' }));
+    expect(onChange).toHaveBeenCalledWith('--wzl-radius-md', null);
+    expect(onChange).not.toHaveBeenCalledWith('--wzl-radius-sm', null);
+  });
+
+  describe('a generated scale', () => {
+    const fonts: TokenEntry[] = [
+      { name: '--f-sm', type: 'dimension', group: 'f', value: '10px' },
+      { name: '--f-md', type: 'dimension', group: 'f', value: '12px' },
+      { name: '--f-lg', type: 'dimension', group: 'f', value: '18px' },
+    ];
+    const byFactors: TokenScale = {
+      tokens: ['--f-sm', '--f-md', '--f-lg'],
+      base: 12,
+      rule: { kind: 'factors', factors: [0.8, 1, 1.5] },
+    };
+    const edit = (field: HTMLElement, value: string) =>
+      act(() => {
+        fireEvent.change(field, { target: { value } });
+        fireEvent.blur(field);
+      });
+
+    it('edits its base, and a multiplier under each step', () => {
+      const onScaleChange = vi.fn();
+      render(<TokenPanel tokens={fonts} onChange={() => {}} scales={{ f: byFactors }} onScaleChange={onScaleChange} />);
+      const family = within(screen.getByRole('group', { name: 'f' }));
+      edit(family.getByRole('textbox', { name: 'f base' }), '14');
+      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byFactors, base: 14 });
+      expect(family.getByRole('textbox', { name: '--f-lg factor' })).toHaveValue('1.5');
+      edit(family.getByRole('textbox', { name: '--f-lg factor' }), '1.6');
+      expect(onScaleChange).toHaveBeenLastCalledWith('f', {
+        ...byFactors,
+        rule: { kind: 'factors', factors: [0.8, 1, 1.6] },
+      });
+    });
+
+    it('refits to the steps as they stand when its rule changes', () => {
+      const onScaleChange = vi.fn();
+      render(<TokenPanel tokens={fonts} onChange={() => {}} scales={{ f: byFactors }} onScaleChange={onScaleChange} />);
+      const family = within(screen.getByRole('group', { name: 'f' }));
+      fireEvent.click(family.getByRole('radio', { name: 'step' }));
+      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byFactors, base: 10, rule: { kind: 'step', step: 4 } });
+      fireEvent.click(family.getByRole('radio', { name: 'ratio' }));
+      expect(onScaleChange).toHaveBeenLastCalledWith('f', { ...byFactors, base: 10, rule: { kind: 'ratio', ratio: 1.34 } });
+    });
+
+    it('draws no controls for a group it is not told how to generate', () => {
+      render(<TokenPanel tokens={fonts} onChange={() => {}} />);
+      expect(screen.queryByRole('textbox', { name: 'f base' })).toBeNull();
+      expect(screen.queryByRole('textbox', { name: '--f-sm factor' })).toBeNull();
+    });
+  });
+
+  it('keeps a unit on each step of a scale whose units differ', () => {
+    const scale: TokenEntry[] = [
+      { name: '--tracking-none', type: 'dimension', group: 'tracking', value: '0' },
+      { name: '--tracking-wide', type: 'dimension', group: 'tracking', value: '0.06em' },
+      { name: '--tracking-wider', type: 'dimension', group: 'tracking', value: '0.08em' },
+    ];
+    render(<TokenPanel tokens={scale} onChange={() => {}} />);
+    expect(within(screen.getByRole('group', { name: 'tracking' })).getAllByText('em')).toHaveLength(2);
+  });
+
+  it('names a swatch in a tooltip the moment it is hovered', () => {
+    render(<TokenPanel tokens={tokens} onChange={() => {}} />);
+    fireEvent.pointerMove(screen.getByRole('button', { name: '--wzl-gray-100' }), { pointerType: 'mouse' });
+    fireEvent.pointerEnter(screen.getByRole('button', { name: '--wzl-gray-100' }), { pointerType: 'mouse' });
+    expect(screen.getByRole('tooltip')).toHaveTextContent('--wzl-gray-100');
   });
 
   it('gives a lone color a swatch and a value field', () => {
