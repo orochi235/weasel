@@ -30,6 +30,15 @@ const SVG_BASE: SVGProps<SVGSVGElement> = {
   strokeLinejoin: 'round',
 };
 
+// React 19 rewrites innerHTML whenever this object's identity changes, and a
+// rewrite during a press removes the node pointerdown hit, so no click follows.
+const markup = new Map<string, { __html: string }>();
+const markupFor = (html: string) => {
+  let m = markup.get(html);
+  if (!m) markup.set(html, (m = { __html: html }));
+  return m;
+};
+
 /** Renders one glyph by name. The named components below are the usual way
  *  in; reach for this when the glyph is chosen at runtime. */
 export function Icon({
@@ -56,7 +65,7 @@ export function Icon({
       aria-hidden={label ? undefined : true}
       // Glyph bodies are generated from scripts/icons/ and contain no
       // interpolated input.
-      dangerouslySetInnerHTML={{ __html: shade + ICON_PATHS[name] }}
+      dangerouslySetInnerHTML={markupFor(shade + ICON_PATHS[name])}
     />
   );
 }

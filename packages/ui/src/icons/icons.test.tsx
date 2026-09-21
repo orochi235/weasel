@@ -68,6 +68,17 @@ describe('icon set', () => {
     expect(container.querySelector('svg')?.getAttribute('fill-opacity')).toBeNull();
   });
 
+  // A browser synthesizes `click` only if the node pointerdown hit is still in the
+  // document at pointerup. Rebuilding the glyph on a re-render during the press
+  // removes it, so the button the icon sits in never gets the click.
+  it('keeps its drawn nodes across a re-render', () => {
+    const { container, rerender } = render(<Icon name="export" size={16} />);
+    const first = container.querySelector('svg')?.firstElementChild;
+    expect(first).not.toBeNull();
+    rerender(<Icon name="export" size={16} className="pressed" />);
+    expect(container.querySelector('svg')?.firstElementChild).toBe(first);
+  });
+
   it('marks the glyphs whose corners must stay points', () => {
     expect(ICON_PATHS.shapePentagram).toContain('stroke-linejoin="miter"');
     expect(ICON_PATHS.shapeCircle).not.toContain('stroke-linejoin');
