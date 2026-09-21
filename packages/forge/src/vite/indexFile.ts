@@ -33,24 +33,31 @@ function indexProgram(program: t.Program, file: string, autoTitle: string): Inde
   }
 
   let metaNode: t.Node | undefined;
-  const exported: { name: string; node: t.Node | undefined }[] = [];
+  let metaDoc: string | undefined;
+  const exported: { name: string; node: t.Node | undefined; doc: string | undefined }[] = [];
   for (const stmt of program.body) {
-    if (stmt.type === 'ExportDefaultDeclaration') metaNode = stmt.declaration;
+    if (stmt.type === 'ExportDefaultDeclaration') {
+      metaNode = stmt.declaration;
+      metaDoc = docOf(stmt);
+    }
     if (stmt.type !== 'ExportNamedDeclaration' || stmt.exportKind === 'type') continue;
+    const doc = docOf(stmt);
     const decl = stmt.declaration;
     if (decl?.type === 'VariableDeclaration') {
       for (const d of decl.declarations) {
-        if (d.id.type === 'Identifier') exported.push({ name: d.id.name, node: d.init ?? undefined });
+        if (d.id.type === 'Identifier') exported.push({ name: d.id.name, node: d.init ?? undefined, doc: docOf(d) ?? doc });
       }
     } else if (decl?.type === 'FunctionDeclaration' && decl.id) {
-      exported.push({ name: decl.id.name, node: undefined });
+      exported.push({ name: decl.id.name, node: undefined, doc });
     }
     for (const spec of stmt.specifiers) {
       if (spec.type !== 'ExportSpecifier' || spec.exportKind === 'type') continue;
       const name = exportedName(spec.exported);
       const node = stmt.source ? undefined : bindings.get(spec.local.name);
-      if (name === 'default') metaNode = node;
-      else exported.push({ name, node });
+      if (name === 'default') {
+        metaNode = node;
+        metaDoc ??= doc;
+      } else exported.push({ name, node, doc });
     }
   }
   if (!metaNode && !program.body.some(isDefaultExport)) return [];
@@ -59,11 +66,13 @@ function indexProgram(program: t.Program, file: string, autoTitle: string): Inde
   const title = stringProp(meta, 'title') ?? autoTitle;
   const include = storyFilter(meta, 'includeStories');
   const exclude = storyFilter(meta, 'excludeStories');
+  const componentNode = prop(meta, 'component');
+  const componentName = componentNode?.type === 'Identifier' ? componentNode.name : undefined;
 
   return exported
     .filter(({ name }) => name !== '__namedExportsOrder')
     .filter(({ name }) => (!include || include(name)) && (!exclude || !exclude(name)))
-    .map(({ name, node }) => {
+    .map(({ name, node, doc }) => {
       const spec = objectOf(node, bindings, wrappers);
       return {
         id: storyId(title, name),
@@ -71,6 +80,9 @@ function indexProgram(program: t.Program, file: string, autoTitle: string): Inde
         name: stringProp(spec, 'name') ?? stringProp(spec, 'storyName') ?? storyNameFromExport(name),
         exportName: name,
         file,
+        ...(doc === undefined ? {} : { description: doc }),
+        ...(metaDoc === undefined ? {} : { componentDescription: metaDoc }),
+        ...(componentName === undefined ? {} : { componentName }),
       };
     });
 }
@@ -81,6 +93,24 @@ function isDefaultExport(stmt: t.Statement): boolean {
     stmt.type === 'ExportNamedDeclaration' &&
     stmt.specifiers.some((s) => s.type === 'ExportSpecifier' && exportedName(s.exported) === 'default')
   );
+}
+
+/**
+ * The JSDoc block immediately above `node`, as prose. A `//` comment is not
+ * one: a line comment above an export is as often a note to the author as a
+ * description of the story, and printing it in the dossier would be guessing.
+ */
+function docOf(node: t.Node): string | undefined {
+  const comments = node.leadingComments;
+  const last = comments?.[comments.length - 1];
+  if (last?.type !== 'CommentBlock' || !last.value.startsWith('*')) return undefined;
+  const text = last.value
+    .slice(1)
+    .split('\n')
+    .map((line) => line.replace(/^\s*\*/, '').trim())
+    .join('\n')
+    .trim();
+  return text || undefined;
 }
 
 function exportedName(node: t.Identifier | t.StringLiteral): string {

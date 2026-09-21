@@ -40,7 +40,7 @@ export type LabContribution<TCtx = LabChromeContext> =
       item: ToolbarItem<TCtx>;
       render?: never;
     })
-  | (ContributionBase & { region: 'palette'; item: ToolItem; render?: never })
+  | (ContributionBase & { region: 'palette'; item: ToolItem<TCtx>; render?: never })
   | (ContributionBase & { region: 'sidebar' | 'aside'; item: SidebarSection; render?: never })
   | (ContributionBase & { region: 'footer'; item: StatusReadout; render?: never })
   | (ContributionBase & {

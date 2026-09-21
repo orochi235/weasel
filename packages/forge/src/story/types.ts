@@ -61,4 +61,10 @@ export interface IndexEntry {
   exportName: string;
   /** Absolute path of the story file. */
   file: string;
+  /** The JSDoc written above this story's export, if any. */
+  description?: string;
+  /** The JSDoc written above the file's meta, if any. */
+  componentDescription?: string;
+  /** The identifier the meta's `component` names, if it names one. */
+  componentName?: string;
 }

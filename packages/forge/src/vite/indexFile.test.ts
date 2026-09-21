@@ -144,6 +144,38 @@ export const Basic = { render: () => <div /> };
     expect(ids(code)).toEqual([['ui-jsx--basic', 'Basic']]);
   });
 
+  it('harvests the component identifier and the JSDoc above the meta and each story', () => {
+    const code = `
+/**
+ * A slider.
+ * Drag it.
+ */
+export default { title: 'ui/Slider', component: Slider };
+/** The plain one. */
+export const Basic = {};
+// Not JSDoc, so not a blurb.
+export const Terse = {};
+`;
+    const [basic, terse] = indexFile(code, FILE, 'ui/Auto');
+    expect(basic).toMatchObject({
+      componentName: 'Slider',
+      componentDescription: 'A slider.\nDrag it.',
+      description: 'The plain one.',
+    });
+    expect(terse).not.toHaveProperty('description');
+    expect(terse).toMatchObject({ componentName: 'Slider' });
+  });
+
+  it('leaves entries alone in a file with no comments', () => {
+    const code = `
+export default { title: 'ui/Bare' };
+export const Basic = {};
+`;
+    expect(indexFile(code, FILE, 'ui/Auto')).toEqual([
+      { id: 'ui-bare--basic', title: 'ui/Bare', name: 'Basic', exportName: 'Basic', file: FILE },
+    ]);
+  });
+
   it('names the file when a title cannot make an id', () => {
     const code = `
 export default { title: '!!!' };

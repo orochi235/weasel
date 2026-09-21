@@ -10,6 +10,10 @@ import type { TrialFrames } from './trialFrames';
 
 export interface StoryRegistry {
   instruments: InstrumentList;
+  /** Whether a story's frame has reported its schema. An instrument is built
+   *  either way, and before the report its schema is empty — which reads as
+   *  "no args" to anything that cannot tell the two apart. */
+  isReady: (id: string) => boolean;
   /** Called by FrameView. Replaces the story's instrument only when `ready.schema`, layout or viewport differ from what it holds. */
   onReady: (entry: IndexEntry, ready: Ready) => void;
 }
@@ -114,5 +118,7 @@ export function useStoryRegistry(
     };
   }, [cache.books]);
 
-  return { instruments: cache.list, onReady };
+  const isReady = useCallback((id: string) => readies.has(id), [readies]);
+
+  return { instruments: cache.list, isReady, onReady };
 }

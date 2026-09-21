@@ -36,6 +36,24 @@ describe('PaletteRegion', () => {
     expect(setActiveTool).toHaveBeenCalledWith('brush');
   });
 
+  it('runs a command tool instead of selecting it, and never marks it current', () => {
+    const onActivate = vi.fn();
+    const setActiveTool = vi.fn();
+    const ctx = ctxWith('info', setActiveTool);
+    const info: RegionContribution<ToolSlotContext> = {
+      id: 'info',
+      region: 'palette',
+      item: { icon: Glyph, label: 'Info', onActivate },
+    };
+    render(<PaletteRegion contributions={[info]} ctx={ctx} />);
+    const button = screen.getByRole('button', { name: 'Info' });
+    button.click();
+    expect(onActivate).toHaveBeenCalledWith(ctx);
+    expect(setActiveTool).not.toHaveBeenCalled();
+    // The slot names this id, and a command still must not read as held down.
+    expect(button).not.toHaveAttribute('aria-current');
+  });
+
   it('puts exactly one tool in the tab order', () => {
     render(<PaletteRegion contributions={[tool('brush'), tool('eraser')]} ctx={ctxWith(null)} />);
     expect(screen.getByRole('button', { name: 'brush' })).toHaveAttribute('tabindex', '0');

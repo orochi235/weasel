@@ -3,8 +3,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ShellConfig } from '../config';
 import { type Globals, stableStringify } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
+import { InfoIcon } from '@weasel-js/ui';
 import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
+import { StoryInfoDialog } from './info/StoryInfoDialog';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
@@ -44,11 +46,32 @@ function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
   return null;
 }
 
+/**
+ * Opens Get Info on ⌘I / Ctrl+I. `ToolItem.shortcut` is a tooltip hint —
+ * labkit binds no keys — so the shell binds its own.
+ */
+function useInfoShortcut(open: (next: boolean) => void): void {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'i' && event.key !== 'I') return;
+      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || /^(input|textarea|select)$/i.test(target?.tagName ?? '')) return;
+      event.preventDefault();
+      open(true);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+}
+
 export function Workshop({ index, frameUrl, config, stories = [], storageKey, storage }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
   const [frames] = useState(createTrialFrames);
   const registry = useStoryRegistry(index, { frameUrl, globals: declarations, frames });
   const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
+  const [infoOpen, setInfoOpen] = useState(false);
+  useInfoShortcut(setInfoOpen);
   const reportLabValues = useCallback(
     (next: Globals) => setLabValues((prev) => (stableStringify(prev) === stableStringify(next) ? prev : next)),
     [],
@@ -56,6 +79,11 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
+      {
+        id: 'fg-info',
+        region: 'palette',
+        item: { icon: InfoIcon, label: 'Info', shortcut: '⌘I', onActivate: () => setInfoOpen(true) },
+      },
       CSS_VARS_SECTION,
       A11Y_SECTION,
       ...(Object.keys(declarations).length > 0
@@ -98,6 +126,12 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
           {...(config?.path !== undefined ? { path: config.path } : {})}
         >
           <RouteOpener index={index} />
+          <StoryInfoDialog
+            index={index}
+            isReady={registry.isReady}
+            isOpen={infoOpen}
+            onOpenChange={setInfoOpen}
+          />
           <LabGlobals declarations={declarations} onChange={reportLabValues} />
         </Lab>
       </TrialFramesContext.Provider>

@@ -31,12 +31,18 @@ export interface ToolbarItem<TCtx = TrialChromeContext> {
   onActivate: (ctx: TCtx) => void;
 }
 
-/** A selectable tool in the palette region. */
-export interface ToolItem {
+/** A tool in the palette region: a mode by default, a command when it carries
+ *  an `onActivate`. `TCtx` is the chrome context that handler is handed — a
+ *  trial's, or the lab's for a lab-level rail. */
+export interface ToolItem<TCtx = TrialChromeContext> {
   icon: IconComponent;
   label: string;
+  /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
   shortcut?: string;
   disabled?: boolean;
+  /** Runs on press instead of selecting. An item with one is a command: it
+   *  never writes the tool slot, and never reads as the current tool. */
+  onActivate?: (ctx: TCtx) => void;
 }
 
 /** A titled block in the sidebar. */

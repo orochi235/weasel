@@ -12,7 +12,8 @@ export interface PaletteRegionProps<TCtx extends ToolSlotContext = TrialChromeCo
 }
 
 /** A tool strip: a trial's, or the lab's. Selection lives in whichever tool
- *  slot the context carries; this region only reflects it. */
+ *  slot the context carries; this region only reflects it. An item carrying
+ *  `onActivate` is a command instead — it presses, and never latches. */
 export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>({
   contributions,
   ctx,
@@ -33,16 +34,16 @@ export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>
         {contributions.map((c) => {
           if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
           if (c.region !== region || !c.item) return null;
-          const { icon: Icon, label, shortcut, disabled } = c.item as ToolItem;
+          const { icon: Icon, label, shortcut, disabled, onActivate } = c.item as ToolItem<TCtx>;
           return (
             <ToolButton
               key={c.id}
               icon={<Icon size={16} />}
               label={label}
               shortcut={shortcut}
-              active={ctx.activeToolId === c.id}
+              active={onActivate ? false : ctx.activeToolId === c.id}
               disabled={disabled}
-              onClick={() => ctx.setActiveTool(c.id)}
+              onClick={onActivate ? () => onActivate(ctx) : () => ctx.setActiveTool(c.id)}
             />
           );
         })}
