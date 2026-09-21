@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent, screen, act } from '@testing-library/react';
+import { render, fireEvent, createEvent, screen, act } from '@testing-library/react';
 import { Select, SelectItem } from './Select';
 import s from './Select.module.css';
 
@@ -145,6 +145,47 @@ describe('Select', () => {
       const { container } = render(<Select label="Color" options={OPTIONS} indicator="none" />);
       expect(container.querySelector(`.${s.chevron}`)).toBeNull();
       expect(root(container).classList.contains(s.plain)).toBe(true);
+    });
+  });
+
+  /** jsdom runs no pointer behavior of its own — React Aria's press handling
+   *  is what opens the list, and nothing here re-targets the release onto a
+   *  row. So the claim "the list stays open" cannot fail in this environment;
+   *  what is assertable on this side of the boundary is that the opening
+   *  release was suppressed, and the browser is what proves the rest. */
+  describe('the click that opens it', () => {
+    const press = (el: Element, init: object) =>
+      fireEvent(el, new MouseEvent('pointerdown', { bubbles: true, ...init }));
+
+    it('swallows the release that ends it', () => {
+      render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" />);
+      const trigger = screen.getByRole('button', { name: /Color/ });
+      press(trigger, { clientX: 20, clientY: 10 });
+      act(() => { fireEvent.click(trigger); });
+      const up = createEvent.pointerUp(document, { clientX: 21, clientY: 11 });
+      fireEvent(document, up);
+      expect(up.defaultPrevented).toBe(true);
+    });
+
+    it('keeps every release after it', () => {
+      render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" />);
+      const trigger = screen.getByRole('button', { name: /Color/ });
+      press(trigger, { clientX: 20, clientY: 10 });
+      act(() => { fireEvent.click(trigger); });
+      fireEvent(document, createEvent.pointerUp(document, { clientX: 21, clientY: 11 }));
+      const second = createEvent.pointerUp(document, { clientX: 21, clientY: 11 });
+      fireEvent(document, second);
+      expect(second.defaultPrevented).toBe(false);
+    });
+
+    it('keeps a release that travelled — a drag onto a row is a choice', () => {
+      render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" />);
+      const trigger = screen.getByRole('button', { name: /Color/ });
+      press(trigger, { clientX: 20, clientY: 10 });
+      act(() => { fireEvent.click(trigger); });
+      const up = createEvent.pointerUp(document, { clientX: 20, clientY: 60 });
+      fireEvent(document, up);
+      expect(up.defaultPrevented).toBe(false);
     });
   });
 
