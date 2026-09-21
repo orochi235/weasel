@@ -739,6 +739,19 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P1) Adopt `ColorList` wherever the kit takes several colors, or one per
+  item.** `ColorList` (`@weasel-js/theme`) is literals, the categorical generator
+  the swatch ramp uses, a ramp of the active theme, or a function, read with
+  `colorAt(list, i, theme)`. Where the kit takes colors today it takes them some
+  other way: labkit's `nebula` is a bare `string[]`, `EffectCard` and `LayerStack`
+  items each take a hand-picked `accent` string, and nothing lets a consumer say
+  "the next hue from the theme" — so every app that colors a list of things picks
+  hexes itself, and they go wrong in the other mode. Move each of these to a
+  `ColorList` (a per-item `accent` becomes a `tone` into one), and give any new
+  multi-color surface — chart series, diagram categories, HUD layers — a
+  `ColorList` from the start. The type is specified in
+  `docs/superpowers/specs/2026-09-21-panel-stance-design.md`.
+
 - **(P1) Carry panel `stance` and `tone` to the kit's other surfaces.** A
   `PropertyPanel` says what kind of content it holds — `scope`, `aside`,
   `advanced`, `debug`, `danger`, `notice`, `important`, `preview` — and which of
