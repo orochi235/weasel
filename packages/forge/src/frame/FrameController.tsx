@@ -138,9 +138,32 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     }
     if (!rendered) {
       rendered = true;
-      send({ type: 'rendered' });
+      announceRendered();
     }
     reportVars();
+  };
+
+  /**
+   * The shell unhides the frame on `rendered` and fades it in, so whatever
+   * reflows after that message reads as a glide rather than a jump. A webfont
+   * swapping in is the reflow that does it: a `layout: 'padded'` story is
+   * top-anchored, so the line-height change walks the whole story upward.
+   * Waiting for the fonts and then one painted frame means the story the
+   * shell reveals is the settled one.
+   *
+   * `document.fonts` is absent in jsdom, where there is no paint to wait for
+   * and no font to swap — the message stays synchronous there, which is also
+   * what `FrameController.test.tsx` observes. The deferral itself is only
+   * exercised in a browser.
+   */
+  const announceRendered = () => {
+    const { fonts } = document;
+    if (!fonts) {
+      send({ type: 'rendered' });
+      return;
+    }
+    const afterPaint = () => requestAnimationFrame(() => send({ type: 'rendered' }));
+    void fonts.ready.then(afterPaint, afterPaint);
   };
 
   const play = async () => {

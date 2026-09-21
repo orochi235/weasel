@@ -491,14 +491,11 @@ Core five + Crop shipped. Remaining:
   reads the `smcp` OpenType feature, which needs shaping. Real small caps is
   a face, not a synthesis, and would fall out of the HarfBuzz entry below.
 
-- **(P3) `layoutMarkdown` ignores the run fields it cannot paint.**
-  `packages/text/src/markdownText.ts` is the 2D-canvas path behind
-  `renderLabel` (chrome pills), and it reads `segRun.fontSize` while knowing
-  nothing about `fontScale`, `baselineShift` or any of the three decorations.
-  Left deliberately: it returns x-offsets with no per-run y, so it could honor
-  a superscript's *size* and not its *position*, and half a superscript reads
-  as a bug rather than a limitation. Either give `LayoutLine` a per-run y or
-  leave it narrow and say so in its header. Recorded 2026-08-30.
+- **(P3) `layoutMarkdown` paints no decorations.** `PositionedRun` now carries
+  a resolved `size` and a per-run `y`, so `fontScale`, `baselineShift` and
+  `script` reach the 2D-canvas path behind `renderLabel`. Underline,
+  strikethrough and overline are still dropped — they need a rule to stroke
+  rather than a number to offset by.
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 
@@ -548,16 +545,6 @@ intercepting the press that drags the body.
   its own placeholder pose. Closing it means giving the adapter surface a
   dependency read, which is a bigger decision than picking.
 
-- **(P3) `derivePose` still rides on pushed invalidation alone.**
-  `resolveDerivedPath` re-resolves its dependencies on a memo hit and compares
-  their poses by value (`packages/core/src/core/scene/poseSnapshot.ts`), so a
-  dependency that moved with nothing pushed behind it — an ancestor's frame
-  moving, a removal, a dependency appearing, a lookup answering poses of its
-  own — is noticed without a trigger for it. `derivedPoseIn` in
-  `effectivePose.ts` is not: it memoizes on the deriving node's own authored
-  pose and waits to be told. The same treatment fits, at a comparable price —
-  the compare took a 750-edge frame of paths from 0.0863ms to 0.2757ms
-  (`tests/perf/bench/derived-path.bench.ts`).
 
   Either way the pull covers poses only. A derivation is handed `DerivedDep`,
   so it can read a dependency's `data` and its `layer` too, which is why the
@@ -581,7 +568,6 @@ intercepting the press that drags the body.
 ### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
 
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-- **(P3) `tileGrid.childPoses` still arranges by sorted id.** Drops, swaps and occupancy go by where a child's pose sits, but the resting arrangement assigns cells in id order — so the source reflow that runs when a child leaves a grid re-sorts the leftovers and undoes any earlier swap among them. Either `childPoses` compacts in current cell order, or the grid keeps an explicit cell assignment.
 - **(P3) Z-order walk doesn't cross non-container ancestors.** Open question: when a deep layout container is BELOW (in z) a shallow layout container that shares the dragged point, today the deepest wins — debate whether real z-order across the whole tree (flat painter's order) should win instead.
 - **(P3) Tile-grid overflow policy.** Children beyond `cols * rows` are skipped from `childPoses`. Scroll, grow-grid, and rejection are the three policies worth designing between.
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
