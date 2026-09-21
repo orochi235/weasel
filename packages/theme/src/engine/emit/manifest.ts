@@ -3,7 +3,13 @@ import { resolveTokens } from '../../dtcg/resolve';
 import { TOKEN_HOOKS } from '../../hooks';
 import type { EmitInput } from './css';
 
-const groupOf = (name: string) => (name.includes('-') ? name.slice(0, name.indexOf('-')) : name);
+/** Prefixes that share a group with their siblings rather than standing alone. */
+const MERGED_GROUPS: Readonly<Record<string, string>> = { danger: 'status', warning: 'status', success: 'status' };
+
+const groupOf = (name: string) => {
+  const prefix = name.includes('-') ? name.slice(0, name.indexOf('-')) : name;
+  return MERGED_GROUPS[prefix] ?? prefix;
+};
 
 const row = (
   name: string,
