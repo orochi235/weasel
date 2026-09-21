@@ -307,14 +307,16 @@
   border-radius: var(--wzl-radius-sm);
 }
 
-/* The same dotted line a compact `<Select>` draws under its value, stated the
-   same way: the shorthand's `auto` thickness takes the font's own, which at
-   this size closes the gaps and reads as a solid rule. */
+/* The same dotted line a compact `<Select>` draws under its value. Stated
+   longhand: the shorthand's `auto` thickness takes the font's, which at label
+   size closes the gaps and reads as a solid rule. The line takes the label's
+   own color — a label is already muted, and a subtler line under it is a 1px
+   dotted rule nobody can see. */
 .autoToggle:hover {
   text-decoration: underline;
   text-decoration-style: dotted;
   text-decoration-thickness: 1px;
-  text-decoration-color: var(--wzl-fg-subtle);
+  text-decoration-color: currentColor;
   text-underline-offset: 0.25em;
 }
 
