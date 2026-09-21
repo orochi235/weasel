@@ -433,3 +433,25 @@ it("does not throw where a child's by-axis ramp omits a step weasel pins", () =>
   const result = derive(child, { mode: 'dark' }, (n) => (n === 'weasel' ? weasel : undefined));
   expect(result.tokens['gray-900'].value).toBe(derive(weasel, { mode: 'dark' }).tokens['gray-900'].value);
 });
+
+it("takes the parent's value where a child's by-axis pin leaves a selection out", () => {
+  const themes = resolve(dirname(fileURLToPath(import.meta.url)), '../../themes');
+  const weasel = JSON.parse(readFileSync(resolve(themes, 'weasel.json'), 'utf8')) as ThemeDefinition;
+  const lookup = (n: string) => (n === 'weasel' ? weasel : undefined);
+  // `accent` is a pin in weasel and `surface` a semantic: both kinds of parent value have to survive.
+  const child = {
+    name: 'c',
+    extends: 'weasel',
+    pins: {
+      accent: { by: 'mode', dark: { value: '#b08adb', type: 'color' } },
+      surface: { by: 'mode', dark: { value: '#0a0a14', type: 'color' } },
+    },
+  } as unknown as ThemeDefinition;
+  const dark = derive(child, { mode: 'dark' }, lookup);
+  const light = derive(child, { mode: 'light' }, lookup);
+  const parent = derive(weasel, { mode: 'light' });
+  expect(dark.tokens.accent.value).toBe('#b08adb');
+  expect(light.tokens.accent.value).toBe(parent.tokens.accent.value);
+  expect(light.tokens.surface.value).toBe(parent.tokens.surface.value);
+  expect(light.issues).toEqual([]);
+});

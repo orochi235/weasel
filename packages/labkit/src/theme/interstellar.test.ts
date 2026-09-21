@@ -1,4 +1,4 @@
-import { resolveTheme, THEME_SOURCES, type ThemeDefinition } from '@weasel-js/theme';
+import { resolveTheme, THEME_SOURCES, type ThemeDefinition, weaselTheme } from '@weasel-js/theme';
 import { derive } from '@weasel-js/theme/engine';
 import { describe, expect, it } from 'vitest';
 import { interstellarTheme } from './interstellar';
@@ -19,8 +19,11 @@ describe('interstellarTheme', () => {
     // Values carried over verbatim from the retired Less.
     expect(dark['--wzl-surface']).toBe('#0a0a14');
     expect(dark['--wzl-accent']).toBe('#b08adb');
-    expect(light['--wzl-surface']).toBe('#fafaf7');
-    expect(light['--wzl-accent']).toBe('#a86f3c');
+    // Light mode is weasel's own: interstellar restyles the dark only.
+    const weasel = resolveTheme(weaselTheme, { mode: 'light' });
+    expect(light['--wzl-surface']).toBe(weasel['--wzl-surface']);
+    expect(light['--wzl-accent']).toBe(weasel['--wzl-accent']);
+    expect(light['--wzl-border']).toBe(weasel['--wzl-border']);
 
     // Inherited from weasel — interstellar overrides values, not the token set.
     expect(dark['--wzl-space-md']).toBe('12px');

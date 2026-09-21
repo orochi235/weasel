@@ -250,8 +250,8 @@ it. `SidebarSection.undockable` and `undockAs` control the offer;
 
 ## Theming
 
-labkit ships one theme, `interstellar` — a cosmic dark and a warm parchment
-light — as a value, not a stylesheet. `<Lab>` and `<LabShell>` apply it for you;
+labkit ships one theme, `interstellar` — a cosmic dark over weasel's own light
+mode — as a value, not a stylesheet. `<Lab>` and `<LabShell>` apply it for you;
 `mode` is `"auto"` (follow the OS), `"light"` or `"dark"`. Only `styles.css`
 needs importing, and the token values arrive through the provider:
 

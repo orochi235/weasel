@@ -1157,12 +1157,10 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "contrast": {
           "min": 4.5,
           "against": [
-            "surface",
-            "surface-raised",
-            "surface-sunken"
+            "surface"
           ]
         },
-        "description": "Secondary accent for foreground use: a second voice beside the accent, such as a value the panel derived rather than one the user set. Picked from the ramp so it clears 4.5:1 on every surface in both modes."
+        "description": "Secondary accent for foreground use: a second voice beside the accent, such as a value the panel derived rather than one the user set. Picked from the ramp so it clears 4.5:1 on the surface in both modes."
       },
       "fg-inverse": {
         "by": "mode",
@@ -2095,12 +2093,12 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "dark": {
           "type": "color",
           "value": "{secondary-base}",
-          "description": "Secondary accent for foreground use: a second voice beside the accent, such as a value the panel derived rather than one the user set. Picked from the ramp so it clears 4.5:1 on every surface in both modes."
+          "description": "Secondary accent for foreground use: a second voice beside the accent, such as a value the panel derived rather than one the user set. Picked from the ramp so it clears 4.5:1 on the surface in both modes."
         },
         "light": {
           "type": "color",
           "value": "{secondary-soft}",
-          "description": "Secondary accent for foreground use: a second voice beside the accent, such as a value the panel derived rather than one the user set. Picked from the ramp so it clears 4.5:1 on every surface in both modes."
+          "description": "Secondary accent for foreground use: a second voice beside the accent, such as a value the panel derived rather than one the user set. Picked from the ramp so it clears 4.5:1 on the surface in both modes."
         }
       },
       "fg-inverse": {

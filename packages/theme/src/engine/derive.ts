@@ -455,6 +455,8 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
 
   for (const [name, v] of Object.entries(def.pins ?? {})) {
     const prior = has(tokens, name) ? tokens[name] : undefined;
+    // A by-axis pin that leaves this selection out overrides nothing here.
+    if (prior && !pick(v, sel).ok) continue;
     const token = toToken(v, `pins.${name}`, prior);
     if (!token) {
       if (!prior) failed.add(name);
