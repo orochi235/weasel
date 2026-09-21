@@ -18,6 +18,9 @@
   /* Midnight blue-violet. Deep and saturated; anchors primary actions on light and dark surfaces alike. */
   --wzl-accent-base: #2e1f7a;
   --wzl-accent-strong: #5841b8;
+  --wzl-secondary-soft: #704e09;
+  --wzl-secondary-base: #dc9d15;
+  --wzl-secondary-strong: #f1cb8d;
   /* First of ten categorical spot colors for plotting, status and data viz. Take them in sequence: the order is farthest-point over hue, so the first N are as separated as N colors can be (first three 87° apart, all ten 32°). Mode-invariant on purpose — a series keeps its color when the mode flips, which is why they are tuned for a dark surface and clear only 1.5:1 on a light one. */
   --wzl-swatch-fuchsia: #f641f7;
   --wzl-swatch-green: #48e628;
@@ -60,6 +63,8 @@
   --wzl-border-strong: var(--wzl-gray-400);
   /* Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces. */
   --wzl-accent-fg: var(--wzl-accent-strong);
+  /* Secondary accent for foreground use: a second voice beside the accent, such as a value the panel derived rather than one the user set. Picked from the ramp so it clears 4.5:1 on every surface in both modes. */
+  --wzl-secondary-fg: var(--wzl-secondary-base);
   /* Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive. */
   --wzl-fg-inverse: var(--wzl-gray-900);
   /* Elevation. Always darker than any surface — never derived from fg, which is near-white on dark. */
@@ -78,6 +83,8 @@
   --wzl-curve-color: var(--wzl-accent-strong);
   --wzl-accent: var(--wzl-accent-base);
   --wzl-accent-hover: var(--wzl-accent-strong);
+  /* Honey amber, opposite the violet accent. A fill; use secondary-fg for text. */
+  --wzl-secondary: var(--wzl-secondary-base);
   --wzl-danger: var(--wzl-danger-base);
   --wzl-warning: var(--wzl-warning-base);
   --wzl-success: var(--wzl-success-base);
@@ -185,6 +192,7 @@
   --wzl-accent-fg: var(--wzl-accent-strong);
   --wzl-fg-inverse: var(--wzl-gray-900);
   --wzl-shadow: rgba(0, 0, 0, 0.6);
+  --wzl-secondary-fg: var(--wzl-secondary-base);
   --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
@@ -206,6 +214,7 @@
   --wzl-accent-fg: var(--wzl-accent-base);
   --wzl-fg-inverse: var(--wzl-gray-50);
   --wzl-shadow: rgba(0, 0, 0, 0.18);
+  --wzl-secondary-fg: var(--wzl-secondary-soft);
   --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);

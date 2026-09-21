@@ -79,6 +79,11 @@ export type TokenName =
   | '--wzl-radius-md'
   | '--wzl-radius-pill'
   | '--wzl-radius-sm'
+  | '--wzl-secondary'
+  | '--wzl-secondary-base'
+  | '--wzl-secondary-fg'
+  | '--wzl-secondary-soft'
+  | '--wzl-secondary-strong'
   | '--wzl-shadow'
   | '--wzl-slider-thumb-mix'
   | '--wzl-slider-thumb-size'
@@ -153,6 +158,9 @@ export const THEMES = {
         '--wzl-accent-soft': "#1d1454",
         '--wzl-accent-base': "#2e1f7a",
         '--wzl-accent-strong': "#5841b8",
+        '--wzl-secondary-soft': "#704e09",
+        '--wzl-secondary-base': "#dc9d15",
+        '--wzl-secondary-strong': "#f1cb8d",
         '--wzl-swatch-fuchsia': "#f641f7",
         '--wzl-swatch-green': "#48e628",
         '--wzl-swatch-sky': "#36bff2",
@@ -186,6 +194,7 @@ export const THEMES = {
         '--wzl-border': "#25272c",
         '--wzl-border-strong': "#6f737b",
         '--wzl-accent-fg': "#5841b8",
+        '--wzl-secondary-fg': "#dc9d15",
         '--wzl-fg-inverse': "#0e0f12",
         '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
         '--wzl-danger-base': "#d94a3f",
@@ -198,6 +207,7 @@ export const THEMES = {
         '--wzl-curve-color': "#5841b8",
         '--wzl-accent': "#2e1f7a",
         '--wzl-accent-hover': "#5841b8",
+        '--wzl-secondary': "#dc9d15",
         '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
@@ -270,6 +280,9 @@ export const THEMES = {
         '--wzl-accent-soft': "#1d1454",
         '--wzl-accent-base': "#2e1f7a",
         '--wzl-accent-strong': "#5841b8",
+        '--wzl-secondary-soft': "#704e09",
+        '--wzl-secondary-base': "#dc9d15",
+        '--wzl-secondary-strong': "#f1cb8d",
         '--wzl-swatch-fuchsia': "#f641f7",
         '--wzl-swatch-green': "#48e628",
         '--wzl-swatch-sky': "#36bff2",
@@ -303,6 +316,7 @@ export const THEMES = {
         '--wzl-border': "#25272c",
         '--wzl-border-strong': "#6f737b",
         '--wzl-accent-fg': "#5841b8",
+        '--wzl-secondary-fg': "#dc9d15",
         '--wzl-fg-inverse': "#0e0f12",
         '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
         '--wzl-danger-base': "#d94a3f",
@@ -315,6 +329,7 @@ export const THEMES = {
         '--wzl-curve-color': "#5841b8",
         '--wzl-accent': "#2e1f7a",
         '--wzl-accent-hover': "#5841b8",
+        '--wzl-secondary': "#dc9d15",
         '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
@@ -387,6 +402,9 @@ export const THEMES = {
         '--wzl-accent-soft': "#1d1454",
         '--wzl-accent-base': "#2e1f7a",
         '--wzl-accent-strong': "#5841b8",
+        '--wzl-secondary-soft': "#704e09",
+        '--wzl-secondary-base': "#dc9d15",
+        '--wzl-secondary-strong': "#f1cb8d",
         '--wzl-swatch-fuchsia': "#f641f7",
         '--wzl-swatch-green': "#48e628",
         '--wzl-swatch-sky': "#36bff2",
@@ -420,6 +438,7 @@ export const THEMES = {
         '--wzl-border': "#25272c",
         '--wzl-border-strong': "#6f737b",
         '--wzl-accent-fg': "#5841b8",
+        '--wzl-secondary-fg': "#dc9d15",
         '--wzl-fg-inverse': "#0e0f12",
         '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
         '--wzl-danger-base': "#d94a3f",
@@ -432,6 +451,7 @@ export const THEMES = {
         '--wzl-curve-color': "#5841b8",
         '--wzl-accent': "#2e1f7a",
         '--wzl-accent-hover': "#5841b8",
+        '--wzl-secondary': "#dc9d15",
         '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
@@ -504,6 +524,9 @@ export const THEMES = {
         '--wzl-accent-soft': "#1d1454",
         '--wzl-accent-base': "#2e1f7a",
         '--wzl-accent-strong': "#5841b8",
+        '--wzl-secondary-soft': "#704e09",
+        '--wzl-secondary-base': "#dc9d15",
+        '--wzl-secondary-strong': "#f1cb8d",
         '--wzl-swatch-fuchsia': "#f641f7",
         '--wzl-swatch-green': "#48e628",
         '--wzl-swatch-sky': "#36bff2",
@@ -537,6 +560,7 @@ export const THEMES = {
         '--wzl-border': "#c9cbcf",
         '--wzl-border-strong': "#4d5058",
         '--wzl-accent-fg': "#2e1f7a",
+        '--wzl-secondary-fg': "#704e09",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
         '--wzl-danger-base': "#d94a3f",
@@ -549,6 +573,7 @@ export const THEMES = {
         '--wzl-curve-color': "#5841b8",
         '--wzl-accent': "#2e1f7a",
         '--wzl-accent-hover': "#5841b8",
+        '--wzl-secondary': "#dc9d15",
         '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
@@ -621,6 +646,9 @@ export const THEMES = {
         '--wzl-accent-soft': "#1d1454",
         '--wzl-accent-base': "#2e1f7a",
         '--wzl-accent-strong': "#5841b8",
+        '--wzl-secondary-soft': "#704e09",
+        '--wzl-secondary-base': "#dc9d15",
+        '--wzl-secondary-strong': "#f1cb8d",
         '--wzl-swatch-fuchsia': "#f641f7",
         '--wzl-swatch-green': "#48e628",
         '--wzl-swatch-sky': "#36bff2",
@@ -654,6 +682,7 @@ export const THEMES = {
         '--wzl-border': "#c9cbcf",
         '--wzl-border-strong': "#4d5058",
         '--wzl-accent-fg': "#2e1f7a",
+        '--wzl-secondary-fg': "#704e09",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
         '--wzl-danger-base': "#d94a3f",
@@ -666,6 +695,7 @@ export const THEMES = {
         '--wzl-curve-color': "#5841b8",
         '--wzl-accent': "#2e1f7a",
         '--wzl-accent-hover': "#5841b8",
+        '--wzl-secondary': "#dc9d15",
         '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
@@ -738,6 +768,9 @@ export const THEMES = {
         '--wzl-accent-soft': "#1d1454",
         '--wzl-accent-base': "#2e1f7a",
         '--wzl-accent-strong': "#5841b8",
+        '--wzl-secondary-soft': "#704e09",
+        '--wzl-secondary-base': "#dc9d15",
+        '--wzl-secondary-strong': "#f1cb8d",
         '--wzl-swatch-fuchsia': "#f641f7",
         '--wzl-swatch-green': "#48e628",
         '--wzl-swatch-sky': "#36bff2",
@@ -771,6 +804,7 @@ export const THEMES = {
         '--wzl-border': "#c9cbcf",
         '--wzl-border-strong': "#4d5058",
         '--wzl-accent-fg': "#2e1f7a",
+        '--wzl-secondary-fg': "#704e09",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
         '--wzl-danger-base': "#d94a3f",
@@ -783,6 +817,7 @@ export const THEMES = {
         '--wzl-curve-color': "#5841b8",
         '--wzl-accent': "#2e1f7a",
         '--wzl-accent-hover': "#5841b8",
+        '--wzl-secondary': "#dc9d15",
         '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
@@ -918,6 +953,27 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "curve": 0,
         "anchor": {
           "base": "#2e1f7a"
+        }
+      },
+      "secondary": {
+        "kind": "lightness",
+        "steps": [
+          "soft",
+          "base",
+          "strong"
+        ],
+        "lightness": [
+          0.45,
+          0.86
+        ],
+        "curve": 0,
+        "chroma": {
+          "peak": 0.149,
+          "lightBias": 1.5,
+          "darkBias": 1.5
+        },
+        "anchor": {
+          "base": "#dc9d15"
         }
       },
       "swatch": {
@@ -1096,6 +1152,18 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
           "description": "Flips to the deep base in light mode, where it is the legible one."
         }
       },
+      "secondary-fg": {
+        "ramp": "secondary",
+        "contrast": {
+          "min": 4.5,
+          "against": [
+            "surface",
+            "surface-raised",
+            "surface-sunken"
+          ]
+        },
+        "description": "Secondary accent for foreground use: a second voice beside the accent, such as a value the panel derived rather than one the user set. Picked from the ramp so it clears 4.5:1 on every surface in both modes."
+      },
       "fg-inverse": {
         "by": "mode",
         "dark": {
@@ -1222,6 +1290,11 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       "accent-hover": {
         "value": "{accent-strong}",
         "type": "color"
+      },
+      "secondary": {
+        "value": "{secondary-base}",
+        "type": "color",
+        "description": "Honey amber, opposite the violet accent. A fill; use secondary-fg for text."
       },
       "danger": {
         "value": "{danger-base}",
@@ -1722,6 +1795,18 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "type": "color",
         "value": "#5841b8"
       },
+      "secondary-soft": {
+        "type": "color",
+        "value": "#704e09"
+      },
+      "secondary-base": {
+        "type": "color",
+        "value": "#dc9d15"
+      },
+      "secondary-strong": {
+        "type": "color",
+        "value": "#f1cb8d"
+      },
       "swatch-fuchsia": {
         "type": "color",
         "value": "#f641f7",
@@ -2005,6 +2090,19 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
           "description": "Flips to the deep base in light mode, where it is the legible one."
         }
       },
+      "secondary-fg": {
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "{secondary-base}",
+          "description": "Secondary accent for foreground use: a second voice beside the accent, such as a value the panel derived rather than one the user set. Picked from the ramp so it clears 4.5:1 on every surface in both modes."
+        },
+        "light": {
+          "type": "color",
+          "value": "{secondary-soft}",
+          "description": "Secondary accent for foreground use: a second voice beside the accent, such as a value the panel derived rather than one the user set. Picked from the ramp so it clears 4.5:1 on every surface in both modes."
+        }
+      },
       "fg-inverse": {
         "by": "mode",
         "dark": {
@@ -2076,6 +2174,11 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       "accent-hover": {
         "type": "color",
         "value": "{accent-strong}"
+      },
+      "secondary": {
+        "type": "color",
+        "value": "{secondary-base}",
+        "description": "Honey amber, opposite the violet accent. A fill; use secondary-fg for text."
       },
       "danger": {
         "type": "color",

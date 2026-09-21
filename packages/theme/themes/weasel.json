@@ -71,6 +71,27 @@
         "base": "#2e1f7a"
       }
     },
+    "secondary": {
+      "kind": "lightness",
+      "steps": [
+        "soft",
+        "base",
+        "strong"
+      ],
+      "lightness": [
+        0.45,
+        0.86
+      ],
+      "curve": 0,
+      "chroma": {
+        "peak": 0.149,
+        "lightBias": 1.5,
+        "darkBias": 1.5
+      },
+      "anchor": {
+        "base": "#dc9d15"
+      }
+    },
     "swatch": {
       "kind": "categorical",
       "steps": [
@@ -247,6 +268,18 @@
         "description": "Flips to the deep base in light mode, where it is the legible one."
       }
     },
+    "secondary-fg": {
+      "ramp": "secondary",
+      "contrast": {
+        "min": 4.5,
+        "against": [
+          "surface",
+          "surface-raised",
+          "surface-sunken"
+        ]
+      },
+      "description": "Secondary accent for foreground use: a second voice beside the accent, such as a value the panel derived rather than one the user set. Picked from the ramp so it clears 4.5:1 on every surface in both modes."
+    },
     "fg-inverse": {
       "by": "mode",
       "dark": {
@@ -373,6 +406,11 @@
     "accent-hover": {
       "value": "{accent-strong}",
       "type": "color"
+    },
+    "secondary": {
+      "value": "{secondary-base}",
+      "type": "color",
+      "description": "Honey amber, opposite the violet accent. A fill; use secondary-fg for text."
     },
     "danger": {
       "value": "{danger-base}",
