@@ -1,6 +1,6 @@
 import { ANGLE_RADIANS, prefUnit } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { PropertyRow } from '@weasel-js/ui';
+import { PropertyRow, type PrefNumberUnit } from '@weasel-js/ui';
 import { useState } from 'react';
 import { f } from '../config/builder';
 import { withValueAtPath } from '../config/path';
@@ -311,6 +311,52 @@ export const Inline: Story = {
           setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
           layout="inline"
           align="center"
+        />
+      </div>
+    );
+  },
+};
+
+const shownIn = (suffix: string): PrefNumberUnit => ({ toDisplay: (v) => v, fromDisplay: (v) => v, suffix });
+
+/** Every slider in astv's right sidebar, for sizing readouts against real ranges, steps and units. */
+const sidebarSliders = f.schema({
+  aimNoise: f.number(0).range(0, 0.6).step(0.02).label('Aim noise'),
+  transition: f.number(600).range(0, 1200).step(50).unit(shownIn('ms')).label('Transition'),
+  sweep: f.number(12).range(0, 40).step(0.5).label('Text motion'),
+  beat: f.number(1600).range(400, 6000).step(100).unit(shownIn('ms')).label('Beat'),
+  tourSeed: f.number(1).range(1, 99).step(1).label('Tour seed'),
+  hold: f.number(1200).range(0, 4000).step(10).unit(shownIn('ms')).label('Demo hold'),
+  scrollRows: f.number(3).range(1, 12).step(1).label('Lines'),
+  pad: f.number(0.5).range(0, 4).step(0.25).label('Window pad'),
+  folderPad: f.number(1).range(0, 4).step(0.1).label('Folder pad'),
+  levels: f.number(2).range(0, 6).step(1).label('Levels'),
+  glyphs: f.number(1_000_000).range(0, 2_000_000).step(2000).format('compact').label('Glyphs'),
+  names: f.number(40).range(0, 200).step(5).label('Names'),
+  labels: f.number(0).range(0, 30).step(1).label('Labels'),
+  text: f.number(100).range(50, 250).step(5).unit(shownIn('%')).label('Text'),
+  lift: f.number(0.8).range(0, 4).step(0.1).label('Lift'),
+  opacity: f.number(0.6).range(0.1, 1).step(0.05).label('Opacity'),
+  detail: f.number(300).range(20, 4000).step(20).label('Nodes'),
+  reachStep: f.number(600).range(200, 2000).step(100).unit(shownIn('ms')).label('Reach step'),
+  width: f.number(2).range(1, 24).step(0.5).unit(shownIn('px')).label('Width'),
+  minimapSize: f.number(280).range(120, 600).step(20).label('Minimap size'),
+});
+
+/** astv's sidebar sliders paired two to a row, at the narrowest width a two-up sidebar should support. */
+export const SidebarSliders: Story = {
+  render: () => {
+    const schema = resolveConfigSchema(sidebarSliders, []);
+    const [config, setConfig] = useState<Record<string, unknown>>(sidebarSliders.defaults());
+    return (
+      <div style={{ width: 300 }}>
+        <ControlPanel
+          schema={schema}
+          config={config}
+          setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+          layout="inline"
+          align="center"
+          pack="pairs"
         />
       </div>
     );

@@ -344,7 +344,7 @@
   /* The fit is the widest value in `ch`, which is one digit; the box is border-box, so its border
      comes back on top, with half a `ch` for a glyph wider than a digit. */
   width: max(
-    var(--wzl-property-readout-w, 2.8em),
+    var(--wzl-property-readout-w, 0px),
     calc(var(--wzl-property-readout-fit, 0px) + 2px + 0.5ch)
   );
   text-align: right;
@@ -383,6 +383,22 @@
   font-size: var(--wzl-font-size-2xs);
   line-height: var(--wzl-leading-tight);
   pointer-events: none;
+}
+
+/* An inline row's readout sits between the control and the next cell, so a unit
+   beside it would take width from the track. It hangs below the digits instead,
+   out of flow, so a row with a unit is the same size as one without. */
+.readoutAfter .readoutGroup {
+  position: relative;
+}
+
+.readoutAfter .readoutUnit {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: -3px;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .fieldUnitGroup {
