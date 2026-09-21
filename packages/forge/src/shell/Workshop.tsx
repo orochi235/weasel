@@ -12,7 +12,7 @@ import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { StoryTree } from './tree/StoryTree';
-import { readRoute, useRoute } from './useRoute';
+import { crossesInPlace, readRoute, readRouteEntry, useRoute } from './useRoute';
 import { useStoryRegistry } from './useStoryRegistry';
 
 export interface WorkshopProps {
@@ -33,15 +33,24 @@ function initialStory(index: readonly IndexEntry[], fallback: string): string {
   return route !== null && index.some((entry) => entry.id === route) ? route : fallback;
 }
 
-/** Opens a trial of the story the route names when none is open, once per route, so closing that trial sticks. */
+/**
+ * Opens a trial of the story the route names when none is open, once per route, so closing that trial sticks.
+ * A history step across an in-place swap swaps back instead, so Back returns the trial to its previous story.
+ */
 function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
   const lab = useLabContext();
   const [route] = useRoute();
   const handled = useRef<string | null>(null);
+  const last = useRef({ route: readRoute(), entry: readRouteEntry() });
   useEffect(() => {
-    if (route === null || handled.current === route || !index.some((entry) => entry.id === route)) return;
+    const from = last.current;
+    if (route !== from.route) last.current = { route, entry: readRouteEntry() };
+    if (route === null || handled.current === route || !index.some((e) => e.id === route)) return;
     handled.current = route;
-    if (!lab.trials.some((trial) => trial.instrumentName === route)) lab.addTrial(route);
+    if (lab.trials.some((trial) => trial.instrumentName === route)) return;
+    const previous = lab.trials.find((trial) => trial.instrumentName === from.route);
+    if (previous && crossesInPlace(from.entry, last.current.entry)) lab.swapTrial(previous.id, route);
+    else lab.addTrial(route);
   }, [route, index, lab]);
   return null;
 }

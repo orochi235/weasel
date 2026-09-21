@@ -74,6 +74,23 @@ describe('Workshop', () => {
     expect(screen.getAllByRole('region', { name: 'Trial X / B' })).toHaveLength(1);
   });
 
+  it('takes the trial back to the previous story on browser back, rather than opening another', async () => {
+    location.hash = '#/x--a';
+    render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1));
+    const folder = screen.getByRole('treeitem', { name: 'X' });
+    if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText('X'));
+    fireEvent.click(screen.getByRole('treeitem', { name: 'B' }));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / B' })).toBeInTheDocument());
+    act(() => history.back());
+    await waitFor(() => expect(location.hash).toBe('#/x--a'));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / A' })).toBeInTheDocument());
+    expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1);
+    act(() => history.forward());
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / B' })).toBeInTheDocument());
+    expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1);
+  });
+
   it('gives a story trial with no viewport no status bar', async () => {
     location.hash = '#/x--a';
     render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);

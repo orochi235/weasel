@@ -99,7 +99,11 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     const focused = ctx.trials.find((trial) => trial.id === ctx.focusedTrialId);
     if (another || !focused) ctx.addTrial(entry.id);
     else if (focused.instrumentName === entry.id) revealTrial(focused.id);
-    else ctx.swapTrial(focused.id, entry.id);
+    else {
+      ctx.swapTrial(focused.id, entry.id);
+      setRoute(entry.id, { inPlace: true });
+      return;
+    }
     setRoute(entry.id);
   };
 
