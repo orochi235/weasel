@@ -29,6 +29,7 @@ export const RULES = [
   ['packages/core/src/canvas', 'Rendering'],
 
   ['packages/core/src/tools', 'Tools & gestures'],
+  ['packages/core/src/input', 'Tools & gestures'],
   ['packages/core/src/interactions/gestures', 'Tools & gestures'],
   ['packages/core/src/interactions/actions', 'Selection & actions'],
   ['packages/core/src/interactions', 'Tools & gestures'],
