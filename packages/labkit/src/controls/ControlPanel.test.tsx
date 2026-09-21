@@ -187,7 +187,11 @@ describe('<ControlPanel> schema', () => {
       [],
     );
     render(
-      <ControlPanel schema={schema} config={{ showGrid: true, snap: false }} setConfig={setConfig} />,
+      <ControlPanel
+        schema={schema}
+        config={{ showGrid: true, snap: false }}
+        setConfig={setConfig}
+      />,
     );
     expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeInTheDocument();
     const sw = screen.getByRole('switch', { name: 'Snap' });
@@ -493,7 +497,9 @@ describe('<ControlPanel> group descriptions', () => {
       }),
       [],
     );
-    render(<ControlPanel schema={schema} config={{ grid: { cellSize: 20 } }} setConfig={vi.fn()} />);
+    render(
+      <ControlPanel schema={schema} config={{ grid: { cellSize: 20 } }} setConfig={vi.fn()} />,
+    );
     const note = screen.getByText('How the background lattice is spaced.');
     const field = screen.getByLabelText('Cell size');
     expect(note.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
