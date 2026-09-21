@@ -133,6 +133,12 @@ export function assertMatchesBaseline(
 
   const isUpdate = process.env.UPDATE_SNAPSHOTS === '1';
 
+  // Writing a missing baseline on CI would pass a spec that compared nothing.
+  if (!isUpdate && !existsSync(baselinePath) && process.env.CI) {
+    throw new Error(
+      `No baseline at ${baselinePath}. Capture it with the "Visual Regression — Update Baselines" workflow and commit it.`,
+    );
+  }
   if (isUpdate || !existsSync(baselinePath)) {
     mkdirSync(dirname(baselinePath), { recursive: true });
     writeFileSync(baselinePath, actual);
