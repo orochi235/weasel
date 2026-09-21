@@ -92,6 +92,38 @@ nodes already sit, and a node carrying `pinned: true` that nothing moves.
 `force` is the exception to the second half of that: it is an iterative
 relaxation seeded from the current positions, so re-running it keeps relaxing.
 
+## Design notes
+
+Five decisions the code cannot explain on its own.
+
+**`dependsOn: 'children'` is deliberately absent from the reverse dependents
+index.** Deleting a node deletes everything that names it in `dependsOn`, and a
+container must *not* be deleted when a child goes — an emptied group is still a
+group. That asymmetry is why a `'children'` container is invalidated by an
+ancestor walk instead. Registering it would "fix" the inconsistency and delete
+your groups.
+
+**Ports live on the bounds and are cast onto the outline when read.** The
+anchor stays normalized against the bounds because that is what survives a
+resize; `rayHit` moves it onto the shape. Don't store outline-relative anchors.
+
+**Connect declines in two different places on purpose.** Which presses start a
+connect is routing, and lives in the binding's `target`. Which ports a live
+connect may land on cannot be routing — the dispatcher never re-reads the
+affordance under a moving pointer — so `canConnect` filters the candidate set
+instead. Neither is an action body inspecting a hit and bailing.
+
+**A live run does not re-anchor; the one-shot layouts do.** The anchor
+translation keeps a single 300-tick jump from moving the diagram off where the
+author left it. A live run cannot jump, and re-anchoring per frame would fight
+a drag — the anchor is measured from where the nodes were, and a pinned node is
+deliberately somewhere else.
+
+**A pose run's frame is the whole picture, not a delta.** An id a producer
+omits stops being published, which is what releases a node the moment a gesture
+takes it. It is why the layout producers drop a pinned participant's whole
+subtree from the frame rather than only the participant.
+
 ## License
 
 MIT
