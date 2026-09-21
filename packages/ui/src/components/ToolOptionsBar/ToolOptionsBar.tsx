@@ -128,11 +128,30 @@ function BarRow({
     <>
       {renderCells(cells, renderers).map((cell) => (
         <span key={cell.key} className={s.cell}>
+          {needsLabel(cell.leaf) && (
+            <span className={s.cellLabel} aria-hidden="true">
+              {cell.leaf.short ?? cell.leaf.name}
+            </span>
+          )}
           {cell.content}
         </span>
       ))}
     </>
   );
+}
+
+/**
+ * Whether a control needs telling from its neighbours in words.
+ *
+ * Only a bare value box does: a number or a string is a box of characters,
+ * and two of them side by side are indistinguishable. Everything else shows
+ * what it is — a swatch is a color, a font picker names the family, a flag
+ * run and a segmented control label their own segments — so a word in front
+ * would repeat what the control already says. `name` stays the accessible
+ * name either way, so this costs a screen reader nothing.
+ */
+function needsLabel(leaf: ToolPrefLeaf): boolean {
+  return leaf.kind === 'number' || leaf.kind === 'string';
 }
 
 function barCell(

@@ -70,3 +70,30 @@
   align-items: center;
   flex: none;
 }
+
+.cellLabel {
+  flex: none;
+  margin-right: var(--wzl-space-2);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+  white-space: nowrap;
+}
+
+/* Fields are read beside their label on one line, so they carry only the
+   digits they need rather than the panel's column width. */
+.controls {
+  --wzl-number-field-width: 5ch;
+}
+
+/* The strip decides how much room a control gets, because its budget is one
+   line rather than a column: a field carries the digits it needs and an
+   opacity track stops short of pushing its neighbours off the end. Both are
+   the panel's widths otherwise, which are sized for a two-column grid. */
+.cell input[type='text'] {
+  inline-size: var(--wzl-number-field-width, 5ch);
+}
+
+.cell input[type='range'] {
+  inline-size: 64px;
+  flex: none;
+}

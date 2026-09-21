@@ -23,6 +23,16 @@ export const ICON_PATHS = {
   redo: `<path d="M15.6 8.4H8.8a3.6 3.6 0 0 0 0 7.2H11.4"/><path d="M13.53 6.66 15.6 8.4 13.53 10.14"/>`,
   snapshot: `<path d="M3.8 8.3A1.4 1.4 0 0 1 5.2 6.9h1.9L8 5.1h4l.9 1.8h1.9A1.4 1.4 0 0 1 16.2 8.3v6A1.4 1.4 0 0 1 14.8 15.7H5.2A1.4 1.4 0 0 1 3.8 14.3z"/><circle cx="10" cy="11" r="2.75"/>`,
 
+  // Character styling
+  bold: `<path d="M6 3.5h4.6a3.1 3.1 0 0 1 0 6.2H6zM6 9.7h5.4a3.4 3.4 0 0 1 0 6.8H6z" stroke-width="2.1"/>`,
+  italic: `<path d="M9 3.5h6M5 16.5h6M12.5 3.5 7.5 16.5"/>`,
+  underline: `<path d="M6 3.4v5.6a4 4 0 0 0 8 0V3.4"/><path d="M4.6 17h10.8"/>`,
+  strikethrough: `<path d="M14.4 5.8c-.9-1.6-2.4-2.4-4.4-2.4-2.5 0-4.2 1.3-4.2 3.1 0 .9.4 1.6 1.2 2.2"/><path d="M5.6 14.2c.9 1.6 2.4 2.4 4.4 2.4 2.5 0 4.2-1.3 4.2-3.1 0-.9-.4-1.6-1.2-2.2"/><path d="M3.4 10h13.2"/>`,
+  overline: `<path d="M4.6 3h10.8"/><ellipse cx="10" cy="11.4" rx="4.4" ry="4.8"/>`,
+  superscript: `<path d="M3.6 8.6 10.4 16.4M10.4 8.6 3.6 16.4"/><path d="M11.9 5.3a2.2 2.2 0 1 1 4.3.8c0 1.4-4.3 2.2-4.3 3.5h4.5"/>`,
+  subscript: `<path d="M3.6 3.6 10.4 11.4M10.4 3.6 3.6 11.4"/><path d="M11.9 11.5a2.2 2.2 0 1 1 4.3.8c0 1.4-4.3 2.2-4.3 3.5h4.5"/>`,
+  code: `<path d="M7 6.2 3.2 10 7 13.8M13 6.2 16.8 10 13 13.8"/><path d="M11.2 4.8 8.8 15.2"/>`,
+
   // Playback
   play: `<path d="M7.6 5.2 15.6 10 7.6 14.8Z"/>`,
   pause: `<path d="M7.8 5.2v9.6M12.2 5.2v9.6"/>`,
@@ -380,6 +390,19 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
       'undo',
       'redo',
       'snapshot',
+    ],
+  },
+  {
+    label: 'Character styling',
+    names: [
+      'bold',
+      'italic',
+      'underline',
+      'strikethrough',
+      'overline',
+      'superscript',
+      'subscript',
+      'code',
     ],
   },
   {

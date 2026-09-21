@@ -24,6 +24,13 @@ const optionsSchema: ToolPrefGroup = {
   name: 'Text',
   children: {
     size: { kind: 'number', name: 'Size', description: 'Type size.', default: 12, min: 1 },
+    tracking: {
+      kind: 'number',
+      name: 'Tracking',
+      description: 'Letter spacing.',
+      short: 'VA',
+      default: 0,
+    },
     bold: {
       kind: 'boolean',
       name: 'Bold',
@@ -55,7 +62,7 @@ const optionsSchema: ToolPrefGroup = {
     },
     advanced: {
       name: 'Advanced',
-      children: { tracking: { kind: 'number', name: 'Tracking', description: 'Letter spacing.', default: 0 } },
+      children: { kerning: { kind: 'number', name: 'Kerning', description: 'Pair spacing.', default: 0 } },
     },
     secret: { kind: 'boolean', name: 'Secret', description: 'Not shown.', default: false, hidden: true },
   },
@@ -74,14 +81,14 @@ describe('ToolOptionsBar driven by a schema', () => {
     render(
       <ToolOptionsBar
         schema={optionsSchema}
-        values={{ 'advanced.tracking': 3 }}
+        values={{ 'advanced.kerning': 3 }}
         onChange={onChange}
       />,
     );
-    const field = screen.getByLabelText('Tracking');
+    const field = screen.getByLabelText('Kerning');
     fireEvent.change(field, { target: { value: '5' } });
     fireEvent.blur(field);
-    expect(onChange).toHaveBeenCalledWith('advanced.tracking', 5);
+    expect(onChange).toHaveBeenCalledWith('advanced.kerning', 5);
   });
 
   it('collapses a run of paired toggles into one segmented bar', () => {
@@ -118,5 +125,25 @@ describe('ToolOptionsBar driven by a schema', () => {
       />,
     );
     expect((screen.getByLabelText('Size') as HTMLInputElement).value).toBe('');
+  });
+});
+
+describe('ToolOptionsBar labels', () => {
+  it('labels a control with its short name, falling back to its full one', () => {
+    render(<ToolOptionsBar schema={optionsSchema} values={{}} onChange={vi.fn()} />);
+    // `short` wins where a leaf has one, because the strip is one line.
+    expect(screen.getByText('VA')).toBeInTheDocument();
+    expect(screen.queryByText('Tracking')).toBeNull();
+    expect(screen.getByText('Size')).toBeInTheDocument();
+  });
+
+  it('leaves a flag run unlabeled — its segments carry their own names', () => {
+    render(<ToolOptionsBar schema={optionsSchema} values={{}} onChange={vi.fn()} />);
+    expect(screen.queryByText('Style')).toBeNull();
+  });
+
+  it('keeps the label out of the accessible name, which stays the full one', () => {
+    render(<ToolOptionsBar schema={optionsSchema} values={{}} onChange={vi.fn()} />);
+    expect(screen.getByLabelText('Tracking')).toBeInTheDocument();
   });
 });

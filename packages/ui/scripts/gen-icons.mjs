@@ -19,6 +19,7 @@ import { ARCS } from './icons/arcs.mjs';
 import { CURVES } from './icons/curves.mjs';
 import { SHAPES } from './icons/shapes.mjs';
 import { SOLIDS } from './icons/solids.mjs';
+import { TEXT } from './icons/text.mjs';
 
 // `save` split: the tray-and-arrow reads as download, so it carries `export`,
 // and capturing a trial's state gets its own camera.
@@ -27,6 +28,7 @@ const RENAME = { save: 'export', zoom: 'zoomIn' };
 const GROUPS = [
   ['View and lifecycle', BASE],
   ['Actions', ACTIONS],
+  ['Character styling', TEXT],
   ['Playback', PLAYBACK],
   ['State', STATUS],
   ['Instrument', INSTRUMENT],

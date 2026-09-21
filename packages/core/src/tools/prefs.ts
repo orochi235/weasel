@@ -39,6 +39,10 @@ interface ToolPrefBase<K extends string, Value> {
    *  on one row labeled with the `pair` string (e.g. `'Position'` for
    *  `pose.x` / `pose.y`). Purely presentational. */
   pair?: string;
+  /** The label a surface with no room for `name` shows instead — a strip of
+   *  controls on one line, or a segment in a `pair`ed row. `name` stays the
+   *  accessible name, so this abbreviates without costing anything. */
+  short?: string;
 }
 
 /** How a schema-driven UI should present a number pref. */
@@ -128,9 +132,6 @@ export interface ToolPrefNumber extends ToolPrefBase<'number', number> {
 /** An on/off pref. */
 export interface ToolPrefBoolean extends ToolPrefBase<'boolean', boolean> {
   control?: ToolPrefBooleanControl;
-  /** The label a `toggle` shows, since a `pair`ed row is named by the pair
-   *  rather than by the leaf. `name` stays the accessible name. */
-  short?: string;
 }
 /** A free-text pref. */
 export interface ToolPrefString extends ToolPrefBase<'string', string> {

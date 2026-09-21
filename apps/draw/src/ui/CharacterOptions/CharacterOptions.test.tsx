@@ -94,8 +94,11 @@ describe('CharacterOptions — script primitives', () => {
     render(
       <CharacterOptions style={{ baselineShift: 0.333, fontScale: 0.583 }} onPatch={vi.fn()} />,
     );
-    expect(screen.getByRole('textbox', { name: 'Baseline shift' })).toHaveValue('33.3%');
-    expect(screen.getByRole('textbox', { name: 'Scale' })).toHaveValue('58.3%');
+    // The unit's suffix is drawn beside the field rather than inside its
+    // value, so a typed number needs no punctuation stripped back off.
+    expect(screen.getByRole('textbox', { name: 'Baseline shift' })).toHaveValue('33.3');
+    expect(screen.getByRole('textbox', { name: 'Scale' })).toHaveValue('58.3');
+    expect(screen.getAllByText('%')).toHaveLength(2);
   });
 
   it('commits a percentage back as the fraction the run stores', () => {

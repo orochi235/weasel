@@ -99,7 +99,6 @@ import {
   StatusBarItem,
   StatusBarSpacer,
   ToolPalette,
-  ToolOptionsBar,
   type PropertyRenderer,
   type PropertyRenderContext,
   PaintInput,
@@ -1665,17 +1664,15 @@ function EditorWithSharedScene({
       {/* Permanently reserved, never mounted on demand: the canvas is sized
           to the workspace, so appearing mid-edit would resize it under the
           caret. Empty until a text edit is in progress. */}
-      <ToolOptionsBar
+      <CharacterOptions
         className={TEXT_CHROME_CLASS}
-        label={textEdit.editingId != null ? 'Text' : undefined}
+        style={textEdit.editingId != null ? barStyle : undefined}
+        onPatch={onCharacterPatch}
       >
-        {textEdit.editingId != null && (
-          <CharacterOptions style={barStyle} onPatch={onCharacterPatch} />
-        )}
         {canvasReady && (
           <LoupeControls canvasRef={canvasRef} source={loupeSource} />
         )}
-      </ToolOptionsBar>
+      </CharacterOptions>
       <div className="wd-body">
         <Sidebar side="left" className="wd-sidebar left" ariaLabel="Tools">
           {tools && (
