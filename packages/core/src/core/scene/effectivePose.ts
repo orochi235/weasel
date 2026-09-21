@@ -7,6 +7,7 @@
  * came to disagree about where a node is, and a derived pose widens that gap
  * from "mid-drag" to "always".
  */
+import { recordDeps, sameDeps, type DepRecord } from './depMemo';
 import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
@@ -58,6 +59,11 @@ export interface PoseSource<TPose> {
   childrenOf(id: NodeId): readonly NodeId[];
 }
 
+/** A cached derived pose, with what it was derived from. */
+interface PoseMemo<TPose> extends DepRecord<TPose> {
+  value: TPose | null;
+}
+
 /** Ids whose derivation is on the stack. A dependency graph is meant to be
  *  acyclic and `dependsOn` is unvalidated, so a cycle resolves to the authored
  *  pose at whichever node closes it rather than overflowing the stack. */
@@ -100,16 +106,38 @@ function derivedPoseIn<TPose>(
   resolving.add(node.id);
   const hitsBefore = cycleHits;
   try {
+    const depOf = (id: NodeId) => depIn(source, id, reading);
     // Keyed on the authored pose, which is what `dropPoseKeyedMemoSlots`
-    // clears — the same push-invalidation the derived path rides on.
-    const value = nodeMemo(node, POSE_SLOT[reading], node.pose, () =>
-      derive(node as never, ids.map((id) => depIn(source, id, reading))),
-    );
+    // clears. That key only sees a change someone pushed, so the record also
+    // carries what the derivation read and re-checks it by value on a hit —
+    // see `depMemo.ts`.
+    let computed = false;
+    const record = nodeMemo<PoseMemo<TPose>>(node, POSE_SLOT[reading], node.pose, () => {
+      computed = true;
+      return run(node, derive, ids.map(depOf), { nodes: [], poses: [], value: null });
+    });
+    // Mutating the record in place is what updates the memo slot, which holds
+    // this object.
+    if (!computed && !sameDeps(record, ids, depOf)) {
+      run(node, derive, ids.map(depOf), record);
+    }
     if (cycleHits !== hitsBefore) dropPoseKeyedMemoSlots(node);
-    return value;
+    return record.value;
   } finally {
     resolving.delete(node.id);
   }
+}
+
+/** Run `derivePose` against `deps` and record what it was run against. */
+function run<TPose>(
+  node: PosedNode<TPose>,
+  derive: NonNullable<PosedNode<TPose>['derivePose']>,
+  deps: readonly (DerivedDep<TPose> | undefined)[],
+  into: PoseMemo<TPose>,
+): PoseMemo<TPose> {
+  into.value = derive(node as never, deps);
+  recordDeps(into, deps);
+  return into;
 }
 
 /**

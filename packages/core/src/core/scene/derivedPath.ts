@@ -21,7 +21,7 @@
 import type { Path } from 'core/geometry/path';
 import { dependencyIdsOf } from './dependents';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
-import { samePoseValue, snapshotPose } from './poseSnapshot';
+import { recordDeps, sameDeps, type DepRecord } from './depMemo';
 import type { DerivedDep, NodeId } from './types';
 
 const SLOT = 'kit:derivedPath';
@@ -40,12 +40,8 @@ export interface PathDerivingNode<TPose> {
   ) => Path | null;
 }
 
-/** A cached path, with what it was drawn from: each dependency's node — an
- *  identity, so a restored clone is a different one — and a copy of the pose
- *  it resolved to. */
-interface PathMemo<TPose> {
-  nodes: (object | undefined)[];
-  poses: (TPose | undefined)[];
+/** A cached path, with what it was drawn from. */
+interface PathMemo<TPose> extends DepRecord<TPose> {
   path: Path | null;
 }
 
@@ -94,7 +90,7 @@ export function resolveDerivedPath<TPose>(
     });
     // Mutating the record in place is what updates the memo slot, which holds
     // this object.
-    if (!computed && !matches(record, ids, depOf)) {
+    if (!computed && !sameDeps(record, ids, depOf)) {
       draw(node, derivePath, ids.map(depOf), record);
     }
     if (cycleHits !== hitsBefore) dropPoseKeyedMemoSlots(node);
@@ -112,29 +108,7 @@ function draw<TPose>(
   into: PathMemo<TPose>,
 ): PathMemo<TPose> {
   into.path = derivePath(node as never, deps);
-  into.nodes.length = 0;
-  into.poses.length = 0;
-  for (const dep of deps) {
-    into.nodes.push(dep?.node);
-    into.poses.push(dep === undefined ? undefined : snapshotPose(dep.pose));
-  }
+  recordDeps(into, deps);
   return into;
 }
 
-/** Whether the dependencies still resolve to the same nodes at the same poses
- *  the record was drawn from. Resolves them one at a time rather than taking
- *  an array: this is the hit path, and it walks every derived node's every
- *  dependency on every frame. */
-function matches<TPose>(
-  record: PathMemo<TPose>,
-  ids: readonly NodeId[],
-  depOf: (id: NodeId) => DerivedDep<TPose> | undefined,
-): boolean {
-  if (record.nodes.length !== ids.length) return false;
-  for (let i = 0; i < ids.length; i++) {
-    const dep = depOf(ids[i]);
-    if (record.nodes[i] !== (dep === undefined ? undefined : dep.node)) return false;
-    if (dep !== undefined && !samePoseValue(record.poses[i], dep.pose)) return false;
-  }
-  return true;
-}
