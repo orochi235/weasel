@@ -344,9 +344,10 @@ ports on the outline, the body builder, edges routed by `straight` /
 `#diagram-nodes`, `#diagram-edges`, `#diagram-layout` and `#diagram-live`,
 sharing `apps/site/demos/diagram/shared.ts`.
 
-Nothing in the original spec is outstanding. What is left is in `docs/TODO.md`:
-a `setDependsOn` op (retargeting an existing edge), and the derived-geometry
-follow-ups under "Scene, adapters & layout".
+Nothing in the original spec is outstanding, and `scene.setDependsOn` —
+retargeting an existing edge — shipped after these notes were written. What is
+left is the derived-geometry follow-ups in `docs/TODO.md`, under "Scene,
+adapters & layout".
 
 ## Decisions made in conversation that the code does not explain
 

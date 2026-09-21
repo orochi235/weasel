@@ -196,11 +196,10 @@ Three rules keep re-layout non-destructive:
 `packages/diagram`, peer-depending on `@weasel-js/core` as `hud`, `d3`, and `ui` do. It ships
 as a `Contribution` bundle composed with `mergeContributions`.
 
-It is **not** a `useDiagramPack` in `packages/den`. `docs/TODO.md:1203` still promises that,
-but `packages/den` is a README-only stub and its `{ registry, alwaysOn, keybindings }` pack
-shape was superseded by core's contributions — `alwaysOn` became `ambient`, and the binary
-registry/ambient split became a four-condition eligibility set. That TODO entry should be
-retired when this lands.
+It is **not** a `useDiagramPack` in `packages/den`: that package is a README-only stub, and
+its `{ registry, alwaysOn, keybindings }` pack shape was superseded by core's contributions —
+`alwaysOn` became `ambient`, and the binary registry/ambient split became a four-condition
+eligibility set.
 
 ## Testing
 
