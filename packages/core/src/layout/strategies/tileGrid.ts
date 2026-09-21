@@ -64,9 +64,6 @@ function cellRectAt(
   };
 }
 
-function sortedChildIds<TPose>(children: ReadonlyArray<LayoutChild<TPose>>): string[] {
-  return children.map((c) => c.id).sort();
-}
 
 /**
  * Layout strategy that arranges children into a fixed grid of cells, one
@@ -149,14 +146,27 @@ export function tileGrid<TPose>(
 
     childPoses(container, children) {
       const out = new Map<string, TPose>();
-      const ids = sortedChildIds(children);
-      const byId = new Map(children.map((c) => [c.id, c.pose] as const));
-      for (let i = 0; i < ids.length && i < capacity; i++) {
+      // Order by the cell each child already sits in, so a reflow compacts
+      // the survivors rather than re-sorting them — an earlier swap among
+      // them has to outlive a sibling leaving the grid. Children sitting in
+      // no cell (a gap, or outside the container) sort last; ties break by
+      // id so an arrangement with no cells yet is still deterministic.
+      const ordered = children
+        .map((c) => ({ c, cell: cellIndexOf(container.bounds, c.pose) }))
+        .sort((a, b) => {
+          if (a.cell !== b.cell) {
+            if (a.cell === null) return 1;
+            if (b.cell === null) return -1;
+            return a.cell - b.cell;
+          }
+          return a.c.id < b.c.id ? -1 : a.c.id > b.c.id ? 1 : 0;
+        });
+      for (let i = 0; i < ordered.length && i < capacity; i++) {
         const col = i % cols;
         const row = Math.floor(i / cols);
         // Use each child's own pose as the basis so non-rect fields survive
         // the cellToPose mapping.
-        out.set(ids[i], cellPose(container.bounds, col, row, byId.get(ids[i])!));
+        out.set(ordered[i].c.id, cellPose(container.bounds, col, row, ordered[i].c.pose));
       }
       return out;
     },

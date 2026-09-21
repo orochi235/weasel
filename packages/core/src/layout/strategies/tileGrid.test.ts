@@ -7,19 +7,44 @@ type P = { x: number; y: number; width: number; height: number };
 const container = { id: 'C', bounds: { x: 0, y: 0, width: 100, height: 100 } };
 
 describe('tileGrid', () => {
-  it('childPoses assigns children to cells in id order', () => {
+  it('childPoses falls back to id order when no child sits in a cell yet', () => {
     const layout = tileGrid<P>({ cols: 2, rows: 2 });
     const children = [
       { id: 'b', pose: { x: 999, y: 999, width: 10, height: 10 } },
-      { id: 'a', pose: { x: 0, y: 0, width: 10, height: 10 } },
-      { id: 'c', pose: { x: 0, y: 0, width: 10, height: 10 } },
+      { id: 'a', pose: { x: 999, y: 999, width: 10, height: 10 } },
+      { id: 'c', pose: { x: 999, y: 999, width: 10, height: 10 } },
     ];
     const got = layout.childPoses(container, children);
     // 100x100 container, 2x2 grid, no gap → 50x50 cells.
-    // Sorted ids: a, b, c → cells (0,0), (1,0), (0,1).
+    // All three sit outside the grid, so id order decides: a, b, c.
     expect(got.get('a')).toEqual({ x: 0, y: 0, width: 50, height: 50 });
     expect(got.get('b')).toEqual({ x: 50, y: 0, width: 50, height: 50 });
     expect(got.get('c')).toEqual({ x: 0, y: 50, width: 50, height: 50 });
+  });
+
+  it('childPoses compacts in current cell order, so a swap survives a sibling leaving', () => {
+    const layout = tileGrid<P>({ cols: 2, rows: 2 });
+    // `b` was swapped into cell 0 and `a` into cell 1; `c` holds cell 2.
+    // `c` then leaves the grid, and the reflow must not re-sort a and b.
+    const children = [
+      { id: 'a', pose: { x: 50, y: 0, width: 50, height: 50 } },
+      { id: 'b', pose: { x: 0, y: 0, width: 50, height: 50 } },
+    ];
+    const got = layout.childPoses(container, children);
+    expect(got.get('b')).toEqual({ x: 0, y: 0, width: 50, height: 50 });
+    expect(got.get('a')).toEqual({ x: 50, y: 0, width: 50, height: 50 });
+  });
+
+  it('childPoses closes the hole a departing child leaves', () => {
+    const layout = tileGrid<P>({ cols: 2, rows: 2 });
+    // Cell 0 is empty; `a` holds cell 1 and `b` cell 3. They compact up.
+    const children = [
+      { id: 'a', pose: { x: 50, y: 0, width: 50, height: 50 } },
+      { id: 'b', pose: { x: 50, y: 50, width: 50, height: 50 } },
+    ];
+    const got = layout.childPoses(container, children);
+    expect(got.get('a')).toEqual({ x: 0, y: 0, width: 50, height: 50 });
+    expect(got.get('b')).toEqual({ x: 50, y: 0, width: 50, height: 50 });
   });
 
   it('skips overflow children beyond cols * rows', () => {
