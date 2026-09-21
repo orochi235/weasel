@@ -1,9 +1,19 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
+import { Checkbox, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
 import { type FocusEvent, type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
 import type { IndexEntry } from '../../story/types';
 import { revealTrial } from '../revealTrial';
 import { useRoute } from '../useRoute';
 import { buildTree, filterTree, type TreeNode } from './buildTree';
+import { buildComponents, componentNodes, filterComponents, librariesIn, libraryOf } from './buildComponents';
+
+/** Which shape the sidebar lists the index in. */
+type View = 'tree' | 'components';
+
+const VIEWS: readonly ToggleBarItem<View>[] = [
+  { value: 'tree', label: 'Tree' },
+  { value: 'components', label: 'Components' },
+];
 
 export interface StoryTreeProps {
   ctx: LabChromeContext;
@@ -36,15 +46,31 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   const [route, setRoute] = useRoute();
   const [query, setQuery] = useState('');
   const [folds, setFolds] = usePersistedState<Record<string, boolean>>('fg-tree-open', {}, { scope: 'lab' });
+  const [view, setView] = usePersistedState<View>('fg-tree-view', 'tree', { scope: 'lab' });
+  // Stored as what is *off*, so a library added later is on without anyone
+  // going back to tick it.
+  const [hidden, setHidden] = usePersistedState<Record<string, boolean>>('fg-tree-libraries', {}, { scope: 'lab' });
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const items = useRef(new Map<string, HTMLElement>());
 
-  const tree = useMemo(() => buildTree(index), [index]);
-  const shown = useMemo(() => filterTree(tree, query), [tree, query]);
-  const routed = index.find((entry) => entry.id === route);
+  const libraries = useMemo(() => librariesIn(index), [index]);
+  // The package filter runs on the index, so it means the same thing in both
+  // views rather than once per view's own grouping.
+  const kept = useMemo(() => index.filter((entry) => !hidden[libraryOf(entry)]), [index, hidden]);
+  const tree = useMemo(() => buildTree(kept), [kept]);
+  const components = useMemo(() => buildComponents(kept), [kept]);
+  const shown = useMemo(
+    () =>
+      view === 'components'
+        ? componentNodes(filterComponents(components, query))
+        : filterTree(tree, query),
+    [view, components, tree, query],
+  );
+  const routed = kept.find((entry) => entry.id === route);
   const routeAncestors = useMemo(() => ancestorsOf(routed), [routed]);
   const filtering = query.trim() !== '';
-  const isOpen = (path: string): boolean => filtering || (folds[path] ?? routeAncestors.has(path));
+  const isOpen = (path: string): boolean =>
+    filtering || (folds[path] ?? (view === 'tree' && routeAncestors.has(path)));
 
   const rows: Row[] = [];
   const collect = (nodes: readonly TreeNode[], parent: string | null): void => {
@@ -146,6 +172,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
           >
             <div className="fg-tree__item fg-tree__folder" onClick={() => setOpen(node.path, !open)}>
               <span className="fg-tree__label">{node.label}</span>
+              {node.tag ? <span className="fg-tree__tag">{node.tag}</span> : null}
             </div>
             {open ? (
               <div role="group" className="fg-tree__group">
@@ -170,7 +197,8 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
             activate(entry, event.shiftKey);
           }}
         >
-          <span className="fg-tree__label">{entry.name}</span>
+          <span className="fg-tree__label">{node.label ?? entry.name}</span>
+          {node.tag ? <span className="fg-tree__tag">{node.tag}</span> : null}
         </a>
       );
     });
@@ -185,6 +213,27 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
           No story <code>{route}</code>
         </p>
       ) : null}
+      <ToggleBar
+        ariaLabel="Sidebar view"
+        variant="flat"
+        items={VIEWS}
+        value={view}
+        onChange={(next) => {
+          if (next) setView(next);
+        }}
+      />
+      <fieldset className="fg-tree__libraries">
+        <legend className="fg-tree__libraries-legend">Packages</legend>
+        {libraries.map((library) => (
+          <Checkbox
+            key={library}
+            isSelected={!hidden[library]}
+            onChange={(on) => setHidden((prev) => ({ ...prev, [library]: !on }))}
+          >
+            {library}
+          </Checkbox>
+        ))}
+      </fieldset>
       <input
         type="search"
         className="fg-tree__filter"

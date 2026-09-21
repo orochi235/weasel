@@ -1,8 +1,8 @@
 import type { IndexEntry } from '../../story/types';
 
 export type TreeNode =
-  | { kind: 'folder'; label: string; path: string; children: TreeNode[] }
-  | { kind: 'story'; entry: IndexEntry };
+  | { kind: 'folder'; label: string; path: string; children: TreeNode[]; tag?: string }
+  | { kind: 'story'; entry: IndexEntry; tag?: string; label?: string };
 
 type Folder = Extract<TreeNode, { kind: 'folder' }>;
 

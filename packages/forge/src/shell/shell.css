@@ -151,6 +151,33 @@
   background: var(--wzl-surface-hover);
 }
 
+/* Sits after the label, which is the element that shrinks, so the tag keeps
+   its width and the rows' tags line up down the column. */
+.fg-tree__tag {
+  flex: none;
+  margin-inline-start: auto;
+  padding: 0 var(--wzl-space-xs);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.fg-tree__libraries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-xs);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fg-tree__libraries-legend {
+  padding: 0;
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm);
+}
+
 /* A folder item holds its group, so its ring goes on its own row rather than around the subtree. */
 .fg-tree__story:focus-visible,
 .fg-tree__node:focus-visible > .fg-tree__folder {
