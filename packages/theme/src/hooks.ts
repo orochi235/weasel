@@ -57,6 +57,13 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     description: 'Width of a numeric field in the Properties panel.',
   },
   {
+    name: 'prop-row-h',
+    type: 'dimension',
+    value: '20px',
+    description:
+      'Floor under every Properties row, whatever control it holds. Unset, it is the panel’s own field height, so it follows density — 20px at the default one.',
+  },
+  {
     name: 'prop-text-width',
     type: 'dimension',
     value: '16ch',

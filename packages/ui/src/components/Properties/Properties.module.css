@@ -61,6 +61,9 @@
      density set further up is not shadowed by this declaration. */
   --wzl-field-h: var(--wzl-prop-field-h, var(--wzl-control-h-sm));
   --wzl-field-pad-x: var(--wzl-prop-field-pad-x, 6px);
+  /* A kit `<Select>` in a row is a field like any other, and its trigger reads
+     its height from a standalone control's token rather than the panel's. */
+  --wzl-select-h: var(--wzl-field-h);
 }
 
 /* Default packing: only color rows pair, everything else spans full width.
@@ -168,6 +171,12 @@
 .row {
   display: flex;
   flex-direction: column;
+  /* Every row stands on the same floor, whatever it holds. A switch is 16px, a
+     range track 12 and a field 20, so a column of mixed rows sets its own line
+     spacing row by row and reads as ragged — which is what a reader sees first,
+     long before any one control's height. Taller content still grows the row;
+     this only stops a short one from collapsing under the field it sits beside. */
+  min-height: var(--wzl-prop-row-h, var(--wzl-field-h, var(--wzl-control-h)));
   /* No gap by default — controls sit flush under their label, matching
      speech-balloons `.field { gap: 0 }`. Slider rows pull tighter still
      via a negative margin on the label below. */
@@ -245,8 +254,8 @@
      will not shrink to a line-height below the font's own content area, so it
      renders 16px of content where a span renders 11px. Stating the height on
      both and filling it here is what makes the two boxes agree. */
-  height: var(--wzl-control-h-sm);
-  line-height: calc(var(--wzl-control-h-sm) - 4px);
+  height: var(--wzl-field-h, var(--wzl-control-h-sm));
+  line-height: calc(var(--wzl-field-h, var(--wzl-control-h-sm)) - 4px);
   border: 1px solid transparent;
   padding: 1px 0;
 }
@@ -298,8 +307,14 @@
   border-radius: var(--wzl-radius-sm);
 }
 
+/* The same dotted line a compact `<Select>` draws under its value, stated the
+   same way: the shorthand's `auto` thickness takes the font's own, which at
+   this size closes the gaps and reads as a solid rule. */
 .autoToggle:hover {
-  text-decoration: underline dotted;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--wzl-fg-subtle);
   text-underline-offset: 0.25em;
 }
 
@@ -323,7 +338,7 @@
   margin: 0;
   /* Stated rather than left to the control's intrinsic size, which `.readoutText`
      cannot reproduce — see the note there. */
-  height: var(--wzl-control-h-sm);
+  height: var(--wzl-field-h, var(--wzl-control-h-sm));
   /* The fit is the widest value in `ch`, which is one digit; the box is border-box, so its border
      comes back on top, with half a `ch` for a glyph wider than a digit. */
   width: max(
@@ -633,7 +648,7 @@
 
 .toggleButton {
   flex: 1;
-  height: 26px;
+  height: var(--wzl-field-h, var(--wzl-control-h));
   padding: 0 var(--wzl-space-4);
   background: rgba(0, 0, 0, 0.25);
   color: var(--wzl-fg-muted);

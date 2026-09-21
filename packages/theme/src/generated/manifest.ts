@@ -140,6 +140,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-number-field-width', type: "dimension", group: "number", defaultValue: "9ch", description: "Width of a NumberField’s input.", hook: true },
   { name: '--wzl-prefs-column-width', type: "dimension", group: "prefs", defaultValue: "300px", description: "Width of the Prefs category column.", hook: true },
   { name: '--wzl-prop-number-width', type: "dimension", group: "prop", defaultValue: "9ch", description: "Width of a numeric field in the Properties panel.", hook: true },
+  { name: '--wzl-prop-row-h', type: "dimension", group: "prop", defaultValue: "20px", description: "Floor under every Properties row, whatever control it holds. Unset, it is the panel’s own field height, so it follows density — 20px at the default one.", hook: true },
   { name: '--wzl-prop-text-width', type: "dimension", group: "prop", defaultValue: "16ch", description: "Width of a text field in the Properties panel.", hook: true },
   { name: '--wzl-property-readout-w', type: "dimension", group: "property", defaultValue: "2.8em", description: "Minimum width of a Properties row’s value readout.", hook: true },
   { name: '--wzl-swatch-size', type: "dimension", group: "swatch", defaultValue: "28px", description: "Minimum cell of a swatch grid — PatternPicker, and any panel laying swatches out the same way.", hook: true },

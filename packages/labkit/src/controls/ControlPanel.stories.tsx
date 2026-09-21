@@ -275,3 +275,44 @@ export const Presentation: Story = {
     );
   },
 };
+
+const inline = f.schema({
+  folderPad: f.number(1.1).range(0, 4).step(0.1).label('Folder pad'),
+  glyphs: f.number(1_000_000).range(0, 2_000_000).format('compact'),
+  names: f.number(60).range(0, 100),
+  labels: f.number(0).range(0, 100),
+  placement: f.enum('spread', ['spread', 'stack', 'ring']),
+  lift: f.number(0.2).range(0, 1).step(0.05),
+  opacity: f.number(0.45).range(0, 1).step(0.05),
+  iconSet: f.enum('small', ['small', 'large']).label('Icon set'),
+  drawAsIcons: f.string('**/node_modules/**').label('Draw as icons'),
+  detail: f.number(1200).range(0, 4000).suffix('nodes'),
+  showCameraRoute: f.boolean(false).toggle().label('Show camera route'),
+  routeColor: f.enum('sweep', ['sweep', 'depth']).label('Route color'),
+  minimap: f.boolean(true).toggle(),
+  minimapSize: f.number(280).range(80, 600).label('Minimap size'),
+  pickHud: f.boolean(true).toggle().label('Pick HUD'),
+  pickOutlines: f.boolean(true).toggle().label('Pick outlines'),
+  markOverlay: f.boolean(false).toggle().label('Mark overlay'),
+});
+
+/** The shape a lab's sidebar draws: `layout="inline"` paired two to a row, in a
+ *  narrow column. Every row kind meets here — slider, select, switch, text —
+ *  and they have to share one base height, or the column reads as ragged. */
+export const Inline: Story = {
+  render: () => {
+    const schema = resolveConfigSchema(inline, []);
+    const [config, setConfig] = useState<Record<string, unknown>>(inline.defaults());
+    return (
+      <div style={{ width: 360 }}>
+        <ControlPanel
+          schema={schema}
+          config={config}
+          setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+          layout="inline"
+          align="center"
+        />
+      </div>
+    );
+  },
+};
