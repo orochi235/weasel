@@ -1,3 +1,53 @@
+# In flight — the CSS Vars scale editor (2026-09-20)
+
+Branch: whatever this checkout is on — it is **shared with another live
+session** and was moved from `main` to `knock-off-batch` mid-session without
+warning. Check `git branch --show-current` before trusting anything, and stage
+explicit paths: dirty files here are usually the other session's.
+
+Everything below landed; `git log --oneline main` from `file danger, warning
+and success under one status group` forward is the set. Nothing is pushed —
+`git log --oneline @{u}..HEAD` says what is waiting.
+
+## What landed
+
+`TokenPanel` draws a group of three or more sizes as one grid of steps, and a
+group the consumer describes through `scales` also edits its base and its rule
+(a multiplier per step, a ratio, or a step). forge's CSS Vars panel wires that
+to the theme's own scales — `font-size` and `space` — regenerating the steps
+with the engine's `scale` so rounding matches the build. Swatches name their
+variable on hover with no delay.
+
+## The open decision
+
+**Edits in the CSS Vars panel cannot be saved.** They are per-trial browser
+overrides; nothing writes them back to `themes/weasel.json`. Mike chose the
+panel growing its own editor over linking out to the theme editor. What is
+undecided is what the *font base* becomes when saved, because in the definition
+it is not a number — it is `{seeds.ui-base}`, which is 11 / 13 / 15 by density:
+
+- change only the current density's seed, keeping density working (my pick), or
+- replace the reference with the literal, which flattens font size across
+  densities.
+
+The mechanism to write it already exists: the theme editor's dev server PUTs to
+`/__theme/<name>`, hash-checked against the file on disk, and regenerates
+`packages/theme/src/generated/`. forge would need that endpoint.
+
+## Worth keeping
+
+**A sparse canvas absorbs a real regression at the default baseline
+tolerance.** `assertMatchesBaseline` allows 2% of pixels to differ; on the
+diagram demos a node moving 10px is half a percent, and the baseline passed
+with the node moved. `tests/visual/diagram.spec.ts` runs at 0.4%. Check any new
+baseline by breaking the demo and watching it fail.
+
+**The visual runner and `dev:theme-editor` both want port 5177**, and the
+runner reuses an existing server — so a theme-editor server left running makes
+every baseline capture the wrong app.
+
+---
+
 # Retained from the gradient arc — merged into `main`
 
 The branch and its worktree are gone; `git log` carries what landed. What is kept
