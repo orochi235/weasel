@@ -1,5 +1,82 @@
 # @weasel-js/forge
 
+## 1.5.2
+
+### Patch Changes
+
+- 785cde0: Add Get Info to weaselforge, and let the tool palette hold commands.
+  
+  `ToolItem` takes an optional `onActivate`. An item carrying one is a command
+  rather than a mode: it presses instead of latching, never writes the tool slot,
+  and never reports itself as the current tool. Both contribution unions take the
+  context generic, with a default that leaves existing call sites alone.
+  
+  forge contributes **Info** to that palette (⌘I). It opens a dialog holding a
+  fixed dossier for the focused trial's story: where it comes from — title,
+  export, id, library and file path — the JSDoc written above its export and
+  above its meta, and a row per arg with its kind, current value, default and
+  description. `indexFile` harvests the two comments and the meta's `component`
+  identifier from the AST it was already parsing, so the dossier reads correctly
+  for a story nobody has opened.
+  
+  `useStoryRegistry` gains `isReady(id)`. An instrument exists with an empty
+  schema before its frame reports one, so without it a story that has not loaded
+  is indistinguishable from a story that takes no args.
+- f9712f0: A lab says how much room its chrome takes.
+  
+  `<Lab density>` picks the theme's density axis for the lab's own shell —
+  `'compact'`, `'comfortable'` (the default, unchanged) or `'roomy'`. The trials
+  and their instruments are unaffected: this sizes the header, the sidebar, the
+  tool rail and the palette around them.
+  
+  A lab that is the whole window rather than a panel beside one reads better at
+  `'roomy'`, so weaselforge takes it: its chrome goes from 13px body text and
+  24px controls to 15px and 28px. A story's frame keeps its own density, which
+  is still the workshop's `Density` global.
+  
+  Get Info was a 40rem box in a full-width window, narrow enough to wrap a story's
+  file path onto a second line. It is 52rem now.
+- 41e2223: Draw a group of sizes as one grid of steps, generated from a base.
+  
+  Three or more numbers, dimensions or durations sharing a group now draw the way
+  a color family does: one compact grid, each cell labeled with what its name adds
+  to the shared prefix (`2xs`, `1`, `track-h`). A group whose steps all carry one
+  unit says it once beside the group name; `slider` and `tracking`, whose units
+  differ, keep a unit per cell.
+  
+  `TokenPanel` takes `scales` and `onScaleChange` for a group that is generated
+  rather than authored step by step. Such a group edits its base and its rule —
+  one multiplier per step, a constant ratio, or a constant step — with the
+  multipliers sitting under the steps they scale, and `refitScale` fits the new
+  rule to the steps as they stand when the rule changes. The panel reports the
+  parameters; regenerating the values stays with the consumer.
+  
+  forge's CSS Vars panel wires that to the theme's own scales: the rule comes from
+  the definition, the base is read back from the values the frame reports, and the
+  steps are regenerated with the engine's `scale` so rounding matches the build.
+  A swatch also names its variable in a tooltip the moment it is hovered, in place
+  of the browser's delayed `title`.
+- Updated dependencies [11d949e]
+- Updated dependencies [bbfdacd]
+- Updated dependencies [1c695cb]
+- Updated dependencies [785cde0]
+- Updated dependencies [55ace67]
+- Updated dependencies [24a2dae]
+- Updated dependencies [f9712f0]
+- Updated dependencies [665ff53]
+- Updated dependencies [2e52d31]
+- Updated dependencies [564deb4]
+- Updated dependencies [8ffd746]
+- Updated dependencies [ae2a424]
+- Updated dependencies [41e2223]
+- Updated dependencies [3978e84]
+- Updated dependencies [37e8105]
+- Updated dependencies [6d79849]
+- Updated dependencies [8081a6b]
+  - @weasel-js/labkit@1.5.2
+  - @weasel-js/core@1.5.2
+  - @weasel-js/theme@1.5.2
+
 ## 1.5.1
 
 ### Patch Changes

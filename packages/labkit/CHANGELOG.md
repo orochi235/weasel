@@ -1,5 +1,233 @@
 # @weasel-js/labkit
 
+## 1.5.2
+
+### Patch Changes
+
+- 11d949e: Clicking a property row's **label** now toggles whether the row is auto. That
+  replaces the hover-revealed pin dot — `PinDot` is removed — and labkit's
+  shift-click gesture, and with them `<PropertyRow data-auto-path>`, which
+  existed only to route that gesture.
+  
+  An auto row now hides its control rather than ghosting it, keeping the box so
+  the row does not resize on the toggle, and reads out the bare word `auto`;
+  labkit's `auto · 18` form is gone. A hidden control is out of reach of the
+  pointer and the tab ring, which is also what takes it out of the
+  accessibility tree — a test reading an auto row's value has to read the
+  element, not the role.
+- bbfdacd: Draw the close X at the size of the glyphs around it.
+  
+  Its arms spanned 5–15 of the 20×20 box while every neighbor spans about 3–17,
+  so at the same `size` it read as a smaller icon. The arms now reach 3.4–16.6 at
+  a 1.9 stroke, and labkit's title-bar region draws its glyphs at 16 like the
+  toolbar and palette regions rather than 14.
+- 785cde0: Add Get Info to weaselforge, and let the tool palette hold commands.
+  
+  `ToolItem` takes an optional `onActivate`. An item carrying one is a command
+  rather than a mode: it presses instead of latching, never writes the tool slot,
+  and never reports itself as the current tool. Both contribution unions take the
+  context generic, with a default that leaves existing call sites alone.
+  
+  forge contributes **Info** to that palette (⌘I). It opens a dialog holding a
+  fixed dossier for the focused trial's story: where it comes from — title,
+  export, id, library and file path — the JSDoc written above its export and
+  above its meta, and a row per arg with its kind, current value, default and
+  description. `indexFile` harvests the two comments and the meta's `component`
+  identifier from the AST it was already parsing, so the dossier reads correctly
+  for a story nobody has opened.
+  
+  `useStoryRegistry` gains `isReady(id)`. An instrument exists with an empty
+  schema before its frame reports one, so without it a story that has not loaded
+  is indistinguishable from a story that takes no args.
+- 55ace67: Stop a trial resizing itself as its frame rate ticks. `FpsMeter` held its
+  label and its number in one box with a `min-width` covering both, so every
+  digit the rate gained or lost changed the readout's width — and in a trial a
+  couple of hundred pixels wide, that wrapped the status bar onto a second line
+  and back, taking the height out of the canvas above it each time. The number
+  is its own cell now, wide enough for a three-digit rate and set in tabular
+  figures, and a status bar keeps its sections on one line and clips rather than
+  growing.
+- 24a2dae: Close the places where two tiers spelled one concept differently.
+  
+  **A fixed pan bug.** `viewport.dragPan` fell back from `drag.screenDelta` to
+  the world `drag.delta` and then divided by the zoom anyway, panning at
+  1/scale² for any event source that supplies no `clientX`/`clientY` — which is
+  every synthesized `InputEvent`, since those fields are optional. It now
+  reconstructs the client delta exactly, by undoing each end of the world delta
+  against the view that produced it.
+  
+  **Breaking, renames.** `ClickEvent`, `DoubleClickEvent` and `ContextMenuEvent`
+  carry their world point as `x`/`y`, matching every other kind in `InputEvent`;
+  `worldX`/`worldY` are gone, and a consumer who set `x`/`y` no longer silently
+  lands at the origin. All three now also carry `clientX`/`clientY`, so a
+  context-menu action can finally read `ctx.screen` — the case that surface was
+  added for. The renderer's `Mat3` is `GlMat3`, freeing `Mat3` to mean geom's
+  affine in a file that imports from both. `translatePolygonInPlace` is
+  gone: it was the one sanctioned writer into a committed path's coord buffer,
+  documented as overlay-only, and nothing called it. `@weasel-js/font` exports `FontStyle`
+  in place of `OutlineFontStyle`. `@weasel-js/labkit` no longer exports
+  `useOrbit`, `OrbitView`, `Vec3` or their helpers: `@weasel-js/kernel3d` owns
+  the orbit camera and `@weasel-js/geom/3d` owns `Vec3`. `ToolCtx.screenPoint`
+  was declared and never written by anything; it is gone.
+  
+  **Breaking, types narrowed.** geom's `Mat3` and `Box` are readonly tuples,
+  matching the reason `geom/3d` already gives for its own. `History.entries()`
+  returns `readonly` arrays, which is what its docstring always asked callers to
+  assume.
+  
+  **One type where there were two.** `@weasel-js/svg`'s `Matrix` is geom's
+  `Mat3`, and its duplicate `multiply` is geom's; `SvgStroke.width` is
+  `ScreenLength` rather than that union written out again. `kernel3d`'s
+  `ViewportRect` is `ScreenBox` — one rectangle spelling instead of `w`/`h`
+  beside `width`/`height` eight lines apart. The renderer's `View` is routing's.
+  Core's `Vec2` is routing's `Point2`, and `Pt` is gone from the barrel.
+  
+  **Additions.** `oklchDegToHex` / `hexToOklchDeg` / `OklchDeg` in
+  `@weasel-js/paint` — the degrees-and-hex form `@weasel-js/ui` and
+  `@weasel-js/theme` had each built for themselves. `srgbFloatToOklab`, for
+  callers holding 0..1 floats; feeding those to `srgbU8ToOklab` truncated where
+  paint's own internal conversion rounds. `mat3.toAffine` / `mat3.fromAffine`
+  name the repack between the GL layout and geom's.
+  
+  **Corrections.** `RECT_POSE_DESCRIPTOR` implements `getRotation`, so a pose it
+  rotated no longer reports itself unrotated to `useResize` and to diagram's port
+  placement. `ToolDef.capabilities` is documented as reaching
+  `Tool.eligibility.capabilities`, which is where it actually goes — following
+  the old text gave `undefined`, and `eligibleForMode` turns that into a tool
+  that vanishes from every mode. `MultitouchEvent.centroid` is documented as
+  canvas-local, which is what the dispatcher hands over. `drag.points` is a
+  snapshot on `onEnd` rather than the dispatcher's live accumulator.
+  
+  `tsconfig.json` now typechecks `packages/routing`, `cursor`, `bidi` and
+  `loupe`, which it had never included.
+- f9712f0: A lab says how much room its chrome takes.
+  
+  `<Lab density>` picks the theme's density axis for the lab's own shell —
+  `'compact'`, `'comfortable'` (the default, unchanged) or `'roomy'`. The trials
+  and their instruments are unaffected: this sizes the header, the sidebar, the
+  tool rail and the palette around them.
+  
+  A lab that is the whole window rather than a panel beside one reads better at
+  `'roomy'`, so weaselforge takes it: its chrome goes from 13px body text and
+  24px controls to 15px and 28px. A story's frame keeps its own density, which
+  is still the workshop's `Density` global.
+  
+  Get Info was a 40rem box in a full-width window, narrow enough to wrap a story's
+  file path onto a second line. It is 52rem now.
+- 665ff53: A group's description now draws in every panel that renders one.
+  
+  `<PropertyGroup description>` puts the text under the heading and above the
+  rows, through a new `<PropertyNote>` — a muted paragraph that spans both
+  columns, which is the group-level counterpart to `<PropertyRow description>`.
+  labkit's `ControlPanel` passes it, so a config group's `.describe()` reads the
+  same there as it already did in `PrefsForm`.
+- 2e52d31: Panel labels inherit their case, tracking, alignment and width.
+  
+  `PropertyPanel`, `Prefs` and labkit's `ControlPanel` read four custom
+  properties — `--wzl-params-label-case`, `-tracking`, `-align` and `-width` —
+  so one declaration on any ancestor restyles every label beneath it. No rule
+  declares them; each label carries its default as a `var()` fallback, so an
+  override never has to outrank anything. `docs/conventions.md` ("Panel labels")
+  has the defaults and which labels each property reaches.
+  
+  Visible changes at the defaults:
+  
+  - An inline slider row's label sits on the leading edge. A rule meant to
+    bottom-align a stacked row's track outranked the inline layout and packed the
+    label against its slider.
+  - Every label is uppercase, including `Prefs` row labels, the `Prefs` subpanel
+    heading and labkit pair-cell captions, which were sentence case.
+  - Tracking comes from the theme's tracking tokens: row labels move from
+    `0.04em`–`0.06em` to `--wzl-tracking-wide`, `Prefs` group titles to
+    `--wzl-tracking-wider`, matching `PropertyPanel`'s.
+  - A `Prefs` row label no longer grows to fill its row. The control stays on the
+    trailing edge.
+- 41e2223: Draw a group of sizes as one grid of steps, generated from a base.
+  
+  Three or more numbers, dimensions or durations sharing a group now draw the way
+  a color family does: one compact grid, each cell labeled with what its name adds
+  to the shared prefix (`2xs`, `1`, `track-h`). A group whose steps all carry one
+  unit says it once beside the group name; `slider` and `tracking`, whose units
+  differ, keep a unit per cell.
+  
+  `TokenPanel` takes `scales` and `onScaleChange` for a group that is generated
+  rather than authored step by step. Such a group edits its base and its rule —
+  one multiplier per step, a constant ratio, or a constant step — with the
+  multipliers sitting under the steps they scale, and `refitScale` fits the new
+  rule to the steps as they stand when the rule changes. The panel reports the
+  parameters; regenerating the values stays with the consumer.
+  
+  forge's CSS Vars panel wires that to the theme's own scales: the rule comes from
+  the definition, the base is read back from the values the frame reports, and the
+  steps are regenerated with the engine's `scale` so rounding matches the build.
+  A swatch also names its variable in a tooltip the moment it is hovered, in place
+  of the browser's delayed `title`.
+- 8081a6b: Derive the type ramp from one number, and add a `density` axis that scales it.
+  
+  Sizes were unrelated px pins, so there was nothing to turn: raising
+  `--wzl-font-size` grew glyphs while `--wzl-control-h` stayed 24px and every gap
+  stayed put. The type ramp now derives from `seeds.ui-base` through a new
+  `factors` rule on a scale (`base × factors[i]`, alongside the existing `step`
+  and `ratio`), and `density` — `compact` / `comfortable` / `roomy` — varies that
+  seed along with `control-h` and `tb-height`. Set it with
+  `applyTheme(el, theme, { density })`.
+  
+  Sizes stay baked px rather than `calc()` against a root variable, because
+  `tokenPx()` feeds SVG, canvas and WebGL geometry and has to read a real number.
+  
+  **Additive, with one behavior change.** Every existing token keeps its computed
+  value at the default selection; `--wzl-font-size` and `--wzl-space-{xs,sm,md,lg}`
+  are now aliases (`var(--wzl-font-size-md)`, `var(--wzl-space-2)` …) rather than
+  literals, which computes identically but is no longer a literal string if you
+  read the declaration rather than the computed value. New: `--wzl-font-size-md`
+  and the `--wzl-space-1` … `--wzl-space-8` ladder in 2px rungs.
+  
+  `toDTCG` no longer refuses a theme with an axis besides `mode`; it exports that
+  axis's default branch and drops the others, since DTCG carries one variant
+  dimension. Round-tripping a theme through DTCG now flattens it to the default
+  selection of every non-mode axis.
+  
+  Control heights follow density too, through three new ranks — `control-h-xs`
+  (18px), `control-h-sm` (20px) and `icon-button-size` (22px), each landing on a
+  value already in wide use so nothing moves at the default density. Without them
+  `Button` sat at 24px in every density while its label grew.
+  
+  Also adopts the ladder across `packages/ui`: 189 `gap`/`padding`/`margin` px
+  literals became rungs and the frozen control boxes became ranks.
+  `npm run check:spacing` and `npm run check:controls` keep them there; a
+  rank-sized box that is really artwork opts out with a `not-a-control` comment.
+  
+  `check:design-tokens` now reads the scale from `:root` alone. Each density block
+  restates the whole scale, so reading the stylesheet straight through left
+  `roomy` standing and vetted every authored fallback against a value no unset
+  document shows.
+- Updated dependencies [11d949e]
+- Updated dependencies [4e02f88]
+- Updated dependencies [bbfdacd]
+- Updated dependencies [1c695cb]
+- Updated dependencies [24a2dae]
+- Updated dependencies [665ff53]
+- Updated dependencies [2e52d31]
+- Updated dependencies [564deb4]
+- Updated dependencies [8ffd746]
+- Updated dependencies [ae2a424]
+- Updated dependencies [dbdd803]
+- Updated dependencies [728ad7c]
+- Updated dependencies [36dd1a4]
+- Updated dependencies [41e2223]
+- Updated dependencies [3978e84]
+- Updated dependencies [37e8105]
+- Updated dependencies [6d79849]
+- Updated dependencies [ad6c351]
+- Updated dependencies [8081a6b]
+  - @weasel-js/ui@1.5.2
+  - @weasel-js/core@1.5.2
+  - @weasel-js/geom@1.5.2
+  - @weasel-js/svg@1.5.2
+  - @weasel-js/kernel3d@1.5.2
+  - @weasel-js/theme@1.5.2
+  - @weasel-js/loupe@1.5.2
+
 ## 1.5.1
 
 ### Patch Changes

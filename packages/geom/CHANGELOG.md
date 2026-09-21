@@ -1,5 +1,107 @@
 # @weasel-js/geom
 
+## 1.5.2
+
+### Patch Changes
+
+- 24a2dae: Close the places where two tiers spelled one concept differently.
+  
+  **A fixed pan bug.** `viewport.dragPan` fell back from `drag.screenDelta` to
+  the world `drag.delta` and then divided by the zoom anyway, panning at
+  1/scale² for any event source that supplies no `clientX`/`clientY` — which is
+  every synthesized `InputEvent`, since those fields are optional. It now
+  reconstructs the client delta exactly, by undoing each end of the world delta
+  against the view that produced it.
+  
+  **Breaking, renames.** `ClickEvent`, `DoubleClickEvent` and `ContextMenuEvent`
+  carry their world point as `x`/`y`, matching every other kind in `InputEvent`;
+  `worldX`/`worldY` are gone, and a consumer who set `x`/`y` no longer silently
+  lands at the origin. All three now also carry `clientX`/`clientY`, so a
+  context-menu action can finally read `ctx.screen` — the case that surface was
+  added for. The renderer's `Mat3` is `GlMat3`, freeing `Mat3` to mean geom's
+  affine in a file that imports from both. `translatePolygonInPlace` is
+  gone: it was the one sanctioned writer into a committed path's coord buffer,
+  documented as overlay-only, and nothing called it. `@weasel-js/font` exports `FontStyle`
+  in place of `OutlineFontStyle`. `@weasel-js/labkit` no longer exports
+  `useOrbit`, `OrbitView`, `Vec3` or their helpers: `@weasel-js/kernel3d` owns
+  the orbit camera and `@weasel-js/geom/3d` owns `Vec3`. `ToolCtx.screenPoint`
+  was declared and never written by anything; it is gone.
+  
+  **Breaking, types narrowed.** geom's `Mat3` and `Box` are readonly tuples,
+  matching the reason `geom/3d` already gives for its own. `History.entries()`
+  returns `readonly` arrays, which is what its docstring always asked callers to
+  assume.
+  
+  **One type where there were two.** `@weasel-js/svg`'s `Matrix` is geom's
+  `Mat3`, and its duplicate `multiply` is geom's; `SvgStroke.width` is
+  `ScreenLength` rather than that union written out again. `kernel3d`'s
+  `ViewportRect` is `ScreenBox` — one rectangle spelling instead of `w`/`h`
+  beside `width`/`height` eight lines apart. The renderer's `View` is routing's.
+  Core's `Vec2` is routing's `Point2`, and `Pt` is gone from the barrel.
+  
+  **Additions.** `oklchDegToHex` / `hexToOklchDeg` / `OklchDeg` in
+  `@weasel-js/paint` — the degrees-and-hex form `@weasel-js/ui` and
+  `@weasel-js/theme` had each built for themselves. `srgbFloatToOklab`, for
+  callers holding 0..1 floats; feeding those to `srgbU8ToOklab` truncated where
+  paint's own internal conversion rounds. `mat3.toAffine` / `mat3.fromAffine`
+  name the repack between the GL layout and geom's.
+  
+  **Corrections.** `RECT_POSE_DESCRIPTOR` implements `getRotation`, so a pose it
+  rotated no longer reports itself unrotated to `useResize` and to diagram's port
+  placement. `ToolDef.capabilities` is documented as reaching
+  `Tool.eligibility.capabilities`, which is where it actually goes — following
+  the old text gave `undefined`, and `eligibleForMode` turns that into a tool
+  that vanishes from every mode. `MultitouchEvent.centroid` is documented as
+  canvas-local, which is what the dispatcher hands over. `drag.points` is a
+  snapshot on `onEnd` rather than the dispatcher's live accumulator.
+  
+  `tsconfig.json` now typechecks `packages/routing`, `cursor`, `bidi` and
+  `loupe`, which it had never included.
+- 8ffd746: State the port-curve rule once, in `@weasel-js/geom`.
+  
+  A routed edge leaves a port along its normal and arrives at the next against
+  that port's normal, with the controls reaching 0.4 of the straight-line
+  distance. That rule lived inside `@weasel-js/diagram`'s `bezier` router with
+  its reach constant module-private, so a 3D consumer had no way to share even
+  the number.
+  
+  It is now `portControls` / `portCurvePoints` / `PORT_REACH`, exported from
+  both `@weasel-js/geom` and `@weasel-js/geom/3d`. One implementation over loose
+  components sits behind both, so the two dimensions cannot disagree: every
+  operation in it is closed on the plane z = 0, and a planar problem answered
+  through the 3D entry returns the same numbers, not an approximation. Each
+  barrel wraps it in its own tier's currency — scalars for 2D, matching
+  `cubicEvalAt`, and `Vec3` for 3D.
+  
+  `bezier` is unchanged in behavior; it calls through. `@weasel-js/diagram` now
+  declares the `@weasel-js/geom` peer it had been importing without.
+  
+  Also moves `Vec2`'s declaration out of `core/geometry/polygonHitTestRect.ts`,
+  a polygon-versus-rect hit-testing helper it had been an incidental local in,
+  into `core/geometry/vec2.ts`. No API change — the barrel exports the same
+  type from a place you would look for it.
+- ad6c351: Give `Vec3` named fields, so both dimensions say `p.x`.
+  
+  `@weasel-js/geom`'s 2D tier has no point struct on purpose — it passes loose
+  components so the f32-relative epsilon policy has nothing between it and the
+  numbers — and `core` wraps those in `Vec2` at the API tier, where a call site
+  reads better with names. `geom/3d` had to pack, since loose scalars stop
+  working at four and sixteen components, but it packed into a tuple, and
+  `@weasel-js/kernel3d` then re-exported that kernel type at its own public
+  surface: `Pose3.position` and `Camera3d.target` were both `Vec3`.
+  
+  So at the position a consumer actually handles, 2D said `pose.x` and 3D said
+  `pose3.position[0]`. Packing was forced; the tuple was not.
+  
+  `Vec3` is now `{ readonly x, readonly y, readonly z }`. The fields are readonly
+  because the tuple's immutability was load-bearing: a pose in a history snapshot
+  must not be writable through the value handed to a renderer. `Quat` stays a
+  tuple — it is not a point, and `[x, y, z, w]` is the layout three.js and
+  glMatrix both use.
+  
+  Breaking for anyone indexing a `Vec3`, which is why it is worth doing while the
+  type is a week old.
+
 ## 1.5.1
 
 ## 1.5.0

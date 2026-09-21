@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/svg",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "SVG import/export for @weasel-js/core: parse SVG strings into weasel-native shapes and serialize them back.",
   "license": "MIT",
   "type": "module",
@@ -42,9 +42,9 @@
     "provenance": true
   },
   "dependencies": {
-    "@weasel-js/geom": "1.5.1"
+    "@weasel-js/geom": "1.5.2"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.5.1"
+    "@weasel-js/core": "1.5.2"
   }
 }
