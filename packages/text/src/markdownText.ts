@@ -1,14 +1,42 @@
 import { resolveScreenLength } from '@weasel-js/paint';
 import { markdownToRuns, type StyledRun } from './runs';
+import { SCRIPT_METRICS } from './runs/resolveRuns';
 
 export type { StyledRun };
 
 /** Width-measurement strategy for `layoutMarkdown`; canvas-backed default supplied by `createMarkdownRenderer`. */
 export type MeasureFn = (text: string, fontSize: number, bold: boolean, italic: boolean) => number;
 
-/** A `StyledRun` with its computed x-offset relative to the start of its line. */
+/** A `StyledRun` with its resolved size and its position relative to the
+ *  start of its line: `x` along the line, `y` off its baseline. */
 export interface PositionedRun extends StyledRun {
   x: number;
+  /** Baseline offset, positive down — a superscript's is negative. Add it to
+   *  the line's baseline when painting. */
+  y: number;
+  /** The run's font size in px, with `fontScale` and `script` already folded
+   *  in. Resolved once here so layout and paint cannot disagree about it. */
+  size: number;
+}
+
+/**
+ * A run's size and baseline offset, resolved the way `resolveRuns` resolves
+ * them for the GL path: an absolute `fontSize` wins over a multiplier, and
+ * the rise is measured against the *inherited* size so it does not shrink
+ * along with the run.
+ */
+function runMetrics(run: StyledRun, fontSize: number): { size: number; y: number } {
+  const script = run.script ? SCRIPT_METRICS[run.script] : undefined;
+  const scale = run.fontScale ?? script?.size ?? 1;
+  const shiftEm = run.baselineShift ?? script?.shift ?? 0;
+  return {
+    size: run.fontSize !== undefined
+      ? resolveScreenLength(run.fontSize, 1)
+      : fontSize * scale,
+    // Canvas y grows downward; a positive shift is a rise. Guarded so an
+    // unshifted run reports 0 rather than -0.
+    y: shiftEm === 0 ? 0 : -shiftEm * fontSize,
+  };
 }
 
 /** A single laid-out line of text: its positioned runs, total width, and computed line height. */
@@ -51,12 +79,12 @@ export function layoutMarkdown(
 
   function processSegment(segRun: StyledRun) {
     // Already a screen-pixel layout, so a run's `{ px }` size is its size.
-    const effectiveSize = resolveScreenLength(segRun.fontSize ?? fontSize, 1);
+    const { size: effectiveSize, y: runY } = runMetrics(segRun, fontSize);
     lineMaxSize = Math.max(lineMaxSize, effectiveSize);
 
     if (maxWidth === Infinity) {
       const w = measure(segRun.text, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
-      currentRuns.push({ ...segRun, x: lineX });
+      currentRuns.push({ ...segRun, x: lineX, y: runY, size: effectiveSize });
       lineX += w;
       return;
     }
@@ -74,7 +102,7 @@ export function layoutMarkdown(
         // Flush current wordBuf as a run on the current line
         if (wordBuf.length > 0) {
           const w = measure(wordBuf, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
-          currentRuns.push({ ...segRun, text: wordBuf, x: lineX });
+          currentRuns.push({ ...segRun, text: wordBuf, x: lineX, y: runY, size: effectiveSize });
           lineX += w;
         }
         commitLine();
@@ -89,7 +117,7 @@ export function layoutMarkdown(
     // Flush remaining wordBuf
     if (wordBuf.length > 0) {
       const w = measure(wordBuf, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
-      currentRuns.push({ ...segRun, text: wordBuf, x: lineX });
+      currentRuns.push({ ...segRun, text: wordBuf, x: lineX, y: runY, size: effectiveSize });
       lineX += w;
     }
   }
@@ -175,12 +203,11 @@ export function createMarkdownRenderer(
     let lineY = y;
     for (const line of layout.lines) {
       for (const run of line.runs) {
-        const effSize = resolveScreenLength(run.fontSize ?? fontSize, 1);
-        _ctx.font = buildFont(effSize, run.bold ?? false, run.italic ?? false, fontOpts);
+        _ctx.font = buildFont(run.size, run.bold ?? false, run.italic ?? false, fontOpts);
         _ctx.fillStyle = fontOpts.color
           ?? (run.italic && !run.bold ? 'rgba(255, 255, 255, 0.7)' : '#FFFFFF');
         const lineOffset = (layout.width - line.width) / 2;
-        _ctx.fillText(run.text, x + lineOffset + run.x, lineY);
+        _ctx.fillText(run.text, x + lineOffset + run.x, lineY + run.y);
       }
       lineY += line.height;
     }
@@ -190,10 +217,9 @@ export function createMarkdownRenderer(
     let lineY = y;
     for (const line of layout.lines) {
       for (const run of line.runs) {
-        const effSize = resolveScreenLength(run.fontSize ?? fontSize, 1);
-        _ctx.font = buildFont(effSize, run.bold ?? false, run.italic ?? false, fontOpts);
+        _ctx.font = buildFont(run.size, run.bold ?? false, run.italic ?? false, fontOpts);
         const lineOffset = (layout.width - line.width) / 2;
-        _ctx.strokeText(run.text, x + lineOffset + run.x, lineY);
+        _ctx.strokeText(run.text, x + lineOffset + run.x, lineY + run.y);
       }
       lineY += line.height;
     }

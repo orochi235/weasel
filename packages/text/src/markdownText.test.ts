@@ -3,25 +3,25 @@ import { createMarkdownRenderer, layoutMarkdown } from './markdownText';
 import { markdownToRuns } from './runs';
 
 function makeMockCtx() {
-  const fillCalls: Array<{ text: string; font: string; fillStyle: string }> = [];
+  const fillCalls: Array<{ text: string; font: string; fillStyle: string; y: number }> = [];
   const strokeCalls: Array<{ text: string; font: string; strokeStyle: string }> = [];
   const ctx: {
     font: string;
     fillStyle: string;
     strokeStyle: string;
     measureText: (text: string) => { width: number };
-    fillText: (text: string) => void;
+    fillText: (text: string, x: number, y: number) => void;
     strokeText: (text: string) => void;
   } = {
     font: '',
     fillStyle: '#000',
     strokeStyle: '#000',
     measureText: (text: string) => ({ width: text.length * 10 }),
-    fillText(text: string) { fillCalls.push({ text, font: ctx.font, fillStyle: ctx.fillStyle }); },
+    fillText(text: string, _x: number, y: number) { fillCalls.push({ text, font: ctx.font, fillStyle: ctx.fillStyle, y }); },
     strokeText(text: string) { strokeCalls.push({ text, font: ctx.font, strokeStyle: ctx.strokeStyle }); },
   };
   const typedCtx = ctx as unknown as CanvasRenderingContext2D & {
-    fillText: (text: string) => void;
+    fillText: (text: string, x: number, y: number) => void;
     strokeText: (text: string) => void;
   };
   return { ctx: typedCtx, fillCalls, strokeCalls };
@@ -152,5 +152,71 @@ describe('createMarkdownRenderer', () => {
     r.strokeRenderer(ctx, '*hi*', 0, 0);
     expect(strokeCalls.map((c) => c.text)).toEqual(fillCalls.map((c) => c.text));
     expect(strokeCalls).toHaveLength(1);
+  });
+
+  describe('script, fontScale and baselineShift', () => {
+    it('gives a superscript run a negative baseline offset and a smaller size', () => {
+      const layout = layoutMarkdown(
+        [{ text: 'E=mc' }, { text: '2', script: 'super' }],
+        Infinity,
+        20,
+        () => 10,
+      );
+      const [base, sup] = layout.lines[0].runs;
+      expect(base.y).toBe(0);
+      expect(base.size).toBe(20);
+      // Adobe's defaults: 58.3% size, 33.3% rise, both off the inherited size.
+      expect(sup.size).toBeCloseTo(20 * 0.583);
+      expect(sup.y).toBeCloseTo(-20 * 0.333);
+    });
+
+    it('lowers a subscript instead of raising it', () => {
+      const layout = layoutMarkdown(
+        [{ text: 'H' }, { text: '2', script: 'sub' }],
+        Infinity,
+        20,
+        () => 10,
+      );
+      expect(layout.lines[0].runs[1].y).toBeCloseTo(20 * 0.333);
+    });
+
+    it('lets an explicit baselineShift or fontScale override half of a script', () => {
+      const layout = layoutMarkdown(
+        [{ text: 'x', script: 'super', fontScale: 0.5 }],
+        Infinity,
+        20,
+        () => 10,
+      );
+      const [run] = layout.lines[0].runs;
+      expect(run.size).toBe(10);
+      // The rise is untouched by naming the size.
+      expect(run.y).toBeCloseTo(-20 * 0.333);
+    });
+
+    it('measures a superscript at its scaled size, not the inherited one', () => {
+      const sizes: number[] = [];
+      layoutMarkdown(
+        [{ text: '2', script: 'super' }],
+        Infinity,
+        20,
+        (_t, size) => { sizes.push(size); return 10; },
+      );
+      expect(sizes.every((s) => s < 20)).toBe(true);
+    });
+
+    it('paints a superscript above the line baseline', () => {
+      const { ctx, fillCalls } = makeMockCtx();
+      const r = createMarkdownRenderer(ctx, 'plain', 20);
+      r.renderer(ctx, 'plain', 0, 100);
+      expect(fillCalls[0].y).toBe(100);
+
+      const layout = layoutMarkdown(
+        [{ text: 'a' }, { text: 'b', script: 'super' }],
+        Infinity,
+        20,
+        () => 10,
+      );
+      expect(layout.lines[0].runs[1].y).toBeLessThan(0);
+    });
   });
 });
