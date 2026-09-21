@@ -524,9 +524,9 @@ export const THEMES = {
         '--wzl-accent-soft': "#1d1454",
         '--wzl-accent-base': "#2e1f7a",
         '--wzl-accent-strong': "#5841b8",
-        '--wzl-secondary-soft': "#704e09",
-        '--wzl-secondary-base': "#dc9d15",
-        '--wzl-secondary-strong': "#f1cb8d",
+        '--wzl-secondary-soft': "#016458",
+        '--wzl-secondary-base': "#3ee1cb",
+        '--wzl-secondary-strong': "#94e3d5",
         '--wzl-swatch-fuchsia': "#f641f7",
         '--wzl-swatch-green': "#48e628",
         '--wzl-swatch-sky': "#36bff2",
@@ -560,7 +560,7 @@ export const THEMES = {
         '--wzl-border': "#c9cbcf",
         '--wzl-border-strong': "#4d5058",
         '--wzl-accent-fg': "#2e1f7a",
-        '--wzl-secondary-fg': "#704e09",
+        '--wzl-secondary-fg': "#016458",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
         '--wzl-danger-base': "#d94a3f",
@@ -573,7 +573,7 @@ export const THEMES = {
         '--wzl-curve-color': "#5841b8",
         '--wzl-accent': "#2e1f7a",
         '--wzl-accent-hover': "#5841b8",
-        '--wzl-secondary': "#dc9d15",
+        '--wzl-secondary': "#3ee1cb",
         '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
@@ -646,9 +646,9 @@ export const THEMES = {
         '--wzl-accent-soft': "#1d1454",
         '--wzl-accent-base': "#2e1f7a",
         '--wzl-accent-strong': "#5841b8",
-        '--wzl-secondary-soft': "#704e09",
-        '--wzl-secondary-base': "#dc9d15",
-        '--wzl-secondary-strong': "#f1cb8d",
+        '--wzl-secondary-soft': "#016458",
+        '--wzl-secondary-base': "#3ee1cb",
+        '--wzl-secondary-strong': "#94e3d5",
         '--wzl-swatch-fuchsia': "#f641f7",
         '--wzl-swatch-green': "#48e628",
         '--wzl-swatch-sky': "#36bff2",
@@ -682,7 +682,7 @@ export const THEMES = {
         '--wzl-border': "#c9cbcf",
         '--wzl-border-strong': "#4d5058",
         '--wzl-accent-fg': "#2e1f7a",
-        '--wzl-secondary-fg': "#704e09",
+        '--wzl-secondary-fg': "#016458",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
         '--wzl-danger-base': "#d94a3f",
@@ -695,7 +695,7 @@ export const THEMES = {
         '--wzl-curve-color': "#5841b8",
         '--wzl-accent': "#2e1f7a",
         '--wzl-accent-hover': "#5841b8",
-        '--wzl-secondary': "#dc9d15",
+        '--wzl-secondary': "#3ee1cb",
         '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
@@ -768,9 +768,9 @@ export const THEMES = {
         '--wzl-accent-soft': "#1d1454",
         '--wzl-accent-base': "#2e1f7a",
         '--wzl-accent-strong': "#5841b8",
-        '--wzl-secondary-soft': "#704e09",
-        '--wzl-secondary-base': "#dc9d15",
-        '--wzl-secondary-strong': "#f1cb8d",
+        '--wzl-secondary-soft': "#016458",
+        '--wzl-secondary-base': "#3ee1cb",
+        '--wzl-secondary-strong': "#94e3d5",
         '--wzl-swatch-fuchsia': "#f641f7",
         '--wzl-swatch-green': "#48e628",
         '--wzl-swatch-sky': "#36bff2",
@@ -804,7 +804,7 @@ export const THEMES = {
         '--wzl-border': "#c9cbcf",
         '--wzl-border-strong': "#4d5058",
         '--wzl-accent-fg': "#2e1f7a",
-        '--wzl-secondary-fg': "#704e09",
+        '--wzl-secondary-fg': "#016458",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
         '--wzl-danger-base': "#d94a3f",
@@ -817,7 +817,7 @@ export const THEMES = {
         '--wzl-curve-color': "#5841b8",
         '--wzl-accent': "#2e1f7a",
         '--wzl-accent-hover': "#5841b8",
-        '--wzl-secondary': "#dc9d15",
+        '--wzl-secondary': "#3ee1cb",
         '--wzl-danger': "#d94a3f",
         '--wzl-warning': "#d99a3f",
         '--wzl-success': "#2ec27e",
@@ -956,24 +956,48 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         }
       },
       "secondary": {
-        "kind": "lightness",
-        "steps": [
-          "soft",
-          "base",
-          "strong"
-        ],
-        "lightness": [
-          0.45,
-          0.86
-        ],
-        "curve": 0,
-        "chroma": {
-          "peak": 0.149,
-          "lightBias": 1.5,
-          "darkBias": 1.5
+        "by": "mode",
+        "dark": {
+          "kind": "lightness",
+          "steps": [
+            "soft",
+            "base",
+            "strong"
+          ],
+          "lightness": [
+            0.45,
+            0.86
+          ],
+          "curve": 0,
+          "chroma": {
+            "peak": 0.149,
+            "lightBias": 1.5,
+            "darkBias": 1.5
+          },
+          "anchor": {
+            "base": "#dc9d15"
+          }
         },
-        "anchor": {
-          "base": "#dc9d15"
+        "light": {
+          "kind": "lightness",
+          "steps": [
+            "soft",
+            "base",
+            "strong"
+          ],
+          "lightness": [
+            0.45,
+            0.86
+          ],
+          "curve": 0,
+          "chroma": {
+            "peak": 0.149,
+            "lightBias": 1.5,
+            "darkBias": 1.5
+          },
+          "anchor": {
+            "base": "#3ee1cb"
+          }
         }
       },
       "swatch": {
@@ -1292,7 +1316,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       "secondary": {
         "value": "{secondary-base}",
         "type": "color",
-        "description": "Honey amber, opposite the violet accent. A fill; use secondary-fg for text."
+        "description": "Honey amber in dark mode and teal in light, where a darkened amber reads as brown. A fill; use secondary-fg for text."
       },
       "danger": {
         "value": "{danger-base}",
@@ -1794,16 +1818,37 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "value": "#5841b8"
       },
       "secondary-soft": {
-        "type": "color",
-        "value": "#704e09"
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "#704e09"
+        },
+        "light": {
+          "type": "color",
+          "value": "#016458"
+        }
       },
       "secondary-base": {
-        "type": "color",
-        "value": "#dc9d15"
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "#dc9d15"
+        },
+        "light": {
+          "type": "color",
+          "value": "#3ee1cb"
+        }
       },
       "secondary-strong": {
-        "type": "color",
-        "value": "#f1cb8d"
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "#f1cb8d"
+        },
+        "light": {
+          "type": "color",
+          "value": "#94e3d5"
+        }
       },
       "swatch-fuchsia": {
         "type": "color",
@@ -2176,7 +2221,7 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       "secondary": {
         "type": "color",
         "value": "{secondary-base}",
-        "description": "Honey amber, opposite the violet accent. A fill; use secondary-fg for text."
+        "description": "Honey amber in dark mode and teal in light, where a darkened amber reads as brown. A fill; use secondary-fg for text."
       },
       "danger": {
         "type": "color",

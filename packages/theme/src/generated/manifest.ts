@@ -82,7 +82,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-curve-color', type: "color", group: "curve", defaultValue: "#5841b8", description: "Drawn data curves. Routes through the bright accent because accent-base is too dim on sunken surfaces.", hook: false },
   { name: '--wzl-accent', type: "color", group: "accent", defaultValue: "#2e1f7a", description: "", hook: false },
   { name: '--wzl-accent-hover', type: "color", group: "accent", defaultValue: "#5841b8", description: "", hook: false },
-  { name: '--wzl-secondary', type: "color", group: "secondary", defaultValue: "#dc9d15", description: "Honey amber, opposite the violet accent. A fill; use secondary-fg for text.", hook: false },
+  { name: '--wzl-secondary', type: "color", group: "secondary", defaultValue: "#dc9d15", description: "Honey amber in dark mode and teal in light, where a darkened amber reads as brown. A fill; use secondary-fg for text.", hook: false },
   { name: '--wzl-danger', type: "color", group: "status", defaultValue: "#d94a3f", description: "", hook: false },
   { name: '--wzl-warning', type: "color", group: "status", defaultValue: "#d99a3f", description: "", hook: false },
   { name: '--wzl-success', type: "color", group: "status", defaultValue: "#2ec27e", description: "", hook: false },

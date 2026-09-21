@@ -83,7 +83,7 @@
   --wzl-curve-color: var(--wzl-accent-strong);
   --wzl-accent: var(--wzl-accent-base);
   --wzl-accent-hover: var(--wzl-accent-strong);
-  /* Honey amber, opposite the violet accent. A fill; use secondary-fg for text. */
+  /* Honey amber in dark mode and teal in light, where a darkened amber reads as brown. A fill; use secondary-fg for text. */
   --wzl-secondary: var(--wzl-secondary-base);
   --wzl-danger: var(--wzl-danger-base);
   --wzl-warning: var(--wzl-warning-base);
@@ -181,6 +181,9 @@
 [data-wzl-theme='weasel'][data-wzl-mode='dark'],
 [data-wzl-mode='dark'] {
   color-scheme: dark;
+  --wzl-secondary-soft: #704e09;
+  --wzl-secondary-base: #dc9d15;
+  --wzl-secondary-strong: #f1cb8d;
   --wzl-surface: var(--wzl-gray-800);
   --wzl-surface-raised: var(--wzl-gray-700);
   --wzl-surface-sunken: var(--wzl-gray-900);
@@ -196,6 +199,7 @@
   --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
+  --wzl-secondary: var(--wzl-secondary-base);
   --wzl-surface-hover: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
 }
@@ -203,6 +207,9 @@
 [data-wzl-theme='weasel'][data-wzl-mode='light'],
 [data-wzl-mode='light'] {
   color-scheme: light;
+  --wzl-secondary-soft: #016458;
+  --wzl-secondary-base: #3ee1cb;
+  --wzl-secondary-strong: #94e3d5;
   --wzl-surface: var(--wzl-gray-50);
   --wzl-surface-raised: var(--wzl-gray-100);
   --wzl-surface-sunken: var(--wzl-gray-200);
@@ -218,6 +225,7 @@
   --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
+  --wzl-secondary: var(--wzl-secondary-base);
   --wzl-surface-hover: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
 }
