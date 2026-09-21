@@ -87,6 +87,17 @@ describe('label disambiguation', () => {
     expect(labels).toEqual(['Button', 'Cursors/Gallery', 'Icons/Gallery']);
   });
 
+  it('leaves same-named components in different libraries alone — the tag tells them apart', () => {
+    const rows = buildComponents([
+      entry('weasel-ui/Sidebar', 'Default', UI),
+      entry('labkit/Primitives/Sidebar', 'Default', LABKIT),
+    ]);
+    expect(rows.map((r) => [r.label, r.library])).toEqual([
+      ['Sidebar', 'labkit'],
+      ['Sidebar', 'weasel-ui'],
+    ]);
+  });
+
   it('leaves a unique label alone', () => {
     const rows = buildComponents([entry('weasel-ui/Foundations/Button', 'Default', UI)]);
     expect(rows[0].label).toBe('Button');

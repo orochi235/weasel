@@ -65,18 +65,21 @@ export function buildComponents(index: readonly IndexEntry[]): ComponentRow[] {
 }
 
 /**
- * Widen each label leftward until it tells its row apart from the others.
+ * Widen each label leftward until it tells its row apart from the others in
+ * its library.
  * `weasel-ui/Cursors/Gallery` and `weasel-ui/Icons/Gallery` are two different
  * components whose last segments agree, and a flat list that prints both as
  * `Gallery` is unusable — the grouping that used to separate them is the very
  * thing this view removes.
  */
 function disambiguate(rows: readonly ComponentRow[]): void {
+  // Rows in different libraries are already told apart by their tag.
   const byLabel = new Map<string, ComponentRow[]>();
   for (const row of rows) {
-    const group = byLabel.get(row.label);
+    const key = `${row.library}\0${row.label}`;
+    const group = byLabel.get(key);
     if (group) group.push(row);
-    else byLabel.set(row.label, [row]);
+    else byLabel.set(key, [row]);
   }
   for (const group of byLabel.values()) {
     if (group.length < 2) continue;
