@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { LayerList, type LayerTreeNode } from './LayerList';
 
 const meta: Meta<typeof LayerList> = {
-  title: 'labkit/layers/LayerList',
+  title: 'labkit/Layers/LayerList',
   component: LayerList,
 };
 export default meta;

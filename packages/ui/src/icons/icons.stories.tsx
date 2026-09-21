@@ -8,7 +8,7 @@ import {
 } from './index';
 import s from './icons.stories.module.css';
 
-const meta: Meta = { title: 'weasel-ui/icons/Gallery' };
+const meta: Meta = { title: 'weasel-ui/Icons/Gallery' };
 export default meta;
 
 /**

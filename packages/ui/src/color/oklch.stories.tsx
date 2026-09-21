@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { oklchToHex, chromaAt, type ChromaCurve } from './oklch';
 
 const meta: Meta = {
-  title: 'weasel-ui/color/oklch',
+  title: 'weasel-ui/Color/Oklch',
 };
 
 export default meta;

@@ -13,7 +13,7 @@ const base: JobHandle = {
 };
 
 const meta: Meta<typeof JobProgress> = {
-  title: 'labkit/primitives/JobProgress',
+  title: 'labkit/Primitives/JobProgress',
   component: JobProgress,
 };
 export default meta;
