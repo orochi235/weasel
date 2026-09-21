@@ -113,6 +113,13 @@ jobs:
       # catch any of this; it inherits the repo tsconfig paths.
       # See scripts/smoke-consumer-bundle.mjs.
       - run: npm run test:smoke:consumer
-      # No story build here — pages.yml already builds the forge workshop on every
-      # main-branch push that touches user-visible source, so a CI step would be a
-      # slow duplicate. If a story breaks, pages.yml surfaces it.
+      # The site pages.yml deploys: demos, API docs, draw, forge, labkit docs.
+      # Left to pages.yml alone, a break here failed every deploy for three days
+      # (an export with no typedoc category) while CI and every release stayed
+      # green. One matrix leg is enough — the site is not an engines promise.
+      - if: matrix.node == 24
+        run: |
+          npm run build:demo
+          npm run build:draw
+          npm run build:forge
+          npm run docs:build -w @weasel-js/labkit
