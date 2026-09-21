@@ -1,6 +1,7 @@
 import {
   Children,
   isValidElement,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -124,6 +125,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
 
   const { anchor, portalProps } = useOverlayPortal(portalContainer);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const pressRef = useRef<Press | null>(null);
   const [nudge, setNudge] = useState(NO_NUDGE);
 
   return (
@@ -146,7 +148,14 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
     >
       {anchor}
       {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
-      <RACButton id={triggerId} ref={triggerRef} className={s.trigger}>
+      <RACButton
+        id={triggerId}
+        ref={triggerRef}
+        className={s.trigger}
+        onPointerDown={(e) => {
+          pressRef.current = { x: e.clientX, y: e.clientY, at: performance.now() };
+        }}
+      >
         <SelectValue className={s.value}>
           {({ defaultChildren, isPlaceholder }) =>
             isPlaceholder ? (placeholder ?? defaultChildren) : defaultChildren
@@ -191,7 +200,12 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
         {...portalProps}
       >
         {popup === 'over' && (
-          <AlignOverTrigger triggerRef={triggerRef} applied={nudge} onMeasure={setNudge} />
+          <AlignOverTrigger
+            triggerRef={triggerRef}
+            pressRef={pressRef}
+            applied={nudge}
+            onMeasure={setNudge}
+          />
         )}
         <RACListBox className={s.listbox}>
           {options !== undefined
@@ -214,7 +228,17 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
 
 type Nudge = { offset: number; crossOffset: number };
 
+/** Where and when the pointer went down on the trigger. */
+type Press = { x: number; y: number; at: number };
+
+/** How long a press may last and how far it may travel and still be a click. */
+const CLICK_MS = 500;
+const CLICK_SLOP = 4;
+
 const NO_NUDGE: Nudge = { offset: 0, crossOffset: 0 };
+
+/** React Aria's own resting place for a popover: hanging under its trigger. */
+const BELOW: Nudge = { offset: 8, crossOffset: 0 };
 
 /**
  * Lands the list so its selected row covers the trigger: same text column,
@@ -228,10 +252,12 @@ const NO_NUDGE: Nudge = { offset: 0, crossOffset: 0 };
  */
 function AlignOverTrigger({
   triggerRef,
+  pressRef,
   applied,
   onMeasure,
 }: {
   triggerRef: RefObject<HTMLButtonElement | null>;
+  pressRef: RefObject<Press | null>;
   applied: Nudge;
   onMeasure: (next: Nudge) => void;
 }) {
@@ -247,10 +273,15 @@ function AlignOverTrigger({
     const popover = markerRef.current?.closest<HTMLElement>('[data-weasel-overlay]');
     if (!trigger || !popover || passes.current > 3) return;
     const value = trigger.querySelector(`.${s.value}`);
-    const label =
-      popover.querySelector(`[data-selected] .${s.optionLabel}`) ??
-      popover.querySelector(`.${s.optionLabel}`);
-    if (!value || !label) return;
+    // Nothing chosen yet, so there is no row that belongs over the trigger —
+    // and putting an arbitrary one under the pointer arms it. A select showing
+    // its placeholder hangs its list below, like any other dropdown.
+    const label = popover.querySelector(`[data-selected] .${s.optionLabel}`);
+    if (!value || !label) {
+      if (applied.offset !== BELOW.offset || applied.crossOffset !== BELOW.crossOffset)
+        onMeasure(BELOW);
+      return;
+    }
 
     // The trigger's own text alignment decides which edge the two labels are
     // matched on, and the list follows it so the selected row reads as the
@@ -281,6 +312,28 @@ function AlignOverTrigger({
     passes.current += 1;
     onMeasure(next);
   });
+
+  // The list covers the trigger, so the release that ends the click opening it
+  // lands on a row — and a row selects on release, which shuts the list again
+  // before it has been seen. A click is a press and a release in the same
+  // place: that one is the opening gesture and belongs to the trigger, and the
+  // list keeps every release after it. Press, hold, drag and release still
+  // picks a row, which is the gesture a list over its trigger is for.
+  useEffect(() => {
+    const doc = triggerRef.current?.ownerDocument;
+    if (!doc) return;
+    const onUp = (e: PointerEvent) => {
+      doc.removeEventListener('pointerup', onUp, true);
+      const press = pressRef.current;
+      if (!press || performance.now() - press.at > CLICK_MS) return;
+      if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > CLICK_SLOP) return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    doc.addEventListener('pointerup', onUp, true);
+    return () => doc.removeEventListener('pointerup', onUp, true);
+  }, [triggerRef, pressRef]);
+
   return <span ref={markerRef} hidden />;
 }
 
