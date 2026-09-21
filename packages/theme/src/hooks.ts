@@ -97,8 +97,8 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
   {
     name: 'property-readout-w',
     type: 'dimension',
-    value: '0px',
-    description: 'Minimum width of a Properties row’s value readout, which is otherwise sized to the widest value its range can show.',
+    value: 'calc(4.5ch + 2px)',
+    description: 'Width of a Properties row’s value readout — four digits, so the controls beside a column of readouts end on one line. A range whose widest value needs more widens its own readout.',
   },
   {
     name: 'select-border',

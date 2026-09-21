@@ -349,10 +349,11 @@
   /* Stated rather than left to the control's intrinsic size, which `.readoutText`
      cannot reproduce — see the note there. */
   height: var(--wzl-field-h, var(--wzl-control-h-sm));
-  /* The fit is the widest value in `ch`, which is one digit; the box is border-box, so its border
-     comes back on top, with half a `ch` for a glyph wider than a digit. */
+  /* One width for every readout, so a column of sliders ends on one line; a range whose widest
+     value (the fit, in digit-wide `ch`) will not fit it widens its own box. The box is
+     border-box, so its border comes back on top, with half a `ch` for a glyph wider than a digit. */
   width: max(
-    var(--wzl-property-readout-w, 0px),
+    var(--wzl-property-readout-w, calc(4.5ch + 2px)),
     calc(var(--wzl-property-readout-fit, 0px) + 2px + 0.5ch)
   );
   text-align: right;
