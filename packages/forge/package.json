@@ -70,6 +70,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "^4.1.6",
     "@weasel-js/theme": "1.5.2",
+    "@weasel-js/ui": "1.5.2",
     "axe-core": "^4.13.0",
     "chai": "^6.2.2"
   },
