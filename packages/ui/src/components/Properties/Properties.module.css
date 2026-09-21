@@ -461,6 +461,16 @@
   --wzl-select-align: right;
 }
 
+/* Two runs of text on one line read as one line or they read as broken, and
+   centering two boxes is not aligning the text in them: a 13px label centered
+   against a 15px value left the two baselines 1px apart, which is exactly the
+   distance the eye reads as a mistake. Only the rows whose control is text — a
+   checkbox or a swatch has no baseline of its own and would hang off the line
+   instead. */
+.rowInline:has(> .select) {
+  align-items: var(--wzl-prop-row-align, baseline);
+}
+
 /* A select sized to its longest option starts wherever that width leaves it, so
    a column of them scatters its values. Filling the row and setting the value
    against the chevron gives them one rail. */
