@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { ThemeProvider, useTheme } from './react';
+import { colorAt } from './colorList';
+import { ThemeProvider, useTheme, useTones } from './react';
 import { defineTheme } from './theme';
 
 function Probe(): React.ReactElement {
@@ -50,5 +51,20 @@ describe('ThemeProvider', () => {
 
   it('throws when useTheme is used outside a provider', () => {
     expect(() => render(<Probe />)).toThrow(/ThemeProvider/);
+  });
+
+  it('publishes the theme’s tones, and a tones prop overrides them for its subtree', () => {
+    function Tone(): React.ReactElement {
+      const ctx = useTones();
+      return <span data-testid="t">{colorAt(ctx.tones, 1, ctx)}</span>;
+    }
+    const { rerender } = render(<Tone />);
+    expect(screen.getByTestId('t').textContent).toBe('#48e628');
+    rerender(
+      <ThemeProvider tones={['#000', '#fff']}>
+        <Tone />
+      </ThemeProvider>,
+    );
+    expect(screen.getByTestId('t').textContent).toBe('#fff');
   });
 });

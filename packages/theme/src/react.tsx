@@ -1,15 +1,17 @@
 import React, { createContext, useContext, useMemo, useRef, useLayoutEffect } from 'react';
 import { applyTheme } from './applyTheme';
+import { themeTones, type ColorList } from './colorList';
 import { fullSelection, selectionKey, type Selection } from './axes';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
 
-/** What `<ThemeProvider>` publishes: the theme, the full selection in force, and the
- *  fully resolved token record for that pair. */
+/** What `<ThemeProvider>` publishes: the theme, the full selection in force, the
+ *  fully resolved token record for that pair, and the tone list in force. */
 export interface ThemeContextValue {
   readonly theme: Theme;
   readonly selection: Selection;
   readonly resolved: ResolvedTheme;
+  readonly tones: ColorList;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -19,6 +21,8 @@ export interface ThemeProviderProps {
   readonly theme?: Theme;
   /** Axis values, e.g. `{ mode: 'light' }`. A missing axis takes its default. */
   readonly selection?: Selection;
+  /** The colors a `tone` index picks from in this subtree. Absent: the theme's own. */
+  readonly tones?: ColorList;
   /** Applied to the wrapper element, so it can be the layout element too. */
   readonly className?: string;
   readonly style?: React.CSSProperties;
@@ -38,6 +42,7 @@ export interface ThemeProviderProps {
 export function ThemeProvider({
   theme = weaselTheme,
   selection,
+  tones,
   className,
   style,
   children,
@@ -49,9 +54,9 @@ export function ThemeProvider({
   const key = selectionKey(axes, full);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, selection: full, resolved: resolveTheme(theme, full) }),
+    () => ({ theme, selection: full, resolved: resolveTheme(theme, full), tones: tones ?? themeTones(theme) }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [theme, key],
+    [theme, key, tones],
   );
 
   useLayoutEffect(() => {
@@ -85,4 +90,22 @@ export function useTheme(): ThemeContextValue {
  */
 export function useThemeOptional(): ThemeContextValue | null {
   return useContext(ThemeContext);
+}
+
+let defaultTones: ThemeContextValue | undefined;
+
+/**
+ * The tone list in force and what it resolves against — the nearest
+ * `<ThemeProvider>`'s, else the built-in theme's at its defaults. Pass the
+ * result as `colorAt`'s context.
+ */
+export function useTones(): ThemeContextValue {
+  const ctx = useContext(ThemeContext);
+  if (ctx) return ctx;
+  return (defaultTones ??= {
+    theme: weaselTheme,
+    selection: fullSelection(themeAxes(weaselTheme)),
+    resolved: resolveTheme(weaselTheme),
+    tones: themeTones(weaselTheme),
+  });
 }

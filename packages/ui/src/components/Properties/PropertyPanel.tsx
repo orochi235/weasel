@@ -1,13 +1,16 @@
 import {
+  createContext,
   type CSSProperties,
   type ReactNode,
   type RefObject,
+  useContext,
   useEffect,
   useId,
   useRef,
   useState,
 } from 'react';
 import { Focusable } from 'react-aria-components';
+import { type StanceProps, useStance } from '../stance';
 import { dlog } from '../../dlog';
 import { formatCompact, formatNumber, parseNumber } from '../../format/number';
 import type { PrefNumberFormat } from '../Prefs/schema';
@@ -70,25 +73,41 @@ export function propertyMetricClass(
 }
 
 /** Props for `<PropertyPanel>`. */
-export interface PropertyPanelProps extends PropertyMetricProps {
+export interface PropertyPanelProps extends PropertyMetricProps, StanceProps {
   title?: ReactNode;
   children: ReactNode;
   className?: string;
 }
 
-/** A titled panel holding property rows — the sidebar container the rest of
- *  this module's components fill. */
+const PanelNesting = createContext(false);
+
+/**
+ * A titled panel holding property rows — the sidebar container the rest of
+ * this module's components fill.
+ *
+ * `stance` says what kind of content it holds and `tone` which of its peers it
+ * is; the theme's `--wzl-panel-*` slots decide how each looks. A stanced
+ * panel's title takes the row-label recipe rather than the display title.
+ */
 export function PropertyPanel({
   title,
   children,
   className,
   density,
   align,
+  stance,
+  tone,
 }: PropertyPanelProps) {
+  const nested = useContext(PanelNesting);
+  const attrs = useStance({ stance, tone }, '--wzl-panel-tone');
   return (
-    <div className={propertyMetricClass(s.panel, { density, align }, className)}>
+    <div
+      className={propertyMetricClass(s.panel, { density, align }, className)}
+      {...attrs}
+      data-nested={nested || undefined}
+    >
       {title != null && <h2 className={s.panelTitle}>{title}</h2>}
-      {children}
+      <PanelNesting.Provider value>{children}</PanelNesting.Provider>
     </div>
   );
 }

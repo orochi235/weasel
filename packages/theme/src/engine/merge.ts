@@ -44,5 +44,7 @@ export function mergeChain(def: ThemeDefinition, lookup?: Lookup, seen: Readonly
   const own = Object.entries(def.pins ?? {}).map(([name, v]) => [name, fillFromParent(v, parentPins[name], axes)]);
   out.pins = { ...Object.fromEntries(inherited), ...Object.fromEntries(own) };
   out.axes = axes;
+  out.tones = def.tones ?? parent.tones;
+  if (out.tones === undefined) delete out.tones;
   return out as unknown as ThemeDefinition;
 }

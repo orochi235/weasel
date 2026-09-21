@@ -328,6 +328,168 @@
       }
     }
   },
+  "components": {
+    "panel-surface": {
+      "value": "{surface-raised}",
+      "type": "color",
+      "description": "Fill of a PropertyPanel."
+    },
+    "panel-border-color": {
+      "value": "{border}",
+      "type": "color"
+    },
+    "panel-border-style": {
+      "value": "solid",
+      "type": "string"
+    },
+    "panel-border-width": {
+      "value": "1px",
+      "type": "dimension"
+    },
+    "panel-radius": {
+      "value": "{radius-lg}",
+      "type": "dimension"
+    },
+    "panel-pad": {
+      "value": "14px 16px",
+      "type": "dimension",
+      "description": "A panel’s padding when no density sets one."
+    },
+    "panel-blur": {
+      "value": "{glass-blur}",
+      "type": "dimension"
+    },
+    "panel-tone-mix": {
+      "value": "14%",
+      "type": "number",
+      "description": "How much of a panel’s tone mixes into its surface."
+    },
+    "panel-title-font": {
+      "value": "{font-display}",
+      "type": "fontFamily"
+    },
+    "panel-title-weight": {
+      "value": "{font-weight-light}",
+      "type": "fontWeight"
+    },
+    "panel-title-size": {
+      "value": "{font-size-lg}",
+      "type": "dimension"
+    },
+    "panel-title-case": {
+      "value": "none",
+      "type": "string"
+    },
+    "panel-title-tracking": {
+      "value": "0.01em",
+      "type": "dimension"
+    },
+    "panel-title-color": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "panel-title-inset": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "panel-scope-border-width": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "panel-scope-radius": {
+      "value": "8px",
+      "type": "dimension"
+    },
+    "panel-scope-tone-mix": {
+      "value": "22%",
+      "type": "number"
+    },
+    "panel-scope-nested-radius": {
+      "value": "6px",
+      "type": "dimension"
+    },
+    "panel-scope-nested-surface": {
+      "value": "{surface}",
+      "type": "color",
+      "description": "A scope panel inside another sits back into it."
+    },
+    "panel-aside-surface": {
+      "value": "transparent",
+      "type": "color"
+    },
+    "panel-aside-border-color": {
+      "value": "{line-subtle}",
+      "type": "color"
+    },
+    "panel-aside-blur": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "panel-aside-title-color": {
+      "value": "{fg-subtle}",
+      "type": "color"
+    },
+    "panel-advanced-title-color": {
+      "value": "{fg-subtle}",
+      "type": "color"
+    },
+    "panel-debug-border-style": {
+      "value": "dashed",
+      "type": "string"
+    },
+    "panel-debug-title-font": {
+      "value": "{font-mono}",
+      "type": "fontFamily"
+    },
+    "panel-debug-title-case": {
+      "value": "none",
+      "type": "string"
+    },
+    "panel-danger-tone": {
+      "value": "{danger}",
+      "type": "color"
+    },
+    "panel-danger-border-color": {
+      "value": "{danger}",
+      "type": "color"
+    },
+    "panel-danger-title-color": {
+      "value": "{danger}",
+      "type": "color"
+    },
+    "panel-notice-tone": {
+      "value": "{accent}",
+      "type": "color"
+    },
+    "panel-notice-tone-mix": {
+      "value": "8%",
+      "type": "number"
+    },
+    "panel-important-border-color": {
+      "value": "{accent-fg}",
+      "type": "color"
+    },
+    "panel-important-title-color": {
+      "value": "{accent-fg}",
+      "type": "color"
+    },
+    "panel-preview-pad": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "panel-preview-title-size": {
+      "value": "{font-size-xs}",
+      "type": "dimension"
+    },
+    "panel-preview-title-case": {
+      "value": "none",
+      "type": "string"
+    },
+    "panel-preview-title-inset": {
+      "value": "6px 10px 0",
+      "type": "dimension"
+    }
+  },
   "pins": {
     "gray-50": {
       "value": "#f5f5f6",
@@ -848,5 +1010,8 @@
       "type": "dimension",
       "description": "Alias for space-8. The t-shirt names name every other rung of the ladder."
     }
+  },
+  "tones": {
+    "ramp": "swatch"
   }
 }

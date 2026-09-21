@@ -188,3 +188,54 @@ export const ListWithoutChrome: Story = {
     </div>
   ),
 };
+
+const STANCES = [
+  undefined,
+  'scope',
+  'aside',
+  'advanced',
+  'debug',
+  'danger',
+  'notice',
+  'important',
+  'preview',
+] as const;
+
+function StanceRows() {
+  const [amount, setAmount] = useState(0.4);
+  const [on, setOn] = useState(true);
+  return (
+    <PropertyList>
+      <SliderRow label="Amount" value={amount} min={0} max={1} step={0.01} onChange={setAmount} />
+      <CheckboxRow label="Enabled" value={on} onChange={setOn} />
+    </PropertyList>
+  );
+}
+
+/** Every stance and none, then tones 0–3 on `scope`, then a panel nested in each. */
+export const Stances: Story = {
+  render: () => (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 260px)', gap: 16 }}>
+      {STANCES.map((stance) => (
+        <PropertyPanel key={stance ?? 'none'} stance={stance} title={stance ?? 'no stance'}>
+          <StanceRows />
+        </PropertyPanel>
+      ))}
+      {[0, 1, 2, 3].map((tone) => (
+        <PropertyPanel key={`tone-${tone}`} stance="scope" tone={tone} title={`scope, tone ${tone}`}>
+          <StanceRows />
+        </PropertyPanel>
+      ))}
+      <PropertyPanel tone={2} title="tone 2, no stance">
+        <StanceRows />
+      </PropertyPanel>
+      {STANCES.filter(Boolean).map((stance) => (
+        <PropertyPanel key={`nested-${stance}`} stance="scope" tone={4} title={`${stance} nested in scope`}>
+          <PropertyPanel stance={stance} title={stance}>
+            <StanceRows />
+          </PropertyPanel>
+        </PropertyPanel>
+      ))}
+    </div>
+  ),
+};

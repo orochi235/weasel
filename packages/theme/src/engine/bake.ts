@@ -1,4 +1,5 @@
 import { enumerateSelections, fullSelection, pick, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes';
+import type { SerializableColorList } from '../colorList';
 import type { ThemeDefinition } from '../definition';
 import type { RawToken } from '../dtcg/types';
 import { derive } from './derive';
@@ -17,6 +18,9 @@ export interface BakedTheme {
   readonly axes: AxisDefs;
   /** In layer order, then definition order. */
   readonly tokens: Readonly<Record<string, Varying<RawToken>>>;
+  /** Each ramp this definition declares → its step names in order, which the tokens alone do not keep. */
+  readonly ramps?: Readonly<Record<string, readonly string[]>>;
+  readonly tones?: SerializableColorList;
 }
 
 /** Drop undefined fields so tokens compare and serialize the same way. */
@@ -116,5 +120,13 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
     if (value !== undefined) tokens[name] = value;
   }
 
-  return { name: definition.name, extends: definition.extends ?? null, axes, tokens };
+  const ramps = Object.fromEntries(Object.entries(definition.ramps ?? {}).map(([name, entry]) => [name, declaredSteps(entry)]));
+  return {
+    name: definition.name,
+    extends: definition.extends ?? null,
+    axes,
+    tokens,
+    ...(Object.keys(ramps).length > 0 ? { ramps } : {}),
+    ...(definition.tones !== undefined ? { tones: definition.tones } : {}),
+  };
 }
