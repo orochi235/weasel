@@ -739,6 +739,17 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P1) Carry panel `stance` and `tone` to the kit's other surfaces.** A
+  `PropertyPanel` says what kind of content it holds — `scope`, `aside`,
+  `advanced`, `debug`, `danger`, `notice`, `important`, `preview` — and which of
+  its peers it is (`tone`, an index into the theme's tone list), and the theme
+  decides how each looks. Nothing else in the kit can say either: `Subpanel`,
+  `EffectCard` (whose `accent` is a hand-picked color in the same role as a tone),
+  `PropertyGroup`, labkit's sidebar sections, `Callout`, toasts, dialogs and HUDs
+  each have their own one look. Extend the convention wherever a surface
+  communicates a class of content; where one does not fit, say why here. The panel
+  design is in `docs/superpowers/specs/2026-09-21-panel-stance-design.md`.
+
 - **(P2) DTCG export carries one axis, so density is flattened out of it.**
   `toDTCG` writes mode and, for every other axis, that axis's default branch
   only — a theme round-tripped through DTCG comes back with its `compact` and
