@@ -80,6 +80,11 @@ export interface SavedSnapshot {
 /** `auto` follows the OS; the other two are an explicit choice. */
 export type LabMode = 'auto' | 'light' | 'dark';
 
+/** How much room the lab's own chrome takes — the theme's density axis, named
+ *  the way the theme names it. A lab's instruments are unaffected: this sizes
+ *  the shell around them. */
+export type LabDensity = 'compact' | 'comfortable' | 'roomy';
+
 /** Everything a lab persists: its trials, its saved snapshots, and the
  *  chosen color mode. */
 export interface LabStoreState {

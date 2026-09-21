@@ -361,7 +361,9 @@
 /* Get Info */
 
 .fg-info-dialog {
-  inline-size: min(40rem, 90vw);
+  /* Wide enough for the longest row a dossier carries — an absolute story file
+     path — to sit on one line. */
+  inline-size: min(52rem, 90vw);
 }
 
 .fg-info {

@@ -30,7 +30,7 @@ import { type OpenedLabStore, openLabStore } from '../state/openLabStore';
 import { PersistenceContext } from '../state/Persistence';
 import { createRecordCache } from '../state/records';
 import { createLabStore, type LabStore } from '../state/store';
-import type { LabMode, StorageAdapter, TrialRecord } from '../state/types';
+import type { LabDensity, LabMode, StorageAdapter, TrialRecord } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { usePersistedState } from '../state/usePersistedState';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
@@ -64,6 +64,10 @@ interface LabBaseProps {
   instruments: InstrumentList;
   defaultInstrument: string;
   mode?: LabMode;
+  /** How much room the lab's chrome takes. Default `'comfortable'`; a lab whose
+   *  window is the whole app, rather than a panel beside one, reads better at
+   *  `'roomy'`. The trials' own contents are unaffected. */
+  density?: LabDensity;
   /** Rendered while a stored lab loads. Default: the lab's empty shell. */
   fallback?: ReactNode;
   /**
@@ -175,12 +179,17 @@ async function openStoredLab(
 function LabFallback({
   title,
   mode,
+  density,
   pages,
   path,
-}: Pick<LabBaseProps, 'title' | 'mode' | 'pages' | 'path'>) {
+}: Pick<LabBaseProps, 'title' | 'mode' | 'density' | 'pages' | 'path'>) {
   const resolvedMode = useResolvedMode(mode ?? 'auto');
   return (
-    <ThemeProvider theme={interstellarTheme} selection={{ mode: resolvedMode }} className="lk-lab">
+    <ThemeProvider
+      theme={interstellarTheme}
+      selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
+      className="lk-lab"
+    >
       <LabShell
         title={title ?? 'Labkit'}
         mode={mode}
@@ -289,7 +298,13 @@ export function Lab(props: LabProps) {
   if (!opened) {
     if (props.fallback !== undefined) return props.fallback;
     return (
-      <LabFallback title={props.title} mode={props.mode} pages={props.pages} path={props.path} />
+      <LabFallback
+        title={props.title}
+        mode={props.mode}
+        density={props.density}
+        pages={props.pages}
+        path={props.path}
+      />
     );
   }
   return <LabRuntime {...props} opened={opened} />;
@@ -298,6 +313,7 @@ export function Lab(props: LabProps) {
 function LabRuntime({
   instruments,
   mode,
+  density,
   nebula,
   title,
   pages,
@@ -575,7 +591,7 @@ function LabRuntime({
           <LabContext.Provider value={contextValue}>
             <ThemeProvider
               theme={interstellarTheme}
-              selection={{ mode: resolvedMode }}
+              selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
               className="lk-lab"
               style={backdropStyle}
             >

@@ -291,6 +291,7 @@ export { Persistence, type PersistenceProps } from './state/Persistence';
 export type { RecordCache, RecordChange } from './state/records';
 export type {
   CreateLabStoreOptions,
+  LabDensity,
   LabDocument,
   LabMode,
   LabStoreState,

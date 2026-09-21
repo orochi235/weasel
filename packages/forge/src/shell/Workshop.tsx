@@ -115,6 +115,7 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
       <TrialFramesContext.Provider value={frames}>
         <Lab
           title="weaselforge"
+          density="roomy"
           instruments={registry.instruments}
           defaultInstrument={initialStory(index, first.id)}
           storageKey={storageKey ?? 'weaselforge'}
