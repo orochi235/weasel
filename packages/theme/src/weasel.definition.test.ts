@@ -44,14 +44,14 @@ const EXPECTED_NAMES = [
   'panel-surface', 'panel-border-color', 'panel-border-style', 'panel-border-width',
   'panel-radius', 'panel-pad', 'panel-blur', 'panel-tone-mix', 'panel-title-font',
   'panel-title-weight', 'panel-title-size', 'panel-title-case', 'panel-title-tracking',
-  'panel-title-color', 'panel-title-inset', 'panel-scope-border-width', 'panel-scope-radius',
-  'panel-scope-tone-mix', 'panel-scope-nested-radius', 'panel-scope-nested-surface',
-  'panel-aside-surface', 'panel-aside-border-color', 'panel-aside-blur', 'panel-aside-title-color',
-  'panel-advanced-title-color', 'panel-debug-border-style', 'panel-debug-title-font',
-  'panel-debug-title-case', 'panel-danger-tone', 'panel-danger-border-color',
-  'panel-danger-title-color', 'panel-notice-tone', 'panel-notice-tone-mix',
-  'panel-important-border-color', 'panel-important-title-color', 'panel-preview-pad',
-  'panel-preview-title-size', 'panel-preview-title-case', 'panel-preview-title-inset',
+  'panel-title-color', 'panel-title-inset', 'stance-scope-border-width', 'stance-scope-radius',
+  'stance-scope-tone-mix', 'stance-scope-nested-radius', 'stance-scope-nested-surface',
+  'stance-aside-surface', 'stance-aside-border-color', 'stance-aside-blur', 'stance-aside-title-color',
+  'stance-advanced-title-color', 'stance-debug-border-style', 'stance-debug-title-font',
+  'stance-debug-title-case', 'stance-danger-tone', 'stance-danger-border-color',
+  'stance-danger-title-color', 'stance-notice-tone', 'stance-notice-tone-mix',
+  'stance-important-border-color', 'stance-important-title-color', 'stance-preview-pad',
+  'stance-preview-title-size', 'stance-preview-title-case', 'stance-preview-title-inset',
 ].sort();
 
 describe('weasel theme definition', () => {

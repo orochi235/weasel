@@ -18,15 +18,15 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { TOKEN_HOOKS } from '../packages/theme/src/hooks';
-import { panelStanceSlotNames } from '../packages/theme/src/panel';
+import { stanceSlotNames } from '../packages/theme/src/panel';
 
 /** Override hooks: read with a fallback, declared by no theme on purpose. The
  *  list is the theme package's, so the checker and the token manifest cannot
  *  disagree about which names are hooks. */
 export const HOOKS = new Set(TOKEN_HOOKS.map((h) => `--wzl-${h.name}`));
 
-/** A panel's per-stance slots: read with a fallback, declared by a theme only where a stance differs. */
-const PANEL_STANCE_SLOTS = panelStanceSlotNames();
+/** Per-stance slots: read with a fallback, declared by a theme only where a stance differs. */
+const STANCE_SLOT_NAMES = stanceSlotNames();
 
 export interface SourceFile {
   readonly path: string;
@@ -52,7 +52,7 @@ const stripComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, (c) => c.rep
 export function findUndeclaredReads(
   files: readonly SourceFile[],
   themeTokens: ReadonlySet<string>,
-  hooks: ReadonlySet<string> = new Set([...HOOKS, ...PANEL_STANCE_SLOTS]),
+  hooks: ReadonlySet<string> = new Set([...HOOKS, ...STANCE_SLOT_NAMES]),
 ): Offender[] {
   const local = new Map<string, Set<string>>();
   for (const { path, source } of files) {

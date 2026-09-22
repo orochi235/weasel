@@ -86,7 +86,7 @@ const PanelNesting = createContext(false);
  * this module's components fill.
  *
  * `stance` says what kind of content it holds and `tone` which of its peers it
- * is; the theme's `--wzl-panel-*` slots decide how each looks. A stanced
+ * is; the theme's `--wzl-panel-*` and `--wzl-stance-*` slots decide how each looks. A stanced
  * panel's title takes the row-label recipe rather than the display title.
  */
 export function PropertyPanel({
@@ -99,7 +99,7 @@ export function PropertyPanel({
   tone,
 }: PropertyPanelProps) {
   const nested = useContext(PanelNesting);
-  const attrs = useStance({ stance, tone }, '--wzl-panel-tone');
+  const attrs = useStance({ stance, tone });
   return (
     <div
       className={propertyMetricClass(s.panel, { density, align }, className)}

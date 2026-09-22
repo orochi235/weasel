@@ -392,100 +392,100 @@
       "value": "0",
       "type": "dimension"
     },
-    "panel-scope-border-width": {
+    "stance-scope-border-width": {
       "value": "0",
       "type": "dimension"
     },
-    "panel-scope-radius": {
+    "stance-scope-radius": {
       "value": "8px",
       "type": "dimension"
     },
-    "panel-scope-tone-mix": {
+    "stance-scope-tone-mix": {
       "value": "22%",
       "type": "number"
     },
-    "panel-scope-nested-radius": {
+    "stance-scope-nested-radius": {
       "value": "6px",
       "type": "dimension"
     },
-    "panel-scope-nested-surface": {
+    "stance-scope-nested-surface": {
       "value": "{surface}",
       "type": "color",
       "description": "A scope panel inside another sits back into it."
     },
-    "panel-aside-surface": {
+    "stance-aside-surface": {
       "value": "transparent",
       "type": "color"
     },
-    "panel-aside-border-color": {
+    "stance-aside-border-color": {
       "value": "{line-subtle}",
       "type": "color"
     },
-    "panel-aside-blur": {
+    "stance-aside-blur": {
       "value": "0px",
       "type": "dimension"
     },
-    "panel-aside-title-color": {
+    "stance-aside-title-color": {
       "value": "{fg-subtle}",
       "type": "color"
     },
-    "panel-advanced-title-color": {
+    "stance-advanced-title-color": {
       "value": "{fg-subtle}",
       "type": "color"
     },
-    "panel-debug-border-style": {
+    "stance-debug-border-style": {
       "value": "dashed",
       "type": "string"
     },
-    "panel-debug-title-font": {
+    "stance-debug-title-font": {
       "value": "{font-mono}",
       "type": "fontFamily"
     },
-    "panel-debug-title-case": {
+    "stance-debug-title-case": {
       "value": "none",
       "type": "string"
     },
-    "panel-danger-tone": {
+    "stance-danger-tone": {
       "value": "{danger}",
       "type": "color"
     },
-    "panel-danger-border-color": {
+    "stance-danger-border-color": {
       "value": "{danger}",
       "type": "color"
     },
-    "panel-danger-title-color": {
+    "stance-danger-title-color": {
       "value": "{danger}",
       "type": "color"
     },
-    "panel-notice-tone": {
+    "stance-notice-tone": {
       "value": "{accent}",
       "type": "color"
     },
-    "panel-notice-tone-mix": {
+    "stance-notice-tone-mix": {
       "value": "8%",
       "type": "number"
     },
-    "panel-important-border-color": {
+    "stance-important-border-color": {
       "value": "{accent-fg}",
       "type": "color"
     },
-    "panel-important-title-color": {
+    "stance-important-title-color": {
       "value": "{accent-fg}",
       "type": "color"
     },
-    "panel-preview-pad": {
+    "stance-preview-pad": {
       "value": "0",
       "type": "dimension"
     },
-    "panel-preview-title-size": {
+    "stance-preview-title-size": {
       "value": "{font-size-xs}",
       "type": "dimension"
     },
-    "panel-preview-title-case": {
+    "stance-preview-title-case": {
       "value": "none",
       "type": "string"
     },
-    "panel-preview-title-inset": {
+    "stance-preview-title-inset": {
       "value": "6px 10px 0",
       "type": "dimension"
     }

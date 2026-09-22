@@ -26,7 +26,7 @@ export * from './components/PatternPicker';
 export * from './components/Powerline';
 export * from './components/Prefs';
 export * from './components/Properties';
-export { type PanelStance, type StanceAttrs, type StanceProps, useStance } from './components/stance';
+export { type Stance, type StanceAttrs, type StanceProps, useStance } from './components/stance';
 export * from './components/SelectionPanel';
 export * from './components/ResizeHandle';
 export * from './components/Sidebar';

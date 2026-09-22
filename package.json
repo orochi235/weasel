@@ -80,7 +80,7 @@
     "prepublishOnly": "npm run check:bumps && npm run check:test-projects && npm run typecheck && npm run lint && npm run test && npm run test:stories:forge && npm run build && npm run check:manifests && npm run test:smoke:consumer",
     "prepare": "npm run build",
     "gen:icons": "node packages/ui/scripts/gen-icons.mjs",
-    "gen:panel-stances": "tsx packages/ui/scripts/gen-panel-stances.ts",
+    "gen:stances": "tsx packages/ui/scripts/gen-stances.ts",
     "gen:cursors": "node packages/cursor/scripts/gen-cursors.mjs",
     "proof:cursors": "node --import ./packages/cursor/scripts/ts-resolve.mjs packages/cursor/scripts/proof-cursors.mjs",
     "proof:pixels": "node --import ./packages/cursor/scripts/ts-resolve.mjs packages/cursor/scripts/proof-pixels.mjs",

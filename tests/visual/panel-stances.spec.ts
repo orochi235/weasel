@@ -14,7 +14,7 @@ const read = (p: string) => readFileSync(resolve(root, p), 'utf8');
 const rows = `<div class="list"><label class="row"><span class="rowLabel">Amount<em class="readout">0.40</em></span><input type="range"></label></div>`;
 const panel = (attrs: string, title: string, inner = rows) =>
   `<div class="panel" ${attrs}><h2 class="panelTitle">${title}</h2>${inner}</div>`;
-const tone = (step: string) => `data-tone="1" style="--wzl-panel-tone: var(--wzl-swatch-${step})"`;
+const tone = (step: string) => `data-tone="1" style="--wzl-tone: var(--wzl-swatch-${step})"`;
 
 const BODY = [
   panel('data-k="none"', 'no stance'),
@@ -37,7 +37,7 @@ async function mount(page: Page, mode: 'dark' | 'light') {
      <head><style>${read('packages/theme/src/generated/tokens.css')}</style>
      <style>${read('packages/ui/src/components/Properties/Properties.module.css')}</style>
      <style>body { background: var(--wzl-surface); display: grid; grid-template-columns: repeat(3, 240px); gap: 12px; padding: 12px; margin: 0 }
-       .pin { --wzl-panel-aside-border-style: dotted; }</style></head><body>${BODY}</body></html>`,
+       .pin { --wzl-stance-aside-border-style: dotted; }</style></head><body>${BODY}</body></html>`,
   );
 }
 
@@ -75,6 +75,7 @@ const looks = (page: Page) =>
       accent: color('var(--wzl-accent)'),
       accentFg: color('var(--wzl-accent-fg)'),
       green: color('var(--wzl-swatch-green)'),
+      greenFg: color('color-mix(in oklab, var(--wzl-swatch-green) 70%, var(--wzl-fg))'),
       danger: color('var(--wzl-danger)'),
     };
     return out;
@@ -85,7 +86,7 @@ for (const mode of ['dark', 'light'] as const) {
     test('an unstanced panel draws as it always has', async ({ page }) => {
       await mount(page, mode);
       const { none, ref } = await looks(page);
-      expect(none).toMatchObject({ bg: ref.raised, borderWidth: '1px', borderStyle: 'solid', borderColor: ref.border, radius: '14px', titleSize: '16px', titleCase: 'none', readout: ref.accent });
+      expect(none).toMatchObject({ bg: ref.raised, borderWidth: '1px', borderStyle: 'solid', borderColor: ref.border, radius: '14px', titleSize: '16px', titleCase: 'none', readout: ref.accentFg });
     });
 
     test('each stance draws its own look, and a stanced title takes the row-label recipe', async ({ page }) => {
@@ -110,8 +111,9 @@ for (const mode of ['dark', 'light'] as const) {
       await mount(page, mode);
       const l = await looks(page);
       expect(l['scope-tone'].bg).not.toBe(l.scope.bg);
-      expect(l['scope-tone'].readout).toBe(l.ref.green);
-      expect(l.danger.readout).toBe(l.ref.accent);
+      // Readouts paint --wzl-accent-fg, which the rebind derives from the tone.
+      expect(l['scope-tone'].readout).toBe(l.ref.greenFg);
+      expect(l.danger.readout).toBe(l.ref.accentFg);
     });
 
     test('a nested panel reads its stance’s nested slots, and takes no tone from its parent', async ({ page }) => {
