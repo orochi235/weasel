@@ -88,6 +88,43 @@ const { tokens, provenance, issues } = derive(slate, { mode: 'light' });
 const theme: Theme = { ...bake(slate), extends: weaselTheme };
 ```
 
+### Axes in DTCG
+
+DTCG has one variant dimension, so a document from `toDTCG` holds mode in
+`modes` and every other axis at its default value. That part is plain DTCG: a
+tool that ignores extensions reads a theme at `density=comfortable` (or whatever
+each axis defaults to). The other values ride in the root's
+`$extensions["com.weasel.axes"]`, which `loadDTCG` reads back:
+
+```json
+"$extensions": {
+  "com.weasel.axes": {
+    "axes": { "mode": { … }, "density": { "default": "comfortable", "values": { "compact": {}, "comfortable": {}, "roomy": {} } } },
+    "varies": { "gap": ["density"] },
+    "overrides": {
+      "density=compact": { "primitives": { "dimension": { "$type": "dimension", "gap": { "$value": "2px" } } }, "modes": {} },
+      "density=roomy":   { "primitives": { "dimension": { "$type": "dimension", "gap": { "$value": "8px" } } }, "modes": {} }
+    }
+  }
+}
+```
+
+- `axes` — every axis the theme resolves with, mode included.
+- `varies` — for each token that depends on an axis besides mode, which ones.
+- `overrides` — a layer shaped like the document (`primitives` and `modes`) for
+  each combination of non-default values some token varies by. The key names
+  only the axes off their default, in axis order: `density=compact`,
+  `density=roomy,contrast=high`.
+
+A token listed in `varies` takes its value at a selection from the layer whose
+key matches that selection's non-default values on its own axes — the plain
+groups when all are at default. Absent from that layer, it has no value there
+and falls through to the theme it extends. Axes a token varies by
+independently cost one layer per value; only a token whose value depends on two
+axes at once adds layers for their combinations. This follows the same idea as
+the DTCG resolver module's modifiers and Tokens Studio's theme groups: a base
+set plus per-dimension overrides rather than one mode per combination.
+
 ## Editing tokens
 
 `src/generated/` is generated — never edit it. Change `themes/weasel.json`,
