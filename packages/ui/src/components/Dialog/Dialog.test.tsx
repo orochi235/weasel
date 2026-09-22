@@ -16,6 +16,13 @@ describe('Dialog', () => {
     expect(screen.getByText('body content')).toBeTruthy();
   });
 
+  it('puts its stance and tone on the modal box', () => {
+    render(<Dialog isOpen title="Delete" stance="danger" tone={0} role="alertdialog">body</Dialog>);
+    const modal = screen.getByRole('alertdialog').parentElement!;
+    expect(modal.dataset.stance).toBe('danger');
+    expect(modal.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-fuchsia)');
+  });
+
   it('uses alertdialog role when requested', () => {
     render(<Dialog isOpen title="Confirm" role="alertdialog">body</Dialog>);
     expect(screen.getByRole('alertdialog')).toBeTruthy();

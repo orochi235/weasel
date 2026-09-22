@@ -27,9 +27,9 @@
 }
 
 .modal {
-  background: var(--wzl-surface);
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-md);
+  background: var(--_s-fill);
+  border: var(--_s-border-width) var(--_s-border-style) var(--_s-border-color);
+  border-radius: var(--_s-radius);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
   color: var(--wzl-fg);
   font-family: var(--wzl-font-ui);
@@ -39,6 +39,186 @@
   flex-direction: column;
   outline: none;
 }
+
+/* BEGIN GENERATED stance rules: dialog — `npm run gen:stances`, do not edit. */
+
+.modal {
+  --wzl-tone: initial;
+}
+
+.modal {
+  --_s-surface: var(--wzl-surface);
+  --_s-border-color: var(--wzl-border);
+  --_s-border-style: solid;
+  --_s-border-width: 1px;
+  --_s-radius: var(--wzl-radius-md);
+  --_s-tone-mix: var(--wzl-panel-tone-mix);
+  --_s-tone: var(--wzl-tone, var(--_s-surface));
+  --_s-accent: var(--wzl-tone);
+  --_s-title-font: var(--wzl-font-ui);
+  --_s-title-weight: var(--wzl-font-weight-bold);
+  --_s-title-size: var(--wzl-font-size);
+  --_s-title-case: none;
+  --_s-title-tracking: normal;
+  --_s-title-color: var(--wzl-fg);
+}
+
+.modal[data-stance='scope'] {
+  --_s-surface: var(--wzl-stance-scope-surface, var(--wzl-surface));
+  --_s-border-color: var(--wzl-stance-scope-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-scope-border-style, solid);
+  --_s-border-width: var(--wzl-stance-scope-border-width, 1px);
+  --_s-radius: var(--wzl-stance-scope-radius, var(--wzl-radius-md));
+  --_s-tone-mix: var(--wzl-stance-scope-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-scope-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-scope-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-scope-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-scope-title-size, var(--wzl-font-size));
+  --_s-title-case: var(--wzl-stance-scope-title-case, none);
+  --_s-title-tracking: var(--wzl-stance-scope-title-tracking, normal);
+  --_s-title-color: var(--wzl-stance-scope-title-color, var(--wzl-fg));
+}
+
+.modal[data-stance='aside'] {
+  --_s-surface: var(--wzl-stance-aside-surface, var(--wzl-surface));
+  --_s-border-color: var(--wzl-stance-aside-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-aside-border-style, solid);
+  --_s-border-width: var(--wzl-stance-aside-border-width, 1px);
+  --_s-radius: var(--wzl-stance-aside-radius, var(--wzl-radius-md));
+  --_s-tone-mix: var(--wzl-stance-aside-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-aside-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-aside-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-aside-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-aside-title-size, var(--wzl-font-size));
+  --_s-title-case: var(--wzl-stance-aside-title-case, none);
+  --_s-title-tracking: var(--wzl-stance-aside-title-tracking, normal);
+  --_s-title-color: var(--wzl-stance-aside-title-color, var(--wzl-fg));
+}
+
+.modal[data-stance='advanced'] {
+  --_s-surface: var(--wzl-stance-advanced-surface, var(--wzl-surface));
+  --_s-border-color: var(--wzl-stance-advanced-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-advanced-border-style, solid);
+  --_s-border-width: var(--wzl-stance-advanced-border-width, 1px);
+  --_s-radius: var(--wzl-stance-advanced-radius, var(--wzl-radius-md));
+  --_s-tone-mix: var(--wzl-stance-advanced-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-advanced-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-advanced-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-advanced-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-advanced-title-size, var(--wzl-font-size));
+  --_s-title-case: var(--wzl-stance-advanced-title-case, none);
+  --_s-title-tracking: var(--wzl-stance-advanced-title-tracking, normal);
+  --_s-title-color: var(--wzl-stance-advanced-title-color, var(--wzl-fg));
+}
+
+.modal[data-stance='debug'] {
+  --_s-surface: var(--wzl-stance-debug-surface, var(--wzl-surface));
+  --_s-border-color: var(--wzl-stance-debug-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-debug-border-style, solid);
+  --_s-border-width: var(--wzl-stance-debug-border-width, 1px);
+  --_s-radius: var(--wzl-stance-debug-radius, var(--wzl-radius-md));
+  --_s-tone-mix: var(--wzl-stance-debug-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-debug-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-debug-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-debug-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-debug-title-size, var(--wzl-font-size));
+  --_s-title-case: var(--wzl-stance-debug-title-case, none);
+  --_s-title-tracking: var(--wzl-stance-debug-title-tracking, normal);
+  --_s-title-color: var(--wzl-stance-debug-title-color, var(--wzl-fg));
+}
+
+.modal[data-stance='danger'] {
+  --_s-surface: var(--wzl-stance-danger-surface, var(--wzl-surface));
+  --_s-border-color: var(--wzl-stance-danger-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-danger-border-style, solid);
+  --_s-border-width: var(--wzl-stance-danger-border-width, 1px);
+  --_s-radius: var(--wzl-stance-danger-radius, var(--wzl-radius-md));
+  --_s-tone-mix: var(--wzl-stance-danger-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-danger-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-danger-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-danger-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-danger-title-size, var(--wzl-font-size));
+  --_s-title-case: var(--wzl-stance-danger-title-case, none);
+  --_s-title-tracking: var(--wzl-stance-danger-title-tracking, normal);
+  --_s-title-color: var(--wzl-stance-danger-title-color, var(--wzl-fg));
+}
+
+.modal[data-stance='notice'] {
+  --_s-surface: var(--wzl-stance-notice-surface, var(--wzl-surface));
+  --_s-border-color: var(--wzl-stance-notice-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-notice-border-style, solid);
+  --_s-border-width: var(--wzl-stance-notice-border-width, 1px);
+  --_s-radius: var(--wzl-stance-notice-radius, var(--wzl-radius-md));
+  --_s-tone-mix: var(--wzl-stance-notice-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-notice-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-notice-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-notice-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-notice-title-size, var(--wzl-font-size));
+  --_s-title-case: var(--wzl-stance-notice-title-case, none);
+  --_s-title-tracking: var(--wzl-stance-notice-title-tracking, normal);
+  --_s-title-color: var(--wzl-stance-notice-title-color, var(--wzl-fg));
+}
+
+.modal[data-stance='important'] {
+  --_s-surface: var(--wzl-stance-important-surface, var(--wzl-surface));
+  --_s-border-color: var(--wzl-stance-important-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-important-border-style, solid);
+  --_s-border-width: var(--wzl-stance-important-border-width, 1px);
+  --_s-radius: var(--wzl-stance-important-radius, var(--wzl-radius-md));
+  --_s-tone-mix: var(--wzl-stance-important-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-important-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-important-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-important-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-important-title-size, var(--wzl-font-size));
+  --_s-title-case: var(--wzl-stance-important-title-case, none);
+  --_s-title-tracking: var(--wzl-stance-important-title-tracking, normal);
+  --_s-title-color: var(--wzl-stance-important-title-color, var(--wzl-fg));
+}
+
+.modal[data-stance='preview'] {
+  --_s-surface: var(--wzl-stance-preview-surface, var(--wzl-surface));
+  --_s-border-color: var(--wzl-stance-preview-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-preview-border-style, solid);
+  --_s-border-width: var(--wzl-stance-preview-border-width, 1px);
+  --_s-radius: var(--wzl-stance-preview-radius, var(--wzl-radius-md));
+  --_s-tone-mix: var(--wzl-stance-preview-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-preview-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-preview-title-font, var(--wzl-font-ui));
+  --_s-title-weight: var(--wzl-stance-preview-title-weight, var(--wzl-font-weight-bold));
+  --_s-title-size: var(--wzl-stance-preview-title-size, var(--wzl-font-size));
+  --_s-title-case: var(--wzl-stance-preview-title-case, none);
+  --_s-title-tracking: var(--wzl-stance-preview-title-tracking, normal);
+  --_s-title-color: var(--wzl-stance-preview-title-color, var(--wzl-fg));
+}
+
+.modal {
+  --_s-fill: var(--_s-surface);
+}
+
+.modal[data-tone],
+.modal[data-stance] {
+  --_s-fill: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));
+}
+
+.modal[data-tone] {
+  --wzl-accent: var(--_s-accent);
+  --wzl-accent-base: var(--_s-accent);
+  --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));
+  --wzl-accent-soft: color-mix(in oklab, var(--_s-accent) 45%, var(--wzl-surface));
+  --wzl-accent-hover: var(--wzl-accent-strong);
+  --wzl-accent-fg: var(--wzl-accent-strong);
+  --wzl-focus-ring: var(--wzl-accent-strong);
+}
+
+/* END GENERATED stance rules: dialog */
 
 .dialog {
   display: flex;
@@ -60,9 +240,12 @@
 .title {
   flex: 1;
   margin: 0;
-  font-size: var(--wzl-font-size);
-  font-weight: var(--wzl-font-weight-bold);
-  color: var(--wzl-fg);
+  font-family: var(--_s-title-font);
+  font-size: var(--_s-title-size);
+  font-weight: var(--_s-title-weight);
+  text-transform: var(--_s-title-case);
+  letter-spacing: var(--_s-title-tracking);
+  color: var(--_s-title-color);
 }
 
 .close {

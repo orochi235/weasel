@@ -8,6 +8,7 @@ import {
   type DialogProps as RACDialogProps,
 } from 'react-aria-components';
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
+import { type StanceProps, useStance } from '../stance';
 import s from './Dialog.module.css';
 
 /** Props for {@link Dialog}, on top of React Aria's `ModalOverlay` props. */
@@ -15,7 +16,8 @@ export type DialogProps = Omit<
   WithoutPortalTarget<ModalOverlayProps>,
   'children' | 'className'
 > &
-  OverlayPortalProps & {
+  OverlayPortalProps &
+  StanceProps & {
     /** Heading rendered in the dialog's default header. Omit when supplying
      *  a custom `header` slot via children. */
     title?: ReactNode;
@@ -39,7 +41,8 @@ export type DialogProps = Omit<
  * `react-aria-components` upstream of this component.
  *
  * Escape, click-outside, focus trap, and scroll lock all come from the
- * underlying primitives.
+ * underlying primitives. `stance` and `tone` work as on `<PropertyPanel>` —
+ * a destructive confirm is `stance="danger"`.
  */
 export function Dialog(props: DialogProps) {
   const {
@@ -52,8 +55,11 @@ export function Dialog(props: DialogProps) {
     isOpen,
     onOpenChange,
     portalContainer,
+    stance,
+    tone,
     ...rest
   } = props;
+  const stanced = useStance({ stance, tone });
 
   const showClose = showCloseButton ?? Boolean(onOpenChange);
   const { anchor, portalProps } = useOverlayPortal(portalContainer);
@@ -69,7 +75,7 @@ export function Dialog(props: DialogProps) {
         data-weasel-overlay=""
         {...portalProps}
       >
-        <RACModal className={[s.modal, className].filter(Boolean).join(' ')}>
+        <RACModal className={[s.modal, className].filter(Boolean).join(' ')} {...stanced}>
           <RACDialog role={role} className={s.dialog}>
             {({ close }) => (
               <>
