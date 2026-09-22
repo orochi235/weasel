@@ -204,4 +204,13 @@ describe('cachedLayoutRuns', () => {
       expect(cachedLayoutRuns([run('text 0')], OPTS)).toBe(first);
     }
   });
+
+  it('does not share a layout between equal text from different sources', () => {
+    const plain = cachedLayoutRuns([run('SS')], OPTS);
+    const mapped = cachedLayoutRuns(
+      [{ ...run('SS'), srcMap: { length: 1, starts: [0, 0], ends: [1, 1] } }], OPTS,
+    );
+    expect(mapped).not.toBe(plain);
+    expect(mapped.lines[0].cells.map((c) => c.srcEnd)).toEqual([1, 1]);
+  });
 });

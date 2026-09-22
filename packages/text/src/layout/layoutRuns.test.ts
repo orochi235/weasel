@@ -1390,6 +1390,17 @@ describe('layoutRuns — one cell per code point', () => {
     expect(cells.map((c) => c.srcIndex)).toEqual([0, 1, 3]);
     expect(cells[1].srcEnd).toBe(3);
   });
+
+  it('maps cells a transform expanded back to their one source character', async () => {
+    await registerBareFixture();
+    const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32 });
+    const runs = resolveRuns([{ text: 'Aß', textTransform: 'uppercase' }, { text: 'B' }], style);
+    const out = layoutRuns(runs, { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const cells = out.lines[0].cells;
+    expect(cells.map((c) => String.fromCodePoint(c.cp)).join('')).toBe('ASSB');
+    expect(cells.map((c) => [c.srcIndex, c.srcEnd])).toEqual([[0, 1], [1, 2], [1, 2], [2, 3]]);
+    expect(out.lines[0].srcEnd).toBe(3);
+  });
 });
 
 describe('layoutRuns — reading-order alignment', () => {

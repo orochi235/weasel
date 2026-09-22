@@ -12,6 +12,7 @@
 
 import type { FillStyle, ScreenLength, Stroke } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
+import type { TextTransform } from './runs/textTransform';
 
 /**
  * Horizontal alignment. `start` / `end` resolve against the reading direction;
@@ -86,6 +87,9 @@ export interface TextStyle {
   strikethrough?: boolean;
   /** Default `false`. */
   overline?: boolean;
+  /** CSS `text-transform` for display; the text itself is not rewritten.
+   *  Default `'none'`. */
+  textTransform?: TextTransform;
 }
 
 /** `TextStyle` with all fields filled in from defaults — what the renderer actually consumes. */
@@ -109,6 +113,7 @@ export interface ResolvedTextStyle {
   underline: boolean;
   strikethrough: boolean;
   overline: boolean;
+  textTransform: TextTransform;
   /** Absent means no outline — unlike the other fields, this one has no
    *  default to fall back to. See {@link TextPaint.stroke}. */
   stroke?: Stroke;
@@ -146,6 +151,7 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   underline: false,
   strikethrough: false,
   overline: false,
+  textTransform: 'none',
 };
 
 /**
@@ -227,6 +233,7 @@ export function resolveTextStyle(
     underline: style.underline ?? DEFAULT_TEXT_STYLE.underline,
     strikethrough: style.strikethrough ?? DEFAULT_TEXT_STYLE.strikethrough,
     overline: style.overline ?? DEFAULT_TEXT_STYLE.overline,
+    textTransform: style.textTransform ?? DEFAULT_TEXT_STYLE.textTransform,
     ...(stroke !== undefined ? { stroke } : {}),
   };
 }

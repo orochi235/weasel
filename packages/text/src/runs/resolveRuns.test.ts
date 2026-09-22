@@ -172,3 +172,25 @@ describe('resolveRuns screen-pixel sizes', () => {
     expect(resolveRuns([{ text: 'a' }], style, 4)[0].fontSize).toBe(6);
   });
 });
+
+describe('resolveRuns text-transform', () => {
+  it("applies a run's transform to its text", () => {
+    const style = resolveTextStyle({});
+    const out = resolveRuns([{ text: 'ab ' }, { text: 'cd', textTransform: 'uppercase' }], style);
+    expect(out.map((r) => r.text)).toEqual(['ab ', 'CD']);
+    expect(out[1].srcMap).toBeUndefined();
+  });
+
+  it('inherits the node transform, and a run can turn it off with none', () => {
+    const style = resolveTextStyle({ textTransform: 'uppercase' });
+    const out = resolveRuns([{ text: 'ab' }, { text: 'cd', textTransform: 'none' }], style);
+    expect(out.map((r) => r.text)).toEqual(['AB', 'cd']);
+  });
+
+  it('reports a source map when a transform changes a length', () => {
+    const style = resolveTextStyle({});
+    const [run] = resolveRuns([{ text: 'aß', textTransform: 'uppercase' }], style);
+    expect(run.text).toBe('ASS');
+    expect(run.srcMap).toEqual({ length: 2, starts: [0, 1, 1], ends: [1, 2, 2] });
+  });
+});

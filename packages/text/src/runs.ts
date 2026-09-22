@@ -10,6 +10,7 @@
  */
 
 import type { FillStyle, ScreenLength, Stroke } from '@weasel-js/paint';
+import type { TextTransform } from './runs/textTransform';
 
 /** A span of text with its own styling, as authored. Fields left absent
  *  inherit from the node's text style — this is the difference between a run
@@ -54,6 +55,13 @@ export interface StyledRun {
    * present.
    */
   fontScale?: number;
+  /**
+   * CSS `text-transform` for this run's display. The run's `text` stays as
+   * authored — carets, selections and edits address it — and only what is
+   * drawn changes. Overrides the node's own; `'none'` turns an inherited one
+   * off.
+   */
+  textTransform?: TextTransform;
 }
 
 /** Normalize the two accepted spellings of text content — a plain string or

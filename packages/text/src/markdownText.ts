@@ -1,6 +1,7 @@
 import { resolveScreenLength } from '@weasel-js/paint';
 import { markdownToRuns, type StyledRun } from './runs';
 import { SCRIPT_METRICS } from './runs/resolveRuns';
+import { transformRunTexts } from './runs/textTransform';
 
 export type { StyledRun };
 
@@ -62,6 +63,9 @@ export function layoutMarkdown(
   lineHeightFactor: number = 1.3,
 ): LayoutResult {
   if (runs.length === 0) return { lines: [], width: 0, height: 0 };
+  // No caret reads this layout, so the transformed text simply replaces the source.
+  const shown = transformRunTexts(runs.map((r) => r.text), runs.map((r) => r.textTransform ?? 'none'));
+  runs = runs.map((r, i) => (shown[i].text === r.text ? r : { ...r, text: shown[i].text }));
 
   const lines: LayoutLine[] = [];
   let currentRuns: PositionedRun[] = [];

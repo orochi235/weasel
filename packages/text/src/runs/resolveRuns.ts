@@ -19,17 +19,28 @@
  * is a preset over: `baselineShift` and `fontScale`. Both come out as one
  * world-unit `baselineShift` and a final `fontSize`, so layout never learns
  * that superscripts exist — it places a run against a baseline and an offset.
+ *
+ * `textTransform` is applied here too, so `text` is what gets drawn. When a
+ * transform changes a length, `srcMap` says which source characters each
+ * drawn one came from; see `textTransform.ts`.
  */
 
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
 import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
+import { transformRunTexts, type RunSourceMap } from './textTransform';
 
 /** A run with every style resolved against the node's text style — no
  *  optional inheritance left. This is what layout and painting consume. */
 export interface ResolvedRun {
+  /** The text as drawn — after `textTransform`, so not necessarily the
+   *  run's source text. */
   text: string;
+  /** Present when `text` differs in length from the source it was
+   *  transformed from: where each of its UTF-16 units came from. Absent
+   *  means `text`'s offsets are the source's. */
+  srcMap?: RunSourceMap;
   fontFamily: string;
   fontSize: number;
   fontWeight: number;
@@ -104,14 +115,21 @@ export function resolveRuns(
 ): ResolvedRun[] {
   const out: ResolvedRun[] = [];
   const baseWeight = numericWeight(style.fontWeight);
-  for (const run of runs) {
+  const shown = transformRunTexts(
+    runs.map((r) => r.text),
+    runs.map((r) => r.textTransform ?? style.textTransform),
+  );
+  for (let i = 0; i < runs.length; i++) {
+    const run = runs[i];
+    const { text, srcMap } = shown[i];
     const script = run.script ? SCRIPT_METRICS[run.script] : undefined;
     // Against the inherited size, not the run's own: a superscript that also
     // shrank its rise would climb less the smaller it got.
     const shiftEm = run.baselineShift ?? script?.shift ?? 0;
     const scale = run.fontScale ?? script?.size ?? 1;
     out.push({
-      text: run.text,
+      text,
+      ...(srcMap ? { srcMap } : {}),
       fontFamily: run.fontFamily ?? style.fontFamily,
       // An absolute size wins over a relative one; naming both is a consumer
       // saying "this size exactly", which a multiplier cannot improve on.

@@ -848,6 +848,39 @@ describe('letter-spacing / text-decoration', () => {
     expect(t.runs?.[0]).toMatchObject({ strikethrough: true, overline: true });
   });
 
+  it('writes textTransform as a CSS style property on the text and its tspans', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'ab',
+      style: { textTransform: 'uppercase' },
+      runs: [{ text: 'a', textTransform: 'none' }, { text: 'b', bold: true, textTransform: 'capitalize' }],
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 20 } });
+    expect(svg).toMatch(/<text [^>]*style="text-transform:uppercase"/);
+    expect(svg).toContain('<tspan style="text-transform:none">a</tspan>');
+    expect(svg).toContain('<tspan font-weight="700" style="text-transform:capitalize">b</tspan>');
+    const { nodes, warnings } = parseSvg(svg);
+    expect(warnings).toEqual([]);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.style?.textTransform).toBe('uppercase');
+    expect(t.runs).toEqual(node.runs);
+  });
+
+  it('reads text-transform from an attribute or an ancestor, and ignores an unknown value', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <g style="text-transform: lowercase"><text x="0" y="0">A<tspan text-transform="full-width">b</tspan></text></g>
+    </svg>`;
+    const { nodes } = parseSvg(svg);
+    const g = nodes[0];
+    if (g.kind !== 'group') throw new Error('expected group');
+    const t = g.children[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.style?.textTransform).toBe('lowercase');
+    expect(t.runs?.[1]?.textTransform).toBeUndefined();
+  });
+
   it('accepts letter-spacing with a unit suffix and drops the "normal" keyword', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
       <text x="0" y="0"><tspan letter-spacing="2px">a</tspan><tspan letter-spacing="normal">b</tspan></text>

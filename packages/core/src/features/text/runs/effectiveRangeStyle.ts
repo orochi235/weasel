@@ -9,6 +9,7 @@ const FLAGS = ['bold', 'italic', 'underline', 'strikethrough', 'overline'] as co
  *  have no node-level counterpart, so they only ever come from the range. */
 const OVERRIDES = [
   'fontFamily', 'fontSize', 'letterSpacing', 'fill', 'script', 'baselineShift', 'fontScale',
+  'textTransform',
 ] as const;
 
 /**
@@ -34,6 +35,7 @@ export function effectiveRangeStyle(
     fontFamily: resolved.fontFamily,
     fontSize: resolved.fontSize,
     letterSpacing: resolved.letterSpacing,
+    textTransform: resolved.textTransform,
   };
   if (resolved.fill !== null) out.fill = resolved.fill;
   for (const key of FLAGS) {
