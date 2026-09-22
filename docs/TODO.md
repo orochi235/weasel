@@ -180,10 +180,6 @@ Priority tags:
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
 
-### Pen tool follow-ups
-
-- **(P3) Close a pen path onto another path's endpoint.** The pen snaps a placed anchor onto any existing anchor and can pick up an open path's end, but finishing on a *different* open path's endpoint only lands an anchor there — it does not join the two paths into one node.
-
 ### Cursor package follow-ups
 
 All four arcs of `docs/superpowers/specs/2026-09-03-cursor-system-design.md`

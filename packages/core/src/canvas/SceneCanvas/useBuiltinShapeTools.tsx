@@ -120,6 +120,15 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
   // Editing a committed path is not the pen's job — double-click it to
   // enter anchor-edit mode (see `usePenTool`'s PenScratch docs).
   type PenCarrier = { path: PolygonPath; closed: boolean; bounds: { x: number; y: number; width: number; height: number } };
+  const makePenLeaf = (carrier: PenCarrier): LeafNode => {
+    const id = freshId('pn');
+    const color = nextFill();
+    return makeLeaf(id, carrier.bounds, {
+      path: carrier.path,
+      fill: carrier.closed ? solid(nextFill()) : null,
+      stroke: strokeOf(color, 2),
+    }) as LeafNode;
+  };
   const pen = usePenTool<PenCarrier>({
     snapPoint,
     wrapPath: (path, { closed }): PenCarrier => {
@@ -128,16 +137,11 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
     },
     adapter: {
       addNode: (carrier) => {
-        const id = freshId('pn');
-        const color = nextFill();
-        const node = makeLeaf(id, carrier.bounds, {
-          path: carrier.path,
-          fill: carrier.closed ? solid(nextFill()) : null,
-          stroke: strokeOf(color, 2),
-        }) as LeafNode;
+        const node = makePenLeaf(carrier);
         adapter.insertNode(node);
-        return String(id);
+        return String(node.id);
       },
+      makeNode: (carrier) => makePenLeaf(carrier),
       setSelection: (ids) => adapter.setSelection(ids),
     },
   });
