@@ -8,6 +8,7 @@
 
 import { getPaintKind, getMarker } from '@weasel-js/core';
 import type { FillStyle, GradStop, GradientUnits, MarkerEntry, MarkerPaint, Path } from '@weasel-js/core';
+import { ownProp } from './cascade';
 import { parsePaintAttr } from './color';
 import { trimNumber } from './transform';
 import { patternXml } from './patterns';
@@ -102,7 +103,7 @@ export function collectGradients(svg: Element, onWarn?: (m: string) => void): Gr
   return out;
 }
 
-/** Paint servers, `<marker>` and `<clipPath>` aside, a `<defs>` child is
+/** Paint servers, `<marker>`, `<clipPath>` and `<style>` aside, a `<defs>` child is
  *  something this package does not model (a `<use>` template, a `<filter>`).
  *  Say so once here. */
 function warnUnsupportedDefsChildren(svg: Element, onWarn?: (m: string) => void): void {
@@ -114,7 +115,7 @@ function warnUnsupportedDefsChildren(svg: Element, onWarn?: (m: string) => void)
       const child = root.children[i];
       const tag = child.tagName.toLowerCase();
       if (GRADIENT_TAGS.has(tag) || GRADIENT_TAGS.has(localName(tag))) continue;
-      if (tag === 'pattern' || tag === 'marker' || tag === 'clippath') continue;
+      if (tag === 'pattern' || tag === 'marker' || tag === 'clippath' || tag === 'style') continue;
       onWarn(`unsupported <defs> child: <${child.tagName}>`);
     }
   }
@@ -173,10 +174,10 @@ function readStops(el: Element, onWarn?: (m: string) => void): GradStop[] {
     if (c.tagName.toLowerCase() !== 'stop') continue;
     const offsetRaw = parseRatio(c.getAttribute('offset') ?? '0');
     const offset = Number.isFinite(offsetRaw) ? offsetRaw : 0;
-    const colorAttr = c.getAttribute('stop-color') ?? '#000000';
+    const colorAttr = ownProp(c, 'stop-color') ?? '#000000';
     const parsed = parsePaintAttr(colorAttr);
     if (parsed && parsed.kind === 'solid') {
-      const opacityAttr = c.getAttribute('stop-opacity');
+      const opacityAttr = ownProp(c, 'stop-opacity');
       const own = opacityAttr != null ? parseRatio(opacityAttr) : NaN;
       const alpha = Number.isFinite(own) ? own : parsed.alpha;
       stops.push({ offset, color: alpha < 1 ? applyAlpha(parsed.color, alpha) : parsed.color });
