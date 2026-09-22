@@ -24,7 +24,7 @@
  *
  */
 import { parseSvg } from './parse';
-import type { SvgNode, SvgPaint, SvgStroke } from './types';
+import type { SvgImageNode, SvgNode, SvgPaint, SvgStroke } from './types';
 import {
   boundsOfPath,
   createInsertOp,
@@ -35,6 +35,7 @@ import {
   resolveTextStyle,
   solid,
   type FillStyle,
+  type ImageNodeData,
   type IngestCtx,
   type Op,
   type ScreenLength,
@@ -130,6 +131,21 @@ export function strokeDataFromSvg(
     ...(stroke.markerMid !== undefined ? { markerMid: stroke.markerMid } : {}),
     ...(stroke.markerEnd !== undefined ? { markerEnd: stroke.markerEnd } : {}),
   };
+}
+
+/** Write a `kit:image` leaf as an `SvgImageNode` — the inverse of the image
+ *  arm of {@link svgNodesToKitDrafts}. The pose is the image's box. */
+export function svgImageFromKit(image: ImageNodeData['image'], pose: DraftPose): SvgImageNode {
+  const node: SvgImageNode = {
+    kind: 'image', href: image.src,
+    x: pose.x, y: pose.y, width: pose.width, height: pose.height,
+  };
+  if (image.source) node.source = { ...image.source };
+  if (image.flipX) node.flipX = true;
+  if (image.flipY) node.flipY = true;
+  if (image.opacity != null) node.opacity = image.opacity;
+  if (pose.rotation) node.rotation = pose.rotation;
+  return node;
 }
 
 /** A text node's paint arrives already lowered to a kit `FillStyle`, not as
@@ -236,7 +252,10 @@ export function svgNodesToKitDrafts(
           image: {
             src: n.href,
             ...(n.opacity != null ? { opacity: n.opacity } : {}),
-          },
+            ...(n.source ? { source: { ...n.source } } : {}),
+            ...(n.flipX ? { flipX: true } : {}),
+            ...(n.flipY ? { flipY: true } : {}),
+          } satisfies ImageNodeData['image'],
         },
       });
       return pose;

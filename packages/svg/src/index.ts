@@ -25,6 +25,7 @@ export { tilePreviewSvg, tilePreviewCssUrl } from './patterns';
 export {
   unpackSvgFiles,
   svgNodesToKitDrafts,
+  svgImageFromKit,
   strokeDataFromSvg,
   type SvgSceneDraft,
   type SvgDraftBounds,

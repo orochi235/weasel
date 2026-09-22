@@ -18,7 +18,18 @@
 /** Public shape of an image node's `data`. `src` round-trips through
  *  serialization; the decoded bitmap is held in this cache, not on the node. */
 export interface ImageNodeData {
-  image: { src: string; opacity?: number };
+  image: {
+    src: string;
+    opacity?: number;
+    /** The part of the bitmap drawn into the pose rect, as fractions of the
+     *  bitmap's width and height from its top-left. Omitted draws the whole
+     *  bitmap. Fractions, so the data means the same thing before the bitmap
+     *  has decoded and after `src` is swapped for another resolution. */
+    source?: { x: number; y: number; width: number; height: number };
+    /** Mirror the drawn region within the pose rect. The rect does not move. */
+    flipX?: boolean;
+    flipY?: boolean;
+  };
 }
 
 /** Where an image is in its load: never requested, in flight, decoded, or

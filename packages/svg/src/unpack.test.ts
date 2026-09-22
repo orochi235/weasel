@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { SvgNode } from './types';
-import { svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
+import { svgImageFromKit, svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
+import { parseSvg } from './parse';
+import { serializeSvg } from './serialize';
 import { getMarker, _resetMarkersForTests, type IngestCtx, type Op } from '@weasel-js/core';
 
 const rectNode = (x: number, y: number, w: number, h: number, extra: Record<string, unknown> = {}): SvgNode => ({
@@ -147,6 +149,27 @@ describe('svgNodesToKitDrafts', () => {
     if (d.kind !== 'leaf') throw new Error('expected leaf');
     expect(d.data.image).toEqual({ src: 'data:image/png;base64,AA==', opacity: 0.5 });
     expect(d.pose).toEqual({ x: 5, y: 6, width: 40, height: 30, rotation: Math.PI / 2 });
+  });
+
+  it("carries an image's source rect and flips onto data.image", () => {
+    const drafts = svgNodesToKitDrafts([{
+      kind: 'image', href: 'a.png', x: 0, y: 0, width: 10, height: 10,
+      source: { x: 0.25, y: 0, width: 0.5, height: 1 }, flipX: true, flipY: true,
+    } as SvgNode], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    expect(d.data.image).toEqual({
+      src: 'a.png', source: { x: 0.25, y: 0, width: 0.5, height: 1 }, flipX: true, flipY: true,
+    });
+  });
+
+  it('leaves an uncropped, unflipped image with no source or flip fields', () => {
+    const drafts = svgNodesToKitDrafts([{
+      kind: 'image', href: 'a.png', x: 0, y: 0, width: 10, height: 10,
+    } as SvgNode], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    expect(d.data.image).toEqual({ src: 'a.png' });
   });
 
   it('groups become container drafts (parent-before-child, union-AABB pose)', () => {
@@ -376,5 +399,28 @@ describe('unpackSvgFiles — document markers', () => {
     expect(key).toMatch(/^head-/);
     expect(getMarker(key)).toBeDefined();
     _resetMarkersForTests();
+  });
+});
+
+describe('svgImageFromKit', () => {
+  it('writes a kit:image leaf back as the SvgImageNode it was read from', () => {
+    const original = parseSvg(serializeSvg([{
+      kind: 'image', href: 'a.png', x: 5, y: 6, width: 40, height: 30,
+      source: { x: 0.25, y: 0.5, width: 0.5, height: 0.25 }, flipX: true,
+      opacity: 0.5, rotation: Math.PI / 4,
+    }])).nodes;
+    const [d] = svgNodesToKitDrafts(original, seq());
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    const back = svgImageFromKit(
+      d.data.image as Parameters<typeof svgImageFromKit>[0], d.pose,
+    );
+    expect(back).toEqual(original[0]);
+    expect(parseSvg(serializeSvg([back])).nodes).toEqual(original);
+  });
+
+  it('writes a plain image without source, flips, opacity or rotation', () => {
+    expect(svgImageFromKit({ src: 'a.png' }, { x: 1, y: 2, width: 3, height: 4 })).toEqual({
+      kind: 'image', href: 'a.png', x: 1, y: 2, width: 3, height: 4,
+    });
   });
 });

@@ -822,18 +822,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   walk, because a bare-adapter consumer has no selection parent-folding to fold
   them back in.
 
-- **(P2) What the cascade audit turned up outside its own pattern.** All found
-  2026-08-29 while collapsing, none of them an instance of the duplication the
-  audit was hunting, so each wants its own decision.
-
-  Three are closed: `selectAll` now skips hidden layers, SVG export honors
-  `layer.visible` through `SceneSource.isPainted`, and `toJSON` carries a user
-  layer's `kind` and `name`.
-
-  Open: `packages/{labkit,modes,d3,paint}` never import `geom` at all, and `ui`
-  only from a story. And `SvgImageNode` now carries a source rect and flips
-  through SVG, but `kit:image`'s `data.image` has no field for either, so
-  `svgNodesToKitDrafts` drops them on the way into a scene.
+- **(P2) Some packages never import `geom`.** Found 2026-08-29 by the cascade
+  audit, outside the duplication it was hunting: `packages/{labkit,modes,d3,paint}`
+  never import `@weasel-js/geom` at all, and `ui` only from a story
+  (`Badge.stories.tsx`). An observation, not yet a decision — whether any of them
+  hand-roll geometry `geom` already has is the open question.
 
 - **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
 
