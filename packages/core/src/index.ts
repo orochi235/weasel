@@ -285,8 +285,9 @@ export {
   getImageBitmap,
   imageStatus,
   subscribeImageReady,
+  isVectorImageSrc,
 } from './features/images/imageCache';
-export type { ImageNodeData, ImageStatus } from './features/images/imageCache';
+export type { ImageNodeData, ImageRasterSize, ImageStatus } from './features/images/imageCache';
 export { sceneToAdapter, useSceneAdapter } from './canvas/sceneAdapter';
 export type { SceneCanvasAdapter } from './canvas/sceneAdapter';
 export {

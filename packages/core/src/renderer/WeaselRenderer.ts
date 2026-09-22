@@ -392,6 +392,7 @@ export class WeaselRenderer {
     if (aPos === undefined) throw new Error('a_position missing after restore');
     this.meshCache = new GLMeshCache(this.gl, aPos);
     this.textureCache = new GLTextureCache(this.gl);
+    this.imageCache.dispose();
     this.imageCache = new GLImageCache(this.gl, this.imageMinification);
     this.gradRamps = new GradientRampAtlas(this.gl);
     markAllFontsNotUploaded();
@@ -456,6 +457,7 @@ export class WeaselRenderer {
     }
     this.programRegistry.clear();
     this.textureCache.free();
+    this.imageCache.dispose();
     this.gradRamps.free();
     if (this.quadVbo) gl.deleteBuffer(this.quadVbo);
     if (this.quadIbo) gl.deleteBuffer(this.quadIbo);

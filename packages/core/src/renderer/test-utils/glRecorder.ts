@@ -54,6 +54,7 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   STENCIL_TEST: 0x0B90,
   CULL_FACE: 0x0B44,
   SCISSOR_TEST: 0x0C11,
+  MAX_TEXTURE_SIZE: 0x0D33,
   // Blend factors
   SRC_ALPHA: 0x0302,
   ONE_MINUS_SRC_ALPHA: 0x0303,
