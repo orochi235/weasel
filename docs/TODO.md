@@ -383,21 +383,6 @@ Core five + Crop shipped. Remaining:
   eight glyphs to this repo's icon standard is its own piece of work and was
   deferred out of the stroke-markers arc.
 
-- **(P3) `extractUniformNames` regex coverage.** Two of the three gaps this
-  entry used to claim were never real: matrix arrays (`mat3 u_xforms[4];`) and
-  layout qualifiers both already worked — `\S+` takes any type name, and
-  `\buniform` skips whatever precedes it. What *was* broken and is now fixed
-  (2026-08-16): a precision or interpolation qualifier (`uniform highp float
-  u_t;` — the common spelling in hand-written GLSL) matched nothing at all, so
-  the uniform got no location and every write to it was dropped silently.
-  Comma-separated declarator lists (`uniform float a, b;`) read too.
-
-  Still a regex scan, not a parser, and still blind to GLSL preprocessor
-  branches, struct uniforms and interface blocks. Those want the bite-the-bullet
-  GLSL-prelude parser. **Check the claim before
-  planning around it** — this entry was wrong for months because nobody ran the
-  regex against the case it described.
-
 ---
 
 ## Text
