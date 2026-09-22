@@ -1,6 +1,6 @@
 // Visual parity check: rebuild a slice of the speech-balloons lab side panels
 // using only these primitives. If the readouts, units, alpha, two-per-row
-// effect bodies, subpanels, and accent-tinted effect cards look the same as
+// effect bodies, subpanels, and toned effect cards look the same as
 // the SB reference, we've captured the styling correctly.
 
 import type { Meta, StoryObj } from '@weasel-js/forge';
@@ -276,24 +276,23 @@ export const LeftSidebar: Story = {
 };
 
 // ── Right sidebar: tails ───────────────────────────────────────────
-// Each tail is an EffectCard with a per-instance accent (--wzl-effect-card-accent)
-// that re-binds --wzl-accent inside the card. Drag the badge handle to reorder.
+// Each tail is an EffectCard toned by its position in the theme's tone list,
+// which recolors the controls inside it. Drag the badge handle to reorder.
 
 interface TailItem {
   id: number;
   shape: string;
-  accent: string;
+  tone: number;
 }
 
-const TAIL_PALETTE = ['#7ec8e3', '#f0a35c', '#a48bd4', '#7fb069', '#d46aaa'];
 
 export const RightSidebarTails: Story = {
   render: () => {
     function TailsList() {
       const [tails, setTails] = useState<TailItem[]>([
-        { id: 1, shape: 'classic', accent: TAIL_PALETTE[0] },
-        { id: 2, shape: 'bubbles', accent: TAIL_PALETTE[1] },
-        { id: 3, shape: 'wavy', accent: TAIL_PALETTE[2] },
+        { id: 1, shape: 'classic', tone: 0 },
+        { id: 2, shape: 'bubbles', tone: 1 },
+        { id: 3, shape: 'wavy', tone: 2 },
       ]);
       const reorder = (sourceId: number, targetId: number, position: 'before' | 'after') => {
         setTails((prev) => {
@@ -315,7 +314,7 @@ export const RightSidebarTails: Story = {
           renderItem={(tail, { cardProps }) => (
             <EffectCard
               {...cardProps}
-              accent={tail.accent}
+              tone={tail.tone}
               index={tails.findIndex((t) => t.id === tail.id)}
               title={tail.shape}
               primary={<>{Math.round(60 + tail.id * 30)}°</>}
@@ -335,7 +334,7 @@ export const RightSidebarTails: Story = {
   },
 };
 
-// ── Effect cards without accent — for fill / stroke / shadow stacks ─
+// ── Effect cards without a tone — for fill / stroke / shadow stacks ─
 
 export const LayerStack: Story = {
   render: () => {

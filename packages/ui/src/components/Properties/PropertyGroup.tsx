@@ -1,5 +1,6 @@
 import { type ReactNode, useId, useState } from 'react';
 import { DisclosureRow } from '../Disclosure';
+import { type StanceProps, useStance } from '../stance';
 import s from './Properties.module.css';
 import {
   type PropertyListPack,
@@ -9,7 +10,7 @@ import {
 } from './PropertyPanel';
 
 /** Props for `<PropertyGroup>`. */
-export interface PropertyGroupProps extends PropertyMetricProps {
+export interface PropertyGroupProps extends PropertyMetricProps, StanceProps {
   /** Title rendered between two rules at the top of the group. */
   title: ReactNode;
   /** Help text for the whole group, drawn under the title and above the
@@ -47,7 +48,8 @@ export interface PropertyGroupProps extends PropertyMetricProps {
  * inside a fill effect's controls).
  *
  * A collapsible group keeps its rows mounted and hides them, so a control's
- * local state survives being folded away.
+ * local state survives being folded away. `stance` and `tone` work as on
+ * `<PropertyPanel>`.
  */
 export function PropertyGroup({
   title,
@@ -63,9 +65,12 @@ export function PropertyGroup({
   pack = 'auto-color',
   density,
   align,
+  stance,
+  tone,
 }: PropertyGroupProps) {
   const bodyId = useId();
   const [own, setOwn] = useState(defaultCollapsed ?? false);
+  const stanced = useStance({ stance, tone });
   if (hidden) return null;
 
   const folds =
@@ -87,7 +92,7 @@ export function PropertyGroup({
     </h3>
   );
   return (
-    <div className={cls}>
+    <div className={cls} {...stanced}>
       {folds ? (
         <DisclosureRow
           className={s.groupHead}

@@ -1,25 +1,24 @@
-import { type CSSProperties, type ReactNode, useState } from 'react';
+import { type ReactNode, useState } from 'react';
+import { type StanceProps, useStance } from '../stance';
 import s from './Properties.module.css';
 import { type PropertyMetricProps, propertyMetricClass } from './PropertyPanel';
 
 // ── Subpanel ─────────────────────────────────────────────────────────
-// Headered group of controls inside a wider panel/list. The header is a
-// label flanked by a horizontal rule — no background, padding, or border;
-// purely a typographic divider. Ported from speech-balloons styles.css:277-313.
 
 /** Props for `<Subpanel>`. */
-export interface SubpanelProps extends PropertyMetricProps {
+export interface SubpanelProps extends PropertyMetricProps, StanceProps {
   title: ReactNode;
   children: ReactNode;
   className?: string;
 }
 
 /** A typographic divider inside a property list: a small title flanked by a
- *  rule. Purely a heading — use `<PropertyGroup>` for a bordered section. */
-export function Subpanel({ title, children, className, density, align }: SubpanelProps) {
+ *  rule. Purely a heading — use `<PropertyGroup>` for a bordered section. A
+ *  stance or tone colors the title and rule. */
+export function Subpanel({ title, children, className, density, align, stance, tone }: SubpanelProps) {
   const cls = propertyMetricClass(s.subpanel, { density, align }, className);
   return (
-    <div className={cls}>
+    <div className={cls} {...useStance({ stance, tone })}>
       <h4 className={s.subpanelTitle}>
         <span>{title}</span>
         <hr />
@@ -30,10 +29,6 @@ export function Subpanel({ title, children, className, density, align }: Subpane
 }
 
 // ── EffectCard ───────────────────────────────────────────────────────
-// Draggable, collapsible card for stacked effect editors. Optional
-// --wzl-effect-card-accent per-instance recolors the title bar, border-left, and
-// (via re-binding --wzl-accent inside the card) every descendant control that
-// reads from the accent token.
 
 /** Props for `<EffectCard>`. */
 export interface EffectCardProps {
@@ -41,8 +36,13 @@ export interface EffectCardProps {
   title: ReactNode;
   /** Optional badge/chip displayed before the remove button (e.g. primary value summary). */
   primary?: ReactNode;
-  /** Optional accent color in any CSS color form. Sets --wzl-effect-card-accent on the card. */
-  accent?: string;
+  /**
+   * Which of its list this card is: an index into the theme's tone list, or a
+   * color given directly. Recolors the title bar and edge, and every control
+   * inside the card. The cards of a list are one kind of thing, so a card
+   * takes no stance.
+   */
+  tone?: StanceProps['tone'];
   /** Optional ordinal badge that doubles as the drag handle (used by tail cards in SB). */
   index?: number;
   expanded?: boolean;
@@ -66,13 +66,12 @@ export interface EffectCardProps {
   className?: string;
 }
 
-/** An accented, collapsible card for one item in a list of like things —
- *  effects, layers, tails. The accent color rebinds the theme accent token
- *  within the card, so its controls pick it up too. */
+/** A toned, collapsible card for one item in a list of like things —
+ *  effects, layers, tails. */
 export function EffectCard({
   title,
   primary,
-  accent,
+  tone,
   index,
   expanded = true,
   onToggleExpanded,
@@ -89,11 +88,9 @@ export function EffectCard({
   children,
   className,
 }: EffectCardProps) {
-  const stateClass = `${expanded ? ` ${s.cardExpanded}` : ''}${dragging ? ` ${s.cardDragging}` : ''}${accent ? ` ${s.cardAccented}` : ''}`;
+  const stateClass = `${expanded ? ` ${s.cardExpanded}` : ''}${dragging ? ` ${s.cardDragging}` : ''}`;
   const cls = `${s.card}${stateClass}${className ? ` ${className}` : ''}`;
-  // Per-instance dynamic color → CSS custom property requires inline style.
-  // The card's CSS re-binds --wzl-accent to it so descendants tint.
-  const style = accent ? ({ '--wzl-effect-card-accent': accent } as CSSProperties) : undefined;
+  const toned = useStance({ tone });
 
   // When a toggle handler is supplied the header acts as a disclosure button:
   // role + tab stop + Enter/Space. Bundled together so the interactive props are
@@ -116,7 +113,7 @@ export function EffectCard({
     // biome-ignore lint/a11y/noStaticElementInteractions: native HTML5 drag-and-drop container — drag events are not click/keyboard interactions and have no semantic element; the in-card handle and header carry the a11y affordances.
     <div
       className={cls}
-      style={style}
+      {...toned}
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}

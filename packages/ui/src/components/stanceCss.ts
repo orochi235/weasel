@@ -22,6 +22,8 @@ export interface StanceSurface {
   readonly nests?: boolean;
   /** The surface paints `--_s-surface` as its background, so a tone mixes into it. */
   readonly fills?: boolean;
+  /** The surface takes a tone and no stance. */
+  readonly stanceless?: boolean;
 }
 
 /** A surface with a tone and no stance tone takes this; mixing a surface into itself changes nothing. */
@@ -53,7 +55,7 @@ export function stanceCss(surface: StanceSurface): string {
     // The tone is per surface: set inline on the one that names it, never inherited by one inside it.
     `${sel} {\n  --wzl-tone: initial;\n}`,
     block(sel, (name) => surface.base[name]),
-    ...STANCES.flatMap((stance) => [
+    ...(surface.stanceless ? [] : STANCES).flatMap((stance) => [
       block(`${sel}[data-stance='${stance}']`, stanced(stance, false)),
       ...(surface.nests ? [block(`${sel}[data-stance='${stance}'][data-nested]`, stanced(stance, true))] : []),
     ]),

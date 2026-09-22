@@ -17,7 +17,7 @@ describe('stance rules', () => {
   // browser spec is what proves the looks.
   it.each(STANCE_SURFACES.map((s) => [s.id, s] as const))('%s falls every stance slot back to its own look', (_, surface) => {
     const text = stanceCss(surface);
-    for (const stance of STANCES) {
+    for (const stance of surface.stanceless ? [] : STANCES) {
       for (const { name } of STANCE_SLOTS) {
         if (!(name in surface.base) || name === 'tone') continue;
         const fallback = surface.stanced?.[name] ?? surface.base[name];

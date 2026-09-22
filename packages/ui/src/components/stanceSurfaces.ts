@@ -39,4 +39,52 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       'title-color': 'var(--wzl-fg-muted)',
     },
   },
+  {
+    id: 'group',
+    file: 'packages/ui/src/components/Properties/Properties.module.css',
+    selector: '.group',
+    fills: true,
+    base: {
+      surface: 'var(--wzl-surface-sunken)',
+      // Also the color of the rules flanking the title.
+      'border-color': 'var(--wzl-border)',
+      'border-style': 'solid',
+      'border-width': '0px',
+      radius: 'var(--wzl-radius-md)',
+      pad: 'var(--wzl-prop-group-pad, 6px 10px 8px)',
+      'tone-mix': 'var(--wzl-panel-tone-mix)',
+      tone: TONE_BASE,
+      accent: ACCENT_BASE,
+      'title-font': 'var(--wzl-font-display)',
+      'title-weight': 'var(--wzl-font-weight-light)',
+      'title-size': 'var(--wzl-font-size-sm)',
+      'title-case': 'var(--wzl-params-label-case, uppercase)',
+      'title-tracking': 'var(--wzl-params-label-tracking, var(--wzl-tracking-wider))',
+      'title-color': 'var(--wzl-fg-subtle)',
+    },
+  },
+  {
+    // A heading and a rule, no box: a stance reaches only the title and the rule.
+    id: 'subpanel',
+    file: 'packages/ui/src/components/Properties/Properties.module.css',
+    selector: '.subpanel',
+    base: {
+      'border-color': 'var(--wzl-line-subtle)',
+      accent: ACCENT_BASE,
+      'title-font': 'var(--wzl-font-display)',
+      'title-weight': 'var(--wzl-font-weight-medium)',
+      'title-size': 'var(--wzl-font-size-sm)',
+      'title-case': 'var(--wzl-params-label-case, uppercase)',
+      'title-tracking': 'var(--wzl-params-label-tracking, var(--wzl-tracking-wider))',
+      'title-color': 'var(--wzl-fg)',
+    },
+  },
+  {
+    // Cards in a list are peers of one kind: a tone, never a stance.
+    id: 'card',
+    file: 'packages/ui/src/components/Properties/Properties.module.css',
+    selector: '.card',
+    stanceless: true,
+    base: { accent: ACCENT_BASE },
+  },
 ];
