@@ -188,3 +188,28 @@ Custom properties are the mechanism because they inherit across the CSS-module
 boundary: labkit's Less cannot name `PropertyPanel`'s label class, and before
 this it restated the recipe by hand. `npm run check:labels` fails on a label in
 those three surfaces that sets its case or tracking any other way.
+
+### Stance and tone
+
+A surface that holds a class of content says which with `stance` —
+`scope`, `aside`, `advanced`, `debug`, `danger`, `notice`, `important`,
+`preview` — and which of its peers it is with `tone`: an index into the theme's
+tone list (`ThemeDefinition.tones`, a `ColorList`; weasel's is the swatch ramp),
+or a color. `PropertyPanel`, `PropertyGroup`, `Subpanel`, `Callout`, `Dialog`,
+labkit's `ControlPanel` and sidebar sections take both; `EffectCard` takes a
+tone only, since a list's cards are one kind of thing.
+
+The theme decides the look. A stance reads `--wzl-stance-<stance>-<slot>` (the
+slots are `STANCE_SLOTS` in `@weasel-js/theme`) and falls back to the surface's
+own look, so a theme declares only what a stance changes, and a stance looks the
+same on every surface. A nested panel reads `-nested-<slot>` first. A surface
+that names a tone recolors the controls inside it; a stance's own tone, like
+`danger`'s, tints the fill and leaves the controls alone.
+
+To give another surface a stance, add it to
+`packages/ui/src/components/stanceSurfaces.ts` with its base look, put an empty
+generated region in its stylesheet, run `npm run gen:stances`, paint its
+properties from the `--_s-*` names, and spread `useStance()` on its root.
+
+Tones mix `in oklab`. In `oklch` the mix takes its hue from weasel's slightly
+blue grays, so a green tone comes out blue.

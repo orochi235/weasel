@@ -19,8 +19,12 @@ export const SURFACES = [
   'packages/labkit/src/controls',
 ];
 
-const CASE = /^var\(--wzl-params-label-case,\s*uppercase\)$/;
-const TRACKING = /^var\(--wzl-params-label-tracking,\s*var\(--wzl-tracking-[a-z]+\)\)$/;
+export const CASE = /^var\(--wzl-params-label-case,\s*uppercase\)$/;
+export const TRACKING = /^var\(--wzl-params-label-tracking,\s*var\(--wzl-tracking-[a-z]+\)\)$/;
+/** A stanced surface's title reads the recipe through its stance slots, whose
+ *  fallback `stanceCss.test.ts` holds to the same two patterns. */
+const STANCE_CASE = /^var\(--_s-title-case\)$/;
+const STANCE_TRACKING = /^var\(--_s-title-tracking\)$/;
 
 export interface Offender {
   readonly file: string;
@@ -56,6 +60,7 @@ export function offenders(files: readonly { path: string; source: string }[]): O
     for (const { body, line } of rules(source)) {
       const transform = decl(body, 'text-transform');
       if (transform === undefined) continue;
+      if (STANCE_CASE.test(transform) && STANCE_TRACKING.test(decl(body, 'letter-spacing') ?? '')) continue;
       if (!CASE.test(transform)) {
         out.push({ file: path, line, problem: `text-transform: ${transform} — use var(--wzl-params-label-case, uppercase)` });
       }

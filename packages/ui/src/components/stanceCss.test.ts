@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { STANCE_SLOTS, STANCES } from '@weasel-js/theme';
 import { describe, expect, it } from 'vitest';
+import { CASE, TRACKING } from '../../../../scripts/check-labels';
 import { stanceCss, withStanceCss } from './stanceCss';
 import { STANCE_SURFACES } from './stanceSurfaces';
 
@@ -27,5 +28,15 @@ describe('stance rules', () => {
         }
       }
     }
+  });
+
+  // check:labels accepts a title reading --_s-title-case, so the recipe has to
+  // arrive through the slot: a stanced panel's title, and every group and
+  // subpanel title, are labels.
+  it.each(['panel', 'group', 'subpanel'])('%s titles take the params label recipe through their slots', (id) => {
+    const surface = STANCE_SURFACES.find((s) => s.id === id)!;
+    const look = { ...surface.base, ...surface.stanced };
+    expect(look['title-case']).toMatch(CASE);
+    expect(look['title-tracking']).toMatch(TRACKING);
   });
 });

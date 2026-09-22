@@ -739,29 +739,26 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P1) Adopt `ColorList` wherever the kit takes several colors, or one per
-  item.** `ColorList` (`@weasel-js/theme`) is literals, the categorical generator
-  the swatch ramp uses, a ramp of the active theme, or a function, read with
-  `colorAt(list, i, theme)`. Where the kit takes colors today it takes them some
-  other way: labkit's `nebula` is a bare `string[]`, `EffectCard` and `LayerStack`
-  items each take a hand-picked `accent` string, and nothing lets a consumer say
-  "the next hue from the theme" — so every app that colors a list of things picks
-  hexes itself, and they go wrong in the other mode. Move each of these to a
-  `ColorList` (a per-item `accent` becomes a `tone` into one), and give any new
-  multi-color surface — chart series, diagram categories, HUD layers — a
-  `ColorList` from the start. The type is specified in
-  `docs/superpowers/specs/2026-09-21-panel-stance-design.md`.
+- **(P1) Adopt `ColorList` in `LayerStack`, and on every new multi-color
+  surface.** `ColorList` (`@weasel-js/theme`) is literals, the categorical
+  generator the swatch ramp uses, a ramp of the active theme, or a function,
+  read with `colorAt` / `colorCssAt`. labkit's `nebula` takes one and
+  `EffectCard`'s `accent` became a `tone` into the theme's; `LayerStack` items
+  still take a hand-picked `accent` string, which goes wrong in the other mode.
+  Move it to a `tone`, and give any new multi-color surface — chart series,
+  diagram categories, HUD layers — a `ColorList` from the start.
 
-- **(P1) Carry panel `stance` and `tone` to the kit's other surfaces.** A
-  `PropertyPanel` says what kind of content it holds — `scope`, `aside`,
-  `advanced`, `debug`, `danger`, `notice`, `important`, `preview` — and which of
-  its peers it is (`tone`, an index into the theme's tone list), and the theme
-  decides how each looks. Nothing else in the kit can say either: `Subpanel`,
-  `EffectCard` (whose `accent` is a hand-picked color in the same role as a tone),
-  `PropertyGroup`, labkit's sidebar sections, `Callout`, toasts, dialogs and HUDs
-  each have their own one look. Extend the convention wherever a surface
-  communicates a class of content; where one does not fit, say why here. The panel
-  design is in `docs/superpowers/specs/2026-09-21-panel-stance-design.md`.
+- **(P1) Give the HUD's window a stance and a tone.** Every DOM surface that
+  holds a class of content takes `stance` and `tone` (`docs/conventions.md`,
+  "Stance and tone"). The hud `window` widget paints its frame in WebGL from the
+  resolved token record, which holds only the stance slots a theme declares and
+  none of the CSS fallback chains, so it needs a TypeScript resolver for
+  `--wzl-stance-<stance>-<slot>` → its own look, and an oklab mix for the toned
+  fill. Two surfaces were looked at and left out: toasts, because a toast reports
+  how an event came out rather than holding a class of content, and `success`
+  has no stance; and `Badge` / `Powerline`, whose `tone` prop names a status
+  (`info`, `danger`, …) — a different thing from a panel's tone under the same
+  word, which wants a rename decision before either moves.
 
 - **(P2) DTCG export carries one axis, so density is flattened out of it.**
   `toDTCG` writes mode and, for every other axis, that axis's default branch
