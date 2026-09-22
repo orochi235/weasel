@@ -160,6 +160,12 @@ export interface EditAnchorsDep {
    *  (when the polygon lives on data.path). Records one history entry
    *  labelled `label`. */
   applyEdit(id: string, worldPath: unknown, label: string): void;
+  /** The ops `applyEdit` would commit for the same arguments, unapplied, so
+   *  a caller can make the edit part of a larger batch — the pen joining
+   *  two paths edits one node and deletes the other in one undo step.
+   *  Optional; a caller that needs it declines the composite edit without
+   *  it. Returns `[]` when `id` has no editable polygon. */
+  editOps?(id: string, worldPath: unknown, label: string): Op[];
 
   /**
    * Anchors currently selected within the edited path, as **flat anchor

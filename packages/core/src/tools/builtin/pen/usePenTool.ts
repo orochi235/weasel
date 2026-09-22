@@ -11,7 +11,12 @@ import { PenIcon } from '../../../icons';
 import { PathBuilder } from 'features/paths/builder';
 import type { PolygonPath } from 'features/paths/types';
 import { anchorsToPath, pathToAnchors } from 'features/paths/anchors';
-import { nearestPathAnchor, reverseAnchors } from 'features/paths/nearestAnchor';
+import { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from 'features/paths/nearestAnchor';
+import type { Op } from 'core/ops/types';
+import { createInsertOp } from 'core/ops/create';
+import { createDeleteOp } from 'core/ops/delete';
+import type { Scene } from 'core/scene/types';
+import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { constrainTo45 } from '../../../util/constrainTo45';
 import { cursorFor } from '@weasel-js/cursor';
 
@@ -96,6 +101,11 @@ export interface UsePenToolOptions<TPose> {
   adapter: {
     addNode: (pose: TPose) => string;
     setSelection: (ids: string[]) => void;
+    /** Build, without inserting, the node `addNode` would insert for `pose`,
+     *  so the pen can put it in a larger op batch — a new path finished on
+     *  another open path's endpoint is inserted and the other path deleted
+     *  in one undo step. Without it, that click only places an anchor. */
+    makeNode?: (pose: TPose) => { id: string };
   };
   /** Auto-select the new object after commit. Default `true`. */
   autoSelect?: boolean;
@@ -296,6 +306,78 @@ export function usePenTool<TPose>(
     resetScratch(s);
   }, [commitContinuation]);
 
+  /** Whether an anchor about to land on `hit` finishes the path by joining
+   *  onto another open subpath. Its own continued subpath never counts —
+   *  reaching that one's far end is a close. Declines when the deps can't
+   *  commit the join as one op batch. */
+  const joinable = useCallback((s: PenScratch, deps: ActionDeps, hit: PathAnchorHit | null): hit is PathAnchorHit => {
+    if (!hit || hit.end === null || !s.current || s.current.anchors.length === 0) return false;
+    const cont = s.continuing;
+    if (cont && hit.id === cont.id && hit.sub === cont.sub) return false;
+    const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+    if (!scene && !deps.applyOps) return false;
+    if (!(cont ? (deps.editAnchors as EditAnchorsDep).editOps : optsRef.current.adapter.makeNode)) return false;
+    return cont?.id === hit.id || scene?.get(hit.id as never) !== undefined;
+  }, []);
+
+  /** Finish the path onto `hit`, the endpoint its last anchor was just placed
+   *  on: the other subpath's anchors follow on from it, turned around when
+   *  `hit` is its last anchor, and its node is deleted. The path being drawn
+   *  keeps its identity — a continued node keeps its id and style, and a new
+   *  path is minted the way any pen path is. One op batch, so one undo. */
+  const commitJoin = useCallback((s: PenScratch, deps: ActionDeps, hit: PathAnchorHit): void => {
+    const edit = deps.editAnchors as EditAnchorsDep;
+    const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+    const current = s.current!;
+    const { anchors: added, closed: addedClosed } = pathToAnchors(buildPath([...s.finishedSubpaths, current], null));
+
+    const other = edit.getEditablePath(hit.id) as PolygonPath;
+    const otherSet = pathToAnchors(other);
+    const tail = hit.end === 'last' ? reverseAnchors(otherSet.anchors[hit.sub]) : otherSet.anchors[hit.sub];
+    const joined = added[added.length - 1];
+    const joint = joined[joined.length - 1];
+    const out = current.anchors[current.anchors.length - 1].outHandle ?? tail[0].outHandle;
+    if (out) joint.outHandle = { ...out };
+    joined.push(...tail.slice(1));
+
+    const cont = s.continuing;
+    const sameNode = cont?.id === hit.id;
+    const rest = sameNode ? { anchors: [], closed: [] } : {
+      anchors: otherSet.anchors.filter((_, i) => i !== hit.sub),
+      closed: otherSet.closed.filter((_, i) => i !== hit.sub),
+    };
+    const label = 'Join paths';
+    const ops: Op[] = [];
+    let keptId: string;
+    if (cont) {
+      if (cont.reversed) added[0] = reverseAnchors(added[0]);
+      const set = pathToAnchors(cont.original);
+      set.anchors.splice(cont.sub, 1, added[0]);
+      set.closed.splice(cont.sub, 1, addedClosed[0]);
+      set.anchors.push(...added.slice(1), ...rest.anchors);
+      set.closed.push(...addedClosed.slice(1), ...rest.closed);
+      if (sameNode) {
+        set.anchors.splice(hit.sub, 1);
+        set.closed.splice(hit.sub, 1);
+      }
+      const next: PolygonPath = { ...anchorsToPath(set.anchors, set.closed), fillRule: cont.original.fillRule };
+      ops.push(...edit.editOps!(cont.id, next, label));
+      keptId = cont.id;
+    } else {
+      const path = anchorsToPath([...added, ...rest.anchors], [...addedClosed, ...rest.closed]);
+      const node = optsRef.current.adapter.makeNode!(optsRef.current.wrapPath(path, { closed: false }));
+      ops.push(createInsertOp({ node }));
+      keptId = node.id;
+    }
+    if (!sameNode) ops.push(createDeleteOp({ node: scene!.get(hit.id as never) as { id: string } }));
+
+    const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+    if (applyOps) applyOps(ops, label);
+    else scene!.applyBatch(ops, label, defaultCommitAdapter(scene!));
+    if (optsRef.current.autoSelect) optsRef.current.adapter.setSelection([keptId]);
+    resetScratch(s);
+  }, []);
+
   /** From idle, a press on an open subpath's end anchor picks that subpath
    *  up: it becomes `current`, turned so the pressed end is last. Returns
    *  whether it did. */
@@ -320,14 +402,15 @@ export function usePenTool<TPose>(
   }, []);
 
   /** Where an anchor pressed at `(x, y)` lands: on an existing path's anchor
-   *  when one is within `anchorSnapRadius`, else wherever `snapPoint` puts it. */
-  const placeAt = useCallback((deps: ActionDeps, x: number, y: number): { x: number; y: number } => {
+   *  when one is within `anchorSnapRadius`, else wherever `snapPoint` puts it.
+   *  `hit` names the anchor it snapped to. */
+  const placeAt = useCallback((deps: ActionDeps, x: number, y: number): { x: number; y: number; hit: PathAnchorHit | null } => {
     const radius = optsRef.current.anchorSnapRadius;
     if (radius > 0) {
       const hit = nearestPathAnchor(pathsNear(deps, x, y, radius), { x, y }, radius, viewScale(deps));
-      if (hit) return { x: hit.x, y: hit.y };
+      if (hit) return { x: hit.x, y: hit.y, hit };
     }
-    return snap(x, y);
+    return { ...snap(x, y), hit: null };
   }, [snap]);
 
   /** Is a world point within the close-hit radius of `(ax, ay)`? Measured as a
@@ -356,7 +439,7 @@ export function usePenTool<TPose>(
         id: 'pen.placeAnchor',
         label: 'Pen — place anchor',
         eligible: { capability: 'creates-paths' },
-        requires: ['view', 'areaSelect', 'editAnchors'],
+        requires: ['view', 'areaSelect', 'editAnchors', 'scene', 'applyOps'],
         invoker: {
           timing: 'immediate' as const,
           run: (deps, params) => {
@@ -370,7 +453,7 @@ export function usePenTool<TPose>(
               forceRenderRef.current();
               return;
             }
-            const { x: wx, y: wy } = placeAt(deps, p.pressX, p.pressY);
+            const { x: wx, y: wy, hit } = placeAt(deps, p.pressX, p.pressY);
             const scratch = s();
 
             // Close-on-first-anchor (>= 3 anchors). With `autoCommitOnClose`
@@ -391,9 +474,11 @@ export function usePenTool<TPose>(
               }
             }
 
+            const join = joinable(scratch, deps, hit);
             // Otherwise: append a corner anchor, starting a subpath if needed.
             if (!scratch.current) scratch.current = { anchors: [], closed: false };
             scratch.current.anchors.push({ x: wx, y: wy });
+            if (join) commitJoin(scratch, deps, hit);
             forceRenderRef.current();
           },
         },
@@ -440,7 +525,7 @@ export function usePenTool<TPose>(
         id: 'pen.dragHandle',
         label: 'Pen — drag out a bezier handle',
         eligible: { capability: 'creates-paths' },
-        requires: ['view', 'areaSelect', 'editAnchors'],
+        requires: ['view', 'areaSelect', 'editAnchors', 'scene', 'applyOps'],
         invoker: {
           timing: 'ongoing' as const,
           start: (ctx: InvocationCtx) => {
@@ -453,8 +538,12 @@ export function usePenTool<TPose>(
             // Dragging from an open path's end picks the path up and pulls
             // that end's own handle rather than placing a new anchor on it.
             const pickedUp = pickUpEndpoint(ctx.deps, origin.x, origin.y);
+            // Dragging on another open path's endpoint joins onto it once
+            // the handle is set.
+            let joinHit: PathAnchorHit | null = null;
             if (!pickedUp) {
-              const { x: ax, y: ay } = placeAt(ctx.deps, origin.x, origin.y);
+              const { x: ax, y: ay, hit } = placeAt(ctx.deps, origin.x, origin.y);
+              if (joinable(scratch, ctx.deps, hit)) joinHit = hit;
               if (!scratch.current) scratch.current = { anchors: [], closed: false };
               scratch.current.anchors.push({ x: ax, y: ay });
             }
@@ -499,6 +588,7 @@ export function usePenTool<TPose>(
                   }
                   se.draggingHandleAt = null;
                 }
+                if (joinHit && se.current) commitJoin(se, ctx.deps, joinHit);
                 forceRenderRef.current();
               },
             };
@@ -543,7 +633,7 @@ export function usePenTool<TPose>(
         },
       },
     ];
-  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint]);
+  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint, joinable, commitJoin]);
 
   return useMemo(() => {
     return defineTool<PenScratch>({

@@ -23,7 +23,8 @@
  * as one undoable batch. Pose-as-polygon is a `transform` op; data.path is
  * a `transform` (new bounds) plus a `setData` (re-aligned local path), so
  * the kit's render invariant (`pathInWorld(stored, pose) === world`) is
- * preserved.
+ * preserved. `editOps` returns those same ops unapplied, for a caller
+ * folding the edit into a larger batch.
  *
  * Live previews ride the standard `OngoingHandle.previewIds/Pose/Data`
  * triple — this dep doesn't own preview state.
@@ -176,6 +177,22 @@ export function useEditAnchorsDepSource(
       ? (ext?.getSelectedAnchors() ?? EMPTY_ANCHOR_SELECTION)
       : EMPTY_ANCHOR_SELECTION;
     const marquee = effectiveId ? (ext?.getMarquee() ?? null) : null;
+  const editOps = (id: string, worldPath: unknown, label: string): Op[] => {
+      const wp = worldPath as PolygonPath;
+      const node = sc.get(id as NodeId);
+      if (!node) return [];
+      const storage = classifyStorage(node as { pose: unknown; data: unknown });
+      if (!storage) return [];
+      if (storage.kind === 'pose') return [createTransformOp({ id, from: node.pose, to: wp, label })];
+      // Edited path arrives in world coords (rotation baked in by
+      // resolveEditablePathOf); invert it back to the unrotated stored
+      // shape so `pose.rotation` is preserved and edits round-trip.
+      const { pose: newPose, path: aligned } = worldEditToStorage(storage.pose, wp);
+      return [
+        createTransformOp({ id, from: node.pose, to: newPose, label }),
+        createSetDataOp({ id, from: node.data, to: { ...(node.data as object), path: aligned }, label }),
+      ];
+    };
     return {
       editingId: effectiveId,
       setEditingId(id: string | null) {
@@ -219,27 +236,10 @@ export function useEditAnchorsDepSource(
         return { pose: node.pose, data: node.data };
       },
       applyEdit(id: string, worldPath: unknown, label: string) {
-        const wp = worldPath as PolygonPath;
-        const node = sc.get(id as NodeId);
-        if (!node) return;
-        const storage = classifyStorage(node as { pose: unknown; data: unknown });
-        if (!storage) return;
-        if (storage.kind === 'pose') {
-          ad.applyOps([createTransformOp({ id, from: node.pose, to: wp, label })], label);
-          return;
-        }
-        // Edited path arrives in world coords (rotation baked in by
-        // resolveEditablePathOf); invert it back to the unrotated stored
-        // shape so `pose.rotation` is preserved and edits round-trip.
-        const { pose: newPose, path: aligned } = worldEditToStorage(storage.pose, wp);
-        ad.applyOps(
-          [
-            createTransformOp({ id, from: node.pose, to: newPose, label }),
-            createSetDataOp({ id, from: node.data, to: { ...(node.data as object), path: aligned }, label }),
-          ],
-          label,
-        );
+        const ops = editOps(id, worldPath, label);
+        if (ops.length > 0) ad.applyOps(ops, label);
       },
+      editOps,
     };
   });
 }
