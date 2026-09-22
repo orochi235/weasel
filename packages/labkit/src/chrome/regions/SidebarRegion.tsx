@@ -1,3 +1,4 @@
+import { type StanceProps, useStance } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
 import type {
   RegionContribution,
@@ -20,7 +21,9 @@ function Section({
   onCollapsedChange,
   onUndock,
   children,
-}: {
+  stance,
+  tone,
+}: StanceProps & {
   title: string;
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
@@ -28,7 +31,7 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="lk-sidebar-section">
+    <section className="lk-sidebar-section" {...useStance({ stance, tone })}>
       <div className="lk-sidebar-section__bar">
         <button
           type="button"
@@ -76,6 +79,8 @@ export function SidebarRegion<TCtx extends SidebarSlotContext = TrialChromeConte
           <Section
             key={c.id}
             title={item.title}
+            stance={item.stance}
+            tone={item.tone}
             collapsed={ctx.collapsedSections[c.id] ?? item.defaultCollapsed ?? false}
             onCollapsedChange={(next) => ctx.setSectionCollapsed(c.id, next)}
             onUndock={

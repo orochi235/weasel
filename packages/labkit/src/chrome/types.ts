@@ -1,3 +1,4 @@
+import type { StanceProps } from '@weasel-js/ui';
 import type { ComponentType, ReactNode } from 'react';
 import type { ResolvedConfig } from '../config/types';
 import type { ConfigField } from '../controls/types';
@@ -45,8 +46,10 @@ export interface ToolItem<TCtx = TrialChromeContext> {
   onActivate?: (ctx: TCtx) => void;
 }
 
-/** A titled block in the sidebar. */
-export interface SidebarSection {
+/** A titled block in the sidebar. `stance` and `tone` work as on a
+ *  `<PropertyPanel>`: what kind of content the section holds, and which of its
+ *  peers it is. */
+export interface SidebarSection extends StanceProps {
   title: string;
   /** Starts collapsed, until the trial remembers a fold of its own. */
   defaultCollapsed?: boolean;

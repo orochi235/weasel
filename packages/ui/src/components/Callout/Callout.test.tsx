@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { Pressable } from 'react-aria-components';
 import { Callout, CalloutTrigger } from './Callout';
-import s from './Callout.module.css';
 
 function TriggerSubject() {
   return (

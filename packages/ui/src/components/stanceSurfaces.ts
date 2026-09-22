@@ -132,4 +132,23 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       'title-color': 'var(--wzl-fg)',
     },
   },
+  {
+    // A strip between rules: no box, so a stance reaches the fill, the rule and the heading.
+    id: 'sidebar-section',
+    file: 'packages/labkit/src/primitives/Sidebar.less',
+    selector: '.lk-sidebar-section',
+    fills: true,
+    base: {
+      surface: 'transparent',
+      'border-color': 'var(--wzl-line-subtle)',
+      'tone-mix': 'var(--wzl-panel-tone-mix)',
+      tone: TONE_BASE,
+      accent: ACCENT_BASE,
+      'title-font': 'var(--wzl-font-display)',
+      'title-size': 'var(--wzl-font-size-sm)',
+      'title-case': 'uppercase',
+      'title-tracking': '0.08em',
+      'title-color': 'var(--wzl-fg-muted)',
+    },
+  },
 ];
