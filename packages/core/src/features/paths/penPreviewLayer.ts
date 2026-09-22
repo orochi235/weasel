@@ -14,7 +14,8 @@ import type { DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { Tool } from '../../tools/overlayBinding';
 import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/pen';
-import { PATH_C, PATH_L, PATH_M, PATH_Z, type PolygonPath } from './types';
+import { PATH_C, PATH_L, PATH_M, type PolygonPath } from './types';
+import { anchorsToPath } from './anchors';
 import { circlePath } from './markers';
 
 /** Appearance of the pen tool's in-progress path. */
@@ -52,73 +53,29 @@ function w2s(wx: number, wy: number, view: { x: number; y: number; scale: { x: n
   return [(wx - view.x) * view.scale.x, (wy - view.y) * view.scale.y];
 }
 
-function mirror(anchor: PenAnchor, out: { x: number; y: number } | undefined): { x: number; y: number } | undefined {
-  if (!out || anchor.altBroken) return undefined;
-  return { x: 2 * anchor.x - out.x, y: 2 * anchor.y - out.y };
-}
-
 // approximateCircle has moved to `./markers.ts` as `circlePath`. Re-exported
 // locally so we don't rename callers in this file.
 function approximateCircle(cx: number, cy: number, r: number): PolygonPath {
   return circlePath(cx, cy, r);
 }
 
-/**
- * Build a `PolygonPath` for a pen subpath in screen space. Mirrors the
- * `strokeSubpath` 2D body — moves to the first anchor in screen coords,
- * emits cubic beziers when out/in handles are present, otherwise
- * linear segments.
- */
+/** A pen subpath as a screen-space `PolygonPath`, segmented by the same rule
+ *  the pen commits with. */
 function subpathToPath(
   sp: PenSubpath,
   view: { x: number; y: number; scale: { x: number; y: number } },
 ): PolygonPath | null {
   if (sp.anchors.length === 0) return null;
-  const cmds: number[] = [];
-  const xs: number[] = [];
-  const [sx, sy] = w2s(sp.anchors[0].x, sp.anchors[0].y, view);
-  cmds.push(PATH_M);
-  xs.push(sx, sy);
-  for (let i = 1; i < sp.anchors.length; i++) {
-    const prev = sp.anchors[i - 1];
-    const curr = sp.anchors[i];
-    const out = prev.outHandle;
-    const inH = curr.inHandle ?? mirror(prev, out);
-    const [tx, ty] = w2s(curr.x, curr.y, view);
-    if (out || curr.inHandle) {
-      const c1 = out ?? prev;
-      const c2 = inH ?? curr;
-      const [c1x, c1y] = w2s(c1.x, c1.y, view);
-      const [c2x, c2y] = w2s(c2.x, c2.y, view);
-      cmds.push(PATH_C);
-      xs.push(c1x, c1y, c2x, c2y, tx, ty);
-    } else {
-      cmds.push(PATH_L);
-      xs.push(tx, ty);
-    }
-  }
-  if (sp.closed) {
-    const last = sp.anchors[sp.anchors.length - 1];
-    const first = sp.anchors[0];
-    const out = last.outHandle;
-    const inH = first.inHandle ?? mirror(last, out);
-    if (out || first.inHandle) {
-      const c1 = out ?? last;
-      const c2 = inH ?? first;
-      const [c1x, c1y] = w2s(c1.x, c1.y, view);
-      const [c2x, c2y] = w2s(c2.x, c2.y, view);
-      const [tx, ty] = w2s(first.x, first.y, view);
-      cmds.push(PATH_C);
-      xs.push(c1x, c1y, c2x, c2y, tx, ty);
-    }
-    cmds.push(PATH_Z);
-  }
-  return {
-    kind: 'polygon',
-    commands: new Uint8Array(cmds),
-    coords: new Float32Array(xs),
-    fillRule: 'nonzero',
+  const pt = (p: { x: number; y: number }) => {
+    const [x, y] = w2s(p.x, p.y, view);
+    return { x, y };
   };
+  const anchors = sp.anchors.map((a: PenAnchor) => ({
+    ...pt(a),
+    ...(a.inHandle ? { inHandle: pt(a.inHandle) } : {}),
+    ...(a.outHandle ? { outHandle: pt(a.outHandle) } : {}),
+  }));
+  return anchorsToPath([anchors], [sp.closed]);
 }
 
 /** Render layer that draws the pen tool's path as it is being placed —
@@ -225,13 +182,10 @@ export function createPenPreviewLayer(
               path: approximateCircle(hx, hy, HANDLE_DOT_RADIUS_PX),
               fill: { fill: 'solid', color: style.handleStroke },
             });
-            // Mirrored in-side handle preview — gives the user a full
-            // through-anchor tangent so they can see the curve's incoming
-            // shape as they drag. Suppressed when Alt-broken.
-            const inSide = mirror(a, a.outHandle);
+            const inSide = a.inHandle;
             if (inSide) {
               const [mx, my] = w2s(inSide.x, inSide.y, view);
-              const mirrorLine: PolygonPath = {
+              const inLine: PolygonPath = {
                 kind: 'polygon',
                 commands: new Uint8Array([PATH_M, PATH_L]),
                 coords: new Float32Array([ax, ay, mx, my]),
@@ -239,7 +193,7 @@ export function createPenPreviewLayer(
               };
               out.push({
                 kind: 'path',
-                path: mirrorLine,
+                path: inLine,
                 stroke: { paint: { fill: 'solid', color: style.handleStroke }, width: 1 },
               });
               out.push({

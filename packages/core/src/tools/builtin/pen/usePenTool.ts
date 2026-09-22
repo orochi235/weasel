@@ -8,7 +8,6 @@ import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import type { AreaSelectDep, EditAnchorsDep, ViewApi } from 'interactions/actions/depSchema';
 import { pxExtent, withinPxRadius } from 'core/viewport/pxExtent';
 import { PenIcon } from '../../../icons';
-import { PathBuilder } from 'features/paths/builder';
 import type { PolygonPath } from 'features/paths/types';
 import { anchorsToPath, pathToAnchors } from 'features/paths/anchors';
 import { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from 'features/paths/nearestAnchor';
@@ -21,18 +20,18 @@ import { constrainTo45 } from '../../../util/constrainTo45';
 import { cursorFor } from '@weasel-js/cursor';
 
 /**
- * In-progress pen anchor. `outHandle` is set when the anchor was placed via
- * click-drag (smooth anchor); undefined for click-placed corners.
- * `inHandle` is mirrored from the previous anchor's outHandle on segment
- * emission unless `altBroken` is set on that previous anchor.
+ * In-progress pen anchor. A click places a corner, with no handles. A drag
+ * sets `outHandle` to the drag point and `inHandle` to its mirror through
+ * the anchor, which shapes the segment coming into it.
  */
 export interface PenAnchor {
   x: number;
   y: number;
   outHandle?: { x: number; y: number };
   inHandle?: { x: number; y: number };
-  /** True when Alt was held during the outgoing-handle drag — the next
-   *  anchor's incoming handle is NOT mirrored from this one. */
+  /** True once Alt is held during the placement drag: from then on the
+   *  in-handle stays where it is, and an anchor dragged with Alt down from
+   *  the start gets none. */
   altBroken?: boolean;
 }
 
@@ -165,59 +164,16 @@ function anchorCount(s: PenScratch): number {
     + s.finishedSubpaths.reduce((n, sp) => n + sp.anchors.length, 0);
 }
 
-/** Build a PolygonPath from the pen's accumulated subpaths. Cubic segments
- *  are emitted whenever either endpoint of the segment carries a handle:
- *  the previous anchor's outHandle (or itself if absent) and the current
- *  anchor's inHandle (mirrored from previous outHandle unless altBroken,
- *  or itself if neither). Pure corner segments fall through to L. */
+/** Build a PolygonPath from the pen's accumulated subpaths, by the same
+ *  rule as any anchor set: segment A→B is a cubic through A's out-handle and
+ *  B's in-handle when either exists, else a line. */
 function buildPath(
   subpaths: PenSubpath[],
   trailing: PenSubpath | null,
 ): PolygonPath {
-  const b = new PathBuilder();
   const all = [...subpaths];
   if (trailing && trailing.anchors.length > 0) all.push(trailing);
-  for (const sp of all) {
-    if (sp.anchors.length === 0) continue;
-    const first = sp.anchors[0];
-    b.moveTo(first.x, first.y);
-    for (let i = 1; i < sp.anchors.length; i++) {
-      const prev = sp.anchors[i - 1];
-      const curr = sp.anchors[i];
-      const out = prev.outHandle;
-      const inH = curr.inHandle ?? mirrorHandle(prev, out);
-      if (out || curr.inHandle) {
-        const c1 = out ?? { x: prev.x, y: prev.y };
-        const c2 = inH ?? { x: curr.x, y: curr.y };
-        b.curveTo(c1.x, c1.y, c2.x, c2.y, curr.x, curr.y);
-      } else {
-        b.lineTo(curr.x, curr.y);
-      }
-    }
-    if (sp.closed) {
-      // For a closed subpath, the closing segment runs from the last anchor
-      // back to the first. If the last anchor has an outHandle, emit a curve.
-      const last = sp.anchors[sp.anchors.length - 1];
-      const first0 = sp.anchors[0];
-      const out = last.outHandle;
-      const inH = first0.inHandle ?? mirrorHandle(last, out);
-      if (out || first0.inHandle) {
-        const c1 = out ?? { x: last.x, y: last.y };
-        const c2 = inH ?? { x: first0.x, y: first0.y };
-        b.curveTo(c1.x, c1.y, c2.x, c2.y, first0.x, first0.y);
-      }
-      b.close();
-    }
-  }
-  return b.build();
-}
-
-function mirrorHandle(
-  anchor: PenAnchor,
-  out: { x: number; y: number } | undefined,
-): { x: number; y: number } | undefined {
-  if (!out || anchor.altBroken) return undefined;
-  return { x: 2 * anchor.x - out.x, y: 2 * anchor.y - out.y };
+  return anchorsToPath(all.map((sp) => sp.anchors), all.map((sp) => sp.closed));
 }
 
 /**
@@ -548,20 +504,23 @@ export function usePenTool<TPose>(
               scratch.current.anchors.push({ x: ax, y: ay });
             }
             scratch.draggingHandleAt = scratch.current!.anchors.length - 1;
-            applyOutHandle(scratch, ctx.world, ctx.modifiers.shift, optsRef.current.snapPoint);
             if (ctx.modifiers.alt) {
               scratch.current!.anchors[scratch.draggingHandleAt].altBroken = true;
             }
+            // A picked-up endpoint's in-handle belongs to the existing
+            // segment into it, which the pen does not reshape.
+            const linked = !pickedUp;
+            applyOutHandle(scratch, ctx.world, ctx.modifiers.shift, linked, optsRef.current.snapPoint);
             forceRenderRef.current();
 
             return {
               onMove: (moveCtx: InvocationCtx) => {
                 const sm = s();
                 if (sm.draggingHandleAt === null) return;
-                applyOutHandle(sm, moveCtx.world, moveCtx.modifiers.shift, optsRef.current.snapPoint);
                 if (moveCtx.modifiers.alt && sm.current) {
                   sm.current.anchors[sm.draggingHandleAt].altBroken = true;
                 }
+                applyOutHandle(sm, moveCtx.world, moveCtx.modifiers.shift, linked, optsRef.current.snapPoint);
                 forceRenderRef.current();
               },
               onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
@@ -582,10 +541,10 @@ export function usePenTool<TPose>(
                   return;
                 }
                 if (se.draggingHandleAt !== null) {
-                  applyOutHandle(se, endCtx.world, endCtx.modifiers.shift, optsRef.current.snapPoint);
                   if (endCtx.modifiers.alt && se.current) {
                     se.current.anchors[se.draggingHandleAt].altBroken = true;
                   }
+                  applyOutHandle(se, endCtx.world, endCtx.modifiers.shift, linked, optsRef.current.snapPoint);
                   se.draggingHandleAt = null;
                 }
                 if (joinHit && se.current) commitJoin(se, ctx.deps, joinHit);
@@ -706,11 +665,13 @@ usePenTool.prefs = {
 } satisfies ToolPrefGroup;
 
 /** Point the anchor's outgoing handle at `target`, optionally snapped and
- *  optionally constrained to 45° steps. */
+ *  optionally constrained to 45° steps. When `linked` and not Alt-broken,
+ *  the in-handle follows as its mirror through the anchor. */
 function applyOutHandle<S extends PenScratch>(
   s: S,
   target: { x: number; y: number },
   shift: boolean,
+  linked: boolean,
   snap?: (p: { x: number; y: number }) => { x: number; y: number },
 ): void {
   if (s.current === null || s.draggingHandleAt === null) return;
@@ -724,6 +685,7 @@ function applyOutHandle<S extends PenScratch>(
     dy = c.dy;
   }
   anchor.outHandle = { x: anchor.x + dx, y: anchor.y + dy };
+  if (linked && !anchor.altBroken) anchor.inHandle = { x: anchor.x - dx, y: anchor.y - dy };
 }
 
 function viewScale(deps: ActionDeps): { x: number; y: number } {
