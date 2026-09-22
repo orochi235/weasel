@@ -59,4 +59,24 @@ describe('useLayoutDepSource', () => {
     );
     expect(reg.get('layout')?.getLayout('C')).toBeNull();
   });
+
+  it('carries the drop-target mode, following the latest render', () => {
+    let reg!: DepRegistry;
+    function Wire({ mode }: { mode?: 'topmost' | 'region' }) {
+      useLayoutDepSource(undefined, mode);
+      return null;
+    }
+    const tree = (mode?: 'topmost' | 'region') => (
+      <DepRegistryProvider>
+        <Wire mode={mode} />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>
+    );
+    const { rerender } = render(tree());
+    expect(reg.get('layout')?.dropTarget).toBeUndefined();
+    rerender(tree('topmost'));
+    expect(reg.get('layout')?.dropTarget).toBe('topmost');
+    rerender(tree('region'));
+    expect(reg.get('layout')?.dropTarget).toBe('region');
+  });
 });

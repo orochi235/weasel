@@ -394,6 +394,9 @@ export interface ResizePolicy<TPose> {
  */
 export interface LayoutDep {
   getLayout(containerId: string): import('../../layout/types').LayoutStrategy<unknown> | null;
+  /** Which container wins when several contain the drop point. Default
+   *  `'innermost'`. */
+  dropTarget?: import('../../layout/types').LayoutDropTargetMode;
 }
 
 /**

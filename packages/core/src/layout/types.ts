@@ -1,4 +1,5 @@
 import type { Op } from 'core/ops/types';
+import type { Path } from 'core/geometry/path';
 
 /** A layout container's extent in world units. */
 export type ContainerBounds = {
@@ -42,6 +43,24 @@ export interface LayoutSnap<TPose> {
     pointer: { x: number; y: number },
   ): DropTarget<TPose> | null;
 }
+
+/** A container's drop region, in its local frame: the origin is the top-left
+ *  of the container's world bounds. A path (a `RectPath` for a plain rect) is
+ *  filled-region tested; a predicate is handed the local point. */
+export type DropRegion = Path | ((point: { x: number; y: number }) => boolean);
+
+/**
+ * Which layout container a drag lands in when more than one contains the
+ * point being dropped.
+ *
+ * - `'innermost'` (default) — the deepest container in the tree, whatever is
+ *   painted over it; ties at one depth go to the one painted later.
+ * - `'topmost'` — the container painted last, in the scene's render order
+ *   across the whole tree, so a shallow container drawn over a deep one wins.
+ * - `'region'` — only containers whose strategy declares a `dropRegion`, and
+ *   only when the point is inside it; ties are broken as for `'innermost'`.
+ */
+export type LayoutDropTargetMode = 'innermost' | 'topmost' | 'region';
 
 /** The container a layout strategy is arranging children within. */
 export interface LayoutContainer {
@@ -103,6 +122,13 @@ export interface LayoutStrategy<TPose> {
    *  rectangular (circles, irregular zones) implement this to override the
    *  AABB default. */
   contains?(containerPose: TPose, point: { x: number; y: number }): boolean;
+
+  /** Optional: where this container takes drops. When it returns a region,
+   *  the region replaces the container body (and `contains`) as the hit area
+   *  for choosing a drop container — it may be smaller than the body or reach
+   *  past it — and it is what makes the container a candidate at all under
+   *  `LayoutDropTargetMode` `'region'`. `null` or absent keeps the body. */
+  dropRegion?(container: LayoutContainer): DropRegion | null;
 
   /** Optional: reject a drag before any drop-target work happens. A type-aware
    *  container (a palette that only takes swatches, say) returns `false` and
