@@ -4,7 +4,7 @@ import type { TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
 const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, { mode: 'dark' });
-const ctx = { dims: { width: 100, height: 100 }, defaultFont: 'Default', tokens: DEFAULT_RESOLVED_TOKENS };
+const ctx = { dims: { width: 100, height: 100 }, defaultFont: 'Default', toneAt: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS };
 
 describe('text widget', () => {
   it('emits a TextDrawCommand using the supplied style', () => {

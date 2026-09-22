@@ -12,4 +12,12 @@ export { parseTokenValue, serializeTokenValue } from './dtcg/value';
 export type { RawToken, FlatTokens, TokenValue } from './dtcg/types';
 export type { BakedTheme } from './engine/bake';
 export { colorAt, colorCount, colorCssAt, rampSteps, themeTones, type ColorContext, type ColorList, type GeneratedColors, type RampColors, type SerializableColorList } from './colorList';
-export { STANCE_SLOTS, STANCES, stanceSlotNames, type Stance, type StanceSlot } from './panel';
+export {
+  resolveStanceSlots,
+  STANCE_SLOTS,
+  STANCES,
+  stanceSlotNames,
+  type Stance,
+  type StanceLookup,
+  type StanceSlot,
+} from './panel';

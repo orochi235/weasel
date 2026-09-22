@@ -48,3 +48,39 @@ export function stanceSlotNames(): string[] {
     STANCE_SLOTS.flatMap((slot) => [`--wzl-stance-${stance}-${slot.name}`, `--wzl-stance-${stance}-nested-${slot.name}`]),
   );
 }
+
+/** What `resolveStanceSlots` resolves a surface against, besides its tokens. */
+export interface StanceLookup<S extends string> {
+  readonly stance?: Stance;
+  /** The surface sits inside one of its own kind, and reads `-nested-<slot>` first. */
+  readonly nested?: boolean;
+  /** A stanced surface's fallback, where it differs from `base`. */
+  readonly stanced?: Partial<Readonly<Record<S, string>>>;
+}
+
+/**
+ * A stanced surface's look, for one drawn without the cascade — a canvas
+ * surface reading a resolved theme. The same lookup the generated CSS makes:
+ * `--wzl-stance-<stance>-<slot>`, then the stanced fallback, then `base`.
+ * `base` holds final values, one per slot the surface draws.
+ *
+ * The tone is the caller's: a surface that names one mixes it into
+ * `surface` at `tone-mix`; one that names none takes the `tone` slot, which
+ * falls back to `surface` so mixing it changes nothing.
+ */
+export function resolveStanceSlots<S extends string>(
+  tokens: Readonly<Record<string, string>>,
+  base: Readonly<Record<S, string>>,
+  { stance, nested, stanced }: StanceLookup<S> = {},
+): Record<S, string> {
+  const out: Record<S, string> = { ...base };
+  if (stance === undefined) return out;
+  for (const slot of Object.keys(base) as S[]) {
+    const own = tokens[`--wzl-stance-${stance}-${slot}`];
+    const inner = nested ? tokens[`--wzl-stance-${stance}-nested-${slot}`] : undefined;
+    // A stance's own tone falls back to the surface, never to the surface's base tone.
+    const fallback = slot === 'tone' ? (base as Record<string, string>).surface ?? base[slot] : stanced?.[slot] ?? base[slot];
+    out[slot] = inner ?? own ?? fallback;
+  }
+  return out;
+}

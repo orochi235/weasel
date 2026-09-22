@@ -10,12 +10,19 @@ import {
 } from './fonts/registerDefaultFont';
 import { claimsOf, cursorOf, type Widget, type HudPointerEvent } from './widget';
 import type { HudHitPayload } from './tool';
-import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
+import {
+  colorAt, resolveTheme, themeTones, weaselTheme,
+  type ColorContext, type ColorList, type ResolvedTheme,
+} from '@weasel-js/theme';
 
 export interface AttachHudOptions {
   /** Resolved theme the widgets draw with. Defaults to the built-in theme's
    *  default mode; pass `useTheme().resolved` to follow a live theme. */
   readonly theme?: ResolvedTheme;
+  /** The tone list a widget's numeric `tone` indexes, and the theme it
+   *  resolves against — `useTheme()`'s value is one. Defaults to the built-in
+   *  theme's list, resolved against `theme`. */
+  readonly tones?: ColorContext & { readonly tones: ColorList };
   /**
    * Where the text a widget draws without naming a family comes from.
    *
@@ -45,6 +52,8 @@ export function attachHud(
   options: AttachHudOptions = {},
 ): () => void {
   const theme = options.theme ?? resolveTheme(weaselTheme);
+  const tones = options.tones ?? { theme: weaselTheme, resolved: theme, tones: themeTones(weaselTheme) };
+  const toneAt = (i: number) => colorAt(tones.tones, i, tones);
   if (hud.attached) {
     throw new Error('weasel-hud: this HUD is already attached to a canvas.');
   }
@@ -85,7 +94,7 @@ export function attachHud(
     label: 'HUD',
     space: 'screen',
     draw: (data, view, dims): DrawCommand[] => {
-      const ctx = { dims, defaultFont, tokens: theme };
+      const ctx = { dims, defaultFont, tokens: theme, toneAt };
       const out: DrawCommand[] = [];
       // Pass 1: interiors. All content precedes all frames so one window's
       // content can never paint over another window's border.
@@ -94,7 +103,7 @@ export function attachHud(
         const rect = w.contentRect;
         if (rect.w <= 0 || rect.h <= 0) continue;
         const children = w.content({
-          data, view, dims, rect, defaultFont, tokens: theme,
+          data, view, dims, rect, defaultFont, tokens: theme, toneAt,
         });
         if (children.length === 0) continue;
         out.push({

@@ -22,6 +22,9 @@ export interface HudDrawCtx {
    *  caller rather than read back off the DOM, so a HUD drawn headlessly is
    *  themed the same way one drawn in a browser is. */
   tokens: ResolvedTheme;
+  /** The `i`th color of the theme's tone list, wrapping — what a widget's
+   *  numeric `tone` names. */
+  toneAt(i: number): string;
 }
 
 /**
@@ -43,6 +46,7 @@ export interface HudContentCtx {
   rect: WidgetBounds;
   defaultFont: string;
   tokens: ResolvedTheme;
+  toneAt(i: number): string;
 }
 
 /**

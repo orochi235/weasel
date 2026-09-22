@@ -5,7 +5,7 @@ import { DEFAULT_WINDOW_METRICS as M } from './zones';
 
 const ctx = {
   dims: { width: 800, height: 600 },
-  defaultFont: 'D',
+  defaultFont: 'D', toneAt: () => '#000000',
   tokens: resolveTheme(weaselTheme, { mode: 'dark' }),
 };
 
@@ -46,6 +46,57 @@ describe('window widget', () => {
     expect(covered(100 + M.edge / 2, cr.y + 10)).toBe(true);        // left band
     expect(covered(300 - M.edge / 2, cr.y + 10)).toBe(true);        // right band
     expect(covered(200, 250 - M.edge / 2)).toBe(true);              // bottom band
+  });
+
+  describe('stance and tone', () => {
+    type Cmd = ReturnType<ReturnType<typeof createWindow>['draw']>[number];
+    const bandColor = (cmds: Cmd[]) => {
+      const c = cmds.find((c) => c.kind === 'path' && c.fill !== undefined) as { fill: { color: string } };
+      return c.fill.color;
+    };
+    const ring = (cmds: Cmd[]) =>
+      cmds.find((c) => c.kind === 'path' && c.stroke !== undefined && c.path.kind === 'rect') as
+        | { stroke: { paint: { color: string }; width: number; dash?: number[] } }
+        | undefined;
+    const title = (cmds: Cmd[]) => JSON.stringify(cmds.find((c) => c.kind === 'text'));
+    const rgb = (css: string) => css.match(/[\d.]+/g)!.slice(0, 3).map(Number);
+
+    it('draws the base look with neither', () => {
+      const cmds = createWindow(opts).draw(ctx);
+      expect(bandColor(cmds)).toBe(ctx.tokens['--wzl-surface-raised']);
+      expect(ring(cmds)?.stroke.paint.color).toBe(ctx.tokens['--wzl-border']);
+    });
+
+    it('takes the theme\'s stance slots, and mixes the stance\'s tone into the fill in oklab', () => {
+      const cmds = createWindow({ ...opts, stance: 'danger' }).draw(ctx);
+      expect(ring(cmds)?.stroke.paint.color).toBe(ctx.tokens['--wzl-stance-danger-border-color']);
+      expect(title(cmds)).toContain(ctx.tokens['--wzl-stance-danger-title-color']);
+      // Chrome's color-mix(in oklab, #d94a3f 14%, #25272c).
+      expect(ctx.tokens['--wzl-surface-raised']).toBe('#25272c');
+      rgb(bandColor(cmds)).forEach((v, i) => expect(Math.abs(v - [61, 46, 48][i])).toBeLessThanOrEqual(1));
+    });
+
+    it('drops the ring where a stance sets no border width, and dashes it where it says dashed', () => {
+      expect(ring(createWindow({ ...opts, stance: 'scope' }).draw(ctx))).toBeUndefined();
+      expect(ring(createWindow({ ...opts, stance: 'debug' }).draw(ctx))?.stroke.dash?.length).toBeGreaterThan(0);
+    });
+
+    it('resolves a numeric tone through the draw context, and takes a color as given', () => {
+      const toneAt = vi.fn(() => '#d94a3f');
+      const indexed = bandColor(createWindow({ ...opts, tone: 3 }).draw({ ...ctx, toneAt }));
+      expect(toneAt).toHaveBeenCalledWith(3);
+      expect(bandColor(createWindow({ ...opts, tone: '#d94a3f' }).draw(ctx))).toBe(indexed);
+      expect(indexed).not.toBe(ctx.tokens['--wzl-surface-raised']);
+    });
+
+    it('redraws on setStance and setTone', () => {
+      const onChange = vi.fn();
+      const win = createWindow({ ...opts, onChange });
+      win.setStance('danger');
+      win.setTone(2);
+      expect(onChange).toHaveBeenCalledTimes(2);
+      expect(ring(win.draw(ctx))?.stroke.paint.color).toBe(ctx.tokens['--wzl-stance-danger-border-color']);
+    });
   });
 
   describe('titlebar: false', () => {

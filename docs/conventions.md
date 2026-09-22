@@ -198,7 +198,9 @@ tone list (`ThemeDefinition.tones`, a `ColorList`; weasel's is the swatch ramp),
 or a color. `PropertyPanel`, `PropertyGroup`, `Subpanel`, `Callout`, `Dialog`,
 labkit's `ControlPanel` and sidebar sections take both; `EffectCard` and
 `LayerStack`'s items take a tone only, since a list's cards are one kind of
-thing. Anything else that takes several colors — chart series, diagram
+thing. The hud `window` takes both, drawn in WebGL from the resolved theme:
+`resolveStanceSlots` (`@weasel-js/theme`) makes the same lookup the generated CSS
+does, and `mixOklab` (`@weasel-js/paint`) mixes the tone in. Anything else that takes several colors — chart series, diagram
 categories — takes a `ColorList` (`@weasel-js/theme`), read with `colorAt` /
 `colorCssAt`, rather than hand-picked color strings that suit only one mode.
 

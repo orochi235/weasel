@@ -162,11 +162,11 @@ describe('weasel-hud integration', () => {
     act(() => { btn = apiOut.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
 
     const themed = { ...defaultResolved, '--wzl-surface-raised': '#abcdef' };
-    const withTheme = btn.draw({ dims: { width: 200, height: 200 }, defaultFont: 'x', tokens: themed });
+    const withTheme = btn.draw({ dims: { width: 200, height: 200 }, defaultFont: 'x', toneAt: () => '#000000', tokens: themed });
     const themedBody = withTheme.find((c) => c.kind === 'path') as { fill: { color: string } };
     expect(themedBody.fill.color).toBe('#abcdef');
 
-    const withoutTheme = btn.draw({ dims: { width: 200, height: 200 }, defaultFont: 'x', tokens: defaultResolved });
+    const withoutTheme = btn.draw({ dims: { width: 200, height: 200 }, defaultFont: 'x', toneAt: () => '#000000', tokens: defaultResolved });
     const plainBody = withoutTheme.find((c) => c.kind === 'path') as { fill: { color: string } };
     expect(plainBody.fill.color).not.toBe('#abcdef');
     expect(plainBody.fill.color).toBe(defaultResolved['--wzl-surface-raised']);

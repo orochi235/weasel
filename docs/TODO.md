@@ -739,17 +739,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P1) Give the HUD's window a stance and a tone.** Every DOM surface that
-  holds a class of content takes `stance` and `tone` (`docs/conventions.md`,
-  "Stance and tone"). The hud `window` widget paints its frame in WebGL from the
-  resolved token record, which holds only the stance slots a theme declares and
-  none of the CSS fallback chains, so it needs a TypeScript resolver for
-  `--wzl-stance-<stance>-<slot>` → its own look, and an oklab mix for the toned
-  fill. Two surfaces were looked at and left out: toasts, because a toast reports
-  how an event came out rather than holding a class of content, and `success`
-  has no stance; and `Badge` / `Powerline`, whose `tone` prop names a status
-  (`info`, `danger`, …) — a different thing from a panel's tone under the same
-  word, which wants a rename decision before either moves.
+- **(P2) Decide what `tone` means on `Badge` and `Powerline`.** Their `tone`
+  prop names a status (`info`, `danger`, …), while a panel's `tone` is which of
+  its peers it is — two things under one word. Either rename the status prop or
+  give these a peer tone beside it. That naming call comes before either moves.
+  Toasts were looked at and left out of stance and tone: a toast reports how an
+  event came out rather than holding a class of content, and `success` has no
+  stance.
 
 - **(P2) DTCG export carries one axis, so density is flattened out of it.**
   `toDTCG` writes mode and, for every other axis, that axis's default branch

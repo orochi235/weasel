@@ -28,6 +28,7 @@ export {
   srgbFloatToOklab,
   oklabToSrgbU8,
   lerpOklab,
+  mixOklab,
   oklabToOklch,
   oklchToOklab,
   lerpOklch,

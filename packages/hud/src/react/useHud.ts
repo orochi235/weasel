@@ -40,14 +40,18 @@ export function useHud(
   useEffect(() => {
     const api = canvasRef.current;
     if (!api) return;
-    const detach = attachHud(api, hud, { theme, ...(font !== undefined ? { font } : {}) });
+    const detach = attachHud(api, hud, {
+      theme,
+      ...(provided ? { tones: provided } : {}),
+      ...(font !== undefined ? { font } : {}),
+    });
     api.requestRedraw();
     return detach;
     // canvasRef.current changing during component lifetime is unusual for
     // canvas refs; treat as effectively-stable in v1. The dep on `hud` is
     // also stable (it comes from useState's initializer, never changes).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hud, theme, font]);
+  }, [hud, theme, provided, font]);
 
   return hud;
 }

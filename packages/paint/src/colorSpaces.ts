@@ -109,6 +109,25 @@ export function lerpOklab(
   ];
 }
 
+/**
+ * `color-mix(in oklab, a p%, b)` for two 0..1 sRGBA colors, `p` as 0..1: the
+ * channels mix premultiplied by alpha, as CSS does, so a transparent side
+ * lends the result its opacity and none of its color.
+ */
+export function mixOklab(
+  a: readonly [number, number, number, number],
+  b: readonly [number, number, number, number],
+  p: number,
+): [number, number, number, number] {
+  const alpha = a[3] * p + b[3] * (1 - p);
+  if (alpha === 0) return [0, 0, 0, 0];
+  const la = srgbFloatToOklab(a[0], a[1], a[2]);
+  const lb = srgbFloatToOklab(b[0], b[1], b[2]);
+  const mix = (i: number) => (la[i] * a[3] * p + lb[i] * b[3] * (1 - p)) / alpha;
+  const [r, g, bl] = oklabToSrgbU8(mix(0), mix(1), mix(2));
+  return [r / 255, g / 255, bl / 255, alpha];
+}
+
 /** Convert OKLab (L, a, b) to OKLCh (L, C, h). h is in radians, range [-π, π]. */
 export function oklabToOklch(L: number, A: number, B: number): [number, number, number] {
   const C = Math.hypot(A, B);

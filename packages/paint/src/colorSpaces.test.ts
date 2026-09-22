@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { srgbU8ToOklab, oklabToSrgbU8, lerpColorArray } from './colorSpaces';
+import { srgbU8ToOklab, oklabToSrgbU8, lerpColorArray, mixOklab } from './colorSpaces';
 
 describe('srgbU8 ↔ Oklab', () => {
   it('round-trips every byte triple within ±1 per channel', () => {
@@ -79,5 +79,30 @@ describe('lerpColorArray oklch', () => {
 
   it('throws on length mismatch in oklch mode', () => {
     expect(() => lerpColorArray([0, 0, 0, 1], [0, 0, 0, 1, 0, 0, 0, 1], 0.5, 'oklch')).toThrow();
+  });
+});
+
+describe('mixOklab', () => {
+  const hex = (h: string, a = 1): [number, number, number, number] => {
+    const n = Number.parseInt(h.slice(1), 16);
+    return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255, a];
+  };
+  const u8 = (c: readonly number[]) => [...c.slice(0, 3).map((v) => Math.round(v * 255)), c[3]];
+
+  // Chrome's own color-mix(in oklab, …), read back through a canvas.
+  it.each([
+    ['#36bff2', '#ffffff', 0.45, [178, 227, 250]],
+    ['#d94a3f', '#25272c', 0.14, [61, 46, 48]],
+    ['#ff0000', '#0000ff', 0.5, [140, 83, 162]],
+  ] as const)('mixes %s into %s as CSS does', (a, b, p, want) => {
+    const got = u8(mixOklab(hex(a), hex(b), p));
+    got.slice(0, 3).forEach((v, i) => expect(Math.abs(v - want[i])).toBeLessThanOrEqual(1));
+    expect(got[3]).toBe(1);
+  });
+
+  it('takes its color from the opaque side of a transparent one, and its opacity from the mix', () => {
+    const got = u8(mixOklab(hex('#2e1f7a'), [0, 0, 0, 0], 0.3));
+    [46, 30, 123].forEach((v, i) => expect(Math.abs(got[i] - v)).toBeLessThanOrEqual(1));
+    expect(got[3]).toBeCloseTo(0.3);
   });
 });

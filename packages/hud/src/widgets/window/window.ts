@@ -2,8 +2,10 @@ import type {
   Widget, WidgetBounds, HudDrawCtx, HudContentCtx, HudPointerEvent,
 } from '../../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
-import { textCommandFromRuns, pathFromD } from '@weasel-js/core';
+import { textCommandFromRuns, pathFromD, parseColor } from '@weasel-js/core';
 import { clampRectWithin } from '@weasel-js/geom';
+import { dashForStrokeStyle, mixOklab } from '@weasel-js/paint';
+import { resolveStanceSlots, type Stance } from '@weasel-js/theme';
 import {
   zoneAt, windowContentRect, applyWindowDrag, cursorForZone,
   DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
@@ -25,6 +27,13 @@ export interface WindowOptions {
    *  there is no bar to grab. */
   titlebar?: boolean;
   metrics?: Partial<WindowMetrics>;
+  /** The class of content the window holds. The theme's
+   *  `--wzl-stance-<stance>-<slot>` values restyle its fill, border and title,
+   *  as they do a DOM panel's. */
+  stance?: Stance;
+  /** Which of its peers the window is: an index into the theme's tone list,
+   *  or a color. Mixed into the fill at the stance's `tone-mix`. */
+  tone?: number | string;
   /** Paints the interior. Drawn beneath every widget frame, clipped to
    *  `contentRect`. Receives the scene data and view the hud layer was
    *  handed — the one place hud sees either. */
@@ -61,7 +70,23 @@ export interface WindowWidget extends Widget {
   setBounds(b: WidgetBounds): void;
   setHidden(hidden: boolean): void;
   setTitle(title: string): void;
+  setStance(stance: Stance | undefined): void;
+  setTone(tone: number | string | undefined): void;
   dispose(): void;
+}
+
+type WindowLook = Record<'surface' | 'border-color' | 'border-style' | 'border-width' | 'tone-mix' | 'tone' | 'title-color' | 'title-case', string>;
+
+/** `color-mix(in oklab, tone p, surface)`, for a canvas that has no cascade to ask. */
+function mixTone(tone: string, mix: string, surface: string): string {
+  const [r, g, b, a] = mixOklab(parseColor(tone), parseColor(surface), Number.parseFloat(mix) / 100);
+  return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${a})`;
+}
+
+function casedTitle(title: string, textCase: string): string {
+  if (textCase === 'uppercase') return title.toUpperCase();
+  if (textCase === 'lowercase') return title.toLowerCase();
+  return title;
 }
 
 export function createWindow(opts: WindowOptions): WindowWidget {
@@ -93,6 +118,8 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   let disposed = false;
   let hidden = false;
   let title = opts.title;
+  let stance = opts.stance;
+  let tone = opts.tone;
   let bounds = clampSize({ x: opts.x, y: opts.y, w: opts.w, h: opts.h });
   let dragZone: WindowZone | null = null;
   let dragStart: WidgetBounds = bounds;
@@ -131,6 +158,8 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     setBounds(b) { assertNotDisposed(); bounds = clampOnHost(clampSize(b)); dragZone = null; pressZone = null; opts.onChange?.(); },
     setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
     setTitle(t) { assertNotDisposed(); title = t; opts.onChange?.(); },
+    setStance(st) { assertNotDisposed(); stance = st; opts.onChange?.(); },
+    setTone(t) { assertNotDisposed(); tone = t; opts.onChange?.(); },
 
     draw(ctx: HudDrawCtx): DrawCommand[] {
       hostDims = ctx.dims;
@@ -140,7 +169,21 @@ export function createWindow(opts: WindowOptions): WindowWidget {
       // The grab bands sit outside contentRect, so nothing else paints them —
       // without these the scene shows through the window's own border. The
       // titlebar, when there is one, is the top band.
-      const band = ctx.tokens['--wzl-surface-raised'];
+      const surface = ctx.tokens['--wzl-surface-raised'];
+      const look = resolveStanceSlots<keyof WindowLook>(ctx.tokens, {
+        surface,
+        'border-color': ctx.tokens['--wzl-border'],
+        'border-style': 'solid',
+        'border-width': '1px',
+        'tone-mix': ctx.tokens['--wzl-panel-tone-mix'],
+        tone: surface,
+        'title-color': ctx.tokens['--wzl-fg-muted'],
+        'title-case': 'none',
+      }, { stance });
+      const named = typeof tone === 'number' ? ctx.toneAt(tone) : tone;
+      const band = named === undefined && stance === undefined
+        ? look.surface
+        : mixTone(named ?? look.tone, look['tone-mix'], look.surface);
       const below = y + m.titleH;
       const bandH = h - m.titleH;
       const rects = [
@@ -156,18 +199,23 @@ export function createWindow(opts: WindowOptions): WindowWidget {
       // Border ring: a stroked rect, no fill, so the interior stays a hole
       // for the content painter drawn beneath this widget.
 
-      const ring: PathDrawCommand = {
-        kind: 'path',
-        path: { kind: 'rect', x, y, width: w, height: h },
-        stroke: { paint: { fill: 'solid', color: ctx.tokens['--wzl-border'] }, width: 1 },
-      };
-      out.push(ring);
+      const ringW = Number.parseFloat(look['border-width']) || 0;
+      if (ringW > 0) {
+        const style = look['border-style'] === 'dashed' || look['border-style'] === 'dotted' ? look['border-style'] : 'solid';
+        const dash = dashForStrokeStyle(style, ringW);
+        const ring: PathDrawCommand = {
+          kind: 'path',
+          path: { kind: 'rect', x, y, width: w, height: h },
+          stroke: { paint: { fill: 'solid', color: look['border-color'] }, width: ringW, ...(dash ? { dash } : {}) },
+        };
+        out.push(ring);
+      }
 
       if (!chrome) return out;
 
       out.push(textCommandFromRuns(
         x + m.edge + 2, y,
-        [{ text: title, fill: { fill: 'solid', color: ctx.tokens['--wzl-fg-muted'] } }],
+        [{ text: casedTitle(title, look['title-case']), fill: { fill: 'solid', color: look['title-color'] } }],
         {
           fontFamily: ctx.defaultFont,
           fontSize: 12,
@@ -186,7 +234,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
       out.push({
         kind: 'path',
         path: pathFromD(`M ${x0} ${y0} L ${x1} ${y1} M ${x1} ${y0} L ${x0} ${y1}`),
-        stroke: { paint: { fill: 'solid', color: ctx.tokens['--wzl-fg-muted'] }, width: 1.5, cap: 'round' },
+        stroke: { paint: { fill: 'solid', color: look['title-color'] }, width: 1.5, cap: 'round' },
       });
 
       return out;
