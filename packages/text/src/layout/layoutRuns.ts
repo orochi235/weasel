@@ -56,6 +56,7 @@ import {
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 import type { BidiResolver } from './bidiSeam';
+import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorationMetrics';
 
 /** One textured glyph quad, origin-relative — see the header. */
 export interface LaidOutQuad {
@@ -132,7 +133,7 @@ export interface LaidOutGroup {
  * the run(s) it decorates so the rule follows the text colour.
  */
 export interface LaidOutDecoration {
-  kind: 'underline' | 'strikethrough' | 'overline';
+  kind: DecorationKind;
   x0: number; y0: number; x1: number; y1: number;
   fill: FillStyle;
 }
@@ -224,26 +225,6 @@ export interface LaidOutRuns {
    *  block wrapped at `maxWidth` never reports wider than it. */
   bounds: { width: number; height: number };
 }
-
-/**
- * Decoration placement and weight, as fractions of the run's `fontSize`.
- * Offsets are the *top* edge of the rule, measured down from the baseline —
- * so the two rules that sit above it are negative.
- *
- * DERIVED, NOT MEASURED. `BmFont` exposes only `info.size`, `common.base`
- * and `common.lineHeight` — a BMFont JSON carries no decoration metrics at
- * all. A future HarfBuzz / OpenType path would read the real
- * `underlinePosition` and `underlineThickness` off the `post` table and
- * retire these numbers.
- *
- * Pinned by `tests/visual/text-decoration.spec.ts`, which measures the gap
- * between the two rules rather than a golden image — `text.spec.ts`'s 5%
- * tolerance cannot see one of these move.
- */
-const UNDERLINE_OFFSET = 0.10;
-const STRIKETHROUGH_OFFSET = -0.30;
-const OVERLINE_OFFSET = -0.90;
-const DECORATION_THICKNESS = 0.05;
 
 /**
  * Where a run's advances, kerning and baseline come from.
@@ -898,18 +879,10 @@ export function layoutRuns(
     const s = span;
     span = null;
     if (!s || s.x1 <= s.x0) return;
-    const thickness = s.fontSize * DECORATION_THICKNESS;
-    if (s.underline) {
-      const y0 = s.baselineY + s.fontSize * UNDERLINE_OFFSET;
-      decorations.push({ kind: 'underline', x0: s.x0, y0, x1: s.x1, y1: y0 + thickness, fill: s.fill });
-    }
-    if (s.strikethrough) {
-      const y0 = s.baselineY + s.fontSize * STRIKETHROUGH_OFFSET;
-      decorations.push({ kind: 'strikethrough', x0: s.x0, y0, x1: s.x1, y1: y0 + thickness, fill: s.fill });
-    }
-    if (s.overline) {
-      const y0 = s.baselineY + s.fontSize * OVERLINE_OFFSET;
-      decorations.push({ kind: 'overline', x0: s.x0, y0, x1: s.x1, y1: y0 + thickness, fill: s.fill });
+    for (const kind of DECORATION_KINDS) {
+      if (!s[kind]) continue;
+      const { y0, y1 } = decorationRule(kind, s.baselineY, s.fontSize);
+      decorations.push({ kind, x0: s.x0, y0, x1: s.x1, y1, fill: s.fill });
     }
   }
 
