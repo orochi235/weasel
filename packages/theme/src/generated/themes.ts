@@ -956,47 +956,27 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         }
       },
       "secondary": {
-        "by": "mode",
-        "dark": {
-          "kind": "lightness",
-          "steps": [
-            "soft",
-            "base",
-            "strong"
-          ],
-          "lightness": [
-            0.45,
-            0.86
-          ],
-          "curve": 0,
-          "chroma": {
-            "peak": 0.149,
-            "lightBias": 1.5,
-            "darkBias": 1.5
-          },
-          "anchor": {
-            "base": "#dc9d15"
-          }
+        "kind": "lightness",
+        "steps": [
+          "soft",
+          "base",
+          "strong"
+        ],
+        "lightness": [
+          0.45,
+          0.86
+        ],
+        "curve": 0,
+        "chroma": {
+          "peak": 0.149,
+          "lightBias": 1.5,
+          "darkBias": 1.5
         },
-        "light": {
-          "kind": "lightness",
-          "steps": [
-            "soft",
-            "base",
-            "strong"
-          ],
-          "lightness": [
-            0.45,
-            0.86
-          ],
-          "curve": 0,
-          "chroma": {
-            "peak": 0.149,
-            "lightBias": 1.5,
-            "darkBias": 1.5
-          },
-          "anchor": {
-            "base": "#3ee1cb"
+        "anchor": {
+          "base": {
+            "by": "mode",
+            "dark": "#dc9d15",
+            "light": "#3ee1cb"
           }
         }
       },
