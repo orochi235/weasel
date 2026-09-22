@@ -152,6 +152,26 @@ describe('WeaselRenderer context loss', () => {
     const names = recorder.calls.map((c) => c.name);
     expect(names).toContain('compileShader');
   });
+
+  // A proxy, as with registerProgram below: the recorder answers every lookup,
+  // so this proves only that the recompiled program asked for the vertex name.
+  it('looks up vertex-stage uniforms when it recompiles a program after restore', () => {
+    const canvas = makeFakeCanvas();
+    const r = new WeaselRenderer({ canvas, width: 100, height: 100, dpr: 1 });
+    const vert = `#version 300 es
+in vec2 a_position;
+uniform mat3 u_restoredModel;
+void main() { gl_Position = vec4((u_restoredModel * vec3(a_position, 1.0)).xy, 0.0, 1.0); }
+`;
+    r.registerProgram(registerProgram('restore-vert-uniform-prog', vert, MINIMAL_FRAG));
+    canvas.dispatchEvent('webglcontextlost');
+    recorder.reset();
+    canvas.dispatchEvent('webglcontextrestored');
+    const asked = recorder.calls
+      .filter((c) => c.name === 'getUniformLocation')
+      .map((c) => c.args[1]);
+    expect(asked).toContain('u_restoredModel');
+  });
 });
 
 describe('WeaselRenderer.render — frame isolation', () => {

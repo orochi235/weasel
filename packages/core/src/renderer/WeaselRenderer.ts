@@ -54,51 +54,13 @@ import {
 } from './shaders/customPrelude';
 import { getProgramSource, type ShaderProgramHandle } from './shaders/registerProgram';
 import { EffectTargets } from './effects/EffectTargets';
+import { extractUniformNames } from './shaders/extractUniformNames';
 
-/** Qualifiers GLSL allows between `uniform` and the type name. Skipping them
- *  is not cosmetic: `uniform highp float u_t;` used to match nothing at all,
- *  so the uniform got no location and every write to it was dropped in
- *  silence. */
-const UNIFORM_QUALIFIER = /^(?:lowp|mediump|highp|precise|invariant|centroid|flat|smooth|noperspective)$/;
-
-/**
- * Uniform names a custom program declares, expanded per array slot
- * (`u_ripples[0]`, `u_ripples[1]`, …) since that is how a caller binds them.
- *
- * A regex scan, not a parser: it reads a declarator list (`float a, b;`) and
- * skips precision / interpolation qualifiers, but knows nothing of
- * preprocessor branches, struct uniforms, or interface blocks.
- */
-function extractUniformNames(glsl: string): string[] {
-  const re = /\buniform\s+([^;{]+);/g;
-  const names: string[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(glsl)) !== null) {
-    const words = m[1].trim().split(/\s+/);
-    // Drop qualifiers, then the type, leaving the declarator list. The list
-    // can still carry whitespace around its commas, so rejoin before split.
-    let i = 0;
-    while (i < words.length && UNIFORM_QUALIFIER.test(words[i])) i++;
-    i++; // the type
-    const declarators = words.slice(i).join(' ');
-    if (!declarators) continue;
-    for (const raw of declarators.split(',')) {
-      const d = raw.trim();
-      const arr = /^(\w+)\s*\[\s*(\d+)\s*\]$/.exec(d);
-      if (arr) {
-        const size = parseInt(arr[2], 10);
-        for (let k = 0; k < size; k++) names.push(`${arr[1]}[${k}]`);
-      } else if (/^\w+$/.test(d)) {
-        names.push(d);
-      }
-    }
-  }
-  return names;
-}
-
-/** @internal Test helper — exported so the regex behavior can be unit-tested. */
-export function _extractUniformNamesForTests(glsl: string): string[] {
-  return extractUniformNames(glsl);
+/** Every uniform a custom program may be written through. Both stages, not
+ *  just the fragment one: a name never looked up is written through `null`,
+ *  which GL accepts silently, so the uniform keeps its zero default. */
+function customUniformNames(vertSrc: string, fragSrc: string): string[] {
+  return [...CUSTOM_KIT_UNIFORMS, ...extractUniformNames(vertSrc), ...extractUniformNames(fragSrc)];
 }
 
 /** How to construct a `WeaselRenderer`: the GL context or canvas to draw
@@ -322,16 +284,7 @@ export class WeaselRenderer {
     const vertSrc = src.vert === '' ? CUSTOM_VERT_SRC : src.vert;
     const fragSrc = src.frag;
     const program = new ShaderProgram(this.gl, vertSrc, fragSrc);
-    // Both stages, not just the fragment one: a program supplying its own
-    // vertex shader declares its own vertex uniforms there, and a name with no
-    // location is written through `null` — which GL accepts silently, so the
-    // uniform keeps its zero default and the geometry collapses with no error
-    // anywhere. Duplicates across the two sources are harmless.
-    program.lookupUniforms([
-      ...CUSTOM_KIT_UNIFORMS,
-      ...extractUniformNames(vertSrc),
-      ...extractUniformNames(fragSrc),
-    ]);
+    program.lookupUniforms(customUniformNames(vertSrc, fragSrc));
     program.lookupAttributes(CUSTOM_ATTRIBUTES);
     const previous = this.programRegistry.get(handle.id);
     if (previous) this.gl.deleteProgram(previous.handle);
@@ -452,7 +405,7 @@ export class WeaselRenderer {
       const vertSrc = src.vert === '' ? CUSTOM_VERT_SRC : src.vert;
       try {
         const program = new ShaderProgram(this.gl, vertSrc, src.frag);
-        program.lookupUniforms([...CUSTOM_KIT_UNIFORMS, ...extractUniformNames(src.frag)]);
+        program.lookupUniforms(customUniformNames(vertSrc, src.frag));
         program.lookupAttributes(CUSTOM_ATTRIBUTES);
         this.programRegistry.set(id, program);
       } catch (e) {
