@@ -9,6 +9,7 @@ export {
   f,
   GroupNode,
   isConfigBranch,
+  ListNode,
   NumberNode,
   StringNode,
   ValueNode,

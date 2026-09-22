@@ -1,4 +1,5 @@
 export { ControlPanel } from './ControlPanel';
+export { type InDialogOptions, inDialog, summarizeValue } from './inDialog';
 export type {
   CheckboxField,
   ColorField,

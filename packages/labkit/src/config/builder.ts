@@ -1,4 +1,5 @@
 import type { PrefLeaf, PrefNumberFormat, PrefNumberUnit } from '@weasel-js/ui';
+import { type InDialogOptions, inDialog } from '../controls/inDialog';
 import { type Auto, isAuto } from './auto';
 import type {
   Annotations,
@@ -89,6 +90,12 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
   /** Draw this one row yourself, keeping the kind, default and validation. */
   render(renderer: ControlRenderer): this {
     return this.opt({ render: renderer });
+  }
+
+  /** Draw this row as a button that opens a dialog, with `body` as the
+   *  dialog's content — for an editor too big for the row. */
+  dialog(body: ControlRenderer, opts?: InDialogOptions): this {
+    return this.render(inDialog(body, opts));
   }
 
   /**
@@ -184,6 +191,15 @@ export class StringNode extends BaseNode<string> {
   /** Milliseconds to debounce live writes. 0 commits every keystroke. */
   debounce(debounceMs: number): this {
     return this.ann({ debounceMs });
+  }
+}
+
+export class ListNode extends BaseNode<string[]> {
+  readonly kind = 'list';
+
+  /** Shown in an empty entry. */
+  placeholder(placeholder: string): this {
+    return this.ann({ placeholder });
   }
 }
 
@@ -304,6 +320,9 @@ export const f = {
   boolean: (def: boolean): BooleanNode => new BooleanNode(def),
   string: (def: string): StringNode => new StringNode(def),
   color: (def: string): ColorNode => new ColorNode(def),
+  /** A list of strings. Its row summarizes the list, and opens a dialog to
+   *  edit it one entry per field. */
+  list: (def: readonly string[]): ListNode => new ListNode([...def]),
 
   /** A fixed set of choices. The default's literal type flows into the config
    *  type, so `f.enum('fast', ['fast', 'accurate'])` gives
