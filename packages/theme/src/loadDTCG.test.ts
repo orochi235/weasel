@@ -24,4 +24,32 @@ describe('loadDTCG', () => {
   it('throws on a document with no name', () => {
     expect(() => loadDTCG({ primitives: {}, modes: {} })).toThrow(/name/i);
   });
+
+  it('loads a document with no axes extension as mode-only, as before', () => {
+    const theme = loadDTCG({
+      name: 'plain',
+      extends: null,
+      defaultMode: 'light',
+      primitives: { dimension: { $type: 'dimension', gap: { $value: '4px' } } },
+      modes: {
+        dark: { color: { $type: 'color', surface: { $value: '#000000' } } },
+        light: { color: { $type: 'color', surface: { $value: '#ffffff' } } },
+      },
+    });
+    expect(theme.axes).toEqual({ mode: { default: 'light', values: { dark: {}, light: {} } } });
+    expect(theme.tokens).toEqual({
+      gap: { type: 'dimension', value: '4px', alpha: undefined, description: undefined },
+      surface: {
+        by: 'mode',
+        dark: { type: 'color', value: '#000000', alpha: undefined, description: undefined },
+        light: { type: 'color', value: '#ffffff', alpha: undefined, description: undefined },
+      },
+    });
+  });
+
+  it('ignores an extension namespace it does not own', () => {
+    const doc = { name: 'x', extends: null, primitives: { dimension: { $type: 'dimension', gap: { $value: '4px' } } } };
+    const theme = loadDTCG({ ...doc, $extensions: { 'com.example.other': { anything: true } } });
+    expect(theme).toEqual(loadDTCG(doc));
+  });
 });
