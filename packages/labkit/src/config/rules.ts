@@ -15,6 +15,8 @@ export function titleCase(key: string): string {
 const kindFromValue: ConfigRule = (ctx) => {
   const t = typeof ctx.default;
   if (t === 'boolean' || t === 'number' || t === 'string') return { kind: t };
+  const d = ctx.default;
+  if (Array.isArray(d) && d.every((v) => typeof v === 'string')) return { kind: 'list' };
   return null;
 };
 

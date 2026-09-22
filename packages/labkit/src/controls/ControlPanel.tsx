@@ -2,7 +2,9 @@ import { isBuiltinToolPref } from '@weasel-js/core';
 import {
   CheckboxRow,
   ColorRow,
+  DialogRow,
   isPrefLeaf,
+  ListEditor,
   NumberRow,
   type PrefGroup,
   type PrefLeaf,
@@ -20,8 +22,8 @@ import {
   prefDisplayBounds,
   Select,
   SelectRow,
-  type StanceProps,
   SliderRow,
+  type StanceProps,
   Switch,
   SwitchRow,
   TextRow,
@@ -35,6 +37,7 @@ import { fromConfigFields } from '../config/fromConfigField';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { isLeafVisible } from '../config/visible';
+import { summarizeValue } from './inDialog';
 import type { ConfigField } from './types';
 
 /** How a panel packs its rows into the two-column property grid.
@@ -425,6 +428,29 @@ function ControlRow<TC extends Record<string, unknown>>({
   // `auto` gives the whole width to the controls that read badly at half of a
   // sidebar's: free text, a slider track, a segmented toggle. `pairs` doesn't.
   const wide = pack === 'auto';
+
+  if (leaf.kind === 'list') {
+    const entries = Array.isArray(value) ? (value as string[]) : [];
+    return (
+      <DialogRow
+        label={label}
+        summary={summarizeValue(entries)}
+        readout={autoReadout}
+        layout={layout}
+        description={description}
+        {...autoProps}
+      >
+        {() => (
+          <ListEditor
+            aria-label={label}
+            value={entries}
+            onChange={write}
+            placeholder={extra<string>(leaf, 'placeholder')}
+          />
+        )}
+      </DialogRow>
+    );
+  }
 
   if (!isBuiltinToolPref(leaf))
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;

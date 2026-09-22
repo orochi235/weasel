@@ -1,6 +1,6 @@
 import { ANGLE_RADIANS, prefUnit } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { PropertyRow, type PrefNumberUnit } from '@weasel-js/ui';
+import { type PrefNumberUnit, PropertyRow } from '@weasel-js/ui';
 import { useState } from 'react';
 import { f } from '../config/builder';
 import { withValueAtPath } from '../config/path';
@@ -285,7 +285,9 @@ const inline = f.schema({
   lift: f.number(0.2).range(0, 1).step(0.05),
   opacity: f.number(0.45).range(0, 1).step(0.05),
   iconSet: f.enum('small', ['small', 'large']).label('Icon set'),
-  drawAsIcons: f.string('**/node_modules/**').label('Draw as icons'),
+  drawAsIcons: f
+    .list(['**/node_modules/**', '**/dist/**', 'package-lock.json'])
+    .label('Draw as icons'),
   detail: f.number(1200).range(0, 4000).suffix('nodes'),
   showCameraRoute: f.boolean(false).toggle().label('Show camera route'),
   routeColor: f.enum('sweep', ['sweep', 'depth']).label('Route color'),
@@ -317,7 +319,11 @@ export const Inline: Story = {
   },
 };
 
-const shownIn = (suffix: string): PrefNumberUnit => ({ toDisplay: (v) => v, fromDisplay: (v) => v, suffix });
+const shownIn = (suffix: string): PrefNumberUnit => ({
+  toDisplay: (v) => v,
+  fromDisplay: (v) => v,
+  suffix,
+});
 
 /** Every slider in astv's right sidebar, for sizing readouts against real ranges, steps and units. */
 const sidebarSliders = f.schema({

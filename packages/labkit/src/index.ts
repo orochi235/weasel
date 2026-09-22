@@ -185,6 +185,7 @@ export {
   f,
   GroupNode,
   isConfigBranch,
+  ListNode,
   NumberNode,
   StringNode,
   ValueNode,
@@ -227,6 +228,7 @@ export { useConfigSchema } from './config/useConfigSchema';
 export { useResolvedConfig } from './config/useResolvedConfig';
 export { isLeafVisible } from './config/visible';
 export { ControlPanel } from './controls/ControlPanel';
+export { type InDialogOptions, inDialog, summarizeValue } from './controls/inDialog';
 export type {
   CheckboxField,
   ColorField,

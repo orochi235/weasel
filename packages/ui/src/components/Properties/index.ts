@@ -7,6 +7,8 @@ export type {
   SubpanelProps,
 } from './EffectCard';
 export { EffectCard, EffectCardList, Subpanel } from './EffectCard';
+export type { DialogRowProps } from './DialogRow';
+export { DialogRow } from './DialogRow';
 export type { PropertyGroupProps } from './PropertyGroup';
 export { PropertyGroup } from './PropertyGroup';
 export type {

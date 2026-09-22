@@ -952,6 +952,56 @@
   box-shadow: 0 0 0 1px var(--wzl-focus-ring);
 }
 
+/* A dialog row's trigger reads as a field holding the value's summary, so a
+   column of them lines up with the text fields around it. */
+.dialogTrigger {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  width: 100%;
+  min-width: 4ch;
+  height: var(--wzl-field-h, var(--wzl-control-h));
+  padding: 0 var(--wzl-field-pad-x);
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size);
+  line-height: var(--wzl-leading-tight);
+  text-align: start;
+  cursor: pointer;
+}
+
+.rowInline > .dialogTrigger {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.dialogTrigger:hover {
+  border-color: var(--wzl-border-strong);
+}
+
+.dialogTrigger:focus-visible {
+  outline: none;
+  border-color: var(--wzl-focus-ring);
+  box-shadow: 0 0 0 1px var(--wzl-focus-ring);
+}
+
+.dialogSummary {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialogGlyph {
+  flex: 0 0 auto;
+  color: var(--wzl-fg-subtle);
+}
+
 /* Selects in property rows render borderless — chevron only, transparent
    background, no chrome. Keep the native arrow via appearance: auto so users
    still see something clickable. */
