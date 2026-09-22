@@ -72,6 +72,7 @@ export type {
   KeyEvent,
   KeyHeldEvent,
   WheelEvent,
+  PinchEvent,
   PointerSampleStylus,
   PointerIdentity,
   PointerDownEvent,
@@ -91,7 +92,7 @@ export type {
 // GestureSpec union + sub-types + ModSpec + TargetSpec + PhaseSpec
 export type {
   GestureSpec,
-  KeySpec, KeyHeldSpec, WheelSpec, ClickSpec, DoubleClickSpec, DragSpec,
+  KeySpec, KeyHeldSpec, WheelSpec, PinchSpec, ClickSpec, DoubleClickSpec, DragSpec,
   PointerDownSpec, LongPressSpec,
   MultiTouchSpec, ContextMenuSpec, MultiTouchTapSpec,
   DropSpec, PasteSpec,

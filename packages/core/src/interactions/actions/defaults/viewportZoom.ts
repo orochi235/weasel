@@ -7,17 +7,23 @@
  *   Browsers synthesize a trackpad pinch as ctrl+wheel. On a Mac that is a
  *   *different* event from the `mod` binding above (`mod` is metaKey there), so
  *   pinch needs its own binding or nothing claims it and the page zooms instead.
+ * - `{ kind: 'pinch' }` → Safari trackpad pinch (WebKit `gesturechange`),
+ *   params: `{ kind: 'pinch' }`. Safari may send the same pinch as ctrl+wheel
+ *   as well; the dispatcher swallows that copy while a claimed gesture is live,
+ *   so only one of the two bindings fires per pinch.
  * - `{ kind: 'key', key: '=' }` → zoom in, params: `{ kind: 'in' }`
  * - `{ kind: 'key', key: '-' }` → zoom out, params: `{ kind: 'out' }`
  * - `{ kind: 'key', key: '0' }` → reset zoom, params: `{ kind: 'reset' }`
  *
  * ## Design notes
  * The invoker switches on `params.kind`:
- * - `'wheel'`: defers to `wheelZoom` (`core/viewport/wheelHandler`), the kit's
- *   one statement of the wheel convention, anchored at (clientX, clientY).
- *   The dispatcher merges wheel event data into params at dispatch time, and
- *   converts the wheel event's client coords to canvas-local (subtracting the
- *   canvas's bounding rect) before merging — `zoomAt` expects canvas-local.
+ * - `'wheel'` and `'pinch'`: both reduce to a scale factor about a focal
+ *   point and share one `zoomAt` call. A wheel sample's factor is
+ *   `wheelZoomFactor(deltaY)`, the kit's one statement of the wheel
+ *   convention; a pinch sample carries its factor as `scale`. The dispatcher
+ *   merges event data into params and converts client coords to canvas-local
+ *   (subtracting the canvas's bounding rect) before merging — `zoomAt`
+ *   expects canvas-local.
  * - `'in'`/`'out'`: step zoom by ×1.25 / ×0.8, anchored at the host center
  *   when the `view` dep wires `hostSize()` (SceneCanvas does), falling back
  *   to the canvas top-left origin for consumers that don't.
@@ -27,7 +33,7 @@
  * The three discrete branches glide instead of jumping when the `animate`
  * option is configured and the `view` dep implements `animate` — they hand the
  * action a target and nothing in between, which is the whole condition for
- * tweening. `'wheel'` always jumps per sample.
+ * tweening. `'wheel'` and `'pinch'` always jump per sample.
  *
  * ## Key binding modifier notes
  * The key bindings (`=`, `-`, `0`) require `mod: true` (Cmd on Mac, Ctrl elsewhere).
@@ -37,7 +43,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';
-import { wheelZoom } from 'core/viewport/wheelHandler';
+import { wheelZoomFactor } from 'core/viewport/wheelHandler';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
 import type { View } from 'core/viewport/view';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
@@ -132,6 +138,11 @@ export function makeViewportZoomAction(
         spec: { kind: 'wheel' as const, mods: { ctrl: true } },
         opts: { params: { kind: 'wheel' } },
       },
+      // Safari's trackpad pinch, reported as a scale rather than a wheel.
+      {
+        spec: { kind: 'pinch' as const },
+        opts: { params: { kind: 'pinch' } },
+      },
       // Cmd+= → zoom in (also accepts Cmd+Shift+= which is Cmd++ on many keyboards)
       {
         spec: { kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } },
@@ -166,14 +177,22 @@ export function makeViewportZoomAction(
         // whichever frame the tween happens to be on.
         const stepFrom = (): View => (canAnimate && view.animationTarget?.()) || current;
 
+        const focal = () => ({
+          x: (params?.clientX as number | undefined) ?? 0,
+          y: (params?.clientY as number | undefined) ?? 0,
+        });
+        const scaleBy = (factor: number) => {
+          if (!(factor > 0) || !Number.isFinite(factor)) return;
+          view.set(zoomAt(current, focal(), factor, clamp));
+        };
+
         switch (kind) {
-          case 'wheel': {
-            const deltaY = (params?.deltaY as number | undefined) ?? 0;
-            const clientX = (params?.clientX as number | undefined) ?? 0;
-            const clientY = (params?.clientY as number | undefined) ?? 0;
-            view.set(wheelZoom(current, { x: clientX, y: clientY }, deltaY, clamp));
+          case 'wheel':
+            scaleBy(wheelZoomFactor((params?.deltaY as number | undefined) ?? 0));
             break;
-          }
+          case 'pinch':
+            scaleBy((params?.scale as number | undefined) ?? Number.NaN);
+            break;
           case 'in':
             stepTo(zoomAt(stepFrom(), keyAnchor(view), KEY_STEP, clamp));
             break;

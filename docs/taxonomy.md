@@ -234,6 +234,14 @@ Normalization of raw DOM events into the kit's `InputEvent` union is
 `useGestureDispatcher`'s job. Plain clicks and keystrokes are gestures too, just
 trivial ones.
 
+A pinch reported as a scale is its own gesture, `pinch` (`PinchSpec`): WebKit's
+`gesturechange`, Safari's trackpad pinch. It is the form of the input that
+differs, not the intent — a pinch carries a scale factor and a focal point where
+a wheel carries a delta, and a touchscreen pinch arrives as pointers
+(`multiTouch`). Where a browser encodes the same trackpad pinch as ctrl+wheel as
+well, `useGestureDispatcher` swallows the ctrl+wheel copy while a claimed pinch
+is live, so one physical pinch reaches one binding.
+
 OS file drop and clipboard paste are gestures as well (`DropSpec` / `PasteSpec`,
 filtered by a MIME-glob `types` field) — external content *arriving* is a form of
 input like any other. Their default routing targets the ambient `ingest` action,

@@ -14,6 +14,7 @@ export type GestureName =
   | 'dblTap'
   | 'drag'
   | 'wheel'
+  | 'pinch'
   | 'keyDown'
   | 'keyUp'
   | 'keyHeld'
@@ -34,7 +35,8 @@ export type ClaimableGesture =
   | 'doubleClick'
   | 'contextMenu'
   | 'longPress'
-  | 'wheel';
+  | 'wheel'
+  | 'pinch';
 
 /** Declares the argument a gesture carries: what it is called, which values
  *  are legal, and what an omitted arg slot means. */
@@ -69,6 +71,7 @@ export const GESTURE_DESCRIPTORS: readonly GestureDescriptor[] = [
   { name: 'dblTap',        hasTarget: true  },
   { name: 'drag',          hasTarget: true  },
   { name: 'wheel',         hasTarget: true,  arg: { name: 'direction', values: ['up', 'down', '*'], default: '*' } },
+  { name: 'pinch',         hasTarget: true,  arg: { name: 'direction', values: ['in', 'out', '*'], default: '*' } },
   { name: 'keyDown',       hasTarget: false, arg: { name: 'key',       values: 'free' } },
   { name: 'keyUp',         hasTarget: false, arg: { name: 'key',       values: 'free' } },
   { name: 'keyHeld',       hasTarget: false, arg: { name: 'key',       values: 'free' } },

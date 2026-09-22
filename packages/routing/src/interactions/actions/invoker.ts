@@ -149,6 +149,9 @@ export interface InvocationCtx {
     points?: DragSample[];
   };
   wheel?: { deltaX: number; deltaY: number; deltaZ: number };
+  /** One `pinch` sample: `scale` is a multiplier since the previous sample,
+   *  `rotation` degrees since it. See `PinchEvent`. */
+  pinch?: { scale: number; rotation: number };
   multiTouch?: {
     /** Canvas-local CSS pixels — see `MultitouchEvent.centroid`. Neither
      *  `world` nor `screen`: it is the space `zoomAt` anchors in, so passing

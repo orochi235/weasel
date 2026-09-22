@@ -12,7 +12,7 @@ import type { GestureSchema, PropertyDescriptor, SourceRef } from '../src/dev/tr
 import { srcRef, sourceFileOrThrow, propertiesOfTypeNode } from './extract';
 
 const GESTURE_IDS: readonly string[] = [
-  'click', 'pointerDown', 'dblTap', 'drag', 'wheel',
+  'click', 'pointerDown', 'dblTap', 'drag', 'wheel', 'pinch',
   'keyDown', 'keyUp',
   'doubleClick', 'key', 'key-held', 'multiTouch', 'multiTouchTap', 'pointerdown',
 ];
@@ -66,6 +66,15 @@ function resolveGesture(
     case 'wheel':
       return {
         payload: [{ name: 'deltaY', type: 'number', optional: false }],
+      };
+    case 'pinch':
+      return {
+        payload: [
+          { name: 'scale', type: 'number', optional: false },
+          { name: 'rotation', type: 'number', optional: false },
+          { name: 'clientX', type: 'number', optional: false },
+          { name: 'clientY', type: 'number', optional: false },
+        ],
       };
     case 'key':
     case 'keyDown':

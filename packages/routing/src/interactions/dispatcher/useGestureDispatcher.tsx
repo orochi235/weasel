@@ -1,8 +1,9 @@
 /**
  * useGestureDispatcher — React seam mounting the gesture dispatcher.
  *
- * Composes the four input channels (window keydown/keyup, canvas wheel, canvas
- * pointer events, multi-touch synthesized from PointerEvents) and routes each
+ * Composes the input channels (window keydown/keyup, canvas wheel, WebKit
+ * gesture events, canvas pointer events, multi-touch synthesized from
+ * PointerEvents) and routes each
  * event to the dispatcher for the view it landed in — one view unless `views`
  * says otherwise. Reads ActiveToolContext + DepRegistry internally; consumer
  * passes the canvas ref, actions registry, and tools map.
@@ -156,6 +157,9 @@ export interface DispatcherChannels {
   pointer?: boolean;
   /** `wheel`. */
   wheel?: boolean;
+  /** WebKit's `gesturestart` / `gesturechange` / `gestureend` — Safari's
+   *  trackpad pinch, dispatched as `pinch` events. */
+  pinch?: boolean;
   /** `contextmenu`. Off leaves the browser's native menu in place. */
   contextMenu?: boolean;
   /** OS drop on the element plus `paste` on the window. Off leaves the
@@ -410,11 +414,12 @@ function computeMultiTouchGeometry(
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onDoubleClick, views, channels } = opts;
-  // Read out as four booleans, not the object: the attach effect depends on
+  // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
   const pointerChannel = channels?.pointer !== false;
   const wheelChannel = channels?.wheel !== false;
+  const pinchChannel = channels?.pinch !== false;
   const contextMenuChannel = channels?.contextMenu !== false;
   const ingestChannel = channels?.ingest !== false;
   const onDoubleClickRef = useRef(onDoubleClick);
@@ -614,6 +619,19 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       return { centroid: toCanvasLocal(centroid), spread };
     };
 
+    // Set on a `gesturestart` some binding claims, cleared on its end. `scale`
+    // and `rotation` on a GestureEvent are cumulative from the start; these
+    // hold the previous sample's so each dispatched `pinch` is a step.
+    let pinchLive = false;
+    let pinchScale = 1;
+    let pinchRotation = 0;
+
+    const endPinch = (): void => {
+      pinchLive = false;
+      pinchScale = 1;
+      pinchRotation = 0;
+    };
+
     // Tracks the start state of an active multitouch episode so we can
     // synthesize a `multitouchtap` event on release when the centroid hasn't
     // moved past the tap threshold. `fingers` records the peak count.
@@ -770,6 +788,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // Nor can a drag trust the release it may or may not see later, so every
     // held pointer is canceled — through its session, which reports once.
     const onWindowBlur = () => {
+      endPinch();
       for (const p of [...held.values()]) p.session.cancel();
       for (const key of heldKeys) {
         const ev: InputEvent = {
@@ -791,6 +810,13 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // -----------------------------------------------------------------------
 
     const onWheel = (e: WheelEvent) => {
+      // Safari can report one trackpad pinch as both a gesture stream and
+      // ctrl+wheel. While a claimed gesture is live it is the only driver.
+      if (pinchLive && e.ctrlKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       routeAt(null, e.clientX, e.clientY);
       // Convert client-space cursor to canvas-local: zoomAt() (and any other
       // wheel consumer of clientX/Y) anchors in canvas-top-left coords, not
@@ -826,6 +852,76 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         e.preventDefault();
         e.stopPropagation();
       }
+    };
+
+    // -----------------------------------------------------------------------
+    // Canvas gesture listeners (WebKit trackpad pinch)
+    // -----------------------------------------------------------------------
+
+    const pinchEventOf = (e: Event, scale: number, rotation: number): InputEvent => {
+      const g = e as Event & {
+        clientX?: number; clientY?: number;
+        altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean;
+      };
+      const rect = canvas?.getBoundingClientRect();
+      // A focal point is part of the WebKit shape; the canvas center stands
+      // in for an embedder that leaves it off.
+      const cx = typeof g.clientX === 'number' ? g.clientX : (rect ? rect.left + rect.width / 2 : 0);
+      const cy = typeof g.clientY === 'number' ? g.clientY : (rect ? rect.top + rect.height / 2 : 0);
+      routeAt(null, cx, cy);
+      const [localX, localY] = rect ? clientToCanvasRect(rect, cx, cy) : [cx, cy];
+      const hitPoint = toWorld(cx, cy);
+      const affordance = target().affordanceAt?.(hitPoint) ?? undefined;
+      const body = target().classifyTarget?.(hitPoint);
+      return {
+        kind: 'pinch',
+        altKey: g.altKey === true,
+        ctrlKey: g.ctrlKey === true,
+        metaKey: g.metaKey === true,
+        shiftKey: g.shiftKey === true,
+        scale,
+        rotation,
+        clientX: localX,
+        clientY: localY,
+        ...(affordance !== undefined ? { affordance } : {}),
+        ...(body?.body !== undefined ? { bodyTarget: body.body } : {}),
+        ...(body?.kind !== undefined ? { bodyKind: body.kind } : {}),
+      };
+    };
+
+    const onGestureStart = (e: Event) => {
+      endPinch();
+      // Claimed up front, with a probe at unit scale: Safari starts its own
+      // page zoom from an unprevented start, before any change arrives.
+      // `direction`-filtered bindings cannot match a unit step, so they are
+      // resolved per change instead and do not claim the start.
+      const probe = pinchEventOf(e, 1, 0);
+      if (dispatcherNow().resolveOnly(probe, ctxNow()) === null) return;
+      pinchLive = true;
+      e.preventDefault();
+    };
+
+    const onGestureChange = (e: Event) => {
+      const g = e as Event & { scale?: number; rotation?: number };
+      const scale = typeof g.scale === 'number' && g.scale > 0 ? g.scale : pinchScale;
+      const rotation = typeof g.rotation === 'number' ? g.rotation : pinchRotation;
+      const step = scale / pinchScale;
+      const turn = rotation - pinchRotation;
+      pinchScale = scale;
+      pinchRotation = rotation;
+      if (dispatch(pinchEventOf(e, step, turn)) === 'handled') {
+        pinchLive = true;
+        e.preventDefault();
+      } else if (pinchLive) {
+        // The start was claimed; letting one change through would hand the
+        // rest of the pinch to Safari's page zoom mid-gesture.
+        e.preventDefault();
+      }
+    };
+
+    const onGestureEnd = (e: Event) => {
+      if (pinchLive) e.preventDefault();
+      endPinch();
     };
 
     // -----------------------------------------------------------------------
@@ -1512,6 +1608,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.addEventListener('pointermove', onHoverMove);
     }
     if (wheelChannel) canvas?.addEventListener('wheel', onWheel, { passive: false });
+    if (pinchChannel) {
+      canvas?.addEventListener('gesturestart', onGestureStart);
+      canvas?.addEventListener('gesturechange', onGestureChange);
+      canvas?.addEventListener('gestureend', onGestureEnd);
+    }
     if (contextMenuChannel) canvas?.addEventListener('contextmenu', onContextMenu);
     if (ingestChannel) {
       canvas?.addEventListener('dragenter', onDragOver);
@@ -1535,6 +1636,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       window.removeEventListener('keyup', scheduleHoverCursorRefresh);
       canvas?.removeEventListener('pointerleave', onHoverPointerLeave);
       canvas?.removeEventListener('wheel', onWheel);
+      canvas?.removeEventListener('gesturestart', onGestureStart);
+      canvas?.removeEventListener('gesturechange', onGestureChange);
+      canvas?.removeEventListener('gestureend', onGestureEnd);
       canvas?.removeEventListener('pointerdown', onPointerDown);
       canvas?.removeEventListener('pointermove', onHoverMove);
       canvas?.removeEventListener('contextmenu', onContextMenu);
@@ -1555,5 +1659,5 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       held.clear();
       for (const d of allDispatchers()) d.cancelAll('cancel');
     };
-  }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, contextMenuChannel, ingestChannel]);
+  }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel]);
 }

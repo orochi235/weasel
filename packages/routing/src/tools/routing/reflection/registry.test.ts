@@ -175,6 +175,7 @@ const SPEC_BY_KIND: Record<GestureSpec['kind'], GestureSpec> = {
   key: { kind: 'key', key: 'Escape' },
   'key-held': { kind: 'key-held', key: ' ' },
   wheel: { kind: 'wheel' },
+  pinch: { kind: 'pinch' },
   click: { kind: 'click' },
   doubleClick: { kind: 'doubleClick' },
   contextMenu: { kind: 'contextMenu' },
@@ -204,6 +205,11 @@ describe('routesForSpec', () => {
     expect(routesForSpec({ kind: 'paste' } as GestureSpec)).toEqual(['[*] paste']);
     expect(routesForSpec({ kind: 'drop', types: ['image/png'] } as GestureSpec))
       .toEqual(['[*] drop(image/png)']);
+  });
+
+  it('routes a pinch with its direction arg', () => {
+    expect(routesForSpec({ kind: 'pinch' } as GestureSpec)).toEqual(['[*] pinch']);
+    expect(routesForSpec({ kind: 'pinch', direction: 'out' } as GestureSpec)).toEqual(['[*] pinch(out)']);
   });
 
   it('emits one route per key alternative', () => {

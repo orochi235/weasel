@@ -150,6 +150,7 @@ function claimGestureOf(e: InputEvent): ClaimableGesture | null {
     case 'contextmenu': return 'contextMenu';
     case 'longpress': return 'longPress';
     case 'wheel': return 'wheel';
+    case 'pinch': return 'pinch';
     default: return null;
   }
 }

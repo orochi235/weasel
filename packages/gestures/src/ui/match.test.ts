@@ -307,6 +307,38 @@ describe('matchSpec — wheel direction', () => {
   });
 });
 
+describe('matchSpec — pinch', () => {
+  const base: InputEvent = { kind: 'pinch', ...noMods, scale: 1, rotation: 0, clientX: 0, clientY: 0 };
+
+  it('matches a bare pinch spec and nothing else', () => {
+    expect(matchSpec(base, { kind: 'pinch' }, false)).toBe(true);
+    expect(matchSpec(base, { kind: 'wheel' }, false)).toBe(false);
+    expect(matchSpec({ kind: 'wheel', ...noMods, ...noWheelData }, { kind: 'pinch' }, false)).toBe(false);
+  });
+
+  it('holds modifiers to the strict rule', () => {
+    expect(matchSpec({ ...base, shiftKey: true }, { kind: 'pinch' }, false)).toBe(false);
+    expect(matchSpec({ ...base, shiftKey: true }, { kind: 'pinch', mods: { shift: true } }, false)).toBe(true);
+  });
+
+  it('direction "out" is fingers spreading (scale > 1), "in" is closing (scale < 1)', () => {
+    const out = { kind: 'pinch' as const, direction: 'out' as const };
+    const inward = { kind: 'pinch' as const, direction: 'in' as const };
+    expect(matchSpec({ ...base, scale: 1.2 }, out, false)).toBe(true);
+    expect(matchSpec({ ...base, scale: 0.8 }, out, false)).toBe(false);
+    expect(matchSpec({ ...base, scale: 0.8 }, inward, false)).toBe(true);
+    expect(matchSpec({ ...base, scale: 1.2 }, inward, false)).toBe(false);
+    expect(matchSpec({ ...base, scale: 0.8 }, { kind: 'pinch', direction: '*' }, false)).toBe(true);
+  });
+
+  it('resolves a target against the affordance, as wheel does', () => {
+    const hud = { kind: 'layer:weasel-hud' };
+    const isHud = { kindOf: (t: unknown) => (t as { kind?: string })?.kind === 'layer:weasel-hud' };
+    expect(matchSpec({ ...base, affordance: hud }, { kind: 'pinch', target: isHud }, false)).toBe(true);
+    expect(matchSpec(base, { kind: 'pinch', target: isHud }, false)).toBe(false);
+  });
+});
+
 describe('matchSpec — contextMenu', () => {
   it('matches a bare contextmenu event', () => {
     const spec = { kind: 'contextMenu' as const };
