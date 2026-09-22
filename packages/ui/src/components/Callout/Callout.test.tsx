@@ -130,19 +130,31 @@ describe('Callout', () => {
     window.removeEventListener('resize', onResize);
   });
 
-  it('applies the tone class', () => {
+  it('carries a tone beside the popover’s own positioning', () => {
+    render(
+      <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} tone="#224a63" aria-label="Toned">
+        !
+      </Callout>,
+    );
+    const popover = screen.getByRole('dialog').parentElement!;
+    expect(popover.dataset.stance).toBe('notice');
+    expect(popover.style.getPropertyValue('--wzl-tone')).toBe('#224a63');
+    expect(popover.style.position).not.toBe('');
+  });
+
+  it('names its stance, `notice` unless told otherwise', () => {
     render(
       <Callout
         isOpen
         anchorRect={{ x: 0, y: 0, width: 10, height: 10 }}
-        tone="danger"
+        stance="danger"
         aria-label="Danger callout"
       >
         !
       </Callout>,
     );
     const popover = screen.getByRole('dialog').parentElement;
-    expect(popover?.classList.contains(s.toneDanger)).toBe(true);
+    expect(popover?.dataset.stance).toBe('danger');
   });
 
   it('closes via the close button in programmatic triggerRef mode (close() no-op fallback)', () => {

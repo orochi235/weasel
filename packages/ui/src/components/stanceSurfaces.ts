@@ -87,4 +87,27 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     stanceless: true,
     base: { accent: ACCENT_BASE },
   },
+  {
+    id: 'callout',
+    file: 'packages/ui/src/components/Callout/Callout.module.css',
+    selector: '.popover',
+    fills: true,
+    base: {
+      surface: 'var(--wzl-surface)',
+      // Also the arrow's stroke.
+      'border-color': 'var(--wzl-accent-strong)',
+      'border-style': 'solid',
+      'border-width': '1px',
+      radius: 'var(--wzl-radius-md)',
+      'tone-mix': 'var(--wzl-panel-tone-mix)',
+      tone: TONE_BASE,
+      accent: ACCENT_BASE,
+      'title-font': 'var(--wzl-font-ui)',
+      'title-weight': 'var(--wzl-font-weight-bold)',
+      'title-size': 'var(--wzl-font-size)',
+      'title-case': 'none',
+      'title-tracking': 'normal',
+      'title-color': 'var(--wzl-fg)',
+    },
+  },
 ];

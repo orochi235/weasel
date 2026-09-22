@@ -20,7 +20,7 @@ export interface StanceSurface {
   readonly stanced?: Readonly<Record<string, string>>;
   /** The surface nests inside its own kind and marks it `data-nested`. */
   readonly nests?: boolean;
-  /** The surface paints `--_s-surface` as its background, so a tone mixes into it. */
+  /** The surface paints `--_s-fill` — its surface, with any tone mixed in — as its background. */
   readonly fills?: boolean;
   /** The surface takes a tone and no stance. */
   readonly stanceless?: boolean;
@@ -62,7 +62,8 @@ export function stanceCss(surface: StanceSurface): string {
   ];
   if (surface.fills) {
     rules.push(
-      `${sel}[data-tone],\n${sel}[data-stance] {\n  background: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));\n}`,
+      `${sel} {\n  --_s-fill: var(--_s-surface);\n}`,
+      `${sel}[data-tone],\n${sel}[data-stance] {\n  --_s-fill: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));\n}`,
     );
   }
   if ('accent' in surface.base) {

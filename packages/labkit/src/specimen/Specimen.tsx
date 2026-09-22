@@ -554,8 +554,8 @@ function OverlaysAndFeedback() {
             triggerRef={calloutAnchor}
             isOpen={calloutOpen}
             onOpenChange={setCalloutOpen}
-            tone="info"
-            title="Info"
+            stance="notice"
+            title="Notice"
           >
             Neutral guidance.
           </Callout>

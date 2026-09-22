@@ -38,9 +38,9 @@ export const Tones: Story = {
           <button ref={infoRef} type="button" onClick={() => setOpen('info')}>info</button>
           <button ref={warnRef} type="button" onClick={() => setOpen('warning')}>warning</button>
           <button ref={dangerRef} type="button" onClick={() => setOpen('danger')}>danger</button>
-          <Callout triggerRef={infoRef} isOpen={open === 'info'} onOpenChange={(o) => !o && setOpen(null)} tone="info" title="Info">Neutral guidance.</Callout>
-          <Callout triggerRef={warnRef} isOpen={open === 'warning'} onOpenChange={(o) => !o && setOpen(null)} tone="warning" title="Warning">Something needs attention.</Callout>
-          <Callout triggerRef={dangerRef} isOpen={open === 'danger'} onOpenChange={(o) => !o && setOpen(null)} tone="danger" title="Danger">Destructive consequence ahead.</Callout>
+          <Callout triggerRef={infoRef} isOpen={open === 'info'} onOpenChange={(o) => !o && setOpen(null)} stance="notice" title="Notice">Neutral guidance.</Callout>
+          <Callout triggerRef={warnRef} isOpen={open === 'warning'} onOpenChange={(o) => !o && setOpen(null)} stance="important" title="Important">Something needs attention.</Callout>
+          <Callout triggerRef={dangerRef} isOpen={open === 'danger'} onOpenChange={(o) => !o && setOpen(null)} stance="danger" title="Danger">Destructive consequence ahead.</Callout>
         </>
       );
     }
@@ -61,7 +61,7 @@ export const Modal: Story = {
             isOpen={open}
             onOpenChange={setOpen}
             modal
-            tone="danger"
+            stance="danger"
             title="Really delete?"
             footer={
               <>

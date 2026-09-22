@@ -54,7 +54,7 @@
    inherited value always reaches the use site. */
 
 .panel {
-  background: var(--_s-surface);
+  background: var(--_s-fill);
   border: var(--_s-border-width) var(--_s-border-style) var(--_s-border-color);
   border-radius: var(--_s-radius);
   padding: var(--_s-pad);
@@ -428,9 +428,13 @@
   --_s-title-inset: var(--wzl-stance-preview-nested-title-inset, var(--wzl-stance-preview-title-inset, var(--wzl-panel-title-inset)));
 }
 
+.panel {
+  --_s-fill: var(--_s-surface);
+}
+
 .panel[data-tone],
 .panel[data-stance] {
-  background: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));
+  --_s-fill: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));
 }
 
 .panel[data-tone] {
@@ -1119,7 +1123,7 @@
    Bordered, sunken section inside a list. */
 .group {
   grid-column: 1 / -1;
-  background: var(--_s-surface);
+  background: var(--_s-fill);
   border: var(--_s-border-width) var(--_s-border-style) var(--_s-border-color);
   border-radius: var(--_s-radius);
   padding: var(--_s-pad);
@@ -1293,9 +1297,13 @@
   --_s-title-color: var(--wzl-stance-preview-title-color, var(--wzl-fg-subtle));
 }
 
+.group {
+  --_s-fill: var(--_s-surface);
+}
+
 .group[data-tone],
 .group[data-stance] {
-  background: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));
+  --_s-fill: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));
 }
 
 .group[data-tone] {

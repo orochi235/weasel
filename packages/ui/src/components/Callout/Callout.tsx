@@ -9,10 +9,8 @@ import {
   type PopoverProps as RACPopoverProps,
 } from 'react-aria-components';
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
+import { type StanceProps, useStance } from '../stance';
 import s from './Callout.module.css';
-
-/** Accent color of a {@link Callout}'s border and arrow. */
-export type CalloutTone = 'info' | 'warning' | 'danger';
 
 /**
  * Composition wrapper for press-to-open callouts:
@@ -29,15 +27,14 @@ export type CalloutProps = Omit<
   WithoutPortalTarget<RACPopoverProps>,
   'children' | 'className' | 'isNonModal' | 'triggerRef'
 > &
-  OverlayPortalProps & {
+  OverlayPortalProps &
+  StanceProps & {
   children?: ReactNode;
   className?: string;
   /** Optional heading rendered above the body. */
   title?: ReactNode;
   /** Footer slot — typically action buttons. */
   footer?: ReactNode;
-  /** Accent tone for border + arrow. Default `info`. */
-  tone?: CalloutTone;
   /**
    * `true` — blocks interaction with the rest of the app until dismissed;
    * inner dialog is `role="alertdialog"`. `false` (default) — non-blocking:
@@ -72,12 +69,6 @@ export type CalloutProps = Omit<
     anchorRect?: { x: number; y: number; width: number; height: number };
   };
 
-const toneClass: Record<CalloutTone, string> = {
-  info: s.toneInfo,
-  warning: s.toneWarning,
-  danger: s.toneDanger,
-};
-
 /**
  * Anchored callout with an arrow pointing at its source — a trigger
  * element, an arbitrary `triggerRef`, or a client-space `anchorRect`.
@@ -90,7 +81,8 @@ export function Callout(props: CalloutProps) {
     className,
     title,
     footer,
-    tone = 'info',
+    stance = 'notice',
+    tone,
     modal = false,
     showCloseButton,
     onDismiss,
@@ -107,6 +99,7 @@ export function Callout(props: CalloutProps) {
     ...rest
   } = props;
   const anchorRef = useRef<HTMLSpanElement>(null);
+  const stanced = useStance({ stance, tone });
   const { anchor: portalAnchor, portalProps } = useOverlayPortal(portalContainer);
   const showClose = showCloseButton ?? !modal;
   // Escape is a dismissal like the × is. It can't ride on a React `onKeyDown`:
@@ -175,7 +168,8 @@ export function Callout(props: CalloutProps) {
         }
         aria-label={popoverAriaLabel}
         aria-labelledby={popoverAriaLabelledby}
-        className={[s.popover, toneClass[tone], className].filter(Boolean).join(' ')}
+        className={[s.popover, className].filter(Boolean).join(' ')}
+        {...stanced}
         data-weasel-overlay=""
         {...portalProps}
       >
