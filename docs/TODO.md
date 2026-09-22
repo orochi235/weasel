@@ -813,7 +813,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   (`Badge.stories.tsx`). An observation, not yet a decision — whether any of them
   hand-roll geometry `geom` already has is the open question.
 
-- **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
+- **(P3) Confirm Safari's trackpad pinch in real Safari.** `useGestureDispatcher`
+  dispatches WebKit `gesturechange` as a `pinch` gesture, which `viewport.zoom`
+  binds, and swallows ctrl+wheel while a claimed gesture is live. All of it is
+  tested in jsdom against a stand-in event. Unverified: that Safari fires
+  `gesturestart` before the first ctrl+wheel copy (if it does not, that first
+  sample zooms once through the wheel binding), and that preventing
+  `gesturestart` / `gesturechange` stops the page zoom in the Safari versions
+  that send both channels.
 
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects). Rotated-object alignment is done: both ends read `AlignBoundsProjection.boundsOf`, which returns the rotated AABB.
 

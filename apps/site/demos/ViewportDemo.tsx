@@ -97,7 +97,7 @@ export function ViewportDemo() {
         }}
       />
       <div style={{ fontSize: 11, color: '#888' }}>
-        H / space = hand · drag fast + release = inertia · ⌘+= / ⌘+- / ⌘+0 = animated zoom (pan to interrupt) · pinch = zoom (touch multitouch; trackpad via ctrl+wheel)
+        H / space = hand · drag fast + release = inertia · ⌘+= / ⌘+- / ⌘+0 = animated zoom (pan to interrupt) · pinch = zoom (touch multitouch; trackpad via ctrl+wheel, or Safari's gesture events)
       </div>
     </div>
   );

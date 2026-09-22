@@ -3,6 +3,7 @@ export type {
   KeySpec,
   KeyHeldSpec,
   WheelSpec,
+  PinchSpec,
   ClickSpec,
   DragSpec,
   MultiTouchSpec,

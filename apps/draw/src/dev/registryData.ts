@@ -260,7 +260,7 @@ export const GESTURE_CHANNEL_KEYS: readonly (keyof GestureChannels)[] = [
  *  `GestureSpec.kind` values — and the catalog listed both because a route
  *  could live in either. One grammar, one list. */
 export const GESTURE_CATALOG_KEYS: readonly string[] = [
-  'click', 'doubleClick', 'pointerDown', 'drag', 'wheel',
+  'click', 'doubleClick', 'pointerDown', 'drag', 'wheel', 'pinch',
   'key', 'key-held', 'contextMenu', 'multiTouch', 'multiTouchTap',
 ];
 

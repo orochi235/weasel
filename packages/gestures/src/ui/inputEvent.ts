@@ -76,6 +76,27 @@ export interface WheelEvent extends EventModifiers {
 }
 
 /**
+ * One sample of a pinch the platform reports as a scale rather than as
+ * pointers — WebKit's `gesturechange`, a macOS trackpad pinch in Safari. A
+ * touchscreen pinch arrives as pointers and is {@link MultitouchEvent}.
+ */
+export interface PinchEvent extends EventModifiers {
+  kind: 'pinch';
+  /** Scale since the previous sample, as a multiplier: `> 1` spreads, `< 1`
+   *  closes. Incremental, so a sample is self-contained like a wheel delta. */
+  scale: number;
+  /** Rotation since the previous sample, in degrees, clockwise positive. */
+  rotation: number;
+  /** Focal point, canvas-local like {@link WheelEvent}'s: client coords minus
+   *  the canvas's bounding rect. */
+  clientX: number;
+  clientY: number;
+  affordance?: unknown;
+  bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
+}
+
+/**
  * Stylus state carried alongside a pointer sample. Every field is optional:
  * the values come straight off the originating `PointerEvent`, and callers
  * that synthesize events (tests, programmatic drags) omit them.
@@ -334,6 +355,7 @@ export type InputEvent =
   | KeyEvent
   | KeyHeldEvent
   | WheelEvent
+  | PinchEvent
   | PointerDownEvent
   | PointerMoveEvent
   | PointerUpEvent

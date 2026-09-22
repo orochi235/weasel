@@ -634,6 +634,8 @@ export function createDispatcher(opts?: {
       base.key = { key: event.key, repeat: false };
     } else if (event.kind === 'wheel') {
       base.wheel = { deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: 0 };
+    } else if (event.kind === 'pinch') {
+      base.pinch = { scale: event.scale, rotation: event.rotation };
     } else if (
       event.kind === 'pointerdown'
       || event.kind === 'click'
@@ -1015,6 +1017,15 @@ export function createDispatcher(opts?: {
             params = {
               deltaX: event.deltaX,
               deltaY: event.deltaY,
+              clientX: event.clientX,
+              clientY: event.clientY,
+              affordance: event.affordance,
+              ...resolved,
+            };
+          } else if (event.kind === 'pinch') {
+            params = {
+              scale: event.scale,
+              rotation: event.rotation,
               clientX: event.clientX,
               clientY: event.clientY,
               affordance: event.affordance,
