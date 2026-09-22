@@ -1070,3 +1070,24 @@ describe('<ControlPanel> color alpha', () => {
     expect(screen.queryByLabelText('Tint opacity')).toBeNull();
   });
 });
+
+describe('<ControlPanel> title, stance and tone', () => {
+  const fields: ConfigField[] = [{ key: 'on', label: 'On', type: 'checkbox', default: true }];
+
+  it('renders the bare list when given none of them', () => {
+    const { container } = render(<ControlPanel fields={fields} config={{ on: true }} setConfig={vi.fn()} />);
+    expect(container.firstElementChild?.classList.contains('lk-control-panel')).toBe(true);
+    expect(container.querySelector('[data-stance], h2')).toBeNull();
+  });
+
+  it('wraps its rows in a panel carrying them when asked', () => {
+    const { container } = render(
+      <ControlPanel title="View" stance="scope" tone={1} fields={fields} config={{ on: true }} setConfig={vi.fn()} />,
+    );
+    const panel = container.firstElementChild as HTMLElement;
+    expect(panel.dataset.stance).toBe('scope');
+    expect(panel.dataset.tone).toBe('1');
+    expect(screen.getByRole('heading', { name: 'View' })).toBeTruthy();
+    expect(panel.querySelector('.lk-control-panel')).not.toBeNull();
+  });
+});

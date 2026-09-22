@@ -14,11 +14,13 @@ import {
   PropertyGroup,
   PropertyList,
   type PropertyListPack,
+  PropertyPanel,
   PropertyRow,
   type PropertyRowLayout,
   prefDisplayBounds,
   Select,
   SelectRow,
+  type StanceProps,
   SliderRow,
   Switch,
   SwitchRow,
@@ -63,7 +65,7 @@ function sectionRows(section: SectionSpec, rows: Rows): Rows {
   };
 }
 
-export interface ControlPanelProps<TC extends Record<string, unknown>> {
+export interface ControlPanelProps<TC extends Record<string, unknown>> extends StanceProps {
   /** The instrument's resolved config schema. */
   schema?: ResolvedConfig;
   /** @deprecated Pass `schema`. A field list is adapted into one internally. */
@@ -115,6 +117,9 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
   auto?: ReadonlySet<string>;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
+  /** Heads the panel. With `title`, `stance` or `tone` given, the rows sit in a
+   *  `<PropertyPanel>` carrying them; with none, they are the bare list. */
+  title?: ReactNode;
   className?: string;
 }
 
@@ -138,6 +143,9 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   onCollapse,
   auto: given,
   showHidden = false,
+  title,
+  stance,
+  tone,
   className,
 }: ControlPanelProps<TC>) {
   const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
@@ -313,7 +321,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     );
   };
 
-  return (
+  const list = (
     <PropertyList
       pack={gridPack}
       density={density}
@@ -322,6 +330,12 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     >
       {body(resolved.group, '', { pack, layout, grid: gridPack })}
     </PropertyList>
+  );
+  if (title === undefined && stance === undefined && tone === undefined) return list;
+  return (
+    <PropertyPanel title={title} stance={stance} tone={tone} density={density}>
+      {list}
+    </PropertyPanel>
   );
 }
 

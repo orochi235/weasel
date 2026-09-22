@@ -1,3 +1,4 @@
+import { type ColorList, colorAt, colorCount, resolveTheme } from '@weasel-js/theme';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import {
   type CSSProperties,
@@ -71,12 +72,13 @@ interface LabBaseProps {
   /** Rendered while a stored lab loads. Default: the lab's empty shell. */
   fallback?: ReactNode;
   /**
-   * Optional list of CSS colors used to compose the interstellar theme's
-   * cosmic backdrop. Each color becomes one radial-gradient blob on the
-   * dark void base. Order maps to a fixed spread of positions; extras wrap
-   * around. Ignored unless the resolved mode is dark.
+   * Colors composing the interstellar theme's cosmic backdrop. Each becomes
+   * one radial-gradient blob on the dark void base, in a fixed spread of
+   * positions; extras wrap around. A theme ramp resolves against the lab's
+   * theme; a function list gives as many blobs as there are positions.
+   * Ignored unless the resolved mode is dark.
    */
-  nebula?: readonly string[];
+  nebula?: ColorList;
   title?: string;
   /** The project's other labs. Given two or more, the title becomes the way to
    *  reach them — the same switcher `<LabShell>` renders, so a lab reached from
@@ -214,7 +216,10 @@ const NEBULA_SLOTS = [
   { cx: '85%', cy: '18%', sx: '55%', sy: '80%', stop: '70%' },
 ] as const;
 
-function buildNebula(colors: readonly string[]): string {
+function buildNebula(list: ColorList, mode: 'light' | 'dark', density: string): string {
+  const ctx = { theme: interstellarTheme, resolved: resolveTheme(interstellarTheme, { mode, density }) };
+  const n = colorCount(list, ctx) ?? NEBULA_SLOTS.length;
+  const colors = Array.from({ length: n }, (_, i) => colorAt(list, i, ctx));
   const blobs = colors.map((c, i) => {
     const p = NEBULA_SLOTS[i % NEBULA_SLOTS.length];
     return `radial-gradient(ellipse ${p.sx} ${p.sy} at ${p.cx} ${p.cy}, color-mix(in srgb, ${c} 22%, transparent), transparent ${p.stop})`;
@@ -564,8 +569,8 @@ function LabRuntime({
   // Only override the backdrop in dark, where there is one to override.
   // Setting a CSS custom property is the sanctioned use of inline style.
   const backdropStyle =
-    resolvedMode === 'dark' && nebula && nebula.length > 0
-      ? ({ ['--wzl-backdrop' as string]: buildNebula(nebula) } as CSSProperties)
+    resolvedMode === 'dark' && nebula && colorCount(nebula) !== 0
+      ? ({ ['--wzl-backdrop' as string]: buildNebula(nebula, resolvedMode, density ?? 'comfortable') } as CSSProperties)
       : undefined;
 
   const workspace = (

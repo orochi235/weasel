@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { colorAt, colorCssAt, rampSteps, themeTones } from './colorList';
+import { colorAt, colorCount, colorCssAt, rampSteps, themeTones } from './colorList';
 import { resolveTheme } from './resolveTheme';
 import { defineTheme, weaselTheme } from './theme';
 
@@ -53,5 +53,14 @@ describe('themeTones', () => {
     const grandchild = defineTheme({ name: 'grandchild', extends: child });
     expect(themeTones(grandchild)).toEqual(['#f00', '#0f0']);
     expect(rampSteps(grandchild, 'swatch')).toEqual(rampSteps(weaselTheme, 'swatch'));
+  });
+});
+
+describe('colorCount', () => {
+  it('counts each form before it wraps, and a function as unbounded', () => {
+    expect(colorCount(['#1', '#2'])).toBe(2);
+    expect(colorCount({ generate: { count: 6 } })).toBe(6);
+    expect(colorCount({ ramp: 'swatch' })).toBe(rampSteps(weaselTheme, 'swatch').length);
+    expect(colorCount(() => '#000')).toBeUndefined();
   });
 });

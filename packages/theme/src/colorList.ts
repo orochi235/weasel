@@ -85,3 +85,10 @@ export function colorCssAt(list: ColorList, i: number, ctx: ColorContext = defau
   if (typeof list !== 'function' && 'ramp' in list) return `var(--wzl-${list.ramp}-${pickStep(list, i, ctx.theme)})`;
   return colorAt(list, i, ctx);
 }
+
+/** How many distinct colors `list` holds before it wraps; `undefined` for a function, which never does. */
+export function colorCount(list: ColorList, ctx: ColorContext = defaultContext()): number | undefined {
+  if (typeof list === 'function') return undefined;
+  if ('ramp' in list) return rampSteps(ctx.theme, list.ramp).length;
+  return 'generate' in list ? list.generate.count : list.length;
+}
