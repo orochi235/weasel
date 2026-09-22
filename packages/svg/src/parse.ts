@@ -42,7 +42,7 @@ const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
 
 const IGNORED_TAGS = new Set([
   'defs', 'lineargradient', 'radialgradient', 'pattern', 'marker', 'clippath',
-  'title', 'desc', 'metadata',
+  'title', 'desc', 'metadata', 'style',
 ]);
 
 /**

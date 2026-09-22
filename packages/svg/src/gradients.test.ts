@@ -27,6 +27,18 @@ describe('gradient collection', () => {
     ]);
   });
 
+  it('reads stop-color and stop-opacity from style="" and from <style> rules', () => {
+    const paint = gradientOf(
+      `<svg xmlns="http://www.w3.org/2000/svg"><style>.end{stop-color:#0000ff}</style>`
+      + `<linearGradient id="g"><stop offset="0" stop-color="#000000" style="stop-color:#ff0000;stop-opacity:0.5"/>`
+      + `<stop offset="1" class="end"/></linearGradient>${RECT}</svg>`,
+    );
+    expect(paint.stops).toEqual([
+      { offset: 0, color: '#ff000080' },
+      { offset: 1, color: '#0000ff' },
+    ]);
+  });
+
   it('finds a gradient nested inside a <g>', () => {
     const paint = gradientOf(
       `<svg xmlns="http://www.w3.org/2000/svg"><g>`

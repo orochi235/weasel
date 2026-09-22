@@ -283,7 +283,7 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 ## Paths & booleans
 
-- **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Selector matching is the missing piece; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
+- **(P3) Conditional at-rules in `@weasel-js/svg` stylesheets.** `<style>` rules, selector matching and `!important` resolve in `packages/svg/src/cascade.ts`, but every at-rule is skipped whole: a rule inside `@media` or `@supports` never applies, even one a static render would match (`@media screen`, `@supports (fill: red)`), and `@import` is not fetched. A `<style media="…">` applies only when its list names `all` or `screen`. Evaluating these needs a stance on which media a parse represents.
 
 ### Pathfinder follow-ups (post-v1)
 

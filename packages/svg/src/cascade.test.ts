@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { deriveStyle, EMPTY_STYLE, ownProp, readStyleProp, resolveCurrentColor } from './cascade';
+import {
+  deriveStyle, EMPTY_STYLE, ownProp, parseDeclarations, parseStylesheet, resolveCurrentColor, specificity,
+} from './cascade';
 
 /** Parse an SVG string and return a lookup by element id. */
 function els(svg: string): (id: string) => Element {
@@ -69,15 +71,155 @@ describe('deriveStyle', () => {
   });
 });
 
-describe('readStyleProp', () => {
-  it('extracts a declaration and trims it', () => {
-    const get = els('<svg><rect id="r" style="fill: #abcabc ; stroke:#000"/></svg>');
-    expect(readStyleProp(get('r'), 'fill')).toBe('#abcabc');
-    expect(readStyleProp(get('r'), 'stroke')).toBe('#000');
+describe('parseDeclarations', () => {
+  it('extracts declarations, trimmed, with property names lowercased', () => {
+    expect(parseDeclarations('fill: #abcabc ; STROKE:#000')).toEqual([
+      { prop: 'fill', value: '#abcabc', important: false },
+      { prop: 'stroke', value: '#000', important: false },
+    ]);
   });
-  it('returns null when the property is absent', () => {
-    const get = els('<svg><rect id="r" style="stroke:#000"/></svg>');
-    expect(readStyleProp(get('r'), 'fill')).toBeNull();
+  it('reads !important, with or without inner whitespace', () => {
+    expect(parseDeclarations('fill:red !important;stroke:blue! IMPORTANT')).toEqual([
+      { prop: 'fill', value: 'red', important: true },
+      { prop: 'stroke', value: 'blue', important: true },
+    ]);
+  });
+  it('does not split inside parentheses or quotes', () => {
+    expect(parseDeclarations(`fill:url("a;b");font-family:'x;y', serif`)).toEqual([
+      { prop: 'fill', value: 'url("a;b")', important: false },
+      { prop: 'font-family', value: "'x;y', serif", important: false },
+    ]);
+  });
+  it('drops declarations with no colon or an empty value, and strips comments', () => {
+    expect(parseDeclarations('garbage; fill:; /* c */ stroke: /* d */ red')).toEqual([
+      { prop: 'stroke', value: 'red', important: false },
+    ]);
+  });
+});
+
+describe('specificity', () => {
+  it('counts ids, classes/attributes/pseudo-classes, and types', () => {
+    expect(specificity('rect')).toEqual([0, 0, 1]);
+    expect(specificity('.a')).toEqual([0, 1, 0]);
+    expect(specificity('#x')).toEqual([1, 0, 0]);
+    expect(specificity('g > rect.a[fill="#f00"]:first-child')).toEqual([0, 3, 2]);
+    expect(specificity('*')).toEqual([0, 0, 0]);
+    expect(specificity('g#x .a .b rect')).toEqual([1, 2, 2]);
+  });
+  it('does not count characters inside attribute values', () => {
+    expect(specificity('[data-k="#a.b c"]')).toEqual([0, 1, 0]);
+  });
+  it('takes :not / :is from their most specific argument and :where as zero', () => {
+    expect(specificity(':not(#a, .b)')).toEqual([1, 0, 0]);
+    expect(specificity('rect:is(.a, g .b .c)')).toEqual([0, 2, 2]);
+    expect(specificity(':where(#a) rect')).toEqual([0, 0, 1]);
+  });
+});
+
+describe('parseStylesheet', () => {
+  it('splits comma lists into one rule per selector, in source order', () => {
+    const rules = parseStylesheet('.a, #b { fill: red } rect{stroke:blue}');
+    expect(rules.map((r) => r.selector)).toEqual(['.a', '#b', 'rect']);
+    expect(rules[0].declarations).toEqual([{ prop: 'fill', value: 'red', important: false }]);
+    expect(rules[0].order).toBeLessThan(rules[2].order);
+  });
+  it('skips comments, CDATA / HTML comment markers, and at-rules', () => {
+    const rules = parseStylesheet(`<![CDATA[ <!--
+      @charset "utf-8";
+      @import url(x.css);
+      /* .gone { fill: red } */
+      @media print { .p { fill: red } }
+      @font-face { font-family: X; src: url(x.woff) }
+      .kept { fill: #00f }
+    --> ]]>`);
+    expect(rules.map((r) => r.selector)).toEqual(['.kept']);
+  });
+  it('ignores a nested block inside a rule body', () => {
+    const rules = parseStylesheet('.a { fill: red; &:hover { fill: blue } stroke: green }');
+    expect(rules[0].declarations.map((d) => d.prop)).toEqual(['fill', 'stroke']);
+  });
+});
+
+describe('stylesheet cascade', () => {
+  const svg = (style: string, body: string): string =>
+    `<svg xmlns="http://www.w3.org/2000/svg"><style>${style}</style>${body}</svg>`;
+
+  it('applies a class rule', () => {
+    const get = els(svg('.cls-1{fill:#f00}', '<rect id="r" class="cls-1"/>'));
+    expect(ownProp(get('r'), 'fill')).toBe('#f00');
+  });
+
+  it('a stylesheet rule beats the presentation attribute', () => {
+    const get = els(svg('rect{fill:#f00}', '<rect id="r" fill="#0f0"/>'));
+    expect(ownProp(get('r'), 'fill')).toBe('#f00');
+  });
+
+  it('inline style beats any stylesheet rule', () => {
+    const get = els(svg('#r{fill:#f00}', '<rect id="r" style="fill:#00f"/>'));
+    expect(ownProp(get('r'), 'fill')).toBe('#00f');
+  });
+
+  it('higher specificity wins regardless of source order', () => {
+    const get = els(svg('#r{fill:#f00} .a{fill:#0f0} rect{fill:#00f}', '<rect id="r" class="a"/>'));
+    expect(ownProp(get('r'), 'fill')).toBe('#f00');
+  });
+
+  it('equal specificity resolves by source order, across <style> elements', () => {
+    const get = els(
+      '<svg xmlns="http://www.w3.org/2000/svg"><style>.a{fill:#f00}</style>'
+        + '<rect id="r" class="a b"/><style>.b{fill:#0f0}</style></svg>',
+    );
+    expect(ownProp(get('r'), 'fill')).toBe('#0f0');
+  });
+
+  it('!important in a rule beats normal inline style', () => {
+    const get = els(svg('.a{fill:#f00 !important}', '<rect id="r" class="a" style="fill:#00f"/>'));
+    expect(ownProp(get('r'), 'fill')).toBe('#f00');
+  });
+
+  it('!important inline beats !important in a rule', () => {
+    const get = els(svg('#r{fill:#f00 !important}', '<rect id="r" style="fill:#00f !important"/>'));
+    expect(ownProp(get('r'), 'fill')).toBe('#00f');
+  });
+
+  it('an !important rule of lower specificity beats a normal one of higher', () => {
+    const get = els(svg('rect{fill:#f00 !important} #r{fill:#0f0}', '<rect id="r"/>'));
+    expect(ownProp(get('r'), 'fill')).toBe('#f00');
+  });
+
+  it('within one declaration block the later declaration wins', () => {
+    const get = els(svg('', '<rect id="r" style="fill:#f00; fill:#0f0"/>'));
+    expect(ownProp(get('r'), 'fill')).toBe('#0f0');
+  });
+
+  it('matches descendant, child, attribute, and type selectors', () => {
+    const get = els(svg(
+      'g.outer rect{fill:#111} g > circle{fill:#222} [data-k="v"]{stroke:#333}',
+      '<g class="outer"><g><rect id="r"/><circle id="c"/></g></g><circle id="c2" data-k="v"/>',
+    ));
+    expect(ownProp(get('r'), 'fill')).toBe('#111');
+    expect(ownProp(get('c'), 'fill')).toBe('#222');
+    expect(ownProp(get('c2'), 'fill')).toBeNull();
+    expect(ownProp(get('c2'), 'stroke')).toBe('#333');
+  });
+
+  it('skips a selector the engine cannot match without dropping the rest of the list', () => {
+    const get = els(svg('rect::before, .a{fill:#f00} :bogus(1){fill:#0f0}', '<rect id="r" class="a"/>'));
+    expect(ownProp(get('r'), 'fill')).toBe('#f00');
+  });
+
+  it('a class-matched fill inherits through a group', () => {
+    const get = els(svg('.g{fill:#f00}', '<g id="g" class="g"><rect id="r"/></g>'));
+    const parent = deriveStyle(EMPTY_STYLE, get('g'));
+    expect(deriveStyle(parent, get('r'))['fill']).toBe('#f00');
+  });
+
+  it('ignores a <style> whose type is not CSS', () => {
+    const get = els(
+      '<svg xmlns="http://www.w3.org/2000/svg"><style type="text/less">.a{fill:#f00}</style>'
+        + '<rect id="r" class="a"/></svg>',
+    );
+    expect(ownProp(get('r'), 'fill')).toBeNull();
   });
 });
 
