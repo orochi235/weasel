@@ -146,9 +146,12 @@ export interface LaidOutDecoration {
  * were actually painted rather than where an unkerned re-measure would put it.
  */
 export interface LaidOutCell {
-  /** UTF-16 offset of this code point in the runs' concatenated text. */
+  /** UTF-16 offset of this code point in the runs' concatenated source text.
+   *  Under a length-changing `textTransform` it is the offset of the source
+   *  character this one was mapped from, so neighbors can share it — both
+   *  `S` cells of an uppercased `ß` do. */
   srcIndex: number;
-  /** One past it — `srcIndex + 2` for an astral code point. */
+  /** One past that source character — `srcIndex + 2` for an astral one. */
   srcEnd: number;
   cp: number;
   /** Left edge of the cell, post-alignment, origin-relative like `x0`/`x1`.
@@ -196,11 +199,12 @@ export interface LaidOutLineBox {
   /**
    * One cell per code point on this line, left to right. Every code point the
    * line covers has exactly one, drawn or not; only a newline has none, since
-   * it separates cells rather than being one. So `cells[i]` is addressable as
-   * slot `i` and needs no reconstruction against the source string.
+   * it separates cells rather than being one. The code points are the drawn
+   * ones, after `textTransform`, so an uppercased `ß` has two cells.
    *
    * A caret stop is a cell's `x`, and the stop closing the line is `x1` /
-   * `srcEnd` — there is one more stop than cell.
+   * `srcEnd` — there is one more stop than cell, except that cells sharing a
+   * source span have no stop between them.
    */
   cells: LaidOutCell[];
   /**
@@ -618,10 +622,13 @@ export function layoutRuns(
       warnNoMetricsOnce(run.fontFamily, run.fontWeight, run.fontStyle);
       // Skipped, but its characters still occupy source offsets — dropping
       // them here would shift every later run's caret indices left.
-      srcIndex += run.text.length;
+      srcIndex += run.srcMap?.length ?? run.text.length;
       prevCp = undefined; prevMetrics = undefined; prevFontSize = undefined;
       continue;
     }
+    const runBase = srcIndex;
+    const map = run.srcMap;
+    let at = 0;
     const scale = run.fontSize / metrics.size;
     // World units — deliberately not scaled by fontSize, so the same tracking
     // opens the same visual gap whatever size the run is set at.
@@ -631,9 +638,12 @@ export function layoutRuns(
       const cp = ch.codePointAt(0)!;
       const isNewline = cp === 10;
       const isSpace = cp === 32;
-      const srcStart = srcIndex;
-      const srcEnd = srcIndex + ch.length;
-      srcIndex = srcEnd;
+      // A transformed run draws characters its source does not have; each
+      // one takes the source span of the character it was mapped from.
+      const srcStart = map ? runBase + map.starts[at] : runBase + at;
+      const srcEnd = map ? runBase + map.ends[at] : runBase + at + ch.length;
+      at += ch.length;
+      srcIndex = map ? runBase + map.length : srcEnd;
 
       if (isNewline) {
         entries.push({

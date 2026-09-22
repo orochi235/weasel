@@ -7,7 +7,7 @@
  */
 
 import type { FillStyle } from '@weasel-js/paint';
-import type { StyledRun } from '@weasel-js/text';
+import type { StyledRun, TextTransform } from '@weasel-js/text';
 
 function solidColor(p: FillStyle | undefined): string | null {
   if (!p) return null;
@@ -28,7 +28,10 @@ interface StyleState {
   script?: 'super' | 'sub';
   baselineShift?: number;
   fontScale?: number;
+  textTransform?: TextTransform;
 }
+
+const TRANSFORMS: ReadonlySet<string> = new Set(['none', 'uppercase', 'lowercase', 'capitalize']);
 
 const EMPTY_STYLE: StyleState = {
   bold: false,
@@ -112,6 +115,8 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
       const shift = parseFloat(rawShift);
       if (Number.isFinite(shift)) next.baselineShift = shift;
     }
+    const tt = el.style.textTransform;
+    if (TRANSFORMS.has(tt)) next.textTransform = tt as TextTransform;
     if (el.style.fontFamily) next.fontFamily = el.style.fontFamily;
     if (el.style.color) next.color = el.style.color;
     const ls = el.style.letterSpacing;
@@ -138,7 +143,8 @@ function styleEquals(a: StyleState, b: StyleState): boolean {
     a.letterSpacing === b.letterSpacing &&
     a.script === b.script &&
     a.baselineShift === b.baselineShift &&
-    a.fontScale === b.fontScale
+    a.fontScale === b.fontScale &&
+    a.textTransform === b.textTransform
   );
 }
 
@@ -162,6 +168,7 @@ function toRun(text: string, style: StyleState): StyledRun {
   // inherited script's rise — so test for presence, as `letterSpacing` does.
   if (style.baselineShift != null) run.baselineShift = style.baselineShift;
   if (style.fontScale != null) run.fontScale = style.fontScale;
+  if (style.textTransform != null) run.textTransform = style.textTransform;
   return run;
 }
 
@@ -245,6 +252,9 @@ export function runsToDom(runs: readonly StyledRun[], parent: HTMLElement): void
     // `letter-spacing` is inherited and a child declaration *replaces* the
     // inherited value, so this composes with the overlay's rather than adding.
     if (run.letterSpacing != null) span.style.letterSpacing = `${run.letterSpacing}px`;
+    // CSS draws the transform, so the span's text stays the source and the
+    // caret-offset walkers below need no map.
+    if (run.textTransform != null) span.style.textTransform = run.textTransform;
     parent.appendChild(span);
   }
 }

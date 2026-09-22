@@ -14,7 +14,27 @@
  */
 
 import { layoutTextPose } from '@weasel-js/text';
-import type { TextPose } from '@weasel-js/text';
+import type { LaidOutCell, TextPose } from '@weasel-js/text';
+
+/**
+ * Merge neighboring cells drawn from one source character — the two `S`s an
+ * uppercased `ß` becomes — into one cell spanning both, so no caret stop falls
+ * between them.
+ */
+function sourceClusters(cells: readonly LaidOutCell[]): LaidOutCell[] {
+  const out: LaidOutCell[] = [];
+  for (const c of cells) {
+    const prev = out[out.length - 1];
+    if (prev && prev.srcIndex === c.srcIndex && prev.srcEnd === c.srcEnd) {
+      const x0 = Math.min(prev.x, c.x);
+      const x1 = Math.max(prev.x + prev.advance, c.x + c.advance);
+      out[out.length - 1] = { ...prev, x: x0, advance: x1 - x0 };
+    } else {
+      out.push(c);
+    }
+  }
+  return out;
+}
 
 /** Options for `pointInTextPose`. */
 export interface PointInTextPoseOpts {
@@ -66,8 +86,8 @@ export function caretIndexAt(x: number, y: number, pose: TextPose): number {
   // Cells are in logical order and their x values need not ascend, so the
   // sweep has to be in visual order and each cell's own extent is what it is
   // tested against — the next cell along is not its right edge.
-  const { cells } = line;
-  if (cells.length === 0) return line.srcEnd;
+  if (line.cells.length === 0) return line.srcEnd;
+  const cells = sourceClusters(line.cells);
   const visual = cells.map((_, i) => i).sort((a, b) => cells[a].x - cells[b].x);
 
   for (const i of visual) {

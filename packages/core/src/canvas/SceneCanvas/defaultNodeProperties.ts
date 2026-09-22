@@ -173,6 +173,7 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                         underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false, control: 'toggle', short: 'U', pair: 'Decoration' },
                         strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false, control: 'toggle', short: 'S', pair: 'Decoration' },
                         overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', default: false, control: 'toggle', short: 'O', pair: 'Decoration' },
+                        textTransform: { kind: 'enum', name: 'Case', description: 'Draw the text in capitals, lowercase or title case. The text itself is unchanged.', default: 'none', control: 'toggle', options: [{ value: 'none', label: 'None', short: '–' }, { value: 'uppercase', label: 'Uppercase', short: 'AA' }, { value: 'lowercase', label: 'Lowercase', short: 'aa' }, { value: 'capitalize', label: 'Capitalize', short: 'Aa' }] },
                       },
                     },
                     paragraph: {

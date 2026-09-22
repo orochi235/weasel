@@ -41,6 +41,12 @@ describe('layoutMarkdown', () => {
     expect(result.width).toBe(50);
   });
 
+  it('lays out and measures a transformed run as it is drawn', () => {
+    const result = layoutMarkdown([{ text: 'straße', textTransform: 'uppercase' }], Infinity, 13, mockMeasure);
+    expect(result.lines[0].runs[0].text).toBe('STRASSE');
+    expect(result.width).toBe(70);
+  });
+
   it('breaks on newline', () => {
     const runs = markdownToRuns('a\nb');
     const result = layoutMarkdown(runs, Infinity, 13, mockMeasure);

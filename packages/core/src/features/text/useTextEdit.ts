@@ -983,6 +983,7 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   if (style.underline) decorations.push('underline');
   if (style.strikethrough) decorations.push('line-through');
   el.style.textDecoration = decorations.length > 0 ? decorations.join(' ') : 'none';
+  el.style.textTransform = style.textTransform;
   // Line breaks follow the node's declared `wrap`, as the canvas's do. Layout
   // breaks only between words, never inside one.
   el.style.whiteSpace = style.wrap ? 'pre-wrap' : 'pre';

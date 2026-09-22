@@ -527,6 +527,11 @@ function textXml(
   }
   const decoration = textDecorationValue(style?.underline, style?.strikethrough, style?.overline);
   if (decoration) attrs.push(`text-decoration="${decoration}"`);
+  // A CSS property rather than an SVG 1.1 presentation attribute, so it goes
+  // where every CSS-aware reader looks for it.
+  if (style?.textTransform && style.textTransform !== 'none') {
+    attrs.push(`style="text-transform:${style.textTransform}"`);
+  }
   // SVG text never wraps, so this is for weasel's own reader, beside the box
   // width it wraps at.
   if (style?.wrap) {
@@ -617,6 +622,8 @@ function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerR
     }
   }
   for (const a of coreStrokeAttrs(run.stroke, registry, warn)) attrs.push(a);
+  // `none` included: on a run it overrides a transform the node would pass down.
+  if (run.textTransform) attrs.push(`style="text-transform:${run.textTransform}"`);
   const head = attrs.length > 0 ? `<tspan ${attrs.join(' ')}>` : '<tspan>';
   return `${head}${escapeText(run.text)}</tspan>`;
 }

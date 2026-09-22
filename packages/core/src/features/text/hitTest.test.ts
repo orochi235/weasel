@@ -176,4 +176,29 @@ describe('caretIndexAt', () => {
     expect(caretIndexAt(188, 5, p)).toBe(0);
     expect(caretIndexAt(191, 5, p)).toBe(1);
   });
+
+  it('snaps across the whole of what one source character drew, never inside it', async () => {
+    // The fixture plus an `S` (advance 20), registered as its own family.
+    const caps = {
+      ...FIXTURE_FONT,
+      chars: [...FIXTURE_FONT.chars, { ...FIXTURE_FONT.chars[0], id: 83, xadvance: 20 }],
+    };
+    const prior = global.fetch;
+    global.fetch = vi.fn().mockImplementation((url: string) => (url.endsWith('.json')
+      ? Promise.resolve({ ok: true, json: () => Promise.resolve(caps) })
+      : prior(url))) as typeof fetch;
+    await registerFont('caps', {}, '/fonts/caps.json', '/fonts/caps.png');
+    _resetLayoutCacheForTests();
+
+    // 'AßB' uppercased draws A 0..23, S 23..43, S 43..63, B 63..85. Both S
+    // cells are the ß, so the stop between them is not a stop: the caret
+    // snaps on the pair's midpoint (43) to one side of the ß or the other.
+    const p = textPose({
+      text: 'AßB', style: { fontFamily: 'caps', fontSize: SIZE, textTransform: 'uppercase' },
+    });
+    expect(caretIndexAt(38, 5, p)).toBe(1);
+    expect(caretIndexAt(48, 5, p)).toBe(2);
+    expect(caretIndexAt(70, 5, p)).toBe(2);
+    expect(caretIndexAt(80, 5, p)).toBe(3);
+  });
 });

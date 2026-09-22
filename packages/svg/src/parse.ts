@@ -21,7 +21,7 @@ import type {
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
   ScreenLength,
 } from './types';
-import type { StyledRun, TextStyle, TextPaint, FillStyle, Stroke } from '@weasel-js/core';
+import type { StyledRun, TextStyle, TextPaint, TextTransform, FillStyle, Stroke } from '@weasel-js/core';
 import { multiply, parseTransform, decomposeRotation, rebaseTransform, rotationComponent, isIdentity } from './transform';
 import { boundsOfPath, layoutRuns, resolveRuns, resolveScreenLength, resolveTextStyle } from '@weasel-js/core';
 import { IDENTITY_MATRIX } from './types';
@@ -1144,6 +1144,15 @@ function parseTextElement(
   return node;
 }
 
+const TEXT_TRANSFORMS: ReadonlySet<string> = new Set(['none', 'uppercase', 'lowercase', 'capitalize']);
+
+/** A CSS `text-transform` keyword the runs model carries, or undefined for
+ *  anything else — `full-width` and friends included. */
+function parseTextTransform(raw: string | null): TextTransform | undefined {
+  const v = raw?.trim().toLowerCase();
+  return v !== undefined && TEXT_TRANSFORMS.has(v) ? (v as TextTransform) : undefined;
+}
+
 function readTspanRun(
   el: Element,
   gradients: GradientTable,
@@ -1179,6 +1188,8 @@ function readTspanRun(
   if (decoration.underline) run.underline = true;
   if (decoration.strikethrough) run.strikethrough = true;
   if (decoration.overline) run.overline = true;
+  const transform = parseTextTransform(ownProp(el, 'text-transform'));
+  if (transform) run.textTransform = transform;
   const tspanStyle = deriveStyle(style, el);
   const fillAttr = resolveCurrentColor(ownProp(el, 'fill'), tspanStyle);
   if (fillAttr) {
@@ -1238,6 +1249,8 @@ function readTextStyle(
   if (decoration.underline) out.underline = true;
   if (decoration.strikethrough) out.strikethrough = true;
   if (decoration.overline) out.overline = true;
+  const transform = parseTextTransform(style['text-transform'] ?? null);
+  if (transform && transform !== 'none') out.textTransform = transform;
   // Note: `lineHeight` is no longer read from a `data-weasel-line-height`
   // attribute. WeaselDraw carries it through the generic namespace bag
   // as `meta.wd.attrs['line-height']`; svgInterop lifts it into / out of

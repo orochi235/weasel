@@ -985,6 +985,16 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     expect(getOverlay(h.container)!.style.textDecoration).toBe('underline line-through');
   });
 
+  it("carries the node's text-transform onto the overlay", () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, textTransform: 'uppercase' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.textTransform).toBe('uppercase');
+    // Inherited by every run span, so it must not come back as run styling.
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'abc' }]);
+  });
+
   it('sets text-decoration: none on an undecorated node', () => {
     const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16 });
     const { result } = renderHook(() => useTextEdit(h.opts));
