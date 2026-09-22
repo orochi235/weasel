@@ -202,7 +202,7 @@ export const cloneAction: Action & { requires: string[] } = {
           }
           if (ops.length > 0) {
             if (scratch.applyOps) scratch.applyOps(ops, 'Clone');
-            else scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene));
+            else scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, selection.adapterMethods));
           }
           scratch.previews.clear();
         },

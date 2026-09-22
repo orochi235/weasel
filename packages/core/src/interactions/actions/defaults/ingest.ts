@@ -60,12 +60,7 @@ export const ingestAction: Action & { requires: string[] } = {
         insert,
         applyOps: (ops, label) => {
           if (applyOps) applyOps(ops, label ?? 'Ingest');
-          // `setSelection` is a documented exclusion from the scene-backed
-          // commit adapter (the scene doesn't own selection) — spread the
-          // SelectionApi's adapter methods over it so selection-carrying
-          // batches (e.g. the weasel-JSON paste handler's SetSelectionOp)
-          // replay instead of throwing mid-batch.
-          else scene.applyBatch(ops, label ?? 'Ingest', { ...defaultCommitAdapter(scene), ...selection.adapterMethods });
+          else scene.applyBatch(ops, label ?? 'Ingest', defaultCommitAdapter(scene, selection.adapterMethods));
         },
         scene,
         selection,

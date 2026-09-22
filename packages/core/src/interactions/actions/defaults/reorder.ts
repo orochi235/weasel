@@ -41,7 +41,7 @@ function reorderSelection(
   const op = createReorderOp({ ids, direction: reorderDir, label: 'Reorder' });
 
   if (applyOps) applyOps([op], 'Reorder');
-  else scene.applyBatch([op], 'Reorder', defaultCommitAdapter(scene));
+  else scene.applyBatch([op], 'Reorder', defaultCommitAdapter(scene, selection.adapterMethods));
 }
 
 // ---------------------------------------------------------------------------
