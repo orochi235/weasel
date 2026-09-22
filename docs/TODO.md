@@ -425,7 +425,9 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) Decoration and script metrics are derived, not read from the font.**
   The underline / strikethrough / overline offsets and weight are the fixed
-  `0.10` / `-0.30` / `-0.90` / `0.05` em constants in `layoutRuns`, and
+  `0.10` / `-0.30` / `-0.90` / `0.05` em constants in
+  `packages/text/src/layout/decorationMetrics.ts` (shared by the GL tier and
+  `createMarkdownRenderer`'s 2D path), and
   `SCRIPT_METRICS` (58.3% size, ±33.3% position) is Adobe's default rather
   than the font's. Real fonts ship `post.underlinePosition` /
   `underlineThickness` and `OS/2.ySuperscript*` / `ySubscript*`, and
@@ -471,12 +473,6 @@ Core five + Crop shipped. Remaining:
   today; the honest version splits the entry walk's size off the run, or
   reads the `smcp` OpenType feature, which needs shaping. Real small caps is
   a face, not a synthesis, and would fall out of the HarfBuzz entry below.
-
-- **(P3) `layoutMarkdown` paints no decorations.** `PositionedRun` now carries
-  a resolved `size` and a per-run `y`, so `fontScale`, `baselineShift` and
-  `script` reach the 2D-canvas path behind `renderLabel`. Underline,
-  strikethrough and overline are still dropped — they need a rule to stroke
-  rather than a number to offset by.
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 
