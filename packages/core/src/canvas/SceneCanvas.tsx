@@ -37,7 +37,7 @@ import type { Animator } from '../animation/types';
 import { useAnimator } from '../animation/useAnimator';
 import { useViewAnimationOn } from 'core/viewport/useViewAnimation';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
-import type { SceneToAdapterOptions } from './sceneAdapter';
+import { useSceneAdapter, type SceneToAdapterOptions } from './sceneAdapter';
 import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
 import type { WheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
 import { normalizeView, viewZoom, type View } from 'core/viewport/view';
@@ -1220,7 +1220,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     },
   }), [effectivePathEditingId]);
 
-  // Adapter + select tool — folded into a single hook that synthesizes both.
   // Apply the handle-size fallback here so useSceneSelectTool always receives
   // a concrete radius even when the caller omits selectTool entirely.
   const selectToolWithDefaults = useMemo(() => ({
@@ -1293,9 +1292,23 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ? layerIsPainted
     : undefined;
 
-  const { adapter, selectTool: internalSelect, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
+  // Under a frame a child's pose is already relative, so cascading a container
+  // move would carry every descendant a second time.
+  const framed = poseComposition !== undefined && poseComposition.closure !== 'identity';
+  const adapter = useSceneAdapter(scene, {
+    // `adapterMethods` is memoized; `selection` itself is a fresh object each render.
+    selection: selection.adapterMethods,
+    poseDescriptor: descriptor as PoseDescriptor<TPose>,
+    commitInsert: insertTool?.create,
+    insertLayer: insertTool?.layer,
+    layouts,
+    poseComposition,
+    cascadeContainerPose: !framed,
+  });
+
+  const { selectTool: internalSelect, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
-    selection,
+    adapter,
     poseDescriptor: descriptor as PoseDescriptor<TPose>,
     geometry,
     // The pick tolerance is declared in screen pixels; this is what converts it.
@@ -1306,9 +1319,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(alphaFor ? { alphaOf: composedAlphaFor } : {}),
     ...(viewLayerGate ? { layerIsPainted: viewLayerGate } : {}),
     selectTool: selectToolWithDefaults,
-    ...(insertTool ? { insertTool } : {}),
-    ...(layouts ? { layouts } : {}),
-    ...(poseComposition ? { poseComposition } : {}),
   });
 
   // Build getNodeAtPoint from the adapter + internalPickEvery. Canvas no longer

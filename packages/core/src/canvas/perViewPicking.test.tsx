@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, renderHook } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
-import { useSelection } from 'core/selection/useSelection';
+import { useSceneAdapter } from 'canvas/sceneAdapter';
 import { CanvasView } from './CanvasView';
 import { ViewInputsProvider } from './viewInputs';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
@@ -32,10 +32,10 @@ describe('pick tolerance converts against the camera the point came from', () =>
     scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
 
     const { result } = renderHook(() => {
-      const selection = useSelection();
+      const adapter = useSceneAdapter(scene);
       // The surface's camera: scale 1.
       return useSceneSelectTool<D, 'main', P>({
-        scene, selection, getView: () => ({ scale: { x: 1, y: 1 } }),
+        scene, adapter, getView: () => ({ scale: { x: 1, y: 1 } }),
       });
     });
 

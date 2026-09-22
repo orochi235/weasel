@@ -289,7 +289,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
               }
             };
             collect(id);
-            scene.batch('setPose', () => {
+            scene.batch('move container', () => {
               scene.setPose(asNodeId(id), pose);
               for (const cid of descIds) {
                 const cn = scene.get(asNodeId(cid));
@@ -569,22 +569,20 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
 }
 
 /**
- * React-hook wrapper around `sceneToAdapter`. Memoizes on `scene`,
- * `options.selection`, `options.commitInsert`, `options.insertLayer`, and
- * `options.layouts` so the adapter identity is stable across renders unless
- * one of those changes.
- *
- * Saves the per-demo `useMemo(() => sceneToAdapter(scene, { selection }),
- * [scene, selection])` boilerplate every consumer that wires custom tools
- * would otherwise repeat.
+ * React-hook wrapper around `sceneToAdapter`. Memoizes on every option, so
+ * the adapter keeps its identity across renders unless one of them changes.
  */
 export function useSceneAdapter<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
 ): SceneCanvasAdapter<TData, TLayer, TPose> {
-  const { selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose } = options;
+  const {
+    selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose, poseComposition,
+  } = options;
   return useMemo(
-    () => sceneToAdapter(scene, { selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose }),
-    [scene, selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose],
+    () => sceneToAdapter(scene, {
+      selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose, poseComposition,
+    }),
+    [scene, selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose, poseComposition],
   );
 }
