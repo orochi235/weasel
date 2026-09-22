@@ -29,6 +29,17 @@ on a node would break persistence and the clipboard.
 `data:image/…;base64,…` URI (the embedded-bytes path used by
 [`../ingestion`](../ingestion/README.md) when it inlines a dropped file).
 
+## SVG sources
+
+An SVG source (`isVectorImageSrc`) has no single right raster. `kit:image`
+passes `getImageBitmap` the size it is about to draw the image at, in device
+pixels, and the cache re-rasterizes in power-of-two steps — up when the drawn
+size passes the current raster, down only once it is four times too big, one
+raster in flight per `src`, capped by the smallest live renderer's
+`MAX_TEXTURE_SIZE` and 4096×4096 pixels. The old raster is returned until the
+new one lands, then its GL texture is freed in every renderer. The SVG is
+decoded into an `<img>` once and each raster is a canvas `drawImage` of it.
+
 ## Note
 
 The cache is process-global and unbounded — entries are keyed by `src` and

@@ -3,7 +3,8 @@
  *
  * Key: ImageBitmap (or pattern source object) identity (WeakMap) — lets GC
  * reclaim unreferenced bitmaps. The GL textures are NOT freed when the source
- * is gc'd; deferred to v2.
+ * is gc'd; a source's owner that knows it will never be drawn again frees them
+ * with {@link releaseImageSource}.
  *
  * Wrapping is set once at upload time per the `repetition` parameter:
  *   - undefined / 'no-repeat' → CLAMP_TO_EDGE
@@ -21,7 +22,31 @@ export type ImageMinification = 'linear' | 'mipmap';
 
 type TexSource = ImageBitmap | ImageData | HTMLCanvasElement | HTMLImageElement;
 
+/** Assumed when no live context has reported its `MAX_TEXTURE_SIZE`. Above
+ *  WebGL2's guaranteed 2048, and at or below what every current GPU reports. */
+const DEFAULT_MAX_TEXTURE_SIDE = 4096;
+
+const live = new Set<GLImageCache>();
+
+/** Free `key`'s texture in every live renderer. For an owner that has replaced
+ *  a source and will never draw the old one again — a later draw of it simply
+ *  re-uploads. */
+export function releaseImageSource(key: object): void {
+  for (const cache of live) cache.release(key);
+}
+
+/** The largest texture side every live renderer can hold: the smallest
+ *  `MAX_TEXTURE_SIZE` among them, or a conservative default when none is live. */
+export function maxImageTextureSide(): number {
+  let side = Infinity;
+  for (const cache of live) side = Math.min(side, cache.maxTextureSide);
+  return Number.isFinite(side) ? side : DEFAULT_MAX_TEXTURE_SIDE;
+}
+
 export class GLImageCache {
+  /** This context's `MAX_TEXTURE_SIZE`. */
+  readonly maxTextureSide: number;
+
   private readonly map = new WeakMap<object, WebGLTexture>();
   /**
    * MAG_FILTER each texture currently carries, so a redundant write can be
@@ -50,7 +75,28 @@ export class GLImageCache {
   constructor(
     private readonly gl: WebGL2RenderingContext,
     private readonly minification: ImageMinification = 'linear',
-  ) {}
+  ) {
+    const reported: unknown = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    this.maxTextureSide = typeof reported === 'number' && reported > 0
+      ? reported
+      : DEFAULT_MAX_TEXTURE_SIDE;
+    live.add(this);
+  }
+
+  /** Delete `key`'s texture, if it has one. */
+  release(key: object): void {
+    const tex = this.map.get(key);
+    if (!tex) return;
+    this.gl.deleteTexture(tex);
+    this.map.delete(key);
+    this.magFilters.delete(key);
+  }
+
+  /** Stop answering {@link releaseImageSource} and {@link maxImageTextureSide}.
+   *  Call when the context is disposed or lost. */
+  dispose(): void {
+    live.delete(this);
+  }
 
   upload(
     key: object,

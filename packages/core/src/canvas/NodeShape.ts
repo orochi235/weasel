@@ -64,7 +64,9 @@ import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
 import { fillInPoseFrame, type FillPoseBox } from '../core/fillInPoseFrame';
 import { resolveFillPattern } from '../features/patterns/resolveSpec';
-import { getImageBitmap, imageStatus, type ImageNodeData } from 'features/images/imageCache';
+import {
+  getImageBitmap, imageStatus, type ImageNodeData, type ImageRasterSize,
+} from 'features/images/imageCache';
 import { nodeMemo, bumpNodeMemoGeneration } from 'core/scene/nodeMemo';
 
 /** Optional per-call paint context, threaded through `defaultDrawOne`'s third
@@ -78,6 +80,11 @@ export interface NodePaintCtx {
    *  paints the deterministic grey placeholder outline (never the ambient
    *  load-status error variant). */
   resolveImage?: (node: Node<unknown, string, unknown>) => ImageBitmap | undefined;
+  /** Device pixels per world unit where this paint will land — the view's
+   *  scale times the device-pixel ratio. `defaultDrawOne` fills it from its
+   *  view when absent. Lets a painter size resolution-dependent work, such as
+   *  re-rasterizing an SVG image; one that has no such work ignores it. */
+  pixelScale?: number;
   /** The node's derived path, resolved by the scene-aware `drawOne` wrapper
    *  before painting: `paint` has no scene handle, and deriving needs the
    *  dependencies' poses. **Absent** for a node that derives from nothing —
@@ -753,6 +760,19 @@ function sourceInPixels(
   };
 }
 
+/** The whole bitmap's size in device pixels when `source` of it fills `pose`. */
+function drawnSize(
+  pose: RectPose,
+  source: ImageNodeData['image']['source'],
+  pixelScale: number | undefined,
+): ImageRasterSize | undefined {
+  if (!(pixelScale && pixelScale > 0)) return undefined;
+  return {
+    width: Math.abs(pose.width) * pixelScale / (source?.width || 1),
+    height: Math.abs(pose.height) * pixelScale / (source?.height || 1),
+  };
+}
+
 /** Raster-image painter. Renders `data.image.src` (URL / blob: / data-URI)
  *  via an `ImageDrawCommand` once the bitmap has decoded; until then it paints
  *  a faint placeholder outline so the node stays visible + selectable (a
@@ -771,7 +791,7 @@ const IMAGE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const p = pose;
     const bmp = ctx?.resolveImage
       ? ctx.resolveImage(node as unknown as Node<unknown, string, unknown>)
-      : getImageBitmap(d.image.src);
+      : getImageBitmap(d.image.src, drawnSize(p, d.image.source, ctx?.pixelScale));
     if (bmp) {
       return [{
         kind: 'image',

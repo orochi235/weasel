@@ -92,10 +92,10 @@ Priority tags:
   instead (`@weasel-js/svg`'s `unpack.ts`: kit-painter-native path/text leaves under
   containers mirroring `<g>` structure, multi-root files wrapped in one
   container, pose-only fit-clamp + drop-point placement, one undoable
-  batch per file). weaseldraw runs with `unpack` on. Remaining:
-  (a) **embedded SVG blurs under zoom** — `imageCache` rasterizes once at
-  natural size; re-rasterize at view scale (or draw from the live `Image`
-  element) if crispness matters; (b) weaseldraw's
+  batch per file). weaseldraw runs with `unpack` on. An embedded SVG
+  re-rasterizes at its drawn size (see `features/images/README.md`); that it
+  actually looks sharp at zoom has only been checked in jsdom, never in a
+  browser. Remaining: weaseldraw's
   file-menu import still uses its own app-local `svgInterop` mapping (richer:
   `wd:` tool metadata, paper size) — fold the shared walk if they drift, and
   note it now *drops* `<image>` nodes, since the app's `Obj` union is path/text

@@ -1,12 +1,13 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { findNodeShape, findShapeSilhouette } from './NodeShape';
+import { defaultDrawOne } from './defaultDrawOne';
 import {
   __setImageLoaderForTests,
   _resetImageCacheForTests,
   getImageBitmap,
 } from 'features/images/imageCache';
 import type { Node } from 'core/scene/types';
-import type { ImageNodeData } from 'features/images/imageCache';
+import type { ImageNodeData, ImageRasterSize } from 'features/images/imageCache';
 import { makeGLRecorder } from 'renderer/test-utils/glRecorder';
 import { WeaselRenderer } from 'renderer/WeaselRenderer';
 import { FLOATS_PER_VERTEX } from 'renderer/drawBatch';
@@ -141,6 +142,52 @@ describe('kit:image painter', () => {
       // Top-left and bottom-right corners: position, then UV.
       expect([v[0], v[1], v[br], v[br + 1]]).toEqual([10, 20, 40, 60]);
       expect([v[UV], v[UV + 1], v[br + UV], v[br + UV + 1]]).toEqual([0.75, 0.5, 0.25, 0.75]);
+    });
+  });
+
+  describe('vector sources ask for a raster at the size they land at', () => {
+    const SVG = 'data:image/svg+xml,%3Csvg%3E';
+    afterEach(() => vi.unstubAllGlobals());
+
+    /** Natural raster is 2×2; returns the sizes of every later raster request. */
+    async function primed(): Promise<(ImageRasterSize | undefined)[]> {
+      const sizes: (ImageRasterSize | undefined)[] = [];
+      __setImageLoaderForTests((_src, size) => {
+        sizes.push(size);
+        return size ? new Promise<ImageBitmap>(() => {}) : Promise.resolve(fakeBitmap());
+      });
+      getImageBitmap(SVG);
+      await flush();
+      sizes.length = 0;
+      return sizes;
+    }
+
+    it('sizes the raster from the pose and ctx.pixelScale', async () => {
+      const sizes = await primed();
+      findNodeShape(imageNode(SVG))!.paint(imageNode(SVG), POSE, { pixelScale: 4 });
+      // 30×40 world units at 4px each = 120×160px; 80× a 2px raster → bucket 128.
+      expect(sizes).toEqual([{ width: 256, height: 256 }]);
+    });
+
+    it('counts only the part of the bitmap a source rect shows', async () => {
+      const sizes = await primed();
+      const node = imageNode(SVG, { source: { x: 0, y: 0, width: 0.5, height: 0.5 } });
+      findNodeShape(node)!.paint(node, POSE, { pixelScale: 4 });
+      expect(sizes).toEqual([{ width: 512, height: 512 }]);
+    });
+
+    it('asks for nothing without a pixel scale', async () => {
+      const sizes = await primed();
+      findNodeShape(imageNode(SVG))!.paint(imageNode(SVG), POSE);
+      expect(sizes).toEqual([]);
+    });
+
+    it('defaultDrawOne derives the pixel scale from the view and devicePixelRatio', async () => {
+      vi.stubGlobal('devicePixelRatio', 1.5);
+      const sizes = await primed();
+      defaultDrawOne(imageNode(SVG), POSE, { x: 0, y: 0, scale: { x: 2, y: -2 } });
+      // 3px per unit: 90×120px, 60× a 2px raster → bucket 64.
+      expect(sizes).toEqual([{ width: 128, height: 128 }]);
     });
   });
 });

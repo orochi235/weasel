@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { makeGLRecorder } from '../test-utils/glRecorder';
-import { GLImageCache } from './GLImageCache';
+import { GLImageCache, maxImageTextureSide, releaseImageSource } from './GLImageCache';
 
 const fakeImg1 = { width: 8, height: 8 } as ImageBitmap;
 const fakeImg2 = { width: 4, height: 4 } as ImageBitmap;
@@ -61,6 +61,51 @@ describe('GLImageCache', () => {
     const wrapCalls = calls.filter((c) => c.name === 'texParameteri');
     const hasRepeat = wrapCalls.some((c) => c.args[2] === gl.REPEAT);
     expect(hasRepeat).toBe(true);
+  });
+});
+
+describe('releasing a source', () => {
+  it('release() deletes the texture, and a later draw re-uploads', () => {
+    const { gl, calls } = makeGLRecorder();
+    const cache = new GLImageCache(gl);
+    const tex = cache.upload(fakeImg1, fakeImgData);
+    cache.release(fakeImg1);
+    expect(calls.filter((c) => c.name === 'deleteTexture').map((c) => c.args[0])).toEqual([tex]);
+    cache.upload(fakeImg1, fakeImgData);
+    expect(calls.filter((c) => c.name === 'createTexture')).toHaveLength(2);
+    cache.dispose();
+  });
+
+  it('releaseImageSource() reaches every live cache, and none that is disposed', () => {
+    const a = makeGLRecorder();
+    const b = makeGLRecorder();
+    const cacheA = new GLImageCache(a.gl);
+    const cacheB = new GLImageCache(b.gl);
+    const key = {};
+    cacheA.upload(key, fakeImgData);
+    cacheB.upload(key, fakeImgData);
+    cacheB.dispose();
+    releaseImageSource(key);
+    expect(a.calls.some((c) => c.name === 'deleteTexture')).toBe(true);
+    expect(b.calls.some((c) => c.name === 'deleteTexture')).toBe(false);
+    cacheA.dispose();
+  });
+});
+
+describe('maxImageTextureSide', () => {
+  it('is the smallest MAX_TEXTURE_SIZE among live caches', () => {
+    const rec = makeGLRecorder();
+    const asked: unknown[] = [];
+    const gl = new Proxy(rec.gl, {
+      get: (t, p) => (p === 'getParameter'
+        ? (pname: unknown) => { asked.push(pname); return 1024; }
+        : Reflect.get(t, p)),
+    });
+    const small = new GLImageCache(gl);
+    expect(asked).toEqual([rec.gl.MAX_TEXTURE_SIZE]);
+    expect(maxImageTextureSide()).toBe(1024);
+    small.dispose();
+    expect(maxImageTextureSide()).toBeGreaterThan(1024);
   });
 });
 
