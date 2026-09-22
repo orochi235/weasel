@@ -241,7 +241,7 @@ describe('SliderRow', () => {
       />,
     );
     const readout = screen.getByRole('textbox');
-    expect(readout).toHaveValue('2.0M');
+    expect(readout).toHaveValue('2.00M');
     fireEvent.focus(readout);
     fireEvent.change(readout, { target: { value: '2.5k' } });
     fireEvent.blur(readout);

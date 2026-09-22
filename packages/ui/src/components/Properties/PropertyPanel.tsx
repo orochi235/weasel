@@ -423,7 +423,7 @@ export interface SliderRowProps extends PropertyMetricProps {
    * which an editable field would seed a draft with and then fail to parse.
    */
   readout?: ReactNode;
-  /** A named display for the value: `compact` reads `2.0M`. `format` wins when both are given. */
+  /** A named display for the value: `compact` reads `2.00M`. `format` wins when both are given. */
   notation?: PrefNumberFormat;
   /**
    * Optional suffix rendered next to the readout. A string becomes a

@@ -134,7 +134,7 @@ export class NumberNode extends BaseNode<number> {
     return this.ann({ suffix });
   }
 
-  /** Show the value in a named format — `'compact'` reads `2.0M`. Presentation
+  /** Show the value in a named format — `'compact'` reads `2.00M`. Presentation
    *  only: the stored value stays a plain number, and a typed `2.5m` reads back. */
   format(format: PrefNumberFormat): this {
     return this.ann({ format });
