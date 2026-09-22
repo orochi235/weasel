@@ -73,12 +73,30 @@
   overflow: hidden;
 }
 
-.cardAccented {
-  /* Re-bind --wzl-accent inside the card so descendant controls (slider tracks
-     and thumbs, readouts, etc.) tint to the per-card accent instead of the
-     global theme accent. Mirrors EffectCard's behavior. */
-  --wzl-accent: var(--wzl-layer-stack-accent);
-  border-left: 3px solid var(--wzl-layer-stack-accent);
+/* BEGIN GENERATED stance rules: layer-card — `npm run gen:stances`, do not edit. */
+
+.card {
+  --wzl-tone: initial;
+}
+
+.card {
+  --_s-accent: var(--wzl-tone);
+}
+
+.card[data-tone] {
+  --wzl-accent: var(--_s-accent);
+  --wzl-accent-base: var(--_s-accent);
+  --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));
+  --wzl-accent-soft: color-mix(in oklab, var(--_s-accent) 45%, var(--wzl-surface));
+  --wzl-accent-hover: var(--wzl-accent-strong);
+  --wzl-accent-fg: var(--wzl-accent-strong);
+  --wzl-focus-ring: var(--wzl-accent-strong);
+}
+
+/* END GENERATED stance rules: layer-card */
+
+.card[data-tone] {
+  border-left: 3px solid var(--wzl-tone);
 }
 
 .cardDragging {
@@ -109,9 +127,9 @@
   font-size: var(--wzl-font-size);
 }
 
-.cardAccented .handle {
-  background: var(--wzl-layer-stack-accent);
-  color: white;
+.card[data-tone] .handle {
+  background: var(--wzl-accent-soft);
+  color: var(--wzl-fg);
 }
 
 .handle:active {

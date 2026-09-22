@@ -739,15 +739,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P1) Adopt `ColorList` in `LayerStack`, and on every new multi-color
-  surface.** `ColorList` (`@weasel-js/theme`) is literals, the categorical
-  generator the swatch ramp uses, a ramp of the active theme, or a function,
-  read with `colorAt` / `colorCssAt`. labkit's `nebula` takes one and
-  `EffectCard`'s `accent` became a `tone` into the theme's; `LayerStack` items
-  still take a hand-picked `accent` string, which goes wrong in the other mode.
-  Move it to a `tone`, and give any new multi-color surface — chart series,
-  diagram categories, HUD layers — a `ColorList` from the start.
-
 - **(P1) Give the HUD's window a stance and a tone.** Every DOM surface that
   holds a class of content takes `stance` and `tone` (`docs/conventions.md`,
   "Stance and tone"). The hud `window` widget paints its frame in WebGL from the

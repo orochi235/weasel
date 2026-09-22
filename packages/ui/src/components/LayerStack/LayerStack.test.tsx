@@ -4,7 +4,7 @@ import { LayerStack, type LayerStackItem, type LayerStackProps } from './LayerSt
 
 const items: LayerStackItem[] = [
   { id: 1, kind: 'fill', primaryValue: 'aqua', primaryOptions: ['aqua', 'bevel', 'dome'] },
-  { id: 2, kind: 'tail', accent: '#f44', badge: '1' },
+  { id: 2, kind: 'tail', tone: '#f44', badge: '1' },
   { id: 3, kind: 'shadow' },
 ];
 
@@ -249,5 +249,24 @@ describe('LayerStack without a palette or kinds', () => {
     );
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(screen.getByText('fill')).toBeInTheDocument();
+  });
+
+  it('a card takes a tone: a color, or an index into the theme tone list', () => {
+    render(
+      <LayerStack
+        items={[
+          { id: 'a', kind: 'tail', tone: '#f44' },
+          { id: 'b', kind: 'tail', tone: 2 },
+          { id: 'c', kind: 'tail' },
+        ]}
+        onReorder={() => {}}
+        renderBody={() => null}
+      />,
+    );
+    const [a, b, c] = ['a', 'b', 'c'].map((id) => screen.getByTestId(`layer-card-${id}`));
+    expect(a.style.getPropertyValue('--wzl-tone')).toBe('#f44');
+    expect(b.dataset.tone).toBe('2');
+    expect(b.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-sky)');
+    expect(c.hasAttribute('data-tone')).toBe(false);
   });
 });

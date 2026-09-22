@@ -1,7 +1,8 @@
-import { type CSSProperties, type ReactNode, type RefCallback, useEffect, useState } from 'react';
+import { type ReactNode, type RefCallback, useEffect, useState } from 'react';
 import { dlog } from '../../dlog';
 import { useReorderDragList } from '../../useReorderDragList';
 import { DragHandleGlyph } from '../DragHandleGlyph';
+import { type StanceProps, useStance } from '../stance';
 import s from './LayerStack.module.css';
 
 /** One card in a layer stack: its identity, the label shown when collapsed,
@@ -21,10 +22,10 @@ export interface LayerStackItem {
    *  can switch mode/shape without expanding. */
   primaryValue?: string;
   primaryOptions?: string[];
-  /** Accent CSS color used as the left border / index-badge fill. Sets
-   *  --wzl-layer-stack-accent on the card, which re-binds --wzl-accent
-   *  for everything inside it. */
-  accent?: string;
+  /** Which of the stack this card is: an index into the theme's tone list,
+   *  or a color given directly. Colors the card's edge and handle, and every
+   *  control inside it. */
+  tone?: StanceProps['tone'];
   /** Optional badge text rendered before the primary control
    *  (e.g. tail index "1", "2", "3"). When omitted a drag handle
    *  glyph renders in its place. */
@@ -164,21 +165,12 @@ export function LayerStack({
           const isDragging = draggedId === String(item.id);
           const showHintBefore = drag.state.targetIndex === i && draggedId !== String(item.id);
           const showHintAfter = drag.state.targetIndex === items.length && i === items.length - 1;
-          const cardCls = [
-            s.card,
-            isDragging ? s.cardDragging : '',
-            item.accent ? s.cardAccented : '',
-          ]
-            .filter(Boolean)
-            .join(' ');
-          const cardStyle = item.accent
-            ? ({ '--wzl-layer-stack-accent': item.accent } as CSSProperties)
-            : undefined;
+          const cardCls = isDragging ? `${s.card} ${s.cardDragging}` : s.card;
           const { onPointerDown } = drag.rowProps(String(item.id), i);
           return (
             <div key={item.id}>
               {showHintBefore && <div className={s.dropHint} />}
-              <div className={cardCls} data-testid={`layer-card-${item.id}`} style={cardStyle}>
+              <LayerCard className={cardCls} tone={item.tone} testId={`layer-card-${item.id}`}>
                 <div className={s.cardHead}>
                   <button
                     type="button"
@@ -221,7 +213,7 @@ export function LayerStack({
                   )}
                 </div>
                 {expanded && <div className={s.cardBody}>{renderBody(item)}</div>}
-              </div>
+              </LayerCard>
               {showHintAfter && <div className={s.dropHint} />}
             </div>
           );
@@ -232,6 +224,24 @@ export function LayerStack({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function LayerCard({
+  className,
+  tone,
+  testId,
+  children,
+}: {
+  className: string;
+  tone: StanceProps['tone'];
+  testId: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={className} data-testid={testId} {...useStance({ tone })}>
+      {children}
     </div>
   );
 }

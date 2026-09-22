@@ -196,8 +196,11 @@ A surface that holds a class of content says which with `stance` —
 `preview` — and which of its peers it is with `tone`: an index into the theme's
 tone list (`ThemeDefinition.tones`, a `ColorList`; weasel's is the swatch ramp),
 or a color. `PropertyPanel`, `PropertyGroup`, `Subpanel`, `Callout`, `Dialog`,
-labkit's `ControlPanel` and sidebar sections take both; `EffectCard` takes a
-tone only, since a list's cards are one kind of thing.
+labkit's `ControlPanel` and sidebar sections take both; `EffectCard` and
+`LayerStack`'s items take a tone only, since a list's cards are one kind of
+thing. Anything else that takes several colors — chart series, diagram
+categories — takes a `ColorList` (`@weasel-js/theme`), read with `colorAt` /
+`colorCssAt`, rather than hand-picked color strings that suit only one mode.
 
 The theme decides the look. A stance reads `--wzl-stance-<stance>-<slot>` (the
 slots are `STANCE_SLOTS` in `@weasel-js/theme`) and falls back to the surface's

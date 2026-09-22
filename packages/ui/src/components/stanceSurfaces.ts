@@ -151,4 +151,12 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       'title-color': 'var(--wzl-fg-muted)',
     },
   },
+  {
+    // A layer stack's cards are peers of one kind, like EffectCard's.
+    id: 'layer-card',
+    file: 'packages/ui/src/components/LayerStack/LayerStack.module.css',
+    selector: '.card',
+    stanceless: true,
+    base: { accent: ACCENT_BASE },
+  },
 ];

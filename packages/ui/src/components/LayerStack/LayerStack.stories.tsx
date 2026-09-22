@@ -10,7 +10,7 @@ export default meta;
 
 const seed: LayerStackItem[] = [
   { id: 1, kind: 'fill', primaryValue: 'dome', primaryOptions: ['aqua', 'bevel', 'dome'] },
-  { id: 2, kind: 'tail', accent: '#f55', badge: '1' },
+  { id: 2, kind: 'tail', tone: 2, badge: '1' },
   { id: 3, kind: 'shadow' },
 ];
 
