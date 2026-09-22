@@ -807,7 +807,8 @@
   right: 1px;
   margin-top: -4px;
   line-height: 1;
-  text-transform: uppercase;
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
 }
 
 .fieldUnitGroup {
