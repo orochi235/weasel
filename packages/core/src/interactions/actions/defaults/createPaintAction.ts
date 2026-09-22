@@ -146,7 +146,7 @@ export function createPaintAction<TState, TValue, K extends string>(
             }
             if (ops.length > 0) {
               if (scratch.applyOps) scratch.applyOps(ops, spec.label);
-              else scratch.scene.applyBatch(ops, spec.label, defaultCommitAdapter(scratch.scene));
+              else scratch.scene.applyBatch(ops, spec.label, defaultCommitAdapter(scratch.scene, selection.adapterMethods));
             }
             scratch.previews.clear();
           },

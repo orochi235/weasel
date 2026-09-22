@@ -508,12 +508,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     selectionOptions?: UseSelectionOptions;
 
     /**
-     * High-level selection semantics. Controls whether canvas interactions
-     * mutate selection and whether multi-select chrome (union AABB) activates.
-     *   - `'single'` (default) — click selects one id.
-     *   - `'multi'` — shift-click extends/toggles.
-     *   - `'none'` — canvas interactions never update selection.
-     * See {@link CanvasSelectionMode}.
+     * What the canvas may do to the selection. See {@link CanvasSelectionMode}.
+     * Default `'single'`.
      */
     selectionMode?: CanvasSelectionMode;
 
@@ -1120,9 +1116,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const internalSelection = useSelection(derivedSelectionOptions);
   const baseSelection = selectionProp ?? internalSelection;
 
-  // selectionMode === 'none' wraps the selection so canvas interactions can't
-  // mutate it. The underlying api is still accessible via the `selection` prop
-  // or `useSelection` directly.
+  // Everything the kit writes selection through — the `selection` dep, the
+  // adapter's `setSelection`, ops committed through either — reads this api,
+  // so under 'none' every write path here is closed. The consumer's own api
+  // is not wrapped and still writes.
+  const baseAdapterMethods = baseSelection.adapterMethods;
+  const readOnlyAdapterMethods = useMemo(() => ({
+    getSelection: () => baseAdapterMethods.getSelection(),
+    setSelection: () => {},
+  }), [baseAdapterMethods]);
   const selection: SelectionApi = useMemo(() => {
     if (selectionMode !== 'none') return baseSelection;
     const noopSet = () => {};
@@ -1134,8 +1136,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       toggle: noopSet,
       clear: noopSet,
       applyClick: noopSet,
+      adapterMethods: readOnlyAdapterMethods,
     };
-  }, [baseSelection, selectionMode]);
+  }, [baseSelection, selectionMode, readOnlyAdapterMethods]);
 
   // Publish the current selection (with optional per-id kind labels) into any
   // surrounding `<SelectionContextProvider>` so non-canvas UI can read it.

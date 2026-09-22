@@ -259,7 +259,7 @@ export const rotateAction: Action & { requires: string[] } = {
           }
           if (ops.length > 0) {
             if (scratch.applyOps) scratch.applyOps(ops, 'Rotate');
-            else scratch.scene.applyBatch(ops, 'Rotate', defaultCommitAdapter(scratch.scene));
+            else scratch.scene.applyBatch(ops, 'Rotate', defaultCommitAdapter(scratch.scene, selection.adapterMethods));
           }
           dropPreviewOverrides(scratch);
           scratch.previews.clear();

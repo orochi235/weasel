@@ -82,7 +82,7 @@ function nudgeSelection(
   if (ops.length === 0) return;
 
   if (applyOps) applyOps(ops, 'Nudge');
-  else scene.applyBatch(ops, 'Nudge', defaultCommitAdapter(scene));
+  else scene.applyBatch(ops, 'Nudge', defaultCommitAdapter(scene, selection.adapterMethods));
 }
 
 /**

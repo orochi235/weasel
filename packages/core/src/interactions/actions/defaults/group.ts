@@ -144,7 +144,7 @@ export const groupAction: Action & { requires: string[] } = {
       // `scene.applyBatch`. One applyOps / applyBatch call = one undo entry,
       // matching the prior single `scene.batch('Group', …)`.
       if (applyOps) applyOps(ops, 'Group');
-      else scene.applyBatch(ops, 'Group', defaultCommitAdapter(scene));
+      else scene.applyBatch(ops, 'Group', defaultCommitAdapter(scene, selection.adapterMethods));
 
       // Selection update is selection state, not a scene op — set it after the
       // commit regardless of which path ran (the old code set it inside the

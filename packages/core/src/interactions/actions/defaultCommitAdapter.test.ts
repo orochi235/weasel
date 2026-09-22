@@ -64,6 +64,18 @@ describe('defaultCommitAdapter', () => {
     expect(scene.get(asNodeId(leaf as string))?.parent).toBe(box);
   });
 
+  it('selection ops write through the selection it is given, not the scene', () => {
+    const { scene, leaf } = fixture();
+    const writes: string[][] = [];
+    const a = defaultCommitAdapter<P>(scene, {
+      getSelection: () => [],
+      setSelection: (ids) => { writes.push(ids as string[]); },
+    });
+    a.setSelection([leaf as string]);
+    expect(writes).toEqual([[leaf]]);
+    expect(scene.getSelection()).toEqual([]);
+  });
+
   it('removeNode then insertNode round-trips a node', () => {
     const { scene, leaf } = fixture();
     const a = defaultCommitAdapter<P>(scene);

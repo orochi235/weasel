@@ -59,7 +59,7 @@ export const clipboardCutAction: Action & { requires: string[] } = {
       const ops = buildDeleteOps(scene, ids, 'Cut');
       if (ops.length > 0) {
         if (applyOps) applyOps(ops, 'Cut');
-        else scene.applyBatch(ops, 'Cut', defaultCommitAdapter(scene));
+        else scene.applyBatch(ops, 'Cut', defaultCommitAdapter(scene, selection.adapterMethods));
       }
       selection.set([]);
     },

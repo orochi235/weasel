@@ -122,7 +122,7 @@ function flipSelection(
   if (ops.length === 0) return;
 
   if (applyOps) applyOps(ops, 'Flip');
-  else scene.applyBatch(ops, 'Flip', defaultCommitAdapter(scene));
+  else scene.applyBatch(ops, 'Flip', defaultCommitAdapter(scene, selection.adapterMethods));
 }
 
 /**
