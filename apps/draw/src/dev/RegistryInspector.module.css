@@ -168,7 +168,7 @@
 .memberLink {
   background: transparent;
   border: none;
-  color: var(--wzl-accent-fg, #c89a5e);
+  color: var(--wzl-accent-fg);
   cursor: pointer;
   padding: var(--wzl-space-1) 0;
   font: inherit;
