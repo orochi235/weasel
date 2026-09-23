@@ -1,49 +1,22 @@
-import { useMemo, type ReactNode } from 'react';
-import { Focusable } from 'react-aria-components';
-import { Checkbox } from '../Checkbox';
-import { ColorField } from '../ColorField';
-import { FontFamilySelect } from '../FontFamilySelect';
-import { isPaint } from '../paintValue';
-import { PaintField } from '../PaintField';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Input } from '../Input';
-import { NumberField, UnitField } from '../NumberField';
-import { RadioGroup, Radio } from '../RadioGroup';
-import { RangeSlider } from '../RangeSlider';
-import { Select } from '../Select';
-import { Switch } from '../Switch';
-import { Tooltip, TooltipTrigger } from '../Tooltip';
-import { isBuiltinToolPref, type FillStyle } from '@weasel-js/core';
+import { useScrollSpy } from '../../useScrollSpy';
 import {
+  filterPrefSubtree,
   isPrefLeaf,
-  prefDisplayBounds,
-  prefUnitAccepts,
-  prefValueAtPath,
+  prefRailItems,
   visiblePrefSubtree,
   type PrefGroup,
-  type PrefLeaf,
 } from './schema';
+import { PrefRow, type PrefRenderer, type WalkCtx } from './PrefsRow';
+import { PrefsPane } from './PrefsPane';
+import { PrefsRail } from './PrefsRail';
 import s from './Prefs.module.css';
 
-/** What a {@link PrefRenderer} is given for the leaf it is rendering. */
-export interface PrefRenderContext {
-  /** Dotted path of the leaf within the schema root. */
-  path: string;
-  /** The schema node. App renderers narrow this to their own kind shape. */
-  pref: PrefLeaf;
-  /** Current value — `values` at `path`, falling back to `pref.default`. */
-  value: unknown;
-  setValue: (value: unknown) => void;
-  /** Whether this leaf is currently auto — not pinned, computed by the owner. */
-  auto: boolean;
-  /** Toggle this leaf's auto state. */
-  setAuto: (next: boolean) => void;
-}
+export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
 
-/**
- * Renders the control cell for one preference leaf. Returning `null`
- * collapses the row.
- */
-export type PrefRenderer = (ctx: PrefRenderContext) => ReactNode;
+/** How a {@link PrefsForm} lays its groups out. */
+export type PrefsLayout = 'columns' | 'rail';
 
 /** Props for {@link PrefsForm}. */
 export interface PrefsFormProps {
@@ -66,43 +39,195 @@ export interface PrefsFormProps {
   renderers?: Record<string, PrefRenderer>;
   /** Reveal `hidden` leaves (dev tooling). Default false. */
   showHidden?: boolean;
+  /**
+   * `'columns'` (the default) wraps each top-level group into its own panel
+   * column. `'rail'` puts a two-level navigation rail beside one group's
+   * settings at a time — what a dialog-sized surface wants, since columns
+   * overflow sideways once there are more than two.
+   */
+  layout?: PrefsLayout;
+  /** Show a filter field that narrows the form to matching leaves. */
+  filterable?: boolean;
+  /** Rail layout: path of the open top-level group. Controlled. */
+  section?: string;
+  /** Rail layout: path of the group open before the reader picks one.
+   *  Defaults to the first in the schema. */
+  defaultSection?: string;
+  onSectionChange?: (path: string) => void;
   className?: string;
 }
 
 /**
- * Schema-driven preferences form. Top-level groups render as columns,
- * nested groups as indented sub-panels, leaves as label + control rows.
- * Storage-agnostic: pair with `PrefsDialog` for the modal composition,
- * and persist however the app likes via `onChange`.
+ * Schema-driven preferences form. Leaves render as label + control rows;
+ * how the groups around them are arranged is `layout`'s to say — columns of
+ * panels, or a navigation rail beside one group at a time.
+ *
+ * Storage-agnostic: pair with `PrefsDialog` for the modal composition, and
+ * persist however the app likes via `onChange`.
  */
 export function PrefsForm(props: PrefsFormProps) {
-  const { schema, values, onChange, renderers, showHidden = false, className } = props;
-  const visibleRoot = useMemo(
-    () => visiblePrefSubtree(schema, showHidden),
-    [schema, showHidden],
-  );
+  const {
+    schema,
+    values,
+    onChange,
+    renderers,
+    showHidden = false,
+    layout = 'columns',
+    filterable = false,
+    className,
+  } = props;
+  const [query, setQuery] = useState('');
+  const root = useMemo(() => {
+    const visible = visiblePrefSubtree(schema, showHidden);
+    return visible === null ? null : filterPrefSubtree(visible, query);
+  }, [schema, showHidden, query]);
+
   const ctx: WalkCtx = { values, onChange, renderers };
+  const field = filterable ? (
+    <div className={s.filter}>
+      <Input
+        value={query}
+        onChange={setQuery}
+        aria-label={`Filter ${schema.name}`}
+        placeholder="Filter settings"
+      />
+    </div>
+  ) : null;
+
+  if (layout === 'rail') {
+    return (
+      <RailLayout
+        {...props}
+        root={root}
+        ctx={ctx}
+        query={query}
+        filterField={field}
+        onClearFilter={() => setQuery('')}
+      />
+    );
+  }
+
   return (
-    <div className={[s.columns, className].filter(Boolean).join(' ')}>
-      {Object.entries(visibleRoot?.children ?? {}).map(([key, child]) => (
-        <div key={key} className={s.column}>
-          {isPrefLeaf(child) ? (
-            // Top-level leaves are unusual but legal — give each its own
-            // column for symmetry with grouped siblings.
-            <PrefRow ctx={ctx} path={key} pref={child} />
-          ) : (
-            <GroupBody ctx={ctx} group={child} path={key} depth={0} />
-          )}
+    <div className={[s.columnsLayout, className].filter(Boolean).join(' ')}>
+      {field}
+      {root === null ? (
+        <NoMatches query={query} onClear={() => setQuery('')} />
+      ) : (
+        <div className={s.columns}>
+          {Object.entries(root.children).map(([key, child]) => (
+            <div key={key} className={s.column}>
+              {isPrefLeaf(child) ? (
+                // Top-level leaves are unusual but legal — give each its own
+                // column for symmetry with grouped siblings.
+                <PrefRow ctx={ctx} path={key} pref={child} />
+              ) : (
+                <GroupBody ctx={ctx} group={child} path={key} depth={0} />
+              )}
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }
 
-interface WalkCtx {
-  values: unknown;
-  onChange: (path: string, value: unknown) => void;
-  renderers?: Record<string, PrefRenderer>;
+/** The rail layout's own state: which group is open, and where the pane is
+ *  scrolled to within it. Split out so the columns layout runs none of it. */
+function RailLayout(props: PrefsFormProps & {
+  root: PrefGroup | null;
+  ctx: WalkCtx;
+  query: string;
+  filterField: ReactNode;
+  onClearFilter: () => void;
+}) {
+  const { schema, root, ctx, query, filterField, onClearFilter, className } = props;
+  const items = useMemo(() => (root === null ? [] : prefRailItems(root)), [root]);
+  const [uncontrolled, setUncontrolled] = useState(
+    () => props.defaultSection ?? '',
+  );
+  const requested = props.section ?? uncontrolled;
+  // A filter can take the open group out of the rail entirely, and a section
+  // the schema never had can arrive from a consumer's stale state. Either way
+  // the first surviving entry is what the reader should be looking at.
+  const open = items.some((i) => i.path === requested && i.depth === 0)
+    ? requested
+    : (items.find((i) => i.depth === 0)?.path ?? '');
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const sectionIds = useMemo(
+    () => items.filter((i) => i.depth === 1 && i.section === open).map((i) => i.path),
+    [items, open],
+  );
+  const spy = useScrollSpy({ rootRef: scrollRef, ids: sectionIds });
+
+  const setOpen = (path: string): void => {
+    if (props.section === undefined) setUncontrolled(path);
+    props.onSectionChange?.(path);
+    // Optional-called: jsdom's elements have no `scrollTo`, and neither does
+    // a pane that is not the scrolling box in some consumer's layout.
+    scrollRef.current?.scrollTo?.({ top: 0 });
+  };
+
+  const group = root === null ? null : paneGroup(root, open, schema.name);
+
+  return (
+    <div className={[s.railLayout, className].filter(Boolean).join(' ')}>
+      <PrefsRail
+        items={items}
+        section={open}
+        current={spy.active}
+        onOpen={setOpen}
+        onScrollTo={spy.scrollTo}
+        ariaLabel={schema.name}
+        header={filterField}
+        showCounts={query.trim() !== ''}
+      />
+      {group === null ? (
+        <div className={s.pane}>
+          <NoMatches query={query} onClear={onClearFilter} />
+        </div>
+      ) : (
+        <PrefsPane ctx={ctx} group={group} path={open} scrollRef={scrollRef} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * The group a rail path opens. The empty path is the root's loose leaves,
+ * which belong to no group of their own and are handed back as one named for
+ * the schema — the rail lists them under the same name.
+ */
+function paneGroup(root: PrefGroup, path: string, rootName: string): PrefGroup | null {
+  if (path === '') {
+    const children = Object.fromEntries(
+      Object.entries(root.children).filter(([, child]) => isPrefLeaf(child)),
+    );
+    return Object.keys(children).length === 0
+      ? null
+      : { ...root, name: rootName, children };
+  }
+  let node: PrefGroup | undefined;
+  let cursor = root;
+  for (const seg of path.split('.')) {
+    const next = cursor.children[seg];
+    if (next === undefined || isPrefLeaf(next)) return null;
+    node = next;
+    cursor = next;
+  }
+  return node ?? null;
+}
+
+/** What a filter matching nothing leaves behind. */
+function NoMatches({ query, onClear }: { query: string; onClear: () => void }) {
+  return (
+    <div className={s.noMatches}>
+      <p>No settings match “{query.trim()}”.</p>
+      <button type="button" className={s.clearFilter} onClick={onClear}>
+        Clear filter
+      </button>
+    </div>
+  );
 }
 
 function GroupBody({ ctx, group, path, depth }: {
@@ -133,261 +258,3 @@ function GroupBody({ ctx, group, path, depth }: {
   );
 }
 
-function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {
-  const stored = prefValueAtPath(ctx.values, path);
-  const renderCtx: PrefRenderContext = {
-    path,
-    pref,
-    value: stored !== undefined ? stored : pref.default,
-    setValue: (v) => ctx.onChange(path, v),
-    // A prefs form pins every leaf: it has no computed state to hand back.
-    auto: false,
-    setAuto: () => {},
-  };
-
-  const custom = ctx.renderers?.[pref.kind];
-  const control = custom ? custom(renderCtx) : renderBuiltin(renderCtx);
-  if (custom && control === null) return null;
-
-  // `block` leaves own their chrome (embedded editors with their own
-  // header) — no label/tooltip row.
-  if (pref.block) return <>{control}</>;
-
-  return (
-    <label className={s.row}>
-      <span className={s.rowLabel}>
-        {pref.name}
-        {pref.description ? (
-          // Help affordance carries the description tooltip. A tooltip
-          // trigger must be interactive (keyboard-reachable), so this is
-          // a real button — a bare label span would be neither focusable
-          // nor announced.
-          <TooltipTrigger>
-            <Focusable>
-              <button type="button" className={s.help} aria-label={`About ${pref.name}`}>
-                ⓘ
-              </button>
-            </Focusable>
-            <Tooltip>{pref.description}</Tooltip>
-          </TooltipTrigger>
-        ) : null}
-      </span>
-      <span className={s.rowControl}>{control}</span>
-    </label>
-  );
-}
-
-function renderBuiltin(
-  ctx: PrefRenderContext,
-  // The object a nested leaf is a field of — what an enum `encoding` reads
-  // and writes against. Undefined for a top-level leaf, which has none.
-  siblings?: Record<string, unknown>,
-): ReactNode {
-  const { pref, value, setValue } = ctx;
-  if (pref.kind === 'font-family') {
-    // Not a `ToolPref` kind: its options are the live font registry, which no
-    // static schema can carry. Core's own text schema still declares it, so
-    // the form ships the control rather than leaving every consumer to.
-    //
-    // The substitution probe runs at the weight and slant the family is stored
-    // beside — fields of the same `TextStyle` object leaf — so the label names
-    // the variant that will actually paint.
-    const weight = siblings?.fontWeight;
-    const slant = siblings?.fontStyle;
-    return (
-      <FontFamilySelect
-        value={typeof value === 'string' ? value : undefined}
-        onChange={setValue}
-        weight={typeof weight === 'number' ? weight : undefined}
-        fontStyle={slant === 'italic' ? 'italic' : undefined}
-        aria-label={pref.name}
-      />
-    );
-  }
-  if (!isBuiltinToolPref(pref)) {
-    // App-defined kind with no `renderers` entry: labeled placeholder, not a
-    // crash — a missing wiring should be visible and recoverable.
-    return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
-  }
-  switch (pref.kind) {
-    case 'boolean': {
-      const checked = Boolean(value);
-      return pref.control === 'switch' ? (
-        <Switch isSelected={checked} onChange={setValue} aria-label={pref.name} />
-      ) : (
-        <Checkbox isSelected={checked} onChange={setValue} aria-label={pref.name} />
-      );
-    }
-    case 'number': {
-      const stored = typeof value === 'number' && Number.isFinite(value) ? value : 0;
-      const unit = pref.unit;
-      const display = unit ? unit.toDisplay(stored) : stored;
-      // `min`/`max`/`step` are declared in the stored unit, like the value, so
-      // they convert with it — a leaf storing radians and showing degrees was
-      // clamping typed degrees against 0..6.28.
-      const bounds = prefDisplayBounds(pref);
-      const store = (v: number): void => setValue(unit ? unit.fromDisplay(v) : v);
-      if (pref.control === 'slider') {
-        return (
-          <RangeSlider
-            value={display}
-            onChange={(v) => store(typeof v === 'number' ? v : v[0])}
-            minValue={bounds.min}
-            maxValue={bounds.max}
-            step={bounds.step}
-            aria-label={pref.name}
-          />
-        );
-      }
-      const field = unit ? (
-        <UnitField
-          value={display}
-          onChange={store}
-          minValue={bounds.min}
-          maxValue={bounds.max}
-          step={bounds.step}
-          accepts={prefUnitAccepts(unit)}
-          aria-label={pref.name}
-        />
-      ) : (
-        <NumberField
-          value={display}
-          onChange={store}
-          minValue={bounds.min}
-          maxValue={bounds.max}
-          step={bounds.step}
-          aria-label={pref.name}
-        />
-      );
-      if (unit?.suffix === undefined) return field;
-      return (
-        <>
-          {field}
-          <span className={s.unitSuffix} aria-hidden="true">{unit.suffix}</span>
-        </>
-      );
-    }
-    case 'string': {
-      const text = typeof value === 'string' ? value : '';
-      if (pref.control === 'textarea') {
-        return (
-          <textarea
-            className={s.textarea}
-            value={text}
-            onChange={(e) => setValue(e.target.value)}
-            aria-label={pref.name}
-            rows={3}
-          />
-        );
-      }
-      return <Input value={text} onChange={setValue} aria-label={pref.name} />;
-    }
-    case 'enum': {
-      const encoding = pref.encoding;
-      // An encoded leaf stores something other than the option string (a dash
-      // array), so reading the raw value selects nothing and writing one
-      // replaces the stored form with the option string.
-      const option = encoding
-        ? encoding.read(value, siblings)
-        : typeof value === 'string'
-          ? value
-          : pref.default;
-      const choose = (next: string): void =>
-        setValue(encoding ? encoding.write(next, siblings) : next);
-      if (pref.control === 'radio') {
-        return (
-          <RadioGroup value={option ?? null} onChange={choose} aria-label={pref.name}>
-            {pref.options.map((o) => (
-              <Radio key={o.value} value={o.value} isDisabled={o.disabled}>
-                {o.label}
-              </Radio>
-            ))}
-          </RadioGroup>
-        );
-      }
-      return (
-        <Select<string>
-          options={pref.options.map((o) => ({
-            value: o.value,
-            label: o.label,
-            isDisabled: o.disabled,
-          }))}
-          selectedKey={option ?? null}
-          onSelectionChange={choose}
-          aria-label={pref.name}
-        />
-      );
-    }
-    case 'color': {
-      const hex = typeof value === 'string' ? value : pref.default;
-      return (
-        <ColorField
-          value={hex}
-          alpha={pref.alpha}
-          onChange={setValue}
-          aria-label={pref.name}
-        />
-      );
-    }
-    case 'paint': {
-      // A whole `FillStyle`, edited as one: `PaintField` puts the kind bar and
-      // the stop editor in a popover, so the control column holds a swatch and
-      // a gradient survives being touched.
-      const held = isPaint(value) ? value : isPaint(pref.default) ? pref.default : null;
-      return (
-        <PaintField
-          value={held as FillStyle | null}
-          onChange={setValue}
-          aria-label={pref.name}
-        />
-      );
-    }
-    case 'object': {
-      // One value with its fields hanging off it: each child renders its own
-      // control and commits the parent object whole.
-      const p = pref;
-      const held = typeof value === 'object' && value !== null
-        ? (value as Record<string, unknown>)
-        : undefined;
-      const objectRows = (children: Record<string, PrefLeaf | PrefGroup>): ReactNode[] => {
-        const out: ReactNode[] = [];
-        for (const [key, child] of Object.entries(children)) {
-          if (!isPrefLeaf(child)) {
-            const inner = objectRows(child.children);
-            if (inner.length === 0) continue;
-            out.push(<h4 key={`group:${key}`} className={s.objectGroup}>{child.name}</h4>, ...inner);
-            continue;
-          }
-          out.push(
-            <label key={key} className={s.objectRow}>
-              <span className={s.objectLabel}>{child.name}</span>
-              {renderBuiltin({
-                path: `${ctx.path}.${key}`,
-                pref: child,
-                value: held?.[key],
-                setValue: (v) => {
-                  const base = held ?? p.fromScalar?.(value) ?? {};
-                  setValue({ ...base, [key]: v });
-                },
-                // A field is not pinned on its own — it shares the state of
-                // the object leaf it hangs off.
-                auto: ctx.auto,
-                setAuto: ctx.setAuto,
-              }, held)}
-            </label>,
-          );
-        }
-        return out;
-      };
-      return <div className={s.objectLeaf}>{objectRows(p.children)}</div>;
-    }
-    default: {
-      // Not reachable while every built-in kind has an arm — and a new kind
-      // that lacks one is a compile error here, never a blank row.
-      const _exhaustive: never = pref;
-      throw new Error(
-        `PrefsForm: no control for built-in pref kind "${(_exhaustive as { kind: string }).kind}"`,
-      );
-    }
-  }
-}

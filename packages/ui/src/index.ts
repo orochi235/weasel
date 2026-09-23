@@ -72,6 +72,8 @@ export type { ChromaCurve, ChromaCurvePoint } from './color/oklch';
 export { useAsyncOptions } from './useAsyncOptions';
 export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './useAsyncOptions';
 export { useReorderDragList } from './useReorderDragList';
+export { pickActiveSection, useScrollSpy } from './useScrollSpy';
+export type { ScrollSpy, SectionOffset, UseScrollSpyOptions } from './useScrollSpy';
 export { useRovingTabIndex } from './useRovingTabIndex';
 export type { RovingItem, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
 export {

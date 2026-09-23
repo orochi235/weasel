@@ -273,6 +273,12 @@
 .body {
   flex: 1;
   min-height: 0;
+}
+
+/* Defaults, not rules: `bodyClassName` exists to turn these off for content
+   that scrolls itself, and a plain class would tie with it on specificity and
+   be decided by stylesheet order. */
+:where(.body) {
   overflow: auto;
   padding: var(--wzl-space-8);
 }

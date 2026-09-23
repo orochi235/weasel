@@ -93,3 +93,95 @@ export function visiblePrefSubtree<T extends ToolPrefLeaf | ToolPrefGroup>(
   if (Object.keys(children).length === 0) return null;
   return { ...node, children };
 }
+
+/** One entry in a {@link PrefsForm} rail: a group the reader can navigate to. */
+export interface PrefRailItem {
+  /** Dotted path of the group. Empty for the entry holding loose root leaves. */
+  path: string;
+  name: string;
+  /** 0 opens a pane; 1 scrolls within the open one. The rail goes no deeper. */
+  depth: 0 | 1;
+  /** Path of the depth-0 ancestor — its own path when `depth` is 0. */
+  section: string;
+  /** Leaves surviving the active filter, counted over the whole subtree. */
+  matches: number;
+}
+
+/** Leaves anywhere under `node`, counted. */
+function countPrefLeaves(node: ToolPrefLeaf | ToolPrefGroup): number {
+  if (isPrefLeaf(node)) return 1;
+  let n = 0;
+  for (const child of Object.values(node.children)) n += countPrefLeaves(child);
+  return n;
+}
+
+/**
+ * The rail's model for a schema: depth-0 groups, each followed by its depth-1
+ * children. Deeper groups render inside a pane and get no entry — a schema
+ * that nests ten deep still navigates two levels.
+ *
+ * Loose leaves directly under the root lead the list under an entry named for
+ * the root itself, since they belong to no group that could name them.
+ */
+export function prefRailItems(root: ToolPrefGroup): PrefRailItem[] {
+  const items: PrefRailItem[] = [];
+  const loose = Object.values(root.children).filter(isPrefLeaf).length;
+  if (loose > 0) {
+    items.push({ path: '', name: root.name, depth: 0, section: '', matches: loose });
+  }
+  for (const [key, child] of Object.entries(root.children)) {
+    if (isPrefLeaf(child)) continue;
+    items.push({
+      path: key,
+      name: child.name,
+      depth: 0,
+      section: key,
+      matches: countPrefLeaves(child),
+    });
+    for (const [subKey, sub] of Object.entries(child.children)) {
+      if (isPrefLeaf(sub)) continue;
+      items.push({
+        path: `${key}.${subKey}`,
+        name: sub.name,
+        depth: 1,
+        section: key,
+        matches: countPrefLeaves(sub),
+      });
+    }
+  }
+  return items;
+}
+
+/** Whether one leaf answers to a filter query, by name, description or path. */
+function prefLeafMatches(pref: ToolPrefLeaf, path: string, query: string): boolean {
+  if (pref.name.toLowerCase().includes(query)) return true;
+  if (pref.description?.toLowerCase().includes(query)) return true;
+  return path.toLowerCase().includes(query);
+}
+
+/**
+ * Drop every leaf that does not answer to `query`, pruning groups left empty.
+ * A group whose own name matches keeps all of its leaves — a reader who typed
+ * the group's name is asking for the group, not for leaves repeating it.
+ *
+ * An empty or whitespace query matches everything, so a cleared field restores
+ * the tree rather than emptying it.
+ */
+export function filterPrefSubtree<T extends ToolPrefLeaf | ToolPrefGroup>(
+  node: T,
+  query: string,
+  path = '',
+): T | null {
+  const q = query.trim().toLowerCase();
+  if (q === '') return node;
+  if (isPrefLeaf(node)) return prefLeafMatches(node, path, q) ? node : null;
+  const group = node as ToolPrefGroup;
+  if (group.name.toLowerCase().includes(q)) return node;
+  const children: Record<string, ToolPrefLeaf | ToolPrefGroup> = {};
+  for (const [key, child] of Object.entries(group.children)) {
+    const kept = filterPrefSubtree(child, q, path === '' ? key : `${path}.${key}`);
+    if (kept) children[key] = kept;
+  }
+  if (Object.keys(children).length === 0) return null;
+  return { ...node, children };
+}

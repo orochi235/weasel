@@ -39,6 +39,13 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     description: 'Hit-target square of a Disclosure twisty, and of a labkit LayerList row’s.',
   },
   {
+    name: 'input-surface',
+    type: 'color',
+    value: 'var(--wzl-surface-sunken)',
+    description:
+      'Surface a text Input’s frame sits on. Set it on any container whose own background is the default — a sunken rail or panel — where an unset field is the same color as what is behind it.',
+  },
+  {
     name: 'number-field-width',
     type: 'dimension',
     value: '9ch',
@@ -68,6 +75,12 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     type: 'dimension',
     value: 'auto',
     description: 'Inline size of row labels in PropertyPanel, Prefs and labkit’s ControlPanel.',
+  },
+  {
+    name: 'prefs-rail-width',
+    type: 'dimension',
+    value: '216px',
+    description: 'Width of the Prefs navigation rail.',
   },
   {
     name: 'prefs-column-width',

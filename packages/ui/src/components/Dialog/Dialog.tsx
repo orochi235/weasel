@@ -32,6 +32,10 @@ export type DialogProps = Omit<
     role?: RACDialogProps['role'];
     /** Class applied to the modal box (inside the overlay). */
     className?: string;
+    /** Class applied to the scrolling body. For content that owns its own
+     *  scrolling — a form with a fixed navigation rail beside a scrolling
+     *  pane — this is where the body's padding and overflow come off. */
+    bodyClassName?: string;
   };
 
 /**
@@ -52,6 +56,7 @@ export function Dialog(props: DialogProps) {
     footer,
     role = 'dialog',
     className,
+    bodyClassName,
     isOpen,
     onOpenChange,
     portalContainer,
@@ -96,7 +101,7 @@ export function Dialog(props: DialogProps) {
                     )}
                   </header>
                 )}
-                <div className={s.body}>{children}</div>
+                <div className={[s.body, bodyClassName].filter(Boolean).join(' ')}>{children}</div>
                 {footer !== undefined && <footer className={s.footer}>{footer}</footer>}
               </>
             )}

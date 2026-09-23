@@ -1,10 +1,21 @@
-export { PrefsForm, type PrefsFormProps, type PrefRenderer, type PrefRenderContext } from './PrefsForm';
+export {
+  PrefsForm,
+  type PrefsFormProps,
+  type PrefsLayout,
+  type PrefRenderer,
+  type PrefRenderContext,
+} from './PrefsForm';
+export { PrefsRail, type PrefsRailProps } from './PrefsRail';
+export { PrefsPane, type PrefsPaneProps } from './PrefsPane';
 export { PrefsDialog, type PrefsDialogProps } from './PrefsDialog';
 export {
+  filterPrefSubtree,
   isPrefLeaf,
   prefDisplayBounds,
+  prefRailItems,
   prefValueAtPath,
   visiblePrefSubtree,
+  type PrefRailItem,
   type BuiltinPref,
   type PrefBoolean,
   type PrefBooleanControl,

@@ -201,3 +201,238 @@
   letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
   opacity: 0.55;
 }
+
+/* ---------------------------------------------------------------------------
+ * Rail layout. The rail is the only chrome: no panels, because the surface
+ * the form sits on already has a border and a card inside it restates one.
+ * Width is overridable via --wzl-prefs-rail-width at any ancestor scope.
+ * ------------------------------------------------------------------------ */
+
+.columnsLayout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+  min-height: 0;
+}
+
+.railLayout {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  min-height: 0;
+  block-size: 100%;
+  /* The pane scrolls, not the layout: a rail that scrolled away with the
+     settings would be useless exactly when it is needed. */
+  overflow: hidden;
+}
+
+/* What `PrefsDialog` hands `Dialog` for its body in rail layout: the pane
+   inside does the scrolling and the rail meets the dialog's own edges. */
+.railBody {
+  padding: 0;
+  overflow: hidden;
+  /* A settled height: without one the dialog grows and shrinks as the reader
+     moves between a two-row group and a twenty-row one, and the rail entry
+     they are aiming at moves while they aim at it. */
+  min-block-size: min(60vh, 420px);
+  /* Same reason across: a filter that narrows the schema to two rows should
+     not pull the dialog's edges in around them. */
+  min-inline-size: min(760px, 90vw);
+}
+
+.rail {
+  /* Never more than two fifths of the box: at its full width in a narrow
+     container the rail takes the space the settings need and leaves a pane
+     too thin to hold a row. The clamp belongs on the flex basis — an
+     `inline-size` here is simply ignored, which is what made a first attempt
+     at this look right and do nothing. */
+  flex: 0 1 min(var(--wzl-prefs-rail-width, 216px), 40%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+  padding: var(--wzl-space-3) var(--wzl-space-2);
+  background: var(--wzl-surface-sunken);
+  border-right: 1px solid var(--wzl-border);
+  overflow-y: auto;
+  /* The rail is itself sunken, so a field taking the default surface would be
+     the same color as the rail behind it. */
+  --wzl-input-surface: var(--wzl-surface);
+}
+
+.railList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.railItem {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  padding: var(--wzl-space-2) var(--wzl-space-3);
+  border: none;
+  border-radius: var(--wzl-radius-sm);
+  background: none;
+  color: var(--wzl-fg);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm);
+  text-align: start;
+  cursor: default;
+}
+
+.railItem:hover {
+  background: var(--wzl-surface-raised);
+}
+
+.railItem:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -2px;
+}
+
+.railSub {
+  padding-left: var(--wzl-space-7);
+  color: var(--wzl-fg-subtle);
+}
+
+.railOpen,
+.railOpen:hover {
+  background: var(--wzl-accent);
+  color: var(--wzl-fg-on-accent);
+}
+
+.railInView {
+  color: var(--wzl-fg);
+  box-shadow: inset 2px 0 0 var(--wzl-accent);
+}
+
+.railName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Last in the row: a count that changes as the reader types would otherwise
+   shove the name on every keystroke. */
+.railCount {
+  margin-left: auto;
+  font-size: var(--wzl-font-size-xs);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+}
+
+.pane {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--wzl-space-5) var(--wzl-space-6);
+}
+
+.paneHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-1);
+  margin-bottom: var(--wzl-space-5);
+}
+
+.paneTitle {
+  margin: 0;
+  font-size: var(--wzl-font-size-lg);
+  font-weight: var(--wzl-font-weight-medium);
+  color: var(--wzl-fg);
+}
+
+.paneDesc {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+  line-height: 1.35;
+}
+
+.paneSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-3);
+  margin-top: var(--wzl-space-6);
+}
+
+.paneSubsection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+  margin-top: var(--wzl-space-4);
+  padding-left: var(--wzl-space-4);
+  border-left: 2px solid var(--wzl-border);
+}
+
+.sectionTitle {
+  position: sticky;
+  /* Sticky offsets are measured from the scrollport's edge, not from inside
+     the pane's padding, so this is 0 and the heading's own padding is what
+     keeps the text off the edge. */
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: var(--wzl-space-3) 0 var(--wzl-space-2);
+  background: var(--wzl-surface);
+  border-bottom: 1px solid var(--wzl-border);
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
+  color: var(--wzl-fg-subtle);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wider));
+  text-transform: var(--wzl-params-label-case, uppercase);
+}
+
+.subsectionTitle {
+  margin: 0;
+  font-size: var(--wzl-font-size-xs);
+  font-weight: var(--wzl-font-weight-bold);
+  color: var(--wzl-fg-subtle);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+  text-transform: var(--wzl-params-label-case, uppercase);
+}
+
+/* In the rail layout a row is a grid, so the control track grows with the
+   pane instead of holding at the columns layout's fixed slot. */
+.railLayout .row {
+  display: grid;
+  /* The control track is capped rather than taking the rest: a number field
+     as wide as the pane reads as a text area, and every row's control starts
+     at the same x either way. */
+  grid-template-columns:
+    minmax(140px, var(--wzl-params-label-width, 240px))
+    minmax(180px, 260px);
+  align-items: center;
+}
+
+.railLayout .rowControl {
+  flex: 1 1 auto;
+}
+
+.filter {
+  padding: 0 var(--wzl-space-1) var(--wzl-space-2);
+}
+
+.noMatches {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wzl-space-3);
+  padding: var(--wzl-space-6) 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+}
+
+.noMatches p {
+  margin: 0;
+}
+
+.clearFilter {
+  padding: var(--wzl-space-1) var(--wzl-space-3);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm);
+}

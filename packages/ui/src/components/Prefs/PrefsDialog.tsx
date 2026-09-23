@@ -12,9 +12,14 @@ export interface PrefsDialogProps extends PrefsFormProps {
   onOpenChange: (open: boolean) => void;
   /** Dialog heading. Defaults to the schema root's `name`. */
   title?: ReactNode;
-  /** Extra chrome rendered inline with the title (e.g. a dev-mode
-   *  "Show hidden" switch). */
+  /** Extra chrome rendered at the end of the title row (e.g. a dev-mode
+   *  "Show hidden" switch). An action the reader acts on when they are done
+   *  — resetting, importing — belongs in `footer` instead, where a dialog's
+   *  actions live. */
   headerExtra?: ReactNode;
+  /** Footer slot, passed through to `Dialog` — typically a reset or done
+   *  action. */
+  footer?: ReactNode;
   /** Class applied to the dialog's modal box. */
   dialogClassName?: string;
 }
@@ -24,15 +29,21 @@ export interface PrefsDialogProps extends PrefsFormProps {
  * live through `onChange` — there is no OK/Cancel staging. For custom
  * placement (sidebar, popover, inline page), compose `PrefsForm`
  * directly; this wrapper is intentionally thin.
+ *
+ * `layout="rail"` is what a dialog usually wants: the default columns wrap
+ * sideways past two groups, and this box is 900px at its widest.
  */
 export function PrefsDialog(props: PrefsDialogProps) {
-  const { isOpen, onOpenChange, title, headerExtra, dialogClassName, ...form } = props;
+  const { isOpen, onOpenChange, title, headerExtra, footer, dialogClassName, ...form } = props;
+  const rail = form.layout === 'rail';
   return (
     <Dialog
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       aria-label={typeof title === 'string' ? title : form.schema.name}
       className={dialogClassName}
+      footer={footer}
+      bodyClassName={rail ? s.railBody : undefined}
       title={
         headerExtra !== undefined ? (
           <span className={s.titleRow}>
