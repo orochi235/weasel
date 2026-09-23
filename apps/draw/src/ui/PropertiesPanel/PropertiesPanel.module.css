@@ -14,11 +14,6 @@
   white-space: nowrap;
   padding-right: 4px;
 }
-.miniLabel {
-  color: var(--wzl-fg-muted);
-  font-size: 12px;
-  text-align: center;
-}
 
 .span1  { grid-column: span 1; }
 .span2  { grid-column: span 2; }
@@ -30,12 +25,6 @@
 .span10 { grid-column: span 10; }
 .span12 { grid-column: span 12; }
 
-.readOnly {
-  font-size: 12px;
-  color: var(--wzl-fg-muted);
-  padding: 4px 6px;
-}
-
 .input {
   padding: 4px 6px;
   border: 1px solid var(--wzl-border);
@@ -44,16 +33,6 @@
   font-size: 12px;
   color: var(--wzl-fg);
   min-width: 0;
-}
-.input[type="number"] {
-  text-align: right;
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
-.input[type="number"]::-webkit-inner-spin-button,
-.input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
 }
 .input:focus {
   outline: none;
@@ -149,22 +128,4 @@
     linear-gradient(45deg, #c5c5c5 25%, transparent 25%, transparent 75%, #c5c5c5 75%, #c5c5c5);
   background-size: 100% 100%, 8px 8px, 8px 8px;
   background-position: 0 0, 0 0, 4px 4px;
-}
-
-.button {
-  padding: 4px 6px;
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  background: var(--wzl-surface-sunken);
-  color: var(--wzl-fg);
-  font-size: 12px;
-  font-family: inherit;
-  cursor: pointer;
-  text-align: center;
-}
-.button:hover {
-  border-color: var(--wzl-accent);
-}
-.button.danger {
-  color: var(--wzl-danger);
 }

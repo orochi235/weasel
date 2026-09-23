@@ -4,12 +4,8 @@ import {
   PropertiesPanel,
   PropertyRow,
   PropertyTextInput,
-  PropertyNumberInput,
-  PropertyAxisInput,
   PropertyColorInput,
   PropertySelect,
-  PropertyButton,
-  PropertyReadOnly,
   PropertySwatchGrid,
 } from './PropertiesPanel';
 
@@ -43,9 +39,6 @@ export const SwatchGrid: Story = {
             columns={6}
           />
         </PropertyRow>
-        <PropertyRow label="Value">
-          <PropertyReadOnly>{color ?? '(none)'}</PropertyReadOnly>
-        </PropertyRow>
       </PropertiesPanel>
     );
   },
@@ -54,22 +47,12 @@ export const SwatchGrid: Story = {
 export const MixedInputs: Story = {
   render: () => {
     const [name, setName] = useState('rectangle');
-    const [width, setWidth] = useState(120);
-    const [posX, setPosX] = useState(20);
-    const [posY, setPosY] = useState(40);
     const [fill, setFill] = useState('#4a8fd4');
     const [shape, setShape] = useState('rect');
     return (
       <PropertiesPanel title="Selection">
         <PropertyRow label="Name">
           <PropertyTextInput value={name} onChange={setName} />
-        </PropertyRow>
-        <PropertyRow label="Width">
-          <PropertyNumberInput value={width} onChange={setWidth} min={0} max={500} step={1} span={4} />
-        </PropertyRow>
-        <PropertyRow label="Position">
-          <PropertyAxisInput axis="X" value={posX} onChange={setPosX} step={1} />
-          <PropertyAxisInput axis="Y" value={posY} onChange={setPosY} step={1} />
         </PropertyRow>
         <PropertyRow label="Fill">
           <PropertyColorInput value={fill} onChange={setFill} />
@@ -85,12 +68,6 @@ export const MixedInputs: Story = {
             ]}
             span={6}
           />
-        </PropertyRow>
-        <PropertyRow label="ID">
-          <PropertyReadOnly>obj_8a2c</PropertyReadOnly>
-        </PropertyRow>
-        <PropertyRow label="">
-          <PropertyButton onClick={() => undefined} span={4}>Delete</PropertyButton>
         </PropertyRow>
       </PropertiesPanel>
     );

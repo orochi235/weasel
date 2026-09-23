@@ -46,12 +46,6 @@
   user-select: none;
 }
 
-/* Sep is no longer needed — groups self-separate via their borders + the
-   parent toolbar's 6px gap. Kept as a no-op for any stragglers. */
-.wd-actionbar-sep {
-  display: none;
-}
-
 /* Visually-hidden input used to host file pickers (Play recording, etc.).
    The button next to it is the actual trigger. */
 .wd-hidden-input {
@@ -154,34 +148,6 @@
   color: var(--wzl-fg);
 }
 
-/* --- LayerList row label (icon + id) --------------------------------- */
-.wd-layer-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.wd-layer-label > svg {
-  display: block;
-  flex-shrink: 0;
-  opacity: 0.85;
-}
-
-/* --- Page row (locked, system-owned) --------------------------------- */
-.wd-layer-label-page {
-  color: var(--wzl-fg-muted);
-  font-style: italic;
-}
-
-/* Thin divider above any locked row in the layer list — separates
-   user layers from system rows (currently just the Page row). */
-.wd-layerlist-host [data-locked="true"] {
-  border-top: 1px solid var(--wzl-border);
-  /* Visually offset the row so the divider sits in its own gutter rather
-     than hugging the previous row. */
-  margin-top: 4px;
-  padding-top: 1px;
-}
-
 /* Column layout, panel surface, and edge borders come from weasel-ui's
    <Sidebar>. What stays here is the part that's this app's business: width,
    padding, and the local chrome palette. Scoped under `.wd-app` so these win
@@ -220,14 +186,6 @@
   opacity: 0.6;
 }
 
-/* Honest mixed-value cue for action-backed color renderers in the
-   Properties panel (SelectionPanel renderers). */
-.wd-mixed {
-  opacity: 0.55;
-}
-
-/* Pull LayerList rows out to the panel edges by absorbing the parent
-   SidebarPanel's 8px body padding via negative margin. */
 .wd-app .wd-sidebar.left {
   /* Sized to the ActiveSwatches widget (56px square) — the limiting
      element. The vertical ToolPalette's 44px buttons fit comfortably
@@ -242,54 +200,6 @@
    sidebar — natural flex order, no `margin-top: auto` push. */
 .wd-sidebar.left .wd-active-swatches-group {
   margin-top: 4px;
-}
-
-.wd-tool-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 8px 4px;
-  background: transparent;
-  color: var(--wzl-fg);
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 11px;
-  line-height: 1.2;
-}
-
-.wd-tool-button > svg { display: block; }
-.wd-tool-button:hover { border-color: var(--wzl-focus-ring); }
-
-.wd-tool-button.active {
-  background: var(--wzl-fg);
-  color: var(--wzl-surface-sunken);
-  border-color: var(--wzl-fg);
-}
-
-.wd-tool-button .key {
-  opacity: 0.6;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px;
-}
-
-/* `.wd-sidebar-resize` used to live here, styling a handle nothing ever
-   rendered. The behavior now comes from weasel-ui's <ResizeHandle>, which
-   brings its own chrome. */
-
-.wd-stage {
-  flex: 1;
-  /* The stage is the canvas host area: the kit's <Canvas> fills it
-     edge-to-edge and renders the document page as a layer inside.
-     `min-width: 0` lets flex shrink without overflow when sidebars
-     are wide. The striped background shows in the negative space
-     around the rendered page (it lives on the canvas itself so it
-     pans/zooms naturally with the doc). */
-  display: flex;
-  min-width: 0;
-  overflow: hidden;
 }
 
 .wd-canvas-host {
@@ -318,97 +228,12 @@
   height: 100%;
 }
 
-/* Background tint applied when the pen tool is in edit mode (dblclick on a
-   path obj). Gives a clear visual cue that pointer gestures will edit
-   anchors/handles rather than start a new path. */
-.pen-edit-active {
-  background-color: var(--wzl-border);
-}
-
 /* The kit's <Canvas> sets tabIndex={0} so keyboard events work. Suppress
    the browser's default focus ring — the canvas is always the focused
    surface during interaction, so the ring is visual noise. */
 .wd-canvas-host canvas:focus,
 .wd-canvas-host canvas:focus-visible {
   outline: none;
-}
-
-.wd-section-label {
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--wzl-fg-subtle);
-  margin-bottom: 4px;
-}
-
-.wd-color-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-}
-
-.wd-color-row input[type="color"] {
-  width: 36px;
-  height: 28px;
-  background: transparent;
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  cursor: pointer;
-  padding: 2px;
-}
-
-.wd-color-row code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  color: var(--wzl-fg-muted);
-}
-
-/* Dismiss animation: pivot around the bottom-left corner as if all but
- * one screw popped, swing past vertical, then translate downward off the
- * viewport in screen space. We use the individual `rotate` / `translate`
- * properties (instead of a combined `transform` matrix) so the
- * downward translation stays in the parent's coordinate frame and isn't
- * tilted along with the rotation. `animation-fill-mode: forwards` keeps
- * the final state until React unmounts on animationend. */
-.wd-disclaimer-falling {
-  /* Default segment easing — gravitational. Per-keyframe overrides
-   * (animation-timing-function inside the @keyframes) handle the
-   * bounce phase so each swing decelerates outbound and accelerates
-   * inbound like a damped pendulum. */
-  animation: wd-disclaimer-fall 2.0s cubic-bezier(0.5, 0, 0.75, 0) forwards;
-  transform-origin: 0% 100%;
-  pointer-events: none;
-}
-@keyframes wd-disclaimer-fall {
-  /* Stage 1 (0 → 28%, ~0.56s): rotate around the bottom-left pivot.
-   * Inherits the default gravitational ease — slow start, hard end
-   * as it swings past horizontal. The override here ramps the impact
-   * back-swing (the next segment) to a sin-out feel. */
-  0%   { rotate: 0deg;   translate: 0 0; }
-  28%  { rotate: 110deg; translate: 0 0;
-         animation-timing-function: cubic-bezier(0.15, 0.7, 0.4, 1); }
-  /* Stage 1b (28% → 67%, ~0.78s): a couple of decaying bounces. Each
-   * outbound segment uses an ease-out (decelerating against gravity);
-   * each inbound segment uses an ease-in (gravity pulling it back to
-   * the wall). The alternation reads as inertial. */
-  38%  { rotate: 80deg;  translate: 0 0;
-         animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.4); }
-  48%  { rotate: 110deg; translate: 0 0;
-         animation-timing-function: cubic-bezier(0.2, 0.7, 0.5, 1); }
-  58%  { rotate: 96deg;  translate: 0 0;
-         animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.4); }
-  67%  { rotate: 110deg; translate: 0 0;
-         animation-timing-function: linear; }
-  /* Hang (67% → 72%, ~0.1s): brief dangle before gravity finishes
-   * the job. The explicit second keyframe at 72% is what enforces
-   * the hold — without it the translate would interpolate
-   * continuously from 0 to 120vh. */
-  72%  { rotate: 110deg; translate: 0 0;
-         animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0); }
-  /* Stage 2 (72% → 100%, ~0.56s): hold the rotation, fall straight
-   * down in screen space. 120vh clears even tall viewports. */
-  100% { rotate: 110deg; translate: 0 120vh; opacity: 0.85; }
 }
 
 /* The status bar's chrome — mono type, panel surface, gap, trailing spacer,
@@ -455,35 +280,6 @@
   margin: 4px auto 0;
   /* The stroke and fill swatches are absolutely positioned inside this
      container with a small offset to produce the iconic overlap. */
-}
-
-/* Compact variant for inline use inside a properties-panel row. Same
-   visual idiom (overlapping fill + stroke), scaled to ~40px so it tucks
-   into a single row without crowding adjacent inputs. */
-.wd-active-swatches--compact {
-  width: 40px;
-  height: 40px;
-  margin: 0;
-}
-
-.wd-active-swatches--compact .wd-swatch {
-  width: 22px;
-  height: 22px;
-}
-
-.wd-active-swatches--compact .wd-swatch--fill {
-  top: 2px;
-  left: 2px;
-}
-
-.wd-active-swatches--compact .wd-swatch--stroke {
-  bottom: 2px;
-  right: 2px;
-}
-
-.wd-active-swatches--compact .wd-swatch--stroke::after {
-  /* Tighter frame on the 22px compact variant. */
-  padding: 5px;
 }
 
 .wd-swatch {
@@ -565,9 +361,6 @@
   border-radius: 1px;
   pointer-events: none;
 }
-.wd-active-swatches--compact .wd-swatch.is-focused.wd-swatch--stroke::before {
-  inset: 5px;
-}
 
 /* `'none'` state — diagonal red stripe through a white square. The fill
    and stroke variants render slightly differently because they have
@@ -609,92 +402,6 @@
      reliably on every click (including when the swatch is already
      focused). The wrapping button still gets the bubbled click for
      focus + shift-toggle handling. */
-}
-
-/* --- Layer list host inside PropertiesPanel -------------------------- */
-.wd-layerlist-host {
-  /* PropertiesPanel uses a 12-column grid; without this the host sits in
-     column 1 and auto-sizes to the LayerList's min-width, leaving the
-     panel mostly empty. Span all columns so the list fills the panel. */
-  grid-column: 1 / -1;
-  /* Scroll long layer stacks within the panel rather than pushing the
-     document/page row off the bottom of the sidebar. */
-  max-height: 320px;
-  overflow-y: auto;
-}
-
-/* LayerList rows ship with hardcoded dark-theme browns. Override against
-   the light sidebar panel surface: dark text, subtle translucent hover,
-   neutral translucent selection. Mirrors the treatment applied to the
-   HistoryList initial row. */
-.wd-layerlist-host > div > div {
-  color: var(--wzl-fg);
-}
-.wd-layerlist-host > div > div:hover {
-  background: rgba(0, 0, 0, 0.06);
-}
-.wd-layerlist-host > div > div[data-selected="true"] {
-  background: rgba(0, 0, 0, 0.12);
-  color: var(--wzl-fg);
-}
-
-/* --- History list host inside PropertiesPanel ------------------------ */
-.wd-historylist-host {
-  /* Mirror the layer-list host: span the full 12-col grid and cap the
-     height so a long edit session doesn't push later panels off-screen.
-     Slightly taller than Layers since users typically scrub through
-     many history entries to find a target state. */
-  grid-column: 1 / -1;
-  max-height: 360px;
-  overflow-y: auto;
-}
-
-.wd-history-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.wd-history-initial {
-  font-style: italic;
-}
-
-/* Strip the HistoryList row chrome on the synthetic "Initial" entry so it
-   blends with the surrounding sidebar text. Without this it inherits the
-   `.current` / `.applied` row styling (dark bg, bottom border, light text)
-   which clashes with the light panel surface. */
-.wd-historylist-host div:has(> .wd-history-initial),
-.wd-historylist-host div:has(> .wd-history-initial):hover {
-  background: transparent;
-  border-bottom: 0;
-  color: var(--wzl-fg);
-}
-
-.wd-sidebar-spacer {
-  flex: 1;
-}
-
-/* Colors panel — strip the SidebarPanel chrome padding so the swatch grid
-   fills the panel edge-to-edge. Targets the panel container and its body
-   wrapper (the last direct child div when the panel is expanded). The
-   `.wd-sidebar` ancestor selector lifts specificity over the
-   module-scoped `.panel` / `.body` rules from weasel-ui. */
-.wd-sidebar .wd-colors-panel {
-  padding: 4px;
-}
-.wd-sidebar .wd-colors-panel > div:last-child {
-  padding: 0;
-}
-
-.wd-scene-label {
-  padding: 0 12px;
-}
-
-.wd-scene-count {
-  padding: 0 12px;
-  font-size: 11px;
-  color: var(--wui-text-muted, var(--wzl-fg-subtle));
-  font-family: ui-monospace, monospace;
 }
 
 /* --- Action bar far-right spacer ------------------------------------- */

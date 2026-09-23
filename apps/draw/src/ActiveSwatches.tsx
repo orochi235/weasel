@@ -29,12 +29,6 @@ export function toHex6(color: string): string {
   return color.slice(0, 7);
 }
 
-export interface ActiveSwatchesProps {
-  /** Render a smaller variant for use inside a properties panel row.
-   *  Default false (full-size, suitable for the tool palette). */
-  compact?: boolean;
-}
-
 /**
  * Render a swatch's display color as a CSS custom property so the rule
  * itself (background, diagonal-stripe overlay) lives in the stylesheet.
@@ -136,13 +130,12 @@ function StrokeColorSwatch(props: {
   );
 }
 
-export function ActiveSwatches(p: ActiveSwatchesProps) {
+export function ActiveSwatches() {
   const colors = useColorContext();
   const fillColor = colors.fill.kind === 'solid' ? toHex6(colors.fill.color) : '#ffffff';
   const strokeColor = colors.stroke.kind === 'solid' ? toHex6(colors.stroke.color) : '#000000';
   const fillPrev = colors.fill.kind === 'solid' ? colors.fill.color : DEFAULT_FILL_COLOR;
   const strokePrev = colors.stroke.kind === 'solid' ? colors.stroke.color : DEFAULT_STROKE_COLOR;
-  const containerClass = `wd-active-swatches${p.compact ? ' wd-active-swatches--compact' : ''}`;
   // Shift-click toggles between solid/none. Plain click updates focus and
   // lets the native color input (which receives the bubbled click) open
   // the OS picker. Calling `preventDefault` on the bubbled event would
@@ -174,7 +167,7 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
   };
   return (
     <div className="wd-active-swatches-group">
-      <div className={containerClass} role="group" aria-label="Active fill and stroke">
+      <div className="wd-active-swatches" role="group" aria-label="Active fill and stroke">
         <button
           type="button"
           className={`wd-swatch wd-swatch--stroke${colors.focused === 'stroke' ? ' is-focused' : ''}${paintClassSuffix(colors.stroke)}`}

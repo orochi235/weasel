@@ -1,10 +1,6 @@
-import { useRef, useState, type ReactNode, type ChangeEvent } from 'react';
+import type { ReactNode, ChangeEvent } from 'react';
 import { SidebarPanel, type SidebarPanelProps } from '@weasel-js/ui';
-import {
-  toHex8, getAlpha01, withAlpha01,
-  useActionsRegistry,
-  type UiOngoingControl,
-} from '@weasel-js/core';
+import { toHex8, getAlpha01, withAlpha01 } from '@weasel-js/core';
 import s from './PropertiesPanel.module.css';
 
 /** Convenience composition: a `SidebarPanel` whose body is a
@@ -63,14 +59,6 @@ function spanClass(n: number): string {
   }
 }
 
-export function PropertyMiniLabel(props: { children: ReactNode; span?: 1 | 2 | 3 | 4 }) {
-  return <span className={`${s.miniLabel} ${spanClass(props.span ?? 2)}`}>{props.children}</span>;
-}
-
-export function PropertyReadOnly(props: { children: ReactNode; span?: 1 | 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 }) {
-  return <span className={`${s.readOnly} ${spanClass(props.span ?? 12)}`}>{props.children}</span>;
-}
-
 export function PropertyTextInput(props: {
   value: string;
   onChange: (v: string) => void;
@@ -88,150 +76,17 @@ export function PropertyTextInput(props: {
   );
 }
 
-export function PropertyNumberInput(props: {
-  value: number;
-  onChange: (v: number) => void;
-  span?: 1 | 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12;
-  step?: number;
-  min?: number;
-  max?: number;
-}) {
-  return (
-    <input
-      className={`${s.input} ${spanClass(props.span ?? 4)}`}
-      type="number"
-      step={props.step ?? 1}
-      min={props.min}
-      max={props.max}
-      value={Number.isFinite(props.value) ? props.value : 0}
-      onChange={(e: ChangeEvent<HTMLInputElement>) => {
-        const n = parseFloat(e.target.value);
-        props.onChange(Number.isFinite(n) ? n : 0);
-      }}
-    />
-  );
-}
-
-/** A single mini-label + number input pair, taking 6 of 12 columns
- *  (2 + 4). Compose two of these in a PropertyRow for X/Y or W/H. */
-export function PropertyAxisInput(props: {
-  axis: ReactNode;
-  value: number;
-  onChange: (v: number) => void;
-  step?: number;
-  min?: number;
-  max?: number;
-}) {
-  return (
-    <>
-      <PropertyMiniLabel span={2}>{props.axis}</PropertyMiniLabel>
-      <PropertyNumberInput
-        value={props.value}
-        onChange={props.onChange}
-        span={4}
-        step={props.step}
-        min={props.min}
-        max={props.max}
-      />
-    </>
-  );
-}
-
 /** Color + alpha picker. Native `<input type=color>` only round-trips
  *  `#rrggbb`, so an adjacent range input drives the alpha channel
- *  independently. Both controls write `#rrggbbaa` so every consumer
- *  carries opacity through the same string.
- *
- *  Two prop shapes are supported:
- *  - Action-based (preferred): pass `colorActionId` + `opacityActionId` to
- *    dispatch via `registry.begin/update/end`. The color picker sends
- *    `{ color: string }` params; the opacity slider sends `{ alpha01: number }`.
- *  - Legacy fallback: pass `onChange` for cases where no registry action
- *    exists (e.g. local React state). */
+ *  independently. Both controls write `#rrggbbaa`. */
 export function PropertyColorInput(props: {
   value: string;
-  colorActionId: string;
-  opacityActionId: string;
-  onChange?: never;
-} | {
-  value: string;
-  /** @deprecated Use `colorActionId` + `opacityActionId` instead. Legacy
-   *  path retained only for local-React-state edits (e.g. background color)
-   *  where no scene action applies, and for paints whose color lives inside
-   *  a larger object the caller must rewrite as a whole (a pattern spec). */
   onChange: (v: string) => void;
-  /** Called at drag/picker end, once, when `onChange` has been driving
-   *  intermediate values. Callers writing to the scene need this to close
-   *  their action; purely-local callers can omit it. */
-  onCommit?: (v: string) => void;
-  colorActionId?: never;
-  opacityActionId?: never;
 }) {
-  const actions = useActionsRegistry();
   const hex8 = toHex8(props.value);
   const rgb6 = hex8.startsWith('#') && hex8.length >= 7 ? hex8.slice(0, 7) : '#000000';
   const alpha01 = getAlpha01(hex8);
   const alphaPct = Math.round(alpha01 * 100);
-  const colorCtrlRef = useRef<UiOngoingControl | null>(null);
-  const opacityCtrlRef = useRef<UiOngoingControl | null>(null);
-  // Action-based dispatch doesn't synchronously refresh `props.value`
-  // (the registry batches scene writes until end('commit')), so a
-  // controlled `<input value={alphaPct}>` snaps the thumb back to the
-  // pre-drag value mid-drag. Track a local draft while the slider is
-  // active so the thumb visually follows the pointer; fall back to
-  // `props.value` once the drag commits.
-  const [opacityDraft, setOpacityDraft] = useState<number | null>(null);
-  const visibleAlphaPct = opacityDraft ?? alphaPct;
-
-  /** Color picker commit uses `blur` (fires when the native picker closes
-   *  and focus leaves the input). Chrome fires `change` continuously during
-   *  picker interaction (per HTML spec), so commit-on-change would emit
-   *  one undo entry per tick. */
-  function dispatchColor(v: string, phase: 'input' | 'commit'): void {
-    if ('onChange' in props && props.onChange) {
-      if (phase === 'input') props.onChange(withAlpha01(v, alpha01));
-      else props.onCommit?.(withAlpha01(v, alpha01));
-      return;
-    }
-    if (phase === 'input') {
-      if (!colorCtrlRef.current) {
-        colorCtrlRef.current = actions?.begin(props.colorActionId, { color: v }) ?? null;
-      } else {
-        colorCtrlRef.current.update({ color: v });
-      }
-      return;
-    }
-    // commit
-    if (colorCtrlRef.current) {
-      colorCtrlRef.current.end('commit');
-      colorCtrlRef.current = null;
-    }
-  }
-
-  /** Slider commit uses pointer/key events rather than `onChange`. The range
-   *  input fires `change` on every value tick (per HTML spec), so commit-on-
-   *  change would emit one undo entry per tick during a drag. Pointer/key
-   *  end events give us true drag-end semantics. */
-  function dispatchOpacity(a: number, phase: 'input' | 'commit'): void {
-    if ('onChange' in props && props.onChange) {
-      if (phase === 'input') props.onChange(withAlpha01(hex8, a));
-      else props.onCommit?.(withAlpha01(hex8, a));
-      return;
-    }
-    if (phase === 'input') {
-      if (!opacityCtrlRef.current) {
-        opacityCtrlRef.current = actions?.begin(props.opacityActionId, { alpha01: a }) ?? null;
-      } else {
-        opacityCtrlRef.current.update({ alpha01: a });
-      }
-      return;
-    }
-    // commit
-    if (opacityCtrlRef.current) {
-      opacityCtrlRef.current.end('commit');
-      opacityCtrlRef.current = null;
-    }
-  }
 
   return (
     <span className={`${s.colorInputRow} ${s.span12}`}>
@@ -239,8 +94,7 @@ export function PropertyColorInput(props: {
         className={s.colorInput}
         type="color"
         value={rgb6}
-        onInput={(e) => dispatchColor((e.target as HTMLInputElement).value, 'input')}
-        onBlur={() => dispatchColor(rgb6, 'commit')}
+        onInput={(e) => props.onChange(withAlpha01((e.target as HTMLInputElement).value, alpha01))}
       />
       <input
         className={s.alphaRange}
@@ -248,20 +102,12 @@ export function PropertyColorInput(props: {
         min={0}
         max={100}
         step={1}
-        value={visibleAlphaPct}
+        value={alphaPct}
         title="Opacity"
         aria-label="Opacity"
-        onInput={(e) => {
-          const pct = Number((e.target as HTMLInputElement).value);
-          setOpacityDraft(pct);
-          dispatchOpacity(pct / 100, 'input');
-        }}
-        onPointerUp={() => { dispatchOpacity(alpha01, 'commit'); setOpacityDraft(null); }}
-        onPointerCancel={() => { dispatchOpacity(alpha01, 'commit'); setOpacityDraft(null); }}
-        onKeyUp={() => { dispatchOpacity(alpha01, 'commit'); setOpacityDraft(null); }}
-        onBlur={() => { dispatchOpacity(alpha01, 'commit'); setOpacityDraft(null); }}
+        onInput={(e) => props.onChange(withAlpha01(hex8, Number((e.target as HTMLInputElement).value) / 100))}
       />
-      <span className={s.alphaReadout}>{visibleAlphaPct}</span>
+      <span className={s.alphaReadout}>{alphaPct}</span>
     </span>
   );
 }
@@ -328,23 +174,5 @@ export function PropertySwatchGrid(props: {
         );
       })}
     </div>
-  );
-}
-
-export function PropertyButton(props: {
-  children: ReactNode;
-  onClick: () => void;
-  variant?: 'default' | 'danger';
-  span?: 1 | 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12;
-}) {
-  const variantClass = props.variant === 'danger' ? ` ${s.danger}` : '';
-  return (
-    <button
-      type="button"
-      className={`${s.button} ${spanClass(props.span ?? 12)}${variantClass}`}
-      onClick={props.onClick}
-    >
-      {props.children}
-    </button>
   );
 }
