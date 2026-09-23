@@ -13,19 +13,29 @@ const ITEMS: LayerListItem[] = [
 const ROW_H = 32;
 
 let latest: ReorderDragState = { draggedIds: null, targetIndex: null };
+let handlers: ReturnType<typeof useReorderDragList> | null = null;
 
 function Harness(props: {
   items: LayerListItem[];
   selectedIds: string[];
   onReorder: (ids: string[], targetIndex: number) => void;
   onPress?: (id: string, mods: PressModifiers) => void;
+  onRowClick?: (id: string) => void;
 }) {
   const drag = useReorderDragList(props);
   latest = drag.state;
+  handlers = drag;
   return (
     <div data-testid="list" ref={drag.containerProps.ref as RefCallback<HTMLDivElement>}>
       {props.items.map((it, i) => (
-        <div key={it.id} data-testid={`row-${it.id}`} {...drag.rowProps(it.id, i)} />
+        <div
+          key={it.id}
+          data-testid={`row-${it.id}`}
+          {...drag.rowProps(it.id, i)}
+          onClick={() => props.onRowClick?.(it.id)}
+        >
+          <button type="button" data-testid={`toggle-${it.id}`} />
+        </div>
       ))}
     </div>
   );
@@ -49,8 +59,9 @@ function stubGeometry(container: HTMLElement) {
 function setup(items: LayerListItem[] = ITEMS, selectedIds: string[] = []) {
   const onReorder = vi.fn();
   const onPress = vi.fn();
+  const onRowClick = vi.fn();
   const view = render(
-    <Harness items={items} selectedIds={selectedIds} onReorder={onReorder} onPress={onPress} />,
+    <Harness items={items} selectedIds={selectedIds} onReorder={onReorder} onPress={onPress} onRowClick={onRowClick} />,
   );
   const list = view.getByTestId('list');
   list.setPointerCapture = vi.fn();
@@ -59,11 +70,12 @@ function setup(items: LayerListItem[] = ITEMS, selectedIds: string[] = []) {
   const row = (id: string) => view.getByTestId(`row-${id}`);
   const rerender = (next: LayerListItem[], sel: string[] = selectedIds) => {
     view.rerender(
-      <Harness items={next} selectedIds={sel} onReorder={onReorder} onPress={onPress} />,
+      <Harness items={next} selectedIds={sel} onReorder={onReorder} onPress={onPress} onRowClick={onRowClick} />,
     );
     stubGeometry(list);
   };
-  return { onReorder, onPress, list, row, rerender, unmount: view.unmount };
+  const toggle = (id: string) => view.getByTestId(`toggle-${id}`);
+  return { onReorder, onPress, onRowClick, list, row, toggle, rerender, unmount: view.unmount };
 }
 
 const press = (el: HTMLElement, y: number, extra: object = {}) =>
@@ -293,5 +305,76 @@ describe('useReorderDragList press intent', () => {
     press(row('c'), 72, { buttons: 1 });
     move(72, { buttons: 0 });
     expect(onPress).toHaveBeenCalledWith('c', expect.anything());
+  });
+});
+
+describe('useReorderDragList row controls', () => {
+  it('leaves a press on a control inside the row to the control', () => {
+    const { onPress, onReorder, list, toggle } = setup();
+    press(toggle('b'), 48);
+    move(200);
+    release(200);
+    expect(list.setPointerCapture).not.toHaveBeenCalled();
+    expect(onPress).not.toHaveBeenCalled();
+    expect(onReorder).not.toHaveBeenCalled();
+  });
+
+  it('reports a press once, even if the browser also delivers its click to the row', () => {
+    const { onPress, onRowClick, row } = setup();
+    press(row('b'), 48);
+    release(48);
+    fireEvent.click(row('b'));
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(onRowClick).not.toHaveBeenCalled();
+  });
+
+  it('lets a later click through', async () => {
+    const { onRowClick, row } = setup();
+    press(row('b'), 48);
+    release(48);
+    await new Promise((r) => setTimeout(r, 0));
+    fireEvent.click(row('b'));
+    expect(onRowClick).toHaveBeenCalledWith('b');
+  });
+});
+
+describe('useReorderDragList nudge', () => {
+  it('moves an unselected row up one place', () => {
+    const { onReorder } = setup(ITEMS, ['a']);
+    handlers!.nudge('c', 2, -1);
+    expect(onReorder).toHaveBeenCalledWith(['c'], 1);
+  });
+
+  it('moves a row down one place, as an insertion index past its neighbor', () => {
+    const { onReorder } = setup();
+    handlers!.nudge('b', 1, 1);
+    expect(onReorder).toHaveBeenCalledWith(['b'], 3);
+  });
+
+  it('moves the whole selection when the row is part of it', () => {
+    const { onReorder } = setup(ITEMS, ['b', 'c']);
+    handlers!.nudge('c', 2, -1);
+    expect(onReorder).toHaveBeenCalledWith(['b', 'c'], 0);
+  });
+
+  it('does nothing at either end', () => {
+    const { onReorder } = setup();
+    handlers!.nudge('a', 0, -1);
+    handlers!.nudge('d', 3, 1);
+    expect(onReorder).not.toHaveBeenCalled();
+  });
+
+  it('treats a locked row as a wall and cannot move a locked row', () => {
+    const items = [{ id: 'page', label: 'Page', locked: true }, ...ITEMS];
+    const { onReorder } = setup(items);
+    handlers!.nudge('a', 1, -1);
+    handlers!.nudge('page', 0, 1);
+    expect(onReorder).not.toHaveBeenCalled();
+  });
+
+  it('reports whether it moved anything', () => {
+    setup();
+    expect(handlers!.nudge('a', 0, -1)).toBe(false);
+    expect(handlers!.nudge('a', 0, 1)).toBe(true);
   });
 });
