@@ -88,6 +88,7 @@ import {
 } from '@weasel-js/core';
 import { useHudContribution } from '@weasel-js/hud/react';
 import {
+  formatZoom,
   ResizeHandle,
   Sidebar,
   SidebarPanel,
@@ -1810,7 +1811,7 @@ function EditorStatusBar({
       <StatusBarItem>fill: {paintLabel(colors.fill)}</StatusBarItem>
       <StatusBarItem>stroke: {paintLabel(colors.stroke)}</StatusBarItem>
       <StatusBarSpacer />
-      <StatusBarItem>zoom: {(view.scale.x * 100).toFixed(0)}%</StatusBarItem>
+      <StatusBarItem>zoom: {formatZoom(view.scale.x)}</StatusBarItem>
       {colorMode && (
         <StatusBarItem>
           <button
