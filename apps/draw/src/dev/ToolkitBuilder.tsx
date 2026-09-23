@@ -47,6 +47,7 @@ import {
   type RegistryEntry,
 } from '@weasel-js/core/routing';
 import {
+  Badge,
   DataGrid,
   KeySequence,
   keySpecsFromMods,
@@ -613,10 +614,7 @@ const RESOLUTION_COLUMNS: readonly DataGridColumn<ResolutionRow>[] = [
       <>
         <code>{c.ownerToolId ?? '—'}</code>
         {isPredicateTarget(c.binding.spec) && (
-          <span
-            className={s.predicateBadge}
-            title="Evaluated against a synthesized hit — a predicate reading more than `kind` may differ at runtime."
-          >?</span>
+          <Caveat text="Evaluated against a synthesized hit — a predicate reading more than `kind` may differ at runtime." />
         )}
       </>
     ),
@@ -636,15 +634,22 @@ const RESOLUTION_COLUMNS: readonly DataGridColumn<ResolutionRow>[] = [
       <>
         {verdictText(c.verdict)}
         {c.verdict.kind === 'disabled' && (
-          <span
-            className={s.predicateBadge}
-            title="`enabled()` ran against a synthesized context with no deps wired, so this reason reflects an empty selection / scene rather than the live one."
-          >?</span>
+          <Caveat text="`enabled()` ran against a synthesized context with no deps wired, so this reason reflects an empty selection / scene rather than the live one." />
         )}
       </>
     ),
   },
 ];
+
+/** A `?` marking a result this panel can only approximate. Uses a native
+ *  title: a kit Tooltip needs a focusable trigger, and Badge is not one. */
+function Caveat({ text }: { text: string }): ReactElement {
+  return (
+    <span className={s.predicateBadge} title={text}>
+      <Badge tone="warn" size="xs">?</Badge>
+    </span>
+  );
+}
 
 function verdictClass(kind: ResolvedCandidate['verdict']['kind']): string {
   if (kind === 'would-fire') return s.verdictFires;
