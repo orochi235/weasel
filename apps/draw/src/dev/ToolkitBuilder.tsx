@@ -216,16 +216,20 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
         </p>
       </section>
 
-      {/* Middle column: tool / action / route tables. */}
+      {/* Middle column: tool table and binding resolution. */}
       <section className={s.catalog}>
         <ToolsWidget defs={toolDefs} slots={toolSlots} actions={actions} />
-        <ActionsWidget actions={actions} />
-        <RoutesWidget routes={routes} slots={toolSlots} />
         <ResolutionWidget
           tools={toolList}
           actions={actions}
           activeToolId={toolSlots.registry[0] ?? ''}
         />
+      </section>
+
+      {/* Under the canvas and middle column: the two wide tables. */}
+      <section className={s.tables}>
+        <ActionsWidget actions={actions} />
+        <RoutesWidget routes={routes} slots={toolSlots} />
       </section>
 
       {/* Right column: conflicts + live dispatch trace. */}
@@ -323,7 +327,7 @@ const ACTION_COLUMNS: readonly DataGridColumn<Action>[] = [
         : <span className={s.empty}>—</span>;
     },
   },
-  { id: 'enabled', header: 'Enabled', sortable: false, render: snapshotEnabled },
+  { id: 'enabled', header: 'Enabled', sortable: false, className: s.nowrap, render: snapshotEnabled },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -406,7 +410,7 @@ const ROUTE_COLUMNS: readonly DataGridColumn<RouteRow>[] = [
   { id: 'arg', header: 'Arg', render: (r) => codeOrDash(r.arg) },
   { id: 'target', header: 'Target', render: (r) => codeOrDash(r.target) },
   { id: 'mods', header: 'Mods', render: (r) => codeOrDash(r.mods) },
-  { id: 'specificity', header: SPECIFICITY_HEADER, render: (r) => <code>{r.specificity}</code> },
+  { id: 'specificity', header: SPECIFICITY_HEADER, className: s.nowrap, render: (r) => <code>{r.specificity}</code> },
 ];
 
 /** Gives each row an `id` from its `key`, numbering repeats so two identical

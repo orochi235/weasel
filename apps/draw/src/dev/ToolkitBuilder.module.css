@@ -19,11 +19,17 @@
      show the 520×360 SceneCanvas near 1:1; the (usually sparse) conflicts
      panel takes the narrow trailing column. */
   grid-template-columns: minmax(0, 540px) minmax(0, 1fr) minmax(240px, 24%);
+  /* The action and route tables run six to eight columns, more than the
+     middle column holds, so they take the width under the canvas too. */
+  grid-template-areas:
+    "canvas catalog reflect"
+    "tables tables  reflect";
   gap: var(--wzl-space-8);
   align-items: start;
 }
 
 .canvas {
+  grid-area: canvas;
   background: var(--wzl-surface);
   border-radius: 6px;
   padding: var(--wzl-space-6);
@@ -36,6 +42,7 @@
 
 /* Catalog column: stack of widgets, like the right reflect column. */
 .catalog {
+  grid-area: catalog;
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-6);
@@ -45,7 +52,16 @@
 /* Right column: vertical stack of widget panels, each independently
    bounded so long lists scroll inside their own card instead of
    pushing the whole page. */
+.tables {
+  grid-area: tables;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+  min-width: 0;
+}
+
 .reflect {
+  grid-area: reflect;
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-6);
@@ -67,6 +83,7 @@
 
 .empty { color: var(--wzl-fg-muted); font-style: italic; padding: var(--wzl-space-4) 0; text-align: center; }
 .iconCell { width: 18px; }
+.nowrap { white-space: nowrap; }
 .iconCell svg { width: 14px; height: 14px; vertical-align: middle; }
 
 /* Action.defaultBinding rendering — one row per binding, key bindings
