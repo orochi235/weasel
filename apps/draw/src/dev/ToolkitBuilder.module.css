@@ -51,32 +51,14 @@
   gap: var(--wzl-space-6);
   min-width: 0;
 }
-.widget {
-  background: var(--wzl-surface);
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  max-height: 320px;
-  margin-bottom: var(--wzl-space-8);
-  overflow: hidden;
-}
-.widgetTitle {
-  margin: 0;
-  padding: var(--wzl-space-4) var(--wzl-space-6);
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  /* Inverted header: light face, dark text — matches the keycap face
-     palette. The widget body keeps its dark surface so contents read
-     against the same backdrop as the rest of the panel. */
-  background: var(--wzl-fg);
-  color: var(--wzl-surface);
-}
-.widgetBody { padding: var(--wzl-space-4) var(--wzl-space-6); }
-.widgetBodyScrollY { padding: 0 var(--wzl-space-6) var(--wzl-space-4); overflow-y: auto; min-height: 0; }
-.widgetBodyScrollXY { padding: 0 var(--wzl-space-6) var(--wzl-space-4); overflow: auto; min-height: 0; }
+.widget { min-width: 0; }
+/* PropertyPanel turns off text selection for its control rows; ids in these
+   tables are there to be copied. Two classes outrank its one. */
+.layout .widget { -webkit-user-select: text; user-select: text; }
+/* Fixed-height scroll bodies keep a long list inside its own panel instead
+   of pushing the whole page. */
+.widgetBodyScrollY { max-height: 280px; overflow-y: auto; min-height: 0; }
+.widgetBodyScrollXY { max-height: 280px; overflow: auto; min-height: 0; }
 /* Explicit aspect-ratio mirrors the SceneCanvas buffer (width=520 height=360,
    = 13/9). A bare `<canvas>` carries this ratio implicitly via its width/height
    attributes, but inside this column-flex container that transferred ratio is
@@ -118,12 +100,10 @@
   text-transform: none;
   letter-spacing: 0;
 }
-/* widgetTitle is the inverted (light) header — lay its contents out in a row
-   so the toggle can sit at the trailing edge. */
 .widgetTitle { display: flex; align-items: center; gap: var(--wzl-space-4); }
 
 /* Resolution widget — verdict-driven row emphasis. */
-.resolutionControls { display: flex; flex-wrap: wrap; gap: var(--wzl-space-4); align-items: center; padding: var(--wzl-space-4) var(--wzl-space-6); }
+.resolutionControls { display: flex; flex-wrap: wrap; gap: var(--wzl-space-4); align-items: center; padding-bottom: var(--wzl-space-4); }
 .verdictFires { font-weight: 600; }
 .verdictShadowed { opacity: 0.5; }
 .verdictBlocked { opacity: 0.75; text-decoration: line-through; }

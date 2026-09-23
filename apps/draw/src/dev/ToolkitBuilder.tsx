@@ -51,6 +51,7 @@ import {
   DataGrid,
   KeySequence,
   keySpecsFromMods,
+  PropertyPanel,
   Select,
   Switch,
   ToggleBar,
@@ -256,8 +257,7 @@ function ToolsWidget({
     shortcut: lookupShortcutByToolId(d.id, actions),
   }));
   return (
-    <div className={s.widget}>
-      <h2 className={s.widgetTitle}>Tools · {defs.length}</h2>
+    <PropertyPanel stance="debug" className={s.widget} title={`Tools · ${defs.length}`}>
       <div className={s.widgetBodyScrollY}>
         {rows.length === 0 ? (
           <p className={s.empty}>No tools yet (canvas still mounting).</p>
@@ -265,7 +265,7 @@ function ToolsWidget({
           <DataGrid rows={rows} columns={TOOL_COLUMNS} defaultSort={{ columnId: 'id', direction: 'asc' }} />
         )}
       </div>
-    </div>
+    </PropertyPanel>
   );
 }
 
@@ -294,8 +294,7 @@ const TOOL_COLUMNS: readonly DataGridColumn<ToolRow>[] = [
 
 function ActionsWidget({ actions }: { actions: readonly Action[] }): ReactElement {
   return (
-    <div className={s.widget}>
-      <h2 className={s.widgetTitle}>Actions · {actions.length}</h2>
+    <PropertyPanel stance="debug" className={s.widget} title={`Actions · ${actions.length}`}>
       <div className={s.widgetBodyScrollY}>
         {actions.length === 0 ? (
           <p className={s.empty}>No actions registered. Mount an ActionsProvider upstream.</p>
@@ -303,7 +302,7 @@ function ActionsWidget({ actions }: { actions: readonly Action[] }): ReactElemen
           <DataGrid rows={actions} columns={ACTION_COLUMNS} defaultSort={{ columnId: 'id', direction: 'asc' }} />
         )}
       </div>
-    </div>
+    </PropertyPanel>
   );
 }
 
@@ -364,8 +363,7 @@ function RoutesWidget({
     };
   }));
   return (
-    <div className={s.widget}>
-      <h2 className={s.widgetTitle}>Routes · {routes.length}</h2>
+    <PropertyPanel stance="debug" className={s.widget} title={`Routes · ${routes.length}`}>
       <div className={s.widgetBodyScrollXY}>
         {rows.length === 0 ? (
           <p className={s.empty}>No routes (no tools mounted yet).</p>
@@ -373,7 +371,7 @@ function RoutesWidget({
           <DataGrid rows={rows} columns={ROUTE_COLUMNS} />
         )}
       </div>
-    </div>
+    </PropertyPanel>
   );
 }
 
@@ -543,8 +541,7 @@ export function ResolutionWidget({
   }, [gesture, target, mods, actions, activeToolId, tools]);
 
   return (
-    <div className={s.widget}>
-      <h2 className={s.widgetTitle}>Resolution · {candidates.length}</h2>
+    <PropertyPanel stance="debug" className={s.widget} title={`Resolution · ${candidates.length}`}>
       <div className={s.resolutionControls}>
         <Select<ResolutionGesture>
           label="gesture"
@@ -593,7 +590,7 @@ export function ResolutionWidget({
           />
         )}
       </div>
-    </div>
+    </PropertyPanel>
   );
 }
 
@@ -665,23 +662,20 @@ function verdictText(verdict: ResolvedCandidate['verdict']): string {
 
 function ConflictsWidget({ conflicts }: { conflicts: readonly Conflict[] }): ReactElement {
   return (
-    <div className={s.widget}>
-      <h2 className={s.widgetTitle}>Conflicts · {conflicts.length}</h2>
-      <div className={s.widgetBody}>
-        {conflicts.length === 0 ? (
-          <p className={s.empty}>No exact-tuple route conflicts in this bundle.</p>
-        ) : (
-          <DataGrid
-            rows={withUniqueIds(conflicts.map((c) => {
-              const route = `${c.phase}.${c.gesture}${c.arg != null ? `(${c.arg})` : ''}${c.target != null ? `.${c.target}` : ''}`;
-              const mods = canonicalModifiers(c.modifiers);
-              return { key: `${route}|${mods}`, route, mods, toolIds: c.toolIds.join(', ') };
-            }))}
-            columns={CONFLICT_COLUMNS}
-          />
-        )}
-      </div>
-    </div>
+    <PropertyPanel stance="debug" className={s.widget} title={`Conflicts · ${conflicts.length}`}>
+      {conflicts.length === 0 ? (
+        <p className={s.empty}>No exact-tuple route conflicts in this bundle.</p>
+      ) : (
+        <DataGrid
+          rows={withUniqueIds(conflicts.map((c) => {
+            const route = `${c.phase}.${c.gesture}${c.arg != null ? `(${c.arg})` : ''}${c.target != null ? `.${c.target}` : ''}`;
+            const mods = canonicalModifiers(c.modifiers);
+            return { key: `${route}|${mods}`, route, mods, toolIds: c.toolIds.join(', ') };
+          }))}
+          columns={CONFLICT_COLUMNS}
+        />
+      )}
+    </PropertyPanel>
   );
 }
 
@@ -706,13 +700,18 @@ function DispatchTraceWidget(): ReactElement {
   const [showUnhandled, setShowUnhandled] = useState<boolean>(false);
 
   return (
-    <div className={s.widget}>
-      <h2 className={s.widgetTitle}>
-        Dispatch · {entries.length}
-        <Switch className={s.traceToggle} isSelected={showUnhandled} onChange={setShowUnhandled}>
-          unhandled
-        </Switch>
-      </h2>
+    <PropertyPanel
+      stance="debug"
+      className={s.widget}
+      title={(
+        <span className={s.widgetTitle}>
+          Dispatch · {entries.length}
+          <Switch className={s.traceToggle} isSelected={showUnhandled} onChange={setShowUnhandled}>
+            unhandled
+          </Switch>
+        </span>
+      )}
+    >
       <div className={s.widgetBodyScrollY}>
         <DispatchTraceTable
           entries={entries}
@@ -723,7 +722,7 @@ function DispatchTraceWidget(): ReactElement {
             : 'No dispatch events yet. Interact with the canvas to populate the trace.'}
         />
       </div>
-    </div>
+    </PropertyPanel>
   );
 }
 

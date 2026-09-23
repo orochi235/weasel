@@ -37,9 +37,10 @@
   display: flex;
   align-items: center;
   gap: var(--wzl-space-3);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-family: var(--wzl-font-display);
+  font-size: var(--wzl-font-size-sm);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
   color: var(--wzl-fg-muted);
   margin-bottom: var(--wzl-space-3);
 }
@@ -234,11 +235,14 @@
 }
 
 /* Bundle detail: section subheading + members table + added/removed tags. */
+/* The stanced panel-title recipe, so these read like ToolkitBuilder's debug panel titles. */
 .subHeading {
   margin: var(--wzl-space-8) 0 var(--wzl-space-3);
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
+  font-size: var(--wzl-font-size-sm);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
   color: var(--wzl-fg-muted);
 }
 .tagAdded { color: var(--wzl-success); }
