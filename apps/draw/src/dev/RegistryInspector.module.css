@@ -92,27 +92,7 @@
 .treeLeafSelected { background: var(--wzl-accent); color: var(--wzl-fg-on-accent); }
 
 .detailHeading { margin: 0 0 var(--wzl-space-6); font-size: 19px; }
-.detailList { display: grid; grid-template-columns: 120px 1fr; gap: var(--wzl-space-1) var(--wzl-space-6); font-size: 15px; margin: 0; }
-.detailList dt {
-  color: var(--wzl-fg-muted);
-  text-transform: capitalize;
-  font-size: var(--wzl-font-size-md);
-  letter-spacing: 0.03em;
-  min-height: 30px;
-  display: flex;
-  /* Top-align labels so a tall multi-line value (e.g. a routes list) doesn't
-     leave the label floating in the middle of its row. */
-  align-items: flex-start;
-  padding-top: var(--wzl-space-4);
-}
-.detailList dd {
-  margin: 0;
-  min-height: 30px;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--wzl-space-2);
-}
+.diffSection { margin-top: var(--wzl-space-8); }
 .routeBadge { display: inline-flex; align-items: center; gap: var(--wzl-space-1); margin-right: var(--wzl-space-3); }
 
 .phaseGroup { display: inline-flex; align-items: center; gap: var(--wzl-space-1); }

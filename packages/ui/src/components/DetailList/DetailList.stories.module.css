@@ -1,0 +1,10 @@
+.frame { width: 360px; }
+.narrow { width: 200px; }
+.rail {
+  --wzl-params-label-width: 8em;
+  --wzl-params-label-align: end;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+}

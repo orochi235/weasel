@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 import type { GestureSpec } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
-import { Badge, Button, Code, DataGrid, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, keySpecsFromShortcut, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@weasel-js/ui';
+import { Badge, Button, Code, DataGrid, DetailList, DetailRow, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, keySpecsFromShortcut, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@weasel-js/ui';
 import type { ParsedModifiers, ModifierKey } from '@weasel-js/core/routing';
 
 /** Minimal inline-markdown renderer — splits on backtick-delimited code
@@ -421,14 +421,14 @@ function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavi
         used by <code>History.serialize</code> / <code>restore</code> to rebuild
         ops across reloads.
       </p>
-      <dl className={s.detailList}>
-        <dt>factory</dt><dd><code>{factoryId}</code></dd>
-        <dt>runtime</dt><dd><Code>{typeof fn}</Code></dd>
+      <DetailList>
+        <DetailRow label="factory"><code>{factoryId}</code></DetailRow>
+        <DetailRow label="runtime"><Code>{typeof fn}</Code></DetailRow>
         {arity !== undefined && (
-          <><dt>parameters</dt><dd>{arity}</dd></>
+          <DetailRow label="parameters">{arity}</DetailRow>
         )}
-        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
-      </dl>
+        {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
+      </DetailList>
       {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
       <OpSchemaPanel factoryId={factoryId} />
     </div>
@@ -451,9 +451,9 @@ function OpSchemaPanel({ factoryId }: { factoryId: string }) {
     <>
       <h3 className={s.subHeading}>Arguments</h3>
       <SchemaTable rows={schema.params} empty="Factory takes no arguments." />
-      <dl className={s.detailList}>
-        <dt>returns</dt><dd><Code variant="plain" tone="accent" size="xs">{schema.returnType}</Code></dd>
-      </dl>
+      <DetailList>
+        <DetailRow label="returns"><Code variant="plain" tone="accent" size="xs">{schema.returnType}</Code></DetailRow>
+      </DetailList>
       <p className={s.schemaSource}>
         Extracted from <code>{schema.source.file}:{schema.source.line}</code>
       </p>
@@ -636,9 +636,9 @@ function GroupDetail({
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.label}</h2>
-      <dl className={s.detailList}>
-        <dt>source</dt><dd><Code>{entry.source}</Code></dd>
-      </dl>
+      <DetailList>
+        <DetailRow label="source"><Code>{entry.source}</Code></DetailRow>
+      </DetailList>
       {entry.source === 'tool' && (
         <>
           <h3 className={s.subHeading}>Tools in this presentation group</h3>
@@ -875,10 +875,10 @@ function IconDetail({ entry }: { entry: IconEntry }) {
         <div className={`${s.iconPreviewCell} ${s.iconPreviewCellSmall}`}><C /></div>
         <div className={`${s.iconPreviewCell} ${s.iconPreviewCellLarge}`}><C /></div>
       </div>
-      <dl className={s.detailList}>
-        <dt>source</dt><dd><Code>{entry.source}</Code></dd>
-        {match?.path && (<><dt>file</dt><dd><SourceLink match={match} /></dd></>)}
-      </dl>
+      <DetailList>
+        <DetailRow label="source"><Code>{entry.source}</Code></DetailRow>
+        {match?.path && <DetailRow label="file"><SourceLink match={match} /></DetailRow>}
+      </DetailList>
       {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
     </div>
   );
@@ -932,73 +932,53 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         )}
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
-      <dl className={s.detailList}>
+      <DetailList>
         {entry.hookName && (
-          <>
-            <dt>hook</dt>
-            <dd><Code>{entry.hookName}</Code></dd>
-          </>
+          <DetailRow label="hook"><Code>{entry.hookName}</Code></DetailRow>
         )}
-        <dt>slot</dt>
-        <dd><EntryLink kind="slot" id={entry.slot} onNavigate={onNavigate} /></dd>
+        <DetailRow label="slot"><EntryLink kind="slot" id={entry.slot} onNavigate={onNavigate} /></DetailRow>
         {entry.switchShortcut && (
-          <><dt>shortcut</dt><dd><KeySequence keys={keySpecsFromShortcut(entry.switchShortcut)} /></dd></>
+          <DetailRow label="shortcut"><KeySequence keys={keySpecsFromShortcut(entry.switchShortcut)} /></DetailRow>
         )}
         {entry.hotkey && (
-          <>
-            <dt>hold to engage</dt>
-            <dd>
-              <KeySequence keys={[hotkeyTriggerToKeySpec(entry.hotkey)]} />
-              <Powerline {...routeToPowerline(`[*:initial] keyHeld(${entry.hotkey})`)} />
-            </dd>
-          </>
+          <DetailRow label="hold to engage">
+            <KeySequence keys={[hotkeyTriggerToKeySpec(entry.hotkey)]} />
+            <Powerline {...routeToPowerline(`[*:initial] keyHeld(${entry.hotkey})`)} />
+          </DetailRow>
         )}
-        {entry.cursor && (<><dt>cursor</dt><dd><code>{entry.cursor}</code></dd></>)}
+        {entry.cursor && <DetailRow label="cursor"><code>{entry.cursor}</code></DetailRow>}
         {entry.presentation && (
-          <>
-            <dt>presentation</dt>
-            <dd>
-              {entry.presentation.label && <Code>{entry.presentation.label}</Code>}
-              {entry.presentation.group && (
-                <EntryLink
-                  kind="group"
-                  id={`tool:${entry.presentation.group}`}
-                  label={`group: ${entry.presentation.group}`}
-                  onNavigate={onNavigate}
-                />
-              )}
-              {entry.presentation.shortcut && <Code>shortcut: {entry.presentation.shortcut}</Code>}
-            </dd>
-          </>
+          <DetailRow label="presentation">
+            {entry.presentation.label && <Code>{entry.presentation.label}</Code>}
+            {entry.presentation.group && (
+              <EntryLink
+                kind="group"
+                id={`tool:${entry.presentation.group}`}
+                label={`group: ${entry.presentation.group}`}
+                onNavigate={onNavigate}
+              />
+            )}
+            {entry.presentation.shortcut && <Code>shortcut: {entry.presentation.shortcut}</Code>}
+          </DetailRow>
         )}
-        <dt>surface</dt>
-        <dd><SurfaceRow surface={entry.surface} /></dd>
+        <DetailRow label="surface"><SurfaceRow surface={entry.surface} /></DetailRow>
         {caps.length > 0 && (
-          <>
-            <dt>capabilities</dt>
-            <dd>{caps.map((c) => <Code key={c}>{c}</Code>)}</dd>
-          </>
+          <DetailRow label="capabilities">{caps.map((c) => <Code key={c}>{c}</Code>)}</DetailRow>
         )}
         {bundles.length > 0 && (
-          <>
-            <dt>in bundles</dt>
-            <dd>
-              {bundles.map((b) => (
-                <Button key={b.id} variant="link" onClick={() => onNavigate({ kind: 'bundle', id: b.id })}>
-                  <BundleBadge id={b.id} label={b.label} />
-                </Button>
-              ))}
-            </dd>
-          </>
+          <DetailRow label="in bundles">
+            {bundles.map((b) => (
+              <Button key={b.id} variant="link" onClick={() => onNavigate({ kind: 'bundle', id: b.id })}>
+                <BundleBadge id={b.id} label={b.label} />
+              </Button>
+            ))}
+          </DetailRow>
         )}
-        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
+        {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
         {unlistedCallbacks.length > 0 && (
-          <>
-            <dt>callbacks</dt>
-            <dd><CallbackList callbacks={unlistedCallbacks} /></dd>
-          </>
+          <DetailRow label="callbacks"><CallbackList callbacks={unlistedCallbacks} /></DetailRow>
         )}
-      </dl>
+      </DetailList>
       {/* Rendered even when empty: a tool with no routes (an overlay-only
           ambient tool like `rotate`) should say so, not silently omit the
           section and leave the reader guessing whether it failed to load. */}
@@ -1208,56 +1188,44 @@ function ActionDetail({ entry, tools, onNavigate }: {
         {entry.icon && <span className={s.toolIcon} aria-hidden>{entry.icon}</span>}
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
-      <dl className={s.detailList}>
-        <dt>label</dt><dd>{entry.label}</dd>
+      <DetailList>
+        <DetailRow label="label">{entry.label}</DetailRow>
         {entry.group && (
-          <>
-            <dt>group</dt>
-            <dd><EntryLink kind="group" id={`action:${entry.group}`} label={entry.group} onNavigate={onNavigate} /></dd>
-          </>
+          <DetailRow label="group"><EntryLink kind="group" id={`action:${entry.group}`} label={entry.group} onNavigate={onNavigate} /></DetailRow>
         )}
         {entry.bindingShortcut && (
-          <><dt>binding</dt><dd><KeySequence keys={keySpecsFromShortcut(entry.bindingShortcut)} /></dd></>
+          <DetailRow label="binding"><KeySequence keys={keySpecsFromShortcut(entry.bindingShortcut)} /></DetailRow>
         )}
         {entry.shortcut && (
-          <><dt>shortcut</dt><dd><code>{entry.shortcut}</code></dd></>
+          <DetailRow label="shortcut"><code>{entry.shortcut}</code></DetailRow>
         )}
         {hasParams && (
-          <>
-            <dt>params</dt>
-            <dd>
-              {paramNames.length > 0
-                ? paramNames.map((name, i) => (
-                    <Fragment key={name}>
-                      {i > 0 && ', '}
-                      <Code>{name}</Code>
-                    </Fragment>
-                  ))
-                : <span className={s.empty}>none</span>}
-            </dd>
-          </>
+          <DetailRow label="params">
+            {paramNames.length > 0
+              ? paramNames.map((name, i) => (
+                  <Fragment key={name}>
+                    {i > 0 && ', '}
+                    <Code>{name}</Code>
+                  </Fragment>
+                ))
+              : <span className={s.empty}>none</span>}
+          </DetailRow>
         )}
         {entry.enabled && (
-          <>
-            <dt>enabled</dt>
-            <dd>
-              {entry.enabled.enabled
-                ? <Badge {...(BOOLEAN_BADGE_PROPS.true as BadgeProps)}>true</Badge>
-                : <>
-                    <Badge {...(BOOLEAN_BADGE_PROPS.false as BadgeProps)}>false</Badge>
-                    <span className={s.empty}> ({entry.enabled.reason})</span>
-                  </>}
-            </dd>
-          </>
+          <DetailRow label="enabled">
+            {entry.enabled.enabled
+              ? <Badge {...(BOOLEAN_BADGE_PROPS.true as BadgeProps)}>true</Badge>
+              : <>
+                  <Badge {...(BOOLEAN_BADGE_PROPS.false as BadgeProps)}>false</Badge>
+                  <span className={s.empty}> ({entry.enabled.reason})</span>
+                </>}
+          </DetailRow>
         )}
-        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
+        {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
         {entry.callbacks && entry.callbacks.length > 0 && (
-          <>
-            <dt>callbacks</dt>
-            <dd><CallbackList callbacks={entry.callbacks} /></dd>
-          </>
+          <DetailRow label="callbacks"><CallbackList callbacks={entry.callbacks} /></DetailRow>
         )}
-      </dl>
+      </DetailList>
       {paramRows.length > 0 && (
         <>
           <h3 className={s.subHeading}>Bindings</h3>
@@ -1377,56 +1345,51 @@ function BundleDetail({
   return (
     <div>
       <h2 className={s.detailHeading}><BundleBadge id={entry.id} label={entry.label} /></h2>
-      <dl className={s.detailList}>
-        <dt>id</dt><dd><Code>{entry.id}</Code></dd>
-        <dt>tool count</dt><dd>{entry.tools.length}</dd>
-        <dt>by group</dt>
-        <dd>
+      <DetailList>
+        <DetailRow label="id"><Code>{entry.id}</Code></DetailRow>
+        <DetailRow label="tool count">{entry.tools.length}</DetailRow>
+        <DetailRow label="by group">
           {[...groupCounts.entries()].map(([g, n]) => (
             <Code key={g}>{g} <Badge shape="pill" size="sm" tone="neutral" variant="subtle">{n}</Badge></Code>
           ))}
-        </dd>
-      </dl>
+        </DetailRow>
+      </DetailList>
       <h3 className={s.subHeading}>Tools</h3>
       <DataGrid
         rows={entry.tools.map((id) => ({ id, tool: byId.get(id) }))}
         columns={bundleMemberColumns(onNavigate)}
         empty="No tools in this bundle."
       />
-      <h3 className={s.subHeading}>Diff vs other bundles</h3>
-      <dl className={s.detailList}>
+      <DetailList title="Diff vs other bundles" className={s.diffSection}>
         {others.map((o) => {
           const mine = new Set(entry.tools);
           const theirs = new Set(o.tools);
           const added = entry.tools.filter((t) => !theirs.has(t));
           const removed = o.tools.filter((t) => !mine.has(t));
           return (
-            <Fragment key={o.id}>
-              <dt>vs <BundleBadge id={o.id} label={o.label} /></dt>
-              <dd>
-                {added.length === 0 && removed.length === 0
-                  ? <span className={s.empty}>(identical)</span>
-                  : <>
-                      {added.map((t) => (
-                        <Button
-                          key={`+${t}`}
-                          variant="link"
-                          onClick={() => onNavigate({ kind: 'tool', id: t })}
-                        ><Code tone="success">+{t}</Code></Button>
-                      ))}
-                      {removed.map((t) => (
-                        <Button
-                          key={`-${t}`}
-                          variant="link"
-                          onClick={() => onNavigate({ kind: 'tool', id: t })}
-                        ><Code tone="danger">−{t}</Code></Button>
-                      ))}
-                    </>}
-              </dd>
-            </Fragment>
+            <DetailRow key={o.id} label={<>vs <BundleBadge id={o.id} label={o.label} /></>}>
+              {added.length === 0 && removed.length === 0
+                ? <span className={s.empty}>(identical)</span>
+                : <>
+                    {added.map((t) => (
+                      <Button
+                        key={`+${t}`}
+                        variant="link"
+                        onClick={() => onNavigate({ kind: 'tool', id: t })}
+                      ><Code tone="success">+{t}</Code></Button>
+                    ))}
+                    {removed.map((t) => (
+                      <Button
+                        key={`-${t}`}
+                        variant="link"
+                        onClick={() => onNavigate({ kind: 'tool', id: t })}
+                      ><Code tone="danger">−{t}</Code></Button>
+                    ))}
+                  </>}
+            </DetailRow>
           );
         })}
-      </dl>
+      </DetailList>
     </div>
   );
 }
@@ -1447,31 +1410,25 @@ function ShapeKindDetail({
         </span>
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
-      <dl className={s.detailList}>
-        <dt>trait</dt><dd><KindBadge label={entry.trait} /></dd>
-        <dt>kind</dt><dd><KindBadge label="shape" /></dd>
+      <DetailList>
+        <DetailRow label="trait"><KindBadge label={entry.trait} /></DetailRow>
+        <DetailRow label="kind"><KindBadge label="shape" /></DetailRow>
         {entry.tool && (
-          <>
-            <dt>authored by</dt>
-            <dd>
-              <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: entry.tool! })}>
-                {entry.hookName ?? entry.tool}
-              </Button>
-            </dd>
-          </>
+          <DetailRow label="authored by">
+            <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: entry.tool! })}>
+              {entry.hookName ?? entry.tool}
+            </Button>
+          </DetailRow>
         )}
         {opTargets.length > 0 && (
-          <>
-            <dt>op factories</dt>
-            <dd>
-              {opTargets.map((f) => (
-                <EntryLink key={f} kind="opFactory" id={f} onNavigate={onNavigate} />
-              ))}
-            </dd>
-          </>
+          <DetailRow label="op factories">
+            {opTargets.map((f) => (
+              <EntryLink key={f} kind="opFactory" id={f} onNavigate={onNavigate} />
+            ))}
+          </DetailRow>
         )}
-        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
-      </dl>
+        {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
+      </DetailList>
       {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
       <ShapeSchemaPanel kindId={entry.id} />
     </div>
@@ -1516,19 +1473,16 @@ function RoutingKindDetail({
       <div className={s.toolHeader}>
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
-      <dl className={s.detailList}>
-        <dt>trait</dt><dd><KindBadge label={entry.trait} /></dd>
-        <dt>kind</dt><dd><KindBadge label="routing-kind" /></dd>
-        <dt>source</dt><dd><KindBadge label={entry.source} /></dd>
+      <DetailList>
+        <DetailRow label="trait"><KindBadge label={entry.trait} /></DetailRow>
+        <DetailRow label="kind"><KindBadge label="routing-kind" /></DetailRow>
+        <DetailRow label="source"><KindBadge label={entry.source} /></DetailRow>
         {entry.shapeKindId && (
-          <>
-            <dt>shape kind</dt>
-            <dd>
-              <EntryLink kind="shapeKind" id={entry.shapeKindId} onNavigate={onNavigate} />
-            </dd>
-          </>
+          <DetailRow label="shape kind">
+            <EntryLink kind="shapeKind" id={entry.shapeKindId} onNavigate={onNavigate} />
+          </DetailRow>
         )}
-      </dl>
+      </DetailList>
     </div>
   );
 }
@@ -1539,18 +1493,17 @@ function PropertiesKindDetail({ entry }: { entry: PropertiesKindEntry }) {
       <div className={s.toolHeader}>
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
-      <dl className={s.detailList}>
-        <dt>trait</dt><dd><KindBadge label={entry.trait} /></dd>
-        <dt>kind</dt><dd><KindBadge label="properties-kind" /></dd>
-        <dt>leaf paths</dt>
-        <dd>
+      <DetailList>
+        <DetailRow label="trait"><KindBadge label={entry.trait} /></DetailRow>
+        <DetailRow label="kind"><KindBadge label="properties-kind" /></DetailRow>
+        <DetailRow label="leaf paths">
           {entry.leafPaths.length === 0
             ? <span className={s.empty}>No editable leaves in this kind's schema.</span>
             : entry.leafPaths.map((path) => (
                 <Code key={path}>{path}</Code>
               ))}
-        </dd>
-      </dl>
+        </DetailRow>
+      </DetailList>
     </div>
   );
 }
@@ -1570,14 +1523,14 @@ function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.id}</h2>
-      <dl className={s.detailList}>
-        <dt>kind</dt><dd><KindBadge label="op factory" /></dd>
-        <dt>runtime</dt><dd><Code>{typeof fn}</Code></dd>
+      <DetailList>
+        <DetailRow label="kind"><KindBadge label="op factory" /></DetailRow>
+        <DetailRow label="runtime"><Code>{typeof fn}</Code></DetailRow>
         {arity !== undefined && (
-          <><dt>parameters</dt><dd>{arity}</dd></>
+          <DetailRow label="parameters">{arity}</DetailRow>
         )}
-        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
-      </dl>
+        {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
+      </DetailList>
       {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
       <OpSchemaPanel factoryId={entry.id} />
     </div>

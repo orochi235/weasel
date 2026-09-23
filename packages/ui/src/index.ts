@@ -10,6 +10,7 @@ export * from './components/Badge';
 export * from './components/Button';
 export * from './components/Code';
 export * from './components/DataGrid';
+export * from './components/DetailList';
 export * from './components/Disclosure';
 export * from './components/DragHandleGlyph';
 export * from './components/Keycaps';
