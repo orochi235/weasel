@@ -11,9 +11,7 @@
  *   /     set the last-focused swatch to none
  */
 import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
-import { useRef } from 'react';
-import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, mergeAlphaFromPrev, useActionsRegistry } from '@weasel-js/core';
-import type { UiOngoingControl } from '@weasel-js/core';
+import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, mergeAlphaFromPrev, useOngoingAction } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui';
 import { useColorContext } from './tools/colorContext';
 
@@ -58,24 +56,7 @@ function SwatchColorInput(props: {
   prev: string;
   setLocal: (color: string) => void;
 }) {
-  const actions = useActionsRegistry();
-  const ctrlRef = useRef<UiOngoingControl | null>(null);
-  const actionId = props.role === 'fill' ? 'setFill' : 'setStroke';
-
-  function input(v: string): void {
-    if (!ctrlRef.current) {
-      ctrlRef.current = actions?.begin(actionId, { color: v }) ?? null;
-    } else {
-      ctrlRef.current.update({ color: v });
-    }
-  }
-
-  function commit(): void {
-    if (ctrlRef.current) {
-      ctrlRef.current.end('commit');
-      ctrlRef.current = null;
-    }
-  }
+  const edit = useOngoingAction(props.role === 'fill' ? 'setFill' : 'setStroke');
 
   return (
     <input
@@ -84,9 +65,9 @@ function SwatchColorInput(props: {
       onInput={(e) => {
         const v = mergeAlphaFromPrev((e.target as HTMLInputElement).value, props.prev);
         props.setLocal(v);
-        input(v);
+        edit.input({ color: v });
       }}
-      onBlur={commit}
+      onBlur={() => edit.commit()}
       className="wd-swatch-input"
       aria-label={props.role === 'fill' ? 'Fill color' : 'Stroke color'}
     />

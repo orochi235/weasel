@@ -124,7 +124,8 @@ export { useKeyState } from './input/useKeyState';
 export type { UseKeyStateOptions } from './input/useKeyState';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
-export { ActionsProvider, ActionsScope, useActionsRegistry, useAction } from '@weasel-js/routing/react';
+export { ActionsProvider, ActionsScope, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
+export type { OngoingAction } from '@weasel-js/routing/react';
 export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
 export { ActionDisabledReason } from '@weasel-js/routing';
 export type { Action, ActionDispatch, ActionPresentation, ActionVariant } from '@weasel-js/routing';

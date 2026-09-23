@@ -34,7 +34,7 @@ import {
   useScene,
   useSelection,
   useActionsRegistry,
-  type UiOngoingControl,
+  useOngoingAction,
   useBooleansAdapter,
   rectPath,
   asNodeId,
@@ -380,8 +380,7 @@ function wdPaintRenderer(actionId: string): PropertyRenderer {
 }
 
 function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; actionId: string }) {
-  const actions = useActionsRegistry();
-  const ctrlRef = useRef<UiOngoingControl | null>(null);
+  const edit = useOngoingAction(actionId);
 
   const fallback = ctx.pref.default;
   const raw = ctx.value;
@@ -392,20 +391,6 @@ function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; actionId: 
     : isFillStyleObject(fallback) ? fallback
     : undefined;
 
-  /** `commit` with no preceding `input` opens and closes the control in one
-   *  go — a kind switch is a complete gesture on its own. */
-  function dispatch(paint: FillStyle | null, phase: 'input' | 'commit'): void {
-    if (!ctrlRef.current) {
-      ctrlRef.current = actions?.begin(actionId, { paint }) ?? null;
-    } else {
-      ctrlRef.current.update({ paint });
-    }
-    if (phase === 'commit' && ctrlRef.current) {
-      ctrlRef.current.end('commit');
-      ctrlRef.current = null;
-    }
-  }
-
   return (
     <PaintInput
       // Per-kind switch memory is scratch for one selection.
@@ -414,8 +399,8 @@ function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; actionId: 
       mixed={ctx.mixed}
       unset={ctx.unset}
       aria-label={ctx.pref.name}
-      onInput={(next) => dispatch(next, 'input')}
-      onChange={(next) => dispatch(next, 'commit')}
+      onInput={(paint) => edit.input({ paint })}
+      onChange={(paint) => edit.commit({ paint })}
     />
   );
 }
@@ -629,7 +614,8 @@ function RightSidebar({
 
 function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
   const colors = useColorContext();
-  const actions = useActionsRegistry();
+  const fillEdit = useOngoingAction('setFill');
+  const strokeEdit = useOngoingAction('setStroke');
   // Highlight tracks the fill swatch — left-click (the primary action)
   // sets fill. Right-click sets stroke; the active-swatches widget
   // reflects the stroke update. `null` is the transparent ("None")
@@ -651,8 +637,7 @@ function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
             colors.setFill({ kind: 'none' });
           } else {
             colors.setFill({ kind: 'solid', color: v });
-            const ctrl = actions?.begin('setFill', { color: v });
-            ctrl?.end('commit');
+            fillEdit.commit({ color: v });
           }
         }}
         onAltChange={(v) => {
@@ -660,8 +645,7 @@ function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
             colors.setStroke({ kind: 'none' });
           } else {
             colors.setStroke({ kind: 'solid', color: v });
-            const ctrl = actions?.begin('setStroke', { color: v });
-            ctrl?.end('commit');
+            strokeEdit.commit({ color: v });
           }
         }}
       />
