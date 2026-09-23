@@ -139,6 +139,8 @@ export function ActionBar(p: ActionBarProps) {
         <MenuButton label="New" items={PAPER_ITEMS} onAction={p.onNew} />
         <ButtonBar
           ariaLabel="File"
+          size="sm"
+          variant="minimal"
           items={[
             { value: 'open', label: 'Open', onAction: p.onOpenSvg, tooltip: 'Open SVG…' },
             { value: 'save', label: 'Save', onAction: p.onSaveSvg, tooltip: 'Save as SVG' },
@@ -183,6 +185,7 @@ export function ActionBar(p: ActionBarProps) {
         <Select
           aria-label="Recording profile"
           width="fit"
+          variant="bare"
           options={RECORDING_PROFILES}
           selectedKey={p.recordingProfile}
           onSelectionChange={p.onChangeRecordingProfile}
