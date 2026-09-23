@@ -19,6 +19,7 @@ const EXPECTED_NAMES = [
   'tb-height', 'control-h-xs', 'control-h-sm', 'control-h', 'icon-button-size', 'glass-blur',
   'slider-track-h', 'slider-thumb-size', 'slider-track-mix', 'slider-thumb-mix', 'field-pad-x',
   'handle-size', 'handle-size-sm', 'handle-size-lg',
+  'checker-a', 'checker-b', 'checker-size', 'workspace-surface', 'workspace-line',
   'font-size-2xs', 'font-size-xs', 'font-size-sm', 'font-size-md', 'font-size-lg', 'font-size-xl', 'font-size',
   'space-1', 'space-2', 'space-3', 'space-4', 'space-5', 'space-6', 'space-7', 'space-8',
   'space-xs', 'space-sm', 'space-md', 'space-lg',

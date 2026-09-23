@@ -806,6 +806,31 @@
       "type": "dimension",
       "description": "A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with."
     },
+    "checker-a": {
+      "value": "{border}",
+      "type": "color",
+      "description": "One square of the transparency checker drawn under a paint that is empty, mixed or translucent. Paint it as repeating-conic-gradient(var(--wzl-checker-a) 0% 25%, var(--wzl-checker-b) 0% 50%) 50% / var(--wzl-checker-size) var(--wzl-checker-size)."
+    },
+    "checker-b": {
+      "value": "{surface}",
+      "type": "color",
+      "description": "The other square of the transparency checker."
+    },
+    "checker-size": {
+      "value": "8px",
+      "type": "dimension",
+      "description": "Edge of one repeat of the transparency checker: two squares by two."
+    },
+    "workspace-surface": {
+      "value": "{surface-sunken}",
+      "type": "color",
+      "description": "Ground of a canvas app's workspace — the area around the document page."
+    },
+    "workspace-line": {
+      "value": "{line-subtle}",
+      "type": "color",
+      "description": "Marks drawn over workspace-surface, such as its diagonal stripes, so the page reads as the thing on top."
+    },
     "field-pad-x": {
       "value": "8px",
       "type": "dimension",
