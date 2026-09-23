@@ -68,6 +68,7 @@ const SPEC_KIND_TO_GESTURE: Record<GestureSpec['kind'], GestureName | undefined>
   key: 'keyDown',
   'key-held': 'keyHeld',
   wheel: 'wheel',
+  pinch: 'pinch',
   click: 'click',
   doubleClick: 'dblTap',
   contextMenu: 'contextMenu',

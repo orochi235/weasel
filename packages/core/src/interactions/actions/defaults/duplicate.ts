@@ -107,7 +107,7 @@ export const duplicateAction: Action & { requires: string[] } = {
 
       if (ops.length === 0) return;
       if (applyOps) applyOps(ops, 'Duplicate');
-      else scene.applyBatch(ops, 'Duplicate', defaultCommitAdapter(scene));
+      else scene.applyBatch(ops, 'Duplicate', defaultCommitAdapter(scene, selection.adapterMethods));
       selection.set(newIds);
     },
   },

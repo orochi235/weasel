@@ -277,3 +277,49 @@ describe('text cascade', () => {
     expect(t.runs?.[0]?.fill).toMatchObject({ color: '#00ff00' });
   });
 });
+
+describe('<style> stylesheets', () => {
+  it('resolves an Illustrator-style export: class rules in <defs><style>', () => {
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #f00;
+      }
+
+      .cls-2 {
+        fill: none;
+        stroke: #231f20;
+        stroke-miterlimit: 10;
+        stroke-width: 2px;
+      }
+    </style>
+  </defs>
+  <rect class="cls-1" x="10" y="10" width="30" height="30"/>
+  <circle class="cls-2" cx="70" cy="70" r="20"/>
+</svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    expect(warnings).toEqual([]);
+    const [rect, circle] = nodes as SvgPathNode[];
+    expect(rect.fill).toEqual({ kind: 'solid', color: '#ff0000' });
+    expect(circle.fill).toEqual({ kind: 'none' });
+    expect(circle.stroke?.paint).toEqual({ kind: 'solid', color: '#231f20' });
+    expect(circle.stroke?.width).toBe(2);
+  });
+
+  it('a top-level <style> is not reported as an unsupported element', () => {
+    const { warnings } = parseSvg(`<svg xmlns="http://www.w3.org/2000/svg">
+      <style><![CDATA[ rect { fill: #0f0 } ]]></style><rect width="1" height="1"/>
+    </svg>`);
+    expect(warnings).toEqual([]);
+  });
+
+  it('a class rule on a <tspan> styles that run', () => {
+    const t = firstText(`<svg xmlns="http://www.w3.org/2000/svg">
+      <style>.hot { fill: #f00 }</style>
+      <text x="0" y="10">a<tspan class="hot">b</tspan></text>
+    </svg>`);
+    expect(t.runs?.find((r) => r.fill)?.fill).toMatchObject({ color: '#ff0000' });
+  });
+});

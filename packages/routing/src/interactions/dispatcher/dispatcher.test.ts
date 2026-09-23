@@ -990,6 +990,14 @@ describe('immediate params for affordance-carrying kinds', () => {
     expect(params).toMatchObject({ deltaX: 0, deltaY: 10, clientX: 1, clientY: 2, affordance });
   });
 
+  it('a pinch invoker sees the scale step, rotation, focal point and affordance', () => {
+    const params = paramsFor(
+      { kind: 'pinch' },
+      { kind: 'pinch', scale: 1.5, rotation: 3, clientX: 1, clientY: 2, affordance, ...noMods },
+    );
+    expect(params).toMatchObject({ scale: 1.5, rotation: 3, clientX: 1, clientY: 2, affordance });
+  });
+
   it('a doubleclick invoker sees the affordance', () => {
     const params = paramsFor(
       { kind: 'doubleClick' },

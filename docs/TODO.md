@@ -92,10 +92,10 @@ Priority tags:
   instead (`@weasel-js/svg`'s `unpack.ts`: kit-painter-native path/text leaves under
   containers mirroring `<g>` structure, multi-root files wrapped in one
   container, pose-only fit-clamp + drop-point placement, one undoable
-  batch per file). weaseldraw runs with `unpack` on. Remaining:
-  (a) **embedded SVG blurs under zoom** — `imageCache` rasterizes once at
-  natural size; re-rasterize at view scale (or draw from the live `Image`
-  element) if crispness matters; (b) weaseldraw's
+  batch per file). weaseldraw runs with `unpack` on. An embedded SVG
+  re-rasterizes at its drawn size (see `features/images/README.md`); that it
+  actually looks sharp at zoom has only been checked in jsdom, never in a
+  browser. Remaining: weaseldraw's
   file-menu import still uses its own app-local `svgInterop` mapping (richer:
   `wd:` tool metadata, paper size) — fold the shared walk if they drift, and
   note it now *drops* `<image>` nodes, since the app's `Obj` union is path/text
@@ -179,10 +179,6 @@ Priority tags:
   is closed: `forNode` hands it the node, and `remapBounds`/`fromBounds` resolve
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
-
-### Pen tool follow-ups
-
-- **(P3) Close a pen path onto another path's endpoint.** The pen snaps a placed anchor onto any existing anchor and can pick up an open path's end, but finishing on a *different* open path's endpoint only lands an anchor there — it does not join the two paths into one node.
 
 ### Cursor package follow-ups
 
@@ -283,7 +279,7 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 ## Paths & booleans
 
-- **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Selector matching is the missing piece; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
+- **(P3) Conditional at-rules in `@weasel-js/svg` stylesheets.** `<style>` rules, selector matching and `!important` resolve in `packages/svg/src/cascade.ts`, but every at-rule is skipped whole: a rule inside `@media` or `@supports` never applies, even one a static render would match (`@media screen`, `@supports (fill: red)`), and `@import` is not fetched. A `<style media="…">` applies only when its list names `all` or `screen`. Evaluating these needs a stance on which media a parse represents.
 
 ### Pathfinder follow-ups (post-v1)
 
@@ -383,21 +379,6 @@ Core five + Crop shipped. Remaining:
   eight glyphs to this repo's icon standard is its own piece of work and was
   deferred out of the stroke-markers arc.
 
-- **(P3) `extractUniformNames` regex coverage.** Two of the three gaps this
-  entry used to claim were never real: matrix arrays (`mat3 u_xforms[4];`) and
-  layout qualifiers both already worked — `\S+` takes any type name, and
-  `\buniform` skips whatever precedes it. What *was* broken and is now fixed
-  (2026-08-16): a precision or interpolation qualifier (`uniform highp float
-  u_t;` — the common spelling in hand-written GLSL) matched nothing at all, so
-  the uniform got no location and every write to it was dropped silently.
-  Comma-separated declarator lists (`uniform float a, b;`) read too.
-
-  Still a regex scan, not a parser, and still blind to GLSL preprocessor
-  branches, struct uniforms and interface blocks. Those want the bite-the-bullet
-  GLSL-prelude parser. **Check the claim before
-  planning around it** — this entry was wrong for months because nobody ran the
-  regex against the case it described.
-
 ---
 
 ## Text
@@ -444,7 +425,9 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) Decoration and script metrics are derived, not read from the font.**
   The underline / strikethrough / overline offsets and weight are the fixed
-  `0.10` / `-0.30` / `-0.90` / `0.05` em constants in `layoutRuns`, and
+  `0.10` / `-0.30` / `-0.90` / `0.05` em constants in
+  `packages/text/src/layout/decorationMetrics.ts` (shared by the GL tier and
+  `createMarkdownRenderer`'s 2D path), and
   `SCRIPT_METRICS` (58.3% size, ±33.3% position) is Adobe's default rather
   than the font's. Real fonts ship `post.underlinePosition` /
   `underlineThickness` and `OS/2.ySuperscript*` / `ySubscript*`, and
@@ -478,24 +461,15 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs.
 
-- **(P3) Small caps and `text-transform` have no run spelling.** The two
-  remaining gaps in the run style model after the superscript pass. Both are
-  harder than they look and for different reasons. `text-transform` breaks the
-  caret: `LaidOutCell.srcIndex` / `srcEnd` are UTF-16 offsets into the runs'
-  concatenated text, and `'ß'.toUpperCase()` is `'SS'`, so a transform that
-  changes length desynchronizes every offset after it — it needs a source-to-
-  transformed index map, not a `.toUpperCase()` in `resolveRuns`. Synthetic
-  small caps needs a *per-character* size within one run (lowercase rendered
-  as scaled-down uppercase), where the run is the unit that carries a size
-  today; the honest version splits the entry walk's size off the run, or
-  reads the `smcp` OpenType feature, which needs shaping. Real small caps is
-  a face, not a synthesis, and would fall out of the HarfBuzz entry below.
-
-- **(P3) `layoutMarkdown` paints no decorations.** `PositionedRun` now carries
-  a resolved `size` and a per-run `y`, so `fontScale`, `baselineShift` and
-  `script` reach the 2D-canvas path behind `renderLabel`. Underline,
-  strikethrough and overline are still dropped — they need a rule to stroke
-  rather than a number to offset by.
+- **(P3) Small caps has no run spelling.** The last gap in the run style
+  model. Synthetic small caps needs a *per-character* size within one run
+  (lowercase rendered as scaled-down uppercase), where the run is the unit
+  that carries a size today; the honest version splits the entry walk's size
+  off the run, or reads the `smcp` OpenType feature, which needs shaping. Real
+  small caps is a face, not a synthesis, and would fall out of the HarfBuzz
+  entry below. The case half is there to build on: `textTransform` already
+  maps drawn characters back to source ones through `ResolvedRun.srcMap`, so
+  the uppercase glyphs a synthesis draws need no new caret bookkeeping.
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 
@@ -504,8 +478,6 @@ Core five + Crop shipped. Remaining:
 ## Scene, adapters & layout
 
 - **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** The Canvas-level synthesis tier this entry used to describe is gone — `Canvas.tsx` no longer takes `items`/`setItems`/`createDefault`/`poseBounds`/`intersectsRect`, and only `toPose` survives as a layer-config override. `arrayAdapter`, `useArrayAdapter` and `sceneToAdapter` are still three separate wirings. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
-
-- **(P3) SceneCanvas → useSceneAdapter for adapter construction.** Surfaced 2026-05-21 during the node-kind registry landing. Today `SceneCanvas` constructs its synthesized adapter inside `useSceneSelectTool` (the select-tool hook), which means every new `SceneToAdapterOptions` field (`layouts`, `cascadeContainerPose`, `kindOf`, …) has to be drilled through the hook's surface. `useSceneAdapter` already exposes the full options shape; lifting adapter construction to `SceneCanvas` and handing the result down would stop the drill-through and shrink `useSceneSelectTool`'s API. Out of scope for the registry work; file when next refactoring the SceneCanvas internals.
 
 ### Derived geometry follow-ups
 
@@ -567,14 +539,12 @@ intercepting the press that drags the body.
 
 ### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
 
-- **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-- **(P3) Z-order walk doesn't cross non-container ancestors.** Open question: when a deep layout container is BELOW (in z) a shallow layout container that shares the dragged point, today the deepest wins — debate whether real z-order across the whole tree (flat painter's order) should win instead.
+- **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only), as does choosing the destination container (`<SceneCanvas layoutDropTarget>`, `LayoutStrategy.dropRegion`). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
 - **(P3) Tile-grid overflow policy.** Children beyond `cols * rows` are skipped from `childPoses`. Scroll, grow-grid, and rejection are the three policies worth designing between.
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
 - **(P3) Animated reflow transitions.** Sibling reflow is snap-to-target in v1. Smooth interpolation likely needs a `useAnimatedReflow` hook over the animation primitive.
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
 - **(P3) Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle.
-- **(P3) Configurable layout hit-test order.** v1 uses top-most container under the dragged center. Innermost-regardless-of-z and explicit-drop-region are the other two modes worth having.
 
 ### Units
 
@@ -747,17 +717,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   event came out rather than holding a class of content, and `success` has no
   stance.
 
-- **(P2) DTCG export carries one axis, so density is flattened out of it.**
-  `toDTCG` writes mode and, for every other axis, that axis's default branch
-  only — a theme round-tripped through DTCG comes back with its `compact` and
-  `roomy` values gone. DTCG has one variant dimension and no standard second, so
-  carrying both means choosing an encoding: each axis combination as its own
-  named mode (`selectionKey` already produces those names, and `loadDTCG` would
-  have to parse them back), or a documented extension. The theme editor's export
-  is the only consumer. Nothing loses data today because nothing imports a
-  density-varying document, but a designer editing tokens in Figma and syncing
-  back would silently drop two densities.
-
 - **(P2) Whether an anchor should set a ramp's chroma peak directly.** Today an
   anchor sets `peak = anchor C · max / e`, with `e` the envelope at the anchor's
   position, so an anchor on an end step whose bias is near 0 leaves `e` tiny and
@@ -822,20 +781,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   walk, because a bare-adapter consumer has no selection parent-folding to fold
   them back in.
 
-- **(P2) What the cascade audit turned up outside its own pattern.** All found
-  2026-08-29 while collapsing, none of them an instance of the duplication the
-  audit was hunting, so each wants its own decision.
+- **(P2) Some packages never import `geom`.** Found 2026-08-29 by the cascade
+  audit, outside the duplication it was hunting: `packages/{labkit,modes,d3,paint}`
+  never import `@weasel-js/geom` at all, and `ui` only from a story
+  (`Badge.stories.tsx`). An observation, not yet a decision — whether any of them
+  hand-roll geometry `geom` already has is the open question.
 
-  Three are closed: `selectAll` now skips hidden layers, SVG export honors
-  `layer.visible` through `SceneSource.isPainted`, and `toJSON` carries a user
-  layer's `kind` and `name`.
-
-  Open: `packages/{labkit,modes,d3,paint}` never import `geom` at all, and `ui`
-  only from a story. And `SvgImageNode` now carries a source rect and flips
-  through SVG, but `kit:image`'s `data.image` has no field for either, so
-  `svgNodesToKitDrafts` drops them on the way into a scene.
-
-- **(P2) Safari's `gesturestart` / `gesturechange` / `gestureend` are unhandled.** They are the second trackpad pinch channel on macOS Safari, alongside the ctrl+wheel one `viewportZoom` reads. Nothing in the repo listens for them, so Safari trackpad pinch gets whatever the wheel path synthesizes. Worth deciding deliberately rather than by omission. Note before adding a listener: `viewportZoom` now claims bare ctrl+wheel, so a `gesturechange` handler becomes a *second* channel for the same physical gesture — the double-apply `.changeset/mac-trackpad-pinch-zoom.md` just removed. Consolidate it into `makeViewportZoomAction` behind one scale-delta seam, not as a fourth listener.
+- **(P3) Confirm Safari's trackpad pinch in real Safari.** `useGestureDispatcher`
+  dispatches WebKit `gesturechange` as a `pinch` gesture, which `viewport.zoom`
+  binds, and swallows ctrl+wheel while a claimed gesture is live. All of it is
+  tested in jsdom against a stand-in event. Unverified: that Safari fires
+  `gesturestart` before the first ctrl+wheel copy (if it does not, that first
+  sample zooms once through the wheel binding), and that preventing
+  `gesturestart` / `gesturechange` stops the page zoom in the Safari versions
+  that send both channels.
 
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects). Rotated-object alignment is done: both ends read `AlignBoundsProjection.boundsOf`, which returns the rotated AABB.
 

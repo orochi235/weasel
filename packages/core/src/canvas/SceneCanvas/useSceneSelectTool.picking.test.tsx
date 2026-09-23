@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useScene } from 'core/scene/useScene';
 import type { UseSceneOptions } from 'core/scene/types';
-import { useSelection } from 'core/selection/useSelection';
+import { useSceneAdapter } from 'canvas/sceneAdapter';
 import { asNodeId } from 'core/scene/types';
 import { useSceneSelectTool } from './useSceneSelectTool';
 import { rectPath, linePath } from 'features/paths/builder';
@@ -45,10 +45,10 @@ function harness(picking?: 'pose' | 'shape') {
       systemLayers: [{ id: 'default' }],
       initial: NODES,
     });
-    const selection = useSelection({ mode: 'single' });
+    const adapter = useSceneAdapter(scene);
     return useSceneSelectTool({
       scene,
-      selection,
+      adapter,
       ...(picking ? { geometry: { picking } } : {}),
     });
   });
@@ -68,8 +68,8 @@ describe('useSceneSelectTool — hidden layers', () => {
           data: { color: '#abc' },
         }],
       });
-      const selection = useSelection({ mode: 'single' });
-      return { scene, tool: useSceneSelectTool({ scene, selection }) };
+      const adapter = useSceneAdapter(scene);
+      return { scene, tool: useSceneSelectTool({ scene, adapter }) };
     });
 
     expect(result.current.tool.pickEvery(10, 10)).toEqual(['hidden-node']);
@@ -120,8 +120,8 @@ describe('useSceneSelectTool — pose overrides', () => {
         systemLayers: [{ id: 'default' }],
         initial: (NODES ?? []).slice(0, 1),
       });
-      const selection = useSelection({ mode: 'single' });
-      return { scene, tool: useSceneSelectTool({ scene, selection }) };
+      const adapter = useSceneAdapter(scene);
+      return { scene, tool: useSceneSelectTool({ scene, adapter }) };
     });
     act(() => {
       result.current.scene.overrides.set(asNodeId('under'), {
@@ -175,8 +175,8 @@ describe('useSceneSelectTool — ancestor clips', () => {
           },
         ],
       });
-      const selection = useSelection({ mode: 'single' });
-      return useSceneSelectTool({ scene, selection });
+      const adapter = useSceneAdapter(scene);
+      return useSceneSelectTool({ scene, adapter });
     });
     return result;
   }
@@ -211,10 +211,10 @@ describe('useSceneSelectTool — stroke reach', () => {
           data: { shape: 'rect', stroke: { width: 20, align: 'outer', paint: '#000' } },
         }],
       });
-      const selection = useSelection({ mode: 'single' });
+      const adapter = useSceneAdapter(scene);
       return useSceneSelectTool({
         scene,
-        selection,
+        adapter,
         getView: () => ({ x: 0, y: 0, scale: { x: scale, y: scale } }),
       });
     });
@@ -263,8 +263,8 @@ describe('useSceneSelectTool — derived nodes', () => {
           },
         ] as UseSceneOptions<Item, 'default', Pose>['initial'],
       });
-      const selection = useSelection({ mode: 'single' });
-      return { scene, tool: useSceneSelectTool({ scene, selection }) };
+      const adapter = useSceneAdapter(scene);
+      return { scene, tool: useSceneSelectTool({ scene, adapter }) };
     });
     return result;
   }

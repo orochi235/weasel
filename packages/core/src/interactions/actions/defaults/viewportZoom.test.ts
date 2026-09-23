@@ -43,10 +43,11 @@ describe('viewportZoomAction descriptor', () => {
     expect(viewportZoomAction.enabled!()).toBe(true);
   });
 
-  it('has 5 gesture bindings: wheel+mod, ctrl+wheel, key =, key -, key 0', () => {
+  it('has 6 gesture bindings: wheel+mod, ctrl+wheel, pinch, key =, key -, key 0', () => {
     const bindings = viewportZoomAction.defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>;
-    expect(bindings).toHaveLength(5);
+    expect(bindings).toHaveLength(6);
     const specs = bindings.map((b) => b.spec);
+    expect(specs).toContainEqual({ kind: 'pinch' });
     expect(specs).toContainEqual({ kind: 'wheel', mods: { mod: true } });
     expect(specs).toContainEqual({ kind: 'wheel', mods: { ctrl: true } });
     expect(specs).toContainEqual({ kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } });
@@ -104,6 +105,51 @@ describe('viewportZoomAction invoker', () => {
       const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
       const invoker = getImmediateInvoker(viewportZoomAction);
       invoker.run({ view }, { kind: 'wheel', deltaY: 0, deltaX: 0, clientX: 0, clientY: 0 });
+      expect(view._value.scale).toEqual({ x: 1, y: 1 });
+    });
+  });
+
+  describe("kind: 'pinch'", () => {
+    it('multiplies the scale by the step factor', () => {
+      const view = makeView({ x: 0, y: 0, scale: { x: 2, y: 2 } });
+      const invoker = getImmediateInvoker(viewportZoomAction);
+      invoker.run({ view }, { kind: 'pinch', scale: 1.5, clientX: 0, clientY: 0 });
+      expect(view._value.scale.x).toBeCloseTo(3, 10);
+      expect(view._value.scale.y).toBeCloseTo(3, 10);
+    });
+
+    it('pins the world point under the focal point', () => {
+      const view = makeView({ x: 10, y: 20, scale: { x: 1, y: 1 } });
+      const invoker = getImmediateInvoker(viewportZoomAction);
+      invoker.run({ view }, { kind: 'pinch', scale: 2, clientX: 100, clientY: 50 });
+      expect(100 / view._value.scale.x + view._value.x).toBeCloseTo(110, 10);
+      expect(50 / view._value.scale.y + view._value.y).toBeCloseTo(70, 10);
+    });
+
+    it('clamps to the configured bounds', () => {
+      const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+      const invoker = getImmediateInvoker(makeViewportZoomAction({ max: 2 }));
+      invoker.run({ view }, { kind: 'pinch', scale: 5, clientX: 0, clientY: 0 });
+      expect(view._value.scale.x).toBeCloseTo(2, 10);
+    });
+
+    it('lands on the same view as the wheel sample of equal factor', () => {
+      // One seam: a wheel sample is its factor, so the two kinds must agree.
+      const a = makeView({ x: 3, y: 4, scale: { x: 1, y: 1 } });
+      const b = makeView({ x: 3, y: 4, scale: { x: 1, y: 1 } });
+      const invoker = getImmediateInvoker(viewportZoomAction);
+      invoker.run({ view: a }, { kind: 'wheel', deltaY: -100, deltaX: 0, clientX: 40, clientY: 30 });
+      invoker.run({ view: b }, { kind: 'pinch', scale: 1.1, clientX: 40, clientY: 30 });
+      expect(b._value.scale.x).toBeCloseTo(a._value.scale.x, 10);
+      expect(b._value.x).toBeCloseTo(a._value.x, 10);
+      expect(b._value.y).toBeCloseTo(a._value.y, 10);
+    });
+
+    it('ignores a non-positive or missing step', () => {
+      const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+      const invoker = getImmediateInvoker(viewportZoomAction);
+      invoker.run({ view }, { kind: 'pinch', scale: 0, clientX: 0, clientY: 0 });
+      invoker.run({ view }, { kind: 'pinch', clientX: 0, clientY: 0 });
       expect(view._value.scale).toEqual({ x: 1, y: 1 });
     });
   });

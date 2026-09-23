@@ -20,20 +20,31 @@ import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
 import { documentPose } from 'core/scene/effectivePose';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
+import type { SelectionApi } from 'core/selection/useSelection';
 
 /** Build the adapter the default actions commit through when the consumer
  *  supplies no `applyOps` hook of its own — it applies ops straight to the
  *  scene. Path and text ops are not covered; those surfaces belong to their
- *  own owners. */
-export function defaultCommitAdapter<TPose>(scene: Scene<unknown, string, TPose>) {
+ *  own owners.
+ *
+ *  Pass `selection` (a `SelectionApi`'s `adapterMethods`) and selection reads
+ *  and writes go through it rather than the scene, so a canvas that gates its
+ *  selection — `selectionMode="none"` — gates what these batches select too. */
+export function defaultCommitAdapter<TPose>(
+  scene: Scene<unknown, string, TPose>,
+  selection?: SelectionApi['adapterMethods'],
+) {
   return {
     getNode: (id: string) => scene.get(asNodeId(id)),
     getNodes: () => {
       return [...scene.renderOrderNodes()] as Node<unknown, string, TPose>[];
     },
     getPose: (id: string) => documentPose(scene, scene.get(asNodeId(id))!),
-    getSelection: (): string[] => [...scene.getSelection()],
-    setSelection: (ids: string[]) => scene.setSelection(ids.map(asNodeId)),
+    getSelection: (): string[] => [...(selection ? selection.getSelection() : scene.getSelection())],
+    setSelection: (ids: string[]) => {
+      if (selection) selection.setSelection(ids.map(asNodeId));
+      else scene.setSelection(ids.map(asNodeId));
+    },
     getParent: (id: string) => (scene.get(asNodeId(id))?.parent ?? null) as string | null,
     getRemovalClosure: (ids: readonly string[]): string[] =>
       [...scene.removalClosure(ids.map(asNodeId))],

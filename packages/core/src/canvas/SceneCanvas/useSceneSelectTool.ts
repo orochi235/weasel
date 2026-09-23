@@ -1,34 +1,22 @@
 /**
- * Scene-aware select-tool synthesis for `<SceneCanvas>`.
- *
- * Folds together (a) the `Scene → MoveAdapter & ResizeAdapter & RotateAdapter
- * & AreaSelectAdapter` adapter (with cascading container moves and a default
- * marquee hit-test) and (b) a `useSelectTool` configured with kit-default
- * pickEvery / boundsOf derived from pose shape.
- *
- * Returns both the synthesized `adapter` (forwarded to `<Canvas>`) and the
- * `selectTool` record (registered into `useTools`). Caller-supplied
- * `pickEvery` / `boundsOf` overrides via the `geometry` arg take precedence;
+ * Scene-aware select-tool synthesis for `<SceneCanvas>`: a `useSelectTool`
+ * over the caller's scene adapter, configured with kit-default pickEvery /
+ * boundsOf derived from pose shape. Caller-supplied `pickEvery` / `boundsOf`
+ * overrides via the `geometry` arg take precedence.
  */
 import { useMemo } from 'react';
-import { sceneToAdapter, type SceneToAdapterOptions } from '../sceneAdapter';
+import type { SceneCanvasAdapter } from '../sceneAdapter';
 import { pickWalk, scenePickSource, type ViewPickGates } from 'canvas/pickWalk';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
-import type { Node, Scene, NodeId } from 'core/scene/types';
+import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import type { Op } from 'core/ops/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
-import {
-  poseDescriptorForNode,
-  translatePoseViaDescriptor,
-  type PoseDescriptor,
-} from 'interactions/actions/resize/geometry';
+import { poseDescriptorForNode, type PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { poseContains, poseContainsRotated } from './poseGeometry';
 import { shapeCoversPoint, findShapeInk } from 'canvas/NodeShape';
@@ -53,7 +41,9 @@ export interface PickView extends ViewPickGates { scale: { x: number; y: number 
 
 export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
-  selection: SelectionApi;
+  /** The adapter the select tool drives, built over `scene` with the same
+   *  `poseDescriptor`. Its world poses are what picking and bounds read. */
+  adapter: SceneCanvasAdapter<TData, TLayer, TPose>;
   /** How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
   geometry?: {
@@ -95,25 +85,9 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
      *  `UseSelectToolOptions.extendClickLocked`. */
     extendClickLocked?: () => boolean;
   };
-  insertTool?: {
-    create: SceneToAdapterOptions<TData, TLayer, TPose>['commitInsert'];
-    layer?: TLayer;
-  };
-  layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
-  /** How a child's stored pose folds into its parent's frame. Supplying one
-   *  makes a container's pose a frame, which also means moving a container
-   *  must not translate its descendants — they ride the frame. */
-  poseComposition?: SceneToAdapterOptions<TData, TLayer, TPose>['poseComposition'];
 }
 
 export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
-  adapter: ReturnType<typeof sceneToAdapter<TData, TLayer, TPose>> & {
-    setPose: (id: string, pose: TPose) => void;
-    hitTestArea: (rect: { x: number; y: number; width: number; height: number }) => string[];
-    applyOps: (ops: Op[]) => void;
-    setSelection: (ids: string[]) => void;
-    getSelection: () => string[];
-  };
   selectTool: ReturnType<typeof useSelectTool<Node<TData, TLayer, TPose>, TPose>>;
   /** Hit-test resolved with the caller's `geometry.pickEvery` (or the
    *  pose-walk default). Forward this to `<Canvas pickEvery={...}>` so the
@@ -135,10 +109,7 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
 export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   args: UseSceneSelectToolArgs<TData, TLayer, TPose>,
 ): UseSceneSelectToolReturn<TData, TLayer, TPose> {
-  const {
-    scene, selection, geometry, selectTool: opts, insertTool, layouts, poseComposition, getView,
-    alphaOf, layerIsPainted,
-  } = args;
+  const { scene, adapter, geometry, selectTool: opts, getView, alphaOf, layerIsPainted } = args;
   const d = (args.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
 
   const pickEveryProp = geometry?.pickEvery;
@@ -151,62 +122,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const pickTolerancePx = geometry?.pickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
   const moveOptions = opts?.move;
   const snap = opts?.snap;
-  const commitInsert = insertTool?.create;
-  const insertLayer = insertTool?.layer;
-
-  const adapter = useMemo(() => {
-    const base = sceneToAdapter(scene, {
-      commitInsert, insertLayer, layouts, poseDescriptor: d,
-      ...(poseComposition ? { poseComposition } : {}),
-    });
-    // Under a frame a child's pose is already relative, so the container
-    // cascade below would move every descendant a second time.
-    const framed = poseComposition !== undefined && poseComposition.closure !== 'identity';
-    const collectDescendants = (id: string, out: string[]): void => {
-      for (const cid of scene.childrenOf(asNodeId(id))) {
-        out.push(cid);
-        collectDescendants(cid, out);
-      }
-    };
-    return {
-      ...base,
-      setPose(id: string, pose: TPose) {
-        const n = scene.get(asNodeId(id));
-        if (framed || !n || n.kind !== 'container') {
-          base.setPose(id, pose);
-          return;
-        }
-        const g = poseDescriptorForNode(d, n);
-        const prev = g.getBounds(n.pose);
-        const next = g.getBounds(pose);
-        const dx = next.x - prev.x;
-        const dy = next.y - prev.y;
-        if (dx === 0 && dy === 0) {
-          base.setPose(id, pose);
-          return;
-        }
-        const desc: string[] = [];
-        collectDescendants(id, desc);
-        scene.batch('move container', () => {
-          base.setPose(id, pose);
-          for (const cid of desc) {
-            const cn = scene.get(asNodeId(cid));
-            if (!cn) continue;
-            base.setPose(
-              cid,
-              translatePoseViaDescriptor(cn.pose, dx, dy, poseDescriptorForNode(d, cn)),
-            );
-          }
-        });
-      },
-      // Selection methods, widened to `string[]` so the synthesized adapter
-      // satisfies `AreaSelectAdapter` (which keeps the kit-internal adapter
-      // contract on plain `string[]`; the brand lives on the public selection
-      // surface, not on adapter shapes).
-      getSelection: (): string[] => [...selection.adapterMethods.getSelection()],
-      setSelection: (ids: string[]) => selection.adapterMethods.setSelection(ids as NodeId[]),
-    };
-  }, [scene, commitInsert, insertLayer, layouts, selection, d, poseComposition]);
 
   const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => {
     const merged: UseMoveOptions<TPose> = { ...(moveOptions ?? {}) };
@@ -311,7 +226,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   }, [wiredHitBody, adapter]);
 
   return {
-    adapter: adapter as UseSceneSelectToolReturn<TData, TLayer, TPose>['adapter'],
     selectTool,
     pickEvery: wiredHitBody,
     pickBest: wiredPickBest,

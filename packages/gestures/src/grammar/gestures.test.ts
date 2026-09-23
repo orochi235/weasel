@@ -21,6 +21,14 @@ describe('GESTURE_DESCRIPTORS', () => {
     expect(d.arg?.default).toBe('*');
   });
 
+  it('pinch has a target and an in/out direction arg with default "*"', () => {
+    const d = getGestureDescriptor('pinch');
+    expect(d.hasTarget).toBe(true);
+    expect(d.arg?.name).toBe('direction');
+    expect(d.arg?.values).toEqual(['in', 'out', '*']);
+    expect(d.arg?.default).toBe('*');
+  });
+
   it('keyDown has no target', () => {
     expect(getGestureDescriptor('keyDown').hasTarget).toBe(false);
   });

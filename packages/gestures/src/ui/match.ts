@@ -384,6 +384,15 @@ export function matchSpec(
       return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
+    case 'pinch': {
+      if (e.kind !== 'pinch') return false;
+      if (!matchModifiers(e, spec.mods, isMac)) return false;
+      const direction = spec.direction ?? '*';
+      if (direction === 'out' && !(e.scale > 1)) return false;
+      if (direction === 'in' && !(e.scale < 1)) return false;
+      return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
+    }
+
     case 'click': {
       if (e.kind !== 'click') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;

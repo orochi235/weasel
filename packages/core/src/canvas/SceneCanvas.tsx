@@ -37,7 +37,8 @@ import type { Animator } from '../animation/types';
 import { useAnimator } from '../animation/useAnimator';
 import { useViewAnimationOn } from 'core/viewport/useViewAnimation';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
-import type { SceneToAdapterOptions } from './sceneAdapter';
+import { useSceneAdapter, type SceneToAdapterOptions } from './sceneAdapter';
+import type { LayoutDropTargetMode } from '../layout/types';
 import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
 import type { WheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
 import { normalizeView, viewZoom, type View } from 'core/viewport/view';
@@ -344,6 +345,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  containers (reflow on enter, reparent + reflow on commit). */
     layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
 
+    /** Which layout container a drag lands in when several contain the drop
+     *  point — the innermost (default), the topmost in paint order, or only
+     *  containers whose strategy declares a `dropRegion`. Decides both the
+     *  drag-time reflow preview and the commit. */
+    layoutDropTarget?: LayoutDropTargetMode;
+
     /** How a child's stored pose folds into its parent's frame. Omit for the
      *  absolute-pose model, where a container groups its children but imposes
      *  no transform. Pass `RIGID_POSE_COMPOSITION` to make a container's pose
@@ -508,12 +515,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     selectionOptions?: UseSelectionOptions;
 
     /**
-     * High-level selection semantics. Controls whether canvas interactions
-     * mutate selection and whether multi-select chrome (union AABB) activates.
-     *   - `'single'` (default) — click selects one id.
-     *   - `'multi'` — shift-click extends/toggles.
-     *   - `'none'` — canvas interactions never update selection.
-     * See {@link CanvasSelectionMode}.
+     * What the canvas may do to the selection. See {@link CanvasSelectionMode}.
+     * Default `'single'`.
      */
     selectionMode?: CanvasSelectionMode;
 
@@ -901,6 +904,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     insertNodeFactories,
     ingestion,
     layouts,
+    layoutDropTarget,
     poseComposition,
     geometryProjection,
     routing,
@@ -1120,9 +1124,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const internalSelection = useSelection(derivedSelectionOptions);
   const baseSelection = selectionProp ?? internalSelection;
 
-  // selectionMode === 'none' wraps the selection so canvas interactions can't
-  // mutate it. The underlying api is still accessible via the `selection` prop
-  // or `useSelection` directly.
+  // Everything the kit writes selection through — the `selection` dep, the
+  // adapter's `setSelection`, ops committed through either — reads this api,
+  // so under 'none' every write path here is closed. The consumer's own api
+  // is not wrapped and still writes.
+  const baseAdapterMethods = baseSelection.adapterMethods;
+  const readOnlyAdapterMethods = useMemo(() => ({
+    getSelection: () => baseAdapterMethods.getSelection(),
+    setSelection: () => {},
+  }), [baseAdapterMethods]);
   const selection: SelectionApi = useMemo(() => {
     if (selectionMode !== 'none') return baseSelection;
     const noopSet = () => {};
@@ -1134,8 +1144,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       toggle: noopSet,
       clear: noopSet,
       applyClick: noopSet,
+      adapterMethods: readOnlyAdapterMethods,
     };
-  }, [baseSelection, selectionMode]);
+  }, [baseSelection, selectionMode, readOnlyAdapterMethods]);
 
   // Publish the current selection (with optional per-id kind labels) into any
   // surrounding `<SelectionContextProvider>` so non-canvas UI can read it.
@@ -1220,7 +1231,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     },
   }), [effectivePathEditingId]);
 
-  // Adapter + select tool — folded into a single hook that synthesizes both.
   // Apply the handle-size fallback here so useSceneSelectTool always receives
   // a concrete radius even when the caller omits selectTool entirely.
   const selectToolWithDefaults = useMemo(() => ({
@@ -1293,9 +1303,23 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ? layerIsPainted
     : undefined;
 
-  const { adapter, selectTool: internalSelect, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
+  // Under a frame a child's pose is already relative, so cascading a container
+  // move would carry every descendant a second time.
+  const framed = poseComposition !== undefined && poseComposition.closure !== 'identity';
+  const adapter = useSceneAdapter(scene, {
+    // `adapterMethods` is memoized; `selection` itself is a fresh object each render.
+    selection: selection.adapterMethods,
+    poseDescriptor: descriptor as PoseDescriptor<TPose>,
+    commitInsert: insertTool?.create,
+    insertLayer: insertTool?.layer,
+    layouts,
+    poseComposition,
+    cascadeContainerPose: !framed,
+  });
+
+  const { selectTool: internalSelect, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
-    selection,
+    adapter,
     poseDescriptor: descriptor as PoseDescriptor<TPose>,
     geometry,
     // The pick tolerance is declared in screen pixels; this is what converts it.
@@ -1306,9 +1330,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(alphaFor ? { alphaOf: composedAlphaFor } : {}),
     ...(viewLayerGate ? { layerIsPainted: viewLayerGate } : {}),
     selectTool: selectToolWithDefaults,
-    ...(insertTool ? { insertTool } : {}),
-    ...(layouts ? { layouts } : {}),
-    ...(poseComposition ? { poseComposition } : {}),
   });
 
   // Build getNodeAtPoint from the adapter + internalPickEvery. Canvas no longer
@@ -2126,6 +2147,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 editAnchorsExternalState={editAnchorsExternalState}
                 anchorEditingAllowed={anchorEditingAllowed}
                 layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
+                layoutDropTarget={layoutDropTarget}
                 poseComposition={poseComposition as SceneCanvasProps<unknown, string, unknown>['poseComposition']}
                 insertNodeFactories={insertNodeFactories}
                 snapPoint={toolOptions?.snapPoint}
@@ -2498,6 +2520,7 @@ function StandardActionsRegistrar({
   anchorEditingAllowed,
   poseComposition,
   layouts,
+  layoutDropTarget,
   insertNodeFactories,
   snapPoint,
   canvasRef,
@@ -2567,6 +2590,7 @@ function StandardActionsRegistrar({
   /** Forwarded from `SceneCanvasProps` so the `layout` dep source can wire
    *  the per-container layout strategy lookup consumed by `moveAction`. */
   layouts?: SceneCanvasProps<unknown, string, unknown>['layouts'];
+  layoutDropTarget?: LayoutDropTargetMode;
   /** Forwarded from `SceneCanvasProps` so the marquee and lasso dep sources
    *  test where a node is drawn rather than where its pose is stored. */
   poseComposition?: SceneCanvasProps<unknown, string, unknown>['poseComposition'];
@@ -2662,7 +2686,7 @@ function StandardActionsRegistrar({
   // dep's contract and trade-offs.
   useAreaSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
   useNodeAtPointDepSource(pickEvery);
-  useLayoutDepSource(layouts);
+  useLayoutDepSource(layouts, layoutDropTarget);
   useInsertDepSource(scene, adapter, insertNodeFactories);
   useSnapDepSource(snapPoint);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);

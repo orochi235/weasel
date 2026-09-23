@@ -285,8 +285,9 @@ export {
   getImageBitmap,
   imageStatus,
   subscribeImageReady,
+  isVectorImageSrc,
 } from './features/images/imageCache';
-export type { ImageNodeData, ImageStatus } from './features/images/imageCache';
+export type { ImageNodeData, ImageRasterSize, ImageStatus } from './features/images/imageCache';
 export { sceneToAdapter, useSceneAdapter } from './canvas/sceneAdapter';
 export type { SceneCanvasAdapter } from './canvas/sceneAdapter';
 export {
@@ -557,6 +558,7 @@ export {
   fontString,
   resolveRuns,
   SCRIPT_METRICS,
+  transformRunTexts,
   layoutRuns,
   cachedLayoutRuns,
   layoutTextPose,
@@ -580,6 +582,9 @@ export type {
   TextPaint,
   ResolvedTextStyle,
   ResolvedRun,
+  TextTransform,
+  RunSourceMap,
+  TransformedRunText,
   TextPose,
   TextVerticalAlign,
   LayoutRunsOpts,
@@ -938,6 +943,7 @@ export type {
   KeySpec,
   KeyHeldSpec,
   WheelSpec,
+  PinchSpec,
   ClickSpec,
   DragSpec,
   MultiTouchSpec,

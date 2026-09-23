@@ -25,6 +25,8 @@ export type {
 
 export { resolveRuns, SCRIPT_METRICS } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
+export { transformRunTexts } from './runs/textTransform';
+export type { TextTransform, RunSourceMap, TransformedRunText } from './runs/textTransform';
 
 export { layoutRuns } from './layout/layoutRuns';
 export {

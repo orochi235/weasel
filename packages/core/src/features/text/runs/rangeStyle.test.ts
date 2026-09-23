@@ -290,3 +290,18 @@ describe('runsCarryStyling', () => {
     expect(runsCarryStyling([{ text: 'a', bold: false, underline: false }])).toBe(false);
   });
 });
+
+describe('textTransform over a range', () => {
+  it('splits the run and keeps the transform to the range', () => {
+    expect(applyStyleToRange([{ text: 'abc' }], 1, 2, { textTransform: 'uppercase' })).toEqual([
+      { text: 'a' }, { text: 'b', textTransform: 'uppercase' }, { text: 'c' },
+    ]);
+  });
+
+  it('keeps runs that differ only in transform apart, and reports MIXED across them', () => {
+    const out = applyStyleToRange([{ text: 'ab', textTransform: 'lowercase' }], 1, 2, { textTransform: 'none' });
+    expect(out).toEqual([{ text: 'a', textTransform: 'lowercase' }, { text: 'b', textTransform: 'none' }]);
+    expect(styleAtRange(out, 0, 2).textTransform).toBe(MIXED);
+    expect(runsCarryStyling([{ text: 'a', textTransform: 'capitalize' }])).toBe(true);
+  });
+});

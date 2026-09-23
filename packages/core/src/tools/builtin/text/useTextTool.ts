@@ -88,6 +88,14 @@ useTextTool.options = {
       description: 'Raise or lower the range off the baseline, at a smaller size.',
       default: undefined,
     },
+    textTransform: {
+      kind: 'enum',
+      name: 'Case',
+      description: 'Draw the range in capitals, lowercase or title case. The text itself is unchanged.',
+      control: 'toggle',
+      default: 'none',
+      options: [{ value: 'none', label: 'None', short: '–' }, { value: 'uppercase', label: 'Uppercase', short: 'AA' }, { value: 'lowercase', label: 'Lowercase', short: 'aa' }, { value: 'capitalize', label: 'Capitalize', short: 'Aa' }],
+    },
     fontFamily: {
       kind: 'font-family',
       name: 'Font',

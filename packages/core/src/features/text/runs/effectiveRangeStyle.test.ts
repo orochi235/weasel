@@ -53,6 +53,13 @@ describe('effectiveRangeStyle', () => {
     expect(s.fontScale).toBe(0.583);
   });
 
+  it("reads the node's transform, and lets a run's override it", () => {
+    expect(effectiveRangeStyle(null, {}).textTransform).toBe('none');
+    expect(effectiveRangeStyle({}, { textTransform: 'uppercase' }).textTransform).toBe('uppercase');
+    expect(effectiveRangeStyle({ textTransform: 'none' }, { textTransform: 'uppercase' }).textTransform)
+      .toBe('none');
+  });
+
   it('reports no script where the range sets none', () => {
     expect(effectiveRangeStyle({}, { fontSize: 24 }).script).toBeUndefined();
   });

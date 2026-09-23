@@ -29,17 +29,37 @@ import type { DrawCommand } from '../renderer';
 import { textCommandFromRuns } from 'features/text/textCommand';
 import { findNodeShape, type NodePaintCtx } from './NodeShape';
 
+function pixelScaleOf(view: View): number {
+  const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+  return Math.max(Math.abs(view.scale.x), Math.abs(view.scale.y)) * dpr;
+}
+
+// Shared across a frame's nodes, which all arrive with the same view.
+let lastView: View | undefined;
+let lastViewCtx: NodePaintCtx = {};
+function viewOnlyCtx(view: View): NodePaintCtx {
+  const pixelScale = pixelScaleOf(view);
+  if (view !== lastView || lastViewCtx.pixelScale !== pixelScale) {
+    lastView = view;
+    lastViewCtx = { pixelScale };
+  }
+  return lastViewCtx;
+}
+
 /** Paint one node the way the kit does by default: dispatch to the first
  *  registered node-shape painter that matches, then draw its `data.label` on
  *  top when it has one. Consumers replace or wrap this via `drawOne`. */
 export function defaultDrawOne<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   pose: TPose,
-  _view?: View,
+  view?: View,
   ctx?: NodePaintCtx,
 ): DrawCommand[] {
   const painter = findNodeShape(node);
-  const primary = painter ? painter.paint(node, pose, ctx) : [];
+  const paintCtx = !view || ctx?.pixelScale !== undefined
+    ? ctx
+    : ctx ? { ...ctx, pixelScale: pixelScaleOf(view) } : viewOnlyCtx(view);
+  const primary = painter ? painter.paint(node, pose, paintCtx) : [];
 
   // Label overlay — skipped for text nodes (their content is the label).
   const data = node.data as { label?: string; text?: string } | null;

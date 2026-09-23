@@ -65,6 +65,7 @@ const STYLE_KEYS = [
   'script',
   'baselineShift',
   'fontScale',
+  'textTransform',
 ] as const satisfies readonly StyleKey[];
 
 // Every function here iterates STYLE_KEYS, so a key missing from the list is

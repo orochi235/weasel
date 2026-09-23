@@ -66,11 +66,11 @@ interface PenAnchor {
   /** Outgoing handle position (world coords), if this anchor was
    *  placed via click-drag. Undefined for corner anchors. */
   outHandle?: { x: number; y: number };
-  /** Incoming handle, mirrored from the previous anchor's outHandle
-   *  unless Alt-broken during the placement drag. */
+  /** Incoming handle: this anchor's own outHandle mirrored through it,
+   *  so it shapes the segment arriving here. Absent when Alt-broken. */
   inHandle?: { x: number; y: number };
-  /** True when Alt was held during the outgoing-handle drag — the
-   *  next anchor's incoming handle is NOT mirrored from this one. */
+  /** True when Alt was held during the outgoing-handle drag — this
+   *  anchor's incoming handle stops following its outgoing one. */
   altBroken?: boolean;
 }
 

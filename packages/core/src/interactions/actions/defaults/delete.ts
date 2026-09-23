@@ -97,7 +97,7 @@ export const deleteAction: Action & { requires: string[] } = {
 
       if (ops.length > 0) {
         if (applyOps) applyOps(ops, 'Delete');
-        else scene.applyBatch(ops, 'Delete', defaultCommitAdapter(scene));
+        else scene.applyBatch(ops, 'Delete', defaultCommitAdapter(scene, selection.adapterMethods));
       }
       selection.set([]);
     },

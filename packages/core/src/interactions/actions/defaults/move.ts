@@ -61,7 +61,9 @@ import type {
   LayoutChild,
   LayoutDragged,
   DropTarget as LayoutDropTarget,
+  DropRegion,
 } from '../../../layout/types';
+import { pointInPath } from 'features/paths/hitTest';
 import {
   poseDescriptorForNode,
   translatePoseViaDescriptor,
@@ -83,8 +85,8 @@ import {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-/** Drag-time layout pass. Walks containers for the deepest/topmost layout
- *  candidate under the *selection's* center, then places each dragged child in
+/** Drag-time layout pass. Picks the layout container under the *selection's*
+ *  center (by `LayoutDep.dropTarget`), then places each dragged child in
  *  turn — every child sees the container state the previous one produced — and
  *  folds destination + source reflow poses into `scratch.previews` (so they
  *  render as ghosts). Sets `scratch.layoutPass` when one container accepts
@@ -162,7 +164,11 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     depth: number;
   }
   const candidates: Candidate[] = [];
-  const testInside = (cPose: unknown, aabb: AABB, layout: Layout): boolean => {
+  const mode = layoutDep.dropTarget ?? 'innermost';
+  const testInside = (id: NodeId, cPose: unknown, aabb: AABB, layout: Layout): boolean => {
+    const region = layout.dropRegion?.({ id: id as string, bounds: aabb }) ?? null;
+    if (region) return regionContains(region, aabb, selectionCenter);
+    if (mode === 'region') return false;
     if (layout.contains) return layout.contains(cPose, selectionCenter);
     return selectionCenter.x >= aabb.x && selectionCenter.x < aabb.x + aabb.width
       && selectionCenter.y >= aabb.y && selectionCenter.y < aabb.y + aabb.height;
@@ -175,7 +181,7 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     if (!node) return;
     const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
     const worldAABB = poseDescriptorForNode(d, node).getBounds(worldPose);
-    if (!testInside(worldPose, worldAABB, layout)) return;
+    if (!testInside(id, worldPose, worldAABB, layout)) return;
     if (layout.acceptsDrop) {
       const arg: LayoutContainer = { id: id as string, bounds: worldAABB };
       for (const c of dragged) if (!layout.acceptsDrop(arg, c.arg)) return;
@@ -198,18 +204,25 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   };
   walk(null, []);
 
-  // Deepest wins; sibling-index path breaks ties (higher z = later index).
   let dest: Candidate | null = null;
-  for (const c of candidates) {
-    if (dest === null) { dest = c; continue; }
-    if (c.depth > dest.depth) { dest = c; continue; }
-    if (c.depth < dest.depth) continue;
-    let cAfter = false;
-    for (let i = 0; i < c.zPath.length; i++) {
-      if (c.zPath[i] > dest.zPath[i]) { cAfter = true; break; }
-      if (c.zPath[i] < dest.zPath[i]) { cAfter = false; break; }
+  if (mode === 'topmost') {
+    // Painted last wins, in the scene's own render order — which crosses
+    // subtrees and layers, where a sibling-index path cannot.
+    const byId = new Map<NodeId, Candidate>(candidates.map((c) => [c.id, c]));
+    for (const id of scene.renderOrder()) dest = byId.get(id) ?? dest;
+  } else {
+    // Deepest wins; sibling-index path breaks ties (higher z = later index).
+    for (const c of candidates) {
+      if (dest === null) { dest = c; continue; }
+      if (c.depth > dest.depth) { dest = c; continue; }
+      if (c.depth < dest.depth) continue;
+      let cAfter = false;
+      for (let i = 0; i < c.zPath.length; i++) {
+        if (c.zPath[i] > dest.zPath[i]) { cAfter = true; break; }
+        if (c.zPath[i] < dest.zPath[i]) { cAfter = false; break; }
+      }
+      if (cAfter) dest = c;
     }
-    if (cAfter) dest = c;
   }
   if (!dest) return;
 
@@ -292,6 +305,19 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   }
 
   scratch.layoutPass = { layout, container, placements, sourceReflow, reflowIds };
+}
+
+/** Whether a world point falls in a drop region, which is authored relative to
+ *  the top-left of the container's world bounds. */
+function regionContains(
+  region: DropRegion,
+  bounds: { x: number; y: number },
+  point: { x: number; y: number },
+): boolean {
+  const local = { x: point.x - bounds.x, y: point.y - bounds.y };
+  return typeof region === 'function'
+    ? region(local)
+    : pointInPath(region, local.x, local.y);
 }
 
 /** Dragged ids grouped by the container they are leaving, skipping any that

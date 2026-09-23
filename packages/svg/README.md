@@ -91,6 +91,11 @@ decodes it, so an external URL round-trips as a reference and resolves only
 when something downstream loads it. `unpackSvgFiles` maps the node onto the
 kit's `kit:image` painter (`data.image.src`), which does load it.
 
+A source rect and flips (`source`, `flipX`, `flipY`) are written as a nested
+`<svg viewBox>` viewport and read back as the same node. `unpackSvgFiles`
+carries them onto `data.image` under the same names, and `svgImageFromKit`
+writes a `kit:image` leaf back as an `SvgImageNode`.
+
 `preserveAspectRatio` is not modeled. The box is taken literally on the way
 in (a non-`none` value warns) and written back as `none`, so a source file
 that relied on letterboxing imports stretched.

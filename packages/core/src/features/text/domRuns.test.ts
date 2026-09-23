@@ -314,6 +314,29 @@ describe('domRuns round-trip — decoration and tracking', () => {
     expect(domToRuns(parent)).toEqual(runs);
   });
 
+  it('round-trips textTransform as CSS text-transform, none included', () => {
+    const runs: StyledRun[] = [
+      { text: 'straße', textTransform: 'uppercase' },
+      { text: ' x', textTransform: 'none' },
+      { text: ' y', textTransform: 'capitalize' },
+    ];
+    runsToDom(runs, parent);
+    const spans = parent.querySelectorAll<HTMLElement>('span[data-run]');
+    expect([...spans].map((el) => el.style.textTransform)).toEqual(['uppercase', 'none', 'capitalize']);
+    // The DOM keeps the source text, so caret offsets stay source offsets.
+    expect(spans[0].textContent).toBe('straße');
+    expect(domToRuns(parent)).toEqual(runs);
+  });
+
+  it('reads text-transform on pasted markup as an inherited override', () => {
+    parent.innerHTML = '<span style="text-transform: lowercase">a<b>b</b></span><span>c</span>';
+    expect(domToRuns(parent)).toEqual([
+      { text: 'a', textTransform: 'lowercase' },
+      { text: 'b', bold: true, textTransform: 'lowercase' },
+      { text: 'c' },
+    ]);
+  });
+
   it('round-trips letterSpacing: 0 as an explicit override', () => {
     const runs: StyledRun[] = [{ text: 'a', letterSpacing: 0 }, { text: 'b', letterSpacing: 4 }];
     runsToDom(runs, parent);

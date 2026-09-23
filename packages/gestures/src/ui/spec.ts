@@ -112,6 +112,19 @@ export interface WheelSpec {
   phase?: PhaseSpec;
 }
 
+/** Pinch reported as a scale factor about a focal point (WebKit
+ *  `gesturechange`). `direction` filters by the sample's scale; default `'*'`.
+ *  - `'out'` → fingers spreading, scale > 1
+ *  - `'in'`  → fingers closing, scale < 1
+ *  A touchscreen pinch is {@link MultiTouchSpec}, not this. */
+export interface PinchSpec {
+  kind: 'pinch';
+  direction?: 'in' | 'out' | '*';
+  target?: TargetSpec;
+  mods?: ModSpec;
+  phase?: PhaseSpec;
+}
+
 /** Click gesture (pointerdown + pointerup without movement past the
  *  threshold). */
 export interface ClickSpec {
@@ -234,6 +247,7 @@ export type GestureSpec =
   | KeySpec
   | KeyHeldSpec
   | WheelSpec
+  | PinchSpec
   | ClickSpec
   | DoubleClickSpec
   | ContextMenuSpec

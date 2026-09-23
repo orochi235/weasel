@@ -33,3 +33,11 @@ describe('describeRoute wildcard args', () => {
     }
   });
 });
+
+describe('describeRoute — pinch', () => {
+  it('phrases pinch by direction', () => {
+    expect(describeRoute(parseRoute('[initial] pinch'))).toContain('the user pinches');
+    expect(describeRoute(parseRoute('[initial] pinch(out)'))).toContain('the user pinches out');
+    expect(describeRoute(parseRoute('[initial] pinch(in)'))).toContain('the user pinches in');
+  });
+});

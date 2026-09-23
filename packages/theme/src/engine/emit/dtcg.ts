@@ -1,9 +1,15 @@
-import { isByAxis, type Varying } from '../../axes';
+import { enumerateSelections, fullSelection, isByAxis, pick } from '../../axes';
+import { AXES_EXT, overrideKey, type DtcgAxesExtension } from '../../dtcg/axesExtension';
 import { ALPHA_EXT, type RawToken, type TokenValue } from '../../dtcg/types';
 import { themeAxes } from '../../resolveTheme';
 import type { Theme } from '../../theme';
 
 type Group = Record<string, unknown> & { $type: string };
+
+interface Layer {
+  primitives: Record<string, Group>;
+  modes: Record<string, Record<string, Group>>;
+}
 
 const REF = /^\{([^}.]+)\}$/;
 
@@ -12,6 +18,7 @@ export interface DtcgExport {
   readonly defaultMode?: string;
   readonly primitives: Record<string, Group>;
   readonly modes: Record<string, Record<string, Group>>;
+  readonly $extensions?: { readonly [AXES_EXT]?: DtcgAxesExtension };
 }
 
 /**
@@ -19,14 +26,18 @@ export interface DtcgExport {
  * not carried; pass it to `loadDTCG`. Every mode the chain declares is written,
  * so a token that leaves one out still falls through to the parent on the way back.
  *
- * DTCG has one variant dimension and no standard way to name a second, so mode
- * is the only axis exported: a token varying by any other axis is written at
- * that axis's default value and its other branches are dropped. Round-tripping
- * a theme through DTCG therefore flattens it to the default selection of every
- * non-mode axis.
+ * DTCG has one variant dimension, so the plain groups hold mode, with every
+ * other axis at its default value: what a tool that ignores extensions reads.
+ * The other values travel under `$extensions["com.weasel.axes"]` (see
+ * `DtcgAxesExtension`), one override layer per combination of non-default values
+ * some token actually varies by — axes that vary independently cost one layer
+ * per value, not their cross-product.
  */
 export function toDTCG(theme: Theme): DtcgExport {
   const axes = themeAxes(theme);
+  const defaults = fullSelection(axes);
+  const nonMode = Object.keys(axes).filter((a) => a !== 'mode');
+  const declaredModes = Object.keys(axes.mode?.values ?? {});
 
   /** The type of the nearest token named `name` in the chain; undefined when no theme has one. */
   const typeOf = (name: string): string | undefined => {
@@ -54,37 +65,56 @@ export function toDTCG(theme: Theme): DtcgExport {
     };
   };
 
-  /** Every non-mode axis collapsed to its default branch, so only mode is left varying. */
-  const flatten = (v: Varying<RawToken>): Varying<RawToken> | undefined => {
-    if (!isByAxis(v)) return v;
-    if (v.by === 'mode') {
-      const out: Record<string, unknown> = { by: 'mode' };
-      for (const [mode, x] of Object.entries(v)) {
-        if (mode === 'by') continue;
-        const inner = flatten(x as Varying<RawToken>);
-        if (inner !== undefined) out[mode] = inner;
-      }
-      return out as Varying<RawToken>;
+  /** Every axis a token branches on, and the keys of its mode branches. */
+  const scan = (v: unknown, used: Set<string>, modeKeys: Set<string>): void => {
+    if (!isByAxis(v)) return;
+    used.add(v.by);
+    for (const [k, x] of Object.entries(v)) {
+      if (k === 'by') continue;
+      if (v.by === 'mode') modeKeys.add(k);
+      scan(x, used, modeKeys);
     }
-    const fallback = axes[v.by]?.default;
-    const chosen = fallback !== undefined ? v[fallback] : undefined;
-    return chosen === undefined ? undefined : flatten(chosen as Varying<RawToken>);
   };
 
-  const branches = (v: Varying<RawToken>): [string, RawToken][] => {
-    if (!isByAxis(v)) return [];
-    return Object.entries(v).flatMap(([mode, x]) => (mode === 'by' ? [] : [[mode, x as RawToken] as [string, RawToken]]));
-  };
+  const base: Layer = { primitives: {}, modes: {} };
+  for (const mode of declaredModes) base.modes[mode] = {};
+  const overrides: Record<string, Layer> = {};
+  const varies: Record<string, string[]> = {};
 
-  const modes: Record<string, Record<string, Group>> = {};
-  for (const mode of Object.keys(axes.mode?.values ?? {})) modes[mode] = {};
-  const primitives: Record<string, Group> = {};
   for (const [name, raw] of Object.entries(theme.tokens)) {
-    const v = flatten(raw);
-    if (v === undefined) continue;
-    if (!isByAxis(v)) put(primitives, name, v);
-    else for (const [mode, t] of branches(v)) put((modes[mode] ??= {}), name, t);
+    const used = new Set<string>();
+    const modeKeys = new Set<string>();
+    scan(raw, used, modeKeys);
+    const varying = nonMode.filter((a) => used.has(a));
+    if (varying.length > 0) varies[name] = varying;
+    const modes = used.has('mode') ? [...new Set([...declaredModes, ...modeKeys])] : [];
+
+    for (const combo of enumerateSelections(Object.fromEntries(varying.map((a) => [a, axes[a]])))) {
+      const key = overrideKey(axes, combo);
+      const layer = key === '' ? base : (overrides[key] ??= { primitives: {}, modes: {} });
+      const sel = { ...defaults, ...combo };
+      if (modes.length === 0) {
+        const p = pick(raw, sel);
+        if (p.ok) put(layer.primitives, name, p.value);
+        continue;
+      }
+      const picked = modes.map((mode) => [mode, pick(raw, { ...sel, mode })] as const);
+      const first = picked[0][1];
+      // The same leaf in every mode: this combination doesn't depend on mode.
+      if (first.ok && picked.every(([, p]) => p.ok && p.value === first.value)) {
+        put(layer.primitives, name, first.value);
+        continue;
+      }
+      for (const [mode, p] of picked) if (p.ok) put((layer.modes[mode] ??= {}), name, p.value);
+    }
   }
 
-  return { name: theme.name, ...(axes.mode ? { defaultMode: axes.mode.default } : {}), primitives, modes };
+  const ext: DtcgAxesExtension = { axes, varies, overrides };
+  return {
+    name: theme.name,
+    ...(axes.mode ? { defaultMode: axes.mode.default } : {}),
+    primitives: base.primitives,
+    modes: base.modes,
+    ...(Object.keys(axes).length > 0 ? { $extensions: { [AXES_EXT]: ext } } : {}),
+  };
 }

@@ -41,6 +41,12 @@ describe('layoutMarkdown', () => {
     expect(result.width).toBe(50);
   });
 
+  it('lays out and measures a transformed run as it is drawn', () => {
+    const result = layoutMarkdown([{ text: 'straße', textTransform: 'uppercase' }], Infinity, 13, mockMeasure);
+    expect(result.lines[0].runs[0].text).toBe('STRASSE');
+    expect(result.width).toBe(70);
+  });
+
   it('breaks on newline', () => {
     const runs = markdownToRuns('a\nb');
     const result = layoutMarkdown(runs, Infinity, 13, mockMeasure);
@@ -218,5 +224,142 @@ describe('createMarkdownRenderer', () => {
       );
       expect(layout.lines[0].runs[1].y).toBeLessThan(0);
     });
+  });
+});
+/**
+ * A 2D context that records what it paints. Glyphs are 10px per character at
+ * any size; the font's ascent is 0.8em above the alphabetic baseline and the
+ * em top sits exactly on it, so `textBaseline: 'top'` puts the baseline 0.8em
+ * below the y it was handed.
+ */
+function makeRecordingCtx(init: { textBaseline?: CanvasTextBaseline; textAlign?: CanvasTextAlign } = {}) {
+  const texts: Array<{ text: string; x: number; y: number; fillStyle: string; textAlign: string }> = [];
+  const rects: Array<{ x: number; y: number; w: number; h: number; fillStyle: string }> = [];
+  const sizeOf = (font: string) => Number(/([\d.]+)px/.exec(font)?.[1] ?? 0);
+  const ctx = {
+    font: '',
+    fillStyle: '#000' as string,
+    strokeStyle: '#000',
+    textBaseline: init.textBaseline ?? 'alphabetic',
+    textAlign: init.textAlign ?? 'start',
+    direction: 'ltr',
+    measureText(text: string) {
+      const size = sizeOf(ctx.font);
+      return {
+        width: text.length * 10,
+        fontBoundingBoxAscent: ctx.textBaseline === 'top' ? 0 : 0.8 * size,
+      };
+    },
+    fillText(text: string, x: number, y: number) {
+      texts.push({ text, x, y, fillStyle: ctx.fillStyle, textAlign: ctx.textAlign });
+    },
+    strokeText() {},
+    fillRect(x: number, y: number, w: number, h: number) {
+      rects.push({ x, y, w, h, fillStyle: ctx.fillStyle });
+    },
+  };
+  return { ctx: ctx as unknown as CanvasRenderingContext2D, raw: ctx, texts, rects };
+}
+
+describe('layoutMarkdown run widths', () => {
+  it('records each positioned run\'s measured width', () => {
+    const layout = layoutMarkdown(markdownToRuns('ab **cde**'), Infinity, 13, mockMeasure);
+    expect(layout.lines[0].runs.map((r) => r.width)).toEqual([30, 30]);
+  });
+});
+
+describe('createMarkdownRenderer decorations', () => {
+  it('paints an underline in the run\'s fill, placed and weighted like the GL tier', () => {
+    const { ctx, rects } = makeRecordingCtx();
+    const r = createMarkdownRenderer(ctx, [{ text: 'abc', underline: true }], 20);
+    r.renderer(ctx, '', 5, 100);
+    // Top edge 0.10em below the baseline, 0.05em thick.
+    expect(rects).toEqual([{ x: 5, y: 102, w: 30, h: 1, fillStyle: '#FFFFFF' }]);
+  });
+
+  it('places strikethrough and overline off the same baseline, in that order', () => {
+    const { ctx, rects } = makeRecordingCtx();
+    const r = createMarkdownRenderer(
+      ctx, [{ text: 'ab', underline: true, strikethrough: true, overline: true }], 20,
+    );
+    r.renderer(ctx, '', 0, 100);
+    expect(rects.map((q) => q.y)).toEqual([102, 94, 82]);
+    expect(rects.every((q) => q.h === 1 && q.w === 20)).toBe(true);
+  });
+
+  it('draws one rule across contiguous runs that share decoration and fill', () => {
+    const { ctx, rects } = makeRecordingCtx();
+    const r = createMarkdownRenderer(
+      ctx, [{ text: 'ab ', underline: true }, { text: 'cd', underline: true, bold: true }], 20,
+    );
+    r.renderer(ctx, '', 0, 100);
+    expect(rects).toEqual([{ x: 0, y: 102, w: 50, h: 1, fillStyle: '#FFFFFF' }]);
+  });
+
+  it('splits the rule where the fill changes, with the halves meeting exactly', () => {
+    const { ctx, rects } = makeRecordingCtx();
+    const r = createMarkdownRenderer(
+      ctx, [{ text: 'ab', underline: true }, { text: 'cde', underline: true, italic: true }], 20,
+    );
+    r.renderer(ctx, '', 0, 100);
+    expect(rects).toEqual([
+      { x: 0, y: 102, w: 20, h: 1, fillStyle: '#FFFFFF' },
+      { x: 20, y: 102, w: 30, h: 1, fillStyle: 'rgba(255, 255, 255, 0.7)' },
+    ]);
+  });
+
+  it('follows fontOpts.color', () => {
+    const { ctx, rects } = makeRecordingCtx();
+    const r = createMarkdownRenderer(ctx, [{ text: 'a', strikethrough: true }], 20, Infinity, { color: '#f00' });
+    r.renderer(ctx, '', 0, 100);
+    expect(rects[0].fillStyle).toBe('#f00');
+  });
+
+  it('underlines a superscript at its own size and raised baseline', () => {
+    const { ctx, rects } = makeRecordingCtx();
+    const r = createMarkdownRenderer(
+      ctx, [{ text: 'x', underline: true }, { text: '2', script: 'super', underline: true }], 20,
+    );
+    r.renderer(ctx, '', 0, 100);
+    expect(rects).toHaveLength(2);
+    const size = 20 * 0.583;
+    const baseline = 100 - 20 * 0.333;
+    expect(rects[1].x).toBe(10);
+    expect(rects[1].w).toBe(10);
+    expect(rects[1].y).toBeCloseTo(baseline + 0.10 * size, 6);
+    expect(rects[1].h).toBeCloseTo(0.05 * size, 6);
+  });
+
+  it('finds the baseline under textBaseline top', () => {
+    const { ctx, rects } = makeRecordingCtx({ textBaseline: 'top' });
+    const r = createMarkdownRenderer(ctx, [{ text: 'ab', underline: true }], 20);
+    r.renderer(ctx, '', 0, 100);
+    // Baseline 0.8em below the em top: 116, rule top 0.10em under it.
+    expect(rects[0].y).toBeCloseTo(118, 6);
+  });
+
+  it('lays out from the block\'s left edge under textAlign center, glyphs and rules alike', () => {
+    const { ctx, raw, texts, rects } = makeRecordingCtx({ textAlign: 'center' });
+    const r = createMarkdownRenderer(
+      ctx, [{ text: 'ab', underline: true }, { text: 'cd', underline: true, italic: true }], 20,
+    );
+    r.renderer(ctx, '', 100, 50);
+    expect(texts.map((t) => [t.x, t.textAlign])).toEqual([[80, 'left'], [100, 'left']]);
+    expect(rects.map((q) => [q.x, q.w])).toEqual([[80, 20], [100, 20]]);
+    expect(raw.textAlign).toBe('center');
+  });
+
+  it('keeps decorations off the stroke pass', () => {
+    const { ctx, rects } = makeRecordingCtx();
+    const r = createMarkdownRenderer(ctx, [{ text: 'ab', underline: true }], 20);
+    r.strokeRenderer(ctx, '', 0, 100);
+    expect(rects).toHaveLength(0);
+  });
+
+  it('breaks a rule at a wrap, one per line', () => {
+    const { ctx, rects } = makeRecordingCtx();
+    const r = createMarkdownRenderer(ctx, [{ text: 'aaa bbb', underline: true }], 20, 40);
+    r.renderer(ctx, '', 0, 100);
+    expect(rects.map((q) => [q.x, q.y, q.w])).toEqual([[0, 102, 30], [0, 128, 30]]);
   });
 });
