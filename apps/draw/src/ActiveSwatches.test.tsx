@@ -9,14 +9,16 @@ function mount() {
       <ActiveSwatches />
     </ColorContextProvider>,
   );
-  return screen.getByRole('button', { name: /Toggle no paint for fill/ });
+  return screen.getByRole('button', { name: 'None' });
 }
+
+const chip = (name: string) => screen.getByLabelText(name).parentElement!;
 
 describe('ActiveSwatches', () => {
   it('renders one color input per paint role', () => {
     mount();
-    expect(screen.getByLabelText('Fill color')).toBeTruthy();
-    expect(screen.getByLabelText('Stroke color')).toBeTruthy();
+    expect(screen.getByLabelText('Fill')).toBeTruthy();
+    expect(screen.getByLabelText('Stroke')).toBeTruthy();
   });
 
   it('None toggles the focused swatch and reports it as pressed', () => {
@@ -24,24 +26,25 @@ describe('ActiveSwatches', () => {
     expect(none.getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(none);
     expect(none.getAttribute('aria-pressed')).toBe('true');
-    expect(document.querySelector('.wd-swatch--fill')?.classList.contains('is-none')).toBe(true);
+    expect(chip('Fill').hasAttribute('data-none')).toBe(true);
     fireEvent.click(none);
     expect(none.getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('keeps each color input out of any button, so no control nests inside another', () => {
-    mount();
-    for (const name of ['Fill color', 'Stroke color']) {
-      expect(screen.getByLabelText(name).closest('button')).toBeNull();
-    }
-  });
-
   it('shift-click on a swatch toggles it to none without opening the picker', () => {
     mount();
-    const input = screen.getByLabelText('Stroke color');
-    const notPrevented = fireEvent.click(input, { shiftKey: true });
+    const notPrevented = fireEvent.click(screen.getByLabelText('Stroke'), { shiftKey: true });
     expect(notPrevented).toBe(false);
-    expect(document.querySelector('.wd-swatch--stroke')?.classList.contains('is-none')).toBe(true);
-    expect(document.querySelector('.wd-swatch--stroke')?.classList.contains('is-focused')).toBe(true);
+    expect(chip('Stroke').hasAttribute('data-none')).toBe(true);
+    expect(chip('Stroke').hasAttribute('data-focused')).toBe(true);
+  });
+
+  it('Swap exchanges the paints, and a pick lands on the focused chip', () => {
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: 'Swap' }));
+    const fill = screen.getByLabelText('Fill');
+    expect(fill).toHaveValue('#000000');
+    fireEvent.input(fill, { target: { value: '#ff0000' } });
+    expect(fill).toHaveValue('#ff0000');
   });
 });

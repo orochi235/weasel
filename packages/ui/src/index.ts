@@ -25,6 +25,8 @@ export * from './components/ButtonBar';
 export * from './components/ToolOptionsBar';
 export * from './components/PaintInput';
 export * from './components/PaintField';
+export * from './components/FillStrokeSwatch';
+export * from './components/SwatchGrid';
 export * from './components/MeshEditor';
 export * from './components/PatternPicker';
 export * from './components/Powerline';

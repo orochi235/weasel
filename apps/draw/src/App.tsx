@@ -110,7 +110,9 @@ import {
   SelectRow,
   ColorRow,
   ColorModeControl,
+  SwatchGrid,
   type PropertyOption,
+  type SwatchGridOption,
 } from '@weasel-js/ui';
 
 import { ActionBar, type PaperSizeKey } from './ActionBar';
@@ -119,7 +121,6 @@ import { PreferencesModal } from './PreferencesModal';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
 import { LayerList, type LayerListItem } from './ui/LayerList';
 import { useLayerList } from './ui/LayerList/useLayerList';
-import { SwatchGrid } from './ui/SwatchGrid';
 import { HistoryList } from './ui/HistoryList';
 import { buildLabel, buildTitle } from '../../shared/buildInfo';
 import { PREFS, usePref } from './prefs';
@@ -253,7 +254,7 @@ function loadDoc(): PersistedDoc {
 //   row 1: null (transparent) + 9 quick-pick primaries/secondaries
 //   row 2: 10-shade gray ramp (50 → 900)
 //   rows 3–10: 8 hue ramps × 10 shades each (50 → 900)
-const PALETTE: { value: string | null; label: string }[] = [
+const PALETTE: SwatchGridOption[] = [
   { value: null,        label: 'None' },
   { value: '#ffffffff', label: 'White' },
   { value: '#000000ff', label: 'Black' },
@@ -615,13 +616,17 @@ function RightSidebar({
 
 function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
   const colors = useColorContext();
-  const fillEdit = useOngoingAction('setFill');
-  const strokeEdit = useOngoingAction('setStroke');
-  // Highlight tracks the fill swatch — left-click (the primary action)
-  // sets fill. Right-click sets stroke; the active-swatches widget
-  // reflects the stroke update. `null` is the transparent ("None")
-  // swatch in the first row.
-  const current = colors.fill.kind === 'solid' ? colors.fill.color : null;
+  const edits = { fill: useOngoingAction('setFill'), stroke: useOngoingAction('setStroke') };
+  const other = colors.focused === 'fill' ? 'stroke' : 'fill';
+  // A click paints the focused slot, a shift- or right-click the other one;
+  // each lands on the active paint and on the selection.
+  const apply = (slot: 'fill' | 'stroke', v: string | null): void => {
+    const paint: ActivePaint = v === null ? { kind: 'none' } : { kind: 'solid', color: v };
+    if (slot === 'fill') colors.setFill(paint);
+    else colors.setStroke(paint);
+    edits[slot].commit(v === null ? { paint: null } : { color: v });
+  };
+  const focusedPaint = colors.focused === 'fill' ? colors.fill : colors.stroke;
   return (
     <SidebarPanel
       title="Colors"
@@ -630,25 +635,12 @@ function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
       onHide={chrome.onHide}
     >
       <SwatchGrid
-        value={current}
+        aria-label="Palette"
+        value={focusedPaint.kind === 'solid' ? focusedPaint.color : focusedPaint.kind === 'none' ? null : undefined}
         options={PALETTE}
         columns={10}
-        onChange={(v) => {
-          if (v === null) {
-            colors.setFill({ kind: 'none' });
-          } else {
-            colors.setFill({ kind: 'solid', color: v });
-            fillEdit.commit({ color: v });
-          }
-        }}
-        onAltChange={(v) => {
-          if (v === null) {
-            colors.setStroke({ kind: 'none' });
-          } else {
-            colors.setStroke({ kind: 'solid', color: v });
-            strokeEdit.commit({ color: v });
-          }
-        }}
+        onChange={(v) => apply(colors.focused, v)}
+        onAltChange={(v) => apply(other, v)}
       />
     </SidebarPanel>
   );

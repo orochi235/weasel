@@ -87,7 +87,7 @@
 
 /* ActiveSwatches sits directly below the tool palette in the left
    sidebar — natural flex order, no `margin-top: auto` push. */
-.wd-sidebar.left .wd-active-swatches-group {
+.wd-sidebar.left .wd-active-swatches {
   margin-top: var(--wzl-space-2);
 }
 
@@ -130,143 +130,6 @@
    muted items — is weasel-ui's <StatusBar>. `.wd-statusbar` survives only as
    a stable hook for app-level selectors; adding rules to it means asking
    whether they belong in the kit component instead. */
-
-/* --- Active fill/stroke swatches (Illustrator-style overlap) --------- */
-/* Wraps the paired swatches + the "None" toggle below them. */
-.wd-active-swatches-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--wzl-space-2);
-}
-
-.wd-active-swatches {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  margin: var(--wzl-space-2) auto 0;
-  /* The stroke and fill swatches are absolutely positioned inside this
-     container with a small offset to produce the iconic overlap. */
-}
-
-.wd-swatch {
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  background: transparent;
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  cursor: pointer;
-  /* The dynamic color flows through --wd-swatch-color, set inline on
-     the chip. Box-shadow inset gives a 1px contrast border around the
-     paint area so light swatches read against the panel. */
-  box-shadow: inset 0 0 0 1px var(--wzl-line);
-}
-
-/* The fill / stroke styling differs: fill is a solid filled square,
-   stroke is a frame (interior hollow) so the user can tell at a glance
-   which swatch represents which paint role. */
-/* Stacked swatches — Illustrator convention: fill is the solid square
-   underneath, stroke is the framed square in front. The stroke's inner
-   cutout is painted with the panel background color so the chip reads as
-   a thick frame regardless of what's behind it. */
-.wd-swatch--fill {
-  top: 4px;
-  left: 4px;
-  z-index: 1;
-  background: var(--wd-swatch-color, #ffffff);
-}
-
-.wd-swatch--stroke {
-  bottom: 4px;
-  right: 4px;
-  z-index: 2;
-  background: transparent;
-}
-
-/* The colored frame lives on a pseudo-element so the chip's own border +
-   focus outline survive (those would be eaten by a mask applied to the
-   chip itself). The mask carves the center: two mask layers + `exclude`
-   composite subtract the content-box from the padding-box, leaving the
-   padding ring painted with the swatch color. Whatever sits behind the
-   chip — sidebar, canvas, workspace stripes, the `is-transparent`
-   checkerboard — shows through the hole. */
-.wd-swatch--stroke::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--wd-swatch-color, #000000);
-  padding: 8px;
-  box-sizing: border-box;
-  pointer-events: none;
-  mask:
-    linear-gradient(#000, #000) padding-box,
-    linear-gradient(#000, #000) content-box;
-  mask-composite: exclude;
-  -webkit-mask:
-    linear-gradient(#000, #000) padding-box,
-    linear-gradient(#000, #000) content-box;
-  -webkit-mask-composite: xor;
-}
-
-.wd-swatch.is-focused {
-  border-color: var(--wzl-fg);
-  box-shadow: 0 0 0 2px var(--wzl-fg), inset 0 0 0 1px var(--wzl-line);
-}
-
-/* When the stroke chip is focused, also outline the *inside* edge of the
-   frame so the active role reads at a glance. ::before sits above the
-   masked ::after and inside the chip's border, drawing a 1px ring at the
-   hole boundary. Inset matches ::after's padding so the ring sits flush
-   against the inner edge of the colored frame. */
-.wd-swatch.is-focused.wd-swatch--stroke::before {
-  content: '';
-  position: absolute;
-  inset: 8px;
-  border: 1px solid var(--wzl-fg);
-  border-radius: 1px;
-  pointer-events: none;
-}
-
-/* `'none'` state — diagonal red stripe across the panel surface. The fill
-   and stroke variants render slightly differently because they have
-   different "background" semantics. */
-.wd-swatch.is-none {
-  background-color: var(--wzl-surface);
-  background-image:
-    linear-gradient(45deg, transparent calc(50% - 1px), var(--wzl-danger) calc(50% - 1px), var(--wzl-danger) calc(50% + 1px), transparent calc(50% + 1px));
-}
-
-/* For `is-none` and `is-transparent`, the chip's background carries the
-   special marker (red stripe / checkerboard); the frame cutout stays on
-   so the chip still reads as a frame against the marker. */
-
-/* `'transparent'` state — gray/white checkerboard with the same red-stripe
-   NO marker. Distinct from `'none'` (no paint at all) — `transparent`
-   means "draw with alpha 0," still occupies the path, still hit-tests. */
-.wd-swatch.is-transparent {
-  background:
-    linear-gradient(45deg, transparent calc(50% - 1px), var(--wzl-danger) calc(50% - 1px), var(--wzl-danger) calc(50% + 1px), transparent calc(50% + 1px)),
-    repeating-conic-gradient(var(--wzl-checker-a) 0% 25%, var(--wzl-checker-b) 0% 50%) 50% / var(--wzl-checker-size) var(--wzl-checker-size);
-}
-
-/* The native color input covers its chip, invisible: it takes the click and
-   the keyboard focus, and the chip draws the paint. */
-.wd-swatch-input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.wd-swatch:has(.wd-swatch-input:focus-visible) {
-  outline: 2px solid var(--wzl-focus-ring);
-  outline-offset: 1px;
-}
 
 /* --- Action bar far-right spacer ------------------------------------- */
 /* Pushes the trailing controls (recording, settings cog) to the right
@@ -324,7 +187,7 @@
 }
 
 /* Dynamic color arrives as --wd-loupe-swatch-color, set inline on the
-   element (the app's pattern for per-element paint — see .wd-swatch). */
+   element. */
 .wd-loupe-swatch {
   inline-size: var(--wzl-space-md);
   block-size: var(--wzl-space-md);
