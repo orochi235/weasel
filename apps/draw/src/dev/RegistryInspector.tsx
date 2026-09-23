@@ -68,7 +68,7 @@ export function RegistryInspector() {
   const onSnapshot = useCallback((snap: RegistrySnapshot) => setRuntime(snap), []);
 
   const bundles = useMemo(() => collectBundles(), []);
-  const icons = useMemo(() => collectIcons(), []);
+  const icons = useMemo(() => collectIcons(runtime.actions), [runtime.actions]);
   const shapeKinds = useMemo(() => collectShapeTrait(runtime.tools), [runtime.tools]);
   const routingEntries = useMemo(() => collectRoutingTrait(runtime.routing), [runtime.routing]);
   const propertiesEntries = useMemo(() => collectPropertiesTrait(runtime.properties), [runtime.properties]);

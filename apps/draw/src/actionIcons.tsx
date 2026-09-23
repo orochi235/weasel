@@ -6,13 +6,6 @@
  *  name.
  */
 
-// The kit's edit-action glyphs, listed here so the registry inspector's icon
-// page still shows every glyph WeaselDraw's action bar draws.
-export {
-  CutIcon, CopyIcon, PasteIcon, DuplicateIcon, GroupIcon, UngroupIcon,
-  BringForwardIcon, BringToFrontIcon, SendBackwardIcon, SendToBackIcon, FlipXIcon, FlipYIcon,
-} from '@weasel-js/ui';
-
 const SVG_BASE = {
   viewBox: '0 0 20 20',
   width: 20,

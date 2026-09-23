@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   actionBindings,
+  actionItems,
   keySpecShortcut,
   SceneCanvas,
   defaultNodeRouting,
@@ -149,6 +150,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     shortcut: a.shortcut,
     group: a.group,
     icon: renderPresentationIcon(a.icon),
+    items: actionItems(a).map((i) => ({ key: i.key, label: i.label, icon: renderPresentationIcon(i.icon) })),
     enabled: snapshotEnabled(a.enabled),
     callbacks: collectActionCallbacks(a),
     defaultBinding: a.defaultBinding,

@@ -877,6 +877,7 @@ function IconDetail({ entry }: { entry: IconEntry }) {
       </div>
       <DetailList>
         <DetailRow label="source"><Code>{entry.source}</Code></DetailRow>
+        {entry.actions && <DetailRow label="drawn by"><Code>{entry.actions.join(', ')}</Code></DetailRow>}
         {match?.path && <DetailRow label="file"><SourceLink match={match} /></DetailRow>}
       </DetailList>
       {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
