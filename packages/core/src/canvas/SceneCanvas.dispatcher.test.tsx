@@ -191,6 +191,8 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
 
   it('Ctrl+Shift+Z fires redoAction run via dispatcher', () => {
     const scene = makeSceneWithNode();
+    // Redo is disabled with nothing to redo, so put the seed batch on the redo stack.
+    scene.undo();
     const redoSpy = vi.fn();
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
