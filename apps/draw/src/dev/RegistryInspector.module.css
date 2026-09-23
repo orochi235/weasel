@@ -245,26 +245,7 @@
 .tagRemoved { color: var(--wzl-danger); }
 
 /* Schema panel — property tables for shape/op/action/gesture/node detail. */
-.schemaTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--wzl-font-size-md);
-  margin: var(--wzl-space-2) 0 var(--wzl-space-4);
-}
-.schemaTable th,
-.schemaTable td {
-  text-align: left;
-  padding: var(--wzl-space-2) var(--wzl-space-4);
-  border-bottom: 1px solid var(--wzl-border);
-  vertical-align: top;
-}
-.schemaTable th {
-  color: var(--wzl-fg-muted);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: var(--wzl-font-size-sm);
-}
+.schemaTable { margin: var(--wzl-space-2) 0 var(--wzl-space-4); }
 .schemaName {
   font-family: var(--wzl-font-mono);
   color: var(--wzl-fg);
