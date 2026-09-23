@@ -18,6 +18,17 @@ export const WithDescription: Story = {
   args: { label: 'Width', description: 'In document units.', defaultValue: '120' },
 };
 
+/** `orientation='row'` sets the label beside the field, which takes the rest of
+ *  the row; a description drops to a line of its own. */
+export const LabelBeside: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 320 }}>
+      <Input label="Name" orientation="row" placeholder="Untitled" />
+      <Input label="Name" orientation="row" description="Shown in the layer list." placeholder="Untitled" />
+    </div>
+  ),
+};
+
 export const Invalid: Story = {
   args: { label: 'Name', isInvalid: true, errorMessage: 'Name is required.' },
 };

@@ -40,6 +40,18 @@ export const FitWidth: Story = {
   ),
 };
 
+/** `orientation='row'` sets the label beside the field. Filling, the field
+ *  takes the rest of the row; fitted, it keeps its own width. */
+export const LabelBeside: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 320 }}>
+      <NumberField label="Width" orientation="row" defaultValue={120} />
+      <NumberField label="Width" orientation="row" width="fit" defaultValue={120} />
+      <NumberField label="Width" orientation="row" description="In document pixels." defaultValue={120} />
+    </div>
+  ),
+};
+
 export const Controlled: Story = {
   render: () => {
     function Wrap() {

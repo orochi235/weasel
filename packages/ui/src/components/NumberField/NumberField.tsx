@@ -10,12 +10,18 @@ import {
   type NumberFieldProps as RACNumberFieldProps,
   type ValidationResult,
 } from 'react-aria-components';
-import { fieldClasses } from '../Field/Field';
+import { fieldClasses, type FieldOrientation } from '../Field/Field';
 import s from './NumberField.module.css';
 
 /** Props for {@link NumberField}, on top of React Aria's `NumberField` props. */
 export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className'> & {
   label?: ReactNode;
+  /**
+   * `'stacked'` (the default) puts the label above the field; `'row'` sets it
+   * beside the field at its own width, with any description or error on a
+   * line below. Same vocabulary as {@link Field}'s `orientation`.
+   */
+  orientation?: FieldOrientation;
   description?: ReactNode;
   errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
   /** Hide the up/down stepper buttons. Defaults to false. */
@@ -49,6 +55,7 @@ export const NumberField = forwardRef(function NumberField(
 ) {
   const {
     label,
+    orientation = 'stacked',
     description,
     errorMessage,
     hideSteppers,
@@ -61,11 +68,18 @@ export const NumberField = forwardRef(function NumberField(
   return (
     <RACNumberField
       {...rest}
-      className={[s.field, width === 'fit' && s.fit, fieldClasses.root, className]
+      className={[
+        s.field,
+        width === 'fit' && s.fit,
+        fieldClasses.root,
+        orientation === 'row' && fieldClasses.row,
+        orientation === 'row' && s.row,
+        className,
+      ]
         .filter(Boolean)
         .join(' ')}
     >
-      {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
+      {label !== undefined && <Label className={`${fieldClasses.label} ${s.label}`}>{label}</Label>}
       <Group className={ghost ? `${s.frame} ${s.ghost}` : s.frame}>
         <RACInput ref={ref} placeholder={placeholder} />
         {!hideSteppers && (
@@ -76,11 +90,11 @@ export const NumberField = forwardRef(function NumberField(
         )}
       </Group>
       {description !== undefined && (
-        <Text slot="description" className={fieldClasses.hint}>
+        <Text slot="description" className={`${fieldClasses.hint} ${s.below}`}>
           {description}
         </Text>
       )}
-      <FieldError className={fieldClasses.error}>{errorMessage}</FieldError>
+      <FieldError className={`${fieldClasses.error} ${s.below}`}>{errorMessage}</FieldError>
     </RACNumberField>
   );
 });
