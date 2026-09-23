@@ -709,10 +709,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) Decide what `tone` means on `Badge` and `Powerline`.** Their `tone`
-  prop names a status (`info`, `danger`, …), while a panel's `tone` is which of
-  its peers it is — two things under one word. Either rename the status prop or
-  give these a peer tone beside it. That naming call comes before either moves.
+- **(P2) Decide what `tone` means on `Badge`, `Powerline`, `Code` and link
+  `Button`s.** Their `tone` prop names a status (`success`, `danger`, …), while a
+  panel's `tone` is which of its peers it is — two things under one word. Either
+  rename the status prop or give these a peer tone beside it. That naming call
+  comes before any of them moves.
   Toasts were looked at and left out of stance and tone: a toast reports how an
   event came out rather than holding a class of content, and `success` has no
   stance.
@@ -870,6 +871,28 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `ColorField` and the flag toggles. Weight is the gap: it is derived from
   the bold flag (`style.bold ? 700 : 400`), so a family's 300 or 600 face
   cannot be asked for.
+- **(P3) The command palette is never mounted.** `apps/draw/src/ui/CommandPalette`
+  is exported from `ui/index.ts`, which nothing imports. If it is revived it
+  should sit on the kit — `Dialog` for the modal, `KeySequence` for the chips —
+  and the core CHANGELOG line saying it moved into `packages/ui` is untrue.
+- **(P3) Canvas grid color ignores the paper.** The grid draws over the page, which
+  is document color, so theme line tokens would vanish on white paper in dark
+  mode; the `rgba(0,0,0,…)` literals stay until something derives a contrasting
+  line color from a document color.
+- **(P3) Fill/stroke input dedup, kit side.** Draw drives a live-preview paint edit
+  as begin/update/end in three places (`ActiveSwatches`, `WdPaintLeaf`,
+  `SwatchGrid`); the kit has no hook for an action driven through a gesture's
+  input/commit phases, no overlapping fill/stroke chip, and no swatch grid.
+- **(P3) Dev pages on `LabShell`.** The Toolkit Builder and Bundle Inspector each
+  hand-build a header and set `document.title`; `LabShell` with `pages` would give
+  them a switcher, but `LabSwitcher` matches on path and both pages are hash
+  routes on one document — check that first.
+- **(P3) Kit gaps the dev pages still route around.** No tree view (the Bundle
+  Inspector's tree is `DisclosureRow`s by hand), no read-only key/value list (the
+  detail pane's `.detailList`, 15+ uses), and the Toolkit Builder's Actions table
+  clips its Requires column — it overflowed before the `DataGrid` move too.
+- **(P3) `ItemList` has no keyboard range selection.** A multi-select list toggles
+  with Shift+Space, matching Shift+click; Shift+Arrow does not extend a range.
 
 ---
 
