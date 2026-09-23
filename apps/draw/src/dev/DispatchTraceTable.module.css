@@ -1,0 +1,19 @@
+/* Age is live, variable-length text in the leading column: fix its width so
+   ticking values never shift the columns after it. */
+.age {
+  width: 7ch;
+  min-width: 7ch;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  white-space: nowrap;
+}
+
+.unhandled > td { background: color-mix(in srgb, var(--wzl-danger) 14%, transparent); }
+tr.unhandled:hover > td { background: color-mix(in srgb, var(--wzl-danger) 24%, transparent); }
+
+/* Mode switches read as ambient state rather than dispatched input. */
+tr.mode { color: var(--wzl-fg-muted); cursor: default; }
+.mode > td { background: color-mix(in srgb, var(--wzl-accent) 8%, transparent); }
+.modeDetail { font-style: italic; }
+
+.fired { font-weight: 700; color: var(--wzl-success); }

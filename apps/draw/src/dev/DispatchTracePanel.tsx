@@ -17,21 +17,12 @@
  * Wire it into the app sidebar (e.g. behind a `#/dev/dispatch` route or a
  * "Show dev panels" pref) only in development.
  */
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
+import { useCallback, useState, type CSSProperties, type ReactElement } from 'react';
 import { useHostAnchor } from '@weasel-js/core';
 import { ButtonBar } from '@weasel-js/ui';
 import s from './DispatchTracePanel.module.css';
-import {
-  clearLog,
-  formatAge,
-  formatEnabled,
-  readLog,
-  type DispatchLogEntry,
-  type TraceLogEntry,
-} from './dispatchTraceLog';
-
-const POLL_MS = 250;
-const DISPLAY_LIMIT = 100;
+import { useDispatchTraceLog } from './dispatchTraceLog';
+import { DispatchTraceTable } from './DispatchTraceTable';
 
 export interface DispatchTracePanelProps {
   /** Initial collapsed state. Defaults to `false` (panel open). */
@@ -51,53 +42,14 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
     () => document.querySelector(anchorSelector),
     { align: { x: 'start', y: 'end' }, offset: { x: 8, y: 8 } },
   );
-  const [entries, setEntries] = useState<TraceLogEntry[]>(() => readLog().slice());
-  const [expanded, setExpanded] = useState<number | null>(null);
-  const [now, setNow] = useState<number>(() => Date.now());
+  // Poll only while open.
+  const { entries, now, clear: onClear } = useDispatchTraceLog(!collapsed);
   const [showHandled, setShowHandled] = useState<boolean>(true);
   // Unhandled events are noisy by default (every mousemove without an active
   // gesture, every wheel scroll over chrome). Hidden by default; toggle to
   // expose them when diagnosing routing problems.
   const [showUnhandled, setShowUnhandled] = useState<boolean>(false);
-  const lastLenRef = useRef<number>(entries.length);
-  const lastTsRef = useRef<number>(entries.length ? entries[entries.length - 1]!.ts : 0);
 
-  // Poll the log only while the panel is uncollapsed. We snapshot length
-  // + last-ts and skip the React setState when nothing changed, so the
-  // 250 ms tick is cheap when the app is idle. `now` still updates each
-  // tick so the "Age" column ticks upward without log activity.
-  useEffect(() => {
-    if (collapsed) return;
-    const id = window.setInterval(() => {
-      const log = readLog();
-      const len = log.length;
-      const lastTs = len ? log[len - 1]!.ts : 0;
-      if (len !== lastLenRef.current || lastTs !== lastTsRef.current) {
-        lastLenRef.current = len;
-        lastTsRef.current = lastTs;
-        setEntries(log.slice());
-      }
-      setNow(Date.now());
-    }, POLL_MS);
-    return () => window.clearInterval(id);
-  }, [collapsed]);
-
-  const onClear = useCallback(() => {
-    clearLog();
-    setEntries([]);
-    setExpanded(null);
-    lastLenRef.current = 0;
-    lastTsRef.current = 0;
-  }, []);
-
-  const filtered = entries.filter((e) => {
-    // Mode-switch entries ride along with the handled-events stream;
-    // hide them when the user has unchecked handled. A dedicated filter
-    // could be added later if mode noise becomes a problem.
-    if (e.kind === 'mode') return showHandled;
-    return e.outcome === 'unhandled' ? showUnhandled : showHandled;
-  });
-  const visible = filtered.slice(-DISPLAY_LIMIT).reverse();
   const onToggleCollapse = useCallback(() => setCollapsed((c) => !c), []);
 
   if (!anchorStyle) return null;
@@ -160,134 +112,20 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
       </div>
       {!collapsed && (
         <div className={s.body}>
-        {visible.length === 0 ? (
-          <p className={s.empty}>
-            {entries.length > 0
+          <DispatchTraceTable
+            className={s.table}
+            entries={entries}
+            now={now}
+            showHandled={showHandled}
+            showUnhandled={showUnhandled}
+            empty={entries.length > 0
               ? 'All recorded events are hidden by the current filters — toggle the icons above to show them.'
               : 'No dispatch events recorded yet. Interact with the canvas to populate the log.'}
-          </p>
-        ) : (
-          <table className={s.table}>
-            <thead>
-              <tr>
-                <th>Age</th>
-                <th>Event</th>
-                <th>Outcome</th>
-                <th>Cands</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((entry, idx) => {
-                const rowKey = `${entry.ts}-${idx}`;
-                const isExpanded = expanded === entry.ts;
-                const ageMs = Math.max(0, now - entry.ts);
-                const unhandled = entry.kind === 'dispatch' && entry.outcome === 'unhandled';
-                const isMode = entry.kind === 'mode';
-                const rowClass = [
-                  s.row,
-                  unhandled ? s.rowUnhandled : '',
-                  isExpanded ? s.rowExpanded : '',
-                  isMode ? s.rowMode : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ');
-                return (
-                  <RowGroup
-                    key={rowKey}
-                    entry={entry}
-                    ageMs={ageMs}
-                    isExpanded={isExpanded}
-                    rowClass={rowClass}
-                    onToggle={() => setExpanded(isExpanded ? null : entry.ts)}
-                  />
-                );
-              })}
-            </tbody>
-          </table>
-        )}
+          />
         </div>
       )}
     </aside>
   );
-}
-
-function RowGroup(props: {
-  entry: TraceLogEntry;
-  ageMs: number;
-  isExpanded: boolean;
-  rowClass: string;
-  onToggle: () => void;
-}): ReactElement {
-  const { entry, ageMs, isExpanded, rowClass, onToggle } = props;
-  if (entry.kind === 'mode') {
-    // Mode-switch row: single line, no expansion. Render the mode name
-    // in the eventKind column, the transition as outcome, and a marker
-    // ('—') in the candidates column so the table layout stays aligned.
-    return (
-      <tr className={rowClass}>
-        <td>{formatAge(ageMs)}</td>
-        <td>
-          <code>{entry.mode}</code>
-          {entry.detail ? <span className={s.modeDetail}> ({entry.detail})</span> : null}
-        </td>
-        <td>
-          <code>{entry.from ?? '∅'}</code> → <code>{entry.to ?? '∅'}</code>
-        </td>
-        <td>—</td>
-      </tr>
-    );
-  }
-  return (
-    <>
-      <tr className={rowClass} onClick={onToggle}>
-        <td>{formatAge(ageMs)}</td>
-        <td>
-          {entry.eventKind}
-          {entry.key !== undefined ? (
-            <> <code>{entry.key === ' ' ? 'Space' : entry.key}</code></>
-          ) : null}
-        </td>
-        <td>{renderOutcome(entry)}</td>
-        <td>{entry.candidates.length}</td>
-      </tr>
-      {isExpanded && (
-        <tr className={s.detailRow}>
-          <td colSpan={4}>
-            {entry.candidates.length === 0 ? (
-              <em>No candidates considered.</em>
-            ) : (
-              <table className={s.candTable}>
-                <thead>
-                  <tr>
-                    <th>Action</th>
-                    <th>Scope</th>
-                    <th>Enabled</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entry.candidates.map((c, i) => (
-                    <tr
-                      key={`${c.actionId}-${i}`}
-                      className={c.actionId === entry.fired ? s.candFired : undefined}
-                    >
-                      <td>{c.actionId}</td>
-                      <td>{c.scope}</td>
-                      <td>{formatEnabled(c.enabledResult)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </td>
-        </tr>
-      )}
-    </>
-  );
-}
-
-function renderOutcome(entry: DispatchLogEntry): ReactElement | string {
-  if (entry.outcome === 'unhandled') return 'unhandled';
-  return entry.fired ? <code>{entry.fired}</code> : 'handled';
 }
 
 /** Trash can — clears the log. */
