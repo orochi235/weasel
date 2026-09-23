@@ -38,3 +38,4 @@ export {
   type ColorSpace,
   type OklchDeg,
 } from './colorSpaces';
+export { contrastLineColor } from './contrast';

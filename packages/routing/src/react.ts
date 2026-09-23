@@ -13,6 +13,8 @@ export type {
 } from './interactions/dispatcher/useGestureDispatcher';
 
 export { ActionsProvider, ActionsScope, useActionsRegistry, useAction } from './interactions/actions/ActionsProvider';
+export { useOngoingAction } from './interactions/actions/useOngoingAction';
+export type { OngoingAction } from './interactions/actions/useOngoingAction';
 export {
   DepRegistryProvider, useDepRegistry, useOptionalDepRegistry, useDepSource,
 } from './interactions/actions/depRegistry';

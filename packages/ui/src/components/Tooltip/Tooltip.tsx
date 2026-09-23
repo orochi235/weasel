@@ -9,6 +9,11 @@ import {
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
 import s from './Tooltip.module.css';
 
+/** Makes a non-RAC element a {@link TooltipTrigger} trigger: supplies
+ *  `tabIndex`, the hover/focus handlers and `aria-describedby`. The child must
+ *  forward its ref and DOM props, and carry an interactive role (or `img`). */
+export { Focusable } from 'react-aria-components';
+
 /**
  * Props for {@link TooltipTrigger} — React Aria's `TooltipTrigger` props
  * unchanged.
@@ -18,8 +23,8 @@ export type TooltipTriggerProps = TooltipTriggerComponentProps;
 /**
  * TooltipTrigger with kit defaults: ~600 ms open delay, instant close.
  * Wrap a focusable trigger plus a `<Tooltip>`. Non-RAC triggers (plain
- * `<button>` etc.) must be wrapped in `<Focusable>` from
- * react-aria-components so hover/focus props reach the DOM node.
+ * `<button>`, a `Badge` etc.) must be wrapped in {@link Focusable} so
+ * hover/focus props reach the DOM node.
  *
  * Caveat: while a tooltip is open, react-aria captures the first Escape
  * keydown (document-level, capture phase) to dismiss it — app-level

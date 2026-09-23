@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ActionsProvider, SelectionContextProvider } from '@weasel-js/core';
 import { RegistryInspector } from './RegistryInspector';
 
@@ -45,6 +45,21 @@ describe('RegistryInspector', () => {
     expect(screen.getByRole('heading', { name: /bundle inspector/i })).toBeTruthy();
   });
 
+  it('names the document and switches to the other dev pages', () => {
+    window.history.replaceState(null, '', '/#/dev/registry');
+    renderInspector();
+    expect(document.title).toBe('Bundle Inspector');
+    fireEvent.click(screen.getByRole('button', { name: /bundle inspector/i }));
+    const items = screen.getAllByRole('menuitem');
+    expect(items.map((i) => [i.textContent, i.getAttribute('href')])).toEqual([
+      ['WeaselDraw', '/'],
+      ['Toolkit Builder', '#/dev/toolkits'],
+      ['Bundle Inspector', '#/dev/registry'],
+    ]);
+    expect(screen.getByRole('menuitem', { name: 'Bundle Inspector' }))
+      .toHaveAttribute('aria-current', 'page');
+  });
+
   it('renders all category nodes in the tree', async () => {
     renderInspector();
     await waitFor(() => expect(screen.queryByText('Bundles')).toBeTruthy());
@@ -68,7 +83,8 @@ describe('RegistryInspector', () => {
     // rect, 'Hand' for hand), not the bare tool id.
     await waitFor(() => expect(screen.queryByText('Rectangle')).toBeTruthy());
 
-    fireEvent.change(screen.getByLabelText(/bundle/i), { target: { value: 'minimal' } });
+    act(() => { fireEvent.click(screen.getByRole('button', { name: /bundle.*all bundles|all bundles.*bundle/i })); });
+    fireEvent.click(screen.getByRole('option', { name: 'Minimal' }));
     await waitFor(() => expect(screen.queryByText('Rectangle')).toBeNull());
     // 'Select' is the always-present member of the minimal bundle; the hand
     // tool only registers when viewport is initialized, which jsdom may skip.

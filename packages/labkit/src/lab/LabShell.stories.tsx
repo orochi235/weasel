@@ -86,3 +86,18 @@ export const HeaderControlsLineUp: Story = {
     await expect(middles).toEqual(middles.map(() => middles[0]));
   },
 };
+
+// One document serving its pages from the hash: the open route is the one the
+// switcher marks, and each entry is a link to its fragment.
+export const HashRoutedPages: Story = {
+  args: {
+    title: 'Registry',
+    pages: [
+      { href: '/app/', label: 'App' },
+      { href: '#/dev/tools', label: 'Tools' },
+      { href: '#/dev/registry', label: 'Registry' },
+    ],
+    path: '/app/#/dev/registry?entry=rect',
+    children: <p>Open the title to see the current route marked.</p>,
+  },
+};

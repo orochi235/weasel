@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { act, render, fireEvent, screen } from '@testing-library/react';
 import { ToggleBar } from './ToggleBar';
 
 const items = [
@@ -268,5 +268,30 @@ describe('ToggleBar disabled segments', () => {
     const segs = container.querySelectorAll<HTMLElement>('[role="radio"]');
     fireEvent.keyDown(segs[0], { key: 'ArrowRight' });
     expect(onChange).toHaveBeenCalledWith('c');
+  });
+});
+
+describe('ToggleBar tooltips', () => {
+  const tipped = [
+    { value: 'left', label: 'L', ariaLabel: 'Align left', tooltip: 'Align left (⌘L)' },
+    { value: 'center', label: 'C', ariaLabel: 'Center' },
+  ];
+
+  it('shows an item tooltip on keyboard focus and describes the segment with it', () => {
+    const { container } = render(<ToggleBar items={tipped} value="center" onChange={() => {}} />);
+    const left = container.querySelectorAll<HTMLButtonElement>('[role="radio"]')[0];
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => left.focus());
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toBe('Align left (⌘L)');
+    expect(left.getAttribute('aria-describedby')).toBe(tip.id);
+    expect(left.getAttribute('aria-label')).toBe('Align left');
+  });
+
+  it('keeps the roving tab stop on the selected segment when items carry tooltips', () => {
+    const { container } = render(<ToggleBar items={tipped} value="center" onChange={() => {}} />);
+    const segs = container.querySelectorAll<HTMLButtonElement>('[role="radio"]');
+    expect(segs[0].tabIndex).toBe(-1);
+    expect(segs[1].tabIndex).toBe(0);
   });
 });

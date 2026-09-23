@@ -1,4 +1,6 @@
 import type { Action } from '@weasel-js/routing';
+import { createElement } from 'react';
+import { DuplicateIcon } from './icons/editIcons';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -75,6 +77,7 @@ function copySubtree(
 export const duplicateAction: Action & { requires: string[] } = {
   id: 'duplicate',
   label: 'Duplicate',
+  icon: createElement(DuplicateIcon),
   group: 'edit',
   defaultBinding: { kind: 'key', key: 'd', mods: { mod: true } },
   eligible: { capability: ['edits-page', 'creates-selection'] },

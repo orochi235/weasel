@@ -4,21 +4,6 @@
   flex: 0 0 auto;
   width: 12px;
   height: 12px;
-  border-radius: 2px;
-  border: 1px solid rgba(0, 0, 0, 0.4);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-}
-
-.dragging {
-  opacity: 0.4;
-}
-
-.dropIndicator {
-  position: absolute;
-  left: 2px;
-  right: 2px;
-  height: 2px;
-  background: var(--wzl-fg);
-  pointer-events: none;
-  z-index: 1;
+  border-radius: var(--wzl-radius-sm);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
 }

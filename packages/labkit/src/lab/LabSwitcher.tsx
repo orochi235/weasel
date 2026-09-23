@@ -2,7 +2,8 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 /** One page in a project's set of labs. */
 export interface LabPage {
-  /** The page's own URL, and how the switcher knows which page is open. */
+  /** The page's own URL, and how the switcher knows which page is open. A
+   *  hash route (`#/dev/tools`) names a page on the current document. */
   href: string;
   label: string;
 }
@@ -18,18 +19,39 @@ export interface LabSwitcherProps {
   className?: string;
 }
 
+/** A URL split into the document it names and the hash route on it, each
+ *  without its query, trailing slash or `.html`. */
+function locate(url: string): { doc: string; route: string } {
+  const hash = url.indexOf('#');
+  const trim = (part: string) => part.replace(/\?.*$/, '').replace(/\/$/, '');
+  return {
+    doc: trim(hash < 0 ? url : url.slice(0, hash)).replace(/\.html$/, ''),
+    route: hash < 0 ? '' : trim(url.slice(hash + 1)),
+  };
+}
+
 /** Which of `pages` a path is on, or -1.
  *
  *  Matched on the end of the path so a query string, a trailing slash or a
  *  leftover `.html` cannot lose it: a project whose dev server maps `/stats`
  *  to `stats.html` serves both spellings, and a bookmark from before the URLs
- *  lost their extension still resolves to the same page. */
+ *  lost their extension still resolves to the same page.
+ *
+ *  A page whose `href` carries a hash is a route on a single document and wins
+ *  when the path's hash is that route or one under it. A page without one
+ *  ignores the hash, so an in-page anchor does not lose it. */
 export function currentPage(path: string, pages: readonly LabPage[]): number {
-  const here = path
-    .replace(/[?#].*$/, '')
-    .replace(/\/$/, '')
-    .replace(/\.html$/, '');
-  return pages.findIndex((p) => here.endsWith(p.href.replace(/\.html$/, '')));
+  const here = locate(path);
+  const onDoc = (doc: string) => here.doc.endsWith(doc);
+  const routed = pages.findIndex((p) => {
+    if (!p.href.includes('#')) return false;
+    const page = locate(p.href);
+    return (
+      onDoc(page.doc) && (here.route === page.route || here.route.startsWith(`${page.route}/`))
+    );
+  });
+  if (routed >= 0) return routed;
+  return pages.findIndex((p) => !p.href.includes('#') && onDoc(locate(p.href).doc));
 }
 
 /** A project's lab title, doubling as the way to reach its other labs.
@@ -47,7 +69,7 @@ export function LabSwitcher({ title, pages, path, className }: LabSwitcherProps)
   const root = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const here = currentPage(
-    path ?? (typeof window === 'undefined' ? '' : window.location.pathname),
+    path ?? (typeof window === 'undefined' ? '' : window.location.pathname + window.location.hash),
     pages,
   );
 

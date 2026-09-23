@@ -123,3 +123,24 @@ export const AllowDeselect: Story = {
     return <ToggleBar items={alignItems} value={v} onChange={setV} allowDeselect />;
   },
 };
+
+/** `shortcut` shows in each segment's tooltip as `Name (key)`, named by
+ *  `ariaLabel`; `tooltip` replaces that text outright. */
+export const Tooltips: Story = {
+  render: () => {
+    const [v, setV] = useState<string[]>([]);
+    return (
+      <ToggleBar
+        mode="multiple"
+        items={[
+          { value: 'b', label: 'B', ariaLabel: 'Bold', shortcut: '⌘B' },
+          { value: 'i', label: 'I', ariaLabel: 'Italic', shortcut: '⌘I' },
+          { value: 'u', label: 'U', ariaLabel: 'Underline', tooltip: 'Underline — no shortcut' },
+        ]}
+        value={v}
+        onChange={setV}
+        ariaLabel="Text style"
+      />
+    );
+  },
+};

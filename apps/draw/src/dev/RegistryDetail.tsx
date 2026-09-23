@@ -1,12 +1,8 @@
 import { Fragment, type ReactNode } from 'react';
 import type { GestureSpec } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
-import { Badge, DataGrid, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@weasel-js/ui';
+import { Badge, Button, Code, DataGrid, DetailList, DetailRow, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, keySpecsFromShortcut, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@weasel-js/ui';
 import type { ParsedModifiers, ModifierKey } from '@weasel-js/core/routing';
-
-function toKeys(parts: readonly string[] | undefined) {
-  return parts?.map((label) => ({ label }));
-}
 
 /** Minimal inline-markdown renderer — splits on backtick-delimited code
  *  spans and wraps each in <code>. No other markdown features. Used by every
@@ -18,7 +14,7 @@ function InlineMarkdown({ text }: { text: string }) {
     <>
       {segments.map((seg, i) => (
         seg.startsWith('`') && seg.endsWith('`')
-          ? <code key={i} className={s.tag}>{seg.slice(1, -1)}</code>
+          ? <Code key={i}>{seg.slice(1, -1)}</Code>
           : <Fragment key={i}>{seg}</Fragment>
       ))}
     </>
@@ -169,9 +165,7 @@ export function RouteBadge({ route }: { route: string }) {
         </span>
       )}
       {hasTarget && (
-        <code className={[s.tag, targetIsWildcard ? s.routeMuted : undefined].filter(Boolean).join(' ')}>
-          {parsed.target}
-        </code>
+        <Code className={targetIsWildcard ? s.routeMuted : undefined}>{parsed.target}</Code>
       )}
     </span>
   );
@@ -240,7 +234,7 @@ function KindBadge({ label }: { label: string }) {
 
 function BundleBadge({ id, label }: { id: string; label?: string }) {
   const props = (BUNDLE_BADGE_PROPS as Record<string, Omit<BadgeProps, 'children'>>)[id];
-  if (!props) return <code className={s.tag}>{label ?? id}</code>;
+  if (!props) return <Code>{label ?? id}</Code>;
   return <Badge {...(props as BadgeProps)}>{label ?? id}</Badge>;
 }
 void parseRoute;
@@ -281,13 +275,9 @@ function EntryLink({
   onNavigate: (t: NavTarget) => void;
 }) {
   return (
-    <button
-      type="button"
-      className={s.memberLink}
-      onClick={() => onNavigate({ kind, id })}
-    >
+    <Button variant="link" onClick={() => onNavigate({ kind, id })}>
       {label ?? id}
-    </button>
+    </Button>
   );
 }
 
@@ -399,20 +389,8 @@ function TokenSetTable({ set }: { set: TokenSet }) {
       <DataGrid
         rows={set.entries.map((e) => ({ id: e.value, entry: e }))}
         columns={[
-          { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <code className={s.tag}>{r.entry.value}</code> },
+          { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <Code>{r.entry.value}</Code> },
           { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <Badge {...(r.entry.props as BadgeProps)}>{r.entry.value}</Badge> },
-        ]}
-        empty="No entries."
-      />
-    );
-  }
-  if (set.kind === 'keycap') {
-    return (
-      <DataGrid
-        rows={set.entries.map((e) => ({ id: e.value, entry: e }))}
-        columns={[
-          { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <code className={s.tag}>{r.entry.value}</code> },
-          { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <KeySequence keys={toKeys(r.entry.props.parts)} /> },
         ]}
         empty="No entries."
       />
@@ -422,7 +400,7 @@ function TokenSetTable({ set }: { set: TokenSet }) {
     <DataGrid
       rows={set.entries.map((e) => ({ id: e.value, entry: e }))}
       columns={[
-        { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <code className={s.tag}>{r.entry.value}</code> },
+        { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <Code>{r.entry.value}</Code> },
         { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <RouteBadge route={r.entry.props.route} /> },
       ]}
       empty="No entries."
@@ -443,14 +421,14 @@ function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavi
         used by <code>History.serialize</code> / <code>restore</code> to rebuild
         ops across reloads.
       </p>
-      <dl className={s.detailList}>
-        <dt>factory</dt><dd><code>{factoryId}</code></dd>
-        <dt>runtime</dt><dd><code className={s.tag}>{typeof fn}</code></dd>
+      <DetailList>
+        <DetailRow label="factory"><code>{factoryId}</code></DetailRow>
+        <DetailRow label="runtime"><Code>{typeof fn}</Code></DetailRow>
         {arity !== undefined && (
-          <><dt>parameters</dt><dd>{arity}</dd></>
+          <DetailRow label="parameters">{arity}</DetailRow>
         )}
-        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
-      </dl>
+        {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
+      </DetailList>
       {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
       <OpSchemaPanel factoryId={factoryId} />
     </div>
@@ -473,9 +451,9 @@ function OpSchemaPanel({ factoryId }: { factoryId: string }) {
     <>
       <h3 className={s.subHeading}>Arguments</h3>
       <SchemaTable rows={schema.params} empty="Factory takes no arguments." />
-      <dl className={s.detailList}>
-        <dt>returns</dt><dd><code className={s.schemaType}>{schema.returnType}</code></dd>
-      </dl>
+      <DetailList>
+        <DetailRow label="returns"><Code variant="plain" tone="accent" size="xs">{schema.returnType}</Code></DetailRow>
+      </DetailList>
       <p className={s.schemaSource}>
         Extracted from <code>{schema.source.file}:{schema.source.line}</code>
       </p>
@@ -526,10 +504,10 @@ function RouteDetail({
         type FieldRow = { id: RouteFieldName; value: ReactNode };
         const fieldRows: FieldRow[] = [
           { id: 'phases', value: parsed.phases.map(formatPhaseAtom).join(', ') },
-          { id: 'gesture', value: <code className={s.tag}>{parsed.gesture}</code> },
+          { id: 'gesture', value: <Code>{parsed.gesture}</Code> },
         ];
         if (parsed.arg !== undefined) {
-          fieldRows.push({ id: 'arg', value: <code className={s.tag}>{parsed.arg}</code> });
+          fieldRows.push({ id: 'arg', value: <Code>{parsed.arg}</Code> });
         }
         if (parsed.target !== undefined) {
           fieldRows.push({
@@ -541,7 +519,7 @@ function RouteDetail({
           fieldRows.push({
             id: 'modifiers',
             value: Object.entries(parsed.modifiers).map(([name, req]) => (
-              <code key={name} className={s.tag}>{req === 'required' ? '+' : '?'}{name}</code>
+              <Code key={name}>{req === 'required' ? '+' : '?'}{name}</Code>
             )),
           });
         }
@@ -658,9 +636,9 @@ function GroupDetail({
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.label}</h2>
-      <dl className={s.detailList}>
-        <dt>source</dt><dd><code className={s.tag}>{entry.source}</code></dd>
-      </dl>
+      <DetailList>
+        <DetailRow label="source"><Code>{entry.source}</Code></DetailRow>
+      </DetailList>
       {entry.source === 'tool' && (
         <>
           <h3 className={s.subHeading}>Tools in this presentation group</h3>
@@ -795,7 +773,7 @@ function GestureDetail({
           {
             id: 'spec', header: 'spec.kind', sortable: true,
             accessor: (r) => r.specKind,
-            render: (r) => <code className={s.tag}>{r.specKind}</code>,
+            render: (r) => <Code>{r.specKind}</Code>,
           },
           {
             id: 'detail', header: 'detail', sortable: false,
@@ -859,13 +837,9 @@ function toolNameColumn(
     header: 'Tool',
     accessor: (r) => r.tool.label ?? r.id,
     render: (r) => (
-      <button
-        type="button"
-        className={s.memberLink}
-        onClick={() => onNavigate({ kind: 'tool', id: r.id })}
-      >
+      <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: r.id })}>
         {r.tool.label ?? r.id}
-      </button>
+      </Button>
     ),
   };
 }
@@ -884,13 +858,9 @@ function mergedToolColumn(
     sortable: false,
     accessor: (r) => r.tool.label ?? r.tool.id,
     render: (r) => r.isFirstForTool ? (
-      <button
-        type="button"
-        className={s.memberLink}
-        onClick={() => onNavigate({ kind: 'tool', id: r.tool.id })}
-      >
+      <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: r.tool.id })}>
         {r.tool.label ?? r.tool.id}
-      </button>
+      </Button>
     ) : null,
   };
 }
@@ -905,10 +875,11 @@ function IconDetail({ entry }: { entry: IconEntry }) {
         <div className={`${s.iconPreviewCell} ${s.iconPreviewCellSmall}`}><C /></div>
         <div className={`${s.iconPreviewCell} ${s.iconPreviewCellLarge}`}><C /></div>
       </div>
-      <dl className={s.detailList}>
-        <dt>source</dt><dd><code className={s.tag}>{entry.source}</code></dd>
-        {match?.path && (<><dt>file</dt><dd><SourceLink match={match} /></dd></>)}
-      </dl>
+      <DetailList>
+        <DetailRow label="source"><Code>{entry.source}</Code></DetailRow>
+        {entry.actions && <DetailRow label="drawn by"><Code>{entry.actions.join(', ')}</Code></DetailRow>}
+        {match?.path && <DetailRow label="file"><SourceLink match={match} /></DetailRow>}
+      </DetailList>
       {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
     </div>
   );
@@ -962,78 +933,53 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         )}
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
-      <dl className={s.detailList}>
+      <DetailList>
         {entry.hookName && (
-          <>
-            <dt>hook</dt>
-            <dd><code className={s.tag}>{entry.hookName}</code></dd>
-          </>
+          <DetailRow label="hook"><Code>{entry.hookName}</Code></DetailRow>
         )}
-        <dt>slot</dt>
-        <dd><EntryLink kind="slot" id={entry.slot} onNavigate={onNavigate} /></dd>
-        {entry.switchShortcutParts && (
-          <><dt>shortcut</dt><dd><KeySequence keys={toKeys(entry.switchShortcutParts)} /></dd></>
+        <DetailRow label="slot"><EntryLink kind="slot" id={entry.slot} onNavigate={onNavigate} /></DetailRow>
+        {entry.switchShortcut && (
+          <DetailRow label="shortcut"><KeySequence keys={keySpecsFromShortcut(entry.switchShortcut)} /></DetailRow>
         )}
         {entry.hotkey && (
-          <>
-            <dt>hold to engage</dt>
-            <dd>
-              <KeySequence keys={[hotkeyTriggerToKeySpec(entry.hotkey)]} />
-              <Powerline {...routeToPowerline(`[*:initial] keyHeld(${entry.hotkey})`)} />
-            </dd>
-          </>
+          <DetailRow label="hold to engage">
+            <KeySequence keys={[hotkeyTriggerToKeySpec(entry.hotkey)]} />
+            <Powerline {...routeToPowerline(`[*:initial] keyHeld(${entry.hotkey})`)} />
+          </DetailRow>
         )}
-        {entry.cursor && (<><dt>cursor</dt><dd><code>{entry.cursor}</code></dd></>)}
+        {entry.cursor && <DetailRow label="cursor"><code>{entry.cursor}</code></DetailRow>}
         {entry.presentation && (
-          <>
-            <dt>presentation</dt>
-            <dd>
-              {entry.presentation.label && <span className={s.tag}>{entry.presentation.label}</span>}
-              {entry.presentation.group && (
-                <EntryLink
-                  kind="group"
-                  id={`tool:${entry.presentation.group}`}
-                  label={`group: ${entry.presentation.group}`}
-                  onNavigate={onNavigate}
-                />
-              )}
-              {entry.presentation.shortcut && <span className={s.tag}>shortcut: {entry.presentation.shortcut}</span>}
-            </dd>
-          </>
+          <DetailRow label="presentation">
+            {entry.presentation.label && <Code>{entry.presentation.label}</Code>}
+            {entry.presentation.group && (
+              <EntryLink
+                kind="group"
+                id={`tool:${entry.presentation.group}`}
+                label={`group: ${entry.presentation.group}`}
+                onNavigate={onNavigate}
+              />
+            )}
+            {entry.presentation.shortcut && <Code>shortcut: {entry.presentation.shortcut}</Code>}
+          </DetailRow>
         )}
-        <dt>surface</dt>
-        <dd><SurfaceRow surface={entry.surface} /></dd>
+        <DetailRow label="surface"><SurfaceRow surface={entry.surface} /></DetailRow>
         {caps.length > 0 && (
-          <>
-            <dt>capabilities</dt>
-            <dd>{caps.map((c) => <code key={c} className={s.tag}>{c}</code>)}</dd>
-          </>
+          <DetailRow label="capabilities">{caps.map((c) => <Code key={c}>{c}</Code>)}</DetailRow>
         )}
         {bundles.length > 0 && (
-          <>
-            <dt>in bundles</dt>
-            <dd>
-              {bundles.map((b) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  className={s.memberLink}
-                  onClick={() => onNavigate({ kind: 'bundle', id: b.id })}
-                >
-                  <BundleBadge id={b.id} label={b.label} />
-                </button>
-              ))}
-            </dd>
-          </>
+          <DetailRow label="in bundles">
+            {bundles.map((b) => (
+              <Button key={b.id} variant="link" onClick={() => onNavigate({ kind: 'bundle', id: b.id })}>
+                <BundleBadge id={b.id} label={b.label} />
+              </Button>
+            ))}
+          </DetailRow>
         )}
-        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
+        {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
         {unlistedCallbacks.length > 0 && (
-          <>
-            <dt>callbacks</dt>
-            <dd><CallbackList callbacks={unlistedCallbacks} /></dd>
-          </>
+          <DetailRow label="callbacks"><CallbackList callbacks={unlistedCallbacks} /></DetailRow>
         )}
-      </dl>
+      </DetailList>
       {/* Rendered even when empty: a tool with no routes (an overlay-only
           ambient tool like `rotate`) should say so, not silently omit the
           section and leave the reader guessing whether it failed to load. */}
@@ -1053,7 +999,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
                 id: 'arg',
                 header: 'arg',
                 accessor: (r) => r.arg,
-                render: (r) => r.arg ? <code className={s.tag}>{r.arg}</code> : <Absent />,
+                render: (r) => r.arg ? <Code>{r.arg}</Code> : <Absent />,
               },
               {
                 id: 'target',
@@ -1078,7 +1024,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
                     : (
                       <span>
                         {Object.entries(r.modifiers).map(([name, req]) => (
-                          <code key={name} className={s.tag}>{(req === 'required' ? '+' : '?') + name}</code>
+                          <Code key={name}>{(req === 'required' ? '+' : '?') + name}</Code>
                         ))}
                       </span>
                     )
@@ -1120,7 +1066,7 @@ function CallbackList({ callbacks }: { callbacks: readonly CallbackRef[] }) {
     <ul className={s.callbackList}>
       {callbacks.map((cb) => (
         <li key={`${cb.label}@${sourceKey(cb.source)}`}>
-          <code className={s.tag}>{cb.label}</code>
+          <Code>{cb.label}</Code>
           <a
             className={s.callbackLink}
             href={`vscode://file/${cb.source.file}:${cb.source.line}:${cb.source.col + 1}`}
@@ -1212,7 +1158,7 @@ function SurfaceRow({ surface }: { surface: ToolSurface }) {
               <Badge key={`g-${g}`} {...(GESTURE_BADGE_PROPS as BadgeProps)}>{g}</Badge>
             ))}
             {outputs.map((o) => (
-              <code key={`o-${o}`} className={s.tag}>{o}</code>
+              <Code key={`o-${o}`}>{o}</Code>
             ))}
           </>
         )}
@@ -1243,56 +1189,44 @@ function ActionDetail({ entry, tools, onNavigate }: {
         {entry.icon && <span className={s.toolIcon} aria-hidden>{entry.icon}</span>}
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
-      <dl className={s.detailList}>
-        <dt>label</dt><dd>{entry.label}</dd>
+      <DetailList>
+        <DetailRow label="label">{entry.label}</DetailRow>
         {entry.group && (
-          <>
-            <dt>group</dt>
-            <dd><EntryLink kind="group" id={`action:${entry.group}`} label={entry.group} onNavigate={onNavigate} /></dd>
-          </>
+          <DetailRow label="group"><EntryLink kind="group" id={`action:${entry.group}`} label={entry.group} onNavigate={onNavigate} /></DetailRow>
         )}
-        {entry.shortcutParts && (
-          <><dt>binding</dt><dd><KeySequence keys={toKeys(entry.shortcutParts)} /></dd></>
+        {entry.bindingShortcut && (
+          <DetailRow label="binding"><KeySequence keys={keySpecsFromShortcut(entry.bindingShortcut)} /></DetailRow>
         )}
         {entry.shortcut && (
-          <><dt>shortcut</dt><dd><code>{entry.shortcut}</code></dd></>
+          <DetailRow label="shortcut"><code>{entry.shortcut}</code></DetailRow>
         )}
         {hasParams && (
-          <>
-            <dt>params</dt>
-            <dd>
-              {paramNames.length > 0
-                ? paramNames.map((name, i) => (
-                    <Fragment key={name}>
-                      {i > 0 && ', '}
-                      <code className={s.tag}>{name}</code>
-                    </Fragment>
-                  ))
-                : <span className={s.empty}>none</span>}
-            </dd>
-          </>
+          <DetailRow label="params">
+            {paramNames.length > 0
+              ? paramNames.map((name, i) => (
+                  <Fragment key={name}>
+                    {i > 0 && ', '}
+                    <Code>{name}</Code>
+                  </Fragment>
+                ))
+              : <span className={s.empty}>none</span>}
+          </DetailRow>
         )}
         {entry.enabled && (
-          <>
-            <dt>enabled</dt>
-            <dd>
-              {entry.enabled.enabled
-                ? <Badge {...(BOOLEAN_BADGE_PROPS.true as BadgeProps)}>true</Badge>
-                : <>
-                    <Badge {...(BOOLEAN_BADGE_PROPS.false as BadgeProps)}>false</Badge>
-                    <span className={s.empty}> ({entry.enabled.reason})</span>
-                  </>}
-            </dd>
-          </>
+          <DetailRow label="enabled">
+            {entry.enabled.enabled
+              ? <Badge {...(BOOLEAN_BADGE_PROPS.true as BadgeProps)}>true</Badge>
+              : <>
+                  <Badge {...(BOOLEAN_BADGE_PROPS.false as BadgeProps)}>false</Badge>
+                  <span className={s.empty}> ({entry.enabled.reason})</span>
+                </>}
+          </DetailRow>
         )}
-        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
+        {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
         {entry.callbacks && entry.callbacks.length > 0 && (
-          <>
-            <dt>callbacks</dt>
-            <dd><CallbackList callbacks={entry.callbacks} /></dd>
-          </>
+          <DetailRow label="callbacks"><CallbackList callbacks={entry.callbacks} /></DetailRow>
         )}
-      </dl>
+      </DetailList>
       {paramRows.length > 0 && (
         <>
           <h3 className={s.subHeading}>Bindings</h3>
@@ -1360,13 +1294,9 @@ function bundleMemberColumns(
       header: 'Tool',
       accessor: (r) => r.tool?.label ?? r.id,
       render: (r) => (
-        <button
-          type="button"
-          className={s.memberLink}
-          onClick={() => onNavigate({ kind: 'tool', id: r.id })}
-        >
+        <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: r.id })}>
           {r.tool?.label ?? r.id}
-        </button>
+        </Button>
       ),
     },
     {
@@ -1393,7 +1323,7 @@ function bundleMemberColumns(
       id: 'shortcut',
       header: 'shortcut',
       sortable: false,
-      render: (r) => <KeySequence keys={toKeys(r.tool?.switchShortcutParts)} />,
+      render: (r) => <KeySequence keys={keySpecsFromShortcut(r.tool?.switchShortcut)} />,
     },
   ];
 }
@@ -1416,58 +1346,51 @@ function BundleDetail({
   return (
     <div>
       <h2 className={s.detailHeading}><BundleBadge id={entry.id} label={entry.label} /></h2>
-      <dl className={s.detailList}>
-        <dt>id</dt><dd><code className={s.tag}>{entry.id}</code></dd>
-        <dt>tool count</dt><dd>{entry.tools.length}</dd>
-        <dt>by group</dt>
-        <dd>
+      <DetailList>
+        <DetailRow label="id"><Code>{entry.id}</Code></DetailRow>
+        <DetailRow label="tool count">{entry.tools.length}</DetailRow>
+        <DetailRow label="by group">
           {[...groupCounts.entries()].map(([g, n]) => (
-            <code key={g} className={s.tag}>{g} <Badge shape="pill" size="sm" tone="neutral" variant="subtle">{n}</Badge></code>
+            <Code key={g}>{g} <Badge shape="pill" size="sm" tone="neutral" variant="subtle">{n}</Badge></Code>
           ))}
-        </dd>
-      </dl>
+        </DetailRow>
+      </DetailList>
       <h3 className={s.subHeading}>Tools</h3>
       <DataGrid
         rows={entry.tools.map((id) => ({ id, tool: byId.get(id) }))}
         columns={bundleMemberColumns(onNavigate)}
         empty="No tools in this bundle."
       />
-      <h3 className={s.subHeading}>Diff vs other bundles</h3>
-      <dl className={s.detailList}>
+      <DetailList title="Diff vs other bundles" className={s.diffSection}>
         {others.map((o) => {
           const mine = new Set(entry.tools);
           const theirs = new Set(o.tools);
           const added = entry.tools.filter((t) => !theirs.has(t));
           const removed = o.tools.filter((t) => !mine.has(t));
           return (
-            <Fragment key={o.id}>
-              <dt>vs <BundleBadge id={o.id} label={o.label} /></dt>
-              <dd>
-                {added.length === 0 && removed.length === 0
-                  ? <span className={s.empty}>(identical)</span>
-                  : <>
-                      {added.map((t) => (
-                        <button
-                          key={`+${t}`}
-                          type="button"
-                          className={`${s.memberLink} ${s.tagAdded}`}
-                          onClick={() => onNavigate({ kind: 'tool', id: t })}
-                        >+{t}</button>
-                      ))}
-                      {removed.map((t) => (
-                        <button
-                          key={`-${t}`}
-                          type="button"
-                          className={`${s.memberLink} ${s.tagRemoved}`}
-                          onClick={() => onNavigate({ kind: 'tool', id: t })}
-                        >−{t}</button>
-                      ))}
-                    </>}
-              </dd>
-            </Fragment>
+            <DetailRow key={o.id} label={<>vs <BundleBadge id={o.id} label={o.label} /></>}>
+              {added.length === 0 && removed.length === 0
+                ? <span className={s.empty}>(identical)</span>
+                : <>
+                    {added.map((t) => (
+                      <Button
+                        key={`+${t}`}
+                        variant="link"
+                        onClick={() => onNavigate({ kind: 'tool', id: t })}
+                      ><Code tone="success">+{t}</Code></Button>
+                    ))}
+                    {removed.map((t) => (
+                      <Button
+                        key={`-${t}`}
+                        variant="link"
+                        onClick={() => onNavigate({ kind: 'tool', id: t })}
+                      ><Code tone="danger">−{t}</Code></Button>
+                    ))}
+                  </>}
+            </DetailRow>
           );
         })}
-      </dl>
+      </DetailList>
     </div>
   );
 }
@@ -1488,32 +1411,25 @@ function ShapeKindDetail({
         </span>
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
-      <dl className={s.detailList}>
-        <dt>trait</dt><dd><KindBadge label={entry.trait} /></dd>
-        <dt>kind</dt><dd><KindBadge label="shape" /></dd>
+      <DetailList>
+        <DetailRow label="trait"><KindBadge label={entry.trait} /></DetailRow>
+        <DetailRow label="kind"><KindBadge label="shape" /></DetailRow>
         {entry.tool && (
-          <>
-            <dt>authored by</dt>
-            <dd>
-              <button type="button" className={s.memberLink}
-                onClick={() => onNavigate({ kind: 'tool', id: entry.tool! })}>
-                {entry.hookName ?? entry.tool}
-              </button>
-            </dd>
-          </>
+          <DetailRow label="authored by">
+            <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: entry.tool! })}>
+              {entry.hookName ?? entry.tool}
+            </Button>
+          </DetailRow>
         )}
         {opTargets.length > 0 && (
-          <>
-            <dt>op factories</dt>
-            <dd>
-              {opTargets.map((f) => (
-                <EntryLink key={f} kind="opFactory" id={f} onNavigate={onNavigate} />
-              ))}
-            </dd>
-          </>
+          <DetailRow label="op factories">
+            {opTargets.map((f) => (
+              <EntryLink key={f} kind="opFactory" id={f} onNavigate={onNavigate} />
+            ))}
+          </DetailRow>
         )}
-        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
-      </dl>
+        {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
+      </DetailList>
       {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
       <ShapeSchemaPanel kindId={entry.id} />
     </div>
@@ -1558,19 +1474,16 @@ function RoutingKindDetail({
       <div className={s.toolHeader}>
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
-      <dl className={s.detailList}>
-        <dt>trait</dt><dd><KindBadge label={entry.trait} /></dd>
-        <dt>kind</dt><dd><KindBadge label="routing-kind" /></dd>
-        <dt>source</dt><dd><KindBadge label={entry.source} /></dd>
+      <DetailList>
+        <DetailRow label="trait"><KindBadge label={entry.trait} /></DetailRow>
+        <DetailRow label="kind"><KindBadge label="routing-kind" /></DetailRow>
+        <DetailRow label="source"><KindBadge label={entry.source} /></DetailRow>
         {entry.shapeKindId && (
-          <>
-            <dt>shape kind</dt>
-            <dd>
-              <EntryLink kind="shapeKind" id={entry.shapeKindId} onNavigate={onNavigate} />
-            </dd>
-          </>
+          <DetailRow label="shape kind">
+            <EntryLink kind="shapeKind" id={entry.shapeKindId} onNavigate={onNavigate} />
+          </DetailRow>
         )}
-      </dl>
+      </DetailList>
     </div>
   );
 }
@@ -1581,18 +1494,17 @@ function PropertiesKindDetail({ entry }: { entry: PropertiesKindEntry }) {
       <div className={s.toolHeader}>
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
-      <dl className={s.detailList}>
-        <dt>trait</dt><dd><KindBadge label={entry.trait} /></dd>
-        <dt>kind</dt><dd><KindBadge label="properties-kind" /></dd>
-        <dt>leaf paths</dt>
-        <dd>
+      <DetailList>
+        <DetailRow label="trait"><KindBadge label={entry.trait} /></DetailRow>
+        <DetailRow label="kind"><KindBadge label="properties-kind" /></DetailRow>
+        <DetailRow label="leaf paths">
           {entry.leafPaths.length === 0
             ? <span className={s.empty}>No editable leaves in this kind's schema.</span>
             : entry.leafPaths.map((path) => (
-                <code key={path} className={s.tag}>{path}</code>
+                <Code key={path}>{path}</Code>
               ))}
-        </dd>
-      </dl>
+        </DetailRow>
+      </DetailList>
     </div>
   );
 }
@@ -1612,14 +1524,14 @@ function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.id}</h2>
-      <dl className={s.detailList}>
-        <dt>kind</dt><dd><KindBadge label="op factory" /></dd>
-        <dt>runtime</dt><dd><code className={s.tag}>{typeof fn}</code></dd>
+      <DetailList>
+        <DetailRow label="kind"><KindBadge label="op factory" /></DetailRow>
+        <DetailRow label="runtime"><Code>{typeof fn}</Code></DetailRow>
         {arity !== undefined && (
-          <><dt>parameters</dt><dd>{arity}</dd></>
+          <DetailRow label="parameters">{arity}</DetailRow>
         )}
-        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
-      </dl>
+        {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
+      </DetailList>
       {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
       <OpSchemaPanel factoryId={entry.id} />
     </div>

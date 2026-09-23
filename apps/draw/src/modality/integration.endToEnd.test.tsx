@@ -83,8 +83,7 @@ function MachineHarness({
 
   return (
     <ModeBreadcrumb
-      modeId={modeId}
-      modeKind={machine.registry.current().kind}
+      mode={machine.registry.byId(modeId)}
       targetLabel={null}
       onExit={() => machine.exitMode()}
       onCommit={() => machine.commitMode()}

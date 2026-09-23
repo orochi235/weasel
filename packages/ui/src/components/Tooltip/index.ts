@@ -1,2 +1,2 @@
-export { Tooltip, TooltipTrigger } from './Tooltip';
+export { Focusable, Tooltip, TooltipTrigger } from './Tooltip';
 export type { TooltipProps, TooltipTriggerProps } from './Tooltip';

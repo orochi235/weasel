@@ -13,6 +13,15 @@ export {
   LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon, HandIcon,
   UnknownIcon,
 } from '@weasel-js/core';
+// The standard edit actions' glyphs live beside those actions in core, for the
+// same reason.
+export {
+  CutIcon, CopyIcon, PasteIcon, DuplicateIcon, GroupIcon, UngroupIcon,
+  BringForwardIcon, BringToFrontIcon, SendBackwardIcon, SendToBackIcon, FlipXIcon, FlipYIcon,
+  UndoIcon, RedoIcon, DeleteIcon,
+  AlignLeftIcon, AlignCenterXIcon, AlignRightIcon, AlignTopIcon, AlignCenterYIcon, AlignBottomIcon,
+  DistributeHorizontalIcon, DistributeVerticalIcon,
+} from '@weasel-js/core';
 
 export const CloneIcon = (p: IconProps) => <Icon name="clone" {...p} />;
 export const ResetIcon = (p: IconProps) => <Icon name="reset" {...p} />;
@@ -25,10 +34,7 @@ export const ModeLightIcon = (p: IconProps) => <Icon name="modeLight" {...p} />;
 export const ModeDarkIcon = (p: IconProps) => <Icon name="modeDark" {...p} />;
 export const ModeAutoIcon = (p: IconProps) => <Icon name="modeAuto" {...p} />;
 export const RemoveIcon = (p: IconProps) => <Icon name="remove" {...p} />;
-export const DeleteIcon = (p: IconProps) => <Icon name="delete" {...p} />;
 export const SortIcon = (p: IconProps) => <Icon name="sort" {...p} />;
-export const UndoIcon = (p: IconProps) => <Icon name="undo" {...p} />;
-export const RedoIcon = (p: IconProps) => <Icon name="redo" {...p} />;
 export const ZoomOutIcon = (p: IconProps) => <Icon name="zoomOut" {...p} />;
 export const FitIcon = (p: IconProps) => <Icon name="fit" {...p} />;
 export const SnapshotIcon = (p: IconProps) => <Icon name="snapshot" {...p} />;
@@ -65,6 +71,7 @@ export const InfoIcon = (p: IconProps) => <Icon name="info" {...p} />;
 export const WarningIcon = (p: IconProps) => <Icon name="warning" {...p} />;
 export const ErrorIcon = (p: IconProps) => <Icon name="error" {...p} />;
 export const BusyIcon = (p: IconProps) => <Icon name="busy" {...p} />;
+export const CheckIcon = (p: IconProps) => <Icon name="check" {...p} />;
 export const LayoutRowsIcon = (p: IconProps) => <Icon name="layoutRows" {...p} />;
 export const LayoutColumnsIcon = (p: IconProps) => <Icon name="layoutColumns" {...p} />;
 export const LayoutGridIcon = (p: IconProps) => <Icon name="layoutGrid" {...p} />;

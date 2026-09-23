@@ -1,14 +1,23 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
 import s from './Button.module.css';
+import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 
-/** Visual weight of a button. Defaults to `secondary`. */
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+/** Visual weight of a button. Defaults to `secondary`. `link` drops the
+ *  control box entirely and reads as a hyperlink in running text -- for an
+ *  in-page navigation that is still a button, not an `<a href>`. */
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link';
+/** Text color of a `link` button — the same set as `Code`'s tones. */
+export type ButtonTone = 'neutral' | 'muted' | 'accent' | 'success' | 'warn' | 'danger';
 /** Button height and type scale. */
 export type ButtonSize = 'sm' | 'md';
 
 type ButtonBase = {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** Text color of the `link` variant, which is `accent` unless told
+   *  otherwise. The boxed variants carry their weight in their fill and
+   *  ignore it. */
+  tone?: ButtonTone;
   /** A button that stays down: renders `aria-pressed` and holds the active
    *  treatment while it is on. For a control that reports a state rather than
    *  firing an action -- a panel toggle, a mode switch. Left off, the button
@@ -24,7 +33,7 @@ type ButtonBase = {
   style?: ButtonHTMLAttributes<HTMLButtonElement>['style'];
   children?: ReactNode;
   onClick?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
-};
+} & SegmentTooltipFields;
 
 type ButtonRegular = ButtonBase & {
   iconOnly?: false;
@@ -72,6 +81,10 @@ function Spinner(): ReactNode {
  * button `aria-busy`, and leaves the label in place; it does not disable the
  * button, so pass `disabled` too if the click should be blocked.
  *
+ * `shortcut` adds a kit tooltip reading `Name (⌘S)`, named by `ariaLabel` or
+ * string children, the way `ToolButton` and `ButtonBar` items show theirs;
+ * `tooltip` replaces that text with any content.
+ *
  * `ref` forwards to the underlying `<button>`.
  */
 export const Button = forwardRef(function Button(
@@ -81,6 +94,7 @@ export const Button = forwardRef(function Button(
   const {
     variant = 'secondary',
     size = 'md',
+    tone,
     pressed,
     disabled,
     loading,
@@ -94,6 +108,8 @@ export const Button = forwardRef(function Button(
     style,
     children,
     onClick,
+    shortcut,
+    tooltip,
   } = props;
 
   const cls = [
@@ -112,28 +128,34 @@ export const Button = forwardRef(function Button(
   const showLeading = !iconOnly && (loading || leadingIcon);
 
   return (
-    <button
-      ref={ref}
-      type={type}
-      className={cls}
-      style={style}
+    <SegmentTooltip
+      content={segmentTooltipContent({ tooltip, shortcut, ariaLabel, label: children })}
       disabled={disabled}
-      aria-busy={loading ? true : undefined}
-      aria-pressed={pressed}
-      aria-label={ariaLabel}
-      onClick={onClick}
     >
-      {showLeading && (
-        <span className={s.iconSlot}>{loading ? <Spinner /> : leadingIcon}</span>
-      )}
-      {iconOnly ? (
-        loading ? <Spinner /> : <span className={s.iconSlot}>{children}</span>
-      ) : (
-        children !== undefined && <span className={s.label}>{children}</span>
-      )}
-      {!iconOnly && trailingIcon && (
-        <span className={s.iconSlot}>{trailingIcon}</span>
-      )}
-    </button>
+      <button
+        ref={ref}
+        type={type}
+        className={cls}
+        style={style}
+        disabled={disabled}
+        aria-busy={loading ? true : undefined}
+        aria-pressed={pressed}
+        data-tone={tone}
+        aria-label={ariaLabel}
+        onClick={onClick}
+      >
+        {showLeading && (
+          <span className={s.iconSlot}>{loading ? <Spinner /> : leadingIcon}</span>
+        )}
+        {iconOnly ? (
+          loading ? <Spinner /> : <span className={s.iconSlot}>{children}</span>
+        ) : (
+          children !== undefined && <span className={s.label}>{children}</span>
+        )}
+        {!iconOnly && trailingIcon && (
+          <span className={s.iconSlot}>{trailingIcon}</span>
+        )}
+      </button>
+    </SegmentTooltip>
   );
 });

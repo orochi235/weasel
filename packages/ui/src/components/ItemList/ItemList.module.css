@@ -30,6 +30,31 @@
   background: var(--wzl-surface);
 }
 
+.row:focus-visible,
+.row:has(> .cell:focus-visible) {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -2px;
+}
+
+/* A grid row's label cell takes the row's focus; the ring is drawn on the row
+   so it looks the same as a listbox option's. */
+.cell {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: stretch;
+  outline: none;
+}
+
+.trailing {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  flex: none;
+}
+
 .label {
   flex: 1 1 auto;
   overflow: hidden;
@@ -41,6 +66,13 @@
   background: var(--wzl-border);
   color: var(--wzl-fg);
 }
+
+/* Drag feedback. The seam is an outer shadow of the row beside it: it needs no
+   measured offset, adds no element for a drag to count as a row, and escapes
+   the row's own `overflow: hidden`. */
+.row[data-drop='before'] { box-shadow: 0 -2px 0 0 var(--wzl-accent); }
+.row[data-drop='after']  { box-shadow: 0 2px 0 0 var(--wzl-accent); }
+.row[data-dragging] { opacity: 0.4; }
 
 /* Present but not in effect. */
 .muted {

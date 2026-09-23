@@ -9,7 +9,7 @@ import { BASES, type BadgeBase } from './bases';
 import { EFFECTS, type BadgeEffect, type EffectSpec } from './effects';
 import { SHAPE_CONTROLS, defaultParamsFor } from './shapeControls';
 
-const TONES: BadgeTone[] = ['accent', 'info', 'warn', 'danger', 'muted', 'neutral'];
+const TONES: BadgeTone[] = ['accent', 'info', 'success', 'warn', 'danger', 'muted', 'neutral'];
 const VARIANTS: BadgeVariant[] = ['outline', 'solid', 'subtle'];
 
 const meta: Meta<typeof Badge> = {
@@ -27,7 +27,7 @@ const meta: Meta<typeof Badge> = {
     shape: { control: 'select', options: ALL_SHAPES },
     tone: { control: 'select', options: TONES },
     variant: { control: 'inline-radio', options: VARIANTS },
-    size: { control: 'inline-radio', options: ['sm', 'md'] },
+    size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
     bloat: {
       control: { type: 'range', min: -10, max: 20, step: 0.25 },
       description: 'Edge bloat: offsets every base perimeter sample outward by N CSS px before compose effects. Negative shrinks. Compose mode only.',
@@ -345,6 +345,7 @@ export const Sizes: Story = {
     const label = typeof args.children === 'string' ? args.children : 'LABEL';
     return (
       <div style={{ display: 'flex', gap: 12, alignItems: 'baseline' }}>
+        <Badge size="xs" shape={args.shape as never} tone={args.tone} variant={args.variant}>{label} xs</Badge>
         <Badge size="sm" shape={args.shape as never} tone={args.tone} variant={args.variant}>{label} sm</Badge>
         <Badge size="md" shape={args.shape as never} tone={args.tone} variant={args.variant}>{label} md</Badge>
       </div>
@@ -355,6 +356,12 @@ export const Sizes: Story = {
 export const Removable: Story = { args: { onRemove: () => {} } };
 
 export const Clickable: Story = { args: { onClick: () => {} } };
+
+/** A plain badge with `tooltip` joins the tab order as an image named by its
+ *  text; hover or Tab to it. */
+export const WithTooltip: Story = {
+  args: { children: '?', tone: 'muted', size: 'xs', tooltip: 'Matched by a predicate, not a fixed id' },
+};
 
 export const EdgeCases: Story = {
   render: (_args) => (

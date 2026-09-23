@@ -25,7 +25,7 @@
  *     mutation (debounced inside SceneCanvas re-renders).
  */
 import {
-  useCallback, useEffect, useMemo, useRef, useState,
+  Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState,
   type CSSProperties, type ReactElement,
 } from 'react';
 import { useColorModeControl } from './colorMode';
@@ -34,7 +34,8 @@ import {
   useScene,
   useSelection,
   useActionsRegistry,
-  type UiOngoingControl,
+  useOngoingAction,
+  contrastLineColor,
   useBooleansAdapter,
   rectPath,
   asNodeId,
@@ -85,9 +86,13 @@ import {
   type SceneCanvasApi,
   buildSceneViewCommands,
   defaultDrawOne,
+  toHex8,
+  getAlpha01,
+  withAlpha01,
 } from '@weasel-js/core';
 import { useHudContribution } from '@weasel-js/hud/react';
 import {
+  formatZoom,
   ResizeHandle,
   Sidebar,
   SidebarPanel,
@@ -100,6 +105,14 @@ import {
   type PropertyRenderer,
   type PropertyRenderContext,
   PaintInput,
+  PropertyList,
+  TextRow,
+  SelectRow,
+  ColorRow,
+  ColorModeControl,
+  SwatchGrid,
+  type PropertyOption,
+  type SwatchGridOption,
 } from '@weasel-js/ui';
 
 import { ActionBar, type PaperSizeKey } from './ActionBar';
@@ -108,18 +121,10 @@ import { PreferencesModal } from './PreferencesModal';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
 import { LayerList, type LayerListItem } from './ui/LayerList';
 import { useLayerList } from './ui/LayerList/useLayerList';
-import {
-  PropertiesPanel,
-  PropertiesGrid,
-  PropertyRow,
-  PropertyTextInput,
-  PropertyColorInput,
-  PropertySwatchGrid,
-  PropertySelect,
-} from './ui/PropertiesPanel';
 import { HistoryList } from './ui/HistoryList';
 import { buildLabel, buildTitle } from '../../shared/buildInfo';
 import { PREFS, usePref } from './prefs';
+import { usePanel, type PanelChrome } from './panels';
 import { LoupeControls } from './LoupeControls';
 import { enableMachineFontOutlines, disableMachineFontOutlines } from './fonts';
 
@@ -129,7 +134,6 @@ import { enableMachineFontOutlines, disableMachineFontOutlines } from './fonts';
 const RIGHT_SIDEBAR_MIN = PREFS.children.ui.children.rightSidebarWidth.min;
 const RIGHT_SIDEBAR_MAX = PREFS.children.ui.children.rightSidebarWidth.max;
 import { CharacterOptions, TextEditDepPublisher } from './ui/CharacterOptions';
-import { DispatchTracePanel } from './dev/DispatchTracePanel';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { useColorContext } from './tools/colorContext';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
@@ -153,6 +157,12 @@ import { sceneToSvgString, selectionToClipboardSvgString, clipboardSnapshotRootI
 import type { RecordingProfile } from './recorder';
 
 import './app.css';
+
+// The trace log it reads is only populated in DEV, so production leaves the
+// panel out of the bundle entirely.
+const DispatchTracePanel = import.meta.env.DEV
+  ? lazy(() => import('./dev/DispatchTracePanel').then((m) => ({ default: m.DispatchTracePanel })))
+  : null;
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
 
@@ -244,7 +254,7 @@ function loadDoc(): PersistedDoc {
 //   row 1: null (transparent) + 9 quick-pick primaries/secondaries
 //   row 2: 10-shade gray ramp (50 → 900)
 //   rows 3–10: 8 hue ramps × 10 shades each (50 → 900)
-const PALETTE: { value: string | null; label: string }[] = [
+const PALETTE: SwatchGridOption[] = [
   { value: null,        label: 'None' },
   { value: '#ffffffff', label: 'White' },
   { value: '#000000ff', label: 'Black' },
@@ -353,14 +363,6 @@ const PALETTE: { value: string | null; label: string }[] = [
  *  kit default on purpose. */
 const INITIAL_FILL_COLOR = '#7ab8d4ff';
 
-/** Fill/stroke keep their ActionsRegistry begin/update/end path (drag-
- *  coalesced live preview + one undo entry per gesture) by overriding
- *  the built-in color renderer with the existing PropertyColorInput.
- *  Keyed by path (not `color` kind) so a future third color leaf can't
- *  silently fall through to the wrong pair of actions. */
-/** Fill gets the paint-kind switch on top of the color input, so a node can
- *  carry a gradient. Stroke keeps the plain color renderer — the kit can paint
- *  and write a non-solid stroke now, but PaintInput is what will edit one. */
 /** Every `FillStyle` variant, not just the gradients. Keyed on the union's
  *  own discriminant, so a variant added later needs no change here — the
  *  earlier `'stops' in raw` test silently downgraded patterns to the
@@ -380,8 +382,7 @@ function wdPaintRenderer(actionId: string): PropertyRenderer {
 }
 
 function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; actionId: string }) {
-  const actions = useActionsRegistry();
-  const ctrlRef = useRef<UiOngoingControl | null>(null);
+  const edit = useOngoingAction(actionId);
 
   const fallback = ctx.pref.default;
   const raw = ctx.value;
@@ -392,28 +393,16 @@ function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; actionId: 
     : isFillStyleObject(fallback) ? fallback
     : undefined;
 
-  /** `commit` with no preceding `input` opens and closes the control in one
-   *  go — a kind switch is a complete gesture on its own. */
-  function dispatch(paint: FillStyle | null, phase: 'input' | 'commit'): void {
-    if (!ctrlRef.current) {
-      ctrlRef.current = actions?.begin(actionId, { paint }) ?? null;
-    } else {
-      ctrlRef.current.update({ paint });
-    }
-    if (phase === 'commit' && ctrlRef.current) {
-      ctrlRef.current.end('commit');
-      ctrlRef.current = null;
-    }
-  }
-
   return (
     <PaintInput
+      // Per-kind switch memory is scratch for one selection.
+      key={ctx.selectionKey}
       value={value}
       mixed={ctx.mixed}
       unset={ctx.unset}
       aria-label={ctx.pref.name}
-      onInput={(next) => dispatch(next, 'input')}
-      onChange={(next) => dispatch(next, 'commit')}
+      onInput={(paint) => edit.input({ paint })}
+      onChange={(paint) => edit.commit({ paint })}
     />
   );
 }
@@ -459,6 +448,18 @@ function paintChipColor(fill: FillStyle): string | undefined {
   if (fill.fill === undefined || fill.fill === 'solid') return fill.color;
   if (fill.fill === 'pattern' && 'tile' in fill.pattern) return fill.pattern.color;
   return undefined;
+}
+
+const PAPER_SIZE_OPTIONS: ReadonlyArray<PropertyOption<PaperSizeKey>> = [
+  { value: 'letter', label: 'Letter' },
+  { value: 'a4', label: 'A4' },
+  { value: 'legal', label: 'Legal' },
+];
+
+/** The `#rrggbb` a native color input accepts; non-hex colors fall back to black. */
+function opaqueHex(color: string): string {
+  const hex8 = toHex8(color);
+  return hex8.startsWith('#') && hex8.length >= 7 ? hex8.slice(0, 7) : '#000000';
 }
 
 interface RightSidebarProps {
@@ -530,134 +531,118 @@ function RightSidebar({
     onSelect: onLayerSelect,
   };
 
-  const [layersCollapsed, setLayersCollapsed] = usePersistedFlag('wd:panel:layers:collapsed', false);
-  const [historyCollapsed, setHistoryCollapsed] = usePersistedFlag('wd:panel:history:collapsed', false);
+  const propertiesPanel = usePanel('properties');
+  const colorsPanel = usePanel('colors');
+  const layersPanel = usePanel('layers');
+  const historyPanel = usePanel('history');
 
   return (
     <>
-      <SidebarPanel title={docSelected ? 'Document' : 'Properties'}>
-        {docSelected ? (
-          <PropertiesGrid>
-            <PropertyRow label="file">
-              <PropertyTextInput value={filename} placeholder={DEFAULT_FILENAME} onChange={setFilename} />
-            </PropertyRow>
-            <PropertyRow label="paper">
-              <PropertySelect<PaperSizeKey>
+      {!propertiesPanel.hidden && (
+        <SidebarPanel
+          title={docSelected ? 'Document' : 'Properties'}
+          collapsed={propertiesPanel.collapsed}
+          onToggleCollapse={propertiesPanel.onToggleCollapse}
+          onHide={propertiesPanel.onHide}
+        >
+          {docSelected ? (
+            <PropertyList>
+              <TextRow label="File" value={filename} placeholder={DEFAULT_FILENAME} onChange={setFilename} />
+              <SelectRow<PaperSizeKey>
+                label="Paper"
                 value={paperSize}
-                options={[
-                  { value: 'letter', label: 'Letter' },
-                  { value: 'a4', label: 'A4' },
-                  { value: 'legal', label: 'Legal' },
-                ]}
+                options={PAPER_SIZE_OPTIONS}
                 onChange={setPaperSize}
               />
-            </PropertyRow>
-            <PropertyRow label="bg">
-              <PropertyColorInput value={backgroundColor} onChange={setBackgroundColor} />
-            </PropertyRow>
-          </PropertiesGrid>
-        ) : (
-          <SelectionPanel
-            scene={scene}
-            selection={selection}
-            // WeaselDraw's kinds come from the kit's inferred routing (`text` /
-            // `path` / `image` — no `data.kind` tag), so the panel classifies
-            // with the same entries SceneCanvas applies when `routing` is unset.
-            properties={inferredNodeProperties}
-            routing={inferredNodeRouting}
-            renderers={WD_RENDERERS}
-            emptyState={<em className="wd-no-selection">No selection</em>}
+              <ColorRow
+                label="Background"
+                value={opaqueHex(backgroundColor)}
+                onChange={(rgb) => setBackgroundColor(withAlpha01(rgb, getAlpha01(backgroundColor)))}
+                alpha={getAlpha01(backgroundColor)}
+                onAlphaChange={(a) => setBackgroundColor(withAlpha01(backgroundColor, a))}
+              />
+            </PropertyList>
+          ) : (
+            <SelectionPanel
+              scene={scene}
+              selection={selection}
+              // WeaselDraw's kinds come from the kit's inferred routing (`text` /
+              // `path` / `image` — no `data.kind` tag), so the panel classifies
+              // with the same entries SceneCanvas applies when `routing` is unset.
+              properties={inferredNodeProperties}
+              routing={inferredNodeRouting}
+              renderers={WD_RENDERERS}
+              emptyState={<em className="wd-no-selection">No selection</em>}
+            />
+          )}
+        </SidebarPanel>
+      )}
+      {!colorsPanel.hidden && <ColorsPanel chrome={colorsPanel} />}
+      {!layersPanel.hidden && (
+        <SidebarPanel
+          title="Layers"
+          collapsed={layersPanel.collapsed}
+          onToggleCollapse={layersPanel.onToggleCollapse}
+          onHide={layersPanel.onHide}
+        >
+          <LayerList {...layerListProps} empty="No nodes" />
+        </SidebarPanel>
+      )}
+      {!historyPanel.hidden && (
+        <SidebarPanel
+          title="History"
+          collapsed={historyPanel.collapsed}
+          onToggleCollapse={historyPanel.onToggleCollapse}
+          onHide={historyPanel.onHide}
+        >
+          <HistoryList
+            items={[
+              { id: '__initial__', label: 'Initial' },
+              ...scene.historyEntries().map((e) => ({ id: e.id, label: e.label })),
+            ]}
+            currentIndex={scene.historyIndex()}
+            onJump={(index) => scene.jumpToHistoryIndex(index)}
           />
-        )}
-      </SidebarPanel>
-      <ColorsPanel />
-      <SidebarPanel
-        title="Layers"
-        collapsed={layersCollapsed}
-        onToggleCollapse={() => setLayersCollapsed((c) => !c)}
-      >
-        <LayerList
-          {...layerListProps}
-          empty={<em style={{ opacity: 0.6 }}>No nodes</em>}
-        />
-      </SidebarPanel>
-      <SidebarPanel
-        title="History"
-        collapsed={historyCollapsed}
-        onToggleCollapse={() => setHistoryCollapsed((c) => !c)}
-      >
-        <HistoryList
-          items={[
-            { id: '__initial__', label: 'Initial' },
-            ...scene.historyEntries().map((e) => ({ id: e.id, label: e.label })),
-          ]}
-          currentIndex={scene.historyIndex()}
-          onJump={(index) => scene.jumpToHistoryIndex(index)}
-        />
-      </SidebarPanel>
-      <DispatchTracePanel />
+        </SidebarPanel>
+      )}
+      {DispatchTracePanel && (
+        <Suspense fallback={null}>
+          <DispatchTracePanel />
+        </Suspense>
+      )}
     </>
   );
 }
 
-/** localStorage-backed boolean state. Reads on mount, writes on every set.
- *  Best-effort — storage errors silently fall back to in-memory state. */
-function usePersistedFlag(key: string, initial: boolean): [boolean, (next: boolean | ((prev: boolean) => boolean)) => void] {
-  const [value, setValue] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw === '1') return true;
-      if (raw === '0') return false;
-    } catch { /* ignore */ }
-    return initial;
-  });
-  const set = useCallback(
-    (next: boolean | ((prev: boolean) => boolean)) => {
-      setValue((prev) => {
-        const resolved = typeof next === 'function' ? next(prev) : next;
-        try { localStorage.setItem(key, resolved ? '1' : '0'); } catch { /* ignore */ }
-        return resolved;
-      });
-    },
-    [key],
-  );
-  return [value, set];
-}
-
-function ColorsPanel(): ReactElement {
+function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
   const colors = useColorContext();
-  const actions = useActionsRegistry();
-  // Highlight tracks the fill swatch — left-click (the primary action)
-  // sets fill. Right-click sets stroke; the active-swatches widget
-  // reflects the stroke update. `null` is the transparent ("None")
-  // swatch in the first row.
-  const current = colors.fill.kind === 'solid' ? colors.fill.color : null;
+  const edits = { fill: useOngoingAction('setFill'), stroke: useOngoingAction('setStroke') };
+  const other = colors.focused === 'fill' ? 'stroke' : 'fill';
+  // A click paints the focused slot, a shift- or right-click the other one;
+  // each lands on the active paint and on the selection.
+  const apply = (slot: 'fill' | 'stroke', v: string | null): void => {
+    const paint: ActivePaint = v === null ? { kind: 'none' } : { kind: 'solid', color: v };
+    if (slot === 'fill') colors.setFill(paint);
+    else colors.setStroke(paint);
+    edits[slot].commit(v === null ? { paint: null } : { color: v });
+  };
+  const focusedPaint = colors.focused === 'fill' ? colors.fill : colors.stroke;
   return (
-    <PropertiesPanel title="Colors">
-      <PropertySwatchGrid
-        value={current}
+    <SidebarPanel
+      title="Colors"
+      collapsed={chrome.collapsed}
+      onToggleCollapse={chrome.onToggleCollapse}
+      onHide={chrome.onHide}
+    >
+      <SwatchGrid
+        aria-label="Palette"
+        value={focusedPaint.kind === 'solid' ? focusedPaint.color : focusedPaint.kind === 'none' ? null : undefined}
         options={PALETTE}
         columns={10}
-        onChange={(v) => {
-          if (v === null) {
-            colors.setFill({ kind: 'none' });
-          } else {
-            colors.setFill({ kind: 'solid', color: v });
-            const ctrl = actions?.begin('setFill', { color: v });
-            ctrl?.end('commit');
-          }
-        }}
-        onAltChange={(v) => {
-          if (v === null) {
-            colors.setStroke({ kind: 'none' });
-          } else {
-            colors.setStroke({ kind: 'solid', color: v });
-            const ctrl = actions?.begin('setStroke', { color: v });
-            ctrl?.end('commit');
-          }
-        }}
+        onChange={(v) => apply(colors.focused, v)}
+        onAltChange={(v) => apply(other, v)}
       />
-    </PropertiesPanel>
+    </SidebarPanel>
   );
 }
 
@@ -1654,8 +1639,7 @@ function EditorWithSharedScene({
         >
           <OpacityHud percent={opacityScrubPercent} />
           <ModeBreadcrumb
-            modeId={modeId}
-            modeKind={modality.machine.registry.current().kind}
+            mode={modality.machine.registry.byId(modeId)}
             targetLabel={targetLabel}
             onExit={() => modality.machine.exitMode()}
             onCommit={() => modality.machine.commitMode()}
@@ -1701,26 +1685,14 @@ function EditorWithSharedScene({
                   bounds: () => ({ x: 0, y: 0, width: paper.width, height: paper.height }),
                   accentEvery: 5,
                   style: {
-                    line:   { paint: { fill: 'solid', color: 'rgba(0, 0, 0, 0.08)' }, width: 1 },
-                    accent: { paint: { fill: 'solid', color: 'rgba(0, 0, 0, 0.18)' }, width: 1 },
+                    line:   { paint: { fill: 'solid', color: contrastLineColor(backgroundColor, 0.06) }, width: 1 },
+                    accent: { paint: { fill: 'solid', color: contrastLineColor(backgroundColor, 0.14) }, width: 1 },
                   },
                 },
               } : {}),
               // Mode tint sits above scene/grid but doesn't paint over the
               // page rect — see workspaceTintLayer above.
               modeTint: { layer: workspaceTintLayer, after: 'grid' },
-              // Selection overlay: corner-resize handles only. Rotation
-              // chrome is now an invisible elliptical ring around the
-              // selection AABB (the affordance in
-              // `src/affordances/rotationHandle.ts`) — hover the band
-              // outside the corners and the cursor becomes `'grab'`;
-              // hovering a corner shows the matching diagonal resize
-              // cursor. Both come from the kit's hover-cursor pump
-              // (`AffordanceHit.cursor`), no wiring here.
-              // The selection-overlay's `rotationHandle: true` option
-              // would paint the legacy small-dot handle; we deliberately
-              // skip it.
-              selectionOverlay: { handles: { size: 8 } },
             }}
             decorationLayer={modality.decorationLayer}
             alphaFor={alphaFor}
@@ -1814,25 +1786,21 @@ function EditorStatusBar({
   const toolLabel = engaged ? `${activeTool.active} → ${engaged}` : activeTool.active;
   return (
     <StatusBar ariaLabel="Editor status" className="wd-statusbar">
-      <ModeStatusIndicator modeId={modeId} />
+      <ModeStatusIndicator mode={machine.registry.byId(modeId)} />
       <StatusBarItem>tool: {toolLabel}</StatusBarItem>
       <StatusBarItem>sel: {selection.current.length}</StatusBarItem>
       <StatusBarItem>groups: {groupCount}</StatusBarItem>
       <StatusBarItem>fill: {paintLabel(colors.fill)}</StatusBarItem>
       <StatusBarItem>stroke: {paintLabel(colors.stroke)}</StatusBarItem>
       <StatusBarSpacer />
-      <StatusBarItem>zoom: {(view.scale.x * 100).toFixed(0)}%</StatusBarItem>
+      <StatusBarItem>zoom: {formatZoom(view.scale.x)}</StatusBarItem>
       {colorMode && (
         <StatusBarItem>
-          <button
-            type="button"
-            className="wd-mode-toggle"
-            onClick={colorMode.toggle}
-            title={`Switch to ${colorMode.mode === 'dark' ? 'light' : 'dark'} mode`}
-            aria-label={`Switch to ${colorMode.mode === 'dark' ? 'light' : 'dark'} mode`}
-          >
-            {colorMode.mode === 'dark' ? '\u25D1 dark' : '\u25D0 light'}
-          </button>
+          <ColorModeControl
+            value={colorMode.preference}
+            onChange={colorMode.setPreference}
+            size="sm"
+          />
         </StatusBarItem>
       )}
       <StatusBarItem muted title={buildTitle()}>{buildLabel()}</StatusBarItem>

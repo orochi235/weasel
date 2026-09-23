@@ -12,7 +12,8 @@ const meta: Meta<typeof Button> = {
     size: 'md',
   },
   argTypes: {
-    variant: { control: 'inline-radio', options: ['primary', 'secondary', 'ghost'] },
+    tone: { control: 'inline-radio', options: ['accent', 'neutral', 'muted', 'success', 'warn', 'danger'] },
+    variant: { control: 'inline-radio', options: ['primary', 'secondary', 'ghost', 'link'] },
     size: { control: 'inline-radio', options: ['sm', 'md'] },
     disabled: { control: 'boolean' },
     loading: { control: 'boolean' },
@@ -46,6 +47,32 @@ export const Primary: Story = { args: { variant: 'primary' } };
 export const Secondary: Story = { args: { variant: 'secondary' } };
 export const Ghost: Story = { args: { variant: 'ghost' } };
 
+/** `link` takes its type from the surrounding text, so it sits inside a
+ *  sentence or a table cell at whatever size that text is. */
+export const Link: Story = {
+  render: () => (
+    <p style={{ maxWidth: 360, lineHeight: 1.5 }}>
+      Bound to <Button variant="link">editor.insert</Button>, which routes
+      through <Button variant="link">routeTarget:scene</Button> and falls back
+      to <Button variant="link" disabled>none</Button>.
+    </p>
+  ),
+};
+
+/** `tone` recolors a `link` from the same set as `Code`: accent unless told
+ *  otherwise. */
+export const LinkTones: Story = {
+  render: () => (
+    <p style={{ maxWidth: 360, lineHeight: 1.8 }}>
+      {(['accent', 'neutral', 'muted', 'success', 'warn', 'danger'] as const).map((tone) => (
+        <span key={tone}>
+          <Button variant="link" tone={tone}>{tone}</Button>{' '}
+        </span>
+      ))}
+    </p>
+  ),
+};
+
 export const Sizes: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -74,6 +101,19 @@ export const IconOnly: Story = {
       <Button iconOnly ariaLabel="Add" variant="secondary"><PlusIcon /></Button>
       <Button iconOnly ariaLabel="Add" variant="ghost"><PlusIcon /></Button>
       <Button iconOnly ariaLabel="Delete" variant="secondary" size="sm"><TrashIcon /></Button>
+    </div>
+  ),
+};
+
+/** `shortcut` puts `Name (⌘Z)` in a kit tooltip; `tooltip` replaces the text. */
+export const Tooltips: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <Button shortcut="⌘S">Save</Button>
+      <Button iconOnly ariaLabel="Add layer" shortcut="⇧⌘N"><PlusIcon /></Button>
+      <Button variant="ghost" leadingIcon={<TrashIcon />} tooltip="Removes the selection from the document">
+        Delete
+      </Button>
     </div>
   ),
 };

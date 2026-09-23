@@ -1,32 +1,8 @@
 .root {
-  font-family: system-ui, sans-serif;
-  color: var(--wzl-fg, var(--wzl-fg));
-  background: var(--wzl-surface);
-  min-height: 100vh;
-  padding: 16px 20px;
-  box-sizing: border-box;
+  padding: var(--wzl-space-8) 20px;
 }
 
-.header { margin-bottom: 16px; }
-.headerRow { display: flex; align-items: baseline; gap: 16px; }
-.title { margin: 0; font-size: 20px; font-weight: 600; flex: 1; }
-.bundlePicker {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--wzl-fg-muted);
-}
-.bundlePicker select {
-  background: var(--wzl-surface);
-  color: var(--wzl-fg, var(--wzl-fg));
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  padding: 3px 6px;
-  font-size: 12px;
-  font-family: inherit;
-}
-.subtitle { margin: 4px 0 0; font-size: 13px; color: var(--wzl-fg-muted); }
+.subtitle { margin: 0 0 var(--wzl-space-8); font-size: var(--wzl-font-size-md); color: var(--wzl-fg-muted); }
 
 .layout {
   display: grid;
@@ -35,306 +11,91 @@
      show the 520×360 SceneCanvas near 1:1; the (usually sparse) conflicts
      panel takes the narrow trailing column. */
   grid-template-columns: minmax(0, 540px) minmax(0, 1fr) minmax(240px, 24%);
-  gap: 16px;
+  /* The action and route tables run six to eight columns, more than the
+     middle column holds, so they take the width under the canvas too. */
+  grid-template-areas:
+    "canvas catalog reflect"
+    "tables tables  reflect";
+  gap: var(--wzl-space-8);
   align-items: start;
 }
 
 .canvas {
-  background: var(--wzl-surface, var(--wzl-border));
+  grid-area: canvas;
+  background: var(--wzl-surface);
   border-radius: 6px;
-  padding: 12px;
+  padding: var(--wzl-space-6);
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   min-width: 0;
 }
 
 /* Catalog column: stack of widgets, like the right reflect column. */
 .catalog {
+  grid-area: catalog;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   min-width: 0;
 }
 
 /* Right column: vertical stack of widget panels, each independently
    bounded so long lists scroll inside their own card instead of
    pushing the whole page. */
-.reflect {
+.tables {
+  grid-area: tables;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   min-width: 0;
 }
-.widget {
-  background: var(--wzl-surface, var(--wzl-border));
-  border-radius: 6px;
+
+.reflect {
+  grid-area: reflect;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  max-height: 320px;
-  margin-bottom: 16px;
-  overflow: hidden;
+  gap: var(--wzl-space-6);
+  min-width: 0;
 }
-.widgetTitle {
-  margin: 0;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  /* Inverted header: light face, dark text — matches the keycap face
-     palette. The widget body keeps its dark surface so contents read
-     against the same backdrop as the rest of the panel. */
-  background: var(--wzl-fg, var(--wzl-fg));
-  color: var(--wzl-surface);
-}
-.widgetBody { padding: 8px 12px; }
-.widgetBodyScrollY { padding: 0 12px 8px; overflow-y: auto; min-height: 0; }
-.widgetBodyScrollXY { padding: 0 12px 8px; overflow: auto; min-height: 0; }
+.widget { min-width: 0; }
+/* Fixed-height scroll bodies keep a long list inside its own panel instead
+   of pushing the whole page. */
+.widgetBodyScrollY { max-height: 280px; overflow-y: auto; min-height: 0; }
+.widgetBodyScrollXY { max-height: 280px; overflow: auto; min-height: 0; }
 /* Explicit aspect-ratio mirrors the SceneCanvas buffer (width=520 height=360,
    = 13/9). A bare `<canvas>` carries this ratio implicitly via its width/height
    attributes, but inside this column-flex container that transferred ratio is
    not applied on first layout — height collapses to the intrinsic 360px and the
    scene paints squished/tall until a reflow happens. Stating the ratio makes
    first-paint sizing deterministic. Keep in sync with the props in ToolkitBuilder.tsx. */
-.scene { background: #6a6a6a; border-radius: 4px; width: 100%; height: auto; max-width: 520px; aspect-ratio: 13 / 9; }
+.scene { background: var(--wzl-surface-sunken); border-radius: 4px; width: 100%; height: auto; max-width: 520px; aspect-ratio: 13 / 9; }
 .hint { margin: 0; font-size: 12px; color: var(--wzl-fg-muted); }
 
-.sectionTitle {
-  margin: 12px 0 6px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--wzl-fg-muted);
-}
-.sectionTitle:first-child { margin-top: 0; }
-
-.row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  padding: 4px 0;
-  cursor: pointer;
-}
-.row code { font-size: 12px; }
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-}
-.table th, .table td {
-  text-align: left;
-  padding: 3px 6px;
-  border-bottom: 1px solid var(--wzl-border);
-  vertical-align: top;
-}
-.table th { font-weight: 600; color: var(--wzl-fg-muted); }
-.table code { font-size: 11px; }
-
-.empty { color: var(--wzl-fg-muted); font-style: italic; padding: 8px 0; text-align: center; }
-.note { margin: 0 0 8px; font-size: 11px; color: var(--wzl-fg-muted); line-height: 1.4; }
+.empty { color: var(--wzl-fg-muted); font-style: italic; padding: var(--wzl-space-4) 0; text-align: center; }
 .iconCell { width: 18px; }
+.nowrap { white-space: nowrap; }
 .iconCell svg { width: 14px; height: 14px; vertical-align: middle; }
-
-/* Bundle ↔ tool membership matrix in the catalog sidebar. */
-.matrix {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-  margin-bottom: 8px;
-}
-.matrix th, .matrix td {
-  text-align: left;
-  padding: 2px 4px;
-  border-bottom: 1px solid var(--wzl-border);
-}
-.matrix th { font-weight: 500; color: var(--wzl-fg-muted); font-size: 10px; }
-.matrix code { font-size: 10px; }
-.matrixCell { text-align: center; color: var(--wzl-accent-fg, #7fb069); font-weight: 700; }
-
-/* Keystroke "key cap" styling — each modifier and key in its own bordered chip. */
-.keys { display: inline-flex; gap: 3px; align-items: center; flex-wrap: wrap; }
-.keysEmpty { color: var(--wzl-fg-muted); }
-.key {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  height: 18px;
-  padding: 0 4px;
-  /* Light face, slightly-darker-than-face border, dark glyph — reads as
-     a real keycap rather than a recessed slot in the panel. */
-  background: var(--wzl-fg, var(--wzl-fg));
-  border: 1px solid var(--wzl-fg-muted);
-  border-bottom-width: 2px;
-  border-radius: 3px;
-  color: var(--wzl-surface);
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 11px;
-  line-height: 1;
-}
-/* Default chip is square — letters, digits, and single glyphs (⎋ ⌫ ↑ etc.)
-   sit in a uniform key-cap box. */
-.key[data-kind='square'] {
-  width: 18px;
-  padding: 0;
-}
-/* Modifiers (⌘ ⇪ ⌥ ⌃) are wider to match the visual weight of how they
-   appear on a real keyboard — and to differentiate them from the keys
-   they modify in a stack. */
-.key[data-kind='modifier'] {
-  min-width: 26px;
-  padding: 0 6px;
-}
-/* Tab / Enter / Space — actual wide keys on a real keyboard. */
-.key[data-kind='wide'] {
-  min-width: 32px;
-  padding: 0 8px;
-}
-
-.conflicts { margin: 0; padding-left: 16px; font-size: 12px; }
-.conflicts li { margin: 4px 0; }
-.conflicts code { font-size: 11px; }
 
 /* Action.defaultBinding rendering — one row per binding, key bindings
    render as KeyCaps; non-key gestures get a compact code tag. */
 .bindingList {
   display: inline-flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--wzl-space-1);
   align-items: flex-start;
 }
-.bindingItem { display: inline-flex; align-items: center; gap: 4px; }
-.bindingSep { font-size: 10px; color: var(--wzl-fg-muted); }
-.bindingTag {
-  display: inline-block;
-  padding: 1px 5px;
-  background: var(--wzl-border);
-  border-radius: 3px;
-  font-size: 11px;
-  color: var(--wzl-fg, var(--wzl-fg));
-}
-.bindingMod { color: var(--wzl-fg-muted); }
+.bindingItem { display: inline-flex; align-items: center; gap: var(--wzl-space-2); }
+.bindingSep { font-size: var(--wzl-font-size-xs); color: var(--wzl-fg-muted); }
 
-.enabledOk { color: var(--wzl-accent-fg, #7fb069); font-weight: 600; }
-.enabledNo { color: var(--wzl-warning, #d97757); font-family: ui-monospace, monospace; font-size: 11px; }
-
-/* Resolutions widget — gesture/phase pickers + per-mod resolution table. */
-.resolutionsControls {
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-  color: var(--wzl-fg-muted);
-}
-.resolutionsControls label { display: inline-flex; align-items: center; gap: 4px; }
-.resolutionsControls select {
-  background: var(--wzl-surface);
-  color: var(--wzl-fg, var(--wzl-fg));
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 12px;
-  font-family: inherit;
-}
-.resolutionsTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-}
-.resolutionsTable th, .resolutionsTable td {
-  padding: 4px 6px;
-  border-bottom: 1px solid var(--wzl-border);
-  text-align: left;
-  vertical-align: middle;
-}
-.resolutionsTable th { font-weight: 600; color: var(--wzl-fg-muted); }
-.resolutionsCell { white-space: nowrap; }
-.resolutionsHit code { font-size: 11px; color: var(--wzl-accent-fg, #7fb069); }
-.resolutionsMatchedKey {
-  font-size: 10px;
-  color: var(--wzl-fg-muted);
-  margin-left: 2px;
-}
-.resolutionsMode {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.segmented {
-  display: inline-flex;
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.segmentedButton {
-  background: transparent;
-  border: 0;
-  color: var(--wzl-fg-muted);
-  font: inherit;
-  font-size: 12px;
-  padding: 2px 8px;
-  cursor: pointer;
-}
-.segmentedButton[data-active='true'] {
-  background: var(--wzl-accent, #7fb069);
-  color: var(--wzl-fg-on-accent, #f5f5f6);
-}
-.segmentedButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.4;
-}
-.resolutionsError {
-  font-size: 11px;
-  color: var(--wzl-warning, #d97757);
-  font-family: ui-monospace, monospace;
-}
-
-/* Dispatch-trace widget rows — mirrors DispatchTracePanel's palette so the
-   two trace surfaces read identically. Rows are clickable to expand the
-   candidate-actions table. */
-.traceToggle {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
-  cursor: pointer;
-}
-.traceToggle input { margin: 0; }
-/* widgetTitle is the inverted (light) header — lay its contents out in a row
-   so the toggle can sit at the trailing edge. */
-.widgetTitle { display: flex; align-items: center; gap: 8px; }
-
-.traceRow { cursor: pointer; }
-.traceRow:hover { background: rgba(255, 255, 255, 0.06); }
-.traceRowUnhandled { background: rgba(220, 80, 60, 0.14); }
-.traceRowUnhandled:hover { background: rgba(220, 80, 60, 0.24); }
-.traceRowExpanded { background: rgba(255, 255, 255, 0.08); }
-
-/* Mode-switch rows: dimmer, read as ambient state rather than dispatched input. */
-.traceRowMode {
-  background: rgba(120, 160, 220, 0.08);
-  color: var(--wzl-fg-muted);
-}
-.traceRowMode:hover { background: rgba(120, 160, 220, 0.14); }
-.traceModeDetail { color: var(--wzl-fg-muted); font-style: italic; }
-
-.traceDetailRow > td { background: rgba(0, 0, 0, 0.25); padding: 6px 12px; }
-.traceCandFired { font-weight: 700; color: var(--wzl-accent-fg, #7fb069); }
+.enabledOk { color: var(--wzl-accent-fg); font-weight: 600; }
+.enabledNo { color: var(--wzl-warning); font-family: var(--wzl-font-mono); font-size: var(--wzl-font-size-sm); }
 
 
 /* Resolution widget — verdict-driven row emphasis. */
-.resolutionControls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 12px; }
-.resolutionControls label { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+.resolutionControls { display: flex; flex-wrap: wrap; gap: var(--wzl-space-4); align-items: center; padding-bottom: var(--wzl-space-4); }
 .verdictFires { font-weight: 600; }
 .verdictShadowed { opacity: 0.5; }
 .verdictBlocked { opacity: 0.75; text-decoration: line-through; }
-.predicateBadge { cursor: help; margin-left: 4px; }
+.predicateBadge { cursor: help; margin-left: var(--wzl-space-2); }

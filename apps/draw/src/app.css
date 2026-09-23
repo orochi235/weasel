@@ -30,26 +30,12 @@
   flex-shrink: 0;
 }
 
-/* Each group renders as a single segmented widget — buttons inside share
-   the container's chrome and are visually merged (1px background bleed
-   between them acts as the divider, à la PathfinderPanel). */
+/* A cluster of kit controls that belong together (file, recording). Each
+   control brings its own chrome, so the cluster only lays them out. */
 .wd-actionbar-group {
   display: inline-flex;
-  flex-direction: row;
-  gap: 1px;
-  /* Same surface as the actionbar itself — border outline alone marks
-     the segmented grouping. */
-  background: var(--wzl-surface);
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  padding: 2px;
-  user-select: none;
-}
-
-/* Sep is no longer needed — groups self-separate via their borders + the
-   parent toolbar's 6px gap. Kept as a no-op for any stragglers. */
-.wd-actionbar-sep {
-  display: none;
+  align-items: center;
+  gap: var(--wzl-space-2);
 }
 
 /* Visually-hidden input used to host file pickers (Play recording, etc.).
@@ -58,156 +44,25 @@
   display: none;
 }
 
-.wd-actionbar-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 6px;
-  background: transparent;
-  color: var(--wzl-fg);
-  border: 0;
-  border-radius: 2px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 11px;
-  line-height: 1.2;
-}
-.wd-actionbar-button > svg {
-  display: block;
-}
-.wd-actionbar-button:hover:not(:disabled) {
-  background: var(--wzl-border);
-}
-.wd-actionbar-button:active:not(:disabled) {
-  background: color-mix(in srgb, var(--wzl-border) 70%, transparent);
-}
-.wd-actionbar-button-active:not(:disabled) {
-  background: var(--wzl-app-accent-bg);
-  color: var(--wzl-app-accent);
-}
-.wd-actionbar-button-active:not(:disabled):hover {
-  background: var(--wzl-app-accent-bg);
-  color: var(--wzl-app-accent);
-}
-.wd-actionbar-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.wd-actionbar-select {
-  height: 26px;
-  padding: 0 6px;
-  background: transparent;
-  color: var(--wzl-fg);
-  border: 0;
-  border-radius: 2px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 11px;
-  line-height: 1.2;
-}
-.wd-actionbar-select:hover:not(:disabled) {
-  background: var(--wzl-border);
-}
-.wd-actionbar-select:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* --- "New ▾" paper-size dropdown ------------------------------------- */
-.wd-actionbar-menu {
-  position: relative;
-  display: inline-flex;
-}
-
-.wd-actionbar-popover {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  min-width: 120px;
-  padding: 2px;
-  background: var(--wzl-surface);
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-}
-
-.wd-actionbar-menuitem {
-  padding: 6px 10px;
-  background: transparent;
-  color: var(--wzl-fg);
-  border: 0;
-  border-radius: 2px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 12px;
-  text-align: left;
-}
-
-.wd-actionbar-menuitem:hover {
-  background: var(--wzl-border);
-  color: var(--wzl-fg);
-}
-
-/* --- LayerList row label (icon + id) --------------------------------- */
-.wd-layer-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.wd-layer-label > svg {
-  display: block;
-  flex-shrink: 0;
-  opacity: 0.85;
-}
-
-/* --- Page row (locked, system-owned) --------------------------------- */
-.wd-layer-label-page {
-  color: var(--wzl-fg-muted);
-  font-style: italic;
-}
-
-/* Thin divider above any locked row in the layer list — separates
-   user layers from system rows (currently just the Page row). */
-.wd-layerlist-host [data-locked="true"] {
-  border-top: 1px solid var(--wzl-border);
-  /* Visually offset the row so the divider sits in its own gutter rather
-     than hugging the previous row. */
-  margin-top: 4px;
-  padding-top: 1px;
-}
-
 /* Column layout, panel surface, and edge borders come from weasel-ui's
-   <Sidebar>. What stays here is the part that's this app's business: width,
-   padding, and the local chrome palette. Scoped under `.wd-app` so these win
-   over the component's own module rules regardless of stylesheet order —
-   specificity, not !important. */
+   <Sidebar>. What stays here is the part that's this app's business: width
+   and padding. Scoped under `.wd-app` so these win over the component's own
+   module rules regardless of stylesheet order — specificity, not !important. */
 .wd-app .wd-sidebar {
-  gap: 8px;
-  padding: 12px 8px;
-  border-right: 1px solid var(--wzl-chrome-border);
-  background: var(--wzl-chrome-bg);
+  gap: var(--wzl-space-4);
+  padding: var(--wzl-space-6) var(--wzl-space-4);
   width: 88px;
   flex-shrink: 0;
 }
 
 .wd-app .wd-sidebar.right {
-  /* The shared rule above borders the trailing edge for left-docked
-     sidebars; this one docks the other way. */
-  border-right: none;
-  border-left: 1px solid var(--wzl-chrome-border);
   /* Width comes from --wd-right-width, set by the ResizeHandle drag in
      App.tsx. Clamped here so CSS owns the floor/ceiling; the numbers match
      the min/max on the `ui.rightSidebarWidth` pref that stores the result. */
   width: clamp(200px, var(--wd-right-width, 260px), 600px);
   align-items: stretch;
-  padding: 12px 0;
-  gap: 4px;
+  padding: var(--wzl-space-6) 0;
+  gap: var(--wzl-space-2);
   overflow-y: auto;
   flex-shrink: 0;
 }
@@ -215,19 +70,11 @@
 /* Empty-selection placeholder in the Properties panel (SelectionPanel
    `emptyState`). */
 .wd-no-selection {
-  padding: 8px;
-  font-size: 12px;
-  opacity: 0.6;
+  padding: var(--wzl-space-4);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
 }
 
-/* Honest mixed-value cue for action-backed color renderers in the
-   Properties panel (SelectionPanel renderers). */
-.wd-mixed {
-  opacity: 0.55;
-}
-
-/* Pull LayerList rows out to the panel edges by absorbing the parent
-   SidebarPanel's 8px body padding via negative margin. */
 .wd-app .wd-sidebar.left {
   /* Sized to the ActiveSwatches widget (56px square) — the limiting
      element. The vertical ToolPalette's 44px buttons fit comfortably
@@ -235,61 +82,13 @@
   width: 72px;
   align-items: center;
   overflow-y: auto;
-  padding: 0 8px;
+  padding: 0 var(--wzl-space-4);
 }
 
 /* ActiveSwatches sits directly below the tool palette in the left
    sidebar — natural flex order, no `margin-top: auto` push. */
-.wd-sidebar.left .wd-active-swatches-group {
-  margin-top: 4px;
-}
-
-.wd-tool-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 8px 4px;
-  background: transparent;
-  color: var(--wzl-fg);
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 11px;
-  line-height: 1.2;
-}
-
-.wd-tool-button > svg { display: block; }
-.wd-tool-button:hover { border-color: var(--wzl-focus-ring); }
-
-.wd-tool-button.active {
-  background: var(--wzl-fg);
-  color: var(--wzl-surface-sunken);
-  border-color: var(--wzl-fg);
-}
-
-.wd-tool-button .key {
-  opacity: 0.6;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px;
-}
-
-/* `.wd-sidebar-resize` used to live here, styling a handle nothing ever
-   rendered. The behavior now comes from weasel-ui's <ResizeHandle>, which
-   brings its own chrome. */
-
-.wd-stage {
-  flex: 1;
-  /* The stage is the canvas host area: the kit's <Canvas> fills it
-     edge-to-edge and renders the document page as a layer inside.
-     `min-width: 0` lets flex shrink without overflow when sidebars
-     are wide. The striped background shows in the negative space
-     around the rendered page (it lives on the canvas itself so it
-     pans/zooms naturally with the doc). */
-  display: flex;
-  min-width: 0;
-  overflow: hidden;
+.wd-sidebar.left .wd-active-swatches {
+  margin-top: var(--wzl-space-2);
 }
 
 .wd-canvas-host {
@@ -302,7 +101,8 @@
      Composited under the canvas; the canvas paints with alpha so these
      stripes show through everywhere the document doesn't cover. */
   background:
-    repeating-linear-gradient(45deg, #5a5a5a 0 8px, #626262 8px 16px);
+    repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-workspace-line) 8px 16px)
+    var(--wzl-workspace-surface);
   overflow: hidden;
 }
 
@@ -318,13 +118,6 @@
   height: 100%;
 }
 
-/* Background tint applied when the pen tool is in edit mode (dblclick on a
-   path obj). Gives a clear visual cue that pointer gestures will edit
-   anchors/handles rather than start a new path. */
-.pen-edit-active {
-  background-color: var(--wzl-border);
-}
-
 /* The kit's <Canvas> sets tabIndex={0} so keyboard events work. Suppress
    the browser's default focus ring — the canvas is always the focused
    surface during interaction, so the ring is visual noise. */
@@ -333,486 +126,36 @@
   outline: none;
 }
 
-.wd-section-label {
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--wzl-fg-subtle);
-  margin-bottom: 4px;
-}
-
-.wd-color-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-}
-
-.wd-color-row input[type="color"] {
-  width: 36px;
-  height: 28px;
-  background: transparent;
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  cursor: pointer;
-  padding: 2px;
-}
-
-.wd-color-row code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  color: var(--wzl-fg-muted);
-}
-
-/* Dismiss animation: pivot around the bottom-left corner as if all but
- * one screw popped, swing past vertical, then translate downward off the
- * viewport in screen space. We use the individual `rotate` / `translate`
- * properties (instead of a combined `transform` matrix) so the
- * downward translation stays in the parent's coordinate frame and isn't
- * tilted along with the rotation. `animation-fill-mode: forwards` keeps
- * the final state until React unmounts on animationend. */
-.wd-disclaimer-falling {
-  /* Default segment easing — gravitational. Per-keyframe overrides
-   * (animation-timing-function inside the @keyframes) handle the
-   * bounce phase so each swing decelerates outbound and accelerates
-   * inbound like a damped pendulum. */
-  animation: wd-disclaimer-fall 2.0s cubic-bezier(0.5, 0, 0.75, 0) forwards;
-  transform-origin: 0% 100%;
-  pointer-events: none;
-}
-@keyframes wd-disclaimer-fall {
-  /* Stage 1 (0 → 28%, ~0.56s): rotate around the bottom-left pivot.
-   * Inherits the default gravitational ease — slow start, hard end
-   * as it swings past horizontal. The override here ramps the impact
-   * back-swing (the next segment) to a sin-out feel. */
-  0%   { rotate: 0deg;   translate: 0 0; }
-  28%  { rotate: 110deg; translate: 0 0;
-         animation-timing-function: cubic-bezier(0.15, 0.7, 0.4, 1); }
-  /* Stage 1b (28% → 67%, ~0.78s): a couple of decaying bounces. Each
-   * outbound segment uses an ease-out (decelerating against gravity);
-   * each inbound segment uses an ease-in (gravity pulling it back to
-   * the wall). The alternation reads as inertial. */
-  38%  { rotate: 80deg;  translate: 0 0;
-         animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.4); }
-  48%  { rotate: 110deg; translate: 0 0;
-         animation-timing-function: cubic-bezier(0.2, 0.7, 0.5, 1); }
-  58%  { rotate: 96deg;  translate: 0 0;
-         animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.4); }
-  67%  { rotate: 110deg; translate: 0 0;
-         animation-timing-function: linear; }
-  /* Hang (67% → 72%, ~0.1s): brief dangle before gravity finishes
-   * the job. The explicit second keyframe at 72% is what enforces
-   * the hold — without it the translate would interpolate
-   * continuously from 0 to 120vh. */
-  72%  { rotate: 110deg; translate: 0 0;
-         animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0); }
-  /* Stage 2 (72% → 100%, ~0.56s): hold the rotation, fall straight
-   * down in screen space. 120vh clears even tall viewports. */
-  100% { rotate: 110deg; translate: 0 120vh; opacity: 0.85; }
-}
-
 /* The status bar's chrome — mono type, panel surface, gap, trailing spacer,
    muted items — is weasel-ui's <StatusBar>. `.wd-statusbar` survives only as
    a stable hook for app-level selectors; adding rules to it means asking
    whether they belong in the kit component instead. */
 
-/* --- Active fill/stroke swatches (Illustrator-style overlap) --------- */
-/* Wraps the paired swatches + the "None" toggle below them. */
-.wd-active-swatches-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-/* The "None" toggle — small text button sitting below the offset swatches.
-   When the focused swatch is `none`, the button shows depressed (active)
-   styling so users can read state at a glance. */
-.wd-swatch-none-toggle {
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  background: transparent;
-  border: 1px solid var(--wzl-border);
-  border-radius: 3px;
-  color: var(--wzl-fg);
-  cursor: pointer;
-}
-.wd-swatch-none-toggle:hover {
-  background: var(--wzl-border);
-}
-.wd-swatch-none-toggle.is-active {
-  background: var(--wzl-app-accent-bg);
-  border-color: var(--wzl-app-accent);
-  color: var(--wzl-app-accent);
-}
-
-.wd-active-swatches {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  margin: 4px auto 0;
-  /* The stroke and fill swatches are absolutely positioned inside this
-     container with a small offset to produce the iconic overlap. */
-}
-
-/* Compact variant for inline use inside a properties-panel row. Same
-   visual idiom (overlapping fill + stroke), scaled to ~40px so it tucks
-   into a single row without crowding adjacent inputs. */
-.wd-active-swatches--compact {
-  width: 40px;
-  height: 40px;
-  margin: 0;
-}
-
-.wd-active-swatches--compact .wd-swatch {
-  width: 22px;
-  height: 22px;
-}
-
-.wd-active-swatches--compact .wd-swatch--fill {
-  top: 2px;
-  left: 2px;
-}
-
-.wd-active-swatches--compact .wd-swatch--stroke {
-  bottom: 2px;
-  right: 2px;
-}
-
-.wd-active-swatches--compact .wd-swatch--stroke::after {
-  /* Tighter frame on the 22px compact variant. */
-  padding: 5px;
-}
-
-.wd-swatch {
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  background: transparent;
-  border: 1px solid var(--wzl-border);
-  border-radius: 2px;
-  cursor: pointer;
-  /* The dynamic color flows through --wd-swatch-color, set inline on
-     the button. Box-shadow inset gives a 1px contrast border around the
-     paint area so light swatches read against the panel. */
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
-}
-
-/* The fill / stroke styling differs: fill is a solid filled square,
-   stroke is a frame (interior hollow) so the user can tell at a glance
-   which swatch represents which paint role. */
-/* Stacked swatches — Illustrator convention: fill is the solid square
-   underneath, stroke is the framed square in front. The stroke's inner
-   cutout is painted with the panel background color so the chip reads as
-   a thick frame regardless of what's behind it. */
-.wd-swatch--fill {
-  top: 4px;
-  left: 4px;
-  z-index: 1;
-  background: var(--wd-swatch-color, #ffffff);
-}
-
-.wd-swatch--stroke {
-  bottom: 4px;
-  right: 4px;
-  z-index: 2;
-  background: transparent;
-}
-
-/* The colored frame lives on a pseudo-element so the chip's own border +
-   focus outline survive (those would be eaten by a mask applied to the
-   chip itself). The mask carves the center: two mask layers + `exclude`
-   composite subtract the content-box from the padding-box, leaving the
-   padding ring painted with the swatch color. Whatever sits behind the
-   chip — sidebar, canvas, workspace stripes, the `is-transparent`
-   checkerboard — shows through the hole. */
-.wd-swatch--stroke::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--wd-swatch-color, #000000);
-  padding: 8px;
-  box-sizing: border-box;
-  pointer-events: none;
-  mask:
-    linear-gradient(#000, #000) padding-box,
-    linear-gradient(#000, #000) content-box;
-  mask-composite: exclude;
-  -webkit-mask:
-    linear-gradient(#000, #000) padding-box,
-    linear-gradient(#000, #000) content-box;
-  -webkit-mask-composite: xor;
-}
-
-.wd-swatch.is-focused {
-  border-color: var(--wzl-fg);
-  box-shadow: 0 0 0 2px var(--wzl-fg), inset 0 0 0 1px rgba(0, 0, 0, 0.18);
-}
-
-/* When the stroke chip is focused, also outline the *inside* edge of the
-   frame so the active role reads at a glance. ::before sits above the
-   masked ::after and inside the chip's border, drawing a 1px ring at the
-   hole boundary. Inset matches ::after's padding so the ring sits flush
-   against the inner edge of the colored frame. */
-.wd-swatch.is-focused.wd-swatch--stroke::before {
-  content: '';
-  position: absolute;
-  inset: 8px;
-  border: 1px solid var(--wzl-fg);
-  border-radius: 1px;
-  pointer-events: none;
-}
-.wd-active-swatches--compact .wd-swatch.is-focused.wd-swatch--stroke::before {
-  inset: 5px;
-}
-
-/* `'none'` state — diagonal red stripe through a white square. The fill
-   and stroke variants render slightly differently because they have
-   different "background" semantics. */
-.wd-swatch.is-none {
-  background-color: #ffffff;
-  background-image:
-    linear-gradient(45deg, transparent calc(50% - 1px), #d4453a calc(50% - 1px), #d4453a calc(50% + 1px), transparent calc(50% + 1px));
-}
-
-/* For `is-none` and `is-transparent`, the chip's background carries the
-   special marker (red stripe / checkerboard); the frame cutout stays on
-   so the chip still reads as a frame against the marker. */
-
-/* `'transparent'` state — gray/white checkerboard with the same red-stripe
-   NO marker. Distinct from `'none'` (no paint at all) — `transparent`
-   means "draw with alpha 0," still occupies the path, still hit-tests. */
-.wd-swatch.is-transparent {
-  background-color: #ffffff;
-  background-image:
-    linear-gradient(45deg, transparent calc(50% - 1px), #d4453a calc(50% - 1px), #d4453a calc(50% + 1px), transparent calc(50% + 1px)),
-    linear-gradient(45deg, #c5c5c5 25%, transparent 25%, transparent 75%, #c5c5c5 75%, #c5c5c5),
-    linear-gradient(45deg, #c5c5c5 25%, transparent 25%, transparent 75%, #c5c5c5 75%, #c5c5c5);
-  background-size: 100% 100%, 8px 8px, 8px 8px;
-  background-position: 0 0, 0 0, 4px 4px;
-}
-
-/* Native color input lives offscreen — the swatch itself is the visible
-   trigger, but we still need a real <input type=color> so the OS color
-   picker pops on click. */
-.wd-swatch-input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-  /* Let the native input receive clicks directly so the OS picker opens
-     reliably on every click (including when the swatch is already
-     focused). The wrapping button still gets the bubbled click for
-     focus + shift-toggle handling. */
-}
-
-/* --- Layer list host inside PropertiesPanel -------------------------- */
-.wd-layerlist-host {
-  /* PropertiesPanel uses a 12-column grid; without this the host sits in
-     column 1 and auto-sizes to the LayerList's min-width, leaving the
-     panel mostly empty. Span all columns so the list fills the panel. */
-  grid-column: 1 / -1;
-  /* Scroll long layer stacks within the panel rather than pushing the
-     document/page row off the bottom of the sidebar. */
-  max-height: 320px;
-  overflow-y: auto;
-}
-
-/* LayerList rows ship with hardcoded dark-theme browns. Override against
-   the light sidebar panel surface: dark text, subtle translucent hover,
-   neutral translucent selection. Mirrors the treatment applied to the
-   HistoryList initial row. */
-.wd-layerlist-host > div > div {
-  color: var(--wzl-fg);
-}
-.wd-layerlist-host > div > div:hover {
-  background: rgba(0, 0, 0, 0.06);
-}
-.wd-layerlist-host > div > div[data-selected="true"] {
-  background: rgba(0, 0, 0, 0.12);
-  color: var(--wzl-fg);
-}
-
-/* --- History list host inside PropertiesPanel ------------------------ */
-.wd-historylist-host {
-  /* Mirror the layer-list host: span the full 12-col grid and cap the
-     height so a long edit session doesn't push later panels off-screen.
-     Slightly taller than Layers since users typically scrub through
-     many history entries to find a target state. */
-  grid-column: 1 / -1;
-  max-height: 360px;
-  overflow-y: auto;
-}
-
-.wd-history-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.wd-history-initial {
-  font-style: italic;
-}
-
-/* Strip the HistoryList row chrome on the synthetic "Initial" entry so it
-   blends with the surrounding sidebar text. Without this it inherits the
-   `.current` / `.applied` row styling (dark bg, bottom border, light text)
-   which clashes with the light panel surface. */
-.wd-historylist-host div:has(> .wd-history-initial),
-.wd-historylist-host div:has(> .wd-history-initial):hover {
-  background: transparent;
-  border-bottom: 0;
-  color: var(--wzl-fg);
-}
-
-.wd-sidebar-spacer {
-  flex: 1;
-}
-
-/* Colors panel — strip the SidebarPanel chrome padding so the swatch grid
-   fills the panel edge-to-edge. Targets the panel container and its body
-   wrapper (the last direct child div when the panel is expanded). The
-   `.wd-sidebar` ancestor selector lifts specificity over the
-   module-scoped `.panel` / `.body` rules from weasel-ui. */
-.wd-sidebar .wd-colors-panel {
-  padding: 4px;
-}
-.wd-sidebar .wd-colors-panel > div:last-child {
-  padding: 0;
-}
-
-.wd-scene-label {
-  padding: 0 12px;
-}
-
-.wd-scene-count {
-  padding: 0 12px;
-  font-size: 11px;
-  color: var(--wui-text-muted, var(--wzl-fg-subtle));
-  font-family: ui-monospace, monospace;
-}
-
 /* --- Action bar far-right spacer ------------------------------------- */
-/* Pushes the trailing group(s) (settings cog) to the right edge of the
-   toolbar. Lives outside any `.wd-actionbar-group` so it doesn't
-   pick up the segmented widget chrome. */
+/* Pushes the trailing controls (recording, settings cog) to the right
+   edge of the toolbar. */
 .wd-actionbar-spacer {
   margin-left: auto;
 }
 
 /* --- Preferences modal ----------------------------------------------- */
-/* Shell (backdrop, frame, header, title, close button) comes from the
- * weasel-ui `Dialog` primitive — no app-level rules needed for those. */
 
-/* Dialog title slot pairs the heading with the dev-only "Show hidden"
- * toggle on the same row. */
-/* ── Preferences: app-specific bits only. The generic prefs layout
- * (columns, panels, rows) moved into weasel-ui's PrefsForm. ── */
-
-/* Bare-input fallback for `registry-enum` prefs whose source isn't wired
- * — RegistrySelect emits `<input class="wd-prefs-input">` in that case,
- * which has no kit primitive of its own. Constrain it to fit the kit's
- * control slot. */
-.wd-prefs-input,
-.wd-prefs-select {
-  width: 100%;
-  height: 24px;
-  padding: 0 8px;
-  background: var(--wzl-surface-sunken);
-  color: var(--wzl-fg);
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  font: inherit;
-  font-size: 13px;
-}
-
-.wd-prefs-readonly {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  color: var(--wzl-fg-subtle);
-}
-
-/* Panels-visibility editor (a `block` pref — supplies its own chrome).
- * Full-width embedded panel with a three-column grid (name, hidden,
- * collapsed). */
+/* Panels-visibility editor — a `block` pref, so it supplies its own title. */
 .wd-prefs-panels {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--wzl-space-2);
   width: 100%;
-  padding: 8px 8px 8px 10px;
-  background: var(--wzl-surface-sunken);
-  border-left: 2px solid var(--wzl-border);
-  border-radius: 2px;
 }
 
 .wd-prefs-panels-title {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--wzl-font-size-xs);
+  font-weight: var(--wzl-font-weight-bold);
   color: var(--wzl-fg);
 }
 
-.wd-prefs-panels-head,
-.wd-prefs-panels-row {
-  display: grid;
-  grid-template-columns: 1fr 48px 64px;
-  align-items: center;
-  gap: 4px;
-}
-
-.wd-prefs-panels-head {
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--wzl-fg-subtle);
-  padding-bottom: 2px;
-  border-bottom: 1px solid var(--wzl-border);
-}
-
-.wd-prefs-panels-head-flag {
-  justify-self: center;
-}
-
-.wd-prefs-panels-row {
-  font-size: 12px;
-  color: var(--wzl-fg);
-}
-
-/* Center the Hidden / Collapsed checkboxes in their grid cells (the
- * `Checkbox` component is inline-flex, so without `justify-self` it
- * sits at the cell's start edge instead of under the column header). */
-.wd-prefs-panels-row > :nth-child(2),
-.wd-prefs-panels-row > :nth-child(3) {
-  justify-self: center;
-}
-
-.wd-prefs-panels-row-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Color-mode toggle in the status bar. Sized to sit inline with the
-   surrounding StatusBarItem text rather than as a chrome button. */
-.wd-mode-toggle {
-  font: inherit;
-  color: inherit;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  opacity: 0.75;
-}
-
-.wd-mode-toggle:hover,
-.wd-mode-toggle:focus-visible {
-  opacity: 1;
+.wd-prefs-panels :is(th, td):not(:first-child) {
+  text-align: center;
 }
 
 /* ── Loupe controls (tool-options strip) ────────────────────────────────── */
@@ -833,17 +176,18 @@
   display: flex;
   align-items: center;
   gap: var(--wzl-space-xs);
-  font-size: 12px;
+  font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg);
 }
 
 .wd-loupe-readout code {
+  font-family: var(--wzl-font-mono);
   font-variant-numeric: tabular-nums;
   min-inline-size: 8ch;
 }
 
 /* Dynamic color arrives as --wd-loupe-swatch-color, set inline on the
-   element (the app's pattern for per-element paint — see .wd-swatch). */
+   element. */
 .wd-loupe-swatch {
   inline-size: var(--wzl-space-md);
   block-size: var(--wzl-space-md);

@@ -47,6 +47,24 @@ describe('LabShell', () => {
     expect(container.querySelector('.lk-root')?.hasAttribute('data-wzl-portal-host')).toBe(true);
   });
 
+  test('holds the document title while mounted when asked to', () => {
+    document.title = 'before';
+    const { unmount } = render(
+      <LabShell title="t" documentTitle="Page title">
+        x
+      </LabShell>,
+    );
+    expect(document.title).toBe('Page title');
+    unmount();
+    expect(document.title).toBe('before');
+  });
+
+  test('leaves the document title alone by default', () => {
+    document.title = 'before';
+    render(<LabShell title="t">x</LabShell>);
+    expect(document.title).toBe('before');
+  });
+
   test('always applies lk-root class', () => {
     const { container } = render(<LabShell title="t">x</LabShell>);
     expect(container.querySelector('.lk-root')).not.toBeNull();

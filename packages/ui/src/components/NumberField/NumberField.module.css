@@ -6,6 +6,21 @@
   gap: var(--wzl-space-2);
 }
 
+/* `orientation='row'`: the label keeps its own width and the field takes the
+   rest; description and error wrap onto a line of their own. A `fit` field
+   keeps its own width and centers on the label instead. */
+.field.row {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  column-gap: var(--wzl-space-4);
+  row-gap: var(--wzl-space-2);
+}
+.field.row .label { flex: 0 0 auto; }
+.field.row:not(.fit) .frame { flex: 1 1 0; min-width: 0; }
+.field.row.fit { align-items: center; }
+.field.row .below { flex-basis: 100%; }
+
 .frame {
   display: flex;
   align-items: stretch;

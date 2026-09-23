@@ -23,6 +23,13 @@
 }
 .badge * { text-decoration: none; }
 
+.badge[data-size='xs'] {
+  --badge-gap: 3px;
+  --badge-pad-x: 4px;
+  --badge-pad-y: 0px;
+  --badge-font-size: var(--wzl-font-size-2xs);
+}
+
 .badge[data-size='md'] {
   --badge-gap: 6px;
   --badge-pad-x: 10px;
@@ -58,6 +65,7 @@
    must be foreground-legible — hence accent-fg, not the accent fill. */
 .badge[data-tone='accent']  { --badge-edge: var(--wzl-accent-fg, var(--wzl-accent, #7fb069)); }
 .badge[data-tone='info']    { --badge-edge: #7ab8d4; }
+.badge[data-tone='success'] { --badge-edge: var(--wzl-success); }
 .badge[data-tone='warn']    { --badge-edge: #d4a574; }
 .badge[data-tone='danger']  { --badge-edge: var(--wzl-danger); }
 .badge[data-tone='muted']   { --badge-edge: var(--wzl-fg-muted); }
@@ -178,5 +186,7 @@ a.badge:hover {
 }
 .remove:hover { background: color-mix(in oklab, var(--badge-fg) 20%, transparent); }
 .remove > svg { display: block; }
+.badge[data-size='xs'] .remove { width: 12px; height: 12px; font-size: var(--wzl-font-size-sm); }
+.badge[data-size='xs'] .remove > svg { width: 8px; height: 8px; }
 .badge[data-size='md'] .remove { width: 16px; height: 16px; font-size: var(--wzl-font-size-lg); }
 .badge[data-size='md'] .remove > svg { width: 12px; height: 12px; }

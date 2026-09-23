@@ -17,6 +17,9 @@ export type TokenName =
   | '--wzl-border'
   | '--wzl-border-strong'
   | '--wzl-border-w'
+  | '--wzl-checker-a'
+  | '--wzl-checker-b'
+  | '--wzl-checker-size'
   | '--wzl-control-h'
   | '--wzl-control-h-sm'
   | '--wzl-control-h-xs'
@@ -163,6 +166,8 @@ export type TokenName =
   | '--wzl-tracking-wider'
   | '--wzl-warning'
   | '--wzl-warning-base'
+  | '--wzl-workspace-line'
+  | '--wzl-workspace-surface'
   | '--wzl-z-modal'
   | '--wzl-z-overlay'
   | '--wzl-z-toolbar';
@@ -316,6 +321,11 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-checker-a': "#25272c",
+        '--wzl-checker-b': "#181a1e",
+        '--wzl-checker-size': "8px",
+        '--wzl-workspace-surface': "#0e0f12",
+        '--wzl-workspace-line': "rgba(230, 231, 233, 0.1)",
         '--wzl-field-pad-x': "8px",
         '--wzl-font-size': "11px",
         '--wzl-tracking-none': "0",
@@ -477,6 +487,11 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-checker-a': "#25272c",
+        '--wzl-checker-b': "#181a1e",
+        '--wzl-checker-size': "8px",
+        '--wzl-workspace-surface': "#0e0f12",
+        '--wzl-workspace-line': "rgba(230, 231, 233, 0.1)",
         '--wzl-field-pad-x': "8px",
         '--wzl-font-size': "13px",
         '--wzl-tracking-none': "0",
@@ -638,6 +653,11 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-checker-a': "#25272c",
+        '--wzl-checker-b': "#181a1e",
+        '--wzl-checker-size': "8px",
+        '--wzl-workspace-surface': "#0e0f12",
+        '--wzl-workspace-line': "rgba(230, 231, 233, 0.1)",
         '--wzl-field-pad-x': "8px",
         '--wzl-font-size': "15px",
         '--wzl-tracking-none': "0",
@@ -799,6 +819,11 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-checker-a': "#c9cbcf",
+        '--wzl-checker-b': "#f5f5f6",
+        '--wzl-checker-size': "8px",
+        '--wzl-workspace-surface': "#c9cbcf",
+        '--wzl-workspace-line': "rgba(14, 15, 18, 0.1)",
         '--wzl-field-pad-x': "8px",
         '--wzl-font-size': "11px",
         '--wzl-tracking-none': "0",
@@ -960,6 +985,11 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-checker-a': "#c9cbcf",
+        '--wzl-checker-b': "#f5f5f6",
+        '--wzl-checker-size': "8px",
+        '--wzl-workspace-surface': "#c9cbcf",
+        '--wzl-workspace-line': "rgba(14, 15, 18, 0.1)",
         '--wzl-field-pad-x': "8px",
         '--wzl-font-size': "13px",
         '--wzl-tracking-none': "0",
@@ -1121,6 +1151,11 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-checker-a': "#c9cbcf",
+        '--wzl-checker-b': "#f5f5f6",
+        '--wzl-checker-size': "8px",
+        '--wzl-workspace-surface': "#c9cbcf",
+        '--wzl-workspace-line': "rgba(14, 15, 18, 0.1)",
         '--wzl-field-pad-x': "8px",
         '--wzl-font-size': "15px",
         '--wzl-tracking-none': "0",
@@ -1962,6 +1997,31 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "value": "10px",
         "type": "dimension",
         "description": "A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with."
+      },
+      "checker-a": {
+        "value": "{border}",
+        "type": "color",
+        "description": "One square of the transparency checker drawn under a paint that is empty, mixed or translucent. Paint it as repeating-conic-gradient(var(--wzl-checker-a) 0% 25%, var(--wzl-checker-b) 0% 50%) 50% / var(--wzl-checker-size) var(--wzl-checker-size)."
+      },
+      "checker-b": {
+        "value": "{surface}",
+        "type": "color",
+        "description": "The other square of the transparency checker."
+      },
+      "checker-size": {
+        "value": "8px",
+        "type": "dimension",
+        "description": "Edge of one repeat of the transparency checker: two squares by two."
+      },
+      "workspace-surface": {
+        "value": "{surface-sunken}",
+        "type": "color",
+        "description": "Ground of a canvas app's workspace — the area around the document page."
+      },
+      "workspace-line": {
+        "value": "{line-subtle}",
+        "type": "color",
+        "description": "Marks drawn over workspace-surface, such as its diagonal stripes, so the page reads as the thing on top."
       },
       "field-pad-x": {
         "value": "8px",
@@ -2989,6 +3049,31 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "type": "dimension",
         "value": "10px",
         "description": "A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with."
+      },
+      "checker-a": {
+        "type": "color",
+        "value": "{border}",
+        "description": "One square of the transparency checker drawn under a paint that is empty, mixed or translucent. Paint it as repeating-conic-gradient(var(--wzl-checker-a) 0% 25%, var(--wzl-checker-b) 0% 50%) 50% / var(--wzl-checker-size) var(--wzl-checker-size)."
+      },
+      "checker-b": {
+        "type": "color",
+        "value": "{surface}",
+        "description": "The other square of the transparency checker."
+      },
+      "checker-size": {
+        "type": "dimension",
+        "value": "8px",
+        "description": "Edge of one repeat of the transparency checker: two squares by two."
+      },
+      "workspace-surface": {
+        "type": "color",
+        "value": "{surface-sunken}",
+        "description": "Ground of a canvas app's workspace — the area around the document page."
+      },
+      "workspace-line": {
+        "type": "color",
+        "value": "{line-subtle}",
+        "description": "Marks drawn over workspace-surface, such as its diagonal stripes, so the page reads as the thing on top."
       },
       "field-pad-x": {
         "type": "dimension",

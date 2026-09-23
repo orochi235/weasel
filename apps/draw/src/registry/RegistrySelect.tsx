@@ -14,6 +14,7 @@
  *     don't silently rewrite state.
  */
 import { createContext, useContext } from 'react';
+import { Input, Select, type SelectOption } from '@weasel-js/ui';
 import type {
   RegistryEnumFilter,
   RegistryEnumSources,
@@ -33,11 +34,8 @@ export interface RegistrySelectProps {
   source: string;
   /** Optional filter (criteria map or predicate); passed to the resolver. */
   filter?: RegistryEnumFilter;
-  /** Override the `<select>`'s className. Falls back to a neutral class
-   *  callers can style globally. */
-  selectClassName?: string;
-  /** Class for the text-input fallback when no resolver is registered. */
-  inputClassName?: string;
+  /** Accessible name for the control. */
+  'aria-label'?: string;
   /** Ordering of the rendered options. Defaults to `'label'` —
    *  case-insensitive alphabetical by label — which makes long lists
    *  scannable. Use `'value'` to sort by id, or `'source'` to preserve
@@ -51,43 +49,32 @@ export function RegistrySelect({
   onChange,
   source,
   filter,
-  selectClassName,
-  inputClassName,
+  'aria-label': ariaLabel,
   sortBy = 'label',
 }: RegistrySelectProps) {
   const sources = useContext(RegistryEnumSourcesContext);
   const resolver = sources[source];
   if (!resolver) {
-    return (
-      <input
-        type="text"
-        className={inputClassName}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    );
+    return <Input value={value} onChange={onChange} aria-label={ariaLabel} />;
   }
   const raw = resolver(filter);
-  const options = sortBy === 'source'
+  const sorted = sortBy === 'source'
     ? raw
     : [...raw].sort((a, b) => {
         const av = sortBy === 'value' ? a.value : a.label;
         const bv = sortBy === 'value' ? b.value : b.label;
         return av.localeCompare(bv, undefined, { sensitivity: 'base' });
       });
-  const hasCurrent = options.some((o) => o.value === value);
+  const options: SelectOption[] = sorted.map((o) => ({ value: o.value, label: o.label }));
+  if (!sorted.some((o) => o.value === value)) {
+    options.unshift({ value, label: `${value} (not in registry)`, isDisabled: true });
+  }
   return (
-    <select
-      className={selectClassName}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      {!hasCurrent && (
-        <option value={value} disabled>{value} (not in registry)</option>
-      )}
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>{o.label}</option>
-      ))}
-    </select>
+    <Select<string>
+      options={options}
+      selectedKey={value}
+      onSelectionChange={onChange}
+      aria-label={ariaLabel}
+    />
   );
 }

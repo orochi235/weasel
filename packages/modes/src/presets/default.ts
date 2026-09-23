@@ -4,6 +4,8 @@ import type { ModeDefinition } from '../modeDefinition';
  *  no workspace tint. */
 export const NORMAL: ModeDefinition = {
   id: 'normal',
+  label: 'Normal',
+  description: 'Select, draw and arrange anything on the page.',
   kind: 'soft',
   allows: [
     'creates-selection',
@@ -22,6 +24,8 @@ export const NORMAL: ModeDefinition = {
  *  double-clicking it, left with Escape. */
 export const PATH_EDIT: ModeDefinition = {
   id: 'path-edit',
+  label: 'Path Edit',
+  description: "Move a path's anchors and handles.",
   kind: 'soft',
   allows: ['edits-anchors'],
   scoping: true,
@@ -34,6 +38,8 @@ export const PATH_EDIT: ModeDefinition = {
  *  Allows the same authoring tools as `NORMAL`, minus page edits. */
 export const ISOLATION: ModeDefinition = {
   id: 'isolation',
+  label: 'Isolation',
+  description: 'Work inside one group with everything outside it dimmed and locked.',
   kind: 'soft',
   allows: [
     'creates-selection',
@@ -54,6 +60,8 @@ export const ISOLATION: ModeDefinition = {
  *  step, committed with Enter or discarded with Escape. */
 export const FREE_TRANSFORM: ModeDefinition = {
   id: 'free-transform',
+  label: 'Free Transform',
+  description: 'Move, scale and rotate the selection as one undoable step.',
   kind: 'strict',
   allows: ['transforms-selection'],
   scoping: false,
@@ -67,6 +75,8 @@ export const FREE_TRANSFORM: ModeDefinition = {
  *  Escape. */
 export const TEXT_EDIT: ModeDefinition = {
   id: 'text-edit',
+  label: 'Text Edit',
+  description: "Edit a text node's content.",
   kind: 'soft',
   allows: ['edits-text'],
   scoping: false,
@@ -79,6 +89,8 @@ export const TEXT_EDIT: ModeDefinition = {
  *  discarded with Escape. */
 export const CROP: ModeDefinition = {
   id: 'crop',
+  label: 'Crop',
+  description: 'Change the page extents as one undoable step.',
   kind: 'strict',
   allows: ['edits-page'],
   scoping: false,

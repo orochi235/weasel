@@ -1,16 +1,15 @@
-import { useRef, type ReactElement, type RefObject } from 'react';
+import { type ReactElement, type RefObject } from 'react';
 import {
   fillInPoseFrame,
   fillToBoundsFrame,
   isGradientFill,
-  useActionsRegistry,
   useNodeOverlayFrame,
+  useOngoingAction,
   type FillStyle,
   type GradientFill,
   type RectPose,
   type Scene,
   type Stroke,
-  type UiOngoingControl,
   type View,
 } from '@weasel-js/core';
 import { GradientHandles } from './GradientHandles';
@@ -65,22 +64,16 @@ export function SceneGradientHandles<
   TPose extends RectPose,
 >(props: SceneGradientHandlesProps<TData, TLayer, TPose>): ReactElement | null {
   const { scene, containerRef, nodeId, slot, view, className } = props;
-  const actions = useActionsRegistry();
   const frame = useNodeOverlayFrame(scene, containerRef, nodeId, { view });
-  const ctrlRef = useRef<UiOngoingControl | null>(null);
+  const edit = useOngoingAction(slot === 'fill' ? 'setFill' : 'setStroke');
 
   const gradient = frame ? gradientInSlot(paintOf(scene, nodeId, slot)) : null;
   if (!frame || !gradient) return null;
 
   const dispatch = (next: GradientFill, phase: 'input' | 'commit'): void => {
     const paint = fillToBoundsFrame(next, frame.box);
-    const id = slot === 'fill' ? 'setFill' : 'setStroke';
-    if (!ctrlRef.current) ctrlRef.current = actions?.begin(id, { paint }) ?? null;
-    else ctrlRef.current.update({ paint });
-    if (phase === 'commit' && ctrlRef.current) {
-      ctrlRef.current.end('commit');
-      ctrlRef.current = null;
-    }
+    if (phase === 'commit') edit.commit({ paint });
+    else edit.input({ paint });
   };
 
   return (

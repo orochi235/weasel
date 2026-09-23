@@ -37,3 +37,18 @@ describe('default mode preset', () => {
     expect(() => byId('nope')).toThrow();
   });
 });
+
+describe('DEFAULT_MODES display', () => {
+  it('gives every shipped mode a label and a description', () => {
+    for (const m of DEFAULT_MODES) {
+      expect(m.label, m.id).toMatch(/\S/);
+      expect(m.description, m.id).toMatch(/\S/);
+    }
+  });
+
+  it('labels the modes the way the chrome names them', () => {
+    expect(DEFAULT_MODES.map((m) => m.label)).toEqual([
+      'Normal', 'Path Edit', 'Isolation', 'Free Transform', 'Text Edit', 'Crop',
+    ]);
+  });
+});

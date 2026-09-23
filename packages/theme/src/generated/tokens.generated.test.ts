@@ -89,3 +89,27 @@ describe('shape and elevation', () => {
     expect(css).toContain('--wzl-shadow:');
   });
 });
+
+/** The body of one `<selector> { … }` block of the generated CSS. */
+function block(selector: string): string {
+  const start = css.indexOf(`${selector} {`);
+  return start < 0 ? '' : css.slice(start, css.indexOf('\n}', start));
+}
+
+// A var() inside a custom property is substituted where it is declared, so a
+// token built on a mode semantic has to be restated in every mode block.
+describe('transparency checker and workspace tokens', () => {
+  it('paint from mode semantics, restated per mode', () => {
+    for (const sel of [':root', "[data-wzl-mode='dark']", "[data-wzl-mode='light']"]) {
+      const body = block(sel);
+      expect(body).toMatch(/--wzl-checker-a: var\(--wzl-border\);/);
+      expect(body).toMatch(/--wzl-checker-b: var\(--wzl-surface\);/);
+      expect(body).toMatch(/--wzl-workspace-surface: var\(--wzl-surface-sunken\);/);
+      expect(body).toMatch(/--wzl-workspace-line: var\(--wzl-line-subtle\);/);
+    }
+  });
+
+  it('sizes the checker tile once', () => {
+    expect(tokenValue('checker-size')).toBe('8px');
+  });
+});

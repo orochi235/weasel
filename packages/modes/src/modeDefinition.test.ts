@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { eligibleForMode } from './modeDefinition';
+import { eligibleForMode, modeLabel } from './modeDefinition';
 import type { ModeDefinition } from './modeDefinition';
 
 const PATH_EDIT: ModeDefinition = {
@@ -29,5 +29,15 @@ describe('eligibleForMode', () => {
 
   it('a tool with no tags is not eligible', () => {
     expect(eligibleForMode(PATH_EDIT, [])).toBe(false);
+  });
+});
+
+describe('modeLabel', () => {
+  it('reads the display label when the mode has one', () => {
+    expect(modeLabel({ ...PATH_EDIT, label: 'Path Edit' })).toBe('Path Edit');
+  });
+
+  it('falls back to the id', () => {
+    expect(modeLabel(PATH_EDIT)).toBe('path-edit');
   });
 });

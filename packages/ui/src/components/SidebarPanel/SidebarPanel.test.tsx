@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SidebarPanel } from './SidebarPanel';
@@ -77,5 +79,23 @@ describe('SidebarPanel', () => {
     rerender(<SidebarPanel title="Properties" onHide={onHide}>body</SidebarPanel>);
     fireEvent.click(screen.getByRole('button', { name: 'Hide panel' }));
     expect(onHide).toHaveBeenCalledTimes(1);
+  });
+});
+
+// The CSS-module proxy answers any key, so the class only proves the static
+// title asked for the box; the stylesheet read proves the box shares the
+// collapsible title's inset.
+describe('SidebarPanel static title', () => {
+  it('sits in the same inset box as the collapsible title', () => {
+    render(<SidebarPanel title="Properties">body</SidebarPanel>);
+    expect(screen.getByText('Properties').className).toMatch(/titleBox/);
+    const css = readFileSync(resolve(__dirname, 'SidebarPanel.module.css'), 'utf8');
+    expect(css).toMatch(/\.titleBox\s*\{[^}]*padding: var\(--wzl-space-2\) var\(--wzl-space-4\);/);
+    expect(css).not.toMatch(/\.titleButton\s*\{[^}]*padding:/);
+  });
+
+  it('gives the collapsible title the same box', () => {
+    render(<SidebarPanel title="Properties" onToggleCollapse={() => {}}>body</SidebarPanel>);
+    expect(screen.getByRole('button').className).toMatch(/titleBox/);
   });
 });

@@ -49,7 +49,7 @@ export function SidebarPanel(props: SidebarPanelProps) {
           {headerInteractive ? (
             <button
               type="button"
-              className={s.titleButton}
+              className={`${s.titleButton} ${s.titleBox}`}
               onClick={onToggleCollapse}
               aria-expanded={!collapsed}
             >
@@ -60,7 +60,7 @@ export function SidebarPanel(props: SidebarPanelProps) {
               <span className={s.title}>{title}</span>
             </button>
           ) : (
-            <span className={s.title}>{title}</span>
+            <span className={`${s.title} ${s.titleBox}`}>{title}</span>
           )}
           {onHide !== undefined && (
             <TooltipTrigger>

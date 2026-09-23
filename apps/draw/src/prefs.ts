@@ -154,13 +154,9 @@ export const PREFS = {
         panels: {
           kind: 'object',
           name: 'Panel visibility',
-          description: 'Hidden/collapsed state per properties-panel section.',
+          description: 'Hidden/collapsed state per right-sidebar panel.',
           block: true,
-          // Document panel is hidden by default: its fields (title, paper
-          // size) are also reachable by selecting the document in the
-          // layers panel, so showing the dedicated panel on first run is
-          // redundant. Reveal it via Preferences → Panel visibility.
-          default: { document: { hidden: true } } as Record<string, { hidden?: boolean; collapsed?: boolean }>,
+          default: {} as Record<string, { hidden?: boolean; collapsed?: boolean }>,
         },
       },
     },
@@ -380,8 +376,7 @@ function descriptorAt(path: string): WeaselDrawPref | null {
 export function readPref<P extends WeaselDrawPrefPath>(path: P): PrefValueAt<P> {
   const desc = descriptorAt(path);
   if (!desc) throw new Error(`readPref: unknown path ${path}`);
-  const root = readRoot();
-  const stored = root ? getAtPath(root, path) : undefined;
+  const stored = getAtPath(currentRoot(), path);
   if (stored !== undefined) return stored as PrefValueAt<P>;
   return desc.default as PrefValueAt<P>;
 }
@@ -389,6 +384,28 @@ export function readPref<P extends WeaselDrawPrefPath>(path: P): PrefValueAt<P> 
 // Coalesce writes within a tick so slider drags don't hammer storage.
 let pendingRoot: PersistedRoot | null = null;
 let writeScheduled = false;
+
+/** The persisted root including writes still waiting on the microtask. */
+function currentRoot(): Record<string, unknown> {
+  return pendingRoot ?? readRoot() ?? {};
+}
+
+// Every live binding hears every write, so the Preferences dialog and an
+// inline control bound to the same path stay in step.
+type PrefListener = (path: string, value: unknown, source: object) => void;
+const listeners = new Set<PrefListener>();
+function notify(path: string, value: unknown, source: object): void {
+  for (const l of listeners) l(path, value, source);
+}
+
+const WRITE_PREF_SOURCE = {};
+
+/** Write a pref outside React (migrations, startup code). Live bindings
+ *  of the path update. */
+export function writePref<P extends WeaselDrawPrefPath>(path: P, value: PrefValueAt<P>): void {
+  schedulePrefsWrite(path, value);
+  notify(path, value, WRITE_PREF_SOURCE);
+}
 function schedulePrefsWrite(path: string, value: unknown): void {
   const base: PersistedRoot = pendingRoot ?? readRoot() ?? { version: 2 };
   pendingRoot = setAtPath(base, path, value);
@@ -424,18 +441,28 @@ export function usePref<P extends WeaselDrawPrefPath>(
   }, [path]);
 
   const [value, setValue] = useState<PrefValueAt<P>>(() => {
-    const root = readRoot();
-    const stored = root ? getAtPath(root, path) : undefined;
+    const stored = getAtPath(currentRoot(), path);
     return (stored !== undefined ? stored : desc.default) as PrefValueAt<P>;
   });
 
-  const mountedRef = useRef(false);
+  // The last value this binding agrees with storage on — a change away
+  // from it is a local edit to persist and broadcast; a broadcast sets it.
+  const syncedRef = useRef<unknown>(value);
+  const selfRef = useRef({});
   useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      return;
-    }
+    const listener: PrefListener = (p, v, source) => {
+      if (p !== path || source === selfRef.current) return;
+      syncedRef.current = v;
+      setValue(v as PrefValueAt<P>);
+    };
+    listeners.add(listener);
+    return () => { listeners.delete(listener); };
+  }, [path]);
+  useEffect(() => {
+    if (Object.is(value, syncedRef.current)) return;
+    syncedRef.current = value;
     schedulePrefsWrite(path, value);
+    notify(path, value, selfRef.current);
   }, [path, value]);
 
   const set = useCallback(
@@ -456,15 +483,24 @@ export function usePref<P extends WeaselDrawPrefPath>(
  * Whole-tree binding for the Preferences dialog (kit `PrefsForm` is
  * controlled: values tree + dotted-path onChange). Reads the persisted
  * root once per mount; writes ride the same coalesced
- * `schedulePrefsWrite` path as `usePref`. Like `usePref` instances, it
- * doesn't sync with other live bindings — the dialog is expected to be
- * the only whole-tree editor.
+ * `schedulePrefsWrite` path as `usePref`, and hears writes from every
+ * other live binding.
  */
 export function usePrefsValues(): [unknown, (path: string, value: unknown) => void] {
-  const [values, setValues] = useState<Record<string, unknown>>(() => readRoot() ?? {});
+  const [values, setValues] = useState<Record<string, unknown>>(currentRoot);
+  const selfRef = useRef({});
+  useEffect(() => {
+    const listener: PrefListener = (path, value, source) => {
+      if (source === selfRef.current) return;
+      setValues((prev) => setAtPath(prev, path, value));
+    };
+    listeners.add(listener);
+    return () => { listeners.delete(listener); };
+  }, []);
   const setAt = useCallback((path: string, value: unknown) => {
     setValues((prev) => setAtPath(prev, path, value));
     schedulePrefsWrite(path, value);
+    notify(path, value, selfRef.current);
   }, []);
   return [values, setAt];
 }

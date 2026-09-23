@@ -22,6 +22,12 @@
   padding: 0;
 }
 
+/* The title's inset, shared by the static title and the collapse button so the
+   two line up. */
+.titleBox {
+  padding: var(--wzl-space-2) var(--wzl-space-4);
+}
+
 .titleButton {
   display: inline-flex;
   align-items: center;
@@ -29,7 +35,6 @@
   flex: 1 1 auto;
   background: transparent;
   border: 0;
-  padding: var(--wzl-space-2) var(--wzl-space-4);
   cursor: pointer;
   color: inherit;
   font: inherit;

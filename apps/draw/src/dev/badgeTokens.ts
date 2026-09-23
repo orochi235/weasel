@@ -2,7 +2,7 @@ import type { BadgeProps } from '@weasel-js/ui';
 
 /** A single value within a token set, paired with the props its renderer
  *  needs. The shape of `props` depends on the set's `kind`. */
-export interface TokenEntry<P> {
+export interface TokenSetEntry<P> {
   value: string;
   props: P;
 }
@@ -17,13 +17,7 @@ interface TokenSetBase {
 
 export interface BadgeTokenSet extends TokenSetBase {
   kind: 'badge';
-  entries: readonly TokenEntry<Omit<BadgeProps, 'children'>>[];
-}
-
-export interface KeycapsTokenSet extends TokenSetBase {
-  kind: 'keycap';
-  /** Each entry's `props.parts` feeds `<Keycaps parts={…} />`. */
-  entries: readonly TokenEntry<{ parts: readonly string[] }>[];
+  entries: readonly TokenSetEntry<Omit<BadgeProps, 'children'>>[];
 }
 
 /** Compound token — entries are raw `phase.gesture.target[:modifiers]`
@@ -31,39 +25,10 @@ export interface KeycapsTokenSet extends TokenSetBase {
  *  lives in `RegistryDetail.tsx` so this file stays View-free. */
 export interface RouteTokenSet extends TokenSetBase {
   kind: 'route';
-  entries: readonly TokenEntry<{ route: string }>[];
+  entries: readonly TokenSetEntry<{ route: string }>[];
 }
 
-export type TokenSet = BadgeTokenSet | KeycapsTokenSet | RouteTokenSet;
-
-// ── slot tone ──────────────────────────────────────────────────────────────
-
-/** Mapping consumed by `ToolkitBuilder` — colors each tool row by the slot
- *  it currently occupies. */
-export const SLOT_TONE = {
-  active: 'accent',
-  ambient: 'warn',
-  hotkey: 'info',
-  inactive: 'danger',
-} as const;
-
-const slotTokenSet: BadgeTokenSet = {
-  kind: 'badge',
-  id: 'slot-tone',
-  label: 'Slot tone',
-  description:
-    'Tone per tool-routing slot. Used by the Toolkit Builder to color tool rows '
-    + 'by where each tool currently mounts.',
-  entries: Object.entries(SLOT_TONE).map(([value, tone]) => ({
-    value,
-    props: {
-      shape: 'pill',
-      size: 'sm',
-      tone,
-      variant: value === 'inactive' ? 'solid' : 'outline',
-    },
-  })),
-};
+export type TokenSet = BadgeTokenSet | RouteTokenSet;
 
 // ── gesture ────────────────────────────────────────────────────────────────
 
@@ -224,7 +189,6 @@ const routeTokenSet: RouteTokenSet = {
 };
 
 export const TOKEN_SETS: readonly TokenSet[] = [
-  slotTokenSet,
   gestureTokenSet,
   phaseTokenSet,
   routeTokenSet,

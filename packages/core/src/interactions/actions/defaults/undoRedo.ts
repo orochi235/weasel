@@ -1,3 +1,5 @@
+import { createElement } from 'react';
+import { RedoIcon, UndoIcon } from './icons/actionGlyphIcons';
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/routing';
 
 type HistoryReads = { canUndo?: () => boolean; canRedo?: () => boolean };
@@ -15,6 +17,7 @@ function historyCan(deps: ActionDeps | undefined, which: 'canUndo' | 'canRedo'):
 export const undoAction: Action & { requires: string[] } = {
   id: 'undo',
   label: 'Undo',
+  icon: createElement(UndoIcon),
   group: 'history',
   defaultBinding: { kind: 'key', key: 'z', mods: { mod: true } },
   requires: ['history'],
@@ -34,6 +37,7 @@ export const undoAction: Action & { requires: string[] } = {
 export const redoAction: Action & { requires: string[] } = {
   id: 'redo',
   label: 'Redo',
+  icon: createElement(RedoIcon),
   group: 'history',
   defaultBinding: { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
   requires: ['history'],

@@ -1,30 +1,22 @@
 import { memo } from 'react';
+import { modeLabel, type ModeDefinition } from '@weasel-js/modes';
+import { Button, KeyCap } from '@weasel-js/ui';
 import styles from './ModeBreadcrumb.module.css';
 
 export interface ModeBreadcrumbProps {
-  modeId: string;
-  modeKind: 'soft' | 'strict';
+  mode: ModeDefinition;
   targetLabel: string | null;
   onExit: () => void;
   onCommit: () => void;
   onCancel: () => void;
 }
 
-const MODE_DISPLAY: Record<string, string> = {
-  'path-edit': 'Path Edit',
-  'isolation': 'Isolation',
-  'text-edit': 'Text Edit',
-  'free-transform': 'Free Transform',
-  'crop': 'Crop',
-};
-
 export const ModeBreadcrumb = memo(function ModeBreadcrumb(props: ModeBreadcrumbProps) {
-  if (props.modeId === 'normal') return null;
-  const name = MODE_DISPLAY[props.modeId] ?? props.modeId;
+  if (props.mode.id === 'normal') return null;
 
   return (
-    <div className={styles.bar} data-mode={props.modeId}>
-      <span className={styles.name}>{name}</span>
+    <div className={styles.bar} data-mode={props.mode.id}>
+      <span className={styles.name}>{modeLabel(props.mode)}</span>
       {props.targetLabel ? (
         <>
           <span className={styles.sep}>·</span>
@@ -32,18 +24,16 @@ export const ModeBreadcrumb = memo(function ModeBreadcrumb(props: ModeBreadcrumb
         </>
       ) : null}
       <span className={styles.spacer} />
-      {props.modeKind === 'soft' ? (
-        <button type="button" className={styles.btn} onClick={props.onExit}>
-          Exit
-        </button>
+      {props.mode.kind === 'soft' ? (
+        <Button size="sm" onClick={props.onExit}>Exit</Button>
       ) : (
         <>
-          <button type="button" className={styles.btn} onClick={props.onCancel}>
-            Cancel <kbd>⎋</kbd>
-          </button>
-          <button type="button" className={styles.btnPrimary} onClick={props.onCommit}>
-            Commit <kbd>⏎</kbd>
-          </button>
+          <Button size="sm" onClick={props.onCancel} trailingIcon={<KeyCap label="⎋" variant="minimal" />}>
+            Cancel
+          </Button>
+          <Button size="sm" variant="primary" onClick={props.onCommit} trailingIcon={<KeyCap label="⏎" variant="minimal" />}>
+            Commit
+          </Button>
         </>
       )}
     </div>

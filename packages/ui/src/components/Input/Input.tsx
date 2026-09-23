@@ -8,12 +8,18 @@ import {
   type TextFieldProps as RACTextFieldProps,
   type ValidationResult,
 } from 'react-aria-components';
-import { fieldClasses } from '../Field/Field';
+import { fieldClasses, type FieldOrientation } from '../Field/Field';
 import s from './Input.module.css';
 
 /** Props for {@link Input}, on top of React Aria's `TextField` props. */
 export type InputProps = Omit<RACTextFieldProps, 'children' | 'className'> & {
   label?: ReactNode;
+  /**
+   * `'stacked'` (the default) puts the label above the field; `'row'` sets it
+   * beside the field at its own width, with any description or error on a
+   * line below. Same vocabulary as {@link Field}'s `orientation`.
+   */
+  orientation?: FieldOrientation;
   description?: ReactNode;
   errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
   placeholder?: string;
@@ -35,6 +41,7 @@ export const Input = forwardRef(function Input(
 ) {
   const {
     label,
+    orientation = 'stacked',
     description,
     errorMessage,
     placeholder,
@@ -45,19 +52,30 @@ export const Input = forwardRef(function Input(
   } = props;
 
   return (
-    <TextField {...textFieldProps} className={[s.field, fieldClasses.root, className].filter(Boolean).join(' ')}>
-      {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
+    <TextField
+      {...textFieldProps}
+      className={[
+        s.field,
+        fieldClasses.root,
+        orientation === 'row' && fieldClasses.row,
+        orientation === 'row' && s.row,
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {label !== undefined && <Label className={`${fieldClasses.label} ${s.label}`}>{label}</Label>}
       <div className={s.frame}>
         {leadingAdornment !== undefined && <span className={s.adornment}>{leadingAdornment}</span>}
         <RACInput ref={ref} placeholder={placeholder} />
         {trailingAdornment !== undefined && <span className={s.adornment}>{trailingAdornment}</span>}
       </div>
       {description !== undefined && (
-        <Text slot="description" className={fieldClasses.hint}>
+        <Text slot="description" className={`${fieldClasses.hint} ${s.below}`}>
           {description}
         </Text>
       )}
-      <FieldError className={fieldClasses.error}>{errorMessage}</FieldError>
+      <FieldError className={`${fieldClasses.error} ${s.below}`}>{errorMessage}</FieldError>
     </TextField>
   );
 });

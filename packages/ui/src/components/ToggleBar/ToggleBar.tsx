@@ -1,6 +1,7 @@
 import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import s from './ToggleBar.module.css';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
+import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 
 /** One segment of a {@link ToggleBar}, identified by its `value`. */
 export type ToggleBarItem<V extends string | number = string> = {
@@ -8,7 +9,7 @@ export type ToggleBarItem<V extends string | number = string> = {
   label?: ReactNode;
   ariaLabel?: string;
   disabled?: boolean;
-};
+} & SegmentTooltipFields;
 
 /** Segment height and type scale for a {@link ToggleBar}. */
 export type ToggleBarSize = 'sm' | 'md';
@@ -154,21 +155,22 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
           .filter(Boolean)
           .join(' ');
         return (
-          <button
-            key={item.value}
-            type="button"
-            role={mode === 'multiple' ? undefined : 'radio'}
-            aria-checked={mode === 'multiple' ? undefined : selected}
-            aria-pressed={mode === 'multiple' ? (mixed ? 'mixed' : selected) : undefined}
-            aria-label={item.ariaLabel}
-            disabled={item.disabled}
-            tabIndex={roving.tabIndexFor(i)}
-            className={cls}
-            onClick={handleClick(i)}
-            onKeyDown={roving.onKeyDown(i)}
-          >
-            {item.label}
-          </button>
+          <SegmentTooltip key={item.value} content={segmentTooltipContent(item)} disabled={item.disabled}>
+            <button
+              type="button"
+              role={mode === 'multiple' ? undefined : 'radio'}
+              aria-checked={mode === 'multiple' ? undefined : selected}
+              aria-pressed={mode === 'multiple' ? (mixed ? 'mixed' : selected) : undefined}
+              aria-label={item.ariaLabel}
+              disabled={item.disabled}
+              tabIndex={roving.tabIndexFor(i)}
+              className={cls}
+              onClick={handleClick(i)}
+              onKeyDown={roving.onKeyDown(i)}
+            >
+              {item.label}
+            </button>
+          </SegmentTooltip>
         );
       })}
     </div>

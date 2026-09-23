@@ -184,6 +184,10 @@ exactly as wide as its text. Give a panel a width and its labels form one
 column. A stacked row with a readout on its label line keeps the label at the
 start whatever the alignment, because the readout holds the end.
 
+`DetailList`, the read-only label/value list, reads all four too: its label
+column is `--wzl-params-label-width` wide, so one declaration lines its labels
+up with a property panel's inline rows.
+
 Custom properties are the mechanism because they inherit across the CSS-module
 boundary: labkit's Less cannot name `PropertyPanel`'s label class, and before
 this it restated the recipe by hand. `npm run check:labels` fails on a label in

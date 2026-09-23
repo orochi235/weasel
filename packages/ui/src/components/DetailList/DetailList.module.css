@@ -1,0 +1,57 @@
+.list {
+  display: grid;
+  grid-template-columns: var(--wzl-params-label-width, auto) minmax(0, 1fr);
+  column-gap: var(--wzl-space-6);
+  row-gap: var(--wzl-space-1);
+  margin: 0;
+  font-size: var(--wzl-font-size-md);
+}
+
+.list[data-layout='block'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  /* A label meets the first line of its value, however many lines that runs to. */
+  align-items: baseline;
+}
+
+.label {
+  display: flex;
+  align-items: baseline;
+  justify-content: var(--wzl-params-label-align, start);
+  gap: var(--wzl-space-2);
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-snug);
+  color: var(--wzl-fg-muted);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+}
+
+.value {
+  margin: 0;
+  min-width: 0;
+  /* The floor a property row stands on, so the two share a rhythm side by side. */
+  min-height: var(--wzl-prop-row-h, var(--wzl-field-h, var(--wzl-control-h)));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  overflow-wrap: anywhere;
+  color: var(--wzl-fg);
+}
+
+.title {
+  margin: 0 0 var(--wzl-space-3);
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+}

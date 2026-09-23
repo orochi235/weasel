@@ -76,6 +76,13 @@ export interface PropertyRenderContext {
    * field.
    */
   valueAt: (path: string) => { value: unknown; mixed: boolean };
+  /**
+   * The ids of the nodes the values were read from, joined. It changes exactly
+   * when the selection does, so a control holding scratch that belongs to one
+   * selection can key on it and be remounted rather than carry it to the next.
+   * Absent where the values come from no selection, as in a tool options bar.
+   */
+  selectionKey?: string;
 }
 
 /**
@@ -598,6 +605,7 @@ function ObjectLeaf({
         unset: !ctx.mixed && held?.[key] === undefined,
         siblings: held,
         valueAt: ctx.valueAt,
+        selectionKey: ctx.selectionKey,
         setValue: (v) => {
           // The node holds no object yet, so writing one field has to
           // materialize the rest: the leaf's `default` is what a complete

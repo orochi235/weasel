@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { NumberField } from './NumberField';
+import { fieldClasses } from '../Field/Field';
 import s from './NumberField.module.css';
 
 describe('NumberField', () => {
@@ -65,5 +68,37 @@ describe('NumberField', () => {
   it('threads placeholder to the input', () => {
     const { container } = render(<NumberField aria-label="X" value={NaN} placeholder="Mixed" />);
     expect(getInput(container)).toHaveAttribute('placeholder', 'Mixed');
+  });
+});
+
+describe('NumberField orientation', () => {
+  const css = readFileSync(resolve(__dirname, 'NumberField.module.css'), 'utf8');
+
+  it('stacks the label above the field by default', () => {
+    render(<NumberField label="Width" />);
+    const root = screen.getByText('Width').closest(`.${fieldClasses.root}`)!;
+    expect(root.className).not.toContain(fieldClasses.row);
+  });
+
+  it("sets the label beside the field with orientation='row', still labeling it", () => {
+    render(<NumberField label="Width" orientation="row" />);
+    const root = screen.getByText('Width').closest(`.${fieldClasses.root}`)!;
+    expect(root.className).toContain(fieldClasses.row);
+    expect(root.className).toContain(s.row);
+    expect(screen.getByRole('textbox', { name: 'Width' })).toBeInstanceOf(HTMLInputElement);
+  });
+
+  it('keeps the label at its own width and lets description and error take a line of their own', () => {
+    // (0,3,0) so Field's own `.row .label { flex: 1 }` cannot win on source order.
+    expect(css).toMatch(/\.field\.row \.label\s*\{[^}]*flex:\s*0 0 auto/);
+    expect(css).toMatch(/\.field\.row\s*\{[^}]*flex-wrap:\s*wrap/);
+    expect(css).toMatch(/\.field\.row \.below\s*\{[^}]*flex-basis:\s*100%/);
+    expect(css).toMatch(/\.field\.row:not\(\.fit\) \.frame\s*\{[^}]*flex:\s*1 1 0/);
+  });
+
+  it('marks the label and the hint/error slots with the local classes the row rules key off', () => {
+    const { container } = render(<NumberField label="Width" orientation="row" description="In pixels" />);
+    expect(container.querySelector(`.${s.label}`)?.textContent).toBe('Width');
+    expect(container.querySelector(`.${s.below}`)?.textContent).toBe('In pixels');
   });
 });

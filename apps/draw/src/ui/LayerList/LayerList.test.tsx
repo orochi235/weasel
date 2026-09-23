@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { act, render, fireEvent, screen } from '@testing-library/react';
 import { LayerList } from './LayerList';
 
 const ITEMS = [
@@ -103,9 +103,8 @@ describe('LayerList', () => {
     const pageRow = screen.getByText('Page');
     fireEvent.pointerDown(pageRow, { clientX: 0, clientY: 60, pointerId: 1, isPrimary: true });
     fireEvent.pointerMove(pageRow, { clientX: 0, clientY: 0, pointerId: 1, isPrimary: true });
-    // No drop indicator should appear because no drag engaged.
-    const indicator = container.querySelector('[class*="dropIndicator"]');
-    expect(indicator).toBeNull();
+    // No drop seam should appear because no drag engaged.
+    expect(container.querySelector('[data-drop]')).toBeNull();
     fireEvent.pointerUp(pageRow, { clientX: 0, clientY: 0, pointerId: 1, isPrimary: true });
     expect(onReorder).not.toHaveBeenCalled();
   });
@@ -151,4 +150,95 @@ describe('LayerList', () => {
     expect(rows[0].getAttribute('data-locked')).toBeNull();
     expect(rows[1].getAttribute('data-locked')).toBe('true');
   });
+
+  it('marks the drop seam on the rows and adds no element ahead of them', () => {
+    // The drop target is computed from the list's children, so any element the
+    // indicator adds ahead of the rows would shift every drop by one.
+    const ROW = 28;
+    const origGBR = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function () {
+      if (this.hasAttribute('data-row-index')) {
+        const top = Number(this.getAttribute('data-row-index')) * ROW;
+        return { top, bottom: top + ROW, left: 0, right: 100, width: 100, height: ROW, x: 0, y: top, toJSON: () => ({}) } as DOMRect;
+      }
+      return origGBR.call(this);
+    };
+    try {
+      const onReorder = vi.fn();
+      const { container } = render(
+        <LayerList items={ITEMS} selectedIds={[]} onSelect={() => {}} onReorder={onReorder} />
+      );
+      const list = container.firstElementChild!;
+      const alpha = screen.getByText('Alpha');
+      fireEvent.pointerDown(alpha, { clientX: 0, clientY: 5, pointerId: 1, isPrimary: true });
+      // Below every row: the seam sits after the last one.
+      fireEvent.pointerMove(alpha, { clientX: 0, clientY: 500, pointerId: 1, isPrimary: true });
+      expect(list.children).toHaveLength(ITEMS.length);
+      expect(list.children[2].getAttribute('data-drop')).toBe('after');
+      expect(list.children[0].getAttribute('data-dragging')).toBe('true');
+      // Inside Gamma: the seam sits above it.
+      fireEvent.pointerMove(alpha, { clientX: 0, clientY: 2 * ROW + 5, pointerId: 1, isPrimary: true });
+      expect(list.children).toHaveLength(ITEMS.length);
+      expect(list.children[2].getAttribute('data-drop')).toBe('before');
+      fireEvent.pointerUp(alpha, { clientX: 0, clientY: 2 * ROW + 5, pointerId: 1, isPrimary: true });
+      expect(onReorder).toHaveBeenCalledWith(['a'], 2);
+    } finally {
+      Element.prototype.getBoundingClientRect = origGBR;
+    }
+  });
+
+  describe('keyboard', () => {
+    const opt = (name: string) => screen.getByRole('option', { name });
+
+    it('is a multi-select listbox of layers', () => {
+      render(<LayerList items={ITEMS} selectedIds={['b']} onSelect={() => {}} onReorder={() => {}} />);
+      expect(screen.getByRole('listbox', { name: 'Layers' })).toHaveAttribute('aria-multiselectable', 'true');
+      expect(opt('Beta')).toHaveAttribute('aria-selected', 'true');
+      expect(opt('Beta').tabIndex).toBe(0);
+    });
+
+    it('selects with Space and adds with Shift+Space, as a click and Shift+click do', () => {
+      const onSelect = vi.fn();
+      render(<LayerList items={ITEMS} selectedIds={['a']} onSelect={onSelect} onReorder={() => {}} />);
+      fireEvent.keyDown(opt('Gamma'), { key: ' ' });
+      expect(onSelect).toHaveBeenLastCalledWith(['c']);
+      fireEvent.keyDown(opt('Gamma'), { key: ' ', shiftKey: true });
+      expect(onSelect).toHaveBeenLastCalledWith(['a', 'c']);
+    });
+
+    it('selects a range with Shift+Arrow from the focused layer', () => {
+      const onSelect = vi.fn();
+      render(<LayerList items={ITEMS} selectedIds={['a']} onSelect={onSelect} onReorder={() => {}} />);
+      act(() => { opt('Alpha').focus(); });
+      fireEvent.keyDown(opt('Alpha'), { key: 'ArrowDown', shiftKey: true });
+      expect(onSelect).toHaveBeenLastCalledWith(['a', 'b']);
+      fireEvent.keyDown(opt('Beta'), { key: 'End', shiftKey: true });
+      expect(onSelect).toHaveBeenLastCalledWith(['a', 'b', 'c']);
+    });
+
+    it('leaves locked layers out of a keyboard range', () => {
+      const onSelect = vi.fn();
+      const items = [...ITEMS, { id: 'page', label: 'Page', locked: true }];
+      render(<LayerList items={items} selectedIds={['c']} onSelect={onSelect} onReorder={() => {}} />);
+      act(() => { opt('Gamma').focus(); });
+      fireEvent.keyDown(opt('Gamma'), { key: 'ArrowDown', shiftKey: true });
+      expect(onSelect).toHaveBeenLastCalledWith(['c']);
+    });
+
+    it('moves a layer with Alt+Arrow', () => {
+      const onReorder = vi.fn();
+      render(<LayerList items={ITEMS} selectedIds={[]} onSelect={() => {}} onReorder={onReorder} />);
+      fireEvent.keyDown(opt('Alpha'), { key: 'ArrowDown', altKey: true });
+      expect(onReorder).toHaveBeenCalledWith(['a'], 2);
+    });
+
+    it('does not move a layer across a locked row', () => {
+      const onReorder = vi.fn();
+      const items = [...ITEMS, { id: 'page', label: 'Page', locked: true }];
+      render(<LayerList items={items} selectedIds={[]} onSelect={() => {}} onReorder={onReorder} />);
+      fireEvent.keyDown(opt('Gamma'), { key: 'ArrowDown', altKey: true });
+      expect(onReorder).not.toHaveBeenCalled();
+    });
+  });
 });
+

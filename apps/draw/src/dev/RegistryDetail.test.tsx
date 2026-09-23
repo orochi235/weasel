@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { keySpecFromKey } from '@weasel-js/ui';
 import { RegistryDetail, RouteBadge } from './RegistryDetail';
-import type { ActionEntry, TreeEntry } from './registryData';
+import { collectBundles, type ActionEntry, type TreeEntry } from './registryData';
 
 describe('RegistryDetail', () => {
   it('renders a Tool entry with id and route signatures', () => {
@@ -41,9 +41,31 @@ describe('RegistryDetail', () => {
   });
 
   it('renders an Action entry with shortcut', () => {
-    const entry: TreeEntry = { kind: 'action', id: 'delete', label: 'Delete', shortcutParts: ['⌫'] };
+    const entry: TreeEntry = { kind: 'action', id: 'delete', label: 'Delete', bindingShortcut: { key: 'd' } };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
-    expect(screen.getByText('⌫')).toBeTruthy();
+    expect(screen.getByText('D')).toBeTruthy();
+  });
+
+  it('pairs each fact about an entry with its label in a description list', () => {
+    const entry: TreeEntry = { kind: 'action', id: 'delete', label: 'Delete', group: 'edit' };
+    render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    const valueOf = (label: string) => {
+      const dt = screen.getByText(label, { selector: 'dt' });
+      expect(dt.nextElementSibling?.tagName).toBe('DD');
+      return dt.nextElementSibling!.textContent;
+    };
+    expect(valueOf('label')).toBe('Delete');
+    expect(valueOf('group')).toBe('edit');
+  });
+
+  it('names the bundle diff list by its heading, one row per other bundle', () => {
+    const entry = { kind: 'bundle', id: 'probe', label: 'Probe', tools: ['probeOnly'] } as unknown as TreeEntry;
+    render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    const heading = screen.getByRole('heading', { name: 'Diff vs other bundles' });
+    const list = document.querySelector(`dl[aria-labelledby="${heading.id}"]`)!;
+    const values = [...list.querySelectorAll('dd')];
+    expect(values.length).toBe(collectBundles().length);
+    for (const dd of values) expect(dd.textContent).toContain('+probeOnly');
   });
 
   it('renders a Bundle with clickable members that fire onNavigate', () => {

@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, act, screen } from '@testing-library/react';
 import { Button } from './Button';
 
 describe('Button', () => {
@@ -108,5 +110,95 @@ describe('Button', () => {
     // that happens to be off.
     rerender(<Button>Save</Button>);
     expect(getByRole('button').getAttribute('aria-pressed')).toBeNull();
+  });
+
+  describe('link variant', () => {
+    const css = readFileSync(resolve(__dirname, 'Button.module.css'), 'utf8');
+    const rule = (sel: string) => {
+      const m = css.match(new RegExp(`(^|\\n)${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`));
+      return m?.[2] ?? '';
+    };
+
+    it('renders a real button with the link variant class', () => {
+      const onClick = vi.fn();
+      const { getByRole } = render(<Button variant="link" onClick={onClick}>open</Button>);
+      const btn = getByRole('button');
+      expect(btn.className).toMatch(/variant_link/);
+      fireEvent.click(btn);
+      expect(onClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('paints its text with the accent-as-text token, not the accent fill', () => {
+      const body = rule('.variant_link');
+      expect(body).toMatch(/color:\s*var\(--wzl-accent-fg\)/);
+      expect(body).not.toMatch(/--wzl-accent\)/);
+    });
+
+    it('drops the control box so it sits in running text', () => {
+      const body = rule('.variant_link');
+      expect(body).toMatch(/height:\s*auto/);
+      expect(body).toMatch(/padding:\s*0/);
+      expect(body).toMatch(/background:\s*transparent/);
+      expect(body).toMatch(/font:\s*inherit/);
+      expect(css).toMatch(/\.variant_link::before\s*\{\s*display:\s*none/);
+    });
+
+    it('names its tone, and says nothing when left on the default accent', () => {
+      const { getAllByRole } = render(
+        <>
+          <Button variant="link" tone="danger">remove</Button>
+          <Button variant="link">open</Button>
+        </>,
+      );
+      const [danger, plain] = getAllByRole('button');
+      expect(danger.getAttribute('data-tone')).toBe('danger');
+      expect(plain.hasAttribute('data-tone')).toBe(false);
+    });
+
+    it('paints each tone from the same tokens as Code', () => {
+      expect(rule(".variant_link[data-tone='neutral']")).toMatch(/color:\s*var\(--wzl-fg\)/);
+      expect(rule(".variant_link[data-tone='muted']")).toMatch(/color:\s*var\(--wzl-fg-muted\)/);
+      expect(rule(".variant_link[data-tone='accent']")).toMatch(/color:\s*var\(--wzl-accent-fg\)/);
+      expect(rule(".variant_link[data-tone='success']")).toMatch(/color:\s*var\(--wzl-success\)/);
+      expect(rule(".variant_link[data-tone='warn']")).toMatch(/color:\s*var\(--wzl-warning\)/);
+      expect(rule(".variant_link[data-tone='danger']")).toMatch(/color:\s*var\(--wzl-danger\)/);
+    });
+  });
+});
+
+/** Enter keyboard modality, then focus — RAC only opens tooltips on focus-visible. */
+function keyboardFocus(el: HTMLElement) {
+  fireEvent.keyDown(document.body, { key: 'Tab' });
+  act(() => el.focus());
+}
+
+describe('Button tooltip', () => {
+  it('shows the shortcut after a string label', () => {
+    render(<Button shortcut="⌘S">Save</Button>);
+    const btn = screen.getByRole('button', { name: 'Save' });
+    keyboardFocus(btn);
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toContain('Save (⌘S)');
+    expect(btn.getAttribute('aria-describedby')).toBe(tip.id);
+  });
+
+  it('names an icon-only button by ariaLabel', () => {
+    render(<Button iconOnly ariaLabel="Undo" shortcut="⌘Z"><svg /></Button>);
+    keyboardFocus(screen.getByRole('button', { name: 'Undo' }));
+    expect(screen.getByRole('tooltip').textContent).toContain('Undo (⌘Z)');
+  });
+
+  it('lets tooltip replace the default text', () => {
+    render(<Button tooltip="Write to disk" shortcut="⌘S">Save</Button>);
+    keyboardFocus(screen.getByRole('button'));
+    expect(screen.getByRole('tooltip').textContent).toContain('Write to disk');
+  });
+
+  it('adds no tooltip without either field', () => {
+    render(<Button>Save</Button>);
+    const btn = screen.getByRole('button');
+    keyboardFocus(btn);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    expect(btn.getAttribute('aria-describedby')).toBeNull();
   });
 });

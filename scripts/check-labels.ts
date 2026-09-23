@@ -15,6 +15,7 @@ import { join, relative } from 'node:path';
 /** The surfaces whose labels inherit. Add a directory to bring one under the rule. */
 export const SURFACES = [
   'packages/ui/src/components/Properties',
+  'packages/ui/src/components/DetailList',
   'packages/ui/src/components/Prefs',
   'packages/labkit/src/controls',
 ];

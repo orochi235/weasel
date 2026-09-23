@@ -3,7 +3,7 @@ import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import { useActionsRegistry } from '@weasel-js/core';
 import { useHud } from '@weasel-js/hud/react';
 import type { LoupeMode } from '@weasel-js/hud';
-import { Button, NumberField, Radio, RadioGroup, Switch } from '@weasel-js/ui';
+import { Button, NumberField, Switch, ToggleBar } from '@weasel-js/ui';
 import { useColorContext } from './tools/colorContext';
 import { useLoupe } from './useLoupe';
 
@@ -12,6 +12,11 @@ import { useLoupe } from './useLoupe';
 function swatchStyle(color: string | null): CSSProperties {
   return { ['--wd-loupe-swatch-color' as string]: color ?? 'transparent' } as CSSProperties;
 }
+
+const LOUPE_MODES: { value: LoupeMode; label: string }[] = [
+  { value: 'vector', label: 'Vector' },
+  { value: 'pixel', label: 'Pixel' },
+];
 
 export interface LoupeControlsProps {
   canvasRef: { current: SceneCanvasApi | null };
@@ -48,15 +53,13 @@ export function LoupeControls({ canvasRef, source }: LoupeControlsProps): ReactE
       </Switch>
       {loupe.visible && (
         <>
-          <RadioGroup
-            aria-label="Loupe mode"
-            orientation="horizontal"
+          <ToggleBar<LoupeMode>
+            size="sm"
+            ariaLabel="Loupe mode"
+            items={LOUPE_MODES}
             value={loupe.mode}
-            onChange={(v) => loupe.setMode(v as LoupeMode)}
-          >
-            <Radio value="vector">Vector</Radio>
-            <Radio value="pixel">Pixel</Radio>
-          </RadioGroup>
+            onChange={(v) => { if (v) loupe.setMode(v); }}
+          />
           <NumberField
             aria-label="Magnification"
             className="wd-loupe-factor"

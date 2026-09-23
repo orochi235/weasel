@@ -8,7 +8,9 @@ export { solidColorOf, strokeColorOf } from './components/paintValue';
 export * from './components/ActionBar';
 export * from './components/Badge';
 export * from './components/Button';
+export * from './components/Code';
 export * from './components/DataGrid';
+export * from './components/DetailList';
 export * from './components/Disclosure';
 export * from './components/DragHandleGlyph';
 export * from './components/Keycaps';
@@ -17,11 +19,14 @@ export * from './components/Slider';
 export * from './components/ItemList';
 export * from './components/ListEditor';
 export * from './components/ToggleBar';
+export * from './components/ColorModeControl';
 export * from './components/OptionsBar';
 export * from './components/ButtonBar';
 export * from './components/ToolOptionsBar';
 export * from './components/PaintInput';
 export * from './components/PaintField';
+export * from './components/FillStrokeSwatch';
+export * from './components/SwatchGrid';
 export * from './components/MeshEditor';
 export * from './components/PatternPicker';
 export * from './components/Powerline';
@@ -42,6 +47,7 @@ export * from './components/Input';
 export * from './components/Checkbox';
 export * from './components/Switch';
 export * from './components/Tabs';
+export * from './components/Tree';
 export * from './components/RadioGroup';
 export * from './components/NumberField';
 export * from './components/Select';
@@ -89,6 +95,7 @@ export type {
   UseReorderDragListOptions,
   ReorderDragState,
   ReorderDragHandlers,
+  PressModifiers,
 } from './useReorderDragList';
 export { HANDLE_SIZE_TOKENS, handleHalf, handleSize } from './handles';
 export type { HandleSizeToken } from './handles';

@@ -1,17 +1,20 @@
 .hud {
   position: absolute;
-  top: 12px;
+  top: var(--wzl-space-6);
   left: 50%;
   translate: -50% 0;
-  padding: 4px 10px;
-  border-radius: 6px;
-  background: rgba(20, 20, 20, 0.78);
-  color: #fff;
-  font: 600 12px/1.2 system-ui, sans-serif;
-  letter-spacing: 0.02em;
+  padding: var(--wzl-space-2) var(--wzl-space-5);
+  border-radius: var(--wzl-radius-md);
+  background: color-mix(in srgb, var(--wzl-surface-raised) 78%, transparent);
+  backdrop-filter: blur(var(--wzl-glass-blur));
+  color: var(--wzl-fg);
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
+  font-variant-numeric: tabular-nums;
   pointer-events: none;
-  z-index: 50;
-  transition: opacity 200ms ease;
+  z-index: var(--wzl-z-overlay);
+  transition: opacity var(--wzl-motion-fast) var(--wzl-ease-out-cubic);
 }
 
 .hudHidden {

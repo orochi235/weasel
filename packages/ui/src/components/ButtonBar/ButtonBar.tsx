@@ -1,6 +1,7 @@
 import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import s from '../segmentedControl.module.css';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
+import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 
 /**
  * One button in an {@link ButtonBar}. `value` is only a React key; the item
@@ -12,7 +13,7 @@ export type ButtonBarItem<V extends string | number = string> = {
   ariaLabel?: string;
   disabled?: boolean;
   onAction: () => void;
-};
+} & SegmentTooltipFields;
 
 /** Segment height and type scale for an {@link ButtonBar}. */
 export type ButtonBarSize = 'sm' | 'md';
@@ -68,18 +69,19 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
       style={style}
     >
       {items.map((item, i) => (
-        <button
-          key={item.value}
-          type="button"
-          aria-label={item.ariaLabel}
-          disabled={item.disabled}
-          tabIndex={roving.tabIndexFor(i)}
-          className={s.segment}
-          onClick={() => fire(i)}
-          onKeyDown={roving.onKeyDown(i)}
-        >
-          {item.label}
-        </button>
+        <SegmentTooltip key={item.value} content={segmentTooltipContent(item)} disabled={item.disabled}>
+          <button
+            type="button"
+            aria-label={item.ariaLabel}
+            disabled={item.disabled}
+            tabIndex={roving.tabIndexFor(i)}
+            className={s.segment}
+            onClick={() => fire(i)}
+            onKeyDown={roving.onKeyDown(i)}
+          >
+            {item.label}
+          </button>
+        </SegmentTooltip>
       ))}
     </div>
   );

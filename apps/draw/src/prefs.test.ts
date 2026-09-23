@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach, vi, beforeAll } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { PREFS_KEY, usePref } from './prefs';
+import { PREFS_KEY, usePref, usePrefsValues, writePref } from './prefs';
 
 // jsdom 26 + Node 26 currently leaves `window.localStorage` returning
 // `undefined` from its native getter. Swap in a plain in-memory Storage so
@@ -125,7 +125,7 @@ describe('usePref', () => {
 
   it('object pref round-trips', async () => {
     const { result } = renderHook(() => usePref('ui.panels'));
-    expect(result.current[0]).toEqual({ document: { hidden: true } });
+    expect(result.current[0]).toEqual({});
     act(() => { result.current[1]({ colors: { hidden: true } }); });
     await flushMicrotasks();
     const parsed = JSON.parse(window.localStorage.getItem(PREFS_KEY)!);
@@ -140,5 +140,30 @@ describe('usePref', () => {
     await flushMicrotasks();
     const parsed = JSON.parse(window.localStorage.getItem(PREFS_KEY)!);
     expect(parsed.tools.pen.autoCommitOnClose).toBe(false);
+  });
+
+  it('a write through one binding reaches every other live binding of the path', async () => {
+    const a = renderHook(() => usePref('view.gridVisible'));
+    const b = renderHook(() => usePref('view.gridVisible'));
+    act(() => { a.result.current[1](false); });
+    expect(b.result.current[0]).toBe(false);
+    await flushMicrotasks();
+    expect(JSON.parse(window.localStorage.getItem(PREFS_KEY)!).view.gridVisible).toBe(false);
+  });
+
+  it('the whole-tree binding and a leaf binding hear each other', () => {
+    const tree = renderHook(() => usePrefsValues());
+    const leaf = renderHook(() => usePref('ui.panels'));
+    act(() => { tree.result.current[1]('ui.panels', { layers: { hidden: true } }); });
+    expect(leaf.result.current[0]).toEqual({ layers: { hidden: true } });
+    act(() => { leaf.result.current[1]({ layers: { collapsed: true } }); });
+    expect((tree.result.current[0] as { ui: { panels: unknown } }).ui.panels)
+      .toEqual({ layers: { collapsed: true } });
+  });
+
+  it('a binding mounted before the pending write flushes reads that write', () => {
+    writePref('view.gridDensity', 40);
+    const { result } = renderHook(() => usePref('view.gridDensity'));
+    expect(result.current[0]).toBe(40);
   });
 });

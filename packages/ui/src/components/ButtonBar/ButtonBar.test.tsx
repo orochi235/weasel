@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { act, render, fireEvent, screen } from '@testing-library/react';
 import { ButtonBar } from './ButtonBar';
 
 function items(onAction = () => {}) {
@@ -49,5 +49,33 @@ describe('ButtonBar', () => {
     const btns = container.querySelectorAll<HTMLButtonElement>('button');
     fireEvent.keyDown(btns[0], { key: 'ArrowRight' });
     expect(document.activeElement).toBe(btns[2]);
+  });
+});
+
+describe('ButtonBar tooltips', () => {
+  it('shows an item tooltip on keyboard focus and keeps arrow navigation', () => {
+    const onAction = vi.fn();
+    const { container } = render(
+      <ButtonBar items={[
+        { value: 'undo', label: 'U', ariaLabel: 'Undo', tooltip: 'Undo (⌘Z)', onAction },
+        { value: 'redo', label: 'R', ariaLabel: 'Redo', tooltip: 'Redo (⇧⌘Z)', onAction },
+      ]} />,
+    );
+    const btns = container.querySelectorAll<HTMLButtonElement>('button');
+    expect(btns[1].tabIndex).toBe(-1);
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => btns[0].focus());
+    expect(screen.getByRole('tooltip').textContent).toBe('Undo (⌘Z)');
+    fireEvent.keyDown(btns[0], { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(btns[1]);
+    fireEvent.click(btns[1]);
+    expect(onAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders no tooltip for an item without one', () => {
+    const { container } = render(<ButtonBar items={items()} />);
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => container.querySelector('button')!.focus());
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 });

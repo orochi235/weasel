@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
 import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
+import { isInControlWithin } from './interactiveTarget';
 
 /** One row in a reorderable list. */
 export interface LayerListItem {
@@ -23,10 +24,17 @@ export interface UseReorderDragListOptions {
   onReorder(ids: string[], targetIndex: number): void;
   /** A press that was released without ever engaging a drag — the click a
    *  list row means by it. Fires for locked rows too, which can be selected
-   *  but not dragged. Modifiers are read at press, not at release. */
+   *  but not dragged. Modifiers are read at press, not at release. When this
+   *  is given, the DOM click that follows the press is dropped, so a row that
+   *  also handles `click` sees one press, not two. A press that starts on a
+   *  control inside the row (a toggle) is left to the control. */
   onPress?(id: string, mods: PressModifiers): void;
   /** Pointer-move distance (px) before pending drag engages. Default 4. */
   threshold?: number;
+  /** Selector matching the container's children that are rows, for a list
+   *  that interleaves other elements (a table's detail rows). Default: every
+   *  child is a row. */
+  rowSelector?: string;
 }
 
 /** Modifier keys held when a press began. */
@@ -58,6 +66,13 @@ export interface ReorderDragHandlers {
     ref: RefCallback<HTMLElement>;
   };
   state: ReorderDragState;
+  /**
+   * Move the row at `index` one place up (`-1`) or down (`1`) — the keyboard
+   * reorder. It moves what a drag of that row would: the whole selection if
+   * the row is in it, else the row alone, never across a locked row. Calls
+   * `onReorder` and returns `true`, or returns `false` when nothing can move.
+   */
+  nudge(id: string, index: number, delta: -1 | 1): boolean;
 }
 
 /**
@@ -75,6 +90,20 @@ function unlockedSegment(items: readonly LayerListItem[], sourceIndex: number): 
     if (items[i]?.locked) { hi = i; break; }
   }
   return [lo, hi];
+}
+
+/** What a drag of the row at `index` carries: the selection within its segment if the row is selected, else the row. */
+function draggedIdsFor(
+  items: readonly LayerListItem[],
+  selectedIds: readonly string[],
+  id: string,
+  index: number,
+): string[] {
+  const [lo, hi] = unlockedSegment(items, index);
+  return (selectedIds.includes(id) ? [...selectedIds] : [id]).filter((x) => {
+    const i = items.findIndex((it) => it.id === x);
+    return i >= lo && i < hi;
+  });
 }
 
 /** Would dropping `draggedIds` at `targetIndex` leave a contiguous block where it already is? */
@@ -125,7 +154,8 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     const [lo, hi] = unlockedSegment(optsRef.current.items, sourceIndex);
     const c = containerRef.current;
     if (!c) return lo;
-    const rows = Array.from(c.children) as HTMLElement[];
+    const sel = optsRef.current.rowSelector;
+    const rows = (sel ? Array.from(c.children).filter((el) => el.matches(sel)) : Array.from(c.children)) as HTMLElement[];
     let raw = rows.length;
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -148,6 +178,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
   const onPointerDownRow = useCallback((id: string, index: number, e: ReactPointerEvent) => {
     const container = containerRef.current;
     if (!container || dragRef.current) return;
+    if (isInControlWithin(e.target, e.currentTarget as Element)) return;
 
     const mods: PressModifiers = {
       shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey,
@@ -163,12 +194,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
         ? Number.POSITIVE_INFINITY
         : (optsRef.current.threshold ?? 4),
       onActivate: (ev) => {
-        const selected = optsRef.current.selectedIds;
-        const [lo, hi] = unlockedSegment(optsRef.current.items, index);
-        draggedIds = (selected.includes(id) ? [...selected] : [id]).filter((x) => {
-          const i = optsRef.current.items.findIndex((it) => it.id === x);
-          return i >= lo && i < hi;
-        });
+        draggedIds = draggedIdsFor(optsRef.current.items, optsRef.current.selectedIds, id, index);
         targetIndex = computeTargetIndex(ev.clientY, index);
         setState({ draggedIds, targetIndex });
       },
@@ -186,7 +212,11 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
         reset();
       },
       onClick: () => {
-        optsRef.current.onPress?.(id, mods);
+        const { onPress } = optsRef.current;
+        if (onPress) {
+          onPress(id, mods);
+          swallowNextClick(container);
+        }
         reset();
       },
       // Every cancel reason — the browser's, a lost capture, an unmount —
@@ -196,7 +226,23 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     });
   }, [computeTargetIndex, reset]);
 
+  const nudge = useCallback((id: string, index: number, delta: -1 | 1): boolean => {
+    const { items, selectedIds, onReorder } = optsRef.current;
+    if (items[index]?.locked) return false;
+    const ids = draggedIdsFor(items, selectedIds, id, index);
+    const at = ids.map((x) => items.findIndex((it) => it.id === x)).sort((a, b) => a - b);
+    const first = at[0];
+    const last = at[at.length - 1];
+    if (first === undefined || last === undefined) return false;
+    const [lo, hi] = unlockedSegment(items, index);
+    const target = delta < 0 ? first - 1 : last + 2;
+    if (target < lo || target > hi || isNoopDrop(items, ids, target)) return false;
+    onReorder(ids, target);
+    return true;
+  }, []);
+
   return {
+    nudge,
     rowProps: (id, index) => ({
       onPointerDown: (e) => onPointerDownRow(id, index, e),
     }),
@@ -205,4 +251,16 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     },
     state,
   };
+}
+
+/**
+ * The session captured the pointer on the container, so browsers disagree on
+ * where the release's click lands; it may still reach the row. `onPress` has
+ * already reported this press, so that click is dropped rather than read as a
+ * second one. It is dispatched in the same task as the release.
+ */
+function swallowNextClick(container: HTMLElement): void {
+  const swallow = (e: Event) => { e.stopPropagation(); };
+  container.addEventListener('click', swallow, true);
+  setTimeout(() => { container.removeEventListener('click', swallow, true); }, 0);
 }

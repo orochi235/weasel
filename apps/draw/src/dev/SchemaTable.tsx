@@ -1,5 +1,36 @@
+import { Code, DataGrid, type DataGridColumn } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 import type { PropertyDescriptor } from './traitSchemas.types';
+
+interface SchemaRow { id: string; prop: PropertyDescriptor }
+
+const COLUMNS: readonly DataGridColumn<SchemaRow>[] = [
+  {
+    id: 'property',
+    header: 'property',
+    sortable: false,
+    render: ({ prop }) => (
+      <>
+        <code className={s.schemaName}>{prop.name}</code>
+        {prop.optional && <span className={s.schemaOptional} aria-label="optional">?</span>}
+      </>
+    ),
+  },
+  {
+    id: 'type',
+    header: 'type',
+    sortable: false,
+    render: ({ prop }) => <Code variant="plain" tone="accent" size="xs">{prop.type}</Code>,
+  },
+  {
+    id: 'default',
+    header: 'default',
+    sortable: false,
+    render: ({ prop }) => (prop.defaultLiteral !== undefined
+      ? <code className={s.schemaDefault}>{prop.defaultLiteral}</code>
+      : <span className={s.schemaMuted}>—</span>),
+  },
+];
 
 /** Renders a list of property descriptors as a compact table. Each row shows
  *  the property name, an optional `?` indicator, the TypeScript type, and the
@@ -16,30 +47,10 @@ export function SchemaTable({
     return <p className={s.empty}>{empty ?? 'No properties extracted.'}</p>;
   }
   return (
-    <table className={s.schemaTable}>
-      <thead>
-        <tr>
-          <th>property</th>
-          <th>type</th>
-          <th>default</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={row.name}>
-            <td>
-              <code className={s.schemaName}>{row.name}</code>
-              {row.optional && <span className={s.schemaOptional} aria-label="optional">?</span>}
-            </td>
-            <td><code className={s.schemaType}>{row.type}</code></td>
-            <td>
-              {row.defaultLiteral !== undefined
-                ? <code className={s.schemaDefault}>{row.defaultLiteral}</code>
-                : <span className={s.schemaMuted}>—</span>}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <DataGrid
+      className={s.schemaTable}
+      rows={rows.map((prop) => ({ id: prop.name, prop }))}
+      columns={COLUMNS}
+    />
   );
 }

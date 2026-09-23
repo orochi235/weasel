@@ -1,8 +1,7 @@
-import { ThemeProvider, useThemeOptional } from '@weasel-js/theme/react';
+import { ThemeProvider, useResolvedColorMode, useThemeOptional } from '@weasel-js/theme/react';
 import type { ReactNode } from 'react';
 import type { LabMode } from '../state/types';
 import { interstellarTheme } from '../theme/interstellar';
-import { useResolvedMode } from './useSystemMode';
 
 /** Props for `<LabRoot>`. */
 export interface LabRootProps {
@@ -24,7 +23,7 @@ export interface LabRootProps {
  *  Pair it with `import '@weasel-js/labkit/styles.css'`, which is what defines
  *  the rules this element scopes. */
 export function LabRoot({ children, mode = 'auto', className }: LabRootProps) {
-  const resolved = useResolvedMode(mode);
+  const resolved = useResolvedColorMode(mode);
   const outer = useThemeOptional();
 
   // Overlays portal here rather than to the themed wrapper above: `.lk-root`

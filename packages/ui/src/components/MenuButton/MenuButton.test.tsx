@@ -49,3 +49,40 @@ describe('MenuButton', () => {
     expect(onAction).not.toHaveBeenCalled();
   });
 });
+
+/** Enter keyboard modality, then focus — RAC only opens tooltips on focus-visible. */
+function keyboardFocus(el: HTMLElement) {
+  fireEvent.keyDown(document.body, { key: 'Tab' });
+  act(() => el.focus());
+}
+
+describe('MenuButton tooltip', () => {
+  it('shows the shortcut after a string label', () => {
+    render(<MenuButton label="New" shortcut="⌘N" items={ITEMS} onAction={() => {}} />);
+    const btn = screen.getByRole('button', { name: /New/ });
+    keyboardFocus(btn);
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toContain('New (⌘N)');
+    expect(btn.getAttribute('aria-describedby')).toBe(tip.id);
+  });
+
+  it('lets tooltip replace the default text, and still opens its menu', () => {
+    const onAction = vi.fn();
+    render(<MenuButton label="New" tooltip="New document" items={ITEMS} onAction={onAction} />);
+    const btn = screen.getByRole('button', { name: /New/ });
+    keyboardFocus(btn);
+    expect(screen.getByRole('tooltip').textContent).toContain('New document');
+    act(() => {
+      fireEvent.click(btn);
+    });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Garden' }));
+    expect(onAction).toHaveBeenCalledWith('garden');
+  });
+
+  it('adds no tooltip without either field', () => {
+    render(<MenuButton label="New" items={ITEMS} onAction={() => {}} />);
+    const btn = screen.getByRole('button', { name: /New/ });
+    keyboardFocus(btn);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+});

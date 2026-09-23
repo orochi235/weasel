@@ -14,6 +14,8 @@
  * re-exports the types, swap these for the imports.
  */
 
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 export interface DispatchLogEntry {
   kind: 'dispatch';
   ts: number;
@@ -72,4 +74,47 @@ export function formatEnabled(v: boolean | string): string {
   if (v === true) return 'yes';
   if (v === false) return 'no';
   return v;
+}
+
+const POLL_MS = 250;
+
+export interface DispatchTraceLog {
+  entries: readonly TraceLogEntry[];
+  /** Wall clock at the last poll, for computing each entry's age. */
+  now: number;
+  clear: () => void;
+}
+
+/** Polls the log every 250 ms while `enabled`. `entries` only changes when
+ *  the log did; `now` advances every tick so ages count up while idle. */
+export function useDispatchTraceLog(enabled = true): DispatchTraceLog {
+  const [entries, setEntries] = useState<TraceLogEntry[]>(() => readLog().slice());
+  const [now, setNow] = useState<number>(() => Date.now());
+  const lastLenRef = useRef<number>(entries.length);
+  const lastTsRef = useRef<number>(entries.length ? entries[entries.length - 1]!.ts : 0);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const id = window.setInterval(() => {
+      const log = readLog();
+      const len = log.length;
+      const lastTs = len ? log[len - 1]!.ts : 0;
+      if (len !== lastLenRef.current || lastTs !== lastTsRef.current) {
+        lastLenRef.current = len;
+        lastTsRef.current = lastTs;
+        setEntries(log.slice());
+      }
+      setNow(Date.now());
+    }, POLL_MS);
+    return () => window.clearInterval(id);
+  }, [enabled]);
+
+  const clear = useCallback(() => {
+    clearLog();
+    setEntries([]);
+    lastLenRef.current = 0;
+    lastTsRef.current = 0;
+  }, []);
+
+  return { entries, now, clear };
 }

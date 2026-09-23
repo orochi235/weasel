@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Select } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
+import { DevShell } from './DevShell';
 import { RegistryTree } from './RegistryTree';
 import { RegistryDetail } from './RegistryDetail';
 import { RegistryProbe, type RegistrySnapshot } from './registryProbe';
@@ -24,11 +26,11 @@ import {
 } from './registryData';
 
 const BUNDLE_OPTIONS = [
-  { id: 'all', label: 'All bundles' },
-  { id: 'minimal', label: 'Minimal' },
-  { id: 'standard', label: 'Standard' },
-  { id: 'exhaustive', label: 'Exhaustive' },
-] as const;
+  { value: 'all', label: 'All bundles' },
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'exhaustive', label: 'Exhaustive' },
+];
 
 /** Parse the selected-entry coordinates out of the URL hash. The inspector
  *  encodes the user's selection as `#/dev/registry?kind=<entryKind>&id=<entryId>`
@@ -52,12 +54,6 @@ function writeSelectionToHash(sel: { kind: string; id: string } | null): void {
  *  Mounted as a sibling to ToolkitBuilder. See
  *  `docs/superpowers/specs/2026-05-16-bundle-inspector-design.md`. */
 export function RegistryInspector() {
-  useEffect(() => {
-    const prev = document.title;
-    document.title = 'Bundle Inspector';
-    return () => { document.title = prev; };
-  }, []);
-
   const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], routing: [], properties: [] });
   const [bundleFilter, setBundleFilter] = useState<string>('all');
   const [textFilter, setTextFilter] = useState<string>('');
@@ -72,7 +68,7 @@ export function RegistryInspector() {
   const onSnapshot = useCallback((snap: RegistrySnapshot) => setRuntime(snap), []);
 
   const bundles = useMemo(() => collectBundles(), []);
-  const icons = useMemo(() => collectIcons(), []);
+  const icons = useMemo(() => collectIcons(runtime.actions), [runtime.actions]);
   const shapeKinds = useMemo(() => collectShapeTrait(runtime.tools), [runtime.tools]);
   const routingEntries = useMemo(() => collectRoutingTrait(runtime.routing), [runtime.routing]);
   const propertiesEntries = useMemo(() => collectPropertiesTrait(runtime.properties), [runtime.properties]);
@@ -191,51 +187,50 @@ export function RegistryInspector() {
   }, [nodes]);
 
   return (
-    <div className={s.root}>
-      <RegistryProbe onSnapshot={onSnapshot} />
-      <header className={s.header}>
-        <h1 className={s.title}>Bundle Inspector</h1>
-        <label className={s.bundlePicker}>
-          bundle
-          <select
-            aria-label="bundle filter"
-            value={bundleFilter}
-            onChange={(e) => setBundleFilter(e.target.value)}
-          >
-            {BUNDLE_OPTIONS.map((b) => (
-              <option key={b.id} value={b.id}>{b.label}</option>
-            ))}
-          </select>
-        </label>
-      </header>
-      <div className={s.layout}>
-        <aside className={s.tree}>
-          <RegistryTree
-            nodes={nodes}
-            selected={selected}
-            onSelect={setSelected}
-            filter={textFilter}
-            onFilterChange={setTextFilter}
-            getCount={(e) => countForEntry(e, runtime.tools, runtime.actions)}
-          />
-        </aside>
-        <section className={s.detail}>
-          {selected
-            ? <RegistryDetail
-                entry={selected}
-                tools={runtime.tools}
-                actions={runtime.actions}
-                category={nodes.find((n) => n.entries.some((e) => e.kind === selected.kind && e.id === selected.id)) ?? null}
-                onNavigate={(t) => {
-                  for (const node of nodes) {
-                    const hit = node.entries.find((e) => e.kind === t.kind && e.id === t.id);
-                    if (hit) { setSelected(hit); return; }
-                  }
-                }}
-              />
-            : <p className={s.empty}>Select an entry to see details.</p>}
-        </section>
+    <DevShell
+      title="Bundle Inspector"
+      header={
+        <Select
+          label="bundle"
+          orientation="row"
+          width="fit"
+          options={BUNDLE_OPTIONS}
+          selectedKey={bundleFilter}
+          onSelectionChange={setBundleFilter}
+        />
+      }
+    >
+      <div className={s.root}>
+        <RegistryProbe onSnapshot={onSnapshot} />
+        <div className={s.layout}>
+          <aside className={s.tree}>
+            <RegistryTree
+              nodes={nodes}
+              selected={selected}
+              onSelect={setSelected}
+              filter={textFilter}
+              onFilterChange={setTextFilter}
+              getCount={(e) => countForEntry(e, runtime.tools, runtime.actions)}
+            />
+          </aside>
+          <section className={s.detail}>
+            {selected
+              ? <RegistryDetail
+                  entry={selected}
+                  tools={runtime.tools}
+                  actions={runtime.actions}
+                  category={nodes.find((n) => n.entries.some((e) => e.kind === selected.kind && e.id === selected.id)) ?? null}
+                  onNavigate={(t) => {
+                    for (const node of nodes) {
+                      const hit = node.entries.find((e) => e.kind === t.kind && e.id === t.id);
+                      if (hit) { setSelected(hit); return; }
+                    }
+                  }}
+                />
+              : <p className={s.empty}>Select an entry to see details.</p>}
+          </section>
+        </div>
       </div>
-    </div>
+    </DevShell>
   );
 }

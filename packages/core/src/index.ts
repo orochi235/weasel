@@ -124,7 +124,8 @@ export { useKeyState } from './input/useKeyState';
 export type { UseKeyStateOptions } from './input/useKeyState';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
-export { ActionsProvider, ActionsScope, useActionsRegistry, useAction } from '@weasel-js/routing/react';
+export { ActionsProvider, ActionsScope, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
+export type { OngoingAction } from '@weasel-js/routing/react';
 export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
 export { ActionDisabledReason } from '@weasel-js/routing';
 export type { Action, ActionDispatch, ActionPresentation, ActionVariant } from '@weasel-js/routing';
@@ -646,6 +647,7 @@ export {
 // ─── Paint types: FillStyle, Stroke, gradients ──────────────────────────────
 export {
   alignedStrokeRect,
+  contrastLineColor,
   dashForStrokeStyle,
   resolveScreenLength,
   strokeDashStyleOf,
@@ -1197,6 +1199,45 @@ export {
   DivideIcon,
   CropIcon,
 } from './interactions/actions/defaults/icons/booleanIcons';
+
+// ─── Default edit-action icons ──────────────────────────────────────────────
+// Shipped on the clipboard, duplicate, group, reorder and flip actions.
+export {
+  CutIcon,
+  CopyIcon,
+  PasteIcon,
+  DuplicateIcon,
+  GroupIcon,
+  UngroupIcon,
+  BringForwardIcon,
+  BringToFrontIcon,
+  SendBackwardIcon,
+  SendToBackIcon,
+  FlipXIcon,
+  FlipYIcon,
+} from './interactions/actions/defaults/icons/editIcons';
+// ─── Default align and distribute icons ─────────────────────────────────────
+export {
+  AlignLeftIcon,
+  AlignCenterXIcon,
+  AlignRightIcon,
+  AlignTopIcon,
+  AlignCenterYIcon,
+  AlignBottomIcon,
+} from './interactions/actions/defaults/icons/alignIcons';
+export {
+  DistributeHorizontalIcon,
+  DistributeVerticalIcon,
+} from './interactions/actions/defaults/icons/distributeIcons';
+// Undo, redo and delete; drawn in @weasel-js/ui's icon pipeline, which emits
+// their markup here and re-exports these components.
+export {
+  UndoIcon,
+  RedoIcon,
+  DeleteIcon,
+  type ActionGlyphProps,
+} from './interactions/actions/defaults/icons/actionGlyphIcons';
+export { ACTION_GLYPHS } from './interactions/actions/defaults/icons/actionGlyphs';
 
 // ─── Trailing type re-exports ────────────────────────────────────────────────
 // Types reachable through the public API but previously only importable via

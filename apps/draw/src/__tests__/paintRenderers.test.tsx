@@ -13,8 +13,9 @@ const STROKE_PAINT_LEAF = {
   alpha: true,
 } as unknown as PropertyRenderContext['pref'];
 
-function ctxWith(value: unknown): PropertyRenderContext {
+function ctxWith(value: unknown, selectionKey = ''): PropertyRenderContext {
   return {
+    selectionKey,
     path: 'data.stroke.paint',
     pref: STROKE_PAINT_LEAF,
     value,
@@ -57,5 +58,21 @@ describe("WeaselDraw's data.stroke.paint renderer", () => {
     );
     expect(screen.getByRole('radio', { name: 'Linear' })).toBeChecked();
     expect(screen.getByLabelText('Stop 1 at 0%')).toBeInTheDocument();
+  });
+});
+
+describe("WeaselDraw's paint renderers across selections", () => {
+  // Proxy: PaintInput's per-kind memory lives in its own state, so a new
+  // selection has to mount a fresh one. Element identity is what shows it.
+  it('remount the paint control when the selection changes', () => {
+    const at = (key: string) => (
+      <ActionsProvider>{WD_RENDERERS['data.fill'](ctxWith(GRADIENT, key))}</ActionsProvider>
+    );
+    const { rerender } = render(at('a'));
+    const before = screen.getByRole('radio', { name: 'Linear' });
+    rerender(at('a'));
+    expect(screen.getByRole('radio', { name: 'Linear' })).toBe(before);
+    rerender(at('b'));
+    expect(screen.getByRole('radio', { name: 'Linear' })).not.toBe(before);
   });
 });

@@ -1,6 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { createRef } from 'react';
+import { render, fireEvent, act, screen } from '@testing-library/react';
 import { Badge } from './Badge';
+import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
 
 describe('Badge', () => {
   it('renders label as a span by default', () => {
@@ -97,5 +101,81 @@ describe('Badge removable', () => {
       <Badge onRemove={() => {}} removeLabel="Dismiss">x</Badge>,
     );
     expect(getByRole('button', { name: 'Dismiss' })).toBeDefined();
+  });
+});
+
+// jsdom resolves no var() and the CSS-module proxy answers any key, so these
+// read the stylesheet as text — a proxy for the rules existing at all.
+describe('Badge stylesheet', () => {
+  const css = readFileSync(resolve(__dirname, 'Badge.module.css'), 'utf8');
+
+  it('paints the success tone from --wzl-success', () => {
+    const { container } = render(<Badge tone="success">ok</Badge>);
+    expect(container.firstElementChild?.getAttribute('data-tone')).toBe('success');
+    expect(css).toMatch(/\.badge\[data-tone='success'\]\s*\{\s*--badge-edge: var\(--wzl-success\);/);
+  });
+
+  it('sizes xs from the 2xs type step', () => {
+    const { container } = render(<Badge size="xs">3</Badge>);
+    expect(container.firstElementChild?.getAttribute('data-size')).toBe('xs');
+    expect(css).toMatch(/\.badge\[data-size='xs'\]\s*\{[^}]*--badge-font-size: var\(--wzl-font-size-2xs\);/);
+  });
+});
+
+/** Enter keyboard modality, then focus — RAC only opens tooltips on focus-visible. */
+function keyboardFocus(el: HTMLElement) {
+  fireEvent.keyDown(document.body, { key: 'Tab' });
+  act(() => el.focus());
+}
+
+describe('Badge as a tooltip trigger', () => {
+  it('forwards its ref and DOM attributes to the root element', () => {
+    const ref = createRef<HTMLElement>();
+    const onFocus = vi.fn();
+    const { container } = render(
+      <Badge ref={ref} id="b1" data-kind="predicate" title="t" onFocus={onFocus} tabIndex={0}>x</Badge>,
+    );
+    const el = container.firstElementChild as HTMLElement;
+    expect(ref.current).toBe(el);
+    expect(el.id).toBe('b1');
+    expect(el.getAttribute('data-kind')).toBe('predicate');
+    expect(el.getAttribute('title')).toBe('t');
+    fireEvent.focus(el);
+    expect(onFocus).toHaveBeenCalledTimes(1);
+    expect(el.getAttribute('data-focused')).toBe('true');
+  });
+
+  it('opens a kit tooltip under TooltipTrigger and Focusable', () => {
+    render(
+      <TooltipTrigger>
+        <Focusable>
+          <Badge role="img" aria-label="Predicate">?</Badge>
+        </Focusable>
+        <Tooltip>Matched by a predicate</Tooltip>
+      </TooltipTrigger>,
+    );
+    const badge = screen.getByRole('img', { name: 'Predicate' });
+    keyboardFocus(badge);
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toContain('Matched by a predicate');
+    expect(badge.getAttribute('aria-describedby')).toBe(tip.id);
+  });
+
+  it('makes a plain badge a focusable trigger with the tooltip prop', () => {
+    render(<Badge tooltip="Matched by a predicate">?</Badge>);
+    const badge = screen.getByRole('img', { name: '?' });
+    expect(badge.tagName).toBe('SPAN');
+    expect(badge.tabIndex).toBe(0);
+    keyboardFocus(badge);
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toContain('Matched by a predicate');
+    expect(badge.getAttribute('aria-describedby')).toBe(tip.id);
+  });
+
+  it('keeps an interactive badge a button when it has a tooltip', () => {
+    render(<Badge tooltip="Filter by tag" onClick={() => {}}>tag</Badge>);
+    const badge = screen.getByRole('button', { name: 'tag' });
+    keyboardFocus(badge);
+    expect(screen.getByRole('tooltip').textContent).toContain('Filter by tag');
   });
 });

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect } from '@weasel-js/forge/play';
 import { useState } from 'react';
-import { Select, SelectItem } from './Select';
+import { Select, SelectItem, SelectSection } from './Select';
 
 const meta: Meta<typeof Select> = {
   title: 'Primitives/Select',
@@ -69,6 +69,55 @@ export const FitWidth: Story = {
   ),
 };
 
+/**
+ * `orientation='row'` sets the label beside the trigger. Filling, the trigger
+ * takes the rest of the row; fitted, the pair sits at its own width. A
+ * description drops to a line of its own.
+ */
+export const LabelBeside: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 320 }}>
+      <Select label="Bundle" orientation="row" defaultSelectedKey="g" options={COLORS} />
+      <Select label="Bundle" orientation="row" width="fit" defaultSelectedKey="g" options={COLORS} />
+      <Select
+        label="Bundle"
+        orientation="row"
+        description="Filters the tree to one bundle's members."
+        defaultSelectedKey="g"
+        options={COLORS}
+      />
+    </div>
+  ),
+};
+
+/** Titled sections, from `options` entries with their own `title` and
+ *  `options`, or from `<SelectSection>` in the children form. */
+export const Sections: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 240 }}>
+      <Select
+        label="Font"
+        defaultSelectedKey="inter"
+        options={[
+          { value: 'system', label: 'System' },
+          { title: 'Sans', options: [{ value: 'inter', label: 'Inter' }, { value: 'helvetica', label: 'Helvetica' }] },
+          { title: 'Serif', options: [{ value: 'garamond', label: 'Garamond' }, { value: 'charter', label: 'Charter' }] },
+        ]}
+      />
+      <Select label="Blend" defaultSelectedKey="multiply">
+        <SelectSection title="Darken">
+          <SelectItem id="darken">Darken</SelectItem>
+          <SelectItem id="multiply">Multiply</SelectItem>
+        </SelectSection>
+        <SelectSection title="Lighten">
+          <SelectItem id="lighten">Lighten</SelectItem>
+          <SelectItem id="screen">Screen</SelectItem>
+        </SelectSection>
+      </Select>
+    </div>
+  ),
+};
+
 export const Disabled: Story = {
   render: () => <Select label="Color" options={COLORS} defaultSelectedKey="r" isDisabled />,
 };
@@ -123,6 +172,23 @@ export const PopupPlacement: Story = {
     <div style={{ display: 'flex', gap: 24 }}>
       <Select label="Over (default)" options={COLORS} defaultSelectedKey="g" />
       <Select label="Below" popup="below" options={COLORS} defaultSelectedKey="g" />
+    </div>
+  ),
+};
+
+/** `shortcut` hovers as `Name (⌘K)`; `tooltip` replaces that text with a
+ *  longer hint for a trigger whose value alone doesn't say what it sets. */
+export const Tooltips: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 24 }}>
+      <Select aria-label="Color" shortcut="⌘K" width="fit" options={COLORS} defaultSelectedKey="g" />
+      <Select
+        aria-label="Color"
+        tooltip="Channel the curve edits"
+        width="fit"
+        options={COLORS}
+        defaultSelectedKey="b"
+      />
     </div>
   ),
 };

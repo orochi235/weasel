@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, createEvent, screen, act } from '@testing-library/react';
-import { Select, SelectItem } from './Select';
+import { Select, SelectItem, SelectSection } from './Select';
 import s from './Select.module.css';
+import { fieldClasses } from '../Field/Field';
 
 const OPTIONS = [
   { value: 'r' as const, label: 'Red' },
@@ -231,5 +234,145 @@ describe('Select', () => {
       act(() => { fireEvent.keyDown(listbox, { key: 'B' }); fireEvent.keyUp(listbox, { key: 'B' }); });
       expect(screen.getByRole('option', { name: 'Blue' })).toHaveAttribute('data-focused', 'true');
     });
+  });
+
+  describe('orientation', () => {
+    const css = readFileSync(resolve(__dirname, 'Select.module.css'), 'utf8');
+
+    it('stacks the label above the trigger by default', () => {
+      render(<Select label="Bundle" options={OPTIONS} />);
+      const root = screen.getByText('Bundle').closest(`.${fieldClasses.root}`)!;
+      expect(root.className).not.toContain(fieldClasses.row);
+    });
+
+    it("sets the label beside the trigger with orientation='row', still labeling it", () => {
+      render(<Select label="Bundle" orientation="row" options={OPTIONS} />);
+      const root = screen.getByText('Bundle').closest(`.${fieldClasses.root}`)!;
+      expect(root.className).toContain(fieldClasses.row);
+      expect(root.className).toContain(s.row);
+      expect(screen.getByRole('button', { name: /Bundle/ })).toBeTruthy();
+    });
+
+    it('keeps the label at its own width and lets description and error take a line of their own', () => {
+      // (0,3,0) so Field's own `.row .label { flex: 1 }` cannot win on source order.
+      expect(css).toMatch(/\.field\.row \.label\s*\{[^}]*flex:\s*0 0 auto/);
+      expect(css).toMatch(/\.field\.row\s*\{[^}]*flex-wrap:\s*wrap/);
+      expect(css).toMatch(/\.field\.row \.below\s*\{[^}]*flex-basis:\s*100%/);
+    });
+
+    it('marks the label and the hint/error slots with the local classes the row rules key off', () => {
+      const { container } = render(
+        <Select label="Bundle" orientation="row" description="Which bundle" options={OPTIONS} />,
+      );
+      expect(container.querySelector(`.${s.label}`)?.textContent).toBe('Bundle');
+      expect(container.querySelector(`.${s.below}`)?.textContent).toBe('Which bundle');
+    });
+  });
+});
+
+describe('Select sections', () => {
+  const open = () => act(() => { fireEvent.click(screen.getByRole('button', { name: /Font/ })); });
+
+  it('groups SelectItem rows under a SelectSection title', () => {
+    const onChange = vi.fn();
+    render(
+      <Select label="Font" onSelectionChange={onChange}>
+        <SelectSection title="Sans">
+          <SelectItem id="inter">Inter</SelectItem>
+          <SelectItem id="arial">Arial</SelectItem>
+        </SelectSection>
+        <SelectSection title="Serif">
+          <SelectItem id="garamond">Garamond</SelectItem>
+        </SelectSection>
+      </Select>,
+    );
+    open();
+    const sans = screen.getByRole('group', { name: 'Sans' });
+    expect(Array.from(sans.querySelectorAll('[role="option"]')).map((o) => o.textContent)).toEqual(['Inter', 'Arial']);
+    fireEvent.click(screen.getByRole('option', { name: 'Garamond' }));
+    expect(onChange).toHaveBeenCalledWith('garamond');
+  });
+
+  it('takes titled groups in the options form, beside plain options', () => {
+    const onChange = vi.fn();
+    render(
+      <Select
+        label="Font"
+        onSelectionChange={onChange}
+        options={[
+          { value: 'system', label: 'System' },
+          { title: 'Sans', options: [{ value: 'inter', label: 'Inter' }] },
+          { title: 'Serif', options: [{ value: 'garamond', label: 'Garamond' }] },
+        ]}
+      />,
+    );
+    open();
+    expect(screen.getByRole('group', { name: 'Serif' }).textContent).toContain('Garamond');
+    expect(screen.getByRole('option', { name: 'System' }).closest('[role="group"]')).toBeNull();
+    fireEvent.click(screen.getByRole('option', { name: 'Inter' }));
+    expect(onChange).toHaveBeenCalledWith('inter');
+  });
+
+  it("sizes a width='fit' trigger against the options inside sections", () => {
+    const { container } = render(
+      <Select label="Font" width="fit" options={[{ title: 'Sans', options: [{ value: 'inter', label: 'Inter' }] }]} />,
+    );
+    const inOptions = container.querySelector('.' + s.sizer) as HTMLElement;
+    expect(Array.from(inOptions.children).map((c) => c.textContent)).toEqual(['Inter']);
+  });
+
+  it("sizes a width='fit' trigger against SelectItems inside a SelectSection", () => {
+    const { container } = render(
+      <Select label="Font" width="fit">
+        <SelectItem id="system">System</SelectItem>
+        <SelectSection title="Serif">
+          <SelectItem id="garamond">Garamond</SelectItem>
+        </SelectSection>
+      </Select>,
+    );
+    const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
+    expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['System', 'Garamond']);
+  });
+});
+
+/** Enter keyboard modality, then focus — RAC only opens tooltips on focus-visible. */
+function keyboardFocusTrigger(el: HTMLElement) {
+  fireEvent.keyDown(document.body, { key: 'Tab' });
+  act(() => el.focus());
+}
+
+describe('Select tooltip', () => {
+  it('shows the shortcut after the accessible name', () => {
+    render(<Select aria-label="Color" shortcut="⌘K" options={OPTIONS} defaultSelectedKey="r" />);
+    const trigger = screen.getByRole('button');
+    keyboardFocusTrigger(trigger);
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toContain('Color (⌘K)');
+    expect(trigger.getAttribute('aria-describedby')).toContain(tip.id);
+  });
+
+  it('names the shortcut after a string label', () => {
+    render(<Select label="Color" shortcut="⌘K" options={OPTIONS} defaultSelectedKey="r" />);
+    keyboardFocusTrigger(screen.getByRole('button'));
+    expect(screen.getByRole('tooltip').textContent).toContain('Color (⌘K)');
+  });
+
+  it('lets tooltip replace the default text, and still opens its list', () => {
+    const onChange = vi.fn();
+    render(
+      <Select aria-label="Color" tooltip="Pick a channel" options={OPTIONS} defaultSelectedKey="r" onSelectionChange={onChange} />,
+    );
+    const trigger = screen.getByRole('button');
+    keyboardFocusTrigger(trigger);
+    expect(screen.getByRole('tooltip').textContent).toContain('Pick a channel');
+    act(() => { fireEvent.click(trigger); });
+    fireEvent.click(screen.getByRole('option', { name: 'Green' }));
+    expect(onChange).toHaveBeenCalledWith('g');
+  });
+
+  it('adds no tooltip without either field', () => {
+    render(<Select aria-label="Color" options={OPTIONS} defaultSelectedKey="r" />);
+    keyboardFocusTrigger(screen.getByRole('button'));
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 });

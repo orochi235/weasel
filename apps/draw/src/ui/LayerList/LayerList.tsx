@@ -1,6 +1,12 @@
-import type { ReactNode, CSSProperties } from 'react';
+import type { ReactNode } from 'react';
 import { useRef } from 'react';
-import { ItemList, useReorderDragList, type ItemListRow, type LayerListItem } from '@weasel-js/ui';
+import {
+  ItemList,
+  useReorderDragList,
+  type ItemListRow,
+  type LayerListItem,
+  type PressModifiers,
+} from '@weasel-js/ui';
 import s from './LayerList.module.css';
 
 export type { LayerListItem };
@@ -21,33 +27,35 @@ export function LayerList(props: LayerListProps) {
   const propsRef = useRef({ selectedIds, onSelect });
   propsRef.current = { selectedIds, onSelect };
 
-  const drag = useReorderDragList({
-    items,
-    selectedIds,
-    onReorder,
-    onPress: (id, mods) => {
-      const { selectedIds: sel, onSelect: sel_cb } = propsRef.current;
-      const targetItem = items.find((it) => it.id === id);
-      if (targetItem?.locked) {
-        // Locked rows are always exclusive — ignore shift modifier so they
-        // never combine with other rows in a multi-selection.
-        sel_cb([id]);
-      } else if (mods.shiftKey) {
-        // Strip any currently-selected locked ids before applying the toggle
-        // so a leftover locked selection (e.g., Page) doesn't carry through
-        // when the user starts building a multi-selection of regular rows.
-        const lockedIds = new Set(items.filter((it) => it.locked).map((it) => it.id));
-        const filtered = sel.filter((x) => !lockedIds.has(x));
-        if (filtered.includes(id)) {
-          sel_cb(filtered.filter((x) => x !== id));
-        } else {
-          sel_cb([...filtered, id]);
-        }
+  const press = (id: string, mods: PressModifiers) => {
+    const { selectedIds: sel, onSelect: sel_cb } = propsRef.current;
+    const targetItem = items.find((it) => it.id === id);
+    if (targetItem?.locked) {
+      // Locked rows are always exclusive — ignore shift modifier so they
+      // never combine with other rows in a multi-selection.
+      sel_cb([id]);
+    } else if (mods.shiftKey) {
+      // Strip any currently-selected locked ids before applying the toggle
+      // so a leftover locked selection (e.g., Page) doesn't carry through
+      // when the user starts building a multi-selection of regular rows.
+      const lockedIds = new Set(items.filter((it) => it.locked).map((it) => it.id));
+      const filtered = sel.filter((x) => !lockedIds.has(x));
+      if (filtered.includes(id)) {
+        sel_cb(filtered.filter((x) => x !== id));
       } else {
-        sel_cb([id]);
+        sel_cb([...filtered, id]);
       }
-    },
-  });
+    } else {
+      sel_cb([id]);
+    }
+  };
+  // Locked rows never join a multi-selection, so a range passes over them.
+  const selectRange = (ids: string[]) => {
+    const locked = new Set(items.filter((it) => it.locked).map((it) => it.id));
+    const range = ids.filter((id) => !locked.has(id));
+    if (range.length > 0) propsRef.current.onSelect(range);
+  };
+  const drag = useReorderDragList({ items, selectedIds, onReorder, onPress: press });
 
   const rows: ItemListRow[] = items.map((item, i) => {
     const isSelected = selectedIds.includes(item.id);
@@ -55,7 +63,7 @@ export function LayerList(props: LayerListProps) {
       id: item.id,
       label: item.label,
       selected: isSelected,
-      className: (drag.state.draggedIds?.includes(item.id) ?? false) ? s.dragging : undefined,
+      dragging: drag.state.draggedIds?.includes(item.id) ?? false,
       leading: item.swatch !== undefined
         ? <span className={s.swatch} style={{ background: item.swatch }} aria-hidden="true" />
         : undefined,
@@ -73,21 +81,13 @@ export function LayerList(props: LayerListProps) {
       rows={rows}
       className={className}
       empty={empty}
-      ref={drag.containerProps.ref as React.RefCallback<HTMLDivElement>}
-      overlay={drag.state.targetIndex !== null
-        // Pixel positioning: the offset depends on targetIndex at runtime, so
-        // it cannot be a static class.
-        ? <div className={s.dropIndicator} style={dropIndicatorStyle(drag.state.targetIndex)} />
-        : undefined}
+      ref={drag.containerProps.ref}
+      selection="multi"
+      onActivate={(id, _i, mods) => press(id, mods)}
+      onSelectRange={selectRange}
+      onNudge={drag.nudge}
+      containerProps={{ 'aria-label': 'Layers' }}
+      dropIndex={drag.state.targetIndex}
     />
   );
-}
-
-function dropIndicatorStyle(targetIndex: number): CSSProperties {
-  // Must track `ItemList`'s row height — 24px row + 1px gap per row, with no
-  // top padding on the container.
-  const ROW_H = 24;
-  const GAP = 1;
-  const y = targetIndex * (ROW_H + GAP) - GAP / 2;
-  return { top: `${y}px` };
 }

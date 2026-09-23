@@ -1,8 +1,9 @@
-import type { ComponentType } from 'react';
+import { isValidElement, type ComponentType } from 'react';
 import * as Weasel from '@weasel-js/core';
 import { defaultNodeRouting, defaultNodeProperties, type NodeRoutingEntry, type NodePropertiesEntry, type ToolPrefGroup } from '@weasel-js/core';
 import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
-import * as ActionIcons from '../actionIcons';
+import type { ShortcutInput } from '@weasel-js/ui';
+import * as AppIcons from '../actionIcons';
 import * as KindIcons from '../kindIcons';
 
 /** Discriminated leaf entry. One of these per row in the tree's right pane. */
@@ -115,9 +116,9 @@ export interface ToolEntry {
    *  covers the regular active/hotkey slots; `ambient` is the always-on
    *  slot. */
   slot: 'registry' | 'ambient';
-  /** Glyphs for the tool-switch keybinding (`ToolDef.keybinding`). Distinct
-   *  from gesture shortcuts inside the tool. */
-  switchShortcutParts?: readonly string[];
+  /** The tool-switch keybinding (`ToolDef.keybinding`). Distinct from
+   *  gesture shortcuts inside the tool. */
+  switchShortcut?: ShortcutInput;
   /** Hotkey-slot trigger key (`space|alt|ctrl|meta|shift`) when set — the
    *  press-and-hold slot. */
   hotkey?: string;
@@ -148,12 +149,11 @@ export interface ActionEntry {
   kind: 'action';
   id: string;
   label: string;
-  /** Per-glyph display chips for the action's default `KeyBinding`, ready
-   *  for the shared `<Keycaps>` component. `undefined` when the action has
-   *  no default binding. */
-  shortcutParts?: readonly string[];
+  /** The first key binding in the action's `defaultBinding`. `undefined`
+   *  when it binds no key. */
+  bindingShortcut?: ShortcutInput;
   /** Display-override shortcut string from `Action.shortcut` — orthogonal
-   *  to `shortcutParts` (which comes from `defaultBinding`). */
+   *  to `bindingShortcut` (which comes from `defaultBinding`). */
   shortcut?: string;
   /** Grouping key from `Action.group`. When unset we fall back to the
    *  id-prefix segment before the first `.` (e.g. `align.left` → `align`). */
@@ -161,6 +161,9 @@ export interface ActionEntry {
   /** Pre-rendered icon node, when `Action.icon` is set. Function-form icons
    *  are invoked with no arguments. */
   icon?: import('react').ReactNode;
+  /** One entry per `ActionItem` (a variant each, or the action alone), with
+   *  its icon pre-rendered — what an `<ActionBar>` draws for this action. */
+  items?: readonly { key: string; label: string; icon?: import('react').ReactNode }[];
   /** Snapshot of `Action.enabled()` at probe time. `undefined` when the
    *  action declares no predicate (always enabled). Stale-by-design: the
    *  inspector doesn't re-evaluate on selection changes — open a fresh
@@ -233,7 +236,11 @@ export interface IconEntry {
   kind: 'icon';
   id: string;
   label: string;
-  source: 'action' | 'kind';
+  /** `action`: a glyph a kit action ships as its `icon`. `app`: one of
+   *  WeaselDraw's own controls. `kind`: a scene-node kind's glyph. */
+  source: 'action' | 'app' | 'kind';
+  /** For `action` glyphs, the `ActionItem.key` of every entry that draws it. */
+  actions?: readonly string[];
   Component: ComponentType;
 }
 
@@ -350,11 +357,39 @@ function isLikelyComponent(value: unknown): boolean {
     || (typeof value === 'object' && value !== null && '$$typeof' in value);
 }
 
-export function collectIcons(): readonly IconEntry[] {
-  const out: IconEntry[] = [];
-  for (const [id, Component] of Object.entries(ActionIcons)) {
+/** The glyphs the registered actions carry — what an `<ActionBar>` actually
+ *  draws. Named by the core barrel export that is the glyph's component
+ *  (identity rather than `Function.name`, which minification rewrites), else
+ *  by the first action item drawing it. */
+function collectActionIcons(actions: readonly ActionEntry[]): IconEntry[] {
+  const exportName = new Map<unknown, string>();
+  for (const [name, value] of Object.entries(Weasel)) {
+    if (typeof value === 'function' && !exportName.has(value)) exportName.set(value, name);
+  }
+  const byGlyph = new Map<unknown, IconEntry & { actions: string[] }>();
+  for (const item of actions.flatMap((a) => a.items ?? [])) {
+    const icon = item.icon;
+    if (!isValidElement(icon)) continue;
+    const existing = byGlyph.get(icon.type);
+    if (existing) {
+      existing.actions.push(item.key);
+      continue;
+    }
+    const id = exportName.get(icon.type) ?? item.key;
+    const bare = typeof icon.type === 'function' && Object.keys(icon.props as object).length === 0;
+    byGlyph.set(icon.type, {
+      kind: 'icon', id, label: id, source: 'action', actions: [item.key],
+      Component: bare ? icon.type as ComponentType : () => icon,
+    });
+  }
+  return [...byGlyph.values()];
+}
+
+export function collectIcons(actions: readonly ActionEntry[]): readonly IconEntry[] {
+  const out: IconEntry[] = collectActionIcons(actions);
+  for (const [id, Component] of Object.entries(AppIcons)) {
     if (!isLikelyComponent(Component)) continue;
-    out.push({ kind: 'icon', id, label: id, source: 'action', Component: Component as ComponentType });
+    out.push({ kind: 'icon', id, label: id, source: 'app', Component: Component as ComponentType });
   }
   for (const [id, Component] of Object.entries(KindIcons)) {
     if (!isLikelyComponent(Component)) continue;

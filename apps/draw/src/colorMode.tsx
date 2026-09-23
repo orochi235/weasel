@@ -1,30 +1,26 @@
 import { createContext, useContext, type ReactNode, type ReactElement } from 'react';
-import { useColorMode, type ColorMode } from './useColorMode';
+import {
+  useColorModePreference,
+  type ColorMode,
+  type ColorModePreferenceState,
+} from '@weasel-js/theme/react';
 
-interface ColorModeValue {
-  readonly mode: ColorMode;
-  readonly toggle: () => void;
-}
-
-const ColorModeContext = createContext<ColorModeValue | null>(null);
+const ColorModeContext = createContext<ColorModePreferenceState | null>(null);
 
 /**
- * Holds the app's color mode. Separate from `ThemeProvider` because the
- * provider publishes the *current* mode but owns no way to change it — the
- * toggle belongs to the app, not the kit.
+ * Holds the app's color-mode preference. Separate from `ThemeProvider` because
+ * the provider publishes the *current* mode but owns no way to change it.
  */
 export function ColorModeProvider({
   children,
 }: {
   children: (mode: ColorMode) => ReactNode;
 }): ReactElement {
-  const [mode, toggle] = useColorMode();
-  return (
-    <ColorModeContext.Provider value={{ mode, toggle }}>{children(mode)}</ColorModeContext.Provider>
-  );
+  const state = useColorModePreference({ storageKey: 'wd-mode' });
+  return <ColorModeContext.Provider value={state}>{children(state.mode)}</ColorModeContext.Provider>;
 }
 
 /** `null` when rendered outside the provider (e.g. an isolated test mount). */
-export function useColorModeControl(): ColorModeValue | null {
+export function useColorModeControl(): ColorModePreferenceState | null {
   return useContext(ColorModeContext);
 }

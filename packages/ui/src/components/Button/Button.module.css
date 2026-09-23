@@ -215,6 +215,37 @@
   background: var(--wzl-surface-pressed);
 }
 
+/* Link: text only, sized by the surrounding text rather than the control scale. */
+.variant_link {
+  display: inline;
+  height: auto;
+  padding: 0;
+  border-radius: var(--wzl-radius-sm);
+  background: transparent;
+  box-shadow: none;
+  text-shadow: none;
+  font: inherit;
+  line-height: inherit;
+  text-align: start;
+  overflow: visible;
+  color: var(--wzl-accent-fg);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.variant_link[data-tone='neutral'] { color: var(--wzl-fg); }
+.variant_link[data-tone='muted']   { color: var(--wzl-fg-muted); }
+.variant_link[data-tone='accent']  { color: var(--wzl-accent-fg); }
+.variant_link[data-tone='success'] { color: var(--wzl-success); }
+.variant_link[data-tone='warn']    { color: var(--wzl-warning); }
+.variant_link[data-tone='danger']  { color: var(--wzl-danger); }
+
+.variant_link::before { display: none; }
+.variant_link .label { display: inline; }
+
+.variant_link:hover:not(:disabled) {
+  text-decoration-thickness: 2px;
+}
+
 /* ---------- Modifiers ---------- */
 
 .pressed:not(:disabled) {

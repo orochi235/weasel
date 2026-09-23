@@ -16,15 +16,18 @@ import {
   Popover as RACPopover,
   ListBox as RACListBox,
   ListBoxItem as RACListBoxItem,
+  ListBoxSection as RACListBoxSection,
+  Header,
   Text,
   FieldError,
   type SelectProps as RACSelectProps,
   type ListBoxItemProps as RACListBoxItemProps,
   type ValidationResult,
 } from 'react-aria-components';
-import { fieldClasses } from '../Field/Field';
+import { fieldClasses, type FieldOrientation } from '../Field/Field';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import s from './Select.module.css';
+import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 
 /** One option in a {@link Select}'s `options` list. */
 export type SelectOption = {
@@ -40,7 +43,19 @@ export type SelectOption = {
   textValue?: string;
 };
 
+/** A titled group of options in a {@link Select}'s `options` list. */
+export type SelectOptionGroup<T extends Key = string> = {
+  title: ReactNode;
+  options: ReadonlyArray<SelectOption & { value: T }>;
+};
+
 type Key = string | number;
+
+function isGroup<T extends Key>(
+  entry: (SelectOption & { value: T }) | SelectOptionGroup<T>,
+): entry is SelectOptionGroup<T> {
+  return 'options' in entry;
+}
 
 /** How a {@link Select} trigger signals that it opens a list. */
 export type SelectIndicator = 'chevron' | 'underline' | 'none';
@@ -54,11 +69,20 @@ export type SelectPopup = 'over' | 'below';
  */
 export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {
   label?: ReactNode;
+  /**
+   * `'stacked'` (the default) puts the label above the trigger; `'row'` sets it
+   * beside the trigger at its own width, with any description or error on a
+   * line below. Same vocabulary as {@link Field}'s `orientation`.
+   */
+  orientation?: FieldOrientation;
   description?: ReactNode;
   errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
   placeholder?: string;
-  /** Either pass `options` for a quick render, or `children` for full control. */
-  options?: ReadonlyArray<SelectOption & { value: T }>;
+  /**
+   * Either pass `options` for a quick render, or `children` for full control.
+   * An entry with `title` and `options` of its own is a titled section.
+   */
+  options?: ReadonlyArray<(SelectOption & { value: T }) | SelectOptionGroup<T>>;
   children?: ReactNode;
   selectedKey?: T | null;
   defaultSelectedKey?: T;
@@ -92,19 +116,25 @@ export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, '
    */
   triggerId?: string;
   className?: string;
-} & OverlayPortalProps;
+} & SegmentTooltipFields & OverlayPortalProps;
 
 /**
  * Form select wrapping React Aria's Select. Pass either `options` for a
  * quick declarative render or `children` of `<SelectItem>` for control over
- * each row.
+ * each row; `<SelectSection>` (or an `options` entry with a `title`) groups
+ * rows under a heading.
  *
  * The selection key type is parameterized so consumers with a string-literal
  * union for `value` (e.g. `'r' | 'g' | 'b'`) get a typed `onSelectionChange`.
+ *
+ * `shortcut` puts a kit tooltip on the trigger reading `Name (⌘K)`, named by
+ * `aria-label` or a string `label`, as `Button` does; `tooltip` replaces that
+ * text.
  */
 export function Select<T extends Key = string>(props: SelectProps<T>) {
   const {
     label,
+    orientation = 'stacked',
     description,
     errorMessage,
     placeholder,
@@ -120,6 +150,8 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
     triggerId,
     className,
     portalContainer,
+    shortcut,
+    tooltip,
     ...rest
   } = props;
 
@@ -141,49 +173,56 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
         indicator === 'underline' && s.underlined,
         indicator === 'none' && s.plain,
         fieldClasses.root,
+        orientation === 'row' && fieldClasses.row,
+        orientation === 'row' && s.row,
         className,
       ]
         .filter(Boolean)
         .join(' ')}
     >
       {anchor}
-      {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
-      <RACButton
-        id={triggerId}
-        ref={triggerRef}
-        className={s.trigger}
-        onPointerDown={(e) => {
-          pressRef.current = { x: e.clientX, y: e.clientY, at: performance.now() };
-        }}
+      {label !== undefined && <Label className={`${fieldClasses.label} ${s.label}`}>{label}</Label>}
+      <TriggerTooltip
+        content={segmentTooltipContent({ tooltip, shortcut, ariaLabel: rest['aria-label'], label })}
+        disabled={rest.isDisabled}
       >
-        <SelectValue className={s.value}>
-          {({ defaultChildren, isPlaceholder }) =>
-            isPlaceholder ? (placeholder ?? defaultChildren) : defaultChildren
-          }
-        </SelectValue>
-        {width === 'fit' && (
-          <span className={s.sizer} aria-hidden="true">
-            {placeholder !== undefined && <span>{placeholder}</span>}
-            {optionLabels(options, children).map((l, i) => (
-              <span key={i}>
-                <CheckMark />
-                {l}
-              </span>
-            ))}
-          </span>
-        )}
-        {indicator === 'chevron' && (
-          <svg className={s.chevron} viewBox="0 0 10 10" aria-hidden="true">
-            <path d="M2 4 L5 7 L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </RACButton>
+        <RACButton
+          id={triggerId}
+          ref={triggerRef}
+          className={s.trigger}
+          onPointerDown={(e) => {
+            pressRef.current = { x: e.clientX, y: e.clientY, at: performance.now() };
+          }}
+        >
+          <SelectValue className={s.value}>
+            {({ defaultChildren, isPlaceholder }) =>
+              isPlaceholder ? (placeholder ?? defaultChildren) : defaultChildren
+            }
+          </SelectValue>
+          {width === 'fit' && (
+            <span className={s.sizer} aria-hidden="true">
+              {placeholder !== undefined && <span>{placeholder}</span>}
+              {optionLabels(options, children).map((l, i) => (
+                <span key={i}>
+                  <CheckMark />
+                  {l}
+                </span>
+              ))}
+            </span>
+          )}
+          {indicator === 'chevron' && (
+            <svg className={s.chevron} viewBox="0 0 10 10" aria-hidden="true">
+              <path d="M2 4 L5 7 L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </RACButton>
+      </TriggerTooltip>
       {description !== undefined && (
-        <Text slot="description" className={fieldClasses.hint}>
+        <Text slot="description" className={`${fieldClasses.hint} ${s.below}`}>
           {description}
         </Text>
       )}
-      <FieldError className={fieldClasses.error}>{errorMessage}</FieldError>
+      <FieldError className={`${fieldClasses.error} ${s.below}`}>{errorMessage}</FieldError>
       {/* `data-weasel-overlay` marks DOM that belongs to this control but
           renders in a portal, outside the subtree the trigger sits in. Any
           consumer reasoning about "did focus leave my component?" via
@@ -209,16 +248,15 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
         )}
         <RACListBox className={s.listbox}>
           {options !== undefined
-            ? options.map((o) => (
-                <SelectItem
-                  key={String(o.value)}
-                  id={o.value}
-                  isDisabled={o.isDisabled}
-                  textValue={o.textValue}
-                >
-                  {o.label}
-                </SelectItem>
-              ))
+            ? options.map((entry, i) =>
+                isGroup(entry) ? (
+                  <SelectSection key={`section-${i}`} title={entry.title}>
+                    {entry.options.map(renderOption)}
+                  </SelectSection>
+                ) : (
+                  renderOption(entry)
+                ),
+              )
             : children}
         </RACListBox>
       </RACPopover>
@@ -347,17 +385,47 @@ function CheckMark() {
   );
 }
 
+function renderOption<T extends Key>(o: SelectOption & { value: T }) {
+  return (
+    <SelectItem key={String(o.value)} id={o.value} isDisabled={o.isDisabled} textValue={o.textValue}>
+      {o.label}
+    </SelectItem>
+  );
+}
+
 /**
  * The labels a `width='fit'` trigger measures itself against. In the children
- * form the label sits one element deep, inside a `SelectItem`.
+ * form the label sits one element deep, inside a `SelectItem`, or two inside a
+ * `SelectSection`.
  */
 function optionLabels(
-  options: ReadonlyArray<SelectOption> | undefined,
+  options: ReadonlyArray<SelectOption | SelectOptionGroup<Key>> | undefined,
   children: ReactNode,
 ): ReactNode[] {
-  if (options !== undefined) return options.map((o) => o.label);
-  return Children.toArray(children).map((c) =>
-    isValidElement<{ children?: ReactNode }>(c) ? c.props.children : c,
+  if (options !== undefined)
+    return options.flatMap((o) => ('options' in o ? o.options.map((g) => g.label) : [o.label]));
+  return Children.toArray(children).flatMap((c) => {
+    if (!isValidElement<{ children?: ReactNode }>(c)) return [c];
+    return c.type === SelectSection ? optionLabels(undefined, c.props.children) : [c.props.children];
+  });
+}
+
+/** Props for {@link SelectSection}. */
+export type SelectSectionProps = {
+  /** Heading shown above the section's rows; it also names the group for
+   *  screen readers. */
+  title?: ReactNode;
+  children?: ReactNode;
+  className?: string;
+};
+
+/** A titled group of `SelectItem` rows in a {@link Select}'s list. */
+export function SelectSection({ title, children, className }: SelectSectionProps) {
+  return (
+    <RACListBoxSection className={[s.section, className].filter(Boolean).join(' ')}>
+      {title !== undefined && <Header className={s.sectionHeader}>{title}</Header>}
+      {children}
+    </RACListBoxSection>
   );
 }
 

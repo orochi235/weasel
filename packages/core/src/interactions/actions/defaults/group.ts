@@ -1,4 +1,6 @@
 import type { Node, NodeId, Scene } from 'core/scene/types';
+import { createElement } from 'react';
+import { GroupIcon, UngroupIcon } from './icons/editIcons';
 import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
@@ -49,6 +51,7 @@ function freshContainerId(): NodeId {
 export const groupAction: Action & { requires: string[] } = {
   id: 'group',
   label: 'Group',
+  icon: createElement(GroupIcon),
   group: 'structure',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true } },
   eligible: { capability: 'edits-page' },
@@ -173,6 +176,7 @@ export const groupAction: Action & { requires: string[] } = {
 export const ungroupAction: Action & { requires: string[] } = {
   id: 'ungroup',
   label: 'Ungroup',
+  icon: createElement(UngroupIcon),
   group: 'structure',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
   eligible: { capability: 'edits-page' },

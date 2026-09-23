@@ -65,3 +65,24 @@
 
 .dropBefore > td { box-shadow: inset 0 2px 0 0 var(--wzl-accent, #7fb069); }
 .dropAfter > td { box-shadow: inset 0 -2px 0 0 var(--wzl-accent, #7fb069); }
+
+/* Row activation (`onRowClick`). */
+.clickable { cursor: pointer; }
+.clickable:hover > td { background: var(--wzl-surface-hover); }
+.clickable:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -2px;
+}
+
+/* Disclosure column and the detail row it opens. */
+.detailCol,
+.detailCell {
+  width: var(--wzl-control-h-sm);
+  padding-inline: 0;
+  text-align: center;
+}
+.table .detailCell { padding-block: 0; }
+.detailRow > td {
+  padding: var(--wzl-space-2) var(--wzl-space-3) var(--wzl-space-3);
+  background: var(--wzl-surface-sunken);
+}

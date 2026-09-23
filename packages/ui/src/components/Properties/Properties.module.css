@@ -37,6 +37,14 @@
   user-select: none;
 }
 
+/* Opted in with `selectable` (a debug panel's default): the whole family lets
+   text select, reaching past each member's own `none`. */
+.panel[data-selectable='true'],
+.panel[data-selectable='true'] :is(.panel, .list, .row, .group, .subpanel, .card, .cardList) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .readout,
 .readoutInput,
 .row input:not([type='range']):not([type='checkbox']):not([type='radio']),
@@ -77,6 +85,27 @@
   color: var(--_s-title-color);
   padding: var(--_s-title-inset);
   margin: 0 0 var(--wzl-prop-panel-title-gap, 12px);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  margin: 0 0 var(--wzl-prop-panel-title-gap, 12px);
+}
+
+.panelHeader > .panelTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.panelActions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  margin-inline-start: auto;
 }
 
 /* Each panel resolves its slots into local names: the stance's own value,

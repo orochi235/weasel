@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Icon } from './Icon';
+import { CheckIcon, DeleteIcon, RedoIcon, UndoIcon } from './index';
 import { isFillable } from './Icon';
 import { ICON_FILLS, ICON_GROUPS, ICON_PATHS, type IconName } from './paths';
 
@@ -84,5 +85,42 @@ describe('icon set', () => {
     expect(ICON_PATHS.shapeCircle).not.toContain('stroke-linejoin');
     // A waveform's acute corners grow spikes under miter, so they stay round.
     expect(ICON_PATHS.arcZigzag).not.toContain('stroke-linejoin');
+  });
+});
+
+describe('CheckIcon', () => {
+  it('draws the check glyph as one open stroke, in the State family', () => {
+    const { container } = render(<CheckIcon label="Handled" />);
+    const svg = container.querySelector('svg');
+    expect(svg?.getAttribute('aria-label')).toBe('Handled');
+    expect(svg?.querySelector('path')?.getAttribute('d')).toBe(ICON_PATHS.check.match(/d="([^"]+)"/)?.[1]);
+    expect(ICON_PATHS.check).toMatch(/^<path d="M[^"Zz]+"\/>$/);
+    expect(ICON_GROUPS.find((g) => g.names.includes('check'))?.label).toBe('State');
+  });
+});
+
+// These three are drawn here but live in core, which ships them on its actions.
+describe('core-owned action glyphs', () => {
+  it.each([
+    ['undo', UndoIcon], ['redo', RedoIcon], ['delete', DeleteIcon],
+  ] as const)('draws %s the same as <Icon>', (name, Component) => {
+    const a = render(<Component size={16} label="x" className="c" />).container.innerHTML;
+    const b = render(<Icon name={name} size={16} label="x" className="c" />).container.innerHTML;
+    expect(a).toBe(b);
+  });
+});
+
+describe('core action glyph re-exports', () => {
+  it('passes the align and distribute glyphs through by identity', async () => {
+    const ui = await import('./index');
+    const core = await import('@weasel-js/core');
+    for (const name of [
+      'AlignLeftIcon', 'AlignCenterXIcon', 'AlignRightIcon',
+      'AlignTopIcon', 'AlignCenterYIcon', 'AlignBottomIcon',
+      'DistributeHorizontalIcon', 'DistributeVerticalIcon',
+    ] as const) {
+      expect(ui[name], name).toBe(core[name]);
+      expect(ui[name], name).toBeTypeOf('function');
+    }
   });
 });
