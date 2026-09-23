@@ -9,6 +9,8 @@ const PAGES = [
   { href: '/ingest', label: 'Ingestion' },
 ];
 
+const open2 = (name: string) =>
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(name) }));
 const open = () => fireEvent.click(screen.getByRole('button', { name: /corpus stats/ }));
 
 describe('currentPage', () => {
@@ -26,6 +28,45 @@ describe('currentPage', () => {
 
   it('reports -1 for a page that is not one of them', () => {
     expect(currentPage('/bench', PAGES)).toBe(-1);
+  });
+
+  // One document serving its pages from the hash: every href shares a path, so
+  // only the fragment can tell them apart.
+  const ROUTES = [
+    { href: '/app/', label: 'App' },
+    { href: '#/dev/tools', label: 'Tools' },
+    { href: '#/dev/registry', label: 'Registry' },
+  ];
+
+  it('tells hash routes on one document apart', () => {
+    expect(currentPage('/app/#/dev/registry', ROUTES)).toBe(2);
+    expect(currentPage('/app/#/dev/tools', ROUTES)).toBe(1);
+  });
+
+  it('matches a hash route through its own query and sub-routes', () => {
+    expect(currentPage('/app/#/dev/tools?bundle=minimal', ROUTES)).toBe(1);
+    expect(currentPage('/app/#/dev/tools/', ROUTES)).toBe(1);
+    expect(currentPage('/app/#/dev/registry/tool/rect', ROUTES)).toBe(2);
+    expect(currentPage('/app/#/dev/toolsets', ROUTES)).toBe(0);
+  });
+
+  it('falls back to the page without a hash when no route matches', () => {
+    expect(currentPage('/app/', ROUTES)).toBe(0);
+    expect(currentPage('/app/#/elsewhere', ROUTES)).toBe(0);
+  });
+
+  it('reads the hash off the current location by default', () => {
+    window.history.replaceState(null, '', '/app/#/dev/registry');
+    try {
+      render(<LabSwitcher title="Registry" pages={ROUTES} />);
+      open2('Registry');
+      expect(screen.getByRole('menuitem', { name: 'Registry' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
   });
 });
 

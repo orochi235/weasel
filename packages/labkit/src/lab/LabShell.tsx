@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import type { LabMode } from '../state/types';
 import { LabRoot } from './LabRoot';
 import type { LabPage } from './LabSwitcher';
@@ -20,6 +20,9 @@ export interface LabShellProps {
   /** The path the switcher reads to mark the open page. Defaults to the
    *  current location. */
   path?: string;
+  /** Set as `document.title` while the shell is mounted, and the previous
+   *  title restored after. Omitted, the document's title is left alone. */
+  documentTitle?: string;
 }
 
 /** Page frame for a lab: a titled header, a body, and an optional footer,
@@ -33,7 +36,17 @@ export function LabShell({
   mode = 'auto',
   pages,
   path,
+  documentTitle,
 }: LabShellProps) {
+  useEffect(() => {
+    if (documentTitle === undefined) return;
+    const previous = document.title;
+    document.title = documentTitle;
+    return () => {
+      document.title = previous;
+    };
+  }, [documentTitle]);
+
   return (
     <LabRoot mode={mode} className="lk-shell">
       <header className="lk-shell-header">
