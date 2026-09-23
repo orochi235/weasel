@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Select } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 import { RegistryTree } from './RegistryTree';
@@ -61,7 +61,6 @@ export function RegistryInspector() {
 
   const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], routing: [], properties: [] });
   const [bundleFilter, setBundleFilter] = useState<string>('all');
-  const bundleTriggerId = useId();
   const [textFilter, setTextFilter] = useState<string>('');
   const [selected, setSelected] = useState<TreeEntry | null>(null);
   // Pending deep-link from the URL — the matching entry may not exist yet
@@ -197,17 +196,14 @@ export function RegistryInspector() {
       <RegistryProbe onSnapshot={onSnapshot} />
       <header className={s.header}>
         <h1 className={s.title}>Bundle Inspector</h1>
-        <div className={s.bundlePicker}>
-          <label htmlFor={bundleTriggerId}>bundle</label>
-          <Select
-            aria-label="bundle filter"
-            triggerId={bundleTriggerId}
-            width="fit"
-            options={BUNDLE_OPTIONS}
-            selectedKey={bundleFilter}
-            onSelectionChange={setBundleFilter}
-          />
-        </div>
+        <Select
+          label="bundle"
+          orientation="row"
+          width="fit"
+          options={BUNDLE_OPTIONS}
+          selectedKey={bundleFilter}
+          onSelectionChange={setBundleFilter}
+        />
       </header>
       <div className={s.layout}>
         <aside className={s.tree}>

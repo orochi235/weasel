@@ -68,7 +68,7 @@ describe('RegistryInspector', () => {
     // rect, 'Hand' for hand), not the bare tool id.
     await waitFor(() => expect(screen.queryByText('Rectangle')).toBeTruthy());
 
-    act(() => { fireEvent.click(screen.getByRole('button', { name: /bundle filter/i })); });
+    act(() => { fireEvent.click(screen.getByRole('button', { name: /bundle.*all bundles|all bundles.*bundle/i })); });
     fireEvent.click(screen.getByRole('option', { name: 'Minimal' }));
     await waitFor(() => expect(screen.queryByText('Rectangle')).toBeNull());
     // 'Select' is the always-present member of the minimal bundle; the hand
