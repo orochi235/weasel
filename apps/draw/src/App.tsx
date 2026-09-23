@@ -25,7 +25,7 @@
  *     mutation (debounced inside SceneCanvas re-renders).
  */
 import {
-  useCallback, useEffect, useMemo, useRef, useState,
+  Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState,
   type CSSProperties, type ReactElement,
 } from 'react';
 import { useColorModeControl } from './colorMode';
@@ -132,7 +132,6 @@ import { enableMachineFontOutlines, disableMachineFontOutlines } from './fonts';
 const RIGHT_SIDEBAR_MIN = PREFS.children.ui.children.rightSidebarWidth.min;
 const RIGHT_SIDEBAR_MAX = PREFS.children.ui.children.rightSidebarWidth.max;
 import { CharacterOptions, TextEditDepPublisher } from './ui/CharacterOptions';
-import { DispatchTracePanel } from './dev/DispatchTracePanel';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { useColorContext } from './tools/colorContext';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
@@ -156,6 +155,12 @@ import { sceneToSvgString, selectionToClipboardSvgString, clipboardSnapshotRootI
 import type { RecordingProfile } from './recorder';
 
 import './app.css';
+
+// The trace log it reads is only populated in DEV, so production leaves the
+// panel out of the bundle entirely.
+const DispatchTracePanel = import.meta.env.DEV
+  ? lazy(() => import('./dev/DispatchTracePanel').then((m) => ({ default: m.DispatchTracePanel })))
+  : null;
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
 
@@ -613,7 +618,11 @@ function RightSidebar({
           />
         </SidebarPanel>
       )}
-      <DispatchTracePanel />
+      {DispatchTracePanel && (
+        <Suspense fallback={null}>
+          <DispatchTracePanel />
+        </Suspense>
+      )}
     </>
   );
 }
