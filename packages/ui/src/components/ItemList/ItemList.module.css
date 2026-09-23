@@ -42,6 +42,13 @@
   color: var(--wzl-fg);
 }
 
+/* Drag feedback. The seam is an outer shadow of the row beside it: it needs no
+   measured offset, adds no element for a drag to count as a row, and escapes
+   the row's own `overflow: hidden`. */
+.row[data-drop='before'] { box-shadow: 0 -2px 0 0 var(--wzl-accent); }
+.row[data-drop='after']  { box-shadow: 0 2px 0 0 var(--wzl-accent); }
+.row[data-dragging] { opacity: 0.4; }
+
 /* Present but not in effect. */
 .muted {
   color: var(--wzl-fg-subtle);

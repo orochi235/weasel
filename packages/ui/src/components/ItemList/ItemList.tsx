@@ -26,6 +26,8 @@ export interface ItemListRow {
   selected?: boolean;
   /** Present but not in effect — history's redo entries. */
   muted?: boolean;
+  /** Part of a drag in progress — `useReorderDragList`'s `state.draggedIds`. */
+  dragging?: boolean;
   /** Consumer classes for states this component has no opinion about. */
   className?: string;
   /** Handlers and data attributes for this row's element. `data-*` is
@@ -39,14 +41,21 @@ export interface ItemListProps {
   /** Shown in place of the rows when there are none. */
   empty?: ReactNode;
   className?: string;
-  /** Rendered inside the container above the rows — a drop indicator. */
+  /**
+   * Where a drop would land, as an insertion index: `0` is above the first
+   * row, `rows.length` below the last. The list draws the seam itself, from
+   * the rows' own boxes, so it follows whatever height the density gives
+   * them. `useReorderDragList`'s `state.targetIndex` goes here as-is.
+   */
+  dropIndex?: number | null;
+  /** Rendered inside the container ahead of the rows. */
   overlay?: ReactNode;
   /** Spread onto the container: pointer handlers for a drag, `aria-label`. */
   containerProps?: HTMLAttributes<HTMLDivElement>;
 }
 
 export const ItemList = forwardRef(function ItemList(
-  { rows, empty, className, overlay, containerProps }: ItemListProps,
+  { rows, empty, className, dropIndex, overlay, containerProps }: ItemListProps,
   ref: Ref<HTMLDivElement>,
 ) {
   const cls = [s.list, className].filter(Boolean).join(' ');
@@ -60,7 +69,7 @@ export const ItemList = forwardRef(function ItemList(
   return (
     <div className={cls} ref={ref} {...containerProps}>
       {overlay}
-      {rows.map((row) => (
+      {rows.map((row, i) => (
         <div
           key={row.id}
           className={[
@@ -70,6 +79,8 @@ export const ItemList = forwardRef(function ItemList(
             row.className,
           ].filter(Boolean).join(' ')}
           {...row.rowProps}
+          data-drop={dropSide(dropIndex, i, rows.length)}
+          data-dragging={row.dragging ? 'true' : undefined}
         >
           {row.leading}
           <span className={s.label}>{row.label}</span>
@@ -78,3 +89,15 @@ export const ItemList = forwardRef(function ItemList(
     </div>
   );
 });
+
+/** Which edge of row `i` carries the seam for `dropIndex`, if any. */
+function dropSide(
+  dropIndex: number | null | undefined,
+  i: number,
+  count: number,
+): 'before' | 'after' | undefined {
+  if (dropIndex == null) return undefined;
+  if (dropIndex === i) return 'before';
+  if (dropIndex >= count && i === count - 1) return 'after';
+  return undefined;
+}
