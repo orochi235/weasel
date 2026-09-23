@@ -138,6 +138,7 @@ export async function runStory(
   let failure: { error: unknown } | null = null;
   try {
     try {
+      await setup?.prepare?.(story);
       stopFrame = startFrame({ story, channel: frame, container, setup });
     } catch (error) {
       throw phased('mount', error);

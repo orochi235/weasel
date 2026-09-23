@@ -91,8 +91,17 @@ export interface Envelope<M> {
   msg: M;
 }
 
-/** Posted on the frame's window with the port transferred alongside it. */
+/** Posted on the frame's window with the port transferred alongside it, as a `PortHandoff`. */
 export const PORT_HANDOFF = 'weaselforge:port';
+
+/** What the shell posts with the port: `id` names what the frame shows, a story or an index. */
+export interface PortHandoff {
+  type: typeof PORT_HANDOFF;
+  id: string;
+}
+
+/** Posted by a frame document to its parent as soon as its entry runs, asking for a port. */
+export const FRAME_HELLO = 'weaselforge:hello';
 
 /** JSON with object keys sorted, so two equal configs produce one key. */
 export function stableStringify(value: unknown): string {

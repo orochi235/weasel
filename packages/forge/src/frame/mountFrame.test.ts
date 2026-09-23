@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { openChannel } from '../protocol/channel';
-import { PORT_HANDOFF } from '../protocol/messages';
+import { FRAME_HELLO, PORT_HANDOFF } from '../protocol/messages';
 import { meta, story } from '../story/define';
 import { type FrameSetup, reportImportFault, startFrame } from './FrameController';
 import { mountFrame } from './mountFrame';
@@ -10,8 +10,8 @@ vi.mock('./FrameController', () => ({ startFrame: vi.fn(), reportImportFault: vi
 
 const FILE = '/repo/a.stories.tsx';
 
-function handoff(origin: string, source: unknown, port: unknown = { fake: 'port' }) {
-  const event = new MessageEvent('message', { data: { type: PORT_HANDOFF }, origin });
+function handoff(origin: string, source: unknown, port: unknown = { fake: 'port' }, id?: string) {
+  const event = new MessageEvent('message', { data: { type: PORT_HANDOFF, ...(id ? { id } : {}) }, origin });
   Object.defineProperty(event, 'source', { value: source });
   Object.defineProperty(event, 'ports', { value: [port] });
   window.dispatchEvent(event);
@@ -112,6 +112,49 @@ describe('mountFrame', () => {
     handoff(location.origin, window.parent);
     await vi.waitFor(() => expect(startFrame).toHaveBeenCalled());
     expect(vi.mocked(startFrame).mock.calls[0]?.[0].container).toBe(document.body);
+  });
+
+  it('asks its parent for a port as soon as it runs', () => {
+    const post = vi.spyOn(window, 'postMessage').mockImplementation(() => {});
+    mount({ default: { title: 'ui/A' }, One: {} }, 'ui-a--one');
+    expect(post).toHaveBeenCalledWith({ type: FRAME_HELLO }, location.origin);
+  });
+
+  it("starts importing the hash's story before the port arrives", () => {
+    const importer = vi.fn(async () => ({ default: { title: 'ui/A' }, One: {} }));
+    location.hash = 'ui-a--one';
+    void mountFrame({ index: [{ id: 'ui-a--one', title: 'ui/A', file: FILE, exportName: 'One' }], importers: { [FILE]: importer } });
+    expect(importer).toHaveBeenCalledTimes(1);
+    expect(openChannel).not.toHaveBeenCalled();
+  });
+
+  it('shows what the handoff names over what the hash does, importing each module once', async () => {
+    const importer = vi.fn(async () => ({ default: { title: 'ui/A' }, One: {}, Two: {} }));
+    location.hash = 'ui-a--one';
+    void mountFrame({
+      index: [
+        { id: 'ui-a--one', title: 'ui/A', file: FILE, exportName: 'One' },
+        { id: 'ui-a--two', title: 'ui/A', file: FILE, exportName: 'Two' },
+      ],
+      importers: { [FILE]: importer },
+    });
+    handoff(location.origin, window.parent, undefined, 'ui-a--two');
+    await vi.waitFor(() => expect(startFrame).toHaveBeenCalled());
+    expect(vi.mocked(startFrame).mock.calls[0]?.[0].story.id).toBe('ui-a--two');
+    expect(importer).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts the story only once the setup's prepare has settled", async () => {
+    let release = () => {};
+    const prepare = vi.fn(() => new Promise<void>((resolve) => (release = resolve)));
+    mount({ default: { title: 'ui/A' }, One: {} }, 'ui-a--one', { prepare });
+    handoff(location.origin, window.parent);
+    await vi.waitFor(() => expect(prepare).toHaveBeenCalled());
+    expect(vi.mocked(prepare).mock.calls[0]?.[0]).toMatchObject({ id: 'ui-a--one' });
+    await settle();
+    expect(startFrame).not.toHaveBeenCalled();
+    release();
+    await vi.waitFor(() => expect(startFrame).toHaveBeenCalledTimes(1));
   });
 
   it('loads a native module with the native loader', async () => {

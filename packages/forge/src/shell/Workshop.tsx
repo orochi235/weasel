@@ -7,6 +7,7 @@ import { InfoIcon } from '@weasel-js/ui';
 import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
+import { createFramePool, type FramePool, FramePoolContext } from './framePool';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
@@ -77,6 +78,12 @@ function useInfoShortcut(open: (next: boolean) => void): void {
 export function Workshop({ index, frameUrl, config, stories = [], storageKey, storage }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
   const [frames] = useState(createTrialFrames);
+  const [pool, setPool] = useState<FramePool | null>(null);
+  useEffect(() => {
+    const next = createFramePool(frameUrl);
+    setPool(next);
+    return () => next.dispose();
+  }, [frameUrl]);
   const registry = useStoryRegistry(index, { frameUrl, globals: declarations, frames });
   const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
   const [infoOpen, setInfoOpen] = useState(false);
@@ -121,30 +128,32 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
   }
   return (
     <StoryGlobalsContext.Provider value={labValues}>
-      <TrialFramesContext.Provider value={frames}>
-        <Lab
-          title="weaselforge"
-          density="roomy"
-          instruments={registry.instruments}
-          defaultInstrument={initialStory(index, first.id)}
-          storageKey={storageKey ?? 'weaselforge'}
-          {...(storage ? { storage } : {})}
-          labChrome={labChrome}
-          addTrial={false}
-          {...(config?.controls ? { controls: config.controls } : {})}
-          {...(config?.pages ? { pages: config.pages } : {})}
-          {...(config?.path !== undefined ? { path: config.path } : {})}
-        >
-          <RouteOpener index={index} />
-          <StoryInfoDialog
-            index={index}
-            isReady={registry.isReady}
-            isOpen={infoOpen}
-            onOpenChange={setInfoOpen}
-          />
-          <LabGlobals declarations={declarations} onChange={reportLabValues} />
-        </Lab>
-      </TrialFramesContext.Provider>
+      <FramePoolContext.Provider value={pool}>
+        <TrialFramesContext.Provider value={frames}>
+          <Lab
+            title="weaselforge"
+            density="roomy"
+            instruments={registry.instruments}
+            defaultInstrument={initialStory(index, first.id)}
+            storageKey={storageKey ?? 'weaselforge'}
+            {...(storage ? { storage } : {})}
+            labChrome={labChrome}
+            addTrial={false}
+            {...(config?.controls ? { controls: config.controls } : {})}
+            {...(config?.pages ? { pages: config.pages } : {})}
+            {...(config?.path !== undefined ? { path: config.path } : {})}
+          >
+            <RouteOpener index={index} />
+            <StoryInfoDialog
+              index={index}
+              isReady={registry.isReady}
+              isOpen={infoOpen}
+              onOpenChange={setInfoOpen}
+            />
+            <LabGlobals declarations={declarations} onChange={reportLabValues} />
+          </Lab>
+        </TrialFramesContext.Provider>
+      </FramePoolContext.Provider>
     </StoryGlobalsContext.Provider>
   );
 }

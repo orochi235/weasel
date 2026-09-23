@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/labkit/styles.css';
 import './frame.css';
 import { type Decorator, defineFrameConfig } from '@weasel-js/forge';
-import { type LabMode, LabRoot } from '@weasel-js/labkit';
+import type { LabMode } from '@weasel-js/labkit';
 import { applyTheme, weaselTheme } from '@weasel-js/theme';
 import { fontRule, GOOGLE_FONTS_HREF } from './fonts';
 import { followScheme } from './mode';
@@ -22,12 +22,13 @@ const DENSITIES = ['compact', 'comfortable', 'roomy'];
 const asDensity = (picked: unknown): string =>
   typeof picked === 'string' && DENSITIES.includes(picked) ? picked : 'comfortable';
 
+const isLabkit = (title: string): boolean => title.startsWith('labkit/');
+
+// Imported only for labkit's own stories: the package is most of what a frame would otherwise load.
+let LabRoot: typeof import('@weasel-js/labkit').LabRoot | null = null;
+
 const labkitRoot: Decorator = (story, ctx) =>
-  ctx.title.startsWith('labkit/') ? (
-    <LabRoot mode={asLabMode(ctx.globals.mode)}>{story()}</LabRoot>
-  ) : (
-    story()
-  );
+  LabRoot && isLabkit(ctx.title) ? <LabRoot mode={asLabMode(ctx.globals.mode)}>{story()}</LabRoot> : story();
 
 const FONT_STYLE_ID = 'fg-font-globals';
 
@@ -45,6 +46,9 @@ const applyGlobals = followScheme((globals, root, mode) => {
 
 export default defineFrameConfig({
   decorators: [labkitRoot],
+  prepare: async (story) => {
+    if (isLabkit(story.title)) LabRoot ??= (await import('@weasel-js/labkit')).LabRoot;
+  },
   applyGlobals,
   cssVarsScope: ':is(:root, [data-wzl-theme], [data-wzl-mode], [data-wzl-density])',
   parameters: {

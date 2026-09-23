@@ -5,7 +5,9 @@ import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type Channel, openChannel } from '../protocol/channel';
-import { type FromFrame, type Globals, PORT_HANDOFF, stableStringify, type ToFrame } from '../protocol/messages';
+import { FRAME_HELLO, type FromFrame, type Globals, PORT_HANDOFF, stableStringify, type ToFrame } from '../protocol/messages';
+import { type FramePool, FramePoolContext } from './framePool';
+import { sayHello } from './labHarness';
 import { describeSchema } from '../protocol/schema';
 import type { IndexEntry } from '../story/types';
 import { createAnswerBook } from './answers';
@@ -120,12 +122,12 @@ function labWith(
   );
 }
 
-/** Loads the iframe by hand and plays the frame's half of the handoff. */
+/** Plays the frame's half of the handoff. */
 function connect(iframe: HTMLIFrameElement) {
   const post = vi.spyOn(iframe.contentWindow as Window, 'postMessage').mockImplementation(() => {});
-  fireEvent.load(iframe);
+  sayHello(iframe);
   const call = post.mock.calls.at(-1) as unknown[] | undefined;
-  expect(call?.[0]).toEqual({ type: PORT_HANDOFF });
+  expect(call?.[0]).toEqual({ type: PORT_HANDOFF, id: entry.id });
   expect(call?.[1]).toBe(location.origin);
   const port = (call?.[2] as MessagePort[])[0] as MessagePort;
   const frame: Channel<ToFrame, FromFrame> = openChannel(port);
@@ -382,6 +384,65 @@ describe('FrameView', () => {
     await flush();
     expect(view.container.querySelector('iframe')).toBe(iframe);
     expect(config()).toEqual({ label: 'clicks', n: 1 });
+  });
+});
+
+
+const handoffs = (post: { mock: { calls: unknown[][] } }) =>
+  post.mock.calls.filter((c) => (c[0] as { type?: unknown } | null)?.type === PORT_HANDOFF);
+
+describe('FrameView handshake', () => {
+  it('hands off a port on each hello and never on load, which a browser fires before the hello', () => {
+    const view = render(labWith(ready));
+    const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
+    const post = vi.spyOn(iframe.contentWindow as Window, 'postMessage').mockImplementation(() => {});
+    fireEvent.load(iframe);
+    expect(handoffs(post)).toHaveLength(0);
+    sayHello(iframe);
+    expect(handoffs(post)).toHaveLength(1);
+    sayHello(iframe);
+    expect(handoffs(post)).toHaveLength(2);
+  });
+
+  it('faults when the frame document never says hello', () => {
+    vi.useFakeTimers();
+    const view = render(labWith(ready));
+    act(() => {
+      vi.advanceTimersByTime(30_000);
+    });
+    expect(faultText(view.container)).toBe('Frame did not start: /frame.html#test-counter--counter');
+  });
+
+  it('ignores a hello from a window other than its frame', () => {
+    const view = render(labWith(ready));
+    const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
+    const post = vi.spyOn(iframe.contentWindow as Window, 'postMessage').mockImplementation(() => {});
+    const stray = new MessageEvent('message', { data: { type: FRAME_HELLO }, origin: location.origin });
+    Object.defineProperty(stray, 'source', { value: window });
+    act(() => {
+      window.dispatchEvent(stray);
+    });
+    expect(handoffs(post)).toHaveLength(0);
+  });
+
+  // Proxy: jsdom has no `moveBefore`, and moving an iframe any other way gives it a new window. So this asserts
+  // the call that keeps the document alive, not that it stayed alive; the browser is what shows that.
+  it('moves a claimed frame into place and hands it a port at once, without loading it again', () => {
+    const proto = Element.prototype as Element & { moveBefore?: (node: Node, child: Node | null) => void };
+    const moveBefore = vi.fn();
+    proto.moveBefore = moveBefore;
+    cleanups.push(() => delete proto.moveBefore);
+    const warm = document.createElement('iframe');
+    document.body.append(warm);
+    cleanups.push(() => warm.remove());
+    const post = vi.spyOn(warm.contentWindow as Window, 'postMessage').mockImplementation(() => {});
+    const pool: FramePool = { claim: vi.fn(() => warm), dispose: () => {} };
+    const view = render(<FramePoolContext.Provider value={pool}>{labWith(ready)}</FramePoolContext.Provider>);
+    expect(moveBefore).toHaveBeenCalledWith(warm, null);
+    expect(moveBefore.mock.contexts[0]).toBe(view.container.querySelector('.fg-frame-slot'));
+    expect(warm.className).toBe('fg-frame-view');
+    expect(warm.hasAttribute('src')).toBe(false);
+    expect(handoffs(post)).toEqual([[{ type: PORT_HANDOFF, id: entry.id }, location.origin, [expect.any(MessagePort)]]]);
   });
 });
 

@@ -1,7 +1,7 @@
-import { act, fireEvent } from '@testing-library/react';
+import { act } from '@testing-library/react';
 import { vi } from 'vitest';
 import { type Channel, openChannel } from '../protocol/channel';
-import { type FromFrame, PORT_HANDOFF, type ToFrame } from '../protocol/messages';
+import { FRAME_HELLO, type FromFrame, PORT_HANDOFF, type ToFrame } from '../protocol/messages';
 
 /** The forge test project runs without labkit's setup, and a lab's tiled surface needs a measured, non-zero box. */
 export function installResizeObserver(): void {
@@ -28,10 +28,19 @@ export async function flush(): Promise<void> {
   await act(async () => {});
 }
 
-/** Loads a story iframe by hand and plays the frame's half of the port handoff. */
+/** Plays a frame document's hello, as its entry would once it runs. */
+export function sayHello(iframe: HTMLIFrameElement): void {
+  const event = new MessageEvent('message', { data: { type: FRAME_HELLO }, origin: location.origin });
+  Object.defineProperty(event, 'source', { value: iframe.contentWindow });
+  act(() => {
+    window.dispatchEvent(event);
+  });
+}
+
+/** Plays the frame's half of the port handoff for a story iframe. */
 export function connectFrame(iframe: HTMLIFrameElement): { frame: Channel<ToFrame, FromFrame>; received: ToFrame[] } {
   const post = vi.spyOn(iframe.contentWindow as Window, 'postMessage').mockImplementation(() => {});
-  fireEvent.load(iframe);
+  sayHello(iframe);
   const call = (post.mock.calls as unknown[][])
     .filter((c) => (c[0] as { type?: unknown } | null)?.type === PORT_HANDOFF)
     .at(-1);
