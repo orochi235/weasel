@@ -887,10 +887,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   hand-build a header and set `document.title`; `LabShell` with `pages` would give
   them a switcher, but `LabSwitcher` matches on path and both pages are hash
   routes on one document — check that first.
-- **(P3) Kit gaps the dev pages still route around.** No tree view (the Bundle
-  Inspector's tree is `DisclosureRow`s by hand), no read-only key/value list (the
-  detail pane's `.detailList`, 15+ uses), and the Toolkit Builder's Actions table
-  clips its Requires column — it overflowed before the `DataGrid` move too.
 
 ---
 
