@@ -263,7 +263,7 @@
   border-radius: var(--wzl-radius-sm);
   cursor: pointer;
   /* The dynamic color flows through --wd-swatch-color, set inline on
-     the button. Box-shadow inset gives a 1px contrast border around the
+     the chip. Box-shadow inset gives a 1px contrast border around the
      paint area so light swatches read against the panel. */
   box-shadow: inset 0 0 0 1px var(--wzl-line);
 }
@@ -355,20 +355,21 @@
     repeating-conic-gradient(var(--wzl-border) 0% 25%, var(--wzl-surface) 0% 50%) 50% / 8px 8px;
 }
 
-/* Native color input lives offscreen — the swatch itself is the visible
-   trigger, but we still need a real <input type=color> so the OS color
-   picker pops on click. */
+/* The native color input covers its chip, invisible: it takes the click and
+   the keyboard focus, and the chip draws the paint. */
 .wd-swatch-input {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  margin: 0;
   opacity: 0;
   cursor: pointer;
-  /* Let the native input receive clicks directly so the OS picker opens
-     reliably on every click (including when the swatch is already
-     focused). The wrapping button still gets the bubbled click for
-     focus + shift-toggle handling. */
+}
+
+.wd-swatch:has(.wd-swatch-input:focus-visible) {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
 }
 
 /* --- Action bar far-right spacer ------------------------------------- */

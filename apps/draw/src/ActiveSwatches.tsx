@@ -1,7 +1,8 @@
 /**
  * Illustrator-style dual swatch widget: active fill on top, active stroke
- * underneath with a small offset overlap. Click either to open a color
- * picker (native `<input type="color">` for v1). `'none'` state renders as
+ * underneath with a small offset overlap. Each chip is a `<label>` around a
+ * transparent native `<input type="color">`, which takes the click, the
+ * keyboard focus and opens the OS picker. `'none'` state renders as
  * a red diagonal stripe across the panel surface.
  *
  * Keybindings (registered by the consumer; not bound here):
@@ -99,10 +100,9 @@ export function ActiveSwatches() {
   const fillPrev = colors.fill.kind === 'solid' ? colors.fill.color : DEFAULT_FILL_COLOR;
   const strokePrev = colors.stroke.kind === 'solid' ? colors.stroke.color : DEFAULT_STROKE_COLOR;
   // Shift-click toggles between solid/none. Plain click updates focus and
-  // lets the native color input (which receives the bubbled click) open
-  // the OS picker. Calling `preventDefault` on the bubbled event would
-  // suppress the picker, so we only do that on the shift-toggle branch.
-  const onSwatchClick = (which: 'fill' | 'stroke', e: ReactMouseEvent<HTMLButtonElement>): void => {
+  // lets the native color input open the OS picker; `preventDefault` would
+  // suppress the picker, so only the shift-toggle branch calls it.
+  const onSwatchClick = (which: 'fill' | 'stroke', e: ReactMouseEvent<HTMLLabelElement>): void => {
     colors.setFocus(which);
     if (e.shiftKey) {
       e.preventDefault();
@@ -118,8 +118,7 @@ export function ActiveSwatches() {
   return (
     <div className="wd-active-swatches-group">
       <div className="wd-active-swatches" role="group" aria-label="Active fill and stroke">
-        <button
-          type="button"
+        <label
           className={`wd-swatch wd-swatch--stroke${colors.focused === 'stroke' ? ' is-focused' : ''}${paintClassSuffix(colors.stroke)}`}
           style={swatchStyle(colors.stroke)}
           title="Stroke — click to pick · shift-click for none"
@@ -131,9 +130,8 @@ export function ActiveSwatches() {
             prev={strokePrev}
             setLocal={(v) => colors.setStroke({ kind: 'solid', color: v })}
           />
-        </button>
-        <button
-          type="button"
+        </label>
+        <label
           className={`wd-swatch wd-swatch--fill${colors.focused === 'fill' ? ' is-focused' : ''}${paintClassSuffix(colors.fill)}`}
           style={swatchStyle(colors.fill)}
           title="Fill — click to pick · shift-click for none"
@@ -145,7 +143,7 @@ export function ActiveSwatches() {
             prev={fillPrev}
             setLocal={(v) => colors.setFill({ kind: 'solid', color: v })}
           />
-        </button>
+        </label>
       </div>
       <span title={`Toggle none for the focused swatch (${colors.focused}) · /`}>
         <Button
