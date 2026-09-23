@@ -40,7 +40,16 @@ export function HistoryList(props: HistoryListProps) {
     muted: i > currentIndex,
     selected: i === currentIndex,
     className: i === currentIndex ? `${s.row} ${s.current}` : s.row,
-    rowProps: { 'data-row-index': i, onClick: () => onJump(i) },
+    rowProps: { 'data-row-index': i },
   }));
-  return <ItemList rows={rows} className={className} empty={empty} />;
+  return (
+    <ItemList
+      rows={rows}
+      className={className}
+      empty={empty}
+      selection="single"
+      onActivate={(_id, i) => onJump(i)}
+      containerProps={{ 'aria-label': 'History' }}
+    />
+  );
 }

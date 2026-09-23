@@ -186,4 +186,40 @@ describe('LayerList', () => {
       Element.prototype.getBoundingClientRect = origGBR;
     }
   });
+
+  describe('keyboard', () => {
+    const opt = (name: string) => screen.getByRole('option', { name });
+
+    it('is a multi-select listbox of layers', () => {
+      render(<LayerList items={ITEMS} selectedIds={['b']} onSelect={() => {}} onReorder={() => {}} />);
+      expect(screen.getByRole('listbox', { name: 'Layers' })).toHaveAttribute('aria-multiselectable', 'true');
+      expect(opt('Beta')).toHaveAttribute('aria-selected', 'true');
+      expect(opt('Beta').tabIndex).toBe(0);
+    });
+
+    it('selects with Space and adds with Shift+Space, as a click and Shift+click do', () => {
+      const onSelect = vi.fn();
+      render(<LayerList items={ITEMS} selectedIds={['a']} onSelect={onSelect} onReorder={() => {}} />);
+      fireEvent.keyDown(opt('Gamma'), { key: ' ' });
+      expect(onSelect).toHaveBeenLastCalledWith(['c']);
+      fireEvent.keyDown(opt('Gamma'), { key: ' ', shiftKey: true });
+      expect(onSelect).toHaveBeenLastCalledWith(['a', 'c']);
+    });
+
+    it('moves a layer with Alt+Arrow', () => {
+      const onReorder = vi.fn();
+      render(<LayerList items={ITEMS} selectedIds={[]} onSelect={() => {}} onReorder={onReorder} />);
+      fireEvent.keyDown(opt('Alpha'), { key: 'ArrowDown', altKey: true });
+      expect(onReorder).toHaveBeenCalledWith(['a'], 2);
+    });
+
+    it('does not move a layer across a locked row', () => {
+      const onReorder = vi.fn();
+      const items = [...ITEMS, { id: 'page', label: 'Page', locked: true }];
+      render(<LayerList items={items} selectedIds={[]} onSelect={() => {}} onReorder={onReorder} />);
+      fireEvent.keyDown(opt('Gamma'), { key: 'ArrowDown', altKey: true });
+      expect(onReorder).not.toHaveBeenCalled();
+    });
+  });
 });
+
