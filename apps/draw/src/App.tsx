@@ -108,6 +108,7 @@ import {
   TextRow,
   SelectRow,
   ColorRow,
+  ColorModeControl,
   type PropertyOption,
 } from '@weasel-js/ui';
 
@@ -1810,15 +1811,11 @@ function EditorStatusBar({
       <StatusBarItem>zoom: {formatZoom(view.scale.x)}</StatusBarItem>
       {colorMode && (
         <StatusBarItem>
-          <button
-            type="button"
-            className="wd-mode-toggle"
-            onClick={colorMode.toggle}
-            title={`Switch to ${colorMode.mode === 'dark' ? 'light' : 'dark'} mode`}
-            aria-label={`Switch to ${colorMode.mode === 'dark' ? 'light' : 'dark'} mode`}
-          >
-            {colorMode.mode === 'dark' ? '\u25D1 dark' : '\u25D0 light'}
-          </button>
+          <ColorModeControl
+            value={colorMode.preference}
+            onChange={colorMode.setPreference}
+            size="sm"
+          />
         </StatusBarItem>
       )}
       <StatusBarItem muted title={buildTitle()}>{buildLabel()}</StatusBarItem>
