@@ -540,11 +540,12 @@
   display: flex;
   align-items: center;
   gap: var(--wzl-space-xs);
-  font-size: 12px;
+  font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg);
 }
 
 .wd-loupe-readout code {
+  font-family: var(--wzl-font-mono);
   font-variant-numeric: tabular-nums;
   min-inline-size: 8ch;
 }
