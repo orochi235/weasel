@@ -241,30 +241,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-}
-
-/* The "None" toggle — small text button sitting below the offset swatches.
-   When the focused swatch is `none`, the button shows depressed (active)
-   styling so users can read state at a glance. */
-.wd-swatch-none-toggle {
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  background: transparent;
-  border: 1px solid var(--wzl-border);
-  border-radius: 3px;
-  color: var(--wzl-fg);
-  cursor: pointer;
-}
-.wd-swatch-none-toggle:hover {
-  background: var(--wzl-surface-hover);
-}
-.wd-swatch-none-toggle.is-active {
-  background: var(--wzl-accent-soft);
-  border-color: var(--wzl-accent-strong);
-  color: var(--wzl-accent-fg);
+  gap: var(--wzl-space-2);
 }
 
 .wd-active-swatches {
@@ -283,12 +260,12 @@
   padding: 0;
   background: transparent;
   border: 1px solid var(--wzl-border);
-  border-radius: 2px;
+  border-radius: var(--wzl-radius-sm);
   cursor: pointer;
   /* The dynamic color flows through --wd-swatch-color, set inline on
      the button. Box-shadow inset gives a 1px contrast border around the
      paint area so light swatches read against the panel. */
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 0 0 1px var(--wzl-line);
 }
 
 /* The fill / stroke styling differs: fill is a solid filled square,
@@ -339,7 +316,7 @@
 
 .wd-swatch.is-focused {
   border-color: var(--wzl-fg);
-  box-shadow: 0 0 0 2px var(--wzl-fg), inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 0 0 2px var(--wzl-fg), inset 0 0 0 1px var(--wzl-line);
 }
 
 /* When the stroke chip is focused, also outline the *inside* edge of the
@@ -356,13 +333,13 @@
   pointer-events: none;
 }
 
-/* `'none'` state — diagonal red stripe through a white square. The fill
+/* `'none'` state — diagonal red stripe across the panel surface. The fill
    and stroke variants render slightly differently because they have
    different "background" semantics. */
 .wd-swatch.is-none {
-  background-color: #ffffff;
+  background-color: var(--wzl-surface);
   background-image:
-    linear-gradient(45deg, transparent calc(50% - 1px), #d4453a calc(50% - 1px), #d4453a calc(50% + 1px), transparent calc(50% + 1px));
+    linear-gradient(45deg, transparent calc(50% - 1px), var(--wzl-danger) calc(50% - 1px), var(--wzl-danger) calc(50% + 1px), transparent calc(50% + 1px));
 }
 
 /* For `is-none` and `is-transparent`, the chip's background carries the
@@ -373,13 +350,9 @@
    NO marker. Distinct from `'none'` (no paint at all) — `transparent`
    means "draw with alpha 0," still occupies the path, still hit-tests. */
 .wd-swatch.is-transparent {
-  background-color: #ffffff;
-  background-image:
-    linear-gradient(45deg, transparent calc(50% - 1px), #d4453a calc(50% - 1px), #d4453a calc(50% + 1px), transparent calc(50% + 1px)),
-    linear-gradient(45deg, #c5c5c5 25%, transparent 25%, transparent 75%, #c5c5c5 75%, #c5c5c5),
-    linear-gradient(45deg, #c5c5c5 25%, transparent 25%, transparent 75%, #c5c5c5 75%, #c5c5c5);
-  background-size: 100% 100%, 8px 8px, 8px 8px;
-  background-position: 0 0, 0 0, 4px 4px;
+  background:
+    linear-gradient(45deg, transparent calc(50% - 1px), var(--wzl-danger) calc(50% - 1px), var(--wzl-danger) calc(50% + 1px), transparent calc(50% + 1px)),
+    repeating-conic-gradient(var(--wzl-border) 0% 25%, var(--wzl-surface) 0% 50%) 50% / 8px 8px;
 }
 
 /* Native color input lives offscreen — the swatch itself is the visible

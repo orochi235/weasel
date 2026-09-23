@@ -2,7 +2,7 @@
  * Illustrator-style dual swatch widget: active fill on top, active stroke
  * underneath with a small offset overlap. Click either to open a color
  * picker (native `<input type="color">` for v1). `'none'` state renders as
- * a white square with a red diagonal stripe.
+ * a red diagonal stripe across the panel surface.
  *
  * Keybindings (registered by the consumer; not bound here):
  *   D     reset to default — black stroke, white fill
@@ -13,6 +13,7 @@ import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import { useRef } from 'react';
 import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, mergeAlphaFromPrev, useActionsRegistry } from '@weasel-js/core';
 import type { UiOngoingControl } from '@weasel-js/core';
+import { Button } from '@weasel-js/ui';
 import { useColorContext } from './tools/colorContext';
 
 export type ActivePaint =
@@ -46,27 +47,29 @@ function paintClassSuffix(p: ActivePaint): string {
   return '';
 }
 
-function FillColorSwatch(props: {
-  fillColor: string;
-  fillPrev: string;
+/** The native picker inside one swatch. Commits on `blur` only — Chrome
+ *  fires `change` per tick while the native picker is open (per HTML spec),
+ *  which would record one undo entry per tick; `blur` fires once when the
+ *  picker closes. */
+function SwatchColorInput(props: {
+  role: 'fill' | 'stroke';
+  color: string;
+  prev: string;
   setLocal: (color: string) => void;
 }) {
   const actions = useActionsRegistry();
   const ctrlRef = useRef<UiOngoingControl | null>(null);
+  const actionId = props.role === 'fill' ? 'setFill' : 'setStroke';
 
-  /** Commit on `blur` only — Chrome fires `change` per-tick during native
-   *  color-picker interaction (per HTML spec), which would emit one undo
-   *  entry per tick. `blur` fires once when the picker closes. */
-  function dispatch(v: string, phase: 'input' | 'commit'): void {
-    if (phase === 'input') {
-      if (!ctrlRef.current) {
-        ctrlRef.current = actions?.begin('setFill', { color: v }) ?? null;
-      } else {
-        ctrlRef.current.update({ color: v });
-      }
-      return;
+  function input(v: string): void {
+    if (!ctrlRef.current) {
+      ctrlRef.current = actions?.begin(actionId, { color: v }) ?? null;
+    } else {
+      ctrlRef.current.update({ color: v });
     }
-    // commit
+  }
+
+  function commit(): void {
     if (ctrlRef.current) {
       ctrlRef.current.end('commit');
       ctrlRef.current = null;
@@ -76,56 +79,15 @@ function FillColorSwatch(props: {
   return (
     <input
       type="color"
-      value={props.fillColor}
+      value={props.color}
       onInput={(e) => {
-        const v = mergeAlphaFromPrev((e.target as HTMLInputElement).value, props.fillPrev);
+        const v = mergeAlphaFromPrev((e.target as HTMLInputElement).value, props.prev);
         props.setLocal(v);
-        dispatch(v, 'input');
+        input(v);
       }}
-      onBlur={() => dispatch(props.fillColor, 'commit')}
+      onBlur={commit}
       className="wd-swatch-input"
-      aria-label="Fill color"
-    />
-  );
-}
-
-function StrokeColorSwatch(props: {
-  strokeColor: string;
-  strokePrev: string;
-  setLocal: (color: string) => void;
-}) {
-  const actions = useActionsRegistry();
-  const ctrlRef = useRef<UiOngoingControl | null>(null);
-
-  /** Commit on `blur` only — see FillColorSwatch for rationale. */
-  function dispatch(v: string, phase: 'input' | 'commit'): void {
-    if (phase === 'input') {
-      if (!ctrlRef.current) {
-        ctrlRef.current = actions?.begin('setStroke', { color: v }) ?? null;
-      } else {
-        ctrlRef.current.update({ color: v });
-      }
-      return;
-    }
-    // commit
-    if (ctrlRef.current) {
-      ctrlRef.current.end('commit');
-      ctrlRef.current = null;
-    }
-  }
-
-  return (
-    <input
-      type="color"
-      value={props.strokeColor}
-      onInput={(e) => {
-        const v = mergeAlphaFromPrev((e.target as HTMLInputElement).value, props.strokePrev);
-        props.setLocal(v);
-        dispatch(v, 'input');
-      }}
-      onBlur={() => dispatch(props.strokeColor, 'commit')}
-      className="wd-swatch-input"
-      aria-label="Stroke color"
+      aria-label={props.role === 'fill' ? 'Fill color' : 'Stroke color'}
     />
   );
 }
@@ -152,19 +114,7 @@ export function ActiveSwatches() {
       else colors.setStroke(next);
     }
   };
-  // A small "None" affordance below the pair. Toggles the focused swatch
-  // between its current paint and `none`. The icon is the same diagonal-stripe
-  // pattern that the swatches use for the `none` state, keeping the visual
-  // language consistent.
   const focusedIsNone = (colors.focused === 'fill' ? colors.fill : colors.stroke).kind === 'none';
-  const toggleNone = (): void => {
-    const cur = colors.focused === 'fill' ? colors.fill : colors.stroke;
-    const next: ActivePaint = cur.kind === 'none'
-      ? { kind: 'solid', color: colors.focused === 'fill' ? DEFAULT_FILL_COLOR : DEFAULT_STROKE_COLOR }
-      : { kind: 'none' };
-    if (colors.focused === 'fill') colors.setFill(next);
-    else colors.setStroke(next);
-  };
   return (
     <div className="wd-active-swatches-group">
       <div className="wd-active-swatches" role="group" aria-label="Active fill and stroke">
@@ -175,9 +125,10 @@ export function ActiveSwatches() {
           title="Stroke — click to pick · shift-click for none"
           onClick={(e) => onSwatchClick('stroke', e)}
         >
-          <StrokeColorSwatch
-            strokeColor={strokeColor}
-            strokePrev={strokePrev}
+          <SwatchColorInput
+            role="stroke"
+            color={strokeColor}
+            prev={strokePrev}
             setLocal={(v) => colors.setStroke({ kind: 'solid', color: v })}
           />
         </button>
@@ -188,23 +139,25 @@ export function ActiveSwatches() {
           title="Fill — click to pick · shift-click for none"
           onClick={(e) => onSwatchClick('fill', e)}
         >
-          <FillColorSwatch
-            fillColor={fillColor}
-            fillPrev={fillPrev}
+          <SwatchColorInput
+            role="fill"
+            color={fillColor}
+            prev={fillPrev}
             setLocal={(v) => colors.setFill({ kind: 'solid', color: v })}
           />
         </button>
       </div>
-      <button
-        type="button"
-        className={`wd-swatch-none-toggle${focusedIsNone ? ' is-active' : ''}`}
-        onClick={toggleNone}
-        title={`Toggle none for the focused swatch (${colors.focused}) · /`}
-        aria-label={`Toggle no paint for ${colors.focused}`}
-        aria-pressed={focusedIsNone}
-      >
-        None
-      </button>
+      <span title={`Toggle none for the focused swatch (${colors.focused}) · /`}>
+        <Button
+          variant="ghost"
+          size="sm"
+          pressed={focusedIsNone}
+          onClick={colors.toggleFocusedNone}
+          ariaLabel={`Toggle no paint for ${colors.focused}`}
+        >
+          None
+        </Button>
+      </span>
     </div>
   );
 }
