@@ -27,6 +27,7 @@ import {
 import { fieldClasses, type FieldOrientation } from '../Field/Field';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import s from './Select.module.css';
+import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 
 /** One option in a {@link Select}'s `options` list. */
 export type SelectOption = {
@@ -115,7 +116,7 @@ export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, '
    */
   triggerId?: string;
   className?: string;
-} & OverlayPortalProps;
+} & SegmentTooltipFields & OverlayPortalProps;
 
 /**
  * Form select wrapping React Aria's Select. Pass either `options` for a
@@ -125,6 +126,10 @@ export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, '
  *
  * The selection key type is parameterized so consumers with a string-literal
  * union for `value` (e.g. `'r' | 'g' | 'b'`) get a typed `onSelectionChange`.
+ *
+ * `shortcut` puts a kit tooltip on the trigger reading `Name (⌘K)`, named by
+ * `aria-label` or a string `label`, as `Button` does; `tooltip` replaces that
+ * text.
  */
 export function Select<T extends Key = string>(props: SelectProps<T>) {
   const {
@@ -145,6 +150,8 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
     triggerId,
     className,
     portalContainer,
+    shortcut,
+    tooltip,
     ...rest
   } = props;
 
@@ -175,36 +182,41 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
     >
       {anchor}
       {label !== undefined && <Label className={`${fieldClasses.label} ${s.label}`}>{label}</Label>}
-      <RACButton
-        id={triggerId}
-        ref={triggerRef}
-        className={s.trigger}
-        onPointerDown={(e) => {
-          pressRef.current = { x: e.clientX, y: e.clientY, at: performance.now() };
-        }}
+      <TriggerTooltip
+        content={segmentTooltipContent({ tooltip, shortcut, ariaLabel: rest['aria-label'], label })}
+        disabled={rest.isDisabled}
       >
-        <SelectValue className={s.value}>
-          {({ defaultChildren, isPlaceholder }) =>
-            isPlaceholder ? (placeholder ?? defaultChildren) : defaultChildren
-          }
-        </SelectValue>
-        {width === 'fit' && (
-          <span className={s.sizer} aria-hidden="true">
-            {placeholder !== undefined && <span>{placeholder}</span>}
-            {optionLabels(options, children).map((l, i) => (
-              <span key={i}>
-                <CheckMark />
-                {l}
-              </span>
-            ))}
-          </span>
-        )}
-        {indicator === 'chevron' && (
-          <svg className={s.chevron} viewBox="0 0 10 10" aria-hidden="true">
-            <path d="M2 4 L5 7 L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </RACButton>
+        <RACButton
+          id={triggerId}
+          ref={triggerRef}
+          className={s.trigger}
+          onPointerDown={(e) => {
+            pressRef.current = { x: e.clientX, y: e.clientY, at: performance.now() };
+          }}
+        >
+          <SelectValue className={s.value}>
+            {({ defaultChildren, isPlaceholder }) =>
+              isPlaceholder ? (placeholder ?? defaultChildren) : defaultChildren
+            }
+          </SelectValue>
+          {width === 'fit' && (
+            <span className={s.sizer} aria-hidden="true">
+              {placeholder !== undefined && <span>{placeholder}</span>}
+              {optionLabels(options, children).map((l, i) => (
+                <span key={i}>
+                  <CheckMark />
+                  {l}
+                </span>
+              ))}
+            </span>
+          )}
+          {indicator === 'chevron' && (
+            <svg className={s.chevron} viewBox="0 0 10 10" aria-hidden="true">
+              <path d="M2 4 L5 7 L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </RACButton>
+      </TriggerTooltip>
       {description !== undefined && (
         <Text slot="description" className={`${fieldClasses.hint} ${s.below}`}>
           {description}

@@ -8,6 +8,7 @@ import {
 } from 'react-aria-components';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import s from './MenuButton.module.css';
+import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 
 /** One row in a {@link MenuButton}'s list. */
 export type MenuButtonItem<T extends string = string> = {
@@ -29,12 +30,15 @@ export type MenuButtonProps<T extends string = string> = {
   isDisabled?: boolean;
   className?: string;
   'aria-label'?: string;
-} & OverlayPortalProps;
+} & SegmentTooltipFields & OverlayPortalProps;
 
 /**
  * A button that opens a list and acts on the row chosen — "Add trial…",
  * "Load…". Unlike a {@link Select} it holds no value, so it sizes to its own
  * label rather than to its widest row.
+ *
+ * `shortcut` adds a kit tooltip reading `Name (⌘N)`, named by `aria-label` or
+ * a string `label`, as `Button` does; `tooltip` replaces that text.
  */
 export function MenuButton<T extends string = string>({
   label,
@@ -44,21 +48,28 @@ export function MenuButton<T extends string = string>({
   className,
   'aria-label': ariaLabel,
   portalContainer,
+  shortcut,
+  tooltip,
 }: MenuButtonProps<T>) {
   const { anchor, portalProps } = useOverlayPortal(portalContainer);
   return (
     <MenuTrigger>
       {anchor}
-      <RACButton
-        className={[s.trigger, className].filter(Boolean).join(' ')}
-        isDisabled={isDisabled}
-        aria-label={ariaLabel}
+      <TriggerTooltip
+        content={segmentTooltipContent({ tooltip, shortcut, ariaLabel, label })}
+        disabled={isDisabled}
       >
-        <span className={s.label}>{label}</span>
-        <svg className={s.chevron} viewBox="0 0 10 10" aria-hidden="true">
-          <path d="M2 4 L5 7 L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </RACButton>
+        <RACButton
+          className={[s.trigger, className].filter(Boolean).join(' ')}
+          isDisabled={isDisabled}
+          aria-label={ariaLabel}
+        >
+          <span className={s.label}>{label}</span>
+          <svg className={s.chevron} viewBox="0 0 10 10" aria-hidden="true">
+            <path d="M2 4 L5 7 L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </RACButton>
+      </TriggerTooltip>
       {/* `data-weasel-overlay`: see Select — the list renders in a portal,
           outside the subtree the trigger sits in. */}
       <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>

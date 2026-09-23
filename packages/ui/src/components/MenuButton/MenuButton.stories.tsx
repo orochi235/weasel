@@ -33,3 +33,14 @@ export const AddTrial: Story = {
     );
   },
 };
+
+/** `shortcut` hovers as `New (⌘N)`; `tooltip` replaces that text with a
+ *  longer hint for a label too terse to say what the menu holds. */
+export const Tooltips: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 12 }}>
+      <MenuButton label="New" shortcut="⌘N" items={INSTRUMENTS} onAction={() => {}} />
+      <MenuButton label="Debug" tooltip="Debug surfaces" items={INSTRUMENTS} onAction={() => {}} />
+    </div>
+  ),
+};

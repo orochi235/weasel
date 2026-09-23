@@ -175,3 +175,20 @@ export const PopupPlacement: Story = {
     </div>
   ),
 };
+
+/** `shortcut` hovers as `Name (⌘K)`; `tooltip` replaces that text with a
+ *  longer hint for a trigger whose value alone doesn't say what it sets. */
+export const Tooltips: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 24 }}>
+      <Select aria-label="Color" shortcut="⌘K" width="fit" options={COLORS} defaultSelectedKey="g" />
+      <Select
+        aria-label="Color"
+        tooltip="Channel the curve edits"
+        width="fit"
+        options={COLORS}
+        defaultSelectedKey="b"
+      />
+    </div>
+  ),
+};

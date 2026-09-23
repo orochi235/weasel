@@ -136,7 +136,7 @@ export function ActionBar(p: ActionBarProps) {
   return (
     <div className="wd-actionbar" role="toolbar" aria-label="Actions">
       <div className="wd-actionbar-group">
-        <MenuButton label="New" items={PAPER_ITEMS} onAction={p.onNew} />
+        <MenuButton label="New" tooltip="New document" items={PAPER_ITEMS} onAction={p.onNew} />
         <ButtonBar
           ariaLabel="File"
           size="sm"
@@ -184,6 +184,7 @@ export function ActionBar(p: ActionBarProps) {
         {/* The profile is captured at `start()`, so it can't change mid-recording. */}
         <Select
           aria-label="Recording profile"
+          tooltip="Recording profile — how aggressively to sample pointermove"
           width="fit"
           variant="bare"
           options={RECORDING_PROFILES}
@@ -192,7 +193,7 @@ export function ActionBar(p: ActionBarProps) {
           isDisabled={p.recording}
         />
         <PlayButton onPlay={p.onPlay} />
-        <MenuButton label="Debug" items={DEBUG_ROUTES} onAction={openDebugRoute} />
+        <MenuButton label="Debug" tooltip="Debug surfaces" items={DEBUG_ROUTES} onAction={openDebugRoute} />
       </div>
       <Button
         variant="ghost"

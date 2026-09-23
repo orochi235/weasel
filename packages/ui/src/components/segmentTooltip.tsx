@@ -36,3 +36,20 @@ export function SegmentTooltip({ content, disabled, children }: {
     </TooltipTrigger>
   );
 }
+
+/** {@link SegmentTooltip} for a React Aria trigger (`Button` inside a
+ *  `MenuTrigger` or `Select`), which takes the tooltip's hover and focus props
+ *  itself and so needs no `Focusable` around it. */
+export function TriggerTooltip({ content, disabled, children }: {
+  content: ReactNode | undefined;
+  disabled?: boolean;
+  children: ReactElement;
+}): ReactElement {
+  if (content === undefined || content === null || content === false) return children;
+  return (
+    <TooltipTrigger isDisabled={disabled}>
+      {children}
+      <Tooltip>{content}</Tooltip>
+    </TooltipTrigger>
+  );
+}

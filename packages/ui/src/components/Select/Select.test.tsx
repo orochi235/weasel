@@ -334,3 +334,45 @@ describe('Select sections', () => {
     expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['System', 'Garamond']);
   });
 });
+
+/** Enter keyboard modality, then focus — RAC only opens tooltips on focus-visible. */
+function keyboardFocusTrigger(el: HTMLElement) {
+  fireEvent.keyDown(document.body, { key: 'Tab' });
+  act(() => el.focus());
+}
+
+describe('Select tooltip', () => {
+  it('shows the shortcut after the accessible name', () => {
+    render(<Select aria-label="Color" shortcut="⌘K" options={OPTIONS} defaultSelectedKey="r" />);
+    const trigger = screen.getByRole('button');
+    keyboardFocusTrigger(trigger);
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toContain('Color (⌘K)');
+    expect(trigger.getAttribute('aria-describedby')).toContain(tip.id);
+  });
+
+  it('names the shortcut after a string label', () => {
+    render(<Select label="Color" shortcut="⌘K" options={OPTIONS} defaultSelectedKey="r" />);
+    keyboardFocusTrigger(screen.getByRole('button'));
+    expect(screen.getByRole('tooltip').textContent).toContain('Color (⌘K)');
+  });
+
+  it('lets tooltip replace the default text, and still opens its list', () => {
+    const onChange = vi.fn();
+    render(
+      <Select aria-label="Color" tooltip="Pick a channel" options={OPTIONS} defaultSelectedKey="r" onSelectionChange={onChange} />,
+    );
+    const trigger = screen.getByRole('button');
+    keyboardFocusTrigger(trigger);
+    expect(screen.getByRole('tooltip').textContent).toContain('Pick a channel');
+    act(() => { fireEvent.click(trigger); });
+    fireEvent.click(screen.getByRole('option', { name: 'Green' }));
+    expect(onChange).toHaveBeenCalledWith('g');
+  });
+
+  it('adds no tooltip without either field', () => {
+    render(<Select aria-label="Color" options={OPTIONS} defaultSelectedKey="r" />);
+    keyboardFocusTrigger(screen.getByRole('button'));
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+});
