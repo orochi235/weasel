@@ -51,6 +51,9 @@ import {
   DataGrid,
   KeySequence,
   keySpecsFromMods,
+  Select,
+  Switch,
+  ToggleBar,
   keySpecsFromShortcut,
   type DataGridColumn,
   type LogicalModSpec,
@@ -449,6 +452,7 @@ function withUniqueIds<T extends { key: string }>(rows: readonly T[]): (T & { id
 // ─────────────────────────────────────────────────────────────────────────
 
 const MOD_KEYS = ['shift', 'alt', 'meta', 'ctrl'] as const;
+type ModKey = (typeof MOD_KEYS)[number];
 
 /** `resolveAll` reads only what this ctx hands it, so a throwaway dispatcher
  *  and these two inert stubs are enough — the query never invokes anything
@@ -507,6 +511,12 @@ export function ResolutionWidget({
     };
   }, [tools]);
 
+  const targetOptions = [
+    ...RESOLUTION_BODY_TARGETS.map((t) => ({ value: t, label: t })),
+    ...affordanceKinds.map((k) => ({ value: `${AFFORDANCE_PREFIX}${k}`, label: `chrome: ${k}` })),
+    ...nodeKinds.map((k) => ({ value: `${KIND_PREFIX}${k}`, label: `node: ${k}` })),
+  ];
+
   // `wheel` and `key` events carry no target for the matcher to read, so the
   // picker would be a control with no effect.
   const targetApplies = gesture !== 'wheel' && gesture !== 'key';
@@ -536,51 +546,37 @@ export function ResolutionWidget({
     <div className={s.widget}>
       <h2 className={s.widgetTitle}>Resolution · {candidates.length}</h2>
       <div className={s.resolutionControls}>
-        <label>
-          gesture
-          <select
-            aria-label="gesture"
-            value={gesture}
-            onChange={(e) => setGesture(e.target.value as ResolutionGesture)}
-          >
-            {RESOLUTION_GESTURES.map((g) => (
-              <option key={g} value={g}>{g}</option>
-            ))}
-          </select>
-        </label>
-        <label
+        <Select<ResolutionGesture>
+          label="gesture"
+          orientation="row"
+          width="fit"
+          options={RESOLUTION_GESTURES.map((g) => ({ value: g, label: g }))}
+          selectedKey={gesture}
+          onSelectionChange={setGesture}
+        />
+        <span
           title={targetApplies
             ? undefined
             : `target matching doesn't apply to a ${gesture} event — it carries no target for the matcher to read`}
         >
-          target
-          <select
-            aria-label="target"
-            value={target}
-            disabled={!targetApplies}
-            onChange={(e) => setTarget(e.target.value)}
-          >
-            {RESOLUTION_BODY_TARGETS.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-            {affordanceKinds.map((k) => (
-              <option key={k} value={`${AFFORDANCE_PREFIX}${k}`}>chrome: {k}</option>
-            ))}
-            {nodeKinds.map((k) => (
-              <option key={k} value={`${KIND_PREFIX}${k}`}>node: {k}</option>
-            ))}
-          </select>
-        </label>
-        {MOD_KEYS.map((m) => (
-          <label key={m}>
-            <input
-              type="checkbox"
-              checked={!!mods[m]}
-              onChange={(e) => setMods((prev) => ({ ...prev, [m]: e.target.checked }))}
-            />
-            {m}
-          </label>
-        ))}
+          <Select
+            label="target"
+            orientation="row"
+            width="fit"
+            isDisabled={!targetApplies}
+            options={targetOptions}
+            selectedKey={target}
+            onSelectionChange={setTarget}
+          />
+        </span>
+        <ToggleBar<ModKey>
+          mode="multiple"
+          size="sm"
+          ariaLabel="modifiers"
+          items={MOD_KEYS.map((m) => ({ value: m, label: m }))}
+          value={MOD_KEYS.filter((m) => mods[m])}
+          onChange={(next) => setMods(Object.fromEntries(next.map((m) => [m, true])))}
+        />
       </div>
       <div className={s.widgetBodyScrollXY}>
         {candidates.length === 0 ? (
@@ -713,14 +709,9 @@ function DispatchTraceWidget(): ReactElement {
     <div className={s.widget}>
       <h2 className={s.widgetTitle}>
         Dispatch · {entries.length}
-        <label className={s.traceToggle}>
-          <input
-            type="checkbox"
-            checked={showUnhandled}
-            onChange={(e) => setShowUnhandled(e.target.checked)}
-          />
+        <Switch className={s.traceToggle} isSelected={showUnhandled} onChange={setShowUnhandled}>
           unhandled
-        </label>
+        </Switch>
       </h2>
       <div className={s.widgetBodyScrollY}>
         <DispatchTraceTable
@@ -837,18 +828,14 @@ export function ToolkitBuilder(): ReactElement {
       <header className={s.header}>
         <div className={s.headerRow}>
           <h1 className={s.title}>Toolkit Builder</h1>
-          <label className={s.bundlePicker}>
-            bundle
-            <select
-              aria-label="bundle"
-              value={bundle}
-              onChange={(e) => setBundle(e.target.value as ToolBundle)}
-            >
-              {BUNDLE_IDS.map((id) => (
-                <option key={id} value={id}>{id}</option>
-              ))}
-            </select>
-          </label>
+          <Select<ToolBundle>
+            label="bundle"
+            orientation="row"
+            width="fit"
+            options={BUNDLE_IDS.map((id) => ({ value: id, label: id }))}
+            selectedKey={bundle}
+            onSelectionChange={setBundle}
+          />
         </div>
         <p className={s.subtitle}>
           Mount a SceneCanvas with the chosen bundle, then inspect the live tool

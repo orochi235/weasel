@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import type { Action, Tool } from '@weasel-js/core';
 import { ResolutionWidget } from './ToolkitBuilder';
 
@@ -60,6 +60,12 @@ function predicateBadges(container: HTMLElement): Element[] {
   return [...container.querySelectorAll('[title^="Evaluated against a synthesized hit"]')];
 }
 
+/** Opens the kit Select labelled `label` and picks the option named `option`. */
+function choose(label: string, option: string): void {
+  act(() => { fireEvent.click(screen.getByRole('button', { name: new RegExp(`${label}$`) })); });
+  fireEvent.click(screen.getByRole('option', { name: option }));
+}
+
 function verdictCells(text: string): HTMLElement[] {
   return screen.queryAllByRole('cell', { name: text });
 }
@@ -99,9 +105,7 @@ describe('ResolutionWidget', () => {
     // the predicate binding is a real candidate — and it is the only badged
     // row, with viewport's untargeted drag alongside it as the control.
     const withPen = renderWidget('pen');
-    fireEvent.change(screen.getByRole('combobox', { name: 'target' }), {
-      target: { value: 'affordance:anchor' },
-    });
+    choose('target', 'chrome: anchor');
     const badges = predicateBadges(withPen.container);
     expect(badges).toHaveLength(1);
     expect(badges[0]!.closest('tr')!.textContent).toContain('pen.adjust');
@@ -110,10 +114,17 @@ describe('ResolutionWidget', () => {
 
   it('says so when nothing matches', () => {
     renderWidget();
-    fireEvent.change(screen.getByRole('combobox', { name: 'gesture' }), {
-      target: { value: 'key' },
-    });
+    choose('gesture', 'key');
     expect(screen.getByText('No binding matches this input.')).toBeTruthy();
     expect(screen.queryByRole('table')).toBeNull();
+  });
+
+  it('matches only bindings whose required modifiers are held', () => {
+    renderWidget();
+    expect(verdictCells('fires')).toHaveLength(1);
+    // Every fixture binding demands no modifiers, so holding shift rules them all out.
+    fireEvent.click(screen.getByRole('button', { name: 'shift' }));
+    expect(screen.getByRole('button', { name: 'shift' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByText('No binding matches this input.')).toBeTruthy();
   });
 });

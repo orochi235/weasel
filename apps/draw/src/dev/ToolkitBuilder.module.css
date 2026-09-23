@@ -10,22 +10,6 @@
 .header { margin-bottom: var(--wzl-space-8); }
 .headerRow { display: flex; align-items: baseline; gap: var(--wzl-space-8); }
 .title { margin: 0; font-size: var(--wzl-font-size-xl); font-weight: 600; flex: 1; }
-.bundlePicker {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-3);
-  font-size: 12px;
-  color: var(--wzl-fg-muted);
-}
-.bundlePicker select {
-  background: var(--wzl-surface);
-  color: var(--wzl-fg);
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  padding: 3px var(--wzl-space-3);
-  font-size: 12px;
-  font-family: inherit;
-}
 .subtitle { margin: var(--wzl-space-2) 0 0; font-size: var(--wzl-font-size-md); color: var(--wzl-fg-muted); }
 
 .layout {
@@ -130,23 +114,16 @@
 
 .traceToggle {
   margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wzl-space-2);
-  font-size: var(--wzl-font-size-xs);
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
-  cursor: pointer;
 }
-.traceToggle input { margin: 0; }
 /* widgetTitle is the inverted (light) header — lay its contents out in a row
    so the toggle can sit at the trailing edge. */
 .widgetTitle { display: flex; align-items: center; gap: var(--wzl-space-4); }
 
 /* Resolution widget — verdict-driven row emphasis. */
 .resolutionControls { display: flex; flex-wrap: wrap; gap: var(--wzl-space-4); align-items: center; padding: var(--wzl-space-4) var(--wzl-space-6); }
-.resolutionControls label { display: flex; align-items: center; gap: var(--wzl-space-2); font-size: var(--wzl-font-size-sm); }
 .verdictFires { font-weight: 600; }
 .verdictShadowed { opacity: 0.5; }
 .verdictBlocked { opacity: 0.75; text-decoration: line-through; }
