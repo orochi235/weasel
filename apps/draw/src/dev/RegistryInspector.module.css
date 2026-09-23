@@ -73,7 +73,6 @@
   width: 100%;
   text-align: left;
 }
-.treeCount { color: var(--wzl-fg-muted); font-weight: 400; }
 .leafBadge { --badge-font-size: 8px; --badge-pad-y: 1px; transform: scale(0.85); transform-origin: left center; }
 .treeLeaves { list-style: none; margin: 0; padding: 0 0 0 32px; }
 .treeLeaf {
@@ -166,7 +165,6 @@
   line-height: 1.4;
   max-width: 420px;
 }
-.memberList { list-style: none; padding: 0; margin: 4px 0 12px; }
 .memberLink {
   background: transparent;
   border: none;
@@ -189,7 +187,6 @@
 .iconPreviewCellSmall { width: 32px; height: 32px; }
 .iconPreviewCellLarge { width: 64px; height: 64px; }
 .iconPreviewCell > svg { width: 100%; height: 100%; }
-.sourcePath { font-size: 13px; color: var(--wzl-fg-muted); margin: 4px 0; }
 .callbackList { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; gap: 2px; }
 .callbackList li { display: flex; align-items: baseline; gap: 8px; }
 .callbackLink {
@@ -234,13 +231,6 @@
   flex-wrap: wrap;
   border: 1px solid var(--wzl-border, var(--wzl-border));
   border-radius: 6px;
-}
-.phaseLabel {
-  font-size: 13px;
-  color: var(--wzl-fg-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  min-width: 56px;
 }
 
 /* Bundle detail: section subheading + members table + added/removed tags. */

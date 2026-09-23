@@ -102,26 +102,6 @@
 .scene { background: #6a6a6a; border-radius: 4px; width: 100%; height: auto; max-width: 520px; aspect-ratio: 13 / 9; }
 .hint { margin: 0; font-size: 12px; color: var(--wzl-fg-muted); }
 
-.sectionTitle {
-  margin: 12px 0 6px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--wzl-fg-muted);
-}
-.sectionTitle:first-child { margin-top: 0; }
-
-.row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  padding: 4px 0;
-  cursor: pointer;
-}
-.row code { font-size: 12px; }
-
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -137,65 +117,8 @@
 .table code { font-size: 11px; }
 
 .empty { color: var(--wzl-fg-muted); font-style: italic; padding: 8px 0; text-align: center; }
-.note { margin: 0 0 8px; font-size: 11px; color: var(--wzl-fg-muted); line-height: 1.4; }
 .iconCell { width: 18px; }
 .iconCell svg { width: 14px; height: 14px; vertical-align: middle; }
-
-/* Bundle ↔ tool membership matrix in the catalog sidebar. */
-.matrix {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-  margin-bottom: 8px;
-}
-.matrix th, .matrix td {
-  text-align: left;
-  padding: 2px 4px;
-  border-bottom: 1px solid var(--wzl-border);
-}
-.matrix th { font-weight: 500; color: var(--wzl-fg-muted); font-size: 10px; }
-.matrix code { font-size: 10px; }
-.matrixCell { text-align: center; color: var(--wzl-accent-fg, #7fb069); font-weight: 700; }
-
-/* Keystroke "key cap" styling — each modifier and key in its own bordered chip. */
-.keys { display: inline-flex; gap: 3px; align-items: center; flex-wrap: wrap; }
-.keysEmpty { color: var(--wzl-fg-muted); }
-.key {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  height: 18px;
-  padding: 0 4px;
-  /* Light face, slightly-darker-than-face border, dark glyph — reads as
-     a real keycap rather than a recessed slot in the panel. */
-  background: var(--wzl-fg, var(--wzl-fg));
-  border: 1px solid var(--wzl-fg-muted);
-  border-bottom-width: 2px;
-  border-radius: 3px;
-  color: var(--wzl-surface);
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 11px;
-  line-height: 1;
-}
-/* Default chip is square — letters, digits, and single glyphs (⎋ ⌫ ↑ etc.)
-   sit in a uniform key-cap box. */
-.key[data-kind='square'] {
-  width: 18px;
-  padding: 0;
-}
-/* Modifiers (⌘ ⇪ ⌥ ⌃) are wider to match the visual weight of how they
-   appear on a real keyboard — and to differentiate them from the keys
-   they modify in a stack. */
-.key[data-kind='modifier'] {
-  min-width: 26px;
-  padding: 0 6px;
-}
-/* Tab / Enter / Space — actual wide keys on a real keyboard. */
-.key[data-kind='wide'] {
-  min-width: 32px;
-  padding: 0 8px;
-}
 
 .conflicts { margin: 0; padding-left: 16px; font-size: 12px; }
 .conflicts li { margin: 4px 0; }
@@ -219,80 +142,9 @@
   font-size: 11px;
   color: var(--wzl-fg, var(--wzl-fg));
 }
-.bindingMod { color: var(--wzl-fg-muted); }
 
 .enabledOk { color: var(--wzl-accent-fg, #7fb069); font-weight: 600; }
 .enabledNo { color: var(--wzl-warning, #d97757); font-family: ui-monospace, monospace; font-size: 11px; }
-
-/* Resolutions widget — gesture/phase pickers + per-mod resolution table. */
-.resolutionsControls {
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-  color: var(--wzl-fg-muted);
-}
-.resolutionsControls label { display: inline-flex; align-items: center; gap: 4px; }
-.resolutionsControls select {
-  background: var(--wzl-surface);
-  color: var(--wzl-fg, var(--wzl-fg));
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 12px;
-  font-family: inherit;
-}
-.resolutionsTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-}
-.resolutionsTable th, .resolutionsTable td {
-  padding: 4px 6px;
-  border-bottom: 1px solid var(--wzl-border);
-  text-align: left;
-  vertical-align: middle;
-}
-.resolutionsTable th { font-weight: 600; color: var(--wzl-fg-muted); }
-.resolutionsCell { white-space: nowrap; }
-.resolutionsHit code { font-size: 11px; color: var(--wzl-accent-fg, #7fb069); }
-.resolutionsMatchedKey {
-  font-size: 10px;
-  color: var(--wzl-fg-muted);
-  margin-left: 2px;
-}
-.resolutionsMode {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.segmented {
-  display: inline-flex;
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.segmentedButton {
-  background: transparent;
-  border: 0;
-  color: var(--wzl-fg-muted);
-  font: inherit;
-  font-size: 12px;
-  padding: 2px 8px;
-  cursor: pointer;
-}
-.segmentedButton[data-active='true'] {
-  background: var(--wzl-accent, #7fb069);
-  color: var(--wzl-fg-on-accent, #f5f5f6);
-}
-.segmentedButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.4;
-}
-.resolutionsError {
-  font-size: 11px;
-  color: var(--wzl-warning, #d97757);
-  font-family: ui-monospace, monospace;
-}
 
 /* Dispatch-trace widget rows — mirrors DispatchTracePanel's palette so the
    two trace surfaces read identically. Rows are clickable to expand the
@@ -329,7 +181,6 @@
 
 .traceDetailRow > td { background: rgba(0, 0, 0, 0.25); padding: 6px 12px; }
 .traceCandFired { font-weight: 700; color: var(--wzl-accent-fg, #7fb069); }
-
 
 /* Resolution widget — verdict-driven row emphasis. */
 .resolutionControls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 12px; }
