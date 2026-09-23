@@ -3,7 +3,7 @@
  *  Every editing command (history, clipboard, reorder, group, align,
  *  distribute, flip, booleans) is a kit action, rendered by the kit's
  *  `<ActionBar group=…/>` from the registry `<SceneCanvas>` fills; this file
- *  only supplies draw's glyphs for the ones the kit ships without. The
+ *  only maps kit glyphs onto the few actions that carry none. The
  *  buttons built here are the app's own: file, view toggles, recording,
  *  preferences. */
 import { useRef, type ReactNode } from 'react';
@@ -28,18 +28,6 @@ import {
  *  preset table (the parent picks the dimensions per key). */
 export type PaperSizeKey = 'letter' | 'a4' | 'legal';
 import {
-  FlipXIcon,
-  FlipYIcon,
-  GroupIcon,
-  UngroupIcon,
-  SendToBackIcon,
-  SendBackwardIcon,
-  BringForwardIcon,
-  BringToFrontIcon,
-  CutIcon,
-  CopyIcon,
-  PasteIcon,
-  DuplicateIcon,
   ReleaseCompoundIcon,
   SettingsIcon,
   RecordIcon,
@@ -81,24 +69,13 @@ const PAPER_ITEMS: ReadonlyArray<{ value: PaperSizeKey; label: string }> = [
   { value: 'legal', label: 'Legal' },
 ];
 
-/** Draw's glyphs for kit actions that ship without one, keyed by
- *  `ActionItem.key`. Align and distribute use the kit's own. */
+/** Kit glyphs for the kit actions that ship without one, keyed by
+ *  `ActionItem.key`: the history and delete actions live in core, their
+ *  glyphs in `@weasel-js/ui`. */
 const KIT_ICONS: Record<string, ReactNode> = {
   'undo': <UndoIcon />,
   'redo': <RedoIcon />,
-  'clipboard.cut': <CutIcon />,
-  'clipboard.copy': <CopyIcon />,
-  'clipboard.paste': <PasteIcon />,
-  'duplicate': <DuplicateIcon />,
   'delete': <DeleteIcon />,
-  'reorder.forward:adjacent': <BringForwardIcon />,
-  'reorder.forward:extreme': <BringToFrontIcon />,
-  'reorder.backward:adjacent': <SendBackwardIcon />,
-  'reorder.backward:extreme': <SendToBackIcon />,
-  'group': <GroupIcon />,
-  'ungroup': <UngroupIcon />,
-  'flip:x': <FlipXIcon />,
-  'flip:y': <FlipYIcon />,
 };
 
 const KIT_GROUPS = [

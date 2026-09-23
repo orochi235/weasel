@@ -1,4 +1,6 @@
 import type { Scene } from 'core/scene/types';
+import { createElement } from 'react';
+import { FlipXIcon, FlipYIcon } from './icons/editIcons';
 import type { Op } from 'core/ops/types';
 import { multiply, rotate, translate, type Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
@@ -141,8 +143,8 @@ export const flipAction: Action & { requires: string[] } = {
   label: 'Flip',
   group: 'flip',
   variants: [
-    { key: 'x', label: 'Flip Horizontal', params: { axis: 'x' } },
-    { key: 'y', label: 'Flip Vertical', params: { axis: 'y' } },
+    { key: 'x', label: 'Flip Horizontal', icon: createElement(FlipXIcon), params: { axis: 'x' } },
+    { key: 'y', label: 'Flip Vertical', icon: createElement(FlipYIcon), params: { axis: 'y' } },
   ],
   defaultBinding: [
     { spec: { kind: 'key', key: ['h', 'H'], mods: { shift: true } }, opts: { params: { axis: 'x' } } },

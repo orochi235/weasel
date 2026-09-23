@@ -1,4 +1,6 @@
 import type { Scene } from 'core/scene/types';
+import { createElement } from 'react';
+import { CopyIcon, CutIcon, PasteIcon } from './icons/editIcons';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -14,6 +16,7 @@ import { requiresSelection } from './requiresSelection';
 export const clipboardCopyAction: Action & { requires: string[] } = {
   id: 'clipboard.copy',
   label: 'Copy',
+  icon: createElement(CopyIcon),
   group: 'clipboard',
   defaultBinding: { kind: 'key', key: 'c', mods: { mod: true } },
   // Same gate as `duplicate`: a mode that can neither edit the page nor own a
@@ -40,6 +43,7 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
 export const clipboardCutAction: Action & { requires: string[] } = {
   id: 'clipboard.cut',
   label: 'Cut',
+  icon: createElement(CutIcon),
   group: 'clipboard',
   defaultBinding: { kind: 'key', key: 'x', mods: { mod: true } },
   eligible: { capability: 'edits-page' },
@@ -79,6 +83,7 @@ export const clipboardCutAction: Action & { requires: string[] } = {
 export const clipboardPasteAction: Action & { requires: string[] } = {
   id: 'clipboard.paste',
   label: 'Paste',
+  icon: createElement(PasteIcon),
   group: 'clipboard',
   eligible: { capability: 'edits-page' },
   requires: ['clipboard'],

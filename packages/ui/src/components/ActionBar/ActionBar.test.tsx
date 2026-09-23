@@ -3,6 +3,9 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import {
   ActionsProvider,
   useAction,
+  clipboardCutAction,
+  clipboardCopyAction,
+  clipboardPasteAction,
   type Action,
 } from '@weasel-js/core';
 import { ActionBar } from './ActionBar';
@@ -261,5 +264,19 @@ describe('ActionBar', () => {
     fireEvent.keyDown(document.body, { key: 'Tab' });
     act(() => y.focus());
     expect(screen.getByRole('tooltip').textContent).toBe('Flip Vertical (⇧V)');
+  });
+});
+
+describe('ActionBar kit glyphs', () => {
+  it('draws the standard edit actions with no icons map', () => {
+    render(
+      <Harness
+        actions={[clipboardCutAction, clipboardCopyAction, clipboardPasteAction]}
+        bar={<ActionBar group="clipboard" />}
+      />,
+    );
+    for (const key of ['clipboard.cut', 'clipboard.copy', 'clipboard.paste']) {
+      expect(screen.getByTestId(`action-bar-item-${key}`).querySelector('svg'), key).not.toBeNull();
+    }
   });
 });

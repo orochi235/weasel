@@ -13,6 +13,12 @@ export {
   LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon, HandIcon,
   UnknownIcon,
 } from '@weasel-js/core';
+// The standard edit actions' glyphs live beside those actions in core, for the
+// same reason.
+export {
+  CutIcon, CopyIcon, PasteIcon, DuplicateIcon, GroupIcon, UngroupIcon,
+  BringForwardIcon, BringToFrontIcon, SendBackwardIcon, SendToBackIcon, FlipXIcon, FlipYIcon,
+} from '@weasel-js/core';
 
 export const CloneIcon = (p: IconProps) => <Icon name="clone" {...p} />;
 export const ResetIcon = (p: IconProps) => <Icon name="reset" {...p} />;

@@ -1198,6 +1198,23 @@ export {
   CropIcon,
 } from './interactions/actions/defaults/icons/booleanIcons';
 
+// ─── Default edit-action icons ──────────────────────────────────────────────
+// Shipped on the clipboard, duplicate, group, reorder and flip actions.
+export {
+  CutIcon,
+  CopyIcon,
+  PasteIcon,
+  DuplicateIcon,
+  GroupIcon,
+  UngroupIcon,
+  BringForwardIcon,
+  BringToFrontIcon,
+  SendBackwardIcon,
+  SendToBackIcon,
+  FlipXIcon,
+  FlipYIcon,
+} from './interactions/actions/defaults/icons/editIcons';
+
 // ─── Trailing type re-exports ────────────────────────────────────────────────
 // Types reachable through the public API but previously only importable via
 // deep paths. Consolidated here so consumers can name them from the barrel.
