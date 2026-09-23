@@ -1,8 +1,10 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
 import s from './Button.module.css';
 
-/** Visual weight of a button. Defaults to `secondary`. */
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+/** Visual weight of a button. Defaults to `secondary`. `link` drops the
+ *  control box entirely and reads as a hyperlink in running text -- for an
+ *  in-page navigation that is still a button, not an `<a href>`. */
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link';
 /** Button height and type scale. */
 export type ButtonSize = 'sm' | 'md';
 

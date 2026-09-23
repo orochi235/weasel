@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { Button } from './Button';
@@ -108,5 +110,37 @@ describe('Button', () => {
     // that happens to be off.
     rerender(<Button>Save</Button>);
     expect(getByRole('button').getAttribute('aria-pressed')).toBeNull();
+  });
+
+  describe('link variant', () => {
+    const css = readFileSync(resolve(__dirname, 'Button.module.css'), 'utf8');
+    const rule = (sel: string) => {
+      const m = css.match(new RegExp(`(^|\\n)${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`));
+      return m?.[2] ?? '';
+    };
+
+    it('renders a real button with the link variant class', () => {
+      const onClick = vi.fn();
+      const { getByRole } = render(<Button variant="link" onClick={onClick}>open</Button>);
+      const btn = getByRole('button');
+      expect(btn.className).toMatch(/variant_link/);
+      fireEvent.click(btn);
+      expect(onClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('paints its text with the accent-as-text token, not the accent fill', () => {
+      const body = rule('.variant_link');
+      expect(body).toMatch(/color:\s*var\(--wzl-accent-fg\)/);
+      expect(body).not.toMatch(/--wzl-accent\)/);
+    });
+
+    it('drops the control box so it sits in running text', () => {
+      const body = rule('.variant_link');
+      expect(body).toMatch(/height:\s*auto/);
+      expect(body).toMatch(/padding:\s*0/);
+      expect(body).toMatch(/background:\s*transparent/);
+      expect(body).toMatch(/font:\s*inherit/);
+      expect(css).toMatch(/\.variant_link::before\s*\{\s*display:\s*none/);
+    });
   });
 });

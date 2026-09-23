@@ -12,7 +12,7 @@ const meta: Meta<typeof Button> = {
     size: 'md',
   },
   argTypes: {
-    variant: { control: 'inline-radio', options: ['primary', 'secondary', 'ghost'] },
+    variant: { control: 'inline-radio', options: ['primary', 'secondary', 'ghost', 'link'] },
     size: { control: 'inline-radio', options: ['sm', 'md'] },
     disabled: { control: 'boolean' },
     loading: { control: 'boolean' },
@@ -45,6 +45,18 @@ const TrashIcon = (): ReactElement => (
 export const Primary: Story = { args: { variant: 'primary' } };
 export const Secondary: Story = { args: { variant: 'secondary' } };
 export const Ghost: Story = { args: { variant: 'ghost' } };
+
+/** `link` takes its type from the surrounding text, so it sits inside a
+ *  sentence or a table cell at whatever size that text is. */
+export const Link: Story = {
+  render: () => (
+    <p style={{ maxWidth: 360, lineHeight: 1.5 }}>
+      Bound to <Button variant="link">editor.insert</Button>, which routes
+      through <Button variant="link">routeTarget:scene</Button> and falls back
+      to <Button variant="link" disabled>none</Button>.
+    </p>
+  ),
+};
 
 export const Sizes: Story = {
   render: () => (
