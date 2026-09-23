@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ActionsProvider } from '@weasel-js/core';
 import type { PropertyRenderContext } from '@weasel-js/ui';
-import { WD_RENDERERS } from '../App';
+import { WD_RENDERERS, WdSelectionKeyContext } from '../App';
 
 /** The schema's own `data.stroke.paint` leaf: a `paint` leaf, so its default
  *  is a whole `FillStyle` and not a color string. */
@@ -57,5 +57,25 @@ describe("WeaselDraw's data.stroke.paint renderer", () => {
     );
     expect(screen.getByRole('radio', { name: 'Linear' })).toBeChecked();
     expect(screen.getByLabelText('Stop 1 at 0%')).toBeInTheDocument();
+  });
+});
+
+describe("WeaselDraw's paint renderers across selections", () => {
+  // Proxy: PaintInput's per-kind memory lives in its own state, so a new
+  // selection has to mount a fresh one. Element identity is what shows it.
+  it('remount the paint control when the selection changes', () => {
+    const at = (key: string) => (
+      <ActionsProvider>
+        <WdSelectionKeyContext.Provider value={key}>
+          {WD_RENDERERS['data.fill'](ctxWith(GRADIENT))}
+        </WdSelectionKeyContext.Provider>
+      </ActionsProvider>
+    );
+    const { rerender } = render(at('a'));
+    const before = screen.getByRole('radio', { name: 'Linear' });
+    rerender(at('a'));
+    expect(screen.getByRole('radio', { name: 'Linear' })).toBe(before);
+    rerender(at('b'));
+    expect(screen.getByRole('radio', { name: 'Linear' })).not.toBe(before);
   });
 });
