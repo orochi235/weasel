@@ -120,6 +120,7 @@ import {
 import { HistoryList } from './ui/HistoryList';
 import { buildLabel, buildTitle } from '../../shared/buildInfo';
 import { PREFS, usePref } from './prefs';
+import { usePanel, type PanelChrome } from './panels';
 import { LoupeControls } from './LoupeControls';
 import { enableMachineFontOutlines, disableMachineFontOutlines } from './fonts';
 
@@ -530,101 +531,92 @@ function RightSidebar({
     onSelect: onLayerSelect,
   };
 
-  const [layersCollapsed, setLayersCollapsed] = usePersistedFlag('wd:panel:layers:collapsed', false);
-  const [historyCollapsed, setHistoryCollapsed] = usePersistedFlag('wd:panel:history:collapsed', false);
+  const propertiesPanel = usePanel('properties');
+  const colorsPanel = usePanel('colors');
+  const layersPanel = usePanel('layers');
+  const historyPanel = usePanel('history');
 
   return (
     <>
-      <SidebarPanel title={docSelected ? 'Document' : 'Properties'}>
-        {docSelected ? (
-          <PropertiesGrid>
-            <PropertyRow label="file">
-              <PropertyTextInput value={filename} placeholder={DEFAULT_FILENAME} onChange={setFilename} />
-            </PropertyRow>
-            <PropertyRow label="paper">
-              <PropertySelect<PaperSizeKey>
-                value={paperSize}
-                options={[
-                  { value: 'letter', label: 'Letter' },
-                  { value: 'a4', label: 'A4' },
-                  { value: 'legal', label: 'Legal' },
-                ]}
-                onChange={setPaperSize}
-              />
-            </PropertyRow>
-            <PropertyRow label="bg">
-              <PropertyColorInput value={backgroundColor} onChange={setBackgroundColor} />
-            </PropertyRow>
-          </PropertiesGrid>
-        ) : (
-          <SelectionPanel
-            scene={scene}
-            selection={selection}
-            // WeaselDraw's kinds come from the kit's inferred routing (`text` /
-            // `path` / `image` — no `data.kind` tag), so the panel classifies
-            // with the same entries SceneCanvas applies when `routing` is unset.
-            properties={inferredNodeProperties}
-            routing={inferredNodeRouting}
-            renderers={WD_RENDERERS}
-            emptyState={<em className="wd-no-selection">No selection</em>}
+      {!propertiesPanel.hidden && (
+        <SidebarPanel
+          title={docSelected ? 'Document' : 'Properties'}
+          collapsed={propertiesPanel.collapsed}
+          onToggleCollapse={propertiesPanel.onToggleCollapse}
+          onHide={propertiesPanel.onHide}
+        >
+          {docSelected ? (
+            <PropertiesGrid>
+              <PropertyRow label="file">
+                <PropertyTextInput value={filename} placeholder={DEFAULT_FILENAME} onChange={setFilename} />
+              </PropertyRow>
+              <PropertyRow label="paper">
+                <PropertySelect<PaperSizeKey>
+                  value={paperSize}
+                  options={[
+                    { value: 'letter', label: 'Letter' },
+                    { value: 'a4', label: 'A4' },
+                    { value: 'legal', label: 'Legal' },
+                  ]}
+                  onChange={setPaperSize}
+                />
+              </PropertyRow>
+              <PropertyRow label="bg">
+                <PropertyColorInput value={backgroundColor} onChange={setBackgroundColor} />
+              </PropertyRow>
+            </PropertiesGrid>
+          ) : (
+            <SelectionPanel
+              scene={scene}
+              selection={selection}
+              // WeaselDraw's kinds come from the kit's inferred routing (`text` /
+              // `path` / `image` — no `data.kind` tag), so the panel classifies
+              // with the same entries SceneCanvas applies when `routing` is unset.
+              properties={inferredNodeProperties}
+              routing={inferredNodeRouting}
+              renderers={WD_RENDERERS}
+              emptyState={<em className="wd-no-selection">No selection</em>}
+            />
+          )}
+        </SidebarPanel>
+      )}
+      {!colorsPanel.hidden && <ColorsPanel chrome={colorsPanel} />}
+      {!layersPanel.hidden && (
+        <SidebarPanel
+          title="Layers"
+          collapsed={layersPanel.collapsed}
+          onToggleCollapse={layersPanel.onToggleCollapse}
+          onHide={layersPanel.onHide}
+        >
+          <LayerList
+            {...layerListProps}
+            empty={<em style={{ opacity: 0.6 }}>No nodes</em>}
           />
-        )}
-      </SidebarPanel>
-      <ColorsPanel />
-      <SidebarPanel
-        title="Layers"
-        collapsed={layersCollapsed}
-        onToggleCollapse={() => setLayersCollapsed((c) => !c)}
-      >
-        <LayerList
-          {...layerListProps}
-          empty={<em style={{ opacity: 0.6 }}>No nodes</em>}
-        />
-      </SidebarPanel>
-      <SidebarPanel
-        title="History"
-        collapsed={historyCollapsed}
-        onToggleCollapse={() => setHistoryCollapsed((c) => !c)}
-      >
-        <HistoryList
-          items={[
-            { id: '__initial__', label: 'Initial' },
-            ...scene.historyEntries().map((e) => ({ id: e.id, label: e.label })),
-          ]}
-          currentIndex={scene.historyIndex()}
-          onJump={(index) => scene.jumpToHistoryIndex(index)}
-        />
-      </SidebarPanel>
+        </SidebarPanel>
+      )}
+      {!historyPanel.hidden && (
+        <SidebarPanel
+          title="History"
+          collapsed={historyPanel.collapsed}
+          onToggleCollapse={historyPanel.onToggleCollapse}
+          onHide={historyPanel.onHide}
+        >
+          <HistoryList
+            items={[
+              { id: '__initial__', label: 'Initial' },
+              ...scene.historyEntries().map((e) => ({ id: e.id, label: e.label })),
+            ]}
+            currentIndex={scene.historyIndex()}
+            onJump={(index) => scene.jumpToHistoryIndex(index)}
+          />
+        </SidebarPanel>
+      )}
       <DispatchTracePanel />
     </>
   );
 }
 
-/** localStorage-backed boolean state. Reads on mount, writes on every set.
- *  Best-effort — storage errors silently fall back to in-memory state. */
-function usePersistedFlag(key: string, initial: boolean): [boolean, (next: boolean | ((prev: boolean) => boolean)) => void] {
-  const [value, setValue] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw === '1') return true;
-      if (raw === '0') return false;
-    } catch { /* ignore */ }
-    return initial;
-  });
-  const set = useCallback(
-    (next: boolean | ((prev: boolean) => boolean)) => {
-      setValue((prev) => {
-        const resolved = typeof next === 'function' ? next(prev) : next;
-        try { localStorage.setItem(key, resolved ? '1' : '0'); } catch { /* ignore */ }
-        return resolved;
-      });
-    },
-    [key],
-  );
-  return [value, set];
-}
-
-function ColorsPanel(): ReactElement {
+function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
   const colors = useColorContext();
   const actions = useActionsRegistry();
   // Highlight tracks the fill swatch — left-click (the primary action)
@@ -633,7 +625,12 @@ function ColorsPanel(): ReactElement {
   // swatch in the first row.
   const current = colors.fill.kind === 'solid' ? colors.fill.color : null;
   return (
-    <PropertiesPanel title="Colors">
+    <PropertiesPanel
+      title="Colors"
+      collapsed={chrome.collapsed}
+      onToggleCollapse={chrome.onToggleCollapse}
+      onHide={chrome.onHide}
+    >
       <PropertySwatchGrid
         value={current}
         options={PALETTE}

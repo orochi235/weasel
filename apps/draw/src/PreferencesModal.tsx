@@ -22,6 +22,7 @@ import {
 } from './prefs';
 import type { RegistryEnumSources } from './registry/types';
 import { RegistryEnumSourcesContext, RegistrySelect } from './registry/RegistrySelect';
+import { PANELS, type PanelsValue } from './panels';
 
 /** Dev mode: the Vite dev server sets `import.meta.env.DEV`. In a
  *  production bundle this is false, so the toggle and any hidden prefs
@@ -97,22 +98,6 @@ function ObjectControl(ctx: PrefRenderContext) {
   return <span className="wd-prefs-readonly">(object)</span>;
 }
 
-type PanelsValue = Record<string, { hidden?: boolean; collapsed?: boolean }>;
-
-// Keys here mirror the panel ids currently rendered in the right sidebar
-// (see App.tsx) plus the History panel. Listed explicitly so unconfigured
-// panels still appear in the editor and users can toggle them off before
-// ever interacting with the panel itself.
-const KNOWN_PANELS: { id: string; label: string }[] = [
-  { id: 'defaults',  label: 'Defaults' },
-  { id: 'selection', label: 'Selection' },
-  { id: 'colors',    label: 'Colors' },
-  { id: 'layers',    label: 'Layers' },
-  { id: 'history',   label: 'History' },
-  { id: 'document',  label: 'Document' },
-  { id: 'view',      label: 'View' },
-];
-
 function PanelsEditor({ ctx }: { ctx: PrefRenderContext }) {
   const pref = ctx.pref as WeaselDrawPrefObject;
   const panels = (ctx.value ?? {}) as PanelsValue;
@@ -127,7 +112,7 @@ function PanelsEditor({ ctx }: { ctx: PrefRenderContext }) {
         <span className="wd-prefs-panels-head-flag">Hidden</span>
         <span className="wd-prefs-panels-head-flag">Collapsed</span>
       </div>
-      {KNOWN_PANELS.map(({ id, label }) => {
+      {PANELS.map(({ id, label }) => {
         const state = panels[id] ?? {};
         return (
           <div key={id} className="wd-prefs-panels-row">

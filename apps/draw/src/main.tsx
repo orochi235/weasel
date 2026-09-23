@@ -12,6 +12,7 @@ import { App } from './App';
 import { drawTheme } from './theme';
 import { ColorModeProvider } from './colorMode';
 import { registerAvailableFonts } from './fonts';
+import { migrateLegacyPanelFlags } from './panels';
 
 // Both dev surfaces are only reachable at `#/dev/*`, and `RegistryInspector`
 // reaches `dev/sourceLookup`, which embeds this app's own source as strings.
@@ -59,6 +60,8 @@ registerFontOutlines(
 // family that's actually installed is enrolled with the kit's dynamic
 // canvas-SDF tier, which rasterizes glyphs on demand. See `./fonts`.
 registerAvailableFonts();
+
+migrateLegacyPanelFlags();
 
 /** Hash-based router: `#/dev/toolkits` mounts ToolkitBuilder, anything else
  *  mounts the main App. Independent surfaces — they don't share providers
