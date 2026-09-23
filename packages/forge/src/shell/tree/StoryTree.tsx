@@ -46,7 +46,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   const [route, setRoute] = useRoute();
   const [query, setQuery] = useState('');
   const [folds, setFolds] = usePersistedState<Record<string, boolean>>('fg-tree-open', {}, { scope: 'lab' });
-  const [view, setView] = usePersistedState<View>('fg-tree-view', 'tree', { scope: 'lab' });
+  const [view, setView] = usePersistedState<View>('fg-tree-view', 'components', { scope: 'lab' });
   // Stored as what is *off*, so a library added later is on without anyone
   // going back to tick it.
   const [hidden, setHidden] = usePersistedState<Record<string, boolean>>('fg-tree-libraries', {}, { scope: 'lab' });

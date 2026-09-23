@@ -66,6 +66,7 @@ describe('Workshop', () => {
     location.hash = '#/x--a';
     render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1));
+    fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
     const folder = screen.getByRole('treeitem', { name: 'X' });
     if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText('X'));
     fireEvent.click(screen.getByRole('treeitem', { name: 'B' }));
@@ -78,6 +79,7 @@ describe('Workshop', () => {
     location.hash = '#/x--a';
     render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1));
+    fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
     const folder = screen.getByRole('treeitem', { name: 'X' });
     if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText('X'));
     fireEvent.click(screen.getByRole('treeitem', { name: 'B' }));

@@ -42,9 +42,11 @@ function Harness({ storage }: { storage: StorageAdapter }) {
 const trialsOf = (e: IndexEntry) => screen.queryAllByRole('region', { name: `Trial ${e.title} / ${e.name}` });
 const allTrials = () => screen.queryAllByRole('region', { name: /^Trial / });
 
+/** Mounts the lab and switches the sidebar to the folder tree, which these tests exercise. */
 async function mount(storage: StorageAdapter = createMemoryAdapter()) {
   const view = render(<Harness storage={storage} />);
   const treeEl = await screen.findByRole('tree', { name: 'Stories' });
+  fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
   return { treeEl, view };
 }
 
@@ -65,6 +67,12 @@ afterEach(() => {
 });
 
 describe('StoryTree', () => {
+  it('lists components until another view is chosen', async () => {
+    render(<Harness storage={createMemoryAdapter()} />);
+    await screen.findByRole('tree', { name: 'Stories' });
+    expect(screen.getByRole('radio', { name: 'Components' })).toHaveAttribute('aria-checked', 'true');
+  });
+
   it('heads itself "Stories" and lists top-level folders', async () => {
     const { treeEl } = await mount();
     expect(screen.getByRole('heading', { name: 'Stories' })).toBeInTheDocument();
