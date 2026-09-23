@@ -103,9 +103,8 @@ describe('LayerList', () => {
     const pageRow = screen.getByText('Page');
     fireEvent.pointerDown(pageRow, { clientX: 0, clientY: 60, pointerId: 1, isPrimary: true });
     fireEvent.pointerMove(pageRow, { clientX: 0, clientY: 0, pointerId: 1, isPrimary: true });
-    // No drop indicator should appear because no drag engaged.
-    const indicator = container.querySelector('[class*="dropIndicator"]');
-    expect(indicator).toBeNull();
+    // No drop seam should appear because no drag engaged.
+    expect(container.querySelector('[data-drop]')).toBeNull();
     fireEvent.pointerUp(pageRow, { clientX: 0, clientY: 0, pointerId: 1, isPrimary: true });
     expect(onReorder).not.toHaveBeenCalled();
   });
@@ -152,50 +151,39 @@ describe('LayerList', () => {
     expect(rows[1].getAttribute('data-locked')).toBe('true');
   });
 
-  it('places the drop indicator on the seam of the rendered rows, not a fixed row height', () => {
-    // Rows 32px tall with a 2px gap — not the 24px the default density gives.
-    const ROW = 32;
-    const GAP = 2;
+  it('marks the drop seam on the rows and adds no element ahead of them', () => {
+    // The drop target is computed from the list's children, so any element the
+    // indicator adds ahead of the rows would shift every drop by one.
+    const ROW = 28;
     const origGBR = Element.prototype.getBoundingClientRect;
-    const origTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop')!;
-    const origHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')!;
-    const indexOf = (el: Element) => Number(el.getAttribute('data-row-index'));
     Element.prototype.getBoundingClientRect = function () {
       if (this.hasAttribute('data-row-index')) {
-        const top = indexOf(this) * (ROW + GAP);
+        const top = Number(this.getAttribute('data-row-index')) * ROW;
         return { top, bottom: top + ROW, left: 0, right: 100, width: 100, height: ROW, x: 0, y: top, toJSON: () => ({}) } as DOMRect;
       }
       return origGBR.call(this);
     };
-    Object.defineProperty(HTMLElement.prototype, 'offsetTop', {
-      configurable: true,
-      get() { return this.hasAttribute('data-row-index') ? indexOf(this) * (ROW + GAP) : 0; },
-    });
-    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
-      configurable: true,
-      get() { return this.hasAttribute('data-row-index') ? ROW : 0; },
-    });
     try {
+      const onReorder = vi.fn();
       const { container } = render(
-        <LayerList items={ITEMS} selectedIds={[]} onSelect={() => {}} onReorder={() => {}} />
+        <LayerList items={ITEMS} selectedIds={[]} onSelect={() => {}} onReorder={onReorder} />
       );
+      const list = container.firstElementChild!;
       const alpha = screen.getByText('Alpha');
       fireEvent.pointerDown(alpha, { clientX: 0, clientY: 5, pointerId: 1, isPrimary: true });
-      // Below every row: the drop lands after the last one.
+      // Below every row: the seam sits after the last one.
       fireEvent.pointerMove(alpha, { clientX: 0, clientY: 500, pointerId: 1, isPrimary: true });
-      const indicator = container.querySelector<HTMLElement>('[class*="dropIndicator"]');
-      expect(indicator).not.toBeNull();
-      expect(indicator!.style.top).toBe(`${2 * (ROW + GAP) + ROW - 1}px`);
-      // Inside Gamma: the drop lands above it, in the middle of the gap
-      // between Beta and Gamma, less half the 2px bar.
-      fireEvent.pointerMove(alpha, { clientX: 0, clientY: 2 * (ROW + GAP) + 5, pointerId: 1, isPrimary: true });
-      const moved = container.querySelector<HTMLElement>('[class*="dropIndicator"]');
-      expect(moved!.style.top).toBe(`${(ROW + GAP) + ROW + GAP / 2 - 1}px`);
-      fireEvent.pointerUp(alpha, { clientX: 0, clientY: 0, pointerId: 1, isPrimary: true });
+      expect(list.children).toHaveLength(ITEMS.length);
+      expect(list.children[2].getAttribute('data-drop')).toBe('after');
+      expect(list.children[0].getAttribute('data-dragging')).toBe('true');
+      // Inside Gamma: the seam sits above it.
+      fireEvent.pointerMove(alpha, { clientX: 0, clientY: 2 * ROW + 5, pointerId: 1, isPrimary: true });
+      expect(list.children).toHaveLength(ITEMS.length);
+      expect(list.children[2].getAttribute('data-drop')).toBe('before');
+      fireEvent.pointerUp(alpha, { clientX: 0, clientY: 2 * ROW + 5, pointerId: 1, isPrimary: true });
+      expect(onReorder).toHaveBeenCalledWith(['a'], 2);
     } finally {
       Element.prototype.getBoundingClientRect = origGBR;
-      Object.defineProperty(HTMLElement.prototype, 'offsetTop', origTop);
-      Object.defineProperty(HTMLElement.prototype, 'offsetHeight', origHeight);
     }
   });
 });

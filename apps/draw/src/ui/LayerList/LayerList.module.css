@@ -7,17 +7,3 @@
   border-radius: var(--wzl-radius-sm);
   border: var(--wzl-border-w) solid var(--wzl-border-strong);
 }
-
-.dragging {
-  opacity: 0.4;
-}
-
-.dropIndicator {
-  position: absolute;
-  left: 2px;
-  right: 2px;
-  height: 2px;
-  background: var(--wzl-fg);
-  pointer-events: none;
-  z-index: 1;
-}
