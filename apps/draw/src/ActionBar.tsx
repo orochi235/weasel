@@ -2,24 +2,20 @@
  *
  *  Every editing command (history, clipboard, reorder, group, align,
  *  distribute, flip, booleans) is a kit action, rendered by the kit's
- *  `<ActionBar group=…/>` from the registry `<SceneCanvas>` fills; this file
- *  only maps kit glyphs onto the few actions that carry none. The
- *  buttons built here are the app's own: file, view toggles, recording,
- *  preferences. */
-import { useRef, type ReactNode } from 'react';
+ *  `<ActionBar group=…/>` from the registry `<SceneCanvas>` fills, glyphs
+ *  included. The buttons built here are the app's own: file, view toggles,
+ *  recording, preferences. */
+import { useRef } from 'react';
 import {
   ActionBar as KitActionBar,
   Button,
   ButtonBar,
-  DeleteIcon,
   GridIcon,
   MenuButton,
   PlayIcon,
-  RedoIcon,
   Select,
   SnapIcon,
   ToggleBar,
-  UndoIcon,
   formatShortcut,
 } from '@weasel-js/ui';
 
@@ -69,15 +65,6 @@ const PAPER_ITEMS: ReadonlyArray<{ value: PaperSizeKey; label: string }> = [
   { value: 'legal', label: 'Legal' },
 ];
 
-/** Kit glyphs for the kit actions that ship without one, keyed by
- *  `ActionItem.key`: the history and delete actions live in core, their
- *  glyphs in `@weasel-js/ui`. */
-const KIT_ICONS: Record<string, ReactNode> = {
-  'undo': <UndoIcon />,
-  'redo': <RedoIcon />,
-  'delete': <DeleteIcon />,
-};
-
 const KIT_GROUPS = [
   'history', 'clipboard', 'edit', 'reorder', 'structure', 'align', 'distribute', 'flip',
 ] as const;
@@ -124,7 +111,7 @@ export function ActionBar(p: ActionBarProps) {
           ]}
         />
       </div>
-      {KIT_GROUPS.map((group) => <KitActionBar key={group} group={group} icons={KIT_ICONS} />)}
+      {KIT_GROUPS.map((group) => <KitActionBar key={group} group={group} />)}
       <ToggleBar
         mode="multiple"
         ariaLabel="View"

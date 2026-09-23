@@ -6,6 +6,8 @@ import { duplicateAction } from './duplicate';
 import { groupAction, ungroupAction } from './group';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';
 import { flipAction } from './flip';
+import { undoAction, redoAction } from './undoRedo';
+import { deleteAction } from './delete';
 
 function iconOf(item: ActionItem) {
   const i = item.icon;
@@ -14,12 +16,14 @@ function iconOf(item: ActionItem) {
 
 describe('default edit-action icons', () => {
   const items = [
+    undoAction, redoAction, deleteAction,
     clipboardCutAction, clipboardCopyAction, clipboardPasteAction, duplicateAction,
     groupAction, ungroupAction, reorderForwardAction, reorderBackwardAction, flipAction,
   ].flatMap(actionItems);
 
   it('gives every entry an svg glyph', () => {
     expect(items.map((i) => i.key)).toEqual([
+      'undo', 'redo', 'delete',
       'clipboard.cut', 'clipboard.copy', 'clipboard.paste', 'duplicate', 'group', 'ungroup',
       'reorder.forward:adjacent', 'reorder.forward:extreme',
       'reorder.backward:adjacent', 'reorder.backward:extreme',

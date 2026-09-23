@@ -1215,6 +1215,15 @@ export {
   FlipXIcon,
   FlipYIcon,
 } from './interactions/actions/defaults/icons/editIcons';
+// Undo, redo and delete; drawn in @weasel-js/ui's icon pipeline, which emits
+// their markup here and re-exports these components.
+export {
+  UndoIcon,
+  RedoIcon,
+  DeleteIcon,
+  type ActionGlyphProps,
+} from './interactions/actions/defaults/icons/actionGlyphIcons';
+export { ACTION_GLYPHS } from './interactions/actions/defaults/icons/actionGlyphs';
 
 // ─── Trailing type re-exports ────────────────────────────────────────────────
 // Types reachable through the public API but previously only importable via

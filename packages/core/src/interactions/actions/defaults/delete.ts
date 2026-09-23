@@ -1,3 +1,5 @@
+import { createElement } from 'react';
+import { DeleteIcon } from './icons/actionGlyphIcons';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
@@ -71,6 +73,7 @@ export function buildDeleteOps(
 export const deleteAction: Action & { requires: string[] } = {
   id: 'delete',
   label: 'Delete',
+  icon: createElement(DeleteIcon),
   group: 'edit',
   // Suppressed while any tool is mid-gesture — accidentally hitting
   // Delete during a drag shouldn't wipe the selection out from under

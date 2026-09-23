@@ -18,6 +18,7 @@ export {
 export {
   CutIcon, CopyIcon, PasteIcon, DuplicateIcon, GroupIcon, UngroupIcon,
   BringForwardIcon, BringToFrontIcon, SendBackwardIcon, SendToBackIcon, FlipXIcon, FlipYIcon,
+  UndoIcon, RedoIcon, DeleteIcon,
 } from '@weasel-js/core';
 
 export const CloneIcon = (p: IconProps) => <Icon name="clone" {...p} />;
@@ -31,10 +32,7 @@ export const ModeLightIcon = (p: IconProps) => <Icon name="modeLight" {...p} />;
 export const ModeDarkIcon = (p: IconProps) => <Icon name="modeDark" {...p} />;
 export const ModeAutoIcon = (p: IconProps) => <Icon name="modeAuto" {...p} />;
 export const RemoveIcon = (p: IconProps) => <Icon name="remove" {...p} />;
-export const DeleteIcon = (p: IconProps) => <Icon name="delete" {...p} />;
 export const SortIcon = (p: IconProps) => <Icon name="sort" {...p} />;
-export const UndoIcon = (p: IconProps) => <Icon name="undo" {...p} />;
-export const RedoIcon = (p: IconProps) => <Icon name="redo" {...p} />;
 export const ZoomOutIcon = (p: IconProps) => <Icon name="zoomOut" {...p} />;
 export const FitIcon = (p: IconProps) => <Icon name="fit" {...p} />;
 export const SnapshotIcon = (p: IconProps) => <Icon name="snapshot" {...p} />;

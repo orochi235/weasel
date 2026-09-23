@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Icon } from './Icon';
-import { CheckIcon } from './index';
+import { CheckIcon, DeleteIcon, RedoIcon, UndoIcon } from './index';
 import { isFillable } from './Icon';
 import { ICON_FILLS, ICON_GROUPS, ICON_PATHS, type IconName } from './paths';
 
@@ -96,5 +96,16 @@ describe('CheckIcon', () => {
     expect(svg?.querySelector('path')?.getAttribute('d')).toBe(ICON_PATHS.check.match(/d="([^"]+)"/)?.[1]);
     expect(ICON_PATHS.check).toMatch(/^<path d="M[^"Zz]+"\/>$/);
     expect(ICON_GROUPS.find((g) => g.names.includes('check'))?.label).toBe('State');
+  });
+});
+
+// These three are drawn here but live in core, which ships them on its actions.
+describe('core-owned action glyphs', () => {
+  it.each([
+    ['undo', UndoIcon], ['redo', RedoIcon], ['delete', DeleteIcon],
+  ] as const)('draws %s the same as <Icon>', (name, Component) => {
+    const a = render(<Component size={16} label="x" className="c" />).container.innerHTML;
+    const b = render(<Icon name={name} size={16} label="x" className="c" />).container.innerHTML;
+    expect(a).toBe(b);
   });
 });
