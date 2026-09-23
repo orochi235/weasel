@@ -52,9 +52,6 @@
   min-width: 0;
 }
 .widget { min-width: 0; }
-/* PropertyPanel turns off text selection for its control rows; ids in these
-   tables are there to be copied. Two classes outrank its one. */
-.layout .widget { -webkit-user-select: text; user-select: text; }
 /* Fixed-height scroll bodies keep a long list inside its own panel instead
    of pushing the whole page. */
 .widgetBodyScrollY { max-height: 280px; overflow-y: auto; min-height: 0; }
@@ -86,13 +83,6 @@
 .enabledOk { color: var(--wzl-accent-fg); font-weight: 600; }
 .enabledNo { color: var(--wzl-warning); font-family: var(--wzl-font-mono); font-size: var(--wzl-font-size-sm); }
 
-.traceToggle {
-  margin-left: auto;
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
-}
-.widgetTitle { display: flex; align-items: center; gap: var(--wzl-space-4); }
 
 /* Resolution widget — verdict-driven row emphasis. */
 .resolutionControls { display: flex; flex-wrap: wrap; gap: var(--wzl-space-4); align-items: center; padding-bottom: var(--wzl-space-4); }

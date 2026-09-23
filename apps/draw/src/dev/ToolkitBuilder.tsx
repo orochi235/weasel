@@ -635,13 +635,12 @@ const RESOLUTION_COLUMNS: readonly DataGridColumn<ResolutionRow>[] = [
   },
 ];
 
-/** A `?` marking a result this panel can only approximate. Uses a native
- *  title: a kit Tooltip needs a focusable trigger, and Badge is not one. */
+/** A `?` marking a result this panel can only approximate. */
 function Caveat({ text }: { text: string }): ReactElement {
   return (
-    <span className={s.predicateBadge} title={text}>
-      <Badge tone="warn" size="xs">?</Badge>
-    </span>
+    <Badge className={s.predicateBadge} tone="warn" size="xs" aria-label="Approximate" tooltip={text}>
+      ?
+    </Badge>
   );
 }
 
@@ -704,13 +703,11 @@ function DispatchTraceWidget(): ReactElement {
     <PropertyPanel
       stance="debug"
       className={s.widget}
-      title={(
-        <span className={s.widgetTitle}>
-          Dispatch · {entries.length}
-          <Switch className={s.traceToggle} isSelected={showUnhandled} onChange={setShowUnhandled}>
-            unhandled
-          </Switch>
-        </span>
+      title={`Dispatch · ${entries.length}`}
+      actions={(
+        <Switch isSelected={showUnhandled} onChange={setShowUnhandled}>
+          unhandled
+        </Switch>
       )}
     >
       <div className={s.widgetBodyScrollY}>

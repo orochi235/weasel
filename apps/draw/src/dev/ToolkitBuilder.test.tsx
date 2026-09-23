@@ -1,4 +1,4 @@
-import { act, render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import type { Action, Tool } from '@weasel-js/core';
 import { ResolutionWidget } from './ToolkitBuilder';
 
@@ -54,10 +54,9 @@ function renderWidget(activeToolId = 'select') {
   );
 }
 
-/** The `?` caveat badge, found by its title rather than its CSS-module class
- *  (the class name is hashed at build time; the title is the contract). */
+/** The `?` caveat badges. */
 function predicateBadges(container: HTMLElement): Element[] {
-  return [...container.querySelectorAll('[title^="Evaluated against a synthesized hit"]')];
+  return within(container).queryAllByRole('img', { name: 'Approximate' });
 }
 
 /** Opens the kit Select labelled `label` and picks the option named `option`. */
