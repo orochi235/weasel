@@ -18,6 +18,7 @@ export * from './components/Slider';
 export * from './components/ItemList';
 export * from './components/ListEditor';
 export * from './components/ToggleBar';
+export * from './components/ColorModeControl';
 export * from './components/OptionsBar';
 export * from './components/ButtonBar';
 export * from './components/ToolOptionsBar';

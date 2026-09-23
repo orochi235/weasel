@@ -1,3 +1,4 @@
+import type { ColorModePreference } from '@weasel-js/theme';
 import type { Auto } from '../config/auto';
 import type { ConfigPath, ResolvedConfig, ValueAtPath } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
@@ -78,7 +79,7 @@ export interface SavedSnapshot {
 }
 
 /** `auto` follows the OS; the other two are an explicit choice. */
-export type LabMode = 'auto' | 'light' | 'dark';
+export type LabMode = ColorModePreference;
 
 /** How much room the lab's own chrome takes — the theme's density axis, named
  *  the way the theme names it. A lab's instruments are unaffected: this sizes

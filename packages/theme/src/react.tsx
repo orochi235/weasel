@@ -5,6 +5,15 @@ import { fullSelection, selectionKey, type Selection } from './axes';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
 
+export {
+  useColorModePreference,
+  useResolvedColorMode,
+  type ColorModePreferenceOptions,
+  type ColorModePreferenceState,
+  type ColorModeStorage,
+} from './useColorMode';
+export { isColorModePreference, type ColorMode, type ColorModePreference } from './colorMode';
+
 /** What `<ThemeProvider>` publishes: the theme, the full selection in force, the
  *  fully resolved token record for that pair, and the tone list in force. */
 export interface ThemeContextValue {

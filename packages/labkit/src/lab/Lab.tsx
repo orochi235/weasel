@@ -1,5 +1,5 @@
 import { type ColorList, colorAt, colorCount, resolveTheme } from '@weasel-js/theme';
-import { ThemeProvider } from '@weasel-js/theme/react';
+import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
 import {
   type CSSProperties,
   type ReactNode,
@@ -55,7 +55,6 @@ import { LabPalette } from './LabPalette';
 import { LabShell } from './LabShell';
 import type { LabPage } from './LabSwitcher';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
-import { useResolvedMode } from './useSystemMode';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
 interface LabBaseProps {
@@ -185,7 +184,7 @@ function LabFallback({
   pages,
   path,
 }: Pick<LabBaseProps, 'title' | 'mode' | 'density' | 'pages' | 'path'>) {
-  const resolvedMode = useResolvedMode(mode ?? 'auto');
+  const resolvedMode = useResolvedColorMode(mode ?? 'auto');
   return (
     <ThemeProvider
       theme={interstellarTheme}
@@ -460,7 +459,7 @@ function LabRuntime({
       })),
     [undockedPanels],
   );
-  const resolvedMode = useResolvedMode(modeValue);
+  const resolvedMode = useResolvedColorMode(modeValue);
 
   // Tools and lab contributions share one id namespace, so they merge once
   // here — before any region renders — and a collision throws rather than one

@@ -38,6 +38,8 @@ export {
   type CheckboxProps,
   type ChromaCurve,
   type ChromaCurvePoint,
+  ColorModeControl,
+  type ColorModeControlProps,
   ComboBox,
   type ComboBoxCommit,
   type ComboBoxFilter,
