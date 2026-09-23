@@ -114,8 +114,6 @@
   flex-wrap: wrap;
   gap: var(--wzl-space-2);
 }
-/* Sunken, not --wzl-surface, so the chip reads against the panel. */
-.tag { background: var(--wzl-surface-sunken); padding: var(--wzl-space-1) var(--wzl-space-4); border-radius: var(--wzl-radius-sm); margin-right: var(--wzl-space-2); font-size: var(--wzl-font-size-md); }
 .routeBadge { display: inline-flex; align-items: center; gap: var(--wzl-space-1); margin-right: var(--wzl-space-3); }
 
 .phaseGroup { display: inline-flex; align-items: center; gap: var(--wzl-space-1); }
@@ -166,17 +164,6 @@
   line-height: 1.4;
   max-width: 420px;
 }
-.memberLink {
-  background: transparent;
-  border: none;
-  color: var(--wzl-accent-fg);
-  cursor: pointer;
-  padding: var(--wzl-space-1) 0;
-  font: inherit;
-  text-align: left;
-  text-decoration: underline;
-}
-
 .iconPreviewRow { display: flex; gap: var(--wzl-space-6); margin: var(--wzl-space-4) 0 var(--wzl-space-6); align-items: flex-end; }
 .iconPreviewCell {
   background: var(--wzl-surface);
@@ -234,7 +221,7 @@
   border-radius: 6px;
 }
 
-/* Bundle detail: section subheading + members table + added/removed tags. */
+/* Bundle detail: section subheading. */
 /* The stanced panel-title recipe, so these read like ToolkitBuilder's debug panel titles. */
 .subHeading {
   margin: var(--wzl-space-8) 0 var(--wzl-space-3);
@@ -245,8 +232,6 @@
   letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
   color: var(--wzl-fg-muted);
 }
-.tagAdded { color: var(--wzl-success); }
-.tagRemoved { color: var(--wzl-danger); }
 
 /* Schema panel — property tables for shape/op/action/gesture/node detail. */
 .schemaTable { margin: var(--wzl-space-2) 0 var(--wzl-space-4); }
@@ -255,13 +240,6 @@
   color: var(--wzl-fg);
 }
 .schemaOptional { color: var(--wzl-fg-muted); margin-left: var(--wzl-space-1); }
-.schemaType {
-  font-family: var(--wzl-font-mono);
-  color: var(--wzl-accent-fg);
-  font-size: 12px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
 .schemaDefault {
   font-family: var(--wzl-font-mono);
   color: var(--wzl-success);

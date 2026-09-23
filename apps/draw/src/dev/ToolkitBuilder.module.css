@@ -82,14 +82,6 @@
 }
 .bindingItem { display: inline-flex; align-items: center; gap: var(--wzl-space-2); }
 .bindingSep { font-size: var(--wzl-font-size-xs); color: var(--wzl-fg-muted); }
-.bindingTag {
-  display: inline-block;
-  padding: 1px 5px;
-  background: var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  font-size: var(--wzl-font-size-sm);
-  color: var(--wzl-fg);
-}
 
 .enabledOk { color: var(--wzl-accent-fg); font-weight: 600; }
 .enabledNo { color: var(--wzl-warning); font-family: var(--wzl-font-mono); font-size: var(--wzl-font-size-sm); }

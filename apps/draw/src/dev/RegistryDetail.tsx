@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 import type { GestureSpec } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
-import { Badge, DataGrid, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, keySpecsFromShortcut, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@weasel-js/ui';
+import { Badge, Button, Code, DataGrid, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, keySpecsFromShortcut, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@weasel-js/ui';
 import type { ParsedModifiers, ModifierKey } from '@weasel-js/core/routing';
 
 /** Minimal inline-markdown renderer — splits on backtick-delimited code
@@ -14,7 +14,7 @@ function InlineMarkdown({ text }: { text: string }) {
     <>
       {segments.map((seg, i) => (
         seg.startsWith('`') && seg.endsWith('`')
-          ? <code key={i} className={s.tag}>{seg.slice(1, -1)}</code>
+          ? <Code key={i}>{seg.slice(1, -1)}</Code>
           : <Fragment key={i}>{seg}</Fragment>
       ))}
     </>
@@ -165,9 +165,7 @@ export function RouteBadge({ route }: { route: string }) {
         </span>
       )}
       {hasTarget && (
-        <code className={[s.tag, targetIsWildcard ? s.routeMuted : undefined].filter(Boolean).join(' ')}>
-          {parsed.target}
-        </code>
+        <Code className={targetIsWildcard ? s.routeMuted : undefined}>{parsed.target}</Code>
       )}
     </span>
   );
@@ -236,7 +234,7 @@ function KindBadge({ label }: { label: string }) {
 
 function BundleBadge({ id, label }: { id: string; label?: string }) {
   const props = (BUNDLE_BADGE_PROPS as Record<string, Omit<BadgeProps, 'children'>>)[id];
-  if (!props) return <code className={s.tag}>{label ?? id}</code>;
+  if (!props) return <Code>{label ?? id}</Code>;
   return <Badge {...(props as BadgeProps)}>{label ?? id}</Badge>;
 }
 void parseRoute;
@@ -277,13 +275,9 @@ function EntryLink({
   onNavigate: (t: NavTarget) => void;
 }) {
   return (
-    <button
-      type="button"
-      className={s.memberLink}
-      onClick={() => onNavigate({ kind, id })}
-    >
+    <Button variant="link" onClick={() => onNavigate({ kind, id })}>
       {label ?? id}
-    </button>
+    </Button>
   );
 }
 
@@ -395,7 +389,7 @@ function TokenSetTable({ set }: { set: TokenSet }) {
       <DataGrid
         rows={set.entries.map((e) => ({ id: e.value, entry: e }))}
         columns={[
-          { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <code className={s.tag}>{r.entry.value}</code> },
+          { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <Code>{r.entry.value}</Code> },
           { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <Badge {...(r.entry.props as BadgeProps)}>{r.entry.value}</Badge> },
         ]}
         empty="No entries."
@@ -406,7 +400,7 @@ function TokenSetTable({ set }: { set: TokenSet }) {
     <DataGrid
       rows={set.entries.map((e) => ({ id: e.value, entry: e }))}
       columns={[
-        { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <code className={s.tag}>{r.entry.value}</code> },
+        { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <Code>{r.entry.value}</Code> },
         { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <RouteBadge route={r.entry.props.route} /> },
       ]}
       empty="No entries."
@@ -429,7 +423,7 @@ function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavi
       </p>
       <dl className={s.detailList}>
         <dt>factory</dt><dd><code>{factoryId}</code></dd>
-        <dt>runtime</dt><dd><code className={s.tag}>{typeof fn}</code></dd>
+        <dt>runtime</dt><dd><Code>{typeof fn}</Code></dd>
         {arity !== undefined && (
           <><dt>parameters</dt><dd>{arity}</dd></>
         )}
@@ -458,7 +452,7 @@ function OpSchemaPanel({ factoryId }: { factoryId: string }) {
       <h3 className={s.subHeading}>Arguments</h3>
       <SchemaTable rows={schema.params} empty="Factory takes no arguments." />
       <dl className={s.detailList}>
-        <dt>returns</dt><dd><code className={s.schemaType}>{schema.returnType}</code></dd>
+        <dt>returns</dt><dd><Code variant="plain" tone="accent" size="xs">{schema.returnType}</Code></dd>
       </dl>
       <p className={s.schemaSource}>
         Extracted from <code>{schema.source.file}:{schema.source.line}</code>
@@ -510,10 +504,10 @@ function RouteDetail({
         type FieldRow = { id: RouteFieldName; value: ReactNode };
         const fieldRows: FieldRow[] = [
           { id: 'phases', value: parsed.phases.map(formatPhaseAtom).join(', ') },
-          { id: 'gesture', value: <code className={s.tag}>{parsed.gesture}</code> },
+          { id: 'gesture', value: <Code>{parsed.gesture}</Code> },
         ];
         if (parsed.arg !== undefined) {
-          fieldRows.push({ id: 'arg', value: <code className={s.tag}>{parsed.arg}</code> });
+          fieldRows.push({ id: 'arg', value: <Code>{parsed.arg}</Code> });
         }
         if (parsed.target !== undefined) {
           fieldRows.push({
@@ -525,7 +519,7 @@ function RouteDetail({
           fieldRows.push({
             id: 'modifiers',
             value: Object.entries(parsed.modifiers).map(([name, req]) => (
-              <code key={name} className={s.tag}>{req === 'required' ? '+' : '?'}{name}</code>
+              <Code key={name}>{req === 'required' ? '+' : '?'}{name}</Code>
             )),
           });
         }
@@ -643,7 +637,7 @@ function GroupDetail({
     <div>
       <h2 className={s.detailHeading}>{entry.label}</h2>
       <dl className={s.detailList}>
-        <dt>source</dt><dd><code className={s.tag}>{entry.source}</code></dd>
+        <dt>source</dt><dd><Code>{entry.source}</Code></dd>
       </dl>
       {entry.source === 'tool' && (
         <>
@@ -779,7 +773,7 @@ function GestureDetail({
           {
             id: 'spec', header: 'spec.kind', sortable: true,
             accessor: (r) => r.specKind,
-            render: (r) => <code className={s.tag}>{r.specKind}</code>,
+            render: (r) => <Code>{r.specKind}</Code>,
           },
           {
             id: 'detail', header: 'detail', sortable: false,
@@ -843,13 +837,9 @@ function toolNameColumn(
     header: 'Tool',
     accessor: (r) => r.tool.label ?? r.id,
     render: (r) => (
-      <button
-        type="button"
-        className={s.memberLink}
-        onClick={() => onNavigate({ kind: 'tool', id: r.id })}
-      >
+      <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: r.id })}>
         {r.tool.label ?? r.id}
-      </button>
+      </Button>
     ),
   };
 }
@@ -868,13 +858,9 @@ function mergedToolColumn(
     sortable: false,
     accessor: (r) => r.tool.label ?? r.tool.id,
     render: (r) => r.isFirstForTool ? (
-      <button
-        type="button"
-        className={s.memberLink}
-        onClick={() => onNavigate({ kind: 'tool', id: r.tool.id })}
-      >
+      <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: r.tool.id })}>
         {r.tool.label ?? r.tool.id}
-      </button>
+      </Button>
     ) : null,
   };
 }
@@ -890,7 +876,7 @@ function IconDetail({ entry }: { entry: IconEntry }) {
         <div className={`${s.iconPreviewCell} ${s.iconPreviewCellLarge}`}><C /></div>
       </div>
       <dl className={s.detailList}>
-        <dt>source</dt><dd><code className={s.tag}>{entry.source}</code></dd>
+        <dt>source</dt><dd><Code>{entry.source}</Code></dd>
         {match?.path && (<><dt>file</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
@@ -950,7 +936,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         {entry.hookName && (
           <>
             <dt>hook</dt>
-            <dd><code className={s.tag}>{entry.hookName}</code></dd>
+            <dd><Code>{entry.hookName}</Code></dd>
           </>
         )}
         <dt>slot</dt>
@@ -972,7 +958,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
           <>
             <dt>presentation</dt>
             <dd>
-              {entry.presentation.label && <span className={s.tag}>{entry.presentation.label}</span>}
+              {entry.presentation.label && <Code>{entry.presentation.label}</Code>}
               {entry.presentation.group && (
                 <EntryLink
                   kind="group"
@@ -981,7 +967,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
                   onNavigate={onNavigate}
                 />
               )}
-              {entry.presentation.shortcut && <span className={s.tag}>shortcut: {entry.presentation.shortcut}</span>}
+              {entry.presentation.shortcut && <Code>shortcut: {entry.presentation.shortcut}</Code>}
             </dd>
           </>
         )}
@@ -990,7 +976,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         {caps.length > 0 && (
           <>
             <dt>capabilities</dt>
-            <dd>{caps.map((c) => <code key={c} className={s.tag}>{c}</code>)}</dd>
+            <dd>{caps.map((c) => <Code key={c}>{c}</Code>)}</dd>
           </>
         )}
         {bundles.length > 0 && (
@@ -998,14 +984,9 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
             <dt>in bundles</dt>
             <dd>
               {bundles.map((b) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  className={s.memberLink}
-                  onClick={() => onNavigate({ kind: 'bundle', id: b.id })}
-                >
+                <Button key={b.id} variant="link" onClick={() => onNavigate({ kind: 'bundle', id: b.id })}>
                   <BundleBadge id={b.id} label={b.label} />
-                </button>
+                </Button>
               ))}
             </dd>
           </>
@@ -1037,7 +1018,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
                 id: 'arg',
                 header: 'arg',
                 accessor: (r) => r.arg,
-                render: (r) => r.arg ? <code className={s.tag}>{r.arg}</code> : <Absent />,
+                render: (r) => r.arg ? <Code>{r.arg}</Code> : <Absent />,
               },
               {
                 id: 'target',
@@ -1062,7 +1043,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
                     : (
                       <span>
                         {Object.entries(r.modifiers).map(([name, req]) => (
-                          <code key={name} className={s.tag}>{(req === 'required' ? '+' : '?') + name}</code>
+                          <Code key={name}>{(req === 'required' ? '+' : '?') + name}</Code>
                         ))}
                       </span>
                     )
@@ -1104,7 +1085,7 @@ function CallbackList({ callbacks }: { callbacks: readonly CallbackRef[] }) {
     <ul className={s.callbackList}>
       {callbacks.map((cb) => (
         <li key={`${cb.label}@${sourceKey(cb.source)}`}>
-          <code className={s.tag}>{cb.label}</code>
+          <Code>{cb.label}</Code>
           <a
             className={s.callbackLink}
             href={`vscode://file/${cb.source.file}:${cb.source.line}:${cb.source.col + 1}`}
@@ -1196,7 +1177,7 @@ function SurfaceRow({ surface }: { surface: ToolSurface }) {
               <Badge key={`g-${g}`} {...(GESTURE_BADGE_PROPS as BadgeProps)}>{g}</Badge>
             ))}
             {outputs.map((o) => (
-              <code key={`o-${o}`} className={s.tag}>{o}</code>
+              <Code key={`o-${o}`}>{o}</Code>
             ))}
           </>
         )}
@@ -1249,7 +1230,7 @@ function ActionDetail({ entry, tools, onNavigate }: {
                 ? paramNames.map((name, i) => (
                     <Fragment key={name}>
                       {i > 0 && ', '}
-                      <code className={s.tag}>{name}</code>
+                      <Code>{name}</Code>
                     </Fragment>
                   ))
                 : <span className={s.empty}>none</span>}
@@ -1344,13 +1325,9 @@ function bundleMemberColumns(
       header: 'Tool',
       accessor: (r) => r.tool?.label ?? r.id,
       render: (r) => (
-        <button
-          type="button"
-          className={s.memberLink}
-          onClick={() => onNavigate({ kind: 'tool', id: r.id })}
-        >
+        <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: r.id })}>
           {r.tool?.label ?? r.id}
-        </button>
+        </Button>
       ),
     },
     {
@@ -1401,12 +1378,12 @@ function BundleDetail({
     <div>
       <h2 className={s.detailHeading}><BundleBadge id={entry.id} label={entry.label} /></h2>
       <dl className={s.detailList}>
-        <dt>id</dt><dd><code className={s.tag}>{entry.id}</code></dd>
+        <dt>id</dt><dd><Code>{entry.id}</Code></dd>
         <dt>tool count</dt><dd>{entry.tools.length}</dd>
         <dt>by group</dt>
         <dd>
           {[...groupCounts.entries()].map(([g, n]) => (
-            <code key={g} className={s.tag}>{g} <Badge shape="pill" size="sm" tone="neutral" variant="subtle">{n}</Badge></code>
+            <Code key={g}>{g} <Badge shape="pill" size="sm" tone="neutral" variant="subtle">{n}</Badge></Code>
           ))}
         </dd>
       </dl>
@@ -1431,20 +1408,18 @@ function BundleDetail({
                   ? <span className={s.empty}>(identical)</span>
                   : <>
                       {added.map((t) => (
-                        <button
+                        <Button
                           key={`+${t}`}
-                          type="button"
-                          className={`${s.memberLink} ${s.tagAdded}`}
+                          variant="link"
                           onClick={() => onNavigate({ kind: 'tool', id: t })}
-                        >+{t}</button>
+                        ><Code tone="success">+{t}</Code></Button>
                       ))}
                       {removed.map((t) => (
-                        <button
+                        <Button
                           key={`-${t}`}
-                          type="button"
-                          className={`${s.memberLink} ${s.tagRemoved}`}
+                          variant="link"
                           onClick={() => onNavigate({ kind: 'tool', id: t })}
-                        >−{t}</button>
+                        ><Code tone="danger">−{t}</Code></Button>
                       ))}
                     </>}
               </dd>
@@ -1479,10 +1454,9 @@ function ShapeKindDetail({
           <>
             <dt>authored by</dt>
             <dd>
-              <button type="button" className={s.memberLink}
-                onClick={() => onNavigate({ kind: 'tool', id: entry.tool! })}>
+              <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: entry.tool! })}>
                 {entry.hookName ?? entry.tool}
-              </button>
+              </Button>
             </dd>
           </>
         )}
@@ -1573,7 +1547,7 @@ function PropertiesKindDetail({ entry }: { entry: PropertiesKindEntry }) {
           {entry.leafPaths.length === 0
             ? <span className={s.empty}>No editable leaves in this kind's schema.</span>
             : entry.leafPaths.map((path) => (
-                <code key={path} className={s.tag}>{path}</code>
+                <Code key={path}>{path}</Code>
               ))}
         </dd>
       </dl>
@@ -1598,7 +1572,7 @@ function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {
       <h2 className={s.detailHeading}>{entry.id}</h2>
       <dl className={s.detailList}>
         <dt>kind</dt><dd><KindBadge label="op factory" /></dd>
-        <dt>runtime</dt><dd><code className={s.tag}>{typeof fn}</code></dd>
+        <dt>runtime</dt><dd><Code>{typeof fn}</Code></dd>
         {arity !== undefined && (
           <><dt>parameters</dt><dd>{arity}</dd></>
         )}

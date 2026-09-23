@@ -48,6 +48,7 @@ import {
 } from '@weasel-js/core/routing';
 import {
   Badge,
+  Code,
   DataGrid,
   KeySequence,
   keySpecsFromMods,
@@ -766,7 +767,7 @@ function renderSpec(spec: GestureSpec): ReactNode {
   }
   return (
     <>
-      <code className={s.bindingTag}>{label}</code>
+      <Code size="sm">{label}</Code>
       {mods.length > 0 && (
         <>
           <span className={s.bindingSep}>+</span>
