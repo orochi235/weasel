@@ -23,6 +23,7 @@ export {
   withValueAtPath,
 } from './path';
 export { resolveConfigSchema } from './resolve';
+export { type SectionTree, sectionTree } from './sectionTree';
 export { applyRules, builtinRules, titleCase } from './rules';
 export type {
   Annotations,
