@@ -875,14 +875,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   is exported from `ui/index.ts`, which nothing imports. If it is revived it
   should sit on the kit — `Dialog` for the modal, `KeySequence` for the chips —
   and the core CHANGELOG line saying it moved into `packages/ui` is untrue.
-- **(P3) Canvas grid color ignores the paper.** The grid draws over the page, which
-  is document color, so theme line tokens would vanish on white paper in dark
-  mode; the `rgba(0,0,0,…)` literals stay until something derives a contrasting
-  line color from a document color.
-- **(P3) Fill/stroke input dedup, kit side.** Draw drives a live-preview paint edit
-  as begin/update/end in three places (`ActiveSwatches`, `WdPaintLeaf`,
-  `SwatchGrid`); the kit has no hook for an action driven through a gesture's
-  input/commit phases, no overlapping fill/stroke chip, and no swatch grid.
 
 ---
 
