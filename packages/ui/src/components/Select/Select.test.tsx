@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, createEvent, screen, act } from '@testing-library/react';
 import { Select, SelectItem } from './Select';
 import s from './Select.module.css';
+import { fieldClasses } from '../Field/Field';
 
 const OPTIONS = [
   { value: 'r' as const, label: 'Red' },
@@ -230,6 +233,39 @@ describe('Select', () => {
       const listbox = screen.getByRole('listbox');
       act(() => { fireEvent.keyDown(listbox, { key: 'B' }); fireEvent.keyUp(listbox, { key: 'B' }); });
       expect(screen.getByRole('option', { name: 'Blue' })).toHaveAttribute('data-focused', 'true');
+    });
+  });
+
+  describe('orientation', () => {
+    const css = readFileSync(resolve(__dirname, 'Select.module.css'), 'utf8');
+
+    it('stacks the label above the trigger by default', () => {
+      render(<Select label="Bundle" options={OPTIONS} />);
+      const root = screen.getByText('Bundle').closest(`.${fieldClasses.root}`)!;
+      expect(root.className).not.toContain(fieldClasses.row);
+    });
+
+    it("sets the label beside the trigger with orientation='row', still labeling it", () => {
+      render(<Select label="Bundle" orientation="row" options={OPTIONS} />);
+      const root = screen.getByText('Bundle').closest(`.${fieldClasses.root}`)!;
+      expect(root.className).toContain(fieldClasses.row);
+      expect(root.className).toContain(s.row);
+      expect(screen.getByRole('button', { name: /Bundle/ })).toBeTruthy();
+    });
+
+    it('keeps the label at its own width and lets description and error take a line of their own', () => {
+      // (0,3,0) so Field's own `.row .label { flex: 1 }` cannot win on source order.
+      expect(css).toMatch(/\.field\.row \.label\s*\{[^}]*flex:\s*0 0 auto/);
+      expect(css).toMatch(/\.field\.row\s*\{[^}]*flex-wrap:\s*wrap/);
+      expect(css).toMatch(/\.field\.row \.below\s*\{[^}]*flex-basis:\s*100%/);
+    });
+
+    it('marks the label and the hint/error slots with the local classes the row rules key off', () => {
+      const { container } = render(
+        <Select label="Bundle" orientation="row" description="Which bundle" options={OPTIONS} />,
+      );
+      expect(container.querySelector(`.${s.label}`)?.textContent).toBe('Bundle');
+      expect(container.querySelector(`.${s.below}`)?.textContent).toBe('Which bundle');
     });
   });
 });

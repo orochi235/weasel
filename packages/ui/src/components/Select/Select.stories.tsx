@@ -69,6 +69,27 @@ export const FitWidth: Story = {
   ),
 };
 
+/**
+ * `orientation='row'` sets the label beside the trigger. Filling, the trigger
+ * takes the rest of the row; fitted, the pair sits at its own width. A
+ * description drops to a line of its own.
+ */
+export const LabelBeside: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 320 }}>
+      <Select label="Bundle" orientation="row" defaultSelectedKey="g" options={COLORS} />
+      <Select label="Bundle" orientation="row" width="fit" defaultSelectedKey="g" options={COLORS} />
+      <Select
+        label="Bundle"
+        orientation="row"
+        description="Filters the tree to one bundle's members."
+        defaultSelectedKey="g"
+        options={COLORS}
+      />
+    </div>
+  ),
+};
+
 export const Disabled: Story = {
   render: () => <Select label="Color" options={COLORS} defaultSelectedKey="r" isDisabled />,
 };

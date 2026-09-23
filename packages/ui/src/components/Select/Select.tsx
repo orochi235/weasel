@@ -22,7 +22,7 @@ import {
   type ListBoxItemProps as RACListBoxItemProps,
   type ValidationResult,
 } from 'react-aria-components';
-import { fieldClasses } from '../Field/Field';
+import { fieldClasses, type FieldOrientation } from '../Field/Field';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import s from './Select.module.css';
 
@@ -54,6 +54,12 @@ export type SelectPopup = 'over' | 'below';
  */
 export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {
   label?: ReactNode;
+  /**
+   * `'stacked'` (the default) puts the label above the trigger; `'row'` sets it
+   * beside the trigger at its own width, with any description or error on a
+   * line below. Same vocabulary as {@link Field}'s `orientation`.
+   */
+  orientation?: FieldOrientation;
   description?: ReactNode;
   errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
   placeholder?: string;
@@ -105,6 +111,7 @@ export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, '
 export function Select<T extends Key = string>(props: SelectProps<T>) {
   const {
     label,
+    orientation = 'stacked',
     description,
     errorMessage,
     placeholder,
@@ -141,13 +148,15 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
         indicator === 'underline' && s.underlined,
         indicator === 'none' && s.plain,
         fieldClasses.root,
+        orientation === 'row' && fieldClasses.row,
+        orientation === 'row' && s.row,
         className,
       ]
         .filter(Boolean)
         .join(' ')}
     >
       {anchor}
-      {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
+      {label !== undefined && <Label className={`${fieldClasses.label} ${s.label}`}>{label}</Label>}
       <RACButton
         id={triggerId}
         ref={triggerRef}
@@ -179,11 +188,11 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
         )}
       </RACButton>
       {description !== undefined && (
-        <Text slot="description" className={fieldClasses.hint}>
+        <Text slot="description" className={`${fieldClasses.hint} ${s.below}`}>
           {description}
         </Text>
       )}
-      <FieldError className={fieldClasses.error}>{errorMessage}</FieldError>
+      <FieldError className={`${fieldClasses.error} ${s.below}`}>{errorMessage}</FieldError>
       {/* `data-weasel-overlay` marks DOM that belongs to this control but
           renders in a portal, outside the subtree the trigger sits in. Any
           consumer reasoning about "did focus leave my component?" via
