@@ -9,11 +9,15 @@
 /* `orientation='row'`: the label keeps its own width and the trigger takes the
    rest; description and error wrap onto a line of their own. */
 .field.row {
+  flex-direction: row;
+  align-items: center;
   flex-wrap: wrap;
+  column-gap: var(--wzl-space-4);
   row-gap: var(--wzl-space-2);
 }
 .field.row .label { flex: 0 0 auto; }
 .field.row:not(.fit) .trigger { flex: 1 1 0; min-width: 0; }
+.field.row.fit .trigger { width: auto; }
 .field.row .below { flex-basis: 100%; }
 
 .trigger {

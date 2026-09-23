@@ -9,7 +9,10 @@
 /* `orientation='row'`: the label keeps its own width and the field takes the
    rest; description and error wrap onto a line of their own. */
 .field.row {
+  flex-direction: row;
+  align-items: center;
   flex-wrap: wrap;
+  column-gap: var(--wzl-space-4);
   row-gap: var(--wzl-space-2);
 }
 .field.row .label { flex: 0 0 auto; }
