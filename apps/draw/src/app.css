@@ -149,24 +149,17 @@
 }
 
 /* Column layout, panel surface, and edge borders come from weasel-ui's
-   <Sidebar>. What stays here is the part that's this app's business: width,
-   padding, and the local chrome palette. Scoped under `.wd-app` so these win
-   over the component's own module rules regardless of stylesheet order —
-   specificity, not !important. */
+   <Sidebar>. What stays here is the part that's this app's business: width
+   and padding. Scoped under `.wd-app` so these win over the component's own
+   module rules regardless of stylesheet order — specificity, not !important. */
 .wd-app .wd-sidebar {
   gap: 8px;
   padding: 12px 8px;
-  border-right: 1px solid var(--wzl-chrome-border);
-  background: var(--wzl-chrome-bg);
   width: 88px;
   flex-shrink: 0;
 }
 
 .wd-app .wd-sidebar.right {
-  /* The shared rule above borders the trailing edge for left-docked
-     sidebars; this one docks the other way. */
-  border-right: none;
-  border-left: 1px solid var(--wzl-chrome-border);
   /* Width comes from --wd-right-width, set by the ResizeHandle drag in
      App.tsx. Clamped here so CSS owns the floor/ceiling; the numbers match
      the min/max on the `ui.rightSidebarWidth` pref that stores the result. */
@@ -265,12 +258,12 @@
   cursor: pointer;
 }
 .wd-swatch-none-toggle:hover {
-  background: var(--wzl-border);
+  background: var(--wzl-surface-hover);
 }
 .wd-swatch-none-toggle.is-active {
-  background: var(--wzl-app-accent-bg);
-  border-color: var(--wzl-app-accent);
-  color: var(--wzl-app-accent);
+  background: var(--wzl-accent-soft);
+  border-color: var(--wzl-accent-strong);
+  color: var(--wzl-accent-fg);
 }
 
 .wd-active-swatches {
