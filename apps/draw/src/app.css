@@ -30,122 +30,18 @@
   flex-shrink: 0;
 }
 
-/* Each group renders as a single segmented widget — buttons inside share
-   the container's chrome and are visually merged (1px background bleed
-   between them acts as the divider, à la PathfinderPanel). */
+/* A cluster of kit controls that belong together (file, recording). Each
+   control brings its own chrome, so the cluster only lays them out. */
 .wd-actionbar-group {
   display: inline-flex;
-  flex-direction: row;
-  gap: 1px;
-  /* Same surface as the actionbar itself — border outline alone marks
-     the segmented grouping. */
-  background: var(--wzl-surface);
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  padding: 2px;
-  user-select: none;
+  align-items: center;
+  gap: var(--wzl-space-2);
 }
 
 /* Visually-hidden input used to host file pickers (Play recording, etc.).
    The button next to it is the actual trigger. */
 .wd-hidden-input {
   display: none;
-}
-
-.wd-actionbar-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 6px;
-  background: transparent;
-  color: var(--wzl-fg);
-  border: 0;
-  border-radius: 2px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 11px;
-  line-height: 1.2;
-}
-.wd-actionbar-button > svg {
-  display: block;
-}
-.wd-actionbar-button:hover:not(:disabled) {
-  background: var(--wzl-border);
-}
-.wd-actionbar-button:active:not(:disabled) {
-  background: color-mix(in srgb, var(--wzl-border) 70%, transparent);
-}
-.wd-actionbar-button-active:not(:disabled) {
-  background: var(--wzl-app-accent-bg);
-  color: var(--wzl-app-accent);
-}
-.wd-actionbar-button-active:not(:disabled):hover {
-  background: var(--wzl-app-accent-bg);
-  color: var(--wzl-app-accent);
-}
-.wd-actionbar-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.wd-actionbar-select {
-  height: 26px;
-  padding: 0 6px;
-  background: transparent;
-  color: var(--wzl-fg);
-  border: 0;
-  border-radius: 2px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 11px;
-  line-height: 1.2;
-}
-.wd-actionbar-select:hover:not(:disabled) {
-  background: var(--wzl-border);
-}
-.wd-actionbar-select:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* --- "New ▾" paper-size dropdown ------------------------------------- */
-.wd-actionbar-menu {
-  position: relative;
-  display: inline-flex;
-}
-
-.wd-actionbar-popover {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  min-width: 120px;
-  padding: 2px;
-  background: var(--wzl-surface);
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-}
-
-.wd-actionbar-menuitem {
-  padding: 6px 10px;
-  background: transparent;
-  color: var(--wzl-fg);
-  border: 0;
-  border-radius: 2px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 12px;
-  text-align: left;
-}
-
-.wd-actionbar-menuitem:hover {
-  background: var(--wzl-border);
-  color: var(--wzl-fg);
 }
 
 /* Column layout, panel surface, and edge borders come from weasel-ui's
@@ -373,9 +269,8 @@
 }
 
 /* --- Action bar far-right spacer ------------------------------------- */
-/* Pushes the trailing group(s) (settings cog) to the right edge of the
-   toolbar. Lives outside any `.wd-actionbar-group` so it doesn't
-   pick up the segmented widget chrome. */
+/* Pushes the trailing controls (recording, settings cog) to the right
+   edge of the toolbar. */
 .wd-actionbar-spacer {
   margin-left: auto;
 }

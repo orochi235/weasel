@@ -5,7 +5,7 @@
  *  z-order op, etc.).
  *
  *  Each icon is `aria-hidden`; the parent button supplies the accessible
- *  name via `aria-label` + `title`.
+ *  name.
  */
 const SVG_BASE = {
   viewBox: '0 0 20 20',
@@ -121,31 +121,9 @@ export function BringToFrontIcon() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// History — looped arrow; undo curls left, redo mirrors right.
-// ──────────────────────────────────────────────────────────────────────────
-
-export function UndoIcon() {
-  return (
-    <svg {...SVG_BASE}>
-      <path d="M4 8 H12 A4 4 0 0 1 16 12 V15" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M7 5 L4 8 L7 11" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-export function RedoIcon() {
-  return (
-    <svg {...SVG_BASE}>
-      <path d="M16 8 H8 A4 4 0 0 0 4 12 V15" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M13 5 L16 8 L13 11" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-// ──────────────────────────────────────────────────────────────────────────
 // Clipboard ops — Cut (scissors), Copy (back doc peek + front doc),
 // Paste (clipboard w/ filled clip), Duplicate (source outline +
-// filled duplicate result), Delete (trash can w/ ridges).
+// filled duplicate result).
 // ──────────────────────────────────────────────────────────────────────────
 
 export function CutIcon() {
@@ -188,37 +166,6 @@ export function DuplicateIcon() {
   );
 }
 
-export function DeleteIcon() {
-  return (
-    <svg {...SVG_BASE}>
-      <path d="M3 5 H17" strokeLinecap="round" />
-      <path d="M7 5 V3 H13 V5" />
-      <path d="M5 5 L5.5 17 H14.5 L15 5" strokeLinejoin="round" />
-      <path d="M8.5 8 V14 M11.5 8 V14" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-export function GridIcon() {
-  return (
-    <svg {...SVG_BASE}>
-      <rect x="3" y="3" width="14" height="14" />
-      <path d="M3 8 H17 M3 12 H17 M8 3 V17 M12 3 V17" />
-    </svg>
-  );
-}
-
-export function SnapToGridIcon() {
-  // Faint grid with a filled dot snapped to an intersection — reads as
-  // "snap to this point."
-  return (
-    <svg {...SVG_BASE}>
-      <path d="M3 8 H17 M3 12 H17 M8 3 V17 M12 3 V17" opacity="0.45" />
-      <circle cx="12" cy="8" r="2" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
 export function ReleaseCompoundIcon() {
   // Two formerly-conjoined regions pulling apart — left filled, right
   // outlined, with a dashed break between them.
@@ -249,8 +196,7 @@ export function SettingsIcon() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// Record / Play — input-tooling controls. RecordIcon swaps to a filled red
-// disc when active; PlayIcon is a right-pointing triangle.
+// Record — input-tooling control. Swaps to a filled red disc when active.
 // ──────────────────────────────────────────────────────────────────────────
 
 export function RecordIcon({ active = false }: { active?: boolean }) {
@@ -265,14 +211,6 @@ export function RecordIcon({ active = false }: { active?: boolean }) {
         fill={active ? '#d23a2a' : 'none'}
         stroke={active ? '#d23a2a' : 'currentColor'}
       />
-    </svg>
-  );
-}
-
-export function PlayIcon() {
-  return (
-    <svg {...SVG_BASE}>
-      <path d="M6 4 L16 10 L6 16 Z" fill="currentColor" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -483,16 +421,6 @@ export function PositionIcon() {
   );
 }
 
-/** Eye — visibility toggle. */
-export function VisibilityIcon() {
-  return (
-    <svg {...SVG_BASE}>
-      <path d="M2 10 Q 10 3 18 10 Q 10 17 2 10 Z" strokeLinejoin="round" />
-      <circle cx="10" cy="10" r="2.5" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
 /** Paint bucket tipped upside-down, pouring a vertical stream — fill
  *  swatch. Body is an inverted trapezoid (wider at the bottom where the
  *  rim sits); the filled ellipse marks the opening; the stream is a
@@ -518,12 +446,3 @@ export function StrokeIcon() {
   );
 }
 
-/** Closed padlock — locked. */
-export function LockIcon() {
-  return (
-    <svg {...SVG_BASE}>
-      <rect x="4" y="9" width="12" height="9" rx="1.5" />
-      <path d="M6.5 9 V 6.5 A 3.5 3.5 0 0 1 13.5 6.5 V 9" />
-    </svg>
-  );
-}

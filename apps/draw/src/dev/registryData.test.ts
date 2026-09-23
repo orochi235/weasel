@@ -16,7 +16,7 @@ describe('registryData static collectors', () => {
     const icons = collectIcons();
     expect(icons.length).toBeGreaterThan(10);
     const names = icons.map((i) => i.id);
-    expect(names).toContain('DeleteIcon');
+    expect(names).toContain('DuplicateIcon');
     expect(names).toContain('PageIcon');
     for (const i of icons) {
       expect(i.kind).toBe('icon');
