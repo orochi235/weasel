@@ -5,4 +5,4 @@
 export * from './CommandPalette';
 export * from './HistoryList';
 export * from './LayerList';
-export * from './PropertiesPanel';
+export * from './SwatchGrid';

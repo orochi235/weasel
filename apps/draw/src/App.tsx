@@ -85,6 +85,9 @@ import {
   type SceneCanvasApi,
   buildSceneViewCommands,
   defaultDrawOne,
+  toHex8,
+  getAlpha01,
+  withAlpha01,
 } from '@weasel-js/core';
 import { useHudContribution } from '@weasel-js/hud/react';
 import {
@@ -101,6 +104,11 @@ import {
   type PropertyRenderer,
   type PropertyRenderContext,
   PaintInput,
+  PropertyList,
+  TextRow,
+  SelectRow,
+  ColorRow,
+  type PropertyOption,
 } from '@weasel-js/ui';
 
 import { ActionBar, type PaperSizeKey } from './ActionBar';
@@ -109,15 +117,7 @@ import { PreferencesModal } from './PreferencesModal';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
 import { LayerList, type LayerListItem } from './ui/LayerList';
 import { useLayerList } from './ui/LayerList/useLayerList';
-import {
-  PropertiesPanel,
-  PropertiesGrid,
-  PropertyRow,
-  PropertyTextInput,
-  PropertyColorInput,
-  PropertySwatchGrid,
-  PropertySelect,
-} from './ui/PropertiesPanel';
+import { SwatchGrid } from './ui/SwatchGrid';
 import { HistoryList } from './ui/HistoryList';
 import { buildLabel, buildTitle } from '../../shared/buildInfo';
 import { PREFS, usePref } from './prefs';
@@ -463,6 +463,18 @@ function paintChipColor(fill: FillStyle): string | undefined {
   return undefined;
 }
 
+const PAPER_SIZE_OPTIONS: ReadonlyArray<PropertyOption<PaperSizeKey>> = [
+  { value: 'letter', label: 'Letter' },
+  { value: 'a4', label: 'A4' },
+  { value: 'legal', label: 'Legal' },
+];
+
+/** The `#rrggbb` a native color input accepts; non-hex colors fall back to black. */
+function opaqueHex(color: string): string {
+  const hex8 = toHex8(color);
+  return hex8.startsWith('#') && hex8.length >= 7 ? hex8.slice(0, 7) : '#000000';
+}
+
 interface RightSidebarProps {
   scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
   selection: ReturnType<typeof useSelection>;
@@ -547,25 +559,22 @@ function RightSidebar({
           onHide={propertiesPanel.onHide}
         >
           {docSelected ? (
-            <PropertiesGrid>
-              <PropertyRow label="file">
-                <PropertyTextInput value={filename} placeholder={DEFAULT_FILENAME} onChange={setFilename} />
-              </PropertyRow>
-              <PropertyRow label="paper">
-                <PropertySelect<PaperSizeKey>
-                  value={paperSize}
-                  options={[
-                    { value: 'letter', label: 'Letter' },
-                    { value: 'a4', label: 'A4' },
-                    { value: 'legal', label: 'Legal' },
-                  ]}
-                  onChange={setPaperSize}
-                />
-              </PropertyRow>
-              <PropertyRow label="bg">
-                <PropertyColorInput value={backgroundColor} onChange={setBackgroundColor} />
-              </PropertyRow>
-            </PropertiesGrid>
+            <PropertyList>
+              <TextRow label="File" value={filename} placeholder={DEFAULT_FILENAME} onChange={setFilename} />
+              <SelectRow<PaperSizeKey>
+                label="Paper"
+                value={paperSize}
+                options={PAPER_SIZE_OPTIONS}
+                onChange={setPaperSize}
+              />
+              <ColorRow
+                label="Background"
+                value={opaqueHex(backgroundColor)}
+                onChange={(rgb) => setBackgroundColor(withAlpha01(rgb, getAlpha01(backgroundColor)))}
+                alpha={getAlpha01(backgroundColor)}
+                onAlphaChange={(a) => setBackgroundColor(withAlpha01(backgroundColor, a))}
+              />
+            </PropertyList>
           ) : (
             <WdSelectionKeyContext.Provider value={selection.current.join(',')}>
               <SelectionPanel
@@ -625,13 +634,13 @@ function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
   // swatch in the first row.
   const current = colors.fill.kind === 'solid' ? colors.fill.color : null;
   return (
-    <PropertiesPanel
+    <SidebarPanel
       title="Colors"
       collapsed={chrome.collapsed}
       onToggleCollapse={chrome.onToggleCollapse}
       onHide={chrome.onHide}
     >
-      <PropertySwatchGrid
+      <SwatchGrid
         value={current}
         options={PALETTE}
         columns={10}
@@ -654,7 +663,7 @@ function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
           }
         }}
       />
-    </PropertiesPanel>
+    </SidebarPanel>
   );
 }
 
