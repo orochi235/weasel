@@ -1,6 +1,6 @@
 /** Preferences modal — kit `PrefsDialog` over the `PREFS` registry.
  *
- *  The kit owns the walk (columns, sub-panels, label rows, hidden
+ *  The kit owns the walk (the navigation rail, label rows, filtering, hidden
  *  filtering, built-in control mapping); this file supplies only what is
  *  WeaselDraw-specific: the values binding (`usePrefsValues` →
  *  localStorage), renderers for the app's two custom kinds
@@ -54,6 +54,8 @@ export function PreferencesModal({ open, onClose, registryEnumSources }: Prefere
       <PrefsDialog
         isOpen={open}
         onOpenChange={(o) => { if (!o) onClose(); }}
+        layout="rail"
+        filterable
         schema={PREFS as WeaselDrawPrefGroup}
         values={values}
         onChange={setAt}

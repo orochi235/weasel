@@ -272,13 +272,15 @@
 
 .body {
   flex: 1;
-  min-height: 0;
 }
 
 /* Defaults, not rules: `bodyClassName` exists to turn these off for content
    that scrolls itself, and a plain class would tie with it on specificity and
-   be decided by stylesheet order. */
+   be decided by stylesheet order. `min-height` is here for the same reason —
+   left in the rule above it silently beat a consumer class asking the body to
+   hold a height, and the dialog resized itself around every pane. */
 :where(.body) {
+  min-height: 0;
   overflow: auto;
   padding: var(--wzl-space-8);
 }
