@@ -174,9 +174,9 @@
 /* Empty-selection placeholder in the Properties panel (SelectionPanel
    `emptyState`). */
 .wd-no-selection {
-  padding: 8px;
-  font-size: 12px;
-  opacity: 0.6;
+  padding: var(--wzl-space-4);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
 }
 
 .wd-app .wd-sidebar.left {

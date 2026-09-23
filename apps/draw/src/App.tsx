@@ -591,10 +591,7 @@ function RightSidebar({
           onToggleCollapse={layersPanel.onToggleCollapse}
           onHide={layersPanel.onHide}
         >
-          <LayerList
-            {...layerListProps}
-            empty={<em style={{ opacity: 0.6 }}>No nodes</em>}
-          />
+          <LayerList {...layerListProps} empty="No nodes" />
         </SidebarPanel>
       )}
       {!historyPanel.hidden && (

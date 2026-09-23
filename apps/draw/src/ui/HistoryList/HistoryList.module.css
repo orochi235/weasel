@@ -1,8 +1,11 @@
-/* The current row rules a line under itself, so the boundary between what is
-   applied and what is redoable reads without an extra divider element. The
-   row box itself is `ItemList`'s. */
-.current {
-  border-bottom: 1px solid var(--wzl-fg);
-  border-radius: 2px 2px 0 0;
+/* The row box itself is `ItemList`'s. Every row jumps to its state. */
+.row {
   cursor: pointer;
+}
+
+/* The current row rules a line under itself, so the boundary between what is
+   applied and what is redoable reads without an extra divider element. */
+.current {
+  border-bottom: var(--wzl-border-w) solid var(--wzl-fg);
+  border-radius: var(--wzl-radius-sm) var(--wzl-radius-sm) 0 0;
 }
