@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, createEvent, screen, act } from '@testing-library/react';
-import { Select, SelectItem } from './Select';
+import { Select, SelectItem, SelectSection } from './Select';
 import s from './Select.module.css';
 import { fieldClasses } from '../Field/Field';
 
@@ -267,5 +267,70 @@ describe('Select', () => {
       expect(container.querySelector(`.${s.label}`)?.textContent).toBe('Bundle');
       expect(container.querySelector(`.${s.below}`)?.textContent).toBe('Which bundle');
     });
+  });
+});
+
+describe('Select sections', () => {
+  const open = () => act(() => { fireEvent.click(screen.getByRole('button', { name: /Font/ })); });
+
+  it('groups SelectItem rows under a SelectSection title', () => {
+    const onChange = vi.fn();
+    render(
+      <Select label="Font" onSelectionChange={onChange}>
+        <SelectSection title="Sans">
+          <SelectItem id="inter">Inter</SelectItem>
+          <SelectItem id="arial">Arial</SelectItem>
+        </SelectSection>
+        <SelectSection title="Serif">
+          <SelectItem id="garamond">Garamond</SelectItem>
+        </SelectSection>
+      </Select>,
+    );
+    open();
+    const sans = screen.getByRole('group', { name: 'Sans' });
+    expect(Array.from(sans.querySelectorAll('[role="option"]')).map((o) => o.textContent)).toEqual(['Inter', 'Arial']);
+    fireEvent.click(screen.getByRole('option', { name: 'Garamond' }));
+    expect(onChange).toHaveBeenCalledWith('garamond');
+  });
+
+  it('takes titled groups in the options form, beside plain options', () => {
+    const onChange = vi.fn();
+    render(
+      <Select
+        label="Font"
+        onSelectionChange={onChange}
+        options={[
+          { value: 'system', label: 'System' },
+          { title: 'Sans', options: [{ value: 'inter', label: 'Inter' }] },
+          { title: 'Serif', options: [{ value: 'garamond', label: 'Garamond' }] },
+        ]}
+      />,
+    );
+    open();
+    expect(screen.getByRole('group', { name: 'Serif' }).textContent).toContain('Garamond');
+    expect(screen.getByRole('option', { name: 'System' }).closest('[role="group"]')).toBeNull();
+    fireEvent.click(screen.getByRole('option', { name: 'Inter' }));
+    expect(onChange).toHaveBeenCalledWith('inter');
+  });
+
+  it("sizes a width='fit' trigger against the options inside sections", () => {
+    const { container } = render(
+      <Select label="Font" width="fit" options={[{ title: 'Sans', options: [{ value: 'inter', label: 'Inter' }] }]} />,
+    );
+    const inOptions = container.querySelector('.' + s.sizer) as HTMLElement;
+    expect(Array.from(inOptions.children).map((c) => c.textContent)).toEqual(['Inter']);
+  });
+
+  it("sizes a width='fit' trigger against SelectItems inside a SelectSection", () => {
+    const { container } = render(
+      <Select label="Font" width="fit">
+        <SelectItem id="system">System</SelectItem>
+        <SelectSection title="Serif">
+          <SelectItem id="garamond">Garamond</SelectItem>
+        </SelectSection>
+      </Select>,
+    );
+    const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
+    expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['System', 'Garamond']);
   });
 });

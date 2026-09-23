@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect } from '@weasel-js/forge/play';
 import { useState } from 'react';
-import { Select, SelectItem } from './Select';
+import { Select, SelectItem, SelectSection } from './Select';
 
 const meta: Meta<typeof Select> = {
   title: 'Primitives/Select',
@@ -86,6 +86,34 @@ export const LabelBeside: Story = {
         defaultSelectedKey="g"
         options={COLORS}
       />
+    </div>
+  ),
+};
+
+/** Titled sections, from `options` entries with their own `title` and
+ *  `options`, or from `<SelectSection>` in the children form. */
+export const Sections: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 240 }}>
+      <Select
+        label="Font"
+        defaultSelectedKey="inter"
+        options={[
+          { value: 'system', label: 'System' },
+          { title: 'Sans', options: [{ value: 'inter', label: 'Inter' }, { value: 'helvetica', label: 'Helvetica' }] },
+          { title: 'Serif', options: [{ value: 'garamond', label: 'Garamond' }, { value: 'charter', label: 'Charter' }] },
+        ]}
+      />
+      <Select label="Blend" defaultSelectedKey="multiply">
+        <SelectSection title="Darken">
+          <SelectItem id="darken">Darken</SelectItem>
+          <SelectItem id="multiply">Multiply</SelectItem>
+        </SelectSection>
+        <SelectSection title="Lighten">
+          <SelectItem id="lighten">Lighten</SelectItem>
+          <SelectItem id="screen">Screen</SelectItem>
+        </SelectSection>
+      </Select>
     </div>
   ),
 };

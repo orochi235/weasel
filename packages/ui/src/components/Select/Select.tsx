@@ -16,6 +16,8 @@ import {
   Popover as RACPopover,
   ListBox as RACListBox,
   ListBoxItem as RACListBoxItem,
+  ListBoxSection as RACListBoxSection,
+  Header,
   Text,
   FieldError,
   type SelectProps as RACSelectProps,
@@ -40,7 +42,19 @@ export type SelectOption = {
   textValue?: string;
 };
 
+/** A titled group of options in a {@link Select}'s `options` list. */
+export type SelectOptionGroup<T extends Key = string> = {
+  title: ReactNode;
+  options: ReadonlyArray<SelectOption & { value: T }>;
+};
+
 type Key = string | number;
+
+function isGroup<T extends Key>(
+  entry: (SelectOption & { value: T }) | SelectOptionGroup<T>,
+): entry is SelectOptionGroup<T> {
+  return 'options' in entry;
+}
 
 /** How a {@link Select} trigger signals that it opens a list. */
 export type SelectIndicator = 'chevron' | 'underline' | 'none';
@@ -63,8 +77,11 @@ export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, '
   description?: ReactNode;
   errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
   placeholder?: string;
-  /** Either pass `options` for a quick render, or `children` for full control. */
-  options?: ReadonlyArray<SelectOption & { value: T }>;
+  /**
+   * Either pass `options` for a quick render, or `children` for full control.
+   * An entry with `title` and `options` of its own is a titled section.
+   */
+  options?: ReadonlyArray<(SelectOption & { value: T }) | SelectOptionGroup<T>>;
   children?: ReactNode;
   selectedKey?: T | null;
   defaultSelectedKey?: T;
@@ -103,7 +120,8 @@ export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, '
 /**
  * Form select wrapping React Aria's Select. Pass either `options` for a
  * quick declarative render or `children` of `<SelectItem>` for control over
- * each row.
+ * each row; `<SelectSection>` (or an `options` entry with a `title`) groups
+ * rows under a heading.
  *
  * The selection key type is parameterized so consumers with a string-literal
  * union for `value` (e.g. `'r' | 'g' | 'b'`) get a typed `onSelectionChange`.
@@ -218,16 +236,15 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
         )}
         <RACListBox className={s.listbox}>
           {options !== undefined
-            ? options.map((o) => (
-                <SelectItem
-                  key={String(o.value)}
-                  id={o.value}
-                  isDisabled={o.isDisabled}
-                  textValue={o.textValue}
-                >
-                  {o.label}
-                </SelectItem>
-              ))
+            ? options.map((entry, i) =>
+                isGroup(entry) ? (
+                  <SelectSection key={`section-${i}`} title={entry.title}>
+                    {entry.options.map(renderOption)}
+                  </SelectSection>
+                ) : (
+                  renderOption(entry)
+                ),
+              )
             : children}
         </RACListBox>
       </RACPopover>
@@ -356,17 +373,47 @@ function CheckMark() {
   );
 }
 
+function renderOption<T extends Key>(o: SelectOption & { value: T }) {
+  return (
+    <SelectItem key={String(o.value)} id={o.value} isDisabled={o.isDisabled} textValue={o.textValue}>
+      {o.label}
+    </SelectItem>
+  );
+}
+
 /**
  * The labels a `width='fit'` trigger measures itself against. In the children
- * form the label sits one element deep, inside a `SelectItem`.
+ * form the label sits one element deep, inside a `SelectItem`, or two inside a
+ * `SelectSection`.
  */
 function optionLabels(
-  options: ReadonlyArray<SelectOption> | undefined,
+  options: ReadonlyArray<SelectOption | SelectOptionGroup<Key>> | undefined,
   children: ReactNode,
 ): ReactNode[] {
-  if (options !== undefined) return options.map((o) => o.label);
-  return Children.toArray(children).map((c) =>
-    isValidElement<{ children?: ReactNode }>(c) ? c.props.children : c,
+  if (options !== undefined)
+    return options.flatMap((o) => ('options' in o ? o.options.map((g) => g.label) : [o.label]));
+  return Children.toArray(children).flatMap((c) => {
+    if (!isValidElement<{ children?: ReactNode }>(c)) return [c];
+    return c.type === SelectSection ? optionLabels(undefined, c.props.children) : [c.props.children];
+  });
+}
+
+/** Props for {@link SelectSection}. */
+export type SelectSectionProps = {
+  /** Heading shown above the section's rows; it also names the group for
+   *  screen readers. */
+  title?: ReactNode;
+  children?: ReactNode;
+  className?: string;
+};
+
+/** A titled group of `SelectItem` rows in a {@link Select}'s list. */
+export function SelectSection({ title, children, className }: SelectSectionProps) {
+  return (
+    <RACListBoxSection className={[s.section, className].filter(Boolean).join(' ')}>
+      {title !== undefined && <Header className={s.sectionHeader}>{title}</Header>}
+      {children}
+    </RACListBoxSection>
   );
 }
 
