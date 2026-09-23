@@ -1,47 +1,47 @@
 .root {
-  font-family: system-ui, sans-serif;
-  color: var(--wzl-fg, var(--wzl-fg));
+  font-family: var(--wzl-font-ui);
+  color: var(--wzl-fg);
   background: var(--wzl-surface);
   /* Lock to the viewport so the sidebar / detail can scroll independently
      rather than letting the document grow into a single page scroll. */
   height: 100vh;
-  padding: 16px 20px;
+  padding: var(--wzl-space-8) 20px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
 }
-.header { display: flex; align-items: baseline; gap: 16px; margin-bottom: 16px; flex: 0 0 auto; }
+.header { display: flex; align-items: baseline; gap: var(--wzl-space-8); margin-bottom: var(--wzl-space-8); flex: 0 0 auto; }
 .title { margin: 0; font-size: 24px; font-weight: 600; flex: 1; }
 .layout {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
-  gap: 16px;
+  gap: var(--wzl-space-8);
   /* Take remaining vertical space; `min-height: 0` lets the grid children
      shrink so their own `overflow-y: auto` actually engages. */
   flex: 1 1 auto;
   min-height: 0;
 }
 .tree, .detail {
-  background: var(--wzl-surface, var(--wzl-border));
+  background: var(--wzl-panel-surface);
   border-radius: 6px;
-  padding: 12px;
+  padding: var(--wzl-space-6);
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
 }
 .filterInput { margin-bottom: var(--wzl-space-4); }
-.bundlePicker { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--wzl-fg-muted); }
+.bundlePicker { display: flex; align-items: center; gap: var(--wzl-space-3); font-size: 14px; color: var(--wzl-fg-muted); }
 .empty { color: var(--wzl-fg-muted); font-size: 15px; font-style: italic; }
 
 .breadcrumb {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--wzl-fg-muted);
-  margin-bottom: 6px;
+  margin-bottom: var(--wzl-space-3);
 }
 .breadcrumbSep { opacity: 0.5; }
 .hidden {
@@ -53,21 +53,21 @@
   overflow: hidden;
 }
 .treeList { list-style: none; margin: 0; padding: 0; }
-.treeCategory { margin-bottom: 4px; }
+.treeCategory { margin-bottom: var(--wzl-space-2); }
 .treeGroupChildren {
   /* Child categories of a group (e.g. Shape kinds / Routing kinds under
    *  Facets) are indented one chevron-width so the parent → child
    *  relationship reads at a glance. */
   padding-left: 18px;
 }
-.treeCategoryRow { padding: 2px 0; }
+.treeCategoryRow { padding: var(--wzl-space-1) 0; }
 .treeCategoryLabel {
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: var(--wzl-space-3);
   background: transparent;
   border: none;
-  color: var(--wzl-fg, var(--wzl-fg));
+  color: var(--wzl-fg);
   cursor: pointer;
-  padding: 2px 2px;
+  padding: var(--wzl-space-1) var(--wzl-space-1);
   font: inherit;
   font-weight: 600;
   width: 100%;
@@ -81,29 +81,29 @@
   text-align: left;
   background: transparent;
   border: none;
-  color: var(--wzl-fg, var(--wzl-fg));
+  color: var(--wzl-fg);
   cursor: pointer;
-  padding: 2px 4px;
+  padding: var(--wzl-space-1) var(--wzl-space-2);
   font: inherit;
   font-size: 14px;
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
 }
 .treeLeaf:hover { background: var(--wzl-border); }
-.treeLeafSelected { background: var(--wzl-accent, #c89a5e); color: var(--wzl-fg-on-accent, var(--wzl-gray-50)); }
+.treeLeafSelected { background: var(--wzl-accent); color: var(--wzl-fg-on-accent); }
 
-.detailHeading { margin: 0 0 12px; font-size: 19px; }
-.detailList { display: grid; grid-template-columns: 120px 1fr; gap: 2px 12px; font-size: 15px; margin: 0; }
+.detailHeading { margin: 0 0 var(--wzl-space-6); font-size: 19px; }
+.detailList { display: grid; grid-template-columns: 120px 1fr; gap: var(--wzl-space-1) var(--wzl-space-6); font-size: 15px; margin: 0; }
 .detailList dt {
   color: var(--wzl-fg-muted);
   text-transform: capitalize;
-  font-size: 13px;
+  font-size: var(--wzl-font-size-md);
   letter-spacing: 0.03em;
   min-height: 30px;
   display: flex;
   /* Top-align labels so a tall multi-line value (e.g. a routes list) doesn't
      leave the label floating in the middle of its row. */
   align-items: flex-start;
-  padding-top: 8px;
+  padding-top: var(--wzl-space-4);
 }
 .detailList dd {
   margin: 0;
@@ -111,20 +111,20 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--wzl-space-2);
 }
 /* Sunken, not --wzl-surface, so the chip reads against the panel. */
-.tag { background: var(--wzl-surface-sunken); padding: 2px 8px; border-radius: 3px; margin-right: 4px; font-size: 13px; }
-.routeBadge { display: inline-flex; align-items: center; gap: 2px; margin-right: 6px; }
+.tag { background: var(--wzl-surface-sunken); padding: var(--wzl-space-1) var(--wzl-space-4); border-radius: var(--wzl-radius-sm); margin-right: var(--wzl-space-2); font-size: var(--wzl-font-size-md); }
+.routeBadge { display: inline-flex; align-items: center; gap: var(--wzl-space-1); margin-right: var(--wzl-space-3); }
 
-.phaseGroup { display: inline-flex; align-items: center; gap: 2px; }
-.phaseSep { color: var(--wzl-fg-muted); font-size: 11px; }
+.phaseGroup { display: inline-flex; align-items: center; gap: var(--wzl-space-1); }
+.phaseSep { color: var(--wzl-fg-muted); font-size: var(--wzl-font-size-sm); }
 /* Wildcard / descriptor-default tokens — kept visible so the route reads
    as the full wiring, but faded so specific args/targets visually dominate. */
 .routeMuted { opacity: 0.55; }
 /* Modifier group sits adjacent to the gesture badge, prefixed with a `+`
    sigil so the visual binding to the gesture is unambiguous. */
-.modGroup { display: inline-flex; align-items: center; gap: 2px; }
+.modGroup { display: inline-flex; align-items: center; gap: var(--wzl-space-1); }
 .modSigil { color: var(--wzl-fg-muted); font-size: 12px; font-weight: 600; }
 /* The gesture badge is `align-items: baseline` (so plain text baselines
    correctly with adjacent badges), but a KeyCap dropped inside has its own
@@ -138,13 +138,13 @@
 /* Description spans the full content column under the route title. Reads as
    a leading "what this route does" caption, not a sidebar callout. */
 .routeDescription {
-  margin: 0 0 12px;
-  padding: 8px 10px;
+  margin: 0 0 var(--wzl-space-6);
+  padding: var(--wzl-space-4) var(--wzl-space-5);
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   border-radius: 4px;
   color: var(--wzl-fg-muted);
-  font-size: 13px;
+  font-size: var(--wzl-font-size-md);
   line-height: 1.5;
   font-style: italic;
 }
@@ -170,30 +170,30 @@
   border: none;
   color: var(--wzl-accent-fg, #c89a5e);
   cursor: pointer;
-  padding: 2px 0;
+  padding: var(--wzl-space-1) 0;
   font: inherit;
   text-align: left;
   text-decoration: underline;
 }
 
-.iconPreviewRow { display: flex; gap: 12px; margin: 8px 0 12px; align-items: flex-end; }
+.iconPreviewRow { display: flex; gap: var(--wzl-space-6); margin: var(--wzl-space-4) 0 var(--wzl-space-6); align-items: flex-end; }
 .iconPreviewCell {
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   border-radius: 4px;
   display: flex; align-items: center; justify-content: center;
-  padding: 4px;
+  padding: var(--wzl-space-2);
 }
 .iconPreviewCellSmall { width: 32px; height: 32px; }
 .iconPreviewCellLarge { width: 64px; height: 64px; }
 .iconPreviewCell > svg { width: 100%; height: 100%; }
-.callbackList { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; gap: 2px; }
-.callbackList li { display: flex; align-items: baseline; gap: 8px; }
+.callbackList { list-style: none; padding: 0; margin: var(--wzl-space-2) 0 0; display: flex; flex-direction: column; gap: var(--wzl-space-1); }
+.callbackList li { display: flex; align-items: baseline; gap: var(--wzl-space-4); }
 .callbackLink {
-  color: var(--wzl-accent-fg, #c89a5e);
+  color: var(--wzl-accent-fg);
   text-decoration: none;
-  font-size: 13px;
-  font-family: var(--wzl-font-mono, ui-monospace, monospace);
+  font-size: var(--wzl-font-size-md);
+  font-family: var(--wzl-font-mono);
 }
 .callbackLink:hover { text-decoration: underline; }
 /* Grid cells that legitimately hold nothing. Dimmer than body text so an
@@ -202,22 +202,22 @@
 .wildcardCell {
   color: var(--wzl-fg-muted);
   font-style: italic;
-  font-size: 13px;
+  font-size: var(--wzl-font-size-md);
 }
 .jsdoc {
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   border-radius: 4px;
-  padding: 8px;
+  padding: var(--wzl-space-4);
   font-size: 14px;
   white-space: pre-wrap;
-  margin: 8px 0 0;
+  margin: var(--wzl-space-4) 0 0;
 }
 
 /* Tool detail: icon + heading inline. Width-capped so the heading text
    sits next to the icon at the same baseline rather than wrapping. */
-.toolHeader { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.toolIcon { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; color: var(--wzl-fg, var(--wzl-fg)); }
+.toolHeader { display: flex; align-items: center; gap: var(--wzl-space-5); margin-bottom: var(--wzl-space-4); }
+.toolIcon { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; color: var(--wzl-fg); }
 .toolIcon > svg { width: 100%; height: 100%; }
 
 /* Per-phase channel row: label gutter + a wrapping strip of channel tags
@@ -225,37 +225,37 @@
 .phaseRow {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin: 4px 4px 4px 0;
-  padding: 6px 8px;
+  gap: var(--wzl-space-4);
+  margin: var(--wzl-space-2) var(--wzl-space-2) var(--wzl-space-2) 0;
+  padding: var(--wzl-space-3) var(--wzl-space-4);
   flex-wrap: wrap;
-  border: 1px solid var(--wzl-border, var(--wzl-border));
+  border: 1px solid var(--wzl-border);
   border-radius: 6px;
 }
 
 /* Bundle detail: section subheading + members table + added/removed tags. */
 .subHeading {
-  margin: 16px 0 6px;
+  margin: var(--wzl-space-8) 0 var(--wzl-space-3);
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--wzl-fg-muted);
 }
-.tagAdded { color: #6cb96c; }
-.tagRemoved { color: var(--wzl-danger, #ff6b6b); }
+.tagAdded { color: var(--wzl-success); }
+.tagRemoved { color: var(--wzl-danger); }
 
 /* Schema panel — property tables for shape/op/action/gesture/node detail. */
 .schemaTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
-  margin: 4px 0 8px;
+  font-size: var(--wzl-font-size-md);
+  margin: var(--wzl-space-2) 0 var(--wzl-space-4);
 }
 .schemaTable th,
 .schemaTable td {
   text-align: left;
-  padding: 4px 8px;
-  border-bottom: 1px solid var(--wzl-border, var(--wzl-border));
+  padding: var(--wzl-space-2) var(--wzl-space-4);
+  border-bottom: 1px solid var(--wzl-border);
   vertical-align: top;
 }
 .schemaTable th {
@@ -263,25 +263,25 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
 }
 .schemaName {
-  font-family: var(--wzl-font-mono, ui-monospace, monospace);
-  color: var(--wzl-fg, var(--wzl-fg));
+  font-family: var(--wzl-font-mono);
+  color: var(--wzl-fg);
 }
-.schemaOptional { color: var(--wzl-fg-muted); margin-left: 2px; }
+.schemaOptional { color: var(--wzl-fg-muted); margin-left: var(--wzl-space-1); }
 .schemaType {
-  font-family: var(--wzl-font-mono, ui-monospace, monospace);
-  color: var(--wzl-accent-fg, #c89a5e);
+  font-family: var(--wzl-font-mono);
+  color: var(--wzl-accent-fg);
   font-size: 12px;
   white-space: pre-wrap;
   word-break: break-word;
 }
 .schemaDefault {
-  font-family: var(--wzl-font-mono, ui-monospace, monospace);
-  color: #8aa86e;
+  font-family: var(--wzl-font-mono);
+  color: var(--wzl-success);
   font-size: 12px;
 }
 .schemaMuted { color: var(--wzl-fg-muted); }
-.schemaSource { color: var(--wzl-fg-muted); font-size: 12px; margin-top: 4px; }
-.schemaNote { color: var(--wzl-fg-muted); font-size: 12px; font-style: italic; margin: 4px 0 8px; }
+.schemaSource { color: var(--wzl-fg-muted); font-size: 12px; margin-top: var(--wzl-space-2); }
+.schemaNote { color: var(--wzl-fg-muted); font-size: 12px; font-style: italic; margin: var(--wzl-space-2) 0 var(--wzl-space-4); }
