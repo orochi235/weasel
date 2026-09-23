@@ -27,5 +27,5 @@
 .swatchTransparent {
   background:
     linear-gradient(45deg, transparent calc(50% - 1px), var(--wzl-danger) calc(50% - 1px), var(--wzl-danger) calc(50% + 1px), transparent calc(50% + 1px)),
-    repeating-conic-gradient(var(--wzl-border) 0% 25%, var(--wzl-surface) 0% 50%) 50% / 8px 8px;
+    repeating-conic-gradient(var(--wzl-checker-a) 0% 25%, var(--wzl-checker-b) 0% 50%) 50% / var(--wzl-checker-size) var(--wzl-checker-size);
 }
