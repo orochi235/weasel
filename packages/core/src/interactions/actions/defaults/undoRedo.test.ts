@@ -30,3 +30,14 @@ describe('redoAction (descriptor)', () => {
     expect(redoAction.invoker?.timing).toBe('immediate');
   });
 });
+
+describe('undo/redo enabled', () => {
+  const history = (canUndo: boolean, canRedo: boolean) => ({ history: { canUndo: () => canUndo, canRedo: () => canRedo } });
+
+  it('follows the history stacks', () => {
+    expect(undoAction.enabled?.(history(true, false))).toBe(true);
+    expect(undoAction.enabled?.(history(false, true))).toBe('not-applicable');
+    expect(redoAction.enabled?.(history(false, true))).toBe(true);
+    expect(redoAction.enabled?.(history(true, false))).toBe('not-applicable');
+  });
+});

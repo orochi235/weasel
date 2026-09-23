@@ -49,6 +49,27 @@ export interface ActionPresentation {
    *  surfaces derive a label from `defaultBinding` via their own
    *  formatter. */
   shortcut?: string;
+  /** The distinct things a parametric action does, one per set of params —
+   *  `flip` flips horizontally or vertically, `reorder.forward` moves one step
+   *  or all the way. A bar, menu or palette shows one entry per variant and
+   *  triggers the action with that variant's `params`. Omitted = the action
+   *  is one entry. See `actionItems`. */
+  variants?: readonly ActionVariant[];
+}
+
+/**
+ * @experimental
+ * One entry a parametric action contributes to a bar, menu or palette.
+ */
+export interface ActionVariant {
+  /** Unique within the action; joined to its id to make the entry's key. */
+  key: string;
+  label: string;
+  /** Falls back to the action's own `icon`. */
+  icon?: ReactNode | (() => ReactNode);
+  /** Passed to `trigger`, and matched against each binding's
+   *  `opts.params` to find the variant's shortcuts. */
+  params: Readonly<Record<string, unknown>>;
 }
 
 /**

@@ -51,11 +51,18 @@ export function keySpecShortcut(spec: GestureSpec): ActionShortcut | undefined {
  * Every keyboard shortcut an action answers to, in declaration order.
  * Specs `keySpecShortcut` has no chip for are skipped, and bindings it leaves
  * identical are emitted once; an action bound only to those returns empty.
+ *
+ * With `params` — an `ActionItem`'s — only the bindings that pass those same
+ * values count, so each variant of `flip` gets its own key.
  */
-export function actionShortcuts(action: Action): readonly ActionShortcut[] {
+export function actionShortcuts(
+  action: Action,
+  params?: Readonly<Record<string, unknown>>,
+): readonly ActionShortcut[] {
   const out: ActionShortcut[] = [];
   const seen = new Set<string>();
-  for (const { spec } of actionBindings(action)) {
+  for (const { spec, opts } of actionBindings(action)) {
+    if (params && !paramsMatch(opts?.params, params)) continue;
     const shortcut = keySpecShortcut(spec);
     if (!shortcut) continue;
     const token = `${shortcut.key}|${shortcut.mod}|${shortcut.alt}|${shortcut.shift}`;
@@ -64,4 +71,9 @@ export function actionShortcuts(action: Action): readonly ActionShortcut[] {
     out.push(shortcut);
   }
   return out;
+}
+
+function paramsMatch(bound: unknown, wanted: Readonly<Record<string, unknown>>): boolean {
+  if (typeof bound !== 'object' || bound === null) return false;
+  return Object.entries(wanted).every(([k, v]) => (bound as Record<string, unknown>)[k] === v);
 }

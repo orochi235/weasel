@@ -20,11 +20,14 @@ import {
 } from 'react';
 import {
   useActionsRegistry,
+  useOptionalDepRegistry,
+  actionItems,
   actionShortcuts,
+  buildDepsFromRequires,
   evaluateEnabled,
   ActionDisabledReason,
   useSelectionContext,
-  type Action,
+  type ActionItem,
   type ActionEnabledResult,
 } from '@weasel-js/core';
 import { formatShortcutParts } from '@weasel-js/ui';
@@ -40,11 +43,11 @@ const DEFAULT_REASON_LABELS: Record<string, string> = {
   [ActionDisabledReason.PredicateThrew]: '(predicate threw)',
 };
 
-/** Every shortcut an action answers to, as chip groups. An action can be
- *  bound more than once — `reorder.forward` has three — so each binding gets
- *  its own group rather than one being picked as canonical. */
-function ShortcutChips({ action }: { action: Action }) {
-  const groups = actionShortcuts(action)
+/** Every shortcut an entry answers to, as chip groups. An entry can be
+ *  bound more than once — Bring to Front has two — so each binding gets its
+ *  own group rather than one being picked as canonical. */
+function ShortcutChips({ item }: { item: ActionItem }) {
+  const groups = actionShortcuts(item.action, item.params)
     .map((s) => formatShortcutParts(s))
     .filter((parts): parts is readonly string[] => parts !== undefined);
   if (groups.length === 0) return null;
@@ -68,6 +71,7 @@ export interface CommandPaletteProps {
 
 export function CommandPalette({ open, onClose, reasonLabels }: CommandPaletteProps) {
   const registry = useActionsRegistry();
+  const depReg = useOptionalDepRegistry();
   const selectionCtx = useSelectionContext();
   const [query, setQuery] = useState('');
   const [highlight, setHighlight] = useState(0);
@@ -76,26 +80,30 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
 
   const labels = reasonLabels ?? DEFAULT_REASON_LABELS;
 
-  const allActions = useMemo<readonly Action[]>(
-    () => (registry && open ? registry.list() : []),
+  const allItems = useMemo<readonly ActionItem[]>(
+    () => (registry && open ? registry.list().flatMap(actionItems) : []),
     [registry, open],
   );
 
   const enabledById = useMemo<ReadonlyMap<string, ActionEnabledResult>>(() => {
     const m = new Map<string, ActionEnabledResult>();
-    for (const a of allActions) m.set(a.id, evaluateEnabled(a));
+    for (const { action } of allItems) {
+      if (m.has(action.id)) continue;
+      const deps = depReg ? buildDepsFromRequires(action, depReg) : undefined;
+      m.set(action.id, evaluateEnabled(action, deps));
+    }
     return m;
-  }, [allActions]);
+  }, [allItems, depReg]);
 
-  const filtered = useMemo<readonly Action[]>(() => {
+  const filtered = useMemo<readonly ActionItem[]>(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return allActions;
-    return allActions.filter((a) => a.label.toLowerCase().includes(q));
-  }, [allActions, query]);
+    if (!q) return allItems;
+    return allItems.filter((i) => i.label.toLowerCase().includes(q));
+  }, [allItems, query]);
 
-  const isEnabled = (a: Action): boolean => enabledById.get(a.id)?.enabled ?? true;
-  const reasonFor = (a: Action): string | undefined => {
-    const r = enabledById.get(a.id)?.reason;
+  const isEnabled = (i: ActionItem): boolean => enabledById.get(i.action.id)?.enabled ?? true;
+  const reasonFor = (i: ActionItem): string | undefined => {
+    const r = enabledById.get(i.action.id)?.reason;
     return r ? labels[r] : undefined;
   };
 
@@ -153,11 +161,11 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
 
   if (!open) return null;
 
-  const trigger = (action: Action) => {
-    if (!isEnabled(action)) return;
+  const trigger = (item: ActionItem) => {
+    if (!isEnabled(item)) return;
     onClose();
     queueMicrotask(() => {
-      registry?.trigger(action.id);
+      registry?.trigger(item.action.id, item.params);
     });
   };
 
@@ -170,8 +178,8 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
       moveHighlight(-1);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const action = filtered[highlight];
-      if (action && isEnabled(action)) trigger(action);
+      const item = filtered[highlight];
+      if (item && isEnabled(item)) trigger(item);
     }
   };
 
@@ -204,9 +212,9 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
           <div className={styles.empty}>No matching actions.</div>
         ) : (
           <ul ref={listRef} className={styles.list} role="listbox">
-            {filtered.map((action, idx) => {
-              const enabled = isEnabled(action);
-              const reason = reasonFor(action);
+            {filtered.map((item, idx) => {
+              const enabled = isEnabled(item);
+              const reason = reasonFor(item);
               const cls = [
                 styles.row,
                 idx === highlight ? styles.rowActive : '',
@@ -214,21 +222,21 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
               ].filter(Boolean).join(' ');
               return (
                 <li
-                  key={action.id}
+                  key={item.key}
                   data-idx={idx}
                   role="option"
                   aria-selected={idx === highlight}
                   aria-disabled={!enabled}
                   className={cls}
                   onMouseEnter={() => { if (enabled) setHighlight(idx); }}
-                  onMouseDown={(e) => { e.preventDefault(); if (enabled) trigger(action); }}
+                  onMouseDown={(e) => { e.preventDefault(); if (enabled) trigger(item); }}
                   title={reason}
                 >
-                  <span className={styles.label}>{action.label}</span>
+                  <span className={styles.label}>{item.label}</span>
                   {!enabled && reason && (
                     <span className={styles.reason}>{reason}</span>
                   )}
-                  <ShortcutChips action={action} />
+                  <ShortcutChips item={item} />
                 </li>
               );
             })}

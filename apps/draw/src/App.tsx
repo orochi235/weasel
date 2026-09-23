@@ -12,13 +12,13 @@
  *     shape-tool `create` defaults already produce, so no per-tool overrides.
  *   - The Actions Registry (auto-mounted by SceneCanvas via
  *     `useStandardActions`) handles undo/redo, delete, duplicate, nudge,
- *     align/distribute, reorder, flip, group/ungroup. We trigger by id from
- *     the ActionBar and the keyboard via the dispatcher.
+ *     align/distribute, reorder, flip, group/ungroup, clipboard. The
+ *     ActionBar renders them from the registry; the keyboard reaches them
+ *     through the dispatcher.
  *   - `<ColorContextProvider>` holds the active fill/stroke; selection
  *     mutations go through `scene.update` so they're undoable.
- *   - `<ActionBar>` is mounted as-is, with feature handlers that are
- *     either backed by registry triggers or stubbed (see `apps/draw/TODO.md`
- *     for the v0 omissions).
+ *   - `<ActionBar>` takes handlers only for draw's own buttons — file,
+ *     view toggles, recording, preferences.
  *   - `<ActiveSwatches>` is the fill/stroke widget; clicks open a native
  *     color picker via the existing component implementation.
  *   - Local-storage round-trip: serialized scene + view persisted on every
@@ -48,8 +48,6 @@ import {
   type Path,
   type FillStyle,
   type Stroke,
-  type AlignEdge,
-  type DistributeAxis,
   type SerializedScene,
   type AddNodeSpec,
   type BooleansAdapter,
@@ -104,7 +102,7 @@ import {
   PaintInput,
 } from '@weasel-js/ui';
 
-import { ActionBar, type FlipAxis, type PaperSizeKey } from './ActionBar';
+import { ActionBar, type PaperSizeKey } from './ActionBar';
 import { ActiveSwatches, type ActivePaint } from './ActiveSwatches';
 import { PreferencesModal } from './PreferencesModal';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
@@ -690,15 +688,9 @@ function Toolbar({
   onOpenPrefs,
   onClearJournalCache,
 }: ToolbarProps): ReactElement {
-  const registry = useActionsRegistry();
-  // Params forward to the action's invoker — parametric actions (reorder's
-  // `distance`, tool activation) are unreachable without them.
-  const trigger = useCallback((id: string, params?: Record<string, unknown>) => {
-    registry?.trigger(id, params);
-  }, [registry]);
-
   const adapter = useSceneAdapter(scene, {});
-  const [clipboardEmpty, setClipboardEmpty] = useState(true);
+  // Only its setter is read: a copy re-renders the bar so Paste re-evaluates.
+  const [, setClipboardEmpty] = useState(true);
   // `snapshot.items` are adapter-shaped copies (`sceneAdapter.snapshotSelection`),
   // not live scene nodes — but their `id`s are the ORIGINAL scene ids at copy
   // time, and `produceFlavors` runs synchronously inside `clipboard.copy()`,
@@ -732,8 +724,8 @@ function Toolbar({
     jsonReplacer: serializeReplacer,
   });
   // Published as the `clipboard` dep so Cmd+C / Cmd+X reach the same object
-  // the buttons do — `copy` is wrapped rather than passed raw so the
-  // paste-button's disabled state updates on the keyboard route too.
+  // the buttons do — `copy` is wrapped rather than passed raw so the Paste
+  // button's enabled state updates on the keyboard route too.
   const clipboardDep = useMemo<ClipboardDep>(() => ({
     copy: () => {
       clipboard.copy();
@@ -743,18 +735,6 @@ function Toolbar({
     isEmpty: clipboard.isEmpty,
   }), [clipboard]);
   useDepSource('clipboard', () => clipboardDep);
-
-  const onPaste = useCallback(() => { clipboard.paste(); }, [clipboard]);
-
-  // Selection-aware z-order: rough "is the top selection at front/back?" guard.
-  // Cheap heuristic — only inspects render order length, not per-id position,
-  // because the dispatcher's reorder action does the real work.
-  const hasSelection = selection.current.length > 0;
-  const selectionSize = selection.current.length;
-  // Ungroup is only meaningful when a container (group) node is selected.
-  const canUngroup = selection.current.some(
-    (id) => scene.get(asNodeId(id))?.kind === 'container',
-  );
 
   // Any selected leaf whose path is a polygon with ≥2 `M` commands is a
   // compound path — release explodes it into N independent leaves.
@@ -827,33 +807,6 @@ function Toolbar({
   return (
     <>
       <ActionBar
-        canUndo={scene.canUndo()}
-        canRedo={scene.canRedo()}
-        onUndo={() => scene.undo()}
-        onRedo={() => scene.redo()}
-        hasSelection={hasSelection}
-        hasMultiSelection={selectionSize >= 2}
-        selectionSize={selectionSize}
-        onDelete={() => trigger('delete')}
-        onDuplicate={() => trigger('duplicate')}
-        onCopy={() => trigger('clipboard.copy')}
-        onCut={() => trigger('clipboard.cut')}
-        onPaste={onPaste}
-        clipboardEmpty={clipboardEmpty}
-        onBringForward={() => trigger('reorder.forward', { distance: 'adjacent' })}
-        onSendBackward={() => trigger('reorder.backward', { distance: 'adjacent' })}
-        // Without the param these fell through to the invoker's 'adjacent'
-        // default, so the to-front/to-back buttons only ever moved one step.
-        onBringToFront={() => trigger('reorder.forward', { distance: 'extreme' })}
-        onSendToBack={() => trigger('reorder.backward', { distance: 'extreme' })}
-        canMoveForward={hasSelection}
-        canMoveBackward={hasSelection}
-        onGroup={() => trigger('group')}
-        onUngroup={() => trigger('ungroup')}
-        canUngroup={canUngroup}
-        onAlign={(edge: AlignEdge) => trigger(`align.${edge}`)}
-        onDistribute={(axis: DistributeAxis) => trigger(`distribute.${axis}`)}
-        onFlip={(_axis: FlipAxis) => trigger('flip')}
         onSaveSvg={() => {
           onClearJournalCache();
           const paper = PAPER_PRESETS[paperSize];

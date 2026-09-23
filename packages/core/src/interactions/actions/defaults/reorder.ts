@@ -61,6 +61,10 @@ export const reorderForwardAction: Action & { requires: string[] } = {
   id: 'reorder.forward',
   label: 'Bring Forward',
   group: 'reorder',
+  variants: [
+    { key: 'adjacent', label: 'Bring Forward', params: { distance: 'adjacent' } },
+    { key: 'extreme', label: 'Bring to Front', params: { distance: 'extreme' } },
+  ],
   defaultBinding: [
     {
       // Modifier matching is strict, so Shift must be absent here — listing
@@ -114,6 +118,10 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
   id: 'reorder.backward',
   label: 'Send Backward',
   group: 'reorder',
+  variants: [
+    { key: 'adjacent', label: 'Send Backward', params: { distance: 'adjacent' } },
+    { key: 'extreme', label: 'Send to Back', params: { distance: 'extreme' } },
+  ],
   defaultBinding: [
     {
       spec: { kind: 'key', key: ['['], mods: { mod: true } },

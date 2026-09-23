@@ -2,7 +2,7 @@
  * Tests for the `clipboard.copy` / `clipboard.cut` descriptors.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { clipboardCopyAction, clipboardCutAction } from './clipboard';
+import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from './clipboard';
 import type { ClipboardDep } from '../depSchema';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
@@ -123,5 +123,24 @@ describe('buildDeleteOps subtree collapsing (shared by delete + cut)', () => {
     };
     const ops = buildDeleteOps(scene as never, ['g', 'a', 'b', 'loose'], 'Cut');
     expect(ops).toHaveLength(2);
+  });
+});
+
+describe('clipboardPasteAction', () => {
+  const clipboard = (empty: boolean): ClipboardDep => ({ copy: vi.fn(), paste: vi.fn(), isEmpty: () => empty });
+
+  it('has no key binding — Cmd+V arrives as a paste event', () => {
+    expect(clipboardPasteAction.defaultBinding).toBeUndefined();
+  });
+
+  it('is enabled only while the clipboard holds something', () => {
+    expect(clipboardPasteAction.enabled?.({ clipboard: clipboard(false) })).toBe(true);
+    expect(clipboardPasteAction.enabled?.({ clipboard: clipboard(true) })).toBe('not-applicable');
+  });
+
+  it('runs the clipboard dep\'s paste', () => {
+    const dep = clipboard(false);
+    (clipboardPasteAction.invoker as ImmediateInvoker).run({ clipboard: dep });
+    expect(dep.paste).toHaveBeenCalledTimes(1);
   });
 });

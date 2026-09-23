@@ -65,3 +65,17 @@ describe('keySpecShortcut', () => {
     expect(keySpecShortcut({ kind: 'key', key: '' } as GestureSpec)).toBeUndefined();
   });
 });
+
+describe('actionShortcuts with params', () => {
+  it('keeps only the bindings that pass those params', () => {
+    const reorder = {
+      ...base,
+      defaultBinding: [
+        { spec: { kind: 'key', key: [']'], mods: { mod: true } }, opts: { params: { distance: 'adjacent' } } },
+        { spec: { kind: 'key', key: [']', '}'], mods: { mod: true, shift: true } }, opts: { params: { distance: 'extreme' } } },
+      ],
+    } as unknown as Action;
+    expect(actionShortcuts(reorder, { distance: 'extreme' }))
+      .toEqual([{ key: ']', mod: true, alt: false, shift: true }]);
+  });
+});

@@ -75,7 +75,7 @@ import { setStrokeAction } from './defaults/setStroke';
 import { setFillOpacityAction } from './defaults/setFillOpacity';
 import { setStrokeOpacityAction } from './defaults/setStrokeOpacity';
 import { ingestAction } from './defaults/ingest';
-import { clipboardCopyAction, clipboardCutAction } from './defaults/clipboard';
+import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from './defaults/clipboard';
 
 // viewportWheelPanAction / viewportZoomAction are NOT in KIT_STANDARD_DESCRIPTORS.
 // They are wired conditionally by SceneCanvas via `useViewportActions`
@@ -113,8 +113,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   escapeAction,
   cancelGestureAction,
   selectAllAction,
-  deleteAction,
   duplicateAction,
+  deleteAction,
   groupAction,
   ungroupAction,
   undoAction,
@@ -127,11 +127,11 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   reorderForwardAction,
   reorderBackwardAction,
   alignLeftAction,
+  alignCenterXAction,
   alignRightAction,
   alignTopAction,
-  alignBottomAction,
-  alignCenterXAction,
   alignCenterYAction,
+  alignBottomAction,
   distributeHorizontalAction,
   distributeVerticalAction,
   pathfinderUnionAction,
@@ -169,8 +169,9 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   setFillOpacityAction,
   setStrokeOpacityAction,
   ingestAction,
-  clipboardCopyAction,
   clipboardCutAction,
+  clipboardCopyAction,
+  clipboardPasteAction,
 ];
 
 /** Every id `useStandardActions` registers, in registration order. */

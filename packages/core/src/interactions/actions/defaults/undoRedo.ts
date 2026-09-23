@@ -1,4 +1,11 @@
-import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/routing';
+
+type HistoryReads = { canUndo?: () => boolean; canRedo?: () => boolean };
+
+function historyCan(deps: ActionDeps | undefined, which: 'canUndo' | 'canRedo'): true | ActionDisabledReason {
+  const history = deps?.history as HistoryReads | undefined;
+  return history?.[which]?.() ? true : ActionDisabledReason.NotApplicable;
+}
 
 /**
  * @experimental
@@ -8,6 +15,7 @@ import type { Action } from '@weasel-js/routing';
 export const undoAction: Action & { requires: string[] } = {
   id: 'undo',
   label: 'Undo',
+  group: 'history',
   defaultBinding: { kind: 'key', key: 'z', mods: { mod: true } },
   requires: ['history'],
   invoker: {
@@ -16,6 +24,7 @@ export const undoAction: Action & { requires: string[] } = {
       (deps.history as { undo?: () => boolean } | undefined)?.undo?.();
     },
   },
+  enabled: (deps) => historyCan(deps, 'canUndo'),
 };
 
 /**
@@ -25,6 +34,7 @@ export const undoAction: Action & { requires: string[] } = {
 export const redoAction: Action & { requires: string[] } = {
   id: 'redo',
   label: 'Redo',
+  group: 'history',
   defaultBinding: { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
   requires: ['history'],
   invoker: {
@@ -33,4 +43,5 @@ export const redoAction: Action & { requires: string[] } = {
       (deps.history as { redo?: () => boolean } | undefined)?.redo?.();
     },
   },
+  enabled: (deps) => historyCan(deps, 'canRedo'),
 };

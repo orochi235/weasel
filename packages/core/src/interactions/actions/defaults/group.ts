@@ -9,7 +9,8 @@ import { unionOfChildren, UNION_OF_CHILDREN } from 'core/scene/kitRegistry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { visualBoundsViaDescriptor } from '../resize/geometry';
 import { createTransformOp } from 'core/ops/transform';
-import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason, type Action } from '@weasel-js/routing';
+import { requiresSelection } from './requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
@@ -48,6 +49,7 @@ function freshContainerId(): NodeId {
 export const groupAction: Action & { requires: string[] } = {
   id: 'group',
   label: 'Group',
+  group: 'structure',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true } },
   eligible: { capability: 'edits-page' },
   requires: ['scene', 'selection', 'applyOps', 'poseDescriptor', 'poseComposition'],
@@ -152,7 +154,7 @@ export const groupAction: Action & { requires: string[] } = {
       selection.set([containerId]);
     },
   },
-  enabled: () => true,
+  enabled: requiresSelection,
 };
 
 /**
@@ -171,6 +173,7 @@ export const groupAction: Action & { requires: string[] } = {
 export const ungroupAction: Action & { requires: string[] } = {
   id: 'ungroup',
   label: 'Ungroup',
+  group: 'structure',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
   eligible: { capability: 'edits-page' },
   requires: ['scene', 'selection', 'poseComposition'],
@@ -223,5 +226,10 @@ export const ungroupAction: Action & { requires: string[] } = {
       });
     },
   },
-  enabled: () => true,
+  enabled: (deps) => {
+    const selection = deps?.selection as SelectionApi | undefined;
+    const scene = deps?.scene as Scene<unknown, string, unknown> | undefined;
+    const any = selection?.get().some((id) => scene?.get(id as NodeId)?.kind === 'container');
+    return any ? true : ActionDisabledReason.NotApplicable;
+  },
 };

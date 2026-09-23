@@ -1,45 +1,32 @@
-import { useState } from 'react';
+import { useState, type ComponentType, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { ActionsProvider } from '@weasel-js/core';
+import {
+  ActionsProvider,
+  DepRegistryProvider,
+  asNodeId,
+  useSelection,
+  useStandardActions,
+} from '@weasel-js/core';
 import { ActionBar, type ActionBarProps } from './ActionBar';
 import './app.css';
 
-// The ActionBar pulls icons and button styling from `app.css`;
-// importing it at story load mirrors the live app's chrome so the
-// component looks right in isolation. The pathfinder strip is rendered by
-// the kit's `<ActionBar group="pathfinder"/>` and reads the ambient
-// ActionsRegistry; in a story we wrap in `<ActionsProvider>` so the
-// component mounts without warnings — no boolean actions are registered,
-// so that strip renders empty in stories.
+// The editing strips are the kit's registry-driven `<ActionBar>`s, so the
+// story registers the kit actions itself, the way `<SceneCanvas>` does in the
+// app. Only a selection is published — enough to light up the
+// selection-gated buttons; undo, paste and ungroup read deps a story has no
+// document for, and stay off.
+function KitActions({ selected, children }: { selected: number; children: ReactNode }) {
+  const selection = useSelection({
+    mode: 'multi',
+    initial: Array.from({ length: selected }, (_, i) => asNodeId(`n${i}`)),
+  });
+  useStandardActions({ selection });
+  return <>{children}</>;
+}
 
 const noop = () => {};
 
 const baseArgs: ActionBarProps = {
-  canUndo: false,
-  canRedo: false,
-  onUndo: noop,
-  onRedo: noop,
-  hasSelection: false,
-  hasMultiSelection: false,
-  selectionSize: 0,
-  onDelete: noop,
-  onDuplicate: noop,
-  onCopy: noop,
-  onCut: noop,
-  onPaste: noop,
-  clipboardEmpty: true,
-  onBringForward: noop,
-  onSendBackward: noop,
-  onBringToFront: noop,
-  onSendToBack: noop,
-  canMoveForward: false,
-  canMoveBackward: false,
-  onGroup: noop,
-  onUngroup: noop,
-  canUngroup: false,
-  onAlign: noop,
-  onDistribute: noop,
-  onFlip: noop,
   onSaveSvg: noop,
   onOpenSvg: noop,
   onNew: noop,
@@ -57,17 +44,20 @@ const baseArgs: ActionBarProps = {
   onPlay: noop,
 };
 
+const withKit = (selected: number) => (Story: ComponentType) => (
+  <ActionsProvider>
+    <DepRegistryProvider>
+      <KitActions selected={selected}>
+        <Story />
+      </KitActions>
+    </DepRegistryProvider>
+  </ActionsProvider>
+);
+
 const meta: Meta<typeof ActionBar> = {
   title: 'draw/ActionBar',
   component: ActionBar,
   parameters: { layout: 'fullscreen' },
-  decorators: [
-    (Story) => (
-      <ActionsProvider>
-        <Story />
-      </ActionsProvider>
-    ),
-  ],
 };
 export default meta;
 
@@ -75,21 +65,12 @@ type Story = StoryObj<typeof ActionBar>;
 
 export const EmptyDocument: Story = {
   args: baseArgs,
+  decorators: [withKit(0)],
 };
 
 export const WithSelection: Story = {
-  args: {
-    ...baseArgs,
-    canUndo: true,
-    hasSelection: true,
-    hasMultiSelection: true,
-    selectionSize: 3,
-    clipboardEmpty: false,
-    canMoveForward: true,
-    canMoveBackward: true,
-    canUngroup: true,
-    canReleaseCompound: true,
-  },
+  args: { ...baseArgs, canReleaseCompound: true },
+  decorators: [withKit(3)],
 };
 
 // Interactive variant lets the reader toggle the grid/snap state
@@ -113,5 +94,6 @@ function InteractiveActionBar(args: ActionBarProps) {
 
 export const ToggleableViewState: Story = {
   args: baseArgs,
+  decorators: [withKit(0)],
   render: (args) => <InteractiveActionBar {...args} />,
 };

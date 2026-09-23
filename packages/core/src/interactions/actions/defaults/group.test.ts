@@ -360,3 +360,13 @@ describe('groupAction — non-rect poses', () => {
     expect(() => scene.toJSON()).not.toThrow();
   });
 });
+
+describe('ungroupAction enabled', () => {
+  it('needs a container in the selection', () => {
+    const scene = makeScene();
+    const leaf = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    const box = scene.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
+    expect(ungroupAction.enabled?.({ scene, selection: makeSelection([leaf]) })).toBe('not-applicable');
+    expect(ungroupAction.enabled?.({ scene, selection: makeSelection([leaf, box]) })).toBe(true);
+  });
+});

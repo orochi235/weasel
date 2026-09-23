@@ -86,7 +86,7 @@ const KIT_IDS = [
   'ingest',
   // No 'clipboard.paste' — Cmd+V arrives as a DOM paste event and routes
   // through `ingest`; a key binding would double-fire. See clipboard.ts.
-  'clipboard.copy', 'clipboard.cut',
+  'clipboard.copy', 'clipboard.cut', 'clipboard.paste',
 ] as const;
 
 // ---------------------------------------------------------------------------

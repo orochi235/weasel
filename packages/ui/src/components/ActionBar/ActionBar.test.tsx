@@ -211,4 +211,55 @@ describe('ActionBar', () => {
     );
     expect(screen.getByTestId('fn-icon')).toBeTruthy();
   });
+
+  it('renders one button per variant and triggers with its params', () => {
+    const run = vi.fn();
+    render(
+      <Harness
+        actions={[
+          {
+            id: 'flip',
+            label: 'Flip',
+            group: 'demo',
+            variants: [
+              { key: 'x', label: 'Flip Horizontal', params: { axis: 'x' } },
+              { key: 'y', label: 'Flip Vertical', params: { axis: 'y' } },
+            ],
+            invoker: { timing: 'immediate', run: (_deps, params) => run(params) },
+          },
+        ]}
+        bar={<ActionBar group="demo" />}
+      />,
+    );
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label')))
+      .toEqual(['Flip Horizontal', 'Flip Vertical']);
+    fireEvent.click(screen.getByTestId('action-bar-item-flip:y'));
+    expect(run).toHaveBeenCalledWith({ axis: 'y' });
+  });
+
+  it("titles a variant with the shortcut of the binding that passes its params", () => {
+    render(
+      <Harness
+        actions={[
+          makeAction({
+            id: 'flip',
+            label: 'Flip',
+            variants: [
+              { key: 'x', label: 'Flip Horizontal', params: { axis: 'x' } },
+              { key: 'y', label: 'Flip Vertical', params: { axis: 'y' } },
+            ],
+            defaultBinding: [
+              { spec: { kind: 'key', key: 'h', mods: { shift: true } }, opts: { params: { axis: 'x' } } },
+              { spec: { kind: 'key', key: 'v', mods: { shift: true } }, opts: { params: { axis: 'y' } } },
+            ],
+          }),
+        ]}
+        bar={<ActionBar group="demo" />}
+      />,
+    );
+    const y = screen.getByTestId('action-bar-item-flip:y');
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => y.focus());
+    expect(screen.getByRole('tooltip').textContent).toBe('Flip Vertical (⇧V)');
+  });
 });

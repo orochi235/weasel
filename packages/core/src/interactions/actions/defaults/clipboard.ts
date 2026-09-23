@@ -2,7 +2,7 @@ import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import type { ClipboardDep } from '../depSchema';
 import { buildDeleteOps } from './delete';
 import { requiresSelection } from './requiresSelection';
@@ -14,6 +14,7 @@ import { requiresSelection } from './requiresSelection';
 export const clipboardCopyAction: Action & { requires: string[] } = {
   id: 'clipboard.copy',
   label: 'Copy',
+  group: 'clipboard',
   defaultBinding: { kind: 'key', key: 'c', mods: { mod: true } },
   // Same gate as `duplicate`: a mode that can neither edit the page nor own a
   // selection has nothing to copy. Notably excludes `text-edit`, where Cmd+C
@@ -39,6 +40,7 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
 export const clipboardCutAction: Action & { requires: string[] } = {
   id: 'clipboard.cut',
   label: 'Cut',
+  group: 'clipboard',
   defaultBinding: { kind: 'key', key: 'x', mods: { mod: true } },
   eligible: { capability: 'edits-page' },
   requires: ['clipboard', 'scene', 'selection', 'applyOps'],
@@ -67,7 +69,27 @@ export const clipboardCutAction: Action & { requires: string[] } = {
   enabled: requiresSelection,
 };
 
-// There is deliberately no `clipboard.paste` descriptor. Cmd/Ctrl+V already
-// arrives as a DOM `paste` event, which the dispatcher routes to the `ingest`
-// action and the content-handler registry — the path that reaches the OS
-// payload. A key binding would fire alongside it and paste twice.
+/**
+ * @experimental
+ * Static descriptor for the `clipboard.paste` Action — what a Paste button or
+ * menu item triggers. It has no key binding: Cmd/Ctrl+V already arrives as a
+ * DOM `paste` event, which the dispatcher routes to `ingest`, and a binding
+ * here would fire alongside it and paste twice.
+ */
+export const clipboardPasteAction: Action & { requires: string[] } = {
+  id: 'clipboard.paste',
+  label: 'Paste',
+  group: 'clipboard',
+  eligible: { capability: 'edits-page' },
+  requires: ['clipboard'],
+  invoker: {
+    timing: 'immediate',
+    run: (deps) => {
+      (deps.clipboard as ClipboardDep | undefined)?.paste();
+    },
+  },
+  enabled: (deps) => {
+    const clipboard = deps?.clipboard as ClipboardDep | undefined;
+    return clipboard && !clipboard.isEmpty() ? true : ActionDisabledReason.NotApplicable;
+  },
+};

@@ -139,6 +139,11 @@ function flipSelection(
 export const flipAction: Action & { requires: string[] } = {
   id: 'flip',
   label: 'Flip',
+  group: 'flip',
+  variants: [
+    { key: 'x', label: 'Flip Horizontal', params: { axis: 'x' } },
+    { key: 'y', label: 'Flip Vertical', params: { axis: 'y' } },
+  ],
   defaultBinding: [
     { spec: { kind: 'key', key: ['h', 'H'], mods: { shift: true } }, opts: { params: { axis: 'x' } } },
     { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true } }, opts: { params: { axis: 'y' } } },

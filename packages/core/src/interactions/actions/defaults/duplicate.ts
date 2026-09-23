@@ -75,6 +75,7 @@ function copySubtree(
 export const duplicateAction: Action & { requires: string[] } = {
   id: 'duplicate',
   label: 'Duplicate',
+  group: 'edit',
   defaultBinding: { kind: 'key', key: 'd', mods: { mod: true } },
   eligible: { capability: ['edits-page', 'creates-selection'] },
   // `selection` is read by the `enabled` gate as well as the invoker. An

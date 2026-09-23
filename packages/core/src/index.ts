@@ -127,10 +127,11 @@ export type { UseKeyStateOptions } from './input/useKeyState';
 export { ActionsProvider, ActionsScope, useActionsRegistry, useAction } from '@weasel-js/routing/react';
 export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
 export { ActionDisabledReason } from '@weasel-js/routing';
-export type { Action, ActionDispatch, ActionPresentation } from '@weasel-js/routing';
-export { actionBindings } from '@weasel-js/routing';
+export type { Action, ActionDispatch, ActionPresentation, ActionVariant } from '@weasel-js/routing';
+export { actionBindings, actionItems } from '@weasel-js/routing';
+export type { ActionItem } from '@weasel-js/routing';
 export type { BoundGesture, BindingSource } from '@weasel-js/routing';
-export { evaluateEnabled } from '@weasel-js/routing';
+export { evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';
 export type { ActionEnabledResult } from '@weasel-js/routing';
 export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
 export type { ActionShortcut } from './interactions/actions/actionShortcuts';
@@ -165,6 +166,7 @@ export {
 export {
   clipboardCopyAction,
   clipboardCutAction,
+  clipboardPasteAction,
 } from './interactions/actions/defaults/clipboard';
 export { enterTextEditAction } from './interactions/actions/defaults/enterTextEdit';
 export type { SliceDep, ClipboardDep, TextEditDep } from './interactions/actions/depSchema';

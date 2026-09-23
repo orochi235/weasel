@@ -4,6 +4,7 @@ import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { Action } from '@weasel-js/routing';
+import { requiresSelection } from './requiresSelection';
 
 /** Host-array index of `id`: its slot among the scene roots (parent `null`)
  *  or among its parent's children. `-1` when not found. Forwarded to
@@ -70,6 +71,7 @@ export function buildDeleteOps(
 export const deleteAction: Action & { requires: string[] } = {
   id: 'delete',
   label: 'Delete',
+  group: 'edit',
   // Suppressed while any tool is mid-gesture — accidentally hitting
   // Delete during a drag shouldn't wipe the selection out from under
   // the in-flight handle.
@@ -102,5 +104,5 @@ export const deleteAction: Action & { requires: string[] } = {
       selection.set([]);
     },
   },
-  enabled: () => true,
+  enabled: requiresSelection,
 };
