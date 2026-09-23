@@ -431,71 +431,22 @@
   font-size: 13px;
 }
 
-.wd-prefs-readonly {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  color: var(--wzl-fg-subtle);
-}
-
-/* Panels-visibility editor (a `block` pref — supplies its own chrome).
- * Full-width embedded panel with a three-column grid (name, hidden,
- * collapsed). */
+/* Panels-visibility editor — a `block` pref, so it supplies its own title. */
 .wd-prefs-panels {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--wzl-space-2);
   width: 100%;
-  padding: 8px 8px 8px 10px;
-  background: var(--wzl-surface-sunken);
-  border-left: 2px solid var(--wzl-border);
-  border-radius: 2px;
 }
 
 .wd-prefs-panels-title {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--wzl-font-size-xs);
+  font-weight: var(--wzl-font-weight-bold);
   color: var(--wzl-fg);
 }
 
-.wd-prefs-panels-head,
-.wd-prefs-panels-row {
-  display: grid;
-  grid-template-columns: 1fr 48px 64px;
-  align-items: center;
-  gap: 4px;
-}
-
-.wd-prefs-panels-head {
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--wzl-fg-subtle);
-  padding-bottom: 2px;
-  border-bottom: 1px solid var(--wzl-border);
-}
-
-.wd-prefs-panels-head-flag {
-  justify-self: center;
-}
-
-.wd-prefs-panels-row {
-  font-size: 12px;
-  color: var(--wzl-fg);
-}
-
-/* Center the Hidden / Collapsed checkboxes in their grid cells (the
- * `Checkbox` component is inline-flex, so without `justify-self` it
- * sits at the cell's start edge instead of under the column header). */
-.wd-prefs-panels-row > :nth-child(2),
-.wd-prefs-panels-row > :nth-child(3) {
-  justify-self: center;
-}
-
-.wd-prefs-panels-row-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.wd-prefs-panels :is(th, td):not(:first-child) {
+  text-align: center;
 }
 
 /* Color-mode toggle in the status bar. Sized to sit inline with the

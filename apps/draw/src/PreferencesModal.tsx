@@ -9,8 +9,11 @@
 import { useMemo, useState } from 'react';
 import {
   Checkbox,
+  Code,
+  DataGrid,
   PrefsDialog,
   Switch,
+  type DataGridColumn,
   type PrefRenderContext,
 } from '@weasel-js/ui';
 import {
@@ -95,41 +98,38 @@ function ObjectControl(ctx: PrefRenderContext) {
   // `ui.panels` has a known shape; anything else object-kind is data
   // other code paths own — show it read-only rather than guessing.
   if (ctx.path === 'ui.panels') return <PanelsEditor ctx={ctx} />;
-  return <span className="wd-prefs-readonly">(object)</span>;
+  return <Code tone="muted" variant="plain" size="xs">(object)</Code>;
 }
 
-function PanelsEditor({ ctx }: { ctx: PrefRenderContext }) {
+type PanelRow = (typeof PANELS)[number];
+
+export function PanelsEditor({ ctx }: { ctx: PrefRenderContext }) {
   const pref = ctx.pref as WeaselDrawPrefObject;
   const panels = (ctx.value ?? {}) as PanelsValue;
   const update = (id: string, field: 'hidden' | 'collapsed', next: boolean): void => {
     ctx.setValue({ ...panels, [id]: { ...panels[id], [field]: next } });
   };
+  const flag = (field: 'hidden' | 'collapsed', header: string, verb: string): DataGridColumn<PanelRow> => ({
+    id: field,
+    header,
+    sortable: false,
+    render: ({ id, label }) => (
+      <Checkbox
+        isSelected={!!panels[id]?.[field]}
+        onChange={(v) => update(id, field, v)}
+        aria-label={`${verb} ${label} panel`}
+      />
+    ),
+  });
+  const columns: DataGridColumn<PanelRow>[] = [
+    { id: 'label', header: 'Panel', sortable: false },
+    flag('hidden', 'Hidden', 'Hide'),
+    flag('collapsed', 'Collapsed', 'Collapse'),
+  ];
   return (
     <div className="wd-prefs-panels">
       <div className="wd-prefs-panels-title">{pref.name}</div>
-      <div className="wd-prefs-panels-head">
-        <span className="wd-prefs-panels-head-name">Panel</span>
-        <span className="wd-prefs-panels-head-flag">Hidden</span>
-        <span className="wd-prefs-panels-head-flag">Collapsed</span>
-      </div>
-      {PANELS.map(({ id, label }) => {
-        const state = panels[id] ?? {};
-        return (
-          <div key={id} className="wd-prefs-panels-row">
-            <span className="wd-prefs-panels-row-name">{label}</span>
-            <Checkbox
-              isSelected={!!state.hidden}
-              onChange={(v) => update(id, 'hidden', v)}
-              aria-label={`Hide ${label} panel`}
-            />
-            <Checkbox
-              isSelected={!!state.collapsed}
-              onChange={(v) => update(id, 'collapsed', v)}
-              aria-label={`Collapse ${label} panel`}
-            />
-          </div>
-        );
-      })}
+      <DataGrid<PanelRow> rows={PANELS} columns={columns} />
     </div>
   );
 }
