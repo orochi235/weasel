@@ -7,7 +7,7 @@ export interface OpacityHudProps {
 
 /**
  * Transient chip rendered inside `.wd-canvas-host` while the opacity-scrub
- * session is active. Fades out (200ms) when `percent` returns to null.
+ * session is active. Fades out when `percent` returns to null.
  */
 export function OpacityHud({ percent }: OpacityHudProps) {
   const display = percent ?? 0;
