@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Badge, DisclosureRow } from '@weasel-js/ui';
+import { Badge, DisclosureRow, Input, SearchIcon } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 import type { TreeCategoryNode, TreeEntry } from './registryData';
 
@@ -143,11 +143,13 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
 
   return (
     <div>
-      <input
+      <Input
         className={s.filterInput}
+        aria-label="Filter registry"
         placeholder="Filter…"
+        leadingAdornment={<SearchIcon />}
         value={filter}
-        onChange={(e) => setFilter(e.target.value)}
+        onChange={setFilter}
       />
       <ul className={s.treeList}>
         {renderItems.map((item) => {

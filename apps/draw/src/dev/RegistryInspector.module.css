@@ -29,18 +29,7 @@
   min-height: 0;
   overflow-y: auto;
 }
-.filterInput {
-  width: 100%;
-  background: var(--wzl-surface);
-  color: var(--wzl-fg, var(--wzl-fg));
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  padding: 4px 6px;
-  font-size: 14px;
-  font-family: inherit;
-  box-sizing: border-box;
-  margin-bottom: 8px;
-}
+.filterInput { margin-bottom: var(--wzl-space-4); }
 .bundlePicker { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--wzl-fg-muted); }
 .bundlePicker select {
   background: var(--wzl-surface);
