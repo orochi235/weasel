@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Select } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
+import { DevShell } from './DevShell';
 import { RegistryTree } from './RegistryTree';
 import { RegistryDetail } from './RegistryDetail';
 import { RegistryProbe, type RegistrySnapshot } from './registryProbe';
@@ -53,12 +54,6 @@ function writeSelectionToHash(sel: { kind: string; id: string } | null): void {
  *  Mounted as a sibling to ToolkitBuilder. See
  *  `docs/superpowers/specs/2026-05-16-bundle-inspector-design.md`. */
 export function RegistryInspector() {
-  useEffect(() => {
-    const prev = document.title;
-    document.title = 'Bundle Inspector';
-    return () => { document.title = prev; };
-  }, []);
-
   const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], routing: [], properties: [] });
   const [bundleFilter, setBundleFilter] = useState<string>('all');
   const [textFilter, setTextFilter] = useState<string>('');
@@ -192,10 +187,9 @@ export function RegistryInspector() {
   }, [nodes]);
 
   return (
-    <div className={s.root}>
-      <RegistryProbe onSnapshot={onSnapshot} />
-      <header className={s.header}>
-        <h1 className={s.title}>Bundle Inspector</h1>
+    <DevShell
+      title="Bundle Inspector"
+      header={
         <Select
           label="bundle"
           orientation="row"
@@ -204,35 +198,39 @@ export function RegistryInspector() {
           selectedKey={bundleFilter}
           onSelectionChange={setBundleFilter}
         />
-      </header>
-      <div className={s.layout}>
-        <aside className={s.tree}>
-          <RegistryTree
-            nodes={nodes}
-            selected={selected}
-            onSelect={setSelected}
-            filter={textFilter}
-            onFilterChange={setTextFilter}
-            getCount={(e) => countForEntry(e, runtime.tools, runtime.actions)}
-          />
-        </aside>
-        <section className={s.detail}>
-          {selected
-            ? <RegistryDetail
-                entry={selected}
-                tools={runtime.tools}
-                actions={runtime.actions}
-                category={nodes.find((n) => n.entries.some((e) => e.kind === selected.kind && e.id === selected.id)) ?? null}
-                onNavigate={(t) => {
-                  for (const node of nodes) {
-                    const hit = node.entries.find((e) => e.kind === t.kind && e.id === t.id);
-                    if (hit) { setSelected(hit); return; }
-                  }
-                }}
-              />
-            : <p className={s.empty}>Select an entry to see details.</p>}
-        </section>
+      }
+    >
+      <div className={s.root}>
+        <RegistryProbe onSnapshot={onSnapshot} />
+        <div className={s.layout}>
+          <aside className={s.tree}>
+            <RegistryTree
+              nodes={nodes}
+              selected={selected}
+              onSelect={setSelected}
+              filter={textFilter}
+              onFilterChange={setTextFilter}
+              getCount={(e) => countForEntry(e, runtime.tools, runtime.actions)}
+            />
+          </aside>
+          <section className={s.detail}>
+            {selected
+              ? <RegistryDetail
+                  entry={selected}
+                  tools={runtime.tools}
+                  actions={runtime.actions}
+                  category={nodes.find((n) => n.entries.some((e) => e.kind === selected.kind && e.id === selected.id)) ?? null}
+                  onNavigate={(t) => {
+                    for (const node of nodes) {
+                      const hit = node.entries.find((e) => e.kind === t.kind && e.id === t.id);
+                      if (hit) { setSelected(hit); return; }
+                    }
+                  }}
+                />
+              : <p className={s.empty}>Select an entry to see details.</p>}
+          </section>
+        </div>
       </div>
-    </div>
+    </DevShell>
   );
 }

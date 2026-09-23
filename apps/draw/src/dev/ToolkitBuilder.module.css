@@ -1,16 +1,8 @@
 .root {
-  font-family: var(--wzl-font-ui);
-  color: var(--wzl-fg);
-  background: var(--wzl-surface);
-  min-height: 100vh;
   padding: var(--wzl-space-8) 20px;
-  box-sizing: border-box;
 }
 
-.header { margin-bottom: var(--wzl-space-8); }
-.headerRow { display: flex; align-items: baseline; gap: var(--wzl-space-8); }
-.title { margin: 0; font-size: var(--wzl-font-size-xl); font-weight: 600; flex: 1; }
-.subtitle { margin: var(--wzl-space-2) 0 0; font-size: var(--wzl-font-size-md); color: var(--wzl-fg-muted); }
+.subtitle { margin: 0 0 var(--wzl-space-8); font-size: var(--wzl-font-size-md); color: var(--wzl-fg-muted); }
 
 .layout {
   display: grid;

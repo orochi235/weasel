@@ -73,6 +73,7 @@ import {
 } from './resolutionInput';
 import { useDispatchTraceLog } from './dispatchTraceLog';
 import { DispatchTraceTable } from './DispatchTraceTable';
+import { DevShell } from './DevShell';
 import s from './ToolkitBuilder.module.css';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -807,12 +808,6 @@ function snapshotEnabled(a: Action): ReactNode {
 export function ToolkitBuilder(): ReactElement {
   const [bundle, setBundle] = useState<ToolBundle>(() => parseBundle(window.location.hash));
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = 'Toolkit Builder';
-    return () => { document.title = prev; };
-  }, []);
-
   // Sync hash on bundle change + react to back/forward.
   useEffect(() => { writeBundle(bundle); }, [bundle]);
   useEffect(() => {
@@ -825,27 +820,28 @@ export function ToolkitBuilder(): ReactElement {
   }, []);
 
   return (
-    <div className={s.root}>
-      <header className={s.header}>
-        <div className={s.headerRow}>
-          <h1 className={s.title}>Toolkit Builder</h1>
-          <Select<ToolBundle>
-            label="bundle"
-            orientation="row"
-            width="fit"
-            options={BUNDLE_IDS.map((id) => ({ value: id, label: id }))}
-            selectedKey={bundle}
-            onSelectionChange={setBundle}
-          />
-        </div>
+    <DevShell
+      title="Toolkit Builder"
+      header={
+        <Select<ToolBundle>
+          label="bundle"
+          orientation="row"
+          width="fit"
+          options={BUNDLE_IDS.map((id) => ({ value: id, label: id }))}
+          selectedKey={bundle}
+          onSelectionChange={setBundle}
+        />
+      }
+    >
+      <div className={s.root}>
         <p className={s.subtitle}>
           Mount a SceneCanvas with the chosen bundle, then inspect the live tool
           set, action registry, route table, and dispatch trace it produces.
         </p>
-      </header>
-      {/* Key by bundle so SceneCanvas rebuilds cleanly when it changes. */}
-      <ToolkitForBundle key={bundle} bundle={bundle} />
-    </div>
+        {/* Key by bundle so SceneCanvas rebuilds cleanly when it changes. */}
+        <ToolkitForBundle key={bundle} bundle={bundle} />
+      </div>
+    </DevShell>
   );
 }
 

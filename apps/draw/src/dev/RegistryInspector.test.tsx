@@ -45,6 +45,21 @@ describe('RegistryInspector', () => {
     expect(screen.getByRole('heading', { name: /bundle inspector/i })).toBeTruthy();
   });
 
+  it('names the document and switches to the other dev pages', () => {
+    window.history.replaceState(null, '', '/#/dev/registry');
+    renderInspector();
+    expect(document.title).toBe('Bundle Inspector');
+    fireEvent.click(screen.getByRole('button', { name: /bundle inspector/i }));
+    const items = screen.getAllByRole('menuitem');
+    expect(items.map((i) => [i.textContent, i.getAttribute('href')])).toEqual([
+      ['WeaselDraw', '/'],
+      ['Toolkit Builder', '#/dev/toolkits'],
+      ['Bundle Inspector', '#/dev/registry'],
+    ]);
+    expect(screen.getByRole('menuitem', { name: 'Bundle Inspector' }))
+      .toHaveAttribute('aria-current', 'page');
+  });
+
   it('renders all category nodes in the tree', async () => {
     renderInspector();
     await waitFor(() => expect(screen.queryByText('Bundles')).toBeTruthy());

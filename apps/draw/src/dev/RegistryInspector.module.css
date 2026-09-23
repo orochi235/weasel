@@ -1,17 +1,12 @@
 .root {
-  font-family: var(--wzl-font-ui);
-  color: var(--wzl-fg);
-  background: var(--wzl-surface);
-  /* Lock to the viewport so the sidebar / detail can scroll independently
+  /* Fill the shell's body so the sidebar / detail scroll independently
      rather than letting the document grow into a single page scroll. */
-  height: 100vh;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: var(--wzl-space-8) 20px;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
 }
-.header { display: flex; align-items: baseline; gap: var(--wzl-space-8); margin-bottom: var(--wzl-space-8); flex: 0 0 auto; }
-.title { margin: 0; font-size: 24px; font-weight: 600; flex: 1; }
 .layout {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
