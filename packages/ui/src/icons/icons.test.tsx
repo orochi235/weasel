@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Icon } from './Icon';
+import { CheckIcon } from './index';
 import { isFillable } from './Icon';
 import { ICON_FILLS, ICON_GROUPS, ICON_PATHS, type IconName } from './paths';
 
@@ -84,5 +85,16 @@ describe('icon set', () => {
     expect(ICON_PATHS.shapeCircle).not.toContain('stroke-linejoin');
     // A waveform's acute corners grow spikes under miter, so they stay round.
     expect(ICON_PATHS.arcZigzag).not.toContain('stroke-linejoin');
+  });
+});
+
+describe('CheckIcon', () => {
+  it('draws the check glyph as one open stroke, in the State family', () => {
+    const { container } = render(<CheckIcon label="Handled" />);
+    const svg = container.querySelector('svg');
+    expect(svg?.getAttribute('aria-label')).toBe('Handled');
+    expect(svg?.querySelector('path')?.getAttribute('d')).toBe(ICON_PATHS.check.match(/d="([^"]+)"/)?.[1]);
+    expect(ICON_PATHS.check).toMatch(/^<path d="M[^"Zz]+"\/>$/);
+    expect(ICON_GROUPS.find((g) => g.names.includes('check'))?.label).toBe('State');
   });
 });

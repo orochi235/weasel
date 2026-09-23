@@ -78,6 +78,18 @@ const sparkle =
     .join('') +
   'Z';
 
+// ── check ────────────────────────────────────────────────────────────────
+// Two legs off one vertex; the mark is then shifted so its bounding box, not
+// its vertex, centres on (10,10).
+const CHECK_SHORT = onCircle(0, 0, 5.2, 135);
+const CHECK_LONG = onCircle(0, 0, 11.4, 48);
+const checkMid = [
+  (Math.min(CHECK_SHORT[0], 0) + Math.max(CHECK_LONG[0], 0)) / 2,
+  (Math.min(CHECK_SHORT[1], CHECK_LONG[1]) + 0) / 2,
+];
+const checkAt = ([x, y]) => `${round2(x + 10 - checkMid[0])} ${round2(y + 10 - checkMid[1])}`;
+const check = `M${checkAt(CHECK_SHORT)} ${checkAt([0, 0])} ${checkAt(CHECK_LONG)}`;
+
 const STATE = {
   // transport
   play: `<path d="${playTri}"/>`,
@@ -178,6 +190,7 @@ const STATE = {
     <circle cx="10" cy="10" r="7"/>
     <path d="M7.6 7.6 12.4 12.4M12.4 7.6 7.6 12.4"/>`,
   busy: `<path d="M10 3.2A6.8 6.8 0 1 1 3.2 10"/>`,
+  check: `<path d="${check}"/>`,
 
   // colour mode
   'mode-light': `<circle cx="10" cy="10" r="${sunDisc}"/><path d="${sunRays}"/>`,
@@ -189,7 +202,7 @@ const SPLIT = {
   playback: ['play', 'pause', 'stop', 'stepBack', 'stepForward'],
   status: [
     'lock', 'unlock', 'visible', 'hidden', 'pin',
-    'info', 'warning', 'error', 'busy',
+    'info', 'warning', 'error', 'busy', 'check',
     'mode-light', 'mode-dark', 'mode-auto',
   ],
   instrument: [
