@@ -59,7 +59,7 @@ export function Disclosure({
   disabled,
   className,
 }: DisclosureProps) {
-  const cls = [s.twisty, direction === 'down' && s.down, className].filter(Boolean).join(' ');
+  const cls = [s.twisty, className].filter(Boolean).join(' ');
   return (
     <button
       type="button"
@@ -70,19 +70,44 @@ export function Disclosure({
       disabled={disabled}
       onClick={onToggle}
     >
-      <svg
-        className={s.mark}
-        viewBox="0 0 12 12"
-        width={size}
-        height={size}
-        aria-hidden="true"
-        focusable="false"
-      >
-        {/* Vertex on the right edge at the vertical center, so the rotation
-            about the box center keeps the point on the same circle. */}
-        <path d="M4 2.5 L8.5 6 L4 9.5 Z" />
-      </svg>
+      <DisclosureMark open={open} direction={direction} size={size} />
     </button>
+  );
+}
+
+/** Props for `<DisclosureMark>`. */
+export interface DisclosureMarkProps {
+  open: boolean;
+  /** Which way the mark points when closed. Default `'right'`. */
+  direction?: DisclosureDirection;
+  /** Mark size in px. Default 12. */
+  size?: number;
+  className?: string;
+}
+
+/**
+ * The drawn triangle a `<Disclosure>` wears, without the button: for a row
+ * that is itself the control, such as a `Tree` item, where a nested button
+ * would be interactive content inside an interactive element. Hidden from
+ * assistive tech; the owner carries `aria-expanded`. Colored by
+ * `currentColor`.
+ */
+export function DisclosureMark({ open, direction = 'right', size = 12, className }: DisclosureMarkProps) {
+  return (
+    <svg
+      className={className ? `${s.mark} ${className}` : s.mark}
+      viewBox="0 0 12 12"
+      width={size}
+      height={size}
+      aria-hidden="true"
+      focusable="false"
+      data-open={open ? 'true' : undefined}
+      data-direction={direction}
+    >
+      {/* Vertex on the right edge at the vertical center, so the rotation
+          about the box center keeps the point on the same circle. */}
+      <path d="M4 2.5 L8.5 6 L4 9.5 Z" />
+    </svg>
   );
 }
 

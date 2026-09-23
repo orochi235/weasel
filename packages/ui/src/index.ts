@@ -45,6 +45,7 @@ export * from './components/Input';
 export * from './components/Checkbox';
 export * from './components/Switch';
 export * from './components/Tabs';
+export * from './components/Tree';
 export * from './components/RadioGroup';
 export * from './components/NumberField';
 export * from './components/Select';

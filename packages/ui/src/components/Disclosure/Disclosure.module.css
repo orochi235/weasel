@@ -49,16 +49,16 @@
   transition: transform var(--wzl-motion-fast, 90ms) var(--wzl-ease-out-cubic);
 }
 
-.twisty[aria-expanded='true'] .mark {
+.mark[data-open] {
   transform: rotate(90deg);
 }
 
 /* `direction="down"` starts pointing down and lifts to point up. */
-.down .mark {
+.mark[data-direction='down'] {
   transform: rotate(90deg);
 }
 
-.down[aria-expanded='true'] .mark {
+.mark[data-direction='down'][data-open] {
   transform: rotate(-90deg);
 }
 
