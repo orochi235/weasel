@@ -1,11 +1,10 @@
 import { memo } from 'react';
+import { modeLabel, type ModeDefinition } from '@weasel-js/modes';
 import { Button, KeyCap } from '@weasel-js/ui';
-import { modeDisplayName } from './modeDisplay';
 import styles from './ModeBreadcrumb.module.css';
 
 export interface ModeBreadcrumbProps {
-  modeId: string;
-  modeKind: 'soft' | 'strict';
+  mode: ModeDefinition;
   targetLabel: string | null;
   onExit: () => void;
   onCommit: () => void;
@@ -13,11 +12,11 @@ export interface ModeBreadcrumbProps {
 }
 
 export const ModeBreadcrumb = memo(function ModeBreadcrumb(props: ModeBreadcrumbProps) {
-  if (props.modeId === 'normal') return null;
+  if (props.mode.id === 'normal') return null;
 
   return (
-    <div className={styles.bar} data-mode={props.modeId}>
-      <span className={styles.name}>{modeDisplayName(props.modeId)}</span>
+    <div className={styles.bar} data-mode={props.mode.id}>
+      <span className={styles.name}>{modeLabel(props.mode)}</span>
       {props.targetLabel ? (
         <>
           <span className={styles.sep}>·</span>
@@ -25,7 +24,7 @@ export const ModeBreadcrumb = memo(function ModeBreadcrumb(props: ModeBreadcrumb
         </>
       ) : null}
       <span className={styles.spacer} />
-      {props.modeKind === 'soft' ? (
+      {props.mode.kind === 'soft' ? (
         <Button size="sm" onClick={props.onExit}>Exit</Button>
       ) : (
         <>

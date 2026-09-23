@@ -1653,8 +1653,7 @@ function EditorWithSharedScene({
         >
           <OpacityHud percent={opacityScrubPercent} />
           <ModeBreadcrumb
-            modeId={modeId}
-            modeKind={modality.machine.registry.current().kind}
+            mode={modality.machine.registry.byId(modeId)}
             targetLabel={targetLabel}
             onExit={() => modality.machine.exitMode()}
             onCommit={() => modality.machine.commitMode()}
@@ -1801,7 +1800,7 @@ function EditorStatusBar({
   const toolLabel = engaged ? `${activeTool.active} → ${engaged}` : activeTool.active;
   return (
     <StatusBar ariaLabel="Editor status" className="wd-statusbar">
-      <ModeStatusIndicator modeId={modeId} />
+      <ModeStatusIndicator mode={machine.registry.byId(modeId)} />
       <StatusBarItem>tool: {toolLabel}</StatusBarItem>
       <StatusBarItem>sel: {selection.current.length}</StatusBarItem>
       <StatusBarItem>groups: {groupCount}</StatusBarItem>
