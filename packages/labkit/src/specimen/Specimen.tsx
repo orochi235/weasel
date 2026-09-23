@@ -1,6 +1,6 @@
 import type { FillStyle, GradientFill, Track } from '@weasel-js/core';
 import {
-  ActionsBar,
+  ButtonBar,
   Badge,
   type Band,
   BandEditor,
@@ -269,7 +269,7 @@ function ButtonsAndToggles() {
           ]}
         />
       </Cell>
-      <Cell label="OptionsBar, ActionsBar">
+      <Cell label="OptionsBar, ButtonBar">
         <div className="lk-specimen__row">
           <OptionsBar
             ariaLabel="Text style"
@@ -278,7 +278,7 @@ function ButtonsAndToggles() {
               { value: 'i', label: 'I', selected: italic, onChange: setItalic },
             ]}
           />
-          <ActionsBar
+          <ButtonBar
             items={[
               { value: 'undo', label: 'Undo', onAction: () => {} },
               { value: 'redo', label: 'Redo', onAction: () => {} },

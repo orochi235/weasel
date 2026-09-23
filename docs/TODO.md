@@ -442,7 +442,7 @@ Core five + Crop shipped. Remaining:
   `packages/font/scripts/gen-font.ts`, not just reading them at runtime.
 
 - **(P3) `ToggleBar.module.css` is a near-copy of the segmented-control
-  styles.** The `ActionsBar` / `OptionsBar` duplication closed 2026-08-15 —
+  styles.** The `ButtonBar` / `OptionsBar` duplication closed 2026-08-15 —
   both now import `components/segmentedControl.module.css`. `ToggleBar` was the
   third copy nobody had counted: 216 lines carrying all 188 shared ones plus a
   `.segmentMixed` third state (`aria-pressed="mixed"`) and a `.variant_minimal`

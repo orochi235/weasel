@@ -3,10 +3,10 @@ import s from '../segmentedControl.module.css';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 
 /**
- * One button in an {@link ActionsBar}. `value` is only a React key; the item
+ * One button in an {@link ButtonBar}. `value` is only a React key; the item
  * carries no selected state.
  */
-export type ActionsBarItem<V extends string | number = string> = {
+export type ButtonBarItem<V extends string | number = string> = {
   value: V;
   label?: ReactNode;
   ariaLabel?: string;
@@ -14,19 +14,19 @@ export type ActionsBarItem<V extends string | number = string> = {
   onAction: () => void;
 };
 
-/** Segment height and type scale for an {@link ActionsBar}. */
-export type ActionsBarSize = 'sm' | 'md';
-/** Visual treatment of an {@link ActionsBar}. */
-export type ActionsBarVariant = 'default' | 'minimal';
+/** Segment height and type scale for an {@link ButtonBar}. */
+export type ButtonBarSize = 'sm' | 'md';
+/** Visual treatment of an {@link ButtonBar}. */
+export type ButtonBarVariant = 'default' | 'minimal';
 
-/** Props for {@link ActionsBar}. */
-export type ActionsBarProps<V extends string | number = string> = {
-  items: readonly ActionsBarItem<V>[];
+/** Props for {@link ButtonBar}. */
+export type ButtonBarProps<V extends string | number = string> = {
+  items: readonly ButtonBarItem<V>[];
   ariaLabel?: string;
   className?: string;
   height?: number;
-  size?: ActionsBarSize;
-  variant?: ActionsBarVariant;
+  size?: ButtonBarSize;
+  variant?: ButtonBarVariant;
 };
 
 /**
@@ -37,7 +37,7 @@ export type ActionsBarProps<V extends string | number = string> = {
  * This is a plain callback bar. For buttons driven by the kit's actions
  * registry, use `ActionBar` instead.
  */
-export function ActionsBar<V extends string | number = string>(props: ActionsBarProps<V>): ReactElement {
+export function ButtonBar<V extends string | number = string>(props: ButtonBarProps<V>): ReactElement {
   const { items, ariaLabel, className, height, size, variant } = props;
 
   const fire = (index: number) => {

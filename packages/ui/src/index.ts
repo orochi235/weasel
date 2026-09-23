@@ -18,7 +18,7 @@ export * from './components/ItemList';
 export * from './components/ListEditor';
 export * from './components/ToggleBar';
 export * from './components/OptionsBar';
-export * from './components/ActionsBar';
+export * from './components/ButtonBar';
 export * from './components/ToolOptionsBar';
 export * from './components/PaintInput';
 export * from './components/PaintField';

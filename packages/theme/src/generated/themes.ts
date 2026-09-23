@@ -1843,17 +1843,17 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "compact": {
           "value": "24px",
           "type": "dimension",
-          "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+          "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
         },
         "comfortable": {
           "value": "28px",
           "type": "dimension",
-          "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+          "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
         },
         "roomy": {
           "value": "32px",
           "type": "dimension",
-          "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+          "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
         }
       },
       "control-h-xs": {
@@ -2870,17 +2870,17 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "compact": {
           "type": "dimension",
           "value": "24px",
-          "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+          "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
         },
         "comfortable": {
           "type": "dimension",
           "value": "28px",
-          "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+          "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
         },
         "roomy": {
           "type": "dimension",
           "value": "32px",
-          "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+          "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
         }
       },
       "control-h-xs": {

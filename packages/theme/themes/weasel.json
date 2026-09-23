@@ -686,17 +686,17 @@
       "compact": {
         "value": "24px",
         "type": "dimension",
-        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+        "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
       },
       "comfortable": {
         "value": "28px",
         "type": "dimension",
-        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+        "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
       },
       "roomy": {
         "value": "32px",
         "type": "dimension",
-        "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+        "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
       }
     },
     "control-h-xs": {

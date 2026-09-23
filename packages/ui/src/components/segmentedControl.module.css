@@ -1,4 +1,4 @@
-/* Shared by ActionsBar and OptionsBar, which look identical and differ only
+/* Shared by ButtonBar and OptionsBar, which look identical and differ only
    in what a segment does. Lives here rather than in either component so
    neither owns the other's styling.
 

@@ -148,7 +148,7 @@
   --wzl-line-width: 2px;
   /* Drawn data curves. Heavier than structural lines so data reads as primary content. */
   --wzl-curve-width: 3px;
-  /* Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges. */
+  /* Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges. */
   --wzl-tb-height: 28px;
   /* Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm. */
   --wzl-control-h-xs: 18px;

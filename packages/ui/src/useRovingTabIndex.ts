@@ -70,7 +70,7 @@ function prevEnabledIndex(items: readonly RovingItem[], from: number): number {
  * at both ends. Home and End go to the first and last enabled item. Both axes
  * navigate, so the same bar works laid out either way.
  *
- * Backs `ActionsBar`, `OptionsBar`, and `ToggleBar`.
+ * Backs `ButtonBar`, `OptionsBar`, and `ToggleBar`.
  *
  * **When a bar should not use this.** What decides it is the items, not who
  * owns them. A container of compound controls — a number field, a select, a

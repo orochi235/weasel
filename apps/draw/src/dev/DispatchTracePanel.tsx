@@ -19,7 +19,7 @@
  */
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { useHostAnchor } from '@weasel-js/core';
-import { ActionsBar } from '@weasel-js/ui';
+import { ButtonBar } from '@weasel-js/ui';
 import s from './DispatchTracePanel.module.css';
 import {
   clearLog,
@@ -144,7 +144,7 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
             <UnhandledIcon />
           </button>
         </div>
-        <ActionsBar
+        <ButtonBar
           variant="minimal"
           ariaLabel="Trace actions"
           items={[
