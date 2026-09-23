@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, act, screen } from '@testing-library/react';
 import { Button } from './Button';
 
 describe('Button', () => {
@@ -142,5 +142,42 @@ describe('Button', () => {
       expect(body).toMatch(/font:\s*inherit/);
       expect(css).toMatch(/\.variant_link::before\s*\{\s*display:\s*none/);
     });
+  });
+});
+
+/** Enter keyboard modality, then focus — RAC only opens tooltips on focus-visible. */
+function keyboardFocus(el: HTMLElement) {
+  fireEvent.keyDown(document.body, { key: 'Tab' });
+  act(() => el.focus());
+}
+
+describe('Button tooltip', () => {
+  it('shows the shortcut after a string label', () => {
+    render(<Button shortcut="⌘S">Save</Button>);
+    const btn = screen.getByRole('button', { name: 'Save' });
+    keyboardFocus(btn);
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toContain('Save (⌘S)');
+    expect(btn.getAttribute('aria-describedby')).toBe(tip.id);
+  });
+
+  it('names an icon-only button by ariaLabel', () => {
+    render(<Button iconOnly ariaLabel="Undo" shortcut="⌘Z"><svg /></Button>);
+    keyboardFocus(screen.getByRole('button', { name: 'Undo' }));
+    expect(screen.getByRole('tooltip').textContent).toContain('Undo (⌘Z)');
+  });
+
+  it('lets tooltip replace the default text', () => {
+    render(<Button tooltip="Write to disk" shortcut="⌘S">Save</Button>);
+    keyboardFocus(screen.getByRole('button'));
+    expect(screen.getByRole('tooltip').textContent).toContain('Write to disk');
+  });
+
+  it('adds no tooltip without either field', () => {
+    render(<Button>Save</Button>);
+    const btn = screen.getByRole('button');
+    keyboardFocus(btn);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    expect(btn.getAttribute('aria-describedby')).toBeNull();
   });
 });

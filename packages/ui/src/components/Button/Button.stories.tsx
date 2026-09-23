@@ -90,6 +90,19 @@ export const IconOnly: Story = {
   ),
 };
 
+/** `shortcut` puts `Name (⌘Z)` in a kit tooltip; `tooltip` replaces the text. */
+export const Tooltips: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <Button shortcut="⌘S">Save</Button>
+      <Button iconOnly ariaLabel="Add layer" shortcut="⇧⌘N"><PlusIcon /></Button>
+      <Button variant="ghost" leadingIcon={<TrashIcon />} tooltip="Removes the selection from the document">
+        Delete
+      </Button>
+    </div>
+  ),
+};
+
 export const Loading: Story = {
   args: { variant: 'primary', loading: true, children: 'Saving…' },
 };
