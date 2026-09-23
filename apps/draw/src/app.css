@@ -153,8 +153,8 @@
    and padding. Scoped under `.wd-app` so these win over the component's own
    module rules regardless of stylesheet order — specificity, not !important. */
 .wd-app .wd-sidebar {
-  gap: 8px;
-  padding: 12px 8px;
+  gap: var(--wzl-space-4);
+  padding: var(--wzl-space-6) var(--wzl-space-4);
   width: 88px;
   flex-shrink: 0;
 }
@@ -165,8 +165,8 @@
      the min/max on the `ui.rightSidebarWidth` pref that stores the result. */
   width: clamp(200px, var(--wd-right-width, 260px), 600px);
   align-items: stretch;
-  padding: 12px 0;
-  gap: 4px;
+  padding: var(--wzl-space-6) 0;
+  gap: var(--wzl-space-2);
   overflow-y: auto;
   flex-shrink: 0;
 }
@@ -186,13 +186,13 @@
   width: 72px;
   align-items: center;
   overflow-y: auto;
-  padding: 0 8px;
+  padding: 0 var(--wzl-space-4);
 }
 
 /* ActiveSwatches sits directly below the tool palette in the left
    sidebar — natural flex order, no `margin-top: auto` push. */
 .wd-sidebar.left .wd-active-swatches-group {
-  margin-top: 4px;
+  margin-top: var(--wzl-space-2);
 }
 
 .wd-canvas-host {
@@ -248,7 +248,7 @@
   position: relative;
   width: 56px;
   height: 56px;
-  margin: 4px auto 0;
+  margin: var(--wzl-space-2) auto 0;
   /* The stroke and fill swatches are absolutely positioned inside this
      container with a small offset to produce the iconic overlap. */
 }
