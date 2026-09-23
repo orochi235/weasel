@@ -145,17 +145,16 @@ export function ActiveSwatches() {
           />
         </label>
       </div>
-      <span title={`Toggle none for the focused swatch (${colors.focused}) · /`}>
-        <Button
-          variant="ghost"
-          size="sm"
-          pressed={focusedIsNone}
-          onClick={colors.toggleFocusedNone}
-          ariaLabel={`Toggle no paint for ${colors.focused}`}
-        >
-          None
-        </Button>
-      </span>
+      <Button
+        variant="ghost"
+        size="sm"
+        pressed={focusedIsNone}
+        onClick={colors.toggleFocusedNone}
+        ariaLabel={`Toggle no paint for ${colors.focused}`}
+        shortcut="/"
+      >
+        None
+      </Button>
     </div>
   );
 }
