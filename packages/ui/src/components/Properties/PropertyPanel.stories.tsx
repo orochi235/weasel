@@ -13,6 +13,7 @@ import {
   TextRow,
   ToggleRow,
 } from './PropertyPanel';
+import { Switch } from '../Switch';
 
 // Args common to most stories — exposed as controls so the
 // title, pack mode, and container width can be tweaked live.
@@ -238,4 +239,27 @@ export const Stances: Story = {
       ))}
     </div>
   ),
+};
+
+/** `actions` sits on the title row's trailing edge. A `debug` panel is
+ *  selectable by default, so the ids below can be dragged over and copied. */
+export const HeaderActionsAndSelection: Story = {
+  render: function Render() {
+    const [unhandled, setUnhandled] = useState(false);
+    return (
+      <div style={{ width: 320 }}>
+        <PropertyPanel
+          stance="debug"
+          title="Dispatch · 3"
+          actions={<Switch isSelected={unhandled} onChange={setUnhandled}>unhandled</Switch>}
+        >
+          <PropertyList>
+            <PropertyRow label="tool">editor.rect</PropertyRow>
+            <PropertyRow label="action">insert</PropertyRow>
+            <PropertyRow label="target">node:7f3a2c</PropertyRow>
+          </PropertyList>
+        </PropertyPanel>
+      </div>
+    );
+  },
 };

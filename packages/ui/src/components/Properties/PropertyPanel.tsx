@@ -75,6 +75,17 @@ export function propertyMetricClass(
 /** Props for `<PropertyPanel>`. */
 export interface PropertyPanelProps extends PropertyMetricProps, StanceProps {
   title?: ReactNode;
+  /** Controls on the trailing edge of the title row — a switch, a clear
+   *  button. They sit outside the heading, so they neither take its type nor
+   *  join its accessible name. */
+  actions?: ReactNode;
+  /**
+   * Lets text inside the panel be selected and copied. A panel is chrome by
+   * default, so a drag across it moves a slider rather than painting a
+   * selection; a `debug` panel defaults to selectable, since what it shows —
+   * ids, keys, traces — is there to be copied.
+   */
+  selectable?: boolean;
   children: ReactNode;
   className?: string;
 }
@@ -91,6 +102,8 @@ const PanelNesting = createContext(false);
  */
 export function PropertyPanel({
   title,
+  actions,
+  selectable,
   children,
   className,
   density,
@@ -100,13 +113,20 @@ export function PropertyPanel({
 }: PropertyPanelProps) {
   const nested = useContext(PanelNesting);
   const attrs = useStance({ stance, tone });
+  const heading = title != null && <h2 className={s.panelTitle}>{title}</h2>;
   return (
     <div
       className={propertyMetricClass(s.panel, { density, align }, className)}
       {...attrs}
       data-nested={nested || undefined}
+      data-selectable={(selectable ?? stance === 'debug') || undefined}
     >
-      {title != null && <h2 className={s.panelTitle}>{title}</h2>}
+      {actions != null ? (
+        <div className={s.panelHeader}>
+          {heading}
+          <div className={s.panelActions}>{actions}</div>
+        </div>
+      ) : heading}
       <PanelNesting.Provider value>{children}</PanelNesting.Provider>
     </div>
   );
