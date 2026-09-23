@@ -205,7 +205,8 @@
      Composited under the canvas; the canvas paints with alpha so these
      stripes show through everywhere the document doesn't cover. */
   background:
-    repeating-linear-gradient(45deg, #5a5a5a 0 8px, #626262 8px 16px);
+    repeating-linear-gradient(45deg, transparent 0 8px, var(--wzl-line-subtle) 8px 16px)
+    var(--wzl-surface-sunken);
   overflow: hidden;
 }
 
