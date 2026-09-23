@@ -1,12 +1,8 @@
 import { Fragment, type ReactNode } from 'react';
 import type { GestureSpec } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
-import { Badge, DataGrid, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@weasel-js/ui';
+import { Badge, DataGrid, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, keySpecsFromShortcut, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@weasel-js/ui';
 import type { ParsedModifiers, ModifierKey } from '@weasel-js/core/routing';
-
-function toKeys(parts: readonly string[] | undefined) {
-  return parts?.map((label) => ({ label }));
-}
 
 /** Minimal inline-markdown renderer — splits on backtick-delimited code
  *  spans and wraps each in <code>. No other markdown features. Used by every
@@ -959,8 +955,8 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         )}
         <dt>slot</dt>
         <dd><EntryLink kind="slot" id={entry.slot} onNavigate={onNavigate} /></dd>
-        {entry.switchShortcutParts && (
-          <><dt>shortcut</dt><dd><KeySequence keys={toKeys(entry.switchShortcutParts)} /></dd></>
+        {entry.switchShortcut && (
+          <><dt>shortcut</dt><dd><KeySequence keys={keySpecsFromShortcut(entry.switchShortcut)} /></dd></>
         )}
         {entry.hotkey && (
           <>
@@ -1239,8 +1235,8 @@ function ActionDetail({ entry, tools, onNavigate }: {
             <dd><EntryLink kind="group" id={`action:${entry.group}`} label={entry.group} onNavigate={onNavigate} /></dd>
           </>
         )}
-        {entry.shortcutParts && (
-          <><dt>binding</dt><dd><KeySequence keys={toKeys(entry.shortcutParts)} /></dd></>
+        {entry.bindingShortcut && (
+          <><dt>binding</dt><dd><KeySequence keys={keySpecsFromShortcut(entry.bindingShortcut)} /></dd></>
         )}
         {entry.shortcut && (
           <><dt>shortcut</dt><dd><code>{entry.shortcut}</code></dd></>
@@ -1381,7 +1377,7 @@ function bundleMemberColumns(
       id: 'shortcut',
       header: 'shortcut',
       sortable: false,
-      render: (r) => <KeySequence keys={toKeys(r.tool?.switchShortcutParts)} />,
+      render: (r) => <KeySequence keys={keySpecsFromShortcut(r.tool?.switchShortcut)} />,
     },
   ];
 }

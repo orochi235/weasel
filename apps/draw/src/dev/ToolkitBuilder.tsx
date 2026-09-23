@@ -46,7 +46,14 @@ import {
   type Conflict,
   type RegistryEntry,
 } from '@weasel-js/core/routing';
-import { DataGrid, formatShortcutParts, KeySequence, type DataGridColumn } from '@weasel-js/ui';
+import {
+  DataGrid,
+  KeySequence,
+  keySpecsFromMods,
+  keySpecsFromShortcut,
+  type DataGridColumn,
+  type LogicalModSpec,
+} from '@weasel-js/ui';
 import { lookupShortcutByToolId } from './keybindingsView';
 import {
   AFFORDANCE_PREFIX,
@@ -273,7 +280,7 @@ const TOOL_COLUMNS: readonly DataGridColumn<ToolRow>[] = [
     id: 'shortcut',
     header: 'Switch',
     sortable: false,
-    render: (r) => <KeySequence keys={formatShortcutParts(r.shortcut)?.map((label) => ({ label }))} />,
+    render: (r) => <KeySequence keys={keySpecsFromShortcut(r.shortcut)} />,
   },
 ];
 
@@ -742,18 +749,18 @@ function renderBinding(action: Action): ReactNode {
   );
 }
 
+const MOD_ORDER = ['mod', 'ctrl', 'meta', 'shift', 'alt'] as const;
+
 function renderSpec(spec: GestureSpec): ReactNode {
   const shortcut = keySpecShortcut(spec);
-  if (shortcut) {
-    const parts = formatShortcutParts(shortcut);
-    return <KeySequence keys={parts?.map((label) => ({ label }))} />;
-  }
-  // `'optional'` matches held or unheld, so it is not something to press.
-  const modGlyphs: string[] = [];
+  if (shortcut) return <KeySequence keys={keySpecsFromShortcut(shortcut)} />;
+  const mods: LogicalModSpec[] = [];
   if ('mods' in spec && spec.mods) {
-    if (spec.mods.mod === true) modGlyphs.push('⌘');
-    if (spec.mods.shift === true) modGlyphs.push('⇧');
-    if (spec.mods.alt === true) modGlyphs.push('⌥');
+    for (const name of MOD_ORDER) {
+      const held = spec.mods[name];
+      if (held === true) mods.push({ name });
+      else if (held === 'optional') mods.push({ name, optional: true });
+    }
   }
   let label: string = spec.kind;
   if (spec.kind === 'click' || spec.kind === 'drag') {
@@ -765,10 +772,10 @@ function renderSpec(spec: GestureSpec): ReactNode {
   return (
     <>
       <code className={s.bindingTag}>{label}</code>
-      {modGlyphs.length > 0 && (
+      {mods.length > 0 && (
         <>
           <span className={s.bindingSep}>+</span>
-          <KeySequence keys={modGlyphs.map((g) => ({ label: g }))} />
+          <KeySequence keys={keySpecsFromMods(mods)} />
         </>
       )}
     </>

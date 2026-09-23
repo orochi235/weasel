@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  actionBindings,
+  keySpecShortcut,
   SceneCanvas,
   defaultNodeRouting,
   defaultNodeProperties,
@@ -14,7 +16,6 @@ import {
 import { routesForSpec } from '@weasel-js/core/routing';
 import { isValidElement, type ReactNode } from 'react';
 import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';
-import { formatShortcutParts } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 
 export interface RegistrySnapshot {
@@ -118,7 +119,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
           routes,
           declaredRoutes,
           slot,
-          switchShortcutParts: formatShortcutParts(def?.keybinding),
+          switchShortcut: def?.keybinding,
           hotkey: def?.hotkey,
           presentation: def?.presentation ? {
             label: def.presentation.label,
@@ -144,10 +145,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     kind: 'action',
     id: a.id,
     label: a.label ?? a.id,
-    // Phase 14e Task 7: Action.defaultBinding removed; bindings live on
-    // defaultBinding. formatShortcutParts only consumes the legacy shape,
-    // so we pass undefined for now (TODO: defaultBinding-aware formatter).
-    shortcutParts: formatShortcutParts(undefined),
+    bindingShortcut: actionBindings(a).map(({ spec }) => keySpecShortcut(spec)).find((k) => k !== undefined),
     shortcut: a.shortcut,
     group: a.group,
     icon: renderPresentationIcon(a.icon),

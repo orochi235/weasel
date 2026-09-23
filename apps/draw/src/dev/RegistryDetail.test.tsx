@@ -41,9 +41,9 @@ describe('RegistryDetail', () => {
   });
 
   it('renders an Action entry with shortcut', () => {
-    const entry: TreeEntry = { kind: 'action', id: 'delete', label: 'Delete', shortcutParts: ['⌫'] };
+    const entry: TreeEntry = { kind: 'action', id: 'delete', label: 'Delete', bindingShortcut: { key: 'd' } };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
-    expect(screen.getByText('⌫')).toBeTruthy();
+    expect(screen.getByText('D')).toBeTruthy();
   });
 
   it('renders a Bundle with clickable members that fire onNavigate', () => {

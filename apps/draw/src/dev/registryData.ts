@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import * as Weasel from '@weasel-js/core';
 import { defaultNodeRouting, defaultNodeProperties, type NodeRoutingEntry, type NodePropertiesEntry, type ToolPrefGroup } from '@weasel-js/core';
 import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
+import type { ShortcutInput } from '@weasel-js/ui';
 import * as ActionIcons from '../actionIcons';
 import * as KindIcons from '../kindIcons';
 
@@ -115,9 +116,9 @@ export interface ToolEntry {
    *  covers the regular active/hotkey slots; `ambient` is the always-on
    *  slot. */
   slot: 'registry' | 'ambient';
-  /** Glyphs for the tool-switch keybinding (`ToolDef.keybinding`). Distinct
-   *  from gesture shortcuts inside the tool. */
-  switchShortcutParts?: readonly string[];
+  /** The tool-switch keybinding (`ToolDef.keybinding`). Distinct from
+   *  gesture shortcuts inside the tool. */
+  switchShortcut?: ShortcutInput;
   /** Hotkey-slot trigger key (`space|alt|ctrl|meta|shift`) when set — the
    *  press-and-hold slot. */
   hotkey?: string;
@@ -148,12 +149,11 @@ export interface ActionEntry {
   kind: 'action';
   id: string;
   label: string;
-  /** Per-glyph display chips for the action's default `KeyBinding`, ready
-   *  for the shared `<Keycaps>` component. `undefined` when the action has
-   *  no default binding. */
-  shortcutParts?: readonly string[];
+  /** The first key binding in the action's `defaultBinding`. `undefined`
+   *  when it binds no key. */
+  bindingShortcut?: ShortcutInput;
   /** Display-override shortcut string from `Action.shortcut` — orthogonal
-   *  to `shortcutParts` (which comes from `defaultBinding`). */
+   *  to `bindingShortcut` (which comes from `defaultBinding`). */
   shortcut?: string;
   /** Grouping key from `Action.group`. When unset we fall back to the
    *  id-prefix segment before the first `.` (e.g. `align.left` → `align`). */
