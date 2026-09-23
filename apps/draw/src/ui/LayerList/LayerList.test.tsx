@@ -151,4 +151,51 @@ describe('LayerList', () => {
     expect(rows[0].getAttribute('data-locked')).toBeNull();
     expect(rows[1].getAttribute('data-locked')).toBe('true');
   });
+
+  it('places the drop indicator on the seam of the rendered rows, not a fixed row height', () => {
+    // Rows 32px tall with a 2px gap — not the 24px the default density gives.
+    const ROW = 32;
+    const GAP = 2;
+    const origGBR = Element.prototype.getBoundingClientRect;
+    const origTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop')!;
+    const origHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')!;
+    const indexOf = (el: Element) => Number(el.getAttribute('data-row-index'));
+    Element.prototype.getBoundingClientRect = function () {
+      if (this.hasAttribute('data-row-index')) {
+        const top = indexOf(this) * (ROW + GAP);
+        return { top, bottom: top + ROW, left: 0, right: 100, width: 100, height: ROW, x: 0, y: top, toJSON: () => ({}) } as DOMRect;
+      }
+      return origGBR.call(this);
+    };
+    Object.defineProperty(HTMLElement.prototype, 'offsetTop', {
+      configurable: true,
+      get() { return this.hasAttribute('data-row-index') ? indexOf(this) * (ROW + GAP) : 0; },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get() { return this.hasAttribute('data-row-index') ? ROW : 0; },
+    });
+    try {
+      const { container } = render(
+        <LayerList items={ITEMS} selectedIds={[]} onSelect={() => {}} onReorder={() => {}} />
+      );
+      const alpha = screen.getByText('Alpha');
+      fireEvent.pointerDown(alpha, { clientX: 0, clientY: 5, pointerId: 1, isPrimary: true });
+      // Below every row: the drop lands after the last one.
+      fireEvent.pointerMove(alpha, { clientX: 0, clientY: 500, pointerId: 1, isPrimary: true });
+      const indicator = container.querySelector<HTMLElement>('[class*="dropIndicator"]');
+      expect(indicator).not.toBeNull();
+      expect(indicator!.style.top).toBe(`${2 * (ROW + GAP) + ROW - 1}px`);
+      // Inside Gamma: the drop lands above it, in the middle of the gap
+      // between Beta and Gamma, less half the 2px bar.
+      fireEvent.pointerMove(alpha, { clientX: 0, clientY: 2 * (ROW + GAP) + 5, pointerId: 1, isPrimary: true });
+      const moved = container.querySelector<HTMLElement>('[class*="dropIndicator"]');
+      expect(moved!.style.top).toBe(`${(ROW + GAP) + ROW + GAP / 2 - 1}px`);
+      fireEvent.pointerUp(alpha, { clientX: 0, clientY: 0, pointerId: 1, isPrimary: true });
+    } finally {
+      Element.prototype.getBoundingClientRect = origGBR;
+      Object.defineProperty(HTMLElement.prototype, 'offsetTop', origTop);
+      Object.defineProperty(HTMLElement.prototype, 'offsetHeight', origHeight);
+    }
+  });
 });
