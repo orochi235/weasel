@@ -31,7 +31,7 @@ describe('<ThemeEditor>', () => {
   it('falls back to the built themes, read-only, when no dev server answers', async () => {
     const failing: ThemeApi = { list: () => Promise.reject(new Error('404')), get: vi.fn(), put: vi.fn() };
     render(<ThemeEditor api={failing} />);
-    expect(await screen.findByText('23 of 159 overridden')).toBeInTheDocument();
+    expect(await screen.findByText('23 of 164 overridden')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
     expect(failing.put).not.toHaveBeenCalled();
   });
