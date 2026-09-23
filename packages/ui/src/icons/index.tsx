@@ -19,6 +19,8 @@ export {
   CutIcon, CopyIcon, PasteIcon, DuplicateIcon, GroupIcon, UngroupIcon,
   BringForwardIcon, BringToFrontIcon, SendBackwardIcon, SendToBackIcon, FlipXIcon, FlipYIcon,
   UndoIcon, RedoIcon, DeleteIcon,
+  AlignLeftIcon, AlignCenterXIcon, AlignRightIcon, AlignTopIcon, AlignCenterYIcon, AlignBottomIcon,
+  DistributeHorizontalIcon, DistributeVerticalIcon,
 } from '@weasel-js/core';
 
 export const CloneIcon = (p: IconProps) => <Icon name="clone" {...p} />;

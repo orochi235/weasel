@@ -44,6 +44,19 @@ describe('registryData static collectors', () => {
     expect(icons[0]?.Component).toBe(Weasel.UndoIcon);
   });
 
+  it('collectIcons names the align and distribute glyphs by their export', () => {
+    const names = [
+      'AlignLeftIcon', 'AlignCenterXIcon', 'AlignRightIcon',
+      'AlignTopIcon', 'AlignCenterYIcon', 'AlignBottomIcon',
+      'DistributeHorizontalIcon', 'DistributeVerticalIcon',
+    ] as const;
+    const icons = collectIcons(names.map((name): ActionEntry => ({
+      kind: 'action', id: name, label: name,
+      items: [{ key: `key:${name}`, label: name, icon: createElement(Weasel[name]) }],
+    }))).filter((i) => i.source === 'action');
+    expect(icons.map((i) => i.id)).toEqual(names);
+  });
+
   it('collectBundles returns the three named tool bundles', () => {
     const bundles = collectBundles();
     expect(bundles.map((b) => b.id)).toEqual(['minimal', 'standard', 'exhaustive']);

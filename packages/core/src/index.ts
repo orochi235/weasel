@@ -1216,6 +1216,19 @@ export {
   FlipXIcon,
   FlipYIcon,
 } from './interactions/actions/defaults/icons/editIcons';
+// ─── Default align and distribute icons ─────────────────────────────────────
+export {
+  AlignLeftIcon,
+  AlignCenterXIcon,
+  AlignRightIcon,
+  AlignTopIcon,
+  AlignCenterYIcon,
+  AlignBottomIcon,
+} from './interactions/actions/defaults/icons/alignIcons';
+export {
+  DistributeHorizontalIcon,
+  DistributeVerticalIcon,
+} from './interactions/actions/defaults/icons/distributeIcons';
 // Undo, redo and delete; drawn in @weasel-js/ui's icon pipeline, which emits
 // their markup here and re-exports these components.
 export {

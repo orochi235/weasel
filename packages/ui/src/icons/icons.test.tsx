@@ -109,3 +109,18 @@ describe('core-owned action glyphs', () => {
     expect(a).toBe(b);
   });
 });
+
+describe('core action glyph re-exports', () => {
+  it('passes the align and distribute glyphs through by identity', async () => {
+    const ui = await import('./index');
+    const core = await import('@weasel-js/core');
+    for (const name of [
+      'AlignLeftIcon', 'AlignCenterXIcon', 'AlignRightIcon',
+      'AlignTopIcon', 'AlignCenterYIcon', 'AlignBottomIcon',
+      'DistributeHorizontalIcon', 'DistributeVerticalIcon',
+    ] as const) {
+      expect(ui[name], name).toBe(core[name]);
+      expect(ui[name], name).toBeTypeOf('function');
+    }
+  });
+});
