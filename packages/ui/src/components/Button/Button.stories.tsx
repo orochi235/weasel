@@ -12,6 +12,7 @@ const meta: Meta<typeof Button> = {
     size: 'md',
   },
   argTypes: {
+    tone: { control: 'inline-radio', options: ['accent', 'neutral', 'muted', 'success', 'warn', 'danger'] },
     variant: { control: 'inline-radio', options: ['primary', 'secondary', 'ghost', 'link'] },
     size: { control: 'inline-radio', options: ['sm', 'md'] },
     disabled: { control: 'boolean' },
@@ -54,6 +55,20 @@ export const Link: Story = {
       Bound to <Button variant="link">editor.insert</Button>, which routes
       through <Button variant="link">routeTarget:scene</Button> and falls back
       to <Button variant="link" disabled>none</Button>.
+    </p>
+  ),
+};
+
+/** `tone` recolors a `link` from the same set as `Code`: accent unless told
+ *  otherwise. */
+export const LinkTones: Story = {
+  render: () => (
+    <p style={{ maxWidth: 360, lineHeight: 1.8 }}>
+      {(['accent', 'neutral', 'muted', 'success', 'warn', 'danger'] as const).map((tone) => (
+        <span key={tone}>
+          <Button variant="link" tone={tone}>{tone}</Button>{' '}
+        </span>
+      ))}
     </p>
   ),
 };

@@ -142,6 +142,27 @@ describe('Button', () => {
       expect(body).toMatch(/font:\s*inherit/);
       expect(css).toMatch(/\.variant_link::before\s*\{\s*display:\s*none/);
     });
+
+    it('names its tone, and says nothing when left on the default accent', () => {
+      const { getAllByRole } = render(
+        <>
+          <Button variant="link" tone="danger">remove</Button>
+          <Button variant="link">open</Button>
+        </>,
+      );
+      const [danger, plain] = getAllByRole('button');
+      expect(danger.getAttribute('data-tone')).toBe('danger');
+      expect(plain.hasAttribute('data-tone')).toBe(false);
+    });
+
+    it('paints each tone from the same tokens as Code', () => {
+      expect(rule(".variant_link[data-tone='neutral']")).toMatch(/color:\s*var\(--wzl-fg\)/);
+      expect(rule(".variant_link[data-tone='muted']")).toMatch(/color:\s*var\(--wzl-fg-muted\)/);
+      expect(rule(".variant_link[data-tone='accent']")).toMatch(/color:\s*var\(--wzl-accent-fg\)/);
+      expect(rule(".variant_link[data-tone='success']")).toMatch(/color:\s*var\(--wzl-success\)/);
+      expect(rule(".variant_link[data-tone='warn']")).toMatch(/color:\s*var\(--wzl-warning\)/);
+      expect(rule(".variant_link[data-tone='danger']")).toMatch(/color:\s*var\(--wzl-danger\)/);
+    });
   });
 });
 

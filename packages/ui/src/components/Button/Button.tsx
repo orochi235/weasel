@@ -6,12 +6,18 @@ import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from
  *  control box entirely and reads as a hyperlink in running text -- for an
  *  in-page navigation that is still a button, not an `<a href>`. */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link';
+/** Text color of a `link` button — the same set as `Code`'s tones. */
+export type ButtonTone = 'neutral' | 'muted' | 'accent' | 'success' | 'warn' | 'danger';
 /** Button height and type scale. */
 export type ButtonSize = 'sm' | 'md';
 
 type ButtonBase = {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** Text color of the `link` variant, which is `accent` unless told
+   *  otherwise. The boxed variants carry their weight in their fill and
+   *  ignore it. */
+  tone?: ButtonTone;
   /** A button that stays down: renders `aria-pressed` and holds the active
    *  treatment while it is on. For a control that reports a state rather than
    *  firing an action -- a panel toggle, a mode switch. Left off, the button
@@ -88,6 +94,7 @@ export const Button = forwardRef(function Button(
   const {
     variant = 'secondary',
     size = 'md',
+    tone,
     pressed,
     disabled,
     loading,
@@ -133,6 +140,7 @@ export const Button = forwardRef(function Button(
         disabled={disabled}
         aria-busy={loading ? true : undefined}
         aria-pressed={pressed}
+        data-tone={tone}
         aria-label={ariaLabel}
         onClick={onClick}
       >
