@@ -647,6 +647,7 @@ export {
 // ─── Paint types: FillStyle, Stroke, gradients ──────────────────────────────
 export {
   alignedStrokeRect,
+  contrastLineColor,
   dashForStrokeStyle,
   resolveScreenLength,
   strokeDashStyleOf,
