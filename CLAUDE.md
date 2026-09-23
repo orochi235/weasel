@@ -243,6 +243,19 @@ a dead token block, because the app's own rem rules were unaffected. A consumer 
 be overridden either sits in `:where()` or is read as a `var()` fallback, so there is no tie to
 lose.
 
+**A `:where()` override hook covers only the declarations inside it.** `Dialog` moved its
+body's `padding` and `overflow` into `:where(.body)` so `bodyClassName` could turn them off, and
+left `min-height: 0` in the plain rule beside it. That one declaration then beat the consumer
+class on source order, and a dialog told to hold a settled height resized itself around whichever
+pane was open — the two properties it had been given worked, which is what made the third look
+like something else. Move the whole set a consumer must beat, not the ones that prompted the fix.
+
+**`--wzl-fg-on-accent` is the text-on-accent token; `--wzl-accent-fg` is the accent used *as*
+text** (it resolves to `--wzl-accent-strong`). Reach for the second to label a selected row in an
+accent-filled rail and it paints the text in its own background color, invisible. The fallback in
+`var(--wzl-accent-fg, #fff)` never fires either, because the token does exist — nothing warns, no
+test sees it, and the row reads as an empty highlight bar in a screenshot.
+
 **`theme/base.less` element defaults live in `:where()` on purpose.** Bare `button` nested under
 `.lk-root` is specificity (0,1,1) and outranks every component class. Don't unwrap them. The flip
 side bites too: because `:where()` carries no specificity, its `height: var(--wzl-control-h)`
