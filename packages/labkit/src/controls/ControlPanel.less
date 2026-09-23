@@ -2,8 +2,12 @@
 // from PropertyPanel.less. This class remains as the consumer-facing hook.
 // It carries no padding: whatever mounts the panel insets it, and a second
 // inset here doubled the gutter inside an already narrow sidebar.
+// A select row aligns to its value's baseline by default, which sits a label
+// lower than the centered rows around it — here those neighbors are sliders and
+// checkboxes, so a column of labels stepped at every dropdown.
 .lk-control-panel {
   padding: 0;
+  --wzl-prop-row-align-text: center;
 }
 
 // A cell in a paired row, with the caption naming the knob it holds. Case,
