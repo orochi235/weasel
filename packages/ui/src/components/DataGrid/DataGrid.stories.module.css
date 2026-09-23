@@ -1,0 +1,8 @@
+.fires { color: var(--wzl-success); }
+.shadowed { color: var(--wzl-fg-muted); }
+.blocked { color: var(--wzl-danger); }
+
+.detail {
+  margin: 0;
+  padding-inline-start: var(--wzl-space-5);
+}

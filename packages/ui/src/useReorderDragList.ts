@@ -27,6 +27,10 @@ export interface UseReorderDragListOptions {
   onPress?(id: string, mods: PressModifiers): void;
   /** Pointer-move distance (px) before pending drag engages. Default 4. */
   threshold?: number;
+  /** Selector matching the container's children that are rows, for a list
+   *  that interleaves other elements (a table's detail rows). Default: every
+   *  child is a row. */
+  rowSelector?: string;
 }
 
 /** Modifier keys held when a press began. */
@@ -125,7 +129,8 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     const [lo, hi] = unlockedSegment(optsRef.current.items, sourceIndex);
     const c = containerRef.current;
     if (!c) return lo;
-    const rows = Array.from(c.children) as HTMLElement[];
+    const sel = optsRef.current.rowSelector;
+    const rows = (sel ? Array.from(c.children).filter((el) => el.matches(sel)) : Array.from(c.children)) as HTMLElement[];
     let raw = rows.length;
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
