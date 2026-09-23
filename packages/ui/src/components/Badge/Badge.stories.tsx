@@ -357,6 +357,12 @@ export const Removable: Story = { args: { onRemove: () => {} } };
 
 export const Clickable: Story = { args: { onClick: () => {} } };
 
+/** A plain badge with `tooltip` joins the tab order as an image named by its
+ *  text; hover or Tab to it. */
+export const WithTooltip: Story = {
+  args: { children: '?', tone: 'muted', size: 'xs', tooltip: 'Matched by a predicate, not a fixed id' },
+};
+
 export const EdgeCases: Story = {
   render: (_args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap' }}>

@@ -1,4 +1,7 @@
-import { useEffect, useId, useRef, useState, type ReactNode, type CSSProperties } from 'react';
+import {
+  forwardRef, useEffect, useId, useRef, useState,
+  type CSSProperties, type FocusEvent, type HTMLAttributes, type ReactNode, type Ref,
+} from 'react';
 import { useVisibleRaf } from '@weasel-js/core';
 import s from './Badge.module.css';
 import { SHAPES, type BadgeShapeParams } from './shapes';
@@ -6,6 +9,7 @@ import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
 import { EFFECTS, type EffectSpec, type BadgeEffect } from './effects';
 import type { BadgeShape, BadgeTone, BadgeVariant, BadgeSize } from './types';
 import { useSvgBox } from './useSvgBox';
+import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
 
 interface BadgeBaseProps {
   tone?: BadgeTone;
@@ -41,10 +45,24 @@ interface BadgeBaseProps {
    *  custom properties (e.g. `--badge-edge` to inject a custom tone color). */
   style?: CSSProperties;
   'aria-label'?: string;
+  /**
+   * Tooltip content. Wraps the badge in a kit tooltip trigger. A tooltip
+   * trigger must be focusable and carry a role that announces its
+   * description, so a badge that is neither a button nor a link joins the tab
+   * order as `role="img"`, named by `aria-label` or else by string content.
+   */
+  tooltip?: ReactNode;
 }
 
+/** DOM attributes a badge passes through to its root element, e.g. the ones
+ *  `Focusable` supplies when a badge sits under a `TooltipTrigger`. */
+type BadgeDomProps = Omit<
+  HTMLAttributes<HTMLElement>,
+  keyof BadgeBaseProps | 'onClick' | 'children' | 'className' | 'style'
+>;
+
 type BadgePropsByShape = {
-  [S in BadgeShape]: BadgeBaseProps & { shape?: S; shapeParams?: BadgeShapeParams[S] };
+  [S in BadgeShape]: BadgeBaseProps & BadgeDomProps & { shape?: S; shapeParams?: BadgeShapeParams[S] };
 }[BadgeShape];
 
 /**
@@ -69,8 +87,10 @@ function chooseElement(props: BadgeProps): 'span' | 'button' | 'a' {
  * over it, which stack additively. `bloat` pushes the whole silhouette outward
  * along its normals before effects run, and `crawl` animates perimeter
  * patterns.
+ *
+ * `ref` and any other DOM attributes forward to the root element.
  */
-export function Badge(props: BadgeProps) {
+export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLElement>) {
   const {
     shape = 'pill',
     tone = 'neutral',
@@ -91,9 +111,17 @@ export function Badge(props: BadgeProps) {
     base,
     baseParams,
     effects,
+    tooltip,
+    as: _as,
+    'aria-label': ariaLabelProp,
+    onFocus,
+    onBlur,
+    ...domProps
   } = props;
-  const ariaLabel = props['aria-label'];
   const element = chooseElement(props);
+  const tooltipOnPlainBadge = tooltip != null && element === 'span';
+  const ariaLabel = ariaLabelProp
+    ?? (tooltipOnPlainBadge && (typeof children === 'string' || typeof children === 'number') ? String(children) : undefined);
   const [focused, setFocused] = useState(false);
   const [phase, setPhase] = useState(0);
   const shapeModule = SHAPES[shape] ?? SHAPES.pill;
@@ -161,6 +189,8 @@ export function Badge(props: BadgeProps) {
   };
 
   const commonProps = {
+    ...domProps,
+    ...(tooltipOnPlainBadge && domProps.role === undefined && { role: 'img' }),
     className: cls,
     style,
     'data-shape': composeBase ? 'compose' : resolvedShape,
@@ -168,8 +198,8 @@ export function Badge(props: BadgeProps) {
     'data-variant': variant,
     'data-size': size,
     'data-focused': focused ? 'true' : undefined,
-    onFocus: () => setFocused(true),
-    onBlur: () => setFocused(false),
+    onFocus: (e: FocusEvent<HTMLElement>) => { setFocused(true); onFocus?.(e); },
+    onBlur: (e: FocusEvent<HTMLElement>) => { setFocused(false); onBlur?.(e); },
     'aria-label': ariaLabel,
   };
 
@@ -311,19 +341,27 @@ export function Badge(props: BadgeProps) {
     </>
   );
 
+  let badge;
   if (element === 'button') {
-    return (
-      <button type="button" {...commonProps} onClick={onClick}>
+    badge = (
+      <button type="button" {...commonProps} ref={ref as Ref<HTMLButtonElement>} onClick={onClick}>
         {inner}
       </button>
     );
-  }
-  if (element === 'a') {
-    return (
-      <a href={href} {...commonProps} onClick={onClick}>
+  } else if (element === 'a') {
+    badge = (
+      <a href={href} {...commonProps} ref={ref as Ref<HTMLAnchorElement>} onClick={onClick}>
         {inner}
       </a>
     );
+  } else {
+    badge = <span {...commonProps} ref={ref}>{inner}</span>;
   }
-  return <span {...commonProps}>{inner}</span>;
-}
+  if (tooltip == null) return badge;
+  return (
+    <TooltipTrigger>
+      <Focusable>{badge}</Focusable>
+      <Tooltip>{tooltip}</Tooltip>
+    </TooltipTrigger>
+  );
+});
