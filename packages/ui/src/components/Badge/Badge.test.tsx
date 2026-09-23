@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { Badge } from './Badge';
@@ -97,5 +99,23 @@ describe('Badge removable', () => {
       <Badge onRemove={() => {}} removeLabel="Dismiss">x</Badge>,
     );
     expect(getByRole('button', { name: 'Dismiss' })).toBeDefined();
+  });
+});
+
+// jsdom resolves no var() and the CSS-module proxy answers any key, so these
+// read the stylesheet as text — a proxy for the rules existing at all.
+describe('Badge stylesheet', () => {
+  const css = readFileSync(resolve(__dirname, 'Badge.module.css'), 'utf8');
+
+  it('paints the success tone from --wzl-success', () => {
+    const { container } = render(<Badge tone="success">ok</Badge>);
+    expect(container.firstElementChild?.getAttribute('data-tone')).toBe('success');
+    expect(css).toMatch(/\.badge\[data-tone='success'\]\s*\{\s*--badge-edge: var\(--wzl-success\);/);
+  });
+
+  it('sizes xs from the 2xs type step', () => {
+    const { container } = render(<Badge size="xs">3</Badge>);
+    expect(container.firstElementChild?.getAttribute('data-size')).toBe('xs');
+    expect(css).toMatch(/\.badge\[data-size='xs'\]\s*\{[^}]*--badge-font-size: var\(--wzl-font-size-2xs\);/);
   });
 });

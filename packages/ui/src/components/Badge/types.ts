@@ -17,12 +17,13 @@ export type BadgeShape =
  * property instead of a theme token, so a call site can supply its own color.
  */
 export type BadgeTone =
-  | 'accent' | 'info' | 'warn' | 'danger' | 'muted' | 'neutral' | 'custom';
+  | 'accent' | 'info' | 'success' | 'warn' | 'danger' | 'muted' | 'neutral' | 'custom';
 
 /** How a badge's tone is applied: outline only, filled, or a soft tinted fill. */
 export type BadgeVariant = 'outline' | 'solid' | 'subtle';
-/** Badge type scale and padding step. */
-export type BadgeSize = 'sm' | 'md';
+/** Badge type scale and padding step. `xs` is for counts and markers set
+ *  inside a dense row, on the 2xs type step. */
+export type BadgeSize = 'xs' | 'sm' | 'md';
 
 export interface ShapeRenderProps<P = Record<string, never>> {
   variant: BadgeVariant;
