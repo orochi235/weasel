@@ -406,30 +406,6 @@
 }
 
 /* --- Preferences modal ----------------------------------------------- */
-/* Shell (backdrop, frame, header, title, close button) comes from the
- * weasel-ui `Dialog` primitive — no app-level rules needed for those. */
-
-/* Dialog title slot pairs the heading with the dev-only "Show hidden"
- * toggle on the same row. */
-/* ── Preferences: app-specific bits only. The generic prefs layout
- * (columns, panels, rows) moved into weasel-ui's PrefsForm. ── */
-
-/* Bare-input fallback for `registry-enum` prefs whose source isn't wired
- * — RegistrySelect emits `<input class="wd-prefs-input">` in that case,
- * which has no kit primitive of its own. Constrain it to fit the kit's
- * control slot. */
-.wd-prefs-input,
-.wd-prefs-select {
-  width: 100%;
-  height: 24px;
-  padding: 0 8px;
-  background: var(--wzl-surface-sunken);
-  color: var(--wzl-fg);
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  font: inherit;
-  font-size: 13px;
-}
 
 /* Panels-visibility editor — a `block` pref, so it supplies its own title. */
 .wd-prefs-panels {

@@ -88,8 +88,7 @@ function RegistryEnumControl(ctx: PrefRenderContext) {
       onChange={(v) => ctx.setValue(v)}
       source={pref.source}
       filter={pref.filter}
-      selectClassName="wd-prefs-select"
-      inputClassName="wd-prefs-input"
+      aria-label={pref.name}
     />
   );
 }
