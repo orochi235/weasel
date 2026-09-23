@@ -1,11 +1,7 @@
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Badge, DisclosureRow, Input, SearchIcon } from '@weasel-js/ui';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Badge, Input, SearchIcon, Tree, filterTree, treeBranchIds, type TreeNode } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 import type { TreeCategoryNode, TreeEntry } from './registryData';
-
-type RenderItem =
-  | { kind: 'category'; node: TreeCategoryNode }
-  | { kind: 'group'; id: string; label: string; nodes: readonly TreeCategoryNode[] };
 
 interface Props {
   nodes: readonly TreeCategoryNode[];
@@ -28,21 +24,18 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
   const filter = filterProp ?? filterInternal;
   const setFilter = onFilterChange ?? setFilterInternal;
   const [openIds, setOpenIds] = useState<ReadonlySet<string>>(() => new Set());
-  const baseId = useId();
 
   // When `selected` changes (e.g. an EntryLink in the detail panel navigates
   // to a different entry), open the containing category so the leaf renders.
   const selectedCategory = useMemo(() => {
     if (!selected) return null;
-    return nodes.find((n) => n.entries.some(
-      (e) => e.kind === selected.kind && e.id === selected.id,
-    )) ?? null;
+    return nodes.find((n) => n.entries.some((e) => sameEntry(e, selected))) ?? null;
   }, [nodes, selected]);
 
   useEffect(() => {
     if (!selectedCategory) return;
-    const idsToOpen: string[] = [selectedCategory.id];
-    if (selectedCategory.group) idsToOpen.push(`group:${selectedCategory.group.id}`);
+    const idsToOpen: string[] = [categoryKey(selectedCategory)];
+    if (selectedCategory.group) idsToOpen.push(groupKey(selectedCategory.group.id));
     setOpenIds((cur) => {
       if (idsToOpen.every((id) => cur.has(id))) return cur;
       const next = new Set(cur);
@@ -51,95 +44,61 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
     });
   }, [selectedCategory]);
 
-  const selectedLeafRef = useRef<HTMLButtonElement | null>(null);
-  useEffect(() => {
-    selectedLeafRef.current?.scrollIntoView({ block: 'nearest' });
-  }, [selected]);
-
-  const lower = filter.trim().toLowerCase();
-
-  const filteredNodes = useMemo(() => {
-    if (!lower) return nodes;
-    return nodes
-      .map((n) => ({
-        ...n,
-        entries: n.entries.filter(
-          (e) => e.id.toLowerCase().includes(lower) || e.label.toLowerCase().includes(lower),
-        ),
-      }))
-      .filter((n) => n.entries.length > 0);
-  }, [nodes, lower]);
-
-  const isOpen = (id: string) => (lower ? true : openIds.has(id));
-  const toggle = (id: string) => {
-    if (lower) return;
-    setOpenIds((cur) => {
-      const next = new Set(cur);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const renderItems = useMemo<readonly RenderItem[]>(() => {
-    const out: RenderItem[] = [];
-    const groupsSeen = new Map<string, { kind: 'group'; id: string; label: string; nodes: TreeCategoryNode[] }>();
-    for (const node of filteredNodes) {
-      if (!node.group) {
-        out.push({ kind: 'category', node });
+  const { treeNodes, entriesByKey } = useMemo(() => {
+    const byKey = new Map<string, TreeEntry>();
+    const out: TreeNode[] = [];
+    const groups = new Map<string, TreeNode & { children: TreeNode[] }>();
+    for (const n of nodes) {
+      const category: TreeNode = {
+        id: categoryKey(n),
+        label: n.label,
+        trailing: countBadge(n.entries.length),
+        children: n.entries.map((e) => {
+          const key = leafKey(n, e);
+          byKey.set(key, e);
+          const count = getCount?.(e);
+          return {
+            id: key,
+            label: e.label,
+            textValue: e.label,
+            trailing: count === undefined ? undefined : countBadge(count, s.leafBadge),
+          };
+        }),
+      };
+      if (!n.group) {
+        out.push(category);
         continue;
       }
-      let item = groupsSeen.get(node.group.id);
-      if (!item) {
-        item = { kind: 'group', id: node.group.id, label: node.group.label, nodes: [] };
-        groupsSeen.set(node.group.id, item);
-        out.push(item);
+      let group = groups.get(n.group.id);
+      if (!group) {
+        group = { id: groupKey(n.group.id), label: n.group.label, children: [] };
+        groups.set(n.group.id, group);
+        out.push(group);
       }
-      item.nodes.push(node);
+      group.children.push(category);
     }
-    return out;
-  }, [filteredNodes]);
+    for (const group of groups.values()) group.trailing = countBadge(group.children.length);
+    return { treeNodes: out, entriesByKey: byKey };
+  }, [nodes, getCount]);
 
-  const renderHeader = (id: string, label: string, count: number): ReactNode => (
-    <DisclosureRow
-      open={isOpen(id)}
-      onToggle={() => toggle(id)}
-      label={label}
-      controls={`${baseId}-${id}`}
-      className={s.treeCategoryRow}
-    >
-      <button type="button" className={s.treeCategoryLabel} onClick={() => toggle(id)}>
-        {label} <Badge shape="pill" size="sm" tone="neutral" variant="solid">{count}</Badge>
-      </button>
-    </DisclosureRow>
+  const lower = filter.trim().toLowerCase();
+  const filteredNodes = useMemo(() => {
+    if (!lower) return treeNodes;
+    return filterTree(treeNodes, (node) => {
+      const e = entriesByKey.get(node.id);
+      return !!e && (e.id.toLowerCase().includes(lower) || e.label.toLowerCase().includes(lower));
+    });
+  }, [treeNodes, entriesByKey, lower]);
+
+  const selectedIds = useMemo(
+    () => (selected ? [...entriesByKey].filter(([, e]) => sameEntry(e, selected)).map(([k]) => k) : []),
+    [entriesByKey, selected],
   );
 
-  const renderCategory = (n: TreeCategoryNode): ReactNode => (
-    <li key={n.id} className={s.treeCategory}>
-      {renderHeader(n.id, n.label, n.entries.length)}
-      {isOpen(n.id) && (
-        <ul id={`${baseId}-${n.id}`} className={s.treeLeaves}>
-          {n.entries.map((e) => {
-            const isSelected = selected && selected.kind === e.kind && selected.id === e.id;
-            const count = getCount?.(e);
-            return (
-              <li key={`${e.kind}:${e.id}`}>
-                <button
-                  ref={isSelected ? selectedLeafRef : undefined}
-                  type="button"
-                  className={`${s.treeLeaf} ${isSelected ? s.treeLeafSelected : ''}`}
-                  onClick={() => onSelect(e)}
-                >
-                  {e.label}
-                  {count !== undefined && <> <Badge className={s.leafBadge} shape="pill" size="sm" tone="neutral" variant="solid">{count}</Badge></>}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </li>
-  );
+  const treeRef = useRef<HTMLUListElement | null>(null);
+  useEffect(() => {
+    treeRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({ block: 'nearest' });
+  }, [selected]);
 
   return (
     <div>
@@ -151,22 +110,29 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
         value={filter}
         onChange={setFilter}
       />
-      <ul className={s.treeList}>
-        {renderItems.map((item) => {
-          if (item.kind !== 'group') return renderCategory(item.node);
-          const groupKey = `group:${item.id}`;
-          return (
-            <li key={groupKey} className={s.treeCategory}>
-              {renderHeader(groupKey, item.label, item.nodes.length)}
-              {isOpen(groupKey) && (
-                <ul id={`${baseId}-${groupKey}`} className={`${s.treeList} ${s.treeGroupChildren}`}>
-                  {item.nodes.map((node) => renderCategory(node))}
-                </ul>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <Tree
+        ref={treeRef}
+        aria-label="Registry"
+        nodes={filteredNodes}
+        empty="No matches"
+        expandedIds={lower ? treeBranchIds(filteredNodes) : openIds}
+        onExpandedChange={lower ? undefined : setOpenIds}
+        selectionMode="single"
+        selectedIds={selectedIds}
+        onAction={(id) => {
+          const entry = entriesByKey.get(id);
+          if (entry) onSelect(entry);
+        }}
+      />
     </div>
   );
+}
+
+const categoryKey = (n: TreeCategoryNode) => `cat:${n.id}`;
+const groupKey = (id: string) => `group:${id}`;
+const leafKey = (n: TreeCategoryNode, e: TreeEntry) => `${n.id}/${e.kind}:${e.id}`;
+const sameEntry = (a: TreeEntry, b: TreeEntry) => a.kind === b.kind && a.id === b.id;
+
+function countBadge(count: number, className?: string) {
+  return <Badge className={className} shape="pill" size="sm" tone="neutral" variant="solid">{count}</Badge>;
 }

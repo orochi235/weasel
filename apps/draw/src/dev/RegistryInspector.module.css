@@ -52,44 +52,7 @@
   height: 1px;
   overflow: hidden;
 }
-.treeList { list-style: none; margin: 0; padding: 0; }
-.treeCategory { margin-bottom: var(--wzl-space-2); }
-.treeGroupChildren {
-  /* Child categories of a group (e.g. Shape kinds / Routing kinds under
-   *  Facets) are indented one chevron-width so the parent → child
-   *  relationship reads at a glance. */
-  padding-left: 18px;
-}
-.treeCategoryRow { padding: var(--wzl-space-1) 0; }
-.treeCategoryLabel {
-  display: flex; align-items: center; gap: var(--wzl-space-3);
-  background: transparent;
-  border: none;
-  color: var(--wzl-fg);
-  cursor: pointer;
-  padding: var(--wzl-space-1) var(--wzl-space-1);
-  font: inherit;
-  font-weight: 600;
-  width: 100%;
-  text-align: left;
-}
-.leafBadge { --badge-font-size: 8px; --badge-pad-y: 1px; transform: scale(0.85); transform-origin: left center; }
-.treeLeaves { list-style: none; margin: 0; padding: 0 0 0 32px; }
-.treeLeaf {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: transparent;
-  border: none;
-  color: var(--wzl-fg);
-  cursor: pointer;
-  padding: var(--wzl-space-1) var(--wzl-space-2);
-  font: inherit;
-  font-size: 14px;
-  border-radius: var(--wzl-radius-sm);
-}
-.treeLeaf:hover { background: var(--wzl-border); }
-.treeLeafSelected { background: var(--wzl-accent); color: var(--wzl-fg-on-accent); }
+.leafBadge { --badge-font-size: 8px; --badge-pad-y: 1px; transform: scale(0.85); transform-origin: right center; }
 
 .detailHeading { margin: 0 0 var(--wzl-space-6); font-size: 19px; }
 .diffSection { margin-top: var(--wzl-space-8); }
