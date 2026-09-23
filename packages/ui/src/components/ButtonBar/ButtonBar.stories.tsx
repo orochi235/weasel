@@ -17,3 +17,16 @@ const items: ButtonBarItem[] = [
 
 export const Default: Story = { render: () => <ButtonBar items={items} /> };
 export const Minimal: Story = { render: () => <ButtonBar items={items} variant="minimal" /> };
+
+/** `shortcut` shows in each button's tooltip as `Name (key)`. */
+export const Tooltips: Story = {
+  render: () => (
+    <ButtonBar
+      items={[
+        { value: 'undo', label: 'Undo', shortcut: '⌘Z', onAction: () => console.log('undo') },
+        { value: 'redo', label: 'Redo', shortcut: '⇧⌘Z', onAction: () => console.log('redo') },
+        { value: 'clear', label: 'Clear', tooltip: 'Remove every mark', onAction: () => console.log('clear') },
+      ]}
+    />
+  ),
+};
