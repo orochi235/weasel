@@ -80,19 +80,19 @@
    *  relationship reads at a glance. */
   padding-left: 18px;
 }
-.treeCategoryButton {
+.treeCategoryRow { padding: 2px 0; }
+.treeCategoryLabel {
   display: flex; align-items: center; gap: 6px;
   background: transparent;
   border: none;
   color: var(--wzl-fg, var(--wzl-fg));
   cursor: pointer;
-  padding: 4px 2px;
+  padding: 2px 2px;
   font: inherit;
   font-weight: 600;
   width: 100%;
   text-align: left;
 }
-.treeChevron { font-size: 20px; width: 18px; display: inline-flex; justify-content: center; color: var(--wzl-fg-muted); }
 .treeCount { color: var(--wzl-fg-muted); font-weight: 400; }
 .leafBadge { --badge-font-size: 8px; --badge-pad-y: 1px; transform: scale(0.85); transform-origin: left center; }
 .treeLeaves { list-style: none; margin: 0; padding: 0 0 0 32px; }

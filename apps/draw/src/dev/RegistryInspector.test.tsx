@@ -68,7 +68,7 @@ describe('RegistryInspector', () => {
     // rect, 'Hand' for hand), not the bare tool id.
     await waitFor(() => expect(screen.queryByText('Rectangle')).toBeTruthy());
 
-    fireEvent.change(screen.getByLabelText(/bundle/i), { target: { value: 'minimal' } });
+    fireEvent.change(screen.getByLabelText('bundle filter'), { target: { value: 'minimal' } });
     await waitFor(() => expect(screen.queryByText('Rectangle')).toBeNull());
     // 'Select' is the always-present member of the minimal bundle; the hand
     // tool only registers when viewport is initialized, which jsdom may skip.

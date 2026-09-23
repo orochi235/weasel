@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Badge } from '@weasel-js/ui';
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Badge, DisclosureRow } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 import type { TreeCategoryNode, TreeEntry } from './registryData';
 
@@ -28,6 +28,7 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
   const filter = filterProp ?? filterInternal;
   const setFilter = onFilterChange ?? setFilterInternal;
   const [openIds, setOpenIds] = useState<ReadonlySet<string>>(() => new Set());
+  const baseId = useId();
 
   // When `selected` changes (e.g. an EntryLink in the detail panel navigates
   // to a different entry), open the containing category so the leaf renders.
@@ -99,14 +100,25 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
     return out;
   }, [filteredNodes]);
 
+  const renderHeader = (id: string, label: string, count: number): ReactNode => (
+    <DisclosureRow
+      open={isOpen(id)}
+      onToggle={() => toggle(id)}
+      label={label}
+      controls={`${baseId}-${id}`}
+      className={s.treeCategoryRow}
+    >
+      <button type="button" className={s.treeCategoryLabel} onClick={() => toggle(id)}>
+        {label} <Badge shape="pill" size="sm" tone="neutral" variant="solid">{count}</Badge>
+      </button>
+    </DisclosureRow>
+  );
+
   const renderCategory = (n: TreeCategoryNode): ReactNode => (
     <li key={n.id} className={s.treeCategory}>
-      <button type="button" className={s.treeCategoryButton} onClick={() => toggle(n.id)}>
-        <span className={s.treeChevron}>{isOpen(n.id) ? '▾' : '▸'}</span>
-        {n.label} <Badge shape="pill" size="sm" tone="neutral" variant="solid">{n.entries.length}</Badge>
-      </button>
+      {renderHeader(n.id, n.label, n.entries.length)}
       {isOpen(n.id) && (
-        <ul className={s.treeLeaves}>
+        <ul id={`${baseId}-${n.id}`} className={s.treeLeaves}>
           {n.entries.map((e) => {
             const isSelected = selected && selected.kind === e.kind && selected.id === e.id;
             const count = getCount?.(e);
@@ -143,12 +155,9 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
           const groupKey = `group:${item.id}`;
           return (
             <li key={groupKey} className={s.treeCategory}>
-              <button type="button" className={s.treeCategoryButton} onClick={() => toggle(groupKey)}>
-                <span className={s.treeChevron}>{isOpen(groupKey) ? '▾' : '▸'}</span>
-                {item.label} <Badge shape="pill" size="sm" tone="neutral" variant="solid">{item.nodes.length}</Badge>
-              </button>
+              {renderHeader(groupKey, item.label, item.nodes.length)}
               {isOpen(groupKey) && (
-                <ul className={`${s.treeList} ${s.treeGroupChildren}`}>
+                <ul id={`${baseId}-${groupKey}`} className={`${s.treeList} ${s.treeGroupChildren}`}>
                   {item.nodes.map((node) => renderCategory(node))}
                 </ul>
               )}
