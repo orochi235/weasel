@@ -8,6 +8,7 @@ export { solidColorOf, strokeColorOf } from './components/paintValue';
 export * from './components/ActionBar';
 export * from './components/Badge';
 export * from './components/Button';
+export * from './components/Code';
 export * from './components/DataGrid';
 export * from './components/Disclosure';
 export * from './components/DragHandleGlyph';
