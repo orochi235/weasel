@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { Select } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 import { RegistryTree } from './RegistryTree';
 import { RegistryDetail } from './RegistryDetail';
@@ -24,11 +25,11 @@ import {
 } from './registryData';
 
 const BUNDLE_OPTIONS = [
-  { id: 'all', label: 'All bundles' },
-  { id: 'minimal', label: 'Minimal' },
-  { id: 'standard', label: 'Standard' },
-  { id: 'exhaustive', label: 'Exhaustive' },
-] as const;
+  { value: 'all', label: 'All bundles' },
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'exhaustive', label: 'Exhaustive' },
+];
 
 /** Parse the selected-entry coordinates out of the URL hash. The inspector
  *  encodes the user's selection as `#/dev/registry?kind=<entryKind>&id=<entryId>`
@@ -60,6 +61,7 @@ export function RegistryInspector() {
 
   const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], routing: [], properties: [] });
   const [bundleFilter, setBundleFilter] = useState<string>('all');
+  const bundleTriggerId = useId();
   const [textFilter, setTextFilter] = useState<string>('');
   const [selected, setSelected] = useState<TreeEntry | null>(null);
   // Pending deep-link from the URL — the matching entry may not exist yet
@@ -195,18 +197,17 @@ export function RegistryInspector() {
       <RegistryProbe onSnapshot={onSnapshot} />
       <header className={s.header}>
         <h1 className={s.title}>Bundle Inspector</h1>
-        <label className={s.bundlePicker}>
-          bundle
-          <select
+        <div className={s.bundlePicker}>
+          <label htmlFor={bundleTriggerId}>bundle</label>
+          <Select
             aria-label="bundle filter"
-            value={bundleFilter}
-            onChange={(e) => setBundleFilter(e.target.value)}
-          >
-            {BUNDLE_OPTIONS.map((b) => (
-              <option key={b.id} value={b.id}>{b.label}</option>
-            ))}
-          </select>
-        </label>
+            triggerId={bundleTriggerId}
+            width="fit"
+            options={BUNDLE_OPTIONS}
+            selectedKey={bundleFilter}
+            onSelectionChange={setBundleFilter}
+          />
+        </div>
       </header>
       <div className={s.layout}>
         <aside className={s.tree}>

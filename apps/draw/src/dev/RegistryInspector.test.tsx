@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ActionsProvider, SelectionContextProvider } from '@weasel-js/core';
 import { RegistryInspector } from './RegistryInspector';
 
@@ -68,7 +68,8 @@ describe('RegistryInspector', () => {
     // rect, 'Hand' for hand), not the bare tool id.
     await waitFor(() => expect(screen.queryByText('Rectangle')).toBeTruthy());
 
-    fireEvent.change(screen.getByLabelText('bundle filter'), { target: { value: 'minimal' } });
+    act(() => { fireEvent.click(screen.getByRole('button', { name: /bundle filter/i })); });
+    fireEvent.click(screen.getByRole('option', { name: 'Minimal' }));
     await waitFor(() => expect(screen.queryByText('Rectangle')).toBeNull());
     // 'Select' is the always-present member of the minimal bundle; the hand
     // tool only registers when viewport is initialized, which jsdom may skip.

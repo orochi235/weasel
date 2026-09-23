@@ -31,15 +31,6 @@
 }
 .filterInput { margin-bottom: var(--wzl-space-4); }
 .bundlePicker { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--wzl-fg-muted); }
-.bundlePicker select {
-  background: var(--wzl-surface);
-  color: var(--wzl-fg, var(--wzl-fg));
-  border: 1px solid var(--wzl-border);
-  border-radius: 4px;
-  padding: 3px 6px;
-  font-size: 14px;
-  font-family: inherit;
-}
 .empty { color: var(--wzl-fg-muted); font-size: 15px; font-style: italic; }
 
 .breadcrumb {
