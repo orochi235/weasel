@@ -585,6 +585,20 @@ describe('SelectionPanel — object leaf', () => {
     );
   }
 
+  it('passes the selection key down to a field of an object leaf', () => {
+    const seen: (string | undefined)[] = [];
+    render(
+      <SelectionPanel
+        scene={sceneWithStroke({ paint: { color: '#00ff00ff' }, width: 4, cap: 'round' })}
+        selection={selectionOf(['p'])}
+        properties={strokeProperties}
+        routing={strokeRouting}
+        renderers={{ 'data.stroke.width': (ctx) => { seen.push(ctx.selectionKey); return <span>w</span>; } }}
+      />,
+    );
+    expect(seen[0]).toBe('p');
+  });
+
   it('renders a row per field, labeled by the child leaves', () => {
     renderStroke(sceneWithStroke({ paint: { color: '#00ff00ff' }, width: 4, cap: 'round' }));
     expect(screen.getByLabelText('Color')).toHaveValue('#00ff00');
@@ -1052,6 +1066,36 @@ describe('SelectionPanel — valueAt', () => {
     const seen: unknown[] = [];
     renderSpan([{ id: 'n1', a: 'x', b: undefined }], seen);
     expect(seen[0]).toEqual({ value: undefined, mixed: false });
+  });
+});
+
+describe('SelectionPanel — selectionKey', () => {
+  it('hands a renderer the selected ids, joined, as the selection key', () => {
+    const seen: (string | undefined)[] = [];
+    render(
+      <SelectionPanel
+        scene={makeScene()}
+        selection={selectionOf(['a', 'b'])}
+        properties={properties}
+        routing={routing}
+        renderers={{ 'data.label': (ctx) => { seen.push(ctx.selectionKey); return <span>label</span>; } }}
+      />,
+    );
+    expect(seen[0]).toBe('a,b');
+  });
+
+  it('skips dead ids, so the key names only the nodes the values came from', () => {
+    const seen: (string | undefined)[] = [];
+    render(
+      <SelectionPanel
+        scene={makeScene()}
+        selection={selectionOf(['gone', 'a'])}
+        properties={properties}
+        routing={routing}
+        renderers={{ 'data.label': (ctx) => { seen.push(ctx.selectionKey); return <span>label</span>; } }}
+      />,
+    );
+    expect(seen[0]).toBe('a');
   });
 });
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ActionsProvider } from '@weasel-js/core';
 import type { PropertyRenderContext } from '@weasel-js/ui';
-import { WD_RENDERERS, WdSelectionKeyContext } from '../App';
+import { WD_RENDERERS } from '../App';
 
 /** The schema's own `data.stroke.paint` leaf: a `paint` leaf, so its default
  *  is a whole `FillStyle` and not a color string. */
@@ -13,8 +13,9 @@ const STROKE_PAINT_LEAF = {
   alpha: true,
 } as unknown as PropertyRenderContext['pref'];
 
-function ctxWith(value: unknown): PropertyRenderContext {
+function ctxWith(value: unknown, selectionKey = ''): PropertyRenderContext {
   return {
+    selectionKey,
     path: 'data.stroke.paint',
     pref: STROKE_PAINT_LEAF,
     value,
@@ -65,11 +66,7 @@ describe("WeaselDraw's paint renderers across selections", () => {
   // selection has to mount a fresh one. Element identity is what shows it.
   it('remount the paint control when the selection changes', () => {
     const at = (key: string) => (
-      <ActionsProvider>
-        <WdSelectionKeyContext.Provider value={key}>
-          {WD_RENDERERS['data.fill'](ctxWith(GRADIENT))}
-        </WdSelectionKeyContext.Provider>
-      </ActionsProvider>
+      <ActionsProvider>{WD_RENDERERS['data.fill'](ctxWith(GRADIENT, key))}</ActionsProvider>
     );
     const { rerender } = render(at('a'));
     const before = screen.getByRole('radio', { name: 'Linear' });

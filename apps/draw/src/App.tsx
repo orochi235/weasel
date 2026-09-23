@@ -25,7 +25,7 @@
  *     mutation (debounced inside SceneCanvas re-renders).
  */
 import {
-  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
+  useCallback, useEffect, useMemo, useRef, useState,
   type CSSProperties, type ReactElement,
 } from 'react';
 import { useColorModeControl } from './colorMode';
@@ -369,11 +369,6 @@ function isFillStyleObject(raw: unknown): raw is FillStyle {
  * entry instead of one per tick. The control itself is the kit's `PaintInput`
  * — the app supplies only which action the writes land on.
  */
-/** The selected node ids, joined — what the kit's own paint leaf keys its
- *  `PaintInput` on. `PropertyRenderContext` doesn't carry it to custom
- *  renderers, so the sidebar provides it. */
-export const WdSelectionKeyContext = createContext('');
-
 function wdPaintRenderer(actionId: string): PropertyRenderer {
   return (ctx) => <WdPaintLeaf ctx={ctx} actionId={actionId} />;
 }
@@ -381,7 +376,6 @@ function wdPaintRenderer(actionId: string): PropertyRenderer {
 function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; actionId: string }) {
   const actions = useActionsRegistry();
   const ctrlRef = useRef<UiOngoingControl | null>(null);
-  const selectionKey = useContext(WdSelectionKeyContext);
 
   const fallback = ctx.pref.default;
   const raw = ctx.value;
@@ -409,7 +403,7 @@ function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; actionId: 
   return (
     <PaintInput
       // Per-kind switch memory is scratch for one selection.
-      key={selectionKey}
+      key={ctx.selectionKey}
       value={value}
       mixed={ctx.mixed}
       unset={ctx.unset}
@@ -576,19 +570,17 @@ function RightSidebar({
               />
             </PropertyList>
           ) : (
-            <WdSelectionKeyContext.Provider value={selection.current.join(',')}>
-              <SelectionPanel
-                scene={scene}
-                selection={selection}
-                // WeaselDraw's kinds come from the kit's inferred routing (`text` /
-                // `path` / `image` — no `data.kind` tag), so the panel classifies
-                // with the same entries SceneCanvas applies when `routing` is unset.
-                properties={inferredNodeProperties}
-                routing={inferredNodeRouting}
-                renderers={WD_RENDERERS}
-                emptyState={<em className="wd-no-selection">No selection</em>}
-              />
-            </WdSelectionKeyContext.Provider>
+            <SelectionPanel
+              scene={scene}
+              selection={selection}
+              // WeaselDraw's kinds come from the kit's inferred routing (`text` /
+              // `path` / `image` — no `data.kind` tag), so the panel classifies
+              // with the same entries SceneCanvas applies when `routing` is unset.
+              properties={inferredNodeProperties}
+              routing={inferredNodeRouting}
+              renderers={WD_RENDERERS}
+              emptyState={<em className="wd-no-selection">No selection</em>}
+            />
           )}
         </SidebarPanel>
       )}

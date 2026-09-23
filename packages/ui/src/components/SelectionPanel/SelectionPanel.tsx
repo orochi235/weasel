@@ -209,6 +209,7 @@ function leafCell(
       const at = aggregateValue(nodes, p);
       return at === MIXED ? { value: undefined, mixed: true } : { value: at, mixed: false };
     },
+    selectionKey,
   };
 
   return {
