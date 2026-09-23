@@ -883,10 +883,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as begin/update/end in three places (`ActiveSwatches`, `WdPaintLeaf`,
   `SwatchGrid`); the kit has no hook for an action driven through a gesture's
   input/commit phases, no overlapping fill/stroke chip, and no swatch grid.
-- **(P3) Dev pages on `LabShell`.** The Toolkit Builder and Bundle Inspector each
-  hand-build a header and set `document.title`; `LabShell` with `pages` would give
-  them a switcher, but `LabSwitcher` matches on path and both pages are hash
-  routes on one document — check that first.
 
 ---
 
