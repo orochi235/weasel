@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { act, render, fireEvent, screen } from '@testing-library/react';
 import { LayerList } from './LayerList';
 
 const ITEMS = [
@@ -204,6 +204,25 @@ describe('LayerList', () => {
       expect(onSelect).toHaveBeenLastCalledWith(['c']);
       fireEvent.keyDown(opt('Gamma'), { key: ' ', shiftKey: true });
       expect(onSelect).toHaveBeenLastCalledWith(['a', 'c']);
+    });
+
+    it('selects a range with Shift+Arrow from the focused layer', () => {
+      const onSelect = vi.fn();
+      render(<LayerList items={ITEMS} selectedIds={['a']} onSelect={onSelect} onReorder={() => {}} />);
+      act(() => { opt('Alpha').focus(); });
+      fireEvent.keyDown(opt('Alpha'), { key: 'ArrowDown', shiftKey: true });
+      expect(onSelect).toHaveBeenLastCalledWith(['a', 'b']);
+      fireEvent.keyDown(opt('Beta'), { key: 'End', shiftKey: true });
+      expect(onSelect).toHaveBeenLastCalledWith(['a', 'b', 'c']);
+    });
+
+    it('leaves locked layers out of a keyboard range', () => {
+      const onSelect = vi.fn();
+      const items = [...ITEMS, { id: 'page', label: 'Page', locked: true }];
+      render(<LayerList items={items} selectedIds={['c']} onSelect={onSelect} onReorder={() => {}} />);
+      act(() => { opt('Gamma').focus(); });
+      fireEvent.keyDown(opt('Gamma'), { key: 'ArrowDown', shiftKey: true });
+      expect(onSelect).toHaveBeenLastCalledWith(['c']);
     });
 
     it('moves a layer with Alt+Arrow', () => {

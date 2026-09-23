@@ -308,3 +308,94 @@ describe('ItemList', () => {
   });
 });
 
+
+describe('ItemList keyboard range selection', () => {
+  const ROWS = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id, label: id.toUpperCase() }));
+  const opt = (label: string) => screen.getByRole('option', { name: label });
+  const setup = () => {
+    const onSelectRange = vi.fn();
+    const onActivate = vi.fn();
+    render(<ItemList rows={ROWS} selection="multi" onActivate={onActivate} onSelectRange={onSelectRange} />);
+    return { onSelectRange, onActivate };
+  };
+
+  it('extends a range from the focused row with Shift+Arrow, moving focus', () => {
+    const { onSelectRange, onActivate } = setup();
+    act(() => { opt('B').focus(); });
+    fireEvent.keyDown(opt('B'), { key: 'ArrowDown', shiftKey: true });
+    expect(opt('C')).toHaveFocus();
+    expect(onSelectRange).toHaveBeenLastCalledWith(['b', 'c']);
+    fireEvent.keyDown(opt('C'), { key: 'ArrowDown', shiftKey: true });
+    expect(onSelectRange).toHaveBeenLastCalledWith(['b', 'c', 'd']);
+    expect(onActivate).not.toHaveBeenCalled();
+  });
+
+  it('shrinks and then crosses the anchor, keeping list order', () => {
+    const { onSelectRange } = setup();
+    act(() => { opt('C').focus(); });
+    fireEvent.keyDown(opt('C'), { key: 'ArrowDown', shiftKey: true });
+    fireEvent.keyDown(opt('D'), { key: 'ArrowUp', shiftKey: true });
+    expect(onSelectRange).toHaveBeenLastCalledWith(['c']);
+    fireEvent.keyDown(opt('C'), { key: 'ArrowUp', shiftKey: true });
+    expect(onSelectRange).toHaveBeenLastCalledWith(['b', 'c']);
+  });
+
+  it('runs to either end with Shift+Home and Shift+End', () => {
+    const { onSelectRange } = setup();
+    act(() => { opt('C').focus(); });
+    fireEvent.keyDown(opt('C'), { key: 'End', shiftKey: true });
+    expect(opt('E')).toHaveFocus();
+    expect(onSelectRange).toHaveBeenLastCalledWith(['c', 'd', 'e']);
+    fireEvent.keyDown(opt('E'), { key: 'Home', shiftKey: true });
+    expect(onSelectRange).toHaveBeenLastCalledWith(['a', 'b', 'c']);
+  });
+
+  it('anchors on the row last activated, so Shift+click then Shift+Arrow extends from it', () => {
+    const { onSelectRange } = setup();
+    fireEvent.click(opt('D'), { shiftKey: true });
+    act(() => { opt('D').focus(); });
+    fireEvent.keyDown(opt('D'), { key: 'ArrowUp', shiftKey: true });
+    expect(onSelectRange).toHaveBeenLastCalledWith(['c', 'd']);
+  });
+
+  it('re-anchors on a plain move, starting the next range where focus is', () => {
+    const { onSelectRange } = setup();
+    act(() => { opt('A').focus(); });
+    fireEvent.keyDown(opt('A'), { key: 'ArrowDown', shiftKey: true });
+    fireEvent.keyDown(opt('B'), { key: 'ArrowDown' });
+    fireEvent.keyDown(opt('C'), { key: 'ArrowDown', shiftKey: true });
+    expect(onSelectRange).toHaveBeenLastCalledWith(['c', 'd']);
+  });
+
+  it('only moves focus on Shift+Arrow without onSelectRange', () => {
+    const onActivate = vi.fn();
+    render(<ItemList rows={ROWS} selection="multi" onActivate={onActivate} />);
+    act(() => { opt('A').focus(); });
+    fireEvent.keyDown(opt('A'), { key: 'ArrowDown', shiftKey: true });
+    expect(opt('B')).toHaveFocus();
+    expect(onActivate).not.toHaveBeenCalled();
+  });
+
+  it('extends no range in a single-select list', () => {
+    const onSelectRange = vi.fn();
+    render(<ItemList rows={ROWS} selection="single" onSelectRange={onSelectRange} />);
+    act(() => { opt('A').focus(); });
+    fireEvent.keyDown(opt('A'), { key: 'ArrowDown', shiftKey: true });
+    expect(opt('B')).toHaveFocus();
+    expect(onSelectRange).not.toHaveBeenCalled();
+  });
+});
+
+describe('ItemList range anchor', () => {
+  it('re-anchors on a row focused by the pointer', () => {
+    const onSelectRange = vi.fn();
+    const rows = ['a', 'b', 'c', 'd'].map((id) => ({ id, label: id.toUpperCase() }));
+    render(<ItemList rows={rows} selection="multi" onSelectRange={onSelectRange} />);
+    const opt = (label: string) => screen.getByRole('option', { name: label });
+    act(() => { opt('A').focus(); });
+    fireEvent.keyDown(opt('A'), { key: 'ArrowDown', shiftKey: true });
+    act(() => { opt('D').focus(); });
+    fireEvent.keyDown(opt('D'), { key: 'ArrowUp', shiftKey: true });
+    expect(onSelectRange).toHaveBeenLastCalledWith(['c', 'd']);
+  });
+});

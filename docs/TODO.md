@@ -891,8 +891,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Inspector's tree is `DisclosureRow`s by hand), no read-only key/value list (the
   detail pane's `.detailList`, 15+ uses), and the Toolkit Builder's Actions table
   clips its Requires column — it overflowed before the `DataGrid` move too.
-- **(P3) `ItemList` has no keyboard range selection.** A multi-select list toggles
-  with Shift+Space, matching Shift+click; Shift+Arrow does not extend a range.
 
 ---
 

@@ -24,7 +24,9 @@
  * **Keyboard.** One row is in the tab order: the one last focused, else the
  * first selected, else the first. Up/Down and Home/End move between rows,
  * Enter/Space activate, carrying modifiers so Shift+Space is Shift+click, and
- * Alt+Up/Down call `onNudge`. In a grid, Right steps from the row into its
+ * Alt+Up/Down call `onNudge`. In a multi-select list with `onSelectRange`,
+ * Shift+Up/Down and Shift+Home/End move focus and report the rows from the
+ * anchor — the row last focused or activated other than by a range — to it. In a grid, Right steps from the row into its
  * controls, Left and Escape step back; the controls leave the tab order.
  */
 import {
@@ -92,6 +94,15 @@ export interface ItemListProps {
    */
   onNudge?(id: string, index: number, delta: -1 | 1): void;
   /**
+   * With `selection="multi"`: Shift+Up/Down or Shift+Home/End moved focus,
+   * and `ids` is every row from the anchor to the newly focused one, in list
+   * order. The anchor is the row last focused or activated other than by a
+   * range move, so a click or a plain arrow move re-anchors. What the range does to
+   * the selection stays with the consumer, as with `onActivate`. Without it,
+   * Shift+Arrow only moves focus.
+   */
+  onSelectRange?(ids: string[]): void;
+  /**
    * Where a drop would land, as an insertion index: `0` is above the first
    * row, `rows.length` below the last. The list draws the seam itself, from
    * the rows' own boxes, so it follows whatever height the density gives
@@ -114,7 +125,8 @@ const ROLES: Record<Mode, { container: string; row: string }> = {
 
 export const ItemList = forwardRef(function ItemList(
   {
-    rows, empty, className, selection, onActivate, onNudge, dropIndex, overlay, containerProps,
+    rows, empty, className, selection, onActivate, onNudge, onSelectRange, dropIndex, overlay,
+    containerProps,
   }: ItemListProps,
   ref: Ref<HTMLDivElement>,
 ) {
@@ -128,6 +140,9 @@ export const ItemList = forwardRef(function ItemList(
   const targets = useRef(new Map<string, HTMLElement>());
   const [focusId, setFocusId] = useState<string | null>(null);
   const pendingFocus = useRef<string | null>(null);
+  const anchor = useRef<string | null>(null);
+  /** The row a range move is focusing, whose focus must not re-anchor. */
+  const extending = useRef<string | null>(null);
 
   const stopId = rows.some((r) => r.id === focusId)
     ? focusId
@@ -163,6 +178,26 @@ export const ItemList = forwardRef(function ItemList(
     if (row) targets.current.get(row.id)?.focus();
   };
 
+  const ranges = selection === 'multi' && onSelectRange !== undefined;
+
+  /** Moves focus to `index`: a range from the anchor when `extend`, else a plain move. */
+  const moveTo = (from: ItemListRow, index: number, extend: boolean) => {
+    const to = Math.max(0, Math.min(rows.length - 1, index));
+    if (!extend || !ranges) {
+      focusRow(to);
+      return;
+    }
+    let at = rows.findIndex((r) => r.id === anchor.current);
+    if (at < 0) {
+      anchor.current = from.id;
+      at = rows.indexOf(from);
+    }
+    extending.current = rows[to]!.id;
+    focusRow(to);
+    extending.current = null;
+    onSelectRange(rows.slice(Math.min(at, to), Math.max(at, to) + 1).map((r) => r.id));
+  };
+
   const onKeyDown = (row: ItemListRow, i: number) => (e: KeyboardEvent<HTMLDivElement>) => {
     row.rowProps?.onKeyDown?.(e);
     if (e.defaultPrevented) return;
@@ -183,7 +218,7 @@ export const ItemList = forwardRef(function ItemList(
           pendingFocus.current = row.id;
           onNudge(row.id, i, delta);
         } else {
-          focusRow(i + delta);
+          moveTo(row, i + delta, e.shiftKey);
         }
         return;
       }
@@ -191,12 +226,13 @@ export const ItemList = forwardRef(function ItemList(
       case 'End':
         if (!onTarget) return;
         e.preventDefault();
-        focusRow(e.key === 'Home' ? 0 : rows.length - 1);
+        moveTo(row, e.key === 'Home' ? 0 : rows.length - 1, e.shiftKey);
         return;
       case 'Enter':
       case ' ':
         if (!onTarget) return;
         e.preventDefault();
+        anchor.current = row.id;
         onActivate?.(row.id, i, modsOf(e));
         return;
       case 'ArrowRight':
@@ -225,12 +261,15 @@ export const ItemList = forwardRef(function ItemList(
   const onClick = (row: ItemListRow, i: number) => (e: MouseEvent<HTMLDivElement>) => {
     row.rowProps?.onClick?.(e);
     if (e.defaultPrevented || isInControlWithin(e.target, e.currentTarget)) return;
+    anchor.current = row.id;
     onActivate?.(row.id, i, modsOf(e));
   };
 
   const onFocus = (row: ItemListRow) => (e: FocusEvent<HTMLDivElement>) => {
     row.rowProps?.onFocus?.(e);
-    if (e.target === targets.current.get(row.id)) setFocusId(row.id);
+    if (e.target !== targets.current.get(row.id)) return;
+    setFocusId(row.id);
+    if (extending.current !== row.id) anchor.current = row.id;
   };
 
   const targetRef = (id: string) => (el: HTMLElement | null) => {

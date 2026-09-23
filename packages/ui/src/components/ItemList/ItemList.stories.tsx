@@ -47,7 +47,8 @@ export const Selectable: Story = {
 /** Drag a row, or move it with Alt+Up/Down. The hook's `targetIndex` goes to
  *  `dropIndex` and the list draws the seam; its `draggedIds` mark the rows
  *  that are `dragging`; its `nudge` is the keyboard move. Shift+click or
- *  Shift+Space adds to the selection. */
+ *  Shift+Space adds to the selection; Shift+Up/Down and Shift+Home/End select
+ *  a range through `onSelectRange`. */
 export const Reorder: Story = {
   render: function Render() {
     const [items, setItems] = useState<LayerListItem[]>([
@@ -82,6 +83,7 @@ export const Reorder: Story = {
           selection="multi"
           containerProps={{ 'aria-label': 'Layers' }}
           onActivate={(id, _i, mods) => press(id, mods)}
+          onSelectRange={setSelected}
           onNudge={drag.nudge}
           dropIndex={drag.state.targetIndex}
           rows={items.map((it, i) => ({

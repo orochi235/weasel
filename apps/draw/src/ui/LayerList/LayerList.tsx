@@ -49,6 +49,12 @@ export function LayerList(props: LayerListProps) {
       sel_cb([id]);
     }
   };
+  // Locked rows never join a multi-selection, so a range passes over them.
+  const selectRange = (ids: string[]) => {
+    const locked = new Set(items.filter((it) => it.locked).map((it) => it.id));
+    const range = ids.filter((id) => !locked.has(id));
+    if (range.length > 0) propsRef.current.onSelect(range);
+  };
   const drag = useReorderDragList({ items, selectedIds, onReorder, onPress: press });
 
   const rows: ItemListRow[] = items.map((item, i) => {
@@ -78,6 +84,7 @@ export function LayerList(props: LayerListProps) {
       ref={drag.containerProps.ref}
       selection="multi"
       onActivate={(id, _i, mods) => press(id, mods)}
+      onSelectRange={selectRange}
       onNudge={drag.nudge}
       containerProps={{ 'aria-label': 'Layers' }}
       dropIndex={drag.state.targetIndex}
