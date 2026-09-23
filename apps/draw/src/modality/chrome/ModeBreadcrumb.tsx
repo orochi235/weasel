@@ -1,4 +1,6 @@
 import { memo } from 'react';
+import { Button, KeyCap } from '@weasel-js/ui';
+import { modeDisplayName } from './modeDisplay';
 import styles from './ModeBreadcrumb.module.css';
 
 export interface ModeBreadcrumbProps {
@@ -10,21 +12,12 @@ export interface ModeBreadcrumbProps {
   onCancel: () => void;
 }
 
-const MODE_DISPLAY: Record<string, string> = {
-  'path-edit': 'Path Edit',
-  'isolation': 'Isolation',
-  'text-edit': 'Text Edit',
-  'free-transform': 'Free Transform',
-  'crop': 'Crop',
-};
-
 export const ModeBreadcrumb = memo(function ModeBreadcrumb(props: ModeBreadcrumbProps) {
   if (props.modeId === 'normal') return null;
-  const name = MODE_DISPLAY[props.modeId] ?? props.modeId;
 
   return (
     <div className={styles.bar} data-mode={props.modeId}>
-      <span className={styles.name}>{name}</span>
+      <span className={styles.name}>{modeDisplayName(props.modeId)}</span>
       {props.targetLabel ? (
         <>
           <span className={styles.sep}>·</span>
@@ -33,17 +26,15 @@ export const ModeBreadcrumb = memo(function ModeBreadcrumb(props: ModeBreadcrumb
       ) : null}
       <span className={styles.spacer} />
       {props.modeKind === 'soft' ? (
-        <button type="button" className={styles.btn} onClick={props.onExit}>
-          Exit
-        </button>
+        <Button size="sm" onClick={props.onExit}>Exit</Button>
       ) : (
         <>
-          <button type="button" className={styles.btn} onClick={props.onCancel}>
-            Cancel <kbd>⎋</kbd>
-          </button>
-          <button type="button" className={styles.btnPrimary} onClick={props.onCommit}>
-            Commit <kbd>⏎</kbd>
-          </button>
+          <Button size="sm" onClick={props.onCancel} trailingIcon={<KeyCap label="⎋" variant="minimal" />}>
+            Cancel
+          </Button>
+          <Button size="sm" variant="primary" onClick={props.onCommit} trailingIcon={<KeyCap label="⏎" variant="minimal" />}>
+            Commit
+          </Button>
         </>
       )}
     </div>
