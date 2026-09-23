@@ -98,6 +98,7 @@ export {
   keyGlyph,
   keySpecFromKey,
   keySpecsFromMods,
+  keySpecsFromShortcut,
   type LayerListItem,
   LayerStack,
   type LayerStackItem,

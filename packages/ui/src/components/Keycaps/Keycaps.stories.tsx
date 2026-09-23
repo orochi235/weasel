@@ -4,6 +4,7 @@ import { KeySequence, type KeySpec, type KeySequenceProps } from './Keycaps';
 import {
   keySpecFromKey,
   keySpecsFromMods,
+  keySpecsFromShortcut,
   type KeyCapVariant,
   type LegendStyle,
   type LogicalMod,
@@ -138,6 +139,14 @@ export const MultiModifier: Story = {
       { label: '⌘' },
     ],
     separator: '+',
+  },
+};
+
+/** A kit shortcut (`{ key, mod, shift, alt }`) through `keySpecsFromShortcut`,
+ *  which spells it for the platform: this one is pinned to Windows. */
+export const FromShortcut: Story = {
+  args: {
+    keys: keySpecsFromShortcut({ key: 'z', mod: true, shift: 'optional' }, { platform: 'windows' }),
   },
 };
 
