@@ -46,7 +46,7 @@ import {
   type Conflict,
   type RegistryEntry,
 } from '@weasel-js/core/routing';
-import { formatShortcutParts, KeySequence } from '@weasel-js/ui';
+import { DataGrid, formatShortcutParts, KeySequence, type DataGridColumn } from '@weasel-js/ui';
 import { lookupShortcutByToolId } from './keybindingsView';
 import {
   AFFORDANCE_PREFIX,
@@ -243,7 +243,12 @@ function ToolsWidget({
   actions: readonly Action[];
 }): ReactElement {
   const ambientSet = new Set(slots.ambient);
-  const rows = [...defs].sort((a, b) => a.id.localeCompare(b.id));
+  const rows: ToolRow[] = defs.map((d) => ({
+    id: d.id,
+    hookName: d.hookName,
+    slot: ambientSet.has(d.id) ? 'ambient' : 'registry',
+    shortcut: lookupShortcutByToolId(d.id, actions),
+  }));
   return (
     <div className={s.widget}>
       <h2 className={s.widgetTitle}>Tools · {defs.length}</h2>
@@ -251,80 +256,69 @@ function ToolsWidget({
         {rows.length === 0 ? (
           <p className={s.empty}>No tools yet (canvas still mounting).</p>
         ) : (
-          <table className={s.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Hook</th>
-                <th>Slot</th>
-                <th>Switch</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((d) => (
-                <tr key={d.id}>
-                  <td><code>{d.id}</code></td>
-                  <td>{d.hookName ?? <span className={s.empty}>—</span>}</td>
-                  <td>{ambientSet.has(d.id) ? 'ambient' : 'registry'}</td>
-                  <td><KeySequence keys={formatShortcutParts(lookupShortcutByToolId(d.id, actions))?.map((label) => ({ label }))} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataGrid rows={rows} columns={TOOL_COLUMNS} defaultSort={{ columnId: 'id', direction: 'asc' }} />
         )}
       </div>
     </div>
   );
 }
+
+interface ToolRow {
+  id: string;
+  hookName: string | undefined;
+  slot: 'ambient' | 'registry';
+  shortcut: ReturnType<typeof lookupShortcutByToolId>;
+}
+
+const TOOL_COLUMNS: readonly DataGridColumn<ToolRow>[] = [
+  { id: 'id', header: 'ID', render: (r) => <code>{r.id}</code> },
+  { id: 'hookName', header: 'Hook', render: (r) => r.hookName ?? <span className={s.empty}>—</span> },
+  { id: 'slot', header: 'Slot' },
+  {
+    id: 'shortcut',
+    header: 'Switch',
+    sortable: false,
+    render: (r) => <KeySequence keys={formatShortcutParts(r.shortcut)?.map((label) => ({ label }))} />,
+  },
+];
 
 // ─────────────────────────────────────────────────────────────────────────
 // Widget: registered actions (kit-standard + anything else in scope).
 // ─────────────────────────────────────────────────────────────────────────
 
 function ActionsWidget({ actions }: { actions: readonly Action[] }): ReactElement {
-  const rows = [...actions].sort((a, b) => a.id.localeCompare(b.id));
   return (
     <div className={s.widget}>
       <h2 className={s.widgetTitle}>Actions · {actions.length}</h2>
       <div className={s.widgetBodyScrollY}>
-        {rows.length === 0 ? (
+        {actions.length === 0 ? (
           <p className={s.empty}>No actions registered. Mount an ActionsProvider upstream.</p>
         ) : (
-          <table className={s.table}>
-            <thead>
-              <tr>
-                <th>Icon</th>
-                <th>ID</th>
-                <th>Group</th>
-                <th>Binding</th>
-                <th>Requires</th>
-                <th>Enabled</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((a) => {
-                const requires = (a as Action & { requires?: readonly string[] }).requires;
-                const enabled = snapshotEnabled(a);
-                return (
-                  <tr key={a.id}>
-                    <td className={s.iconCell}>{renderIcon(a.icon)}</td>
-                    <td><code>{a.id}</code></td>
-                    <td>{a.group ?? <span className={s.empty}>—</span>}</td>
-                    <td>{renderBinding(a)}</td>
-                    <td>{requires && requires.length > 0
-                      ? <code>{requires.join(', ')}</code>
-                      : <span className={s.empty}>—</span>}</td>
-                    <td>{enabled}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <DataGrid rows={actions} columns={ACTION_COLUMNS} defaultSort={{ columnId: 'id', direction: 'asc' }} />
         )}
       </div>
     </div>
   );
 }
+
+const ACTION_COLUMNS: readonly DataGridColumn<Action>[] = [
+  { id: 'icon', header: 'Icon', sortable: false, className: s.iconCell, render: (a) => renderIcon(a.icon) },
+  { id: 'id', header: 'ID', render: (a) => <code>{a.id}</code> },
+  { id: 'group', header: 'Group', render: (a) => a.group ?? <span className={s.empty}>—</span> },
+  { id: 'binding', header: 'Binding', sortable: false, render: renderBinding },
+  {
+    id: 'requires',
+    header: 'Requires',
+    sortable: false,
+    render: (a) => {
+      const requires = (a as Action & { requires?: readonly string[] }).requires;
+      return requires && requires.length > 0
+        ? <code>{requires.join(', ')}</code>
+        : <span className={s.empty}>—</span>;
+    },
+  },
+  { id: 'enabled', header: 'Enabled', sortable: false, render: snapshotEnabled },
+];
 
 // ─────────────────────────────────────────────────────────────────────────
 // Widget: route signatures pulled from the live ToolDefs via
@@ -349,56 +343,76 @@ function RoutesWidget({
     || a.gesture.localeCompare(b.gesture)
     || (a.arg ?? '').localeCompare(b.arg ?? '')
     || (a.target ?? '').localeCompare(b.target ?? ''));
+  const rows = withUniqueIds(sorted.map((r): Omit<RouteRow, 'id'> => {
+    const mods = canonicalModifiers(r.modifiers);
+    return {
+      key: [r.toolId, r.phase, r.gesture, r.arg ?? '', r.target ?? '', mods, r.actionId].join('|'),
+      toolId: r.toolId,
+      slot: ambientSet.has(r.toolId) ? 'ambient' : 'registry',
+      phase: r.phase,
+      gesture: r.gesture,
+      arg: r.arg,
+      target: r.target,
+      mods,
+      specificity: specificity(r.spec).join(' · '),
+    };
+  }));
   return (
     <div className={s.widget}>
       <h2 className={s.widgetTitle}>Routes · {routes.length}</h2>
       <div className={s.widgetBodyScrollXY}>
-        {sorted.length === 0 ? (
+        {rows.length === 0 ? (
           <p className={s.empty}>No routes (no tools mounted yet).</p>
         ) : (
-          <table className={s.table}>
-            <thead>
-              <tr>
-                <th>Tool</th>
-                <th>Slot</th>
-                <th>Phase</th>
-                <th>Gesture</th>
-                <th>Arg</th>
-                <th>Target</th>
-                <th>Mods</th>
-                <th title="target, required mods, phase declared, typed drop/paste">
-                  Specificity
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((r, i) => {
-                const modKey = canonicalModifiers(r.modifiers);
-                return (
-                <tr key={`${r.toolId}-${r.phase}-${r.gesture}-${r.arg ?? ''}-${r.target ?? ''}-${modKey}-${i}`}>
-                  <td><code>{r.toolId}</code></td>
-                  <td>{ambientSet.has(r.toolId) ? 'ambient' : 'registry'}</td>
-                  <td>{r.phase}</td>
-                  <td>{r.gesture}</td>
-                  <td>{r.arg == null
-                    ? <span className={s.empty}>—</span>
-                    : <code>{r.arg}</code>}</td>
-                  <td>{r.target == null
-                    ? <span className={s.empty}>—</span>
-                    : <code>{r.target}</code>}</td>
-                  <td>{modKey === ''
-                    ? <span className={s.empty}>—</span>
-                    : <code>{modKey}</code>}</td>
-                  <td><code>{specificity(r.spec).join(' · ')}</code></td>
-                </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <DataGrid rows={rows} columns={ROUTE_COLUMNS} />
         )}
       </div>
     </div>
   );
+}
+
+interface RouteRow {
+  id: string;
+  key: string;
+  toolId: string;
+  slot: 'ambient' | 'registry';
+  phase: string;
+  gesture: string;
+  arg: string | undefined;
+  target: string | undefined;
+  mods: string;
+  specificity: string;
+}
+
+/** Codes a value, or a muted dash when it is absent. */
+function codeOrDash(v: string | undefined): ReactNode {
+  return v == null || v === '' ? <span className={s.empty}>—</span> : <code>{v}</code>;
+}
+
+const SPECIFICITY_HEADER = (
+  <span title="target, required mods, phase declared, typed drop/paste">Specificity</span>
+);
+
+const ROUTE_COLUMNS: readonly DataGridColumn<RouteRow>[] = [
+  { id: 'toolId', header: 'Tool', render: (r) => <code>{r.toolId}</code> },
+  { id: 'slot', header: 'Slot' },
+  { id: 'phase', header: 'Phase' },
+  { id: 'gesture', header: 'Gesture' },
+  { id: 'arg', header: 'Arg', render: (r) => codeOrDash(r.arg) },
+  { id: 'target', header: 'Target', render: (r) => codeOrDash(r.target) },
+  { id: 'mods', header: 'Mods', render: (r) => codeOrDash(r.mods) },
+  { id: 'specificity', header: SPECIFICITY_HEADER, render: (r) => <code>{r.specificity}</code> },
+];
+
+/** Gives each row an `id` from its `key`, numbering repeats so two identical
+ *  bindings still get distinct, order-independent ids. */
+function withUniqueIds<T extends { key: string }>(rows: readonly T[]): (T & { id: string })[] {
+  const seen = new Map<string, number>();
+  return rows.map((r) => {
+    const n = seen.get(r.key) ?? 0;
+    seen.set(r.key, n + 1);
+    return { ...r, id: n === 0 ? r.key : `${r.key}#${n}` };
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -569,53 +583,66 @@ export function ResolutionWidget({
         {candidates.length === 0 ? (
           <p className={s.empty}>No binding matches this input.</p>
         ) : (
-          <table className={s.table}>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Scope</th>
-                <th>Tool</th>
-                <th>Action</th>
-                <th title="target, required mods, phase declared, typed drop/paste">
-                  Specificity
-                </th>
-                <th>Verdict</th>
-              </tr>
-            </thead>
-            <tbody>
-              {candidates.map((c, i) => (
-                <tr key={`${c.actionId}-${i}`} className={verdictClass(c.verdict.kind)}>
-                  <td>{i + 1}</td>
-                  <td>{c.scope}</td>
-                  <td>
-                    <code>{c.ownerToolId ?? '—'}</code>
-                    {isPredicateTarget(c.binding.spec) && (
-                      <span
-                        className={s.predicateBadge}
-                        title="Evaluated against a synthesized hit — a predicate reading more than `kind` may differ at runtime."
-                      >?</span>
-                    )}
-                  </td>
-                  <td><code>{c.actionId}</code></td>
-                  <td><code>{c.specificity.join(' · ')}</code></td>
-                  <td>
-                    {verdictText(c.verdict)}
-                    {c.verdict.kind === 'disabled' && (
-                      <span
-                        className={s.predicateBadge}
-                        title="`enabled()` ran against a synthesized context with no deps wired, so this reason reflects an empty selection / scene rather than the live one."
-                      >?</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataGrid
+            rows={withUniqueIds(candidates.map((c, i) => ({
+              key: `${c.scope}|${c.ownerToolId ?? ''}|${c.actionId}`,
+              rank: i + 1,
+              candidate: c,
+            })))}
+            columns={RESOLUTION_COLUMNS}
+            rowClassName={(r) => verdictClass(r.candidate.verdict.kind)}
+          />
         )}
       </div>
     </div>
   );
 }
+
+interface ResolutionRow { id: string; rank: number; candidate: ResolvedCandidate }
+
+const RESOLUTION_COLUMNS: readonly DataGridColumn<ResolutionRow>[] = [
+  { id: 'rank', header: '#', sortable: false },
+  { id: 'scope', header: 'Scope', sortable: false, render: (r) => r.candidate.scope },
+  {
+    id: 'tool',
+    header: 'Tool',
+    sortable: false,
+    render: ({ candidate: c }) => (
+      <>
+        <code>{c.ownerToolId ?? '—'}</code>
+        {isPredicateTarget(c.binding.spec) && (
+          <span
+            className={s.predicateBadge}
+            title="Evaluated against a synthesized hit — a predicate reading more than `kind` may differ at runtime."
+          >?</span>
+        )}
+      </>
+    ),
+  },
+  { id: 'action', header: 'Action', sortable: false, render: (r) => <code>{r.candidate.actionId}</code> },
+  {
+    id: 'specificity',
+    header: SPECIFICITY_HEADER,
+    sortable: false,
+    render: (r) => <code>{r.candidate.specificity.join(' · ')}</code>,
+  },
+  {
+    id: 'verdict',
+    header: 'Verdict',
+    sortable: false,
+    render: ({ candidate: c }) => (
+      <>
+        {verdictText(c.verdict)}
+        {c.verdict.kind === 'disabled' && (
+          <span
+            className={s.predicateBadge}
+            title="`enabled()` ran against a synthesized context with no deps wired, so this reason reflects an empty selection / scene rather than the live one."
+          >?</span>
+        )}
+      </>
+    ),
+  },
+];
 
 function verdictClass(kind: ResolvedCandidate['verdict']['kind']): string {
   if (kind === 'would-fire') return s.verdictFires;
@@ -641,29 +668,27 @@ function ConflictsWidget({ conflicts }: { conflicts: readonly Conflict[] }): Rea
         {conflicts.length === 0 ? (
           <p className={s.empty}>No exact-tuple route conflicts in this bundle.</p>
         ) : (
-          <ul className={s.conflicts}>
-            {conflicts.map((c, i) => {
-              const modKey = canonicalModifiers(c.modifiers);
-              return (
-              <li key={i}>
-                <code>{c.phase}.{c.gesture}{c.arg != null ? `(${c.arg})` : ''}{c.target != null ? `.${c.target}` : ''}</code>
-                {modKey !== '' && <> · <code>{modKey}</code></>}
-                {' '}claimed by{' '}
-                {c.toolIds.map((id, j) => (
-                  <span key={id}>
-                    {j > 0 && ', '}
-                    <code>{id}</code>
-                  </span>
-                ))}
-              </li>
-              );
-            })}
-          </ul>
+          <DataGrid
+            rows={withUniqueIds(conflicts.map((c) => {
+              const route = `${c.phase}.${c.gesture}${c.arg != null ? `(${c.arg})` : ''}${c.target != null ? `.${c.target}` : ''}`;
+              const mods = canonicalModifiers(c.modifiers);
+              return { key: `${route}|${mods}`, route, mods, toolIds: c.toolIds.join(', ') };
+            }))}
+            columns={CONFLICT_COLUMNS}
+          />
         )}
       </div>
     </div>
   );
 }
+
+interface ConflictRow { id: string; route: string; mods: string; toolIds: string }
+
+const CONFLICT_COLUMNS: readonly DataGridColumn<ConflictRow>[] = [
+  { id: 'route', header: 'Route', render: (r) => <code>{r.route}</code> },
+  { id: 'mods', header: 'Mods', render: (r) => codeOrDash(r.mods) },
+  { id: 'toolIds', header: 'Claimed by', render: (r) => <code>{r.toolIds}</code> },
+];
 
 // ─────────────────────────────────────────────────────────────────────────
 // Widget: live dispatch trace. Reads the kit's dev-only rolling log

@@ -120,10 +120,6 @@
 .iconCell { width: 18px; }
 .iconCell svg { width: 14px; height: 14px; vertical-align: middle; }
 
-.conflicts { margin: 0; padding-left: var(--wzl-space-8); font-size: 12px; }
-.conflicts li { margin: var(--wzl-space-2) 0; }
-.conflicts code { font-size: var(--wzl-font-size-sm); }
-
 /* Action.defaultBinding rendering — one row per binding, key bindings
    render as KeyCaps; non-key gestures get a compact code tag. */
 .bindingList {
