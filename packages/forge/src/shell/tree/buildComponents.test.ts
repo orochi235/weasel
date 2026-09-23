@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildComponents, filterComponents, libraryOf } from './buildComponents';
+import { buildComponents, componentNodes, filterComponents, libraryOf } from './buildComponents';
+import type { TreeNode } from './buildTree';
 import type { IndexEntry } from '../../story/types';
 
 const entry = (title: string, name: string, file: string): IndexEntry => ({
@@ -71,6 +72,41 @@ describe('filterComponents', () => {
     const got = filterComponents(rows, 'disabled');
     expect(got).toHaveLength(1);
     expect(got[0].entries.map((e) => e.name)).toEqual(['Disabled']);
+  });
+});
+
+describe('componentNodes', () => {
+  /** Folders as `label/`, stories as their row label, nested as arrays. */
+  const shape = (nodes: readonly TreeNode[]): unknown[] =>
+    nodes.map((node) =>
+      node.kind === 'folder' ? { [`${node.label}/`]: shape(node.children) } : (node.label ?? node.entry.name),
+    );
+
+  it('makes every component a folder led by its index page, one story or many', () => {
+    const nodes = componentNodes(
+      buildComponents([
+        entry('weasel-ui/Foundations/Button', 'Default', UI),
+        entry('weasel-ui/Foundations/Button', 'Disabled', UI),
+        entry('labkit/Primitives/JobProgress', 'Running', LABKIT),
+      ]),
+    );
+    expect(shape(nodes)).toEqual([
+      { 'Button/': ['Index', 'Default', 'Disabled'] },
+      { 'JobProgress/': ['Index', 'Running'] },
+    ]);
+    const first = nodes[0]?.kind === 'folder' ? nodes[0].children[0] : undefined;
+    expect(first?.kind === 'story' && first.entry.id).toBe('weasel-ui-foundations-button:index');
+  });
+
+  it('keeps the index page of a component the filter names, and not of one matched only by a story', () => {
+    const rows = buildComponents([
+      entry('weasel-ui/Foundations/Button', 'Default', UI),
+      entry('weasel-ui/Foundations/Button', 'Disabled', UI),
+    ]);
+    expect(shape(componentNodes(filterComponents(rows, 'button')))).toEqual([
+      { 'Button/': ['Index', 'Default', 'Disabled'] },
+    ]);
+    expect(shape(componentNodes(filterComponents(rows, 'disabled')))).toEqual([{ 'Button/': ['Disabled'] }]);
   });
 });
 

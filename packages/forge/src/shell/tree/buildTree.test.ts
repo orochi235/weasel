@@ -17,7 +17,9 @@ function shape(nodes: readonly TreeNode[]): unknown[] {
 describe('buildTree', () => {
   it('nests titles by their segments, with each component holding its stories', () => {
     const tree = buildTree([entry('Kit/Button', 'Primary'), entry('Kit/Button', 'Ghost'), entry('Kit/Slider', 'Default')]);
-    expect(shape(tree)).toEqual([{ 'Kit/': [{ 'Button/': ['Primary', 'Ghost'] }, { 'Slider/': ['Default'] }] }]);
+    expect(shape(tree)).toEqual([
+      { 'Kit/': [{ 'Button/': ['Index', 'Primary', 'Ghost'] }, { 'Slider/': ['Index', 'Default'] }] },
+    ]);
   });
 
   it('gives each folder the path of the segments that reach it', () => {
@@ -27,6 +29,14 @@ describe('buildTree', () => {
     expect(button?.kind === 'folder' && button.path).toBe('Kit/Button');
   });
 
+  it('opens each component folder with its index page, and gives a folder no component has none', () => {
+    const [kit] = buildTree([entry('Kit/Button', 'Primary')]);
+    expect(kit?.kind === 'folder' && kit.children.every((node) => node.kind === 'folder')).toBe(true);
+    const button = kit?.kind === 'folder' ? kit.children[0] : undefined;
+    const first = button?.kind === 'folder' ? button.children[0] : undefined;
+    expect(first?.kind === 'story' && first.entry).toMatchObject({ id: 'kit-button:index', name: 'Index' });
+  });
+
   it('sorts folders before stories and folders alphabetically, keeping stories in index order', () => {
     const tree = buildTree([
       entry('Zed', 'Second'),
@@ -34,7 +44,10 @@ describe('buildTree', () => {
       entry('Zed', 'First'),
       entry('Alpha', 'One'),
     ]);
-    expect(shape(tree)).toEqual([{ 'Alpha/': ['One'] }, { 'Zed/': [{ 'Inner/': ['Only'] }, 'Second', 'First'] }]);
+    expect(shape(tree)).toEqual([
+      { 'Alpha/': ['Index', 'One'] },
+      { 'Zed/': ['Index', { 'Inner/': ['Index', 'Only'] }, 'Second', 'First'] },
+    ]);
   });
 });
 
@@ -47,6 +60,10 @@ describe('filterTree', () => {
 
   it('matches across the title and the name', () => {
     expect(shape(filterTree(tree, 'SLIDER/def'))).toEqual([{ 'Kit/': [{ 'Slider/': ['Default'] }] }]);
+  });
+
+  it('keeps the index page of a component the query names', () => {
+    expect(shape(filterTree(tree, 'button'))).toEqual([{ 'Kit/': [{ 'Button/': ['Index', 'Primary', 'Ghost'] }] }]);
   });
 
   it('drops folders left with nothing in them', () => {

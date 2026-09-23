@@ -2,6 +2,7 @@ import { Lab, type LabContribution, type StorageAdapter, useLabContext } from '@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ShellConfig } from '../config';
 import { type Globals, stableStringify } from '../protocol/messages';
+import { indexEntries } from '../story/indexPages';
 import type { IndexEntry } from '../story/types';
 import { InfoIcon } from '@weasel-js/ui';
 import { A11Y_SECTION } from './a11y/A11yPanel';
@@ -28,10 +29,10 @@ export interface WorkshopProps {
 
 const NO_DECLARATIONS: GlobalDeclarations = {};
 
-/** The story `#/<id>` names, when it is indexed; otherwise the first story. Read when the lab mounts. */
-function initialStory(index: readonly IndexEntry[], fallback: string): string {
+/** The story or index page `#/<id>` names, when there is one; otherwise `fallback`. Read when the lab mounts. */
+function initialStory(entries: readonly IndexEntry[], fallback: string): string {
   const route = readRoute();
-  return route !== null && index.some((entry) => entry.id === route) ? route : fallback;
+  return route !== null && entries.some((entry) => entry.id === route) ? route : fallback;
 }
 
 /**
@@ -84,7 +85,8 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
     setPool(next);
     return () => next.dispose();
   }, [frameUrl]);
-  const registry = useStoryRegistry(index, { frameUrl, globals: declarations, frames });
+  const entries = useMemo(() => [...index, ...indexEntries(index)], [index]);
+  const registry = useStoryRegistry(entries, { frameUrl, globals: declarations, frames });
   const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
   const [infoOpen, setInfoOpen] = useState(false);
   useInfoShortcut(setInfoOpen);
@@ -134,7 +136,7 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
             title="weaselforge"
             density="roomy"
             instruments={registry.instruments}
-            defaultInstrument={initialStory(index, first.id)}
+            defaultInstrument={initialStory(entries, first.id)}
             storageKey={storageKey ?? 'weaselforge'}
             {...(storage ? { storage } : {})}
             labChrome={labChrome}
@@ -143,7 +145,7 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
             {...(config?.pages ? { pages: config.pages } : {})}
             {...(config?.path !== undefined ? { path: config.path } : {})}
           >
-            <RouteOpener index={index} />
+            <RouteOpener index={entries} />
             <StoryInfoDialog
               index={index}
               isReady={registry.isReady}

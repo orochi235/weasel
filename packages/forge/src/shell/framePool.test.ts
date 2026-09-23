@@ -18,7 +18,7 @@ describe('createFramePool', () => {
   afterEach(() => {
     pool?.dispose();
     pool = null;
-    delete proto.moveBefore;
+    Reflect.deleteProperty(proto, 'moveBefore');
     vi.useRealTimers();
   });
 

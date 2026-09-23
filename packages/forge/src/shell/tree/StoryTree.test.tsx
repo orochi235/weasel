@@ -1,6 +1,7 @@
 import { createMemoryAdapter, Lab, type LabContribution, type StorageAdapter } from '@weasel-js/labkit';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { indexEntries, indexId } from '../../story/indexPages';
 import type { IndexEntry } from '../../story/types';
 import { installResizeObserver } from '../labHarness';
 import { useStoryRegistry } from '../useStoryRegistry';
@@ -20,13 +21,15 @@ const primary = entry('Kit/Button', 'Primary');
 const ghost = entry('Kit/Button', 'Ghost');
 const slider = entry('Kit/Slider', 'Default');
 const index = [primary, ghost, slider];
+const withIndexPages = [...index, ...indexEntries(index)];
+const buttonIndex = withIndexPages.find((e) => e.id === indexId('Kit/Button')) as IndexEntry;
 
 const tree: LabContribution[] = [
   { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
 ];
 
 function Harness({ storage }: { storage: StorageAdapter }) {
-  const { instruments } = useStoryRegistry(index, { frameUrl: '/frame.html' });
+  const { instruments } = useStoryRegistry(withIndexPages, { frameUrl: '/frame.html' });
   return (
     <Lab
       instruments={instruments}
@@ -124,6 +127,31 @@ describe('StoryTree', () => {
     await waitFor(() => expect([...backing.keys()].some((key) => key.includes('fg-tree-open'))).toBe(true));
     const second = await mount(createMemoryAdapter(backing));
     expect(item(second.treeEl, 'Kit')).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('leads each component folder with its index page, and runs it like a story', async () => {
+    const { treeEl } = await mount();
+    openFolder('Kit');
+    openFolder('Button');
+    const group = within(item(treeEl, 'Button')).getByRole('group');
+    expect(within(group).getAllByRole('treeitem')[0]).toHaveTextContent('Index');
+    fireEvent.click(within(group).getByRole('treeitem', { name: 'Index' }));
+    await waitFor(() => expect(trialsOf(buttonIndex)).toHaveLength(1));
+    expect(allTrials()).toHaveLength(1);
+    expect(location.hash).toBe(`#/${encodeURIComponent(buttonIndex.id)}`);
+    expect(within(group).getByRole('treeitem', { name: 'Index' })).toHaveAttribute('aria-current', 'true');
+    expect(document.querySelector('.fg-route-miss')).toBeNull();
+  });
+
+  it('makes a one-story component a folder in the components view, led by its index page', async () => {
+    const view = render(<Harness storage={createMemoryAdapter()} />);
+    const treeEl = await screen.findByRole('tree', { name: 'Stories' });
+    const sliderRow = item(treeEl, 'Slider');
+    expect(sliderRow).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(within(sliderRow).getByText('Slider'));
+    const group = within(item(treeEl, 'Slider')).getByRole('group');
+    expect(within(group).getAllByRole('treeitem').map((el) => el.textContent)).toEqual(['Index', 'Default']);
+    view.unmount();
   });
 
   it('runs a clicked story in the focused trial, and sets the route', async () => {
@@ -284,6 +312,14 @@ describe('StoryTree', () => {
       fireEvent.keyDown(defaultItem, { key: 'Enter', shiftKey: true });
       await waitFor(() => expect(trialsOf(slider)).toHaveLength(2));
     });
+  });
+
+  it('opens the routed component in the components view, and leaves the others shut', async () => {
+    history.replaceState(null, '', `/#/${ghost.id}`);
+    render(<Harness storage={createMemoryAdapter()} />);
+    const treeEl = await screen.findByRole('tree', { name: 'Stories' });
+    expect(item(treeEl, 'Button')).toHaveAttribute('aria-expanded', 'true');
+    expect(item(treeEl, 'Slider')).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('names a route that matches no story', async () => {

@@ -1008,6 +1008,14 @@ controls. It is the only story runner in the repo.
   iframe. Mount the provisional instrument under the same tree position, or learn
   the viewport before the first instrument is built.
 
+- **(P3) Opening a trial in forge reloads another trial's story.** Measured
+  2026-09-22 in the dev app: with one Button trial open, opening a second from
+  the route re-ran the first trial's `FrameView` frame effect, so its story
+  loaded again into a new frame. Whether labkit remounts the trial's body when
+  the tiling changes, or its host briefly leaves the `IntersectionObserver`
+  margin, is not yet known. Each reload also takes a frame from the warm pool
+  (`packages/forge/src/shell/framePool.ts`), which is why it keeps two.
+
 - **(P3) forge's lab scrolls sideways with two trials open beside the aside.**
   labkit's fit check (`packages/labkit/src/lab/fitCheck.ts`) warns that
   `.lk-shell-body` scrolls: a pane inside a trial's `lk-trial__panes` split

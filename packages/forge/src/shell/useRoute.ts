@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /** What forge keeps on a history entry: its place in the session, and whether reaching it swapped a trial's story in place. */
 export interface RouteEntry {
@@ -30,25 +30,27 @@ function stamp(entry: RouteEntry, hash: string): void {
   history.replaceState({ ...(history.state ?? {}), forgeRoute: entry }, '', hash);
 }
 
-/** The story the URL names, and a way to name another; `inPlace` says the new story replaced the old one in its trial. */
-export function useRoute(): [string | null, (id: string, options?: { inPlace?: boolean }) => void] {
-  const [route, setRoute] = useState(readRoute);
+/** Names story `id` in the URL; `inPlace` says it replaced the previous story in its trial. */
+export function setRoute(id: string, options: { inPlace?: boolean } = {}): void {
+  const hash = `#/${encodeURIComponent(id)}`;
+  if (readRoute() === id) {
+    history.replaceState(history.state, '', hash);
+    return;
+  }
+  const from = readRouteEntry() ?? { step: 0, inPlace: false };
+  stamp(from, location.hash);
+  location.hash = hash;
+  stamp({ step: from.step + 1, inPlace: options.inPlace ?? false }, hash);
+}
+
+/** The story the URL names, and `setRoute` to name another. */
+export function useRoute(): [string | null, typeof setRoute] {
+  const [route, setCurrent] = useState(readRoute);
   useEffect(() => {
-    const sync = (): void => setRoute(readRoute());
+    const sync = (): void => setCurrent(readRoute());
     window.addEventListener('hashchange', sync);
     sync();
     return () => window.removeEventListener('hashchange', sync);
   }, []);
-  const go = useCallback((id: string, options: { inPlace?: boolean } = {}) => {
-    const hash = `#/${encodeURIComponent(id)}`;
-    if (readRoute() === id) {
-      history.replaceState(history.state, '', hash);
-      return;
-    }
-    const from = readRouteEntry() ?? { step: 0, inPlace: false };
-    stamp(from, location.hash);
-    location.hash = hash;
-    stamp({ step: from.step + 1, inPlace: options.inPlace ?? false }, hash);
-  }, []);
-  return [route, go];
+  return [route, setRoute];
 }

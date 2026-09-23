@@ -385,6 +385,29 @@ describe('FrameView', () => {
     expect(view.container.querySelector('iframe')).toBe(iframe);
     expect(config()).toEqual({ label: 'clicks', n: 1 });
   });
+
+  it('swaps its trial to the story a frame asks to open, in place, and names it in the route', async () => {
+    const other: IndexEntry = { ...entry, id: 'test-counter--other', name: 'Other', exportName: 'Other' };
+    const instrument = (e: IndexEntry) =>
+      storyInstrument({ entry: e, ready, answers: createAnswerBook(), frameUrl: '/frame.html', onReady: vi.fn() });
+    lab = null;
+    const view = render(
+      <StoryGlobalsContext.Provider value={globals}>
+        <Lab instruments={[instrument(entry), instrument(other)]} defaultInstrument={entry.id}>
+          {captureLab()}
+        </Lab>
+      </StoryGlobalsContext.Provider>,
+    );
+    cleanups.push(() => history.replaceState(null, '', '/'));
+    const { frame } = connect(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
+    frame.send({ type: 'open', id: 'no-such-story' });
+    await flush();
+    expect((lab as LabContextValue | null)?.trials.map((trial) => trial.instrumentName)).toEqual([entry.id]);
+    frame.send({ type: 'open', id: other.id });
+    await flush();
+    expect((lab as LabContextValue | null)?.trials.map((trial) => trial.instrumentName)).toEqual([other.id]);
+    expect(location.hash).toBe(`#/${other.id}`);
+  });
 });
 
 
@@ -431,7 +454,7 @@ describe('FrameView handshake', () => {
     const proto = Element.prototype as Element & { moveBefore?: (node: Node, child: Node | null) => void };
     const moveBefore = vi.fn();
     proto.moveBefore = moveBefore;
-    cleanups.push(() => delete proto.moveBefore);
+    cleanups.push(() => Reflect.deleteProperty(proto, 'moveBefore'));
     const warm = document.createElement('iframe');
     document.body.append(warm);
     cleanups.push(() => warm.remove());

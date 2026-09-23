@@ -1,3 +1,4 @@
+import { indexEntries, isIndexId } from '../../story/indexPages';
 import type { IndexEntry } from '../../story/types';
 
 export type TreeNode =
@@ -9,16 +10,20 @@ type Folder = Extract<TreeNode, { kind: 'folder' }>;
 function sortFolder(nodes: TreeNode[]): TreeNode[] {
   const folders = nodes.filter((n): n is Folder => n.kind === 'folder');
   const stories = nodes.filter((n) => n.kind === 'story');
+  const pages = stories.filter((n) => isIndexId(n.entry.id));
   folders.sort((a, b) => a.label.localeCompare(b.label));
   for (const folder of folders) folder.children = sortFolder(folder.children);
-  return [...folders, ...stories];
+  return [...pages, ...folders, ...stories.filter((n) => !isIndexId(n.entry.id))];
 }
 
-/** Story titles as nested folders, split on `/`; the last segment is the component holding its stories. */
+/**
+ * Story titles as nested folders, split on `/`; the last segment is the component holding its index page, then
+ * its subfolders, then its stories.
+ */
 export function buildTree(index: readonly IndexEntry[]): TreeNode[] {
   const root: TreeNode[] = [];
   const folders = new Map<string, Folder>();
-  for (const entry of index) {
+  for (const entry of [...indexEntries(index), ...index]) {
     let siblings = root;
     let path = '';
     for (const label of entry.title.split('/')) {

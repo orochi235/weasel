@@ -1,3 +1,4 @@
+import { indexEntries } from '../../story/indexPages';
 import type { IndexEntry } from '../../story/types';
 import type { TreeNode } from './buildTree';
 
@@ -9,6 +10,8 @@ export interface ComponentRow {
   label: string;
   /** Which library it ships in. */
   library: string;
+  /** The component's index page; absent when a filter kept the row only for some of its stories. */
+  index?: IndexEntry;
   entries: IndexEntry[];
 }
 
@@ -48,6 +51,7 @@ export function buildComponents(index: readonly IndexEntry[]): ComponentRow[] {
         path: entry.title,
         label: segments[segments.length - 1],
         library: libraryOf(entry),
+        index: indexEntries([entry])[0],
         entries: [],
       };
       byTitle.set(entry.title, row);
@@ -95,8 +99,9 @@ function disambiguate(rows: readonly ComponentRow[]): void {
 }
 
 /** The components whose name, library or story names contain `query`,
- *  ignoring case. A matching component keeps all its stories; a component
- *  matching only through one story keeps just the stories that matched. */
+ *  ignoring case. A matching component keeps its index page and all its
+ *  stories; a component matching only through one story keeps just the
+ *  stories that matched. */
 export function filterComponents(rows: readonly ComponentRow[], query: string): ComponentRow[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [...rows];
@@ -107,27 +112,28 @@ export function filterComponents(rows: readonly ComponentRow[], query: string): 
       continue;
     }
     const entries = row.entries.filter((entry) => entry.name.toLowerCase().includes(needle));
-    if (entries.length > 0) out.push({ ...row, entries });
+    if (entries.length > 0) out.push({ path: row.path, label: row.label, library: row.library, entries });
   }
   return out;
 }
 
 /**
  * The flat component list as tree nodes, so the sidebar renders and navigates
- * both views with one code path. A component with a single story becomes that
- * story's row directly — an expander onto one child is a click for nothing.
+ * both views with one code path. Every component is a folder holding its index
+ * page, then its stories.
  */
 export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
-  return rows.map((row): TreeNode =>
-    row.entries.length === 1
-      ? { kind: 'story', entry: row.entries[0], tag: row.library, label: row.label }
-      : {
-          kind: 'folder',
-          label: row.label,
-          path: row.path,
-          tag: row.library,
-          children: row.entries.map((entry) => ({ kind: 'story', entry })),
-        },
+  return rows.map(
+    (row): TreeNode => ({
+      kind: 'folder',
+      label: row.label,
+      path: row.path,
+      tag: row.library,
+      children: [
+        ...(row.index ? [{ kind: 'story', entry: row.index } as const] : []),
+        ...row.entries.map((entry) => ({ kind: 'story', entry }) as const),
+      ],
+    }),
   );
 }
 

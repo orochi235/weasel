@@ -1,6 +1,6 @@
 # forge: faster frames, then component index pages
 
-**Status: designed 2026-09-22, being built on `forge-index-pages`.**
+**Status: built 2026-09-22 on `forge-index-pages`.**
 
 For whoever works on forge's shell or frame. It answers two questions: how a
 story reaches the screen quickly, and what a component's index page is.
@@ -26,24 +26,30 @@ new id, and labkit remounts `<Trial key={id}>` with its iframe.
 
 ## Stage 1: faster frames
 
-**The frame says hello.** The frame entry posts `weaselforge:hello` to its
-parent as soon as it runs. The shell hands over the port on that, not on `load`.
-The story to show arrives as the first message on the port — `open`, naming a
-story or an index — instead of in the URL. When the URL does carry a target
-(`frame.html#<id>`), the frame starts importing it at once, in parallel with the
-handshake; `open` then finds the import under way.
+After stage 1, a warm frame costs 75 requests on the dev server before the
+story's own (9 for Button), and the production build opens a story in a median
+262 ms against 409 ms before.
 
-**A pool of warm frames.** The workshop keeps one frame document loaded, blank
-and off-screen. A `FrameView` claims it, moves it into its host with
+**The frame says hello.** The frame entry posts `weaselforge:hello` to its
+parent as soon as it runs, and the shell hands over the port on that. Never on
+`load`: the browser fires `load` first, and a port handed over then is the one
+the frame keeps. The handoff message carries the id to show, a story or an
+index, instead of the URL. When the URL does carry one (`frame.html#<id>`), the
+frame starts importing it at once, in parallel with the handshake.
+
+**A pool of warm frames.** The workshop keeps two frame documents loaded, blank
+and off-screen. A `FrameView` claims one, moves it into its host with
 `Element.prototype.moveBefore` (which moves an iframe without reloading it) and
-sends `open`. A frame that has shown something is discarded when its view
+hands it the port. A frame that has shown something is discarded when its view
 unmounts — never returned to the pool — so no story's global CSS or leftover
-state reaches the next one. The pool refills on idle. Where `moveBefore` is
+state reaches the next one. The pool refills when idle. Where `moveBefore` is
 absent, or no warm frame is ready, the view creates a fresh iframe as before.
 
-**labkit only where it is used.** `forge.frame.tsx` wraps `labkit/` stories in
-`LabRoot`; it now loads labkit lazily, so every other frame stops pulling in the
-whole package.
+**Only what the story needs.** `forge.frame.tsx` wraps `labkit/` stories in
+`LabRoot`; it now imports labkit in the new `FrameSetup.prepare` hook, awaited
+before a story first renders, and only for labkit stories. `labkit/config` no
+longer imports `@weasel-js/ui` at runtime, which had pulled ui's 167-module
+barrel into every frame.
 
 ## Stage 2: index pages
 
@@ -70,7 +76,9 @@ description, then one section per story, in file order:
   of the story rendered once per value, every other leaf at its default. One
   control varies at a time, never the cross product. Enums over 8 options,
   custom controls and leaves hidden at the defaults are skipped; at most 6
-  rows per story.
+  rows per story. Only the first story with a given set of rows shows them:
+  stories of one CSF file share their meta's controls, and Button's eleven
+  stories otherwise repeated the same six rows eleven times.
 
 A story's `layout` holds per cell: `fullscreen` gets a fixed-height box.
 `play` does not run on an index. Cells mount only while near the viewport, so

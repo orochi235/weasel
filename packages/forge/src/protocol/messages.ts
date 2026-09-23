@@ -78,6 +78,8 @@ export type FromFrame =
   | { type: 'setState'; state: unknown }
   | { type: 'size'; width: number; height: number }
   | { type: 'vars'; vars: CssVarReport[] }
+  /** Asks the shell to show story `id` in this frame's trial in place of what it shows now. */
+  | { type: 'open'; id: string }
   | { type: 'played'; ok: boolean; message?: string }
   | { type: 'a11y'; id: string; ok: true; report: A11yReport }
   | { type: 'a11y'; id: string; ok: false; message: string }

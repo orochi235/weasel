@@ -1,6 +1,7 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
 import { Checkbox, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
 import { type FocusEvent, type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
+import { indexEntries } from '../../story/indexPages';
 import type { IndexEntry } from '../../story/types';
 import { revealTrial } from '../revealTrial';
 import { useRoute } from '../useRoute';
@@ -66,11 +67,12 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
         : filterTree(tree, query),
     [view, components, tree, query],
   );
-  const routed = kept.find((entry) => entry.id === route);
+  const routable = useMemo(() => [...kept, ...indexEntries(kept)], [kept]);
+  const routed = routable.find((entry) => entry.id === route);
   const routeAncestors = useMemo(() => ancestorsOf(routed), [routed]);
   const filtering = query.trim() !== '';
   const isOpen = (path: string): boolean =>
-    filtering || (folds[path] ?? (view === 'tree' && routeAncestors.has(path)));
+    filtering || (folds[path] ?? routeAncestors.has(path));
 
   const rows: Row[] = [];
   const collect = (nodes: readonly TreeNode[], parent: string | null): void => {

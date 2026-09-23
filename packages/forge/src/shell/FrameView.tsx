@@ -1,5 +1,5 @@
 import './shell.css';
-import { type RenderContext, TrialIdContext } from '@weasel-js/labkit';
+import { type RenderContext, TrialIdContext, useLabContext } from '@weasel-js/labkit';
 import { type RefObject, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { type Channel, type Mismatch, openChannel } from '../protocol/channel';
 import {
@@ -23,6 +23,7 @@ import { effectiveGlobals, GLOBALS_KEY, isGlobalsPath, storyConfig } from './glo
 import { type Ready, readyKey } from './readyKey';
 import { type A11yOutcome, TrialFramesContext } from './trialFrames';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
+import { setRoute } from './useRoute';
 
 export interface FrameViewProps {
   entry: IndexEntry;
@@ -123,6 +124,7 @@ export function FrameView(props: FrameViewProps) {
   const frames = useContext(TrialFramesContext);
   const [overrides] = useCssOverrides();
   const pool = useContext(FramePoolContext);
+  const lab = useLabContext();
   const src = `${frameUrl}#${entry.id}`;
   const title = `${entry.title} / ${entry.name}`;
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -130,8 +132,8 @@ export function FrameView(props: FrameViewProps) {
   const slotRef = useRef<HTMLDivElement>(null);
   const inView = useInView(hostRef);
   const link = useRef<Link | null>(null);
-  const latest = useRef({ ...props, globals, overrides, pool });
-  latest.current = { ...props, globals, overrides, pool };
+  const latest = useRef({ ...props, globals, overrides, pool, lab });
+  latest.current = { ...props, globals, overrides, pool, lab };
   const [fault, setFault] = useState<Fault | null>(null);
   // A loaded document stays hidden until its story has rendered, so a new trial never shows the blank page.
   const [pending, setPending] = useState(true);
@@ -192,6 +194,13 @@ export function FrameView(props: FrameViewProps) {
         else current.pending.get(msg.id)?.fail(new Error(msg.message));
         current.pending.delete(msg.id);
         break;
+      case 'open': {
+        const { lab: liveLab } = latest.current;
+        if (!trialId || !liveLab.instruments.some((instrument) => instrument.name === msg.id)) break;
+        liveLab.swapTrial(trialId, msg.id);
+        setRoute(msg.id, { inPlace: true });
+        break;
+      }
       case 'fault':
         // A newer input is already on its way to the frame, which faults again if it still throws.
         if (msg.phase === 'render' && msg.seq !== undefined && msg.seq < current.inputs) break;

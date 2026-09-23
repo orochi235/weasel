@@ -151,6 +151,22 @@ describe('Workshop', () => {
     for (const { frame } of frames) frame.close();
   });
 
+  it('opens a component’s index page the hash names', async () => {
+    location.hash = '#/x:index';
+    const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    expect(await frameSrc(container)).toBe('/frame.html#x:index');
+    expect(screen.getByRole('region', { name: 'Trial X / Index' })).toBeInTheDocument();
+    act(() => {
+      location.hash = '#/x--b';
+    });
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / B' })).toBeInTheDocument());
+    act(() => {
+      location.hash = '#/x:index';
+    });
+    await act(async () => {});
+    expect(screen.getAllByRole('region', { name: 'Trial X / Index' })).toHaveLength(1);
+  });
+
   it('opens the first story when the hash names none that is indexed', async () => {
     location.hash = '#/nope';
     const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
