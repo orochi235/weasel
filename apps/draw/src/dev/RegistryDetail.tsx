@@ -406,18 +406,6 @@ function TokenSetTable({ set }: { set: TokenSet }) {
       />
     );
   }
-  if (set.kind === 'keycap') {
-    return (
-      <DataGrid
-        rows={set.entries.map((e) => ({ id: e.value, entry: e }))}
-        columns={[
-          { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <code className={s.tag}>{r.entry.value}</code> },
-          { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <KeySequence keys={toKeys(r.entry.props.parts)} /> },
-        ]}
-        empty="No entries."
-      />
-    );
-  }
   return (
     <DataGrid
       rows={set.entries.map((e) => ({ id: e.value, entry: e }))}
