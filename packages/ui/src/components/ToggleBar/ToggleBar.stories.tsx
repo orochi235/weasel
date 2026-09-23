@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ToggleBar } from './ToggleBar';
 
 const meta: Meta<typeof ToggleBar> = {
-  title: 'weasel-ui/Foundations/ToggleBar',
+  title: 'ui/Foundations/ToggleBar',
   component: ToggleBar,
 };
 

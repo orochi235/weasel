@@ -6,7 +6,7 @@ import s from './Powerline.module.css';
 const ALL_CAPS: EdgeCap[] = ['flat', 'chevron', 'slant', 'slant-up', 'round', 'scallop', 'concave-chevron'];
 
 const meta: Meta<typeof Powerline> = {
-  title: 'weasel-ui/Foundations/Powerline',
+  title: 'ui/Foundations/Powerline',
   component: Powerline,
   args: {
     variant: 'solid',

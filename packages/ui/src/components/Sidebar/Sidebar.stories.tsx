@@ -3,7 +3,7 @@ import { Sidebar } from './Sidebar';
 import { SidebarPanel } from '../SidebarPanel';
 
 const meta: Meta<typeof Sidebar> = {
-  title: 'weasel-ui/Sidebar',
+  title: 'ui/Sidebar',
   component: Sidebar,
   parameters: { layout: 'fullscreen' },
 };

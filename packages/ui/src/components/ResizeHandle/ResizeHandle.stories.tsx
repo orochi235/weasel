@@ -5,7 +5,7 @@ import { Sidebar } from '../Sidebar';
 import { SidebarPanel } from '../SidebarPanel';
 
 const meta: Meta<typeof ResizeHandle> = {
-  title: 'weasel-ui/ResizeHandle',
+  title: 'ui/ResizeHandle',
   component: ResizeHandle,
 };
 export default meta;

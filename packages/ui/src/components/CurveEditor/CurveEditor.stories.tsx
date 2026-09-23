@@ -46,7 +46,7 @@ function Interactive(props: InteractiveProps) {
 }
 
 const meta: Meta<typeof Interactive> = {
-  title: 'weasel-ui/CurveEditor',
+  title: 'ui/CurveEditor',
   component: Interactive,
   argTypes: {
     initial: { control: false },

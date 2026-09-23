@@ -68,7 +68,7 @@ const mixedEnabled: Action[] = [
 ];
 
 const meta: Meta<typeof ActionBar> = {
-  title: 'weasel-ui/ActionBar',
+  title: 'ui/ActionBar',
   component: ActionBar,
 };
 export default meta;

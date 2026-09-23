@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildComponents, filterComponents, libraryOf } from './buildComponents';
+import { buildComponents, componentNodes, filterComponents, libraryOf } from './buildComponents';
 import type { IndexEntry } from '../../story/types';
 
 const entry = (title: string, name: string, file: string): IndexEntry => ({
@@ -16,8 +16,8 @@ const LABKIT = '/repo/packages/labkit/src/primitives/JobProgress.stories.tsx';
 describe('libraryOf', () => {
   it('reads the package, not the title prefix', () => {
     // The two title prefixes `packages/ui` actually ships.
-    expect(libraryOf(entry('weasel-ui/Foundations/Button', 'Default', UI))).toBe('weasel-ui');
-    expect(libraryOf(entry('Primitives/Checkbox', 'Default', UI))).toBe('weasel-ui');
+    expect(libraryOf(entry('ui/Foundations/Button', 'Default', UI))).toBe('ui');
+    expect(libraryOf(entry('Primitives/Checkbox', 'Default', UI))).toBe('ui');
     expect(libraryOf(entry('labkit/Primitives/JobProgress', 'Default', LABKIT))).toBe('labkit');
   });
 
@@ -29,14 +29,14 @@ describe('libraryOf', () => {
 describe('buildComponents', () => {
   it('collapses every title into one alphabetical list, stories kept', () => {
     const rows = buildComponents([
-      entry('weasel-ui/Foundations/Button', 'Default', UI),
-      entry('weasel-ui/Foundations/Button', 'Disabled', UI),
+      entry('ui/Foundations/Button', 'Default', UI),
+      entry('ui/Foundations/Button', 'Disabled', UI),
       entry('Primitives/Checkbox', 'Default', UI),
       entry('labkit/Primitives/JobProgress', 'Default', LABKIT),
     ]);
     expect(rows.map((r) => `${r.label} [${r.library}]`)).toEqual([
-      'Button [weasel-ui]',
-      'Checkbox [weasel-ui]',
+      'Button [ui]',
+      'Checkbox [ui]',
       'JobProgress [labkit]',
     ]);
     expect(rows[0].entries.map((e) => e.name)).toEqual(['Default', 'Disabled']);
@@ -44,18 +44,18 @@ describe('buildComponents', () => {
 
   it('keeps same-named components in different libraries apart', () => {
     const rows = buildComponents([
-      entry('weasel-ui/Sidebar', 'Default', UI),
+      entry('ui/Sidebar', 'Default', UI),
       entry('labkit/Primitives/Sidebar', 'Default', LABKIT),
     ]);
     expect(rows).toHaveLength(2);
-    expect(rows.map((r) => r.library)).toEqual(['labkit', 'weasel-ui']);
+    expect(rows.map((r) => r.library)).toEqual(['labkit', 'ui']);
   });
 });
 
 describe('filterComponents', () => {
   const rows = buildComponents([
-    entry('weasel-ui/Foundations/Button', 'Default', UI),
-    entry('weasel-ui/Foundations/Button', 'Disabled', UI),
+    entry('ui/Foundations/Button', 'Default', UI),
+    entry('ui/Foundations/Button', 'Disabled', UI),
     entry('labkit/Primitives/JobProgress', 'Running', LABKIT),
   ]);
 
@@ -79,9 +79,9 @@ describe('label disambiguation', () => {
 
   it('widens colliding labels leftward until they differ', () => {
     const rows = buildComponents([
-      entry('weasel-ui/Cursors/Gallery', 'Default', UI),
-      entry('weasel-ui/Icons/Gallery', 'Default', UI2),
-      entry('weasel-ui/Foundations/Button', 'Default', UI),
+      entry('ui/Cursors/Gallery', 'Default', UI),
+      entry('ui/Icons/Gallery', 'Default', UI2),
+      entry('ui/Foundations/Button', 'Default', UI),
     ]);
     const labels = rows.map((r) => r.label).sort();
     expect(labels).toEqual(['Button', 'Cursors/Gallery', 'Icons/Gallery']);
@@ -89,17 +89,37 @@ describe('label disambiguation', () => {
 
   it('leaves same-named components in different libraries alone — the tag tells them apart', () => {
     const rows = buildComponents([
-      entry('weasel-ui/Sidebar', 'Default', UI),
+      entry('ui/Sidebar', 'Default', UI),
       entry('labkit/Primitives/Sidebar', 'Default', LABKIT),
     ]);
     expect(rows.map((r) => [r.label, r.library])).toEqual([
       ['Sidebar', 'labkit'],
-      ['Sidebar', 'weasel-ui'],
+      ['Sidebar', 'ui'],
     ]);
   });
 
   it('leaves a unique label alone', () => {
-    const rows = buildComponents([entry('weasel-ui/Foundations/Button', 'Default', UI)]);
+    const rows = buildComponents([entry('ui/Foundations/Button', 'Default', UI)]);
     expect(rows[0].label).toBe('Button');
+  });
+});
+
+describe('componentNodes', () => {
+  it('nests a widened label under a folder per slash', () => {
+    const nodes = componentNodes(
+      buildComponents([
+        entry('ui/Cursors/Gallery', 'Default', UI),
+        entry('ui/Icons/Gallery', 'Default', UI),
+        entry('ui/Icons/Gallery', 'Dark', UI),
+      ]),
+    );
+    const shape = (list: typeof nodes): unknown[] =>
+      list.map((n) =>
+        n.kind === 'folder' ? { [`${n.label}${n.tag ? ` [${n.tag}]` : ''}`]: shape(n.children) } : (n.label ?? n.entry.name),
+      );
+    expect(shape(nodes)).toEqual([
+      { 'Cursors [ui]': ['Gallery'] },
+      { 'Icons [ui]': [{ Gallery: ['Default', 'Dark'] }] },
+    ]);
   });
 });

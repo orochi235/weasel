@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { OptionsBar, type OptionsBarItem } from './OptionsBar';
 
 const meta: Meta<typeof OptionsBar> = {
-  title: 'weasel-ui/Foundations/OptionsBar',
+  title: 'ui/Foundations/OptionsBar',
   component: OptionsBar,
 };
 

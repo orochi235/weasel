@@ -4,7 +4,7 @@ import { SliderRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof SliderRow> = {
-  title: 'weasel-ui/Properties/Rows/SliderRow',
+  title: 'ui/Properties/Rows/SliderRow',
   component: SliderRow,
 };
 export default meta;

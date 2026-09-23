@@ -4,7 +4,7 @@ import { PropertyGroup } from './PropertyGroup';
 import { PropertyList, PropertyPanel, SliderRow } from './PropertyPanel';
 
 const meta: Meta<typeof PropertyGroup> = {
-  title: 'weasel-ui/Properties/PropertyGroup',
+  title: 'ui/Properties/PropertyGroup',
   component: PropertyGroup,
 };
 export default meta;

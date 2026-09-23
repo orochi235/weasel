@@ -44,7 +44,7 @@ function Panel({ data }: { data: Data }) {
 }
 
 const meta: Meta<typeof Panel> = {
-  title: 'weasel-ui/SelectionPanel',
+  title: 'ui/SelectionPanel',
   component: Panel,
   parameters: { layout: 'padded' },
 };

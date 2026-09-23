@@ -13,7 +13,7 @@ const TONES: BadgeTone[] = ['accent', 'info', 'warn', 'danger', 'muted', 'neutra
 const VARIANTS: BadgeVariant[] = ['outline', 'solid', 'subtle'];
 
 const meta: Meta<typeof Badge> = {
-  title: 'weasel-ui/Foundations/Badge',
+  title: 'ui/Foundations/Badge',
   component: Badge,
   args: {
     children: 'LABEL',

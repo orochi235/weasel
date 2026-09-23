@@ -19,7 +19,7 @@ import {
 } from './';
 
 const meta: Meta = {
-  title: 'weasel-ui/Properties/PropertyPanel/SpeechBalloonPanels',
+  title: 'ui/Properties/PropertyPanel/SpeechBalloonPanels',
 };
 export default meta;
 type Story = StoryObj;

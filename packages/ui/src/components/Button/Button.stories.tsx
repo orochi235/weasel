@@ -4,7 +4,7 @@ import { Button, type ButtonVariant, type ButtonSize } from './Button';
 import { ToggleBar as KitToggleBar } from '../ToggleBar/ToggleBar';
 
 const meta: Meta<typeof Button> = {
-  title: 'weasel-ui/Foundations/Button',
+  title: 'ui/Foundations/Button',
   component: Button,
   args: {
     children: 'Save',

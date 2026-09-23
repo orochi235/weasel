@@ -38,7 +38,7 @@ function Interactive(props: InteractiveProps) {
 }
 
 const meta: Meta<typeof Interactive> = {
-  title: 'weasel-ui/PointPlotter',
+  title: 'ui/PointPlotter',
   component: Interactive,
   argTypes: {
     initial: { control: false },

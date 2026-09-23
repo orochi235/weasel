@@ -1,6 +1,8 @@
 import type { IndexEntry } from '../../story/types';
 import type { TreeNode } from './buildTree';
 
+type Folder = Extract<TreeNode, { kind: 'folder' }>;
+
 /** One component — a story title — with the stories declared under it. */
 export interface ComponentRow {
   /** The full story title, unique per component and used as the row key. */
@@ -16,10 +18,10 @@ export interface ComponentRow {
  * Which library a story file belongs to, by the package it lives in rather
  * than by its title's first segment. The title prefix is authored per story
  * and disagrees with itself — `packages/ui` alone declares both `Primitives/`
- * and `weasel-ui/` — so the path is the answer that cannot drift.
+ * and `ui/` — so the path is the answer that cannot drift.
  */
 const LIBRARIES: readonly (readonly [marker: string, label: string])[] = [
-  ['/packages/ui/', 'weasel-ui'],
+  ['/packages/ui/', 'ui'],
   ['/packages/labkit/', 'labkit'],
   ['/packages/forge/', 'forge'],
   ['/apps/draw/', 'draw'],
@@ -67,7 +69,7 @@ export function buildComponents(index: readonly IndexEntry[]): ComponentRow[] {
 /**
  * Widen each label leftward until it tells its row apart from the others in
  * its library.
- * `weasel-ui/Cursors/Gallery` and `weasel-ui/Icons/Gallery` are two different
+ * `ui/Cursors/Gallery` and `ui/Icons/Gallery` are two different
  * components whose last segments agree, and a flat list that prints both as
  * `Gallery` is unusable — the grouping that used to separate them is the very
  * thing this view removes.
@@ -113,22 +115,46 @@ export function filterComponents(rows: readonly ComponentRow[], query: string): 
 }
 
 /**
- * The flat component list as tree nodes, so the sidebar renders and navigates
- * both views with one code path. A component with a single story becomes that
- * story's row directly — an expander onto one child is a click for nothing.
+ * The component list as tree nodes, so the sidebar renders and navigates both
+ * views with one code path. A slash in a label is a directory: `Icons/Gallery`
+ * is a `Gallery` row inside an `Icons` folder, which it shares with any other
+ * row of its library widened to the same prefix. A component with a single
+ * story becomes that story's row directly — an expander onto one child is a
+ * click for nothing.
  */
 export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
-  return rows.map((row): TreeNode =>
-    row.entries.length === 1
-      ? { kind: 'story', entry: row.entries[0], tag: row.library, label: row.label }
-      : {
-          kind: 'folder',
-          label: row.label,
-          path: row.path,
-          tag: row.library,
-          children: row.entries.map((entry) => ({ kind: 'story', entry })),
-        },
-  );
+  const root: TreeNode[] = [];
+  const folders = new Map<string, Folder>();
+  for (const row of rows) {
+    const labels = row.label.split('/');
+    const title = row.path.split('/');
+    let siblings = root;
+    let tag: string | undefined = row.library;
+    for (let i = 0; i < labels.length - 1; i++) {
+      const path = title.slice(0, title.length - labels.length + i + 1).join('/');
+      let folder = folders.get(path);
+      if (!folder) {
+        folder = { kind: 'folder', label: labels[i], path, tag, children: [] };
+        folders.set(path, folder);
+        siblings.push(folder);
+      }
+      siblings = folder.children;
+      tag = undefined;
+    }
+    const label = labels[labels.length - 1];
+    siblings.push(
+      row.entries.length === 1
+        ? { kind: 'story', entry: row.entries[0], tag, label }
+        : {
+            kind: 'folder',
+            label,
+            path: row.path,
+            tag,
+            children: row.entries.map((entry) => ({ kind: 'story', entry })),
+          },
+    );
+  }
+  return root;
 }
 
 /** Every library present in `index`, alphabetically. */

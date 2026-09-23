@@ -28,7 +28,7 @@ function CircleGlyph() {
 }
 
 const meta: Meta<typeof ToolButton> = {
-  title: 'weasel-ui/ToolButton',
+  title: 'ui/ToolButton',
   component: ToolButton,
   args: {
     icon: <CursorGlyph />,

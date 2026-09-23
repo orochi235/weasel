@@ -306,7 +306,7 @@ function StoryRoot({ children }: { children: ReactNode }) {
 }
 
 const meta: Meta = {
-  title: 'weasel-ui/LayeredCurveEditor',
+  title: 'ui/LayeredCurveEditor',
 };
 export default meta;
 

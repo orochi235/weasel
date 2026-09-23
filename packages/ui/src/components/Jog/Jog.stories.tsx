@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Jog } from './Jog';
 
 const meta: Meta<typeof Jog> = {
-  title: 'weasel-ui/Jog',
+  title: 'ui/Jog',
   component: Jog,
 };
 export default meta;

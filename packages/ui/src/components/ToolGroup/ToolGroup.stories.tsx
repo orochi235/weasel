@@ -19,7 +19,7 @@ const sampleButtons = (
 );
 
 const meta: Meta<typeof ToolGroup> = {
-  title: 'weasel-ui/ToolGroup',
+  title: 'ui/ToolGroup',
   component: ToolGroup,
   args: { children: sampleButtons },
 };

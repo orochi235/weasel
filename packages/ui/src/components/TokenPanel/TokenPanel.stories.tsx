@@ -4,7 +4,7 @@ import { TokenPanel } from './TokenPanel';
 import type { TokenEntry } from './tokenTypes';
 
 const meta: Meta<typeof TokenPanel> = {
-  title: 'weasel-ui/TokenPanel',
+  title: 'ui/TokenPanel',
   component: TokenPanel,
 };
 export default meta;

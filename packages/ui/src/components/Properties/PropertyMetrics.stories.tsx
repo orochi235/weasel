@@ -13,7 +13,7 @@ import {
 } from './PropertyPanel';
 
 const meta: Meta = {
-  title: 'weasel-ui/Properties/Metrics',
+  title: 'ui/Properties/Metrics',
 };
 export default meta;
 type Story = StoryObj;

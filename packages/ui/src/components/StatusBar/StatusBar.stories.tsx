@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { StatusBar, StatusBarItem, StatusBarSpacer } from './StatusBar';
 
 const meta: Meta<typeof StatusBar> = {
-  title: 'weasel-ui/StatusBar',
+  title: 'ui/StatusBar',
   component: StatusBar,
   args: { ariaLabel: 'Editor status' },
 };

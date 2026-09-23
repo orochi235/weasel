@@ -6,7 +6,7 @@ const [origin = 'http://[::1]:5178', shots = '.'] = process.argv.slice(2);
 /** Each check runs once the frame has rendered, and throws on what it finds wrong. */
 const stories = [
   {
-    id: 'weasel-ui-foundations-button--primary',
+    id: 'ui-foundations-button--primary',
     what: 'ui story with argTypes',
     check: async ({ frame, page }) => {
       await frame.getByRole('button').first().waitFor();
@@ -38,7 +38,7 @@ const stories = [
     },
   },
   {
-    id: 'weasel-ui-foundations-slider--playground',
+    id: 'ui-foundations-slider--playground',
     what: 'Slider updating its own args with useArgs',
     check: async ({ frame }) => {
       await frame.getByText('3 thumbs').waitFor();

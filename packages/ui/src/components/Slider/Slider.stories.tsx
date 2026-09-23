@@ -6,7 +6,7 @@ import { paintGradientTrack } from '../../paintGradientTrack';
 import { oklchToHex } from '../../color/oklch';
 
 const meta: Meta<typeof Slider> = {
-  title: 'weasel-ui/Foundations/Slider',
+  title: 'ui/Foundations/Slider',
   component: Slider,
   args: {
     min: 0,

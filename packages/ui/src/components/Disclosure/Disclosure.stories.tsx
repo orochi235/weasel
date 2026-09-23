@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Disclosure, DisclosureRow } from './Disclosure';
 
 const meta: Meta<typeof Disclosure> = {
-  title: 'weasel-ui/Disclosure',
+  title: 'ui/Disclosure',
   component: Disclosure,
 };
 export default meta;

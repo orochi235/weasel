@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { CheckboxRow, ColorRow, PropertyList, PropertyRow, SliderRow } from './PropertyPanel';
 
 const meta: Meta<typeof PropertyList> = {
-  title: 'weasel-ui/Properties/PropertyList',
+  title: 'ui/Properties/PropertyList',
   component: PropertyList,
 };
 export default meta;

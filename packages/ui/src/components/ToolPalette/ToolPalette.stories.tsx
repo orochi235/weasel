@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/core';
 
 const meta: Meta<typeof ToolPalette> = {
-  title: 'weasel-ui/ToolPalette',
+  title: 'ui/ToolPalette',
   component: ToolPalette,
 };
 export default meta;

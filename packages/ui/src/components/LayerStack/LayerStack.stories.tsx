@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { LayerStack, type LayerStackItem } from './LayerStack';
 
 const meta: Meta<typeof LayerStack> = {
-  title: 'weasel-ui/LayerStack',
+  title: 'ui/LayerStack',
   component: LayerStack,
 };
 export default meta;

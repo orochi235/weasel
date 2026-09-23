@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { LayerList, type LayerListItem } from './LayerList';
 
 const meta: Meta<typeof LayerList> = {
-  title: 'weasel-ui/LayerList',
+  title: 'ui/LayerList',
   component: LayerList,
 };
 export default meta;

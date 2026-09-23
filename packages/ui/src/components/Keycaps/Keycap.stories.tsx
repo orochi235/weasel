@@ -56,7 +56,7 @@ function resolveFont(value: string | undefined): string | undefined {
 }
 
 const meta: Meta<StoryArgs> = {
-  title: 'weasel-ui/Foundations/Keycaps/KeyCap',
+  title: 'ui/Foundations/Keycaps/KeyCap',
   component: KeyCap,
   args: {
     label: 'K',

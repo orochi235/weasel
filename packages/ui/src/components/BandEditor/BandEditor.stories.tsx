@@ -29,7 +29,7 @@ const FOUR: Band<Slice>[] = [
 const TypedBandEditor = BandEditor<Slice>;
 
 const meta: Meta<typeof TypedBandEditor> = {
-  title: 'weasel-ui/Foundations/BandEditor',
+  title: 'ui/Foundations/BandEditor',
   component: TypedBandEditor,
   args: {
     min: MIN,

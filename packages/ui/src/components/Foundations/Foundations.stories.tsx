@@ -4,7 +4,7 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react';
 import s from './Foundations.module.css';
 
 const meta: Meta = {
-  title: 'weasel-ui/Foundations',
+  title: 'ui/Foundations',
   parameters: {
     layout: 'padded',
   },

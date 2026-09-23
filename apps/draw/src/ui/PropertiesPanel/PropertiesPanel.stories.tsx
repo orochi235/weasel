@@ -14,7 +14,7 @@ import {
 } from './PropertiesPanel';
 
 const meta: Meta<typeof PropertiesPanel> = {
-  title: 'weasel-ui/PropertiesPanel',
+  title: 'ui/PropertiesPanel',
   component: PropertiesPanel,
 };
 

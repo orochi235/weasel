@@ -5,7 +5,7 @@ import { Timeline } from './Timeline';
 import { AnimatedTimeline } from './AnimatedTimeline';
 
 const meta: Meta<typeof Timeline> = {
-  title: 'weasel-ui/Timeline',
+  title: 'ui/Timeline',
   component: Timeline,
 };
 export default meta;

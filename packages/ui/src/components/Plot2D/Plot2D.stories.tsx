@@ -22,7 +22,7 @@ function Demo(props: DemoProps) {
 }
 
 const meta: Meta<typeof Demo> = {
-  title: 'weasel-ui/Plot2D',
+  title: 'ui/Plot2D',
   component: Demo,
   argTypes: {
     width: { control: { type: 'number', min: 100, max: 800, step: 20 } },

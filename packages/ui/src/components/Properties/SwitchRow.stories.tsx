@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { CheckboxRow, SwitchRow } from './PropertyPanel';
 
 const meta: Meta<typeof SwitchRow> = {
-  title: 'weasel-ui/Properties/Rows/SwitchRow',
+  title: 'ui/Properties/Rows/SwitchRow',
   component: SwitchRow,
 };
 export default meta;
