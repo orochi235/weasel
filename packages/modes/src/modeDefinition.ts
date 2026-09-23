@@ -20,6 +20,11 @@ export interface WorkspaceVisual {
  */
 export interface ModeDefinition {
   id: string;
+  /** Human-readable name for chrome — a breadcrumb, a status bar. Falls back
+   *  to `id`; read it through {@link modeLabel}. */
+  label?: string;
+  /** One sentence on what the mode is for, for a tooltip or a hint line. */
+  description?: string;
   kind: 'soft' | 'strict';
   /** Capability tags this mode allows beyond IMPLICIT_TAGS. */
   allows: CapabilityTag[];
@@ -30,6 +35,11 @@ export interface ModeDefinition {
   exit?: { shortcut?: string };
   commit?: { shortcut?: string };
   cancel?: { shortcut?: string };
+}
+
+/** A mode's display name: its `label`, else its `id`. */
+export function modeLabel(mode: ModeDefinition): string {
+  return mode.label ?? mode.id;
 }
 
 /** True iff a tool carrying `toolTags` is eligible for `mode`. */
