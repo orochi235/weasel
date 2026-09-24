@@ -5,7 +5,7 @@
 
 Every component in forge now has an index page, and stories open faster.
 
-An index page is listed first under each component in the sidebar and shows all
+Clicking a component's row in the sidebar opens its index page, which shows all
 of the component's stories in one frame, each at its defaults and then once per
 value of each boolean and enum control. A component supplies its own page with
 a native meta's `index`, or `parameters.forge.index` in a CSF file; either is

@@ -27,8 +27,9 @@ forge({ stories: ['src/**/*.stories.tsx'], frameConfig: 'forge.frame.tsx', shell
 
 ## Index pages
 
-Every component — every story title — has an index page, listed first under
-the component in the sidebar and routed at `#/<title id>:index`. It renders all
+Every component — every story title — has an index page, opened by clicking
+the component's row in the sidebar (its chevron only folds it) and routed at
+`#/<title id>:index`. It renders all
 of the component's stories in one frame: each at its defaults, then once per
 value of each of its boolean and enum controls, one control at a time.
 

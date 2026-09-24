@@ -61,9 +61,9 @@ in a story id, so no export name can collide with it. It routes like a story
 (`#/ui-foundations-button:index`) and runs as a lab instrument with an empty
 schema, so it gets trials, history and the frame pool for free.
 
-**Sidebar.** Every component row in both views becomes a folder whose first
-child is **Index**, followed by its stories. The single-story shortcut in the
-components view goes: a component always has at least two rows now.
+**Sidebar.** Every component row in both views is a folder holding its
+stories. Clicking the row opens the folder and the component's index page;
+its chevron only folds it.
 
 **The generated page.** A header with the title and the file's meta
 description, then one section per story, in file order:

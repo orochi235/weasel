@@ -109,6 +109,16 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     setRoute(entry.id);
   };
 
+  // A component's row opens its index page as well as its folder; the chevron alone only folds.
+  const openFolder = (node: Extract<TreeNode, { kind: 'folder' }>, another: boolean): void => {
+    if (!node.index) {
+      setOpen(node.path, !isOpen(node.path));
+      return;
+    }
+    setOpen(node.path, true);
+    activate(node.index, another);
+  };
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     const at = rows.findIndex((row) => row.key === active);
     const row = rows[at];
@@ -138,8 +148,8 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
         break;
       case 'Enter':
       case ' ':
-        if (node.kind === 'folder') setOpen(node.path, !isOpen(node.path));
-        else activate(node.entry, event.shiftKey);
+        if (node.kind === 'story') activate(node.entry, event.shiftKey);
+        else openFolder(node, event.shiftKey);
         break;
       default:
         return;
@@ -174,9 +184,24 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
             {...itemProps(node, level)}
             aria-expanded={open}
             aria-label={node.label}
+            aria-current={node.index && openIds.has(node.index.id) ? 'true' : undefined}
             className="fg-tree__node"
           >
-            <div className="fg-tree__item fg-tree__folder" onClick={() => setOpen(node.path, !open)}>
+            <div
+              className="fg-tree__item fg-tree__folder"
+              onClick={(event) => {
+                setFocusKey(keyOf(node));
+                openFolder(node, event.shiftKey);
+              }}
+            >
+              <span
+                aria-hidden="true"
+                className="fg-tree__chevron"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setOpen(node.path, !open);
+                }}
+              />
               <span className="fg-tree__label">{node.label}</span>
               {node.tag ? <span className="fg-tree__tag">{node.tag}</span> : null}
             </div>

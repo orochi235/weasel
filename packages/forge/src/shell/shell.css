@@ -206,14 +206,24 @@
   outline-offset: calc(-1 * var(--wzl-line-width));
 }
 
-.fg-tree__item[aria-current='true'] {
+.fg-tree__item[aria-current='true'],
+.fg-tree__node[aria-current='true'] > .fg-tree__folder {
   color: var(--wzl-accent-fg);
 }
 
-/* Drawn with borders rather than a glyph, which would join the item's accessible name. */
-.fg-tree__folder::before {
-  content: '';
+/* Padded out to a hit target and pulled back by the same amount, so the row's layout is unchanged. */
+.fg-tree__chevron {
   flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: calc(-1 * var(--wzl-space-xs));
+  padding: var(--wzl-space-xs);
+}
+
+/* Drawn with borders rather than a glyph, which would join the item's accessible name. */
+.fg-tree__chevron::before {
+  content: '';
   width: 0.35em;
   height: 0.35em;
   border: solid currentColor;
@@ -221,7 +231,7 @@
   transform: rotate(-45deg);
 }
 
-.fg-tree__node[aria-expanded='true'] > .fg-tree__folder::before {
+.fg-tree__node[aria-expanded='true'] > .fg-tree__folder > .fg-tree__chevron::before {
   transform: rotate(45deg);
 }
 

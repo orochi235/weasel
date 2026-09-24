@@ -79,10 +79,12 @@ describe('componentNodes', () => {
   /** Folders as `label/`, stories as their row label, nested as arrays. */
   const shape = (nodes: readonly TreeNode[]): unknown[] =>
     nodes.map((node) =>
-      node.kind === 'folder' ? { [`${node.label}/`]: shape(node.children) } : (node.label ?? node.entry.name),
+      node.kind === 'folder'
+        ? { [`${node.label}/${node.index ? '+' : ''}`]: shape(node.children) }
+        : (node.label ?? node.entry.name),
     );
 
-  it('makes every component a folder led by its index page, one story or many', () => {
+  it('makes every component a folder carrying its index page, one story or many', () => {
     const nodes = componentNodes(
       buildComponents([
         entry('weasel-ui/Foundations/Button', 'Default', UI),
@@ -91,11 +93,10 @@ describe('componentNodes', () => {
       ]),
     );
     expect(shape(nodes)).toEqual([
-      { 'Button/': ['Index', 'Default', 'Disabled'] },
-      { 'JobProgress/': ['Index', 'Running'] },
+      { 'Button/+': ['Default', 'Disabled'] },
+      { 'JobProgress/+': ['Running'] },
     ]);
-    const first = nodes[0]?.kind === 'folder' ? nodes[0].children[0] : undefined;
-    expect(first?.kind === 'story' && first.entry.id).toBe('weasel-ui-foundations-button:index');
+    expect(nodes[0]?.kind === 'folder' && nodes[0].index?.id).toBe('weasel-ui-foundations-button:index');
   });
 
   it('keeps the index page of a component the filter names, and not of one matched only by a story', () => {
@@ -104,7 +105,7 @@ describe('componentNodes', () => {
       entry('weasel-ui/Foundations/Button', 'Disabled', UI),
     ]);
     expect(shape(componentNodes(filterComponents(rows, 'button')))).toEqual([
-      { 'Button/': ['Index', 'Default', 'Disabled'] },
+      { 'Button/+': ['Default', 'Disabled'] },
     ]);
     expect(shape(componentNodes(filterComponents(rows, 'disabled')))).toEqual([{ 'Button/': ['Disabled'] }]);
   });

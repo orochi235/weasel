@@ -53,10 +53,13 @@ async function mount(storage: StorageAdapter = createMemoryAdapter()) {
   return { treeEl, view };
 }
 
-/** Folders open by clicking through, the way a person reaches a story. */
+/** The chevron on a folder's own row, which folds it without opening its index page. */
+const chevronOf = (folder: HTMLElement) => folder.querySelector(':scope > .fg-tree__folder > .fg-tree__chevron') as HTMLElement;
+
+/** Folders open by their chevrons, so no index page loads on the way to a story. */
 function openFolder(label: string) {
   const folder = screen.getByRole('treeitem', { name: label });
-  if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText(label));
+  if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(chevronOf(folder));
 }
 
 const item = (scope: HTMLElement, name: string) => within(scope).getByRole('treeitem', { name });
@@ -129,28 +132,56 @@ describe('StoryTree', () => {
     expect(item(second.treeEl, 'Kit')).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('leads each component folder with its index page, and runs it like a story', async () => {
+  it('opens a component folder and runs its index page when its row is clicked', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
     const { treeEl } = await mount();
     openFolder('Kit');
-    openFolder('Button');
-    const group = within(item(treeEl, 'Button')).getByRole('group');
-    expect(within(group).getAllByRole('treeitem')[0]).toHaveTextContent('Index');
-    fireEvent.click(within(group).getByRole('treeitem', { name: 'Index' }));
+    const button = item(treeEl, 'Button');
+    fireEvent.click(within(button).getByText('Button'));
+    expect(button).toHaveAttribute('aria-expanded', 'true');
     await waitFor(() => expect(trialsOf(buttonIndex)).toHaveLength(1));
     expect(allTrials()).toHaveLength(1);
     expect(location.hash).toBe(`#/${encodeURIComponent(buttonIndex.id)}`);
-    expect(within(group).getByRole('treeitem', { name: 'Index' })).toHaveAttribute('aria-current', 'true');
+    expect(button).toHaveAttribute('aria-current', 'true');
+    expect(within(within(button).getByRole('group')).getAllByRole('treeitem').map((el) => el.textContent)).toEqual([
+      'Primary',
+      'Ghost',
+    ]);
     expect(document.querySelector('.fg-route-miss')).toBeNull();
+
+    fireEvent.click(within(button).getByText('Button'));
+    expect(button).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('makes a one-story component a folder in the components view, led by its index page', async () => {
+  it('folds a component with its chevron alone, running nothing', async () => {
+    const { treeEl } = await mount();
+    openFolder('Kit');
+    const button = item(treeEl, 'Button');
+    fireEvent.click(chevronOf(button));
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(chevronOf(button));
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(trialsOf(buttonIndex)).toHaveLength(0);
+    expect(trialsOf(slider)).toHaveLength(1);
+  });
+
+  it('toggles a folder no component owns when its row is clicked', async () => {
+    const { treeEl } = await mount();
+    const kit = item(treeEl, 'Kit');
+    fireEvent.click(within(kit).getByText('Kit'));
+    expect(kit).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(within(kit).getByText('Kit'));
+    expect(kit).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('makes a one-story component a folder in the components view', async () => {
     const view = render(<Harness storage={createMemoryAdapter()} />);
     const treeEl = await screen.findByRole('tree', { name: 'Stories' });
     const sliderRow = item(treeEl, 'Slider');
     expect(sliderRow).toHaveAttribute('aria-expanded', 'false');
-    fireEvent.click(within(sliderRow).getByText('Slider'));
+    fireEvent.click(chevronOf(sliderRow));
     const group = within(item(treeEl, 'Slider')).getByRole('group');
-    expect(within(group).getAllByRole('treeitem').map((el) => el.textContent)).toEqual(['Index', 'Default']);
+    expect(within(group).getAllByRole('treeitem').map((el) => el.textContent)).toEqual(['Default']);
     view.unmount();
   });
 
@@ -291,6 +322,16 @@ describe('StoryTree', () => {
       expect(kit).toHaveAttribute('aria-expanded', 'true');
       fireEvent.keyDown(kit, { key: 'Enter' });
       expect(kit).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('opens a component and runs its index page with Enter', async () => {
+      const { treeEl } = await mount();
+      openFolder('Kit');
+      const button = item(treeEl, 'Button');
+      act(() => button.focus());
+      fireEvent.keyDown(button, { key: 'Enter' });
+      expect(button).toHaveAttribute('aria-expanded', 'true');
+      await waitFor(() => expect(trialsOf(buttonIndex)).toHaveLength(1));
     });
 
     it('opens a story’s trial with Space', async () => {

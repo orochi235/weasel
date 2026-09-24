@@ -119,8 +119,8 @@ export function filterComponents(rows: readonly ComponentRow[], query: string): 
 
 /**
  * The flat component list as tree nodes, so the sidebar renders and navigates
- * both views with one code path. Every component is a folder holding its index
- * page, then its stories.
+ * both views with one code path. Every component is a folder carrying its index
+ * page and holding its stories.
  */
 export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
   return rows.map(
@@ -129,10 +129,8 @@ export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
       label: row.label,
       path: row.path,
       tag: row.library,
-      children: [
-        ...(row.index ? [{ kind: 'story', entry: row.index } as const] : []),
-        ...row.entries.map((entry) => ({ kind: 'story', entry }) as const),
-      ],
+      ...(row.index ? { index: row.index } : {}),
+      children: row.entries.map((entry) => ({ kind: 'story', entry }) as const),
     }),
   );
 }
