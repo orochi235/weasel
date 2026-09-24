@@ -1,5 +1,130 @@
 # Changelog
 
+## 1.5.3
+
+### Patch Changes
+
+- 16c0da2: Kit actions can now fill a whole editor toolbar from the registry.
+  
+  - `Action.variants` lists the separate things a parametric action does, each with its own label and params. `flip` declares Flip Horizontal and Flip Vertical; `reorder.forward` and `reorder.backward` declare their one-step and all-the-way forms. `actionItems(action)` expands an action into the entries a bar, menu or palette shows: one per variant, or the action itself. An action without an immediate invoker gets none, because `trigger` cannot start a drag.
+  - `actionShortcuts(action, params)` returns only the shortcuts whose binding passes those params, so each variant shows its own key.
+  - `ActionBar` renders one button per entry and triggers it with that entry's params. `icons` and `labels` are now keyed by entry key (`flip:y`, `reorder.forward:extreme`), which is still the action id for an action without variants. `enabled` is evaluated with the deps the action declares in `requires`, not a fixed set of six, and a tooltip without a `shortcut` override now shows the binding's key.
+  - New groups: `history` (undo, redo), `clipboard` (cut, copy, paste), `edit` (duplicate, delete), `structure` (group, ungroup) and `flip`.
+  - New `clipboard.paste` action, which calls the `clipboard` dep's `paste()`. It has no key binding, because Cmd/Ctrl+V already arrives as a paste event.
+  - `enabled` now follows the current state: undo and redo follow the history stacks, `delete` and `group` need a selection, `ungroup` needs a selected container, and `clipboard.paste` needs a non-empty clipboard. `delete`, `group` and `ungroup` used to report enabled unconditionally.
+  - Align actions now register left, center, right, top, middle, bottom.
+  - `buildDepsFromRequires` is re-exported from `@weasel-js/core`.
+- b8ebef6: The eight glyphs the align and distribute actions ship are now exported from `@weasel-js/core` and re-exported from `@weasel-js/ui`, beside the Pathfinder and edit-action icons: `AlignLeftIcon`, `AlignCenterXIcon`, `AlignRightIcon`, `AlignTopIcon`, `AlignCenterYIcon`, `AlignBottomIcon`, `DistributeHorizontalIcon` and `DistributeVerticalIcon`. They are the same components the actions draw, so a consumer can render one outside an `<ActionBar>` without authoring its own.
+- bfe6a4f: `contrastLineColor(background, strength)` derives a line color that reads against an arbitrary background — a grid or a rule drawn over a page whose color the document picks, where theme tokens follow the chrome instead. It moves the background `strength` in OKLab lightness away from its nearer end, darker over light and lighter over dark, keeping its hue, so dark and tinted pages get lines that show. Re-exported from `@weasel-js/core`.
+- 0cf6a0d: The clipboard, duplicate, group, ungroup, reorder and flip actions now ship their own icons, so `<ActionBar group="clipboard" />` and its siblings draw glyphs with no `icons` map. Each reorder and flip variant carries its own glyph (Bring Forward / Bring to Front, Send Backward / Send to Back, Flip Horizontal / Flip Vertical). The twelve glyphs are exported from `@weasel-js/core` and `@weasel-js/ui` as `CutIcon`, `CopyIcon`, `PasteIcon`, `DuplicateIcon`, `GroupIcon`, `UngroupIcon`, `BringForwardIcon`, `BringToFrontIcon`, `SendBackwardIcon`, `SendToBackIcon`, `FlipXIcon` and `FlipYIcon`, in the same 20×20 `currentColor` register as the Pathfinder icons. An `icons` entry still overrides them.
+- 811abcd: A registered program's struct uniforms now get locations. `uniform Light
+  u_lights[2];` is looked up as `u_lights[0].pos`, `u_lights[0].r` and so on,
+  nested structs and array members included; before, only the bare name was
+  looked up, so every write to a struct member was dropped, with a warning only
+  in development.
+  
+  Array sizes written as a `#define`, a top-level `const int`, a small integer
+  expression over those, or on the type (`uniform float[2] u_t;`) now resolve;
+  before, such a uniform got no locations at all. Uniforms inside comments are no
+  longer looked up.
+  
+  A program recompiled after a restored WebGL context now looks up the uniforms
+  its own vertex shader declares, as `registerProgram` already did.
+- 7c53d1a: The undo, redo and delete actions now ship their own icons, so `<ActionBar group="history" />` and `<ActionBar group="edit" />` draw glyphs with no `icons` map. `UndoIcon`, `RedoIcon` and `DeleteIcon` move into `@weasel-js/core`, which the actions need them in; `@weasel-js/ui` re-exports them under the same names with the same props, and `<Icon name="undo" />` draws the same glyph. Core also exports `ACTION_GLYPHS`, the three glyphs' SVG markup, which `ICON_PATHS` now points at.
+- 5345efb: A `kit:image` node can crop and mirror its bitmap. `data.image` takes an
+  optional `source` — the part of the bitmap to draw into the pose rect, as
+  fractions of the bitmap's width and height — and optional `flipX` / `flipY`,
+  which mirror the drawn region within the rect without moving it. The painter
+  hands both to the renderer's existing `ImageDrawCommand` fields, so hit-testing
+  and the silhouette are unchanged. Existing image data draws as before.
+  
+  `svgNodesToKitDrafts` now carries an `SvgImageNode`'s source rect and flips onto
+  `data.image` instead of dropping them, and the new `svgImageFromKit(image, pose)`
+  writes a `kit:image` leaf back as an `SvgImageNode`, so a cropped or flipped
+  image survives SVG → scene → SVG.
+- 87fd8a8: Choose which layout container a drag lands in when several contain the drop point. `<SceneCanvas layoutDropTarget>` takes `'innermost'` (the default, and the behavior until now: the deepest container, ties to the one painted later), `'topmost'` (the container painted last, in the scene's render order across the whole tree) or `'region'` (only containers that declare a drop region). A layout strategy declares one with the new optional `dropRegion(container)`, returning a `Path` or a predicate in the container's local frame; a declared region replaces the container body as its hit area in every mode, and may reach past it. The drag-time reflow preview and the commit follow the same choice. New types: `LayoutDropTargetMode`, `DropRegion`.
+- 6f14f6f: The pen joins paths. Finishing a path by clicking (or dragging on) another open path's endpoint now makes one node: the drawn path's anchors followed by the other path's, turned around when you land on its last anchor, with the other node deleted in the same undo step. The path being drawn keeps its identity — a continued node keeps its id and style, and a new path is minted like any other pen path.
+  
+  Two optional additions make that one op batch: `EditAnchorsDep.editOps(id, worldPath, label)` returns the ops `applyEdit` would commit without applying them, and the pen adapter's `makeNode(pose)` builds the node `addNode` would insert. `<SceneCanvas>` supplies both. Without them the click places an anchor, as before.
+- c1f82e2: The pen's curves now follow the handles you drag. Dragging while placing an anchor gives it an out-handle at the drag point and an in-handle mirrored through it, and each segment runs from its start anchor's out-handle to its end anchor's in-handle — as in Illustrator and Figma. Before, a segment's second control point was the mirror of the *previous* anchor's handle, which sat behind the start of the segment, and a dragged anchor never shaped the segment coming into it. The preview and the committed path both changed.
+  
+  Alt held from the start of the drag leaves the anchor with no in-handle; Alt pressed part-way freezes the in-handle and moves only the out-handle. Dragging the endpoint of a path the pen picked up moves its out-handle only, leaving the existing segment into it alone. `PenAnchor.altBroken` now describes the anchor it is set on, not the one after it.
+- 97561f1: Zoom the canvas on Safari's trackpad pinch
+  
+  Safari reports a trackpad pinch as WebKit `gesturestart` / `gesturechange` /
+  `gestureend` events, and nothing listened for them, so the page zoomed instead
+  of the canvas. `useGestureDispatcher` now dispatches each `gesturechange` as a
+  new `pinch` gesture: `PinchSpec` (`{ kind: 'pinch', direction?: 'in' | 'out' }`),
+  `PinchEvent`, route-grammar name `pinch`, and `InvocationCtx.pinch`. Safari's
+  cumulative `scale` is turned into a per-sample step, and the focal point is
+  canvas-local like a wheel's. A new `pinch` entry in `DispatcherChannels` turns
+  the listeners off.
+  
+  `viewport.zoom` binds it. Its wheel and pinch samples now share one path: each
+  becomes a scale factor about a focal point, so a pinch sample of 1.1 lands on
+  exactly the view a ctrl+wheel `deltaY` of -100 does.
+  
+  Safari can send the same pinch as ctrl+wheel too. While a pinch some binding
+  has claimed is live, the dispatcher swallows ctrl+wheel (preventing its
+  default, dispatching nothing), so one pinch zooms once. When no binding claims
+  the pinch, the gesture events are left to the browser and ctrl+wheel reaches
+  its bindings as before.
+- 89926b5: `<SceneCanvas>` now builds its adapter with `useSceneAdapter` and keeps the same adapter across renders unless one of its inputs changes; it used to build a new one on every render. Moving a container still moves its children, now through `sceneToAdapter`'s `cascadeContainerPose` rather than a second copy of that logic.
+  
+  `useSceneAdapter` now passes `poseComposition` through to `sceneToAdapter`. It used to drop it, so the adapter it returned ignored the frame model. The undo entry `cascadeContainerPose` records for a container move is now labeled `move container` rather than `setPose`, the label `<SceneCanvas>` already used.
+- 9f86dec: `<SceneCanvas selectionMode="none">` now blocks every selection write the canvas makes. Before, the adapter it hands its tools could still set the selection, and so could any op batch that selects its result, such as a paste or an ingest. `setSelection` on that adapter, and on the `selection` dep's `adapterMethods`, now does nothing in that mode. The consumer's own `SelectionApi`, passed as the `selection` prop or made with `useSelection({ scene })`, still writes, and the canvas draws what it holds.
+  
+  `defaultCommitAdapter` takes an optional second argument, a `SelectionApi`'s `adapterMethods`. When it is passed, selection reads and writes go through it rather than the scene. Every built-in action now passes its `selection` dep.
+  
+  The `CanvasSelectionMode` docs now say what each mode does. `'single'` is a click rule, not a cap: a marquee, lasso, select-all or paste can still select several nodes.
+- debfd5d: An SVG image node (`data:image/svg+xml` source, or a URL ending in `.svg`) now stays sharp under zoom. The image cache re-rasterizes it at the size it is drawn, in power-of-two steps so a zoom gesture does not redraw it every frame, capped at the renderer's maximum texture size and 4096×4096 pixels. The previous raster keeps painting until the new one is ready, and its GL texture is freed when it is replaced. PNG, JPEG and other raster sources are unchanged.
+  
+  New: `getImageBitmap(src, drawnAt?)` takes the size in device pixels an image is about to cover, `NodePaintCtx.pixelScale` carries device pixels per world unit to painters (`defaultDrawOne` fills it from the view and `devicePixelRatio`), and `isVectorImageSrc(src)` reports whether a source is treated as SVG.
+- d975afa: `text-transform` for styled runs and text nodes
+  
+  `StyledRun` and `TextStyle` gain `textTransform: 'none' | 'uppercase' |
+  'lowercase' | 'capitalize'`, with CSS semantics. A run's value overrides the
+  node's, and `'none'` on a run turns an inherited transform off. Only what is
+  drawn changes: a run's `text` stays as authored, so carets, selections and
+  edits still address the source.
+  
+  - Case mapping uses JavaScript's locale-independent full mappings, so `ß`
+    uppercases to `SS` and a word-final `Σ` lowercases to `ς`. `capitalize`
+    titlecases the first letter of each word (`ǆ` → `ǅ`, `ß` → `Ss`) and leaves
+    the rest alone; word starts come from `Intl.Segmenter`, the same boundaries
+    browsers use, and are found across run boundaries.
+  - `resolveRuns` applies the transform, so `ResolvedRun.text` is the drawn
+    text. When a transform changes a length, the run carries `srcMap`: where
+    each drawn UTF-16 unit came from in the source. Layout reads each cell's
+    `srcIndex` / `srcEnd` off it, so both cells of an uppercased `ß` map to the
+    one source character, and `caretIndexAt` treats them as one stop.
+  - `transformRunTexts` is exported for callers laying text out themselves;
+    `layoutMarkdown` uses it.
+  - The range helpers (`applyStyleToRange`, `styleAtRange`,
+    `effectiveRangeStyle`) carry the new key, the text tool and the node's
+    Character properties offer it as "Case", and the edit overlay shows it with
+    CSS `text-transform` on the overlay and on each run span.
+  - `@weasel-js/svg` writes it as `style="text-transform:…"` on `<text>` and
+    `<tspan>` — it is a CSS property, not an SVG 1.1 presentation attribute — and
+    reads it back from either spelling or an ancestor.
+- 62d8d7c: `useOngoingAction(actionId)` lets a UI control — a color picker, a slider, a swatch — drive an ongoing action the way a drag does: `input(params)` opens the action on the first call and moves it on the rest (the live preview), `commit(params?)` ends it as one undo entry, and `cancel()` drops it. A commit with nothing open is a whole edit on its own, which is what a click on a swatch is. An edit still open when the control unmounts or its action id changes is committed. It wraps `ActionsRegistry.begin`, whose begin-or-update-then-end bookkeeping every such control used to hand-roll around a ref; `SceneGradientHandles` now uses it.
+- Updated dependencies [16c0da2]
+- Updated dependencies [bfe6a4f]
+- Updated dependencies [b1c30bc]
+- Updated dependencies [f792755]
+- Updated dependencies [9aa63a1]
+- Updated dependencies [97561f1]
+- Updated dependencies [d975afa]
+- Updated dependencies [62d8d7c]
+  - @weasel-js/routing@1.5.3
+  - @weasel-js/paint@1.5.3
+  - @weasel-js/text@1.5.3
+  - @weasel-js/gestures@1.5.3
+  - @weasel-js/cursor@1.5.3
+  - @weasel-js/font@1.5.3
+  - @weasel-js/geom@1.5.3
+  - @weasel-js/history@1.5.3
+
 ## 1.5.2
 
 ### Patch Changes

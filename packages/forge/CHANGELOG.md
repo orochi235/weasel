@@ -1,5 +1,95 @@
 # @weasel-js/forge
 
+## 1.5.3
+
+### Patch Changes
+
+- bbf1de2: Text drawn in the accent color now reads `--wzl-accent-fg` instead of the accent fill tokens: Properties readouts and their editable input, `NumberField`'s ghost variant, Timeline's checked transport buttons, forge's current story and labkit's button hover. A surface that rebinds `--wzl-accent` to recolor its controls' fills can now set the text color separately. In dark mode the readouts get brighter, since `accent-fg` is the strong accent there. `npm run check:token-reads` now fails on `color:` reading an accent fill token.
+- 06aa549: Browser Back and Forward now move a trial between the stories it showed.
+  
+  Opening a story from the tree swaps it into the focused trial, but Back then
+  found no trial of the previous story and opened a new one beside it. A history
+  step across such a swap now swaps the trial back. A hash typed or linked to
+  still opens a trial of its own.
+- 8c778ec: The Components list no longer prefixes a component's name with part of its title (`weasel-ui/Sidebar`, `Primitives/StatusBar`) just because another library ships a component of the same name. The library tag already tells those apart; names are widened only where two components in the same library collide, such as the three `Gallery` stories.
+- 4db48a8: Declare `@weasel-js/ui` as a dependency.
+  
+  The workshop shell imports it, and forge's build leaves every `@weasel-js`
+  package external, so the published shell asked for a package forge never
+  declared. It only resolved when something else — labkit — happened to install it.
+- Updated dependencies [bbf1de2]
+- Updated dependencies [16c0da2]
+- Updated dependencies [b8ebef6]
+- Updated dependencies [dfbed19]
+- Updated dependencies [7216628]
+- Updated dependencies [a581611]
+- Updated dependencies [5f45cb4]
+- Updated dependencies [928fa33]
+- Updated dependencies [d7577d2]
+- Updated dependencies [64f4739]
+- Updated dependencies [9689a2a]
+- Updated dependencies [90a2d9b]
+- Updated dependencies [a9a61f0]
+- Updated dependencies [04ff89b]
+- Updated dependencies [bfe6a4f]
+- Updated dependencies [2af33a4]
+- Updated dependencies [9a25ac4]
+- Updated dependencies [f4712fe]
+- Updated dependencies [f1c96ff]
+- Updated dependencies [f04faf6]
+- Updated dependencies [0cf6a0d]
+- Updated dependencies [23c4282]
+- Updated dependencies [7c98a5a]
+- Updated dependencies [b466aad]
+- Updated dependencies [811abcd]
+- Updated dependencies [7c53d1a]
+- Updated dependencies [b1c30bc]
+- Updated dependencies [6ab0006]
+- Updated dependencies [5345efb]
+- Updated dependencies [9e77264]
+- Updated dependencies [609d801]
+- Updated dependencies [497727a]
+- Updated dependencies [2da83b8]
+- Updated dependencies [1bcbbf6]
+- Updated dependencies [f0a74f8]
+- Updated dependencies [7215cd1]
+- Updated dependencies [5382c7e]
+- Updated dependencies [601d72c]
+- Updated dependencies [c0c6971]
+- Updated dependencies [0ac85d7]
+- Updated dependencies [e9bfe55]
+- Updated dependencies [61ba0a2]
+- Updated dependencies [87fd8a8]
+- Updated dependencies [3ed8213]
+- Updated dependencies [f3d9d92]
+- Updated dependencies [c24d2c7]
+- Updated dependencies [6f14f6f]
+- Updated dependencies [c1f82e2]
+- Updated dependencies [5ad1478]
+- Updated dependencies [ce53e3c]
+- Updated dependencies [edf7878]
+- Updated dependencies [cf69850]
+- Updated dependencies [a4d9250]
+- Updated dependencies [5fb5bab]
+- Updated dependencies [2efeb82]
+- Updated dependencies [97561f1]
+- Updated dependencies [89926b5]
+- Updated dependencies [6ce2bcb]
+- Updated dependencies [959e5e5]
+- Updated dependencies [106139a]
+- Updated dependencies [9789097]
+- Updated dependencies [da3b958]
+- Updated dependencies [9f86dec]
+- Updated dependencies [731573b]
+- Updated dependencies [debfd5d]
+- Updated dependencies [d975afa]
+- Updated dependencies [74cc4df]
+- Updated dependencies [62d8d7c]
+  - @weasel-js/ui@1.5.3
+  - @weasel-js/labkit@1.5.3
+  - @weasel-js/core@1.5.3
+  - @weasel-js/theme@1.5.3
+
 ## 1.5.2
 
 ### Patch Changes

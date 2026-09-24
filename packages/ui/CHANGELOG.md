@@ -1,5 +1,162 @@
 # @weasel-js/ui
 
+## 1.5.3
+
+### Patch Changes
+
+- bbf1de2: Text drawn in the accent color now reads `--wzl-accent-fg` instead of the accent fill tokens: Properties readouts and their editable input, `NumberField`'s ghost variant, Timeline's checked transport buttons, forge's current story and labkit's button hover. A surface that rebinds `--wzl-accent` to recolor its controls' fills can now set the text color separately. In dark mode the readouts get brighter, since `accent-fg` is the strong accent there. `npm run check:token-reads` now fails on `color:` reading an accent fill token.
+- 16c0da2: Kit actions can now fill a whole editor toolbar from the registry.
+  
+  - `Action.variants` lists the separate things a parametric action does, each with its own label and params. `flip` declares Flip Horizontal and Flip Vertical; `reorder.forward` and `reorder.backward` declare their one-step and all-the-way forms. `actionItems(action)` expands an action into the entries a bar, menu or palette shows: one per variant, or the action itself. An action without an immediate invoker gets none, because `trigger` cannot start a drag.
+  - `actionShortcuts(action, params)` returns only the shortcuts whose binding passes those params, so each variant shows its own key.
+  - `ActionBar` renders one button per entry and triggers it with that entry's params. `icons` and `labels` are now keyed by entry key (`flip:y`, `reorder.forward:extreme`), which is still the action id for an action without variants. `enabled` is evaluated with the deps the action declares in `requires`, not a fixed set of six, and a tooltip without a `shortcut` override now shows the binding's key.
+  - New groups: `history` (undo, redo), `clipboard` (cut, copy, paste), `edit` (duplicate, delete), `structure` (group, ungroup) and `flip`.
+  - New `clipboard.paste` action, which calls the `clipboard` dep's `paste()`. It has no key binding, because Cmd/Ctrl+V already arrives as a paste event.
+  - `enabled` now follows the current state: undo and redo follow the history stacks, `delete` and `group` need a selection, `ungroup` needs a selected container, and `clipboard.paste` needs a non-empty clipboard. `delete`, `group` and `ungroup` used to report enabled unconditionally.
+  - Align actions now register left, center, right, top, middle, bottom.
+  - `buildDepsFromRequires` is re-exported from `@weasel-js/core`.
+- b8ebef6: The eight glyphs the align and distribute actions ship are now exported from `@weasel-js/core` and re-exported from `@weasel-js/ui`, beside the Pathfinder and edit-action icons: `AlignLeftIcon`, `AlignCenterXIcon`, `AlignRightIcon`, `AlignTopIcon`, `AlignCenterYIcon`, `AlignBottomIcon`, `DistributeHorizontalIcon` and `DistributeVerticalIcon`. They are the same components the actions draw, so a consumer can render one outside an `<ActionBar>` without authoring its own.
+- dfbed19: An auto row's `AUTO` readout is no longer italic and draws at the extra-small size, a step below the row label. Its color reads `--wzl-secondary-fg`, falling back to `--wzl-fg-subtle` where a theme does not set one.
+- 7216628: A `Badge` can now trigger a kit tooltip. `Badge` forwards its `ref` and any other DOM attributes to its root element, so it works as the child of `Focusable` under a `TooltipTrigger`, and `@weasel-js/ui` now exports `Focusable` so that pattern needs no direct react-aria-components import. For the common case, `tooltip` does the wrapping itself: a badge that is neither a button nor a link becomes focusable as `role="img"`, named by `aria-label` or else by its string content, because a tooltip trigger has to be reachable by keyboard and announce its description.
+- a581611: `Badge` gains a `success` tone, painted from `--wzl-success`, and an `xs` size for counts and markers inside a dense row. `xs` sets its type on the `--wzl-font-size-2xs` step with tighter padding, so a small badge no longer needs a hand-set font size and a `transform: scale()` on top of `sm`.
+- 5f45cb4: `ToggleBarItem` and `ButtonBarItem` take `shortcut` and `tooltip`, so a segmented bar can show shortcut hints. `shortcut` puts a kit tooltip on the segment reading `Name (⌘B)`, named by `ariaLabel` or a string `label` — the same form `ToolButton` and `ActionBar` use. `tooltip` replaces that text with any content. Items with neither render exactly as before, and arrow-key navigation is unchanged.
+- 928fa33: `Button` takes `tone` (type `ButtonTone`: `neutral`, `muted`, `accent`, `success`, `warn`, `danger` — the same set as `Code`'s tones, from the same tokens) to recolor the `link` variant's text, so a link can read as destructive or as a quiet secondary reference. A link is still `accent` when no tone is given. The boxed variants carry their weight in their fill and ignore `tone`.
+- d7577d2: `Button` gains a `link` variant: a real `<button>` that reads as a hyperlink, for in-page navigation where there is no URL to put in an `<a href>`. It drops the control box — no height, padding, fill or gloss — and takes its font from the surrounding text, so it sits inside a sentence or a table cell at that text's size. The text is painted with `--wzl-accent-fg`, the accent-as-text token.
+- 64f4739: `Button` takes `shortcut` and `tooltip`, the same fields `ToggleBarItem` and `ButtonBarItem` have. `shortcut` puts a kit tooltip on the button reading `Name (⌘S)`, named by `ariaLabel` or string children, so a shortcut hint no longer needs a wrapping `title` span; `tooltip` replaces that text with any content. A button with neither renders exactly as before.
+- 9689a2a: New `CheckIcon` (glyph name `check`) in the State family beside `info`, `warning` and `error`: an open check mark for a success, handled or confirmed state.
+- 90a2d9b: The theme gains a transparency checker and a workspace pair. `--wzl-checker-a` and `--wzl-checker-b` are the checker's two squares (`border` and `surface`) and `--wzl-checker-size` is one repeat of it (8px); `PaintField` and `ColorField` now paint their empty and mixed chips from them instead of each restating the gradient's colors and size, so a theme can restyle every checker at once. `--wzl-workspace-surface` (`surface-sunken`) and `--wzl-workspace-line` (`line-subtle`) are the ground of a canvas app's workspace — the area around the document page — and the marks drawn over it. All five follow the color mode.
+- a9a61f0: New `Code` component: an inline `<code>` span for literal text — identifiers, types, key paths — in the monospace face. `tone` colors it (`neutral`, `muted`, `accent`, `success`, `warn`, `danger`; `success` and `danger` serve as a diff's added and removed sides), `variant` picks a tinted chip (`subtle`) or bare colored text (`plain`), and `size` pins the type to a theme step or, left unset, follows the surrounding text. The text keeps its case and wraps anywhere, with the chip repeating its padding on each line, so a long type signature breaks cleanly. `Badge` stays the label chip; it uppercases and was not built to quote.
+- 04ff89b: A color-mode choice with a way back to Auto, as kit surface instead of something each app rebuilds.
+  
+  `@weasel-js/theme` exports the `ColorModePreference` type (`'auto' | 'light' | 'dark'`), `ColorMode` (`'light' | 'dark'`) and `isColorModePreference`. `@weasel-js/theme/react` adds `useResolvedColorMode(preference)`, which follows the OS setting live under `'auto'` and returns an explicit choice as given, and `useColorModePreference({ storageKey, storage, defaultPreference })`, which holds the choice, optionally remembers it in `localStorage` (or a store you pass), and returns `{ preference, setPreference, mode }`. `mode` is what goes in a `ThemeProvider`'s `selection`. Storage that is missing or throws leaves the choice unremembered rather than failing.
+  
+  `@weasel-js/ui` adds `ColorModeControl`, the Auto / Light / Dark radiogroup drawn with the mode glyphs, controlled by `value` and `onChange`.
+  
+  labkit's header now renders `ColorModeControl`, and `<Lab>` and `<LabRoot>` resolve their mode with `useResolvedColorMode`; `LabMode` is an alias of `ColorModePreference`. Switching a lab back to Auto now picks up an OS change made while it was pinned.
+- 2af33a4: `DataGrid` rows can now carry state, be activated, and open a detail row.
+  
+  - `rowClassName(row)` adds a class to that row's `<tr>`.
+  - `onRowClick(row)` makes each row focusable and calls back on a click or on Enter/Space. The row keeps its table-row role, and a click on a control inside a cell is left to that control.
+  - `renderDetail(row)` adds a leading disclosure column and renders a full-width row under each expanded row. Expansion is uncontrolled (`defaultExpandedIds`) or controlled (`expandedIds` + `onExpandedChange`); `rowExpandable(row)` hides the disclosure on rows with nothing to show. Detail rows stay under their parent when the grid is sorted, and drag reordering ignores them.
+  - `useReorderDragList` takes a `rowSelector` for a container whose children are not all rows.
+- 9a25ac4: New `DetailList` and `DetailRow`: a read-only list of labelled values, rendered as a `<dl>` with one `<dt>`/`<dd>` pair per row. A value can be any run of elements — code chips, badges, keycaps, links — and wraps inside its column rather than widening the list. Labels take the params label recipe and rail: the label column is `--wzl-params-label-width` wide (its content width by default), and case, tracking and alignment follow the other three `--wzl-params-label-*` properties, so a detail list lines its labels up with a property panel's inline rows. `title` puts a heading above the list and names it by it; `layout="block"` stacks each label over its value for narrow columns.
+- f4712fe: A row can now hold an editor too big for it. weasel-ui's `DialogRow` shows a one-line summary of the value on a button, and the button opens a modal around whatever body it is given; `ListEditor` edits a list of strings one field per entry. In labkit, `.dialog(body)` on any config leaf moves that leaf's control into such a dialog, and `inDialog(body)` builds the same row as a renderer for a panel's `renderers`. The new `f.list([...])` leaf is a list of strings drawn this way by default, and an `f.value` whose default is an array of strings now resolves to it.
+- f1c96ff: WeaselDraw's preferences dialog moves to the rail layout, with the filter field
+  on. Its five groups used to wrap into columns the dialog was too narrow to
+  hold.
+  
+  `Dialog`'s `min-height: 0` moves into the same `:where()` block as its padding
+  and overflow. Left in a plain rule it beat `bodyClassName` on source order, so
+  a body asked to hold a height did not, and the dialog resized itself around
+  whichever pane was open.
+- 0cf6a0d: The clipboard, duplicate, group, ungroup, reorder and flip actions now ship their own icons, so `<ActionBar group="clipboard" />` and its siblings draw glyphs with no `icons` map. Each reorder and flip variant carries its own glyph (Bring Forward / Bring to Front, Send Backward / Send to Back, Flip Horizontal / Flip Vertical). The twelve glyphs are exported from `@weasel-js/core` and `@weasel-js/ui` as `CutIcon`, `CopyIcon`, `PasteIcon`, `DuplicateIcon`, `GroupIcon`, `UngroupIcon`, `BringForwardIcon`, `BringToFrontIcon`, `SendBackwardIcon`, `SendToBackIcon`, `FlipXIcon` and `FlipYIcon`, in the same 20×20 `currentColor` register as the Pathfinder icons. An `icons` entry still overrides them.
+- 23c4282: `Select`, `Input` and `NumberField` with `orientation="row"` now lay their
+  label and control out side by side. Each field's own `.field` rule declared
+  `flex-direction: column` at the same specificity as `Field`'s shared row class
+  and came later in the cascade, so the row class was applied and the label still
+  stacked above the control. A `width="fit"` Select in a row also sizes its
+  trigger to its options instead of wrapping it onto its own line.
+- 7c98a5a: Two paint controls for drawing apps. `FillStrokeSwatch` shows the active fill and stroke as the overlapping pair: fill a solid square behind, stroke a frame in front that the fill shows through. Each chip is a native color picker that reports `onInput` while it is open and `onChange` once when it closes, and the chip that has focus is the one the None button acts on. Given the matching callbacks it also adds shift-click-for-none, a None button, Swap and Default. `SwatchGrid` is a palette that applies a color on click, or sends it to an alternate target on shift-click, right-click or Shift+Enter. It takes one tab stop, and the arrow keys move by one swatch across or by a row up and down. Both draw a translucent color over the `--wzl-checker-*` checker and mark "no paint" with the danger diagonal. Neither holds any paint state. The app routes each pick to its own state, and to the selection through `useOngoingAction`.
+- b466aad: A pressed `ghost` `Button` keeps its pressed background under the pointer. The ghost hover rule outranked `.pressed`, so a toggle clicked on showed no change until the pointer left it.
+- 7c53d1a: The undo, redo and delete actions now ship their own icons, so `<ActionBar group="history" />` and `<ActionBar group="edit" />` draw glyphs with no `icons` map. `UndoIcon`, `RedoIcon` and `DeleteIcon` move into `@weasel-js/core`, which the actions need them in; `@weasel-js/ui` re-exports them under the same names with the same props, and `<Icon name="undo" />` draws the same glyph. Core also exports `ACTION_GLYPHS`, the three glyphs' SVG markup, which `ICON_PATHS` now points at.
+- 6ab0006: Keep an icon's drawn nodes across a re-render, so an icon button's click lands.
+  
+  `Icon` passed React a new `dangerouslySetInnerHTML` object on every render, and
+  React 19 rewrites `innerHTML` whenever that object changes. A re-render during a
+  press — labkit's lab toolbar re-renders on pointerdown — replaced the
+  `<path>` the pointer went down on, and the browser synthesizes no `click` when
+  that node is gone. The Export panel could not be opened with a mouse.
+- 9e77264: Slider readouts in inline rows take less width.
+  
+  - The readout's width is four digits (`calc(4.5ch + 2px)`) rather than `2.8em`, so it follows the digit width of the face, and every readout in a column is the same box: the sliders beside them end on one line. A range whose widest value needs more than four characters widens its own readout. `--wzl-property-readout-w` still overrides the width.
+  - A word unit (`ms`, `px`, `%`) in an inline row hangs below the digits in capitals instead of sitting beside them, taken out of flow so a row with a unit is the same height and width as one without. Stacked rows, whose readout sits on the label line, keep the unit beside the value.
+- 609d801: `Input` and `NumberField` take `orientation`, the same `'stacked' | 'row'` that `Field` and `Select` take. `'row'` sets the label beside the field at its own width, the field takes the rest of the row, and any description or error drops to a line of its own; a `NumberField` with `width="fit"` keeps its own width and centers on the label. The default, `'stacked'`, renders as before.
+- 2da83b8: `ItemList` is now an accessible list rather than a column of plain divs. Its role follows what the list can do: a `list` when rows can be neither selected nor activated, a `listbox` of `option`s with `aria-selected` when `selection` is `'single'` or `'multi'`, and a `grid` when any row carries `trailing` controls (visibility, lock), since an option may not contain controls. One row sits in the tab order; Up/Down and Home/End move between rows, Enter/Space and click call the new `onActivate(id, index, mods)` with the modifiers held, and Alt+Up/Down call the new `onNudge(id, index, delta)`, which takes `useReorderDragList`'s `nudge` as-is. In a grid, Right steps into a row's controls and Left or Escape steps back; a control's own clicks and keys never activate its row. `PressModifiers` is now exported.
+- 1bcbbf6: `ItemList` draws its own drop indicator: pass `dropIndex` (an insertion index, `0` above the first row, `rows.length` below the last — `useReorderDragList`'s `state.targetIndex` as-is) and the list marks the seam in the accent color. It is drawn from the row beside the seam, so it follows the rows' height at every density, needs no measuring, and adds no element to the list, so the drag hook needs no `rowSelector` to skip it. A row's new `dragging` flag dims it while it is being dragged.
+- f0a74f8: `ItemList` takes `onSelectRange(ids)` for keyboard range selection. In a `selection="multi"` list, Shift+Up/Down and Shift+Home/End move focus and report every row from the anchor to the newly focused one, in list order. The anchor is the row last focused or activated by anything other than a range move, so a click or a plain arrow move starts a new range there. As with `onActivate`, what the range does to the selection stays with the consumer. A list without `onSelectRange` keeps treating Shift+Arrow as a plain move.
+- 7215cd1: New `keySpecsFromShortcut(shortcut, { platform?, legend? })` turns a kit shortcut (`{ key, mod, shift, alt }`) into `KeySequence` keys, spelled for the platform the way `keySpecsFromMods` and `keySpecFromKey` spell them: `⌘ Z` on macOS, `Ctrl Z` on Windows. An optional shift renders as an optional key. It replaces `formatShortcutParts(s)?.map((label) => ({ label }))`, which always printed macOS glyphs and dropped an optional shift. The `ShortcutInput` type it takes is now exported, and labkit's `weasel-ui` passthrough carries the helper.
+- 5382c7e: `KeySequence` now recognizes Windows and Linux modifier labels (`Ctrl`, `Alt`, `⊞`, `Win`, `Super`) and macOS text legends (`Cmd`, `Option`, `Control`, `Shift`) as modifiers, so they sort ahead of the key and get the `+` separator. Previously only the macOS glyphs did, and a Windows shortcut rendered in input order with no separator. Those labels also take the modifier chip width now.
+- 61ba0a2: `LayerStackItem.accent` is replaced by `tone`, the same prop `EffectCard` takes: an index into the theme's tone list, which follows light and dark mode, or a color given directly. Breaking for anyone passing `accent`; a color string moves across unchanged as `tone`.
+- 3ed8213: `MenuButton` and `Select` take `shortcut` and `tooltip`, the same fields `Button`, `ToggleBarItem` and `ButtonBarItem` carry. `shortcut` puts a kit tooltip on the trigger reading `Name (⌘N)`, named by `aria-label` or a string `label`; `tooltip` replaces that text with any content. A trigger with neither renders exactly as before, and opening the menu or list is unchanged.
+- f3d9d92: Surfaces can say what kind of content they hold and which of their peers they are. `PropertyPanel`, `PropertyGroup`, `Subpanel`, `Callout`, `Dialog`, labkit's `ControlPanel` and its sidebar sections take `stance` (`scope`, `aside`, `advanced`, `debug`, `danger`, `notice`, `important`, `preview`) and `tone` (an index into the theme's tone list, or a color). The theme draws each stance from `--wzl-panel-*` and `--wzl-stance-*` slots, and a surface given a tone recolors the controls inside it. `ControlPanel` wraps its rows in a titled `PropertyPanel` when given any of `title`, `stance` or `tone`.
+  
+  `@weasel-js/theme` adds `ColorList` — literals, the categorical generator, a theme ramp, or a function — read with `colorAt`, `colorCssAt` and `colorCount`; `tones` on theme definitions; `<ThemeProvider tones>` and `useTones()`; and `STANCES` / `STANCE_SLOTS`. labkit's `nebula` takes a `ColorList`.
+  
+  Breaking: `EffectCard`'s `accent` is now `tone`, and `--wzl-effect-card-accent` is gone. `Callout`'s `tone` (`info` / `warning` / `danger`) is now `stance` (`notice`, the default / `important` / `danger`), and `CalloutTone` is removed. A subpanel's rule now reads `--wzl-line-subtle` rather than a fixed translucent white, so it shows in light mode.
+- 5ad1478: `PrefsForm` grows a second layout. `layout="rail"` puts a two-level navigation
+  rail beside one group's settings at a time: top-level groups open a pane,
+  nested groups scroll it and light up as they pass, and anything deeper renders
+  as an indented section in the pane rather than growing the rail. `filterable`
+  adds a field that narrows the form to matching leaves in either layout, with
+  per-group match counts in the rail.
+  
+  The default `layout="columns"` is untouched.
+  
+  Also new, and useful on their own: `useScrollSpy` (which section of a scrolling
+  container is in view, with its decision exposed as the pure `pickActiveSection`),
+  `Dialog`'s `bodyClassName` for content that scrolls itself, `PrefsDialog`'s
+  `footer` passthrough, and two theme hooks — `--wzl-prefs-rail-width` and
+  `--wzl-input-surface`, the latter for a text field on a container whose own
+  background is the default sunken surface, where it was previously the same
+  color as what sat behind it.
+- ce53e3c: `PropertyPanel` takes `actions` and `selectable`. `actions` puts controls on the trailing edge of the title row, outside the heading, so a switch or a clear button no longer has to be packed inside the `title` node, where it took the title's type and joined its accessible name. `selectable` lets text in the panel be selected and copied, reaching past the `user-select: none` every member of the family sets; a `debug` panel is selectable unless given `selectable={false}`, since the ids and traces it shows are there to be copied. Other panels behave as before.
+- edf7878: The property-panel family (`PropertyPanel`, `PropertyList`, rows, groups, subpanels and effect cards) is no longer text-selectable, so a drag that misses a slider does not paint a selection over the labels. Readouts, text fields and editable content stay selectable.
+- cf69850: `PropertyRenderContext` carries `selectionKey`: the ids of the nodes a
+  `SelectionPanel` read its values from, joined. A custom renderer holding
+  scratch that belongs to one selection — a paint control's per-kind memory —
+  can key on it and be remounted when the selection changes, as the built-in
+  paint leaf already is. Fields of an object leaf receive it too. It is absent
+  where values come from no selection, as in `ToolOptionsBar`.
+- a4d9250: An inline row's hanging readout unit takes its case and tracking from
+  `--wzl-params-label-case` and `--wzl-params-label-tracking`, like every other
+  cased label on a params surface, instead of hard-coding uppercase with no
+  letter-spacing.
+- 5fb5bab: Rename `ActionsBar` to `ButtonBar`, along with its `ButtonBarItem`, `ButtonBarProps`, `ButtonBarSize` and `ButtonBarVariant` types. The old name read as a variant of `ActionBar`, which renders actions from the kit's actions registry; this one is a plain strip of callback buttons, the momentary sibling of `ToggleBar` and `OptionsBar`. Breaking: the old names have no alias.
+- 2efeb82: `useReorderDragList` gains `nudge(id, index, delta)`, the keyboard half of the reorder: it moves one row, or the selection that row belongs to, one place up or down under the same rules as a drag — never across a locked row, and not at all when the move would change nothing. A press that starts on a control inside a row (a visibility toggle) is now left to that control instead of opening a drag and capturing the pointer away from it. When `onPress` is given, the DOM click that follows the same press is dropped, so a row that also handles `click` no longer counts one press twice.
+- 6ce2bcb: The weasel theme has a secondary accent: a honey amber opposite the violet accent, as a `secondary-soft`/`-base`/`-strong` ramp, a `--wzl-secondary` fill, and `--wzl-secondary-fg` for text. `--wzl-secondary-fg` is picked from the ramp to clear 4.5:1 on every surface, so it is the base step in dark mode and the deep step in light. An auto row's `AUTO` readout draws in it.
+- 106139a: `Select` takes an `orientation` prop, with `Field`'s values: `'stacked'` (the default) keeps the label above the trigger, and `'row'` sets it beside the trigger at its own width, the trigger taking the rest of the row, or sitting at its fitted width with `width='fit'`. A description or error drops to a line of its own. A side-by-side label no longer needs an outer `<label htmlFor>` wired to `triggerId`.
+- 9789097: An inline property row holding a select lines its value up with its label under `align="center"` too. Text rows already aligned on the baseline, but `center` overrode that, and centering a 9px label against an 11px value left the value about 1px low. For those rows `center` now means `baseline`; `start` and `end` still apply as given.
+- da3b958: `Select` can group its rows into titled sections. In the children form, wrap `SelectItem` rows in the new `SelectSection` with a `title`; in the `options` form, an entry with `title` and its own `options` is a section (type `SelectOptionGroup`) and can sit beside plain options. Sections render as React Aria list-box sections, so each is a group named by its title for screen readers, and neighboring sections divide on a rule. A `width="fit"` trigger measures the options inside sections too.
+- 731573b: A `SidebarPanel` whose title is static (no `onToggleCollapse`) now insets that title the way a collapsible one is inset. Since the panel's horizontal padding moved onto the title row's controls, a static title sat flush against the panel edge with no vertical padding either; both kinds of title now share one box, so they line up and a panel's header row is the same height whether or not it collapses.
+- 74cc4df: New `Tree`: a hierarchy of expandable rows with WAI-ARIA tree semantics (`tree` / `treeitem` / `group`, `aria-level`, `aria-expanded`, `aria-selected`) and the tree keyboard — Up/Down over visible rows, Right to open or step in, Left to close or step out, Home/End, Enter/Space to activate, and type-ahead. Expansion and selection are each controlled or uncontrolled (`expandedIds` / `defaultExpandedIds` / `onExpandedChange`, `selectedIds` / `defaultSelectedIds` / `onSelectionChange`), with `selectionMode` `'single'` or `'multiple'` (Cmd/Ctrl toggles, Shift extends). Each node takes `leading` and `trailing` decoration, `muted` and `disabled`. Rows are `--wzl-control-h` tall, so they follow density. `filterTree` and `treeBranchIds` cover the usual filter: narrow the nodes, then open every branch that still holds a match.
+  
+  `DisclosureMark` is the drawn twisty `Disclosure` wears, now exported on its own for a row that is itself the control and so cannot nest a button.
+- 62d8d7c: `useOngoingAction(actionId)` lets a UI control — a color picker, a slider, a swatch — drive an ongoing action the way a drag does: `input(params)` opens the action on the first call and moves it on the rest (the live preview), `commit(params?)` ends it as one undo entry, and `cancel()` drops it. A commit with nothing open is a whole edit on its own, which is what a click on a swatch is. An edit still open when the control unmounts or its action id changes is committed. It wraps `ActionsRegistry.begin`, whose begin-or-update-then-end bookkeeping every such control used to hand-roll around a ref; `SceneGradientHandles` now uses it.
+- Updated dependencies [16c0da2]
+- Updated dependencies [b8ebef6]
+- Updated dependencies [90a2d9b]
+- Updated dependencies [04ff89b]
+- Updated dependencies [bfe6a4f]
+- Updated dependencies [f04faf6]
+- Updated dependencies [0cf6a0d]
+- Updated dependencies [811abcd]
+- Updated dependencies [7c53d1a]
+- Updated dependencies [b1c30bc]
+- Updated dependencies [5345efb]
+- Updated dependencies [9e77264]
+- Updated dependencies [497727a]
+- Updated dependencies [87fd8a8]
+- Updated dependencies [c7e9e4c]
+- Updated dependencies [f3d9d92]
+- Updated dependencies [c24d2c7]
+- Updated dependencies [6f14f6f]
+- Updated dependencies [c1f82e2]
+- Updated dependencies [5ad1478]
+- Updated dependencies [97561f1]
+- Updated dependencies [89926b5]
+- Updated dependencies [6ce2bcb]
+- Updated dependencies [959e5e5]
+- Updated dependencies [9f86dec]
+- Updated dependencies [debfd5d]
+- Updated dependencies [3225eb8]
+- Updated dependencies [d975afa]
+- Updated dependencies [62d8d7c]
+  - @weasel-js/core@1.5.3
+  - @weasel-js/theme@1.5.3
+  - @weasel-js/svg@1.5.3
+  - @weasel-js/modes@1.5.3
+  - @weasel-js/font@1.5.3
+
 ## 1.5.2
 
 ### Patch Changes
