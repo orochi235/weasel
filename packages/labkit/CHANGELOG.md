@@ -1,5 +1,124 @@
 # @weasel-js/labkit
 
+## 1.5.3
+
+### Patch Changes
+
+- bbf1de2: Text drawn in the accent color now reads `--wzl-accent-fg` instead of the accent fill tokens: Properties readouts and their editable input, `NumberField`'s ghost variant, Timeline's checked transport buttons, forge's current story and labkit's button hover. A surface that rebinds `--wzl-accent` to recolor its controls' fills can now set the text color separately. In dark mode the readouts get brighter, since `accent-fg` is the strong accent there. `npm run check:token-reads` now fails on `color:` reading an accent fill token.
+- 04ff89b: A color-mode choice with a way back to Auto, as kit surface instead of something each app rebuilds.
+  
+  `@weasel-js/theme` exports the `ColorModePreference` type (`'auto' | 'light' | 'dark'`), `ColorMode` (`'light' | 'dark'`) and `isColorModePreference`. `@weasel-js/theme/react` adds `useResolvedColorMode(preference)`, which follows the OS setting live under `'auto'` and returns an explicit choice as given, and `useColorModePreference({ storageKey, storage, defaultPreference })`, which holds the choice, optionally remembers it in `localStorage` (or a store you pass), and returns `{ preference, setPreference, mode }`. `mode` is what goes in a `ThemeProvider`'s `selection`. Storage that is missing or throws leaves the choice unremembered rather than failing.
+  
+  `@weasel-js/ui` adds `ColorModeControl`, the Auto / Light / Dark radiogroup drawn with the mode glyphs, controlled by `value` and `onChange`.
+  
+  labkit's header now renders `ColorModeControl`, and `<Lab>` and `<LabRoot>` resolve their mode with `useResolvedColorMode`; `LabMode` is an alias of `ColorModePreference`. Switching a lab back to Auto now picks up an OS change made while it was pinned.
+- f4712fe: A row can now hold an editor too big for it. weasel-ui's `DialogRow` shows a one-line summary of the value on a button, and the button opens a modal around whatever body it is given; `ListEditor` edits a list of strings one field per entry. In labkit, `.dialog(body)` on any config leaf moves that leaf's control into such a dialog, and `inDialog(body)` builds the same row as a renderer for a panel's `renderers`. The new `f.list([...])` leaf is a list of strings drawn this way by default, and an `f.value` whose default is an array of strings now resolves to it.
+- 497727a: `interstellar`'s light mode is weasel's own: violet on cool gray, where it used to be a parchment palette with a copper accent. The theme restyles the dark mode only.
+  
+  `derive` now lets a child theme's by-axis pin leave a value out, as `defineTheme` already did: that selection keeps what the parent theme produces, whether the parent pins the token or derives it. A pin with nothing underneath it still reports `missing-axis-value`.
+  
+  `--wzl-secondary-fg` is picked for contrast against `surface` alone, which is solid in every shipped theme, rather than also against `surface-raised`, which `interstellar` draws translucent.
+- 7215cd1: New `keySpecsFromShortcut(shortcut, { platform?, legend? })` turns a kit shortcut (`{ key, mod, shift, alt }`) into `KeySequence` keys, spelled for the platform the way `keySpecsFromMods` and `keySpecFromKey` spell them: `⌘ Z` on macOS, `Ctrl Z` on Windows. An optional shift renders as an optional key. It replaces `formatShortcutParts(s)?.map((label) => ({ label }))`, which always printed macOS glyphs and dropped an optional shift. The `ShortcutInput` type it takes is now exported, and labkit's `weasel-ui` passthrough carries the helper.
+- 601d72c: `LabSwitcher` (and `LabShell`'s `pages`) now tells hash routes on one document apart. A page whose `href` is a hash route such as `#/dev/tools` is the open page when the location's hash is that route or one under it, ignoring the route's own query; a page without a hash still ignores the hash, so an in-page anchor keeps it marked. The default path now includes `location.hash`, and a trailing slash on a page's `href` no longer stops it matching. `LabShell` also takes `documentTitle`, which it sets as `document.title` while mounted and restores after.
+- c0c6971: `sectionTree` rearranges a `ResolvedConfig` so its root sections are groups,
+  which is where `PrefsForm`'s rail layout looks for them. A section naming a
+  group brings it in whole, so it lands as an indented rail item; a section
+  naming a leaf drops it loose into that section's pane. `showIf` and `hidden`
+  are applied on the way, and a section they empty is left out rather than
+  opening onto nothing. It returns the tree, the config renested to match, and
+  `pathAt` to get a config path back from a rail one.
+  
+  A flat schema's rail was otherwise one unnamed item however many headings the
+  panel drew, since a resolved schema keeps its sections beside the tree.
+  
+  `PrefsForm`, `PrefsDialog` and their prop types now come through
+  `@weasel-js/labkit/weasel-ui`, which carried the `Pref*` vocabulary but not the
+  components that render it.
+- 0ac85d7: A dropdown row's label in the params panel now sits on the same rail as every
+  other row's. A select row aligns to its value's baseline by default, which put
+  its label ~1.6px below the centered slider and checkbox rows around it, so a
+  column of labels stepped at each dropdown. The panel sets
+  `--wzl-prop-row-align-text: center`; the `@weasel-js/ui` default is unchanged.
+- e9bfe55: A lab's main viewport no longer pads its contents: the workspace runs edge to edge under the header. The `--lk-workspace-pad` custom property is gone.
+- f3d9d92: Surfaces can say what kind of content they hold and which of their peers they are. `PropertyPanel`, `PropertyGroup`, `Subpanel`, `Callout`, `Dialog`, labkit's `ControlPanel` and its sidebar sections take `stance` (`scope`, `aside`, `advanced`, `debug`, `danger`, `notice`, `important`, `preview`) and `tone` (an index into the theme's tone list, or a color). The theme draws each stance from `--wzl-panel-*` and `--wzl-stance-*` slots, and a surface given a tone recolors the controls inside it. `ControlPanel` wraps its rows in a titled `PropertyPanel` when given any of `title`, `stance` or `tone`.
+  
+  `@weasel-js/theme` adds `ColorList` — literals, the categorical generator, a theme ramp, or a function — read with `colorAt`, `colorCssAt` and `colorCount`; `tones` on theme definitions; `<ThemeProvider tones>` and `useTones()`; and `STANCES` / `STANCE_SLOTS`. labkit's `nebula` takes a `ColorList`.
+  
+  Breaking: `EffectCard`'s `accent` is now `tone`, and `--wzl-effect-card-accent` is gone. `Callout`'s `tone` (`info` / `warning` / `danger`) is now `stance` (`notice`, the default / `important` / `danger`), and `CalloutTone` is removed. A subpanel's rule now reads `--wzl-line-subtle` rather than a fixed translucent white, so it shows in light mode.
+- 5fb5bab: Rename `ActionsBar` to `ButtonBar`, along with its `ButtonBarItem`, `ButtonBarProps`, `ButtonBarSize` and `ButtonBarVariant` types. The old name read as a variant of `ActionBar`, which renders actions from the kit's actions registry; this one is a plain strip of callback buttons, the momentary sibling of `ToggleBar` and `OptionsBar`. Breaking: the old names have no alias.
+- Updated dependencies [bbf1de2]
+- Updated dependencies [16c0da2]
+- Updated dependencies [b8ebef6]
+- Updated dependencies [dfbed19]
+- Updated dependencies [7216628]
+- Updated dependencies [a581611]
+- Updated dependencies [5f45cb4]
+- Updated dependencies [928fa33]
+- Updated dependencies [d7577d2]
+- Updated dependencies [64f4739]
+- Updated dependencies [9689a2a]
+- Updated dependencies [90a2d9b]
+- Updated dependencies [a9a61f0]
+- Updated dependencies [04ff89b]
+- Updated dependencies [bfe6a4f]
+- Updated dependencies [2af33a4]
+- Updated dependencies [9a25ac4]
+- Updated dependencies [f4712fe]
+- Updated dependencies [f1c96ff]
+- Updated dependencies [f04faf6]
+- Updated dependencies [0cf6a0d]
+- Updated dependencies [23c4282]
+- Updated dependencies [7c98a5a]
+- Updated dependencies [b466aad]
+- Updated dependencies [811abcd]
+- Updated dependencies [7c53d1a]
+- Updated dependencies [b1c30bc]
+- Updated dependencies [6ab0006]
+- Updated dependencies [5345efb]
+- Updated dependencies [9e77264]
+- Updated dependencies [609d801]
+- Updated dependencies [497727a]
+- Updated dependencies [2da83b8]
+- Updated dependencies [1bcbbf6]
+- Updated dependencies [f0a74f8]
+- Updated dependencies [7215cd1]
+- Updated dependencies [5382c7e]
+- Updated dependencies [61ba0a2]
+- Updated dependencies [87fd8a8]
+- Updated dependencies [3ed8213]
+- Updated dependencies [f3d9d92]
+- Updated dependencies [c24d2c7]
+- Updated dependencies [6f14f6f]
+- Updated dependencies [c1f82e2]
+- Updated dependencies [5ad1478]
+- Updated dependencies [ce53e3c]
+- Updated dependencies [edf7878]
+- Updated dependencies [cf69850]
+- Updated dependencies [a4d9250]
+- Updated dependencies [5fb5bab]
+- Updated dependencies [2efeb82]
+- Updated dependencies [97561f1]
+- Updated dependencies [89926b5]
+- Updated dependencies [6ce2bcb]
+- Updated dependencies [959e5e5]
+- Updated dependencies [106139a]
+- Updated dependencies [9789097]
+- Updated dependencies [da3b958]
+- Updated dependencies [9f86dec]
+- Updated dependencies [731573b]
+- Updated dependencies [debfd5d]
+- Updated dependencies [3225eb8]
+- Updated dependencies [d975afa]
+- Updated dependencies [74cc4df]
+- Updated dependencies [62d8d7c]
+  - @weasel-js/ui@1.5.3
+  - @weasel-js/core@1.5.3
+  - @weasel-js/theme@1.5.3
+  - @weasel-js/svg@1.5.3
+  - @weasel-js/kernel3d@1.5.3
+  - @weasel-js/loupe@1.5.3
+  - @weasel-js/geom@1.5.3
+
 ## 1.5.2
 
 ### Patch Changes
