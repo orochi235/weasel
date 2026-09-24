@@ -6,6 +6,8 @@ export interface GlobalDeclaration {
   label: string;
   options: readonly { value: string; label: string }[];
   default: string;
+  /** Another global's key: the toolbar shows this one in a popover beside that one rather than in the bar itself. */
+  under?: string;
 }
 
 export type GlobalDeclarations = Readonly<Record<string, GlobalDeclaration>>;

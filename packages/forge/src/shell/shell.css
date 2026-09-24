@@ -312,10 +312,22 @@
   font-size: var(--wzl-font-size-sm);
 }
 
-.fg-globals {
+.fg-globals,
+.fg-globals__item {
   display: flex;
   align-items: center;
   gap: var(--wzl-space-xs);
+}
+
+.fg-globals__item {
+  gap: 0;
+}
+
+.fg-globals__popover {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-sm);
+  min-width: 14rem;
 }
 
 

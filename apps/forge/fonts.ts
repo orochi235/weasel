@@ -74,14 +74,9 @@ const SLOTS = [
 export const FONT_GLOBALS: GlobalDeclarations = {
   fontFamily: { label: 'Font', default: 'oswald', options: options(FAMILY_OPTIONS) },
   ...Object.fromEntries(
-    // The toolbar shows a select's value alone, so each option names its slot.
     SLOTS.slice(1).map(({ global, label }) => [
       global,
-      {
-        label,
-        default: THEME,
-        options: options([[THEME, 'Theme'], ...FAMILY_OPTIONS].map(([key, name]) => [key, `${label}: ${name}`])),
-      },
+      { label, default: THEME, options: options([[THEME, 'Theme'], ...FAMILY_OPTIONS]), under: 'fontFamily' },
     ]),
   ),
   fontWeight: { label: 'Weight', default: '500', options: options(WEIGHTS) },
