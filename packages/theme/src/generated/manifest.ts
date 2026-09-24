@@ -184,6 +184,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-space-sm', type: "dimension", group: "space", defaultValue: "8px", description: "Alias for space-4. The t-shirt names name every other rung of the ladder.", hook: false },
   { name: '--wzl-space-md', type: "dimension", group: "space", defaultValue: "12px", description: "Alias for space-6. The t-shirt names name every other rung of the ladder.", hook: false },
   { name: '--wzl-space-lg', type: "dimension", group: "space", defaultValue: "16px", description: "Alias for space-8. The t-shirt names name every other rung of the ladder.", hook: false },
+  { name: '--wzl-disclosure-fill', type: "color", group: "disclosure", defaultValue: "var(--wzl-accent-fg)", description: "Fill of a Disclosure’s fold mark.", hook: true },
   { name: '--wzl-disclosure-gap', type: "dimension", group: "disclosure", defaultValue: "4px", description: "Gap between a Disclosure’s twisty and its label.", hook: true },
   { name: '--wzl-disclosure-target', type: "dimension", group: "disclosure", defaultValue: "20px", description: "Hit-target square of a Disclosure twisty, and of a labkit LayerList row’s.", hook: true },
   { name: '--wzl-input-surface', type: "color", group: "input", defaultValue: "var(--wzl-surface-sunken)", description: "Surface a text Input’s frame sits on. Set it on any container whose own background is the default — a sunken rail or panel — where an unset field is the same color as what is behind it.", hook: true },

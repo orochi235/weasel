@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
-import { ChevronIcon } from '../../icons';
+import { DisclosureMark } from '../Disclosure';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './SidebarPanel.module.css';
 
@@ -16,7 +16,7 @@ export interface SidebarPanelProps {
   collapsed?: boolean;
   /**
    * Click handler for the title row. When provided, the header renders
-   * as a button (chevron + label) and acts as the collapse toggle.
+   * as a button (fold mark + label) and acts as the collapse toggle.
    * When omitted, the title is static text and the panel can't collapse.
    */
   onToggleCollapse?(): void;
@@ -34,7 +34,7 @@ export interface SidebarPanelProps {
  * Generic collapsible panel section for sidebars. Pure presentation —
  * caller manages `collapsed`/`hidden` state externally (the pattern is
  * to drive it from app prefs so the Preferences modal and inline
- * chevrons toggle the same map).
+ * fold marks toggle the same map).
  *
  * Pair with `<Sidebar>` for the docked column layout.
  */
@@ -53,10 +53,7 @@ export function SidebarPanel(props: SidebarPanelProps) {
               onClick={onToggleCollapse}
               aria-expanded={!collapsed}
             >
-              <ChevronIcon
-                size={16}
-                className={[s.chevron, collapsed && s.chevronCollapsed].filter(Boolean).join(' ')}
-              />
+              <DisclosureMark open={!collapsed} />
               <span className={s.title}>{title}</span>
             </button>
           ) : (

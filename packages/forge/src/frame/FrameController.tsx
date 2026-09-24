@@ -28,6 +28,11 @@ export interface FrameSetup {
   cssVarsScope?: string;
   /** Project-wide CSF parameters, Storybook's preview `parameters`: under each meta's and story's. */
   parameters?: Record<string, unknown>;
+  /**
+   * Awaited once a story is loaded and before it first renders — the place to import what only some stories
+   * need, so the rest never load it.
+   */
+  prepare?: (story: LoadedStory) => void | Promise<void>;
 }
 
 export interface StartFrameOptions {

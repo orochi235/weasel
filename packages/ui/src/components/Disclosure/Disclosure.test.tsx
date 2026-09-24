@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { Disclosure, DisclosureRow } from './Disclosure';
+import { Disclosure, DisclosureMark, DisclosureRow } from './Disclosure';
 
 describe('Disclosure', () => {
   it('reports its state through aria-expanded', () => {
@@ -75,7 +75,16 @@ describe('Disclosure', () => {
     const svg = container.querySelector('svg');
     expect(svg).toHaveAttribute('width', '20');
     expect(svg).toHaveAttribute('height', '20');
-    expect(svg).toHaveAttribute('viewBox', '0 0 12 12');
+    expect(svg).toHaveAttribute('viewBox', '0 0 13 13');
+  });
+});
+
+describe('DisclosureMark', () => {
+  it('draws a plus while shut and a minus while open', () => {
+    const d = (open: boolean) =>
+      render(<DisclosureMark open={open} />).container.querySelector('path')?.getAttribute('d');
+    expect(d(false)).toBe('M3 6.5 H10 M6.5 3 V10');
+    expect(d(true)).toBe('M3 6.5 H10');
   });
 });
 

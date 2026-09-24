@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { openPointerSession, type EventTrack, type Keyframe, type PointerSession, type SampledTrack, type TimelineTrack } from '@weasel-js/core';
-import { ChevronIcon } from '../../icons';
+import { DisclosureMark } from '../Disclosure';
 import s from './Timeline.module.css';
 import { createTimeScale, spanPercent, toPercent, type TimeWindow } from './timeScale';
 import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
@@ -127,10 +127,7 @@ export function Lane(props: LaneProps): ReactElement {
             onClick={onToggleExpand}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleExpand(); } }}
           >
-            <ChevronIcon
-              size={14}
-              className={[s.disclosureIcon, !expanded && s.disclosureCollapsed].filter(Boolean).join(' ')}
-            />
+            <DisclosureMark open={expanded} />
           </span>
         ) : null}
         {row.label}

@@ -2,11 +2,13 @@ import { Lab, type LabContribution, type StorageAdapter, useLabContext } from '@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ShellConfig } from '../config';
 import { type Globals, stableStringify } from '../protocol/messages';
+import { indexEntries } from '../story/indexPages';
 import type { IndexEntry } from '../story/types';
 import { InfoIcon } from '@weasel-js/ui';
 import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
+import { createFramePool, type FramePool, FramePoolContext } from './framePool';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
@@ -27,10 +29,10 @@ export interface WorkshopProps {
 
 const NO_DECLARATIONS: GlobalDeclarations = {};
 
-/** The story `#/<id>` names, when it is indexed; otherwise the first story. Read when the lab mounts. */
-function initialStory(index: readonly IndexEntry[], fallback: string): string {
+/** The story or index page `#/<id>` names, when there is one; otherwise `fallback`. Read when the lab mounts. */
+function initialStory(entries: readonly IndexEntry[], fallback: string): string {
   const route = readRoute();
-  return route !== null && index.some((entry) => entry.id === route) ? route : fallback;
+  return route !== null && entries.some((entry) => entry.id === route) ? route : fallback;
 }
 
 /**
@@ -77,8 +79,17 @@ function useInfoShortcut(open: (next: boolean) => void): void {
 export function Workshop({ index, frameUrl, config, stories = [], storageKey, storage }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
   const [frames] = useState(createTrialFrames);
-  const registry = useStoryRegistry(index, { frameUrl, globals: declarations, frames });
+  const [pool, setPool] = useState<FramePool | null>(null);
+  useEffect(() => {
+    const next = createFramePool(frameUrl);
+    setPool(next);
+    return () => next.dispose();
+  }, [frameUrl]);
+  const entries = useMemo(() => [...index, ...indexEntries(index)], [index]);
+  const registry = useStoryRegistry(entries, { frameUrl, globals: declarations, frames });
   const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
+  const themeFor = config?.labTheme;
+  const labTheme = useMemo(() => themeFor?.(labValues), [themeFor, labValues]);
   const [infoOpen, setInfoOpen] = useState(false);
   useInfoShortcut(setInfoOpen);
   const reportLabValues = useCallback(
@@ -121,30 +132,33 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
   }
   return (
     <StoryGlobalsContext.Provider value={labValues}>
-      <TrialFramesContext.Provider value={frames}>
-        <Lab
-          title="weaselforge"
-          density="roomy"
-          instruments={registry.instruments}
-          defaultInstrument={initialStory(index, first.id)}
-          storageKey={storageKey ?? 'weaselforge'}
-          {...(storage ? { storage } : {})}
-          labChrome={labChrome}
-          addTrial={false}
-          {...(config?.controls ? { controls: config.controls } : {})}
-          {...(config?.pages ? { pages: config.pages } : {})}
-          {...(config?.path !== undefined ? { path: config.path } : {})}
-        >
-          <RouteOpener index={index} />
-          <StoryInfoDialog
-            index={index}
-            isReady={registry.isReady}
-            isOpen={infoOpen}
-            onOpenChange={setInfoOpen}
-          />
-          <LabGlobals declarations={declarations} onChange={reportLabValues} />
-        </Lab>
-      </TrialFramesContext.Provider>
+      <FramePoolContext.Provider value={pool}>
+        <TrialFramesContext.Provider value={frames}>
+          <Lab
+            title="weaselforge"
+            density="roomy"
+            {...(labTheme ? { theme: labTheme } : {})}
+            instruments={registry.instruments}
+            defaultInstrument={initialStory(entries, first.id)}
+            storageKey={storageKey ?? 'weaselforge'}
+            {...(storage ? { storage } : {})}
+            labChrome={labChrome}
+            addTrial={false}
+            {...(config?.controls ? { controls: config.controls } : {})}
+            {...(config?.pages ? { pages: config.pages } : {})}
+            {...(config?.path !== undefined ? { path: config.path } : {})}
+          >
+            <RouteOpener index={entries} />
+            <StoryInfoDialog
+              index={index}
+              isReady={registry.isReady}
+              isOpen={infoOpen}
+              onOpenChange={setInfoOpen}
+            />
+            <LabGlobals declarations={declarations} onChange={reportLabValues} />
+          </Lab>
+        </TrialFramesContext.Provider>
+      </FramePoolContext.Provider>
     </StoryGlobalsContext.Provider>
   );
 }

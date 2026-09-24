@@ -1,6 +1,7 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
-import { Checkbox, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
+import { Badge, Checkbox, DisclosureMark, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
 import { type FocusEvent, type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
+import { indexEntries } from '../../story/indexPages';
 import type { IndexEntry } from '../../story/types';
 import { revealTrial } from '../revealTrial';
 import { useRoute } from '../useRoute';
@@ -40,13 +41,22 @@ function ancestorsOf(entry: IndexEntry | undefined): Set<string> {
   return paths;
 }
 
+/** A component's package, as a badge colored per package. */
+function LibraryBadge({ library }: { library: string }) {
+  return (
+    <Badge tone="custom" variant="subtle" size="sm" className={`fg-tree__tag fg-lib--${library}`}>
+      {library}
+    </Badge>
+  );
+}
+
 /** The indexed stories as a filterable tree; opening one runs it in the focused trial, or with Shift in another. */
 export function StoryTree({ ctx, index }: StoryTreeProps) {
   const headingId = useId();
   const [route, setRoute] = useRoute();
   const [query, setQuery] = useState('');
   const [folds, setFolds] = usePersistedState<Record<string, boolean>>('fg-tree-open', {}, { scope: 'lab' });
-  const [view, setView] = usePersistedState<View>('fg-tree-view', 'tree', { scope: 'lab' });
+  const [view, setView] = usePersistedState<View>('fg-tree-view', 'components', { scope: 'lab' });
   // Stored as what is *off*, so a library added later is on without anyone
   // going back to tick it.
   const [hidden, setHidden] = usePersistedState<Record<string, boolean>>('fg-tree-libraries', {}, { scope: 'lab' });
@@ -66,11 +76,12 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
         : filterTree(tree, query),
     [view, components, tree, query],
   );
-  const routed = kept.find((entry) => entry.id === route);
+  const routable = useMemo(() => [...kept, ...indexEntries(kept)], [kept]);
+  const routed = routable.find((entry) => entry.id === route);
   const routeAncestors = useMemo(() => ancestorsOf(routed), [routed]);
   const filtering = query.trim() !== '';
   const isOpen = (path: string): boolean =>
-    filtering || (folds[path] ?? (view === 'tree' && routeAncestors.has(path)));
+    filtering || (folds[path] ?? routeAncestors.has(path));
 
   const rows: Row[] = [];
   const collect = (nodes: readonly TreeNode[], parent: string | null): void => {
@@ -107,6 +118,16 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     setRoute(entry.id);
   };
 
+  // A component's row opens its index page as well as its folder; the fold mark alone only folds.
+  const openFolder = (node: Extract<TreeNode, { kind: 'folder' }>, another: boolean): void => {
+    if (!node.index) {
+      setOpen(node.path, !isOpen(node.path));
+      return;
+    }
+    setOpen(node.path, true);
+    activate(node.index, another);
+  };
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     const at = rows.findIndex((row) => row.key === active);
     const row = rows[at];
@@ -136,8 +157,8 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
         break;
       case 'Enter':
       case ' ':
-        if (node.kind === 'folder') setOpen(node.path, !isOpen(node.path));
-        else activate(node.entry, event.shiftKey);
+        if (node.kind === 'story') activate(node.entry, event.shiftKey);
+        else openFolder(node, event.shiftKey);
         break;
       default:
         return;
@@ -172,11 +193,28 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
             {...itemProps(node, level)}
             aria-expanded={open}
             aria-label={node.label}
+            aria-current={node.index && openIds.has(node.index.id) ? 'true' : undefined}
             className="fg-tree__node"
           >
-            <div className="fg-tree__item fg-tree__folder" onClick={() => setOpen(node.path, !open)}>
+            <div
+              className="fg-tree__item fg-tree__folder"
+              onClick={(event) => {
+                setFocusKey(keyOf(node));
+                openFolder(node, event.shiftKey);
+              }}
+            >
+              <span
+                aria-hidden="true"
+                className="fg-tree__fold"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setOpen(node.path, !open);
+                }}
+              >
+                <DisclosureMark open={open} />
+              </span>
               <span className="fg-tree__label">{node.label}</span>
-              {node.tag ? <span className="fg-tree__tag">{node.tag}</span> : null}
+              {node.tag ? <LibraryBadge library={node.tag} /> : null}
             </div>
             {open ? (
               <div role="group" className="fg-tree__group">
@@ -202,7 +240,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
           }}
         >
           <span className="fg-tree__label">{node.label ?? entry.name}</span>
-          {node.tag ? <span className="fg-tree__tag">{node.tag}</span> : null}
+          {node.tag ? <LibraryBadge library={node.tag} /> : null}
         </a>
       );
     });
@@ -234,7 +272,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
             isSelected={!hidden[library]}
             onChange={(on) => setHidden((prev) => ({ ...prev, [library]: !on }))}
           >
-            {library}
+            <LibraryBadge library={library} />
           </Checkbox>
         ))}
       </fieldset>

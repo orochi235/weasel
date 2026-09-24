@@ -733,6 +733,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   the first anchored step, in step order, sets the hue and peak, so anchoring
   `#ff0000` and `#0000ff` on one ramp pins the blue step inside a red ramp.
 
+- **(P2) labkit's Oswald `@font-face` 404s in every source-tree build.**
+  `packages/labkit/src/theme/base.less` points at `./fonts/…`, which only
+  resolves beside the compiled `dist/styles.css`; its comment says source-tree
+  use needs no URL, but a vite build emits the dead path and, declared after
+  any other Oswald face, replaces it. Text then falls back to whatever weights
+  the system has, so a 200 or 700 renders as 300 or 400 with no error but the
+  404. forge's workshop works around it by importing the theme's `fonts.css`
+  after labkit's styles (`apps/forge/labkitStyles.ts`) and its frame by
+  re-declaring the face (`apps/forge/frame.css`). The fix is one face with a URL
+  that resolves in both trees, most likely labkit dropping its own in favor of
+  `@weasel-js/theme/fonts.css`.
+
 - **(P3) The lab switcher's migrated tokens have not been looked at in a browser.**
   `packages/labkit/src/lab/LabSwitcher.less` read seven `--wzl-*` names no theme
   declares, so its menu items inherited the title's 20px and its hover changed
@@ -958,6 +970,14 @@ controls. It is the only story runner in the repo.
   and other content bare, so the switch remounts `FrameView` and reloads the
   iframe. Mount the provisional instrument under the same tree position, or learn
   the viewport before the first instrument is built.
+
+- **(P3) Opening a trial in forge reloads another trial's story.** Measured
+  2026-09-22 in the dev app: with one Button trial open, opening a second from
+  the route re-ran the first trial's `FrameView` frame effect, so its story
+  loaded again into a new frame. Whether labkit remounts the trial's body when
+  the tiling changes, or its host briefly leaves the `IntersectionObserver`
+  margin, is not yet known. Each reload also takes a frame from the warm pool
+  (`packages/forge/src/shell/framePool.ts`), which is why it keeps two.
 
 - **(P3) forge's lab scrolls sideways with two trials open beside the aside.**
   labkit's fit check (`packages/labkit/src/lab/fitCheck.ts`) warns that

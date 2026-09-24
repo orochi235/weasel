@@ -4,6 +4,8 @@
   align-items: baseline;
   vertical-align: baseline;
   gap: var(--badge-gap, 4px);
+  /* The shorthand first: after `font-size` it would reset the size to the parent's. */
+  font: inherit;
   font-size: var(--badge-font-size, var(--wzl-font-size-xs));
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -13,8 +15,6 @@
   --badge-fg: var(--badge-edge);
   background: transparent;
   border: 0;
-  font: inherit;
-  font-family: inherit;
   /* Badges never carry text-decoration. Symmetric: a badge inside a link
      suppresses the link's underline on the badge's text; a link inside a
      badge suppresses its own underline. The chip's colored background is

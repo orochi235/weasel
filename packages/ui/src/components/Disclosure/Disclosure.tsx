@@ -1,8 +1,42 @@
 import type { ReactNode } from 'react';
 import s from './Disclosure.module.css';
 
-/** Which way the mark points when the section is closed. */
-export type DisclosureDirection = 'right' | 'down';
+/** Props for `<DisclosureMark>`. */
+export interface DisclosureMarkProps {
+  /** Whether the section it stands for is open: `−` when open, `+` when shut. */
+  open: boolean;
+  /** Mark size in px, square. Default 13. */
+  size?: number;
+  className?: string;
+}
+
+/**
+ * The fold mark alone: a dark violet rounded square holding a `+` while its section is
+ * shut and a `−` while it is open. Decorative — it carries no role or label —
+ * for a row that is itself the control, such as a tree item or a header
+ * button. Anywhere the mark has to be the control, use `<Disclosure>`.
+ *
+ * Deliberately not part of the icon register, on the same grounds as
+ * `DragHandleGlyph`: that register is outline strokes at a fixed weight, and
+ * this mark is filled.
+ */
+export function DisclosureMark({ open, size = 13, className }: DisclosureMarkProps) {
+  return (
+    <svg
+      className={className ? `${s.mark} ${className}` : s.mark}
+      viewBox="0 0 13 13"
+      width={size}
+      height={size}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect className={s.lozenge} width="13" height="13" rx="3" />
+      {/* One-unit bars centered on 6.5 in an odd box, so at the default size
+          both edges land on the pixel grid rather than blurring across it. */}
+      <path className={s.sign} d={open ? 'M3 6.5 H10' : 'M3 6.5 H10 M6.5 3 V10'} />
+    </svg>
+  );
+}
 
 /** Props for `<Disclosure>`. */
 export interface DisclosureProps {
@@ -19,18 +53,15 @@ export interface DisclosureProps {
    * screen reader move to the revealed content.
    */
   controls?: string;
-  /** Which way the closed mark points. `'right'` (default) rotates down when
-   *  open; `'down'` rotates up. */
-  direction?: DisclosureDirection;
   /** Mark size in px. The hit target is at least 20px and grows with it.
-   *  Default 12. */
+   *  Default 13. */
   size?: number;
   disabled?: boolean;
   className?: string;
 }
 
 /**
- * The twisty on a collapsible section: a triangle that turns as it opens.
+ * The twisty on a collapsible section: a `<DisclosureMark>` in a button.
  *
  * Presentational — it holds no open/closed state and renders no children.
  * The consumer owns the state and the panel; this is the control that toggles
@@ -39,75 +70,23 @@ export interface DisclosureProps {
  * Three things it settles that a hand-rolled twisty keeps getting wrong. The
  * mark is drawn rather than typed, because `--wzl-font-ui` carries no ▸/▾ and
  * a text glyph falls back to whatever the system offers at whatever size that
- * font renders it — around 6px against 13px body text, which reads as dirt on
- * the screen. The hit target is larger than the mark. And it is a sibling of
- * the row's label rather than a child, so clicking to expand does not actuate
- * the label's own control.
- *
- * Deliberately not part of the icon register, on the same grounds as
- * `DragHandleGlyph`: that register is outline strokes at a fixed weight, and
- * `base.mjs` rejects a solid triangle in it by name. A disclosure mark is
- * filled.
+ * font renders it. The hit target is larger than the mark. And it is a sibling
+ * of the row's label rather than a child, so clicking to expand does not
+ * actuate the label's own control.
  */
-export function Disclosure({
-  open,
-  onToggle,
-  label,
-  controls,
-  direction = 'right',
-  size = 12,
-  disabled,
-  className,
-}: DisclosureProps) {
-  const cls = [s.twisty, className].filter(Boolean).join(' ');
+export function Disclosure({ open, onToggle, label, controls, size = 13, disabled, className }: DisclosureProps) {
   return (
     <button
       type="button"
-      className={cls}
+      className={className ? `${s.twisty} ${className}` : s.twisty}
       aria-expanded={open}
       aria-controls={controls}
       aria-label={label}
       disabled={disabled}
       onClick={onToggle}
     >
-      <DisclosureMark open={open} direction={direction} size={size} />
+      <DisclosureMark open={open} size={size} />
     </button>
-  );
-}
-
-/** Props for `<DisclosureMark>`. */
-export interface DisclosureMarkProps {
-  open: boolean;
-  /** Which way the mark points when closed. Default `'right'`. */
-  direction?: DisclosureDirection;
-  /** Mark size in px. Default 12. */
-  size?: number;
-  className?: string;
-}
-
-/**
- * The drawn triangle a `<Disclosure>` wears, without the button: for a row
- * that is itself the control, such as a `Tree` item, where a nested button
- * would be interactive content inside an interactive element. Hidden from
- * assistive tech; the owner carries `aria-expanded`. Colored by
- * `currentColor`.
- */
-export function DisclosureMark({ open, direction = 'right', size = 12, className }: DisclosureMarkProps) {
-  return (
-    <svg
-      className={className ? `${s.mark} ${className}` : s.mark}
-      viewBox="0 0 12 12"
-      width={size}
-      height={size}
-      aria-hidden="true"
-      focusable="false"
-      data-open={open ? 'true' : undefined}
-      data-direction={direction}
-    >
-      {/* Vertex on the right edge at the vertical center, so the rotation
-          about the box center keeps the point on the same circle. */}
-      <path d="M4 2.5 L8.5 6 L4 9.5 Z" />
-    </svg>
   );
 }
 

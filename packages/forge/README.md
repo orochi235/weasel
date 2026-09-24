@@ -14,14 +14,40 @@ workshop page and each frame document are separate documents:
 
 - `frameConfig` default-exports `defineFrameConfig({...})`: decorators around
   every story, `applyGlobals` for what a global does to the frame document,
-  `cssVarsScope`, and `parameters`, the project-wide CSF parameters that
-  Storybook keeps in `preview`. Only frame documents import it, so its CSS
-  stays off the workshop page.
+  `cssVarsScope`, `parameters`, the project-wide CSF parameters that
+  Storybook keeps in `preview`, and `prepare`, awaited before a story first
+  renders, which is where to import what only some stories need. Only frame
+  documents import it, so its CSS stays off the workshop page.
 - `shellConfig` default-exports `defineShellConfig({...})`: lab chrome, control
   renderers, and global declarations. Only the workshop page imports it.
 
 ```ts
 forge({ stories: ['src/**/*.stories.tsx'], frameConfig: 'forge.frame.tsx', shellConfig: 'forge.shell.tsx' });
+```
+
+## Index pages
+
+Every component — every story title — has an index page, opened by clicking
+the component's row in the sidebar (its fold mark only folds it) and routed at
+`#/<title id>:index`. It renders all
+of the component's stories in one frame: each at its defaults, then once per
+value of each of its boolean and enum controls, one control at a time.
+
+A component can supply its own page. A native meta takes `index`; a CSF meta
+sets `parameters.forge.index`. Either is handed an `IndexContext` holding the
+stories and the generated page's parts, `Story`, `Variants` and `DefaultIndex`,
+so a custom page composes them:
+
+```tsx
+export default meta({
+  title: 'ui/Button',
+  index: ({ stories, Story, DefaultIndex }) => (
+    <>
+      <Story story={stories[0]} config={{ label: 'Save' }} label="In a form" />
+      <DefaultIndex />
+    </>
+  ),
+});
 ```
 
 ## Story tests

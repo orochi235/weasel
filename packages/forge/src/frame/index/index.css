@@ -1,0 +1,121 @@
+.fg-index {
+  box-sizing: border-box;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+  font-family: var(--wzl-font-body, system-ui, sans-serif);
+  color: var(--wzl-fg, inherit);
+}
+
+.fg-index__head {
+  margin-bottom: 32px;
+}
+
+.fg-index__path {
+  margin: 0 0 4px;
+  font-size: var(--wzl-font-size-sm, 12px);
+  color: var(--wzl-fg-muted, inherit);
+}
+
+.fg-index__title {
+  margin: 0;
+  font-family: var(--wzl-font-display, inherit);
+  font-size: 32px;
+  font-weight: 500;
+}
+
+.fg-index__description,
+.fg-index-story__description {
+  max-width: 72ch;
+  margin: 8px 0 0;
+  line-height: 1.5;
+  color: var(--wzl-fg-muted, inherit);
+}
+
+.fg-index-story {
+  padding-top: 24px;
+  margin-top: 24px;
+  border-top: 1px solid var(--wzl-border, currentColor);
+}
+
+.fg-index-story__head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.fg-index-story__name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.fg-index-story__open {
+  padding: 2px 10px;
+  border: 1px solid var(--wzl-border-strong, currentColor);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--wzl-font-size-sm, 12px);
+  cursor: pointer;
+}
+
+.fg-index-story__open:hover {
+  background: var(--wzl-surface-raised, transparent);
+}
+
+.fg-index-cell {
+  margin: 16px 0 0;
+}
+
+.fg-index-cell__stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  padding: 16px;
+  border: 1px solid var(--wzl-border, currentColor);
+  border-radius: 6px;
+  overflow: auto;
+}
+
+.fg-index-cell--padded > .fg-index-cell__stage {
+  display: block;
+}
+
+.fg-index-cell--fullscreen > .fg-index-cell__stage {
+  display: block;
+  height: 360px;
+  padding: 0;
+}
+
+.fg-index-cell__label {
+  margin-top: 6px;
+  font-family: var(--wzl-font-mono, monospace);
+  font-size: var(--wzl-font-size-sm, 12px);
+  color: var(--wzl-fg-muted, inherit);
+}
+
+.fg-index-variants__row {
+  margin-top: 20px;
+}
+
+.fg-index-variants__label {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm, 12px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--wzl-fg-muted, inherit);
+}
+
+.fg-index-variants__cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.fg-index-variants__cells > .fg-index-cell {
+  margin-top: 8px;
+}

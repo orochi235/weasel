@@ -1,3 +1,4 @@
+import { indexEntries } from '../../story/indexPages';
 import type { IndexEntry } from '../../story/types';
 import type { TreeNode } from './buildTree';
 
@@ -11,6 +12,8 @@ export interface ComponentRow {
   label: string;
   /** Which library it ships in. */
   library: string;
+  /** The component's index page; absent when a filter kept the row only for some of its stories. */
+  index?: IndexEntry;
   entries: IndexEntry[];
 }
 
@@ -50,6 +53,7 @@ export function buildComponents(index: readonly IndexEntry[]): ComponentRow[] {
         path: entry.title,
         label: segments[segments.length - 1],
         library: libraryOf(entry),
+        index: indexEntries([entry])[0],
         entries: [],
       };
       byTitle.set(entry.title, row);
@@ -97,8 +101,9 @@ function disambiguate(rows: readonly ComponentRow[]): void {
 }
 
 /** The components whose name, library or story names contain `query`,
- *  ignoring case. A matching component keeps all its stories; a component
- *  matching only through one story keeps just the stories that matched. */
+ *  ignoring case. A matching component keeps its index page and all its
+ *  stories; a component matching only through one story keeps just the
+ *  stories that matched. */
 export function filterComponents(rows: readonly ComponentRow[], query: string): ComponentRow[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [...rows];
@@ -109,7 +114,7 @@ export function filterComponents(rows: readonly ComponentRow[], query: string): 
       continue;
     }
     const entries = row.entries.filter((entry) => entry.name.toLowerCase().includes(needle));
-    if (entries.length > 0) out.push({ ...row, entries });
+    if (entries.length > 0) out.push({ path: row.path, label: row.label, library: row.library, entries });
   }
   return out;
 }
@@ -117,10 +122,9 @@ export function filterComponents(rows: readonly ComponentRow[], query: string): 
 /**
  * The component list as tree nodes, so the sidebar renders and navigates both
  * views with one code path. A slash in a label is a directory: `Icons/Gallery`
- * is a `Gallery` row inside an `Icons` folder, which it shares with any other
- * row of its library widened to the same prefix. A component with a single
- * story becomes that story's row directly — an expander onto one child is a
- * click for nothing.
+ * is a `Gallery` folder inside an `Icons` folder, which it shares with any
+ * other row of its library widened to the same prefix. Every component is a
+ * folder carrying its index page and holding its stories.
  */
 export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
   const root: TreeNode[] = [];
@@ -141,18 +145,14 @@ export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
       siblings = folder.children;
       tag = undefined;
     }
-    const label = labels[labels.length - 1];
-    siblings.push(
-      row.entries.length === 1
-        ? { kind: 'story', entry: row.entries[0], tag, label }
-        : {
-            kind: 'folder',
-            label,
-            path: row.path,
-            tag,
-            children: row.entries.map((entry) => ({ kind: 'story', entry })),
-          },
-    );
+    siblings.push({
+      kind: 'folder',
+      label: labels[labels.length - 1],
+      path: row.path,
+      tag,
+      ...(row.index ? { index: row.index } : {}),
+      children: row.entries.map((entry) => ({ kind: 'story', entry }) as const),
+    });
   }
   return root;
 }
