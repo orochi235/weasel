@@ -88,6 +88,8 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
   const entries = useMemo(() => [...index, ...indexEntries(index)], [index]);
   const registry = useStoryRegistry(entries, { frameUrl, globals: declarations, frames });
   const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
+  const themeFor = config?.labTheme;
+  const labTheme = useMemo(() => themeFor?.(labValues), [themeFor, labValues]);
   const [infoOpen, setInfoOpen] = useState(false);
   useInfoShortcut(setInfoOpen);
   const reportLabValues = useCallback(
@@ -135,6 +137,7 @@ export function Workshop({ index, frameUrl, config, stories = [], storageKey, st
           <Lab
             title="weaselforge"
             density="roomy"
+            {...(labTheme ? { theme: labTheme } : {})}
             instruments={registry.instruments}
             defaultInstrument={initialStory(entries, first.id)}
             storageKey={storageKey ?? 'weaselforge'}

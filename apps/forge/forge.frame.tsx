@@ -4,16 +4,10 @@ import './frame.css';
 import { type Decorator, defineFrameConfig } from '@weasel-js/forge';
 import type { LabMode } from '@weasel-js/labkit';
 import { applyTheme, weaselTheme } from '@weasel-js/theme';
-import { fontRule, GOOGLE_FONTS_HREF } from './fonts';
+import { fontRule, loadWebFonts } from './fonts';
 import { followScheme } from './mode';
 
-if (typeof document !== 'undefined' && !document.getElementById('fg-google-fonts')) {
-  const link = document.createElement('link');
-  link.id = 'fg-google-fonts';
-  link.rel = 'stylesheet';
-  link.href = GOOGLE_FONTS_HREF;
-  document.head.append(link);
-}
+if (typeof document !== 'undefined') loadWebFonts(document);
 
 const asLabMode = (picked: unknown): LabMode =>
   picked === 'light' || picked === 'dark' ? picked : 'auto';

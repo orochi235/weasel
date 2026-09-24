@@ -1,6 +1,9 @@
 import { defineShellConfig } from '@weasel-js/forge';
+import { interstellarTheme } from '@weasel-js/labkit';
 import { FORGE_LAB, LABS } from '../shared/labs';
-import { FONT_GLOBALS } from './fonts';
+import { FONT_GLOBALS, fontTheme, loadWebFonts } from './fonts';
+
+if (typeof document !== 'undefined') loadWebFonts(document);
 
 export default defineShellConfig({
   pages: LABS,
@@ -26,4 +29,5 @@ export default defineShellConfig({
     },
     ...FONT_GLOBALS,
   },
+  labTheme: (globals) => fontTheme(interstellarTheme, globals),
 });

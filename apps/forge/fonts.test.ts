@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { FONT_GLOBALS, fontRule } from './fonts';
+import { resolveTheme, weaselTheme } from '@weasel-js/theme';
+import { FONT_GLOBALS, fontRule, fontTheme } from './fonts';
 
 describe('fontRule', () => {
   it('declares Storybook’s defaults, snapped to what Oswald ships', () => {
@@ -8,13 +9,17 @@ describe('fontRule', () => {
     );
   });
 
-  it('points weasel’s UI, display and body font tokens at the chosen family, and leaves mono alone', () => {
+  it('points weasel’s default face at the chosen family, and leaves a slot on Theme alone', () => {
     const rule = fontRule({ fontFamily: 'helvetica' });
-    const family = '"Helvetica Neue", Helvetica, Arial, sans-serif';
-    expect(rule).toContain(`--wzl-font-ui: ${family};`);
-    expect(rule).toContain(`--wzl-font-display: ${family};`);
-    expect(rule).toContain(`--wzl-font-body: ${family};`);
-    expect(rule).not.toContain('--wzl-font-mono');
+    expect(rule).toContain('--wzl-font-ui: "Helvetica Neue", Helvetica, Arial, sans-serif;');
+    for (const face of ['display', 'body', 'mono']) expect(rule).not.toContain(`--wzl-font-${face}`);
+  });
+
+  it('points each other slot at the family its own global picks', () => {
+    const rule = fontRule({ fontDisplay: 'lato', fontBody: 'inter', fontMono: 'jetbrains' });
+    expect(rule).toContain('--wzl-font-display: Lato, system-ui, sans-serif;');
+    expect(rule).toContain('--wzl-font-body: Inter, system-ui, sans-serif;');
+    expect(rule).toContain('--wzl-font-mono: "JetBrains Mono", ui-monospace, monospace;');
   });
 
   it('declares the font tokens on a selector that outranks the theme’s own [data-wzl-theme][data-wzl-mode] rule', () => {
@@ -46,9 +51,12 @@ describe('fontRule', () => {
 });
 
 describe('FONT_GLOBALS', () => {
-  it('declares family, weight, width and italic with Storybook’s defaults, each one of its own options', () => {
+  it('declares a family per slot, weight, width and italic, each defaulting to one of its own options', () => {
     expect(Object.fromEntries(Object.entries(FONT_GLOBALS).map(([key, d]) => [key, d.default]))).toEqual({
       fontFamily: 'oswald',
+      fontDisplay: 'theme',
+      fontBody: 'theme',
+      fontMono: 'theme',
       fontWeight: '500',
       fontStretch: 'normal',
       fontStyle: 'normal',
@@ -56,5 +64,21 @@ describe('FONT_GLOBALS', () => {
     for (const declaration of Object.values(FONT_GLOBALS)) {
       expect(declaration.options.map((o) => o.value)).toContain(declaration.default);
     }
+  });
+});
+
+describe('fontTheme', () => {
+  it('sets each slot to its chosen family, and leaves a slot on Theme alone', () => {
+    const tokens = resolveTheme(fontTheme(weaselTheme, { fontFamily: 'inter', fontMono: 'jetbrains' }), { mode: 'light' });
+    const base = resolveTheme(weaselTheme, { mode: 'light' });
+    expect(tokens['--wzl-font-ui']).toMatch(/^Inter\b/);
+    expect(tokens['--wzl-font-mono']).toMatch(/^['"]?JetBrains Mono/);
+    for (const name of ['--wzl-font-display', '--wzl-font-body'] as const) expect(tokens[name]).toBe(base[name]);
+  });
+
+  it('keeps one theme per combination, so the lab is not handed a new theme for the same choice', () => {
+    const globals = { fontFamily: 'inter', fontBody: 'lato' };
+    expect(fontTheme(weaselTheme, globals)).toBe(fontTheme(weaselTheme, { ...globals }));
+    expect(fontTheme(weaselTheme, globals).name).toBe('weasel-ui-inter-body-lato');
   });
 });

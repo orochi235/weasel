@@ -1,4 +1,4 @@
-import { type ColorList, colorAt, colorCount, resolveTheme } from '@weasel-js/theme';
+import { type ColorList, colorAt, colorCount, resolveTheme, type Theme } from '@weasel-js/theme';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import {
   type CSSProperties,
@@ -69,6 +69,10 @@ interface LabBaseProps {
    *  window is the whole app, rather than a panel beside one, reads better at
    *  `'roomy'`. The trials' own contents are unaffected. */
   density?: LabDensity;
+  /** The theme the lab's chrome resolves against, applied at `mode` and
+   *  `density`. Default `interstellarTheme`; extend it rather than replace it to
+   *  keep the lab's look while changing a few tokens. */
+  theme?: Theme;
   /** Rendered while a stored lab loads. Default: the lab's empty shell. */
   fallback?: ReactNode;
   /**
@@ -182,13 +186,14 @@ function LabFallback({
   title,
   mode,
   density,
+  theme = interstellarTheme,
   pages,
   path,
-}: Pick<LabBaseProps, 'title' | 'mode' | 'density' | 'pages' | 'path'>) {
+}: Pick<LabBaseProps, 'title' | 'mode' | 'density' | 'theme' | 'pages' | 'path'>) {
   const resolvedMode = useResolvedMode(mode ?? 'auto');
   return (
     <ThemeProvider
-      theme={interstellarTheme}
+      theme={theme}
       selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
       className="lk-lab"
     >
@@ -216,8 +221,8 @@ const NEBULA_SLOTS = [
   { cx: '85%', cy: '18%', sx: '55%', sy: '80%', stop: '70%' },
 ] as const;
 
-function buildNebula(list: ColorList, mode: 'light' | 'dark', density: string): string {
-  const ctx = { theme: interstellarTheme, resolved: resolveTheme(interstellarTheme, { mode, density }) };
+function buildNebula(list: ColorList, theme: Theme, mode: 'light' | 'dark', density: string): string {
+  const ctx = { theme, resolved: resolveTheme(theme, { mode, density }) };
   const n = colorCount(list, ctx) ?? NEBULA_SLOTS.length;
   const colors = Array.from({ length: n }, (_, i) => colorAt(list, i, ctx));
   const blobs = colors.map((c, i) => {
@@ -307,6 +312,7 @@ export function Lab(props: LabProps) {
         title={props.title}
         mode={props.mode}
         density={props.density}
+        {...(props.theme ? { theme: props.theme } : {})}
         pages={props.pages}
         path={props.path}
       />
@@ -319,6 +325,7 @@ function LabRuntime({
   instruments,
   mode,
   density,
+  theme = interstellarTheme,
   nebula,
   title,
   pages,
@@ -570,7 +577,7 @@ function LabRuntime({
   // Setting a CSS custom property is the sanctioned use of inline style.
   const backdropStyle =
     resolvedMode === 'dark' && nebula && colorCount(nebula) !== 0
-      ? ({ ['--wzl-backdrop' as string]: buildNebula(nebula, resolvedMode, density ?? 'comfortable') } as CSSProperties)
+      ? ({ ['--wzl-backdrop' as string]: buildNebula(nebula, theme, resolvedMode, density ?? 'comfortable') } as CSSProperties)
       : undefined;
 
   const workspace = (
@@ -595,7 +602,7 @@ function LabRuntime({
         <AnnotationPreloadContext.Provider value={opened.marks}>
           <LabContext.Provider value={contextValue}>
             <ThemeProvider
-              theme={interstellarTheme}
+              theme={theme}
               selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
               className="lk-lab"
               style={backdropStyle}
