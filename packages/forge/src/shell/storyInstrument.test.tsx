@@ -49,7 +49,7 @@ describe('storyInstrument', () => {
   });
 
   it('titles itself by the story’s title and name', () => {
-    expect(storyInstrument(base).title).toBe('Test/Counter / Counter');
+    expect(storyInstrument(base).title).toBe('Test > Counter > Counter');
   });
 
   it('takes its defaults from the ready description', () => {
@@ -153,7 +153,7 @@ describe('FrameView', () => {
   it('points the iframe at the story', () => {
     const { iframe } = mount();
     expect(iframe.getAttribute('src')).toBe(`/frame.html#${entry.id}`);
-    expect(iframe.title).toBe('Test/Counter / Counter');
+    expect(iframe.title).toBe('Test > Counter > Counter');
   });
 
   it('sends nothing before ready, then init with the trial’s config, state and globals', async () => {

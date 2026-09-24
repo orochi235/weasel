@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   colorLiteralToHex,
+  hexToColorLiteral,
   resolvePaletteColor,
   resolvePaletteColors,
   type ColorLiteral,
@@ -182,5 +183,17 @@ describe('colorLiteralToHex', () => {
   it('returns null for a space it cannot convert, or too few coordinates', () => {
     expect(colorLiteralToHex({ space: 'display-p3', coords: [1, 0, 0] })).toBeNull();
     expect(colorLiteralToHex({ space: 'srgb', coords: [1, 0] })).toBeNull();
+  });
+});
+
+describe('hexToColorLiteral', () => {
+  it('reads #rrggbb and #rrggbbaa as srgb, and round-trips through colorLiteralToHex', () => {
+    expect(hexToColorLiteral('#ff0000')).toEqual({ space: 'srgb', coords: [1, 0, 0] });
+    expect(hexToColorLiteral('#0000ff80')?.alpha).toBeCloseTo(128 / 255);
+    for (const hex of ['#7fb069', '#d4a57480']) expect(colorLiteralToHex(hexToColorLiteral(hex)!)).toBe(hex);
+  });
+
+  it('returns null for anything else', () => {
+    for (const bad of ['red', '#fff', '#12345', '#gg0000']) expect(hexToColorLiteral(bad)).toBeNull();
   });
 });

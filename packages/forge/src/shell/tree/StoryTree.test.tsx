@@ -1,3 +1,4 @@
+import { breadcrumb } from '../breadcrumb';
 import { createMemoryAdapter, Lab, type LabContribution, type StorageAdapter } from '@weasel-js/labkit';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -39,7 +40,7 @@ function Harness({ storage }: { storage: StorageAdapter }) {
   );
 }
 
-const trialsOf = (e: IndexEntry) => screen.queryAllByRole('region', { name: `Trial ${e.title} / ${e.name}` });
+const trialsOf = (e: IndexEntry) => screen.queryAllByRole('region', { name: `Trial ${breadcrumb(e.title, e.name)}` });
 const allTrials = () => screen.queryAllByRole('region', { name: /^Trial / });
 
 async function mount(storage: StorageAdapter = createMemoryAdapter()) {

@@ -23,6 +23,11 @@ describe('labGlobals', () => {
   it('keeps stored values an option offers, and drops undeclared keys and values no option offers', () => {
     expect(labGlobals(declarations, { mode: 'dark', font: 'comic', gone: 'x' })).toEqual({ mode: 'dark', font: 'oswald' });
   });
+
+  it('holds a global kept off the toolbar at its default, whatever was stored for it', () => {
+    const offToolbar = { ...declarations, font: { ...declarations.font!, toolbar: false } };
+    expect(labGlobals(offToolbar, { mode: 'dark', font: 'inter' })).toEqual({ mode: 'dark', font: 'oswald' });
+  });
 });
 
 describe('effectiveGlobals', () => {

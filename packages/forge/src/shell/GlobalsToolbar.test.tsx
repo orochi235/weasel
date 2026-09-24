@@ -39,4 +39,17 @@ describe('GlobalsToolbar', () => {
     fireEvent.click(await screen.findByRole('option', { name: 'Dark' }));
     await waitFor(() => expect(toolbar.getByRole('button', { name: /Mode/ })).toHaveTextContent('Dark'));
   });
+
+  it('leaves out a global declared toolbar: false', async () => {
+    const withFont: ShellConfig = {
+      globals: {
+        ...config.globals,
+        font: { label: 'Font', default: 'a', options: [{ value: 'a', label: 'A' }], toolbar: false },
+      },
+    };
+    render(<Workshop index={[a]} frameUrl="/frame.html" config={withFont} storage={createMemoryAdapter()} />);
+    const toolbar = within(await screen.findByRole('toolbar', { name: 'Globals' }));
+    expect(toolbar.getByRole('button', { name: /Mode/ })).toBeTruthy();
+    expect(toolbar.queryByRole('button', { name: /Font/ })).toBeNull();
+  });
 });

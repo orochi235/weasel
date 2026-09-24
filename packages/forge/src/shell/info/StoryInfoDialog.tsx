@@ -1,3 +1,4 @@
+import { breadcrumb } from '../breadcrumb';
 import { useLabContext } from '@weasel-js/labkit';
 import { Dialog } from '@weasel-js/ui';
 import type { IndexEntry } from '../../story/types';
@@ -31,7 +32,7 @@ export function StoryInfoDialog({ index, isReady, isOpen, onOpenChange }: StoryI
     <Dialog
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      title={`${dossier.title} / ${dossier.name}`}
+      title={breadcrumb(dossier.title, dossier.name)}
       className="fg-info-dialog"
     >
       <StoryDossier dossier={dossier} />

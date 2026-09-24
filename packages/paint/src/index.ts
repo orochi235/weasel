@@ -43,6 +43,7 @@ export {
   resolvePaletteColor,
   resolvePaletteColors,
   colorLiteralToHex,
+  hexToColorLiteral,
   type ColorLiteral,
   type ColorRef,
   type ColorFn,

@@ -19,7 +19,7 @@ afterEach(() => {
 });
 
 function trial(name: string) {
-  return within(screen.getByRole('region', { name: `Trial X / ${name}` }));
+  return within(screen.getByRole('region', { name: `Trial X > ${name}` }));
 }
 
 /** The lab's CSS Vars panel, which follows the focused trial. */
@@ -28,8 +28,8 @@ function vars() {
 }
 
 async function openTrial(name: string) {
-  await waitFor(() => expect(screen.getByRole('region', { name: `Trial X / ${name}` })).toBeInTheDocument());
-  const iframe = screen.getByRole('region', { name: `Trial X / ${name}` }).querySelector('iframe.fg-frame-view');
+  await waitFor(() => expect(screen.getByRole('region', { name: `Trial X > ${name}` })).toBeInTheDocument());
+  const iframe = screen.getByRole('region', { name: `Trial X > ${name}` }).querySelector('iframe.fg-frame-view');
   const link = connectFrame(iframe as HTMLIFrameElement);
   link.frame.send(ready);
   await flush();
@@ -49,7 +49,7 @@ describe('CssVarsPanel', () => {
     const { received } = await openTrial('A');
     expect(trial('A').queryByRole('region', { name: 'CSS Vars' })).toBeNull();
     const panel = vars();
-    expect(panel.getByText('X / A')).toBeInTheDocument();
+    expect(panel.getByText('X > A')).toBeInTheDocument();
     fireEvent.change(panel.getByLabelText('Filter'), { target: { value: 'gray-50' } });
     expect(panel.queryByRole('group', { name: '--wzl-gray-100' })).toBeNull();
     const token = row(panel, '--wzl-gray-50');
@@ -142,18 +142,18 @@ describe('CssVarsPanel', () => {
       location.hash = '#/x--b';
     });
     const second = await openTrial('B');
-    await waitFor(() => expect(vars().getByText('X / B')).toBeInTheDocument());
+    await waitFor(() => expect(vars().getByText('X > B')).toBeInTheDocument());
 
-    fireEvent.pointerDown(screen.getByRole('region', { name: 'Trial X / A' }));
-    await waitFor(() => expect(vars().getByText('X / A')).toBeInTheDocument());
+    fireEvent.pointerDown(screen.getByRole('region', { name: 'Trial X > A' }));
+    await waitFor(() => expect(vars().getByText('X > A')).toBeInTheDocument());
     fireEvent.change(vars().getByLabelText('Filter'), { target: { value: 'gray-50' } });
     fireEvent.change(row(vars(), '--wzl-gray-50').getByRole('textbox'), { target: { value: 'red' } });
     await flush();
     expect(setsOf(first.received)).toEqual([{ type: 'vars.set', name: '--wzl-gray-50', value: 'red' }]);
     expect(setsOf(second.received)).toEqual([]);
 
-    fireEvent.pointerDown(screen.getByRole('region', { name: 'Trial X / B' }));
-    await waitFor(() => expect(vars().getByText('X / B')).toBeInTheDocument());
+    fireEvent.pointerDown(screen.getByRole('region', { name: 'Trial X > B' }));
+    await waitFor(() => expect(vars().getByText('X > B')).toBeInTheDocument());
     expect(row(vars(), '--wzl-gray-50').getByRole('textbox')).toHaveValue('#f5f5f6');
 
     const again = connectFrame(first.iframe);

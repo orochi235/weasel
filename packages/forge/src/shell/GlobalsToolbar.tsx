@@ -20,7 +20,7 @@ export function GlobalsToolbar({ declarations }: { declarations: GlobalDeclarati
   const [values, set] = useLabGlobals(declarations);
   return (
     <div className="fg-globals" role="toolbar" aria-label="Globals">
-      {Object.entries(declarations).map(([key, declaration]) => (
+      {Object.entries(declarations).filter(([, declaration]) => declaration.toolbar !== false).map(([key, declaration]) => (
         <Select
           key={key}
           aria-label={declaration.label}

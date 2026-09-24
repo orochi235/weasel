@@ -275,6 +275,10 @@ const CLICK_SLOP = 4;
 
 const NO_NUDGE: Nudge = { offset: 0, crossOffset: 0 };
 
+/** The gap kept between a list and the viewport edge — React Aria's own
+ *  `containerPadding` default. */
+const EDGE = 12;
+
 /** React Aria's own resting place for a popover: hanging under its trigger. */
 const BELOW: Nudge = { offset: 8, crossOffset: 0 };
 
@@ -338,9 +342,14 @@ function AlignOverTrigger({
     const seat = trigger.getBoundingClientRect();
     const row = label.getBoundingClientRect();
     const shown = value.getBoundingClientRect();
+    // React Aria holds the list inside the viewport across the trigger but not
+    // along it, and `offset` moves it along: the selected row sits on the
+    // trigger only as far as the rest of the list still fits on screen.
+    const over = shown.top + shown.height / 2 - seat.top - (row.top + row.height / 2 - box.top) - seat.height;
+    const viewHeight = trigger.ownerDocument.documentElement.clientHeight;
+    const lowest = viewHeight - EDGE - box.height - seat.bottom;
     const next = {
-      offset:
-        shown.top + shown.height / 2 - seat.top - (row.top + row.height / 2 - box.top) - seat.height,
+      offset: Math.max(EDGE - seat.bottom, Math.min(over, lowest)),
       crossOffset: toEnd
         ? shown.right - seat.left - (row.right - box.left)
         : shown.left - seat.left - (row.left - box.left),

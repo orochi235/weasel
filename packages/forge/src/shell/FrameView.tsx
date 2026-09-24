@@ -1,3 +1,4 @@
+import { breadcrumb } from './breadcrumb';
 import './shell.css';
 import { type RenderContext, TrialIdContext } from '@weasel-js/labkit';
 import { type RefObject, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -310,7 +311,7 @@ export function FrameView(props: FrameViewProps) {
           ref={iframeRef}
           className="fg-frame-view"
           src={src}
-          title={`${entry.title} / ${entry.name}`}
+          title={breadcrumb(entry.title, entry.name)}
           onLoad={onLoad}
           data-pending={pending && !fault ? '' : undefined}
         />

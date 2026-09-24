@@ -6,6 +6,8 @@ export interface GlobalDeclaration {
   label: string;
   options: readonly { value: string; label: string }[];
   default: string;
+  /** `false` keeps it off the toolbar, so only a trial's own pin moves it from `default`. */
+  toolbar?: boolean;
 }
 
 export type GlobalDeclarations = Readonly<Record<string, GlobalDeclaration>>;
@@ -20,12 +22,13 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 export const isGlobalsPath = (path: string): boolean => path === GLOBALS_KEY || path.startsWith(`${GLOBALS_KEY}.`);
 
-/** The lab's values from what was stored: declared keys only, and a value no option offers falls back to the default. */
+/** The lab's values from what was stored: declared keys only, and a value no option offers — or one for a global
+ *  the toolbar no longer shows, which nothing could change back — falls back to the default. */
 export function labGlobals(declarations: GlobalDeclarations, stored: unknown): Globals {
   const from = isRecord(stored) ? stored : {};
   return Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
-      const value = from[key];
+      const value = declaration.toolbar === false ? undefined : from[key];
       return [key, declaration.options.some((option) => option.value === value) ? value : declaration.default];
     }),
   );

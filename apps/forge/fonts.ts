@@ -56,12 +56,12 @@ const STRETCHES: [string, string][] = [
 
 const options = (pairs: [string, string][]) => pairs.map(([value, label]) => ({ value, label }));
 
-/** Storybook's font toolbar, as forge globals: family, weight, width and italic. */
+/** Storybook's font toolbar, as forge globals: family, weight, width and italic. Set per trial, not from the toolbar. */
 export const FONT_GLOBALS: GlobalDeclarations = {
-  fontFamily: { label: 'Font', default: 'oswald', options: options(Object.entries(FONTS).map(([key, font]) => [key, font.label])) },
-  fontWeight: { label: 'Weight', default: '500', options: options(WEIGHTS) },
-  fontStretch: { label: 'Width', default: 'normal', options: options(STRETCHES) },
-  fontStyle: { label: 'Italic', default: 'normal', options: options([['normal', 'Regular'], ['italic', 'Italic']]) },
+  fontFamily: { label: 'Font', default: 'oswald', options: options(Object.entries(FONTS).map(([key, font]) => [key, font.label])), toolbar: false },
+  fontWeight: { label: 'Weight', default: '500', options: options(WEIGHTS), toolbar: false },
+  fontStretch: { label: 'Width', default: 'normal', options: options(STRETCHES), toolbar: false },
+  fontStyle: { label: 'Italic', default: 'normal', options: options([['normal', 'Regular'], ['italic', 'Italic']]), toolbar: false },
 };
 
 const nearest = (value: number, supported: number[]): number =>

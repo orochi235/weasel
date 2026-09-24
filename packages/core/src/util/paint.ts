@@ -8,7 +8,15 @@
  *  All values are `#rrggbbaa` so they round-trip through the kit's hex8 alpha
  *  helpers (`util/color`) without ambiguity.
  */
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import {
+  colorLiteralToHex,
+  hexToColorLiteral,
+  resolvePaletteColor,
+  type ColorLiteral,
+  type FillStyle,
+  type Palette,
+  type Stroke,
+} from '@weasel-js/paint';
 import { getAlpha01 } from './color';
 
 /** Default fill paint for shapes and the fill action — opaque white. */
@@ -17,20 +25,34 @@ export const DEFAULT_FILL_COLOR = '#ffffffff';
 /** Default stroke paint for shapes and the stroke action — opaque black. */
 export const DEFAULT_STROKE_COLOR = '#000000ff';
 
+const srgb = (hex: string): ColorLiteral => hexToColorLiteral(hex) as ColorLiteral;
+
 /** Default fill palette cycled through for auto-generated shape nodes
  *  (the kit's built-in shape tools and the `insert` action). */
-export const DEFAULT_PALETTE: readonly string[] = [
-  '#7fb069',
-  '#d4a574',
-  '#a48bd4',
-  '#7ab8d4',
-  '#d47a7a',
-];
+export const DEFAULT_PALETTE: Palette = {
+  entries: [
+    { name: 'sage', color: srgb('#7fb069') },
+    { name: 'tan', color: srgb('#d4a574') },
+    { name: 'lavender', color: srgb('#a48bd4') },
+    { name: 'sky', color: srgb('#7ab8d4') },
+    { name: 'rose', color: srgb('#d47a7a') },
+  ],
+};
+
+/** The `seq`th color of `palette`'s entries as hex, wrapping past the end.
+ *  An entry that resolves to nothing, or to a space with no hex form, gives
+ *  `fallback`. */
+export function cycleFill(seq: number, palette: Palette = DEFAULT_PALETTE, fallback = DEFAULT_FILL_COLOR): string {
+  const { entries } = palette;
+  const entry = entries[((seq % entries.length) + entries.length) % entries.length];
+  const color = entry && resolvePaletteColor(palette, { ref: entry.name });
+  return (color && colorLiteralToHex(color)) ?? fallback;
+}
 
 /** Preview / "ghost" stroke color used by drag-to-draw tool overlays and the
  *  selected-anchor highlight. Derived from the first palette entry so the
  *  preview chrome matches the default insert color. */
-export const GHOST_STROKE: string = DEFAULT_PALETTE[0];
+export const GHOST_STROKE: string = cycleFill(0);
 
 /**
  * A solid paint from a color string — the authoring shorthand for the one
