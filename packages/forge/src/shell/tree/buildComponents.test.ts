@@ -17,8 +17,8 @@ const LABKIT = '/repo/packages/labkit/src/primitives/JobProgress.stories.tsx';
 describe('libraryOf', () => {
   it('reads the package, not the title prefix', () => {
     // The two title prefixes `packages/ui` actually ships.
-    expect(libraryOf(entry('weasel-ui/Foundations/Button', 'Default', UI))).toBe('weasel-ui');
-    expect(libraryOf(entry('Primitives/Checkbox', 'Default', UI))).toBe('weasel-ui');
+    expect(libraryOf(entry('weasel-ui/Foundations/Button', 'Default', UI))).toBe('ui');
+    expect(libraryOf(entry('Primitives/Checkbox', 'Default', UI))).toBe('ui');
     expect(libraryOf(entry('labkit/Primitives/JobProgress', 'Default', LABKIT))).toBe('labkit');
   });
 
@@ -36,8 +36,8 @@ describe('buildComponents', () => {
       entry('labkit/Primitives/JobProgress', 'Default', LABKIT),
     ]);
     expect(rows.map((r) => `${r.label} [${r.library}]`)).toEqual([
-      'Button [weasel-ui]',
-      'Checkbox [weasel-ui]',
+      'Button [ui]',
+      'Checkbox [ui]',
       'JobProgress [labkit]',
     ]);
     expect(rows[0].entries.map((e) => e.name)).toEqual(['Default', 'Disabled']);
@@ -49,7 +49,7 @@ describe('buildComponents', () => {
       entry('labkit/Primitives/Sidebar', 'Default', LABKIT),
     ]);
     expect(rows).toHaveLength(2);
-    expect(rows.map((r) => r.library)).toEqual(['labkit', 'weasel-ui']);
+    expect(rows.map((r) => r.library)).toEqual(['labkit', 'ui']);
   });
 });
 
@@ -131,7 +131,7 @@ describe('label disambiguation', () => {
     ]);
     expect(rows.map((r) => [r.label, r.library])).toEqual([
       ['Sidebar', 'labkit'],
-      ['Sidebar', 'weasel-ui'],
+      ['Sidebar', 'ui'],
     ]);
   });
 

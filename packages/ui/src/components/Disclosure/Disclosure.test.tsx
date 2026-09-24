@@ -75,7 +75,7 @@ describe('Disclosure', () => {
     const svg = container.querySelector('svg');
     expect(svg).toHaveAttribute('width', '20');
     expect(svg).toHaveAttribute('height', '20');
-    expect(svg).toHaveAttribute('viewBox', '0 0 12 12');
+    expect(svg).toHaveAttribute('viewBox', '0 0 13 13');
   });
 });
 
@@ -83,8 +83,8 @@ describe('DisclosureMark', () => {
   it('draws a plus while shut and a minus while open', () => {
     const d = (open: boolean) =>
       render(<DisclosureMark open={open} />).container.querySelector('path')?.getAttribute('d');
-    expect(d(false)).toBe('M3 6 H9 M6 3 V9');
-    expect(d(true)).toBe('M3 6 H9');
+    expect(d(false)).toBe('M3 6.5 H10 M6.5 3 V10');
+    expect(d(true)).toBe('M3 6.5 H10');
   });
 });
 

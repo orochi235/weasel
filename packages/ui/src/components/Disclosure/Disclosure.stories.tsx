@@ -17,12 +17,12 @@ export const Open: Story = {
   args: { open: true, label: 'Shapes', onToggle: () => {} },
 };
 
-/** Proofed large, because an off-center bar is a blurry pixel at 12px and
- *  obviously wrong at 96. The right-hand column is the size it actually ships. */
+/** Proofed large, because an off-center bar is a blurry pixel at 13px and
+ *  obviously wrong at 104. The right-hand column is the size it actually ships. */
 export const Sizes: Story = {
   render: () => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-      {[96, 48, 24, 12].map((size) => (
+      {[104, 52, 26, 13].map((size) => (
         <Disclosure key={size} open={false} onToggle={() => {}} label={`${size}px`} size={size} />
       ))}
     </div>

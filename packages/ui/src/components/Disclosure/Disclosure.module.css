@@ -38,12 +38,12 @@
 }
 
 .lozenge {
-  fill: var(--wzl-swatch-violet);
+  fill: var(--wzl-disclosure-fill, var(--wzl-accent-fg));
   transition: fill var(--wzl-motion-fast, 90ms) var(--wzl-ease-out-cubic);
 }
 
 .twisty:hover:not(:disabled) .lozenge {
-  fill: color-mix(in oklab, var(--wzl-swatch-violet), white 15%);
+  fill: color-mix(in oklab, var(--wzl-disclosure-fill, var(--wzl-accent-fg)), white 15%);
 }
 
 .twisty:disabled .lozenge {
@@ -53,7 +53,7 @@
 .sign {
   fill: none;
   stroke: var(--wzl-fg-on-accent);
-  stroke-width: 2;
+  stroke-width: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

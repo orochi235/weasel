@@ -5,13 +5,13 @@ import s from './Disclosure.module.css';
 export interface DisclosureMarkProps {
   /** Whether the section it stands for is open: `−` when open, `+` when shut. */
   open: boolean;
-  /** Mark size in px, square. Default 12. */
+  /** Mark size in px, square. Default 13. */
   size?: number;
   className?: string;
 }
 
 /**
- * The fold mark alone: a violet rounded square holding a `+` while its section is
+ * The fold mark alone: a dark violet rounded square holding a `+` while its section is
  * shut and a `−` while it is open. Decorative — it carries no role or label —
  * for a row that is itself the control, such as a tree item or a header
  * button. Anywhere the mark has to be the control, use `<Disclosure>`.
@@ -20,20 +20,20 @@ export interface DisclosureMarkProps {
  * `DragHandleGlyph`: that register is outline strokes at a fixed weight, and
  * this mark is filled.
  */
-export function DisclosureMark({ open, size = 12, className }: DisclosureMarkProps) {
+export function DisclosureMark({ open, size = 13, className }: DisclosureMarkProps) {
   return (
     <svg
       className={className ? `${s.mark} ${className}` : s.mark}
-      viewBox="0 0 12 12"
+      viewBox="0 0 13 13"
       width={size}
       height={size}
       aria-hidden="true"
       focusable="false"
     >
-      <rect className={s.lozenge} width="12" height="12" rx="3" />
-      {/* Bars two units thick on whole-unit edges, so at the default size they
-          land on the pixel grid rather than blurring across it. */}
-      <path className={s.sign} d={open ? 'M3 6 H9' : 'M3 6 H9 M6 3 V9'} />
+      <rect className={s.lozenge} width="13" height="13" rx="3" />
+      {/* One-unit bars centered on 6.5 in an odd box, so at the default size
+          both edges land on the pixel grid rather than blurring across it. */}
+      <path className={s.sign} d={open ? 'M3 6.5 H10' : 'M3 6.5 H10 M6.5 3 V10'} />
     </svg>
   );
 }
@@ -53,8 +53,8 @@ export interface DisclosureProps {
    * screen reader move to the revealed content.
    */
   controls?: string;
-  /** Mark height in px. The hit target is at least 20px and grows with it.
-   *  Default 12. */
+  /** Mark size in px. The hit target is at least 20px and grows with it.
+   *  Default 13. */
   size?: number;
   disabled?: boolean;
   className?: string;
@@ -74,7 +74,7 @@ export interface DisclosureProps {
  * of the row's label rather than a child, so clicking to expand does not
  * actuate the label's own control.
  */
-export function Disclosure({ open, onToggle, label, controls, size = 12, disabled, className }: DisclosureProps) {
+export function Disclosure({ open, onToggle, label, controls, size = 13, disabled, className }: DisclosureProps) {
   return (
     <button
       type="button"

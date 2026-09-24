@@ -1,5 +1,5 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
-import { Checkbox, DisclosureMark, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
+import { Badge, Checkbox, DisclosureMark, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
 import { type FocusEvent, type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
 import { indexEntries } from '../../story/indexPages';
 import type { IndexEntry } from '../../story/types';
@@ -39,6 +39,15 @@ function ancestorsOf(entry: IndexEntry | undefined): Set<string> {
     paths.add(path);
   }
   return paths;
+}
+
+/** A component's package, as a badge colored per package. */
+function LibraryBadge({ library }: { library: string }) {
+  return (
+    <Badge tone="custom" variant="subtle" size="sm" className={`fg-tree__tag fg-lib--${library}`}>
+      {library}
+    </Badge>
+  );
 }
 
 /** The indexed stories as a filterable tree; opening one runs it in the focused trial, or with Shift in another. */
@@ -205,7 +214,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
                 <DisclosureMark open={open} />
               </span>
               <span className="fg-tree__label">{node.label}</span>
-              {node.tag ? <span className="fg-tree__tag">{node.tag}</span> : null}
+              {node.tag ? <LibraryBadge library={node.tag} /> : null}
             </div>
             {open ? (
               <div role="group" className="fg-tree__group">
@@ -231,7 +240,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
           }}
         >
           <span className="fg-tree__label">{node.label ?? entry.name}</span>
-          {node.tag ? <span className="fg-tree__tag">{node.tag}</span> : null}
+          {node.tag ? <LibraryBadge library={node.tag} /> : null}
         </a>
       );
     });
@@ -263,7 +272,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
             isSelected={!hidden[library]}
             onChange={(on) => setHidden((prev) => ({ ...prev, [library]: !on }))}
           >
-            {library}
+            <LibraryBadge library={library} />
           </Checkbox>
         ))}
       </fieldset>

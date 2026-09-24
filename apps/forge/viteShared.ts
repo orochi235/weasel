@@ -20,6 +20,10 @@ export function forgeAliases(repoRoot: string): ViteAlias[] {
       replacement: resolve(repoRoot, 'packages/theme/src/generated/tokens.css'),
     },
     {
+      find: '@weasel-js/theme/fonts.css',
+      replacement: resolve(repoRoot, 'packages/theme/src/fonts.css'),
+    },
+    {
       find: '@weasel-js/labkit/styles.css',
       replacement: resolve(repoRoot, 'apps/forge/labkitStyles.ts'),
     },

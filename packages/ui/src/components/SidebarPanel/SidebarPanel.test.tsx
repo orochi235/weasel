@@ -33,11 +33,11 @@ describe('SidebarPanel', () => {
     expect(btn.textContent).toBe('Properties');
     const sign = () => container.querySelector('svg path')?.getAttribute('d');
     expect(container.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
-    expect(sign()).toBe('M3 6 H9');
+    expect(sign()).toBe('M3 6.5 H10');
     rerender(
       <SidebarPanel title="Properties" collapsed onToggleCollapse={() => {}}>body</SidebarPanel>,
     );
-    expect(sign()).toBe('M3 6 H9 M6 3 V9');
+    expect(sign()).toBe('M3 6.5 H10 M6.5 3 V10');
   });
 
   it('renders the hide button only when onHide is given', () => {

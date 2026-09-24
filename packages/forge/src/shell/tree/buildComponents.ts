@@ -19,10 +19,11 @@ export interface ComponentRow {
  * Which library a story file belongs to, by the package it lives in rather
  * than by its title's first segment. The title prefix is authored per story
  * and disagrees with itself — `packages/ui` alone declares both `Primitives/`
- * and `weasel-ui/` — so the path is the answer that cannot drift.
+ * and `weasel-ui/` — so the path is the answer that cannot drift. Named by
+ * package directory, so `@weasel-js/ui` is `ui`.
  */
 const LIBRARIES: readonly (readonly [marker: string, label: string])[] = [
-  ['/packages/ui/', 'weasel-ui'],
+  ['/packages/ui/', 'ui'],
   ['/packages/labkit/', 'labkit'],
   ['/packages/forge/', 'forge'],
   ['/apps/draw/', 'draw'],
