@@ -39,3 +39,17 @@ export {
   type OklchDeg,
 } from './colorSpaces';
 export { contrastLineColor } from './contrast';
+export {
+  resolvePaletteColor,
+  resolvePaletteColors,
+  colorLiteralToHex,
+  type ColorLiteral,
+  type ColorRef,
+  type ColorFn,
+  type ColorFnContext,
+  type ColorSeqFn,
+  type ColorSource,
+  type ExternalColors,
+  type Palette,
+  type PaletteEntry,
+} from './palette';
