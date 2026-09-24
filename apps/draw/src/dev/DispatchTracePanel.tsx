@@ -19,7 +19,7 @@
  */
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { useHostAnchor } from '@weasel-js/core';
-import { ActionsBar } from '@weasel-js/ui';
+import { ActionsBar, DisclosureMark } from '@weasel-js/ui';
 import s from './DispatchTracePanel.module.css';
 import {
   clearLog,
@@ -118,7 +118,7 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
           aria-label={collapsed ? 'Expand dispatch trace' : 'Collapse dispatch trace'}
           title={collapsed ? 'Expand' : 'Collapse'}
         >
-          <span className={s.chevron} aria-hidden="true">{collapsed ? '▴' : '▾'}</span>
+          <DisclosureMark open={!collapsed} />
           <span className={s.barTitle}>Dispatch trace</span>
         </button>
         <span className={s.count}>

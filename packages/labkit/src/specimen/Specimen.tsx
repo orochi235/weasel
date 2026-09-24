@@ -297,7 +297,6 @@ function ButtonsAndToggles() {
             ]}
           />
           <Disclosure open={open} onToggle={() => setOpen((o) => !o)} label="Shapes" />
-          <Disclosure open={false} onToggle={() => {}} label="Down" direction="down" />
         </div>
       </Cell>
       <Cell label="Tabs">

@@ -53,13 +53,13 @@ async function mount(storage: StorageAdapter = createMemoryAdapter()) {
   return { treeEl, view };
 }
 
-/** The chevron on a folder's own row, which folds it without opening its index page. */
-const chevronOf = (folder: HTMLElement) => folder.querySelector(':scope > .fg-tree__folder > .fg-tree__chevron') as HTMLElement;
+/** The fold mark on a folder's own row, which folds it without opening its index page. */
+const foldOf = (folder: HTMLElement) => folder.querySelector(':scope > .fg-tree__folder > .fg-tree__fold') as HTMLElement;
 
-/** Folders open by their chevrons, so no index page loads on the way to a story. */
+/** Folders open by their fold marks, so no index page loads on the way to a story. */
 function openFolder(label: string) {
   const folder = screen.getByRole('treeitem', { name: label });
-  if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(chevronOf(folder));
+  if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(foldOf(folder));
 }
 
 const item = (scope: HTMLElement, name: string) => within(scope).getByRole('treeitem', { name });
@@ -153,13 +153,13 @@ describe('StoryTree', () => {
     expect(button).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('folds a component with its chevron alone, running nothing', async () => {
+  it('folds a component with its fold mark alone, running nothing', async () => {
     const { treeEl } = await mount();
     openFolder('Kit');
     const button = item(treeEl, 'Button');
-    fireEvent.click(chevronOf(button));
+    fireEvent.click(foldOf(button));
     expect(button).toHaveAttribute('aria-expanded', 'true');
-    fireEvent.click(chevronOf(button));
+    fireEvent.click(foldOf(button));
     expect(button).toHaveAttribute('aria-expanded', 'false');
     expect(trialsOf(buttonIndex)).toHaveLength(0);
     expect(trialsOf(slider)).toHaveLength(1);
@@ -179,7 +179,7 @@ describe('StoryTree', () => {
     const treeEl = await screen.findByRole('tree', { name: 'Stories' });
     const sliderRow = item(treeEl, 'Slider');
     expect(sliderRow).toHaveAttribute('aria-expanded', 'false');
-    fireEvent.click(chevronOf(sliderRow));
+    fireEvent.click(foldOf(sliderRow));
     const group = within(item(treeEl, 'Slider')).getByRole('group');
     expect(within(group).getAllByRole('treeitem').map((el) => el.textContent)).toEqual(['Default']);
     view.unmount();

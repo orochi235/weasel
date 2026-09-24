@@ -63,7 +63,7 @@ schema, so it gets trials, history and the frame pool for free.
 
 **Sidebar.** Every component row in both views is a folder holding its
 stories. Clicking the row opens the folder and the component's index page;
-its chevron only folds it.
+its fold mark only folds it.
 
 **The generated page.** A header with the title and the file's meta
 description, then one section per story, in file order:

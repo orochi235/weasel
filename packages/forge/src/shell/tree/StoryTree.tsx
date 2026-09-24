@@ -1,5 +1,5 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
-import { Checkbox, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
+import { Checkbox, DisclosureMark, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
 import { type FocusEvent, type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
 import { indexEntries } from '../../story/indexPages';
 import type { IndexEntry } from '../../story/types';
@@ -109,7 +109,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     setRoute(entry.id);
   };
 
-  // A component's row opens its index page as well as its folder; the chevron alone only folds.
+  // A component's row opens its index page as well as its folder; the fold mark alone only folds.
   const openFolder = (node: Extract<TreeNode, { kind: 'folder' }>, another: boolean): void => {
     if (!node.index) {
       setOpen(node.path, !isOpen(node.path));
@@ -196,12 +196,14 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
             >
               <span
                 aria-hidden="true"
-                className="fg-tree__chevron"
+                className="fg-tree__fold"
                 onClick={(event) => {
                   event.stopPropagation();
                   setOpen(node.path, !open);
                 }}
-              />
+              >
+                <DisclosureMark open={open} />
+              </span>
               <span className="fg-tree__label">{node.label}</span>
               {node.tag ? <span className="fg-tree__tag">{node.tag}</span> : null}
             </div>

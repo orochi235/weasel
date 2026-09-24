@@ -17,7 +17,7 @@ export const Open: Story = {
   args: { open: true, label: 'Shapes', onToggle: () => {} },
 };
 
-/** Proofed large, because a misplaced vertex is two blurry pixels at 12px and
+/** Proofed large, because an off-center bar is a blurry pixel at 12px and
  *  obviously wrong at 96. The right-hand column is the size it actually ships. */
 export const Sizes: Story = {
   render: () => (
@@ -79,14 +79,13 @@ export const FacetTree: Story = {
   },
 };
 
-/** `direction="down"` for a section whose closed state points down and lifts
- *  to point up — a sort header, an accordion that opens upward. */
-export const PointingDown: Story = {
+/** Every state side by side: shut, open, and disabled. */
+export const States: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 16 }}>
-      <Disclosure open={false} onToggle={() => {}} label="Closed" direction="down" />
-      <Disclosure open onToggle={() => {}} label="Open" direction="down" />
-      <Disclosure open={false} onToggle={() => {}} label="Disabled" direction="down" disabled />
+      <Disclosure open={false} onToggle={() => {}} label="Shut" />
+      <Disclosure open onToggle={() => {}} label="Open" />
+      <Disclosure open={false} onToggle={() => {}} label="Disabled" disabled />
     </div>
   ),
 };

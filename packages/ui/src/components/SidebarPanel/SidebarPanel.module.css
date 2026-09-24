@@ -39,15 +39,6 @@
   color: var(--wzl-fg);
 }
 
-.chevron {
-  flex: none;
-  color: var(--wzl-fg-muted);
-  transition: transform var(--wzl-motion-fast) ease;
-}
-.chevronCollapsed {
-  transform: rotate(-90deg);
-}
-
 .hideButton {
   background: transparent;
   border: 0;

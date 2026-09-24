@@ -19,51 +19,45 @@
   background: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  color: var(--wzl-fg-muted);
   line-height: 1;
   cursor: pointer;
-}
-
-.twisty:hover:not(:disabled) {
-  color: var(--wzl-fg);
-  background: var(--wzl-surface-raised);
 }
 
 .twisty:focus-visible {
   outline: 2px solid var(--wzl-focus-ring);
   outline-offset: -2px;
-  color: var(--wzl-fg);
 }
 
 .twisty:disabled {
-  color: var(--wzl-fg-subtle);
   cursor: not-allowed;
 }
 
-/* `currentColor` so the mark follows the button's own hover and disabled
-   colors, and so a consumer can recolor the pair with one declaration. */
 .mark {
   display: block;
   flex: none;
-  fill: currentColor;
-  transition: transform var(--wzl-motion-fast, 90ms) var(--wzl-ease-out-cubic);
 }
 
-.twisty[aria-expanded='true'] .mark {
-  transform: rotate(90deg);
+.lozenge {
+  fill: var(--wzl-swatch-violet);
+  transition: fill var(--wzl-motion-fast, 90ms) var(--wzl-ease-out-cubic);
 }
 
-/* `direction="down"` starts pointing down and lifts to point up. */
-.down .mark {
-  transform: rotate(90deg);
+.twisty:hover:not(:disabled) .lozenge {
+  fill: color-mix(in oklab, var(--wzl-swatch-violet), white 15%);
 }
 
-.down[aria-expanded='true'] .mark {
-  transform: rotate(-90deg);
+.twisty:disabled .lozenge {
+  fill: var(--wzl-fg-subtle);
+}
+
+.sign {
+  fill: none;
+  stroke: var(--wzl-fg-on-accent);
+  stroke-width: 2;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mark {
+  .lozenge {
     transition: none;
   }
 }

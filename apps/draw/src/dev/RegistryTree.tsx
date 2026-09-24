@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Badge } from '@weasel-js/ui';
+import { Badge, DisclosureMark } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 import type { TreeCategoryNode, TreeEntry } from './registryData';
 
@@ -102,7 +102,7 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
   const renderCategory = (n: TreeCategoryNode): ReactNode => (
     <li key={n.id} className={s.treeCategory}>
       <button type="button" className={s.treeCategoryButton} onClick={() => toggle(n.id)}>
-        <span className={s.treeChevron}>{isOpen(n.id) ? '▾' : '▸'}</span>
+        <span className={s.treeFold}><DisclosureMark open={isOpen(n.id)} /></span>
         {n.label} <Badge shape="pill" size="sm" tone="neutral" variant="solid">{n.entries.length}</Badge>
       </button>
       {isOpen(n.id) && (
@@ -144,7 +144,7 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
           return (
             <li key={groupKey} className={s.treeCategory}>
               <button type="button" className={s.treeCategoryButton} onClick={() => toggle(groupKey)}>
-                <span className={s.treeChevron}>{isOpen(groupKey) ? '▾' : '▸'}</span>
+                <span className={s.treeFold}><DisclosureMark open={isOpen(groupKey)} /></span>
                 {item.label} <Badge shape="pill" size="sm" tone="neutral" variant="solid">{item.nodes.length}</Badge>
               </button>
               {isOpen(groupKey) && (
