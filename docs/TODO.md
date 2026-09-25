@@ -1122,6 +1122,17 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
+- **(P2) labkit's bundled declarations reference types no entry exports.**
+  rollup-plugin-dts 6.5 warns during labkit's build that its `.d.ts` entries
+  name types they don't export, which a consumer inferring a type through them
+  meets as TS2742: `index.d.ts` → `PropertyMetricProps`, `StanceProps`;
+  `passthrough/weasel-ui.d.ts` → `OverlayPortalProps`, `SegmentTooltipFields`,
+  `StanceProps`, `WithoutPortalTarget`; `config/index.d.ts` → `SectionOption`;
+  `loupe/index.d.ts` → `LoupeMode`, `LoupePoint`. Some are public in their
+  own package and only lost in labkit's bundle (`StanceProps`, `LoupeMode`,
+  `LoupePoint`); the rest are exported from no entry at all, so each needs a
+  call on whether it is public before labkit re-exports it.
+
 - **(P2) labkit's lint fails on three raw values in `@weasel-js/ui` CSS.**
   `npm run lint -w @weasel-js/labkit` runs `check-design-tokens.ts`, which
   rejects `border-radius: 1px` (`FillStrokeSwatch.module.css:78`),
