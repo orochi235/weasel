@@ -708,15 +708,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P3) Settings rows do not shrink below their content.** Seen 2026-09-25 on
-  a plain page mounting the stories into ~460px columns, and the same before the
-  `PropertyField` merge: `PrefsForm`'s rail layout runs its content pane past the
-  panel's right edge (the zoom-step field and the sliders are cut off), and
-  `PropertyField`'s inline and framed columns overflow their story box. Separately,
-  in `ControlPanel`'s `SidebarSliders` story a unit (`MS`, `%`, `PX`) wraps onto
-  a second line under its number instead of sitting beside it. Check these in a
-  browser at a narrow width before fixing: forge's frames were wider, so they
-  may never have shown it.
+- **(P3) A slider readout's unit wraps under its number in `ControlPanel`.** In
+  the `SidebarSliders` story (`packages/labkit/src/controls/ControlPanel.stories.tsx`)
+  `MS`, `%` and `PX` sit on a second line beneath the value instead of beside it,
+  seen 2026-09-25 and the same before the `PropertyField` merge.
 
 - **(P2) One widget per field kind, so `PropertyField` loses its `chrome` axis.**
   `PropertyField` / `PropertyControl` (`Properties/PropertyField.tsx`) are the one
