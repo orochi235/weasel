@@ -1,5 +1,4 @@
 import type { PrefLeaf, PrefNumberFormat, PrefNumberUnit } from '@weasel-js/ui';
-import { type InDialogOptions, inDialog } from '../controls/inDialog';
 import { type Auto, isAuto } from './auto';
 import type {
   Annotations,
@@ -12,6 +11,7 @@ import type {
   ConfigSchema,
   ConfigShape,
   ControlRenderer,
+  InDialogOptions,
   InferConfig,
   NodeOptions,
   SectionOption,
@@ -89,13 +89,13 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
 
   /** Draw this one row yourself, keeping the kind, default and validation. */
   render(renderer: ControlRenderer): this {
-    return this.opt({ render: renderer });
+    return this.opt({ render: renderer, dialog: undefined });
   }
 
   /** Draw this row as a button that opens a dialog, with `body` as the
    *  dialog's content — for an editor too big for the row. */
   dialog(body: ControlRenderer, opts?: InDialogOptions): this {
-    return this.render(inDialog(body, opts));
+    return this.opt({ dialog: { ...opts, body }, render: undefined });
   }
 
   /**

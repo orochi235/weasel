@@ -372,6 +372,7 @@ describe('<ControlPanel> built-in kind coverage', () => {
     sections: [],
     showIf: new Map(),
     renderers: {},
+    dialogs: {},
   });
 
   it('declines paint and object with a named row rather than a blank one', () => {

@@ -26,7 +26,7 @@ import { fromConfigFields } from '../config/fromConfigField';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { isLeafVisible } from '../config/visible';
-import { summarizeValue } from './inDialog';
+import { inDialog, summarizeValue } from './inDialog';
 import type { ConfigField } from './types';
 
 /** How a panel packs its rows into the two-column property grid.
@@ -243,7 +243,13 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     if (pair === undefined) return undefined;
     if (!isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden))
       return undefined;
-    if (renderers?.[path] ?? resolved.renderers[path] ?? renderers?.[found.kind]) return undefined;
+    if (
+      renderers?.[path] ??
+      resolved.renderers[path] ??
+      resolved.dialogs[path] ??
+      renderers?.[found.kind]
+    )
+      return undefined;
     if (!isBuiltinToolPref(found)) return undefined;
     if (found.kind === 'paint' || found.kind === 'object' || isSliderLeaf(found)) return undefined;
     return { leaf: found, pair };
@@ -405,8 +411,13 @@ function ControlRow<TC extends Record<string, unknown>>({
   const autoProps = { auto: isAutoRow, onAutoChange };
 
   // Most specific wins, and within a tier the lab's entry beats the
-  // instrument's: controls[path] -> node .render -> controls[kind] -> built-in.
-  const custom = renderers?.[path] ?? resolved.renderers[path] ?? renderers?.[leaf.kind];
+  // instrument's: controls[path] -> node .render/.dialog -> controls[kind] -> built-in.
+  const dialog = resolved.dialogs[path];
+  const custom =
+    renderers?.[path] ??
+    resolved.renderers[path] ??
+    (dialog ? inDialog(dialog.body, dialog) : undefined) ??
+    renderers?.[leaf.kind];
   // A custom row places itself like any other; one that needs the full width
   // says so with `<PropertyRow span>`, which is the same opt-out a built-in has.
   if (custom) return custom({ path, pref: leaf, value, setValue: write, auto: isAutoRow, setAuto });

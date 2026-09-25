@@ -7,6 +7,7 @@ import type {
   ConfigSchema,
   ConfigShape,
   ControlRenderer,
+  DialogSpec,
   LeafPatch,
   ResolvedConfig,
   SectionSpec,
@@ -25,6 +26,7 @@ interface Sink {
   sections: SectionSpec[];
   showIf: Map<string, (config: Record<string, unknown>) => boolean>;
   renderers: Record<string, ControlRenderer>;
+  dialogs: Record<string, DialogSpec>;
   chain: readonly ConfigRule[];
 }
 
@@ -45,10 +47,17 @@ export function resolveConfigSchema<TC>(
     sections: [],
     showIf: new Map(),
     renderers: {},
+    dialogs: {},
     chain: [...rules, ...builtinRules],
   };
   const group = resolveShape(schema.nodes, '', '', sink);
-  return { group, sections: sink.sections, showIf: sink.showIf, renderers: sink.renderers };
+  return {
+    group,
+    sections: sink.sections,
+    showIf: sink.showIf,
+    renderers: sink.renderers,
+    dialogs: sink.dialogs,
+  };
 }
 
 /** A section while it is still being filled. */
@@ -81,6 +90,7 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
     }
     if (predicate) sink.showIf.set(path, predicate);
     if (!isConfigBranch(entry) && entry.options.render) sink.renderers[path] = entry.options.render;
+    if (!isConfigBranch(entry) && entry.options.dialog) sink.dialogs[path] = entry.options.dialog;
   }
 
   return { name, children };

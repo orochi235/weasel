@@ -198,6 +198,7 @@ export type {
   ConfigSchema,
   ConfigShape,
   ControlRenderer,
+  DialogSpec,
   EntryValue,
   InferConfig,
   LeafPatch,

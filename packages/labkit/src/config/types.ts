@@ -5,6 +5,7 @@ import type {
   PrefNumberUnit,
   PrefRenderer,
 } from '@weasel-js/ui';
+import type { ReactNode } from 'react';
 
 /**
  * Renders the control cell for one config leaf. Identical to weasel-ui's
@@ -104,6 +105,23 @@ export interface ResolvedConfig {
   showIf: ReadonlyMap<string, (config: Record<string, unknown>) => boolean>;
   /** Node-level `.render` overrides, keyed by path. */
   renderers: Readonly<Record<string, ControlRenderer>>;
+  /** Node-level `.dialog` rows, keyed by path. */
+  dialogs: Readonly<Record<string, DialogSpec>>;
+}
+
+/** Options for a row drawn as a button that opens a dialog. */
+export interface InDialogOptions {
+  /** What the row's button shows of the value. Defaults to a list joined with
+   *  commas, or the value itself. */
+  summary?: (value: unknown) => ReactNode;
+  /** The dialog's heading. Defaults to the row's label. */
+  title?: ReactNode;
+}
+
+/** A `.dialog` row: `body` is the dialog's content, handed the context a row
+ *  renderer gets. */
+export interface DialogSpec extends InDialogOptions {
+  body: ControlRenderer;
 }
 
 /** How a node names the section it belongs to: the heading, and how that
@@ -121,6 +139,9 @@ export interface SectionOption {
 /** Per-node extras that do not belong on a `PrefLeaf`. */
 export interface NodeOptions extends BranchOptions {
   render?: ControlRenderer;
+  /** Draw the row as a button that opens a dialog. Set by `.dialog`; the
+   *  config entry records it, and `ControlPanel` draws it. */
+  dialog?: DialogSpec;
   /** Errors for this leaf under `config`, the instrument's whole config. */
   validate?: (leaf: PrefLeaf, config: Record<string, unknown>) => string[];
   /** Computes this leaf's value while it is auto. Attaching one is what gives
