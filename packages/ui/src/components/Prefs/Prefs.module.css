@@ -28,6 +28,7 @@
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
+  --wzl-input-surface: var(--wzl-surface);
 }
 
 .subpanel {
@@ -39,6 +40,7 @@
   background: var(--wzl-surface-sunken);
   border-left: 2px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
+  --wzl-input-surface: var(--wzl-surface);
 }
 
 .groupHeader {
