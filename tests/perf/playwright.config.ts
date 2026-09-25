@@ -1,12 +1,13 @@
 import { defineConfig } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../..');
 // A second checkout running perf on the default port would otherwise be reused
 // outside CI, and every spec would measure that checkout's code.
-const port = Number(process.env.WEASEL_PERF_PORT ?? 5176);
+const port = Number(process.env.WEASEL_PERF_PORT ?? ports.perf);
 
 // Performance / stress harness. These specs drive the demos under a real GL
 // renderer and assert on wall-clock timing and crash-freedom — they are NOT
@@ -17,7 +18,7 @@ export default defineConfig({
   testDir: here,
   testMatch: /\.spec\.ts$/,
   use: {
-    baseURL: `http://localhost:${port}`,   // default 5176; 5173 smoke / 5174 dev:draw / 5175 e2e / 5177 visual
+    baseURL: `http://localhost:${port}`,
     headless: true,
     // `globalThis.gc()`, so a spec can collect the garbage it built between
     // measurements instead of paying for it inside a timed block. Absent the

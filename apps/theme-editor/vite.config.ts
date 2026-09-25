@@ -6,6 +6,7 @@ import { weaselAliases } from '../../scripts/vite-aliases';
 import { weaselDefines } from '../../scripts/vite-build-info';
 import { localWake } from '../../scripts/vite-wake';
 import { themeStorePlugin } from './server/themeStorePlugin';
+import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
 const repoRoot = resolve(__dirname, '../..');
 
@@ -59,7 +60,7 @@ export default defineConfig({
     }),
     localWake(),
   ],
-  server: { port: 5177, host: '::' },
+  server: { port: ports.themeEditor, strictPort: true, host: '::' },
   define: weaselDefines(repoRoot),
   build: { outDir: resolve(repoRoot, 'dist-theme-editor'), emptyOutDir: true },
 });

@@ -75,7 +75,7 @@ writes it:
 
 Knobs every runner honors: `WEASEL_PERF_OUT` (above), `WEASEL_PERF_ROUNDS` to
 override a spec's round count, and `WEASEL_PERF_PORT` for the Playwright dev
-server (default 5176). Use your own port when another checkout might be running
+server (default 4722, from `scripts/dev-ports.json`). Use your own port when another checkout might be running
 perf: outside CI the config reuses whatever already listens there, and every
 spec would measure that checkout's code. Some specs take their own —
 `PERF_KINDS` in `frame-budget`, `WEASEL_PERF_N` and `WEASEL_PERF_SIZE` in

@@ -6,6 +6,7 @@ import { forge } from '../../packages/forge/src/vite/index';
 import { weaselDefines } from '../../scripts/vite-build-info';
 import { localWake } from '../../scripts/vite-wake';
 import { forgeAliases, frameConfig, shellConfig, stories } from './viteShared';
+import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
 const repoRoot = resolve(__dirname, '../..');
 
@@ -21,6 +22,6 @@ export default defineConfig(({ command, isPreview }) => ({
     forge({ stories, frameConfig, shellConfig }),
     localWake(),
   ],
-  server: { port: 5178, host: '::' },
+  server: { port: ports.forge, strictPort: true, host: '::' },
   build: { outDir: resolve(repoRoot, 'dist-forge'), emptyOutDir: true },
 }));

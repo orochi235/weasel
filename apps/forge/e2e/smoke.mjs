@@ -1,9 +1,10 @@
 // Headless check of the forge dev app: node apps/forge/e2e/smoke.mjs [url] [screenshot] [--profile=<dir>] [--expect-persisted]
 // A second run with the same --profile and --expect-persisted checks that the trial survived a relaunch.
 import { chromium } from '@playwright/test';
+import ports from '../../../scripts/dev-ports.json' with { type: 'json' };
 
 const args = process.argv.slice(2);
-const [url = 'http://[::1]:5178/#/forge-counter--counter', shot = 'forge-smoke.png'] = args.filter((a) => !a.startsWith('--'));
+const [url = `http://[::1]:${ports.forge}/#/forge-counter--counter`, shot = 'forge-smoke.png'] = args.filter((a) => !a.startsWith('--'));
 const profile = args.find((a) => a.startsWith('--profile='))?.slice('--profile='.length);
 const persisted = args.includes('--expect-persisted');
 const viewport = { width: 1280, height: 800 };

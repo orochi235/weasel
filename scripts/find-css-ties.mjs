@@ -4,7 +4,7 @@
  *
  * Usage: node scripts/find-css-ties.mjs <forge-url> [story-id ...]
  *   npm run dev:forge, then
- *   node scripts/find-css-ties.mjs http://localhost:5174 labkit-lab-fullchrome--all-chrome
+ *   node scripts/find-css-ties.mjs http://localhost:4712 labkit-lab-fullchrome--all-chrome
  * With no story ids, every story titled `labkit/…` is checked. Ids are read
  * from forge's own indexer rather than over HTTP, so this needs no endpoint
  * the workshop does not already serve.

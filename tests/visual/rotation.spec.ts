@@ -20,9 +20,9 @@
  *
  * Rig caveat:
  *   This spec targets the WeaselDraw app, served on Vite's dev server
- *   for WeaselDraw (port 5174, see `apps/draw/vite.config.ts`). The visual
+ *   for WeaselDraw (`ports.draw` in `scripts/dev-ports.json`). The visual
  *   rig's `playwright.config.ts` currently boots
- *   only the kit-demos vite config on port 5177; running this spec requires
+ *   only the kit-demos vite config; running this spec requires
  *   either pointing the rig at the WeaselDraw vite config or adding a
  *   second webServer entry. That integration is part of T2.11 baseline
  *   capture in the CI workflow, not local pixel comparison.
@@ -33,11 +33,12 @@
  *   spec asserts the renderer contract once the hook exists.
  */
 import { test, expect } from '@playwright/test';
+import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
 test.describe('rotation — WeaselDraw renderer', () => {
   test.skip(
-    ({ baseURL }) => !baseURL?.includes('5173'),
-    'WeaselDraw dev server (port 5173) not booted by the visual rig yet; '
+    ({ baseURL }) => !baseURL?.includes(String(ports.draw)),
+    'WeaselDraw dev server not booted by the visual rig yet; '
     + 'see spec preamble for the CI workflow that captures baselines.',
   );
 

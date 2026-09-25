@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../..');
@@ -14,14 +15,11 @@ export default defineConfig({
   // the kit sizes the backing store by DPR, so changing it rescales every
   // baseline. The viewport is fixed mainly to keep demo layout stable.
   use: {
-    // 5177, not 5174. `dev:draw` binds 5174 (and the kit dev server proxies
-    // /weasel/draw/ there, so that port is spoken for), and with
-    // `reuseExistingServer` below a local run would silently attach to
-    // WeaselDraw instead of the kit demos — every baseline then fails against
-    // the wrong application, which reads like a mass regression rather than a
-    // misconfiguration. Ports: 5173 smoke / 5174 dev:draw / 5175 e2e /
-    // 5176 perf + draw e2e / 5177 visual.
-    baseURL: 'http://localhost:5177',
+    // A port no dev server shares: with `reuseExistingServer` below, a local
+    // run silently attaches to whatever already listens there, and every
+    // baseline then fails against the wrong application — which reads like a
+    // mass regression rather than a misconfiguration.
+    baseURL: `http://localhost:${ports.visual}`,
     headless: true,
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,
@@ -39,14 +37,14 @@ export default defineConfig({
   // naming conventions.
   snapshotDir: resolve(here, 'baselines'),
   webServer: {
-    command: 'npx vite --config vite.config.ts --port 5177',
+    command: `npx vite --config vite.config.ts --port ${ports.visual}`,
     cwd: repoRoot,
-    port: 5177,
+    port: ports.visual,
     // vite.config.ts loads vite-plugin-wake, which otherwise stops any other
     // running copy of this app to take its remembered port. WAKE_EXTRA runs
     // an extra copy on exactly this port instead, leaving a developer's dev
     // server alone.
-    env: { WAKE_EXTRA: '5177' },
+    env: { WAKE_EXTRA: String(ports.visual) },
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },

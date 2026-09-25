@@ -6,6 +6,7 @@ import { weaselDefines } from '../../scripts/vite-build-info';
 import { localWake } from '../../scripts/vite-wake';
 import { callbackSourcePlugin } from './vite-plugin-callback-source';
 import { traitSchemasPlugin } from './vite-plugin-trait-schemas';
+import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
 const repoRoot = resolve(__dirname, '../..');
 
@@ -49,7 +50,7 @@ export default defineConfig({
     traitSchemasPlugin({ repoRoot }),
     localWake(),
   ],
-  server: { port: 5174 },
+  server: { port: ports.draw, strictPort: true, host: '::' },
   define: {
     ...weaselDefines(repoRoot),
     __WEASEL_REPO_ROOT__: JSON.stringify(repoRoot),

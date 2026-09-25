@@ -8,6 +8,7 @@ import { demoTimestamps } from './scripts/vite-demo-timestamps';
 import { demoSources } from './scripts/vite-demo-sources';
 import { changelogs } from './scripts/vite-changelogs';
 import { localWake } from './scripts/vite-wake';
+import ports from './scripts/dev-ports.json' with { type: 'json' };
 
 /**
  * Dev-only middleware: serve `dist-demo/api/*` at `/api/*`. The deployed
@@ -98,15 +99,18 @@ export default defineConfig({
     include: ['d3-force'],
   },
   // Proxy `/weasel/draw/*` to the WeaselDraw dev server (`npm run dev:draw`,
-  // port 5174) so a single localhost:5173 origin mirrors the production Pages
+  // `ports.draw`) so a single site origin mirrors the production Pages
   // layout where WeaselDraw is copied into `dist-demo/draw/`. Both servers
   // need to be running for this to work; WeaselDraw's `base: '/weasel/draw/'`
   // means we forward the path through unchanged. WebSocket forwarding is enabled
   // so HMR + Vite's dev-server live-reload also work end-to-end via the proxy.
   server: {
+    port: ports.site,
+    strictPort: true,
+    host: '::',
     proxy: {
       '/weasel/draw': {
-        target: 'http://localhost:5174',
+        target: `http://localhost:${ports.draw}`,
         changeOrigin: true,
         ws: true,
       },

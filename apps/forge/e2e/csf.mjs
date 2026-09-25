@@ -1,7 +1,8 @@
 // Headless check that forge renders a sample of Storybook's CSF stories: node apps/forge/e2e/csf.mjs [origin] [screenshot-dir]
 import { chromium } from '@playwright/test';
+import ports from '../../../scripts/dev-ports.json' with { type: 'json' };
 
-const [origin = 'http://[::1]:5178', shots = '.'] = process.argv.slice(2);
+const [origin = `http://[::1]:${ports.forge}`, shots = '.'] = process.argv.slice(2);
 
 /** Each check runs once the frame has rendered, and throws on what it finds wrong. */
 const stories = [

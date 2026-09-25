@@ -23,8 +23,9 @@
  */
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import ports from './dev-ports.json' with { type: 'json' };
 
-const [modulePath, needle, origin = 'http://localhost:5173'] = process.argv.slice(2);
+const [modulePath, needle, origin = `http://localhost:${ports.site}`] = process.argv.slice(2);
 
 if (!modulePath || !needle) {
   console.error('usage: node scripts/is-it-stale.mjs <module-path> <needle> [origin]');
