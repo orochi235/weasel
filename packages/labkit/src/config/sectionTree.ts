@@ -25,7 +25,11 @@ export interface SectionTree {
 /** A section label as an object key: no dots, since a dotted path is how every
  *  caller addresses a node, and a label is free to hold one. */
 function slugOf(label: string, taken: ReadonlySet<string>): string {
-  const base = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'section';
+  const base =
+    label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'section';
   if (!taken.has(base)) return base;
   for (let n = 2; ; n += 1) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
 }

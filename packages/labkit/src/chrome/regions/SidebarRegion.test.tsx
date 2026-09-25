@@ -3,13 +3,20 @@ import { describe, expect, it } from 'vitest';
 import type { RegionContribution, TrialChromeContext } from '../types';
 import { SidebarRegion } from './SidebarRegion';
 
-const ctx = { collapsedSections: {}, setSectionCollapsed: () => {} } as unknown as TrialChromeContext;
+const ctx = {
+  collapsedSections: {},
+  setSectionCollapsed: () => {},
+} as unknown as TrialChromeContext;
 
 describe('<SidebarRegion> stance and tone', () => {
   it('puts a section’s stance and tone on the section', () => {
     const contributions: RegionContribution<TrialChromeContext>[] = [
       { id: 'a', region: 'sidebar', item: { title: 'Plain', body: 'x' } },
-      { id: 'b', region: 'sidebar', item: { title: 'Debug', body: 'y', stance: 'debug', tone: '#224a63' } },
+      {
+        id: 'b',
+        region: 'sidebar',
+        item: { title: 'Debug', body: 'y', stance: 'debug', tone: '#224a63' },
+      },
     ];
     const { container } = render(<SidebarRegion contributions={contributions} ctx={ctx} />);
     const [plain, debug] = [...container.querySelectorAll<HTMLElement>('.lk-sidebar-section')];

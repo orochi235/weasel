@@ -1,11 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { TokenName } from '@weasel-js/theme';
 import { useTheme } from '@weasel-js/theme/react';
-import {
-  PropertyField,
-  PropertyList,
-  PropertyPanel,
-} from '@weasel-js/ui';
+import { PropertyField, PropertyList, PropertyPanel } from '@weasel-js/ui';
 import './Interstellar.stories.less';
 
 const meta: Meta = {

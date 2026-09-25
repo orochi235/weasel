@@ -468,7 +468,15 @@ function PanelsAndRows() {
               onAlphaChange={setAlpha}
             />
             <PropertyField kind="color" label="Stroke" value={stroke} onChange={setStroke} />
-            <PropertyField kind="number" label="Count" value={count} min={0} max={100} step={1} onChange={setCount} />
+            <PropertyField
+              kind="number"
+              label="Count"
+              value={count}
+              min={0}
+              max={100}
+              step={1}
+              onChange={setCount}
+            />
             <PropertyField
               kind="enum"
               label="Line cap"
@@ -494,7 +502,16 @@ function PanelsAndRows() {
             <PropertyField kind="string" label="Label" value={label} onChange={setLabel} />
             <PropertyField kind="boolean" label="Visible" value={visible} onChange={setVisible} />
             <PropertyGroup title="Bevel" defaultCollapsed>
-              <PropertyField kind="number" control="slider" label="Rings" value={32} min={4} max={96} step={1} onChange={() => {}} />
+              <PropertyField
+                kind="number"
+                control="slider"
+                label="Rings"
+                value={32}
+                min={4}
+                max={96}
+                step={1}
+                onChange={() => {}}
+              />
             </PropertyGroup>
           </PropertyList>
         </PropertyPanel>

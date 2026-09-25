@@ -96,7 +96,10 @@ describe('documents and records', () => {
       ['trial:z', { instrumentName: 'T', order: 0 }],
       ['trial:m', { instrumentName: 'T', order: 0 }],
     ]);
-    expect((joined?.doc.trials as { id: string }[]).map((t) => t.id)).toEqual(['m', 'z']);
+    expect((joined?.doc.trials as { id: string }[] | undefined)?.map((t) => t.id)).toEqual([
+      'm',
+      'z',
+    ]);
   });
 
   it('is null without a meta record', () => {

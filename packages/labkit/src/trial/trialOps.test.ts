@@ -132,7 +132,7 @@ describe('addTrial', () => {
     const out = addTrial([], instruments, 'Schemed', { config: { gap: auto } });
     expect(out[0]?.auto).toContain('gap');
     expect(out[0]?.autoSeed).toEqual(['gap']);
-    expect((out[0]?.config as { gap: number }).gap).toBe(12);
+    expect((out[0]?.config as { gap: number } | undefined)?.gap).toBe(12);
     expect(out[0]?.configSeed).not.toHaveProperty('gap');
   });
 
@@ -141,13 +141,13 @@ describe('addTrial', () => {
     const out = addTrial([], instruments, 'Counter', {
       config: { at: when } as unknown as Partial<CounterConfig>,
     });
-    expect((out[0]?.config as { at: unknown }).at).toBe(when);
+    expect((out[0]?.config as { at: unknown } | undefined)?.at).toBe(when);
   });
 
   it('honors auto at a nested seed path', () => {
     const out = addTrial([], instruments, 'Schemed', { config: { grid: { size: auto } } });
     expect(out[0]?.auto).toContain('grid.size');
-    expect((out[0]?.config as { grid: { size: number } }).grid.size).toBe(4);
+    expect((out[0]?.config as { grid: { size: number } } | undefined)?.grid.size).toBe(4);
   });
 
   it('leaves a trial with no auto field when nothing is unpinned', () => {
@@ -222,7 +222,7 @@ describe('resetTrial', () => {
     const arr = addTrial([], instruments, 'Counter');
     head(arr).config = { step: 99 } as CounterConfig;
     resetTrial(arr, head(arr).id, instruments);
-    expect((arr[0]?.config as CounterConfig).step).toBe(99);
+    expect((arr[0]?.config as CounterConfig | undefined)?.step).toBe(99);
   });
 
   it('restores the seed the trial was opened with, not the bare defaults', () => {

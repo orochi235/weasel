@@ -173,7 +173,6 @@ export {
   ValueNode,
 } from './config/builder';
 export { fromConfigFields } from './config/fromConfigField';
-export { type SectionTree, sectionTree } from './config/sectionTree';
 export {
   fillConfigDefaults,
   hasConfigPath,
@@ -183,6 +182,7 @@ export {
 } from './config/path';
 export { resolveConfigSchema } from './config/resolve';
 export { applyRules, builtinRules, titleCase } from './config/rules';
+export { type SectionTree, sectionTree } from './config/sectionTree';
 export type {
   Annotations,
   BranchAnnotations,

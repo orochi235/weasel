@@ -165,7 +165,9 @@ describe('<Lab>', () => {
       storageKey: 's',
     });
     await waitFor(() => expect(labRef?.trials[0]).toBeDefined());
-    expect((labRef?.trials[0]?.state as { seen: Set<string> }).seen).toEqual(new Set(['a']));
+    expect((labRef?.trials[0]?.state as { seen: Set<string> } | undefined)?.seen).toEqual(
+      new Set(['a']),
+    );
   });
 });
 

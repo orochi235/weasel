@@ -6,8 +6,8 @@ import {
   type PrefGroup,
   type PrefLeaf,
   type PropertyAlign,
-  type PropertyControlProps,
   PropertyControl,
+  type PropertyControlProps,
   type PropertyDensity,
   PropertyField,
   PropertyGroup,
@@ -442,7 +442,8 @@ function ControlRow<TC extends Record<string, unknown>>({
   }
 
   const field = labField(leaf, value, write);
-  if (field === null) return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
+  if (field === null)
+    return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
   switch (field.kind) {
     case 'string':
       return <DebouncedTextRow leaf={leaf} field={field} span={wide} {...row} />;
@@ -479,7 +480,10 @@ function labField(
         unit: extra<string>(leaf, 'suffix') ?? field.unit,
       };
     case 'boolean':
-      return { ...field, control: extra<string>(leaf, 'control') === 'switch' ? 'switch' : 'checkbox' };
+      return {
+        ...field,
+        control: extra<string>(leaf, 'control') === 'switch' ? 'switch' : 'checkbox',
+      };
     case 'enum':
       return { ...field, control: extra<string>(leaf, 'control') === 'radio' ? 'radio' : 'select' };
     case 'string':
@@ -605,7 +609,9 @@ function PairCell({
   if (field === null) return null;
   switch (field.kind) {
     case 'string':
-      return <PropertyControl {...field} name={leaf.name} value={text.local} onChange={text.type} />;
+      return (
+        <PropertyControl {...field} name={leaf.name} value={text.local} onChange={text.type} />
+      );
     case 'number':
       // The pair names the row, so a cell has no room for a unit.
       return <PropertyControl {...field} name={leaf.name} control="input" unit={undefined} />;
@@ -618,7 +624,9 @@ function PairCell({
           {...field}
           name={leaf.name}
           alpha={undefined}
-          onChange={(rgb: string) => write(field.alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb)}
+          onChange={(rgb: string) =>
+            write(field.alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb)
+          }
         />
       );
     }
