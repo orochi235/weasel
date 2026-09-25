@@ -14,10 +14,9 @@ import * as Weasel from '@weasel-js/core';
 import { defaultNodeRouting, defaultNodeProperties, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 
 describe('registryData static collectors', () => {
-  it('collectIcons lists app and kind icons alongside the actions\' glyphs', () => {
+  it('collectIcons lists app icons alongside the actions\' glyphs', () => {
     const icons = collectIcons([]);
     const byId = new Map(icons.map((i) => [i.id, i]));
-    expect(byId.get('PageIcon')?.source).toBe('kind');
     expect(byId.get('SettingsIcon')?.source).toBe('app');
     for (const i of icons) {
       expect(i.kind).toBe('icon');

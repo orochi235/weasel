@@ -1354,7 +1354,7 @@ export type {
 export type { BuiltinToolId, ToolBundle } from './canvas/SceneCanvas';
 export { BUNDLE_TOOLS, rotateAroundAABBCenter } from './canvas/SceneCanvas';
 export { KIT_SHAPE_KINDS } from './core/shapeKinds';
-export type { BuiltinShapeToolId } from './core/shapeKinds';
+export type { BuiltinShapeToolId, ShapeKind } from './core/shapeKinds';
 export type { BuiltinToolOptions } from './canvas/SceneCanvas/useBuiltinShapeTools';
 export type { InsertNodeFactory } from './canvas/deps';
 export type {

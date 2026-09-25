@@ -90,6 +90,9 @@ const checkMid = [
 const checkAt = ([x, y]) => `${round2(x + 10 - checkMid[0])} ${round2(y + 10 - checkMid[1])}`;
 const check = `M${checkAt(CHECK_SHORT)} ${checkAt([0, 0])} ${checkAt(CHECK_LONG)}`;
 
+// ── page ─────────────────────────────────────────────────────────────────
+const PAGE_EAR = 11.6;
+
 const STATE = {
   // transport
   play: `<path d="${playTri}"/>`,
@@ -129,6 +132,11 @@ const STATE = {
     <path d="M10 2.8 17.2 6.6 10 10.4 2.8 6.6z"/>
     <path d="M2.8 10 10 13.8 17.2 10" stroke-width="1"/>
     <path d="M2.8 13.4 10 17.2 17.2 13.4" stroke-width="1"/>`,
+  // Document page: dog-ear folded at 45°, so the fold's two legs land exactly
+  // on the corner cut's endpoints.
+  page: `
+    <path d="M4.6 2.8H${PAGE_EAR}L15.4 ${round2(2.8 + 15.4 - PAGE_EAR)}V17.2H4.6z"/>
+    <path d="M${PAGE_EAR} 2.8V${round2(2.8 + 15.4 - PAGE_EAR)}H15.4"/>`,
 
   // state
   lock: `
@@ -207,7 +215,7 @@ const SPLIT = {
   ],
   instrument: [
     'crosshair', 'fullscreen', 'compare', 'search', 'loupe',
-    'layers', 'link', 'collapse', 'expand', 'chevron',
+    'layers', 'page', 'link', 'collapse', 'expand', 'chevron',
     'tune', 'grid', 'snap', 'measure', 'randomize', 'refresh',
   ],
 };

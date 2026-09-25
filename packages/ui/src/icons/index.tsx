@@ -3,6 +3,8 @@ import { Icon, type IconProps } from './Icon';
 export { Icon, isFillable } from './Icon';
 export type { IconProps } from './Icon';
 export { ICON_FILLS, ICON_GROUPS, ICON_PATHS } from './paths';
+export { ShapeKindIcon } from './ShapeKindIcon';
+export type { ShapeKindIconProps } from './ShapeKindIcon';
 export type { FillableIconName, IconName } from './paths';
 
 // Tool glyphs live in @weasel-js/core because core needs them for
@@ -52,6 +54,7 @@ export const FilterIcon = (p: IconProps) => <Icon name="filter" {...p} />;
 export const SearchIcon = (p: IconProps) => <Icon name="search" {...p} />;
 export const LoupeIcon = (p: IconProps) => <Icon name="loupe" {...p} />;
 export const LayersIcon = (p: IconProps) => <Icon name="layers" {...p} />;
+export const PageIcon = (p: IconProps) => <Icon name="page" {...p} />;
 export const LockIcon = (p: IconProps) => <Icon name="lock" {...p} />;
 export const UnlockIcon = (p: IconProps) => <Icon name="unlock" {...p} />;
 export const VisibleIcon = (p: IconProps) => <Icon name="visible" {...p} />;
