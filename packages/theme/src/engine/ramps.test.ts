@@ -78,8 +78,52 @@ describe('an anchor where the chroma envelope is near zero', () => {
   });
 });
 
-it('keeps a low-chroma ramp low-chroma when its anchor sits on an end with that bias at 0', () => {
+describe('an anchor sets the chroma peak directly', () => {
   const steps = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
-  const ramp = lightnessRamp({ steps, lightness: [0.97, 0.2], curve: 0, hue: 0, peak: 0, darkBias: 0, anchor: { '900': '#1f2328' } });
-  expect(toLch(ramp['500']).C).toBeLessThan(0.02);
+  const gray = (darkBias: number) =>
+    lightnessRamp({ steps, lightness: [0.97, 0.2], curve: 0, hue: 0, peak: 0, darkBias, anchor: { '900': '#1f2328' } });
+
+  it('keeps a gray ramp anchored on its last step gray, and continuous as darkBias leaves 0', () => {
+    const at0 = toLch(gray(0)['500']).C;
+    const nudged = toLch(gray(0.001)['500']).C;
+    expect(at0).toBeLessThan(0.02);
+    expect(nudged).toBeLessThan(0.02);
+    expect(Math.abs(nudged - at0)).toBeLessThan(0.001);
+  });
+});
+
+describe('several anchors', () => {
+  const steps = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
+  const red = '#ff0000';
+  const blue = '#0000ff';
+  const ramp = lightnessRamp({
+    steps,
+    lightness: [0.97, 0.2],
+    curve: 0,
+    hue: 0,
+    peak: 0,
+    lightBias: 0.5,
+    darkBias: 0.5,
+    anchor: { '100': red, '800': blue },
+  });
+  const hr = toLch(red).H;
+  const hb = toLch(blue).H;
+  const arc = ((hb - hr + 540) % 360) - 180;
+
+  it('lands each anchored step exactly on its anchor', () => {
+    expect(ramp['100']).toBe(red);
+    expect(ramp['800']).toBe(blue);
+  });
+
+  it('blends hue along the shortest arc between consecutive anchors', () => {
+    for (let i = 2; i <= 7; i += 1) {
+      const want = (hr + (arc * (i - 1)) / 7 + 360) % 360;
+      expect(hueGap(toLch(ramp[steps[i]]).H, want), `hue at ${steps[i]}`).toBeLessThan(4);
+    }
+  });
+
+  it('holds the first anchor’s hue before it and the last anchor’s after it', () => {
+    expect(hueGap(toLch(ramp['50']).H, hr)).toBeLessThan(4);
+    expect(hueGap(toLch(ramp['900']).H, hb)).toBeLessThan(4);
+  });
 });
