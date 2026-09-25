@@ -5,8 +5,7 @@ renders each story in the workshop page as a labkit trial: the story's
 controls, state, undo and snapshots live in the trial, so two settings of one
 component can be compared side by side.
 
-Direction: `docs/superpowers/specs/2026-09-13-forge-design.md` and
-`docs/superpowers/specs/2026-09-25-forge-in-document-stories-design.md`.
+Direction: `docs/superpowers/specs/2026-09-13-forge-design.md`.
 
 ## Where a story renders
 
@@ -29,6 +28,13 @@ for those stories and gets no new features; `npm run check:forge-isolate`
 lists the isolated stories and fails when their number goes above the one the
 script holds, so the count only goes down. The value is read from the source
 without running it, and must be a string literal.
+
+A story may stay isolated as long as it needs to. If the count ever reaches
+zero, the frame side goes: `FrameView`, `framePool`, `trialFrames`,
+`answers`, `readyKey`, `labHarness`, `mountFrame`, `protocol/*`, the frame
+entry, `frame.html`, `html.ts`, the frame page in `build.ts`, the `./frame`
+and `./frame.css` exports, the ratchet script, and the `docs/TODO.md` entries
+about frame reloads; `defineFrameConfig` folds into one config.
 
 ## Config modules
 
