@@ -52,6 +52,9 @@ forge({ stories: ['src/**/*.stories.tsx'], frameConfig: 'forge.frame.tsx', shell
 Editing a story file reloads that story in every trial showing it, with the
 trial's config and state kept; the page itself stays.
 
+Clicking a story in the tree, or reaching one by its URL, shows it in the
+focused trial; Shift-click opens another trial beside it.
+
 ## Index pages
 
 Every component — every story title — has an index page, opened by clicking

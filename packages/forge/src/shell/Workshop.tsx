@@ -46,8 +46,10 @@ function initialStory(entries: readonly IndexEntry[], fallback: string): string 
 }
 
 /**
- * Opens a trial of the story the route names when none is open, once per route, so closing that trial sticks.
- * A history step across an in-place swap swaps back instead, so Back returns the trial to its previous story.
+ * Shows the story the route names when no trial shows it, once per route, so closing that trial sticks. It goes
+ * into the trial the previous route was in when a history step crosses an in-place swap, so Back returns that
+ * trial to its previous story; otherwise into the focused trial, as a click in the tree does. Only a lab with no
+ * trial at all gets a new one: another trial is what Shift-click is for.
  */
 function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
   const lab = useLabContext();
@@ -61,7 +63,11 @@ function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
     handled.current = route;
     if (lab.trials.some((trial) => trial.instrumentName === route)) return;
     const previous = lab.trials.find((trial) => trial.instrumentName === from.route);
-    if (previous && crossesInPlace(from.entry, last.current.entry)) lab.swapTrial(previous.id, route);
+    const target =
+      (previous && crossesInPlace(from.entry, last.current.entry) ? previous : undefined) ??
+      lab.trials.find((trial) => trial.id === lab.focusedTrialId) ??
+      lab.trials[0];
+    if (target) lab.swapTrial(target.id, route);
     else lab.addTrial(route);
   }, [route, index, lab]);
   return null;

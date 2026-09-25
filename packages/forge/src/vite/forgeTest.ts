@@ -62,8 +62,11 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
           '  viewport: (width, height) => __forge_page.viewport(width, height),',
           '};',
           'const __forge_run = async (exportName) => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), exportName, __forge_file, __forge_title, __forge_options);',
-          ...entries.map(
-            (entry) => `__forge_test(${q(entry.name)}, () => __forge_run(${q(entry.exportName)}), __forge_timeout);`,
+          // An isolated story asks for a document of its own, which the test page is not; its reason goes in the name.
+          ...entries.map((entry) =>
+            entry.isolate === undefined
+              ? `__forge_test(${q(entry.name)}, () => __forge_run(${q(entry.exportName)}), __forge_timeout);`
+              : `__forge_test.skip(${q(`${entry.name} (isolated: ${entry.isolate})`)}, () => {});`,
           ),
         ];
         return { code: `${code}\n${lines.join('\n')}\n`, map: null };

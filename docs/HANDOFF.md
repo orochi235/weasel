@@ -1,3 +1,36 @@
+# In flight: forge stories in the workshop document — branch `worktree-forge-in-document`
+
+Worktree `.claude/worktrees/forge-in-document`, four commits on top of `main`,
+not merged. Spec: `docs/superpowers/specs/2026-09-25-forge-in-document-stories-design.md`.
+The changeset `.changeset/forge-in-document-stories.md` says what landed.
+
+**Next:** merge to `main`, then delete the branch and worktree.
+
+## Decisions made in conversation that the code does not explain
+
+**Isolation is allowed indefinitely.** The frame path is frozen and
+`check:forge-isolate` refuses an increase, but a story may stay isolated for
+as long as it takes; deleting the frame side is a condition on the count
+reaching zero, not a milestone. Two stories are isolated today, Toast and the
+Select edge story, each with its reason in the source.
+
+**A URL goes into the focused trial.** Typed, linked or pasted, a story's hash
+swaps into the focused trial the way a tree click does; only a lab with no
+trial gets a new one, and Shift-click is what opens another. The earlier
+"a typed hash opens a trial of its own" is gone on purpose.
+
+**The wake dev plugin reloads a tab that hot-updated in place.** Its stamp
+moves on every JS update and its client treats a tab still on the old stamp
+as stale, so with wake loaded a story edit applies in place and the page
+reloads a few seconds later anyway. Noted in `~/src/wake/TODO.md`; run the
+forge dev server with `WAKE_PATH=/nonexistent` to see the in-place reload.
+
+**`packages/labkit/src/config/entry.test.ts` fails on `main` too**
+("loads nothing from @weasel-js/ui at runtime"); it is the P2 filed in
+`e5d134438`, not this branch.
+
+---
+
 # Retained from the CSS Vars scale editor — merged into `main`
 
 **A sparse canvas absorbs a real regression at the default baseline

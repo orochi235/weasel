@@ -167,9 +167,11 @@ describe('CssVarsPanel', () => {
     location.hash = '#/x--a';
     render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const first = await openTrial('A');
-    act(() => {
-      location.hash = '#/x--b';
-    });
+    // Shift-click in the tree is what opens a second trial; a hash goes into the focused one.
+    fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
+    const folder = screen.getByRole('treeitem', { name: /^X/ });
+    if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText('X'));
+    fireEvent.click(screen.getByRole('treeitem', { name: 'B' }), { shiftKey: true });
     const second = await openTrial('B');
     await waitFor(() => expect(vars().getByText('X > B')).toBeInTheDocument());
 

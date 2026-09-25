@@ -48,7 +48,7 @@ describe('Workshop', () => {
     expect(await frameSrc(container)).toBe('/frame.html#x--b');
   });
 
-  it('opens a trial of a story the hash comes to name, and leaves out the add-trial picker', async () => {
+  it('shows a story the hash comes to name in the focused trial rather than a new one, and leaves out the add-trial picker', async () => {
     location.hash = '#/x--a';
     const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1));
@@ -58,7 +58,7 @@ describe('Workshop', () => {
       location.hash = '#/x--b';
     });
     await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > B' })).toBeInTheDocument());
-    expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(2);
+    expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1);
     expect(container.querySelector('[role="tree"]')).not.toBeNull();
   });
 
@@ -117,9 +117,11 @@ describe('Workshop', () => {
       <Workshop index={[a, b]} frameUrl="/frame.html" config={{ globals }} storage={createMemoryAdapter()} />,
     );
     await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1));
-    act(() => {
-      location.hash = '#/x--b';
-    });
+    // Shift-click in the tree is what opens a second trial; a hash goes into the focused one.
+    fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
+    const folder = screen.getByRole('treeitem', { name: /^X/ });
+    if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText('X'));
+    fireEvent.click(screen.getByRole('treeitem', { name: 'B' }), { shiftKey: true });
     await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(2));
     const frames = [...container.querySelectorAll<HTMLIFrameElement>('iframe.fg-frame-view')].map(connectFrame);
     expect(frames).toHaveLength(2);
@@ -160,11 +162,12 @@ describe('Workshop', () => {
       location.hash = '#/x--b';
     });
     await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > B' })).toBeInTheDocument());
+    expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1);
     act(() => {
       location.hash = '#/x:index';
     });
-    await act(async () => {});
-    expect(screen.getAllByRole('region', { name: 'Trial X' })).toHaveLength(1);
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X' })).toBeInTheDocument());
+    expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1);
   });
 
   it('opens the first story when the hash names none that is indexed', async () => {

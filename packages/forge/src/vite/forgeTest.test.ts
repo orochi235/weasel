@@ -41,6 +41,19 @@ describe('forgeTest', () => {
     expect(code).toContain(`__forge_test(${JSON.stringify('With "quotes"')}, () => __forge_run("Named"), __forge_timeout);`);
   });
 
+  it('skips an isolated story, naming the reason, since the test page is no document of its own', () => {
+    const file = `${ROOT}/apps/x/Edge.stories.tsx`;
+    const isolated = `import { meta, story } from '@weasel-js/forge';
+export default meta({ title: 'forge/Edge' });
+export const Plain = story({ render: () => null });
+export const Edge = story({ isolate: 'asserts placement against the window edge', render: () => null });
+`;
+    const code = transformer({ stories: ['apps/**/*.stories.tsx'] })(isolated, file);
+    expect(code).toContain('__forge_test("Plain", () => __forge_run("Plain"), __forge_timeout);');
+    expect(code).toContain('__forge_test.skip("Edge (isolated: asserts placement against the window edge)", () => {});');
+    expect(code).not.toContain('__forge_run("Edge")');
+  });
+
   it('keeps every test line short, whatever the file path', () => {
     const file = `${ROOT}/${'deeply/'.repeat(20)}Counter.stories.tsx`;
     const code = transformer({ stories: ['**/*.stories.tsx'] })(source, file) ?? '';

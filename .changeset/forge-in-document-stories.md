@@ -29,3 +29,8 @@ region portals to `document.body` with no container option.
 no lab, trial or theme were above them, and `@weasel-js/theme/react` exports
 `ThemeContext` so such a boundary can hide an outer theme. A story host in the
 workshop, which is itself a lab, wraps every story in one.
+
+A story reached by its URL, typed, linked or pasted, now shows in the focused
+trial the way a click in the tree does, instead of opening another trial
+beside it. Only a lab with no trial gets a new one; Shift-click is what opens
+another.
