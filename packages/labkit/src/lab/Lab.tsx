@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { useStore } from 'zustand/react';
 import { AnnotationPreloadContext } from '../annotations/preload';
-import { ANNOTATION_TOOLS } from '../annotations/toolMap';
+import { labAnnotationTools } from '../annotations/toolMap';
 import {
   LabAsideRegion,
   LabFooterRegion,
@@ -478,10 +478,10 @@ function LabRuntime({
   // of them silently losing.
   // Declaring `annotations` on any instrument puts the drawing tools here, in
   // the lab's rail: one tool is armed across every trial.
-  const annotates = instruments.some((i) => i.annotations != null);
+  const annotationTools = useMemo(() => labAnnotationTools(instruments), [instruments]);
   const labChromeAll = useMemo(
-    () => labContributions([...(annotates ? ANNOTATION_TOOLS : []), ...(tools ?? [])], labChrome),
-    [annotates, tools, labChrome],
+    () => labContributions([...annotationTools, ...(tools ?? [])], labChrome),
+    [annotationTools, tools, labChrome],
   );
   const hasFooterChrome = labChromeAll.some((c) => c.region === 'footer');
   const hasPaneChrome = labChromeAll.some((c) => c.region === 'sidebar' || c.region === 'aside');

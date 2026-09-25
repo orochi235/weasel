@@ -69,6 +69,22 @@ describe('an instrument that declares annotations', () => {
     }
   });
 
+  it('gets only the tools it names', () => {
+    const narrow = defineInstrument<Record<string, never>, Record<string, never>>({
+      ...annotating,
+      name: 'Narrow',
+      annotations: {
+        targets: () => [{ id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } }],
+        tools: ['pointer', 'select'],
+      },
+    });
+    render(<Lab instruments={[narrow]} defaultInstrument="Narrow" />);
+    expect(screen.getByRole('button', { name: 'Interact' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Select' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Freehand' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Rectangle' })).toBeNull();
+  });
+
   it('puts the store in reach of its own render', () => {
     render(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
     expect(screen.getByTestId('pane').dataset.marks).toBe('0');

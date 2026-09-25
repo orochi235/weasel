@@ -28,6 +28,7 @@ export type {
   AnnotationsCapability,
   AnnotationTarget,
   AnnotationTargetInfo,
+  AnnotationToolId,
   CaptureOptions,
   CaptureResult,
   CaptureSource,

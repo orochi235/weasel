@@ -160,10 +160,25 @@ export interface AnnotationStorage {
 
 /** Declares that an instrument accepts marks: which regions take them,
  *  optionally what a mark is allowed to mean, and optionally where they live. */
+/** The annotation tools a lab's rail can carry. */
+export type AnnotationToolId =
+  | 'pointer'
+  | 'select'
+  | 'stroke'
+  | 'line'
+  | 'arrow'
+  | 'rect'
+  | 'ellipse'
+  | 'text';
+
 export interface AnnotationsCapability<TS = unknown, TC = unknown> {
   /** `trial` is which trial is asking: a declaration made once per instrument
    *  is called once per trial, and its targets are that trial's own. */
   targets: (state: TS, config: TC, trial: TrialInfo) => readonly AnnotationTarget[];
+  /** Which annotation tools the lab's rail offers. The rail is shared, so it
+   *  carries every tool any annotating instrument asks for, in the kit's own
+   *  order; an instrument that leaves this unset asks for all of them. */
+  tools?: readonly AnnotationToolId[];
   meaning?: AnnotationMeaning;
   /** An instrument replacing this one under a live trial must pass the same
    *  object: the trial keeps the marks it loaded from the first. */

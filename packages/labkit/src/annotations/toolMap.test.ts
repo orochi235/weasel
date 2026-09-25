@@ -1,7 +1,9 @@
 import { KIT_SHAPE_KINDS } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
-import { ANNOTATION_TOOLS, annotationToolInfo } from './toolMap';
-import type { AnnotationKind } from './types';
+import type { InstrumentList } from '../instrument/types';
+import { resolveLabTool } from '../tools/labTool';
+import { ANNOTATION_TOOLS, annotationToolInfo, labAnnotationTools } from './toolMap';
+import type { AnnotationKind, AnnotationToolId } from './types';
 
 const KINDS: AnnotationKind[] = ['stroke', 'line', 'arrow', 'rect', 'ellipse', 'text'];
 
@@ -36,5 +38,38 @@ describe('the annotation tool table', () => {
 
   it('answers undefined for a tool id that is not one of ours', () => {
     expect(annotationToolInfo('hand')).toBeUndefined();
+  });
+});
+
+describe('the tools a lab rail carries', () => {
+  const ids = (instruments: InstrumentList) => labAnnotationTools(instruments).map((t) => t.id);
+  const inst = (annotations?: { tools?: AnnotationToolId[] }) =>
+    ({
+      annotations: annotations && { targets: () => [], ...annotations },
+    }) as unknown as InstrumentList[number];
+
+  it('carries none when no instrument annotates', () => {
+    expect(ids([inst()])).toEqual([]);
+  });
+
+  it('carries every tool for an instrument that names none', () => {
+    expect(ids([inst({})])).toEqual(ANNOTATION_TOOLS.map((t) => t.id));
+  });
+
+  it('carries only the named tools, in the kit order', () => {
+    expect(ids([inst({ tools: ['select', 'pointer'] })])).toEqual(['pointer', 'select']);
+  });
+
+  it('carries the union across annotating instruments', () => {
+    expect(ids([inst({ tools: ['pointer'] }), inst({ tools: ['rect'] }), inst()])).toEqual([
+      'pointer',
+      'rect',
+    ]);
+  });
+
+  it('starts the lab in pointer when the rail has it, else in its first tool', () => {
+    expect(resolveLabTool(null, [inst({ tools: ['select', 'pointer'] })])).toBe('pointer');
+    expect(resolveLabTool(null, [inst({ tools: ['text', 'select'] })])).toBe('select');
+    expect(resolveLabTool(null, [inst()])).toBeNull();
   });
 });

@@ -9,6 +9,7 @@ import {
   SelectIcon,
   TextIcon,
 } from '@weasel-js/ui';
+import type { InstrumentList } from '../instrument/types';
 import type { TrialTool } from '../tools/types';
 import type { AnnotationKind } from './types';
 
@@ -45,6 +46,18 @@ export const ANNOTATION_TOOLS: readonly TrialTool[] = [
   { id: 'ellipse', label: 'Ellipse', icon: EllipseIcon, group: 'annotate' },
   { id: 'text', label: 'Text', icon: TextIcon, group: 'annotate' },
 ];
+
+/** The annotation tools a lab's rail carries for these instruments: none
+ *  without an annotating instrument, else the union of what each asks for. */
+export function labAnnotationTools(instruments: InstrumentList): readonly TrialTool[] {
+  const wanted = new Set<string>();
+  for (const i of instruments) {
+    if (i.annotations == null) continue;
+    if (i.annotations.tools == null) return ANNOTATION_TOOLS;
+    for (const id of i.annotations.tools) wanted.add(id);
+  }
+  return ANNOTATION_TOOLS.filter((t) => wanted.has(t.id));
+}
 
 /** What `id` drives, or undefined for a tool that is not one of these. */
 export function annotationToolInfo(id: string | null): AnnotationToolInfo | undefined {
