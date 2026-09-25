@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
+import { LayerList, type LayerListItem, moveLayers } from '../LayerList';
+import { Subpanel } from './Subpanel';
 import {
   CheckboxRow,
   ColorRow,
@@ -8,6 +10,7 @@ import {
   type PropertyListPack,
   PropertyPanel,
   PropertyRow,
+  PropertySpan,
   SelectRow,
   SliderRow,
   TextRow,
@@ -259,6 +262,298 @@ export const HeaderActionsAndSelection: Story = {
             <PropertyRow label="target">node:7f3a2c</PropertyRow>
           </PropertyList>
         </PropertyPanel>
+      </div>
+    );
+  },
+};
+
+// ── A sidebar of panels ──────────────────────────────────────────────
+// Rebuilt from a speech-balloon editor's side panels: readouts with units and
+// alpha, two-per-row bodies, and a subpanel for a shape's own parameters.
+
+function BodyPanel() {
+  const [base, setBase] = useState<'rectangle' | 'oval' | 'polygon' | 'cloud'>('rectangle');
+  const [width, setWidth] = useState(220);
+  const [height, setHeight] = useState(140);
+  const [lean, setLean] = useState(0);
+  const [textColor, setTextColor] = useState('#e6e7ec');
+  const [textAlpha, setTextAlpha] = useState(1);
+
+  return (
+    <PropertyPanel title={`Body — ${base}`}>
+      <PropertyList>
+        <SelectRow
+          label="Base shape"
+          value={base}
+          onChange={(v) => setBase(v as typeof base)}
+          options={[
+            { value: 'rectangle', label: 'rectangle' },
+            { value: 'oval', label: 'oval' },
+            { value: 'polygon', label: 'polygon' },
+            { value: 'cloud', label: 'cloud' },
+          ]}
+        />
+        <SliderRow
+          label="Width"
+          value={width}
+          min={60}
+          max={500}
+          step={2}
+          unit="px"
+          onChange={setWidth}
+        />
+        <SliderRow
+          label="Height"
+          value={height}
+          min={20}
+          max={500}
+          step={2}
+          unit="px"
+          onChange={setHeight}
+        />
+        <SliderRow
+          label="Italic lean"
+          value={lean}
+          min={-25}
+          max={25}
+          step={0.5}
+          unit={<sup>°</sup>}
+          onChange={setLean}
+        />
+        <ColorRow
+          label="Text color"
+          value={textColor}
+          onChange={setTextColor}
+          alpha={textAlpha}
+          onAlphaChange={setTextAlpha}
+        />
+      </PropertyList>
+    </PropertyPanel>
+  );
+}
+
+// A single tail's editor body — demonstrates pack='pairs' + a Subpanel
+// divider for the shape-specific section (e.g. Bubbles parameters).
+function TailBody() {
+  const [shape, setShape] = useState<'classic' | 'bubbles' | 'lightning' | 'wavy'>('bubbles');
+  const [angle, setAngle] = useState(115);
+  const [outAngle, setOutAngle] = useState(0);
+  const [arc, setArc] = useState(0);
+  const [size, setSize] = useState(60);
+  const [bubbleDiameter, setBubbleDiameter] = useState(30);
+  const [count, setCount] = useState(3);
+  const [gap, setGap] = useState(0.15);
+  const [radial, setRadial] = useState(0);
+
+  return (
+    <PropertyList pack="pairs">
+      <SelectRow
+        label="Shape"
+        value={shape}
+        onChange={(v) => setShape(v as typeof shape)}
+        options={[
+          { value: 'classic', label: 'classic' },
+          { value: 'bubbles', label: 'bubbles' },
+          { value: 'lightning', label: 'lightning' },
+          { value: 'wavy', label: 'wavy' },
+        ]}
+      />
+      <SliderRow
+        label="Angle"
+        value={angle}
+        min={0}
+        max={359}
+        unit={<sup>°</sup>}
+        onChange={setAngle}
+      />
+      <SliderRow
+        label="Tip angle"
+        value={outAngle}
+        min={-90}
+        max={90}
+        unit={<sup>°</sup>}
+        onChange={setOutAngle}
+      />
+      <SliderRow
+        label="Bend"
+        value={arc}
+        min={-1}
+        max={1}
+        step={0.02}
+        format={(v) => v.toFixed(2)}
+        onChange={setArc}
+      />
+      <SliderRow
+        label="Length"
+        value={size}
+        min={8}
+        max={220}
+        step={0.5}
+        unit="px"
+        onChange={setSize}
+      />
+      {shape === 'bubbles' && (
+        <Subpanel title="Bubbles">
+          <SliderRow
+            label="Size"
+            value={bubbleDiameter}
+            min={8}
+            max={120}
+            unit="px"
+            onChange={setBubbleDiameter}
+          />
+          <SliderRow label="Count" value={count} min={1} max={8} onChange={setCount} />
+          <SliderRow
+            label="Gap"
+            value={gap}
+            min={-1}
+            max={1}
+            step={0.02}
+            format={(v) => v.toFixed(2)}
+            onChange={setGap}
+          />
+          <SliderRow
+            label="Base distance"
+            value={radial}
+            min={-60}
+            max={60}
+            step={0.5}
+            unit="px"
+            onChange={setRadial}
+          />
+        </Subpanel>
+      )}
+    </PropertyList>
+  );
+}
+
+function StrokePanel() {
+  const [width, setWidth] = useState(2);
+  const [color, setColor] = useState('#161921');
+  const [alpha, setAlpha] = useState(1);
+  return (
+    <PropertyPanel title="Stroke">
+      <PropertyList pack="pairs">
+        <SliderRow
+          label="Width"
+          value={width}
+          min={0.5}
+          max={12}
+          step={0.5}
+          unit="px"
+          format={(v) => v.toFixed(1)}
+          onChange={setWidth}
+        />
+        <ColorRow
+          label="Color"
+          value={color}
+          onChange={setColor}
+          alpha={alpha}
+          onAlphaChange={setAlpha}
+        />
+      </PropertyList>
+    </PropertyPanel>
+  );
+}
+
+function ShadowPanel() {
+  const [dx, setDx] = useState(4);
+  const [dy, setDy] = useState(8);
+  const [blur, setBlur] = useState(10);
+  const [opacity, setOpacity] = useState(0.4);
+  const [enabled, setEnabled] = useState(true);
+  return (
+    <PropertyPanel title="Shadow">
+      <PropertyList pack="pairs">
+        <PropertySpan>
+          <CheckboxRow label="Enabled" value={enabled} onChange={setEnabled} />
+        </PropertySpan>
+        <SliderRow
+          label="Offset X"
+          value={dx}
+          min={-20}
+          max={20}
+          step={0.5}
+          unit="px"
+          format={(v) => v.toFixed(1)}
+          onChange={setDx}
+        />
+        <SliderRow
+          label="Offset Y"
+          value={dy}
+          min={-20}
+          max={20}
+          step={0.5}
+          unit="px"
+          format={(v) => v.toFixed(1)}
+          onChange={setDy}
+        />
+        <SliderRow
+          label="Blur"
+          value={blur}
+          min={0}
+          max={30}
+          step={0.5}
+          unit="px"
+          format={(v) => v.toFixed(1)}
+          onChange={setBlur}
+        />
+        <SliderRow
+          label="Opacity"
+          value={opacity}
+          min={0}
+          max={1}
+          step={0.05}
+          format={(v) => v.toFixed(2)}
+          onChange={setOpacity}
+        />
+      </PropertyList>
+    </PropertyPanel>
+  );
+}
+
+/** Panels stacked as an editor's sidebar: units on the readouts, a color with
+ *  alpha, `pack="pairs"` bodies, and a checkbox spanning a paired grid. */
+export const Sidebar: Story = {
+  render: () => (
+    <div style={{ width: 360, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <BodyPanel />
+      <StrokePanel />
+      <ShadowPanel />
+    </div>
+  ),
+};
+
+/**
+ * A panel of like items, each a group that reorders, folds and goes away: a
+ * `LayerList` of cards inside the panel. Each tail takes the next tone of the theme's
+ * list, which colors its edge and handle and every control inside it, and its
+ * ordinal is its handle. Its body pairs its rows and gives the shape's own
+ * parameters a `Subpanel`.
+ */
+export const ToneList: Story = {
+  render: () => {
+    function Tails() {
+      const [tails, setTails] = useState<LayerListItem[]>([
+        { id: '1', label: 'classic', tone: 0 },
+        { id: '2', label: 'bubbles', tone: 1 },
+        { id: '3', label: 'wavy', tone: 2 },
+      ]);
+      const numbered = tails.map((tail, i) => ({ ...tail, badge: String(i + 1) }));
+      return (
+        <PropertyPanel title="Tails">
+          <LayerList
+            items={numbered}
+            onReorder={(move) => setTails(moveLayers(tails, move))}
+            onRemove={(id) => setTails(tails.filter((t) => t.id !== id))}
+            renderBody={() => <TailBody />}
+          />
+        </PropertyPanel>
+      );
+    }
+    return (
+      <div style={{ width: 360 }}>
+        <Tails />
       </div>
     );
   },

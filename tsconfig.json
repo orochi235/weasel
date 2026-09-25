@@ -41,6 +41,7 @@
       // source anyway); now that they point at `dist`, a missing entry makes
       // `npm run typecheck` silently depend on a prior `npm run build`.
       "@weasel-js/ui": ["./packages/ui/src/index.ts"],
+      "@weasel-js/ui/components/*": ["./packages/ui/src/components/*/index.ts"],
       "@weasel-js/svg": ["./packages/svg/src/index.ts"],
       "@weasel-js/d3": ["./packages/d3/src/index.ts"],
       "@weasel-js/diagram": ["./packages/diagram/src/index.ts"],

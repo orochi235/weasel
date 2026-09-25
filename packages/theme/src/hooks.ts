@@ -33,10 +33,16 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     description: 'Gap between a Disclosure’s twisty and its label.',
   },
   {
+    name: 'disclosure-fill',
+    type: 'color',
+    value: 'var(--wzl-accent-fg)',
+    description: 'Fill of a Disclosure’s fold mark.',
+  },
+  {
     name: 'disclosure-target',
     type: 'dimension',
     value: '20px',
-    description: 'Hit-target square of a Disclosure twisty, and of a labkit LayerList row’s.',
+    description: 'Hit-target square of a Disclosure twisty, and the twisty column of a LayerList row.',
   },
   {
     name: 'input-surface',

@@ -1,10 +1,10 @@
 import type { FillStyle, GradientFill, Track } from '@weasel-js/core';
 import {
-  ButtonBar,
   Badge,
   type Band,
   BandEditor,
   Button,
+  ButtonBar,
   Callout,
   Checkbox,
   CheckboxRow,
@@ -24,9 +24,10 @@ import {
   ItemList,
   KeyCap,
   KeySequence,
-  LayerStack,
-  type LayerStackItem,
+  LayerList,
+  type LayerListItem,
   MenuButton,
+  moveLayers,
   NumberField,
   NumberRow,
   OptionsBar,
@@ -45,6 +46,7 @@ import {
   ResizeHandle,
   Select,
   SelectRow,
+  Sidebar,
   SidebarPanel,
   Slider,
   SliderRow,
@@ -66,7 +68,6 @@ import {
   ToolOptionsBar,
   Tooltip,
   TooltipTrigger,
-  Sidebar as UiSidebar,
   StatusBar as UiStatusBar,
 } from '@weasel-js/ui';
 import { type CSSProperties, type ReactNode, useId, useMemo, useRef, useState } from 'react';
@@ -76,7 +77,6 @@ import { FloatingPanel } from '../primitives/FloatingPanel';
 import { JobProgress } from '../primitives/JobProgress';
 import { Legend, type LegendEntry } from '../primitives/Legend';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
-import { Sidebar } from '../primitives/Sidebar';
 import { Split } from '../primitives/Split';
 import { StatusBar } from '../primitives/StatusBar';
 import { Toolbar } from '../primitives/Toolbar';
@@ -297,7 +297,6 @@ function ButtonsAndToggles() {
             ]}
           />
           <Disclosure open={open} onToggle={() => setOpen((o) => !o)} label="Shapes" />
-          <Disclosure open={false} onToggle={() => {}} label="Down" direction="down" />
         </div>
       </Cell>
       <Cell label="Tabs">
@@ -436,7 +435,7 @@ function PanelsAndRows() {
   const [label, setLabel] = useState('Badge');
   const [visible, setVisible] = useState(true);
   const [prefs, setPrefs] = useState<Record<string, unknown>>({});
-  const [layers, setLayers] = useState<LayerStackItem[]>([
+  const [layers, setLayers] = useState<LayerListItem[]>([
     { id: 'base', label: 'Base coat' },
     { id: 'wash', label: 'Wash' },
   ]);
@@ -505,18 +504,16 @@ function PanelsAndRows() {
           onChange={(path, value) => setPrefs((prev) => setAt(prev, path, value))}
         />
       </Cell>
-      <Cell label="LayerStack">
-        <LayerStack
+      <Cell label="LayerList">
+        <LayerList
           items={layers}
-          onReorder={(ids) =>
-            setLayers(ids.flatMap((id) => layers.filter((item) => item.id === id)))
-          }
+          onReorder={(move) => setLayers(moveLayers(layers, move))}
           renderBody={(item) => <div>settings for {item.label}</div>}
         />
       </Cell>
       <Cell label="Sidebar, SidebarPanel">
         <div className="lk-specimen__box">
-          <UiSidebar side="right" ariaLabel="Specimen sidebar">
+          <Sidebar side="right" ariaLabel="Specimen sidebar">
             <SidebarPanel
               title="Selection"
               collapsed={panelCollapsed}
@@ -525,7 +522,7 @@ function PanelsAndRows() {
             >
               <div className="lk-specimen__pad">2 items selected</div>
             </SidebarPanel>
-          </UiSidebar>
+          </Sidebar>
         </div>
       </Cell>
     </Section>
@@ -799,7 +796,6 @@ function EditorsAndPlots() {
 }
 
 function LabChrome() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [zoom, setZoom] = useState(1);
   return (
     <Section title="Lab chrome">
@@ -822,18 +818,6 @@ function LabChrome() {
           <StatusBar.Section>Items: 12</StatusBar.Section>
           <StatusBar.Section>Zoom: 100%</StatusBar.Section>
         </StatusBar>
-      </Cell>
-      <Cell label="Sidebar">
-        <div className="lk-specimen__box">
-          <div className="lk-specimen__box-main">main</div>
-          <Sidebar
-            title="Controls"
-            collapsed={sidebarCollapsed}
-            onToggle={() => setSidebarCollapsed((v) => !v)}
-          >
-            <p>One slider</p>
-          </Sidebar>
-        </div>
       </Cell>
       <Cell label="Legend, JobProgress">
         <Legend entries={LEGEND} />

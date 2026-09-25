@@ -44,6 +44,16 @@
   display: none;
 }
 
+/* --- Layer row color chip ------------------------------------------- */
+.wd-layer-swatch {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid var(--wzl-border);
+  background: var(--wd-swatch);
+}
+
 /* Column layout, panel surface, and edge borders come from weasel-ui's
    <Sidebar>. What stays here is the part that's this app's business: width
    and padding. Scoped under `.wd-app` so these win over the component's own

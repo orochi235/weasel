@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { describe, expect, it } from 'vitest';
-import { EffectCard, Subpanel } from './EffectCard';
+import { Subpanel } from './Subpanel';
 import { PropertyGroup } from './PropertyGroup';
 import { PropertyPanel } from './PropertyPanel';
 
@@ -77,11 +77,4 @@ describe('the rest of the family takes stance and tone', () => {
     expect(sub.dataset.stance).toBe('debug');
   });
 
-  it('an effect card takes a tone in place of its accent', () => {
-    const { container } = render(<EffectCard title="Tail" tone="#abcdef" />);
-    const card = container.firstElementChild as HTMLElement;
-    expect(card.dataset.tone).toBe('#abcdef');
-    expect(card.hasAttribute('data-stance')).toBe(false);
-    expect(card.style.getPropertyValue('--wzl-tone')).toBe('#abcdef');
-  });
 });

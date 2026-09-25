@@ -39,4 +39,27 @@ describe('GlobalsToolbar', () => {
     fireEvent.click(await screen.findByRole('option', { name: 'Dark' }));
     await waitFor(() => expect(toolbar.getByRole('button', { name: /Mode/ })).toHaveTextContent('Dark'));
   });
+
+  it('shows a global declared under another only in a popover beside that one, labeled', async () => {
+    const faces = [
+      { value: 'oswald', label: 'Oswald' },
+      { value: 'inter', label: 'Inter' },
+    ];
+    const nested: ShellConfig = {
+      globals: {
+        font: { label: 'Font', default: 'oswald', options: faces },
+        display: { label: 'Display', default: 'oswald', options: faces, under: 'font' },
+      },
+    };
+    render(<Workshop index={[a]} frameUrl="/frame.html" config={nested} storage={createMemoryAdapter()} />);
+    const toolbar = within(await screen.findByRole('toolbar', { name: 'Globals' }));
+    expect(toolbar.getByRole('button', { name: /^Oswald Font/ })).toHaveTextContent('Oswald');
+    expect(toolbar.queryByRole('button', { name: /Display/ })).toBeNull();
+    act(() => {
+      fireEvent.click(toolbar.getByRole('button', { name: 'More Font settings' }));
+    });
+    const dialog = within(await screen.findByRole('dialog'));
+    expect(dialog.getByText('Display')).toBeInTheDocument();
+    expect(dialog.getByRole('button', { name: /Display/ })).toHaveTextContent('Oswald');
+  });
 });

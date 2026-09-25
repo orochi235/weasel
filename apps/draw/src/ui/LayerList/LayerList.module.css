@@ -1,9 +1,0 @@
-/* Row and container chrome is `ItemList`'s; what is left is what only a
-   layer row has. */
-.swatch {
-  flex: 0 0 auto;
-  width: 12px;
-  height: 12px;
-  border-radius: var(--wzl-radius-sm);
-  border: var(--wzl-border-w) solid var(--wzl-border-strong);
-}

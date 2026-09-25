@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
+import { CloseIcon } from '../../icons';
+import { Button } from '../Button';
+import { DragHandleGlyph } from '../DragHandleGlyph';
 import { PropertyGroup } from './PropertyGroup';
 import { PropertyList, PropertyPanel, SliderRow } from './PropertyPanel';
 
@@ -56,4 +59,31 @@ export const Collapsible: StoryObj<typeof PropertyGroup> = {
     }
     return <Sections />;
   },
+};
+
+/** `leading` and `actions` share the title row with the title: a handle before it, a value and a remove button after
+ *  it. A tone draws the group's edge in it, which tells like groups in a list apart. */
+export const HeaderSlots: StoryObj<typeof PropertyGroup> = {
+  render: () => (
+    <PropertyPanel title="Effects">
+      <PropertyList>
+        {(['Glow', 'Drop shadow'] as const).map((name, i) => (
+          <PropertyGroup
+            key={name}
+            title={name}
+            tone={i}
+            collapsible
+            leading={<DragHandleGlyph />}
+            actions={
+              <Button variant="ghost" size="sm" iconOnly ariaLabel={`Remove ${name}`}>
+                <CloseIcon size={14} />
+              </Button>
+            }
+          >
+            <SliderRow label="Size" value={8} min={0} max={32} unit="px" onChange={() => {}} />
+          </PropertyGroup>
+        ))}
+      </PropertyList>
+    </PropertyPanel>
+  ),
 };

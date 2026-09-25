@@ -82,10 +82,6 @@
       "types": "./dist/passthrough/weasel-canvas.d.ts",
       "import": "./dist/passthrough/weasel-canvas.js"
     },
-    "./ui/layers": {
-      "types": "./dist/ui/layers/index.d.ts",
-      "import": "./dist/ui/layers/index.js"
-    },
     "./styles.css": "./dist/styles.css",
     "./loupe": {
       "types": "./dist/loupe/index.d.ts",

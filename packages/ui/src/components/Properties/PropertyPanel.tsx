@@ -1,7 +1,9 @@
 import {
   createContext,
   type CSSProperties,
+  forwardRef,
   type ReactNode,
+  type Ref,
   type RefObject,
   useContext,
   useEffect,
@@ -156,16 +158,17 @@ export interface PropertyListProps extends PropertyMetricProps {
  * Grid container for PropertyRows. Use standalone for chrome-less layouts, or
  * nest inside <PropertyPanel/> for the standard glass card.
  */
-export function PropertyList({
-  children,
-  className,
-  pack = 'auto-color',
-  density,
-  align,
-}: PropertyListProps) {
+export const PropertyList = forwardRef(function PropertyList(
+  { children, className, pack = 'auto-color', density, align }: PropertyListProps,
+  ref: Ref<HTMLDivElement>,
+) {
   const base = `${s.list}${pack === 'pairs' ? ` ${s.listPairs}` : pack === 'one-up' ? ` ${s.listOneUp}` : ''}`;
-  return <div className={propertyMetricClass(base, { density, align }, className)}>{children}</div>;
-}
+  return (
+    <div ref={ref} className={propertyMetricClass(base, { density, align }, className)}>
+      {children}
+    </div>
+  );
+});
 
 /** Props for `<PropertySpan>`. */
 export interface PropertySpanProps {

@@ -10,6 +10,7 @@ import { A11yPanel } from './a11y/A11yPanel';
 import { createAnswerBook } from './answers';
 import { storyInstrument } from './storyInstrument';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
+import { sayHello } from './labHarness';
 
 const entry: IndexEntry = {
   id: 'test-counter--counter',
@@ -123,7 +124,7 @@ describe('FrameView audits its frame', () => {
 
     const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
     const post = vi.spyOn(iframe.contentWindow as Window, 'postMessage').mockImplementation(() => {});
-    fireEvent.load(iframe);
+    sayHello(iframe);
     const port = ((post.mock.calls.at(-1) as unknown[])[2] as MessagePort[])[0] as MessagePort;
     const frame: Channel<ToFrame, FromFrame> = openChannel(port);
     cleanups.push(() => frame.close());
@@ -186,7 +187,7 @@ describe('FrameView audits its frame', () => {
     cleanups.push(() => view.unmount());
     const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
     const post = vi.spyOn(iframe.contentWindow as Window, 'postMessage').mockImplementation(() => {});
-    fireEvent.load(iframe);
+    sayHello(iframe);
     const port = ((post.mock.calls.at(-1) as unknown[])[2] as MessagePort[])[0] as MessagePort;
     const frame: Channel<ToFrame, FromFrame> = openChannel(port);
     cleanups.push(() => frame.close());

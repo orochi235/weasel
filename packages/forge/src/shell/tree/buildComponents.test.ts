@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildComponents, componentNodes, filterComponents, libraryOf } from './buildComponents';
+import type { TreeNode } from './buildTree';
 import type { IndexEntry } from '../../story/types';
 
 const entry = (title: string, name: string, file: string): IndexEntry => ({
@@ -74,6 +75,42 @@ describe('filterComponents', () => {
   });
 });
 
+describe('componentNodes', () => {
+  /** Folders as `label/`, stories as their row label, nested as arrays. */
+  const shape = (nodes: readonly TreeNode[]): unknown[] =>
+    nodes.map((node) =>
+      node.kind === 'folder'
+        ? { [`${node.label}/${node.index ? '+' : ''}`]: shape(node.children) }
+        : (node.label ?? node.entry.name),
+    );
+
+  it('makes every component a folder carrying its index page, one story or many', () => {
+    const nodes = componentNodes(
+      buildComponents([
+        entry('ui/Foundations/Button', 'Default', UI),
+        entry('ui/Foundations/Button', 'Disabled', UI),
+        entry('labkit/Primitives/JobProgress', 'Running', LABKIT),
+      ]),
+    );
+    expect(shape(nodes)).toEqual([
+      { 'Button/+': ['Default', 'Disabled'] },
+      { 'JobProgress/+': ['Running'] },
+    ]);
+    expect(nodes[0]?.kind === 'folder' && nodes[0].index?.id).toBe('ui-foundations-button:index');
+  });
+
+  it('keeps the index page of a component the filter names, and not of one matched only by a story', () => {
+    const rows = buildComponents([
+      entry('ui/Foundations/Button', 'Default', UI),
+      entry('ui/Foundations/Button', 'Disabled', UI),
+    ]);
+    expect(shape(componentNodes(filterComponents(rows, 'button')))).toEqual([
+      { 'Button/+': ['Default', 'Disabled'] },
+    ]);
+    expect(shape(componentNodes(filterComponents(rows, 'disabled')))).toEqual([{ 'Button/': ['Disabled'] }]);
+  });
+});
+
 describe('label disambiguation', () => {
   const UI2 = '/repo/packages/ui/src/components/Icons/Gallery.stories.tsx';
 
@@ -118,7 +155,7 @@ describe('componentNodes', () => {
         n.kind === 'folder' ? { [`${n.label}${n.tag ? ` [${n.tag}]` : ''}`]: shape(n.children) } : (n.label ?? n.entry.name),
       );
     expect(shape(nodes)).toEqual([
-      { 'Cursors [ui]': ['Gallery'] },
+      { 'Cursors [ui]': [{ Gallery: ['Default'] }] },
       { 'Icons [ui]': [{ Gallery: ['Default', 'Dark'] }] },
     ]);
   });

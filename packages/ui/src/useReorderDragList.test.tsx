@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import type { RefCallback } from 'react';
-import { useReorderDragList, type LayerListItem, type PressModifiers, type ReorderDragState } from './useReorderDragList';
+import { useReorderDragList, type ReorderItem, type PressModifiers, type ReorderDragState } from './useReorderDragList';
 
-const ITEMS: LayerListItem[] = [
+const ITEMS: ReorderItem[] = [
   { id: 'a', label: 'A' },
   { id: 'b', label: 'B' },
   { id: 'c', label: 'C' },
@@ -12,11 +12,11 @@ const ITEMS: LayerListItem[] = [
 
 const ROW_H = 32;
 
-let latest: ReorderDragState = { draggedIds: null, targetIndex: null };
+let latest: ReorderDragState = { draggedIds: null, targetIndex: null, ghost: null };
 let handlers: ReturnType<typeof useReorderDragList> | null = null;
 
 function Harness(props: {
-  items: LayerListItem[];
+  items: ReorderItem[];
   selectedIds: string[];
   onReorder: (ids: string[], targetIndex: number) => void;
   onPress?: (id: string, mods: PressModifiers) => void;
@@ -56,7 +56,7 @@ function stubGeometry(container: HTMLElement) {
   });
 }
 
-function setup(items: LayerListItem[] = ITEMS, selectedIds: string[] = []) {
+function setup(items: ReorderItem[] = ITEMS, selectedIds: string[] = []) {
   const onReorder = vi.fn();
   const onPress = vi.fn();
   const onRowClick = vi.fn();
@@ -68,7 +68,7 @@ function setup(items: LayerListItem[] = ITEMS, selectedIds: string[] = []) {
   list.releasePointerCapture = vi.fn();
   stubGeometry(list);
   const row = (id: string) => view.getByTestId(`row-${id}`);
-  const rerender = (next: LayerListItem[], sel: string[] = selectedIds) => {
+  const rerender = (next: ReorderItem[], sel: string[] = selectedIds) => {
     view.rerender(
       <Harness items={next} selectedIds={sel} onReorder={onReorder} onPress={onPress} onRowClick={onRowClick} />,
     );
@@ -110,6 +110,23 @@ describe('useReorderDragList', () => {
     expect(onReorder).toHaveBeenCalledWith(['a', 'c'], ITEMS.length);
   });
 
+  it('puts the ghost where it keeps the grabbed point of the row under the pointer, and clears it on drop', () => {
+    const { row } = setup(ITEMS, ['a']);
+    // Row c spans y 64–96; a press 16px into it keeps the ghost's top 16px above the pointer.
+    press(row('c'), 80);
+    move(150, { clientX: 130 });
+    expect(latest.ghost).toEqual({ ids: ['c'], left: 30, top: 134, width: 200 });
+    release(150);
+    expect(latest.ghost).toBeNull();
+  });
+
+  it('ghosts the whole selection when a selected row is dragged', () => {
+    const { row } = setup(ITEMS, ['a', 'c']);
+    press(row('a'), 16);
+    move(200);
+    expect(latest.ghost?.ids).toEqual(['a', 'c']);
+  });
+
   it('drop below all rows yields targetIndex = items.length', () => {
     const { onReorder, row } = setup();
     press(row('a'), 16);
@@ -137,7 +154,7 @@ describe('useReorderDragList', () => {
   });
 
   it('a drop below a locked row cannot cross it', () => {
-    const items: LayerListItem[] = [
+    const items: ReorderItem[] = [
       { id: 'a', label: 'A' },
       { id: 'b', label: 'B' },
       { id: 'wall', label: 'Wall', locked: true },
@@ -153,7 +170,7 @@ describe('useReorderDragList', () => {
   });
 
   it('a drop above a locked row cannot cross it', () => {
-    const items: LayerListItem[] = [
+    const items: ReorderItem[] = [
       { id: 'a', label: 'A' },
       { id: 'b', label: 'B' },
       { id: 'wall', label: 'Wall', locked: true },
@@ -167,7 +184,7 @@ describe('useReorderDragList', () => {
   });
 
   it('drops selection members that sit on the far side of a wall', () => {
-    const items: LayerListItem[] = [
+    const items: ReorderItem[] = [
       { id: 'a', label: 'A' },
       { id: 'b', label: 'B' },
       { id: 'wall', label: 'Wall', locked: true },
@@ -182,7 +199,7 @@ describe('useReorderDragList', () => {
   });
 
   it('a locked row cannot be dragged at all', () => {
-    const items: LayerListItem[] = [
+    const items: ReorderItem[] = [
       { id: 'wall', label: 'Wall', locked: true },
       { id: 'b', label: 'B' },
     ];
@@ -278,7 +295,7 @@ describe('useReorderDragList press intent', () => {
   });
 
   it('reports a press on a locked row, which can be selected but not dragged', () => {
-    const items: LayerListItem[] = [{ id: 'a', label: 'A', locked: true }, ...ITEMS.slice(1)];
+    const items: ReorderItem[] = [{ id: 'a', label: 'A', locked: true }, ...ITEMS.slice(1)];
     const { row, onPress, onReorder } = setup(items);
     press(row('a'), 8);
     move(8);

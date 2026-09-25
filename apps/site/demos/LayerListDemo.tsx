@@ -7,10 +7,8 @@ import {
   useSelectTool,
   useTools,
 } from '@weasel-js/core';
-// `LayerList` + `useLayerList` are WeaselDraw-side specializations
-// (kit/app split): they live under `apps/draw/src/ui/`. Imported
-// via relative path because both directories are part of this monorepo.
-import { LayerList, useLayerList } from '../../draw/src/ui/LayerList';
+import { LayerList, useSceneLayerList } from '@weasel-js/ui';
+import type { CSSProperties } from 'react';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -32,9 +30,15 @@ function LayerListDemoInner() {
   const select = useSelectTool(adapter, {});
   const tools = useTools({ active: 'select', registry: { select } });
 
-  const layerList = useLayerList({
+  const layerList = useSceneLayerList({
     scene, selection, adapter,
-    itemFor: (n) => ({ label: (n.data as Rect).color, swatch: (n.data as Rect).color }),
+    itemFor: (n) => {
+      const { color } = n.data as Rect;
+      return {
+        label: color,
+        leading: <span className="ckd-swatch" style={{ '--ckd-swatch': color } as CSSProperties} aria-hidden="true" />,
+      };
+    },
   });
 
   return (

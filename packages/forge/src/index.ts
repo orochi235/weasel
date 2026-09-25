@@ -14,4 +14,14 @@ export type { FrameSetup } from './frame/FrameController';
 export type { A11yFinding, A11yNode, A11yReport } from './protocol/messages';
 export type { GlobalDeclaration, GlobalDeclarations } from './shell/globals';
 export { meta, story } from './story/define';
-export type { Decorator, LoadedStory, MetaSpec, PlayContext, StoryContext, StorySpec } from './story/types';
+export type {
+  Decorator,
+  IndexContext,
+  IndexRender,
+  IndexStoryProps,
+  LoadedStory,
+  MetaSpec,
+  PlayContext,
+  StoryContext,
+  StorySpec,
+} from './story/types';

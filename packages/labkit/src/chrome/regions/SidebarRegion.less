@@ -1,0 +1,197 @@
+.lk-sidebar-section {
+  background: var(--_s-fill);
+  border-bottom: var(--wzl-border-w) solid var(--_s-border-color);
+
+  // The last section runs to the bottom of its pane. Stopped at its content,
+  // its rule and the bare pane under it read as a second, empty zone.
+  &:last-child {
+    flex-grow: 1;
+    border-bottom: 0;
+  }
+}
+
+/* BEGIN GENERATED stance rules: sidebar-section — `npm run gen:stances`, do not edit. */
+
+.lk-sidebar-section {
+  --wzl-tone: initial;
+}
+
+.lk-sidebar-section {
+  --_s-surface: transparent;
+  --_s-border-color: var(--wzl-line-subtle);
+  --_s-tone-mix: var(--wzl-panel-tone-mix);
+  --_s-tone: var(--wzl-tone, var(--_s-surface));
+  --_s-accent: var(--wzl-tone);
+  --_s-title-font: var(--wzl-font-display);
+  --_s-title-size: var(--wzl-font-size-sm);
+  --_s-title-case: uppercase;
+  --_s-title-tracking: 0.08em;
+  --_s-title-color: var(--wzl-fg-muted);
+}
+
+.lk-sidebar-section[data-stance='scope'] {
+  --_s-surface: var(--wzl-stance-scope-surface, transparent);
+  --_s-border-color: var(--wzl-stance-scope-border-color, var(--wzl-line-subtle));
+  --_s-tone-mix: var(--wzl-stance-scope-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-scope-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-scope-title-font, var(--wzl-font-display));
+  --_s-title-size: var(--wzl-stance-scope-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-scope-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-scope-title-tracking, 0.08em);
+  --_s-title-color: var(--wzl-stance-scope-title-color, var(--wzl-fg-muted));
+}
+
+.lk-sidebar-section[data-stance='aside'] {
+  --_s-surface: var(--wzl-stance-aside-surface, transparent);
+  --_s-border-color: var(--wzl-stance-aside-border-color, var(--wzl-line-subtle));
+  --_s-tone-mix: var(--wzl-stance-aside-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-aside-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-aside-title-font, var(--wzl-font-display));
+  --_s-title-size: var(--wzl-stance-aside-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-aside-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-aside-title-tracking, 0.08em);
+  --_s-title-color: var(--wzl-stance-aside-title-color, var(--wzl-fg-muted));
+}
+
+.lk-sidebar-section[data-stance='advanced'] {
+  --_s-surface: var(--wzl-stance-advanced-surface, transparent);
+  --_s-border-color: var(--wzl-stance-advanced-border-color, var(--wzl-line-subtle));
+  --_s-tone-mix: var(--wzl-stance-advanced-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-advanced-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-advanced-title-font, var(--wzl-font-display));
+  --_s-title-size: var(--wzl-stance-advanced-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-advanced-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-advanced-title-tracking, 0.08em);
+  --_s-title-color: var(--wzl-stance-advanced-title-color, var(--wzl-fg-muted));
+}
+
+.lk-sidebar-section[data-stance='debug'] {
+  --_s-surface: var(--wzl-stance-debug-surface, transparent);
+  --_s-border-color: var(--wzl-stance-debug-border-color, var(--wzl-line-subtle));
+  --_s-tone-mix: var(--wzl-stance-debug-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-debug-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-debug-title-font, var(--wzl-font-display));
+  --_s-title-size: var(--wzl-stance-debug-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-debug-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-debug-title-tracking, 0.08em);
+  --_s-title-color: var(--wzl-stance-debug-title-color, var(--wzl-fg-muted));
+}
+
+.lk-sidebar-section[data-stance='danger'] {
+  --_s-surface: var(--wzl-stance-danger-surface, transparent);
+  --_s-border-color: var(--wzl-stance-danger-border-color, var(--wzl-line-subtle));
+  --_s-tone-mix: var(--wzl-stance-danger-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-danger-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-danger-title-font, var(--wzl-font-display));
+  --_s-title-size: var(--wzl-stance-danger-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-danger-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-danger-title-tracking, 0.08em);
+  --_s-title-color: var(--wzl-stance-danger-title-color, var(--wzl-fg-muted));
+}
+
+.lk-sidebar-section[data-stance='notice'] {
+  --_s-surface: var(--wzl-stance-notice-surface, transparent);
+  --_s-border-color: var(--wzl-stance-notice-border-color, var(--wzl-line-subtle));
+  --_s-tone-mix: var(--wzl-stance-notice-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-notice-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-notice-title-font, var(--wzl-font-display));
+  --_s-title-size: var(--wzl-stance-notice-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-notice-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-notice-title-tracking, 0.08em);
+  --_s-title-color: var(--wzl-stance-notice-title-color, var(--wzl-fg-muted));
+}
+
+.lk-sidebar-section[data-stance='important'] {
+  --_s-surface: var(--wzl-stance-important-surface, transparent);
+  --_s-border-color: var(--wzl-stance-important-border-color, var(--wzl-line-subtle));
+  --_s-tone-mix: var(--wzl-stance-important-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-important-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-important-title-font, var(--wzl-font-display));
+  --_s-title-size: var(--wzl-stance-important-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-important-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-important-title-tracking, 0.08em);
+  --_s-title-color: var(--wzl-stance-important-title-color, var(--wzl-fg-muted));
+}
+
+.lk-sidebar-section[data-stance='preview'] {
+  --_s-surface: var(--wzl-stance-preview-surface, transparent);
+  --_s-border-color: var(--wzl-stance-preview-border-color, var(--wzl-line-subtle));
+  --_s-tone-mix: var(--wzl-stance-preview-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-preview-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-preview-title-font, var(--wzl-font-display));
+  --_s-title-size: var(--wzl-stance-preview-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-preview-title-case, uppercase);
+  --_s-title-tracking: var(--wzl-stance-preview-title-tracking, 0.08em);
+  --_s-title-color: var(--wzl-stance-preview-title-color, var(--wzl-fg-muted));
+}
+
+.lk-sidebar-section {
+  --_s-fill: var(--_s-surface);
+}
+
+.lk-sidebar-section[data-tone],
+.lk-sidebar-section[data-stance] {
+  --_s-fill: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));
+}
+
+.lk-sidebar-section[data-tone] {
+  --wzl-accent: var(--_s-accent);
+  --wzl-accent-base: var(--_s-accent);
+  --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));
+  --wzl-accent-soft: color-mix(in oklab, var(--_s-accent) 45%, var(--wzl-surface));
+  --wzl-accent-hover: var(--wzl-accent-strong);
+  --wzl-accent-fg: var(--wzl-accent-strong);
+  --wzl-focus-ring: var(--wzl-accent-strong);
+}
+
+/* END GENERATED stance rules: sidebar-section */
+
+.lk-sidebar-section__bar {
+  display: flex;
+  align-items: center;
+}
+
+.lk-sidebar-section__undock {
+  padding: 0 var(--wzl-space-xs);
+  border: 0;
+  background: transparent;
+  color: var(--wzl-fg-subtle);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--wzl-fg);
+  }
+}
+
+.lk-sidebar-section__head {
+  flex: 1;
+  width: 100%;
+  padding: var(--wzl-space-xs);
+  border: 0;
+  background: transparent;
+  color: var(--_s-title-color);
+  font-family: var(--_s-title-font);
+  font-size: var(--_s-title-size);
+  letter-spacing: var(--_s-title-tracking);
+  text-align: left;
+  text-transform: var(--_s-title-case);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--wzl-fg);
+  }
+}
+
+// The section body is the only thing that insets a panel — the panels
+// themselves carry no padding, so this is the whole gutter.
+.lk-sidebar-section__body {
+  padding: 0 var(--wzl-space-xs) var(--wzl-space-xs);
+}

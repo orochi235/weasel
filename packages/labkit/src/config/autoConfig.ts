@@ -1,4 +1,4 @@
-import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/ui';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/ui';
 import { isAuto } from './auto';
 import { isRecord, withValueAtPath } from './path';
 import type { ResolvedConfig } from './types';
@@ -15,7 +15,7 @@ function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
 function* leaves(group: PrefGroup, at = ''): Generator<[string, PrefLeaf]> {
   for (const [key, child] of Object.entries(group.children)) {
     const path = at === '' ? key : `${at}.${key}`;
-    if (isPrefLeaf(child)) yield [path, child];
+    if ('kind' in child) yield [path, child];
     else yield* leaves(child, path);
   }
 }

@@ -718,6 +718,26 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   event came out rather than holding a class of content, and `success` has no
   stance.
 
+- **(P2) One kind-indexed row renderer for every settings surface.** Three
+  switches each map a field's `kind` (and `control`) to a control: labkit's
+  `ControlRow` (`controls/ControlPanel.tsx`), `PrefsForm`'s `renderBuiltin`,
+  and `SelectionPanel`'s `renderLeaf.tsx`. Only the first goes through the
+  typed rows in `PropertyPanel.tsx`; the other two call the bare controls, and
+  `PrefsForm` has its own row frame beside `PropertyRow`. `CheckboxRow`,
+  `SwitchRow`, `TextRow` and `SelectRow` add nothing over `PropertyRow` plus
+  their control. Build one renderer in `@weasel-js/ui` keyed by kind, with the
+  behavior `SliderRow`, `NumberRow` and `ColorRow` carry (editable readout, live
+  and commit callbacks, alpha) and `SelectionPanel`'s mixed and unset values,
+  and put all three on it. theme-editor's direct `*Row` calls, which have no
+  schema, need either a `kind` prop on one row component or the typed rows kept
+  as thin entries into the renderer.
+
+- **(P2) Take `ColorRamp` past OKLCH.** The forge entry `ui/Color/ColorRamp`
+  (`packages/ui/src/color/`) ramps lightness, hue and a `ChromaCurve` in OKLCH
+  only, through `oklchToHex`. Ramp in the other spaces too — OKLab, HSL, sRGB and
+  linear RGB at least — so a ramp's interpolation space is a choice, and the
+  story shows the same endpoints ramped in each.
+
 - **(P2) Whether an anchor should set a ramp's chroma peak directly.** Today an
   anchor sets `peak = anchor C · max / e`, with `e` the envelope at the anchor's
   position, so an anchor on an end step whose bias is near 0 leaves `e` tiny and
@@ -732,6 +752,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   slider nudge. Either answer should also say what a second anchor does: only
   the first anchored step, in step order, sets the hue and peak, so anchoring
   `#ff0000` and `#0000ff` on one ramp pins the blue step inside a red ramp.
+
+- **(P2) labkit's Oswald `@font-face` 404s in every source-tree build.**
+  `packages/labkit/src/theme/base.less` points at `./fonts/…`, which only
+  resolves beside the compiled `dist/styles.css`; its comment says source-tree
+  use needs no URL, but a vite build emits the dead path and, declared after
+  any other Oswald face, replaces it. Text then falls back to whatever weights
+  the system has, so a 200 or 700 renders as 300 or 400 with no error but the
+  404. forge's workshop works around it by importing the theme's `fonts.css`
+  after labkit's styles (`apps/forge/labkitStyles.ts`) and its frame by
+  re-declaring the face (`apps/forge/frame.css`). The fix is one face with a URL
+  that resolves in both trees, most likely labkit dropping its own in favor of
+  `@weasel-js/theme/fonts.css`.
 
 - **(P3) The lab switcher's migrated tokens have not been looked at in a browser.**
   `packages/labkit/src/lab/LabSwitcher.less` read seven `--wzl-*` names no theme
@@ -958,6 +990,14 @@ controls. It is the only story runner in the repo.
   and other content bare, so the switch remounts `FrameView` and reloads the
   iframe. Mount the provisional instrument under the same tree position, or learn
   the viewport before the first instrument is built.
+
+- **(P3) Opening a trial in forge reloads another trial's story.** Measured
+  2026-09-22 in the dev app: with one Button trial open, opening a second from
+  the route re-ran the first trial's `FrameView` frame effect, so its story
+  loaded again into a new frame. Whether labkit remounts the trial's body when
+  the tiling changes, or its host briefly leaves the `IntersectionObserver`
+  margin, is not yet known. Each reload also takes a frame from the warm pool
+  (`packages/forge/src/shell/framePool.ts`), which is why it keeps two.
 
 - **(P3) forge's lab scrolls sideways with two trials open beside the aside.**
   labkit's fit check (`packages/labkit/src/lab/fitCheck.ts`) warns that

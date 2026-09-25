@@ -1,5 +1,5 @@
 /* One stylesheet for the whole property-panel family. PropertyList, PropertyRow,
-   PropertyGroup and Subpanel/EffectCard are styled together because the grid
+   PropertyGroup and Subpanel are styled together because the grid
    rules genuinely cross components — `.listPairs > .subpanel` and
    `.groupBody > :not(.rowColor)` name two components in one selector, and a CSS
    Module can only compose local names within its own file. */
@@ -11,15 +11,11 @@
 .row,
 .group,
 .subpanel,
-.card,
-.cardList,
 .panel *,
 .list *,
 .row *,
 .group *,
-.subpanel *,
-.card *,
-.cardList * {
+.subpanel * {
   box-sizing: border-box;
 }
 
@@ -30,9 +26,7 @@
 .list,
 .row,
 .group,
-.subpanel,
-.card,
-.cardList {
+.subpanel {
   -webkit-user-select: none;
   user-select: none;
 }
@@ -1209,6 +1203,33 @@
   padding: var(--_s-pad);
 }
 
+/* A toned group is one of a list of like groups; its edge says which. */
+.group[data-tone] {
+  border-left: 4px solid var(--wzl-tone);
+}
+
+.groupHeadRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  margin: 0 0 var(--wzl-prop-group-title-gap, 4px);
+}
+
+/* The row takes the title's bottom margin, so the handle and actions center on the title itself. */
+.groupHeadRow > .groupTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.groupLeading,
+.groupActions {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}
+
 /* BEGIN GENERATED stance rules: group — `npm run gen:stances`, do not edit. */
 
 .group {
@@ -1635,202 +1656,6 @@
   border: 0;
   border-top: 1px solid var(--_s-border-color);
   margin: 0;
-}
-
-/* ── EffectCard ──────────────────────────────────────────────────────
-   Draggable, collapsible card. A tone recolors its title bar and edge, and
-   every control inside it. */
-.card {
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transition: background 120ms ease, border-color 120ms ease;
-}
-
-/* BEGIN GENERATED stance rules: card — `npm run gen:stances`, do not edit. */
-
-.card {
-  --wzl-tone: initial;
-}
-
-.card {
-  --_s-accent: var(--wzl-tone);
-}
-
-.card[data-tone] {
-  --wzl-accent: var(--_s-accent);
-  --wzl-accent-base: var(--_s-accent);
-  --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));
-  --wzl-accent-soft: color-mix(in oklab, var(--_s-accent) 45%, var(--wzl-surface));
-  --wzl-accent-hover: var(--wzl-accent-strong);
-  --wzl-accent-fg: var(--wzl-accent-strong);
-  --wzl-focus-ring: var(--wzl-accent-strong);
-}
-
-/* END GENERATED stance rules: card */
-
-.cardDragging {
-  opacity: 0.45;
-}
-
-.cardExpanded {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.card[data-tone] {
-  background: color-mix(in srgb, var(--wzl-tone) 4%, rgba(0, 0, 0, 0.28));
-  border-color: color-mix(in srgb, var(--wzl-tone) 28%, var(--wzl-border));
-  border-left-width: 4px;
-  border-left-color: var(--wzl-tone);
-}
-
-.card[data-tone].cardExpanded {
-  background: color-mix(in srgb, var(--wzl-tone) 5%, rgba(0, 0, 0, 0.35));
-}
-
-.card[data-tone] .cardHead {
-  background: color-mix(in srgb, var(--wzl-tone) 38%, rgba(0, 0, 0, 0.4));
-}
-
-.card[data-tone] .cardHead:hover {
-  background: color-mix(in srgb, var(--wzl-tone) 48%, rgba(0, 0, 0, 0.35));
-}
-
-.cardHead {
-  display: flex;
-  align-items: baseline;
-  gap: var(--wzl-space-4);
-  padding: var(--wzl-space-1) var(--wzl-space-5);
-  cursor: pointer;
-  user-select: none;
-}
-
-.cardHead:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.cardHandle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--wzl-fg-muted);
-  cursor: grab;
-  padding: 0 var(--wzl-space-1);
-}
-
-.cardHandle:active {
-  cursor: grabbing;
-}
-
-.cardIndexBadge {
-  /* Rendered as a <button> (keyboard-operable drag/toggle handle); strip the
-     native button chrome so it matches the surrounding badge styling. */
-  appearance: none;
-  border: 0;
-  background: none;
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: center;
-  min-width: 14px;
-  padding: 0 var(--wzl-space-1);
-  color: var(--wzl-tone, var(--wzl-fg-muted));
-  font-size: var(--wzl-font-size);
-  font-weight: var(--wzl-font-weight-bold);
-  font-family: var(--wzl-font-mono);
-  line-height: 1;
-}
-
-.cardTitle {
-  font-family: var(--wzl-font-display);
-  font-weight: var(--wzl-font-weight-medium);
-  font-size: var(--wzl-font-size);
-  line-height: var(--wzl-leading-tight);
-  color: var(--wzl-fg);
-  text-transform: var(--wzl-params-label-case, uppercase);
-  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
-}
-
-.cardPrimary {
-  font-family: var(--wzl-font-ui);
-  font-weight: var(--wzl-font-weight-medium);
-  font-size: var(--wzl-font-size-sm);
-  line-height: var(--wzl-leading-tight);
-  color: var(--wzl-fg);
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  padding: var(--wzl-space-1) var(--wzl-space-3);
-  margin-left: auto;
-}
-
-/* Push the remove button to the right edge — whether it follows a primary
-   chip or sits alone after the title. */
-.cardHead .cardRemove,
-.cardHead .cardPrimary + .cardRemove {
-  margin-left: auto;
-}
-
-.cardHead .cardPrimary ~ .cardRemove {
-  margin-left: var(--wzl-space-2);
-}
-
-.cardRemove {
-  background: transparent;
-  color: var(--wzl-fg-muted);
-  border: 1px solid transparent;
-  border-radius: var(--wzl-radius-sm);
-  width: var(--wzl-icon-button-size);
-  height: var(--wzl-icon-button-size);
-  font-size: var(--wzl-font-size);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cardRemove:hover {
-  color: var(--wzl-danger);
-  border-color: color-mix(in srgb, var(--wzl-danger) 40%, transparent);
-  background: color-mix(in srgb, var(--wzl-danger) 8%, transparent);
-}
-
-.cardBody {
-  padding: var(--wzl-space-2) var(--wzl-space-6) var(--wzl-space-6);
-  border-top: 1px solid var(--wzl-border);
-}
-
-/* ── EffectCardList ────────────────────────────────────────────────── */
-.cardList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-3);
-}
-
-.cardListWrap {
-  position: relative;
-}
-
-.cardDropHint {
-  height: 0;
-  border-top: 2px solid var(--wzl-accent);
-  border-radius: var(--wzl-radius-sm);
-  margin: var(--wzl-space-1) 0;
-  box-shadow: 0 0 6px color-mix(in srgb, var(--wzl-accent) 60%, transparent);
-}
-
-.cardListEmpty {
-  font-family: var(--wzl-font-display);
-  font-weight: var(--wzl-font-weight-light);
-  font-size: var(--wzl-font-size-sm);
-  line-height: var(--wzl-leading);
-  color: var(--wzl-fg-muted);
-  text-align: center;
-  padding: var(--wzl-space-8) var(--wzl-space-6);
-  border: 1px dashed var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
 }
 
 /* An auto row: the value is not pinned, and the row says only that. The

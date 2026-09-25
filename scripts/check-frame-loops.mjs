@@ -22,6 +22,7 @@ const ALLOWED = new Map([
   ['packages/core/src/scheduling/useVisibleRaf.ts', 'the gate itself'],
   ['packages/forge/src/test/runStory.ts', 'not a loop: a story test waits for one painted frame before checking faults'],
   ['packages/forge/src/frame/FrameController.tsx', 'not a loop: a story frame waits for one painted frame after its fonts settle before announcing it rendered'],
+  ['packages/forge/src/frame/index/startIndex.tsx', 'not a loop: an index page waits for one painted frame after its fonts settle before announcing it rendered'],
 ]);
 
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-examples', 'examples']);

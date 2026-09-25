@@ -1,12 +1,14 @@
 import './shell.css';
-import { type RenderContext, TrialIdContext } from '@weasel-js/labkit';
+import { type RenderContext, TrialIdContext, useLabContext } from '@weasel-js/labkit';
 import { type RefObject, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { type Channel, type Mismatch, openChannel } from '../protocol/channel';
 import {
   type FaultPhase,
+  FRAME_HELLO,
   type FromFrame,
   type Globals,
   PORT_HANDOFF,
+  type PortHandoff,
   PROTOCOL_VERSION,
   stableStringify,
   type CapturedPicture,
@@ -15,11 +17,13 @@ import {
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
 import { useCssOverrides } from './cssVars/overrides';
+import { FramePoolContext, moveFrame } from './framePool';
 
 import { effectiveGlobals, GLOBALS_KEY, isGlobalsPath, storyConfig } from './globals';
 import { type Ready, readyKey } from './readyKey';
 import { type A11yOutcome, TrialFramesContext } from './trialFrames';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
+import { setRoute } from './useRoute';
 
 export interface FrameViewProps {
   entry: IndexEntry;
@@ -32,6 +36,8 @@ export interface FrameViewProps {
 }
 
 const START_TIMEOUT_MS = 10_000;
+/** Longer than a cold dev server takes to serve a frame document its first time. */
+const HELLO_TIMEOUT_MS = 30_000;
 /** Distinguishes one frame request from the next; only ever compared, never read. */
 let requests = 0;
 /** How far past the viewport a frame stays mounted, so a small scroll back does not reload it. */
@@ -117,15 +123,17 @@ export function FrameView(props: FrameViewProps) {
   const trialId = useContext(TrialIdContext);
   const frames = useContext(TrialFramesContext);
   const [overrides] = useCssOverrides();
+  const pool = useContext(FramePoolContext);
+  const lab = useLabContext();
   const src = `${frameUrl}#${entry.id}`;
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const title = `${entry.title} / ${entry.name}`;
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
-  // A trial out of view drops its frame, and with it any WebGL contexts the story held; the config and state
-  // live in the trial, so a return reloads the frame and `init` carries them back.
+  const slotRef = useRef<HTMLDivElement>(null);
   const inView = useInView(hostRef);
   const link = useRef<Link | null>(null);
-  const latest = useRef({ ...props, globals, overrides });
-  latest.current = { ...props, globals, overrides };
+  const latest = useRef({ ...props, globals, overrides, pool, lab, title });
+  latest.current = { ...props, globals, overrides, pool, lab, title };
   const [fault, setFault] = useState<Fault | null>(null);
   // A loaded document stays hidden until its story has rendered, so a new trial never shows the blank page.
   const [pending, setPending] = useState(true);
@@ -186,6 +194,13 @@ export function FrameView(props: FrameViewProps) {
         else current.pending.get(msg.id)?.fail(new Error(msg.message));
         current.pending.delete(msg.id);
         break;
+      case 'open': {
+        const { lab: liveLab } = latest.current;
+        if (!trialId || !liveLab.instruments.some((instrument) => instrument.name === msg.id)) break;
+        liveLab.swapTrial(trialId, msg.id);
+        setRoute(msg.id, { inPlace: true });
+        break;
+      }
       case 'fault':
         // A newer input is already on its way to the frame, which faults again if it still throws.
         if (msg.phase === 'render' && msg.seq !== undefined && msg.seq < current.inputs) break;
@@ -195,10 +210,10 @@ export function FrameView(props: FrameViewProps) {
     }
   };
 
-  const onLoad = (): void => {
+  const connect = (frame: HTMLIFrameElement): void => {
     closeLink(link);
     setPending(true);
-    const target = iframeRef.current?.contentWindow;
+    const target = frame.contentWindow;
     if (!target) return;
     const { port1, port2 } = new MessageChannel();
     const timer = setTimeout(() => setFault({ phase: null, message: `Frame did not start: ${src}` }), START_TIMEOUT_MS);
@@ -250,17 +265,63 @@ export function FrameView(props: FrameViewProps) {
     };
     link.current = current;
     channel.on((msg) => receive(current, msg));
-    target.postMessage({ type: PORT_HANDOFF }, location.origin, [port2]);
+    target.postMessage({ type: PORT_HANDOFF, id: latest.current.entry.id } satisfies PortHandoff, location.origin, [
+      port2,
+    ]);
   };
 
-  useEffect(() => () => closeLink(link), []);
+  const connectRef = useRef(connect);
+  connectRef.current = connect;
+
+  // A trial out of view drops its frame, and with it any WebGL contexts the story held; the config and state
+  // live in the trial, so a return brings up a new frame and `init` carries them back.
+  useEffect(() => {
+    const slot = slotRef.current;
+    if (!inView || !slot) return;
+    const claimed = latest.current.pool?.claim() ?? null;
+    const frame = claimed ?? document.createElement('iframe');
+    frame.className = 'fg-frame-view';
+    frame.title = latest.current.title;
+    frame.removeAttribute('tabindex');
+    frame.toggleAttribute('data-pending', true);
+    iframeRef.current = frame;
+    // Handshakes start on the document's hello, never on `load`: that fires before the hello, and a port handed
+    // over then is one the frame, which keeps only its first, would still take in place of the right one.
+    const unheard = claimed
+      ? undefined
+      : setTimeout(() => setFault({ phase: null, message: `Frame did not start: ${src}` }), HELLO_TIMEOUT_MS);
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== frame.contentWindow || event.origin !== location.origin) return;
+      if ((event.data as { type?: unknown } | null)?.type !== FRAME_HELLO) return;
+      clearTimeout(unheard);
+      connectRef.current(frame);
+    };
+    window.addEventListener('message', onMessage);
+    if (claimed) {
+      moveFrame(slot, claimed);
+      connectRef.current(claimed);
+    } else {
+      frame.src = src;
+      slot.append(frame);
+    }
+    return () => {
+      window.removeEventListener('message', onMessage);
+      clearTimeout(unheard);
+      closeLink(link);
+      frame.remove();
+      iframeRef.current = null;
+      setPending(true);
+      setFault(null);
+    };
+  }, [inView, src]);
 
   useEffect(() => {
-    if (inView) return;
-    closeLink(link);
-    setPending(true);
-    setFault(null);
-  }, [inView]);
+    iframeRef.current?.toggleAttribute('data-pending', pending && !fault);
+  }, [pending, fault, inView, src]);
+
+  useEffect(() => {
+    if (iframeRef.current) iframeRef.current.title = title;
+  }, [title]);
 
   useEffect(() => answers.hold(ctx.config), [answers, ctx.config]);
 
@@ -305,16 +366,8 @@ export function FrameView(props: FrameViewProps) {
       }}
       className="fg-frame-host"
     >
-      {inView ? (
-        <iframe
-          ref={iframeRef}
-          className="fg-frame-view"
-          src={src}
-          title={`${entry.title} / ${entry.name}`}
-          onLoad={onLoad}
-          data-pending={pending && !fault ? '' : undefined}
-        />
-      ) : null}
+      {/* The frame is placed here by hand: a pooled one arrives already loaded, and React would reload it. */}
+      <div ref={slotRef} className="fg-frame-slot" />
       {fault ? (
         <div className="fg-fault" role="alert">
           {fault.phase ? <span className="fg-fault__phase">{fault.phase}</span> : null}

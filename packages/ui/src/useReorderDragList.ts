@@ -4,14 +4,12 @@ import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import { isInControlWithin } from './interactiveTarget';
 
 /** One row in a reorderable list. */
-export interface LayerListItem {
+export interface ReorderItem {
   id: string;
   label: ReactNode;
   /** Locked rows cannot be dragged, cannot be crossed by drops, and
    *  never combine with other rows in a multi-selection. */
   locked?: boolean;
-  /** Optional color swatch rendered before the label. Any CSS color string. */
-  swatch?: string;
 }
 
 /**
@@ -19,7 +17,7 @@ export interface LayerListItem {
  * and the index they were dropped at, measured against the pre-drag `items`.
  */
 export interface UseReorderDragListOptions {
-  items: LayerListItem[];
+  items: ReorderItem[];
   selectedIds: string[];
   onReorder(ids: string[], targetIndex: number): void;
   /** A press that was released without ever engaging a drag — the click a
@@ -46,13 +44,29 @@ export interface PressModifiers {
 }
 
 /**
- * Live drag state for rendering feedback: which ids are being dragged and the
- * insertion index the drop would use. Both `null` when no drag is engaged.
+ * Where a drag's ghost goes: the dragged rows, drawn again with their top-left
+ * at a client-space point, so the row that was grabbed stays under the pointer
+ * where it was picked up. `width` is the grabbed row's.
+ */
+export interface ReorderGhost {
+  ids: readonly string[];
+  left: number;
+  top: number;
+  width: number;
+}
+
+/**
+ * Live drag state for rendering feedback: which ids are being dragged, the
+ * insertion index the drop would use, and where their ghost goes. All `null`
+ * when no drag is engaged.
  */
 export interface ReorderDragState {
   draggedIds: string[] | null;
   targetIndex: number | null;
+  ghost: ReorderGhost | null;
 }
+
+const IDLE: ReorderDragState = { draggedIds: null, targetIndex: null, ghost: null };
 
 /**
  * A `ref` for the list container, an `onPointerDown` for each row, and the
@@ -80,7 +94,7 @@ export interface ReorderDragHandlers {
  * bounded by the nearest locked row above and below it, so a locked row is a
  * wall in both directions rather than a global ceiling.
  */
-function unlockedSegment(items: readonly LayerListItem[], sourceIndex: number): [number, number] {
+function unlockedSegment(items: readonly ReorderItem[], sourceIndex: number): [number, number] {
   let lo = 0;
   for (let i = sourceIndex - 1; i >= 0; i--) {
     if (items[i]?.locked) { lo = i + 1; break; }
@@ -94,7 +108,7 @@ function unlockedSegment(items: readonly LayerListItem[], sourceIndex: number): 
 
 /** What a drag of the row at `index` carries: the selection within its segment if the row is selected, else the row. */
 function draggedIdsFor(
-  items: readonly LayerListItem[],
+  items: readonly ReorderItem[],
   selectedIds: readonly string[],
   id: string,
   index: number,
@@ -107,7 +121,7 @@ function draggedIdsFor(
 }
 
 /** Would dropping `draggedIds` at `targetIndex` leave a contiguous block where it already is? */
-function isNoopDrop(items: readonly LayerListItem[], draggedIds: readonly string[], targetIndex: number): boolean {
+function isNoopDrop(items: readonly ReorderItem[], draggedIds: readonly string[], targetIndex: number): boolean {
   const indices = draggedIds
     .map((id) => items.findIndex((it) => it.id === id))
     .filter((i) => i >= 0)
@@ -135,6 +149,10 @@ function isNoopDrop(items: readonly LayerListItem[], draggedIds: readonly string
  * drop. A drop that would leave a contiguous block where it already is does
  * not call `onReorder`.
  *
+ * The rows are the container's children, whatever they are: `ItemList` rows,
+ * or the `PropertyGroup`s of a `PropertyList`. A row's `onPointerDown` can go
+ * on the whole row or on a handle inside it.
+ *
  * A press opens a `startThresholdDrag` on the *container*, which owns the
  * rest of the gesture: a drag that leaves the list still tracks, a release
  * anywhere still drops, and a release the window never delivered still ends
@@ -146,7 +164,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
   optsRef.current = opts;
   const containerRef = useRef<HTMLElement | null>(null);
   const dragRef = useRef<ThresholdDragHandle | null>(null);
-  const [state, setState] = useState<ReorderDragState>({ draggedIds: null, targetIndex: null });
+  const [state, setState] = useState<ReorderDragState>(IDLE);
 
   useEffect(() => () => { dragRef.current?.cancel(); }, []);
 
@@ -172,7 +190,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
 
   const reset = useCallback(() => {
     dragRef.current = null;
-    setState({ draggedIds: null, targetIndex: null });
+    setState(IDLE);
   }, []);
 
   const onPointerDownRow = useCallback((id: string, index: number, e: ReactPointerEvent) => {
@@ -185,6 +203,18 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     };
     let draggedIds: string[] = [];
     let targetIndex = 0;
+    // Where in the grabbed row the pointer went down, so the ghost keeps that point under it. The handler may sit on
+    // a handle inside the row rather than the row itself, so the row is the container's child holding it.
+    const pressed = e.currentTarget as Element;
+    const rowEl = Array.from(container.children).find((child) => child.contains(pressed)) ?? pressed;
+    const row = rowEl.getBoundingClientRect();
+    const grab = { x: e.clientX - row.left, y: e.clientY - row.top };
+    const ghostAt = (ev: { clientX: number; clientY: number }): ReorderGhost => ({
+      ids: draggedIds,
+      left: ev.clientX - grab.x,
+      top: ev.clientY - grab.y,
+      width: row.width,
+    });
 
     dragRef.current = startThresholdDrag(e, {
       origin: container,
@@ -196,13 +226,11 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       onActivate: (ev) => {
         draggedIds = draggedIdsFor(optsRef.current.items, optsRef.current.selectedIds, id, index);
         targetIndex = computeTargetIndex(ev.clientY, index);
-        setState({ draggedIds, targetIndex });
+        setState({ draggedIds, targetIndex, ghost: ghostAt(ev) });
       },
       onMove: (ev) => {
-        const next = computeTargetIndex(ev.clientY, index);
-        if (next === targetIndex) return;
-        targetIndex = next;
-        setState({ draggedIds, targetIndex });
+        targetIndex = computeTargetIndex(ev.clientY, index);
+        setState({ draggedIds, targetIndex, ghost: ghostAt(ev) });
       },
       onCommit: (ev) => {
         const drop = computeTargetIndex(ev.clientY, index);

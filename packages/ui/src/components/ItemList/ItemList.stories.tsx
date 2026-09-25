@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { useReorderDragList, type LayerListItem, type PressModifiers } from '../../useReorderDragList';
+import { useReorderDragList, type PressModifiers, type ReorderItem } from '../../useReorderDragList';
 import { Button } from '../Button';
 import { ItemList } from './ItemList';
 
@@ -44,14 +44,15 @@ export const Selectable: Story = {
   },
 };
 
-/** Drag a row, or move it with Alt+Up/Down. The hook's `targetIndex` goes to
+/** Drag a row, or move it with Alt+Up/Down. A dragged row holds its place while
+ *  its `ghost` follows the pointer. The hook's `targetIndex` goes to
  *  `dropIndex` and the list draws the seam; its `draggedIds` mark the rows
  *  that are `dragging`; its `nudge` is the keyboard move. Shift+click or
  *  Shift+Space adds to the selection; Shift+Up/Down and Shift+Home/End select
  *  a range through `onSelectRange`. */
 export const Reorder: Story = {
   render: function Render() {
-    const [items, setItems] = useState<LayerListItem[]>([
+    const [items, setItems] = useState<ReorderItem[]>([
       { id: 'page', label: 'Page', locked: true },
       { id: 'a', label: 'Background' },
       { id: 'b', label: 'Sketch' },
@@ -86,6 +87,7 @@ export const Reorder: Story = {
           onSelectRange={setSelected}
           onNudge={drag.nudge}
           dropIndex={drag.state.targetIndex}
+          ghost={drag.state.ghost}
           rows={items.map((it, i) => ({
             id: it.id,
             label: it.label,

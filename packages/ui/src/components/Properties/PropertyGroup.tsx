@@ -13,6 +13,10 @@ import {
 export interface PropertyGroupProps extends PropertyMetricProps, StanceProps {
   /** Title rendered between two rules at the top of the group. */
   title: ReactNode;
+  /** Before the title: a drag handle, an ordinal. Clicks here do not fold the group. */
+  leading?: ReactNode;
+  /** After the title: a summary of the group's value, a remove button. Clicks here do not fold the group. */
+  actions?: ReactNode;
   /** Help text for the whole group, drawn under the title and above the
    *  rows. `<PropertyRow description>` covers the per-row case. */
   description?: ReactNode;
@@ -49,10 +53,15 @@ export interface PropertyGroupProps extends PropertyMetricProps, StanceProps {
  *
  * A collapsible group keeps its rows mounted and hides them, so a control's
  * local state survives being folded away. `stance` and `tone` work as on
- * `<PropertyPanel>`.
+ * `<PropertyPanel>`; a tone also draws the group's leading edge in it, which
+ * is how a list of like groups — effects, tails — tells its members apart.
+ * `leading` and `actions` put a handle and controls in the title row, and the
+ * groups of a `<PropertyList>` reorder with `useReorderDragList`.
  */
 export function PropertyGroup({
   title,
+  leading,
+  actions,
   description,
   hidden,
   collapsible,
@@ -84,13 +93,23 @@ export function PropertyGroup({
 
   const base = `${s.group}${pack === 'pairs' ? ` ${s.groupPairs}` : pack === 'one-up' ? ` ${s.groupOneUp}` : ''}`;
   const cls = propertyMetricClass(span ? `${base} ${s.span}` : base, { density, align }, className);
-  const heading = (
+  const titled = (
     <h3 className={s.groupTitle}>
       <hr />
       <span>{title}</span>
       <hr />
     </h3>
   );
+  const heading =
+    leading === undefined && actions === undefined ? (
+      titled
+    ) : (
+      <div className={s.groupHeadRow}>
+        {leading === undefined ? null : <span className={s.groupLeading}>{leading}</span>}
+        {titled}
+        {actions === undefined ? null : <span className={s.groupActions}>{actions}</span>}
+      </div>
+    );
   return (
     <div className={cls} {...stanced}>
       {folds ? (

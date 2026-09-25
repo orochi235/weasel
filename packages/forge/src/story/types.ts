@@ -1,5 +1,5 @@
 import type { ConfigSchema } from '@weasel-js/labkit/config';
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { Globals, Layout, Viewport } from '../protocol/messages';
 
 export interface StoryContext<C = unknown, S = unknown> {
@@ -24,7 +24,37 @@ export interface MetaSpec {
   title?: string;
   decorators?: Decorator[];
   layout?: Layout;
+  /** The component's own index page, in place of the generated one. A CSF file sets `parameters.forge.index`. */
+  index?: IndexRender;
 }
+
+/** What an index page is given: its component's stories, and the parts the generated page is built from. */
+export interface IndexContext {
+  title: string;
+  /** The JSDoc above the file's meta, if any. */
+  description?: string;
+  /** In file order. */
+  stories: readonly LoadedStory[];
+  globals: Globals;
+  /** One story, interactive, at its defaults with `config` over them. */
+  Story: ComponentType<IndexStoryProps>;
+  /** One story rendered once per value of each of its boolean and enum controls, the rest at their defaults. */
+  Variants: ComponentType<{ story: LoadedStory }>;
+  /** The whole generated page. */
+  DefaultIndex: ComponentType;
+  /** Shows story `id` in this page's trial in its place. */
+  open: (id: string) => void;
+}
+
+export interface IndexStoryProps {
+  story: LoadedStory;
+  /** Merged over the story's defaults; nested groups merge rather than replace. */
+  config?: Record<string, unknown>;
+  /** Shown under the story. */
+  label?: string;
+}
+
+export type IndexRender = (ctx: IndexContext) => ReactNode;
 
 export interface StorySpec<C = Record<string, never>, S = undefined> {
   name?: string;

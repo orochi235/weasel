@@ -1,0 +1,167 @@
+/* Row box, hover and selection are `ItemList`'s, so a layer list and the
+   history list stacked under it agree. What is here is only what a layer has. */
+.root,
+.root * {
+  box-sizing: border-box;
+}
+
+.root {
+  display: grid;
+  gap: var(--wzl-space-4);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wzl-space-4);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
+  font-size: var(--wzl-font-size-lg);
+  color: var(--wzl-fg);
+}
+
+.palette {
+  display: flex;
+  gap: var(--wzl-space-2);
+}
+
+.add {
+  font: inherit;
+  height: var(--wzl-control-h);
+  background: transparent;
+  border: 1px dashed var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  padding: var(--wzl-space-1) var(--wzl-space-4);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+  cursor: pointer;
+}
+
+.add:hover {
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg);
+}
+
+.level {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  position: relative;
+  width: 100%;
+}
+
+/* A level of cards is a `PropertyList`, so the controls in each body take the
+   panel's density; its rows are spaced like cards rather than lines. */
+.level.cards {
+  display: grid;
+  row-gap: var(--wzl-space-3);
+}
+
+.entry {
+  min-width: 0;
+}
+
+.row {
+  user-select: none;
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -2px;
+}
+
+/* A child's twisty sits under its parent's grip. */
+.children {
+  padding-left: calc(var(--wzl-disclosure-target, var(--wzl-control-h-sm)) + var(--wzl-space-4));
+}
+
+/* The layer the drag picked up holds its place, faded, while its ghost follows the pointer. */
+.dragging {
+  opacity: 0.5;
+}
+
+/* Where the drop would land: a line on the edge of the layer it would land against. */
+.dropBefore {
+  box-shadow: 0 -2px 0 var(--wzl-accent);
+}
+
+.dropAfter {
+  box-shadow: 0 2px 0 var(--wzl-accent);
+}
+
+/* One width for the grip and the lock, so a locked row's label lines up. */
+.grip,
+.lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 13px;
+  color: var(--wzl-fg-muted);
+}
+
+.row:not([data-locked]) {
+  cursor: grab;
+}
+
+.row:not([data-locked]):active {
+  cursor: grabbing;
+}
+
+.stop {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+/* Holds the twisty column open on rows with nothing to expand, so labels line up down a level. */
+.twistyGap {
+  flex: 0 0 auto;
+  width: var(--wzl-disclosure-target, var(--wzl-control-h-sm));
+}
+
+/* Sized, so the empty column a locked row keeps is the checkbox's width. */
+.check {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  accent-color: var(--wzl-accent);
+}
+
+.handle {
+  font: inherit;
+  background: transparent;
+  border: 0;
+  color: var(--wzl-fg-subtle);
+  padding: var(--wzl-space-1) var(--wzl-space-2);
+  cursor: grab;
+  touch-action: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--wzl-icon-button-size);
+  height: var(--wzl-icon-button-size);
+  border-radius: var(--wzl-radius-sm);
+  font-weight: var(--wzl-font-weight-bold);
+  font-size: var(--wzl-font-size);
+}
+
+.card[data-tone] .handle {
+  background: var(--wzl-tone);
+  color: var(--wzl-fg-on-accent);
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+.entry[data-selected] > .card {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: -1px;
+}

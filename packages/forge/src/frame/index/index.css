@@ -1,0 +1,117 @@
+.fg-index {
+  box-sizing: border-box;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: calc(var(--wzl-space-lg) * 2) var(--wzl-space-lg) calc(var(--wzl-space-lg) * 4);
+  font-family: var(--wzl-font-body);
+  font-size: var(--wzl-font-size);
+  color: var(--wzl-fg);
+}
+
+.fg-index__head {
+  margin-bottom: calc(var(--wzl-space-lg) * 2);
+}
+
+.fg-index__path {
+  margin: 0 0 var(--wzl-space-2);
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
+
+.fg-index__title {
+  margin: 0;
+  font-family: var(--wzl-panel-title-font);
+  font-size: calc(var(--wzl-font-size-xl) * 1.6);
+  font-weight: var(--wzl-font-weight-medium);
+  letter-spacing: var(--wzl-panel-title-tracking);
+  text-transform: var(--wzl-panel-title-case);
+}
+
+.fg-index__description,
+.fg-index-story__description {
+  max-width: 72ch;
+  margin: var(--wzl-space-4) 0 0;
+  line-height: 1.5;
+  color: var(--wzl-fg-muted);
+}
+
+.fg-index-story {
+  padding-top: calc(var(--wzl-space-lg) * 1.5);
+  margin-top: calc(var(--wzl-space-lg) * 1.5);
+  border-top: var(--wzl-border-w) solid var(--wzl-border);
+}
+
+.fg-index-story__head {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-6);
+}
+
+.fg-index-story__name {
+  margin: 0;
+  font-family: var(--wzl-panel-title-font);
+  font-size: var(--wzl-font-size-xl);
+  font-weight: var(--wzl-panel-title-weight);
+  letter-spacing: var(--wzl-panel-title-tracking);
+  text-transform: var(--wzl-panel-title-case);
+  color: var(--wzl-panel-title-color);
+}
+
+.fg-index-cell {
+  margin: var(--wzl-space-8) 0 0;
+}
+
+.fg-index-cell__stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  padding: var(--wzl-space-8);
+  border: var(--wzl-border-w) solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface);
+  overflow: auto;
+}
+
+.fg-index-cell--padded > .fg-index-cell__stage {
+  display: block;
+}
+
+.fg-index-cell--fullscreen > .fg-index-cell__stage {
+  display: block;
+  height: 360px;
+  padding: 0;
+}
+
+.fg-index-cell__label {
+  margin-top: var(--wzl-space-3);
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
+
+.fg-index-variants__row {
+  margin-top: calc(var(--wzl-space-lg) * 1.25);
+}
+
+/* Set as the kit's panel titles are, at the small size. */
+.fg-index-variants__label {
+  margin: 0;
+  font-family: var(--wzl-panel-title-font);
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-panel-title-weight);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wzl-fg-muted);
+}
+
+.fg-index-variants__cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--wzl-space-6);
+}
+
+.fg-index-variants__cells > .fg-index-cell {
+  margin-top: var(--wzl-space-4);
+}

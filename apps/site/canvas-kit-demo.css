@@ -1102,3 +1102,12 @@ a:hover { text-decoration: underline; }
   flex-wrap: wrap;
   gap: 4px;
 }
+
+.ckd-swatch {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid var(--wzl-border);
+  background: var(--ckd-swatch);
+}

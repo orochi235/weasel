@@ -31,6 +31,7 @@
  */
 import {
   forwardRef,
+  useCallback,
   useLayoutEffect,
   useRef,
   useState,
@@ -42,7 +43,8 @@ import {
   type Ref,
 } from 'react';
 import { CONTROL_SELECTOR, isInControlWithin } from '../../interactiveTarget';
-import type { PressModifiers } from '../../useReorderDragList';
+import type { PressModifiers, ReorderGhost } from '../../useReorderDragList';
+import { DragGhost } from '../DragGhost';
 import s from './ItemList.module.css';
 
 /** One row. `id` is the React key. */
@@ -113,6 +115,8 @@ export interface ItemListProps {
   overlay?: ReactNode;
   /** Spread onto the container: pointer handlers for a drag, `aria-label`. */
   containerProps?: HTMLAttributes<HTMLDivElement>;
+  /** Rows to draw again under the pointer during a drag — `useReorderDragList`'s `state.ghost`. */
+  ghost?: ReorderGhost | null;
 }
 
 type Mode = 'list' | 'listbox' | 'grid';
@@ -126,7 +130,7 @@ const ROLES: Record<Mode, { container: string; row: string }> = {
 export const ItemList = forwardRef(function ItemList(
   {
     rows, empty, className, selection, onActivate, onNudge, onSelectRange, dropIndex, overlay,
-    containerProps,
+    containerProps, ghost,
   }: ItemListProps,
   ref: Ref<HTMLDivElement>,
 ) {
@@ -135,6 +139,16 @@ export const ItemList = forwardRef(function ItemList(
     ? 'grid'
     : selection ? 'listbox' : 'list';
   const interactive = mode !== 'list';
+
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  const setRefs = useCallback(
+    (el: HTMLDivElement | null) => {
+      setContainer(el);
+      if (typeof ref === 'function') ref(el);
+      else if (ref) ref.current = el;
+    },
+    [ref],
+  );
 
   /** The element of each row that takes focus: the row itself, or in a grid its label cell. */
   const targets = useRef(new Map<string, HTMLElement>());
@@ -167,7 +181,7 @@ export const ItemList = forwardRef(function ItemList(
   const cls = [s.list, className].filter(Boolean).join(' ');
   if (rows.length === 0) {
     return (
-      <div className={cls} ref={ref} {...containerProps}>
+      <div className={cls} ref={setRefs} {...containerProps}>
         <div className={s.empty}>{empty ?? '—'}</div>
       </div>
     );
@@ -281,12 +295,24 @@ export const ItemList = forwardRef(function ItemList(
   return (
     <div
       className={cls}
-      ref={ref}
+      ref={setRefs}
       {...containerProps}
       role={roles.container}
       aria-multiselectable={selection === 'multi' && mode !== 'list' ? true : undefined}
     >
       {overlay}
+      {ghost && container ? (
+        <DragGhost at={ghost} from={container}>
+          {rows
+            .filter((row) => ghost.ids.includes(row.id))
+            .map((row) => (
+              <div key={row.id} className={[s.row, row.selected && s.selected].filter(Boolean).join(' ')}>
+                {row.leading}
+                <span className={s.label}>{row.label}</span>
+              </div>
+            ))}
+        </DragGhost>
+      ) : null}
       {rows.map((row, i) => {
         const tabIndex = interactive ? (row.id === stopId ? 0 : -1) : undefined;
         const content = (

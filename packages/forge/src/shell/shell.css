@@ -29,6 +29,27 @@
   height: 100%;
 }
 
+.fg-frame-slot {
+  display: contents;
+}
+
+/* Warm frames lay out at a trial's usual size, so moving one into place is not its first layout. */
+.fg-frame-pool {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: 1024px;
+  height: 768px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.fg-frame-pool > iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 .fg-frame-view {
   display: block;
   width: 100%;
@@ -153,14 +174,32 @@
 
 /* Sits after the label, which is the element that shrinks, so the tag keeps
    its width and the rows' tags line up down the column. */
-.fg-tree__tag {
+.fg-tree__item > .fg-tree__tag {
   flex: none;
   margin-inline-start: auto;
-  padding: 0 var(--wzl-space-xs);
-  border-radius: var(--wzl-radius-sm);
-  background: var(--wzl-surface-sunken);
-  color: var(--wzl-fg-muted);
-  font-size: var(--wzl-font-size-sm);
+}
+
+/* Each swatch mixed toward the foreground, so the badge text keeps its
+   contrast in both modes. Two classes, to outrank the badge's own edge. */
+.fg-tree__tag.fg-tree__tag {
+  --badge-edge: var(--wzl-fg-muted);
+  --badge-font-size: var(--wzl-font-size-2xs);
+}
+
+.fg-tree__tag.fg-lib--ui {
+  --badge-edge: color-mix(in oklab, var(--wzl-swatch-blue), var(--wzl-fg) 35%);
+}
+
+.fg-tree__tag.fg-lib--labkit {
+  --badge-edge: color-mix(in oklab, var(--wzl-swatch-teal), var(--wzl-fg) 45%);
+}
+
+.fg-tree__tag.fg-lib--forge {
+  --badge-edge: color-mix(in oklab, var(--wzl-swatch-amber), var(--wzl-fg) 40%);
+}
+
+.fg-tree__tag.fg-lib--draw {
+  --badge-edge: color-mix(in oklab, var(--wzl-swatch-rose), var(--wzl-fg) 35%);
 }
 
 .fg-tree__libraries {
@@ -185,27 +224,31 @@
   outline-offset: calc(-1 * var(--wzl-line-width));
 }
 
-.fg-tree__item[aria-current='true'] {
-  color: var(--wzl-accent-fg);
+.fg-tree__item[aria-current='true'],
+.fg-tree__node[aria-current='true'] > .fg-tree__folder {
+  color: var(--wzl-swatch-violet);
 }
 
-/* Drawn with borders rather than a glyph, which would join the item's accessible name. */
-.fg-tree__folder::before {
-  content: '';
+/* Padded out to a hit target and pulled back by the same amount, so the row's layout is unchanged. */
+.fg-tree__fold {
   flex: none;
-  width: 0.35em;
-  height: 0.35em;
-  border: solid currentColor;
-  border-width: 0 1.5px 1.5px 0;
-  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: calc(-1 * var(--wzl-space-xs));
+  padding: var(--wzl-space-xs);
 }
 
-.fg-tree__node[aria-expanded='true'] > .fg-tree__folder::before {
-  transform: rotate(45deg);
+
+.fg-tree__folder {
+  font-weight: calc(var(--wzl-font-weight-normal) + 100);
 }
 
 .fg-tree__story {
-  padding-inline-start: calc(var(--wzl-space-xs) * 2 + 0.35em);
+  /* The CSS floor, which the browser rounds up to the lightest weight the face has. */
+  font-weight: 100;
+  /* Clears the folder rows' 13px fold mark, so a story's label lines up with its folder's. */
+  padding-inline-start: calc(var(--wzl-space-xs) * 2 + 13px);
 }
 
 .lk-trial.fg-flash {
@@ -269,10 +312,22 @@
   font-size: var(--wzl-font-size-sm);
 }
 
-.fg-globals {
+.fg-globals,
+.fg-globals__item {
   display: flex;
   align-items: center;
   gap: var(--wzl-space-xs);
+}
+
+.fg-globals__item {
+  gap: 0;
+}
+
+.fg-globals__popover {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-sm);
+  min-width: 14rem;
 }
 
 

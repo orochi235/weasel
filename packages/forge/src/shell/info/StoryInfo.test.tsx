@@ -37,7 +37,7 @@ describe('Get Info', () => {
     expect(dialog.textContent).toContain('The plain one.');
     expect(dialog.textContent).toContain('Slider');
     expect(dialog.textContent).toContain('/repo/packages/ui/src/X.stories.tsx');
-    expect(within(dialog).getByText('Library').nextElementSibling?.textContent).toBe('ui');
+    expect(dialog.textContent).toContain('Libraryui');
   });
 
   it('leaves the palette item unpressed — it is a command, not a mode', async () => {

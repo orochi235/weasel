@@ -80,14 +80,6 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     },
   },
   {
-    // Cards in a list are peers of one kind: a tone, never a stance.
-    id: 'card',
-    file: 'packages/ui/src/components/Properties/Properties.module.css',
-    selector: '.card',
-    stanceless: true,
-    base: { accent: ACCENT_BASE },
-  },
-  {
     id: 'callout',
     file: 'packages/ui/src/components/Callout/Callout.module.css',
     selector: '.popover',
@@ -135,7 +127,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
   {
     // A strip between rules: no box, so a stance reaches the fill, the rule and the heading.
     id: 'sidebar-section',
-    file: 'packages/labkit/src/primitives/Sidebar.less',
+    file: 'packages/labkit/src/chrome/regions/SidebarRegion.less',
     selector: '.lk-sidebar-section',
     fills: true,
     base: {
@@ -150,13 +142,5 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       'title-tracking': '0.08em',
       'title-color': 'var(--wzl-fg-muted)',
     },
-  },
-  {
-    // A layer stack's cards are peers of one kind, like EffectCard's.
-    id: 'layer-card',
-    file: 'packages/ui/src/components/LayerStack/LayerStack.module.css',
-    selector: '.card',
-    stanceless: true,
-    base: { accent: ACCENT_BASE },
   },
 ];
