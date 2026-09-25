@@ -1,5 +1,58 @@
 # @weasel-js/hud
 
+## 1.6.0
+
+### Patch Changes
+
+- b1c30bc: The hud `window` takes a `stance` and a `tone`, like the kit's DOM panels, with `setStance` / `setTone` to change them. It draws them in WebGL from the resolved theme: the stance's `--wzl-stance-<stance>-<slot>` values restyle its fill, border and title, and the tone mixes into the fill in oklab. A numeric tone indexes the theme's tone list through the new `HudDrawCtx.toneAt`, which `attachHud` builds from its new `tones` option and `useHud` fills from the app's `<ThemeProvider>`. A widget drawn by hand, as in a test, now needs a `toneAt` in its draw context.
+  
+  `@weasel-js/theme` adds `resolveStanceSlots`, the stance lookup for a surface drawn without the cascade. `@weasel-js/paint` adds `mixOklab`, which matches CSS `color-mix(in oklab, …)`, alpha included.
+- Updated dependencies [16c0da2]
+- Updated dependencies [b8ebef6]
+- Updated dependencies [90a2d9b]
+- Updated dependencies [04ff89b]
+- Updated dependencies [c373af4]
+- Updated dependencies [bfe6a4f]
+- Updated dependencies [1589afd]
+- Updated dependencies [6857b4d]
+- Updated dependencies [bbaefca]
+- Updated dependencies [07b106f]
+- Updated dependencies [f04faf6]
+- Updated dependencies [0cf6a0d]
+- Updated dependencies [a564aea]
+- Updated dependencies [811abcd]
+- Updated dependencies [7c53d1a]
+- Updated dependencies [b1c30bc]
+- Updated dependencies [5345efb]
+- Updated dependencies [9e77264]
+- Updated dependencies [497727a]
+- Updated dependencies [5c6072f]
+- Updated dependencies [87fd8a8]
+- Updated dependencies [9aa63a1]
+- Updated dependencies [f3d9d92]
+- Updated dependencies [c24d2c7]
+- Updated dependencies [6f14f6f]
+- Updated dependencies [c1f82e2]
+- Updated dependencies [5ad1478]
+- Updated dependencies [08b80b8]
+- Updated dependencies
+- Updated dependencies [97561f1]
+- Updated dependencies [89926b5]
+- Updated dependencies [6ce2bcb]
+- Updated dependencies [959e5e5]
+- Updated dependencies [9f86dec]
+- Updated dependencies [4074270]
+- Updated dependencies [debfd5d]
+- Updated dependencies [d975afa]
+- Updated dependencies [96a5302]
+- Updated dependencies [62d8d7c]
+  - @weasel-js/core@1.6.0
+  - @weasel-js/theme@1.6.0
+  - @weasel-js/paint@1.6.0
+  - @weasel-js/loupe@1.6.0
+  - @weasel-js/font@1.6.0
+  - @weasel-js/geom@1.6.0
+
 ## 1.5.2
 
 ### Patch Changes

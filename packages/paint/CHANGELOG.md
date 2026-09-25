@@ -1,5 +1,17 @@
 # @weasel-js/paint
 
+## 1.6.0
+
+### Patch Changes
+
+- c373af4: Color ramps can interpolate in OKLab, HSL, sRGB and linear sRGB as well as OKLCH. `@weasel-js/ui` adds `colorRamp(from, to, steps, options)` and `rampColor(from, to, t, options)`, whose `space` option picks the space (default `'oklch'`), `hue` picks the shorter or longer arc in the polar spaces, and `chroma` applies a `ChromaCurve` after interpolation in any space. Underneath, `@weasel-js/paint` (re-exported from core) adds `interpolateSrgb` with the `ColorInterpolationSpace` and `HueInterpolation` types, plus float-precision `srgbToLinear`, `linearToSrgb`, `linearSrgbToOklab`, `oklabToLinearSrgb`, `srgbToHsl` and `hslToSrgb`. The forge story `ui/Color/ColorRamp` shows the same endpoints ramped in each space.
+- bfe6a4f: `contrastLineColor(background, strength)` derives a line color that reads against an arbitrary background — a grid or a rule drawn over a page whose color the document picks, where theme tokens follow the chrome instead. It moves the background `strength` in OKLab lightness away from its nearer end, darker over light and lighter over dark, keeping its hue, so dark and tinted pages get lines that show. Re-exported from `@weasel-js/core`.
+- 6857b4d: `DEFAULT_PALETTE` is now a `Palette` of five named sRGB entries rather than a `string[]`, which breaks any code indexing it as an array. `cycleFill(seq, palette?, fallback?)` gives the `seq`th entry as hex, wrapping, and is what the built-in shape tools and the `insert` dep now call. `@weasel-js/paint` gains `hexToColorLiteral` for `#rrggbb` and `#rrggbbaa`.
+- b1c30bc: The hud `window` takes a `stance` and a `tone`, like the kit's DOM panels, with `setStance` / `setTone` to change them. It draws them in WebGL from the resolved theme: the stance's `--wzl-stance-<stance>-<slot>` values restyle its fill, border and title, and the tone mixes into the fill in oklab. A numeric tone indexes the theme's tone list through the new `HudDrawCtx.toneAt`, which `attachHud` builds from its new `tones` option and `useHud` fills from the app's `<ThemeProvider>`. A widget drawn by hand, as in a test, now needs a `toneAt` in its draw context.
+  
+  `@weasel-js/theme` adds `resolveStanceSlots`, the stance lookup for a surface drawn without the cascade. `@weasel-js/paint` adds `mixOklab`, which matches CSS `color-mix(in oklab, …)`, alpha included.
+- 9aa63a1: A `Palette` type: named entries whose colors are literals in any color space (`{ space, coords, alpha? }`), refs to other entries or to an outside lookup (`{ ref, index? }`), or functions computed at resolve time. An entry may instead hold `colors`, a factory such as a `function*` that yields a sequence, possibly endless, read lazily. `resolvePaletteColor` follows refs to a literal, `resolvePaletteColors` iterates one entry, and `colorLiteralToHex` converts `srgb`, `oklab` and `oklch` literals to hex.
+
 ## 1.5.2
 
 ### Patch Changes

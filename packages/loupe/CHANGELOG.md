@@ -1,5 +1,32 @@
 # @weasel-js/loupe
 
+## 1.6.0
+
+### Patch Changes
+
+- Updated dependencies [16c0da2]
+- Updated dependencies [b8ebef6]
+- Updated dependencies [c373af4]
+- Updated dependencies [bfe6a4f]
+- Updated dependencies [6857b4d]
+- Updated dependencies [bbaefca]
+- Updated dependencies [0cf6a0d]
+- Updated dependencies [811abcd]
+- Updated dependencies [7c53d1a]
+- Updated dependencies [5345efb]
+- Updated dependencies [87fd8a8]
+- Updated dependencies [6f14f6f]
+- Updated dependencies [c1f82e2]
+- Updated dependencies
+- Updated dependencies [97561f1]
+- Updated dependencies [89926b5]
+- Updated dependencies [9f86dec]
+- Updated dependencies [4074270]
+- Updated dependencies [debfd5d]
+- Updated dependencies [d975afa]
+- Updated dependencies [62d8d7c]
+  - @weasel-js/core@1.6.0
+
 ## 1.5.2
 
 ### Patch Changes

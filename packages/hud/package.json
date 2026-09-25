@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/hud",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "WebGL-rendered UI widgets that composite into a weasel canvas",
   "license": "MIT",
   "type": "module",
@@ -21,14 +21,14 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "@weasel-js/core": "1.5.2",
-    "@weasel-js/font": "1.5.2"
+    "@weasel-js/core": "1.6.0",
+    "@weasel-js/font": "1.6.0"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.5.2",
-    "@weasel-js/loupe": "1.5.2",
-    "@weasel-js/paint": "1.5.2",
-    "@weasel-js/theme": "1.5.2"
+    "@weasel-js/geom": "1.6.0",
+    "@weasel-js/loupe": "1.6.0",
+    "@weasel-js/paint": "1.6.0",
+    "@weasel-js/theme": "1.6.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

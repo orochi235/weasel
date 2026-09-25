@@ -1,5 +1,72 @@
 # @weasel-js/svg
 
+## 1.6.0
+
+### Patch Changes
+
+- 5345efb: A `kit:image` node can crop and mirror its bitmap. `data.image` takes an
+  optional `source` — the part of the bitmap to draw into the pose rect, as
+  fractions of the bitmap's width and height — and optional `flipX` / `flipY`,
+  which mirror the drawn region within the rect without moving it. The painter
+  hands both to the renderer's existing `ImageDrawCommand` fields, so hit-testing
+  and the silhouette are unchanged. Existing image data draws as before.
+  
+  `svgNodesToKitDrafts` now carries an `SvgImageNode`'s source rect and flips onto
+  `data.image` instead of dropping them, and the new `svgImageFromKit(image, pose)`
+  writes a `kit:image` leaf back as an `SvgImageNode`, so a cropped or flipped
+  image survives SVG → scene → SVG.
+- 3225eb8: `parseSvg` now reads `<style>` elements. Rules match by class, id, type, attribute, descendant and child combinators, and comma lists, and resolve by CSS precedence: presentation attributes lowest, then stylesheet rules by specificity and source order, then `style=""`, with `!important` inverting per CSS Cascade 4. Illustrator-style exports (`<style>.cls-1{fill:#f00}</style>` with `class` attributes) now import with their paint. `style=""` goes through the same declaration parser, so `!important` works there too, and gradient stops honor `stop-color` / `stop-opacity` from `style=""` and stylesheet rules. At-rules (`@media`, `@supports`, `@import`, `@font-face`, …) are skipped, and a `<style>` is no longer reported as an unsupported element.
+- d975afa: `text-transform` for styled runs and text nodes
+  
+  `StyledRun` and `TextStyle` gain `textTransform: 'none' | 'uppercase' |
+  'lowercase' | 'capitalize'`, with CSS semantics. A run's value overrides the
+  node's, and `'none'` on a run turns an inherited transform off. Only what is
+  drawn changes: a run's `text` stays as authored, so carets, selections and
+  edits still address the source.
+  
+  - Case mapping uses JavaScript's locale-independent full mappings, so `ß`
+    uppercases to `SS` and a word-final `Σ` lowercases to `ς`. `capitalize`
+    titlecases the first letter of each word (`ǆ` → `ǅ`, `ß` → `Ss`) and leaves
+    the rest alone; word starts come from `Intl.Segmenter`, the same boundaries
+    browsers use, and are found across run boundaries.
+  - `resolveRuns` applies the transform, so `ResolvedRun.text` is the drawn
+    text. When a transform changes a length, the run carries `srcMap`: where
+    each drawn UTF-16 unit came from in the source. Layout reads each cell's
+    `srcIndex` / `srcEnd` off it, so both cells of an uppercased `ß` map to the
+    one source character, and `caretIndexAt` treats them as one stop.
+  - `transformRunTexts` is exported for callers laying text out themselves;
+    `layoutMarkdown` uses it.
+  - The range helpers (`applyStyleToRange`, `styleAtRange`,
+    `effectiveRangeStyle`) carry the new key, the text tool and the node's
+    Character properties offer it as "Case", and the edit overlay shows it with
+    CSS `text-transform` on the overlay and on each run span.
+  - `@weasel-js/svg` writes it as `style="text-transform:…"` on `<text>` and
+    `<tspan>` — it is a CSS property, not an SVG 1.1 presentation attribute — and
+    reads it back from either spelling or an ancestor.
+- Updated dependencies [16c0da2]
+- Updated dependencies [b8ebef6]
+- Updated dependencies [c373af4]
+- Updated dependencies [bfe6a4f]
+- Updated dependencies [6857b4d]
+- Updated dependencies [bbaefca]
+- Updated dependencies [0cf6a0d]
+- Updated dependencies [811abcd]
+- Updated dependencies [7c53d1a]
+- Updated dependencies [5345efb]
+- Updated dependencies [87fd8a8]
+- Updated dependencies [6f14f6f]
+- Updated dependencies [c1f82e2]
+- Updated dependencies
+- Updated dependencies [97561f1]
+- Updated dependencies [89926b5]
+- Updated dependencies [9f86dec]
+- Updated dependencies [4074270]
+- Updated dependencies [debfd5d]
+- Updated dependencies [d975afa]
+- Updated dependencies [62d8d7c]
+  - @weasel-js/core@1.6.0
+  - @weasel-js/geom@1.6.0
+
 ## 1.5.2
 
 ### Patch Changes

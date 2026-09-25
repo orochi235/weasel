@@ -1,5 +1,11 @@
 # @weasel-js/modes
 
+## 1.6.0
+
+### Patch Changes
+
+- c7e9e4c: `ModeDefinition` takes an optional display `label` and a one-sentence `description`, so chrome that names the active mode — a breadcrumb, a status bar, a tooltip — reads it off the definition instead of keeping its own id-to-name table. `modeLabel(mode)` returns the label, or the id when there is none. The six stock modes in `DEFAULT_MODES` carry both.
+
 ## 1.5.2
 
 ## 1.5.1

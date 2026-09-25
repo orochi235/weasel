@@ -1,5 +1,119 @@
 # @weasel-js/theme
 
+## 1.6.0
+
+### Patch Changes
+
+- 90a2d9b: The theme gains a transparency checker and a workspace pair. `--wzl-checker-a` and `--wzl-checker-b` are the checker's two squares (`border` and `surface`) and `--wzl-checker-size` is one repeat of it (8px); `PaintField` and `ColorField` now paint their empty and mixed chips from them instead of each restating the gradient's colors and size, so a theme can restyle every checker at once. `--wzl-workspace-surface` (`surface-sunken`) and `--wzl-workspace-line` (`line-subtle`) are the ground of a canvas app's workspace — the area around the document page — and the marks drawn over it. All five follow the color mode.
+- 04ff89b: A color-mode choice with a way back to Auto, as kit surface instead of something each app rebuilds.
+  
+  `@weasel-js/theme` exports the `ColorModePreference` type (`'auto' | 'light' | 'dark'`), `ColorMode` (`'light' | 'dark'`) and `isColorModePreference`. `@weasel-js/theme/react` adds `useResolvedColorMode(preference)`, which follows the OS setting live under `'auto'` and returns an explicit choice as given, and `useColorModePreference({ storageKey, storage, defaultPreference })`, which holds the choice, optionally remembers it in `localStorage` (or a store you pass), and returns `{ preference, setPreference, mode }`. `mode` is what goes in a `ThemeProvider`'s `selection`. Storage that is missing or throws leaves the choice unremembered rather than failing.
+  
+  `@weasel-js/ui` adds `ColorModeControl`, the Auto / Light / Dark radiogroup drawn with the mode glyphs, controlled by `value` and `onChange`.
+  
+  labkit's header now renders `ColorModeControl`, and `<Lab>` and `<LabRoot>` resolve their mode with `useResolvedColorMode`; `LabMode` is an alias of `ColorModePreference`. Switching a lab back to Auto now picks up an OS change made while it was pinned.
+- 1589afd: forge's CSS Vars panel can save its scale edits into the theme's definition file. "Save scales to theme" writes each edited scale back through its references: a font base read from `{seeds.ui-base}` changes that seed for the trial's density only, so the other densities keep theirs, and a param that differs by axis changes only the branch the trial shows. A save that would have to flatten a reference, or guess an axis value (a `mode` of Auto), is refused with a message. The write goes to the dev server's `__theme/<name>` endpoint with the file's hash, so a file changed on disk is reported rather than overwritten; once saved, the trial's overrides for those scales are dropped, since the theme now carries them.
+  
+  `@weasel-js/theme/engine` now exports the theme store's protocol — `StoredTheme`, `PutResult`, `IssueReport`, `serializeDefinition` — and `httpThemeApi`, its client, which the theme editor and forge both use.
+- 07b106f: `Disclosure` draws a 13px dark violet rounded square holding a white `+` while its
+  section is shut and a `−` while it is open, in place of the turning triangle.
+  `--wzl-disclosure-fill` recolors it.
+  `DisclosureMark` is the same mark on its own, for a row that is itself the
+  control; `SidebarPanel` and `Timeline` lanes now use it. `Disclosure`'s
+  `direction` prop and the `DisclosureDirection` type are gone, since the mark no
+  longer points.
+  
+  `Badge` now honors its size: a `font: inherit` declared after its
+  `font-size` had reset every badge to its parent's font size.
+- f04faf6: `toDTCG` now carries every axis, so a theme round-tripped through `toDTCG` and `loadDTCG` keeps its `compact` and `roomy` density values instead of flattening to the default. The plain `primitives` and `modes` groups are unchanged: they still hold mode, with every other axis at its default. The rest travels in the document root's `$extensions["com.weasel.axes"]`: the theme's axis definitions, which tokens vary by which axes, and one override layer per non-default axis value a token depends on. The README's "Axes in DTCG" section documents the encoding. `loadDTCG` reads it back, and a document without it loads exactly as before. Mode values now also keep their `scheme` through the round-trip.
+- a564aea: Stories render in the workshop page instead of in an iframe each.
+  
+  A story is now a labkit instrument directly: its schema is the trial's, its
+  render runs in the page inside a host that applies the globals to itself,
+  portals weasel overlays into itself and contains fixed-position descendants.
+  A story that needs its own document sets `isolate: '<why>'` (CSF:
+  `parameters.forge.isolate`) and keeps the frame path unchanged;
+  `check:forge-isolate` lists those and refuses an increase. A `viewport` story
+  renders as a fixed-size box the trial pans and zooms, so `vw`, `vh` and media
+  queries inside it read the page.
+  
+  `applyGlobals` in the frame config now receives a target, `{ root, scope,
+  style }`, instead of a bare root: `style(css)` writes a rule that reaches that
+  story alone. Editing a story file reloads it in place, with each trial's
+  config and state kept. `runStory` renders through the same host, with no
+  message channel.
+  
+  `@weasel-js/ui`'s Toast story is the one isolated story: React Aria's toast
+  region portals to `document.body` with no container option.
+  
+  `@weasel-js/labkit` gains `LabBoundary`, which renders its children as though
+  no lab, trial or theme were above them, and `@weasel-js/theme/react` exports
+  `ThemeContext` so such a boundary can hide an outer theme. A story host in the
+  workshop, which is itself a lab, wraps every story in one.
+  
+  A story reached by its URL, typed, linked or pasted, now shows in the focused
+  trial the way a click in the tree does, instead of opening another trial
+  beside it. Only a lab with no trial gets a new one; Shift-click is what opens
+  another.
+- b1c30bc: The hud `window` takes a `stance` and a `tone`, like the kit's DOM panels, with `setStance` / `setTone` to change them. It draws them in WebGL from the resolved theme: the stance's `--wzl-stance-<stance>-<slot>` values restyle its fill, border and title, and the tone mixes into the fill in oklab. A numeric tone indexes the theme's tone list through the new `HudDrawCtx.toneAt`, which `attachHud` builds from its new `tones` option and `useHud` fills from the app's `<ThemeProvider>`. A widget drawn by hand, as in a test, now needs a `toneAt` in its draw context.
+  
+  `@weasel-js/theme` adds `resolveStanceSlots`, the stance lookup for a surface drawn without the cascade. `@weasel-js/paint` adds `mixOklab`, which matches CSS `color-mix(in oklab, …)`, alpha included.
+- 9e77264: Slider readouts in inline rows take less width.
+  
+  - The readout's width is four digits (`calc(4.5ch + 2px)`) rather than `2.8em`, so it follows the digit width of the face, and every readout in a column is the same box: the sliders beside them end on one line. A range whose widest value needs more than four characters widens its own readout. `--wzl-property-readout-w` still overrides the width.
+  - A word unit (`ms`, `px`, `%`) in an inline row hangs below the digits in capitals instead of sitting beside them, taken out of flow so a row with a unit is the same height and width as one without. Stacked rows, whose readout sits on the label line, keep the unit beside the value.
+- 497727a: `interstellar`'s light mode is weasel's own: violet on cool gray, where it used to be a parchment palette with a copper accent. The theme restyles the dark mode only.
+  
+  `derive` now lets a child theme's by-axis pin leave a value out, as `defineTheme` already did: that selection keeps what the parent theme produces, whether the parent pins the token or derives it. A pin with nothing underneath it still reports `missing-axis-value`.
+  
+  `--wzl-secondary-fg` is picked for contrast against `surface` alone, which is solid in every shipped theme, rather than also against `surface-raised`, which `interstellar` draws translucent.
+- 5c6072f: labkit's stylesheet no longer declares its own Oswald face. It takes the
+  theme's Oswald and Inter faces from the new `@weasel-js/theme/faces.css`, which
+  holds the `@font-face` rules without the `:root` font that `fonts.css` also
+  sets. Built from source, labkit's styles now load Oswald from the theme's
+  `fonts/` directory instead of requesting a `./fonts/` path that 404'd and
+  dropped text to the system's weights. The published `dist/styles.css` still
+  carries both faces, pointed at its own `dist/fonts/` copies.
+- f3d9d92: Surfaces can say what kind of content they hold and which of their peers they are. `PropertyPanel`, `PropertyGroup`, `Subpanel`, `Callout`, `Dialog`, labkit's `ControlPanel` and its sidebar sections take `stance` (`scope`, `aside`, `advanced`, `debug`, `danger`, `notice`, `important`, `preview`) and `tone` (an index into the theme's tone list, or a color). The theme draws each stance from `--wzl-panel-*` and `--wzl-stance-*` slots, and a surface given a tone recolors the controls inside it. `ControlPanel` wraps its rows in a titled `PropertyPanel` when given any of `title`, `stance` or `tone`.
+  
+  `@weasel-js/theme` adds `ColorList` — literals, the categorical generator, a theme ramp, or a function — read with `colorAt`, `colorCssAt` and `colorCount`; `tones` on theme definitions; `<ThemeProvider tones>` and `useTones()`; and `STANCES` / `STANCE_SLOTS`. labkit's `nebula` takes a `ColorList`.
+  
+  Breaking: `EffectCard`'s `accent` is now `tone`, and `--wzl-effect-card-accent` is gone. `Callout`'s `tone` (`info` / `warning` / `danger`) is now `stance` (`notice`, the default / `important` / `danger`), and `CalloutTone` is removed. A subpanel's rule now reads `--wzl-line-subtle` rather than a fixed translucent white, so it shows in light mode.
+- c24d2c7: List the panel-label and Select hooks in the token manifest.
+  
+  `--wzl-params-label-case`, `-tracking`, `-align` and `-width`, and
+  `--wzl-select-border` and `--wzl-select-fg`, were already read by the kit with
+  fallbacks but missing from `TOKEN_HOOKS`, so the manifest did not list them as
+  override points.
+- 5ad1478: `PrefsForm` grows a second layout. `layout="rail"` puts a two-level navigation
+  rail beside one group's settings at a time: top-level groups open a pane,
+  nested groups scroll it and light up as they pass, and anything deeper renders
+  as an indented section in the pane rather than growing the rail. `filterable`
+  adds a field that narrows the form to matching leaves in either layout, with
+  per-group match counts in the rail.
+  
+  The default `layout="columns"` is untouched.
+  
+  Also new, and useful on their own: `useScrollSpy` (which section of a scrolling
+  container is in view, with its decision exposed as the pure `pickActiveSection`),
+  `Dialog`'s `bodyClassName` for content that scrolls itself, `PrefsDialog`'s
+  `footer` passthrough, and two theme hooks — `--wzl-prefs-rail-width` and
+  `--wzl-input-surface`, the latter for a text field on a container whose own
+  background is the default sunken surface, where it was previously the same
+  color as what sat behind it.
+- 08b80b8: A lightness ramp's anchor now sets the chroma peak to its own chroma, instead of scaling it by the envelope at the anchor's step. An anchor on an end step no longer sends the ramp to gamut-clipped color, and nudging `darkBias` or `lightBias` off 0 no longer jumps a gray ramp to a saturated one. This changes any ramp anchored away from its envelope's peak.
+  
+  Several anchors on one ramp now blend: hue (along the shorter arc) and chroma peak interpolate by step between consecutive anchors, and steps outside them take the nearest anchor's. Previously only the first anchor counted.
+- 6ce2bcb: The weasel theme has a secondary accent: a honey amber opposite the violet accent, as a `secondary-soft`/`-base`/`-strong` ramp, a `--wzl-secondary` fill, and `--wzl-secondary-fg` for text. `--wzl-secondary-fg` is picked from the ramp to clear 4.5:1 on every surface, so it is the base step in dark mode and the deep step in light. An auto row's `AUTO` readout draws in it.
+- 959e5e5: The secondary accent is teal in light mode, and honey amber in dark mode as before. Darkened far enough for text contrast on a light surface, amber read as brown; `--wzl-secondary-fg` in light mode is now `#016458`.
+- 96a5302: `--wzl-tree-indent` is now a declared override hook: it appears in the token manifest, and setting it on a container sets the indent of each `Tree` level. Unset, the indent is one twisty plus one gap, as before. forge's package tags in the story tree now color themselves with `Badge`'s peer `tone`, replacing the per-package `--badge-edge` rules and the `fg-lib--*` classes.
+- Updated dependencies [c373af4]
+- Updated dependencies [bfe6a4f]
+- Updated dependencies [6857b4d]
+- Updated dependencies [b1c30bc]
+- Updated dependencies [9aa63a1]
+  - @weasel-js/paint@1.6.0
+
 ## 1.5.2
 
 ### Patch Changes

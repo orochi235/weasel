@@ -1,5 +1,7 @@
 # @weasel-js/history
 
+## 1.6.0
+
 ## 1.5.2
 
 ### Patch Changes

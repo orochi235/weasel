@@ -1,5 +1,175 @@
 # @weasel-js/forge
 
+## 1.6.0
+
+### Patch Changes
+
+- bbf1de2: Text drawn in the accent color now reads `--wzl-accent-fg` instead of the accent fill tokens: Properties readouts and their editable input, `NumberField`'s ghost variant, Timeline's checked transport buttons, forge's current story and labkit's button hover. A surface that rebinds `--wzl-accent` to recolor its controls' fills can now set the text color separately. In dark mode the readouts get brighter, since `accent-fg` is the strong accent there. `npm run check:token-reads` now fails on `color:` reading an accent fill token.
+- 1589afd: forge's CSS Vars panel can save its scale edits into the theme's definition file. "Save scales to theme" writes each edited scale back through its references: a font base read from `{seeds.ui-base}` changes that seed for the trial's density only, so the other densities keep theirs, and a param that differs by axis changes only the branch the trial shows. A save that would have to flatten a reference, or guess an axis value (a `mode` of Auto), is refused with a message. The write goes to the dev server's `__theme/<name>` endpoint with the file's hash, so a file changed on disk is reported rather than overwritten; once saved, the trial's overrides for those scales are dropped, since the theme now carries them.
+  
+  `@weasel-js/theme/engine` now exports the theme store's protocol — `StoredTheme`, `PutResult`, `IssueReport`, `serializeDefinition` — and `httpThemeApi`, its client, which the theme editor and forge both use.
+- 06aa549: Browser Back and Forward now move a trial between the stories it showed.
+  
+  Opening a story from the tree swaps it into the focused trial, but Back then
+  found no trial of the previous story and opened a new one beside it. A history
+  step across such a swap now swaps the trial back. A hash typed or linked to
+  still opens a trial of its own.
+- 8c778ec: The Components list no longer prefixes a component's name with part of its title (`weasel-ui/Sidebar`, `Primitives/StatusBar`) just because another library ships a component of the same name. The library tag already tells those apart; names are widened only where two components in the same library collide, such as the three `Gallery` stories.
+- 4db48a8: Declare `@weasel-js/ui` as a dependency.
+  
+  The workshop shell imports it, and forge's build leaves every `@weasel-js`
+  package external, so the published shell asked for a package forge never
+  declared. It only resolved when something else — labkit — happened to install it.
+- 6857b4d: Trial titles separate their segments with `>` rather than `/`, and leave out an `index` segment.
+- a564aea: Stories render in the workshop page instead of in an iframe each.
+  
+  A story is now a labkit instrument directly: its schema is the trial's, its
+  render runs in the page inside a host that applies the globals to itself,
+  portals weasel overlays into itself and contains fixed-position descendants.
+  A story that needs its own document sets `isolate: '<why>'` (CSF:
+  `parameters.forge.isolate`) and keeps the frame path unchanged;
+  `check:forge-isolate` lists those and refuses an increase. A `viewport` story
+  renders as a fixed-size box the trial pans and zooms, so `vw`, `vh` and media
+  queries inside it read the page.
+  
+  `applyGlobals` in the frame config now receives a target, `{ root, scope,
+  style }`, instead of a bare root: `style(css)` writes a rule that reaches that
+  story alone. Editing a story file reloads it in place, with each trial's
+  config and state kept. `runStory` renders through the same host, with no
+  message channel.
+  
+  `@weasel-js/ui`'s Toast story is the one isolated story: React Aria's toast
+  region portals to `document.body` with no container option.
+  
+  `@weasel-js/labkit` gains `LabBoundary`, which renders its children as though
+  no lab, trial or theme were above them, and `@weasel-js/theme/react` exports
+  `ThemeContext` so such a boundary can hide an outer theme. A story host in the
+  workshop, which is itself a lab, wraps every story in one.
+  
+  A story reached by its URL, typed, linked or pasted, now shows in the focused
+  trial the way a click in the tree does, instead of opening another trial
+  beside it. Only a lab with no trial gets a new one; Shift-click is what opens
+  another.
+- 668d929: Every component in forge now has an index page, and stories open faster.
+  
+  Clicking a component's row in the sidebar opens its index page, which shows all
+  of the component's stories in one frame, each at its defaults and then once per
+  value of each boolean and enum control. A component supplies its own page with
+  a native meta's `index`, or `parameters.forge.index` in a CSF file; either is
+  handed the stories and the generated page's parts (`IndexContext`). The sidebar
+  opens on the Components view, badges each component with its package (`ui` for
+  `@weasel-js/ui`), and sets stories lighter than the components holding them.
+  
+  The workshop keeps two frame documents loaded ahead of need and moves one into
+  a trial with `moveBefore`, so opening a story loads only the story's own
+  modules. Frames now ask for their port with a hello message, and the handoff
+  names what to show. `FrameSetup.prepare` is awaited before a story first
+  renders, for imports only some stories need. `@weasel-js/labkit/config` no
+  longer loads `@weasel-js/ui` at runtime.
+- f9f338e: `<Lab theme>` sets the theme the lab's chrome resolves against, defaulting to
+  `interstellarTheme`. forge's shell config takes `labTheme(globals)`, the theme
+  the workshop's own chrome takes at the lab's current globals, so a global can
+  restyle the workshop as well as the stories. A global declared `under` another
+  shows in a popover beside that one's select rather than in the toolbar itself.
+- 96a5302: `--wzl-tree-indent` is now a declared override hook: it appears in the token manifest, and setting it on a container sets the indent of each `Tree` level. Unset, the indent is one twisty plus one gap, as before. forge's package tags in the story tree now color themselves with `Badge`'s peer `tone`, replacing the per-package `--badge-edge` rules and the `fg-lib--*` classes.
+- Updated dependencies [bbf1de2]
+- Updated dependencies [16c0da2]
+- Updated dependencies [b8ebef6]
+- Updated dependencies [dfbed19]
+- Updated dependencies [7216628]
+- Updated dependencies [a581611]
+- Updated dependencies [5f45cb4]
+- Updated dependencies [928fa33]
+- Updated dependencies [d7577d2]
+- Updated dependencies [64f4739]
+- Updated dependencies [9689a2a]
+- Updated dependencies [90a2d9b]
+- Updated dependencies [a9a61f0]
+- Updated dependencies [04ff89b]
+- Updated dependencies [c373af4]
+- Updated dependencies [22eba68]
+- Updated dependencies [bfe6a4f]
+- Updated dependencies [1589afd]
+- Updated dependencies [2af33a4]
+- Updated dependencies [6857b4d]
+- Updated dependencies [bbaefca]
+- Updated dependencies [9a25ac4]
+- Updated dependencies [f4712fe]
+- Updated dependencies [07b106f]
+- Updated dependencies [f1c96ff]
+- Updated dependencies [f04faf6]
+- Updated dependencies [0cf6a0d]
+- Updated dependencies [12cab9f]
+- Updated dependencies [23c4282]
+- Updated dependencies [7c98a5a]
+- Updated dependencies [a564aea]
+- Updated dependencies [668d929]
+- Updated dependencies [b466aad]
+- Updated dependencies [811abcd]
+- Updated dependencies [7c53d1a]
+- Updated dependencies [b1c30bc]
+- Updated dependencies [6ab0006]
+- Updated dependencies [5345efb]
+- Updated dependencies [750124f]
+- Updated dependencies [9e77264]
+- Updated dependencies [609d801]
+- Updated dependencies [497727a]
+- Updated dependencies [2da83b8]
+- Updated dependencies [1bcbbf6]
+- Updated dependencies [f0a74f8]
+- Updated dependencies [7215cd1]
+- Updated dependencies [5382c7e]
+- Updated dependencies [601d72c]
+- Updated dependencies [f9f338e]
+- Updated dependencies [5c6072f]
+- Updated dependencies [941bd9e]
+- Updated dependencies [c0c6971]
+- Updated dependencies [0ac85d7]
+- Updated dependencies [e9bfe55]
+- Updated dependencies [d7d99ee]
+- Updated dependencies [61ba0a2]
+- Updated dependencies [87fd8a8]
+- Updated dependencies [3ed8213]
+- Updated dependencies [df69809]
+- Updated dependencies [f3d9d92]
+- Updated dependencies [c24d2c7]
+- Updated dependencies [6f14f6f]
+- Updated dependencies [c1f82e2]
+- Updated dependencies [6a6d9f6]
+- Updated dependencies [5ad1478]
+- Updated dependencies [83c4a3e]
+- Updated dependencies [ce53e3c]
+- Updated dependencies [edf7878]
+- Updated dependencies [cf69850]
+- Updated dependencies [08b80b8]
+- Updated dependencies [a4d9250]
+- Updated dependencies
+- Updated dependencies [bd1877e]
+- Updated dependencies [5fb5bab]
+- Updated dependencies [d286c84]
+- Updated dependencies [2efeb82]
+- Updated dependencies [97561f1]
+- Updated dependencies [89926b5]
+- Updated dependencies [6ce2bcb]
+- Updated dependencies [959e5e5]
+- Updated dependencies [106139a]
+- Updated dependencies [6857b4d]
+- Updated dependencies [9789097]
+- Updated dependencies [da3b958]
+- Updated dependencies [9f86dec]
+- Updated dependencies [4074270]
+- Updated dependencies [731573b]
+- Updated dependencies [f9ff231]
+- Updated dependencies [debfd5d]
+- Updated dependencies [d975afa]
+- Updated dependencies [96a5302]
+- Updated dependencies [74cc4df]
+- Updated dependencies [62d8d7c]
+  - @weasel-js/ui@1.6.0
+  - @weasel-js/labkit@1.6.0
+  - @weasel-js/core@1.6.0
+  - @weasel-js/theme@1.6.0
+
 ## 1.5.2
 
 ### Patch Changes

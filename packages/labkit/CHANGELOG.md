@@ -1,5 +1,306 @@
 # @weasel-js/labkit
 
+## 1.6.0
+
+### Patch Changes
+
+- bbf1de2: Text drawn in the accent color now reads `--wzl-accent-fg` instead of the accent fill tokens: Properties readouts and their editable input, `NumberField`'s ghost variant, Timeline's checked transport buttons, forge's current story and labkit's button hover. A surface that rebinds `--wzl-accent` to recolor its controls' fills can now set the text color separately. In dark mode the readouts get brighter, since `accent-fg` is the strong accent there. `npm run check:token-reads` now fails on `color:` reading an accent fill token.
+- 04ff89b: A color-mode choice with a way back to Auto, as kit surface instead of something each app rebuilds.
+  
+  `@weasel-js/theme` exports the `ColorModePreference` type (`'auto' | 'light' | 'dark'`), `ColorMode` (`'light' | 'dark'`) and `isColorModePreference`. `@weasel-js/theme/react` adds `useResolvedColorMode(preference)`, which follows the OS setting live under `'auto'` and returns an explicit choice as given, and `useColorModePreference({ storageKey, storage, defaultPreference })`, which holds the choice, optionally remembers it in `localStorage` (or a store you pass), and returns `{ preference, setPreference, mode }`. `mode` is what goes in a `ThemeProvider`'s `selection`. Storage that is missing or throws leaves the choice unremembered rather than failing.
+  
+  `@weasel-js/ui` adds `ColorModeControl`, the Auto / Light / Dark radiogroup drawn with the mode glyphs, controlled by `value` and `onChange`.
+  
+  labkit's header now renders `ColorModeControl`, and `<Lab>` and `<LabRoot>` resolve their mode with `useResolvedColorMode`; `LabMode` is an alias of `ColorModePreference`. Switching a lab back to Auto now picks up an OS change made while it was pinned.
+- f4712fe: A row can now hold an editor too big for it. weasel-ui's `DialogRow` shows a one-line summary of the value on a button, and the button opens a modal around whatever body it is given; `ListEditor` edits a list of strings one field per entry. In labkit, `.dialog(body)` on any config leaf moves that leaf's control into such a dialog, and `inDialog(body)` builds the same row as a renderer for a panel's `renderers`. The new `f.list([...])` leaf is a list of strings drawn this way by default, and an `f.value` whose default is an array of strings now resolves to it.
+- 07b106f: `Disclosure` draws a 13px dark violet rounded square holding a white `+` while its
+  section is shut and a `−` while it is open, in place of the turning triangle.
+  `--wzl-disclosure-fill` recolors it.
+  `DisclosureMark` is the same mark on its own, for a row that is itself the
+  control; `SidebarPanel` and `Timeline` lanes now use it. `Disclosure`'s
+  `direction` prop and the `DisclosureDirection` type are gone, since the mark no
+  longer points.
+  
+  `Badge` now honors its size: a `font: inherit` declared after its
+  `font-size` had reset every badge to its parent's font size.
+- 12cab9f: `EffectCard` and `EffectCardList` are removed; a reorderable list of toned,
+  collapsible sections is `LayerStack`, now built from kit parts.
+  
+  - `PropertyGroup` takes `leading` and `actions`, which share its title row, and
+    a toned group draws its leading edge in its tone.
+  - `PropertyList` forwards its ref, so its groups can reorder with
+    `useReorderDragList`, whose row handler may now sit on a handle inside the row.
+  - `LayerStack` renders each card as a `PropertyGroup` in a `PropertyList`, with
+    the kit's `Select` for a hoisted primary value and a ghost during a drag. Its
+    items take `tone` where they took `accent`, which is a breaking change for any
+    caller passing `accent`.
+  - `DragGhost` is the pointer-following copy on its own, which `ItemList` and
+    `LayerStack` both use.
+- a564aea: Stories render in the workshop page instead of in an iframe each.
+  
+  A story is now a labkit instrument directly: its schema is the trial's, its
+  render runs in the page inside a host that applies the globals to itself,
+  portals weasel overlays into itself and contains fixed-position descendants.
+  A story that needs its own document sets `isolate: '<why>'` (CSF:
+  `parameters.forge.isolate`) and keeps the frame path unchanged;
+  `check:forge-isolate` lists those and refuses an increase. A `viewport` story
+  renders as a fixed-size box the trial pans and zooms, so `vw`, `vh` and media
+  queries inside it read the page.
+  
+  `applyGlobals` in the frame config now receives a target, `{ root, scope,
+  style }`, instead of a bare root: `style(css)` writes a rule that reaches that
+  story alone. Editing a story file reloads it in place, with each trial's
+  config and state kept. `runStory` renders through the same host, with no
+  message channel.
+  
+  `@weasel-js/ui`'s Toast story is the one isolated story: React Aria's toast
+  region portals to `document.body` with no container option.
+  
+  `@weasel-js/labkit` gains `LabBoundary`, which renders its children as though
+  no lab, trial or theme were above them, and `@weasel-js/theme/react` exports
+  `ThemeContext` so such a boundary can hide an outer theme. A story host in the
+  workshop, which is itself a lab, wraps every story in one.
+  
+  A story reached by its URL, typed, linked or pasted, now shows in the focused
+  trial the way a click in the tree does, instead of opening another trial
+  beside it. Only a lab with no trial gets a new one; Shift-click is what opens
+  another.
+- 668d929: Every component in forge now has an index page, and stories open faster.
+  
+  Clicking a component's row in the sidebar opens its index page, which shows all
+  of the component's stories in one frame, each at its defaults and then once per
+  value of each boolean and enum control. A component supplies its own page with
+  a native meta's `index`, or `parameters.forge.index` in a CSF file; either is
+  handed the stories and the generated page's parts (`IndexContext`). The sidebar
+  opens on the Components view, badges each component with its package (`ui` for
+  `@weasel-js/ui`), and sets stories lighter than the components holding them.
+  
+  The workshop keeps two frame documents loaded ahead of need and moves one into
+  a trial with `moveBefore`, so opening a story loads only the story's own
+  modules. Frames now ask for their port with a hello message, and the handoff
+  names what to show. `FrameSetup.prepare` is awaited before a story first
+  renders, for imports only some stories need. `@weasel-js/labkit/config` no
+  longer loads `@weasel-js/ui` at runtime.
+- 497727a: `interstellar`'s light mode is weasel's own: violet on cool gray, where it used to be a parchment palette with a copper accent. The theme restyles the dark mode only.
+  
+  `derive` now lets a child theme's by-axis pin leave a value out, as `defineTheme` already did: that selection keeps what the parent theme produces, whether the parent pins the token or derives it. A pin with nothing underneath it still reports `missing-axis-value`.
+  
+  `--wzl-secondary-fg` is picked for contrast against `surface` alone, which is solid in every shipped theme, rather than also against `surface-raised`, which `interstellar` draws translucent.
+- 7215cd1: New `keySpecsFromShortcut(shortcut, { platform?, legend? })` turns a kit shortcut (`{ key, mod, shift, alt }`) into `KeySequence` keys, spelled for the platform the way `keySpecsFromMods` and `keySpecFromKey` spell them: `⌘ Z` on macOS, `Ctrl Z` on Windows. An optional shift renders as an optional key. It replaces `formatShortcutParts(s)?.map((label) => ({ label }))`, which always printed macOS glyphs and dropped an optional shift. The `ShortcutInput` type it takes is now exported, and labkit's `weasel-ui` passthrough carries the helper.
+- 601d72c: `LabSwitcher` (and `LabShell`'s `pages`) now tells hash routes on one document apart. A page whose `href` is a hash route such as `#/dev/tools` is the open page when the location's hash is that route or one under it, ignoring the route's own query; a page without a hash still ignores the hash, so an in-page anchor keeps it marked. The default path now includes `location.hash`, and a trailing slash on a page's `href` no longer stops it matching. `LabShell` also takes `documentTitle`, which it sets as `document.title` while mounted and restores after.
+- f9f338e: `<Lab theme>` sets the theme the lab's chrome resolves against, defaulting to
+  `interstellarTheme`. forge's shell config takes `labTheme(globals)`, the theme
+  the workshop's own chrome takes at the lab's current globals, so a global can
+  restyle the workshop as well as the stories. A global declared `under` another
+  shows in a popover beside that one's select rather than in the toolbar itself.
+- 5c6072f: labkit's stylesheet no longer declares its own Oswald face. It takes the
+  theme's Oswald and Inter faces from the new `@weasel-js/theme/faces.css`, which
+  holds the `@font-face` rules without the `:root` font that `fonts.css` also
+  sets. Built from source, labkit's styles now load Oswald from the theme's
+  `fonts/` directory instead of requesting a `./fonts/` path that 404'd and
+  dropped text to the system's weights. The published `dist/styles.css` still
+  carries both faces, pointed at its own `dist/fonts/` copies.
+- 941bd9e: labkit annotations gain a `point` kind: one stored point with zero-size bounds, drawn as a small unfilled ring in the mark color and dashed when stale, reachable through `hitTest`'s tolerance like any hairline mark. The ring is sized in world units for now, so it scales with the picture rather than holding a fixed screen size.
+- c0c6971: `sectionTree` rearranges a `ResolvedConfig` so its root sections are groups,
+  which is where `PrefsForm`'s rail layout looks for them. A section naming a
+  group brings it in whole, so it lands as an indented rail item; a section
+  naming a leaf drops it loose into that section's pane. `showIf` and `hidden`
+  are applied on the way, and a section they empty is left out rather than
+  opening onto nothing. It returns the tree, the config renested to match, and
+  `pathAt` to get a config path back from a rail one.
+  
+  A flat schema's rail was otherwise one unnamed item however many headings the
+  panel drew, since a resolved schema keeps its sections beside the tree.
+  
+  `PrefsForm`, `PrefsDialog` and their prop types now come through
+  `@weasel-js/labkit/weasel-ui`, which carried the `Pref*` vocabulary but not the
+  components that render it.
+- 0ac85d7: A dropdown row's label in the params panel now sits on the same rail as every
+  other row's. A select row aligns to its value's baseline by default, which put
+  its label ~1.6px below the centered slider and checkbox rows around it, so a
+  column of labels stepped at each dropdown. The panel sets
+  `--wzl-prop-row-align-text: center`; the `@weasel-js/ui` default is unchanged.
+- e9bfe55: A lab's main viewport no longer pads its contents: the workspace runs edge to edge under the header. The `--lk-workspace-pad` custom property is gone.
+- d7d99ee: A stage instrument can declare `stage.overlay`, a render function drawn over its content in viewport pixels, outside the camera. It is where a legend or a floating panel goes: anything that must sit on the picture without zooming with it.
+- df69809: `LayerStack`, labkit's `LayerList` and WeaselDraw's `LayerList` are one
+  component: `LayerList` in `@weasel-js/ui`. This is a breaking change for callers
+  of either old component.
+  
+  - A layer is a one-line row, or a card when `renderBody` returns something for
+    it, and either can hold `children`. Selection (`selectedIds`/`onSelect`,
+    shift-click to add, drag a selected row to move its selected siblings),
+    a visibility checkbox (`onVisibilityChange`), a remove button (`onRemove`)
+    and an add palette (`addKinds`/`onAdd`) each turn on with their handler.
+  - `onReorder` receives a `LayerMove` — `{ ids, parentId, index }` — instead of
+    a list of ids or a new tree. `moveLayers(items, move)` applies one to a tree
+    held as state.
+  - Items take string ids, and `title` in place of `LayerStack`'s hoisted
+    `primaryValue`/`primaryOptions`/`onPrimaryChange`; put the select in `title`.
+    `defaultExpanded: false` is `defaultCollapsed: true`, and `alwaysOn` is
+    `locked`.
+  - Rows form a treegrid with one row in the tab order: Up/Down/Home/End move
+    between visible rows, Right/Left open and close a layer or step in and out,
+    Enter/Space select, Shift+arrows select a range, and Alt+Up/Down move a row —
+    or, on a card's handle, the card — as a drag would.
+  - `useSceneLayerList` puts a scene in the list: a container's children nest
+    under it, and a drag dispatches a `MoveToIndexOp` under the right parent.
+  - `useReorderDragList`'s item type is `ReorderItem`, without `swatch`.
+  - labkit drops the `./ui/layers` entry point; `./layers` re-exports the ui
+    component. A trial's layer list now shows the order its canvas draws in,
+    where it used to snap back after a drag.
+- f3d9d92: Surfaces can say what kind of content they hold and which of their peers they are. `PropertyPanel`, `PropertyGroup`, `Subpanel`, `Callout`, `Dialog`, labkit's `ControlPanel` and its sidebar sections take `stance` (`scope`, `aside`, `advanced`, `debug`, `danger`, `notice`, `important`, `preview`) and `tone` (an index into the theme's tone list, or a color). The theme draws each stance from `--wzl-panel-*` and `--wzl-stance-*` slots, and a surface given a tone recolors the controls inside it. `ControlPanel` wraps its rows in a titled `PropertyPanel` when given any of `title`, `stance` or `tone`.
+  
+  `@weasel-js/theme` adds `ColorList` — literals, the categorical generator, a theme ramp, or a function — read with `colorAt`, `colorCssAt` and `colorCount`; `tones` on theme definitions; `<ThemeProvider tones>` and `useTones()`; and `STANCES` / `STANCE_SLOTS`. labkit's `nebula` takes a `ColorList`.
+  
+  Breaking: `EffectCard`'s `accent` is now `tone`, and `--wzl-effect-card-accent` is gone. `Callout`'s `tone` (`info` / `warning` / `danger`) is now `stance` (`notice`, the default / `important` / `danger`), and `CalloutTone` is removed. A subpanel's rule now reads `--wzl-line-subtle` rather than a fixed translucent white, so it shows in light mode.
+- 83c4a3e: `PropertyField` is the one settings row, its control chosen by `kind` (and
+  `control`): `<PropertyField kind="number" control="slider" label="Blur" …>`.
+  `CheckboxRow`, `SwitchRow`, `TextRow`, `SelectRow`, `SliderRow`, `NumberRow`,
+  `ColorRow` and `ToggleRow`, with their `*RowProps` types, are removed, from
+  `@weasel-js/ui` and from labkit's re-exports. This is a breaking change for
+  anyone calling them: each is `PropertyField` with a `kind`, and its props carry
+  over unchanged.
+  
+  | Removed | Now |
+  | --- | --- |
+  | `CheckboxRow` | `kind="boolean"` |
+  | `SwitchRow` | `kind="boolean" control="switch"` |
+  | `TextRow` | `kind="string"` |
+  | `NumberRow` | `kind="number"` |
+  | `SliderRow` | `kind="number" control="slider"` |
+  | `SelectRow` | `kind="enum"` |
+  | `ToggleRow` | `kind="enum" control="toggle"` |
+  | `ColorRow` | `kind="color"` |
+  
+  - `PropertyControl` draws the same control with no row around it, for a cell
+    that shares a row. `kind` also takes `paint` and `font-family`.
+  - Every field takes `mixed` (the sources disagree) and `unset` (they agree on
+    holding nothing), and shows no value for either.
+  - `chrome="framed"` draws the kit's field components in place of the row's
+    native inputs — `UnitField` for a number with `accepts`, `Checkbox`,
+    `Input`, a boxed `Select`, `RadioGroup` and `ToggleBar`, `ColorField`.
+    `PropertyRow` takes the same `chrome`, and leaves a framed field's inputs to
+    its own stylesheet.
+  - A text field given `onInput` drafts, reporting each keystroke to `onInput`
+    and the settled text to `onChange` on blur or Enter.
+  - `color`'s `alpha` may be `true`, keeping the alpha in a `#rrggbbaa` value.
+  - A bare `enum` with `control="radio"` is segments with radio semantics; with
+    `control="toggle"` it stays pressable segments.
+  - `prefFieldProps(leaf, state)` turns a schema leaf into `PropertyControl`
+    props: a number in its display unit and its bounds, an enum through its
+    encoding, an icon as a glyph. `ControlPanel`, `PrefsForm`, `SelectionPanel`
+    and `ToolOptionsBar` all draw their built-in kinds through it.
+  - `PrefsForm` rows are `PropertyRow`s, so a preference's label and help take
+    the params label look the other settings surfaces use. A leaf's slider is a
+    track with an editable readout, and a `radio` enum in `SelectionPanel` is a
+    radio group rather than a dropdown.
+  - `InlineRange` forwards its ref to the input.
+- bd1877e: labkit's own `Sidebar` is removed. Nothing in labkit rendered it, and it shared
+  its name with weasel-ui's `Sidebar`, which `@weasel-js/labkit/weasel-ui`
+  re-exports — so the two imports named two different components. Use weasel-ui's
+  `Sidebar` with `SidebarPanel`. This breaks any caller importing `Sidebar` or
+  `SidebarProps` from `@weasel-js/labkit`.
+- 5fb5bab: Rename `ActionsBar` to `ButtonBar`, along with its `ButtonBarItem`, `ButtonBarProps`, `ButtonBarSize` and `ButtonBarVariant` types. The old name read as a variant of `ActionBar`, which renders actions from the kit's actions registry; this one is a plain strip of callback buttons, the momentary sibling of `ToggleBar` and `OptionsBar`. Breaking: the old names have no alias.
+- d286c84: A drag from `useReorderDragList` now has a ghost. The hook's state carries
+  `ghost` — the dragged ids and a client-space box that keeps the grabbed point
+  under the pointer — and `ItemList`'s `ghost` prop draws those rows there,
+  portaled to the list's nearest themed host so no panel clips them.
+- f9ff231: `tone` now means one thing everywhere: which of its peers a surface is. Breaking: `Badge`'s and `PowerlineSegment`'s status prop is renamed from `tone` to `status`, and `BadgeTone` to `BadgeStatus` (labkit's passthrough re-export follows). The rendered attribute is `data-status` rather than `data-tone`. There is no alias; a status string passed as `tone` is now read as a color.
+  
+  `Badge`, `Code`, `Button` and `PowerlineSegment` also take `stance` and a peer `tone` — an index into the theme's tone list, or a color — as panels do. The tone, or a stance's `accent`, paints over the status color, and a toned primary button takes the tone as its accent.
+- Updated dependencies [bbf1de2]
+- Updated dependencies [16c0da2]
+- Updated dependencies [b8ebef6]
+- Updated dependencies [dfbed19]
+- Updated dependencies [7216628]
+- Updated dependencies [a581611]
+- Updated dependencies [5f45cb4]
+- Updated dependencies [928fa33]
+- Updated dependencies [d7577d2]
+- Updated dependencies [64f4739]
+- Updated dependencies [9689a2a]
+- Updated dependencies [90a2d9b]
+- Updated dependencies [a9a61f0]
+- Updated dependencies [04ff89b]
+- Updated dependencies [c373af4]
+- Updated dependencies [22eba68]
+- Updated dependencies [bfe6a4f]
+- Updated dependencies [1589afd]
+- Updated dependencies [2af33a4]
+- Updated dependencies [6857b4d]
+- Updated dependencies [bbaefca]
+- Updated dependencies [9a25ac4]
+- Updated dependencies [f4712fe]
+- Updated dependencies [07b106f]
+- Updated dependencies [f1c96ff]
+- Updated dependencies [f04faf6]
+- Updated dependencies [0cf6a0d]
+- Updated dependencies [12cab9f]
+- Updated dependencies [23c4282]
+- Updated dependencies [7c98a5a]
+- Updated dependencies [a564aea]
+- Updated dependencies [b466aad]
+- Updated dependencies [811abcd]
+- Updated dependencies [7c53d1a]
+- Updated dependencies [b1c30bc]
+- Updated dependencies [6ab0006]
+- Updated dependencies [5345efb]
+- Updated dependencies [750124f]
+- Updated dependencies [9e77264]
+- Updated dependencies [609d801]
+- Updated dependencies [497727a]
+- Updated dependencies [2da83b8]
+- Updated dependencies [1bcbbf6]
+- Updated dependencies [f0a74f8]
+- Updated dependencies [7215cd1]
+- Updated dependencies [5382c7e]
+- Updated dependencies [5c6072f]
+- Updated dependencies [61ba0a2]
+- Updated dependencies [87fd8a8]
+- Updated dependencies [3ed8213]
+- Updated dependencies [df69809]
+- Updated dependencies [f3d9d92]
+- Updated dependencies [c24d2c7]
+- Updated dependencies [6f14f6f]
+- Updated dependencies [c1f82e2]
+- Updated dependencies [6a6d9f6]
+- Updated dependencies [5ad1478]
+- Updated dependencies [83c4a3e]
+- Updated dependencies [ce53e3c]
+- Updated dependencies [edf7878]
+- Updated dependencies [cf69850]
+- Updated dependencies [08b80b8]
+- Updated dependencies [a4d9250]
+- Updated dependencies
+- Updated dependencies [5fb5bab]
+- Updated dependencies [d286c84]
+- Updated dependencies [2efeb82]
+- Updated dependencies [97561f1]
+- Updated dependencies [89926b5]
+- Updated dependencies [6ce2bcb]
+- Updated dependencies [959e5e5]
+- Updated dependencies [106139a]
+- Updated dependencies [6857b4d]
+- Updated dependencies [9789097]
+- Updated dependencies [da3b958]
+- Updated dependencies [9f86dec]
+- Updated dependencies [4074270]
+- Updated dependencies [731573b]
+- Updated dependencies [f9ff231]
+- Updated dependencies [debfd5d]
+- Updated dependencies [3225eb8]
+- Updated dependencies [d975afa]
+- Updated dependencies [96a5302]
+- Updated dependencies [74cc4df]
+- Updated dependencies [62d8d7c]
+  - @weasel-js/ui@1.6.0
+  - @weasel-js/core@1.6.0
+  - @weasel-js/theme@1.6.0
+  - @weasel-js/svg@1.6.0
+  - @weasel-js/kernel3d@1.6.0
+  - @weasel-js/loupe@1.6.0
+  - @weasel-js/geom@1.6.0
+
 ## 1.5.2
 
 ### Patch Changes

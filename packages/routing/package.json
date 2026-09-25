@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/routing",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Binding-to-action routing: the gesture dispatcher, the action registry, tool and contribution declaration, and the eligibility rule algebra.",
   "license": "MIT",
   "type": "module",
@@ -26,10 +26,10 @@
     "react": { "optional": true }
   },
   "dependencies": {
-    "@weasel-js/cursor": "1.5.2",
-    "@weasel-js/gestures": "1.5.2",
-    "@weasel-js/history": "1.5.2",
-    "@weasel-js/modes": "1.5.2"
+    "@weasel-js/cursor": "1.6.0",
+    "@weasel-js/gestures": "1.6.0",
+    "@weasel-js/history": "1.6.0",
+    "@weasel-js/modes": "1.6.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
