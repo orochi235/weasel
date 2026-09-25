@@ -228,16 +228,17 @@
   line-height: inherit;
   text-align: start;
   overflow: visible;
-  color: var(--wzl-accent-fg);
+  /* A peer tone or a stance's accent paints over the status. */
+  color: var(--_s-accent, var(--btn-link-fg, var(--wzl-accent-fg)));
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
-.variant_link[data-tone='neutral'] { color: var(--wzl-fg); }
-.variant_link[data-tone='muted']   { color: var(--wzl-fg-muted); }
-.variant_link[data-tone='accent']  { color: var(--wzl-accent-fg); }
-.variant_link[data-tone='success'] { color: var(--wzl-success); }
-.variant_link[data-tone='warn']    { color: var(--wzl-warning); }
-.variant_link[data-tone='danger']  { color: var(--wzl-danger); }
+.variant_link[data-status='neutral'] { --btn-link-fg: var(--wzl-fg); }
+.variant_link[data-status='muted']   { --btn-link-fg: var(--wzl-fg-muted); }
+.variant_link[data-status='accent']  { --btn-link-fg: var(--wzl-accent-fg); }
+.variant_link[data-status='success'] { --btn-link-fg: var(--wzl-success); }
+.variant_link[data-status='warn']    { --btn-link-fg: var(--wzl-warning); }
+.variant_link[data-status='danger']  { --btn-link-fg: var(--wzl-danger); }
 
 .variant_link::before { display: none; }
 .variant_link .label { display: inline; }
@@ -285,3 +286,57 @@
 @keyframes wzl-btn-spin {
   to { transform: rotate(360deg); }
 }
+
+/* BEGIN GENERATED stance rules: button — `npm run gen:stances`, do not edit. */
+
+.button {
+  --wzl-tone: initial;
+}
+
+.button {
+  --_s-accent: var(--wzl-tone);
+}
+
+.button[data-stance='scope'] {
+  --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
+}
+
+.button[data-stance='aside'] {
+  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
+}
+
+.button[data-stance='advanced'] {
+  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
+}
+
+.button[data-stance='debug'] {
+  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
+}
+
+.button[data-stance='danger'] {
+  --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
+}
+
+.button[data-stance='notice'] {
+  --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
+}
+
+.button[data-stance='important'] {
+  --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
+}
+
+.button[data-stance='preview'] {
+  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
+}
+
+.button[data-tone] {
+  --wzl-accent: var(--_s-accent);
+  --wzl-accent-base: var(--_s-accent);
+  --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));
+  --wzl-accent-soft: color-mix(in oklab, var(--_s-accent) 45%, var(--wzl-surface));
+  --wzl-accent-hover: var(--wzl-accent-strong);
+  --wzl-accent-fg: var(--wzl-accent-strong);
+  --wzl-focus-ring: var(--wzl-accent-strong);
+}
+
+/* END GENERATED stance rules: button */

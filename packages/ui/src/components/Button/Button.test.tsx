@@ -130,7 +130,7 @@ describe('Button', () => {
 
     it('paints its text with the accent-as-text token, not the accent fill', () => {
       const body = rule('.variant_link');
-      expect(body).toMatch(/color:\s*var\(--wzl-accent-fg\)/);
+      expect(body).toMatch(/var\(--btn-link-fg, var\(--wzl-accent-fg\)\)/);
       expect(body).not.toMatch(/--wzl-accent\)/);
     });
 
@@ -143,25 +143,42 @@ describe('Button', () => {
       expect(css).toMatch(/\.variant_link::before\s*\{\s*display:\s*none/);
     });
 
-    it('names its tone, and says nothing when left on the default accent', () => {
+    it('names its status, and says nothing when left on the default accent', () => {
       const { getAllByRole } = render(
         <>
-          <Button variant="link" tone="danger">remove</Button>
+          <Button variant="link" status="danger">remove</Button>
           <Button variant="link">open</Button>
         </>,
       );
       const [danger, plain] = getAllByRole('button');
-      expect(danger.getAttribute('data-tone')).toBe('danger');
-      expect(plain.hasAttribute('data-tone')).toBe(false);
+      expect(danger.getAttribute('data-status')).toBe('danger');
+      expect(danger.hasAttribute('data-tone')).toBe(false);
+      expect(plain.hasAttribute('data-status')).toBe(false);
     });
 
-    it('paints each tone from the same tokens as Code', () => {
-      expect(rule(".variant_link[data-tone='neutral']")).toMatch(/color:\s*var\(--wzl-fg\)/);
-      expect(rule(".variant_link[data-tone='muted']")).toMatch(/color:\s*var\(--wzl-fg-muted\)/);
-      expect(rule(".variant_link[data-tone='accent']")).toMatch(/color:\s*var\(--wzl-accent-fg\)/);
-      expect(rule(".variant_link[data-tone='success']")).toMatch(/color:\s*var\(--wzl-success\)/);
-      expect(rule(".variant_link[data-tone='warn']")).toMatch(/color:\s*var\(--wzl-warning\)/);
-      expect(rule(".variant_link[data-tone='danger']")).toMatch(/color:\s*var\(--wzl-danger\)/);
+    it('takes a peer tone beside its status, merged with its own style', () => {
+      const { getByRole } = render(
+        <Button variant="link" status="danger" tone={1} style={{ marginLeft: 4 }}>remove</Button>,
+      );
+      const el = getByRole('button');
+      expect(el.dataset.status).toBe('danger');
+      expect(el.dataset.tone).toBe('1');
+      expect(el.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-green)');
+      expect(el.style.marginLeft).toBe('4px');
+    });
+
+    it('paints a peer tone or a stance accent over the status', () => {
+      expect(rule('.variant_link')).toMatch(/color:\s*var\(--_s-accent, var\(--btn-link-fg, var\(--wzl-accent-fg\)\)\)/);
+      expect(css).not.toMatch(/\[data-tone='/);
+    });
+
+    it('paints each status from the same tokens as Code', () => {
+      expect(rule(".variant_link[data-status='neutral']")).toMatch(/--btn-link-fg:\s*var\(--wzl-fg\)/);
+      expect(rule(".variant_link[data-status='muted']")).toMatch(/--btn-link-fg:\s*var\(--wzl-fg-muted\)/);
+      expect(rule(".variant_link[data-status='accent']")).toMatch(/--btn-link-fg:\s*var\(--wzl-accent-fg\)/);
+      expect(rule(".variant_link[data-status='success']")).toMatch(/--btn-link-fg:\s*var\(--wzl-success\)/);
+      expect(rule(".variant_link[data-status='warn']")).toMatch(/--btn-link-fg:\s*var\(--wzl-warning\)/);
+      expect(rule(".variant_link[data-status='danger']")).toMatch(/--btn-link-fg:\s*var\(--wzl-danger\)/);
     });
   });
 });

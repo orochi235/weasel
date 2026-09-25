@@ -97,7 +97,7 @@ function ObjectControl(ctx: PrefRenderContext) {
   // `ui.panels` has a known shape; anything else object-kind is data
   // other code paths own — show it read-only rather than guessing.
   if (ctx.path === 'ui.panels') return <PanelsEditor ctx={ctx} />;
-  return <Code tone="muted" variant="plain" size="xs">(object)</Code>;
+  return <Code status="muted" variant="plain" size="xs">(object)</Code>;
 }
 
 type PanelRow = (typeof PANELS)[number];

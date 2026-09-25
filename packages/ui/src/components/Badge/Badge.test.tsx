@@ -13,9 +13,23 @@ describe('Badge', () => {
     expect(container.firstElementChild?.tagName).toBe('SPAN');
   });
 
-  it('applies tone via data-tone attribute', () => {
-    const { container } = render(<Badge tone="accent">x</Badge>);
-    expect(container.firstElementChild?.getAttribute('data-tone')).toBe('accent');
+  it('applies status via data-status attribute, with no peer tone', () => {
+    const { container } = render(<Badge status="accent">x</Badge>);
+    expect(container.firstElementChild?.getAttribute('data-status')).toBe('accent');
+    expect(container.firstElementChild?.hasAttribute('data-tone')).toBe(false);
+    expect(container.firstElementChild?.hasAttribute('data-stance')).toBe(false);
+  });
+
+  it('takes a peer tone and a stance beside its status, merged with its own style', () => {
+    const { container } = render(
+      <Badge status="warn" stance="notice" tone={1} style={{ marginLeft: 4 }}>x</Badge>,
+    );
+    const el = container.firstElementChild as HTMLElement;
+    expect(el.dataset.status).toBe('warn');
+    expect(el.dataset.stance).toBe('notice');
+    expect(el.dataset.tone).toBe('1');
+    expect(el.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-green)');
+    expect(el.style.marginLeft).toBe('4px');
   });
 
   it('applies variant via data-variant attribute', () => {
@@ -109,10 +123,15 @@ describe('Badge removable', () => {
 describe('Badge stylesheet', () => {
   const css = readFileSync(resolve(__dirname, 'Badge.module.css'), 'utf8');
 
-  it('paints the success tone from --wzl-success', () => {
-    const { container } = render(<Badge tone="success">ok</Badge>);
-    expect(container.firstElementChild?.getAttribute('data-tone')).toBe('success');
-    expect(css).toMatch(/\.badge\[data-tone='success'\]\s*\{\s*--badge-edge: var\(--wzl-success\);/);
+  it('paints the success status from --wzl-success', () => {
+    const { container } = render(<Badge status="success">ok</Badge>);
+    expect(container.firstElementChild?.getAttribute('data-status')).toBe('success');
+    expect(css).toMatch(/\.badge\[data-status='success'\]\s*\{\s*--badge-status-edge: var\(--wzl-success\);/);
+  });
+
+  it('paints a peer tone or a stance accent over the status, and keys no status off data-tone', () => {
+    expect(css).toMatch(/--badge-edge: var\(--_s-accent, var\(--badge-status-edge\)\);/);
+    expect(css).not.toMatch(/\[data-tone='/);
   });
 
   it('sizes xs from the 2xs type step', () => {

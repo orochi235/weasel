@@ -1,5 +1,7 @@
 .code {
-  --code-fg: var(--wzl-fg);
+  --code-status-fg: var(--wzl-fg);
+  /* A peer tone or a stance's accent paints over the status. */
+  --code-fg: var(--_s-accent, var(--code-status-fg));
   display: inline;
   padding: 0 var(--wzl-space-2);
   border-radius: var(--wzl-radius-sm);
@@ -14,11 +16,11 @@
   box-decoration-break: clone;
 }
 
-.code[data-tone='muted']   { --code-fg: var(--wzl-fg-muted); }
-.code[data-tone='accent']  { --code-fg: var(--wzl-accent-fg); }
-.code[data-tone='success'] { --code-fg: var(--wzl-success); }
-.code[data-tone='warn']    { --code-fg: var(--wzl-warning); }
-.code[data-tone='danger']  { --code-fg: var(--wzl-danger); }
+.code[data-status='muted']   { --code-status-fg: var(--wzl-fg-muted); }
+.code[data-status='accent']  { --code-status-fg: var(--wzl-accent-fg); }
+.code[data-status='success'] { --code-status-fg: var(--wzl-success); }
+.code[data-status='warn']    { --code-status-fg: var(--wzl-warning); }
+.code[data-status='danger']  { --code-status-fg: var(--wzl-danger); }
 
 .code[data-variant='plain'] {
   padding: 0;
@@ -28,3 +30,57 @@
 .code[data-size='xs'] { --code-font-size: var(--wzl-font-size-xs); }
 .code[data-size='sm'] { --code-font-size: var(--wzl-font-size-sm); }
 .code[data-size='md'] { --code-font-size: var(--wzl-font-size); }
+
+/* BEGIN GENERATED stance rules: code — `npm run gen:stances`, do not edit. */
+
+.code {
+  --wzl-tone: initial;
+}
+
+.code {
+  --_s-accent: var(--wzl-tone);
+}
+
+.code[data-stance='scope'] {
+  --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
+}
+
+.code[data-stance='aside'] {
+  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
+}
+
+.code[data-stance='advanced'] {
+  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
+}
+
+.code[data-stance='debug'] {
+  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
+}
+
+.code[data-stance='danger'] {
+  --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
+}
+
+.code[data-stance='notice'] {
+  --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
+}
+
+.code[data-stance='important'] {
+  --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
+}
+
+.code[data-stance='preview'] {
+  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
+}
+
+.code[data-tone] {
+  --wzl-accent: var(--_s-accent);
+  --wzl-accent-base: var(--_s-accent);
+  --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));
+  --wzl-accent-soft: color-mix(in oklab, var(--_s-accent) 45%, var(--wzl-surface));
+  --wzl-accent-hover: var(--wzl-accent-strong);
+  --wzl-accent-fg: var(--wzl-accent-strong);
+  --wzl-focus-ring: var(--wzl-accent-strong);
+}
+
+/* END GENERATED stance rules: code */

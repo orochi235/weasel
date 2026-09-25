@@ -201,7 +201,12 @@ A surface that holds a class of content says which with `stance` —
 tone list (`ThemeDefinition.tones`, a `ColorList`; weasel's is the swatch ramp),
 or a color. `PropertyPanel`, `PropertyGroup`, `Subpanel`, `Callout`, `Dialog`,
 labkit's `ControlPanel` and sidebar sections take both; `LayerList`'s items
-take a tone only, since a list's cards are one kind of thing. The hud `window` takes both, drawn in WebGL from the resolved theme:
+take a tone only, since a list's cards are one kind of thing. `Badge`, `Code`,
+`Button` and `Powerline` segments take both too, beside the `status` they report
+(`success`, `danger`, …); a tone, or a stance's `accent`, paints over the status
+color, and a toned primary button takes the tone as its accent. Toasts take
+neither: a toast reports how an event came out rather than holding a class of
+content. The hud `window` takes both, drawn in WebGL from the resolved theme:
 `resolveStanceSlots` (`@weasel-js/theme`) makes the same lookup the generated CSS
 does, and `mixOklab` (`@weasel-js/paint`) mixes the tone in. Anything else that takes several colors — chart series, diagram
 categories — takes a `ColorList` (`@weasel-js/theme`), read with `colorAt` /

@@ -32,20 +32,30 @@ describe('Powerline', () => {
     expect(badges.length).toBe(3);
   });
 
-  it('applies row-level tone defaults but per-segment tone wins', () => {
+  it('applies row-level variant defaults and per-segment status', () => {
     const { container } = render(
       <Powerline
         variant="solid"
         segments={[
-          { text: 'a', tone: 'accent' },
-          { text: 'b', tone: 'info' },
+          { text: 'a', status: 'accent' },
+          { text: 'b', status: 'info' },
         ]}
       />
     );
-    const badges = container.querySelectorAll('[data-tone]');
-    expect(badges[0].getAttribute('data-tone')).toBe('accent');
-    expect(badges[1].getAttribute('data-tone')).toBe('info');
+    const badges = container.querySelectorAll('[data-status]');
+    expect(badges[0].getAttribute('data-status')).toBe('accent');
+    expect(badges[1].getAttribute('data-status')).toBe('info');
     expect(badges[0].getAttribute('data-variant')).toBe('solid');
+  });
+
+  it('passes each segment’s peer tone and stance to its badge', () => {
+    const { container } = render(
+      <Powerline segments={[{ text: 'a', status: 'info', stance: 'debug', tone: 2 }, { text: 'b' }]} />,
+    );
+    const badges = container.querySelectorAll<HTMLElement>('[data-status]');
+    expect(badges[0].dataset.tone).toBe('2');
+    expect(badges[0].dataset.stance).toBe('debug');
+    expect(badges[1].hasAttribute('data-tone')).toBe(false);
   });
 
   it('renders segment text content', () => {

@@ -643,7 +643,7 @@ const RESOLUTION_COLUMNS: readonly DataGridColumn<ResolutionRow>[] = [
 /** A `?` marking a result this panel can only approximate. */
 function Caveat({ text }: { text: string }): ReactElement {
   return (
-    <Badge className={s.predicateBadge} tone="warn" size="xs" aria-label="Approximate" tooltip={text}>
+    <Badge className={s.predicateBadge} status="warn" size="xs" aria-label="Approximate" tooltip={text}>
       ?
     </Badge>
   );

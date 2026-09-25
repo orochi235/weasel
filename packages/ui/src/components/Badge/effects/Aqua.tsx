@@ -22,7 +22,7 @@ import type { EffectModule } from '../bases/types';
  * `backdrop-filter: blur(...)` on the host element via CSS.
  */
 export interface AquaEffectParams {
-  /** Body tint. Defaults to `var(--badge-edge)` so the badge's tone drives it. */
+  /** Body tint. Defaults to `var(--badge-edge)` so the badge's color drives it. */
   accent?: string;
   /** Stop opacities along the body gradient (0..1). */
   topAlpha?: number;

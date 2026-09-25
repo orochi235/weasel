@@ -44,7 +44,7 @@ function ancestorsOf(entry: IndexEntry | undefined): Set<string> {
 /** A component's package, as a badge colored per package. */
 function LibraryBadge({ library }: { library: string }) {
   return (
-    <Badge tone="custom" variant="subtle" size="sm" className={`fg-tree__tag fg-lib--${library}`}>
+    <Badge status="custom" variant="subtle" size="sm" className={`fg-tree__tag fg-lib--${library}`}>
       {library}
     </Badge>
   );

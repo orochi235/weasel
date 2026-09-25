@@ -4,12 +4,12 @@ import { applyToPoint, invert } from '@weasel-js/geom';
 import { Badge } from './Badge';
 import { ToggleBar as KitToggleBar } from '../ToggleBar/ToggleBar';
 import { ALL_SHAPES, SHAPES } from './shapes';
-import type { BadgeShape, BadgeTone, BadgeVariant } from './types';
+import type { BadgeShape, BadgeStatus, BadgeVariant } from './types';
 import { BASES, type BadgeBase } from './bases';
 import { EFFECTS, type BadgeEffect, type EffectSpec } from './effects';
 import { SHAPE_CONTROLS, defaultParamsFor } from './shapeControls';
 
-const TONES: BadgeTone[] = ['accent', 'info', 'success', 'warn', 'danger', 'muted', 'neutral'];
+const STATUSES: BadgeStatus[] = ['accent', 'info', 'success', 'warn', 'danger', 'muted', 'neutral'];
 const VARIANTS: BadgeVariant[] = ['outline', 'solid', 'subtle'];
 
 const meta: Meta<typeof Badge> = {
@@ -18,14 +18,14 @@ const meta: Meta<typeof Badge> = {
   args: {
     children: 'LABEL',
     shape: 'pill',
-    tone: 'accent',
+    status: 'accent',
     variant: 'outline',
     size: 'sm',
   },
   argTypes: {
     children: { control: 'text', description: 'Badge label content' },
     shape: { control: 'select', options: ALL_SHAPES },
-    tone: { control: 'select', options: TONES },
+    status: { control: 'select', options: STATUSES },
     variant: { control: 'inline-radio', options: VARIANTS },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
     bloat: {
@@ -59,9 +59,9 @@ type Story = StoryObj<typeof Badge>;
 
 export const Default: Story = {};
 
-function ShapeCard({ shape, tone, variant, label, params, onChange }: {
+function ShapeCard({ shape, status, variant, label, params, onChange }: {
   shape: BadgeShape;
-  tone: BadgeTone;
+  status: BadgeStatus;
   variant: BadgeVariant;
   label: string;
   params: Record<string, number | string>;
@@ -78,7 +78,7 @@ function ShapeCard({ shape, tone, variant, label, params, onChange }: {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, borderRadius: 6, background: 'rgba(255,255,255,0.02)', minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', minHeight: 56 }}>
-        <Badge shape={shape} tone={tone} variant={variant} shapeParams={params as never}>{label}</Badge>
+        <Badge shape={shape} status={status} variant={variant} shapeParams={params as never}>{label}</Badge>
       </div>
       <code style={{ fontSize: 10, opacity: 0.85, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
         {shape}
@@ -197,8 +197,8 @@ function formatExportAsTs(diff: Record<string, Record<string, number | string>>)
   return lines.join('\n');
 }
 
-function AllShapesView({ tone, variant, label }: {
-  tone: BadgeTone;
+function AllShapesView({ status, variant, label }: {
+  status: BadgeStatus;
   variant: BadgeVariant;
   label: string;
 }) {
@@ -256,7 +256,7 @@ function AllShapesView({ tone, variant, label }: {
               <ShapeCard
                 key={shape}
                 shape={shape}
-                tone={tone}
+                status={status}
                 variant={variant}
                 label={label}
                 params={allParams[shape] ?? defaultParamsFor(shape)}
@@ -273,7 +273,7 @@ function AllShapesView({ tone, variant, label }: {
 export const AllShapes: Story = {
   args: {
     children: 'ZORF',
-    tone: 'muted',
+    status: 'muted',
     variant: 'outline',
   },
   argTypes: {
@@ -282,14 +282,14 @@ export const AllShapes: Story = {
   },
   render: (args) => (
     <AllShapesView
-           tone={args.tone ?? 'accent'}
+           status={args.status ?? 'accent'}
       variant={args.variant ?? 'outline'}
       label={typeof args.children === 'string' ? args.children : 'LABEL'}
     />
   ),
 };
 
-export const ToneVariantMatrix: Story = {
+export const StatusVariantMatrix: Story = {
   render: (args) => {
     const label = typeof args.children === 'string' ? args.children : 'LABEL';
     return (
@@ -301,14 +301,14 @@ export const ToneVariantMatrix: Story = {
           </tr>
         </thead>
         <tbody>
-          {TONES.map((tone) => (
-            <tr key={tone}>
-              <td style={{ fontSize: 10, textTransform: 'uppercase', opacity: 0.7 }}>{tone}</td>
+          {STATUSES.map((status) => (
+            <tr key={status}>
+              <td style={{ fontSize: 10, textTransform: 'uppercase', opacity: 0.7 }}>{status}</td>
               {VARIANTS.map((variant) => (
                 <td key={variant}>
                   <Badge
                     shape={args.shape as never}
-                    tone={tone}
+                    status={status}
                     variant={variant}
                     size={args.size}
                                      >
@@ -324,17 +324,37 @@ export const ToneVariantMatrix: Story = {
   },
 };
 
+/** `tone` says which of its peers a badge is: an index into the theme's tone
+ *  list, the same one a panel takes. It paints over the status. */
+export const PeerTones: Story = {
+  render: (args) => (
+    <div>
+      {VARIANTS.map((variant) => (
+        <p key={variant}>
+          {[0, 1, 2, 3, 4, 5].map((tone) => (
+            <span key={tone}>
+              <Badge shape={args.shape as never} variant={variant} size={args.size} tone={tone}>
+                {`peer ${tone}`}
+              </Badge>{' '}
+            </span>
+          ))}
+        </p>
+      ))}
+    </div>
+  ),
+};
+
 export const BaselineRow: Story = {
   name: 'Baseline justification',
   render: (_args) => (
     <p style={{ fontSize: 14, lineHeight: 1.6 }}>
       Inline text with{' '}
-      <Badge shape="pill" tone="accent" >pill</Badge>{' '}
-      <Badge shape="square" tone="info" >square</Badge>{' '}
-      <Badge shape="notched" tone="warn" >notched</Badge>{' '}
-      <Badge shape="shield" tone="danger" >shield</Badge>{' '}
-      <Badge shape="ribbon" tone="muted" shapeParams={{ left: 'outward', right: 'outward' } as never} >ribbon</Badge>{' '}
-      <Badge shape="house" tone="accent" >house</Badge>{' '}
+      <Badge shape="pill" status="accent" >pill</Badge>{' '}
+      <Badge shape="square" status="info" >square</Badge>{' '}
+      <Badge shape="notched" status="warn" >notched</Badge>{' '}
+      <Badge shape="shield" status="danger" >shield</Badge>{' '}
+      <Badge shape="ribbon" status="muted" shapeParams={{ left: 'outward', right: 'outward' } as never} >ribbon</Badge>{' '}
+      <Badge shape="house" status="accent" >house</Badge>{' '}
       and trailing copy.
     </p>
   ),
@@ -345,9 +365,9 @@ export const Sizes: Story = {
     const label = typeof args.children === 'string' ? args.children : 'LABEL';
     return (
       <div style={{ display: 'flex', gap: 12, alignItems: 'baseline' }}>
-        <Badge size="xs" shape={args.shape as never} tone={args.tone} variant={args.variant}>{label} xs</Badge>
-        <Badge size="sm" shape={args.shape as never} tone={args.tone} variant={args.variant}>{label} sm</Badge>
-        <Badge size="md" shape={args.shape as never} tone={args.tone} variant={args.variant}>{label} md</Badge>
+        <Badge size="xs" shape={args.shape as never} status={args.status} variant={args.variant}>{label} xs</Badge>
+        <Badge size="sm" shape={args.shape as never} status={args.status} variant={args.variant}>{label} sm</Badge>
+        <Badge size="md" shape={args.shape as never} status={args.status} variant={args.variant}>{label} md</Badge>
       </div>
     );
   },
@@ -360,22 +380,22 @@ export const Clickable: Story = { args: { onClick: () => {} } };
 /** A plain badge with `tooltip` joins the tab order as an image named by its
  *  text; hover or Tab to it. */
 export const WithTooltip: Story = {
-  args: { children: '?', tone: 'muted', size: 'xs', tooltip: 'Matched by a predicate, not a fixed id' },
+  args: { children: '?', status: 'muted', size: 'xs', tooltip: 'Matched by a predicate, not a fixed id' },
 };
 
 export const EdgeCases: Story = {
   render: (_args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap' }}>
-      <Badge tone="info" >A very long label that tests overflow</Badge>
-      <Badge shape="plain" tone="warn" >
+      <Badge status="info" >A very long label that tests overflow</Badge>
+      <Badge shape="plain" status="warn" >
         <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'currentColor', marginRight: 4, verticalAlign: 'middle' }} />
         live
       </Badge>
-      <Badge shape="starburst" tone="danger" variant="solid" >NEW</Badge>
-      <Badge shape="ribbon" tone="accent" shapeParams={{ left: 'outward', right: 'outward' } as never} >RIBBON</Badge>
-      <Badge shape="perforated" tone="muted" >STAMP</Badge>
-      <Badge shape="house" tone="info" >HOME</Badge>
-      <Badge shape="cloud" tone="warn" >CLOUDY</Badge>
+      <Badge shape="starburst" status="danger" variant="solid" >NEW</Badge>
+      <Badge shape="ribbon" status="accent" shapeParams={{ left: 'outward', right: 'outward' } as never} >RIBBON</Badge>
+      <Badge shape="perforated" status="muted" >STAMP</Badge>
+      <Badge shape="house" status="info" >HOME</Badge>
+      <Badge shape="cloud" status="warn" >CLOUDY</Badge>
     </div>
   ),
 };
@@ -386,7 +406,7 @@ export const InlineWrapping: Story = {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 360, lineHeight: 1.7 }}>
       <p style={{ margin: 0 }}>
         A normal paragraph that contains{' '}
-        <Badge shape="pill" tone="accent" >
+        <Badge shape="pill" status="accent" >
           a sufficiently long inline badge label
         </Badge>{' '}
         and continues afterward to force the badge to be broken across two visual lines.
@@ -394,14 +414,14 @@ export const InlineWrapping: Story = {
       <p style={{ margin: 0 }}>
         With <code>display: inline-flex</code>, badges don't fragment — they stay whole and either fit the line or push to a new one.
         Here's the same thing with a longer payload:{' '}
-        <Badge shape="square" tone="info" >
+        <Badge shape="square" status="info" >
           this badge has even more text inside that the line can't hold
         </Badge>{' '}
         trailing copy.
       </p>
       <p style={{ margin: 0 }}>
         Constrained-width container —{' '}
-        <Badge shape="ribbon" tone="warn" >
+        <Badge shape="ribbon" status="warn" >
           a ribbon badge that wraps because of width
         </Badge>{' '}
         and we keep going.
@@ -412,7 +432,7 @@ export const InlineWrapping: Story = {
 
 export const ComposeShowcase: Story = {
   name: 'Compose: base + effects',
-  args: { children: 'COMPOSE', tone: 'danger', variant: 'solid' },
+  args: { children: 'COMPOSE', status: 'danger', variant: 'solid' },
   render: (args) => (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 24, alignItems: 'baseline' }}>
       <Badge
@@ -425,7 +445,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        tone="accent"
+        status="accent"
         variant="outline"
         base="chamfered-rect"
         baseParams={{ chamfer: 12 }}
@@ -435,7 +455,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        tone="info"
+        status="info"
         variant="outline"
         base="rounded-rect"
         baseParams={{ erosion: 0.5 }}
@@ -445,7 +465,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        tone="warn"
+        status="warn"
         variant="solid"
         base="rounded-rect"
         baseParams={{ erosion: 0.75 }}
@@ -455,7 +475,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        tone="muted"
+        status="muted"
         variant="outline"
         base="rounded-rect"
         baseParams={{ erosion: 0.27 }}
@@ -465,7 +485,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        tone="info"
+        status="info"
         variant="solid"
         base="chamfered-rect"
         baseParams={{ chamfer: 6 }}
@@ -478,7 +498,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        tone="accent"
+        status="accent"
         variant="outline"
         base="rounded-rect"
         baseParams={{ erosion: 0.4 }}
@@ -488,7 +508,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        tone="muted"
+        status="muted"
         variant="solid"
         base="rounded-rect"
         baseParams={{ erosion: 0.67 }}
@@ -498,7 +518,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        tone="warn"
+        status="warn"
         variant="solid"
         base="rounded-rect"
         baseParams={{ erosion: 0 }}
@@ -512,7 +532,7 @@ export const ComposeShowcase: Story = {
       </Badge>
       <Badge
         {...args}
-        tone="info"
+        status="info"
         variant="solid"
         base="rounded-rect"
         baseParams={{ erosion: 0.4 }}
@@ -532,10 +552,10 @@ export const SlotPillReplica: Story = {
   name: 'Slot pill (migration parity)',
   render: (_args) => (
     <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-      <Badge shape="pill" tone="accent" variant="outline" >active</Badge>
-      <Badge shape="pill" tone="warn" variant="outline" >ambient</Badge>
-      <Badge shape="pill" tone="info" variant="outline" >hotkey</Badge>
-      <Badge shape="pill" tone="danger" variant="solid" >inactive</Badge>
+      <Badge shape="pill" status="accent" variant="outline" >active</Badge>
+      <Badge shape="pill" status="warn" variant="outline" >ambient</Badge>
+      <Badge shape="pill" status="info" variant="outline" >hotkey</Badge>
+      <Badge shape="pill" status="danger" variant="solid" >inactive</Badge>
     </div>
   ),
 };
@@ -887,7 +907,7 @@ interface LabSnapshot {
   baseParams: Record<string, number | string>;
   labEffects: LabEffect[];
   nextId: number;
-  tone: BadgeTone;
+  status: BadgeStatus;
   customColor: string;
   variant: BadgeVariant;
   bloat: number;
@@ -923,8 +943,8 @@ function loadLabSnapshot(): Partial<LabSnapshot> {
   }
 }
 
-function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }: {
-  tone: BadgeTone; variant: BadgeVariant; label: string;
+function ComposeLabView({ status: statusArg, variant: variantArg, label: labelArg }: {
+  status: BadgeStatus; variant: BadgeVariant; label: string;
 }) {
   const saved = useRef<Partial<LabSnapshot>>(loadLabSnapshot()).current;
   const [base, setBase] = useState<BadgeBase>(saved.base ?? 'rounded-rect');
@@ -934,7 +954,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
   const [labEffects, setLabEffects] = useState<LabEffect[]>(saved.labEffects ?? []);
   const [nextId, setNextId] = useState(saved.nextId ?? 1);
   const [exportText, setExportText] = useState<string | null>(null);
-  const [tone, setTone] = useState<BadgeTone>(saved.tone ?? toneArg);
+  const [status, setStatus] = useState<BadgeStatus>(saved.status ?? statusArg);
   const [customColor, setCustomColor] = useState<string>(saved.customColor ?? '#7fb069');
   const [variant, setVariant] = useState<BadgeVariant>(saved.variant ?? variantArg);
   const [bloat, setBloat] = useState<number>(saved.bloat ?? 0);
@@ -963,7 +983,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
   const toggleLinkPadX = (on: boolean) => { setLinkPadX(on); if (on) setPadRight(padLeft); };
   const toggleLinkPadY = (on: boolean) => { setLinkPadY(on); if (on) setPadBottom(padTop); };
   const currentSnapshot = (): LabSnapshot => ({
-    base, baseParams, labEffects, nextId, tone, customColor, variant, bloat,
+    base, baseParams, labEffects, nextId, status, customColor, variant, bloat,
     label, size, crawlOn, crawlSpeed, labelX, labelY, zoom,
     padTop, padRight, padBottom, padLeft,
     fontFamily, fontSizeDelta, bold, italic, caps,
@@ -976,7 +996,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
     const snap = currentSnapshot();
     try { window.localStorage.setItem(LAB_STORAGE_KEY, JSON.stringify(snap)); } catch { /* quota / private mode */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [base, baseParams, labEffects, nextId, tone, customColor, variant, bloat, label, size, crawlOn, crawlSpeed, labelX, labelY, zoom, padTop, padRight, padBottom, padLeft, fontFamily, fontSizeDelta, bold, italic, caps, linkPadX, linkPadY]);
+  }, [base, baseParams, labEffects, nextId, status, customColor, variant, bloat, label, size, crawlOn, crawlSpeed, labelX, labelY, zoom, padTop, padRight, padBottom, padLeft, fontFamily, fontSizeDelta, bold, italic, caps, linkPadX, linkPadY]);
 
   // --- Undo / redo --------------------------------------------------------
   // Snapshots of the full lab state. The stacks live in refs (not state) so
@@ -1008,7 +1028,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
       redoStackRef.current = [];
     }, 300);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [base, baseParams, labEffects, nextId, tone, customColor, variant, bloat, label, size, crawlOn, crawlSpeed, labelX, labelY, zoom, padTop, padRight, padBottom, padLeft, fontFamily, fontSizeDelta, bold, italic, caps, linkPadX, linkPadY]);
+  }, [base, baseParams, labEffects, nextId, status, customColor, variant, bloat, label, size, crawlOn, crawlSpeed, labelX, labelY, zoom, padTop, padRight, padBottom, padLeft, fontFamily, fontSizeDelta, bold, italic, caps, linkPadX, linkPadY]);
 
   const applySnapshot = (s: LabSnapshot) => {
     isRestoringRef.current = true;
@@ -1016,7 +1036,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
     setBaseParams(s.baseParams);
     setLabEffects(s.labEffects);
     setNextId(s.nextId);
-    setTone(s.tone);
+    setStatus(s.status);
     setCustomColor(s.customColor);
     setVariant(s.variant);
     setBloat(s.bloat);
@@ -1096,7 +1116,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [base, baseParams, labEffects, variant, tone, bloat, label]);
+  }, [base, baseParams, labEffects, variant, status, bloat, label]);
 
   const loadPreset = (preset: LabPreset) => {
     setBase(preset.base);
@@ -1165,7 +1185,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
       }
       lines.push('  ]}');
     }
-    lines.push(`  tone="${tone}" variant="${variant}" size="${size}"`);
+    lines.push(`  status="${status}" variant="${variant}" size="${size}"`);
     if (bloat !== 0) lines.push(`  bloat={${bloat}}`);
     if (crawlOn) lines.push(`  crawl={${crawlSpeed}}`);
     lines.push(`>${label}</Badge>`);
@@ -1270,13 +1290,13 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
                 base={base}
                 baseParams={baseParams as never}
                 effects={effectsForBadge}
-                tone={tone}
+                status={status}
                 variant={variant}
                 bloat={bloat}
                 size={size}
                 padding={`${padTop}px ${padRight}px ${padBottom}px ${padLeft}px`}
                 crawl={crawlOn ? crawlSpeed : undefined}
-                style={tone === 'custom' ? ({ ['--badge-edge' as never]: customColor }) : undefined}
+                style={status === 'custom' ? ({ ['--badge-edge' as never]: customColor }) : undefined}
               >
                 <span style={{
                   display: 'inline-block',
@@ -1328,13 +1348,13 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
             {toggleBar<BadgeVariant>(variant, ['outline', 'solid', 'subtle'] as const, setVariant)}
           </label>
           <label style={{ display: 'grid', gridTemplateColumns: '110px 1fr 24px', alignItems: 'center', gap: 8 }}>
-            <span style={ctrlLabel}>tone</span>
-            {toggleBar<BadgeTone>(tone, ['accent', 'info', 'warn', 'danger', 'muted', 'neutral', 'custom'] as const, setTone)}
+            <span style={ctrlLabel}>status</span>
+            {toggleBar<BadgeStatus>(status, ['accent', 'info', 'warn', 'danger', 'muted', 'neutral', 'custom'] as const, setStatus)}
             <input
               type="color"
               value={customColor}
-              onChange={(e) => { setCustomColor(e.target.value); setTone('custom'); }}
-              title="Pick a custom tone color"
+              onChange={(e) => { setCustomColor(e.target.value); setStatus('custom'); }}
+              title="Pick a custom status color"
               style={{ width: 22, height: 22, padding: 0, border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, cursor: 'pointer', background: 'transparent' }}
             />
           </label>
@@ -1655,11 +1675,11 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
               base={p.base}
               baseParams={p.baseParams as never}
               effects={p.effects as never}
-              tone={tone}
+              status={status}
               variant={variant}
               bloat={bloat}
               size={size}
-              style={tone === 'custom' ? ({ ['--badge-edge' as never]: customColor }) : undefined}
+              style={status === 'custom' ? ({ ['--badge-edge' as never]: customColor }) : undefined}
             >
               {label}
             </Badge>
@@ -2129,7 +2149,7 @@ export const QuatrefoilOctants: Story = {
   argTypes: {
     shape: { table: { disable: true } }, shapeParams: { table: { disable: true } },
     base: { table: { disable: true } }, baseParams: { table: { disable: true } },
-    effects: { table: { disable: true } }, tone: { table: { disable: true } },
+    effects: { table: { disable: true } }, status: { table: { disable: true } },
     variant: { table: { disable: true } }, size: { table: { disable: true } },
     crawl: { table: { disable: true } }, bloat: { table: { disable: true } },
     padding: { table: { disable: true } },
@@ -2158,7 +2178,7 @@ export const QuatrefoilOctants: Story = {
 
 export const ComposeLab: Story = {
   name: 'Compose lab',
-  args: { children: 'COMPOSE', tone: 'accent', variant: 'solid' },
+  args: { children: 'COMPOSE', status: 'accent', variant: 'solid' },
   argTypes: {
     shape: { table: { disable: true } },
     shapeParams: { table: { disable: true } },
@@ -2168,7 +2188,7 @@ export const ComposeLab: Story = {
   },
   render: (args) => (
     <ComposeLabView
-      tone={(args.tone ?? 'accent') as BadgeTone}
+      status={(args.status ?? 'accent') as BadgeStatus}
       variant={(args.variant ?? 'solid') as BadgeVariant}
            label={typeof args.children === 'string' ? args.children : 'COMPOSE'}
     />

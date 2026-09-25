@@ -70,11 +70,11 @@ const REGISTRY: readonly TreeNode[] = [
 ].map(([label, leaves]) => ({
   id: label as string,
   label: label as string,
-  trailing: <Badge shape="pill" size="sm" tone="neutral" variant="solid">{leaves.length}</Badge>,
+  trailing: <Badge shape="pill" size="sm" status="neutral" variant="solid">{leaves.length}</Badge>,
   children: (leaves as string[]).map((leaf, i) => ({
     id: `${label}/${leaf}`,
     label: leaf,
-    trailing: <Badge shape="pill" size="sm" tone="neutral" variant="subtle">{(i * 7) % 11}</Badge>,
+    trailing: <Badge shape="pill" size="sm" status="neutral" variant="subtle">{(i * 7) % 11}</Badge>,
   })),
 }));
 

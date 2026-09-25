@@ -188,8 +188,8 @@ export function routeToPowerline(route: string): Omit<PowerlineProps, 'className
 
   const segments: PowerlineProps['segments'] = [];
   for (const p of parsed.phases) {
-    if (p.channel !== '&') segments.push({ text: p.channel, tone: 'neutral', variant: 'subtle' });
-    segments.push({ text: p.phase, tone: 'accent', variant: 'subtle' });
+    if (p.channel !== '&') segments.push({ text: p.channel, status: 'neutral', variant: 'subtle' });
+    segments.push({ text: p.phase, status: 'accent', variant: 'subtle' });
   }
   segments.push({
     text: hasArg ? (
@@ -205,7 +205,7 @@ export function routeToPowerline(route: string): Omit<PowerlineProps, 'className
         </>
       )
     ) : parsed.gesture,
-    tone: 'info',
+    status: 'info',
     variant: 'outline',
   });
   if (modKeys) {
@@ -214,12 +214,12 @@ export function routeToPowerline(route: string): Omit<PowerlineProps, 'className
     // Sigils are inlined per-key: `+` for required, `?` for optional, so a
     // mixed set like `+mod ?shift` renders as `+⌘?⇧`.
     const text = modKeys.map((k) => `${k.optional ? '?' : '+'}${k.label}`).join('');
-    segments.push({ text, tone: 'muted', variant: 'solid' });
+    segments.push({ text, status: 'muted', variant: 'solid' });
   }
   if (hasTarget) {
     segments.push({
       text: parsed.target,
-      tone: 'muted',
+      status: 'muted',
       variant: targetIsWildcard ? 'subtle' : 'outline',
     });
   }
@@ -452,7 +452,7 @@ function OpSchemaPanel({ factoryId }: { factoryId: string }) {
       <h3 className={s.subHeading}>Arguments</h3>
       <SchemaTable rows={schema.params} empty="Factory takes no arguments." />
       <DetailList>
-        <DetailRow label="returns"><Code variant="plain" tone="accent" size="xs">{schema.returnType}</Code></DetailRow>
+        <DetailRow label="returns"><Code variant="plain" status="accent" size="xs">{schema.returnType}</Code></DetailRow>
       </DetailList>
       <p className={s.schemaSource}>
         Extracted from <code>{schema.source.file}:{schema.source.line}</code>
@@ -1351,7 +1351,7 @@ function BundleDetail({
         <DetailRow label="tool count">{entry.tools.length}</DetailRow>
         <DetailRow label="by group">
           {[...groupCounts.entries()].map(([g, n]) => (
-            <Code key={g}>{g} <Badge shape="pill" size="sm" tone="neutral" variant="subtle">{n}</Badge></Code>
+            <Code key={g}>{g} <Badge shape="pill" size="sm" status="neutral" variant="subtle">{n}</Badge></Code>
           ))}
         </DetailRow>
       </DetailList>
@@ -1377,14 +1377,14 @@ function BundleDetail({
                         key={`+${t}`}
                         variant="link"
                         onClick={() => onNavigate({ kind: 'tool', id: t })}
-                      ><Code tone="success">+{t}</Code></Button>
+                      ><Code status="success">+{t}</Code></Button>
                     ))}
                     {removed.map((t) => (
                       <Button
                         key={`-${t}`}
                         variant="link"
                         onClick={() => onNavigate({ kind: 'tool', id: t })}
-                      ><Code tone="danger">−{t}</Code></Button>
+                      ><Code status="danger">−{t}</Code></Button>
                     ))}
                   </>}
             </DetailRow>

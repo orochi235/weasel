@@ -213,19 +213,19 @@ function ButtonsAndToggles() {
       </Cell>
       <Cell label="Badge">
         <div className="lk-specimen__row">
-          <Badge shape="pill" tone="accent" variant="outline" size="sm">
+          <Badge shape="pill" status="accent" variant="outline" size="sm">
             ACCENT
           </Badge>
-          <Badge tone="info" variant="subtle">
+          <Badge status="info" variant="subtle">
             INFO
           </Badge>
-          <Badge tone="warn" variant="solid">
+          <Badge status="warn" variant="solid">
             WARN
           </Badge>
-          <Badge tone="danger" variant="solid">
+          <Badge status="danger" variant="solid">
             DANGER
           </Badge>
-          <Badge tone="muted">MUTED</Badge>
+          <Badge status="muted">MUTED</Badge>
         </div>
       </Cell>
       <Cell label="Checkbox, Switch">
@@ -584,9 +584,9 @@ function OverlaysAndFeedback() {
           variant="solid"
           size="sm"
           segments={[
-            { text: 'main', tone: 'accent', endCap: 'chevron' },
-            { text: '✓ 12', tone: 'info', endCap: 'slant' },
-            { text: '~/proj', tone: 'muted' },
+            { text: 'main', status: 'accent', endCap: 'chevron' },
+            { text: '✓ 12', status: 'info', endCap: 'slant' },
+            { text: '~/proj', status: 'muted' },
           ]}
         />
       </Cell>
