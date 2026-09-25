@@ -1,6 +1,6 @@
 # In flight: forge stories in the workshop document — branch `worktree-forge-in-document`
 
-Worktree `.claude/worktrees/forge-in-document`, four commits on top of `main`,
+Worktree `.claude/worktrees/forge-in-document`, five commits on top of `main`,
 not merged. Spec: `docs/superpowers/specs/2026-09-25-forge-in-document-stories-design.md`.
 The changeset `.changeset/forge-in-document-stories.md` says what landed.
 
