@@ -1,7 +1,11 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Icon } from './Icon';
-import { CheckIcon, DeleteIcon, RedoIcon, UndoIcon } from './index';
+import {
+  EllipseIcon, ImageIcon, KIT_SHAPE_KINDS, LassoIcon, LineIcon, PenIcon, PencilIcon, PolygonIcon,
+  RectIcon, StarIcon, TextIcon, UnknownIcon,
+} from '@weasel-js/core';
+import { CheckIcon, DeleteIcon, RedoIcon, ShapeKindIcon, UndoIcon } from './index';
 import { isFillable } from './Icon';
 import { ICON_FILLS, ICON_GROUPS, ICON_PATHS, type IconName } from './paths';
 
@@ -122,5 +126,27 @@ describe('core action glyph re-exports', () => {
       expect(ui[name], name).toBe(core[name]);
       expect(ui[name], name).toBeTypeOf('function');
     }
+  });
+});
+
+describe('ShapeKindIcon', () => {
+  const GLYPHS = {
+    rect: RectIcon, ellipse: EllipseIcon, line: LineIcon, polygon: PolygonIcon, star: StarIcon,
+    pen: PenIcon, pencil: PencilIcon, lasso: LassoIcon, text: TextIcon, image: ImageIcon,
+  };
+
+  it('draws the insertion tool glyph for every built-in shape kind', () => {
+    for (const kind of [...KIT_SHAPE_KINDS, 'image'] as const) {
+      const Glyph = GLYPHS[kind];
+      const a = render(<ShapeKindIcon kind={kind} size={16} />).container.innerHTML;
+      const b = render(<Glyph size={16} />).container.innerHTML;
+      expect(a, kind).toBe(b);
+    }
+  });
+
+  it('falls back to the unknown glyph for a kind the kit does not ship', () => {
+    const a = render(<ShapeKindIcon kind="sprocket" />).container.innerHTML;
+    const b = render(<UnknownIcon />).container.innerHTML;
+    expect(a).toBe(b);
   });
 });

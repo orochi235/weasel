@@ -4,7 +4,6 @@ import { defaultNodeRouting, defaultNodeProperties, type NodeRoutingEntry, type 
 import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import type { ShortcutInput } from '@weasel-js/ui';
 import * as AppIcons from '../actionIcons';
-import * as KindIcons from '../kindIcons';
 
 /** Discriminated leaf entry. One of these per row in the tree's right pane. */
 export type TreeEntry =
@@ -237,8 +236,8 @@ export interface IconEntry {
   id: string;
   label: string;
   /** `action`: a glyph a kit action ships as its `icon`. `app`: one of
-   *  WeaselDraw's own controls. `kind`: a scene-node kind's glyph. */
-  source: 'action' | 'app' | 'kind';
+   *  WeaselDraw's own controls. */
+  source: 'action' | 'app';
   /** For `action` glyphs, the `ActionItem.key` of every entry that draws it. */
   actions?: readonly string[];
   Component: ComponentType;
@@ -390,10 +389,6 @@ export function collectIcons(actions: readonly ActionEntry[]): readonly IconEntr
   for (const [id, Component] of Object.entries(AppIcons)) {
     if (!isLikelyComponent(Component)) continue;
     out.push({ kind: 'icon', id, label: id, source: 'app', Component: Component as ComponentType });
-  }
-  for (const [id, Component] of Object.entries(KindIcons)) {
-    if (!isLikelyComponent(Component)) continue;
-    out.push({ kind: 'icon', id, label: id, source: 'kind', Component: Component as ComponentType });
   }
   return out;
 }
