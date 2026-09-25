@@ -510,7 +510,12 @@ function TrialRuntime({
         minZoom={stage.minZoom}
         maxZoom={stage.maxZoom}
         hostRef={loupeHostRef}
-        overlay={lens}
+        overlay={
+          <>
+            {stage.overlay?.(renderCtx)}
+            {lens}
+          </>
+        }
       >
         {instrument.render(renderCtx)}
       </Stage>

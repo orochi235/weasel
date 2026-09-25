@@ -70,7 +70,7 @@ export interface CanvasCapability<TS = unknown, TC = unknown> {
 /** Declares that an instrument's DOM is content of a fixed size, which the
  *  trial pans and zooms the way it does a canvas's layers. Not combined with
  *  `canvas`: there the DOM is an unzoomed overlay, and `canvas` wins. */
-export interface StageCapability {
+export interface StageCapability<TS = unknown, TC = unknown> {
   /** The content's own size in CSS pixels, at zoom 1. */
   size: ViewportSize;
   /** Where the view starts. Omitted, the content opens centered and shrunk to
@@ -78,6 +78,9 @@ export interface StageCapability {
   initialView?: ViewTransform | ((viewport: ViewportSize) => ViewTransform);
   minZoom?: number;
   maxZoom?: number;
+  /** Drawn over the content in viewport pixels, outside the camera — a legend,
+   *  a floating panel, anything that must not zoom with the picture. */
+  overlay?: (ctx: RenderContext<TS, TC>) => ReactNode;
 }
 
 /** Declares which of an instrument's layers the trial should offer
@@ -159,7 +162,7 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   serialize?: (state: TS) => unknown;
   deserialize?: (data: unknown, config: TC) => TS;
   canvas?: CanvasCapability<TS, TC>;
-  stage?: StageCapability;
+  stage?: StageCapability<TS, TC>;
   layers?: LayerCapability;
   dragDrop?: DragDropCapability<TS, TC>;
   undo?: UndoCapability;

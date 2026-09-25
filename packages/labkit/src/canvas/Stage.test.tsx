@@ -183,4 +183,22 @@ describe('an instrument that declares a stage', () => {
     render(<Lab instruments={[plain]} defaultInstrument="Plain" />);
     expect(screen.queryByRole('button', { name: 'Zoom in' })).toBeNull();
   });
+
+  it('draws its overlay on the stage, outside the camera', () => {
+    const overlaid = defineInstrument<{ n: number }, Record<string, never>>({
+      name: 'Overlaid',
+      defaultConfig: () => ({}),
+      initialState: () => ({ n: 7 }),
+      render: () => <div data-testid="art" />,
+      stage: {
+        size: { width: 240, height: 160 },
+        overlay: ({ state }) => <div data-testid="legend">{state.n}</div>,
+      },
+    });
+    const { container } = render(<Lab instruments={[overlaid]} defaultInstrument="Overlaid" />);
+    const legend = screen.getByTestId('legend');
+    expect(legend).toHaveTextContent('7');
+    expect(container.querySelector('.lk-stage')).toContainElement(legend);
+    expect(content(container)).not.toContainElement(legend);
+  });
 });
