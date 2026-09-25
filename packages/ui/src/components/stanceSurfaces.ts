@@ -127,7 +127,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
   {
     // A strip between rules: no box, so a stance reaches the fill, the rule and the heading.
     id: 'sidebar-section',
-    file: 'packages/labkit/src/primitives/Sidebar.less',
+    file: 'packages/labkit/src/chrome/regions/SidebarRegion.less',
     selector: '.lk-sidebar-section',
     fills: true,
     base: {

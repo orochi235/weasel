@@ -66,7 +66,7 @@ import {
   ToolOptionsBar,
   Tooltip,
   TooltipTrigger,
-  Sidebar as UiSidebar,
+  Sidebar,
   StatusBar as UiStatusBar,
 } from '@weasel-js/ui';
 import { type CSSProperties, type ReactNode, useId, useMemo, useRef, useState } from 'react';
@@ -76,7 +76,6 @@ import { FloatingPanel } from '../primitives/FloatingPanel';
 import { JobProgress } from '../primitives/JobProgress';
 import { Legend, type LegendEntry } from '../primitives/Legend';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
-import { Sidebar } from '../primitives/Sidebar';
 import { Split } from '../primitives/Split';
 import { StatusBar } from '../primitives/StatusBar';
 import { Toolbar } from '../primitives/Toolbar';
@@ -515,7 +514,7 @@ function PanelsAndRows() {
       </Cell>
       <Cell label="Sidebar, SidebarPanel">
         <div className="lk-specimen__box">
-          <UiSidebar side="right" ariaLabel="Specimen sidebar">
+          <Sidebar side="right" ariaLabel="Specimen sidebar">
             <SidebarPanel
               title="Selection"
               collapsed={panelCollapsed}
@@ -524,7 +523,7 @@ function PanelsAndRows() {
             >
               <div className="lk-specimen__pad">2 items selected</div>
             </SidebarPanel>
-          </UiSidebar>
+          </Sidebar>
         </div>
       </Cell>
     </Section>
@@ -798,7 +797,6 @@ function EditorsAndPlots() {
 }
 
 function LabChrome() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [zoom, setZoom] = useState(1);
   return (
     <Section title="Lab chrome">
@@ -821,18 +819,6 @@ function LabChrome() {
           <StatusBar.Section>Items: 12</StatusBar.Section>
           <StatusBar.Section>Zoom: 100%</StatusBar.Section>
         </StatusBar>
-      </Cell>
-      <Cell label="Sidebar">
-        <div className="lk-specimen__box">
-          <div className="lk-specimen__box-main">main</div>
-          <Sidebar
-            title="Controls"
-            collapsed={sidebarCollapsed}
-            onToggle={() => setSidebarCollapsed((v) => !v)}
-          >
-            <p>One slider</p>
-          </Sidebar>
-        </div>
       </Cell>
       <Cell label="Legend, JobProgress">
         <Legend entries={LEGEND} />

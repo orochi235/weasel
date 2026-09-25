@@ -11,7 +11,6 @@ A map of the library so agents can find what they need quickly.
 | `<LabShell>` | `src/lab/LabShell.tsx` |
 | `<Workspace>` | `src/lab/Workspace.tsx` |
 | `<Toolbar>` + subcomponents | `src/primitives/Toolbar.tsx` |
-| `<Sidebar>` | `src/primitives/Sidebar.tsx` |
 | `<StatusBar>` | `src/primitives/StatusBar.tsx` |
 | `<FpsMeter>` | `src/primitives/FpsMeter.tsx` |
 | `<ScaleIndicator>` | `src/primitives/ScaleIndicator.tsx` |
