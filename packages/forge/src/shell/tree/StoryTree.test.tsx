@@ -138,8 +138,8 @@ describe('StoryTree', () => {
     openFolder('Kit');
     const button = item(treeEl, 'Button');
     fireEvent.click(within(button).getByText('Button'));
-    expect(button).toHaveAttribute('aria-expanded', 'true');
     await waitFor(() => expect(trialsOf(buttonIndex)).toHaveLength(1));
+    expect(button).toHaveAttribute('aria-expanded', 'true');
     expect(allTrials()).toHaveLength(1);
     expect(location.hash).toBe(`#/${encodeURIComponent(buttonIndex.id)}`);
     expect(button).toHaveAttribute('aria-current', 'true');
@@ -151,6 +151,36 @@ describe('StoryTree', () => {
 
     fireEvent.click(within(button).getByText('Button'));
     expect(button).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('closes a component its selection opened once the selection moves on, and keeps one opened by hand', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    const { treeEl } = await mount();
+    openFolder('Kit');
+    fireEvent.click(within(item(treeEl, 'Button')).getByText('Button'));
+    await waitFor(() => expect(item(treeEl, 'Button')).toHaveAttribute('aria-expanded', 'true'));
+    fireEvent.click(within(item(treeEl, 'Slider')).getByText('Slider'));
+    await waitFor(() => expect(item(treeEl, 'Slider')).toHaveAttribute('aria-expanded', 'true'));
+    expect(item(treeEl, 'Button')).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(foldOf(item(treeEl, 'Button')));
+    fireEvent.click(within(item(treeEl, 'Button')).getByText('Button'));
+    await waitFor(() => expect(location.hash).toBe(`#/${encodeURIComponent(buttonIndex.id)}`));
+    expect(item(treeEl, 'Slider')).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(within(item(treeEl, 'Slider')).getByText('Slider'));
+    await waitFor(() => expect(item(treeEl, 'Slider')).toHaveAttribute('aria-expanded', 'true'));
+    expect(item(treeEl, 'Button')).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('lets a selection open a component that was closed by hand', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    const { treeEl } = await mount();
+    openFolder('Kit');
+    fireEvent.click(foldOf(item(treeEl, 'Button')));
+    fireEvent.click(foldOf(item(treeEl, 'Button')));
+    expect(item(treeEl, 'Button')).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(within(item(treeEl, 'Button')).getByText('Button'));
+    await waitFor(() => expect(item(treeEl, 'Button')).toHaveAttribute('aria-expanded', 'true'));
   });
 
   it('folds a component with its fold mark alone, running nothing', async () => {
@@ -330,8 +360,8 @@ describe('StoryTree', () => {
       const button = item(treeEl, 'Button');
       act(() => button.focus());
       fireEvent.keyDown(button, { key: 'Enter' });
-      expect(button).toHaveAttribute('aria-expanded', 'true');
       await waitFor(() => expect(trialsOf(buttonIndex)).toHaveLength(1));
+      expect(button).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('opens a story’s trial with Space', async () => {

@@ -124,7 +124,11 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
       setOpen(node.path, !isOpen(node.path));
       return;
     }
-    setOpen(node.path, true);
+    // Selection opens it, and closes it again once the selection moves on; only a manual fold is stored. A
+    // manual close would outrank the selection, so it is dropped.
+    if (folds[node.path] === false) {
+      setFolds(({ [node.path]: _dropped, ...rest }) => rest);
+    }
     activate(node.index, another);
   };
 
