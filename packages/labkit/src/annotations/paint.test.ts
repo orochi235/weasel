@@ -99,6 +99,20 @@ describe('markCommands', () => {
   it('draws an untitled text mark as nothing rather than an empty run', () => {
     expect(markCommands(mark('text'), CONTENT)).toEqual([]);
   });
+
+  it('draws a point as a small unfilled ring centered on its one stored point', () => {
+    const cmds = markCommands(mark('point', { points: [{ x: 0.25, y: 0.5 }] }), CONTENT);
+    expect(cmds).toHaveLength(1);
+    expect((cmds[0] as { fill?: unknown }).fill).toBeUndefined();
+    const pts = anchors(cmds);
+    const xs = pts.filter((_, i) => i % 2 === 0);
+    const ys = pts.filter((_, i) => i % 2 === 1);
+    // Centered on (50, 50) in world, radius 4.
+    expect(Math.min(...xs)).toBeCloseTo(46, 4);
+    expect(Math.max(...xs)).toBeCloseTo(54, 4);
+    expect(Math.min(...ys)).toBeCloseTo(46, 4);
+    expect(Math.max(...ys)).toBeCloseTo(54, 4);
+  });
 });
 
 describe('markCommands styling', () => {
@@ -115,6 +129,13 @@ describe('markCommands styling', () => {
     const [stale] = markCommands(mark('rect'), CONTENT, { stale: true });
     expect((fresh as { stroke?: { dash?: number[] } }).stroke?.dash).toBeUndefined();
     expect((stale as { stroke?: { dash?: number[] } }).stroke?.dash).toEqual([6, 4]);
+  });
+
+  it('dashes a stale point ring like any other mark', () => {
+    const [ring] = markCommands(mark('point', { points: [{ x: 0.25, y: 0.5 }] }), CONTENT, {
+      stale: true,
+    });
+    expect((ring as { stroke?: { dash?: number[] } }).stroke?.dash).toEqual([6, 4]);
   });
 
   it("colors a text mark's glyphs too, not only the outlines", () => {

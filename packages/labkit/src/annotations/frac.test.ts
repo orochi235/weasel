@@ -51,6 +51,13 @@ describe('fraction hit geometry', () => {
     expect(fracContains(box, { x: 0.18, y: 0.3 }, 0.05)).toBe(true);
   });
 
+  it('reaches a zero-size box through the tolerance alone', () => {
+    const dot: FracRect = { x: 0.25, y: 0.5, w: 0, h: 0 };
+    expect(fracContains(dot, { x: 0.25, y: 0.5 })).toBe(true);
+    expect(fracContains(dot, { x: 0.26, y: 0.51 })).toBe(false);
+    expect(fracContains(dot, { x: 0.26, y: 0.51 }, 0.02)).toBe(true);
+  });
+
   it('encloses only a box that lies wholly inside', () => {
     expect(fracEncloses({ x: 0, y: 0, w: 1, h: 1 }, box)).toBe(true);
     // Overlapping is not containing: a marquee takes what it encloses.

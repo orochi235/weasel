@@ -21,8 +21,9 @@ export interface FracRect {
 }
 
 /** What shape a mark is. The kinds map onto weasel's own tools; an arrow is a
- *  line carrying an end marker, not a separate geometry. */
-export type AnnotationKind = 'stroke' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'text';
+ *  line carrying an end marker, not a separate geometry. A point holds one
+ *  entry in `points` and zero-size bounds at that position. */
+export type AnnotationKind = 'stroke' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'text' | 'point';
 
 /** One selectable status in an instrument's meaning tier. */
 export interface AnnotationStatus {

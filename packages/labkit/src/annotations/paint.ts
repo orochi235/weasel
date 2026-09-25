@@ -17,6 +17,7 @@ const MARK_COLOR = '#e5484d';
  *  marker geometry can be resolved here, which needs a resolved width. */
 const MARK_WIDTH = 2;
 const TEXT_SIZE = 14;
+const POINT_RADIUS = 4;
 
 /** The subset of a mark's scene node this needs: where it is, and what it is. */
 export interface PaintableMark {
@@ -108,6 +109,17 @@ export function markCommands(
     }
     case 'stroke':
       return [{ kind: 'path', path: polyline(vertices(m, content)), stroke }];
+    case 'point': {
+      const stored = m.data.points?.[0];
+      const c = stored ? toWorld(stored, content) : { x: m.pose.x, y: m.pose.y };
+      const ring = {
+        x: c.x - POINT_RADIUS,
+        y: c.y - POINT_RADIUS,
+        width: 2 * POINT_RADIUS,
+        height: 2 * POINT_RADIUS,
+      };
+      return [{ kind: 'path', path: ellipsePath(ring), stroke }];
+    }
     case 'text': {
       const text = m.data.title;
       if (!text) return [];

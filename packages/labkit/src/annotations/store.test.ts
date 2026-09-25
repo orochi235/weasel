@@ -245,6 +245,37 @@ describe('the annotation store', () => {
     expect(revived.query()).toHaveLength(1);
   });
 
+  it('round-trips a point mark with its one stored point and zero-size bounds', () => {
+    const store = makeStore();
+    const id = store.add({
+      target: 'naive',
+      kind: 'point',
+      frac: { x: 0.25, y: 0.5, w: 0, h: 0 },
+      points: [{ x: 0.25, y: 0.5 }],
+    });
+    expect(store.get(id)).toMatchObject({
+      kind: 'point',
+      frac: { x: 0.25, y: 0.5, w: 0, h: 0 },
+      points: [{ x: 0.25, y: 0.5 }],
+    });
+
+    const revived = annotationsFromJSON(JSON.parse(JSON.stringify(store.toJSON())), () => TARGETS);
+    expect(revived.get(id)).toEqual(store.get(id));
+  });
+
+  it('hit-tests a point mark through the tolerance, since its bounds have no area', () => {
+    const store = makeStore();
+    const id = store.add({
+      target: 'naive',
+      kind: 'point',
+      frac: { x: 0.25, y: 0.5, w: 0, h: 0 },
+      points: [{ x: 0.25, y: 0.5 }],
+    });
+    expect(store.hitTest('naive', { x: 0.26, y: 0.51 })).toHaveLength(0);
+    expect(store.hitTest('naive', { x: 0.26, y: 0.51 }, 0.02).map((a) => a.id)).toEqual([id]);
+    expect(store.hitTest('naive', { x: 0.3, y: 0.51 }, 0.02)).toHaveLength(0);
+  });
+
   it('reads a meaning passed as a thunk at each capture', async () => {
     let color = '#111111';
     const store = annotationsFromJSON(null, () => TARGETS, {
