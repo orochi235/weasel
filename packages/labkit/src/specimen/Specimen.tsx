@@ -7,9 +7,7 @@ import {
   ButtonBar,
   Callout,
   Checkbox,
-  CheckboxRow,
   ColorField,
-  ColorRow,
   ComboBox,
   type ControlPoint,
   CurveEditor,
@@ -29,7 +27,6 @@ import {
   MenuButton,
   moveLayers,
   NumberField,
-  NumberRow,
   OptionsBar,
   PaintInput,
   Plot2D,
@@ -37,6 +34,7 @@ import {
   Powerline,
   type PrefGroup,
   PrefsForm,
+  PropertyField,
   PropertyGroup,
   PropertyList,
   PropertyPanel,
@@ -45,11 +43,9 @@ import {
   RangeSlider,
   ResizeHandle,
   Select,
-  SelectRow,
   Sidebar,
   SidebarPanel,
   Slider,
-  SliderRow,
   StatusBarItem,
   StatusBarSpacer,
   Switch,
@@ -57,12 +53,10 @@ import {
   TabList,
   TabPanel,
   Tabs,
-  TextRow,
   type Thumb,
   Timeline,
   ToastRegion,
   ToggleBar,
-  ToggleRow,
   ToolButton,
   ToolGroup,
   ToolOptionsBar,
@@ -445,7 +439,9 @@ function PanelsAndRows() {
       <Cell label="PropertyPanel">
         <PropertyPanel title="Shape">
           <PropertyList>
-            <SliderRow
+            <PropertyField
+              kind="number"
+              control="slider"
               label="Opacity"
               value={opacity}
               min={0}
@@ -453,7 +449,9 @@ function PanelsAndRows() {
               step={0.01}
               onChange={setOpacity}
             />
-            <SliderRow
+            <PropertyField
+              kind="number"
+              control="slider"
               label="Radius"
               value={radius}
               min={0}
@@ -461,16 +459,18 @@ function PanelsAndRows() {
               unit="px"
               onChange={setRadius}
             />
-            <ColorRow
+            <PropertyField
+              kind="color"
               label="Fill"
               value={fill}
               onChange={setFill}
               alpha={alpha}
               onAlphaChange={setAlpha}
             />
-            <ColorRow label="Stroke" value={stroke} onChange={setStroke} />
-            <NumberRow label="Count" value={count} min={0} max={100} step={1} onChange={setCount} />
-            <SelectRow
+            <PropertyField kind="color" label="Stroke" value={stroke} onChange={setStroke} />
+            <PropertyField kind="number" label="Count" value={count} min={0} max={100} step={1} onChange={setCount} />
+            <PropertyField
+              kind="enum"
               label="Line cap"
               value={cap}
               onChange={setCap}
@@ -479,7 +479,9 @@ function PanelsAndRows() {
                 { value: 'round', label: 'Round' },
               ]}
             />
-            <ToggleRow
+            <PropertyField
+              kind="enum"
+              control="toggle"
               label="Align"
               value={side}
               onChange={setSide}
@@ -489,10 +491,10 @@ function PanelsAndRows() {
                 { value: 'right', label: 'R' },
               ]}
             />
-            <TextRow label="Label" value={label} onChange={setLabel} />
-            <CheckboxRow label="Visible" value={visible} onChange={setVisible} />
+            <PropertyField kind="string" label="Label" value={label} onChange={setLabel} />
+            <PropertyField kind="boolean" label="Visible" value={visible} onChange={setVisible} />
             <PropertyGroup title="Bevel" defaultCollapsed>
-              <SliderRow label="Rings" value={32} min={4} max={96} step={1} onChange={() => {}} />
+              <PropertyField kind="number" control="slider" label="Rings" value={32} min={4} max={96} step={1} onChange={() => {}} />
             </PropertyGroup>
           </PropertyList>
         </PropertyPanel>

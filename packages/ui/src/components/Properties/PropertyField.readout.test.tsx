@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { SliderRow } from './PropertyPanel';
+import { PropertyField } from './PropertyField';
 
 /**
  * A slider row's readout swaps between an editable input and a word when the row
@@ -15,7 +15,7 @@ import { SliderRow } from './PropertyPanel';
  * wrapper element, and that both boxes take their height from the same token.
  * Only a browser can prove the pixels; the measurement is in the commit.
  */
-describe('SliderRow auto readout', () => {
+describe('slider field auto readout', () => {
   // Comments stripped first: they talk about height, and a declaration regex cannot tell.
   const sheet = readFileSync(resolve(__dirname, 'Properties.module.css'), 'utf8').replace(
     /\/\*[\s\S]*?\*\//g,
@@ -34,7 +34,7 @@ describe('SliderRow auto readout', () => {
 
   it('wraps a text readout in the same group element the input uses', () => {
     const { container } = render(
-      <SliderRow label="Width" value={20} min={0} max={100} readout="auto · 18" onChange={() => {}} />,
+      <PropertyField kind="number" control="slider" label="Width" value={20} min={0} max={100} readout="auto · 18" onChange={() => {}} />,
     );
     const group = container.querySelector('[class*="readoutGroup"]');
     expect(group?.textContent).toBe('auto · 18');
@@ -43,7 +43,7 @@ describe('SliderRow auto readout', () => {
 
   it('leaves the editable readout in place when the row is not auto', () => {
     const { container } = render(
-      <SliderRow label="Width" value={20} min={0} max={100} onChange={() => {}} />,
+      <PropertyField kind="number" control="slider" label="Width" value={20} min={0} max={100} onChange={() => {}} />,
     );
     const group = container.querySelector('[class*="readoutGroup"]');
     expect(group?.querySelector('input')).not.toBeNull();
@@ -51,7 +51,9 @@ describe('SliderRow auto readout', () => {
 
   it('passes a rendered readout through untouched, so a caller can style its own', () => {
     const { container } = render(
-      <SliderRow
+      <PropertyField
+        kind="number"
+        control="slider"
         label="Width"
         value={20}
         min={0}

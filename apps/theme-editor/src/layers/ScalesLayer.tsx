@@ -1,6 +1,6 @@
 import type { ThemeDefinition } from '@weasel-js/theme';
 import type { Lookup, ScaleDef } from '@weasel-js/theme/engine';
-import { Button, PropertyGroup, PropertyPanel, SliderRow } from '@weasel-js/ui';
+import { Button, PropertyField, PropertyGroup, PropertyPanel } from '@weasel-js/ui';
 import { useEffect, useMemo, useRef } from 'react';
 import styles from '../ThemeEditor.module.css';
 import type { DerivedDraft } from '../theme/draft';
@@ -116,7 +116,9 @@ function ScaleSection({
               );
             }
             return (
-              <SliderRow
+              <PropertyField
+                kind="number"
+                control="slider"
                 key={p.key}
                 label={p.label}
                 value={raw}

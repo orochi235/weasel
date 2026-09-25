@@ -1,16 +1,10 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
+import { PropertyField } from './PropertyField';
 import {
-  CheckboxRow,
-  ColorRow,
-  NumberRow,
   PropertyList,
   PropertyPanel,
   PropertyRow,
-  SelectRow,
-  SliderRow,
-  TextRow,
-  ToggleRow,
 } from './PropertyPanel';
 
 // Titled "Gallery" so it sorts above PropertyPanel/PropertyList/Rows in the
@@ -30,7 +24,9 @@ function BlockRows() {
   return (
     <PropertyPanel title="Block layout (default)">
       <PropertyList>
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Opacity"
           value={opacity}
           min={0}
@@ -39,9 +35,10 @@ function BlockRows() {
           onChange={setOpacity}
           format={(v) => v.toFixed(2)}
         />
-        <NumberRow label="Count" value={count} onChange={setCount} min={0} max={100} />
-        <TextRow label="Name" value={name} onChange={setName} />
-        <SelectRow
+        <PropertyField kind="number" label="Count" value={count} onChange={setCount} min={0} max={100} />
+        <PropertyField kind="string" label="Name" value={name} onChange={setName} />
+        <PropertyField
+          kind="enum"
           label="Mode"
           value={mode}
           onChange={setMode}
@@ -51,7 +48,9 @@ function BlockRows() {
             { value: 'both', label: 'Fill + stroke' },
           ]}
         />
-        <ToggleRow
+        <PropertyField
+          kind="enum"
+          control="toggle"
           label="Align"
           value={align}
           onChange={setAlign}
@@ -75,7 +74,9 @@ function InlineRows() {
   return (
     <PropertyPanel title="Inline layout">
       <PropertyList>
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Opacity"
           layout="inline"
           value={opacity}
@@ -85,7 +86,8 @@ function InlineRows() {
           onChange={setOpacity}
           format={(v) => v.toFixed(2)}
         />
-        <NumberRow
+        <PropertyField
+          kind="number"
           label="Count"
           layout="inline"
           value={count}
@@ -93,8 +95,9 @@ function InlineRows() {
           min={0}
           max={100}
         />
-        <TextRow label="Name" layout="inline" value={name} onChange={setName} />
-        <SelectRow
+        <PropertyField kind="string" label="Name" layout="inline" value={name} onChange={setName} />
+        <PropertyField
+          kind="enum"
           label="Mode"
           layout="inline"
           value={mode}
@@ -105,7 +108,9 @@ function InlineRows() {
             { value: 'both', label: 'Fill + stroke' },
           ]}
         />
-        <ToggleRow
+        <PropertyField
+          kind="enum"
+          control="toggle"
           label="Align"
           layout="inline"
           value={align}
@@ -131,12 +136,12 @@ function IntrinsicRows() {
   return (
     <PropertyPanel title="Intrinsic-layout variants">
       <PropertyList>
-        <ColorRow label="Fill" value={fill} onChange={setFill} />
-        <ColorRow label="Stroke" value={stroke} onChange={setStroke} />
-        <ColorRow label="Highlight" value={highlight} onChange={setHighlight} />
-        <ColorRow label="Shadow" value={shadow} onChange={setShadow} />
-        <CheckboxRow label="Visible" value={visible} onChange={setVisible} />
-        <CheckboxRow label="Snap to grid" value={snap} onChange={setSnap} />
+        <PropertyField kind="color" label="Fill" value={fill} onChange={setFill} />
+        <PropertyField kind="color" label="Stroke" value={stroke} onChange={setStroke} />
+        <PropertyField kind="color" label="Highlight" value={highlight} onChange={setHighlight} />
+        <PropertyField kind="color" label="Shadow" value={shadow} onChange={setShadow} />
+        <PropertyField kind="boolean" label="Visible" value={visible} onChange={setVisible} />
+        <PropertyField kind="boolean" label="Snap to grid" value={snap} onChange={setSnap} />
       </PropertyList>
     </PropertyPanel>
   );

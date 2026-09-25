@@ -1,5 +1,5 @@
 import type { Constraints } from '@weasel-js/theme/engine';
-import { PropertyGroup, SliderRow, ToggleRow } from '@weasel-js/ui';
+import { PropertyField, PropertyGroup } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
 
 export type SetConstraint = <K extends keyof Constraints>(key: K, value: Constraints[K]) => void;
@@ -19,7 +19,9 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
     <>
       <PropertyGroup title="Set">
         {!fixedCount && (
-          <SliderRow
+          <PropertyField
+            kind="number"
+            control="slider"
             label="Colors"
             value={c.count}
             min={5}
@@ -28,7 +30,9 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
             onChange={(v) => onSet('count', v)}
           />
         )}
-        <ToggleRow
+        <PropertyField
+          kind="enum"
+          control="toggle"
           label="Order"
           value={c.order}
           options={[
@@ -42,7 +46,9 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
       </PropertyGroup>
 
       <PropertyGroup title="Gates">
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Min hue gap"
           value={c.hueFloor}
           min={0}
@@ -53,7 +59,9 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           unit={<sup>°</sup>}
           description={`A share of the even ${(360 / Math.max(1, c.count)).toFixed(1)}° this many colors would get. Held as a share so the floor means the same thing at any count. 0 turns it off.`}
         />
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Min contrast"
           value={c.minContrast}
           min={0}
@@ -62,7 +70,9 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           onChange={(v) => onSet('minContrast', v)}
           description="WCAG, which reads lightness only. 3:1 is its floor for graphical objects. 0 turns it off."
         />
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="From surface"
           value={c.minSurfaceDistance}
           min={0}
@@ -71,7 +81,9 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           onChange={(v) => onSet('minSurfaceDistance', v)}
           description="Perceptual distance from the surface — the gate contrast cannot express, because it counts chroma. This is what lets a yellow stay yellow on paper. 0 turns it off."
         />
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Between colors"
           value={c.minDistance}
           min={0}
@@ -83,7 +95,9 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
       </PropertyGroup>
 
       <PropertyGroup title="Lightness law">
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Target"
           value={c.lightnessTarget}
           min={0.4}
@@ -91,7 +105,9 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           step={0.01}
           onChange={(v) => onSet('lightnessTarget', v)}
         />
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Pull"
           value={c.lightnessPull}
           min={0}
@@ -103,7 +119,9 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
       </PropertyGroup>
 
       <PropertyGroup title="Chroma">
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Fraction of cap"
           value={c.chromaFraction}
           min={0.4}
@@ -111,7 +129,9 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           step={0.01}
           onChange={(v) => onSet('chromaFraction', v)}
         />
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Equalize"
           value={c.equalize}
           min={0}

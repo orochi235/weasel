@@ -80,7 +80,7 @@
 }
 
 /* A dead alpha track keeps its groove but loses its thumb, so the affordance
-   reads inert rather than merely dimmed. Keyed off `:disabled`, which ColorRow
+   reads inert rather than merely dimmed. Keyed off `:disabled`, which a color field
    already sets on the input — not off a class on the row. */
 .alpha:disabled::-webkit-slider-runnable-track,
 .alpha:disabled::-moz-range-track {

@@ -1,0 +1,38 @@
+.column {
+  display: grid;
+  gap: var(--wzl-space-5);
+  width: 280px;
+}
+
+.wide {
+  width: 320px;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--wzl-space-8);
+  width: 640px;
+  align-items: start;
+}
+
+.caption {
+  margin: 0 0 var(--wzl-space-3);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--wzl-tracking-wider);
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  width: 280px;
+}
+
+.count {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}

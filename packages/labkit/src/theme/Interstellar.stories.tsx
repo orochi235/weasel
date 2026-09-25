@@ -2,12 +2,9 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { TokenName } from '@weasel-js/theme';
 import { useTheme } from '@weasel-js/theme/react';
 import {
-  CheckboxRow,
-  ColorRow,
+  PropertyField,
   PropertyList,
   PropertyPanel,
-  SliderRow,
-  TextRow,
 } from '@weasel-js/ui';
 import './Interstellar.stories.less';
 
@@ -148,7 +145,9 @@ function LivePanelPreview() {
       <h3 className="lk-theme-doc__heading">Live panel</h3>
       <PropertyPanel title="Sample">
         <PropertyList>
-          <SliderRow
+          <PropertyField
+            kind="number"
+            control="slider"
             label="Opacity"
             value={0.65}
             min={0}
@@ -157,10 +156,10 @@ function LivePanelPreview() {
             onChange={() => {}}
             format={(v) => v.toFixed(2)}
           />
-          <ColorRow label="Fill" value="#b08adb" onChange={() => {}} />
-          <ColorRow label="Stroke" value="#1a1428" onChange={() => {}} />
-          <TextRow label="Name" value="Untitled" onChange={() => {}} />
-          <CheckboxRow label="Visible" value={true} onChange={() => {}} />
+          <PropertyField kind="color" label="Fill" value="#b08adb" onChange={() => {}} />
+          <PropertyField kind="color" label="Stroke" value="#1a1428" onChange={() => {}} />
+          <PropertyField kind="string" label="Name" value="Untitled" onChange={() => {}} />
+          <PropertyField kind="boolean" label="Visible" value={true} onChange={() => {}} />
         </PropertyList>
       </PropertyPanel>
     </div>

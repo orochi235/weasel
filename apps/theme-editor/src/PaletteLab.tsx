@@ -1,10 +1,10 @@
 import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
 import { LABS, PALETTE_LAB } from '../../shared/labs';
 import {
+  PropertyField,
   PropertyPanel,
   RedoIcon,
   ResetIcon,
-  ToggleRow,
   UndoIcon,
 } from '@weasel-js/ui';
 import { useEffect, useMemo, useState } from 'react';
@@ -111,7 +111,9 @@ export function PaletteLab() {
               c={c}
               onSet={set}
               setRows={
-                <ToggleRow
+                <PropertyField
+                  kind="enum"
+                  control="toggle"
                   label="Surface"
                   value={surfaceKey}
                   options={[

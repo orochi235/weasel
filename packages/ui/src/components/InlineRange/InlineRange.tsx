@@ -1,4 +1,4 @@
-import { type CSSProperties, type InputHTMLAttributes, type ReactElement } from 'react';
+import { type CSSProperties, forwardRef, type InputHTMLAttributes, type Ref } from 'react';
 import shared from '../range.module.css';
 import s from './InlineRange.module.css';
 
@@ -20,13 +20,17 @@ export type InlineRangeProps = Omit<
  * one exists to sit inline beside a swatch or a readout, and to own the track
  * painting both of those surfaces need.
  */
-export function InlineRange(props: InlineRangeProps): ReactElement {
+export const InlineRange = forwardRef(function InlineRange(
+  props: InlineRangeProps,
+  ref: Ref<HTMLInputElement>,
+) {
   const { value, min = 0, max = 100, className, style, ...rest } = props;
   const span = max - min;
   const filled = span > 0 ? ((Math.min(Math.max(value, min), max) - min) / span) * 100 : 0;
   return (
     <input
       {...rest}
+      ref={ref}
       type="range"
       value={value}
       min={min}
@@ -35,4 +39,4 @@ export function InlineRange(props: InlineRangeProps): ReactElement {
       style={{ ['--slider-fill' as string]: `${filled}%`, ...style } as CSSProperties}
     />
   );
-}
+});

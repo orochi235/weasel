@@ -1,6 +1,6 @@
 import { isByAxis, type AxisDefs, type Varying } from '@weasel-js/theme';
 import type { SemanticRule } from '@weasel-js/theme/engine';
-import { Button, CheckboxRow, NumberRow, PropertyGroup, PropertyPanel, SelectRow, TextRow, ToggleRow } from '@weasel-js/ui';
+import { Button, PropertyField, PropertyGroup, PropertyPanel } from '@weasel-js/ui';
 import { useState } from 'react';
 import styles from '../ThemeEditor.module.css';
 import { RULE_KINDS, defaultRule, ruleKind, type SemanticRowView } from '../theme/semantics';
@@ -40,7 +40,8 @@ function AgainstRow({ against, onChange }: { against: readonly string[]; onChang
   const [raw, setRaw] = useState(() => against.join(', '));
   const text = sameJson(parseNames(raw), against) ? raw : against.join(', ');
   return (
-    <TextRow
+    <PropertyField
+      kind="string"
       label="Against"
       value={text}
       onChange={(v) => {
@@ -66,8 +67,8 @@ function RuleFields({
   if ('ref' in rule) {
     return (
       <>
-        <TextRow label="Reference" value={rule.ref} onChange={(ref) => onChange({ ...rule, ref }, 'ref')} />
-        <NumberRow label="Alpha" value={rule.alpha ?? null} min={0} max={1} step={0.01} onChange={(alpha) => onChange({ ...rule, alpha }, 'alpha')} />
+        <PropertyField kind="string" label="Reference" value={rule.ref} onChange={(ref) => onChange({ ...rule, ref }, 'ref')} />
+        <PropertyField kind="number" label="Alpha" value={rule.alpha ?? null} min={0} max={1} step={0.01} onChange={(alpha) => onChange({ ...rule, alpha }, 'alpha')} />
         {rule.alpha !== undefined && (
           <Button
             size="sm"
@@ -86,8 +87,9 @@ function RuleFields({
   if ('contrast' in rule) {
     return (
       <>
-        <SelectRow label="Ramp" value={rule.ramp} options={rampOptions} onChange={(ramp) => onChange({ ...rule, ramp }, 'ramp')} />
-        <NumberRow
+        <PropertyField kind="enum" label="Ramp" value={rule.ramp} options={rampOptions} onChange={(ramp) => onChange({ ...rule, ramp }, 'ramp')} />
+        <PropertyField
+          kind="number"
           label="Minimum"
           value={rule.contrast.min}
           min={1}
@@ -105,21 +107,23 @@ function RuleFields({
   if ('offset' in rule) {
     return (
       <>
-        <SelectRow
+        <PropertyField
+          kind="enum"
           label="From"
           value={rule.from}
           options={semantics.map((s) => ({ value: s, label: s }))}
           onChange={(from) => onChange({ ...rule, from }, 'from')}
         />
-        <NumberRow label="Offset" value={rule.offset} min={0} step={1} onChange={(offset) => onChange({ ...rule, offset }, 'offset')} />
-        <ToggleRow label="Direction" value={rule.dir} options={DIRECTIONS} onChange={(dir) => onChange({ ...rule, dir }, 'dir')} />
+        <PropertyField kind="number" label="Offset" value={rule.offset} min={0} step={1} onChange={(offset) => onChange({ ...rule, offset }, 'offset')} />
+        <PropertyField kind="enum" control="toggle" label="Direction" value={rule.dir} options={DIRECTIONS} onChange={(dir) => onChange({ ...rule, dir }, 'dir')} />
       </>
     );
   }
   if ('step' in rule) {
     return (
       <>
-        <SelectRow
+        <PropertyField
+          kind="enum"
           label="Ramp"
           value={rule.ramp}
           options={rampOptions}
@@ -128,7 +132,8 @@ function RuleFields({
         {isByAxis(rule.step) ? (
           <p className={styles.paramNote}>The step varies by {rule.step.by}; edit it in the definition file.</p>
         ) : (
-          <SelectRow
+          <PropertyField
+            kind="enum"
             label="Step"
             value={rule.step}
             options={(ramps[rule.ramp] ?? []).map((s) => ({ value: s, label: s }))}
@@ -138,7 +143,7 @@ function RuleFields({
       </>
     );
   }
-  return <TextRow label="Value" value={String(rule.value)} onChange={(value) => onChange({ ...rule, value }, 'value')} />;
+  return <PropertyField kind="string" label="Value" value={String(rule.value)} onChange={(value) => onChange({ ...rule, value }, 'value')} />;
 }
 
 export function SemanticDrawer({ name, rule, row, axes, ramps, semantics, issues, onRule, onRevert, onClose }: SemanticDrawerProps) {
@@ -190,10 +195,10 @@ export function SemanticDrawer({ name, rule, row, axes, ramps, semantics, issues
       )}
       <PropertyPanel title="Rule">
         <PropertyGroup title="Kind">
-          {(varies || modeValues.length > 1) && <CheckboxRow label={`Varies by ${axis}`} value={varies} onChange={setVaries} />}
-          {varies && <ToggleRow label="Editing" value={branch} options={values.map((v) => ({ value: v, label: v }))} onChange={setBranch} />}
+          {(varies || modeValues.length > 1) && <PropertyField kind="boolean" label={`Varies by ${axis}`} value={varies} onChange={setVaries} />}
+          {varies && <PropertyField kind="enum" control="toggle" label="Editing" value={branch} options={values.map((v) => ({ value: v, label: v }))} onChange={setBranch} />}
           {current !== undefined && !isByAxis(current) && (
-            <SelectRow label="Rule" value={ruleKind(current)} options={RULE_KINDS} onChange={(kind) => write(defaultRule(kind, current, ramps, others), 'kind')} />
+            <PropertyField kind="enum" label="Rule" value={ruleKind(current)} options={RULE_KINDS} onChange={(kind) => write(defaultRule(kind, current, ramps, others), 'kind')} />
           )}
         </PropertyGroup>
         <PropertyGroup title="Fields">

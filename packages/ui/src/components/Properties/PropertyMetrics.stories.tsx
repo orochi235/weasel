@@ -1,15 +1,11 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
+import { PropertyField } from './PropertyField';
 import {
-  CheckboxRow,
-  ColorRow,
-  NumberRow,
   type PropertyAlign,
   type PropertyDensity,
   PropertyList,
   PropertyPanel,
-  SliderRow,
-  TextRow,
 } from './PropertyPanel';
 
 const meta: Meta = {
@@ -36,7 +32,8 @@ function Palette({ align }: { align?: PropertyAlign }) {
     <PropertyPanel title={align ? `align="${align}"` : 'unset'} className="metrics-palette">
       <PropertyList align={align} pack="one-up">
         {SWATCHES.map(([label], i) => (
-          <ColorRow
+          <PropertyField
+            kind="color"
             key={label}
             label={label}
             value={colors[i]}
@@ -79,7 +76,9 @@ function Sample({ density }: { density?: PropertyDensity }) {
   return (
     <PropertyPanel title={density ? `density="${density}"` : 'unset'} density={density}>
       <PropertyList>
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Opacity"
           value={opacity}
           min={0}
@@ -87,10 +86,10 @@ function Sample({ density }: { density?: PropertyDensity }) {
           step={0.01}
           onChange={setOpacity}
         />
-        <NumberRow label="Count" value={count} onChange={setCount} min={0} max={100} />
-        <TextRow label="Name" value={name} onChange={setName} />
-        <ColorRow label="Fill" value={color} onChange={setColor} />
-        <CheckboxRow label="Locked" value={locked} onChange={setLocked} />
+        <PropertyField kind="number" label="Count" value={count} onChange={setCount} min={0} max={100} />
+        <PropertyField kind="string" label="Name" value={name} onChange={setName} />
+        <PropertyField kind="color" label="Fill" value={color} onChange={setColor} />
+        <PropertyField kind="boolean" label="Locked" value={locked} onChange={setLocked} />
       </PropertyList>
     </PropertyPanel>
   );
@@ -120,10 +119,10 @@ export const NumberUnits: Story = {
     return (
       <PropertyPanel title="Units sit outside the field">
         <PropertyList>
-          <NumberRow label="Radius" value={px} onChange={setPx} unit="px" />
-          <NumberRow label="Duration" value={ms} onChange={setMs} unit="ms" />
-          <NumberRow label="Angle" value={deg} onChange={setDeg} unit={<sup>°</sup>} />
-          <NumberRow label="Count" value={plain} onChange={setPlain} />
+          <PropertyField kind="number" label="Radius" value={px} onChange={setPx} unit="px" />
+          <PropertyField kind="number" label="Duration" value={ms} onChange={setMs} unit="ms" />
+          <PropertyField kind="number" label="Angle" value={deg} onChange={setDeg} unit={<sup>°</sup>} />
+          <PropertyField kind="number" label="Count" value={plain} onChange={setPlain} />
         </PropertyList>
       </PropertyPanel>
     );
@@ -140,19 +139,21 @@ export const VariantLayout: Story = {
       <Row>
         <PropertyPanel title="unset">
           <PropertyList>
-            <ColorRow
+            <PropertyField
+              kind="color"
               label="Fill"
               value={color}
               onChange={setColor}
               alpha={alpha}
               onAlphaChange={setAlpha}
             />
-            <CheckboxRow label="Locked" value={locked} onChange={setLocked} />
+            <PropertyField kind="boolean" label="Locked" value={locked} onChange={setLocked} />
           </PropertyList>
         </PropertyPanel>
         <PropertyPanel title='layout="block"'>
           <PropertyList>
-            <ColorRow
+            <PropertyField
+              kind="color"
               label="Fill"
               value={color}
               onChange={setColor}
@@ -160,7 +161,7 @@ export const VariantLayout: Story = {
               onAlphaChange={setAlpha}
               layout="block"
             />
-            <CheckboxRow label="Locked" value={locked} onChange={setLocked} layout="block" />
+            <PropertyField kind="boolean" label="Locked" value={locked} onChange={setLocked} layout="block" />
           </PropertyList>
         </PropertyPanel>
       </Row>

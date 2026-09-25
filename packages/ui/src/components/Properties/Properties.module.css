@@ -882,14 +882,16 @@
    is a handful of digits and a short string is a word. Stated as a width and
    not as a `min(100%, …)`, because an auto-width sidebar sizes to what its
    fields ask for and a percentage asks for an input's 20-character default. */
-.row input[type='number']:not(.readoutInput) {
+/* `.rowFramed` holds a kit field that brings its own frame, so these bare-input
+   rules skip it; `:where` keeps their specificity what it was. */
+.row:not(:where(.rowFramed)) input[type='number']:not(.readoutInput) {
   width: var(--wzl-prop-number-width, 9ch);
   max-width: 100%;
   -moz-appearance: textfield;
   appearance: textfield;
 }
 
-.row input[type='text']:not(.readoutInput) {
+.row:not(:where(.rowFramed)) input[type='text']:not(.readoutInput) {
   width: var(--wzl-prop-text-width, 16ch);
   max-width: 100%;
 }
@@ -934,8 +936,8 @@
   width: auto;
 }
 
-.row input[type='text']:not(.readoutInput),
-.row input[type='number'] {
+.row:not(:where(.rowFramed)) input[type='text']:not(.readoutInput),
+.row:not(:where(.rowFramed)) input[type='number'] {
   background: var(--wzl-surface-sunken);
   color: var(--wzl-fg);
   border: 1px solid var(--wzl-border);
@@ -953,7 +955,7 @@
 
 /* Numbers right-align so a column of them shares a decimal position; text does
    not, so this cannot live in the rule the two share. */
-.row input[type='number'] {
+.row:not(:where(.rowFramed)) input[type='number'] {
   text-align: right;
 }
 
@@ -963,14 +965,14 @@
    panel drives numbers by typing and dragging, never by the steppers.
    `.readoutInput` has always dropped them; this is the same removal for the
    typed field beside it. */
-.row input[type='number']::-webkit-inner-spin-button,
-.row input[type='number']::-webkit-outer-spin-button {
+.row:not(:where(.rowFramed)) input[type='number']::-webkit-inner-spin-button,
+.row:not(:where(.rowFramed)) input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.row input[type='text']:not(.readoutInput):focus,
-.row input[type='number']:focus {
+.row:not(:where(.rowFramed)) input[type='text']:not(.readoutInput):focus,
+.row:not(:where(.rowFramed)) input[type='number']:focus {
   outline: none;
   border-color: var(--wzl-focus-ring);
   box-shadow: 0 0 0 1px var(--wzl-focus-ring);
@@ -1077,7 +1079,7 @@
 /* Padding: 0 is important — the native <input type="color"> in some browsers (esp. Chrome) inflates beyond its
    declared box when given padding, which expands the grid row and pushes
    the paired slider track out of bottom alignment. */
-.rowColor input[type='color'] {
+.rowColor:not(:where(.rowFramed)) input[type='color'] {
   grid-column: 2;
   grid-row: 1;
   align-self: var(--wzl-prop-row-align, center);
@@ -1111,7 +1113,7 @@
   grid-row: 1;
 }
 
-.rowColor.rowBlock input[type='color'] {
+.rowColor.rowBlock:not(:where(.rowFramed)) input[type='color'] {
   grid-column: 1;
   grid-row: 2;
   justify-self: start;
@@ -1133,7 +1135,7 @@
   cursor: pointer;
 }
 
-.rowCheckbox input[type='checkbox']:not([role='switch']) {
+.rowCheckbox:not(:where(.rowFramed)) input[type='checkbox']:not([role='switch']) {
   accent-color: var(--wzl-accent);
   width: 14px;
   height: 14px;
@@ -1147,6 +1149,39 @@
   align-items: var(--wzl-prop-row-align, start);
 }
 
+
+/* A state the control cannot draw itself: a switch has no indeterminate form,
+   and nothing has an "unset" one. */
+.dimmed {
+  opacity: 0.55;
+}
+
+/* A slider cell's readout, beside its track rather than in a row's label line.
+   Doubled so a row laying its cells out evenly does not stretch it. */
+.cellReadout.cellReadout {
+  flex: none;
+  min-inline-size: 3ch;
+  text-align: end;
+}
+
+/* Names the unit a framed number field displays in, beside the field. */
+.unitSuffix {
+  flex: none;
+  font-size: var(--wzl-font-size-sm);
+  opacity: 0.6;
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--wzl-space-2) var(--wzl-space-4);
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm);
+  resize: vertical;
+}
 
 /* ── Segmented toggle group ───────────────────────────────────── */
 .toggle {

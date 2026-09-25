@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { PropertyList, PropertyPanel, SliderRow } from './PropertyPanel';
+import { PropertyField } from './PropertyField';
+import { PropertyList, PropertyPanel } from './PropertyPanel';
 import { Subpanel } from './Subpanel';
 
 const meta: Meta<typeof Subpanel> = {
@@ -15,10 +16,10 @@ export const Basic: Story = {
     <div style={{ width: 320 }}>
       <PropertyPanel title="Tail">
         <PropertyList>
-          <SliderRow label="Length" value={60} min={8} max={220} unit="px" onChange={() => {}} />
+          <PropertyField kind="number" control="slider" label="Length" value={60} min={8} max={220} unit="px" onChange={() => {}} />
           <Subpanel title="Bubbles">
-            <SliderRow label="Size" value={30} min={8} max={120} unit="px" onChange={() => {}} />
-            <SliderRow label="Count" value={3} min={1} max={8} onChange={() => {}} />
+            <PropertyField kind="number" control="slider" label="Size" value={30} min={8} max={120} unit="px" onChange={() => {}} />
+            <PropertyField kind="number" control="slider" label="Count" value={3} min={1} max={8} onChange={() => {}} />
           </Subpanel>
         </PropertyList>
       </PropertyPanel>
@@ -32,11 +33,11 @@ export const InPairs: Story = {
     <div style={{ width: 320 }}>
       <PropertyPanel title="Tail">
         <PropertyList pack="pairs">
-          <SliderRow label="Angle" value={115} min={0} max={359} unit="°" onChange={() => {}} />
-          <SliderRow label="Bend" value={0} min={-1} max={1} step={0.02} onChange={() => {}} />
+          <PropertyField kind="number" control="slider" label="Angle" value={115} min={0} max={359} unit="°" onChange={() => {}} />
+          <PropertyField kind="number" control="slider" label="Bend" value={0} min={-1} max={1} step={0.02} onChange={() => {}} />
           <Subpanel title="Bubbles">
-            <SliderRow label="Size" value={30} min={8} max={120} unit="px" onChange={() => {}} />
-            <SliderRow label="Count" value={3} min={1} max={8} onChange={() => {}} />
+            <PropertyField kind="number" control="slider" label="Size" value={30} min={8} max={120} unit="px" onChange={() => {}} />
+            <PropertyField kind="number" control="slider" label="Count" value={3} min={1} max={8} onChange={() => {}} />
           </Subpanel>
         </PropertyList>
       </PropertyPanel>
@@ -51,10 +52,10 @@ export const Toned: Story = {
       <PropertyPanel title="Stances">
         <PropertyList>
           <Subpanel title="Tone 0" tone={0}>
-            <SliderRow label="Amount" value={0.5} min={0} max={1} step={0.05} onChange={() => {}} />
+            <PropertyField kind="number" control="slider" label="Amount" value={0.5} min={0} max={1} step={0.05} onChange={() => {}} />
           </Subpanel>
           <Subpanel title="Advanced" stance="advanced">
-            <SliderRow label="Amount" value={0.5} min={0} max={1} step={0.05} onChange={() => {}} />
+            <PropertyField kind="number" control="slider" label="Amount" value={0.5} min={0} max={1} step={0.05} onChange={() => {}} />
           </Subpanel>
         </PropertyList>
       </PropertyPanel>
