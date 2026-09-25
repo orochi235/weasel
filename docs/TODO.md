@@ -969,6 +969,17 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 in its own iframe ("frame"), and the workshop shows it as a lab trial with
 controls. It is the only story runner in the repo.
 
+- **(P2) The CSS Vars panel's scale edits cannot be saved.** They are per-trial
+  browser overrides; nothing writes them back to `themes/weasel.json`. The
+  panel grows its own editor rather than linking out to the theme editor
+  (decided). Undecided: what the *font base* becomes when saved, since the
+  definition holds `{seeds.ui-base}` (11 / 13 / 15 by density), not a number —
+  either change only the current density's seed, keeping density working (the
+  proposal), or write the literal, flattening font size across densities. The
+  write path exists: the theme editor's dev server PUTs to `/__theme/<name>`,
+  hash-checked against the file, and regenerates `packages/theme/src/generated/`;
+  forge would need that endpoint.
+
 - **(P3) Storybook's secondary-panel addon has no forge equivalent.** It pinned
   a second addon panel into a fixed column beside the first, so controls and
   CSS vars could be read at once. forge tiles its panels through labkit's
