@@ -132,8 +132,8 @@ export function FrameView(props: FrameViewProps) {
   const slotRef = useRef<HTMLDivElement>(null);
   const inView = useInView(hostRef);
   const link = useRef<Link | null>(null);
-  const latest = useRef({ ...props, globals, overrides, pool, lab });
-  latest.current = { ...props, globals, overrides, pool, lab };
+  const latest = useRef({ ...props, globals, overrides, pool, lab, title });
+  latest.current = { ...props, globals, overrides, pool, lab, title };
   const [fault, setFault] = useState<Fault | null>(null);
   // A loaded document stays hidden until its story has rendered, so a new trial never shows the blank page.
   const [pending, setPending] = useState(true);
@@ -270,6 +270,9 @@ export function FrameView(props: FrameViewProps) {
     ]);
   };
 
+  const connectRef = useRef(connect);
+  connectRef.current = connect;
+
   // A trial out of view drops its frame, and with it any WebGL contexts the story held; the config and state
   // live in the trial, so a return brings up a new frame and `init` carries them back.
   useEffect(() => {
@@ -278,7 +281,7 @@ export function FrameView(props: FrameViewProps) {
     const claimed = latest.current.pool?.claim() ?? null;
     const frame = claimed ?? document.createElement('iframe');
     frame.className = 'fg-frame-view';
-    frame.title = title;
+    frame.title = latest.current.title;
     frame.removeAttribute('tabindex');
     frame.toggleAttribute('data-pending', true);
     iframeRef.current = frame;
@@ -291,12 +294,12 @@ export function FrameView(props: FrameViewProps) {
       if (event.source !== frame.contentWindow || event.origin !== location.origin) return;
       if ((event.data as { type?: unknown } | null)?.type !== FRAME_HELLO) return;
       clearTimeout(unheard);
-      connect(frame);
+      connectRef.current(frame);
     };
     window.addEventListener('message', onMessage);
     if (claimed) {
       moveFrame(slot, claimed);
-      connect(claimed);
+      connectRef.current(claimed);
     } else {
       frame.src = src;
       slot.append(frame);
