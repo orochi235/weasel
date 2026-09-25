@@ -26,6 +26,10 @@ export type { RectPose };
 export interface PoseAdapter<TPose> {
   getPose(id: string): TPose;
   getParent(id: string): string | null;
+  /** Whether `id`'s pose is a frame its children are expressed in. Absent
+   *  means every node is one. A container whose pose derives from its children
+   *  is not: its children share its frame, so the fold passes over it. */
+  definesFrame?(id: string): boolean;
 }
 
 /**
@@ -83,7 +87,7 @@ export function composeWorldPose<TPose>(
   while (cursor !== null) {
     if (seen.has(cursor)) break;
     seen.add(cursor);
-    chain.push(cursor);
+    if (adapter.definesFrame?.(cursor) ?? true) chain.push(cursor);
     cursor = adapter.getParent(cursor);
   }
   // chain is [id, parent, grandparent, ..., root]; fold from the root down.
@@ -139,9 +143,25 @@ export function rebaseLocalPose<TPose>(
   compose: (parent: TPose, child: TPose) => TPose,
   decompose: (parent: TPose, world: TPose) => TPose,
 ): TPose {
-  if (newParentId === null) return worldPose;
-  const parentWorld = composeWorldPose(adapter, newParentId, compose);
-  return decompose(parentWorld, worldPose);
+  const frame = frameAtOrAbove(adapter, newParentId);
+  if (frame === null) return worldPose;
+  return decompose(composeWorldPose(adapter, frame, compose), worldPose);
+}
+
+/** The nearest node at or above `id` whose pose is a frame, or `null` for the
+ *  root frame. Cycle-safe, like `composeWorldPose`. */
+export function frameAtOrAbove<TPose>(
+  adapter: PoseAdapter<TPose>,
+  id: string | null,
+): string | null {
+  const seen = new Set<string>();
+  let cursor = id;
+  while (cursor !== null && !seen.has(cursor)) {
+    if (adapter.definesFrame?.(cursor) ?? true) return cursor;
+    seen.add(cursor);
+    cursor = adapter.getParent(cursor);
+  }
+  return null;
 }
 
 /** Inverse of `composeRectPose` — subtracts parent translation. */

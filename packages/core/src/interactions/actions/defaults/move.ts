@@ -44,7 +44,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
-import { documentPose, effectivePose } from 'core/scene/effectivePose';
+import { definesFrame, documentPose, effectivePose } from 'core/scene/effectivePose';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
 import { asNodeId } from 'core/scene/types';
@@ -409,6 +409,10 @@ function scenePoseAdapter(
   return {
     getPose: (id) => documentPose(scene, scene.get(id as NodeId)!),
     getParent: (id) => scene.get(id as NodeId)?.parent ?? null,
+    definesFrame: (id) => {
+      const node = scene.get(id as NodeId);
+      return node === undefined || definesFrame(node);
+    },
   };
 }
 

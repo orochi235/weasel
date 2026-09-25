@@ -238,3 +238,17 @@ export function effectivePose<TPose>(
 ): TPose {
   return poseIn(source, node, 'effective');
 }
+
+/**
+ * Whether `node`'s pose is a frame its children are expressed in, under a
+ * composing strategy.
+ *
+ * A container that derives its pose from its children cannot be one: moving
+ * the frame to cover the children would move the children, and a `RectPose`
+ * frame's origin is its corner, so no envelope leaves them in place. Such a
+ * container is an envelope instead — its children are stored in its own
+ * frame — and the composition fold passes over it.
+ */
+export function definesFrame(node: { dependsOn?: unknown; derivePose?: unknown }): boolean {
+  return !(node.dependsOn === 'children' && node.derivePose !== undefined);
+}

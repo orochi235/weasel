@@ -23,7 +23,7 @@ export type {
   UseSceneOptions,
 } from './types';
 export { createPoseOverrides } from './poseOverrides';
-export { derivedDepOf, derivedPose, documentPose, effectivePose } from './effectivePose';
+export { definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose } from './effectivePose';
 export { createPoseFeed } from './poseFeed';
 export type { FeedDelta, FeedNode, PoseFeed } from './poseFeed';
 export { resolveDerivedPath } from './derivedPath';

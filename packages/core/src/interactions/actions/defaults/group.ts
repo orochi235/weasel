@@ -96,8 +96,8 @@ export const groupAction: Action & { requires: string[] } = {
         ? nodes[0]!.pose
         : d.fromBounds(union, nodes[0]!.pose);
       const pose = frame.localUnder(parent, containerWorldPose);
-      // An identity composition stores world coordinates, so there is no frame
-      // to re-express a member in and no circularity in deriving the container.
+      // Under identity the container is an envelope that tracks its members;
+      // under a composing strategy it is a frame they are re-expressed in.
       const absolutePoses = frame.pc.closure === 'identity';
       const derive = scene.registry.derivePose?.[UNION_OF_CHILDREN] ?? unionOfChildren;
 

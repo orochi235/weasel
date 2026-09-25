@@ -3,6 +3,7 @@ import type { View } from 'core/viewport/view';
 import { findShapeSilhouette } from './NodeShape';
 import type { Node } from 'core/scene/types';
 import type { Path } from 'features/paths/types';
+import { definesFrame } from 'core/scene/effectivePose';
 
 /**
  * The scene-tree reading surface `buildSceneTree` walks. A `SceneCanvasAdapter`
@@ -81,14 +82,14 @@ export function buildSceneTree<
   function visit(
     id: string,
     ancestorClips: readonly GroupDrawCommand['clip'][],
-    parentWorld: TPose | null,
+    parentFrame: TPose | null,
   ): void {
     const node = adapter.getNode(id);
     if (!node) return;
     const local = adapter.getPose(id);
     // Fold once, on the way down: O(1) per node where walking the parent chain
     // per node would be O(depth).
-    const pose = compose && parentWorld !== null ? compose(parentWorld, local) : local;
+    const pose = compose && parentFrame !== null ? compose(parentFrame, local) : local;
     // Skip the (potentially expensive) painter for nodes we won't emit; their
     // clip still extends the chain for descendants below.
     const paints = forLayer === undefined || node.layer === forLayer;
@@ -126,7 +127,9 @@ export function buildSceneTree<
       }
     }
 
-    for (const cid of adapter.getChildren(id)) visit(cid, ownClips, pose);
+    // An envelope's children share its own parent's frame.
+    const childFrame = definesFrame(node as never) ? pose : parentFrame;
+    for (const cid of adapter.getChildren(id)) visit(cid, ownClips, childFrame);
   }
 
   for (const rootId of adapter.getChildren(null)) visit(rootId, [], null);

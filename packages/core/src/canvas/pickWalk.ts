@@ -25,7 +25,7 @@ import type { Path } from 'features/paths/types';
 import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import { effectivePose } from 'core/scene/effectivePose';
+import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { resolveDerivedPath } from './derivedPath';
 import { composeWorldPose, type PoseAdapter, type PoseComposition } from 'features/groups/composePose';
 
@@ -284,6 +284,10 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
             return n ? effectivePose(scene, n) : (undefined as unknown as TPose);
           },
           getParent: (id: string) => scene.get(asNodeId(id))?.parent ?? null,
+          definesFrame: (id: string) => {
+            const n = scene.get(asNodeId(id));
+            return n === undefined || definesFrame(n);
+          },
         }
       : null;
 

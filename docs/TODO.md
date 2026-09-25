@@ -58,11 +58,20 @@ Priority tags:
   Omitting the prop leaves the absolute-pose model untouched. Design and the
   list of what it deliberately does not cover:
   `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
-  Open follow-ups: `kitRegistry.ts`'s `unionOfChildren` derives a container's
-  pose from children expressed in that container's frame, which is circular and
-  only works because the default frame is identity; `nestedHit` composes
-  correctly and still has no caller inside the kit; `apps/draw`'s SVG export
-  bakes stored poses and would need world ones if that app ever opts in.
+  A container deriving its pose from its children is an envelope, not a frame
+  (`definesFrame` in `core/scene/effectivePose.ts`).
+  Open follow-ups:
+  - `moveAction` is wrong under a composing strategy in two ways, both
+    reproduced against `RIGID_POSE_COMPOSITION`: dragging a frame container
+    also translates its descendants (`cascadeIds` → `translateCommitOps`), so
+    they move twice — a 100px drag lands a child 200px over; and the translate
+    commit adds the world delta to the *local* pose, so a leaf inside a
+    quarter-turned frame dragged right moves down.
+  - The clipboard drops `dependsOn`/`derivePose` from a copied container, so a
+    pasted envelope comes back a frame and, under a composing strategy, its
+    children are re-read relative to it.
+  - `apps/draw`'s SVG export bakes stored poses and would need world ones if
+    that app ever opts in.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`

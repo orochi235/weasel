@@ -27,7 +27,7 @@ import type {
 import type { LayoutStrategy } from '../layout/types';
 import type { Op } from 'core/ops/types';
 import type { Node, NodeId, Scene } from 'core/scene/types';
-import { effectivePose } from 'core/scene/effectivePose';
+import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
 import { asNodeId } from 'core/scene/types';
 import { applyOpsTo } from 'core/applyOps';
@@ -89,6 +89,9 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       /** The node's pose with every ancestor's frame folded in. Equal to
        *  `getPose` unless a `poseComposition` is configured. */
       getWorldPose(id: string): TPose;
+      /** Whether `id`'s pose is a frame its children are expressed in — see
+       *  `definesFrame`. */
+      definesFrame(id: string): boolean;
       /** Present only when a composing strategy is configured; the render
        *  walk feature-detects it. */
       composePose?(parent: TPose, child: TPose): TPose;
@@ -259,6 +262,10 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     getParent(id) {
       const n = scene.get(asNodeId(id));
       return n?.parent ?? null;
+    },
+    definesFrame(id) {
+      const n = scene.get(asNodeId(id));
+      return n === undefined || definesFrame(n);
     },
     getWorldPose(id) {
       if (!composes) return adapter.getPose(id);
