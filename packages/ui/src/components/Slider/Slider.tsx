@@ -87,7 +87,8 @@ export type SliderStop = {
  * `'even'` falls back to linear.
  *
  * `trackClick: 'move-nearest'` makes a press on bare track send the closest
- * thumb there and continue as a drag. It is off by default because on a
+ * thumb there, focus it, and continue as a drag. It is the default for a
+ * single thumb. With several it defaults to `'none'`, because on a
  * multi-thumb editor a stray click would yank a stop the user was not aiming
  * at; `onAddThumb`, where it is set, keeps the track press.
  *
@@ -436,7 +437,8 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
 
   const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (typeof e.button === 'number' && e.button > 0) return;
-    const wantsMove = (props.trackClick ?? 'none') === 'move-nearest' && thumbs.length > 0;
+    const trackClick = props.trackClick ?? (thumbs.length === 1 ? 'move-nearest' : 'none');
+    const wantsMove = trackClick === 'move-nearest' && thumbs.length > 0;
     if (!props.onAddThumb && !wantsMove) return;
     // If the event originated on a thumb, the thumb's own handler ran first; this is a track click.
     if ((e.target as HTMLElement).closest(`.${s.thumb}`)) return;
@@ -465,6 +467,8 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     if (constraint === 'ordered') moved = clampOrdered(moved, next, index, min, max, step);
     next[index] = { ...next[index], value: moved };
     onInput(next);
+    // preventDefault above suppresses the focus the press would give; the arrow keys are on the thumb.
+    track.querySelectorAll<HTMLElement>(`.${s.thumb}`)[index]?.focus();
     beginThumbDrag(track, e, index, next);
   };
 

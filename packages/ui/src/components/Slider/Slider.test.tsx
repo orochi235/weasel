@@ -1002,10 +1002,34 @@ describe('Slider track click', () => {
   const lastValues = (fn: ReturnType<typeof vi.fn>): number[] =>
     fn.mock.calls[fn.mock.calls.length - 1][0].map((t: { value: number }) => t.value);
 
-  it('ignores a track click by default', () => {
+  it('moves a lone thumb to a track click by default', () => {
     const { track, onInput } = renderTrackClick({ trackClick: undefined });
     fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
+    expect(lastValues(onInput)).toEqual([50]);
+  });
+
+  it('ignores a track click by default when there are several thumbs', () => {
+    const { track, onInput } = renderTrackClick({ trackClick: undefined, thumbs: [{ value: 10 }, { value: 90 }] });
+    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
     expect(onInput).not.toHaveBeenCalled();
+  });
+
+  it('ignores a track click when told to', () => {
+    const { track, onInput } = renderTrackClick({ trackClick: 'none' });
+    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
+    expect(onInput).not.toHaveBeenCalled();
+  });
+
+  it('snaps the clicked value to the step', () => {
+    const { track, onInput } = renderTrackClick({ step: 5 });
+    fireEvent.pointerDown(track, { clientX: 105, clientY: 12, button: 0 });
+    expect(lastValues(onInput)).toEqual([55]);
+  });
+
+  it('focuses the thumb it moved, so the arrow keys carry on from there', () => {
+    const { track, thumb } = renderTrackClick();
+    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
+    expect(document.activeElement).toBe(thumb);
   });
 
   it('moves the only thumb to the clicked value', () => {
