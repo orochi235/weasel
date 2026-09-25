@@ -12,7 +12,7 @@ import { useRef } from 'react';
 import {
   asNodeId,
   boundsOfPath,
-  DEFAULT_PALETTE,
+  cycleFill,
   solid,
   strokeOf,
   useEllipseTool,
@@ -72,7 +72,7 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
   // private to the SceneCanvas instance.
   const seqRef = useRef(0);
   const freshId = (prefix: string) => asNodeId(`${prefix}-${++seqRef.current}`);
-  const nextFill = () => DEFAULT_PALETTE[seqRef.current % DEFAULT_PALETTE.length];
+  const nextFill = () => cycleFill(seqRef.current);
 
   // First system-or-trivial layer is the default insertion layer. Falls back
   // to 'default' when the scene has none yet (rare — useScene synthesizes

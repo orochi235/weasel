@@ -29,7 +29,7 @@ import {
 } from 'features/paths/builder';
 import { schneiderFit } from 'features/paths/schneiderFit';
 import { insertPreviewExtent } from '../insertPreviewExtent';
-import { DEFAULT_PALETTE, solid, strokeOf } from '../../util/paint';
+import { cycleFill, solid, strokeOf } from '../../util/paint';
 
 interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
@@ -83,7 +83,7 @@ export function useInsertDepSource(
           seq = ++insertSeqRef.current;
           id = asNodeId(`kit-${kind}-${seq}`);
         }
-        const color = DEFAULT_PALETTE[seq % DEFAULT_PALETTE.length];
+        const color = cycleFill(seq);
         const fill = solid(color);
         const layer = (sc.layers[0]?.id ?? 'default') as string;
 

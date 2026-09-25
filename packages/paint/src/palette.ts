@@ -143,3 +143,11 @@ export function colorLiteralToHex(color: ColorLiteral): string | null {
   const a = color.alpha ?? 1;
   return `#${rgb.map(hex2).join('')}${a < 1 ? hex2(a * 255) : ''}`;
 }
+
+/** `#rrggbb` or `#rrggbbaa` as an `srgb` literal; `null` for anything else. */
+export function hexToColorLiteral(hex: string): ColorLiteral | null {
+  if (!/^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/i.test(hex)) return null;
+  const byte = (i: number): number => Number.parseInt(hex.slice(i, i + 2), 16) / 255;
+  const coords = [byte(1), byte(3), byte(5)];
+  return hex.length === 9 ? { space: 'srgb', coords, alpha: byte(7) } : { space: 'srgb', coords };
+}

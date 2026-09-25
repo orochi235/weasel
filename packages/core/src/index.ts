@@ -844,6 +844,7 @@ export {
   DEFAULT_STROKE_COLOR,
   DEFAULT_SHAPE_FILL,
   DEFAULT_PALETTE,
+  cycleFill,
   GHOST_STROKE,
   solid,
   strokeOf,

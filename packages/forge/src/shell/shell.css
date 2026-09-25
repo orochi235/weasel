@@ -226,7 +226,7 @@
 
 .fg-tree__item[aria-current='true'],
 .fg-tree__node[aria-current='true'] > .fg-tree__folder {
-  color: var(--wzl-swatch-violet);
+  color: var(--wzl-secondary-fg);
 }
 
 /* Padded out to a hit target and pulled back by the same amount, so the row's layout is unchanged. */

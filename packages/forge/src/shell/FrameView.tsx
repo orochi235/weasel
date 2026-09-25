@@ -1,3 +1,4 @@
+import { breadcrumb } from './breadcrumb';
 import './shell.css';
 import { type RenderContext, TrialIdContext, useLabContext } from '@weasel-js/labkit';
 import { type RefObject, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -126,7 +127,7 @@ export function FrameView(props: FrameViewProps) {
   const pool = useContext(FramePoolContext);
   const lab = useLabContext();
   const src = `${frameUrl}#${entry.id}`;
-  const title = `${entry.title} / ${entry.name}`;
+  const title = breadcrumb(entry.title, entry.name);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const slotRef = useRef<HTMLDivElement>(null);

@@ -31,18 +31,18 @@ const openInfo = async () => {
 describe('Get Info', () => {
   it('opens from the palette and names the focused story', async () => {
     mount();
-    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / A' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
     const dialog = await openInfo();
-    expect(within(dialog).getByRole('heading', { name: 'X / A' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('heading', { name: 'X > A' })).toBeInTheDocument();
     expect(dialog.textContent).toContain('The plain one.');
     expect(dialog.textContent).toContain('Slider');
     expect(dialog.textContent).toContain('/repo/packages/ui/src/X.stories.tsx');
-    expect(dialog.textContent).toContain('Libraryui');
+    expect(within(dialog).getByText('Library').nextElementSibling?.textContent).toBe('ui');
   });
 
   it('leaves the palette item unpressed — it is a command, not a mode', async () => {
     mount();
-    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / A' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
     const button = screen.getByRole('button', { name: /^Info/ });
     fireEvent.click(button);
     await screen.findByRole('dialog');
@@ -74,7 +74,7 @@ describe('Get Info', () => {
 
   it('closes on Escape', async () => {
     mount();
-    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / A' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
     const dialog = await openInfo();
     fireEvent.keyDown(dialog, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());

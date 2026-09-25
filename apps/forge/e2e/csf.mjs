@@ -95,7 +95,7 @@ const stories = [
     // With the OS dark, `auto` starts every story dark, so light can only come from the toolbar.
     colorScheme: 'dark',
     check: async ({ page }) => {
-      const trial = (name) => page.getByRole('region', { name: `Trial labkit/Primitives/JobProgress / ${name}`, exact: true });
+      const trial = (name) => page.getByRole('region', { name: `Trial labkit > Primitives > JobProgress > ${name}`, exact: true });
       /** Resolves once the trial's `.lk-root` is in `mode` and computes that mode's surface, not the other's. */
       const surfaceIs = (name, mode) =>
         trial(name)

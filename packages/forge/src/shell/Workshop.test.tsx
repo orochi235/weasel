@@ -52,12 +52,12 @@ describe('Workshop', () => {
     location.hash = '#/x--a';
     const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     await waitFor(() => expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1));
-    expect(screen.getByRole('region', { name: 'Trial X / A' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /add trial/i })).toBeNull();
     act(() => {
       location.hash = '#/x--b';
     });
-    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / B' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > B' })).toBeInTheDocument());
     expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(2);
     expect(container.querySelector('[role="tree"]')).not.toBeNull();
   });
@@ -72,7 +72,7 @@ describe('Workshop', () => {
     fireEvent.click(screen.getByRole('treeitem', { name: 'B' }));
     await waitFor(() => expect(location.hash).toBe('#/x--b'));
     await act(async () => {});
-    expect(screen.getAllByRole('region', { name: 'Trial X / B' })).toHaveLength(1);
+    expect(screen.getAllByRole('region', { name: 'Trial X > B' })).toHaveLength(1);
   });
 
   it('takes the trial back to the previous story on browser back, rather than opening another', async () => {
@@ -83,20 +83,20 @@ describe('Workshop', () => {
     const folder = screen.getByRole('treeitem', { name: 'X' });
     if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(within(folder).getByText('X'));
     fireEvent.click(screen.getByRole('treeitem', { name: 'B' }));
-    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / B' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > B' })).toBeInTheDocument());
     act(() => history.back());
     await waitFor(() => expect(location.hash).toBe('#/x--a'));
-    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / A' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
     expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1);
     act(() => history.forward());
-    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / B' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > B' })).toBeInTheDocument());
     expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1);
   });
 
   it('gives a story trial with no viewport no status bar', async () => {
     location.hash = '#/x--a';
     render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
-    const trial = await screen.findByRole('region', { name: 'Trial X / A' });
+    const trial = await screen.findByRole('region', { name: 'Trial X > A' });
     expect(trial.querySelector('.lk-status-bar')).toBeNull();
   });
 
@@ -128,7 +128,7 @@ describe('Workshop', () => {
     await flush();
     for (const { received } of frames) expect(received).toEqual([expect.objectContaining({ type: 'init', globals: { mode: 'auto' } })]);
 
-    const trialB = screen.getByRole('region', { name: 'Trial X / B' });
+    const trialB = screen.getByRole('region', { name: 'Trial X > B' });
     act(() => {
       fireEvent.click(within(trialB).getByRole('button', { name: notTheAutoToggle('Mode') }));
     });
@@ -155,16 +155,16 @@ describe('Workshop', () => {
     location.hash = '#/x:index';
     const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     expect(await frameSrc(container)).toBe('/frame.html#x:index');
-    expect(screen.getByRole('region', { name: 'Trial X / Index' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Trial X' })).toBeInTheDocument();
     act(() => {
       location.hash = '#/x--b';
     });
-    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X / B' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > B' })).toBeInTheDocument());
     act(() => {
       location.hash = '#/x:index';
     });
     await act(async () => {});
-    expect(screen.getAllByRole('region', { name: 'Trial X / Index' })).toHaveLength(1);
+    expect(screen.getAllByRole('region', { name: 'Trial X' })).toHaveLength(1);
   });
 
   it('opens the first story when the hash names none that is indexed', async () => {

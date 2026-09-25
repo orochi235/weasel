@@ -192,3 +192,33 @@ export const Tooltips: Story = {
     </div>
   ),
 };
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m) => ({
+  value: m,
+  label: m,
+}));
+
+/** A select in a toolbar along the window's top edge, set to a late option.
+ *  Laying that row over the trigger would push the rows above it past the
+ *  edge, so the list stops at the edge instead. */
+export const AtTheTopEdge: Story = {
+  render: () => (
+    <div style={{ position: 'fixed', top: 4, left: 4 }}>
+      <Select aria-label="Month" width="fit" options={MONTHS} defaultSelectedKey="Nov" />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const trigger = canvasElement.querySelector('button');
+    if (!trigger) throw new Error('no trigger');
+    trigger.focus();
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    let popover: Element | null = null;
+    for (let i = 0; i < 40 && !popover?.querySelector('[data-selected]'); i++) {
+      await new Promise((r) => requestAnimationFrame(r));
+      popover = trigger.ownerDocument.querySelector('[data-weasel-overlay][role="dialog"], [data-weasel-overlay]');
+    }
+    if (!popover) throw new Error('list never opened');
+    for (let i = 0; i < 5; i++) await new Promise((r) => requestAnimationFrame(r));
+    expect(popover.getBoundingClientRect().top).toBeGreaterThanOrEqual(12);
+  },
+};

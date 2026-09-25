@@ -1,3 +1,4 @@
+import { breadcrumb } from './breadcrumb';
 import type { AnnotationsCapability, Instrument } from '@weasel-js/labkit';
 import { type ConfigSchema, f } from '@weasel-js/labkit/config';
 import { schemaFromDescription } from '../protocol/schema';
@@ -52,7 +53,7 @@ export function storyInstrument(options: StoryInstrumentOptions): Instrument<unk
   const descriptionKey = ready ? readyKey(ready) : null;
   return {
     name: entry.id,
-    title: `${entry.title} / ${entry.name}`,
+    title: breadcrumb(entry.title, entry.name),
     config,
     defaultConfig: () => config.defaults(),
     initialState: () => null,
