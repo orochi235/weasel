@@ -27,7 +27,7 @@ describe('fontRule', () => {
   });
 
   it('has form controls inherit the font, which they do not by default', () => {
-    expect(fontRule({})).toContain(':where(button, input, select, textarea) { font: inherit; }');
+    expect(fontRule({})).toContain(':root :where(button, input, select, textarea) { font: inherit; }');
   });
 
   it('snaps a weight to the nearest the font ships, the lighter on a tie', () => {

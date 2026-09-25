@@ -1,4 +1,4 @@
-import type { StoryContext } from '@weasel-js/forge';
+import type { GlobalsTarget, StoryContext } from '@weasel-js/forge';
 import { useSyncExternalStore } from 'react';
 
 type Globals = StoryContext['globals'];
@@ -11,19 +11,27 @@ const darkQuery = (): MediaQueryList | null =>
 export const resolveMode = (picked: unknown, prefersDark: boolean): Mode =>
   picked === 'light' || picked === 'dark' ? picked : prefersDark ? 'dark' : 'light';
 
-/** An `applyGlobals` that hands `apply` the resolved mode, and applies the last globals again when the OS scheme changes. */
+/**
+ * An `applyGlobals` that hands `apply` the resolved mode, and applies each target's last globals again when the OS
+ * scheme changes. One target per root: the workshop applies to every open story's host through this one function.
+ */
 export function followScheme(
-  apply: (globals: Globals, root: HTMLElement, mode: Mode) => void,
+  apply: (globals: Globals, target: GlobalsTarget, mode: Mode) => void,
   media: MediaQueryList | null = darkQuery(),
-): (globals: Globals, root: HTMLElement) => void {
-  let last: { globals: Globals; root: HTMLElement } | null = null;
-  const run = () => {
-    if (last) apply(last.globals, last.root, resolveMode(last.globals.mode, media?.matches ?? true));
-  };
-  media?.addEventListener('change', run);
-  return (globals, root) => {
-    last = { globals, root };
-    run();
+): (globals: Globals, target: GlobalsTarget) => void {
+  const last = new Map<HTMLElement, { globals: Globals; target: GlobalsTarget }>();
+  const run = ({ globals, target }: { globals: Globals; target: GlobalsTarget }) =>
+    apply(globals, target, resolveMode(globals.mode, media?.matches ?? true));
+  media?.addEventListener('change', () => {
+    for (const [root, entry] of last) {
+      if (root.isConnected) run(entry);
+      else last.delete(root);
+    }
+  });
+  return (globals, target) => {
+    const entry = { globals, target };
+    last.set(target.root, entry);
+    run(entry);
   };
 }
 

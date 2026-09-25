@@ -9,6 +9,7 @@ import type { IndexRender, LoadedStory } from '../../story/types';
 import { runAxe } from '../a11y';
 import { captureElement } from '../capture';
 import type { FrameSetup } from '../FrameController';
+import { createGlobalsTarget } from '../globalsTarget';
 import { type IndexEnv, IndexPage } from './IndexPage';
 import './index.css';
 
@@ -57,6 +58,7 @@ export function startIndex(options: StartIndexOptions): () => void {
   wrapper.className = 'fg-frame fg-frame--fullscreen';
   container.append(wrapper);
   const root = createRoot(wrapper);
+  const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
   let globals: Globals | null = null;
   let announced = false;
 
@@ -97,7 +99,7 @@ export function startIndex(options: StartIndexOptions): () => void {
       case 'init':
       case 'globals':
         globals = msg.globals;
-        setup.applyGlobals?.(globals, document.documentElement);
+        setup.applyGlobals?.(globals, globalsTarget);
         flushSync(render);
         announce();
         break;
@@ -121,6 +123,7 @@ export function startIndex(options: StartIndexOptions): () => void {
 
   return () => {
     off();
+    globalsTarget.dispose();
     root.unmount();
     wrapper.remove();
   };

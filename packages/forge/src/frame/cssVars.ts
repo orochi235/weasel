@@ -25,32 +25,37 @@ function walkRules(sheet: CSSStyleSheet, names: Set<string>): void {
 
 /**
  * Every custom property the document references with `var()`, from inline styles and stylesheet rules — computed
- * styles have already substituted the reference away. Values resolve on `:root`, or else on the first element that
- * declares one.
+ * styles have already substituted the reference away. Values resolve on `root`, the document's by default, or else
+ * on the first element under it that declares one.
  */
-export function scanCssVars(doc: Document, overridden: (name: string) => boolean = () => false): CssVarReport[] {
+export function scanCssVars(
+  doc: Document,
+  overridden: (name: string) => boolean = () => false,
+  root: Element = doc.documentElement,
+): CssVarReport[] {
   const names = new Set<string>();
   for (const el of Array.from(doc.querySelectorAll('[style]'))) collect(el.getAttribute('style') ?? '', names);
   for (const sheet of Array.from(doc.styleSheets)) walkRules(sheet, names);
 
-  const values = resolveValues(doc, names);
+  const values = resolveValues(doc, names, root);
   return [...names]
     .sort()
     .map((name) => ({ name, value: values.get(name) ?? '', overridden: overridden(name) }));
 }
 
-function resolveValues(doc: Document, names: Iterable<string>): Map<string, string> {
+function resolveValues(doc: Document, names: Iterable<string>, root: Element): Map<string, string> {
   const view = doc.defaultView;
   const values = new Map<string, string>();
   if (!view) return values;
-  const root = view.getComputedStyle(doc.documentElement);
+  const own = view.getComputedStyle(root);
   const missing: string[] = [];
   for (const name of names) {
-    const value = root.getPropertyValue(name).trim();
+    const value = own.getPropertyValue(name).trim();
     if (value) values.set(name, value);
     else missing.push(name);
   }
-  for (const el of missing.length > 0 ? Array.from((doc.body ?? doc.documentElement).querySelectorAll('*')) : []) {
+  const under = root === doc.documentElement ? (doc.body ?? root) : root;
+  for (const el of missing.length > 0 ? Array.from(under.querySelectorAll('*')) : []) {
     const style = view.getComputedStyle(el);
     for (let i = missing.length - 1; i >= 0; i--) {
       const value = style.getPropertyValue(missing[i]!).trim();
@@ -64,8 +69,8 @@ function resolveValues(doc: Document, names: Iterable<string>): Map<string, stri
 }
 
 /** One custom property's value, resolved the way `scanCssVars` resolves each. */
-export function resolveCssVar(doc: Document, name: string): string {
-  return resolveValues(doc, [name]).get(name) ?? '';
+export function resolveCssVar(doc: Document, name: string, root: Element = doc.documentElement): string {
+  return resolveValues(doc, [name], root).get(name) ?? '';
 }
 
 export interface Overrides {

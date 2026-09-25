@@ -91,10 +91,14 @@ export function forge(options: ForgeOptions): Plugin[] {
 import '@weasel-js/labkit/styles.css';
 import '@weasel-js/forge/shell.css';
 import index from 'virtual:forge/index.js';
+import importers from 'virtual:forge/importers.js';
 import config from 'virtual:forge/shell-config.js';
+import setup from 'virtual:forge/frame-config.js';
 
 const workshop = mountWorkshop({
   index,
+  importers,
+  setup,
   config,
   frameUrl: ${JSON.stringify(`${base}frame.html`)},
   stories: ${JSON.stringify(options.stories)},

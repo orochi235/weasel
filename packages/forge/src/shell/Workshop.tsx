@@ -1,6 +1,8 @@
 import { Lab, type LabContribution, type StorageAdapter, useLabContext } from '@weasel-js/labkit';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ShellConfig } from '../config';
+import type { FrameSetup } from '../frame/FrameController';
+import type { FrameImporters } from '../frame/mountFrame';
 import { type Globals, stableStringify } from '../protocol/messages';
 import { indexEntries } from '../story/indexPages';
 import type { IndexEntry } from '../story/types';
@@ -19,7 +21,12 @@ import { useStoryRegistry } from './useStoryRegistry';
 
 export interface WorkshopProps {
   index: readonly IndexEntry[];
+  /** The frame document, for the stories `isolate` keeps in one. */
   frameUrl: string;
+  /** Story modules by file. Given, stories render in the workshop document; absent, every story renders in a frame. */
+  importers?: FrameImporters;
+  /** The frame config, applied to each story rendered in the document. */
+  setup?: FrameSetup;
   config?: ShellConfig;
   /** The story globs the index was built from, named when it is empty. */
   stories?: readonly string[];
@@ -76,17 +83,29 @@ function useInfoShortcut(open: (next: boolean) => void): void {
   }, [open]);
 }
 
-export function Workshop({ index, frameUrl, config, stories = [], storageKey, storage }: WorkshopProps) {
+export function Workshop({ index, frameUrl, importers, setup, config, stories = [], storageKey, storage }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
   const [frames] = useState(createTrialFrames);
   const [pool, setPool] = useState<FramePool | null>(null);
+  // Warm frames are for the stories that render in one: every story when no importers are given, else the isolated.
+  const framed = importers === undefined || index.some((entry) => entry.isolate !== undefined);
   useEffect(() => {
+    if (!framed) return;
     const next = createFramePool(frameUrl);
     setPool(next);
-    return () => next.dispose();
-  }, [frameUrl]);
+    return () => {
+      next.dispose();
+      setPool(null);
+    };
+  }, [frameUrl, framed]);
   const entries = useMemo(() => [...index, ...indexEntries(index)], [index]);
-  const registry = useStoryRegistry(entries, { frameUrl, globals: declarations, frames });
+  const registry = useStoryRegistry(entries, {
+    frameUrl,
+    globals: declarations,
+    frames,
+    ...(importers ? { importers } : {}),
+    ...(setup ? { setup } : {}),
+  });
   const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
   const themeFor = config?.labTheme;
   const labTheme = useMemo(() => themeFor?.(labValues), [themeFor, labValues]);

@@ -144,7 +144,8 @@ const nearest = (value: number, supported: number[]): number =>
 
 /** The rules for the font globals, each snapped to what the chosen font ships. weasel's components read their
  *  family from the font tokens, and form controls do not inherit one, so both are pointed at the choice too. */
-export function fontRule(globals: StoryContext['globals']): string {
+/** The rule for `scope`, `:root` by default: a story host in the workshop names itself instead. */
+export function fontRule(globals: StoryContext['globals'], scope = ':root'): string {
   const [, font] = fontOf(globals);
   const weight = nearest(Number(globals.fontWeight ?? 500), font.weights);
   const requestedStretch = String(globals.fontStretch ?? 'normal');
@@ -154,9 +155,10 @@ export function fontRule(globals: StoryContext['globals']): string {
     .map((slot) => `--wzl-${slot.token}: ${slot.font.family};`)
     .join(' ');
   return [
-    `:root { font-family: ${font.family}; font-weight: ${weight}; font-stretch: ${stretch}; font-style: ${italic ? 'italic' : 'normal'}; }`,
-    // applyTheme declares the tokens at [data-wzl-theme][data-wzl-mode], on the root and on any nested themed box.
-    ` :root:root:root, [data-wzl-theme][data-wzl-mode][data-wzl-mode] { ${tokens} }`,
-    ' :where(button, input, select, textarea) { font: inherit; }',
+    `${scope} { font-family: ${font.family}; font-weight: ${weight}; font-stretch: ${stretch}; font-style: ${italic ? 'italic' : 'normal'}; }`,
+    // applyTheme declares the tokens at [data-wzl-theme][data-wzl-mode] (0,3,0), on the root and on any nested
+    // themed box; `:not(#…)` lifts the root's rule above it without `!important`.
+    ` ${scope}:not(#fg-font-globals), ${scope} [data-wzl-theme][data-wzl-mode][data-wzl-mode] { ${tokens} }`,
+    ` ${scope} :where(button, input, select, textarea) { font: inherit; }`,
   ].join('');
 }

@@ -30,18 +30,47 @@ describe('resolveMode', () => {
 });
 
 describe('followScheme', () => {
+  const target = (root: HTMLElement) => ({ root, scope: `#${root.id}`, style: () => {} });
+
   it('applies with the resolved mode, and applies the last globals again when the OS scheme changes', () => {
     const { media, flip } = fakeScheme(false);
     const apply = vi.fn();
     const root = document.createElement('div');
+    document.body.append(root);
     const applyGlobals = followScheme(apply, media);
     flip(true);
     expect(apply).not.toHaveBeenCalled();
-    applyGlobals({ mode: 'auto' }, root);
-    expect(apply).toHaveBeenLastCalledWith({ mode: 'auto' }, root, 'dark');
+    const t = target(root);
+    applyGlobals({ mode: 'auto' }, t);
+    expect(apply).toHaveBeenLastCalledWith({ mode: 'auto' }, t, 'dark');
     flip(false);
-    expect(apply).toHaveBeenLastCalledWith({ mode: 'auto' }, root, 'light');
+    expect(apply).toHaveBeenLastCalledWith({ mode: 'auto' }, t, 'light');
     expect(apply).toHaveBeenCalledTimes(2);
+    root.remove();
+  });
+
+  it('follows the scheme for every target it has applied to, and forgets one that left the document', () => {
+    const { media, flip } = fakeScheme(false);
+    const apply = vi.fn();
+    const a = document.createElement('div');
+    const b = document.createElement('div');
+    document.body.append(a, b);
+    const applyGlobals = followScheme(apply, media);
+    const ta = target(a);
+    const tb = target(b);
+    applyGlobals({ mode: 'auto' }, ta);
+    applyGlobals({ mode: 'light' }, tb);
+    apply.mockClear();
+    flip(true);
+    expect(apply.mock.calls).toEqual([
+      [{ mode: 'auto' }, ta, 'dark'],
+      [{ mode: 'light' }, tb, 'light'],
+    ]);
+    b.remove();
+    apply.mockClear();
+    flip(false);
+    expect(apply.mock.calls).toEqual([[{ mode: 'auto' }, ta, 'light']]);
+    a.remove();
   });
 });
 

@@ -1,4 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { f } from '@weasel-js/labkit/config';
+import { createElement, useEffect } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../story/define';
 import { runStory } from './runStory';
 
@@ -12,6 +14,28 @@ function boom(): never {
 const mod = {
   default: meta({ title: 'Test/Run' }),
   Plain: story({ render: () => null }),
+  Seen: story({
+    config: f.schema({ label: f.string('hello') }),
+    render: ({ config, setConfig }) => {
+      // A story writing its own config on mount: the trial has to re-render it, and play has to see the write.
+      useEffect(() => {
+        if (config.label !== 'renamed') setConfig('label', 'renamed');
+      }, [config.label, setConfig]);
+      return createElement('button', { type: 'button' }, config.label);
+    },
+    play: async ({ canvasElement, config }) => {
+      if (!canvasElement.matches('.fg-story[data-fg-host]')) throw new Error(`canvasElement is ${canvasElement.className}`);
+      if (!canvasElement.isConnected) throw new Error('canvasElement is not in the document');
+      const button = canvasElement.querySelector('button');
+      if (button?.textContent !== 'renamed') throw new Error(`button reads "${button?.textContent}"`);
+      if (config.label !== 'renamed') throw new Error(`config.label is "${config.label}"`);
+    },
+  }),
+  Throwing: story({
+    render: () => {
+      throw new Error('render broke');
+    },
+  }),
   Failing: story({
     render: () => null,
     play: async () => boom(),
@@ -25,6 +49,11 @@ afterEach(() => {
 describe('runStory', () => {
   it('runs a story that renders and has no play', async () => {
     await expect(runStory(mod, 'Plain', FILE, AUTO_TITLE)).resolves.toBeUndefined();
+    expect(document.body.children).toHaveLength(0);
+  });
+
+  it('renders the story in the page, and plays it against its host with the config it wrote', async () => {
+    await expect(runStory(mod, 'Seen', FILE, AUTO_TITLE)).resolves.toBeUndefined();
     expect(document.body.children).toHaveLength(0);
   });
 
@@ -55,6 +84,24 @@ describe('runStory', () => {
       },
     });
     await expect(runStory(broken, 'Plain', FILE, AUTO_TITLE)).rejects.toThrow('load fault: export blew up');
+  });
+
+  it("names the mount phase when the setup's prepare fails", async () => {
+    const prepare = async () => {
+      throw new Error('font missing');
+    };
+    await expect(runStory(mod, 'Plain', FILE, AUTO_TITLE, { setup: { prepare } })).rejects.toThrow('mount fault: font missing');
+    expect(document.body.children).toHaveLength(0);
+  });
+
+  it('names the render phase when the story throws while rendering', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      await expect(runStory(mod, 'Throwing', FILE, AUTO_TITLE)).rejects.toThrow('render fault: render broke');
+    } finally {
+      spy.mockRestore();
+    }
+    expect(document.body.children).toHaveLength(0);
   });
 
   it('carries the play function’s stack when play fails', async () => {

@@ -11,6 +11,7 @@ export type {
   StoryObj,
 } from './csf/types';
 export type { FrameSetup } from './frame/FrameController';
+export type { GlobalsTarget } from './frame/globalsTarget';
 export type { A11yFinding, A11yNode, A11yReport } from './protocol/messages';
 export type { GlobalDeclaration, GlobalDeclarations } from './shell/globals';
 export { meta, story } from './story/define';

@@ -176,6 +176,61 @@ export const Basic = {};
     ]);
   });
 
+  describe('isolate', () => {
+    const isolates = (code: string) => indexFile(code, FILE, 'ui/Auto').map((e) => e.isolate);
+
+    it('reads it off a native story', () => {
+      const code = `
+import { meta, story } from '@weasel-js/forge';
+export default meta({ title: 'ui/Slider' });
+export const Basic = story({ isolate: 'imports a global stylesheet', render: () => null });
+export const Plain = story({ render: () => null });
+`;
+      expect(isolates(code)).toEqual(['imports a global stylesheet', undefined]);
+    });
+
+    it('inherits it from a native meta, with the story winning', () => {
+      const code = `
+import { meta, story } from '@weasel-js/forge';
+export default meta({ title: 'ui/Slider', isolate: \`whole file\` });
+export const Basic = story({ render: () => null });
+export const Own = story({ isolate: 'its own reason', render: () => null });
+`;
+      expect(isolates(code)).toEqual(['whole file', 'its own reason']);
+    });
+
+    it('reads parameters.forge.isolate off a CSF story and its meta', () => {
+      const code = `
+export default { title: 'ui/Button', parameters: { forge: { isolate: 'meta reason' } } };
+export const FromMeta = {};
+export const FromStory = { parameters: { forge: { isolate: 'story reason' } } };
+`;
+      expect(isolates(code)).toEqual(['meta reason', 'story reason']);
+    });
+
+    it('refuses a value that is not a string literal, naming the file and export', () => {
+      const code = `
+export default { title: 'ui/Button' };
+export const Basic = { parameters: { forge: { isolate: REASON } } };
+`;
+      expect(() => indexFile(code, FILE, 'ui/Auto')).toThrow(`${FILE}: Basic: isolate must be a string literal`);
+      const template = `
+import { meta, story } from '@weasel-js/forge';
+export default meta({ title: 'ui/Slider', isolate: \`because \${why}\` });
+export const Basic = story({ render: () => null });
+`;
+      expect(() => indexFile(template, FILE, 'ui/Auto')).toThrow(`${FILE}: default: isolate must be a string literal`);
+    });
+
+    it('leaves the key off an entry with none', () => {
+      const code = `
+export default { title: 'ui/Button', parameters: { forge: {} } };
+export const Basic = {};
+`;
+      expect(indexFile(code, FILE, 'ui/Auto')[0]).not.toHaveProperty('isolate');
+    });
+  });
+
   it('names the file when a title cannot make an id', () => {
     const code = `
 export default { title: '!!!' };

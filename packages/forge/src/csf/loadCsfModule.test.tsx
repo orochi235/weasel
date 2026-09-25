@@ -254,6 +254,20 @@ describe('loadCsfModule', () => {
     expect(loadCsfModule({ default: { title: 'ui/L' }, A: {} }, AUTO_TITLE)[0]?.layout).toBe('padded');
   });
 
+  it('takes isolate from parameters.forge.isolate when it is a string', () => {
+    const stories = loadCsfModule(
+      {
+        default: { title: 'ui/I', parameters: { forge: { isolate: 'meta reason' } } },
+        FromMeta: {},
+        FromStory: { parameters: { forge: { isolate: 'story reason' } } },
+        NotAString: { parameters: { forge: { isolate: true } } },
+      },
+      AUTO_TITLE,
+    );
+    expect(stories.map((s) => s.isolate)).toEqual(['meta reason', 'story reason', null]);
+    expect(loadCsfModule({ default: { title: 'ui/I' }, A: {} }, AUTO_TITLE)[0]?.isolate).toBeNull();
+  });
+
   it('merges project parameters under the meta’s and the story’s', () => {
     const preview = { layout: 'centered', backgrounds: { default: 'dark', grid: true } };
     const stories = loadCsfModule(

@@ -1,10 +1,8 @@
-import { loadCsfModule } from '../csf/loadCsfModule';
 import { openChannel } from '../protocol/channel';
 import { FRAME_HELLO, type FromFrame, PORT_HANDOFF, type ToFrame } from '../protocol/messages';
-import { isNative } from '../story/define';
-import { loadNativeModule } from '../story/native';
 import { indexId, isIndexId } from '../story/indexPages';
-import type { IndexRender, LoadedStory } from '../story/types';
+import { indexRenderOf, loadStories } from '../story/load';
+import type { LoadedStory } from '../story/types';
 import { type FrameSetup, reportImportFault, startFrame } from './FrameController';
 import { startIndex } from './index/startIndex';
 
@@ -31,26 +29,7 @@ export interface MountFrameOptions {
   load?: (mod: Record<string, unknown>, autoTitle: string, parameters?: Record<string, unknown>) => LoadedStory[];
 }
 
-/**
- * The default `load`: a module whose default export is a forge `meta` is native, anything else is CSF under
- * `parameters`. `autoTitle` titles the stories when the meta names no title.
- */
-export function loadStories(
-  mod: Record<string, unknown>,
-  autoTitle: string,
-  parameters?: Record<string, unknown>,
-): LoadedStory[] {
-  return isNative(mod.default, 'meta')
-    ? loadNativeModule(mod, autoTitle)
-    : loadCsfModule(mod, autoTitle, parameters);
-}
-
-/** A module's own index page: a native meta's `index`, or a CSF meta's `parameters.forge.index`. */
-export function indexRenderOf(mod: Record<string, unknown>): IndexRender | null {
-  const meta = mod.default as { index?: unknown; parameters?: { forge?: { index?: unknown } } } | undefined;
-  const render = isNative(meta, 'meta') ? meta?.index : meta?.parameters?.forge?.index;
-  return typeof render === 'function' ? (render as IndexRender) : null;
-}
+export { indexRenderOf, loadStories } from '../story/load';
 
 function waitForHandoff():Promise<{ port: MessagePort; id: string | null }> {
   return new Promise((resolve) => {

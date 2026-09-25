@@ -50,6 +50,8 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
           `import { test as __forge_test } from "vitest";`,
           `import { page as __forge_page } from "vitest/browser";`,
           `import { runStory as __forge_runStory } from "@weasel-js/forge/test";`,
+          // shell.css draws the story host; frame.css still holds the boundary's fault rule.
+          `import "@weasel-js/forge/shell.css";`,
           `import "@weasel-js/forge/frame.css";`,
           ...(options.frameConfig ? [`import __forge_frame_config from ${q(resolve(root, options.frameConfig))};`] : []),
           `const __forge_file = ${q(id)};`,

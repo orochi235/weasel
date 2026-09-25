@@ -64,19 +64,20 @@ const trialSaved = (label, n) =>
 
 try {
   await page.goto(url);
-  const frame = page.frameLocator('iframe.fg-frame-view');
+  // The story renders in the page, inside its trial's host element.
+  const frame = page.locator('.fg-story[data-fg-host]').first();
   if (persisted) {
     await frame.getByRole('button', { name: 'taps: 1' }).waitFor({ timeout: 15000 });
     done('config and state survived a relaunch');
   } else {
     await frame.getByRole('button', { name: 'clicks: 0' }).waitFor({ timeout: 15000 });
-    done('frame rendered the story');
+    done('host rendered the story');
     await frame.getByRole('button').click();
     await frame.getByRole('button', { name: 'clicks: 1' }).waitFor();
     done('story state round-tripped');
     await page.getByRole('textbox').first().fill('taps');
     await frame.getByRole('button', { name: 'taps: 1' }).waitFor();
-    done('control reached the frame');
+    done('control reached the story');
     // labkit writes records on a debounce; closing before the write lands loses them.
     const deadline = Date.now() + 5000;
     while (!(await trialSaved('taps', 1))) {

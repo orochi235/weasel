@@ -23,6 +23,7 @@ export function loadNativeModule(mod: Record<string, unknown>, autoTitle: string
       decorators: [...(spec.decorators ?? []), ...(metaSpec.decorators ?? [])],
       layout: spec.layout ?? metaSpec.layout ?? 'centered',
       viewport: spec.viewport ?? null,
+      isolate: spec.isolate ?? metaSpec.isolate ?? null,
       play: spec.play ?? null,
     });
   }

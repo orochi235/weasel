@@ -29,6 +29,8 @@ describe('forgeTest', () => {
     expect(code).toBeDefined();
     expect(code).toContain(source);
     expect(code).toContain(`import { runStory as __forge_runStory } from "@weasel-js/forge/test";`);
+    expect(code).toContain(`import "@weasel-js/forge/shell.css";`);
+    expect(code).toContain(`import "@weasel-js/forge/frame.css";`);
     expect(code?.match(/__forge_test\(/g)).toHaveLength(2);
     expect(code).toContain(`const __forge_file = ${JSON.stringify(file)};`);
     expect(code).toContain('const __forge_title = "x/Counter";');

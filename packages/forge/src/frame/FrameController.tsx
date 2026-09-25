@@ -14,13 +14,15 @@ import type { Decorator, LoadedStory, StoryContext } from '../story/types';
 import { runAxe } from './a11y';
 import { captureElement } from './capture';
 import { createOverrides, resolveCssVar, scanCssVars } from './cssVars';
+import { createGlobalsTarget, type GlobalsTarget } from './globalsTarget';
 import { StoryHost } from './StoryHost';
 
 export interface FrameSetup {
   /** Wraps every story, outermost; receives the globals. From the frame config (`frameConfig`). */
   decorators?: Decorator[];
-  /** Applies globals to the frame document — theme mode, fonts. */
-  applyGlobals?: (globals: Globals, root: HTMLElement) => void;
+  /** Applies globals to a target: theme mode, fonts. The target is a frame document's root, or one story's host in
+   *  the workshop document, so a rule the setup writes goes through `target.style` under `target.scope`. */
+  applyGlobals?: (globals: Globals, target: GlobalsTarget) => void;
   /**
    * The elements a CSS variable override is declared on; `:root` by default. An override has to be declared on
    * whichever element declares the token itself — a theme wrapper, say — or that element's own value wins.
@@ -75,6 +77,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   let seq = 0;
 
   const overrides = createOverrides(document, setup.cssVarsScope);
+  const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
   let lastVars: CssVarReport[] | null = null;
   let reported: string | null = null;
   const publishVars = (vars: CssVarReport[]) => {
@@ -209,7 +212,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
             state = story.initialState(config);
             send({ type: 'setState', state });
           }
-          setup.applyGlobals?.(globals, document.documentElement);
+          setup.applyGlobals?.(globals, globalsTarget);
         });
         break;
       case 'config':
@@ -225,7 +228,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
       case 'globals':
         input(() => {
           globals = msg.globals;
-          setup.applyGlobals?.(globals, document.documentElement);
+          setup.applyGlobals?.(globals, globalsTarget);
         });
         break;
       case 'vars.set': {
@@ -264,6 +267,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     mutations?.disconnect();
     clearTimeout(settleTimer);
     overrides.dispose();
+    globalsTarget.dispose();
     root.unmount();
     wrapper.remove();
   };

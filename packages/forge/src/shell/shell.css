@@ -23,6 +23,50 @@
   font-size: var(--wzl-font-size-sm);
 }
 
+/* One story's box in the workshop document. `contain` makes it the containing block for its fixed-position
+   descendants, so a Dialog or a Toast stays inside its trial; the theme attributes land on it from applyGlobals. */
+.fg-story {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  contain: layout paint;
+  background: var(--wzl-surface);
+  color: var(--wzl-fg);
+  transition: opacity var(--wzl-motion-fast) var(--wzl-ease-out-cubic);
+}
+
+.fg-story[data-pending] {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.fg-story[data-fg-layout='centered'] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fg-story[data-fg-layout='padded'] {
+  padding: 16px;
+}
+
+.fg-story[data-fg-layout='fullscreen'] {
+  padding: 0;
+}
+
+.fg-story--loading {
+  visibility: visible;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fg-story {
+    transition: none;
+  }
+}
+
 .fg-frame-host {
   position: relative;
   width: 100%;
