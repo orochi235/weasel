@@ -921,6 +921,11 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 
 ---
 
+- [ ] (P3) **labkit `point` marks are sized in world units.** `markCommands` draws the ring at
+  `POINT_RADIUS` world units, so it grows with the picture; a point should hold a fixed screen
+  size like a handle. `markCommands` has no zoom to read — `drawOne` would have to pass it
+  through, or the ring becomes a marker the renderer sizes. Landed 2026-09-25 with the kind.
+
 ## forge
 
 `@weasel-js/forge` is the component workshop built on labkit: each story renders

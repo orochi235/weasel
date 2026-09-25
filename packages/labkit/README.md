@@ -30,9 +30,6 @@ the `@weasel-js/ui` components it passes through:
 import '@weasel-js/labkit/styles.css';
 ```
 
-Annotations are on the `pre` tag until the next stable release:
-`npm i @weasel-js/labkit@pre`.
-
 ## A lab
 
 ```tsx
