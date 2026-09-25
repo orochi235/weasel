@@ -2,19 +2,13 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { LayerList, type LayerListItem, moveLayers } from '../LayerList';
 import { Subpanel } from './Subpanel';
+import { PropertyField } from './PropertyField';
 import {
-  CheckboxRow,
-  ColorRow,
-  NumberRow,
   PropertyList,
   type PropertyListPack,
   PropertyPanel,
   PropertyRow,
   PropertySpan,
-  SelectRow,
-  SliderRow,
-  TextRow,
-  ToggleRow,
 } from './PropertyPanel';
 import { Switch } from '../Switch';
 
@@ -60,7 +54,9 @@ function Demo({ title, pack, width }: DemoArgs) {
     <div style={{ width }}>
       <PropertyPanel title={title}>
         <PropertyList pack={pack}>
-          <SliderRow
+          <PropertyField
+            kind="number"
+            control="slider"
             label="Opacity"
             value={opacity}
             min={0}
@@ -69,7 +65,9 @@ function Demo({ title, pack, width }: DemoArgs) {
             onChange={setOpacity}
             format={(v) => v.toFixed(2)}
           />
-          <SliderRow
+          <PropertyField
+            kind="number"
+            control="slider"
             label="Radius"
             value={radius}
             min={0}
@@ -78,10 +76,10 @@ function Demo({ title, pack, width }: DemoArgs) {
             onChange={setRadius}
             unit="px"
           />
-          <ColorRow label="Fill" value={fill} onChange={setFill} />
-          <ColorRow label="Stroke" value={stroke} onChange={setStroke} />
-          <TextRow label="Label" value={label} onChange={setLabel} />
-          <CheckboxRow label="Visible" value={visible} onChange={setVisible} />
+          <PropertyField kind="color" label="Fill" value={fill} onChange={setFill} />
+          <PropertyField kind="color" label="Stroke" value={stroke} onChange={setStroke} />
+          <PropertyField kind="string" label="Label" value={label} onChange={setLabel} />
+          <PropertyField kind="boolean" label="Visible" value={visible} onChange={setVisible} />
         </PropertyList>
       </PropertyPanel>
     </div>
@@ -98,7 +96,7 @@ export const NoTitle: Story = {
     <div style={{ width }}>
       <PropertyPanel title={title || undefined}>
         <PropertyList>
-          <SliderRow label="Just a slider" value={50} min={0} max={100} onChange={() => {}} />
+          <PropertyField kind="number" control="slider" label="Just a slider" value={50} min={0} max={100} onChange={() => {}} />
         </PropertyList>
       </PropertyPanel>
     </div>
@@ -119,7 +117,9 @@ function AllRowsDemo({ title, pack, width }: DemoArgs) {
     <div style={{ width }}>
       <PropertyPanel title={title}>
         <PropertyList pack={pack}>
-          <SliderRow
+          <PropertyField
+            kind="number"
+            control="slider"
             label="Opacity"
             value={opacity}
             min={0}
@@ -128,11 +128,12 @@ function AllRowsDemo({ title, pack, width }: DemoArgs) {
             onChange={setOpacity}
             format={(v) => v.toFixed(2)}
           />
-          <NumberRow label="Count" value={count} onChange={setCount} min={0} max={100} step={1} />
-          <ColorRow label="Fill" value={fill} onChange={setFill} />
-          <ColorRow label="Stroke" value={stroke} onChange={setStroke} />
-          <TextRow label="Name" value={name} onChange={setName} />
-          <SelectRow
+          <PropertyField kind="number" label="Count" value={count} onChange={setCount} min={0} max={100} step={1} />
+          <PropertyField kind="color" label="Fill" value={fill} onChange={setFill} />
+          <PropertyField kind="color" label="Stroke" value={stroke} onChange={setStroke} />
+          <PropertyField kind="string" label="Name" value={name} onChange={setName} />
+          <PropertyField
+            kind="enum"
             label="Mode"
             value={mode}
             onChange={setMode}
@@ -142,7 +143,9 @@ function AllRowsDemo({ title, pack, width }: DemoArgs) {
               { value: 'both', label: 'Fill + stroke' },
             ]}
           />
-          <ToggleRow
+          <PropertyField
+            kind="enum"
+            control="toggle"
             label="Align"
             value={align}
             onChange={setAlign}
@@ -152,7 +155,7 @@ function AllRowsDemo({ title, pack, width }: DemoArgs) {
               { value: 'right', label: 'R' },
             ]}
           />
-          <CheckboxRow label="Visible" value={visible} onChange={setVisible} />
+          <PropertyField kind="boolean" label="Visible" value={visible} onChange={setVisible} />
         </PropertyList>
       </PropertyPanel>
     </div>
@@ -185,9 +188,9 @@ export const ListWithoutChrome: Story = {
   render: ({ pack, width }) => (
     <div style={{ width }}>
       <PropertyList pack={pack}>
-        <SliderRow label="Bare" value={50} min={0} max={100} onChange={() => {}} />
-        <ColorRow label="Color A" value="#b08adb" onChange={() => {}} />
-        <ColorRow label="Color B" value="#1a1428" onChange={() => {}} />
+        <PropertyField kind="number" control="slider" label="Bare" value={50} min={0} max={100} onChange={() => {}} />
+        <PropertyField kind="color" label="Color A" value="#b08adb" onChange={() => {}} />
+        <PropertyField kind="color" label="Color B" value="#1a1428" onChange={() => {}} />
       </PropertyList>
     </div>
   ),
@@ -210,8 +213,8 @@ function StanceRows() {
   const [on, setOn] = useState(true);
   return (
     <PropertyList>
-      <SliderRow label="Amount" value={amount} min={0} max={1} step={0.01} onChange={setAmount} />
-      <CheckboxRow label="Enabled" value={on} onChange={setOn} />
+      <PropertyField kind="number" control="slider" label="Amount" value={amount} min={0} max={1} step={0.01} onChange={setAmount} />
+      <PropertyField kind="boolean" label="Enabled" value={on} onChange={setOn} />
     </PropertyList>
   );
 }
@@ -282,7 +285,8 @@ function BodyPanel() {
   return (
     <PropertyPanel title={`Body — ${base}`}>
       <PropertyList>
-        <SelectRow
+        <PropertyField
+          kind="enum"
           label="Base shape"
           value={base}
           onChange={(v) => setBase(v as typeof base)}
@@ -293,7 +297,9 @@ function BodyPanel() {
             { value: 'cloud', label: 'cloud' },
           ]}
         />
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Width"
           value={width}
           min={60}
@@ -302,7 +308,9 @@ function BodyPanel() {
           unit="px"
           onChange={setWidth}
         />
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Height"
           value={height}
           min={20}
@@ -311,7 +319,9 @@ function BodyPanel() {
           unit="px"
           onChange={setHeight}
         />
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Italic lean"
           value={lean}
           min={-25}
@@ -320,7 +330,8 @@ function BodyPanel() {
           unit={<sup>°</sup>}
           onChange={setLean}
         />
-        <ColorRow
+        <PropertyField
+          kind="color"
           label="Text color"
           value={textColor}
           onChange={setTextColor}
@@ -347,7 +358,8 @@ function TailBody() {
 
   return (
     <PropertyList pack="pairs">
-      <SelectRow
+      <PropertyField
+        kind="enum"
         label="Shape"
         value={shape}
         onChange={(v) => setShape(v as typeof shape)}
@@ -358,7 +370,9 @@ function TailBody() {
           { value: 'wavy', label: 'wavy' },
         ]}
       />
-      <SliderRow
+      <PropertyField
+        kind="number"
+        control="slider"
         label="Angle"
         value={angle}
         min={0}
@@ -366,7 +380,9 @@ function TailBody() {
         unit={<sup>°</sup>}
         onChange={setAngle}
       />
-      <SliderRow
+      <PropertyField
+        kind="number"
+        control="slider"
         label="Tip angle"
         value={outAngle}
         min={-90}
@@ -374,7 +390,9 @@ function TailBody() {
         unit={<sup>°</sup>}
         onChange={setOutAngle}
       />
-      <SliderRow
+      <PropertyField
+        kind="number"
+        control="slider"
         label="Bend"
         value={arc}
         min={-1}
@@ -383,7 +401,9 @@ function TailBody() {
         format={(v) => v.toFixed(2)}
         onChange={setArc}
       />
-      <SliderRow
+      <PropertyField
+        kind="number"
+        control="slider"
         label="Length"
         value={size}
         min={8}
@@ -394,7 +414,9 @@ function TailBody() {
       />
       {shape === 'bubbles' && (
         <Subpanel title="Bubbles">
-          <SliderRow
+          <PropertyField
+            kind="number"
+            control="slider"
             label="Size"
             value={bubbleDiameter}
             min={8}
@@ -402,8 +424,10 @@ function TailBody() {
             unit="px"
             onChange={setBubbleDiameter}
           />
-          <SliderRow label="Count" value={count} min={1} max={8} onChange={setCount} />
-          <SliderRow
+          <PropertyField kind="number" control="slider" label="Count" value={count} min={1} max={8} onChange={setCount} />
+          <PropertyField
+            kind="number"
+            control="slider"
             label="Gap"
             value={gap}
             min={-1}
@@ -412,7 +436,9 @@ function TailBody() {
             format={(v) => v.toFixed(2)}
             onChange={setGap}
           />
-          <SliderRow
+          <PropertyField
+            kind="number"
+            control="slider"
             label="Base distance"
             value={radial}
             min={-60}
@@ -434,7 +460,9 @@ function StrokePanel() {
   return (
     <PropertyPanel title="Stroke">
       <PropertyList pack="pairs">
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Width"
           value={width}
           min={0.5}
@@ -444,7 +472,8 @@ function StrokePanel() {
           format={(v) => v.toFixed(1)}
           onChange={setWidth}
         />
-        <ColorRow
+        <PropertyField
+          kind="color"
           label="Color"
           value={color}
           onChange={setColor}
@@ -466,9 +495,11 @@ function ShadowPanel() {
     <PropertyPanel title="Shadow">
       <PropertyList pack="pairs">
         <PropertySpan>
-          <CheckboxRow label="Enabled" value={enabled} onChange={setEnabled} />
+          <PropertyField kind="boolean" label="Enabled" value={enabled} onChange={setEnabled} />
         </PropertySpan>
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Offset X"
           value={dx}
           min={-20}
@@ -478,7 +509,9 @@ function ShadowPanel() {
           format={(v) => v.toFixed(1)}
           onChange={setDx}
         />
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Offset Y"
           value={dy}
           min={-20}
@@ -488,7 +521,9 @@ function ShadowPanel() {
           format={(v) => v.toFixed(1)}
           onChange={setDy}
         />
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Blur"
           value={blur}
           min={0}
@@ -498,7 +533,9 @@ function ShadowPanel() {
           format={(v) => v.toFixed(1)}
           onChange={setBlur}
         />
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Opacity"
           value={opacity}
           min={0}

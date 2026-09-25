@@ -718,19 +718,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   event came out rather than holding a class of content, and `success` has no
   stance.
 
-- **(P2) One kind-indexed row renderer for every settings surface.** Three
-  switches each map a field's `kind` (and `control`) to a control: labkit's
-  `ControlRow` (`controls/ControlPanel.tsx`), `PrefsForm`'s `renderBuiltin`,
-  and `SelectionPanel`'s `renderLeaf.tsx`. Only the first goes through the
-  typed rows in `PropertyPanel.tsx`; the other two call the bare controls, and
-  `PrefsForm` has its own row frame beside `PropertyRow`. `CheckboxRow`,
-  `SwitchRow`, `TextRow` and `SelectRow` add nothing over `PropertyRow` plus
-  their control. Build one renderer in `@weasel-js/ui` keyed by kind, with the
-  behavior `SliderRow`, `NumberRow` and `ColorRow` carry (editable readout, live
-  and commit callbacks, alpha) and `SelectionPanel`'s mixed and unset values,
-  and put all three on it. theme-editor's direct `*Row` calls, which have no
-  schema, need either a `kind` prop on one row component or the typed rows kept
-  as thin entries into the renderer.
+- **(P2) One widget per field kind, so `PropertyField` loses its `chrome` axis.**
+  `PropertyField` / `PropertyControl` (`Properties/PropertyField.tsx`) are the one
+  kind-indexed mapping every settings surface draws through, but `chrome`
+  (`bare` | `framed`) still picks between two widgets wherever the kit has two:
+  a native `type=number` against `UnitField` / `NumberField`, a native checkbox
+  against `Checkbox`, a native text input against `Input`, a bare `Select`
+  against a boxed one, bare segments against `ToggleBar` / `RadioGroup`, and a
+  native swatch plus alpha track against `ColorField`. ControlPanel, the
+  theme-editor and draw's document rows draw `bare`; PrefsForm, SelectionPanel
+  and ToolOptionsBar draw `framed`. The split is load-bearing today: typed units
+  exist only in `UnitField`, per-keystroke live values only in the native
+  number, and tests on each side name the widget. Settle one widget per slot —
+  the control-skin design (`docs/superpowers/specs/2026-09-03-control-skin-unification-design.md`)
+  is where the look converges — then delete the axis.
 
 - **(P2) Take `ColorRamp` past OKLCH.** The forge entry `ui/Color/ColorRamp`
   (`packages/ui/src/color/`) ramps lightness, hue and a `ChromaCurve` in OKLCH

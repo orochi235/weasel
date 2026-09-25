@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { CheckboxRow, ColorRow, PropertyList, PropertyRow, SliderRow } from './PropertyPanel';
+import { PropertyField } from './PropertyField';
+import { PropertyList, PropertyRow } from './PropertyPanel';
 
 const meta: Meta<typeof PropertyList> = {
   title: 'ui/Properties/PropertyList',
@@ -17,7 +18,9 @@ function Mixed() {
   return (
     <div style={{ width: 320 }}>
       <PropertyList>
-        <SliderRow
+        <PropertyField
+          kind="number"
+          control="slider"
           label="Opacity"
           value={opacity}
           min={0}
@@ -26,9 +29,9 @@ function Mixed() {
           onChange={setOpacity}
           format={(v) => v.toFixed(2)}
         />
-        <ColorRow label="Fill" value={fill} onChange={setFill} />
-        <ColorRow label="Stroke" value={stroke} onChange={setStroke} />
-        <CheckboxRow label="Visible" value={visible} onChange={setVisible} />
+        <PropertyField kind="color" label="Fill" value={fill} onChange={setFill} />
+        <PropertyField kind="color" label="Stroke" value={stroke} onChange={setStroke} />
+        <PropertyField kind="boolean" label="Visible" value={visible} onChange={setVisible} />
       </PropertyList>
     </div>
   );
@@ -44,10 +47,10 @@ export const FourColors: Story = {
   render: () => (
     <div style={{ width: 320 }}>
       <PropertyList>
-        <ColorRow label="A" value="#b08adb" onChange={() => {}} />
-        <ColorRow label="B" value="#7fb069" onChange={() => {}} />
-        <ColorRow label="C" value="#e07a5f" onChange={() => {}} />
-        <ColorRow label="D" value="#74c69d" onChange={() => {}} />
+        <PropertyField kind="color" label="A" value="#b08adb" onChange={() => {}} />
+        <PropertyField kind="color" label="B" value="#7fb069" onChange={() => {}} />
+        <PropertyField kind="color" label="C" value="#e07a5f" onChange={() => {}} />
+        <PropertyField kind="color" label="D" value="#74c69d" onChange={() => {}} />
       </PropertyList>
     </div>
   ),
@@ -58,9 +61,9 @@ export const ThreeColors: Story = {
   render: () => (
     <div style={{ width: 320 }}>
       <PropertyList>
-        <ColorRow label="A" value="#b08adb" onChange={() => {}} />
-        <ColorRow label="B" value="#7fb069" onChange={() => {}} />
-        <ColorRow label="C" value="#e07a5f" onChange={() => {}} />
+        <PropertyField kind="color" label="A" value="#b08adb" onChange={() => {}} />
+        <PropertyField kind="color" label="B" value="#7fb069" onChange={() => {}} />
+        <PropertyField kind="color" label="C" value="#e07a5f" onChange={() => {}} />
       </PropertyList>
     </div>
   ),
@@ -71,12 +74,12 @@ export const ColorPairingBrokenBySlider: Story = {
   render: () => (
     <div style={{ width: 320 }}>
       <PropertyList>
-        <ColorRow label="A" value="#b08adb" onChange={() => {}} />
+        <PropertyField kind="color" label="A" value="#b08adb" onChange={() => {}} />
         <PropertyRow label="Divider">
           <input type="text" defaultValue="full width row" />
         </PropertyRow>
-        <ColorRow label="B" value="#7fb069" onChange={() => {}} />
-        <ColorRow label="C" value="#e07a5f" onChange={() => {}} />
+        <PropertyField kind="color" label="B" value="#7fb069" onChange={() => {}} />
+        <PropertyField kind="color" label="C" value="#e07a5f" onChange={() => {}} />
       </PropertyList>
     </div>
   ),

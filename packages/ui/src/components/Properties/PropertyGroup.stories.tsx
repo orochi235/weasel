@@ -4,7 +4,8 @@ import { CloseIcon } from '../../icons';
 import { Button } from '../Button';
 import { DragHandleGlyph } from '../DragHandleGlyph';
 import { PropertyGroup } from './PropertyGroup';
-import { PropertyList, PropertyPanel, SliderRow } from './PropertyPanel';
+import { PropertyField } from './PropertyField';
+import { PropertyList, PropertyPanel } from './PropertyPanel';
 
 const meta: Meta<typeof PropertyGroup> = {
   title: 'ui/Properties/PropertyGroup',
@@ -16,9 +17,11 @@ export const Basic: StoryObj<typeof PropertyGroup> = {
   render: () => (
     <PropertyPanel title="Fill">
       <PropertyList>
-        <SliderRow label="Amount" value={0.6} min={0} max={1} step={0.02} onChange={() => {}} />
+        <PropertyField kind="number" control="slider" label="Amount" value={0.6} min={0} max={1} step={0.02} onChange={() => {}} />
         <PropertyGroup title="Aqua">
-          <SliderRow
+          <PropertyField
+            kind="number"
+            control="slider"
             label="Light angle"
             value={270}
             min={0}
@@ -27,10 +30,10 @@ export const Basic: StoryObj<typeof PropertyGroup> = {
             unit="°"
             onChange={() => {}}
           />
-          <SliderRow label="Gloss" value={0.55} min={0} max={1} step={0.02} onChange={() => {}} />
+          <PropertyField kind="number" control="slider" label="Gloss" value={0.55} min={0} max={1} step={0.02} onChange={() => {}} />
         </PropertyGroup>
         <PropertyGroup title="Bevel" hidden>
-          <SliderRow label="Rings" value={32} min={4} max={96} step={1} onChange={() => {}} />
+          <PropertyField kind="number" control="slider" label="Rings" value={32} min={4} max={96} step={1} onChange={() => {}} />
         </PropertyGroup>
       </PropertyList>
     </PropertyPanel>
@@ -48,10 +51,10 @@ export const Collapsible: StoryObj<typeof PropertyGroup> = {
         <PropertyPanel title="Fill">
           <PropertyList>
             <PropertyGroup title="Aqua" defaultCollapsed>
-              <SliderRow label="Gloss" value={0.55} min={0} max={1} step={0.02} onChange={() => {}} />
+              <PropertyField kind="number" control="slider" label="Gloss" value={0.55} min={0} max={1} step={0.02} onChange={() => {}} />
             </PropertyGroup>
             <PropertyGroup title="Bevel" collapsed={closed} onCollapsedChange={setClosed}>
-              <SliderRow label="Rings" value={32} min={4} max={96} step={1} onChange={() => {}} />
+              <PropertyField kind="number" control="slider" label="Rings" value={32} min={4} max={96} step={1} onChange={() => {}} />
             </PropertyGroup>
           </PropertyList>
         </PropertyPanel>
@@ -80,7 +83,7 @@ export const HeaderSlots: StoryObj<typeof PropertyGroup> = {
               </Button>
             }
           >
-            <SliderRow label="Size" value={8} min={0} max={32} unit="px" onChange={() => {}} />
+            <PropertyField kind="number" control="slider" label="Size" value={8} min={0} max={32} unit="px" onChange={() => {}} />
           </PropertyGroup>
         ))}
       </PropertyList>

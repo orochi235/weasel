@@ -1,35 +1,21 @@
 /**
- * The leaf → control mapping: one `ToolPrefLeaf` and its value in, one
- * rendered control out, plus the run logic that turns a row of paired
- * toggles into a single segmented bar.
+ * A selection's leaves as cells: one `ToolPrefLeaf` and its aggregated value
+ * in, one rendered cell out, plus the run logic that turns a row of paired
+ * toggles into a single segmented bar and the rows of an object leaf.
  *
- * It lives beside `SelectionPanel` because it grew there and still draws on
- * that stylesheet, but it is not the panel's: `ToolOptionsBar` renders a
- * tool's options through the same function, so a leaf kind gets its control
- * decided once rather than once per surface.
+ * The control itself is `PropertyControl`'s, through `prefFieldProps`; what
+ * is decided here is how a selection surface sizes and composes it.
+ * `ToolOptionsBar` renders a tool's options through the same functions.
  */
-import { Fragment, useState, type ReactNode } from 'react';
-import {
-  isBuiltinToolPref,
-  type FillStyle,
-  type ToolPrefBoolean,
-  type ToolPrefColor,
-  type ToolPrefEnum,
-  type ToolPrefLeaf,
-  type ToolPrefNumber,
-  type ToolPrefPaint,
-  type ToolPrefGroup,
-  type ToolPrefObject,
+import { Fragment, type ReactNode } from 'react';
+import type {
+  ToolPrefBoolean,
+  ToolPrefGroup,
+  ToolPrefLeaf,
+  ToolPrefObject,
 } from '@weasel-js/core';
-import { prefDisplayBounds, prefUnitAccepts } from '../Prefs/schema';
-import { ColorField } from '../ColorField';
-import { FontFamilySelect } from '../FontFamilySelect';
-import { PaintInput } from '../PaintInput';
-import { InlineRange } from '../InlineRange';
-import { Input } from '../Input';
-import { NumberField, UnitField } from '../NumberField';
-import { Select } from '../Select';
-import { Switch } from '../Switch';
+import { prefFieldProps } from '../Prefs/prefField';
+import { PropertyControl } from '../Properties/PropertyField';
 import { ToggleBar } from '../ToggleBar';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
@@ -228,277 +214,86 @@ export function renderBuiltin(
   nested = false,
 ): ReactNode {
   const { pref, value, mixed, unset, setValue } = ctx;
-  if (pref.kind === 'font-family') {
-    // Not a `ToolPref` kind: its options are the live font registry, which no
-    // static schema can carry. Core's own text schema still declares it, so
-    // the panel ships the control rather than leaving every consumer to.
-    //
-    // The substitution probe runs at the node's own weight and style, so the
-    // label names the variant that will actually paint. A mixed selection has
-    // no single one; the probe falls back to 400/normal there.
-    const weight = ctx.valueAt('data.style.fontWeight');
-    const style = ctx.valueAt('data.style.fontStyle');
-    return (
-      <FontFamilySelect
-        className={s.select}
-        value={mixed || typeof value !== 'string' ? undefined : value}
-        mixed={mixed}
-        onChange={setValue}
-        weight={typeof weight.value === 'number' ? weight.value : undefined}
-        fontStyle={style.value === 'italic' ? 'italic' : undefined}
-        aria-label={ariaLabel}
-      />
-    );
+  if (pref.kind === 'object') {
+    // One value with fields hanging off it. Each child writes the parent
+    // whole, so a field is never set on a half-built object.
+    return <ObjectLeaf ctx={ctx} renderers={renderers} selectionKey={selectionKey} />;
   }
-  if (!isBuiltinToolPref(pref)) {
+  const field = prefFieldProps(pref, {
+    value,
+    mixed,
+    unset,
+    siblings: ctx.siblings,
+    setValue,
+    // The substitution probe runs at the node's own weight and style, so the
+    // picker names the variant that will actually paint. A mixed selection
+    // has no single one; the probe falls back to 400/normal there.
+    fontVariant: {
+      weight: ctx.valueAt('data.style.fontWeight').value,
+      style: ctx.valueAt('data.style.fontStyle').value,
+    },
+  });
+  if (field === null) {
     return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
   }
-  switch (pref.kind) {
-    case 'number': {
-      const p = pref as ToolPrefNumber;
-      const stored = typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-      const display = stored !== undefined ? (p.unit ? p.unit.toDisplay(stored) : stored) : NaN;
-      // `min`/`max`/`step` are declared in the stored unit, like the value, so
-      // they convert with it — a leaf storing radians and showing degrees was
-      // clamping typed degrees against 0..6.28. Only declared bounds convert:
-      // the slider's 0..100 fallback is a display-space number with no stored
-      // counterpart to put through the conversion.
-      const bounds = prefDisplayBounds(p);
-      if (p.control === 'slider') {
-        const min = bounds.min ?? 0;
-        const max = bounds.max ?? 100;
-        const known = !mixed && stored !== undefined;
-        return (
-          <>
-            <InlineRange
-              min={min}
-              max={max}
-              step={bounds.step}
-              // The thumb clamps to the track; the readout beside it does not,
-              // so a value past `max` is still reported as what it is.
-              value={known ? Math.min(Math.max(display, min), max) : min}
-              disabled={mixed}
-              className={s.slider}
-              aria-label={ariaLabel}
-              onChange={(e) => {
-                const next = Number(e.target.value);
-                setValue(p.unit ? p.unit.fromDisplay(next) : next);
-              }}
-            />
-            <span className={s.sliderReadout} aria-hidden="true">
-              {known
-                ? (p.unit?.format?.(stored as number) ?? `${display}${p.unit?.suffix ?? ''}`)
-                : '—'}
-            </span>
-          </>
-        );
-      }
-      const unit = p.unit;
-      const field = unit ? (
-        <UnitField
-          className={s.number}
-          value={mixed || stored === undefined ? NaN : display}
-          placeholder={mixed ? 'Mixed' : undefined}
-          minValue={bounds.min}
-          maxValue={bounds.max}
-          step={bounds.step}
-          accepts={prefUnitAccepts(unit)}
-          aria-label={ariaLabel}
-          onChange={(n) => setValue(unit.fromDisplay(n))}
-        />
-      ) : (
-        <NumberField
-          className={s.number}
-          value={mixed || stored === undefined ? NaN : display}
-          placeholder={mixed ? 'Mixed' : undefined}
-          minValue={bounds.min}
-          maxValue={bounds.max}
-          step={bounds.step}
-          hideSteppers
-          aria-label={ariaLabel}
-          onChange={(n) => {
-            if (Number.isNaN(n)) return;
-            setValue(n);
-          }}
+  switch (field.kind) {
+    case 'boolean':
+      // A panel's flag is a switch unless it asks otherwise.
+      return (
+        <PropertyControl
+          {...field}
+          {...framed(ariaLabel)}
+          control={field.control ?? 'switch'}
+          className={field.control === 'toggle' ? s.flagToggle : undefined}
         />
       );
-      if (unit?.suffix === undefined) return field;
+    case 'number':
       return (
-        <>
-          {field}
-          <span className={s.unitSuffix} aria-hidden="true">
-            {unit.suffix}
-          </span>
-        </>
-      );
-    }
-    case 'string': {
-      return (
-        <DraftInput
-          text={mixed ? undefined : typeof value === 'string' ? value : ''}
-          placeholder={mixed ? 'Mixed' : undefined}
-          ariaLabel={ariaLabel}
-          onCommit={setValue}
+        <PropertyControl
+          {...field}
+          {...framed(ariaLabel)}
+          className={field.control === 'slider' ? s.slider : s.number}
+          steppers={false}
         />
       );
-    }
-    case 'boolean': {
-      const p = pref as ToolPrefBoolean;
-      if (p.control === 'toggle') {
-        // One segment, so the bar is the flag: `short` (else the initial of
-        // `name`) is all a paired row has room for, and `name` stays the
-        // accessible name.
-        //
-        // No dimming wrapper here. Unselected already *is* how a toggle button
-        // says "not set", and dimming it reads as disabled; mixed has an ARIA
-        // form on a toggle — `mixedValues` — which the `Switch` below has to
-        // fake for want of one.
-        return (
-          <ToggleBar<string>
-            mode="multiple"
-            size="sm"
-            variant="flat"
-            className={s.flagToggle}
-            ariaLabel={ariaLabel}
-            items={[{
-              value: ctx.path,
-              label:
-                p.icon && p.icon in ICON_PATHS ? (
-                  <Icon name={p.icon as IconName} size={14} />
-                ) : (
-                  (p.short ?? p.name.slice(0, 1))
-                ),
-              ariaLabel,
-            }]}
-            value={value === true ? [ctx.path] : []}
-            mixedValues={mixed ? [ctx.path] : []}
-            onChange={(next) => setValue(next.includes(ctx.path))}
-          />
-        );
-      }
-      const control = <Switch isSelected={Boolean(value)} onChange={setValue} aria-label={ariaLabel} />;
-      // Neither `Switch`'s indeterminate gap nor "unset" has an ARIA form, so
-      // a reduced-opacity wrapper with a title is the cue for both — a mixed
-      // selection, and a field the node leaves to its fallback.
-      if (!mixed && !unset) return control;
+    case 'string':
+      // Settled values only: a live write per keystroke would be one undo
+      // step per character.
+      return <PropertyControl {...field} {...framed(ariaLabel)} onInput={settledOnly} />;
+    case 'enum':
       return (
-        <span className={s.mixedSwitch} title={mixed ? 'Mixed' : 'Not set'}>
-          {control}
-        </span>
-      );
-    }
-    case 'enum': {
-      const p = pref as ToolPrefEnum;
-      // An encoded leaf stores something other than the option string, so the
-      // option comes from the encoding rather than from the value — and an
-      // absent field is one of the things it reads (no dash is `solid`), which
-      // is why `unset` doesn't blank the control here.
-      const option = p.encoding
-        ? (mixed ? undefined : p.encoding.read(value, ctx.siblings))
-        : mixed || unset
-          ? undefined
-          : typeof value === 'string'
-            ? value
-            : p.default;
-      const choose = (next: string): void =>
-        setValue(p.encoding ? p.encoding.write(next, ctx.siblings) : next);
-      if (p.control === 'toggle') {
-        // Every option visible at once, which is the point of a segmented
-        // control: a glyph, else `short`, keeps it to the width a property row
-        // has, and the full label stays the accessible name. A mixed selection
-        // selects nothing rather than picking a winner.
-        return (
-          <ToggleBar<string>
-            size="sm"
-            variant="flat"
-            className={s.toggle}
-            ariaLabel={ariaLabel}
-            items={p.options.map((o) => ({
-              value: o.value,
-              label:
-                o.icon && o.icon in ICON_PATHS ? (
-                  <Icon name={o.icon as IconName} size={14} />
-                ) : (
-                  (o.short ?? o.label)
-                ),
-              ariaLabel: o.label,
-              disabled: o.disabled,
-            }))}
-            value={option ?? null}
-            onChange={(next) => { if (next !== null) choose(next); }}
-          />
-        );
-      }
-      return (
-        <Select<string>
-          className={s.select}
-          options={p.options.map((o) => ({ value: o.value, label: o.label, isDisabled: o.disabled }))}
-          selectedKey={option ?? null}
-          placeholder={mixed ? 'Mixed' : unset ? '—' : undefined}
-          onSelectionChange={choose}
-          aria-label={ariaLabel}
+        <PropertyControl
+          {...field}
+          {...framed(ariaLabel)}
+          className={field.control === 'toggle' ? s.toggle : field.control === 'radio' ? undefined : s.select}
         />
       );
-    }
-    case 'color': {
-      const p = pref as ToolPrefColor;
+    case 'font-family':
+      return <PropertyControl {...field} {...framed(ariaLabel)} className={s.select} />;
+    case 'paint':
       return (
-        <ColorField
-          value={mixed ? undefined : typeof value === 'string' ? value : p.default}
-          mixed={mixed}
-          alpha={p.alpha}
-          onChange={setValue}
-          aria-label={ariaLabel}
-        />
-      );
-    }
-    case 'paint': {
-      // The value is a whole `FillStyle`, and `PaintInput` edits it as one —
-      // previewing a gradient as a gradient rather than degrading it to the
-      // indeterminate chip. That leaves the checkerboard meaning `mixed` and
-      // nothing else.
-      const p = pref as ToolPrefPaint;
-      // `??` would read an explicit `null` — "no paint" — as absent and show
-      // the schema default over it, so the None segment could never stay lit.
-      // Unset shows the fallback that is actually on the canvas, dimmed: true,
-      // but not chosen, which is what the dimming says.
-      const paint = (value === null
-        ? null
-        : (value ?? (mixed ? undefined : p.default))) as FillStyle | null | undefined;
-      return (
-        <PaintInput
+        <PropertyControl
+          {...field}
+          {...framed(ariaLabel)}
           // Per-kind switch memory is scratch for one selection; carrying it
           // across would recall the previous node's gradient.
           key={selectionKey}
-          value={paint}
-          mixed={mixed}
-          unset={unset}
+          control="inline"
           // A nested paint writes one field of its parent, and no kit paint
           // field is optional — `Stroke.paint` is required. Removing the
           // whole parent is a different edit than repainting it, so the
-          // control must not offer one as the other. A consumer whose
-          // renderer owns the parent key (WeaselDraw's `setStroke`) can.
+          // control must not offer one as the other.
           allowNone={!nested}
-          onChange={setValue}
-          aria-label={ariaLabel}
         />
       );
-    }
-    case 'object': {
-      // One value with fields hanging off it. Each child writes the parent
-      // whole, so a field is never set on a half-built object.
-      return <ObjectLeaf ctx={ctx} renderers={renderers} selectionKey={selectionKey} />;
-    }
-    default: {
-      // Not reachable while every built-in kind has an arm — and a new kind
-      // that lacks one is a compile error here, never a blank cell.
-      const _exhaustive: never = pref;
-      throw new Error(
-        `SelectionPanel: no control for built-in pref kind "${(_exhaustive as { kind: string }).kind}"`,
-      );
-    }
+    default:
+      return <PropertyControl {...field} {...framed(ariaLabel)} />;
   }
 }
+
+const framed = (name: string) => ({ chrome: 'framed' as const, name });
+
+const settledOnly = (): void => {};
 
 /**
  * Renders an object leaf: a titled block whose rows are the object's own
@@ -681,36 +476,5 @@ function ObjectLeaf({
       {!allGrouped && <h4 className={s.sectionTitle}>{pref.name}</h4>}
       {rows}
     </div>
-  );
-}
-
-/** Text input with commit-on-blur/Enter semantics — live-per-keystroke
- *  writes would emit one undo step per character. */
-function DraftInput({
-  text,
-  placeholder,
-  ariaLabel,
-  onCommit,
-}: {
-  text: string | undefined;
-  placeholder?: string;
-  ariaLabel: string;
-  onCommit: (v: string) => void;
-}) {
-  const [draft, setDraft] = useState<string | null>(null);
-  return (
-    <Input
-      value={draft ?? text ?? ''}
-      placeholder={placeholder}
-      aria-label={ariaLabel}
-      onChange={setDraft}
-      onBlur={() => {
-        if (draft !== null && draft !== text) onCommit(draft);
-        setDraft(null);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-      }}
-    />
   );
 }

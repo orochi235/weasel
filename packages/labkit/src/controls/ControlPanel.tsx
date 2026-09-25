@@ -1,34 +1,23 @@
-import { isBuiltinToolPref } from '@weasel-js/core';
+import { getAlpha01, isBuiltinToolPref, toHex8, withAlpha01 } from '@weasel-js/core';
 import {
-  CheckboxRow,
-  ColorRow,
   DialogRow,
   isPrefLeaf,
   ListEditor,
-  NumberRow,
   type PrefGroup,
   type PrefLeaf,
-  type PrefNumber,
-  type PrefNumberFormat,
-  type PrefNumberUnit,
   type PropertyAlign,
+  type PropertyControlProps,
+  PropertyControl,
   type PropertyDensity,
+  PropertyField,
   PropertyGroup,
   PropertyList,
   type PropertyListPack,
   PropertyPanel,
   PropertyRow,
   type PropertyRowLayout,
-  prefDisplayBounds,
-  Select,
-  SelectRow,
-  SliderRow,
+  prefFieldProps,
   type StanceProps,
-  Switch,
-  SwitchRow,
-  TextRow,
-  ToggleBar,
-  ToggleRow,
 } from '@weasel-js/ui';
 import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { auto as autoValue } from '../config/auto';
@@ -424,10 +413,10 @@ function ControlRow<TC extends Record<string, unknown>>({
 
   const label = leaf.name;
   const description = leaf.description;
-  const read = <T,>(): T => value as T;
   // `auto` gives the whole width to the controls that read badly at half of a
   // sidebar's: free text, a slider track, a segmented toggle. `pairs` doesn't.
   const wide = pack === 'auto';
+  const row = { label, description, layout, readout: autoReadout, ...autoProps };
 
   if (leaf.kind === 'list') {
     const entries = Array.isArray(value) ? (value as string[]) : [];
@@ -452,137 +441,55 @@ function ControlRow<TC extends Record<string, unknown>>({
     );
   }
 
-  if (!isBuiltinToolPref(leaf))
-    return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
-
-  switch (leaf.kind) {
-    case 'number': {
-      const field = numberField(leaf, read<number>());
-      const suffix = extra<string>(leaf, 'suffix') ?? field.unit?.suffix;
-      const notation = extra<PrefNumberFormat>(leaf, 'format');
-      if (isSliderLeaf(leaf)) {
-        return (
-          <SliderRow
-            label={label}
-            value={field.shown}
-            min={field.min as number}
-            max={field.max as number}
-            step={field.step}
-            notation={notation}
-            unit={suffix}
-            onChange={(n) => write(field.store(n))}
-            readout={autoReadout}
-            layout={layout}
-            span={wide}
-            description={description}
-            {...autoProps}
-          />
-        );
-      }
-      // NumberRow commits every keystroke and does not clamp, so the bounds a
-      // schema declares are enforced here — an instrument should never be
-      // handed a config value outside the range it asked for.
-      return (
-        <NumberRow
-          label={label}
-          value={field.shown}
-          min={field.min}
-          max={field.max}
-          step={field.step}
-          unit={suffix}
-          onChange={(n) => write(field.store(n))}
-          readout={autoReadout}
-          layout={layout}
-          description={description}
-          {...autoProps}
-        />
-      );
-    }
-    case 'boolean': {
-      const Row = extra<string>(leaf, 'control') === 'switch' ? SwitchRow : CheckboxRow;
-      return (
-        <Row
-          label={label}
-          value={read<boolean>()}
-          onChange={write}
-          readout={autoReadout}
-          layout={layout}
-          description={description}
-          {...autoProps}
-        />
-      );
-    }
-    case 'enum': {
-      const options = extra<readonly { value: string; label: string }[]>(leaf, 'options') ?? [];
-      const segmented = extra<string>(leaf, 'control') === 'radio';
-      const Row = segmented ? ToggleRow : SelectRow;
-      return (
-        <Row
-          label={label}
-          value={read<string>()}
-          options={options}
-          onChange={write}
-          readout={autoReadout}
-          layout={layout}
-          span={segmented && wide}
-          description={description}
-          {...autoProps}
-        />
-      );
-    }
+  const field = labField(leaf, value, write);
+  if (field === null) return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
+  switch (field.kind) {
     case 'string':
-      return (
-        <DebouncedTextRow
-          leaf={leaf}
-          label={label}
-          value={read<string>()}
-          write={write}
-          readout={autoReadout}
-          layout={layout}
-          span={wide}
-          description={description}
-          {...autoProps}
-        />
-      );
-    case 'color': {
-      // `ColorRow` takes alpha as a number beside a `#rrggbb` swatch, so an
-      // `#rrggbbaa` value has to be split going in and rejoined coming out —
-      // handed whole to the swatch, the browser cannot parse it and the first
-      // edit writes back black.
-      const common = {
-        label,
-        readout: autoReadout,
-        layout,
-        description,
-        ...autoProps,
+      return <DebouncedTextRow leaf={leaf} field={field} span={wide} {...row} />;
+    case 'number':
+      return <PropertyField {...field} {...row} span={field.control === 'slider' && wide} />;
+    case 'enum':
+      return <PropertyField {...field} {...row} span={field.control === 'radio' && wide} />;
+    default:
+      return <PropertyField {...field} {...row} />;
+  }
+}
+
+/**
+ * A leaf as the field it draws, with the labkit-only extras `prefFieldProps`
+ * knows nothing of. `null` for a kind the panel declines: a paint, which a
+ * hex swatch would flatten to a solid, and an object, which a flat row would
+ * write one field of. Override with `render` to edit either.
+ */
+function labField(
+  leaf: PrefLeaf,
+  value: unknown,
+  write: (value: unknown) => void,
+): PropertyControlProps | null {
+  if (!isBuiltinToolPref(leaf) || leaf.kind === 'paint' || leaf.kind === 'object') return null;
+  const field = prefFieldProps(leaf, { value, setValue: write });
+  if (field === null) return null;
+  switch (field.kind) {
+    case 'number':
+      // `prefFieldProps` clamps what it stores, so an instrument is never
+      // handed a value outside the range it asked for.
+      return {
+        ...field,
+        control: isSliderLeaf(leaf) ? 'slider' : 'input',
+        unit: extra<string>(leaf, 'suffix') ?? field.unit,
       };
-      if (extra<boolean>(leaf, 'alpha') !== true)
-        return <ColorRow {...common} value={read<string>()} onChange={write} />;
-      const { rgb, alpha } = splitHexAlpha(read<string>());
-      return (
-        <ColorRow
-          {...common}
-          value={rgb}
-          onChange={(next) => write(joinHexAlpha(next, alpha))}
-          alpha={alpha}
-          onAlphaChange={(next) => write(joinHexAlpha(rgb, next))}
-        />
-      );
-    }
-    case 'paint':
-    case 'object':
-      // Declined: a hex swatch would write a solid over a gradient, and a flat
-      // row would write one field into a half-built object. Override with
-      // `render` to edit either.
-      return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
-    default: {
-      // Not reachable while every built-in kind has an arm — and a new kind
-      // that lacks one is a compile error here, never a blank row.
-      const _exhaustive: never = leaf;
-      throw new Error(
-        `ControlPanel: no control for built-in pref kind "${(_exhaustive as { kind: string }).kind}"`,
-      );
-    }
+    case 'boolean':
+      return { ...field, control: extra<string>(leaf, 'control') === 'switch' ? 'switch' : 'checkbox' };
+    case 'enum':
+      return { ...field, control: extra<string>(leaf, 'control') === 'radio' ? 'radio' : 'select' };
+    case 'string':
+      return {
+        ...field,
+        placeholder: extra<string>(leaf, 'placeholder'),
+        maxLength: extra<number>(leaf, 'maxLength'),
+      };
+    default:
+      return field;
   }
 }
 
@@ -607,20 +514,12 @@ function UnwiredRow({
 /** A text row whose writes are debounced — see {@link useDebouncedText}. */
 function DebouncedTextRow({
   leaf,
-  label,
-  value,
-  write,
-  layout,
-  span,
-  description,
-  readout,
-  auto,
-  onAutoChange,
+  field,
+  ...row
 }: {
   leaf: PrefLeaf;
+  field: PropertyControlProps & { kind: 'string' };
   label: string;
-  value: string;
-  write: (value: unknown) => void;
   layout?: PropertyRowLayout;
   span?: boolean;
   description?: string;
@@ -629,100 +528,11 @@ function DebouncedTextRow({
   onAutoChange?: (next: boolean) => void;
 }) {
   const text = useDebouncedText(
-    value,
-    write as (v: string) => void,
+    field.value ?? '',
+    field.onChange,
     extra<number>(leaf, 'debounceMs') ?? 150,
   );
-
-  return (
-    <TextRow
-      label={label}
-      readout={readout}
-      layout={layout}
-      span={span}
-      description={description}
-      auto={auto}
-      onAutoChange={onAutoChange}
-      value={text.local}
-      placeholder={extra<string>(leaf, 'placeholder')}
-      maxLength={extra<number>(leaf, 'maxLength')}
-      onChange={text.type}
-    />
-  );
-}
-
-/**
- * A number leaf's field in the unit it is edited in: what the control shows,
- * the bounds it shows them against, and what a typed number stores once it is
- * clamped and converted back. Without a `unit` this is what the leaf declares,
- * unchanged.
- */
-function numberField(
-  leaf: PrefLeaf,
-  value: number,
-): {
-  unit: PrefNumberUnit | undefined;
-  min: number | undefined;
-  max: number | undefined;
-  step: number | undefined;
-  shown: number;
-  store: (shown: number) => number;
-} {
-  const unit = extra<PrefNumberUnit>(leaf, 'unit');
-  // `min`, `max` and `step` are declared in the stored unit alongside the
-  // value, so they convert with it — a leaf storing radians and showing
-  // degrees would otherwise clamp typed degrees against 0..6.28.
-  const bounds = unit
-    ? prefDisplayBounds(leaf as PrefNumber)
-    : {
-        min: extra<number>(leaf, 'min'),
-        max: extra<number>(leaf, 'max'),
-        step: extra<number>(leaf, 'step'),
-      };
-  const lo = bounds.min ?? Number.NEGATIVE_INFINITY;
-  const hi = bounds.max ?? Number.POSITIVE_INFINITY;
-  return {
-    unit,
-    min: bounds.min,
-    max: bounds.max,
-    step: bounds.step,
-    shown: unit ? unit.toDisplay(value) : value,
-    store: (shown) => {
-      const clamped = Math.min(hi, Math.max(lo, shown));
-      return unit ? unit.fromDisplay(clamped) : clamped;
-    },
-  };
-}
-
-/** `#rgb`, `#rgba`, `#rrggbb` or `#rrggbbaa` as the `#rrggbb` an
- *  `<input type="color">` can hold and the 0..1 alpha beside it. Anything else
- *  reads as opaque black, which is what the input would show for it anyway. */
-function splitHexAlpha(value: string): { rgb: string; alpha: number } {
-  const digits = /^#([0-9a-f]{3,8})$/i.exec(value?.trim() ?? '')?.[1];
-  const twice = (s: string): string =>
-    s
-      .split('')
-      .map((c) => c + c)
-      .join('');
-  const byte = (s: string): number => Number.parseInt(s, 16) / 255;
-  switch (digits?.length) {
-    case 3:
-      return { rgb: `#${twice(digits)}`, alpha: 1 };
-    case 4:
-      return { rgb: `#${twice(digits.slice(0, 3))}`, alpha: byte(twice(digits.slice(3))) };
-    case 6:
-      return { rgb: `#${digits}`, alpha: 1 };
-    case 8:
-      return { rgb: `#${digits.slice(0, 6)}`, alpha: byte(digits.slice(6)) };
-    default:
-      return { rgb: '#000000', alpha: 1 };
-  }
-}
-
-/** A `#rrggbb` and a 0..1 alpha back into the `#rrggbbaa` the config holds. */
-function joinHexAlpha(rgb: string, alpha: number): string {
-  const byte = Math.max(0, Math.min(255, Math.round(alpha * 255)));
-  return `${rgb}${byte.toString(16).padStart(2, '0')}`;
+  return <PropertyField {...field} {...row} value={text.local} onChange={text.type} />;
 }
 
 /** One cell of a paired row, with its path and the leaf it draws. */
@@ -761,7 +571,7 @@ function PairedRow<TC extends Record<string, unknown>>({
         // The row is named by the pair, so a cell that shares it says which
         // knob it is — without a caption a paired switch reads only to a
         // screen reader. A cell whose leaf is deliberately unnamed keeps none.
-        <span key={path} className="lk-pair-cell">
+        <span key={path} className="lk-pair-cell" title={leaf.description || undefined}>
           {leaf.name ? <span className="lk-pair-label">{leaf.name}</span> : null}
           <PairCell
             leaf={leaf}
@@ -785,106 +595,35 @@ function PairCell({
   value: unknown;
   write: (value: unknown) => void;
 }) {
-  const name = leaf.name;
-  const title = leaf.description;
   const text = useDebouncedText(
     typeof value === 'string' ? value : '',
     write,
     extra<number>(leaf, 'debounceMs') ?? 150,
   );
-  switch (leaf.kind) {
-    case 'number': {
-      const field = numberField(leaf, typeof value === 'number' ? value : 0);
-      return (
-        <input
-          type="number"
-          aria-label={name}
-          title={title}
-          value={field.shown}
-          min={field.min}
-          max={field.max}
-          step={field.step}
-          onChange={(e) => {
-            const n = Number(e.target.value);
-            if (e.target.value !== '' && Number.isFinite(n)) write(field.store(n));
-          }}
-        />
-      );
-    }
-    case 'boolean':
-      return extra<string>(leaf, 'control') === 'switch' ? (
-        <Switch aria-label={name} isSelected={value === true} onChange={write} />
-      ) : (
-        <input
-          type="checkbox"
-          aria-label={name}
-          title={title}
-          checked={value === true}
-          onChange={(e) => write(e.target.checked)}
-        />
-      );
+  const field = labField(leaf, value, write);
+  // Unreachable for null: `pairable` admits only kinds with a field.
+  if (field === null) return null;
+  switch (field.kind) {
     case 'string':
-      return (
-        <input
-          type="text"
-          aria-label={name}
-          title={title}
-          value={text.local}
-          placeholder={extra<string>(leaf, 'placeholder')}
-          maxLength={extra<number>(leaf, 'maxLength')}
-          onChange={(e) => text.type(e.target.value)}
-        />
-      );
+      return <PropertyControl {...field} name={leaf.name} value={text.local} onChange={text.type} />;
+    case 'number':
+      // The pair names the row, so a cell has no room for a unit.
+      return <PropertyControl {...field} name={leaf.name} control="input" unit={undefined} />;
     case 'color': {
       // The alpha track needs a row of its own to sit under, so a paired
       // swatch edits the color and carries the stored alpha through untouched.
-      const { rgb, alpha } = splitHexAlpha(typeof value === 'string' ? value : '');
-      const carriesAlpha = extra<boolean>(leaf, 'alpha') === true;
+      const stored = typeof value === 'string' ? toHex8(value) : '#000000';
       return (
-        <input
-          type="color"
-          aria-label={name}
-          title={title}
-          value={rgb}
-          onChange={(e) =>
-            write(carriesAlpha ? joinHexAlpha(e.target.value, alpha) : e.target.value)
-          }
+        <PropertyControl
+          {...field}
+          name={leaf.name}
+          alpha={undefined}
+          onChange={(rgb: string) => write(field.alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb)}
         />
       );
     }
-    case 'enum': {
-      const options = extra<readonly { value: string; label: string }[]>(leaf, 'options') ?? [];
-      // A leaf that asked to be segmented stays segmented when it shares a row:
-      // the choice is the control's shape, not a whole row's worth of chrome.
-      if (extra<string>(leaf, 'control') === 'radio') {
-        return (
-          <span title={title}>
-            <ToggleBar<string>
-              ariaLabel={name}
-              size="sm"
-              value={typeof value === 'string' ? value : null}
-              onChange={(next) => next !== null && write(next)}
-              items={options.map((o) => ({ value: o.value, label: o.label }))}
-            />
-          </span>
-        );
-      }
-      // `Select` takes no `title`, so the cell's help hangs off a wrapper.
-      return (
-        <span title={title}>
-          <Select<string>
-            variant="bare"
-            aria-label={name}
-            options={options}
-            selectedKey={typeof value === 'string' ? value : null}
-            onSelectionChange={write}
-          />
-        </span>
-      );
-    }
     default:
-      // Unreachable: `pairable` admits only the kinds above.
-      return null;
+      return <PropertyControl {...field} name={leaf.name} />;
   }
 }
 

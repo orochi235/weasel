@@ -1,25 +1,13 @@
 import { type ReactNode } from 'react';
-import { Focusable } from 'react-aria-components';
-import { Checkbox } from '../Checkbox';
-import { ColorField } from '../ColorField';
-import { FontFamilySelect } from '../FontFamilySelect';
-import { isPaint } from '../paintValue';
-import { PaintField } from '../PaintField';
-import { Input } from '../Input';
-import { NumberField, UnitField } from '../NumberField';
-import { RadioGroup, Radio } from '../RadioGroup';
-import { RangeSlider } from '../RangeSlider';
-import { Select } from '../Select';
-import { Switch } from '../Switch';
-import { Tooltip, TooltipTrigger } from '../Tooltip';
-import { isBuiltinToolPref, type FillStyle } from '@weasel-js/core';
+import { PropertyControl } from '../Properties/PropertyField';
+import { PropertyRow } from '../Properties/PropertyPanel';
+import { prefFieldProps } from './prefField';
 import {
   isPrefLeaf,
-  prefDisplayBounds,
-  prefUnitAccepts,
   prefValueAtPath,
   type PrefGroup,
   type PrefLeaf,
+  type PrefObject,
 } from './schema';
 import s from './Prefs.module.css';
 
@@ -71,240 +59,79 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   if (pref.block) return <>{control}</>;
 
   return (
-    <label className={s.row}>
-      <span className={s.rowLabel}>
-        {pref.name}
-        {pref.description ? (
-          // Help affordance carries the description tooltip. A tooltip
-          // trigger must be interactive (keyboard-reachable), so this is
-          // a real button — a bare label span would be neither focusable
-          // nor announced.
-          <TooltipTrigger>
-            <Focusable>
-              <button type="button" className={s.help} aria-label={`About ${pref.name}`}>
-                ⓘ
-              </button>
-            </Focusable>
-            <Tooltip>{pref.description}</Tooltip>
-          </TooltipTrigger>
-        ) : null}
-      </span>
+    <PropertyRow
+      label={pref.name}
+      description={pref.description}
+      layout="inline"
+      chrome="framed"
+      className={s.row}
+    >
       <span className={s.rowControl}>{control}</span>
-    </label>
+    </PropertyRow>
   );
 }
 
 function renderBuiltin(
   ctx: PrefRenderContext,
-  // The object a nested leaf is a field of — what an enum `encoding` reads
-  // and writes against. Undefined for a top-level leaf, which has none.
+  // The object a nested leaf is a field of — what an enum `encoding` and a
+  // font's weight and slant read against. Undefined for a top-level leaf.
   siblings?: Record<string, unknown>,
 ): ReactNode {
   const { pref, value, setValue } = ctx;
-  if (pref.kind === 'font-family') {
-    // Not a `ToolPref` kind: its options are the live font registry, which no
-    // static schema can carry. Core's own text schema still declares it, so
-    // the form ships the control rather than leaving every consumer to.
-    //
-    // The substitution probe runs at the weight and slant the family is stored
-    // beside — fields of the same `TextStyle` object leaf — so the label names
-    // the variant that will actually paint.
-    const weight = siblings?.fontWeight;
-    const slant = siblings?.fontStyle;
-    return (
-      <FontFamilySelect
-        value={typeof value === 'string' ? value : undefined}
-        onChange={setValue}
-        weight={typeof weight === 'number' ? weight : undefined}
-        fontStyle={slant === 'italic' ? 'italic' : undefined}
-        aria-label={pref.name}
-      />
-    );
-  }
-  if (!isBuiltinToolPref(pref)) {
+  if (pref.kind === 'object') return <ObjectLeaf ctx={ctx} />;
+  const field = prefFieldProps(pref, { value, siblings, setValue });
+  if (field === null) {
     // App-defined kind with no `renderers` entry: labeled placeholder, not a
     // crash — a missing wiring should be visible and recoverable.
     return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
   }
-  switch (pref.kind) {
-    case 'boolean': {
-      const checked = Boolean(value);
-      return pref.control === 'switch' ? (
-        <Switch isSelected={checked} onChange={setValue} aria-label={pref.name} />
-      ) : (
-        <Checkbox isSelected={checked} onChange={setValue} aria-label={pref.name} />
-      );
-    }
-    case 'number': {
-      const stored = typeof value === 'number' && Number.isFinite(value) ? value : 0;
-      const unit = pref.unit;
-      const display = unit ? unit.toDisplay(stored) : stored;
-      // `min`/`max`/`step` are declared in the stored unit, like the value, so
-      // they convert with it — a leaf storing radians and showing degrees was
-      // clamping typed degrees against 0..6.28.
-      const bounds = prefDisplayBounds(pref);
-      const store = (v: number): void => setValue(unit ? unit.fromDisplay(v) : v);
-      if (pref.control === 'slider') {
-        return (
-          <RangeSlider
-            value={display}
-            onChange={(v) => store(typeof v === 'number' ? v : v[0])}
-            minValue={bounds.min}
-            maxValue={bounds.max}
-            step={bounds.step}
-            aria-label={pref.name}
-          />
-        );
+  return <PropertyControl {...field} chrome="framed" name={pref.name} />;
+}
+
+/** One value with its fields hanging off it: each field renders its own
+ *  control and commits the parent object whole. */
+function ObjectLeaf({ ctx }: { ctx: PrefRenderContext }) {
+  const pref = ctx.pref as PrefObject;
+  const { value, setValue } = ctx;
+  const held = typeof value === 'object' && value !== null
+    ? (value as Record<string, unknown>)
+    : undefined;
+  const objectRows = (children: Record<string, PrefLeaf | PrefGroup>): ReactNode[] => {
+    const out: ReactNode[] = [];
+    for (const [key, child] of Object.entries(children)) {
+      if (!isPrefLeaf(child)) {
+        const inner = objectRows(child.children);
+        if (inner.length === 0) continue;
+        out.push(<h4 key={`group:${key}`} className={s.objectGroup}>{child.name}</h4>, ...inner);
+        continue;
       }
-      const field = unit ? (
-        <UnitField
-          value={display}
-          onChange={store}
-          minValue={bounds.min}
-          maxValue={bounds.max}
-          step={bounds.step}
-          accepts={prefUnitAccepts(unit)}
-          aria-label={pref.name}
-        />
-      ) : (
-        <NumberField
-          value={display}
-          onChange={store}
-          minValue={bounds.min}
-          maxValue={bounds.max}
-          step={bounds.step}
-          aria-label={pref.name}
-        />
-      );
-      if (unit?.suffix === undefined) return field;
-      return (
-        <>
-          {field}
-          <span className={s.unitSuffix} aria-hidden="true">{unit.suffix}</span>
-        </>
+      out.push(
+        <PropertyRow
+          key={key}
+          label={child.name}
+          layout="inline"
+          chrome="framed"
+          className={s.objectRow}
+        >
+          <span className={s.rowControl}>
+            {renderBuiltin({
+              path: `${ctx.path}.${key}`,
+              pref: child,
+              value: held?.[key],
+              setValue: (v) => {
+                const base = held ?? pref.fromScalar?.(value) ?? {};
+                setValue({ ...base, [key]: v });
+              },
+              // A field is not pinned on its own — it shares the state of
+              // the object leaf it hangs off.
+              auto: ctx.auto,
+              setAuto: ctx.setAuto,
+            }, held)}
+          </span>
+        </PropertyRow>,
       );
     }
-    case 'string': {
-      const text = typeof value === 'string' ? value : '';
-      if (pref.control === 'textarea') {
-        return (
-          <textarea
-            className={s.textarea}
-            value={text}
-            onChange={(e) => setValue(e.target.value)}
-            aria-label={pref.name}
-            rows={3}
-          />
-        );
-      }
-      return <Input value={text} onChange={setValue} aria-label={pref.name} />;
-    }
-    case 'enum': {
-      const encoding = pref.encoding;
-      // An encoded leaf stores something other than the option string (a dash
-      // array), so reading the raw value selects nothing and writing one
-      // replaces the stored form with the option string.
-      const option = encoding
-        ? encoding.read(value, siblings)
-        : typeof value === 'string'
-          ? value
-          : pref.default;
-      const choose = (next: string): void =>
-        setValue(encoding ? encoding.write(next, siblings) : next);
-      if (pref.control === 'radio') {
-        return (
-          <RadioGroup value={option ?? null} onChange={choose} aria-label={pref.name}>
-            {pref.options.map((o) => (
-              <Radio key={o.value} value={o.value} isDisabled={o.disabled}>
-                {o.label}
-              </Radio>
-            ))}
-          </RadioGroup>
-        );
-      }
-      return (
-        <Select<string>
-          options={pref.options.map((o) => ({
-            value: o.value,
-            label: o.label,
-            isDisabled: o.disabled,
-          }))}
-          selectedKey={option ?? null}
-          onSelectionChange={choose}
-          aria-label={pref.name}
-        />
-      );
-    }
-    case 'color': {
-      const hex = typeof value === 'string' ? value : pref.default;
-      return (
-        <ColorField
-          value={hex}
-          alpha={pref.alpha}
-          onChange={setValue}
-          aria-label={pref.name}
-        />
-      );
-    }
-    case 'paint': {
-      // A whole `FillStyle`, edited as one: `PaintField` puts the kind bar and
-      // the stop editor in a popover, so the control column holds a swatch and
-      // a gradient survives being touched.
-      const held = isPaint(value) ? value : isPaint(pref.default) ? pref.default : null;
-      return (
-        <PaintField
-          value={held as FillStyle | null}
-          onChange={setValue}
-          aria-label={pref.name}
-        />
-      );
-    }
-    case 'object': {
-      // One value with its fields hanging off it: each child renders its own
-      // control and commits the parent object whole.
-      const p = pref;
-      const held = typeof value === 'object' && value !== null
-        ? (value as Record<string, unknown>)
-        : undefined;
-      const objectRows = (children: Record<string, PrefLeaf | PrefGroup>): ReactNode[] => {
-        const out: ReactNode[] = [];
-        for (const [key, child] of Object.entries(children)) {
-          if (!isPrefLeaf(child)) {
-            const inner = objectRows(child.children);
-            if (inner.length === 0) continue;
-            out.push(<h4 key={`group:${key}`} className={s.objectGroup}>{child.name}</h4>, ...inner);
-            continue;
-          }
-          out.push(
-            <label key={key} className={s.objectRow}>
-              <span className={s.objectLabel}>{child.name}</span>
-              {renderBuiltin({
-                path: `${ctx.path}.${key}`,
-                pref: child,
-                value: held?.[key],
-                setValue: (v) => {
-                  const base = held ?? p.fromScalar?.(value) ?? {};
-                  setValue({ ...base, [key]: v });
-                },
-                // A field is not pinned on its own — it shares the state of
-                // the object leaf it hangs off.
-                auto: ctx.auto,
-                setAuto: ctx.setAuto,
-              }, held)}
-            </label>,
-          );
-        }
-        return out;
-      };
-      return <div className={s.objectLeaf}>{objectRows(p.children)}</div>;
-    }
-    default: {
-      // Not reachable while every built-in kind has an arm — and a new kind
-      // that lacks one is a compile error here, never a blank row.
-      const _exhaustive: never = pref;
-      throw new Error(
-        `PrefsForm: no control for built-in pref kind "${(_exhaustive as { kind: string }).kind}"`,
-      );
-    }
-  }
+    return out;
+  };
+  return <div className={s.objectLeaf}>{objectRows(pref.children)}</div>;
 }

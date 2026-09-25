@@ -106,9 +106,7 @@ import {
   type PropertyRenderContext,
   PaintInput,
   PropertyList,
-  TextRow,
-  SelectRow,
-  ColorRow,
+  PropertyField,
   ColorModeControl,
   SwatchGrid,
   type PropertyOption,
@@ -554,14 +552,16 @@ function RightSidebar({
         >
           {docSelected ? (
             <PropertyList>
-              <TextRow label="File" value={filename} placeholder={DEFAULT_FILENAME} onChange={setFilename} />
-              <SelectRow<PaperSizeKey>
+              <PropertyField kind="string" label="File" value={filename} placeholder={DEFAULT_FILENAME} onChange={setFilename} />
+              <PropertyField<PaperSizeKey>
+                kind="enum"
                 label="Paper"
                 value={paperSize}
                 options={PAPER_SIZE_OPTIONS}
                 onChange={setPaperSize}
               />
-              <ColorRow
+              <PropertyField
+                kind="color"
                 label="Background"
                 value={opaqueHex(backgroundColor)}
                 onChange={(rgb) => setBackgroundColor(withAlpha01(rgb, getAlpha01(backgroundColor)))}

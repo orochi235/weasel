@@ -6,9 +6,8 @@ import { describe, expect, it } from 'vitest';
 import { Subpanel } from './Subpanel';
 import s from './Properties.module.css';
 import { PropertyGroup } from './PropertyGroup';
+import { PropertyField } from './PropertyField';
 import {
-  CheckboxRow,
-  ColorRow,
   PropertyList,
   type PropertyMetricProps,
   PropertyPanel,
@@ -102,7 +101,7 @@ describe('container metric props', () => {
 
 describe('one-up packing', () => {
   it('gives a color row the full width, which the other packings do not', () => {
-    const swatch = <ColorRow label="Fill" value="#ffffff" onChange={() => {}} />;
+    const swatch = <PropertyField kind="color" label="Fill" value="#ffffff" onChange={() => {}} />;
     const { container: oneUp } = render(<PropertyList pack="one-up">{swatch}</PropertyList>);
     const { container: autoColor } = render(<PropertyList>{swatch}</PropertyList>);
 
@@ -115,7 +114,7 @@ describe('one-up packing', () => {
   it('does the same inside a group', () => {
     const { container } = render(
       <PropertyGroup title="T" pack="one-up">
-        <ColorRow label="Fill" value="#ffffff" onChange={() => {}} />
+        <PropertyField kind="color" label="Fill" value="#ffffff" onChange={() => {}} />
       </PropertyGroup>,
     );
     expect(container.querySelector(`.${s.group}`)?.className).toContain(s.groupOneUp);
@@ -130,8 +129,8 @@ describe('layout across row variants', () => {
         <PropertyRow label="A">
           <input type="text" readOnly value="" />
         </PropertyRow>
-        <ColorRow label="B" value="#ffffff" onChange={() => {}} />
-        <CheckboxRow label="C" value={false} onChange={() => {}} />
+        <PropertyField kind="color" label="B" value="#ffffff" onChange={() => {}} />
+        <PropertyField kind="boolean" label="C" value={false} onChange={() => {}} />
       </>,
     );
     for (const row of container.querySelectorAll(`.${s.row}`)) {
@@ -149,10 +148,10 @@ describe('layout across row variants', () => {
         <PropertyRow label="A2" layout="block">
           <input type="text" readOnly value="" />
         </PropertyRow>
-        <ColorRow label="B" value="#ffffff" onChange={() => {}} layout="block" />
-        <ColorRow label="B2" value="#ffffff" onChange={() => {}} layout="inline" />
-        <CheckboxRow label="C" value={false} onChange={() => {}} layout="block" />
-        <CheckboxRow label="C2" value={false} onChange={() => {}} layout="inline" />
+        <PropertyField kind="color" label="B" value="#ffffff" onChange={() => {}} layout="block" />
+        <PropertyField kind="color" label="B2" value="#ffffff" onChange={() => {}} layout="inline" />
+        <PropertyField kind="boolean" label="C" value={false} onChange={() => {}} layout="block" />
+        <PropertyField kind="boolean" label="C2" value={false} onChange={() => {}} layout="inline" />
       </>,
     );
     const cls = (label: string) =>
@@ -168,7 +167,7 @@ describe('layout across row variants', () => {
 
   it('lets a single color row align itself without a container', () => {
     const { container } = render(
-      <ColorRow label="B" value="#ffffff" onChange={() => {}} align="start" />,
+      <PropertyField kind="color" label="B" value="#ffffff" onChange={() => {}} align="start" />,
     );
     expect(container.querySelector(`.${s.rowColor}`)?.className).toContain(s.alignStart);
   });

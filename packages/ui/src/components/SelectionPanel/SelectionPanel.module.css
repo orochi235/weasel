@@ -117,16 +117,6 @@
   font-size: var(--wzl-font-size-sm);
 }
 
-.unitSuffix {
-  flex: none;
-  font-size: var(--wzl-font-size-sm);
-  opacity: 0.6;
-}
-
-.mixedSwitch {
-  opacity: 0.55;
-}
-
 .unrenderable {
   font-size: var(--wzl-font-size-sm);
   opacity: 0.5;
@@ -149,15 +139,7 @@
   margin-block-end: var(--wzl-space-2);
 }
 
-/* `InlineRange` owns the track; the row only says how it shares the space. */
+/* The slider's track; the row only says how it shares the space. */
 .slider {
   flex: 1;
-}
-
-.sliderReadout {
-  flex: none;
-  min-inline-size: 3ch;
-  text-align: end;
-  font-size: var(--wzl-font-size-sm);
-  opacity: 0.7;
 }

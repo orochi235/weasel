@@ -9,7 +9,7 @@ import {
   type Lookup,
   type RampDef,
 } from '@weasel-js/theme/engine';
-import { Button, Dialog, PropertyGroup, PropertyPanel, SliderRow } from '@weasel-js/ui';
+import { Button, Dialog, PropertyField, PropertyGroup, PropertyPanel } from '@weasel-js/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnchorList } from '../AnchorList';
 import { PinIcon } from '../PinIcon';
@@ -80,7 +80,9 @@ function LightnessParams({ name, entry, draft, lookup, onChange, readOnly }: Edi
             );
           }
           return (
-            <SliderRow
+            <PropertyField
+              kind="number"
+              control="slider"
               key={p.key}
               label={p.label}
               value={(raw as number | undefined) ?? 0}

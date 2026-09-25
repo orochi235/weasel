@@ -1,18 +1,11 @@
 import { act, createEvent, fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { PropertyField } from './PropertyField';
 import {
-  CheckboxRow,
-  ColorRow,
-  NumberRow,
   PropertyList,
   PropertyPanel,
   PropertyRow,
-  SelectRow,
-  SliderRow,
-  SwitchRow,
-  TextRow,
-  ToggleRow,
 } from './PropertyPanel';
 import s from './Properties.module.css';
 
@@ -125,7 +118,7 @@ describe('PropertyRow', () => {
   it('does not actuate the row control when the help affordance is clicked', () => {
     const onChange = vi.fn();
     render(
-      <CheckboxRow label="Visible" value={false} onChange={onChange} description="Show it." />,
+      <PropertyField kind="boolean" label="Visible" value={false} onChange={onChange} description="Show it." />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'About Visible' }));
     expect(onChange).not.toHaveBeenCalled();
@@ -148,10 +141,10 @@ describe('PropertyRow', () => {
   });
 });
 
-describe('SliderRow', () => {
+describe('slider field', () => {
   it('emits numeric value on change', () => {
     const onChange = vi.fn();
-    render(<SliderRow label="Op" value={10} min={0} max={100} onChange={onChange} />);
+    render(<PropertyField kind="number" control="slider" label="Op" value={10} min={0} max={100} onChange={onChange} />);
     fireEvent.change(screen.getByRole('slider'), { target: { value: '42' } });
     expect(onChange).toHaveBeenCalledWith(42);
   });
@@ -171,7 +164,9 @@ describe('SliderRow', () => {
       onInput?.(n);
     };
     return (
-      <SliderRow
+      <PropertyField
+        kind="number"
+        control="slider"
         label="Op"
         value={v}
         min={0}
@@ -230,7 +225,9 @@ describe('SliderRow', () => {
   it('shows a compact notation and reads a typed suffix back', () => {
     const onChange = vi.fn();
     render(
-      <SliderRow
+      <PropertyField
+        kind="number"
+        control="slider"
         label="Glyphs"
         value={2_000_000}
         min={0}
@@ -250,7 +247,7 @@ describe('SliderRow', () => {
 
   it('reverts an empty readout instead of committing zero', () => {
     const onChange = vi.fn();
-    render(<SliderRow label="Op" value={10} min={0} max={100} onChange={onChange} />);
+    render(<PropertyField kind="number" control="slider" label="Op" value={10} min={0} max={100} onChange={onChange} />);
     const readout = screen.getByRole('textbox');
     fireEvent.focus(readout);
     fireEvent.change(readout, { target: { value: '' } });
@@ -259,7 +256,7 @@ describe('SliderRow', () => {
   });
 
   it('publishes the widest value its range can show', () => {
-    render(<SliderRow label="Op" value={5} min={0} max={200_000} onChange={() => {}} />);
+    render(<PropertyField kind="number" control="slider" label="Op" value={5} min={0} max={200_000} onChange={() => {}} />);
     // jsdom does no layout, so this reads the custom property the width is taken from.
     expect(screen.getByRole('textbox').style.getPropertyValue('--wzl-property-readout-fit')).toBe(
       '6ch',
@@ -268,7 +265,9 @@ describe('SliderRow', () => {
 
   it('formats the readout when format is supplied', () => {
     render(
-      <SliderRow
+      <PropertyField
+        kind="number"
+        control="slider"
         label="Op"
         value={0.5}
         min={0}
@@ -282,60 +281,60 @@ describe('SliderRow', () => {
   });
 });
 
-describe('ColorRow', () => {
+describe('color field', () => {
   it('emits the new hex on change', () => {
     const onChange = vi.fn();
-    const { container } = render(<ColorRow label="Fill" value="#ffffff" onChange={onChange} />);
+    const { container } = render(<PropertyField kind="color" label="Fill" value="#ffffff" onChange={onChange} />);
     const input = container.querySelector('input[type="color"]') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '#aa3300' } });
     expect(onChange).toHaveBeenCalledWith('#aa3300');
   });
 });
 
-describe('CheckboxRow', () => {
+describe('checkbox field', () => {
   it('toggles the boolean', () => {
     const onChange = vi.fn();
-    render(<CheckboxRow label="Visible" value={false} onChange={onChange} />);
+    render(<PropertyField kind="boolean" label="Visible" value={false} onChange={onChange} />);
     fireEvent.click(screen.getByRole('checkbox'));
     expect(onChange).toHaveBeenCalledWith(true);
   });
 });
 
-describe('SwitchRow', () => {
+describe('switch field', () => {
   it('exposes a switch, not a checkbox, and toggles it', () => {
     const onChange = vi.fn();
-    render(<SwitchRow label="Snap to grid" value={false} onChange={onChange} />);
+    render(<PropertyField kind="boolean" control="switch" label="Snap to grid" value={false} onChange={onChange} />);
     expect(screen.queryByRole('checkbox')).toBeNull();
     fireEvent.click(screen.getByRole('switch', { name: 'Snap to grid' }));
     expect(onChange).toHaveBeenCalledWith(true);
   });
 
   it('reflects an absent value as off', () => {
-    render(<SwitchRow label="Snap to grid" value={undefined} onChange={() => {}} />);
+    render(<PropertyField kind="boolean" control="switch" label="Snap to grid" value={undefined} onChange={() => {}} />);
     expect(screen.getByRole('switch')).not.toBeChecked();
   });
 });
 
-describe('TextRow', () => {
+describe('text field', () => {
   it('emits the new text on change', () => {
     const onChange = vi.fn();
-    render(<TextRow label="Name" value="foo" onChange={onChange} />);
+    render(<PropertyField kind="string" label="Name" value="foo" onChange={onChange} />);
     fireEvent.change(screen.getByDisplayValue('foo'), { target: { value: 'bar' } });
     expect(onChange).toHaveBeenCalledWith('bar');
   });
 });
 
-describe('NumberRow', () => {
+describe('number field', () => {
   it('emits a number on change', () => {
     const onChange = vi.fn();
-    render(<NumberRow label="N" value={1} onChange={onChange} />);
+    render(<PropertyField kind="number" label="N" value={1} onChange={onChange} />);
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '42' } });
     expect(onChange).toHaveBeenCalledWith(42);
   });
 
   it('ignores non-finite values', () => {
     const onChange = vi.fn();
-    render(<NumberRow label="N" value={1} onChange={onChange} />);
+    render(<PropertyField kind="number" label="N" value={1} onChange={onChange} />);
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: 'abc' } });
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -355,11 +354,12 @@ function pick(label: string, option: string) {
   fireEvent.click(within(screen.getByRole('listbox')).getByRole('option', { name: option }));
 }
 
-describe('SelectRow', () => {
+describe('select field', () => {
   it('emits the selected option', () => {
     const onChange = vi.fn();
     render(
-      <SelectRow
+      <PropertyField
+        kind="enum"
         label="Mode"
         value="a"
         options={[
@@ -375,11 +375,13 @@ describe('SelectRow', () => {
   });
 });
 
-describe('ToggleRow', () => {
+describe('toggle field', () => {
   it('marks the active option aria-pressed and emits on click', () => {
     const onChange = vi.fn();
     render(
-      <ToggleRow
+      <PropertyField
+        kind="enum"
+        control="toggle"
         label="Align"
         value="left"
         options={[
@@ -402,7 +404,9 @@ describe('ToggleRow', () => {
   it('selects nothing when its label text is clicked', () => {
     const onChange = vi.fn();
     render(
-      <ToggleRow
+      <PropertyField
+        kind="enum"
+        control="toggle"
         label="Align"
         value="right"
         options={[
@@ -423,74 +427,74 @@ describe('row names', () => {
     { value: 'b', label: 'B' },
   ];
 
-  it("names SliderRow's slider after its label", () => {
-    render(<SliderRow label="Opacity" value={10} min={0} max={100} onChange={() => {}} />);
+  it("names slider field's slider after its label", () => {
+    render(<PropertyField kind="number" control="slider" label="Opacity" value={10} min={0} max={100} onChange={() => {}} />);
     expect(screen.getByRole('slider', { name: 'Opacity' })).toBeInTheDocument();
   });
 
-  it("names NumberRow's field after its label", () => {
-    render(<NumberRow label="N" value={1} onChange={() => {}} />);
+  it("names number field's field after its label", () => {
+    render(<PropertyField kind="number" label="N" value={1} onChange={() => {}} />);
     expect(screen.getByRole('spinbutton', { name: 'N' })).toBeInTheDocument();
   });
 
-  it("names TextRow's field after its label", () => {
-    render(<TextRow label="Name" value="foo" onChange={() => {}} />);
+  it("names text field's field after its label", () => {
+    render(<PropertyField kind="string" label="Name" value="foo" onChange={() => {}} />);
     expect(screen.getByRole('textbox', { name: 'Name' })).toBeInTheDocument();
   });
 
-  it("names SelectRow's trigger after its label", () => {
-    render(<SelectRow label="Mode" value="a" options={options} onChange={() => {}} />);
+  it("names select field's trigger after its label", () => {
+    render(<PropertyField kind="enum" label="Mode" value="a" options={options} onChange={() => {}} />);
     expect(trigger('Mode')).toBeInTheDocument();
   });
 
-  it("names ColorRow's swatch after its label", () => {
-    const { container } = render(<ColorRow label="Fill" value="#ffffff" onChange={() => {}} />);
+  it("names color field's swatch after its label", () => {
+    const { container } = render(<PropertyField kind="color" label="Fill" value="#ffffff" onChange={() => {}} />);
     expect(container.querySelector('input[type="color"]')).toHaveAccessibleName('Fill');
   });
 
-  it("names CheckboxRow's box after its label", () => {
-    render(<CheckboxRow label="Visible" value={false} onChange={() => {}} />);
+  it("names checkbox field's box after its label", () => {
+    render(<PropertyField kind="boolean" label="Visible" value={false} onChange={() => {}} />);
     expect(screen.getByRole('checkbox', { name: 'Visible' })).toBeInTheDocument();
   });
 
-  it("names ToggleRow's segments after their options", () => {
-    render(<ToggleRow label="Align" value="a" options={options} onChange={() => {}} />);
+  it("names toggle field's segments after their options", () => {
+    render(<PropertyField kind="enum" control="toggle" label="Align" value="a" options={options} onChange={() => {}} />);
     expect(screen.getByRole('button', { name: 'A' })).toBeInTheDocument();
   });
 
-  it("names ToggleRow's group after its label", () => {
-    render(<ToggleRow label="Align" value="a" options={options} onChange={() => {}} />);
+  it("names toggle field's group after its label", () => {
+    render(<PropertyField kind="enum" control="toggle" label="Align" value="a" options={options} onChange={() => {}} />);
     expect(screen.getByRole('group', { name: 'Align' })).toBeInTheDocument();
   });
 
   // The help button is labelable and comes first, so the row's <label> labels it instead.
   describe('with a description', () => {
-    it('SliderRow', () => {
-      render(<SliderRow label="Opacity" description="d" value={10} min={0} max={100} onChange={() => {}} />);
+    it('slider field', () => {
+      render(<PropertyField kind="number" control="slider" label="Opacity" description="d" value={10} min={0} max={100} onChange={() => {}} />);
       expect(screen.getByRole('slider', { name: 'Opacity' })).toBeInTheDocument();
     });
-    it('SliderRow readout', () => {
-      render(<SliderRow label="Opacity" description="d" value={10} min={0} max={100} onChange={() => {}} />);
+    it('slider field readout', () => {
+      render(<PropertyField kind="number" control="slider" label="Opacity" description="d" value={10} min={0} max={100} onChange={() => {}} />);
       expect(screen.getByRole('textbox', { name: 'Opacity' })).toBeInTheDocument();
     });
-    it('NumberRow', () => {
-      render(<NumberRow label="N" description="d" value={1} onChange={() => {}} />);
+    it('number field', () => {
+      render(<PropertyField kind="number" label="N" description="d" value={1} onChange={() => {}} />);
       expect(screen.getByRole('spinbutton', { name: 'N' })).toBeInTheDocument();
     });
-    it('TextRow', () => {
-      render(<TextRow label="Name" description="d" value="foo" onChange={() => {}} />);
+    it('text field', () => {
+      render(<PropertyField kind="string" label="Name" description="d" value="foo" onChange={() => {}} />);
       expect(screen.getByRole('textbox', { name: 'Name' })).toBeInTheDocument();
     });
-    it('SelectRow', () => {
-      render(<SelectRow label="Mode" description="d" value="a" options={options} onChange={() => {}} />);
+    it('select field', () => {
+      render(<PropertyField kind="enum" label="Mode" description="d" value="a" options={options} onChange={() => {}} />);
       expect(trigger('Mode')).toBeInTheDocument();
     });
-    it('ColorRow', () => {
-      const { container } = render(<ColorRow label="Fill" description="d" value="#ffffff" onChange={() => {}} />);
+    it('color field', () => {
+      const { container } = render(<PropertyField kind="color" label="Fill" description="d" value="#ffffff" onChange={() => {}} />);
       expect(container.querySelector('input[type="color"]')).toHaveAccessibleName('Fill');
     });
-    it('CheckboxRow', () => {
-      render(<CheckboxRow label="Visible" description="d" value={false} onChange={() => {}} />);
+    it('checkbox field', () => {
+      render(<PropertyField kind="boolean" label="Visible" description="d" value={false} onChange={() => {}} />);
       expect(screen.getByRole('checkbox', { name: 'Visible' })).toBeInTheDocument();
     });
   });
@@ -504,9 +508,9 @@ describe('described rows', () => {
     { value: 'b', label: 'B' },
   ];
 
-  it("CheckboxRow toggles when its label's text is clicked", () => {
+  it("checkbox field toggles when its label's text is clicked", () => {
     const onChange = vi.fn();
-    render(<CheckboxRow label="Visible" description="d" value={false} onChange={onChange} />);
+    render(<PropertyField kind="boolean" label="Visible" description="d" value={false} onChange={onChange} />);
     fireEvent.click(screen.getByText('Visible'));
     expect(onChange).toHaveBeenCalledWith(true);
   });
@@ -515,32 +519,32 @@ describe('described rows', () => {
   // it takes a label's first form control inside it and ignores `for`, so it always finds the ⓘ.
   const controlOf = (container: HTMLElement) => container.querySelector('label')?.control;
 
-  it("TextRow's label is its field's", () => {
-    const { container } = render(<TextRow label="Name" description="d" value="foo" onChange={() => {}} />);
+  it("text field's label is its field's", () => {
+    const { container } = render(<PropertyField kind="string" label="Name" description="d" value="foo" onChange={() => {}} />);
     expect(controlOf(container)).toBe(screen.getByRole('textbox', { name: 'Name' }));
   });
 
-  it("NumberRow's label is its field's", () => {
-    const { container } = render(<NumberRow label="N" description="d" value={1} onChange={() => {}} />);
+  it("number field's label is its field's", () => {
+    const { container } = render(<PropertyField kind="number" label="N" description="d" value={1} onChange={() => {}} />);
     expect(controlOf(container)).toBe(screen.getByRole('spinbutton', { name: 'N' }));
   });
 
-  it("SelectRow's label is its trigger's", () => {
+  it("select field's label is its trigger's", () => {
     const { container } = render(
-      <SelectRow label="Mode" description="d" value="a" options={options} onChange={() => {}} />,
+      <PropertyField kind="enum" label="Mode" description="d" value="a" options={options} onChange={() => {}} />,
     );
     expect(controlOf(container)).toBe(trigger('Mode'));
   });
 
-  it("ColorRow's label is its swatch's", () => {
+  it("color field's label is its swatch's", () => {
     const { container } = render(
-      <ColorRow label="Fill" description="d" value="#ffffff" onChange={() => {}} />,
+      <PropertyField kind="color" label="Fill" description="d" value="#ffffff" onChange={() => {}} />,
     );
     expect(controlOf(container)).toBe(container.querySelector('input[type="color"]'));
   });
 
-  it("names ColorRow's alpha slider after its label", () => {
-    render(<ColorRow label="Fill" description="d" value="#ffffff" alpha={0.5} onChange={() => {}} />);
+  it("names color field's alpha slider after its label", () => {
+    render(<PropertyField kind="color" label="Fill" description="d" value="#ffffff" alpha={0.5} onChange={() => {}} />);
     expect(screen.getByRole('slider', { name: 'Fill opacity' })).toBeInTheDocument();
   });
 });
@@ -551,62 +555,62 @@ describe('rows with no value', () => {
     { value: 'b', label: 'B' },
   ];
 
-  it('SelectRow shows a placeholder, not the first option, and choosing the first option fires', () => {
+  it('select field shows a placeholder, not the first option, and choosing the first option fires', () => {
     const onChange = vi.fn();
-    render(<SelectRow label="Mode" value={undefined} options={options} onChange={onChange} />);
+    render(<PropertyField kind="enum" label="Mode" value={undefined} options={options} onChange={onChange} />);
     expect(trigger('Mode')).toHaveTextContent('Choose option…');
     pick('Mode', options[0]!.label as string);
     expect(onChange).toHaveBeenCalledWith('a');
   });
 
-  it('SelectRow shows the placeholder for a value that is not an option', () => {
-    render(<SelectRow label="Mode" value="z" options={options} onChange={() => {}} />);
+  it('select field shows the placeholder for a value that is not an option', () => {
+    render(<PropertyField kind="enum" label="Mode" value="z" options={options} onChange={() => {}} />);
     expect(trigger('Mode')).toHaveTextContent('Choose option…');
   });
 
-  it('SelectRow renders a present value with no placeholder', () => {
-    render(<SelectRow label="Mode" value="b" options={options} onChange={() => {}} />);
+  it('select field renders a present value with no placeholder', () => {
+    render(<PropertyField kind="enum" label="Mode" value="b" options={options} onChange={() => {}} />);
     expect(trigger('Mode')).toHaveTextContent(options[1]!.label as string);
     expect(trigger('Mode')).not.toHaveTextContent('Choose option…');
   });
 
-  it('SelectRow names its placeholder', () => {
-    render(<SelectRow label="Mode" value={undefined} options={options} placeholder="Pick one" onChange={() => {}} />);
+  it('select field names its placeholder', () => {
+    render(<PropertyField kind="enum" label="Mode" value={undefined} options={options} placeholder="Pick one" onChange={() => {}} />);
     expect(trigger('Mode')).toHaveTextContent('Pick one');
   });
 
   // React warns about a controlled/uncontrolled switch once per module, so these assert the DOM instead.
-  it('CheckboxRow clears when its value goes away, and checks when one arrives', () => {
-    const { rerender } = render(<CheckboxRow label="On" value onChange={() => {}} />);
+  it('checkbox field clears when its value goes away, and checks when one arrives', () => {
+    const { rerender } = render(<PropertyField kind="boolean" label="On" value onChange={() => {}} />);
     const box = () => screen.getByRole<HTMLInputElement>('checkbox');
     expect(box().checked).toBe(true);
-    rerender(<CheckboxRow label="On" value={undefined} onChange={() => {}} />);
+    rerender(<PropertyField kind="boolean" label="On" value={undefined} onChange={() => {}} />);
     expect(box().checked).toBe(false);
-    rerender(<CheckboxRow label="On" value onChange={() => {}} />);
+    rerender(<PropertyField kind="boolean" label="On" value onChange={() => {}} />);
     expect(box().checked).toBe(true);
   });
 
-  it('TextRow clears when its value goes away, and shows one that arrives', () => {
-    const { rerender } = render(<TextRow label="Name" value="foo" onChange={() => {}} />);
+  it('text field clears when its value goes away, and shows one that arrives', () => {
+    const { rerender } = render(<PropertyField kind="string" label="Name" value="foo" onChange={() => {}} />);
     const field = () => screen.getByRole<HTMLInputElement>('textbox');
-    rerender(<TextRow label="Name" value={undefined} onChange={() => {}} />);
+    rerender(<PropertyField kind="string" label="Name" value={undefined} onChange={() => {}} />);
     expect(field().value).toBe('');
-    rerender(<TextRow label="Name" value="bar" onChange={() => {}} />);
-    rerender(<TextRow label="Name" value={null} onChange={() => {}} />);
+    rerender(<PropertyField kind="string" label="Name" value="bar" onChange={() => {}} />);
+    rerender(<PropertyField kind="string" label="Name" value={null} onChange={() => {}} />);
     expect(field().value).toBe('');
-    rerender(<TextRow label="Name" value="baz" onChange={() => {}} />);
+    rerender(<PropertyField kind="string" label="Name" value="baz" onChange={() => {}} />);
     expect(field().value).toBe('baz');
   });
 
-  it('NumberRow clears when its value goes away, and shows one that arrives', () => {
-    const { rerender } = render(<NumberRow label="N" value={5} onChange={() => {}} />);
+  it('number field clears when its value goes away, and shows one that arrives', () => {
+    const { rerender } = render(<PropertyField kind="number" label="N" value={5} onChange={() => {}} />);
     const field = () => screen.getByRole<HTMLInputElement>('spinbutton');
-    rerender(<NumberRow label="N" value={undefined} onChange={() => {}} />);
+    rerender(<PropertyField kind="number" label="N" value={undefined} onChange={() => {}} />);
     expect(field().value).toBe('');
-    rerender(<NumberRow label="N" value={6} onChange={() => {}} />);
-    rerender(<NumberRow label="N" value={null} onChange={() => {}} />);
+    rerender(<PropertyField kind="number" label="N" value={6} onChange={() => {}} />);
+    rerender(<PropertyField kind="number" label="N" value={null} onChange={() => {}} />);
     expect(field().value).toBe('');
-    rerender(<NumberRow label="N" value={0} onChange={() => {}} />);
+    rerender(<PropertyField kind="number" label="N" value={0} onChange={() => {}} />);
     expect(field().value).toBe('0');
   });
 });
@@ -680,7 +684,9 @@ describe('auto rows', () => {
 
   it('leaves a row label naming its control, not the toggle it doubles as', () => {
     const { container } = render(
-      <SliderRow
+      <PropertyField
+        kind="number"
+        control="slider"
         label="Gap"
         value={12}
         min={0}
@@ -695,9 +701,11 @@ describe('auto rows', () => {
     expect(label.control).toHaveAttribute('aria-label', 'Gap');
   });
 
-  it('SliderRow forwards auto and onAutoChange', () => {
+  it('slider field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <SliderRow
+      <PropertyField
+        kind="number"
+        control="slider"
         label="Gap"
         value={12}
         min={0}
@@ -711,17 +719,18 @@ describe('auto rows', () => {
     expect(screen.getByRole('button', { name: 'Pin Gap' })).toBeInTheDocument();
   });
 
-  it('NumberRow forwards auto and onAutoChange', () => {
+  it('number field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <NumberRow label="Count" value={3} onChange={() => {}} auto onAutoChange={() => {}} />,
+      <PropertyField kind="number" label="Count" value={3} onChange={() => {}} auto onAutoChange={() => {}} />,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
     expect(screen.getByRole('button', { name: 'Pin Count' })).toBeInTheDocument();
   });
 
-  it('SelectRow forwards auto and onAutoChange', () => {
+  it('select field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <SelectRow
+      <PropertyField
+        kind="enum"
         label="Mode"
         value="a"
         options={[
@@ -739,9 +748,11 @@ describe('auto rows', () => {
     expect(screen.getByRole('button', { name: 'Pin Mode' })).toBeInTheDocument();
   });
 
-  it('ToggleRow forwards auto and onAutoChange', () => {
+  it('toggle field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <ToggleRow
+      <PropertyField
+        kind="enum"
+        control="toggle"
         label="Fit"
         value="a"
         options={[
@@ -757,25 +768,25 @@ describe('auto rows', () => {
     expect(screen.getByRole('button', { name: 'Pin Fit' })).toBeInTheDocument();
   });
 
-  it('CheckboxRow forwards auto and onAutoChange', () => {
+  it('checkbox field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <CheckboxRow label="Snap" value={true} onChange={() => {}} auto onAutoChange={() => {}} />,
+      <PropertyField kind="boolean" label="Snap" value={true} onChange={() => {}} auto onAutoChange={() => {}} />,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
     expect(screen.getByRole('button', { name: 'Pin Snap' })).toBeInTheDocument();
   });
 
-  it('ColorRow forwards auto and onAutoChange', () => {
+  it('color field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <ColorRow label="Fill" value="#ff0000" onChange={() => {}} auto onAutoChange={() => {}} />,
+      <PropertyField kind="color" label="Fill" value="#ff0000" onChange={() => {}} auto onAutoChange={() => {}} />,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
     expect(screen.getByRole('button', { name: 'Pin Fill' })).toBeInTheDocument();
   });
 
-  it('TextRow forwards auto and onAutoChange', () => {
+  it('text field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <TextRow label="Name" value="foo" onChange={() => {}} auto onAutoChange={() => {}} />,
+      <PropertyField kind="string" label="Name" value="foo" onChange={() => {}} auto onAutoChange={() => {}} />,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
     expect(screen.getByRole('button', { name: 'Pin Name' })).toBeInTheDocument();
@@ -785,9 +796,11 @@ describe('auto rows', () => {
 describe('auto readouts', () => {
   const READOUT = 'auto · 18 px';
 
-  it('SliderRow shows a static readout, not an editable field, when given one', () => {
+  it('slider field shows a static readout, not an editable field, when given one', () => {
     render(
-      <SliderRow
+      <PropertyField
+        kind="number"
+        control="slider"
         label="Gap"
         value={12}
         min={0}
@@ -803,14 +816,15 @@ describe('auto readouts', () => {
     expect(screen.queryByRole('textbox')).toBeNull();
   });
 
-  it('NumberRow shows its auto readout', () => {
-    render(<NumberRow label="Count" value={3} onChange={() => {}} readout={READOUT} auto />);
+  it('number field shows its auto readout', () => {
+    render(<PropertyField kind="number" label="Count" value={3} onChange={() => {}} readout={READOUT} auto />);
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
 
-  it('SelectRow shows its auto readout', () => {
+  it('select field shows its auto readout', () => {
     render(
-      <SelectRow
+      <PropertyField
+        kind="enum"
         label="Mode"
         value="a"
         options={[{ value: 'a', label: 'A' }]}
@@ -822,9 +836,11 @@ describe('auto readouts', () => {
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
 
-  it('ToggleRow shows its auto readout', () => {
+  it('toggle field shows its auto readout', () => {
     render(
-      <ToggleRow
+      <PropertyField
+        kind="enum"
+        control="toggle"
         label="Fit"
         value="a"
         options={[{ value: 'a', label: 'A' }]}
@@ -836,18 +852,18 @@ describe('auto readouts', () => {
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
 
-  it('CheckboxRow shows its auto readout', () => {
-    render(<CheckboxRow label="Snap" value onChange={() => {}} readout={READOUT} auto />);
+  it('checkbox field shows its auto readout', () => {
+    render(<PropertyField kind="boolean" label="Snap" value onChange={() => {}} readout={READOUT} auto />);
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
 
-  it('ColorRow shows its auto readout', () => {
-    render(<ColorRow label="Fill" value="#ff0000" onChange={() => {}} readout={READOUT} auto />);
+  it('color field shows its auto readout', () => {
+    render(<PropertyField kind="color" label="Fill" value="#ff0000" onChange={() => {}} readout={READOUT} auto />);
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
 
-  it('TextRow shows its auto readout', () => {
-    render(<TextRow label="Name" value="foo" onChange={() => {}} readout={READOUT} auto />);
+  it('text field shows its auto readout', () => {
+    render(<PropertyField kind="string" label="Name" value="foo" onChange={() => {}} readout={READOUT} auto />);
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
 });
