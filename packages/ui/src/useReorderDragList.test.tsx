@@ -12,7 +12,7 @@ const ITEMS: LayerListItem[] = [
 
 const ROW_H = 32;
 
-let latest: ReorderDragState = { draggedIds: null, targetIndex: null };
+let latest: ReorderDragState = { draggedIds: null, targetIndex: null, ghost: null };
 
 function Harness(props: {
   items: LayerListItem[];
@@ -96,6 +96,23 @@ describe('useReorderDragList', () => {
     move(200);
     release(200);
     expect(onReorder).toHaveBeenCalledWith(['a', 'c'], ITEMS.length);
+  });
+
+  it('puts the ghost where it keeps the grabbed point of the row under the pointer, and clears it on drop', () => {
+    const { row } = setup(ITEMS, ['a']);
+    // Row c spans y 64–96; a press 16px into it keeps the ghost's top 16px above the pointer.
+    press(row('c'), 80);
+    move(150, { clientX: 130 });
+    expect(latest.ghost).toEqual({ ids: ['c'], left: 30, top: 134, width: 200 });
+    release(150);
+    expect(latest.ghost).toBeNull();
+  });
+
+  it('ghosts the whole selection when a selected row is dragged', () => {
+    const { row } = setup(ITEMS, ['a', 'c']);
+    press(row('a'), 16);
+    move(200);
+    expect(latest.ghost?.ids).toEqual(['a', 'c']);
   });
 
   it('drop below all rows yields targetIndex = items.length', () => {

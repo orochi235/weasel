@@ -38,13 +38,29 @@ export interface PressModifiers {
 }
 
 /**
- * Live drag state for rendering feedback: which ids are being dragged and the
- * insertion index the drop would use. Both `null` when no drag is engaged.
+ * Where a drag's ghost goes: the dragged rows, drawn again with their top-left
+ * at a client-space point, so the row that was grabbed stays under the pointer
+ * where it was picked up. `width` is the grabbed row's.
+ */
+export interface ReorderGhost {
+  ids: readonly string[];
+  left: number;
+  top: number;
+  width: number;
+}
+
+/**
+ * Live drag state for rendering feedback: which ids are being dragged, the
+ * insertion index the drop would use, and where their ghost goes. All `null`
+ * when no drag is engaged.
  */
 export interface ReorderDragState {
   draggedIds: string[] | null;
   targetIndex: number | null;
+  ghost: ReorderGhost | null;
 }
+
+const IDLE: ReorderDragState = { draggedIds: null, targetIndex: null, ghost: null };
 
 /**
  * A `ref` for the list container, an `onPointerDown` for each row, and the
@@ -117,7 +133,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
   optsRef.current = opts;
   const containerRef = useRef<HTMLElement | null>(null);
   const dragRef = useRef<ThresholdDragHandle | null>(null);
-  const [state, setState] = useState<ReorderDragState>({ draggedIds: null, targetIndex: null });
+  const [state, setState] = useState<ReorderDragState>(IDLE);
 
   useEffect(() => () => { dragRef.current?.cancel(); }, []);
 
@@ -142,7 +158,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
 
   const reset = useCallback(() => {
     dragRef.current = null;
-    setState({ draggedIds: null, targetIndex: null });
+    setState(IDLE);
   }, []);
 
   const onPointerDownRow = useCallback((id: string, index: number, e: ReactPointerEvent) => {
@@ -154,6 +170,15 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     };
     let draggedIds: string[] = [];
     let targetIndex = 0;
+    // Where in the grabbed row the pointer went down, so the ghost keeps that point under it.
+    const row = (e.currentTarget as Element).getBoundingClientRect();
+    const grab = { x: e.clientX - row.left, y: e.clientY - row.top };
+    const ghostAt = (ev: { clientX: number; clientY: number }): ReorderGhost => ({
+      ids: draggedIds,
+      left: ev.clientX - grab.x,
+      top: ev.clientY - grab.y,
+      width: row.width,
+    });
 
     dragRef.current = startThresholdDrag(e, {
       origin: container,
@@ -170,13 +195,11 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
           return i >= lo && i < hi;
         });
         targetIndex = computeTargetIndex(ev.clientY, index);
-        setState({ draggedIds, targetIndex });
+        setState({ draggedIds, targetIndex, ghost: ghostAt(ev) });
       },
       onMove: (ev) => {
-        const next = computeTargetIndex(ev.clientY, index);
-        if (next === targetIndex) return;
-        targetIndex = next;
-        setState({ draggedIds, targetIndex });
+        targetIndex = computeTargetIndex(ev.clientY, index);
+        setState({ draggedIds, targetIndex, ghost: ghostAt(ev) });
       },
       onCommit: (ev) => {
         const drop = computeTargetIndex(ev.clientY, index);

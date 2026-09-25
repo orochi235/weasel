@@ -85,6 +85,7 @@ export type {
   LayerListItem,
   UseReorderDragListOptions,
   ReorderDragState,
+  ReorderGhost,
   ReorderDragHandlers,
 } from './useReorderDragList';
 export { HANDLE_SIZE_TOKENS, handleHalf, handleSize } from './handles';

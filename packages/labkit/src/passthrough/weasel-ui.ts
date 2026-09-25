@@ -156,6 +156,7 @@ export {
   type RangeSliderProps,
   type ReorderDragHandlers,
   type ReorderDragState,
+  type ReorderGhost,
   type RovingItem,
   type RovingTabIndex,
   Select,

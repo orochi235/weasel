@@ -74,6 +74,7 @@ export function LayerList(props: LayerListProps) {
       className={className}
       empty={empty}
       ref={drag.containerProps.ref as React.RefCallback<HTMLDivElement>}
+      ghost={drag.state.ghost}
       overlay={drag.state.targetIndex !== null
         // Pixel positioning: the offset depends on targetIndex at runtime, so
         // it cannot be a static class.

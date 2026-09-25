@@ -47,6 +47,21 @@
   color: var(--wzl-fg-subtle);
 }
 
+/* The dragged rows, following the pointer while the originals hold their place. */
+.ghost {
+  position: fixed;
+  z-index: var(--wzl-z-overlay);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 1px;
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface-raised);
+  box-shadow: 0 4px 12px var(--wzl-shadow);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
 .empty {
   padding: var(--wzl-space-6) var(--wzl-space-4);
   font-size: var(--wzl-font-size-sm);

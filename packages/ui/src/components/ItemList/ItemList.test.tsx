@@ -16,6 +16,23 @@ describe('ItemList', () => {
     expect(screen.getByText('Nothing here')).toBeInTheDocument();
   });
 
+  it('draws the ghost rows at its point, in the nearest themed host, hidden from assistive tech', () => {
+    render(
+      <div data-wzl-theme="t" data-testid="host">
+        <ItemList
+          rows={[{ id: 'a', label: 'One' }, { id: 'b', label: 'Two' }, { id: 'c', label: 'Three' }]}
+          ghost={{ ids: ['a', 'c'], left: 40, top: 70, width: 180 }}
+        />
+      </div>,
+    );
+    const ghost = screen.getByTestId('host').querySelector(':scope > [aria-hidden="true"]') as HTMLElement;
+    expect(ghost).not.toBeNull();
+    expect(ghost.textContent).toBe('OneThree');
+    expect(ghost.style.left).toBe('40px');
+    expect(ghost.style.top).toBe('70px');
+    expect(ghost.style.width).toBe('180px');
+  });
+
   it('falls back to a dash when nothing is given for empty', () => {
     render(<ItemList rows={[]} />);
     expect(screen.getByText('—')).toBeInTheDocument();
