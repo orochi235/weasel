@@ -924,8 +924,19 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 ## forge
 
 `@weasel-js/forge` is the component workshop built on labkit: each story renders
-in its own iframe ("frame"), and the workshop shows it as a lab trial with
-controls. It is the only story runner in the repo.
+in the workshop page as a lab trial with controls. A story that sets `isolate`
+renders in an iframe ("frame") instead; that path is frozen, kept for as long
+as any story needs it, and `check:forge-isolate` holds the count. It is the
+only story runner in the repo.
+
+- **(P3) `ToastRegion` portals to `document.body` and cannot be told otherwise.**
+  React Aria's `UNSTABLE_ToastRegion` takes its container from
+  `UNSAFE_PortalProvider` only, which `@weasel-js/ui` avoids
+  (`packages/ui/src/overlays/portalHost.tsx` says why), so a toast raised inside
+  a forge trial lands on the page's corner. The Toast story is the one isolated
+  story for it. Either give `ToastRegion` a `portalContainer` through a
+  provider import that is proven to share React Aria's instance, or render the
+  region inline with `position: absolute` under the nearest portal host.
 
 - **(P3) The CSS Vars panel saves scale edits only.** A single token edited by
   hand — a color, a step changed after its scale — stays a per-trial override,
@@ -949,15 +960,16 @@ controls. It is the only story runner in the repo.
   font is still lost, and so is any font or image the document did not inline.
 
 
-- **(P3) A forge story with a `viewport` reloads its frame once when first
-  opened.** The instrument built before the frame's `ready` message has no
+- **(P3, isolated stories only) A forge story with a `viewport` reloads its
+  frame once when first opened.** The instrument built before the frame's `ready` message has no
   `stage`, and the one built after it does. labkit's `Trial`
   (`packages/labkit/src/trial/Trial.tsx`) renders stage content inside `<Stage>`
   and other content bare, so the switch remounts `FrameView` and reloads the
   iframe. Mount the provisional instrument under the same tree position, or learn
   the viewport before the first instrument is built.
 
-- **(P3) Opening a trial in forge reloads another trial's story.** Measured
+- **(P3, isolated stories only) Opening a trial in forge reloads another
+  trial's story.** Measured
   2026-09-22 in the dev app: with one Button trial open, opening a second from
   the route re-ran the first trial's `FrameView` frame effect, so its story
   loaded again into a new frame. Whether labkit remounts the trial's body when
@@ -973,7 +985,8 @@ controls. It is the only story runner in the repo.
   aside open. Which pane overflows, and why the trial split does not clamp to
   its tile, is not yet known.
 
-- **(P3) Check forge's out-of-view frame unmounting in a browser.** `FrameView`
+- **(P3, isolated stories only) Check forge's out-of-view frame unmounting in
+  a browser.** `FrameView`
   (`packages/forge/src/shell/FrameView.tsx`) drops a trial's iframe once its host
   is more than half a viewport outside the viewport (`IntersectionObserver`,
   `rootMargin: '50%'`) and reloads it on return. Tested only against a stubbed

@@ -33,8 +33,11 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
   }, [ctx, story, config]);
 
   // Each new input retries a render the boundary caught, as the frame did on each message.
-  const inputs = useRef(0);
-  const resetKey = useMemo(() => (inputs.current += 1), [config, ctx.state]);
+  const input = useRef({ config, state: ctx.state, key: 0 });
+  if (input.current.config !== config || input.current.state !== ctx.state) {
+    input.current = { config, state: ctx.state, key: input.current.key + 1 };
+  }
+  const resetKey = input.current.key;
 
   // Stable, as the frame's were: a story may list them as effect dependencies.
   // The pins belong to the trial; a story cannot see them, so it cannot set them either.

@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 
 // This number only goes down. Raising it is a reviewed edit to this file, and the story that
 // needs it carries the reason in its `isolate`.
-const ALLOWED = 0;
+const ALLOWED = 1;
 
 const repoRoot = resolve(import.meta.dirname, '../../..');
 

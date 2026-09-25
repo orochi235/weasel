@@ -14,6 +14,7 @@ import { createFramePool, type FramePool, FramePoolContext } from './framePool';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
+import type { StoryChanges } from './storyChanges';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { StoryTree } from './tree/StoryTree';
 import { crossesInPlace, readRoute, readRouteEntry, useRoute } from './useRoute';
@@ -27,6 +28,8 @@ export interface WorkshopProps {
   importers?: FrameImporters;
   /** The frame config, applied to each story rendered in the document. */
   setup?: FrameSetup;
+  /** Story files edited while the workshop runs; each is loaded again for the stories that had it. */
+  changes?: StoryChanges;
   config?: ShellConfig;
   /** The story globs the index was built from, named when it is empty. */
   stories?: readonly string[];
@@ -83,7 +86,7 @@ function useInfoShortcut(open: (next: boolean) => void): void {
   }, [open]);
 }
 
-export function Workshop({ index, frameUrl, importers, setup, config, stories = [], storageKey, storage }: WorkshopProps) {
+export function Workshop({ index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
   const [frames] = useState(createTrialFrames);
   const [pool, setPool] = useState<FramePool | null>(null);
@@ -106,6 +109,8 @@ export function Workshop({ index, frameUrl, importers, setup, config, stories = 
     ...(importers ? { importers } : {}),
     ...(setup ? { setup } : {}),
   });
+  const reload = registry.reload;
+  useEffect(() => changes?.subscribe(reload), [changes, reload]);
   const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
   const themeFor = config?.labTheme;
   const labTheme = useMemo(() => themeFor?.(labValues), [themeFor, labValues]);

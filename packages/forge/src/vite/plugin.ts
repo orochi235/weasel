@@ -104,6 +104,16 @@ const workshop = mountWorkshop({
   stories: ${JSON.stringify(options.stories)},
 });
 import.meta.hot?.on('forge:index', (next) => workshop.setIndex(next));
+// A story edit reaches here as an update of the importers module, whose fresh import() URLs carry the new
+// timestamps; the file it names arrives just before, so the reload waits for the importers that can fetch it.
+const stale = new Set();
+import.meta.hot?.on('forge:story', ({ file }) => stale.add(file));
+import.meta.hot?.accept('virtual:forge/importers.js', (next) => {
+  if (!next) return;
+  workshop.setImporters(next.default);
+  for (const file of stale) workshop.reloadStory(file);
+  stale.clear();
+});
 `,
     'frame-entry.js': () => `import { mountFrame } from '@weasel-js/forge/frame';
 import '@weasel-js/forge/frame.css';
@@ -112,11 +122,15 @@ import importers from 'virtual:forge/importers.js';
 import setup from 'virtual:forge/frame-config.js';
 
 mountFrame({ index, importers, setup });
+// The importers module is shared with the workshop page, which accepts a story edit in place; a frame document
+// showing the old module reloads instead, and without this the edit would dead-end here and reload every page.
+import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
 `,
   };
 
   function reindex(server: ViteDevServer, file: string, event: 'add' | 'change' | 'unlink'): void {
     const current = files();
+    if (event === 'change' && current.has(file)) server.ws.send({ type: 'custom', event: 'forge:story', data: { file } });
     if (event === 'change' && !current.has(file)) return;
     if (event === 'add' && !matches(file)) return;
     if (event === 'unlink' && !current.has(file)) return;

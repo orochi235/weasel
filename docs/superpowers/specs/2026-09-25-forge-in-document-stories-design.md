@@ -1,6 +1,7 @@
 # weaselforge: stories in the workshop document
 
-**Status: unbuilt. Written 2026-09-25; nothing below exists in the tree yet.**
+**Status: phases 1 and 2 built 2026-09-25.** Phase 3, deleting the frame side,
+runs only if `check:forge-isolate` ever reports zero; it may never.
 
 For whoever implements the change in `@weasel-js/forge`. Assumes you know forge's
 shape as `2026-09-13-forge-design.md` describes it: a story renders in an
@@ -117,9 +118,10 @@ today, with the setup's decorators outermost.
 | `capture` round trip | `captureElement(host)`; the host carries the theme attributes, so mode rules apply in the clone |
 | `size` | the host's own box |
 
-A per-trial store, `trialHosts`, keyed by trial id, holds the host element, its
-`Overrides`, the last vars report and the last a11y outcome, with the same
-`useSyncExternalStore` shape the panels read today. `createOverrides` takes the
+While the frame path exists, the host registers into the same `trialFrames`
+store the frame path uses, with direct implementations behind the same calls,
+so the panels read one shape for both. The store is renamed when the frame
+side goes. `createOverrides` takes the
 host's `scope` and prefixes the setup's `cssVarsScope` with it; its keep-last
 observer already tolerates several instances.
 

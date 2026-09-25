@@ -11,18 +11,20 @@ function boom(): never {
   throw new Error('button missing');
 }
 
+/** A story writing its own config on mount: the trial has to re-render it, and play has to see the write. */
+function Renamer({ label, setConfig }: { label: string; setConfig: (path: string, value: unknown) => void }) {
+  useEffect(() => {
+    if (label !== 'renamed') setConfig('label', 'renamed');
+  }, [label, setConfig]);
+  return createElement('button', { type: 'button' }, label);
+}
+
 const mod = {
   default: meta({ title: 'Test/Run' }),
   Plain: story({ render: () => null }),
   Seen: story({
     config: f.schema({ label: f.string('hello') }),
-    render: ({ config, setConfig }) => {
-      // A story writing its own config on mount: the trial has to re-render it, and play has to see the write.
-      useEffect(() => {
-        if (config.label !== 'renamed') setConfig('label', 'renamed');
-      }, [config.label, setConfig]);
-      return createElement('button', { type: 'button' }, config.label);
-    },
+    render: ({ config, setConfig }) => createElement(Renamer, { label: config.label, setConfig }),
     play: async ({ canvasElement, config }) => {
       if (!canvasElement.matches('.fg-story[data-fg-host]')) throw new Error(`canvasElement is ${canvasElement.className}`);
       if (!canvasElement.isConnected) throw new Error('canvasElement is not in the document');
