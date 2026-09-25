@@ -150,4 +150,10 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     value: '32px',
     description: 'Width reserved for the Timeline’s value axis.',
   },
+  {
+    name: 'tree-indent',
+    type: 'dimension',
+    value: 'calc(var(--wzl-control-h-xs) + var(--wzl-space-2))',
+    description: 'Indent of each Tree level. Unset, it is one twisty and one gap, so a child’s twisty sits under its parent’s label.',
+  },
 ];
