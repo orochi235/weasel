@@ -1,0 +1,13 @@
+.ghost {
+  position: fixed;
+  z-index: var(--wzl-z-overlay);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 1px;
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface-raised);
+  box-shadow: 0 4px 12px var(--wzl-shadow);
+  opacity: 0.85;
+  pointer-events: none;
+}

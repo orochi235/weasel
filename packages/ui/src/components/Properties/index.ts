@@ -1,12 +1,5 @@
 export type { CurveFieldProps, CurveMark } from './CurveField';
 export { CurveField } from './CurveField';
-export type {
-  EffectCardListItem,
-  EffectCardListProps,
-  EffectCardProps,
-  SubpanelProps,
-} from './EffectCard';
-export { EffectCard, EffectCardList, Subpanel } from './EffectCard';
 export type { PropertyGroupProps } from './PropertyGroup';
 export { PropertyGroup } from './PropertyGroup';
 export type {
@@ -46,3 +39,5 @@ export {
   TextRow,
   ToggleRow,
 } from './PropertyPanel';
+export type { SubpanelProps } from './Subpanel';
+export { Subpanel } from './Subpanel';

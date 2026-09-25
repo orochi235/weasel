@@ -1,7 +1,13 @@
-import { type CSSProperties, type ReactNode, type RefCallback, useEffect, useState } from 'react';
+import { type ReactNode, type RefCallback, useEffect, useState } from 'react';
 import { dlog } from '../../dlog';
+import { CloseIcon } from '../../icons';
 import { useReorderDragList } from '../../useReorderDragList';
+import { Button } from '../Button';
+import { DragGhost } from '../DragGhost';
 import { DragHandleGlyph } from '../DragHandleGlyph';
+import { PropertyGroup, PropertyList } from '../Properties';
+import { Select } from '../Select';
+import type { StanceProps } from '../stance';
 import s from './LayerStack.module.css';
 
 /** One card in a layer stack: its identity, the label shown when collapsed,
@@ -21,10 +27,10 @@ export interface LayerStackItem {
    *  can switch mode/shape without expanding. */
   primaryValue?: string;
   primaryOptions?: string[];
-  /** Accent CSS color used as the left border / index-badge fill. Sets
-   *  --wzl-layer-stack-accent on the card, which re-binds --wzl-accent
-   *  for everything inside it. */
-  accent?: string;
+  /** Which of its stack this card is: an index into the theme's tone list, or
+   *  a color. Draws the card's edge and handle in it, and recolors every
+   *  control inside the card. */
+  tone?: StanceProps['tone'];
   /** Optional badge text rendered before the primary control
    *  (e.g. tail index "1", "2", "3"). When omitted a drag handle
    *  glyph renders in its place. */
@@ -64,7 +70,12 @@ export interface LayerStackProps {
 }
 
 /** A drag-reorderable stack of expandable cards, with a palette in the header
- *  for adding more. The body of each card is the caller's to render. */
+ *  for adding more. The body of each card is the caller's to render.
+ *
+ *  Each card is a `<PropertyGroup>` in a `<PropertyList>`: its handle and
+ *  remove button sit in the group's title row, a `tone` colors it, and a drag
+ *  leaves the cards in place while a ghost of the dragged one follows the
+ *  pointer. */
 export function LayerStack({
   className,
   title,
@@ -130,6 +141,70 @@ export function LayerStack({
 
   const palette = onAdd ? (paletteKinds ?? []) : [];
   const showHead = !hideHead && (title !== undefined || palette.length > 0);
+  const [list, setList] = useState<HTMLDivElement | null>(null);
+  const bindList = (el: HTMLDivElement | null) => {
+    setList(el);
+    (drag.containerProps.ref as RefCallback<HTMLDivElement>)(el);
+  };
+  const draggedId = drag.state.draggedIds?.[0];
+  const target = drag.state.targetIndex;
+
+  const titleOf = (item: LayerStackItem): ReactNode =>
+    item.primaryValue !== undefined && item.primaryOptions && onPrimaryChange ? (
+      <Select
+        aria-label={`Primary select for layer ${item.id}`}
+        width="fit"
+        selectedKey={item.primaryValue}
+        onSelectionChange={(value) => onPrimaryChange(item.id, String(value))}
+        options={item.primaryOptions.map((o) => ({ value: o, label: o }))}
+      />
+    ) : (
+      (item.label ?? item.kind)
+    );
+
+  const card = (item: LayerStackItem, i: number, ghost = false) => {
+    const expanded = !ghost && expandedIds.has(item.id);
+    const { onPointerDown } = drag.rowProps(String(item.id), i);
+    const cls = [
+      s.card,
+      !ghost && draggedId === String(item.id) ? s.cardDragging : '',
+      !ghost && target === i && draggedId !== String(item.id) ? s.dropBefore : '',
+      !ghost && target === items.length && i === items.length - 1 ? s.dropAfter : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    return (
+      <PropertyGroup
+        key={item.id}
+        className={cls}
+        title={titleOf(item)}
+        {...(item.tone === undefined ? {} : { tone: item.tone })}
+        collapsed={!expanded}
+        onCollapsedChange={() => toggleExpanded(item.id)}
+        leading={
+          <button
+            type="button"
+            className={s.handle}
+            aria-label={`Drag to reorder layer ${item.id}`}
+            onPointerDown={ghost ? undefined : onPointerDown}
+          >
+            {item.badge ?? <DragHandleGlyph />}
+          </button>
+        }
+        {...(onRemove && !ghost
+          ? {
+              actions: (
+                <Button variant="ghost" size="sm" iconOnly ariaLabel="Remove layer" onClick={() => onRemove(item.id)}>
+                  <CloseIcon size={14} />
+                </Button>
+              ),
+            }
+          : {})}
+      >
+        {ghost ? null : renderBody(item)}
+      </PropertyGroup>
+    );
+  };
 
   return (
     <div className={className ? `${s.stack} ${className}` : s.stack}>
@@ -154,84 +229,20 @@ export function LayerStack({
           </div>
         </div>
       )}
-      <div
-        className={s.list}
-        ref={drag.containerProps.ref as RefCallback<HTMLDivElement>}
-      >
-        {items.map((item, i) => {
-          const expanded = expandedIds.has(item.id);
-          const draggedId = drag.state.draggedIds?.[0];
-          const isDragging = draggedId === String(item.id);
-          const showHintBefore = drag.state.targetIndex === i && draggedId !== String(item.id);
-          const showHintAfter = drag.state.targetIndex === items.length && i === items.length - 1;
-          const cardCls = [
-            s.card,
-            isDragging ? s.cardDragging : '',
-            item.accent ? s.cardAccented : '',
-          ]
-            .filter(Boolean)
-            .join(' ');
-          const cardStyle = item.accent
-            ? ({ '--wzl-layer-stack-accent': item.accent } as CSSProperties)
-            : undefined;
-          const { onPointerDown } = drag.rowProps(String(item.id), i);
-          return (
-            <div key={item.id}>
-              {showHintBefore && <div className={s.dropHint} />}
-              <div className={cardCls} data-testid={`layer-card-${item.id}`} style={cardStyle}>
-                <div className={s.cardHead}>
-                  <button
-                    type="button"
-                    className={s.handle}
-                    aria-label={`Drag to reorder layer ${item.id}`}
-                    onPointerDown={onPointerDown}
-                    onClick={() => toggleExpanded(item.id)}
-                  >
-                    {item.badge ?? <DragHandleGlyph />}
-                  </button>
-                  {item.primaryValue !== undefined && item.primaryOptions && onPrimaryChange ? (
-                    <select
-                      className={s.primary}
-                      value={item.primaryValue}
-                      aria-label={`Primary select for layer ${item.id}`}
-                      onChange={(e) => onPrimaryChange(item.id, e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {item.primaryOptions.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span className={s.kind}>{item.label ?? item.kind}</span>
-                  )}
-                  {onRemove && (
-                    <button
-                      type="button"
-                      className={s.remove}
-                      aria-label="Remove layer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRemove(item.id);
-                      }}
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-                {expanded && <div className={s.cardBody}>{renderBody(item)}</div>}
-              </div>
-              {showHintAfter && <div className={s.dropHint} />}
-            </div>
-          );
-        })}
-        {items.length === 0 && (
-          <div className={s.empty}>
-            {emptyLabel ?? (palette.length > 0 ? 'No layers — add one above.' : 'No layers.')}
-          </div>
-        )}
-      </div>
+      {items.length === 0 ? (
+        <div className={s.empty}>
+          {emptyLabel ?? (palette.length > 0 ? 'No layers — add one above.' : 'No layers.')}
+        </div>
+      ) : (
+        <PropertyList ref={bindList} className={s.list}>
+          {items.map((item, i) => card(item, i))}
+        </PropertyList>
+      )}
+      {drag.state.ghost && list ? (
+        <DragGhost at={drag.state.ghost} from={list}>
+          {items.filter((item) => drag.state.ghost?.ids.includes(String(item.id))).map((item) => card(item, -1, true))}
+        </DragGhost>
+      ) : null}
     </div>
   );
 }

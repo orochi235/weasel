@@ -122,6 +122,10 @@ function isNoopDrop(items: readonly LayerListItem[], draggedIds: readonly string
  * drop. A drop that would leave a contiguous block where it already is does
  * not call `onReorder`.
  *
+ * The rows are the container's children, whatever they are: `ItemList` rows,
+ * or the `PropertyGroup`s of a `PropertyList`. A row's `onPointerDown` can go
+ * on the whole row or on a handle inside it.
+ *
  * A press opens a `startThresholdDrag` on the *container*, which owns the
  * rest of the gesture: a drag that leaves the list still tracks, a release
  * anywhere still drops, and a release the window never delivered still ends
@@ -170,8 +174,11 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     };
     let draggedIds: string[] = [];
     let targetIndex = 0;
-    // Where in the grabbed row the pointer went down, so the ghost keeps that point under it.
-    const row = (e.currentTarget as Element).getBoundingClientRect();
+    // Where in the grabbed row the pointer went down, so the ghost keeps that point under it. The handler may sit on
+    // a handle inside the row rather than the row itself, so the row is the container's child holding it.
+    const pressed = e.currentTarget as Element;
+    const rowEl = Array.from(container.children).find((child) => child.contains(pressed)) ?? pressed;
+    const row = rowEl.getBoundingClientRect();
     const grab = { x: e.clientX - row.left, y: e.clientY - row.top };
     const ghostAt = (ev: { clientX: number; clientY: number }): ReorderGhost => ({
       ids: draggedIds,

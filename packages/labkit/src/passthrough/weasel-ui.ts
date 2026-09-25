@@ -61,6 +61,8 @@ export {
   type DisclosureProps,
   DisclosureRow,
   type DisclosureRowProps,
+  DragGhost,
+  type DragGhostProps,
   DragHandleGlyph,
   type DragHandleGlyphProps,
   detectPlatform,

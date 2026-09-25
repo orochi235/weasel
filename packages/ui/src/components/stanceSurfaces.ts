@@ -80,14 +80,6 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     },
   },
   {
-    // Cards in a list are peers of one kind: a tone, never a stance.
-    id: 'card',
-    file: 'packages/ui/src/components/Properties/Properties.module.css',
-    selector: '.card',
-    stanceless: true,
-    base: { accent: ACCENT_BASE },
-  },
-  {
     id: 'callout',
     file: 'packages/ui/src/components/Callout/Callout.module.css',
     selector: '.popover',

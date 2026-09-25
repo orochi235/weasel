@@ -4,7 +4,7 @@ import { LayerStack, type LayerStackItem, type LayerStackProps } from './LayerSt
 
 const items: LayerStackItem[] = [
   { id: 1, kind: 'fill', primaryValue: 'aqua', primaryOptions: ['aqua', 'bevel', 'dome'] },
-  { id: 2, kind: 'tail', accent: '#f44', badge: '1' },
+  { id: 2, kind: 'tail', tone: '#f44', badge: '1' },
   { id: 3, kind: 'shadow' },
 ];
 
@@ -26,7 +26,7 @@ describe('LayerStack', () => {
     for (const k of ['fill', 'tail', 'shadow']) {
       expect(screen.getByRole('button', { name: new RegExp(`add ${k}`, 'i') })).toBeInTheDocument();
     }
-    expect(screen.getAllByTestId(/layer-card-/)).toHaveLength(3);
+    expect(screen.getAllByRole('button', { name: /drag to reorder layer/i })).toHaveLength(3);
   });
 
   it('clicking a palette button calls onAdd with that kind', () => {
@@ -82,7 +82,7 @@ describe('LayerStack', () => {
     expect(screen.getByText(/no layers/i)).toBeInTheDocument();
   });
 
-  it('changing the primary select calls onPrimaryChange', () => {
+  it('changing the primary select calls onPrimaryChange', async () => {
     const onPrimaryChange = vi.fn();
     render(
       <LayerStack
@@ -96,8 +96,8 @@ describe('LayerStack', () => {
         renderBody={() => null}
       />,
     );
-    const sel = screen.getByLabelText(/primary select for layer 1/i) as HTMLSelectElement;
-    fireEvent.change(sel, { target: { value: 'bevel' } });
+    fireEvent.click(screen.getByRole('button', { name: /primary select for layer 1/i }));
+    fireEvent.click(await screen.findByRole('option', { name: 'bevel' }));
     expect(onPrimaryChange).toHaveBeenCalledWith(1, 'bevel');
   });
 
@@ -144,7 +144,8 @@ describe('LayerStack', () => {
         renderBody={(item) => <div data-testid={`body-${item.id}`}>b{item.id}</div>}
       />,
     );
-    expect(screen.queryByTestId('body-1')).not.toBeInTheDocument();
+    // Folded, not unmounted: a control's own state survives the fold.
+    expect(screen.getByTestId('body-1')).not.toBeVisible();
   });
 
 

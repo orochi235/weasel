@@ -49,14 +49,7 @@
 }
 
 .list {
-  display: grid;
-  gap: var(--wzl-space-3);
-}
-
-.dropHint {
-  height: 2px;
-  background: var(--wzl-accent);
-  border-radius: var(--wzl-radius-sm);
+  row-gap: var(--wzl-space-3);
 }
 
 .empty {
@@ -66,30 +59,18 @@
   text-align: center;
 }
 
-.card {
-  background: var(--wzl-surface-raised);
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-md);
-  overflow: hidden;
-}
-
-.cardAccented {
-  /* Re-bind --wzl-accent inside the card so descendant controls (slider tracks
-     and thumbs, readouts, etc.) tint to the per-card accent instead of the
-     global theme accent. Mirrors EffectCard's behavior. */
-  --wzl-accent: var(--wzl-layer-stack-accent);
-  border-left: 3px solid var(--wzl-layer-stack-accent);
-}
-
+/* The card the drag picked up holds its place, faded, while the ghost follows the pointer. */
 .cardDragging {
   opacity: 0.5;
 }
 
-.cardHead {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-3);
-  padding: var(--wzl-space-3) var(--wzl-space-4);
+/* Where the drop would land: a line on the edge of the card it would land against. */
+.dropBefore {
+  box-shadow: 0 -2px 0 var(--wzl-accent);
+}
+
+.dropAfter {
+  box-shadow: 0 2px 0 var(--wzl-accent);
 }
 
 .handle {
@@ -99,6 +80,7 @@
   color: var(--wzl-fg-subtle);
   padding: var(--wzl-space-1) var(--wzl-space-2);
   cursor: grab;
+  touch-action: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -109,46 +91,11 @@
   font-size: var(--wzl-font-size);
 }
 
-.cardAccented .handle {
-  background: var(--wzl-layer-stack-accent);
-  color: white;
+.card[data-tone] .handle {
+  background: var(--wzl-tone);
+  color: var(--wzl-fg-on-accent);
 }
 
 .handle:active {
   cursor: grabbing;
-}
-
-.kind,
-.primary {
-  flex: 1;
-  font-size: var(--wzl-font-size);
-}
-
-.primary {
-  background: transparent;
-  border: 0;
-  color: var(--wzl-fg);
-  font: inherit;
-  text-transform: uppercase;
-  letter-spacing: var(--wzl-tracking-wide);
-}
-
-.remove {
-  font: inherit;
-  height: var(--wzl-control-h);
-  background: transparent;
-  border: 0;
-  color: var(--wzl-fg-subtle);
-  font-size: var(--wzl-font-size-lg);
-  cursor: pointer;
-  padding: var(--wzl-space-1) var(--wzl-space-3);
-}
-
-.remove:hover {
-  color: var(--wzl-fg);
-}
-
-.cardBody {
-  padding: var(--wzl-space-4);
-  border-top: 1px solid var(--wzl-border);
 }

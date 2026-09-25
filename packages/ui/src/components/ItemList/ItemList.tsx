@@ -13,10 +13,9 @@
  * panels stacked in the same sidebar have to agree, and they did not while
  * each owned a private copy of the same CSS.
  */
-import { type CSSProperties, forwardRef, type HTMLAttributes, type ReactNode, type Ref, useCallback, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { nearestPortalHost } from '../../overlays/portalHost';
+import { forwardRef, type HTMLAttributes, type ReactNode, type Ref, useCallback, useState } from 'react';
 import type { ReorderGhost } from '../../useReorderDragList';
+import { DragGhost } from '../DragGhost';
 import s from './ItemList.module.css';
 
 /** One row. `id` is the React key. */
@@ -50,38 +49,6 @@ export interface ItemListProps {
   ghost?: ReorderGhost | null;
 }
 
-/** Whether `el` is the containing block of its fixed-position descendants rather than the viewport. */
-function containsFixed(el: Element): boolean {
-  const cs = getComputedStyle(el);
-  return (
-    cs.transform !== 'none' ||
-    cs.filter !== 'none' ||
-    cs.backdropFilter !== 'none' ||
-    cs.perspective !== 'none' ||
-    /paint|layout|strict|content/.test(cs.contain)
-  );
-}
-
-/** Copies of the dragged rows at the ghost's point, portaled to the list's themed host so no panel clips them. */
-function Ghost({ ghost, rows, from }: { ghost: ReorderGhost; rows: readonly ItemListRow[]; from: Element }) {
-  const host = nearestPortalHost(from) ?? document.body;
-  const origin = host !== document.body && containsFixed(host) ? host.getBoundingClientRect() : { left: 0, top: 0 };
-  const dragged = rows.filter((row) => ghost.ids.includes(row.id));
-  // Pixel positioning: the point is the pointer's, known only at runtime.
-  const at: CSSProperties = { left: ghost.left - origin.left, top: ghost.top - origin.top, width: ghost.width };
-  return createPortal(
-    <div className={s.ghost} style={at} aria-hidden="true">
-      {dragged.map((row) => (
-        <div key={row.id} className={[s.row, row.selected && s.selected].filter(Boolean).join(' ')}>
-          {row.leading}
-          <span className={s.label}>{row.label}</span>
-        </div>
-      ))}
-    </div>,
-    host,
-  );
-}
-
 export const ItemList = forwardRef(function ItemList(
   { rows, empty, className, overlay, containerProps, ghost }: ItemListProps,
   ref: Ref<HTMLDivElement>,
@@ -106,7 +73,18 @@ export const ItemList = forwardRef(function ItemList(
   return (
     <div className={cls} ref={setRefs} {...containerProps}>
       {overlay}
-      {ghost && container ? <Ghost ghost={ghost} rows={rows} from={container} /> : null}
+      {ghost && container ? (
+        <DragGhost at={ghost} from={container}>
+          {rows
+            .filter((row) => ghost.ids.includes(row.id))
+            .map((row) => (
+              <div key={row.id} className={[s.row, row.selected && s.selected].filter(Boolean).join(' ')}>
+                {row.leading}
+                <span className={s.label}>{row.label}</span>
+              </div>
+            ))}
+        </DragGhost>
+      ) : null}
       {rows.map((row) => (
         <div
           key={row.id}
