@@ -3,7 +3,6 @@ import { type ViteAlias, weaselAliases } from '../../scripts/vite-aliases';
 
 /** Story globs, relative to the repo root. Shared by the workshop and the `forge-stories` vitest project. */
 export const stories = [
-  'apps/forge/stories/**/*.stories.{ts,tsx}',
   'packages/ui/src/**/*.stories.{ts,tsx}',
   'apps/draw/src/**/*.stories.{ts,tsx}',
   'packages/labkit/src/**/*.stories.{ts,tsx}',
