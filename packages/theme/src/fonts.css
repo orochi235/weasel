@@ -1,26 +1,12 @@
 /* Opt-in typography: the kit's intended faces, and the document set in them.
  * Import this only if you want both — the token font stacks fall back to
  * system-ui without the faces, and `tokens.css` sets no font of its own, so an
- * app with its own typography can import the tokens and skip this file.
- * Licenses: ../fonts/OFL-Oswald.txt, ../fonts/OFL-Inter.txt */
+ * app with its own typography can import the tokens and skip this file, or
+ * take `faces.css` for the faces alone. */
+
+@import './faces.css';
 
 :root {
   font-family: var(--wzl-font-ui);
   font-weight: var(--wzl-font-weight-normal);
-}
-
-@font-face {
-  font-family: 'Oswald';
-  font-style: normal;
-  font-weight: 200 700;
-  font-display: swap;
-  src: url('../fonts/oswald-latin-variable.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('../fonts/inter-latin.woff2') format('woff2');
 }

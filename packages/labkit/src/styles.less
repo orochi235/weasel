@@ -1,4 +1,7 @@
 // Imports compile-time only. Component .less files are added in later steps.
+// Left as a CSS @import for the consumer's bundler to resolve; build-css.mjs
+// swaps it for the faces themselves, pointed at dist/fonts/.
+@import (css) '@weasel-js/theme/faces.css';
 @import './theme/base.less';
 @import './lab/Workspace.less';
 @import './lab/LabShell.less';
