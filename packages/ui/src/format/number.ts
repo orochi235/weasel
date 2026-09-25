@@ -35,15 +35,16 @@ const EXPONENTS: Record<string, number> = { k: 3, m: 6, b: 9, t: 12 };
 
 /**
  * Formats a number the way a `compact` readout shows it: below 1,000 at
- * `decimals` places, from 1,000 up at one decimal with a magnitude suffix
- * (`40.0K`, `2.0M`). Always `en-US`, so {@link parseNumber} reads it back.
+ * `decimals` places, from 1,000 up at three significant figures with a magnitude
+ * suffix (`40.0K`, `294K`, `2.00M`), so the readout holds one width whatever the
+ * value. Always `en-US`, so {@link parseNumber} reads it back.
  */
 export function formatCompact(value: number, decimals = 0): string {
   if (!Number.isFinite(value)) return formatNumber(value);
   const options: Intl.NumberFormatOptions =
     Math.abs(value) < 1000
       ? { useGrouping: false, minimumFractionDigits: decimals, maximumFractionDigits: decimals }
-      : { notation: 'compact', minimumFractionDigits: 1, maximumFractionDigits: 1 };
+      : { notation: 'compact', minimumSignificantDigits: 3, maximumSignificantDigits: 3 };
   return value.toLocaleString('en-US', options).replace(/^-/, MINUS_SIGN);
 }
 

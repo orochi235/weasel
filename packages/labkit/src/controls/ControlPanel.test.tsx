@@ -482,7 +482,7 @@ describe('<ControlPanel> format', () => {
         setConfig={vi.fn()}
       />,
     );
-    expect(screen.getByDisplayValue('2.0M')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('2.00M')).toBeInTheDocument();
   });
 });
 

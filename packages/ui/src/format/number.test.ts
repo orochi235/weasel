@@ -95,18 +95,19 @@ describe('formatCompact', () => {
   });
 
   it('abbreviates from a thousand up, at one decimal', () => {
-    expect(formatCompact(1000)).toBe('1.0K');
+    expect(formatCompact(1000)).toBe('1.00K');
     expect(formatCompact(40_000)).toBe('40.0K');
-    expect(formatCompact(2_000_000)).toBe('2.0M');
+    expect(formatCompact(2_000_000)).toBe('2.00M');
+    expect(formatCompact(294_000)).toBe('294K');
     expect(formatCompact(12_345_678)).toBe('12.3M');
   });
 
   it('rolls over into the next magnitude rather than printing 1000.0K', () => {
-    expect(formatCompact(999_950)).toBe('1.0M');
+    expect(formatCompact(999_950)).toBe('1.00M');
   });
 
   it('signs a negative with U+2212', () => {
-    expect(formatCompact(-1500)).toBe('−1.5K');
+    expect(formatCompact(-1500)).toBe('−1.50K');
   });
 });
 
