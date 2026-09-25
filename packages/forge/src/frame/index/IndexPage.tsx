@@ -1,3 +1,5 @@
+// The component's own entry, not the barrel: the barrel would bring every weasel-ui component into each frame.
+import { Button } from '@weasel-js/ui/components/Button';
 import { createContext, type ReactNode, type RefObject, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Globals } from '../../protocol/messages';
 import type { Decorator, IndexContext, IndexStoryProps, LoadedStory, StoryContext } from '../../story/types';
@@ -126,9 +128,9 @@ function StorySection({ story, variants }: { story: LoadedStory; variants: boole
         <h2 id={headingId} className="fg-index-story__name">
           {story.name}
         </h2>
-        <button type="button" className="fg-index-story__open" onClick={() => env.open(story.id)}>
+        <Button variant="secondary" size="sm" onClick={() => env.open(story.id)}>
           Open
-        </button>
+        </Button>
       </header>
       {description ? <p className="fg-index-story__description">{description}</p> : null}
       <IndexStory story={story} />
