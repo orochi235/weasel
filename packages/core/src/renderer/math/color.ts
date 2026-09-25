@@ -1,3 +1,5 @@
+import { hslToSrgb } from '@weasel-js/paint';
+
 /**
  * Parse a CSS color string into [r, g, b, a] with 0..1 components.
  *
@@ -274,28 +276,12 @@ function parsePercentOrNumber(tok: string): number | null {
 }
 
 /**
- * HSL → RGB, all components 0..1 except hue in degrees (0..360). The single
- * internal HSL→RGB implementation for the package — `animation/colorHelpers`
- * re-uses this rather than carrying its own copy.
+ * HSL → RGB, all components 0..1 except hue in degrees (0..360). paint's
+ * `hslToSrgb` under the name this file's callers use.
  *
  * @internal Not part of the public API; not re-exported from the barrel.
  */
-export function hslToRgb(h: number, s: number, l: number): [number, number, number] {
-  if (s === 0) return [l, l, l];
-  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-  const p = 2 * l - q;
-  const hk = h / 360;
-  return [hueToChannel(p, q, hk + 1 / 3), hueToChannel(p, q, hk), hueToChannel(p, q, hk - 1 / 3)];
-}
-
-function hueToChannel(p: number, q: number, t: number): number {
-  if (t < 0) t += 1;
-  if (t > 1) t -= 1;
-  if (t < 1 / 6) return p + (q - p) * 6 * t;
-  if (t < 1 / 2) return q;
-  if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-  return p;
-}
+export const hslToRgb = hslToSrgb;
 
 function clamp01(n: number): number {
   return n < 0 ? 0 : n > 1 ? 1 : n;

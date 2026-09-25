@@ -33,9 +33,11 @@ export function srgbFloatToOklab(r: number, g: number, b: number): [number, numb
 /** Convert an 8-bit sRGB triple to OKLab. Channels are indices into a 256-entry
  *  LUT: pass integers, or `srgbFloatToOklab` for 0..1 floats. */
 export function srgbU8ToOklab(r: number, g: number, b: number): [number, number, number] {
-  const rl = SRGB_TO_LINEAR[r & 0xff];
-  const gl = SRGB_TO_LINEAR[g & 0xff];
-  const bl = SRGB_TO_LINEAR[b & 0xff];
+  return linearSrgbToOklab(SRGB_TO_LINEAR[r & 0xff], SRGB_TO_LINEAR[g & 0xff], SRGB_TO_LINEAR[b & 0xff]);
+}
+
+/** Linear-light sRGB (0..1 floats, unclamped) to OKLab. */
+export function linearSrgbToOklab(rl: number, gl: number, bl: number): [number, number, number] {
   const l = 0.4122214708 * rl + 0.5363325363 * gl + 0.0514459929 * bl;
   const m = 0.2119034982 * rl + 0.6806995451 * gl + 0.1073969566 * bl;
   const s = 0.0883024619 * rl + 0.2817188376 * gl + 0.6299787005 * bl;
@@ -49,7 +51,9 @@ export function srgbU8ToOklab(r: number, g: number, b: number): [number, number,
   ];
 }
 
-function oklabToLinearSrgb(L: number, A: number, B: number): [number, number, number] {
+/** OKLab to linear-light sRGB. Not gamut-clipped: out-of-gamut colors come
+ *  back with channels outside 0..1. */
+export function oklabToLinearSrgb(L: number, A: number, B: number): [number, number, number] {
   const lp = L + 0.3963377774 * A + 0.2158037573 * B;
   const mp = L - 0.1055613458 * A - 0.0638541728 * B;
   const sp = L - 0.0894841775 * A - 1.2914855480 * B;
@@ -273,4 +277,161 @@ export function hexToOklchDeg(hex: string): OklchDeg {
   const [L, A, B] = srgbU8ToOklab((n >> 16) & 255, (n >> 8) & 255, n & 255);
   const [l, c, h] = oklabToOklch(L, A, B);
   return { L: l, C: c, H: ((((h * 180) / Math.PI) % 360) + 360) % 360 };
+}
+
+// ---------------------------------------------------------------------------
+// Float sRGB transfer, HSL, and interpolation across spaces
+// ---------------------------------------------------------------------------
+
+/** sRGB-encoded channel (0..1) to linear light. Unclamped; odd-symmetric
+ *  below zero, as CSS `srgb-linear` extends it. */
+export function srgbToLinear(c: number): number {
+  const a = Math.abs(c);
+  const v = a <= 0.04045 ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4);
+  return c < 0 ? -v : v;
+}
+
+/** Linear-light channel to sRGB encoding (0..1). Unclamped. */
+export function linearToSrgb(c: number): number {
+  const a = Math.abs(c);
+  const v = a <= 0.0031308 ? a * 12.92 : 1.055 * Math.pow(a, 1 / 2.4) - 0.055;
+  return c < 0 ? -v : v;
+}
+
+/** HSL to sRGB. Hue in degrees, saturation, lightness and output all 0..1. */
+export function hslToSrgb(h: number, s: number, l: number): [number, number, number] {
+  if (s === 0) return [l, l, l];
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const hk = h / 360;
+  return [hueToChannel(p, q, hk + 1 / 3), hueToChannel(p, q, hk), hueToChannel(p, q, hk - 1 / 3)];
+}
+
+function hueToChannel(p: number, q: number, t: number): number {
+  if (t < 0) t += 1;
+  if (t > 1) t -= 1;
+  if (t < 1 / 6) return p + (q - p) * 6 * t;
+  if (t < 1 / 2) return q;
+  if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+  return p;
+}
+
+/** sRGB (0..1) to HSL: `[hue°, saturation, lightness]`, hue in 0..360. An
+ *  achromatic color reports hue 0 and saturation 0. */
+export function srgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  if (d === 0) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  let h: number;
+  if (max === r) h = ((g - b) / d) % 6;
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  return [(((h * 60) % 360) + 360) % 360, s, l];
+}
+
+/**
+ * The space a color interpolation runs in, spelled as CSS `color-mix()` spells
+ * them. `'srgb'` and `'srgb-linear'` blend gamma-encoded and linear-light
+ * channels; `'oklab'` blends perceptual coordinates; `'oklch'` and `'hsl'` are
+ * polar, so their hue travels around the wheel rather than through it.
+ *
+ * Distinct from {@link ColorSpace}, the gradient and animation vocabulary,
+ * which keeps its `'rgb'` spelling and its byte-precision paths.
+ */
+export type ColorInterpolationSpace = 'oklch' | 'oklab' | 'hsl' | 'srgb' | 'srgb-linear';
+
+/** Which way a polar space's hue goes between two endpoints, as CSS
+ *  `hue-interpolation-method`: the arc of at most 180°, or the other one. */
+export type HueInterpolation = 'shorter' | 'longer';
+
+/** An endpoint with less chroma (OKLCH) or saturation (HSL) than this has no
+ *  hue of its own. */
+const ACHROMATIC_EPS = 1e-4;
+
+function lerpHueDeg(h1: number, h2: number, t: number, method: HueInterpolation): number {
+  let dh = (((h2 - h1) % 360) + 360) % 360;
+  if (method === 'shorter') {
+    if (dh > 180) dh -= 360;
+  } else if (dh > 0 && dh < 180) {
+    dh -= 360;
+  }
+  return (((h1 + dh * t) % 360) + 360) % 360;
+}
+
+type Polar = readonly [radius: number, hueDeg: number, axis: number];
+
+function lerpPolar(a: Polar, b: Polar, t: number, method: HueInterpolation): [number, number, number] {
+  const h1 = a[0] < ACHROMATIC_EPS ? b[1] : a[1];
+  const h2 = b[0] < ACHROMATIC_EPS ? a[1] : b[1];
+  return [a[0] + (b[0] - a[0]) * t, lerpHueDeg(h1, h2, t, method), a[2] + (b[2] - a[2]) * t];
+}
+
+type Rgb = readonly [number, number, number];
+
+const lerp3 = (a: Rgb, b: Rgb, t: number): [number, number, number] => [
+  a[0] + (b[0] - a[0]) * t,
+  a[1] + (b[1] - a[1]) * t,
+  a[2] + (b[2] - a[2]) * t,
+];
+
+const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+const srgbToOklabFloat = (c: Rgb): [number, number, number] =>
+  linearSrgbToOklab(srgbToLinear(c[0]), srgbToLinear(c[1]), srgbToLinear(c[2]));
+
+function oklabToSrgbClipped(L: number, A: number, B: number): [number, number, number] {
+  const [rl, gl, bl] = clipToGamut(L, A, B);
+  return [clamp01(linearToSrgb(rl)), clamp01(linearToSrgb(gl)), clamp01(linearToSrgb(bl))];
+}
+
+/**
+ * Interpolate between two sRGB colors (0..1 floats) in `space`, at `t` in 0..1.
+ * Float precision throughout, with no byte round-trip. The result is sRGB;
+ * only OKLab and OKLCH blends can leave gamut, and those come back
+ * chroma-clipped at constant OKLab lightness.
+ *
+ * `hue` applies to the polar spaces only. An endpoint with no chroma (OKLCH)
+ * or no saturation (HSL) borrows the other endpoint's hue, so a ramp to white
+ * or black holds its hue instead of sweeping from red.
+ */
+export function interpolateSrgb(
+  from: Rgb,
+  to: Rgb,
+  t: number,
+  space: ColorInterpolationSpace = 'oklch',
+  hue: HueInterpolation = 'shorter',
+): [number, number, number] {
+  switch (space) {
+    case 'srgb':
+      return lerp3(from, to, t);
+    case 'srgb-linear': {
+      const lin = (c: Rgb): Rgb => [srgbToLinear(c[0]), srgbToLinear(c[1]), srgbToLinear(c[2])];
+      const [r, g, b] = lerp3(lin(from), lin(to), t);
+      return [linearToSrgb(r), linearToSrgb(g), linearToSrgb(b)];
+    }
+    case 'oklab': {
+      const [L, A, B] = lerp3(srgbToOklabFloat(from), srgbToOklabFloat(to), t);
+      return oklabToSrgbClipped(L, A, B);
+    }
+    case 'oklch': {
+      const polar = (c: Rgb): Polar => {
+        const [L, C, h] = oklabToOklch(...srgbToOklabFloat(c));
+        return [C, (((h * 180) / Math.PI) % 360 + 360) % 360, L];
+      };
+      const [C, H, L] = lerpPolar(polar(from), polar(to), t, hue);
+      const [l, a, b] = oklchToOklab(L, C, (H * Math.PI) / 180);
+      return oklabToSrgbClipped(l, a, b);
+    }
+    case 'hsl': {
+      const polar = (c: Rgb): Polar => {
+        const [h, s, l] = srgbToHsl(c[0], c[1], c[2]);
+        return [s, h, l];
+      };
+      const [s, h, l] = lerpPolar(polar(from), polar(to), t, hue);
+      return hslToSrgb(h, s, l);
+    }
+  }
 }

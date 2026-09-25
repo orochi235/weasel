@@ -75,6 +75,8 @@ export type { GradientTrackOpts } from './paintGradientTrack';
 export { paintPreviewCss } from './paintPreview';
 export { oklchToHex, chromaAt } from './color/oklch';
 export type { ChromaCurve, ChromaCurvePoint } from './color/oklch';
+export { rampColor, colorRamp } from './color/ramp';
+export type { ColorRampOptions } from './color/ramp';
 export { useAsyncOptions } from './useAsyncOptions';
 export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './useAsyncOptions';
 export { useReorderDragList } from './useReorderDragList';

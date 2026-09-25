@@ -732,12 +732,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   schema, need either a `kind` prop on one row component or the typed rows kept
   as thin entries into the renderer.
 
-- **(P2) Take `ColorRamp` past OKLCH.** The forge entry `ui/Color/ColorRamp`
-  (`packages/ui/src/color/`) ramps lightness, hue and a `ChromaCurve` in OKLCH
-  only, through `oklchToHex`. Ramp in the other spaces too — OKLab, HSL, sRGB and
-  linear RGB at least — so a ramp's interpolation space is a choice, and the
-  story shows the same endpoints ramped in each.
-
 - **(P2) Whether an anchor should set a ramp's chroma peak directly.** Today an
   anchor sets `peak = anchor C · max / e`, with `e` the envelope at the anchor's
   position, so an anchor on an end step whose bias is near 0 leaves `e` tiny and
