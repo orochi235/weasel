@@ -39,7 +39,9 @@ export {
   lerpColorArray,
   // Degrees + `#rrggbb`, the form a palette or theme ramp authors in.
   oklchDegToHex, hexToOklchDeg,
-  type ColorSpace, type OklchDeg,
+  srgbToLinear, linearToSrgb, linearSrgbToOklab, oklabToLinearSrgb,
+  srgbToHsl, hslToSrgb, interpolateSrgb,
+  type ColorSpace, type OklchDeg, type ColorInterpolationSpace, type HueInterpolation,
 } from '@weasel-js/paint';
 export {
   tweenVertexColors, springVertexColors, cycleVertexColors, staggerVertexColors,
