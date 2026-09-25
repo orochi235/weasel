@@ -5,7 +5,8 @@ import { resolve } from 'node:path';
 import { weaselAliases } from '../../scripts/vite-aliases';
 import { weaselDefines } from '../../scripts/vite-build-info';
 import { localWake } from '../../scripts/vite-wake';
-import { themeStorePlugin } from './server/themeStorePlugin';
+import { repoThemeStoreOptions } from '../../scripts/theme-store';
+import { themeStorePlugin } from '../../scripts/vite-theme-store';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
 const repoRoot = resolve(__dirname, '../..');
@@ -53,11 +54,7 @@ export default defineConfig({
   plugins: [
     react(),
     themeFonts(repoRoot),
-    themeStorePlugin({
-      themesDir: resolve(repoRoot, 'packages/theme/themes'),
-      extraFiles: [resolve(repoRoot, 'packages/labkit/src/theme/interstellar.theme.json')],
-      generatedDir: resolve(repoRoot, 'packages/theme/src/generated'),
-    }),
+    themeStorePlugin(repoThemeStoreOptions(repoRoot)),
     localWake(),
   ],
   server: { port: ports.themeEditor, strictPort: true, host: '::' },

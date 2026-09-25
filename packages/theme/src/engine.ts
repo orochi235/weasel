@@ -14,3 +14,4 @@ export { emitManifest } from './engine/emit/manifest';
 export { emitThemes, type ThemesInput } from './engine/emit/themes';
 export { declaredSteps } from './engine/steps';
 export { generateTokens, type GeneratedTokens } from './engine/emit/tokens';
+export { httpThemeApi, serializeDefinition, type IssueReport, type PutResult, type StoredTheme, type ThemeApi } from './store';

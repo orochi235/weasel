@@ -306,6 +306,26 @@
   background: var(--wzl-surface);
 }
 
+.fg-css-vars__save {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wzl-space-xs);
+}
+
+.fg-css-vars__notice {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+}
+
+.fg-css-vars__notice--saved {
+  color: var(--wzl-fg-muted);
+}
+
+.fg-css-vars__notice--error {
+  color: var(--wzl-danger);
+}
+
 .fg-css-vars__empty {
   margin: 0;
   color: var(--wzl-fg-muted);

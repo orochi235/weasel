@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { httpThemeApi } from './api';
+import { httpThemeApi } from './store';
 
 const respond = (status: number, body: unknown) => new Response(JSON.stringify(body), { status });
 

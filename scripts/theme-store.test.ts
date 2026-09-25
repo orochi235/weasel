@@ -4,10 +4,10 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ThemeDefinition } from '@weasel-js/theme';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { serializeDefinition } from '../src/theme/store';
-import { createThemeStore, type ThemeStore } from './themeStore';
+import { serializeDefinition } from '../packages/theme/src/store';
+import { createThemeStore, type ThemeStore } from './theme-store';
 
-const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 let root: string;
 let store: ThemeStore;
 const at = (...parts: string[]) => resolve(root, ...parts);

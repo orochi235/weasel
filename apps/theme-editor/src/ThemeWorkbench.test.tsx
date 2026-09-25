@@ -6,7 +6,7 @@ import { ThemeWorkbench, type WorkbenchProps } from './ThemeWorkbench';
 import type { ThemeApi } from './theme/api';
 import { weasel } from './theme/fixtures';
 import { removePin, setPin } from './theme/model';
-import type { PutResult, StoredTheme } from './theme/store';
+import type { PutResult, StoredTheme } from '@weasel-js/theme/engine';
 
 vi.mock('./theme/exportFiles', async (importOriginal) => ({ ...(await importOriginal<typeof import('./theme/exportFiles')>()), download: vi.fn() }));
 

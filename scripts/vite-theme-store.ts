@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
-import type { ThemeDefinition } from '../../../packages/theme/src/definition';
-import { createThemeStore, type ThemeStore, type ThemeStoreOptions } from './themeStore';
+import type { ThemeDefinition } from '../packages/theme/src/definition';
+import { createThemeStore, type ThemeStore, type ThemeStoreOptions } from './theme-store';
 
 const ROUTE = /\/__theme\/(list|[a-z][a-z0-9-]*)$/;
 
@@ -56,7 +56,7 @@ function parseBody(raw: string): { ok: true; body: unknown } | { ok: false } {
   }
 }
 
-/** Serves the theme definition files to the editor. Dev server only. */
+/** Serves and saves the theme definition files at `__theme/<name>`, for the theme editor and forge. Dev server only. */
 export function themeStorePlugin(options: ThemeStoreOptions): Plugin {
   return {
     name: 'weasel-theme-store',

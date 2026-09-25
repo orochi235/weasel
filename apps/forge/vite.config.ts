@@ -4,6 +4,8 @@ import { defineConfig } from 'vite';
 import { traitSchemasPlugin } from '../draw/vite-plugin-trait-schemas';
 import { forge } from '../../packages/forge/src/vite/index';
 import { weaselDefines } from '../../scripts/vite-build-info';
+import { repoThemeStoreOptions } from '../../scripts/theme-store';
+import { themeStorePlugin } from '../../scripts/vite-theme-store';
 import { localWake } from '../../scripts/vite-wake';
 import { forgeAliases, frameConfig, shellConfig, stories } from './viteShared';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
@@ -19,6 +21,7 @@ export default defineConfig(({ command, isPreview }) => ({
   plugins: [
     react(),
     traitSchemasPlugin({ repoRoot }),
+    themeStorePlugin(repoThemeStoreOptions(repoRoot)),
     forge({ stories, frameConfig, shellConfig }),
     localWake(),
   ],

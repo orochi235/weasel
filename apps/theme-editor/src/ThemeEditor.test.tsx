@@ -6,7 +6,7 @@ import type { ThemeApi } from './theme/api';
 import { loadDraft, persistDraft, persistLastTheme } from './theme/draftStorage';
 import { weasel } from './theme/fixtures';
 import { starterDefinition } from './theme/starter';
-import type { PutResult, StoredTheme } from './theme/store';
+import type { PutResult, StoredTheme } from '@weasel-js/theme/engine';
 
 // Under Node 26 the environment has no working `localStorage`; a test that seeds a draft needs one.
 function stubStorage() {
