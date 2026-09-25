@@ -19,7 +19,7 @@ type Story = StoryObj<typeof DetailList>;
 const rows = (
   <>
     <DetailRow label="id"><Code>select.collapseDeferred</Code></DetailRow>
-    <DetailRow label="kind"><Badge tone="accent" size="xs">action</Badge></DetailRow>
+    <DetailRow label="kind"><Badge status="accent" size="xs">action</Badge></DetailRow>
     <DetailRow label="shortcut"><KeySequence keys={[{ label: '⌘' }, { label: '⇧' }, { label: 'G' }]} /></DetailRow>
     <DetailRow label="requires">
       {['selection', 'scene', 'poseDescriptor', 'poseComposition'].map((d) => <Code key={d}>{d}</Code>)}

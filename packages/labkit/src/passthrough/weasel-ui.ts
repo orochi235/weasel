@@ -17,7 +17,7 @@ export {
   type BadgeProps,
   type BadgeShape,
   type BadgeSize,
-  type BadgeTone,
+  type BadgeStatus,
   type BadgeVariant,
   type BoundsCtx,
   type BuiltInEdgeName,

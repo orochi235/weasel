@@ -204,4 +204,5 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-swatch-size', type: "dimension", group: "swatch", defaultValue: "28px", description: "Minimum cell of a swatch grid — PatternPicker, and any panel laying swatches out the same way.", hook: true },
   { name: '--wzl-timeline-label-w', type: "dimension", group: "timeline", defaultValue: "120px", description: "Width of the Timeline’s track-label gutter.", hook: true },
   { name: '--wzl-timeline-value-axis-w', type: "dimension", group: "timeline", defaultValue: "32px", description: "Width reserved for the Timeline’s value axis.", hook: true },
+  { name: '--wzl-tree-indent', type: "dimension", group: "tree", defaultValue: "calc(var(--wzl-control-h-xs) + var(--wzl-space-2))", description: "Indent of each Tree level. Unset, it is one twisty and one gap, so a child’s twisty sits under its parent’s label.", hook: true },
 ];

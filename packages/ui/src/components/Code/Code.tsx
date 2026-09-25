@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 import s from './Code.module.css';
+import { type StanceProps, useStance } from '../stance';
 
-/** Text color of a {@link Code} span. `success` and `danger` double as the
+/** Status color of a {@link Code} span. `success` and `danger` double as the
  *  added and removed sides of a diff. */
-export type CodeTone = 'neutral' | 'muted' | 'accent' | 'success' | 'warn' | 'danger';
+export type CodeStatus = 'neutral' | 'muted' | 'accent' | 'success' | 'warn' | 'danger';
 /** `subtle` sets the text on a tinted chip; `plain` is colored monospace text alone. */
 export type CodeVariant = 'subtle' | 'plain';
 /** Pins the type to a theme step. Left unset, the span sizes itself from the
@@ -11,9 +12,10 @@ export type CodeVariant = 'subtle' | 'plain';
 export type CodeSize = 'xs' | 'sm' | 'md';
 
 /** Props for {@link Code}. */
-export interface CodeProps {
+export interface CodeProps extends StanceProps {
   children: ReactNode;
-  tone?: CodeTone;
+  /** The status the text reports. A peer `tone`, or a stance's accent, paints over it. */
+  status?: CodeStatus;
   variant?: CodeVariant;
   size?: CodeSize;
   className?: string;
@@ -28,16 +30,20 @@ export interface CodeProps {
  */
 export function Code({
   children,
-  tone = 'neutral',
+  status = 'neutral',
+  stance,
+  tone,
   variant = 'subtle',
   size,
   className,
   title,
 }: CodeProps) {
+  const stanced = useStance({ stance, tone });
   return (
     <code
       className={className ? `${s.code} ${className}` : s.code}
-      data-tone={tone}
+      {...stanced}
+      data-status={status}
       data-variant={variant}
       data-size={size}
       title={title}

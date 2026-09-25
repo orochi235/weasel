@@ -134,5 +134,5 @@ const leafKey = (n: TreeCategoryNode, e: TreeEntry) => `${n.id}/${e.kind}:${e.id
 const sameEntry = (a: TreeEntry, b: TreeEntry) => a.kind === b.kind && a.id === b.id;
 
 function countBadge(count: number, className?: string) {
-  return <Badge className={className} shape="pill" size="sm" tone="neutral" variant="solid">{count}</Badge>;
+  return <Badge className={className} shape="pill" size="sm" status="neutral" variant="solid">{count}</Badge>;
 }

@@ -709,15 +709,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) Decide what `tone` means on `Badge`, `Powerline`, `Code` and link
-  `Button`s.** Their `tone` prop names a status (`success`, `danger`, …), while a
-  panel's `tone` is which of its peers it is — two things under one word. Either
-  rename the status prop or give these a peer tone beside it. That naming call
-  comes before any of them moves.
-  Toasts were looked at and left out of stance and tone: a toast reports how an
-  event came out rather than holding a class of content, and `success` has no
-  stance.
-
 - **(P2) One kind-indexed row renderer for every settings surface.** Three
   switches each map a field's `kind` (and `control`) to a control: labkit's
   `ControlRow` (`controls/ControlPanel.tsx`), `PrefsForm`'s `renderBuiltin`,
@@ -803,7 +794,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) The color literals with no token equivalent.** Arc 4 tokenized what had a token and
   left the rest rather than inventing a mapping — `check-design-tokens` covers size, weight,
   radius and the stray danger reds, but not color generally, for that reason. What remains is
-  `Badge`'s tone palette (`#7ab8d4`, `#d4a574`), the `GradientHandles` and `Keycaps` literals,
+  `Badge`'s status palette (`#7ab8d4`, `#d4a574`), the `GradientHandles` and `Keycaps` literals,
   and roughly 70 `rgba()` values that are depth geometry (box-shadow insets, gloss gradient
   stops, the dialog scrim) for which the theme ships no shadow, gloss or scrim token. Each needs
   a semantic name before it can become one.

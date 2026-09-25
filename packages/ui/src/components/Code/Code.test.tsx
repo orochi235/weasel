@@ -18,18 +18,20 @@ describe('Code', () => {
     expect(el.textContent).toBe('editor.insert');
   });
 
-  it('defaults to the neutral tone and the subtle variant', () => {
+  it('defaults to the neutral status and the subtle variant, with no peer tone', () => {
     const { container } = render(<Code>x</Code>);
     const el = container.firstElementChild!;
-    expect(el.getAttribute('data-tone')).toBe('neutral');
+    expect(el.getAttribute('data-status')).toBe('neutral');
+    expect(el.hasAttribute('data-tone')).toBe(false);
+    expect(el.hasAttribute('data-stance')).toBe(false);
     expect(el.getAttribute('data-variant')).toBe('subtle');
     expect(el.getAttribute('data-size')).toBeNull();
   });
 
-  it('reports tone, variant and size as data attributes', () => {
-    const { container } = render(<Code tone="danger" variant="plain" size="sm">x</Code>);
+  it('reports status, variant and size as data attributes', () => {
+    const { container } = render(<Code status="danger" variant="plain" size="sm">x</Code>);
     const el = container.firstElementChild!;
-    expect(el.getAttribute('data-tone')).toBe('danger');
+    expect(el.getAttribute('data-status')).toBe('danger');
     expect(el.getAttribute('data-variant')).toBe('plain');
     expect(el.getAttribute('data-size')).toBe('sm');
   });
@@ -47,11 +49,25 @@ describe('Code', () => {
     expect(body).toMatch(/box-decoration-break:\s*clone/);
   });
 
-  it('paints each tone from a theme token, accent as text', () => {
-    expect(css).toMatch(/\[data-tone='accent'\]\s*\{\s*--code-fg:\s*var\(--wzl-accent-fg\)/);
-    expect(css).toMatch(/\[data-tone='success'\]\s*\{\s*--code-fg:\s*var\(--wzl-success\)/);
-    expect(css).toMatch(/\[data-tone='warn'\]\s*\{\s*--code-fg:\s*var\(--wzl-warning\)/);
-    expect(css).toMatch(/\[data-tone='danger'\]\s*\{\s*--code-fg:\s*var\(--wzl-danger\)/);
+  it('takes a peer tone and a stance beside its status', () => {
+    const { container } = render(<Code status="danger" stance="debug" tone={1}>x</Code>);
+    const el = container.firstElementChild as HTMLElement;
+    expect(el.dataset.status).toBe('danger');
+    expect(el.dataset.stance).toBe('debug');
+    expect(el.dataset.tone).toBe('1');
+    expect(el.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-green)');
+  });
+
+  it('paints a peer tone or a stance accent over the status', () => {
+    expect(rule('.code')).toMatch(/--code-fg:\s*var\(--_s-accent, var\(--code-status-fg\)\)/);
+    expect(css).not.toMatch(/\[data-tone='/);
+  });
+
+  it('paints each status from a theme token, accent as text', () => {
+    expect(css).toMatch(/\[data-status='accent'\]\s*\{\s*--code-status-fg:\s*var\(--wzl-accent-fg\)/);
+    expect(css).toMatch(/\[data-status='success'\]\s*\{\s*--code-status-fg:\s*var\(--wzl-success\)/);
+    expect(css).toMatch(/\[data-status='warn'\]\s*\{\s*--code-status-fg:\s*var\(--wzl-warning\)/);
+    expect(css).toMatch(/\[data-status='danger'\]\s*\{\s*--code-status-fg:\s*var\(--wzl-danger\)/);
   });
 
   it('drops the chip fill in the plain variant', () => {

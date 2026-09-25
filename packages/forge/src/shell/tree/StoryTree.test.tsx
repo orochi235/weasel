@@ -394,6 +394,35 @@ describe('StoryTree', () => {
     expect(item(treeEl, 'Slider')).toHaveAttribute('aria-expanded', 'false');
   });
 
+  it('tones each known package’s badge, and leaves an unknown one on the muted status', async () => {
+    const uiEntry = { ...entry('ui/Badge', 'Default'), file: '/repo/packages/ui/src/Badge.stories.tsx' };
+    const tagged = [uiEntry, slider];
+    const contribution: LabContribution[] = [
+      { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={tagged} /> },
+    ];
+    function Tagged() {
+      const { instruments } = useStoryRegistry(tagged, { frameUrl: '/frame.html' });
+      return (
+        <Lab
+          instruments={instruments}
+          defaultInstrument={slider.id}
+          labChrome={contribution}
+          addTrial={false}
+          storageKey="tree-tone-test"
+          storage={createMemoryAdapter()}
+        />
+      );
+    }
+    render(<Tagged />);
+    const packages = await screen.findByRole('group', { name: 'Packages' });
+    const tags = Array.from(packages.querySelectorAll<HTMLElement>('.fg-tree__tag'));
+    const tag = (label: string) => tags.find((t) => t.textContent === label) as HTMLElement;
+    const [ui, kit] = [tag('ui'), tag('Kit')];
+    expect(ui.style.getPropertyValue('--wzl-tone')).toContain('var(--wzl-swatch-blue)');
+    expect(kit.hasAttribute('data-tone')).toBe(false);
+    expect(kit.dataset.status).toBe('muted');
+  });
+
   it('names a route that matches no story', async () => {
     history.replaceState(null, '', `/#/no-such--story`);
     await mount();

@@ -10,7 +10,9 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--badge-fg, var(--wzl-fg-muted));
-  --badge-edge: var(--wzl-border);
+  --badge-status-edge: var(--wzl-border);
+  /* A peer tone or a stance's accent paints over the status. */
+  --badge-edge: var(--_s-accent, var(--badge-status-edge));
   --badge-fill: var(--wzl-surface);
   --badge-fg: var(--badge-edge);
   background: transparent;
@@ -61,15 +63,15 @@
   z-index: 1;
 }
 
-/* Tone edges double as text color in the outline/subtle variants, so they
+/* Status edges double as text color in the outline/subtle variants, so they
    must be foreground-legible — hence accent-fg, not the accent fill. */
-.badge[data-tone='accent']  { --badge-edge: var(--wzl-accent-fg, var(--wzl-accent, #7fb069)); }
-.badge[data-tone='info']    { --badge-edge: #7ab8d4; }
-.badge[data-tone='success'] { --badge-edge: var(--wzl-success); }
-.badge[data-tone='warn']    { --badge-edge: #d4a574; }
-.badge[data-tone='danger']  { --badge-edge: var(--wzl-danger); }
-.badge[data-tone='muted']   { --badge-edge: var(--wzl-fg-muted); }
-.badge[data-tone='neutral'] { --badge-edge: var(--wzl-border); --badge-fg: var(--wzl-fg-muted); }
+.badge[data-status='accent']  { --badge-status-edge: var(--wzl-accent-fg, var(--wzl-accent, #7fb069)); }
+.badge[data-status='info']    { --badge-status-edge: #7ab8d4; }
+.badge[data-status='success'] { --badge-status-edge: var(--wzl-success); }
+.badge[data-status='warn']    { --badge-status-edge: #d4a574; }
+.badge[data-status='danger']  { --badge-status-edge: var(--wzl-danger); }
+.badge[data-status='muted']   { --badge-status-edge: var(--wzl-fg-muted); }
+.badge[data-status='neutral'] { --badge-status-edge: var(--wzl-border); }
 
 .badge[data-variant='outline'] {
   --badge-fill: var(--wzl-surface);
@@ -87,7 +89,7 @@
 /* Neutral's edge is a border gray that vanishes when the outline/subtle
    variants (above) reuse it as the text color — re-assert the muted fg.
    Solid keeps the variant's white fg on the gray fill. */
-.badge[data-tone='neutral']:not([data-variant='solid']) { --badge-fg: var(--wzl-fg-muted); }
+.badge[data-status='neutral']:not([data-variant='solid']) { --badge-fg: var(--_s-accent, var(--wzl-fg-muted)); }
 
 .badge {
   padding:
@@ -190,3 +192,57 @@ a.badge:hover {
 .badge[data-size='xs'] .remove > svg { width: 8px; height: 8px; }
 .badge[data-size='md'] .remove { width: 16px; height: 16px; font-size: var(--wzl-font-size-lg); }
 .badge[data-size='md'] .remove > svg { width: 12px; height: 12px; }
+
+/* BEGIN GENERATED stance rules: badge — `npm run gen:stances`, do not edit. */
+
+.badge {
+  --wzl-tone: initial;
+}
+
+.badge {
+  --_s-accent: var(--wzl-tone);
+}
+
+.badge[data-stance='scope'] {
+  --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
+}
+
+.badge[data-stance='aside'] {
+  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
+}
+
+.badge[data-stance='advanced'] {
+  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
+}
+
+.badge[data-stance='debug'] {
+  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
+}
+
+.badge[data-stance='danger'] {
+  --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
+}
+
+.badge[data-stance='notice'] {
+  --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
+}
+
+.badge[data-stance='important'] {
+  --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
+}
+
+.badge[data-stance='preview'] {
+  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
+}
+
+.badge[data-tone] {
+  --wzl-accent: var(--_s-accent);
+  --wzl-accent-base: var(--_s-accent);
+  --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));
+  --wzl-accent-soft: color-mix(in oklab, var(--_s-accent) 45%, var(--wzl-surface));
+  --wzl-accent-hover: var(--wzl-accent-strong);
+  --wzl-accent-fg: var(--wzl-accent-strong);
+  --wzl-focus-ring: var(--wzl-accent-strong);
+}
+
+/* END GENERATED stance rules: badge */

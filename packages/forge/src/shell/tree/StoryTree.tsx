@@ -41,10 +41,19 @@ function ancestorsOf(entry: IndexEntry | undefined): Set<string> {
   return paths;
 }
 
-/** A component's package, as a badge colored per package. */
+/** Each package's peer tone: its swatch mixed toward the foreground, so the
+ *  badge text keeps its contrast in both modes. */
+const LIBRARY_TONES: Readonly<Record<string, string>> = {
+  ui: 'color-mix(in oklab, var(--wzl-swatch-blue), var(--wzl-fg) 35%)',
+  labkit: 'color-mix(in oklab, var(--wzl-swatch-teal), var(--wzl-fg) 45%)',
+  forge: 'color-mix(in oklab, var(--wzl-swatch-amber), var(--wzl-fg) 40%)',
+  draw: 'color-mix(in oklab, var(--wzl-swatch-rose), var(--wzl-fg) 35%)',
+};
+
+/** A component's package, as a badge toned per package. */
 function LibraryBadge({ library }: { library: string }) {
   return (
-    <Badge tone="custom" variant="subtle" size="sm" className={`fg-tree__tag fg-lib--${library}`}>
+    <Badge status="muted" tone={LIBRARY_TONES[library]} variant="subtle" size="sm" className="fg-tree__tag">
       {library}
     </Badge>
   );

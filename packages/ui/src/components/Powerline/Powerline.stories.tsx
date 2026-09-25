@@ -12,10 +12,10 @@ const meta: Meta<typeof Powerline> = {
     variant: 'solid',
     size: 'sm',
     segments: [
-      { text: 'main', tone: 'accent', endCap: 'chevron' },
-      { text: '✓ 12', tone: 'info', endCap: 'slant' },
-      { text: '↑3 ↓1', tone: 'warn', endCap: 'scallop' },
-      { text: '~/proj', tone: 'muted' },
+      { text: 'main', status: 'accent', endCap: 'chevron' },
+      { text: '✓ 12', status: 'info', endCap: 'slant' },
+      { text: '↑3 ↓1', status: 'warn', endCap: 'scallop' },
+      { text: '~/proj', status: 'muted' },
     ],
   },
   argTypes: {
@@ -38,9 +38,9 @@ export const EveryCapInOneRow: Story = {
       ...ALL_CAPS.slice(0, -1).map((cap, i) => ({
         text: typeof cap === 'string' ? cap : `custom-${i}`,
         endCap: cap,
-        tone: (['accent', 'info', 'warn', 'danger', 'muted', 'neutral'] as const)[i % 6],
+        status: (['accent', 'info', 'warn', 'danger', 'muted', 'neutral'] as const)[i % 6],
       })),
-      { text: 'end', tone: 'neutral' as const },
+      { text: 'end', status: 'neutral' as const },
     ],
   },
 };
@@ -54,8 +54,8 @@ export const CapMatrix: Story = {
           variant="solid"
           size="sm"
           segments={[
-            { text: String(cap), tone: 'accent', endCap: cap },
-            { text: 'next', tone: 'info' },
+            { text: String(cap), status: 'accent', endCap: cap },
+            { text: 'next', status: 'info' },
           ]}
         />
       ))}
@@ -80,10 +80,10 @@ export const CustomEdgeProfile: Story = {
     segments: [
       {
         text: 'wave',
-        tone: 'accent',
+        status: 'accent',
         endCap: (t, d) => Math.sin(t * Math.PI * 4) * d * 0.6,
       },
-      { text: 'next', tone: 'info' },
+      { text: 'next', status: 'info' },
     ],
   },
 };
@@ -95,9 +95,9 @@ export const FlushNoGap: Story = {
 export const MixedVariants: Story = {
   args: {
     segments: [
-      { text: 'main', tone: 'accent', variant: 'solid', endCap: 'chevron' },
-      { text: 'tracked', tone: 'info', variant: 'outline', endCap: 'chevron' },
-      { text: 'dirty', tone: 'warn', variant: 'subtle' },
+      { text: 'main', status: 'accent', variant: 'solid', endCap: 'chevron' },
+      { text: 'tracked', status: 'info', variant: 'outline', endCap: 'chevron' },
+      { text: 'dirty', status: 'warn', variant: 'subtle' },
     ],
   },
 };
@@ -105,11 +105,11 @@ export const MixedVariants: Story = {
 export const LongStripCookbook: Story = {
   args: {
     segments: [
-      { text: '⎈ k8s', tone: 'info', endCap: 'chevron' },
-      { text: 'prod', tone: 'danger', endCap: 'chevron' },
-      { text: 'us-west-2', tone: 'warn', endCap: 'chevron' },
-      { text: 'deployment/api', tone: 'muted', endCap: 'chevron' },
-      { text: 'v2.3.1', tone: 'accent' },
+      { text: '⎈ k8s', status: 'info', endCap: 'chevron' },
+      { text: 'prod', status: 'danger', endCap: 'chevron' },
+      { text: 'us-west-2', status: 'warn', endCap: 'chevron' },
+      { text: 'deployment/api', status: 'muted', endCap: 'chevron' },
+      { text: 'v2.3.1', status: 'accent' },
     ],
   },
 };

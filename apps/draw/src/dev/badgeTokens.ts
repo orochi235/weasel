@@ -40,7 +40,7 @@ export const GESTURE_BADGE_PROPS: Omit<BadgeProps, 'children'> = {
   shape: 'ribbon',
   shapeParams: { left: 'inward', right: 'outward' },
   size: 'sm',
-  tone: 'info',
+  status: 'info',
   variant: 'outline',
 };
 
@@ -66,18 +66,18 @@ export const PHASE_BADGE_PROPS: Omit<BadgeProps, 'children'> = {
   shape: 'ribbon',
   shapeParams: { left: 'flat', right: 'outward' },
   size: 'sm',
-  tone: 'accent',
+  status: 'accent',
   variant: 'subtle',
 };
 
 /** Channel badge — leading chip when a phase atom names a tool/wildcard
  *  channel other than the implicit `&` ("this tool's own phase"). Muted
- *  tone so it reads as context for the phase chip that follows it. */
+ *  status so it reads as context for the phase chip that follows it. */
 export const CHANNEL_BADGE_PROPS: Omit<BadgeProps, 'children'> = {
   shape: 'ribbon',
   shapeParams: { left: 'flat', right: 'flat' },
   size: 'sm',
-  tone: 'neutral',
+  status: 'neutral',
   variant: 'subtle',
 };
 
@@ -97,8 +97,8 @@ const phaseTokenSet: BadgeTokenSet = {
 
 /** Per-truthiness props for boolean fields surfaced in the inspector. */
 export const BOOLEAN_BADGE_PROPS = {
-  true: { shape: 'pill', size: 'sm', tone: 'accent', variant: 'solid' },
-  false: { shape: 'pill', size: 'sm', tone: 'muted', variant: 'subtle' },
+  true: { shape: 'pill', size: 'sm', status: 'accent', variant: 'solid' },
+  false: { shape: 'pill', size: 'sm', status: 'muted', variant: 'subtle' },
 } as const satisfies Record<'true' | 'false', Omit<BadgeProps, 'children'>>;
 
 const booleanTokenSet: BadgeTokenSet = {
@@ -116,12 +116,12 @@ const booleanTokenSet: BadgeTokenSet = {
 
 // ── bundle id ──────────────────────────────────────────────────────────────
 
-/** Per-bundle badge — tones grade from muted (minimal) to accent (exhaustive)
+/** Per-bundle badge — statuses grade from muted (minimal) to accent (exhaustive)
  *  to convey the deliberate progression the bundles encode. */
 export const BUNDLE_BADGE_PROPS = {
-  minimal:    { shape: 'pill', size: 'sm', tone: 'muted',  variant: 'outline' },
-  standard:   { shape: 'pill', size: 'sm', tone: 'info',   variant: 'outline' },
-  exhaustive: { shape: 'pill', size: 'sm', tone: 'accent', variant: 'outline' },
+  minimal:    { shape: 'pill', size: 'sm', status: 'muted',  variant: 'outline' },
+  standard:   { shape: 'pill', size: 'sm', status: 'info',   variant: 'outline' },
+  exhaustive: { shape: 'pill', size: 'sm', status: 'accent', variant: 'outline' },
 } as const satisfies Record<string, Omit<BadgeProps, 'children'>>;
 
 const bundleTokenSet: BadgeTokenSet = {
@@ -129,7 +129,7 @@ const bundleTokenSet: BadgeTokenSet = {
   id: 'bundle',
   label: 'Bundle id',
   description:
-    'Named tool presets passable as `SceneCanvas.toolBundle`. Tone grades from '
+    'Named tool presets passable as `SceneCanvas.toolBundle`. Status grades from '
     + 'muted → info → accent to reflect the minimal → standard → exhaustive progression.',
   entries: (Object.entries(BUNDLE_BADGE_PROPS) as [keyof typeof BUNDLE_BADGE_PROPS, Omit<BadgeProps, 'children'>][])
     .map(([value, props]) => ({ value, props })),
@@ -143,7 +143,7 @@ const bundleTokenSet: BadgeTokenSet = {
 export const KIND_BADGE_PROPS: Omit<BadgeProps, 'children'> = {
   shape: 'plaque',
   size: 'sm',
-  tone: 'muted',
+  status: 'muted',
   variant: 'outline',
 };
 

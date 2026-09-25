@@ -7,12 +7,14 @@ import s from './Badge.module.css';
 import { SHAPES, type BadgeShapeParams } from './shapes';
 import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
 import { EFFECTS, type EffectSpec, type BadgeEffect } from './effects';
-import type { BadgeShape, BadgeTone, BadgeVariant, BadgeSize } from './types';
+import type { BadgeShape, BadgeStatus, BadgeVariant, BadgeSize } from './types';
 import { useSvgBox } from './useSvgBox';
 import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
+import { type StanceProps, useStance } from '../stance';
 
-interface BadgeBaseProps {
-  tone?: BadgeTone;
+interface BadgeBaseProps extends StanceProps {
+  /** The status the badge reports. A peer `tone`, or a stance's accent, paints over it. */
+  status?: BadgeStatus;
   variant?: BadgeVariant;
   size?: BadgeSize;
   /** "Edge bloat": offset every base perimeter sample outward by N CSS px along the normal
@@ -42,7 +44,7 @@ interface BadgeBaseProps {
   children: ReactNode;
   className?: string;
   /** Optional style overrides merged with the badge's own style. Useful for setting CSS
-   *  custom properties (e.g. `--badge-edge` to inject a custom tone color). */
+   *  custom properties (e.g. `--badge-edge` to inject a `custom` status color). */
   style?: CSSProperties;
   'aria-label'?: string;
   /**
@@ -93,7 +95,9 @@ function chooseElement(props: BadgeProps): 'span' | 'button' | 'a' {
 export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLElement>) {
   const {
     shape = 'pill',
-    tone = 'neutral',
+    status = 'neutral',
+    stance,
+    tone,
     variant = 'outline',
     size = 'sm',
     onClick,
@@ -153,6 +157,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     return () => crawlLoop.cancel();
   }, [crawl, crawlLoop]);
   const cls = [s.badge, className].filter(Boolean).join(' ');
+  const stanced = useStance({ stance, tone });
 
   // Compose-mode: explicit `base` prop wins; otherwise the shape may declare its own
   // `compose()` spec to migrate legacy shapes through the new pipeline.
@@ -176,6 +181,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     : (typeof shapeModule.insets === 'function' ? shapeModule.insets(params) : shapeModule.insets);
   const insets = insetsSource;
   const style: CSSProperties = {
+    ...stanced.style,
     ['--badge-inset-top' as never]: `${insets.top}px`,
     ['--badge-inset-right' as never]: `${insets.right}px`,
     ['--badge-inset-bottom' as never]: `${insets.bottom}px`,
@@ -194,7 +200,9 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     className: cls,
     style,
     'data-shape': composeBase ? 'compose' : resolvedShape,
-    'data-tone': tone,
+    'data-status': status,
+    'data-stance': stanced['data-stance'],
+    'data-tone': stanced['data-tone'],
     'data-variant': variant,
     'data-size': size,
     'data-focused': focused ? 'true' : undefined,

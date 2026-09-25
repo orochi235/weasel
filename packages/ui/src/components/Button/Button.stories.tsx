@@ -12,7 +12,7 @@ const meta: Meta<typeof Button> = {
     size: 'md',
   },
   argTypes: {
-    tone: { control: 'inline-radio', options: ['accent', 'neutral', 'muted', 'success', 'warn', 'danger'] },
+    status: { control: 'inline-radio', options: ['accent', 'neutral', 'muted', 'success', 'warn', 'danger'] },
     variant: { control: 'inline-radio', options: ['primary', 'secondary', 'ghost', 'link'] },
     size: { control: 'inline-radio', options: ['sm', 'md'] },
     disabled: { control: 'boolean' },
@@ -59,17 +59,40 @@ export const Link: Story = {
   ),
 };
 
-/** `tone` recolors a `link` from the same set as `Code`: accent unless told
+/** `status` recolors a `link` from the same set as `Code`: accent unless told
  *  otherwise. */
-export const LinkTones: Story = {
+export const LinkStatuses: Story = {
   render: () => (
     <p style={{ maxWidth: 360, lineHeight: 1.8 }}>
-      {(['accent', 'neutral', 'muted', 'success', 'warn', 'danger'] as const).map((tone) => (
-        <span key={tone}>
-          <Button variant="link" tone={tone}>{tone}</Button>{' '}
+      {(['accent', 'neutral', 'muted', 'success', 'warn', 'danger'] as const).map((status) => (
+        <span key={status}>
+          <Button variant="link" status={status}>{status}</Button>{' '}
         </span>
       ))}
     </p>
+  ),
+};
+
+/** `tone` says which of its peers a button is: a primary takes it as its
+ *  accent, a link as its text color. */
+export const PeerTones: Story = {
+  render: () => (
+    <div>
+      <p>
+        {[0, 1, 2, 3].map((tone) => (
+          <span key={tone}>
+            <Button variant="primary" tone={tone}>{`Peer ${tone}`}</Button>{' '}
+          </span>
+        ))}
+      </p>
+      <p>
+        {[0, 1, 2, 3].map((tone) => (
+          <span key={tone}>
+            <Button variant="link" tone={tone}>{`peer ${tone}`}</Button>{' '}
+          </span>
+        ))}
+      </p>
+    </div>
   ),
 };
 
@@ -175,7 +198,7 @@ interface LabParams {
   fontsize: number;
   fontweight: 200 | 300 | 400;
   label: string;
-  // Tone (overrides --wzl-accent)
+  // Accent (overrides --wzl-accent)
   accent: string;
   // Body gradient
   topAlpha: number;
@@ -568,9 +591,9 @@ function ButtonLabView(): ReactElement {
         <Slider label="font size" value={p.fontsize} min={10} max={24} step={0.5} onChange={(v) => set('fontsize', v)} format={(v) => `${v}px`} />
       </section>
 
-      {/* Tone — col 3, row 2 */}
+      {/* Accent — col 3, row 2 */}
       <section style={{ ...sectionStyle, gridColumn: 3, gridRow: 2 }}>
-        <h3 style={subheadStyle}>Tone</h3>
+        <h3 style={subheadStyle}>Accent</h3>
           <label style={{ display: 'grid', gridTemplateColumns: '100px 1fr 36px', alignItems: 'center', gap: 8 }}>
             <span style={ctrlLabelStyle}>accent</span>
             <input

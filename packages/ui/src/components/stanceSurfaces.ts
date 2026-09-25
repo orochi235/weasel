@@ -143,4 +143,25 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       'title-color': 'var(--wzl-fg-muted)',
     },
   },
+  {
+    // Colored marks rather than boxes: a stance or tone reaches only the color
+    // the status would otherwise paint.
+    id: 'badge',
+    file: 'packages/ui/src/components/Badge/Badge.module.css',
+    selector: '.badge',
+    base: { accent: ACCENT_BASE },
+  },
+  {
+    id: 'code',
+    file: 'packages/ui/src/components/Code/Code.module.css',
+    selector: '.code',
+    base: { accent: ACCENT_BASE },
+  },
+  {
+    // A toned primary button takes the tone as its accent; a link, as its text color.
+    id: 'button',
+    file: 'packages/ui/src/components/Button/Button.module.css',
+    selector: '.button',
+    base: { accent: ACCENT_BASE },
+  },
 ];

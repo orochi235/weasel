@@ -179,27 +179,8 @@
   margin-inline-start: auto;
 }
 
-/* Each swatch mixed toward the foreground, so the badge text keeps its
-   contrast in both modes. Two classes, to outrank the badge's own edge. */
-.fg-tree__tag.fg-tree__tag {
-  --badge-edge: var(--wzl-fg-muted);
+.fg-tree__tag {
   --badge-font-size: var(--wzl-font-size-2xs);
-}
-
-.fg-tree__tag.fg-lib--ui {
-  --badge-edge: color-mix(in oklab, var(--wzl-swatch-blue), var(--wzl-fg) 35%);
-}
-
-.fg-tree__tag.fg-lib--labkit {
-  --badge-edge: color-mix(in oklab, var(--wzl-swatch-teal), var(--wzl-fg) 45%);
-}
-
-.fg-tree__tag.fg-lib--forge {
-  --badge-edge: color-mix(in oklab, var(--wzl-swatch-amber), var(--wzl-fg) 40%);
-}
-
-.fg-tree__tag.fg-lib--draw {
-  --badge-edge: color-mix(in oklab, var(--wzl-swatch-rose), var(--wzl-fg) 35%);
 }
 
 .fg-tree__libraries {
