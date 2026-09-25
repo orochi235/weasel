@@ -1,8 +1,8 @@
-import { enumerateSelections, fullSelection, pick, pickAll, type AxisDefs, type Selection } from '../../axes';
-import { resolveTokens } from '../../dtcg/resolve';
-import type { RawToken } from '../../dtcg/types';
-import type { BakedTheme } from '../bake';
-import type { AxisDependency } from '../deps';
+import { enumerateSelections, fullSelection, pick, pickAll, type AxisDefs, type Selection } from '../../axes.ts';
+import { resolveTokens } from '../../dtcg/resolve.ts';
+import type { RawToken } from '../../dtcg/types.ts';
+import type { BakedTheme } from '../bake.ts';
+import type { AxisDependency } from '../deps.ts';
 
 export interface EmitInput {
   readonly baked: BakedTheme;

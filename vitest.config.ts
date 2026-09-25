@@ -2,14 +2,14 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
 import { playwright } from '@vitest/browser-playwright';
-import { weaselAliases } from './scripts/vite-aliases';
-import { traitSchemasPlugin } from './apps/draw/vite-plugin-trait-schemas';
-import { forgeAliases, frameConfig as forgeFrameConfig, stories as forgeStories } from './apps/forge/viteShared';
-import { forgeTest } from './packages/forge/src/vite/forgeTest';
-import { weaselDefines } from './scripts/vite-build-info';
-import { demoTimestamps } from './scripts/vite-demo-timestamps';
-import { demoSources } from './scripts/vite-demo-sources';
-import { changelogs } from './scripts/vite-changelogs';
+import { weaselAliases } from './scripts/vite-aliases.ts';
+import { traitSchemasPlugin } from './apps/draw/vite-plugin-trait-schemas.ts';
+import { forgeAliases, frameConfig as forgeFrameConfig, stories as forgeStories } from './apps/forge/viteShared.ts';
+import { forgeTest } from './packages/forge/src/vite/forgeTest.ts';
+import { weaselDefines } from './scripts/vite-build-info.ts';
+import { demoTimestamps } from './scripts/vite-demo-timestamps.ts';
+import { demoSources } from './scripts/vite-demo-sources.ts';
+import { changelogs } from './scripts/vite-changelogs.ts';
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
@@ -21,10 +21,10 @@ import { changelogs } from './scripts/vite-changelogs';
 // `test` keys from the top-level config when `projects` is set.
 const shared = {
   resolve: {
-    alias: weaselAliases(__dirname, [
+    alias: weaselAliases(import.meta.dirname, [
       {
         find: '@weasel-js/theme/tokens.css',
-        replacement: resolve(__dirname, 'packages/theme/src/generated/tokens.css'),
+        replacement: resolve(import.meta.dirname, 'packages/theme/src/generated/tokens.css'),
       },
     ]),
   },
@@ -60,9 +60,9 @@ export default defineConfig({
         // 400-odd core files don't pay for reading every CHANGELOG.
         plugins: [
           react(),
-          demoTimestamps({ root: __dirname }),
-          demoSources({ root: __dirname }),
-          changelogs({ root: __dirname }),
+          demoTimestamps({ root: import.meta.dirname }),
+          demoSources({ root: import.meta.dirname }),
+          changelogs({ root: import.meta.dirname }),
         ],
         test: {
           name: 'site',
@@ -137,7 +137,7 @@ export default defineConfig({
         // doesn't inherit that config, so the plugin has to be added
         // here too or any test that imports a Bundle Inspector module
         // fails to resolve the virtual id at load time.
-        plugins: [react(), traitSchemasPlugin({ repoRoot: __dirname })],
+        plugins: [react(), traitSchemasPlugin({ repoRoot: import.meta.dirname })],
         test: {
           name: 'draw',
           environment: 'jsdom',
@@ -161,11 +161,11 @@ export default defineConfig({
       {
         plugins: [
           react(),
-          traitSchemasPlugin({ repoRoot: __dirname }),
+          traitSchemasPlugin({ repoRoot: import.meta.dirname }),
           forgeTest({ stories: forgeStories, frameConfig: forgeFrameConfig }),
         ],
-        resolve: { alias: forgeAliases(__dirname) },
-        define: weaselDefines(__dirname),
+        resolve: { alias: forgeAliases(import.meta.dirname) },
+        define: weaselDefines(import.meta.dirname),
         test: {
           name: 'forge-stories',
           include: forgeStories,

@@ -1,4 +1,4 @@
-import type { TokenValue } from './types';
+import type { TokenValue } from './types.ts';
 
 /**
  * Quote family names containing whitespace; leave everything else bare.

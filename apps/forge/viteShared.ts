@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { type ViteAlias, weaselAliases } from '../../scripts/vite-aliases';
+import { type ViteAlias, weaselAliases } from '../../scripts/vite-aliases.ts';
 
 /** Story globs, relative to the repo root. Shared by the workshop and the `forge-stories` vitest project. */
 export const stories = [

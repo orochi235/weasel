@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { html } from './html';
+import { html } from './html.ts';
 
 const DIR = 'node_modules/.forge';
 type Source = string | Uint8Array;

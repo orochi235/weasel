@@ -20,8 +20,8 @@ import {
   type TypeAliasDeclaration,
 } from 'ts-morph';
 import { resolve } from 'node:path';
-import type { OpFactorySchema, PropertyDescriptor } from '../src/dev/traitSchemas.types';
-import { srcRef, readJsDoc, sourceFileOrThrow } from './extract';
+import type { OpFactorySchema, PropertyDescriptor } from '../src/dev/traitSchemas.types.ts';
+import { srcRef, readJsDoc, sourceFileOrThrow } from './extract.ts';
 
 const SOURCES: readonly string[] = [
   'packages/core/src/core/ops/create.ts',

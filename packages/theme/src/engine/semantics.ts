@@ -1,8 +1,8 @@
-import { pick, type Selection, type Varying } from '../axes';
-import type { PinObject, SemanticRule } from '../definition';
-import type { RawToken, TokenValue } from '../dtcg/types';
-import { contrast, toLch } from './color/oklch';
-import type { Issue } from './types';
+import { pick, type Selection, type Varying } from '../axes.ts';
+import type { PinObject, SemanticRule } from '../definition.ts';
+import type { RawToken, TokenValue } from '../dtcg/types.ts';
+import { contrast, toLch } from './color/oklch.ts';
+import type { Issue } from './types.ts';
 
 const TOKEN_REF = /^\{([^}.]+)\}$/;
 const HEX = /^#[0-9a-f]{6}$/i;

@@ -1,4 +1,4 @@
-import type { FlatTokens, RawToken } from '../dtcg/types';
+import type { FlatTokens, RawToken } from '../dtcg/types.ts';
 
 export type Layer = 'ramps' | 'scales' | 'semantics' | 'components' | 'pins';
 

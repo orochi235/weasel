@@ -1,12 +1,12 @@
-import { enumerateSelections } from '../../axes';
-import type { ThemeDefinition } from '../../definition';
-import { bake } from '../bake';
-import { axisDependencies } from '../deps';
-import { derive } from '../derive';
-import { mergeChain } from '../merge';
-import { emitCss } from './css';
-import { emitManifest } from './manifest';
-import { emitThemes } from './themes';
+import { enumerateSelections } from '../../axes.ts';
+import type { ThemeDefinition } from '../../definition.ts';
+import { bake } from '../bake.ts';
+import { axisDependencies } from '../deps.ts';
+import { derive } from '../derive.ts';
+import { mergeChain } from '../merge.ts';
+import { emitCss } from './css.ts';
+import { emitManifest } from './manifest.ts';
+import { emitThemes } from './themes.ts';
 
 export type GeneratedTokens =
   | { readonly ok: true; readonly files: { readonly 'tokens.css': string; readonly 'themes.ts': string; readonly 'manifest.ts': string } }

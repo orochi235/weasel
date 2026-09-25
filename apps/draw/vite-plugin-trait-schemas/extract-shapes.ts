@@ -23,8 +23,8 @@ import {
   type VariableDeclaration,
 } from 'ts-morph';
 import { resolve } from 'node:path';
-import type { PropertyDescriptor, ShapeSchema } from '../src/dev/traitSchemas.types';
-import { srcRef, sourceFileOrThrow, readJsDoc } from './extract';
+import type { PropertyDescriptor, ShapeSchema } from '../src/dev/traitSchemas.types.ts';
+import { srcRef, sourceFileOrThrow, readJsDoc } from './extract.ts';
 
 const SOURCE = 'packages/core/src/canvas/SceneCanvas/useBuiltinShapeTools.tsx';
 

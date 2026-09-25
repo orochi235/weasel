@@ -1,6 +1,6 @@
-import { type AxisDefs, isByAxis, mergeAxes } from '../axes';
-import type { ThemeDefinition } from '../definition';
-import { alwaysDeclaredSteps } from './steps';
+import { type AxisDefs, isByAxis, mergeAxes } from '../axes.ts';
+import type { ThemeDefinition } from '../definition.ts';
+import { alwaysDeclaredSteps } from './steps.ts';
 
 export type Lookup = (name: string) => ThemeDefinition | undefined;
 

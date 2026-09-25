@@ -1,6 +1,6 @@
-import type { Selection } from './axes';
-import type { ThemeDefinition } from './definition';
-import type { Issue } from './engine/types';
+import type { Selection } from './axes.ts';
+import type { ThemeDefinition } from './definition.ts';
+import type { Issue } from './engine/types.ts';
 
 /** A theme definition file as a theme store serves it: the dev-server endpoint at `__theme/<name>`. */
 export interface StoredTheme {

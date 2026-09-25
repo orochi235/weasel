@@ -2,12 +2,12 @@ import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, matchesGlob, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Logger, Plugin, ViteDevServer } from 'vite';
-import type { IndexEntry } from '../story/types';
-import { hoistPages, writePages } from './build';
-import { autoTitle } from './autoTitle';
-import { html } from './html';
-import { indexFile } from './indexFile';
-import { storybookShims } from './storybookShims';
+import type { IndexEntry } from '../story/types.ts';
+import { hoistPages, writePages } from './build.ts';
+import { autoTitle } from './autoTitle.ts';
+import { html } from './html.ts';
+import { indexFile } from './indexFile.ts';
+import { storybookShims } from './storybookShims.ts';
 
 export interface ForgeOptions {
   /** Globs of story files, relative to the vite root. */

@@ -1,4 +1,4 @@
-import type { SchemaDescription } from './schema';
+import type { SchemaDescription } from './schema.ts';
 
 export const PROTOCOL_VERSION = 1;
 

@@ -1,4 +1,4 @@
-import type { AxisDefs, Selection } from '../axes';
+import type { AxisDefs, Selection } from '../axes.ts';
 
 /** The `$extensions` key on a DTCG export's root that carries every axis besides mode. */
 export const AXES_EXT = 'com.weasel.axes';

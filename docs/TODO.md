@@ -1122,16 +1122,6 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
-- **(P3) The vite and vitest configs don't load under vite's native config
-  loader.** vite 8.3 warns on every run that `configLoader: 'native'` is
-  planned as a future default and these configs use what it can't: `__dirname`
-  in `vitest.config.ts`, and about thirty extensionless relative imports in
-  files the configs pull in (`vitest.config.ts`,
-  `apps/draw/vite-plugin-trait-schemas/*`, `packages/forge/src/vite/*`,
-  `scripts/vite-changelogs.ts`, `apps/forge/viteShared.ts`). Fixing it means
-  `.ts` extensions on those imports, which nothing in the repo uses yet, so it
-  needs `allowImportingTsExtensions` and a decision about the convention.
-
 - **(P2) The release workflow checks the registry before the publish lands.**
   1.6.0's "Verify every version reached the registry" step ran 20:35–20:37 UTC
   and failed on `bidi`, `hud`, `labkit` and `svg`, whose npm `time` entries

@@ -17,12 +17,12 @@ import type {
   SceneNodeSchema,
   PropertyDescriptor,
   SourceRef,
-} from '../src/dev/traitSchemas.types';
-import { extractShapes } from './extract-shapes';
-import { extractOps } from './extract-ops';
-import { extractActions } from './extract-actions';
-import { extractGestures } from './extract-gestures';
-import { extractNode } from './extract-node';
+} from '../src/dev/traitSchemas.types.ts';
+import { extractShapes } from './extract-shapes.ts';
+import { extractOps } from './extract-ops.ts';
+import { extractActions } from './extract-actions.ts';
+import { extractGestures } from './extract-gestures.ts';
+import { extractNode } from './extract-node.ts';
 
 /** Source files (absolute paths) that the extractor reads. Returned so the
  *  Vite plugin can wire them into the dev-server file watcher. */

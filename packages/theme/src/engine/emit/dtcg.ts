@@ -1,8 +1,8 @@
-import { enumerateSelections, fullSelection, isByAxis, pick } from '../../axes';
-import { AXES_EXT, overrideKey, type DtcgAxesExtension } from '../../dtcg/axesExtension';
-import { ALPHA_EXT, type RawToken, type TokenValue } from '../../dtcg/types';
-import { themeAxes } from '../../resolveTheme';
-import type { Theme } from '../../theme';
+import { enumerateSelections, fullSelection, isByAxis, pick } from '../../axes.ts';
+import { AXES_EXT, overrideKey, type DtcgAxesExtension } from '../../dtcg/axesExtension.ts';
+import { ALPHA_EXT, type RawToken, type TokenValue } from '../../dtcg/types.ts';
+import { themeAxes } from '../../resolveTheme.ts';
+import type { Theme } from '../../theme.ts';
 
 type Group = Record<string, unknown> & { $type: string };
 

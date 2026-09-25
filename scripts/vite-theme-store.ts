@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
-import type { ThemeDefinition } from '../packages/theme/src/definition';
-import { createThemeStore, type ThemeStore, type ThemeStoreOptions } from './theme-store';
+import type { ThemeDefinition } from '../packages/theme/src/definition.ts';
+import { createThemeStore, type ThemeStore, type ThemeStoreOptions } from './theme-store.ts';
 
 const ROUTE = /\/__theme\/(list|[a-z][a-z0-9-]*)$/;
 

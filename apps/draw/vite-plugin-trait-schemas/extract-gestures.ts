@@ -8,8 +8,8 @@
  */
 import { type Project } from 'ts-morph';
 import { resolve } from 'node:path';
-import type { GestureSchema, PropertyDescriptor, SourceRef } from '../src/dev/traitSchemas.types';
-import { srcRef, sourceFileOrThrow, propertiesOfTypeNode } from './extract';
+import type { GestureSchema, PropertyDescriptor, SourceRef } from '../src/dev/traitSchemas.types.ts';
+import { srcRef, sourceFileOrThrow, propertiesOfTypeNode } from './extract.ts';
 
 const GESTURE_IDS: readonly string[] = [
   'click', 'pointerDown', 'dblTap', 'drag', 'wheel', 'pinch',

@@ -1,6 +1,6 @@
-import type { AxisDefs, Varying } from './axes';
-import type { SerializableColorList } from './colorList';
-import type { TokenValue } from './dtcg/types';
+import type { AxisDefs, Varying } from './axes.ts';
+import type { SerializableColorList } from './colorList.ts';
+import type { TokenValue } from './dtcg/types.ts';
 
 /** A number, or `{seeds.name}`. */
 export type NumberParam = Varying<number | string>;

@@ -1,13 +1,13 @@
-import { fullSelection, isByAxis, pick, type Selection, type Varying } from '../axes';
-import type { PinObject, PinValue, ThemeDefinition } from '../definition';
-import type { RawToken, TokenValue } from '../dtcg/types';
-import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from './color/generate';
-import { mergeChain, type Lookup } from './merge';
-import { categoricalRamp, lightnessRamp } from './ramps';
-import { scale } from './scales';
-import { checkSemantics, deriveSemantics } from './semantics';
-import { declaredSteps } from './steps';
-import type { DeriveResult, Issue, Layer, Provenance } from './types';
+import { fullSelection, isByAxis, pick, type Selection, type Varying } from '../axes.ts';
+import type { PinObject, PinValue, ThemeDefinition } from '../definition.ts';
+import type { RawToken, TokenValue } from '../dtcg/types.ts';
+import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from './color/generate.ts';
+import { mergeChain, type Lookup } from './merge.ts';
+import { categoricalRamp, lightnessRamp } from './ramps.ts';
+import { scale } from './scales.ts';
+import { checkSemantics, deriveSemantics } from './semantics.ts';
+import { declaredSteps } from './steps.ts';
+import type { DeriveResult, Issue, Layer, Provenance } from './types.ts';
 
 const SEED_REF = /^\{seeds\.([\w-]+)\}$/;
 const REF = /^\{([^}]+)\}$/;

@@ -1,5 +1,5 @@
-import { DEFAULT_CONSTRAINTS, generate, type Anchor, type Constraints } from './color/generate';
-import { toHex, toLch } from './color/oklch';
+import { DEFAULT_CONSTRAINTS, generate, type Anchor, type Constraints } from './color/generate.ts';
+import { toHex, toLch } from './color/oklch.ts';
 
 export interface LightnessParams {
   readonly steps: readonly string[];
