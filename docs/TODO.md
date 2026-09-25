@@ -732,21 +732,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   schema, need either a `kind` prop on one row component or the typed rows kept
   as thin entries into the renderer.
 
-- **(P2) Whether an anchor should set a ramp's chroma peak directly.** Today an
-  anchor sets `peak = anchor C · max / e`, with `e` the envelope at the anchor's
-  position, so an anchor on an end step whose bias is near 0 leaves `e` tiny and
-  sends the peak to gamut-clipped color. `peak = anchor C` removes the jump and
-  changes any anchor placed away from the envelope's peak. weasel's only anchor is
-  mid-ramp, so neither choice moves what ships. A 0.1 floor on `e` was tried and
-  taken back out: it turned a gray ramp anchored on its darkest step blue.
-  `lightnessRamp` (`packages/theme/src/engine/ramps.ts`) already falls back to
-  `peak = anchor C` when `e ≤ 1e-6`, so today the behavior is discontinuous: a
-  ten-step ramp anchored on `#1f2328` at its last step has a mid-ramp chroma of
-  0.011 at `darkBias` 0 and 0.176 at 0.001 — gray to saturated blue for a
-  slider nudge. Either answer should also say what a second anchor does: only
-  the first anchored step, in step order, sets the hue and peak, so anchoring
-  `#ff0000` and `#0000ff` on one ramp pins the blue step inside a red ramp.
-
 - **(P3) The lab switcher's migrated tokens have not been looked at in a browser.**
   `packages/labkit/src/lab/LabSwitcher.less` read seven `--wzl-*` names no theme
   declares, so its menu items inherited the title's 20px and its hover changed
