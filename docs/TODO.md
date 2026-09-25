@@ -748,6 +748,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Move it to a `tone`, and give any new multi-color surface — chart series,
   diagram categories, HUD layers — a `ColorList` from the start.
 
+- **(P2) One kind-indexed row renderer for every settings surface.** Three
+  switches each map a field's `kind` (and `control`) to a control: labkit's
+  `ControlRow` (`controls/ControlPanel.tsx`), `PrefsForm`'s `renderBuiltin`,
+  and `SelectionPanel`'s `renderLeaf.tsx`. Only the first goes through the
+  typed rows in `PropertyPanel.tsx`; the other two call the bare controls, and
+  `PrefsForm` has its own row frame beside `PropertyRow`. `CheckboxRow`,
+  `SwitchRow`, `TextRow` and `SelectRow` add nothing over `PropertyRow` plus
+  their control. Build one renderer in `@weasel-js/ui` keyed by kind, with the
+  behavior `SliderRow`, `NumberRow` and `ColorRow` carry (editable readout, live
+  and commit callbacks, alpha) and `SelectionPanel`'s mixed and unset values,
+  and put all three on it. theme-editor's direct `*Row` calls, which have no
+  schema, need either a `kind` prop on one row component or the typed rows kept
+  as thin entries into the renderer.
+
 - **(P2) Take `ColorRamp` past OKLCH.** The forge entry `weasel-ui/Color/ColorRamp`
   (`packages/ui/src/color/`) ramps lightness, hue and a `ChromaCurve` in OKLCH
   only, through `oklchToHex`. Ramp in the other spaces too — OKLab, HSL, sRGB and
