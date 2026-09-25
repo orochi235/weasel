@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
 import { weaselAliases } from '../../scripts/vite-aliases';
 import { weaselDefines } from '../../scripts/vite-build-info';
+import { localWake } from '../../scripts/vite-wake';
 import { callbackSourcePlugin } from './vite-plugin-callback-source';
 import { traitSchemasPlugin } from './vite-plugin-trait-schemas';
 
@@ -46,6 +47,7 @@ export default defineConfig({
         })]
       : []),
     traitSchemasPlugin({ repoRoot }),
+    localWake(),
   ],
   server: { port: 5174 },
   define: {

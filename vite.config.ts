@@ -7,6 +7,7 @@ import { weaselDefines } from './scripts/vite-build-info';
 import { demoTimestamps } from './scripts/vite-demo-timestamps';
 import { demoSources } from './scripts/vite-demo-sources';
 import { changelogs } from './scripts/vite-changelogs';
+import { localWake } from './scripts/vite-wake';
 
 /**
  * Dev-only middleware: serve `dist-demo/api/*` at `/api/*`. The deployed
@@ -84,6 +85,7 @@ export default defineConfig({
     demoTimestamps({ root: __dirname }),
     demoSources({ root: __dirname }),
     changelogs({ root: __dirname }),
+    localWake(),
   ],
   define: weaselDefines(__dirname),
   // Pre-bundle demo-only deps at server start so they don't trigger lazy

@@ -23,6 +23,11 @@ export default defineConfig({
     command: 'npx vite --config apps/draw/vite.config.ts --port 5176',
     cwd: repoRoot,
     url: 'http://localhost:5176/weasel/draw/',
+    // apps/draw/vite.config.ts loads vite-plugin-wake, which otherwise stops
+    // any other running copy of this app to take its remembered port.
+    // WAKE_EXTRA runs an extra copy on exactly this port instead, leaving a
+    // developer's dev server alone.
+    env: { WAKE_EXTRA: '5176' },
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },
