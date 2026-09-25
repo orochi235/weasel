@@ -748,6 +748,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Move it to a `tone`, and give any new multi-color surface — chart series,
   diagram categories, HUD layers — a `ColorList` from the start.
 
+- **(P2) Take `ColorRamp` past OKLCH.** The forge entry `weasel-ui/Color/ColorRamp`
+  (`packages/ui/src/color/`) ramps lightness, hue and a `ChromaCurve` in OKLCH
+  only, through `oklchToHex`. Ramp in the other spaces too — OKLab, HSL, sRGB and
+  linear RGB at least — so a ramp's interpolation space is a choice, and the
+  story shows the same endpoints ramped in each.
+
 - **(P1) Give the HUD's window a stance and a tone.** Every DOM surface that
   holds a class of content takes `stance` and `tone` (`docs/conventions.md`,
   "Stance and tone"). The hud `window` widget paints its frame in WebGL from the
