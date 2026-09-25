@@ -4,7 +4,7 @@ import ports from '../../../scripts/dev-ports.json' with { type: 'json' };
 
 const [origin = `http://[::1]:${ports.forge}`, shots = '.'] = process.argv.slice(2);
 
-/** Each check runs once the frame has rendered, and throws on what it finds wrong. */
+/** Each check runs once the story's host has rendered, with `frame` the host's locator, and throws on what it finds wrong. */
 const stories = [
   {
     id: 'ui-foundations-button--primary',
@@ -16,14 +16,14 @@ const stories = [
   },
   {
     id: 'draw-actionbar--emptydocument',
-    what: 'apps/draw story, inside #root and on screen',
+    what: 'apps/draw story, inside its host and on screen',
     check: async ({ frame }) => {
-      const box = await frame.locator('body').evaluate(() => {
-        const story = document.querySelector('#root > .fg-frame')?.firstElementChild;
+      const box = await frame.evaluate((host) => {
+        const story = host.firstElementChild;
         const rect = story?.getBoundingClientRect();
         return rect ? { top: rect.top, height: rect.height, viewport: innerHeight } : null;
       });
-      if (!box) throw new Error('no story under #root > .fg-frame');
+      if (!box) throw new Error('no story inside the host');
       if (!(box.height > 0 && box.top >= 0 && box.top < box.viewport)) {
         throw new Error(`story is off screen: top ${box.top}, height ${box.height}, viewport ${box.viewport}`);
       }
@@ -32,10 +32,10 @@ const stories = [
   {
     id: 'labkit-lab-fit--fullscreenwide',
     what: 'labkit/Lab/Fit export',
-    // The story mounts its Lab in a host of its own under <body>, outside the frame's wrapper.
+    // The story mounts its Lab in an element of its own under <body>, outside the story's host.
     rendered: '.lk-lab',
-    check: async ({ frame }) => {
-      await frame.locator('.lk-lab').first().waitFor();
+    check: async ({ page }) => {
+      await page.locator('.lk-lab').first().waitFor();
     },
   },
   {
@@ -51,9 +51,11 @@ const stories = [
     id: 'labkit-primitives-jobprogress--determinate',
     what: 'labkit story inside the .lk-root decorator',
     check: async ({ frame }) => {
-      const rooted = await frame
-        .locator('.fg-frame')
-        .evaluate((wrapper) => wrapper.firstElementChild?.matches('.lk-root') && wrapper.firstElementChild.children.length > 0);
+      // LabRoot wraps itself in its own theme element inside a story host, so `.lk-root` sits one level down.
+      const rooted = await frame.evaluate((host) => {
+        const root = host.querySelector(':scope > .lk-root, :scope > [data-wzl-theme] > .lk-root');
+        return !!root && root.children.length > 0;
+      });
       if (!rooted) throw new Error("the story's root has no .lk-root ancestor");
     },
   },
@@ -70,8 +72,10 @@ const stories = [
       const filter = page.getByLabel('Filter', { exact: true }).first();
       if (!(await filter.isVisible())) await page.getByText('CSS Vars', { exact: true }).first().click();
       await filter.fill('--wzl-accent');
-      const row = page.getByRole('group', { name: '--wzl-accent', exact: true }).first();
-      await row.getByRole('textbox').first().fill(OVERRIDE);
+      // A color scale shows as a strip of swatches; picking one unfolds its own row under the strip.
+      const family = page.getByRole('group', { name: 'accent', exact: true }).first();
+      await family.getByRole('button', { name: '--wzl-accent', exact: true }).click();
+      await family.getByRole('textbox', { name: '--wzl-accent value', exact: true }).fill(OVERRIDE);
 
       await fill.evaluate(
         (el, want) =>
@@ -99,8 +103,7 @@ const stories = [
       /** Resolves once the trial's `.lk-root` is in `mode` and computes that mode's surface, not the other's. */
       const surfaceIs = (name, mode) =>
         trial(name)
-          .frameLocator('iframe.fg-frame-view')
-          .locator('.lk-root')
+          .locator('.fg-story[data-fg-host] .lk-root')
           .first()
           .evaluate(
             (el, want) =>
@@ -108,7 +111,10 @@ const stories = [
                 const surfaceOf = (node) => getComputedStyle(node).getPropertyValue('--wzl-surface').trim();
                 const probe = (probeMode) => {
                   const node = document.createElement('div');
-                  node.setAttribute('data-wzl-theme', el.getAttribute('data-wzl-theme') ?? '');
+                  // Every axis the themed wrapper carries: applyTheme's rule names all of them, mode included.
+                  for (const { name, value } of (el.closest('[data-wzl-theme]') ?? el).attributes) {
+                    if (name.startsWith('data-wzl-')) node.setAttribute(name, value);
+                  }
                   node.setAttribute('data-wzl-mode', probeMode);
                   document.body.append(node);
                   const value = surfaceOf(node);
@@ -118,7 +124,8 @@ const stories = [
                 const other = want === 'light' ? 'dark' : 'light';
                 const deadline = performance.now() + 5000;
                 const poll = () => {
-                  const got = { mode: el.getAttribute('data-wzl-mode'), surface: surfaceOf(el) };
+                  // LabRoot's theme lands on the wrapper it renders around `.lk-root`, not on `.lk-root` itself.
+                  const got = { mode: (el.closest('[data-wzl-mode]') ?? el).getAttribute('data-wzl-mode'), surface: surfaceOf(el) };
                   if (got.mode === want && got.surface !== '' && got.surface === probe(want) && got.surface !== probe(other)) resolve(got);
                   else if (performance.now() > deadline) reject(new Error(`.lk-root is ${got.mode} with surface ${got.surface}, not ${want}`));
                   else setTimeout(poll, 50);
@@ -129,17 +136,19 @@ const stories = [
           );
 
       await surfaceIs('Determinate', 'dark');
-      await page.getByRole('toolbar', { name: 'Globals' }).getByRole('button', { name: /Mode/ }).click();
+      // The select's accessible name carries its value before the label ("Auto (OS) Mode"), and the label beside
+      // a trial's pin is a button too, named "Pin Mode".
+      const modeSelect = { name: /^(?!Pin\b).*\bMode$/ };
+      await page.getByRole('toolbar', { name: 'Globals' }).getByRole('button', modeSelect).click();
       await page.getByRole('option', { name: 'Light', exact: true }).click();
       await surfaceIs('Determinate', 'light');
 
-      await page.evaluate(() => {
-        location.hash = '#/labkit-primitives-jobprogress--indeterminate';
-      });
-      await trial('Indeterminate').frameLocator('iframe.fg-frame-view').locator('.lk-root').first().waitFor({ timeout: 20000 });
+      // A hash would swap the focused trial; Shift-click in the tree is what opens a second one.
+      await page.getByRole('treeitem', { name: 'Indeterminate', exact: true }).click({ modifiers: ['Shift'] });
+      await trial('Indeterminate').locator('.fg-story[data-fg-host] .lk-root').first().waitFor({ timeout: 20000 });
       await surfaceIs('Indeterminate', 'light');
 
-      await trial('Determinate').getByRole('button', { name: /Mode/ }).click();
+      await trial('Determinate').getByRole('button', modeSelect).click();
       await page.getByRole('option', { name: 'Dark', exact: true }).click();
       await surfaceIs('Determinate', 'dark');
       await surfaceIs('Indeterminate', 'light');
@@ -160,8 +169,12 @@ try {
     page.on('pageerror', (e) => errors.push(e.message));
     try {
       await page.goto(`${origin}/#/${story.id}`);
-      const frame = page.locator('iframe.fg-frame-view').first().contentFrame();
-      await frame.locator(story.rendered ?? '.fg-frame > *').first().waitFor({ timeout: 20000 });
+      // The story just opened is the last host on the page; a host stays `data-pending` until its story has painted.
+      const frame = page.locator('.fg-story[data-fg-host]').last();
+      const rendered = story.rendered
+        ? page.locator(story.rendered).first()
+        : page.locator('.fg-story[data-fg-host]:not([data-pending])').last();
+      await rendered.waitFor({ timeout: 20000 });
       await story.check({ page, frame });
       const faults = [
         ...(await page.locator('.fg-fault').allInnerTexts()),

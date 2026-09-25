@@ -1,3 +1,23 @@
+# Retained from forge stories in the workshop document — merged into `main`
+
+Stories render in the workshop document; `isolate` keeps one in an iframe.
+`packages/forge/README.md` describes the result.
+
+## Decisions made in conversation that the code does not explain
+
+**A URL goes into the focused trial.** Typed, linked or pasted, a story's hash
+swaps into the focused trial the way a tree click does; only a lab with no
+trial gets a new one, and Shift-click is what opens another. The earlier
+"a typed hash opens a trial of its own" is gone on purpose.
+
+**The wake dev plugin reloads a tab that hot-updated in place.** Its stamp
+moves on every JS update and its client treats a tab still on the old stamp
+as stale, so with wake loaded a story edit applies in place and the page
+reloads a few seconds later anyway. Noted in `~/src/wake/TODO.md`; run the
+forge dev server with `WAKE_PATH=/nonexistent` to see the in-place reload.
+
+---
+
 # Retained from the CSS Vars scale editor — merged into `main`
 
 **A sparse canvas absorbs a real regression at the default baseline

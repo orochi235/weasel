@@ -210,6 +210,7 @@ export function loadCsfModule(
         );
 
     const layout = parameters.layout as Layout | undefined;
+    const isolate = (parameters.forge as { isolate?: unknown } | undefined)?.isolate;
     const play = spec.play ?? meta.play;
 
     stories.push({
@@ -226,6 +227,7 @@ export function loadCsfModule(
       decorators: [...asArray(spec.decorators), ...asArray(meta.decorators)].map(adapt),
       layout: layout && LAYOUTS.includes(layout) ? layout : 'padded',
       viewport: resolveViewport(parameters, storyGlobals),
+      isolate: typeof isolate === 'string' ? isolate : null,
       play: play
         ? ({ canvasElement, config, globals }: PlayContext) =>
             play({ ...csfContext(config, globals), canvasElement, step: async (_label, fn) => fn() })

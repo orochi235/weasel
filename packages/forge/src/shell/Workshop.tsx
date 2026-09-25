@@ -1,6 +1,8 @@
 import { Lab, type LabContribution, type StorageAdapter, useLabContext } from '@weasel-js/labkit';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ShellConfig } from '../config';
+import type { FrameSetup } from '../frame/FrameController';
+import type { FrameImporters } from '../frame/mountFrame';
 import { type Globals, stableStringify } from '../protocol/messages';
 import { indexEntries } from '../story/indexPages';
 import type { IndexEntry } from '../story/types';
@@ -12,6 +14,7 @@ import { createFramePool, type FramePool, FramePoolContext } from './framePool';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
+import type { StoryChanges } from './storyChanges';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { StoryTree } from './tree/StoryTree';
 import { crossesInPlace, readRoute, readRouteEntry, useRoute } from './useRoute';
@@ -19,7 +22,14 @@ import { useStoryRegistry } from './useStoryRegistry';
 
 export interface WorkshopProps {
   index: readonly IndexEntry[];
+  /** The frame document, for the stories `isolate` keeps in one. */
   frameUrl: string;
+  /** Story modules by file. Given, stories render in the workshop document; absent, every story renders in a frame. */
+  importers?: FrameImporters;
+  /** The frame config, applied to each story rendered in the document. */
+  setup?: FrameSetup;
+  /** Story files edited while the workshop runs; each is loaded again for the stories that had it. */
+  changes?: StoryChanges;
   config?: ShellConfig;
   /** The story globs the index was built from, named when it is empty. */
   stories?: readonly string[];
@@ -36,8 +46,10 @@ function initialStory(entries: readonly IndexEntry[], fallback: string): string 
 }
 
 /**
- * Opens a trial of the story the route names when none is open, once per route, so closing that trial sticks.
- * A history step across an in-place swap swaps back instead, so Back returns the trial to its previous story.
+ * Shows the story the route names when no trial shows it, once per route, so closing that trial sticks. It goes
+ * into the trial the previous route was in when a history step crosses an in-place swap, so Back returns that
+ * trial to its previous story; otherwise into the focused trial, as a click in the tree does. Only a lab with no
+ * trial at all gets a new one: another trial is what Shift-click is for.
  */
 function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
   const lab = useLabContext();
@@ -51,7 +63,11 @@ function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
     handled.current = route;
     if (lab.trials.some((trial) => trial.instrumentName === route)) return;
     const previous = lab.trials.find((trial) => trial.instrumentName === from.route);
-    if (previous && crossesInPlace(from.entry, last.current.entry)) lab.swapTrial(previous.id, route);
+    const target =
+      (previous && crossesInPlace(from.entry, last.current.entry) ? previous : undefined) ??
+      lab.trials.find((trial) => trial.id === lab.focusedTrialId) ??
+      lab.trials[0];
+    if (target) lab.swapTrial(target.id, route);
     else lab.addTrial(route);
   }, [route, index, lab]);
   return null;
@@ -76,17 +92,31 @@ function useInfoShortcut(open: (next: boolean) => void): void {
   }, [open]);
 }
 
-export function Workshop({ index, frameUrl, config, stories = [], storageKey, storage }: WorkshopProps) {
+export function Workshop({ index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
   const [frames] = useState(createTrialFrames);
   const [pool, setPool] = useState<FramePool | null>(null);
+  // Warm frames are for the stories that render in one: every story when no importers are given, else the isolated.
+  const framed = importers === undefined || index.some((entry) => entry.isolate !== undefined);
   useEffect(() => {
+    if (!framed) return;
     const next = createFramePool(frameUrl);
     setPool(next);
-    return () => next.dispose();
-  }, [frameUrl]);
+    return () => {
+      next.dispose();
+      setPool(null);
+    };
+  }, [frameUrl, framed]);
   const entries = useMemo(() => [...index, ...indexEntries(index)], [index]);
-  const registry = useStoryRegistry(entries, { frameUrl, globals: declarations, frames });
+  const registry = useStoryRegistry(entries, {
+    frameUrl,
+    globals: declarations,
+    frames,
+    ...(importers ? { importers } : {}),
+    ...(setup ? { setup } : {}),
+  });
+  const reload = registry.reload;
+  useEffect(() => changes?.subscribe(reload), [changes, reload]);
   const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
   const themeFor = config?.labTheme;
   const labTheme = useMemo(() => themeFor?.(labValues), [themeFor, labValues]);

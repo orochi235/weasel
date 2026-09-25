@@ -24,18 +24,9 @@ let LabRoot: typeof import('@weasel-js/labkit').LabRoot | null = null;
 const labkitRoot: Decorator = (story, ctx) =>
   LabRoot && isLabkit(ctx.title) ? <LabRoot mode={asLabMode(ctx.globals.mode)}>{story()}</LabRoot> : story();
 
-const FONT_STYLE_ID = 'fg-font-globals';
-
-const applyGlobals = followScheme((globals, root, mode) => {
+const applyGlobals = followScheme((globals, { root, scope, style }, mode) => {
   applyTheme(root, weaselTheme, { mode, density: asDensity(globals.density) });
-  const doc = root.ownerDocument;
-  let style = doc.getElementById(FONT_STYLE_ID);
-  if (!style) {
-    style = doc.createElement('style');
-    style.id = FONT_STYLE_ID;
-    doc.head.append(style);
-  }
-  style.textContent = fontRule(globals);
+  style(fontRule(globals, scope));
 });
 
 export default defineFrameConfig({

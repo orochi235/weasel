@@ -6,6 +6,9 @@ import { Button } from '../Button';
 const meta: Meta<typeof ToastRegion> = {
   title: 'Primitives/Toast',
   component: ToastRegion,
+  // React Aria's toast region portals to document.body with no container option, so in the workshop document
+  // the toasts would land on the page's corner rather than the trial's.
+  parameters: { forge: { isolate: 'ToastRegion portals to document.body' } },
 };
 export default meta;
 

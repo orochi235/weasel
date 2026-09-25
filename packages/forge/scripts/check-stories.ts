@@ -26,7 +26,7 @@ const server = await createServer({
 const faults: string[] = [];
 try {
   const index = (await server.ssrLoadModule('virtual:forge/index.js')).default as IndexEntry[];
-  const { loadStories } = await server.ssrLoadModule('/packages/forge/src/frame/mountFrame.tsx');
+  const { loadStories } = await server.ssrLoadModule('/packages/forge/src/story/load.ts');
   const { describeSchema } = await server.ssrLoadModule('/packages/forge/src/protocol/schema.ts');
   const { autoTitle } = await server.ssrLoadModule('/packages/forge/src/vite/autoTitle.ts');
   const { stories: globs } = await server.ssrLoadModule('/apps/forge/viteShared.ts');

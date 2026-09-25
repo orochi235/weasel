@@ -29,6 +29,19 @@ describe('loadNativeModule', () => {
     expect(second?.initialState).toBeNull();
   });
 
+  it('takes isolate from the story, then the meta, else null', () => {
+    const stories = loadNativeModule(
+      {
+        default: meta({ isolate: 'whole file' }),
+        FromMeta: story({ render: () => null }),
+        Own: story({ isolate: 'its own reason', render: () => null }),
+      },
+      'ui/Button',
+    );
+    expect(stories.map((s) => s.isolate)).toEqual(['whole file', 'its own reason']);
+    expect(loadNativeModule(mod, 'Slider').map((s) => s.isolate)).toEqual([null, null]);
+  });
+
   it('titles its stories with the auto title when the meta names none', () => {
     const [only] = loadNativeModule(
       { default: meta({}), A: story({ render: () => null }) },

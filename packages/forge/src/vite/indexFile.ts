@@ -68,12 +68,14 @@ function indexProgram(program: t.Program, file: string, autoTitle: string): Inde
   const exclude = storyFilter(meta, 'excludeStories');
   const componentNode = prop(meta, 'component');
   const componentName = componentNode?.type === 'Identifier' ? componentNode.name : undefined;
+  const metaIsolate = isolateOf(meta, bindings, wrappers, 'default');
 
   return exported
     .filter(({ name }) => name !== '__namedExportsOrder')
     .filter(({ name }) => (!include || include(name)) && (!exclude || !exclude(name)))
     .map(({ name, node, doc }) => {
       const spec = objectOf(node, bindings, wrappers);
+      const isolate = isolateOf(spec, bindings, wrappers, name) ?? metaIsolate;
       return {
         id: storyId(title, name),
         title,
@@ -83,8 +85,30 @@ function indexProgram(program: t.Program, file: string, autoTitle: string): Inde
         ...(doc === undefined ? {} : { description: doc }),
         ...(metaDoc === undefined ? {} : { componentDescription: metaDoc }),
         ...(componentName === undefined ? {} : { componentName }),
+        ...(isolate === undefined ? {} : { isolate }),
       };
     });
+}
+
+/**
+ * The reason `obj` isolates its story: `isolate` on a native meta or story, `parameters.forge.isolate` in CSF.
+ * It must be a string literal, because the shell reads it without importing the module.
+ */
+function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Set<string>, exportName: string): string | undefined {
+  const parameters = objectOf(prop(obj, 'parameters'), bindings, wrappers);
+  const forge = objectOf(prop(parameters, 'forge'), bindings, wrappers);
+  const value = prop(obj, 'isolate') ?? prop(forge, 'isolate');
+  if (value === undefined) return undefined;
+  const literal = stringLiteral(value);
+  if (literal === undefined) throw new Error(`${exportName}: isolate must be a string literal`);
+  return literal;
+}
+
+/** The value of a plain string literal or an expression-free template literal. */
+function stringLiteral(node: t.Node): string | undefined {
+  if (node.type === 'StringLiteral') return node.value;
+  if (node.type === 'TemplateLiteral' && node.expressions.length === 0) return node.quasis.map((q) => q.value.cooked ?? q.value.raw).join('');
+  return undefined;
 }
 
 function isDefaultExport(stmt: t.Statement): boolean {

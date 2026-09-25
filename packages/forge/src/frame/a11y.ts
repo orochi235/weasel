@@ -46,10 +46,28 @@ function loadAxe(): Promise<AxeModule> {
   return loading;
 }
 
+/** Rules that judge the page rather than the element audited; off when the element is one story on a page of many. */
+export const PAGE_RULES: readonly string[] = [
+  'bypass',
+  'document-title',
+  'html-has-lang',
+  'html-lang-valid',
+  'html-xml-lang-mismatch',
+  'landmark-one-main',
+  'page-has-heading-one',
+  'region',
+];
+
+export interface RunAxeOptions {
+  /** Whether `element` stands for the whole page. False leaves `PAGE_RULES` out. Default true. */
+  page?: boolean;
+}
+
 /** Runs axe over `element` and reduces its answer to what crosses the frame's channel. */
-export async function runAxe(element: Element): Promise<A11yReport> {
+export async function runAxe(element: Element, { page = true }: RunAxeOptions = {}): Promise<A11yReport> {
   const axe = await loadAxe();
-  const result = await axe.run(element);
+  const rules = page ? undefined : Object.fromEntries(PAGE_RULES.map((id) => [id, { enabled: false }]));
+  const result = await axe.run(element, rules ? { rules } : undefined);
   return {
     violations: result.violations.map(finding),
     incomplete: result.incomplete.map(finding),

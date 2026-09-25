@@ -163,12 +163,18 @@ describe('startFrame', () => {
     const { shell } = start(themed!, { applyGlobals });
     shell.send({ type: 'init', config: {}, state: null, globals: { mode: 'light' } });
     await flush();
-    expect(applyGlobals).toHaveBeenLastCalledWith({ mode: 'light' }, document.documentElement);
+    expect(applyGlobals).toHaveBeenLastCalledWith(
+      { mode: 'light' },
+      expect.objectContaining({ root: document.documentElement, scope: ':root' }),
+    );
     expect(screen.getByTestId('mode').textContent).toBe('light');
     shell.send({ type: 'globals', globals: { mode: 'dark' } });
     await flush();
     expect(applyGlobals).toHaveBeenCalledTimes(2);
-    expect(applyGlobals).toHaveBeenLastCalledWith({ mode: 'dark' }, document.documentElement);
+    expect(applyGlobals).toHaveBeenLastCalledWith(
+      { mode: 'dark' },
+      expect.objectContaining({ root: document.documentElement, scope: ':root' }),
+    );
     expect(screen.getByTestId('mode').textContent).toBe('dark');
   });
 

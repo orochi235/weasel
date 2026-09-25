@@ -1,4 +1,4 @@
-import { existsSync, globSync, readFileSync } from 'node:fs';
+import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, matchesGlob, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Logger, Plugin, ViteDevServer } from 'vite';
@@ -48,6 +48,8 @@ export function forge(options: ForgeOptions): Plugin[] {
     const files = options.stories.flatMap((pattern) =>
       globSync(pattern, { cwd: root, exclude: (name) => basename(String(name)) === 'node_modules' })
         .map((f) => resolve(root, f))
+        // A failed story run leaves `__screenshots__/<file>.stories.tsx/` directories that match the globs.
+        .filter((f) => statSync(f).isFile())
         .sort(),
     );
     return [...new Set(files)];
@@ -91,15 +93,29 @@ export function forge(options: ForgeOptions): Plugin[] {
 import '@weasel-js/labkit/styles.css';
 import '@weasel-js/forge/shell.css';
 import index from 'virtual:forge/index.js';
+import importers from 'virtual:forge/importers.js';
 import config from 'virtual:forge/shell-config.js';
+import setup from 'virtual:forge/frame-config.js';
 
 const workshop = mountWorkshop({
   index,
+  importers,
+  setup,
   config,
   frameUrl: ${JSON.stringify(`${base}frame.html`)},
   stories: ${JSON.stringify(options.stories)},
 });
 import.meta.hot?.on('forge:index', (next) => workshop.setIndex(next));
+// A story edit reaches here as an update of the importers module, whose fresh import() URLs carry the new
+// timestamps; the file it names arrives just before, so the reload waits for the importers that can fetch it.
+const stale = new Set();
+import.meta.hot?.on('forge:story', ({ file }) => stale.add(file));
+import.meta.hot?.accept('virtual:forge/importers.js', (next) => {
+  if (!next) return;
+  workshop.setImporters(next.default);
+  for (const file of stale) workshop.reloadStory(file);
+  stale.clear();
+});
 `,
     'frame-entry.js': () => `import { mountFrame } from '@weasel-js/forge/frame';
 import '@weasel-js/forge/frame.css';
@@ -108,11 +124,15 @@ import importers from 'virtual:forge/importers.js';
 import setup from 'virtual:forge/frame-config.js';
 
 mountFrame({ index, importers, setup });
+// The importers module is shared with the workshop page, which accepts a story edit in place; a frame document
+// showing the old module reloads instead, and without this the edit would dead-end here and reload every page.
+import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
 `,
   };
 
   function reindex(server: ViteDevServer, file: string, event: 'add' | 'change' | 'unlink'): void {
     const current = files();
+    if (event === 'change' && current.has(file)) server.ws.send({ type: 'custom', event: 'forge:story', data: { file } });
     if (event === 'change' && !current.has(file)) return;
     if (event === 'add' && !matches(file)) return;
     if (event === 'unlink' && !current.has(file)) return;

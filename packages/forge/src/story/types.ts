@@ -24,6 +24,8 @@ export interface MetaSpec {
   title?: string;
   decorators?: Decorator[];
   layout?: Layout;
+  /** Renders this story in its own frame document, for a reason the value states. The default is the workshop document. */
+  isolate?: string;
   /** The component's own index page, in place of the generated one. A CSF file sets `parameters.forge.index`. */
   index?: IndexRender;
 }
@@ -64,6 +66,8 @@ export interface StorySpec<C = Record<string, never>, S = undefined> {
   decorators?: Decorator[];
   layout?: Layout;
   viewport?: Viewport;
+  /** Renders this story in its own frame document, for a reason the value states. The default is the workshop document. */
+  isolate?: string;
   play?: (ctx: PlayContext<C>) => void | Promise<void>;
 }
 
@@ -80,6 +84,7 @@ export interface LoadedStory {
   decorators: Decorator[];
   layout: Layout;
   viewport: Viewport | null;
+  isolate: string | null;
   play: ((ctx: PlayContext) => void | Promise<void>) | null;
 }
 
@@ -97,4 +102,6 @@ export interface IndexEntry {
   componentDescription?: string;
   /** The identifier the meta's `component` names, if it names one. */
   componentName?: string;
+  /** Read statically from the source; a story with it renders in its own frame. */
+  isolate?: string;
 }

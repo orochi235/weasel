@@ -226,13 +226,23 @@ describe('forge vite plugin, with a config module per realm', () => {
     expect(await loadDefault('virtual:forge/shell-config.js')).toEqual({ globals: {} });
   });
 
-  it('imports each config module only from its own entry', async () => {
+  it('imports the shell config only from the workshop entry, and the frame config from both', async () => {
     const shell = await entry('shell-entry.js');
     const frame = await entry('frame-entry.js');
     expect(shell).toContain('virtual:forge/shell-config.js');
-    expect(shell).not.toContain('frame-config');
+    expect(shell).toContain('virtual:forge/frame-config.js');
+    expect(shell).toContain('virtual:forge/importers.js');
     expect(frame).toContain('virtual:forge/frame-config.js');
     expect(frame).not.toContain('shell-config');
+  });
+
+  it('accepts a story edit in both entries: the workshop reloads the story, a frame reloads itself', async () => {
+    const shell = await entry('shell-entry.js');
+    const frame = await entry('frame-entry.js');
+    expect(shell).toContain(`import.meta.hot?.on('forge:story'`);
+    expect(shell).toContain(`import.meta.hot?.accept('virtual:forge/importers.js'`);
+    expect(shell).toContain('workshop.reloadStory(file)');
+    expect(frame).toContain(`import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload())`);
   });
 
   it('adds the story globs, both config modules and its own entry modules to the dependency scan', () => {

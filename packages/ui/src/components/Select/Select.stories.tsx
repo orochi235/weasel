@@ -202,6 +202,8 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
  *  Laying that row over the trigger would push the rows above it past the
  *  edge, so the list stops at the edge instead. */
 export const AtTheTopEdge: Story = {
+  // The premise is the window's edge: in the workshop document the list clamps to the page, not the trial.
+  parameters: { forge: { isolate: 'asserts placement against the window edge' } },
   render: () => (
     <div style={{ position: 'fixed', top: 4, left: 4 }}>
       <Select aria-label="Month" width="fit" options={MONTHS} defaultSelectedKey="Nov" />
