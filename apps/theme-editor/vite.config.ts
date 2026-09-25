@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
 import { weaselAliases } from '../../scripts/vite-aliases';
 import { weaselDefines } from '../../scripts/vite-build-info';
+import { localWake } from '../../scripts/vite-wake';
 import { themeStorePlugin } from './server/themeStorePlugin';
 
 const repoRoot = resolve(__dirname, '../..');
@@ -56,6 +57,7 @@ export default defineConfig({
       extraFiles: [resolve(repoRoot, 'packages/labkit/src/theme/interstellar.theme.json')],
       generatedDir: resolve(repoRoot, 'packages/theme/src/generated'),
     }),
+    localWake(),
   ],
   server: { port: 5177, host: '::' },
   define: weaselDefines(repoRoot),

@@ -4,6 +4,7 @@ import { defineConfig } from 'vite';
 import { traitSchemasPlugin } from '../draw/vite-plugin-trait-schemas';
 import { forge } from '../../packages/forge/src/vite/index';
 import { weaselDefines } from '../../scripts/vite-build-info';
+import { localWake } from '../../scripts/vite-wake';
 import { forgeAliases, frameConfig, shellConfig, stories } from './viteShared';
 
 const repoRoot = resolve(__dirname, '../..');
@@ -18,6 +19,7 @@ export default defineConfig(({ command, isPreview }) => ({
     react(),
     traitSchemasPlugin({ repoRoot }),
     forge({ stories, frameConfig, shellConfig }),
+    localWake(),
   ],
   server: { port: 5178, host: '::' },
   build: { outDir: resolve(repoRoot, 'dist-forge'), emptyOutDir: true },
