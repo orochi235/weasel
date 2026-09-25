@@ -58,11 +58,10 @@ Priority tags:
   Omitting the prop leaves the absolute-pose model untouched. Design and the
   list of what it deliberately does not cover:
   `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
-  Open follow-ups: `kitRegistry.ts`'s `unionOfChildren` derives a container's
-  pose from children expressed in that container's frame, which is circular and
-  only works because the default frame is identity; `nestedHit` composes
-  correctly and still has no caller inside the kit; `apps/draw`'s SVG export
-  bakes stored poses and would need world ones if that app ever opts in.
+  A container deriving its pose from its children is an envelope, not a frame
+  (`definesFrame` in `core/scene/effectivePose.ts`).
+  Open follow-up: `apps/draw`'s SVG export bakes stored poses and would need
+  world ones if that app ever opts in.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`

@@ -19,6 +19,10 @@ export const UNION_OF_CHILDREN = 'kit:unionOfChildren';
  * box. Paired with `dependsOn: 'children'`, this is what makes a group's
  * bounds track its members instead of freezing at the moment it was made.
  *
+ * Its members and its result share one frame: a container deriving its pose
+ * from its children defines none of its own (see `definesFrame`), so the same
+ * union is right under any composition strategy.
+ *
  * Returns `null` for an emptied container, which falls back to its authored
  * pose — the group stays where the last member left it rather than collapsing
  * to a zero box at the origin.

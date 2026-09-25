@@ -12,10 +12,11 @@
  * ships today — local and world are the same value and all of this is an
  * identity. `features/groups/frameFixture.ts` is the scene where they differ.
  */
-import { effectivePose, type PoseSource } from 'core/scene/effectivePose';
+import { definesFrame, effectivePose, type PoseSource } from 'core/scene/effectivePose';
 import type { NodeId, Scene } from 'core/scene/types';
 import {
   composeWorldPose,
+  frameAtOrAbove,
   rebaseLocalPose,
   IDENTITY_POSE_COMPOSITION,
   type PoseAdapter,
@@ -28,7 +29,7 @@ export interface PoseFrame<TPose> {
   readonly pc: PoseComposition<TPose>;
   /** `id`'s pose in world coordinates, honoring an in-flight gesture override. */
   world(id: NodeId): TPose;
-  /** `id`'s parent's world pose, or `null` when it has no parent. */
+  /** World pose of the frame `id` is stored in, or `null` for the root frame. */
   parentWorld(id: NodeId): TPose | null;
   /** `worldPose` expressed in `id`'s own parent frame — what `setPose` stores. */
   local(id: NodeId, worldPose: TPose): TPose;
@@ -46,8 +47,8 @@ export function poseFrame<TPose>(
     pc,
     world: (id) => composeWorldPose(adapter, id as string, pc.compose),
     parentWorld: (id) => {
-      const parent = adapter.getParent(id as string);
-      return parent === null ? null : composeWorldPose(adapter, parent, pc.compose);
+      const frame = frameAtOrAbove(adapter, adapter.getParent(id as string));
+      return frame === null ? null : composeWorldPose(adapter, frame, pc.compose);
     },
     local: (id, worldPose) =>
       rebaseLocalPose(adapter, worldPose, adapter.getParent(id as string), pc.compose, pc.decompose),
@@ -71,6 +72,10 @@ export function scenePoseFrame(
       return node === undefined ? { x: 0, y: 0, width: 0, height: 0 } : effectivePose(source, node);
     },
     getParent: (id) => scene.get(id as NodeId)?.parent ?? null,
+    definesFrame: (id) => {
+      const node = scene.get(id as NodeId);
+      return node === undefined || definesFrame(node);
+    },
   };
   return poseFrame(adapter, pc);
 }

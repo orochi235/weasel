@@ -29,8 +29,10 @@ it straight to the painter as though it were world (`buildSceneTree.ts:75-79`,
 the tree: *"`Scene` stores absolute poses and the render walks hand `getPose`
 straight to `drawOne`, composing nothing."*
 
-Of roughly sixty pose consumers, one composes correctly: `move.ts`.
-`useNodeOverlayFrame` composes but reads the authored pose, so it misses gesture
+Of roughly sixty pose consumers, only `move.ts` composes, and only on its
+reparent and layout paths: its translate-only commit added the world drag to
+the stored local pose and also translated every descendant of a dragged
+container. `useNodeOverlayFrame` composes but reads the authored pose, so it misses gesture
 overrides. `nestedHit` composes and has no caller inside the kit. Everything
 else — both pick sources, all selection chrome, align/distribute/flip, the
 diagram edge router, SVG export, clipboard, the minimap — reads a local pose and
@@ -175,9 +177,12 @@ default.
 4. Selection chrome — `useViewHelpers`, which feeds `chromeState` — plus the
    `poseComposition` prop on `SceneCanvas`, which is what lets a consumer turn
    any of this on.
-5. Actions — `resize`, `rotate`, `group`, `clone`, `flip`, align, distribute.
-6. Clipboard — `snapshotSelection` captures roots composed, because a root
-   loses its parent on paste.
+5. Actions — `move`, `resize`, `rotate`, `group`, `clone`, `flip`, align,
+   distribute. A translate-only move turns the world drag into the node's own
+   frame, and leaves a node whose frame is being dragged where it is stored.
+6. Clipboard — `snapshotSelection` captures composed any node whose frame is
+   not copied with it, because it loses that frame on paste; `commitPaste`
+   offsets only nodes that do not ride a pasted frame.
 
 Two guards were needed that this design did not anticipate, both because the
 absolute-pose model bakes a *cascade* into moving a container: dragging one
@@ -224,6 +229,21 @@ worth keeping as guards against a fix that reads world and writes world, but
 what actually found the defects was a paired correctness assertion against a
 hand-derived world value.
 
+## A derived container is an envelope
+
+A container whose pose derives from its children (`dependsOn: 'children'` plus
+a `derivePose`) cannot also be their frame: moving the frame to cover them
+moves them, and a `RectPose` frame's origin is its corner, so no envelope
+leaves them in place. Such a container defines no frame. Its children are
+stored in the frame it is stored in, `unionOfChildren` reads and writes that
+one frame, and every fold — the render walk, `getWorldPose`, the pick source,
+`poseFrame` — passes over it (`definesFrame`, `core/scene/effectivePose.ts`).
+Under identity that is what grouping always meant, so a document grouped under
+the default strategy renders the same after opting in.
+
+`groupAction` mints an envelope under identity and a frame under any other
+strategy, re-expressing members in it.
+
 ## What this does not fix
 
 Stated so nobody plans against it:
@@ -235,16 +255,6 @@ Stated so nobody plans against it:
   `scaleY` separately (`animation/rig/types.ts:8`), so a bone chain using them
   stays flattened onto independent nodes. A rigid or uniformly scaled rig
   becomes expressible as parenting, which is what TODO 914 asks for.
-- **`kitRegistry.ts:32`'s `unionOfChildren`** is circular under a frame: it
-  derives a container's pose from children whose poses are expressed in that
-  container's frame. This was meant to be deferred, but `groupAction` attaches
-  it to every container it mints, so grouping forced the decision. It is now
-  attached only when the strategy's closure is `'identity'`; under any other
-  strategy a new container keeps its authored envelope. Whether a framed
-  container should track its contents at all — and by what rule — is still
-  open.
-- **`nestedHit`**, which composes correctly and has no caller. Either it gets
-  one or it goes; not decided here.
 - **`apps/draw`'s SVG export.** It bakes each leaf's stored pose into the
   emitted path and gives a container a `<g>` with no transform, which is right
   for the absolute-pose model that app uses and would need world poses under a
