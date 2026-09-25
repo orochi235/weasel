@@ -870,6 +870,25 @@ a:hover { text-decoration: underline; }
   line-height: 1.5;
   color: var(--ckd-text);
 }
+.ckd-release-change > .ckd-release-title {
+  display: flex;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+}
+.ckd-release-change > .ckd-release-title::-webkit-details-marker { display: none; }
+.ckd-release-change > .ckd-release-title::before {
+  content: '▸';
+  flex: none;
+  color: var(--ckd-faint);
+  font-size: 11px;
+  line-height: 22px;
+  transition: transform 120ms ease;
+}
+.ckd-release-change[open] > .ckd-release-title::before { transform: rotate(90deg); }
+.ckd-release-change > .ckd-release-title:hover { color: var(--ckd-accent); }
+.ckd-release-change > .ckd-release-body { padding-left: 19px; }
+
 .ckd-release-body {
   margin-top: 8px;
   color: var(--ckd-muted);

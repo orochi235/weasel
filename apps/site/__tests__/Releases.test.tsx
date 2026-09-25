@@ -18,7 +18,13 @@ const RELEASES: Release[] = [
     date: '2026-09-14T00:00:00Z',
     entries: [
       { id: 'c', packages: ['core'], titleHtml: 'core only', bodyHtml: '', level: 'patch' },
-      { id: 'd', packages: ['svg', 'ui'], titleHtml: 'svg and ui', bodyHtml: '', level: 'patch' },
+      {
+        id: 'd',
+        packages: ['svg', 'ui'],
+        titleHtml: 'svg and ui',
+        bodyHtml: '<p>the long account</p>',
+        level: 'patch',
+      },
     ],
   },
 ];
@@ -134,5 +140,21 @@ describe('the filter in the URL', () => {
     window.history.replaceState(null, '', '/?pkg=nonesuch');
     render(<Releases />);
     expect(screen.getByText('No changes name those packages.')).toBeTruthy();
+  });
+});
+
+describe('an entry with a body', () => {
+  it('shows its title and folds the body away until the title is clicked', async () => {
+    render(<Releases />);
+    const body = screen.getByText('the long account');
+    const change = body.closest('details');
+    expect(change?.open).toBe(false);
+    await userEvent.click(screen.getByText('svg and ui'));
+    expect(change?.open).toBe(true);
+  });
+
+  it('leaves a title-only entry as plain text', () => {
+    render(<Releases />);
+    expect(screen.getByText('core only').closest('.ckd-release-change')).toBeNull();
   });
 });

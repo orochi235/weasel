@@ -151,18 +151,32 @@ export function Releases() {
               {release.entries.map((entry) => (
                 <li key={entry.id} className="ckd-release-entry">
                   <Packages names={entry.packages} selected={selected} onToggle={toggle} />
-                  {entry.titleHtml ? (
-                    <p
-                      className="ckd-release-title"
-                      dangerouslySetInnerHTML={{ __html: entry.titleHtml }}
-                    />
-                  ) : null}
-                  {entry.bodyHtml ? (
-                    <div
-                      className="ckd-release-body"
-                      dangerouslySetInnerHTML={{ __html: entry.bodyHtml }}
-                    />
-                  ) : null}
+                  {entry.titleHtml && entry.bodyHtml ? (
+                    <details className="ckd-release-change">
+                      <summary className="ckd-release-title">
+                        <span dangerouslySetInnerHTML={{ __html: entry.titleHtml }} />
+                      </summary>
+                      <div
+                        className="ckd-release-body"
+                        dangerouslySetInnerHTML={{ __html: entry.bodyHtml }}
+                      />
+                    </details>
+                  ) : (
+                    <>
+                      {entry.titleHtml ? (
+                        <p
+                          className="ckd-release-title"
+                          dangerouslySetInnerHTML={{ __html: entry.titleHtml }}
+                        />
+                      ) : null}
+                      {entry.bodyHtml ? (
+                        <div
+                          className="ckd-release-body"
+                          dangerouslySetInnerHTML={{ __html: entry.bodyHtml }}
+                        />
+                      ) : null}
+                    </>
+                  )}
                 </li>
               ))}
             </ul>

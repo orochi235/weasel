@@ -85,6 +85,20 @@ describe('splitSummary', () => {
   it('handles a single-paragraph entry', () => {
     expect(splitSummary('just this')).toEqual(['just this', '']);
   });
+
+  it('takes the first sentence as the summary and leads the rest with the remainder', () => {
+    expect(splitSummary('One thing.\nMore about it.\n\nrest')).toEqual([
+      'One thing.',
+      'More about it.\n\nrest',
+    ]);
+  });
+
+  it('does not end a sentence inside a code span or before a lowercase word', () => {
+    expect(splitSummary('Use `a. B` here, e.g. this. Then more.')).toEqual([
+      'Use `a. B` here, e.g. this.',
+      'Then more.',
+    ]);
+  });
 });
 
 describe('parseChangeset', () => {
