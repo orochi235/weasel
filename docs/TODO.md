@@ -708,11 +708,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P3) A slider readout's unit wraps under its number in `ControlPanel`.** In
-  the `SidebarSliders` story (`packages/labkit/src/controls/ControlPanel.stories.tsx`)
-  `MS`, `%` and `PX` sit on a second line beneath the value instead of beside it,
-  seen 2026-09-25 and the same before the `PropertyField` merge.
-
 - **(P2) One widget per field kind, so `PropertyField` loses its `chrome` axis.**
   `PropertyField` / `PropertyControl` (`Properties/PropertyField.tsx`) are the one
   kind-indexed mapping every settings surface draws through, but `chrome`
