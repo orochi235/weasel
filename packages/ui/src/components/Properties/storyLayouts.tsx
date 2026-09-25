@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import s from './storyLayouts.module.css';
 
 /**
  * Side-by-side comparison used by row stories to show block + inline layouts
@@ -6,29 +7,14 @@ import type { ReactNode } from 'react';
  * The story glob skips it.
  */
 export function SideBySide({ block, inline }: { block: ReactNode; inline: ReactNode }) {
-  const labelStyle = {
-    font: 'var(--wzl-font-weight-normal) var(--wzl-font-size-sm)/var(--wzl-leading-tight) var(--wzl-font-ui)',
-    color: 'var(--wzl-fg-muted)',
-    textTransform: 'uppercase' as const,
-    letterSpacing: 'var(--wzl-tracking-wider)',
-    margin: '0 0 8px',
-  };
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 24,
-        width: 720,
-        alignItems: 'start',
-      }}
-    >
+    <div className={s.sideBySide}>
       <div>
-        <div style={labelStyle}>Block</div>
+        <div className={s.caption}>Block</div>
         {block}
       </div>
       <div>
-        <div style={labelStyle}>Inline</div>
+        <div className={s.caption}>Inline</div>
         {inline}
       </div>
     </div>

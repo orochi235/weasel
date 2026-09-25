@@ -657,6 +657,9 @@
 }
 
 .readout {
+  font-family: var(--wzl-font-display);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-snug);
   font-style: normal;
   font-weight: var(--wzl-font-weight-medium);
   color: var(--wzl-accent-fg);

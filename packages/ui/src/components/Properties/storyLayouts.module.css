@@ -1,0 +1,16 @@
+.sideBySide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wzl-space-8);
+  width: 100%;
+  max-width: 720px;
+  align-items: start;
+}
+
+.caption {
+  margin: 0 0 var(--wzl-space-3);
+  font: var(--wzl-font-weight-normal) var(--wzl-font-size-sm) / var(--wzl-leading-tight) var(--wzl-font-ui);
+  color: var(--wzl-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--wzl-tracking-wider);
+}

@@ -1,18 +1,20 @@
 .column {
   display: grid;
   gap: var(--wzl-space-5);
-  width: 280px;
+  width: 100%;
+  max-width: 280px;
 }
 
 .wide {
-  width: 320px;
+  max-width: 320px;
 }
 
 .pair {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--wzl-space-8);
-  width: 640px;
+  width: 100%;
+  max-width: 640px;
   align-items: start;
 }
 
@@ -28,7 +30,8 @@
   display: flex;
   align-items: center;
   gap: var(--wzl-space-3);
-  width: 280px;
+  width: 100%;
+  max-width: 280px;
 }
 
 .count {
