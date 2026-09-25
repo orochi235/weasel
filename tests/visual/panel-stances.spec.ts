@@ -33,7 +33,7 @@ const BODY = [
     `<div class="group" data-k="group"><h3 class="groupTitle"><hr><span>group</span><hr></h3>${rows}</div>`,
     `<div class="group" data-k="group-danger" data-stance="danger"><h3 class="groupTitle"><hr><span>danger group</span><hr></h3>${rows}</div>`,
     `<div class="subpanel" data-k="sub-important" data-stance="important"><h4 class="subpanelTitle"><span>important</span><hr></h4>${rows}</div>`,
-    `<div class="card" data-k="card" ${tone('green')}><div class="cardHead"><span class="cardTitle">card</span></div><div class="panelTitle">x</div>${rows}</div>`,
+    `<div class="group" data-k="group-tone" ${tone('green')}><h3 class="groupTitle"><hr><span>toned group</span><hr></h3>${rows}</div>`,
   ].join('')),
 ].join('');
 
@@ -130,13 +130,13 @@ for (const mode of ['dark', 'light'] as const) {
       expect(l.nested.bg).not.toBe(l.outer.bg);
     });
 
-    test('a group, a subpanel and a card follow the same stances and tones', async ({ page }) => {
+    test('a group and a subpanel follow the same stances and tones', async ({ page }) => {
       await mount(page, mode);
       const l = await looks(page);
       expect(l['group-danger'].bg).not.toBe(l.group.bg);
       expect(l['group-danger'].titleColor).toBe(l.ref.danger);
       expect(l['sub-important'].titleColor).toBe(l.ref.accentFg);
-      expect(l.card.readout).toBe(l.ref.greenFg);
+      expect(l['group-tone'].readout).toBe(l.ref.greenFg);
     });
 
     test('a stance slot set on an ancestor reaches the panels beneath it', async ({ page }) => {

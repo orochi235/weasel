@@ -11,6 +11,6 @@
   margin: 0 0 var(--wzl-space-3);
   font: var(--wzl-font-weight-normal) var(--wzl-font-size-sm) / var(--wzl-leading-tight) var(--wzl-font-ui);
   color: var(--wzl-fg-muted);
-  text-transform: uppercase;
-  letter-spacing: var(--wzl-tracking-wider);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wider));
 }
