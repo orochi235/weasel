@@ -8,11 +8,11 @@ third-party host at runtime.
 | `oswald-latin-variable.woff2` | `--wzl-font-ui`, `--wzl-font-display` | condensed UI/display face, variable `wght 200–700` |
 | `inter-latin.woff2` | `--wzl-font-body` | body/prose face, weight 400 |
 
-Loading them is opt-in: `import '@weasel-js/theme/fonts.css'`. Skip it and the
-token font stacks fall back to `system-ui`.
+Loading them is opt-in: `import '@weasel-js/theme/fonts.css'`, or
+`faces.css` for the `@font-face` rules without the `:root` font. Skip both and
+the token font stacks fall back to `system-ui`.
 
-**Not opt-in through labkit.** `@weasel-js/labkit` concatenates these
-`@font-face` rules into its one `dist/styles.css` and copies both `.woff2`
+**Not opt-in through labkit.** `@weasel-js/labkit` concatenates `faces.css` into its one `dist/styles.css` and copies both `.woff2`
 files to `dist/fonts/`, so a lab renders in them without importing anything
 here. Renaming or dropping a face changes what a consumer's text looks like
 with no error anywhere.
@@ -32,8 +32,7 @@ python3 -m venv /tmp/fontvenv
 
 Upstream `fonts/variable/Oswald[wght].ttf` from
 https://github.com/googlefonts/OswaldFont, subset to the Google Fonts `latin`
-range plus the three combining marks labkit's `@font-face` declares
-(`U+0304`, `U+0308`, `U+0329`):
+range plus three combining marks (`U+0304`, `U+0308`, `U+0329`):
 
 ```sh
 /tmp/fontvenv/bin/pyftsubset "Oswald[wght].ttf" \

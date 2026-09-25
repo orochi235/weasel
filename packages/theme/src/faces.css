@@ -1,0 +1,19 @@
+/* The kit's two faces, declared and nothing else. `fonts.css` pairs them with a
+ * document font; `@weasel-js/labkit` carries them in its stylesheet.
+ * Licenses: OFL-Oswald.txt and OFL-Inter.txt in @weasel-js/theme's fonts/. */
+
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 200 700;
+  font-display: swap;
+  src: url('../fonts/oswald-latin-variable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/inter-latin.woff2') format('woff2');
+}

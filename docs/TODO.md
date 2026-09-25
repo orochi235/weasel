@@ -753,18 +753,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   the first anchored step, in step order, sets the hue and peak, so anchoring
   `#ff0000` and `#0000ff` on one ramp pins the blue step inside a red ramp.
 
-- **(P2) labkit's Oswald `@font-face` 404s in every source-tree build.**
-  `packages/labkit/src/theme/base.less` points at `./fonts/…`, which only
-  resolves beside the compiled `dist/styles.css`; its comment says source-tree
-  use needs no URL, but a vite build emits the dead path and, declared after
-  any other Oswald face, replaces it. Text then falls back to whatever weights
-  the system has, so a 200 or 700 renders as 300 or 400 with no error but the
-  404. forge's workshop works around it by importing the theme's `fonts.css`
-  after labkit's styles (`apps/forge/labkitStyles.ts`) and its frame by
-  re-declaring the face (`apps/forge/frame.css`). The fix is one face with a URL
-  that resolves in both trees, most likely labkit dropping its own in favor of
-  `@weasel-js/theme/fonts.css`.
-
 - **(P3) The lab switcher's migrated tokens have not been looked at in a browser.**
   `packages/labkit/src/lab/LabSwitcher.less` read seven `--wzl-*` names no theme
   declares, so its menu items inherited the title's 20px and its hover changed

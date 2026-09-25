@@ -23,7 +23,8 @@ import '@weasel-js/theme/fonts.css';    // optional — bundled Oswald + Inter
 
 `tokens.css` is required; component styles reference the custom properties it
 declares. `fonts.css` is optional — skip it and the token font stacks fall back
-to `system-ui`. Nothing is fetched from a third-party host either way.
+to `system-ui`. It sets `:root`'s font as well as declaring the faces; import
+`@weasel-js/theme/faces.css` instead for the `@font-face` rules alone. Nothing is fetched from a third-party host either way.
 
 Modes are selected with a data attribute, which cascades:
 

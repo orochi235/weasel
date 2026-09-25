@@ -1,12 +1,3 @@
-/* labkit's own @font-face resolves against its compiled dist stylesheet, so the source build re-declares Oswald. */
-@font-face {
-  font-family: 'Oswald';
-  font-style: normal;
-  font-weight: 200 700;
-  font-display: swap;
-  src: url('../../packages/theme/fonts/oswald-latin-variable.woff2') format('woff2');
-}
-
 html,
 body {
   background: var(--wzl-surface);
