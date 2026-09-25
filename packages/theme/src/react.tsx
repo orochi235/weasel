@@ -23,7 +23,9 @@ export interface ThemeContextValue {
   readonly tones: ColorList;
 }
 
-const ThemeContext = createContext<ThemeContextValue | null>(null);
+/** What `<ThemeProvider>` publishes. Provide `null` to hide an outer theme from a subtree, as a
+ *  boundary that renders its children the way a page with no provider would. */
+export const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 /** Props for `<ThemeProvider>`. */
 export interface ThemeProviderProps {

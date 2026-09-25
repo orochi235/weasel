@@ -1,6 +1,8 @@
 ---
 '@weasel-js/forge': patch
 '@weasel-js/ui': patch
+'@weasel-js/labkit': patch
+'@weasel-js/theme': patch
 ---
 
 Stories render in the workshop page instead of in an iframe each.
@@ -22,3 +24,8 @@ message channel.
 
 `@weasel-js/ui`'s Toast story is the one isolated story: React Aria's toast
 region portals to `document.body` with no container option.
+
+`@weasel-js/labkit` gains `LabBoundary`, which renders its children as though
+no lab, trial or theme were above them, and `@weasel-js/theme/react` exports
+`ThemeContext` so such a boundary can hide an outer theme. A story host in the
+workshop, which is itself a lab, wraps every story in one.

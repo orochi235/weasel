@@ -1,4 +1,4 @@
-import { TrialIdContext } from '@weasel-js/labkit';
+import { LabBoundary, TrialIdContext } from '@weasel-js/labkit';
 import { OverlayPortalProvider } from '@weasel-js/ui';
 import {
   type ReactNode,
@@ -213,7 +213,11 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       data-pending={pending || undefined}
     >
       {host && inView ? (
-        <OverlayPortalProvider container={host}>{children(globals)}</OverlayPortalProvider>
+        // The workshop is itself a lab; below the boundary a story sees no lab, trial or theme above it, as in a
+        // document of its own.
+        <LabBoundary>
+          <OverlayPortalProvider container={host}>{children(globals)}</OverlayPortalProvider>
+        </LabBoundary>
       ) : null}
     </div>
   );

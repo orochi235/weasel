@@ -51,9 +51,11 @@ const stories = [
     id: 'labkit-primitives-jobprogress--determinate',
     what: 'labkit story inside the .lk-root decorator',
     check: async ({ frame }) => {
-      const rooted = await frame.evaluate(
-        (host) => host.firstElementChild?.matches('.lk-root') && host.firstElementChild.children.length > 0,
-      );
+      // LabRoot wraps itself in its own theme element inside a story host, so `.lk-root` sits one level down.
+      const rooted = await frame.evaluate((host) => {
+        const root = host.querySelector(':scope > .lk-root, :scope > [data-wzl-theme] > .lk-root');
+        return !!root && root.children.length > 0;
+      });
       if (!rooted) throw new Error("the story's root has no .lk-root ancestor");
     },
   },
@@ -107,7 +109,7 @@ const stories = [
                 const surfaceOf = (node) => getComputedStyle(node).getPropertyValue('--wzl-surface').trim();
                 const probe = (probeMode) => {
                   const node = document.createElement('div');
-                  node.setAttribute('data-wzl-theme', el.getAttribute('data-wzl-theme') ?? '');
+                  node.setAttribute('data-wzl-theme', (el.closest('[data-wzl-theme]') ?? el).getAttribute('data-wzl-theme') ?? '');
                   node.setAttribute('data-wzl-mode', probeMode);
                   document.body.append(node);
                   const value = surfaceOf(node);
@@ -117,7 +119,8 @@ const stories = [
                 const other = want === 'light' ? 'dark' : 'light';
                 const deadline = performance.now() + 5000;
                 const poll = () => {
-                  const got = { mode: el.getAttribute('data-wzl-mode'), surface: surfaceOf(el) };
+                  // LabRoot's theme lands on the wrapper it renders around `.lk-root`, not on `.lk-root` itself.
+                  const got = { mode: (el.closest('[data-wzl-mode]') ?? el).getAttribute('data-wzl-mode'), surface: surfaceOf(el) };
                   if (got.mode === want && got.surface !== '' && got.surface === probe(want) && got.surface !== probe(other)) resolve(got);
                   else if (performance.now() > deadline) reject(new Error(`.lk-root is ${got.mode} with surface ${got.surface}, not ${want}`));
                   else setTimeout(poll, 50);

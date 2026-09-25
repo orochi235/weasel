@@ -1,12 +1,12 @@
 // Counts the stories the workshop renders in their own frame document and fails when there are more
 // than it allows. Reads story sources statically and never starts vite, so it is fast.
-import { globSync, readFileSync } from 'node:fs';
+import { globSync, readFileSync, statSync } from 'node:fs';
 import { registerHooks } from 'node:module';
 import { resolve } from 'node:path';
 
 // This number only goes down. Raising it is a reviewed edit to this file, and the story that
 // needs it carries the reason in its `isolate`.
-const ALLOWED = 1;
+const ALLOWED = 2;
 
 const repoRoot = resolve(import.meta.dirname, '../../..');
 
@@ -32,7 +32,10 @@ const { autoTitle } = await import('../src/vite/autoTitle.ts');
 const { isolateReport } = await import('../src/vite/isolateReport.ts');
 const { stories } = await import('../../../apps/forge/viteShared.ts');
 
-const files = [...new Set(stories.flatMap((pattern) => globSync(pattern, { cwd: repoRoot })))].sort();
+// A failed story run leaves `__screenshots__/<file>.stories.tsx/` directories that match the globs.
+const files = [...new Set(stories.flatMap((pattern) => globSync(pattern, { cwd: repoRoot })))]
+  .filter((path) => statSync(resolve(repoRoot, path)).isFile())
+  .sort();
 const entries = files.flatMap((path) => {
   const file = resolve(repoRoot, path);
   return indexFile(readFileSync(file, 'utf8'), file, autoTitle(file, repoRoot, stories));

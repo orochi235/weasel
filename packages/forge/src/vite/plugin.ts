@@ -1,4 +1,4 @@
-import { existsSync, globSync, readFileSync } from 'node:fs';
+import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, matchesGlob, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Logger, Plugin, ViteDevServer } from 'vite';
@@ -48,6 +48,8 @@ export function forge(options: ForgeOptions): Plugin[] {
     const files = options.stories.flatMap((pattern) =>
       globSync(pattern, { cwd: root, exclude: (name) => basename(String(name)) === 'node_modules' })
         .map((f) => resolve(root, f))
+        // A failed story run leaves `__screenshots__/<file>.stories.tsx/` directories that match the globs.
+        .filter((f) => statSync(f).isFile())
         .sort(),
     );
     return [...new Set(files)];
