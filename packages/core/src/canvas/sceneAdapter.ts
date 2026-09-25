@@ -45,7 +45,7 @@ import {
   type PoseDescriptor,
 } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
-import { composeWorldPose, type PoseComposition } from 'features/groups/composePose';
+import { composeWorldPose, frameAtOrAbove, type PoseComposition } from 'features/groups/composePose';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 
 /** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
@@ -460,12 +460,22 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       const items: Node<TData, TLayer, TPose>[] = [];
       // DFS from one snapshot root: push the node, then its subtree —
       // parents-before-children, so paste can re-insert in array order.
-      // A snapshot root loses its parent on paste, so under a frame its stored
-      // pose — which is relative to that parent — would land it somewhere else
-      // entirely. Capture roots in world coordinates; descendants keep their
-      // parent, so theirs stay local.
-      const poseFor = (n: Node<TData, TLayer, TPose>, isRoot: boolean): TPose =>
-        isRoot && composes ? adapter.getWorldPose(n.id) : n.pose;
+      // A stored pose is relative to its frame, and a node whose frame is not
+      // copied with it lands somewhere else entirely on paste. Capture those in
+      // world coordinates: every root, and under an envelope root, the nodes
+      // sharing the frame the root left behind.
+      const poseFor = (n: Node<TData, TLayer, TPose>, isRoot: boolean): TPose => {
+        if (!composes) return n.pose;
+        if (isRoot) return adapter.getWorldPose(n.id);
+        const frame = frameAtOrAbove(adapter, n.parent);
+        return frame !== null && taken.has(frame) ? n.pose : adapter.getWorldPose(n.id);
+      };
+      // Only a derivation over `'children'` survives the copy: an id list
+      // would still name the originals.
+      const derivation = (n: Node<TData, TLayer, TPose>) =>
+        n.dependsOn === 'children' && n.derivePose
+          ? { dependsOn: n.dependsOn, derivePose: n.derivePose }
+          : {};
 
       const capture = (id: string, isRoot = false): void => {
         if (taken.has(id)) return;
@@ -482,6 +492,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             data: copyField(n.data),
             children: [...n.children],
             ...(n.clipFromPose ? { clipFromPose: n.clipFromPose } : {}),
+            ...derivation(n),
           });
           for (const cid of scene.childrenOf(asNodeId(id))) capture(cid);
         } else {
@@ -519,6 +530,18 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       // of the pasted cluster.
       const isRoot = (item: Node<TData, TLayer, TPose>): boolean =>
         item.parent === null || !idMap.has(item.parent);
+      // Under a composing strategy a node inside a pasted frame rides it, and
+      // offsetting it as well would move it twice.
+      const byId = new Map(src.map((item) => [item.id, item]));
+      const ridesPastedFrame = (item: Node<TData, TLayer, TPose>): boolean => {
+        if (!composes) return false;
+        let p = item.parent === null ? undefined : byId.get(item.parent);
+        while (p !== undefined) {
+          if (definesFrame(p)) return true;
+          p = p.parent === null ? undefined : byId.get(p.parent);
+        }
+        return false;
+      };
       // Scene v1 poses are absolute (see the cascade notes above), so the
       // delta applies to EVERY pasted node — the cluster translates rigidly,
       // descendants staying attached to their parents.
@@ -546,7 +569,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
           id: idMap.get(item.id)!,
           layer: item.layer,
           parent: isRoot(item) ? null : idMap.get(item.parent as string)!,
-          pose: translate(copyField(item.pose), dx, dy),
+          pose: ridesPastedFrame(item) ? copyField(item.pose) : translate(copyField(item.pose), dx, dy),
           data: copyField(item.data),
         };
         if (item.kind === 'container') {
@@ -555,6 +578,9 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             kind: 'container',
             children: item.children.filter((c) => idMap.has(c)).map((c) => idMap.get(c)!),
             ...(item.clipFromPose ? { clipFromPose: item.clipFromPose } : {}),
+            ...(item.dependsOn === 'children' && item.derivePose
+              ? { dependsOn: item.dependsOn, derivePose: item.derivePose }
+              : {}),
           });
         } else {
           out.push({ ...base, kind: 'leaf' });

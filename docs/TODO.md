@@ -60,18 +60,8 @@ Priority tags:
   `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
   A container deriving its pose from its children is an envelope, not a frame
   (`definesFrame` in `core/scene/effectivePose.ts`).
-  Open follow-ups:
-  - `moveAction` is wrong under a composing strategy in two ways, both
-    reproduced against `RIGID_POSE_COMPOSITION`: dragging a frame container
-    also translates its descendants (`cascadeIds` → `translateCommitOps`), so
-    they move twice — a 100px drag lands a child 200px over; and the translate
-    commit adds the world delta to the *local* pose, so a leaf inside a
-    quarter-turned frame dragged right moves down.
-  - The clipboard drops `dependsOn`/`derivePose` from a copied container, so a
-    pasted envelope comes back a frame and, under a composing strategy, its
-    children are re-read relative to it.
-  - `apps/draw`'s SVG export bakes stored poses and would need world ones if
-    that app ever opts in.
+  Open follow-up: `apps/draw`'s SVG export bakes stored poses and would need
+  world ones if that app ever opts in.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`

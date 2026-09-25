@@ -29,8 +29,10 @@ it straight to the painter as though it were world (`buildSceneTree.ts:75-79`,
 the tree: *"`Scene` stores absolute poses and the render walks hand `getPose`
 straight to `drawOne`, composing nothing."*
 
-Of roughly sixty pose consumers, one composes correctly: `move.ts`.
-`useNodeOverlayFrame` composes but reads the authored pose, so it misses gesture
+Of roughly sixty pose consumers, only `move.ts` composes, and only on its
+reparent and layout paths: its translate-only commit added the world drag to
+the stored local pose and also translated every descendant of a dragged
+container. `useNodeOverlayFrame` composes but reads the authored pose, so it misses gesture
 overrides. `nestedHit` composes and has no caller inside the kit. Everything
 else — both pick sources, all selection chrome, align/distribute/flip, the
 diagram edge router, SVG export, clipboard, the minimap — reads a local pose and
@@ -175,9 +177,12 @@ default.
 4. Selection chrome — `useViewHelpers`, which feeds `chromeState` — plus the
    `poseComposition` prop on `SceneCanvas`, which is what lets a consumer turn
    any of this on.
-5. Actions — `resize`, `rotate`, `group`, `clone`, `flip`, align, distribute.
-6. Clipboard — `snapshotSelection` captures roots composed, because a root
-   loses its parent on paste.
+5. Actions — `move`, `resize`, `rotate`, `group`, `clone`, `flip`, align,
+   distribute. A translate-only move turns the world drag into the node's own
+   frame, and leaves a node whose frame is being dragged where it is stored.
+6. Clipboard — `snapshotSelection` captures composed any node whose frame is
+   not copied with it, because it loses that frame on paste; `commitPaste`
+   offsets only nodes that do not ride a pasted frame.
 
 Two guards were needed that this design did not anticipate, both because the
 absolute-pose model bakes a *cascade* into moving a container: dragging one
@@ -254,8 +259,5 @@ Stated so nobody plans against it:
   emitted path and gives a container a `<g>` with no transform, which is right
   for the absolute-pose model that app uses and would need world poses under a
   frame. It does not opt in, so nothing there is wrong today.
-- **`moveAction`'s translate commit, and the clipboard's copy of an
-  envelope.** Both are wrong under a composing strategy; `docs/TODO.md` has the
-  reproductions under "The render path composes world poses".
 - **The `poseById` fallback on the selection overlay**, which a consumer
   supplies. The chrome path that matters reads `chromeState`, which composes.

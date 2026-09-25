@@ -75,6 +75,7 @@ import type { MoveBehavior, GroupTransform, GestureContext, BehaviorResult } fro
 import { moveGestureAdapter, type MoveGestureAdapter } from '../move/gestureAdapter';
 import {
   composeWorldPose,
+  frameAtOrAbove,
   rebaseLocalPose,
   IDENTITY_POSE_COMPOSITION,
   type PoseAdapter,
@@ -345,12 +346,13 @@ function translateCommitOps(
   dx: number,
   dy: number,
 ): Op[] {
-  const m: Mat3 = [1, 0, 0, 1, dx, dy];
   const ops: Op[] = [];
   for (const id of ids) {
-    if (!scratch.startPoses.has(id)) continue;
+    if (!scratch.startPoses.has(id) || scratch.carried.has(id)) continue;
     const node = scratch.scene.get(id);
     if (!node) continue;
+    const l = localDelta(scratch, id, dx, dy);
+    const m: Mat3 = [1, 0, 0, 1, l.dx, l.dy];
     // The authored pose, not the captured one: a derived node's captured pose
     // is its derivation, and writing that back would lose the placeholder undo
     // restores.
@@ -358,7 +360,7 @@ function translateCommitOps(
     ops.push(createTransformOp<unknown>({
       id: id as string,
       from: authored,
-      to: translatePoseViaDescriptor(authored, dx, dy, scratch.projection),
+      to: translatePoseViaDescriptor(authored, l.dx, l.dy, scratch.projection),
       label: 'Move',
     }));
     if (scratch.geometryProjection) {
@@ -372,6 +374,26 @@ function translateCommitOps(
     }
   }
   return ops;
+}
+
+/**
+ * The world drag `(dx, dy)` as a translation of `id`'s stored pose. A pose is
+ * stored in its frame, so under a turned frame the two point different ways.
+ */
+function localDelta(
+  scratch: MoveScratch,
+  id: NodeId,
+  dx: number,
+  dy: number,
+): { dx: number; dy: number } {
+  const f = scratch.frames.get(id);
+  if (f === undefined) return { dx, dy };
+  const { pc, projection: d } = scratch;
+  const from = d.getBounds(pc.decompose(f.frameWorld, f.world));
+  const to = d.getBounds(
+    pc.decompose(f.frameWorld, translatePoseViaDescriptor(f.world, dx, dy, d)),
+  );
+  return { dx: to.x - from.x, dy: to.y - from.y };
 }
 
 /** Selected roots no source layout claimed on release, plus the descendants
@@ -451,14 +473,17 @@ interface MoveScratch {
    *  preview-ghost layer needs every child's pose to render the subtree at
    *  the previewed location (clipped to the container silhouette). */
   startPoses: Map<NodeId, unknown>;
-  /** Selected ids only — the roots whose pose actually changes at commit.
-   *  Descendants follow implicitly under local-pose semantics (a child's
-   *  local pose is unchanged when its parent's local pose moves), so we
-   *  do NOT write descendant poses to scene at commit. */
+  /** Selected ids only — the drag roots. */
   ids: NodeId[];
   /** Descendant ids cascaded for preview only. Their preview poses are
    *  computed each frame so container drags show children moving along. */
   cascadeIds: NodeId[];
+  /** Ids whose frame is itself moving, so they ride it and are not
+   *  translated. Empty under identity, where every node stores world. */
+  carried: Set<NodeId>;
+  /** For each moved id stored under a frame: its world pose and the frame's,
+   *  both at drag start — what `localDelta` rotates the drag through. */
+  frames: Map<NodeId, { world: unknown; frameWorld: unknown }>;
   scene: Scene<unknown, string, unknown>;
   /** Running drag delta — updated each onMove, applied once at commit. */
   currentDelta: { dx: number; dy: number };
@@ -688,6 +713,24 @@ export const moveAction: Action & { requires: string[] } = {
         }
       }
 
+      const carried = new Set<NodeId>();
+      const frames = new Map<NodeId, { world: unknown; frameWorld: unknown }>();
+      if (pc.closure !== 'identity') {
+        const poseAdapter = scenePoseAdapter(scene);
+        for (const id of startPoses.keys()) {
+          const frame = frameAtOrAbove(poseAdapter, scene.get(id)?.parent ?? null);
+          if (frame === null) continue;
+          if (startPoses.has(asNodeId(frame))) {
+            carried.add(id);
+            continue;
+          }
+          frames.set(id, {
+            world: composeWorldPose(poseAdapter, id as string, pc.compose),
+            frameWorld: composeWorldPose(poseAdapter, frame, pc.compose),
+          });
+        }
+      }
+
       const behaviors = (opts?.behaviors ?? []) as MoveBehavior<unknown>[];
       const adapter = moveGestureAdapter<unknown>(scene as Scene<unknown, string, unknown>);
       const origin = new Map<string, unknown>();
@@ -708,6 +751,8 @@ export const moveAction: Action & { requires: string[] } = {
         startPoses,
         ids,
         cascadeIds,
+        carried,
+        frames,
         scene,
         currentDelta: { dx: 0, dy: 0 },
         previews: new Map<NodeId, unknown>(),
@@ -769,7 +814,12 @@ export const moveAction: Action & { requires: string[] } = {
           // The preview-ghost layer reads these via `previewIds`/`previewPose`.
           scratch.previews.clear();
           for (const [id, ori] of scratch.startPoses) {
-            scratch.previews.set(id, translatePoseViaDescriptor(ori, dx, dy, scratch.projection));
+            if (scratch.carried.has(id)) {
+              scratch.previews.set(id, ori);
+              continue;
+            }
+            const l = localDelta(scratch, id, dx, dy);
+            scratch.previews.set(id, translatePoseViaDescriptor(ori, l.dx, l.dy, scratch.projection));
           }
 
           // Layout reflow pass — no-op without a layout dep.
