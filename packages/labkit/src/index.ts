@@ -1,4 +1,4 @@
-// The property-panel family, LayerStack, Input, Select, TokenPanel, ToggleBar and Button live in
+// The property-panel family, LayerList, Input, Select, TokenPanel, ToggleBar and Button live in
 // `@weasel-js/ui`; labkit re-exports them so chrome built on labkit needs no
 // direct ui dependency. Named, not `export *` — a star re-export of an external
 // package emits no binding in the bundle.
@@ -15,8 +15,6 @@ export type {
   IconProps,
   InputProps,
   JogProps,
-  LayerStackItem,
-  LayerStackProps,
   NumberRowProps,
   PropertyGroupProps,
   PropertyListPack,
@@ -55,7 +53,6 @@ export {
   Input,
   inferTokenType,
   Jog,
-  LayerStack,
   NumberRow,
   PauseIcon,
   PlayIcon,
@@ -257,8 +254,8 @@ export type { ValidationResult } from './instrument/validateConfigSchema';
 export { validateConfigSchema } from './instrument/validateConfigSchema';
 export * from './job';
 export * from './lab';
-export type { LayerListProps, LayerTreeNode } from './layers';
-export { LayerList } from './layers';
+export type { LayerListItem, LayerListProps, LayerMove } from './layers';
+export { LayerList, moveLayers } from './layers';
 export * from './loupe';
 export * from './primitives';
 export { SPECIMEN_SECTIONS, Specimen } from './specimen/Specimen';

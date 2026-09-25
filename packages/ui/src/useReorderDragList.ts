@@ -3,14 +3,12 @@ import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from '
 import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 
 /** One row in a reorderable list. */
-export interface LayerListItem {
+export interface ReorderItem {
   id: string;
   label: ReactNode;
   /** Locked rows cannot be dragged, cannot be crossed by drops, and
    *  never combine with other rows in a multi-selection. */
   locked?: boolean;
-  /** Optional color swatch rendered before the label. Any CSS color string. */
-  swatch?: string;
 }
 
 /**
@@ -18,7 +16,7 @@ export interface LayerListItem {
  * and the index they were dropped at, measured against the pre-drag `items`.
  */
 export interface UseReorderDragListOptions {
-  items: LayerListItem[];
+  items: ReorderItem[];
   selectedIds: string[];
   onReorder(ids: string[], targetIndex: number): void;
   /** A press that was released without ever engaging a drag — the click a
@@ -81,7 +79,7 @@ export interface ReorderDragHandlers {
  * bounded by the nearest locked row above and below it, so a locked row is a
  * wall in both directions rather than a global ceiling.
  */
-function unlockedSegment(items: readonly LayerListItem[], sourceIndex: number): [number, number] {
+function unlockedSegment(items: readonly ReorderItem[], sourceIndex: number): [number, number] {
   let lo = 0;
   for (let i = sourceIndex - 1; i >= 0; i--) {
     if (items[i]?.locked) { lo = i + 1; break; }
@@ -94,7 +92,7 @@ function unlockedSegment(items: readonly LayerListItem[], sourceIndex: number): 
 }
 
 /** Would dropping `draggedIds` at `targetIndex` leave a contiguous block where it already is? */
-function isNoopDrop(items: readonly LayerListItem[], draggedIds: readonly string[], targetIndex: number): boolean {
+function isNoopDrop(items: readonly ReorderItem[], draggedIds: readonly string[], targetIndex: number): boolean {
   const indices = draggedIds
     .map((id) => items.findIndex((it) => it.id === id))
     .filter((i) => i >= 0)

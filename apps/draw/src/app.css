@@ -154,32 +154,14 @@
   color: var(--wzl-fg);
 }
 
-/* --- LayerList row label (icon + id) --------------------------------- */
-.wd-layer-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.wd-layer-label > svg {
-  display: block;
-  flex-shrink: 0;
-  opacity: 0.85;
-}
-
-/* --- Page row (locked, system-owned) --------------------------------- */
-.wd-layer-label-page {
-  color: var(--wzl-fg-muted);
-  font-style: italic;
-}
-
-/* Thin divider above any locked row in the layer list — separates
-   user layers from system rows (currently just the Page row). */
-.wd-layerlist-host [data-locked="true"] {
-  border-top: 1px solid var(--wzl-border);
-  /* Visually offset the row so the divider sits in its own gutter rather
-     than hugging the previous row. */
-  margin-top: 4px;
-  padding-top: 1px;
+/* --- Layer row color chip ------------------------------------------- */
+.wd-layer-swatch {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid var(--wzl-border);
+  background: var(--wd-swatch);
 }
 
 /* Column layout, panel surface, and edge borders come from weasel-ui's
@@ -609,44 +591,6 @@
      reliably on every click (including when the swatch is already
      focused). The wrapping button still gets the bubbled click for
      focus + shift-toggle handling. */
-}
-
-/* --- Layer list host inside PropertiesPanel -------------------------- */
-.wd-layerlist-host {
-  /* PropertiesPanel uses a 12-column grid; without this the host sits in
-     column 1 and auto-sizes to the LayerList's min-width, leaving the
-     panel mostly empty. Span all columns so the list fills the panel. */
-  grid-column: 1 / -1;
-  /* Scroll long layer stacks within the panel rather than pushing the
-     document/page row off the bottom of the sidebar. */
-  max-height: 320px;
-  overflow-y: auto;
-}
-
-/* LayerList rows ship with hardcoded dark-theme browns. Override against
-   the light sidebar panel surface: dark text, subtle translucent hover,
-   neutral translucent selection. Mirrors the treatment applied to the
-   HistoryList initial row. */
-.wd-layerlist-host > div > div {
-  color: var(--wzl-fg);
-}
-.wd-layerlist-host > div > div:hover {
-  background: rgba(0, 0, 0, 0.06);
-}
-.wd-layerlist-host > div > div[data-selected="true"] {
-  background: rgba(0, 0, 0, 0.12);
-  color: var(--wzl-fg);
-}
-
-/* --- History list host inside PropertiesPanel ------------------------ */
-.wd-historylist-host {
-  /* Mirror the layer-list host: span the full 12-col grid and cap the
-     height so a long edit session doesn't push later panels off-screen.
-     Slightly taller than Layers since users typically scrub through
-     many history entries to find a target state. */
-  grid-column: 1 / -1;
-  max-height: 360px;
-  overflow-y: auto;
 }
 
 .wd-history-label {

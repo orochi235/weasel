@@ -24,9 +24,10 @@ import {
   ItemList,
   KeyCap,
   KeySequence,
-  LayerStack,
-  type LayerStackItem,
+  LayerList,
+  type LayerListItem,
   MenuButton,
+  moveLayers,
   NumberField,
   NumberRow,
   OptionsBar,
@@ -45,6 +46,7 @@ import {
   ResizeHandle,
   Select,
   SelectRow,
+  Sidebar,
   SidebarPanel,
   Slider,
   SliderRow,
@@ -66,7 +68,6 @@ import {
   ToolOptionsBar,
   Tooltip,
   TooltipTrigger,
-  Sidebar,
   StatusBar as UiStatusBar,
 } from '@weasel-js/ui';
 import { type CSSProperties, type ReactNode, useId, useMemo, useRef, useState } from 'react';
@@ -434,7 +435,7 @@ function PanelsAndRows() {
   const [label, setLabel] = useState('Badge');
   const [visible, setVisible] = useState(true);
   const [prefs, setPrefs] = useState<Record<string, unknown>>({});
-  const [layers, setLayers] = useState<LayerStackItem[]>([
+  const [layers, setLayers] = useState<LayerListItem[]>([
     { id: 'base', label: 'Base coat' },
     { id: 'wash', label: 'Wash' },
   ]);
@@ -503,12 +504,10 @@ function PanelsAndRows() {
           onChange={(path, value) => setPrefs((prev) => setAt(prev, path, value))}
         />
       </Cell>
-      <Cell label="LayerStack">
-        <LayerStack
+      <Cell label="LayerList">
+        <LayerList
           items={layers}
-          onReorder={(ids) =>
-            setLayers(ids.flatMap((id) => layers.filter((item) => item.id === id)))
-          }
+          onReorder={(move) => setLayers(moveLayers(layers, move))}
           renderBody={(item) => <div>settings for {item.label}</div>}
         />
       </Cell>

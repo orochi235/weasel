@@ -185,7 +185,7 @@ describe('LabProps.instruments', () => {
     render(<Lab instruments={[instrument]} defaultInstrument="Probe" />);
     expect([...seen]).toEqual(['grid', 'glyph']);
 
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Toggle grid' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Show grid' }));
     expect([...seen]).toEqual(['glyph']);
   });
 });

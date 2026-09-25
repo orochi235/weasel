@@ -68,7 +68,7 @@ A map of the library so agents can find what they need quickly.
 | `useLayerScheduler` (DPR-aware rAF dirty-flag scheduler) | `src/canvas/useLayerScheduler.ts` |
 | `usePanZoom` | `src/canvas/usePanZoom.ts` |
 | `screenToWorld` / `worldToScreen` | `src/canvas/canvasCoords.ts` |
-| `<LayerList>` (visibility toggles + reorder) | `src/layers/LayerList.tsx` |
+| `<LayerList>` (reorder, visibility, nesting, cards) | `@weasel-js/ui` (re-exported by labkit) |
 | Undo stack (pure FIFO with `past`/`future`) | `src/undo/undoStack.ts` |
 | Synchronous event bus | `src/undo/eventBus.ts` |
 | `<Palette>` (drag source) | `src/dragdrop/Palette.tsx` |
@@ -135,7 +135,6 @@ Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all
 |---|---|
 | `<PropertyGroup>` (subpanel grouping with `hidden`) | `@weasel-js/ui` (re-exported by labkit) |
 | `<CurveField>` (1D y=f(x) curve editor) | `@weasel-js/ui` (re-exported by labkit) |
-| `<LayerStack>` (expandable layer cards w/ drop-hint reorder) | `@weasel-js/ui` (re-exported by labkit) |
 | `<SingletonExperimentProvider>` (one-trial state runtime) | `src/state/SingletonExperiment.tsx` |
 | Weasel-ui passthroughs (`CurveEditor`, `useReorderDragList`, `formatNumber`, …) | `src/passthrough/weasel-ui.ts` (exported as `@weasel-js/labkit/weasel-ui`) |
 

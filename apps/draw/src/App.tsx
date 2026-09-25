@@ -102,14 +102,15 @@ import {
   type PropertyRenderer,
   type PropertyRenderContext,
   PaintInput,
+  LayerList,
+  type LayerListItem,
+  useSceneLayerList,
 } from '@weasel-js/ui';
 
 import { ActionBar, type FlipAxis, type PaperSizeKey } from './ActionBar';
 import { ActiveSwatches, type ActivePaint } from './ActiveSwatches';
 import { PreferencesModal } from './PreferencesModal';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
-import { LayerList, type LayerListItem } from './ui/LayerList';
-import { useLayerList } from './ui/LayerList/useLayerList';
 import {
   PropertiesPanel,
   PropertiesGrid,
@@ -444,6 +445,12 @@ export const WD_RENDERERS: Record<string, PropertyRenderer> = {
  * nothing. Non-solid paints (gradient, pattern) have no single color to show
  * and return undefined until the row can draw a real preview.
  */
+function LayerSwatch({ color }: { color: string | undefined }): ReactElement | null {
+  if (color === undefined) return null;
+  // A custom property rather than a class: the chip's color is the node's data.
+  return <span className="wd-layer-swatch" style={{ '--wd-swatch': color } as CSSProperties} aria-hidden="true" />;
+}
+
 function layerSwatch(data: WeaselDrawData): string | undefined {
   if (data.fill != null) return paintChipColor(data.fill);
   if (data.text === undefined) return undefined;
@@ -489,7 +496,7 @@ function RightSidebar({
   setDocSelected,
 }: RightSidebarProps): ReactElement {
   const adapter = useSceneAdapter(scene, {});
-  const baseLayerListProps = useLayerList({
+  const baseLayerListProps = useSceneLayerList({
     scene,
     selection,
     adapter,
@@ -497,7 +504,7 @@ function RightSidebar({
       const data = node.data as WeaselDrawData;
       return {
         label: data.text ?? data.label ?? node.id,
-        swatch: layerSwatch(data),
+        leading: <LayerSwatch color={layerSwatch(data)} />,
       };
     },
   });
@@ -509,7 +516,7 @@ function RightSidebar({
   const backgroundRow: LayerListItem = {
     id: BACKGROUND_ROW_ID,
     label: 'Background',
-    swatch: backgroundColor,
+    leading: <LayerSwatch color={backgroundColor} />,
     locked: true,
   };
   const layerItems = [...baseLayerListProps.items, backgroundRow];
@@ -580,7 +587,7 @@ function RightSidebar({
       >
         <LayerList
           {...layerListProps}
-          empty={<em style={{ opacity: 0.6 }}>No nodes</em>}
+          empty="No nodes"
         />
       </SidebarPanel>
       <SidebarPanel

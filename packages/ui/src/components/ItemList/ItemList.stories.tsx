@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { type RefCallback, useState } from 'react';
-import { type LayerListItem, useReorderDragList } from '../../useReorderDragList';
+import { type ReorderItem, useReorderDragList } from '../../useReorderDragList';
 import { ItemList, type ItemListRow } from './ItemList';
 
 const meta: Meta<typeof ItemList> = {
@@ -33,7 +33,7 @@ export const Empty: Story = {
   ),
 };
 
-const LAYERS: LayerListItem[] = [
+const LAYERS: (ReorderItem & { swatch: string })[] = [
   { id: 'sky', label: 'Sky', swatch: '#6ab7ff' },
   { id: 'hills', label: 'Hills', swatch: '#7bc96f' },
   { id: 'house', label: 'House', swatch: '#e58f65' },

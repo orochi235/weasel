@@ -316,14 +316,13 @@ directly. Several expose more than the root does, `/state` most of all.
 | `/chrome` | Regions, contribution types, built-in contributions |
 | `/controls` | `<ControlPanel>` and the config field types |
 | `/canvas` | `<CanvasStack>`, coordinate helpers, `usePanZoom`, `useOrbit` |
-| `/layers` | `<LayerList>` |
+| `/layers` | `<LayerList>` from `@weasel-js/ui`, and the layers capability types |
 | `/loupe` | Magnifier components and `useLoupe` |
 | `/surface` | Tiled surface hooks for your own renderer |
 | `/job` | `useJob` and the job capability types |
 | `/state` | The lab store, storage adapters, `useTrialState`, serialization helpers |
 | `/undo` | Undo stack and event bus |
 | `/dragdrop` | `<Palette>`, `<DragGhost>`, `useDragDrop` |
-| `/ui/layers` | `<LayerStack>`, the expandable layer-card list |
 | `/weasel-ui`, `/weasel-canvas` | Passthroughs to `@weasel-js/ui` and `@weasel-js/core` |
 
 ## Development

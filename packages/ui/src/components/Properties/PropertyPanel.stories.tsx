@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { LayerStack, type LayerStackItem } from '../LayerStack';
+import { LayerList, type LayerListItem, moveLayers } from '../LayerList';
 import { Subpanel } from './Subpanel';
 import {
   CheckboxRow,
@@ -502,7 +502,7 @@ export const Sidebar: Story = {
 
 /**
  * A panel of like items, each a group that reorders, folds and goes away: a
- * `LayerStack` inside the panel. Each tail takes the next tone of the theme's
+ * `LayerList` of cards inside the panel. Each tail takes the next tone of the theme's
  * list, which colors its edge and handle and every control inside it, and its
  * ordinal is its handle. Its body pairs its rows and gives the shape's own
  * parameters a `Subpanel`.
@@ -510,17 +510,17 @@ export const Sidebar: Story = {
 export const ToneList: Story = {
   render: () => {
     function Tails() {
-      const [tails, setTails] = useState<LayerStackItem[]>([
-        { id: 1, label: 'classic', tone: 0 },
-        { id: 2, label: 'bubbles', tone: 1 },
-        { id: 3, label: 'wavy', tone: 2 },
+      const [tails, setTails] = useState<LayerListItem[]>([
+        { id: '1', label: 'classic', tone: 0 },
+        { id: '2', label: 'bubbles', tone: 1 },
+        { id: '3', label: 'wavy', tone: 2 },
       ]);
       const numbered = tails.map((tail, i) => ({ ...tail, badge: String(i + 1) }));
       return (
         <PropertyPanel title="Tails">
-          <LayerStack
+          <LayerList
             items={numbered}
-            onReorder={(ids) => setTails(ids.flatMap((id) => tails.filter((t) => t.id === id)))}
+            onReorder={(move) => setTails(moveLayers(tails, move))}
             onRemove={(id) => setTails(tails.filter((t) => t.id !== id))}
             renderBody={() => <TailBody />}
           />

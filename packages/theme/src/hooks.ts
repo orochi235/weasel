@@ -42,7 +42,7 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     name: 'disclosure-target',
     type: 'dimension',
     value: '20px',
-    description: 'Hit-target square of a Disclosure twisty, and of a labkit LayerList row’s.',
+    description: 'Hit-target square of a Disclosure twisty, and the twisty column of a LayerList row.',
   },
   {
     name: 'number-field-width',

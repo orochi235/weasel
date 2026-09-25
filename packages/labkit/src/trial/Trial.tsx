@@ -24,9 +24,9 @@ import type {
 } from '../instrument/types';
 import { useJob } from '../job/useJob';
 import { useLabContext } from '../lab/LabContext';
-import { LayerList } from '../layers/LayerList';
 import { TrialLoupe } from '../loupe/TrialLoupe';
 import { resolveLoupe } from '../loupe/types';
+import { LayerList, type LayerListItem, moveLayers } from '../passthrough/weasel-ui';
 import { LabStoreContext, TrialIdProvider } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
@@ -401,6 +401,24 @@ function TrialRuntime({
     return instrument.layers.ids.map((l) => (typeof l === 'string' ? { id: l, label: l } : l));
   }, [instrument.layers]);
 
+  // In the order the canvas draws them, with the always-on layers pinned
+  // below the rest, where a drag cannot reach past them.
+  const layerItems: LayerListItem[] = useMemo(() => {
+    const ordered = layerOrder
+      ? [...layerDescriptors].sort((a, b) => layerOrder.indexOf(a.id) - layerOrder.indexOf(b.id))
+      : layerDescriptors;
+    const pinnedLast = [
+      ...ordered.filter((l) => !l.alwaysOn),
+      ...ordered.filter((l) => l.alwaysOn),
+    ];
+    return pinnedLast.map((l) => ({
+      id: l.id,
+      label: l.label,
+      locked: l.alwaysOn === true,
+      visible: l.alwaysOn === true || layerVisibility[l.id] !== false,
+    }));
+  }, [layerDescriptors, layerOrder, layerVisibility]);
+
   const dragDropResult = useDragDrop({
     capability: instrument.dragDrop ?? { palette: [], onDrop: (_p, _i, s) => s },
     canvasContainerRef,
@@ -519,19 +537,18 @@ function TrialRuntime({
     () =>
       instrument.layers && layerDescriptors.length > 0 ? (
         <LayerList
-          layers={layerDescriptors}
-          visibility={layerVisibility}
-          onReorder={(next) => {
-            setLayerOrder(next.map((l) => l.id));
+          items={layerItems}
+          onReorder={(move) => {
+            setLayerOrder(moveLayers(layerItems, move).map((l) => l.id));
             bus.emit('layers.reorder');
           }}
-          onToggle={(lid, visible) => {
+          onVisibilityChange={(lid, visible) => {
             setLayerVisibility((prev) => ({ ...prev, [lid]: visible }));
             bus.emit('layers.toggle');
           }}
         />
       ) : null,
-    [instrument.layers, layerDescriptors, layerVisibility, bus],
+    [instrument.layers, layerDescriptors, layerItems, bus],
   );
 
   const extraChrome = useMemo<TrialContribution[]>(() => {

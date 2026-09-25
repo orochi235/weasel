@@ -1,7 +1,6 @@
 // `@weasel-js/ui` ships generic UI primitives plus scene-aware panels
 // that stay generic over consumer data (SelectionPanel). App-specific
-// policy panels (LayerList composition, document props) live in their
-// consuming app (today: `apps/draw/src/ui/`).
+// policy panels (document props) live in their consuming app.
 export { dlog, isDebugEnabled } from './dlog';
 export * from './icons';
 export { solidColorOf, strokeColorOf } from './components/paintValue';
@@ -13,7 +12,7 @@ export * from './components/Disclosure';
 export * from './components/DragGhost';
 export * from './components/DragHandleGlyph';
 export * from './components/Keycaps';
-export * from './components/LayerStack';
+export * from './components/LayerList';
 export * from './components/Slider';
 export * from './components/ItemList';
 export * from './components/ToggleBar';
@@ -83,7 +82,7 @@ export {
   parseSignedNumber,
 } from './format/number';
 export type {
-  LayerListItem,
+  ReorderItem,
   UseReorderDragListOptions,
   ReorderDragState,
   ReorderGhost,
