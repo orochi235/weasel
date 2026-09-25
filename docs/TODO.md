@@ -1133,15 +1133,6 @@ one dead `const` and four stale disable directives.
   `LoupePoint`); the rest are exported from no entry at all, so each needs a
   call on whether it is public before labkit re-exports it.
 
-- **(P2) labkit's lint fails on three raw values in `@weasel-js/ui` CSS.**
-  `npm run lint -w @weasel-js/labkit` runs `check-design-tokens.ts`, which
-  rejects `border-radius: 1px` (`FillStrokeSwatch.module.css:78`),
-  `border-radius: 2px` (`LayerList.stories.module.css:13`) and
-  `font-size: var(--code-font-size, 0.9em)` (`Code.module.css:11`). No token
-  holds either radius (`--wzl-radius-sm` is 3px), and `0.9em` is relative on
-  purpose, so each wants a token, a calc on one, or an allowlist entry with
-  its reason. CI stops at this step.
-
 - **(P3) The vite and vitest configs don't load under vite's native config
   loader.** vite 8.3 warns on every run that `configLoader: 'native'` is
   planned as a future default and these configs use what it can't: `__dirname`
