@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import type { Plugin } from 'vite';
 
 /**
@@ -13,6 +14,6 @@ export async function localWake(): Promise<Plugin | null> {
     if (!process.env.CI) console.warn(`wake: ${entry} not found; serving without one-copy-per-app`);
     return null;
   }
-  const { wake } = (await import(entry)) as { wake: () => Plugin };
+  const { wake } = (await import(pathToFileURL(resolve(entry)).href)) as { wake: () => Plugin };
   return wake();
 }

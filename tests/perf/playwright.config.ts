@@ -34,6 +34,11 @@ export default defineConfig({
     command: `npx vite --config vite.config.ts --port ${port}`,
     cwd: repoRoot,
     port,
+    // vite.config.ts loads vite-plugin-wake, which otherwise stops any other
+    // running copy of this app to take its remembered port. WAKE_EXTRA runs
+    // an extra copy on exactly this port instead, leaving a developer's dev
+    // server alone.
+    env: { WAKE_EXTRA: String(port) },
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },
