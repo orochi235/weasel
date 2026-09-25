@@ -204,6 +204,7 @@ export type {
   NodeOptions,
   NodeValue,
   ResolvedConfig,
+  SectionOption,
   SectionSpec,
   ValueAtPath,
 } from './config/types';

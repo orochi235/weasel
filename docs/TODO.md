@@ -1122,17 +1122,6 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
-- **(P2) labkit's bundled declarations reference types no entry exports.**
-  rollup-plugin-dts 6.5 warns during labkit's build that its `.d.ts` entries
-  name types they don't export, which a consumer inferring a type through them
-  meets as TS2742: `index.d.ts` → `PropertyMetricProps`, `StanceProps`;
-  `passthrough/weasel-ui.d.ts` → `OverlayPortalProps`, `SegmentTooltipFields`,
-  `StanceProps`, `WithoutPortalTarget`; `config/index.d.ts` → `SectionOption`;
-  `loupe/index.d.ts` → `LoupeMode`, `LoupePoint`. Some are public in their
-  own package and only lost in labkit's bundle (`StanceProps`, `LoupeMode`,
-  `LoupePoint`); the rest are exported from no entry at all, so each needs a
-  call on whether it is public before labkit re-exports it.
-
 - **(P3) The vite and vitest configs don't load under vite's native config
   loader.** vite 8.3 warns on every run that `configLoader: 'native'` is
   planned as a future default and these configs use what it can't: `__dirname`
