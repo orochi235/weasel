@@ -1122,6 +1122,14 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
+- **(P2) The release workflow checks the registry before the publish lands.**
+  1.6.0's "Verify every version reached the registry" step ran 20:35–20:37 UTC
+  and failed on `bidi`, `hud`, `labkit` and `svg`, whose npm `time` entries
+  read 20:36:54–20:38:10; `npm run check:published` and
+  `test:smoke:registry` both passed minutes later. The step needs to retry a
+  missing package over a few minutes before failing, or a real miss and a
+  late one look the same.
+
 - **(P2) `@weasel-js/labkit/config` loads `@weasel-js/ui` at runtime again.**
   `packages/labkit/src/config/entry.test.ts` ("loads nothing from @weasel-js/ui
   at runtime") fails on main: `config/sectionTree.ts` imports `isPrefLeaf` and
