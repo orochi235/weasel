@@ -53,7 +53,6 @@ const entries: Record<string, string> = {
   'passthrough/weasel-canvas': 'src/passthrough/weasel-canvas.ts',
   'surface/index': 'src/surface/index.ts',
   'job/index': 'src/job/index.ts',
-  'ui/layers/index': 'src/ui/layers/index.ts',
 };
 
 const input = Object.fromEntries(
