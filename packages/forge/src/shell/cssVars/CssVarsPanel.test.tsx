@@ -1,7 +1,8 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { THEME_SOURCES } from '@weasel-js/theme';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FromFrame, ToFrame } from '../../protocol/messages';
 import { describeSchema } from '../../protocol/schema';
 import type { IndexEntry } from '../../story/types';
@@ -16,7 +17,34 @@ const ready: FromFrame = { type: 'ready', schema: describeSchema(f.schema({})), 
 
 afterEach(() => {
   history.replaceState(null, '', '/');
+  vi.unstubAllGlobals();
 });
+
+/** A theme store answering GET with the built weasel definition at `h1`, and PUT with `put`. */
+function stubStore(put: { status: number; body: unknown }) {
+  const calls: { url: string; init?: RequestInit }[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, ...(init ? { init } : {}) });
+      const answer =
+        init?.method === 'PUT' ? put : { status: 200, body: { name: 'weasel', hash: 'h1', emits: true, definition: THEME_SOURCES.weasel } };
+      return new Response(JSON.stringify(answer.body), { status: answer.status });
+    }),
+  );
+  return calls;
+}
+
+async function editFontBase(value: string) {
+  const font = row(vars(), 'font');
+  const base = font.getByRole('textbox', { name: 'font base' });
+  act(() => {
+    fireEvent.change(base, { target: { value } });
+    fireEvent.blur(base);
+  });
+  await flush();
+  return font;
+}
 
 function trial(name: string) {
   return within(screen.getByRole('region', { name: `Trial X > ${name}` }));
@@ -41,6 +69,7 @@ function row(scope: ReturnType<typeof vars>, name: string) {
 }
 
 const setsOf = (received: { type: string }[]) => received.filter((m) => m.type === 'vars.set');
+type VarsSet = Extract<ToFrame, { type: 'vars.set' }>;
 
 describe('CssVarsPanel', () => {
   it('lists the theme tokens and sends an edit, then its reset, through its trial’s frame', async () => {
@@ -161,5 +190,43 @@ describe('CssVarsPanel', () => {
     await flush();
     expect(again.received.map((m) => m.type)).toEqual(['vars.set', 'init']);
     expect(again.received[0]).toEqual({ type: 'vars.set', name: '--wzl-gray-50', value: 'red' });
+  });
+
+  it('saves a font base edit into the current density’s seed, then drops the overrides the theme now carries', async () => {
+    location.hash = '#/x--a';
+    const calls = stubStore({ status: 200, body: { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] } });
+    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { received } = await openTrial('A');
+    await editFontBase('15');
+
+    fireEvent.click(vars().getByRole('button', { name: 'Save scales to theme' }));
+    await waitFor(() => expect(vars().getByRole('status')).toHaveTextContent('Saved to themes/weasel.json.'));
+    const put = calls.find((c) => c.init?.method === 'PUT');
+    expect(put?.url).toMatch(/\/__theme\/weasel$/);
+    const body = JSON.parse(String(put?.init?.body));
+    expect(body.hash).toBe('h1');
+    expect(body.definition.seeds['ui-base']).toEqual({ by: 'density', compact: 11, comfortable: 15, roomy: 15 });
+    expect(body.definition.scales['font-size'].base).toBe('{seeds.ui-base}');
+
+    await flush();
+    const cleared = (setsOf(received) as VarsSet[]).filter((m) => m.value === null);
+    expect(cleared.map((m) => m.name).sort()).toEqual(
+      ['2xs', 'xs', 'sm', 'md', 'lg', 'xl'].map((step) => `--wzl-font-size-${step}`).sort(),
+    );
+    expect(vars().queryByRole('button', { name: 'Save scales to theme' })).toBeNull();
+  });
+
+  it('reports a file changed on disk and keeps the edit', async () => {
+    location.hash = '#/x--a';
+    stubStore({ status: 409, body: { status: 'conflict', hash: 'h9' } });
+    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { received } = await openTrial('A');
+    const font = await editFontBase('15');
+
+    fireEvent.click(vars().getByRole('button', { name: 'Save scales to theme' }));
+    await waitFor(() => expect(vars().getByRole('alert')).toHaveTextContent('changed on disk'));
+    expect((setsOf(received) as VarsSet[]).some((m) => m.value === null)).toBe(false);
+    expect(font.getByRole('textbox', { name: 'font base' })).toHaveValue('15');
+    expect(vars().getByRole('button', { name: 'Save scales to theme' })).toBeInTheDocument();
   });
 });

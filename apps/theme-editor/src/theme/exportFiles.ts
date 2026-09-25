@@ -1,7 +1,6 @@
 import type { ThemeDefinition } from '@weasel-js/theme';
-import { axisDependencies, bakeChain, emitCss, toDTCG, type Lookup } from '@weasel-js/theme/engine';
+import { axisDependencies, bakeChain, emitCss, serializeDefinition, toDTCG, type Lookup } from '@weasel-js/theme/engine';
 import { runtimeTheme } from './model';
-import { serializeDefinition } from './store';
 
 export type ExportKind = 'css' | 'definition' | 'dtcg';
 

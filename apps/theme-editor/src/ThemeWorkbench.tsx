@@ -1,6 +1,6 @@
 import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
 import { fullSelection, type Selection, type ThemeDefinition } from '@weasel-js/theme';
-import type { Lookup } from '@weasel-js/theme/engine';
+import type { IssueReport, Lookup, PutResult, StoredTheme } from '@weasel-js/theme/engine';
 import { AddIcon, Button, Dialog, ExportIcon, Input, RedoIcon, Select, UndoIcon } from '@weasel-js/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LayerRail } from './LayerRail';
@@ -17,7 +17,6 @@ import { EXPORTS, download, exportFile } from './theme/exportFiles';
 import { describeIssue } from './theme/issues';
 import { documentSheets, tokensReadAt } from './theme/inspect';
 import { LAYERS, adoptGenerated, countTokens, pinApplies, runtimeTheme, type LayerId } from './theme/model';
-import type { IssueReport, PutResult, StoredTheme } from './theme/store';
 import { useLabHistory, type LabHistory } from './useLabHistory';
 
 export interface WorkbenchProps {

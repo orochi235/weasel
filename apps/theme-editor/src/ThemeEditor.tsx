@@ -5,7 +5,7 @@ import { ThemeWorkbench } from './ThemeWorkbench';
 import { bundledThemeApi, httpThemeApi, type ThemeApi } from './theme/api';
 import { clearDraft, draftNames, loadDraft, loadLastTheme, persistLastTheme } from './theme/draftStorage';
 import { starterDefinition, themeNameProblem } from './theme/starter';
-import type { StoredTheme } from './theme/store';
+import type { StoredTheme } from '@weasel-js/theme/engine';
 
 interface Loaded {
   readonly api: ThemeApi;

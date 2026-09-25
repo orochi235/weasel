@@ -936,16 +936,13 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 in its own iframe ("frame"), and the workshop shows it as a lab trial with
 controls. It is the only story runner in the repo.
 
-- **(P2) The CSS Vars panel's scale edits cannot be saved.** They are per-trial
-  browser overrides; nothing writes them back to `themes/weasel.json`. The
-  panel grows its own editor rather than linking out to the theme editor
-  (decided). Undecided: what the *font base* becomes when saved, since the
-  definition holds `{seeds.ui-base}` (11 / 13 / 15 by density), not a number —
-  either change only the current density's seed, keeping density working (the
-  proposal), or write the literal, flattening font size across densities. The
-  write path exists: the theme editor's dev server PUTs to `/__theme/<name>`,
-  hash-checked against the file, and regenerates `packages/theme/src/generated/`;
-  forge would need that endpoint.
+- **(P3) The CSS Vars panel saves scale edits only.** A single token edited by
+  hand — a color, a step changed after its scale — stays a per-trial override,
+  because a token's value comes from a semantic rule, a ramp or a pin and the
+  panel has no mapping back to which. Scale edits save through
+  `applyScaleEdits` (`packages/forge/src/shell/cssVars/saveScales.ts`). A save
+  also refuses a param that differs by `mode` while the trial's mode is Auto,
+  since the panel does not know which scheme the frame resolved.
 
 - **(P3) Storybook's secondary-panel addon has no forge equivalent.** It pinned
   a second addon panel into a fixed column beside the first, so controls and
