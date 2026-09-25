@@ -1138,17 +1138,6 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
-- **(P2) Dev links assume the port table, but wake decides the port.** Every
-  app's port comes from `scripts/dev-ports.json`, and `apps/shared/labs.ts` and
-  the site's `/weasel/draw` proxy link to those numbers. Under
-  `scripts/vite-wake.ts`, though, an app that wake has already registered is
-  served on its remembered port, and the configured one only counts on the
-  app's first launch. So forge, registered at 5190 before the table existed,
-  stays there and its lab link points at a dead 4712. Clearing forge's entry in
-  `~/.local/state/wake/apps.json` fixes this machine once. The durable fix is
-  either for wake to follow a changed config port, or for the links to ask wake
-  where the app is.
-
 - **(P2) Benchmark HUD text against a transparent DOM overlay.** Two ways to
   put text over the canvas: `@weasel-js/hud` draws it as canvas commands, or a
   transparent `@weasel-js/ui` layer sits above the canvas and lets the browser
