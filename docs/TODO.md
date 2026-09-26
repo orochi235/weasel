@@ -1144,12 +1144,15 @@ one dead `const` and four stale disable directives.
 ## Release-gate & build hygiene
 
 - **(P2) The release workflow checks the registry before the publish lands.**
-  1.6.0's "Verify every version reached the registry" step ran 20:35–20:37 UTC
-  and failed on `bidi`, `hud`, `labkit` and `svg`, whose npm `time` entries
-  read 20:36:54–20:38:10; `npm run check:published` and
-  `test:smoke:registry` both passed minutes later. The step needs to retry a
-  missing package over a few minutes before failing, or a real miss and a
-  late one look the same.
+  npm holds an upload as staged, invisible to `npm view`, for minutes before
+  listing it. 1.6.0's `bidi`, `hud`, `labkit` and `svg` went live up to three
+  minutes after the "Verify every version reached the registry" step failed on
+  them; 1.6.1's `hud` was uploaded at 17:30 UTC and listed at 17:44. A
+  re-dispatch inside that window fails too, with `E409 … Cannot publish over
+  previously staged version`, so the check's advice to re-dispatch is wrong
+  while a version is staged. The step needs to poll a missing package for
+  about 15 minutes before failing, and the publish step should treat that
+  E409 as "npm already holds this version" ([npm/cli#9889](https://github.com/npm/cli/issues/9889)).
 
 - **(P2) `@weasel-js/labkit/config` loads `@weasel-js/ui` at runtime again.**
   `packages/labkit/src/config/entry.test.ts` ("loads nothing from @weasel-js/ui
