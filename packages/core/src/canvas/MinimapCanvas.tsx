@@ -1,7 +1,5 @@
 /**
  * `<MinimapCanvas>` — opinionated minimap built on top of `<SceneViewCanvas>`.
- * Step 4 of the detached-minimap spec
- * (`docs/superpowers/specs/2026-05-31-detached-minimap-design.md`).
  *
  * Renders the same `scene` the main canvas is showing, through a derived
  * "fit" view, and overlays a dashed visible-window indicator showing where

@@ -1,7 +1,6 @@
 /**
  * `<SceneViewCanvas>` — pointer-inert, read-only render of a `Scene` at a
- * given `View` into its own `<canvas>` DOM element. Step 2 of the detached
- * minimap spec (`docs/superpowers/specs/2026-05-31-detached-minimap-design.md`).
+ * given `View` into its own `<canvas>` DOM element.
  *
  * The component:
  *   - mounts its own `<canvas>`,

@@ -136,8 +136,7 @@ function App() {
 }
 ```
 
-Design rationale: see
-[`docs/superpowers/specs/2026-05-31-detached-minimap-design.md`](./superpowers/specs/2026-05-31-detached-minimap-design.md).
+Both are separate `<canvas>` elements with their own GL context, so they can sit anywhere in the page — a sidebar, a floating panel. A view *inside* the main canvas is a `<CanvasView>` instead.
 
 ## Adapter
 

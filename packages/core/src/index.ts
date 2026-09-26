@@ -363,7 +363,6 @@ export type { CanvasViewProps, ViewRect } from './canvas/CanvasView';
 // ─── Detached scene-view + minimap: read-only canvases with their own GL ─────
 // `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a
 // given view; `<MinimapCanvas>` is the opinionated minimap built on top.
-// See `docs/superpowers/specs/2026-05-31-detached-minimap-design.md`.
 export { SceneViewCanvas } from './canvas/SceneViewCanvas';
 export type { SceneViewCanvasProps } from './canvas/SceneViewCanvas';
 export { MinimapCanvas } from './canvas/MinimapCanvas';
