@@ -57,10 +57,10 @@ describe('SceneCanvas — auto-wires PointerContext getDropPoint', () => {
     // jsdom's getBoundingClientRect returns zeros and default view is identity,
     // so clientX/Y maps 1:1 to world coords.
     pointerMoveAt(canvas, 42, 17);
-    expect(probedCtx!.getDropPoint()).toEqual({ worldX: 42, worldY: 17 });
+    expect(probedCtx!.getDropPoint()).toEqual({ worldX: 42, worldY: 17, viewId: null });
     // A second move updates the same ref.
     pointerMoveAt(canvas, 100, 200);
-    expect(probedCtx!.getDropPoint()).toEqual({ worldX: 100, worldY: 200 });
+    expect(probedCtx!.getDropPoint()).toEqual({ worldX: 100, worldY: 200, viewId: null });
     // pointerleave clears.
     fireEvent.pointerLeave(canvas);
     expect(probedCtx!.getDropPoint()).toBeNull();

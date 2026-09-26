@@ -130,7 +130,15 @@ export interface CanvasSurfaceHelpers {
  *  What a layer receives as its `data` argument, unchanged: the two halves
  *  are split so a per-view set can be built independently of the surface's,
  *  not to make layers ask for one. */
-export interface CanvasHelpers<TPose> extends CanvasViewHelpers<TPose>, CanvasSurfaceHelpers {}
+export interface CanvasHelpers<TPose> extends CanvasViewHelpers<TPose>, CanvasSurfaceHelpers {
+  /**
+   * The view this draw is for: a `<CanvasView>` id, or `null` for the
+   * surface's own camera. One layer array paints every view, so a layer that
+   * belongs in some views and not others — a minimap's indicator — declines
+   * the rest by this id.
+   */
+  readonly viewId: string | null;
+}
 
 export interface UseViewHelpersOpts<TPose> {
   /** Only `getPose` is read here — the narrow slice keeps this hook off the

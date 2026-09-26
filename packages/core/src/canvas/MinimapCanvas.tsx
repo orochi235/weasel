@@ -1,28 +1,43 @@
 /**
- * `<MinimapCanvas>` — opinionated minimap built on top of `<SceneViewCanvas>`.
- * Step 4 of the detached-minimap spec
- * (`docs/superpowers/specs/2026-05-31-detached-minimap-design.md`).
+ * `<MinimapCanvas>` — opinionated minimap on a canvas of its own, built on
+ * `<SceneViewCanvas>`.
  *
  * Renders the same `scene` the main canvas is showing, through a derived
  * "fit" view, and overlays a dashed visible-window indicator showing where
- * the main canvas is currently looking. Click anywhere in the minimap to
+ * the main canvas is currently looking. Press anywhere in the minimap to
  * recenter the main view on that world point; drag to pan continuously.
  *
- * Pointer-isolated from the main canvas: a native `pointerdown` listener on
- * the underlying `<canvas>` opens an `openPointerSession`, which owns the
- * rest of the drag. No participation in the tool / action / dispatcher layer
- * — this is a single one-off click+drag gesture with a fixed effect (per the
- * spec).
+ * Input runs on a dispatcher of its own, through the same `minimap.center` /
+ * `minimap.pan` actions the in-surface minimap (`createMinimapContribution`)
+ * binds. It publishes its pointer into the pointer store in scope, and draws a
+ * crosshair wherever that store says the pointer is on another surface — put
+ * one `<PointerContextProvider>` around it and the main canvas for linked
+ * cursors both ways.
  */
 import {
   useCallback,
-  useLayoutEffect,
+  useEffect,
   useMemo,
   useRef,
   useSyncExternalStore,
 } from 'react';
 import type { Ref } from 'react';
-import { openPointerSession, type PointerSession } from '@weasel-js/routing';
+import {
+  ActionsProvider,
+  ActiveToolContextProvider,
+  DepRegistryProvider,
+  useActionsRegistry,
+  useDepSource,
+  useGestureDispatcher,
+} from '@weasel-js/routing/react';
+import type { Tool } from '@weasel-js/routing';
+import { PointerProviderIfRoot } from './SceneCanvas/PointerProviderIfRoot';
+import { usePointerContext, usePointerPosition } from 'features/pointer/PointerContext';
+import {
+  MINIMAP_CENTER, MINIMAP_PAN, minimapCenterAction, minimapPanAction,
+} from 'features/minimap/actions';
+import { createLinkedCursorLayer } from 'features/minimap/layers';
+import type { ViewApi } from 'interactions/actions/depSchema';
 import { SceneViewCanvas } from './SceneViewCanvas';
 import {
   computeFitView,
@@ -88,7 +103,24 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
   className?: string;
   /** Forwarded ref to the underlying `<canvas>`. */
   canvasRef?: Ref<HTMLCanvasElement>;
+  /** The view id this minimap publishes its pointer under. Default
+   *  `'minimap'`. */
+  id?: string;
 }
+
+/** The minimap's own bindings. Unscoped: this dispatcher routes no views, so
+ *  every input on it is the minimap's. */
+const MINIMAP_INPUT: Tool = {
+  id: 'minimap',
+  eligibility: { always: true },
+  bindings: [
+    { spec: { kind: 'pointerDown' }, actionId: MINIMAP_CENTER },
+    { spec: { kind: 'drag' }, actionId: MINIMAP_PAN },
+  ],
+};
+const TOOLS_BY_ID: ReadonlyMap<string, Tool> = new Map([[MINIMAP_INPUT.id, MINIMAP_INPUT]]);
+const CHANNELS = { wheel: false, pinch: false, contextMenu: false, ingest: false } as const;
+const FALLBACK_CURSOR_COLOR = '#4c8dff';
 
 function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   props: MinimapCanvasProps<TData, TLayer, TPose>,
@@ -110,6 +142,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     indicatorStyle,
     className,
     canvasRef,
+    id = 'minimap',
   } = props;
   const mainView = normalizeView(mainViewProp);
 
@@ -135,19 +168,15 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     return computeIndicatorCommand(mainView, mainViewDims, indicatorStyle);
   }, [mainView, mainViewDims, indicatorStyle]);
 
-  const extraCommands = useMemo<DrawCommand[]>(() => [indicatorCmd], [indicatorCmd]);
-
   // -------------------------------------------------------------------------
-  // Pointer handling
+  // Input
   // -------------------------------------------------------------------------
   //
   // The "latest" pattern (refs holding the current mainView / dims / setter
-  // / fitView) lets the listeners read up-to-date values without re-binding
-  // every frame.
+  // / fitView) lets the dep and the listeners read up-to-date values without
+  // re-binding every frame.
 
   const localCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const sessionRef = useRef<PointerSession | null>(null);
-
   const mainViewRef = useRef(mainView);
   const mainViewDimsRef = useRef(mainViewDims);
   const onMainViewChangeRef = useRef(onMainViewChange);
@@ -157,45 +186,81 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   onMainViewChangeRef.current = onMainViewChange;
   fitViewRef.current = fitView;
 
-  const recenterFromPointer = useCallback((ev: PointerEvent) => {
-    const canvas = localCanvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const px = ev.clientX - rect.left;
-    const py = ev.clientY - rect.top;
+  // The main canvas's camera, which is what the minimap's actions move.
+  const rootView = useMemo<ViewApi>(() => ({
+    get: () => mainViewRef.current,
+    set: (v) => onMainViewChangeRef.current(v),
+    hostSize: () => mainViewDimsRef.current,
+  }), []);
+  useDepSource('rootView', () => rootView);
+
+  const actions = useActionsRegistry();
+  useEffect(() => {
+    if (!actions) return;
+    const off = [actions.register(minimapCenterAction()), actions.register(minimapPanAction())];
+    return () => { for (const u of off) u(); };
+  }, [actions]);
+
+  /** Client point → world, through the fit camera. */
+  const clientToWorld = useCallback((cx: number, cy: number) => {
+    const rect = localCanvasRef.current?.getBoundingClientRect();
     const fv = fitViewRef.current;
-    // Minimap-px → world: invert the fit view.
-    const worldX = fv.x + px / fv.scale.x;
-    const worldY = fv.y + py / fv.scale.y;
-    const mv = mainViewRef.current;
-    const dims = mainViewDimsRef.current;
-    const next: View = {
-      x: worldX - dims.width / (2 * mv.scale.x),
-      y: worldY - dims.height / (2 * mv.scale.y),
-      scale: { x: mv.scale.x, y: mv.scale.y },
+    return {
+      x: fv.x + (cx - (rect?.left ?? 0)) / fv.scale.x,
+      y: fv.y + (cy - (rect?.top ?? 0)) / fv.scale.y,
     };
-    onMainViewChangeRef.current(next);
   }, []);
 
-  const handlePointerDown = useCallback((ev: PointerEvent) => {
-    const canvas = localCanvasRef.current;
-    if (!canvas || sessionRef.current) return;
-    // Only act on the primary button for mouse; touch/pen always proceed.
-    if (ev.pointerType === 'mouse' && ev.button !== 0) return;
-    // A recenter is applied the moment it is computed and there is nothing
-    // to commit, so a cancelled drag ends exactly where a released one does.
-    const done = () => { sessionRef.current = null; };
-    sessionRef.current = openPointerSession(canvas, ev, {
-      onMove: recenterFromPointer,
-      onEnd: done,
-      onCancel: done,
-    });
-    recenterFromPointer(ev);
-  }, [recenterFromPointer]);
+  useGestureDispatcher({
+    canvasRef: localCanvasRef,
+    actions: actions!,
+    toolsById: TOOLS_BY_ID,
+    clientToWorld,
+    keyboard: false,
+    channels: CHANNELS,
+  });
 
-  // Wire native listeners on the canvas. `<SceneViewCanvas>` doesn't expose
-  // its element except via `canvasRef`, so we route both our internal ref
-  // and the consumer's ref through a single setter.
+  // -------------------------------------------------------------------------
+  // Linked cursor
+  // -------------------------------------------------------------------------
+
+  const pointerStore = usePointerContext();
+  useEffect(() => {
+    const el = localCanvasRef.current;
+    if (!el || !pointerStore) return;
+    const onMove = (e: PointerEvent): void => {
+      const w = clientToWorld(e.clientX, e.clientY);
+      pointerStore.set({ worldX: w.x, worldY: w.y, viewId: id });
+    };
+    const onLeave = (e: PointerEvent): void => {
+      if (e.buttons !== 0) return;
+      if (pointerStore.get()?.viewId === id) pointerStore.set(null);
+    };
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerleave', onLeave);
+    return () => {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerleave', onLeave);
+    };
+  }, [pointerStore, clientToWorld, id]);
+
+  const pointer = usePointerPosition();
+  const cursorLayer = useMemo(() => createLinkedCursorLayer({
+    id: `${id}.cursor`,
+    pointer: () => pointer,
+    color: () => {
+      const el = localCanvasRef.current;
+      return (el && getComputedStyle(el).getPropertyValue('--wzl-accent').trim()) || FALLBACK_CURSOR_COLOR;
+    },
+  }), [id, pointer]);
+
+  const extraCommands = useMemo<DrawCommand[]>(() => [
+    indicatorCmd,
+    ...cursorLayer.draw({ viewId: id }, fitView, { width, height }),
+  ], [indicatorCmd, cursorLayer, id, fitView, width, height]);
+
+  // `<SceneViewCanvas>` doesn't expose its element except via `canvasRef`, so
+  // we route both our internal ref and the consumer's ref through one setter.
   const setCanvasRef = useCallback((el: HTMLCanvasElement | null) => {
     localCanvasRef.current = el;
     if (typeof canvasRef === 'function') {
@@ -204,16 +269,6 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
       (canvasRef as { current: HTMLCanvasElement | null }).current = el;
     }
   }, [canvasRef]);
-
-  useLayoutEffect(() => {
-    const canvas = localCanvasRef.current;
-    if (!canvas) return;
-    canvas.addEventListener('pointerdown', handlePointerDown);
-    return () => {
-      canvas.removeEventListener('pointerdown', handlePointerDown);
-      sessionRef.current?.cancel();
-    };
-  }, [handlePointerDown]);
 
   return (
     <SceneViewCanvas
@@ -235,10 +290,27 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
 
 /**
  * Opinionated minimap. See `MinimapCanvasProps` for the full surface and
- * the module docstring for the rendering / pointer model.
+ * the module docstring for the rendering / input model.
+ *
+ * Its dispatcher, actions and deps are its own, so it never competes with
+ * the main canvas for input. The pointer store is shared when one is in scope.
  *
  * `forwardRef` is not used because the component is generic over
  * `<TData, TLayer, TPose>` and React's `forwardRef` erases generics. The
  * `canvasRef` prop is the plain-prop equivalent.
  */
-export const MinimapCanvas = MinimapCanvasInner;
+export function MinimapCanvas<TData, TLayer extends string, TPose>(
+  props: MinimapCanvasProps<TData, TLayer, TPose>,
+) {
+  return (
+    <DepRegistryProvider>
+      <ActionsProvider>
+        <ActiveToolContextProvider>
+          <PointerProviderIfRoot>
+            <MinimapCanvasInner {...props} />
+          </PointerProviderIfRoot>
+        </ActiveToolContextProvider>
+      </ActionsProvider>
+    </DepRegistryProvider>
+  );
+}

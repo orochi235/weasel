@@ -1,3 +1,4 @@
+import { createPointerStore } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { Instrument } from '../instrument/types';
 import { LabContext, type LabContextValue } from '../lab/LabContext';
@@ -63,6 +64,7 @@ function Harness() {
                 setZoom: () => {},
                 activeToolId: null,
                 visibleLayers: [],
+                pointer: createPointerStore(),
               },
               emit: () => {},
             })}

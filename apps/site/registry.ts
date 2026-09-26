@@ -393,10 +393,10 @@ const DEMO_META: DemoMeta[] = [
   },
   {
     id: 'minimap',
-    title: 'Minimap (detached)',
+    title: 'Minimap',
     category: 'Viewport',
-    description: '<MinimapCanvas> mounts its own <canvas> in a sidebar (separate DOM location, own WebGL2 context) and renders the same scene the main canvas shows, through a derived fit view. A dashed indicator tracks the main canvas\'s visible window in world coords; click to recenter the main view on that world point, drag to pan continuously. Pointer-independent from the main canvas — the browser routes events by element under the cursor. No tool/action/dispatcher participation; the minimap is one hardcoded gesture pair with a fixed effect.',
-    hint: 'H = hand on main · click minimap to recenter · drag minimap to pan',
+    description: 'Two minimaps over one scene. The inset one is a single ambient entry, createMinimapContribution: a view in the corner of the main canvas, the press and drag that recenter the main camera, the visible-rect indicator and a linked crosshair. The detached <MinimapCanvas> beside it runs the same actions on a canvas of its own. One PointerContextProvider spans both, so each draws a crosshair where the pointer is on the other.',
+    hint: 'press or drag either minimap to recenter · watch the crosshair follow the pointer',
     load: () => import('./demos/MinimapDemo').then((m) => m.MinimapDemo),
     path: 'apps/site/demos/MinimapDemo.tsx',
   },

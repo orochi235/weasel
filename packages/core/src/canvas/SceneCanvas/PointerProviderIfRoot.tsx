@@ -50,7 +50,7 @@ export function PointerPublisher({
         target?.origin ?? rect,
         target?.view ?? { x: 0, y: 0, scale: { x: 1, y: 1 } },
       );
-      ctx.pointerRef.current = { worldX, worldY };
+      ctx.set({ worldX, worldY, viewId: target?.id ?? null });
     };
     const onMove = (e: PointerEvent): void => publish(e.pointerId, e.clientX, e.clientY);
     const onLeave = (e: PointerEvent): void => {
@@ -65,7 +65,7 @@ export function PointerPublisher({
         publish(e.pointerId, e.clientX, e.clientY);
         return;
       }
-      ctx.pointerRef.current = null;
+      ctx.set(null);
     };
     // Document-level pointermove backstop so the HUD keeps updating when the
     // pointer drifts off the canvas during a drag (pointer capture routes

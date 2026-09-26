@@ -754,6 +754,22 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
   action, and `docs/taxonomy.md` would need to say what a hover binding claims.
 
+- **(P3) labkit's loupe ships in the main bundle.** `<Trial>` imports
+  `TrialLoupe` statically, so every lab pays for the magnifier whether or not
+  an instrument declares one. The overview shows the other shape: its own
+  entry (`@weasel-js/labkit/overview`), mounted by the instrument and reading
+  the trial through `CameraContext`. Moving the loupe onto it means the
+  instrument mounts the lens, and the trial's toolbar toggle finds it through
+  context rather than the capability.
+
+- **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
+  pan, zoom, tap and loupe route through weasel's dispatcher (`CameraInput`),
+  but dragging a palette item onto a canvas is `useDragDrop`
+  (`packages/labkit/src/dragdrop/DragDropRuntime.tsx`): a press in the sidebar
+  that ends over the canvas, which no binding on the canvas's dispatcher sees
+  begin. Routing it needs a drag that starts on one element and drops on
+  another — the same shape `ingest` answers for an OS drag.
+
 - **(P2) Things that look duplicated in this engine and are not.** Left from the
   2026-08-29 duplicated-cascade audit, whose findings all landed — `git log` and
   `.changeset/` are the record. This list is the other half: pairs a future audit
@@ -870,9 +886,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ### Plugin/bundling convention
 
-**v1 shipped 2026-08-10** as `Contribution[]` + `mergeContributions(...)`: a feature returns entries a consumer spreads in, instead of wiring three or four separate exports. `@weasel-js/hud`'s `useHudContribution()` is the worked example. What remains is the heavier tier.
+A feature ships as one `SurfaceContribution` — bindings, actions, deps,
+overlay, views and an `attach` for mount/unmount — installed through
+`<SceneCanvas ambient>`. `docs/extending.md` opens with the map; the minimap and
+the HUD are built on it.
 
-- **(P3) Heavier v2** (only if needed for true third-party plugins): Canvas lifecycle hooks (mount/unmount/pre-render/post-render), capability/version negotiation against kit semver, sub-package layout (`@weasel-js/pen`?). Don't pursue without a real third-party consumer asking.
+- **(P3) Per-frame hooks and version negotiation.** `attach` covers mount and
+  unmount; a contribution cannot yet run before or after a paint, or declare
+  the kit versions it was written against.
 
 
 ### Feature-roles taxonomy — risks to monitor

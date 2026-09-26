@@ -1,19 +1,10 @@
-import {
-  type CSSProperties,
-  type ReactNode,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import type { Point, ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
-import { CameraWheelContext } from './CameraWheelContext';
+import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
 import { CanvasStackContext } from './CanvasStackContext';
-import { screenToWorld } from './canvasCoords';
+import { LinkedCursor } from './LinkedCursor';
 import { type CanvasLayerDescriptor, useLayerScheduler } from './useLayerScheduler';
-import { usePanZoom } from './usePanZoom';
 import { resolveFrame, type ViewportSize, type WorldSpec } from './worldSpec';
 
 /** Props for `<CanvasStack>`. */
@@ -38,7 +29,8 @@ export interface CanvasStackProps {
 
 /** Stacks one `<canvas>` per layer and drives them from a shared view, so a
  *  layer that changes rarely is not redrawn with one that changes every frame.
- *  Handles sizing, device pixel ratio, and pan/zoom. */
+ *  Handles sizing and device pixel ratio; pan and zoom route through weasel's
+ *  gesture dispatcher (`<CameraInput>`). */
 export function CanvasStack({
   layers,
   view: viewProp,
@@ -92,31 +84,18 @@ export function CanvasStack({
 
   const frame = useMemo(() => resolveFrame(worldSpec, size), [worldSpec, size]);
 
-  const onTap = (e: PointerEvent) => {
-    const el = containerRef.current;
-    if (!onHitTest || !el) return;
-    const rect = el.getBoundingClientRect();
-    onHitTest(screenToWorld({ x: e.clientX - rect.left, y: e.clientY - rect.top }, view, frame));
-  };
-
-  const handlers = usePanZoom({ view: viewProp, onViewChange, minZoom, maxZoom, frame, onTap });
-  const onWheelRef = useRef(handlers.onWheel);
-  onWheelRef.current = handlers.onWheel;
-  const wheelSlot = useContext(CameraWheelContext);
-
-  // Bound by hand because React registers wheel listeners passive, where
-  // `preventDefault` is refused and the page scrolls under the zoom.
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const wheel = (e: WheelEvent): void => onWheelRef.current(e, el);
-    el.addEventListener('wheel', wheel, { passive: false });
-    if (wheelSlot) wheelSlot.current = wheel;
-    return () => {
-      el.removeEventListener('wheel', wheel);
-      if (wheelSlot?.current === wheel) wheelSlot.current = null;
-    };
-  }, [wheelSlot]);
+  const camera = useCameraView({
+    view: viewProp,
+    onViewChange,
+    frame,
+    hostRef: containerRef,
+    minZoom,
+    maxZoom,
+  });
+  const cameraCtx = useMemo(
+    () => ({ view: camera, frame, element: () => containerRef.current }),
+    [camera, frame],
+  );
   useLayerScheduler({ layers, view, frame, canvasRefs: canvasMap, size, host: containerRef });
 
   const ctxValue = useMemo(
@@ -139,25 +118,30 @@ export function CanvasStack({
   };
 
   return (
-    <CanvasStackContext.Provider value={ctxValue}>
-      <div
-        ref={containerRef}
-        className={className ? `lk-canvas-stack ${className}` : 'lk-canvas-stack'}
-        style={containerStyle}
-        onPointerDown={handlers.onPointerDown}
-      >
-        {layers.map((layer) => (
-          <canvas
-            key={layer.id}
-            ref={(el) => setCanvasRef(layer.id, el)}
-            className="lk-canvas-stack__canvas"
-            width={canvasPx.width}
-            height={canvasPx.height}
-            style={{ ...canvasCss, display: layer.visible ? 'block' : 'none' }}
-          />
-        ))}
-        <div className="lk-canvas-stack__overlay">{children}</div>
-      </div>
-    </CanvasStackContext.Provider>
+    <CameraScope>
+      <CameraContext.Provider value={cameraCtx}>
+        <CanvasStackContext.Provider value={ctxValue}>
+          <CameraInput hostRef={containerRef} camera={camera} frame={frame} onTap={onHitTest} />
+          <div
+            ref={containerRef}
+            className={className ? `lk-canvas-stack ${className}` : 'lk-canvas-stack'}
+            style={containerStyle}
+          >
+            {layers.map((layer) => (
+              <canvas
+                key={layer.id}
+                ref={(el) => setCanvasRef(layer.id, el)}
+                className="lk-canvas-stack__canvas"
+                width={canvasPx.width}
+                height={canvasPx.height}
+                style={{ ...canvasCss, display: layer.visible ? 'block' : 'none' }}
+              />
+            ))}
+            <LinkedCursor />
+            <div className="lk-canvas-stack__overlay">{children}</div>
+          </div>
+        </CanvasStackContext.Provider>
+      </CameraContext.Provider>
+    </CameraScope>
   );
 }

@@ -1,5 +1,5 @@
 export type {
-  Contribution, ContributionRouting, ContributionChrome, Eligibility,
+  Contribution, ContributionRouting, ContributionChrome, ContributionDeps, Eligibility,
   OverlayPosition, HotkeyTrigger, ToolPresentation,
 } from './types';
 export { liveScope } from './eligibility';

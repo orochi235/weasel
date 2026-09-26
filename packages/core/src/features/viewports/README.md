@@ -53,5 +53,8 @@ inside a viewport, and the bug won't show up until someone puts it in one.
   camera, but keeps it full-canvas — no rect, no clip. Viewports are bounded;
   parallax planes are not.
 - `<MinimapCanvas>` and `<SceneViewCanvas>` are the higher-level, supported
-  answers for the two most common cases. Reach for this module when you need a
-  viewport *inside* an existing canvas rather than a second canvas element.
+  answers for the two most common cases on a second canvas element. For a
+  minimap *inside* the canvas, `createMinimapContribution` installs one as a
+  view with its input and chrome in one `ambient` entry
+  ([`../minimap`](../minimap/README.md)). Reach for this module when you need a
+  viewport of your own inside an existing canvas.

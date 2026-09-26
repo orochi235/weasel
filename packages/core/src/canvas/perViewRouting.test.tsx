@@ -58,14 +58,14 @@ function pointerMoveAt(el: Element, clientX: number, clientY: number) {
 }
 
 describe('pointer world coordinates follow the view under the cursor', () => {
-  it('reports panel-space coords inside the panel and canvas-space outside it', () => {
+  it('reports panel-space coords and the panel id inside it, canvas-space outside it', () => {
     const h = mount();
     // Outside the panel: the canvas's own identity camera.
     pointerMoveAt(h.canvas, 42, 17);
-    expect(h.pointerCtx().getDropPoint()).toEqual({ worldX: 42, worldY: 17 });
+    expect(h.pointerCtx().get()).toEqual({ worldX: 42, worldY: 17, viewId: null });
     // Inside it: panel-local (50, 10) through a 2× camera at (1000, 2000).
     pointerMoveAt(h.canvas, 150, 10);
-    expect(h.pointerCtx().getDropPoint()).toEqual({ worldX: 1025, worldY: 2005 });
+    expect(h.pointerCtx().get()).toEqual({ worldX: 1025, worldY: 2005, viewId: 'panel' });
   });
 });
 

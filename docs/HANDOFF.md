@@ -1,3 +1,42 @@
+# Built, not merged: contributions as the feature unit, and the stage overview — branch `labkit-overview`
+
+Worktree `.claude/worktrees/labkit-overview`, branched from local `main` (which
+carries unpushed commits of its own). All three arcs are built and committed;
+nothing is pushed or merged. **Next:** Mike's call on merging to `main`; never
+push without his explicit OK.
+
+Where it lives now: `docs/extending.md` (the extension-unit map and the minimap
+worked example), `docs/taxonomy.md` §1 "Contribution",
+`packages/core/src/features/minimap/README.md`,
+`packages/labkit/src/canvas/AGENTS.md`, `packages/labkit/src/overview/AGENTS.md`.
+The design spec is deleted; its decisions are in those and in the commits.
+
+## Decisions made in conversation that the code does not explain
+
+**The overview is an engine feature, not a labkit component.** Mike rejected a
+labkit `overview` capability and then a `TrialPlugin` seam: "if there isn't an
+obvious way to express something like this, there should be." taxonomy §6's
+deferred `WeaselPlugin` is `SurfaceContribution`; its "≥2 features first" gate
+was the consumer-gating the root CLAUDE.md bans.
+
+**labkit trial content moves onto weasel's dispatcher.** Mike chose this over
+labkit binding engine pieces under its own `usePanZoom`, which is now deleted.
+
+**The overview ships outside labkit's main bundle** (`@weasel-js/labkit/overview`).
+Mike's "d3dx sense": optional helpers on the core API, not in it. The loupe's
+move onto the same shape is filed in `docs/TODO.md`.
+
+**The requester is levar's session `levar-0b`**, told on completion how an
+instrument declares the overview; it moves its eye marks lab onto it and
+deletes `visor/src/eyemarks/Context.tsx` and `GhostCursor.tsx`.
+
+## Traps
+
+**Weasel tests go to the fleet.** `onto test --ref origin/main` from the
+worktree (no upstream). A fresh tree needs `--setup --node <n>` once.
+
+---
+
 # Retained from forge stories in the workshop document — merged into `main`
 
 Stories render in the workshop document; `isolate` keeps one in an iframe.

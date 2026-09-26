@@ -363,10 +363,21 @@ export type { CanvasViewProps, ViewRect } from './canvas/CanvasView';
 // ─── Detached scene-view + minimap: read-only canvases with their own GL ─────
 // `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a
 // given view; `<MinimapCanvas>` is the opinionated minimap built on top.
-// See `docs/superpowers/specs/2026-05-31-detached-minimap-design.md`.
 export { SceneViewCanvas } from './canvas/SceneViewCanvas';
 export type { SceneViewCanvasProps } from './canvas/SceneViewCanvas';
 export { MinimapCanvas } from './canvas/MinimapCanvas';
+export {
+  createMinimapContribution,
+  createLinkedCursorContribution,
+  minimapCenterAction,
+  minimapPanAction,
+  centerRootOn,
+  MINIMAP_CENTER,
+  MINIMAP_PAN,
+  crosshairRects,
+  CROSSHAIR_HALO,
+} from './features/minimap';
+export type { MinimapContributionOptions, LinkedCursorOptions, CrosshairRect } from './features/minimap';
 export type { MinimapCanvasProps } from './canvas/MinimapCanvas';
 export {
   buildSceneViewCommands,
@@ -411,7 +422,9 @@ export type { SelectionContextValue } from './features/selection';
 // --- @experimental Pointer ambient context (2026-05-16) ---------------------
 export {
   PointerContextProvider,
+  createPointerStore,
   usePointerContext,
+  usePointerPosition,
 } from './features/pointer/PointerContext';
 export type { PointerContextValue, PointerWorldPos } from './features/pointer/PointerContext';
 export { PointerProviderIfRoot } from './canvas/SceneCanvas/PointerProviderIfRoot';
@@ -1363,7 +1376,10 @@ export type {
 } from './canvas/sceneAdapter';
 export type { ContributionRouting, Eligibility, EligibilityState, HotkeyTrigger, OverlayPosition, ToolPresentation } from '@weasel-js/routing';
 export type { Contribution, ContributionChrome } from './tools/overlayBinding';
-export { liveScope, mergeContributions, scopeBindings } from '@weasel-js/routing';
+export type { ContributionDeps } from '@weasel-js/routing';
+export { liveScope, scopeBindings } from '@weasel-js/routing';
+export { mergeContributions } from './canvas/surfaceContribution';
+export type { SurfaceContribution, ContributionDepReader } from './canvas/surfaceContribution';
 export type { InsertOverlayStyle } from './tools/builtin/marquee';
 export type { InsertPoint } from './interactions/gestures/types';
 export type {

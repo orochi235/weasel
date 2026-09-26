@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react';
+import { createPointerStore } from '@weasel-js/core';
 import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_VIEW } from '../state/view';
@@ -94,6 +95,7 @@ describe('SineWave instrument smoke test', () => {
         setZoom: vi.fn(),
         activeToolId: null,
         visibleLayers: [],
+        pointer: createPointerStore(),
       },
       emit: vi.fn(),
     };

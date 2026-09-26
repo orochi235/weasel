@@ -3,9 +3,7 @@
  * (`<SceneViewCanvas>` / `<MinimapCanvas>`). Given a `<canvas>`, a `Scene`,
  * a `View`, and a per-node `drawOne`, render one frame.
  *
- * Step 1 of the detached-minimap spec
- * (`docs/superpowers/specs/2026-05-31-detached-minimap-design.md`). The full
- * `<SceneCanvas>` render pipeline does much more than this (slots, layer
+ * The full `<SceneCanvas>` render pipeline does much more than this (slots, layer
  * ordering, debug sinks, tool overlays). The helper deliberately re-implements
  * the small subset needed for a non-interactive scene view rather than
  * refactoring `<SceneCanvas>` to share code — the spec calls for that

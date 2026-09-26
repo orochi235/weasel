@@ -8,8 +8,6 @@
  *
  * Neither helper touches GL, the DOM, or the renderer; they're pure
  * functions, unit-testable with `expect`.
- *
- * See `docs/superpowers/specs/2026-05-31-detached-minimap-design.md`.
  */
 import { documentPose } from '../core/scene';
 import type { Scene } from '../core/scene';

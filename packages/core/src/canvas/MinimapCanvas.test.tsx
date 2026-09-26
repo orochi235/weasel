@@ -28,6 +28,7 @@ import { ColorOverrideRegistry } from '../animation/colorRegistry';
 import type { Animator } from '../animation/types';
 import { pathFromD } from 'features/paths/pathFromD';
 import { strokeOf } from '../util/paint';
+import { PointerContextProvider, usePointerContext, type PointerContextValue } from 'features/pointer/PointerContext';
 
 const RAINBOW = [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1];
 const RED = [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1];
@@ -517,5 +518,47 @@ describe('<MinimapCanvas> — animator', () => {
     renderMock.mock.calls.at(-1)![0].forEach(walk);
     expect(strokes).toEqual([RED]);
     expect(onTick).toHaveBeenCalled();
+  });
+});
+
+describe('<MinimapCanvas> — linked cursor', () => {
+  function mountShared() {
+    let store: PointerContextValue | null = null;
+    function Grab() { store = usePointerContext(); return null; }
+    const { container } = render(
+      <PointerContextProvider>
+        <Grab />
+        <MinimapCanvas
+          scene={makeScene()}
+          mainView={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
+          mainViewDims={{ width: 400, height: 300 }}
+          onMainViewChange={() => {}}
+          width={100}
+          height={100}
+          drawOne={drawOne}
+        />
+      </PointerContextProvider>,
+    );
+    return { canvas: container.querySelector('canvas')!, store: () => store! };
+  }
+
+  const lastRoot = () => renderMock.mock.calls.at(-1)![0][0] as GroupDrawCommand;
+
+  it('publishes its pointer into the shared store under its own view id', () => {
+    const h = mountShared();
+    fireEvent(h.canvas, pointerEvent(h.canvas, 'pointerMove', { x: 50, y: 50, buttons: 0 }));
+    const fv = computeFitView(makeScene(), { width: 100, height: 100 }, 'scene', identityPoseBounds);
+    expect(h.store().get()).toEqual({
+      worldX: fv.x + 50 / fv.scale.x, worldY: fv.y + 50 / fv.scale.y, viewId: 'minimap',
+    });
+  });
+
+  it('draws a crosshair while the pointer is over another surface, and none for its own', async () => {
+    const h = mountShared();
+    const idle = lastRoot().children.length;
+    await act(async () => { h.store().set({ worldX: 50, worldY: 50, viewId: null }); await frame(); });
+    expect(lastRoot().children.length).toBe(idle + 8);
+    await act(async () => { h.store().set({ worldX: 50, worldY: 50, viewId: 'minimap' }); await frame(); });
+    expect(lastRoot().children.length).toBe(idle);
   });
 });

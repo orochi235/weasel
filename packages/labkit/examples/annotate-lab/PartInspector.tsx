@@ -8,7 +8,8 @@
  * labkit provides the palette, the overlay, the store, the hook and the
  * camera. Circle a defect, change `angle`, and `isStale` answers that the mark
  * no longer describes the picture underneath it; change `shading` and it
- * still does. Wheel or drag the empty well and the marks ride along.
+ * still does. Wheel or drag the empty well and the marks ride along. The
+ * overview in the corner shows the whole part, with linked cursors both ways.
  *
  * Refs are held per trial because `targets()` is called with the trial's
  * state and config, not from inside a component, and every trial of this
@@ -16,6 +17,7 @@
  * trial whichever pane mounted last.
  */
 import { type CaptureSource, defineInstrument, f, useAnnotations } from '@weasel-js/labkit';
+import { TrialOverview } from '@weasel-js/labkit/overview';
 
 interface Config {
   angle: number;
@@ -103,7 +105,20 @@ export const PartInspector = defineInstrument<Record<string, never>, Config>({
   }),
   initialState: () => ({}),
   render: (ctx) => <InspectorBody config={ctx.config} trialId={ctx.trial.id} />,
-  stage: { size: STAGE },
+  stage: {
+    size: STAGE,
+    // The whole part at a glance: press or drag in it to move the stage there.
+    // It draws a copy of the picture, not the instrument's `render`, whose pane
+    // ref and mark count belong to the stage.
+    overlay: (ctx) => (
+      <TrialOverview
+        width={180}
+        height={144}
+        persist="annotate-overview"
+        render={() => <Part angle={ctx.config.angle} shading={ctx.config.shading} />}
+      />
+    ),
+  },
   annotations: {
     // What a mark is allowed to mean here. A status carries its own color, so
     // a fixed defect stops shouting without anyone re-drawing it.

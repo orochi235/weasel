@@ -1,0 +1,53 @@
+.lk-overview__title {
+  padding: 2px 6px 4px;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: grab;
+}
+
+.lk-overview__box {
+  position: relative;
+  width: var(--lk-overview-w);
+  height: var(--lk-overview-h);
+  overflow: hidden;
+  background: var(--wzl-surface-sunken);
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.lk-overview__content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--lk-overview-cw);
+  height: var(--lk-overview-ch);
+  transform-origin: 0 0;
+  transform: translate(var(--lk-overview-x), var(--lk-overview-y)) scale(var(--lk-overview-zoom));
+  pointer-events: none;
+}
+
+.lk-overview__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.lk-overview__marks {
+  position: absolute;
+  left: var(--lk-overview-mx);
+  top: var(--lk-overview-my);
+  width: var(--lk-overview-mw);
+  height: var(--lk-overview-mh);
+  pointer-events: none;
+}
+
+.lk-overview__marks > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}

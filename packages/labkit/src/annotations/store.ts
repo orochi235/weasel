@@ -6,6 +6,7 @@ import {
   sceneFromJSON,
 } from '@weasel-js/core';
 import { captureTarget } from './capture';
+import { type MarkDrawOptions, resolveMarkStyle } from './drawOne';
 import type { WorldRect } from './frac';
 import { fracContains, fracEncloses, fracToWorld, roundFrac, worldToFrac } from './frac';
 import { MarkHistory } from './history';
@@ -123,6 +124,14 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
     targets().find((t) => t.id === id);
 
   const contentOf = (id: string) => targetOf(id)?.content ?? NO_CONTENT;
+  /** How a target's marks are drawn right now — one answer for the pane, an
+   *  export and an overview, so none can disagree on a color or a dash. */
+  const drawOptionsFor = (info: AnnotationTargetInfo): MarkDrawOptions => ({
+    content: info.content,
+    positionDependsOn: info.positionDependsOn,
+    config: opts.config?.(),
+    meaning: typeof opts.meaning === 'function' ? opts.meaning() : opts.meaning,
+  });
 
   const project = (target: string, node: string): Annotation | undefined => {
     const found = scenes.get(target)?.get(asNodeId(node));
@@ -304,6 +313,21 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       if (found) found.scene.remove(asNodeId(found.node.id));
     },
 
+    paintedMarks(target) {
+      const info = targetOf(target);
+      const scene = scenes.get(target);
+      if (!info || !scene) return [];
+      const draw = drawOptionsFor(info);
+      return [...scene.renderOrder()].flatMap((id) => {
+        const node = scene.get(asNodeId(String(id)));
+        if (!node) return [];
+        const data = node.data as AnnotationData;
+        return [
+          { mark: { pose: node.pose as MarkPose, data }, style: resolveMarkStyle(data, draw) },
+        ];
+      });
+    },
+
     async capture(target: string, captureOpts?: CaptureOptions) {
       const info = targetOf(target);
       if (!info) throw new Error(`[labkit] no annotation target called '${target}'`);
@@ -311,12 +335,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
         {
           target,
           scene: sceneFor(target),
-          draw: {
-            content: info.content,
-            positionDependsOn: info.positionDependsOn,
-            config: opts.config?.(),
-            meaning: typeof opts.meaning === 'function' ? opts.meaning() : opts.meaning,
-          },
+          draw: drawOptionsFor(info),
           base: info.base,
           onWarn: (message) => console.warn(`[labkit] capture: ${message}`),
         },

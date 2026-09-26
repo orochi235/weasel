@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -124,5 +124,77 @@ describe('the loupe capability', () => {
 
     await user.click(toggle);
     expect(lens(container)).toBeNull();
+  });
+});
+
+describe('the loupe and the trial camera share one dispatcher', () => {
+  const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+
+  function mountDrawn() {
+    const zooms: number[] = [];
+    const drawn = defineInstrument<Record<string, never>, Record<string, never>>({
+      name: 'Zoomed',
+      defaultConfig: () => ({}),
+      initialState: () => ({}),
+      render: () => null,
+      canvas: {
+        layers: [
+          {
+            id: 'main',
+            draw: (_ctx, { zoom }) => {
+              zooms.push(zoom);
+            },
+          },
+        ],
+      },
+      loupe: true,
+    });
+    const r = render(<Lab instruments={[drawn]} defaultInstrument="Zoomed" />);
+    const stack = r.container.querySelector('.lk-canvas-stack');
+    if (!stack) throw new Error('no canvas stack');
+    return { ...r, stack, zooms };
+  }
+
+  const wheel = (el: Element) => {
+    const e = new WheelEvent('wheel', {
+      deltaY: -300,
+      clientX: 50,
+      clientY: 50,
+      bubbles: true,
+      cancelable: true,
+    });
+    el.dispatchEvent(e);
+    return e;
+  };
+
+  it('zooms the camera while the lens is down', async () => {
+    const h = mountDrawn();
+    await act(async () => {
+      await frame();
+    });
+    await act(async () => {
+      wheel(h.stack);
+      await frame();
+    });
+    expect(h.zooms.at(-1)).toBeGreaterThan(1);
+  });
+
+  it('gives the wheel to the lens while it is up, and leaves the camera alone', async () => {
+    const user = userEvent.setup();
+    const h = mountDrawn();
+    await user.click(screen.getByRole('button', { name: 'Loupe' }));
+    pointAt(h.stack, 60, 40);
+    expect(lens(h.container)).not.toBeNull();
+    await act(async () => {
+      await frame();
+    });
+    const before = h.zooms.at(-1);
+    let e!: WheelEvent;
+    await act(async () => {
+      e = wheel(h.stack);
+      await frame();
+    });
+    expect(e.defaultPrevented).toBe(true);
+    expect(h.zooms.at(-1)).toBe(before);
   });
 });

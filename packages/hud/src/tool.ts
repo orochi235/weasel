@@ -1,6 +1,8 @@
 import type {
-  Action, ActionDeps, ClaimableGesture, Contribution, InvocationCtx, View,
+  Action, ActionDeps, CanvasExtensionApi, ClaimableGesture, InvocationCtx, SurfaceContribution, View,
 } from '@weasel-js/core';
+import { attachHud, type AttachHudOptions } from './attach';
+import type { Hud } from './hud';
 import { viewToTransform, worldToScreen } from '@weasel-js/core';
 import { claimsOf, type Widget, type HudPointerEvent } from './widget';
 
@@ -182,10 +184,14 @@ function wheelAction(): Action {
  * whatever tool is active, live only for input its own layer claimed.
  *
  * ```tsx
- * const hud = useHud(ref);
- * const hudContribution = useHudContribution();
- * <SceneCanvas ref={ref} ambient={[hudContribution]} … />
+ * const hud = useHud();
+ * const hudEntry = useHudContribution(hud);
+ * <SceneCanvas ambient={[hudEntry]} … />
  * ```
+ *
+ * Given a HUD, the entry's `attach` binds it to the canvas the entry is
+ * installed on. Without one, the entry routes input only, for a HUD attached
+ * some other way (`attachHud`, or `useHud(ref)`).
  *
  * The press protocol alone spans three gesture kinds:
  *
@@ -203,9 +209,16 @@ function wheelAction(): Action {
  * This replaces a `DragChannel` the HUD's `hitTest` used to hand back for the
  * tool-routing dispatcher to drive. That dispatcher is gone.
  */
-export function createHudContribution(): Contribution {
+export function createHudContribution(hud?: Hud, options?: AttachHudOptions): SurfaceContribution {
   return {
     id: 'weasel-hud',
+    ...(hud ? {
+      attach: (api: CanvasExtensionApi) => {
+        const detach = attachHud(api, hud, options);
+        api.requestRedraw();
+        return detach;
+      },
+    } : {}),
     eligibility: { claimed: true },
     actions: [
       pressAction(), releaseAction(), dragAction(),

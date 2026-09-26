@@ -1,5 +1,5 @@
-import { WeaselProvider } from '@weasel-js/core';
 import { type RefObject, useContext, useMemo } from 'react';
+import { CameraScope } from '../canvas/CameraInput';
 import { CanvasStackContext } from '../canvas/CanvasStackContext';
 import type { WorldSpec } from '../canvas/worldSpec';
 import type { ViewTransform } from '../instrument/types';
@@ -63,12 +63,12 @@ export function TrialLoupe({
 
   // The gestures mount outside the visibility gate: hold-to-peek is what
   // raises a lens that is down, so its binding has to be live while it is.
-  // One isolated scope per loupe, for the reason `<AnnotationOverlay>` gives
-  // — an actions registry holds one dispatcher.
+  // In a trial they join the trial's scope, and with it the camera's
+  // dispatcher; outside one, `<CameraScope>` gives them an isolated scope.
   const gestures = (
-    <WeaselProvider isolate>
+    <CameraScope>
       <LoupeGestures hostRef={host} input={loupe.input} peekKey={capability.peekKey ?? null} />
-    </WeaselProvider>
+    </CameraScope>
   );
 
   if (!loupe.visible) return gestures;

@@ -1,3 +1,4 @@
+import type { PointerContextValue } from '@weasel-js/core';
 import type { ReactNode } from 'react';
 import type { AnnotationsCapability } from '../annotations/types';
 import type { ViewportSize, WorldSpec } from '../canvas/worldSpec';
@@ -33,6 +34,14 @@ export interface RenderContext<TS = unknown, TC = unknown> {
      *  hidden layer's `draw`, so this is the only way to know what was
      *  painted — a legend listing rows the view did not draw needs it. */
     visibleLayers: readonly string[];
+    /**
+     * Where the pointer is over this trial, in the instrument's world:
+     * `get()` answers `{ worldX, worldY, viewId }`, where `viewId` is
+     * `'stage'` over the trial's own camera and `'overview'` over its
+     * `<TrialOverview>`, or `null` when it is over neither. A key handler
+     * reading it works over either view.
+     */
+    pointer: PointerContextValue;
   };
   emit: (event: string) => void;
   /** Present only when the instrument declares a `job`. */
@@ -61,7 +70,7 @@ export interface CanvasCapability<TS = unknown, TC = unknown> {
    *  size, so an instrument can frame content it can only place in terms of
    *  the viewport; until then the trial's view is `null`. */
   initialView?: ViewTransform | ((size: ViewportSize) => ViewTransform);
-  /** Widens `usePanZoom`'s default clamp; the opening zoom stays reachable
+  /** Widens the camera's default zoom clamp; the opening zoom stays reachable
    *  regardless of these. */
   minZoom?: number;
   maxZoom?: number;

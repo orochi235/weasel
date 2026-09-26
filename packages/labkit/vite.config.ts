@@ -28,7 +28,9 @@ export default defineConfig(async () => ({
   root: `examples/${example}`,
   resolve: {
     alias: [
-      { find: '@weasel-js/labkit', replacement: labkitAlias['@weasel-js/labkit'] },
+      { find: /^@weasel-js\/labkit$/, replacement: labkitAlias['@weasel-js/labkit'] },
+      // A subpath entry (`/overview`, `/primitives`) is its directory's index.
+      { find: /^@weasel-js\/labkit\/(.*)$/, replacement: `${here}src/$1/index.ts` },
       ...(await weaselAlias()),
     ],
   },

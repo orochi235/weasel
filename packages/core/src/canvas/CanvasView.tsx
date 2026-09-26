@@ -361,7 +361,7 @@ export function CanvasView(props: CanvasViewProps): null {
       // The surface half of the envelope passes through; the view half is
       // this view's, so its layers paint its chrome rather than the
       // surface's.
-      data: (outer) => ({ ...(outer as object), ...helpersRef.current }),
+      data: (outer) => ({ ...(outer as object), ...helpersRef.current, viewId: id }),
       ...(background !== undefined ? { background } : {}),
     }),
     layerIsPainted,

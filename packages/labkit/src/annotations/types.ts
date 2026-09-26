@@ -1,6 +1,7 @@
 import type { RefObject } from 'react';
 import type { ViewTransform } from '../instrument/types';
 import type { TrialInfo } from '../state/types';
+import type { MarkStyle, PaintableMark } from './paint';
 import type { MarkScene } from './store';
 
 /** A point in fractions of a target's content box. */
@@ -198,6 +199,12 @@ export interface SerializedAnnotations {
   scenes: Record<string, unknown>;
 }
 
+/** One mark, as `AnnotationsApi.paintedMarks` hands it over. */
+export interface PaintedMark {
+  mark: PaintableMark;
+  style: MarkStyle;
+}
+
 /** Everything a host can ask or tell labkit about the marks on its targets. */
 export interface AnnotationsApi {
   /** The scene a target's marks live in, created on first ask. One per target
@@ -236,6 +243,11 @@ export interface AnnotationsApi {
   /** Take back the most recent mark change, wherever it was made. */
   undo(): boolean;
   redo(): boolean;
+
+  /** A target's marks as its pane paints them, in scene order: geometry in
+   *  the target's content box, each with the style its status and staleness
+   *  resolve to. For a painter outside the pane — an overview. */
+  paintedMarks(target: string): PaintedMark[];
 
   /** Export a target's picture with its marks on it. Rejects on an id the
    *  instrument does not declare. */

@@ -294,3 +294,29 @@ describe('the annotation store', () => {
     expect(svg).toContain('#222222');
   });
 });
+
+describe('paintedMarks', () => {
+  it("hands over a target's marks in world units with their resolved style", () => {
+    let config: Record<string, string> = { angle: 'iso', shading: 'outline' };
+    const store = createAnnotationStore({
+      targets: () => TARGETS,
+      meaning: { statuses: [{ id: 'open', label: 'Open', color: '#123456' }] },
+      config: () => config,
+    });
+    store.add(RING, config);
+    const [painted] = store.paintedMarks('naive');
+    expect(painted?.mark.data.kind).toBe('rect');
+    expect(painted?.mark.pose.x).toBeCloseTo(0.3322 * 256);
+    expect(painted?.style).toEqual({ color: '#123456', stale: false });
+
+    // A config the mark no longer describes draws it dashed, as the pane does.
+    config = { angle: 'top', shading: 'outline' };
+    expect(store.paintedMarks('naive')[0]?.style.stale).toBe(true);
+  });
+
+  it('answers nothing for a target with no marks or no declaration', () => {
+    const store = makeStore();
+    expect(store.paintedMarks('occt')).toEqual([]);
+    expect(store.paintedMarks('nowhere')).toEqual([]);
+  });
+});
