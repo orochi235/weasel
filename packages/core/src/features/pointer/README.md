@@ -2,32 +2,44 @@
 
 `@experimental`
 
-One file: an ambient context publishing the world-space position of the canvas
-pointer.
+One file: a store publishing the world-space position of the canvas pointer,
+and the view it is over.
 
-## Why it's ref-based, not state-based
+## Why it's a store, not state
 
 Cursor moves fire dozens of times per second. Routing them through React state
 would re-render every consumer in the tree on every mouse twitch. So the
-context exposes:
+context is an external store:
 
-- `pointerRef` — a **stable ref** whose `.current` the publisher mutates
-  directly. No re-render, ever.
-- `getDropPoint()` — a thunk that reads it on demand.
+- `get()` — the latest `{ worldX, worldY, viewId }`, or `null`.
+- `subscribe(fn)` / `getVersion()` — for a reader that follows it, such as a
+  linked cursor. Subscribers hear only a changed value.
+- `usePointerPosition()` — the same through `useSyncExternalStore`, for a
+  component that renders from it.
+- `getDropPoint()` — `get` as a stable thunk.
 
-Consumers pull inside their callbacks. No subscription, no re-render. If you
-find yourself wanting to *render* from this value, you want state somewhere
-else — don't convert this context, or every pointermove becomes a render pass.
+A consumer that only reads on demand pulls inside its callback and never
+re-renders.
 
-`.current` is set to `null` on `pointerleave` — the pointer isn't over the
-canvas, so there is no world position. Handle the null; don't treat a stale
+The position is `null` on `pointerleave` — the pointer isn't over the canvas,
+so there is no world position. Handle the null; don't treat a stale
 last-known point as current.
+
+`viewId` is the id of the `<CanvasView>` the pointer is over, or `null` for
+the surface's own camera; the coordinates are in that view's world.
+
+## Sharing one pointer
+
+`<SceneCanvas>` publishes automatically and mounts a provider only when none
+is in scope. Put one `<PointerContextProvider>` around several surfaces and
+they share a pointer: `<MinimapCanvas>` publishes into it under its own view
+id, and the linked cursor on each side draws where the other's pointer is.
+Surfaces also publish it as the `pointer` dep, which is how a contribution
+reads it.
 
 ## Who uses it
 
-`<SceneCanvas>` publishes automatically. `useClipboardOps` consumes it when the
-caller didn't pass an explicit `getDropPoint` — that's how "paste lands under
-the cursor" works without threading pointer state through the app.
-
-Other hit-on-cursor consumers (drop-zone hover, context-menu anchor) can reuse
-the same context rather than attaching their own `pointermove` listener.
+`useClipboardOps` consumes it when the caller didn't pass an explicit
+`getDropPoint` — that's how "paste lands under the cursor" works without
+threading pointer state through the app. `features/minimap` draws its linked
+crosshair from it.

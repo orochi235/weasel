@@ -264,11 +264,11 @@ describe('useClipboardOps', () => {
       () => useClipboardOps(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
       { wrapper },
     );
-    // Publish a synthetic pointer position via the context's pointerRef.
-    ctxHandle!.pointerRef.current = { worldX: 77, worldY: 88 };
+    // Publish a synthetic pointer position into the context's store.
+    ctxHandle!.set({ worldX: 77, worldY: 88, viewId: null });
     act(() => { result.current.copy(); });
     act(() => { result.current.paste(); });
-    expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { worldX: 77, worldY: 88 } }]);
+    expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { worldX: 77, worldY: 88, viewId: null } }]);
   });
 
   it('explicit getDropPoint wins over the surrounding PointerContext', () => {
@@ -289,7 +289,7 @@ describe('useClipboardOps', () => {
       }),
       { wrapper },
     );
-    ctxHandle!.pointerRef.current = { worldX: 999, worldY: 999 };
+    ctxHandle!.set({ worldX: 999, worldY: 999, viewId: null });
     act(() => { result.current.copy(); });
     act(() => { result.current.paste(); });
     expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { worldX: 1, worldY: 2 } }]);

@@ -410,7 +410,9 @@ export type { SelectionContextValue } from './features/selection';
 // --- @experimental Pointer ambient context (2026-05-16) ---------------------
 export {
   PointerContextProvider,
+  createPointerStore,
   usePointerContext,
+  usePointerPosition,
 } from './features/pointer/PointerContext';
 export type { PointerContextValue, PointerWorldPos } from './features/pointer/PointerContext';
 export { PointerProviderIfRoot } from './canvas/SceneCanvas/PointerProviderIfRoot';
