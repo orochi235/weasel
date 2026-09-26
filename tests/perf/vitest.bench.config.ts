@@ -7,8 +7,8 @@ const repoRoot = resolve(__dirname, '../..');
 
 // Benchmarks live in their own config, not as a project in `vitest.config.ts`,
 // so that no `--project` selection or bare `vitest run` can pull them into a
-// correctness run. `npm run perf:bench` is the way in; it passes `--outputJson`
-// and turns that report into a result file.
+// correctness run. `npm run perf:bench` is the way in; it asks for the JSON
+// reporter and turns that report into a result file.
 export default defineConfig({
   root: repoRoot,
   resolve: {
@@ -30,7 +30,6 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     benchmark: {
       include: ['tests/perf/bench/**/*.bench.ts'],
-      reporters: ['default'],
     },
   },
 });

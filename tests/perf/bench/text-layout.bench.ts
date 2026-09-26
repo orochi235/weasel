@@ -11,7 +11,7 @@
  * glyph set, not any particular shipped face; the shape of the curve against
  * glyph count is the portable part.
  */
-import { bench, describe } from 'vitest';
+import { group } from './group';
 import { registerFont } from '@weasel-js/font';
 import { layoutRuns, cachedLayoutRuns } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
@@ -53,7 +53,7 @@ const single = new Map(GLYPH_COUNTS.map((n) => [n, [plainRun(proseOf(n))]]));
   if (quads !== 2) throw new Error(`bench font fixture: expected 2 quads, got ${quads}`);
 }
 
-describe('layoutRuns — glyph count, one run, no wrap', () => {
+group('layoutRuns — glyph count, one run, no wrap', (bench) => {
   for (const n of GLYPH_COUNTS) {
     const runs = single.get(n)!;
     bench(`${n} glyphs`, () => {
@@ -62,7 +62,7 @@ describe('layoutRuns — glyph count, one run, no wrap', () => {
   }
 });
 
-describe('layoutRuns — glyph count, one run, wrapped to 400px', () => {
+group('layoutRuns — glyph count, one run, wrapped to 400px', (bench) => {
   for (const n of GLYPH_COUNTS) {
     const runs = single.get(n)!;
     bench(`${n} glyphs`, () => {
@@ -71,7 +71,7 @@ describe('layoutRuns — glyph count, one run, wrapped to 400px', () => {
   }
 });
 
-describe('layoutRuns — run count at a fixed 1000 glyphs', () => {
+group('layoutRuns — run count at a fixed 1000 glyphs', (bench) => {
   // Same total work per glyph; what changes is how often layout switches
   // face and opens a new draw-call group.
   for (const runCount of [1, 10, 100]) {
@@ -82,7 +82,7 @@ describe('layoutRuns — run count at a fixed 1000 glyphs', () => {
   }
 });
 
-describe('layoutCache — hit vs miss (500 glyphs, wrapped)', () => {
+group('layoutCache — hit vs miss (500 glyphs, wrapped)', (bench) => {
   const runs = single.get(500)!;
   cachedLayoutRuns(runs, WRAP);
   bench('cachedLayoutRuns hit', () => {

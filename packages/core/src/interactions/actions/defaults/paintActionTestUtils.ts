@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi, type Mock } from 'vitest';
 import { asNodeId } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
@@ -13,6 +13,23 @@ import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routi
 
 interface FakeNode<TData> { id: NodeId; kind: 'leaf'; pose: unknown; data: TData }
 
+export interface FakeScene<TData> {
+  get(id: NodeId): FakeNode<TData> | null;
+  update: Mock<(id: NodeId, patch: { data: unknown }) => void>;
+  setPose: Mock;
+  batch: Mock<(label: string, fn: () => void) => void>;
+  applyBatch: Mock<(opList: unknown[], label: string, adapter: unknown) => void>;
+  renderOrder(): NodeId[];
+  updates: Array<{ id: string; data: unknown }>;
+  batches: string[];
+}
+
+export interface FakeSelection {
+  get(): NodeId[];
+  current: NodeId[];
+  set: Mock; add: Mock; remove: Mock; toggle: Mock; clear: Mock; contains: Mock;
+}
+
 /**
  * A scene recording what the action wrote.
  *
@@ -21,7 +38,7 @@ interface FakeNode<TData> { id: NodeId; kind: 'leaf'; pose: unknown; data: TData
  * whose `setData` calls `scene.update({ data })` — so every op routes back
  * through `update` here and populates `updates`.
  */
-export function makeScene<TData extends object>(nodes: Record<string, TData>) {
+export function makeScene<TData extends object>(nodes: Record<string, TData>): FakeScene<TData> {
   const current: Record<string, FakeNode<TData>> = {};
   for (const [id, d] of Object.entries(nodes)) {
     current[id] = { id: asNodeId(id), kind: 'leaf', pose: {}, data: { ...d } };
@@ -46,7 +63,7 @@ export function makeScene<TData extends object>(nodes: Record<string, TData>) {
   };
 }
 
-export function makeSelection(ids: string[]) {
+export function makeSelection(ids: string[]): FakeSelection {
   return {
     get: () => ids.map(asNodeId),
     current: ids.map(asNodeId),

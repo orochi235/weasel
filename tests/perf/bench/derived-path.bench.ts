@@ -14,7 +14,7 @@
  * structurally. The gap between them is what generality over the pose type
  * costs.
  */
-import { bench, describe } from 'vitest';
+import { group } from './group';
 import { derivedDepOf, effectivePose } from 'core/scene/effectivePose';
 import { resolveDerivedPath } from 'core/scene/derivedPath';
 import type { NodeId } from 'core/scene/types';
@@ -33,18 +33,18 @@ function frameOf(nodes: number, edges: number) {
   return { scene, edgeIds, depOf, childrenOf };
 }
 
-describe('a frame of derived paths — memo hit, value-comparing the deps', () => {
+group('a frame of derived paths — memo hit, value-comparing the deps', (bench) => {
   for (const [nodes, edges] of SHAPES) {
     const { scene, edgeIds, depOf, childrenOf } = frameOf(nodes, edges);
     // Prime the memo, so the timed iterations are the steady state.
     for (const id of edgeIds) resolveDerivedPath(scene.get(id)! as never, depOf, childrenOf);
     bench(`${nodes} nodes, ${edges} edges`, () => {
       for (const id of edgeIds) resolveDerivedPath(scene.get(id)! as never, depOf, childrenOf);
-    }, FRAME);
+    });
   }
-});
+}, FRAME);
 
-describe('the floor: the same frame, comparing named fields off the scene', () => {
+group('the floor: the same frame, comparing named fields off the scene', (bench) => {
   for (const [nodes, edges] of SHAPES) {
     const { scene, edgeIds, depOf, childrenOf } = frameOf(nodes, edges);
     for (const id of edgeIds) resolveDerivedPath(scene.get(id)! as never, depOf, childrenOf);
@@ -73,6 +73,6 @@ describe('the floor: the same frame, comparing named fields off the scene', () =
         last.set(id, now);
         if (!same) resolveDerivedPath(node as never, depOf, childrenOf);
       }
-    }, FRAME);
+    });
   }
-});
+}, FRAME);

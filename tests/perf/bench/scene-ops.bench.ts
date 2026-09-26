@@ -11,7 +11,7 @@
  * proportionally. `historyLimit` is likewise small, so the undo log does not
  * become the thing under test.
  */
-import { bench, describe } from 'vitest';
+import { group } from './group';
 import type { NodeId } from 'core/scene/types';
 import { containerChain, deepScene, emptyScene, layeredScene, type BenchScene } from './fixtures';
 
@@ -30,7 +30,7 @@ function chainAt(depth: number): { scene: BenchScene; parent: NodeId | null } {
   return { scene, parent: containerChain(scene, depth) };
 }
 
-describe('scene.add — leaf, by tree depth', () => {
+group('scene.add — leaf, by tree depth', (bench) => {
   for (const depth of DEPTHS) {
     const { scene, parent } = chainAt(depth);
     bench(`depth ${depth}`, () => {
@@ -38,11 +38,11 @@ describe('scene.add — leaf, by tree depth', () => {
         kind: 'leaf', layer: 'main', pose: POSE, data: { n: 0 },
         ...(parent !== null ? { parent } : {}),
       });
-    }, FIXED);
+    });
   }
-});
+}, FIXED);
 
-describe('scene.add + scene.remove — round trip, by tree depth', () => {
+group('scene.add + scene.remove — round trip, by tree depth', (bench) => {
   // Paired so the scene stays the same size across iterations. `remove`
   // snapshots the subtree for undo, so this is the honest cost of an insert
   // the user immediately deletes.
@@ -54,11 +54,11 @@ describe('scene.add + scene.remove — round trip, by tree depth', () => {
         ...(parent !== null ? { parent } : {}),
       });
       scene.remove(id);
-    }, FIXED);
+    });
   }
-});
+}, FIXED);
 
-describe('scene.setPose — by tree depth', () => {
+group('scene.setPose — by tree depth', (bench) => {
   for (const depth of DEPTHS) {
     const { scene, parent } = chainAt(depth);
     const id = scene.add({
@@ -68,9 +68,9 @@ describe('scene.setPose — by tree depth', () => {
     let i = 0;
     bench(`depth ${depth}`, () => {
       scene.setPose(id, { x: i++, y: 0, width: 3, height: 4 });
-    }, FIXED);
+    });
   }
-});
+}, FIXED);
 
 /**
  * The three ways a 60 Hz loop can move a node, against each other.
@@ -84,50 +84,50 @@ describe('scene.setPose — by tree depth', () => {
  * place, and `commit()` drops the pose-keyed memo slots the reference key can
  * no longer see.
  */
-describe('per-frame pose write — one node, three paths', () => {
+group('per-frame pose write — one node, three paths', (bench) => {
   const scene = emptyScene(60);
   const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { n: 0 } });
 
   let i = 0;
   bench('setPose, fresh object — records a step', () => {
     scene.setPose(id, { x: i++, y: 0, width: 3, height: 4 });
-  }, FIXED);
+  });
 
   const entry = { pose: { x: 0, y: 0, width: 3, height: 4 } };
   scene.overrides.set(id, entry);
   bench('override, mutated in place — records nothing', () => {
     entry.pose.x = i++;
     scene.overrides.commit();
-  }, FIXED);
+  });
 
   // No scene at all: the cost the two remedies above would have removed.
   const sink: { x: number; y: number; width: number; height: number }[] = [];
   bench('the pose object alone', () => {
     sink[0] = { x: i++, y: 0, width: 3, height: 4 };
-  }, FIXED);
-});
+  });
+}, FIXED);
 
-describe('per-frame pose write — setPose, untracked', () => {
+group('per-frame pose write — setPose, untracked', (bench) => {
   // The document write a simulation makes: same `setPose`, nothing recorded.
   const scene = emptyScene(60);
   const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { n: 0 } });
   let i = 0;
   bench('setPose inside untracked — records nothing', () => {
     scene.untracked(() => scene.setPose(id, { x: i++, y: 0, width: 3, height: 4 }));
-  }, FIXED);
-});
+  });
+}, FIXED);
 
-describe('scene.setPose — 10k-node scene, one node', () => {
+group('scene.setPose — 10k-node scene, one node', (bench) => {
   // Isolates "does scene size cost anything per mutation" from tree depth.
   const scene = deepScene(10000, 0);
   const id = [...scene.renderOrder()][0];
   let i = 0;
   bench('10000 nodes', () => {
     scene.setPose(id, { x: i++, y: 0, width: 3, height: 4 });
-  }, FIXED);
-});
+  });
+}, FIXED);
 
-describe('renderOrder — flat scene, fully drained', () => {
+group('renderOrder — flat scene, fully drained', (bench) => {
   for (const n of NODE_COUNTS) {
     const scene = deepScene(n, 0);
     bench(`${n} nodes`, () => {
@@ -138,7 +138,7 @@ describe('renderOrder — flat scene, fully drained', () => {
   }
 });
 
-describe('renderOrder — 10k nodes, by layer count', () => {
+group('renderOrder — 10k nodes, by layer count', (bench) => {
   // The other renderOrder benchmarks use a one-layer fixture, which hides any
   // per-layer term. Node count is fixed here so only the layer axis moves.
   for (const layers of LAYER_COUNTS) {
@@ -151,7 +151,7 @@ describe('renderOrder — 10k nodes, by layer count', () => {
   }
 });
 
-describe('renderOrder — 1000 leaves under a container chain', () => {
+group('renderOrder — 1000 leaves under a container chain', (bench) => {
   for (const depth of DEPTHS) {
     const scene = deepScene(1000, depth);
     const expected = 1000 + depth;
@@ -169,10 +169,10 @@ describe('renderOrder — 1000 leaves under a container chain', () => {
  * body only drains it. This group is what separates the two costs: both benches
  * iterate the same 10,000 ids, and only the second rebuilds first.
  *
- * The rebuild is forced by a layer reorder in an untimed `beforeEach`. On four
+ * The rebuild is forced by a layer reorder inside the timed body. On four
  * layers that is a two-element splice, nothing next to a 10,000-node walk.
  */
-describe('renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)', () => {
+group('renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)', (bench) => {
   const scene = layeredScene(10000, 4);
   const drain = (): void => {
     let c = 0;
@@ -189,9 +189,8 @@ describe('renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)', 
     scene.moveLayer('L0', slot);
   };
 
-  // Vitest's bench `setup` hook does not run per iteration, so the
-  // invalidation has to sit inside the timed body. It is measured on its own
-  // so the walk can be recovered by subtraction:
+  // The invalidation is measured on its own so the walk can be recovered by
+  // subtraction:
   //   cold walk = (reorder + drain) - reorder - drain
   bench('drain only — cached', drain);
   bench('layer reorder only — the invalidation', reorderLayers);
@@ -203,7 +202,7 @@ describe('renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)', 
 
 // Resolving ids back to nodes is what `renderOrderNodes()` exists to avoid.
 // Every adapter's `getNodes` runs this on the render path, once a frame.
-describe('renderOrder → nodes vs renderOrderNodes', () => {
+group('renderOrder → nodes vs renderOrderNodes', (bench) => {
   for (const n of NODE_COUNTS) {
     const scene = deepScene(n, 0);
     bench(`${n} nodes — via renderOrder + get`, () => {

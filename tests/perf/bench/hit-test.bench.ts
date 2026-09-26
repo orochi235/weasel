@@ -11,7 +11,7 @@
  * These numbers are the argument for or against building an index. They are
  * not a benchmark of one.
  */
-import { bench, describe } from 'vitest';
+import { group } from './group';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
 import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
 import type { Scene } from 'core/scene/types';
@@ -42,7 +42,7 @@ const polyScenes = new Map(
 
 const asAny = (s: unknown) => s as Scene<unknown, string, unknown>;
 
-describe('hitTestArea — rect poses, node count (25% query rect)', () => {
+group('hitTestArea — rect poses, node count (25% query rect)', (bench) => {
   const bounds = rectFor(0.5);
   for (const n of NODE_COUNTS) {
     const scene = asAny(rectScenes.get(n));
@@ -52,7 +52,7 @@ describe('hitTestArea — rect poses, node count (25% query rect)', () => {
   }
 });
 
-describe('hitTestArea — rect poses, query-rect size (1000 nodes)', () => {
+group('hitTestArea — rect poses, query-rect size (1000 nodes)', (bench) => {
   const scene = asAny(rectScenes.get(1000));
   for (const { label, f } of RECTS) {
     const bounds = rectFor(f);
@@ -65,7 +65,7 @@ describe('hitTestArea — rect poses, query-rect size (1000 nodes)', () => {
   }
 });
 
-describe('hitTestArea — 24-gon silhouettes, node count (25% query rect)', () => {
+group('hitTestArea — 24-gon silhouettes, node count (25% query rect)', (bench) => {
   const bounds = rectFor(0.5);
   for (const n of NODE_COUNTS) {
     const scene = asAny(polyScenes.get(n));
@@ -75,7 +75,7 @@ describe('hitTestArea — 24-gon silhouettes, node count (25% query rect)', () =
   }
 });
 
-describe('hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)', () => {
+group('hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)', (bench) => {
   const scene = asAny(polyScenes.get(1000));
   for (const { label, f } of RECTS) {
     const bounds = rectFor(f);
@@ -86,7 +86,7 @@ describe('hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)', () 
   }
 });
 
-describe('aabbOfPose — the per-node fast-reject itself', () => {
+group('aabbOfPose — the per-node fast-reject itself', (bench) => {
   // Why query-rect size barely moves the silhouette numbers above: the
   // fast-reject calls `boundsOfPath`, which walks the whole command stream
   // and allocates, for every node in the scene whether or not it can
@@ -103,7 +103,7 @@ describe('aabbOfPose — the per-node fast-reject itself', () => {
   }
 });
 
-describe('pointInPath — per-node kernel, by vertex count', () => {
+group('pointInPath — per-node kernel, by vertex count', (bench) => {
   // The point-pick path (`poseContains`) reaches this once per candidate.
   for (const sides of [4, 24, 256]) {
     const path = polygonPath(sides, 100, 0, 0);

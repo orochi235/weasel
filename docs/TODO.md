@@ -1423,6 +1423,16 @@ one dead `const` and four stale disable directives.
   benchmarks on both revisions and posts the `npm run perf:compare` table as a
   comment without failing the build. Mike's call.
 
+- **(P3) Two microbenchmarks time their own setup, and vitest 5 no longer
+  forces them to.** `tessellate.bench.ts`'s `getMesh miss` resets the cache
+  inside the timed body, and `scene-ops.bench.ts`'s cold `renderOrder` walk is
+  recovered by subtracting a separately-timed layer reorder. vitest 4 gave
+  `bench()` no per-iteration hook; vitest 5 passes tinybench's `beforeEach`
+  through the options argument, and it runs untimed before every iteration.
+  Moving both setups into it measures the thing directly, but renames or drops
+  benchmarks, so it goes with a re-record of `tests/perf/bench/baseline.json`
+  on an idle machine — which also moves that file off vitest 4's shape.
+
 - **(P2) A clipped group costs ~10 us to enter, and the stencil is now the
   larger half.** `tests/perf/clip-cost.spec.ts` separates entry's two costs by
   clipping contents that would not have batched anyway: a gradient rect never

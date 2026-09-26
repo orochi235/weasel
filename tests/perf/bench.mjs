@@ -25,7 +25,10 @@ try {
   const raw = join(dir, 'vitest-bench.json');
   const res = spawnSync(
     'npx',
-    ['vitest', 'bench', '--run', '--config', 'tests/perf/vitest.bench.config.ts', '--outputJson', raw, ...filters],
+    [
+      'vitest', 'bench', '--run', '--config', 'tests/perf/vitest.bench.config.ts',
+      '--reporter=default', '--reporter=json', `--outputFile.json=${raw}`, ...filters,
+    ],
     { cwd: REPO_ROOT, stdio: 'inherit' },
   );
   if (res.status !== 0) {

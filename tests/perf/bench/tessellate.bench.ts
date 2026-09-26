@@ -7,7 +7,7 @@
  * the gap between them is the whole reason the cache exists — and first paint
  * pays the miss for every path on screen.
  */
-import { bench, describe } from 'vitest';
+import { group } from './group';
 import { tessellate } from 'features/paths/tessellate/tessellate';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
 // Relative: core's `renderer/` tree has no bare path mapping (nothing inside
@@ -22,7 +22,7 @@ const TOLERANCES = [0.05, 0.25, 0.5, 2];
 // thing under test.
 const paths = new Map(CURVE_COUNTS.map((n) => [n, curvyPath(n)]));
 
-describe('tessellate — curve count (default tolerance 0.5)', () => {
+group('tessellate — curve count (default tolerance 0.5)', (bench) => {
   for (const n of CURVE_COUNTS) {
     const path = paths.get(n)!;
     bench(`${n} cubics`, () => {
@@ -31,7 +31,7 @@ describe('tessellate — curve count (default tolerance 0.5)', () => {
   }
 });
 
-describe('tessellate — flatten tolerance (64 cubics)', () => {
+group('tessellate — flatten tolerance (64 cubics)', (bench) => {
   const path = paths.get(64)!;
   for (const tol of TOLERANCES) {
     bench(`tolerance ${tol}`, () => {
@@ -40,30 +40,29 @@ describe('tessellate — flatten tolerance (64 cubics)', () => {
   }
 });
 
-describe('tessellate — rect fast path', () => {
+group('tessellate — rect fast path', (bench) => {
   const r = rectPath(0, 0, 100, 60);
   bench('rect', () => {
     tessellate(r);
   });
 });
 
-describe('mesh cache — hit vs miss (64 cubics)', () => {
+group('mesh cache — hit vs miss (64 cubics)', (bench) => {
   const path = paths.get(64)!;
   // Warm once so the first timed iteration is already a hit.
   getMesh(path);
   bench('getMesh hit', () => {
     getMesh(path);
   });
-  // The reset is a `new WeakMap()` — nanoseconds against a tessellation, but
-  // it is inside the timed region because tinybench exposes no per-iteration
-  // hook through vitest's `bench()`.
+  // The reset is a `new WeakMap()` — nanoseconds against a tessellation, and
+  // inside the timed region.
   bench('getMesh miss', () => {
     _resetCacheForTests();
     getMesh(path);
   });
 });
 
-describe('tessellateStroke — curve count', () => {
+group('tessellateStroke — curve count', (bench) => {
   const stroke = { paint: { fill: 'solid' as const, color: '#000' }, width: 4 };
   for (const n of CURVE_COUNTS) {
     const path = paths.get(n)!;
