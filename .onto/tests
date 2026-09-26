@@ -1,4 +1,6 @@
+enlist: 2
 run: npm test
+runner: vitest
 setup: npm ci
 needs: node_modules
 
