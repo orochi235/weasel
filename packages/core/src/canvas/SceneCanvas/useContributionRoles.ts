@@ -23,7 +23,7 @@ import type { CanvasExtensionApi } from '../canvasExtension';
 import type { SurfaceContribution } from '../surfaceContribution';
 
 /** Every entry the registry holds, registry and ambient alike. */
-export function contributionEntries(tools: ToolsApi): SurfaceContribution[] {
+export function contributionEntries(tools: Pick<ToolsApi, 'registry' | 'ambient'>): SurfaceContribution[] {
   return [...Object.values(tools.registry), ...tools.ambient] as SurfaceContribution[];
 }
 
@@ -60,6 +60,7 @@ export function useContributionRoles(
 ): void {
   const registry = useActionsRegistry();
   const depRegistry = useOptionalDepRegistry();
+  const { registry: toolRegistry, ambient } = tools;
 
   useEffect(() => {
     if (!registry) return;
@@ -68,13 +69,13 @@ export function useContributionRoles(
     // bindings reference exactly as a registry tool does, and leaving them out
     // gives the same silent failure this hook exists to prevent — a binding
     // pointing at an id nothing registered.
-    for (const entry of contributionEntries(tools)) {
+    for (const entry of contributionEntries({ registry: toolRegistry, ambient })) {
       for (const action of entry.actions ?? []) {
         unregisters.push(registry.register(action));
       }
     }
     return () => { for (const u of unregisters) u(); };
-  }, [registry, tools.registry, tools.ambient]);
+  }, [registry, toolRegistry, ambient]);
 
   const installs = new Map<object, () => () => void>();
   for (const entry of contributionEntries(tools)) {

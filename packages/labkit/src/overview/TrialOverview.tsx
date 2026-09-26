@@ -163,11 +163,13 @@ function Overview({
 }: TrialOverviewProps & { camera: CameraContextValue }) {
   const size = useMemo(() => ({ width, height }), [width, height]);
   const content = bounds ? toLocalRect(bounds, camera.frame) : camera.content;
-  const contentKey = content ? `${content.x},${content.y},${content.width},${content.height}` : '';
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `content` is rebuilt every render; its numbers, in `contentKey`, are what the fit depends on.
+  // `content` is rebuilt every render, so the fit keys on its numbers.
+  const framed = content !== null && content !== undefined;
+  const { x = 0, y = 0, width: w = 0, height: h = 0 } = content ?? {};
   const fit = useMemo(
-    () => (content ? fitRect(content, size) : { x: 0, y: 0, scale: { x: 1, y: 1 } }),
-    [contentKey, size],
+    () =>
+      framed ? fitRect({ x, y, width: w, height: h }, size) : { x: 0, y: 0, scale: { x: 1, y: 1 } },
+    [framed, x, y, w, h, size],
   );
   const boxRef = useRef<HTMLDivElement | null>(null);
 
