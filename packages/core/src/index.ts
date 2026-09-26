@@ -366,6 +366,16 @@ export type { CanvasViewProps, ViewRect } from './canvas/CanvasView';
 export { SceneViewCanvas } from './canvas/SceneViewCanvas';
 export type { SceneViewCanvasProps } from './canvas/SceneViewCanvas';
 export { MinimapCanvas } from './canvas/MinimapCanvas';
+export {
+  createMinimapContribution,
+  createLinkedCursorContribution,
+  minimapCenterAction,
+  minimapPanAction,
+  centerRootOn,
+  MINIMAP_CENTER,
+  MINIMAP_PAN,
+} from './features/minimap';
+export type { MinimapContributionOptions, LinkedCursorOptions } from './features/minimap';
 export type { MinimapCanvasProps } from './canvas/MinimapCanvas';
 export {
   buildSceneViewCommands,
