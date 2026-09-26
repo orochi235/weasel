@@ -1,47 +1,39 @@
-# In flight: contributions as the feature unit, and the stage overview — branch `labkit-overview`
+# Built, not merged: contributions as the feature unit, and the stage overview — branch `labkit-overview`
 
-Worktree `.claude/worktrees/labkit-overview`, branched from local `main`, which
-carries unpushed commits (`git log --oneline origin/main..main`). Nothing is
-pushed; never push without Mike's explicit OK.
+Worktree `.claude/worktrees/labkit-overview`, branched from local `main` (which
+carries unpushed commits of its own). All three arcs are built and committed;
+nothing is pushed or merged. **Next:** Mike's call on merging to `main`; never
+push without his explicit OK.
 
-**Done:** the design, `docs/superpowers/specs/2026-09-25-labkit-stage-overview-design.md`
-(arc 1 in full, arcs 2 and 3 in outline). **Next:** Mike said *gogogo*: plan and
-build all three arcs with no approval gates, detailing arcs 2 and 3 in the spec
-before starting each. Delete the spec when the last arc merges.
+Where it lives now: `docs/extending.md` (the extension-unit map and the minimap
+worked example), `docs/taxonomy.md` §1 "Contribution",
+`packages/core/src/features/minimap/README.md`,
+`packages/labkit/src/canvas/AGENTS.md`, `packages/labkit/src/overview/AGENTS.md`.
+The design spec is deleted; its decisions are in those and in the commits.
 
 ## Decisions made in conversation that the code does not explain
 
 **The overview is an engine feature, not a labkit component.** Mike rejected a
 labkit `overview` capability and then a `TrialPlugin` seam: "if there isn't an
-obvious way to express something like this, there should be." The unit is
-`Contribution`, grown to carry `deps`, plus core's `SurfaceContribution` with
-`views` and `attach`. taxonomy §6's deferred `WeaselPlugin` is that unit; its
-"≥2 features first" gate is the consumer-gating the root CLAUDE.md bans.
+obvious way to express something like this, there should be." taxonomy §6's
+deferred `WeaselPlugin` is `SurfaceContribution`; its "≥2 features first" gate
+was the consumer-gating the root CLAUDE.md bans.
 
-**labkit trial content moves onto weasel's dispatcher (arc 2).** Mike chose
-this over labkit binding engine pieces under its own `usePanZoom`. Precedent:
-`packages/labkit/examples/3d-lab/SolidInstrument.tsx`.
+**labkit trial content moves onto weasel's dispatcher.** Mike chose this over
+labkit binding engine pieces under its own `usePanZoom`, which is now deleted.
 
 **The overview ships outside labkit's main bundle** (`@weasel-js/labkit/overview`).
-Mike's "d3dx sense": optional helpers on the core API, not in it. The loupe is
-in the main bundle today because `Trial.tsx` imports it statically; moving it
-onto the same mechanism is a follow-up to file, not part of this branch.
+Mike's "d3dx sense": optional helpers on the core API, not in it. The loupe's
+move onto the same shape is filed in `docs/TODO.md`.
 
-**Mike asked for an extending guide.** `docs/extending.md` already exists; it
-gets the extension-unit map (arc 1 §1.5) rather than a second file.
-
-**The requester is levar's session `levar-0b`** (`uds:/tmp/cc-socks/15952.sock`).
-Message it when the overview lands (arc 3: after marks show, it deletes its
-hand-rolled `visor/src/eyemarks/Context.tsx` and `GhostCursor.tsx`). It was told
-the request is in design and a DOM stage will need an instrument-supplied
-overview `render`.
+**The requester is levar's session `levar-0b`**, told on completion how an
+instrument declares the overview; it moves its eye marks lab onto it and
+deletes `visor/src/eyemarks/Context.tsx` and `GhostCursor.tsx`.
 
 ## Traps
 
 **Weasel tests go to the fleet.** `onto test --ref origin/main` from the
-worktree (this branch has no upstream, and onto refuses without `--ref`). It
-runs the whole suite; locally, run only the files covering the diff. A 5s
-timeout in an unrelated file on a loaded node is contention, not a regression.
+worktree (no upstream). A fresh tree needs `--setup --node <n>` once.
 
 ---
 

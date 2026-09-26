@@ -754,6 +754,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
   action, and `docs/taxonomy.md` would need to say what a hover binding claims.
 
+- **(P3) labkit's loupe ships in the main bundle.** `<Trial>` imports
+  `TrialLoupe` statically, so every lab pays for the magnifier whether or not
+  an instrument declares one. The overview shows the other shape: its own
+  entry (`@weasel-js/labkit/overview`), mounted by the instrument and reading
+  the trial through `CameraContext`. Moving the loupe onto it means the
+  instrument mounts the lens, and the trial's toolbar toggle finds it through
+  context rather than the capability.
+
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap and loupe route through weasel's dispatcher (`CameraInput`),
   but dragging a palette item onto a canvas is `useDragDrop`
