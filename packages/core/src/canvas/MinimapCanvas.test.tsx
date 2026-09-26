@@ -557,7 +557,7 @@ describe('<MinimapCanvas> — linked cursor', () => {
     const h = mountShared();
     const idle = lastRoot().children.length;
     await act(async () => { h.store().set({ worldX: 50, worldY: 50, viewId: null }); await frame(); });
-    expect(lastRoot().children.length).toBe(idle + 4);
+    expect(lastRoot().children.length).toBe(idle + 8);
     await act(async () => { h.store().set({ worldX: 50, worldY: 50, viewId: 'minimap' }); await frame(); });
     expect(lastRoot().children.length).toBe(idle);
   });

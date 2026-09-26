@@ -143,10 +143,18 @@ describe('minimap chrome', () => {
     const layer = createLinkedCursorLayer({ id: 'x', pointer: () => pos, color: () => '#f00' });
     expect(layer.draw({ viewId: null }, ROOT, { width: 400, height: 300 })).toEqual([]);
     const inMini = layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80 });
-    expect(inMini).toHaveLength(4);
+    // Four halo bars under four accent bars.
+    expect(inMini).toHaveLength(8);
     // A 9px arm at scale 0.08 spans 112.5 world units.
-    expect((inMini[0] as { path: { width: number } }).path.width).toBeCloseTo(112.5);
+    expect((inMini[4] as { path: { width: number } }).path.width).toBeCloseTo(112.5);
     pos = null;
+    expect(layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80 })).toEqual([]);
+  });
+
+  it('keeps out of views it was not built for', () => {
+    const pos = { worldX: 500, worldY: 400, viewId: 'elsewhere' };
+    const layer = createLinkedCursorLayer({ id: 'x', pointer: () => pos, color: () => '#f00', views: [null] });
+    expect(layer.draw({ viewId: null }, ROOT, { width: 400, height: 300 })).toHaveLength(8);
     expect(layer.draw({ viewId: 'minimap' }, FIT, { width: 100, height: 80 })).toEqual([]);
   });
 });

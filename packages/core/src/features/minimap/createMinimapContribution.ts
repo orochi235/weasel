@@ -41,7 +41,7 @@ function linkedCursor(id: string, ownViews: readonly (string | null)[]) {
   let color = FALLBACK_CURSOR_COLOR;
   const visible = (p: PointerWorldPos): boolean =>
     p !== null && ownViews.some((v) => v !== p.viewId);
-  const layer = createLinkedCursorLayer({ id, pointer: () => pointer, color: () => color });
+  const layer = createLinkedCursorLayer({ id, pointer: () => pointer, color: () => color, views: ownViews });
   const attach = (api: CanvasExtensionApi, deps: ContributionDepReader): (() => void) => {
     const store = deps.get('pointer');
     if (!store) return () => {};
@@ -74,6 +74,9 @@ export interface LinkedCursorOptions {
  * The linked crosshair alone: this surface paints the pointer's position
  * whenever the pointer is over some other view — another surface under the
  * same `<PointerContextProvider>`, such as a detached `<MinimapCanvas>`.
+ *
+ * A surface carrying `createMinimapContribution` already has one, in both its
+ * views; this is for a surface without.
  */
 export function createLinkedCursorContribution(opts: LinkedCursorOptions = {}): SurfaceContribution {
   const id = opts.id ?? 'linked-cursor';
@@ -99,7 +102,7 @@ export interface MinimapContributionOptions<TData = unknown, TLayer extends stri
   indicatorStyle?: IndicatorStyle;
 }
 
-const DEFAULT_BACKGROUND = 'rgba(24, 24, 28, 0.92)';
+const DEFAULT_BACKGROUND = '#18181c';
 
 /**
  * A minimap inside a `<SceneCanvas>`, installed with one entry:

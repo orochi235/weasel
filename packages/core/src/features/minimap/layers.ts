@@ -48,39 +48,50 @@ export function createIndicatorLayer(opts: {
 }
 
 /** Screen-pixel geometry of the crosshair: arm length, the gap at its center,
- *  and line thickness. */
+ *  line thickness, and the dark halo that keeps it legible over any content. */
 const ARM = 9;
 const GAP = 3;
-const THICK = 1.5;
+const THICK = 2;
+const HALO = 1;
+const HALO_COLOR = 'rgba(0, 0, 0, 0.6)';
 
 /**
- * A crosshair at the pointer's world point, in every view the pointer is not
- * over — the other side of a linked cursor. A fixed screen size in every view.
+ * A crosshair at the pointer's world point, in each of `views` the pointer is
+ * not over — the other side of a linked cursor. A fixed screen size in every
+ * view. `views` omitted paints in every view.
  */
 export function createLinkedCursorLayer(opts: {
   id: string;
   pointer: () => PointerWorldPos;
   color: () => string;
+  views?: readonly (string | null)[];
 }): RenderLayer<unknown> {
-  const { id, pointer, color } = opts;
+  const { id, pointer, color, views } = opts;
   return {
     id,
     label: 'Linked cursor',
     draw: (data, view: View): DrawCommand[] => {
       const p = pointer();
-      if (!p || p.viewId === viewIdOf(data)) return [];
+      const here = viewIdOf(data);
+      if (!p || p.viewId === here || (views && !views.includes(here))) return [];
       const k = 1 / view.scale.x;
-      const arm = ARM * k, gap = GAP * k, t = THICK * k;
+      const arm = ARM * k, gap = GAP * k, t = THICK * k, h = HALO * k;
       const { worldX: x, worldY: y } = p;
-      const fill = { fill: 'solid' as const, color: color() };
-      const bar = (bx: number, by: number, w: number, h: number): DrawCommand => ({
-        kind: 'path', path: { kind: 'rect', x: bx, y: by, width: w, height: h }, fill,
+      const bars: [number, number, number, number][] = [
+        [x - gap - arm, y - t / 2, arm, t],
+        [x + gap, y - t / 2, arm, t],
+        [x - t / 2, y - gap - arm, t, arm],
+        [x - t / 2, y + gap, t, arm],
+      ];
+      const rect = (bx: number, by: number, w: number, ht: number, c: string): DrawCommand => ({
+        kind: 'path',
+        path: { kind: 'rect', x: bx, y: by, width: w, height: ht },
+        fill: { fill: 'solid', color: c },
       });
+      const accent = color();
       return [
-        bar(x - gap - arm, y - t / 2, arm, t),
-        bar(x + gap, y - t / 2, arm, t),
-        bar(x - t / 2, y - gap - arm, t, arm),
-        bar(x - t / 2, y + gap, t, arm),
+        ...bars.map(([bx, by, w, ht]) => rect(bx - h, by - h, w + 2 * h, ht + 2 * h, HALO_COLOR)),
+        ...bars.map(([bx, by, w, ht]) => rect(bx, by, w, ht, accent)),
       ];
     },
   };
