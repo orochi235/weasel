@@ -53,7 +53,7 @@ function indexProgram(program: t.Program, file: string, autoTitle: string): Inde
     for (const spec of stmt.specifiers) {
       if (spec.type !== 'ExportSpecifier' || spec.exportKind === 'type') continue;
       const name = exportedName(spec.exported);
-      const node = stmt.source ? undefined : bindings.get(spec.local.name);
+      const node = stmt.source ? undefined : bindings.get(exportedName(spec.local));
       if (name === 'default') {
         metaNode = node;
         metaDoc ??= doc;

@@ -54,7 +54,7 @@
     "url": "https://github.com/orochi235/weasel/issues"
   },
   "engines": {
-    "node": ">=22"
+    "node": "^22.18.0 || >=24.11.0"
   },
   "files": [
     "dist",
@@ -65,7 +65,7 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@babel/parser": "^7.29.0",
+    "@babel/parser": "^8.0.6",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "^5.0.2",
@@ -75,7 +75,7 @@
     "chai": "^6.2.2"
   },
   "devDependencies": {
-    "@babel/types": "^7.29.0"
+    "@babel/types": "^8.0.6"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.6.1",
