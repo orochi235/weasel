@@ -175,6 +175,12 @@ export interface InvocationCtx {
   };
   key?: { key: string; repeat: boolean };
   /**
+   * The view the input landed in, as the surface's view resolver assigned it:
+   * a view id, or `null` for the surface's own camera. Absent where no
+   * surface routed the input — a UI-driven trigger, a bare dispatcher.
+   */
+  view?: string | null;
+  /**
    * Per-invocation parameters. Populated by `ActionsRegistry.begin()` for
    * UI-driven ongoing actions (color picker, opacity slider) so handles can
    * read the current value on `start` and updated values on `onMove`. The
@@ -205,6 +211,16 @@ export interface BindingOpts {
    *  values at commit, the invoker can re-call the thunk inside `onEnd`
    *  via `resolveParams(opts?.params)`. */
   params?: Record<string, unknown> | (() => Record<string, unknown>);
+  /**
+   * The views this binding is live in, by id, where `null` is the surface's
+   * own camera. Omitted means every view.
+   *
+   * A binding that names the view an input landed in outranks every binding
+   * that does not, whatever their scope tiers: naming a view is the most
+   * specific thing a binding can say about where it applies. Without that, a
+   * drag bound inside a minimap view loses to the active tool's marquee.
+   */
+  views?: readonly (string | null)[];
 }
 
 /** Resolve `BindingOpts.params` to a concrete record (calling the thunk if

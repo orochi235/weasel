@@ -29,6 +29,16 @@ describe('mergeContributions', () => {
       .toThrow(/dup/);
   });
 
+  it('throws naming a dep two bundles both provide', () => {
+    // Routing's own DepSchema is empty; core fills it. The name is opaque here.
+    const withDep = (id: string): Contribution => ({
+      ...entry(id, `${id}.click`),
+      deps: { camera: () => 1 } as unknown as Contribution['deps'],
+    });
+    expect(() => mergeContributions([withDep('a')], [withDep('b')]))
+      .toThrow(/"camera" is provided by both "a" and "b"/);
+  });
+
   it('merges no bundles into no entries', () => {
     expect(mergeContributions()).toEqual([]);
   });

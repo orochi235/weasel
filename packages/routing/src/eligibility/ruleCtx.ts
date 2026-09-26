@@ -55,6 +55,10 @@ export interface RuleCtx {
    *  density 1. That is what the kit assumed before this field existed, so
    *  an absent profile is behavior-preserving by construction. */
   readonly device?: DeviceProfile;
+  /** The view the input being dispatched landed in — a view id, or `null`
+   *  for the surface's own camera. The dispatcher fills it; absent anywhere
+   *  else a rule is evaluated. */
+  readonly view?: string | null;
 }
 
 /** The live state a `RuleCtx` is assembled from — the chrome context plus

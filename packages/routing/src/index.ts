@@ -94,7 +94,7 @@ export * from './eligibility';
 
 // ─── contributions ────────────────────────────────────────────────────────
 export type {
-  Contribution, ContributionRouting, ContributionChrome, Eligibility,
+  Contribution, ContributionRouting, ContributionChrome, ContributionDeps, Eligibility,
   OverlayPosition, HotkeyTrigger, ToolPresentation,
 } from './contributions/types';
 export { liveScope } from './contributions/eligibility';

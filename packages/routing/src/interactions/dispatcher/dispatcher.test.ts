@@ -1132,3 +1132,76 @@ describe('enabled() sees where the event landed', () => {
     expect(dispatcher.resolveOnly(altClick(1, 0), ctx)?.actionId).toBe('near');
   });
 });
+
+describe('view-scoped bindings', () => {
+  const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+  const down: InputEvent = { kind: 'pointerdown', x: 5, y: 6, ...noMods };
+  const ruleCtx = {
+    focused: true, selection: [], multiActive: false,
+    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    action: { kind: null, id: null }, hover: null, mode: 'normal',
+    allowedCapabilities: new Set<string>(),
+  } as unknown as NonNullable<ReturnType<NonNullable<DispatcherContext['getRuleCtx']>>>;
+
+  /** A `mini`-scoped ambient drag, and the active tool's own unscoped drag. */
+  function setup() {
+    const miniStart = vi.fn().mockReturnValue({ onMove: vi.fn(), onEnd: vi.fn() });
+    const toolStart = vi.fn().mockReturnValue({ onMove: vi.fn(), onEnd: vi.fn() });
+    const registry = makeRegistry([
+      { id: 'mini.pan', label: 'mini', invoker: { timing: 'ongoing', start: miniStart } },
+      { id: 'tool.drag', label: 'tool', invoker: { timing: 'ongoing', start: toolStart } },
+    ]);
+    const mini: Tool = {
+      id: 'mini',
+      eligibility: { always: true },
+      bindings: [{ spec: { kind: 'drag' }, actionId: 'mini.pan', opts: { views: ['mini'] } }],
+    };
+    const tool: Tool = {
+      id: 'select',
+      eligibility: { focus: true },
+      bindings: [{ spec: { kind: 'drag' }, actionId: 'tool.drag' }],
+    };
+    const toolsById = new Map([['mini', mini], ['select', tool]]);
+    return { registry, toolsById, miniStart, toolStart };
+  }
+
+  it('is not live for input routed to another view', () => {
+    const { registry, toolsById, miniStart } = setup();
+    const onlyMini = new Map([['mini', toolsById.get('mini')!]]);
+    const result = createDispatcher().handleInput(
+      down, makeCtx({ actions: registry, toolsById: onlyMini, view: null }),
+    );
+    expect(result).toBe('unhandled');
+    expect(miniStart).not.toHaveBeenCalled();
+  });
+
+  it('outranks an active-tier binding for input in the view it names', () => {
+    const { registry, toolsById, miniStart, toolStart } = setup();
+    createDispatcher().handleInput(down, makeCtx({ actions: registry, toolsById, view: 'mini' }));
+    expect(miniStart).toHaveBeenCalledOnce();
+    expect(toolStart).not.toHaveBeenCalled();
+  });
+
+  it('hands the routed view to the invoker', () => {
+    const { registry, toolsById, miniStart } = setup();
+    createDispatcher().handleInput(down, makeCtx({ actions: registry, toolsById, view: 'mini' }));
+    expect((miniStart.mock.calls[0][0] as InvocationCtx).view).toBe('mini');
+  });
+
+  it('hands the routed view to an eligibility rule', () => {
+    const seen: (string | null | undefined)[] = [];
+    const start = vi.fn().mockReturnValue({ onMove: vi.fn(), onEnd: vi.fn() });
+    const registry = makeRegistry([{
+      id: 'probe', label: 'probe',
+      defaultBinding: { kind: 'drag' },
+      eligible: { when: (c) => { seen.push(c.view); return c.view === 'mini'; } },
+      invoker: { timing: 'ongoing', start },
+    }]);
+    const d = createDispatcher();
+    d.handleInput(down, makeCtx({ actions: registry, getRuleCtx: () => ruleCtx, view: null }));
+    expect(start).not.toHaveBeenCalled();
+    d.handleInput(down, makeCtx({ actions: registry, getRuleCtx: () => ruleCtx, view: 'mini' }));
+    expect(start).toHaveBeenCalledOnce();
+    expect(seen).toEqual([null, 'mini']);
+  });
+});

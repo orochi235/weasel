@@ -189,6 +189,40 @@ export interface DispatcherContext {
    * no eligibility filtering.
    */
   getRuleCtx?: () => RuleCtx | undefined;
+  /**
+   * The view this input landed in — a view id, or `null` for the surface's
+   * own camera. Bindings whose `opts.views` omit it are not live, those naming
+   * it outrank the rest, and it reaches the invoker as `InvocationCtx.view`
+   * and rules as `RuleCtx.view`. Absent means the host routes no views, which
+   * reads as the root.
+   */
+  view?: string | null;
+}
+
+/** Whether `binding` is live for input routed to `view`. */
+function liveInView(binding: GestureBinding, view: string | null): boolean {
+  const views = binding.opts?.views;
+  return views === undefined || views.includes(view);
+}
+
+/** Stable partition: matches whose binding names `view` first. See
+ *  `BindingOpts.views` for why naming the view outranks the scope tier. */
+function preferViewScoped<M extends { binding: GestureBinding }>(
+  matches: readonly M[],
+  view: string | null,
+): M[] {
+  const named: M[] = [];
+  const rest: M[] = [];
+  for (const m of matches) {
+    (m.binding.opts?.views?.includes(view) ? named : rest).push(m);
+  }
+  return named.length === 0 ? [...matches] : [...named, ...rest];
+}
+
+/** The routed view's rule context, carrying the view id. */
+function ruleCtxOf(ctx: DispatcherContext): RuleCtx | undefined {
+  const r = ctx.getRuleCtx?.();
+  return r ? { ...r, view: ctx.view ?? null } : undefined;
 }
 
 /**
@@ -591,6 +625,10 @@ export function createDispatcher(opts?: {
     return !h.onMove && !h.onEnd && !h.overlay && !h.previewIds && !h.previewPose;
   }
 
+  // The view the input being handled landed in. Set per `handleInput`, so a
+  // pump of an in-flight gesture reports the view it is pinned to.
+  let routedView: string | null | undefined;
+
   /** Build a zero-position InvocationCtx for UI-driven invocations (no
    *  pointer event involved — world/screen coords are irrelevant). */
   function buildUiInvocationCtx(deps: ActionDeps, params?: Record<string, unknown>): InvocationCtx {
@@ -614,6 +652,7 @@ export function createDispatcher(opts?: {
       world: { x: 0, y: 0 },
       modifiers,
       deps,
+      ...(routedView !== undefined ? { view: routedView } : {}),
     };
 
     // The pointer in client pixels, where the event carries it. Not every kind
@@ -752,17 +791,19 @@ export function createDispatcher(opts?: {
       ? (tags: readonly CapabilityTag[]) =>
           tags.every((tag) => capsCtx.allowedCapabilities.has(tag))
       : undefined;
+    const view = ctx.view ?? null;
     const result: ScopedBinding[] = scopeBindings(ordered, {
       focusedId: ctx.activeToolId,
       engagedIds: new Set(ctx.hotkeyStack),
       ...(allows ? { allows } : {}),
-    });
+    }).filter((sb) => liveInView(sb.binding, view));
 
     // Actions have no owning tool — `'&'`-channel phase atoms on their
     // bindings won't match.
     for (const action of ctx.actions.list()) {
       const targetScope: BindingScope = action.scope === 'hotkey' ? 'hotkey' : 'ambient';
       for (const binding of actionBindings(action)) {
+        if (!liveInView(binding, view)) continue;
         result.push({ binding, scope: targetScope, ownerToolId: null });
       }
     }
@@ -795,6 +836,7 @@ export function createDispatcher(opts?: {
   // -------------------------------------------------------------------------
 
   function handleInput(event: InputEvent, ctx: DispatcherContext): 'handled' | 'unhandled' {
+    routedView = ctx.view;
     // --- Pump: check for key-held up-phase against in-flight handle ---
     if (event.kind === 'key-held' && event.phase === 'up') {
       const gestureId = gestureIdFor(event);
@@ -921,7 +963,9 @@ export function createDispatcher(opts?: {
     // Compute the engaged-channels set once per dispatch — the matcher
     // uses it to gate `phase`-qualified specs (`[engaged] wheel`, etc.).
     const engagedChannels = snapshotEngagedChannels();
-    const rawMatches = matchSorted(event, scopedBindings, ctx.isMac, engagedChannels);
+    const rawMatches = preferViewScoped(
+      matchSorted(event, scopedBindings, ctx.isMac, engagedChannels), ctx.view ?? null,
+    );
     const traceCandidates: DispatchLogEntry['candidates'] = [];
     const eventKey =
       event.kind === 'key' || event.kind === 'key-held' ? event.key : undefined;
@@ -949,7 +993,7 @@ export function createDispatcher(opts?: {
     // `eligible` rule evaluates false. This is defense-in-depth: even
     // if a stale affordance hit slips through, the dispatcher refuses
     // to fire an action declared ineligible for the active mode.
-    const ruleCtx = ctx.getRuleCtx?.();
+    const ruleCtx = ruleCtxOf(ctx);
     const matches = ruleCtx
       ? filterEligible(rawMatches, (id) => actionMap.get(id), ruleCtx)
       : rawMatches;
@@ -1175,11 +1219,13 @@ export function createDispatcher(opts?: {
   ): ResolvedCandidate[] {
     const scopedBindings = assembleScopedBindings(ctx);
     const engagedChannels = snapshotEngagedChannels();
-    const matches = matchSorted(event, scopedBindings, ctx.isMac, engagedChannels);
+    const matches = preferViewScoped(
+      matchSorted(event, scopedBindings, ctx.isMac, engagedChannels), ctx.view ?? null,
+    );
     if (matches.length === 0) return [];
 
     const actionMap = buildActionMap(ctx.actions);
-    const ruleCtx = ctx.getRuleCtx?.();
+    const ruleCtx = ruleCtxOf(ctx);
 
     // Verdict per action id, so a second binding for an action already
     // evaluated higher up inherits that verdict instead of being re-asked —

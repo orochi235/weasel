@@ -1,6 +1,7 @@
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { Action } from '../interactions/actions/action';
 import type { CapabilityTag } from '@weasel-js/modes';
+import type { DepName, DepSchema } from '../index';
 
 /** Hotkey-slot trigger key. The slot is engaged while this key is held —
  *  hence "hotkey": active as long as the key is hot. `null` (or omitted)
@@ -54,15 +55,21 @@ export interface Eligibility {
  */
 export type OverlayPosition = 'top' | 'before-selection' | 'after-selection';
 
+/** Dep sources an entry provides while it is installed, by dep name. */
+export type ContributionDeps = { [K in DepName]?: () => DepSchema[K] };
+
 /**
  * What routing reads off an entry: when its bindings are live, which they
- * are, and the actions they name.
+ * are, the actions they name, and the deps those actions read.
  */
 export interface ContributionRouting {
   id: string;
   eligibility: Eligibility;
   bindings?: GestureBinding[];
   actions?: Action[];
+  /** Dep sources this entry provides while it is installed. A host installs
+   *  them for as long as the entry is registered, whatever its eligibility. */
+  deps?: ContributionDeps;
 }
 
 /**
