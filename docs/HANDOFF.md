@@ -1,9 +1,7 @@
-# Built, not merged: contributions as the feature unit, and the stage overview — branch `labkit-overview`
+# Retained from contributions as the feature unit, and the stage overview — merged into `main`
 
-Worktree `.claude/worktrees/labkit-overview`, branched from local `main` (which
-carries unpushed commits of its own). All three arcs are built and committed;
-nothing is pushed or merged. **Next:** Mike's call on merging to `main`; never
-push without his explicit OK.
+Merged 2026-09-25 (`7378cbe2d`), not pushed. Never push without Mike's
+explicit OK.
 
 Where it lives now: `docs/extending.md` (the extension-unit map and the minimap
 worked example), `docs/taxonomy.md` §1 "Contribution",
