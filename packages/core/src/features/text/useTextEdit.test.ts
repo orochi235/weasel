@@ -273,7 +273,7 @@ describe('useTextEdit', () => {
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    expect(overlay.style.caretColor).toBe('#3366cc');
+    expect(overlay.style.caretColor).toBe('rgb(51, 102, 204)');
   });
 
   it('honors an explicit caretColor override', () => {
@@ -286,7 +286,7 @@ describe('useTextEdit', () => {
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    expect(overlay.style.caretColor).toBe('#ff00ff');
+    expect(overlay.style.caretColor).toBe('rgb(255, 0, 255)');
   });
 
   it('caretColor falls back to #000 when the node fill is a pattern', () => {
@@ -298,7 +298,7 @@ describe('useTextEdit', () => {
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    expect(overlay.style.caretColor).toBe('#000');
+    expect(overlay.style.caretColor).toBe('rgb(0, 0, 0)');
   });
 
   it('injects a default ::selection style derived from caret color', () => {

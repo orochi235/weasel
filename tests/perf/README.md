@@ -136,14 +136,18 @@ measures free, and a single-threaded static server invents load regressions.
 an Apple M2 Max (12 threads, Node v26.1.0), measured 2026-08-14. They are
 committed so a change can be measured against something and a reviewer can
 see numbers in a diff. They are one machine's numbers, not a threshold, and
-nothing fails when they are exceeded. `baseline.json` is vitest's own
-`--outputJson` format, not `weasel-perf-result/1`; `BASELINE.md` is rendered
-from it by `bench-report.mjs`.
+nothing fails when they are exceeded. `baseline.json` is a vitest report, not
+`weasel-perf-result/1`; `BASELINE.md` is rendered from it by `bench-report.mjs`.
+The committed one predates vitest 5 and is in vitest 4's `--outputJson` shape;
+a re-record writes vitest 5's JSON reporter instead, and
+`lib/vitest-bench.ts` reads both.
 
 ```sh
-npm run perf:bench -- --compare tests/perf/bench/baseline.json   # run, with a delta column against it
-npm run perf:bench:baseline                                      # re-measure, overwrite both files
+npm run perf:bench:baseline   # re-measure, overwrite both files
 ```
+
+vitest 5 dropped `--compare`. To measure a change, run `npm run perf:bench`
+before and after it and put the two result files through `npm run perf:compare`.
 
 Re-record it when a change is *meant* to move the numbers, on an idle machine,
 and say what moved in the commit message. `bench-report.mjs` stamps the
@@ -152,9 +156,10 @@ the measurement it describes.
 
 They run from their own config, `vitest.bench.config.ts`, not as a project in
 the root `vitest.config.ts`, so no `--project` selection and no bare
-`vitest run` can pull them into a correctness run. vitest prints one table per
-group as each finishes; the result file holds each benchmark's median, min,
-mean and `rme`.
+`vitest run` can pull them into a correctness run. Each group is one `test`
+built by `bench/group.ts`, which runs its benchmarks together; vitest prints
+one table per group as each finishes; the result file holds each benchmark's
+median, min, mean and `rme`.
 
 Fixtures are in `bench/fixtures.ts`, all seeded through `mulberry32` — no bare
 `Math.random()`, so two runs on the same machine are comparable. Two fixture

@@ -145,4 +145,21 @@ describe('addVitestBench', () => {
       },
     }]);
   });
+
+  it('reads the same item out of the JSON reporter vitest 5 writes', () => {
+    const run = startRun('vitest-bench');
+    const stats = { p50: 0.02, min: 0.01, mean: 0.03, rme: 1.5, samplesCount: 400 };
+    addVitestBench(run, {
+      testResults: [{
+        name: join(DEFAULT_RESULTS_DIR, '../bench/tessellate.bench.ts'),
+        assertionResults: [
+          { benchmarks: [{ name: 'tessellate — curve count', tasks: [{ name: '8 cubics', latency: stats, throughput: { mean: 33333 } }] }] },
+          {},
+        ],
+      }],
+    });
+    expect(run.result.items.map((i) => [i.id, i.metrics.median.value, i.metrics.median.stat])).toEqual([
+      ['tests/perf/bench/tessellate.bench.ts > tessellate — curve count > 8 cubics', 0.02, 'median of 400 samples'],
+    ]);
+  });
 });

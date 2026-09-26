@@ -18,6 +18,7 @@ playwright-report/
 test-results/
 # Failure artifacts from vitest browser runs.
 .vitest-attachments/
+.vitest/
 __screenshots__/
 # Ad-hoc screenshots dropped at repo root during debugging.
 # Doesn't affect tracked PNGs (weasel-transparent.png etc.) or anything in subdirs.

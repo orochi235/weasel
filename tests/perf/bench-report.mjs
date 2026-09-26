@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import os from 'node:os';
+import { readBenchReport } from './lib/vitest-bench.ts';
 
 const args = process.argv.slice(2);
 const argOf = (flag, fallback) => {
@@ -33,28 +34,12 @@ function ms(v) {
   return v.toExponential(2);
 }
 
-const rows = [];
-let total = 0;
-for (const file of report.files) for (const g of file.groups) total += g.benchmarks.length;
-
-let i = 0;
-for (const file of report.files) {
-  // `filepath` is absolute to the checkout that measured; keep headings repo-relative from any other.
-  const rel = relative(repoRoot, file.filepath);
-  const suite = rel.startsWith('..') ? rel.replace(/^.*?(tests\/)/, '$1') : rel;
-  for (const group of file.groups) {
-    // `fullName` is prefixed with the file path, which the `## suite` heading
-    // already carries.
-    const groupName = group.fullName.replace(/^.*?\.bench\.ts > /, '');
-    for (const b of group.benchmarks) {
-      i++;
-      console.log(
-        `[${i}/${total}] ${suite} > ${groupName} :: ${b.name}  median=${ms(b.median)}ms  rme=±${b.rme.toFixed(1)}%`,
-      );
-      rows.push({ suite, group: groupName, ...b });
-    }
-  }
-}
+const rows = readBenchReport(report);
+rows.forEach((b, i) => {
+  console.log(
+    `[${i + 1}/${rows.length}] ${b.suite} > ${b.group} :: ${b.name}  median=${ms(b.median)}ms  rme=±${b.rme.toFixed(1)}%`,
+  );
+});
 
 const lines = [];
 lines.push('# Benchmark baseline');
@@ -101,7 +86,7 @@ for (let n = 0; n < rows.length; n++) {
   }
   lines.push(
     `| ${r.name} | ${ms(r.median)} | ${ms(r.min)} | ` +
-    `${Math.round(r.hz).toLocaleString('en-US')} | ±${r.rme.toFixed(1)}% | ${r.sampleCount} |`,
+    `${Math.round(r.hz).toLocaleString('en-US')} | ±${r.rme.toFixed(1)}% | ${r.samples} |`,
   );
   if (rows[n + 1]?.group !== r.group) lines.push('');
 }

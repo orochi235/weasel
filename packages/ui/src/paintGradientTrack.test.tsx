@@ -21,8 +21,8 @@ describe('paintGradientTrack', () => {
     // 5 stops at 0/25/50/75/100%.
     expect(bg).toMatch(/0\.0%/);
     expect(bg).toMatch(/100\.0%/);
-    expect(bg).toContain('#000');
-    expect(bg).toContain('#fff');
+    expect(bg).toContain('rgb(0, 0, 0)');
+    expect(bg).toContain('rgb(255, 255, 255)');
   });
 
   it('layers hatched overlays for activeRange < full', () => {

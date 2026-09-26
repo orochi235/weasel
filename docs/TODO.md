@@ -1143,6 +1143,17 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
+- **(P2) jsdom is pinned to exactly 29.0.1.** From 29.0.2 through 30.1.1
+  (the latest), reading an inherited property that no ancestor sets — an unset
+  custom property is enough — costs twice as much for every level of DOM depth:
+  about 1.3s at depth 22 on 30.1.1, against about 3ms on 26. `getInheritedPropertyValue` in
+  jsdom's `living/css/helpers/computed-style.js` walks every ancestor, and each
+  ancestor's lookup walks its own ancestors again. `Select`'s
+  `getComputedStyle(trigger).getPropertyValue('--wzl-select-align')` hit it
+  inside forge's workshop, turning one `Workshop.test.tsx` case from ~1s into
+  ~150s. A depth-sweep repro is a dozen lines against `new JSDOM()`; move off the pin once
+  a jsdom release is flat on it.
+
 - **(P2) The release workflow checks the registry before the publish lands.**
   npm holds an upload as staged, invisible to `npm view`, for minutes before
   listing it. 1.6.0's `bidi`, `hud`, `labkit` and `svg` went live up to three
@@ -1422,6 +1433,16 @@ one dead `const` and four stale disable directives.
   regressions. The shape a gate could take instead: a PR job that runs the
   benchmarks on both revisions and posts the `npm run perf:compare` table as a
   comment without failing the build. Mike's call.
+
+- **(P3) Two microbenchmarks time their own setup, and vitest 5 no longer
+  forces them to.** `tessellate.bench.ts`'s `getMesh miss` resets the cache
+  inside the timed body, and `scene-ops.bench.ts`'s cold `renderOrder` walk is
+  recovered by subtracting a separately-timed layer reorder. vitest 4 gave
+  `bench()` no per-iteration hook; vitest 5 passes tinybench's `beforeEach`
+  through the options argument, and it runs untimed before every iteration.
+  Moving both setups into it measures the thing directly, but renames or drops
+  benchmarks, so it goes with a re-record of `tests/perf/bench/baseline.json`
+  on an idle machine — which also moves that file off vitest 4's shape.
 
 - **(P2) A clipped group costs ~10 us to enter, and the stencil is now the
   larger half.** `tests/perf/clip-cost.spec.ts` separates entry's two costs by

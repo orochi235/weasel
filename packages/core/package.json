@@ -75,8 +75,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
-    "react": ">=18",
-    "@weasel-js/font": "1.6.1"
+    "@weasel-js/font": "1.6.1",
+    "react": ">=18"
   },
   "dependencies": {
     "@weasel-js/cursor": "1.6.1",
@@ -86,7 +86,7 @@
     "@weasel-js/paint": "1.6.1",
     "@weasel-js/routing": "1.6.1",
     "@weasel-js/text": "1.6.1",
-    "earcut": "2.2.4",
+    "earcut": "3.2.3",
     "polygon-clipping": "^0.15.7"
   },
   "publishConfig": {
