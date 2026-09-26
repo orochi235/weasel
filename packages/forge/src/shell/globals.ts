@@ -8,6 +8,11 @@ export interface GlobalDeclaration {
   default: string;
   /** Another global's key: the toolbar shows this one in a popover beside that one rather than in the bar itself. */
   under?: string;
+  /**
+   * Whether the toolbar offers `value` given the lab's other values; every option shows when absent. `globals` is
+   * resolved without any declaration's `shows`, so one `shows` cannot depend on another's outcome.
+   */
+  shows?: (value: string, globals: Globals) => boolean;
 }
 
 export type GlobalDeclarations = Readonly<Record<string, GlobalDeclaration>>;
@@ -22,13 +27,35 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 export const isGlobalsPath = (path: string): boolean => path === GLOBALS_KEY || path.startsWith(`${GLOBALS_KEY}.`);
 
-/** The lab's values from what was stored: declared keys only, and a value no option offers falls back to the default. */
+/** The options the toolbar offers for `declaration` at `globals`. */
+export function shownOptions(declaration: GlobalDeclaration, globals: Globals): GlobalDeclaration['options'] {
+  const { shows } = declaration;
+  return shows ? declaration.options.filter((option) => shows(option.value, globals)) : declaration.options;
+}
+
+/**
+ * The lab's values from what was stored: declared keys only. A value no option offers falls back to the default, and
+ * one its declaration's `shows` hides falls back to the shown option nearest it in `options`, the earlier on a tie.
+ */
 export function labGlobals(declarations: GlobalDeclarations, stored: unknown): Globals {
   const from = isRecord(stored) ? stored : {};
-  return Object.fromEntries(
+  const offered: Globals = Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
       const value = from[key];
       return [key, declaration.options.some((option) => option.value === value) ? value : declaration.default];
+    }),
+  );
+  return Object.fromEntries(
+    Object.entries(declarations).map(([key, declaration]) => {
+      const shown = shownOptions(declaration, offered);
+      const value = offered[key];
+      if (!declaration.shows || shown.length === 0 || shown.some((option) => option.value === value)) return [key, value];
+      const at = (v: unknown) => declaration.options.findIndex((option) => option.value === v);
+      const from = at(value);
+      const nearest = shown.reduce((best, option) =>
+        Math.abs(at(option.value) - from) < Math.abs(at(best.value) - from) ? option : best,
+      );
+      return [key, nearest.value];
     }),
   );
 }

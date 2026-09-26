@@ -23,6 +23,19 @@ describe('labGlobals', () => {
   it('keeps stored values an option offers, and drops undeclared keys and values no option offers', () => {
     expect(labGlobals(declarations, { mode: 'dark', font: 'comic', gone: 'x' })).toEqual({ mode: 'dark', font: 'oswald' });
   });
+
+  it('moves a value its `shows` hides to the nearest option that shows, the earlier on a tie', () => {
+    const sizes = ['xs', 's', 'm', 'l', 'xl'].map((value) => ({ value, label: value }));
+    const onlyFor: Record<string, string[]> = { oswald: ['s', 'xl'], inter: ['xs', 'm', 'xl'] };
+    const shaped: GlobalDeclarations = {
+      ...declarations,
+      size: { label: 'Size', default: 'm', options: sizes, shows: (value, globals) => onlyFor[String(globals.font)]!.includes(value) },
+    };
+    expect(labGlobals(shaped, { font: 'oswald', size: 'm' }).size).toBe('s');
+    expect(labGlobals(shaped, { font: 'oswald', size: 'l' }).size).toBe('xl');
+    expect(labGlobals(shaped, { font: 'inter', size: 'l' }).size).toBe('m');
+    expect(labGlobals(shaped, { font: 'inter', size: 'xs' }).size).toBe('xs');
+  });
 });
 
 describe('effectiveGlobals', () => {

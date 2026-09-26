@@ -35,8 +35,9 @@ describe('fontRule', () => {
     expect(fontRule({ fontFamily: 'ptSans', fontWeight: '900' })).toContain('font-weight: 700;');
   });
 
-  it('keeps a width the font ships, and otherwise falls back to normal', () => {
+  it('snaps a width to the nearest the font ships', () => {
     expect(fontRule({ fontFamily: 'helvetica', fontStretch: 'condensed' })).toContain('font-stretch: condensed;');
+    expect(fontRule({ fontFamily: 'futura', fontStretch: 'ultra-condensed' })).toContain('font-stretch: condensed;');
     expect(fontRule({ fontFamily: 'inter', fontStretch: 'condensed' })).toContain('font-stretch: normal;');
   });
 
@@ -64,6 +65,16 @@ describe('FONT_GLOBALS', () => {
     for (const declaration of Object.values(FONT_GLOBALS)) {
       expect(declaration.options.map((o) => o.value)).toContain(declaration.default);
     }
+  });
+
+  it('offers only the weights, widths and italic the chosen font ships', () => {
+    const shown = (key: string, globals: Record<string, string>) =>
+      FONT_GLOBALS[key]!.options.map((option) => option.value).filter((value) => FONT_GLOBALS[key]!.shows!(value, globals));
+    expect(shown('fontStretch', { fontFamily: 'oswald' })).toEqual(['normal']);
+    expect(shown('fontStretch', { fontFamily: 'futura' })).toEqual(['condensed', 'normal']);
+    expect(shown('fontStyle', { fontFamily: 'oswald' })).toEqual(['normal']);
+    expect(shown('fontStyle', { fontFamily: 'inter' })).toEqual(['normal', 'italic']);
+    expect(shown('fontWeight', { fontFamily: 'oswald' })).toEqual(['200', '300', '400']);
   });
 });
 

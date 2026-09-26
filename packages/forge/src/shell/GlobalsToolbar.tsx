@@ -2,7 +2,7 @@ import { Select, usePersistedState } from '@weasel-js/labkit';
 import { Button, Callout, TuneIcon } from '@weasel-js/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Globals } from '../protocol/messages';
-import { type GlobalDeclaration, type GlobalDeclarations, labGlobals } from './globals';
+import { type GlobalDeclaration, type GlobalDeclarations, labGlobals, shownOptions } from './globals';
 
 const RECORD = 'fg-globals';
 
@@ -31,7 +31,7 @@ function GlobalSelect({ name, declaration, values, set, labeled = false }: Globa
       width={labeled ? 'fill' : 'fit'}
       selectedKey={String(values[name])}
       onSelectionChange={(value) => set(name, value)}
-      options={declaration.options}
+      options={shownOptions(declaration, values)}
     />
   );
 }

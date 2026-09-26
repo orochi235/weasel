@@ -16,7 +16,7 @@ interface FontInfo {
 // prettier-ignore
 const FONTS: Record<string, FontInfo> = {
   oswald:     { label: 'Oswald',         family: 'Oswald, system-ui, sans-serif',                  weights: [200, 300, 400],                     italics: [false],       stretches: ['normal'] },
-  helvetica:  { label: 'Helvetica',      family: '"Helvetica Neue", Helvetica, Arial, sans-serif', weights: [100, 300, 400, 500, 700, 900],      italics: [false, true], stretches: ['ultra-condensed', 'condensed', 'normal'] },
+  helvetica:  { label: 'Helvetica',      family: '"Helvetica Neue", Helvetica, Arial, sans-serif', weights: [100, 300, 400, 500, 700, 900],      italics: [false, true], stretches: ['condensed', 'normal'] },
   futura:     { label: 'Futura',         family: 'Futura, "Trebuchet MS", Arial, sans-serif',      weights: [400, 500, 700],                     italics: [false, true], stretches: ['condensed', 'normal'] },
   inter:      { label: 'Inter',          family: 'Inter, system-ui, sans-serif',                   weights: [300, 400, 500, 600, 700],           italics: [false, true], stretches: ['normal'] },
   roboto:     { label: 'Roboto',         family: 'Roboto, system-ui, sans-serif',                  weights: [300, 400, 500, 700, 900],           italics: [false, true], stretches: ['normal'] },
@@ -34,6 +34,7 @@ const FONTS: Record<string, FontInfo> = {
 
 const WEIGHTS: [string, string][] = [
   ['100', 'Thin (100)'],
+  ['200', 'Extralight (200)'],
   ['300', 'Light (300)'],
   ['400', 'Regular (400)'],
   ['500', 'Medium (500)'],
@@ -79,9 +80,24 @@ export const FONT_GLOBALS: GlobalDeclarations = {
       { label, default: THEME, options: options([[THEME, 'Theme'], ...FAMILY_OPTIONS]), under: 'fontFamily' },
     ]),
   ),
-  fontWeight: { label: 'Weight', default: '500', options: options(WEIGHTS) },
-  fontStretch: { label: 'Width', default: 'normal', options: options(STRETCHES) },
-  fontStyle: { label: 'Italic', default: 'normal', options: options([['normal', 'Regular'], ['italic', 'Italic']]) },
+  fontWeight: {
+    label: 'Weight',
+    default: '500',
+    options: options(WEIGHTS),
+    shows: (value, globals) => fontOf(globals)[1].weights.includes(Number(value)),
+  },
+  fontStretch: {
+    label: 'Width',
+    default: 'normal',
+    options: options(STRETCHES),
+    shows: (value, globals) => fontOf(globals)[1].stretches.includes(value),
+  },
+  fontStyle: {
+    label: 'Italic',
+    default: 'normal',
+    options: options([['normal', 'Regular'], ['italic', 'Italic']]),
+    shows: (value, globals) => fontOf(globals)[1].italics.includes(value === 'italic'),
+  },
 };
 
 /** Links the webfont stylesheet into `doc` once. */
@@ -142,14 +158,22 @@ export function fontTheme(base: Theme, globals: StoryContext['globals']): Theme 
 const nearest = (value: number, supported: number[]): number =>
   supported.reduce((closest, v) => (Math.abs(v - value) < Math.abs(closest - value) ? v : closest), supported[0]!);
 
+const STRETCH_ORDER = STRETCHES.map(([value]) => value);
+
+/** The width `font` ships nearest `requested`. */
+function nearestStretch(requested: string, supported: string[]): string {
+  const at = (value: string) => STRETCH_ORDER.indexOf(value);
+  const from = at(requested) === -1 ? at('normal') : at(requested);
+  return supported.reduce((best, value) => (Math.abs(at(value) - from) < Math.abs(at(best) - from) ? value : best), supported[0]!);
+}
+
 /** The rules for the font globals, each snapped to what the chosen font ships. weasel's components read their
  *  family from the font tokens, and form controls do not inherit one, so both are pointed at the choice too. */
 /** The rule for `scope`, `:root` by default: a story host in the workshop names itself instead. */
 export function fontRule(globals: StoryContext['globals'], scope = ':root'): string {
   const [, font] = fontOf(globals);
   const weight = nearest(Number(globals.fontWeight ?? 500), font.weights);
-  const requestedStretch = String(globals.fontStretch ?? 'normal');
-  const stretch = font.stretches.includes(requestedStretch) ? requestedStretch : 'normal';
+  const stretch = nearestStretch(String(globals.fontStretch ?? 'normal'), font.stretches);
   const italic = globals.fontStyle === 'italic' && font.italics.includes(true);
   const tokens = chosenSlots(globals)
     .map((slot) => `--wzl-${slot.token}: ${slot.font.family};`)

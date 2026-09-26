@@ -62,4 +62,40 @@ describe('GlobalsToolbar', () => {
     expect(dialog.getByText('Display')).toBeInTheDocument();
     expect(dialog.getByRole('button', { name: /Display/ })).toHaveTextContent('Oswald');
   });
+
+  it('lists only the options a declaration shows at the lab’s current values', async () => {
+    const gated: ShellConfig = {
+      globals: {
+        mode: config.globals!.mode!,
+        tone: {
+          label: 'Tone',
+          default: 'soft',
+          options: [
+            { value: 'soft', label: 'Soft' },
+            { value: 'glare', label: 'Glare' },
+          ],
+          shows: (value, globals) => value === 'soft' || globals.mode === 'dark',
+        },
+      },
+    };
+    render(<Workshop index={[a]} frameUrl="/frame.html" config={gated} storage={createMemoryAdapter()} />);
+    const toolbar = within(await screen.findByRole('toolbar', { name: 'Globals' }));
+    act(() => {
+      fireEvent.click(toolbar.getByRole('button', { name: /Tone/ }));
+    });
+    expect((await screen.findAllByRole('option')).map((option) => option.textContent)).toEqual(['Soft']);
+    fireEvent.click(screen.getByRole('option', { name: 'Soft' }));
+    await waitFor(() => expect(screen.queryByRole('listbox')).toBeNull());
+    act(() => {
+      fireEvent.click(toolbar.getByRole('button', { name: /Mode/ }));
+    });
+    fireEvent.click(await screen.findByRole('option', { name: 'Dark' }));
+    await waitFor(() => expect(toolbar.getByRole('button', { name: /Mode/ })).toHaveTextContent('Dark'));
+    act(() => {
+      fireEvent.click(toolbar.getByRole('button', { name: /Tone/ }));
+    });
+    await waitFor(async () =>
+      expect((await screen.findAllByRole('option')).map((option) => option.textContent)).toEqual(['Soft', 'Glare']),
+    );
+  });
 });
