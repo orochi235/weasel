@@ -21,8 +21,8 @@ export const WHEEL_RATE = 0.002;
  *  registration. */
 export interface LoupeInputApi {
   /** Whether the lens is up. The wheel belongs to the loupe only while it is;
-   *  otherwise `loupe.magnify` declines and the dispatcher leaves the event
-   *  unhandled, which is what hands it back to the lab's own pan/zoom. */
+   *  otherwise `loupe.magnify` declines and the dispatcher falls through to
+   *  the trial camera's zoom. */
   shown: () => boolean;
   /** Raise or drop the hold-to-peek flag. */
   setPeeking: (on: boolean) => void;
@@ -43,6 +43,10 @@ export function createLoupeActions(
     id: LOUPE_MAGNIFY_ID,
     label: 'Magnify (loupe)',
     group: 'loupe',
+    // Hotkey scope, so while the lens is up it outranks the trial camera's
+    // wheel zoom on the same dispatcher; while it is down `enabled` declines
+    // and the zoom runs.
+    scope: 'hotkey',
     // Every modifier optional: the lens claims the wheel whenever it is up,
     // which is what the hand-rolled capture-phase listener did. A bare spec
     // would forbid modifiers and hand Cmd+wheel back to the lab mid-peek.

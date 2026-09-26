@@ -754,6 +754,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
   action, and `docs/taxonomy.md` would need to say what a hover binding claims.
 
+- **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
+  pan, zoom, tap and loupe route through weasel's dispatcher (`CameraInput`),
+  but dragging a palette item onto a canvas is `useDragDrop`
+  (`packages/labkit/src/dragdrop/DragDropRuntime.tsx`): a press in the sidebar
+  that ends over the canvas, which no binding on the canvas's dispatcher sees
+  begin. Routing it needs a drag that starts on one element and drops on
+  another — the same shape `ingest` answers for an OS drag.
+
 - **(P2) Things that look duplicated in this engine and are not.** Left from the
   2026-08-29 duplicated-cascade audit, whose findings all landed — `git log` and
   `.changeset/` are the record. This list is the other half: pairs a future audit

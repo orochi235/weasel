@@ -1,10 +1,10 @@
-import { type CSSProperties, type ReactNode, useContext, useEffect, useRef } from 'react';
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import type { ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
-import { CameraWheelContext } from './CameraWheelContext';
-import { usePanZoom } from './usePanZoom';
-import type { ViewportSize } from './worldSpec';
+import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
+import { LinkedCursor } from './LinkedCursor';
+import { DEFAULT_FRAME, type ViewportSize } from './worldSpec';
 
 /** Props for `<Stage>`. */
 export interface StageProps {
@@ -43,7 +43,8 @@ export function fitStage(size: ViewportSize, viewport: ViewportSize): ViewTransf
 
 /**
  * DOM content of a fixed size, panned and zoomed by a camera — what
- * `<CanvasStack>` is for layers drawn to a canvas. The content is laid out at
+ * `<CanvasStack>` is for layers drawn to a canvas. Pan and zoom route through
+ * weasel's gesture dispatcher (`<CameraInput>`). The content is laid out at
  * its own size and transformed, so everything inside keeps its layout and a
  * measurement of any element in it reports where it is actually drawn.
  */
@@ -61,24 +62,23 @@ export function Stage({
   const view = normalize2DView(viewProp);
   const host = useRef<HTMLDivElement | null>(null);
   const surface = useSurfaceOptional();
-  const handlers = usePanZoom({ view: viewProp, onViewChange, minZoom, maxZoom });
-  const onWheelRef = useRef(handlers.onWheel);
-  onWheelRef.current = handlers.onWheel;
-  const wheelSlot = useContext(CameraWheelContext);
-
-  // Bound by hand because React registers wheel listeners passive, where
-  // `preventDefault` is refused and the page scrolls under the zoom.
-  useEffect(() => {
-    const el = host.current;
-    if (!el) return;
-    const wheel = (e: WheelEvent): void => onWheelRef.current(e, el);
-    el.addEventListener('wheel', wheel, { passive: false });
-    if (wheelSlot) wheelSlot.current = wheel;
-    return () => {
-      el.removeEventListener('wheel', wheel);
-      if (wheelSlot?.current === wheel) wheelSlot.current = null;
-    };
-  }, [wheelSlot]);
+  const camera = useCameraView({
+    view: viewProp,
+    onViewChange,
+    frame: DEFAULT_FRAME,
+    hostRef: host,
+    minZoom,
+    maxZoom,
+  });
+  const cameraCtx = useMemo(
+    () => ({
+      view: camera,
+      frame: DEFAULT_FRAME,
+      element: () => host.current,
+      content: { x: 0, y: 0, width: size.width, height: size.height },
+    }),
+    [camera, size.width, size.height],
+  );
 
   const onResizeRef = useRef(onResize);
   onResizeRef.current = onResize;
@@ -108,7 +108,7 @@ export function Stage({
   // The camera changes every frame of a pan, and a transform has nowhere to
   // live but the element's own style: set as custom properties the stylesheet
   // reads.
-  const camera = {
+  const cameraVars = {
     ['--lk-stage-x' as string]: `${view.pan.x}px`,
     ['--lk-stage-y' as string]: `${view.pan.y}px`,
     ['--lk-stage-zoom' as string]: String(view.zoom),
@@ -117,18 +117,23 @@ export function Stage({
   } as CSSProperties;
 
   return (
-    <div
-      ref={(el) => {
-        host.current = el;
-        if (hostRef) hostRef.current = el;
-      }}
-      className="lk-stage"
-      onPointerDown={handlers.onPointerDown}
-    >
-      <div className="lk-stage__content" style={camera}>
-        {children}
-      </div>
-      {overlay}
-    </div>
+    <CameraScope>
+      <CameraContext.Provider value={cameraCtx}>
+        <CameraInput hostRef={host} camera={camera} frame={DEFAULT_FRAME} />
+        <div
+          ref={(el) => {
+            host.current = el;
+            if (hostRef) hostRef.current = el;
+          }}
+          className="lk-stage"
+        >
+          <div className="lk-stage__content" style={cameraVars}>
+            {children}
+          </div>
+          <LinkedCursor />
+          {overlay}
+        </div>
+      </CameraContext.Provider>
+    </CameraScope>
   );
 }

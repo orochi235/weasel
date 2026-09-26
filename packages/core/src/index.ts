@@ -374,8 +374,10 @@ export {
   centerRootOn,
   MINIMAP_CENTER,
   MINIMAP_PAN,
+  crosshairRects,
+  CROSSHAIR_HALO,
 } from './features/minimap';
-export type { MinimapContributionOptions, LinkedCursorOptions } from './features/minimap';
+export type { MinimapContributionOptions, LinkedCursorOptions, CrosshairRect } from './features/minimap';
 export type { MinimapCanvasProps } from './canvas/MinimapCanvas';
 export {
   buildSceneViewCommands,

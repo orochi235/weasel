@@ -6,18 +6,16 @@ For a renderer labkit does not own — three.js, raw WebGL, anything with its ow
 render loop — see `src/surface/AGENTS.md` instead. `CanvasStack` is 2D and
 schedules its own layers; a foreign renderer wants rects and dirtiness only.
 
-`useOrbit` also lives here, as the 3D peer of `usePanZoom`. It produces a trial
-view (`{ yaw, pitch, distance, target }`) rather than a matrix — turning that
-into a camera is the host's job.
-
 ## Files
 
 | File | Role |
 |---|---|
-| `CanvasStack.tsx` | Layered `<canvas>` container; owns sizing, pan/zoom handlers, and per-layer canvas refs |
+| `CanvasStack.tsx` | Layered `<canvas>` container; owns sizing and per-layer canvas refs |
 | `CanvasStackContext.ts` | React context exposing the current `view` to descendants |
 | `useLayerScheduler.ts` | DPR-aware rAF scheduler; redraws dirty layers on view/state changes |
-| `usePanZoom.ts` | Pointer + wheel handlers that mutate `view` via `onViewChange` |
+| `CameraInput.tsx` | Pan, zoom and tap routed through weasel's gesture dispatcher; `CameraContext`; publishes the pointer |
+| `cameraView.ts` | The camera as a weasel `View` over frame-local coordinates, and the anchored zoom clamp |
+| `LinkedCursor.tsx` | The crosshair on the camera's element while the pointer is over another view |
 | `camera.ts` | `zoomAt` (fixed-point zoom) and `centerOn` (put a world point at a viewport's middle) |
 | `canvasCoords.ts` | Pure `screenToWorld` / `worldToScreen` helpers |
 | `worldSpec.ts` | The instrument's declared coordinate system, and the camera derived from it |
@@ -32,8 +30,8 @@ interface CanvasStackProps {
   onViewChange: (v: ViewTransform) => void;
   worldSpec?: WorldSpec;                // origin + y direction; default top-left, y down
   onResize?: (size: ViewportSize) => void;
-  minZoom?: number;                     // default 0.1, forwarded to usePanZoom
-  maxZoom?: number;                     // default 32, forwarded to usePanZoom
+  minZoom?: number;                     // default 0.1; the opening zoom stays reachable
+  maxZoom?: number;                     // default 32
   width?: number | string;              // default '100%'
   height?: number | string;             // default '100%'
   className?: string;
@@ -93,11 +91,11 @@ convention: origin at the element's top-left, y downward.
 `resolveFrame(spec, size)` turns a spec plus a measured viewport into a
 `WorldFrame` — `{ originPx, yDir }` — which is what the rest of the directory
 actually consumes. `CanvasStack` owns the measurement, so it owns the frame and
-hands it to `usePanZoom`, to the scheduler, and to every `render`.
+hands it to the camera (`useCameraView`), to the scheduler, and to every `render`.
 
 **Every world↔screen path must go through the frame.** There are four, and each
 one is a silent wrong answer if it is missed: `worldToScreen` / `screenToWorld`,
-the camera (`applyCamera`), the wheel anchor in `usePanZoom`, and
+the camera (`applyCamera`), the camera as a weasel `View` (`cameraView.ts`), and
 `DragDropRuntime`'s drop position. A miss produces geometry that is off by a
 constant, or a wheel that drifts — never an error.
 

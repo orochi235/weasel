@@ -52,28 +52,99 @@ unit map. Arcs 2 and 3 build on these names:
   a host that binds them on a dispatcher of its own, as `<MinimapCanvas>` does.
 - `createLinkedCursorLayer({ id, pointer, color, views })` is the crosshair.
 
-## Arc 2 — labkit trials on the dispatcher, and the overview (outline)
+## Arc 2 — labkit trials on the dispatcher, and the overview
 
-- `Trial` hosts a weasel dispatcher over its content host, as
-  `examples/3d-lab/SolidInstrument.tsx` does per instrument. Pan and zoom
-  become the core viewport actions bound on it, and `usePanZoom` retires. The
-  canvas instruments' `onHitTest` and drag-drop move onto actions at the same
-  time or are listed as follow-ups. Detail them before starting.
-- The trial's pointer is published into a `PointerContextProvider`, with view
-  ids `stage` and `overview`. `RenderContext.trial.pointer` exposes it to
-  instruments, so levar's keys read `get()` in content coordinates over either
-  view.
-- The overview is a detached panel (a `FloatingPanel`) at
-  `@weasel-js/labkit/overview`, outside the main bundle. It draws:
-  - its content: a canvas instrument's layers redrawn through the fit camera;
-    for a DOM stage, an instrument-supplied `render`, as the DOM loupe does,
-    because re-running the instrument's own `render` would run its effects
-    twice;
-  - the same `minimap.pan` action and linked crosshair as arc 1;
-  - the indicator.
-- An instrument declares it with the trial's existing chrome and overlay seams.
-  Whether that needs a labkit-side contribution list is decided in this arc's
-  detail, not here.
+### 2.1 The camera as a weasel `View`
+
+labkit's camera is `{ zoom, pan }` in screen pixels, placed by a `WorldFrame`
+(`originPx`, `yDir`). It maps exactly onto a weasel `View` over *frame-local*
+coordinates — the instrument's world with `y` negated when its axis runs up:
+
+| labkit | weasel |
+|---|---|
+| `zoom` | `scale.x = scale.y = zoom` |
+| `pan`, `frame.originPx` | `x = -(originPx.x + pan.x) / zoom`, `y` likewise |
+
+`canvas/cameraView.ts` holds the pair of conversions, and
+`clampZoomAbout(prev, next, min, max)`, which clamps a zoom while keeping the
+point the zoom was anchored on fixed. Core's viewport actions then drive a
+labkit camera unchanged, and frame-local points convert to the instrument's
+world by `y *= yDir`.
+
+### 2.2 `useCameraInput` replaces `usePanZoom`
+
+`canvas/useCameraInput.ts` mounts `useGestureDispatcher` on the host element
+(`<CanvasStack>`'s container, `<Stage>`'s viewport) with:
+
+| Deps | `view` and `rootView`: a `ViewApi` over the labkit camera, clamped to `minZoom`/`maxZoom` widened to keep the opening zoom reachable; `hostSize` from the host's rect |
+|---|---|
+| Actions | `viewport.dragPan`; `makeViewportZoomAction({ wheel: 'plain' })`; `trial.tap`, which calls `onTap(world)` |
+| Bindings | `drag` → `viewport.dragPan`; `click` → `trial.tap` |
+
+It uses the actions registry in scope, and mounts an isolated one
+(`<WeaselProvider isolate>`) when there is none, so `<CanvasStack>` and
+`<Stage>` keep working on their own. It also fills `CameraWheelContext` with a
+forwarder that re-dispatches a wheel on the host. `CanvasStack.onHitTest`
+becomes `trial.tap`. `usePanZoom` is deleted.
+
+`<Trial>` wraps its body in one `<WeaselProvider isolate>`, so the camera, the
+loupe and the overview share one actions registry, one dep registry and one
+pointer store per trial.
+
+**The loupe joins that dispatcher.** `loupe.magnify` takes `scope: 'hotkey'`,
+so while the lens is up it outranks the camera's wheel zoom, and while it is
+down it declines and the zoom runs. `<LoupeGestures>` registers its actions in
+the scope it is in and mounts a dispatcher only when the host has none
+(`HostDispatchContext`, set by `useCameraInput`), which is the DOM
+`.lk-trial__loupe-host` case.
+
+**Follow-up, filed in `docs/TODO.md`:** palette drag-drop (`useDragDrop`) is a
+DOM drag from the sidebar onto the canvas, not a canvas gesture; it keeps its
+own pointer session.
+
+### 2.3 The trial's pointer
+
+`useCameraInput` publishes the pointer into the store in scope as
+`{ worldX, worldY, viewId: 'stage' }` in the instrument's world, and clears it
+on leave. `RenderContext.trial.pointer` is that store
+(`PointerContextValue`), so an instrument's keys read `get()` over the stage or
+the overview alike.
+
+### 2.4 The overview, at `@weasel-js/labkit/overview`
+
+A new entry (`src/overview/`, its own tsup entry and package export), not
+imported by the main bundle. An instrument declares it through the seams it
+already has: its `render` (or `stage.overlay`) mounts `<TrialOverview>`, which
+reads the trial through `TrialCameraContext` — set by `<Trial>` beside the
+dispatcher: the camera as a `ViewApi`, the frame, the viewport size, the
+content bounds (`stage.size`, or `canvas.bounds` for a canvas instrument), the
+canvas layers with state and config, and the pointer store. No labkit-side
+contribution list is needed: the overview is a component, and the context is
+the whole seam.
+
+`<TrialOverview>` is a `FloatingPanel` holding a box of `width` × `height`:
+
+| Layer | Content |
+|---|---|
+| Content | Canvas instrument: its layers redrawn into a `<canvas>` through the fit camera. DOM stage: the instrument's `render({ state, config, size })` at the content's own size, scaled to fit by a CSS transform, as `<Stage>` does — never the instrument's own `render`, whose effects would run twice |
+| Chrome | A `<canvas>` with the visible-rect indicator and the linked crosshair, drawn in 2D from core's `crosshairRects` so it matches arc 1's |
+| Input | A dispatcher on the box, binding `minimapCenterAction` and `minimapPanAction` with `rootView` = the trial's camera, and publishing `{ viewId: 'overview' }` into the trial's pointer store |
+
+Props: `render?`, `width`, `height`, `anchor?`, `persist?`, `title?`,
+`className?`.
+
+### 2.5 Tests
+
+- `cameraView`: round trip over both y axes and a moved origin; `clampZoomAbout`
+  keeps the anchor.
+- `useCameraInput`: drag pans by the screen delta, wheel zooms about the
+  pointer within the clamp, tap reports the world point, the pointer store gets
+  the world point with `viewId: 'stage'`.
+- Existing `CanvasStack`, `Stage`, `Trial.canvas`, `Trial.loupe` tests keep
+  passing; the loupe claims the wheel only while up.
+- Overview: a press recenters the trial camera; the pointer over the overview
+  publishes `viewId: 'overview'`; the crosshair paints when the pointer is on
+  the stage. A labkit story shows it; a screenshot checks the picture.
 
 ## Arc 3 — marks on the overview (outline)
 

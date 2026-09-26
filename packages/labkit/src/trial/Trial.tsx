@@ -1,3 +1,4 @@
+import { createPointerStore, PointerContextProvider, WeaselProvider } from '@weasel-js/core';
 import { type ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
@@ -5,6 +6,7 @@ import { AnnotationTargets } from '../annotations/AnnotationTargets';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { annotationsFromJSON } from '../annotations/store';
 import type { AnnotationStorage, AnnotationTargetInfo } from '../annotations/types';
+import { CameraScopeContext } from '../canvas/CameraInput';
 import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
 import { fitStage, Stage } from '../canvas/Stage';
@@ -134,6 +136,7 @@ function TrialRuntime({
   suppress,
 }: TrialRuntimeProps) {
   const wheelSlot = useRef<CameraWheelSlot['current']>(null);
+  const [pointer] = useState(createPointerStore);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const loupeHostRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
@@ -328,6 +331,7 @@ function TrialRuntime({
       },
       activeToolId: resolvedToolId,
       visibleLayers,
+      pointer,
     },
     emit: (event) => {
       snapshotIfNeeded(event);
@@ -589,6 +593,18 @@ function TrialRuntime({
     />
   ) : null;
 
+  // One input scope for the trial's body: the camera, the loupe and an
+  // overview share its actions, its deps and its pointer. Isolated, because an
+  // actions registry holds one dispatcher and the trial beside this one has
+  // its own.
+  const scopedBody = (
+    <WeaselProvider isolate>
+      <PointerContextProvider store={pointer}>
+        <CameraScopeContext.Provider value={true}>{body}</CameraScopeContext.Provider>
+      </PointerContextProvider>
+    </WeaselProvider>
+  );
+
   return (
     <TrialIdProvider trialId={record.id}>
       <AnnotationsContext.Provider value={annotationsCap ? annotations : null}>
@@ -607,7 +623,7 @@ function TrialRuntime({
             activeToolId={resolvedToolId}
             setActiveTool={setActiveTool}
           >
-            {body}
+            {scopedBody}
             {annotationOverlays}
           </TrialChrome>
         </CameraWheelContext.Provider>

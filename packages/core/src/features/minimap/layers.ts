@@ -53,7 +53,32 @@ const ARM = 9;
 const GAP = 3;
 const THICK = 2;
 const HALO = 1;
-const HALO_COLOR = 'rgba(0, 0, 0, 0.6)';
+/** The halo's color: dark enough to separate the accent from any content. */
+export const CROSSHAIR_HALO = 'rgba(0, 0, 0, 0.6)';
+
+/** An axis-aligned rect, `{ x, y, w, h }`. */
+export interface CrosshairRect { x: number; y: number; w: number; h: number }
+
+/**
+ * The linked crosshair at (`x`, `y`) as rects in the caller's units, where one
+ * screen pixel is `unitsPerPx` of them: four halo rects to paint first, then
+ * four bars. A painter with no weasel renderer — a 2D canvas — draws the same
+ * crosshair from these.
+ */
+export function crosshairRects(
+  x: number, y: number, unitsPerPx: number,
+): { halo: CrosshairRect[]; bars: CrosshairRect[] } {
+  const k = unitsPerPx;
+  const arm = ARM * k, gap = GAP * k, t = THICK * k, h = HALO * k;
+  const bars: CrosshairRect[] = [
+    { x: x - gap - arm, y: y - t / 2, w: arm, h: t },
+    { x: x + gap, y: y - t / 2, w: arm, h: t },
+    { x: x - t / 2, y: y - gap - arm, w: t, h: arm },
+    { x: x - t / 2, y: y + gap, w: t, h: arm },
+  ];
+  const halo = bars.map((b) => ({ x: b.x - h, y: b.y - h, w: b.w + 2 * h, h: b.h + 2 * h }));
+  return { halo, bars };
+}
 
 /**
  * A crosshair at the pointer's world point, in each of `views` the pointer is
@@ -74,24 +99,16 @@ export function createLinkedCursorLayer(opts: {
       const p = pointer();
       const here = viewIdOf(data);
       if (!p || p.viewId === here || (views && !views.includes(here))) return [];
-      const k = 1 / view.scale.x;
-      const arm = ARM * k, gap = GAP * k, t = THICK * k, h = HALO * k;
-      const { worldX: x, worldY: y } = p;
-      const bars: [number, number, number, number][] = [
-        [x - gap - arm, y - t / 2, arm, t],
-        [x + gap, y - t / 2, arm, t],
-        [x - t / 2, y - gap - arm, t, arm],
-        [x - t / 2, y + gap, t, arm],
-      ];
-      const rect = (bx: number, by: number, w: number, ht: number, c: string): DrawCommand => ({
+      const { halo, bars } = crosshairRects(p.worldX, p.worldY, 1 / view.scale.x);
+      const rect = (r: CrosshairRect, c: string): DrawCommand => ({
         kind: 'path',
-        path: { kind: 'rect', x: bx, y: by, width: w, height: ht },
+        path: { kind: 'rect', x: r.x, y: r.y, width: r.w, height: r.h },
         fill: { fill: 'solid', color: c },
       });
       const accent = color();
       return [
-        ...bars.map(([bx, by, w, ht]) => rect(bx - h, by - h, w + 2 * h, ht + 2 * h, HALO_COLOR)),
-        ...bars.map(([bx, by, w, ht]) => rect(bx, by, w, ht, accent)),
+        ...halo.map((r) => rect(r, CROSSHAIR_HALO)),
+        ...bars.map((r) => rect(r, accent)),
       ];
     },
   };

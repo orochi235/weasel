@@ -73,11 +73,14 @@ const PointerContext = createContext<PointerContextValue | null>(null);
  *
  * Most consumers don't need to mount this directly — `<SceneCanvas>` mounts
  * one when none is in scope. Mount it yourself when two surfaces should share
- * a pointer.
+ * a pointer. Pass `store` to publish into one you hold elsewhere
+ * (`createPointerStore()`).
  */
-export function PointerContextProvider({ children }: { children: ReactNode }): ReactNode {
-  const value = useMemo(createPointerStore, []);
-  return <PointerContext.Provider value={value}>{children}</PointerContext.Provider>;
+export function PointerContextProvider(
+  { children, store }: { children: ReactNode; store?: PointerContextValue },
+): ReactNode {
+  const own = useMemo(createPointerStore, []);
+  return <PointerContext.Provider value={store ?? own}>{children}</PointerContext.Provider>;
 }
 
 /** @experimental The surrounding pointer store, or `null` when no provider is

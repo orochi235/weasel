@@ -1,7 +1,7 @@
 /**
- * Mounts the gesture dispatcher on a loupe's host and registers the loupe's
- * actions on it, so the peek key and the wheel route the way every other
- * weasel binding does.
+ * Registers the loupe's actions, and mounts the gesture dispatcher on the
+ * loupe's host when no camera already has one there, so the peek key and the
+ * wheel route the way every other weasel binding does.
  *
  * Three of the dispatcher's four element channels are off. Only `wheel` is
  * wanted here; `contextMenu` suppresses the native menu unconditionally and
@@ -14,7 +14,8 @@ import {
   useActionsRegistry,
   useGestureDispatcher,
 } from '@weasel-js/core';
-import { type RefObject, useEffect, useMemo } from 'react';
+import { type RefObject, useContext, useEffect, useMemo } from 'react';
+import { CameraContext } from '../canvas/CameraInput';
 import { createLoupeActions, type LoupeInputApi } from './loupeActions';
 
 /** Props for `<LoupeGestures>`. */
@@ -35,7 +36,8 @@ function LoupeDispatch({
   input,
   peekKey,
   registry,
-}: LoupeGesturesProps & { registry: ActionsRegistry }) {
+  ownDispatcher,
+}: LoupeGesturesProps & { registry: ActionsRegistry; ownDispatcher: boolean }) {
   const actions = useMemo(() => createLoupeActions(input, peekKey), [input, peekKey]);
 
   useEffect(() => {
@@ -50,18 +52,21 @@ function LoupeDispatch({
     actions: registry,
     toolsById: NO_TOOLS,
     channels: CHANNELS,
+    enabled: ownDispatcher,
   });
 
   return null;
 }
 
 /**
- * The loupe's input, routed. Render it inside a `<WeaselProvider isolate>` —
- * with no registry in scope it renders nothing rather than registering
- * actions that could never fire.
+ * The loupe's input, routed. Inside a camera (`<CanvasStack>`, `<Stage>`) its
+ * actions join the camera's dispatcher, which already listens on the host;
+ * elsewhere it mounts a dispatcher of its own. With no registry in scope it
+ * renders nothing rather than registering actions that could never fire.
  */
 export function LoupeGestures(props: LoupeGesturesProps) {
   const registry = useActionsRegistry();
+  const camera = useContext(CameraContext);
   if (!registry) return null;
-  return <LoupeDispatch {...props} registry={registry} />;
+  return <LoupeDispatch {...props} registry={registry} ownDispatcher={camera === null} />;
 }
