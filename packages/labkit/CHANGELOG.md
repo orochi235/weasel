@@ -1,5 +1,30 @@
 # @weasel-js/labkit
 
+## 1.6.1
+
+### Patch Changes
+
+- f497731: Types that public props already use are now exported, so inferring a type through them no longer fails with TS2742. `@weasel-js/ui` exports `SegmentTooltipFields`. `@weasel-js/labkit/weasel-ui` re-exports `OverlayPortalProps`, `PropertyAlign`, `PropertyDensity`, `PropertyMetricProps`, `SegmentTooltipFields`, `StanceProps` and `WithoutPortalTarget`; `@weasel-js/labkit/loupe` re-exports `LoupeMode` and `LoupePoint`; and `@weasel-js/labkit` and `@weasel-js/labkit/config` export `SectionOption`, `DialogSpec` and `InDialogOptions`.
+- 62329f7: `annotations.tools` chooses which annotation tools a lab's rail offers, by id (`AnnotationToolId`: `pointer`, `select`, `stroke`, `line`, `arrow`, `rect`, `ellipse`, `text`). The rail is shared across the lab, so it carries the union of what each annotating instrument names, in the kit's order; an instrument that leaves `tools` unset still asks for all of them. A lab starts in `pointer` when its rail has it, and otherwise in the first tool the rail carries.
+- 7683659: A labkit camera now routes through weasel's gesture dispatcher. `<CanvasStack>` and `<Stage>` pan on a drag, zoom on the wheel and report a tap through `CameraInput`, which drives core's `viewport.dragPan` and `viewport.zoom` over the camera as a weasel `View` (`toCameraView` / `fromCameraView`). The loupe joins the same dispatcher, taking the wheel while its lens is up. A trial publishes its pointer, and `RenderContext.trial.pointer` is that store; `<LinkedCursor>` draws the crosshair on the stage while the pointer is over another view.
+  
+  Breaking: `usePanZoom` is removed. `PointerContextProvider` takes an optional `store`, and core exports `crosshairRects`.
+- f497731: `@weasel-js/labkit/config` no longer loads `@weasel-js/ui` at runtime, so a forge frame importing it stops pulling in ui's whole barrel. `.dialog()` now records a `DialogSpec` on the node (`NodeOptions.dialog`) rather than building the `DialogRow` renderer itself, and `ControlPanel` draws it. `ResolvedConfig` gains a `dialogs` map beside `renderers`, which code that builds a `ResolvedConfig` by hand now has to supply. `.dialog()` and `.render()` still replace each other, whichever is called last winning.
+- a7a54a0: `@weasel-js/labkit/overview` exports `<TrialOverview>`: a floating panel showing a trial's whole content — an instrument-supplied `render`, or a canvas instrument's own layers — with the stage's visible rect and a crosshair where the pointer is. Pressing or dragging in it moves the stage's camera there, and the pointer over it is published into `trial.pointer` as `viewId: 'overview'`, so an instrument's keys work over either view. It ships outside the main bundle.
+- 4763610: `<TrialOverview>` draws every annotation target's marks, read-only, where each target sits on the stage. `AnnotationsApi.paintedMarks(target)` answers a target's marks with the style its status and staleness resolve to — the same answer an export draws.
+- 800b03c: A press on a single-thumb `Slider`'s track now jumps the thumb to that point, snapped to the step, and keeps dragging from there; the thumb takes focus, so the arrow keys carry on from the new value. labkit's zoom control and config sliders get it through `Slider`. A `Slider` with several thumbs still ignores a track press unless `trackClick: 'move-nearest'` is set, and `trackClick: 'none'` turns the jump off on a single thumb.
+- Updated dependencies [b209a8e]
+- Updated dependencies [f497731]
+- Updated dependencies [7683659]
+- Updated dependencies [800b03c]
+  - @weasel-js/core@1.6.1
+  - @weasel-js/ui@1.6.1
+  - @weasel-js/kernel3d@1.6.1
+  - @weasel-js/loupe@1.6.1
+  - @weasel-js/svg@1.6.1
+  - @weasel-js/geom@1.6.1
+  - @weasel-js/theme@1.6.1
+
 ## 1.6.0
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @weasel-js/ui
 
+## 1.6.1
+
+### Patch Changes
+
+- f497731: Types that public props already use are now exported, so inferring a type through them no longer fails with TS2742. `@weasel-js/ui` exports `SegmentTooltipFields`. `@weasel-js/labkit/weasel-ui` re-exports `OverlayPortalProps`, `PropertyAlign`, `PropertyDensity`, `PropertyMetricProps`, `SegmentTooltipFields`, `StanceProps` and `WithoutPortalTarget`; `@weasel-js/labkit/loupe` re-exports `LoupeMode` and `LoupePoint`; and `@weasel-js/labkit` and `@weasel-js/labkit/config` export `SectionOption`, `DialogSpec` and `InDialogOptions`.
+- 800b03c: A press on a single-thumb `Slider`'s track now jumps the thumb to that point, snapped to the step, and keeps dragging from there; the thumb takes focus, so the arrow keys carry on from the new value. labkit's zoom control and config sliders get it through `Slider`. A `Slider` with several thumbs still ignores a track press unless `trackClick: 'move-nearest'` is set, and `trackClick: 'none'` turns the jump off on a single thumb.
+- Updated dependencies [b209a8e]
+- Updated dependencies [7683659]
+  - @weasel-js/core@1.6.1
+  - @weasel-js/svg@1.6.1
+  - @weasel-js/font@1.6.1
+  - @weasel-js/modes@1.6.1
+  - @weasel-js/theme@1.6.1
+
 ## 1.6.0
 
 ### Patch Changes

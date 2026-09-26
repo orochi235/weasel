@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.6.1
+
+### Patch Changes
+
+- b209a8e: A feature installs from one entry. `SurfaceContribution` extends `Contribution` with `views` and `attach(api, deps)`, and `Contribution` gains `deps`; `<SceneCanvas ambient>` installs every role an entry declares and removes them with it. `mergeContributions` throws on a duplicate dep name or view id as well as a duplicate entry id.
+  
+  Bindings can be scoped to views with `opts.views`; a binding that names the view an input landed in outranks bindings that do not. `InvocationCtx.viewId` and `RuleCtx.viewId` carry that view, layer `data.viewId` names the view a draw is for, and the `rootView` dep answers the surface camera from inside a view.
+  
+  `createMinimapContribution` puts a minimap inside a canvas, with a linked crosshair, and `createLinkedCursorContribution` draws the crosshair alone. `<MinimapCanvas>` now runs on a dispatcher, publishes its pointer, and takes an `id`.
+  
+  Breaking: `PointerContextValue` is a store — `get`, `set`, `subscribe`, `getVersion` — in place of `pointerRef`, and `PointerWorldPos` carries `viewId`. `usePointerPosition()` follows it. `useHud`'s ref is optional; `useHudContribution(hud, options)` attaches the HUD as well as routing its input.
+- 7683659: A labkit camera now routes through weasel's gesture dispatcher. `<CanvasStack>` and `<Stage>` pan on a drag, zoom on the wheel and report a tap through `CameraInput`, which drives core's `viewport.dragPan` and `viewport.zoom` over the camera as a weasel `View` (`toCameraView` / `fromCameraView`). The loupe joins the same dispatcher, taking the wheel while its lens is up. A trial publishes its pointer, and `RenderContext.trial.pointer` is that store; `<LinkedCursor>` draws the crosshair on the stage while the pointer is over another view.
+  
+  Breaking: `usePanZoom` is removed. `PointerContextProvider` takes an optional `store`, and core exports `crosshairRects`.
+- Updated dependencies [b209a8e]
+  - @weasel-js/routing@1.6.1
+  - @weasel-js/cursor@1.6.1
+  - @weasel-js/font@1.6.1
+  - @weasel-js/geom@1.6.1
+  - @weasel-js/gestures@1.6.1
+  - @weasel-js/history@1.6.1
+  - @weasel-js/paint@1.6.1
+  - @weasel-js/text@1.6.1
+
 ## 1.6.0
 
 ### Patch Changes

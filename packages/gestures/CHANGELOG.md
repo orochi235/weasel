@@ -1,5 +1,9 @@
 # @weasel-js/gestures
 
+## 1.6.1
+
+No changes in this release.
+
 ## 1.6.0
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @weasel-js/svg
 
+## 1.6.1
+
+### Patch Changes
+
+- Updated dependencies [b209a8e]
+- Updated dependencies [7683659]
+  - @weasel-js/core@1.6.1
+  - @weasel-js/geom@1.6.1
+
 ## 1.6.0
 
 ### Patch Changes

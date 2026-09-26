@@ -1,5 +1,13 @@
 # @weasel-js/text
 
+## 1.6.1
+
+### Patch Changes
+
+- @weasel-js/font@1.6.1
+  - @weasel-js/geom@1.6.1
+  - @weasel-js/paint@1.6.1
+
 ## 1.6.0
 
 ### Patch Changes
