@@ -106,9 +106,19 @@ The vocabulary an app developer uses to wire up the kit.
 
 A registry entry: what it contributes, and when it is eligible. Every role is
 optional and independent — `bindings` (its entire input surface), `actions`,
-an `overlay` layer, `presentation` for a palette. An entry that only routes
-input declares only the first two. See
-`packages/core/src/contributions/types.ts`.
+`deps` (live sources its actions read, installed while it is), an `overlay`
+layer, `presentation` for a palette. An entry that only routes input declares
+only the first two. See `packages/routing/src/contributions/types.ts`.
+
+**`SurfaceContribution`** is the canvas's form, and the kit's unit for shipping
+a feature: it adds `views` (cameras over rects of the surface) and `attach`
+(runs against the mounted canvas, returns its teardown, for what the other
+roles cannot say). `<SceneCanvas ambient>` installs every role an entry
+declares and removes them with it; `mergeContributions` concatenates features
+and throws on a duplicate entry id, dep name or view id. The minimap
+(`features/minimap`) and the HUD (`useHudContribution(hud)`) are built this
+way. `docs/extending.md` has the full map. See
+`packages/core/src/canvas/surfaceContribution.ts`.
 
 **Eligibility** is a *set* of conditions, not one value, because one entry holds
 several at once — the hand tool is palette-selectable and space-held:
@@ -131,7 +141,7 @@ the fields that only mean something for a mode the user switches into —
 `initScratch`, `onActivate`/`onDeactivate`, the preview hooks, a `cursor`
 closing over its own scratch. Distinct from [Gesture hooks](#gesture) in that a
 Tool is a stateful mode while a gesture hook is a direct binding to a pointer
-interaction. See `packages/core/src/tools/types.ts`.
+interaction. See `packages/routing/src/tools/types.ts`.
 
 Not every entry is a Tool. `@weasel-js/hud` contributes bindings and actions and
 declares `claimed`; it has no scratch, no palette icon, and nothing to preview.
@@ -164,13 +174,13 @@ paired with the tier its declaration resolves to) plus `overlays()`. The
 dispatcher matches against that, so one place decides eligibility. It is also
 where route-conflict reporting sees both entry bindings and action
 `defaultBinding`s, which is what lets a collision between them be reported at
-all. See `packages/core/src/contributions/useContributions.ts`.
+all. See `packages/routing/src/contributions/useContributions.ts`.
 
 `useTools({ active, registry, ambient })` remains as a shim over it, unchanged
 in shape: `registry` entries get `focus`, `ambient` entries get `always`, a
 `hotkey` declaration becomes `offhand`. Note it returns shallow copies for those
 last two categories, since it adds the declaration. See
-`packages/core/src/tools/useTools.ts`.
+`packages/routing/src/tools/useTools.ts`.
 
 ### Layer
 
@@ -402,9 +412,9 @@ A directory under `packages/core/src/features/<name>/` that bundles related prim
 domain. Examples: `focus`, `selection`, `grid`, `groups`, `text`, `paths`,
 `viewport`, `drag`, `patterns`. Not a runtime concept — an organizing principle
 for the repo. The mental model (from `docs/TODO.md`): the fix for "the kit is
-turning into a katamari." Distinct from a [Plugin](#plugin-deferred) (which bundles
-parts with consumer-facing composition rules) in that features are internal to the
-kit.
+turning into a katamari." Distinct from a [Contribution](#contribution) (which
+bundles parts with consumer-facing composition rules) in that features are internal
+to the kit — though a feature often exports one.
 
 **Bundle-shaped vs protocol-shaped features.** Features fall on a spectrum:
 
@@ -747,16 +757,6 @@ The two coexist until the cleanup completes.
 
 These have been discussed but are not shipped. Mentioned here so design
 conversations don't re-litigate whether they exist.
-
-### Plugin (deferred)
-
-A convention for bundling a feature's parts (`tool`, `layers`, `behaviors`, …) so
-a single `useFooPlugin()` call returns an object the consumer spreads into
-`<Canvas>` / `useTools`, instead of wiring three or four separate exports per
-feature. Deferred until ≥2 plugin-shaped features have shipped and the pattern is
-clear. A lightweight `WeaselPlugin = { tool?, layers?, behaviors?, ... }` shape
-plus `mergePluginConfig(...plugins)` is the v1 target. Tracked in
-`docs/TODO.md:138`.
 
 ### Mixin / lifecycle behavior (deferred)
 

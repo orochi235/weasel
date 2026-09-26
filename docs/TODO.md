@@ -870,9 +870,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ### Plugin/bundling convention
 
-**v1 shipped 2026-08-10** as `Contribution[]` + `mergeContributions(...)`: a feature returns entries a consumer spreads in, instead of wiring three or four separate exports. `@weasel-js/hud`'s `useHudContribution()` is the worked example. What remains is the heavier tier.
+A feature ships as one `SurfaceContribution` — bindings, actions, deps,
+overlay, views and an `attach` for mount/unmount — installed through
+`<SceneCanvas ambient>`. `docs/extending.md` opens with the map; the minimap and
+the HUD are built on it.
 
-- **(P3) Heavier v2** (only if needed for true third-party plugins): Canvas lifecycle hooks (mount/unmount/pre-render/post-render), capability/version negotiation against kit semver, sub-package layout (`@weasel-js/pen`?). Don't pursue without a real third-party consumer asking.
+- **(P3) Per-frame hooks and version negotiation.** `attach` covers mount and
+  unmount; a contribution cannot yet run before or after a paint, or declare
+  the kit versions it was written against.
 
 
 ### Feature-roles taxonomy — risks to monitor

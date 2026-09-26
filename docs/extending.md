@@ -1,8 +1,96 @@
 # Extending weasel
 
-Five common extension points: custom layers, custom affordances, custom
-gesture behaviors, non-rect poses, and derived geometry — plus writing a whole
-new action when none of those fit, and mounting tools in a host of your own.
+How to add a feature to a weasel canvas: first the units a feature is made of
+and how one installs, then the common extension points one at a time — custom
+layers, affordances, gesture behaviors, non-rect poses, derived geometry,
+actions — and mounting tools in a host of your own.
+
+## Extension units
+
+| Unit | What it is | How it installs |
+|---|---|---|
+| **Action** | An operation: `start`/`onMove`/`onEnd` for a gesture, or one `run` | Named by a binding, or registered as a contribution's `actions` |
+| **Binding** | A gesture spec bound to an action id, optionally scoped to views (`opts.views`) | A contribution's `bindings`, or an action's `defaultBinding` |
+| **Layer** | A `RenderLayer`: draw commands for one frame, told which view it is drawing for (`data.viewId`) | A contribution's `overlay`, or the `layers` prop |
+| **Registered layer** | A layer that also hit-tests, painted above every view | `api.registerLayer`, usually from `attach` |
+| **Dep** | A named live source actions read (`view`, `scene`, `rootView`, `pointer`, …) | A contribution's `deps`, or `useDepSource` |
+| **View** | A second camera over a rect of the surface, with input routed to it | A contribution's `views`, the `views` prop, or `<CanvasView>` |
+| **Tool** | A contribution the user switches into (`eligibility.focus`), with scratch and previews | `useTools` / the `tools` prop |
+| **Contribution** | A whole feature: any of the roles above, plus `attach` | `<SceneCanvas ambient>` |
+
+`SurfaceContribution` is the unit a feature ships as. Every role is optional,
+installing the entry installs every role it declares, and removing the entry
+removes them:
+
+```ts
+interface SurfaceContribution {
+  id: string;
+  eligibility: Eligibility;           // when its bindings are live
+  bindings?: GestureBinding[];
+  actions?: Action[];
+  deps?: { [name]: () => value };     // live while the entry is installed
+  overlay?: RenderLayer | RenderLayer[];
+  views?: CanvasViewProps[];
+  attach?: (api, deps) => () => void; // anything the roles cannot say
+}
+```
+
+`mergeContributions(...bundles)` concatenates several features' entries and
+throws on a duplicate entry id, dep name or view id.
+
+### Eligibility
+
+A tool is the entry that declares `eligibility.focus`. Plenty of things route
+input without being one: chrome that owns its own presses, an always-on
+viewport behavior, a feature that only ever reacts to its own affordances.
+Those declare a different condition:
+
+- `focus` — selectable as the focused entry, one at a time.
+- `offhand` — also live while a key is held.
+- `always` — live whatever is focused.
+- `claimed` — live only for input this entry's own affordances produced.
+
+The conditions are a set, not a choice: the hand tool is palette-selectable
+*and* held-key engaged. A `claimed` entry must give its bindings a target that
+consults the affordance (a `kindOf` predicate or `affordance:<kind>`), or its
+own exclusive claim filters them out — a dev-only warning names it if that
+happens.
+
+### Worked example: the minimap
+
+`createMinimapContribution` (`packages/core/src/features/minimap/`) uses every
+role:
+
+| Role | What it holds |
+|---|---|
+| `views` | The minimap: a view at `rect`, its camera a fit over the scene |
+| `actions` | `minimap.center` and `minimap.pan`, which move the main camera |
+| `bindings` | `pointerDown` → center and `drag` → pan, with `views: ['minimap']` |
+| `overlay` | The visible-rect indicator, and a crosshair where the pointer is in the other view |
+| `attach` | Subscribes to the pointer store and repaints while the crosshair shows |
+
+```tsx
+const minimap = useMemo(() => createMinimapContribution({ rect: { x: 8, y: 8, w: 160, h: 110 } }), []);
+<SceneCanvas ambient={[minimap]} … />
+```
+
+Three rules it depends on, each general:
+
+- **A binding scoped to a view outranks the rest there.** Inside the minimap
+  the select tool's drag is live at the active tier, which outranks the
+  minimap's always-on entry. A binding whose `views` names the view the input
+  landed in wins over every binding that does not, whatever their tiers.
+- **Inside a view, `view` is that view's camera.** That is what makes every
+  other action work in a view. An action there that must move the main camera
+  reads `rootView`.
+- **A layer paints in every view unless it declines.** One layer array paints
+  the surface and every view; a layer that belongs in one view checks
+  `data.viewId`. Registered layers are the exception: they paint above every
+  view and inside none, so chrome that has to appear inside a view is an
+  `overlay`, never `attach` → `registerLayer`.
+
+The HUD is the other example: `useHudContribution(hud)` is one entry carrying
+its input routing and an `attach` that binds its registered layer.
 
 ## Custom layers
 
@@ -424,31 +512,6 @@ threshold, the gesture id, cancel-on-blur/Escape, and the
 uses; `overlay()` covers non-ghost chrome; and the action is triggerable from
 a palette or toolbar via `registry.trigger('my-app.smear')` without a second
 code path.
-
-### When it isn't a tool
-
-A tool is the entry that declares `eligibility.focus` — a mode the user
-switches into, with scratch and previews. Plenty of things route input without
-being one: chrome that owns its own presses, an always-on viewport behavior, a
-feature that only ever reacts to its own affordances. Those are contributions
-with the same `bindings` and `actions` fields and a different declaration:
-
-```ts
-const hud: Contribution = {
-  id: 'my-app.hud',
-  eligibility: { claimed: true },   // only input my own affordances produced
-  actions: [pressAction, dragAction],
-  bindings: [{ spec: { kind: 'drag', target: { kindOf: isMyHit } }, actionId: 'my-app.hud.drag' }],
-};
-```
-
-The four conditions — `focus`, `offhand`, `always`, `claimed` — are a set, not
-a choice: an entry can be palette-selectable *and* held-key engaged, as the hand
-tool is. Ship several entries as one bundle with `mergeContributions(...)`.
-
-A `claimed` entry must give its bindings a target that consults the affordance
-(a `kindOf` predicate or `affordance:<kind>`), or its own exclusive claim
-filters them out — a dev-only warning names it if that happens.
 
 **Reference implementations** — all under
 `packages/core/src/interactions/actions/defaults/`:
