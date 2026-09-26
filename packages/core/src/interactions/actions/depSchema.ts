@@ -635,6 +635,17 @@ declare module '@weasel-js/routing' {
      * consults this seam (rotation lives on the pose, baked at render).
      */
     geometryProjection?: GeometryProjection;
+    /**
+     * The surface's own camera. Inside a `<CanvasView>`, `view` answers that
+     * view's camera and this one does not change: an action bound in a view
+     * that must move the main camera — a minimap's pan — reads this.
+     */
+    rootView: ViewApi;
+    /**
+     * The pointer store in scope: where the pointer is, in which view. Shared
+     * by every surface under one `<PointerContextProvider>`.
+     */
+    pointer?: import('../../features/pointer/PointerContext').PointerContextValue;
   }
 }
 

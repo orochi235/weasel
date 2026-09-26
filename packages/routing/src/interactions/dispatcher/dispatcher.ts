@@ -192,11 +192,11 @@ export interface DispatcherContext {
   /**
    * The view this input landed in — a view id, or `null` for the surface's
    * own camera. Bindings whose `opts.views` omit it are not live, those naming
-   * it outrank the rest, and it reaches the invoker as `InvocationCtx.view`
-   * and rules as `RuleCtx.view`. Absent means the host routes no views, which
+   * it outrank the rest, and it reaches the invoker as `InvocationCtx.viewId`
+   * and rules as `RuleCtx.viewId`. Absent means the host routes no views, which
    * reads as the root.
    */
-  view?: string | null;
+  viewId?: string | null;
 }
 
 /** Whether `binding` is live for input routed to `view`. */
@@ -222,7 +222,7 @@ function preferViewScoped<M extends { binding: GestureBinding }>(
 /** The routed view's rule context, carrying the view id. */
 function ruleCtxOf(ctx: DispatcherContext): RuleCtx | undefined {
   const r = ctx.getRuleCtx?.();
-  return r ? { ...r, view: ctx.view ?? null } : undefined;
+  return r ? { ...r, viewId: ctx.viewId ?? null } : undefined;
 }
 
 /**
@@ -652,7 +652,7 @@ export function createDispatcher(opts?: {
       world: { x: 0, y: 0 },
       modifiers,
       deps,
-      ...(routedView !== undefined ? { view: routedView } : {}),
+      ...(routedView !== undefined ? { viewId: routedView } : {}),
     };
 
     // The pointer in client pixels, where the event carries it. Not every kind
@@ -791,7 +791,7 @@ export function createDispatcher(opts?: {
       ? (tags: readonly CapabilityTag[]) =>
           tags.every((tag) => capsCtx.allowedCapabilities.has(tag))
       : undefined;
-    const view = ctx.view ?? null;
+    const view = ctx.viewId ?? null;
     const result: ScopedBinding[] = scopeBindings(ordered, {
       focusedId: ctx.activeToolId,
       engagedIds: new Set(ctx.hotkeyStack),
@@ -836,7 +836,7 @@ export function createDispatcher(opts?: {
   // -------------------------------------------------------------------------
 
   function handleInput(event: InputEvent, ctx: DispatcherContext): 'handled' | 'unhandled' {
-    routedView = ctx.view;
+    routedView = ctx.viewId;
     // --- Pump: check for key-held up-phase against in-flight handle ---
     if (event.kind === 'key-held' && event.phase === 'up') {
       const gestureId = gestureIdFor(event);
@@ -964,7 +964,7 @@ export function createDispatcher(opts?: {
     // uses it to gate `phase`-qualified specs (`[engaged] wheel`, etc.).
     const engagedChannels = snapshotEngagedChannels();
     const rawMatches = preferViewScoped(
-      matchSorted(event, scopedBindings, ctx.isMac, engagedChannels), ctx.view ?? null,
+      matchSorted(event, scopedBindings, ctx.isMac, engagedChannels), ctx.viewId ?? null,
     );
     const traceCandidates: DispatchLogEntry['candidates'] = [];
     const eventKey =
@@ -1220,7 +1220,7 @@ export function createDispatcher(opts?: {
     const scopedBindings = assembleScopedBindings(ctx);
     const engagedChannels = snapshotEngagedChannels();
     const matches = preferViewScoped(
-      matchSorted(event, scopedBindings, ctx.isMac, engagedChannels), ctx.view ?? null,
+      matchSorted(event, scopedBindings, ctx.isMac, engagedChannels), ctx.viewId ?? null,
     );
     if (matches.length === 0) return [];
 

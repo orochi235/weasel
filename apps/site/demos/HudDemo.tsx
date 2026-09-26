@@ -1,6 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
-import type { SceneCanvasApi } from '@weasel-js/core';
 import { useHud, useHudContribution } from '../../../packages/hud/src/react';
 import type { ButtonWidget } from '../../../packages/hud/src';
 
@@ -9,23 +8,22 @@ const W = 600, H = 400;
 interface Empty { id: string }
 
 export function HudDemo() {
-  const ref = useRef<SceneCanvasApi>(null);
-  // The app registers Inter as `sans-serif` in main.tsx; without this the
-  // HUD fetches its own byte-identical copy of the same atlas.
-  const hud = useHud(ref, { font: 'sans-serif' });
-  // The HUD's input routing rides an ambient tool: its bindings gate on the
-  // affordance its own layer hit-test produces, so they never compete with
-  // whatever tool is active.
-  const hudTool = useHudContribution();
+  const hud = useHud();
+  // One ambient entry installs the whole HUD: its layer, and input routing
+  // gated on the affordance that layer's hit-test produces, so it never
+  // competes with whatever tool is active. The app registers Inter as
+  // `sans-serif` in main.tsx; without `font` the HUD fetches its own
+  // byte-identical copy of the same atlas.
+  const hudEntry = useHudContribution(hud, { font: 'sans-serif' });
   const [count, setCount] = useState(0);
   const btnRef = useRef<ButtonWidget | null>(null);
 
   // Empty scene — this demo's content is the HUD layer, not scene nodes.
   const scene = useScene<Empty>({ items: [] });
 
-  // Create the button once, after the HUD attaches.
+  // Widgets can be created before the HUD attaches; they paint once it does.
   useEffect(() => {
-    if (!hud.attached || btnRef.current) return;
+    if (btnRef.current) return;
     const btn = hud.button({ id: 'inc', x: 12, y: 12, w: 140, h: 34, label: 'Click me' });
     btn.on('press', () => setCount(c => c + 1));
     btnRef.current = btn;
@@ -33,7 +31,7 @@ export function HudDemo() {
       btn.dispose();
       btnRef.current = null;
     };
-  }, [hud, hud.attached]);
+  }, [hud]);
 
   // Sync the label on count changes.
   useEffect(() => {
@@ -50,13 +48,12 @@ export function HudDemo() {
         <code> @weasel-js/hud</code>.
       </p>
       <SceneCanvas
-        ref={ref}
         width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}
         defaultTools={['select']}
-        ambient={[hudTool]}
+        ambient={[hudEntry]}
       />
       <p style={{ marginTop: 8, color: '#555' }}>
         React state counter: <strong>{count}</strong>

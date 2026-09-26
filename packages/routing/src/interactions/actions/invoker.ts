@@ -179,7 +179,7 @@ export interface InvocationCtx {
    * a view id, or `null` for the surface's own camera. Absent where no
    * surface routed the input — a UI-driven trigger, a bare dispatcher.
    */
-  view?: string | null;
+  viewId?: string | null;
   /**
    * Per-invocation parameters. Populated by `ActionsRegistry.begin()` for
    * UI-driven ongoing actions (color picker, opacity slider) so handles can

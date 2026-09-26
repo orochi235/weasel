@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { useHud } from './useHud';
+import { useHud, useHudContribution } from './useHud';
 import type { CanvasExtensionApi } from '@weasel-js/core';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { createPaintedCursorState } from '@weasel-js/core';
@@ -68,5 +68,24 @@ describe('useHud', () => {
     const first = result.current;
     act(() => { rerender(); });
     expect(result.current).toBe(first);
+  });
+
+  it('attaches through its contribution when given no ref', () => {
+    const api = makeApi();
+    const { result } = renderHook(() => {
+      const hud = useHud();
+      return { hud, entry: useHudContribution(hud) };
+    });
+    expect(result.current.hud.attached).toBe(false);
+    const detach = result.current.entry.attach!(api, { get: () => undefined });
+    expect(result.current.hud.attached).toBe(true);
+    expect(api.registerLayer).toHaveBeenCalledTimes(1);
+    detach();
+    expect(result.current.hud.attached).toBe(false);
+  });
+
+  it('gives an entry with no HUD no attach', () => {
+    const { result } = renderHook(() => useHudContribution());
+    expect(result.current.attach).toBeUndefined();
   });
 });

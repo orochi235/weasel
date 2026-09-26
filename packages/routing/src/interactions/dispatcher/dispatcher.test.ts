@@ -1169,7 +1169,7 @@ describe('view-scoped bindings', () => {
     const { registry, toolsById, miniStart } = setup();
     const onlyMini = new Map([['mini', toolsById.get('mini')!]]);
     const result = createDispatcher().handleInput(
-      down, makeCtx({ actions: registry, toolsById: onlyMini, view: null }),
+      down, makeCtx({ actions: registry, toolsById: onlyMini, viewId: null }),
     );
     expect(result).toBe('unhandled');
     expect(miniStart).not.toHaveBeenCalled();
@@ -1177,15 +1177,15 @@ describe('view-scoped bindings', () => {
 
   it('outranks an active-tier binding for input in the view it names', () => {
     const { registry, toolsById, miniStart, toolStart } = setup();
-    createDispatcher().handleInput(down, makeCtx({ actions: registry, toolsById, view: 'mini' }));
+    createDispatcher().handleInput(down, makeCtx({ actions: registry, toolsById, viewId: 'mini' }));
     expect(miniStart).toHaveBeenCalledOnce();
     expect(toolStart).not.toHaveBeenCalled();
   });
 
   it('hands the routed view to the invoker', () => {
     const { registry, toolsById, miniStart } = setup();
-    createDispatcher().handleInput(down, makeCtx({ actions: registry, toolsById, view: 'mini' }));
-    expect((miniStart.mock.calls[0][0] as InvocationCtx).view).toBe('mini');
+    createDispatcher().handleInput(down, makeCtx({ actions: registry, toolsById, viewId: 'mini' }));
+    expect((miniStart.mock.calls[0][0] as InvocationCtx).viewId).toBe('mini');
   });
 
   it('hands the routed view to an eligibility rule', () => {
@@ -1194,13 +1194,13 @@ describe('view-scoped bindings', () => {
     const registry = makeRegistry([{
       id: 'probe', label: 'probe',
       defaultBinding: { kind: 'drag' },
-      eligible: { when: (c) => { seen.push(c.view); return c.view === 'mini'; } },
+      eligible: { when: (c) => { seen.push(c.viewId); return c.viewId === 'mini'; } },
       invoker: { timing: 'ongoing', start },
     }]);
     const d = createDispatcher();
-    d.handleInput(down, makeCtx({ actions: registry, getRuleCtx: () => ruleCtx, view: null }));
+    d.handleInput(down, makeCtx({ actions: registry, getRuleCtx: () => ruleCtx, viewId: null }));
     expect(start).not.toHaveBeenCalled();
-    d.handleInput(down, makeCtx({ actions: registry, getRuleCtx: () => ruleCtx, view: 'mini' }));
+    d.handleInput(down, makeCtx({ actions: registry, getRuleCtx: () => ruleCtx, viewId: 'mini' }));
     expect(start).toHaveBeenCalledOnce();
     expect(seen).toEqual([null, 'mini']);
   });

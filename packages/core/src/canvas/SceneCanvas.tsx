@@ -65,7 +65,10 @@ import { CanvasView, type CanvasViewProps } from './CanvasView';
 import type { DeviceProfile } from '../core/device/types';
 import { HANDLE_BASE_PX, targetSizesPx } from '../core/device/targets';
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
-import { useToolActions } from './SceneCanvas/useToolActions';
+import { useContributionRoles, contributionEntries } from './SceneCanvas/useContributionRoles';
+import type { SurfaceContribution } from './surfaceContribution';
+import { useDepSource } from '@weasel-js/routing/react';
+import { usePointerContext } from 'features/pointer/PointerContext';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useHandTool } from 'tools/builtin/hand';
@@ -605,11 +608,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  consumer supplies their own `tools` prop. */
     initialActiveTool?: string;
 
-    /** Always-on tools to register alongside the internal default select.
-     *  Use this for wheel/keyboard zoom + pan tools that should run alongside
-     *  the default select. If you supply your own `tools` prop, this is
-     *  ignored — wire `ambient` through your own `useTools` call instead. */
-    ambient?: AnyTool[];
+    /** Always-on entries to register alongside the internal default select:
+     *  tools, and features written as a `SurfaceContribution` — whose views,
+     *  deps, overlay, bindings, actions and `attach` all install from this one
+     *  list, and uninstall when the entry leaves it. If you supply your own
+     *  `tools` prop, this is ignored — wire `ambient` through your own
+     *  `useTools` call instead. */
+    ambient?: readonly (AnyTool | SurfaceContribution)[];
 
     /** Viewport feature wiring.
      *
@@ -1429,7 +1434,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // (lasso mode, clone-selection) thread through `toolOptions`.
   const shapeTools = useBuiltinShapeTools({ scene, adapter, options: toolOptions });
 
-  const mergedAmbient = [...viewportAmbient, ...(ambient ?? [])];
+  const mergedAmbient = [...viewportAmbient, ...((ambient ?? []) as AnyTool[])];
 
   const internalRegistry: Record<string, AnyTool> = {};
   if (wants('select')) internalRegistry.select = internalSelect;
@@ -2181,9 +2186,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 toolsTakeover={toolsTakeover ?? undefined}
                 enableKeybindings={enableKeybindings}
                 isToolEligible={isToolEligible}
+                canvasApi={canvasReady ? canvasApiRef.current : null}
               />
               {viewDescriptors?.map((v, i) => (
                 <CanvasView key={v.id} {...v} order={v.order ?? i} />
+              ))}
+              {contributionEntries(tools).flatMap((e) => e.views ?? []).map((v) => (
+                <CanvasView key={`contribution:${v.id}`} {...v} />
               ))}
               {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
               {children}
@@ -2222,11 +2231,13 @@ function ToolKeybindingsMounter({
   toolsTakeover,
   enableKeybindings,
   isToolEligible,
+  canvasApi,
 }: {
   internalTools: ToolsApi;
   toolsTakeover?: ToolsApi;
   enableKeybindings: boolean;
   isToolEligible: (toolId: string) => boolean;
+  canvasApi: CanvasExtensionApi | null;
 }) {
   useKeybindings(internalTools, {
     disable: !!toolsTakeover || !enableKeybindings,
@@ -2236,11 +2247,11 @@ function ToolKeybindingsMounter({
     disable: !toolsTakeover || !enableKeybindings,
     isToolEligible,
   });
-  // Tool-owned actions (polygon.adjustSides, star.adjustPoints, …). Same
-  // reason this lives here and not in the tool hooks: the hooks run above the
-  // provider. Not gated on `enableKeybindings` — these back wheel and pointer
-  // bindings too, not just keys.
-  useToolActions(toolsTakeover ?? internalTools);
+  // Entry-owned roles: actions (polygon.adjustSides, …), deps and `attach`.
+  // Same reason this lives here and not in the tool hooks: the hooks run above
+  // the provider. Not gated on `enableKeybindings` — these back wheel and
+  // pointer bindings too, not just keys.
+  useContributionRoles(toolsTakeover ?? internalTools, canvasApi);
   return null;
 }
 
@@ -2675,6 +2686,10 @@ function StandardActionsRegistrar({
     layerIsPainted,
   );
   useStandardActions({ selection, scene, view, history: scene.history });
+  // A view overlays `view` with its own camera; this name it leaves alone.
+  useDepSource('rootView', () => view);
+  const pointer = usePointerContext();
+  useDepSource('pointer', () => pointer ?? undefined);
 
   // viewport.pan / viewport.zoom are SceneCanvas-coupled (need the `view` dep
   // published just above), so they're registered here rather than in

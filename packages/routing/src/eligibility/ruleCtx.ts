@@ -58,7 +58,7 @@ export interface RuleCtx {
   /** The view the input being dispatched landed in — a view id, or `null`
    *  for the surface's own camera. The dispatcher fills it; absent anywhere
    *  else a rule is evaluated. */
-  readonly view?: string | null;
+  readonly viewId?: string | null;
 }
 
 /** The live state a `RuleCtx` is assembled from — the chrome context plus

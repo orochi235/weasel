@@ -1364,7 +1364,10 @@ export type {
 } from './canvas/sceneAdapter';
 export type { ContributionRouting, Eligibility, EligibilityState, HotkeyTrigger, OverlayPosition, ToolPresentation } from '@weasel-js/routing';
 export type { Contribution, ContributionChrome } from './tools/overlayBinding';
-export { liveScope, mergeContributions, scopeBindings } from '@weasel-js/routing';
+export type { ContributionDeps } from '@weasel-js/routing';
+export { liveScope, scopeBindings } from '@weasel-js/routing';
+export { mergeContributions } from './canvas/surfaceContribution';
+export type { SurfaceContribution, ContributionDepReader } from './canvas/surfaceContribution';
 export type { InsertOverlayStyle } from './tools/builtin/marquee';
 export type { InsertPoint } from './interactions/gestures/types';
 export type {

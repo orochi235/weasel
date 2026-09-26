@@ -1193,7 +1193,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const surfaceHelpers: CanvasSurfaceHelpers = {
     getDebug: () => debugSink,
   };
-  const helpersForLayers: CanvasHelpers<TPose> = { ...viewHelpers, ...surfaceHelpers };
+  const helpersForLayers: CanvasHelpers<TPose> = { ...viewHelpers, ...surfaceHelpers, viewId: null };
   helpersForLayersRef.current = helpersForLayers;
   if (helpersRef) helpersRef.current = helpersForLayers;
 

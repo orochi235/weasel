@@ -561,7 +561,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       target().getRuleCtx?.();
     const ctxNow = (): DispatcherContext => ({
       ...ctxRef.current, depRegistry: routedDeps, getRuleCtx: routedRuleCtx,
-      view: target().id,
+      viewId: target().id,
     });
     const canvas = canvasRef.current;
 
