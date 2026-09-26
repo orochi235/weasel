@@ -39,7 +39,9 @@ describe('@weasel-js/labkit/config', () => {
   // A forge frame loads this entry for every story, and ui's barrel is 167 modules on the dev server.
   it('loads nothing from @weasel-js/ui at runtime', () => {
     const importers = [...walk(resolve(__dirname, 'index.ts'))].filter((file) =>
-      [...readFileSync(file, 'utf8').matchAll(IMPORT)].some((m) => (m[1] ?? m[2] ?? m[3])?.startsWith('@weasel-js/ui')),
+      [...readFileSync(file, 'utf8').matchAll(IMPORT)].some((m) =>
+        (m[1] ?? m[2] ?? m[3])?.startsWith('@weasel-js/ui'),
+      ),
     );
     expect(importers).toEqual([]);
   });

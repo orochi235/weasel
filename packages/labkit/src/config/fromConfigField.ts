@@ -70,5 +70,6 @@ export function fromConfigFields(fields: readonly ConfigField[]): ResolvedConfig
     sections: [],
     showIf: new Map(),
     renderers: {},
+    dialogs: {},
   };
 }

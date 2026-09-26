@@ -1,8 +1,8 @@
-import { isByAxis, type AxisDefs, type Varying } from './axes';
-import type { SerializableColorList } from './colorList';
-import type { PinObject, PinValue, ThemeDefinition } from './definition';
-import type { RawToken, TokenValue } from './dtcg/types';
-import { BAKED_THEMES } from './generated/themes';
+import { isByAxis, type AxisDefs, type Varying } from './axes.ts';
+import type { SerializableColorList } from './colorList.ts';
+import type { PinObject, PinValue, ThemeDefinition } from './definition.ts';
+import type { RawToken, TokenValue } from './dtcg/types.ts';
+import { BAKED_THEMES } from './generated/themes.ts';
 
 /**
  * A theme ready to resolve: its axes and its tokens, each plain or varying by

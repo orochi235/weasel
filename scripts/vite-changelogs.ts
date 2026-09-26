@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { marked } from 'marked';
 import type { PluginOption } from 'vite';
-import type { ChangelogEntry, Release } from '../apps/shared/releases';
+import type { ChangelogEntry, Release } from '../apps/shared/releases.ts';
 
 /**
  * Virtual module exposing every package CHANGELOG as one release history,

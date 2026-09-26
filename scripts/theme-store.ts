@@ -2,10 +2,10 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 // Relative on purpose: vite loads its config in Node, where the aliases don't apply and the package's exports name a dist that may predate this code.
-import { enumerateSelections } from '../packages/theme/src/axes';
-import type { ThemeDefinition } from '../packages/theme/src/definition';
-import { derive, generateTokens, mergeChain } from '../packages/theme/src/engine';
-import { serializeDefinition, type IssueReport, type PutResult, type StoredTheme } from '../packages/theme/src/store';
+import { enumerateSelections } from '../packages/theme/src/axes.ts';
+import type { ThemeDefinition } from '../packages/theme/src/definition.ts';
+import { derive, generateTokens, mergeChain } from '../packages/theme/src/engine.ts';
+import { serializeDefinition, type IssueReport, type PutResult, type StoredTheme } from '../packages/theme/src/store.ts';
 
 const NAME = /^[a-z][a-z0-9-]*$/;
 

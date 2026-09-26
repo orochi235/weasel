@@ -2,12 +2,12 @@ import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import { existsSync, statSync, createReadStream } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
-import { weaselAliases } from './scripts/vite-aliases';
-import { weaselDefines } from './scripts/vite-build-info';
-import { demoTimestamps } from './scripts/vite-demo-timestamps';
-import { demoSources } from './scripts/vite-demo-sources';
-import { changelogs } from './scripts/vite-changelogs';
-import { localWake } from './scripts/vite-wake';
+import { weaselAliases } from './scripts/vite-aliases.ts';
+import { weaselDefines } from './scripts/vite-build-info.ts';
+import { demoTimestamps } from './scripts/vite-demo-timestamps.ts';
+import { demoSources } from './scripts/vite-demo-sources.ts';
+import { changelogs } from './scripts/vite-changelogs.ts';
+import { localWake } from './scripts/vite-wake.ts';
 import ports from './scripts/dev-ports.json' with { type: 'json' };
 
 /**
@@ -22,7 +22,7 @@ import ports from './scripts/dev-ports.json' with { type: 'json' };
  * instead of falling through to vite's generic 404.
  */
 function serveApiDocsInDev(): PluginOption {
-  const apiRoot = resolve(__dirname, 'dist-demo/api');
+  const apiRoot = resolve(import.meta.dirname, 'dist-demo/api');
   const MIME: Record<string, string> = {
     '.html': 'text/html; charset=utf-8',
     '.js': 'application/javascript; charset=utf-8',
@@ -71,24 +71,24 @@ function serveApiDocsInDev(): PluginOption {
 export default defineConfig({
   root: 'apps/site',
   base: '/weasel/',
-  publicDir: resolve(__dirname, 'assets/fonts'),
+  publicDir: resolve(import.meta.dirname, 'assets/fonts'),
   resolve: {
-    alias: weaselAliases(__dirname, [
+    alias: weaselAliases(import.meta.dirname, [
       {
         find: '@weasel-js/theme/tokens.css',
-        replacement: resolve(__dirname, 'packages/theme/src/generated/tokens.css'),
+        replacement: resolve(import.meta.dirname, 'packages/theme/src/generated/tokens.css'),
       },
     ]),
   },
   plugins: [
     react(),
     serveApiDocsInDev(),
-    demoTimestamps({ root: __dirname }),
-    demoSources({ root: __dirname }),
-    changelogs({ root: __dirname }),
+    demoTimestamps({ root: import.meta.dirname }),
+    demoSources({ root: import.meta.dirname }),
+    changelogs({ root: import.meta.dirname }),
     localWake(),
   ],
-  define: weaselDefines(__dirname),
+  define: weaselDefines(import.meta.dirname),
   // Pre-bundle demo-only deps at server start so they don't trigger lazy
   // re-optimization on first import — that race produces 504 "Outdated
   // Optimize Dep" responses on slow ESM packages with many internal modules.

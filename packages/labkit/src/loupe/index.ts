@@ -1,3 +1,4 @@
+export type { LoupeMode, LoupePoint } from '@weasel-js/loupe';
 export type { CanvasLoupeProps } from './CanvasLoupe';
 export { CanvasLoupe } from './CanvasLoupe';
 export type { LensCamera, SourceRect } from './canvasLens';

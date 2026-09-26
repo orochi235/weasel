@@ -1,6 +1,6 @@
 import type { ConfigSchema } from '@weasel-js/labkit/config';
 import type { ComponentType, ReactNode } from 'react';
-import type { Globals, Layout, Viewport } from '../protocol/messages';
+import type { Globals, Layout, Viewport } from '../protocol/messages.ts';
 
 export interface StoryContext<C = unknown, S = unknown> {
   config: C;

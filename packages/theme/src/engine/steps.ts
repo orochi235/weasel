@@ -1,4 +1,4 @@
-import { isByAxis } from '../axes';
+import { isByAxis } from '../axes.ts';
 
 const stepList = (x: unknown): string[] => (Array.isArray(x) ? [...new Set(x.filter((s): s is string => typeof s === 'string'))] : []);
 

@@ -1,7 +1,7 @@
 import { type ParserPlugin, parse } from '@babel/parser';
 import type * as t from '@babel/types';
-import { storyId, storyNameFromExport } from '../story/ids';
-import type { IndexEntry } from '../story/types';
+import { storyId, storyNameFromExport } from '../story/ids.ts';
+import type { IndexEntry } from '../story/types.ts';
 
 type Bindings = Map<string, t.Node>;
 

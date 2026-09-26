@@ -15,8 +15,8 @@ import {
   VariableDeclaration,
 } from 'ts-morph';
 import { resolve } from 'node:path';
-import type { ActionSchema } from '../src/dev/traitSchemas.types';
-import { srcRef, sourceFileOrThrow } from './extract';
+import type { ActionSchema } from '../src/dev/traitSchemas.types.ts';
+import { srcRef, sourceFileOrThrow } from './extract.ts';
 
 const BINDING_CLIP = 200;
 

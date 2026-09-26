@@ -1,7 +1,7 @@
-import { fullSelection, pickAll } from '../../axes';
-import { resolveTokens } from '../../dtcg/resolve';
-import { TOKEN_HOOKS } from '../../hooks';
-import type { EmitInput } from './css';
+import { fullSelection, pickAll } from '../../axes.ts';
+import { resolveTokens } from '../../dtcg/resolve.ts';
+import { TOKEN_HOOKS } from '../../hooks.ts';
+import type { EmitInput } from './css.ts';
 
 /** Prefixes that share a group with their siblings rather than standing alone. */
 const MERGED_GROUPS: Readonly<Record<string, string>> = { danger: 'status', warning: 'status', success: 'status' };

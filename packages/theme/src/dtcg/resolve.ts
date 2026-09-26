@@ -1,6 +1,6 @@
-import { withAlpha } from './color';
-import type { FlatTokens, ResolvedTokenMap, TokenValue } from './types';
-import { serializeTokenValue } from './value';
+import { withAlpha } from './color.ts';
+import type { FlatTokens, ResolvedTokenMap, TokenValue } from './types.ts';
+import { serializeTokenValue } from './value.ts';
 
 /** `{color.gray-100}` → `gray-100`. The type group is dropped, per the naming rule. */
 const REF = /^\{([^}]+)\}$/;

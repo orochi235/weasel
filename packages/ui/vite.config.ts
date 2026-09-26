@@ -32,8 +32,8 @@ import { resolve } from 'node:path';
  * A directory with no `index.ts` (Foundations) is not a component entry point
  * and is skipped; it still reaches consumers through whatever imports it.
  */
-const componentsDir = resolve(__dirname, 'src/components');
-const entries: Record<string, string> = { index: resolve(__dirname, 'src/index.ts') };
+const componentsDir = resolve(import.meta.dirname, 'src/components');
+const entries: Record<string, string> = { index: resolve(import.meta.dirname, 'src/index.ts') };
 for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
   if (!dirent.isDirectory()) continue;
   const dir = resolve(componentsDir, dirent.name);

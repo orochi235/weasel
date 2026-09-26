@@ -1,7 +1,7 @@
-import type { CategoricalRampDef } from './definition';
-import { DEFAULT_CONSTRAINTS, generate, type Constraints } from './engine/color/generate';
-import { resolveTheme, themeChain, type ResolvedTheme } from './resolveTheme';
-import { weaselTheme, type Theme } from './theme';
+import type { CategoricalRampDef } from './definition.ts';
+import { DEFAULT_CONSTRAINTS, generate, type Constraints } from './engine/color/generate.ts';
+import { resolveTheme, themeChain, type ResolvedTheme } from './resolveTheme.ts';
+import { weaselTheme, type Theme } from './theme.ts';
 
 /** The categorical generator the swatch ramp uses, asked for `count` colors. */
 export interface GeneratedColors {

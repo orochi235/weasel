@@ -1,7 +1,7 @@
-import { isByAxis } from '../axes';
-import type { SemanticRule, ThemeDefinition } from '../definition';
-import { mergeChain, type Lookup } from './merge';
-import { declaredSteps } from './steps';
+import { isByAxis } from '../axes.ts';
+import type { SemanticRule, ThemeDefinition } from '../definition.ts';
+import { mergeChain, type Lookup } from './merge.ts';
+import { declaredSteps } from './steps.ts';
 
 export interface AxisDependency {
   /** Axes this token's own entry varies on. */

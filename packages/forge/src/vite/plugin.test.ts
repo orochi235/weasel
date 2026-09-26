@@ -286,7 +286,10 @@ describe('forge vite plugin, built', () => {
     enforce: 'pre',
     resolveId: (id) => (id.startsWith('@weasel-js/') ? `\0stub:${id}.js` : undefined),
     load: (id) =>
-      id.startsWith('\0stub:') ? 'export const mountWorkshop = () => ({ setIndex() {} });\nexport const mountFrame = () => {};\n' : undefined,
+      // The side effects keep vite 8.3's bundler from dropping the shell as dead code.
+      id.startsWith('\0stub:')
+        ? 'export const mountWorkshop = () => { globalThis.mounted = true; return { setIndex() {} }; };\nexport const mountFrame = () => { globalThis.mounted = true; };\n'
+        : undefined,
   };
 
   it('writes the workshop and frame documents at the output root, loading bundles under base', async () => {

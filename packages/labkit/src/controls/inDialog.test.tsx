@@ -69,6 +69,24 @@ describe('.dialog', () => {
     render(<Panel schema={schema} />);
     expect(screen.getByRole('button', { name: 'Edit Pts' }).textContent).toContain('3 points');
   });
+
+  it('gives way to a later .render, and takes over from an earlier one', () => {
+    const schema = f.schema({
+      a: f
+        .string('x')
+        .dialog(() => null)
+        .render(() => <span>row a</span>),
+      b: f
+        .string('y')
+        .render(() => <span>row b</span>)
+        .dialog(() => null),
+    });
+    render(<Panel schema={schema} />);
+    expect(screen.getByText('row a')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Edit A' })).toBeNull();
+    expect(screen.queryByText('row b')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit B' })).toBeTruthy();
+  });
 });
 
 describe('summarizeValue', () => {

@@ -173,7 +173,7 @@ describe('auto paths', () => {
     store.getState().updateTrialConfig('w1', 'gap', 30);
     const rec = store.getState().trials[0];
     expect(rec?.auto).toBeUndefined();
-    expect((rec?.config as { gap: number }).gap).toBe(30);
+    expect((rec?.config as { gap: number } | undefined)?.gap).toBe(30);
   });
 
   it('does not allocate a new record when the path is already auto', () => {

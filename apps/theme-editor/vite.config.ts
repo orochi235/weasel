@@ -1,17 +1,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
-import { weaselAliases } from '../../scripts/vite-aliases';
-import { weaselDefines } from '../../scripts/vite-build-info';
-import { localWake } from '../../scripts/vite-wake';
-import { repoThemeStoreOptions } from '../../scripts/theme-store';
-import { themeStorePlugin } from '../../scripts/vite-theme-store';
+import { weaselAliases } from '../../scripts/vite-aliases.ts';
+import { weaselDefines } from '../../scripts/vite-build-info.ts';
+import { localWake } from '../../scripts/vite-wake.ts';
+import { repoThemeStoreOptions } from '../../scripts/theme-store.ts';
+import { themeStorePlugin } from '../../scripts/vite-theme-store.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
-const repoRoot = resolve(__dirname, '../..');
+const repoRoot = resolve(import.meta.dirname, '../..');
 
 export default defineConfig({
-  root: __dirname,
+  root: import.meta.dirname,
   base: '/weasel/theme-editor/',
   // This app has no node_modules of its own, so Vite's default cacheDir would
   // resolve to the repo root's — the same one the kit dev server uses. Two

@@ -1,15 +1,7 @@
 import { DialogRow } from '@weasel-js/ui';
-import type { ReactNode } from 'react';
-import type { ControlRenderer } from '../config/types';
+import type { ControlRenderer, InDialogOptions } from '../config/types';
 
-/** Options for {@link inDialog}. */
-export interface InDialogOptions {
-  /** What the row's button shows of the value. Defaults to a list joined with
-   *  commas, or the value itself. */
-  summary?: (value: unknown) => ReactNode;
-  /** The dialog's heading. Defaults to the row's label. */
-  title?: ReactNode;
-}
+export type { InDialogOptions };
 
 /** The one-line summary a dialog row shows when it is given none. */
 export function summarizeValue(value: unknown): string {

@@ -1,8 +1,8 @@
-import { fullSelection, mergeAxes, pickAll, type AxisDefs, type Selection } from './axes';
-import { resolveTokens } from './dtcg/resolve';
-import type { FlatTokens } from './dtcg/types';
-import type { TokenName } from './generated/themes';
-import type { Theme } from './theme';
+import { fullSelection, mergeAxes, pickAll, type AxisDefs, type Selection } from './axes.ts';
+import { resolveTokens } from './dtcg/resolve.ts';
+import type { FlatTokens } from './dtcg/types.ts';
+import type { TokenName } from './generated/themes.ts';
+import type { Theme } from './theme.ts';
 
 /** The output of `resolveTheme`: every token of a theme, for one selection, keyed
  *  by CSS custom-property name and flattened to a final CSS value. */

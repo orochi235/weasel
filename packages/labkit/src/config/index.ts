@@ -23,8 +23,8 @@ export {
   withValueAtPath,
 } from './path';
 export { resolveConfigSchema } from './resolve';
-export { type SectionTree, sectionTree } from './sectionTree';
 export { applyRules, builtinRules, titleCase } from './rules';
+export { type SectionTree, sectionTree } from './sectionTree';
 export type {
   Annotations,
   BranchAnnotations,
@@ -40,12 +40,15 @@ export type {
   ConfigSchema,
   ConfigShape,
   ControlRenderer,
+  DialogSpec,
   EntryValue,
+  InDialogOptions,
   InferConfig,
   LeafPatch,
   NodeOptions,
   NodeValue,
   ResolvedConfig,
+  SectionOption,
   SectionSpec,
   ValueAtPath,
 } from './types';

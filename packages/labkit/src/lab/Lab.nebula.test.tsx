@@ -19,12 +19,21 @@ const backdrop = (container: HTMLElement) =>
 
 describe('<Lab nebula>', () => {
   it('draws one blob per literal color', () => {
-    const { container } = render(<Lab instruments={[bare]} defaultInstrument="Bare" mode="dark" nebula={['#ff0000', '#00ff00']} />);
+    const { container } = render(
+      <Lab
+        instruments={[bare]}
+        defaultInstrument="Bare"
+        mode="dark"
+        nebula={['#ff0000', '#00ff00']}
+      />,
+    );
     expect(backdrop(container).match(/radial-gradient/g)).toHaveLength(3);
   });
 
   it('resolves a theme ramp against the lab’s theme', () => {
-    const { container } = render(<Lab instruments={[bare]} defaultInstrument="Bare" mode="dark" nebula={{ ramp: 'swatch' }} />);
+    const { container } = render(
+      <Lab instruments={[bare]} defaultInstrument="Bare" mode="dark" nebula={{ ramp: 'swatch' }} />,
+    );
     const sky = resolveTheme(interstellarTheme, { mode: 'dark' })['--wzl-swatch-sky'];
     expect(backdrop(container)).toContain(sky);
   });

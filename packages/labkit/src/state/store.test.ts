@@ -84,7 +84,7 @@ describe('updateTrialState', () => {
     s.getState().updateTrialState('w1', (prev: unknown) => ({
       n: (prev as { n: number }).n + 1,
     }));
-    expect((s.getState().trials[0]?.state as { n: number }).n).toBe(2);
+    expect((s.getState().trials[0]?.state as { n: number } | undefined)?.n).toBe(2);
   });
 });
 
@@ -99,8 +99,8 @@ describe('updateTrialConfig', () => {
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
     s.getState().updateTrialConfig('w1', 'x', 99);
-    expect((s.getState().trials[0]?.config as { x: number }).x).toBe(99);
-    expect((s.getState().trials[0]?.config as { y: number }).y).toBe(2);
+    expect((s.getState().trials[0]?.config as { x: number } | undefined)?.x).toBe(99);
+    expect((s.getState().trials[0]?.config as { y: number } | undefined)?.y).toBe(2);
   });
 
   it('writes down a dotted path without disturbing its siblings', () => {
@@ -161,7 +161,7 @@ describe('save/load/delete snapshots', () => {
     s.getState().updateTrialState('w1', { n: 99 });
     const snapId = s.getState().savedSnapshots[0]?.id ?? '';
     s.getState().loadSnapshot(snapId, 'w1');
-    expect((s.getState().trials[0]?.state as { n: number }).n).toBe(5);
+    expect((s.getState().trials[0]?.state as { n: number } | undefined)?.n).toBe(5);
   });
 
   it('loadSnapshot restores the auto paths the trial had when saved', () => {

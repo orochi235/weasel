@@ -70,14 +70,19 @@ describe('sectionTree', () => {
       'weight',
     ]);
     const off = sectionTree(resolved, { lineNumbers: false, listing: { dim: 1, weight: 0 } });
-    expect(Object.keys(groupAt(groupAt(off.group, 'view'), 'listing').children)).toEqual(['weight']);
+    expect(Object.keys(groupAt(groupAt(off.group, 'view'), 'listing').children)).toEqual([
+      'weight',
+    ]);
   });
 
   it('drops a section nothing in it is showing, rather than opening it onto nothing', () => {
     const resolved = resolveConfigSchema(
       f.schema({
         mode: f.enum<string>('a', ['a', 'b']).section('View'),
-        glow: f.number(1).section('Diff').showIf((c) => c.mode === 'b'),
+        glow: f
+          .number(1)
+          .section('Diff')
+          .showIf((c) => c.mode === 'b'),
       }),
     );
     expect(Object.keys(sectionTree(resolved, { mode: 'b', glow: 1 }).group.children)).toEqual([
@@ -91,7 +96,10 @@ describe('sectionTree', () => {
 
   it('keeps a hidden leaf out unless asked for it', () => {
     const resolved = resolveConfigSchema(
-      f.schema({ seed: f.number(1).hidden().section('Debug'), route: f.boolean(true).section('Debug') }),
+      f.schema({
+        seed: f.number(1).hidden().section('Debug'),
+        route: f.boolean(true).section('Debug'),
+      }),
     );
     expect(Object.keys(groupAt(sectionTree(resolved, {}).group, 'debug').children)).toEqual([
       'route',
@@ -134,9 +142,7 @@ describe('sectionTree', () => {
   it('ignores a section nested under a group, which buckets rows in a pane', () => {
     const resolved = resolveConfigSchema(
       f.schema({
-        cards: f
-          .group({ floor: f.number(1).section('Size') })
-          .section('View'),
+        cards: f.group({ floor: f.number(1).section('Size') }).section('View'),
       }),
     );
     const { group } = sectionTree(resolved, { cards: { floor: 1 } });

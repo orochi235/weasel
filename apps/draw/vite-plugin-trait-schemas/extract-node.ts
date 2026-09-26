@@ -21,8 +21,8 @@ import type {
   SceneNodeSchema,
   SceneNodeVariant,
   PropertyDescriptor,
-} from '../src/dev/traitSchemas.types';
-import { srcRef, sourceFileOrThrow, readJsDoc } from './extract';
+} from '../src/dev/traitSchemas.types.ts';
+import { srcRef, sourceFileOrThrow, readJsDoc } from './extract.ts';
 
 const VARIANT_NAMES: readonly string[] = ['LeafNode', 'ContainerNode'];
 const BASE_NAME = 'NodeBase';

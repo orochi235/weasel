@@ -11,6 +11,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "tsBuildInfoFile": "../../.tsbuildinfo/core.tsbuildinfo",
+    "noEmit": true,
     "paths": {
       "@weasel-js/core": ["./src/index.ts"],
       "@weasel-js/core/*": ["./src/import-shims/*"],

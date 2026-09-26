@@ -1,10 +1,10 @@
-import { enumerateSelections, fullSelection, pick, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes';
-import type { SerializableColorList } from '../colorList';
-import type { ThemeDefinition } from '../definition';
-import type { RawToken } from '../dtcg/types';
-import { derive } from './derive';
-import { mergeChain, type Lookup } from './merge';
-import { declaredSteps } from './steps';
+import { enumerateSelections, fullSelection, pick, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes.ts';
+import type { SerializableColorList } from '../colorList.ts';
+import type { ThemeDefinition } from '../definition.ts';
+import type { RawToken } from '../dtcg/types.ts';
+import { derive } from './derive.ts';
+import { mergeChain, type Lookup } from './merge.ts';
+import { declaredSteps } from './steps.ts';
 
 /**
  * A definition with every rule run: plain or `by`-varying tokens, references intact.

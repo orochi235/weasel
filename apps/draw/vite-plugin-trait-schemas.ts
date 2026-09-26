@@ -13,8 +13,8 @@
  */
 import type { Plugin, ViteDevServer } from 'vite';
 import { resolve } from 'node:path';
-import { extractTraitSchemas, watchedFilesFor } from './vite-plugin-trait-schemas/extract';
-import type { TraitSchemaIndex } from './src/dev/traitSchemas.types';
+import { extractTraitSchemas, watchedFilesFor } from './vite-plugin-trait-schemas/extract.ts';
+import type { TraitSchemaIndex } from './src/dev/traitSchemas.types.ts';
 
 const VIRTUAL_ID = 'virtual:weasel-trait-schemas';
 const RESOLVED_ID = `\0${VIRTUAL_ID}`;

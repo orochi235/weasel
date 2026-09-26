@@ -1,4 +1,4 @@
-import { isPrefLeaf, type PrefGroup } from '@weasel-js/ui';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/ui';
 import { valueAtPath } from './path';
 import type { ResolvedConfig } from './types';
 import { isLeafVisible } from './visible';
@@ -22,10 +22,20 @@ export interface SectionTree {
   pathAt: (railPath: string) => string;
 }
 
+/** Structural rather than `isPrefLeaf`, so the config entry stays free of a
+ *  runtime import from ui. */
+function isLeaf(node: PrefLeaf | PrefGroup): node is PrefLeaf {
+  return 'kind' in node;
+}
+
 /** A section label as an object key: no dots, since a dotted path is how every
  *  caller addresses a node, and a label is free to hold one. */
 function slugOf(label: string, taken: ReadonlySet<string>): string {
-  const base = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'section';
+  const base =
+    label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'section';
   if (!taken.has(base)) return base;
   for (let n = 2; ; n += 1) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
 }
@@ -44,7 +54,7 @@ function prune(
   for (const [key, child] of Object.entries(group.children)) {
     const path = at === '' ? key : `${at}.${key}`;
     if (!isLeafVisible(resolved, path, config, showHidden)) continue;
-    if (isPrefLeaf(child)) {
+    if (isLeaf(child)) {
       children[key] = child;
       continue;
     }
@@ -81,7 +91,7 @@ export function sectionTree(
       claimed.add(path);
       const child = resolved.group.children[path];
       if (!child || !isLeafVisible(resolved, path, config, showHidden)) continue;
-      if (isPrefLeaf(child)) {
+      if (isLeaf(child)) {
         kept[path] = child;
       } else {
         const subtree = prune(resolved, child, path, config, showHidden);
@@ -101,7 +111,7 @@ export function sectionTree(
   // gathers loose leaves into one item named for the root.
   for (const [key, child] of Object.entries(resolved.group.children)) {
     if (claimed.has(key) || !isLeafVisible(resolved, key, config, showHidden)) continue;
-    if (isPrefLeaf(child)) {
+    if (isLeaf(child)) {
       children[key] = child;
     } else {
       const subtree = prune(resolved, child, key, config, showHidden);

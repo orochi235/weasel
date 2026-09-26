@@ -1,8 +1,8 @@
 import { matchesGlob, relative, resolve, sep } from 'node:path';
 import type { Plugin } from 'vite';
-import { autoTitle } from './autoTitle';
-import { indexFile } from './indexFile';
-import { storybookShims } from './storybookShims';
+import { autoTitle } from './autoTitle.ts';
+import { indexFile } from './indexFile.ts';
+import { storybookShims } from './storybookShims.ts';
 
 export interface ForgeTestOptions {
   /** Globs of story files, relative to the vite root. Each matching file becomes a test file. */

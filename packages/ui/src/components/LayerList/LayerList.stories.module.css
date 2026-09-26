@@ -10,7 +10,7 @@
   flex: 0 0 auto;
   width: 12px;
   height: 12px;
-  border-radius: 2px;
+  border-radius: var(--wzl-radius-sm);
   border: 1px solid var(--wzl-border);
   background: var(--swatch);
 }

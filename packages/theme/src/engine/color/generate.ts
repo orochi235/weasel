@@ -8,7 +8,7 @@ import {
   toLab,
   toLch,
   type Lch,
-} from './oklch';
+} from './oklch.ts';
 
 /**
  * A hue pinned into the palette with its own lightness.

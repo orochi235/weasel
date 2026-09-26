@@ -33,6 +33,7 @@ export * from './components/Powerline';
 export * from './components/Prefs';
 export * from './components/Properties';
 export { type Stance, type StanceAttrs, type StanceProps, useStance } from './components/stance';
+export type { SegmentTooltipFields } from './components/segmentTooltip';
 export * from './components/SelectionPanel';
 export * from './components/ResizeHandle';
 export * from './components/Sidebar';

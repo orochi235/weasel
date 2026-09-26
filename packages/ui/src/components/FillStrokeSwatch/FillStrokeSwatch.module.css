@@ -75,7 +75,7 @@
   position: absolute;
   inset: calc(var(--ring) - var(--wzl-border-w));
   border: 1px solid var(--wzl-fg);
-  border-radius: 1px;
+  border-radius: 0;
   pointer-events: none;
 }
 
