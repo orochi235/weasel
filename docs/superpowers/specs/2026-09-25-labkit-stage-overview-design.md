@@ -140,14 +140,27 @@ since it sits inside the stage's element. `<LinkedCursor>` draws the stage side.
   publishes `viewId: 'overview'`; the crosshair paints when the pointer is on
   the stage. A labkit story shows it; a screenshot checks the picture.
 
-## Arc 3 — marks on the overview (outline)
+## Arc 3 — marks on the overview
 
-The annotation marks of every target drawn read-only on the overview, from
-`markCommands` (the painter the export already uses). Each target is placed by
-measuring its `ref` against the content element. This needs one addition to
-the annotations store: a selector for a target's marks with resolved styles,
-readable outside `AnnotationOverlay`. levar can delete `Context.tsx` and
-`GhostCursor.tsx` when this lands.
+- **Store:** `AnnotationsApi.paintedMarks(target)` answers a target's marks as
+  the pane paints them — `{ mark: PaintableMark, style: MarkStyle }[]` in
+  scene order, styles resolved by `resolveMarkStyle` against the store's live
+  `meaning` and `config`. `capture` and it share one `drawOptionsFor(target)`,
+  so an export, the pane and the overview cannot disagree on a color or a
+  stale dash.
+- **Overview:** a marks layer in `<TrialOverview>`, drawn whenever an
+  annotations store is in scope (`AnnotationsContext`). For each target it
+  measures the target's element (`ref`, carried by the capability's targets)
+  against the camera's element, converts that rect to frame-local units
+  through the camera, and places one `<svg>` there through the fit camera —
+  `markSvgNodes` → `serializeSvg`, the export's own vector path. Read-only: it
+  takes no input, so presses fall through to the overview's pan. It follows the
+  store's `subscribe`.
+- **Tests:** `paintedMarks` resolves a status color and a stale dash; the
+  overview places a target's marks at the target's measured rect (a mocked
+  `getBoundingClientRect`), and redraws when a mark is added.
+- **levar:** with this, the eye marks lab can drop `Context.tsx` and
+  `GhostCursor.tsx`.
 
 ## Traps
 

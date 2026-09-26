@@ -44,6 +44,7 @@ import { CanvasStackContext } from '../canvas/CanvasStackContext';
 import { fromCameraView } from '../canvas/cameraView';
 import type { ViewportSize, WorldFrame } from '../canvas/worldSpec';
 import { FloatingPanel, type FloatingPanelProps } from '../primitives/FloatingPanel';
+import { OverviewMarks } from './OverviewMarks';
 
 /** The view id the overview publishes its pointer under. */
 export const OVERVIEW_VIEW_ID = 'overview';
@@ -184,6 +185,7 @@ function Overview({
           </div>
         ) : null}
         {render ? null : <LayersCanvas fit={fit} size={size} frame={camera.frame} />}
+        <OverviewMarks fit={fit} camera={camera} />
         <ChromeCanvas fit={fit} size={size} camera={camera} />
         <OverviewInput boxRef={boxRef} fit={fit} camera={camera} />
       </div>
