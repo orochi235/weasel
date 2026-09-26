@@ -126,7 +126,7 @@
     "@weasel-js/loupe": "1.6.1",
     "@weasel-js/svg": "1.6.1",
     "@weasel-js/ui": "1.6.1",
-    "earcut": "2.2.4",
+    "earcut": "3.2.3",
     "polygon-clipping": "^0.15.7",
     "react-aria-components": "^1.5.0",
     "windease": "^2.0.0",
