@@ -74,6 +74,10 @@
       "types": "./dist/job/index.d.ts",
       "import": "./dist/job/index.js"
     },
+    "./overview": {
+      "types": "./dist/overview/index.d.ts",
+      "import": "./dist/overview/index.js"
+    },
     "./weasel-ui": {
       "types": "./dist/passthrough/weasel-ui.d.ts",
       "import": "./dist/passthrough/weasel-ui.js"

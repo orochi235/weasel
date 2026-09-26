@@ -110,28 +110,22 @@ on leave. `RenderContext.trial.pointer` is that store
 (`PointerContextValue`), so an instrument's keys read `get()` over the stage or
 the overview alike.
 
-### 2.4 The overview, at `@weasel-js/labkit/overview`
+### 2.4 The overview, at `@weasel-js/labkit/overview` (built)
 
-A new entry (`src/overview/`, its own tsup entry and package export), not
-imported by the main bundle. An instrument declares it through the seams it
-already has: its `render` (or `stage.overlay`) mounts `<TrialOverview>`, which
-reads the trial through `TrialCameraContext` — set by `<Trial>` beside the
-dispatcher: the camera as a `ViewApi`, the frame, the viewport size, the
-content bounds (`stage.size`, or `canvas.bounds` for a canvas instrument), the
-canvas layers with state and config, and the pointer store. No labkit-side
-contribution list is needed: the overview is a component, and the context is
-the whole seam.
+`<TrialOverview width height render? bounds? title? anchor? persist?>`, its own
+tsup entry and package export, not in the main bundle. An instrument mounts it
+from `stage.overlay` (DOM stage) or its `render` (canvas) — anywhere inside the
+camera, which it reads through `CameraContext` (set by `<CanvasStack>` and
+`<Stage>`: the camera as a `ViewApi`, the frame, the element, a stage's content
+rect). No labkit contribution list was needed.
 
-`<TrialOverview>` is a `FloatingPanel` holding a box of `width` × `height`:
-
-| Layer | Content |
-|---|---|
-| Content | Canvas instrument: its layers redrawn into a `<canvas>` through the fit camera. DOM stage: the instrument's `render({ state, config, size })` at the content's own size, scaled to fit by a CSS transform, as `<Stage>` does — never the instrument's own `render`, whose effects would run twice |
-| Chrome | A `<canvas>` with the visible-rect indicator and the linked crosshair, drawn in 2D from core's `crosshairRects` so it matches arc 1's |
-| Input | A dispatcher on the box, binding `minimapCenterAction` and `minimapPanAction` with `rootView` = the trial's camera, and publishing `{ viewId: 'overview' }` into the trial's pointer store |
-
-Props: `render?`, `width`, `height`, `anchor?`, `persist?`, `title?`,
-`className?`.
+It draws the instrument-supplied `render({ size })` scaled to fit, or a canvas
+instrument's layers from `CanvasStackContext`; a 2D chrome canvas with the
+visible rect and core's `crosshairRects`; and runs `minimapCenterAction` /
+`minimapPanAction` on an isolated dispatcher with the trial camera as
+`rootView`, publishing `viewId: 'overview'`. It stops its events at the box,
+since it sits inside the stage's element. `<LinkedCursor>` draws the stage side.
+`examples/annotate-lab` and a story show it.
 
 ### 2.5 Tests
 

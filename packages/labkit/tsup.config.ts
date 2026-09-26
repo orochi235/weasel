@@ -17,6 +17,7 @@ export default defineConfig({
     'passthrough/weasel-canvas': 'src/passthrough/weasel-canvas.ts',
     'surface/index': 'src/surface/index.ts',
     'job/index': 'src/job/index.ts',
+    'overview/index': 'src/overview/index.ts',
   },
   format: ['esm'],
   tsconfig: './tsconfig.lib.json',
