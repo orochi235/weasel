@@ -461,7 +461,7 @@ function ControlRow<TC extends Record<string, unknown>>({
     case 'number':
       return <PropertyField {...field} {...row} span={field.control === 'slider' && wide} />;
     case 'enum':
-      return <PropertyField {...field} {...row} span={field.control === 'radio' && wide} />;
+      return <PropertyField {...field} {...row} span={field.control === 'toggle' && wide} />;
     default:
       return <PropertyField {...field} {...row} />;
   }
@@ -496,7 +496,11 @@ function labField(
         control: extra<string>(leaf, 'control') === 'switch' ? 'switch' : 'checkbox',
       };
     case 'enum':
-      return { ...field, control: extra<string>(leaf, 'control') === 'radio' ? 'radio' : 'select' };
+      // `.radio()` asks for every option at once, as segments.
+      return {
+        ...field,
+        control: extra<string>(leaf, 'control') === 'radio' ? 'toggle' : 'select',
+      };
     case 'string':
       return {
         ...field,

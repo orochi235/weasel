@@ -54,6 +54,22 @@ describe('PropertyGroup collapse', () => {
     expect(screen.getByText('child')).toBeVisible();
   });
 
+  it('sets the twisty beside the title, in the heading, which the title alone names', () => {
+    render(
+      <PropertyGroup title="Aqua" collapsible>
+        <div>child</div>
+      </PropertyGroup>,
+    );
+    const heading = screen.getByRole('heading', { name: 'Aqua' });
+    const twisty = screen.getByRole('button', { name: 'Aqua' });
+    expect(heading).toContainElement(twisty);
+    expect(twisty.nextElementSibling).toHaveTextContent('Aqua');
+    twisty.focus();
+    fireEvent.keyDown(twisty, { key: 'Enter' });
+    fireEvent.click(twisty);
+    expect(twisty).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('points the twisty at the body it opens', () => {
     render(
       <PropertyGroup title="Aqua" collapsible>

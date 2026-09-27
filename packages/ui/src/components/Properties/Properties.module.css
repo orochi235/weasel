@@ -837,24 +837,34 @@
   letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
 }
 
+/* A number and its unit, on one line, the field taking what the unit leaves. */
 .fieldUnitGroup {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
   white-space: nowrap;
   min-width: 0;
 }
 
-.fieldUnitGroup .readoutUnit {
-  margin-left: var(--wzl-space-2);
+.fieldUnitGroup > .numberField {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 /* Symbol units (e.g. `<sup>°</sup>`) lean on the browser's native super
-   positioning. Just dim them to match — do NOT set line-height: 0, that
-   would re-collapse the glyph onto the baseline. */
+   positioning in a readout. Just dim them to match — do NOT set
+   line-height: 0, that would re-collapse the glyph onto the baseline. A flex
+   item ignores `vertical-align`, so beside a field the glyph rides the top of
+   the line instead. */
 .readoutGroup sup,
 .fieldUnitGroup sup {
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-2xs);
   pointer-events: none;
+}
+
+.fieldUnitGroup > sup {
+  align-self: flex-start;
 }
 
 /* ── Inline layout: label sits to the left of the control. ────── */
@@ -876,7 +886,7 @@
 
 .rowInline > input,
 .rowInline > select,
-.rowInline > .toggle {
+.rowInline > .toggleBar {
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -884,30 +894,75 @@
 /* Fields size to their content, not to the row they happen to sit in: a number
    is a handful of digits and a short string is a word. Stated as a width and
    not as a `min(100%, …)`, because an auto-width sidebar sizes to what its
-   fields ask for and a percentage asks for an input's 20-character default. */
-/* `.rowFramed` holds a kit field that brings its own frame, so these bare-input
-   rules skip it; `:where` keeps their specificity what it was. */
-.row:not(:where(.rowFramed)) input[type='number']:not(.readoutInput) {
+   fields ask for and a percentage asks for an input's 20-character default.
+   Only a field set in the row itself: a surface that wraps its control in a
+   slot of its own sizes it there. */
+.row > .numberField,
+.row > .fieldUnitGroup > .numberField {
+  flex: 0 1 auto;
+  width: var(--wzl-prop-number-width, 9ch);
+  max-width: 100%;
+}
+
+.row > .textField {
+  width: var(--wzl-prop-text-width, 16ch);
+  max-width: 100%;
+}
+
+/* The property rows' fields set their text at the weight the readouts use.
+   The attribute outranks the field's own `font: inherit`. */
+.numberField input[type='text'],
+.textField input[type='text'] {
+  font-weight: var(--wzl-font-weight-medium);
+}
+
+/* A select is as tall as the fields around it. */
+.select {
+  --wzl-select-h: var(--wzl-field-h, var(--wzl-control-h));
+}
+
+/* Set directly in a property row, it drops its box and underlines its value:
+   a dense row of settings reads its choices as words, and 10px of caret is a
+   tenth of a short value's width. A surface that slots the control in a
+   wrapper of its own — a prefs form, an inspector cell — keeps the box. */
+.row > .select {
+  --wzl-select-bg: transparent;
+  --wzl-select-border: 1px solid transparent;
+  --wzl-select-pad: 0;
+  --wzl-select-chevron: none;
+  --wzl-select-underline: underline;
+  --wzl-select-focus-border: transparent;
+  --wzl-select-focus-shadow: none;
+  --wzl-select-focus-outline: 1px solid var(--wzl-focus-ring);
+}
+
+/* The rules from here to the select are for a native input a caller hands a
+   row directly; every field kind draws a kit field that brings its own frame,
+   and sits deeper than a child. */
+.row > input[type='number']:not(.readoutInput) {
   width: var(--wzl-prop-number-width, 9ch);
   max-width: 100%;
   -moz-appearance: textfield;
   appearance: textfield;
 }
 
-.row:not(:where(.rowFramed)) input[type='text']:not(.readoutInput) {
+.row > input[type='text']:not(.readoutInput) {
   width: var(--wzl-prop-text-width, 16ch);
   max-width: 100%;
 }
 
 /* An inline row stays on one line: the field gives up width to the label as the
    column narrows, down to a floor that still shows a value. */
-.rowInline > input:not(.readoutInput) {
+.rowInline > input:not(.readoutInput),
+.rowInline > .numberField,
+.rowInline > .fieldUnitGroup,
+.rowInline > .textField {
   flex: 0 1 auto;
   min-width: 4ch;
 }
 
-/* A property row's select is weasel-ui's, bare. Inline, it fills the space beside
-   its label and sets its value against the chevron, like the native one below. */
+/* Inline, a select fills the space beside its label and sets its value against
+   the chevron, like a native one handed to the row. */
 .rowInline > .select {
   flex: 1 1 auto;
   width: auto;
@@ -939,8 +994,8 @@
   width: auto;
 }
 
-.row:not(:where(.rowFramed)) input[type='text']:not(.readoutInput),
-.row:not(:where(.rowFramed)) input[type='number'] {
+.row > input[type='text']:not(.readoutInput),
+.row > input[type='number'] {
   background: var(--wzl-input-surface, var(--wzl-surface-sunken));
   color: var(--wzl-fg);
   border: 1px solid var(--wzl-border);
@@ -958,7 +1013,7 @@
 
 /* Numbers right-align so a column of them shares a decimal position; text does
    not, so this cannot live in the rule the two share. */
-.row:not(:where(.rowFramed)) input[type='number'] {
+.row > input[type='number'] {
   text-align: right;
 }
 
@@ -968,14 +1023,14 @@
    panel drives numbers by typing and dragging, never by the steppers.
    `.readoutInput` has always dropped them; this is the same removal for the
    typed field beside it. */
-.row:not(:where(.rowFramed)) input[type='number']::-webkit-inner-spin-button,
-.row:not(:where(.rowFramed)) input[type='number']::-webkit-outer-spin-button {
+.row > input[type='number']::-webkit-inner-spin-button,
+.row > input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.row:not(:where(.rowFramed)) input[type='text']:not(.readoutInput):focus,
-.row:not(:where(.rowFramed)) input[type='number']:focus {
+.row > input[type='text']:not(.readoutInput):focus,
+.row > input[type='number']:focus {
   outline: none;
   border-color: var(--wzl-focus-ring);
   box-shadow: 0 0 0 1px var(--wzl-focus-ring);
@@ -1031,10 +1086,10 @@
   color: var(--wzl-fg-subtle);
 }
 
-/* Selects in property rows render borderless — chevron only, transparent
-   background, no chrome. Keep the native arrow via appearance: auto so users
-   still see something clickable. */
-.row select {
+/* A native select handed to a row renders borderless — chevron only,
+   transparent background, no chrome. Keep the native arrow via appearance: auto
+   so users still see something clickable. */
+.row > select {
   background: transparent;
   color: var(--wzl-fg);
   border: 0;
@@ -1050,7 +1105,7 @@
 
 /* An outline rather than the boxed family's inset ring: a property-row select
    is borderless, so there is no border to recolour. */
-.row select:focus {
+.row > select:focus {
   outline: 1px solid var(--wzl-focus-ring);
   outline-offset: 2px;
 }
@@ -1082,7 +1137,7 @@
 /* Padding: 0 is important — the native <input type="color"> in some browsers (esp. Chrome) inflates beyond its
    declared box when given padding, which expands the grid row and pushes
    the paired slider track out of bottom alignment. */
-.rowColor:not(:where(.rowFramed)) input[type='color'] {
+.rowColor > input[type='color'] {
   grid-column: 2;
   grid-row: 1;
   align-self: var(--wzl-prop-row-align, center);
@@ -1097,13 +1152,31 @@
   flex-shrink: 0;
 }
 
-/* Alpha slider: full-width second row beneath the color swatch. */
-.rowColor input[type='range'].alpha {
-  grid-column: 1 / -1;
+/* A color field set directly in the row gives its parts to the row's grid:
+   the swatch beside the label, and the opacity track with its readout on a
+   second row beneath. Nested in another wrapper, it keeps its own line. */
+.rowColor > .colorField {
+  display: contents;
+}
+
+.rowColor > .colorField > :first-child {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: var(--wzl-prop-row-align, center);
+  justify-self: end;
+}
+
+.rowColor > .colorField > input[type='range'] {
+  grid-column: 1;
   grid-row: 2;
-  height: 12px;
   width: 100%;
   margin: 0;
+}
+
+.rowColor > .colorField > :last-child:not(:first-child):not(input) {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
 }
 
 /* `layout="block"` stacks the color row: label, then swatch, then alpha. */
@@ -1116,14 +1189,22 @@
   grid-row: 1;
 }
 
-.rowColor.rowBlock:not(:where(.rowFramed)) input[type='color'] {
+.rowColor.rowBlock > input[type='color'],
+.rowColor.rowBlock > .colorField > :first-child {
   grid-column: 1;
   grid-row: 2;
   justify-self: start;
 }
 
-.rowColor.rowBlock input[type='range'].alpha {
+.rowColor.rowBlock > .colorField > input[type='range'] {
   grid-row: 3;
+}
+
+/* A block row has one column, so the readout rides at the track's end. */
+.rowColor.rowBlock > .colorField > :last-child:not(:first-child):not(input) {
+  grid-column: 1;
+  grid-row: 3;
+  justify-self: end;
 }
 
 /* ── Checkbox variant: label-first inline layout. */
@@ -1138,7 +1219,7 @@
   cursor: pointer;
 }
 
-.rowCheckbox:not(:where(.rowFramed)) input[type='checkbox']:not([role='switch']) {
+.rowCheckbox > input[type='checkbox']:not([role='switch']) {
   accent-color: var(--wzl-accent);
   width: 14px;
   height: 14px;
@@ -1167,13 +1248,6 @@
   text-align: end;
 }
 
-/* Names the unit a framed number field displays in, beside the field. */
-.unitSuffix {
-  flex: none;
-  font-size: var(--wzl-font-size-sm);
-  opacity: 0.6;
-}
-
 .textarea {
   width: 100%;
   padding: var(--wzl-space-2) var(--wzl-space-4);
@@ -1186,49 +1260,70 @@
   resize: vertical;
 }
 
-/* ── Segmented toggle group ───────────────────────────────────── */
-.toggle {
+/* ── Segmented toggle ─────────────────────────────────────────────
+   A `ToggleBar`, filling the row the way a field does and standing at the
+   row's field height rather than its own small size. */
+.row > .toggleBar {
   display: flex;
   width: 100%;
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  overflow: hidden;
-}
-
-.toggleButton {
-  flex: 1;
   height: var(--wzl-field-h, var(--wzl-control-h));
-  padding: 0 var(--wzl-space-4);
-  background: rgba(0, 0, 0, 0.25);
-  color: var(--wzl-fg-muted);
-  border: 0;
-  border-radius: 0;
-  font-family: var(--wzl-font-ui);
-  font-weight: var(--wzl-font-weight-medium);
-  font-size: var(--wzl-font-size-sm);
-  line-height: var(--wzl-leading-tight);
+}
+
+/* ── Checkbox ──────────────────────────────────────────────────────
+   A native box dressed as the kit's `Checkbox`, from the same tokens. */
+.checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  background: var(--wzl-surface-sunken);
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-sm);
   cursor: pointer;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  transition: background-color var(--wzl-motion-fast), border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
 
-.toggleButton + .toggleButton {
-  border-left: 1px solid var(--wzl-border);
+.checkbox:hover:not(:disabled) {
+  border-color: var(--wzl-fg-muted);
 }
 
-.toggleButton:hover {
-  color: var(--wzl-fg);
-  border-color: var(--wzl-border);
+.checkbox:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--wzl-focus-ring);
 }
 
-.toggleButtonSelected {
-  background: var(--wzl-accent);
-  color: var(--wzl-fg-on-accent);
-  font-weight: var(--wzl-font-weight-medium);
+.checkbox:checked,
+.checkbox:indeterminate {
+  background: var(--wzl-accent-strong);
+  border-color: var(--wzl-accent-strong);
 }
 
-.toggleButtonSelected:hover {
-  color: var(--wzl-fg-on-accent);
+/* The mark is a mask filled with the on-accent color, so it follows the theme. */
+.checkbox:checked::before,
+.checkbox:indeterminate::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--wzl-fg-on-accent);
+  -webkit-mask: var(--_check-mark) center / 100% 100% no-repeat;
+  mask: var(--_check-mark) center / 100% 100% no-repeat;
+}
+
+.checkbox:checked {
+  --_check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpolyline points='2,6.5 5,9.5 10,3.5' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.checkbox:indeterminate {
+  --_check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cline x1='2' y1='6' x2='10' y2='6' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ── PropertyGroup ──────────────────────────────────────────────────
@@ -1486,14 +1581,12 @@
   margin: 0;
 }
 
-/* A twisty leads the title, so the head takes over the title's bottom gap and
-   the two sit on one line. */
-.groupHead {
-  margin-bottom: var(--wzl-prop-group-title-gap, 4px);
-}
-
-.groupHead .groupTitle {
-  margin-bottom: 0;
+/* The title between the rules: the twisty, where the group folds, and the text. */
+.groupTitleMid {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-disclosure-gap, 4px);
+  min-width: 0;
 }
 
 /* `hidden` on its own loses to the body's `display: grid` below. */

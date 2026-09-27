@@ -1,5 +1,5 @@
 import { type ReactNode, useId, useState } from 'react';
-import { DisclosureRow } from '../Disclosure';
+import { Disclosure } from '../Disclosure';
 import { type StanceProps, useStance } from '../stance';
 import s from './Properties.module.css';
 import {
@@ -78,6 +78,7 @@ export function PropertyGroup({
   tone,
 }: PropertyGroupProps) {
   const bodyId = useId();
+  const titleId = useId();
   const [own, setOwn] = useState(defaultCollapsed ?? false);
   const stanced = useStance({ stance, tone });
   if (hidden) return null;
@@ -93,10 +94,22 @@ export function PropertyGroup({
 
   const base = `${s.group}${pack === 'pairs' ? ` ${s.groupPairs}` : pack === 'one-up' ? ` ${s.groupOneUp}` : ''}`;
   const cls = propertyMetricClass(span ? `${base} ${s.span}` : base, { density, align }, className);
+  // The twisty sits in the title, between the rules, so the two read as one
+  // unit. The heading is named by the title alone, not the twisty's label too.
   const titled = (
-    <h3 className={s.groupTitle}>
+    <h3 className={s.groupTitle} aria-labelledby={folds ? titleId : undefined}>
       <hr />
-      <span>{title}</span>
+      <span className={s.groupTitleMid}>
+        {folds ? (
+          <Disclosure
+            open={!folded}
+            onToggle={toggle}
+            label={typeof title === 'string' ? title : 'this section'}
+            controls={bodyId}
+          />
+        ) : null}
+        <span id={titleId}>{title}</span>
+      </span>
       <hr />
     </h3>
   );
@@ -112,19 +125,7 @@ export function PropertyGroup({
     );
   return (
     <div className={cls} {...stanced}>
-      {folds ? (
-        <DisclosureRow
-          className={s.groupHead}
-          open={!folded}
-          onToggle={toggle}
-          label={typeof title === 'string' ? title : 'this section'}
-          controls={bodyId}
-        >
-          {heading}
-        </DisclosureRow>
-      ) : (
-        heading
-      )}
+      {heading}
       {description !== undefined && description !== '' && <PropertyNote>{description}</PropertyNote>}
       <div id={bodyId} className={s.groupBody} hidden={folded}>
         {children}

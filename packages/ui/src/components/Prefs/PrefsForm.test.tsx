@@ -94,7 +94,7 @@ describe('PrefsForm', () => {
     expect(screen.getByText('Import / Export')).toBeTruthy();
     expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeTruthy();
     expect(screen.getByRole('switch', { name: 'Smoothing' })).toBeTruthy();
-    expect(screen.getByRole('textbox', { name: 'Zoom step' })).toBeTruthy(); // NumberField input
+    expect(screen.getByRole('spinbutton', { name: 'Zoom step' })).toBeTruthy();
     expect(screen.getByRole('slider', { name: 'Opacity' })).toBeTruthy();
     // Select trigger's accessible name = "<selected label> <aria-label>".
     expect(screen.getByRole('button', { name: 'Dark Theme' })).toBeTruthy();
@@ -462,12 +462,12 @@ describe('PrefsForm — number leaves with a display unit', () => {
 
   it('shows the stored value in the unit the leaf displays', () => {
     renderRotation({}, Math.PI / 4);
-    expect(screen.getByRole('textbox', { name: 'Rotation' })).toHaveValue('45');
+    expect(screen.getByRole('spinbutton', { name: 'Rotation' })).toHaveValue('45');
   });
 
   it('stores what a typed display value converts back to', () => {
     const onChange = renderRotation({}, Math.PI / 4);
-    const field = screen.getByRole('textbox', { name: 'Rotation' });
+    const field = screen.getByRole('spinbutton', { name: 'Rotation' });
     fireEvent.change(field, { target: { value: '90' } });
     fireEvent.blur(field);
     expect(onChange).toHaveBeenCalledTimes(1);
@@ -483,7 +483,7 @@ describe('PrefsForm — number leaves with a display unit', () => {
       { min: 0, max: Math.PI * 2, step: Math.PI / 180 },
       Math.PI / 4,
     );
-    const field = screen.getByRole('textbox', { name: 'Rotation' });
+    const field = screen.getByRole('spinbutton', { name: 'Rotation' });
     fireEvent.change(field, { target: { value: '90' } });
     fireEvent.blur(field);
     expect(onChange.mock.calls[0][1]).toBeCloseTo(Math.PI / 2);
@@ -491,7 +491,7 @@ describe('PrefsForm — number leaves with a display unit', () => {
 
   it('reads a unit typed in place of the one it shows', () => {
     const onChange = renderRotation({}, Math.PI / 4);
-    const field = screen.getByRole('textbox', { name: 'Rotation' });
+    const field = screen.getByRole('spinbutton', { name: 'Rotation' });
     fireEvent.change(field, { target: { value: '0.25turn' } });
     fireEvent.blur(field);
     expect(onChange.mock.calls[0][1]).toBeCloseTo(Math.PI / 2);
@@ -502,7 +502,7 @@ describe('PrefsForm — number leaves with a display unit', () => {
 
   it('commits nothing for a unit it does not accept', () => {
     const onChange = renderRotation({}, Math.PI / 4);
-    const field = screen.getByRole('textbox', { name: 'Rotation' });
+    const field = screen.getByRole('spinbutton', { name: 'Rotation' });
     fireEvent.change(field, { target: { value: '12mm' } });
     fireEvent.blur(field);
     expect(onChange).not.toHaveBeenCalled();
@@ -547,7 +547,7 @@ describe('PrefsForm — number leaves with a display unit', () => {
         onChange={onChange}
       />,
     );
-    const field = screen.getByRole('textbox', { name: 'Width' });
+    const field = screen.getByRole('spinbutton', { name: 'Width' });
     expect(field).toHaveValue('12');
     fireEvent.change(field, { target: { value: '34' } });
     fireEvent.blur(field);

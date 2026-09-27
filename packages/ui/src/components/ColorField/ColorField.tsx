@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toHex8, getAlpha01, withAlpha01 } from '@weasel-js/core';
 import { InlineRange } from '../InlineRange';
+import shared from '../range.module.css';
 import s from './ColorField.module.css';
 
 /**
@@ -18,12 +19,16 @@ export interface ColorFieldProps {
   mixed?: boolean;
   /** Show the opacity slider; emitted values are `#rrggbbaa`. */
   alpha?: boolean;
+  /** Draw the opacity slider inert, for a consumer that drops alpha. */
+  alphaDisabled?: boolean;
   /** Live value during interaction (picker drag, slider drag). Optional —
    *  wire it for live preview; omit it for commit-only consumers. */
   onInput?: (hex: string) => void;
-  /** Committed value — picker close (blur) or slider release. One call
+  /** Committed value — picker close or blur, or slider release. One call
    *  per user gesture; pair with an undoable write. */
   onChange: (hex: string) => void;
+  /** Id for the color input, for a `<label htmlFor>` outside it. */
+  id?: string;
   'aria-label'?: string;
   className?: string;
 }
@@ -35,7 +40,7 @@ export interface ColorFieldProps {
  * commit-on-change would emit one undo entry per tick.
  */
 export function ColorField(props: ColorFieldProps) {
-  const { value, mixed = false, alpha = false, onInput, onChange, className } = props;
+  const { value, mixed = false, alpha = false, alphaDisabled = false, onInput, onChange, id, className } = props;
   const hex8 = toHex8(value ?? '#000000');
   const rgb6 = hex8.slice(0, 7);
   const alpha01 = getAlpha01(hex8);
@@ -65,6 +70,22 @@ export function ColorField(props: ColorFieldProps) {
     setAlphaDraft(null);
   };
 
+  // The picker closing fires a native `change`, which React's `onChange` does
+  // not deliver apart from `input`; the input can keep focus after it closes,
+  // so waiting for blur alone would hold the commit until the next click.
+  const swatch = useRef<HTMLInputElement>(null);
+  const latestCommit = useRef(() => {});
+  useEffect(() => {
+    latestCommit.current = () => commit(visibleRgb, visibleAlphaPct / 100);
+  });
+  useEffect(() => {
+    const el = swatch.current;
+    if (!el) return;
+    const onClose = () => latestCommit.current();
+    el.addEventListener('change', onClose);
+    return () => el.removeEventListener('change', onClose);
+  }, []);
+
   return (
     <span
       className={[s.root, className].filter(Boolean).join(' ')}
@@ -72,6 +93,8 @@ export function ColorField(props: ColorFieldProps) {
     >
       <span className={s.chip}>
         <input
+          ref={swatch}
+          id={id}
           className={s.color}
           type="color"
           value={visibleRgb}
@@ -87,12 +110,12 @@ export function ColorField(props: ColorFieldProps) {
       {alpha && (
         <>
           <InlineRange
-            className={s.alphaRange}
+            className={`${s.alphaRange} ${shared.alpha}`}
             min={0}
             max={100}
             step={1}
             value={visibleAlphaPct}
-            disabled={alphaLocked}
+            disabled={alphaLocked || alphaDisabled}
             aria-label={props['aria-label'] ? `${props['aria-label']} opacity` : 'Opacity'}
             onInput={(e) => {
               const pct = Number((e.target as HTMLInputElement).value);

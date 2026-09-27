@@ -41,7 +41,7 @@ describe('<PaletteLab> action rail', () => {
     expect(within(rail()).getByRole('button', { name: 'Redo' })).toBeDisabled();
 
     // Any edit is enough; the surface toggle is the cheapest one to reach.
-    await user.click(screen.getByRole('button', { name: 'Light' }));
+    await user.click(screen.getByRole('radio', { name: 'Light' }));
     expect(within(rail()).getByRole('button', { name: 'Undo' })).toBeEnabled();
     expect(within(rail()).getByRole('button', { name: 'Redo' })).toBeDisabled();
 
@@ -53,10 +53,10 @@ describe('<PaletteLab> action rail', () => {
   it('resets to the default state', async () => {
     const user = userEvent.setup();
     render(<PaletteLab />);
-    await user.click(screen.getByRole('button', { name: 'Light' }));
-    expect(screen.getByRole('button', { name: 'Light' })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(screen.getByRole('radio', { name: 'Light' }));
+    expect(screen.getByRole('radio', { name: 'Light' })).toHaveAttribute('aria-checked', 'true');
 
     await user.click(within(rail()).getByRole('button', { name: 'Reset' }));
-    expect(screen.getByRole('button', { name: 'Dark' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('radio', { name: 'Dark' })).toHaveAttribute('aria-checked', 'true');
   });
 });

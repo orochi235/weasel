@@ -25,11 +25,14 @@
   width: 100%;
   align-items: center;
   gap: var(--wzl-space-3);
-  padding: 0 var(--wzl-space-3) 0 var(--wzl-space-5);
-  background: var(--wzl-surface-sunken);
   /* Hooks, each defaulting to what the trigger already drew: the visible box is
      this button, not the `.field` a consumer's `className` lands on, so a
-     surface that has to restyle it sets these rather than reaching in here. */
+     surface that has to restyle it sets these rather than reaching in here.
+     Together they draw the bare look too, for a surface that wants it from
+     context rather than from `variant`: a transparent fill, no padding, the
+     chevron hidden, the value underlined and an outline for focus. */
+  padding: var(--wzl-select-pad, 0 var(--wzl-space-3) 0 var(--wzl-space-5));
+  background: var(--wzl-select-bg, var(--wzl-input-surface, var(--wzl-surface-sunken)));
   height: var(--wzl-select-h, var(--wzl-control-h));
   border: var(--wzl-select-border, 1px solid var(--wzl-border));
   border-radius: var(--wzl-radius-sm);
@@ -42,8 +45,10 @@
 }
 
 .trigger[data-focus-visible] {
-  border-color: var(--wzl-focus-ring);
-  box-shadow: 0 0 0 1px var(--wzl-focus-ring);
+  border-color: var(--wzl-select-focus-border, var(--wzl-focus-ring));
+  box-shadow: var(--wzl-select-focus-shadow, 0 0 0 1px var(--wzl-focus-ring));
+  outline: var(--wzl-select-focus-outline, none);
+  outline-offset: 2px;
 }
 
 .field[data-invalid] .trigger {
@@ -66,6 +71,24 @@
      the trigger's `line-height: 1` would cut this text's ascenders and
      descenders off. `normal` is the font's own leading, so it never can. */
   line-height: normal;
+  /* The underline hook: none unless a surface or `indicator` turns it on. */
+  text-decoration-line: var(--wzl-select-underline, none);
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--wzl-fg-subtle);
+  text-underline-offset: 0.25em;
+  transition: text-decoration-color var(--wzl-motion-fast);
+}
+
+.trigger:hover .value,
+.trigger[data-focus-visible] .value {
+  text-decoration-style: solid;
+  text-decoration-color: var(--wzl-fg-muted);
+}
+
+.field[data-open] .value {
+  text-decoration-style: solid;
+  text-decoration-color: var(--wzl-accent);
 }
 
 /* `variant='bare'`: no box. The focus ring moves to an outline, since there is no border to recolor. */
@@ -87,6 +110,7 @@
 }
 
 .chevron {
+  display: var(--wzl-select-chevron, block);
   width: 10px;
   height: 10px;
   color: var(--wzl-fg-muted);
@@ -95,28 +119,13 @@
 
 /* `indicator='underline'`: the value carries the affordance itself. A text
    decoration rather than a border, so it hugs the word and adds nothing to the
-   box — the row's height and the value's width are the same either way. */
+   box — the row's height and the value's width are the same either way. The
+   rest of the underline's look sits on `.value`, shared with the hook. */
 .underlined .value {
-  text-decoration: underline;
-  text-decoration-style: dotted;
-  text-decoration-thickness: 1px;
-  text-decoration-color: var(--wzl-fg-subtle);
-  text-underline-offset: 0.25em;
-  transition: text-decoration-color var(--wzl-motion-fast);
+  text-decoration-line: underline;
 }
 
-.underlined .trigger:hover .value,
-.underlined .trigger[data-focus-visible] .value {
-  text-decoration-style: solid;
-  text-decoration-color: var(--wzl-fg-muted);
-}
-
-.underlined[data-open] .value {
-  text-decoration-style: solid;
-  text-decoration-color: var(--wzl-accent);
-}
-
-.underlined .value[data-placeholder] {
+.value[data-placeholder] {
   text-decoration-color: var(--wzl-fg-subtle);
 }
 

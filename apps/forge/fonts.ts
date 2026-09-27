@@ -183,6 +183,8 @@ export function fontRule(globals: StoryContext['globals'], scope = ':root'): str
     // applyTheme declares the tokens at [data-wzl-theme][data-wzl-mode] (0,3,0), on the root and on any nested
     // themed box; `:not(#…)` lifts the root's rule above it without `!important`.
     ` ${scope}:not(#fg-font-globals), ${scope} [data-wzl-theme][data-wzl-mode][data-wzl-mode] { ${tokens} }`,
-    ` ${scope} :where(button, input, select, textarea) { font: inherit; }`,
+    // At zero specificity: a story host names itself by attribute, (0,1,0), which would otherwise beat every
+    // one-class component rule that sets its own size, such as a select's trigger.
+    ` :where(${scope}) :where(button, input, select, textarea) { font: inherit; }`,
   ].join('');
 }

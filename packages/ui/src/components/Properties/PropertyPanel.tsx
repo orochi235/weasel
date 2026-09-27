@@ -2,7 +2,6 @@ import { createContext, forwardRef, type ReactNode, type Ref, useContext } from 
 import { Focusable } from 'react-aria-components';
 import { type StanceProps, useStance } from '../stance';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
-import type { PropertyFieldChrome } from './PropertyField';
 import s from './Properties.module.css';
 
 /**
@@ -230,12 +229,6 @@ export interface PropertyRowProps extends PropertyMetricProps {
    *  The label then names that toggle, so a control passed as `children` has to
    *  carry its own accessible name — every `<PropertyField>` does. */
   onAutoChange?: (next: boolean) => void;
-  /**
-   * What draws the row's control. `bare` (the default) is a native input the
-   * row's stylesheet dresses; `framed` is a kit field bringing its own frame,
-   * which the row then leaves alone — see {@link PropertyFieldChrome}.
-   */
-  chrome?: PropertyFieldChrome;
 }
 
 /** The label-plus-control frame `<PropertyField>` draws its rows in. Use it
@@ -255,7 +248,6 @@ export function PropertyRow({
   align,
   auto,
   onAutoChange,
-  chrome,
 }: PropertyRowProps) {
   const variantClass = variant === 'color' ? s.rowColor : variant === 'checkbox' ? s.rowCheckbox : '';
   // Each variant already lays out one way; a class is only needed for the
@@ -266,7 +258,7 @@ export function PropertyRow({
   const layoutClass =
     resolved === intrinsic ? '' : resolved === 'inline' ? s.rowInline : s.rowBlock;
   const cls = propertyMetricClass(
-    [s.row, variantClass, layoutClass, span && s.span, auto && s.rowAuto, chrome === 'framed' && s.rowFramed]
+    [s.row, variantClass, layoutClass, span && s.span, auto && s.rowAuto]
       .filter(Boolean)
       .join(' '),
     { density, align },

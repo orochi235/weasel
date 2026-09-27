@@ -148,7 +148,7 @@ describe('<SemanticsLayer>', () => {
     await userEvent.click(screen.getByRole('button', { name: 'fg-muted' }));
     expect(screen.getByRole('checkbox', { name: 'Varies by density' })).toBeChecked();
     expect(screen.getByRole('textbox', { name: 'Reference' })).toHaveValue('gray-300');
-    await userEvent.click(within(screen.getByRole('group', { name: 'Editing' })).getByRole('button', { name: 'compact' }));
+    await userEvent.click(within(screen.getByRole('radiogroup', { name: 'Editing' })).getByRole('radio', { name: 'compact' }));
     expect(screen.getByRole('textbox', { name: 'Reference' })).toHaveValue('gray-400');
     await pickRule('Step');
     expect(firstDef(onChange).semantics!['fg-muted']).toMatchObject({
@@ -175,10 +175,10 @@ describe('<SemanticsLayer>', () => {
     const light = { ref: 'gray-600', type: 'color' };
     const onChange = renderSemantics(setSemantic(weasel, 'fg-muted', { by: 'mode', light } as never));
     await userEvent.click(screen.getByRole('button', { name: 'fg-muted' }));
-    const editing = screen.getByRole('group', { name: 'Editing' });
-    expect(within(editing).getByRole('button', { name: 'light' })).toHaveAttribute('aria-pressed', 'true');
+    const editing = screen.getByRole('radiogroup', { name: 'Editing' });
+    expect(within(editing).getByRole('radio', { name: 'light' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('textbox', { name: 'Reference' })).toHaveValue('gray-600');
-    await userEvent.click(within(editing).getByRole('button', { name: 'dark' }));
+    await userEvent.click(within(editing).getByRole('radio', { name: 'dark' }));
     expect(screen.getByText('This rule has no dark branch.')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Add a dark branch' }));
     expect(firstDef(onChange).semantics!['fg-muted']).toEqual({ by: 'mode', light, dark: light });

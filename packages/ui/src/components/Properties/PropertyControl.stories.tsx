@@ -14,56 +14,29 @@ type Story = StoryObj<typeof PropertyControl>;
  *  a tool options strip holds. A slider brings its readout beside the track. */
 export const Cells: Story = {
   render: () => {
-    function Line({ chrome }: { chrome: 'bare' | 'framed' }) {
+    function Line() {
       const [x, setX] = useState(24);
       const [y, setY] = useState(48);
       const [size, setSize] = useState(40);
       const [bold, setBold] = useState(true);
       const [fill, setFill] = useState('#7ec8e3');
       return (
-        <>
-          <p className={s.caption}>{chrome}</p>
+        <div className={s.column}>
           <div className={s.cell}>
-            <PropertyControl kind="number" chrome={chrome} name="X" value={x} onChange={setX} />
-            <PropertyControl kind="number" chrome={chrome} name="Y" value={y} onChange={setY} />
+            <PropertyControl kind="number" name="X" value={x} onChange={setX} />
+            <PropertyControl kind="number" name="Y" value={y} onChange={setY} />
           </div>
           <div className={s.cell}>
-            <PropertyControl
-              kind="number"
-              control="slider"
-              chrome={chrome}
-              name="Size"
-              value={size}
-              min={0}
-              max={100}
-              onChange={setSize}
-            />
+            <PropertyControl kind="number" control="slider" name="Size" value={size} min={0} max={100} onChange={setSize} />
           </div>
           <div className={s.cell}>
-            <PropertyControl
-              kind="boolean"
-              control="toggle"
-              chrome={chrome}
-              name="Bold"
-              glyph="B"
-              value={bold}
-              onChange={setBold}
-            />
-            <PropertyControl kind="color" chrome={chrome} name="Fill" value={fill} onChange={setFill} />
+            <PropertyControl kind="boolean" control="toggle" name="Bold" glyph="B" value={bold} onChange={setBold} />
+            <PropertyControl kind="color" name="Fill" value={fill} onChange={setFill} />
           </div>
-        </>
+        </div>
       );
     }
-    return (
-      <div className={s.pair}>
-        <div>
-          <Line chrome="bare" />
-        </div>
-        <div>
-          <Line chrome="framed" />
-        </div>
-      </div>
-    );
+    return <Line />;
   },
 };
 
@@ -74,15 +47,15 @@ export const Mixed: Story = {
     return (
       <div className={s.column}>
         <div className={s.cell}>
-          <PropertyControl kind="number" chrome="framed" name="X" value={undefined} mixed onChange={ignore} />
+          <PropertyControl kind="number" name="X" value={undefined} mixed onChange={ignore} />
           <PropertyControl kind="boolean" control="switch" name="Visible" value={undefined} mixed onChange={ignore} />
         </div>
         <div className={s.cell}>
-          <PropertyControl kind="color" chrome="framed" name="Fill" value={undefined} mixed onChange={ignore} />
+          <PropertyControl kind="color" name="Fill" value={undefined} mixed onChange={ignore} />
           <PropertyControl
             kind="number"
             control="slider"
-            chrome="framed"
+           
             name="Opacity"
             value={undefined}
             mixed

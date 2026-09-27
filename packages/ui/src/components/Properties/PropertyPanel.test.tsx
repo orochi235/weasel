@@ -214,7 +214,7 @@ describe('slider field', () => {
     const onInput = vi.fn();
     const onChange = vi.fn();
     render(<LiveSlider onInput={onInput} onChange={onChange} />);
-    const readout = screen.getByRole('textbox');
+    const readout = screen.getByRole('spinbutton');
     fireEvent.focus(readout);
     fireEvent.change(readout, { target: { value: '55' } });
     fireEvent.blur(readout);
@@ -237,7 +237,7 @@ describe('slider field', () => {
         onChange={onChange}
       />,
     );
-    const readout = screen.getByRole('textbox');
+    const readout = screen.getByRole('spinbutton');
     expect(readout).toHaveValue('2.00M');
     fireEvent.focus(readout);
     fireEvent.change(readout, { target: { value: '2.5k' } });
@@ -248,7 +248,7 @@ describe('slider field', () => {
   it('reverts an empty readout instead of committing zero', () => {
     const onChange = vi.fn();
     render(<PropertyField kind="number" control="slider" label="Op" value={10} min={0} max={100} onChange={onChange} />);
-    const readout = screen.getByRole('textbox');
+    const readout = screen.getByRole('spinbutton');
     fireEvent.focus(readout);
     fireEvent.change(readout, { target: { value: '' } });
     fireEvent.blur(readout);
@@ -258,7 +258,7 @@ describe('slider field', () => {
   it('publishes the widest value its range can show', () => {
     render(<PropertyField kind="number" control="slider" label="Op" value={5} min={0} max={200_000} onChange={() => {}} />);
     // jsdom does no layout, so this reads the custom property the width is taken from.
-    expect(screen.getByRole('textbox').style.getPropertyValue('--wzl-property-readout-fit')).toBe(
+    expect(screen.getByRole('spinbutton').style.getPropertyValue('--wzl-property-readout-fit')).toBe(
       '6ch',
     );
   });
@@ -286,7 +286,7 @@ describe('color field', () => {
     const onChange = vi.fn();
     const { container } = render(<PropertyField kind="color" label="Fill" value="#ffffff" onChange={onChange} />);
     const input = container.querySelector('input[type="color"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { value: '#aa3300' } });
+    fireEvent.input(input, { target: { value: '#aa3300' } });
     expect(onChange).toHaveBeenCalledWith('#aa3300');
   });
 });
@@ -376,7 +376,7 @@ describe('select field', () => {
 });
 
 describe('toggle field', () => {
-  it('marks the active option aria-pressed and emits on click', () => {
+  it('marks the active option checked and emits on click', () => {
     const onChange = vi.fn();
     render(
       <PropertyField
@@ -393,8 +393,8 @@ describe('toggle field', () => {
     );
     const left = screen.getByText('L');
     const right = screen.getByText('R');
-    expect(left).toHaveAttribute('aria-pressed', 'true');
-    expect(right).toHaveAttribute('aria-pressed', 'false');
+    expect(left).toHaveAttribute('aria-checked', 'true');
+    expect(right).toHaveAttribute('aria-checked', 'false');
     fireEvent.click(right);
     expect(onChange).toHaveBeenCalledWith('right');
   });
@@ -459,12 +459,12 @@ describe('row names', () => {
 
   it("names toggle field's segments after their options", () => {
     render(<PropertyField kind="enum" control="toggle" label="Align" value="a" options={options} onChange={() => {}} />);
-    expect(screen.getByRole('button', { name: 'A' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'A' })).toBeInTheDocument();
   });
 
   it("names toggle field's group after its label", () => {
     render(<PropertyField kind="enum" control="toggle" label="Align" value="a" options={options} onChange={() => {}} />);
-    expect(screen.getByRole('group', { name: 'Align' })).toBeInTheDocument();
+    expect(screen.getByRole('radiogroup', { name: 'Align' })).toBeInTheDocument();
   });
 
   // The help button is labelable and comes first, so the row's <label> labels it instead.
@@ -475,7 +475,7 @@ describe('row names', () => {
     });
     it('slider field readout', () => {
       render(<PropertyField kind="number" control="slider" label="Opacity" description="d" value={10} min={0} max={100} onChange={() => {}} />);
-      expect(screen.getByRole('textbox', { name: 'Opacity' })).toBeInTheDocument();
+      expect(screen.getByRole('spinbutton', { name: 'Opacity' })).toBeInTheDocument();
     });
     it('number field', () => {
       render(<PropertyField kind="number" label="N" description="d" value={1} onChange={() => {}} />);
@@ -813,7 +813,7 @@ describe('auto readouts', () => {
     );
     expect(screen.getByText(READOUT)).toBeInTheDocument();
     expect(screen.queryByDisplayValue(READOUT)).toBeNull();
-    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.queryByRole('spinbutton')).toBeNull();
   });
 
   it('number field shows its auto readout', () => {
