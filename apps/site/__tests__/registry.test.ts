@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CATEGORIES, DEMOS, DEMOS_BY_ID } from '../registry';
+import { CATEGORIES, DEMOS, DEMOS_BY_ID, PACKAGES, placeOf } from '../registry';
 
 /** Repo root, from `apps/site/__tests__/`. */
 const ROOT = resolve(__dirname, '../../..');
@@ -31,9 +31,14 @@ describe('the demo registry', () => {
     expect(DEMOS.filter((d) => d.id !== encodeURIComponent(d.id)).map((d) => d.id)).toEqual([]);
   });
 
-  it('gives every demo a title, category and description', () => {
-    const blank = DEMOS.filter((d) => !d.title?.trim() || !d.category?.trim() || !d.description?.trim());
+  it('gives every demo a title, a place and a description', () => {
+    const blank = DEMOS.filter((d) => !d.title?.trim() || !placeOf(d)?.trim() || !d.description?.trim());
     expect(blank.map((d) => d.id)).toEqual([]);
+  });
+
+  it('files every demo under a category or a package, never both', () => {
+    const wrong = DEMOS.filter((d) => (d.category === undefined) === (d.package === undefined));
+    expect(wrong.map((d) => d.id)).toEqual([]);
   });
 
   it('points every demo at a source file that exists', () => {
@@ -53,17 +58,20 @@ describe('the demo registry', () => {
     expect(wrong.map((d) => d.id)).toEqual([]);
   });
 
-  it('derives categories in first-appearance order, with no duplicates', () => {
-    expect(new Set(CATEGORIES).size).toBe(CATEGORIES.length);
-    expect(CATEGORIES).toEqual([...new Set(DEMOS.map((d) => d.category))]);
+  it('derives categories and packages in first-appearance order, with no duplicates', () => {
+    expect(CATEGORIES).toEqual([...new Set(DEMOS.flatMap((d) => (d.category ? [d.category] : [])))]);
+    expect(PACKAGES).toEqual([...new Set(DEMOS.flatMap((d) => (d.package ? [d.package] : [])))]);
   });
 
-  it('partitions every demo into exactly one rendered category', () => {
-    // The nav loops over `CATEGORIES` and filters `DEMOS` by each, so a demo
-    // reached by no category would silently never render. File order does not
-    // matter — `Tools` is split around `Text` in the registry today and both
+  it('renders every demo under exactly one heading', () => {
+    // The nav loops over CATEGORIES then PACKAGES and filters DEMOS by each, so
+    // a demo reached by neither would silently never render. File order does
+    // not matter — `Tools` is split around `Text` in the registry and both
     // halves land under one heading.
-    const placed = CATEGORIES.flatMap((c) => DEMOS.filter((d) => d.category === c));
+    const placed = [
+      ...CATEGORIES.flatMap((c) => DEMOS.filter((d) => d.category === c)),
+      ...PACKAGES.flatMap((p) => DEMOS.filter((d) => d.package === p)),
+    ];
     expect(placed).toHaveLength(DEMOS.length);
   });
 

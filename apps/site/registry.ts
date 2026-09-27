@@ -12,12 +12,17 @@ export interface DemoSourceTab {
   load: () => Promise<string>;
 }
 
+/** Where the sidebar files a demo: a feature section, or a package's heading
+ *  under Packages. Exactly one. */
+type Placement =
+  | { category: string; package?: never }
+  | { package: string; category?: never };
+
 /** What the nav needs. Small, eager, and the only thing a registry literal
  *  declares — the payload below hangs off `path` and `load`. */
-interface DemoMeta {
+interface DemoInfo {
   id: string;
   title: string;
-  category: string;
   description: string;
   hint?: string;
   /** Path to the demo file relative to repo root, for display in the source pane. */
@@ -30,7 +35,9 @@ interface DemoMeta {
   links?: { label: string; href: string }[];
 }
 
-export interface DemoEntry extends DemoMeta {
+type DemoMeta = DemoInfo & Placement;
+
+export type DemoEntry = DemoMeta & {
   Component: LazyExoticComponent<ComponentType>;
   /** The demo's own TSX first, then a tab per companion file it imports. */
   sources: DemoSourceTab[];
@@ -38,7 +45,7 @@ export interface DemoEntry extends DemoMeta {
   created?: string;
   /** ISO-8601 date of the most recent git commit touching this demo's source. */
   lastModified?: string;
-}
+};
 
 const DEMO_META: DemoMeta[] = [
   // ─── Foundations ──────────────────────────────────────────────────────────
@@ -643,6 +650,14 @@ export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
   ...TIMESTAMPS[meta.path],
 }));
 
-export const CATEGORIES = Array.from(new Set(DEMOS.map((d) => d.category)));
+export const CATEGORIES = Array.from(new Set(DEMOS.flatMap((d) => (d.category ? [d.category] : []))));
+
+/** Package names (unscoped) that have at least one demo, in registry order. */
+export const PACKAGES = Array.from(new Set(DEMOS.flatMap((d) => (d.package ? [d.package] : []))));
+
+/** The heading a demo is filed under. */
+export function placeOf(d: DemoMeta): string {
+  return d.category ?? d.package;
+}
 
 export const DEMOS_BY_ID = new Map(DEMOS.map((d) => [d.id, d]));
