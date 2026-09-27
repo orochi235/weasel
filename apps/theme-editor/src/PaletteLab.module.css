@@ -187,13 +187,6 @@
   margin-bottom: var(--wzl-space-xs);
 }
 
-.anchorHead {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-sm);
-  margin-bottom: var(--wzl-space-xs);
-}
-
 .anchorChip {
   width: 14px;
   height: 14px;
@@ -209,28 +202,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.anchorRemove {
-  background: none;
-  border: 0;
-  padding: 0;
-  color: var(--wzl-fg-muted);
-  font: inherit;
-  font-size: var(--wzl-font-size-sm);
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.anchorRemove:hover {
-  color: var(--wzl-danger);
-}
-
-.anchorAdd {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-sm);
-  padding-top: var(--wzl-space-xs);
 }
 
 .anchorFromHex {
@@ -263,13 +234,6 @@
   cursor: pointer;
 }
 
-
-
-
-
-
-
-.anchorPreset:disabled,
 .copy:disabled {
   opacity: 0.45;
   cursor: default;
@@ -367,8 +331,6 @@
   color: var(--wzl-danger);
 }
 
-
-
 .copy {
   display: inline-flex;
   align-items: center;
@@ -421,13 +383,6 @@
 /* A pinned swatch is never disabled — clicking it is how you unpin. */
 .crayonPin {
   pointer-events: none;
-}
-
-.crayonCaption {
-  margin: 2px 0 0;
-  min-height: 1.2em;
-  font-size: var(--wzl-font-size-sm);
-  color: var(--wzl-fg-muted);
 }
 
 /* The swatch is the control: a native color input sits over it, invisible,

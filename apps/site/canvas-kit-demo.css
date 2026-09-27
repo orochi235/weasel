@@ -82,8 +82,8 @@ a:hover { text-decoration: underline; }
   margin: 0 0 6px;
 }
 
-.ckd-sidebar-hint {
-  margin-top: 10px !important;
+.ckd-sidebar-header .ckd-sidebar-hint {
+  margin-top: 10px;
 }
 
 .ckd-sidebar-hint kbd {

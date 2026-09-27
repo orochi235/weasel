@@ -65,12 +65,6 @@
    * marker for future per-endpoint styling needs. */
 }
 
-/* When the consumer opts into hiding non-interactive handles, pinned
- * endpoints disappear entirely. */
-.hidden {
-  display: none;
-}
-
 /* Focus is drawn on the mark itself: an outline on an SVG shape rings its
    bounding box, which the nearest scroll container clips. */
 .anchor:focus-visible {
