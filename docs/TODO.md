@@ -760,8 +760,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   ambient bindings, so registration order picks the winner; the `minimap` demo warns on load. The
   other kit ties the 2026-09-27 browser sweep found are settled by context-gated precedence (see
   "Interaction" in `docs/taxonomy.md`): `areaSelect` and `insert` are gated on
-  `creates-selection` and `creates-shapes`, so each beats `viewport.dragPan` where its tool is
-  active, and in path edit the anchor-editing key bindings are the only ones eligible. The
+  `creates-selection` and `creates-shapes`, so each beats `viewport.dragPan` where its capability
+  is granted, and in path edit the anchor-editing key bindings are the only ones eligible. The
   route-conflict check trusts that actions gated by different rules never hold together — true of
   the default modes, not checked for a consumer's.
 

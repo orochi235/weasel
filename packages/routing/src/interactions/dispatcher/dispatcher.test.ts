@@ -1189,6 +1189,29 @@ describe('view-scoped bindings', () => {
     expect((miniStart.mock.calls[0][0] as InvocationCtx).viewId).toBe('mini');
   });
 
+  it('keeps a binding naming the view ahead of a context-gated one that does not', () => {
+    const miniStart = vi.fn().mockReturnValue({ onMove: vi.fn(), onEnd: vi.fn() });
+    const gatedStart = vi.fn().mockReturnValue({ onMove: vi.fn(), onEnd: vi.fn() });
+    const registry = makeRegistry([
+      { id: 'mini.pan', label: 'mini', invoker: { timing: 'ongoing', start: miniStart } },
+      {
+        id: 'gated', label: 'gated', defaultBinding: { kind: 'drag' },
+        eligible: { mode: 'normal' },
+        invoker: { timing: 'ongoing', start: gatedStart },
+      },
+    ]);
+    const mini: Tool = {
+      id: 'mini',
+      eligibility: { always: true },
+      bindings: [{ spec: { kind: 'drag' }, actionId: 'mini.pan', opts: { views: ['mini'] } }],
+    };
+    createDispatcher().handleInput(down, makeCtx({
+      actions: registry, toolsById: new Map([['mini', mini]]), getRuleCtx: () => ruleCtx, viewId: 'mini',
+    }));
+    expect(miniStart).toHaveBeenCalledOnce();
+    expect(gatedStart).not.toHaveBeenCalled();
+  });
+
   it('hands the routed view to an eligibility rule', () => {
     const seen: (string | null | undefined)[] = [];
     const start = vi.fn().mockReturnValue({ onMove: vi.fn(), onEnd: vi.fn() });

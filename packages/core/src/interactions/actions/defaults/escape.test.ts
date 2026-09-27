@@ -20,13 +20,22 @@ describe('escapeAction (descriptor)', () => {
   });
 
   describe('enabled gate', () => {
-    it('returns true when no editAnchors dep is registered', () => {
-      expect(escapeAction.enabled?.({})).toBe(true);
+    const selected = { get: () => ['a'], set: () => {} };
+    const empty = { get: () => [], set: () => {} };
+
+    it('returns true with a selection and no editAnchors dep registered', () => {
+      expect(escapeAction.enabled?.({ selection: selected } as never)).toBe(true);
     });
 
-    it('returns true when editAnchors is present but editingId is empty', () => {
+    it('returns true with a selection when editAnchors is present but editingId is empty', () => {
       const editAnchors = { editingId: '', setEditingId: () => {}, getEditablePath: () => null, getStorageKind: () => null, getNodeShape: () => null, applyEdit: () => {} };
-      expect(escapeAction.enabled?.({ editAnchors } as never)).toBe(true);
+      expect(escapeAction.enabled?.({ selection: selected, editAnchors } as never)).toBe(true);
+    });
+
+    // Nothing to clear, so the press falls through to `tool.resetToDefault`.
+    it('returns a disabled reason when nothing is selected', () => {
+      expect(escapeAction.enabled?.({ selection: empty } as never)).not.toBe(true);
+      expect(escapeAction.enabled?.({})).not.toBe(true);
     });
 
     it('returns a disabled reason while path-edit mode is active (defers to exitPathEdit)', () => {

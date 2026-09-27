@@ -374,22 +374,25 @@ gesture and action sides of a feature factored separately when designing.
 [dispatcher.md](./dispatcher.md) draws how the dispatcher routes one input,
 ranks the bindings that match it, and picks whose registries answer.
 
-**When several bindings match one input**, the dispatcher drops those whose
-action's `eligible` rule is false, then ranks the rest best-first:
+**When several bindings match one input**, an exclusive
+[affordance](#affordance) claim first bars every binding that does not consult
+the affordance, and actions whose `eligible` rule is false are dropped. The
+rest are ranked best-first:
 
 | Rung | Rule |
 |---|---|
-| 1 | An exclusive [affordance](#affordance) claim bars every binding that does not consult the affordance |
+| 1 | Bindings naming the view the pointer is in, ahead of every other |
 | 2 | Scope tier: hotkey-held tool, then the active tool, then ambient bindings |
 | 3 | Specificity within a tier: target narrowness, then required modifiers, then phase, then a MIME filter on drop/paste |
-| 4 | Bindings naming the view the pointer is in |
-| 5 | An action gated by an `eligible` rule that holds now, ahead of one with no rule |
-| 6 | Registration order |
+| 4 | An action gated by an `eligible` rule that holds now, ahead of one with no rule |
+| 5 | Registration order |
 
-It fires the first whose `enabled()` passes. Rung 5 is how context wins: in path
-edit, Escape exits the edit instead of resetting the tool, and with a selection
-tool active a bare drag marquees instead of panning. Two actions tied through
-rung 5 fall to registration order, and the kit's route-conflict check reports
+It fires the first whose `enabled()` passes. Rung 4 is how context wins a tie:
+in path edit, Escape exits the edit instead of resetting the tool, and a bare
+drag no tool binds marquees (`areaSelect`, gated on `creates-selection`) where
+selection is on offer and pans (`viewport.dragPan`) where it is not. With the
+select tool active its own drag binding wins earlier, on scope tier. Two actions tied through
+rung 4 fall to registration order, and the kit's route-conflict check reports
 them (`reportRouteConflicts`); it treats actions gated by different rules as
 applying in different contexts.
 

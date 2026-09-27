@@ -7,16 +7,16 @@
  * in-flight handles.
  *
  * ## Precedence and fall-through
- * Every binding that matches the event is ranked, best first, by:
- *   1. an exclusive affordance claim, which bars every binding that does not
- *      consult the affordance;
+ * An exclusive affordance claim first bars every binding that does not
+ * consult the affordance. The rest are ranked, best first, by:
+ *   1. bindings naming the routed view ahead of every other
+ *      (`preferViewScoped`);
  *   2. scope tier: hotkey > active > ambient;
  *   3. specificity within a tier (`specificity()` in `matcher.ts`);
- *   4. bindings naming the routed view ahead of the rest (`preferViewScoped`);
- *   5. an action gated by an `eligible` rule that holds now ahead of one with
+ *   4. an action gated by an `eligible` rule that holds now ahead of one with
  *      no rule (`preferContextual`) — Escape while editing a path exits the
  *      edit rather than resetting the tool;
- *   6. registration order.
+ *   5. registration order.
  * Candidates whose `eligible` rule is false are dropped first. The dispatcher
  * walks the rest and fires the first action whose `enabled()` returns
  * `true`. If every candidate's `enabled()` returns a disabled reason, the
@@ -217,6 +217,10 @@ function liveInView(binding: GestureBinding, view: string | null): boolean {
 
 /** Stable partition: matches whose binding names `view` first. See
  *  `BindingOpts.views` for why naming the view outranks the scope tier. */
+function namesView(binding: GestureBinding, view: string | null): boolean {
+  return binding.opts?.views?.includes(view) ?? false;
+}
+
 function preferViewScoped<M extends { binding: GestureBinding }>(
   matches: readonly M[],
   view: string | null,
@@ -224,7 +228,7 @@ function preferViewScoped<M extends { binding: GestureBinding }>(
   const named: M[] = [];
   const rest: M[] = [];
   for (const m of matches) {
-    (m.binding.opts?.views?.includes(view) ? named : rest).push(m);
+    (namesView(m.binding, view) ? named : rest).push(m);
   }
   return named.length === 0 ? [...matches] : [...named, ...rest];
 }
@@ -290,6 +294,8 @@ export function preferContextual<M extends { binding: GestureBinding; scope: str
   /** Whether a gated action's rule holds; skip re-asking where the matches
    *  were already filtered by it. */
   holds: (action: Action) => boolean,
+  /** The routed view: a binding naming it is never tied with one that does not. */
+  view: string | null,
 ): M[] {
   const out: M[] = [];
   let run: M[] = [];
@@ -303,7 +309,12 @@ export function preferContextual<M extends { binding: GestureBinding; scope: str
   };
   for (const m of matches) {
     const head = run[0];
-    if (head && (head.scope !== m.scope || !sameSpecificity(head.binding.spec, m.binding.spec))) flush();
+    if (
+      head
+      && (head.scope !== m.scope
+        || namesView(head.binding, view) !== namesView(m.binding, view)
+        || !sameSpecificity(head.binding.spec, m.binding.spec))
+    ) flush();
     run.push(m);
   }
   flush();
@@ -1049,6 +1060,7 @@ export function createDispatcher(opts?: {
         filterEligible(rawMatches, (id) => actionMap.get(id), ruleCtx),
         (id) => actionMap.get(id),
         () => true,
+        ctx.viewId ?? null,
       )
       : rawMatches;
     if (matches.length === 0) {
@@ -1282,7 +1294,7 @@ export function createDispatcher(opts?: {
     const ruleCtx = ruleCtxOf(ctx);
     // The same order handleInput walks, so a prediction names what fires.
     const matches = ruleCtx
-      ? preferContextual(sorted, (id) => actionMap.get(id), (a) => isEligible(a, ruleCtx))
+      ? preferContextual(sorted, (id) => actionMap.get(id), (a) => isEligible(a, ruleCtx), ctx.viewId ?? null)
       : sorted;
 
     // Verdict per action id, so a second binding for an action already
