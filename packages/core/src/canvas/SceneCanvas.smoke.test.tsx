@@ -844,6 +844,70 @@ describe('useLassoTool smoke', () => {
     // lassoSelectAction should call hitTestLasso + setSelection → id in selection.
     expect(selectionState).toContain(id);
   });
+
+  /** Triangle lasso (20,20) → (320,20) → (20,320) over three rects: one
+   *  inside it, one straddling the hypotenuse (x + y = 340), and one inside
+   *  the triangle's bounding box but wholly past the hypotenuse. */
+  function triangleLasso(mode?: 'centers' | 'intersect' | 'enclosed') {
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const ids = {} as Record<'inside' | 'straddle' | 'outside', NodeId>;
+    scene.batch('seed', () => {
+      const add = (x: number, y: number, s: number) => scene.add({
+        kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+        pose: { x, y, width: s, height: s } as P,
+      });
+      ids.inside = add(40, 40, 30);
+      ids.straddle = add(140, 140, 40);
+      ids.outside = add(250, 250, 40);
+    });
+    let selected: NodeId[] = [];
+    const selection = {
+      get current() { return selected; },
+      get() { return [...selected]; },
+      set: (next: NodeId[]) => { selected = next; },
+      clear: () => { selected = []; },
+      contains: (nid: NodeId) => selected.includes(nid),
+      applyClick: () => {},
+    };
+    const { container, unmount } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={400}
+        height={400}
+        features={['draw']}
+        defaultTools={['select', 'lasso']}
+        initialActiveTool="lasso"
+        {...(mode ? { toolOptions: { lasso: { mode } } } : {})}
+        selection={selection as unknown as Parameters<typeof SceneCanvas>[0]['selection']}
+      />,
+    );
+    const canvas = getCanvas(container);
+    act(() => {
+      pd(canvas, 20, 20);
+      pm(canvas, 320, 20);
+      pm(canvas, 20, 320);
+      pu(canvas, 20, 320);
+    });
+    unmount();
+    return { ids, selected: [...selected].sort() };
+  }
+
+  it("default 'intersect' tests the lasso polygon, not its bounding box", () => {
+    const { ids, selected } = triangleLasso();
+    expect(selected).toEqual([ids.inside, ids.straddle].sort());
+  });
+
+  it("'enclosed' takes only nodes wholly inside the lasso polygon", () => {
+    const { ids, selected } = triangleLasso('enclosed');
+    expect(selected).toEqual([ids.inside]);
+  });
+
+  it("'centers' takes nodes whose center is inside the lasso polygon", () => {
+    // The straddling rect's center (160,160) sits inside the hypotenuse.
+    const { ids, selected } = triangleLasso('centers');
+    expect(selected).toEqual([ids.inside, ids.straddle].sort());
+  });
 });
 
 // ---------------------------------------------------------------------------

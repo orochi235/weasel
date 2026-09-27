@@ -9,8 +9,9 @@
  *   - `onMove`: appends the current world point (skipping duplicates closer
  *     than `minVertexSpacing = 2` world-px).
  *   - `onEnd('commit')`: performs hit-testing against the accumulated polygon.
- *     Uses `dep.hitTestLasso(polygon, 'centers')` when available, otherwise
- *     falls back to the polygon's AABB via `dep.hitTestArea(bounds)`.
+ *     Uses `dep.hitTestLasso(polygon, mode)` when available — `mode` from the
+ *     binding's `params.mode`, default `'intersect'` — otherwise falls back to
+ *     the polygon's AABB via `dep.hitTestArea(bounds)`.
  *     Extends selection with shift, replaces otherwise.
  *   - `onEnd('cancel')`: no-op.
  *
@@ -28,9 +29,10 @@
  * - Debug sink recording.
  */
 
-import type { Action } from '@weasel-js/routing';
+import { resolveParams, type Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import type { LassoSelectDep, ViewApi } from '../depSchema';
+import type { LassoHitMode } from 'core/adapters/types';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -59,6 +61,7 @@ const MIN_VERTEX_SPACING = 2; // world-px (matches useLassoSelect default)
 
 interface LassoScratch {
   dep: LassoSelectDep;
+  mode: LassoHitMode;
   /** The view the lasso started in: what it does not paint is not taken. */
   view: ViewApi | undefined;
   vertices: Point2[];
@@ -95,12 +98,14 @@ export const lassoSelectAction: Action & { requires: string[] } = {
   requires: ['lassoSelect', 'view'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, _opts): OngoingHandle {
+    start(ctx: InvocationCtx, opts): OngoingHandle {
       const dep = ctx.deps.lassoSelect as LassoSelectDep | undefined;
       if (!dep) return {};
 
+      const params = resolveParams(opts?.params) as { mode?: LassoHitMode } | undefined;
       const scratch: LassoScratch = {
         dep,
+        mode: params?.mode ?? 'intersect',
         view: ctx.deps.view as ViewApi | undefined,
         vertices: [{ x: ctx.world.x, y: ctx.world.y }],
         shiftHeld: ctx.modifiers.shift,
@@ -136,7 +141,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           scratch.open = false;
           if (reason === 'cancel') return;
 
-          const { dep: d, view, vertices, shiftHeld } = scratch;
+          const { dep: d, mode, view, vertices, shiftHeld } = scratch;
 
           // Need at least 3 vertices for a meaningful polygon; otherwise no-op.
           if (vertices.length < 3) {
@@ -147,7 +152,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           // Hit-test: prefer polygon test; fall back to AABB.
           let hits: string[];
           if (d.hitTestLasso) {
-            hits = d.hitTestLasso(vertices, 'centers', view);
+            hits = d.hitTestLasso(vertices, mode, view);
           } else {
             const aabb = polygonAABB(vertices);
             hits = aabb ? d.hitTestArea(aabb, view) : [];

@@ -1,4 +1,4 @@
-import { useMemo, createElement } from 'react';
+import { useMemo, useRef, createElement } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { LassoIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
@@ -32,13 +32,11 @@ export function useLassoTool(
   _adapter: LassoSelectAdapter,
   options: UseLassoToolOptions = {},
 ): Tool<undefined> {
-  // Behaviors are still resolved here so consumers' `mode` option threads
-  // through `selectFromLasso`. The actual gesture machinery reads behaviors
-  // from the dispatcher-path `lassoSelectAction` registration; this resolution
-  // is preserved for option-surface parity even though the value isn't
-  // currently forwarded into the action (deferred to the action descriptor's
-  // own option surface).
+  // `behaviors` is not forwarded into the dispatcher-path action yet; `mode`
+  // reaches it through the binding's params below.
   void (options.behaviors ?? [selectFromLasso({ mode: options.mode ?? 'intersect' })]);
+  const modeRef = useRef<LassoHitMode>(options.mode ?? 'intersect');
+  modeRef.current = options.mode ?? 'intersect';
 
   return useMemo(() => {
     return defineTool<undefined>({
@@ -56,7 +54,13 @@ export function useLassoTool(
       // dispatcher invokes `lassoSelectAction`, which owns vertex buffering,
       // overlay state, and the commit-on-end selection write.
       bindings: [
-        { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'lassoSelect' },
+        {
+          spec: { kind: 'drag', mods: { shift: 'optional' } },
+          actionId: 'lassoSelect',
+          // Thunked so a mode change reaches the next gesture without
+          // rebuilding the tool.
+          opts: { params: () => ({ mode: modeRef.current }) },
+        },
       ],
     });
   }, [options.keybinding]);

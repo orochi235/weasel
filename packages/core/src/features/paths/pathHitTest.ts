@@ -26,9 +26,10 @@ import {
 
 /**
  * Every closed subpath of `path`, flattened to interleaved `[x, y, …]`. The
- * closing edge back to the first vertex is implicit.
+ * closing edge back to the first vertex is implicit. `keepOpen` also returns
+ * the open subpaths, indistinguishable from the closed ones in the result.
  */
-function closedSubpaths(path: PolygonPath, tolerance: number): number[][] {
+function closedSubpaths(path: PolygonPath, tolerance: number, keepOpen = false): number[][] {
   const { commands, coords } = path;
   const out: number[][] = [];
   let sub: number[] = [];
@@ -36,6 +37,7 @@ function closedSubpaths(path: PolygonPath, tolerance: number): number[][] {
   forEachSegment(commands, coords, (cmd, ci, curX, curY) => {
     switch (cmd) {
       case PATH_M:
+        if (keepOpen && sub.length >= 2) out.push(sub);
         sub = [coords[ci], coords[ci + 1]];
         break;
       case PATH_L:
@@ -59,13 +61,14 @@ function closedSubpaths(path: PolygonPath, tolerance: number): number[][] {
         );
         break;
       case PATH_Z:
-        if (sub.length >= 6) out.push(sub);
+        if (sub.length >= 6 || (keepOpen && sub.length >= 2)) out.push(sub);
         sub = [];
         break;
       default:
         throw new Error(`pathHitTest: unknown command ${cmd}`);
     }
   });
+  if (keepOpen && sub.length >= 2) out.push(sub);
   return out;
 }
 
@@ -257,4 +260,30 @@ export function pathIntersectsPolygon(
   }
   if (anyVertexInPolygon(subpaths, flattenVerts(polygon))) return true;
   return anyEdgeCrossesPolygon(subpaths, polygon);
+}
+
+/**
+ * Returns true if all of `path` — every subpath, open ones included, beziers
+ * flattened — lies inside the closed `polygon`: the inverse of
+ * {@link pathContainsPolygon}. A lasso enclosing a shape asks this.
+ */
+export function polygonContainsPath(
+  polygon: readonly Vec2[],
+  path: Path,
+  opts: PointInPathOptions = {},
+): boolean {
+  if (polygon.length < 3) return false;
+  const subpaths = path.kind === 'rect'
+    ? [flattenVerts(rectToVerts(path))]
+    : closedSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE, true);
+  if (subpaths.length === 0) return false;
+  const flatPoly = flattenVerts(polygon);
+  for (const sub of subpaths) {
+    for (let i = 0; i < sub.length; i += 2) {
+      if (!pointInPolygon(flatPoly, sub[i], sub[i + 1])) return false;
+    }
+  }
+  // Every vertex is inside, but a concave polygon can still cut an edge. An
+  // open subpath is checked as if closed, so this can only err toward false.
+  return !anyEdgeCrossesPolygon(subpaths, polygon);
 }

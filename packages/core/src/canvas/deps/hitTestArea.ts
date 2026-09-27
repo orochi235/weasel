@@ -18,16 +18,19 @@
  *      (`findShapeSilhouette`, world frame, memoized per node) and run the same
  *      kernel test on it. This is what reaches the kit's own inserted shapes,
  *      which keep their geometry on `node.data` behind a bare `{x,y,w,h}` pose.
- *      A rect silhouette or no painter falls back to AABB-overlap-is-a-hit.
+ *      With no painter the outline is the pose rect, rotated if the pose is.
+ *      An axis-aligned rect against a rect marquee is a hit on AABB overlap.
  *
  * The "area" is a closed polygon. Marquee passes a rect (converted to its four
- * corners here). Lasso currently passes its bounding rect through `hitTestArea`
- * (silhouette-aware within that rect); `hitTestAreaPolygon` is the shared
- * polygon entry a true lasso-polygon hit-test would route through.
+ * corners here); lasso passes its own polygon through `hitTestLassoPolygon`,
+ * whose `intersect` mode is `hitTestAreaPolygon`.
  */
 import type { Scene, NodeId } from 'core/scene/types';
 import { nodeMemo } from 'core/scene/nodeMemo';
-import { pathIntersectsRect } from 'features/paths/pathHitTest';
+import { pathIntersectsRect, polygonContainsPath } from 'features/paths/pathHitTest';
+import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
+import { rectPath } from 'features/paths/builder';
+import type { LassoHitMode } from 'core/adapters/types';
 import {
   poseDescriptorForNode,
   visualBoundsViaDescriptor,
@@ -111,6 +114,92 @@ export function hitTestAreaPolygon(
 ): NodeId[] {
   const ab = areaBounds ?? boundsOf(area);
   if (!ab) return [];
+  return walkArea(scene, ab, opts, descriptor, (node, pose, b, silhouette) => {
+    // 2. Swallowed whole by a rect marquee — no silhouette can change the
+    // answer, so skip the kernel and the painter lookup both.
+    if (
+      areaIsRect &&
+      b.x >= ab.x && b.y >= ab.y &&
+      b.x + b.width <= ab.x + ab.width &&
+      b.y + b.height <= ab.y + ab.height
+    ) {
+      return true;
+    }
+
+    // 3. SILHOUETTE poses: kernel polygon-overlap against the area polygon.
+    if (silhouette) {
+      return silhouetteOverlapsArea((pose as PolygonPath).coords, area);
+    }
+
+    // 4. Everything else — the kit's own inserted shapes among them, which
+    // carry a bare `{x,y,w,h}` pose and keep their geometry on `data`. Test
+    // the node's world-frame outline. An axis-aligned rect against a rect
+    // marquee was already answered by the fast-reject; against a lasso it
+    // still has to meet the polygon.
+    const outline = outlineOf(node, pose, b);
+    if (outline.kind === 'polygon') {
+      return silhouetteOverlapsArea(outline.coords, area);
+    }
+    return areaIsRect
+      || silhouetteOverlapsArea(rectToContour(outline.x, outline.y, outline.width, outline.height), area);
+  });
+}
+
+/**
+ * Lasso entry point: which nodes a closed lasso polygon picks under `mode`.
+ *
+ * - `intersect` — the node's outline meets the polygon anywhere
+ *   ({@link hitTestAreaPolygon}).
+ * - `enclosed` — the whole outline lies inside the polygon.
+ * - `centers` — the center of the node's visual bounds lies inside it.
+ *
+ * The outline is the pose itself for a polygon pose, else the painter's
+ * world-frame silhouette, else the pose's rect with its rotation applied.
+ */
+export function hitTestLassoPolygon(
+  scene: Scene<unknown, string, unknown>,
+  polygon: ReadonlyArray<{ x: number; y: number }>,
+  mode: LassoHitMode,
+  opts?: ScenePickSourceOptions<unknown>,
+  descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
+): NodeId[] {
+  if (polygon.length < 3) return [];
+  const area: number[] = [];
+  for (const p of polygon) area.push(p.x, p.y);
+  if (mode === 'intersect') {
+    return hitTestAreaPolygon(scene, area, undefined, false, opts, descriptor);
+  }
+  const ab = boundsOf(area);
+  if (!ab) return [];
+  return walkArea(scene, ab, opts, descriptor, (node, pose, b, silhouette) => {
+    if (mode === 'centers') {
+      return pointInPolygon(area, b.x + b.width / 2, b.y + b.height / 2);
+    }
+    // A node sticking out of the lasso's box cannot be inside the lasso.
+    if (
+      b.x < ab.x || b.y < ab.y ||
+      b.x + b.width > ab.x + ab.width ||
+      b.y + b.height > ab.y + ab.height
+    ) {
+      return false;
+    }
+    const outline = silhouette ? (pose as PolygonPath) : outlineOf(node, pose, b);
+    return polygonContainsPath(polygon, outline);
+  });
+}
+
+/**
+ * The walk every region query shares: skip containers, gate on the clip, and
+ * AABB fast-reject each leaf against `ab` before `hits` sees it with the
+ * node's visual bounds `b` and whether its pose is itself a silhouette.
+ */
+function walkArea(
+  scene: Scene<unknown, string, unknown>,
+  ab: AABBBounds,
+  opts: ScenePickSourceOptions<unknown> | undefined,
+  descriptor: PoseDescriptor<unknown>,
+  hits: (node: unknown, pose: unknown, b: AABBBounds, silhouette: boolean) => boolean,
+): NodeId[] {
   return pickWalk<unknown>(scenePickSource(scene, opts), {
     // A marquee that returns a container *and* its children selects the same
     // ink twice; the container comes back through the selection's own
@@ -157,36 +246,23 @@ export function hitTestAreaPolygon(
       ) {
         return false;
       }
-
-      // 2. Swallowed whole by a rect marquee — no silhouette can change the
-      // answer, so skip the kernel and the painter lookup both.
-      if (
-        areaIsRect &&
-        b.x >= ab.x && b.y >= ab.y &&
-        b.x + b.width <= ab.x + ab.width &&
-        b.y + b.height <= ab.y + ab.height
-      ) {
-        return true;
-      }
-
-      // 3. SILHOUETTE poses: kernel polygon-overlap against the area polygon.
-      if (silhouette) {
-        return silhouetteOverlapsArea((pose as PolygonPath).coords, area);
-      }
-
-      // 4. Everything else — the kit's own inserted shapes among them, which
-      // carry a bare `{x,y,w,h}` pose and keep their geometry on `data`. Ask the
-      // painter for the world-frame silhouette; a polygon gets the same kernel
-      // test as a polygon pose. A rect silhouette (or no painter) falls back to
-      // the historical AABB-overlap-is-a-hit behavior, which the fast-reject
-      // above has already established.
-      const drawn = findShapeSilhouette(node as never, pose);
-      if (drawn?.kind === 'polygon') {
-        return silhouetteOverlapsArea(drawn.coords, area);
-      }
-      return true;
+      return hits(node, pose, b, silhouette);
     },
   }) as NodeId[];
+}
+
+/** A non-silhouette node's world-frame outline: the painter's silhouette when
+ *  it has one, else its pose rect — rotated when the pose rotates, since `b`
+ *  is then the rotated ink's AABB rather than the rect itself. */
+function outlineOf(node: unknown, pose: unknown, b: AABBBounds): Path {
+  const drawn = findShapeSilhouette(node as never, pose);
+  if (drawn) return drawn;
+  const r = poseRotationOf(pose);
+  if (r) {
+    const p = pose as { x: number; y: number; width: number; height: number };
+    return rotatePathAround(rectPath(p.x, p.y, p.width, p.height), r.cx, r.cy, r.rotation);
+  }
+  return rectPath(b.x, b.y, b.width, b.height);
 }
 
 /**

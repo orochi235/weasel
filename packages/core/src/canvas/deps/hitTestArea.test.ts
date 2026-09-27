@@ -10,7 +10,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from 'features/paths/types';
-import { hitTestArea } from './hitTestArea';
+import { hitTestArea, hitTestLassoPolygon } from './hitTestArea';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
@@ -253,5 +253,77 @@ describe('hitTestArea — non-rect poses', () => {
     const s = scene as unknown as Scene<unknown, string, unknown>;
     expect(hitTestArea(s, { x: 0, y: 0, width: 20, height: 20 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([id]);
     expect(hitTestArea(s, { x: 30, y: 30, width: 5, height: 5 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([]);
+  });
+});
+
+/**
+ * Lasso against the polygon itself. The triangle (0,0) → (200,0) → (0,200)
+ * has the hypotenuse x + y = 200, and its bounding box is [0,0]-[200,200]:
+ * everything past the hypotenuse is inside the box and outside the lasso.
+ */
+describe('hitTestLassoPolygon', () => {
+  const TRIANGLE = [{ x: 0, y: 0 }, { x: 200, y: 0 }, { x: 0, y: 200 }];
+
+  function lassoScene(nodes: Array<{ id: string; pose: unknown; data?: unknown }>) {
+    return createScene<unknown, string, unknown>({
+      systemLayers: [{ id: 'default' }],
+      initial: nodes.map((n) => ({
+        id: n.id as NodeId, kind: 'leaf' as const, layer: 'default', pose: n.pose, data: n.data ?? null,
+      })),
+    });
+  }
+  const pick = (scene: Scene<unknown, string, unknown>, mode: 'centers' | 'intersect' | 'enclosed') =>
+    [...hitTestLassoPolygon(scene, TRIANGLE, mode)].sort();
+
+  const rects = () => lassoScene([
+    { id: 'inside', pose: { x: 10, y: 10, width: 20, height: 20 } },
+    // Corners sum 120..220: crosses the hypotenuse; center (85,85) inside.
+    { id: 'straddle', pose: { x: 60, y: 60, width: 50, height: 50 } },
+    // Inside the lasso's bounding box, wholly past the hypotenuse.
+    { id: 'outside', pose: { x: 150, y: 150, width: 30, height: 30 } },
+  ]);
+
+  it('intersect: takes what meets the polygon, not what meets its bounds', () => {
+    expect(pick(rects(), 'intersect')).toEqual(['inside', 'straddle']);
+  });
+
+  it('enclosed: takes only what lies wholly inside the polygon', () => {
+    expect(pick(rects(), 'enclosed')).toEqual(['inside']);
+  });
+
+  it('centers: takes what has its center inside the polygon', () => {
+    expect(pick(rects(), 'centers')).toEqual(['inside', 'straddle']);
+  });
+
+  it('tests a rect held on node.data through its painter', () => {
+    const scene = lassoScene([
+      { id: 'outside', pose: { x: 150, y: 150, width: 30, height: 30 },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 30, height: 30 } } },
+      { id: 'inside', pose: { x: 10, y: 10, width: 20, height: 20 },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 20, height: 20 } } },
+    ]);
+    expect(pick(scene, 'intersect')).toEqual(['inside']);
+    expect(pick(scene, 'enclosed')).toEqual(['inside']);
+  });
+
+  it('honors a pose rotation', () => {
+    // 100x6 centered on (110,110), 14 units past the hypotenuse. Flat, its
+    // left end at (60,107) is inside the triangle. Turned -45 deg it lies
+    // parallel to the hypotenuse and 11 units clear of it, while its box
+    // still overlaps the triangle.
+    const flat = { x: 60, y: 107, width: 100, height: 6 };
+    expect(pick(lassoScene([{ id: 'r', pose: flat }]), 'intersect')).toEqual(['r']);
+    expect(pick(lassoScene([{ id: 'r', pose: { ...flat, rotation: -Math.PI / 4 } }]), 'intersect'))
+      .toEqual([]);
+  });
+
+  it('tests a polygon pose by its own outline', () => {
+    const scene = lassoScene([
+      { id: 'in', pose: square(20, 20) },
+      { id: 'out', pose: square(130, 130) },
+      { id: 'cross', pose: square(90, 90) },
+    ]);
+    expect(pick(scene, 'intersect')).toEqual(['cross', 'in']);
+    expect(pick(scene, 'enclosed')).toEqual(['in']);
   });
 });
