@@ -203,10 +203,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
             <span className={s.sizer} aria-hidden="true">
               {placeholder !== undefined && <span>{placeholder}</span>}
               {optionLabels(options, children).map((l, i) => (
-                <span key={i}>
-                  <CheckMark />
-                  {l}
-                </span>
+                <span key={i}>{l}</span>
               ))}
             </span>
           )}
@@ -384,8 +381,8 @@ function AlignOverTrigger({
   return <span ref={markerRef} hidden />;
 }
 
-/* A selected row's mark travels into the trigger with its label, so a
-   `width='fit'` sizer has to allow for it too. */
+/* `SelectValue` copies the selected row into the trigger, mark included; the
+   trigger hides it, so the `width='fit'` sizer leaves it out. */
 function CheckMark() {
   return (
     <svg className={s.check} viewBox="0 0 10 10" aria-hidden="true">
