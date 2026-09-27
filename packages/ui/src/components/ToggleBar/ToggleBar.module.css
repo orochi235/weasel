@@ -276,14 +276,11 @@
 
 .variant_flat .segmentSelected {
   background: var(--wzl-accent);
-  border-color: var(--wzl-accent);
   color: var(--wzl-fg-on-accent);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   text-shadow: none;
   box-shadow: none;
-  /* Its own border rather than the neighbour's overlapping edge. */
-  z-index: 1;
 }
 
 .variant_flat .segmentSelected::before {
