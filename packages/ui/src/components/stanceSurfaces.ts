@@ -137,6 +137,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
       tone: TONE_BASE,
       accent: ACCENT_BASE,
       'title-font': 'var(--wzl-font-display)',
+      'title-weight': 'var(--wzl-font-weight-bold)',
       'title-size': 'var(--wzl-font-size-sm)',
       'title-case': 'uppercase',
       'title-tracking': '0.08em',

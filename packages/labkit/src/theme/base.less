@@ -151,9 +151,7 @@
 }
 
 // Headline / display text uses Oswald light at tighter line-height.
-.lk-lab h1,
-.lk-lab h2,
-.lk-lab h3 {
+:where(.lk-lab) :where(h1, h2, h3) {
   font-family: var(--wzl-font-display);
   font-weight: var(--wzl-font-weight-light);
   letter-spacing: 0.01em;

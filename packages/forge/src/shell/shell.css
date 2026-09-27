@@ -144,7 +144,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-xs);
-  padding: 0 var(--wzl-space-xs) var(--wzl-space-xs);
+  padding: 0 var(--wzl-space-sm) var(--wzl-space-sm);
   border-bottom: var(--wzl-border-w) solid var(--wzl-line-subtle);
   color: var(--wzl-fg);
 }
@@ -155,7 +155,7 @@
   color: var(--wzl-fg-muted);
   font-family: var(--wzl-font-display);
   font-size: var(--wzl-font-size-sm);
-  font-weight: var(--wzl-font-weight-normal);
+  font-weight: var(--wzl-font-weight-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
