@@ -240,7 +240,7 @@ export function AnnotationOverlay({
         // canvas under it respond to input, and the rest go silently dead.
         <WeaselProvider isolate>
           <ToolBridge toolId={annotationToolInfo(activeToolId)?.weaselTool ?? 'select'} />
-          <SceneCanvas<AnnotationData, 'marks', WorldRect>
+          <SceneCanvas<AnnotationData, 'marks', WorldRect> features={['draw']}
             ref={attachSceneCanvas}
             scene={scene}
             width={rect.w}

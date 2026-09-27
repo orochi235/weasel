@@ -295,7 +295,7 @@ function Panel({
       onPointerDownCapture={onPointerDown}
       className="rrmd-panel"
     >
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"

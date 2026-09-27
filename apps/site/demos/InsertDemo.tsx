@@ -26,7 +26,7 @@ function InsertDemoInner() {
   const tools = useTools({ active: 'rect', registry: { rect } });
 
   return (
-    <SceneCanvas
+    <SceneCanvas features={['draw']}
       width={W}
       height={H}
       className="ckd-canvas"

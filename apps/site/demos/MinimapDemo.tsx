@@ -82,7 +82,7 @@ export function MinimapDemo() {
           </span>
         </div>
         <div className={styles.row}>
-          <SceneCanvas
+          <SceneCanvas features={['draw']}
             width={MAIN_W}
             height={MAIN_H}
             className="ckd-canvas"

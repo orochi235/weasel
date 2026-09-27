@@ -3,6 +3,7 @@ import {
   gridSnapStrategy,
   ROTATED_POSE_DESCRIPTOR,
   SceneCanvas,
+  BUILTIN_TOOL_IDS,
 } from '@weasel-js/core';
 import type { PoseDescriptor, RotatedPose, UnitSystem } from '@weasel-js/core';
 import sceneJson from './data/transform.scene.json';
@@ -18,10 +19,10 @@ const CELL = { value: 1, unit: 'tile' } as const;
  * corner handles resize in each leaf's local frame (the `poseDescriptor` prop
  * supplies `ROTATED_POSE_DESCRIPTOR`, which keeps the diagonal corner pinned
  * even when the rect is rotated), the handle
- * above a selection rotates it, and Alt+drag clones (the select tool's default
- * alt-drag binding → `cloneAction`). `toolBundle="exhaustive"` registers the
- * select/rotate tools and the clone action; no tool palette is rendered, so
- * select stays the active tool throughout.
+ * above a selection rotates it, and Alt+drag clones (the `move` preset's
+ * alt-drag binding → `cloneAction`). `features={['draw']}` registers the
+ * select tool, the move and transform bindings and the clone action; no tool
+ * palette is rendered, so select stays the active tool throughout.
  */
 export function TransformDemo() {
   return (
@@ -31,7 +32,7 @@ export function TransformDemo() {
       className="ckd-canvas"
       scene={sceneJson}
       selectionMode="multi"
-      toolBundle="exhaustive"
+      features={['draw']} defaultTools={BUILTIN_TOOL_IDS}
       poseDescriptor={ROTATED_POSE_DESCRIPTOR as PoseDescriptor<RotatedPose>}
       selectTool={{
         snap: gridSnapStrategy<RotatedPose>(CELL, UNITS),

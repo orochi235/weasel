@@ -156,7 +156,7 @@ export function TextScriptDemo() {
         className="ckd-canvas"
         backgroundFill={{ color: '#ffffff' }}
         scene={scene}
-        toolBundle="minimal"
+        features={['draw']}
         layers={{ scene: { drawOne } }}
       />
     </div>

@@ -122,7 +122,7 @@ function Body({ config, state, setState }: BodyProps) {
       style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
     >
       <div style={{ position: 'absolute', inset: 0 }}>
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           width={size.w}
           height={size.h}
           scene={scene}

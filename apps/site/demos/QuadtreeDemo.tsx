@@ -88,7 +88,7 @@ export function QuadtreeDemo() {
   const helpersRef = useRef<CanvasHelpers<Rect> | null>(null);
 
   return (
-    <SceneCanvas
+    <SceneCanvas features={['draw']}
       width={W}
       height={H}
       className="ckd-canvas"

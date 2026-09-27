@@ -54,7 +54,7 @@ export function LayoutDemo() {
 
   return (
     <div>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={620}
         height={260}
         scene={scene}

@@ -108,7 +108,7 @@ function Pane({
         // One scope per pane: a shared <ActionsProvider> lets only the newest
         // canvas under it respond to input, and the rest go silently dead.
         <WeaselProvider isolate>
-          <SceneCanvas
+          <SceneCanvas features={['draw']}
             ref={apiRef}
             width={PANE_W}
             height={PANE_H}

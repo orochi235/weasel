@@ -6,7 +6,7 @@
  * Post-purge surface: the legacy consumer hooks (useDelete / useEscape /
  * useNudge / useGroup / useFlip / ...) are gone — actions now live in the
  * Actions Registry mounted by SceneCanvas via `useStandardActions`. This
- * page picks a `toolBundle`, mounts a real SceneCanvas, and reflects on
+ * page picks a tool bundle, mounts a real SceneCanvas, and reflects on
  * what the kit registered.
  */
 import {
@@ -33,7 +33,6 @@ import {
   type ResolvedCandidate,
   type GestureSpec,
   type Tool,
-  type ToolBundle,
   type ToolDef,
   type ToolsApi,
   solid,
@@ -74,14 +73,15 @@ import {
 import { useDispatchTraceLog } from './dispatchTraceLog';
 import { DispatchTraceTable } from './DispatchTraceTable';
 import { DevShell } from './DevShell';
+import { BUNDLE_DEFAULT_TOOLS } from './registryData';
 import s from './ToolkitBuilder.module.css';
 
 // ─────────────────────────────────────────────────────────────────────────
-// URL state — `?bundle=<id>`. Only the three named presets are addressable;
-// custom tool mixes are a follow-up (would need to plumb `defaultTools`
-// through SceneCanvas, which it already supports).
+// URL state — `?bundle=<id>`. Only the three named bundles are addressable;
+// each is `features={['draw']}` plus a `defaultTools` list.
 // ─────────────────────────────────────────────────────────────────────────
 
+type ToolBundle = keyof typeof BUNDLE_DEFAULT_TOOLS;
 const BUNDLE_IDS: readonly ToolBundle[] = ['minimal', 'standard', 'exhaustive'];
 const DEFAULT_BUNDLE: ToolBundle = 'standard';
 
@@ -115,7 +115,7 @@ const INITIAL_NODES = [
 // ─────────────────────────────────────────────────────────────────────────
 // Inner shell — re-mounted with `key={bundle}` whenever the bundle changes
 // so SceneCanvas re-builds its tool set cleanly rather than trying to
-// reconcile a different `toolBundle` prop in place.
+// reconcile a different tool set in place.
 // ─────────────────────────────────────────────────────────────────────────
 
 function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
@@ -202,11 +202,11 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
     <div className={s.layout}>
       {/* Left column: canvas. */}
       <section className={s.canvas}>
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={scene}
           width={520}
           height={360}
-          toolBundle={bundle}
+          defaultTools={BUNDLE_DEFAULT_TOOLS[bundle]}
           onToolsCreated={onToolsCreated}
           className={s.scene}
         />

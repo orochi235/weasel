@@ -55,7 +55,7 @@ export function ViewportDemo() {
           {boundary !== 'none' && inertiaOn ? '(bounds: x 0–300, y 0–200)' : ''}
         </span>
       </div>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         width={480}
         height={320}

@@ -104,13 +104,13 @@ describe('RegistryProbe', () => {
     expect(select, 'select tool should be probed').toBeTruthy();
     const actionIds = select!.declaredRoutes.map((d) => d.actionId).filter(Boolean);
     expect(actionIds).toEqual(
-      expect.arrayContaining(['resize', 'rotate', 'clone', 'move', 'areaSelect', 'clearSelection']),
+      expect.arrayContaining(['select.pick', 'select.collapseDeferred', 'areaSelect', 'clearSelection']),
     );
-    // The predicate-target drags all format to the same route string but
-    // dispatch to different actions — de-duping on the string would drop all
-    // but one of them.
+    // Moving and transforming the selection are ambient bindings of the
+    // `move` / `transform` presets, not the select tool's.
+    expect(actionIds).not.toContain('move');
     const predicateDrags = select!.declaredRoutes.filter((d) => d.route === '[*] drag => predicate');
-    expect(predicateDrags.map((d) => d.actionId)).toEqual(['resize', 'rotate', 'move']);
+    expect(predicateDrags.map((d) => d.actionId)).toEqual(['areaSelect']);
   });
 
   // Parity: every built-in tool surfaced by the probe must carry the kit

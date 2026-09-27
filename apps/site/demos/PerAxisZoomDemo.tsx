@@ -71,7 +71,7 @@ export function PerAxisZoomDemo() {
       <span style={{ fontSize: 12, color: '#888' }}>
         Cmd/Ctrl+wheel zooms uniformly · plain wheel pans · Cmd/Ctrl+= / - / 0 for zoom steps.
       </span>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"

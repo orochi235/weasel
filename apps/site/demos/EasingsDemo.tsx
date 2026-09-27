@@ -165,7 +165,7 @@ export function EasingsDemo() {
           <span style={{ fontVariantNumeric: 'tabular-nums', minWidth: 48 }}>{duration} ms</span>
         </label>
       </div>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"

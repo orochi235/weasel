@@ -106,7 +106,7 @@ export function TextNodesDemo() {
   return (
     <div className="ckd-stack">
       <div className="ckd-canvas-frame" ref={setFrame} onDoubleClick={edit.onDoubleClick}>
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           width={W}
           height={H}
           className="ckd-canvas"

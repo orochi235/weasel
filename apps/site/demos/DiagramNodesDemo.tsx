@@ -90,7 +90,7 @@ function DiagramNodesInner() {
   useEffect(() => canvasRef.current?.registerLayer(layer), [layer]);
 
   return (
-    <SceneCanvas
+    <SceneCanvas features={['draw']}
       ref={canvasRef}
       width={W}
       height={H}

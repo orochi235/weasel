@@ -170,7 +170,7 @@ export function ViewportLayerDemo() {
         <span style={{ fontFamily: 'monospace', color: '#888' }}>click: {probe}</span>
       </div>
       <div onPointerDown={onPointerDown}>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"

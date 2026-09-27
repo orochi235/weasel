@@ -244,7 +244,7 @@ function ParallaxDemoInner() {
           Drag or scroll-wheel to pan (x only, loops forever). Sky lags · hills slow · ground 1:1 · foreground leads. Toggle per-plane zoom to see depth-aware scaling.
         </span>
       </div>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"

@@ -210,7 +210,7 @@ export function TextOutlinesDemo() {
         backgroundFill={{ color: '#ffffff' }}
         scene={scene}
         view={{ x: 0, y: 0, scale: { x: zoom, y: zoom } }}
-        toolBundle="minimal"
+        features={['draw']}
         layers={{ scene: { drawOne: makeDrawOne(faceReady, stroked, filled) } }}
       />
     </div>

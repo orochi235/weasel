@@ -186,7 +186,7 @@ function StrokeAndFill() {
       <div className="ckd-stack">
         {tools && <ToolPalette tools={tools} orientation="horizontal" />}
         <div className="ckd-canvas-frame" ref={hostRef}>
-          <SceneCanvas
+          <SceneCanvas features={['draw']}
             width={W}
             height={H}
             className="ckd-canvas"

@@ -4,13 +4,14 @@ import {
   useScene,
   useSelection,
   type ToolsApi,
+  BUILTIN_TOOL_IDS,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui';
 
 const W = 600, H = 400;
 
 export function ShapeToolsDemo() {
-  // Empty scene; SceneCanvas's `toolBundle="exhaustive"` materializes the
+  // Empty scene; `defaultTools={BUILTIN_TOOL_IDS}` materializes the
   // full shape toolset (rect / ellipse / line / polygon / star / pencil +
   // lasso / text / clone) with default `create` callbacks that produce
   // leaf nodes shaped for the kit's PATH_PAINTER.
@@ -31,7 +32,7 @@ export function ShapeToolsDemo() {
         scene={scene}
         selection={selection}
         selectionMode="multi"
-        toolBundle="exhaustive"
+        features={['draw']} defaultTools={BUILTIN_TOOL_IDS}
         onToolsCreated={setTools}
       />
     </div>

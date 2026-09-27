@@ -75,7 +75,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'transform',
     title: 'Transform (move · resize · rotate · clone)',
     category: 'Tools',
-    description: 'The select tool\'s full transform surface on one canvas. Body-drag moves (snapping to the 20-unit grid via gridSnapStrategy); corner handles resize in each leaf\'s local frame (ROTATED_POSE_DESCRIPTOR keeps the diagonal corner pinned even on a rotated rect); the handle above a selection rotates it; Alt+drag clones (the select tool\'s default alt-drag binding → cloneAction). toolBundle="exhaustive" registers the select/rotate tools and the clone action — no palette is rendered, so select stays active throughout.',
+    description: 'The select tool\'s full transform surface on one canvas. Body-drag moves (snapping to the 20-unit grid via gridSnapStrategy); corner handles resize in each leaf\'s local frame (ROTATED_POSE_DESCRIPTOR keeps the diagonal corner pinned even on a rotated rect); the handle above a selection rotates it; Alt+drag clones (the move preset\'s alt-drag binding → cloneAction). features={[\'draw\']} registers the select tool, the move and transform bindings and the clone action — no palette is rendered, so select stays active throughout.',
     hint: 'Drag a body to move; drag a corner to resize; drag the top handle to rotate; Alt+drag to clone. Shift-click to multi-select.',
     load: () => import('./demos/TransformDemo').then((m) => m.TransformDemo),
     path: 'apps/site/demos/TransformDemo.tsx',

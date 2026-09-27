@@ -19,6 +19,7 @@ import {
   useDepSource,
   useGestureDispatcher,
   useSelectTool,
+  selectionMoveContribution,
   useStandardActions,
   type Dispatcher,
   type NodeId,
@@ -324,14 +325,18 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const select = useSelectTool(selectAdapter, { pickEvery, pickBest, poseDescriptor });
   const orbit = useOrbitTool();
   const box = useBoxTool();
+  // The select tool only picks; dragging a solid to move it is the
+  // selection's own ambient binding, live under every tool here.
+  const selectionMove = useMemo(() => selectionMoveContribution() as Tool, []);
   const toolsById = useMemo(
     () =>
       new Map<string, Tool>([
         ['select', select as Tool],
         ['orbit', orbit as Tool],
         ['box', box as Tool],
+        [selectionMove.id, selectionMove],
       ]),
-    [select, orbit, box],
+    [select, orbit, box, selectionMove],
   );
 
   const activeTool = useActiveToolContext();

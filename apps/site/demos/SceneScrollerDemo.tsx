@@ -287,7 +287,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         <button className="ckd-btn" onClick={onRestart}>restart</button>
         <span className="ckd-readout">zoom {CAM_SCALE}x</span>
       </div>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"

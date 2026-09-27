@@ -50,7 +50,7 @@ export function SelectionPanelDemo() {
 
   return (
     <div className="ckd-row">
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"

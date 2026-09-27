@@ -143,7 +143,7 @@ function D3SortableDemoInner() {
           {animating ? ' · animating…' : ''}
         </span>
       </div>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"

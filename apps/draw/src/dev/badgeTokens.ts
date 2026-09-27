@@ -129,7 +129,7 @@ const bundleTokenSet: BadgeTokenSet = {
   id: 'bundle',
   label: 'Bundle id',
   description:
-    'Named tool presets passable as `SceneCanvas.toolBundle`. Status grades from '
+    'The inspector\'s named tool sets, each `features={[\'draw\']}` plus a `defaultTools` list. Status grades from '
     + 'muted → info → accent to reflect the minimal → standard → exhaustive progression.',
   entries: (Object.entries(BUNDLE_BADGE_PROPS) as [keyof typeof BUNDLE_BADGE_PROPS, Omit<BadgeProps, 'children'>][])
     .map(([value, props]) => ({ value, props })),

@@ -276,7 +276,7 @@ export function ForceGraphDemo() {
         </span>
       </div>
       <div style={{ display: 'inline-block' }}>
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           width={W}
           height={H}
           className="ckd-canvas"

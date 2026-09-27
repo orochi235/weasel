@@ -73,7 +73,7 @@ export function StrokeMarkersDemo() {
     initial: NODES,
   });
   return (
-    <SceneCanvas
+    <SceneCanvas features={['draw']}
       width={W}
       height={H}
       className="ckd-canvas"

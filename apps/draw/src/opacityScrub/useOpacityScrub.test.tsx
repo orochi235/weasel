@@ -51,7 +51,7 @@ function setup({ selected = true } = {}) {
     });
     api = { scene, percent };
     return (
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         selection={selection}
         width={200} height={200}

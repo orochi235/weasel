@@ -23,7 +23,7 @@ export function SceneDemo() {
           Cmd/Ctrl+Z undo · Shift+Cmd/Ctrl+Z redo · drag rects to move
         </span>
       </div>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={480}
         height={320}
         className="ckd-canvas"

@@ -13,6 +13,7 @@ import {
   type ToolDef,
   type ToolsApi,
   type FillStyle,
+  BUILTIN_TOOL_IDS,
 } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
 import { isValidElement, type ReactNode } from 'react';
@@ -173,7 +174,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
         scene={scene}
         width={200}
         height={200}
-        toolBundle="exhaustive"
+        features={['draw']} defaultTools={BUILTIN_TOOL_IDS}
         routing={defaultNodeRouting}
         onToolsCreated={handleToolsCreated}
       />

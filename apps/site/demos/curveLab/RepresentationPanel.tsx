@@ -173,7 +173,7 @@ export function RepresentationPanel({
   return (
     <div className="curve-lab-panel">
       <div className="curve-lab-panel-title">{rep.label}</div>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         ref={canvasRef}
         width={width}
         height={height}

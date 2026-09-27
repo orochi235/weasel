@@ -68,7 +68,7 @@ export function PathPoseDemo() {
           Debug overlay: {DEBUG_STATES[debugIdx].label}
         </button>
       </div>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"

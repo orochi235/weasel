@@ -47,7 +47,7 @@ function MultiSelectDemoInner() {
   }, []);
 
   return (
-    <SceneCanvas
+    <SceneCanvas features={['draw']}
       ref={canvasRef}
       width={W}
       height={H}

@@ -118,17 +118,19 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
     [baseAdapter, animator],
   );
 
-  const select = useSelectTool<Card, Pose>(adapter as never, {
+  const select = useSelectTool<Card, Pose>(adapter as never, {});
+  // The move preset's bindings carry these; the select tool only picks.
+  const selectToolOpts = useMemo(() => ({
     move: {
       behaviors: [
-        momentum<Pose>({
+        momentum<Card>({
           animator,
           friction: 0.93,
           bounds: { x: 0, y: 0, width: W - 60, height: H - 60 },
         }),
       ],
     },
-  });
+  }), [animator]);
   const tools = useTools({ active: 'select', registry: { select } });
 
   const tweenTo = (id: string, x: number, y: number) => {
@@ -234,13 +236,14 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
         </label>
         <span style={{ opacity: 0.7 }}>Tip: select one card to see the breathing pulse.</span>
       </div>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}
         selection={selection}
         tools={tools}
+        selectTool={selectToolOpts}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => {
@@ -357,7 +360,7 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
   // canvas would leave whichever mounted first unable to dispatch.
   return (
     <WeaselProvider isolate>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={FLICK_W}
         height={FLICK_H}
         className="ckd-canvas"

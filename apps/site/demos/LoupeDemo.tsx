@@ -164,7 +164,7 @@ export function LoupeDemo() {
         <span className="ckd-hint">under the aim point: {color ?? '—'}</span>
         <span className="ckd-hint">clicked: {picked ?? '—'}</span>
       </div>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         ref={ref}
         width={W}
         height={H}

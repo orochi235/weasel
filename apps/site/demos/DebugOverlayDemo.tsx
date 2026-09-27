@@ -80,7 +80,7 @@ export function DebugOverlayDemo() {
         <button style={btn} onClick={allOn}>all on</button>
         <button style={btn} onClick={allOff}>all off</button>
       </div>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"

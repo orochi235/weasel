@@ -187,7 +187,7 @@ export function TimelineDemo() {
         <button className="ckd-btn" onClick={addKey}>add x keyframe</button>
       </div>
       <div className="ckd-row">
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           width={W}
           height={H}
           className="ckd-canvas"

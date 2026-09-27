@@ -3,7 +3,7 @@
  * surface.
  *
  * Shape:
- *   - `<SceneCanvas toolBundle="exhaustive">` provides every built-in tool
+ *   - `<SceneCanvas features={['draw']} defaultTools={BUILTIN_TOOL_IDS}>` provides every built-in tool
  *     (select / hand / rect / ellipse / line / polygon / star / pencil /
  *     lasso / text / clone) plus the resize / rotate affordances.
  *   - `useScene` owns the document tree; pose is `{x,y,width,height,rotation?}`
@@ -89,6 +89,7 @@ import {
   toHex8,
   getAlpha01,
   withAlpha01,
+  BUILTIN_TOOL_IDS,
 } from '@weasel-js/core';
 import { useHudContribution } from '@weasel-js/hud/react';
 import {
@@ -174,7 +175,7 @@ interface WeaselDrawPose {
 }
 
 /** Data stored on every leaf — kit-native shape consumed by PATH_PAINTER
- *  and the text painter. Tools synthesized by `toolBundle="exhaustive"`
+ *  and the text painter. Tools synthesized by `defaultTools={BUILTIN_TOOL_IDS}`
  *  already produce this shape, so no per-tool `create` overrides are
  *  required. `text` is present on text-tool leaves only. */
 interface WeaselDrawData {
@@ -1652,7 +1653,7 @@ function EditorWithSharedScene({
             onCancel={() => modality.machine.cancelMode()}
           />
           {hostDims.width > 0 && hostDims.height > 0 && (
-          <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>
+          <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw']}
             ref={attachCanvas}
             ambient={hudAmbient}
             width={hostDims.width}
@@ -1662,7 +1663,7 @@ function EditorWithSharedScene({
             scene={scene}
             selection={selection}
             selectionMode="multi"
-            toolBundle="exhaustive"
+            defaultTools={BUILTIN_TOOL_IDS}
             tools={{ slice: sliceTool, opacityScrub: opacityScrubTool }}
             actions={{ slice: sliceAction }}
             ingestion={DRAW_INGESTION}

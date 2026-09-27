@@ -438,8 +438,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       pickTolerancePx?: number;
     };
 
-    // --- Select tool options. Ignored if the consumer passes their own
-    //     `tools` prop. ---
+    // --- Selection options. `pickBest` and `handleHitRadius` configure the
+    //     internal select tool, and are ignored under a `tools` takeover;
+    //     `move`, `snap`, `resize` and `rotate` configure the `move` and
+    //     `transform` presets, and apply either way. ---
     selectTool?: {
       move?: UseMoveOptions<TPose>;
       resize?: UseResizeOptions<TPose>;

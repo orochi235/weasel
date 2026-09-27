@@ -75,7 +75,7 @@ export function EffectsDemo() {
 
   return (
     <div className="ckd-stack">
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"

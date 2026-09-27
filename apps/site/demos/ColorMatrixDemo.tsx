@@ -94,7 +94,7 @@ export function ColorMatrixDemo() {
   return (
     <div className="ckd-stack">
       <div style={{ position: 'relative', width: W, height: H }}>
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           width={W}
           height={H}
           className="ckd-canvas"

@@ -225,9 +225,9 @@ export interface BundleEntry {
   kind: 'bundle';
   id: 'minimal' | 'standard' | 'exhaustive';
   label: string;
-  /** Tool ids the bundle enables when passed as SceneCanvas's `toolBundle`
-   *  prop. The kit does not group actions into bundles — actions are
-   *  wired separately by consumers. */
+  /** Tool ids the bundle registers: `features={['draw']}` brings select and
+   *  hand, and `defaultTools` the rest. The kit names no bundles of its own;
+   *  these are the inspector's. */
   tools: readonly string[];
 }
 
@@ -393,9 +393,17 @@ export function collectIcons(actions: readonly ActionEntry[]): readonly IconEntr
   return out;
 }
 
-/** Display labels for each `ToolBundle` id. The kit ships `BUNDLE_TOOLS`
- *  (tool-id contents) but not human-readable labels — those are
- *  presentation, owned by the inspector. */
+/** What each bundle passes as `defaultTools` beside `features={['draw']}`,
+ *  which brings select and hand itself. */
+export const BUNDLE_DEFAULT_TOOLS: Record<BundleEntry['id'], readonly Weasel.BuiltinToolId[]> = {
+  minimal: [],
+  // No `pencil`: freehand is a specialist instrument, not part of the
+  // everyday shape-drawing set. It stays in `exhaustive`, which means
+  // everything.
+  standard: ['rect', 'ellipse', 'line'],
+  exhaustive: Weasel.BUILTIN_TOOL_IDS,
+};
+
 const BUNDLE_LABELS: Record<BundleEntry['id'], string> = {
   minimal: 'Minimal',
   standard: 'Standard',
@@ -403,11 +411,11 @@ const BUNDLE_LABELS: Record<BundleEntry['id'], string> = {
 };
 
 export function collectBundles(): readonly BundleEntry[] {
-  return (Object.keys(Weasel.BUNDLE_TOOLS) as BundleEntry['id'][]).map((id) => ({
+  return (Object.keys(BUNDLE_DEFAULT_TOOLS) as BundleEntry['id'][]).map((id) => ({
     kind: 'bundle',
     id,
     label: BUNDLE_LABELS[id] ?? id,
-    tools: Weasel.BUNDLE_TOOLS[id],
+    tools: [...new Set<string>(['select', 'hand', ...BUNDLE_DEFAULT_TOOLS[id]])],
   }));
 }
 

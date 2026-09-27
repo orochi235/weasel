@@ -36,7 +36,7 @@ export function PathAnchorEditDemo() {
   const selection = useSelection();
 
   return (
-    <SceneCanvas
+    <SceneCanvas features={['draw']}
       width={W}
       height={H}
       className="ckd-canvas"

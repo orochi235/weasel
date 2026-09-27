@@ -47,7 +47,7 @@ export function HudDemo() {
         each click. The button is a HUD widget drawn in screen space via
         <code> @weasel-js/hud</code>.
       </p>
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         width={W}
         height={H}
         className="ckd-canvas"

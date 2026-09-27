@@ -29,7 +29,7 @@ export function SceneHost<TData>({ scene }: { scene: Scene<TData, 'default', Rec
   return (
     <div ref={hostRef} className="sl-scene-host">
       <div className="sl-scene-fill">
-        <SceneCanvas width={size.w} height={size.h} scene={scene} selection={selection} />
+        <SceneCanvas features={['draw']} width={size.w} height={size.h} scene={scene} selection={selection} />
       </div>
     </div>
   );

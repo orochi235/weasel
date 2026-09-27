@@ -50,7 +50,7 @@ export function ImageDemo() {
         scene={scene}
         selection={selection}
         selectionMode="multi"
-        toolBundle="minimal"
+        features={['draw']}
         tools={{ image: imageTool }}
         onToolsCreated={setTools}
       />

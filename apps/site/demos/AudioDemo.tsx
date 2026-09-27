@@ -194,7 +194,7 @@ export function AudioDemo() {
         <span className="ckd-readout">activeVoices {voices} / 8 per bus</span>
       </div>
       <div className="ckd-row">
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           width={W}
           height={H}
           className="ckd-canvas"

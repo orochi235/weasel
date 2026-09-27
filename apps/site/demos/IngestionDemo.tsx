@@ -50,7 +50,7 @@ export function IngestionDemo() {
         scene={scene}
         selection={selection}
         selectionMode="multi"
-        toolBundle="minimal"
+        features={['draw']}
         ingestion={{ handlers: textHandler }}
       />
     </div>

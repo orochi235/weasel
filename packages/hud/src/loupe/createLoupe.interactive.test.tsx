@@ -64,7 +64,7 @@ async function mount(): Promise<Mounted> {
       ],
     });
     return (
-      <SceneCanvas ref={ref} scene={scene} layers={{}} width={400} height={400} ambient={[contribution]} />
+      <SceneCanvas features={['draw']} ref={ref} scene={scene} layers={{}} width={400} height={400} ambient={[contribution]} />
     );
   }
   const r = render(<Harness />);
