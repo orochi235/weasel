@@ -279,7 +279,13 @@ export function renderBuiltin(
         <PropertyControl
           {...field}
           name={ariaLabel}
-          className={field.control === 'toggle' ? s.toggle : field.control === 'radio' ? undefined : s.select}
+          // A clearable toggle is a set of exclusive flags, and sits beside
+          // other flags sized the way they are.
+          className={
+            field.control === 'toggle'
+              ? field.onClear ? s.flagToggle : s.toggle
+              : field.control === 'radio' ? undefined : s.select
+          }
         />
       );
     case 'font-family':
