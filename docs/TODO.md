@@ -708,20 +708,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) One widget per field kind, so `PropertyField` loses its `chrome` axis.**
-  `PropertyField` / `PropertyControl` (`Properties/PropertyField.tsx`) are the one
-  kind-indexed mapping every settings surface draws through, but `chrome`
-  (`bare` | `framed`) still picks between two widgets wherever the kit has two:
-  a native `type=number` against `UnitField` / `NumberField`, a native checkbox
-  against `Checkbox`, a native text input against `Input`, a bare `Select`
-  against a boxed one, bare segments against `ToggleBar` / `RadioGroup`, and a
-  native swatch plus alpha track against `ColorField`. ControlPanel, the
-  theme-editor and draw's document rows draw `bare`; PrefsForm, SelectionPanel
-  and ToolOptionsBar draw `framed`. The split is load-bearing today: typed units
-  exist only in `UnitField`, per-keystroke live values only in the native
-  number, and tests on each side name the widget. Settle one widget per slot —
-  the control-skin design (`docs/superpowers/specs/2026-09-03-control-skin-unification-design.md`)
-  is where the look converges — then delete the axis.
+- **(P3) The checkbox skin is written twice.** `PropertyField` draws a native
+  `<input type="checkbox">` dressed by `.checkbox` in `Properties/Properties.module.css`,
+  because the kit's `Checkbox` renders a `<label>` of its own that cannot sit inside a
+  property row's. The two read the same tokens but are separate rules, so a change to
+  one does not reach the other. One way to one copy: `Checkbox` draws its box from the
+  same native input and a shared `checkbox.module.css`, as the range skin does.
 
 - **(P3) The lab switcher's migrated tokens have not been looked at in a browser.**
   `packages/labkit/src/lab/LabSwitcher.less` read seven `--wzl-*` names no theme

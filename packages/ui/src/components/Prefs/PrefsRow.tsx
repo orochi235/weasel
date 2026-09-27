@@ -63,7 +63,6 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
       label={pref.name}
       description={pref.description}
       layout="inline"
-      chrome="framed"
       className={s.row}
     >
       <span className={s.rowControl}>{control}</span>
@@ -85,8 +84,26 @@ function renderBuiltin(
     // crash — a missing wiring should be visible and recoverable.
     return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
   }
-  return <PropertyControl {...field} chrome="framed" name={pref.name} />;
+  switch (field.kind) {
+    // A form stores what was settled on: a number once it is entered, a color
+    // once its gesture ends.
+    case 'number':
+      return (
+        <PropertyControl
+          {...field}
+          name={pref.name}
+          onInput={settledOnly}
+          steppers={field.accepts === undefined}
+        />
+      );
+    case 'color':
+      return <PropertyControl {...field} name={pref.name} onInput={settledOnly} />;
+    default:
+      return <PropertyControl {...field} name={pref.name} />;
+  }
 }
+
+const settledOnly = (): void => {};
 
 /** One value with its fields hanging off it: each field renders its own
  *  control and commits the parent object whole. */
@@ -110,8 +127,7 @@ function ObjectLeaf({ ctx }: { ctx: PrefRenderContext }) {
           key={key}
           label={child.name}
           layout="inline"
-          chrome="framed"
-          className={s.objectRow}
+              className={s.objectRow}
         >
           <span className={s.rowControl}>
             {renderBuiltin({

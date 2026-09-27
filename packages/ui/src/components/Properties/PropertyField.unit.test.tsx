@@ -10,15 +10,15 @@ describe('number field unit', () => {
     expect(container.textContent).not.toContain('px');
   });
 
-  it('renders a string unit after the input', () => {
+  it('renders a string unit after the field', () => {
     const { container } = render(
       <PropertyField kind="number" label="Width" value={20} unit="px" onChange={() => {}} />,
     );
-    const input = container.querySelector('input[type="number"]');
+    const input = container.querySelector('input[role="spinbutton"]');
     expect(input).not.toBeNull();
-    expect(container.textContent).toContain('px');
-    // After the input, not before — the suffix reads as a trailing unit.
-    expect(input?.nextElementSibling?.textContent).toBe('px');
+    // After the field, not before — the suffix reads as a trailing unit.
+    const field = input?.closest('span > div');
+    expect(field?.nextElementSibling?.textContent).toBe('px');
   });
 
   it('renders a node unit as given', () => {
@@ -40,14 +40,9 @@ describe('number field spin buttons', () => {
     'utf8',
   );
 
-  it('drops the native steppers on a property-row number field', () => {
-    // A framed row's field brings its own frame, so the rule skips it.
-    const row = String.raw`\.row:not\(:where\(\.rowFramed\)\)`;
-    expect(sheet).toMatch(
-      new RegExp(String.raw`${row} input\[type='number'\]::-webkit-inner-spin-button[^}]*-webkit-appearance: none;`),
-    );
-    expect(sheet).toMatch(
-      new RegExp(String.raw`${row} input\[type='number'\]:not\(\.readoutInput\)[^}]*appearance: textfield;`),
-    );
+  it('drops the native steppers on a number input handed to a row', () => {
+    const row = String.raw`\.row > input\[type='number'\]`;
+    expect(sheet).toMatch(new RegExp(String.raw`${row}::-webkit-inner-spin-button[^}]*-webkit-appearance: none;`));
+    expect(sheet).toMatch(new RegExp(String.raw`${row}:not\(\.readoutInput\)[^}]*appearance: textfield;`));
   });
 });

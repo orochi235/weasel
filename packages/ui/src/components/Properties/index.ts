@@ -9,7 +9,6 @@ export type {
   PropertyColorFieldProps,
   PropertyControlProps,
   PropertyEnumFieldProps,
-  PropertyFieldChrome,
   PropertyFieldKind,
   PropertyFieldProps,
   PropertyFieldRowProps,

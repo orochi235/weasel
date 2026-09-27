@@ -227,66 +227,40 @@ export const MixedAndUnset: Story = {
   },
 };
 
-/** The same fields drawn `bare` — the controls the row styles — and `framed`,
- *  the kit's field components. A framed number reads a unit typed into it. */
-export const BareAndFramed: Story = {
+/** A number reading a unit typed into it (`15mm` here), a choice drawn as
+ *  segments and as a radio list, and a color with its opacity track. */
+export const UnitsChoicesAlpha: Story = {
   render: () => {
-    function Chromes() {
+    function Kinds() {
       const [on, setOn] = useState(true);
       const [width, setWidth] = useState(2.5);
       const [label, setLabel] = useState('Title');
       const [blend, setBlend] = useState<Blend>('multiply');
       const [align, setAlign] = useState<Align>('left');
-      const [fill, setFill] = useState('#ffb347');
-      const column = (chrome: 'bare' | 'framed') => (
-        <PropertyList pack="one-up">
-          <PropertyField kind="boolean" chrome={chrome} label="Visible" value={on} onChange={setOn} layout="inline" />
-          <PropertyField
-            kind="number"
-            chrome={chrome}
-            label="Width"
-            value={width}
-            unit="cm"
-            accepts={{ cm: 1, mm: 0.1, in: 2.54 }}
-            onChange={setWidth}
-            layout="inline"
-          />
-          <PropertyField kind="string" chrome={chrome} label="Label" value={label} onChange={setLabel} layout="inline" />
-          <PropertyField
-            kind="enum"
-            chrome={chrome}
-            label="Blend"
-            value={blend}
-            options={BLEND}
-            onChange={setBlend}
-            layout="inline"
-          />
-          <PropertyField
-            kind="enum"
-            control="radio"
-            chrome={chrome}
-            label="Align"
-            value={align}
-            options={ALIGN}
-            onChange={setAlign}
-          />
-          <PropertyField kind="color" chrome={chrome} label="Fill" value={fill} onChange={setFill} layout="inline" />
-        </PropertyList>
-      );
+      const [fill, setFill] = useState('#ffb347cc');
       return (
-        <div className={s.pair}>
-          <div>
-            <p className={s.caption}>Bare</p>
-            {column('bare')}
-          </div>
-          <div>
-            <p className={s.caption}>Framed</p>
-            {column('framed')}
-          </div>
+        <div className={s.column}>
+          <PropertyList pack="one-up">
+            <PropertyField kind="boolean" label="Visible" value={on} onChange={setOn} layout="inline" />
+            <PropertyField
+              kind="number"
+              label="Width"
+              value={width}
+              unit="cm"
+              accepts={{ cm: 1, mm: 0.1, in: 2.54 }}
+              onChange={setWidth}
+              layout="inline"
+            />
+            <PropertyField kind="string" label="Label" value={label} onChange={setLabel} layout="inline" />
+            <PropertyField kind="enum" label="Blend" value={blend} options={BLEND} onChange={setBlend} layout="inline" />
+            <PropertyField kind="enum" control="toggle" label="Align" value={align} options={ALIGN} onChange={setAlign} />
+            <PropertyField kind="enum" control="radio" label="Align, listed" value={align} options={ALIGN} onChange={setAlign} />
+            <PropertyField kind="color" label="Fill" value={fill} alpha onChange={setFill} />
+          </PropertyList>
         </div>
       );
     }
-    return <Chromes />;
+    return <Kinds />;
   },
 };
 

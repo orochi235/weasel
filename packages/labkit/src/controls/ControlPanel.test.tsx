@@ -88,7 +88,7 @@ describe('<ControlPanel> number', () => {
     ];
     render(<ControlPanel fields={fields} config={{ n: 42 }} setConfig={vi.fn()} />);
     const input = screen.getByLabelText('N') as HTMLInputElement;
-    expect(input.type).toBe('number');
+    expect(input).toHaveAttribute('role', 'spinbutton');
     expect(input.value).toBe('42');
   });
 
@@ -143,7 +143,7 @@ describe('<ControlPanel> color', () => {
     const input = screen.getByLabelText('Color') as HTMLInputElement;
     expect(input.type).toBe('color');
     expect(input.value).toBe('#ff0000');
-    fireEvent.change(input, { target: { value: '#00ff00' } });
+    fireEvent.input(input, { target: { value: '#00ff00' } });
     expect(setConfig).toHaveBeenCalledWith('c', '#00ff00');
   });
 });
@@ -206,7 +206,7 @@ describe('<ControlPanel> schema', () => {
       [],
     );
     render(<ControlPanel schema={schema} config={{ a: 5, b: 5 }} setConfig={vi.fn()} />);
-    expect(screen.getByLabelText('B')).toHaveAttribute('type', 'number');
+    expect(screen.getByLabelText('B')).toHaveAttribute('role', 'spinbutton');
   });
 
   it('falls back to the leaf default when config holds no value', () => {
@@ -466,7 +466,7 @@ describe('<ControlPanel> suffix', () => {
 
   it('suffixes a typed number with the suffix the leaf declares', () => {
     const { container } = panel(f.number(20).input().suffix('px'));
-    expect(container.querySelector('input[type="number"]')).not.toBeNull();
+    expect(container.querySelector('input[role="spinbutton"]')).not.toBeNull();
     expect(container.textContent).toContain('px');
   });
 });
@@ -913,8 +913,8 @@ describe('<ControlPanel> pair', () => {
   it('draws two leaves sharing a pair id as one row named by the pair', () => {
     render(<ControlPanel schema={paired()} config={config} setConfig={vi.fn()} />);
     const row = screen.getByText('Offset').closest('div') as HTMLElement;
-    expect(within(row).getByLabelText('X')).toHaveValue(10);
-    expect(within(row).getByLabelText('Y')).toHaveValue(20);
+    expect(within(row).getByLabelText('X')).toHaveValue('10');
+    expect(within(row).getByLabelText('Y')).toHaveValue('20');
   });
 
   it('captions each cell of a pair with its own name, so a paired switch is not left unnamed', () => {
@@ -952,7 +952,7 @@ describe('<ControlPanel> pair', () => {
     render(<ControlPanel schema={paired()} config={config} setConfig={vi.fn()} />);
     const row = screen.getByText('Offset').closest('div') as HTMLElement;
     expect(within(row).queryByLabelText('Scale')).toBeNull();
-    expect(screen.getByLabelText('Scale')).toHaveValue(1);
+    expect(screen.getByLabelText('Scale')).toHaveValue('1');
   });
 });
 
@@ -1045,18 +1045,18 @@ describe('<ControlPanel> color alpha', () => {
   it('splits the stored hex into a swatch and an alpha track', () => {
     panel();
     expect((screen.getByLabelText('Tint') as HTMLInputElement).value).toBe('#336699');
-    expect((screen.getByLabelText('Tint opacity') as HTMLInputElement).value).toBe('0.8');
+    expect((screen.getByLabelText('Tint opacity') as HTMLInputElement).value).toBe('80');
   });
 
   it('keeps the stored alpha when the swatch moves', () => {
     const setConfig = panel();
-    fireEvent.change(screen.getByLabelText('Tint'), { target: { value: '#00ff00' } });
+    fireEvent.input(screen.getByLabelText('Tint'), { target: { value: '#00ff00' } });
     expect(setConfig).toHaveBeenCalledWith('tint', '#00ff00cc');
   });
 
   it('keeps the stored color when the alpha track moves', () => {
     const setConfig = panel();
-    fireEvent.change(screen.getByLabelText('Tint opacity'), { target: { value: '0.5' } });
+    fireEvent.input(screen.getByLabelText('Tint opacity'), { target: { value: '50' } });
     expect(setConfig).toHaveBeenCalledWith('tint', '#33669980');
   });
 

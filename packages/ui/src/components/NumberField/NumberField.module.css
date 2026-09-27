@@ -25,7 +25,7 @@
   display: flex;
   align-items: stretch;
   height: var(--wzl-field-h, var(--wzl-control-h));
-  background: var(--wzl-surface-sunken);
+  background: var(--wzl-input-surface, var(--wzl-surface-sunken));
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg);
@@ -81,12 +81,17 @@
   justify-content: center;
   width: var(--wzl-control-h-xs);
   flex: 1;
+  /* The two share the frame's height; left to their glyphs' line boxes they
+     overflow it, and the frame clips the lower one. */
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
   background: transparent;
   border: none;
   color: var(--wzl-fg-muted);
   cursor: pointer;
   padding: 0;
-  font-size: var(--wzl-font-size-2xs);
+  font-size: min(var(--wzl-font-size-2xs), calc(var(--wzl-field-h, var(--wzl-control-h)) * 0.35));
   line-height: 1;
 }
 
@@ -94,16 +99,19 @@
   border-bottom: 1px solid var(--wzl-border);
 }
 
-.stepper[data-hovered]:not([data-disabled]) {
+.stepper[data-hovered]:not([data-disabled]),
+.stepper:hover:not(:disabled):not([data-rac]) {
   background: var(--wzl-surface-hover);
   color: var(--wzl-fg);
 }
 
-.stepper[data-pressed]:not([data-disabled]) {
+.stepper[data-pressed]:not([data-disabled]),
+.stepper:active:not(:disabled):not([data-rac]) {
   background: var(--wzl-surface-pressed);
 }
 
-.stepper[data-disabled] {
+.stepper[data-disabled],
+.stepper:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }

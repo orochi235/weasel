@@ -26,7 +26,7 @@
   align-items: center;
   gap: var(--wzl-space-3);
   padding: 0 var(--wzl-space-3) 0 var(--wzl-space-5);
-  background: var(--wzl-surface-sunken);
+  background: var(--wzl-input-surface, var(--wzl-surface-sunken));
   /* Hooks, each defaulting to what the trigger already drew: the visible box is
      this button, not the `.field` a consumer's `className` lands on, so a
      surface that has to restyle it sets these rather than reaching in here. */

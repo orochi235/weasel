@@ -7,7 +7,7 @@ const CM = { mm: 0.1, cm: 1, m: 100 };
 function setup(props: Partial<Parameters<typeof UnitField>[0]> = {}) {
   const onChange = vi.fn();
   render(<UnitField value={5} onChange={onChange} accepts={CM} aria-label="Width" {...props} />);
-  return { onChange, field: screen.getByRole('textbox', { name: 'Width' }) };
+  return { onChange, field: screen.getByRole('spinbutton', { name: 'Width' }) };
 }
 
 describe('UnitField', () => {

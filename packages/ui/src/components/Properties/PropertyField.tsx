@@ -10,16 +10,15 @@ import {
 import { getAlpha01, toHex8, withAlpha01, type FillStyle, type PaintKind } from '@weasel-js/core';
 import { dlog } from '../../dlog';
 import { formatCompact, formatNumber, parseNumber, type UnitTable } from '../../format/number';
-import { Checkbox } from '../Checkbox';
 import { ColorField } from '../ColorField';
 import { FontFamilySelect } from '../FontFamilySelect';
-import { InlineRange } from '../InlineRange';
 import { Input } from '../Input';
-import { NumberField, UnitField } from '../NumberField';
+import { UnitField } from '../NumberField';
 import { PaintField } from '../PaintField';
 import { PaintInput } from '../PaintInput';
 import type { PrefNumberFormat } from '../Prefs/schema';
 import { Radio, RadioGroup } from '../RadioGroup';
+import { spinKey } from '../spin';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
 import { ToggleBar } from '../ToggleBar';
@@ -31,21 +30,6 @@ import {
   type PropertyRowVariant,
 } from './PropertyPanel';
 import s from './Properties.module.css';
-
-/**
- * Which controls a field is drawn with.
- *
- *   - `'bare'` (the default): native inputs the property row's own stylesheet
- *     draws — the compact controls of an inspector sidebar or a lab panel.
- *   - `'framed'`: the kit's field components, each bringing its own frame —
- *     for a surface whose row does not style its controls (`SelectionPanel`,
- *     `ToolOptionsBar`), or that needs what only they do, such as reading a
- *     unit typed into a number (`accepts`).
- *
- * The two differ only where the kit still has two widgets for one job; a
- * slider, a switch, a font picker and a paint are the same in both.
- */
-export type PropertyFieldChrome = 'bare' | 'framed';
 
 /** One choice of an enum field. */
 export interface PropertyOption<T extends string> {
@@ -73,7 +57,6 @@ interface FieldBase {
    * inventing one, since the next edit would write the invention back.
    */
   unset?: boolean;
-  chrome?: PropertyFieldChrome;
   /** Class on the control element itself. */
   className?: string;
   /** Id for the control element, for a `<label htmlFor>` outside it. */
@@ -102,9 +85,9 @@ export interface PropertyNumberFieldProps extends FieldBase {
   value: number | null | undefined;
   /**
    * The committed value. Given `onInput` as well, it fires once a drag ends,
-   * or on blur or Enter in a typed field; on its own it fires on every move
-   * and keystroke. A `framed` typed field commits only on blur or Enter,
-   * whichever callbacks it has.
+   * or on blur, Enter or a step in a typed field; on its own it fires on every
+   * move, keystroke and step. A caller wanting settled values only passes a
+   * no-op `onInput`.
    */
   onChange: (next: number) => void;
   /** The live value, fired continuously. Pass it alongside `onChange` when the
@@ -119,7 +102,7 @@ export interface PropertyNumberFieldProps extends FieldBase {
    * like `<sup>°</sup>` for a symbol. Display only — the value stays a number.
    */
   unit?: ReactNode;
-  /** Units a person may type into a `framed` field, each mapped to the factor
+  /** Units a person may type into a typed field, each mapped to the factor
    *  that turns it into the unit shown: `{ mm: 0.1, cm: 1 }`. */
   accepts?: Readonly<UnitTable>;
   /** A slider readout's display. Defaults to the value at `step`'s precision. */
@@ -127,7 +110,8 @@ export interface PropertyNumberFieldProps extends FieldBase {
   /** A named display for the value: `compact` reads `2.00M`. `format` wins. */
   notation?: PrefNumberFormat;
   placeholder?: string;
-  /** A `framed` unitless field's stepper buttons. Default `true`. */
+  /** A typed field's up and down buttons. Default `false`: a dense panel
+   *  drives its numbers by typing, the arrow keys and the wheel. */
   steppers?: boolean;
 }
 
@@ -153,8 +137,7 @@ export interface PropertyEnumFieldProps<T extends string = string> extends Field
   kind: 'enum';
   /**
    * `select` (default) is a dropdown. `radio` and `toggle` show every option
-   * at once — a radio group chooses, and a toggle is a row of pressable
-   * segments. Drawn `bare`, both are segments.
+   * at once — a radio group lists them, and a toggle is a row of segments.
    */
   control?: 'select' | 'radio' | 'toggle';
   /** Absent, or not one of `options`, chooses nothing. */
@@ -171,9 +154,9 @@ export interface PropertyColorFieldProps extends FieldBase {
   /** `#rrggbb`, or `#rrggbbaa` when `alpha` is `true`. */
   value: string | undefined;
   /**
-   * The committed color. `bare`: given `onInput` as well, it fires once the
-   * picker closes; on its own it fires on every move. `framed`: it fires once
-   * per gesture, whichever callbacks it has.
+   * The committed color. Given `onInput` as well, it fires once per gesture —
+   * the picker closing, or the opacity track let go; on its own it fires on
+   * every move. A caller wanting settled values only passes a no-op `onInput`.
    */
   onChange: (next: string) => void;
   onInput?: (next: string) => void;
@@ -300,7 +283,6 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
     className: controlClassName,
     id,
   } as unknown as PropertyControlProps;
-  const framed = control.chrome === 'framed';
   const shape = rowShape(control);
 
   const row = {
@@ -313,12 +295,11 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
     auto,
     onAutoChange,
     className: rowClassName,
-    chrome: control.chrome,
     variant: shape.variant,
     group: shape.group,
-    // A framed field brings its own label wiring, and the font picker takes no
-    // id; any other bare one is named by the row's `<label>` through this one.
-    htmlFor: shape.group || framed || control.kind === 'font-family' ? undefined : id,
+    // The font picker takes no id; any other single control is named by the
+    // row's `<label>` through this one.
+    htmlFor: shape.group || control.kind === 'font-family' ? undefined : id,
   };
 
   if (control.kind === 'number' && control.control === 'slider') {
@@ -457,38 +438,33 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
       </Dimmed>
     );
   }
-  const control =
-    p.chrome === 'framed' ? (
-      <Checkbox
-        className={p.className}
-        isSelected={on}
-        isIndeterminate={p.mixed}
-        onChange={p.onChange}
-        aria-label={p.name}
-      />
-    ) : (
+  // A native box rather than the kit's `Checkbox`: that one renders a `<label>`
+  // of its own, which may not sit inside the row's, and without the row's the
+  // label text would no longer toggle it.
+  return (
+    <Dimmed unset={p.unset}>
       <input
         ref={box}
         id={p.id}
         type="checkbox"
-        className={p.className}
+        className={p.className ? `${s.checkbox} ${p.className}` : s.checkbox}
         aria-label={p.name}
         checked={on}
         onChange={(e) => p.onChange(e.target.checked)}
       />
-    );
-  return <Dimmed unset={p.unset}>{control}</Dimmed>;
+    </Dimmed>
+  );
 }
 
 /**
  * A ref for an input whose commit half has to come off a real listener.
  *
- * A native `range`, `color` or `number` input fires `input` through the
- * interaction and `change` once at the end, but React's synthetic `onChange`
- * sees only the first: its value tracker drops the unchanged second. So a
- * control offering the live/committed split reads the live half from React
- * and the committed half from here. `commit` is `undefined` when a control has
- * one callback, which then fires continuously.
+ * A native `range` input fires `input` through a drag and `change` once at
+ * the end, but React's synthetic `onChange` sees only the first: its value
+ * tracker drops the unchanged second. So a track offering the live/committed
+ * split reads the live half from React and the committed half from here.
+ * `commit` is `undefined` when the track has one callback, which then fires
+ * continuously.
  */
 function useCommitListener(
   commit: ((raw: string) => void) | undefined,
@@ -513,79 +489,26 @@ function unitSuffix(unit: ReactNode, className: string): ReactNode {
   return typeof unit === 'string' ? <span className={className}>{unit}</span> : unit;
 }
 
+const ignore = (): void => {};
+
 function NumberInput(p: PropertyNumberFieldProps) {
-  const live = p.onInput ?? p.onChange;
-  const field = useCommitListener(
-    p.onInput &&
-      ((raw) => {
-        if (raw === '') return;
-        const n = Number(raw);
-        if (Number.isFinite(n)) p.onChange(n);
-      }),
-  );
   const known = !p.mixed && typeof p.value === 'number' && Number.isFinite(p.value);
-  const placeholder = p.mixed ? 'Mixed' : p.placeholder;
-
-  if (p.chrome === 'framed') {
-    const commit = (n: number) => {
-      // A cleared field reads as NaN, which is no value to write.
-      if (!Number.isNaN(n)) p.onChange(n);
-    };
-    const value = known ? (p.value as number) : NaN;
-    const input = p.accepts ? (
-      <UnitField
-        className={p.className}
-        value={value}
-        placeholder={placeholder}
-        minValue={p.min}
-        maxValue={p.max}
-        step={p.step}
-        accepts={p.accepts}
-        aria-label={p.name}
-        onChange={commit}
-      />
-    ) : (
-      <NumberField
-        className={p.className}
-        value={value}
-        placeholder={placeholder}
-        minValue={p.min}
-        maxValue={p.max}
-        step={p.step}
-        hideSteppers={p.steppers === false}
-        aria-label={p.name}
-        onChange={commit}
-      />
-    );
-    if (p.unit == null) return input;
-    return (
-      <>
-        {input}
-        <span className={s.unitSuffix} aria-hidden="true">
-          {p.unit}
-        </span>
-      </>
-    );
-  }
-
   const input = (
-    <input
-      ref={field}
+    <UnitField
       id={p.id}
-      type="number"
-      className={p.className}
-      aria-label={p.name}
-      value={known ? (p.value as number) : ''}
-      min={p.min}
-      max={p.max}
+      className={p.className ? `${s.numberField} ${p.className}` : s.numberField}
+      value={known ? (p.value as number) : NaN}
+      placeholder={p.mixed ? 'Mixed' : p.placeholder}
+      minValue={p.min}
+      maxValue={p.max}
       step={p.step}
-      placeholder={placeholder}
-      onChange={(e) => {
-        const raw = e.target.value;
-        if (raw === '') return;
-        const n = Number(raw);
-        if (Number.isFinite(n)) live(n);
-      }}
+      accepts={p.accepts}
+      steppers={p.steppers}
+      aria-label={p.name}
+      // With one callback it is the live one: every keystroke and step reaches
+      // it, and the commit on blur would only repeat the last of them.
+      onInput={p.onInput ?? p.onChange}
+      onChange={p.onInput ? p.onChange : ignore}
     />
   );
   if (p.unit == null) return input;
@@ -611,42 +534,28 @@ function SliderTrack(p: PropertyNumberFieldProps) {
   // The thumb clamps to the track; the readout beside it does not, so a value
   // past `max` is still reported as what it is.
   const value = known ? Math.min(Math.max(p.value as number, min), max) : min;
-  const onChange = (raw: string) => {
-    const v = Number(raw);
-    dlog('property-panel', 'slider', { name: p.name, value: v });
-    live(v);
-  };
-  if (p.chrome === 'framed') {
-    return (
-      <InlineRange
-        ref={range}
-        className={p.className}
-        aria-label={p.name}
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        disabled={p.mixed}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    );
-  }
   return (
+    // The shared skin with no fill: `InlineRange`'s filled-to-value track is its
+    // own, and the property rows' 18% track is the one the kit converges on.
     <input
       ref={range}
-      id={p.id}
       type="range"
-      aria-label={p.name}
+      id={p.id}
       className={p.className ? `${shared.range} ${p.className}` : shared.range}
-      // The readout is the keyboard's way in; a tab stop on the track too
-      // would be two stops for one value.
+      aria-label={p.name}
+      // The readout is the keyboard's way in, and steps as the track would; a
+      // tab stop here too would be two stops for one value.
       tabIndex={-1}
       min={min}
       max={max}
       step={step}
       value={value}
       disabled={p.mixed}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        const v = Number(e.target.value);
+        dlog('property-panel', 'slider', { name: p.name, value: v });
+        live(v);
+      }}
     />
   );
 }
@@ -673,6 +582,7 @@ function SliderReadout(p: PropertyNumberFieldProps) {
       value={p.value as number}
       min={min}
       max={max}
+      step={step}
       format={format}
       unit={p.unit}
       onCommit={(next) => {
@@ -707,6 +617,7 @@ interface EditableReadoutProps {
   value: number;
   min: number;
   max: number;
+  step: number;
   format: (value: number) => ReactNode;
   unit?: ReactNode;
   onCommit: (next: number) => void;
@@ -714,10 +625,10 @@ interface EditableReadoutProps {
 
 /**
  * Readout that swaps to a number input on click, commits on Enter/blur,
- * cancels on Escape. Clicks are stopped so a wrapping <label> doesn't forward
- * focus to the slider thumb.
+ * cancels on Escape, and steps like the track beside it. Clicks are stopped so
+ * a wrapping <label> doesn't forward focus to the slider thumb.
  */
-function EditableReadout({ name, value, min, max, format, unit, onCommit }: EditableReadoutProps) {
+function EditableReadout({ name, value, min, max, step, format, unit, onCommit }: EditableReadoutProps) {
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
@@ -741,7 +652,12 @@ function EditableReadout({ name, value, min, max, format, unit, onCommit }: Edit
     <span className={s.readoutGroup}>
       <input
         type="text"
+        role="spinbutton"
         aria-label={name}
+        aria-valuenow={value}
+        aria-valuetext={text(value)}
+        aria-valuemin={min}
+        aria-valuemax={max}
         inputMode="decimal"
         className={s.readoutInput}
         style={fit as CSSProperties}
@@ -765,6 +681,14 @@ function EditableReadout({ name, value, min, max, format, unit, onCommit }: Edit
           } else if (e.key === 'Escape') {
             setDraft(null);
             e.currentTarget.blur();
+          } else {
+            const typed = draft === null ? value : parseNumber(draft);
+            const next = spinKey(e.key, Number.isFinite(typed) ? typed : value, { step, min, max });
+            if (next === null) return;
+            e.preventDefault();
+            onCommit(next);
+            // A step is committed already; the box shows the value it comes back as.
+            setDraft(null);
           }
         }}
       />
@@ -803,14 +727,11 @@ function useTextEdit(p: PropertyStringFieldProps) {
 function StringControl(p: PropertyStringFieldProps) {
   const edit = useTextEdit(p);
   const placeholder = p.mixed ? 'Mixed' : p.placeholder;
-  const onKeyDown = (e: { key: string; currentTarget: HTMLElement }) => {
-    if (e.key === 'Enter' && p.control !== 'textarea') e.currentTarget.blur();
-  };
   if (p.control === 'textarea') {
     return (
       <textarea
         id={p.id}
-        className={[p.chrome === 'framed' && s.textarea, p.className].filter(Boolean).join(' ') || undefined}
+        className={p.className ? `${s.textarea} ${p.className}` : s.textarea}
         aria-label={p.name}
         value={edit.shown}
         placeholder={placeholder}
@@ -821,32 +742,19 @@ function StringControl(p: PropertyStringFieldProps) {
       />
     );
   }
-  if (p.chrome === 'framed') {
-    return (
-      <Input
-        className={p.className}
-        value={edit.shown}
-        placeholder={placeholder}
-        maxLength={p.maxLength}
-        aria-label={p.name}
-        onChange={edit.type}
-        onBlur={edit.settle}
-        onKeyDown={onKeyDown}
-      />
-    );
-  }
   return (
-    <input
+    <Input
       id={p.id}
-      type="text"
-      className={p.className}
-      aria-label={p.name}
+      className={p.className ? `${s.textField} ${p.className}` : s.textField}
       value={edit.shown}
       placeholder={placeholder}
       maxLength={p.maxLength}
-      onChange={(e) => edit.type(e.target.value)}
+      aria-label={p.name}
+      onChange={edit.type}
       onBlur={edit.settle}
-      onKeyDown={onKeyDown}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') (e.target as HTMLElement).blur();
+      }}
     />
   );
 }
@@ -862,80 +770,41 @@ function EnumControl(p: PropertyEnumFieldProps) {
   const chosen = !p.mixed && p.options.some((opt) => opt.value === p.value);
   const current = chosen ? (p.value as string) : null;
 
-  if (p.control === 'radio' || p.control === 'toggle') {
-    if (p.chrome === 'framed') {
-      if (p.control === 'radio') {
-        return (
-          <RadioGroup
-            className={p.className}
-            value={current}
-            onChange={p.onChange}
-            aria-label={p.name}
-          >
-            {p.options.map((o) => (
-              <Radio key={o.value} value={o.value} isDisabled={o.disabled}>
-                {o.label}
-              </Radio>
-            ))}
-          </RadioGroup>
-        );
-      }
-      return (
-        <ToggleBar<string>
-          size="sm"
-          variant="flat"
-          className={p.className}
-          ariaLabel={p.name}
-          items={p.options.map((o) => ({
-            value: o.value,
-            label: o.glyph ?? o.label,
-            ariaLabel: nameOf(o.label),
-            disabled: o.disabled,
-          }))}
-          value={current}
-          onChange={(next) => {
-            if (next !== null) p.onChange(next);
-          }}
-        />
-      );
-    }
-    // Bare, both are segments; a radio's say which one is chosen, a toggle's
-    // which are pressed.
-    const radio = p.control === 'radio';
+  if (p.control === 'radio') {
     return (
-      <div
-        className={p.className ? `${s.toggle} ${p.className}` : s.toggle}
-        role={radio ? 'radiogroup' : 'group'}
-        aria-label={p.name}
-      >
-        {p.options.map((opt) => {
-          const selected = opt.value === current;
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              role={radio ? 'radio' : undefined}
-              aria-checked={radio ? selected : undefined}
-              aria-pressed={radio ? undefined : selected}
-              aria-label={nameOf(opt.label)}
-              disabled={opt.disabled}
-              className={selected ? `${s.toggleButton} ${s.toggleButtonSelected}` : s.toggleButton}
-              onClick={() => p.onChange(opt.value)}
-            >
-              {opt.glyph ?? opt.label}
-            </button>
-          );
-        })}
-      </div>
+      <RadioGroup className={p.className} value={current} onChange={p.onChange} aria-label={p.name}>
+        {p.options.map((o) => (
+          <Radio key={o.value} value={o.value} isDisabled={o.disabled}>
+            {o.label}
+          </Radio>
+        ))}
+      </RadioGroup>
     );
   }
-
-  const bare = p.chrome !== 'framed';
+  if (p.control === 'toggle') {
+    return (
+      <ToggleBar<string>
+        size="sm"
+        variant="flat"
+        className={p.className ? `${s.toggleBar} ${p.className}` : s.toggleBar}
+        ariaLabel={p.name}
+        items={p.options.map((o) => ({
+          value: o.value,
+          label: o.glyph ?? o.label,
+          ariaLabel: nameOf(o.label),
+          disabled: o.disabled,
+        }))}
+        value={current}
+        onChange={(next) => {
+          if (next !== null) p.onChange(next);
+        }}
+      />
+    );
+  }
   return (
     <Select<string>
-      className={bare ? (p.className ? `${s.select} ${p.className}` : s.select) : p.className}
-      variant={bare ? 'bare' : undefined}
-      triggerId={bare ? p.id : undefined}
+      className={p.className ? `${s.select} ${p.className}` : s.select}
+      triggerId={p.id}
       aria-label={p.name}
       placeholder={p.mixed ? 'Mixed' : (p.placeholder ?? (p.unset ? '—' : 'Choose option…'))}
       selectedKey={current}
@@ -948,9 +817,9 @@ function EnumControl(p: PropertyEnumFieldProps) {
   );
 }
 
-/** A hex color as the `#rrggbb` a color input can hold and the 0..1 alpha
- *  beside it. Anything unreadable is opaque black, which is what the input
- *  would show for it anyway. */
+/** A hex color as the `#rrggbb` it paints and the 0..1 alpha beside it.
+ *  Anything unreadable is opaque black, which is what a swatch would show for
+ *  it anyway. */
 function splitAlpha(value: string | undefined): { rgb: string; alpha: number } {
   const eight = toHex8(value?.trim() ?? '');
   if (!/^#[0-9a-f]{8}$/i.test(eight)) return { rgb: '#000000', alpha: 1 };
@@ -958,109 +827,42 @@ function splitAlpha(value: string | undefined): { rgb: string; alpha: number } {
 }
 
 function ColorControl(p: PropertyColorFieldProps) {
-  const inValue = p.alpha === true;
+  const withAlpha = p.alpha !== undefined && p.alpha !== false;
+  const apart = typeof p.alpha === 'number';
   const split = splitAlpha(p.value);
-  const alpha = typeof p.alpha === 'number' ? p.alpha : split.alpha;
+  const alpha = apart ? (p.alpha as number) : split.alpha;
 
-  // Where the alpha lives: in the color's own hex, or in a channel of its own.
-  const color = (rgb: string, a: number) => (inValue ? withAlpha01(rgb, a) : rgb);
-  const colorOut = (write: (hex: string) => void) => (rgb: string) => write(color(rgb, alpha));
-  const alphaOut = (write: ((hex: string) => void) | undefined, own: ((a: number) => void) | undefined) =>
-    inValue ? write && ((a: number) => write(withAlpha01(split.rgb, a))) : own;
-  const alphaChange = alphaOut(p.onChange, p.onAlphaChange);
-  const alphaInput = alphaOut(p.onInput, p.onAlphaInput);
-
-  if (p.chrome === 'framed') {
-    const withAlpha = p.alpha !== undefined && p.alpha !== false;
-    // ColorField holds alpha in the hex; a separate channel goes in and comes
-    // back out of it.
-    const out = (write: ((hex: string) => void) | undefined, own: ((a: number) => void) | undefined) =>
-      write &&
-      ((hex: string) => {
-        if (typeof p.alpha !== 'number') {
-          write(hex);
-          return;
-        }
-        const next = splitAlpha(hex);
-        if (next.rgb !== split.rgb || !own) write(next.rgb);
-        if (next.alpha !== alpha) own?.(next.alpha);
-      });
-    return (
-      <ColorField
-        className={p.className}
-        value={p.mixed ? undefined : withAlpha ? withAlpha01(split.rgb, alpha) : (p.value ?? '#000000')}
-        mixed={p.mixed}
-        alpha={withAlpha}
-        onChange={out(p.onChange, p.onAlphaChange) ?? p.onChange}
-        onInput={out(p.onInput, p.onAlphaInput)}
-        aria-label={p.name}
-      />
-    );
-  }
-
+  // `ColorField` holds alpha in the hex. One kept in a channel of its own goes
+  // in with the color and comes back out of it, each half to its own callback.
+  const route =
+    (write: (hex: string) => void, own: ((a: number) => void) | undefined) => (hex: string) => {
+      if (!apart) {
+        write(hex);
+        return;
+      }
+      const next = splitAlpha(hex);
+      if (next.rgb !== split.rgb || !own) write(next.rgb);
+      // Read back at the track's percent, which is all a hex byte can hold of it.
+      const a = Math.round(next.alpha * 100) / 100;
+      if (a !== Math.round(alpha * 100) / 100) own?.(a);
+    };
+  // As a number does: one callback is the live one, and the commit at the end
+  // of a gesture would only repeat its last call.
+  const drafting = p.onInput !== undefined || p.onAlphaInput !== undefined;
+  const live = route(p.onInput ?? p.onChange, p.onAlphaInput ?? p.onAlphaChange);
+  const settled = drafting ? route(p.onChange, p.onAlphaChange) : ignore;
   return (
-    <BareColor
-      p={p}
-      rgb={split.rgb}
-      alpha={p.alpha === undefined || p.alpha === false ? undefined : alpha}
-      onColorChange={colorOut(p.onChange)}
-      onColorInput={p.onInput && colorOut(p.onInput)}
-      onAlphaChange={alphaChange}
-      onAlphaInput={alphaInput}
+    <ColorField
+      id={p.id}
+      className={p.className ? `${s.colorField} ${p.className}` : s.colorField}
+      value={p.mixed ? undefined : withAlpha ? withAlpha01(split.rgb, alpha) : (p.value ?? '#000000')}
+      mixed={p.mixed}
+      alpha={withAlpha}
+      alphaDisabled={p.alphaDisabled}
+      onInput={live}
+      onChange={settled}
+      aria-label={p.name}
     />
-  );
-}
-
-function BareColor({
-  p,
-  rgb,
-  alpha,
-  onColorChange,
-  onColorInput,
-  onAlphaChange,
-  onAlphaInput,
-}: {
-  p: PropertyColorFieldProps;
-  rgb: string;
-  alpha: number | undefined;
-  onColorChange: (rgb: string) => void;
-  onColorInput?: (rgb: string) => void;
-  onAlphaChange?: (a: number) => void;
-  onAlphaInput?: (a: number) => void;
-}) {
-  const liveColor = onColorInput ?? onColorChange;
-  const color = useCommitListener(onColorInput && ((raw) => onColorChange(raw)));
-  const liveAlpha = onAlphaInput ?? onAlphaChange;
-  const alphaRange = useCommitListener(
-    onAlphaInput && onAlphaChange && ((raw) => onAlphaChange(Number(raw))),
-  );
-  return (
-    <>
-      <input
-        ref={color}
-        id={p.id}
-        type="color"
-        className={p.className}
-        aria-label={p.name}
-        value={rgb}
-        data-mixed={p.mixed || undefined}
-        onChange={(e) => liveColor(e.target.value)}
-      />
-      {alpha !== undefined && (
-        <input
-          ref={alphaRange}
-          type="range"
-          aria-label={p.name ? `${p.name} opacity` : undefined}
-          className={`${shared.range} ${shared.alpha} ${s.alpha}`}
-          min={0}
-          max={1}
-          step={0.01}
-          value={alpha}
-          disabled={p.alphaDisabled}
-          onChange={(e) => liveAlpha?.(Number(e.target.value))}
-        />
-      )}
-    </>
   );
 }
 

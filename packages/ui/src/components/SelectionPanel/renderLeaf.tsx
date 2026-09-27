@@ -242,7 +242,7 @@ export function renderBuiltin(
       return (
         <PropertyControl
           {...field}
-          {...framed(ariaLabel)}
+          name={ariaLabel}
           control={field.control ?? 'switch'}
           className={field.control === 'toggle' ? s.flagToggle : undefined}
         />
@@ -251,30 +251,32 @@ export function renderBuiltin(
       return (
         <PropertyControl
           {...field}
-          {...framed(ariaLabel)}
+          name={ariaLabel}
           className={field.control === 'slider' ? s.slider : s.number}
-          steppers={false}
+          // A typed number writes once it is entered, as text does; a slider
+          // writes as it moves.
+          onInput={field.control === 'slider' ? field.onInput : settledOnly}
         />
       );
     case 'string':
       // Settled values only: a live write per keystroke would be one undo
       // step per character.
-      return <PropertyControl {...field} {...framed(ariaLabel)} onInput={settledOnly} />;
+      return <PropertyControl {...field} name={ariaLabel} onInput={settledOnly} />;
     case 'enum':
       return (
         <PropertyControl
           {...field}
-          {...framed(ariaLabel)}
+          name={ariaLabel}
           className={field.control === 'toggle' ? s.toggle : field.control === 'radio' ? undefined : s.select}
         />
       );
     case 'font-family':
-      return <PropertyControl {...field} {...framed(ariaLabel)} className={s.select} />;
+      return <PropertyControl {...field} name={ariaLabel} className={s.select} />;
     case 'paint':
       return (
         <PropertyControl
           {...field}
-          {...framed(ariaLabel)}
+          name={ariaLabel}
           // Per-kind switch memory is scratch for one selection; carrying it
           // across would recall the previous node's gradient.
           key={selectionKey}
@@ -286,12 +288,11 @@ export function renderBuiltin(
           allowNone={!nested}
         />
       );
-    default:
-      return <PropertyControl {...field} {...framed(ariaLabel)} />;
+    case 'color':
+      // One write per gesture, not one per step of the picker.
+      return <PropertyControl {...field} name={ariaLabel} onInput={settledOnly} />;
   }
 }
-
-const framed = (name: string) => ({ chrome: 'framed' as const, name });
 
 const settledOnly = (): void => {};
 
