@@ -96,6 +96,9 @@ test:smoke:registry` installs the whole set into an empty tree to catch the
 consumer-facing half — one missing sibling breaks `npm i @weasel-js/core` while
 seventeen versions are perfectly present. Both run in the release workflow after
 the publish; run either by hand to answer "did the last release land?".
+Within 15 minutes of a publish a missing version may only be staged — npm hides
+a fresh upload that long, and republishing it fails with E409 — so check with
+`npm run check:published -- --wait` before re-dispatching anything.
 
 ## Package manager
 
