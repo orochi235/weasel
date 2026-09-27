@@ -107,7 +107,7 @@ import {
   PaintInput,
   PropertyList,
   PropertyField,
-  ColorModeControl,
+  ThemeSwitcher,
   SwatchGrid,
   type PropertyOption,
   type SwatchGridOption,
@@ -1803,11 +1803,7 @@ function EditorStatusBar({
       <StatusBarItem>zoom: {formatZoom(view.scale.x)}</StatusBarItem>
       {colorMode && (
         <StatusBarItem>
-          <ColorModeControl
-            value={colorMode.preference}
-            onChange={colorMode.setPreference}
-            size="sm"
-          />
+          <ThemeSwitcher value={colorMode.preference} onChange={colorMode.setPreference} />
         </StatusBarItem>
       )}
       <StatusBarItem muted title={buildTitle()}>{buildLabel()}</StatusBarItem>
