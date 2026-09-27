@@ -1,8 +1,8 @@
-import { Select, usePersistedState } from '@weasel-js/labkit';
+import { Select, useLabContext, usePersistedState } from '@weasel-js/labkit';
 import { Button, Callout, TuneIcon } from '@weasel-js/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Globals } from '../protocol/messages';
-import { type GlobalDeclaration, type GlobalDeclarations, labGlobals, shownOptions } from './globals';
+import { followApp, type GlobalDeclaration, type GlobalDeclarations, labGlobals, labOptions } from './globals';
 
 const RECORD = 'fg-globals';
 
@@ -31,7 +31,7 @@ function GlobalSelect({ name, declaration, values, set, labeled = false }: Globa
       width={labeled ? 'fill' : 'fit'}
       selectedKey={String(values[name])}
       onSelectionChange={(value) => set(name, value)}
-      options={shownOptions(declaration, values)}
+      options={labOptions(declaration, values)}
     />
   );
 }
@@ -104,7 +104,10 @@ function NestedGlobals({
   );
 }
 
-/** Reports the lab's global values, as the toolbar persists them, to `onChange`. Renders nothing; mount it inside the lab. */
+/**
+ * Reports the lab's global values, as the toolbar persists them and with each `App` resolved against the lab's own
+ * chrome, to `onChange`. Renders nothing; mount it inside the lab.
+ */
 export function LabGlobals({
   declarations,
   onChange,
@@ -113,6 +116,8 @@ export function LabGlobals({
   onChange: (values: Globals) => void;
 }) {
   const [values] = useLabGlobals(declarations);
-  useEffect(() => onChange(values), [values, onChange]);
+  const { mode } = useLabContext();
+  const resolved = useMemo(() => followApp(declarations, values, { mode }), [declarations, values, mode]);
+  useEffect(() => onChange(resolved), [resolved, onChange]);
   return null;
 }

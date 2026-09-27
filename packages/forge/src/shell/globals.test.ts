@@ -1,6 +1,16 @@
 import { type ConfigBranch, type ConfigNode, f } from '@weasel-js/labkit/config';
 import { describe, expect, it } from 'vitest';
-import { effectiveGlobals, type GlobalDeclarations, isGlobalsPath, labGlobals, storyConfig, withGlobals } from './globals';
+import {
+  effectiveGlobals,
+  FOLLOW_APP,
+  followApp,
+  type GlobalDeclarations,
+  isGlobalsPath,
+  labGlobals,
+  labOptions,
+  storyConfig,
+  withGlobals,
+} from './globals';
 
 const declarations: GlobalDeclarations = {
   mode: {
@@ -89,6 +99,33 @@ describe('withGlobals', () => {
       { value: 'lab', label: 'Lab' },
       ...declarations.mode!.options,
     ]);
+  });
+});
+
+describe('a global that follows the app', () => {
+  const following: GlobalDeclarations = {
+    ...declarations,
+    mode: { ...declarations.mode!, default: FOLLOW_APP, follows: (chrome) => chrome.mode },
+  };
+
+  it('keeps App as a lab value only where the declaration follows the app', () => {
+    expect(labGlobals(following, undefined).mode).toBe(FOLLOW_APP);
+    expect(labGlobals(following, { mode: FOLLOW_APP }).mode).toBe(FOLLOW_APP);
+    expect(labGlobals(declarations, { mode: FOLLOW_APP }).mode).toBe('auto');
+  });
+
+  it('offers App first in the lab’s options, and never as a trial’s pin', () => {
+    expect(labOptions(following.mode!, {}).map((option) => option.value)).toEqual([FOLLOW_APP, 'auto', 'light', 'dark']);
+    expect(labOptions(declarations.mode!, {}).map((option) => option.value)).toEqual(['auto', 'light', 'dark']);
+    const group = withGlobals(f.schema({}), following).nodes.$globals as ConfigBranch;
+    const pins = (group.children.mode as ConfigNode<string>).annotations.options ?? [];
+    expect(pins.map((option) => option.value)).toEqual(['lab', 'auto', 'light', 'dark']);
+  });
+
+  it('resolves App to what the app’s chrome says, leaving every other value alone', () => {
+    expect(followApp(following, { mode: FOLLOW_APP, font: 'inter' }, { mode: 'dark' })).toEqual({ mode: 'dark', font: 'inter' });
+    const picked = { mode: 'light', font: 'inter' };
+    expect(followApp(following, picked, { mode: 'dark' })).toBe(picked);
   });
 });
 

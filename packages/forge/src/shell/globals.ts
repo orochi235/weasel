@@ -1,3 +1,4 @@
+import type { LabMode } from '@weasel-js/labkit';
 import { type ConfigSchema, f } from '@weasel-js/labkit/config';
 import type { Globals } from '../protocol/messages';
 
@@ -13,6 +14,17 @@ export interface GlobalDeclaration {
    * resolved without any declaration's `shows`, so one `shows` cannot depend on another's outcome.
    */
   shows?: (value: string, globals: Globals) => boolean;
+  /**
+   * What this global reads from the lab's own chrome. Given, the lab's value may be `App` (`FOLLOW_APP`), offered
+   * first, and while it is the global follows that chrome control, as the header's mode switch sets it. A trial's
+   * pin follows the lab or names a value; it cannot follow the app on its own.
+   */
+  follows?: (chrome: LabChrome) => string;
+}
+
+/** The lab chrome's own settings a global can follow. */
+export interface LabChrome {
+  mode: LabMode;
 }
 
 export type GlobalDeclarations = Readonly<Record<string, GlobalDeclaration>>;
@@ -21,6 +33,10 @@ export type GlobalDeclarations = Readonly<Record<string, GlobalDeclaration>>;
 export const GLOBALS_KEY = '$globals';
 /** A pin's value when the trial follows the lab. */
 export const FOLLOW_LAB = 'lab';
+/** A lab value, for a declaration that `follows` the app, meaning whatever the app's chrome is set to. */
+export const FOLLOW_APP = 'app';
+
+const APP_OPTION = { value: FOLLOW_APP, label: 'App' } as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -33,6 +49,20 @@ export function shownOptions(declaration: GlobalDeclaration, globals: Globals): 
   return shows ? declaration.options.filter((option) => shows(option.value, globals)) : declaration.options;
 }
 
+/** The options the lab's own control offers: `shownOptions`, after `App` where the declaration follows the app. */
+export function labOptions(declaration: GlobalDeclaration, globals: Globals): GlobalDeclaration['options'] {
+  const shown = shownOptions(declaration, globals);
+  return declaration.follows ? [APP_OPTION, ...shown] : shown;
+}
+
+/** `values` with each `App` replaced by what its declaration reads from `chrome`; `values` itself when none is. */
+export function followApp(declarations: GlobalDeclarations, values: Globals, chrome: LabChrome): Globals {
+  const followed = Object.entries(declarations).flatMap(([key, { follows }]) =>
+    follows && values[key] === FOLLOW_APP ? [[key, follows(chrome)] as const] : [],
+  );
+  return followed.length === 0 ? values : { ...values, ...Object.fromEntries(followed) };
+}
+
 /**
  * The lab's values from what was stored: declared keys only. A value no option offers falls back to the default, and
  * one its declaration's `shows` hides falls back to the shown option nearest it in `options`, the earlier on a tie.
@@ -42,13 +72,16 @@ export function labGlobals(declarations: GlobalDeclarations, stored: unknown): G
   const offered: Globals = Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
       const value = from[key];
-      return [key, declaration.options.some((option) => option.value === value) ? value : declaration.default];
+      const known =
+        declaration.options.some((option) => option.value === value) || (declaration.follows && value === FOLLOW_APP);
+      return [key, known ? value : declaration.default];
     }),
   );
   return Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
       const shown = shownOptions(declaration, offered);
       const value = offered[key];
+      if (value === FOLLOW_APP && declaration.follows) return [key, value];
       if (!declaration.shows || shown.length === 0 || shown.some((option) => option.value === value)) return [key, value];
       const at = (v: unknown) => declaration.options.findIndex((option) => option.value === v);
       const from = at(value);

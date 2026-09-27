@@ -3,18 +3,14 @@ import '@weasel-js/labkit/styles.css';
 import './frame.css';
 import { type Decorator, defineFrameConfig } from '@weasel-js/forge';
 import type { LabMode } from '@weasel-js/labkit';
-import { applyTheme, weaselTheme } from '@weasel-js/theme';
 import { fontRule, loadWebFonts } from './fonts';
 import { followScheme } from './mode';
+import { applyTrialTheme } from './themes';
 
 if (typeof document !== 'undefined') loadWebFonts(document);
 
 const asLabMode = (picked: unknown): LabMode =>
   picked === 'light' || picked === 'dark' ? picked : 'auto';
-
-const DENSITIES = ['compact', 'comfortable', 'roomy'];
-const asDensity = (picked: unknown): string =>
-  typeof picked === 'string' && DENSITIES.includes(picked) ? picked : 'comfortable';
 
 const isLabkit = (title: string): boolean => title.startsWith('labkit/');
 
@@ -25,7 +21,7 @@ const labkitRoot: Decorator = (story, ctx) =>
   LabRoot && isLabkit(ctx.title) ? <LabRoot mode={asLabMode(ctx.globals.mode)}>{story()}</LabRoot> : story();
 
 const applyGlobals = followScheme((globals, { root, scope, style }, mode) => {
-  applyTheme(root, weaselTheme, { mode, density: asDensity(globals.density) });
+  applyTrialTheme(root, globals, mode);
   style(fontRule(globals, scope));
 });
 

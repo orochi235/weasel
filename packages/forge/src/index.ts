@@ -13,7 +13,7 @@ export type {
 export type { FrameSetup } from './frame/FrameController';
 export type { GlobalsTarget } from './frame/globalsTarget';
 export type { A11yFinding, A11yNode, A11yReport } from './protocol/messages';
-export type { GlobalDeclaration, GlobalDeclarations } from './shell/globals';
+export { FOLLOW_APP, type GlobalDeclaration, type GlobalDeclarations, type LabChrome } from './shell/globals';
 export { meta, story } from './story/define';
 export { GALLERY_TAG } from './story/tags';
 export type {
