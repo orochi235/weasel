@@ -60,6 +60,8 @@
 
 .fg-index-cell {
   margin: var(--wzl-space-8) 0 0;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .fg-index-cell__stage {
@@ -76,6 +78,10 @@
 
 .fg-index-cell--padded > .fg-index-cell__stage {
   display: block;
+}
+
+.fg-index-cell--fullscreen {
+  width: auto;
 }
 
 .fg-index-cell--fullscreen > .fg-index-cell__stage {
@@ -107,8 +113,9 @@
 }
 
 .fg-index-variants__cells {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: var(--wzl-space-6);
 }
 
