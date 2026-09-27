@@ -955,6 +955,12 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
+- **(P3) Marks are off in the workshop until annotations are a feature.** forge's
+  instruments no longer declare labkit's `annotations` capability, so trials show
+  no Marks section and the tool rail holds only Info. The removed wiring — the
+  story as the one annotation target, sized and captured through the trial's
+  frame registry — is in `git log --grep 'take marks out of forge'`.
+
 - **(P2) The first press in a story may remount it and drop the first edit.**
   Seen 2026-09-26 while checking property fields in the workshop: the first
   edit made in a freshly opened story was lost, as if the press activated the

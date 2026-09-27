@@ -211,29 +211,7 @@ describe('FrameView audits its frame', () => {
     expect((await caught)?.message).toBe('no DOM');
   });
 
-  it('declares the story as an annotation target, sized by what the frame measured', async () => {
-    const frames = createTrialFrames();
-    const instrument = storyInstrument({
-      entry,
-      ready,
-      answers: createAnswerBook(),
-      frameUrl: '/frame.html',
-      onReady: () => {},
-      frames,
-    });
-    expect(instrument.annotations).toBeDefined();
-
-    frames.connect('t9', { send: vi.fn(), audit: vi.fn(async () => ({ ok: true as const, report })), capture: noCapture });
-    frames.reportSize('t9', { width: 320, height: 200 });
-    const targets = instrument.annotations?.targets(null, {}, { id: 't9', view: undefined });
-    expect(targets).toHaveLength(1);
-    expect(targets?.[0]?.id).toBe('story');
-    expect(targets?.[0]?.content).toEqual({ w: 320, h: 200 });
-    expect(targets?.[0]?.ref).toBe(frames.hostRef('t9'));
-    await expect(targets?.[0]?.base?.()).resolves.toEqual(picture);
-  });
-
-  it('takes no marks without a frame registry', () => {
+  it('takes no marks until annotations are a feature', () => {
     const instrument = storyInstrument({
       entry,
       ready,

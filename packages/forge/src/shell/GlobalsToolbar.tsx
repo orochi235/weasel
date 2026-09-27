@@ -37,27 +37,26 @@ function GlobalSelect({ name, declaration, values, set, labeled = false }: Globa
 }
 
 /**
- * The lab's header control for its global values: one select per declaration, and beside any declaration that others
- * are declared `under`, a button opening those others in a popover.
+ * The lab's header control for its global values: one select per declaration, then, at the end, a button for each
+ * declaration that others are declared `under`, opening those others in a popover.
  */
 export function GlobalsToolbar({ declarations }: { declarations: GlobalDeclarations }) {
   const [values, set] = useLabGlobals(declarations);
   const entries = Object.entries(declarations);
+  const top = entries.filter(([, declaration]) => declaration.under === undefined);
   return (
     <div className="fg-globals" role="toolbar" aria-label="Globals">
-      {entries
-        .filter(([, declaration]) => declaration.under === undefined)
-        .map(([key, declaration]) => {
-          const nested = entries.filter(([, other]) => other.under === key);
-          return (
-            <div key={key} className="fg-globals__item">
-              <GlobalSelect name={key} declaration={declaration} values={values} set={set} />
-              {nested.length > 0 ? (
-                <NestedGlobals label={declaration.label} nested={nested} values={values} set={set} />
-              ) : null}
-            </div>
-          );
-        })}
+      {top.map(([key, declaration]) => (
+        <div key={key} className="fg-globals__item">
+          <GlobalSelect name={key} declaration={declaration} values={values} set={set} />
+        </div>
+      ))}
+      {top.map(([key, declaration]) => {
+        const nested = entries.filter(([, other]) => other.under === key);
+        return nested.length > 0 ? (
+          <NestedGlobals key={key} label={declaration.label} nested={nested} values={values} set={set} />
+        ) : null;
+      })}
     </div>
   );
 }

@@ -11,7 +11,6 @@ import { documentInstrument, type Loaded, pendingInstrument } from './documentIn
 import type { GlobalDeclarations } from './globals';
 import { type Ready, readyKey } from './readyKey';
 import { storyInstrument } from './storyInstrument';
-import type { TrialFrames } from './trialFrames';
 
 export interface StoryRegistry {
   instruments: InstrumentList;
@@ -28,7 +27,6 @@ export interface StoryRegistry {
 export interface StoryRegistryOptions {
   frameUrl: string;
   globals?: GlobalDeclarations;
-  frames?: TrialFrames;
   /** Story modules by file. Given, every entry without `isolate` renders in the workshop document; absent, every
    *  entry renders in a frame. */
   importers?: FrameImporters;
@@ -44,7 +42,6 @@ interface Built {
   fault: Error | undefined;
   frameUrl: string;
   globals: GlobalDeclarations;
-  frames: TrialFrames | undefined;
   setup: FrameSetup | undefined;
   inDocument: boolean;
   generation: number;
@@ -71,7 +68,7 @@ const toError = (error: unknown): Error => (error instanceof Error ? error : new
  * reach the stories through `StoryGlobalsContext`, not through here.
  */
 export function useStoryRegistry(index: readonly IndexEntry[], options: StoryRegistryOptions): StoryRegistry {
-  const { frameUrl, globals = NO_GLOBALS, frames, importers, setup = NO_SETUP, load = loadStories } = options;
+  const { frameUrl, globals = NO_GLOBALS, importers, setup = NO_SETUP, load = loadStories } = options;
   const [readies, setReadies] = useState<ReadonlyMap<string, Ready>>(() => new Map());
   const [loaded, setLoaded] = useState<ReadonlyMap<string, Loaded>>(() => new Map());
   const [faults, setFaults] = useState<ReadonlyMap<string, Error>>(() => new Map());
@@ -214,7 +211,6 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
         held.fault === fault &&
         held.frameUrl === frameUrl &&
         held.globals === globals &&
-        held.frames === frames &&
         held.setup === setup &&
         held.inDocument === inDocument &&
         held.generation === generation &&
@@ -227,15 +223,14 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
               fault,
               frameUrl,
               globals,
-              frames,
               setup,
               inDocument,
               generation,
               revision,
               instrument: !inDocument
-                ? storyInstrument({ entry, ready, answers, frameUrl, onReady, globals, ...(frames ? { frames } : {}) })
+                ? storyInstrument({ entry, ready, answers, frameUrl, onReady, globals })
                 : had
-                  ? documentInstrument({ entry, loaded: had, setup, globals, ...(frames ? { frames } : {}) })
+                  ? documentInstrument({ entry, loaded: had, setup, globals })
                   : pendingInstrument({ entry, globals, load: request, generation, ...(fault ? { fault } : {}) }),
             };
       built.set(entry.id, kept);
@@ -243,7 +238,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
     });
     const unchanged = list.length === previous.list.length && list.every((i, n) => i === previous.list[n]);
     return { built, books, list: unchanged ? previous.list : list };
-  }, [index, readies, loaded, faults, generations, revisions, frameUrl, globals, frames, setup, importers, onReady, request]);
+  }, [index, readies, loaded, faults, generations, revisions, frameUrl, globals, setup, importers, onReady, request]);
 
   useLayoutEffect(() => {
     committed.current = cache;

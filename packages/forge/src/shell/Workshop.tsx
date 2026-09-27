@@ -111,7 +111,6 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
   const registry = useStoryRegistry(entries, {
     frameUrl,
     globals: declarations,
-    frames,
     ...(importers ? { importers } : {}),
     ...(setup ? { setup } : {}),
   });
