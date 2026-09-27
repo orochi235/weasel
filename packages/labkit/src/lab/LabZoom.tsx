@@ -10,13 +10,13 @@ import {
   useActionsRegistry,
   useDepSource,
   useGestureDispatcher,
-  type View,
   type ViewApi,
 } from '@weasel-js/core';
 import { ZoomInIcon, ZoomOutIcon } from '@weasel-js/ui';
 import { useContext, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import type { CameraView } from '../canvas/CameraInput';
+import { atScale, viewMiddle } from '../canvas/cameraZoom';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { formatShortcut } from '../passthrough/weasel-ui';
 import { Toolbar } from '../primitives/Toolbar';
@@ -46,15 +46,6 @@ function shortcutFor(kind: ZoomKind): string | undefined {
   return spec?.key ? formatShortcut({ key: spec.key, mod: spec.mods?.mod }) : undefined;
 }
 
-/** `view` at `scale`, about the screen point `at`. */
-function atScale(view: View, scale: number, at: { x: number; y: number }): View {
-  return {
-    x: view.x + at.x / view.scale.x - at.x / scale,
-    y: view.y + at.y / view.scale.y - at.y / scale,
-    scale: { x: scale, y: scale },
-  };
-}
-
 /** The focused trial's camera, with the zoom's reset meaning actual size about
  *  the middle of the view. */
 function forZoom(camera: CameraView): ViewApi {
@@ -62,11 +53,7 @@ function forZoom(camera: CameraView): ViewApi {
     get: camera.get,
     set: camera.set,
     hostSize: camera.hostSize,
-    recenter: () => {
-      const size = camera.hostSize?.();
-      const at = size ? { x: size.width / 2, y: size.height / 2 } : { x: 0, y: 0 };
-      return atScale(camera.get(), 1, at);
-    },
+    recenter: () => atScale(camera.get(), 1, viewMiddle(camera)),
   };
 }
 

@@ -180,6 +180,26 @@ describe('an instrument that declares a stage', () => {
     expect(zoomOf(content(container))).toBe(1);
   });
 
+  it('zooms about the middle of the view, not the stage origin', () => {
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ x: 0, y: 0, left: 0, top: 0, right: 240, bottom: 160, width: 240, height: 160, toJSON: () => ({}) });
+    try {
+      const { container } = render(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+      const trialView = within(screen.getByRole('toolbar', { name: 'View' }));
+      act(() => {
+        fireEvent.click(trialView.getByRole('button', { name: 'Zoom in' }));
+      });
+      const el = content(container);
+      expect(zoomOf(el)).toBeCloseTo(1.25);
+      // The screen middle (120, 80) still shows world (120, 80): pan = 120 - 120 * 1.25.
+      expect(el.style.getPropertyValue('--lk-stage-x')).toBe('-30px');
+      expect(el.style.getPropertyValue('--lk-stage-y')).toBe('-20px');
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
   it('is what earns them: DOM content without one gets none', () => {
     render(<Lab instruments={[plain]} defaultInstrument="Plain" />);
     expect(screen.queryByRole('toolbar', { name: 'View' })).toBeNull();

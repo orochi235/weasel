@@ -272,14 +272,6 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   Grid hairline strokes (`1 / meanScale`) have no per-axis analog at all — the
   renderer takes one width.
 
-- **(P3) A trial's own zoom buttons bypass its camera.** The `zoom-in`,
-  `zoom-out` and `actual-size` contributions in `packages/labkit/src/chrome/builtins.tsx`
-  write `withZoom(view, z)`, which keeps `pan`: they zoom about the frame's
-  origin rather than the middle of the view, and ignore the instrument's
-  `minZoom` / `maxZoom`. The lab header's zoom (`lab/LabZoom.tsx`) goes through
-  the trial's camera and core's `viewport.zoom`; the trial's buttons, and the
-  `ZoomControl` slider beside them, should trigger the same action.
-
 - **(P3) One Cmd+= may zoom two viewports.** The lab header claims Mod+= / Mod+-
   / Mod+0 for the focused trial's camera, and a story that renders its own
   `<SceneCanvas>` with keyboard zoom binds the same keys on its own dispatcher.

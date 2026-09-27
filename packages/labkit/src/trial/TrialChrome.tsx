@@ -1,5 +1,7 @@
-import { type KeyboardEvent, type ReactNode, useContext, useMemo } from 'react';
+import { type KeyboardEvent, type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
+import { CameraRegistryContext } from '../canvas/cameraRegistry';
+import { zoomCameraTo } from '../canvas/cameraZoom';
 import { builtinContributions } from '../chrome/builtins';
 import { mergeContributions, suppressContributions } from '../chrome/merge';
 import { PaletteRegion } from '../chrome/regions/PaletteRegion';
@@ -68,6 +70,7 @@ const NO_OP = (): void => {};
 /** One frozen empty map, so a trial that has folded nothing keeps a stable
  *  context identity across renders. */
 const NO_SECTIONS: Readonly<Record<string, boolean>> = Object.freeze({});
+const noSubscribe = (): (() => void) => NO_OP;
 
 /** The frame around a running instrument. Builds one chrome context, assembles
  *  the contributions the instrument, the runtime and the lab declare, and hands
@@ -123,8 +126,17 @@ export function TrialChrome({
   const title = record.title ?? instrument.title ?? instrument.name;
   const collapsedSections = record.collapsedSections ?? NO_SECTIONS;
 
+  // The trial's own camera, where it has one: zoom goes through it, about the
+  // middle of the view and inside the instrument's range, as the lab's does.
+  const cameras = useContext(CameraRegistryContext);
+  const camera = useSyncExternalStore(
+    cameras?.subscribe ?? noSubscribe,
+    () => cameras?.get(trialId) ?? null,
+  );
+
   const ctx = useMemo<TrialChromeContext>(() => {
     const setZoom = (z: number): void => {
+      if (camera) return zoomCameraTo(camera, z);
       if (!view2d) return;
       updateTrialView(trialId, withZoom(view2d, z));
     };
@@ -203,6 +215,7 @@ export function TrialChrome({
     setTrialTitle,
     setTrialSectionCollapsed,
     collapsedSections,
+    camera,
   ]);
 
   const contributions = useMemo(
