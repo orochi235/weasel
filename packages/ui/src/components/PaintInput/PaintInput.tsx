@@ -1,7 +1,12 @@
 import { useCallback, useRef, type ReactElement } from 'react';
 import {
+  getAlpha01,
   getPaintKind,
   listPaintKinds,
+  paintAlpha,
+  solid,
+  toHex8,
+  withAlpha01,
   withGradientKind,
   type FillStyle,
   type GradientFill,
@@ -33,6 +38,23 @@ const GRADIENT_KINDS: readonly string[] = [
 
 function isGradient(paint: FillStyle | undefined): paint is GradientFill {
   return paint !== undefined && GRADIENT_KINDS.includes(paint.fill ?? '');
+}
+
+/** A solid paint as the one `#rrggbbaa` a color field edits. Its alpha lives
+ *  in `opacity`; a hex alpha left in `color` multiplies with it when painted,
+ *  so both fold in. */
+function solidHex8(paint: FillStyle): string {
+  const hex8 = toHex8((paint as { color: string }).color);
+  return withAlpha01(hex8.slice(0, 7), getAlpha01(hex8) * paintAlpha(paint));
+}
+
+/** `solid(color)` at the slider's own 1% resolution: the alpha arrives
+ *  through a hex channel, which would turn 70% into 0.70196. */
+function solidFromField(color: string): FillStyle {
+  const paint = solid(color);
+  return paint.opacity === undefined
+    ? paint
+    : { ...paint, opacity: Math.round(paint.opacity * 100) / 100 };
 }
 
 function isPattern(paint: FillStyle | undefined): paint is PatternFill {
@@ -163,7 +185,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
         <ColorField
           mixed
           aria-label={ariaLabel}
-          onChange={(color) => onChange({ fill: 'solid', color })}
+          onChange={(color) => onChange(solidFromField(color))}
         />
       );
     }
@@ -201,11 +223,11 @@ export function PaintInput(props: PaintInputProps): ReactElement {
     }
     return (
       <ColorField
-        value={currentColor()}
+        value={solidHex8(value)}
         alpha
         aria-label={ariaLabel}
-        onInput={(color) => onInput?.({ fill: 'solid', color })}
-        onChange={(color) => onChange({ fill: 'solid', color })}
+        onInput={(color) => onInput?.(solidFromField(color))}
+        onChange={(color) => onChange(solidFromField(color))}
       />
     );
   }

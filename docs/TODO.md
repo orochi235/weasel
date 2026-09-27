@@ -788,12 +788,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `lassoSelectAction` is always transient, spaces vertices at a fixed 2 world-px, and
   has no gesture callbacks or debug sink. `behaviors` and `mode` are the two that work.
 
-- **(P3) Unconfirmed: apps/draw's fill slider lags a live opacity scrub.** Seen
-  2026-09-27 in a browser: holding O and wheeling faded the selected rect, while
-  the Properties panel's fill slider still read 100%. Not yet checked whether it
-  predates the scrub moving onto a held tool. The scrub writes paints through
-  `scene.update` inside a batch (`apps/draw/src/opacityScrub/`), so the likely
-  question is whether the panel re-reads mid-batch.
+- **(P3) A gradient's or pattern's opacity has no control in the paint editors.** Every
+  paint kind carries its alpha in `opacity`, and `PaintInput` edits it only for a solid
+  (its alpha slider). `GradientEditor`, `PatternPicker` and `MeshEditor` never read or
+  write it, so an opacity scrub over a gradient node changes nothing the Properties
+  panel shows, and a panel edit can't undo it.
 
 - **(P3) The checkbox skin is written twice.** `PropertyField` draws a native
   `<input type="checkbox">` dressed by `.checkbox` in `Properties/Properties.module.css`,
