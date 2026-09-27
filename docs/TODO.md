@@ -40,6 +40,30 @@ Priority tags:
   time. Fine while `rect` / `text` / `image` are unconditionally decorative;
   revisit when a stateful-claims widget appears.
 
+- **(P3) Mode shortcuts never reach the dispatcher.** `ModeDefinition` declares
+  `entry` / `exit` / `commit` / `cancel` shortcuts (`packages/modes/src/presets/default.ts`),
+  and nothing in the tree reads them. `apps/draw/src/App.tsx` instead runs a
+  capture-phase window `keydown` that hard-codes Escape and Enter and
+  `stopPropagation`s ahead of the dispatcher's Escape ladder, and enters modes
+  from `SceneCanvas`'s `onDoubleClick` callback. Its comment says it is beating
+  `useKeybindings`' document handler, which no longer exists. The shortcuts
+  should become bindings gated on `modeIs`/`modeNot`.
+
+- **(P3) apps/draw's opacity scrub runs its own hold-key session.** Hold O and
+  wheel (`apps/draw/src/opacityScrub/useOpacityScrub.ts`) is a window
+  keydown/keyup pair plus a capture-phase `wheel` that `stopPropagation`s, so no
+  binding sees it. Held-key engagement exists for tools (`ToolDef.hotkey`); a
+  held key scoping a wheel binding for something that is not a tool does not.
+
+- **(P3) A press on empty canvas can't be an ambient binding beside select.**
+  `select` binds `pointerDown` on empty space at active scope, and active
+  outranks ambient, so an ambient contribution's `pointerDown` never fires.
+  `CustomShaderDemo` spawns its ripple from a one-binding tool made the active
+  tool instead (`defaultTools={[]}`, `initialActiveTool="press"`) — about 25
+  lines replacing a 5-line handler, and a tool mounted on panels that want no
+  press at all. Its pointer-move half is still a raw listener, waiting on a
+  hover gesture (below).
+
 - **(P3) `targetConsultsAffordance` still guesses from shape.** The kit's four
   body predicates now carry `readsAffordance: false` and the filter honors it
   (2026-08-12), so the counterexamples the kit itself ships are handled — which
@@ -610,6 +634,11 @@ What it surfaced:
   which one it drives. That wants a focused-canvas concept — which canvas an
   ambient `<ActionBar>`, keybinding or palette targets — and the registry keyed
   per canvas beneath it. Isolation covers only two canvases that simply coexist.
+  The same sharing makes action ids page-global without saying so: registrants
+  for one id stack newest-live, so three canvases each registering `press`
+  leave only the last one mounted answering every canvas's binding — the press
+  fires, into the wrong closure, with no warning. `CustomShaderDemo` hit it and
+  suffixes its ids per panel.
 
 - **(P3) View-bounds culling is opt-in and stops short of the painter.** The
   scene slot's `cull` option (`layers={{ scene: { cull: true } }}`, on in this
