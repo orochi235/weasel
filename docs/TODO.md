@@ -1222,6 +1222,15 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 ## Demos & visual regression
 
+- **(P3) Demos for packages that have none.** The demo site's Packages section lists only
+  packages with a demo that imports them directly (`apps/site/__tests__/packageDemos.test.ts`
+  holds that rule). None yet for `gestures`, `history`, `routing`, `bidi`, `svg`, `paint`,
+  `cursor`, `modes`, `kernel3d`, `loupe`, `geom`.
+- **(P3) A minimal public stage for package demos.** Demos of scene-free packages
+  (`quantity`, `text`, `bidi`, `geom`, `audio`) mount a whole `SceneCanvas` just to draw.
+  Not the primitive `<Canvas>`, which was unexported on purpose. Enforce its reach in
+  `packageDemos.test.ts` so it cannot spread: only a Packages-section demo of a scene-free
+  package may import it.
 - **(P2) Demos found broken during the 2026-09-27 preset pass.** Each one reproduces with
   `features={['draw']}` restored, so the presets didn't cause it:
   - `DiagramLiveDemo`: Relax did nothing on the first press. **Not reproduced** on 2026-09-27
