@@ -24,6 +24,10 @@ verdict.
 
 ![Precedence ladder](./diagrams/precedence-ladder.svg)
 
+The example routes are written in the route grammar that `parseRoute` and
+`formatRoute` read and print, defined in
+[`packages/gestures/src/grammar/routeGrammar.ts`](../packages/gestures/src/grammar/routeGrammar.ts).
+
 The ladder runs top to bottom, the order the candidate list ends up in.
 Naming the routed view outranks the scope tier (see `BindingOpts.views`), so
 the ladder puts it first. The two examples show the usual pattern: a rung
