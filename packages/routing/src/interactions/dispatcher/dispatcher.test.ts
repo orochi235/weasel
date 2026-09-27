@@ -29,7 +29,8 @@ function makeRegistry(actions: Action[]): ActionsRegistry {
     subscribe: vi.fn().mockReturnValue(() => {}),
     begin: vi.fn().mockReturnValue(null),
     setDispatcher: vi.fn(),
-    setDepRegistry: vi.fn(),
+    activate: vi.fn(),
+    isActive: () => true,
   };
 }
 
@@ -1188,6 +1189,29 @@ describe('view-scoped bindings', () => {
     expect((miniStart.mock.calls[0][0] as InvocationCtx).viewId).toBe('mini');
   });
 
+  it('keeps a binding naming the view ahead of a context-gated one that does not', () => {
+    const miniStart = vi.fn().mockReturnValue({ onMove: vi.fn(), onEnd: vi.fn() });
+    const gatedStart = vi.fn().mockReturnValue({ onMove: vi.fn(), onEnd: vi.fn() });
+    const registry = makeRegistry([
+      { id: 'mini.pan', label: 'mini', invoker: { timing: 'ongoing', start: miniStart } },
+      {
+        id: 'gated', label: 'gated', defaultBinding: { kind: 'drag' },
+        eligible: { mode: 'normal' },
+        invoker: { timing: 'ongoing', start: gatedStart },
+      },
+    ]);
+    const mini: Tool = {
+      id: 'mini',
+      eligibility: { always: true },
+      bindings: [{ spec: { kind: 'drag' }, actionId: 'mini.pan', opts: { views: ['mini'] } }],
+    };
+    createDispatcher().handleInput(down, makeCtx({
+      actions: registry, toolsById: new Map([['mini', mini]]), getRuleCtx: () => ruleCtx, viewId: 'mini',
+    }));
+    expect(miniStart).toHaveBeenCalledOnce();
+    expect(gatedStart).not.toHaveBeenCalled();
+  });
+
   it('hands the routed view to an eligibility rule', () => {
     const seen: (string | null | undefined)[] = [];
     const start = vi.fn().mockReturnValue({ onMove: vi.fn(), onEnd: vi.fn() });
@@ -1203,5 +1227,55 @@ describe('view-scoped bindings', () => {
     d.handleInput(down, makeCtx({ actions: registry, getRuleCtx: () => ruleCtx, viewId: 'mini' }));
     expect(start).toHaveBeenCalledOnce();
     expect(seen).toEqual([null, 'mini']);
+  });
+});
+
+describe('context-gated precedence', () => {
+  const ruleIn = (mode: string) => ({
+    focused: true,
+    selection: [],
+    multiActive: false,
+    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    action: { kind: null, id: null },
+    hover: null,
+    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
+    mode,
+    allowedCapabilities: new Set<string>(),
+  });
+
+  function setup() {
+    const reset = vi.fn();
+    const exit = vi.fn();
+    // The ungated action registers first, so registration order alone would pick it.
+    const registry = makeRegistry([
+      {
+        id: 'reset', label: 'reset', defaultBinding: { kind: 'key', key: 'a' },
+        invoker: { timing: 'immediate', run: reset },
+      },
+      {
+        id: 'exit', label: 'exit', defaultBinding: { kind: 'key', key: 'a' },
+        eligible: { mode: 'path-edit' },
+        invoker: { timing: 'immediate', run: exit },
+      },
+    ]);
+    return { registry, reset, exit };
+  }
+
+  it('fires the action gated on the current context ahead of an ungated one', () => {
+    const { registry, reset, exit } = setup();
+    createDispatcher().handleInput(
+      keyAEvent, makeCtx({ actions: registry, getRuleCtx: () => ruleIn('path-edit') }),
+    );
+    expect(exit).toHaveBeenCalledOnce();
+    expect(reset).not.toHaveBeenCalled();
+  });
+
+  it('leaves the ungated action to fire when the context does not hold', () => {
+    const { registry, reset, exit } = setup();
+    createDispatcher().handleInput(
+      keyAEvent, makeCtx({ actions: registry, getRuleCtx: () => ruleIn('normal') }),
+    );
+    expect(reset).toHaveBeenCalledOnce();
+    expect(exit).not.toHaveBeenCalled();
   });
 });

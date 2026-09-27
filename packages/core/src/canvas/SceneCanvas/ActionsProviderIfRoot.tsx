@@ -1,16 +1,14 @@
 /**
- * Conditional `<ActionsProvider>` wrapper. Mounts a provider only when no
- * parent registry is in scope — otherwise wraps children in an
- * `<ActionsScope>` so SceneCanvas shares the host's registry without its own
- * opt-outs reaching a sibling canvas.
+ * Conditional `<ActionsProvider>` wrapper: mounts one only when no registry is
+ * in scope, and otherwise renders its children against the one there. Used by
+ * a non-isolated `<WeaselProvider>`.
  */
 import type { ReactNode } from 'react';
-import { ActionsProvider, ActionsScope, useActionsRegistry } from '@weasel-js/routing/react';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
 
-/** Mount an `<ActionsProvider>` only when none is already in scope, so
- *  nesting canvases share one action registry instead of shadowing it. */
+/** Mount an `<ActionsProvider>` only when none is already in scope. */
 export function ActionsProviderIfRoot({ children }: { children: ReactNode }) {
   const parent = useActionsRegistry();
-  if (parent) return <ActionsScope>{children}</ActionsScope>;
+  if (parent) return <>{children}</>;
   return <ActionsProvider>{children}</ActionsProvider>;
 }

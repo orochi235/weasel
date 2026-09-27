@@ -245,7 +245,7 @@ export function BooleanOpsDemo() {
           registry before its SceneCanvas mounts, so the registry has to be in
           scope by the time they fire. Isolated because this canvas's non-empty
           initial selection would otherwise fight the static panels' empty
-          ones, and one actions registry routes input to one canvas. */}
+          ones. */}
       <WeaselProvider isolate>
         <InteractivePanel />
       </WeaselProvider>

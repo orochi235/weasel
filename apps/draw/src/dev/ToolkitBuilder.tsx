@@ -476,7 +476,8 @@ function stubActionsRegistry(actions: readonly Action[]): ActionsRegistry {
     subscribe: () => () => {},
     begin: () => null,
     setDispatcher: () => () => {},
-    setDepRegistry: () => () => {},
+    activate: () => {},
+    isActive: () => true,
   };
 }
 

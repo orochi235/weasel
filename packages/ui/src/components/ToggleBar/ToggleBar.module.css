@@ -275,6 +275,8 @@
 }
 
 .variant_flat .segmentSelected {
+  /* Above its neighbors, or the next cell's left border covers its right one. */
+  z-index: 1;
   background: var(--wzl-accent);
   color: var(--wzl-fg-on-accent);
   backdrop-filter: none;

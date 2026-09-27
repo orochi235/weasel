@@ -218,8 +218,9 @@ describe('SceneCanvas actions integration', () => {
     expect(saw).not.toBeNull();
   });
 
-  // The canvas gets its own <ActionsScope> so its opt-outs stay its own, but
-  // the store underneath is the host's: registrations cross in both directions.
+  // The canvas mounts its own input scope under the host's registry: the host
+  // reads through to the canvas's actions, and the canvas falls through to the
+  // host's.
   it('uses parent ActionsProvider when wrapped externally — no inner provider', () => {
     const scene = makeScene();
     let parentReg: ReturnType<typeof useActionsRegistry> = null;

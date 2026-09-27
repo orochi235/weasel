@@ -444,6 +444,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   // current state without needing to re-register on every render.
   // No `getRuleCtx` here: eligibility is a per-view answer, so it rides on the
   // dispatch record and `ctxNow` installs the routed view's.
+  const registryRef = useRef(actions);
+  registryRef.current = actions;
   const ctxRef = useRef<DispatcherContext>({
     actions,
     depRegistry,
@@ -726,6 +728,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented || isEditableTarget(e.target)) return;
+      // Every dispatcher hears keys on window; only the active scope's act.
+      if (!registryRef.current.isActive()) return;
 
       // Autorepeat for a key that's already engaged a key-held binding is
       // suppressed entirely — no dispatch (no trace flood) and the
@@ -822,6 +826,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // -----------------------------------------------------------------------
 
     const onWheel = (e: WheelEvent) => {
+      registryRef.current.activate();
       // Safari can report one trackpad pinch as both a gesture stream and
       // ctrl+wheel. While a claimed gesture is live it is the only driver.
       if (pinchLive && e.ctrlKey) {
@@ -941,6 +946,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // -----------------------------------------------------------------------
 
     const onPointerDown = (e: PointerEvent) => {
+      // Any button makes this the scope chrome and keys reach.
+      registryRef.current.activate();
       // Only the primary button drives gesture dispatch. `pointerdown` reports
       // `button === 0` for the left mouse button and for touch / pen contact;
       // secondary (right, `2`) and middle (`1`) mouse buttons are left for the

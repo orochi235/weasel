@@ -151,6 +151,16 @@ function actionAsTool(action: Action): Tool<unknown> {
   return { id: action.id, eligibility: {}, bindings: actionBindings(action) };
 }
 
+/** Which context an action applies in: `null` for everywhere, otherwise its
+ *  `eligible` rule, keyed so equal rules group together. */
+function contextKey(action: Action): string | null {
+  const eligible = action.eligible;
+  if (eligible === undefined) return null;
+  const rule = typeof eligible === 'function' ? (eligible as { rule?: unknown }).rule : eligible;
+  if (rule !== null && typeof rule === 'object') return JSON.stringify(rule);
+  return `action:${action.id}`;
+}
+
 /**
  * Detect the same-tuple overlaps that are *reachable* — the ones where the
  * dispatcher really does fall back on declaration order.
@@ -172,16 +182,32 @@ function actionAsTool(action: Action): Tool<unknown> {
  * Registered actions join the same two buckets: their `defaultBinding`s
  * assemble at ambient scope (hotkey scope when `Action.scope` says so), so an
  * ambient tool and an action claiming one tuple really do fall back on
- * declaration order.
+ * declaration order. An ambient action gated by an `eligible` rule is the
+ * exception: when its rule holds it outranks every ungated binding
+ * (`preferContextual`), so it is compared only with actions gated by the same
+ * rule. Actions gated by different rules are taken to apply in different
+ * contexts, which the modes that grant them decide.
  */
 export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   const registry = Array.isArray(scopes.registry)
     ? (scopes.registry as readonly Tool<unknown>[])
     : Object.values(scopes.registry as Readonly<Record<string, Tool<unknown>>>);
   const actions = scopes.actions ?? [];
-  const ambientActions = actions.filter((a) => a.scope !== 'hotkey').map(actionAsTool);
   const hotkeyActions = actions.filter((a) => a.scope === 'hotkey').map(actionAsTool);
-  const ambient = [...(scopes.ambient ?? []), ...ambientActions];
+  const gated = new Map<string, Tool<unknown>[]>();
+  const ungated: Tool<unknown>[] = [];
+  for (const a of actions) {
+    if (a.scope === 'hotkey') continue;
+    const key = contextKey(a);
+    if (key === null) {
+      ungated.push(actionAsTool(a));
+      continue;
+    }
+    const group = gated.get(key);
+    if (group) group.push(actionAsTool(a));
+    else gated.set(key, [actionAsTool(a)]);
+  }
+  const ambient = [...(scopes.ambient ?? []), ...ungated];
 
   const out: Conflict[] = [];
   const seen = new Set<string>();
@@ -197,9 +223,13 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   // Self-collisions: every entry, whichever slot it lands in — actions
   // included. Both group passes below are guarded on having more than one
   // member, so a lone action is checked by nothing else.
-  for (const tool of [...registry, ...ambient, ...hotkeyActions]) add(findConflictsKeyed([tool]));
-  // Ambient tools and ambient-scope actions are all live together.
+  const gatedActions = [...gated.values()].flat();
+  for (const tool of [...registry, ...ambient, ...gatedActions, ...hotkeyActions]) {
+    add(findConflictsKeyed([tool]));
+  }
+  // Ambient tools and ungated ambient actions are all live together.
   if (ambient.length > 1) add(findConflictsKeyed(ambient));
+  for (const group of gated.values()) if (group.length > 1) add(findConflictsKeyed(group));
   // Hotkey-capable tools can stack on each other. `hotkey` is declared on the
   // authored `ToolDef`, not carried onto the runtime `Tool` — `Tool.def` is
   // the reflection handle for exactly this kind of read, and it's typed
