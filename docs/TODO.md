@@ -757,6 +757,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P3) Unconfirmed: apps/draw's fill slider lags a live opacity scrub.** Seen
+  2026-09-27 in a browser: holding O and wheeling faded the selected rect, while
+  the Properties panel's fill slider still read 100%. Not yet checked whether it
+  predates the scrub moving onto a held tool. The scrub writes paints through
+  `scene.update` inside a batch (`apps/draw/src/opacityScrub/`), so the likely
+  question is whether the panel re-reads mid-batch.
+
 - **(P3) The checkbox skin is written twice.** `PropertyField` draws a native
   `<input type="checkbox">` dressed by `.checkbox` in `Properties/Properties.module.css`,
   because the kit's `Checkbox` renders a `<label>` of its own that cannot sit inside a
