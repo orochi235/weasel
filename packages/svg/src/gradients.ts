@@ -33,9 +33,15 @@ export const WEASEL_NS_PREFIX = 'wzl';
 
 /** `true` when SVG has a paint server for this kind, so the reference needs no
  *  fallback color and the root needs no foreign namespace. */
-function hasNativeSvgForm(paint: FillStyle): boolean {
-  const kind = paint.fill ?? 'solid';
+/** Whether SVG has its own paint server for paint kind `kind`: solids, the
+ *  linear and radial gradients, and patterns. Any other kind is written in
+ *  weasel's namespace with a fallback color, which other renderers paint flat. */
+export function nativeSvgKind(kind: string): boolean {
   return kind === 'solid' || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'pattern';
+}
+
+function hasNativeSvgForm(paint: FillStyle): boolean {
+  return nativeSvgKind(paint.fill ?? 'solid');
 }
 
 /**
@@ -48,10 +54,17 @@ function hasNativeSvgForm(paint: FillStyle): boolean {
  */
 const INTERPOLATE_SPACES = new Set(['rgb', 'oklab', 'oklch']);
 
+/** Whether a gradient interpolating through `space` blends the same in every
+ *  SVG renderer — only sRGB, the default. A perceptual space still exports,
+ *  but renderers other than weasel blend it in sRGB. */
+export function nativeSvgSpace(space: string | null | undefined): boolean {
+  return !space || space === 'rgb';
+}
+
 /** The `wzl:interpolate` attribute a gradient needs, or `''` for the sRGB
  *  default every other renderer already assumes. */
 function interpolateAttr(space: string | undefined): string {
-  if (!space || space === 'rgb') return '';
+  if (nativeSvgSpace(space)) return '';
   return ` ${WEASEL_NS_PREFIX}:interpolate="${space}"`;
 }
 
@@ -68,7 +81,7 @@ function readInterpolate(el: Element, elements: ElementTable): 'oklab' | 'oklch'
  *  has to declare the namespace the attribute is written in. */
 function usesInterpolateAttr(paint: FillStyle): boolean {
   const space = (paint as { interpolate?: string }).interpolate;
-  return space != null && space !== 'rgb' && INTERPOLATE_SPACES.has(space);
+  return !nativeSvgSpace(space) && INTERPOLATE_SPACES.has(space!);
 }
 
 /** The local name of a tag, prefix stripped. */

@@ -51,12 +51,17 @@ export type BoundsCtx = {
 };
 
 /**
- * Passed to `renderTrack`: the track's width in CSS px and a mapping from a
- * slider value to its 0..1 position along the track.
+ * Passed to `renderTrack`: the track's width in CSS px, a mapping from a
+ * slider value to its 0..1 position along the value span, and the CSS
+ * position (a `calc()` against the painted box's width) of a 0..1 fraction of
+ * that span. A painter places everything that must line up with the thumbs
+ * through `fractionToPosition`: under `thumbFit: 'inside'` the span stops half
+ * a thumb short of each end of the track.
  */
 export type TrackCtx = {
   trackWidth: number;
   valueToFraction: (v: number) => number;
+  fractionToPosition: (f: number) => string;
 };
 
 /** A {@link Slider} stop that carries a label, drawn under the track at the stop. */
@@ -97,6 +102,12 @@ export type SliderStop = {
  * `onRemoveThumb` lets a right-click or a drag off the track remove one —
  * both callbacks can decline by returning `null`/`false`. `allowShiftAll`
  * makes shift-drag translate every thumb together.
+ *
+ * `thumbFit: 'inside'`, the default, runs the value span half a thumb short of
+ * each end of the track, so a thumb at `min` or `max` sits flush with the
+ * track's edge instead of hanging half over it — the layout a native range
+ * input has. `'overhang'` runs the span edge to edge and centers an end thumb
+ * on the edge.
  */
 export type SliderProps<T extends Thumb = Thumb> = {
   thumbs: readonly T[];
@@ -116,6 +127,7 @@ export type SliderProps<T extends Thumb = Thumb> = {
   onRemoveThumb?: (index: number) => boolean;
   allowShiftAll?: boolean;
   renderTrack?: (ctx: TrackCtx) => ReactNode;
+  thumbFit?: 'inside' | 'overhang';
   trackHeight?: number;
   /** `'slim'` drives the track and thumb from the kit's slider tokens, so a
    *  Slider matches the property rows. `trackHeight` still wins if given. */
@@ -217,6 +229,12 @@ function resolveBounds(thumb: Thumb, ctx: BoundsCtx, fallbackMin: number, fallba
   return [tuple[0], tuple[1]];
 }
 
+/** Where fraction `f` of the value span falls in a box as wide as the track.
+ *  The rail element is laid out from the same `--rp-thumb-inset`. */
+function fractionToPosition(f: number): string {
+  return `calc(var(--rp-thumb-inset) + ${f} * (100% - 2 * var(--rp-thumb-inset)))`;
+}
+
 function defaultReadout(thumb: Thumb): string {
   return formatNumber(thumb.value, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 }
@@ -240,6 +258,9 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
   const max = even ? stops[stops.length - 1] : props.max;
 
   const trackRef = useRef<HTMLDivElement | null>(null);
+  // The value span. Every pointer is measured against it, and thumbs, ticks
+  // and stop labels are laid out inside it, so they agree by construction.
+  const railRef = useRef<HTMLDivElement | null>(null);
   // In-flight thumb buffer during a drag; null when not dragging.
   const dragBufferRef = useRef<T[] | null>(null);
   const sessionRef = useRef<PointerSession | null>(null);
@@ -292,10 +313,10 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
       let droppedOff = false;
 
       const onMove = (ev: PointerEvent) => {
-        const track = trackRef.current;
+        const rail = railRef.current;
         const buffer = dragBufferRef.current;
-        if (!track || !buffer) return;
-        const rect = track.getBoundingClientRect();
+        if (!rail || !buffer) return;
+        const rect = rail.getBoundingClientRect();
         let v = valueAt((ev.clientX - rect.left) / rect.width, rect.width);
 
         const [bLo, bHi] = resolveBounds(buffer[index], { thumbs: buffer, index }, min, max);
@@ -356,10 +377,10 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
       dragBufferRef.current = buf;
 
       const onMove = (ev: PointerEvent) => {
-        const track = trackRef.current;
+        const rail = railRef.current;
         const buffer = dragBufferRef.current;
-        if (!track || !buffer) return;
-        const rect = track.getBoundingClientRect();
+        if (!rail || !buffer) return;
+        const rect = rail.getBoundingClientRect();
         const dxFraction = (ev.clientX - anchorX) / rect.width;
         // Evenly spaced gaps span different amounts of value, so equal value
         // offsets would pull the thumbs apart; move them by track distance.
@@ -444,8 +465,9 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     if ((e.target as HTMLElement).closest(`.${s.thumb}`)) return;
     e.preventDefault();
     const track = trackRef.current;
-    if (!track) return;
-    const rect = track.getBoundingClientRect();
+    const rail = railRef.current;
+    if (!track || !rail) return;
+    const rect = rail.getBoundingClientRect();
     const v = valueAt((e.clientX - rect.left) / rect.width, rect.width);
 
     if (props.onAddThumb) {
@@ -565,7 +587,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
       ))}
     </div>
   );
-  const rootClass = [s.root, slim && s.slim, stopLabelRow && s.withStopLabels, className].filter(Boolean).join(' ');
+  const rootClass = [s.root, slim && s.slim, props.thumbFit === 'overhang' && s.overhang, stopLabelRow && s.withStopLabels, className].filter(Boolean).join(' ');
 
   return (
     <div
@@ -579,9 +601,11 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
             {props.renderTrack({
               trackWidth: trackRef.current?.getBoundingClientRect().width ?? 0,
               valueToFraction,
+              fractionToPosition,
             })}
           </div>
         )}
+        <div className={s.rail} ref={railRef} data-slider-rail>
         {(props.showStops ?? true) && stops.length > 0 && (
           <div className={s.ticks} data-slider-ticks aria-hidden="true">
             {stops.map(v => {
@@ -624,6 +648,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
             </div>
           );
         })}
+        </div>
       </div>
       {placement === 'inline-after' && (
         <span data-readout="inline" className={s.readoutInline}>

@@ -1,4 +1,8 @@
 .root {
+  /* The value span stops this far short of each end of the track. Half a
+   * thumb puts an end thumb flush with the edge; `fractionToPosition` in
+   * Slider.tsx is the same geometry for painters. */
+  --rp-thumb-inset: calc(var(--rp-thumb-size, 14px) / 2);
   position: relative;
   user-select: none;
   -webkit-user-select: none;
@@ -23,6 +27,15 @@
   /* No `overflow: hidden` here — thumbs at extreme values would get
    * clipped at the track edges. The gradient/track-paint clip is
    * applied to `.trackInner` instead, which lets thumbs spill freely. */
+}
+
+.overhang {
+  --rp-thumb-inset: 0px;
+}
+
+.rail {
+  position: absolute;
+  inset: 0 var(--rp-thumb-inset);
 }
 
 .trackInner {
@@ -93,6 +106,7 @@
    size — which left 4px of dead space under the labels at either density. */
 .readoutsBelow {
   position: relative;
+  margin-inline: var(--rp-thumb-inset);
   height: calc(var(--wzl-font-size-xs) * var(--wzl-leading-tight));
   margin-top: var(--wzl-space-2);
 }

@@ -1,23 +1,23 @@
-import { useCallback, type ReactElement } from 'react';
+import { type ReactElement, type ReactNode } from 'react';
 import {
+  getPaintKind,
+  isGradientFill,
+  listGradientKinds,
   sampleGradientStops,
-  withGradientKind,
+  switchGradientKind,
   type ColorSpace,
+  type FillStyle,
   type GradStop,
   type GradientFill,
-  type GradientKind,
+  type PaintKind,
 } from '@weasel-js/core';
+import { nativeSvgKind, nativeSvgSpace } from '@weasel-js/svg';
 import { Slider, type Thumb } from '../Slider';
 import { ColorField } from '../ColorField';
+import { MeshEditor, isMeshPaint } from '../MeshEditor';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import { paintGradientTrack } from '../../paintGradientTrack';
 import s from './GradientEditor.module.css';
-
-const KINDS: readonly ToggleBarItem<GradientKind>[] = [
-  { value: 'linear-gradient', label: 'Linear' },
-  { value: 'radial-gradient', label: 'Radial' },
-  { value: 'conic-gradient', label: 'Conic' },
-];
 
 const SPACES: readonly ToggleBarItem<ColorSpace>[] = [
   { value: 'rgb', label: 'sRGB' },
@@ -33,30 +33,44 @@ const MIN_STOPS = 2;
  * `onChange` once at its end.
  */
 export interface GradientEditorProps {
-  /** The gradient being edited. */
-  value: GradientFill;
+  /** The gradient being edited: a paint of any gradient kind — one that
+   *  `listGradientKinds` returns. */
+  value: FillStyle;
   /**
    * Live value during a gesture — a stop drag, a color-picker scrub. Wire
    * it for preview; it fires many times per gesture and must not be
    * written to history.
    */
-  onInput?: (next: GradientFill) => void;
+  onInput?: (next: FillStyle) => void;
   /** Committed value: one call per completed gesture. Pair with an
    *  undoable write. */
-  onChange: (next: GradientFill) => void;
-  /** Show the linear / radial / conic switch. Default true; turn it off
-   *  when the surrounding UI already owns the kind. */
+  onChange: (next: FillStyle) => void;
+  /** Show the kind switch — every registered gradient kind. Default true;
+   *  turn it off when the surrounding UI already owns the kind. */
   kindSwitch?: boolean;
   /** Show the sRGB / OKLab / OKLCh switch, which writes `interpolate`.
    *  Default true. */
   spaceSwitch?: boolean;
+  /**
+   * Offer only what an SVG file carries natively: the linear and radial
+   * gradients, which SVG has elements for, blended in sRGB, the only space
+   * every SVG renderer honors. A conic or mesh gradient exports as a weasel
+   * element that other renderers paint as one flat color, and an OKLab or
+   * OKLCh blend exports as an attribute they ignore. A value already outside
+   * that set keeps its own kind and space on offer, so it can be switched
+   * back. Default false.
+   */
+  svg?: boolean;
   className?: string;
 }
 
 type StopThumb = Thumb & { color: string };
 
 /**
- * Editor for a gradient's kind and stop list.
+ * Editor for a gradient's kind and colors: the stop list of a linear, radial
+ * or conic gradient, a mesh's corner colors, or a registered kind's own
+ * `Editor`. Switching kind goes through `switchGradientKind`, so the colors
+ * carry across.
  *
  * Geometry (`from`/`to`, `center`, `radius`, `angle`) is deliberately not
  * edited here — on a canvas that belongs on the artwork, via
@@ -69,14 +83,74 @@ type StopThumb = Thumb & { color: string };
  * Rendering sorts a copy.
  */
 export function GradientEditor(props: GradientEditorProps): ReactElement {
-  const { value, onInput, onChange, kindSwitch = true, spaceSwitch = true, className } = props;
+  const { value, onInput, onChange, kindSwitch = true, spaceSwitch = true, svg = false, className } = props;
+  const kind: PaintKind = value.fill ?? 'solid';
+  const space: ColorSpace = (value as { interpolate?: ColorSpace }).interpolate ?? 'rgb';
+
+  const kinds: readonly ToggleBarItem<PaintKind>[] = listGradientKinds()
+    .filter((entry) => !svg || nativeSvgKind(entry.id) || entry.id === kind)
+    .map((entry) => ({ value: entry.id, label: entry.label }));
+  const spaces = SPACES.filter((item) => !svg || nativeSvgSpace(item.value) || item.value === space);
+
+  const switchKind = (next: PaintKind): void => {
+    const converted = switchGradientKind(value, next);
+    if (converted && converted !== value) onChange(converted);
+  };
+
+  return (
+    <div className={[s.root, className].filter(Boolean).join(' ')}>
+      {kindSwitch && (
+        <ToggleBar<PaintKind>
+          items={kinds}
+          value={kind}
+          size="sm"
+          ariaLabel="Gradient kind"
+          onChange={(next) => next && switchKind(next)}
+        />
+      )}
+
+      {renderBody()}
+    </div>
+  );
+
+  function renderBody(): ReactElement {
+    const spaceBar = spaceSwitch && spaces.length > 1 && (
+      <ToggleBar<ColorSpace>
+        items={spaces}
+        value={space}
+        size="sm"
+        ariaLabel="Blend space"
+        onChange={(next) => next && onChange({ ...value, interpolate: next } as FillStyle)}
+      />
+    );
+    // A registered `Editor` wins even for a built-in id, as it does in `PaintInput`.
+    const entry = getPaintKind(kind);
+    if (entry?.Editor) {
+      const Editor = entry.Editor;
+      return <><Editor value={value} onInput={onInput} onChange={onChange} />{spaceBar}</>;
+    }
+    if (isGradientFill(value)) {
+      return <StopsBody value={value} spaceBar={spaceBar} onInput={onInput} onChange={onChange} />;
+    }
+    if (isMeshPaint(value)) {
+      return <><MeshEditor value={value} spaceSwitch={false} onInput={onInput} onChange={onChange} />{spaceBar}</>;
+    }
+    return <div className={s.noEditor}>{entry?.label ?? kind}: no editor</div>;
+  }
+}
+
+/** The stop slider and swatch row of a linear, radial or conic gradient. */
+function StopsBody(props: {
+  value: GradientFill;
+  spaceBar: ReactNode;
+  onInput?: (next: FillStyle) => void;
+  onChange: (next: FillStyle) => void;
+}): ReactElement {
+  const { value, spaceBar, onInput, onChange } = props;
   const stops = value.stops;
   const space = value.interpolate ?? 'rgb';
 
-  const withStops = useCallback(
-    (next: GradStop[]): GradientFill => ({ ...value, stops: next }),
-    [value],
-  );
+  const withStops = (next: GradStop[]): GradientFill => ({ ...value, stops: next });
 
   const thumbs: StopThumb[] = stops.map((stop) => ({ value: stop.offset, color: stop.color }));
 
@@ -93,17 +167,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
     .sort((a, b) => a.stop.offset - b.stop.offset);
 
   return (
-    <div className={[s.root, className].filter(Boolean).join(' ')}>
-      {kindSwitch && (
-        <ToggleBar<GradientKind>
-          items={KINDS}
-          value={value.fill}
-          size="sm"
-          ariaLabel="Gradient kind"
-          onChange={(kind) => kind && onChange(withGradientKind(value, kind))}
-        />
-      )}
-
+    <>
       <Slider<StopThumb>
         min={0}
         max={1}
@@ -124,15 +188,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
         })}
       />
 
-      {spaceSwitch && (
-        <ToggleBar<ColorSpace>
-          items={SPACES}
-          value={space}
-          size="sm"
-          ariaLabel="Blend space"
-          onChange={(next) => next && onChange({ ...value, interpolate: next })}
-        />
-      )}
+      {spaceBar}
 
       <div className={s.swatches}>
         {ordered.map(({ stop, index }) => (
@@ -147,6 +203,6 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
           />
         ))}
       </div>
-    </div>
+    </>
   );
 }

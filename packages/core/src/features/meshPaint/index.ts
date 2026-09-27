@@ -6,7 +6,9 @@
 export {
   MESH_GRADIENT_KIND,
   isMeshGradientFill,
+  meshFromStops,
   meshGradientXml,
+  meshStops,
   seedMeshPatch,
   type MeshGradientFill,
 } from './meshPaint';

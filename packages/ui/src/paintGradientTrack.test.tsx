@@ -1,14 +1,34 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
+import type { CSSProperties, ReactElement } from 'react';
 import { paintGradientTrack } from './paintGradientTrack';
 import type { TrackCtx } from './components/Slider';
 
 const ctx: TrackCtx = {
   trackWidth: 200,
   valueToFraction: (v: number) => v,
+  fractionToPosition: (f: number) => `${(f * 100).toFixed(1)}%`,
 };
 
 describe('paintGradientTrack', () => {
+  it("places the ramp and the hatch on the slider's rail, not the bare track", () => {
+    const railed: TrackCtx = { ...ctx, fractionToPosition: (f) => `rail(${f})` };
+    const renderTrack = paintGradientTrack({
+      gradient: () => '#888',
+      samples: 2,
+      activeRange: [0.25, 0.75],
+    });
+    // Read off the element rather than the DOM: jsdom drops a background it can't parse.
+    const bg = (renderTrack(railed) as ReactElement<{ style: CSSProperties }>).props.style.background as string;
+    // Every sample sits at the rail position for its fraction.
+    expect(bg).toContain('rail(0)');
+    expect(bg).toContain('rail(0.5)');
+    expect(bg).toContain('rail(1)');
+    // The dimmed ends run to the rail positions of the active range's ends.
+    expect(bg).toContain('rail(0.25)');
+    expect(bg).toContain('rail(0.75)');
+  });
+
   it('returns a function that renders a div with a sampled linear gradient', () => {
     const renderTrack = paintGradientTrack({
       gradient: t => (t < 0.5 ? '#000' : '#fff'),
