@@ -97,7 +97,7 @@ describe('KeySequence', () => {
 
   it('always renders modifiers first even when given out of order', () => {
     const { container } = render(
-      <KeySequence keys={[{ label: 'K' }, { label: '⌘' }, { label: '⇧' }]} separator={null} />,
+      <KeySequence keys={[{ label: 'K' }, { label: '⌘' }, { label: '⇧' }]} joins="none" />,
     );
     expect(chips(container).map((c) => c.textContent)).toEqual(['⌘', '⇧', 'K']);
   });
@@ -106,7 +106,7 @@ describe('KeySequence', () => {
     const { container } = render(
       <KeySequence
         keys={[{ label: 'B' }, { label: '⌥' }, { label: 'A' }, { label: '⌘' }]}
-        separator={null}
+        joins="none"
       />,
     );
     expect(chips(container).map((c) => c.textContent)).toEqual(['⌥', '⌘', 'B', 'A']);
@@ -124,18 +124,49 @@ describe('KeySequence', () => {
     expect(container.textContent).toBe('⌘ then K');
   });
 
-  it('suppresses the separator when null', () => {
+  it('suppresses the separator with joins="none"', () => {
     const { container } = render(
-      <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} separator={null} />,
+      <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} joins="none" />,
     );
     expect(container.textContent).toBe('⌘K');
+    expect(container.querySelector('kbd + span, span + kbd')).toBeNull();
   });
 
-  it('suppresses the separator when empty string', () => {
+  it('joins="key" (the default) places one separator between the modifiers and the keys', () => {
+    const keys = [{ label: '⌘' }, { label: '⇧' }, { label: 'K' }];
+    const a = render(<KeySequence keys={keys} />);
+    expect(a.container.textContent).toBe('⌘⇧+K');
+    a.unmount();
+    const b = render(<KeySequence keys={keys} joins="key" />);
+    expect(b.container.textContent).toBe('⌘⇧+K');
+  });
+
+  it('joins="key" with several non-modifiers separates only at the boundary', () => {
     const { container } = render(
-      <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} separator="" />,
+      <KeySequence keys={[{ label: '⌘' }, { label: 'K' }, { label: 'L' }]} joins="key" />,
     );
-    expect(container.textContent).toBe('⌘K');
+    expect(container.textContent).toBe('⌘+KL');
+  });
+
+  it('joins="all" separates every adjacent pair of chips', () => {
+    const { container } = render(
+      <KeySequence keys={[{ label: 'K' }, { label: '⌘' }, { label: '⇧' }]} joins="all" />,
+    );
+    expect(container.textContent).toBe('⌘+⇧+K');
+    expect(container.querySelectorAll('kbd')).toHaveLength(3);
+  });
+
+  it('joins="all" separates modifier-only and key-only sequences too', () => {
+    const mods = render(<KeySequence keys={[{ label: '⌘' }, { label: '⇧' }]} joins="all" />);
+    expect(mods.container.textContent).toBe('⌘+⇧');
+    mods.unmount();
+    const plain = render(<KeySequence keys={[{ label: 'A' }, { label: 'B' }]} joins="all" separator=" then " />);
+    expect(plain.container.textContent).toBe('A then B');
+  });
+
+  it('joins="all" renders no separator around a single chip', () => {
+    const { container } = render(<KeySequence keys={[{ label: 'K' }]} joins="all" />);
+    expect(container.textContent).toBe('K');
   });
 
   it('omits the separator when there are no modifiers', () => {

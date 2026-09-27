@@ -62,6 +62,7 @@ const meta: Meta<StoryArgs> = {
   args: {
     keys: [{ label: '⌘' }, { label: 'K' }],
     separator: '+',
+    joins: 'key',
     variant: 'default',
     platform: 'macos',
     legend: 'auto',
@@ -76,7 +77,13 @@ const meta: Meta<StoryArgs> = {
     separator: {
       control: 'text',
       description:
-        'Inserted between the trailing modifier chip and the first non-modifier chip. `null` or `""` suppresses it.',
+        'Glyph drawn wherever `joins` places a separator.',
+    },
+    joins: {
+      control: 'inline-radio',
+      options: ['all', 'key', 'none'],
+      description:
+        '`all`: between every pair of chips. `key` (default): once, between the last modifier and the first non-modifier. `none`: never.',
     },
     variant: {
       control: 'inline-radio',
@@ -107,8 +114,8 @@ const meta: Meta<StoryArgs> = {
 export default meta;
 type Story = StoryObj<StoryArgs>;
 
-/** Standard Cmd+K. The default separator (`+`) sits at the
- *  modifier/non-modifier boundary. */
+/** Standard Cmd+K. By default (`joins: 'key'`) the separator sits once,
+ *  at the modifier/non-modifier boundary. */
 export const Default: Story = {};
 
 /** Empty input renders a muted em-dash placeholder. */
@@ -158,11 +165,27 @@ export const CustomSeparator: Story = {
   },
 };
 
-/** No separator at all — chips abut. */
-export const NoSeparator: Story = {
+/** `joins: 'all'` — a separator between every pair of chips: `⌘ + ⇧ + K`. */
+export const JoinAll: Story = {
   args: {
-    keys: [{ label: '⌘' }, { label: 'K' }],
-    separator: null,
+    keys: [{ label: '⌘' }, { label: '⇧' }, { label: 'K' }],
+    joins: 'all',
+  },
+};
+
+/** `joins: 'key'` (the default) — one separator, before the key: `⌘ ⇧ + K`. */
+export const JoinKey: Story = {
+  args: {
+    keys: [{ label: '⌘' }, { label: '⇧' }, { label: 'K' }],
+    joins: 'key',
+  },
+};
+
+/** `joins: 'none'` — no separator at all; chips abut. */
+export const JoinNone: Story = {
+  args: {
+    keys: [{ label: '⌘' }, { label: '⇧' }, { label: 'K' }],
+    joins: 'none',
   },
 };
 
@@ -188,6 +211,7 @@ export const Gallery: Story = {
   argTypes: {
     keys: { table: { disable: true } },
     separator: { table: { disable: true } },
+    joins: { table: { disable: true } },
     variant: { table: { disable: true } },
   },
   render: ({ platform = 'macos', legend = 'auto', font }) => (
