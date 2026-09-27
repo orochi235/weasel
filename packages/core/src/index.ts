@@ -640,7 +640,9 @@ export {
   isTensorPatch,
   isValidPatch,
   meshBounds,
+  meshFromStops,
   meshGradientXml,
+  meshStops,
   patchBounds,
   patchCorner,
   seedMeshPatch,
@@ -829,8 +831,10 @@ export {
   registerPaintKind,
   asPaint,
   getPaintKind,
+  listGradientKinds,
   listPaintKinds,
   paintKindOf,
+  switchGradientKind,
   _resetPaintKindsForTests,
 } from './core/paintKinds';
 export type {

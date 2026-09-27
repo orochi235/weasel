@@ -16,6 +16,7 @@
  * `docs/proposals/2026-09-17-paint-kinds-beyond-svg.md` is the design.
  */
 
+import type { GradStop } from '@weasel-js/paint';
 import { registerPaintKind, asPaint, type PaintBindContext, type PaintProgram } from '../../core/paintKinds';
 import { resolveColor, rgbaToHex } from '../../renderer/math/color';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
@@ -116,6 +117,59 @@ export function seedMeshPatch(color: string): MeshGradientFill {
   };
 }
 
+/** The straight-edged patch covering `[x0, x1] × [0, 1]`, in walk order. */
+function bandPatch(x0: number, x1: number, left: string, right: string): MeshPatch {
+  const corners: MeshPoint[] = [{ x: x0, y: 0 }, { x: x1, y: 0 }, { x: x1, y: 1 }, { x: x0, y: 1 }];
+  const points: MeshPoint[] = [];
+  for (let i = 0; i < 4; i++) {
+    const a = corners[i];
+    const b = corners[(i + 1) % 4];
+    points.push(a, { x: a.x + (b.x - a.x) / 3, y: a.y + (b.y - a.y) / 3 }, { x: a.x + (2 * (b.x - a.x)) / 3, y: a.y + (2 * (b.y - a.y)) / 3 });
+  }
+  return { points, colors: [left, right, right, left] };
+}
+
+/**
+ * A stop list as a mesh: one full-height band per gap between neighboring
+ * stops, colored left to right. The bands blend exactly the way the ramp
+ * does, so a horizontal gradient survives the switch unchanged. A zero-width
+ * gap is a hard break and gets no band.
+ */
+export function meshFromStops(stops: readonly GradStop[]): MeshGradientFill {
+  const sorted = [...stops].sort((a, b) => a.offset - b.offset);
+  if (sorted.length === 1) sorted.push({ offset: 1, color: sorted[0].color });
+  if (sorted.length === 0) return seedMeshPatch('#000000ff');
+  const patches: MeshPatch[] = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const a = sorted[i];
+    const b = sorted[i + 1];
+    if (b.offset > a.offset) patches.push(bandPatch(a.offset, b.offset, a.color, b.color));
+  }
+  return { fill: MESH_GRADIENT_KIND, patches, units: 'bounds' };
+}
+
+/**
+ * A mesh read as a stop list: every patch's top edge — corner 0 to corner 1 —
+ * placed by its `x` across the mesh's horizontal extent. The inverse of
+ * `meshFromStops`, and for any other mesh the ramp across its top.
+ */
+export function meshStops(mesh: MeshGradientFill): GradStop[] {
+  const valid = mesh.patches.filter(isValidPatch);
+  if (valid.length === 0) return [];
+  const xs = valid.flatMap((p) => [p.points[0].x, p.points[3].x]);
+  const lo = Math.min(...xs);
+  const span = Math.max(...xs) - lo;
+  const offsetOf = (x: number) => (span > 0 ? (x - lo) / span : 0);
+  const stops: GradStop[] = [];
+  for (const patch of valid) {
+    for (const [point, color] of [[patch.points[0], patch.colors[0]], [patch.points[3], patch.colors[1]]] as const) {
+      const offset = offsetOf(point.x);
+      if (!stops.some((s) => s.offset === offset && s.color === color)) stops.push({ offset, color });
+    }
+  }
+  return stops.sort((a, b) => a.offset - b.offset);
+}
+
 /** Every patch mapped through `move`. */
 function mapPatches(mesh: MeshGradientFill, move: (p: MeshPoint) => MeshPoint): MeshPatch[] {
   return mesh.patches.map((patch) => ({ ...patch, points: patch.points.map(move) }));
@@ -206,6 +260,8 @@ registerPaintKind({
   // The first corner of the first patch: a mesh has no single color, and this
   // is the one a fallback swatch and an SVG paint fallback both read.
   colorOf: (paint) => asMesh(paint).patches?.[0]?.colors?.[0],
+  stopsOf: (paint) => meshStops(asMesh(paint)),
+  fromStops: (stops) => asPaint(meshFromStops(stops)),
   bind: bindMesh,
   inPoseFrame: (fill, box: FillPoseBox) => {
     const mesh = asMesh(fill);

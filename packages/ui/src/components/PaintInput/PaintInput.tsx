@@ -5,19 +5,16 @@ import {
   listPaintKinds,
   paintAlpha,
   solid,
+  switchGradientKind,
   toHex8,
   withAlpha01,
-  withGradientKind,
   type FillStyle,
-  type GradientFill,
-  type GradientKind,
   type PaintKind,
 } from '@weasel-js/core';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import { ColorField } from '../ColorField';
 import { GradientEditor } from '../GradientEditor';
-import { MeshEditor, isMeshPaint } from '../MeshEditor';
 import { PatternPicker, type PatternFill } from '../PatternPicker';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import s from './PaintInput.module.css';
@@ -29,16 +26,6 @@ const FALLBACK_COLOR = '#000000ff';
  *  has no seed, no color and nothing to render — so it is this control's own
  *  segment rather than a registry entry. */
 const NONE = 'none';
-
-const GRADIENT_KINDS: readonly string[] = [
-  'linear-gradient',
-  'radial-gradient',
-  'conic-gradient',
-];
-
-function isGradient(paint: FillStyle | undefined): paint is GradientFill {
-  return paint !== undefined && GRADIENT_KINDS.includes(paint.fill ?? '');
-}
 
 /** A solid paint as the one `#rrggbbaa` a color field edits. Its alpha lives
  *  in `opacity`; a hex alpha left in `color` multiplies with it when painted,
@@ -155,8 +142,9 @@ export function PaintInput(props: PaintInputProps): ReactElement {
       onChange(seen);
       return;
     }
-    if (value != null && isGradient(value) && GRADIENT_KINDS.includes(kind)) {
-      onChange(withGradientKind(value, kind as GradientKind));
+    const converted = value != null ? switchGradientKind(value, kind) : undefined;
+    if (converted !== undefined) {
+      onChange(converted);
       return;
     }
     const entry = getPaintKind(kind);
@@ -199,7 +187,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
       const Editor = entry.Editor;
       return <Editor value={value} onInput={onInput} onChange={onChange} />;
     }
-    if (isGradient(value)) {
+    if (entry?.stopsOf) {
       return (
         <GradientEditor
           value={value}
@@ -211,9 +199,6 @@ export function PaintInput(props: PaintInputProps): ReactElement {
     }
     if (isPattern(value)) {
       return <PatternPicker value={value} color={currentColor()} onChange={onChange} />;
-    }
-    if (isMeshPaint(value)) {
-      return <MeshEditor value={value} onInput={onInput} onChange={onChange} />;
     }
     const kind = kindOf(value);
     if (kind !== 'solid') {

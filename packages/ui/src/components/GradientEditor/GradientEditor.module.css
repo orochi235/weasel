@@ -17,3 +17,8 @@
   flex: 0 1 auto;
   min-inline-size: 0;
 }
+
+.noEditor {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}

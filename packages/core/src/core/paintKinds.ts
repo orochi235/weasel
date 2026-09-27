@@ -16,7 +16,7 @@
 import type {
   ColorSpace, FillStyle, GradientFill, GradientKind, GradientUnits, GradStop, TilePatternSpec,
 } from '@weasel-js/paint';
-import { gradientForBounds } from './gradient';
+import { gradientForBounds, isGradientFill, withGradientKind } from './gradient';
 import { bumpNodeMemoGeneration } from './scene/nodeMemo';
 import type { ComponentType } from 'react';
 import type { FillPoseBox } from './fillInPoseFrame';
@@ -105,6 +105,15 @@ export interface PaintKindEntry {
   /** Editor slot. */
   Editor?: ComponentType<PaintKindEditorProps>;
   /**
+   * The stop list this paint reads as. With `fromStops`, it is what makes a
+   * kind a gradient: `listGradientKinds` returns the kinds carrying both, and
+   * `switchGradientKind` converts between any two of them through the list.
+   */
+  stopsOf?(paint: FillStyle): GradStop[];
+  /** A paint of this kind built from a stop list, in `bounds` units. The
+   *  converse of `stopsOf`; supply both or neither. */
+  fromStops?(stops: GradStop[]): FillStyle;
+  /**
    * Render slot: bind program, uniforms and textures for `fill` and return the
    * bound program; `null` declines the paint.
    *
@@ -166,6 +175,8 @@ function gradientKind(id: GradientKind, label: string, icon: string): PaintKindE
     // `bounds` units make the seed independent of the node's actual size.
     seed: (color) => gradientForBounds(id, UNIT_BOX, twoStopRamp(color), 'bounds'),
     colorOf: (paint) => (paint as Partial<GradientFill>).stops?.[0]?.color,
+    stopsOf: (paint) => (paint as GradientFill).stops,
+    fromStops: (stops) => gradientForBounds(id, UNIT_BOX, stops, 'bounds'),
   };
 }
 
@@ -200,6 +211,13 @@ export function asPaint<T extends { fill: string }>(paint: T): FillStyle {
 
 /** Register a paint kind. Returns a disposer that removes it. */
 export function registerPaintKind(entry: PaintKindEntry): () => void {
+  if ((entry.stopsOf === undefined) !== (entry.fromStops === undefined)) {
+    const missing = entry.stopsOf === undefined ? 'stopsOf' : 'fromStops';
+    throw new Error(
+      `weasel registerPaintKind: kind "${entry.id}" is missing ${missing}. A ` +
+      'gradient kind reads as a stop list and builds from one; supply both or neither.',
+    );
+  }
   if ((entry.inPoseFrame === undefined) !== (entry.toBoundsFrame === undefined)) {
     const missing = entry.inPoseFrame === undefined ? 'inPoseFrame' : 'toBoundsFrame';
     throw new Error(
@@ -232,6 +250,38 @@ export function getPaintKind(kind: string | undefined): PaintKindEntry | undefin
 /** Every registered kind, built-ins first, in registration order. */
 export function listPaintKinds(): readonly PaintKindEntry[] {
   return [...KINDS.values()];
+}
+
+/** Every registered gradient kind — the ones that read as and build from a
+ *  stop list — in registration order. */
+export function listGradientKinds(): readonly PaintKindEntry[] {
+  return listPaintKinds().filter((entry) => entry.stopsOf && entry.fromStops);
+}
+
+/**
+ * `paint` retargeted to gradient kind `kind`, or `undefined` when either side
+ * is not a gradient kind.
+ *
+ * Between two of the stop gradients this is `withGradientKind`, which carries
+ * the geometry. Any other pair goes through the stop list — `stopsOf` on the
+ * way out, `fromStops` on the way in — keeping `interpolate` and `opacity`.
+ * Lossy wherever the kinds hold different information; an editor that wants a
+ * switch to be undoable should keep the original paint.
+ */
+export function switchGradientKind(paint: FillStyle, kind: PaintKind): FillStyle | undefined {
+  const from = paintKindOf(paint);
+  const to = getPaintKind(kind);
+  if (!from?.stopsOf || !to?.fromStops) return undefined;
+  if (from.id === to.id) return paint;
+  if (isGradientFill(paint) && isGradientFill({ fill: kind } as FillStyle)) {
+    return withGradientKind(paint, kind as GradientKind);
+  }
+  const { interpolate, opacity } = paint as { interpolate?: ColorSpace; opacity?: number };
+  return {
+    ...to.fromStops(from.stopsOf(paint)),
+    ...(interpolate !== undefined ? { interpolate } : {}),
+    ...(opacity !== undefined ? { opacity } : {}),
+  } as FillStyle;
 }
 
 /** The registry entry for a paint, or `undefined` when its kind is unknown. */

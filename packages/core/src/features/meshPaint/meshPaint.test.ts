@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { makeGLRecorder } from '../../renderer/test-utils/glRecorder';
-import { getPaintKind, listPaintKinds } from '../../core/paintKinds';
+import { getPaintKind, listGradientKinds, listPaintKinds, switchGradientKind } from '../../core/paintKinds';
 import { fillInPoseFrame, fillToBoundsFrame } from '../../core/fillInPoseFrame';
 import { seedMeshPatch, isMeshGradientFill, meshGradientXml, MESH_GRADIENT_KIND } from './meshPaint';
 import type { MeshGradientFill } from './meshPaint';
@@ -147,5 +147,69 @@ describe('binding a mesh paint', () => {
     const { ctx } = bindContext();
     const flattened: PaintBindContext = { ...ctx, spaceInverse: () => null };
     expect(entry().bind!(flattened, seedMeshPatch('#ff0000ff') as unknown as FillStyle)).toBeNull();
+  });
+});
+
+describe('the mesh as a gradient kind', () => {
+  const STOPS = [
+    { offset: 0, color: '#ff0000ff' },
+    { offset: 0.3, color: '#ffff00ff' },
+    { offset: 1, color: '#0000ffff' },
+  ];
+  const LINEAR: FillStyle = {
+    fill: 'linear-gradient',
+    from: { x: 0, y: 0.5 },
+    to: { x: 1, y: 0.5 },
+    stops: STOPS,
+    units: 'bounds',
+    interpolate: 'oklch',
+    opacity: 0.5,
+  };
+  const topEdge = (mesh: MeshGradientFill) =>
+    mesh.patches.map((p) => [p.points[0].x, p.points[3].x, ...p.colors]);
+
+  it('is listed with the three stop gradients as a gradient kind', () => {
+    expect(listGradientKinds().map((k) => k.id)).toEqual([
+      'linear-gradient', 'radial-gradient', 'conic-gradient', MESH_GRADIENT_KIND,
+    ]);
+  });
+
+  it('builds from a stop list as one patch per gap, so the ramp survives the switch', () => {
+    const mesh = switchGradientKind(LINEAR, MESH_GRADIENT_KIND) as unknown as MeshGradientFill;
+    expect(mesh.fill).toBe(MESH_GRADIENT_KIND);
+    expect(mesh.units).toBe('bounds');
+    expect(mesh.interpolate).toBe('oklch');
+    expect(mesh.opacity).toBe(0.5);
+    expect(topEdge(mesh)).toEqual([
+      [0, 0.3, '#ff0000ff', '#ffff00ff', '#ffff00ff', '#ff0000ff'],
+      [0.3, 1, '#ffff00ff', '#0000ffff', '#0000ffff', '#ffff00ff'],
+    ]);
+  });
+
+  it('reads back as the stop list it was built from', () => {
+    const mesh = switchGradientKind(LINEAR, MESH_GRADIENT_KIND)!;
+    const back = switchGradientKind(mesh, 'linear-gradient') as { stops: unknown; interpolate?: string; opacity?: number };
+    expect(back.stops).toEqual(STOPS);
+    expect(back.interpolate).toBe('oklch');
+    expect(back.opacity).toBe(0.5);
+  });
+
+  it('reads a seeded mesh as its top edge, left to right', () => {
+    const seed = seedMeshPatch('#ff0000ff');
+    const back = switchGradientKind(seed as unknown as FillStyle, 'radial-gradient') as { fill: string; stops: unknown };
+    expect(back.fill).toBe('radial-gradient');
+    expect(back.stops).toEqual([
+      { offset: 0, color: seed.patches[0].colors[0] },
+      { offset: 1, color: seed.patches[0].colors[1] },
+    ]);
+  });
+
+  it('keeps geometry across a switch between two stop gradients', () => {
+    const radial = switchGradientKind(LINEAR, 'radial-gradient');
+    expect(radial).toMatchObject({ fill: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.5 });
+  });
+
+  it('declines a paint that is not a gradient', () => {
+    expect(switchGradientKind({ fill: 'solid', color: '#fff' }, MESH_GRADIENT_KIND)).toBeUndefined();
   });
 });

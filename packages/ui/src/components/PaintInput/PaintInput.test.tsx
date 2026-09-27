@@ -106,6 +106,16 @@ describe('PaintInput', () => {
     expect(next.stops).toEqual(LINEAR.stops);
   });
 
+  it("carries a gradient's colors into a mesh rather than seeding one", () => {
+    const onCommit = vi.fn();
+    render(<Host initial={LINEAR} onCommit={onCommit} />);
+
+    clickKind('Mesh');
+    const next = onCommit.mock.calls.at(-1)?.[0] as unknown as { fill: string; patches: { colors: string[] }[] };
+    expect(next.fill).toBe('mesh-gradient');
+    expect(next.patches[0].colors).toEqual(['#ff0000ff', '#0000ffff', '#0000ffff', '#ff0000ff']);
+  });
+
   it('prefers the memory over a gradient-to-gradient conversion', () => {
     // Radial carries no angle, so conic -> radial -> conic is the round trip
     // a conversion cannot survive. The memory is what restores the angle.

@@ -1,4 +1,4 @@
-import type { FillStyle, GradientFill, Track } from '@weasel-js/core';
+import type { FillStyle, Track } from '@weasel-js/core';
 import {
   Badge,
   type Band,
@@ -321,7 +321,7 @@ function FieldsAndPickers() {
   const [rate, setRate] = useState(1);
   const [width, setWidth] = useState(6);
   const [color, setColor] = useState('#b08adbff');
-  const [gradient, setGradient] = useState<GradientFill>({
+  const [gradient, setGradient] = useState<FillStyle>({
     fill: 'linear-gradient',
     from: { x: 0.1, y: 0.1 },
     to: { x: 0.9, y: 0.9 },

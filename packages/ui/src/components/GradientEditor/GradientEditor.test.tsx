@@ -1,6 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import type { GradientFill } from '@weasel-js/core';
+import { render, screen, fireEvent, within } from '@testing-library/react';
+import {
+  asPaint,
+  registerPaintKind,
+  seedMeshPatch,
+  type FillStyle,
+  type GradStop,
+  type GradientFill,
+  type MeshGradientFill,
+} from '@weasel-js/core';
 import { GradientEditor } from './GradientEditor';
 
 const LINEAR: GradientFill = {
@@ -120,5 +128,79 @@ describe('GradientEditor', () => {
       expect(screen.queryByRole('radio', { name: 'OKLCh' })).not.toBeInTheDocument();
     });
 
+  });
+
+  describe('kinds', () => {
+    const kindNames = () =>
+      within(screen.getByRole('radiogroup', { name: 'Gradient kind' }))
+        .getAllByRole('radio')
+        .map((r) => r.getAttribute('aria-label') ?? r.textContent);
+
+    it('offers every registered gradient kind, mesh included', () => {
+      render(<GradientEditor value={LINEAR} onChange={() => {}} />);
+      expect(kindNames()).toEqual(['Linear', 'Radial', 'Conic', 'Mesh']);
+    });
+
+    it('offers a kind a consumer registers with a stop reading', () => {
+      const dispose = registerPaintKind({
+        id: 'diamond-gradient',
+        label: 'Diamond',
+        seed: (color) => asPaint({ fill: 'diamond-gradient', stops: [{ offset: 0, color }] }),
+        colorOf: () => undefined,
+        stopsOf: (paint) => (paint as unknown as { stops: GradStop[] }).stops,
+        fromStops: (stops) => asPaint({ fill: 'diamond-gradient', stops }),
+      });
+      try {
+        render(<GradientEditor value={LINEAR} onChange={() => {}} />);
+        expect(kindNames()).toContain('Diamond');
+      } finally {
+        dispose();
+      }
+    });
+
+    it('switches a stop gradient to a mesh carrying its colors', () => {
+      const onChange = vi.fn();
+      render(<GradientEditor value={LINEAR} onChange={onChange} />);
+      fireEvent.click(screen.getByRole('radio', { name: 'Mesh' }));
+      const next = onChange.mock.calls[0][0] as MeshGradientFill;
+      expect(next.fill).toBe('mesh-gradient');
+      expect(next.patches[0].colors).toEqual(['#ff0000ff', '#0000ffff', '#0000ffff', '#ff0000ff']);
+    });
+
+    it('edits a mesh by its corners, and switches it back to a stop gradient', () => {
+      const onChange = vi.fn();
+      const mesh = seedMeshPatch('#ff0000ff') as unknown as FillStyle;
+      render(<GradientEditor value={mesh} onChange={onChange} />);
+      expect(screen.getByLabelText('Patch 1 corner 1')).toBeInTheDocument();
+      expect(screen.queryByRole('slider', { name: /Gradient stops/ })).toBeNull();
+      expect(screen.getByRole('radio', { name: 'Mesh' })).toBeChecked();
+
+      fireEvent.click(screen.getByRole('radio', { name: 'Linear' }));
+      expect(onChange.mock.calls[0][0]).toMatchObject({ fill: 'linear-gradient', stops: [{ offset: 0, color: '#ff0000ff' }, { offset: 1 }] });
+    });
+  });
+
+  describe('svg', () => {
+    const radios = (group: string) =>
+      within(screen.getByRole('radiogroup', { name: group })).getAllByRole('radio').map((r) => r.textContent);
+
+    it('is off by default', () => {
+      render(<GradientEditor value={LINEAR} onChange={() => {}} />);
+      expect(radios('Gradient kind')).toContain('Conic');
+      expect(radios('Blend space')).toEqual(['sRGB', 'OKLab', 'OKLCh']);
+    });
+
+    it('limits the kinds to the gradients SVG has elements for, and drops the space switch', () => {
+      render(<GradientEditor value={LINEAR} svg onChange={() => {}} />);
+      expect(radios('Gradient kind')).toEqual(['Linear', 'Radial']);
+      expect(screen.queryByRole('radiogroup', { name: 'Blend space' })).toBeNull();
+    });
+
+    it('still shows the kind and space a value already has, so it can be switched off them', () => {
+      const conic: GradientFill = { fill: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops: LINEAR.stops, interpolate: 'oklch' };
+      render(<GradientEditor value={conic} svg onChange={() => {}} />);
+      expect(radios('Gradient kind')).toEqual(['Linear', 'Radial', 'Conic']);
+      expect(radios('Blend space')).toEqual(['sRGB', 'OKLCh']);
+    });
   });
 });
