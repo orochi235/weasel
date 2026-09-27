@@ -31,8 +31,13 @@ Priority tags:
 
   A bare `<SceneCanvas>` now only renders, and `features` presets turn behavior on
   (`canvas/SceneCanvas/features.ts`). Still waiting on the answer:
-  - **Every canvas in the tree runs `features={['draw']}`.** That was the one-word migration;
-    most demos want far less. Tailoring each to the presets it demonstrates is its own pass.
+  - **Presets are coarser than two demos want.** `pick` is the only way to get the selection
+    outline, so a demo supplying its own select tool (LayerList, MultiSelect) still mounts
+    `pick`'s built-in one unused. `transform` brings rotation with resize, so a resize-only
+    demo (PointSnap hides the rotation handle in its layer config; Text doesn't) can't ask
+    for half.
+  - **`features` now names two things.** The `<SceneCanvas features>` prop is unrelated to the
+    `features/` source directories `docs/taxonomy.md` describes, and the two will be confused.
   - **Ambient drag catch-alls remain.** `areaSelect` and `viewport.dragPan` keep a bare
     `{ kind: 'drag' }` default binding, so under a tool that leaves a drag unclaimed, an
     empty drag marquees (with `pick`) or pans (with `view`). `rotate` and `clone` lost theirs.
@@ -749,6 +754,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P2) Multi-select handles stay behind after a group move.** Drag a two-item selection,
+  and the union's corner handles stay where the union was. The next drag on the real
+  corner moves the set rather than resizing it. Resize works if it comes before any move.
+  Reproduced 2026-09-27 in `MultiSelectDemo` under both the new presets and `draw`.
+
+- **(P2) Lasso `intersect` selects by bounding box.** A triangle lasso picked up rects lying
+  entirely outside the triangle but inside its bounds: the same set a marquee over the
+  bounds would pick. Seen 2026-09-27 in `LassoDemo`.
+
 - **(P3) Unconfirmed: apps/draw's fill slider lags a live opacity scrub.** Seen
   2026-09-27 in a browser: holding O and wheeling faded the selected rect, while
   the Properties panel's fill slider still read 100%. Not yet checked whether it
@@ -1132,6 +1146,27 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 ---
 
 ## Demos & visual regression
+
+- **(P2) Demos found broken during the 2026-09-27 preset pass.** Each one reproduces with
+  `features={['draw']}` restored, so the presets didn't cause it:
+  - `PathPoseDemo`: a body drag turns every coordinate to NaN and the polygon vanishes.
+    Resize works. Suspect `gridSnapStrategy(20)`'s default origin reader meeting a `Path`
+    pose (unconfirmed).
+  - `RotatedResizeMathDemo`: after a corner drag, all three "fixed corner" captions show the
+    same value. The blurb says the green one holds still.
+  - labkit's `schema-lab`: the ShapeProperties trial renders empty and throws
+    `(stroke.dash ?? []).join is not a function`.
+  - labkit's `weasel-lab`, `minimal` and `drag-lab` examples paint every node gray. Their
+    `data.color` isn't read by the default painter.
+  - `DiagramLiveDemo`: Relax did nothing on the first press. Not compared against main.
+  - `window.__weaselTest.getActiveToolId()` always returns null. Nothing in `SceneCanvas.tsx`
+    writes the ref behind it, so every browser probe reading it is blind.
+
+- **(P3) Props left with nothing to act on.** After the preset pass, `D3SortableDemo`
+  (`selection`, `selectionMode="none"`, `selectionOverlay`), labkit's `schema-lab`
+  `SceneHost` (`selection`), and `PerAxisZoomDemo` / `SelectionPanelDemo` (a `view` state) pass
+  props that no longer do anything. `AlignmentGuidesDemo` keeps `viewport={{}}` only so
+  `getView` holds the snap tolerance in screen space.
 
 - **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
 

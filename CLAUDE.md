@@ -404,6 +404,11 @@ that sets React state and then asks for a redraw can paint the tile where it *wa
 `AnnotationOverlay` commits the rect with `flushSync` first. A GL trace of
 `scissor` against `clear` is what shows it; the screenshot only shows a stray mark.
 
+**A second site dev server takes over the first.** The vite config loads `wake`
+(`scripts/vite-wake.ts`), which keeps one copy of each app per machine and ignores
+`--port`, so a server started from another worktree kills whichever one is running. Start
+any extra copy with `WAKE_EXTRA=<port>`, which neither takes over nor gets taken over.
+
 **A perf loop driven by hover events measures vsync.** A hover that changes no state does
 not dirty the surface, so the loop reports zero uploads as though the caches had absorbed
 the work, and a cache that does nothing scores the same as one that works. Count draw
