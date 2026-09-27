@@ -272,6 +272,14 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   Grid hairline strokes (`1 / meanScale`) have no per-axis analog at all — the
   renderer takes one width.
 
+- **(P3) A trial's own zoom buttons bypass its camera.** The `zoom-in`,
+  `zoom-out` and `actual-size` contributions in `packages/labkit/src/chrome/builtins.tsx`
+  write `withZoom(view, z)`, which keeps `pan`: they zoom about the frame's
+  origin rather than the middle of the view, and ignore the instrument's
+  `minZoom` / `maxZoom`. The lab header's zoom (`lab/LabZoom.tsx`) goes through
+  the trial's camera and core's `viewport.zoom`; the trial's buttons, and the
+  `ZoomControl` slider beside them, should trigger the same action.
+
 - **(P3) Typed discriminated union for multi-type insert.** Deferred from `docs/specs/2026-05-07-viewport-followups-design.md`. Current shape splits into `posefromBounds(bounds) → TPose` + `pointInsert(point) → TNode` (`packages/core/src/interactions/actions/insert/options.ts`); multi-type canvases (rect vs image vs ellipse from one `<SceneCanvas>`) wire their own `tools` array (one `useInsertTool` per type) rather than folding a variant switch into the insert options. The single-canvas multi-type ergonomic is the open design question.
 
 ---

@@ -14,6 +14,7 @@ schedules its own layers; a foreign renderer wants rects and dirtiness only.
 | `CanvasStackContext.ts` | React context exposing the current `view` to descendants |
 | `useLayerScheduler.ts` | DPR-aware rAF scheduler; redraws dirty layers on view/state changes |
 | `CameraInput.tsx` | Pan, zoom and tap routed through weasel's gesture dispatcher; `CameraContext`; publishes the pointer |
+| `cameraRegistry.ts` | Cameras by trial id, so chrome outside a trial (the lab header's zoom) can drive the focused one |
 | `cameraView.ts` | The camera as a weasel `View` over frame-local coordinates, and the anchored zoom clamp |
 | `LinkedCursor.tsx` | The crosshair on the camera's element while the pointer is over another view |
 | `camera.ts` | `zoomAt` (fixed-point zoom) and `centerOn` (put a world point at a viewport's middle) |

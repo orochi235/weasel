@@ -13,3 +13,4 @@ export type { LabPage, LabSwitcherProps } from './LabSwitcher';
 export { currentPage, LabSwitcher } from './LabSwitcher';
 export type { PanelDescriptor, TrialLayout, WorkspaceProps } from './Workspace';
 export { Workspace } from './Workspace';
+export { LabZoom } from './LabZoom';

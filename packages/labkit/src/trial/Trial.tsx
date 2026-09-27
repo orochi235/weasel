@@ -6,7 +6,8 @@ import { AnnotationTargets } from '../annotations/AnnotationTargets';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { annotationsFromJSON } from '../annotations/store';
 import type { AnnotationStorage, AnnotationTargetInfo } from '../annotations/types';
-import { CameraScopeContext } from '../canvas/CameraInput';
+import { type CameraView, CameraScopeContext } from '../canvas/CameraInput';
+import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
 import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
 import { fitStage, Stage } from '../canvas/Stage';
@@ -136,6 +137,12 @@ function TrialRuntime({
   suppress,
 }: TrialRuntimeProps) {
   const wheelSlot = useRef<CameraWheelSlot['current']>(null);
+  const cameras = useContext(CameraRegistryContext);
+  const trialId = record.id;
+  const publishCamera = useMemo(
+    () => (cameras ? (camera: CameraView) => cameras.register(trialId, camera) : null),
+    [cameras, trialId],
+  );
   const [pointer] = useState(createPointerStore);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const loupeHostRef = useRef<HTMLDivElement | null>(null);
@@ -600,7 +607,11 @@ function TrialRuntime({
   const scopedBody = (
     <WeaselProvider isolate>
       <PointerContextProvider store={pointer}>
-        <CameraScopeContext.Provider value={true}>{body}</CameraScopeContext.Provider>
+        <CameraScopeContext.Provider value={true}>
+          <CameraPublishContext.Provider value={publishCamera}>
+            {body}
+          </CameraPublishContext.Provider>
+        </CameraScopeContext.Provider>
       </PointerContextProvider>
     </WeaselProvider>
   );

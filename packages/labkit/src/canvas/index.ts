@@ -1,4 +1,10 @@
-export type { CameraContextValue, CameraInputProps, CameraViewOptions } from './CameraInput';
+export type {
+  CameraContextValue,
+  CameraInputProps,
+  CameraView,
+  CameraViewOptions,
+  ZoomRange,
+} from './CameraInput';
 export {
   CameraContext,
   CameraInput,
@@ -7,6 +13,13 @@ export {
   STAGE_VIEW_ID,
   useCameraView,
 } from './CameraInput';
+export type { CameraRegistry } from './cameraRegistry';
+export {
+  CameraPublishContext,
+  CameraRegistryContext,
+  createCameraRegistry,
+  usePublishCamera,
+} from './cameraRegistry';
 export type { CameraWheelSlot } from './CameraWheelContext';
 export { CameraWheelContext } from './CameraWheelContext';
 export type { CanvasStackProps } from './CanvasStack';

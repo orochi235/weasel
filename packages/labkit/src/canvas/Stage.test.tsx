@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -169,19 +169,20 @@ describe('an instrument that declares a stage', () => {
 
   it('gets the zoom controls, and they move the stage', () => {
     const { container } = render(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+    const trialView = within(screen.getByRole('toolbar', { name: 'View' }));
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }));
+      fireEvent.click(trialView.getByRole('button', { name: 'Zoom in' }));
     });
     expect(zoomOf(content(container))).toBeCloseTo(1.25);
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Actual size' }));
+      fireEvent.click(trialView.getByRole('button', { name: 'Actual size' }));
     });
     expect(zoomOf(content(container))).toBe(1);
   });
 
   it('is what earns them: DOM content without one gets none', () => {
     render(<Lab instruments={[plain]} defaultInstrument="Plain" />);
-    expect(screen.queryByRole('button', { name: 'Zoom in' })).toBeNull();
+    expect(screen.queryByRole('toolbar', { name: 'View' })).toBeNull();
   });
 
   it('draws its overlay on the stage, outside the camera', () => {

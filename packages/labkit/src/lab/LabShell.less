@@ -154,3 +154,13 @@
 .lk-lab-header__add > svg {
   align-self: center;
 }
+
+// The readout's digit count changes as the zoom does (80% to 125%), so it sits
+// in a cell sized for the widest value the default range reaches, and the
+// buttons either side of it stay put.
+.lk-lab-zoom__readout {
+  display: inline-block;
+  min-width: 5ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

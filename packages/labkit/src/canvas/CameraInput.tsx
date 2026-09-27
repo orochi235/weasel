@@ -94,6 +94,17 @@ export interface CameraViewOptions {
   maxZoom?: number;
 }
 
+/** A camera's zoom limits, after widening to admit its opening zoom. */
+export interface ZoomRange {
+  min: number;
+  max: number;
+}
+
+/** A labkit camera: a weasel `ViewApi` that also says how far it zooms. */
+export interface CameraView extends ViewApi {
+  zoomRange(): ZoomRange;
+}
+
 function isPositiveFinite(n: number): boolean {
   return Number.isFinite(n) && n > 0;
 }
@@ -110,7 +121,7 @@ export function useCameraView({
   hostRef,
   minZoom = 0.1,
   maxZoom = 32,
-}: CameraViewOptions): ViewApi {
+}: CameraViewOptions): CameraView {
   const live = useRef({ view: normalize2DView(view), onViewChange, frame });
   live.current = { view: normalize2DView(view), onViewChange, frame };
   const initialZoom = useRef(isPositiveFinite(view.zoom) ? view.zoom : null);
@@ -121,7 +132,7 @@ export function useCameraView({
     max: opening == null ? maxZoom : Math.max(maxZoom, opening),
   };
 
-  return useMemo<ViewApi>(() => {
+  return useMemo<CameraView>(() => {
     const get = (): View => toCameraView(live.current.view, live.current.frame);
     return {
       get,
@@ -138,6 +149,7 @@ export function useCameraView({
         const r = hostRef.current?.getBoundingClientRect();
         return r ? { width: r.width, height: r.height } : null;
       },
+      zoomRange: () => ({ ...bounds.current }),
     };
   }, [hostRef]);
 }

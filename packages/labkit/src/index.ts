@@ -131,6 +131,8 @@ export type { ContentSize, PaneSize } from './annotations/view';
 export { fitView, fromWeaselView, toWeaselView } from './annotations/view';
 export type {
   CameraContextValue,
+  CameraRegistry,
+  CameraView,
   CanvasLayerDescriptor,
   CanvasStackContextValue,
   CanvasStackProps,
@@ -140,20 +142,25 @@ export type {
   WorldFrame,
   WorldSpec,
   ZoomAtOptions,
+  ZoomRange,
 } from './canvas';
 export {
   applyCamera,
   CameraContext,
   CameraInput,
+  CameraPublishContext,
+  CameraRegistryContext,
   CameraScope,
   CanvasStack,
   CanvasStackContext,
   centerOn,
+  createCameraRegistry,
   DEFAULT_FRAME,
   fitStage,
   resolveFrame,
   Stage,
   screenToWorld,
+  usePublishCamera,
   worldToScreen,
   zoomAt,
 } from './canvas';
