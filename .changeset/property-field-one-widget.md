@@ -13,8 +13,9 @@ Each field kind now draws one widget on every surface:
   and draws steppers with `steppers`, which now defaults to off. A caller that wants
   settled values only passes a no-op `onInput`.
 - Text is an `Input`; a textarea always wears the field frame.
-- A choice is a boxed `Select`, a `ToggleBar` for `control="toggle"`, and a `RadioGroup`
-  for `control="radio"`. labkit's `.radio()` draws segments, as it says, through the toggle.
+- A choice is a `Select` — borderless with an underlined value when set directly in a
+  property row, boxed where a surface wraps it — a `ToggleBar` for `control="toggle"`, and
+  a `RadioGroup` for `control="radio"`. labkit's `.radio()` draws segments, as it says, through the toggle.
 - A color is a `ColorField`, which gains `id` and `alphaDisabled` and commits when the
   picker closes as well as on blur. An alpha held apart (`alpha={0.5}`) still reports
   through `onAlphaChange` / `onAlphaInput`.
@@ -24,4 +25,6 @@ Each field kind now draws one widget on every surface:
   and steps like the track.
 
 `UnitField` gains `onInput`, `steppers` and `id` and is `role="spinbutton"`.
-`NumberField` and `Select` fill with `--wzl-input-surface` where a surface sets it.
+`NumberField` and `Select` fill with `--wzl-input-surface` where a surface sets it. `Select`
+gains look hooks (`--wzl-select-bg`, `-pad`, `-chevron`, `-underline`, `-focus-border`,
+`-focus-shadow`, `-focus-outline`) that draw the bare look from context.
