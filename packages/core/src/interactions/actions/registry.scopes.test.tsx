@@ -8,7 +8,8 @@ import { render, act } from '@testing-library/react';
 import type { Action, ActionsRegistry } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import {
-  ActionsProvider, DepRegistryProvider, InputScope, useActionsRegistry, useOptionalDepRegistry,
+  ActionsProvider, ActiveToolContextProvider, DepRegistryProvider, InputScope, useActionsRegistry,
+  useActiveToolContext, useOptionalDepRegistry, useYoke, type ActiveToolContextValue,
 } from '@weasel-js/routing/react';
 
 const immediate = (id: string, run: () => void = () => {}): Action => ({
@@ -175,5 +176,61 @@ describe('muting', () => {
     act(() => { b.actions.subscribe(seen); });
     act(() => { b.actions.mute('go'); });
     expect(seen).toHaveBeenCalled();
+  });
+});
+
+describe('tools and yokes', () => {
+  function mountTools(yoked: boolean) {
+    const got: Record<string, ActiveToolContextValue> = {};
+    function Capture({ at }: { at: string }) {
+      got[at] = useActiveToolContext();
+      return null;
+    }
+    function Tree() {
+      const yoke = useYoke();
+      const joined = yoked ? yoke : undefined;
+      return (
+        <>
+          <Capture at="root" />
+          <InputScope yoke={joined}><Capture at="a" /></InputScope>
+          <InputScope yoke={joined}><Capture at="b" /></InputScope>
+        </>
+      );
+    }
+    render(
+      <ActionsProvider>
+        <ActiveToolContextProvider initialActive="select">
+          <Tree />
+        </ActiveToolContextProvider>
+      </ActionsProvider>,
+    );
+    return got;
+  }
+
+  it('starts each scope on the tool in effect around it', () => {
+    const got = mountTools(false);
+    expect(got.a?.active).toBe('select');
+    expect(got.b?.active).toBe('select');
+  });
+
+  it('keeps a tool per scope when nothing yokes them', () => {
+    const got = mountTools(false);
+    act(() => { got.a!.setActive('hand'); });
+    expect(got.a?.active).toBe('hand');
+    expect(got.b?.active).toBe('select');
+  });
+
+  it('shares one tool across a yoke', () => {
+    const got = mountTools(true);
+    act(() => { got.a!.setActive('hand'); });
+    expect(got.a?.active).toBe('hand');
+    expect(got.b?.active).toBe('hand');
+  });
+
+  it('reads and writes the active scope\'s tool from above', () => {
+    const got = mountTools(false);
+    act(() => { got.root!.setActive('pen'); });
+    expect(got.b?.active).toBe('pen');
+    expect(got.a?.active).toBe('select');
   });
 });

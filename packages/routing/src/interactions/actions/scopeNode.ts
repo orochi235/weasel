@@ -67,14 +67,23 @@ export class ScopeNode<N extends ScopeNode<N>> {
   }
 
   /** The node a lookup made here starts from: down the active children, or the
-   *  newest where nothing has been activated yet. */
+   *  newest where nothing has been activated yet. A yoke with no members yet
+   *  is passed over — there is no canvas behind it to answer. */
   leaf(): N {
     let n = this as unknown as N;
     for (;;) {
-      const next: N | undefined = n.activeChild ?? n.children.at(-1);
+      const next: N | null = n.activeChild ?? n.newestMember();
       if (!next) return n;
       n = next;
     }
+  }
+
+  private newestMember(): N | null {
+    for (let i = this.children.length - 1; i >= 0; i--) {
+      const c = this.children[i]!;
+      if (!(c.descends && c.children.length === 0)) return c;
+    }
+    return null;
   }
 
   /** Where a read made through this node starts. */

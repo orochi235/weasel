@@ -15,9 +15,6 @@ import {
 } from 'react';
 import type { Action } from './action';
 import {
-  DepNode,
-  DepRegistryContext,
-  depNodeOf,
   useOptionalDepRegistry,
   type DepRegistry,
   type DepName,
@@ -27,7 +24,8 @@ import type { Dispatcher } from '../dispatcher/dispatcher';
 import { validateActionId, validateActionDefaultBinding, type ActionsRegistry } from './registry';
 import { pushOwner, ScopeNode } from './scopeNode';
 
-const ActionsContext = createContext<ActionsRegistry | null>(null);
+/** @internal Provided by `<ActionsProvider>`, `<InputScope>` and `<Yoke>`. */
+export const ActionsContext = createContext<ActionsRegistry | null>(null);
 
 /** The deps an action is invoked with: its declared `requires` when it has
  *  one, the legacy fixed bag otherwise. The fixed bag has no `applyOps`, so an
@@ -57,8 +55,8 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   private readonly dispatchers: Dispatcher[] = [];
   private readonly wiredDeps: DepRegistry[] = [];
   private cache: { version: number; leaf: ActionsNode; list: readonly Action[] } | null = null;
-  /** Called on `activate`, so a scope's dep node moves with it. */
-  onActivate: (() => void) | null = null;
+  /** Called on `activate`, so a scope's dep and tool nodes move with it. */
+  readonly onActivate: (() => void)[] = [];
 
   constructor(
     parent: ActionsNode | null,
@@ -112,7 +110,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
 
   override activate(): void {
     super.activate();
-    this.onActivate?.();
+    for (const f of this.onActivate) f();
   }
 
   readonly registry: ActionsRegistry = {
@@ -192,7 +190,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
 const NODES = new WeakMap<ActionsRegistry, ActionsNode>();
 
 /** The tree node behind `registry`, when it is one of ours. */
-function actionsNodeOf(registry: ActionsRegistry | null): ActionsNode | null {
+export function actionsNodeOf(registry: ActionsRegistry | null): ActionsNode | null {
   return registry ? (NODES.get(registry) ?? null) : null;
 }
 
@@ -210,41 +208,6 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   depRegRef.current = depReg;
   const node = useMemo(() => new ActionsNode(null, true, () => depRegRef.current), []);
   return <ActionsContext.Provider value={node.registry}>{children}</ActionsContext.Provider>;
-}
-
-/**
- * @experimental
- * One canvas's input: an actions registry and a dep registry of its own, under
- * whichever are in scope. What the canvas registers stays here; what it looks
- * up is answered here first, then by the registries above. With nothing in
- * scope it is a root.
- *
- * Chrome above calls `trigger` / `begin` on its own registry, and those reach
- * the active scope: the one last activated — by a pointerdown or focus — or the
- * newest where none has been.
- */
-export function InputScope({ children }: { children: ReactNode }): ReactElement {
-  const parentActions = useActionsRegistry();
-  const parentDeps = useOptionalDepRegistry();
-  const deps = useMemo(() => new DepNode(depNodeOf(parentDeps), false), [parentDeps]);
-  const actions = useMemo(() => {
-    const node = new ActionsNode(actionsNodeOf(parentActions), false, () => deps.registry);
-    node.onActivate = () => deps.activate();
-    return node;
-  }, [parentActions, deps]);
-  useEffect(() => {
-    const leaveDeps = deps.mount();
-    const leaveActions = actions.mount();
-    return () => {
-      leaveActions();
-      leaveDeps();
-    };
-  }, [actions, deps]);
-  return (
-    <DepRegistryContext.Provider value={deps.registry}>
-      <ActionsContext.Provider value={actions.registry}>{children}</ActionsContext.Provider>
-    </DepRegistryContext.Provider>
-  );
 }
 
 /**

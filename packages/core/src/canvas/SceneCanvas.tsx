@@ -63,7 +63,7 @@ import { ViewInputsProvider, type SurfaceViewInputs, type ViewRuleInputs } from 
 import { CanvasView, type CanvasViewProps } from './CanvasView';
 import type { DeviceProfile } from '../core/device/types';
 import { HANDLE_BASE_PX, targetSizesPx } from '../core/device/targets';
-import { InputScope } from '@weasel-js/routing/react';
+import { InputScope, type Yoke } from '@weasel-js/routing/react';
 import { useContributionRoles, contributionEntries } from './SceneCanvas/useContributionRoles';
 import type { SurfaceContribution } from './surfaceContribution';
 import { useDepSource } from '@weasel-js/routing/react';
@@ -128,7 +128,6 @@ import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
 import { useViewportActions } from './SceneCanvas/useViewportActions';
 import type { ViewportZoomAnimateOptions, ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
 import type { PinchZoomOptions } from 'interactions/actions/defaults/pinchZoom';
-import { ActiveToolContextProviderIfRoot } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
 import type { ActionsRegistry } from '@weasel-js/routing';
@@ -746,10 +745,17 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     views?: readonly CanvasViewProps[];
 
     /**
-     * Children rendered alongside the canvas. Useful for siblings that need
-     * the same `<ActionsProvider>` scope (e.g. shortcuts overlays, probes).
+     * Children rendered alongside the canvas, inside its input scope (e.g.
+     * shortcuts overlays, probes).
      */
     children?: ReactNode;
+
+    /**
+     * A yoke to join, from `useYoke()`: canvases on one yoke share the
+     * active tool, the gesture in flight and history. Omitted, this canvas
+     * keeps its own.
+     */
+    yoke?: Yoke;
 
     /**
      * Chrome-caps visibility overrides, keyed by chrome id (`selection.outline`,
@@ -2181,7 +2187,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   return (
     <DeviceProfileProvider value={device}>
       <ViewInputsProvider value={viewInputs}>
-        <InputScope>
+        <>
           <PointerProviderIfRoot>
             <>
               {canvas}
@@ -2258,7 +2264,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               {children}
             </>
           </PointerProviderIfRoot>
-        </InputScope>
+        </>
       </ViewInputsProvider>
     </DeviceProfileProvider>
   );
@@ -2835,23 +2841,18 @@ function GeometryProjectionRegistrar({
 
 const SceneCanvasInnerForwardRef = forwardRef(SceneCanvasInner);
 
-// Wrapper that lifts `<ActiveToolContextProvider>` above `SceneCanvasInner`
-// — but only when none is already in scope. The `IfRoot` variant is critical:
-// a consumer wrapping in `<WeaselProvider>` (or its own
-// `<ActiveToolContextProvider>`) pushes the active tool via `useTools(...)` to
-// the OUTER context; if SceneCanvas unconditionally mounted a fresh inner
-// provider here, its dispatcher would read the inner (stale 'select') context
-// instead of the outer (live 'hand'/'select'/etc.) one.
+// The canvas's input scope sits above `SceneCanvasInner`, whose own hooks
+// (`useTools` among them) must already read this canvas's tool and registries.
 function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
   props: SceneCanvasProps<TData, TLayer, TPose>,
   ref: React.ForwardedRef<SceneCanvasApi>,
 ) {
   return (
-    <ActiveToolContextProviderIfRoot>
+    <InputScope yoke={props.yoke}>
       <ViewRegistryProvider>
         <SceneCanvasInnerForwardRef {...(props as SceneCanvasProps<unknown, string, unknown>)} ref={ref} />
       </ViewRegistryProvider>
-    </ActiveToolContextProviderIfRoot>
+    </InputScope>
   );
 }
 

@@ -6,7 +6,6 @@
 import {
   type Action,
   type ActionsRegistry,
-  ActiveToolContextProvider,
   InputScope,
   makeViewportZoomAction,
   PointerContextProvider,
@@ -19,6 +18,7 @@ import {
   type View,
   type ViewApi,
   viewportDragPanAction,
+  type Yoke,
 } from '@weasel-js/core';
 import {
   createContext,
@@ -61,19 +61,15 @@ export const CameraContext = createContext<CameraContextValue | null>(null);
  * The input scope a camera routes through. Inside another camera — a loupe or
  * an overlay laid over a canvas stack — it joins that camera's scope, so its
  * actions reach the dispatcher already listening there. Anywhere else it
- * mounts a scope of its own, which keeps its own tool: a camera beside another
- * never takes that one's gestures. The pointer store is the exception — one
+ * mounts a scope of its own, which keeps its own tool unless it joins `yoke`:
+ * a camera beside another never takes that one's gestures. The pointer store is the exception — one
  * already in scope is kept, since sharing it is the point.
  */
-export function CameraScope({ children }: { children: ReactNode }) {
+export function CameraScope({ yoke, children }: { yoke?: Yoke; children: ReactNode }) {
   const around = useContext(CameraContext);
   const pointer = usePointerContext();
   if (around) return <>{children}</>;
-  const scoped = (
-    <InputScope>
-      <ActiveToolContextProvider>{children}</ActiveToolContextProvider>
-    </InputScope>
-  );
+  const scoped = <InputScope yoke={yoke}>{children}</InputScope>;
   return pointer ? scoped : <PointerContextProvider>{scoped}</PointerContextProvider>;
 }
 
