@@ -31,7 +31,11 @@ deletes `visor/src/eyemarks/Context.tsx` and `GhostCursor.tsx`.
 ## Traps
 
 **Weasel tests go to the fleet.** `onto test --ref origin/main` from the
-worktree (no upstream). A fresh tree needs `--setup --node <n>` once.
+worktree (no upstream). A fresh tree needs `--setup --node <n>` once, and so
+does any tree after `package-lock.json` moves: `needs: node_modules` only checks
+the directory exists. On 2026-09-27 orochi still held jsdom 26.1.0 against a
+29.0.1 pin, and `useTextEdit`'s caret tests failed there on color serialization
+while passing locally. `--spread` is refused: `.onto/tests` names no shard plugin.
 
 ---
 
