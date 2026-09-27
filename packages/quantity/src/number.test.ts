@@ -199,6 +199,29 @@ describe('parseNumber with compound values', () => {
   });
 });
 
+describe('parseNumber with inch and foot marks', () => {
+  const imperialInInches = { in: 1, ft: 12 };
+
+  it('reads " and \' as inches and feet wherever in and ft are accepted', () => {
+    expect(parseNumber('3"', imperialInInches)).toBe(3);
+    expect(parseNumber("5'", imperialInInches)).toBe(60);
+    expect(parseNumber('5\' 3"', imperialInInches)).toBe(63);
+  });
+
+  it('reads the primes and the curly quotes a keyboard substitutes', () => {
+    expect(parseNumber('5′ 3″', imperialInInches)).toBe(63);
+    expect(parseNumber('5’ 3”', imperialInInches)).toBe(63);
+  });
+
+  it('reads the names wherever a mark is what the field accepts', () => {
+    expect(parseNumber('5ft 3in', { '"': 1, "'": 12 })).toBe(63);
+  });
+
+  it('adds no unit a field does not accept', () => {
+    expect(parseNumber('3"', { cm: 1 })).toBeNaN();
+  });
+});
+
 describe('parseNumber with offset units', () => {
   // A field showing degC that also accepts K, which puts zero elsewhere.
   const inDegC = { degC: 1, K: { factor: 1, offset: -273.15 } };

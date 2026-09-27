@@ -61,6 +61,7 @@ export function formatCompact(value: number, decimals = 0): string {
  */
 export function parseNumber(text: string, units?: Readonly<UnitTable>): number {
   if (units) {
+    units = withSpellings(units);
     const trimmed = text.trim();
     const name = unitSuffixOf(trimmed, units);
     if (name !== undefined) {
@@ -81,6 +82,30 @@ export function parseNumber(text: string, units?: Readonly<UnitTable>): number {
 
 /** Suffixes a person may type, each mapped to its conversion into the shown unit. */
 export type UnitTable = Record<string, UnitEntry>;
+
+/**
+ * Units that are written more than one way. A table accepting any spelling
+ * accepts them all: `"` wherever `in` is, `ft` wherever `'` is. The primes and
+ * curly quotes are there because a keyboard substitutes them for the marks.
+ */
+const SPELLINGS: readonly (readonly string[])[] = [
+  ['in', '"', '″', '”'],
+  ['ft', "'", '′', '’'],
+];
+
+function withSpellings(units: Readonly<UnitTable>): Readonly<UnitTable> {
+  let out: UnitTable | undefined;
+  for (const group of SPELLINGS) {
+    const known = group.find((n) => units[n] !== undefined);
+    if (known === undefined) continue;
+    for (const n of group) {
+      if (units[n] !== undefined) continue;
+      out ??= { ...units };
+      out[n] = units[known]!;
+    }
+  }
+  return out ?? units;
+}
 
 /** Divided by the reciprocal below 1: 12 * 0.1 is 1.2000000000000002, 12 / 10 is 1.2. */
 function scaled(n: number, factor: number): number {
