@@ -6,6 +6,7 @@ import './Interstellar.stories.less';
 
 const meta: Meta = {
   title: 'labkit/Themes/Interstellar',
+  tags: ['gallery'],
   parameters: {
     docs: {
       description: {

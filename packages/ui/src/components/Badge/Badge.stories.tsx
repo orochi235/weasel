@@ -271,6 +271,7 @@ function AllShapesView({ status, variant, label }: {
 }
 
 export const AllShapes: Story = {
+  tags: ['gallery'],
   args: {
     children: 'ZORF',
     status: 'muted',
@@ -290,6 +291,7 @@ export const AllShapes: Story = {
 };
 
 export const StatusVariantMatrix: Story = {
+  tags: ['gallery'],
   render: (args) => {
     const label = typeof args.children === 'string' ? args.children : 'LABEL';
     return (
@@ -431,6 +433,7 @@ export const InlineWrapping: Story = {
 };
 
 export const ComposeShowcase: Story = {
+  tags: ['gallery'],
   name: 'Compose: base + effects',
   args: { children: 'COMPOSE', status: 'danger', variant: 'solid' },
   render: (args) => (

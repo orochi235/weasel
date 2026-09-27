@@ -17,6 +17,7 @@ export const Default: Story = { args: { kind: 'rect', size: 20 } };
 /** `image` is a shape kind with no auto-mounted tool, so it sits outside
  *  `KIT_SHAPE_KINDS`; `custom` stands in for a consumer-defined kind. */
 export const EveryKind: Story = {
+  tags: ['gallery'],
   render: () => (
     <div className={s.sheet}>
       {[...KIT_SHAPE_KINDS, 'image', 'custom'].map((kind) => (

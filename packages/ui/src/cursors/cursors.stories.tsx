@@ -20,7 +20,7 @@ import {
 } from '@weasel-js/cursor';
 import s from './cursors.stories.module.css';
 
-const meta: Meta = { title: 'ui/Cursors/Gallery' };
+const meta: Meta = { title: 'ui/Cursors/Gallery', tags: ['gallery'] };
 export default meta;
 
 const NAMES = Object.keys(GLYPHS) as CursorGlyphName[];

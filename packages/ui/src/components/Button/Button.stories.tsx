@@ -167,6 +167,7 @@ const VARIANTS: ButtonVariant[] = ['primary', 'secondary', 'ghost'];
 const SIZES: ButtonSize[] = ['sm', 'md'];
 
 export const Matrix: Story = {
+  tags: ['gallery'],
   render: () => (
     <div style={{ display: 'grid', gridTemplateColumns: 'auto repeat(3, 1fr)', gap: 12, alignItems: 'center' }}>
       <div />

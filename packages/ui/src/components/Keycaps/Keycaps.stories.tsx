@@ -183,6 +183,7 @@ export const Minimal: Story = {
 /** Side-by-side comparison: same shortcuts in default vs minimal (under a
  *  colored container). Honors `platform` + `legend`. */
 export const Gallery: Story = {
+  tags: ['gallery'],
   args: { platform: 'macos', legend: 'auto', font: 'system sans' },
   argTypes: {
     keys: { table: { disable: true } },

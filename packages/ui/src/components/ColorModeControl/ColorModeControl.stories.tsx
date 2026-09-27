@@ -25,6 +25,7 @@ export const WithPreferenceHook: Story = {
 };
 
 export const SizesAndVariants: Story = {
+  tags: ['gallery'],
   render: function Render() {
     const { preference, setPreference } = useColorModePreference();
     return (

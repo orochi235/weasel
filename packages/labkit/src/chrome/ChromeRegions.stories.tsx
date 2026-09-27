@@ -72,6 +72,7 @@ export default meta;
 type Story = StoryObj<typeof Lab>;
 
 export const EveryRegion: Story = {
+  tags: ['gallery'],
   args: {
     instruments: [FullInstrument],
     defaultInstrument: 'Every Region',

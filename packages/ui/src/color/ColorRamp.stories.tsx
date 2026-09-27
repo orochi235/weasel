@@ -5,6 +5,7 @@ import { colorRamp, type ColorRampOptions } from './ramp';
 
 const meta: Meta = {
   title: 'ui/Color/ColorRamp',
+  tags: ['gallery'],
 };
 
 export default meta;

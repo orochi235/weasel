@@ -114,6 +114,7 @@ const SECTIONS: readonly { title: string; routes: readonly string[] }[] = [
 
 /** Every route shape, grouped by the axis it varies. */
 export const AllPermutations: Story = {
+  tags: ['gallery'],
   render: () => (
     <div className={s.catalog}>
       {SECTIONS.map(({ title, routes }) => (

@@ -3,6 +3,7 @@ import { Specimen } from './Specimen';
 
 const meta: Meta<typeof Specimen> = {
   title: 'labkit/Specimen',
+  tags: ['gallery'],
   component: Specimen,
   parameters: { layout: 'fullscreen' },
 };

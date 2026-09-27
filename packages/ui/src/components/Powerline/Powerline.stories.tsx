@@ -33,6 +33,7 @@ type Story = StoryObj<typeof Powerline>;
 export const ClassicPrompt: Story = {};
 
 export const EveryCapInOneRow: Story = {
+  tags: ['gallery'],
   args: {
     segments: [
       ...ALL_CAPS.slice(0, -1).map((cap, i) => ({
@@ -46,6 +47,7 @@ export const EveryCapInOneRow: Story = {
 };
 
 export const CapMatrix: Story = {
+  tags: ['gallery'],
   render: () => (
     <div className={s.matrix}>
       {ALL_CAPS.map((cap) => (

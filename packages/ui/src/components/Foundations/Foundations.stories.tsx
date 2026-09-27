@@ -5,6 +5,7 @@ import s from './Foundations.module.css';
 
 const meta: Meta = {
   title: 'ui/Foundations',
+  tags: ['gallery'],
   parameters: {
     layout: 'padded',
   },

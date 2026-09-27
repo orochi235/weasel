@@ -10,6 +10,7 @@ export default meta;
 type Story = StoryObj<typeof Legend>;
 
 export const AllMarks: Story = {
+  tags: ['gallery'],
   args: {
     entries: [
       { key: 'contour', label: 'contour', color: '#7d7f86' },

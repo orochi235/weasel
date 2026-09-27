@@ -160,6 +160,7 @@ export const MinimalOptional: Story = {
  *  combination side by side. The `platform` and `legend` controls affect
  *  the modifier and named-key rows. */
 export const Gallery: Story = {
+  tags: ['gallery'],
   args: { platform: 'macos', legend: 'auto', font: 'system sans' },
   argTypes: {
     label: { table: { disable: true } },
