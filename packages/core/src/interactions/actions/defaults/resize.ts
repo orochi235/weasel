@@ -276,7 +276,9 @@ interface ResizeScratch {
 export const resizeAction: Action & { requires: string[] } = {
   id: 'resize',
   label: 'Resize',
-  defaultBinding: { kind: 'drag' },
+  // No default binding: a bare `{ kind: 'drag' }` claimed every drag at ambient
+  // scope, tying areaSelect's. The resize handles bind it
+  // (`SELECTION_TRANSFORM_BINDINGS`, the `transform` preset).
   eligible: { capability: 'transforms-selection' },
   requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'poseComposition'],
   invoker: {

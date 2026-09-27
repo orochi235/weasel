@@ -99,10 +99,10 @@ function getOngoingInvoker(action: typeof resizeAction) {
 // ---------------------------------------------------------------------------
 
 describe('resizeAction descriptor', () => {
-  it('declares id, label, drag defaultBinding, and ongoing timing', () => {
+  it('declares id, label, no defaultBinding, and ongoing timing', () => {
     expect(resizeAction.id).toBe('resize');
     expect(resizeAction.label).toBe('Resize');
-    expect(resizeAction.defaultBinding).toEqual({ kind: 'drag' });
+    expect(resizeAction.defaultBinding).toBeUndefined();
     expect(resizeAction.invoker?.timing).toBe('ongoing');
   });
 
