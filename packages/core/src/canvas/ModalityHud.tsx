@@ -11,7 +11,7 @@
  */
 import { useOptionalActiveToolContext } from '@weasel-js/routing/react';
 import { useHostAnchor } from './useHostAnchor';
-import s from './ModalityHud.module.css';
+import s from './hud.module.css';
 
 export interface ModalityHudProps {
   canvasRef: React.RefObject<HTMLElement | null>;
@@ -45,23 +45,23 @@ export function ModalityHud({ canvasRef, anchorRef, modeId, offset }: ModalityHu
   const hotkeyTop = hotkeys.length > 0 ? hotkeys[hotkeys.length - 1] : null;
 
   return (
-    <div ref={ref} className={s.hud} style={style}>
+    <div ref={ref} className={`${s.hud} ${s.sized}`} style={style}>
       <div className={s.row}>
-        <span className={s.label}>mode</span>
-        <span className={modeId ? s.value : s.valueMuted}>{modeId ?? '—'}</span>
+        <span className={s.muted}>mode</span>
+        <span className={modeId ? undefined : s.absent}>{modeId ?? '—'}</span>
       </div>
       <div className={s.row}>
-        <span className={s.label}>active</span>
-        <span className={active ? s.value : s.valueMuted}>{active ?? '—'}</span>
+        <span className={s.muted}>active</span>
+        <span className={active ? undefined : s.absent}>{active ?? '—'}</span>
       </div>
       <div className={s.row}>
-        <span className={s.label}>hotkey</span>
+        <span className={s.muted}>hotkey</span>
         {hotkeys.length <= 1 ? (
-          <span className={hotkeyTop ? s.value : s.valueMuted}>{hotkeyTop ?? '—'}</span>
+          <span className={hotkeyTop ? undefined : s.absent}>{hotkeyTop ?? '—'}</span>
         ) : (
           <span className={s.stack}>
             {hotkeys.slice().reverse().map((id, i) => (
-              <span key={`${id}-${i}`} className={i === 0 ? s.value : s.valueMuted}>
+              <span key={`${id}-${i}`} className={i === 0 ? undefined : s.absent}>
                 {id}
               </span>
             ))}

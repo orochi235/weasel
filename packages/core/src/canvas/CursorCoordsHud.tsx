@@ -10,6 +10,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
+import s from './hud.module.css';
 import { useHostAnchor } from './useHostAnchor';
 import type { View } from 'core/viewport/view';
 import { clientToWorld } from 'core/viewport/clientToWorld';
@@ -108,20 +109,8 @@ export function CursorCoordsHud({ canvasRef, anchorRef, viewRef, offset }: Curso
   return (
     <div
       ref={ref}
-      style={{
-        position: 'fixed',
-        ...anchorStyle,
-        zIndex: 10000,
-        background: 'rgba(0,0,0,0.7)',
-        color: '#e8e8e8',
-        font: '11px ui-monospace, SFMono-Regular, Menlo, monospace',
-        padding: '6px 8px',
-        borderRadius: 4,
-        pointerEvents: 'none',
-        lineHeight: 1.4,
-        whiteSpace: 'pre',
-        textAlign: 'right',
-      }}
+      className={`${s.hud} ${s.pre}`}
+      style={anchorStyle}
     >
       {`fps    ${fps.toString().padStart(3)}`}
       {'\n'}
