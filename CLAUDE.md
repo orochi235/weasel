@@ -176,6 +176,9 @@ The `core` workspace has no `test` script at all. `npm test` runs every project.
 `packages/text` and `packages/bidi` run under the `weasel-ui` project, not `core` — and running
 vitest from inside a package finds zero files and looks like a pass. `npm run check:test-projects`
 prints which project owns each directory, and fails on a test file no project collects.
+A check that needs a real browser — layout, real IndexedDB, CSS jsdom can't resolve — is a
+`*.browser.test.{ts,tsx}` file, not a story `play`: the `browser` project runs it in headless
+Chromium (`npm run test:browser`, part of `npm test` and CI).
 
 Typecheck is `npx tsc --noEmit` **from the repo root**. `tsc -p packages/core/tsconfig.json`
 exits 1 with 31 pre-existing `TS6059` errors on a clean tree — core's `outDir` pins `rootDir` to

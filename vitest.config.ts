@@ -13,10 +13,10 @@ import { changelogs } from './scripts/vite-changelogs.ts';
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
-// Default `npm test` runs the jsdom projects (core, weasel-ui, WeaselDraw,
-// smoke). `npm run check:test-projects` fails the build on a test file no
-// project's glob reaches. The browser project (`forge-stories`) is opt-in via
-// `npm run test:stories:forge`. Shared concerns (jsdom env, setup, alias map) live
+// Default `npm test` runs the jsdom projects plus `browser`, which runs
+// `*.browser.test.*` files in headless Chromium. `npm run check:test-projects`
+// fails the build on a test file no project's glob reaches. `forge-stories`
+// is opt-in via `npm run test:stories:forge`. Shared concerns (jsdom env, setup, alias map) live
 // in the per-project block — vitest doesn't currently inherit `resolve` or
 // `test` keys from the top-level config when `projects` is set.
 const shared = {
@@ -47,7 +47,7 @@ export default defineConfig({
             'tests/perf/lib/**/*.test.{ts,tsx}',
             'typedoc/**/*.test.mjs',
           ],
-          exclude: ['**/*.smoke.test.{ts,tsx}', '**/node_modules/**'],
+          exclude: ['**/*.smoke.test.{ts,tsx}', '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
       },
       {
@@ -70,7 +70,7 @@ export default defineConfig({
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
           include: ['apps/site/**/*.test.{ts,tsx}'],
-          exclude: ['**/*.smoke.test.{ts,tsx}', '**/node_modules/**'],
+          exclude: ['**/*.smoke.test.{ts,tsx}', '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
       },
       {
@@ -85,7 +85,7 @@ export default defineConfig({
             'apps/**/*.smoke.test.{ts,tsx}',
           ],
           // labkit's smoke test runs in the dedicated `labkit` project (own setup).
-          exclude: ['**/node_modules/**', '**/dist/**', '.claude/**', 'packages/labkit/**', 'packages/forge/**'],
+          exclude: ['**/node_modules/**', '**/dist/**', '.claude/**', 'packages/labkit/**', 'packages/forge/**', '**/*.browser.test.{ts,tsx}'],
         },
       },
       {
@@ -100,7 +100,7 @@ export default defineConfig({
           // core runs in the `core` project above — it lived at the repo root
           // until the move into packages/, and this glob would otherwise
           // swallow its entire suite and run it twice.
-          exclude: ['packages/labkit/**', 'packages/forge/**', 'packages/core/**', '**/node_modules/**'],
+          exclude: ['packages/labkit/**', 'packages/forge/**', 'packages/core/**', '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
       },
       {
@@ -117,7 +117,7 @@ export default defineConfig({
           // A test that mounts a whole lab takes up to ~0.5 s alone and blows the 5 s default under a full fleet run.
           testTimeout: 20_000,
           include: ['packages/labkit/{src,scripts,examples}/**/*.{test,spec}.{ts,tsx}'],
-          exclude: ['**/node_modules/**'],
+          exclude: ['**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
       },
       {
@@ -130,7 +130,7 @@ export default defineConfig({
           // A test that mounts the whole workshop takes ~1 s alone and blows the 5 s default under a full fleet run.
           testTimeout: 20_000,
           include: ['packages/forge/src/**/*.test.{ts,tsx}', 'apps/forge/*.test.{ts,tsx}'],
-          exclude: ['**/node_modules/**'],
+          exclude: ['**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
       },
       {
@@ -157,6 +157,27 @@ export default defineConfig({
             'apps/shared/**/*.test.{ts,tsx}',
             'scripts/**/*.test.ts',
           ],
+          exclude: ['**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
+        },
+      },
+      // Tests that need a real browser — layout, real IndexedDB, CSS that jsdom
+      // resolves none of. Headless Chromium, like forge-stories below.
+      {
+        ...shared,
+        // Scanned up front: a dependency discovered mid-run makes vite re-optimize and reload,
+        // and the reloaded page gets a second React ("Invalid hook call").
+        optimizeDeps: { entries: ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'] },
+        test: {
+          name: 'browser',
+          include: ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'],
+          exclude: ['**/node_modules/**', '**/dist/**'],
+          css: true,
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            instances: [{ browser: 'chromium' }],
+          },
         },
       },
       // Every story — native and CSF — rendered and played through forge's frame, with the workshop's
