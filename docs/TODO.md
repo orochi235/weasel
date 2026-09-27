@@ -1265,15 +1265,6 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
-- **(P2) A full run on a fleet node times out the same ~28 jsdom tests every time.** On
-  orochi on 2026-09-27, before and after an `npm ci`, the same tests hit vitest's 5 s default:
-  forge's `CssVarsPanel`, `StoryInfo`, `Workshop`, `GlobalsToolbar`, `csf/shims/alias` and
-  `useStoryRegistry.document`; labkit's `LabZoom` and `Trial.annotations`; theme-editor's
-  `ThemeEditor` and `SemanticsLayer`; site's `WeaselDemos.routing`. Each file passes run
-  alone. That makes it load, not a regression, but it also means `onto test` is red on
-  every run and a real failure hides among them. Either raise `testTimeout` for the
-  projects that mount a whole shell, or cut what those tests mount.
-
 - **(P2) jsdom is pinned to exactly 29.0.1.** From 29.0.2 through 30.1.1
   (the latest), reading an inherited property that no ancestor sets — an unset
   custom property is enough — costs twice as much for every level of DOM depth:

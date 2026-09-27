@@ -114,6 +114,8 @@ export default defineConfig({
           // root setup/projects don't provide either.
           setupFiles: ['./packages/labkit/src/test-setup.ts'],
           css: true,
+          // A test that mounts a whole lab takes up to ~0.5 s alone and blows the 5 s default under a full fleet run.
+          testTimeout: 20_000,
           include: ['packages/labkit/{src,scripts,examples}/**/*.{test,spec}.{ts,tsx}'],
           exclude: ['**/node_modules/**'],
         },
@@ -125,6 +127,8 @@ export default defineConfig({
           environment: 'jsdom',
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
+          // A test that mounts the whole workshop takes ~1 s alone and blows the 5 s default under a full fleet run.
+          testTimeout: 20_000,
           include: ['packages/forge/src/**/*.test.{ts,tsx}', 'apps/forge/*.test.{ts,tsx}'],
           exclude: ['**/node_modules/**'],
         },

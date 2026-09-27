@@ -2,6 +2,10 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEMOS } from '../registry';
 import { WeaselDemos } from '../WeaselDemos';
+// The views `WeaselDemos` loads lazily, loaded here at collection so their transform is not
+// paid inside a test's timeout. `lazy()`'s own import then resolves from the module cache.
+import '../Releases';
+import '../WhatsNew';
 
 // jsdom has no IntersectionObserver, and `WeaselDemos` builds one to defer
 // work until a demo scrolls into view. Without this the page boundary catches
@@ -25,8 +29,7 @@ beforeAll(() => {
 
 // The whole app renders here. Demos load lazily, so what these assert is the
 // chrome the router drives — the heading and the hash — not a demo's canvas.
-// The nav's section labels are `<h2>` too, so scope to the main pane. The
-// releases and what's-new views are lazy, hence the generous timeout.
+// The nav's section labels are `<h2>` too, so scope to the main pane.
 const heading = async (text: string | RegExp) =>
   waitFor(
     () => expect(within(screen.getByRole('main')).getByRole('heading', { level: 2, name: text })).toBeTruthy(),

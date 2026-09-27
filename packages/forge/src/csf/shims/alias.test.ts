@@ -31,6 +31,8 @@ describe('storybook shims', () => {
       plugins,
       server: { middlewareMode: true, watch: null },
       appType: 'custom',
+      // Otherwise every server crawls forge's own entries for dependencies, which these resolves never read.
+      optimizeDeps: { noDiscovery: true },
       logLevel: 'silent',
     });
     return server;

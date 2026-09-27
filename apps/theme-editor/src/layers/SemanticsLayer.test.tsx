@@ -8,6 +8,9 @@ import { lookupOf, weasel } from '../theme/fixtures';
 import { setPin, setSemantic } from '../theme/model';
 import { SemanticsLayer } from './SemanticsLayer';
 
+// Mounting the editor takes up to ~0.7 s a test alone, and blows the 5 s default under a full fleet run.
+vi.setConfig({ testTimeout: 20_000 });
+
 function renderSemantics(def: ThemeDefinition) {
   const lookup = lookupOf(def);
   const onChange = vi.fn();
