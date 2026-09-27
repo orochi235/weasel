@@ -36,6 +36,8 @@ describe('forge vite plugin', () => {
       plugins: [forge({ stories: ['*.stories.tsx'] })],
       server: { middlewareMode: true },
       appType: 'custom',
+      // The dependency crawl writes into root after close, so rmSync meets ENOTEMPTY.
+      optimizeDeps: { noDiscovery: true },
       logLevel: 'silent',
     });
     http = createHttpServer(server.middlewares);
@@ -46,7 +48,7 @@ describe('forge vite plugin', () => {
   afterAll(async () => {
     await new Promise((done) => http?.close(done));
     await server?.close();
-    rmSync(root, { recursive: true, force: true });
+    rmSync(root, { recursive: true, force: true, maxRetries: 3 });
   });
 
   it('resolves its virtual modules', async () => {

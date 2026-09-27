@@ -109,7 +109,7 @@ describe('usePersistedState', () => {
     );
     await screen.findByLabelText('a');
     act(() => screen.getByText('set a').click());
-    expect(shown('b')).toBe('color');
+    await waitFor(() => expect(shown('b')).toBe('color'));
   });
 
   it("re-renders with another tab's write", async () => {
