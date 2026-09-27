@@ -23,7 +23,7 @@ Priority tags:
   unphased spec as `[*] drag`, whose `specificity()` phase part is 0. Parsed back, `[*]` is the
   bare-phase shorthand for `[&:*]`, whose phase part is 1; `[*:*]` scores 0 like the original.
   The text round-trips, so nothing notices, but a route copied out of a conflict message, the
-  reflection panel or `docs/diagrams/precedence-ladder.svg` into a binding outranks the one it
+  reflection panel or `docs/diagrams/precedence-fallthrough.svg` into a binding outranks the one it
   was printed from. Either the printer emits `[*:*]` for no phase, or `[*]` stops meaning
   `[&:*]` — the second changes the grammar's documented shorthand. Measured with a throwaway
   `npx tsx` script comparing `specificity()` of the spec and of `parseRoute(printed)`.

@@ -14,7 +14,7 @@ export const TOOL_RESET_TO_DEFAULT_ID = 'tool.resetToDefault';
  * Escape bindings (`cancelGesture`, `exitPathEdit`, `escape`). Both fired on
  * the same keypress because they were separate listeners.
  *
- * As an Action it joins the dispatcher's Escape ladder, which is
+ * As an Action it joins the dispatcher's Escape order, which is
  * first-match-wins. It registers at ambient scope, the lowest priority, so
  * one Escape press does exactly one thing, in this order:
  *
@@ -24,7 +24,7 @@ export const TOOL_RESET_TO_DEFAULT_ID = 'tool.resetToDefault';
  *   4. return to the default tool   ← this action
  *
  * That IS a behavior change from "reset the tool *and* clear the selection on
- * the same press." The ladder is the coherent reading of Escape, and the old
+ * the same press." That order is the coherent reading of Escape, and the old
  * pairing was an artifact of two uncoordinated listeners rather than a design.
  *
  * `getTarget` returns the tool id to return to, or `null` when the behavior

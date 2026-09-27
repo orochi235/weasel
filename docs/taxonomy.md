@@ -379,7 +379,7 @@ ranks the bindings that match it, and picks whose registries answer.
 the affordance, and actions whose `eligible` rule is false are dropped. The
 rest are ranked best-first:
 
-| Rung | Rule |
+| Step | Rule |
 |---|---|
 | 1 | Bindings naming the view the pointer is in, ahead of every other |
 | 2 | Scope tier: hotkey-held tool, then the active tool, then ambient bindings |
@@ -387,12 +387,12 @@ rest are ranked best-first:
 | 4 | An action gated by an `eligible` rule that holds now, ahead of one with no rule |
 | 5 | Registration order |
 
-It fires the first whose `enabled()` passes. Rung 4 is how context wins a tie:
+It fires the first whose `enabled()` passes. Step 4 is how context wins a tie:
 in path edit, Escape exits the edit instead of resetting the tool, and a bare
 drag no tool binds marquees (`areaSelect`, gated on `creates-selection`) where
 selection is on offer and pans (`viewport.dragPan`) where it is not. With the
 select tool active its own drag binding wins earlier, on scope tier. Two actions tied through
-rung 4 fall to registration order, and the kit's route-conflict check reports
+step 4 fall to registration order, and the kit's route-conflict check reports
 them (`reportRouteConflicts`); it treats actions gated by different rules as
 applying in different contexts.
 
