@@ -372,6 +372,25 @@ gesture system invoking actions. The term is most useful for *describing* what a
 feature does (e.g. "alt-click invokes the eyedropper action") and for keeping the
 gesture and action sides of a feature factored separately when designing.
 
+**When several bindings match one input**, the dispatcher drops those whose
+action's `eligible` rule is false, then ranks the rest best-first:
+
+| Rung | Rule |
+|---|---|
+| 1 | An exclusive [affordance](#affordance) claim bars every binding that does not consult the affordance |
+| 2 | Scope tier: hotkey-held tool, then the active tool, then ambient bindings |
+| 3 | Specificity within a tier: target narrowness, then required modifiers, then phase, then a MIME filter on drop/paste |
+| 4 | Bindings naming the view the pointer is in |
+| 5 | An action gated by an `eligible` rule that holds now, ahead of one with no rule |
+| 6 | Registration order |
+
+It fires the first whose `enabled()` passes. Rung 5 is how context wins: in path
+edit, Escape exits the edit instead of resetting the tool, and with a selection
+tool active a bare drag marquees instead of panning. Two actions tied through
+rung 5 fall to registration order, and the kit's route-conflict check reports
+them (`reportRouteConflicts`); it treats actions gated by different rules as
+applying in different contexts.
+
 ### Behavior
 
 A pluggable extension to a drag-based [Action](#action)'s per-frame proposed-pose

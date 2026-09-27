@@ -6,10 +6,19 @@
  * on `enabled()`; then invokes `immediate` or `ongoing` invokers and tracks
  * in-flight handles.
  *
- * ## Specificity-ordered fall-through
- * `matchSorted` returns every matching binding in precedence order
- * (hotkey > active > ambient, first-declared within scope). The dispatcher
- * walks that list and fires the first action whose `enabled()` returns
+ * ## Precedence and fall-through
+ * Every binding that matches the event is ranked, best first, by:
+ *   1. an exclusive affordance claim, which bars every binding that does not
+ *      consult the affordance;
+ *   2. scope tier: hotkey > active > ambient;
+ *   3. specificity within a tier (`specificity()` in `matcher.ts`);
+ *   4. bindings naming the routed view ahead of the rest (`preferViewScoped`);
+ *   5. an action gated by an `eligible` rule that holds now ahead of one with
+ *      no rule (`preferContextual`) — Escape while editing a path exits the
+ *      edit rather than resetting the tool;
+ *   6. registration order.
+ * Candidates whose `eligible` rule is false are dropped first. The dispatcher
+ * walks the rest and fires the first action whose `enabled()` returns
  * `true`. If every candidate's `enabled()` returns a disabled reason, the
  * event is unhandled. This mirrors CSS-style specificity matching with a
  * `:not(:disabled)` filter, and lets a tool declare a high-specificity
@@ -41,6 +50,7 @@ import type { Action, ActionSource } from '../actions/action';
 import { actionBindings } from '../actions/binding';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { GestureBinding } from '../actions/binding';
+import type { GestureSpec } from '@weasel-js/gestures';
 import type { OngoingHandle, InvocationCtx, ActionDeps, AffordanceHit, DragSample, Point2 } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
 import { buildDepsFromRequires } from '../actions/buildDeps';
@@ -264,6 +274,46 @@ export function filterEligible<M extends { binding: { actionId: string } }>(
     if (!action) return true;
     return isEligible(action, ruleCtx);
   });
+}
+
+/**
+ * Among matches tied on scope and specificity, put those whose action is
+ * gated by an `eligible` rule that holds now ahead of those with no rule: a
+ * binding that applies only in the current context — Escape while editing a
+ * path — outranks one that applies everywhere. Otherwise stable.
+ *
+ * @internal
+ */
+export function preferContextual<M extends { binding: GestureBinding; scope: string }>(
+  matches: readonly M[],
+  actionLookup: (id: string) => Action | undefined,
+  /** Whether a gated action's rule holds; skip re-asking where the matches
+   *  were already filtered by it. */
+  holds: (action: Action) => boolean,
+): M[] {
+  const out: M[] = [];
+  let run: M[] = [];
+  const flush = (): void => {
+    const gated = run.filter((m) => {
+      const action = actionLookup(m.binding.actionId);
+      return action?.eligible !== undefined && holds(action);
+    });
+    out.push(...gated, ...run.filter((m) => !gated.includes(m)));
+    run = [];
+  };
+  for (const m of matches) {
+    const head = run[0];
+    if (head && (head.scope !== m.scope || !sameSpecificity(head.binding.spec, m.binding.spec))) flush();
+    run.push(m);
+  }
+  flush();
+  return out;
+}
+
+function sameSpecificity(a: GestureSpec, b: GestureSpec): boolean {
+  const sa = specificity(a);
+  const sb = specificity(b);
+  return sa.every((v, i) => v === sb[i]);
 }
 
 /**
@@ -995,7 +1045,11 @@ export function createDispatcher(opts?: {
     // to fire an action declared ineligible for the active mode.
     const ruleCtx = ruleCtxOf(ctx);
     const matches = ruleCtx
-      ? filterEligible(rawMatches, (id) => actionMap.get(id), ruleCtx)
+      ? preferContextual(
+        filterEligible(rawMatches, (id) => actionMap.get(id), ruleCtx),
+        (id) => actionMap.get(id),
+        () => true,
+      )
       : rawMatches;
     if (matches.length === 0) {
       finishTrace(null, 'unhandled');
@@ -1219,13 +1273,17 @@ export function createDispatcher(opts?: {
   ): ResolvedCandidate[] {
     const scopedBindings = assembleScopedBindings(ctx);
     const engagedChannels = snapshotEngagedChannels();
-    const matches = preferViewScoped(
+    const sorted = preferViewScoped(
       matchSorted(event, scopedBindings, ctx.isMac, engagedChannels), ctx.viewId ?? null,
     );
-    if (matches.length === 0) return [];
+    if (sorted.length === 0) return [];
 
     const actionMap = buildActionMap(ctx.actions);
     const ruleCtx = ruleCtxOf(ctx);
+    // The same order handleInput walks, so a prediction names what fires.
+    const matches = ruleCtx
+      ? preferContextual(sorted, (id) => actionMap.get(id), (a) => isEligible(a, ruleCtx))
+      : sorted;
 
     // Verdict per action id, so a second binding for an action already
     // evaluated higher up inherits that verdict instead of being re-asked —

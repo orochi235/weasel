@@ -756,22 +756,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `PropertyRenderContext.update`, rather than the one aggregated object that a mixed selection
   does not have.
 
-- **(P2) Kit actions still tie on a bare drag, and the kit's own check cannot see it.**
-  `areaSelect`, `insert` and `viewport.dragPan` each keep a `defaultBinding: { kind: 'drag' }`,
-  which the dispatcher assembles at ambient scope, so any two registered together tie and
-  registration order picks the winner of a drag no tool claims — today `areaSelect`, ahead of
-  both. Demos warning on load (browser sweep, 2026-09-27): `alignment-guides` and
-  `tool-reflection` (areaSelect, viewport.dragPan), `image`, `stroke-and-fill` and
-  `annotation-capture` (areaSelect, insert), `shape-tools` (all three), `minimap` (minimap,
-  viewport.dragPan). `resize` had the same catch-all and lost it, as `rotate` and `clone` did
-  before it. Dropping or targeting the other three changes what an unclaimed drag does — marquee,
-  a stray insert or a pan — so it needs a decision on which action owns that drag, if any.
-  Separately, `SceneCanvas.routeConflicts.test.tsx` only caught `resize` once it mounted a
-  consumer-side `useTools` under `<WeaselProvider>`: `<SceneCanvas>` assembles its internal
-  tools above its `<ActionsProvider>`, so the conflict check it runs never sees the actions.
-  Key-side ties also warn (`nudge.*` / `nudgeAnchors.*`, `delete` / `deleteAnchors`,
-  `exitPathEdit` / `tool.resetToDefault` on Escape); the anchor variants decline through `enabled` with no anchor
-  selection, which the check cannot see, so those may want a way to mark an intended fall-through.
+- **(P2) The minimap tool and `viewport.dragPan` still tie on a bare drag.** Both are ungated
+  ambient bindings, so registration order picks the winner; the `minimap` demo warns on load. The
+  other kit ties the 2026-09-27 browser sweep found are settled by context-gated precedence (see
+  "Interaction" in `docs/taxonomy.md`): `areaSelect` and `insert` are gated on
+  `creates-selection` and `creates-shapes`, so each beats `viewport.dragPan` where its tool is
+  active, and in path edit the anchor-editing key bindings are the only ones eligible. The
+  route-conflict check trusts that actions gated by different rules never hold together — true of
+  the default modes, not checked for a consumer's.
 
 - **(P2) `arrayAdapter`'s marquee and lasso still test bounding boxes.** `sceneToAdapter`'s
   both run the live silhouette hit-test; `arrayAdapter`'s `hitTestArea` (bounds, or the

@@ -1206,3 +1206,53 @@ describe('view-scoped bindings', () => {
     expect(seen).toEqual([null, 'mini']);
   });
 });
+
+describe('context-gated precedence', () => {
+  const ruleIn = (mode: string) => ({
+    focused: true,
+    selection: [],
+    multiActive: false,
+    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    action: { kind: null, id: null },
+    hover: null,
+    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
+    mode,
+    allowedCapabilities: new Set<string>(),
+  });
+
+  function setup() {
+    const reset = vi.fn();
+    const exit = vi.fn();
+    // The ungated action registers first, so registration order alone would pick it.
+    const registry = makeRegistry([
+      {
+        id: 'reset', label: 'reset', defaultBinding: { kind: 'key', key: 'a' },
+        invoker: { timing: 'immediate', run: reset },
+      },
+      {
+        id: 'exit', label: 'exit', defaultBinding: { kind: 'key', key: 'a' },
+        eligible: { mode: 'path-edit' },
+        invoker: { timing: 'immediate', run: exit },
+      },
+    ]);
+    return { registry, reset, exit };
+  }
+
+  it('fires the action gated on the current context ahead of an ungated one', () => {
+    const { registry, reset, exit } = setup();
+    createDispatcher().handleInput(
+      keyAEvent, makeCtx({ actions: registry, getRuleCtx: () => ruleIn('path-edit') }),
+    );
+    expect(exit).toHaveBeenCalledOnce();
+    expect(reset).not.toHaveBeenCalled();
+  });
+
+  it('leaves the ungated action to fire when the context does not hold', () => {
+    const { registry, reset, exit } = setup();
+    createDispatcher().handleInput(
+      keyAEvent, makeCtx({ actions: registry, getRuleCtx: () => ruleIn('normal') }),
+    );
+    expect(reset).toHaveBeenCalledOnce();
+    expect(exit).not.toHaveBeenCalled();
+  });
+});
