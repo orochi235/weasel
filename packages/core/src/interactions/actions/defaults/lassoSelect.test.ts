@@ -161,6 +161,22 @@ describe('lassoSelectAction descriptor', () => {
     expect(dep.calls.setSelection).toEqual([['nodeA', 'nodeB']]);
   });
 
+  it("hit-tests in the binding's params.mode, 'intersect' when none is given", () => {
+    const invoker = getOngoingInvoker(lassoSelectAction);
+    const run = (opts: Parameters<typeof invoker.start>[1]) => {
+      const dep = makeLassoSelectDep();
+      const handle = invoker.start(makeCtx(dep, { x: 0, y: 0 }), opts);
+      for (const [x, y] of [[10, 0], [10, 10], [0, 10]]) {
+        handle.onMove!({ ...makeCtx(), world: { x, y }, screen: { x, y } });
+      }
+      handle.onEnd!(makeCtx(), 'commit');
+      return (dep.calls.hitTestLasso[0] as { mode: string }).mode;
+    };
+    expect(run(undefined)).toBe('intersect');
+    expect(run({ params: { mode: 'enclosed' } })).toBe('enclosed');
+    expect(run({ params: () => ({ mode: 'centers' }) })).toBe('centers');
+  });
+
   it('onEnd(commit) falls back to hitTestArea AABB when hitTestLasso is absent', () => {
     const invoker = getOngoingInvoker(lassoSelectAction);
     const dep = makeLassoSelectDep(['nodeX']);

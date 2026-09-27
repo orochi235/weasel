@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useLassoTool } from './useLassoTool';
 import type { LassoSelectAdapter } from 'core/adapters/types';
+import { resolveParams } from '@weasel-js/routing';
 
 function makeAdapter(hits: string[] = []): LassoSelectAdapter & { applyOps: ReturnType<typeof vi.fn> } {
   const applyOps = vi.fn();
@@ -47,5 +48,17 @@ describe('useLassoTool', () => {
     expect(bindings.length).toBe(1);
     expect(bindings[0].actionId).toBe('lassoSelect');
     expect(bindings[0].spec.kind).toBe('drag');
+  });
+
+  it('hands its hit mode to the action through the binding params', () => {
+    const adapter = makeAdapter();
+    const { result, rerender } = renderHook(
+      ({ mode }: { mode?: 'centers' | 'intersect' | 'enclosed' }) => useLassoTool(adapter, { mode }),
+      { initialProps: {} },
+    );
+    const params = () => resolveParams(result.current.bindings![0].opts?.params);
+    expect(params()).toEqual({ mode: 'intersect' });
+    rerender({ mode: 'enclosed' });
+    expect(params()).toEqual({ mode: 'enclosed' });
   });
 });

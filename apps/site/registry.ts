@@ -208,7 +208,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'lasso',
     title: 'Lasso',
     category: 'Selection & actions',
-    description: 'useLassoTool — free-form polygon selection sibling to the rectangular marquee. Press L to switch from select to lasso, then drag to paint a closed polygon. The on-screen radio toggles the hit mode plumbed through `selectFromLasso({ mode })`: `centers` (rect center inside polygon — Photoshop-style snap), `intersect` (any overlap — Figma default), `enclosed` (rect fully inside — strict). Backed by `arrayAdapter`/`sceneToAdapter`\'s default `hitTestLasso`, which composes `polygonContainsRectCenter` / `polygonIntersectsRect` / `polygonContainsRect` from `@weasel-js/core`.',
+    description: 'useLassoTool — free-form polygon selection sibling to the rectangular marquee. Press L to switch from select to lasso, then drag to paint a closed polygon. The on-screen radio sets `toolOptions.lasso.mode`: `centers` (shape center inside the polygon — Photoshop-style snap), `intersect` (any overlap — Figma default), `enclosed` (shape wholly inside — strict). Each mode tests the polygon against the shape\'s drawn outline, rotation included.',
     hint: 'Press L for lasso, drag to paint a polygon. Switch the radio to compare hit modes.',
     load: () => import('./demos/LassoDemo').then((m) => m.LassoDemo),
     path: 'apps/site/demos/LassoDemo.tsx',
