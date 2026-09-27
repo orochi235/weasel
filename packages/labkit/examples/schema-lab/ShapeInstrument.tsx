@@ -1,6 +1,6 @@
 import { createScene, defaultNodeProperties, solid, strokeOf } from '@weasel-js/core';
 import type { FillStyle, RectPose, Scene, Stroke } from '@weasel-js/core';
-import { defineInstrument, type RenderContext } from '@weasel-js/labkit';
+import { defineInstrument, hasConfigPath, type RenderContext, valueAtPath, withValueAtPath } from '@weasel-js/labkit';
 import { useEffect, useRef } from 'react';
 import { decodePrefValue, flattenPrefs, type PrefGroup, prefDefaults, prefsToFields, setAtPath } from './prefsToFields';
 import { SceneFrame } from './SceneHost';
@@ -16,16 +16,16 @@ interface ShapeData {
 }
 type Config = Record<string, unknown>;
 
-const START: Config = {
-  ...prefDefaults(RECT_SCHEMA),
+/** Nested at each field's node path: labkit reads a dotted key as a path. */
+export const START: Config = Object.entries({
   'pose.x': 120,
   'pose.y': 90,
   'pose.width': 260,
   'pose.height': 180,
   'data.stroke.width': 6,
-};
+}).reduce<Config>((config, [path, value]) => withValueAtPath(config, path, value), prefDefaults(RECT_SCHEMA));
 
-function buildScene(): Scene<ShapeData, 'default', RectPose> {
+export function buildScene(): Scene<ShapeData, 'default', RectPose> {
   return createScene<ShapeData, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: [
@@ -41,18 +41,20 @@ function buildScene(): Scene<ShapeData, 'default', RectPose> {
 
 /** Push every config key onto the node path its schema leaf names. No field
  *  is handled by name — the schema says where each value goes. */
-function applyConfig(scene: Scene<ShapeData, 'default', RectPose>, config: Config): void {
+export function applyConfig(scene: Scene<ShapeData, 'default', RectPose>, config: Config): void {
   const id = scene.roots[0];
   const node = id ? scene.get(id) : undefined;
   if (!id || !node) return;
   const pose = { ...node.pose } as Record<string, unknown>;
   const data = { ...node.data } as Record<string, unknown>;
   for (const { path, leaf } of flattenPrefs(RECT_SCHEMA)) {
-    if (!(path in config)) continue;
+    if (!hasConfigPath(config, path)) continue;
     const [root, ...rest] = path.split('.');
-    const value = decodePrefValue(leaf, config[path]);
-    if (root === 'pose') setAtPath(pose, rest, value);
-    else if (root === 'data') setAtPath(data, rest, value);
+    const target = root === 'pose' ? pose : root === 'data' ? data : undefined;
+    if (!target) continue;
+    const siblings = rest.length > 1 ? valueAtPath(target, rest.slice(0, -1).join('.')) : undefined;
+    const value = decodePrefValue(leaf, valueAtPath(config, path), siblings as Record<string, unknown> | undefined);
+    setAtPath(target, rest, value);
   }
   scene.setPose(id, pose as unknown as RectPose);
   scene.update(id, { data: data as unknown as ShapeData });
