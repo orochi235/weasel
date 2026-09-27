@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { snap } from './snap';
 import type { GestureContext, GroupTransform, SnapStrategy } from '../types';
+import { gridSnapStrategy } from './strategies/grid';
+import { polygonFromPoints, type Path } from 'features/paths';
 
 interface Pose { x: number; y: number }
 
@@ -75,5 +77,19 @@ describe('snap', () => {
     const b = snap(strategy);
     const result = b.onMove!(ctx({}, { x: 10, y: 20 }), tt(1.7, 3.9));
     expect(result).toEqual({ transform: { kind: 'translate', dx: 2, dy: 4 } });
+  });
+});
+
+describe('snap on a Path pose', () => {
+  it('derives a finite delta from the path bounds when no origin projection is passed', () => {
+    const tri = polygonFromPoints([
+      { x: 83, y: 47 },
+      { x: 120, y: 47 },
+      { x: 100, y: 90 },
+    ]);
+    const c = { ...ctx(), origin: new Map<string, Path>([['a', tri]]) } as unknown as GestureContext<Path>;
+    const b = snap(gridSnapStrategy<Path>(20));
+    // bounds origin (83,47) + (5,5) = (88,52) → grid (80,60) → delta (-3,13).
+    expect(b.onMove!(c, tt(5, 5))).toEqual({ transform: { kind: 'translate', dx: -3, dy: 13 } });
   });
 });

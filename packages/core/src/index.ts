@@ -38,8 +38,10 @@
  *     `AUTO_POSE_DESCRIPTOR`, which handles both `{x,y,width,height}` and
  *     `Path`. Pass via `<SceneCanvas poseDescriptor>`.
  *   - `OriginProjection<TPose>` — read snap-origin + translate by delta. Used
- *     by `gridSnapStrategy` and `snapBackOrDelete` for non-rect poses. Default
- *     `RECT_ORIGIN_PROJECTION`; `pathOriginProjection` for `Path`. Pass via
+ *     by `gridSnapStrategy`, `snap` and `snapBackOrDelete` for non-rect poses.
+ *     `gridSnapStrategy` and `snap` default to `AUTO_ORIGIN_PROJECTION`, which
+ *     reads rects and `Path`s alike; `snapBackOrDelete` defaults to
+ *     `RECT_ORIGIN_PROJECTION`, so pass `pathOriginProjection` there. Pass via
  *     `gridSnapStrategy(spacing, { origin })` or `snapBackOrDelete({ ...,
  *     origin })`.
  *
