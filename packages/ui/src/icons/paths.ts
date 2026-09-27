@@ -57,6 +57,12 @@ export const ICON_PATHS = {
   modeDark: `<path d="M8.19 3.55A6.7 6.7 0 1 0 16.45 11.81A5.9 5.9 0 0 1 8.19 3.55Z"/>`,
   modeAuto: `<path d="M10 2.6Q10 10 17.4 10Q10 10 10 17.4Q10 10 2.6 10Q10 10 10 2.6Z"/>`,
 
+  // Badge status
+  statusSuccess: `<circle cx="10" cy="10" r="7"/><path d="M6.84 10.33 8.89 12.38 13.17 7.62"/>`,
+  statusAccent: `<circle cx="10" cy="10" r="7" fill="currentColor"/>`,
+  statusNeutral: `<path d="M10 3A7 7 0 0 1 10 17Z" fill="currentColor" stroke="none"/><circle cx="10" cy="10" r="7"/>`,
+  statusMuted: `<path d="M11.44 3.15A7 7 0 0 0 8.56 3.15M4.79 5.33A7 7 0 0 0 3.35 7.82M3.35 12.18A7 7 0 0 0 4.79 14.67M8.56 16.85A7 7 0 0 0 11.44 16.85M15.21 14.67A7 7 0 0 0 16.65 12.18M16.65 7.82A7 7 0 0 0 15.21 5.33"/>`,
+
   // Instrument
   crosshair: `<circle cx="10" cy="10" r="5.6"/><path d="M10 2.8v4.4M10 12.8v4.4M2.8 10h4.4M12.8 10h4.4"/>`,
   fullscreen: `<path d="M11.6 3.6h4.8v4.8M8.4 16.4H3.6v-4.8"/><path d="M16.4 3.6 11.2 8.8M3.6 16.4 8.8 11.2"/>`,
@@ -435,6 +441,15 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
       'modeLight',
       'modeDark',
       'modeAuto',
+    ],
+  },
+  {
+    label: 'Badge status',
+    names: [
+      'statusSuccess',
+      'statusAccent',
+      'statusNeutral',
+      'statusMuted',
     ],
   },
   {

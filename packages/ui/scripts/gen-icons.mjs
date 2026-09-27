@@ -20,6 +20,7 @@ import { CURVES } from './icons/curves.mjs';
 import { SHAPES } from './icons/shapes.mjs';
 import { SOLIDS } from './icons/solids.mjs';
 import { TEXT } from './icons/text.mjs';
+import { STATUSES } from './icons/status.mjs';
 
 // `save` split: the tray-and-arrow reads as download, so it carries `export`,
 // and capturing a trial's state gets its own camera.
@@ -31,6 +32,7 @@ const GROUPS = [
   ['Character styling', TEXT],
   ['Playback', PLAYBACK],
   ['State', STATUS],
+  ['Badge status', STATUSES],
   ['Instrument', INSTRUMENT],
   ['Stroke cap, join, align and dash', PAINT],
   ['Workspace layout', LAYOUT],
