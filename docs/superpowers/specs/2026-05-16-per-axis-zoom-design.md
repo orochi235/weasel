@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-16
 **Status:** Approved (pending user spec review)
-**Replaces:** TODO entry "Per-axis zoom (`scaleX` ≠ `scaleY`)" (originally deferred from `docs/specs/2026-05-07-viewport-followups-design.md`)
+**Replaces:** TODO entry "Per-axis zoom (`scaleX` ≠ `scaleY`)"
 
 ## Purpose
 
