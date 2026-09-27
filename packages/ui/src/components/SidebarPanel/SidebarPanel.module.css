@@ -45,16 +45,7 @@
 }
 
 .hideButton {
-  background: transparent;
-  border: 0;
-  padding: 0 var(--wzl-space-4);
-  font-size: var(--wzl-font-size);
-  line-height: 1;
-  color: var(--wzl-fg-muted);
-  cursor: pointer;
-}
-.hideButton:hover {
-  color: var(--wzl-fg);
+  margin-inline-end: var(--wzl-space-2);
 }
 
 .panel.collapsed {

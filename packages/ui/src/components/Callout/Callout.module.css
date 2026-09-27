@@ -245,22 +245,6 @@
   color: var(--_s-title-color);
 }
 
-.close {
-  flex: 0 0 auto;
-  background: none;
-  border: none;
-  color: var(--wzl-fg-muted);
-  font-size: var(--wzl-font-size-lg);
-  line-height: 1;
-  padding: var(--wzl-space-1) var(--wzl-space-2);
-  cursor: pointer;
-  border-radius: var(--wzl-radius-sm);
-}
-
-.close:hover {
-  color: var(--wzl-fg);
-}
-
 .body {
   padding: var(--wzl-space-4) var(--wzl-space-6) var(--wzl-space-5);
   font-size: var(--wzl-font-size);

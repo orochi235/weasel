@@ -9,6 +9,7 @@ import {
   type PopoverProps as RACPopoverProps,
 } from 'react-aria-components';
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
+import { CloseButton } from '../CloseButton';
 import { type StanceProps, useStance } from '../stance';
 import s from './Callout.module.css';
 
@@ -42,14 +43,14 @@ export type CalloutProps = Omit<
    */
   modal?: boolean;
   /**
-   * Show the × button. Defaults to `!modal`. In programmatic
+   * Show the close button. Defaults to `!modal`. In programmatic
    * `triggerRef`/`anchorRect` modes the close button needs controlled open
    * (`isOpen` + `onOpenChange`); with only `defaultOpen` it has no open-state
    * setter to call and cannot close.
    */
   showCloseButton?: boolean;
   /**
-   * The user asked for this callout to go away — the × button or Escape.
+   * The user asked for this callout to go away — the close button or Escape.
    *
    * Distinct from `onOpenChange`, which a non-modal popover *also* fires when
    * interaction or focus merely leaves it. On a canvas that's every click on
@@ -102,7 +103,7 @@ export function Callout(props: CalloutProps) {
   const stanced = useStance({ stance, tone });
   const { anchor: portalAnchor, portalProps } = useOverlayPortal(portalContainer);
   const showClose = showCloseButton ?? !modal;
-  // Escape is a dismissal like the × is. It can't ride on a React `onKeyDown`:
+  // Escape is a dismissal like the close button is. It can't ride on a React `onKeyDown`:
   // RAC's Dialog runs its props through filterDOMProps, which drops handlers
   // it doesn't know, so the listener goes on the section itself. RAC's own
   // Escape handling is untouched — this only adds the signal.
@@ -195,9 +196,8 @@ export function Callout(props: CalloutProps) {
                     </Heading>
                   )}
                   {showClose && (
-                    <button
-                      type="button"
-                      className={s.close}
+                    <CloseButton
+                      ariaLabel="Close callout"
                       onClick={() => {
                         // `close()` resolves OverlayTriggerStateContext, only
                         // provided by DialogTrigger (composed mode). In
@@ -208,10 +208,7 @@ export function Callout(props: CalloutProps) {
                         onOpenChange?.(false);
                         onDismiss?.();
                       }}
-                      aria-label="Close callout"
-                    >
-                      ×
-                    </button>
+                    />
                   )}
                 </header>
               )}

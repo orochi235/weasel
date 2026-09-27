@@ -8,9 +8,9 @@ import {
   useState,
 } from 'react';
 import { dlog } from '../../dlog';
-import { CloseIcon, LockIcon } from '../../icons';
+import { LockIcon } from '../../icons';
 import { type PressModifiers, useReorderDragList } from '../../useReorderDragList';
-import { Button } from '../Button';
+import { CloseButton } from '../CloseButton';
 import { Disclosure } from '../Disclosure';
 import { DragGhost } from '../DragGhost';
 import { DragHandleGlyph } from '../DragHandleGlyph';
@@ -68,7 +68,7 @@ export interface LayerListProps {
   onSelect?: (ids: string[]) => void;
   /** Adds a visibility checkbox to every unlocked layer. */
   onVisibilityChange?: (id: string, visible: boolean) => void;
-  /** Adds a ✕ to every unlocked layer. */
+  /** Adds a remove button to every unlocked layer. */
   onRemove?: (id: string) => void;
   /** A layer's controls. Returning `null` leaves that layer a one-line row. */
   renderBody?: (item: LayerListItem) => ReactNode;
@@ -608,9 +608,7 @@ function Remove({ item, shared }: { item: LayerListItem; shared: Shared }) {
   if (!onRemove || item.locked) return null;
   return (
     <span className={s.stop} onPointerDown={stop}>
-      <Button variant="ghost" size="sm" iconOnly ariaLabel={`Remove ${item.label}`} onClick={() => onRemove(item.id)}>
-        <CloseIcon size={14} />
-      </Button>
+      <CloseButton ariaLabel={`Remove ${item.label}`} onClick={() => onRemove(item.id)} />
     </span>
   );
 }

@@ -1,0 +1,17 @@
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+  width: 200px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--wzl-fg);
+  font-size: var(--wzl-font-size);
+}
+
+.rows li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

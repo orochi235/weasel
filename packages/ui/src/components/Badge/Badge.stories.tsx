@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { applyToPoint, invert } from '@weasel-js/geom';
 import { Badge } from './Badge';
+import { CloseButton } from '../CloseButton';
 import { ToggleBar as KitToggleBar } from '../ToggleBar/ToggleBar';
 import { ALL_SHAPES, SHAPES } from './shapes';
 import type { BadgeShape, BadgeStatus, BadgeVariant } from './types';
@@ -1654,7 +1655,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
                     {EFFECT_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
                   </select>
                   <code style={{ fontSize: 9, opacity: 0.6, fontFamily: 'Helvetica, Arial, sans-serif' }}>{EFFECTS[eff.type].offsetAt ? 'offset' : (EFFECTS[eff.type].zone ?? 'foreground')}</code>
-                  <button onClick={() => removeEffect(eff.id)} style={{ fontSize: 10, padding: '0 6px', cursor: 'pointer' }}>×</button>
+                  <CloseButton ariaLabel={`Remove effect ${i + 1}`} onClick={() => removeEffect(eff.id)} />
                 </div>
                 {(EFFECT_LAB_CONTROLS[eff.type] ?? []).map((c) =>
                   renderControl(c, eff.params[c.key], (v) => updateEffect(eff.id, c.key, v)),

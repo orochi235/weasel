@@ -38,6 +38,8 @@ export {
   type CheckboxProps,
   type ChromaCurve,
   type ChromaCurvePoint,
+  CloseButton,
+  type CloseButtonProps,
   COLOR_MODE_OPTIONS,
   ColorModeControl,
   type ColorModeControlProps,

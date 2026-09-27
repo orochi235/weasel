@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import { Focusable } from 'react-aria-components';
+import { CloseButton } from '../CloseButton';
 import { DisclosureMark } from '../Disclosure';
-import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './SidebarPanel.module.css';
 
 /** Props for {@link SidebarPanel}. */
@@ -21,7 +20,7 @@ export interface SidebarPanelProps {
    */
   onToggleCollapse?(): void;
   /**
-   * Optional close handler — when provided, the header gains a `×`
+   * Optional close handler — when provided, the header gains a close
    * button on the trailing edge. Caller flips its "hidden" state and
    * conditionally unmounts the panel from the parent.
    */
@@ -60,19 +59,12 @@ export function SidebarPanel(props: SidebarPanelProps) {
             <span className={`${s.title} ${s.titleBox}`}>{title}</span>
           )}
           {onHide !== undefined && (
-            <TooltipTrigger>
-              <Focusable>
-                <button
-                  type="button"
-                  className={s.hideButton}
-                  onClick={onHide}
-                  aria-label="Hide panel"
-                >
-                  ×
-                </button>
-              </Focusable>
-              <Tooltip>Hide panel</Tooltip>
-            </TooltipTrigger>
+            <CloseButton
+              className={s.hideButton}
+              ariaLabel="Hide panel"
+              tooltip="Hide panel"
+              onClick={onHide}
+            />
           )}
         </div>
       )}

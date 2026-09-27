@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Button } from '../Button';
+import { CloseButton } from '../CloseButton';
 import s from './ListEditor.module.css';
 
 /** Props for {@link ListEditor}. */
@@ -82,15 +83,7 @@ export function ListEditor({
                 onChange={(e) => onChange(value.map((v, j) => (j === i ? e.target.value : v)))}
                 onKeyDown={(e) => onKeyDown(e, i)}
               />
-              <Button
-                variant="ghost"
-                size="sm"
-                iconOnly
-                ariaLabel={`Remove ${name(i)}`}
-                onClick={() => remove(i)}
-              >
-                ×
-              </Button>
+              <CloseButton ariaLabel={`Remove ${name(i)}`} onClick={() => remove(i)} />
             </li>
           ))}
         </ul>
