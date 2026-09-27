@@ -1516,8 +1516,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // to the second call when `toolsProp` is absent is a render-stable empty
   // stand-in just to keep the call site valid; it never actually fires
   // because `disable` is true on that branch.
-  const toolsForEligibilityRef = useRef<ToolsApi | null>(null);
-  toolsForEligibilityRef.current = toolsTakeover ?? internalTools;
+  const liveToolsRef = useRef<ToolsApi | null>(null);
+  liveToolsRef.current = toolsTakeover ?? internalTools;
   //
   // `isToolEligible` mirrors `eligibleForMode` (packages/modes) — the same
   // predicate `ToolPalette` uses to grey a button out. Without a mode
@@ -1525,7 +1525,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const isToolEligible = useCallback((toolId: string): boolean => {
     const getMode = getActiveModeRef.current;
     if (!getMode) return true;
-    const registry = toolsForEligibilityRef.current?.registry;
+    const registry = liveToolsRef.current?.registry;
     const caps = registry?.[toolId]?.eligibility.capabilities ?? [];
     if (caps.length === 0) return false;
     const allowed = getMode().allowedCapabilities;
@@ -2147,7 +2147,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Test hook: opt-in via ?test=1, never in production builds. See src/test-hook.
   const testHookSceneRef = useRef(scene);
   const testHookSelectionRef = useRef(selection);
-  const testHookActiveToolRef = useRef<string | null>(null);
   testHookSceneRef.current = scene;
   testHookSelectionRef.current = selection;
 
@@ -2165,7 +2164,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         getSelectionIds: () =>
           (testHookSelectionRef.current?.current as readonly string[] | undefined) ?? [],
         getView: () => currentViewRef.current,
-        getActiveToolId: () => testHookActiveToolRef.current,
+        getActiveToolId: () => liveToolsRef.current?.active ?? null,
       });
       testHookRef.current?._markReady();
     }
