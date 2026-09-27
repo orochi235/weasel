@@ -25,24 +25,19 @@ Priority tags:
   - an always-on contribution in the `ambient` slot: the viewport, the HUD, the loupe;
   - a command given a place on a tool rail: forge's Info, labkit's `ToolItem` with `onActivate`;
   - a viewport behavior: `useHandTool`, `defineViewportTool`, which exists only as a naming signal;
-  - `select`, which is two of these at once. `pick`, marquee and clear are choosing things.
-    `resize`, `rotate`, move-selected and clone act on the selection and bind only while
-    select is active (`useSelectTool.ts`).
+  - `select`, which only chooses: pick, marquee, clear. Moving, cloning, resizing and
+    rotating the selection are always-live entries of their own (`selectionContributions.ts`),
+    which fit none of the meanings above either.
 
-  Waiting on the answer:
-  - **Bare-minimum defaults.** A bare `<SceneCanvas>` should only render. Features come as
-    composable presets: `view`, `pick`, `move`, `transform`, `edit`, `arrange`, `paths`, and
-    `draw` for today's set. Today a bare canvas makes select the active tool (and crashes
-    without it), registers about 40 standard actions with their bindings, a rotate-on-any-drag
-    catch-all, tool keys and the clipboard. 65 of the tree's 87 `<SceneCanvas>` uses rely on
-    that.
-  - **Select as a hard-coded base tool.** It's the default tool set, the initial active tool
-    and Escape's target (`SceneCanvas.tsx`). Its empty-canvas bindings at active scope are why
-    an ambient press can't coexist with it (the `CustomShaderDemo` entry below).
-  - **Selection handles on by default.** Easy to turn on, but not on by default.
-
-  Also open: whether selection *state* exists in the bare canvas, with no input setting it, so
-  that consumer bindings have something to act on.
+  A bare `<SceneCanvas>` now only renders, and `features` presets turn behavior on
+  (`canvas/SceneCanvas/features.ts`). Still waiting on the answer:
+  - **Every canvas in the tree runs `features={['draw']}`.** That was the one-word migration;
+    most demos want far less. Tailoring each to the presets it demonstrates is its own pass.
+  - **Ambient drag catch-alls remain.** `areaSelect` and `viewport.dragPan` keep a bare
+    `{ kind: 'drag' }` default binding, so under a tool that leaves a drag unclaimed, an
+    empty drag marquees (with `pick`) or pans (with `view`). `rotate` and `clone` lost theirs.
+  - **`edit` cannot paste from the keyboard alone.** Cmd/Ctrl+V arrives as a DOM `paste`,
+    which only `ingest` binds; `clipboard.paste` is the button-and-menu half.
 
 - **(P3) Long-press has no feedback.** No haptic, no visual "press is
   registering" affordance during the 500ms hold. Users get no signal that
@@ -75,14 +70,11 @@ Priority tags:
   `useKeybindings`' document handler, which no longer exists. The shortcuts
   should become bindings gated on `modeIs`/`modeNot`.
 
-- **(P3) A press on empty canvas can't be an ambient binding beside select.**
-  `select` binds `pointerDown` on empty space at active scope, and active
-  outranks ambient, so an ambient contribution's `pointerDown` never fires.
-  `CustomShaderDemo` spawns its ripple from a one-binding tool made the active
-  tool instead (`defaultTools={[]}`, `initialActiveTool="press"`) — about 25
-  lines replacing a 5-line handler, and a tool mounted on panels that want no
-  press at all. Its pointer-move half is still a raw listener, waiting on a
-  hover gesture (below).
+- **(P3) A press on empty canvas can't be an ambient binding beside the select tool.**
+  `select.pick` binds `pointerDown` on empty space at active scope, and active
+  outranks ambient, so an ambient contribution's `pointerDown` never fires while
+  select is active. With no base tool it works: `CustomShaderDemo` spawns its
+  ripple from an ambient binding on a bare canvas.
 
 - **(P3) `targetConsultsAffordance` still guesses from shape.** The kit's four
   body predicates now carry `readsAffordance: false` and the filter honors it
@@ -804,7 +796,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `pointermove` listener in `packages/labkit/src/loupe/useLoupe.ts`, because
   `GESTURE_DESCRIPTORS` has no continuous-motion entry. Every other consumer that
   wants to follow the pointer without a press — a coordinate readout, an
-  eyedropper preview, a hover ruler — hand-attaches the same listener. Adding one
+  eyedropper preview, a hover ruler, `CustomShaderDemo`'s cursor-following
+  panels — hand-attaches the same listener. Adding one
   is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
   action, and `docs/taxonomy.md` would need to say what a hover binding claims.
 

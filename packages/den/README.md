@@ -14,9 +14,9 @@ became a four-condition eligibility *set* — `focus | offhand | always | claime
 on `Contribution`, composed with `mergeContributions`
 (`packages/core/src/contributions/`).
 
-**The convenience layer shipped inside core.** `ToolBundle`
-(`minimal | standard | exhaustive`) plus `defaultTools` / `toolOptions` on
-`SceneCanvas` cover what `useStandardTools` and `useStandardCanvasSetup` were for.
+**The convenience layer shipped inside core.** The `features` presets plus
+`defaultTools` / `toolOptions` on `SceneCanvas` cover what `useStandardTools` and
+`useStandardCanvasSetup` were for.
 
 **The `{ adapter }` threading is obsolete** — and obsolete for exactly the tools the
 spec was migrating. Delete, duplicate, nudge, and undo/redo are actions that read

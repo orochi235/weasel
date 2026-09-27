@@ -17,7 +17,9 @@ option fields not covered here are in the source — every export carries JSDoc.
 ## Actions and bindings
 
 `<SceneCanvas>` mounts an `<ActionsProvider>` and a `<DepRegistryProvider>`,
-then calls `useStandardActions` to register the kit-standard descriptors. A
+then calls `useStandardActions` to register the kit-standard descriptors its
+`features` presets name (`FEATURE_ACTION_IDS`) and its tools bind — none on a
+bare canvas, all of them under `features={['draw']}`. A
 descriptor declares *what* it does (`invoker.run`), *what it needs*
 (`requires`, resolved from the dep registry at dispatch time), *when it's
 allowed* (`eligible` / `enabled`), and *how it's reached by default*
@@ -122,7 +124,7 @@ curly quote, so both codepoints are listed.
 `setStrokeOpacity` — all UI-driven.
 
 `viewport.wheelPan` and `viewport.zoom` are deliberately **not** in the
-standard set; `<SceneCanvas>` registers them conditionally from its
+standard set; `<SceneCanvas>` registers them under the `view` preset, from its
 `viewport.pan` / `viewport.zoom` flags.
 
 ### Where the old hooks went

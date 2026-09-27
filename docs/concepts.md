@@ -81,6 +81,40 @@ to ask whether the current render is a transition. Render that DOM outside the
 transition, gated on `getPaintedVersion()` when it must be in lockstep, or set
 `syncPaint` for the old whole-cloth guarantee.
 
+## What `<SceneCanvas>` turns on
+
+A bare `<SceneCanvas>` renders its scene and nothing else. The `selection`
+API works, so a consumer binding has a selection to act on, but no input sets
+it. There is no tool and no active tool, no standard action and no key, no
+clipboard, no drop or paste, and no selection chrome. The gesture dispatcher is
+mounted, so a binding a consumer adds — an `ambient` entry, a tool, an action
+with a `defaultBinding` — routes as usual, with no base tool ahead of it.
+
+Behavior is turned on by naming presets in `features`. Each is independent:
+
+| Preset | Registers |
+|---|---|
+| `view` | wheel pan and zoom, pinch, the zoom keys; the hand tool, held on Space |
+| `pick` | the select tool, as the initial active tool and Escape's return target; the selection outline |
+| `move` | ambient drag-to-move and Alt-drag-to-clone bindings |
+| `transform` | the resize and rotation handles, drawn and bound |
+| `edit` | undo/redo, delete, duplicate, group/ungroup, nudge, select-all, Escape, cancel-gesture, clipboard, fill and stroke, and their keys |
+| `arrange` | align, distribute, reorder, flip |
+| `paths` | pathfinder operations, path-edit entry, anchor editing |
+| `ingest` | dropped and pasted content |
+| `draw` | every preset above |
+
+`FEATURE_ACTION_IDS` is the table of which kit action each preset registers.
+Passing `viewport` implies `view`; the prop only configures it. A tool brings
+the kit actions it binds, so `defaultTools={['rect']}` registers `insert`
+under any preset, and `actions` adds, overrides or removes on top of all of it.
+
+`move` and `transform` belong to the selection, not to the select tool: they
+are always-live entries (`selectionMoveContribution`,
+`selectionTransformContribution`), so a drag on the selection moves it under
+any tool that leaves the drag unclaimed. The select tool itself only chooses:
+it picks on press, marquees on an empty drag, and clears on an empty click.
+
 ## `<SceneViewCanvas>` and `<MinimapCanvas>` (detached views)
 
 Three primitives can render a second view of a scene. Pick by where the
@@ -370,7 +404,8 @@ export const deleteAction: Action & { requires: string[] } = {
 ```
 
 `useStandardActions` registers the kit-standard set into the surrounding
-`<ActionsProvider>`; `<SceneCanvas>` calls it for you. Actions reached by a
+`<ActionsProvider>`; `<SceneCanvas>` calls it for you, leaving out whatever
+its `features` presets and tools do not name. Actions reached by a
 pointer gesture (`move`, `resize`, `insert`, …) are the same kind of object —
 an `invoker` with `start` / `move` / `end` rather than a one-shot `run`. A
 tool is just an array of `{ spec, actionId }` bindings pointing at them.
@@ -511,13 +546,11 @@ is the same behavior with a world-unit tolerance. Both scene pick paths agree.
 
 ## Tool
 
-`<Canvas tool="select" | "insert">` flips what an empty-space drag does:
-
-- `select` (default) routes to area-select (marquee).
-- `insert` routes to the insert gesture (drag a rectangle, adapter mints a
-  new object via `commitInsert(bounds)`).
-
-Both are no-ops when the relevant controller isn't wired.
+A tool is a list of `{ spec, actionId }` bindings that are live while it holds
+the active slot, or while its `hotkey` is held. With the select tool active an
+empty-space drag marquees; with a shape tool active it inserts. A canvas can
+also have no active tool at all — `useTools({ registry })` with no `active` —
+and run on ambient bindings alone.
 
 ## Putting it together
 
@@ -529,12 +562,13 @@ const adapter = {
 };
 
 // No per-action wiring: `duplicate` (Cmd+D) and `delete` (Backspace/Delete)
-// are kit-standard descriptors, registered by the canvas.
+// are kit-standard descriptors, registered by the canvas's `edit` preset.
 
 return (
   <SceneCanvas<Rect, Pose>
     width={W} height={H}
     adapter={adapter}
+    features={['draw']}
     selection={selection}
     selectionMode="multi"
     layers={{

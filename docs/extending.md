@@ -564,6 +564,14 @@ returns silently when there is none — with a console warning in a development
 build, with nothing at all in a production one. Actions ride on the definition
 so that a tool hook stays callable from anywhere.
 
+**Add the selection's own bindings.** The select tool only chooses. Dragging
+the selection to move or clone it, and its resize and rotation handles, are the
+`always` entries `selectionMoveContribution()` and
+`selectionTransformContribution`; put them in the dispatcher's `toolsById`
+beside your tools (transform first, since a handle sits over the body it
+resizes). The 3d lab (`packages/labkit/examples/3d-lab/SolidInstrument.tsx`)
+adds the move one.
+
 **Capability eligibility is off until you ask for it.** `select.pick` declares
 `eligible: { capability: 'creates-selection' }`. The dispatcher evaluates that
 rule only when it has a rule context to evaluate against — `getRuleCtx` on

@@ -149,6 +149,21 @@ interaction. See `packages/routing/src/tools/types.ts`.
 Not every entry is a Tool. `@weasel-js/hud` contributes bindings and actions and
 declares `claimed`; it has no scratch, no palette icon, and nothing to preview.
 
+The **select tool** is a Tool in this sense and only chooses: `select.pick` on
+press, the deferred multi-click collapse on release, `areaSelect` on an empty
+drag, `clearSelection` on an empty click. Acting on the selection is not the
+select tool's. Moving, cloning, resizing and rotating it are `always` entries
+owned by the selection (`selectionMoveContribution`,
+`selectionTransformContribution` in `tools/builtin/select`), so they are live
+under any tool that leaves the gesture unclaimed.
+
+Nothing is a base tool. A bare `<SceneCanvas>` registers no tool and has none
+active; the `pick` preset registers select and makes it the initial active tool
+and Escape's return target, and without it Escape returns nowhere. The presets
+`<SceneCanvas features>` takes (`view`, `pick`, `move`, `transform`, `edit`,
+`arrange`, `paths`, `ingest`, and `draw` for all of them) are listed in
+`docs/concepts.md`.
+
 ### Affordance
 
 A reusable factory primitive that produces a `{ id, render, hitTest? }` triple consumed by tools. Lives in `packages/core/src/affordances/`. Tools compose multiple affordances into a single overlay layer via `composeAffordanceLayer`. The dispatcher consults each composite layer's `hitTest` on pointerdown (top-down z-order) before falling through to the active-tool slot walk — so visible chrome is hittable regardless of which tool is currently active.
@@ -301,8 +316,9 @@ second dispatcher that read it are gone, so a tool's entire input surface is
 
 Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
 `align.{left,...}`, `distribute.{horizontal,vertical}`, `flip.{x,y}`. Kit defaults
-register automatically via `<SceneCanvas>`; consumer-level actions register
-explicitly. See `packages/core/src/interactions/actions/registry.tsx`.
+register via `<SceneCanvas>`, each under the `features` preset that names it
+(`FEATURE_ACTION_IDS`), or with a tool that binds it; consumer-level actions
+register explicitly. See `packages/core/src/interactions/actions/registry.tsx`.
 
 An action may declare an optional `cursor` — the hover hint shown while the
 pointer rests where a drag would route to that action. The hover-cursor pump
@@ -450,7 +466,7 @@ kit's internal partial order.
 
 3. **The kit's main barrel (`packages/core/src/index.ts`) imports from feature barrels, not from feature-internal paths.** This is the load-bearing discipline — once enforced, internal restructures (renaming a file, splitting a primitive into two) don't ripple through the main barrel.
 
-4. **The [Role taxonomy](#role-taxonomy) is a thinking tool, not a code shape.** When authoring a feature's primitives, sort them mentally: which are state surfaces (api), which contribute DOM attrs (attrs), which contribute render layers (layers). The categorization helps decide what belongs in the barrel and what stays internal. It does NOT manifest as TypeScript types or runtime structures — there's no `Api<S>` alias, no `<SceneCanvas features={[…]}>` prop, no `useFooFeature()` convenience hook by convention.
+4. **The [Role taxonomy](#role-taxonomy) is a thinking tool, not a code shape.** When authoring a feature's primitives, sort them mentally: which are state surfaces (api), which contribute DOM attrs (attrs), which contribute render layers (layers). The categorization helps decide what belongs in the barrel and what stays internal. It does NOT manifest as TypeScript types or runtime structures — there's no `Api<S>` alias, no `useFooFeature()` convenience hook by convention. (`<SceneCanvas features>` is unrelated: it names behavior presets, not these directories.)
 
 5. **Protocol-shaped features document their protocol surface explicitly.** Selection's `SelectionApi`, `AreaSelectAdapter`, and the `getSelection`/`setSelection` methods threaded into Move/Resize/Rotate adapters are the model. When a feature introduces a cross-cutting concept other code must honor, name the contracts in TypeScript interfaces and reference them in the feature's docs.
 
