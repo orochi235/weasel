@@ -1,7 +1,3 @@
-/* Every dimension is stated because a host app's bare-element defaults can be
-   authored at zero specificity — labkit's `:where(.lk-root) :where(button)`
-   sets `height: var(--wzl-control-h)` and horizontal padding, which would
-   otherwise stretch a 12px mark into a full-height control. */
 .twisty {
   flex: 0 0 auto;
   display: inline-flex;
@@ -17,8 +13,6 @@
   border: 0;
   border-radius: var(--wzl-radius-sm);
   background: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
   line-height: 1;
   cursor: pointer;
 }

@@ -29,8 +29,6 @@
   position: relative;
   flex: 1 1 0;
   min-width: 0;
-  /* The track's stretch sizes a segment; without this, labkit's :where(button) height wins and overflows a small bar. */
-  height: auto;
   padding: 0 var(--wzl-space-6);
   display: inline-flex;
   align-items: center;

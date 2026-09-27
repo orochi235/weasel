@@ -5,8 +5,6 @@
   justify-content: center;
   gap: var(--wzl-space-1);
   min-width: 44px;
-  /* Sized by its stack; a host's control-height default for bare buttons would crush it. */
-  height: auto;
   padding: var(--wzl-space-3) var(--wzl-space-2);
   background: transparent;
   border: 1px solid transparent;

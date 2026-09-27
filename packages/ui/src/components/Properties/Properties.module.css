@@ -694,11 +694,7 @@
   padding: 1px 0;
 }
 
-/* ⓘ help affordance beside a row label. Every dimension is stated because a
-   host app's bare-element defaults can be authored at zero specificity —
-   labkit's `:where(.lk-root) :where(button)` sets `height: var(--wzl-control-h)`
-   and horizontal padding, which would otherwise stretch a one-glyph button into
-   a full-height control. */
+/* ⓘ help affordance beside a row label. */
 .help {
   flex: 0 0 auto;
   display: inline-flex;
@@ -709,8 +705,6 @@
   padding: 0;
   border: 0;
   background: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
   color: var(--wzl-fg-subtle);
   font-size: var(--wzl-font-size-sm);
   line-height: 1;
@@ -731,9 +725,7 @@
 }
 
 /* The pinned/auto affordance. Invisible at rest so a panel of thirty rows is
-   not thirty dots; revealed by the row, and permanent once the row is auto.
-   Every box dimension is stated for the same reason `.help` states them — a
-   host's zero-specificity bare-element defaults would otherwise size it. */
+   not thirty dots; revealed by the row, and permanent once the row is auto. */
 /* The row's label is also its pin, so it says so when pointed at — the same
    dotted underline a compact `<Select>` puts under its value. */
 .autoToggle {

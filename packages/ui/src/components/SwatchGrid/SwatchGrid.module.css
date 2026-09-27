@@ -6,8 +6,6 @@
 .swatch {
   aspect-ratio: 1 / 1;
   min-inline-size: 0;
-  /* A labkit host's :where(button) default sets a control height. */
-  block-size: auto;
   padding: 0;
   border: 0.5px solid var(--wzl-border);
   border-radius: 0;
