@@ -1234,7 +1234,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const handlePointerCancel = undefined;
 
   // Background-fill layer: screen-space, emits a single full-canvas rect with
-  // the configured FillStyle. Slotted before 'scene' so the scene draws on top.
+  // the configured FillStyle. Drawn beneath every other layer.
   // Independent of pan / zoom — backgrounds are canvas chrome, not world content.
   const backgroundLayer = useMemo<RenderLayer<unknown> | null>(() => {
     if (!backgroundFill) return null;
@@ -1325,10 +1325,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       });
     }
 
-    const effectiveLayersMap = backgroundLayer
-      ? { ...layersMap, backgroundFill: { layer: backgroundLayer, before: 'scene' } }
-      : layersMap;
-    const out: RenderLayer<unknown>[] = composeOrderedLayers(effectiveLayersMap, standardLayers, sceneLayers);
+    const out: RenderLayer<unknown>[] = composeOrderedLayers(
+      layersMap, standardLayers, sceneLayers, backgroundLayer ?? undefined,
+    );
     // Decoration layer: above scene, below tool overlay (per slot ordering doc).
     if (decorationLayer) out.push(decorationLayer);
     if (tools) {

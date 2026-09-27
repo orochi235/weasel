@@ -14,6 +14,16 @@ describe('composeOrderedLayers', () => {
     expect(out.map(l => l.id)).toEqual(['grid', 'scene', 'sel']);
   });
 
+  it('puts a background beneath everything, including customs anchored before the scene and the grid', () => {
+    const out = composeOrderedLayers(
+      { curve: { layer: L('curve'), before: 'scene' } },
+      { grid: L('grid'), scene: L('scene') },
+      undefined,
+      L('background'),
+    );
+    expect(out.map(l => l.id)).toEqual(['background', 'grid', 'curve', 'scene']);
+  });
+
   it('split scene: emits per-scene-layer canvas layers in order at the scene slot', () => {
     const out = composeOrderedLayers(
       {},

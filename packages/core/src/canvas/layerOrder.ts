@@ -32,6 +32,9 @@ export function composeOrderedLayers<TNode extends { id: string }, TPose>(
    *  `before/after: 'scene'` still works (before the first / after the last).
    *  When omitted, the `scene` slot uses `standardLayers.scene` as before. */
   sceneLayers?: ReadonlyArray<{ key: string; layer: RenderLayer<unknown> }>,
+  /** Drawn beneath everything else, grid and customs anchored before the
+   *  scene included — a fill that must never cover what is laid over it. */
+  background?: RenderLayer<unknown>,
 ): RenderLayer<unknown>[] {
   // Map<parent key, [{ key, layer }, ...]> — children grouped by their declared anchor.
   const afterByParent = new Map<string, Array<{ key: string; layer: RenderLayer<unknown> }>>();
@@ -57,7 +60,7 @@ export function composeOrderedLayers<TNode extends { id: string }, TPose>(
   }
 
   const emitted = new Set<string>();
-  const out: RenderLayer<unknown>[] = [];
+  const out: RenderLayer<unknown>[] = background ? [background] : [];
 
   function emitChild(child: { key: string; layer: RenderLayer<unknown> }) {
     if (emitted.has(child.key)) {
