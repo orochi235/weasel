@@ -15,7 +15,7 @@
  * from anywhere.
  */
 import { useEffect, useRef } from 'react';
-import { useActionsRegistry, useOptionalDepRegistry } from '@weasel-js/routing/react';
+import { useActionsRegistry, useOffhandAction, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import type { DepName } from 'interactions/actions/depSchema';
 import type { ToolsApi } from '../../tools/overlayBinding';
@@ -88,6 +88,10 @@ export function useContributionRoles(
     }
   }
   useKeyedInstall(installs);
+
+  // Tool assembly runs above the provider too, so its own registration of
+  // held-key engagement finds no registry unless the consumer mounted one.
+  useOffhandAction(contributionEntries(tools));
 }
 
 function registerDeps(

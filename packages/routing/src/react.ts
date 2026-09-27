@@ -29,5 +29,5 @@ export type {
 
 export { useTools } from './tools/useTools';
 export type { UseToolsOptions, ToolsApi } from './tools/useTools';
-export { useContributions } from './contributions/useContributions';
+export { useContributions, useOffhandAction } from './contributions/useContributions';
 export type { ContributionsApi, UseContributionsOptions } from './contributions/useContributions';

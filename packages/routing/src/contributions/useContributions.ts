@@ -130,21 +130,7 @@ export function useContributions<TOverlay = unknown>(
     return [...active, ...hotkey, ...ambient];
   }, [snapshot]);
 
-  // A declared `offhand` trigger registers its own engagement. One
-  // consolidated `tool.offhand` action serves every entry that declares one;
-  // its invoker reads `params.toolId` off the matched binding.
-  const offhandSig = opts.entries
-    .map((e) => (e.eligibility?.offhand ? `${e.id}:${e.eligibility.offhand}` : ''))
-    .filter(Boolean)
-    .join(',');
-  useEffect(() => {
-    if (!actionsRegistry || offhandSig === '') return;
-    const specs: ToolOffhandBindingSpec[] = offhandSig.split(',').map((entry) => {
-      const [toolId, trigger] = entry.split(':');
-      return { toolId, key: offhandKeyFor(trigger as HotkeyTrigger) };
-    });
-    return actionsRegistry.register(makeToolOffhandAction(buildToolOffhandBindings(specs)));
-  }, [actionsRegistry, offhandSig]);
+  useOffhandAction(opts.entries);
 
   // Route-conflict check. Two entries declaring the same (phase, gesture, arg,
   // target, modifiers) tuple in one scope are resolved by declaration order and
@@ -195,4 +181,26 @@ export function useContributions<TOverlay = unknown>(
     }),
     [focused, setFocused, scopedBindings, overlays],
   );
+}
+
+/**
+ * Registers the consolidated `tool.offhand` action for every entry declaring
+ * an `offhand` trigger, into the nearest `<ActionsProvider>`; its invoker
+ * reads `params.toolId` off the matched binding. `useContributions` calls it,
+ * and so does any host that assembles its entries above its own provider —
+ * `<SceneCanvas>` does — since a null registry here registers nothing.
+ */
+export function useOffhandAction(entries: readonly Contribution<unknown>[]): void {
+  const actionsRegistry = useActionsRegistry();
+  const offhandSig = JSON.stringify(entries
+    .filter((e) => e.eligibility?.offhand)
+    .map((e) => [e.id, e.eligibility.offhand]));
+  useEffect(() => {
+    const pairs = JSON.parse(offhandSig) as [string, HotkeyTrigger][];
+    if (!actionsRegistry || pairs.length === 0) return;
+    const specs: ToolOffhandBindingSpec[] = pairs.map(([toolId, trigger]) => (
+      { toolId, key: offhandKeyFor(trigger) }
+    ));
+    return actionsRegistry.register(makeToolOffhandAction(buildToolOffhandBindings(specs)));
+  }, [actionsRegistry, offhandSig]);
 }

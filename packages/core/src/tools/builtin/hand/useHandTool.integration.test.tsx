@@ -15,6 +15,9 @@ import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { defineTool } from '../../overlayBinding';
 import { useTools } from '../../overlayBinding';
 import { useHandTool } from './useHandTool';
+import type { ToolsApi } from '../../overlayBinding';
+import { SceneCanvas } from '../../../canvas/SceneCanvas';
+import { useScene } from 'core/scene/useScene';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -69,5 +72,32 @@ describe('useHandTool held-key engagement', () => {
     expect(ctx.hotkeyStack).toEqual(['hand']);
     act(() => { window.dispatchEvent(new KeyboardEvent('keyup', { key: ' ' })); });
     expect(ctx.hotkeyStack).toEqual([]);
+  });
+});
+
+describe('useHandTool held-key engagement in a bare <SceneCanvas>', () => {
+  // SceneCanvas assembles its tools above the actions provider it mounts, so
+  // with no provider of the consumer's own, nothing registered `tool.offhand`.
+  it('engages hand while Space is held', () => {
+    let tools: ToolsApi | null = null;
+    function Harness() {
+      const scene = useScene<unknown, 'main', { x: number; y: number; width: number; height: number }>({
+        systemLayers: [{ id: 'main' }], initial: [],
+      });
+      return (
+        <SceneCanvas
+          scene={scene}
+          width={100} height={100}
+          layers={{}}
+          viewport={{ pinchZoom: true }}
+          onToolsCreated={(t) => { tools = t; }}
+        />
+      );
+    }
+    render(<Harness />);
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' })); });
+    expect(tools!.hotkeyEngaged).toBe('hand');
+    act(() => { window.dispatchEvent(new KeyboardEvent('keyup', { key: ' ' })); });
+    expect(tools!.hotkeyEngaged).toBe(null);
   });
 });
