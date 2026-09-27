@@ -95,7 +95,8 @@ export function PropertyGroup({
   const base = `${s.group}${pack === 'pairs' ? ` ${s.groupPairs}` : pack === 'one-up' ? ` ${s.groupOneUp}` : ''}`;
   const cls = propertyMetricClass(span ? `${base} ${s.span}` : base, { density, align }, className);
   // The twisty sits in the title, between the rules, so the two read as one
-  // unit. The heading is named by the title alone, not the twisty's label too.
+  // unit, without moving the centered text. The heading is named by the title
+  // alone, not the twisty's label too.
   const titled = (
     <h3 className={s.groupTitle} aria-labelledby={folds ? titleId : undefined}>
       <hr />
@@ -106,6 +107,7 @@ export function PropertyGroup({
             onToggle={toggle}
             label={typeof title === 'string' ? title : 'this section'}
             controls={bodyId}
+            className={s.groupTwisty}
           />
         ) : null}
         <span id={titleId}>{title}</span>

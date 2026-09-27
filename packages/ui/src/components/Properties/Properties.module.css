@@ -1581,12 +1581,25 @@
   margin: 0;
 }
 
-/* The title between the rules: the twisty, where the group folds, and the text. */
+/* The title between the rules. The twisty hangs off the text's leading edge,
+   out of flow, so the text centers as though it were not there. */
 .groupTitleMid {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wzl-disclosure-gap, 4px);
+  position: relative;
   min-width: 0;
+}
+
+/* Being out of flow, the twisty would sit on the leading rule; the rule stops at its box instead. */
+.groupTitle:has(> .groupTitleMid > .groupTwisty) > hr:first-child {
+  margin-inline-end: calc(
+    var(--wzl-disclosure-target, var(--wzl-control-h-sm)) + var(--wzl-disclosure-gap, 4px) - var(--wzl-space-4)
+  );
+}
+
+.groupTwisty {
+  position: absolute;
+  inset-inline-end: calc(100% + var(--wzl-disclosure-gap, 4px));
+  top: 50%;
+  translate: 0 -50%;
 }
 
 /* `hidden` on its own loses to the body's `display: grid` below. */
