@@ -62,6 +62,18 @@ describe('useLassoTool', () => {
     expect(params()).toEqual({ mode: 'enclosed' });
   });
 
+  it('hands its vertex spacing to the action through the binding params', () => {
+    const adapter = makeAdapter();
+    const { result, rerender } = renderHook(
+      ({ minVertexSpacing }: { minVertexSpacing?: number }) => useLassoTool(adapter, { minVertexSpacing }),
+      { initialProps: {} },
+    );
+    const params = () => resolveParams(result.current.bindings![0].opts?.params);
+    expect(params()).toEqual({ mode: 'intersect' });
+    rerender({ minVertexSpacing: 0 });
+    expect(params()).toEqual({ mode: 'intersect', minVertexSpacing: 0 });
+  });
+
   it('hands its behaviors to the action through the binding, and none when given none', () => {
     const adapter = makeAdapter();
     const behaviors = [{ onEnd: () => undefined }];

@@ -31,9 +31,8 @@ import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
 import { asNodeId } from 'core/scene/types';
 import { applyOpsTo } from 'core/applyOps';
-import { pathIntersectsRect } from 'features/paths/pathHitTest';
-import { hitTestLassoPolygon } from 'canvas/deps/hitTestArea';
-import { pickWalk, scenePickSource } from 'canvas/pickWalk';
+import { hitTestArea, hitTestLassoPolygon } from 'canvas/deps/hitTestArea';
+import type { ScenePickSourceOptions } from 'canvas/pickWalk';
 import {
   poseDescriptorForNode,
   translatePoseViaDescriptor,
@@ -149,30 +148,6 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   poseComposition?: PoseComposition<TPose>;
 }
 
-// ─── Clip-aware hierarchical walk ────────────────────────────────────────────
-
-/**
- * Evaluate every scene node against a geometry callback, honoring the clips
- * its ancestors impose.
- *
- * Delegates to the shared `pickWalk`, so this answers the same question — in
- * the same node order, against the same override-aware poses — as the live
- * marquee and the two point walks. The one declared difference is that this
- * one **includes containers**: a bare-adapter consumer with no selection
- * parent-folding wants the container back, where the live dep path does not.
- */
-function walkClipAware<TData, TLayer extends string, TPose>(
-  scene: Scene<TData, TLayer, TPose>,
-  poseBounds: (pose: TPose) => Bounds,
-  nodeTest: (node: Node<TData, TLayer, TPose>, pose: TPose) => boolean,
-  poseComposition?: PoseComposition<TPose>,
-): string[] {
-  return pickWalk<TPose>(scenePickSource(scene, poseComposition ? { poseComposition } : {}), {
-    hits: (node, pose) => nodeTest(node as unknown as Node<TData, TLayer, TPose>, pose),
-    clipAdmits: (clip, _node, pose) => pathIntersectsRect(clip, poseBounds(pose)),
-  });
-}
-
 // Fallback id generator for `commitInsert` when the consumer factory omits
 // `created.id`. Mirrors `scene.ts`'s `defaultGenerateId` shape; module-scoped
 // counter keeps ids unique across adapters in a session.
@@ -229,6 +204,9 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
 
   const composition = options.poseComposition;
   const composes = composition !== undefined && composition.closure !== 'identity';
+  const pickOpts: ScenePickSourceOptions<unknown> = composition
+    ? { poseComposition: composition as PoseComposition<unknown> }
+    : {};
   if (composes && options.cascadeContainerPose) {
     throw new Error(
       'sceneToAdapter: poseComposition and cascadeContainerPose contradict each other. ' +
@@ -387,30 +365,26 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     // AreaSelectAdapter surface — included unconditionally so plain
     // `useSelectTool(sceneToAdapter(scene, { selection }))` Just Works for the
     // marquee gesture. `applyOps` (above) dispatches transiently when called
-    // without a label, matching the AreaSelectAdapter contract; `hitTestArea`
-    // does an AABB-vs-AABB scan over `scene.renderOrder()`, reading bounds
-    // through the pose descriptor.
+    // without a label, matching the AreaSelectAdapter contract.
     getSelection,
     setSelection,
+    // The live marquee's and lasso's own hit-tests. Containers come back:
+    // this adapter's consumer has nothing to fold children into them.
     hitTestArea(rect: Bounds) {
-      return walkClipAware(scene, poseBounds, (_n, pose) => {
-        const b = poseBounds(pose);
-        return (
-          b.x < rect.x + rect.width &&
-          b.x + b.width > rect.x &&
-          b.y < rect.y + rect.height &&
-          b.y + b.height > rect.y
-        );
-      }, composition);
+      return hitTestArea(
+        scene as unknown as Scene<unknown, string, unknown>,
+        rect,
+        pickOpts,
+        d as PoseDescriptor<unknown>,
+        { includeContainers: true },
+      );
     },
-    // The live lasso's own hit-test. Containers come back, as `hitTestArea`'s
-    // do: this adapter's consumer has nothing to fold children into them.
     hitTestLasso(polygon, mode: LassoHitMode) {
       return hitTestLassoPolygon(
         scene as unknown as Scene<unknown, string, unknown>,
         polygon,
         mode,
-        composition ? { poseComposition: composition as PoseComposition<unknown> } : {},
+        pickOpts,
         d as PoseDescriptor<unknown>,
         { includeContainers: true },
       );

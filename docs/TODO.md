@@ -771,22 +771,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `exitPathEdit` / `tool.resetToDefault` on Escape); the anchor variants decline through `enabled` with no anchor
   selection, which the check cannot see, so those may want a way to mark an intended fall-through.
 
-- **(P2) The adapters' marquee, and `arrayAdapter`'s lasso, still test bounding boxes.**
-  `sceneAdapter.hitTestLasso` now runs the live `hitTestLassoPolygon`; its `hitTestArea`
-  still runs `walkClipAware` with an AABB test, so a rotated or curved shape answers
-  differently to the adapter's marquee and to `SceneCanvas`'s. Routing it through
-  `hitTestArea` with `{ includeContainers: true }` is the same change the lasso got.
-  `arrayAdapter`'s `hitTestArea` (bounds, or the descriptor's `intersectsRect`) and
-  `hitTestLasso` (bounds only) cannot be routed that way: it sits in
-  `core/`, and the silhouette hit-test needs painters and path flattening from `canvas/`
-  and `features/`. Undecided: move that kernel down into `core/geometry`, or let
-  `arrayAdapter` stay a bounds-only adapter and say so in its contract.
-
-- **(P3) `useLassoTool` accepts options it never uses.** `transient`, `label`,
-  `onGestureStart`, `onGestureEnd`, `minVertexSpacing` and `debug` are in
-  `UseLassoToolOptions` (picked from `UseLassoSelectOptions`) and reach nothing:
-  `lassoSelectAction` is always transient, spaces vertices at a fixed 2 world-px, and
-  has no gesture callbacks or debug sink. `behaviors` and `mode` are the two that work.
+- **(P2) `arrayAdapter`'s marquee and lasso still test bounding boxes.** `sceneToAdapter`'s
+  both run the live silhouette hit-test; `arrayAdapter`'s `hitTestArea` (bounds, or the
+  descriptor's `intersectsRect`) and `hitTestLasso` (bounds only) cannot: it sits in `core/`,
+  and that hit-test needs painters and path flattening from `canvas/` and `features/`.
+  Undecided: move the kernel down into `core/geometry`, or let `arrayAdapter` stay a
+  bounds-only adapter and say so in its contract.
 
 - **(P3) Unconfirmed: apps/draw's fill slider lags a live opacity scrub.** Seen
   2026-09-27 in a browser: holding O and wheeling faded the selected rect, while

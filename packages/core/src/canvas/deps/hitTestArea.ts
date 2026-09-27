@@ -99,10 +99,11 @@ export function hitTestArea(
   bounds: AABBBounds,
   opts?: ScenePickSourceOptions<unknown>,
   descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
+  query: RegionQueryOptions = {},
 ): NodeId[] {
   const { x, y, width: w, height: h } = bounds;
   const area = Array.from(rectToContour(x, y, w, h));
-  return hitTestAreaPolygon(scene, area, { x, y, width: w, height: h }, true, opts, descriptor);
+  return hitTestAreaPolygon(scene, area, { x, y, width: w, height: h }, true, opts, descriptor, query);
 }
 
 /**

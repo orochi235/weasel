@@ -8,9 +8,7 @@ import type { ToolKeybinding } from '@weasel-js/routing';
 
 /** Options for `useLassoTool` — the lasso-select action's options plus the
  *  tool's own hit mode and activation key. */
-export interface UseLassoToolOptions extends Pick<UseLassoSelectOptions,
-  'behaviors' | 'transient' | 'label' | 'onGestureStart' | 'onGestureEnd' |
-  'minVertexSpacing' | 'debug'> {
+export interface UseLassoToolOptions extends UseLassoSelectOptions {
   /** Hit mode for the action's own selection commit, which runs when no
    *  behavior claims the gesture. A behavior carries its own, as
    *  `selectFromLasso({ mode })` does. Default 'intersect'. */
@@ -32,8 +30,11 @@ export function useLassoTool(
   _adapter: LassoSelectAdapter,
   options: UseLassoToolOptions = {},
 ): Tool<undefined> {
-  const modeRef = useRef<LassoHitMode>(options.mode ?? 'intersect');
-  modeRef.current = options.mode ?? 'intersect';
+  const paramsRef = useRef<{ mode: LassoHitMode; minVertexSpacing?: number }>({ mode: 'intersect' });
+  paramsRef.current = {
+    mode: options.mode ?? 'intersect',
+    ...(options.minVertexSpacing !== undefined ? { minVertexSpacing: options.minVertexSpacing } : {}),
+  };
   const { behaviors } = options;
 
   return useMemo(() => {
@@ -55,10 +56,10 @@ export function useLassoTool(
         {
           spec: { kind: 'drag', mods: { shift: 'optional' } },
           actionId: 'lassoSelect',
-          // Thunked so a mode change reaches the next gesture without
-          // rebuilding the tool.
+          // Thunked so a mode or spacing change reaches the next gesture
+          // without rebuilding the tool.
           opts: {
-            params: () => ({ mode: modeRef.current }),
+            params: () => paramsRef.current,
             ...(behaviors ? { behaviors } : {}),
           },
         },
