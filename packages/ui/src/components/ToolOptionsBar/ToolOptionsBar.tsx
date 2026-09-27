@@ -171,6 +171,8 @@ function barCell(
     mixed: isMixed,
     unset: !isMixed && values?.[path] === undefined,
     setValue: (v) => onChange?.(path, v),
+    // One set of values, so there is one prior value to derive from.
+    update: (fn) => onChange?.(path, fn(isMixed ? undefined : values?.[path])),
     valueAt: (p) => ({ value: values?.[p], mixed: mixed?.has(p) === true }),
   };
   return {

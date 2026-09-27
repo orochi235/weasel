@@ -1,8 +1,0 @@
-/* The bar itself owns the strip's height, padding and rhythm; what is left
-   here is the one control this app draws itself. */
-
-/* Keeps its intrinsic width: the bar's flex context would otherwise shrink
-   the segments, which are `flex: 1 1 0; min-width: 0` and go to zero. */
-.script {
-  flex: none;
-}

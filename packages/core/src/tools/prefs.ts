@@ -129,9 +129,22 @@ export interface ToolPrefNumber extends ToolPrefBase<'number', number> {
   format?: ToolPrefNumberFormat;
   unit?: ToolPrefNumberUnit;
 }
+/**
+ * Stored-value bridge for a boolean leaf whose field is not a boolean — the
+ * flag counterpart of {@link ToolPrefEnumEncoding}. `TextStyle.fontStyle` is
+ * the case: it stores `'italic'`, and the control is an Italic toggle.
+ */
+export interface ToolPrefBooleanEncoding {
+  /** Whether `stored` reads as on. */
+  read: (stored: unknown, siblings: Record<string, unknown> | undefined) => boolean;
+  /** What to store for `on`. `undefined` removes the field. */
+  write: (on: boolean, siblings: Record<string, unknown> | undefined) => unknown;
+}
+
 /** An on/off pref. */
 export interface ToolPrefBoolean extends ToolPrefBase<'boolean', boolean> {
   control?: ToolPrefBooleanControl;
+  encoding?: ToolPrefBooleanEncoding;
 }
 /** A free-text pref. */
 export interface ToolPrefString extends ToolPrefBase<'string', string> {
@@ -160,9 +173,17 @@ export interface ToolPrefEnumEncoding<T extends string = string> {
   write: (option: T, siblings: Record<string, unknown> | undefined) => unknown;
 }
 
-/** A pref with a fixed set of labeled choices. */
+/** A pref with a fixed set of labeled choices. `default` is `undefined` only
+ *  for a {@link ToolPrefEnum.clearable} leaf, whose absence is a value. */
 export interface ToolPrefEnum<T extends string = string>
-  extends ToolPrefBase<'enum', T> {
+  extends ToolPrefBase<'enum', T | undefined> {
+  /**
+   * The field may hold none of the options, and that absence is a state of
+   * its own rather than a missing value — a script that is neither super nor
+   * sub. A toggle control then lets the chosen segment be clicked off, which
+   * removes the field.
+   */
+  clearable?: boolean;
   /** `short` is the label a segmented control uses when a full one would not
    *  fit — a capital or two. `icon` names a glyph in the host UI's set
    *  (weasel-ui resolves it against `ICON_PATHS`) and outranks `short` where

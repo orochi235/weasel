@@ -15,7 +15,7 @@ import type {
   ToolPrefObject,
 } from '@weasel-js/core';
 import { prefFieldProps } from '../Prefs/prefField';
-import { PropertyControl } from '../Properties/PropertyField';
+import { PropertyControl, type PropertyBooleanFieldProps } from '../Properties/PropertyField';
 import { ToggleBar } from '../ToggleBar';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
@@ -52,6 +52,13 @@ export interface PropertyRenderContext {
   siblings?: Record<string, unknown>;
   /** Commit a value — fans out to every selected node in one undo step. */
   setValue: (value: unknown) => void;
+  /**
+   * Commit a value derived from what each node holds at this path, in one undo
+   * step. What `setValue` cannot do across a selection whose nodes differ: a
+   * field of an object leaf has to land in each node's own object, not in one
+   * object written over all of them.
+   */
+  update: (fn: (prev: unknown) => unknown) => void;
   /**
    * The aggregated value at another node path — what `value` and `mixed` are
    * for this leaf's own path, for any path.
@@ -165,7 +172,19 @@ export function renderCells(
  * every text editor draws them.
  */
 function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: string }): ReactNode {
-  const on = run.filter((c) => c.ctx.value === true).map((c) => c.key);
+  // Each flag through the same field props a lone one gets, so an `encoding`
+  // (Italic stored as `fontStyle`) reads and writes the same way in a bar.
+  const flags = run.map((c) => {
+    const field = prefFieldProps(c.leaf, {
+      value: c.ctx.value,
+      mixed: c.ctx.mixed,
+      unset: c.ctx.unset,
+      siblings: c.ctx.siblings,
+      setValue: c.ctx.setValue,
+    }) as PropertyBooleanFieldProps;
+    return { cell: c, field };
+  });
+  const on = flags.filter((f) => !f.cell.ctx.mixed && f.field.value === true).map((f) => f.cell.key);
   return (
     <ToggleBar<string>
       mode="multiple"
@@ -173,28 +192,21 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
       variant="flat"
       className={s.flagToggle}
       ariaLabel={ariaLabel}
-      items={run.map((c) => {
-        const p = c.leaf as ToolPrefBoolean;
-        return {
-          value: c.key,
-          label:
-            p.icon && p.icon in ICON_PATHS ? (
-              <Icon name={p.icon as IconName} size={14} />
-            ) : (
-              (p.short ?? p.name.slice(0, 1))
-            ),
-          ariaLabel: c.ariaLabel,
-        };
-      })}
+      items={flags.map(({ cell, field }) => ({
+        value: cell.key,
+        label: field.glyph ?? cell.leaf.name.slice(0, 1),
+        ariaLabel: cell.ariaLabel,
+        tooltip: field.glyph !== undefined && typeof field.glyph !== 'string' ? cell.leaf.name : undefined,
+      }))}
       value={on}
       // Each flag owns its own path, so only the segment that moved is
       // written — committing the run would write two fields nobody touched,
       // and inside an object leaf would fabricate values for the other two.
       mixedValues={run.filter((c) => c.ctx.mixed).map((c) => c.key)}
       onChange={(next) => {
-        for (const c of run) {
-          const now = next.includes(c.key);
-          if (now !== on.includes(c.key)) c.ctx.setValue(now);
+        for (const { cell, field } of flags) {
+          const now = next.includes(cell.key);
+          if (now !== on.includes(cell.key)) field.onChange(now);
         }
       }}
     />
@@ -390,39 +402,51 @@ function ObjectLeaf({
         continue;
       }
       const childPath = `${ctx.path}.${key}`;
-      const childCtx: PropertyRenderContext = {
-        path: childPath,
-        pref: child,
-        value: held?.[key],
-        mixed: ctx.mixed,
-        // A field of an object the node does not hold is unset, and so is one
-        // the object omits — `data.stroke` absent leaves every stroke field
-        // with nothing behind it, not with the schema's defaults.
-        unset: !ctx.mixed && held?.[key] === undefined,
-        siblings: held,
-        valueAt: ctx.valueAt,
-        selectionKey: ctx.selectionKey,
-        setValue: (v) => {
+      // Nodes whose objects differ still agree or disagree field by field: two
+      // styles at different sizes are both upright, and saying "mixed" for
+      // every field of them hides that.
+      const field = ctx.mixed ? ctx.valueAt(childPath) : { value: held?.[key], mixed: false };
+      // Each node's own object, with this one field changed. Deriving it per
+      // node is what keeps a multi-selection edit from writing one node's
+      // object over all the others.
+      const update = (fn: (prev: unknown) => unknown): void =>
+        ctx.update((prev) => {
           // The node holds no object yet, so writing one field has to
           // materialize the rest: the leaf's `default` is what a complete
           // value looks like. Starting from `{}` instead committed the one
           // field on its own — a `data.stroke` of `{ width: 2 }` with no
           // `paint`, which the type forbids and the painter threw on, taking
           // the whole frame and the visible document with it.
-          const base = held
-            ?? pref.fromScalar?.(ctx.value)
-            ?? (typeof pref.default === 'object' && pref.default !== null
-              ? { ...(pref.default as Record<string, unknown>) }
-              : {});
+          const base: Record<string, unknown> =
+            typeof prev === 'object' && prev !== null
+              ? (prev as Record<string, unknown>)
+              : (pref.fromScalar?.(prev)
+                ?? (typeof pref.default === 'object' && pref.default !== null
+                  ? { ...(pref.default as Record<string, unknown>) }
+                  : {}));
+          const v = fn(base[key]);
           if (v === undefined) {
             // A field written as absent is absent — leaving the key holding
             // `undefined` says the object has a dash of nothing.
             const { [key]: _dropped, ...rest } = base;
-            ctx.setValue(rest);
-            return;
+            return rest;
           }
-          ctx.setValue({ ...base, [key]: v });
-        },
+          return { ...base, [key]: v };
+        });
+      const childCtx: PropertyRenderContext = {
+        path: childPath,
+        pref: child,
+        value: field.mixed ? undefined : field.value,
+        mixed: field.mixed,
+        // A field of an object the node does not hold is unset, and so is one
+        // the object omits — `data.stroke` absent leaves every stroke field
+        // with nothing behind it, not with the schema's defaults.
+        unset: !field.mixed && field.value === undefined,
+        siblings: held,
+        valueAt: ctx.valueAt,
+        selectionKey: ctx.selectionKey,
+        update,
+        setValue: (v) => update(() => v),
       };
       pending.push({
         key: childPath,

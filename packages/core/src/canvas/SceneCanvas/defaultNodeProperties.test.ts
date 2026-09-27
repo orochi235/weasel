@@ -3,6 +3,10 @@ import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProp
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import type { ToolPrefBoolean, ToolPrefEnum, ToolPrefGroup, ToolPrefObject } from 'tools/prefs';
+import type { TextStyle } from '@weasel-js/text';
+
+/** Colors the edit overlay reads, which are chrome rather than document. */
+type EditOverlayChrome = 'caretColor' | 'selectionBackground' | 'selectionColor';
 
 describe('defaultNodeProperties', () => {
   it('stays in lockstep with KIT_SHAPE_KINDS', () => {
@@ -125,33 +129,71 @@ describe('inferredNodeProperties', () => {
     const style = ((entry.schema.children.text as ToolPrefGroup).children['data.style']) as ToolPrefObject;
     const character = style.children.character as ToolPrefGroup;
     // Family first, then the paired size and weight — `pair` merges adjacent
-    // leaves, so the two it merges have to be adjacent.
+    // leaves, so the leaves it merges have to be adjacent. The same holds for
+    // the style strip after them.
     expect(Object.keys(character.children)).toEqual([
       'fontFamily',
       'fontSize',
       'fontWeight',
       'fontStyle',
-      'letterSpacing',
       'underline',
       'strikethrough',
       'overline',
+      'script',
+      'letterSpacing',
       'textTransform',
       // No `fill`: a text node's color is its own `data.fill`, in Appearance,
       // the same leaf every other node kind paints from.
     ]);
     const paragraph = style.children.paragraph as ToolPrefGroup;
-    expect(Object.keys(paragraph.children)).toEqual(['align', 'lineHeight']);
+    expect(Object.keys(paragraph.children)).toEqual(['lineHeight', 'wrap', 'direction', 'align']);
   });
 
-  it('asks for the three decorations as one row of toggles', () => {
+  it('exposes every authored TextStyle field', () => {
+    // Keyed by the type, so a field added to `TextStyle` fails to compile here
+    // until it is either offered or named as deliberately left out.
+    const offered: Record<Exclude<keyof TextStyle, EditOverlayChrome>, true> = {
+      fontSize: true, fontFamily: true, fontWeight: true, fontStyle: true, align: true,
+      direction: true, lineHeight: true, wrap: true, letterSpacing: true, underline: true,
+      strikethrough: true, overline: true, textTransform: true, script: true,
+    };
+    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
+    const style = ((entry.schema.children.text as ToolPrefGroup).children['data.style']) as ToolPrefObject;
+    const fields = Object.values(style.children).flatMap((g) => Object.keys((g as ToolPrefGroup).children));
+    expect(fields.sort()).toEqual(Object.keys(offered).sort());
+  });
+
+  it('offers the box alignment beside the style, as a field of the node', () => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
+    const text = entry.schema.children.text as ToolPrefGroup;
+    expect(Object.keys(text.children)).toEqual(['data.style', 'data.verticalAlign']);
+    const vertical = text.children['data.verticalAlign'] as ToolPrefEnum;
+    expect(vertical.options.map((o) => o.value)).toEqual(['top', 'center', 'bottom']);
+  });
+
+  it('asks for italic, the decorations and the scripts as one row of glyph toggles', () => {
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
     const style = ((entry.schema.children.text as ToolPrefGroup).children['data.style']) as ToolPrefObject;
     const character = style.children.character as ToolPrefGroup;
-    const decorations = ['underline', 'strikethrough', 'overline'].map(
+    const flags = ['fontStyle', 'underline', 'strikethrough', 'overline'].map(
       (k) => character.children[k] as ToolPrefBoolean,
     );
-    expect(decorations.map((d) => d.control)).toEqual(['toggle', 'toggle', 'toggle']);
-    expect(decorations.map((d) => d.short)).toEqual(['U', 'S', 'O']);
-    expect(decorations.map((d) => d.pair)).toEqual(['Decoration', 'Decoration', 'Decoration']);
+    expect(flags.map((d) => d.control)).toEqual(['toggle', 'toggle', 'toggle', 'toggle']);
+    expect(flags.map((d) => d.icon)).toEqual(['italic', 'underline', 'strikethrough', 'overline']);
+    const script = character.children.script as ToolPrefEnum;
+    expect(script).toMatchObject({ control: 'toggle', clearable: true });
+    expect(script.options.map((o) => o.icon)).toEqual(['superscript', 'subscript']);
+    expect([...flags, script].map((d) => d.pair)).toEqual(['Style', 'Style', 'Style', 'Style', 'Style']);
+  });
+
+  it('stores italic as the fontStyle it is, and upright as no field at all', () => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
+    const style = ((entry.schema.children.text as ToolPrefGroup).children['data.style']) as ToolPrefObject;
+    const italic = (style.children.character as ToolPrefGroup).children.fontStyle as ToolPrefBoolean;
+    expect(italic.encoding!.read('italic', undefined)).toBe(true);
+    expect(italic.encoding!.read('normal', undefined)).toBe(false);
+    expect(italic.encoding!.read(undefined, undefined)).toBe(false);
+    expect(italic.encoding!.write(true, undefined)).toBe('italic');
+    expect(italic.encoding!.write(false, undefined)).toBeUndefined();
   });
 });

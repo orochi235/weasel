@@ -16,9 +16,8 @@
 import { MIXED, resolveScreenLength, SCRIPT_METRICS, useTextTool } from '@weasel-js/core';
 import type { ScreenLength } from '@weasel-js/core';
 import type { RangeStyle, RunStylePatch, StyledRun } from '@weasel-js/core';
-import { ToggleBar, ToolOptionsBar, type PropertyRenderer } from '@weasel-js/ui';
+import { ToolOptionsBar } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
-import s from './CharacterOptions.module.css';
 
 export interface CharacterOptionsProps {
   /** Styling to display. `MIXED` at a key means the sources disagree there.
@@ -43,7 +42,6 @@ export function CharacterOptions({ style, onPatch, children, className }: Charac
       schema={editing ? useTextTool.options : undefined}
       values={editing ? characterValues(style) : undefined}
       mixed={editing ? characterMixed(style) : undefined}
-      renderers={RENDERERS}
       onChange={(path, value) => onPatch(characterPatch(path, value))}
     >
       {children}
@@ -121,41 +119,3 @@ function solidFill(fill: RangeStyle['fill']): string | undefined {
 function worldSize(v: ScreenLength | typeof MIXED | undefined): number | undefined {
   return v === undefined || v === MIXED ? undefined : resolveScreenLength(v, 1);
 }
-
-/**
- * Superscript and subscript. Its own control rather than an enum toggle for
- * the reason the schema records: the two values are exclusive *and* absent is
- * a third state, so clicking the lit segment clears it.
- *
- * `mode="multiple"` even so, for two things `single` cannot give: `mixedValues`
- * exists only on multiple, and single's arrow-key roving *sets* the value as
- * focus moves, so a keyboard user could not pass over superscript without
- * applying it.
- */
-const SCRIPTS = [
-  { value: 'super', label: 'x²', ariaLabel: 'Superscript' },
-  { value: 'sub', label: 'x₂', ariaLabel: 'Subscript' },
-] as const;
-type ScriptKey = (typeof SCRIPTS)[number]['value'];
-
-const RENDERERS: Record<string, PropertyRenderer> = {
-  script: (ctx) => {
-    const value = ctx.value as ScriptKey | undefined;
-    const on = value === 'super' || value === 'sub' ? [value] : [];
-    return (
-      <ToggleBar<ScriptKey>
-        mode="multiple"
-        size="sm"
-        className={s.script}
-        ariaLabel="Script"
-        items={SCRIPTS.map((f) => ({ value: f.value, label: f.label, ariaLabel: f.ariaLabel }))}
-        value={on}
-        mixedValues={ctx.mixed ? ['super', 'sub'] : []}
-        // The value just added wins, so clicking Subscript while Superscript
-        // is on swaps rather than producing two. Adding nothing means the lit
-        // segment was clicked: that clears, which is the enum's absence.
-        onChange={(next) => ctx.setValue(next.find((v) => !on.includes(v)))}
-      />
-    );
-  },
-};

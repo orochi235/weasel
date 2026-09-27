@@ -2,9 +2,10 @@ import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { listMarkers } from 'core/strokeMarkers';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
+import { resolveAlign, type TextAlign } from '@weasel-js/text';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import { ANGLE_RADIANS } from 'core/units';
-import { prefUnit, type ToolPrefEnumEncoding, type ToolPrefGroup, type ToolPrefNumberUnit } from 'tools/prefs';
+import { prefUnit, type ToolPrefBooleanEncoding, type ToolPrefEnumEncoding, type ToolPrefGroup, type ToolPrefNumberUnit } from 'tools/prefs';
 
 /** Radians-stored / degrees-shown conversion for `pose.rotation` leaves.
  *  Display rounds to 0.1° so a canonical radian value doesn't render as
@@ -52,6 +53,25 @@ const markerEncoding: ToolPrefEnumEncoding = {
     return '';
   },
   write: (value) => (value === '' ? undefined : value),
+};
+
+/** `TextStyle.fontStyle` as an Italic flag. Off removes the field rather than
+ *  storing `'normal'`, which is what an absent one already means. */
+const italicEncoding: ToolPrefBooleanEncoding = {
+  read: (stored) => stored === 'italic',
+  write: (on) => (on ? 'italic' : undefined),
+};
+
+/** `TextStyle.align` read as the edge that paints. The model also holds the
+ *  reading-order pair `start` / `end`, which the three segments would otherwise
+ *  leave unlit; they read through `direction`, and a click writes the edge. */
+const alignEncoding: ToolPrefEnumEncoding = {
+  read: (stored, style) => {
+    if (stored === undefined) return undefined;
+    const direction = style?.direction === 'rtl' ? 'rtl' : 'ltr';
+    return resolveAlign(stored as TextAlign, direction);
+  },
+  write: (edge) => edge,
 };
 
 /** Options come from the registry, so a consumer's registered entry appears in
@@ -168,23 +188,33 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                         fontFamily: { kind: 'font-family', name: 'Font', description: 'Registered font family.', default: 'sans-serif' },
                         fontSize: { kind: 'number', name: 'Size', description: 'Font size, world units.', default: 16, min: 1, step: 1, pair: 'Size / weight' },
                         fontWeight: { kind: 'number', name: 'Weight', description: 'Font weight, 100–900.', default: 400, min: 100, max: 900, step: 100, pair: 'Size / weight' },
-                        fontStyle: { kind: 'enum', name: 'Style', description: 'Upright or italic.', default: 'normal', options: [{ value: 'normal', label: 'Normal' }, { value: 'italic', label: 'Italic' }] },
+                        // One row of segments, the strip every text editor
+                        // draws: the slant, the three rules, then the two
+                        // scripts. Italic is a flag here although the field
+                        // is `fontStyle`, whose only other value is upright.
+                        fontStyle: { kind: 'boolean', name: 'Italic', description: 'Set the text in its italic face.', default: false, control: 'toggle', icon: 'italic', short: 'I', pair: 'Style', encoding: italicEncoding },
+                        underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false, control: 'toggle', icon: 'underline', short: 'U', pair: 'Style' },
+                        strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false, control: 'toggle', icon: 'strikethrough', short: 'S', pair: 'Style' },
+                        overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', default: false, control: 'toggle', icon: 'overline', short: 'O', pair: 'Style' },
+                        script: { kind: 'enum', name: 'Script', description: 'Set the text smaller and raised or lowered, on the line it would otherwise hold.', default: undefined, control: 'toggle', clearable: true, pair: 'Style', options: [{ value: 'super', label: 'Superscript', icon: 'superscript' }, { value: 'sub', label: 'Subscript', icon: 'subscript' }] },
                         letterSpacing: { kind: 'number', name: 'Tracking', description: 'Extra advance per glyph, world units.', default: 0, step: 0.1 },
-                        underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false, control: 'toggle', short: 'U', pair: 'Decoration' },
-                        strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false, control: 'toggle', short: 'S', pair: 'Decoration' },
-                        overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', default: false, control: 'toggle', short: 'O', pair: 'Decoration' },
                         textTransform: { kind: 'enum', name: 'Case', description: 'Draw the text in capitals, lowercase or title case. The text itself is unchanged.', default: 'none', control: 'toggle', options: [{ value: 'none', label: 'None', short: '–' }, { value: 'uppercase', label: 'Uppercase', short: 'AA' }, { value: 'lowercase', label: 'Lowercase', short: 'aa' }, { value: 'capitalize', label: 'Capitalize', short: 'Aa' }] },
                       },
                     },
                     paragraph: {
                       name: 'Paragraph',
                       children: {
-                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', default: 'left', control: 'toggle', options: [{ value: 'left', label: 'Left', short: 'L' }, { value: 'center', label: 'Center', short: 'C' }, { value: 'right', label: 'Right', short: 'R' }] },
                         lineHeight: { kind: 'number', name: 'Leading', description: 'Line height as a multiple of font size.', default: 1.2, min: 0.5, step: 0.1 },
+                        wrap: { kind: 'boolean', name: 'Wrap', description: 'Break lines between words at the box width.', default: false, control: 'switch' },
+                        direction: { kind: 'enum', name: 'Direction', description: 'Reading direction.', default: 'ltr', control: 'toggle', options: [{ value: 'ltr', label: 'Left to right', short: 'LTR' }, { value: 'rtl', label: 'Right to left', short: 'RTL' }] },
+                        // Last, so the box's vertical alignment — a field of
+                        // the node rather than of its style — follows it.
+                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', default: 'left', control: 'toggle', encoding: alignEncoding, options: [{ value: 'left', label: 'Left', icon: 'textAlignLeft' }, { value: 'center', label: 'Center', icon: 'textAlignCenter' }, { value: 'right', label: 'Right', icon: 'textAlignRight' }] },
                       },
                     },
                   },
                 },
+                'data.verticalAlign': { kind: 'enum', name: 'Vertical', description: 'Where the lines sit in the box\'s height.', default: 'top', control: 'toggle', options: [{ value: 'top', label: 'Top', icon: 'textAlignTop' }, { value: 'center', label: 'Middle', icon: 'textAlignMiddle' }, { value: 'bottom', label: 'Bottom', icon: 'textAlignBottom' }] },
               },
             },
           }

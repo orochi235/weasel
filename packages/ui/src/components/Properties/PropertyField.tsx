@@ -144,6 +144,11 @@ export interface PropertyEnumFieldProps<T extends string = string> extends Field
   value: T | undefined;
   options: ReadonlyArray<PropertyOption<T>>;
   onChange: (next: T) => void;
+  /**
+   * Given, choosing nothing is a value of its own: a `toggle` lets the chosen
+   * segment be clicked off, and calls this. Absent, a toggle always holds one.
+   */
+  onClear?: () => void;
   /** Shown while no option is chosen. Defaults to "Choose option…". */
   placeholder?: string;
 }
@@ -784,6 +789,37 @@ function EnumControl(p: PropertyEnumFieldProps) {
           </Radio>
         ))}
       </RadioGroup>
+    );
+  }
+  if (p.control === 'toggle' && p.onClear) {
+    // `multiple` for what `single` cannot give: a mixed state on each segment,
+    // and arrow keys that move focus without choosing. At most one stays lit —
+    // the segment just added wins, and adding none means the lit one was
+    // clicked off.
+    const { onClear } = p;
+    const lit = current === null ? [] : [current];
+    return (
+      <ToggleBar<string>
+        mode="multiple"
+        size="sm"
+        variant="flat"
+        className={p.className ? `${s.toggleBar} ${p.className}` : s.toggleBar}
+        ariaLabel={p.name}
+        items={p.options.map((o) => ({
+          value: o.value,
+          label: o.glyph ?? o.label,
+          ariaLabel: nameOf(o.label),
+          tooltip: glyphTip(o),
+          disabled: o.disabled,
+        }))}
+        value={lit}
+        mixedValues={p.mixed ? p.options.map((o) => o.value) : []}
+        onChange={(next) => {
+          const added = next.find((v) => !lit.includes(v));
+          if (added !== undefined) p.onChange(added);
+          else onClear();
+        }}
+      />
     );
   }
   if (p.control === 'toggle') {

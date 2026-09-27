@@ -53,16 +53,24 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
   }
   if (!isBuiltinToolPref(leaf)) return null;
   switch (leaf.kind) {
-    case 'boolean':
+    case 'boolean': {
+      const encoding = leaf.encoding;
       return {
         kind: 'boolean',
         control: leaf.control,
-        value: typeof value === 'boolean' ? value : undefined,
+        value: encoding
+          ? mixed
+            ? undefined
+            : encoding.read(value, siblings)
+          : typeof value === 'boolean'
+            ? value
+            : undefined,
         mixed,
         unset,
         glyph: glyphOf(leaf.icon) ?? leaf.short,
-        onChange: setValue,
+        onChange: encoding ? (on: boolean) => setValue(encoding.write(on, siblings)) : setValue,
       };
+    }
     case 'number': {
       const unit = leaf.unit;
       const stored = typeof value === 'number' && Number.isFinite(value) ? value : undefined;
@@ -125,6 +133,7 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
           disabled: o.disabled,
         })),
         onChange: (next: string) => setValue(encoding ? encoding.write(next, siblings) : next),
+        onClear: leaf.clearable ? () => setValue(undefined) : undefined,
       };
     }
     case 'color':
