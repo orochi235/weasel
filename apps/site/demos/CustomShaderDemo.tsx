@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, useHandleDrag, useScene, useVisibleRaf } from '@weasel-js/core';
-import type { RenderLayer } from '@weasel-js/core';
+import { SceneCanvas, defineTool, useHandleDrag, useScene, useVisibleRaf } from '@weasel-js/core';
+import type { Action, RenderLayer } from '@weasel-js/core';
 import {
   registerProgram, registerTexture,
   type DrawCommand, type ShaderProgramHandle, type TextureHandle,
@@ -138,7 +138,7 @@ function Panel({
   program,
   uniforms,
   onPointerMove,
-  onPointerDown,
+  onPress,
   overlay,
   disabled,
 }: {
@@ -146,7 +146,7 @@ function Panel({
   program: ShaderProgramHandle;
   uniforms: ShaderUniforms;
   onPointerMove?: (x: number, y: number) => void;
-  onPointerDown?: (x: number, y: number) => void;
+  onPress?: (x: number, y: number) => void;
   overlay?: React.ReactNode;
   disabled?: boolean;
 }) {
@@ -164,6 +164,32 @@ function Panel({
     }],
   }), [program, disabled, title]);
 
+  // Press routes through a binding; hover has no gesture yet, so the move
+  // handler below stays raw. Action ids are page-wide, hence one per panel.
+  const onPressRef = useRef(onPress);
+  onPressRef.current = onPress;
+  const tools = useMemo(() => {
+    const press: Action = {
+      id: `${layer.id}.press`,
+      label: 'Press the shader panel',
+      invoker: {
+        timing: 'immediate',
+        run: (_deps, params) => {
+          const p = params as { worldX: number; worldY: number };
+          onPressRef.current?.(p.worldX / PANEL_W, p.worldY / PANEL_H);
+        },
+      },
+    };
+    return {
+      press: defineTool<null>({
+        id: 'press',
+        hookName: 'CustomShaderDemo',
+        actions: [press],
+        bindings: [{ spec: { kind: 'pointerDown' }, actionId: press.id }],
+      }),
+    };
+  }, [layer.id]);
+
   const scene = useScene<never, 'default'>({
     systemLayers: [{ id: 'default' }],
     initial: [],
@@ -179,11 +205,6 @@ function Panel({
           const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
           onPointerMove((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
         }}
-        onPointerDown={(e) => {
-          if (!onPointerDown) return;
-          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          onPointerDown((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
-        }}
       >
         <SceneCanvas
           width={PANEL_W}
@@ -191,6 +212,9 @@ function Panel({
           className="ckd-canvas"
           scene={scene}
           shaders={SHADERS}
+          defaultTools={[]}
+          tools={tools}
+          initialActiveTool="press"
           layers={{
             scene: { drawOne: () => [] },
             shader: { layer, after: 'scene' },
@@ -341,7 +365,7 @@ export function CustomShaderDemo() {
           title="Ripple"
           program={RIPPLE_PROGRAM}
           uniforms={rippleUniforms_}
-          onPointerDown={(x, y) => setRipples((r) => [...r, { x, y, t: time }])}
+          onPress={(x, y) => setRipples((r) => [...r, { x, y, t: time }])}
           disabled={!tex}
         />
         <Panel
