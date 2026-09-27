@@ -45,6 +45,7 @@ import {
   useHandleDrag,
   useScene,
   cornerResizeHandles,
+  fixedCornerOf,
   hitCornerHandle,
   asNodeId,
 } from '@weasel-js/core';
@@ -152,16 +153,9 @@ function computeProposedBounds(
   return { x: nx, y: ny, width: nw, height: nh };
 }
 
-function fixedCorner(bounds: Bounds, anchor: ResizeAnchor): { x: number; y: number } {
-  return {
-    x: anchor.x === 'max' ? bounds.x + bounds.width : bounds.x,
-    y: anchor.y === 'max' ? bounds.y + bounds.height : bounds.y,
-  };
-}
-
 /** World-space fixed corner of a rotated rect for the given anchor. */
 function fixedCornerWorld(pose: Rect, anchor: ResizeAnchor): { x: number; y: number } {
-  const local = fixedCorner(pose, anchor);
+  const local = fixedCornerOf(pose, anchor);
   const cx = pose.x + pose.width / 2;
   const cy = pose.y + pose.height / 2;
   return rotatePoint(local.x, local.y, cx, cy, pose.rotation);
@@ -181,14 +175,14 @@ function runResize(
   const proposedBounds = computeProposedBounds(originBounds, anchor, dx, dy, rotation);
   let proposed = geometry.remapBounds(startPose, originBounds, proposedBounds);
   if (rotation !== 0) {
-    const startFixedLocal = fixedCorner(originBounds, anchor);
+    const startFixedLocal = fixedCornerOf(originBounds, anchor);
     const startFixedWorld = rotatePoint(
       startFixedLocal.x, startFixedLocal.y,
       originBounds.x + originBounds.width / 2,
       originBounds.y + originBounds.height / 2,
       rotation,
     );
-    const newFixedLocal = fixedCorner(proposedBounds, anchor);
+    const newFixedLocal = fixedCornerOf(proposedBounds, anchor);
     const newFixedWorld = rotatePoint(
       newFixedLocal.x, newFixedLocal.y,
       proposedBounds.x + proposedBounds.width / 2,
@@ -277,13 +271,14 @@ interface PanelProps {
   ghostColor: string;
   fixedOrigin: { x: number; y: number } | null;
   anchor: ResizeAnchor | null;
+  ledgerAnchor: ResizeAnchor;
   onPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
   title: string;
   showHandles: boolean;
 }
 
 function Panel({
-  scene, livePose, ghostColor, fixedOrigin, anchor, onPointerDown, title, showHandles,
+  scene, livePose, ghostColor, fixedOrigin, anchor, ledgerAnchor, onPointerDown, title, showHandles,
 }: PanelProps) {
   const node = scene.get(asNodeId('a'));
   const committed = node?.pose as Rect | undefined;
@@ -316,11 +311,8 @@ function Panel({
         current={anchor && displayed ? fixedCornerWorld(displayed, anchor) : null}
         color={ghostColor}
       />
-      {displayed && anchor && (
-        <LedgerCaption pose={displayed} anchor={anchor} title={title} />
-      )}
-      {displayed && !anchor && (
-        <LedgerCaption pose={displayed} anchor={{ x: 'min', y: 'min' }} title={title} />
+      {displayed && (
+        <LedgerCaption pose={displayed} anchor={ledgerAnchor} title={title} />
       )}
     </div>
   );
@@ -481,6 +473,9 @@ export function RotatedResizeMathDemo() {
   const [activePanel, setActivePanel] = useState<PanelId | null>(null);
   const [originFixed, setOriginFixed] = useState<{ x: number; y: number } | null>(null);
   const [activeAnchor, setActiveAnchor] = useState<ResizeAnchor | null>(null);
+  // The corner the last resize pinned. Outlives the gesture so the ledger
+  // still reads that corner after release, instead of switching to another.
+  const [ledgerAnchor, setLedgerAnchor] = useState<ResizeAnchor>({ x: 'min', y: 'min' });
 
   const COLORS: Record<PanelId, string> = {
     green: INITIAL_GREEN.color,
@@ -604,6 +599,7 @@ export function RotatedResizeMathDemo() {
     dragRef.current = { anchor: hitAnchor, startPt: pt, startPoses };
     setActivePanel(panel);
     if (hitAnchor) setActiveAnchor(hitAnchor);
+    if (hitAnchor) setLedgerAnchor(hitAnchor);
     if (hitAnchor) setOriginFixed(fixedCornerWorld(refPose, hitAnchor));
     updateLive(startPoses);
   }, [greenScene, orangeScene, purpleScene, tealScene, handleDrag, updateLive]);
@@ -659,6 +655,7 @@ export function RotatedResizeMathDemo() {
           ghostColor={ghostColorFor('green')}
           fixedOrigin={originFixed}
           anchor={activeAnchor}
+          ledgerAnchor={ledgerAnchor}
           onPointerDown={(e) => handlePointerDown('green', e)}
         />
         <Panel
@@ -669,6 +666,7 @@ export function RotatedResizeMathDemo() {
           ghostColor={ghostColorFor('orange')}
           fixedOrigin={originFixed}
           anchor={activeAnchor}
+          ledgerAnchor={ledgerAnchor}
         />
         <Panel
           title="No correction — anchor drifts"
@@ -678,6 +676,7 @@ export function RotatedResizeMathDemo() {
           ghostColor={ghostColorFor('purple')}
           fixedOrigin={originFixed}
           anchor={activeAnchor}
+          ledgerAnchor={ledgerAnchor}
         />
         <Panel
           title="Coupled rotation — pivot follows size"
@@ -687,6 +686,7 @@ export function RotatedResizeMathDemo() {
           ghostColor={ghostColorFor('teal')}
           fixedOrigin={originFixed}
           anchor={activeAnchor}
+          ledgerAnchor={ledgerAnchor}
         />
         <StackedOverlayPanel
           poses={{
