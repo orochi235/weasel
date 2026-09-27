@@ -998,6 +998,27 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     expect(getOverlay(h.container)!.style.textDecoration).toBe('underline line-through');
   });
 
+  it('carries node-level overline onto the overlay', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, overline: true, underline: true });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.textDecoration).toBe('underline overline');
+  });
+
+  it('sets a node-level script smaller and raised, on the line the plain text would hold', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, script: 'super' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(parseFloat(overlay.style.fontSize)).toBeCloseTo(16 * 0.583, 3);
+    // The line keeps the unscripted size's height, as the canvas's does.
+    expect(parseFloat(overlay.style.lineHeight)).toBeCloseTo(16 * 1.2, 3);
+    expect(overlay.style.translate).toMatch(/^0(px)? -5\.328px$/);
+    // Node styling, so it must not come back as run styling.
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'abc' }]);
+  });
+
   it("carries the node's text-transform onto the overlay", () => {
     const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, textTransform: 'uppercase' });
     const { result } = renderHook(() => useTextEdit(h.opts));

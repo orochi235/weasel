@@ -69,6 +69,13 @@ export interface ResolvedRun {
    * asks nothing about where it came from.
    */
   baselineShift: number;
+  /**
+   * The size this run holds its line open at, when a relative size shrank it
+   * below the size it inherited — so a superscript alone on its line keeps the
+   * line's height and baseline instead of collapsing them. Absent means
+   * `fontSize`.
+   */
+  strutSize?: number;
 }
 
 /**
@@ -122,11 +129,13 @@ export function resolveRuns(
   for (let i = 0; i < runs.length; i++) {
     const run = runs[i];
     const { text, srcMap } = shown[i];
-    const script = run.script ? SCRIPT_METRICS[run.script] : undefined;
+    const scriptKey = run.script ?? style.script;
+    const script = scriptKey ? SCRIPT_METRICS[scriptKey] : undefined;
     // Against the inherited size, not the run's own: a superscript that also
     // shrank its rise would climb less the smaller it got.
     const shiftEm = run.baselineShift ?? script?.shift ?? 0;
     const scale = run.fontScale ?? script?.size ?? 1;
+    const relative = run.fontSize === undefined && scale !== 1;
     out.push({
       text,
       ...(srcMap ? { srcMap } : {}),
@@ -152,6 +161,7 @@ export function resolveRuns(
       strikethrough: run.strikethrough || style.strikethrough,
       overline: run.overline || style.overline,
       baselineShift: shiftEm * style.fontSize,
+      ...(relative ? { strutSize: style.fontSize } : {}),
     });
   }
   return out;

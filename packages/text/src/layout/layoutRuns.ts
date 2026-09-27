@@ -21,7 +21,9 @@
  * breaks are emitted for `\n` codepoints. Every run on a line shares one
  * baseline, sunk to clear the tallest run's ascent, so mixing sizes or faces
  * aligns them the way inline text aligns everywhere else; line height is
- * `max(fontSize * lineHeight)` across the line.
+ * `max(fontSize * lineHeight)` across the line. A run a relative size shrank
+ * measures at its `strutSize` for both, the way a CSS line keeps its parent's
+ * strut under a `<sup>`.
  *
  * A run may also sit off that shared baseline: `ResolvedRun.baselineShift`
  * displaces it, which is what `script: 'super' | 'sub'` resolves to. The shift
@@ -598,6 +600,9 @@ export function layoutRuns(
      *  Survives the wrap's copies, unlike object identity. */
     flat: number;
   }
+  /** The size an entry holds its line at — its own, or the larger size a
+   *  shrunken run inherited. Glyphs are drawn at `fontSize` regardless. */
+  const lineSize = (e: Entry): number => Math.max(e.fontSize, e.run.strutSize ?? 0);
 
   // 1. Flatten all runs into entries with per-glyph data, computing
   //    kerning using the left glyph's atlas+scale across run boundaries.
@@ -789,7 +794,7 @@ export function layoutRuns(
       // under `a` — the blank line vanished instead of opening a gap. The
       // newline's own run supplies the style, since no other entry can.
       if (cur.entries.length === 0) {
-        cur.height = Math.max(cur.height, e.fontSize * opts.lineHeight);
+        cur.height = Math.max(cur.height, lineSize(e) * opts.lineHeight);
         cur.blank = e;
       }
       commitLine(); i++; continue;
@@ -803,7 +808,7 @@ export function layoutRuns(
         // so every code point stays addressable, but takes no width.
         cur.entries.push({ ...e, kerningBefore: 0, advance: 0, tracking: 0 });
       }
-      cur.height = Math.max(cur.height, e.fontSize * opts.lineHeight);
+      cur.height = Math.max(cur.height, lineSize(e) * opts.lineHeight);
       i++;
       continue;
     }
@@ -823,7 +828,7 @@ export function layoutRuns(
       const kerningBefore = cur.entries.length === 0 ? 0 : w.kerningBefore;
       cur.entries.push({ ...w, kerningBefore });
       cur.width += kerningBefore + w.advance + w.tracking;
-      cur.height = Math.max(cur.height, w.fontSize * opts.lineHeight);
+      cur.height = Math.max(cur.height, lineSize(w) * opts.lineHeight);
     }
     i = j;
   }
@@ -933,11 +938,11 @@ export function layoutRuns(
     // baseline it is measured against would drag the rest of the line with it.
     let lineAscent = 0;
     for (const e of line.entries) {
-      lineAscent = Math.max(lineAscent, e.metrics.base * (e.fontSize / e.metrics.size));
+      lineAscent = Math.max(lineAscent, e.metrics.base * (lineSize(e) / e.metrics.size));
     }
     if (line.entries.length === 0 && line.blank) {
       lineAscent = line.blank.metrics.base
-        * (line.blank.fontSize / line.blank.metrics.size);
+        * (lineSize(line.blank) / line.blank.metrics.size);
     }
     const lineBaselineY = penY + lineAscent;
 
