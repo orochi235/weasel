@@ -61,22 +61,51 @@ export function nearestFraction(x: number, maxDenominator: number): [number, num
 }
 
 /**
- * A value as the nearest fraction: 1/12 shows `1/12` and is spoken `1 over 12`.
- * `mixed` splits a whole part off (`1 1/2`); a whole value shows as an integer.
- * Has a MathML form, as `<mfrac>`.
+ * A constant a fraction can count in: `π`, so 3π/4 shows as `3π/4` rather
+ * than `2.356`. `names` are what may be typed for it besides the symbol.
  */
-export type FractionDisplay = {
-  kind: 'fraction';
+export interface NamedConstant {
+  symbol: string;
+  value: number;
+  /** How it is read aloud: `pi`. */
+  spoken: string;
+  names?: readonly string[];
+}
+
+/** The constants `fraction({ of })` knows by symbol. */
+export const CONSTANTS = {
+  π: { symbol: 'π', value: Math.PI, spoken: 'pi', names: ['pi'] },
+  τ: { symbol: 'τ', value: 2 * Math.PI, spoken: 'tau', names: ['tau'] },
+  e: { symbol: 'e', value: Math.E, spoken: 'e' },
+} as const satisfies Record<string, NamedConstant>;
+
+type FractionOptions = {
   /** Default 64. */
   maxDenominator?: number;
-  mixed?: boolean;
   /**
    * `inline` (default) writes `1/12`. `diagonal` writes `¹⁄₁₂` — superscript
    * digits, the fraction slash, subscript digits — so the text itself is
    * diagonal wherever it is drawn, CSS or not.
    */
   form?: 'inline' | 'diagonal';
-};
+} & (
+  | { mixed?: boolean; of?: never }
+  | {
+      /**
+       * Count in a constant: with `π`, 3π/4 shows `3π/4` and is spoken `3 pi
+       * over 4`. Excludes `mixed`, since `1 1/2π` reads as 1 + ½π.
+       */
+      of: keyof typeof CONSTANTS | NamedConstant;
+      mixed?: never;
+    }
+);
+
+/**
+ * A value as the nearest fraction: 1/12 shows `1/12` and is spoken `1 over 12`.
+ * `mixed` splits a whole part off (`1 1/2`); a whole value shows as an integer.
+ * Has a MathML form, as `<mfrac>`.
+ */
+export type FractionDisplay = { kind: 'fraction' } & FractionOptions;
 
 const SUPERSCRIPT = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 const SUBSCRIPT = '₀₁₂₃₄₅₆₇₈₉';
@@ -85,66 +114,104 @@ const inDigits = (n: number, digits: string) => String(n).replace(/\d/g, (c) => 
 const fromDigits = (text: string, digits: string) =>
   Number([...text].map((c) => digits.indexOf(c)).join(''));
 
-export function fraction(options: Omit<FractionDisplay, 'kind'> = {}): FractionDisplay {
+export function fraction(options: FractionOptions = {}): FractionDisplay {
   return { kind: 'fraction', ...options };
 }
 
-/** A fraction's pieces: sign, whole part (mixed only), numerator, denominator. */
+function constantOf(d: FractionDisplay): NamedConstant | undefined {
+  return typeof d.of === 'string' ? CONSTANTS[d.of] : d.of;
+}
+
+/** A fraction's pieces: sign, whole part (mixed only), numerator, denominator,
+ *  and the constant they count in. */
 function fractionPieces(value: number, d: FractionDisplay) {
-  const [n, den] = nearestFraction(value, d.maxDenominator ?? 64);
+  const constant = constantOf(d);
+  const [n, den] = nearestFraction(constant ? value / constant.value : value, d.maxDenominator ?? 64);
   const negative = n < 0;
   const abs = Math.abs(n);
   const whole = d.mixed || den === 1 ? Math.floor(abs / den) : 0;
-  return { negative, whole, num: abs - whole * den, den };
+  return { negative, whole, num: abs - whole * den, den, constant };
 }
+
+/** A fraction typed inline (`1 1/2`) or diagonally (`1¹⁄₂`), else a plain number. */
+function parseFraction(text: string): number {
+  const inline = /^\s*([-−+]?)\s*(?:(\d+)\s+)?(\d+)\s*[/⁄]\s*(\d+)\s*$/.exec(text);
+  const diagonal = /^\s*([-−+]?)\s*(\d+)?\s*([⁰¹²³⁴⁵⁶⁷⁸⁹]+)\s*[/⁄]\s*([₀₁₂₃₄₅₆₇₈₉]+)\s*$/.exec(text);
+  let magnitude: number;
+  if (inline) magnitude = Number(inline[2] ?? 0) + Number(inline[3]) / Number(inline[4]);
+  else if (diagonal) {
+    magnitude = Number(diagonal[2] ?? 0) + fromDigits(diagonal[3]!, SUPERSCRIPT) / fromDigits(diagonal[4]!, SUBSCRIPT);
+  } else return parseNumber(text);
+  const sign = (inline ?? diagonal)![1];
+  return sign === '-' || sign === MINUS_SIGN ? -magnitude : magnitude;
+}
+
+const escape = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export const fractionKind: DisplayKind<FractionDisplay> = {
   kind: 'fraction',
   format: (value, d) => {
     if (!Number.isFinite(value)) return [{ type: 'number', value: String(value) }];
-    const { negative, whole, num, den } = fractionPieces(value, d);
+    const { negative, whole, num, den, constant } = fractionPieces(value, d);
+    const diagonal = d.form === 'diagonal';
+    const symbol: Part[] = constant ? [{ type: 'constant', value: constant.symbol }] : [];
     const parts: Part[] = [];
     if (negative) parts.push({ type: 'sign', value: MINUS_SIGN });
-    if (whole > 0 || num === 0) parts.push({ type: 'whole', value: String(whole) });
-    if (num > 0) {
-      const diagonal = d.form === 'diagonal';
-      if (whole > 0 && !diagonal) parts.push({ type: 'literal', value: ' ' });
+    if (num === 0) {
+      if (whole === 0) return [...parts, { type: 'whole', value: '0' }];
+      if (!(constant && whole === 1)) parts.push({ type: 'whole', value: String(whole) });
+      return [...parts, ...symbol];
+    }
+    if (whole > 0) {
+      parts.push({ type: 'whole', value: String(whole) });
+      if (!diagonal) parts.push({ type: 'literal', value: ' ' });
+    }
+    if (diagonal) {
       parts.push(
-        { type: 'numerator', value: diagonal ? inDigits(num, SUPERSCRIPT) : String(num) },
-        { type: 'literal', value: diagonal ? '⁄' : '/' },
-        { type: 'denominator', value: diagonal ? inDigits(den, SUBSCRIPT) : String(den) },
+        { type: 'numerator', value: inDigits(num, SUPERSCRIPT) },
+        { type: 'literal', value: '⁄' },
+        { type: 'denominator', value: inDigits(den, SUBSCRIPT) },
+        ...symbol,
       );
+    } else {
+      if (!(constant && num === 1)) parts.push({ type: 'numerator', value: String(num) });
+      parts.push(...symbol, { type: 'literal', value: '/' }, { type: 'denominator', value: String(den) });
     }
     return parts;
   },
   speak: (value, d) => {
     if (!Number.isFinite(value)) return String(value);
-    const { negative, whole, num, den } = fractionPieces(value, d);
+    const { negative, whole, num, den, constant } = fractionPieces(value, d);
+    const counted = (n: number) => (!constant ? String(n) : n === 1 ? constant.spoken : `${n} ${constant.spoken}`);
     const words = [
-      whole > 0 || num === 0 ? String(whole) : '',
+      whole > 0 ? counted(whole) : num === 0 ? '0' : '',
       whole > 0 && num > 0 ? 'and' : '',
-      num > 0 ? `${num} over ${den}` : '',
+      num > 0 ? `${counted(num)} over ${den}` : '',
     ].filter(Boolean);
     return `${negative ? 'minus ' : ''}${words.join(' ')}`;
   },
-  parse: (text) => {
-    const inline = /^\s*([-−+]?)\s*(?:(\d+)\s+)?(\d+)\s*[/⁄]\s*(\d+)\s*$/.exec(text);
-    const diagonal = /^\s*([-−+]?)\s*(\d+)?\s*([⁰¹²³⁴⁵⁶⁷⁸⁹]+)\s*[/⁄]\s*([₀₁₂₃₄₅₆₇₈₉]+)\s*$/.exec(text);
-    let magnitude: number;
-    if (inline) magnitude = Number(inline[2] ?? 0) + Number(inline[3]) / Number(inline[4]);
-    else if (diagonal) {
-      magnitude = Number(diagonal[2] ?? 0) + fromDigits(diagonal[3]!, SUPERSCRIPT) / fromDigits(diagonal[4]!, SUBSCRIPT);
-    } else return parseNumber(text);
-    const sign = (inline ?? diagonal)![1];
-    return sign === '-' || sign === MINUS_SIGN ? -magnitude : magnitude;
+  parse: (text, d) => {
+    const constant = constantOf(d);
+    if (!constant) return parseFraction(text);
+    const spellings = [constant.symbol, ...(constant.names ?? [])].sort((a, b) => b.length - a.length);
+    const token = new RegExp(spellings.map(escape).join('|'), 'i');
+    if (!token.test(text)) return parseFraction(text);
+    // With the constant taken out, a bare `/2` or nothing at all counts one of it.
+    const coefficient = text.replace(token, '').replace(/^(\s*[-−+]?\s*)(?=[/⁄]|\s*$)/, '$11');
+    return parseFraction(coefficient) * constant.value;
   },
   mathml: (value, d) => {
     if (!Number.isFinite(value)) return undefined;
-    const { negative, whole, num, den } = fractionPieces(value, d);
+    const { negative, whole, num, den, constant } = fractionPieces(value, d);
+    const counted = (n: number) => {
+      if (!constant) return `<mn>${n}</mn>`;
+      const mi = `<mi>${constant.symbol}</mi>`;
+      return n === 1 ? mi : `<mn>${n}</mn>${mi}`;
+    };
     const body = [
       negative ? `<mo>${MINUS_SIGN}</mo>` : '',
-      whole > 0 || num === 0 ? `<mn>${whole}</mn>` : '',
-      num > 0 ? `<mfrac><mn>${num}</mn><mn>${den}</mn></mfrac>` : '',
+      whole > 0 ? counted(whole) : num === 0 ? '<mn>0</mn>' : '',
+      num > 0 ? `<mfrac>${num === 1 || !constant ? counted(num) : `<mrow>${counted(num)}</mrow>`}<mn>${den}</mn></mfrac>` : '',
     ].join('');
     return `<math>${body}</math>`;
   },

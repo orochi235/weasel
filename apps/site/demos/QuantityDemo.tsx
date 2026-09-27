@@ -29,6 +29,7 @@ const KINDS: [string, Display][] = [
   ['percent', percent({ places: 1 })],
   ['fraction', fraction({ mixed: true })],
   ['fraction, diagonal', fraction({ mixed: true, form: 'diagonal' })],
+  ['fraction of π', fraction({ of: 'π' })],
   ['ratio', ratio()],
   ['multiplier', multiplier()],
   ['zoom', zoom()],
@@ -43,7 +44,7 @@ const KINDS: [string, Display][] = [
 
 const ENTRY = decimal({ maxPlaces: 6, grouping: false });
 
-const PRESETS = [1 / 12, 1.5, 22, 1994, 3723, 1_200_000];
+const PRESETS = [1 / 12, 1.5, (3 * Math.PI) / 4, 22, 1994, 3723, 1_200_000];
 
 const INITIAL_BANDS: Band<string, Tagged>[] = [
   { from: tag(1 / 64, fraction()), data: 'Icon' },

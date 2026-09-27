@@ -86,6 +86,16 @@ const CASES: [Display, number, string, string][] = [
   [fraction({ form: 'diagonal', mixed: true }), 1.5, '1¹⁄₂', '1 and 1 over 2'],
   [fraction({ form: 'diagonal' }), -0.75, `${MINUS}³⁄₄`, 'minus 3 over 4'],
   [fraction({ form: 'diagonal' }), 2, '2', '2'],
+  [fraction({ of: 'π' }), (3 * Math.PI) / 4, '3π/4', '3 pi over 4'],
+  [fraction({ of: 'π' }), Math.PI / 2, 'π/2', 'pi over 2'],
+  [fraction({ of: 'π' }), -Math.PI / 2, `${MINUS}π/2`, 'minus pi over 2'],
+  [fraction({ of: 'π' }), 2 * Math.PI, '2π', '2 pi'],
+  [fraction({ of: 'π' }), Math.PI, 'π', 'pi'],
+  [fraction({ of: 'π' }), 0, '0', '0'],
+  [fraction({ of: 'π', form: 'diagonal' }), (3 * Math.PI) / 4, '³⁄₄π', '3 pi over 4'],
+  [fraction({ of: 'τ' }), Math.PI / 2, 'τ/4', 'tau over 4'],
+  [fraction({ of: 'e' }), 2 * Math.E, '2e', '2 e'],
+  [fraction({ of: { symbol: 'g', value: 9.80665, spoken: 'gee' } }), 9.80665 / 2, 'g/2', 'gee over 2'],
   [ratio(), 1 / 12, '1:12', '1 to 12'],
   [multiplier(), 2.5, '2.5×', '2.5 times'],
   [zoom(), 2.5, '2.5x', '2.5 times'],
@@ -134,6 +144,16 @@ const PARSES: [Display, string, number][] = [
   [fraction(), '1¹⁄₂', 1.5],
   [fraction(), '1 ¹⁄₂', 1.5],
   [fraction(), `${MINUS}³⁄₄`, -0.75],
+  [fraction({ of: 'π' }), '3π/4', (3 * Math.PI) / 4],
+  [fraction({ of: 'π' }), '3pi/4', (3 * Math.PI) / 4],
+  [fraction({ of: 'π' }), '3/4π', (3 * Math.PI) / 4],
+  [fraction({ of: 'π' }), '³⁄₄π', (3 * Math.PI) / 4],
+  [fraction({ of: 'π' }), 'π/2', Math.PI / 2],
+  [fraction({ of: 'π' }), `${MINUS}π/2`, -Math.PI / 2],
+  [fraction({ of: 'π' }), '2π', 2 * Math.PI],
+  [fraction({ of: 'π' }), 'PI', Math.PI],
+  [fraction({ of: 'π' }), '0.5', 0.5],
+  [fraction({ of: 'τ' }), 'tau/4', Math.PI / 2],
   [ratio(), '1:4', 0.25],
   [multiplier(), '4x', 4],
   [zoom(), '150%', 1.5],
@@ -158,13 +178,18 @@ describe.each(PARSES)('parsing %o', (display, typed, value) => {
   });
 });
 
+it('refuses a constant on a mixed fraction, which has no honest text form', () => {
+  // @ts-expect-error — `1 1/2π` reads as 1 + ½π.
+  fraction({ of: 'π', mixed: true });
+});
+
 it('reads text it cannot parse as NaN', () => {
   expect(parseAs('abc', fraction())).toBeNaN();
   expect(parseAs('IIII', roman())).toBeNaN();
 });
 
 describe('round trips', () => {
-  const displays: Display[] = [decimal({ maxPlaces: 6 }), fraction(), fraction({ form: 'diagonal', mixed: true }), ratio(), percent({ places: 2 }), duration({ places: 2 }), roman()];
+  const displays: Display[] = [decimal({ maxPlaces: 6 }), fraction(), fraction({ of: 'π' }), fraction({ of: 'π', form: 'diagonal' }), fraction({ form: 'diagonal', mixed: true }), ratio(), percent({ places: 2 }), duration({ places: 2 }), roman()];
   it.each(displays)('reads back what %o shows', (display) => {
     for (const v of [1 / 12, 0.5, 3, 42]) {
       const shown = present(v, display).text;
@@ -191,6 +216,11 @@ describe('html', () => {
 describe('mathml', () => {
   it('writes a fraction as mfrac, with a whole part when mixed', () => {
     expect(present(1 / 12, fraction()).mathml).toBe('<math><mfrac><mn>1</mn><mn>12</mn></mfrac></math>');
+    expect(present((3 * Math.PI) / 4, fraction({ of: 'π' })).mathml).toBe(
+      '<math><mfrac><mrow><mn>3</mn><mi>π</mi></mrow><mn>4</mn></mfrac></math>',
+    );
+    expect(present(Math.PI / 2, fraction({ of: 'π' })).mathml).toBe('<math><mfrac><mi>π</mi><mn>2</mn></mfrac></math>');
+    expect(present(2 * Math.PI, fraction({ of: 'π' })).mathml).toBe('<math><mn>2</mn><mi>π</mi></math>');
     expect(present(-1.5, fraction({ mixed: true })).mathml).toBe(
       `<math><mo>${MINUS}</mo><mn>1</mn><mfrac><mn>1</mn><mn>2</mn></mfrac></math>`,
     );

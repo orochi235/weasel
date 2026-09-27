@@ -43,6 +43,7 @@ export {
   type IntegerDisplay,
 } from './kinds/plain';
 export {
+  CONSTANTS,
   fraction,
   fractionKind,
   multiplier,
@@ -55,6 +56,7 @@ export {
   zoom,
   zoomKind,
   type FractionDisplay,
+  type NamedConstant,
   type MultiplierDisplay,
   type PercentDisplay,
   type RatioDisplay,
