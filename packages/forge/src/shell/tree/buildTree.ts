@@ -1,4 +1,5 @@
 import { indexEntries } from '../../story/indexPages';
+import { isGallery } from '../../story/tags';
 import type { IndexEntry } from '../../story/types';
 
 export type TreeNode =
@@ -15,8 +16,33 @@ function sortFolder(nodes: TreeNode[]): TreeNode[] {
 }
 
 /**
+ * `nodes` with every folder that holds nothing but a gallery replaced by that gallery under the folder's name, so a
+ * gallery titled `ui/Cursors/Gallery` lists as `Cursors` with its stories directly beneath it. The gallery keeps its
+ * own path and index page, so its route and story ids are unchanged.
+ */
+export function foldGalleries(nodes: TreeNode[]): TreeNode[] {
+  return nodes.map((node) => {
+    if (node.kind !== 'folder') return node;
+    const children = foldGalleries(node.children);
+    const [only] = children;
+    // Only a gallery one segment down: one already folded would carry this folder off and lose its name.
+    if (
+      !node.index
+      && children.length === 1
+      && only?.kind === 'folder'
+      && only.path === `${node.path}/${only.label}`
+      && only.index
+      && isGallery(only.index)
+    ) {
+      return { ...only, label: node.label, tag: node.tag ?? only.tag };
+    }
+    return { ...node, children };
+  });
+}
+
+/**
  * Story titles as nested folders, split on `/`; the last segment is the component, which carries its index page and
- * holds its subfolders, then its stories.
+ * holds its subfolders, then its stories. A folder holding only a gallery is folded into it (see `foldGalleries`).
  */
 export function buildTree(index: readonly IndexEntry[]): TreeNode[] {
   const root: TreeNode[] = [];
@@ -38,7 +64,7 @@ export function buildTree(index: readonly IndexEntry[]): TreeNode[] {
     }
     siblings.push({ kind: 'story', entry });
   }
-  return sortFolder(root);
+  return foldGalleries(sortFolder(root));
 }
 
 /**

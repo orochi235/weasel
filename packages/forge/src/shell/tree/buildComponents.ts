@@ -1,7 +1,7 @@
 import { indexEntries } from '../../story/indexPages';
 import { libraryOf } from '../../story/library';
 import type { IndexEntry } from '../../story/types';
-import type { TreeNode } from './buildTree';
+import { foldGalleries, type TreeNode } from './buildTree';
 
 type Folder = Extract<TreeNode, { kind: 'folder' }>;
 
@@ -102,7 +102,8 @@ export function filterComponents(rows: readonly ComponentRow[], query: string): 
  * views with one code path. A slash in a label is a directory: `Icons/Gallery`
  * is a `Gallery` folder inside an `Icons` folder, which it shares with any
  * other row of its library widened to the same prefix. Every component is a
- * folder carrying its index page and holding its stories.
+ * folder carrying its index page and holding its stories. A folder a gallery's label opened, holding only that
+ * gallery, is folded into it.
  */
 export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
   const root: TreeNode[] = [];
@@ -132,7 +133,7 @@ export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
       children: row.entries.map((entry) => ({ kind: 'story', entry }) as const),
     });
   }
-  return root;
+  return foldGalleries(root);
 }
 
 /** Every library present in `index`, alphabetically. */

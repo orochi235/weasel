@@ -169,3 +169,40 @@ describe('componentNodes', () => {
     ]);
   });
 });
+
+describe('componentNodes galleries', () => {
+  const gallery = (title: string, name: string): IndexEntry => ({ ...entry(title, name, UI), tags: ['gallery'] });
+  const shape = (list: readonly TreeNode[]): unknown[] =>
+    list.map((n) =>
+      n.kind === 'folder'
+        ? { [`${n.label}${n.index ? '+' : ''}${n.tag ? ` [${n.tag}]` : ''}`]: shape(n.children) }
+        : (n.label ?? n.entry.name),
+    );
+
+  it('folds a widened gallery into the folder its label opened, one level above its stories', () => {
+    const nodes = componentNodes(
+      buildComponents([
+        gallery('ui/Cursors/Gallery', 'Hotspots'),
+        gallery('ui/Icons/Gallery', 'Proof'),
+        gallery('ui/Icons/Gallery', 'Chrome'),
+      ]),
+    );
+    expect(shape(nodes)).toEqual([
+      { 'Cursors+ [ui]': ['Hotspots'] },
+      { 'Icons+ [ui]': ['Proof', 'Chrome'] },
+    ]);
+    const [cursors] = nodes;
+    expect(cursors?.kind === 'folder' && cursors.path).toBe('ui/Cursors/Gallery');
+    expect(cursors?.kind === 'folder' && cursors.index?.id).toBe('ui-cursors-gallery:index');
+  });
+
+  it('leaves a widened component that is not a gallery nested under its folder', () => {
+    const nodes = componentNodes(
+      buildComponents([entry('ui/Cursors/Gallery', 'Default', UI), entry('ui/Icons/Gallery', 'Default', UI)]),
+    );
+    expect(shape(nodes)).toEqual([
+      { 'Cursors [ui]': [{ 'Gallery+': ['Default'] }] },
+      { 'Icons [ui]': [{ 'Gallery+': ['Default'] }] },
+    ]);
+  });
+});
