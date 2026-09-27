@@ -81,6 +81,7 @@ import {
   useSceneTextEdit,
   type StyledRun,
   type TextStyle,
+  type TextVerticalAlign,
   type RangeStyle,
   type Scene,
   type SceneCanvasApi,
@@ -187,6 +188,9 @@ interface WeaselDrawData {
    *  `runsToPlainText(runs) === text` — and preferred by the `kit:text`
    *  painter when present. */
   runs?: StyledRun[];
+  /** Where the lines sit in the box's height — read by the `kit:text`
+   *  painter and the editor, edited beside the Paragraph group. */
+  verticalAlign?: TextVerticalAlign;
   /** The node's paint — solid, gradient or pattern. `null` is an explicit
    *  "no fill"; absent takes the painter's default. */
   fill?: FillStyle | null;
@@ -864,6 +868,7 @@ function Toolbar({
                       ...(o.stroke ? { stroke: o.stroke } : {}),
                       ...(o.style ? { style: o.style } : {}),
                       ...(o.runs ? { runs: o.runs } : {}),
+                      ...(o.verticalAlign ? { verticalAlign: o.verticalAlign } : {}),
                     }
                   : { path: o.path, fill: o.fill, stroke: o.stroke };
                 const sceneId = scene.add({
