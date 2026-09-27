@@ -5,6 +5,7 @@ import type { Globals } from '../../protocol/messages';
 import type { Decorator, IndexContext, IndexStoryProps, LoadedStory, StoryContext } from '../../story/types';
 import { StoryHost } from '../StoryHost';
 import { mergeConfig, variantRows, withValueAt } from './variants';
+import './index.css';
 
 /** What every cell on an index page shares with the frame that hosts it. */
 export interface IndexEnv {

@@ -11,7 +11,6 @@ import { captureElement } from '../capture';
 import type { FrameSetup } from '../FrameController';
 import { createGlobalsTarget } from '../globalsTarget';
 import { type IndexEnv, IndexPage } from './IndexPage';
-import './index.css';
 
 export interface StartIndexOptions {
   title: string;
