@@ -2,7 +2,7 @@ import { createDeleteOp } from 'core/ops/delete';
 import type { Op } from 'core/ops/types';
 import type { MoveBehavior } from '../../../gestures/types';
 import {
-  RECT_ORIGIN_PROJECTION,
+  AUTO_ORIGIN_PROJECTION,
   type OriginProjection,
 } from '../../../gestures/shared/strategies';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
@@ -40,7 +40,7 @@ export function snapBackOrDelete<TPose>(args: {
 }): MoveBehavior<TPose> {
   const { radius, onFreeRelease, deleteLabel = 'Delete' } = args;
   const proj: OriginProjection<TPose> =
-    args.origin ?? (RECT_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
+    args.origin ?? (AUTO_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
   const r2 = radius * radius;
 
   return {

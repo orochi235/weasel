@@ -754,10 +754,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) Multi-select handles stay behind after a group move.** Drag a two-item selection,
-  and the union's corner handles stay where the union was. The next drag on the real
-  corner moves the set rather than resizing it. Resize works if it comes before any move.
-  Reproduced 2026-09-27 in `MultiSelectDemo` under both the new presets and `draw`.
+- **(P2) Two actions claim the same drag in `MultiSelectDemo`.** Every load warns
+  `[weasel] route conflict: ... [*] drag — declared by resize, areaSelect`, so declaration
+  order alone decides which fires. Seen 2026-09-27; not yet checked whether the preset
+  wiring or the demo declares the duplicate, or whether any drag lands on the wrong one.
 
 - **(P2) Lasso `intersect` selects by bounding box.** A triangle lasso picked up rects lying
   entirely outside the triangle but inside its bounds: the same set a marquee over the
@@ -1149,9 +1149,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P2) Demos found broken during the 2026-09-27 preset pass.** Each one reproduces with
   `features={['draw']}` restored, so the presets didn't cause it:
-  - `PathPoseDemo`: a body drag turns every coordinate to NaN and the polygon vanishes.
-    Resize works. Suspect `gridSnapStrategy(20)`'s default origin reader meeting a `Path`
-    pose (unconfirmed).
   - `RotatedResizeMathDemo`: after a corner drag, all three "fixed corner" captions show the
     same value. The blurb says the green one holds still.
   - labkit's `schema-lab`: the ShapeProperties trial renders empty and throws

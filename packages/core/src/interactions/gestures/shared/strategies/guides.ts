@@ -3,7 +3,7 @@ import type { Guide } from 'features/guides/types';
 import type { View } from 'core/viewport/view';
 import { pxExtent } from 'core/viewport/pxExtent';
 import type { OriginProjection } from './grid';
-import { RECT_ORIGIN_PROJECTION } from './grid';
+import { AUTO_ORIGIN_PROJECTION } from './grid';
 
 /** Default snap tolerance (screen pixels). */
 export const DEFAULT_GUIDE_TOLERANCE_PX = 6;
@@ -61,7 +61,7 @@ export function guideSnapStrategy<TPose>(
   const tolerance = options.tolerance ?? DEFAULT_GUIDE_TOLERANCE_PX;
   const getView = options.getView;
   const proj: OriginProjection<TPose> =
-    options.origin ?? (RECT_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
+    options.origin ?? (AUTO_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
 
   return {
     snap(pose) {
