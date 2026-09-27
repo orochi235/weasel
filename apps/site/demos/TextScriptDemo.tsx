@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react';
-import {
-  SceneCanvas, useScene, textCommandFromRuns, solid,
-  SCRIPT_METRICS,
-} from '@weasel-js/core';
-import type {
-  FillStyle, SceneViewDrawOne, StyledRun, TextStyle,
-} from '@weasel-js/core';
+import { SceneCanvas, useScene, textCommandFromRuns, solid } from '@weasel-js/core';
+import type { FillStyle, SceneViewDrawOne } from '@weasel-js/core';
+import { SCRIPT_METRICS } from '@weasel-js/text';
+import type { StyledRun, TextStyle } from '@weasel-js/text';
 import styles from './TextScriptDemo.module.css';
 
 const W = 620, H = 320;

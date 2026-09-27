@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
-import { useHud, useHudContribution } from '../../../packages/hud/src/react';
-import type { ButtonWidget } from '../../../packages/hud/src';
+import { useHud, useHudContribution } from '@weasel-js/hud/react';
+import type { ButtonWidget } from '@weasel-js/hud';
 
 const W = 600, H = 400;
 

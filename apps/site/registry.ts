@@ -115,25 +115,6 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/InsertDemo.tsx',
   },
   {
-    id: 'layer-list',
-    title: 'Layer list',
-    category: 'Tools',
-    description: 'LayerList from @weasel-js/ui wired to a scene. Click rows or rects to select. Drag rows to reorder. Drag a selected row to move the whole selection.',
-    hint: 'Drag the rows up and down.',
-    load: () => import('./demos/LayerListDemo').then((m) => m.LayerListDemo),
-    path: 'apps/site/demos/LayerListDemo.tsx',
-  },
-  {
-    id: 'selection-panel',
-    title: 'Selection properties panel',
-    category: 'Tools',
-    description:
-      'SelectionPanel from @weasel-js/ui wired to a scene with the kit\'s pre-baked property schemas (defaultNodeProperties). Click a shape to inspect and edit its kind-specific properties; shift-click several — including different kinds — to see the schema intersection and per-field Mixed state. Edits fan out to the whole selection as one undo step.',
-    hint: 'Select shapes and edit X/Y/W/H, fill, stroke. Shift-click a rect and the ellipse for Mixed state.',
-    load: () => import('./demos/SelectionPanelDemo').then((m) => m.SelectionPanelDemo),
-    path: 'apps/site/demos/SelectionPanelDemo.tsx',
-  },
-  {
     id: 'text',
     title: 'Text editing',
     category: 'Text',
@@ -144,16 +125,6 @@ const DEMO_META: DemoMeta[] = [
   },
 
   {
-    id: 'text-script',
-    title: 'Superscript & baseline shift',
-    category: 'Text',
-    description: "StyledRun.script: 'super' | 'sub' sets a run as a superscript or subscript — a raised or lowered baseline and a smaller size together, the pair <sup> and <sub> imply. It is a preset over two primitives rather than a mechanism of its own: baselineShift raises or lowers a run off the line's shared baseline in ems of the inherited font size, and fontScale multiplies that inherited size (an absolute fontSize still wins). Naming either directly overrides that half and leaves the other alone, which is what the two sliders do. resolveRuns folds all of it into one world-unit offset and a final size, so layout places a run against a baseline and an offset without knowing superscripts exist — which is why a shifted run carries its own decoration rules with it. The bottom row is the other half of the story: every run on a line now shares one baseline, sunk to clear the tallest run's ascent, so mixing sizes aligns them the way inline text aligns everywhere else. overline joins underline and strikethrough on both the node style and the run.",
-    hint: "Drag the sliders and watch the rows that aren't shifted: they don't move. A shift displaces its own run and never feeds back into the line's baseline or height.",
-    load: () => import('./demos/TextScriptDemo').then((m) => m.TextScriptDemo),
-    path: 'apps/site/demos/TextScriptDemo.tsx',
-  },
-
-  {
     id: 'text-outlines',
     title: 'Outline tier',
     category: 'Text',
@@ -161,16 +132,6 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Toggle the checkbox: the same lines fall back to the baked MSDF atlas, without moving. Zoom in and the small lines cross the threshold too — the rule is on-screen size, not document size.',
     load: () => import('./demos/TextOutlinesDemo').then((m) => m.TextOutlinesDemo),
     path: 'apps/site/demos/TextOutlinesDemo.tsx',
-  },
-
-  {
-    id: 'text-nodes',
-    title: 'Text nodes',
-    category: 'Text',
-    description: "A node whose data carries `text` needs no layer and no `drawOne`: the kit's built-in `kit:text` painter draws it, reading the same node data every other text path reads — `style` for size, weight and slant, `runs` over `text` when both are present, `fill` for ink, and the pose's width and height as the box `align` and `verticalAlign` resolve within. Rotation comes from the pose like any other node's. This is the path a scene gets by default, and the one editing commits back into: double-click a node to edit it in place. No node declares `style.wrap`, so a line typed past its box stays one line on the canvas and in the editor alike.",
-    hint: 'One node per painter feature. Double-click to edit.',
-    load: () => import('./demos/TextNodesDemo').then((m) => m.TextNodesDemo),
-    path: 'apps/site/demos/TextNodesDemo.tsx',
   },
 
   {
@@ -351,15 +312,6 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/SceneScrollerDemo').then((m) => m.SceneScrollerDemo),
     path: 'apps/site/demos/SceneScrollerDemo.tsx',
   },
-  {
-    id: 'audio',
-    title: 'Audio',
-    category: 'Animation',
-    description: "@weasel-js/audio schedules playback with a lookahead window against the AudioContext's hardware clock, not per animation frame — a frame can be late by tens of milliseconds and nobody sees it, but a late note is audible, so `play({ when })` books a start time the audio thread honours exactly. Every sound here is synthesized into an `AudioBuffer` by hand and handed to `engine.register()`, so the demo ships no binary assets. The context starts suspended, which is shown rather than hidden: nothing sounds until \"enable audio\" resumes it from a user gesture, with `engine.state()` live beside the button. Dragging the source dot calls `setPosition` on a looping voice; the gain and pan readouts are `spatialize()`, the same pure function the engine applies. The bars are `analyser().bands(16)` on master. Firing fifty one-shots against a per-bus limit of eight makes voice stealing observable in the active count.",
-    hint: 'Click "enable audio" first · drag the orange dot · gain/mute/solo per bus · fire 50 one-shots and watch activeVoices hold at the limit.',
-    load: () => import('./demos/AudioDemo').then((m) => m.AudioDemo),
-    path: 'apps/site/demos/AudioDemo.tsx',
-  },
 
   // ─── Viewport ─────────────────────────────────────────────────────────────
   {
@@ -424,15 +376,6 @@ const DEMO_META: DemoMeta[] = [
     hint: 'drag to pin · ctrl/⌘+wheel zoom · wheel pan · H drag to pan · ⌘+0 reset',
     load: () => import('./demos/ForceGraphDemo').then((m) => m.ForceGraphDemo),
     path: 'apps/site/demos/ForceGraphDemo.tsx',
-  },
-  {
-    id: 'd3-sortable',
-    title: 'd3 plugin: sortable bars',
-    category: 'Viewport',
-    description: '`@weasel-js/d3` proof of concept. Twelve bars bound to a data array via `d3Bind(scene, data, { key, animator }).pose(fn).data(fn).join()`. Click sort buttons to reorder the data; the join diffs against the scene and emits one batched op group, then `.transition().duration(600).ease(easeInOutCubic).delay(i × 30)` animates each bar to its new x-position with a stagger. Phase 2 of the d3 plugin (transition chain over `useAnimator`).',
-    hint: 'click sort buttons · per-item delay staggers the move',
-    load: () => import('./demos/D3SortableDemo').then((m) => m.D3SortableDemo),
-    path: 'apps/site/demos/D3SortableDemo.tsx',
   },
 
   // ─── Rendering & paint ────────────────────────────────────────────────────
@@ -520,20 +463,11 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/ToolReflectionDemo.tsx',
   },
 
-  // ─── weasel-ui ────────────────────────────────────────────────────────────
-  {
-    id: 'quantity',
-    title: 'Quantities',
-    category: 'weasel-ui',
-    description: "`@weasel-js/quantity`: one number shown through every built-in display. Each row is a `UnitField` given that row's `display`, so it shows the value its own way, reads typed text back its own way (`1 1/2`, `5ft 3in`, `$1,234`, `1:02:03`, `mcmxciv`), and speaks it as its `aria-valuetext` — the spoken column. The html column renders `qty(value, display).html` with each `data-part` span outlined, and the fraction row adds its MathML. Below, a `BandEditor` whose band edges are tagged `fraction()` quantities: the JSON under it shows each edge keep its tag through drags, splits and merges.",
-    hint: 'Type into any row, in that row\'s own notation; every other row follows. Pick a preset for values that suit the bigger kinds. Drag a seam and watch the JSON stay tagged.',
-    load: () => import('./demos/QuantityDemo').then((m) => m.QuantityDemo),
-    path: 'apps/site/demos/QuantityDemo.tsx',
-  },
+  // ─── Packages ─────────────────────────────────────────────────────────────
   {
     id: 'perceptual-color-sliders',
     title: 'Perceptual color sliders',
-    category: 'weasel-ui',
+    package: 'ui',
     description: 'Four representative slider variants from the perceptual-color experiment, all built on Slider: single-thumb hue, 2-thumb ordered L range with active-range hatching, 3-thumb chroma with per-thumb bounds, and a dynamic indices band with click-to-add, drag-off-vertical to remove, and shift-drag translate-all.',
     hint: 'Drag thumbs; on the indices band, click empty track to add, drag a thumb up/down to remove, hold Shift to translate all.',
     load: () => import('./demos/PerceptualColorSlidersDemo').then((m) => m.PerceptualColorSlidersDemo),
@@ -542,7 +476,7 @@ const DEMO_META: DemoMeta[] = [
   {
     id: 'layered-curve',
     title: 'Layered curve editor',
-    category: 'weasel-ui',
+    package: 'ui',
     description: 'LayeredCurveEditor composing three layers to reconstruct a beveled solid-of-revolution\'s cross-section: a goldenrod bevel layer (filled under, x ∈ [0, b]), a purple catmull-rom spline (x ∈ [b, half]), and a custom partition-handle layer at the seam. The two curves are held C0 continuous — the seam\'s y is synced between layers inside `onLayerChange`, demonstrating how cross-layer reactivity works (consumer-driven recompute; in-flight gestures see the freshest state each pointermove tick). The toolbar slider sets the bevel width b; the dark on-plot handle adjusts it live.',
     hint: 'Drag anchors on either curve (the seam stays attached); drag the dark vertical handle to slide b; click on a curve to insert; shift-click an anchor to delete.',
     links: [{
@@ -552,12 +486,74 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/LayeredCurveDemo').then((m) => m.LayeredCurveDemo),
     path: 'apps/site/demos/LayeredCurveDemo.tsx',
   },
-
-  // ─── weasel-diagram ───────────────────────────────────────────────────────
+  {
+    id: 'layer-list',
+    title: 'Layer list',
+    package: 'ui',
+    description: 'LayerList from @weasel-js/ui wired to a scene. Click rows or rects to select. Drag rows to reorder. Drag a selected row to move the whole selection.',
+    hint: 'Drag the rows up and down.',
+    load: () => import('./demos/LayerListDemo').then((m) => m.LayerListDemo),
+    path: 'apps/site/demos/LayerListDemo.tsx',
+  },
+  {
+    id: 'selection-panel',
+    title: 'Selection properties panel',
+    package: 'ui',
+    description:
+      'SelectionPanel from @weasel-js/ui wired to a scene with the kit\'s pre-baked property schemas (defaultNodeProperties). Click a shape to inspect and edit its kind-specific properties; shift-click several — including different kinds — to see the schema intersection and per-field Mixed state. Edits fan out to the whole selection as one undo step.',
+    hint: 'Select shapes and edit X/Y/W/H, fill, stroke. Shift-click a rect and the ellipse for Mixed state.',
+    load: () => import('./demos/SelectionPanelDemo').then((m) => m.SelectionPanelDemo),
+    path: 'apps/site/demos/SelectionPanelDemo.tsx',
+  },
+  {
+    id: 'quantity',
+    title: 'Quantities',
+    package: 'quantity',
+    description: "`@weasel-js/quantity`: one number shown through every built-in display. Each row is a `UnitField` given that row's `display`, so it shows the value its own way, reads typed text back its own way (`1 1/2`, `5ft 3in`, `$1,234`, `1:02:03`, `mcmxciv`), and speaks it as its `aria-valuetext` — the spoken column. The html column renders `qty(value, display).html` with each `data-part` span outlined, and the fraction row adds its MathML. Below, a `BandEditor` whose band edges are tagged `fraction()` quantities: the JSON under it shows each edge keep its tag through drags, splits and merges.",
+    hint: 'Type into any row, in that row\'s own notation; every other row follows. Pick a preset for values that suit the bigger kinds. Drag a seam and watch the JSON stay tagged.',
+    load: () => import('./demos/QuantityDemo').then((m) => m.QuantityDemo),
+    path: 'apps/site/demos/QuantityDemo.tsx',
+  },
+  {
+    id: 'text-script',
+    title: 'Superscript & baseline shift',
+    package: 'text',
+    description: "StyledRun.script: 'super' | 'sub' sets a run as a superscript or subscript — a raised or lowered baseline and a smaller size together, the pair <sup> and <sub> imply. It is a preset over two primitives rather than a mechanism of its own: baselineShift raises or lowers a run off the line's shared baseline in ems of the inherited font size, and fontScale multiplies that inherited size (an absolute fontSize still wins). Naming either directly overrides that half and leaves the other alone, which is what the two sliders do. resolveRuns folds all of it into one world-unit offset and a final size, so layout places a run against a baseline and an offset without knowing superscripts exist — which is why a shifted run carries its own decoration rules with it. The bottom row is the other half of the story: every run on a line now shares one baseline, sunk to clear the tallest run's ascent, so mixing sizes aligns them the way inline text aligns everywhere else. overline joins underline and strikethrough on both the node style and the run.",
+    hint: "Drag the sliders and watch the rows that aren't shifted: they don't move. A shift displaces its own run and never feeds back into the line's baseline or height.",
+    load: () => import('./demos/TextScriptDemo').then((m) => m.TextScriptDemo),
+    path: 'apps/site/demos/TextScriptDemo.tsx',
+  },
+  {
+    id: 'text-nodes',
+    title: 'Text nodes',
+    package: 'text',
+    description: "A node whose data carries `text` needs no layer and no `drawOne`: the kit's built-in `kit:text` painter draws it, reading the same node data every other text path reads — `style` for size, weight and slant, `runs` over `text` when both are present, `fill` for ink, and the pose's width and height as the box `align` and `verticalAlign` resolve within. Rotation comes from the pose like any other node's. This is the path a scene gets by default, and the one editing commits back into: double-click a node to edit it in place. No node declares `style.wrap`, so a line typed past its box stays one line on the canvas and in the editor alike.",
+    hint: 'One node per painter feature. Double-click to edit.',
+    load: () => import('./demos/TextNodesDemo').then((m) => m.TextNodesDemo),
+    path: 'apps/site/demos/TextNodesDemo.tsx',
+  },
+  {
+    id: 'audio',
+    title: 'Audio',
+    package: 'audio',
+    description: "@weasel-js/audio schedules playback with a lookahead window against the AudioContext's hardware clock, not per animation frame — a frame can be late by tens of milliseconds and nobody sees it, but a late note is audible, so `play({ when })` books a start time the audio thread honours exactly. Every sound here is synthesized into an `AudioBuffer` by hand and handed to `engine.register()`, so the demo ships no binary assets. The context starts suspended, which is shown rather than hidden: nothing sounds until \"enable audio\" resumes it from a user gesture, with `engine.state()` live beside the button. Dragging the source dot calls `setPosition` on a looping voice; the gain and pan readouts are `spatialize()`, the same pure function the engine applies. The bars are `analyser().bands(16)` on master. Firing fifty one-shots against a per-bus limit of eight makes voice stealing observable in the active count.",
+    hint: 'Click "enable audio" first · drag the orange dot · gain/mute/solo per bus · fire 50 one-shots and watch activeVoices hold at the limit.',
+    load: () => import('./demos/AudioDemo').then((m) => m.AudioDemo),
+    path: 'apps/site/demos/AudioDemo.tsx',
+  },
+  {
+    id: 'd3-sortable',
+    title: 'd3 plugin: sortable bars',
+    package: 'd3',
+    description: '`@weasel-js/d3` proof of concept. Twelve bars bound to a data array via `d3Bind(scene, data, { key, animator }).pose(fn).data(fn).join()`. Click sort buttons to reorder the data; the join diffs against the scene and emits one batched op group, then `.transition().duration(600).ease(easeInOutCubic).delay(i × 30)` animates each bar to its new x-position with a stagger. Phase 2 of the d3 plugin (transition chain over `useAnimator`).',
+    hint: 'click sort buttons · per-item delay staggers the move',
+    load: () => import('./demos/D3SortableDemo').then((m) => m.D3SortableDemo),
+    path: 'apps/site/demos/D3SortableDemo.tsx',
+  },
   {
     id: 'diagram-nodes',
     title: 'Diagram node bodies',
-    category: 'weasel-diagram',
+    package: 'diagram',
     description: "Any scene node becomes a diagram participant by carrying the DiagramNode trait — nothing has to be authored through @weasel-js/diagram to take part. These four came from the optional body builder, which is what a node uses when it should read as a flowchart box: buildBody measures the rows, grows the authored pose to clear them, and returns the container carrying the trait plus one ordinary text node per row, so the kit's own text painter draws them and editing and styling work unchanged. The outline vocabulary is stadium, diamond, rect and parallelogram, painted by registerDiagramShape. The 'scale' box carries a port row, whose ports anchor to the row's own edges rather than to the node's perimeter — the visual-programming shape, where an operator's inputs line up with the rows they feed. Orange squares are the ports, cast from the node's bounds onto the outline so an edge meets the shape rather than its bounding box; they are declared as affordances rather than merely painted, so the kit's region walk gives them their cursor and their hit-test.",
     hint: 'Drag a box to move it, or drag one orange port onto another to author an edge between them — the dashed line follows your pointer and snaps when a port is in reach.',
     load: () => import('./demos/DiagramNodesDemo').then((m) => m.DiagramNodesDemo),
@@ -566,7 +562,7 @@ const DEMO_META: DemoMeta[] = [
   {
     id: 'diagram-edges',
     title: 'Diagram edges and routers',
-    category: 'weasel-diagram',
+    package: 'diagram',
     description: "An edge is an ordinary leaf scene node, not something the plugin paints: dependsOn names the two participants it joins and derivePath runs a router over them, so the path recomputes whenever either end moves and nothing has to keep a parallel graph in sync. Making it a scene node is what buys selection, hit-testing, styling, z-order, SVG export, undo and copy/paste without implementing any of them. The three shipped routers are one per row here — straight goes there directly, orthogonal leaves along each port's normal and turns once, and bezier leaves and arrives along them so the edge reads as plugged into its port rather than aimed at it. An end that names no port resolves to whichever one faces the other end. An edge label is a node too: it depends on the edge and derives its pose from the route the edge derived, so it never routes anything itself — the three here sit at 'start', 'mid' and 'end'.",
     hint: 'Drag either box in a row. The path re-routes as you go, the labels ride along it, and the end an edge attaches to changes when the other box crosses to the far side.',
     load: () => import('./demos/DiagramEdgesDemo').then((m) => m.DiagramEdgesDemo),
@@ -575,7 +571,7 @@ const DEMO_META: DemoMeta[] = [
   {
     id: 'diagram-layout',
     title: 'Diagram layout',
-    category: 'weasel-diagram',
+    package: 'diagram',
     description: "layered ranks a pipeline by longest path, tree centers a parent over its children's block, and force relaxes a graph that has no direction to read it in. Each is a plain function of the graph — no scene, no ops — that returns the new top-left for only the nodes that move, so pressing the same button twice writes nothing the second time and pushes no undo entry. Three rules keep a re-layout from scrambling an arrangement someone made: no RNG anywhere, order within a rank seeded from where the boxes already sit rather than from crossing-minimization, and a node marked pinned that nothing moves. The whole rearrangement is one scene.batch, so it undoes in one step.",
     hint: 'Press a button, then press the same one again — nothing moves, and Cmd+Z takes the whole rearrangement back in one step. Drag two boxes past each other first and the layout keeps the order you put them in.',
     load: () => import('./demos/DiagramLayoutDemo').then((m) => m.DiagramLayoutDemo),
@@ -584,17 +580,16 @@ const DEMO_META: DemoMeta[] = [
   {
     id: 'diagram-live',
     title: 'Live diagram layout',
-    category: 'weasel-diagram',
+    package: 'diagram',
     description: "The same relaxation the Force button runs, a tick a frame instead of all at once. Each frame goes to the scene's ephemeral override channel — the one a drag already publishes to — so the edges follow the boxes as they move and the document is untouched until the run settles, at which point the whole arrangement lands as one undo entry. Dragging a box mid-run needs no gesture from the plugin: the move tool publishes an override, and a node carrying an override the run did not put there is a pin, held with fx/fy while its neighbors relax around it. The loop runs behind useVisibleRaf, so a tab nobody is looking at stops relaxing and picks up where it left off.",
     hint: 'Press Relax, then grab a box and drag it while the graph is still moving — the rest answers, and lets go when you do. Cmd+Z takes the whole settled arrangement back in one step.',
     load: () => import('./demos/DiagramLiveDemo').then((m) => m.DiagramLiveDemo),
     path: 'apps/site/demos/DiagramLiveDemo.tsx',
   },
-  // ─── weasel-hud ───────────────────────────────────────────────────────────
   {
     id: 'hud',
     title: 'HUD widgets',
-    category: 'weasel-hud',
+    package: 'hud',
     description: 'A button widget rendered by @weasel-js/hud in screen space over a WebGL canvas. useHud attaches a HUD layer to the canvas; hud.button() creates a click-counter button. Press events fire in the HUD dispatcher before the active tool sees the pointer down, so tool interactions are never disrupted by HUD clicks.',
     hint: 'Click the "Click me" button — the label updates with the click count.',
     load: () => import('./demos/HudDemo').then((m) => m.HudDemo),
@@ -603,18 +598,16 @@ const DEMO_META: DemoMeta[] = [
   {
     id: 'loupe',
     title: 'Loupe (hud window)',
-    category: 'weasel-hud',
+    package: 'hud',
     description: 'A hud window — this one bare, so dragging the lens itself moves it; drag any edge or corner to resize. Vector mode re-renders the scene through a magnified inner view (crisp at any zoom, but the colors along antialiased edges are not the colors on screen). Pixel mode reads the framebuffer back at 1:1 device pixels with NEAREST magnification, which is the honest source for color. The content freezes while the pointer is over the window so the borders stay reachable, and a click inside the lens picks the color it is showing at that point. Tick "edit through the lens" and the lens takes input as a view on the canvas: a press inside it selects the block it magnifies, and a drag moves it at the lens\u2019s scale, so eight screen pixels at 8× move it one world unit. The window then grows a titlebar to be moved by.',
     hint: 'Move the pointer over the canvas to aim; drag the interior to move the window, an edge or corner to resize; click inside the lens to pick the color there. Switch to pixel mode to see device pixels. Tick "edit through the lens", aim at a block, then drag it inside the lens.',
     load: () => import('./demos/LoupeDemo').then((m) => m.LoupeDemo),
     path: 'apps/site/demos/LoupeDemo.tsx',
   },
-
-  // ─── labkit ───────────────────────────────────────────────────────────────
   {
     id: 'annotation-capture',
     title: 'Annotation capture',
-    category: 'labkit',
+    package: 'labkit',
     description:
       "Draw on a lab's picture, then export the picture with the marks on it. The instrument hands over its own SVG as the base, so the marks serialize beside it into one document — vector all the way through, and rasterized once at the end. The toolbar's Export panel is labkit's caller; the buttons under the pane are the lab's own, calling `annotations.capture()` and doing what they like with the Blob.",
     hint: 'Pick a tool from the palette, draw over the quadrants, then Capture. Change the hue and the mark goes dashed — its stored position no longer describes the picture.',
@@ -624,7 +617,7 @@ const DEMO_META: DemoMeta[] = [
   {
     id: 'lab-loupe',
     title: 'Loupe (lab capability)',
-    category: 'labkit',
+    package: 'labkit',
     description:
       'The same magnifier as a labkit capability, painted two ways. `loupe: true` on an instrument that draws gets the canvas painter: the lens re-runs the instrument\'s own layers through a camera zoomed about the aimed point, so a hairline stays a hairline at any factor — switch Lens to `pixel` and it enlarges the pixels the stack presented instead. `loupe: { render }` on an instrument whose content is DOM gets the DOM painter: given a camera, the instrument draws itself again inside a circular clip. The lens takes no pointer events, so pan and the wheel keep working underneath it.',
     hint: 'Press the loupe button in the toolbar, then move over the content — or hold Alt for a peek without turning it on. The wheel resizes the magnification while the lens is up, and pans the trial when it is not.',
@@ -634,7 +627,7 @@ const DEMO_META: DemoMeta[] = [
   {
     id: 'auto-controls',
     title: 'Auto controls',
-    category: 'labkit',
+    package: 'labkit',
     description:
       'A control the reader is not pinning. `Columns` and `Gap` declare `.auto(fn)`, so while they are unpinned the instrument reads what their resolver computed from `Width` — drag Width and both follow, and the ghosted sliders draw the numbers they resolved to rather than the values underneath. Pin one and it stops following, at whatever it was showing. `Caption` resolves from `Columns`, which is usually auto itself — resolution is demand-driven, so the count resolves first and the caption names what was actually drawn rather than a number that was true when someone typed it. `Width` and `Tint` are `.manual()` — one is what the others divide by and the other goes straight into a fill, so neither has anything sensible to do with `undefined` and neither offers the state at all.',
     hint: 'Drag Width: Columns and Gap track it, and the caption renames itself to match. Shift-click a row — or click the dot beside its label — to pin or unpin it; the handle stays where it was. Width and Tint have no dot.',

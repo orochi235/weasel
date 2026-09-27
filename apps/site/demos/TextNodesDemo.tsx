@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit } from '@weasel-js/core';
-import type {
-  FillStyle, StyledRun, TextStyle, TextVerticalAlign,
-} from '@weasel-js/core';
+import type { FillStyle } from '@weasel-js/core';
+import type { StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/text';
 
 const W = 480;
 const H = 380;
