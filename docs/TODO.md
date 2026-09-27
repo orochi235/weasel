@@ -1269,8 +1269,8 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
-- **(P2) A full run on a fleet node times out the same ~28 jsdom tests every time.** Twice on
-  orochi on 2026-09-27, against a freshly `npm ci`'d tree, 28 tests hit vitest's 5 s default:
+- **(P2) A full run on a fleet node times out the same ~28 jsdom tests every time.** On
+  orochi on 2026-09-27, before and after an `npm ci`, the same tests hit vitest's 5 s default:
   forge's `CssVarsPanel`, `StoryInfo`, `Workshop`, `GlobalsToolbar`, `csf/shims/alias` and
   `useStoryRegistry.document`; labkit's `LabZoom` and `Trial.annotations`; theme-editor's
   `ThemeEditor` and `SemanticsLayer`; site's `WeaselDemos.routing`. Each file passes run
