@@ -37,6 +37,7 @@ export const WithReadout: Story = {
 };
 
 export const Variants: Story = {
+  tags: ['gallery'],
   render: () => (
     <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <PropertyRow label="Default" readout="42">

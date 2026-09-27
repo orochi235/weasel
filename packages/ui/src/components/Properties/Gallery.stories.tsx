@@ -11,6 +11,7 @@ import {
 // sidebar alphabetically (G < P < R). Acts as the visual root of the section.
 const meta: Meta = {
   title: 'ui/Properties/Gallery',
+  tags: ['gallery'],
 };
 export default meta;
 type Story = StoryObj;

@@ -163,6 +163,7 @@ function AllRowsDemo({ title, pack, width }: DemoArgs) {
 }
 
 export const AllRows: Story = {
+  tags: ['gallery'],
   args: { title: 'Everything' },
   render: (args) => <AllRowsDemo {...args} />,
 };
