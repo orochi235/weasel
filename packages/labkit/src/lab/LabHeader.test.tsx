@@ -58,28 +58,23 @@ describe('<LabHeader>', () => {
       <Lab instruments={[Stub, Other]} defaultInstrument="Stub" addTrial={false} />,
     );
     expect(screen.queryByRole('button', { name: /add trial/i })).toBeNull();
-    expect(screen.getByRole('radio', { name: 'Auto' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Theme: Auto/ })).toBeInTheDocument();
     unmount();
     render(<Lab instruments={[Stub]} defaultInstrument="Stub" addTrial={false} />);
     expect(screen.queryByRole('button', { name: /add trial/i })).toBeNull();
   });
 
-  it('exposes the color mode as a three-way choice', () => {
+  it('rotates the color mode from one button', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
     render(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
-    for (const label of ['Auto', 'Light', 'Dark']) {
-      expect(screen.getByRole('radio', { name: label })).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+    for (const [now, next] of [['Auto', 'Light'], ['Light', 'Dark'], ['Dark', 'Auto']]) {
+      const button = screen.getByRole('button', { name: `Theme: ${now} — click for ${next}` });
+      expect(button.querySelector('svg')).not.toBeNull();
+      expect(button).toHaveTextContent('');
+      await user.click(button);
     }
-  });
-
-  it('draws each color mode as a glyph, with the word only as its name', () => {
-    // The assertion above passes whether the segment holds text or an icon,
-    // because both routes produce the same accessible name. This is the one
-    // that can tell them apart.
-    render(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
-    for (const label of ['Auto', 'Light', 'Dark']) {
-      const segment = screen.getByRole('radio', { name: label });
-      expect(segment.querySelector('svg')).not.toBeNull();
-      expect(segment).toHaveTextContent('');
-    }
+    expect(screen.getByRole('button', { name: /^Theme: Auto/ })).toBeInTheDocument();
   });
 });

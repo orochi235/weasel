@@ -1,5 +1,5 @@
 import { AddIcon } from '@weasel-js/ui';
-import { ColorModeControl, MenuButton } from '../passthrough/weasel-ui';
+import { MenuButton, ThemeSwitcher } from '../passthrough/weasel-ui';
 import { useLabContext } from './LabContext';
 
 /** The controls `<Lab>` puts in its header: add a trial, and choose the color
@@ -30,12 +30,7 @@ export function LabHeader({ addTrial = true }: { addTrial?: boolean }) {
         />
       )}
 
-      <ColorModeControl
-        className="lk-lab-header__mode"
-        variant="flat"
-        value={lab.mode}
-        onChange={lab.setMode}
-      />
+      <ThemeSwitcher value={lab.mode} onChange={lab.setMode} />
     </>
   );
 }
