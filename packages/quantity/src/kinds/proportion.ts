@@ -70,7 +70,20 @@ export type FractionDisplay = {
   /** Default 64. */
   maxDenominator?: number;
   mixed?: boolean;
+  /**
+   * `inline` (default) writes `1/12`. `diagonal` writes `¹⁄₁₂` — superscript
+   * digits, the fraction slash, subscript digits — so the text itself is
+   * diagonal wherever it is drawn, CSS or not.
+   */
+  form?: 'inline' | 'diagonal';
 };
+
+const SUPERSCRIPT = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+const SUBSCRIPT = '₀₁₂₃₄₅₆₇₈₉';
+
+const inDigits = (n: number, digits: string) => String(n).replace(/\d/g, (c) => digits[Number(c)]!);
+const fromDigits = (text: string, digits: string) =>
+  Number([...text].map((c) => digits.indexOf(c)).join(''));
 
 export function fraction(options: Omit<FractionDisplay, 'kind'> = {}): FractionDisplay {
   return { kind: 'fraction', ...options };
@@ -94,11 +107,12 @@ export const fractionKind: DisplayKind<FractionDisplay> = {
     if (negative) parts.push({ type: 'sign', value: MINUS_SIGN });
     if (whole > 0 || num === 0) parts.push({ type: 'whole', value: String(whole) });
     if (num > 0) {
-      if (whole > 0) parts.push({ type: 'literal', value: ' ' });
+      const diagonal = d.form === 'diagonal';
+      if (whole > 0 && !diagonal) parts.push({ type: 'literal', value: ' ' });
       parts.push(
-        { type: 'numerator', value: String(num) },
-        { type: 'literal', value: '/' },
-        { type: 'denominator', value: String(den) },
+        { type: 'numerator', value: diagonal ? inDigits(num, SUPERSCRIPT) : String(num) },
+        { type: 'literal', value: diagonal ? '⁄' : '/' },
+        { type: 'denominator', value: diagonal ? inDigits(den, SUBSCRIPT) : String(den) },
       );
     }
     return parts;
@@ -114,10 +128,15 @@ export const fractionKind: DisplayKind<FractionDisplay> = {
     return `${negative ? 'minus ' : ''}${words.join(' ')}`;
   },
   parse: (text) => {
-    const m = /^\s*([-−+]?)\s*(?:(\d+)\s+)?(\d+)\s*[/⁄]\s*(\d+)\s*$/.exec(text);
-    if (!m) return parseNumber(text);
-    const magnitude = Number(m[2] ?? 0) + Number(m[3]) / Number(m[4]);
-    return m[1] === '-' || m[1] === MINUS_SIGN ? -magnitude : magnitude;
+    const inline = /^\s*([-−+]?)\s*(?:(\d+)\s+)?(\d+)\s*[/⁄]\s*(\d+)\s*$/.exec(text);
+    const diagonal = /^\s*([-−+]?)\s*(\d+)?\s*([⁰¹²³⁴⁵⁶⁷⁸⁹]+)\s*[/⁄]\s*([₀₁₂₃₄₅₆₇₈₉]+)\s*$/.exec(text);
+    let magnitude: number;
+    if (inline) magnitude = Number(inline[2] ?? 0) + Number(inline[3]) / Number(inline[4]);
+    else if (diagonal) {
+      magnitude = Number(diagonal[2] ?? 0) + fromDigits(diagonal[3]!, SUPERSCRIPT) / fromDigits(diagonal[4]!, SUBSCRIPT);
+    } else return parseNumber(text);
+    const sign = (inline ?? diagonal)![1];
+    return sign === '-' || sign === MINUS_SIGN ? -magnitude : magnitude;
   },
   mathml: (value, d) => {
     if (!Number.isFinite(value)) return undefined;

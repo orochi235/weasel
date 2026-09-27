@@ -82,6 +82,10 @@ const CASES: [Display, number, string, string][] = [
   [fraction(), 1.5, '3/2', '3 over 2'],
   [fraction(), 2, '2', '2'],
   [fraction(), 0, '0', '0'],
+  [fraction({ form: 'diagonal' }), 1 / 12, '¹⁄₁₂', '1 over 12'],
+  [fraction({ form: 'diagonal', mixed: true }), 1.5, '1¹⁄₂', '1 and 1 over 2'],
+  [fraction({ form: 'diagonal' }), -0.75, `${MINUS}³⁄₄`, 'minus 3 over 4'],
+  [fraction({ form: 'diagonal' }), 2, '2', '2'],
   [ratio(), 1 / 12, '1:12', '1 to 12'],
   [multiplier(), 2.5, '2.5×', '2.5 times'],
   [zoom(), 2.5, '2.5x', '2.5 times'],
@@ -124,6 +128,10 @@ const PARSES: [Display, string, number][] = [
   [fraction(), '1 1/2', 1.5],
   [fraction(), `${MINUS}3/4`, -0.75],
   [fraction(), '0.2', 0.2],
+  [fraction(), '¹⁄₁₂', 1 / 12],
+  [fraction(), '1¹⁄₂', 1.5],
+  [fraction(), '1 ¹⁄₂', 1.5],
+  [fraction(), `${MINUS}³⁄₄`, -0.75],
   [ratio(), '1:4', 0.25],
   [multiplier(), '4x', 4],
   [zoom(), '150%', 1.5],
@@ -152,7 +160,7 @@ it('reads text it cannot parse as NaN', () => {
 });
 
 describe('round trips', () => {
-  const displays: Display[] = [decimal({ maxPlaces: 6 }), fraction(), ratio(), percent({ places: 2 }), duration({ places: 2 }), roman()];
+  const displays: Display[] = [decimal({ maxPlaces: 6 }), fraction(), fraction({ form: 'diagonal', mixed: true }), ratio(), percent({ places: 2 }), duration({ places: 2 }), roman()];
   it.each(displays)('reads back what %o shows', (display) => {
     for (const v of [1 / 12, 0.5, 3, 42]) {
       const shown = present(v, display).text;
