@@ -36,6 +36,7 @@ import '../actions/depSchema'; // augments DepSchema with 'selection' and 'scene
 import { ActiveToolContextProvider } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { resizeAction } from '../actions/defaults/resize';
+import { selectionTransformContribution } from '../../tools/builtin/select/selectionContributions';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { Scene } from 'core/scene/types';
@@ -109,7 +110,9 @@ function MountDispatcher({
   useGestureDispatcher({
     canvasRef,
     actions: registry!,
-    toolsById: new Map(),
+    // resize has no default binding; the `transform` preset's handle binding
+    // is what routes a handle drag to it.
+    toolsById: new Map([[selectionTransformContribution.id, selectionTransformContribution]]),
     affordanceAt,
   });
   return <canvas ref={canvasRef} data-testid="canvas" />;

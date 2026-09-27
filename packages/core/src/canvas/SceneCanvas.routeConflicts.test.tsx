@@ -14,6 +14,12 @@ import { render } from '@testing-library/react';
 import { SceneCanvas, BUILTIN_TOOL_IDS, type BuiltinToolId } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
+import type { Feature } from './SceneCanvas/features';
+import { WeaselProvider } from '../WeaselProvider';
+import { useSelection } from 'core/selection/useSelection';
+import { useSceneAdapter } from './sceneAdapter';
+import { useSelectTool } from '../tools/builtin/select/useSelectTool';
+import { useTools } from '../tools/overlayBinding';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -69,6 +75,59 @@ describe('built-in tool bundles declare no conflicting routes', () => {
     it(`${name} (${tools.join(', ') || 'select, hand'})`, () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       render(<Harness tools={tools} />);
+      const conflicts = warn.mock.calls
+        .map((args) => String(args[0]))
+        .filter((m) => m.includes('route conflict'));
+      expect(conflicts).toEqual([]);
+    });
+  }
+});
+
+/**
+ * `<SceneCanvas>` assembles its own tools above its `<ActionsProvider>`, so
+ * the check `useTools` runs there never sees the registered actions — whose
+ * `defaultBinding`s the dispatcher assembles at ambient scope. A consumer's
+ * `useTools` under a `<WeaselProvider>` does see them, which is how
+ * `MultiSelectDemo` found `resize` and `areaSelect` both claiming a bare drag.
+ */
+function ConsumerHarness({ features }: { features: readonly Feature[] }) {
+  const scene = useScene<D, L, P>({
+    systemLayers: [{ id: 'main' }],
+    initial: [{
+      id: asNodeId('a'),
+      kind: 'leaf',
+      layer: 'main',
+      pose: { x: 0, y: 0, width: 50, height: 50 },
+      data: { color: '#f00' },
+    }],
+  });
+  const selection = useSelection({ mode: 'multi' });
+  const adapter = useSceneAdapter(scene, { selection });
+  const select = useSelectTool(adapter, {});
+  const tools = useTools({ active: 'select', registry: { select } });
+  return (
+    <SceneCanvas
+      features={features}
+      scene={scene}
+      selection={selection}
+      selectionMode="multi"
+      tools={tools}
+      width={200}
+      height={200}
+      layers={{}}
+    />
+  );
+}
+
+describe('kit actions a consumer-assembled tool set sees declare no conflicting routes', () => {
+  const COMBOS: Record<string, readonly Feature[]> = {
+    'pick + move + transform (MultiSelectDemo)': ['pick', 'move', 'transform'],
+    'pick + move + transform + edit + arrange': ['pick', 'move', 'transform', 'edit', 'arrange'],
+  };
+  for (const [name, features] of Object.entries(COMBOS)) {
+    it(name, () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      render(<WeaselProvider><ConsumerHarness features={features} /></WeaselProvider>);
       const conflicts = warn.mock.calls
         .map((args) => String(args[0]))
         .filter((m) => m.includes('route conflict'));

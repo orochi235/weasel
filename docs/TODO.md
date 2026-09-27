@@ -754,10 +754,22 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) Two actions claim the same drag in `MultiSelectDemo`.** Every load warns
-  `[weasel] route conflict: ... [*] drag — declared by resize, areaSelect`, so declaration
-  order alone decides which fires. Seen 2026-09-27; not yet checked whether the preset
-  wiring or the demo declares the duplicate, or whether any drag lands on the wrong one.
+- **(P2) Kit actions still tie on a bare drag, and the kit's own check cannot see it.**
+  `areaSelect`, `insert` and `viewport.dragPan` each keep a `defaultBinding: { kind: 'drag' }`,
+  which the dispatcher assembles at ambient scope, so any two registered together tie and
+  registration order picks the winner of a drag no tool claims — today `areaSelect`, ahead of
+  both. Demos warning on load (browser sweep, 2026-09-27): `alignment-guides` and
+  `tool-reflection` (areaSelect, viewport.dragPan), `image`, `stroke-and-fill` and
+  `annotation-capture` (areaSelect, insert), `shape-tools` (all three), `minimap` (minimap,
+  viewport.dragPan). `resize` had the same catch-all and lost it, as `rotate` and `clone` did
+  before it. Dropping or targeting the other three changes what an unclaimed drag does — marquee,
+  a stray insert or a pan — so it needs a decision on which action owns that drag, if any.
+  Separately, `SceneCanvas.routeConflicts.test.tsx` only caught `resize` once it mounted a
+  consumer-side `useTools` under `<WeaselProvider>`: `<SceneCanvas>` assembles its internal
+  tools above its `<ActionsProvider>`, so the conflict check it runs never sees the actions.
+  Key-side ties also warn (`nudge.*` / `nudgeAnchors.*`, `delete` / `deleteAnchors`,
+  `exitPathEdit` / `tool.resetToDefault` on Escape); the anchor variants decline through `enabled` with no anchor
+  selection, which the check cannot see, so those may want a way to mark an intended fall-through.
 
 - **(P2) Two lasso hit-tests, and the old one tests bounding boxes.** The live lasso runs
   `hitTestLassoPolygon` (`canvas/deps/hitTestArea.ts`), which tests each node's silhouette.
