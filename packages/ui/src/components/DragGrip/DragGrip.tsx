@@ -1,5 +1,5 @@
-/** Props for `<DragHandleGlyph>`. */
-export interface DragHandleGlyphProps {
+/** Props for `<DragGrip>`. */
+export interface DragGripProps {
   /** Height in px; width scales with it. Default 16. */
   size?: number;
 }
@@ -9,7 +9,7 @@ export interface DragHandleGlyphProps {
  *  Deliberately not part of the icon register: that register is outline strokes
  *  at a fixed weight, and a grip is filled dots. Forcing it in would either
  *  break the register's rule or produce a worse glyph. */
-export function DragHandleGlyph({ size = 16 }: DragHandleGlyphProps) {
+export function DragGrip({ size = 16 }: DragGripProps) {
   return (
     <svg
       width={(size * 8) / 16}

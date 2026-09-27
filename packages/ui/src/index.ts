@@ -13,7 +13,7 @@ export * from './components/DataGrid';
 export * from './components/DetailList';
 export * from './components/Disclosure';
 export * from './components/DragGhost';
-export * from './components/DragHandleGlyph';
+export * from './components/DragGrip';
 export * from './components/Keycaps';
 export * from './components/LayerList';
 export * from './components/Slider';

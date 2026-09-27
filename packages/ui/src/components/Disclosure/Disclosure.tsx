@@ -17,7 +17,7 @@ export interface DisclosureMarkProps {
  * button. Anywhere the mark has to be the control, use `<Disclosure>`.
  *
  * Deliberately not part of the icon register, on the same grounds as
- * `DragHandleGlyph`: that register is outline strokes at a fixed weight, and
+ * `DragGrip`: that register is outline strokes at a fixed weight, and
  * this mark is filled.
  */
 export function DisclosureMark({ open, size = 13, className }: DisclosureMarkProps) {

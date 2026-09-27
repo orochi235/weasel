@@ -13,7 +13,7 @@ import { type PressModifiers, useReorderDragList } from '../../useReorderDragLis
 import { CloseButton } from '../CloseButton';
 import { Disclosure } from '../Disclosure';
 import { DragGhost } from '../DragGhost';
-import { DragHandleGlyph } from '../DragHandleGlyph';
+import { DragGrip } from '../DragGrip';
 import rows from '../ItemList/ItemList.module.css';
 import { PropertyGroup, PropertyList } from '../Properties';
 import type { StanceProps } from '../stance';
@@ -546,7 +546,7 @@ function Grip({ item, reorder }: { item: LayerListItem; reorder: boolean }) {
   if (!reorder && item.badge === undefined) return null;
   return (
     <span className={s.grip} aria-hidden="true">
-      {item.badge ?? <DragHandleGlyph size={13} />}
+      {item.badge ?? <DragGrip size={13} />}
     </span>
   );
 }
@@ -579,7 +579,7 @@ function Handle({
         onNudge(e.key === 'ArrowUp' ? -1 : 1);
       }}
     >
-      {item.badge ?? <DragHandleGlyph />}
+      {item.badge ?? <DragGrip />}
     </button>
   );
 }
