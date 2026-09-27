@@ -6,6 +6,10 @@ answer. The rules themselves are in [taxonomy.md](./taxonomy.md#interaction)
 (the precedence table) and [taxonomy.md](./taxonomy.md#input-scope-and-yoke)
 (scope tiers); these pictures show how they fit together.
 
+Each SVG is drawn by the script of the same name in `diagrams/src/`; edit the
+script and rerun it rather than editing the SVG
+(`python3 docs/diagrams/src/input-scopes.py docs/diagrams/input-scopes.svg`).
+
 The code is `packages/routing/src/interactions/dispatcher/` (`useGestureDispatcher.tsx`,
 `dispatcher.ts`, `matcher.ts`) and `packages/routing/src/interactions/actions/`
 (`inputScope.tsx`, `scopeNode.ts`).
