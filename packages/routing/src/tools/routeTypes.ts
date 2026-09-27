@@ -54,7 +54,9 @@ export interface ToolDef<TScratch = void, TOverlay = unknown> {
    *  set so the invoker knows which tool to switch to). */
   keybinding?: ToolKeybinding;
   /** Held-key trigger: this tool engages while the key is down and
-   *  disengages on release. Carried onto `Tool.eligibility.offhand`, which
+   *  disengages on release — a modifier, `'space'`, or any other key
+   *  (`'o'`), never while typing in a text field. Carried onto
+   *  `Tool.eligibility.offhand`, which
    *  assembly reads to register the consolidated `tool.offhand` action — the
    *  declaration is the wiring, with nothing for the host to do. */
   hotkey?: HotkeyTrigger;

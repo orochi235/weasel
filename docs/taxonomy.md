@@ -124,7 +124,8 @@ way. `docs/extending.md` has the full map. See
 several at once — the hand tool is palette-selectable and space-held:
 
 - `focus` — selectable as the focused entry; exclusive, one at a time.
-- `offhand: HotkeyTrigger` — also live while that key is held.
+- `offhand: HotkeyTrigger` — also live while that key is held: a modifier,
+  `'space'`, or any other key (`'o'`), matched case-insensitively.
 - `always` — live regardless of what is focused.
 - `claimed` — live only for input this entry's own affordances produced.
 - `capabilities` — modality filter, applied wherever it would otherwise be live.

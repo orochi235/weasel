@@ -4,9 +4,13 @@ import type { CapabilityTag } from '@weasel-js/modes';
 import type { DepName, DepSchema } from '../index';
 
 /** Hotkey-slot trigger key. The slot is engaged while this key is held —
- *  hence "hotkey": active as long as the key is hot. `null` (or omitted)
- *  means the tool is not eligible for the hotkey slot. */
-export type HotkeyTrigger = 'space' | 'alt' | 'ctrl' | 'meta' | 'shift';
+ *  hence "hotkey": active as long as the key is hot. Omitted means the tool
+ *  is not eligible for the hotkey slot.
+ *
+ *  The named keys map to their DOM names (`'space'` is `' '`, `'ctrl'` is
+ *  `'Control'`). Anything else is a `KeyboardEvent.key` value, matched
+ *  case-insensitively as every key spec is — so `'o'` holds on O. */
+export type HotkeyTrigger = 'space' | 'alt' | 'ctrl' | 'meta' | 'shift' | (string & {});
 
 /** Presentation metadata for tool palettes / menus. Optional on every
  *  tool — consumers that render a palette (`<ToolPalette>`) read these

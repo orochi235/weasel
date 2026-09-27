@@ -16,8 +16,8 @@ export interface ToolOffhandBindingSpec {
   key: string | string[];
 }
 
-/** `KeyboardEvent.key` for a declared `Eligibility.offhand` trigger. Only
- *  `space` is exercised today; the modifier arms follow the DOM's names. */
+/** `KeyboardEvent.key` for a declared `Eligibility.offhand` trigger. The
+ *  named keys become their DOM names; any other trigger already is one. */
 export function offhandKeyFor(trigger: HotkeyTrigger): string {
   switch (trigger) {
     case 'space': return ' ';
@@ -25,6 +25,7 @@ export function offhandKeyFor(trigger: HotkeyTrigger): string {
     case 'ctrl': return 'Control';
     case 'meta': return 'Meta';
     case 'shift': return 'Shift';
+    default: return trigger;
   }
 }
 

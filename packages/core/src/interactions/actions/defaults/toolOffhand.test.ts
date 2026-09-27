@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { makeToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID } from '@weasel-js/routing';
+import { makeToolOffhandAction, buildToolOffhandBindings, offhandKeyFor, TOOL_OFFHAND_ID } from '@weasel-js/routing';
 
 describe('makeToolOffhandAction', () => {
   it("declares scope:'hotkey' so the offhand action beats the active tool", () => {
@@ -114,5 +114,17 @@ describe('buildToolOffhandBindings', () => {
     ]);
     const first = bindings[0] as { spec: { key: string | string[] } };
     expect(first.spec.key).toEqual([' ', 'Spacebar']);
+  });
+});
+
+describe('offhandKeyFor', () => {
+  it('maps the named triggers to their DOM key names', () => {
+    expect(['space', 'alt', 'ctrl', 'meta', 'shift'].map(offhandKeyFor))
+      .toEqual([' ', 'Alt', 'Control', 'Meta', 'Shift']);
+  });
+
+  it('passes any other key through as the key it names', () => {
+    expect(offhandKeyFor('o')).toBe('o');
+    expect(offhandKeyFor('F2')).toBe('F2');
   });
 });
