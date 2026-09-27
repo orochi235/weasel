@@ -3,6 +3,7 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
@@ -51,6 +52,9 @@ export interface BandEditorProps<T> {
   label?: ReactNode;
   className?: string;
 }
+
+/** A drag under way: the bands as the pointer has them, and which edges it took from where. */
+type Draft<T> = { bands: Band<T>[]; ghost: { seam: number } | { band: number } };
 
 /** One arrow-key step, as a fraction of the track. */
 const KEY_STEP = 0.01;
@@ -117,7 +121,11 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
   const labelId = useId();
-  const bands = normalizeBands(value, min);
+  const [draft, setDraft] = useState<Draft<T> | null>(null);
+  const committed = normalizeBands(value, min);
+  // Drawn from the drag while one is under way, so the control moves with the pointer whether or not the consumer
+  // wires `onInput`. Every edit reads `committed`.
+  const bands = draft?.bands ?? committed;
   const sc = resolveScale(scale, min);
   const toUnit = (v: number): number => clamp01(sc.toUnit(v, min, max));
   const fromUnit = (u: number): number => sc.fromUnit(clamp01(u), min, max);
@@ -148,8 +156,8 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
     sessionRef.current?.cancel();
     sessionRef.current = openPointerSession(down.currentTarget, down, {
       onMove,
-      onEnd: () => { sessionRef.current = null; onEnd(); },
-      onCancel: () => { sessionRef.current = null; },
+      onEnd: () => { sessionRef.current = null; setDraft(null); onEnd(); },
+      onCancel: () => { sessionRef.current = null; setDraft(null); },
     }, { capture: false });
   };
 
@@ -157,13 +165,14 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
     if (typeof e.button === 'number' && e.button > 0) return;
     e.preventDefault();
     e.stopPropagation();
-    const base = bands;
+    const base = committed;
     let latest: Band<T>[] | null = null;
     drag(
       e,
       (ev) => {
         const to = clampSeamTo(base, index, fromUnit(snapped(unitAt(ev.clientX), ev.altKey)), min, max);
         latest = setSeam(base, index, to);
+        setDraft({ bands: latest, ghost: { seam: index } });
         onInput?.(latest);
       },
       () => {
@@ -173,7 +182,7 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
   };
 
   const onSeamKeyDown = (index: number) => (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    const [lo, hi] = seamBounds(bands, index, min, max);
+    const [lo, hi] = seamBounds(committed, index, min, max);
     let target: number;
     if (e.key === 'Home') target = lo;
     else if (e.key === 'End') target = hi;
@@ -182,11 +191,11 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
       if (e.key === 'ArrowRight' || e.key === 'ArrowUp') delta = e.shiftKey ? KEY_STEP * 10 : KEY_STEP;
       else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') delta = e.shiftKey ? -KEY_STEP * 10 : -KEY_STEP;
       else return;
-      target = fromUnit(toUnit(bands[index + 1].from) + delta);
+      target = fromUnit(toUnit(committed[index + 1].from) + delta);
     }
     e.preventDefault();
-    const next = setSeam(bands, index, clampSeamTo(bands, index, target, min, max));
-    if (next !== bands) onChange(next);
+    const next = setSeam(committed, index, clampSeamTo(committed, index, target, min, max));
+    if (next !== committed) onChange(next);
   };
 
   const onBandPointerDown = (index: number) => (e: ReactPointerEvent<HTMLButtonElement>): void => {
@@ -194,8 +203,8 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
     if (index !== selectedIndex) onSelect?.(index);
     // The first and last bands' outer edges are `min` and `max`, which do not
     // move, so their bodies have nothing to translate.
-    if (index === 0 || index === bands.length - 1) return;
-    const base = bands;
+    if (index === 0 || index === committed.length - 1) return;
+    const base = committed;
     const edges = unitEdges(base, sc, min, max);
     const startUnit = unitAt(e.clientX);
     let latest: Band<T>[] | null = null;
@@ -209,6 +218,7 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
           fromUnit(edges[index] + shift),
           fromUnit(edges[index + 1] + shift),
         );
+        setDraft({ bands: latest, ghost: { band: index } });
         onInput?.(latest);
       },
       () => {
@@ -224,8 +234,8 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
   const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (typeof e.button === 'number' && e.button > 0) return;
     e.preventDefault();
-    const next = splitBands(bands, fromUnit(unitAt(e.clientX)), min, max, splitBand);
-    if (next !== bands) onChange(next);
+    const next = splitBands(committed, fromUnit(unitAt(e.clientX)), min, max, splitBand);
+    if (next !== committed) onChange(next);
   };
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
@@ -235,8 +245,8 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (isTextEntry(e.target)) return;
     if (selectedIndex === null || selectedIndex === undefined) return;
-    const next = mergeBand(bands, selectedIndex);
-    if (next === bands) return;
+    const next = mergeBand(committed, selectedIndex);
+    if (next === committed) return;
     e.preventDefault();
     onChange(next);
     onSelect?.(selectedIndex - 1);
@@ -300,6 +310,25 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
             </Fragment>
           );
         })}
+        {draft && 'band' in draft.ghost && (
+          <div
+            className={s.bandGhost}
+            data-band-ghost=""
+            aria-hidden="true"
+            style={{
+              '--be-from': pct(toUnit(bandBounds(committed, draft.ghost.band, min, max)[0])),
+              '--be-to': pct(toUnit(bandBounds(committed, draft.ghost.band, min, max)[1])),
+            } as CSSProperties}
+          />
+        )}
+        {draft && 'seam' in draft.ghost && (
+          <div
+            className={s.seamGhost}
+            data-band-ghost=""
+            aria-hidden="true"
+            style={{ '--be-at': pct(toUnit(committed[draft.ghost.seam + 1].from)) } as CSSProperties}
+          />
+        )}
       </div>
     </div>
   );

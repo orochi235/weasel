@@ -103,6 +103,28 @@
   pointer-events: none;
 }
 
+/* Where a dragged band or seam started, held until the drag ends. */
+.bandGhost {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--be-from);
+  width: calc(var(--be-to) - var(--be-from));
+  border: 1px dashed var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-sm);
+  pointer-events: none;
+}
+
+.seamGhost {
+  position: absolute;
+  left: var(--be-at);
+  top: -3px;
+  bottom: -3px;
+  width: 0;
+  border-left: 1px dashed var(--wzl-border-strong);
+  pointer-events: none;
+}
+
 /* Wider than the line it draws: a 1px seam is unhittable. */
 .seam {
   position: absolute;

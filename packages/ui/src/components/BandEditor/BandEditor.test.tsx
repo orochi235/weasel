@@ -86,6 +86,39 @@ describe('BandEditor rendering', () => {
   });
 });
 
+describe('drag in flight', () => {
+  const ghosts = (root: HTMLElement) => [...root.querySelectorAll<HTMLElement>('[data-band-ghost]')];
+
+  it('moves a dragged seam with the pointer when no onInput is wired, and leaves a ghost where it started', () => {
+    const { container, seams } = setup({ onInput: undefined });
+    fireEvent.pointerDown(seams()[0], { clientX: 80, clientY: 20, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 160, clientY: 20 });
+    expect(seams()[0].style.getPropertyValue('--be-at')).toBe('40%');
+    expect(ghosts(container).map((g) => g.style.getPropertyValue('--be-at'))).toEqual(['20%']);
+    fireEvent.pointerUp(document, { clientX: 160, clientY: 20 });
+    expect(ghosts(container)).toHaveLength(0);
+  });
+
+  it('moves a dragged band body with the pointer and ghosts its starting span', () => {
+    const { container, bodies } = setup({ onInput: undefined });
+    fireEvent.pointerDown(bodies()[1], { clientX: 120, clientY: 20, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 140, clientY: 20 });
+    expect(bodies()[1].style.getPropertyValue('--be-from')).toBe('25%');
+    const [ghost] = ghosts(container);
+    expect(ghost?.style.getPropertyValue('--be-from')).toBe('20%');
+    expect(ghost?.style.getPropertyValue('--be-to')).toBe('60%');
+    fireEvent.pointerUp(document, { clientX: 140, clientY: 20 });
+    expect(ghosts(container)).toHaveLength(0);
+  });
+
+  it('shows no ghost before the pointer moves', () => {
+    const { container, seams } = setup();
+    fireEvent.pointerDown(seams()[0], { clientX: 80, clientY: 20, button: 0 });
+    expect(ghosts(container)).toHaveLength(0);
+    fireEvent.pointerUp(document, { clientX: 80, clientY: 20 });
+  });
+});
+
 describe('seam drag', () => {
   it('previews on every move and commits once at the end', () => {
     const { seams, onInput, onChange } = setup();
