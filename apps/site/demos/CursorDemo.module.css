@@ -1,0 +1,92 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 620px;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px 6px;
+  border: 1px solid var(--ckd-border);
+  border-radius: 6px;
+  background: var(--ckd-surface);
+  color: var(--ckd-fg);
+  font: inherit;
+}
+
+.selected {
+  border-color: var(--ckd-accent);
+  background: color-mix(in srgb, var(--ckd-accent) 12%, var(--ckd-surface));
+}
+
+.glyph {
+  width: 48px;
+  height: 48px;
+  background: #ffffff;
+  border-radius: 4px;
+}
+
+.hotspot {
+  fill: #e0433a;
+}
+
+.name {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+}
+
+.coords {
+  font-size: 11px;
+  color: var(--ckd-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.controls {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.control {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.slider {
+  width: 200px;
+}
+
+.readout {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  color: var(--ckd-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+}
+
+.tierCss,
+.tierPainted {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--ckd-border);
+}
+
+.tierCss {
+  color: var(--ckd-muted);
+}
+
+.tierPainted {
+  color: var(--ckd-accent);
+  border-color: var(--ckd-accent);
+}

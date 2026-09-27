@@ -1,0 +1,73 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 620px;
+}
+
+.control {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.slider {
+  width: 200px;
+}
+
+.readout {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ckd-muted);
+}
+
+.table {
+  border-collapse: collapse;
+}
+
+.table td {
+  padding: 3px 8px;
+}
+
+.fn {
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  color: var(--ckd-muted);
+}
+
+.num {
+  text-align: end;
+  white-space: pre;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-inline-end: 6px;
+  border-radius: 2px;
+}
+
+.swatchHull {
+  composes: swatch;
+  border: 1px dashed #9a9a9a;
+}
+
+.swatchTight {
+  composes: swatch;
+  border: 1px solid #2f7fd0;
+}
+
+.swatchT {
+  composes: swatch;
+  border-radius: 50%;
+  background: #e08a1e;
+}
+
+.swatchProbe {
+  composes: swatch;
+  border-radius: 50%;
+  background: #c0392b;
+}
