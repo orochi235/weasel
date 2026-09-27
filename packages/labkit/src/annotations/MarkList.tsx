@@ -45,7 +45,6 @@ export function MarkList({ meaning, config }: MarkListProps) {
               </button>
             </div>
             <Input
-              className="lk-mark-list__title"
               aria-label={`Title of ${a.kind} on ${a.target}`}
               value={a.title ?? ''}
               placeholder="Untitled"
