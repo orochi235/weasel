@@ -111,8 +111,6 @@ function Body({ config, state, setState }: BodyProps) {
             accentEvery: 5,
           }
         : null,
-      scene: {},
-      selectionOverlay: { handles: true },
     }),
     [config.showGrid],
   );

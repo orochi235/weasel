@@ -232,6 +232,14 @@ function recordCoordTrace(entry: CoordTraceEntry): void {
 
 export { defaultDrawOne } from './defaultDrawOne';
 
+/** `<SceneCanvas layers>`: a {@link LayersMap} whose scene slot may be partial,
+ *  since the defaults fill in whatever it leaves out. */
+export type SceneCanvasLayers<TNode extends { id: string }, TPose> = LayersMap<
+  TNode,
+  TPose,
+  Partial<SceneSlotConfig<TNode, TPose>>
+>;
+
 /** Deep-merge user-supplied `layers` with kit defaults. Slots the user
  *  doesn't mention get filled with defaults; slots explicitly set to
  *  `null` are dropped (the existing "disable this slot" convention).
@@ -242,7 +250,7 @@ export { defaultDrawOne } from './defaultDrawOne';
  *  parameter rather than a read because this function is module-scope and
  *  the profile is a hook value; the caller inside the component passes it. */
 export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
-  user: LayersMap<Node<TData, TLayer, TPose>, TPose> | undefined,
+  user: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose> | undefined,
   targetScale = 1,
 ): LayersMap<Node<TData, TLayer, TPose>, TPose> {
   const defaults = {
@@ -256,7 +264,7 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   if (!user) return defaults as LayersMap<Node<TData, TLayer, TPose>, TPose>;
 
   // Start from a shallow copy of the user map so unknown slots pass through.
-  const result: LayersMap<Node<TData, TLayer, TPose>, TPose> = { ...user };
+  const result = { ...user } as LayersMap<Node<TData, TLayer, TPose>, TPose>;
 
   if (!('scene' in user)) {
     result.scene = defaults.scene;
@@ -332,9 +340,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /** Layer configuration. When omitted, SceneCanvas applies kit defaults
      *  (a scene slot that paints `node.data.fill` rects + a default
-     *  selection overlay). Partial slot configs deep-merge with the
-     *  defaults; pass `slot: null` to suppress a default explicitly. */
-    layers?: LayersMap<Node<TData, TLayer, TPose>, TPose>;
+     *  selection overlay). A partial scene or selection-overlay config is
+     *  spread over that slot's defaults; pass `slot: null` to suppress a
+     *  default explicitly. */
+    layers?: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose>;
 
     /** Layout strategies keyed by container node id (or a resolver). Forwarded
      *  to `sceneToAdapter` so `useMove`'s layout pass runs on configured

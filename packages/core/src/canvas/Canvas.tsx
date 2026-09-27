@@ -201,10 +201,16 @@ export type LayerSlotValue<TNode extends { id: string }, TPose> =
 
 /** The canvas's render stack, as named slots. The standard slots (grid,
  *  scene, selection overlay, cell highlight) can be configured, replaced with
- *  a layer of your own, or switched off; further keys add custom layers. */
-export type LayersMap<TNode extends { id: string }, TPose> = {
+ *  a layer of your own, or switched off; further keys add custom layers.
+ *  `TSceneSlot` is what the scene slot accepts: `<SceneCanvas>` takes a
+ *  partial config and fills the rest from its defaults. */
+export type LayersMap<
+  TNode extends { id: string },
+  TPose,
+  TSceneSlot = SceneSlotConfig<TNode, TPose>,
+> = {
   grid?: GridSlotConfig | null;
-  scene?: SceneSlotConfig<TNode, TPose> | null;
+  scene?: TSceneSlot | null;
   /** Selection-overlay slot. Canvas constructs the layer from a
    *  `SelectionOverlaySlotConfig`; pass a `CustomLayerEntry` (`{ layer }`) to
    *  supply a pre-built layer (e.g. from `<SceneCanvas>`). */
@@ -215,7 +221,7 @@ export type LayersMap<TNode extends { id: string }, TPose> = {
    *  is set. */
   cellHighlight?: CustomLayerEntry | null;
 } & {
-  [customKey: string]: LayerSlotValue<TNode, TPose> | undefined;
+  [customKey: string]: LayerSlotValue<TNode, TPose> | TSceneSlot | undefined;
 };
 
 /**

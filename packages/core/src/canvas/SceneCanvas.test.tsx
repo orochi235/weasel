@@ -179,6 +179,11 @@ describe('SceneCanvas defaults', () => {
       expect(merged.selectionOverlay).toEqual({ handles: { size: DEFAULT_HANDLE_SIZE } });
     });
 
+    it('a scene slot without drawOne keeps the default painter', () => {
+      const merged = mergeLayersWithDefaults({ scene: { cull: true } });
+      expect(merged.scene).toMatchObject({ drawOne: defaultDrawOne, cull: true });
+    });
+
     it('null slot suppresses the default', () => {
       const merged = mergeLayersWithDefaults({ selectionOverlay: null });
       expect(merged.selectionOverlay).toBeNull();
