@@ -18,6 +18,32 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P1) "Tool" names too many things. Decide what it means before building on it.**
+  In the tree today, a tool is any of:
+  - a mode for what the pointer does, chosen from a palette: rect, pen, text;
+  - a held-key temporary tool: Space for hand, hold-O opacity scrub;
+  - an always-on contribution in the `ambient` slot: the viewport, the HUD, the loupe;
+  - a command given a place on a tool rail: forge's Info, labkit's `ToolItem` with `onActivate`;
+  - a viewport behavior: `useHandTool`, `defineViewportTool`, which exists only as a naming signal;
+  - `select`, which is two of these at once. `pick`, marquee and clear are choosing things.
+    `resize`, `rotate`, move-selected and clone act on the selection and bind only while
+    select is active (`useSelectTool.ts`).
+
+  Waiting on the answer:
+  - **Bare-minimum defaults.** A bare `<SceneCanvas>` should only render. Features come as
+    composable presets: `view`, `pick`, `move`, `transform`, `edit`, `arrange`, `paths`, and
+    `draw` for today's set. Today a bare canvas makes select the active tool (and crashes
+    without it), registers about 40 standard actions with their bindings, a rotate-on-any-drag
+    catch-all, tool keys and the clipboard. 65 of the tree's 87 `<SceneCanvas>` uses rely on
+    that.
+  - **Select as a hard-coded base tool.** It's the default tool set, the initial active tool
+    and Escape's target (`SceneCanvas.tsx`). Its empty-canvas bindings at active scope are why
+    an ambient press can't coexist with it (the `CustomShaderDemo` entry below).
+  - **Selection handles on by default.** Easy to turn on, but not on by default.
+
+  Also open: whether selection *state* exists in the bare canvas, with no input setting it, so
+  that consumer bindings have something to act on.
+
 - **(P3) Long-press has no feedback.** No haptic, no visual "press is
   registering" affordance during the 500ms hold. Users get no signal that
   holding will do something. Recorded 2026-08-02, alongside the `longPress`
