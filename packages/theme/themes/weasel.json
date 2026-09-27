@@ -68,7 +68,11 @@
       ],
       "curve": 0,
       "anchor": {
-        "base": "#2e1f7a"
+        "base": {
+          "by": "mode",
+          "dark": "#5b63c9",
+          "light": "#4338ca"
+        }
       }
     },
     "secondary": {
@@ -512,17 +516,19 @@
       "type": "color"
     },
     "accent-soft": {
-      "value": "#1d1454",
-      "type": "color"
+      "by": "mode",
+      "dark": { "value": "#262a66", "type": "color" },
+      "light": { "value": "#312e81", "type": "color" }
     },
     "accent-base": {
-      "value": "#2e1f7a",
-      "type": "color",
-      "description": "Midnight blue-violet. Deep and saturated; anchors primary actions on light and dark surfaces alike."
+      "by": "mode",
+      "dark": { "value": "#5b63c9", "type": "color", "description": "Periwinkle. Anchors primary actions on dark surfaces." },
+      "light": { "value": "#4338ca", "type": "color", "description": "Indigo. Anchors primary actions on light surfaces." }
     },
     "accent-strong": {
-      "value": "#5841b8",
-      "type": "color"
+      "by": "mode",
+      "dark": { "value": "#8c94ee", "type": "color" },
+      "light": { "value": "#6366f1", "type": "color" }
     },
     "danger-base": {
       "value": "#d94a3f",

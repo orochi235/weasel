@@ -58,8 +58,8 @@ describe('generated themes.ts', () => {
   });
 
   it('flips accent-fg per mode', () => {
-    expect(dark['--wzl-accent-fg']).toBe('#5841b8');
-    expect(light['--wzl-accent-fg']).toBe('#2e1f7a');
+    expect(dark['--wzl-accent-fg']).toBe('#8c94ee');
+    expect(light['--wzl-accent-fg']).toBe('#4338ca');
   });
 });
 

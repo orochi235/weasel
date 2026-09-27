@@ -14,10 +14,10 @@
   --wzl-gray-700: #25272c;
   --wzl-gray-800: #181a1e;
   --wzl-gray-900: #0e0f12;
-  --wzl-accent-soft: #1d1454;
-  /* Midnight blue-violet. Deep and saturated; anchors primary actions on light and dark surfaces alike. */
-  --wzl-accent-base: #2e1f7a;
-  --wzl-accent-strong: #5841b8;
+  --wzl-accent-soft: #262a66;
+  /* Periwinkle. Anchors primary actions on dark surfaces. */
+  --wzl-accent-base: #5b63c9;
+  --wzl-accent-strong: #8c94ee;
   --wzl-secondary-soft: #704e09;
   --wzl-secondary-base: #dc9d15;
   --wzl-secondary-strong: #f1cb8d;
@@ -234,6 +234,9 @@
 [data-wzl-theme='weasel'][data-wzl-mode='dark'],
 [data-wzl-mode='dark'] {
   color-scheme: dark;
+  --wzl-accent-soft: #262a66;
+  --wzl-accent-base: #5b63c9;
+  --wzl-accent-strong: #8c94ee;
   --wzl-secondary-soft: #704e09;
   --wzl-secondary-base: #dc9d15;
   --wzl-secondary-strong: #f1cb8d;
@@ -256,12 +259,18 @@
   --wzl-stance-aside-border-color: var(--wzl-line-subtle);
   --wzl-stance-aside-title-color: var(--wzl-fg-subtle);
   --wzl-stance-advanced-title-color: var(--wzl-fg-subtle);
+  --wzl-stance-notice-tone: var(--wzl-accent);
   --wzl-stance-important-border-color: var(--wzl-accent-fg);
   --wzl-stance-important-title-color: var(--wzl-accent-fg);
   --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
+  --wzl-curve-color: var(--wzl-accent-strong);
+  --wzl-accent: var(--wzl-accent-base);
+  --wzl-accent-hover: var(--wzl-accent-strong);
   --wzl-secondary: var(--wzl-secondary-base);
+  --wzl-focus-ring: var(--wzl-accent-strong);
+  --wzl-glass-tint: var(--wzl-accent);
   --wzl-surface-hover: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
   --wzl-checker-a: var(--wzl-border);
@@ -273,6 +282,9 @@
 [data-wzl-theme='weasel'][data-wzl-mode='light'],
 [data-wzl-mode='light'] {
   color-scheme: light;
+  --wzl-accent-soft: #312e81;
+  --wzl-accent-base: #4338ca;
+  --wzl-accent-strong: #6366f1;
   --wzl-secondary-soft: #016458;
   --wzl-secondary-base: #3ee1cb;
   --wzl-secondary-strong: #94e3d5;
@@ -295,12 +307,18 @@
   --wzl-stance-aside-border-color: var(--wzl-line-subtle);
   --wzl-stance-aside-title-color: var(--wzl-fg-subtle);
   --wzl-stance-advanced-title-color: var(--wzl-fg-subtle);
+  --wzl-stance-notice-tone: var(--wzl-accent);
   --wzl-stance-important-border-color: var(--wzl-accent-fg);
   --wzl-stance-important-title-color: var(--wzl-accent-fg);
   --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
+  --wzl-curve-color: var(--wzl-accent-strong);
+  --wzl-accent: var(--wzl-accent-base);
+  --wzl-accent-hover: var(--wzl-accent-strong);
   --wzl-secondary: var(--wzl-secondary-base);
+  --wzl-focus-ring: var(--wzl-accent-strong);
+  --wzl-glass-tint: var(--wzl-accent);
   --wzl-surface-hover: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
   --wzl-checker-a: var(--wzl-border);
