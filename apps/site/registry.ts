@@ -515,6 +515,15 @@ const DEMO_META: DemoMeta[] = [
 
   // ─── weasel-ui ────────────────────────────────────────────────────────────
   {
+    id: 'quantity',
+    title: 'Quantities',
+    category: 'weasel-ui',
+    description: "`@weasel-js/quantity`: one number shown through every built-in display. Each row is a `UnitField` given that row's `display`, so it shows the value its own way, reads typed text back its own way (`1 1/2`, `5ft 3in`, `$1,234`, `1:02:03`, `mcmxciv`), and speaks it as its `aria-valuetext` — the spoken column. The html column renders `qty(value, display).html` with each `data-part` span outlined, and the fraction row adds its MathML. Below, a `BandEditor` whose band edges are tagged `fraction()` quantities: the JSON under it shows each edge keep its tag through drags, splits and merges.",
+    hint: 'Type into any row, in that row\'s own notation; every other row follows. Pick a preset for values that suit the bigger kinds. Drag a seam and watch the JSON stay tagged.',
+    load: () => import('./demos/QuantityDemo').then((m) => m.QuantityDemo),
+    path: 'apps/site/demos/QuantityDemo.tsx',
+  },
+  {
     id: 'perceptual-color-sliders',
     title: 'Perceptual color sliders',
     category: 'weasel-ui',
