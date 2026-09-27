@@ -19,7 +19,7 @@ import { ARCS } from './icons/arcs.mjs';
 import { CURVES } from './icons/curves.mjs';
 import { SHAPES } from './icons/shapes.mjs';
 import { SOLIDS } from './icons/solids.mjs';
-import { TEXT } from './icons/text.mjs';
+import { PARAGRAPH, TEXT } from './icons/text.mjs';
 import { STATUSES } from './icons/status.mjs';
 
 // `save` split: the tray-and-arrow reads as download, so it carries `export`,
@@ -30,6 +30,7 @@ const GROUPS = [
   ['View and lifecycle', BASE],
   ['Actions', ACTIONS],
   ['Character styling', TEXT],
+  ['Paragraph alignment', PARAGRAPH],
   ['Playback', PLAYBACK],
   ['State', STATUS],
   ['Badge status', STATUSES],
