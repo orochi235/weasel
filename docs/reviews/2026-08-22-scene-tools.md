@@ -137,10 +137,9 @@ fix changes rendered output, and the visual baselines could not be run here.
 **`useHandTool`'s `inertia` and `axis` options do nothing**, and neither do
 `useLassoTool`'s `mode` / `behaviors`. Both compute their values and drop them;
 `<SceneCanvas viewport={{ inertia }}>` threads all the way down to nothing, and
-`viewportDragPan`'s docblock asserts the opposite. `Tool.onActivate` is likewise
-declared, forwarded by `defineTool`, and never invoked — only `onDeactivate` is.
-Each is a public option that silently no-ops, so the fix is either implement or
-delete, and that is a product call rather than a correctness one.
+`viewportDragPan`'s docblock asserts the opposite. Each is a public option that
+silently no-ops, so the fix is either implement or delete, and that is a product
+call rather than a correctness one.
 
 **`PenScratch.cursor` and `closeHintActive` are unreachable.** Nothing writes
 them outside tests, so the pen's rubber-band preview and close hint never draw,

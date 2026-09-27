@@ -104,7 +104,7 @@ export { mergeContributions } from './contributions/merge';
 
 // ─── tools ────────────────────────────────────────────────────────────────
 export type {
-  Tool, AnyTool, AnyToolOf, ToolCtx, ToolBounds, ToolModifiers, ToolKeybinding, ToolSlot,
+  Tool, AnyTool, AnyToolOf, ToolCtx, ToolLifecycleCtx, ToolBounds, ToolModifiers, ToolKeybinding, ToolSlot,
 } from './tools/types';
 export type { ToolDef, ViewportToolDef } from './tools/routeTypes';
 export { defineTool } from './tools/defineTool';

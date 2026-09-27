@@ -20,7 +20,7 @@ import { useDepRegistry, type DepRegistry } from '../actions/depRegistry';
 import type { DepName, DepSchema } from '../../index';
 import type { ActionsRegistry } from '../actions/registry';
 import type { AffordanceHit } from '../actions/invoker';
-import type { Tool, ToolCtx } from '../../tools/types';
+import type { Tool } from '../../tools/types';
 import { createDispatcher, pointerGestureId, type Dispatcher, type DispatcherContext } from './dispatcher';
 import { openPointerSession, type PointerSession } from '../pointerSession';
 import { clientToCanvasRect } from '../../viewport/clientToCanvas';
@@ -489,42 +489,42 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   // fires.
   const lastClickRef = useRef<{ t: number; clientX: number; clientY: number } | null>(null);
 
-  // Tool-switch lifecycle. Two things have to happen when the active tool
-  // changes (and only then — not on initial mount):
-  //   1. Fire the outgoing tool's `onDeactivate(ctx)` so it can clean up
-  //      tool-owned scratch state. Pen relies on this to discard a
-  //      half-built path the user hasn't committed.
-  //   2. Cancel any in-flight ongoing dispatcher handles so the new tool
-  //      doesn't inherit a live gesture.
-  //
-  // The `ToolCtx` passed to `onDeactivate` is intentionally minimal — at
-  // this lifecycle moment there's no event-driven cursor position, hit
-  // result, or modifier state to populate. We pass the tool's own scratch
-  // (via `initScratch()`, which tools that hold persistent state implement
-  // as a singleton ref-return) so cleanup hooks can read/mutate the only
-  // state they actually care about. Fields the implementation reads beyond
-  // `scratch` will read undefined; tools whose cleanup needs more should
-  // either rely on closure-captured refs (the pen-tool pattern) or wait
-  // until we have a real cause to broaden the contract.
+  // Tool lifecycle. A tool is live while it holds the active slot or sits
+  // in the hotkey stack; `onActivate` fires as it becomes live in either and
+  // `onDeactivate` as it stops being live in both. A switch of the active
+  // tool also cancels in-flight handles, so the new tool does not inherit a
+  // live gesture — between the outgoing tools' cleanup and the incoming
+  // tools' setup.
+  const liveToolsRef = useRef<ReadonlySet<string>>(new Set());
   const prevActiveRef = useRef(activeTool.active);
+  const toolsByIdRef = useRef(toolsById);
+  toolsByIdRef.current = toolsById;
+  const fireLifecycle = (id: string, hook: 'onActivate' | 'onDeactivate'): void => {
+    const tool = toolsByIdRef.current.get(id) as Tool<unknown> | undefined;
+    const fn = tool?.[hook];
+    if (!fn) return;
+    try {
+      fn({ scratch: tool.initScratch?.() });
+    } catch (err) {
+      console.error(`weasel: tool "${id}".${hook} threw`, err);
+    }
+  };
   useEffect(() => {
+    const prev = liveToolsRef.current;
+    const next = new Set([activeTool.active, ...activeTool.hotkeyStack]);
+    liveToolsRef.current = next;
+    for (const id of prev) if (!next.has(id)) fireLifecycle(id, 'onDeactivate');
     if (prevActiveRef.current !== activeTool.active) {
-      const prevTool = toolsById.get(prevActiveRef.current) as Tool<unknown> | undefined;
-      if (prevTool?.onDeactivate) {
-        const scratch = prevTool.initScratch?.();
-        try {
-          prevTool.onDeactivate({ scratch } as unknown as ToolCtx<unknown>);
-        } catch (err) {
-          console.error(
-            `weasel: tool "${prevActiveRef.current}".onDeactivate threw`,
-            err,
-          );
-        }
-      }
       for (const d of allDispatchers()) d.cancelAll('cancel');
     }
     prevActiveRef.current = activeTool.active;
+    for (const id of next) if (!prev.has(id)) fireLifecycle(id, 'onActivate');
   });
+  useEffect(() => () => {
+    const live = liveToolsRef.current;
+    liveToolsRef.current = new Set();
+    for (const id of live) fireLifecycle(id, 'onDeactivate');
+  }, []);
 
   useEffect(() => {
     if (!enabled) return;

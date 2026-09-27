@@ -1,4 +1,4 @@
-import type { ToolCtx, ToolKeybinding } from './types';
+import type { ToolCtx, ToolKeybinding, ToolLifecycleCtx } from './types';
 import type { HotkeyTrigger, ToolPresentation } from '../contributions/types';
 
 import type { GestureBinding } from '../interactions/actions/binding';
@@ -60,8 +60,11 @@ export interface ToolDef<TScratch = void, TOverlay = unknown> {
    *  assembly reads to register the consolidated `tool.offhand` action — the
    *  declaration is the wiring, with nothing for the host to do. */
   hotkey?: HotkeyTrigger;
-  onActivate?:   (ctx: ToolCtx<TScratch>) => void;
-  onDeactivate?: (ctx: ToolCtx<TScratch>) => void;
+  /** Fires as the tool becomes live in the active or hotkey slot. See
+   *  `Tool.onActivate`. */
+  onActivate?:   (ctx: ToolLifecycleCtx<TScratch>) => void;
+  /** Fires as the tool stops being live in either slot. */
+  onDeactivate?: (ctx: ToolLifecycleCtx<TScratch>) => void;
   cursor?: CursorSpec | ((ctx: ToolCtx<TScratch>) => CursorSpec);
   /** Override the default scratch initializer. Default is `() => null`
    *  cast to `TScratch`, which works for tools whose scratch is fresh

@@ -61,6 +61,16 @@ export interface ToolCtx<TScratch = unknown> {
   scratch: TScratch;
 }
 
+/**
+ * What `onActivate` / `onDeactivate` receive: the tool's scratch, from
+ * `initScratch()`. A lifecycle moment has no pointer, hit or modifier state to
+ * report, so nothing else is populated; a callback needing the selection or
+ * the scene closes over it, as the tool's actions do.
+ */
+export interface ToolLifecycleCtx<TScratch = unknown> {
+  scratch: TScratch;
+}
+
 /** World-space AABB shape used by `previewBounds`. Alias of the kit-wide
  *  `Bounds` type — the optional `rotation` field carries through so a tool
  *  can report an oriented preview rect (e.g. mid-rotate). */
@@ -83,8 +93,11 @@ export interface Tool<TScratch = unknown, TOverlay = unknown> extends Contributi
   keybinding?: ToolKeybinding;
   initScratch?: () => TScratch;
   cursor?: CursorSpec | ((ctx: ToolCtx<TScratch>) => CursorSpec);
-  onActivate?: (ctx: ToolCtx<TScratch>) => void;
-  onDeactivate?: (ctx: ToolCtx<TScratch>) => void;
+  /** The tool became live: it took the active slot, or its `hotkey` went
+   *  down, while it held neither. */
+  onActivate?: (ctx: ToolLifecycleCtx<TScratch>) => void;
+  /** The tool stopped being live in both slots, or its canvas unmounted. */
+  onDeactivate?: (ctx: ToolLifecycleCtx<TScratch>) => void;
   /** Returns the in-flight preview pose for `id` if this tool is mid-gesture
    *  on it; otherwise `null`. Lets `Canvas.helpersRef.getEffectivePose`
    *  reflect live gesture state without reaching into hook internals. The

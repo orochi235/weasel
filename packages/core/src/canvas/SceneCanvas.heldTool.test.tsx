@@ -67,7 +67,7 @@ function setup() {
       </>
     );
   }
-  const { container } = render(<Harness />);
+  const { container, unmount } = render(<Harness />);
   const canvas = container.querySelector('canvas')!;
   const wheel = () => act(() => {
     canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: 10, bubbles: true, cancelable: true }));
@@ -75,7 +75,7 @@ function setup() {
   const key = (type: 'keydown' | 'keyup', init: KeyboardEventInit, target: EventTarget = window) =>
     act(() => { target.dispatchEvent(new KeyboardEvent(type, { bubbles: true, ...init })); });
   return {
-    scrub, onActivate, onDeactivate, onViewChange, wheel, key, container,
+    scrub, onActivate, onDeactivate, onViewChange, wheel, key, container, unmount,
     tools: () => tools!,
   };
 }
@@ -116,5 +116,55 @@ describe('a tool held by a letter key', () => {
     t.key('keydown', { key: 'o', code: 'KeyO' });
     t.wheel();
     expect(t.scrub).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('tool lifecycle', () => {
+  it('brackets a hold with onActivate and onDeactivate', () => {
+    const t = setup();
+    expect(t.onActivate).not.toHaveBeenCalled();
+    t.key('keydown', { key: 'o', code: 'KeyO' });
+    expect(t.onActivate).toHaveBeenCalledTimes(1);
+    expect(t.onDeactivate).not.toHaveBeenCalled();
+    t.key('keyup', { key: 'o', code: 'KeyO' });
+    expect(t.onDeactivate).toHaveBeenCalledTimes(1);
+    expect(t.onActivate).toHaveBeenCalledTimes(1);
+  });
+
+  it('deactivates a held tool when the window loses focus', () => {
+    const t = setup();
+    t.key('keydown', { key: 'o', code: 'KeyO' });
+    act(() => { window.dispatchEvent(new Event('blur')); });
+    expect(t.onDeactivate).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires onActivate and onDeactivate as the tool enters and leaves the active slot', () => {
+    const t = setup();
+    act(() => t.tools().setActive('scrub'));
+    expect(t.onActivate).toHaveBeenCalledTimes(1);
+    act(() => t.tools().setActive('select'));
+    expect(t.onDeactivate).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not re-fire for a tool that is already live in the other slot', () => {
+    const t = setup();
+    act(() => t.tools().setActive('scrub'));
+    t.key('keydown', { key: 'o', code: 'KeyO' });
+    t.key('keyup', { key: 'o', code: 'KeyO' });
+    expect(t.onActivate).toHaveBeenCalledTimes(1);
+    expect(t.onDeactivate).not.toHaveBeenCalled();
+  });
+
+  it('deactivates a live tool when the canvas unmounts', () => {
+    const t = setup();
+    t.key('keydown', { key: 'o', code: 'KeyO' });
+    t.unmount();
+    expect(t.onDeactivate).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands the callbacks the tool scratch', () => {
+    const t = setup();
+    t.key('keydown', { key: 'o', code: 'KeyO' });
+    expect(t.onActivate).toHaveBeenCalledWith({ scratch: null });
   });
 });
