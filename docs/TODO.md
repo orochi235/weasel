@@ -940,10 +940,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   container of definite height caps it. Under an ancestor with no definite
   height, a shell mounted below other page content still takes the whole
   viewport and overflows by its offset. Plain `height: 100%` fixes that case
-  and breaks another: `LabFit.stories`' `WrappedNoReset*` cases, a host that
+  and breaks another: `LabFit.browser.test.tsx`'s `wrapped` cases, a host that
   never set `html, body, #root { height: 100% }`, then size the lab to its
-  content. So this is a choice between the two mounts, not a CSS fix; the
-  `forge-stories` browser project is what checks either one.
+  content. So this is a choice between the two mounts, not a CSS fix; that
+  test (`npm run test:browser`) is what checks either one.
 
 - **(P3) Two CurveEditor handles are still literals.** The `--wzl-handle-size`
   family covers the 45°-rotated squares; the round ranks did not fold into it,

@@ -1,15 +1,21 @@
-import type { Meta, StoryObj } from '@weasel-js/forge';
-import { expect, userEvent, waitFor, within } from '@weasel-js/forge/play';
+import '@weasel-js/theme/tokens.css';
+import 'windease/styles.css';
+import '../styles.less';
+import './LabFit.browser.test.less';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { type ReactNode, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { afterEach, expect, test } from 'vitest';
+import { page, userEvent } from 'vitest/browser';
 import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
-import './LabFit.stories.less';
 
-// A lab must fit whatever it is mounted in without scrolling. jsdom cannot see
-// layout, so these run in the forge-stories vitest project's real browser.
+// A lab must fit whatever it is mounted in without scrolling, which only real
+// layout can show.
+
+afterEach(cleanup);
 
 const Stub: Instrument = {
   name: 'Stub',
@@ -158,62 +164,34 @@ function fitProblems(fixture: Fixture, viewport: keyof typeof VIEWPORTS): string
   return problems;
 }
 
-function fit(fixture: Fixture, viewport: keyof typeof VIEWPORTS): Story {
-  return {
-    globals: { viewport: { value: viewport, isRotated: false } },
-    render: () => (
-      <BodyHost host={HOST[fixture]}>
-        <Lab
-          title={`Fit: ${fixture}`}
-          instruments={[Stub]}
-          defaultInstrument="Stub"
-          chrome={fixture === 'floating' ? [floater] : undefined}
-          labChrome={fixture === 'sidebar' ? [sidebarTree] : undefined}
-        />
-      </BodyHost>
-    ),
-    play: async () => {
-      if (fixture === 'floating') {
-        const undock = await within(document.body).findByRole('button', { name: 'Undock Floater' });
-        await userEvent.click(undock);
-      }
-      await waitFor(
-        () => {
-          const problems = fitProblems(fixture, viewport);
-          if (problems.length > 0) throw new Error(problems.join('; '));
-        },
-        { timeout: 2000 },
-      );
-      await expect(fitProblems(fixture, viewport)).toEqual([]);
+const FIXTURES: Fixture[] = ['fullscreen', 'floating', 'wrapped', 'framed', 'sidebar'];
+const CASES = FIXTURES.flatMap((fixture) =>
+  (Object.keys(VIEWPORTS) as (keyof typeof VIEWPORTS)[]).map((viewport) => ({ fixture, viewport })),
+);
+
+test.each(CASES)('$fixture fits a $viewport viewport', async ({ fixture, viewport }) => {
+  const { width, height } = VIEWPORTS[viewport].styles;
+  await page.viewport(Number.parseInt(width, 10), Number.parseInt(height, 10));
+  render(
+    <BodyHost host={HOST[fixture]}>
+      <Lab
+        title={`Fit: ${fixture}`}
+        instruments={[Stub]}
+        defaultInstrument="Stub"
+        chrome={fixture === 'floating' ? [floater] : undefined}
+        labChrome={fixture === 'sidebar' ? [sidebarTree] : undefined}
+      />
+    </BodyHost>,
+  );
+  if (fixture === 'floating') {
+    await userEvent.click(await screen.findByRole('button', { name: 'Undock Floater' }));
+  }
+  await waitFor(
+    () => {
+      const problems = fitProblems(fixture, viewport);
+      if (problems.length > 0) throw new Error(problems.join('; '));
     },
-  };
-}
-
-const meta: Meta<typeof Lab> = {
-  title: 'labkit/Lab/Fit',
-  component: Lab,
-  parameters: { layout: 'fullscreen', viewport: { options: VIEWPORTS } },
-};
-export default meta;
-
-type Story = StoryObj<typeof Lab>;
-
-export const FullscreenWide = fit('fullscreen', 'wide');
-export const FullscreenMedium = fit('fullscreen', 'medium');
-export const FullscreenNarrow = fit('fullscreen', 'narrow');
-
-export const FloatingPanelWide = fit('floating', 'wide');
-export const FloatingPanelMedium = fit('floating', 'medium');
-export const FloatingPanelNarrow = fit('floating', 'narrow');
-
-export const WrappedNoResetWide = fit('wrapped', 'wide');
-export const WrappedNoResetMedium = fit('wrapped', 'medium');
-export const WrappedNoResetNarrow = fit('wrapped', 'narrow');
-
-export const FramedWide = fit('framed', 'wide');
-export const FramedMedium = fit('framed', 'medium');
-export const FramedNarrow = fit('framed', 'narrow');
-
-export const SidebarWide = fit('sidebar', 'wide');
-export const SidebarMedium = fit('sidebar', 'medium');
-export const SidebarNarrow = fit('sidebar', 'narrow');
+    { timeout: 2000 },
+  );
+  expect(fitProblems(fixture, viewport)).toEqual([]);
+});

@@ -30,15 +30,6 @@ const stories = [
     },
   },
   {
-    id: 'labkit-lab-fit--fullscreenwide',
-    what: 'labkit/Lab/Fit export',
-    // The story mounts its Lab in an element of its own under <body>, outside the story's host.
-    rendered: '.lk-lab',
-    check: async ({ page }) => {
-      await page.locator('.lk-lab').first().waitFor();
-    },
-  },
-  {
     id: 'ui-foundations-slider--playground',
     what: 'Slider updating its own args with useArgs',
     check: async ({ frame }) => {
@@ -171,10 +162,7 @@ try {
       await page.goto(`${origin}/#/${story.id}`);
       // The story just opened is the last host on the page; a host stays `data-pending` until its story has painted.
       const frame = page.locator('.fg-story[data-fg-host]').last();
-      const rendered = story.rendered
-        ? page.locator(story.rendered).first()
-        : page.locator('.fg-story[data-fg-host]:not([data-pending])').last();
-      await rendered.waitFor({ timeout: 20000 });
+      await page.locator('.fg-story[data-fg-host]:not([data-pending])').last().waitFor({ timeout: 20000 });
       await story.check({ page, frame });
       const faults = [
         ...(await page.locator('.fg-fault').allInnerTexts()),

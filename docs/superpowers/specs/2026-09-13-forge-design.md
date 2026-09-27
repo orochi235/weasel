@@ -239,8 +239,9 @@ layout survive a reload.
   `storybook` project — Playwright plus ~250 MB of browser to prove stories
   mount. Run as `test:stories:forge`.
 
-⚠️ The two `play` tests with real assertions (`LabFit.stories.tsx`,
-`Persistence.stories.tsx`) still run in no CI, as today.
+The two `play` tests that carried real assertions (lab fit, IndexedDB
+persistence) are now `*.browser.test.tsx` files in the `browser` vitest project,
+which CI runs.
 
 ## Build and delivery
 
