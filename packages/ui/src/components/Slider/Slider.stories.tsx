@@ -36,6 +36,7 @@ const meta: Meta<typeof Slider> = {
     snap: { control: 'inline-radio', options: ['magnetic', 'strict'] },
     spacing: { control: 'inline-radio', options: ['linear', 'even'] },
     stopLabels: { control: 'inline-radio', options: ['all', 'ends', 'none'] },
+    thumbFit: { control: 'inline-radio', options: ['inside', 'overhang'] },
     ariaLabel: { control: 'text' },
     stops: { table: { disable: true } },
     thumbs: { table: { disable: true } },
@@ -194,6 +195,24 @@ export const HueGradientTrack: Story = {
       })}
     />
   ),
+};
+
+/** `thumbFit` side by side, thumbs at both ends. `'inside'` (the default)
+ *  pads the track by half a thumb at each end, so an end thumb sits flush with
+ *  the edge and the ramp runs between the two thumb centers; `'overhang'` runs
+ *  the ramp edge to edge and hangs an end thumb half over it. */
+export const ThumbFit: Story = {
+  args: { step: 0.001, trackHeight: 20, readoutPlacement: 'none' },
+  render: (args) => {
+    const hue = paintGradientTrack({ gradient: (t) => oklchToHex(0.7, 0.18, t * 360), samples: 24 });
+    const ends: Thumb[] = [{ value: 0 }, { value: 0.5 }, { value: 1 }];
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Wrapper {...args} thumbFit="inside" initial={ends} renderTrack={hue} />
+        <Wrapper {...args} thumbFit="overhang" initial={ends} renderTrack={hue} />
+      </div>
+    );
+  },
 };
 
 function ActiveRangeHatchStory({ args }: { args: Omit<Parameters<typeof Slider>[0], 'thumbs' | 'onInput' | 'renderTrack'> }) {
