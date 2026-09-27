@@ -1,3 +1,4 @@
+/* The debug HUDs <Canvas> can draw: CursorCoordsHud, PickHud, ModalityHud. */
 .hud {
   position: fixed;
   z-index: 10000;
@@ -9,18 +10,29 @@
   pointer-events: none;
   line-height: 1.4;
   text-align: right;
+}
+
+.sized {
   min-width: 120px;
   max-width: 260px;
 }
 
-.header {
-  color: #888;
-  margin-bottom: 2px;
+.pre {
+  white-space: pre;
 }
 
-.empty {
+.muted {
+  color: #888;
+}
+
+/* A value that is not there: an em dash, "off-canvas". */
+.absent {
   color: #888;
   font-style: italic;
+}
+
+.header {
+  margin-bottom: 2px;
 }
 
 .list {
@@ -40,4 +52,17 @@
 
 .itemBest {
   font-weight: 700;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }

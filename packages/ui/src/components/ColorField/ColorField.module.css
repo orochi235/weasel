@@ -15,7 +15,7 @@
   inline-size: 28px;
   block-size: var(--wzl-control-h-sm);
   padding: 0;
-  border: 1px solid var(--wzl-border, #444);
+  border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   background: none;
   cursor: pointer;

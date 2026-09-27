@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react';
 import type { View } from 'core/viewport/view';
 import { useHostAnchor } from './useHostAnchor';
-import s from './PickHud.module.css';
+import s from './hud.module.css';
 
 /** Props for `<PickHud>`. */
 export interface PickHudProps {
@@ -90,10 +90,10 @@ export function PickHud({ canvasRef, anchorRef, viewRef, pickEvery, pickBest, of
   if (!style) return null;
 
   return (
-    <div ref={ref} className={s.hud} style={style}>
-      <div className={s.header}>pickEvery ({state.ids.length})</div>
+    <div ref={ref} className={`${s.hud} ${s.sized}`} style={style}>
+      <div className={`${s.header} ${s.muted}`}>pickEvery ({state.ids.length})</div>
       {state.ids.length === 0 ? (
-        <div className={s.empty}>{state.inCanvas ? '—' : 'off-canvas'}</div>
+        <div className={s.absent}>{state.inCanvas ? '—' : 'off-canvas'}</div>
       ) : (
         <ul className={s.list}>
           {/* pickEvery returns back-to-front (topmost last). Display top-first. */}

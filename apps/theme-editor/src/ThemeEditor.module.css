@@ -357,7 +357,7 @@
   display: block;
   width: 16px;
   height: 16px;
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
   border: 1px solid var(--wzl-border);
 }
 

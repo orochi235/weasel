@@ -49,7 +49,7 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     type: 'color',
     value: 'var(--wzl-surface-sunken)',
     description:
-      'Surface a text Input’s frame sits on. Set it on any container whose own background is the default — a sunken rail or panel — where an unset field is the same color as what is behind it.',
+      'Surface a field’s frame sits on — Input, NumberField, ComboBox, Select, MenuButton, ListEditor and the property rows. Set it on any container whose own background is the default — a sunken rail or panel — where an unset field is the same color as what is behind it.',
   },
   {
     name: 'number-field-width',

@@ -29,9 +29,9 @@
   &:hover { color: var(--wzl-accent-fg); }
 
   &:focus-visible {
-    outline: 2px solid var(--wzl-focus-ring, currentColor);
+    outline: 2px solid var(--wzl-focus-ring);
     outline-offset: 2px;
-    border-radius: var(--wzl-radius-sm, 3px);
+    border-radius: var(--wzl-radius-sm);
   }
 }
 
@@ -64,22 +64,22 @@
   // surface, the way `FloatingPanel` does.
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-md, 5px);
+  border-radius: var(--wzl-radius-md);
   box-shadow: 0 6px 20px var(--wzl-shadow);
 }
 
 .lk-switcher-item {
   padding: var(--wzl-space-xs) var(--wzl-space-sm);
-  border-radius: var(--wzl-radius-sm, 3px);
+  border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg);
   font-size: var(--wzl-font-size);
   text-decoration: none;
   white-space: nowrap;
 
-  &:hover { background: var(--wzl-surface-hover, var(--wzl-surface)); }
+  &:hover { background: var(--wzl-surface-hover); }
 
   &:focus-visible {
-    outline: 2px solid var(--wzl-focus-ring, currentColor);
+    outline: 2px solid var(--wzl-focus-ring);
     outline-offset: -2px;
   }
 }

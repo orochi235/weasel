@@ -21,7 +21,10 @@
 // Deliberate overrides of a weasel-ui component go the other way — see the
 // `.lk-root` prefix convention below.
 :where(.lk-root) {
-  :where(button) {
+  // Only a button with no class or a labkit one. Specificity cannot keep this
+  // off a weasel-ui button: whatever its module leaves unset — a height, a
+  // backdrop blur — the default fills in.
+  :where(button:not([class]), button[class^='lk-'], button[class*=' lk-']) {
     font: inherit;
     color: inherit;
     background: var(--wzl-surface-raised);
@@ -33,17 +36,17 @@
     backdrop-filter: blur(var(--wzl-glass-blur));
     -webkit-backdrop-filter: blur(var(--wzl-glass-blur));
 
-    &:hover {
+    &:where(:hover) {
       border-color: var(--wzl-accent);
       color: var(--wzl-accent-fg);
     }
 
-    &:focus-visible {
+    &:where(:focus-visible) {
       outline: 2px solid var(--wzl-focus-ring);
       outline-offset: 1px;
     }
 
-    &:disabled {
+    &:where(:disabled) {
       color: var(--wzl-fg-subtle);
       cursor: not-allowed;
     }

@@ -65,7 +65,7 @@
 
 /* Status edges double as text color in the outline/subtle variants, so they
    must be foreground-legible — hence accent-fg, not the accent fill. */
-.badge[data-status='accent']  { --badge-status-edge: var(--wzl-accent-fg, var(--wzl-accent, #7fb069)); }
+.badge[data-status='accent']  { --badge-status-edge: var(--wzl-accent-fg); }
 .badge[data-status='info']    { --badge-status-edge: #7ab8d4; }
 .badge[data-status='success'] { --badge-status-edge: var(--wzl-success); }
 .badge[data-status='warn']    { --badge-status-edge: #d4a574; }

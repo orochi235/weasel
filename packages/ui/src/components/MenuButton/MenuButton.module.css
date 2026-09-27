@@ -5,7 +5,7 @@
   gap: var(--wzl-space-3);
   height: var(--wzl-control-h);
   padding: 0 var(--wzl-space-3) 0 var(--wzl-space-5);
-  background: var(--wzl-surface-sunken);
+  background: var(--wzl-input-surface, var(--wzl-surface-sunken));
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg);

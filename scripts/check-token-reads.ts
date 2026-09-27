@@ -70,11 +70,39 @@ export function findUndeclaredReads(
       .split('\n')
       .forEach((line, i) => {
         for (const [, name, comma] of line.matchAll(READ)) {
+          // `var(--wzl-swatch-${name})`: the name is built at runtime, so there is nothing to check.
+          if (name.endsWith('-')) continue;
           if (themeTokens.has(name) || declared.has(name)) continue;
           if (!hooks.has(name)) {
             out.push({ file: path, line: i + 1, name, reason: 'declared by no theme' });
           } else if (!comma) {
             out.push({ file: path, line: i + 1, name, reason: 'override hook read without a fallback' });
+          }
+        }
+      });
+  }
+  return out;
+}
+
+/** A theme token is declared by every theme, so a fallback on it never fires — and a
+ *  literal one records a stale guess at the value (an old accent, a retired surface)
+ *  that reads as though it mattered. Stance slots and hooks are exempt: a theme may
+ *  leave those undeclared. Stylesheets only — an icon's SVG markup in TS can render
+ *  as an image, outside any document that declares tokens. */
+export function findThemeTokenFallbacks(
+  files: readonly SourceFile[],
+  themeTokens: ReadonlySet<string>,
+  exempt: ReadonlySet<string> = new Set([...HOOKS, ...STANCE_SLOT_NAMES]),
+): Offender[] {
+  const out: Offender[] = [];
+  for (const { path, source } of files) {
+    if (!/\.(css|less)$/.test(path)) continue;
+    stripComments(source)
+      .split('\n')
+      .forEach((line, i) => {
+        for (const [, name, comma] of line.matchAll(READ)) {
+          if (comma && themeTokens.has(name) && !exempt.has(name)) {
+            out.push({ file: path, line: i + 1, name, reason: 'theme token read with a fallback it can never take' });
           }
         }
       });
@@ -121,11 +149,17 @@ interface ThemeLike {
 const isTheme = (v: unknown): v is ThemeLike =>
   typeof v === 'object' && v !== null && 'tokens' in v && 'extends' in v && typeof (v as ThemeLike).tokens === 'object';
 
-/** Every token of every baked theme, and of every theme a live module builds with `defineTheme`. */
-async function themeTokens(root: string, files: readonly SourceFile[]): Promise<Set<string>> {
+/** Every token of every baked theme. */
+async function bakedTokens(root: string): Promise<Set<string>> {
   const names = new Set<string>();
   const { BAKED_THEMES } = await import(pathToFileURL(join(root, 'packages/theme/src/generated/themes.ts')).href);
   for (const t of Object.values(BAKED_THEMES) as ThemeLike[]) for (const n of Object.keys(t.tokens)) names.add(`--wzl-${n}`);
+  return names;
+}
+
+/** Every token of every baked theme, and of every theme a live module builds with `defineTheme`. */
+async function themeTokens(root: string, files: readonly SourceFile[]): Promise<Set<string>> {
+  const names = await bakedTokens(root);
 
   const modules = files.filter((f) => /\.tsx?$/.test(f.path) && /=\s*defineTheme\(/.test(f.source));
   for (const f of modules) {
@@ -144,11 +178,13 @@ if (invokedDirectly) {
   const files = dirs.flatMap((d) => [...walk(d)]).map((f) => ({ path: relative(root, f), source: readFileSync(f, 'utf8') }));
   const offenders = findUndeclaredReads(files, await themeTokens(root, files));
   const misused = findAccentFillAsText(files);
-  for (const o of [...offenders, ...misused]) console.error(`${o.file}:${o.line}  ${o.name}  ${o.reason}`);
+  const deadFallbacks = findThemeTokenFallbacks(files, await bakedTokens(root));
+  for (const o of [...offenders, ...misused, ...deadFallbacks]) console.error(`${o.file}:${o.line}  ${o.name}  ${o.reason}`);
   if (offenders.length > 0) {
     console.error(`\n${offenders.length} --wzl-* read(s) nothing declares. Point them at a theme token, or add a real override hook to TOKEN_HOOKS in packages/theme/src/hooks.ts.`);
   }
   if (misused.length > 0) console.error(`\n${misused.length} text color(s) read an accent fill token.`);
-  if (offenders.length + misused.length > 0) process.exit(1);
+  if (deadFallbacks.length > 0) console.error(`\n${deadFallbacks.length} theme token read(s) carry a fallback. Every theme declares these; drop the fallback.`);
+  if (offenders.length + misused.length + deadFallbacks.length > 0) process.exit(1);
   console.log(`token reads: clean (${files.length} files)`);
 }

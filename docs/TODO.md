@@ -790,6 +790,37 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   one does not reach the other. One way to one copy: `Checkbox` draws its box from the
   same native input and a shared `checkbox.module.css`, as the range skin does.
 
+- **(P2) The field frame is written four times.** `Input`, `Select`, `NumberField` and
+  `ComboBox` each restate the same `.field` column, the `.field.row` layout, and the `.frame`
+  box with its focus ring, invalid border and disabled fade; `MenuButton`'s trigger and
+  `ListEditor`'s input repeat the frame again. `Field` already exports `fieldClasses` for
+  the layout half. One shared `field.module.css` would hold both halves. The copies have
+  drifted: `ComboBox` has no `orientation="row"`, and three of them ignored
+  `--wzl-input-surface` until 2026-09-27.
+
+- **(P3) The popover listbox skin is written three times.** `MenuButton`'s `.menu`,
+  `Select`'s `.listbox` and `ComboBox`'s `.listbox` are the same ten declarations, including a
+  literal `0 8px 24px` shadow that `PaintField`'s popover repeats. labkit's
+  `LabSwitcher.less` menu copies `MenuButton`'s menu and items too, with an opaque surface and
+  a different shadow; its items are links, which `MenuButton` has no way to render yet. One
+  `listbox.module.css`, and a decision on whether the switcher's differences are intended.
+
+- **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each differs a little
+  from the ui component, so swapping changes pixels and needs a call on which look wins:
+  labkit's `.lk-viewport-controls__button`, `.lk-toolbar-button` and `.lk-titlebar-button`
+  against `Button`'s ghost icon button; labkit's `StatusBar` and `DragGhost` against the ui
+  ones of the same name; `SidebarRegion`'s section head and undock button against
+  `SidebarPanel`; `LabHeader`'s bare "Add trial" button beside the `MenuButton` it becomes
+  with more than one instrument; draw's `CommandPalette` against `Dialog`; the theme editor's
+  swatch tabs against `ToggleBar`'s flat variant and its hex and number inputs against `Input`
+  and `NumberField`.
+
+- **(P3) App chrome sizes text in pixels, so it ignores density.** `apps/site`'s
+  `canvas-kit-demo.css` runs on its own `--ckd-*` palette rather than theme tokens, and
+  `RegistryInspector`, `ThemeEditor`, `CommandPalette` and `ToolReflectionDemo` set
+  `font-size` and radii as px literals. Moving them to `--wzl-font-size-*` changes their size
+  under compact and roomy, so each needs a look rather than a find-and-replace.
+
 - **(P3) The lab switcher's migrated tokens have not been looked at in a browser.**
   `packages/labkit/src/lab/LabSwitcher.less` read seven `--wzl-*` names no theme
   declares, so its menu items inherited the title's 20px and its hover changed
