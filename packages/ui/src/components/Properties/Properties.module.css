@@ -1822,7 +1822,7 @@
    word, not a number, so it takes the label recipe and both rows read alike. */
 .rowAuto .readout {
   font-size: var(--wzl-font-size-xs);
-  color: var(--wzl-secondary-fg, var(--wzl-fg-subtle));
+  color: var(--wzl-secondary-fg);
   text-transform: var(--wzl-params-label-case, uppercase);
   letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
 }

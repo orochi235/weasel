@@ -1,6 +1,6 @@
 .ruler {
   position: relative;
-  height: var(--wzl-control-h, 24px);
+  height: var(--wzl-control-h);
   border-bottom: 1px solid var(--wzl-border);
   background: var(--wzl-surface-raised);
   cursor: ew-resize;

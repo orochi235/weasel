@@ -70,6 +70,8 @@ export function findUndeclaredReads(
       .split('\n')
       .forEach((line, i) => {
         for (const [, name, comma] of line.matchAll(READ)) {
+          // `var(--wzl-swatch-${name})`: the name is built at runtime, so there is nothing to check.
+          if (name.endsWith('-')) continue;
           if (themeTokens.has(name) || declared.has(name)) continue;
           if (!hooks.has(name)) {
             out.push({ file: path, line: i + 1, name, reason: 'declared by no theme' });

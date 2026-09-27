@@ -14,7 +14,7 @@
   display: flex;
   align-items: center;
   gap: var(--wzl-space-4);
-  height: var(--wzl-tb-height, 28px);
+  height: var(--wzl-tb-height);
   padding: 0 var(--wzl-space-4);
   background: var(--wzl-surface);
   border-bottom: 1px solid var(--wzl-border);

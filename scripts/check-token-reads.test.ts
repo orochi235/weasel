@@ -56,6 +56,10 @@ describe('findUndeclaredReads', () => {
     const out = run([{ path: 'packages/ui/a.css', source: '.g { width: var(--wzl-swatch-size); }' }]);
     expect(out.map((o) => o.reason)).toEqual(['override hook read without a fallback']);
   });
+
+  it('skips a name built at runtime', () => {
+    expect(run([{ path: 'packages/ui/A.tsx', source: 'const c = `var(--wzl-swatch-${name})`;' }])).toEqual([]);
+  });
 });
 
 describe('findAccentFillAsText', () => {

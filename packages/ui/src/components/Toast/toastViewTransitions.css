@@ -30,12 +30,12 @@
  * genuine entries — a group with an old+new pair is a surviving toast
  * reflowing, which keeps the default smooth position animation. */
 :root.wzl-toast-vt::view-transition-new(.wzl-toast):only-child {
-  animation: wzl-toast-enter var(--wzl-motion-medium, 240ms) var(--wzl-ease-out-cubic, ease-out) both;
+  animation: wzl-toast-enter var(--wzl-motion-medium) var(--wzl-ease-out-cubic) both;
 }
 
 /* Exiting toast: quick fade + slight shrink. */
 :root.wzl-toast-vt::view-transition-old(.wzl-toast):only-child {
-  animation: wzl-toast-exit var(--wzl-motion-fast, 120ms) var(--wzl-ease-in-cubic, ease-in) both;
+  animation: wzl-toast-exit var(--wzl-motion-fast) var(--wzl-ease-in-cubic) both;
 }
 
 @keyframes wzl-toast-enter {

@@ -39,7 +39,7 @@
 
 .lozenge {
   fill: var(--wzl-disclosure-fill, var(--wzl-accent-fg));
-  transition: fill var(--wzl-motion-fast, 90ms) var(--wzl-ease-out-cubic);
+  transition: fill var(--wzl-motion-fast) var(--wzl-ease-out-cubic);
 }
 
 .twisty:hover:not(:disabled) .lozenge {

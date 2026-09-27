@@ -9,7 +9,7 @@
    can tune both surfaces with one set of sliders. */
 .root {
   display: inline-flex;
-  height: var(--tb-h, var(--wzl-control-h, 24px));
+  height: var(--tb-h, var(--wzl-control-h));
   padding: var(--wzl-space-1);
   background: linear-gradient(
     180deg,
@@ -183,7 +183,7 @@
   background: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  color: var(--wzl-accent-fg, var(--wzl-accent));
+  color: var(--wzl-accent-fg);
   text-shadow: none;
   box-shadow: none;
   font-weight: var(--wzl-font-weight-medium);
