@@ -4,10 +4,12 @@ import {
   createScene,
   gridSnapStrategy,
   sceneFromJSON,
+  solid,
   useSelection,
 } from '@weasel-js/core';
 import type {
   AddNodeSpec,
+  FillStyle,
   RectPose,
   Scene,
   SerializedScene,
@@ -17,7 +19,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { type ConfigOf, defineInstrument, f, type RenderContext } from '@weasel-js/labkit';
 
 interface NodeData {
-  color: string;
+  fill: FillStyle;
 }
 type Pose = RectPose;
 type LayerId = 'default';
@@ -37,24 +39,24 @@ type SceneConfig = ConfigOf<typeof sceneConfig>;
 
 const UNITS: UnitSystem = { base: 'px', units: { px: 1 } };
 
-const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
+export const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
   {
     kind: 'leaf',
     layer: 'default',
     pose: { x: 40, y: 40, width: 80, height: 60 },
-    data: { color: '#7fb069' },
+    data: { fill: solid('#7fb069') },
   },
   {
     kind: 'leaf',
     layer: 'default',
     pose: { x: 180, y: 120, width: 100, height: 80 },
-    data: { color: '#d4a574' },
+    data: { fill: solid('#d4a574') },
   },
   {
     kind: 'leaf',
     layer: 'default',
     pose: { x: 340, y: 60, width: 70, height: 70 },
-    data: { color: '#a48bd4' },
+    data: { fill: solid('#a48bd4') },
   },
 ];
 

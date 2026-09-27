@@ -331,7 +331,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       | { version: number; systemLayers?: ReadonlyArray<{ id: string }>; nodes: ReadonlyArray<unknown> };
 
     /** Layer configuration. When omitted, SceneCanvas applies kit defaults
-     *  (a scene slot that paints `node.data.color` rects + a default
+     *  (a scene slot that paints `node.data.fill` rects + a default
      *  selection overlay). Partial slot configs deep-merge with the
      *  defaults; pass `slot: null` to suppress a default explicitly. */
     layers?: LayersMap<Node<TData, TLayer, TPose>, TPose>;

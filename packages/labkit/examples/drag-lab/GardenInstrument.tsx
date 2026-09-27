@@ -4,11 +4,13 @@ import {
   createScene,
   sceneFromJSON,
   screenToWorld,
+  solid,
   useSelection,
   viewToTransform,
 } from '@weasel-js/core';
 import type {
   AddNodeSpec,
+  FillStyle,
   RectPose,
   Scene,
   SerializedScene,
@@ -22,7 +24,7 @@ type Kind = 'tree' | 'shrub' | 'flower';
 
 interface NodeData {
   kind: Kind;
-  color: string;
+  fill: FillStyle;
 }
 type Pose = RectPose;
 type LayerId = 'default';
@@ -38,10 +40,10 @@ interface GardenConfig {
 const UNITS: UnitSystem = { base: 'px', units: { px: 1 } };
 const SYSTEM_LAYERS = [{ id: 'default' as const }];
 
-const KIND_COLORS: Record<Kind, string> = {
-  tree: '#2d6a4f',
-  shrub: '#74c69d',
-  flower: '#e07a5f',
+const KIND_FILLS: Record<Kind, FillStyle> = {
+  tree: solid('#2d6a4f'),
+  shrub: solid('#74c69d'),
+  flower: solid('#e07a5f'),
 };
 const KIND_SIZE: Record<Kind, number> = { tree: 44, shrub: 28, flower: 16 };
 const KIND_LABEL: Record<Kind, string> = {
@@ -53,24 +55,24 @@ const KINDS: Kind[] = ['tree', 'shrub', 'flower'];
 
 const DEFAULT_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
-const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
+export const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
   {
     kind: 'leaf',
     layer: 'default',
     pose: { x: 180, y: 140, width: KIND_SIZE.tree, height: KIND_SIZE.tree },
-    data: { kind: 'tree', color: KIND_COLORS.tree },
+    data: { kind: 'tree', fill: KIND_FILLS.tree },
   },
   {
     kind: 'leaf',
     layer: 'default',
     pose: { x: 280, y: 200, width: KIND_SIZE.shrub, height: KIND_SIZE.shrub },
-    data: { kind: 'shrub', color: KIND_COLORS.shrub },
+    data: { kind: 'shrub', fill: KIND_FILLS.shrub },
   },
   {
     kind: 'leaf',
     layer: 'default',
     pose: { x: 360, y: 160, width: KIND_SIZE.flower, height: KIND_SIZE.flower },
-    data: { kind: 'flower', color: KIND_COLORS.flower },
+    data: { kind: 'flower', fill: KIND_FILLS.flower },
   },
 ];
 
@@ -178,7 +180,7 @@ function GardenBody({ config, state, setState }: BodyProps) {
       kind: 'leaf',
       layer: 'default',
       pose: { x: wx - s / 2, y: wy - s / 2, width: s, height: s },
-      data: { kind, color: KIND_COLORS[kind] },
+      data: { kind, fill: KIND_FILLS[kind] },
     });
   };
 

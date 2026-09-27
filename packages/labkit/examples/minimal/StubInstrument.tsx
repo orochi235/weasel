@@ -3,10 +3,12 @@ import {
   WeaselProvider,
   createScene,
   sceneFromJSON,
+  solid,
   useSelection,
 } from '@weasel-js/core';
 import type {
   AddNodeSpec,
+  FillStyle,
   RectPose,
   Scene,
   SerializedScene,
@@ -16,7 +18,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { defineInstrument, type RenderContext } from '@weasel-js/labkit';
 
 interface NodeData {
-  color: string;
+  fill: FillStyle;
 }
 type Pose = RectPose;
 type LayerId = 'default';
@@ -31,12 +33,12 @@ interface StubConfig {
 
 const UNITS: UnitSystem = { base: 'px', units: { px: 1 } };
 const SYSTEM_LAYERS = [{ id: 'default' as const }];
-const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
+export const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
   {
     kind: 'leaf',
     layer: 'default',
     pose: { x: 120, y: 80, width: 120, height: 80 },
-    data: { color: '#7fb069' },
+    data: { fill: solid('#7fb069') },
   },
 ];
 
