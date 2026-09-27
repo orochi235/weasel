@@ -766,6 +766,11 @@ function nameOf(label: ReactNode): string | undefined {
   return typeof label === 'string' ? label : undefined;
 }
 
+/** A segment drawing a glyph hides its label, so the label comes back as its tooltip. */
+function glyphTip(o: PropertyOption<string>): ReactNode {
+  return o.glyph === undefined || o.glyph === null ? undefined : o.label;
+}
+
 function EnumControl(p: PropertyEnumFieldProps) {
   const chosen = !p.mixed && p.options.some((opt) => opt.value === p.value);
   const current = chosen ? (p.value as string) : null;
@@ -792,6 +797,7 @@ function EnumControl(p: PropertyEnumFieldProps) {
           value: o.value,
           label: o.glyph ?? o.label,
           ariaLabel: nameOf(o.label),
+          tooltip: glyphTip(o),
           disabled: o.disabled,
         }))}
         value={current}

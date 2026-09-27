@@ -18,6 +18,9 @@ export type ControlRenderer = PrefRenderer;
 export interface ConfigOption {
   value: string;
   label: string;
+  /** A glyph in weasel-ui's icon set (`IconName`). A segmented row draws it in
+   *  place of `label`, which stays the accessible name and becomes the tooltip. */
+  icon?: string;
 }
 
 /** Everything a leaf can carry beyond its kind and default. A flat union of

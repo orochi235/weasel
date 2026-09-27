@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { rotationDegreesUnit } from '@weasel-js/core';
 import { prefFieldProps } from '../Prefs/prefField';
@@ -99,6 +99,28 @@ describe('PropertyField enum choices', () => {
     expect(onChange).toHaveBeenCalledWith('b');
     fireEvent.keyDown(screen.getByRole('radio', { name: 'Alpha' }), { key: 'ArrowRight' });
     expect(onChange).toHaveBeenLastCalledWith('b');
+  });
+
+  const GLYPHED = [
+    { value: 'a', label: 'Alpha', glyph: <svg data-testid="alpha-glyph" /> },
+    { value: 'b', label: 'Beta' },
+  ];
+
+  it('names a glyph segment by its label and tips it with the label', () => {
+    render(<PropertyField kind="enum" control="toggle" label="Mode" value="b" options={GLYPHED} onChange={() => {}} />);
+    const alpha = screen.getByRole('radio', { name: 'Alpha' });
+    expect(alpha).toContainElement(screen.getByTestId('alpha-glyph'));
+    expect(alpha.textContent).toBe('');
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => alpha.focus());
+    expect(screen.getByRole('tooltip').textContent).toBe('Alpha');
+  });
+
+  it('gives a segment showing its own label no tooltip', () => {
+    render(<PropertyField kind="enum" control="toggle" label="Mode" value="a" options={GLYPHED} onChange={() => {}} />);
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => screen.getByRole('radio', { name: 'Beta' }).focus());
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
   it('draws a radio as a radio group, with its disabled options', () => {

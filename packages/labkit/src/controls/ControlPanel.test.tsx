@@ -898,6 +898,25 @@ describe('<ControlPanel> auto', () => {
   });
 });
 
+describe('<ControlPanel> option icons', () => {
+  it("draws an option's icon in its segment and keeps the label as its name", () => {
+    const status = f
+      .enum('ok', [{ value: 'ok', label: 'ok', icon: 'statusSuccess' }, { value: 'bad', label: 'bad' }])
+      .radio();
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ status }), [])}
+        config={{ status: 'ok' }}
+        setConfig={() => {}}
+      />,
+    );
+    const ok = screen.getByRole('radio', { name: 'ok' });
+    expect(ok.querySelector('svg')).not.toBeNull();
+    expect(ok.textContent).toBe('');
+    expect(screen.getByRole('radio', { name: 'bad' }).textContent).toBe('bad');
+  });
+});
+
 describe('<ControlPanel> pair', () => {
   const paired = () =>
     resolveConfigSchema(
