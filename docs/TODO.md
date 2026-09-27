@@ -1187,17 +1187,23 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
     finish when the motion stops rather than when alpha does? A shorter run also closes the
     window for a mid-run drag, which the demo's hint asks for.
 
-- **(P3) labkit's `weasel-lab`, `minimal` and `drag-lab` examples don't typecheck.** They pass
-  `layers={{ scene: {} }}`, and `SceneSlotConfig` requires `drawOne`, though at runtime a
-  partial slot merges with the defaults. The root `tsconfig.json` leaves the examples out,
-  which is why nothing fails. Either the slot type should be partial or the examples are
-  wrong; decide which, then bring the examples under a typecheck.
+- **(P3) Snap and alignment behaviors can't see the view.** `alignMoveBehavior`, the three
+  `snapToGuides` behaviors and `guideSnapStrategy` read tolerance in screen pixels only when
+  handed a `getView`; without one it is in world units, so it grows and shrinks with zoom.
+  The gesture context they run in carries no view, so every consumer that zooms has to
+  thread one in: `AlignmentGuidesDemo` holds a controlled `view` state for nothing but that.
+  The fix is to put the view the gesture landed in on `GestureContext` (move, resize, insert)
+  and make screen pixels the default. The open question is a multi-view surface:
+  `InvocationCtx.viewId` names the view the input landed in, and whether `deps.view`
+  answers for that view or for the surface's own camera hasn't been checked.
 
-- **(P3) Props left with nothing to act on.** After the preset pass, `D3SortableDemo`
-  (`selection`, `selectionMode="none"`, `selectionOverlay`), labkit's `schema-lab`
-  `SceneHost` (`selection`), and `PerAxisZoomDemo` / `SelectionPanelDemo` (a `view` state) pass
-  props that no longer do anything. `AlignmentGuidesDemo` keeps `viewport={{}}` only so
-  `getView` holds the snap tolerance in screen space.
+- **(P3) `selectionMode="multi"` does nothing when the canvas is given a `selection`.**
+  `<SceneCanvas>` forwards the mode only into the selection it builds for itself; a supplied
+  one keeps its own `mode`, which is what `applyClick` reads. So a canvas passed
+  `useSelection()` and `selectionMode="multi"` still replaces on shift-click. Every demo,
+  and `apps/draw`, that passes both also passes `useSelection({ mode: 'multi' })`, which is
+  what makes them work. Either the prop should govern a supplied selection's click policy, or
+  the two should not both be accepted.
 
 - **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
 

@@ -78,7 +78,6 @@ export function AlignmentGuidesDemo() {
           }],
         },
         guides: { layer: guidesLayer },
-        selectionOverlay: { handles: false },
       }}
     />
   );

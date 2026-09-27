@@ -1,4 +1,4 @@
-import { SceneCanvas, useSelection, WeaselProvider } from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider } from '@weasel-js/core';
 import type { RectPose, Scene } from '@weasel-js/core';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
@@ -6,7 +6,6 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
  *  sizes its own `<canvas>`, and on a flow-layout parent that feeds the resize
  *  observer back into itself. */
 export function SceneHost<TData>({ scene }: { scene: Scene<TData, 'default', RectPose> }) {
-  const selection = useSelection();
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
 
@@ -29,7 +28,7 @@ export function SceneHost<TData>({ scene }: { scene: Scene<TData, 'default', Rec
   return (
     <div ref={hostRef} className="sl-scene-host">
       <div className="sl-scene-fill">
-        <SceneCanvas width={size.w} height={size.h} scene={scene} selection={selection} />
+        <SceneCanvas width={size.w} height={size.h} scene={scene} />
       </div>
     </div>
   );

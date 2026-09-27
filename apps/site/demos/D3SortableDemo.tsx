@@ -4,7 +4,6 @@ import {
   SceneCanvas,
   WeaselProvider,
   useScene,
-  useSelection,
   useAnimator,
   easeInOutCubic,
 } from '@weasel-js/core';
@@ -76,7 +75,6 @@ function D3SortableDemoInner() {
     systemLayers: [{ id: 'bars' }],
     initial: [],
   });
-  const selection = useSelection();
   const animator = useAnimator();
   const firstRunRef = useRef(true);
 
@@ -135,8 +133,6 @@ function D3SortableDemoInner() {
         height={H}
         className="ckd-canvas"
         scene={scene}
-        selection={selection}
-        selectionMode="none"
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => [{
@@ -146,7 +142,6 @@ function D3SortableDemoInner() {
               stroke: { paint: { color: '#222' }, width: 1.5 },
             }],
           },
-          selectionOverlay: { handles: false },
         }}
       />
     </div>

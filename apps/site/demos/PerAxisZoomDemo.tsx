@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   SceneCanvas,
   useScene,
-  useSelection,
   fitViewToBounds,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -25,7 +24,6 @@ export function PerAxisZoomDemo() {
         data: { color: '#7fb069' } },
     ],
   });
-  const selection = useSelection();
   const [view, setView] = useState<View>({ x: -100, y: -100, scale: { x: 1, y: 1 } });
   const [mode, setMode] = useState<'contain' | 'fill' | 'stretch'>('contain');
 
@@ -77,7 +75,6 @@ export function PerAxisZoomDemo() {
         height={H}
         className="ckd-canvas"
         scene={scene}
-        selection={selection}
         view={view}
         onViewChange={setView}
         layers={{
