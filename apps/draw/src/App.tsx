@@ -13,11 +13,11 @@
  *   - The Actions Registry (auto-mounted by SceneCanvas via
  *     `useStandardActions`) handles undo/redo, delete, duplicate, nudge,
  *     align/distribute, reorder, flip, group/ungroup, clipboard. The
- *     ActionBar renders them from the registry; the keyboard reaches them
+ *     CommandBar renders them from the registry; the keyboard reaches them
  *     through the dispatcher.
  *   - `<ColorContextProvider>` holds the active fill/stroke; selection
  *     mutations go through `scene.update` so they're undoable.
- *   - `<ActionBar>` takes handlers only for draw's own buttons — file,
+ *   - `<CommandBar>` takes handlers only for draw's own buttons — file,
  *     view toggles, recording, preferences.
  *   - `<ActiveSwatches>` is the fill/stroke widget; clicks open a native
  *     color picker via the existing component implementation.
@@ -116,7 +116,7 @@ import {
   useSceneLayerList,
 } from '@weasel-js/ui';
 
-import { ActionBar, type PaperSizeKey } from './ActionBar';
+import { CommandBar, type PaperSizeKey } from './CommandBar';
 import { ActiveSwatches, type ActivePaint } from './ActiveSwatches';
 import { PreferencesModal } from './PreferencesModal';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
@@ -798,7 +798,7 @@ function Toolbar({
 
   return (
     <>
-      <ActionBar
+      <CommandBar
         onSaveSvg={() => {
           onClearJournalCache();
           const paper = PAPER_PRESETS[paperSize];

@@ -5,7 +5,7 @@ Subsystems intentionally deferred:
 
 ## Deferred from the pre-purge App.tsx
 
-- **Recording / Replay.** ActionBar still shows the record/play buttons, but
+- **Recording / Replay.** CommandBar still shows the record/play buttons, but
   the handlers in App.tsx are no-ops. `recorder.ts`, `recordingIO.ts`, and
   `replay.ts` survive in src/ ready to be wired back in — the rebuild needs
   to thread a `Recorder` instance through the canvas's pointer/keyboard
