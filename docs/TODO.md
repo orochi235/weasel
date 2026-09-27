@@ -1205,10 +1205,37 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 ## Demos & visual regression
 
-- **(P3) Demos for packages that have none.** The demo site's Packages section lists only
-  packages with a demo that imports them directly (`apps/site/__tests__/packageDemos.test.ts`
-  holds that rule). None yet for `gestures`, `history`, `routing`, `bidi`, `svg`, `paint`,
-  `cursor`, `modes`, `kernel3d`, `loupe`, `geom`.
+- **(P2) Public API gaps the package demos worked around.** Each demo under the site's
+  Packages section imports only its own package, and building them turned these up. Each one
+  is duplicated consumer code today:
+  - `svg`: no kit-to-SVG inverse for shapes and text — only `svgImageFromKit` for images.
+    `SvgDemo.tsx` (`svgNodeOf`, `svgPaintOf`, `svgStrokeOf`) and `apps/draw/src/svgExport.ts` /
+    `svgInterop.ts` each carry their own copy. `svgNodesToKitDrafts` also drops `fill-opacity`
+    and element `opacity` (read in `packages/svg/src/unpack.ts`, `fillFromPaint`; not run), and
+    does not register `parsed.markers` — only `unpackSvgFiles` does.
+  - `geom`: no nearest-point-on-curve and no split-at-t (de Casteljau). `GeomDemo.tsx` flattens
+    and walks segments for the first and cannot show the second.
+  - `history`: a `Journal` has no coalesce window and no `subscribe`/`getVersion`, and a
+    `HistoryEntry` does not say how many pushes merged into it. `HistoryDemo.tsx` re-renders by
+    hand and cannot show a merge.
+  - `modes`: every consumer rebuilds `getActiveMode` from a registry by hand (`ModesDemo.tsx`,
+    draw's `activeModeOf`, `SceneCanvas.modeShortcuts.test.tsx`); a mode switch does not
+    repaint on its own because `ScopingDim` and `ModeDecorations` expose no version; nothing
+    paints `WorkspaceVisual` (the demo and draw's `workspaceTintLayer` each do).
+  - `gestures`: nothing converts a `ParsedRoute` into a `GestureSpec`, so a typed route cannot
+    drive `matchSpec`; `specificity()` lives in `routing`, not `gestures`; `describeRoute` with
+    two modifiers reads "the user Mod and Alt-drags anywhere".
+  - `routing`: `modeShortcuts` gives each mode its own Escape exit, eligible only in that mode,
+    and the route-conflict check warns that they collide (`[initial] keyDown(Escape) — declared
+    by mode.focus.exit, mode.review.exit`) though they can never both fire. The check ignores
+    mutually exclusive eligibility. Seen in `ModesDemo`; any app with two exitable modes hits it.
+  - `routing`: no stock `DepRegistry` is exported (only the type, from `routing/react`), and the
+    drag-vs-click threshold lives only inside `useGestureDispatcher`, so a sceneless
+    dispatcher (`RoutingDemo.tsx`) stubs the first and repeats the second.
+  - `routing` / `core`: two `defineTool`s. Routing's returns a tool core's `tools` prop rejects
+    (TS2322), so `CursorDemo` imports core's.
+  - `ui`: a `ToggleBar` squeezed in a flex row collapses its text segments to nothing — segments
+    are `flex: 1 1 0; min-width: 0` and only glyph labels are pinned (`> svg { flex: none }`).
 - **(P3) A minimal public stage for package demos.** Demos of scene-free packages
   (`quantity`, `text`, `bidi`, `geom`, `audio`) mount a whole `SceneCanvas` just to draw.
   Not the primitive `<Canvas>`, which was unexported on purpose. Enforce its reach in

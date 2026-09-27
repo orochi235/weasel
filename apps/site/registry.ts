@@ -715,6 +715,24 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/ModesDemo').then((m) => m.ModesDemo),
     path: 'apps/site/demos/ModesDemo.tsx',
   },
+  {
+    id: 'routing',
+    title: 'Dispatcher without a scene',
+    package: 'routing',
+    description: "The gesture dispatcher with no scene and no canvas. Seven actions and one hand tool are declared as plain data and fed input from a small SVG surface. For each input the table lists every binding that matched, in the order the dispatcher ranks them: tier first (hotkey, then active tool, then always-on), then how narrowly the binding targets. Each row also shows what happened to that binding: it fired, it was outranked, its eligibility rule failed, or its `enabled()` check said no. The dispatcher is driven directly (`createDispatcher`, `handleInput`, `resolveAll`) so the precedence rules show without `SceneCanvas` in between.",
+    hint: 'Click and drag the boxes, press Escape or Delete, then turn on Hand tool or Locked mode (or hold Space) and repeat the same input to see a different binding win.',
+    load: () => import('./demos/RoutingDemo').then((m) => m.RoutingDemo),
+    path: 'apps/site/demos/RoutingDemo.tsx',
+  },
+  {
+    id: 'kernel3d',
+    title: 'Boxes in 3D',
+    package: 'kernel3d',
+    description: "Three boxes in 3D on an ordinary `SceneCanvas` whose scene holds 3D poses. The kernel draws nothing, so the demo's renderer is one layer that projects each box's corners through the orbit camera and paints the faces far to near. Everything else is the kit's own: the select tool picks through the kernel's ray-cast `nodeAtPoint`, and the selection outline and marquee read the kernel's `poseDescriptor`, which reports each box as the screen rectangle it covers. The orbit tool and the wheel dolly are the kernel's own tool and actions, driving a `camera3d` dep.",
+    hint: 'Click a box to select it, or drag on empty space to marquee. Switch to Orbit and drag to turn the camera, then scroll to dolly; the outline follows the box.',
+    load: () => import('./demos/Kernel3dDemo').then((m) => m.Kernel3dDemo),
+    path: 'apps/site/demos/Kernel3dDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({

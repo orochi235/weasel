@@ -1,0 +1,19 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 620px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.readout {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+  color: var(--ckd-muted);
+}
