@@ -418,7 +418,7 @@ describe('StoryTree', () => {
     const tags = Array.from(packages.querySelectorAll<HTMLElement>('.fg-tree__tag'));
     const tag = (label: string) => tags.find((t) => t.textContent === label) as HTMLElement;
     const [ui, kit] = [tag('ui'), tag('Kit')];
-    expect(ui.style.getPropertyValue('--wzl-tone')).toContain('var(--wzl-swatch-blue)');
+    expect(ui.style.getPropertyValue('--wzl-tone')).toContain('var(--wzl-swatch-amber)');
     expect(kit.hasAttribute('data-tone')).toBe(false);
     expect(kit.dataset.status).toBe('muted');
   });
@@ -452,23 +452,28 @@ describe('StoryTree galleries', () => {
     );
   }
 
-  it.each(['Components', 'Tree'])('marks a gallery’s row, and only its, in the %s view', async (view) => {
+  const names = () => screen.getAllByRole('treeitem').map((row) => row.getAttribute('aria-label') ?? row.textContent);
+
+  it.each(['Components', 'Tree'])('leaves galleries out of the %s view', async (view) => {
     render(<GalleryHarness />);
     await screen.findByRole('tree', { name: 'Stories' });
     fireEvent.click(screen.getByRole('radio', { name: view }));
     if (view === 'Tree') openFolder('Kit');
-    const row = screen.getByRole('treeitem', { name: 'Everything (gallery)' });
-    expect(row.querySelector(':scope > .fg-tree__folder > .fg-tree__gallery')).not.toBeNull();
-    const button = screen.getByRole('treeitem', { name: 'Button' });
-    expect(button.querySelector(':scope > .fg-tree__folder > .fg-tree__gallery')).toBeNull();
-  });
-
-  it('marks a story tagged on its own, leaving its component unmarked', async () => {
-    render(<GalleryHarness />);
-    await screen.findByRole('tree', { name: 'Stories' });
     const button = screen.getByRole('treeitem', { name: 'Button' });
     if (button.getAttribute('aria-expanded') !== 'true') fireEvent.click(foldOf(button));
-    expect(item(button, 'Permutations (gallery)').querySelector('.fg-tree__gallery')).not.toBeNull();
-    expect(item(button, 'Primary').querySelector('.fg-tree__gallery')).toBeNull();
+    expect(names()).not.toContain('Everything');
+    expect(item(button, 'Primary')).toBeTruthy();
+    expect(within(button).queryByRole('treeitem', { name: 'Permutations' })).toBeNull();
+  });
+
+  it('lists every gallery, and only galleries, in the Gallery view', async () => {
+    render(<GalleryHarness />);
+    await screen.findByRole('tree', { name: 'Stories' });
+    fireEvent.click(screen.getByRole('radio', { name: 'Gallery' }));
+    const button = screen.getByRole('treeitem', { name: 'Button' });
+    if (button.getAttribute('aria-expanded') !== 'true') fireEvent.click(foldOf(button));
+    expect(item(button, 'Permutations')).toBeTruthy();
+    expect(within(button).queryByRole('treeitem', { name: 'Primary' })).toBeNull();
+    expect(screen.getByRole('treeitem', { name: 'Everything' })).toBeTruthy();
   });
 });

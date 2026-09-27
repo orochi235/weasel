@@ -42,7 +42,7 @@ export function foldGalleries(nodes: TreeNode[]): TreeNode[] {
 
 /**
  * Story titles as nested folders, split on `/`; the last segment is the component, which carries its index page and
- * holds its subfolders, then its stories. A folder holding only a gallery is folded into it (see `foldGalleries`).
+ * holds its subfolders, then its stories.
  */
 export function buildTree(index: readonly IndexEntry[]): TreeNode[] {
   const root: TreeNode[] = [];
@@ -64,7 +64,7 @@ export function buildTree(index: readonly IndexEntry[]): TreeNode[] {
     }
     siblings.push({ kind: 'story', entry });
   }
-  return foldGalleries(sortFolder(root));
+  return sortFolder(root);
 }
 
 /**

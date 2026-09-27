@@ -229,12 +229,6 @@
   --badge-font-size: var(--wzl-font-size-2xs);
 }
 
-.fg-tree__gallery {
-  display: inline-flex;
-  flex: none;
-  color: var(--wzl-accent-fg);
-}
-
 .fg-tree__libraries {
   display: flex;
   flex-wrap: wrap;
@@ -262,16 +256,17 @@
   color: var(--wzl-secondary-fg);
 }
 
-/* Padded out to a hit target and pulled back by the same amount, so the row's layout is unchanged. */
+/* Padded out to a hit target and pulled back by the same amount, except on the label's side, where the padding
+   widens the gap to the label. */
 .fg-tree__fold {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: calc(-1 * var(--wzl-space-xs));
+  margin-inline-end: 0;
   padding: var(--wzl-space-xs);
 }
-
 
 .fg-tree__folder {
   font-weight: calc(var(--wzl-font-weight-normal) + 100);
@@ -281,7 +276,7 @@
   /* The CSS floor, which the browser rounds up to the lightest weight the face has. */
   font-weight: 100;
   /* Clears the folder rows' 13px fold mark, so a story's label lines up with its folder's. */
-  padding-inline-start: calc(var(--wzl-space-xs) * 2 + 13px);
+  padding-inline-start: calc(var(--wzl-space-xs) * 3 + 13px);
 }
 
 .lk-trial.fg-flash {

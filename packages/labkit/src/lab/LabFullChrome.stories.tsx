@@ -252,6 +252,7 @@ const runLog = defineInstrument<{ lines: string[] }, Record<string, never>>({
 const meta: Meta<typeof Lab> = {
   title: 'labkit/Lab/FullChrome',
   component: Lab,
+  tags: ['gallery'],
   parameters: { layout: 'fullscreen' },
 };
 export default meta;
@@ -264,7 +265,6 @@ type Story = StoryObj<typeof Lab>;
  *  layer list, and a status bar with a running job. Starts in dark, where the
  *  `nebula` backdrop paints. */
 export const AllChrome: Story = {
-  tags: ['gallery'],
   args: {
     instruments: [spectrometer, beamProfile, thermalDrift],
     defaultInstrument: 'Spectrometer',

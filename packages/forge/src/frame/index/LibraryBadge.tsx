@@ -9,9 +9,9 @@ const tone = (swatch: string, light: number, dark: number): string =>
 
 /** Each package's peer tone. */
 const LIBRARY_TONES: Readonly<Record<string, string>> = {
-  ui: tone('blue', 55, 35),
+  ui: tone('amber', 55, 40),
   labkit: tone('teal', 55, 45),
-  forge: tone('amber', 55, 40),
+  forge: tone('blue', 55, 35),
   draw: tone('rose', 55, 35),
 };
 

@@ -1,5 +1,5 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
-import { Checkbox, DisclosureMark, Icon, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
+import { Checkbox, DisclosureMark, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
 import { type FocusEvent, type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
 import { indexEntries } from '../../story/indexPages';
 import { isGallery } from '../../story/tags';
@@ -12,11 +12,12 @@ import { libraryOf } from '../../story/library';
 import { LibraryBadge as PackageBadge } from '../../frame/index/LibraryBadge';
 
 /** Which shape the sidebar lists the index in. */
-type View = 'tree' | 'components';
+type View = 'tree' | 'components' | 'gallery';
 
 const VIEWS: readonly ToggleBarItem<View>[] = [
   { value: 'tree', label: 'Tree' },
   { value: 'components', label: 'Components' },
+  { value: 'gallery', label: 'Gallery' },
 ];
 
 export interface StoryTreeProps {
@@ -49,15 +50,6 @@ function LibraryBadge({ library }: { library: string }) {
   return <PackageBadge library={library} className="fg-tree__tag" />;
 }
 
-/** What a row tagged `gallery` shows before its label. Its row's name says the same for a screen reader. */
-function GalleryMark() {
-  return (
-    <span className="fg-tree__gallery" title="Gallery">
-      <Icon name="layoutGrid" size={14} />
-    </span>
-  );
-}
-
 /** The indexed stories as a filterable tree; opening one runs it in the focused trial, or with Shift in another. */
 export function StoryTree({ ctx, index }: StoryTreeProps) {
   const headingId = useId();
@@ -75,14 +67,22 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   // The package filter runs on the index, so it means the same thing in both
   // views rather than once per view's own grouping.
   const kept = useMemo(() => index.filter((entry) => !hidden[libraryOf(entry)]), [index, hidden]);
-  const tree = useMemo(() => buildTree(kept), [kept]);
-  const components = useMemo(() => buildComponents(kept), [kept]);
+  // Galleries list only in their own view, grouped the way Components groups.
+  const [galleryEntries, rest] = useMemo(() => {
+    const yes: IndexEntry[] = [];
+    const no: IndexEntry[] = [];
+    for (const entry of kept) (isGallery(entry) ? yes : no).push(entry);
+    return [yes, no];
+  }, [kept]);
+  const tree = useMemo(() => buildTree(rest), [rest]);
+  const components = useMemo(() => buildComponents(rest), [rest]);
+  const galleries = useMemo(() => buildComponents(galleryEntries), [galleryEntries]);
   const shown = useMemo(
     () =>
-      view === 'components'
-        ? componentNodes(filterComponents(components, query))
-        : filterTree(tree, query),
-    [view, components, tree, query],
+      view === 'tree'
+        ? filterTree(tree, query)
+        : componentNodes(filterComponents(view === 'gallery' ? galleries : components, query)),
+    [view, components, galleries, tree, query],
   );
   const routable = useMemo(() => [...kept, ...indexEntries(kept)], [kept]);
   const routed = routable.find((entry) => entry.id === route);
@@ -199,13 +199,12 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     nodes.map((node) => {
       if (node.kind === 'folder') {
         const open = isOpen(node.path);
-        const gallery = node.index !== undefined && isGallery(node.index);
         return (
           <div
             key={keyOf(node)}
             {...itemProps(node, level)}
             aria-expanded={open}
-            aria-label={gallery ? `${node.label} (gallery)` : node.label}
+            aria-label={node.label}
             aria-current={node.index && openIds.has(node.index.id) ? 'true' : undefined}
             className="fg-tree__node"
           >
@@ -226,7 +225,6 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
               >
                 <DisclosureMark open={open} />
               </span>
-              {gallery ? <GalleryMark /> : null}
               <span className="fg-tree__label">{node.label}</span>
               {node.tag ? <LibraryBadge library={node.tag} /> : null}
             </div>
@@ -239,14 +237,12 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
         );
       }
       const { entry } = node;
-      const gallery = isGallery(entry);
       return (
         <a
           key={keyOf(node)}
           {...itemProps(node, level)}
           href={`#/${encodeURIComponent(entry.id)}`}
           aria-current={openIds.has(entry.id) ? 'true' : undefined}
-          aria-label={gallery ? `${node.label ?? entry.name} (gallery)` : undefined}
           className="fg-tree__item fg-tree__story"
           onClick={(event) => {
             if (event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -255,7 +251,6 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
             activate(entry, event.shiftKey);
           }}
         >
-          {gallery ? <GalleryMark /> : null}
           <span className="fg-tree__label">{node.label ?? entry.name}</span>
           {node.tag ? <LibraryBadge library={node.tag} /> : null}
         </a>
