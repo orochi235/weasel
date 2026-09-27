@@ -6,7 +6,7 @@ import {
   shapeKindsWhere,
 } from './shapeKinds';
 import type { ShapeKindsWhere } from './shapeKinds';
-import { BUNDLE_TOOLS } from 'canvas/SceneCanvas';
+import { BUILTIN_TOOL_IDS } from 'canvas/SceneCanvas';
 import { defaultNodeRouting } from 'canvas/SceneCanvas/defaultNodeRouting';
 import { defaultNodeProperties } from 'canvas/SceneCanvas/defaultNodeProperties';
 
@@ -31,8 +31,7 @@ describe('shape-kind table', () => {
     expect([...KIT_SHAPE_KINDS]).toEqual(shapeKindsWhere(SHAPE_KINDS, 'tool'));
     expect(defaultNodeRouting.map((e) => e.name)).toEqual([...KIT_SHAPE_KINDS]);
     expect(defaultNodeProperties.map((e) => e.name)).toEqual([...KIT_SHAPE_KINDS]);
-    const exhaustive = BUNDLE_TOOLS.exhaustive;
-    expect(KIT_SHAPE_KINDS.filter((k) => !exhaustive.includes(k))).toEqual([]);
+    expect(KIT_SHAPE_KINDS.filter((k) => !BUILTIN_TOOL_IDS.includes(k))).toEqual([]);
   });
 
   it('answers per-kind questions through one accessor', () => {

@@ -87,7 +87,7 @@ function renderWith(
       helpersRef.current = localRef.current;
     });
     return (
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}
@@ -169,7 +169,7 @@ describe('SceneCanvas — resize-handles gated by selectTool.resize.resizable', 
       const localRef = useRef<CanvasHelpers<P> | null>(null);
       useEffect(() => { helpersRef.current = localRef.current; });
       return (
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={scene}
           layers={{}}
           width={400}
@@ -226,7 +226,7 @@ function renderWithMode(
       helpersRef.current = localRef.current;
     });
     return (
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}

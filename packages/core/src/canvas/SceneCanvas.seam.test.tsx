@@ -134,7 +134,7 @@ describe('Behavior 2: selectionMode=multi accumulates selection', () => {
     };
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}
@@ -200,7 +200,7 @@ describe('Behavior 3: pickEvery receives view-adjusted worldXY', () => {
     };
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}
@@ -235,7 +235,7 @@ describe('Behavior 7: backgroundFill prop wires a layer', () => {
   it('mounts without throwing when backgroundFill is set', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -249,7 +249,7 @@ describe('Behavior 7: backgroundFill prop wires a layer', () => {
   it('backgroundFill=undefined produces no background layer (no throw, no extra noise)', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -271,7 +271,7 @@ describe('Behavior 8: cursorCoordsHud and pickHud render when enabled', () => {
     // assert no throw and that the canvas is still rendered.
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -285,7 +285,7 @@ describe('Behavior 8: cursorCoordsHud and pickHud render when enabled', () => {
   it('pickHud=true mounts without throwing', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -299,7 +299,7 @@ describe('Behavior 8: cursorCoordsHud and pickHud render when enabled', () => {
   it('both cursorCoordsHud and pickHud can be enabled together without throwing', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -318,7 +318,7 @@ describe('Behavior 8: cursorCoordsHud and pickHud render when enabled', () => {
     // same formula as Canvas's clientToWorld: (clientX / scale) + view.x.
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container, unmount } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -357,7 +357,7 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
     let capturedIds: string[] = [];
 
     render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -377,7 +377,7 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
     let capturedIds: string[] = [];
 
     render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -397,7 +397,7 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
     let capturedIds: string[] = [];
 
     render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -421,7 +421,7 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
     let capturedIds: string[] = [];
 
     render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -448,8 +448,8 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
     function Pair({ showB }: { showB: boolean }) {
       return (
         <ActionsProvider>
-          <SceneCanvas scene={sceneA} layers={{}} width={200} height={200} />
-          {showB ? <SceneCanvas scene={sceneB} layers={{}} width={200} height={200} /> : null}
+          <SceneCanvas features={['draw']} scene={sceneA} layers={{}} width={200} height={200} />
+          {showB ? <SceneCanvas features={['draw']} scene={sceneB} layers={{}} width={200} height={200} /> : null}
           <ActionProbe onIds={(ids) => { capturedIds = ids; }} />
         </ActionsProvider>
       );
@@ -518,7 +518,7 @@ describe('Seam: selectTool.pickBest forwards into the internal select tool', () 
     );
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -552,7 +552,7 @@ describe('Seam: selectTool.pickBest forwards into the internal select tool', () 
 
     const selApi = makeSelectionStub();
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}

@@ -24,7 +24,7 @@
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { SceneCanvas } from './SceneCanvas';
+import { SceneCanvas, BUILTIN_TOOL_IDS } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import { ActiveToolContextProvider, useActiveToolContext } from '@weasel-js/routing/react';
@@ -107,17 +107,12 @@ describe('default keybindings: tool activation', () => {
       render(
         <ActiveToolContextProvider initialActive={initial}>
           <ActiveTap tapRef={tap} />
-          <SceneCanvas
+          <SceneCanvas features={['draw']}
             scene={scene}
             layers={{}}
             width={64}
             height={64}
-            toolBundle="exhaustive"
-            // Hand is only registered when the viewport feature is on
-            // (its `H` key activate + space hold both route through the
-            // registry); an empty viewport prop is enough to flip the
-            // gate without changing the matrix's behavior.
-            viewport={{}}
+            defaultTools={BUILTIN_TOOL_IDS}
           />
         </ActiveToolContextProvider>,
       );
@@ -156,7 +151,7 @@ describe('default keybindings: action shortcuts', () => {
       const scene = makeScene();
       const run = vi.fn();
       render(
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={scene}
           layers={{}}
           width={64}
@@ -186,7 +181,7 @@ describe('default keybindings: Escape is reachable', () => {
     const scene = makeScene();
     const run = vi.fn();
     render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={64}

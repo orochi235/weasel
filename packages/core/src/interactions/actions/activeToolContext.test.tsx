@@ -9,7 +9,7 @@ describe('ActiveToolContext', () => {
     return null;
   }
 
-  it('default initialActive is "select"', () => {
+  it('starts with no active tool unless seeded', () => {
     let captured: ActiveToolContextValue | null = null;
     render(
       <ActiveToolContextProvider>
@@ -17,7 +17,7 @@ describe('ActiveToolContext', () => {
       </ActiveToolContextProvider>,
     );
     expect(captured).not.toBeNull();
-    expect(captured!.active).toBe('select');
+    expect(captured!.active).toBe(null);
     expect(captured!.hotkeyStack).toEqual([]);
   });
 

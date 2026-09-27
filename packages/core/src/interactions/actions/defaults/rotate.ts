@@ -125,7 +125,9 @@ interface RotateScratch {
 export const rotateAction: Action & { requires: string[] } = {
   id: 'rotate',
   label: 'Rotate',
-  defaultBinding: { kind: 'drag' },
+  // No default binding. It used to be a bare `{ kind: 'drag' }`, which made
+  // any drag no active tool claimed rotate a non-empty selection. The rotation
+  // handle binds it (`SELECTION_TRANSFORM_BINDINGS`, the `transform` preset).
   eligible: { capability: 'transforms-selection' },
   requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'poseComposition'],
   invoker: {

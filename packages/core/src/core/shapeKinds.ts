@@ -5,7 +5,7 @@
  * questions of the same set: the interactions layer decides whether
  * `insertAction` can paint a live preview for a kind, and the canvas layer
  * decides which shape tools `useBuiltinShapeTools` mounts and what
- * `BUNDLE_TOOLS` / `defaultNodeRouting` / `defaultNodeProperties` enumerate.
+ * `BUILTIN_TOOL_IDS` / `defaultNodeRouting` / `defaultNodeProperties` enumerate.
  *
  * This module imports nothing on purpose: `useBuiltinShapeTools` imports the
  * package barrel, so anything barrel-reachable that needs these lists at
@@ -28,7 +28,7 @@ export interface ShapeKindDescriptor {
 /**
  * Declaration order is the enumeration order of every derived list —
  * `KIT_SHAPE_KINDS`, and through it `defaultNodeRouting` /
- * `defaultNodeProperties` / `BUNDLE_TOOLS.exhaustive`.
+ * `defaultNodeProperties` / `BUILTIN_TOOL_IDS`.
  */
 export const SHAPE_KINDS = {
   rect: { tool: true, insertPreview: true },

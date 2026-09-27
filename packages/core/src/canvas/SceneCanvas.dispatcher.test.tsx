@@ -68,7 +68,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
 
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64}>
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}>
         <ActionRegistrar action={action} />
       </SceneCanvas>,
     );
@@ -91,7 +91,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
 
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64} enableGestureDispatcher={false}>
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} enableGestureDispatcher={false}>
         <ActionRegistrar action={action} />
       </SceneCanvas>,
     );
@@ -127,7 +127,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     // enabled:()=>true bypasses the selection guard so the dispatcher runs the
     // action even without an active selection — verifies routing, not business logic.
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         actions={{ delete: { invoker: { timing: 'immediate' as const, run: () => { deleteSpy(); } }, enabled: () => true } }} />,
     );
     act(() => {
@@ -140,7 +140,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const scene = makeSceneWithNode();
     const deleteSpy = vi.fn();
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         actions={{ delete: { invoker: { timing: 'immediate' as const, run: () => { deleteSpy(); } }, enabled: () => true } }} />,
     );
     act(() => {
@@ -153,7 +153,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const scene = makeSceneWithNode();
     const dupSpy = vi.fn();
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         actions={{ duplicate: { invoker: { timing: 'immediate' as const, run: () => { dupSpy(); } }, enabled: () => true } }} />,
     );
     act(() => {
@@ -167,7 +167,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const nudgeSpy = vi.fn();
     // nudge descriptor id is "nudge.up" (not "nudge.up.small")
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         actions={{ 'nudge.up': { invoker: { timing: 'immediate' as const, run: () => { nudgeSpy(); } }, enabled: () => true } }} />,
     );
     act(() => {
@@ -180,7 +180,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const scene = makeSceneWithNode();
     const undoSpy = vi.fn();
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         actions={{ undo: { invoker: { timing: 'immediate' as const, run: () => { undoSpy(); } } } }} />,
     );
     act(() => {
@@ -195,7 +195,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     scene.undo();
     const redoSpy = vi.fn();
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         actions={{ redo: { invoker: { timing: 'immediate' as const, run: () => { redoSpy(); } } } }} />,
     );
     act(() => {
@@ -216,7 +216,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
 
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64}>
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}>
         <ActionRegistrar action={action} />
       </SceneCanvas>,
     );
@@ -287,7 +287,7 @@ describe('insertDep wired in SceneCanvas', () => {
     let capturedCommit: InsertDep['commit'] | null = null;
 
     render(
-      <SceneCanvas<D14, L14, P14>
+      <SceneCanvas<D14, L14, P14> features={['draw']}
         scene={scene}
         width={200}
         height={200}
@@ -323,7 +323,7 @@ describe('insertDep wired in SceneCanvas', () => {
     let capturedCommit: InsertDep['commit'] | null = null;
 
     render(
-      <SceneCanvas<D14, L14, P14>
+      <SceneCanvas<D14, L14, P14> features={['draw']}
         scene={scene}
         width={200}
         height={200}
@@ -358,7 +358,7 @@ describe('insertDep wired in SceneCanvas', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     render(
-      <SceneCanvas<D14, L14, P14>
+      <SceneCanvas<D14, L14, P14> features={['draw']}
         scene={scene}
         width={200}
         height={200}

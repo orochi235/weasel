@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, createEvent, act } from '@testing-library/react';
-import { SceneCanvas } from './SceneCanvas';
+import { SceneCanvas, BUILTIN_TOOL_IDS } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
 import { useTools } from '../tools/overlayBinding';
@@ -73,7 +73,7 @@ describe('SceneCanvas defaultTools selector', () => {
         }],
       });
       return (
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={scene}
           width={200} height={200}
           layers={{}}
@@ -121,7 +121,7 @@ describe('SceneCanvas defaultTools selector', () => {
         }],
       });
       return (
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={scene}
           width={200} height={200}
           layers={{}}
@@ -157,7 +157,7 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       captured = tools;
       return (
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={scene}
           width={100} height={100}
           layers={{}}
@@ -183,7 +183,7 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       captured = tools;
       return (
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={scene}
           width={100} height={100}
           layers={{}}
@@ -209,7 +209,7 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={scene}
           width={100} height={100}
           layers={{}}
@@ -234,7 +234,7 @@ describe('SceneCanvas tools prop patch form', () => {
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={scene}
           width={100} height={100}
           layers={{}}
@@ -263,11 +263,11 @@ describe('SceneCanvas tools prop patch form', () => {
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={scene}
           width={100} height={100}
           layers={{}}
-          toolBundle="exhaustive"
+          defaultTools={BUILTIN_TOOL_IDS}
           tools={{ pen: false } as never}
           onToolsCreated={(t) => { captured = t; }}
         />
@@ -293,11 +293,11 @@ describe('SceneCanvas tools prop patch form', () => {
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={scene}
           width={100} height={100}
           layers={{}}
-          toolBundle="exhaustive"
+          defaultTools={BUILTIN_TOOL_IDS}
           tools={{ pen: customPen } as never}
           onToolsCreated={(t) => { captured = t; }}
         />

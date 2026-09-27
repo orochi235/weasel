@@ -10,8 +10,9 @@ import type { Contribution, Eligibility, OverlayPosition } from '../contribution
 /** Options for `useTools`: which tools exist, which one starts active, and
  *  which run continuously regardless of the active one. */
 export interface UseToolsOptions<TOverlay = unknown> {
-  /** Initial active-slot tool id. Must exist in `registry`. */
-  active: string;
+  /** Initial active-slot tool id, which must exist in `registry`. Omit, or
+   *  pass `null`, for no active tool: only hotkey and ambient bindings run. */
+  active?: string | null;
   /** Tools eligible for the active slot or hotkey slot. The keys are the
    *  tool ids; the values are the tool records. A tool with `hotkey` set
    *  is wired into the hotkey slot whenever the engagement state matches. */
@@ -23,11 +24,11 @@ export interface UseToolsOptions<TOverlay = unknown> {
 /** The tool registry's runtime surface: which tool is active, which is
  *  temporarily held by a hotkey, and how to change either. */
 export interface ToolsApi<TOverlay = unknown> {
-  /** Current active-slot tool id. */
-  active: string;
-  /** Set the active-slot tool. The gesture dispatcher watches the active
-   *  tool and cancels any in-flight handle itself. */
-  setActive: (id: string) => void;
+  /** Current active-slot tool id, or `null` when no tool is active. */
+  active: string | null;
+  /** Set the active-slot tool, or `null` to clear it. The gesture dispatcher
+   *  watches the active tool and cancels any in-flight handle itself. */
+  setActive: (id: string | null) => void;
   /** Currently hotkey-engaged tool id (or `null`). Derived as the top of
    *  the hotkey stack for backwards compat with the pre-stack API. */
   hotkeyEngaged: string | null;
@@ -82,16 +83,17 @@ function sameEligibility(a: Eligibility | undefined, b: Eligibility): boolean {
  * lives in the context so the gesture dispatcher and any sibling
  * `useTools` calls all read the same source of truth.
  *
- * **First-mount-wins semantics**: if `opts.active` differs from the context
- * default (`'select'`) on first mount, `useTools` pushes `opts.active` to
- * the context. Subsequent mounts respect whatever the context currently
- * holds (the first caller wins).
+ * **First-mount-wins semantics**: if the context's slot is unseeded (no
+ * `initialActive`, nothing set yet) on first mount, `useTools` pushes
+ * `opts.active` to the context. Subsequent mounts respect whatever the
+ * context currently holds (the first caller wins).
  */
 export function useTools<TOverlay = unknown>(
   opts: UseToolsOptions<TOverlay>,
 ): ToolsApi<TOverlay> {
-  if (!(opts.active in opts.registry)) {
-    throw new Error(`useTools: active "${opts.active}" not in registry`);
+  const initialActive = opts.active ?? null;
+  if (initialActive !== null && !(initialActive in opts.registry)) {
+    throw new Error(`useTools: active "${initialActive}" not in registry`);
   }
 
   const ctx = useActiveToolContext();
@@ -111,7 +113,7 @@ export function useTools<TOverlay = unknown>(
     return { registry, ambient, entries: [...byId.values()] };
   }, [opts.registry, opts.ambient]);
 
-  const contributions = useContributions<TOverlay>({ entries: slotted.entries, focused: opts.active });
+  const contributions = useContributions<TOverlay>({ entries: slotted.entries, focused: initialActive });
 
   const hotkeyEngaged = ctx.hotkeyStack.at(-1) ?? null;
 
@@ -126,8 +128,8 @@ export function useTools<TOverlay = unknown>(
 
   const setFocused = contributions.setFocused;
   const setActive = useCallback(
-    (id: string) => {
-      if (!(id in slottedRef.current.registry)) {
+    (id: string | null) => {
+      if (id !== null && !(id in slottedRef.current.registry)) {
         throw new Error(`setActive: "${id}" not in registry`);
       }
       dlog('tools', 'active:', activeRef.current, '→', id);

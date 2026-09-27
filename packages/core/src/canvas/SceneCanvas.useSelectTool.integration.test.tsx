@@ -141,7 +141,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     // With jsdom getBoundingClientRect → all zeros, worldX = clientX.
     // Hit radius = 8, so clicking at (0,0) should hit the top-left handle.
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -188,7 +188,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     // `moveAction.enabled` returns `SelectionRequired` (static placeholder, Phase 7 TODO).
     // Override to `() => true` so the dispatcher doesn't gate it.
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -227,7 +227,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
 
     // Override areaSelect action to use a spy invoker so we can detect the binding fired.
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -275,7 +275,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     // `rotateAction.enabled` returns `SelectionRequired` (static placeholder).
     // Override to `() => true` so the dispatcher doesn't gate it.
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -326,7 +326,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     };
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -362,7 +362,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     };
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}
@@ -395,7 +395,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     // `moveAction.enabled` returns `SelectionRequired` (static placeholder).
     // Override to `() => true` so the dispatcher doesn't gate it.
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={200}

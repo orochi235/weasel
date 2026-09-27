@@ -277,80 +277,15 @@ describe('useSelectTool — press and drag bindings do not collide', () => {
   });
 });
 
-describe('useSelectTool — drag on an unselected body routes to move', () => {
-  // Regression: dragging a not-yet-selected object must MOVE it, not rotate.
-  //
-  // `select.pick` selects the hit node at press time, but the gesture
-  // dispatcher bakes the `bodyTarget` BEFORE that selection lands — so the
-  // first drag on a fresh object carries `bodyTarget: 'unselected-body'`.
-  // With only a `'selected-body'` move binding, that drag found no ACTIVE
-  // match and fell through to the ambient `rotate` catch-all (`{ kind:
-  // 'drag' }`, whose `start()` only guards on a non-empty selection — which
-  // the classifier has by then established). Result: first drag rotated,
-  // subsequent drags (now pre-selected) moved.
-  function downEvent(bodyTarget: 'selected-body' | 'unselected-body') {
-    return {
-      kind: 'pointerdown' as const,
-      x: 0, y: 0, clientX: 0, clientY: 0,
-      altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
-      bodyTarget,
-    };
-  }
-
-  // The ambient rotate catch-all that hijacked the first drag pre-fix.
-  const ambientRotate: ScopedBinding = {
-    binding: { spec: { kind: 'drag' }, actionId: 'rotate' },
-    scope: 'ambient',
-    ownerToolId: null,
-  };
-
-  function selectBindings(): ScopedBinding[] {
-    const tool = mount({ pickEvery: () => ['hit-id'] });
-    return (tool.bindings ?? []).map((binding) => ({
-      binding,
-      scope: 'active' as const,
-      ownerToolId: 'select',
-    }));
-  }
-
-  it('unselected-body drag (no modifiers) wins for move over the ambient rotate catch-all', () => {
-    const bindings = [...selectBindings(), ambientRotate];
-    const top = matchSorted(downEvent('unselected-body'), bindings, false)[0];
-    expect(top?.binding.actionId).toBe('move');
-    expect(top?.scope).toBe('active');
-  });
-
-  it('selected-body drag still routes to move (unchanged)', () => {
-    const bindings = [...selectBindings(), ambientRotate];
-    const top = matchSorted(downEvent('selected-body'), bindings, false)[0];
-    expect(top?.binding.actionId).toBe('move');
-    expect(top?.scope).toBe('active');
-  });
-
-  // The move binding opts out on anchor / control hits so `editAnchors`'s
-  // ambient binding can win. Both sides now read `isAnchorOrControl` from
-  // `interactions/dispatcher/predicates`, so they cannot drift; these cases
-  // pin the boundary that the old hand-rolled `/^(anchor|controlIn|controlOut):/`
-  // regex got wrong (it had no trailing-index requirement).
-  function downOnAffordance(kind: string) {
-    return { ...downEvent('selected-body'), affordance: { kind } };
-  }
-
-  it.each(['anchor:0', 'anchor:12', 'controlIn:3', 'controlOut:0'])(
-    'move declines a selected-body drag that hit %s',
-    (kind) => {
-      const top = matchSorted(downOnAffordance(kind), selectBindings(), false)[0];
-      expect(top?.binding.actionId).not.toBe('move');
-    },
-  );
-
-  it.each(['anchor', 'anchorage', 'anchor:', 'anchor:1x', 'controlInner:2'])(
-    'move still claims a selected-body drag on the non-anchor kind %s',
-    (kind) => {
-      const top = matchSorted(downOnAffordance(kind), selectBindings(), false)[0];
-      expect(top?.binding.actionId).toBe('move');
-    },
-  );
+// Moving and transforming the selection are ambient bindings now, not the
+// select tool's — `selectionContributions.test.ts` pins their routing.
+it('binds nothing that moves or transforms the selection', () => {
+  const tool = mount({ pickEvery: () => ['hit-id'] });
+  const ids = (tool.bindings ?? []).map((b) => b.actionId);
+  expect(ids).not.toContain('move');
+  expect(ids).not.toContain('clone');
+  expect(ids).not.toContain('resize');
+  expect(ids).not.toContain('rotate');
 });
 
 // useSelectTool no longer publishes its own overlay layer. Marquee paint moved

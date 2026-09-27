@@ -746,7 +746,7 @@ function resolveToolsCursor(
   ctxBase?: () => Omit<ToolCtx, 'scratch'>,
 ): ResolvedCursor | undefined {
   const id = tools.hotkeyEngaged ?? tools.active;
-  const tool = tools.registry[id];
+  const tool = id === null ? undefined : tools.registry[id];
   if (!tool?.cursor) return undefined;
   if (typeof tool.cursor !== 'function') return resolveCursorTier(tool.cursor);
   if (!ctxBase) return undefined;

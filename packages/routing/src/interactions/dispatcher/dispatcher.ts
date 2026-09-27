@@ -173,8 +173,8 @@ export interface DispatcherContext {
   actions: ActionSource;
   /** Dep sources keyed by name. */
   depRegistry: DepRegistry;
-  /** Active tool's id (from ActiveToolContext). */
-  activeToolId: string;
+  /** Active tool's id (from ActiveToolContext); `null` when none is. */
+  activeToolId: string | null;
   /** Held-hotkey stack, top of stack last. */
   hotkeyStack: readonly string[];
   /** Lookup for tool definitions. */

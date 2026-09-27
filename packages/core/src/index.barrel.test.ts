@@ -66,33 +66,19 @@ describe('kit barrel parity', () => {
   // same (canvas) layer, so it's in lockstep by construction — no cross-layer
   // parity test needed (the two no longer straddle a boundary).
 
-  // `apps/draw/src/dev/registryData.ts` previously mirrored
-  // `BUNDLE_DEFINITIONS` from the kit's internal `BUNDLE_TOOLS` map. Now the
-  // kit ships it directly — assert the export exists, names every
-  // `ToolBundle` id, and lists tool ids for each.
-  it('exports BUNDLE_TOOLS mapping every ToolBundle id to its tool ids', () => {
-    const table = (Barrel as Record<string, unknown>).BUNDLE_TOOLS as
+  // `apps/draw/src/dev/registryData.ts` lists the presets from the kit's own
+  // tables rather than a copy — assert the barrel ships them, one action list
+  // per preset `draw` abbreviates.
+  it('exports SCENE_CANVAS_FEATURES and FEATURE_ACTION_IDS for every preset', () => {
+    const features = (Barrel as Record<string, unknown>).SCENE_CANVAS_FEATURES as
+      | readonly string[]
+      | undefined;
+    const table = (Barrel as Record<string, unknown>).FEATURE_ACTION_IDS as
       | Record<string, readonly string[]>
       | undefined;
-    expect(table, 'BUNDLE_TOOLS must be exported').toBeDefined();
-    // The `ToolBundle` type union is the contract for the keys.
-    const sceneCanvasSrc = readFileSync(
-      join(ROOT, 'canvas', 'SceneCanvas.tsx'),
-      'utf8',
-    );
-    const unionMatch = sceneCanvasSrc.match(
-      /export\s+type\s+ToolBundle\s*=([^;]+);/,
-    );
-    expect(unionMatch, 'could not locate ToolBundle union').not.toBeNull();
-    const expectedKeys = [...unionMatch![1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
-    expect(expectedKeys.length).toBeGreaterThan(0);
-    const missingKeys = expectedKeys.filter((id) => !(id in table!));
-    expect(missingKeys, `ToolBundle ids missing from BUNDLE_TOOLS: ${missingKeys.join(', ')}`).toEqual([]);
-    for (const key of expectedKeys) {
-      const tools = table![key];
-      expect(Array.isArray(tools), `BUNDLE_TOOLS.${key} must be an array`).toBe(true);
-      expect(tools.length, `BUNDLE_TOOLS.${key} must be non-empty`).toBeGreaterThan(0);
-    }
+    expect(features, 'SCENE_CANVAS_FEATURES must be exported').toBeDefined();
+    expect(table, 'FEATURE_ACTION_IDS must be exported').toBeDefined();
+    expect(features!.filter((f) => f !== 'draw').sort()).toEqual(Object.keys(table!).sort());
   });
 });
 

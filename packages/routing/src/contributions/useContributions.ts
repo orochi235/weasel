@@ -21,18 +21,19 @@ export interface UseContributionsOptions<TOverlay = unknown> {
   /** Every registry entry, in declaration order. Order decides which of two
    *  same-specificity bindings in one scope tier wins. */
   entries: readonly Contribution<TOverlay>[];
-  /** Desired focused entry id. First-mount-wins against the shared
-   *  `ActiveToolContext` — see `useTools` for the full semantics. */
-  focused: string;
+  /** Desired focused entry id, or `null` for none. First-mount-wins against
+   *  the shared `ActiveToolContext` — see `useTools` for the full semantics. */
+  focused: string | null;
 }
 
 export interface ContributionsApi<TOverlay = unknown> {
   /** Every entry, as passed in. */
   entries: readonly Contribution<TOverlay>[];
-  /** Currently focused entry id. */
-  focused: string;
-  /** Focus an entry. Writes through to the shared `ActiveToolContext`. */
-  setFocused: (id: string) => void;
+  /** Currently focused entry id, or `null` when nothing is focused. */
+  focused: string | null;
+  /** Focus an entry, or pass `null` to focus none. Writes through to the
+   *  shared `ActiveToolContext`. */
+  setFocused: (id: string | null) => void;
   /** Every live binding, tiered by the declaring entry's eligibility. */
   scopedBindings(): ScopedBinding[];
   /** Overlays of every live entry declaring `position`, ordered active, then
@@ -56,15 +57,15 @@ export function useContributions<TOverlay = unknown>(
   const ctx = useActiveToolContext();
   const actionsRegistry = useActionsRegistry();
 
-  // First-mount sync: if context is at its default ('select') and the caller
-  // wants something else, push it. Captured at first render; the setState runs
-  // in a post-commit effect so it never updates state during render.
+  // First-mount sync: if the context's slot is still unseeded and the caller
+  // wants a tool, push it. Captured at first render; the setState runs in a
+  // post-commit effect so it never updates state during render.
   const hasInitializedRef = useRef(false);
   const isFirstRender = !hasInitializedRef.current;
   const needsFirstMountSyncRef = useRef(false);
   if (isFirstRender) {
     hasInitializedRef.current = true;
-    needsFirstMountSyncRef.current = ctx.active === 'select' && opts.focused !== 'select';
+    needsFirstMountSyncRef.current = ctx.active === null && opts.focused !== null;
   }
   useEffect(() => {
     if (!needsFirstMountSyncRef.current) return;
@@ -74,7 +75,7 @@ export function useContributions<TOverlay = unknown>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const focused = isFirstRender && ctx.active === 'select' && opts.focused !== 'select'
+  const focused = isFirstRender && ctx.active === null && opts.focused !== null
     ? opts.focused
     : ctx.active;
 
@@ -87,7 +88,7 @@ export function useContributions<TOverlay = unknown>(
   const engagedRef = useRef<readonly string[]>(ctx.hotkeyStack);
   engagedRef.current = ctx.hotkeyStack;
 
-  const setFocused = useCallback((id: string) => { ctx.setActive(id); }, [ctx]);
+  const setFocused = useCallback((id: string | null) => { ctx.setActive(id); }, [ctx]);
 
   /** Live eligibility state, plus the entries ordered so that hotkey-engaged
    *  ones come first — stack order breaks ties within the hotkey tier. */

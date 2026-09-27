@@ -11,8 +11,7 @@
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render } from '@testing-library/react';
-import { SceneCanvas } from './SceneCanvas';
-import { BUNDLE_TOOLS } from './SceneCanvas';
+import { SceneCanvas, BUILTIN_TOOL_IDS, type BuiltinToolId } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
 
@@ -44,7 +43,14 @@ type D = { color: string };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
-function Harness({ bundle }: { bundle: 'minimal' | 'standard' | 'exhaustive' }) {
+/** The tool sets the removed `toolBundle` presets named, each under `draw`. */
+const TOOL_SETS: Record<string, readonly BuiltinToolId[]> = {
+  draw: [],
+  'draw + shapes': ['rect', 'ellipse', 'line'],
+  'draw + every built-in': BUILTIN_TOOL_IDS,
+};
+
+function Harness({ tools }: { tools: readonly BuiltinToolId[] }) {
   const scene = useScene<D, L, P>({
     systemLayers: [{ id: 'main' }],
     initial: [{
@@ -55,14 +61,14 @@ function Harness({ bundle }: { bundle: 'minimal' | 'standard' | 'exhaustive' }) 
       data: { color: '#f00' },
     }],
   });
-  return <SceneCanvas scene={scene} width={200} height={200} layers={{}} toolBundle={bundle} />;
+  return <SceneCanvas features={['draw']} scene={scene} width={200} height={200} layers={{}} defaultTools={tools} />;
 }
 
 describe('built-in tool bundles declare no conflicting routes', () => {
-  for (const bundle of ['minimal', 'standard', 'exhaustive'] as const) {
-    it(`${bundle} (${BUNDLE_TOOLS[bundle].join(', ')})`, () => {
+  for (const [name, tools] of Object.entries(TOOL_SETS)) {
+    it(`${name} (${tools.join(', ') || 'select, hand'})`, () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      render(<Harness bundle={bundle} />);
+      render(<Harness tools={tools} />);
       const conflicts = warn.mock.calls
         .map((args) => String(args[0]))
         .filter((m) => m.includes('route conflict'));

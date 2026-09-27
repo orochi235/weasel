@@ -16,7 +16,7 @@ import type { GesturePreviewSource } from './gestureBounds';
 export function* toolsInPriorityOrder(tools: ToolsApi): IterableIterator<AnyTool> {
   const seen = new Set<AnyTool>();
   const hotkey = tools.hotkeyEngaged ? tools.registry[tools.hotkeyEngaged] : undefined;
-  const active = tools.registry[tools.active];
+  const active = tools.active === null ? undefined : tools.registry[tools.active];
   for (const t of [hotkey, active]) {
     if (t && !seen.has(t)) { seen.add(t); yield t; }
   }

@@ -72,12 +72,12 @@ describe('SceneCanvas action scopes', () => {
     const sceneB = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
       <ActionsProvider>
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={sceneA} layers={{}} width={400} height={400}
           viewport={{ pinchZoom: true }}
           onViewChange={(v) => { keeps.push(v); }}
         />
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={sceneB} layers={{}} width={400} height={400}
           viewport={{ pinchZoom: false }}
           onViewChange={(v) => { optsOut.push(v); }}
@@ -98,12 +98,12 @@ describe('SceneCanvas action scopes', () => {
     const sceneB = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const both = (
       <ActionsProvider>
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={sceneA} layers={{}} width={400} height={400}
           viewport={{ pinchZoom: true }}
           onViewChange={(v) => { keeps.push(v); }}
         />
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={sceneB} layers={{}} width={400} height={400}
           viewport={{ pinchZoom: false }}
         />
@@ -113,7 +113,7 @@ describe('SceneCanvas action scopes', () => {
     act(() => {
       rerender(
         <ActionsProvider>
-          <SceneCanvas
+          <SceneCanvas features={['draw']}
             scene={sceneA} layers={{}} width={400} height={400}
             viewport={{ pinchZoom: true }}
             onViewChange={(v) => { keeps.push(v); }}
@@ -131,11 +131,11 @@ describe('SceneCanvas action scopes', () => {
     const sceneB = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
       <ActionsProvider>
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={sceneA} layers={{}} width={400} height={400}
           onViewChange={(v) => { keeps.push(v); }}
         />
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={sceneB} layers={{}} width={400} height={400}
           actions={{ 'viewport.pinchZoom': null }}
         />

@@ -125,10 +125,10 @@ function getOngoingInvoker(action: typeof cloneAction) {
 // ---------------------------------------------------------------------------
 
 describe('cloneAction descriptor', () => {
-  it('declares id, label, drag defaultBinding, and ongoing timing', () => {
+  it('declares id, label, no catch-all default binding, and ongoing timing', () => {
     expect(cloneAction.id).toBe('clone');
     expect(cloneAction.label).toBe('Clone');
-    expect(cloneAction.defaultBinding).toEqual({ kind: 'drag' });
+    expect(cloneAction.defaultBinding).toBeUndefined();
     expect(cloneAction.invoker?.timing).toBe('ongoing');
   });
 

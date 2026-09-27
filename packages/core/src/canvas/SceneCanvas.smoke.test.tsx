@@ -29,7 +29,7 @@
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { SceneCanvas } from './SceneCanvas';
+import { SceneCanvas, BUILTIN_TOOL_IDS } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { ActionDisabledReason } from '@weasel-js/routing';
@@ -148,7 +148,7 @@ describe('useSelectTool smoke', () => {
     const id = firstId(scene);
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}
@@ -185,7 +185,7 @@ describe('useSelectTool smoke', () => {
     const areaSelectSpy = vi.fn();
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}
@@ -244,7 +244,7 @@ describe('useSelectTool smoke', () => {
     };
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}
@@ -291,7 +291,7 @@ describe('useSelectTool smoke', () => {
     };
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}
@@ -334,7 +334,7 @@ describe('clone smoke (alt-drag via select tool)', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="exhaustive"
+        features={['draw']} defaultTools={BUILTIN_TOOL_IDS}
         selectionOptions={{ initial: [id] }}
         actions={{
           // clone requires 'selection' + 'scene' deps — both wired in SceneCanvas.
@@ -372,7 +372,7 @@ describe('clone smoke (alt-drag via select tool)', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="exhaustive"
+        features={['draw']} defaultTools={BUILTIN_TOOL_IDS}
         // No initial selection — the alt-drag must select-and-clone in one go.
         actions={{
           clone: { enabled: () => true as const },
@@ -417,7 +417,7 @@ describe('useHandTool smoke', () => {
     });
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}
@@ -474,7 +474,7 @@ describe('useRectTool smoke', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="standard"
+        features={['draw']}
         defaultTools={['select', 'rect']}
       />,
     );
@@ -512,7 +512,7 @@ describe('useEllipseTool smoke', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="standard"
+        features={['draw']}
         defaultTools={['select', 'ellipse']}
       />,
     );
@@ -543,7 +543,7 @@ describe('useLineTool smoke', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="standard"
+        features={['draw']}
         defaultTools={['select', 'line']}
       />,
     );
@@ -574,7 +574,7 @@ describe('usePolygonTool smoke', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="exhaustive"
+        features={['draw']}
         defaultTools={['select', 'polygon']}
       />,
     );
@@ -608,7 +608,7 @@ describe('useStarTool smoke', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="exhaustive"
+        features={['draw']}
         defaultTools={['select', 'star']}
       />,
     );
@@ -639,7 +639,7 @@ describe('usePencilTool smoke', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="standard"
+        features={['draw']}
         defaultTools={['select', 'pencil']}
       />,
     );
@@ -681,7 +681,7 @@ describe('insert geometry uses tool params, not AABB', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="standard"
+        features={['draw']}
         defaultTools={['select', 'line']}
       />,
     );
@@ -714,7 +714,7 @@ describe('insert geometry uses tool params, not AABB', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="exhaustive"
+        features={['draw']}
         defaultTools={['select', 'polygon']}
       />,
     );
@@ -755,7 +755,7 @@ describe('insert geometry uses tool params, not AABB', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="standard"
+        features={['draw']}
         defaultTools={['select', 'pencil']}
       />,
     );
@@ -817,7 +817,7 @@ describe('useLassoTool smoke', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="exhaustive"
+        features={['draw']}
         defaultTools={['select', 'lasso']}
         selection={selectionApi as Parameters<typeof SceneCanvas>[0]['selection']}
       />,
@@ -864,7 +864,7 @@ describe('SceneCanvas — routing prop', () => {
   }) {
     const { scene, id, routing, onKind } = props;
     return (
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}
@@ -927,7 +927,7 @@ describe('SceneCanvas onDoubleClick', () => {
     const onDoubleClick = vi.fn();
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}
@@ -951,7 +951,7 @@ describe('SceneCanvas onDoubleClick', () => {
     const onDoubleClick = vi.fn();
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}
@@ -975,7 +975,7 @@ describe('SceneCanvas onDoubleClick', () => {
     const onDoubleClick = vi.fn();
 
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={400}
@@ -1010,7 +1010,7 @@ describe('keydown fan-out: polygon ArrowUp vs nudge', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="standard"
+        features={['draw']}
         defaultTools={['select', 'polygon']}
         selectionOptions={{ initial: [id] }}
       />,
@@ -1043,7 +1043,7 @@ describe('keydown fan-out: polygon ArrowUp vs nudge', () => {
         layers={{}}
         width={400}
         height={400}
-        toolBundle="standard"
+        features={['draw']}
         defaultTools={['select', 'polygon']}
       />,
     );

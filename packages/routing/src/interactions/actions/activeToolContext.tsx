@@ -24,9 +24,11 @@ import {
  *  hotkey (space-for-hand and the like). The dispatcher reads this to decide
  *  whose bindings are in scope. */
 export interface ActiveToolContextValue {
-  active: string;
+  /** The focused tool's id, or `null` when no tool holds the active slot —
+   *  a canvas can run on ambient bindings alone. */
+  active: string | null;
   hotkeyStack: string[];
-  setActive(id: string): void;
+  setActive(id: string | null): void;
   pushHotkey(id: string): void;
   /**
    * Disengage a hotkey-held tool. With `id`, removes that tool's own entry
@@ -42,18 +44,20 @@ const ActiveToolContext = createContext<ActiveToolContextValue | null>(null);
 /** Props for `<ActiveToolContextProvider>`. */
 export interface ActiveToolContextProviderProps {
   children: ReactNode;
-  initialActive?: string;
+  /** Seeds the active slot, and wins over the first `useTools` call's
+   *  `active`. Omitted, the slot starts empty and that call seeds it. */
+  initialActive?: string | null;
 }
 
 /** Provides active-tool state for a canvas. `<SceneCanvas>` mounts one. */
 export function ActiveToolContextProvider({
   children,
-  initialActive = 'select',
+  initialActive = null,
 }: ActiveToolContextProviderProps) {
-  const [active, setActiveState] = useState(initialActive);
+  const [active, setActiveState] = useState<string | null>(initialActive);
   const [hotkeyStack, setHotkeyStack] = useState<string[]>([]);
 
-  const setActive = useCallback((id: string) => {
+  const setActive = useCallback((id: string | null) => {
     setActiveState(id);
   }, []);
   const pushHotkey = useCallback((id: string) => {

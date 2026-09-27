@@ -97,9 +97,9 @@ const CLIPBOARD_DISABLED_INGESTION = { clipboard: { enabled: false } };
 
 describe('SceneCanvas ingestion — handler registration lifecycle', () => {
   it('two mounted canvases share one refcounted kit:image handler', () => {
-    const a = render(<SceneCanvas scene={makeScene()} layers={{}} width={64} height={64} />);
+    const a = render(<SceneCanvas features={['draw']} scene={makeScene()} layers={{}} width={64} height={64} />);
     expect(kitImageCount()).toBe(1);
-    const b = render(<SceneCanvas scene={makeScene()} layers={{}} width={64} height={64} />);
+    const b = render(<SceneCanvas features={['draw']} scene={makeScene()} layers={{}} width={64} height={64} />);
     expect(kitImageCount()).toBe(1);
 
     // Unmounting the FIRST mount must not strand the survivor without an
@@ -117,7 +117,7 @@ describe('SceneCanvas ingestion — handler registration lifecycle', () => {
       handle: vi.fn(),
     };
     const { unmount } = render(
-      <SceneCanvas scene={makeScene()} layers={{}} width={64} height={64}
+      <SceneCanvas features={['draw']} scene={makeScene()} layers={{}} width={64} height={64}
         ingestion={{ handlers: [entry] }} />,
     );
     expect(getContentHandlers().some((h) => h.id === 'app:test')).toBe(true);
@@ -138,7 +138,7 @@ describe('SceneCanvasApi.ingest', () => {
   it('ingest([pngFile], point) inserts an image node centered on the point', async () => {
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
-    render(<SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+    render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
     expect(ref.current?.ingest).toBeTypeOf('function');
 
     await act(async () => {
@@ -163,7 +163,7 @@ describe('SceneCanvasApi.ingest', () => {
   it('ingest with no point centers the node in the viewport', async () => {
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
-    render(<SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+    render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
 
     await act(async () => {
       ref.current!.ingest([pngFile()]);
@@ -185,7 +185,7 @@ describe('SceneCanvasApi.ingest', () => {
     __setSvgMeasureForTests(async () => ({ width: 100, height: 80 }));
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
-    render(<SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+    render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
 
     const svg = new File(['<svg xmlns="http://www.w3.org/2000/svg"/>'], 'art.svg', { type: 'image/svg+xml' });
     await act(async () => {
@@ -206,7 +206,7 @@ describe('SceneCanvasApi.ingest', () => {
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref}
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref}
         ingestion={UNPACK_INGESTION} />,
     );
 
@@ -251,7 +251,7 @@ describe('SceneCanvasApi.ingest', () => {
     const ref = createRef<SceneCanvasApi>();
     render(
       <ActionsProvider>
-        <SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref} />
+        <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref} />
       </ActionsProvider>,
     );
 
@@ -266,7 +266,7 @@ describe('SceneCanvasApi.ingest', () => {
   it('a weasel-JSON payload pastes through the canvas adapter (fresh id, cascade offset, one undo)', async () => {
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
-    render(<SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+    render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
 
     const text = buildWeaselClipboardText([
       {
@@ -295,7 +295,7 @@ describe('SceneCanvasApi.ingest', () => {
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref}
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref}
         ingestion={CLIPBOARD_DISABLED_INGESTION} />,
     );
 
@@ -317,7 +317,7 @@ describe('SceneCanvasApi.ingest', () => {
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref}
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref}
         ingestion={RESOLVE_SRC_INGESTION} />,
     );
 

@@ -12,7 +12,7 @@ const mkLayer = (id: string): RenderLayer<unknown> => ({
 });
 
 /** Wrapper that provides ActiveToolContextProvider for all useTools tests. */
-function makeWrapper(initialActive = 'select') {
+function makeWrapper(initialActive: string | null = null) {
   return function Wrapper({ children }: { children: ReactNode }) {
     return createElement(ActiveToolContextProvider, { initialActive, children });
   };
@@ -188,7 +188,7 @@ describe('useTools (context-backed)', () => {
     ).toThrow(/ActiveToolContextProvider/);
   });
 
-  it('opts.active populates context on first mount when context is default', async () => {
+  it('opts.active populates context on first mount when context is unseeded', async () => {
     const { result } = renderHook(
       () => {
         useTools({ active: 'rect', registry: { rect: defineTool({ id: 'rect' }), select: defineTool({ id: 'select' }) } });
@@ -196,7 +196,7 @@ describe('useTools (context-backed)', () => {
       },
       {
         wrapper: ({ children }: { children: ReactNode }) =>
-          createElement(ActiveToolContextProvider, { initialActive: 'select', children }),
+          createElement(ActiveToolContextProvider, { children }),
       },
     );
     // Allow the microtask to fire and flush the resulting state update.
@@ -205,6 +205,36 @@ describe('useTools (context-backed)', () => {
     });
     // After the microtask flush the context should have been updated to 'rect'
     expect(result.current.active).toBe('rect');
+  });
+
+  it('a seeded context wins over opts.active', () => {
+    const { result } = renderHook(
+      () => useTools({ active: 'rect', registry: { rect: defineTool({ id: 'rect' }), select: defineTool({ id: 'select' }) } }),
+      { wrapper: makeWrapper('select') },
+    );
+    expect(result.current.active).toBe('select');
+  });
+
+  it('accepts no active tool', () => {
+    const rect = defineTool({ id: 'rect' });
+    const { result } = renderHook(
+      () => useTools({ registry: { rect } }),
+      { wrapper: makeWrapper() },
+    );
+    expect(result.current.active).toBe(null);
+    act(() => result.current.setActive('rect'));
+    expect(result.current.active).toBe('rect');
+    act(() => result.current.setActive(null));
+    expect(result.current.active).toBe(null);
+  });
+
+  it('accepts an empty registry with no active tool', () => {
+    const { result } = renderHook(
+      () => useTools({ active: null, registry: {} }),
+      { wrapper: makeWrapper() },
+    );
+    expect(result.current.active).toBe(null);
+    expect(result.current.getActiveOverlays()).toEqual([]);
   });
 
   it('tools.setActive writes to context', () => {

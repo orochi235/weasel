@@ -18,7 +18,9 @@ import type { ActionsProp } from '@weasel-js/routing';
 import { useActionsRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 
-export function useActionsPropResolver(actions: ActionsProp | undefined): void {
+/** `rev` re-applies the overrides when it changes — pass whatever changes when
+ *  the set they sit on is re-registered. */
+export function useActionsPropResolver(actions: ActionsProp | undefined, rev?: string): void {
   const reg = useActionsRegistry();
   const actionsRef = useRef(actions);
   actionsRef.current = actions;
@@ -78,5 +80,5 @@ export function useActionsPropResolver(actions: ActionsProp | undefined): void {
     }
 
     return () => { for (const u of unregisters) u(); };
-  }, [reg, actions]);
+  }, [reg, actions, rev]);
 }

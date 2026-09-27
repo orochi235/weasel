@@ -93,7 +93,9 @@ interface CloneScratch {
 export const cloneAction: Action & { requires: string[] } = {
   id: 'clone',
   label: 'Clone',
-  defaultBinding: { kind: 'drag' },
+  // No default binding: a bare `{ kind: 'drag' }` would clone a non-empty
+  // selection on any drag no tool claimed. Alt-drag on a body binds it
+  // (`selectionMoveBindings`, the `move` preset).
   // The platform's duplicate cursor, and the whole reason this field is
   // modifier-aware: the select tool binds clone behind `mods: { alt: true }`,
   // so the pump predicts it — and shows this — only while Alt is down.

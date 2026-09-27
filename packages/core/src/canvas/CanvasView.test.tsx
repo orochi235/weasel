@@ -44,7 +44,7 @@ function mount(opts: {
 } = {}) {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   const r = render(
-    <SceneCanvas
+    <SceneCanvas features={['draw']}
       scene={scene}
       layers={{}}
       width={300}
@@ -106,7 +106,7 @@ describe('<CanvasView>', () => {
     const panel = vi.fn();
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={300}
@@ -133,12 +133,12 @@ describe('<CanvasView>', () => {
     const outer = vi.fn();
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container, rerender } = render(
-      <SceneCanvas scene={scene} layers={{}} width={300} height={200} onViewChange={outer}>
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={200} onViewChange={outer}>
         <CanvasView id="panel" bounds={PANEL} />
       </SceneCanvas>,
     );
     rerender(
-      <SceneCanvas scene={scene} layers={{}} width={300} height={200} onViewChange={outer} />,
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={200} onViewChange={outer} />,
     );
 
     wheelAt(container.querySelector('canvas')!, 150);
@@ -304,7 +304,7 @@ describe('SceneCanvas views prop', () => {
     const panel = vi.fn();
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={300}
@@ -329,7 +329,7 @@ describe('SceneCanvas views prop', () => {
       return null;
     }
     render(
-      <SceneCanvas
+      <SceneCanvas features={['draw']}
         scene={scene}
         layers={{}}
         width={300}
@@ -521,7 +521,7 @@ describe('<CanvasView> zoom invariant', () => {
     const panel = vi.fn();
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
-      <SceneCanvas scene={scene} layers={{}} width={300} height={200}>
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={200}>
         <CanvasView
           id="panel"
           bounds={PANEL}

@@ -511,7 +511,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   };
   useEffect(() => {
     const prev = liveToolsRef.current;
-    const next = new Set([activeTool.active, ...activeTool.hotkeyStack]);
+    const next = new Set<string>(
+      activeTool.active === null ? activeTool.hotkeyStack : [activeTool.active, ...activeTool.hotkeyStack],
+    );
     liveToolsRef.current = next;
     for (const id of prev) if (!next.has(id)) fireLifecycle(id, 'onDeactivate');
     if (prevActiveRef.current !== activeTool.active) {

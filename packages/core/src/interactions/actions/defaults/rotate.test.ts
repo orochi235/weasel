@@ -103,10 +103,10 @@ function getOngoingInvoker(action: typeof rotateAction) {
 // ---------------------------------------------------------------------------
 
 describe('rotateAction descriptor', () => {
-  it('declares id, label, drag defaultBinding, and ongoing timing', () => {
+  it('declares id, label, no catch-all default binding, and ongoing timing', () => {
     expect(rotateAction.id).toBe('rotate');
     expect(rotateAction.label).toBe('Rotate');
-    expect(rotateAction.defaultBinding).toEqual({ kind: 'drag' });
+    expect(rotateAction.defaultBinding).toBeUndefined();
     expect(rotateAction.invoker?.timing).toBe('ongoing');
   });
 

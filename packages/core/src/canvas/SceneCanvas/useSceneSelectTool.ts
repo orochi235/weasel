@@ -104,6 +104,9 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
    *  affordance hit-test need. Exposed so SceneCanvas can pass it to the
    *  `affordanceAt` thunk without re-deriving it. */
   boundsOf: (id: string) => import('core/viewport/fitViewToBounds').Bounds | null;
+  /** `selectTool.move` with `selectTool.snap` folded into its behaviors — what
+   *  the `move` preset's bindings carry. */
+  moveOptions: UseMoveOptions<TPose>;
 }
 
 export function useSceneSelectTool<TData, TLayer extends string, TPose>(
@@ -212,7 +215,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
 
   const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
     pickEvery: wiredHitBody,
-    move: wiredMoveOptions,
     ...(opts?.pickBest ? { pickBest: opts.pickBest } : {}),
     ...(opts?.extendClickLocked ? { extendClickLocked: opts.extendClickLocked } : {}),
   });
@@ -230,5 +232,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     pickEvery: wiredHitBody,
     pickBest: wiredPickBest,
     boundsOf: wiredBoundsOf,
+    moveOptions: wiredMoveOptions,
   };
 }

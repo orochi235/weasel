@@ -113,11 +113,11 @@ describe('<SceneCanvas layerVisibility> hides a layer in that view only', () => 
     return (
       <>
         <div data-view="hidden">
-          <SceneCanvas scene={scene} selection={hidden} selectionMode="multi" width={300} height={200}
+          <SceneCanvas features={['draw']} scene={scene} selection={hidden} selectionMode="multi" width={300} height={200}
             layers={LAYERS} layerVisibility={HIDE_FX} />
         </div>
         <div data-view="shown">
-          <SceneCanvas scene={scene} selection={shown} selectionMode="multi" width={300} height={200}
+          <SceneCanvas features={['draw']} scene={scene} selection={shown} selectionMode="multi" width={300} height={200}
             layers={LAYERS} />
         </div>
       </>
@@ -174,7 +174,7 @@ describe('<SceneCanvas layerVisibility> hides a layer in that view only', () => 
     const scene = makeScene();
     scene.setLayerVisible('fx', false);
     const { container } = render(
-      <SceneCanvas scene={scene} width={300} height={200} layers={LAYERS}
+      <SceneCanvas features={['draw']} scene={scene} width={300} height={200} layers={LAYERS}
         layerVisibility={{ 'scene:fx': true }} />,
     );
     await nextFrame();
@@ -196,7 +196,7 @@ describe('<CanvasView layerVisibility> hides a layer in that view only', () => {
     function Host(): ReactNode {
       selection = useSelection({ mode: 'multi' });
       return (
-        <SceneCanvas scene={makeScene()} selection={selection} width={800} height={800} layers={LAYERS}
+        <SceneCanvas features={['draw']} scene={makeScene()} selection={selection} width={800} height={800} layers={LAYERS}
           views={[{
             id: 'panel', bounds: { x: 500, y: 500, w: 200, h: 200 },
             layers: onlyScene, layerVisibility: HIDE_FX,

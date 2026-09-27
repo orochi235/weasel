@@ -2,11 +2,11 @@
  * Shape-tool synthesis for `<SceneCanvas>` — calls the kit's per-shape tool
  * hooks with default `create` callbacks that produce leaf nodes shaped for
  * the kit's PATH_PAINTER (`data: { path, fill }`). Lets consumers opt into
- * a complete drawing toolset via `<SceneCanvas toolBundle="standard">`
+ * a complete drawing toolset via `<SceneCanvas defaultTools={['rect', 'ellipse']}>`
  * without writing per-tool factory code.
  *
  * All hooks are always called (React rules of hooks) — `<SceneCanvas>` only
- * registers the ones requested via `toolBundle` / `defaultTools`.
+ * registers the ones requested via `defaultTools`.
  */
 import { useRef } from 'react';
 import {

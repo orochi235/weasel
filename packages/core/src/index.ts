@@ -1363,8 +1363,9 @@ export type {
   LayerSlotValue,
   StandardSlotConfig,
 } from './canvas/Canvas';
-export type { BuiltinToolId, ToolBundle } from './canvas/SceneCanvas';
-export { BUNDLE_TOOLS, rotateAroundAABBCenter } from './canvas/SceneCanvas';
+export type { BuiltinToolId, Feature } from './canvas/SceneCanvas';
+export { BUILTIN_TOOL_IDS, SCENE_CANVAS_FEATURES, rotateAroundAABBCenter } from './canvas/SceneCanvas';
+export { FEATURE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS } from './canvas/SceneCanvas/features';
 export { KIT_SHAPE_KINDS } from './core/shapeKinds';
 export type { BuiltinShapeToolId, ShapeKind } from './core/shapeKinds';
 export type { BuiltinToolOptions } from './canvas/SceneCanvas/useBuiltinShapeTools';

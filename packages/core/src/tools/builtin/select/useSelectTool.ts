@@ -8,8 +8,6 @@ import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { NodeId } from 'core/scene/types';
 import { defineTool } from '../../overlayBinding';
-import type { UseMoveOptions } from '../../../interactions/actions/move/options';
-import type { BindingOpts } from '@weasel-js/routing';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -18,11 +16,6 @@ import type { DebugSink } from '../../../debug/types';
 import { pickTopMostHit } from '../pickTopMostHit';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
-// Shared affordance predicates — the single source of truth for "what does
-// this affordance kind mean" (`interactions/dispatcher/predicates.ts`). The
-// action descriptors these bindings route to read the same functions, so a
-// tool binding and its action can't disagree about what a hit is.
-import { isResizeHandle, isRotateHandle, isAnchorOrControl } from '@weasel-js/routing';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 export type { Bounds };
 export { MULTI_RESIZE_TARGET_ID };
@@ -84,11 +77,6 @@ export interface UseSelectToolOptions<TPose> {
   /** Whether a node's `layer` reaches the screen in the view this tool picks
    *  for. Ignored when `pickEvery` is supplied. */
   layerIsPainted?: (layer: string) => boolean;
-  /** Move-action options. The move gesture is dispatcher-routed,
-   *  so only `behaviors` is consumed here — threaded into the move binding's
-   *  `opts.behaviors`. Other `UseMoveOptions` fields are accepted for API shape
-   *  but not read by this tool. */
-  move?: UseMoveOptions<TPose>;
   /**
    * When this returns true, a Shift/Meta extend-click must NOT change the
    * node selection.
@@ -106,13 +94,6 @@ export interface UseSelectToolOptions<TPose> {
   /** Optional debug sink. Reserved for future overlay/affordance hitbox
    *  recording. */
   debug?: DebugSink;
-  /** Reparent-on-drop behavior for drag-to-move. `'off'` (default)
-   *  preserves translate-only commits. `'top'` lands the moved nodes at
-   *  the top of the container under the drop point. `'above'` lands them
-   *  immediately above the hit sibling in z-order (falls back to `'top'`
-   *  semantics when the hit is itself a container). Requires the
-   *  `nodeAtPoint` dep to be registered (sourced by `<SceneCanvas>`). */
-  reparentOnDrop?: 'off' | 'top' | 'above';
 }
 
 /** Intersection of the move + area-select adapter interfaces.
@@ -149,12 +130,11 @@ interface PressClassification {
  *  - `select.pick` classifies the press (pointerDown) — it runs the tool's own
  *    pickBest/pickEvery so click semantics (selection replace, extend,
  *    deferred collapse) live in one place.
- *  - drag is owned exclusively by the dispatcher via `Tool.bindings`
- *    (selected-body → moveAction, rotate-handle → rotateAction, handle:* →
- *    resizeAction, empty → areaSelectAction, click on empty → clearSelection).
- *  - Move ghosts render via the preview-ghost layer (driven by moveAction's
- *    `previewIds`/`previewPose`); the marquee renders via the dispatcher
- *    overlay layer (driven by areaSelectAction's `overlay()`).
+ *  - an empty drag marquees (`areaSelect`) and a click on empty clears the
+ *    selection (`clearSelection`); the marquee renders via the dispatcher
+ *    overlay layer, driven by areaSelectAction's `overlay()`.
+ *  - moving and transforming the selection are not the tool's: they are the
+ *    ambient bindings in `selectionContributions.ts`.
  */
 export function useSelectTool<TNode extends { id: string }, TPose>(
   adapter: SelectAdapter<TNode, TPose>,
@@ -353,31 +333,14 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         actions: [pickAction, collapseDeferredAction],
       });
 
-      // Shared move-binding opts (reparent-on-drop + behaviors). Applied to
-      // both the selected-body and unselected-body move bindings so a
-      // first-touch drag and a re-drag commit identically.
-      const moveOpts: { opts?: BindingOpts } = (() => {
-        const reparent = options.reparentOnDrop && options.reparentOnDrop !== 'off'
-          ? { params: { reparentOnDrop: options.reparentOnDrop } }
-          : undefined;
-        const behaviors = options.move?.behaviors?.length
-          ? { behaviors: options.move.behaviors as BindingOpts['behaviors'] }
-          : undefined;
-        return reparent || behaviors
-          ? { opts: { ...reparent, ...behaviors } satisfies BindingOpts }
-          : {};
-      })();
-
       return {
         ...base,
-        // Declarative bindings for the gesture dispatcher.
-        // Binding priority (first match wins):
-        //   0. Press → classify + select (runs before click/drag classification).
-        //   1. Handle drags (resize) — guard on AffordanceHit kind.
-        //   2. Rotate-handle drag — single-selection rotation.
-        //   3. Body drag (selected OR unselected) — move the selection.
-        //   4. Empty drag — marquee area-select.
-        //   5. Click on empty (no modifiers) → clear selection.
+        // Declarative bindings for the gesture dispatcher. The select tool
+        // only chooses: press → classify + select, release → collapse a
+        // deferred multi-click, empty drag → marquee, click on empty → clear.
+        // Moving, cloning, resizing and rotating the selection are ambient
+        // bindings owned by the selection (`selectionContributions.ts`), so
+        // they run under any tool that leaves the gesture unclaimed.
         bindings: [
           // Every press that landed on the scene rather than on chrome. This
           // is the former `initial.pointerDown['*']` route: it classifies the
@@ -417,56 +380,17 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             },
             actionId: 'select.collapseDeferred',
           },
-          { spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle } }, actionId: 'resize' },
-          { spec: { kind: 'drag' as const, target: { kindOf: isRotateHandle } }, actionId: 'rotate' },
-          // Alt-drag on a body → clone (Illustrator convention).
-          // Listed BEFORE bare move so the strict-modifier dispatcher
-          // picks this when Alt is held; bare move matches no-mod drags.
-          // Both selected and unselected bodies are valid clone targets — the
-          // pointerDown classifier calls `selection.applyClick(top, mods)` on
-          // an unselected hit before the drag fires, so cloneAction's
-          // `start` sees the hit node in `selection.get()` either way.
-          { spec: { kind: 'drag' as const, target: 'selected-body' as const, mods: { alt: true } }, actionId: 'clone' },
-          { spec: { kind: 'drag' as const, target: 'unselected-body' as const, mods: { alt: true } }, actionId: 'clone' },
+          // Empty drag → marquee, but not a drag that starts on chrome over
+          // empty canvas. The rotation handle and the outer half of a resize
+          // handle sit off the body; the ambient bindings that own them rank
+          // below this active one, so a bare `'empty'` target took them.
           {
-            // Body-drag → move, BUT defer when the pointerdown hit a path
-            // anchor / control affordance. Anchors lie on the curve so the
-            // body classifier still reports 'selected-body'; without this
-            // opt-out, move's active-scope binding beats editAnchors's
-            // ambient-scope binding on every anchor drag.
-            //
-            // `isAnchorOrControl` is the SAME predicate `editAnchorsAction`
-            // matches on. That is load-bearing: the two must agree on what
-            // counts as an anchor hit or move steals the drag — which is
-            // exactly the bug this opt-out exists to prevent. (It used to be
-            // a hand-rolled regex here that lacked the trailing-index
-            // requirement, so the two sides could disagree.)
             spec: {
               kind: 'drag' as const,
-              target: {
-                kindOf: (afford: unknown, body?: string): boolean =>
-                  body === 'selected-body' && !isAnchorOrControl(afford),
-              },
+              target: { kindOf: (hit: unknown, body?: string) => hit == null && body === 'empty' },
             },
-            actionId: 'move',
-            ...moveOpts,
+            actionId: 'areaSelect',
           },
-          // Body-drag on a NOT-yet-selected node → also move. The pointerDown
-          // classifier selects the hit node before the drag fires (same
-          // contract clone relies on), so by the time moveAction.start() runs
-          // the node is in `selection.get()`. Without this active binding an
-          // unselected-body drag finds no active match and falls through to
-          // ambient scope, where the `rotate` catch-all (`{ kind: 'drag' }`,
-          // start()-guarded only on a non-empty selection) hijacks it — the
-          // "first drag rotates, later drags move" bug. Unselected nodes never
-          // carry anchor affordances (those gate on selection), so the plain
-          // string-form target is sufficient here.
-          {
-            spec: { kind: 'drag' as const, target: 'unselected-body' as const },
-            actionId: 'move',
-            ...moveOpts,
-          },
-          { spec: { kind: 'drag' as const, target: 'empty' as const }, actionId: 'areaSelect' },
           // resize/rotate bind only drag (no click), so a click on either handle
           // (body genuinely empty) would hit target:'empty' and wrongly clear selection.
           {
@@ -481,6 +405,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [options.debug, options.reparentOnDrop, options.move, pickAction, collapseDeferredAction],
+    [options.debug, pickAction, collapseDeferredAction],
   );
 }

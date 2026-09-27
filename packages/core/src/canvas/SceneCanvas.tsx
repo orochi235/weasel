@@ -2,15 +2,14 @@
  * `<SceneCanvas>` — `<Canvas>` wired to a `Scene` primitive.
  *
  * Synthesizes a `MoveAdapter & ResizeAdapter & RotateAdapter & AreaSelectAdapter`
- * from the passed `scene` (via `sceneToAdapter`) and constructs an internal
- * `useSelectTool` + `useTools` so consumers don't have to. The caller-facing
- * API still accepts `pickEvery`/`boundsOf`/`handleHitRadius`/`snap`/
- * `moveOptions`/`resizeOptions`/`rotateOptions`/`selectionOptions` — those
- * props are folded into the internal tool rather than forwarded to Canvas.
+ * from the passed `scene` (via `sceneToAdapter`) and an internal `useTools`.
+ * Bare, it only renders: behavior comes from the `features` presets
+ * (`canvas/SceneCanvas/features.ts`), each of which registers its own actions,
+ * tools, ambient bindings and chrome.
  *
  * If a consumer needs custom tools (e.g. `select` + `insert`), they can pass
  * `tools={useTools(...)}` directly and SceneCanvas forwards it as-is — the
- * internal default tool is ignored in that case.
+ * internal tool registry is ignored in that case.
  *
  * Cascade: `Scene` stores absolute poses, so dragging a container has to
  * translate its descendants in the live overlay and again at commit. The move
@@ -71,6 +70,15 @@ import { useDepSource } from '@weasel-js/routing/react';
 import { usePointerContext } from 'features/pointer/PointerContext';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
+import { selectionMoveContribution, selectionTransformContribution } from 'tools/builtin/select';
+import {
+  resolveFeatures,
+  featureActionIds,
+  type Feature,
+} from './SceneCanvas/features';
+import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
+export type { Feature } from './SceneCanvas/features';
+export { SCENE_CANVAS_FEATURES } from './SceneCanvas/features';
 import { useHandTool } from 'tools/builtin/hand';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
@@ -274,28 +282,13 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
 const NON_SHAPE_BUILTIN_TOOLS = ['select', 'hand'] as const;
 
 /** Built-in tool ids SceneCanvas knows how to mount when no `tools` prop
- *  is supplied. Pass a subset via `defaultTools` to slim the registered set. */
+ *  is supplied, via `defaultTools`. */
 export type BuiltinToolId =
   | (typeof NON_SHAPE_BUILTIN_TOOLS)[number]
   | BuiltinShapeToolId;
 
-/** Named preset tool collections for the `toolBundle` prop. Maps to a
- *  `BuiltinToolId[]` consumed by SceneCanvas's internal `useTools`. */
-export type ToolBundle = 'minimal' | 'standard' | 'exhaustive';
-
-/** Tool-id contents of each named `ToolBundle`. Public so consumers (e.g.
- *  the Bundle Inspector) can introspect the same map SceneCanvas uses to
- *  expand `toolBundle` without mirroring it. The `src/index.barrel.test.ts`
- *  parity gate enforces that every `ToolBundle` id appears here with a
- *  non-empty tool list. */
-export const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
-  minimal: ['select', 'hand'],
-  // No `pencil`: freehand is a specialist instrument, not part of the
-  // everyday shape-drawing set. It stays in `exhaustive`, which means
-  // everything.
-  standard: ['select', 'hand', 'rect', 'ellipse', 'line'],
-  exhaustive: [...NON_SHAPE_BUILTIN_TOOLS, ...KIT_SHAPE_KINDS],
-};
+/** Every built-in tool id, shape tools included. */
+export const BUILTIN_TOOL_IDS: readonly BuiltinToolId[] = [...NON_SHAPE_BUILTIN_TOOLS, ...KIT_SHAPE_KINDS];
 
 /** Minimal hit descriptor passed to `onDoubleClick`. Contains the fields
  *  modality dispatch needs; extends as the kit's `Hit` type evolves. */
@@ -304,9 +297,9 @@ export interface SceneCanvasHit {
   kind: string;
 }
 
-/** Props for `<SceneCanvas>`. Most are optional: a scene is the only thing it
- *  truly needs, and everything else — tools, layers, selection handling,
- *  layouts, animation — layers onto sensible defaults. */
+/** Props for `<SceneCanvas>`. A scene is the only thing it needs. With nothing
+ *  else it renders that scene and keeps a selection no input sets; `features`
+ *  turns behavior on by preset, and the rest configures what those turn on. */
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
     CanvasProps<Node<TData, TLayer, TPose>, TPose>,
@@ -523,26 +516,55 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      */
     selectionMode?: CanvasSelectionMode;
 
+    /**
+     * Behavior presets to turn on, composable in any combination. A canvas
+     * with none renders its scene and keeps a selection (the `selection` API
+     * works) that no input sets: no tools, no standard actions or their keys,
+     * no clipboard, no drop or paste, and no selection chrome. The dispatcher
+     * is still mounted, so bindings a consumer adds work.
+     *
+     * - `view` — wheel pan and zoom, pinch, the zoom keys, and the hand tool
+     *   (H, or hold Space). Passing `viewport` implies it.
+     * - `pick` — the select tool, as the initial active tool and Escape's
+     *   return target: click to pick, drag on empty to marquee, click on empty
+     *   to clear; and the selection outline.
+     * - `move` — drag a body to move it, Alt-drag to clone it. Ambient, so it
+     *   runs under any tool that does not claim the drag.
+     * - `transform` — resize and rotation handles, drawn and bound.
+     * - `edit` — undo/redo, delete, duplicate, group/ungroup, nudge,
+     *   select-all, Escape, cancel-gesture, cut/copy/paste, fill and stroke,
+     *   and their keys.
+     * - `arrange` — align, distribute, reorder, flip.
+     * - `paths` — pathfinder operations, path-edit entry and anchor editing.
+     * - `ingest` — dropped and pasted content (Cmd/Ctrl+V arrives as a paste).
+     * - `draw` — all of the above.
+     *
+     * Tools add the actions they bind — a shape tool brings `insert` — so
+     * `defaultTools` composes with any preset. `actions` then adds, overrides
+     * or removes on top of what the presets registered.
+     */
+    features?: readonly Feature[];
+
     // --- Tools: extend, override, or take over ---
     /** Extra tools or overrides keyed by id, or a full `ToolsApi` takeover.
      *
      *  **Patch form** (`Record<string, AnyTool | true | false>`): merged
-     *  into the built-in registry on top of whatever `defaultTools` /
-     *  `toolBundle` already selected.
+     *  into the built-in registry on top of whatever `defaultTools` and
+     *  `features` already selected.
      *    - `true` pulls in the built-in for this id (`'pen'`, `'lasso'`,
-     *      `'hand'`, …) even when it's outside the active tier — useful
-     *      for `toolBundle: 'minimal'` + `tools={{ pen: true }}`. Unknown
+     *      `'hand'`, …), the same as listing it in `defaultTools`. Unknown
      *      built-in ids warn in dev and are ignored.
      *    - `AnyTool` adds a new id or replaces an existing one
      *      (dev-only warning on replace).
      *    - `false` omits a bundled tool entirely.
      *  Auto-wiring (keybindings, dispatcher, action registry) still runs.
      *
-     *  **Takeover form** (`ToolsApi`): the internal default `useSelectTool`
-     *  is bypassed and this `tools` value is forwarded to Canvas as-is —
-     *  the consumer owns active-slot management. Keybindings are still
-     *  auto-wired against the supplied registry; pass `enableKeybindings={false}`
-     *  to opt out. */
+     *  **Takeover form** (`ToolsApi`): the internal registry is bypassed and
+     *  this `tools` value is forwarded to Canvas as-is — the consumer owns
+     *  active-slot management, and `pick`'s select tool is theirs to supply.
+     *  Every other preset still applies. Keybindings are still auto-wired
+     *  against the supplied registry; pass `enableKeybindings={false}` to opt
+     *  out. */
     tools?: ToolsApi | Record<string, AnyTool | true | false>;
 
     /**
@@ -579,20 +601,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     onToolsCreated?: (tools: ToolsApi) => void;
 
     /**
-     * Named preset for the built-in tool set: `'minimal'` (select + hand),
-     * `'standard'` (select + hand + rect + ellipse + line), or `'exhaustive'` (every built-in including polygon,
-     * star, lasso, text, clone). When set, defines the starting set;
-     * `defaultTools` (if also passed) overrides it. Ignored when the
-     * consumer supplies their own `tools` prop.
-     */
-    toolBundle?: ToolBundle;
-
-    /**
-     * Which built-in tools SceneCanvas registers in its internal `useTools`.
-     * Default: `['select']` (plus `'hand'` when the
-     * `viewport` feature is on). Pass a smaller array to slim — e.g.
-     * `['select']` for move-only. Wins over `toolBundle` when both are
-     * passed. Ignored when the consumer supplies their own `tools` prop.
+     * Built-in tools SceneCanvas registers in its internal `useTools`, on top
+     * of the ones presets bring (`select` from `pick`, `hand` from `view`).
+     * Default: none. Each tool also registers the kit actions it binds, so
+     * `['rect']` brings `insert`. Ignored when the consumer supplies their own
+     * `tools` prop.
      */
     defaultTools?: readonly BuiltinToolId[];
 
@@ -601,14 +614,14 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  surface — `lasso.mode`, `clone.cloneSelection`, etc. */
     toolOptions?: BuiltinToolOptions;
 
-    /** Initial active-slot tool id. Default: `'select'`. Must be one of the
-     *  registered tools (via `defaultTools` / `toolBundle`). Useful for
-     *  demos / consumers that want to land on a non-select tool — e.g. the
-     *  lasso demo starts with `initialActiveTool="lasso"`. Ignored when the
-     *  consumer supplies their own `tools` prop. */
+    /** Initial active-slot tool id. Default: `'select'` when it is
+     *  registered, otherwise none — a canvas can run on ambient bindings
+     *  alone. Must be one of the registered tools. The lasso demo starts with
+     *  `initialActiveTool="lasso"`. Ignored when the consumer supplies their
+     *  own `tools` prop. */
     initialActiveTool?: string;
 
-    /** Always-on entries to register alongside the internal default select:
+    /** Always-on entries to register alongside the internal tools:
      *  tools, and features written as a `SurfaceContribution` — whose views,
      *  deps, overlay, bindings, actions and `attach` all install from this one
      *  list, and uninstall when the entry leaves it. If you supply your own
@@ -616,21 +629,19 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  `useTools` call instead. */
     ambient?: readonly (AnyTool | SurfaceContribution)[];
 
-    /** Viewport feature wiring.
+    /** Configures the `view` preset, and implies it: passing this turns
+     *  `view` on.
      *
      *  - `inertia` and `animatedZoom` are opt-in: pass `true` for defaults or
      *    an object to tune. Omitted means off.
      *  - `pan` (wheel pan), `zoom` (Cmd+wheel + Cmd+=/-/0) and `pinchZoom`
-     *    (two-finger pinch) are opt-OUT: on by default; pass `false` to
-     *    disable. All three are wired by registering the kit's `viewport.*`
-     *    action descriptors with the actions registry — disabling via the
-     *    `actions` prop (`actions: { 'viewport.wheelPan': null }`) also works
-     *    and runs after this.
+     *    (two-finger pinch) are on under `view`; pass `false` to disable one.
+     *    All three are wired by registering the kit's `viewport.*` action
+     *    descriptors with the actions registry — disabling via the `actions`
+     *    prop (`actions: { 'viewport.wheelPan': null }`) also works and runs
+     *    after this.
      *
-     *  When omitted entirely, no hand tool is registered but the default wheel
-     *  pan, Cmd+wheel/key zoom and pinch zoom remain wired (canvas-first
-     *  default). Pass `{ pan: false, zoom: false, pinchZoom: false }` to opt
-     *  out entirely. */
+     *  Without `view`, none of them are wired. */
     viewport?: {
       inertia?: boolean | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds };
       /** Two-finger pinch zoom. `true`/omitted = on with the kit's 0.1–8
@@ -917,10 +928,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectionOptions,
     selectionMode = 'single',
     tools: toolsProp,
+    features,
     enableKeybindings = true,
     enableGestureDispatcher = true,
     onToolsCreated,
-    toolBundle,
     defaultTools,
     toolOptions,
     initialActiveTool,
@@ -1322,7 +1333,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     cascadeContainerPose: !framed,
   });
 
-  const { selectTool: internalSelect, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
+  const {
+    selectTool: internalSelect, pickEvery: internalPickEvery, pickBest: internalPickBest,
+    boundsOf: internalBoundsOf, moveOptions: internalMoveOptions,
+  } = useSceneSelectTool({
     scene,
     adapter,
     poseDescriptor: descriptor as PoseDescriptor<TPose>,
@@ -1365,10 +1379,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     };
   }, [adapter, internalPickEvery, isPointerInteractive, kindClassifier]);
 
-  // Canvas owns pan and pinch itself, gated on its own `viewport` members.
-  // This flag is only "did the consumer pass a viewport prop", and all it
-  // gates here is whether the hand tool gets a registry entry.
-  const viewportRegistered = !!viewport;
+  // The presets this canvas runs with. Keyed on the ids, not the array, so an
+  // inline `features={['draw']}` does not re-derive every render.
+  const featuresKey = (features ?? []).join('|');
+  const hasViewport = viewport !== undefined;
+  const enabled = useMemo(
+    () => resolveFeatures(features, { viewport: hasViewport }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [featuresKey, hasViewport],
+  );
 
   const inertiaEnabled = !!viewport?.inertia;
   const inertiaObj = typeof viewport?.inertia === 'object' ? viewport.inertia : undefined;
@@ -1392,20 +1411,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // viewportAmbient no longer includes keyZoom/wheelZoom tool instances.
   const viewportAmbient: AnyTool[] = [];
 
-  // Resolve which built-ins to mount. Precedence: explicit `defaultTools` >
-  // `toolBundle` preset > legacy default (select, plus hand
-  // when viewport is engaged).
-  const baseRequestedTools: readonly BuiltinToolId[] =
-    defaultTools
-    ?? (toolBundle ? BUNDLE_TOOLS[toolBundle] : null)
-    ?? (viewportRegistered
-      ? ['select', 'hand']
-      : ['select']);
+  // Built-ins to mount: what `defaultTools` lists, plus the tool each preset
+  // brings — `pick` the select tool, `view` the hand.
+  const baseRequestedTools: readonly BuiltinToolId[] = [
+    ...(defaultTools ?? []),
+    ...(enabled.has('pick') ? ['select' as const] : []),
+    ...(enabled.has('view') ? ['hand' as const] : []),
+  ];
 
   // Patch-form `tools` extras with value `true` widen the requested set
-  // ("pull in this built-in even if it's not in the active tier"). Computed
-  // here so the rest of the if-ladder treats them identically to ids that
-  // came in via `defaultTools` / `toolBundle`.
+  // ("pull in this built-in"). Computed here so the rest of the if-ladder
+  // treats them identically to ids that came in via `defaultTools`.
   const KNOWN_BUILTIN_IDS: ReadonlySet<BuiltinToolId> = new Set<BuiltinToolId>([
     ...NON_SHAPE_BUILTIN_TOOLS, ...KIT_SHAPE_KINDS,
   ]);
@@ -1438,11 +1454,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const internalRegistry: Record<string, AnyTool> = {};
   if (wants('select')) internalRegistry.select = internalSelect;
-  // `hand` stays in the registry (not ambient) so its H keybinding + space
-  // hotkey route through `useKeybindings`. The `viewportRegistered` guard
-  // ensures a consumer who passes `defaultTools: ['select','hand']` without
-  // enabling the viewport feature still gets a clean registry (no hand entry).
-  if (wants('hand') && viewportRegistered) internalRegistry.hand = handTool;
+  // `hand` stays in the registry (not ambient) so its H keybinding and its
+  // Space hold both apply.
+  if (wants('hand')) internalRegistry.hand = handTool;
   // Shape / lasso / text tools — registry entries with built-in
   // keybindings (R/E/G/N/L/T) routed via `useKeybindings`.
   if (wants('rect'))    internalRegistry.rect    = shapeTools.rect;
@@ -1481,7 +1495,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const toolsTakeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
 
   const internalTools = useTools({
-    active: initialActiveTool ?? 'select',
+    active: initialActiveTool ?? ('select' in internalRegistry ? 'select' : null),
     registry: internalRegistry,
     ...(mergedAmbient.length ? { ambient: mergedAmbient } : {}),
   });
@@ -1526,6 +1540,35 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // 3.8) exposed the layering bug.
 
   const tools = toolsTakeover ?? internalTools;
+
+  // The selection's own ambient bindings: `move` and `transform`. They are
+  // not tools and sit outside `tools`, so they apply under a takeover too.
+  const selectionMoveOptions = useMemo(
+    () => ({ move: internalMoveOptions }),
+    [internalMoveOptions],
+  );
+  // Transform first: a handle sits over the selected body, so the move
+  // binding matches a handle drag too, and a tie goes to whichever is first.
+  const featureContributions = useMemo<AnyTool[]>(() => [
+    ...(enabled.has('transform') ? [selectionTransformContribution as AnyTool] : []),
+    ...(enabled.has('move') ? [selectionMoveContribution(selectionMoveOptions) as AnyTool] : []),
+  ], [enabled, selectionMoveOptions]);
+
+  // Kit-standard actions to register: every preset's own, plus whichever a
+  // tool or contribution on this canvas binds — a tool brings the actions it
+  // routes to, so `defaultTools={['rect']}` works under any preset.
+  const standardActionsExclude = useMemo(() => {
+    const include = featureActionIds(enabled);
+    const bound = [
+      ...Object.values(tools.registry),
+      ...tools.ambient,
+      ...featureContributions,
+    ];
+    for (const entry of bound) {
+      for (const b of entry.bindings ?? []) include.add(b.actionId);
+    }
+    return KIT_STANDARD_ACTION_IDS.filter((id) => !include.has(id));
+  }, [enabled, tools, featureContributions]);
 
   // Surface the resolved ToolsApi to the introspection callback (the
   // toolkit-builder dev surface uses this to walk `tools.registry` for
@@ -1681,6 +1724,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const selectionForCapsRef = useRef<readonly NodeId[]>([]);
   const getFocusedPropRef = useRef(getFocusedProp);
   getFocusedPropRef.current = getFocusedProp;
+  // Selection chrome belongs to the presets that act on it: the outline to
+  // `pick`, the handles to `transform`. `never` also takes a handle out of
+  // hit-testing, so a hidden handle cannot be grabbed.
+  //
   // selectionMode 'none' suppresses the marquee / lasso chrome by default:
   // every selection write no-ops in that mode, so the select tool's
   // empty-drag binding still CLAIMS the gesture (keeping it from falling
@@ -1689,6 +1736,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const effectiveChromeVisibility = useMemo(() => {
     // Kit defaults first; consumer `chromeVisibility` spread last so it wins.
     const defaults: import('features/chrome-caps').VisibilityRules = {};
+    if (!enabled.has('pick')) defaults['selection.outline'] = never;
+    if (!enabled.has('transform')) {
+      defaults['selection.resize-handles'] = never;
+      defaults['selection.rotation-handle'] = never;
+    }
     if (selectionMode === 'none') {
       defaults['action.marquee'] = never;
       defaults['action.lasso'] = never;
@@ -1698,7 +1750,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     if (selectToolOpts?.rotate === false) defaults['selection.rotation-handle'] = never;
     if (Object.keys(defaults).length === 0) return chromeVisibility;
     return { ...defaults, ...chromeVisibility };
-  }, [chromeVisibility, selectionMode, selectToolOpts?.rotate]);
+  }, [chromeVisibility, selectionMode, selectToolOpts?.rotate, enabled]);
   const chromeVisibilityRef = useRef(effectiveChromeVisibility);
   chromeVisibilityRef.current = effectiveChromeVisibility;
   const getActiveModeRef = useRef(getActiveMode);
@@ -1804,15 +1856,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Pen preview overlay — reads the pen tool's persistent scratch and draws
   // the in-progress path (anchors, handles, rubber-band, close hint). Only
   // wired when the pen tool is actually registered; otherwise null.
+  const wantsPen = wants('pen');
   const penPreviewLayer = useMemo(
-    () => (wants('pen')
+    () => (wantsPen
       ? createPenPreviewLayer({ penTool: shapeTools.pen as Tool<PenScratch> })
       : null),
-    // shapeTools.pen identity is stable across renders (returned from a hook
-    // that memoizes via defineTool). `wants('pen')` is recomputed each render
-    // from `baseRequestedTools` + patch-form `true` entries — capture both.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [shapeTools.pen, baseRequestedTools, trueIds],
+    [shapeTools.pen, wantsPen],
   );
 
   // Bump the canvas's redraw whenever edit-mode changes — the chrome layer
@@ -2134,6 +2183,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 adapter={adapter as unknown as BridgeAdapter}
                 actionDefaults={actionDefaults}
                 actions={resolvedActions}
+                excludeActions={standardActionsExclude}
                 currentViewRef={currentViewRef}
                 onViewChange={handleViewChange}
                 resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
@@ -2144,9 +2194,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 pickEvery={internalPickEvery}
                 layerIsPainted={viewLayerGate}
                 alphaOf={alphaFor ? composedAlphaFor : undefined}
-                viewportPanEnabled={viewport?.pan ?? true}
-                viewportZoom={resolvedViewportZoom}
-                viewportPinchZoom={viewport?.pinchZoom ?? true}
+                viewportPanEnabled={enabled.has('view') ? (viewport?.pan ?? true) : false}
+                viewportZoom={enabled.has('view') ? resolvedViewportZoom : false}
+                viewportPinchZoom={enabled.has('view') ? (viewport?.pinchZoom ?? true) : false}
                 viewportRecenter={viewport?.recenter}
                 viewAnimation={viewAnimation}
                 editAnchorsExternalState={editAnchorsExternalState}
@@ -2166,6 +2216,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 canvasRef={internalCanvasRef}
                 canvasApiRef={canvasApiRef}
                 tools={tools}
+                contributions={featureContributions}
                 enabled={enableGestureDispatcher}
                 keyboard={enableKeybindings}
                 selectionRef={selectionRef}
@@ -2259,6 +2310,7 @@ function GestureDispatcherMounter({
   canvasRef,
   canvasApiRef,
   tools,
+  contributions,
   enabled,
   keyboard,
   selectionRef,
@@ -2279,6 +2331,10 @@ function GestureDispatcherMounter({
    *  `requestRedraw()` between pointer events. */
   canvasApiRef?: React.RefObject<CanvasExtensionApi | null>;
   tools: ToolsApi;
+  /** Always-live entries the canvas installs beside `tools` — the selection's
+   *  `move` / `transform` bindings. Ahead of the tools' ambient entries, so a
+   *  tie at one specificity goes to the kit's. */
+  contributions: readonly AnyTool[];
   enabled: boolean;
   /** When false, the dispatcher leaves keyboard listeners unattached so
    *  keyboard-bound actions never fire. Wired to `enableKeybindings`. */
@@ -2327,11 +2383,12 @@ function GestureDispatcherMounter({
     for (const [id, tool] of Object.entries(tools.registry)) {
       m.set(id, tool);
     }
+    for (const entry of contributions) m.set(entry.id, entry);
     // Ambient tools too — their bindings assemble at ambient scope, and the
     // dispatcher resolves them through this same map.
     for (const tool of tools.ambient) m.set(tool.id, tool);
     return m;
-  }, [tools.registry, tools.ambient]);
+  }, [tools.registry, tools.ambient, contributions]);
 
 
   // Stable refs for the optional thunk inputs so the thunks themselves are
@@ -2512,6 +2569,7 @@ function StandardActionsRegistrar({
   scene,
   adapter,
   actions,
+  excludeActions,
   currentViewRef,
   onViewChange,
   resizeOptions,
@@ -2545,6 +2603,8 @@ function StandardActionsRegistrar({
   adapter: BridgeAdapter;
   actionDefaults?: SceneCanvasProps<unknown, string, unknown>['actionDefaults'];
   actions?: ActionsProp;
+  /** Kit-standard action ids this canvas's presets and tools leave out. */
+  excludeActions: readonly string[];
   currentViewRef: React.RefObject<View>;
   onViewChange: (v: View) => void;
   /** Forwarded from `selectTool.resize` — wires the `resizePolicy` dep
@@ -2685,7 +2745,7 @@ function StandardActionsRegistrar({
     decayLoop,
     layerIsPainted,
   );
-  useStandardActions({ selection, scene, view, history: scene.history });
+  useStandardActions({ selection, scene, view, history: scene.history, exclude: excludeActions });
   // A view overlays `view` with its own camera; this name it leaves alone.
   useDepSource('rootView', () => view);
   const pointer = usePointerContext();
@@ -2714,7 +2774,9 @@ function StandardActionsRegistrar({
   usePoseDescriptorDepSource(poseDescriptor);
   usePoseCompositionDepSource(poseComposition);
 
-  useActionsPropResolver(actions);
+  // Keyed on the exclusion too: a re-registration of the standard set would
+  // otherwise land over the overrides applied on top of it.
+  useActionsPropResolver(actions, excludeActions.join('|'));
 
   // Gate the `resizePolicy` dep registration on the consumer having
   // passed `selectTool.resize`. When absent, consumers wire it via a child
@@ -2788,11 +2850,12 @@ function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
  * The canvas component: renders a `Scene` and wires the interaction stack
  * around it.
  *
- * Mounting one gives you the whole default kit — an adapter synthesized from
- * the scene, the built-in tools and actions, selection, undo, and the gesture
- * dispatcher — with each piece replaceable through props. This is the intended
- * entry point; the lower-level primitives it composes are not part of the
- * public surface.
+ * Mounted bare it renders the scene, keeps a selection no input sets, and
+ * runs a gesture dispatcher for whatever bindings the consumer adds. The
+ * `features` presets turn the kit's behavior on — `features={['draw']}` is the
+ * whole editor: tools, standard actions and their keys, selection chrome,
+ * undo. This is the intended entry point; the lower-level primitives it
+ * composes are not part of the public surface.
  *
  * Its ref exposes a `SceneCanvasApi` for the imperative operations that do not
  * fit a prop (view control, hit queries, redraw requests).

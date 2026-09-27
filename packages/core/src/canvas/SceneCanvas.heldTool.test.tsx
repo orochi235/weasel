@@ -55,7 +55,7 @@ function setup() {
     return (
       <>
         <input aria-label="field" />
-        <SceneCanvas
+        <SceneCanvas features={['draw']}
           scene={scene}
           width={200} height={200}
           layers={{}}

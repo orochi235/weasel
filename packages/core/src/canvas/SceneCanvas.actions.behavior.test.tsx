@@ -41,7 +41,7 @@ describe('SceneCanvas keydown dispatch', () => {
     const scene = makeScene();
     const customRun = vi.fn();
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         actions={{ selectAll: { invoker: { timing: 'immediate' as const, run: () => { customRun(); } } } }} />,
     );
     // jsdom is not Mac, so `mod: true` in the defaultBinding resolves to ctrlKey.
@@ -51,14 +51,14 @@ describe('SceneCanvas keydown dispatch', () => {
 
   it('Escape clears selection (no throw, dispatch reaches handler)', () => {
     const scene = makeScene();
-    const { container } = render(<SceneCanvas scene={scene} layers={{}} width={64} height={64} />);
+    const { container } = render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} />);
     expect(container).toBeTruthy();
     act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
   });
 
   it('a non-matching key does not throw', () => {
     const scene = makeScene();
-    render(<SceneCanvas scene={scene} layers={{}} width={64} height={64} />);
+    render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} />);
     expect(() => act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F13', bubbles: true })); }))
       .not.toThrow();
   });
@@ -67,7 +67,7 @@ describe('SceneCanvas keydown dispatch', () => {
     const scene = makeScene();
     const customRun = vi.fn();
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         actions={{ selectAll: { invoker: { timing: 'immediate' as const, run: () => { customRun(); } } } }} />,
     );
     const input = document.createElement('input');
@@ -83,7 +83,7 @@ describe('SceneCanvas keydown dispatch', () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const next = vi.fn();
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         actions={{
           selectAll: { invoker: { timing: 'immediate', run: () => { throw new Error('boom'); } } },
           // Override `enabled` so the dispatcher's gate doesn't suppress `escape`

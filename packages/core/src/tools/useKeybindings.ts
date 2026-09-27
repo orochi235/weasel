@@ -76,6 +76,8 @@ export function useKeybindings(
   useEffect(() => {
     if (optionsRef.current.disable) return;
     if (!registry) return;
+    // No tools, no tool keys: nothing to activate and nothing to return to.
+    if (Object.keys(toolsRef.current.registry).length === 0) return;
 
     const specs: ToolActivateBindingSpec[] = [];
 
