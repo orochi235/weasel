@@ -14,6 +14,7 @@
 
 .entry {
   --wzl-field-h: 24px;
+  --wzl-number-field-width: 12ch;
   --wzl-font-size: 13px;
   --wzl-border: var(--ckd-accent);
   --wzl-input-surface: color-mix(in srgb, var(--ckd-accent) 12%, transparent);

@@ -34,10 +34,6 @@ import {
   CommandPalette,
   useCommandPaletteShortcut,
 } from '../draw/src/ui/CommandPalette';
-// We deliberately don't import @weasel-js/ui/tokens.css here — the
-// demo's own canvas-kit-demo.css supplies dark-theme --wui-* values mapped
-// from --ckd-* tokens. Pulling tokens.css would clobber those with the
-// light-theme defaults.
 import logoUrl from './assets/weasel-logo.svg';
 import { VERSION } from '@weasel-js/core';
 import { buildTitle } from '../shared/buildInfo';

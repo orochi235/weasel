@@ -1,3 +1,7 @@
+/* The kit's full token set first — spacing, sizes, type scale — so weasel-ui
+   components lay out as designed; the --wzl-* colors below re-skin it. */
+@import '@weasel-js/theme/tokens.css';
+
 :root {
   color-scheme: dark;
   --ckd-bg: #1e1610;
