@@ -6,7 +6,7 @@ import { AnnotationTargets } from '../annotations/AnnotationTargets';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { annotationsFromJSON } from '../annotations/store';
 import type { AnnotationStorage, AnnotationTargetInfo } from '../annotations/types';
-import { type CameraView, CameraScopeContext } from '../canvas/CameraInput';
+import type { CameraView } from '../canvas/CameraInput';
 import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
 import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
@@ -600,18 +600,15 @@ function TrialRuntime({
     />
   ) : null;
 
-  // One input scope for the trial's body: the camera, the loupe and an
-  // overview share its actions, its deps and its pointer. Isolated, because an
-  // actions registry holds one dispatcher and the trial beside this one has
-  // its own.
+  // The trial's root registries, isolated from the trial beside it. Each
+  // camera inside mounts an input scope under them; chrome here reaches the
+  // one last used. The pointer store is the trial's, shared by all of them.
   const scopedBody = (
     <WeaselProvider isolate>
       <PointerContextProvider store={pointer}>
-        <CameraScopeContext.Provider value={true}>
-          <CameraPublishContext.Provider value={publishCamera}>
-            {body}
-          </CameraPublishContext.Provider>
-        </CameraScopeContext.Provider>
+        <CameraPublishContext.Provider value={publishCamera}>
+          {body}
+        </CameraPublishContext.Provider>
       </PointerContextProvider>
     </WeaselProvider>
   );

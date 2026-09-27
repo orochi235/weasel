@@ -60,8 +60,12 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   /** Called on `activate`, so a scope's dep node moves with it. */
   onActivate: (() => void) | null = null;
 
-  constructor(parent: ActionsNode | null, private readonly contextDeps: () => DepRegistry | null) {
-    super(parent);
+  constructor(
+    parent: ActionsNode | null,
+    descends: boolean,
+    private readonly contextDeps: () => DepRegistry | null,
+  ) {
+    super(parent, descends);
     NODES.set(this.registry, this);
   }
 
@@ -75,7 +79,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   }
 
   private snapshot(): readonly Action[] {
-    const leaf = this.leaf();
+    const leaf = this.start();
     const cached = this.cache;
     if (cached && cached.version === this.tree.version && cached.leaf === leaf) return cached.list;
     const ids = new Set<string>();
@@ -153,7 +157,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     },
     list: () => this.snapshot(),
     trigger: (id: string, params?: Record<string, unknown>) => {
-      const leaf = this.leaf();
+      const leaf = this.start();
       const a = leaf.resolve(id);
       if (!a) return false;
       try {
@@ -174,7 +178,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     setDispatcher: (d: Dispatcher | null) => pushOwner(this.dispatchers, d),
     setDepRegistry: (r: DepRegistry | null) => pushOwner(this.wiredDeps, r),
     begin: (id: string, params?: Record<string, unknown>) => {
-      const leaf = this.leaf();
+      const leaf = this.start();
       const a = leaf.resolve(id);
       const disp = leaf.dispatcher();
       if (!a || !disp) return null;
@@ -204,7 +208,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const depReg = useOptionalDepRegistry();
   const depRegRef = useRef<DepRegistry | null>(depReg);
   depRegRef.current = depReg;
-  const node = useMemo(() => new ActionsNode(null, () => depRegRef.current), []);
+  const node = useMemo(() => new ActionsNode(null, true, () => depRegRef.current), []);
   return <ActionsContext.Provider value={node.registry}>{children}</ActionsContext.Provider>;
 }
 
@@ -222,9 +226,9 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
 export function InputScope({ children }: { children: ReactNode }): ReactElement {
   const parentActions = useActionsRegistry();
   const parentDeps = useOptionalDepRegistry();
-  const deps = useMemo(() => new DepNode(depNodeOf(parentDeps)), [parentDeps]);
+  const deps = useMemo(() => new DepNode(depNodeOf(parentDeps), false), [parentDeps]);
   const actions = useMemo(() => {
-    const node = new ActionsNode(actionsNodeOf(parentActions), () => deps.registry);
+    const node = new ActionsNode(actionsNodeOf(parentActions), false, () => deps.registry);
     node.onActivate = () => deps.activate();
     return node;
   }, [parentActions, deps]);
@@ -255,7 +259,7 @@ export function ActionsScope({ children }: { children: ReactNode }): ReactElemen
   const depReg = useOptionalDepRegistry();
   const depRegRef = useRef<DepRegistry | null>(depReg);
   depRegRef.current = depReg;
-  const node = useMemo(() => new ActionsNode(parentNode, () => depRegRef.current), [parentNode]);
+  const node = useMemo(() => new ActionsNode(parentNode, false, () => depRegRef.current), [parentNode]);
   useEffect(() => node.mount(), [node]);
   if (!parent) return <>{children}</>;
   return <ActionsContext.Provider value={node.registry}>{children}</ActionsContext.Provider>;

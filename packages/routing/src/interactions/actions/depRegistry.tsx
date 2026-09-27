@@ -59,7 +59,7 @@ export class DepNode extends ScopeNode<DepNode> {
       };
     },
     get: <K extends DepName>(name: K) => {
-      for (const n of this.leaf().chain()) {
+      for (const n of this.start().chain()) {
         const source = n.sources.get(name as string)?.at(-1);
         if (source) return source() as DepSchema[K];
       }
@@ -67,8 +67,8 @@ export class DepNode extends ScopeNode<DepNode> {
     },
   };
 
-  constructor(parent: DepNode | null) {
-    super(parent);
+  constructor(parent: DepNode | null, descends: boolean) {
+    super(parent, descends);
     NODES.set(this.registry, this);
   }
 }
@@ -86,7 +86,7 @@ export const DepRegistryContext = createContext<DepRegistry | null>(null);
 /** Provides the dep registry for a canvas. `<SceneCanvas>` mounts one; a
  *  consumer registering its own dep sources must be inside it. */
 export function DepRegistryProvider({ children }: { children: ReactNode }) {
-  const node = useMemo(() => new DepNode(null), []);
+  const node = useMemo(() => new DepNode(null, true), []);
   return <DepRegistryContext.Provider value={node.registry}>{children}</DepRegistryContext.Provider>;
 }
 

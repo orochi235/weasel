@@ -8,7 +8,6 @@ import { act, render } from '@testing-library/react';
 import { WeaselProvider } from '@weasel-js/core';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ViewTransform } from '../instrument/types';
-import { CameraScopeContext } from './CameraInput';
 import { CanvasStack } from './CanvasStack';
 
 beforeAll(() => {
@@ -42,7 +41,6 @@ function mountTwo() {
   const taps = [vi.fn(), vi.fn()];
   const { container } = render(
     <WeaselProvider isolate>
-      <CameraScopeContext.Provider value={true}>
         {views.map((onViewChange, i) => (
           <CanvasStack
             key={i}
@@ -54,7 +52,6 @@ function mountTwo() {
             height={100}
           />
         ))}
-      </CameraScopeContext.Provider>
     </WeaselProvider>,
   );
   const hosts = [...container.querySelectorAll<HTMLElement>('.lk-canvas-stack')];

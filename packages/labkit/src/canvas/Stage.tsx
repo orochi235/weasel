@@ -3,7 +3,6 @@ import type { ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
-import { usePublishCamera } from './cameraRegistry';
 import { LinkedCursor } from './LinkedCursor';
 import { DEFAULT_FRAME, type ViewportSize } from './worldSpec';
 
@@ -71,7 +70,6 @@ export function Stage({
     minZoom,
     maxZoom,
   });
-  usePublishCamera(camera);
   const cameraCtx = useMemo(
     () => ({
       view: camera,

@@ -2,7 +2,6 @@ import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useStat
 import type { Point, ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
 import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
-import { usePublishCamera } from './cameraRegistry';
 import { CanvasStackContext } from './CanvasStackContext';
 import { LinkedCursor } from './LinkedCursor';
 import { type CanvasLayerDescriptor, useLayerScheduler } from './useLayerScheduler';
@@ -93,7 +92,6 @@ export function CanvasStack({
     minZoom,
     maxZoom,
   });
-  usePublishCamera(camera);
   const cameraCtx = useMemo(
     () => ({ view: camera, frame, element: () => containerRef.current }),
     [camera, frame],

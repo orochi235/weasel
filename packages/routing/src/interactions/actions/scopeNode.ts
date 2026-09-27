@@ -18,7 +18,10 @@ export class ScopeNode<N extends ScopeNode<N>> {
   private readonly children: N[] = [];
   private activeChild: N | null = null;
 
-  constructor(readonly parent: N | null) {
+  /** `descends`: whether reads made here answer from the active child down —
+   *  true for a root or a yoke, which chrome reads through; false for a scope,
+   *  which answers for itself even with a scope nested inside it. */
+  constructor(readonly parent: N | null, readonly descends: boolean) {
     this.tree = parent ? parent.tree : { version: 0, listeners: new Set() };
   }
 
@@ -74,11 +77,17 @@ export class ScopeNode<N extends ScopeNode<N>> {
     }
   }
 
-  /** Whether a lookup made from the root starts here. */
+  /** Where a read made through this node starts. */
+  start(): N {
+    return this.descends ? this.leaf() : (this as unknown as N);
+  }
+
+  /** Whether this node is on the path a read from the root takes. */
   isActive(): boolean {
     let root = this as unknown as N;
     while (root.parent) root = root.parent;
-    return root.leaf() === this.leaf();
+    for (const n of root.leaf().chain()) if (n === (this as unknown as N)) return true;
+    return false;
   }
 
   /** This node, then each ancestor up to the root. */

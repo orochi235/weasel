@@ -1,3 +1,4 @@
+import { useActionsRegistry } from '@weasel-js/core';
 import { createContext, useContext, useEffect } from 'react';
 import type { CameraView } from './CameraInput';
 
@@ -57,8 +58,29 @@ export const CameraPublishContext = createContext<((camera: CameraView) => () =>
   null,
 );
 
-/** Publish `camera` to the host in scope for as long as the caller is mounted. */
+/** Publish `camera` to the host in scope for as long as the caller is mounted,
+ *  and again each time its input scope becomes the active one — a registry
+ *  key stacks newest-live, so the camera last used is the one chrome reaches.
+ *  Call it inside the camera's scope. */
 export function usePublishCamera(camera: CameraView): void {
   const publish = useContext(CameraPublishContext);
-  useEffect(() => publish?.(camera), [publish, camera]);
+  const actions = useActionsRegistry();
+  useEffect(() => {
+    if (!publish) return;
+    let release = publish(camera);
+    if (!actions) return release;
+    let was = actions.isActive();
+    const off = actions.subscribe(() => {
+      const now = actions.isActive();
+      if (now && !was) {
+        release();
+        release = publish(camera);
+      }
+      was = now;
+    });
+    return () => {
+      off();
+      release();
+    };
+  }, [publish, camera, actions]);
 }
