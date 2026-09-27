@@ -96,15 +96,15 @@ describe('CharacterOptions — script primitives', () => {
     );
     // The unit's suffix is drawn beside the field rather than inside its
     // value, so a typed number needs no punctuation stripped back off.
-    expect(screen.getByRole('textbox', { name: 'Baseline shift' })).toHaveValue('33.3');
-    expect(screen.getByRole('textbox', { name: 'Scale' })).toHaveValue('58.3');
+    expect(screen.getByRole('spinbutton', { name: 'Baseline shift' })).toHaveValue('33.3');
+    expect(screen.getByRole('spinbutton', { name: 'Scale' })).toHaveValue('58.3');
     expect(screen.getAllByText('%')).toHaveLength(2);
   });
 
   it('commits a percentage back as the fraction the run stores', () => {
     const onPatch = vi.fn();
     render(<CharacterOptions style={{ fontScale: 1 }} onPatch={onPatch} />);
-    const input = screen.getByRole('textbox', { name: 'Scale' });
+    const input = screen.getByRole('spinbutton', { name: 'Scale' });
     fireEvent.change(input, { target: { value: '50%' } });
     fireEvent.blur(input);
     expect(onPatch).toHaveBeenCalledWith({ fontScale: 0.5 });
@@ -113,7 +113,7 @@ describe('CharacterOptions — script primitives', () => {
   it('takes a negative baseline shift — that is what a subscript is', () => {
     const onPatch = vi.fn();
     render(<CharacterOptions style={{ baselineShift: 0 }} onPatch={onPatch} />);
-    const input = screen.getByRole('textbox', { name: 'Baseline shift' });
+    const input = screen.getByRole('spinbutton', { name: 'Baseline shift' });
     fireEvent.change(input, { target: { value: '-33.3%' } });
     fireEvent.blur(input);
     expect(onPatch).toHaveBeenCalledWith({ baselineShift: -0.333 });
@@ -123,12 +123,12 @@ describe('CharacterOptions — script primitives', () => {
 describe('CharacterOptions — numeric fields', () => {
   it('shows the shared font size', () => {
     render(<CharacterOptions style={{ fontSize: 18 }} onPatch={vi.fn()} />);
-    expect(screen.getByRole('textbox', { name: 'Size' })).toHaveValue('18');
+    expect(screen.getByRole('spinbutton', { name: 'Size' })).toHaveValue('18');
   });
 
   it('shows a mixed font size as an empty Mixed placeholder', () => {
     render(<CharacterOptions style={{ fontSize: MIXED }} onPatch={vi.fn()} />);
-    const input = screen.getByRole('textbox', { name: 'Size' });
+    const input = screen.getByRole('spinbutton', { name: 'Size' });
     expect(input).toHaveValue('');
     expect(input).toHaveAttribute('placeholder', 'Mixed');
   });
@@ -136,7 +136,7 @@ describe('CharacterOptions — numeric fields', () => {
   it('commits a font size on blur', () => {
     const onPatch = vi.fn();
     render(<CharacterOptions style={{ fontSize: 18 }} onPatch={onPatch} />);
-    const input = screen.getByRole('textbox', { name: 'Size' });
+    const input = screen.getByRole('spinbutton', { name: 'Size' });
     fireEvent.change(input, { target: { value: '24' } });
     fireEvent.blur(input);
     expect(onPatch).toHaveBeenCalledWith({ fontSize: 24 });
@@ -145,7 +145,7 @@ describe('CharacterOptions — numeric fields', () => {
   it('commits tracking on blur', () => {
     const onPatch = vi.fn();
     render(<CharacterOptions style={{ letterSpacing: 0 }} onPatch={onPatch} />);
-    const input = screen.getByRole('textbox', { name: 'Tracking' });
+    const input = screen.getByRole('spinbutton', { name: 'Tracking' });
     fireEvent.change(input, { target: { value: '1.5' } });
     fireEvent.blur(input);
     expect(onPatch).toHaveBeenCalledWith({ letterSpacing: 1.5 });
