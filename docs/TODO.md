@@ -1165,13 +1165,6 @@ one dead `const` and four stale disable directives.
   about 15 minutes before failing, and the publish step should treat that
   E409 as "npm already holds this version" ([npm/cli#9889](https://github.com/npm/cli/issues/9889)).
 
-- **(P2) `@weasel-js/labkit/config` loads `@weasel-js/ui` at runtime again.**
-  `packages/labkit/src/config/entry.test.ts` ("loads nothing from @weasel-js/ui
-  at runtime") fails on main: `config/sectionTree.ts` imports `isPrefLeaf` and
-  `controls/inDialog.tsx` imports `DialogRow` as values from `@weasel-js/ui`.
-  Either move what the config entry needs off `ui` (`isPrefLeaf` is a one-line
-  guard) or keep those modules out of the entry's graph.
-
 - **(P2) Benchmark HUD text against a transparent DOM overlay.** Two ways to
   put text over the canvas: `@weasel-js/hud` draws it as canvas commands, or a
   transparent `@weasel-js/ui` layer sits above the canvas and lets the browser
