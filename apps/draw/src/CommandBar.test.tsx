@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { ActionBar, type ActionBarProps } from './ActionBar';
+import { CommandBar, type CommandBarProps } from './CommandBar';
 
-function props(over: Partial<ActionBarProps> = {}): ActionBarProps {
+function props(over: Partial<CommandBarProps> = {}): CommandBarProps {
   return {
     onSaveSvg: vi.fn(),
     onOpenSvg: vi.fn(),
@@ -31,10 +31,10 @@ function openMenu(name: RegExp) {
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('ActionBar', () => {
+describe('CommandBar', () => {
   it('starts a new document at the paper size picked from New', () => {
     const p = props();
-    render(<ActionBar {...p} />);
+    render(<CommandBar {...p} />);
     openMenu(/New/);
     fireEvent.click(screen.getByRole('menuitem', { name: 'A4' }));
     expect(p.onNew).toHaveBeenCalledWith('a4');
@@ -42,7 +42,7 @@ describe('ActionBar', () => {
 
   it('opens a debug surface in a new tab', () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
-    render(<ActionBar {...props()} />);
+    render(<CommandBar {...props()} />);
     openMenu(/Debug/);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Bundle Inspector' }));
     expect(open).toHaveBeenCalledWith(expect.stringMatching(/#\/dev\/registry$/), '_blank', 'noopener');
@@ -50,7 +50,7 @@ describe('ActionBar', () => {
 
   it('shows grid and snap as pressed toggles and flips only the one clicked', () => {
     const p = props({ gridVisible: true });
-    render(<ActionBar {...p} />);
+    render(<CommandBar {...p} />);
     expect(screen.getByRole('button', { name: 'Show grid' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button', { name: 'Snap to grid' }).getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(screen.getByRole('button', { name: 'Snap to grid' }));
@@ -59,14 +59,14 @@ describe('ActionBar', () => {
   });
 
   it('marks the record button pressed while recording and locks the profile', () => {
-    render(<ActionBar {...props({ recording: true })} />);
+    render(<CommandBar {...props({ recording: true })} />);
     expect(screen.getByRole('button', { name: 'Record input' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button', { name: /Recording profile/ }).hasAttribute('disabled')).toBe(true);
   });
 
   it('changes the recording profile', () => {
     const p = props();
-    render(<ActionBar {...p} />);
+    render(<CommandBar {...p} />);
     openMenu(/Recording profile/);
     fireEvent.click(screen.getByRole('option', { name: 'Full fidelity' }));
     expect(p.onChangeRecordingProfile).toHaveBeenCalledWith('full');

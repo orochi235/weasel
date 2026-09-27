@@ -1,0 +1,3 @@
+.muted { opacity: 0.55; }
+/* A gesture segment baseline-aligns its text; a KeyCap inside it has its own box and sits off-center without this. */
+.keyCap { align-self: center; }

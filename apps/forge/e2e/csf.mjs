@@ -15,7 +15,7 @@ const stories = [
     },
   },
   {
-    id: 'draw-actionbar--emptydocument',
+    id: 'draw-commandbar--emptydocument',
     what: 'apps/draw story, inside its host and on screen',
     check: async ({ frame }) => {
       const box = await frame.evaluate((host) => {

@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 import type { GestureSpec } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
-import { Badge, Button, Code, DataGrid, DetailList, DetailRow, KeyCap, KeySequence, Powerline, ShapeKindIcon, keySpecFromKey, keySpecsFromMods, keySpecsFromShortcut, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@weasel-js/ui';
+import { Badge, Button, Code, DataGrid, DetailList, DetailRow, GestureRoute, KeyCap, KeySequence, ShapeKindIcon, keySpecFromKey, keySpecsFromMods, keySpecsFromShortcut, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec } from '@weasel-js/ui';
 import type { ParsedModifiers, ModifierKey } from '@weasel-js/core/routing';
 
 /** Minimal inline-markdown renderer — splits on backtick-delimited code
@@ -169,63 +169,6 @@ export function RouteBadge({ route }: { route: string }) {
       )}
     </span>
   );
-}
-
-/** Decomposes a v3 route string into a Powerline config. Mirrors RouteBadge's
- *  token order (phase atoms → gesture(arg) → target → modifier keys) but
- *  emits them as tessellated powerline segments. Arg fuses into the gesture
- *  segment as `gesture(arg)`; descriptor defaults and wildcard targets are
- *  kept visible (muted) so the strip reads as the full wiring at a glance. */
-export function routeToPowerline(route: string): Omit<PowerlineProps, 'className' | 'aria-label'> {
-  const parsed = parseRoute(route);
-  const desc = getGestureDescriptor(parsed.gesture as GestureName);
-  const hasArg = !!desc.arg && parsed.arg !== undefined;
-  const argIsKey = hasArg && desc.arg?.name === 'key';
-  const argIsDefault = hasArg && desc.arg?.default !== undefined && parsed.arg === desc.arg.default;
-  const hasTarget = desc.hasTarget && parsed.target !== undefined;
-  const targetIsWildcard = hasTarget && parsed.target === '*';
-  const modKeys = modifierKeys(parsed.modifiers);
-
-  const segments: PowerlineProps['segments'] = [];
-  for (const p of parsed.phases) {
-    if (p.channel !== '&') segments.push({ text: p.channel, status: 'neutral', variant: 'subtle' });
-    segments.push({ text: p.phase, status: 'accent', variant: 'subtle' });
-  }
-  segments.push({
-    text: hasArg ? (
-      argIsKey ? (
-        <>
-          {parsed.gesture}{' '}
-          <KeyCap label={keySpecFromKey(parsed.arg!).label} variant="minimal" className={s.routeKeyCap} />
-        </>
-      ) : (
-        <>
-          {parsed.gesture}
-          <span className={argIsDefault ? s.routeMuted : undefined}>({parsed.arg})</span>
-        </>
-      )
-    ) : parsed.gesture,
-    status: 'info',
-    variant: 'outline',
-  });
-  if (modKeys) {
-    // Coalesce all modifiers into a single fused segment so the whole
-    // "held keys" group reads as one chord rather than a chain of pills.
-    // Sigils are inlined per-key: `+` for required, `?` for optional, so a
-    // mixed set like `+mod ?shift` renders as `+⌘?⇧`.
-    const text = modKeys.map((k) => `${k.optional ? '?' : '+'}${k.label}`).join('');
-    segments.push({ text, status: 'muted', variant: 'solid' });
-  }
-  if (hasTarget) {
-    segments.push({
-      text: parsed.target,
-      status: 'muted',
-      variant: targetIsWildcard ? 'subtle' : 'outline',
-    });
-  }
-  // Every cap is a chevron so the strip reads as a directional pipeline.
-  for (let i = 0; i < segments.length - 1; i++) segments[i].endCap = 'chevron';
-  return { segments };
 }
 
 function KindBadge({ label }: { label: string }) {
@@ -490,7 +433,7 @@ function RouteDetail({
     .map((t) => ({ id: t.id, tool: t }));
   return (
     <div className={s.routeDetailRoot}>
-      <h2 className={s.detailHeading}><Powerline {...routeToPowerline(entry.id)} /></h2>
+      <h2 className={s.detailHeading}><GestureRoute route={entry.id} /></h2>
       <p className={s.routeDescription} title={describeRoute(parsed)}>
         {describeRouteParts(parsed).map((part, i) =>
           typeof part === 'string'
@@ -613,7 +556,7 @@ function ModifierSetDetail({
             id: 'route',
             header: 'route',
             sortable: false,
-            render: (r) => <Powerline {...routeToPowerline(r.route)} />,
+            render: (r) => <GestureRoute route={r.route} />,
           },
         ]}
         empty="No tools declare routes under this modifier set."
@@ -942,7 +885,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         {entry.hotkey && (
           <DetailRow label="hold to engage">
             <KeySequence keys={[hotkeyTriggerToKeySpec(entry.hotkey)]} />
-            <Powerline {...routeToPowerline(`[*:initial] keyHeld(${entry.hotkey})`)} />
+            <GestureRoute route={`[*:initial] keyHeld(${entry.hotkey})`} />
           </DetailRow>
         )}
         {entry.cursor && <DetailRow label="cursor"><code>{entry.cursor}</code></DetailRow>}

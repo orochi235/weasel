@@ -12,7 +12,7 @@
 }
 
 /* --- Action bar (top of window) -------------------------------------- */
-.wd-actionbar {
+.wd-commandbar {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -32,7 +32,7 @@
 
 /* A cluster of kit controls that belong together (file, recording). Each
    control brings its own chrome, so the cluster only lays them out. */
-.wd-actionbar-group {
+.wd-commandbar-group {
   display: inline-flex;
   align-items: center;
   gap: var(--wzl-space-2);
@@ -144,7 +144,7 @@
 /* --- Action bar far-right spacer ------------------------------------- */
 /* Pushes the trailing controls (recording, settings cog) to the right
    edge of the toolbar. */
-.wd-actionbar-spacer {
+.wd-commandbar-spacer {
   margin-left: auto;
 }
 

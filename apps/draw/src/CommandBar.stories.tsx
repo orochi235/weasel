@@ -7,7 +7,7 @@ import {
   useSelection,
   useStandardActions,
 } from '@weasel-js/core';
-import { ActionBar, type ActionBarProps } from './ActionBar';
+import { CommandBar, type CommandBarProps } from './CommandBar';
 import './app.css';
 
 // The editing strips are the kit's registry-driven `<ActionBar>`s, so the
@@ -26,7 +26,7 @@ function KitActions({ selected, children }: { selected: number; children: ReactN
 
 const noop = () => {};
 
-const baseArgs: ActionBarProps = {
+const baseArgs: CommandBarProps = {
   onSaveSvg: noop,
   onOpenSvg: noop,
   onNew: noop,
@@ -54,14 +54,14 @@ const withKit = (selected: number) => (Story: ComponentType) => (
   </ActionsProvider>
 );
 
-const meta: Meta<typeof ActionBar> = {
-  title: 'draw/ActionBar',
-  component: ActionBar,
+const meta: Meta<typeof CommandBar> = {
+  title: 'draw/CommandBar',
+  component: CommandBar,
   parameters: { layout: 'fullscreen' },
 };
 export default meta;
 
-type Story = StoryObj<typeof ActionBar>;
+type Story = StoryObj<typeof CommandBar>;
 
 export const EmptyDocument: Story = {
   args: baseArgs,
@@ -75,12 +75,12 @@ export const WithSelection: Story = {
 
 // Interactive variant lets the reader toggle the grid/snap state
 // buttons and see the active styling, without wiring real ops.
-function InteractiveActionBar(args: ActionBarProps) {
+function InteractiveCommandBar(args: CommandBarProps) {
   const [grid, setGrid] = useState(args.gridVisible);
   const [snap, setSnap] = useState(args.snapToGrid);
   const [recording, setRecording] = useState(args.recording);
   return (
-    <ActionBar
+    <CommandBar
       {...args}
       gridVisible={grid}
       onToggleGrid={() => setGrid((v) => !v)}
@@ -95,5 +95,5 @@ function InteractiveActionBar(args: ActionBarProps) {
 export const ToggleableViewState: Story = {
   args: baseArgs,
   decorators: [withKit(0)],
-  render: (args) => <InteractiveActionBar {...args} />,
+  render: (args) => <InteractiveCommandBar {...args} />,
 };

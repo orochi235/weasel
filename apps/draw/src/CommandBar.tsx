@@ -31,7 +31,7 @@ import {
 import type { Recording, RecordingProfile } from './recorder';
 import { deserializeRecording } from './recordingIO';
 
-export interface ActionBarProps {
+export interface CommandBarProps {
   // File I/O — SVG round-trip via @weasel-js/svg.
   onSaveSvg(): void;
   onOpenSvg(): void;
@@ -92,14 +92,14 @@ function openDebugRoute(hash: string) {
   window.open(`${window.location.pathname}${window.location.search}${hash}`, '_blank', 'noopener');
 }
 
-export function ActionBar(p: ActionBarProps) {
+export function CommandBar(p: CommandBarProps) {
   const viewValue: ViewToggle[] = [
     ...(p.gridVisible ? ['grid' as const] : []),
     ...(p.snapToGrid ? ['snap' as const] : []),
   ];
   return (
-    <div className="wd-actionbar" role="toolbar" aria-label="Actions">
-      <div className="wd-actionbar-group">
+    <div className="wd-commandbar" role="toolbar" aria-label="Actions">
+      <div className="wd-commandbar-group">
         <MenuButton label="New" tooltip="New document" items={PAPER_ITEMS} onAction={p.onNew} />
         <ButtonBar
           ariaLabel="File"
@@ -133,8 +133,8 @@ export function ActionBar(p: ActionBarProps) {
       >
         <ReleaseCompoundIcon />
       </Button>
-      <div className="wd-actionbar-spacer" />
-      <div className="wd-actionbar-group">
+      <div className="wd-commandbar-spacer" />
+      <div className="wd-commandbar-group">
         <Button
           variant="ghost"
           iconOnly

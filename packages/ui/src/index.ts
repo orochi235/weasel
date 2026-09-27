@@ -30,6 +30,7 @@ export * from './components/SwatchGrid';
 export * from './components/MeshEditor';
 export * from './components/PatternPicker';
 export * from './components/Powerline';
+export * from './components/GestureRoute';
 export * from './components/Prefs';
 export * from './components/Properties';
 export { type Stance, type StanceAttrs, type StanceProps, useStance } from './components/stance';
