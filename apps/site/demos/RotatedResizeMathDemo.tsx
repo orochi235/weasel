@@ -28,8 +28,8 @@
  * scene's `setPose`. On release the scenes' batched history captures the
  * gesture.
  *
- * This bypasses `SceneCanvas`'s built-in dispatcher entirely
- * (`enableGestureDispatcher={false}`); the four canvases are pure renderers.
+ * This bypasses `SceneCanvas`'s built-in dispatcher entirely: the four
+ * canvases take no `features`, so they are pure renderers.
  * The math runs in this file because the demo's pedagogy is precisely that
  * math — substituting a broken descriptor for each panel is the whole point.
  */

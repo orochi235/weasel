@@ -1149,8 +1149,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P2) Demos found broken during the 2026-09-27 preset pass.** Each one reproduces with
   `features={['draw']}` restored, so the presets didn't cause it:
-  - `RotatedResizeMathDemo`: after a corner drag, all three "fixed corner" captions show the
-    same value. The blurb says the green one holds still.
   - labkit's `schema-lab`: the ShapeProperties trial renders empty and throws
     `(stroke.dash ?? []).join is not a function`.
   - labkit's `weasel-lab`, `minimal` and `drag-lab` examples paint every node gray. Their
