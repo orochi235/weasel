@@ -1,6 +1,6 @@
 /**
- * Path-vs-geometry hit-test helpers. Five pure functions covering all
- * combinations of path-vs-point, path-vs-rect, and path-vs-polygon.
+ * Path-vs-geometry hit-test helpers: pure functions covering path-vs-point,
+ * path-vs-rect, and path-vs-polygon in both directions.
  *
  * `RectPath` short-circuits to AABB arithmetic. A `PolygonPath` is treated as
  * its filled region: whether a point is inside comes from `pointInPath`, so
@@ -30,14 +30,28 @@ import {
  * the open subpaths, indistinguishable from the closed ones in the result.
  */
 function closedSubpaths(path: PolygonPath, tolerance: number, keepOpen = false): number[][] {
+  const { closed, open } = flatSubpaths(path, tolerance);
+  return keepOpen ? [...closed, ...open] : closed;
+}
+
+/**
+ * `path` flattened to interleaved `[x, y, …]` runs, sorted by whether each
+ * subpath encloses area. A `Z` closing fewer than three points yields an open
+ * run, as does any subpath a `Z` never ends.
+ */
+function flatSubpaths(
+  path: PolygonPath,
+  tolerance: number,
+): { closed: number[][]; open: number[][] } {
   const { commands, coords } = path;
-  const out: number[][] = [];
+  const closed: number[][] = [];
+  const open: number[][] = [];
   let sub: number[] = [];
 
   forEachSegment(commands, coords, (cmd, ci, curX, curY) => {
     switch (cmd) {
       case PATH_M:
-        if (keepOpen && sub.length >= 2) out.push(sub);
+        if (sub.length >= 2) open.push(sub);
         sub = [coords[ci], coords[ci + 1]];
         break;
       case PATH_L:
@@ -61,15 +75,16 @@ function closedSubpaths(path: PolygonPath, tolerance: number, keepOpen = false):
         );
         break;
       case PATH_Z:
-        if (sub.length >= 6 || (keepOpen && sub.length >= 2)) out.push(sub);
+        if (sub.length >= 6) closed.push(sub);
+        else if (sub.length >= 2) open.push(sub);
         sub = [];
         break;
       default:
         throw new Error(`pathHitTest: unknown command ${cmd}`);
     }
   });
-  if (keepOpen && sub.length >= 2) out.push(sub);
-  return out;
+  if (sub.length >= 2) open.push(sub);
+  return { closed, open };
 }
 
 function rectToVerts(r: Rect): Vec2[] {
@@ -142,6 +157,20 @@ function anyEdgeCrossesPolygon(subpaths: readonly number[][], poly: readonly Vec
     }
     return false;
   });
+}
+
+/** `anyEdgeCrossesPolygon` for open runs: no edge back to the first vertex. */
+function anyOpenEdgeCrossesPolygon(runs: readonly number[][], poly: readonly Vec2[]): boolean {
+  for (const run of runs) {
+    for (let i = 0; i + 3 < run.length; i += 2) {
+      const ax = run[i], ay = run[i + 1], bx = run[i + 2], by = run[i + 3];
+      for (let k = 0; k < poly.length; k++) {
+        const p0 = poly[k], p1 = poly[(k + 1) % poly.length];
+        if (segmentsCross(ax, ay, bx, by, p0.x, p0.y, p1.x, p1.y)) return true;
+      }
+    }
+  }
+  return false;
 }
 
 function anyVertexInRect(subpaths: readonly number[][], r: Rect): boolean {
@@ -286,4 +315,28 @@ export function polygonContainsPath(
   // Every vertex is inside, but a concave polygon can still cut an edge. An
   // open subpath is checked as if closed, so this can only err toward false.
   return !anyEdgeCrossesPolygon(subpaths, polygon);
+}
+
+/**
+ * Returns true if any of `path` meets the closed `polygon`: its filled region,
+ * or the line of an open subpath, which encloses nothing. Beziers are
+ * flattened, so a control point off the curve never counts. The companion of
+ * {@link polygonContainsPath}; a lasso touching a shape asks this.
+ */
+export function polygonIntersectsPath(
+  polygon: readonly Vec2[],
+  path: Path,
+  opts: PointInPathOptions = {},
+): boolean {
+  if (polygon.length < 3) return false;
+  if (path.kind === 'rect') return polygonsIntersect(rectToVerts(path), polygon);
+  const { closed, open } = flatSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE);
+  const flatPoly = flattenVerts(polygon);
+  if (anyVertexInPolygon(closed, flatPoly) || anyVertexInPolygon(open, flatPoly)) return true;
+  if (anyEdgeCrossesPolygon(closed, polygon) || anyOpenEdgeCrossesPolygon(open, polygon)) {
+    return true;
+  }
+  // No vertex inside and no crossing: the polygon lies wholly in one region
+  // of the path, so one of its vertices decides whether that region is filled.
+  return closed.length > 0 && pointInPath(path, polygon[0].x, polygon[0].y, opts);
 }

@@ -176,17 +176,20 @@ export interface AreaSelectAdapter {
 
 /**
  * Hit mode for `LassoSelectAdapter.hitTestLasso`:
- *   - 'centers'   — bounds center inside polygon.
- *   - 'intersect' — bounds intersect polygon (any overlap).
- *   - 'enclosed'  — bounds fully inside polygon.
+ *   - 'centers'   — the center of the node's visual bounds is inside the polygon.
+ *   - 'intersect' — the node's outline meets the polygon anywhere.
+ *   - 'enclosed'  — the node's whole outline is inside the polygon.
+ *
+ * The outline is the drawn silhouette, rotation included. `arrayAdapter`,
+ * which has no painters to ask, tests its descriptor's bounds instead.
  */
 export type LassoHitMode = 'centers' | 'intersect' | 'enclosed';
 
 /**
- * Narrow adapter for `useLassoSelect`. Extends `AreaSelectAdapter` with a
+ * Narrow adapter for lasso selection. Extends `AreaSelectAdapter` with a
  * polygon hit-test method. Transient — uses `applyOps` like its rectangular
- * sibling. `hitTestLasso` is optional; when omitted, `useLassoTool` skips
- * wiring the default behavior (same opt-in pattern as `hitTestArea`).
+ * sibling. `hitTestLasso` is optional; `selectFromLasso` does nothing
+ * without it.
  */
 export interface LassoSelectAdapter extends AreaSelectAdapter {
   /** Hit-test against a closed polygon. Vertex order may be CW or CCW; the

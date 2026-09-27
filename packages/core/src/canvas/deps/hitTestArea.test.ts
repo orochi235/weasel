@@ -9,7 +9,7 @@
  * the silhouette via the kernel, so it must NOT.
  */
 import { describe, it, expect } from 'vitest';
-import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from 'features/paths/types';
+import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from 'features/paths/types';
 import { hitTestArea, hitTestLassoPolygon } from './hitTestArea';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
@@ -325,5 +325,67 @@ describe('hitTestLassoPolygon', () => {
     ]);
     expect(pick(scene, 'intersect')).toEqual(['cross', 'in']);
     expect(pick(scene, 'enclosed')).toEqual(['in']);
+  });
+});
+
+/**
+ * A curve's control points are not on its outline. The lobe below runs
+ * (100,0) → (0,0) through controls (100,200) and (0,200), so it bulges to
+ * y = 150 at x = 50 and is only x ≈ 81 wide at y = 120 — while its control
+ * polygon is the whole square [0,100] × [0,200]. A probe at (97,120) is
+ * inside the lobe's bounding box and outside the lobe.
+ */
+describe('intersect flattens curves', () => {
+  const lobe: PolygonPath = {
+    kind: 'polygon',
+    commands: Uint8Array.of(PATH_M, PATH_L, PATH_C, PATH_Z),
+    coords: Float32Array.of(0, 0, 100, 0, 100, 200, 0, 200, 0, 0),
+    fillRule: 'nonzero',
+  };
+  const lobeScene = () => createScene<unknown, string, unknown>({
+    systemLayers: [{ id: 'default' }],
+    initial: [{ id: 'lobe' as NodeId, kind: 'leaf' as const, layer: 'default', pose: lobe, data: null }],
+  });
+  const probe = [{ x: 95, y: 115 }, { x: 99, y: 115 }, { x: 97, y: 125 }];
+
+  it('a lasso beside the curve misses it', () => {
+    expect(hitTestLassoPolygon(lobeScene(), probe, 'intersect')).toEqual([]);
+  });
+
+  it('a lasso over the curve still takes it', () => {
+    const over = [{ x: 45, y: 100 }, { x: 55, y: 100 }, { x: 50, y: 110 }];
+    expect(hitTestLassoPolygon(lobeScene(), over, 'intersect')).toEqual(['lobe']);
+  });
+
+  it('a marquee beside the curve misses it', () => {
+    expect(hitTestArea(lobeScene(), { x: 95, y: 115, width: 4, height: 10 })).toEqual([]);
+  });
+});
+
+/**
+ * An open subpath encloses nothing — the kit's `pointInPath` convention — so
+ * a lasso meets it only by touching the stroke. The V below opens at the top:
+ * its phantom closing edge would run along y = 0.
+ */
+describe('intersect reads an open subpath as a polyline', () => {
+  const vee: PolygonPath = {
+    kind: 'polygon',
+    commands: Uint8Array.of(PATH_M, PATH_L, PATH_L),
+    coords: Float32Array.of(0, 0, 50, 100, 100, 0),
+    fillRule: 'nonzero',
+  };
+  const veeScene = () => createScene<unknown, string, unknown>({
+    systemLayers: [{ id: 'default' }],
+    initial: [{ id: 'vee' as NodeId, kind: 'leaf' as const, layer: 'default', pose: vee, data: null }],
+  });
+
+  it('a lasso between the arms, across the missing closing edge, misses it', () => {
+    const between = [{ x: 45, y: -5 }, { x: 55, y: -5 }, { x: 50, y: 10 }];
+    expect(hitTestLassoPolygon(veeScene(), between, 'intersect')).toEqual([]);
+  });
+
+  it('a lasso across one arm takes it', () => {
+    const arm = [{ x: 10, y: 20 }, { x: 40, y: 20 }, { x: 25, y: 40 }];
+    expect(hitTestLassoPolygon(veeScene(), arm, 'intersect')).toEqual(['vee']);
   });
 });

@@ -123,6 +123,53 @@ describe('sceneToAdapter', () => {
     expect(adapter.hitTestLasso!([{ x: 0, y: 0 }, { x: 1, y: 1 }], 'intersect')).toEqual([]);
   });
 
+  describe('hitTestLasso answers as the live lasso does', () => {
+    // Hypotenuse x + y = 200; the box [0,0]-[200,200] reaches well past it.
+    const TRIANGLE = [{ x: 0, y: 0 }, { x: 200, y: 0 }, { x: 0, y: 200 }];
+
+    it('tests a rotated rect by its rotated ink, not its bounding box', () => {
+      // 100x6 centered on (110,110), turned parallel to the hypotenuse and
+      // 11 units clear of it; its bounding box still overlaps the triangle.
+      const scene = createScene<Data, 'bg', Pose & { rotation?: number }>({ systemLayers: [{ id: 'bg' }] });
+      scene.add({
+        kind: 'leaf', layer: 'bg', data: { label: 'r' },
+        pose: { x: 60, y: 107, width: 100, height: 6, rotation: -Math.PI / 4 },
+      });
+      expect(sceneToAdapter(scene).hitTestLasso!(TRIANGLE, 'intersect')).toEqual([]);
+    });
+
+    it('returns containers, as its marquee does', () => {
+      const scene = makeScene();
+      const box = scene.add({
+        kind: 'container', layer: 'bg', data: { label: 'box' },
+        pose: { x: 0, y: 0, width: 50, height: 50 },
+      });
+      const child = scene.add({
+        kind: 'leaf', layer: 'bg', parent: box, data: { label: 'child' },
+        pose: { x: 10, y: 10, width: 10, height: 10 },
+      });
+      const adapter = sceneToAdapter(scene);
+      expect(adapter.hitTestLasso!(TRIANGLE, 'intersect')).toEqual([box, child]);
+      expect(adapter.hitTestArea!({ x: 0, y: 0, width: 50, height: 50 })).toEqual([box, child]);
+    });
+
+    it('rejects a node whose clipped-away part is all the lasso meets', () => {
+      // The clip shows the child's left end; the lasso reaches only its right.
+      const scene = makeScene();
+      const bed = scene.add({
+        kind: 'container', layer: 'bg', data: { label: 'bed' },
+        pose: { x: 0, y: 0, width: 100, height: 10 },
+        clipFromPose: () => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }),
+      });
+      const wide = scene.add({
+        kind: 'leaf', layer: 'bg', parent: bed, data: { label: 'wide' },
+        pose: { x: 0, y: 0, width: 100, height: 10 },
+      });
+      const rightEnd = [{ x: 80, y: -5 }, { x: 105, y: -5 }, { x: 105, y: 15 }, { x: 80, y: 15 }];
+      expect(sceneToAdapter(scene).hitTestLasso!(rightEnd, 'intersect')).not.toContain(wide);
+    });
+  });
+
   it('setChildOrder reorders root siblings via scene.batch (single undo entry)', () => {
     const scene = makeScene();
     const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });

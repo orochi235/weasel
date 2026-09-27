@@ -31,12 +31,8 @@ import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
 import { asNodeId } from 'core/scene/types';
 import { applyOpsTo } from 'core/applyOps';
-import {
-  polygonContainsRect,
-  polygonContainsRectCenter,
-  polygonIntersectsRect,
-} from 'core/geometry/polygonHitTestRect';
 import { pathIntersectsRect } from 'features/paths/pathHitTest';
+import { hitTestLassoPolygon } from 'canvas/deps/hitTestArea';
 import { pickWalk, scenePickSource } from 'canvas/pickWalk';
 import {
   poseDescriptorForNode,
@@ -407,16 +403,17 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         );
       }, composition);
     },
+    // The live lasso's own hit-test. Containers come back, as `hitTestArea`'s
+    // do: this adapter's consumer has nothing to fold children into them.
     hitTestLasso(polygon, mode: LassoHitMode) {
-      if (polygon.length < 3) return [];
-      return walkClipAware(scene, poseBounds, (_n, pose) => {
-        const b = poseBounds(pose);
-        return (
-          mode === 'centers' ? polygonContainsRectCenter(polygon, b) :
-          mode === 'enclosed' ? polygonContainsRect(polygon, b) :
-          polygonIntersectsRect(polygon, b)
-        );
-      }, composition);
+      return hitTestLassoPolygon(
+        scene as unknown as Scene<unknown, string, unknown>,
+        polygon,
+        mode,
+        composition ? { poseComposition: composition as PoseComposition<unknown> } : {},
+        d as PoseDescriptor<unknown>,
+        { includeContainers: true },
+      );
     },
     // commitInsert (gesture-time leaf insert) is opt-in: present only when
     // `options.commitInsert` is. The full insertNode/removeNode mutators

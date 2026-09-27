@@ -21,10 +21,11 @@ export interface SelectFromLassoOptions {
   mode?: LassoHitMode;
 }
 
-/** Default behavior for `useLassoSelect` / `useLassoTool`: replace selection
- *  with polygon hits, or extend the existing selection when shift is held at
- *  gesture start. Tiny / degenerate lassos behave like a click — clear (or
- *  preserve, with shift). */
+/** A lasso behavior (`useLassoTool({ behaviors })`): replace selection with
+ *  polygon hits in its own `mode`, or extend the existing selection when shift
+ *  is held at gesture start. Tiny / degenerate lassos behave like a click —
+ *  clear (or preserve, with shift). Hits come from the gesture adapter's
+ *  `hitTestLasso`, which under `lassoSelectAction` is the `lassoSelect` dep. */
 export function selectFromLasso(opts?: SelectFromLassoOptions): LassoSelectBehavior {
   const mode: LassoHitMode = opts?.mode ?? 'intersect';
   return {
