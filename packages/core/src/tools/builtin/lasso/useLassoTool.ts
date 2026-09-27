@@ -3,7 +3,6 @@ import { defineTool } from '../../overlayBinding';
 import { LassoIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
 import type { UseLassoSelectOptions } from 'interactions/actions/lasso-select/options';
-import { selectFromLasso } from 'interactions/actions/lasso-select/behaviors/selectFromLasso';
 import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
 import type { ToolKeybinding } from '@weasel-js/routing';
 
@@ -12,8 +11,9 @@ import type { ToolKeybinding } from '@weasel-js/routing';
 export interface UseLassoToolOptions extends Pick<UseLassoSelectOptions,
   'behaviors' | 'transient' | 'label' | 'onGestureStart' | 'onGestureEnd' |
   'minVertexSpacing' | 'debug'> {
-  /** Hit mode forwarded to the default `selectFromLasso` behavior when no
-   *  explicit `behaviors` array is passed. Default 'intersect'. */
+  /** Hit mode for the action's own selection commit, which runs when no
+   *  behavior claims the gesture. A behavior carries its own, as
+   *  `selectFromLasso({ mode })` does. Default 'intersect'. */
   mode?: LassoHitMode;
   /** Override the default keybinding (`{ key: 'L' }`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
@@ -32,11 +32,9 @@ export function useLassoTool(
   _adapter: LassoSelectAdapter,
   options: UseLassoToolOptions = {},
 ): Tool<undefined> {
-  // `behaviors` is not forwarded into the dispatcher-path action yet; `mode`
-  // reaches it through the binding's params below.
-  void (options.behaviors ?? [selectFromLasso({ mode: options.mode ?? 'intersect' })]);
   const modeRef = useRef<LassoHitMode>(options.mode ?? 'intersect');
   modeRef.current = options.mode ?? 'intersect';
+  const { behaviors } = options;
 
   return useMemo(() => {
     return defineTool<undefined>({
@@ -59,9 +57,12 @@ export function useLassoTool(
           actionId: 'lassoSelect',
           // Thunked so a mode change reaches the next gesture without
           // rebuilding the tool.
-          opts: { params: () => ({ mode: modeRef.current }) },
+          opts: {
+            params: () => ({ mode: modeRef.current }),
+            ...(behaviors ? { behaviors } : {}),
+          },
         },
       ],
     });
-  }, [options.keybinding]);
+  }, [options.keybinding, behaviors]);
 }

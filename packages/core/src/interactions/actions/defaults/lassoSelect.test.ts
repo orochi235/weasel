@@ -2,6 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { lassoSelectAction } from './lassoSelect';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { LassoSelectDep } from '../depSchema';
+import { getScratch } from '@weasel-js/routing';
+import type { LassoSelectBehavior, LassoSelectProposed } from '../../gestures/types';
+import {
+  LASSO_VERTICES,
+  selectFromLasso,
+} from '../lasso-select/behaviors/selectFromLasso';
+import { createSetSelectionOp } from 'core/ops/select';
+import type { NodeId } from 'core/scene/types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -262,5 +270,72 @@ describe('lassoSelectAction descriptor', () => {
 
     // Extended: nodeA (existing) + nodeB (hit) deduplicated
     expect(dep.calls.setSelection).toEqual([['nodeA', 'nodeB']]);
+  });
+});
+
+describe('lassoSelectAction behaviors', () => {
+  const SQUARE: Array<[number, number]> = [[10, 0], [10, 10], [0, 10]];
+
+  function drive(
+    dep: LassoSelectDep,
+    behaviors: LassoSelectBehavior[],
+    params?: Record<string, unknown>,
+  ): void {
+    const invoker = getOngoingInvoker(lassoSelectAction);
+    const handle = invoker.start(makeCtx(dep, { x: 0, y: 0 }), {
+      behaviors,
+      ...(params ? { params } : {}),
+    });
+    for (const [x, y] of SQUARE) {
+      handle.onMove!({ ...makeCtx(), world: { x, y }, screen: { x, y } });
+    }
+    handle.onEnd!(makeCtx(), 'commit');
+  }
+
+  it('runs each hook with the gesture pose, the vertices and the proposed lasso', () => {
+    const dep = makeLassoSelectDep();
+    const seen: string[] = [];
+    let lastProposed: LassoSelectProposed | undefined;
+    drive(dep, [{
+      onStart: (ctx) => { seen.push(`start ${JSON.stringify(ctx.origin.get('gesture'))}`); },
+      onMove: (_ctx, proposed) => { lastProposed = proposed; },
+      onEnd: (ctx) => {
+        seen.push(`end ${getScratch(ctx.scratch, LASSO_VERTICES)?.length}`);
+        return undefined;
+      },
+    }]);
+    expect(seen).toEqual([
+      'start {"worldX":0,"worldY":0,"shiftHeld":false}',
+      'end 4',
+    ]);
+    expect(lastProposed?.vertices).toHaveLength(4);
+    expect(lastProposed?.shiftHeld).toBe(false);
+  });
+
+  it('commits the ops a behavior returns in place of the default selection', () => {
+    const dep = makeLassoSelectDep(['hit']);
+    drive(dep, [{ onEnd: () => [createSetSelectionOp({ from: [], to: ['chosen' as NodeId] })] }]);
+    expect(dep.calls.setSelection).toEqual([['chosen']]);
+    expect(dep.calls.hitTestLasso).toEqual([]);
+  });
+
+  it('commits nothing when a behavior aborts with null', () => {
+    const dep = makeLassoSelectDep(['hit']);
+    drive(dep, [{ onEnd: () => null }]);
+    expect(dep.calls.setSelection).toEqual([]);
+  });
+
+  it('falls through to the default selection when every behavior defers', () => {
+    const dep = makeLassoSelectDep(['hit']);
+    drive(dep, [{ onEnd: () => undefined }]);
+    expect(dep.calls.setSelection).toEqual([['hit']]);
+  });
+
+  it("selectFromLasso reaches the dep's hit-test in its own mode", () => {
+    const dep = makeLassoSelectDep(['hit']);
+    drive(dep, [selectFromLasso({ mode: 'enclosed' })], { mode: 'centers' });
+    expect(dep.calls.hitTestLasso).toHaveLength(1);
+    expect((dep.calls.hitTestLasso[0] as { mode: string }).mode).toBe('enclosed');
+    expect(dep.calls.setSelection).toEqual([['hit']]);
   });
 });

@@ -9,11 +9,11 @@
  *      is a hit no silhouette can overturn, so neither the kernel nor the
  *      painter runs.
  *   3. SILHOUETTE poses (`PolygonPath`) → test the silhouette against the area
- *      polygon via the kernel: a hit when ANY silhouette vertex is inside the
- *      area, OR ANY area vertex is inside the silhouette, OR ANY silhouette
- *      edge crosses ANY area edge. This drops AABB false-positives (marquee
- *      grazes an empty corner of the AABB) and rescues silhouettes the old
- *      AABB test would have selected only by luck.
+ *      polygon with `polygonIntersectsPath`: curves flattened, the fill rule
+ *      honored, and an open subpath read as a line rather than an area. This
+ *      drops AABB false-positives (marquee grazes an empty corner of the AABB)
+ *      and rescues silhouettes the old AABB test would have selected only by
+ *      luck.
  *   4. Every other pose → ask the painter for the drawn silhouette
  *      (`findShapeSilhouette`, world frame, memoized per node) and run the same
  *      kernel test on it. This is what reaches the kit's own inserted shapes,
@@ -27,7 +27,12 @@
  */
 import type { Scene, NodeId } from 'core/scene/types';
 import { nodeMemo } from 'core/scene/nodeMemo';
-import { pathIntersectsRect, polygonContainsPath } from 'features/paths/pathHitTest';
+import {
+  pathIntersectsRect,
+  polygonContainsPath,
+  polygonIntersectsPath,
+} from 'features/paths/pathHitTest';
+import type { Vec2 } from 'core/geometry/vec2';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { rectPath } from 'features/paths/builder';
 import type { LassoHitMode } from 'core/adapters/types';
@@ -47,7 +52,7 @@ export { hiddenLayerIds } from 'canvas/pickWalk';
 import type { HitTestView } from 'interactions/actions/depSchema';
 import type { PoseComposition } from 'features/groups/composePose';
 import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
-import { pointInPolygon, rectToContour, segmentsCross } from '@weasel-js/geom';
+import { pointInPolygon, rectToContour } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { Path, PolygonPath } from 'features/paths/types';
 
@@ -60,6 +65,14 @@ export interface AABBBounds {
 
 /** Closed area polygon as interleaved [x0,y0,x1,y1,…]; closing edge implicit. */
 type AreaCoords = ArrayLike<number>;
+
+/** What a region query takes back beyond leaves. */
+export interface RegionQueryOptions {
+  /** Default `false`: a region that takes a container and its children
+   *  selects the same ink twice. A bare-adapter consumer, which has nothing
+   *  to fold children back into their container, asks for them. */
+  includeContainers?: boolean;
+}
 
 
 /** The pick options a region dep hands the shared walk: the asking view's
@@ -111,10 +124,13 @@ export function hitTestAreaPolygon(
   opts?: ScenePickSourceOptions<unknown>,
   /** How to read this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
   descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
+  query: RegionQueryOptions = {},
 ): NodeId[] {
   const ab = areaBounds ?? boundsOf(area);
   if (!ab) return [];
-  return walkArea(scene, ab, opts, descriptor, (node, pose, b, silhouette) => {
+  const areaVerts: Vec2[] = [];
+  for (let i = 0; i + 1 < area.length; i += 2) areaVerts.push({ x: area[i], y: area[i + 1] });
+  return walkArea(scene, ab, opts, descriptor, query, (node, pose, b, silhouette) => {
     // 2. Swallowed whole by a rect marquee — no silhouette can change the
     // answer, so skip the kernel and the painter lookup both.
     if (
@@ -128,7 +144,7 @@ export function hitTestAreaPolygon(
 
     // 3. SILHOUETTE poses: kernel polygon-overlap against the area polygon.
     if (silhouette) {
-      return silhouetteOverlapsArea((pose as PolygonPath).coords, area);
+      return polygonIntersectsPath(areaVerts, pose as PolygonPath);
     }
 
     // 4. Everything else — the kit's own inserted shapes among them, which
@@ -137,11 +153,8 @@ export function hitTestAreaPolygon(
     // marquee was already answered by the fast-reject; against a lasso it
     // still has to meet the polygon.
     const outline = outlineOf(node, pose, b);
-    if (outline.kind === 'polygon') {
-      return silhouetteOverlapsArea(outline.coords, area);
-    }
-    return areaIsRect
-      || silhouetteOverlapsArea(rectToContour(outline.x, outline.y, outline.width, outline.height), area);
+    if (outline.kind === 'rect' && areaIsRect) return true;
+    return polygonIntersectsPath(areaVerts, outline);
   });
 }
 
@@ -162,16 +175,17 @@ export function hitTestLassoPolygon(
   mode: LassoHitMode,
   opts?: ScenePickSourceOptions<unknown>,
   descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
+  query: RegionQueryOptions = {},
 ): NodeId[] {
   if (polygon.length < 3) return [];
   const area: number[] = [];
   for (const p of polygon) area.push(p.x, p.y);
   if (mode === 'intersect') {
-    return hitTestAreaPolygon(scene, area, undefined, false, opts, descriptor);
+    return hitTestAreaPolygon(scene, area, undefined, false, opts, descriptor, query);
   }
   const ab = boundsOf(area);
   if (!ab) return [];
-  return walkArea(scene, ab, opts, descriptor, (node, pose, b, silhouette) => {
+  return walkArea(scene, ab, opts, descriptor, query, (node, pose, b, silhouette) => {
     if (mode === 'centers') {
       return pointInPolygon(area, b.x + b.width / 2, b.y + b.height / 2);
     }
@@ -189,22 +203,21 @@ export function hitTestLassoPolygon(
 }
 
 /**
- * The walk every region query shares: skip containers, gate on the clip, and
- * AABB fast-reject each leaf against `ab` before `hits` sees it with the
- * node's visual bounds `b` and whether its pose is itself a silhouette.
+ * The walk every region query shares: skip containers unless asked, gate on
+ * the clip, and AABB fast-reject each node against `ab` before `hits` sees it
+ * with the node's visual bounds `b` and whether its pose is itself a
+ * silhouette.
  */
 function walkArea(
   scene: Scene<unknown, string, unknown>,
   ab: AABBBounds,
   opts: ScenePickSourceOptions<unknown> | undefined,
   descriptor: PoseDescriptor<unknown>,
+  query: RegionQueryOptions,
   hits: (node: unknown, pose: unknown, b: AABBBounds, silhouette: boolean) => boolean,
 ): NodeId[] {
   return pickWalk<unknown>(scenePickSource(scene, opts), {
-    // A marquee that returns a container *and* its children selects the same
-    // ink twice; the container comes back through the selection's own
-    // parent-folding instead.
-    includeContainers: false,
+    includeContainers: query.includeContainers === true,
     clipAdmits: (clip, node, pose) => {
       const g = poseDescriptorForNode(descriptor, node);
       return pathIntersectsRect(clip, visualBoundsViaDescriptor(pose, g))
@@ -263,40 +276,6 @@ function outlineOf(node: unknown, pose: unknown, b: AABBBounds): Path {
     return rotatePathAround(rectPath(p.x, p.y, p.width, p.height), r.cx, r.cy, r.rotation);
   }
   return rectPath(b.x, b.y, b.width, b.height);
-}
-
-/**
- * Standard polygon-overlap test between a silhouette contour and an area
- * polygon, both interleaved & implicitly closed. Covers all three overlap
- * modes:
- *   - any silhouette vertex inside the area  (silhouette ⊂ area, or partial)
- *   - any area vertex inside the silhouette  (area ⊂ silhouette)
- *   - any silhouette edge crossing any area edge (boundary intersection)
- */
-function silhouetteOverlapsArea(sil: ArrayLike<number>, area: ArrayLike<number>): boolean {
-  const ns = sil.length >> 1;
-  const na = area.length >> 1;
-  if (ns < 1 || na < 3) return false;
-
-  // Any silhouette vertex inside the area.
-  for (let i = 0; i < ns; i++) {
-    if (pointInPolygon(area, sil[i * 2], sil[i * 2 + 1])) return true;
-  }
-  // Any area vertex inside the silhouette.
-  for (let i = 0; i < na; i++) {
-    if (pointInPolygon(sil, area[i * 2], area[i * 2 + 1])) return true;
-  }
-  // Any silhouette edge crossing any area edge (implicit closing edges).
-  for (let i = 0, j = ns - 1; i < ns; j = i++) {
-    const ax = sil[j * 2], ay = sil[j * 2 + 1];
-    const bx = sil[i * 2], by = sil[i * 2 + 1];
-    for (let k = 0, l = na - 1; k < na; l = k++) {
-      const cx = area[l * 2], cy = area[l * 2 + 1];
-      const dx = area[k * 2], dy = area[k * 2 + 1];
-      if (segmentsCross(ax, ay, bx, by, cx, cy, dx, dy)) return true;
-    }
-  }
-  return false;
 }
 
 function boundsOf(coords: ArrayLike<number>): AABBBounds | null {

@@ -61,4 +61,13 @@ describe('useLassoTool', () => {
     rerender({ mode: 'enclosed' });
     expect(params()).toEqual({ mode: 'enclosed' });
   });
+
+  it('hands its behaviors to the action through the binding, and none when given none', () => {
+    const adapter = makeAdapter();
+    const behaviors = [{ onEnd: () => undefined }];
+    const withSome = renderHook(() => useLassoTool(adapter, { behaviors }));
+    expect(withSome.result.current.bindings![0].opts?.behaviors).toBe(behaviors);
+    const withNone = renderHook(() => useLassoTool(adapter));
+    expect(withNone.result.current.bindings![0].opts?.behaviors).toBeUndefined();
+  });
 });

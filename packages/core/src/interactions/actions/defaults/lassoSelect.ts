@@ -15,24 +15,35 @@
  *     Extends selection with shift, replaces otherwise.
  *   - `onEnd('cancel')`: no-op.
  *
+ * ## Behaviors
+ *
+ * `opts.behaviors` (`LassoSelectBehavior[]`) run over a `GestureContext`
+ * whose `origin.get('gesture')` is the start pose, whose scratch holds the
+ * vertices under `LASSO_VERTICES`, and whose adapter answers selection and
+ * hit-testing from the `lassoSelect` dep. `onEnd` is first-non-undefined-wins:
+ * `Op[]` is applied in place of the default selection, `null` aborts, and
+ * all-`undefined` falls through to it.
+ *
  * ## Dep
  *
  * Requires `lassoSelect` dep from DepSchema:
  *   `{ hitTestLasso?(...), hitTestArea(...), getSelection(), setSelection(ids) }`
  *
- * ## What this does NOT wire (vs `useLassoSelect`)
+ * ## What this does NOT wire
  *
- * - Live overlay rendering — deferred to the overlay surface.
- * - `LassoSelectBehavior` pipeline — uses default replace/extend semantics.
- * - Transient vs. committed history modes — always transient (no undo entry),
- *   matching `useLassoSelect`'s `defaultTransient: true` convention.
+ * - Committed history — always transient (no undo entry); a behavior's ops
+ *   are applied the same way.
  * - Debug sink recording.
  */
 
-import { resolveParams, type Action } from '@weasel-js/routing';
+import { resolveParams, setScratch, type Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import type { LassoSelectDep, ViewApi } from '../depSchema';
-import type { LassoHitMode } from 'core/adapters/types';
+import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
+import type { Op } from 'core/ops/types';
+import { applyOpsTo } from 'core/applyOps';
+import type { GestureContext, LassoSelectBehavior, LassoSelectPose } from '../../gestures/types';
+import { LASSO_VERTICES } from '../lasso-select/behaviors/selectFromLasso';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -51,6 +62,32 @@ function polygonAABB(
     if (p.y > maxY) maxY = p.y;
   }
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+/** The dep's polygon test, or its rect test over the polygon's AABB when it
+ *  has none. What both the default commit and a behavior's adapter ask. */
+function hitTestPolygon(
+  dep: LassoSelectDep,
+  vertices: ReadonlyArray<Point2>,
+  mode: LassoHitMode,
+  view: ViewApi | undefined,
+): string[] {
+  if (dep.hitTestLasso) return dep.hitTestLasso(vertices, mode, view);
+  const aabb = polygonAABB(vertices as Point2[]);
+  return aabb ? dep.hitTestArea(aabb, view) : [];
+}
+
+/** The adapter a behavior sees: selection and hit-testing from the dep,
+ *  scoped to the view the lasso started in. */
+function behaviorAdapter(dep: LassoSelectDep, view: ViewApi | undefined): LassoSelectAdapter {
+  const adapter: LassoSelectAdapter = {
+    getSelection: () => dep.getSelection(),
+    setSelection: (ids) => dep.setSelection(ids),
+    hitTestArea: (rect) => dep.hitTestArea(rect, view),
+    hitTestLasso: (polygon, mode) => hitTestPolygon(dep, polygon, mode, view),
+    applyOps: (ops: Op[]) => applyOpsTo(adapter, ops),
+  };
+  return adapter;
 }
 
 // ---------------------------------------------------------------------------
@@ -73,6 +110,9 @@ interface LassoScratch {
   currentY: number;
   /** Cleared by `onEnd` so post-commit `overlay()` returns null. */
   open: boolean;
+  behaviors: LassoSelectBehavior[];
+  /** Built only when there are behaviors to hand it to. */
+  gesture: GestureContext<LassoSelectPose> | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,15 +143,39 @@ export const lassoSelectAction: Action & { requires: string[] } = {
       if (!dep) return {};
 
       const params = resolveParams(opts?.params) as { mode?: LassoHitMode } | undefined;
+      const view = ctx.deps.view as ViewApi | undefined;
+      const vertices: Point2[] = [{ x: ctx.world.x, y: ctx.world.y }];
+      const behaviors = (opts?.behaviors ?? []) as LassoSelectBehavior[];
+      let gesture: GestureContext<LassoSelectPose> | null = null;
+      if (behaviors.length > 0) {
+        const pose: LassoSelectPose = {
+          worldX: ctx.world.x, worldY: ctx.world.y, shiftHeld: ctx.modifiers.shift,
+        };
+        gesture = {
+          draggedIds: ['gesture'],
+          origin: new Map([['gesture', pose]]),
+          current: new Map([['gesture', { ...pose }]]),
+          snap: null,
+          modifiers: { ...ctx.modifiers },
+          pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
+          adapter: behaviorAdapter(dep, view) as unknown as GestureContext<LassoSelectPose>['adapter'],
+          scratch: {},
+        };
+        // The live array, so a behavior reads every vertex added since.
+        setScratch(gesture.scratch, LASSO_VERTICES, vertices);
+        for (const b of behaviors) b.onStart?.(gesture);
+      }
       const scratch: LassoScratch = {
         dep,
         mode: params?.mode ?? 'intersect',
-        view: ctx.deps.view as ViewApi | undefined,
-        vertices: [{ x: ctx.world.x, y: ctx.world.y }],
+        view,
+        vertices,
         shiftHeld: ctx.modifiers.shift,
         currentX: ctx.world.x,
         currentY: ctx.world.y,
         open: true,
+        behaviors,
+        gesture,
       };
 
       return {
@@ -127,6 +191,14 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           if (dx * dx + dy * dy >= MIN_VERTEX_SPACING * MIN_VERTEX_SPACING) {
             scratch.vertices.push({ x, y });
           }
+          const g = scratch.gesture;
+          if (g) {
+            g.modifiers = { ...moveCtx.modifiers };
+            g.pointer = { worldX: x, worldY: y, clientX: 0, clientY: 0 };
+            g.current.set('gesture', { worldX: x, worldY: y, shiftHeld: scratch.shiftHeld });
+            const proposed = { vertices: scratch.vertices, shiftHeld: scratch.shiftHeld };
+            for (const b of scratch.behaviors) b.onMove?.(g, proposed);
+          }
         },
         overlay(): OngoingOverlay | null {
           if (!scratch.open) return null;
@@ -141,7 +213,16 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           scratch.open = false;
           if (reason === 'cancel') return;
 
-          const { dep: d, mode, view, vertices, shiftHeld } = scratch;
+          const { dep: d, mode, view, vertices, shiftHeld, gesture: g } = scratch;
+
+          if (g) {
+            for (const b of scratch.behaviors) {
+              const r = b.onEnd?.(g);
+              if (r === undefined) continue;
+              if (r !== null) (g.adapter as unknown as LassoSelectAdapter).applyOps!(r);
+              return;
+            }
+          }
 
           // Need at least 3 vertices for a meaningful polygon; otherwise no-op.
           if (vertices.length < 3) {
@@ -149,14 +230,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
             return;
           }
 
-          // Hit-test: prefer polygon test; fall back to AABB.
-          let hits: string[];
-          if (d.hitTestLasso) {
-            hits = d.hitTestLasso(vertices, mode, view);
-          } else {
-            const aabb = polygonAABB(vertices);
-            hits = aabb ? d.hitTestArea(aabb, view) : [];
-          }
+          const hits = hitTestPolygon(d, vertices, mode, view);
 
           if (shiftHeld) {
             // Extend: merge current + hits (deduplicated).
