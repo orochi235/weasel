@@ -67,19 +67,3 @@
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
 }
-
-.close {
-  flex: 0 0 auto;
-  background: none;
-  border: none;
-  color: var(--wzl-fg-muted);
-  font-size: var(--wzl-font-size-lg);
-  line-height: 1;
-  padding: var(--wzl-space-1) var(--wzl-space-2);
-  cursor: pointer;
-  border-radius: var(--wzl-radius-sm);
-}
-
-.close:hover {
-  color: var(--wzl-fg);
-}

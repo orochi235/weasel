@@ -3,8 +3,8 @@ import {
   UNSTABLE_Toast as RACToast,
   UNSTABLE_ToastContent as RACToastContent,
   Text,
-  Button,
 } from 'react-aria-components';
+import { CloseButton } from '../CloseButton';
 import { defaultToastQueue, racQueueOf, type ToastQueue, type ToastTone } from './queue';
 import s from './Toast.module.css';
 import './toastViewTransitions.css';
@@ -65,9 +65,7 @@ export function ToastRegion(props: ToastRegionProps) {
               <Text slot="description" className={s.description}>{t.content.description}</Text>
             )}
           </RACToastContent>
-          <Button slot="close" className={s.close} aria-label="Dismiss notification">
-            ×
-          </Button>
+          <CloseButton ariaLabel="Dismiss notification" onClick={() => racQueueOf(queue).close(t.key)} />
         </RACToast>
       )}
     </RACToastRegion>

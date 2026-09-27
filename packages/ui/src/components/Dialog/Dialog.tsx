@@ -8,6 +8,7 @@ import {
   type DialogProps as RACDialogProps,
 } from 'react-aria-components';
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
+import { CloseButton } from '../CloseButton';
 import { type StanceProps, useStance } from '../stance';
 import s from './Dialog.module.css';
 
@@ -90,14 +91,7 @@ export function Dialog(props: DialogProps) {
                       <Heading slot="title" className={s.title}>{title}</Heading>
                     )}
                     {showClose && (
-                      <button
-                        type="button"
-                        className={s.close}
-                        onClick={close}
-                        aria-label="Close dialog"
-                      >
-                        ×
-                      </button>
+                      <CloseButton ariaLabel="Close dialog" onClick={close} />
                     )}
                   </header>
                 )}

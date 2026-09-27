@@ -1,0 +1,38 @@
+/* Sets its own height: a host's control-height default for bare buttons
+   (labkit's) would otherwise stretch the square. */
+.close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--wzl-icon-button-size);
+  height: var(--wzl-icon-button-size);
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--wzl-radius-sm);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--wzl-fg-muted);
+  cursor: pointer;
+}
+
+.close:hover:not(:disabled) {
+  background: var(--wzl-surface-hover);
+  border-color: transparent;
+  color: var(--wzl-fg);
+}
+
+.close:active:not(:disabled) {
+  background: var(--wzl-surface-pressed);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+}
+
+.close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

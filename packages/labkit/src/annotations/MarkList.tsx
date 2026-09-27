@@ -1,4 +1,4 @@
-import { Input } from '../passthrough/weasel-ui';
+import { CloseButton, Input } from '../passthrough/weasel-ui';
 import { useAnnotations } from './AnnotationsContext';
 import type { AnnotationMeaning } from './types';
 
@@ -35,14 +35,11 @@ export function MarkList({ meaning, config }: MarkListProps) {
               <span className="lk-mark-list__kind">{a.kind}</span>
               <span className="lk-mark-list__target">{a.target}</span>
               {stale ? <span className="lk-mark-list__stale">stale</span> : null}
-              <button
-                type="button"
+              <CloseButton
                 className="lk-mark-list__drop"
-                aria-label={`Remove ${a.kind} on ${a.target}`}
+                ariaLabel={`Remove ${a.kind} on ${a.target}`}
                 onClick={() => marks.remove(a.id)}
-              >
-                ×
-              </button>
+              />
             </div>
             <Input
               className="lk-mark-list__title"

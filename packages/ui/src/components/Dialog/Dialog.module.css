@@ -248,28 +248,6 @@
   color: var(--_s-title-color);
 }
 
-.close {
-  flex: 0 0 auto;
-  width: var(--wzl-icon-button-size);
-  height: var(--wzl-icon-button-size);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--wzl-radius-sm);
-  color: var(--wzl-fg-muted);
-  cursor: pointer;
-  padding: 0;
-  font-size: var(--wzl-font-size-lg);
-  line-height: 1;
-}
-
-.close:hover {
-  background: var(--wzl-surface-hover);
-  color: var(--wzl-fg);
-}
-
 .body {
   flex: 1;
 }
