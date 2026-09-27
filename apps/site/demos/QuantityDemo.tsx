@@ -10,6 +10,8 @@ import {
   multiplier,
   ordinal,
   percent,
+  parseAs,
+  partsOf,
   qty,
   ratio,
   roman,
@@ -45,6 +47,22 @@ const KINDS: [string, Display][] = [
 const ENTRY = decimal({ maxPlaces: 6, grouping: false });
 
 const PRESETS = [1 / 12, 1.5, (3 * Math.PI) / 4, 22, 1994, 3723, 1_200_000];
+
+// Every property below is measured, not declared: each kind runs over these
+// values and the table reports what came back.
+const SAMPLES = [0.3, 1.5, 2.7, 1994.25];
+const NUMERIC_PARTS = new Set(['number', 'sign', 'whole', 'numerator', 'denominator', 'literal']);
+
+const roundTrip = (v: number, d: Display) => parseAs(qty(v, d).text, d);
+
+const PROPERTIES: { name: string; has: (d: Display, value: number) => boolean }[] = [
+  { name: 'whole only', has: (d) => SAMPLES.every((v) => Number.isInteger(roundTrip(v, d))) },
+  { name: 'negatives', has: (d) => roundTrip(-1.5, d) < 0 },
+  { name: 'exact here', has: (d, value) => Math.abs(roundTrip(value, d) - value) <= 1e-9 * Math.max(1, Math.abs(value)) },
+  { name: 'beyond digits', has: (d) => SAMPLES.some((v) => partsOf(v, d).some((p) => !NUMERIC_PARTS.has(p.type))) },
+  { name: 'own speech', has: (d) => SAMPLES.some((v) => qty(v, d).spoken !== qty(v, d).text) },
+  { name: 'MathML', has: (d) => SAMPLES.some((v) => qty(v, d).mathml !== undefined) },
+];
 
 const INITIAL_BANDS: Band<string, Tagged>[] = [
   { from: tag(1 / 64, fraction()), data: 'Icon' },
@@ -91,6 +109,27 @@ export function QuantityDemo() {
               </tr>
             );
           })}
+        </tbody>
+      </table>
+
+      <h3 className={s.heading}>What each kind does, probed</h3>
+      <table className={`${s.table} ${s.probe}`}>
+        <thead>
+          <tr>
+            <th>kind</th>
+            {PROPERTIES.map((p) => <th key={p.name}>{p.name}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {KINDS.map(([name, display]) => (
+            <tr key={name}>
+              <td className={s.kind}>{name}</td>
+              {PROPERTIES.map((p) => {
+                const has = p.has(display, value);
+                return <td key={p.name} className={has ? s.yes : s.no}>{has ? '✓' : '—'}</td>;
+              })}
+            </tr>
+          ))}
         </tbody>
       </table>
 

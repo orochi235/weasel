@@ -39,12 +39,26 @@
 }
 
 .kind {
+  white-space: nowrap;
   font-family: ui-monospace, SFMono-Regular, monospace;
   color: var(--ckd-muted);
 }
 
 .text {
   white-space: nowrap;
+}
+
+.probe th:not(:first-child),
+.probe td:not(:first-child) {
+  text-align: center;
+}
+
+.yes {
+  color: var(--ckd-accent);
+}
+
+.no {
+  color: var(--ckd-faint);
 }
 
 .spoken {
