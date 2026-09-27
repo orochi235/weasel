@@ -405,9 +405,10 @@ them:
 
 Built-in activation keys come from `BUILTIN_SELECT_KEYS` in
 `packages/core/src/tools/useKeybindings.ts`. Held-key engagement is not wired
-there: a tool declares `hotkey` on its `ToolDef`, that becomes
-`eligibility.offhand`, and assembly registers the consolidated `tool.offhand`
-action from the declaration. The `ToolKeybinding` field on `ToolDef` is reserved
+there: a tool declares `hotkey` on its `ToolDef` — `'space'`, a modifier, or
+any other key such as `'o'` — that becomes `eligibility.offhand`, and assembly
+registers the consolidated `tool.offhand` action from the declaration. A tool
+that is only ever held sets `presentation.hide` to stay off the palette. The `ToolKeybinding` field on `ToolDef` is reserved
 for tools whose activation key is set by the host caller (Lasso, Eyedropper);
 the `useKeybindings` effect picks those up and appends entries to the
 consolidated `tool.activate` action's bindings dynamically.

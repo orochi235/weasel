@@ -1,6 +1,7 @@
 ---
 '@weasel-js/routing': patch
 '@weasel-js/core': patch
+'@weasel-js/ui': patch
 ---
 
 A tool's `hotkey` can be any key. Besides `'space'` and the modifier names, a
@@ -24,3 +25,6 @@ when a held tool was released. Both receive `ToolLifecycleCtx` — just
 `{ scratch }`, which is all `onDeactivate` was ever given; the parameter was
 typed as a full `ToolCtx`, so a callback annotated that way no longer
 typechecks and should close over what else it reads.
+
+`ToolPresentation` takes `hide: true` to keep a tool off `ToolPalette` — for a
+tool that is only ever held. It stays registered and selectable by id.

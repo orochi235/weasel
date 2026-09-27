@@ -30,6 +30,16 @@ describe('ToolPalette', () => {
     expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 
+  it('leaves out a tool whose presentation says hide', () => {
+    const tools = fakeTools([
+      fakeTool('select'),
+      { id: 'scrub', presentation: { label: 'Scrub', hide: true } } as AnyTool,
+    ]);
+    render(<ToolPalette tools={tools} />);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.queryByText('Scrub')).toBeNull();
+  });
+
   it('shows the tool label from presentation', () => {
     const tools = fakeTools([fakeTool('select', undefined, 'Select')]);
     render(<ToolPalette tools={tools} />);
