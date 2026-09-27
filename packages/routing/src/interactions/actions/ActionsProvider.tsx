@@ -1,8 +1,8 @@
 /**
  * @experimental
- * The React half of the actions registry: the context, the provider that owns
- * the id → descriptor stack, the mute scope, and the two hooks. The store
- * contract it implements is in `registry.tsx`.
+ * The React half of the actions registry: the context, the tree node that
+ * owns each id → descriptor stack, the providers that mount nodes, and the two
+ * hooks. The store contract it implements is in `registry.ts`.
  */
 import {
   createContext,
@@ -14,324 +14,205 @@ import {
   type ReactNode,
 } from 'react';
 import type { Action } from './action';
-import { useOptionalDepRegistry, type DepRegistry, type DepName } from './depRegistry';
+import {
+  useOptionalDepRegistry,
+  type DepRegistry,
+  type DepName,
+} from './depRegistry';
 import { buildDepsFromRequires } from './buildDeps';
 import type { Dispatcher } from '../dispatcher/dispatcher';
 import { validateActionId, validateActionDefaultBinding, type ActionsRegistry } from './registry';
+import { pushOwner, ScopeNode } from './scopeNode';
 
+/** @internal Provided by `<ActionsProvider>`, `<InputScope>` and `<Yoke>`. */
+export const ActionsContext = createContext<ActionsRegistry | null>(null);
 
-const ActionsContext = createContext<ActionsRegistry | null>(null);
-
-/** Everything a registry does apart from muting, which is layered on top of it
- *  once per scope by `useMuted`. */
-type ActionsStore = Omit<ActionsRegistry, 'mute'>;
-
-/**
- * Layers a mute set over `base`. Registration, `unregister`, `trigger`'s
- * effects, and the dispatcher / dep-registry slots all pass straight through,
- * so what one scope registers every sibling still sees; only this scope's own
- * reads and invocations skip what it muted.
- */
-function useMuted(base: ActionsStore | null): ActionsRegistry | null {
-  const mutedRef = useRef<Map<string, number>>(new Map());
-  const listenersRef = useRef<Set<() => void>>(new Set());
-  const cacheRef = useRef<{ src: readonly Action[]; out: readonly Action[] } | null>(null);
-
-  return useMemo<ActionsRegistry | null>(() => {
-    if (!base) return null;
-    const isMuted = (id: string): boolean => mutedRef.current.has(id);
-    const notify = (): void => {
-      for (const l of listenersRef.current) {
-        try {
-          l();
-        } catch (err) {
-          console.error('weasel ActionsRegistry: subscriber threw', err);
-        }
-      }
-    };
-    return {
-      ...base,
-      list: () => {
-        const src = base.list();
-        if (mutedRef.current.size === 0) return src;
-        const cached = cacheRef.current;
-        if (cached && cached.src === src) return cached.out;
-        const out = Object.freeze(src.filter((a) => !mutedRef.current.has(a.id)));
-        cacheRef.current = { src, out };
-        return out;
-      },
-      trigger: (id, params) => (isMuted(id) ? false : base.trigger(id, params)),
-      begin: (id, params) => (isMuted(id) ? null : base.begin(id, params)),
-      subscribe: (listener) => {
-        const offBase = base.subscribe(listener);
-        listenersRef.current.add(listener);
-        return () => {
-          offBase();
-          listenersRef.current.delete(listener);
-        };
-      },
-      mute: (id: string) => {
-        mutedRef.current.set(id, (mutedRef.current.get(id) ?? 0) + 1);
-        cacheRef.current = null;
-        notify();
-        let released = false;
-        return () => {
-          if (released) return;
-          released = true;
-          const held = mutedRef.current.get(id);
-          if (held === undefined) return;
-          if (held > 1) mutedRef.current.set(id, held - 1);
-          else mutedRef.current.delete(id);
-          cacheRef.current = null;
-          notify();
-        };
-      },
-    };
-  }, [base]);
-}
-
-/**
- * @experimental
- * A view of the registry in scope that can declare ids not for itself. Wrap
- * anything that should be able to opt out of an action — a second
- * `<SceneCanvas>` sharing the host's `<ActionsProvider>` mounts one — and its
- * `mute` calls stay inside it. Renders nothing of its own.
- *
- * Not a `BindingScope`: that names the tier a binding matches at (hotkey /
- * active / ambient), which this has nothing to do with.
- */
-export function ActionsScope({ children }: { children: ReactNode }): ReactElement {
-  const parent = useActionsRegistry();
-  const scoped = useMuted(parent);
-  if (!scoped) return <>{children}</>;
-  return <ActionsContext.Provider value={scoped}>{children}</ActionsContext.Provider>;
-}
-
-/**
- * @experimental
- * Mounts an `ActionsRegistry` for its lifetime. Children call
- * `useActionsRegistry()` or `useAction()` to participate. Mounts no input
- * listener of its own — the gesture dispatcher owns input.
- */
-/**
- * Push `value` onto an owner stack and hand back its release.
- *
- * Newest wins, but the release takes out *its own* entry wherever it now sits,
- * so a displaced owner leaving cannot disturb the one above it and the owner
- * on top leaving uncovers the one below rather than emptying the stack. A
- * `null` value registers nothing and releases to a no-op. Double-release safe.
- */
-function pushOwner<T>(ref: { current: T[] }, value: T | null): () => void {
-  if (value === null) return () => {};
-  ref.current.push(value);
-  let released = false;
-  return () => {
-    if (released) return;
-    released = true;
-    const i = ref.current.lastIndexOf(value);
-    if (i !== -1) ref.current.splice(i, 1);
+/** The deps an action is invoked with: its declared `requires` when it has
+ *  one, the legacy fixed bag otherwise. The fixed bag has no `applyOps`, so an
+ *  action that needs the consumer's history must declare it. */
+function depsFor(a: Action, r: DepRegistry | null): Record<string, unknown> {
+  if (!r) return {};
+  if (a.requires) return buildDepsFromRequires(a, r) as Record<string, unknown>;
+  return {
+    selection: r.get('selection' as DepName),
+    scene: r.get('scene' as DepName),
+    history: r.get('history' as DepName),
+    view: r.get('view' as DepName),
+    activeTool: r.get('activeTool' as DepName),
+    booleansAdapter: r.get('booleansAdapter' as DepName),
   };
 }
 
-export function ActionsProvider({ children }: { children: ReactNode }): ReactElement {
-  // A stack of registrants per id, newest live. Two canvases under one provider
-  // both register `viewport.zoom`; with a single slot the second displaced the
-  // first and its teardown then deleted the entry outright, taking wheel zoom
-  // away from the canvas still on screen. Stacking means a displaced registrant
-  // is restored when the one above it leaves.
-  const actionsRef = useRef<Map<string, Action[]>>(new Map());
-  const liveAction = (id: string): Action | undefined => actionsRef.current.get(id)?.at(-1);
-  const versionRef = useRef(0);
-  const cachedRef = useRef<readonly Action[]>([]);
-  const cachedVerRef = useRef(-1);
-  const listenersRef = useRef<Set<() => void>>(new Set());
+/**
+ * One node of the actions tree: the actions registered at it, over its
+ * parent's. Each id holds a stack of registrants, newest live, so a displaced
+ * registrant is restored when the one above it leaves. Every read the registry
+ * answers — `list`, `trigger`, `begin` — starts at the node's leaf.
+ */
+export class ActionsNode extends ScopeNode<ActionsNode> {
+  private readonly actions = new Map<string, Action[]>();
+  private readonly muted = new Map<string, number>();
+  private readonly dispatchers: Dispatcher[] = [];
+  private cache: { version: number; leaf: ActionsNode; list: readonly Action[] } | null = null;
+  /** Called on `activate`, so a scope's dep and tool nodes move with it. */
+  readonly onActivate: (() => void)[] = [];
 
-  // Trigger() consults the optional dep registry so actions can be fired
-  // imperatively from ActionBar / palette callers — the registered
-  // `invoker.run` receives a deps bag built fresh from the registry.
-  const depReg = useOptionalDepRegistry();
-  const depRegRef = useRef<DepRegistry | null>(depReg);
-  depRegRef.current = depReg;
+  constructor(
+    parent: ActionsNode | null,
+    descends: boolean,
+    private readonly contextDeps: () => DepRegistry | null,
+  ) {
+    super(parent, descends);
+    NODES.set(this.registry, this);
+  }
 
-  // One warning per registry: the message is about the scope, not about which
-  // canvas lost, and a page of canvases would otherwise repeat it per mount.
-  const warnedRef = useRef(false);
+  private resolve(id: string): Action | undefined {
+    for (const n of this.chain()) {
+      if (n.muted.has(id)) return undefined;
+      const a = n.actions.get(id)?.at(-1);
+      if (a) return a;
+    }
+    return undefined;
+  }
 
-  // Dep registry wired via setDepRegistry — set by SceneCanvas's registrar
-  // when this provider sits above the dep-registry scope (consumer root
-  // <ActionsProvider>). Preferred over the context read above.
-  //
-  // A stack, newest live, for the same reason the registrant stacks above are:
-  // two canvases under one provider both wire themselves, and with a single
-  // slot whichever one unmounts empties it — taking the wiring away from the
-  // canvas still on screen. The dispatcher ref below is the same story.
-  const wiredDepRegRef = useRef<DepRegistry[]>([]);
+  private snapshot(): readonly Action[] {
+    const leaf = this.start();
+    const cached = this.cache;
+    if (cached && cached.version === this.tree.version && cached.leaf === leaf) return cached.list;
+    const ids = new Set<string>();
+    for (const n of leaf.chain()) for (const id of n.actions.keys()) ids.add(id);
+    const out: Action[] = [];
+    for (const id of ids) {
+      const a = leaf.resolve(id);
+      if (a) out.push(a);
+    }
+    const list = Object.freeze(out);
+    this.cache = { version: this.tree.version, leaf, list };
+    return list;
+  }
 
-  // Dispatcher stack — wired from SceneCanvas via setDispatcher so that
-  // begin() can delegate to beginUiOngoing.
-  const dispatcherRef = useRef<Dispatcher[]>([]);
+  private deps(): DepRegistry | null {
+    for (const n of this.chain()) {
+      const r = n.contextDeps();
+      if (r) return r;
+    }
+    return null;
+  }
 
-  // The legacy keystroke loop that walked every action's
-  // `defaultBinding: KeyBinding` and matched against keydown is gone, along
-  // with the per-action consumer hooks (`useEscape`, `useDelete`, ...) that
-  // carried their own `useKeybinding` listener. Every kit-standard descriptor
-  // now routes through the gesture dispatcher via `defaultBinding`.
+  private dispatcher(): Dispatcher | null {
+    for (const n of this.chain()) {
+      const d = n.dispatchers.at(-1);
+      if (d) return d;
+    }
+    return null;
+  }
 
-  const store = useMemo<ActionsStore>(() => {
-    const snapshot = (): readonly Action[] => {
-      const v = versionRef.current;
-      if (cachedVerRef.current === v) return cachedRef.current;
-      const out = Object.freeze(
-        Array.from(actionsRef.current.values(), (stack) => stack[stack.length - 1]),
-      );
-      cachedRef.current = out;
-      cachedVerRef.current = v;
-      return out;
-    };
-    const notify = (): void => {
-      for (const l of listenersRef.current) {
-        try {
-          l();
-        } catch (err) {
-          console.error('weasel ActionsRegistry: subscriber threw', err);
+  override activate(): void {
+    super.activate();
+    for (const f of this.onActivate) f();
+  }
+
+  readonly registry: ActionsRegistry = {
+    register: (action: Action) => {
+      validateActionId(action.id);
+      validateActionDefaultBinding(action);
+      const stack = this.actions.get(action.id);
+      if (stack) stack.push(action);
+      else this.actions.set(action.id, [action]);
+      this.changed();
+      let released = false;
+      return () => {
+        if (released) return;
+        released = true;
+        const cur = this.actions.get(action.id);
+        if (!cur) return;
+        // Our own entry, wherever it now sits: a registrant that was already
+        // displaced must take itself out without disturbing the one above it.
+        const i = cur.lastIndexOf(action);
+        if (i === -1) return;
+        cur.splice(i, 1);
+        if (cur.length === 0) this.actions.delete(action.id);
+        this.changed();
+      };
+    },
+    unregister: (id: string) => {
+      if (this.actions.delete(id)) this.changed();
+    },
+    mute: (id: string) => {
+      this.muted.set(id, (this.muted.get(id) ?? 0) + 1);
+      this.changed();
+      let released = false;
+      return () => {
+        if (released) return;
+        released = true;
+        const held = this.muted.get(id);
+        if (held === undefined) return;
+        if (held > 1) this.muted.set(id, held - 1);
+        else this.muted.delete(id);
+        this.changed();
+      };
+    },
+    list: () => this.snapshot(),
+    trigger: (id: string, params?: Record<string, unknown>) => {
+      const leaf = this.start();
+      const a = leaf.resolve(id);
+      if (!a) return false;
+      try {
+        if (a.invoker && a.invoker.timing === 'immediate') {
+          a.invoker.run(depsFor(a, leaf.deps()) as never, params);
         }
+      } catch (err) {
+        console.error(`weasel ActionsRegistry: action "${id}" threw`, err);
       }
-    };
-    return {
-      register: (action: Action) => {
-        validateActionId(action.id);
-        validateActionDefaultBinding(action);
-        const stack = actionsRef.current.get(action.id);
-        if (stack) stack.push(action);
-        else actionsRef.current.set(action.id, [action]);
-        versionRef.current++;
-        notify();
-        let released = false;
-        return () => {
-          if (released) return;
-          released = true;
-          const cur = actionsRef.current.get(action.id);
-          if (!cur) return;
-          // Our own entry, wherever it now sits: a registrant that was already
-          // displaced must take itself out without disturbing the one above it.
-          const i = cur.lastIndexOf(action);
-          if (i === -1) return;
-          cur.splice(i, 1);
-          if (cur.length === 0) actionsRef.current.delete(action.id);
-          versionRef.current++;
-          notify();
-        };
-      },
-      unregister: (id: string) => {
-        // Drops every registrant of `id`, not just the live one — this is the
-        // "this action should not exist" door, not a release.
-        if (actionsRef.current.delete(id)) {
-          versionRef.current++;
-          notify();
-        }
-      },
-      list: () => snapshot(),
-      trigger: (id: string, params?: Record<string, unknown>) => {
-        const a = liveAction(id);
-        if (!a) return false;
-        try {
-          if (a.invoker && a.invoker.timing === 'immediate') {
-            const r = wiredDepRegRef.current.at(-1) ?? depRegRef.current;
-            // Prefer the action's declared `requires` (same contract the
-            // dispatcher uses — shared `buildDepsFromRequires`, including
-            // the dev-mode undeclared-read guard); legacy fixed bag
-            // otherwise.
-            const deps = !r
-              ? {}
-              : a.requires
-                ? buildDepsFromRequires(a, r)
-                : {
-                    selection: r.get('selection' as DepName),
-                    scene: r.get('scene' as DepName),
-                    history: r.get('history' as DepName),
-                    view: r.get('view' as DepName),
-                    activeTool: r.get('activeTool' as DepName),
-                    booleansAdapter: r.get('booleansAdapter' as DepName),
-                  };
-            a.invoker.run(deps as never, params);
-          }
-        } catch (err) {
-          console.error(`weasel ActionsRegistry: action "${id}" threw`, err);
-        }
-        return true;
-      },
-      subscribe: (listener: () => void) => {
-        listenersRef.current.add(listener);
-        return () => {
-          listenersRef.current.delete(listener);
-        };
-      },
-      setDispatcher: (d: Dispatcher | null) => {
-        if (d && dispatcherRef.current.length > 0 && dispatcherRef.current.at(-1) !== d
-            && !warnedRef.current) {
-          warnedRef.current = true;
-          warnSharedScope();
-        }
-        return pushOwner(dispatcherRef, d);
-      },
-      setDepRegistry: (r: DepRegistry | null) => pushOwner(wiredDepRegRef, r),
-      begin: (id: string, params?: Record<string, unknown>) => {
-        const disp = dispatcherRef.current.at(-1) ?? null;
-        if (!disp) return null;
-        const r = wiredDepRegRef.current.at(-1) ?? depRegRef.current;
-        const a = liveAction(id);
-        // Same resolution order as `trigger`: the action's declared `requires`
-        // when it has one, the legacy fixed bag otherwise. The fixed bag has no
-        // `applyOps`, so the paint actions — which declare it and are the only
-        // callers of `begin` — used to fall back to the scene's own history
-        // instead of the consumer's.
-        const deps = !r
-          ? {}
-          : a?.requires
-            ? buildDepsFromRequires(a, r)
-            : {
-                selection: r.get('selection' as DepName),
-                scene: r.get('scene' as DepName),
-                history: r.get('history' as DepName),
-                view: r.get('view' as DepName),
-                activeTool: r.get('activeTool' as DepName),
-                booleansAdapter: r.get('booleansAdapter' as DepName),
-              };
-        return disp.beginUiOngoing(id, deps as never, params);
-      },
-    };
-  }, []);
+      return true;
+    },
+    subscribe: (listener: () => void) => {
+      this.tree.listeners.add(listener);
+      return () => {
+        this.tree.listeners.delete(listener);
+      };
+    },
+    setDispatcher: (d: Dispatcher | null) => pushOwner(this.dispatchers, d),
+    begin: (id: string, params?: Record<string, unknown>) => {
+      const leaf = this.start();
+      const a = leaf.resolve(id);
+      const disp = leaf.dispatcher();
+      if (!a || !disp) return null;
+      return disp.beginUiOngoing(id, depsFor(a, leaf.deps()) as never, params);
+    },
+    activate: () => this.activate(),
+    isActive: () => this.isActive(),
+  };
+}
 
-  // The provider is a scope in its own right, so a lone canvas can mute
-  // without one wrapped around it.
-  const registry = useMuted(store)!;
+const NODES = new WeakMap<ActionsRegistry, ActionsNode>();
 
-  return <ActionsContext.Provider value={registry}>{children}</ActionsContext.Provider>;
+/** The tree node behind `registry`, when it is one of ours. */
+export function actionsNodeOf(registry: ActionsRegistry | null): ActionsNode | null {
+  return registry ? (NODES.get(registry) ?? null) : null;
 }
 
 /**
  * @experimental
- * Returns the parent `ActionsRegistry`, or `null` when no provider is in scope.
+ * Mounts a root `ActionsRegistry` for its lifetime. Children call
+ * `useActionsRegistry()` or `useAction()` to participate. Mounts no input
+ * listener of its own — the gesture dispatcher owns input.
  */
+export function ActionsProvider({ children }: { children: ReactNode }): ReactElement {
+  // `trigger` consults the dep registry in scope, so actions can be fired
+  // imperatively from ActionBar / palette callers.
+  const depReg = useOptionalDepRegistry();
+  const depRegRef = useRef<DepRegistry | null>(depReg);
+  depRegRef.current = depReg;
+  const node = useMemo(() => new ActionsNode(null, true, () => depRegRef.current), []);
+  return <ActionsContext.Provider value={node.registry}>{children}</ActionsContext.Provider>;
+}
+
 /**
  * `import.meta.env.DEV` read through a cast — core must not depend on a
  * bundler's ambient augmentation (`vite/client`) to compile. Mirrors the same
  * cast in SceneCanvas.tsx, dispatcher.ts and buildDeps.ts.
  */
-/**
- * A second `<SceneCanvas>` claiming one registry leaves the first unable to
- * dispatch anything, and the symptom — a canvas that stops responding — names
- * neither canvas nor the registry they share.
- */
-function warnSharedScope(): void {
-  if (!IS_DEV) return;
-  console.warn(
-    'weasel: a second dispatcher claimed this <ActionsProvider>, so only the ' +
-    'newest <SceneCanvas> under it will respond to input. Give each canvas its ' +
-    'own scope with <WeaselProvider isolate>.',
-  );
-}
-
 const IS_DEV: boolean = (() => {
   try {
     return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
@@ -340,6 +221,10 @@ const IS_DEV: boolean = (() => {
   }
 })();
 
+/**
+ * @experimental
+ * Returns the `ActionsRegistry` in scope, or `null` when there is none.
+ */
 export function useActionsRegistry(): ActionsRegistry | null {
   return useContext(ActionsContext);
 }

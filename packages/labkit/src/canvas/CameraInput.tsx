@@ -5,10 +5,8 @@
  */
 import {
   type Action,
-  ActionsProvider,
   type ActionsRegistry,
-  ActiveToolContextProvider,
-  DepRegistryProvider,
+  InputScope,
   makeViewportZoomAction,
   PointerContextProvider,
   type PointerWorldPos,
@@ -20,6 +18,7 @@ import {
   type View,
   type ViewApi,
   viewportDragPanAction,
+  type Yoke,
 } from '@weasel-js/core';
 import {
   createContext,
@@ -32,6 +31,7 @@ import {
 } from 'react';
 import type { Point, ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
+import { usePublishCamera } from './cameraRegistry';
 import { CameraWheelContext } from './CameraWheelContext';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
 import type { ViewportSize, WorldFrame } from './worldSpec';
@@ -57,31 +57,20 @@ export interface CameraContextValue {
 /** The camera around the caller, or `null` outside one. */
 export const CameraContext = createContext<CameraContextValue | null>(null);
 
-/** Set by a host that already provides one input scope for everything inside
- *  it — a trial — so the camera, the loupe and an overview share it. */
-export const CameraScopeContext = createContext(false);
-
 /**
- * The actions and deps a camera routes through: the ones a trial provides, or
- * an isolated set of its own. Isolated, because an actions registry holds one
- * dispatcher, and a camera must not take input from a canvas beside it. The
- * pointer store is the exception — one already in scope is kept, since sharing
- * it is the point.
+ * The input scope a camera routes through. Inside another camera — a loupe or
+ * an overlay laid over a canvas stack — it joins that camera's scope, so its
+ * actions reach the dispatcher already listening there. Anywhere else it
+ * mounts a scope of its own, which keeps its own tool unless it joins `yoke`:
+ * a camera beside another never takes that one's gestures. The pointer store is the exception — one
+ * already in scope is kept, since sharing it is the point.
  */
-export function CameraScope({ children }: { children: ReactNode }) {
-  const inScope = useContext(CameraScopeContext);
+export function CameraScope({ yoke, children }: { yoke?: Yoke; children: ReactNode }) {
+  const around = useContext(CameraContext);
   const pointer = usePointerContext();
-  if (inScope) return <>{children}</>;
-  const scoped = <CameraScopeContext.Provider value={true}>{children}</CameraScopeContext.Provider>;
-  return (
-    <DepRegistryProvider>
-      <ActionsProvider>
-        <ActiveToolContextProvider>
-          {pointer ? scoped : <PointerContextProvider>{scoped}</PointerContextProvider>}
-        </ActiveToolContextProvider>
-      </ActionsProvider>
-    </DepRegistryProvider>
-  );
+  if (around) return <>{children}</>;
+  const scoped = <InputScope yoke={yoke}>{children}</InputScope>;
+  return pointer ? scoped : <PointerContextProvider>{scoped}</PointerContextProvider>;
 }
 
 /** Options for {@link useCameraView}. */
@@ -161,7 +150,9 @@ const CHANNELS = { contextMenu: false, ingest: false } as const;
 /** Props for `<CameraInput>`. */
 export interface CameraInputProps {
   hostRef: RefObject<HTMLElement | null>;
-  camera: ViewApi;
+  /** Published to the host's camera registry while its scope is the active
+   *  one, so chrome acting on "the camera" acts on the one last used. */
+  camera: CameraView;
   frame: WorldFrame;
   /** A primary-button press released without crossing the drag threshold, at
    *  the world point it landed on. */
@@ -255,20 +246,27 @@ function CameraDispatch({
   });
 
   usePublishPointer(hostRef, clientToWorld, frame, STAGE_VIEW_ID);
+  usePublishCamera(camera);
 
   // Input that lands outside the camera's element — an annotation target's
-  // box, portalled into the surface — reaches the dispatcher through here.
+  // box, portalled into the surface — reaches the active camera's dispatcher
+  // through here.
   const wheelSlot = useContext(CameraWheelContext);
   useEffect(() => {
     if (!wheelSlot) return;
     const forward = (e: WheelEvent): void => {
       hostRef.current?.dispatchEvent(new WheelEvent('wheel', e));
     };
-    wheelSlot.current = forward;
+    const claim = (): void => {
+      if (registry.isActive()) wheelSlot.current = forward;
+    };
+    claim();
+    const off = registry.subscribe(claim);
     return () => {
+      off();
       if (wheelSlot.current === forward) wheelSlot.current = null;
     };
-  }, [wheelSlot, hostRef]);
+  }, [wheelSlot, hostRef, registry]);
 
   return null;
 }

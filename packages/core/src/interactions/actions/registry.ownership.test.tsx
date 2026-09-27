@@ -80,20 +80,6 @@ describe('ActionsRegistry dispatcher ownership', () => {
     expect(slotIsWired()).toBe(false);
   });
 
-  it('names the collision rather than failing silently', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { reg, makeDispatcher } = setup();
-    act(() => { reg.setDispatcher(makeDispatcher()); });
-    expect(warn).not.toHaveBeenCalled();
-    act(() => { reg.setDispatcher(makeDispatcher()); });
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(String(warn.mock.calls[0][0])).toContain('WeaselProvider isolate');
-    // Says it once: the message is about the scope, not about which canvas lost.
-    act(() => { reg.setDispatcher(makeDispatcher()); });
-    expect(warn).toHaveBeenCalledTimes(1);
-    warn.mockRestore();
-  });
-
   it('stays quiet when one canvas re-wires its own dispatcher', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { reg, makeDispatcher } = setup();
@@ -104,39 +90,5 @@ describe('ActionsRegistry dispatcher ownership', () => {
     act(() => { reg.setDispatcher(makeDispatcher()); });
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
-  });
-});
-
-describe('ActionsRegistry dep-registry ownership', () => {
-  const depsFor = (value: string) => ({ get: (n: string) => (n === 'selection' ? value : undefined) }) as never;
-
-  it('leaves the dep registry alone when a displaced owner releases', () => {
-    const seen: string[] = [];
-    const action: Action & { requires: string[] } = {
-      id: 'peek',
-      label: 'peek',
-      requires: ['selection'],
-      invoker: {
-        timing: 'ongoing',
-        start: (ctx) => {
-          seen.push((ctx.deps as Record<string, string>).selection);
-          return { onMove: vi.fn(), onEnd: vi.fn() };
-        },
-      },
-    };
-    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
-    const reg = result.current!;
-    act(() => { reg.register(action); });
-    act(() => { reg.setDispatcher(createDispatcher({ getAction: (id) => reg.list().find((a) => a.id === id) })); });
-
-    let releaseFirst: () => void = () => {};
-    act(() => { releaseFirst = reg.setDepRegistry(depsFor('first')); });
-    act(() => { reg.setDepRegistry(depsFor('second')); });
-    act(() => { releaseFirst(); });
-
-    let ctrl: UiOngoingControl | null = null;
-    act(() => { ctrl = reg.begin('peek', {}); });
-    act(() => { (ctrl as unknown as UiOngoingControl).end('cancel'); });
-    expect(seen[0]).toBe('second');
   });
 });

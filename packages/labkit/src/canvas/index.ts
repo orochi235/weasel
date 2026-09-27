@@ -9,7 +9,6 @@ export {
   CameraContext,
   CameraInput,
   CameraScope,
-  CameraScopeContext,
   STAGE_VIEW_ID,
   useCameraView,
 } from './CameraInput';

@@ -11,7 +11,8 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
-import { ActionsProvider } from '@weasel-js/routing/react';
+import { WeaselProvider } from '../WeaselProvider';
+import { ActionsProvider, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
 
@@ -143,5 +144,55 @@ describe('SceneCanvas action scopes', () => {
     );
     const a = sized(container.querySelectorAll('canvas')[0] as HTMLCanvasElement);
     expect(pinch(a, keeps).map((v) => v.scale.x)).toEqual([2]);
+  });
+
+  it('zooms the canvas the pinch landed on, and only that one', () => {
+    const first: View[] = [];
+    const second: View[] = [];
+    const sceneA = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const sceneB = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const { container } = render(
+      <ActionsProvider>
+        <SceneCanvas features={['draw']}
+          scene={sceneA} layers={{}} width={400} height={400}
+          onViewChange={(v) => { first.push(v); }}
+        />
+        <SceneCanvas features={['draw']}
+          scene={sceneB} layers={{}} width={400} height={400}
+          onViewChange={(v) => { second.push(v); }}
+        />
+      </ActionsProvider>,
+    );
+    const [a, b] = Array.from(container.querySelectorAll('canvas')).map((el) =>
+      sized(el as HTMLCanvasElement),
+    );
+    expect(pinch(a!, first).map((v) => v.scale.x)).toEqual([2]);
+    expect(second).toEqual([]);
+    expect(pinch(b!, second).map((v) => v.scale.x)).toEqual([2]);
+  });
+
+  it("resolves each canvas's scene to its own, not the newest canvas's", () => {
+    const deps: (ReturnType<typeof useOptionalDepRegistry>)[] = [];
+    function Probe({ at }: { at: number }) {
+      deps[at] = useOptionalDepRegistry();
+      return null;
+    }
+    const sceneA = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const sceneB = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    render(
+      <WeaselProvider isolate>
+        <SceneCanvas features={['draw']} scene={sceneA} layers={{}} width={400} height={400}>
+          <Probe at={0} />
+        </SceneCanvas>
+        <SceneCanvas features={['draw']} scene={sceneB} layers={{}} width={400} height={400}>
+          <Probe at={1} />
+        </SceneCanvas>
+      </WeaselProvider>,
+    );
+    // Read once both are mounted: the question is what the first canvas sees
+    // after the second has registered over it.
+    const [a, b] = [deps[0]?.get('scene'), deps[1]?.get('scene')];
+    expect(a).toBeDefined();
+    expect(a).not.toBe(b);
   });
 });

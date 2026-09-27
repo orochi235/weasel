@@ -27,14 +27,9 @@ export interface ToolDef<TScratch = void, TOverlay = unknown> {
    * reference by id.
    *
    * Declared here rather than registered by the hook with `useAction`,
-   * because tool hooks run wherever the consumer calls them — for
-   * `<SceneCanvas>` that is ABOVE `<ActionsProviderIfRoot>`, where
-   * `useActionsRegistry()` returns null and `useAction` silently no-ops. The
-   * result was a binding pointing at an action id nothing had registered, so
-   * the gesture fell through to whatever matched next (polygon's
-   * wheel/arrow-key side adjustment did nothing and `nudge.*` moved the
-   * selection instead). `<ToolActionsMounter>` registers these from inside
-   * the provider.
+   * because tool hooks run wherever the consumer calls them, which may be
+   * outside any registry — and there `useAction` silently no-ops, leaving a
+   * binding that points at an action id nothing registered.
    */
   actions?: import('../interactions/actions/action').Action[];
 

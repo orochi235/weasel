@@ -166,12 +166,12 @@ function Panel({
 
   // Press routes through an ambient binding: a bare canvas has no active tool
   // ahead of it to claim the press. Hover has no gesture yet, so the move
-  // handler below stays raw. Action ids are page-wide, hence one per panel.
+  // handler below stays raw.
   const onPressRef = useRef(onPress);
   onPressRef.current = onPress;
   const ambient = useMemo(() => {
     const press: Action = {
-      id: `${layer.id}.press`,
+      id: 'shader.press',
       label: 'Press the shader panel',
       invoker: {
         timing: 'immediate',
@@ -187,7 +187,7 @@ function Panel({
       actions: [press],
       bindings: [{ spec: { kind: 'pointerDown' as const }, actionId: press.id }],
     }];
-  }, [layer.id]);
+  }, []);
 
   const scene = useScene<never, 'default'>({
     systemLayers: [{ id: 'default' }],

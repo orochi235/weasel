@@ -1,12 +1,7 @@
 /**
- * Conditional `<DepRegistryProvider>` wrapper. Mounts a provider only when
- * no parent registry is in scope — otherwise renders children unwrapped so
- * SceneCanvas defers to the host's existing scope. Mirrors
- * `ActionsProviderIfRoot`.
- *
- * Needed because consumers commonly render the kit `<ActionBar>` as a
- * sibling toolbar above SceneCanvas — that bar's `enabled` predicates read
- * the dep registry, so the registry must live somewhere both can see it.
+ * Conditional `<DepRegistryProvider>` wrapper: mounts one only when no registry
+ * is in scope, and otherwise renders its children against the one there. Used
+ * by a non-isolated `<WeaselProvider>`. Mirrors `ActionsProviderIfRoot`.
  */
 import type { ReactNode } from 'react';
 import { DepRegistryProvider, useOptionalDepRegistry } from '@weasel-js/routing/react';

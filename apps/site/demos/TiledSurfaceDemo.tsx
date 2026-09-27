@@ -105,8 +105,7 @@ function Pane({
         style={{ left: x, top: y, width: PANE_W, height: PANE_H }}
       />
       {surface && input && (
-        // One scope per pane: a shared <ActionsProvider> lets only the newest
-        // canvas under it respond to input, and the rest go silently dead.
+        // Isolated so each pane keeps its own selection.
         <WeaselProvider isolate>
           <SceneCanvas features={['pick', 'move']}
             ref={apiRef}

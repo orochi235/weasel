@@ -362,9 +362,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * Requires `inputElement`: with no element of its own there is nowhere for
    * pointer input, focus or the cursor to live, and nothing renders.
    *
-   * N canvases can then share one GL context and one buffer. Each needs its
-   * own `<WeaselProvider isolate>` — under a shared `<ActionsProvider>` only
-   * the newest responds to input and the rest go silently dead.
+   * N canvases can then share one GL context and one buffer.
    */
   paintInto?: { canvas: HTMLCanvasElement | null; x: number; y: number };
   /**

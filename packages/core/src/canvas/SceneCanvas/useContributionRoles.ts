@@ -5,14 +5,9 @@
  * the mounted canvas. Views are the fourth such role; `<SceneCanvas>` renders
  * those itself, because a view is a component.
  *
- * Tool hooks run wherever the consumer calls them. For `<SceneCanvas>` that is
- * `SceneCanvasInner`, which sits ABOVE `<ActionsProviderIfRoot>` — so a tool
- * that registered its own action with `useAction` got a null registry and
- * silently no-op'd, leaving its bindings pointing at an action id nothing had
- * registered. That is why polygon/star's wheel- and arrow-key side adjustment
- * once did nothing while `nudge.*` moved the selection instead. Declaring roles
- * on the entry and installing them from in here keeps the tool hook callable
- * from anywhere.
+ * Tool hooks run wherever the consumer calls them, which may be outside any
+ * registry. Declaring roles on the entry and installing them from in here keeps
+ * the tool hook callable from anywhere.
  */
 import { useEffect, useRef } from 'react';
 import { useActionsRegistry, useOffhandAction, useOptionalDepRegistry } from '@weasel-js/routing/react';

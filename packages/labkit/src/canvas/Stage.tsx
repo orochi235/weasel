@@ -1,9 +1,9 @@
+import type { Yoke } from '@weasel-js/core';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import type { ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
-import { usePublishCamera } from './cameraRegistry';
 import { LinkedCursor } from './LinkedCursor';
 import { DEFAULT_FRAME, type ViewportSize } from './worldSpec';
 
@@ -22,6 +22,9 @@ export interface StageProps {
   /** Drawn over the content in viewport pixels, outside the camera. */
   overlay?: ReactNode;
   children?: ReactNode;
+  /** A yoke to join, from `useYoke()`: cameras on one yoke share their tool
+   *  and gesture in flight. Omitted, this one keeps its own. */
+  yoke?: Yoke;
 }
 
 /**
@@ -59,6 +62,7 @@ export function Stage({
   hostRef,
   overlay,
   children,
+  yoke,
 }: StageProps) {
   const view = normalize2DView(viewProp);
   const host = useRef<HTMLDivElement | null>(null);
@@ -71,7 +75,6 @@ export function Stage({
     minZoom,
     maxZoom,
   });
-  usePublishCamera(camera);
   const cameraCtx = useMemo(
     () => ({
       view: camera,
@@ -119,7 +122,7 @@ export function Stage({
   } as CSSProperties;
 
   return (
-    <CameraScope>
+    <CameraScope yoke={yoke}>
       <CameraContext.Provider value={cameraCtx}>
         <CameraInput hostRef={host} camera={camera} frame={DEFAULT_FRAME} />
         <div

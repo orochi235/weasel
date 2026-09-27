@@ -34,9 +34,13 @@ export const escapeAction: Action & { requires: string[] } = {
   // `exitPathEdit`'s bare key spec, swallowing the Escape that should leave
   // edit mode. With this gate, `escape` reports a disabled reason in that
   // case and the dispatcher falls through to `exitPathEdit`.
+  // With nothing selected there is nothing to clear, so the press falls
+  // through to `tool.resetToDefault` instead of being spent here.
   enabled: (deps) => {
     const editAnchors = deps?.editAnchors as EditAnchorsDep | undefined;
     if (editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
+    const sel = (deps?.selection as { get(): NodeId[] } | undefined)?.get() ?? [];
+    if (sel.length === 0) return ActionDisabledReason.NotApplicable;
     return true;
   },
 };

@@ -7,18 +7,19 @@
  * actions (`tool.activate`) and offhand hotkey actions (`tool.offhand`),
  * both parametric on `params.toolId`.
  *
- * See `docs/superpowers/specs/2026-05-16-registry-unification-design.md`
- * § "Types" and § "Dispatcher contract".
+ * The state hangs on the same scope tree as the actions and dep registries:
+ * every canvas's input scope owns a tool of its own unless it joins a yoke,
+ * and a provider above reads and writes the tool of the scope last used.
  */
 
 import {
   createContext,
   useContext,
   useMemo,
-  useState,
-  useCallback,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
+import { ScopeNode } from './scopeNode';
 
 /** Which tool is active, plus the stack of tools temporarily held active by a
  *  hotkey (space-for-hand and the like). The dispatcher reads this to decide
@@ -39,7 +40,79 @@ export interface ActiveToolContextValue {
   popHotkey(id?: string): void;
 }
 
-const ActiveToolContext = createContext<ActiveToolContextValue | null>(null);
+interface ToolState {
+  active: string | null;
+  hotkeyStack: string[];
+}
+
+/**
+ * One node of the tool tree. A node that `owns` a tool holds its state; one
+ * that does not — a scope inside a yoke — reads and writes its yoke's.
+ */
+export class ToolNode extends ScopeNode<ToolNode> {
+  private state: ToolState | null;
+  private value: { from: ToolNode; state: ToolState; out: ActiveToolContextValue } | null = null;
+
+  constructor(parent: ToolNode | null, descends: boolean, owns: boolean, initialActive: string | null) {
+    super(parent, descends);
+    // A new scope starts on the tool in effect around it, so a tool a
+    // consumer seeded above a canvas before it mounted is not lost.
+    this.state = owns
+      ? { active: initialActive ?? parent?.owner().state?.active ?? null, hotkeyStack: [] }
+      : null;
+  }
+
+  /** The node whose tool a read here resolves to. */
+  owner(): ToolNode {
+    for (const n of this.start().chain()) if (n.state) return n;
+    return this;
+  }
+
+  private update(next: (s: ToolState) => ToolState): void {
+    const owner = this.owner();
+    if (!owner.state) return;
+    const updated = next(owner.state);
+    if (updated === owner.state) return;
+    owner.state = updated;
+    owner.changed();
+  }
+
+  /** A stable value per owner and state, for `useSyncExternalStore`. */
+  snapshot(): ActiveToolContextValue {
+    const from = this.owner();
+    const state = from.state ?? { active: null, hotkeyStack: [] };
+    const cached = this.value;
+    if (cached && cached.from === from && cached.state === state) return cached.out;
+    const out: ActiveToolContextValue = {
+      active: state.active,
+      hotkeyStack: state.hotkeyStack,
+      setActive: (id) => this.update((s) => (s.active === id ? s : { ...s, active: id })),
+      pushHotkey: (id) => this.update((s) => ({ ...s, hotkeyStack: [...s.hotkeyStack, id] })),
+      popHotkey: (id) =>
+        this.update((s) => {
+          const stack = s.hotkeyStack;
+          if (stack.length === 0) return s;
+          if (id === undefined) return { ...s, hotkeyStack: stack.slice(0, -1) };
+          const i = stack.lastIndexOf(id);
+          return i === -1 ? s : { ...s, hotkeyStack: [...stack.slice(0, i), ...stack.slice(i + 1)] };
+        }),
+    };
+    this.value = { from, state, out };
+    return out;
+  }
+
+  subscribe = (listener: () => void): (() => void) => {
+    this.tree.listeners.add(listener);
+    return () => {
+      this.tree.listeners.delete(listener);
+    };
+  };
+}
+
+const ActiveToolContext = createContext<ToolNode | null>(null);
+
+/** @internal The context `<InputScope>` and `<Yoke>` provide a tool node through. */
+export const ActiveToolNodeContext = ActiveToolContext;
 
 /** Props for `<ActiveToolContextProvider>`. */
 export interface ActiveToolContextProviderProps {
@@ -49,43 +122,31 @@ export interface ActiveToolContextProviderProps {
   initialActive?: string | null;
 }
 
-/** Provides active-tool state for a canvas. `<SceneCanvas>` mounts one. */
+/** Provides root active-tool state. Every canvas below has a tool of its own;
+ *  reads and writes here reach the one last used. */
 export function ActiveToolContextProvider({
   children,
   initialActive = null,
 }: ActiveToolContextProviderProps) {
-  const [active, setActiveState] = useState<string | null>(initialActive);
-  const [hotkeyStack, setHotkeyStack] = useState<string[]>([]);
+  const node = useMemo(() => new ToolNode(null, true, true, initialActive), []);
+  return <ActiveToolContext.Provider value={node}>{children}</ActiveToolContext.Provider>;
+}
 
-  const setActive = useCallback((id: string | null) => {
-    setActiveState(id);
-  }, []);
-  const pushHotkey = useCallback((id: string) => {
-    setHotkeyStack((s) => [...s, id]);
-  }, []);
-  const popHotkey = useCallback((id?: string) => {
-    setHotkeyStack((s) => {
-      if (s.length === 0) return s;
-      if (id === undefined) return s.slice(0, -1);
-      const i = s.lastIndexOf(id);
-      return i === -1 ? s : [...s.slice(0, i), ...s.slice(i + 1)];
-    });
-  }, []);
-
-  const value = useMemo<ActiveToolContextValue>(
-    () => ({ active, hotkeyStack, setActive, pushHotkey, popHotkey }),
-    [active, hotkeyStack, setActive, pushHotkey, popHotkey],
-  );
-
-  return (
-    <ActiveToolContext.Provider value={value}>{children}</ActiveToolContext.Provider>
+function useNodeValue(node: ToolNode | null): ActiveToolContextValue | null {
+  const subscribe = useMemo(() => node?.subscribe ?? NO_SUBSCRIBE, [node]);
+  return useSyncExternalStore(
+    subscribe,
+    () => node?.snapshot() ?? null,
+    () => node?.snapshot() ?? null,
   );
 }
 
+const NO_SUBSCRIBE = (): (() => void) => () => {};
+
 /** The active-tool state in scope. Throws outside a provider; use
- *  `useActiveToolContextOptional` where one is not guaranteed. */
+ *  `useOptionalActiveToolContext` where one is not guaranteed. */
 export function useActiveToolContext(): ActiveToolContextValue {
-  const value = useContext(ActiveToolContext);
+  const value = useNodeValue(useContext(ActiveToolContext));
   if (value === null) {
     throw new Error(
       'useActiveToolContext: no ActiveToolContextProvider in scope. Wrap your tree with <ActiveToolContextProvider> (typically inside <SceneCanvas>).',
@@ -101,14 +162,13 @@ export function useActiveToolContext(): ActiveToolContextValue {
  * is present.
  */
 export function useOptionalActiveToolContext(): ActiveToolContextValue | null {
-  return useContext(ActiveToolContext);
+  return useNodeValue(useContext(ActiveToolContext));
 }
 
 /**
  * Conditional `<ActiveToolContextProvider>` wrapper. Mounts a provider only
  * when no parent provider is in scope — otherwise renders children unwrapped
- * so callers (e.g. `<WeaselProvider>`, `<SceneCanvas>`) defer to the host's
- * existing scope. Mirrors `ActionsProviderIfRoot` / `DepRegistryProviderIfRoot`.
+ * so `<WeaselProvider>` defers to the host's existing scope.
  */
 export function ActiveToolContextProviderIfRoot({
   children,

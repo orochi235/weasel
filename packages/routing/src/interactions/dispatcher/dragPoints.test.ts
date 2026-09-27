@@ -60,7 +60,7 @@ describe('drag.points reaches an action with no onMove', () => {
     const action = endOnlyAction((ctx) => { seen.push(ctx); });
     const registry = {
       register: vi.fn(), unregister: vi.fn(), mute: vi.fn(), subscribe: vi.fn(),
-      trigger: vi.fn(), begin: vi.fn(), setDispatcher: vi.fn(), setDepRegistry: vi.fn(),
+      trigger: vi.fn(), begin: vi.fn(), setDispatcher: vi.fn(),
       list: () => [action],
     } as unknown as ActionsRegistry;
     const d = createDispatcher({ getAction: (id) => (id === 'lassoSelect' ? action : undefined) });

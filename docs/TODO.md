@@ -644,20 +644,6 @@ What it surfaced:
   either a pose composition with a reflection term, or a rig-side
   `mirrorPose(pose)` beside `blendPoses`.
 
-- **(P3) One actions registry still routes input to one canvas.**
-  `<WeaselProvider isolate>` gives each canvas its own scope, and a second
-  canvas claiming a shared registry says so instead of failing silently. What
-  is still unbuilt is canvases genuinely *sharing* a registry: `setDispatcher`
-  holds one dispatcher, so a toolbar outside two canvases has nothing to say
-  which one it drives. That wants a focused-canvas concept — which canvas an
-  ambient `<ActionBar>`, keybinding or palette targets — and the registry keyed
-  per canvas beneath it. Isolation covers only two canvases that simply coexist.
-  The same sharing makes action ids page-global without saying so: registrants
-  for one id stack newest-live, so three canvases each registering `press`
-  leave only the last one mounted answering every canvas's binding — the press
-  fires, into the wrong closure, with no warning. `CustomShaderDemo` hit it and
-  suffixes its ids per panel.
-
 - **(P3) View-bounds culling is opt-in and stops short of the painter.** The
   scene slot's `cull` option (`layers={{ scene: { cull: true } }}`, on in this
   demo) drops commands outside the view via `cullDrawCommands`, but only after
@@ -755,11 +741,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) Canvases under one provider share one input registry, so the newest takes
-  everyone's gestures.** Forge's `labkit/Canvas/CanvasStack` index page shows it: a drag on the
-  top canvas moves the bottom camera, with no warning. `SceneCanvas` has the same flaw. Design,
-  unbuilt: `docs/proposals/2026-09-27-input-scopes.md`.
-
 - **(P3) `@weasel-js/quantity` has no composites and no styling.** A value is one number, so a
   range (`1/64–1/2`, which `BandEditor`'s bands would want to report) or a vector readout has no
   display of its own yet; `Slider`'s thumbs still take bare numbers where `BandEditor`'s bands take
@@ -775,22 +756,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `PropertyRenderContext.update`, rather than the one aggregated object that a mixed selection
   does not have.
 
-- **(P2) Kit actions still tie on a bare drag, and the kit's own check cannot see it.**
-  `areaSelect`, `insert` and `viewport.dragPan` each keep a `defaultBinding: { kind: 'drag' }`,
-  which the dispatcher assembles at ambient scope, so any two registered together tie and
-  registration order picks the winner of a drag no tool claims — today `areaSelect`, ahead of
-  both. Demos warning on load (browser sweep, 2026-09-27): `alignment-guides` and
-  `tool-reflection` (areaSelect, viewport.dragPan), `image`, `stroke-and-fill` and
-  `annotation-capture` (areaSelect, insert), `shape-tools` (all three), `minimap` (minimap,
-  viewport.dragPan). `resize` had the same catch-all and lost it, as `rotate` and `clone` did
-  before it. Dropping or targeting the other three changes what an unclaimed drag does — marquee,
-  a stray insert or a pan — so it needs a decision on which action owns that drag, if any.
-  Separately, `SceneCanvas.routeConflicts.test.tsx` only caught `resize` once it mounted a
-  consumer-side `useTools` under `<WeaselProvider>`: `<SceneCanvas>` assembles its internal
-  tools above its `<ActionsProvider>`, so the conflict check it runs never sees the actions.
-  Key-side ties also warn (`nudge.*` / `nudgeAnchors.*`, `delete` / `deleteAnchors`,
-  `exitPathEdit` / `tool.resetToDefault` on Escape); the anchor variants decline through `enabled` with no anchor
-  selection, which the check cannot see, so those may want a way to mark an intended fall-through.
+- **(P2) The minimap tool and `viewport.dragPan` still tie on a bare drag.** Both are ungated
+  ambient bindings, so registration order picks the winner; the `minimap` demo warns on load. The
+  other kit ties the 2026-09-27 browser sweep found are settled by context-gated precedence (see
+  "Interaction" in `docs/taxonomy.md`): `areaSelect` and `insert` are gated on
+  `creates-selection` and `creates-shapes`, so each beats `viewport.dragPan` where its capability
+  is granted, and in path edit the anchor-editing key bindings are the only ones eligible. The
+  route-conflict check trusts that actions gated by different rules never hold together — true of
+  the default modes, not checked for a consumer's.
 
 - **(P2) `arrayAdapter`'s marquee and lasso still test bounding boxes.** `sceneToAdapter`'s
   both run the live silhouette hit-test; `arrayAdapter`'s `hitTestArea` (bounds, or the

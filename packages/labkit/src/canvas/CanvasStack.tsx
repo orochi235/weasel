@@ -1,8 +1,8 @@
+import type { Yoke } from '@weasel-js/core';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import type { Point, ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
 import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
-import { usePublishCamera } from './cameraRegistry';
 import { CanvasStackContext } from './CanvasStackContext';
 import { LinkedCursor } from './LinkedCursor';
 import { type CanvasLayerDescriptor, useLayerScheduler } from './useLayerScheduler';
@@ -26,6 +26,9 @@ export interface CanvasStackProps {
   onResize?: (size: ViewportSize) => void;
   onHitTest?: (worldPos: Point) => void;
   children?: ReactNode;
+  /** A yoke to join, from `useYoke()`: cameras on one yoke share their tool
+   *  and gesture in flight. Omitted, this one keeps its own. */
+  yoke?: Yoke;
 }
 
 /** Stacks one `<canvas>` per layer and drives them from a shared view, so a
@@ -45,6 +48,7 @@ export function CanvasStack({
   onResize,
   onHitTest,
   children,
+  yoke,
 }: CanvasStackProps) {
   const view = normalize2DView(viewProp);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -93,7 +97,6 @@ export function CanvasStack({
     minZoom,
     maxZoom,
   });
-  usePublishCamera(camera);
   const cameraCtx = useMemo(
     () => ({ view: camera, frame, element: () => containerRef.current }),
     [camera, frame],
@@ -120,7 +123,7 @@ export function CanvasStack({
   };
 
   return (
-    <CameraScope>
+    <CameraScope yoke={yoke}>
       <CameraContext.Provider value={cameraCtx}>
         <CanvasStackContext.Provider value={ctxValue}>
           <CameraInput hostRef={containerRef} camera={camera} frame={frame} onTap={onHitTest} />
