@@ -729,6 +729,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   standing in another. `selection()` reports both. A host can enforce exclusivity
   from `subscribe`, awkwardly.
 
+- **(P3) A select-drawn enum ignores its options' icons.** A `ConfigOption` can
+  carry an `icon` (forge's argTypes pass one through `control.icons`), and a
+  segmented row draws it as the segment's glyph, but an enum drawn as a `Select`
+  shows only the label. Draw the glyph beside the label in the trigger and in
+  each menu item.
+
 - **(P3) Overlays still set React Aria's deprecated `UNSTABLE_portalContainer`.**
   Its replacement, `UNSAFE_PortalProvider`, is exported by `react-aria` but not
   re-exported by `react-aria-components` 1.18, and depending on `react-aria`
