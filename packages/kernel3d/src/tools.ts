@@ -8,6 +8,7 @@
  * `viewport.dragPan`, and that wants the 2D `view`.
  */
 
+import { useMemo } from 'react';
 import { defineTool, type Action, type Tool } from '@weasel-js/core';
 import { dollyBy, orbitBy, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
@@ -68,11 +69,11 @@ export const dollyAction: Action = {
 };
 
 export function useOrbitTool(): Tool<null> {
-  return defineTool<null>({
+  return useMemo(() => defineTool<null>({
     id: 'orbit',
     hookName: 'useOrbitTool',
     cursor: 'grab',
     presentation: { label: 'Orbit', group: 'viewport' },
     bindings: [{ spec: { kind: 'drag' }, actionId: 'camera.orbit' }],
-  });
+  }), []);
 }

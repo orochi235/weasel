@@ -6,10 +6,11 @@
  * nothing else, which is the whole of what a shape tool is in any dimension.
  */
 
+import { useMemo } from 'react';
 import { defineTool, type Tool } from '@weasel-js/core';
 
 export function useBoxTool(): Tool<null> {
-  return defineTool<null>({
+  return useMemo(() => defineTool<null>({
     id: 'box',
     capabilities: ['creates-shapes'],
     hookName: 'useBoxTool',
@@ -18,5 +19,5 @@ export function useBoxTool(): Tool<null> {
     bindings: [
       { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'rect' } } },
     ],
-  });
+  }), []);
 }
