@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { ToolButton } from './ToolButton';
+import { ToolButton, type ToolButtonProps } from './ToolButton';
 import { ToolGroup } from '../ToolGroup';
 
 // Inline placeholder icons keep the story free of cross-package imports
@@ -27,9 +27,22 @@ function CircleGlyph() {
   );
 }
 
+// Each story's button sits beside two plain neighbors for comparison: one
+// tabbable, one left out of the tab order, so Tab shows which buttons take focus.
+function WithNeighbors(args: ToolButtonProps) {
+  return (
+    <ToolGroup>
+      <ToolButton {...args} />
+      <ToolButton icon={<SquareGlyph />} label="Tabbable" shortcut="R" tabbable onClick={() => {}} />
+      <ToolButton icon={<CircleGlyph />} label="Untabbable" shortcut="O" tabbable={false} onClick={() => {}} />
+    </ToolGroup>
+  );
+}
+
 const meta: Meta<typeof ToolButton> = {
   title: 'ui/ToolButton',
   component: ToolButton,
+  render: (args) => <WithNeighbors {...args} />,
   args: {
     icon: <CursorGlyph />,
     label: 'Select',
@@ -46,6 +59,7 @@ export const Default: Story = {};
 export const Active: Story = { args: { active: true } };
 export const Disabled: Story = { args: { disabled: true } };
 export const NoShortcut: Story = { args: { shortcut: undefined } };
+export const NotTabbable: Story = { args: { tabbable: false } };
 
 // Renders the button as toolbar consumers would: inside a ToolGroup with
 // roving tabindex managed by the parent.
