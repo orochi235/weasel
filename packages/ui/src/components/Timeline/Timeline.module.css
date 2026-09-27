@@ -157,6 +157,7 @@
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg);
+  font: inherit;
   cursor: pointer;
 }
 

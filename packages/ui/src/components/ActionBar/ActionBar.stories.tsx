@@ -17,7 +17,7 @@ function Glyph({ char }: { char: string }) {
         fontSize="11"
         textAnchor="middle"
         fill="currentColor"
-        fontFamily="ui-monospace, monospace"
+        style={{ fontFamily: 'var(--wzl-font-mono)' }}
       >
         {char}
       </text>

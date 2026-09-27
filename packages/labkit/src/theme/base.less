@@ -52,6 +52,11 @@
     }
   }
 
+  // The browser sets these in its own `monospace`, which no font token reaches.
+  :where(code, kbd, samp, pre) {
+    font-family: var(--wzl-font-mono);
+  }
+
   // Mirrors packages/ui/src/components/range.module.css so a consumer's bare
   // range matches the kit's. A weasel-ui component's own module class outranks
   // this, which is what keeps InlineRange's gradient track intact.

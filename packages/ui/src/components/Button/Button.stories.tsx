@@ -321,7 +321,6 @@ const BACKDROP_STYLE: Record<LabParams['backdrop'], CSSProperties> = {
 const ctrlLabelStyle: CSSProperties = {
   fontSize: 10,
   opacity: 0.7,
-  fontFamily: 'Helvetica, Arial, sans-serif',
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
 };
@@ -340,7 +339,6 @@ const subheadStyle: CSSProperties = {
   letterSpacing: '0.08em',
   opacity: 0.7,
   margin: '0 0 4px',
-  fontFamily: 'Helvetica, Arial, sans-serif',
 };
 
 function Slider({
@@ -554,7 +552,7 @@ function ButtonLabView(): ReactElement {
             readOnly
             value={exportText}
             rows={Math.min(20, exportText.split('\n').length + 1)}
-            style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 11, padding: 8, width: '100%', boxSizing: 'border-box' }}
+            style={{ fontFamily: 'var(--wzl-font-mono)', fontSize: 11, padding: 8, width: '100%', boxSizing: 'border-box' }}
           />
         )}
       </div>
@@ -607,7 +605,7 @@ function ButtonLabView(): ReactElement {
               onChange={(e) => set('accent', e.target.value)}
               style={{ width: '100%', height: 22, padding: 0, border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, cursor: 'pointer', background: 'transparent' }}
             />
-            <code style={{ ...ctrlLabelStyle, textAlign: 'right', fontFamily: 'ui-monospace, monospace' }}>{p.accent}</code>
+            <code style={{ ...ctrlLabelStyle, textAlign: 'right', fontFamily: 'var(--wzl-font-mono)' }}>{p.accent}</code>
           </label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {(['#2e1f7a', '#1d1454', '#5841b8', '#0a5e7a', '#1f6e3a', '#a8341f', '#a8821f', '#5e1f5a'] as const).map((c) => (
@@ -662,5 +660,5 @@ function ButtonLabView(): ReactElement {
 
 export const Lab: Story = {
   parameters: { layout: 'fullscreen', controls: { disable: true } },
-  render: () => <div style={{ padding: 16, fontFamily: 'Helvetica, Arial, sans-serif' }}><ButtonLabView /></div>,
+  render: () => <div style={{ padding: 16 }}><ButtonLabView /></div>,
 };

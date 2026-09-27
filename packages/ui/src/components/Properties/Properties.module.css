@@ -706,6 +706,7 @@
   border: 0;
   background: none;
   color: var(--wzl-fg-subtle);
+  font: inherit;
   font-size: var(--wzl-font-size-sm);
   line-height: 1;
   letter-spacing: normal;
