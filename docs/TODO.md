@@ -755,6 +755,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P2) Canvases under one provider share one input registry, so the newest takes
+  everyone's gestures.** Forge's `labkit/Canvas/CanvasStack` index page shows it: a drag on the
+  top canvas moves the bottom camera, with no warning. `SceneCanvas` has the same flaw. Design,
+  unbuilt: `docs/proposals/2026-09-27-input-scopes.md`.
+
 - **(P2) Quantities have no display layer beyond plain numbers.** `format/number.ts` formats a
   number (`formatNumber`, `formatCompact`, `formatZoom`), but nothing shows a fraction, a ratio,
   or a number with its unit as one value. `BandEditor` is the case in hand: its story builds tick
