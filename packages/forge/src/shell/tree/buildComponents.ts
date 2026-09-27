@@ -45,6 +45,7 @@ export function libraryOf(entry: IndexEntry): string {
  *  sharing a name are kept apart by their library, then by their full title. */
 export function buildComponents(index: readonly IndexEntry[]): ComponentRow[] {
   const byTitle = new Map<string, ComponentRow>();
+  const pages = new Map(indexEntries(index).map((page) => [page.title, page]));
   for (const entry of index) {
     let row = byTitle.get(entry.title);
     if (!row) {
@@ -53,7 +54,7 @@ export function buildComponents(index: readonly IndexEntry[]): ComponentRow[] {
         path: entry.title,
         label: segments[segments.length - 1],
         library: libraryOf(entry),
-        index: indexEntries([entry])[0],
+        index: pages.get(entry.title),
         entries: [],
       };
       byTitle.set(entry.title, row);

@@ -28,6 +28,14 @@ describe('libraryOf', () => {
 });
 
 describe('buildComponents', () => {
+  it('gives a row the tags all its stories carry, not its first story’s', () => {
+    const [row] = buildComponents([
+      { ...entry('ui/Legend', 'AllMarks', UI), tags: ['gallery'] },
+      entry('ui/Legend', 'Empty', UI),
+    ]);
+    expect(row?.index).not.toHaveProperty('tags');
+  });
+
   it('collapses every title into one alphabetical list, stories kept', () => {
     const rows = buildComponents([
       entry('ui/Foundations/Button', 'Default', UI),

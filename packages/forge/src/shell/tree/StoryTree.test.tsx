@@ -429,3 +429,46 @@ describe('StoryTree', () => {
     expect(document.querySelector('.fg-route-miss')?.textContent).toContain('no-such--story');
   });
 });
+
+describe('StoryTree galleries', () => {
+  const gallery: IndexEntry = { ...entry('Kit/Everything', 'All'), tags: ['gallery'] };
+  const permutations: IndexEntry = { ...entry('Kit/Button', 'Permutations'), tags: ['gallery'] };
+  const tagged = [primary, permutations, gallery];
+  const pages = [...tagged, ...indexEntries(tagged)];
+  const chrome: LabContribution[] = [
+    { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={tagged} /> },
+  ];
+  function GalleryHarness() {
+    const { instruments } = useStoryRegistry(pages, { frameUrl: '/frame.html' });
+    return (
+      <Lab
+        instruments={instruments}
+        defaultInstrument={primary.id}
+        labChrome={chrome}
+        addTrial={false}
+        storageKey="tree-gallery"
+        storage={createMemoryAdapter()}
+      />
+    );
+  }
+
+  it.each(['Components', 'Tree'])('marks a gallery’s row, and only its, in the %s view', async (view) => {
+    render(<GalleryHarness />);
+    await screen.findByRole('tree', { name: 'Stories' });
+    fireEvent.click(screen.getByRole('radio', { name: view }));
+    if (view === 'Tree') openFolder('Kit');
+    const row = screen.getByRole('treeitem', { name: 'Everything (gallery)' });
+    expect(row.querySelector(':scope > .fg-tree__folder > .fg-tree__gallery')).not.toBeNull();
+    const button = screen.getByRole('treeitem', { name: 'Button' });
+    expect(button.querySelector(':scope > .fg-tree__folder > .fg-tree__gallery')).toBeNull();
+  });
+
+  it('marks a story tagged on its own, leaving its component unmarked', async () => {
+    render(<GalleryHarness />);
+    await screen.findByRole('tree', { name: 'Stories' });
+    const button = screen.getByRole('treeitem', { name: 'Button' });
+    if (button.getAttribute('aria-expanded') !== 'true') fireEvent.click(foldOf(button));
+    expect(item(button, 'Permutations (gallery)').querySelector('.fg-tree__gallery')).not.toBeNull();
+    expect(item(button, 'Primary').querySelector('.fg-tree__gallery')).toBeNull();
+  });
+});

@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import type { FrameImporters } from '../frame/mountFrame';
-import type { IndexEntry } from '../story/types';
+import type { DepGraph, IndexEntry } from '../story/types';
 import { createStoryChanges } from './storyChanges';
 import { Workshop, type WorkshopProps } from './Workshop';
 
@@ -16,6 +16,8 @@ export interface MountedWorkshop {
   setImporters(importers: FrameImporters): void;
   /** Loads `file` again for every story that had it, through the current importers. */
   reloadStory(file: string): void;
+  /** Swaps in the component graph, as the vite plugin's `forge:deps` event carries. */
+  setDependencies(dependencies: DepGraph): void;
   unmount(): void;
 }
 
@@ -36,6 +38,10 @@ export function mountWorkshop({ container, ...props }: MountWorkshopOptions): Mo
       root.render(<Workshop {...current} />);
     },
     reloadStory: (file) => changes.emit(file),
+    setDependencies(dependencies) {
+      current = { ...current, dependencies };
+      root.render(<Workshop {...current} />);
+    },
     unmount: () => root.unmount(),
   };
 }

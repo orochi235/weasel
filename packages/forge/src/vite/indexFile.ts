@@ -69,6 +69,7 @@ function indexProgram(program: t.Program, file: string, autoTitle: string): Inde
   const componentNode = prop(meta, 'component');
   const componentName = componentNode?.type === 'Identifier' ? componentNode.name : undefined;
   const metaIsolate = isolateOf(meta, bindings, wrappers, 'default');
+  const metaTags = tagsOf(meta);
 
   return exported
     .filter(({ name }) => name !== '__namedExportsOrder')
@@ -76,6 +77,7 @@ function indexProgram(program: t.Program, file: string, autoTitle: string): Inde
     .map(({ name, node, doc }) => {
       const spec = objectOf(node, bindings, wrappers);
       const isolate = isolateOf(spec, bindings, wrappers, name) ?? metaIsolate;
+      const tags = combineTags(metaTags, tagsOf(spec));
       return {
         id: storyId(title, name),
         title,
@@ -86,6 +88,7 @@ function indexProgram(program: t.Program, file: string, autoTitle: string): Inde
         ...(metaDoc === undefined ? {} : { componentDescription: metaDoc }),
         ...(componentName === undefined ? {} : { componentName }),
         ...(isolate === undefined ? {} : { isolate }),
+        ...(tags === undefined ? {} : { tags }),
       };
     });
 }
@@ -102,6 +105,24 @@ function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers:
   const literal = stringLiteral(value);
   if (literal === undefined) throw new Error(`${exportName}: isolate must be a string literal`);
   return literal;
+}
+
+/** `obj`'s `tags`: the string literals of an array literal. */
+function tagsOf(obj: t.ObjectExpression | null): string[] | undefined {
+  const value = prop(obj, 'tags');
+  if (value?.type !== 'ArrayExpression') return undefined;
+  return value.elements.flatMap((e) => (e ? (stringLiteral(e) ?? []) : []));
+}
+
+/** A story's tags as Storybook combines them: the meta's, then its own, where `!tag` removes `tag`. */
+function combineTags(meta: string[] | undefined, own: string[] | undefined): string[] | undefined {
+  if (meta === undefined && own === undefined) return undefined;
+  const out = new Set(meta);
+  for (const tag of own ?? []) {
+    if (tag.startsWith('!')) out.delete(tag.slice(1));
+    else out.add(tag);
+  }
+  return [...out];
 }
 
 /** The value of a plain string literal or an expression-free template literal. */

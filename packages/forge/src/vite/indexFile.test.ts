@@ -231,6 +231,38 @@ export const Basic = {};
     });
   });
 
+  describe('tags', () => {
+    const tags = (code: string) => indexFile(code, FILE, 'ui/Auto').map((e) => e.tags);
+
+    it('gives every story the meta’s tags, from a CSF meta or a native one', () => {
+      expect(tags(`export default { title: 'ui/All', tags: ['gallery', 'autodocs'] };\nexport const A = {};\nexport const B = {};\n`)).toEqual([
+        ['gallery', 'autodocs'],
+        ['gallery', 'autodocs'],
+      ]);
+      const native = `
+import { meta, story } from '@weasel-js/forge';
+export default meta({ title: 'ui/All', tags: ['gallery'] });
+export const Basic = story({ render: () => null });
+`;
+      expect(tags(native)).toEqual([['gallery']]);
+    });
+
+    it('adds a story’s own tags to the meta’s, and drops one a story negates, as Storybook does', () => {
+      const code = `
+export default { title: 'ui/Route', tags: ['a', 'b'] };
+export const Default = {};
+export const AllPermutations = { tags: ['gallery', '!b'] };
+`;
+      expect(tags(code)).toEqual([['a', 'b'], ['a', 'gallery']]);
+      expect(tags(`export default { title: 'ui/Route' };\nexport const A = { tags: ['gallery'] };\n`)).toEqual([['gallery']]);
+    });
+
+    it('reads only string literals, and leaves the key off a meta with none', () => {
+      expect(tags(`export default { title: 'ui/All', tags: ['gallery', NAME] };\nexport const A = {};\n`)).toEqual([['gallery']]);
+      expect(indexFile(`export default { title: 'ui/All' };\nexport const A = {};\n`, FILE, 'ui/Auto')[0]).not.toHaveProperty('tags');
+    });
+  });
+
   it('names the file when a title cannot make an id', () => {
     const code = `
 export default { title: '!!!' };

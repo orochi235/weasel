@@ -229,6 +229,12 @@
   --badge-font-size: var(--wzl-font-size-2xs);
 }
 
+.fg-tree__gallery {
+  display: inline-flex;
+  flex: none;
+  color: var(--wzl-accent-fg);
+}
+
 .fg-tree__libraries {
   display: flex;
   flex-wrap: wrap;

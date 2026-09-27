@@ -15,6 +15,10 @@ import { type IndexEnv, IndexPage } from './IndexPage';
 export interface StartIndexOptions {
   title: string;
   description?: string;
+  /** Whether the component is a gallery. */
+  gallery?: boolean;
+  /** The ids of the stories tagged `gallery`. */
+  galleries?: readonly string[];
   /** In file order. */
   stories: readonly LoadedStory[];
   descriptions: Readonly<Record<string, string>>;
@@ -68,6 +72,8 @@ export function startIndex(options: StartIndexOptions): () => void {
       ...(options.description === undefined ? {} : { description: options.description }),
       stories: options.stories,
       descriptions: options.descriptions,
+      gallery: options.gallery ?? false,
+      galleries: options.galleries ?? [],
       globals,
       decorators: setup.decorators ?? [],
       open: (id) => send({ type: 'open', id }),

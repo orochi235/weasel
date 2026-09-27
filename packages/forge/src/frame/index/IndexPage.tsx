@@ -1,8 +1,21 @@
-// The component's own entry, not the barrel: the barrel would bring every weasel-ui component into each frame.
+// The components' own entries, not the barrel: the barrel would bring every weasel-ui component into each frame.
+import { Badge } from '@weasel-js/ui/components/Badge';
 import { Button } from '@weasel-js/ui/components/Button';
-import { createContext, type ReactNode, type RefObject, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  type MouseEvent,
+  type ReactNode,
+  type RefObject,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { Globals } from '../../protocol/messages';
-import type { Decorator, IndexContext, IndexStoryProps, LoadedStory, StoryContext } from '../../story/types';
+import { indexId } from '../../story/indexPages';
+import type { ComponentDeps, Decorator, IndexContext, IndexStoryProps, LoadedStory, StoryContext } from '../../story/types';
 import { StoryHost } from '../StoryHost';
 import { mergeConfig, variantRows, withValueAt } from './variants';
 import './index.css';
@@ -14,6 +27,12 @@ export interface IndexEnv {
   stories: readonly LoadedStory[];
   /** Per story id, the JSDoc above its export. */
   descriptions: Readonly<Record<string, string>>;
+  /** A catalog or showcase rather than one component: every story of it is tagged `gallery`. */
+  gallery?: boolean;
+  /** The ids of the stories tagged `gallery`. */
+  galleries?: readonly string[];
+  /** The component's place in the component graph; absent until the graph arrives, and for a gallery. */
+  dependencies?: ComponentDeps;
   globals: Globals;
   /** The frame config's, outermost. */
   decorators: readonly Decorator[];
@@ -119,16 +138,83 @@ export function IndexVariants({ story }: { story: LoadedStory }) {
   );
 }
 
+function GalleryBadge() {
+  return (
+    <Badge status="accent" variant="subtle" size="sm">
+      Gallery
+    </Badge>
+  );
+}
+
+function DependencyList({ label, titles, empty }: { label: string; titles: readonly string[]; empty: string }) {
+  const env = useEnv();
+  const labelId = useId();
+  const follow = (event: MouseEvent, id: string) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    env.open(id);
+  };
+  return (
+    <div className="fg-index-deps__row">
+      <dt id={labelId} className="fg-index-deps__label">
+        {label}
+      </dt>
+      <dd className="fg-index-deps__value">
+        {titles.length === 0 ? (
+          <span className="fg-index-deps__empty">{empty}</span>
+        ) : (
+          <ul className="fg-index-deps__list" aria-labelledby={labelId}>
+            {titles.map((title) => {
+              const cut = title.lastIndexOf('/') + 1;
+              const id = indexId(title);
+              return (
+                <li key={title}>
+                  <a className="fg-index-deps__link" href={`#/${encodeURIComponent(id)}`} onClick={(event) => follow(event, id)}>
+                    <span className="fg-index-deps__prefix">{title.slice(0, cut)}</span>
+                    {title.slice(cut)}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </dd>
+    </div>
+  );
+}
+
+/** The listed components this one uses and those that use it, read from source. Nothing for a gallery. */
+export function IndexDependencies() {
+  const { gallery, dependencies } = useEnv();
+  if (gallery || !dependencies) return null;
+  if (dependencies.source === null) {
+    return (
+      <p className="fg-index-deps__none">
+        forge found no source file for this component, so it lists none of its dependencies. It looks for the
+        import the meta&rsquo;s <code>component</code> names, or else the one the title&rsquo;s last segment names.
+      </p>
+    );
+  }
+  return (
+    <dl className="fg-index-deps" aria-label="Dependencies">
+      <DependencyList label="Uses" titles={dependencies.uses} empty="No listed component." />
+      <DependencyList label="Used by" titles={dependencies.usedBy} empty="No listed component uses it." />
+    </dl>
+  );
+}
+
 function StorySection({ story, variants }: { story: LoadedStory; variants: boolean }) {
   const env = useEnv();
   const headingId = useId();
   const description = env.descriptions[story.id];
+  const gallery = !env.gallery && env.galleries?.includes(story.id);
   return (
     <section className="fg-index-story" aria-labelledby={headingId}>
       <header className="fg-index-story__head">
         <h2 id={headingId} className="fg-index-story__name">
           {story.name}
         </h2>
+        {gallery ? <GalleryBadge /> : null}
         <Button variant="secondary" size="sm" onClick={() => env.open(story.id)}>
           Open
         </Button>
@@ -165,8 +251,12 @@ export function DefaultIndex() {
     <article className="fg-index">
       <header className="fg-index__head">
         {segments.length > 0 ? <p className="fg-index__path">{segments.join(' / ')}</p> : null}
-        <h1 className="fg-index__title">{name}</h1>
+        <div className="fg-index__title-row">
+          <h1 className="fg-index__title">{name}</h1>
+          {env.gallery ? <GalleryBadge /> : null}
+        </div>
         {env.description ? <p className="fg-index__description">{env.description}</p> : null}
+        <IndexDependencies />
       </header>
       {env.stories.map((story) => (
         <StorySection key={story.id} story={story} variants={withVariants.has(story.id)} />
@@ -185,6 +275,8 @@ export function indexContext(env: IndexEnv): IndexContext {
     Story: IndexStory,
     Variants: IndexVariants,
     DefaultIndex,
+    Dependencies: IndexDependencies,
+    gallery: env.gallery ?? false,
     open: env.open,
   };
 }

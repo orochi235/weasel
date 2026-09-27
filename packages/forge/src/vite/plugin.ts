@@ -5,6 +5,7 @@ import type { Logger, Plugin, ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types.ts';
 import { hoistPages, writePages } from './build.ts';
 import { autoTitle } from './autoTitle.ts';
+import { createDepGraph, type DepGraphBuilder, type ResolveImport } from './depGraph.ts';
 import { html } from './html.ts';
 import { indexFile } from './indexFile.ts';
 import { storybookShims } from './storybookShims.ts';
@@ -21,7 +22,7 @@ export interface ForgeOptions {
 }
 
 const PREFIX = 'virtual:forge/';
-const MODULES = new Set(['index.js', 'importers.js', 'frame-config.js', 'shell-config.js', 'shell-entry.js', 'frame-entry.js']);
+const MODULES = new Set(['index.js', 'importers.js', 'deps.js', 'frame-config.js', 'shell-config.js', 'shell-entry.js', 'frame-entry.js']);
 const PAGES: Record<string, string> = { '/': 'shell-entry.js', '/index.html': 'shell-entry.js', '/frame.html': 'frame-entry.js' };
 
 /** forge's shell and frame entry modules: source beside this file in a checkout, the built entries in an install. */
@@ -43,6 +44,10 @@ export function forge(options: ForgeOptions): Plugin[] {
   let base = '/';
   let byFile: Map<string, IndexEntry[]> | null = null;
   let logger: Logger | undefined;
+  let deps: DepGraphBuilder | null = null;
+  /** The graph last served or pushed; null until a page first asks for it, so no edit rebuilds it before then. */
+  let depsSent: string | null = null;
+  let depsPending: Promise<void> | null = null;
 
   const glob = (): string[] => {
     const files = options.stories.flatMap((pattern) =>
@@ -75,6 +80,7 @@ export function forge(options: ForgeOptions): Plugin[] {
     return byFile;
   };
   const index = () => [...files().values()].flat();
+  const depGraph = (): DepGraphBuilder => (deps ??= createDepGraph({ root, read: (file) => readFileSync(file, 'utf8') }));
 
   const configModule = (path: string | undefined) =>
     path ? `export { default } from ${JSON.stringify(resolve(root, path))};\n` : 'export default {};\n';
@@ -106,6 +112,9 @@ const workshop = mountWorkshop({
   stories: ${JSON.stringify(options.stories)},
 });
 import.meta.hot?.on('forge:index', (next) => workshop.setIndex(next));
+// Read from source on first request, so the graph costs nothing until the page is up.
+import('virtual:forge/deps.js').then((m) => workshop.setDependencies(m.default));
+import.meta.hot?.on('forge:deps', (next) => workshop.setDependencies(next));
 // A story edit reaches here as an update of the importers module, whose fresh import() URLs carry the new
 // timestamps; the file it names arrives just before, so the reload waits for the importers that can fetch it.
 const stale = new Set();
@@ -130,12 +139,42 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
 `,
   };
 
-  function reindex(server: ViteDevServer, file: string, event: 'add' | 'change' | 'unlink'): void {
+  const invalidate = (server: ViteDevServer, names: readonly string[]): void => {
+    for (const env of Object.values(server.environments)) {
+      for (const name of names) {
+        const mod = env.moduleGraph.getModuleById(`\0${PREFIX}${name}`);
+        if (mod) env.moduleGraph.invalidateModule(mod);
+      }
+    }
+  };
+
+  /** Rebuilds the graph after an edit and pushes it when it changed. Edits landing while one runs share the next. */
+  function redeps(server: ViteDevServer): void {
+    if (depsSent === null || depsPending) return;
+    const resolve: ResolveImport = async (spec, importer) =>
+      (await server.environments.client.pluginContainer.resolveId(spec, importer))?.id ?? null;
+    depsPending = Promise.resolve()
+      .then(async () => {
+        const graph = await depGraph().build(index(), resolve);
+        const json = JSON.stringify(graph);
+        if (json === depsSent) return;
+        depsSent = json;
+        invalidate(server, ['deps.js']);
+        server.ws.send({ type: 'custom', event: 'forge:deps', data: graph });
+      })
+      .catch(logError)
+      .finally(() => {
+        depsPending = null;
+      });
+  }
+
+  /** Re-reads a story file after `event`; true when the index changed. */
+  function reindex(server: ViteDevServer, file: string, event: 'add' | 'change' | 'unlink'): boolean {
     const current = files();
     if (event === 'change' && current.has(file)) server.ws.send({ type: 'custom', event: 'forge:story', data: { file } });
-    if (event === 'change' && !current.has(file)) return;
-    if (event === 'add' && !matches(file)) return;
-    if (event === 'unlink' && !current.has(file)) return;
+    if (event === 'change' && !current.has(file)) return false;
+    if (event === 'add' && !matches(file)) return false;
+    if (event === 'unlink' && !current.has(file)) return false;
 
     const before = JSON.stringify(index());
     if (event === 'unlink') {
@@ -145,19 +184,15 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
         current.set(file, read(file));
       } catch (err) {
         logError(err);
-        return;
+        return false;
       }
     }
     const next = index();
-    if (JSON.stringify(next) === before) return;
+    if (JSON.stringify(next) === before) return false;
 
-    for (const env of Object.values(server.environments)) {
-      for (const name of ['index.js', 'importers.js']) {
-        const mod = env.moduleGraph.getModuleById(`\0${PREFIX}${name}`);
-        if (mod) env.moduleGraph.invalidateModule(mod);
-      }
-    }
+    invalidate(server, ['index.js', 'importers.js']);
     server.ws.send({ type: 'custom', event: 'forge:index', data: next });
+    return true;
   }
 
   return [
@@ -187,18 +222,32 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
         base = config.base;
         logger = config.logger;
         byFile = null;
+        deps = null;
+        depsSent = null;
       },
       resolveId(id) {
         return id.startsWith(PREFIX) && MODULES.has(id.slice(PREFIX.length)) ? `\0${id}` : undefined;
       },
-      load(id) {
+      async load(id) {
         if (!id.startsWith(`\0${PREFIX}`)) return undefined;
-        return modules[id.slice(PREFIX.length + 1)]?.();
+        const name = id.slice(PREFIX.length + 1);
+        if (name !== 'deps.js') return modules[name]?.();
+        const graph = await depGraph().build(index(), async (spec, importer) => (await this.resolve(spec, importer))?.id ?? null);
+        depsSent = JSON.stringify(graph);
+        return `export default ${depsSent};\n`;
       },
       configureServer(server) {
         server.watcher.add([...files().keys()]);
         for (const event of ['add', 'change', 'unlink'] as const) {
-          server.watcher.on(event, (file) => reindex(server, resolve(file), event));
+          server.watcher.on(event, (path) => {
+            const file = resolve(path);
+            const indexed = reindex(server, file, event);
+            // A new file can answer an import that resolved to nothing before.
+            const added = event === 'add' && /\.[cm]?[jt]sx?$/.test(file) && !file.split(sep).includes('node_modules');
+            if (added) depGraph().reset();
+            const read = added || (event !== 'add' && depGraph().invalidate(file));
+            if (indexed || read) redeps(server);
+          });
         }
         server.middlewares.use((req, res, next) => {
           const url = req.url ?? '/';

@@ -5,7 +5,8 @@ import type { FrameSetup } from '../frame/FrameController';
 import type { FrameImporters } from '../frame/mountFrame';
 import { type Globals, stableStringify } from '../protocol/messages';
 import { indexEntries } from '../story/indexPages';
-import type { IndexEntry } from '../story/types';
+import type { DepGraph, IndexEntry } from '../story/types';
+import { DependenciesContext } from './dependencies';
 import { InfoIcon } from '@weasel-js/ui';
 import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
@@ -35,6 +36,8 @@ export interface WorkshopProps {
   stories?: readonly string[];
   storageKey?: string;
   storage?: StorageAdapter;
+  /** The component graph index pages list dependencies from. */
+  dependencies?: DepGraph;
 }
 
 const NO_DECLARATIONS: GlobalDeclarations = {};
@@ -92,7 +95,7 @@ function useInfoShortcut(open: (next: boolean) => void): void {
   }, [open]);
 }
 
-export function Workshop({ index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage }: WorkshopProps) {
+export function Workshop({ index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage, dependencies }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
   const [frames] = useState(createTrialFrames);
   const [pool, setPool] = useState<FramePool | null>(null);
@@ -161,33 +164,35 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
   }
   return (
     <StoryGlobalsContext.Provider value={labValues}>
-      <FramePoolContext.Provider value={pool}>
-        <TrialFramesContext.Provider value={frames}>
-          <Lab
-            title="weaselforge"
-            density="roomy"
-            {...(labTheme ? { theme: labTheme } : {})}
-            instruments={registry.instruments}
-            defaultInstrument={initialStory(entries, first.id)}
-            storageKey={storageKey ?? 'weaselforge'}
-            {...(storage ? { storage } : {})}
-            labChrome={labChrome}
-            addTrial={false}
-            {...(config?.controls ? { controls: config.controls } : {})}
-            {...(config?.pages ? { pages: config.pages } : {})}
-            {...(config?.path !== undefined ? { path: config.path } : {})}
-          >
-            <RouteOpener index={entries} />
-            <StoryInfoDialog
-              index={index}
-              isReady={registry.isReady}
-              isOpen={infoOpen}
-              onOpenChange={setInfoOpen}
-            />
-            <LabGlobals declarations={declarations} onChange={reportLabValues} />
-          </Lab>
-        </TrialFramesContext.Provider>
-      </FramePoolContext.Provider>
+      <DependenciesContext.Provider value={dependencies ?? null}>
+        <FramePoolContext.Provider value={pool}>
+          <TrialFramesContext.Provider value={frames}>
+            <Lab
+              title="weaselforge"
+              density="roomy"
+              {...(labTheme ? { theme: labTheme } : {})}
+              instruments={registry.instruments}
+              defaultInstrument={initialStory(entries, first.id)}
+              storageKey={storageKey ?? 'weaselforge'}
+              {...(storage ? { storage } : {})}
+              labChrome={labChrome}
+              addTrial={false}
+              {...(config?.controls ? { controls: config.controls } : {})}
+              {...(config?.pages ? { pages: config.pages } : {})}
+              {...(config?.path !== undefined ? { path: config.path } : {})}
+            >
+              <RouteOpener index={entries} />
+              <StoryInfoDialog
+                index={index}
+                isReady={registry.isReady}
+                isOpen={infoOpen}
+                onOpenChange={setInfoOpen}
+              />
+              <LabGlobals declarations={declarations} onChange={reportLabValues} />
+            </Lab>
+          </TrialFramesContext.Provider>
+        </FramePoolContext.Provider>
+      </DependenciesContext.Provider>
     </StoryGlobalsContext.Provider>
   );
 }

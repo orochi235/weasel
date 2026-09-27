@@ -69,6 +69,18 @@ the component's row in the sidebar (its fold mark only folds it) and routed at
 of the component's stories in one trial: each at its defaults, then once per
 value of each of its boolean and enum controls, one control at a time.
 
+Under its title, an index page lists the components it uses and the ones that
+use it, each linking to that component's index page. The plugin reads these
+from source, not from anything an author writes: a component is the binding its
+meta's `component` names, followed through imports and re-exports (barrels
+included) to the file declaring it. When `component` is declared in the story
+file itself, or absent, the import the title's last segment names stands in.
+What it uses is every listed component that declaration reaches, through that
+file's local helpers and the relative imports in its own directory. A component
+whose file forge cannot find says so on its page and lists nothing. The graph is
+built the first time the workshop asks for it, after the page is up, and an edit
+re-reads only the file it touched.
+
 A component can supply its own page. A native meta takes `index`; a CSF meta
 sets `parameters.forge.index`. Either is handed an `IndexContext` holding the
 stories and the generated page's parts, `Story`, `Variants` and `DefaultIndex`,
@@ -85,6 +97,27 @@ export default meta({
   ),
 });
 ```
+
+A custom page gets the list as `Dependencies`, and `gallery` says whether the
+component is one.
+
+## Galleries
+
+A story file that catalogs many components, or every permutation of one, tags
+its meta `gallery`, CSF's own `tags` field; a single such story tags itself.
+Tags must be string literals, since the index reads them without running the
+file. A story's tags are its meta's plus its own, and `'!gallery'` on a story
+drops the meta's.
+
+```ts
+const meta: Meta = { title: 'ui/Icons/Gallery', tags: ['gallery'] };
+export const AllPermutations: Story = { tags: ['gallery'], render: … };
+```
+
+A gallery row carries a grid mark in the sidebar and a Gallery badge on its
+index page. A component every one of whose stories is a gallery is left out of
+the dependency lists entirely, so a catalog that imports everything does not
+appear as a user of everything.
 
 ## Story tests
 

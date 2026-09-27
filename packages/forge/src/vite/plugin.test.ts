@@ -181,6 +181,25 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     await expect.poll(async () => indexOf(s), { timeout: 5000, interval: 50 }).toContain('ui-bad--fixed');
   });
 
+  it('serves the component graph from source, and pushes it again when a component file changes', async () => {
+    const { dir, server: s } = await start({
+      'A.tsx': `import { B } from './B';\nexport const A = () => <B />;\n`,
+      'B.tsx': `export const B = () => null;\n`,
+      'a.stories.tsx': `import { A } from './A';\nexport default { title: 'ui/A', component: A };\nexport const One = {};\n`,
+      'b.stories.tsx': `import { B } from './B';\nexport default { title: 'ui/B', component: B };\nexport const One = {};\n`,
+    });
+    const sent = vi.spyOn(s.ws, 'send');
+    const graph = async () =>
+      ((await s.ssrLoadModule('virtual:forge/deps.js')) as { default: Record<string, { uses: string[]; usedBy: string[] }> }).default;
+    expect(await graph()).toEqual({
+      'ui/A': { source: 'A.tsx', uses: ['ui/B'], usedBy: [] },
+      'ui/B': { source: 'B.tsx', uses: [], usedBy: ['ui/A'] },
+    });
+    writeFileSync(join(dir, 'A.tsx'), `export const A = () => null;\n`);
+    await expect.poll(async () => (await graph())['ui/A']?.uses, { timeout: 5000, interval: 50 }).toEqual([]);
+    expect(sent).toHaveBeenCalledWith(expect.objectContaining({ event: 'forge:deps' }));
+  });
+
   it('serves the workshop at its base with or without the trailing slash', async () => {
     const { server: s } = await start({}, { base: '/x/' });
     const listening = createHttpServer(s.middlewares);

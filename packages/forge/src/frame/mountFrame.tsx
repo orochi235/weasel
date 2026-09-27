@@ -1,6 +1,7 @@
 import { openChannel } from '../protocol/channel';
 import { FRAME_HELLO, type FromFrame, PORT_HANDOFF, type ToFrame } from '../protocol/messages';
 import { indexId, isIndexId } from '../story/indexPages';
+import { isGallery } from '../story/tags';
 import { indexRenderOf, loadStories } from '../story/load';
 import type { LoadedStory } from '../story/types';
 import { type FrameSetup, reportImportFault, startFrame } from './FrameController';
@@ -20,6 +21,8 @@ export interface FrameIndexEntry {
   description?: string;
   /** The JSDoc above the file's meta, which heads the index page. */
   componentDescription?: string;
+  /** The meta's `tags`. */
+  tags?: readonly string[];
 }
 
 export interface MountFrameOptions {
@@ -96,6 +99,8 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
       startIndex({
         title,
         ...(entries[0]?.componentDescription === undefined ? {} : { description: entries[0].componentDescription }),
+        gallery: entries.every(isGallery),
+        galleries: entries.filter(isGallery).map((e) => e.id),
         stories,
         descriptions: Object.fromEntries(entries.flatMap((e) => (e.description ? [[e.id, e.description]] : []))),
         render: mods.map(indexRenderOf).find((render) => render !== null) ?? null,

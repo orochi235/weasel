@@ -28,6 +28,9 @@ export interface MetaSpec {
   isolate?: string;
   /** The component's own index page, in place of the generated one. A CSF file sets `parameters.forge.index`. */
   index?: IndexRender;
+  /** As CSF's meta `tags`; `'gallery'` marks a catalog or showcase rather than one component. Read from the source,
+   *  so each must be a string literal. */
+  tags?: readonly string[];
 }
 
 /** What an index page is given: its component's stories, and the parts the generated page is built from. */
@@ -44,6 +47,10 @@ export interface IndexContext {
   Variants: ComponentType<{ story: LoadedStory }>;
   /** The whole generated page. */
   DefaultIndex: ComponentType;
+  /** The listed components this one uses and those that use it, as the generated page shows them. */
+  Dependencies: ComponentType;
+  /** Whether the meta is tagged `gallery`. */
+  gallery: boolean;
   /** Shows story `id` in this page's trial in its place. */
   open: (id: string) => void;
 }
@@ -69,6 +76,8 @@ export interface StorySpec<C = Record<string, never>, S = undefined> {
   /** Renders this story in its own frame document, for a reason the value states. The default is the workshop document. */
   isolate?: string;
   play?: (ctx: PlayContext<C>) => void | Promise<void>;
+  /** Added to the meta's `tags`; `'!tag'` drops one. Read from the source, so each must be a string literal. */
+  tags?: readonly string[];
 }
 
 /** One story, normalized — what both the native and CSF loaders produce. */
@@ -104,4 +113,20 @@ export interface IndexEntry {
   componentName?: string;
   /** Read statically from the source; a story with it renders in its own frame. */
   isolate?: string;
+  /** The story's tags, read statically from the source: its meta's and its own. An index page's are those every
+   *  story of its component carries. */
+  tags?: string[];
 }
+
+/** One component's place in the component graph. Every list holds story titles, sorted. */
+export interface ComponentDeps {
+  /** The file declaring the component, relative to the vite root; null when forge could not find one. */
+  source: string | null;
+  /** The listed components its own source imports. */
+  uses: string[];
+  /** The listed components whose own source imports it. */
+  usedBy: string[];
+}
+
+/** The component graph the vite plugin derives from source, by story title. A gallery has no entry. */
+export type DepGraph = Record<string, ComponentDeps>;

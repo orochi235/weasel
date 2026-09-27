@@ -1,7 +1,8 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
-import { Badge, Checkbox, DisclosureMark, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
+import { Badge, Checkbox, DisclosureMark, Icon, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
 import { type FocusEvent, type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
 import { indexEntries } from '../../story/indexPages';
+import { isGallery } from '../../story/tags';
 import type { IndexEntry } from '../../story/types';
 import { revealTrial } from '../revealTrial';
 import { useRoute } from '../useRoute';
@@ -56,6 +57,15 @@ function LibraryBadge({ library }: { library: string }) {
     <Badge status="muted" tone={LIBRARY_TONES[library]} variant="subtle" size="sm" className="fg-tree__tag">
       {library}
     </Badge>
+  );
+}
+
+/** What a row tagged `gallery` shows before its label. Its row's name says the same for a screen reader. */
+function GalleryMark() {
+  return (
+    <span className="fg-tree__gallery" title="Gallery">
+      <Icon name="layoutGrid" size={14} />
+    </span>
   );
 }
 
@@ -200,12 +210,13 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     nodes.map((node) => {
       if (node.kind === 'folder') {
         const open = isOpen(node.path);
+        const gallery = node.index !== undefined && isGallery(node.index);
         return (
           <div
             key={keyOf(node)}
             {...itemProps(node, level)}
             aria-expanded={open}
-            aria-label={node.label}
+            aria-label={gallery ? `${node.label} (gallery)` : node.label}
             aria-current={node.index && openIds.has(node.index.id) ? 'true' : undefined}
             className="fg-tree__node"
           >
@@ -226,6 +237,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
               >
                 <DisclosureMark open={open} />
               </span>
+              {gallery ? <GalleryMark /> : null}
               <span className="fg-tree__label">{node.label}</span>
               {node.tag ? <LibraryBadge library={node.tag} /> : null}
             </div>
@@ -238,12 +250,14 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
         );
       }
       const { entry } = node;
+      const gallery = isGallery(entry);
       return (
         <a
           key={keyOf(node)}
           {...itemProps(node, level)}
           href={`#/${encodeURIComponent(entry.id)}`}
           aria-current={openIds.has(entry.id) ? 'true' : undefined}
+          aria-label={gallery ? `${node.label ?? entry.name} (gallery)` : undefined}
           className="fg-tree__item fg-tree__story"
           onClick={(event) => {
             if (event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -252,6 +266,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
             activate(entry, event.shiftKey);
           }}
         >
+          {gallery ? <GalleryMark /> : null}
           <span className="fg-tree__label">{node.label ?? entry.name}</span>
           {node.tag ? <LibraryBadge library={node.tag} /> : null}
         </a>

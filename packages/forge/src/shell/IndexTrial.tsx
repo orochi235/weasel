@@ -1,9 +1,11 @@
 import { TrialIdContext, useLabContext } from '@weasel-js/labkit';
 import { useContext } from 'react';
+import { isGallery } from '../story/tags';
 import type { FrameSetup } from '../frame/FrameController';
 import { type IndexEnv, IndexPage } from '../frame/index/IndexPage';
 import type { Globals } from '../protocol/messages';
 import type { IndexRender, LoadedStory } from '../story/types';
+import { DependenciesContext } from './dependencies';
 import { TrialHost } from './TrialHost';
 import { setRoute } from './useRoute';
 
@@ -11,6 +13,10 @@ import { setRoute } from './useRoute';
 export interface IndexBundle {
   title: string;
   description?: string;
+  /** The tags every story of the component carries. */
+  tags?: readonly string[];
+  /** The ids of the stories tagged `gallery`. */
+  galleries: readonly string[];
   stories: readonly LoadedStory[];
   descriptions: Readonly<Record<string, string>>;
   render: IndexRender | null;
@@ -26,6 +32,9 @@ export interface IndexTrialProps {
 export function IndexTrial({ bundle, setup, config }: IndexTrialProps) {
   const lab = useLabContext();
   const trialId = useContext(TrialIdContext);
+  const graph = useContext(DependenciesContext);
+  const gallery = isGallery(bundle);
+  const dependencies = gallery ? undefined : graph?.[bundle.title];
   const open = (id: string) => {
     if (!trialId || !lab.instruments.some((instrument) => instrument.name === id)) return;
     lab.swapTrial(trialId, id);
@@ -37,6 +46,9 @@ export function IndexTrial({ bundle, setup, config }: IndexTrialProps) {
       ...(bundle.description === undefined ? {} : { description: bundle.description }),
       stories: bundle.stories,
       descriptions: bundle.descriptions,
+      gallery,
+      galleries: bundle.galleries,
+      ...(dependencies ? { dependencies } : {}),
       globals,
       decorators: setup.decorators ?? [],
       open,

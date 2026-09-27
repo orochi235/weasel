@@ -17,12 +17,21 @@ export function isIndexId(id: string): boolean {
 
 /**
  * One index-page entry per title in `stories`, in the order titles first appear. It routes and runs like a story:
- * its `file` is the title's first story file, and its descriptions are the title's own.
+ * its `file` is the title's first story file, its descriptions are the title's own, and its tags are those every story
+ * of the title carries.
  */
 export function indexEntries(stories: readonly IndexEntry[]): IndexEntry[] {
   const byTitle = new Map<string, IndexEntry>();
   for (const entry of stories) {
-    if (byTitle.has(entry.title)) continue;
+    const page = byTitle.get(entry.title);
+    if (page) {
+      if (page.tags) {
+        const common = page.tags.filter((tag) => entry.tags?.includes(tag));
+        if (common.length > 0) page.tags = common;
+        else delete page.tags;
+      }
+      continue;
+    }
     byTitle.set(entry.title, {
       id: indexId(entry.title),
       title: entry.title,
@@ -31,6 +40,7 @@ export function indexEntries(stories: readonly IndexEntry[]): IndexEntry[] {
       file: entry.file,
       ...(entry.componentDescription === undefined ? {} : { componentDescription: entry.componentDescription }),
       ...(entry.componentName === undefined ? {} : { componentName: entry.componentName }),
+      ...(entry.tags === undefined ? {} : { tags: entry.tags }),
     });
   }
   return [...byTitle.values()];
