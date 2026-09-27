@@ -3,7 +3,7 @@ import { Powerline } from './Powerline';
 import type { EdgeCap } from '../Badge/bases/edgeProfiles';
 import s from './Powerline.module.css';
 
-const ALL_CAPS: EdgeCap[] = ['flat', 'chevron', 'slant', 'slant-up', 'round', 'scallop', 'concave-chevron'];
+const ALL_CAPS: EdgeCap[] = ['flat', 'chevron', 'slant', 'slant-up', 'round', 'scallop', 'puzzle', 'concave-chevron'];
 
 const meta: Meta<typeof Powerline> = {
   title: 'ui/Foundations/Powerline',
@@ -100,6 +100,20 @@ export const MixedVariants: Story = {
       { text: 'main', status: 'accent', variant: 'solid', endCap: 'chevron' },
       { text: 'tracked', status: 'info', variant: 'outline', endCap: 'chevron' },
       { text: 'dirty', status: 'warn', variant: 'subtle' },
+    ],
+  },
+};
+
+export const PuzzleChain: Story = {
+  args: {
+    gap: 0,
+    depth: 8,
+    size: 'md',
+    segments: [
+      { text: 'tool', status: 'accent', endCap: 'puzzle' },
+      { text: 'drag', status: 'info', endCap: 'puzzle' },
+      { text: 'move', status: 'warn', endCap: 'puzzle' },
+      { text: 'node-7', status: 'muted' },
     ],
   },
 };

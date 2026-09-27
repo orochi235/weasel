@@ -92,7 +92,7 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
         step: bounds.step,
         unit: unit?.suffix,
         accepts: unit ? prefUnitAccepts(unit) : undefined,
-        notation: leaf.format,
+        display: leaf.display,
         onChange: store,
       };
     }

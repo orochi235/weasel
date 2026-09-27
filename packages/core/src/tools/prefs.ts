@@ -7,8 +7,8 @@
 // boolean, string, enum, plus rendering hints — so it's a clean
 // structural subset of whatever a host app already has.
 
-import { formatUnit, unitScale } from 'core/units';
-import type { Unit, UnitEntry, UnitScale, UnitSystem } from 'core/units';
+import { formatUnit, unitScale } from '@weasel-js/quantity';
+import type { Display, Unit, UnitEntry, UnitScale, UnitSystem } from '@weasel-js/quantity';
 
 /** The value types a built-in pref leaf can hold. */
 export type ToolPrefKind =
@@ -47,9 +47,6 @@ interface ToolPrefBase<K extends string, Value> {
 
 /** How a schema-driven UI should present a number pref. */
 export type ToolPrefNumberControl = 'input' | 'slider';
-/** How a schema-driven UI should show a number pref's value. `compact`
- *  abbreviates from a thousand up, as in `2.0M`. */
-export type ToolPrefNumberFormat = 'plain' | 'compact';
 /** How a schema-driven UI should present a boolean pref. */
 export type ToolPrefBooleanControl = 'checkbox' | 'switch' | 'toggle';
 /** How a schema-driven UI should present a string pref. */
@@ -126,7 +123,9 @@ export interface ToolPrefNumber extends ToolPrefBase<'number', number> {
   max?: number;
   step?: number;
   control?: ToolPrefNumberControl;
-  format?: ToolPrefNumberFormat;
+  /** How the value shows, speaks and reads back when typed — `compact()`
+   *  reads `2.00M`. Presentation only: the stored value stays a number. */
+  display?: Display;
   unit?: ToolPrefNumberUnit;
 }
 /**

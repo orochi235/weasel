@@ -459,8 +459,8 @@ export {
   IMPERIAL_INCHES,
   METRIC_MM,
   PIXELS,
-} from './core/units';
-export type { Unit, UnitEntry, UnitScale, UnitSystem, UnitValue } from './core/units';
+} from '@weasel-js/quantity';
+export type { Unit, UnitEntry, UnitScale, UnitSystem, UnitValue } from '@weasel-js/quantity';
 
 // ─── Affordances: cross-tool hittable chrome (resize/rotate handles) ────────
 export {

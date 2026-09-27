@@ -2,11 +2,14 @@ import { describe, it, expect } from 'vitest';
 import {
   formatCompact,
   formatNumber,
-  formatZoom,
   MINUS_SIGN,
   parseNumber,
   parseSignedNumber,
 } from './number';
+import { qty } from './present';
+import { zoom } from './kinds/proportion';
+
+const formatZoom = (z: number) => qty(z, zoom()).text;
 
 describe('formatNumber', () => {
   it('exports the U+2212 MINUS SIGN, not the ASCII hyphen', () => {
@@ -56,7 +59,7 @@ describe('parseSignedNumber', () => {
   });
 });
 
-describe('formatZoom', () => {
+describe('zoom display', () => {
   it('shows a percentage up to and including 2x', () => {
     expect(formatZoom(0.5)).toBe('50%');
     expect(formatZoom(1)).toBe('100%');

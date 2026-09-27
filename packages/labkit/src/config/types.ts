@@ -1,10 +1,5 @@
-import type {
-  PrefGroup,
-  PrefLeaf,
-  PrefNumberFormat,
-  PrefNumberUnit,
-  PrefRenderer,
-} from '@weasel-js/ui';
+import type { Display } from '@weasel-js/quantity';
+import type { PrefGroup, PrefLeaf, PrefNumberUnit, PrefRenderer } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
 
 /**
@@ -35,8 +30,8 @@ export interface Annotations {
   max?: number;
   step?: number;
   suffix?: string;
-  /** How a number's value is shown. `compact` abbreviates from a thousand up. */
-  format?: PrefNumberFormat;
+  /** How a number's value shows, speaks and reads back — `compact()` reads `2.00M`. */
+  display?: Display;
   /** Display-unit conversion for a number stored in a canonical unit — the
    *  value, its bounds and its step all convert at the control's edge. */
   unit?: PrefNumberUnit;

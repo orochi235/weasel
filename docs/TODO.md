@@ -741,14 +741,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) Quantities have no display layer beyond plain numbers.** `format/number.ts` formats a
-  number (`formatNumber`, `formatCompact`, `formatZoom`), but nothing shows a fraction, a ratio,
-  or a number with its unit as one value. `BandEditor` is the case in hand: its story builds tick
-  labels by hand (`` `1/${Math.round(1 / at)}` ``), the band payloads say nothing about their
-  range, and each seam's `aria-valuenow` is a raw float such as `0.08333333333333333`. Wanted: a
-  kit way to format a quantity as a fraction, a ratio, or a value with its unit, which `BandEditor`,
-  `NumberField` and the other params surfaces read from, and which gives a screen reader the same
-  text a sighted reader gets.
+- **(P3) `@weasel-js/quantity` has no composites and no styling.** A value is one number, so a
+  range (`1/64–1/2`, which `BandEditor`'s bands would want to report) or a vector readout has no
+  display of its own yet; `Slider`'s thumbs still take bare numbers where `BandEditor`'s bands take
+  tagged ones; and nothing styles the `data-part` spans the HTML form emits, so `PropertyField`
+  still draws its suffix from its own `unit` prop.
 
 - **(P3) An encoded field of an object leaf reads and writes without its siblings across a
   mixed selection.** `SelectionPanel` reports and writes an object leaf's fields per node, but a

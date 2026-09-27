@@ -1,4 +1,5 @@
-import type { PrefLeaf, PrefNumberFormat, PrefNumberUnit } from '@weasel-js/ui';
+import type { Display } from '@weasel-js/quantity';
+import type { PrefLeaf, PrefNumberUnit } from '@weasel-js/ui';
 import { type Auto, isAuto } from './auto';
 import type {
   Annotations,
@@ -141,10 +142,10 @@ export class NumberNode extends BaseNode<number> {
     return this.ann({ suffix });
   }
 
-  /** Show the value in a named format — `'compact'` reads `2.00M`. Presentation
-   *  only: the stored value stays a plain number, and a typed `2.5m` reads back. */
-  format(format: PrefNumberFormat): this {
-    return this.ann({ format });
+  /** Show, speak and read the value through a display — `compact()` reads
+   *  `2.00M`. Presentation only: the stored value stays a plain number. */
+  display(display: Display): this {
+    return this.ann({ display });
   }
 
   /**

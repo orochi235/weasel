@@ -54,6 +54,7 @@ export const RULES = [
   ['packages/gestures/src', 'Tools & gestures'],
   ['packages/history/src', 'History'],
   ['packages/paint/src', 'Paint & fills'],
+  ['packages/quantity/src', 'Scene'],
   ['packages/text/src', 'Text'],
 
   // Routing moved out of core; each part keeps the category its core directory had.

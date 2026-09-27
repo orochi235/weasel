@@ -5,6 +5,7 @@
  * future without consumer churn.
  */
 
+export { formatNumber, MINUS_SIGN } from '@weasel-js/quantity';
 export {
   ActionBar,
   type ActionBarProps,
@@ -21,6 +22,7 @@ export {
   type BadgeVariant,
   type BoundsCtx,
   type BuiltInEdgeName,
+  type BuiltInProfileName,
   type BuiltinPref,
   Button,
   ButtonBar,
@@ -81,7 +83,6 @@ export {
   type FieldProps,
   type FillSettings,
   fieldClasses,
-  formatNumber,
   formatShortcut,
   formatShortcutParts,
   GestureRoute,
@@ -122,7 +123,6 @@ export {
   MenuButton,
   type MenuButtonItem,
   type MenuButtonProps,
-  MINUS_SIGN,
   moveLayers,
   NumberField,
   type NumberFieldProps,

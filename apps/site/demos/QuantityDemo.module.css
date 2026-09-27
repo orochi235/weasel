@@ -1,0 +1,63 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 760px;
+}
+
+.presets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.table {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th {
+  text-align: start;
+  font-weight: 500;
+  color: var(--ckd-muted);
+  padding: 4px 8px;
+}
+
+.table td {
+  padding: 3px 8px;
+  vertical-align: middle;
+}
+
+.kind {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  color: var(--ckd-muted);
+}
+
+.spoken {
+  color: var(--ckd-faint);
+  font-style: italic;
+}
+
+.parts :global([data-part]) {
+  outline: 1px dashed color-mix(in srgb, var(--ckd-muted) 60%, transparent);
+  outline-offset: 1px;
+  margin: 0 1px;
+}
+
+.math {
+  margin-inline-start: 12px;
+  font-size: 1.1em;
+}
+
+.heading {
+  margin: 12px 0 0;
+  font-size: 1em;
+  font-weight: 500;
+}
+
+.json {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ckd-muted);
+  white-space: pre-wrap;
+}

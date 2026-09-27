@@ -1,3 +1,4 @@
+import { compact } from '@weasel-js/quantity';
 import { describe, expect, it } from 'vitest';
 import { auto } from './auto';
 import { f } from './builder';
@@ -37,7 +38,7 @@ describe('builder', () => {
   });
 
   it('annotates a number with a display format', () => {
-    expect(f.number(0).format('compact').annotations.format).toBe('compact');
+    expect(f.number(0).display(compact()).annotations.display).toEqual(compact());
   });
 
   it('keeps a custom node kind across a chain', () => {

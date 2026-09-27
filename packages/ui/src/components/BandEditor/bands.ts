@@ -1,9 +1,12 @@
+import type { Quantity } from '@weasel-js/quantity';
 import type { BandScale } from './scale';
 import { clamp01 } from './scale';
 
-export interface Band<T> {
+/** One band. `from` may be a tagged quantity, which keeps its display and
+ *  unit through every edit: see `BandEditor`. */
+export interface Band<T, F extends Quantity = number> {
   /** Domain value where this band starts. The first band's is normalized to `min`. */
-  from: number;
+  from: F;
   data: T;
 }
 

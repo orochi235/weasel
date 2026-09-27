@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TOOL_PREF_KINDS, type ToolPrefKind } from '@weasel-js/core';
+import { compact } from '@weasel-js/quantity';
 import type { PrefLeaf } from '@weasel-js/ui';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -476,7 +477,7 @@ describe('<ControlPanel> format', () => {
     render(
       <ControlPanel
         schema={resolveConfigSchema(
-          f.schema({ glyphs: f.number(0).range(0, 2_000_000).format('compact') }),
+          f.schema({ glyphs: f.number(0).range(0, 2_000_000).display(compact()) }),
           [],
         )}
         config={{ glyphs: 2_000_000 }}
@@ -901,7 +902,10 @@ describe('<ControlPanel> auto', () => {
 describe('<ControlPanel> option icons', () => {
   it("draws an option's icon in its segment and keeps the label as its name", () => {
     const status = f
-      .enum('ok', [{ value: 'ok', label: 'ok', icon: 'statusSuccess' }, { value: 'bad', label: 'bad' }])
+      .enum('ok', [
+        { value: 'ok', label: 'ok', icon: 'statusSuccess' },
+        { value: 'bad', label: 'bad' },
+      ])
       .radio();
     render(
       <ControlPanel

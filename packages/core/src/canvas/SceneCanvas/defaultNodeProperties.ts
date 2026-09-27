@@ -4,7 +4,7 @@ import { listMarkers } from 'core/strokeMarkers';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
 import { resolveAlign, type TextAlign } from '@weasel-js/text';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
-import { ANGLE_RADIANS } from 'core/units';
+import { ANGLE_RADIANS } from '@weasel-js/quantity';
 import { prefUnit, type ToolPrefBooleanEncoding, type ToolPrefEnumEncoding, type ToolPrefGroup, type ToolPrefNumberUnit } from 'tools/prefs';
 
 /** Radians-stored / degrees-shown conversion for `pose.rotation` leaves.
