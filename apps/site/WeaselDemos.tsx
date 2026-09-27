@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'react';
-import { CATEGORIES, DEMOS, DEMOS_BY_ID, type DemoEntry, type DemoSourceTab } from './registry';
+import { CATEGORIES, DEMOS, DEMOS_BY_ID, PACKAGES, placeOf, type DemoEntry, type DemoSourceTab } from './registry';
 import { sessionStore } from './chunkReload';
 import { PageBoundary } from './PageBoundary';
 
@@ -108,19 +108,20 @@ export function WeaselDemos() {
           {CATEGORIES.map((cat) => (
             <section key={cat} className="ckd-nav-section">
               <h2>{cat}</h2>
-              <ul>
-                {DEMOS.filter((d) => d.category === cat).map((d) => (
-                  <li key={d.id}>
-                    <a
-                      href={`#${d.id}`}
-                      className={d.id === activeId ? 'active' : ''}
-                      onClick={(e) => { e.preventDefault(); setActiveId(d.id); }}
-                    >{d.title}</a>
-                  </li>
-                ))}
-              </ul>
+              <DemoLinks demos={DEMOS.filter((d) => d.category === cat)} activeId={activeId} onPick={setActiveId} />
             </section>
           ))}
+          {PACKAGES.length > 0 && (
+            <section className="ckd-nav-section">
+              <h2>Packages</h2>
+              {PACKAGES.map((pkg) => (
+                <section key={pkg} className="ckd-nav-package">
+                  <h3>{pkg}</h3>
+                  <DemoLinks demos={DEMOS.filter((d) => d.package === pkg)} activeId={activeId} onPick={setActiveId} />
+                </section>
+              ))}
+            </section>
+          )}
         </nav>
       </aside>
 
@@ -136,6 +137,26 @@ export function WeaselDemos() {
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
+  );
+}
+
+function DemoLinks({ demos, activeId, onPick }: {
+  demos: DemoEntry[];
+  activeId: string;
+  onPick: (id: string) => void;
+}) {
+  return (
+    <ul>
+      {demos.map((d) => (
+        <li key={d.id}>
+          <a
+            href={`#${d.id}`}
+            className={d.id === activeId ? 'active' : ''}
+            onClick={(e) => { e.preventDefault(); onPick(d.id); }}
+          >{d.title}</a>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -185,7 +206,7 @@ function DemoView({ entry }: { entry: DemoEntry }) {
     <article className="ckd-demo">
       <header>
         <div className="ckd-eyebrow">
-          {entry.category}
+          {placeOf(entry)}
           {entry.lastModified && (
             <>
               <span className="ckd-eyebrow-sep" aria-hidden> · </span>

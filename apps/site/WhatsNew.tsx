@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { DEMOS, type DemoEntry } from './registry';
+import { DEMOS, placeOf, type DemoEntry } from './registry';
 
-type SortKey = 'title' | 'category' | 'created' | 'lastModified';
+type SortKey = 'title' | 'place' | 'created' | 'lastModified';
 type SortDir = 'asc' | 'desc';
 
 interface Props {
@@ -40,7 +40,7 @@ export function WhatsNew({ onSelect }: Props) {
           <thead>
             <tr>
               <Th label="Demo" colKey="title" sortKey={sortKey} sortDir={sortDir} onClick={cycle} />
-              <Th label="Category" colKey="category" sortKey={sortKey} sortDir={sortDir} onClick={cycle} />
+              <Th label="Filed under" colKey="place" sortKey={sortKey} sortDir={sortDir} onClick={cycle} />
               <Th label="Created" colKey="created" sortKey={sortKey} sortDir={sortDir} onClick={cycle} />
               <Th label="Last modified" colKey="lastModified" sortKey={sortKey} sortDir={sortDir} onClick={cycle} />
             </tr>
@@ -57,7 +57,7 @@ export function WhatsNew({ onSelect }: Props) {
                     {d.title}
                   </a>
                 </td>
-                <td>{d.category}</td>
+                <td>{placeOf(d)}</td>
                 <td><DateCell iso={d.created} /></td>
                 <td><DateCell iso={d.lastModified} /></td>
               </tr>
@@ -110,6 +110,10 @@ function formatShortDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+function valueOf(d: DemoEntry, key: SortKey): string {
+  return key === 'place' ? placeOf(d) : (d[key] ?? '');
+}
+
 function sortDemos(
   entries: readonly DemoEntry[],
   key: SortKey,
@@ -117,8 +121,8 @@ function sortDemos(
 ): DemoEntry[] {
   const sign = dir === 'asc' ? 1 : -1;
   return [...entries].sort((a, b) => {
-    const av = (a[key] ?? '') as string;
-    const bv = (b[key] ?? '') as string;
+    const av = valueOf(a, key);
+    const bv = valueOf(b, key);
     // Empty strings sort as the "smallest" value regardless of direction
     // so undated entries always trail (which is what consumers expect:
     // freshly-created, ungit-tracked demos sit at the bottom).

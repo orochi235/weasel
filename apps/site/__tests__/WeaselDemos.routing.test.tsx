@@ -90,3 +90,14 @@ describe('the hash router', () => {
     expect(window.location.search).toBe('?pkg=core');
   });
 });
+
+describe('the sidebar', () => {
+  it('lists package demos under Packages, by package, and nowhere else', () => {
+    render(<WeaselDemos />);
+    const nav = screen.getByRole('navigation');
+    const packages = within(nav).getByRole('heading', { level: 2, name: 'Packages' }).closest('section')!;
+    const audio = within(packages).getByRole('heading', { level: 3, name: 'audio' }).closest('section')!;
+    expect(within(audio).getByRole('link', { name: 'Audio' })).toBeTruthy();
+    expect(within(nav).getAllByRole('link', { name: 'Audio' })).toHaveLength(1);
+  });
+});

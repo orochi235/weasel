@@ -113,6 +113,16 @@ a:hover { text-decoration: underline; }
   margin: 0 0 6px;
 }
 
+.ckd-nav-package + .ckd-nav-package {
+  margin-top: 10px;
+}
+
+.ckd-nav-package h3 {
+  font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--ckd-faint);
+  margin: 0 0 4px 8px;
+}
+
 .ckd-nav-section ul {
   list-style: none;
   padding: 0;
