@@ -759,9 +759,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   order alone decides which fires. Seen 2026-09-27; not yet checked whether the preset
   wiring or the demo declares the duplicate, or whether any drag lands on the wrong one.
 
-- **(P2) Lasso `intersect` selects by bounding box.** A triangle lasso picked up rects lying
-  entirely outside the triangle but inside its bounds: the same set a marquee over the
-  bounds would pick. Seen 2026-09-27 in `LassoDemo`.
+- **(P2) Two lasso hit-tests, and the old one tests bounding boxes.** The live lasso runs
+  `hitTestLassoPolygon` (`canvas/deps/hitTestArea.ts`), which tests each node's silhouette.
+  `sceneAdapter.hitTestLasso` and `arrayAdapter.hitTestLasso` still test by unrotated
+  bounding box, reached only through the `selectFromLasso` behavior, which nothing live
+  runs. Fold them onto the one hit-test; the adapter walk (`walkClipAware`) gates nodes
+  differently from `pickWalk`, so reconcile that first. Also: `useLassoTool`'s `behaviors`
+  option is never forwarded to the action, and polygon `intersect` treats bezier control
+  points as vertices where `enclosed` flattens curves.
 
 - **(P3) Unconfirmed: apps/draw's fill slider lags a live opacity scrub.** Seen
   2026-09-27 in a browser: holding O and wheeling faded the selected rect, while
