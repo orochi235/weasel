@@ -1154,7 +1154,18 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P2) Demos found broken during the 2026-09-27 preset pass.** Each one reproduces with
   `features={['draw']}` restored, so the presets didn't cause it:
-  - `DiagramLiveDemo`: Relax did nothing on the first press. Not compared against main.
+  - `DiagramLiveDemo`: Relax did nothing on the first press. **Not reproduced** on 2026-09-27
+    (`de54c0aca`), in headless Chrome and chromium, with the current presets and with
+    `features={['draw']}`: pressed at once and after 3s, after 20× CPU throttling, after
+    clicking or dragging a box first, after arriving from another demo, and after an HMR edit.
+    Every first press published 14 overrides and moved `api` from (150, 70) to (198, 84). What
+    does happen: the motion ends about 245 ms (15 frames) after the press, but the run holds
+    for the full 300-tick alpha schedule, so the button reads "Settle now" for another ~4.7 s
+    with nothing moving, and a Relax on an already-settled layout moves nothing. The likeliest
+    source of the report (not confirmed) is the `useScene`/HMR trap: after an edit, the scene
+    still holds the layout an earlier press settled. Open question: should a live force run
+    finish when the motion stops rather than when alpha does? A shorter run also closes the
+    window for a mid-run drag, which the demo's hint asks for.
 
 - **(P3) labkit's `weasel-lab`, `minimal` and `drag-lab` examples don't typecheck.** They pass
   `layers={{ scene: {} }}`, and `SceneSlotConfig` requires `drawOne`, though at runtime a
