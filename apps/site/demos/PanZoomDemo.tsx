@@ -53,7 +53,7 @@ export function PanZoomDemo() {
           H = hand · hold space = momentary · ctrl/⌘+wheel zoom · plain wheel pan · ⌘+= / ⌘+- / ⌘+0
         </span>
       </div>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={['view']}
         width={W}
         height={H}
         className="ckd-canvas"
@@ -61,7 +61,6 @@ export function PanZoomDemo() {
         selection={selection}
         view={view}
         onViewChange={setView}
-        viewport={{}}
         layers={{
           scene: {
             drawOne: (n, p, v): DrawCommand[] => {
@@ -76,7 +75,6 @@ export function PanZoomDemo() {
               }];
             },
           },
-          selectionOverlay: { handles: false },
         }}
       />
     </div>

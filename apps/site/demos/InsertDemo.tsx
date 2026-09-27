@@ -26,14 +26,12 @@ function InsertDemoInner() {
   const tools = useTools({ active: 'rect', registry: { rect } });
 
   return (
-    <SceneCanvas features={['draw']}
+    <SceneCanvas
       width={W}
       height={H}
       className="ckd-canvas"
       scene={scene}
       tools={tools}
-      selectionMode="none"
-      layers={{ selectionOverlay: null }}
     />
   );
 }

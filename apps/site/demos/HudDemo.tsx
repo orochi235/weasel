@@ -47,12 +47,11 @@ export function HudDemo() {
         each click. The button is a HUD widget drawn in screen space via
         <code> @weasel-js/hud</code>.
       </p>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={['pick']}
         width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}
-        defaultTools={['select']}
         ambient={[hudEntry]}
       />
       <p style={{ marginTop: 8, color: '#555' }}>

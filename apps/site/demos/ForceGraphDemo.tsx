@@ -276,22 +276,17 @@ export function ForceGraphDemo() {
         </span>
       </div>
       <div style={{ display: 'inline-block' }}>
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={['view']}
           width={W}
           height={H}
           className="ckd-canvas"
           scene={scene}
           selection={selection}
           selectionMode="none"
-          // Only hand + pin: the default select/rotate affordances draw
-          // cubic-Bezier handles, which overflow the flattener when poses
-          // change every frame (see D3SortableDemo).
-          defaultTools={['hand']}
           tools={tools}
           initialActiveTool="pin"
           view={view}
           onViewChange={setView}
-          viewport={{}}
           layers={{
             scene: {
               drawOne: (n, p, v): DrawCommand[] => [{
@@ -301,7 +296,6 @@ export function ForceGraphDemo() {
                 stroke: { paint: { color: '#fff' }, width: 1.5 / meanScale(v.scale) },
               }],
             },
-            selectionOverlay: { handles: false },
             edges: { layer: edgesLayer, before: 'scene' },
           }}
         />

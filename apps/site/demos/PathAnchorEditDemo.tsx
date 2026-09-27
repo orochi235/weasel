@@ -36,7 +36,7 @@ export function PathAnchorEditDemo() {
   const selection = useSelection();
 
   return (
-    <SceneCanvas features={['draw']}
+    <SceneCanvas features={['pick', 'move', 'paths']}
       width={W}
       height={H}
       className="ckd-canvas"

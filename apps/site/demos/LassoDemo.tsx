@@ -7,7 +7,6 @@ import {
   useSelection,
   solid,
   type LassoHitMode,
-  BUILTIN_TOOL_IDS,
 } from '@weasel-js/core';
 
 const W = 480, H = 320;
@@ -43,7 +42,7 @@ const MODE_LABELS: Record<LassoHitMode, string> = {
 };
 
 export function LassoDemo() {
-  // `defaultTools={BUILTIN_TOOL_IDS}` includes useLassoTool. The
+  // `pick` brings the select tool and `defaultTools` adds the lasso. The
   // `toolOptions.lasso.mode` knob drives the live hit-mode comparison —
   // press L to switch to lasso, drag a closed polygon, watch which rects
   // get selected based on the chosen mode.
@@ -76,7 +75,8 @@ export function LassoDemo() {
         scene={scene}
         selection={selection}
         selectionMode="multi"
-        features={['draw']} defaultTools={BUILTIN_TOOL_IDS}
+        features={['pick']}
+        defaultTools={['lasso']}
         initialActiveTool="lasso"
         toolOptions={{ lasso: { mode } }}
       />

@@ -244,7 +244,7 @@ function ParallaxDemoInner() {
           Drag or scroll-wheel to pan (x only, loops forever). Sky lags · hills slow · ground 1:1 · foreground leads. Toggle per-plane zoom to see depth-aware scaling.
         </span>
       </div>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={['view']}
         width={W}
         height={H}
         className="ckd-canvas"
@@ -256,7 +256,6 @@ function ParallaxDemoInner() {
         tools={tools}
         layers={{
           scene: { drawOne: () => [] },
-          selectionOverlay: { handles: false },
           paraSky:        { layer: sky,        after: 'scene' },
           paraHills:      { layer: hills,      after: 'paraSky' },
           paraGround:     { layer: ground,     after: 'paraHills' },

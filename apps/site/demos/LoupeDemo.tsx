@@ -164,13 +164,12 @@ export function LoupeDemo() {
         <span className="ckd-hint">under the aim point: {color ?? '—'}</span>
         <span className="ckd-hint">clicked: {picked ?? '—'}</span>
       </div>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={['pick', 'move']}
         ref={ref}
         width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}
-        viewport={{}}
         backgroundFill={{ fill: 'solid', color: PAPER }}
         ambient={[hudTool]}
         layers={{

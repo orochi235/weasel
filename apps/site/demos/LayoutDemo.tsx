@@ -54,7 +54,7 @@ export function LayoutDemo() {
 
   return (
     <div>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={['pick', 'move']}
         width={620}
         height={260}
         scene={scene}
@@ -77,8 +77,6 @@ export function LayoutDemo() {
               return cmds;
             },
           },
-          // Outline-only selection — this demo's about layout, not resize.
-          selectionOverlay: { handles: false },
         }}
       />
       <ul className="ld-ledger">

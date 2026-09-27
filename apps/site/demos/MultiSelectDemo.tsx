@@ -39,15 +39,13 @@ function MultiSelectDemoInner() {
   });
   const tools = useTools({ active: 'select', registry: { select } });
 
-  // Cmd/Ctrl+A is auto-registered by SceneCanvas's default actions.
-
   const canvasRef = useRef<SceneCanvasApi | null>(null);
   useEffect(() => {
     canvasRef.current?.element?.focus();
   }, []);
 
   return (
-    <SceneCanvas features={['draw']}
+    <SceneCanvas features={['pick', 'move', 'transform']}
       ref={canvasRef}
       width={W}
       height={H}

@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
 import { snapToContainer, snapBackOrDelete } from '@weasel-js/core/move';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { View } from '@weasel-js/core';
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -24,7 +23,6 @@ export function MoveSnapDemo() {
     ],
   });
   const selection = useSelection();
-  const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   const behaviors = useMemo(() => [
     snapToContainer<Pose>({
@@ -39,16 +37,13 @@ export function MoveSnapDemo() {
   ], []);
 
   return (
-    <SceneCanvas features={['draw']}
+    <SceneCanvas features={['pick', 'move']}
       width={W}
       height={H}
       className="ckd-canvas"
       scene={scene}
       selection={selection}
       selectTool={{ move: { behaviors } }}
-      view={view}
-      onViewChange={setView}
-      viewport={{}}
       layers={{
         scene: {
           drawOne: (n, p): DrawCommand[] => [{
@@ -57,7 +52,6 @@ export function MoveSnapDemo() {
             fill: { color: n.data.color },
           }],
         },
-        selectionOverlay: { handles: false },
       }}
     />
   );

@@ -82,7 +82,7 @@ export function MinimapDemo() {
           </span>
         </div>
         <div className={styles.row}>
-          <SceneCanvas features={['draw']}
+          <SceneCanvas features={['view']}
             width={MAIN_W}
             height={MAIN_H}
             className="ckd-canvas"
@@ -90,7 +90,6 @@ export function MinimapDemo() {
             selection={selection}
             view={view}
             onViewChange={setView}
-            viewport={{}}
             ambient={[inset]}
             layers={{
               scene: {
