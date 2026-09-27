@@ -223,3 +223,28 @@ describe('PaintInput — a registered kind', () => {
     expect(body).toHaveTextContent('Noise');
   });
 });
+
+describe('PaintInput — solid opacity', () => {
+  const opacitySlider = (): HTMLInputElement =>
+    screen.getByRole('slider', { name: /opacity/i }) as HTMLInputElement;
+
+  it("reads a solid paint's alpha from its opacity slot", () => {
+    render(<PaintInput value={{ color: '#336699', opacity: 0.4 }} onChange={() => {}} />);
+    expect(opacitySlider().value).toBe('40');
+  });
+
+  it('follows an opacity written from outside the control', () => {
+    const { rerender } = render(<PaintInput value={{ color: '#336699' }} onChange={() => {}} />);
+    expect(opacitySlider().value).toBe('100');
+    rerender(<PaintInput value={{ color: '#336699', opacity: 0.25 }} onChange={() => {}} />);
+    expect(opacitySlider().value).toBe('25');
+  });
+
+  it('commits alpha into the opacity slot, not the hex', () => {
+    const onChange = vi.fn();
+    render(<PaintInput value={{ color: '#336699', opacity: 0.4 }} onChange={onChange} />);
+    fireEvent.input(opacitySlider(), { target: { value: '70' } });
+    fireEvent.pointerUp(opacitySlider());
+    expect(onChange).toHaveBeenLastCalledWith({ color: '#336699', opacity: 0.7 });
+  });
+});

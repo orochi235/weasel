@@ -17,6 +17,10 @@ export interface WorkspaceVisual {
  * independently undoable and `exit` is non-destructive. A `strict` mode
  * (free-transform, crop) is a transaction: the whole session collapses to one
  * undoable step and leaving requires an explicit `commit` or `cancel`.
+ *
+ * The four shortcut fields are key chords (`'Escape'`, `'Meta+T'`) that
+ * `modeShortcuts` in `@weasel-js/routing` turns into dispatcher bindings,
+ * each live only while the mode it acts on is (or, for `entry`, is not).
  */
 export interface ModeDefinition {
   id: string;
@@ -35,6 +39,9 @@ export interface ModeDefinition {
   exit?: { shortcut?: string };
   commit?: { shortcut?: string };
   cancel?: { shortcut?: string };
+  /** Leave a soft mode and throw its session away, where `exit` keeps it to
+   *  resume. */
+  discard?: { shortcut?: string };
 }
 
 /** A mode's display name: its `label`, else its `id`. */

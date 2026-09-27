@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import {
   createScene,
   asNodeId,
@@ -450,6 +450,28 @@ describe('SelectionPanel — paint leaf', () => {
     expect(screen.getByLabelText('Color')).toHaveValue('#00ff00');
   });
 
+  it("tracks a paint's opacity written in a batch while the panel is mounted", () => {
+    // apps/draw's opacity scrub writes exactly this shape: `opacity` on the
+    // solid paint, through `scene.update` inside `scene.batch`.
+    const scene = sceneWithFill({ color: '#336699' });
+    render(
+      <SelectionPanel
+        scene={scene}
+        selection={selectionOf(['t'])}
+        properties={paintProperties}
+        routing={paintRouting}
+      />,
+    );
+    const slider = screen.getByRole('slider', { name: 'Color opacity' });
+    expect(slider).toHaveValue('100');
+    act(() => {
+      scene.batch('Adjust opacity', () => {
+        scene.update(asNodeId('t'), { data: { kind: 'text', style: { fill: { color: '#336699', opacity: 0.35 } } } });
+      });
+    });
+    expect(slider).toHaveValue('35');
+  });
+
   it('shows a gradient fill as a gradient, not as the indeterminate chip', () => {
     // The checkerboard used to mean both "mixed selection" and "structurally
     // not a solid". Now that the leaf previews a gradient as a gradient it
@@ -512,10 +534,7 @@ describe('SelectionPanel — paint leaf', () => {
     const input = screen.getByLabelText('Color');
     fireEvent.input(input, { target: { value: '#123456' } });
     fireEvent.blur(input);
-    expect(scene.get(asNodeId('t'))?.data.style?.fill).toEqual({
-      fill: 'solid',
-      color: '#123456ff',
-    });
+    expect(scene.get(asNodeId('t'))?.data.style?.fill).toEqual({ color: '#123456' });
   });
 });
 
@@ -613,7 +632,7 @@ describe('SelectionPanel — object leaf', () => {
     fireEvent.input(input, { target: { value: '#123456' } });
     fireEvent.blur(input);
     expect(scene.get(asNodeId('p'))?.data.stroke).toEqual({
-      paint: { fill: 'solid', color: '#123456ff' },
+      paint: { color: '#123456' },
       width: 12,
       cap: 'round',
     });

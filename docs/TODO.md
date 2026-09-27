@@ -66,14 +66,13 @@ Priority tags:
   time. Fine while `rect` / `text` / `image` are unconditionally decorative;
   revisit when a stateful-claims widget appears.
 
-- **(P3) Mode shortcuts never reach the dispatcher.** `ModeDefinition` declares
-  `entry` / `exit` / `commit` / `cancel` shortcuts (`packages/modes/src/presets/default.ts`),
-  and nothing in the tree reads them. `apps/draw/src/App.tsx` instead runs a
-  capture-phase window `keydown` that hard-codes Escape and Enter and
-  `stopPropagation`s ahead of the dispatcher's Escape ladder, and enters modes
-  from `SceneCanvas`'s `onDoubleClick` callback. Its comment says it is beating
-  `useKeybindings`' document handler, which no longer exists. The shortcuts
-  should become bindings gated on `modeIs`/`modeNot`.
+- **(P3) apps/draw binds no mode-entry shortcut.** `modeShortcuts` (routing) binds a
+  mode's `entry` chord when the consumer passes `enter`, and draw passes only the
+  leaving roles. PATH_EDIT's Enter can't simply enter the machine's mode: the
+  anchor editing it exists for keys off the kit's `editAnchors.editingId`, which only
+  `enterPathEdit`'s double-click sets, so Enter would light the mode with no editable
+  anchors. Draw also still enters every mode from `SceneCanvas`'s `onDoubleClick`
+  observer rather than from `entry.trigger`, which nothing reads.
 
 - **(P3) A press on empty canvas can't be an ambient binding beside the select tool.**
   `select.pick` binds `pointerDown` on empty space at active scope, and active
@@ -778,12 +777,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Undecided: move the kernel down into `core/geometry`, or let `arrayAdapter` stay a
   bounds-only adapter and say so in its contract.
 
-- **(P3) Unconfirmed: apps/draw's fill slider lags a live opacity scrub.** Seen
-  2026-09-27 in a browser: holding O and wheeling faded the selected rect, while
-  the Properties panel's fill slider still read 100%. Not yet checked whether it
-  predates the scrub moving onto a held tool. The scrub writes paints through
-  `scene.update` inside a batch (`apps/draw/src/opacityScrub/`), so the likely
-  question is whether the panel re-reads mid-batch.
+- **(P3) A gradient's or pattern's opacity has no control in the paint editors.** Every
+  paint kind carries its alpha in `opacity`, and `PaintInput` edits it only for a solid
+  (its alpha slider). `GradientEditor`, `PatternPicker` and `MeshEditor` never read or
+  write it, so an opacity scrub over a gradient node changes nothing the Properties
+  panel shows, and a panel edit can't undo it.
 
 - **(P3) The checkbox skin is written twice.** `PropertyField` draws a native
   `<input type="checkbox">` dressed by `.checkbox` in `Properties/Properties.module.css`,

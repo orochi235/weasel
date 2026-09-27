@@ -148,11 +148,10 @@ import { parseSvg, unpackSvgFiles } from '@weasel-js/svg';
 import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { useModality } from './modality/useModality';
 import type { ModeMachine } from './modality';
-import { dispatchDoubleClickEntry } from './modality';
+import { activeModeOf, dispatchDoubleClickEntry, modalityShortcuts } from './modality';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { ModeStatusIndicator } from './modality/chrome/ModeStatusIndicator';
 import type { SceneCanvasHit } from '@weasel-js/core';
-import { IMPLICIT_TAGS } from '@weasel-js/modes';
 import { sceneToSvgString, selectionToClipboardSvgString, clipboardSnapshotRootIds } from './svgExport';
 import type { RecordingProfile } from './recorder';
 
@@ -1258,52 +1257,16 @@ function EditorWithSharedScene({
     return tid;
   }, [activeTargetId, scene]);
 
-  // ── Modality keyboard handler ─────────────────────────────────────────────
-  // Runs at capture phase so it intercepts Escape before the kit's
-  // useKeybindings handler (which returns to the default tool). When the
-  // mode is 'normal' we early-return and let the kit's handler run as usual.
-  useEffect(() => {
-    const { machine } = modality;
-    function onKey(e: KeyboardEvent): void {
-      const mode = machine.registry.current();
-      // Only intercept when a non-normal mode is active.
-      if (mode.id === 'normal') return;
-
-      if (e.key === 'Escape') {
-        if (e.metaKey && mode.kind === 'soft') {
-          machine.discardMode();
-          e.stopPropagation();
-          e.preventDefault();
-          return;
-        }
-        if (mode.kind === 'soft') machine.exitMode();
-        else machine.cancelMode();
-        e.stopPropagation();
-        e.preventDefault();
-        return;
-      }
-      if (e.key === 'Enter' && mode.kind === 'strict') {
-        machine.commitMode();
-        e.stopPropagation();
-        e.preventDefault();
-      }
-    }
-    // Capture phase: fires before bubble phase so we beat useKeybindings'
-    // document-level bubble handler when a mode is active.
-    window.addEventListener('keydown', onKey, { capture: true });
-    return () => window.removeEventListener('keydown', onKey, { capture: true });
-  }, [modality]);
+  // Leaving a mode rides the dispatcher: each mode's declared shortcuts,
+  // gated on that mode.
+  const modalityKeys = useMemo(() => modalityShortcuts(modality.machine), [modality.machine]);
 
   // ── Modality SceneCanvas callbacks ────────────────────────────────────────
   const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
     dispatchDoubleClickEntry(hit, modality.machine);
   }, [modality.machine]);
 
-  const getActiveMode = useCallback((): { id: string; allowedCapabilities: ReadonlySet<string> } => {
-    const mode = modality.machine.registry.current();
-    const allowed = new Set<string>([...mode.allows, ...IMPLICIT_TAGS]);
-    return { id: mode.id, allowedCapabilities: allowed };
-  }, [modality.machine]);
+  const getActiveMode = useCallback(() => activeModeOf(modality.machine), [modality.machine]);
 
   // TODO(modality): wire non-normal-mode background-click composition
   // (text-edit commit, isolation scoped-clear) through `handleBackgroundClick`
@@ -1384,7 +1347,7 @@ function EditorWithSharedScene({
   ], [paperLayer, scene]);
 
   const hudTool = useHudContribution();
-  const hudAmbient = useMemo(() => [hudTool], [hudTool]);
+  const ambient = useMemo(() => [hudTool, modalityKeys], [hudTool, modalityKeys]);
 
   // `useHud` and `createLoupe` both read the canvas handle in a mount effect
   // and neither retries, so the loupe chrome can only mount once the handle
@@ -1417,6 +1380,9 @@ function EditorWithSharedScene({
     isEditorChrome: (el) =>
       el.closest(`.${TEXT_CHROME_CLASS}`) !== null
       || el.closest('[data-weasel-overlay]') !== null,
+    // Escape out of a text edit keeps the text, as in every comparable
+    // editor; losing a paragraph to a stray key is the worse failure.
+    escape: 'commit',
   });
 
   // Keep the mode and the edit session in lockstep. The session can end
@@ -1454,17 +1420,9 @@ function EditorWithSharedScene({
     }
   }, [modeId, textEdit.editingId, modality.machine, scene]);
 
-  // ...and the same seam from the other side. The modality key handler
-  // intercepts Escape at capture phase and stops propagation, so the kit's
-  // own Escape (which would cancel the edit) never fires — the mode ended
-  // while a live editor stayed mounted over the canvas, swallowing
-  // keystrokes into nothing.
-  //
-  // This commits rather than cancels: Escape out of a text edit keeps the
-  // text in every comparable editor, and losing a paragraph to a stray key
-  // is the worse failure. The kit's bare `cancelEdit` still discards — only
-  // this app-level route changed. Flip to `textEdit.cancelEdit()` if Escape
-  // should discard here too.
+  // ...and the same seam from the other side: the mode can end while the
+  // editor is still mounted (the breadcrumb's exit), which would leave it
+  // over the canvas swallowing keystrokes. Commit it, as Escape does.
   const prevModeIdRef = useRef<string>(modeId);
   useEffect(() => {
     const prev = prevModeIdRef.current;
@@ -1655,7 +1613,7 @@ function EditorWithSharedScene({
           {hostDims.width > 0 && hostDims.height > 0 && (
           <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw']}
             ref={attachCanvas}
-            ambient={hudAmbient}
+            ambient={ambient}
             width={hostDims.width}
             height={hostDims.height}
             view={view}

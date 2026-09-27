@@ -101,6 +101,8 @@ export { liveScope } from './contributions/eligibility';
 export type { EligibilityState } from './contributions/eligibility';
 export { scopeBindings } from './contributions/assemble';
 export { mergeContributions } from './contributions/merge';
+export { modeShortcuts, modeShortcutSpec } from './contributions/modeShortcuts';
+export type { ModeShortcutHandlers } from './contributions/modeShortcuts';
 
 // ─── tools ────────────────────────────────────────────────────────────────
 export type {

@@ -443,6 +443,9 @@ export interface UseTextEditOptions {
    * `UseTextEditReturn.selection`.
    */
   isEditorChrome?: (el: Element) => boolean;
+  /** What Escape does to the edit: `'cancel'` (the default) drops it,
+   *  `'commit'` keeps the text as Enter would. */
+  escape?: 'cancel' | 'commit';
 }
 
 /** Options for `useTextEdit().startEdit`. */
@@ -804,7 +807,8 @@ export function useTextEdit(
       }
       if (e.key === 'Escape') {
         e.preventDefault();
-        cancelEdit();
+        if (optsRef.current.escape === 'commit') commit();
+        else cancelEdit();
         return;
       }
       const toggle = toggleForKey(e);

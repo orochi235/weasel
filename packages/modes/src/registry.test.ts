@@ -8,6 +8,11 @@ describe('createModeRegistry', () => {
     expect(r.current().id).toBe('normal');
   });
 
+  it('lists every registered mode in order', () => {
+    const r = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
+    expect(r.list().map((m) => m.id)).toEqual(DEFAULT_MODES.map((m) => m.id));
+  });
+
   it('setMode swaps the active mode and bumps version', () => {
     const r = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
     const v0 = r.getVersion();

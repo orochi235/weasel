@@ -13,18 +13,25 @@
  * requires a live ToolsApi provided by SceneCanvas's onToolsCreated).
  * We therefore test at the layer below the canvas: we build a real
  * ModeMachine, call dispatchDoubleClickEntry with a fake path hit, and
- * render a ModeBreadcrumb that subscribes to the machine. This is still a
+ * render a ModeBreadcrumb that subscribes to the machine beside a bare
+ * canvas carrying App's mode shortcuts. This is still a
  * genuine integration test — it exercises every real module in the
  * enter-mode → chrome-update → exit-mode flow except the canvas hit resolver.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import { useState, useEffect, type ReactElement } from 'react';
 
 import { createModeMachine } from './machine';
 import { dispatchDoubleClickEntry } from './doubleClickEntry';
 import { ModeBreadcrumb } from './chrome/ModeBreadcrumb';
+import { activeModeOf, modalityShortcuts } from './shortcuts';
 import { DEFAULT_MODES } from '@weasel-js/modes';
+import { SceneCanvas, createScene } from '@weasel-js/core';
+
+beforeAll(() => {
+  (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;
+});
 
 // ─── Minimal history stub (no real scene needed) ─────────────────────────────
 
@@ -50,8 +57,8 @@ function fakeHistory() {
 
 /**
  * Renders a ModeBreadcrumb that tracks a live ModeMachine via its registry
- * subscription. Also wires the same keydown handler that App.tsx registers
- * (capture-phase on window), so fireEvent.keyDown exercises real exit logic.
+ * subscription, beside a canvas carrying the same mode shortcuts App.tsx
+ * installs, so a window keydown exercises the real exit route.
  */
 function MachineHarness({
   machine,
@@ -59,36 +66,27 @@ function MachineHarness({
   machine: ReturnType<typeof createModeMachine>;
 }): ReactElement {
   const [modeId, setModeId] = useState(machine.registry.current().id);
+  const [scene] = useState(() => createScene({ systemLayers: [{ id: 'main' }] }));
+  const [ambient] = useState(() => [modalityShortcuts(machine)]);
 
   // Subscribe to registry changes — same pattern as App's useModeId helper.
   useEffect(() => {
     return machine.registry.subscribe(() => setModeId(machine.registry.current().id));
   }, [machine]);
 
-  // Wire the same capture-phase keydown handler App.tsx uses.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent): void {
-      const mode = machine.registry.current();
-      if (mode.id === 'normal') return;
-      if (e.key === 'Escape') {
-        if (e.metaKey && mode.kind === 'soft') { machine.discardMode(); return; }
-        if (mode.kind === 'soft') machine.exitMode();
-        else machine.cancelMode();
-      }
-      if (e.key === 'Enter' && mode.kind === 'strict') machine.commitMode();
-    }
-    window.addEventListener('keydown', onKey, { capture: true });
-    return () => window.removeEventListener('keydown', onKey, { capture: true });
-  }, [machine]);
-
   return (
-    <ModeBreadcrumb
-      mode={machine.registry.byId(modeId)}
-      targetLabel={null}
-      onExit={() => machine.exitMode()}
-      onCommit={() => machine.commitMode()}
-      onCancel={() => machine.cancelMode()}
-    />
+    <>
+      <ModeBreadcrumb
+        mode={machine.registry.byId(modeId)}
+        targetLabel={null}
+        onExit={() => machine.exitMode()}
+        onCommit={() => machine.commitMode()}
+        onCancel={() => machine.cancelMode()}
+      />
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+        ambient={ambient}
+        getActiveMode={() => activeModeOf(machine)} />
+    </>
   );
 }
 
@@ -121,8 +119,7 @@ describe('path-edit end-to-end integration', () => {
     // The active journal was opened (path-edit is a soft mode with a journal).
     expect(machine.getActiveJournal()).not.toBeNull();
 
-    // Fire Escape through window — the capture-phase handler should call
-    // machine.exitMode() (soft mode, no metaKey).
+    // Escape through window reaches the canvas's path-edit exit binding.
     act(() => {
       fireEvent.keyDown(window, { key: 'Escape' });
     });

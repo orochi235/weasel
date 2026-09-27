@@ -5,9 +5,12 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import {
-  SceneCanvas, asNodeId, paintAlpha, solid, useScene, useSelection,
+  ActionsProvider, SceneCanvas, asNodeId, inferredNodeProperties,
+  paintAlpha, solid, useScene, useSelection,
   type FillStyle, type View,
 } from '@weasel-js/core';
+import { SelectionPanel } from '@weasel-js/ui';
+import { WD_RENDERERS } from '../App';
 import { useOpacityScrub } from './useOpacityScrub';
 
 type D = { fill: FillStyle | null };
@@ -28,6 +31,8 @@ afterEach(() => cleanup());
 
 const HOME: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const ID = asNodeId('a');
+// The fixture has no `path`, so classify it as one outright to get draw's schema.
+const PANEL_ROUTING = [{ name: 'path', matches: () => true }];
 
 function setup({ selected = true } = {}) {
   const onViewChange = vi.fn();
@@ -51,6 +56,14 @@ function setup({ selected = true } = {}) {
     });
     api = { scene, percent };
     return (
+      <ActionsProvider>
+      <SelectionPanel
+        scene={scene}
+        selection={selection}
+        properties={inferredNodeProperties}
+        routing={PANEL_ROUTING}
+        renderers={WD_RENDERERS}
+      />
       <SceneCanvas features={['draw']}
         scene={scene}
         selection={selection}
@@ -60,9 +73,11 @@ function setup({ selected = true } = {}) {
         onViewChange={onViewChange}
         tools={{ opacityScrub: tool }}
       />
+      </ActionsProvider>
     );
   }
-  const { container } = render(<Harness />);
+  const { container, getByRole } = render(<Harness />);
+  const fillSlider = () => (getByRole('slider', { name: 'Fill opacity' }) as HTMLInputElement).value;
   const canvas = container.querySelector('canvas')!;
   const wheel = (init: WheelEventInit = {}) => act(() => {
     canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: 10, bubbles: true, cancelable: true, ...init }));
@@ -74,7 +89,7 @@ function setup({ selected = true } = {}) {
     const fill = (api.scene.get(ID)!.data as D).fill;
     return Math.round(paintAlpha(fill!) * 100);
   };
-  return { onViewChange, wheel, key, alpha, api: () => api };
+  return { onViewChange, wheel, key, alpha, fillSlider, api: () => api };
 }
 
 describe('opacity scrub', () => {
@@ -89,6 +104,18 @@ describe('opacity scrub', () => {
     t.wheel({ shiftKey: true });
     expect(t.alpha()).toBe(89);
     expect(t.onViewChange).not.toHaveBeenCalled();
+  });
+
+  it("moves the Properties panel's fill opacity with every tick", () => {
+    const t = setup();
+    expect(t.fillSlider()).toBe('100');
+    t.key('keydown');
+    t.wheel();
+    expect(t.fillSlider()).toBe('95');
+    t.wheel();
+    expect(t.fillSlider()).toBe('90');
+    t.key('keyup');
+    expect(t.fillSlider()).toBe('90');
   });
 
   it('commits the session as one undo entry on release, and the wheel pans again', () => {

@@ -10,3 +10,5 @@ export type { BackgroundClickCtx } from './backgroundClickPolicy';
 export { dispatchDoubleClickEntry } from './doubleClickEntry';
 export type { HitLike } from './doubleClickEntry';
 
+
+export { modalityShortcuts, activeModeOf } from './shortcuts';

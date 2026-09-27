@@ -272,7 +272,7 @@ describe('PrefsForm — union-valued leaves', () => {
     const input = screen.getByLabelText('Fill', { selector: 'input[type="color"]' });
     fireEvent.input(input, { target: { value: '#112233' } });
     fireEvent.blur(input);
-    expect(onChange).toHaveBeenCalledWith('appearance.fill', { fill: 'solid', color: '#112233ff' });
+    expect(onChange).toHaveBeenCalledWith('appearance.fill', { color: '#112233' });
   });
 
   it('commits the whole object when one of its fields is edited', () => {
@@ -284,7 +284,7 @@ describe('PrefsForm — union-valued leaves', () => {
     fireEvent.input(input, { target: { value: '#445566' } });
     fireEvent.blur(input);
     expect(onChange).toHaveBeenCalledWith('appearance.stroke', {
-      paint: { fill: 'solid', color: '#445566ff' },
+      paint: { color: '#445566' },
       width: 6,
       dash: [4, 2],
     });
@@ -297,7 +297,7 @@ describe('PrefsForm — union-valued leaves', () => {
     fireEvent.input(input, { target: { value: '#445566' } });
     fireEvent.blur(input);
     expect(onChange).toHaveBeenCalledWith('appearance.stroke', {
-      paint: { fill: 'solid', color: '#445566ff' },
+      paint: { color: '#445566' },
     });
   });
 });
