@@ -26,6 +26,7 @@ export interface StoryInstrumentOptions {
 /** The story itself, as the one region of the trial that takes marks. */
 function annotationsOn(frames: TrialFrames): AnnotationsCapability<unknown, unknown> {
   return {
+    tools: ['pointer'],
     targets: (_state, _config, trial) => {
       const ref = frames.hostRef(trial.id);
       const frame = frames.get(trial.id);
