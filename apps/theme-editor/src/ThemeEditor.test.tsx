@@ -8,6 +8,9 @@ import { weasel } from './theme/fixtures';
 import { starterDefinition } from './theme/starter';
 import type { PutResult, StoredTheme } from '@weasel-js/theme/engine';
 
+// Mounting the editor takes up to ~0.7 s a test alone, and blows the 5 s default under a full fleet run.
+vi.setConfig({ testTimeout: 20_000 });
+
 // Under Node 26 the environment has no working `localStorage`; a test that seeds a draft needs one.
 function stubStorage() {
   const items = new Map<string, string>();
