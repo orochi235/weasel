@@ -10,7 +10,7 @@
    * DOM-first still hugs the top edge. */
   flex-direction: column-reverse;
   gap: var(--wzl-space-4);
-  max-width: 360px;
+  max-width: 420px;
   outline: none;
 }
 
@@ -35,7 +35,7 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   color: var(--wzl-fg);
   font-family: var(--wzl-font-ui);
-  padding: var(--wzl-space-5) var(--wzl-space-6);
+  padding: var(--wzl-space-7) var(--wzl-space-8);
   outline: none;
 }
 
@@ -57,13 +57,13 @@
 
 .title {
   display: block;
-  font-size: var(--wzl-font-size);
+  font-size: var(--wzl-font-size-lg);
   font-weight: var(--wzl-font-weight-bold);
 }
 
 .description {
   display: block;
-  margin-top: var(--wzl-space-1);
-  font-size: var(--wzl-font-size-sm);
+  margin-top: var(--wzl-space-2);
+  font-size: var(--wzl-font-size);
   color: var(--wzl-fg-muted);
 }
