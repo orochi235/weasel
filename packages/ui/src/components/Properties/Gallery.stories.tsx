@@ -6,6 +6,7 @@ import {
   PropertyPanel,
   PropertyRow,
 } from './PropertyPanel';
+import { decimal } from '@weasel-js/quantity';
 
 // Titled "Gallery" so it sorts above PropertyPanel/PropertyList/Rows in the
 // sidebar alphabetically (G < P < R). Acts as the visual root of the section.
@@ -34,7 +35,7 @@ function BlockRows() {
           max={1}
           step={0.01}
           onChange={setOpacity}
-          format={(v) => v.toFixed(2)}
+          display={decimal({ places: 2 })}
         />
         <PropertyField kind="number" label="Count" value={count} onChange={setCount} min={0} max={100} />
         <PropertyField kind="string" label="Name" value={name} onChange={setName} />
@@ -85,7 +86,7 @@ function InlineRows() {
           max={1}
           step={0.01}
           onChange={setOpacity}
-          format={(v) => v.toFixed(2)}
+          display={decimal({ places: 2 })}
         />
         <PropertyField
           kind="number"

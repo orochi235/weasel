@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { PropertyField } from './PropertyField';
 import { PropertyList, PropertyRow } from './PropertyPanel';
+import { decimal } from '@weasel-js/quantity';
 
 const meta: Meta<typeof PropertyList> = {
   title: 'ui/Properties/PropertyList',
@@ -27,7 +28,7 @@ function Mixed() {
           max={1}
           step={0.01}
           onChange={setOpacity}
-          format={(v) => v.toFixed(2)}
+          display={decimal({ places: 2 })}
         />
         <PropertyField kind="color" label="Fill" value={fill} onChange={setFill} />
         <PropertyField kind="color" label="Stroke" value={stroke} onChange={setStroke} />

@@ -4,6 +4,7 @@ import { PropertyField } from './PropertyField';
 import { PropertyList } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 import s from './PropertyField.stories.module.css';
+import { compact, type Display } from '@weasel-js/quantity';
 
 const meta: Meta<typeof PropertyField> = {
   title: 'ui/Properties/PropertyField',
@@ -85,7 +86,7 @@ function Slider({ initial, ...rest }: {
   min: number;
   max: number;
   step?: number;
-  notation?: 'plain' | 'compact';
+  display?: Display;
   unit?: ReactNode;
 }) {
   const [value, setValue] = useState(initial);
@@ -100,7 +101,7 @@ export const SliderReadouts: Story = {
       <Slider initial={12} label="Radius" min={0} max={64} unit="px" />
       <Slider initial={45} label="Angle" min={-180} max={180} unit={<sup>°</sup>} />
       <Slider initial={200_000} label="Glyphs" min={0} max={200_000} step={1000} />
-      <Slider initial={2_000_000} label="Glyphs" min={0} max={2_000_000} step={1000} notation="compact" />
+      <Slider initial={2_000_000} label="Glyphs" min={0} max={2_000_000} step={1000} display={compact()} />
     </div>
   ),
 };

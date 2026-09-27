@@ -15,7 +15,7 @@ import type React from 'react';
 import { screenToWorld, type ViewTransform } from 'core/viewport/viewTransform';
 import { clientToCanvasRect } from '@weasel-js/routing';
 import { pointToGridCell } from 'interactions/gestures/shared/strategies/grid';
-import type { UnitSystem, UnitValue } from 'core/units';
+import type { UnitSystem, UnitValue } from '@weasel-js/quantity';
 import type { RenderLayer } from 'core/layers/render';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { createGridLayer } from './layer';

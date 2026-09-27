@@ -93,8 +93,8 @@ import {
   BUILTIN_TOOL_IDS,
 } from '@weasel-js/core';
 import { useHudContribution } from '@weasel-js/hud/react';
+import { qty, zoom } from '@weasel-js/quantity';
 import {
-  formatZoom,
   ResizeHandle,
   Sidebar,
   SidebarPanel,
@@ -1763,7 +1763,7 @@ function EditorStatusBar({
       <StatusBarItem>fill: {paintLabel(colors.fill)}</StatusBarItem>
       <StatusBarItem>stroke: {paintLabel(colors.stroke)}</StatusBarItem>
       <StatusBarSpacer />
-      <StatusBarItem>zoom: {formatZoom(view.scale.x)}</StatusBarItem>
+      <StatusBarItem>zoom: {qty(view.scale.x, zoom()).text}</StatusBarItem>
       {colorMode && (
         <StatusBarItem>
           <ThemeSwitcher value={colorMode.preference} onChange={colorMode.setPreference} />

@@ -88,14 +88,6 @@ export { pickActiveSection, useScrollSpy } from './useScrollSpy';
 export type { ScrollSpy, SectionOffset, UseScrollSpyOptions } from './useScrollSpy';
 export { useRovingTabIndex } from './useRovingTabIndex';
 export type { RovingItem, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
-export {
-  formatCompact,
-  formatNumber,
-  formatZoom,
-  MINUS_SIGN,
-  parseNumber,
-  parseSignedNumber,
-} from './format/number';
 export type {
   ReorderItem,
   UseReorderDragListOptions,

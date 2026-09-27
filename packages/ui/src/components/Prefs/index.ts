@@ -31,7 +31,6 @@ export {
   type PrefLeaf,
   type PrefNumber,
   type PrefNumberControl,
-  type PrefNumberFormat,
   type PrefNumberUnit,
   type PrefPaint,
   type PrefObject,

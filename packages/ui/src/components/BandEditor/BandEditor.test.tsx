@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useState } from 'react';
 import { render, fireEvent } from '@testing-library/react';
+import { fraction, percent, tag, type Tagged } from '@weasel-js/quantity';
 import { BandEditor } from './BandEditor';
 import type { Band } from './bands';
 
@@ -485,5 +486,61 @@ describe('BandEditor pointer capture', () => {
     fireEvent.pointerMove(document, { clientX: 160, clientY: 20, buttons: 1 });
     fireEvent.pointerUp(document, { clientX: 160, clientY: 20 });
     expect(capture).not.toHaveBeenCalled();
+  });
+});
+
+describe('BandEditor quantities', () => {
+  const tagged = (): Band<string, Tagged>[] => [
+    { from: tag(1 / 64, fraction()), data: 'a' },
+    { from: tag(1 / 12, fraction()), data: 'b' },
+  ];
+
+  it('speaks each seam through the display rather than as a raw float', () => {
+    const { seams } = setup({
+      min: 1 / 64,
+      max: 1 / 2,
+      value: [
+        { from: 1 / 64, data: 'a' },
+        { from: 1 / 12, data: 'b' },
+      ],
+      display: fraction(),
+    });
+    expect(seams()[0]!.getAttribute('aria-valuetext')).toBe('1 over 12');
+  });
+
+  it('speaks a seam at three decimals with no display', () => {
+    const { seams } = setup({ value: [{ from: 0, data: 'a' }, { from: 100 / 3, data: 'b' }] });
+    expect(seams()[0]!.getAttribute('aria-valuetext')).toBe('33.333');
+  });
+
+  it('labels an unlabeled tick through the display', () => {
+    const { container } = setup({ ticks: [{ at: 25 }, { at: 50, label: 'half' }], display: percent() });
+    const labels = [...container.querySelectorAll('[data-tick-at]')].map((t) => t.textContent);
+    expect(labels).toEqual(['2,500%', 'half']);
+  });
+
+  it('keeps a tagged from tagged through an edit', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <BandEditor<string, Tagged> value={tagged()} min={1 / 64} max={1 / 2} scale="linear" onChange={onChange} />,
+    );
+    const seam = container.querySelector<HTMLElement>('[role="slider"]')!;
+    expect(seam.getAttribute('aria-valuetext')).toBe('1 over 12');
+    fireEvent.keyDown(seam, { key: 'End' });
+    const next = onChange.mock.calls[0]![0] as Band<string, Tagged>[];
+    expect(next[1]!.from).toEqual({ value: 1 / 2, display: { kind: 'fraction' } });
+    expect(next[0]!.from.display).toEqual({ kind: 'fraction' });
+  });
+
+  it("gives a split band its parent's tag", () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <BandEditor<string, Tagged> value={tagged()} min={0} max={1} scale="linear" onChange={onChange} />,
+    );
+    fireEvent.pointerDown(container.querySelector('[data-band-ruler]')!, { clientX: 300, clientY: 20, button: 0 });
+    const next = onChange.mock.calls[0]![0] as Band<string, Tagged>[];
+    expect(next).toHaveLength(3);
+    expect(next.every((b) => b.from.display?.kind === 'fraction')).toBe(true);
+    expect(next[2]!.from.value).toBeCloseTo(0.75);
   });
 });

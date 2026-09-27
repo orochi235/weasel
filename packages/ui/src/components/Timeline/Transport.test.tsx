@@ -79,6 +79,6 @@ describe('Transport', () => {
 
   it('speaks the rate rather than the detent index', () => {
     render(<Transport {...props} rate={4} />);
-    expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '4x');
+    expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '4 times');
   });
 });

@@ -18,7 +18,6 @@ export type {
   ToolPrefLeaf as PrefLeaf,
   ToolPrefNumber as PrefNumber,
   ToolPrefNumberControl as PrefNumberControl,
-  ToolPrefNumberFormat as PrefNumberFormat,
   ToolPrefNumberUnit as PrefNumberUnit,
   ToolPrefObject as PrefObject,
   ToolPrefPaint as PrefPaint,
@@ -26,7 +25,7 @@ export type {
   ToolPrefStringControl as PrefStringControl,
 } from '@weasel-js/core';
 
-import type { UnitTable } from '../../format/number';
+import type { UnitTable } from '@weasel-js/quantity';
 import type { ToolPrefGroup, ToolPrefLeaf, ToolPrefNumber, ToolPrefNumberUnit as PrefNumberUnitType } from '@weasel-js/core';
 
 /**

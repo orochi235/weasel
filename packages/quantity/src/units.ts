@@ -1,5 +1,7 @@
+import type { Quantity } from './quantity';
+
 /**
- * Units — a tiny customizable unit system for canvas-kit APIs.
+ * Units — a tiny customizable unit system.
  *
  * The kit stores all coordinates as bare numbers in a single base unit
  * chosen by the consumer app. To make API call sites self-documenting,
@@ -46,6 +48,11 @@ export function unitScale(unitSystem: UnitSystem, unit: Unit): Required<UnitScal
       `unknown unit '${unit}' (system base: '${unitSystem.base}', known units: ${known})`,
     );
   }
+  return entryScale(entry);
+}
+
+/** An entry's scale, with the bare-number shorthand widened and the offset defaulted. */
+export function entryScale(entry: UnitEntry): Required<UnitScale> {
   return typeof entry === 'number'
     ? { factor: entry, offset: 0 }
     : { factor: entry.factor, offset: entry.offset ?? 0 };
@@ -56,11 +63,12 @@ export type UnitValue = number | { value: number; unit: Unit };
 
 /**
  * Resolve a UnitValue to a number in base units.
- *  - bare number: returned as-is (assumed base)
+ *  - bare number, or a quantity tagged with no unit: its value, as base
  *  - tagged: looks up factor; throws if unit not in unit system
  */
-export function resolveUnit(v: UnitValue, unitSystem?: UnitSystem): number {
+export function resolveUnit(v: UnitValue | Quantity, unitSystem?: UnitSystem): number {
   if (typeof v === 'number') return v;
+  if (v.unit === undefined) return v.value;
   if (!unitSystem) {
     throw new Error(
       `resolveUnit: tagged value { value: ${v.value}, unit: '${v.unit}' } requires a UnitSystem`,

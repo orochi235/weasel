@@ -1,3 +1,5 @@
+import { entryScale, type UnitEntry } from './units';
+
 /**
  * Display-formatter for numbers. Use this anywhere a number is shown to
  * a user. The whole point: negative values get prefixed with the real
@@ -64,7 +66,7 @@ export function parseNumber(text: string, units?: Readonly<UnitTable>): number {
     if (name !== undefined) {
       const terms = compoundTermsOf(trimmed, units);
       if (terms !== undefined && terms.length > 1) return compoundValue(terms, trimmed, units);
-      const { factor, offset } = scaleOf(units[name]!);
+      const { factor, offset } = entryScale(units[name]!);
       return scaled(parseNumber(trimmed.slice(0, -name.length)), factor) + offset;
     }
   }
@@ -77,23 +79,12 @@ export function parseNumber(text: string, units?: Readonly<UnitTable>): number {
   return Number(exponent === undefined ? t : `${t}e${exponent}`);
 }
 
-/** One unit's conversion into the shown unit: a bare factor, or a scale that
- *  also moves zero. Structurally the kit's `UnitEntry`, kept local so this
- *  formatting helper stays free of the scene vocabulary. */
-export type UnitTableEntry = number | { factor: number; offset?: number };
-/** Suffixes a person may type, each mapped to its conversion. */
-export type UnitTable = Record<string, UnitTableEntry>;
+/** Suffixes a person may type, each mapped to its conversion into the shown unit. */
+export type UnitTable = Record<string, UnitEntry>;
 
 /** Divided by the reciprocal below 1: 12 * 0.1 is 1.2000000000000002, 12 / 10 is 1.2. */
 function scaled(n: number, factor: number): number {
   return factor < 1 ? n / (1 / factor) : n * factor;
-}
-
-/** A unit table entry's scale, with the bare-factor shorthand widened. */
-function scaleOf(entry: UnitTableEntry): { factor: number; offset: number } {
-  return typeof entry === 'number'
-    ? { factor: entry, offset: 0 }
-    : { factor: entry.factor, offset: entry.offset ?? 0 };
 }
 
 /**
@@ -130,7 +121,7 @@ function compoundValue(names: string[], text: string, units: Readonly<UnitTable>
   const sign = /^\s*[-\u2212]/.test(text) ? -1 : 1;
   let total = 0;
   for (const [i, name] of names.entries()) {
-    const { factor, offset } = scaleOf(units[name]!);
+    const { factor, offset } = entryScale(units[name]!);
     if (offset !== 0) return Number.NaN;
     total += scaled(Number(digits[i]), factor);
   }
@@ -142,23 +133,4 @@ function unitSuffixOf(text: string, units: Readonly<UnitTable>): string | undefi
   const names = Object.keys(units).filter((n) => n !== '').sort((a, b) => b.length - a.length);
   const lower = text.toLowerCase();
   return names.find((n) => text.endsWith(n)) ?? names.find((n) => lower.endsWith(n.toLowerCase()));
-}
-
-/** {@link String} with the leading ASCII hyphen swapped for {@link MINUS_SIGN}.
- *  Locale-independent, unlike `toLocaleString`. */
-function signedString(value: number): string {
-  return String(value).replace(/^-/, MINUS_SIGN);
-}
-
-/**
- * Formats a zoom factor for display. Below 2x a percentage reads naturally;
- * past it the numbers get long and a multiplier is what people say out loud,
- * so 250% shows as `2.5x`. Past 100x a tenth is noise, so the decimal is
- * dropped and thousands are grouped: `1009.74` reads as `1,010x`.
- */
-export function formatZoom(zoom: number): string {
-  if (!Number.isFinite(zoom)) return String(zoom);
-  if (zoom <= 2) return `${signedString(Math.round(zoom * 100))}%`;
-  if (zoom >= 100) return `${Math.round(zoom).toLocaleString('en-US')}x`;
-  return `${signedString(Math.round(zoom * 10) / 10)}x`;
 }

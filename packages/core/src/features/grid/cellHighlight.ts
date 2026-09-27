@@ -7,7 +7,7 @@
 import { type DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { type FillStyle } from '@weasel-js/paint';
-import { resolveUnit, type UnitSystem, type UnitValue } from 'core/units';
+import { resolveUnit, type UnitSystem, type UnitValue } from '@weasel-js/quantity';
 
 /** Options for `createCellHighlightLayer`. */
 export interface CellHighlightLayerOpts {

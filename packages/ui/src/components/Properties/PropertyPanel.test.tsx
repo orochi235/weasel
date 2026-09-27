@@ -8,6 +8,7 @@ import {
   PropertyRow,
 } from './PropertyPanel';
 import s from './Properties.module.css';
+import { compact, decimal, fraction } from '@weasel-js/quantity';
 
 describe('PropertyPanel', () => {
   it('renders title and children', () => {
@@ -222,7 +223,7 @@ describe('slider field', () => {
     expect(onChange).toHaveBeenCalledWith(55);
   });
 
-  it('shows a compact notation and reads a typed suffix back', () => {
+  it('shows a compact display, speaks it long, and reads a typed suffix back', () => {
     const onChange = vi.fn();
     render(
       <PropertyField
@@ -233,12 +234,13 @@ describe('slider field', () => {
         min={0}
         max={2_000_000}
         step={1000}
-        notation="compact"
+        display={compact()}
         onChange={onChange}
       />,
     );
     const readout = screen.getByRole('spinbutton');
     expect(readout).toHaveValue('2.00M');
+    expect(readout).toHaveAttribute('aria-valuetext', '2 million');
     fireEvent.focus(readout);
     fireEvent.change(readout, { target: { value: '2.5k' } });
     fireEvent.blur(readout);
@@ -263,7 +265,7 @@ describe('slider field', () => {
     );
   });
 
-  it('formats the readout when format is supplied', () => {
+  it('shows the readout through display', () => {
     render(
       <PropertyField
         kind="number"
@@ -274,10 +276,51 @@ describe('slider field', () => {
         max={1}
         step={0.01}
         onChange={() => {}}
-        format={(v) => v.toFixed(2)}
+        display={decimal({ places: 2 })}
       />,
     );
     expect(screen.getByDisplayValue('0.50')).toBeInTheDocument();
+  });
+
+  it('reads typed text through display', () => {
+    const onChange = vi.fn();
+    render(
+      <PropertyField
+        kind="number"
+        control="slider"
+        label="Share"
+        value={0.5}
+        min={0}
+        max={1}
+        step={0.01}
+        onChange={onChange}
+        display={fraction()}
+      />,
+    );
+    const readout = screen.getByRole('spinbutton');
+    expect(readout).toHaveValue('1/2');
+    expect(readout).toHaveAttribute('aria-valuetext', '1 over 2');
+    fireEvent.focus(readout);
+    fireEvent.change(readout, { target: { value: '1/4' } });
+    fireEvent.blur(readout);
+    expect(onChange).toHaveBeenCalledWith(0.25);
+  });
+
+  it('lets format override display for text no display expresses', () => {
+    render(
+      <PropertyField
+        kind="number"
+        control="slider"
+        label="Radius"
+        value={999}
+        min={0}
+        max={999}
+        onChange={() => {}}
+        display={decimal({ places: 2 })}
+        format={(v) => (v >= 999 ? 'pill' : `${v}px`)}
+      />,
+    );
+    expect(screen.getByRole('spinbutton')).toHaveValue('pill');
   });
 });
 

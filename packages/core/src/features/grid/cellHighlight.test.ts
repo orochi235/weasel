@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createCellHighlightLayer } from './cellHighlight';
-import { IMPERIAL_INCHES } from 'core/units';
+import { IMPERIAL_INCHES } from '@weasel-js/quantity';
 
 describe('createCellHighlightLayer', () => {
   it('exposes id and label', () => {

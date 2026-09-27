@@ -116,7 +116,7 @@ describe('AnimatedTimeline', () => {
     const h = fakeHandle({ loop: () => 3, timeScale: () => 4 });
     render(<AnimatedTimeline handle={h} />);
     expect(screen.getByRole('switch', { name: /loop/i })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '4x');
+    expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '4 times');
   });
 
   // The drift a mirrored copy caused: anything else holding the handle can set
@@ -128,6 +128,6 @@ describe('AnimatedTimeline', () => {
     h.setTimeScale(2);
     rerender(<AnimatedTimeline handle={h} />);
     expect(screen.getByRole('switch', { name: /loop/i })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '2x');
+    expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '2 times');
   });
 });
