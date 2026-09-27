@@ -39,7 +39,6 @@ entry in `PACKAGES`, named without the scope (`text`, `audio`). No empty heading
 | `quantity` | weasel-ui | `quantity` | — |
 | `audio` | Animation | `audio` | — |
 | `d3-sortable` | Viewport | `d3` | — |
-| `easings` | Animation | `geom` | easing fns from `@weasel-js/geom` |
 | `text-script` | Text | `text` | text symbols from `@weasel-js/text` |
 | `text-nodes` | Text | `text` | same |
 | `hud`, `loupe` | weasel-hud | `hud` | `HudDemo` drops `../../../packages/hud/src` for `@weasel-js/hud` |
@@ -47,7 +46,7 @@ entry in `PACKAGES`, named without the scope (`text`, `audio`). No empty heading
 | `annotation-capture`, `lab-loupe`, `auto-controls` | labkit | `labkit` | — |
 | `perceptual-color-sliders`, `layered-curve`, `layer-list`, `selection-panel` | weasel-ui / Tools | `ui` | verify |
 
-Stay put: `text-outlines` (renderer outline tier, not `font`), `boolean-ops`
+Stay put: `easings` (the easing functions live in core, not `geom`), `text-outlines` (renderer outline tier, not `font`), `boolean-ops`
 (a tool demo, not a basic one).
 
 ## Tests
@@ -61,7 +60,7 @@ Stay put: `text-outlines` (renderer outline tier, not `font`), `boolean-ops`
 ## TODO entry (Demos & visual regression)
 
 - Demos for packages with none: `gestures`, `history`, `routing`, `bidi`, `svg`,
-  `paint`, `cursor`, `modes`, `kernel3d`, `loupe`.
+  `paint`, `cursor`, `modes`, `kernel3d`, `loupe`, `geom`.
 - A minimal public stage for package demos that need no scene graph. Not the
   primitive `<Canvas>`, which was unexported deliberately. Its use gets enforced
   by a test: only Packages-section demos for scene-free packages may import it.
