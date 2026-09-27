@@ -644,20 +644,6 @@ What it surfaced:
   either a pose composition with a reflection term, or a rig-side
   `mirrorPose(pose)` beside `blendPoses`.
 
-- **(P3) One actions registry still routes input to one canvas.**
-  `<WeaselProvider isolate>` gives each canvas its own scope, and a second
-  canvas claiming a shared registry says so instead of failing silently. What
-  is still unbuilt is canvases genuinely *sharing* a registry: `setDispatcher`
-  holds one dispatcher, so a toolbar outside two canvases has nothing to say
-  which one it drives. That wants a focused-canvas concept — which canvas an
-  ambient `<ActionBar>`, keybinding or palette targets — and the registry keyed
-  per canvas beneath it. Isolation covers only two canvases that simply coexist.
-  The same sharing makes action ids page-global without saying so: registrants
-  for one id stack newest-live, so three canvases each registering `press`
-  leave only the last one mounted answering every canvas's binding — the press
-  fires, into the wrong closure, with no warning. `CustomShaderDemo` hit it and
-  suffixes its ids per panel.
-
 - **(P3) View-bounds culling is opt-in and stops short of the painter.** The
   scene slot's `cull` option (`layers={{ scene: { cull: true } }}`, on in this
   demo) drops commands outside the view via `cullDrawCommands`, but only after
@@ -754,11 +740,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
-
-- **(P2) Canvases under one provider share one input registry, so the newest takes
-  everyone's gestures.** Forge's `labkit/Canvas/CanvasStack` index page shows it: a drag on the
-  top canvas moves the bottom camera, with no warning. `SceneCanvas` has the same flaw. Design,
-  unbuilt: `docs/proposals/2026-09-27-input-scopes.md`.
 
 - **(P2) Quantities have no display layer beyond plain numbers.** `format/number.ts` formats a
   number (`formatNumber`, `formatCompact`, `formatZoom`), but nothing shows a fraction, a ratio,

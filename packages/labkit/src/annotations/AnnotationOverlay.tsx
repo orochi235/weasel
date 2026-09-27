@@ -236,8 +236,7 @@ export function AnnotationOverlay({
         style={box}
       />
       {canvas && input ? (
-        // One scope per pane: a shared <ActionsProvider> lets only the newest
-        // canvas under it respond to input, and the rest go silently dead.
+        // Isolated so each pane keeps its own selection and tool.
         <WeaselProvider isolate>
           <ToolBridge toolId={annotationToolInfo(activeToolId)?.weaselTool ?? 'select'} />
           <SceneCanvas<AnnotationData, 'marks', WorldRect> features={['pick', 'move', 'transform', 'edit']}

@@ -38,7 +38,7 @@ function ctxOf(action: Action, allowed: string[] | null): DispatcherContext {
   };
   const actions = {
     register: vi.fn(), unregister: vi.fn(), mute: vi.fn(), subscribe: vi.fn(),
-    trigger: vi.fn(), begin: vi.fn(), setDispatcher: vi.fn(), setDepRegistry: vi.fn(),
+    trigger: vi.fn(), begin: vi.fn(), setDispatcher: vi.fn(),
     list: () => [action],
   } as unknown as ActionsRegistry;
   return {

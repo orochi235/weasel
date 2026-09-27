@@ -1547,13 +1547,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return false;
   }, []);
 
-  // NOTE: the actual `useKeybindings` calls live in <ToolKeybindingsMounter>,
-  // rendered inside <ActionsProviderIfRoot> below. They used to sit here, but
-  // this component is ABOVE the provider, so `useActionsRegistry()` returned
-  // null and the `tool.activate` / `tool.offhand` registrations silently
-  // no-op'd. That went unnoticed because a parallel document `keydown`
-  // listener inside the hook did the real work; deleting the listener (audit
-  // 3.8) exposed the layering bug.
 
   const tools = toolsTakeover ?? internalTools;
 
@@ -2029,8 +2022,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // content-handler pipeline OS drop / clipboard paste hit. Routed through
   // `registry.trigger('ingest', …)` so the action's `requires` deps
   // (insert, ingestion, …) are resolved exactly as on the dispatcher path.
-  // The registry lives inside `<ActionsProviderIfRoot>` below us, so
-  // `StandardActionsRegistrar` stashes it into this ref.
+  // `StandardActionsRegistrar` stashes the registry into this ref.
   const actionsRegistryRef = useRef<ActionsRegistry | null>(null);
 
   // Clipboard-paste ctx for the kit weasel-JSON content handler
@@ -2271,11 +2263,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 }
 
 /**
- * Mounts the gesture dispatcher inside `<ActionsProviderIfRoot>` so it can
- * read the live registry. The dispatcher is now
- * unconditionally present in every `<SceneCanvas>` tree; the
- * `DispatcherPresenceProvider` context (and `useIsDispatcherMounted` hook)
- * have been removed.
+ * Mounts the gesture dispatcher on this canvas's input scope.
  *
  * Accepts `selectionRef`, `boundsOf`, `pickEvery`, and `viewRef` so
  * it can wire `affordanceAt` + `classifyTarget` thunks into the dispatcher.
@@ -2283,9 +2271,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
  * then classify the pointer position against affordances and scene bodies.
  */
 /**
- * Mounts `useKeybindings` inside `<ActionsProviderIfRoot>` so its
- * `tool.activate` / `tool.offhand` / `tool.resetToDefault` registrations
- * actually reach a registry.
+ * Mounts `useKeybindings`, whose `tool.activate` / `tool.offhand` /
+ * `tool.resetToDefault` registrations land in this canvas's scope.
  *
  * Two calls, mirroring the pair that used to live in `SceneCanvasInner`: the
  * hook snapshots the initial active tool for Escape-returns-to-default, so
@@ -2568,9 +2555,7 @@ function GestureDispatcherMounter({
 }
 
 /**
- * Registers the kit's default action set into whatever `<ActionsProvider>`
- * is in scope. Lives inside `<ActionsProviderIfRoot>` so it sees both
- * parent-supplied registries and SceneCanvas's auto-mounted one.
+ * Registers the kit's default action set into this canvas's input scope.
  *
  * For `delete`, `duplicate`, `group`, and `ungroup` the descriptor's
  * invoker is a stub (those deps aren't in `DepSchema` yet — Phase 4 T8
@@ -2714,23 +2699,11 @@ function StandardActionsRegistrar({
 
   // Wire the dispatcher into the registry so registry.begin() can delegate
   // to dispatcher.beginUiOngoing() for UI-driven ongoing actions (color,
-  // opacity). The returned release detaches only while this canvas still holds
-  // the slot, so unmounting one of two canvases sharing a registry does not
-  // take input away from the other.
+  // opacity).
   useEffect(() => {
     if (!registry) return;
     return registry.setDispatcher(dispatcher);
   }, [registry, dispatcher]);
-
-  // Wire the dep registry the same way: when the ActionsProvider in scope
-  // is a consumer root mounted ABOVE DepRegistryProviderIfRoot, its own
-  // context read finds no dep registry — trigger()/begin() would build an
-  // empty deps bag and dep-guarded invokers (e.g. ingest) bail silently.
-  const wiredDepRegistry = useDepRegistry();
-  useEffect(() => {
-    if (!registry) return;
-    return registry.setDepRegistry(wiredDepRegistry);
-  }, [registry, wiredDepRegistry]);
 
   // Populate the action-lookup ref so the dispatcher's getAction closure
   // can resolve action ids once the registry is in scope.

@@ -32,7 +32,7 @@ function registryOf(actions: Action[]): ActionsRegistry {
   const byId = new Map(actions.map((a) => [a.id, a]));
   return {
     register: vi.fn(), unregister: vi.fn(), mute: vi.fn(), subscribe: vi.fn(),
-    trigger: vi.fn(), begin: vi.fn(), setDispatcher: vi.fn(), setDepRegistry: vi.fn(),
+    trigger: vi.fn(), begin: vi.fn(), setDispatcher: vi.fn(),
     list: () => [...byId.values()],
   } as unknown as ActionsRegistry;
 }

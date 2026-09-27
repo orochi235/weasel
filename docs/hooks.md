@@ -55,7 +55,7 @@ bindings: [
 
 | Hook / component | Purpose |
 |---|---|
-| `<ActionsProvider>` | Owns the registry. `<SceneCanvas>` mounts one (via `ActionsProviderIfRoot`) unless it's already nested inside one. |
+| `<ActionsProvider>` | Owns a root registry. Every `<SceneCanvas>` mounts an `<InputScope>` under whichever registry is in scope, or a root of its own where there is none — see "Input scope and yoke" in `docs/taxonomy.md`. |
 | `useStandardActions(opts)` | Registers the 51 kit-standard descriptors and publishes `selection` / `view` / `scene` / `history` / `activeTool` as live dep sources. No-ops silently when either provider is absent. |
 | `useActionsRegistry()` | The registry handle: `register(action)`, `trigger(id, params?)`, enumeration for palettes and toolbars. |
 | `useAction(action)` | Register one `Action` descriptor for the lifetime of the calling component. No-ops when no `<ActionsProvider>` is in scope — with a dev-only warning, so a production build says nothing. |

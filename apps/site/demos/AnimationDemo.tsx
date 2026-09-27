@@ -356,8 +356,8 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
     [animator, tracker],
   );
 
-  // The demo site mounts one provider set at its root; sharing it with the card
-  // canvas would leave whichever mounted first unable to dispatch.
+  // The demo site mounts one provider set at its root; isolated so this canvas
+  // and the card canvas each keep their own selection.
   return (
     <WeaselProvider isolate>
       <SceneCanvas features={['pick', 'move']}

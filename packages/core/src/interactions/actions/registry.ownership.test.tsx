@@ -92,37 +92,3 @@ describe('ActionsRegistry dispatcher ownership', () => {
     warn.mockRestore();
   });
 });
-
-describe('ActionsRegistry dep-registry ownership', () => {
-  const depsFor = (value: string) => ({ get: (n: string) => (n === 'selection' ? value : undefined) }) as never;
-
-  it('leaves the dep registry alone when a displaced owner releases', () => {
-    const seen: string[] = [];
-    const action: Action & { requires: string[] } = {
-      id: 'peek',
-      label: 'peek',
-      requires: ['selection'],
-      invoker: {
-        timing: 'ongoing',
-        start: (ctx) => {
-          seen.push((ctx.deps as Record<string, string>).selection);
-          return { onMove: vi.fn(), onEnd: vi.fn() };
-        },
-      },
-    };
-    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
-    const reg = result.current!;
-    act(() => { reg.register(action); });
-    act(() => { reg.setDispatcher(createDispatcher({ getAction: (id) => reg.list().find((a) => a.id === id) })); });
-
-    let releaseFirst: () => void = () => {};
-    act(() => { releaseFirst = reg.setDepRegistry(depsFor('first')); });
-    act(() => { reg.setDepRegistry(depsFor('second')); });
-    act(() => { releaseFirst(); });
-
-    let ctrl: UiOngoingControl | null = null;
-    act(() => { ctrl = reg.begin('peek', {}); });
-    act(() => { (ctrl as unknown as UiOngoingControl).end('cancel'); });
-    expect(seen[0]).toBe('second');
-  });
-});

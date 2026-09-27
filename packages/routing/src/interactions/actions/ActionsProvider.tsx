@@ -53,7 +53,6 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   private readonly actions = new Map<string, Action[]>();
   private readonly muted = new Map<string, number>();
   private readonly dispatchers: Dispatcher[] = [];
-  private readonly wiredDeps: DepRegistry[] = [];
   private cache: { version: number; leaf: ActionsNode; list: readonly Action[] } | null = null;
   /** Called on `activate`, so a scope's dep and tool nodes move with it. */
   readonly onActivate: (() => void)[] = [];
@@ -94,7 +93,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
 
   private deps(): DepRegistry | null {
     for (const n of this.chain()) {
-      const r = n.wiredDeps.at(-1) ?? n.contextDeps();
+      const r = n.contextDeps();
       if (r) return r;
     }
     return null;
@@ -174,7 +173,6 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       };
     },
     setDispatcher: (d: Dispatcher | null) => pushOwner(this.dispatchers, d),
-    setDepRegistry: (r: DepRegistry | null) => pushOwner(this.wiredDeps, r),
     begin: (id: string, params?: Record<string, unknown>) => {
       const leaf = this.start();
       const a = leaf.resolve(id);
@@ -207,24 +205,6 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const depRegRef = useRef<DepRegistry | null>(depReg);
   depRegRef.current = depReg;
   const node = useMemo(() => new ActionsNode(null, true, () => depRegRef.current), []);
-  return <ActionsContext.Provider value={node.registry}>{children}</ActionsContext.Provider>;
-}
-
-/**
- * @experimental
- * An actions scope with no dep registry of its own: what is registered or
- * muted here stays here. Renders its children bare when no registry is in
- * scope.
- */
-export function ActionsScope({ children }: { children: ReactNode }): ReactElement {
-  const parent = useActionsRegistry();
-  const parentNode = actionsNodeOf(parent);
-  const depReg = useOptionalDepRegistry();
-  const depRegRef = useRef<DepRegistry | null>(depReg);
-  depRegRef.current = depReg;
-  const node = useMemo(() => new ActionsNode(parentNode, false, () => depRegRef.current), [parentNode]);
-  useEffect(() => node.mount(), [node]);
-  if (!parent) return <>{children}</>;
   return <ActionsContext.Provider value={node.registry}>{children}</ActionsContext.Provider>;
 }
 

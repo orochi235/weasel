@@ -8,7 +8,6 @@
 import type { GestureSpec, PhaseSpec } from '@weasel-js/gestures';
 import type { BoundGesture } from './binding';
 import type { Action } from './action';
-import type { DepRegistry } from './depRegistry';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES, type PhaseAtom } from '../../tools/routing/routeGrammar';
 import type { Dispatcher, UiOngoingControl } from '../dispatcher/dispatcher';
 export type { UiOngoingControl } from '../dispatcher/dispatcher';
@@ -43,10 +42,9 @@ export interface ActionsRegistry {
   /** Drop every registrant of `id`. This is the "this action should not exist"
    *  door, not a release — for that, call what `register` returned. */
   unregister(id: string): void;
-  /** Declare `id` not for this scope: it stays registered, and every other
-   *  scope over the same store still resolves it, but here it lists as absent
-   *  and neither `trigger` nor `begin` will fire it. Returns a release; an
-   *  `<ActionsScope>` drops what it muted when it unmounts. This is the
+  /** Declare `id` not for this scope: it stays registered wherever it was,
+   *  but here — and in scopes below — it lists as absent and neither
+   *  `trigger` nor `begin` will fire it. Returns a release. This is the
    *  "not for me" door — `unregister` is the "should not exist" one. */
   mute(id: string): () => void;
   list(): readonly Action[];
@@ -89,15 +87,6 @@ export interface ActionsRegistry {
   /** Whether a lookup made from the root of this registry's tree starts here —
    *  the question a dispatcher asks before handling a keystroke. */
   isActive(): boolean;
-
-  /** Wire a `DepRegistry` into the registry so `trigger()` / `begin()` can
-   *  resolve action deps even when this provider is mounted ABOVE the dep
-   *  registry (e.g. a consumer's root `<ActionsProvider>` reused by
-   *  SceneCanvas's `ActionsProviderIfRoot`). Takes precedence over the dep
-   *  registry read from context at the provider's own level. Call with
-   *  `null` to detach unconditionally; the returned release clears the slot
-   *  only while this registry still holds it. */
-  setDepRegistry(r: DepRegistry | null): () => void;
 }
 
 // ─── Registration-time validation ─────────────────────────────────────────

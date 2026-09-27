@@ -2,7 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { UiOngoingControl } from '@weasel-js/routing';
-import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import {
+  ActionsProvider, DepRegistryProvider, useActionsRegistry, useDepRegistry,
+} from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import { createDispatcher } from '@weasel-js/routing';
 
@@ -71,15 +73,21 @@ describe('ActionsRegistry.begin', () => {
         },
       },
     };
-    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
-    const reg = result.current!;
+    const { result } = renderHook(
+      () => ({ reg: useActionsRegistry()!, deps: useDepRegistry() }),
+      {
+        wrapper: ({ children }: { children: ReactNode }) => (
+          <DepRegistryProvider><ActionsProvider>{children}</ActionsProvider></DepRegistryProvider>
+        ),
+      },
+    );
+    const { reg, deps } = result.current;
     act(() => { reg.register(action); });
     const d = createDispatcher({ getAction: (id) => reg.list().find((a) => a.id === id) });
     act(() => { reg.setDispatcher(d); });
     act(() => {
-      reg.setDepRegistry({
-        get: (name: string) => (name === 'applyOps' ? applyOps : name === 'selection' ? 'sel' : undefined),
-      } as never);
+      deps.register('applyOps', () => applyOps as never);
+      deps.register('selection', () => 'sel' as never);
     });
 
     let ctrl: UiOngoingControl | null = null;

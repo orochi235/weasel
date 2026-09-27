@@ -326,16 +326,36 @@ predicts the route via `Dispatcher.resolveOnly` (the same match walk a real
 pointerdown takes), so hint and behavior can't drift. See "Hover cursors
 predict the drag route" in `docs/concepts.md`.
 
-### Action scope
+### Input scope and yoke
 
-`<ActionsScope>` — a view of the `ActionsRegistry` in scope that can declare an
-id **not for itself**: `mute(id)` leaves the action registered and every sibling
-scope still resolving it, while here it lists as absent and neither `trigger`
-nor `begin` fires it. The release comes back from `mute`, and a scope drops
-what it muted when it unmounts. `<SceneCanvas>` mounts one whenever it defers
-to a host's `<ActionsProvider>`, so `viewport={{ pinchZoom: false }}` and
-`actions={{ id: null }}` are opt-outs for that canvas alone. `unregister` is
-still the other door: it drops the action for everyone.
+Every canvas's input lives in its own **input scope** (`<InputScope>`): an
+actions registry, a dep registry and an active tool of its own, mounted under
+whichever registries are in scope. `<SceneCanvas>`, labkit's `<CanvasStack>` and
+`<Stage>` each mount one, always, so two canvases under one provider never take
+each other's gestures.
+
+| Tier | Mounted by | Holds |
+|---|---|---|
+| **Scope** | every canvas | what is the canvas's own: `view`, `rootView`, `pointer`, its tool, the actions it binds |
+| **Yoke** | `useYoke()`, joined with `yoke={yoke}` on a canvas or `<Yoke value={yoke}>` around anything else | what canvases share on purpose: the tool, the gesture in flight, history, yoke-wide actions |
+| **Root** | the outermost `<ActionsProvider>` / `<DepRegistryProvider>` / `<ActiveToolContextProvider>` | app-wide actions and deps |
+
+A registration lands in the innermost tier around the registering component. A
+lookup made through a scope answers from that scope first, then its yoke, then
+the root; another scope's entries are never visible. A lookup made through a
+root or a yoke — chrome's `trigger`, `begin`, `list`, `useActiveToolContext` —
+answers from the **active scope**: the one that last took a pointerdown or wheel,
+or the newest where none has. Keystrokes dispatch only in the active scope.
+
+A canvas with no yoke keeps its own tool; a new scope starts on the tool in
+effect around it. Shared *state* — a selection two canvases should agree on —
+still shares by lifting its provider above both.
+
+`mute(id)` declares an id **not for this scope**: here and below it lists as
+absent and neither `trigger` nor `begin` fires it, while it stays registered
+where it was. `viewport={{ pinchZoom: false }}` and `actions={{ id: null }}` are
+opt-outs for one canvas this way. `unregister` is the other door: it drops the
+action from the tier it is called on.
 
 Not a [`BindingScope`](#contribution) — that names the tier a binding matches
 at (hotkey / active / ambient), which this has nothing to do with.

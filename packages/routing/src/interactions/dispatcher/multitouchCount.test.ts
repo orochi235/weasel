@@ -48,7 +48,7 @@ describe('a multitouch handle ends when the finger count moves on', () => {
     } as unknown as Tool;
     const actions = {
       register: vi.fn(), unregister: vi.fn(), mute: vi.fn(), subscribe: vi.fn(),
-      trigger: vi.fn(), begin: vi.fn(), setDispatcher: vi.fn(), setDepRegistry: vi.fn(),
+      trigger: vi.fn(), begin: vi.fn(), setDispatcher: vi.fn(),
       list: () => [zoom, swipe],
     } as unknown as ActionsRegistry;
     const depRegistry: DepRegistry = {
