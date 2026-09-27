@@ -1501,10 +1501,9 @@ function EditorWithSharedScene({
     [editingId, scopingAlphaFor],
   );
 
-  const { percent: opacityScrubPercent } = useOpacityScrub({
+  const { tool: opacityScrubTool, percent: opacityScrubPercent } = useOpacityScrub({
     scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
     selection,
-    hostRef,
   });
 
   // Mode-tint layer — screen-space wash over the workspace area surrounding
@@ -1664,7 +1663,7 @@ function EditorWithSharedScene({
             selection={selection}
             selectionMode="multi"
             toolBundle="exhaustive"
-            tools={{ slice: sliceTool }}
+            tools={{ slice: sliceTool, opacityScrub: opacityScrubTool }}
             actions={{ slice: sliceAction }}
             ingestion={DRAW_INGESTION}
             // Pick on the drawn shape, not the bounding box. In a drawing app

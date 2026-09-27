@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import type { RefObject } from 'react';
-import { asNodeId, paintAlpha } from '@weasel-js/core';
-import type { FillStyle, Stroke } from '@weasel-js/core';
+import { useMemo, useRef, useState } from 'react';
+import { ActionDisabledReason, asNodeId, defineTool, paintAlpha } from '@weasel-js/core';
+import type { Action, FillStyle, Stroke } from '@weasel-js/core';
 import {
   computeScrubbedPaints,
   type PaintSnapshot,
@@ -10,12 +9,14 @@ import {
 interface ScrubSession {
   startHistoryIndex: number;
   snapshots: Map<string, PaintSnapshot>;
-  startBrightest: Map<string, number>;
   targetAlpha: number;
 }
 
 const COARSE_STEP = 0.05;
 const FINE_STEP = 0.01;
+
+/** The wheel's action while O is held. */
+export const OPACITY_SCRUB_NUDGE = 'draw.opacityScrub.nudge';
 
 export interface UseOpacityScrubArgs {
   scene: {
@@ -29,10 +30,16 @@ export interface UseOpacityScrubArgs {
     jumpToHistoryIndex: (n: number) => void;
   };
   selection: { current: ReadonlyArray<string> };
-  hostRef: RefObject<HTMLElement | null>;
 }
 
-export function useOpacityScrub({ scene, selection, hostRef }: UseOpacityScrubArgs) {
+/**
+ * Hold O and turn the wheel to scrub the selection's opacity; Shift steps
+ * finer. A spring-loaded tool: holding O engages it at hotkey scope, which
+ * opens a session over the selection's paints, and releasing it commits the
+ * session as one undo entry. With nothing selected no session opens and the
+ * wheel falls through to the viewport.
+ */
+export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
   const sessionRef = useRef<ScrubSession | null>(null);
   const [percent, setPercent] = useState<number | null>(null);
 
@@ -41,7 +48,7 @@ export function useOpacityScrub({ scene, selection, hostRef }: UseOpacityScrubAr
   sceneRef.current = scene;
   selectionRef.current = selection;
 
-  useEffect(() => {
+  const tool = useMemo(() => {
     function readSnapshot(id: string): PaintSnapshot | null {
       const node = sceneRef.current.get(asNodeId(id));
       if (!node) return null;
@@ -59,10 +66,8 @@ export function useOpacityScrub({ scene, selection, hostRef }: UseOpacityScrubAr
       );
     }
 
-    // Each tick: rewind any prior tick's entry, then write the new state in
-    // a single 'Adjust opacity' batch. Net effect on the history panel: at
-    // most one new entry exists during the session, and it's the same entry
-    // being replaced — not a growing list of intermediate edits.
+    // Each tick rewinds the previous tick's entry before writing, so the
+    // session holds at most one 'Adjust opacity' entry, replaced in place.
     function applyLive(session: ScrubSession) {
       sceneRef.current.jumpToHistoryIndex(session.startHistoryIndex);
       sceneRef.current.batch('Adjust opacity', () => {
@@ -81,102 +86,65 @@ export function useOpacityScrub({ scene, selection, hostRef }: UseOpacityScrubAr
       });
     }
 
-    function startSession(): boolean {
-      const ids = selectionRef.current.current;
-      if (ids.length === 0) return false;
-
+    function startSession() {
       const snapshots = new Map<string, PaintSnapshot>();
-      const startBrightest = new Map<string, number>();
       let sessionBrightest = 0;
-      for (const id of ids) {
+      for (const id of selectionRef.current.current) {
         const snap = readSnapshot(id);
         if (!snap) continue;
         snapshots.set(id, snap);
-        const b = brightestAlphaOf(snap);
-        startBrightest.set(id, b);
-        if (b > sessionBrightest) sessionBrightest = b;
+        sessionBrightest = Math.max(sessionBrightest, brightestAlphaOf(snap));
       }
-      if (snapshots.size === 0) return false;
-
+      if (snapshots.size === 0) return;
       sessionRef.current = {
         startHistoryIndex: sceneRef.current.historyIndex(),
         snapshots,
-        startBrightest,
         targetAlpha: sessionBrightest,
       };
       setPercent(Math.round(sessionBrightest * 100));
-      return true;
     }
 
-    function endSession(commit: boolean) {
-      const session = sessionRef.current;
+    // The last `applyLive` batch is already the session's one history entry.
+    function commitSession() {
       sessionRef.current = null;
       setPercent(null);
-      if (!session) return;
-
-      // On commit, leave the last `applyLive` batch in place — it is already
-      // the single 'Adjust opacity' history entry. On cancel, rewind it.
-      if (!commit) {
-        sceneRef.current.jumpToHistoryIndex(session.startHistoryIndex);
-      }
     }
 
-    function isTypingTarget(t: EventTarget | null): boolean {
-      if (!(t instanceof HTMLElement)) return false;
-      const tag = t.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
-      if (t.isContentEditable) return true;
-      return false;
-    }
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.code !== 'KeyO') return;
-      if (e.repeat) return;
-      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
-      if (isTypingTarget(e.target)) return;
-      if (sessionRef.current) return;
-      if (startSession()) {
-        e.preventDefault();
-      }
-    }
-
-    function onKeyUp(e: KeyboardEvent) {
-      if (e.code !== 'KeyO') return;
-      if (!sessionRef.current) return;
-      endSession(true);
-    }
-
-    function onBlur() {
-      if (sessionRef.current) endSession(true);
-    }
-
-    function onWheel(e: WheelEvent) {
-      const session = sessionRef.current;
-      if (!session) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const step = e.shiftKey ? FINE_STEP : COARSE_STEP;
-      const delta = -Math.sign(e.deltaY) * step;
-      session.targetAlpha = Math.max(0, Math.min(1, session.targetAlpha + delta));
-      setPercent(Math.round(session.targetAlpha * 100));
-      applyLive(session);
-    }
-
-    window.addEventListener('keydown', onKeyDown, { capture: true });
-    window.addEventListener('keyup', onKeyUp, { capture: true });
-    window.addEventListener('blur', onBlur);
-
-    const host = hostRef.current;
-    host?.addEventListener('wheel', onWheel, { capture: true, passive: false });
-
-    return () => {
-      window.removeEventListener('keydown', onKeyDown, { capture: true });
-      window.removeEventListener('keyup', onKeyUp, { capture: true });
-      window.removeEventListener('blur', onBlur);
-      host?.removeEventListener('wheel', onWheel, { capture: true });
-      if (sessionRef.current) endSession(false);
+    const nudge: Action = {
+      id: OPACITY_SCRUB_NUDGE,
+      label: 'Adjust opacity (wheel)',
+      enabled: () => (sessionRef.current ? true : ActionDisabledReason.SelectionRequired),
+      invoker: {
+        timing: 'immediate',
+        run: (_deps, params) => {
+          const session = sessionRef.current;
+          if (!session) return;
+          const step = params?.step as number;
+          const deltaY = (params?.deltaY as number | undefined) ?? 0;
+          session.targetAlpha = Math.max(0, Math.min(1, session.targetAlpha - Math.sign(deltaY) * step));
+          setPercent(Math.round(session.targetAlpha * 100));
+          applyLive(session);
+        },
+      },
     };
-  }, [hostRef]);
 
-  return { percent };
+    return defineTool<null>({
+      id: 'opacityScrub',
+      hotkey: 'o',
+      presentation: { label: 'Opacity scrub', hide: true },
+      actions: [nudge],
+      bindings: [
+        { spec: { kind: 'wheel' }, actionId: OPACITY_SCRUB_NUDGE, opts: { params: { step: COARSE_STEP } } },
+        {
+          spec: { kind: 'wheel', mods: { shift: true } },
+          actionId: OPACITY_SCRUB_NUDGE,
+          opts: { params: { step: FINE_STEP } },
+        },
+      ],
+      onActivate: startSession,
+      onDeactivate: commitSession,
+    });
+  }, []);
+
+  return { tool, percent };
 }

@@ -75,12 +75,6 @@ Priority tags:
   `useKeybindings`' document handler, which no longer exists. The shortcuts
   should become bindings gated on `modeIs`/`modeNot`.
 
-- **(P3) apps/draw's opacity scrub runs its own hold-key session.** Hold O and
-  wheel (`apps/draw/src/opacityScrub/useOpacityScrub.ts`) is a window
-  keydown/keyup pair plus a capture-phase `wheel` that `stopPropagation`s, so no
-  binding sees it. Held-key engagement exists for tools (`ToolDef.hotkey`); a
-  held key scoping a wheel binding for something that is not a tool does not.
-
 - **(P3) A press on empty canvas can't be an ambient binding beside select.**
   `select` binds `pointerDown` on empty space at active scope, and active
   outranks ambient, so an ambient contribution's `pointerDown` never fires.
