@@ -28,16 +28,20 @@ const KINDS: [string, Display][] = [
   ['compact', compact({ places: 1 })],
   ['percent', percent({ places: 1 })],
   ['fraction', fraction({ mixed: true })],
+  ['fraction, diagonal', fraction({ mixed: true, form: 'diagonal' })],
   ['ratio', ratio()],
   ['multiplier', multiplier()],
   ['zoom', zoom()],
-  ['unit', unit('in', { accepts: { in: 1, ft: 12, yd: 36 } })],
+  ['unit', unit('in')],
+  ['unit, marked', unit('"')],
   ['currency', currency('USD')],
   ['duration', duration({ places: 1 })],
   ['bytes', bytes()],
   ['roman', roman()],
   ['ordinal', ordinal()],
 ];
+
+const ENTRY = decimal({ maxPlaces: 6, grouping: false });
 
 const PRESETS = [1 / 12, 1.5, 22, 1994, 3723, 1_200_000];
 
@@ -55,6 +59,7 @@ export function QuantityDemo() {
   return (
     <div className={s.demo}>
       <div className={s.presets}>
+        <UnitField value={value} onChange={setValue} display={ENTRY} width="fit" className={s.entry} aria-label="Value" />
         {PRESETS.map((p) => (
           <button key={p} type="button" className="ckd-btn" onClick={() => setValue(p)}>
             {qty(p, decimal({ maxPlaces: 4 })).text}
@@ -65,7 +70,7 @@ export function QuantityDemo() {
         <thead>
           <tr>
             <th>kind</th>
-            <th>text — type into any row</th>
+            <th>text</th>
             <th>spoken</th>
             <th>html parts</th>
           </tr>
@@ -76,9 +81,7 @@ export function QuantityDemo() {
             return (
               <tr key={name}>
                 <td className={s.kind}>{name}</td>
-                <td>
-                  <UnitField value={value} onChange={setValue} display={display} aria-label={name} />
-                </td>
+                <td className={s.text}>{q.text}</td>
                 <td className={s.spoken}>{q.spoken}</td>
                 <td>
                   <span className={s.parts} dangerouslySetInnerHTML={{ __html: q.html }} />

@@ -7,8 +7,18 @@
 
 .presets {
   display: flex;
+  align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+.entry {
+  --wzl-field-h: 24px;
+  --wzl-font-size: 13px;
+  --wzl-border: var(--ckd-accent);
+  --wzl-input-surface: color-mix(in srgb, var(--ckd-accent) 12%, transparent);
+  margin-inline-end: 6px;
+  font-weight: 600;
 }
 
 .table {
@@ -31,6 +41,10 @@
 .kind {
   font-family: ui-monospace, SFMono-Regular, monospace;
   color: var(--ckd-muted);
+}
+
+.text {
+  white-space: nowrap;
 }
 
 .spoken {
