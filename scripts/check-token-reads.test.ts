@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findAccentFillAsText, findUndeclaredReads } from './check-token-reads';
+import { findAccentFillAsText, findThemeTokenFallbacks, findUndeclaredReads } from './check-token-reads';
 
 const THEME = new Set(['--wzl-fg', '--wzl-surface']);
 const HOOKS = new Set(['--wzl-swatch-size']);
@@ -59,6 +59,28 @@ describe('findUndeclaredReads', () => {
 
   it('skips a name built at runtime', () => {
     expect(run([{ path: 'packages/ui/A.tsx', source: 'const c = `var(--wzl-swatch-${name})`;' }])).toEqual([]);
+  });
+});
+
+describe('findThemeTokenFallbacks', () => {
+  const run = (path: string, source: string) => findThemeTokenFallbacks([{ path, source }], THEME, HOOKS);
+
+  it('flags a theme token read with a fallback, with its line', () => {
+    expect(run('packages/ui/a.css', '.x {\n  color: var(--wzl-fg, #eee);\n}')).toEqual([
+      { file: 'packages/ui/a.css', line: 2, name: '--wzl-fg', reason: 'theme token read with a fallback it can never take' },
+    ]);
+  });
+
+  it('flags the inner read of a nested fallback too', () => {
+    expect(run('packages/ui/a.less', '.x { color: var(--wzl-x, var(--wzl-fg, #eee)); }').map((o) => o.name)).toEqual(['--wzl-fg']);
+  });
+
+  it('accepts a bare theme token read and an exempt name with a fallback', () => {
+    expect(run('packages/ui/a.css', '.x { color: var(--wzl-fg); width: var(--wzl-swatch-size, 28px); }')).toEqual([]);
+  });
+
+  it('leaves TS alone, where SVG markup may render outside the document', () => {
+    expect(run('packages/ui/icons.ts', 'const p = `<path stroke="var(--wzl-fg, #eee)"/>`;')).toEqual([]);
   });
 });
 
