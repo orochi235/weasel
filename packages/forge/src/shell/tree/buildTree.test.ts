@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { IndexEntry } from '../../story/types';
 import { buildTree, filterTree, type TreeNode } from './buildTree';
 
-const entry = (title: string, name: string): IndexEntry => {
+const entry = (title: string, name: string, tags?: string[]): IndexEntry => {
   const id = `${title.toLowerCase().replaceAll('/', '-')}--${name.toLowerCase()}`;
-  return { id, title, name, exportName: name, file: '/x.stories.tsx' };
+  return { id, title, name, exportName: name, file: '/x.stories.tsx', ...(tags ? { tags } : {}) };
 };
 
 /** Folders as `label/`, with a `+` when they carry an index page; stories as their name; nested as arrays. */
@@ -48,6 +48,42 @@ describe('buildTree', () => {
       { 'Alpha/+': ['One'] },
       { 'Zed/+': [{ 'Inner/+': ['Only'] }, 'Second', 'First'] },
     ]);
+  });
+});
+
+describe('buildTree galleries', () => {
+  const gallery = (title: string, name: string) => entry(title, name, ['gallery']);
+
+  it('folds a folder holding only a gallery into the gallery, so its stories sit one level below it', () => {
+    const tree = buildTree([gallery('ui/Cursors/Gallery', 'Hotspots'), gallery('ui/Cursors/Gallery', 'Rotations')]);
+    expect(shape(tree)).toEqual([{ 'ui/': [{ 'Cursors/+': ['Hotspots', 'Rotations'] }] }]);
+    const cursors = tree[0]?.kind === 'folder' ? tree[0].children[0] : undefined;
+    // The gallery's own path and index page, so its story ids and route ancestors are unchanged.
+    expect(cursors?.kind === 'folder' && cursors.path).toBe('ui/Cursors/Gallery');
+    expect(cursors?.kind === 'folder' && cursors.index?.id).toBe('ui-cursors-gallery:index');
+    expect(cursors?.kind === 'folder' && cursors.index?.tags).toEqual(['gallery']);
+  });
+
+  it('leaves a gallery alone when its folder holds anything else', () => {
+    const tree = buildTree([gallery('ui/Properties/Gallery', 'All'), entry('ui/Properties/Panel', 'Default')]);
+    expect(shape(tree)).toEqual([{ 'ui/': [{ 'Properties/': [{ 'Gallery/+': ['All'] }, { 'Panel/+': ['Default'] }] }] }]);
+  });
+
+  it('does not fold a lone component that is not a gallery', () => {
+    expect(shape(buildTree([entry('ui/Cursors/Gallery', 'Default')]))).toEqual([
+      { 'ui/': [{ 'Cursors/': [{ 'Gallery/+': ['Default'] }] }] },
+    ]);
+  });
+
+  it('does not fold a gallery into a folder that is itself a component', () => {
+    const tree = buildTree([entry('ui/Kit', 'Default'), gallery('ui/Kit/Gallery', 'All')]);
+    expect(shape(tree)).toEqual([{ 'ui/': [{ 'Kit/+': [{ 'Gallery/+': ['All'] }, 'Default'] }] }]);
+  });
+
+  it('keeps the folded gallery findable by its folder name and its own', () => {
+    const tree = buildTree([gallery('ui/Cursors/Gallery', 'Hotspots'), entry('ui/Button', 'Default')]);
+    expect(shape(filterTree(tree, 'cursors'))).toEqual([{ 'ui/': [{ 'Cursors/+': ['Hotspots'] }] }]);
+    expect(shape(filterTree(tree, 'hotspots'))).toEqual([{ 'ui/': [{ 'Cursors/': ['Hotspots'] }] }]);
   });
 });
 
