@@ -65,7 +65,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 7px 10px;
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
   font-size: 13px;
   color: var(--wzl-fg);
   cursor: pointer;
@@ -118,7 +118,7 @@
   color: var(--wzl-fg-muted);
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
   padding: 1px 6px;
   flex-shrink: 0;
 }
