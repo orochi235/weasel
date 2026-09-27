@@ -1,0 +1,20 @@
+.sheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 20px 12px;
+  padding: 24px;
+  color: var(--wzl-fg);
+}
+
+.sheet figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.sheet figcaption {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
