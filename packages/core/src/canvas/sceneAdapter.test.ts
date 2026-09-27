@@ -138,6 +138,17 @@ describe('sceneToAdapter', () => {
       expect(sceneToAdapter(scene).hitTestLasso!(TRIANGLE, 'intersect')).toEqual([]);
     });
 
+    it('its marquee tests a rotated rect by its rotated ink, not its bounding box', () => {
+      // The same bar as above; the marquee sits inside its bounding box's
+      // top-left corner, which the turned bar leaves empty.
+      const scene = createScene<Data, 'bg', Pose & { rotation?: number }>({ systemLayers: [{ id: 'bg' }] });
+      scene.add({
+        kind: 'leaf', layer: 'bg', data: { label: 'r' },
+        pose: { x: 60, y: 107, width: 100, height: 6, rotation: -Math.PI / 4 },
+      });
+      expect(sceneToAdapter(scene).hitTestArea!({ x: 76, y: 76, width: 10, height: 10 })).toEqual([]);
+    });
+
     it('returns containers, as its marquee does', () => {
       const scene = makeScene();
       const box = scene.add({
