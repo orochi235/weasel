@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { InlineRange } from './InlineRange/InlineRange';
+import { PropertyField } from './Properties/PropertyField';
 import shared from './range.module.css';
 
 // CSS modules are not processed in the `weasel-ui` vitest project, so these
@@ -23,8 +24,7 @@ describe('shared range skin', () => {
     expect(cls).toContain('mine');
   });
 
-  it('a slider field wears the shared range class', async () => {
-    const { PropertyField } = await import('./Properties/PropertyField');
+  it('a slider field wears the shared range class', () => {
     const { container } = render(
       <PropertyField
         kind="number"
@@ -41,8 +41,7 @@ describe('shared range skin', () => {
     expect(input?.className.split(' ')).toContain(shared.range);
   });
 
-  it('a color field\'s alpha wears the shared range and alpha classes', async () => {
-    const { PropertyField } = await import('./Properties/PropertyField');
+  it('a color field\'s alpha wears the shared range and alpha classes', () => {
     const { container } = render(
       <PropertyField
         kind="color"
@@ -58,10 +57,9 @@ describe('shared range skin', () => {
     expect(cls).toContain(shared.alpha);
   });
 
-  it('a disabled alpha track stays disabled on the input', async () => {
+  it('a disabled alpha track stays disabled on the input', () => {
     // The inert treatment is keyed off :disabled in the shared module, so the
     // prop has to keep reaching the element and not only the row's class.
-    const { PropertyField } = await import('./Properties/PropertyField');
     const { container } = render(
       <PropertyField
         kind="color"

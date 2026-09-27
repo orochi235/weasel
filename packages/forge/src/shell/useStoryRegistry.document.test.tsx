@@ -97,7 +97,7 @@ describe('Workshop in the document', () => {
       <Workshop index={[a, b]} frameUrl="/frame.html" importers={importers()} setup={{}} storage={createMemoryAdapter()} />,
     );
     // A lab, a trial and a story module under a loaded test run take more than testing-library's second.
-    await waitFor(() => expect(screen.getByRole('button', { name: 'hi' })).toBeInTheDocument(), { timeout: 5000 });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'hi' })).toBeInTheDocument(), { timeout: 15_000 });
     const host = screen.getByRole('button', { name: 'hi' }).closest('.fg-story');
     expect(host).not.toBeNull();
     expect(container.querySelector('iframe')).toBeNull();
