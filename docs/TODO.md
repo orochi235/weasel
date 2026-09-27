@@ -280,6 +280,13 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   the trial's camera and core's `viewport.zoom`; the trial's buttons, and the
   `ZoomControl` slider beside them, should trigger the same action.
 
+- **(P3) One Cmd+= may zoom two viewports.** The lab header claims Mod+= / Mod+-
+  / Mod+0 for the focused trial's camera, and a story that renders its own
+  `<SceneCanvas>` with keyboard zoom binds the same keys on its own dispatcher.
+  The dispatcher does not check `defaultPrevented`, so one keystroke should reach
+  both. Inferred from the code, not reproduced: reproduce it, then decide which
+  viewport owns the keys when both are live.
+
 - **(P3) Typed discriminated union for multi-type insert.** Deferred from `docs/specs/2026-05-07-viewport-followups-design.md`. Current shape splits into `posefromBounds(bounds) → TPose` + `pointInsert(point) → TNode` (`packages/core/src/interactions/actions/insert/options.ts`); multi-type canvases (rect vs image vs ellipse from one `<SceneCanvas>`) wire their own `tools` array (one `useInsertTool` per type) rather than folding a variant switch into the insert options. The single-canvas multi-type ergonomic is the open design question.
 
 ---
