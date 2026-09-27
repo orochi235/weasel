@@ -57,7 +57,8 @@ const claimed = (projects) => {
   );
   const byFile = new Map();
   for (const line of out.split('\n')) {
-    const match = /^\[([\w-]+)]\s+(.+)$/.exec(line.trim());
+    // A browser project labels its files `[name (chromium)]`.
+    const match = /^\[([\w-]+)(?: \([\w-]+\))?]\s+(.+)$/.exec(line.trim());
     if (!match) continue;
     const [, project, file] = match;
     if (!byFile.has(file)) byFile.set(file, new Set());

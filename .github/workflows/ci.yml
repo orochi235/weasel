@@ -74,6 +74,9 @@ jobs:
       - run: npm run check:forge-boundary
       - run: npm run check:forge-isolate
       - run: npx vitest run --project=core --project=weasel-ui --project=draw --project=labkit --project=forge
+      # Tests that need real layout or real IndexedDB (`*.browser.test.*`), in headless Chromium.
+      - run: npx playwright install --with-deps chromium-headless-shell
+      - run: npm run test:browser
       - run: npm run build
       # labkit bundles its weasel siblings into its dist; build it after them so
       # their built output is what it inlines. `@weasel-js/core` and
