@@ -12,6 +12,8 @@ import { setRoute } from './useRoute';
 /** A component's index page as the registry loads it: its stories in index order, and the page's own render. */
 export interface IndexBundle {
   title: string;
+  /** The package the component ships in. */
+  library: string;
   description?: string;
   /** The tags every story of the component carries. */
   tags?: readonly string[];
@@ -43,6 +45,7 @@ export function IndexTrial({ bundle, setup, config }: IndexTrialProps) {
   const render = (globals: Globals) => {
     const env: IndexEnv = {
       title: bundle.title,
+      library: bundle.library,
       ...(bundle.description === undefined ? {} : { description: bundle.description }),
       stories: bundle.stories,
       descriptions: bundle.descriptions,

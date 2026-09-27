@@ -1,5 +1,5 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
-import { Badge, Checkbox, DisclosureMark, Icon, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
+import { Checkbox, DisclosureMark, Icon, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
 import { type FocusEvent, type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
 import { indexEntries } from '../../story/indexPages';
 import { isGallery } from '../../story/tags';
@@ -7,7 +7,9 @@ import type { IndexEntry } from '../../story/types';
 import { revealTrial } from '../revealTrial';
 import { useRoute } from '../useRoute';
 import { buildTree, filterTree, type TreeNode } from './buildTree';
-import { buildComponents, componentNodes, filterComponents, librariesIn, libraryOf } from './buildComponents';
+import { buildComponents, componentNodes, filterComponents, librariesIn } from './buildComponents';
+import { libraryOf } from '../../story/library';
+import { LibraryBadge as PackageBadge } from '../../frame/index/LibraryBadge';
 
 /** Which shape the sidebar lists the index in. */
 type View = 'tree' | 'components';
@@ -42,22 +44,9 @@ function ancestorsOf(entry: IndexEntry | undefined): Set<string> {
   return paths;
 }
 
-/** Each package's peer tone: its swatch mixed toward the foreground, so the
- *  badge text keeps its contrast in both modes. */
-const LIBRARY_TONES: Readonly<Record<string, string>> = {
-  ui: 'color-mix(in oklab, var(--wzl-swatch-blue), var(--wzl-fg) 35%)',
-  labkit: 'color-mix(in oklab, var(--wzl-swatch-teal), var(--wzl-fg) 45%)',
-  forge: 'color-mix(in oklab, var(--wzl-swatch-amber), var(--wzl-fg) 40%)',
-  draw: 'color-mix(in oklab, var(--wzl-swatch-rose), var(--wzl-fg) 35%)',
-};
-
-/** A component's package, as a badge toned per package. */
+/** A component's package, as the sidebar tags its rows. */
 function LibraryBadge({ library }: { library: string }) {
-  return (
-    <Badge status="muted" tone={LIBRARY_TONES[library]} variant="subtle" size="sm" className="fg-tree__tag">
-      {library}
-    </Badge>
-  );
+  return <PackageBadge library={library} className="fg-tree__tag" />;
 }
 
 /** What a row tagged `gallery` shows before its label. Its row's name says the same for a screen reader. */

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildComponents, componentNodes, filterComponents, libraryOf } from './buildComponents';
+import { libraryOf } from '../../story/library';
+import { buildComponents, componentNodes, filterComponents } from './buildComponents';
 import type { TreeNode } from './buildTree';
 import type { IndexEntry } from '../../story/types';
 

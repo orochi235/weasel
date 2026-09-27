@@ -116,6 +116,11 @@
   margin-top: var(--wzl-space-4);
 }
 
+.fg-index__library {
+  margin-inline-end: var(--wzl-space-4);
+  vertical-align: middle;
+}
+
 .fg-index__title-row {
   display: flex;
   align-items: center;

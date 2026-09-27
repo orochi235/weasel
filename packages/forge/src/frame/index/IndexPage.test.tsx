@@ -60,6 +60,17 @@ describe('IndexPage', () => {
     expect(within(section).getByText('Gallery')).toBeTruthy();
   });
 
+  it('heads the path with the package as a badge, in place of a first segment naming it', () => {
+    const { container, rerender } = render(<IndexPage env={envOf({ title: 'ui/Properties/Field', library: 'ui' })} render={null} />);
+    const path = container.querySelector('.fg-index__path') as HTMLElement;
+    expect(path.querySelector('.fg-index__library')?.textContent).toBe('ui');
+    expect(path.textContent).toBe('uiProperties');
+    rerender(<IndexPage env={envOf({ title: 'Primitives/Input', library: 'ui' })} render={null} />);
+    expect(container.querySelector('.fg-index__path')?.textContent).toBe('uiPrimitives');
+    rerender(<IndexPage env={envOf({ title: 'labkit/Specimen', library: 'labkit' })} render={null} />);
+    expect(container.querySelector('.fg-index__path')?.textContent).toBe('labkit');
+  });
+
   it('shows no dependency section before the graph arrives', () => {
     render(<IndexPage env={envOf()} render={null} />);
     expect(screen.queryByRole('list', { name: 'Uses' })).toBeNull();

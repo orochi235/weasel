@@ -1,7 +1,7 @@
 import type { Instrument } from '@weasel-js/labkit';
 import { type ConfigNode, type ConfigShape, isConfigBranch, valueAtPath } from '@weasel-js/labkit/config';
 import type { IndexEntry } from '../../story/types';
-import { libraryOf } from '../tree/buildComponents';
+import { libraryOf } from '../../story/library';
 
 /** One prop of the story, as the dossier prints it. */
 export interface DossierArg {

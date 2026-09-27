@@ -4,6 +4,7 @@ import type { FrameSetup } from '../frame/FrameController';
 import type { FrameImporters } from '../frame/mountFrame';
 import { stableStringify } from '../protocol/messages';
 import { indexId, isIndexId } from '../story/indexPages';
+import { libraryOf } from '../story/library';
 import { isGallery } from '../story/tags';
 import { indexRenderOf, loadStories } from '../story/load';
 import type { IndexEntry, LoadedStory } from '../story/types';
@@ -144,6 +145,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
               kind: 'index',
               bundle: {
                 title: entry.title,
+                library: libraryOf(entry),
                 ...(entry.componentDescription === undefined ? {} : { description: entry.componentDescription }),
                 ...(entry.tags === undefined ? {} : { tags: entry.tags }),
                 galleries: entries.filter(isGallery).map((e) => e.id),

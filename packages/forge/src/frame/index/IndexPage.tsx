@@ -19,10 +19,13 @@ import type { ComponentDeps, Decorator, IndexContext, IndexStoryProps, LoadedSto
 import { StoryHost } from '../StoryHost';
 import { mergeConfig, variantRows, withValueAt } from './variants';
 import './index.css';
+import { LibraryBadge } from './LibraryBadge';
 
 /** What every cell on an index page shares with the frame that hosts it. */
 export interface IndexEnv {
   title: string;
+  /** The package the component ships in. */
+  library?: string;
   description?: string;
   stories: readonly LoadedStory[];
   /** Per story id, the JSDoc above its export. */
@@ -247,10 +250,17 @@ export function DefaultIndex() {
   const withVariants = useMemo(() => firstOfEachControlSet(env.stories), [env.stories]);
   const segments = env.title.split('/');
   const name = segments.pop();
+  const { library } = env;
+  if (library !== undefined && segments[0] === library) segments.shift();
   return (
     <article className="fg-index">
       <header className="fg-index__head">
-        {segments.length > 0 ? <p className="fg-index__path">{segments.join(' / ')}</p> : null}
+        {segments.length > 0 || library !== undefined ? (
+          <p className="fg-index__path">
+            {library !== undefined ? <LibraryBadge library={library} className="fg-index__library" /> : null}
+            {segments.join(' / ')}
+          </p>
+        ) : null}
         <div className="fg-index__title-row">
           <h1 className="fg-index__title">{name}</h1>
           {env.gallery ? <GalleryBadge /> : null}

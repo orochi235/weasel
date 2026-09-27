@@ -14,6 +14,8 @@ import { type IndexEnv, IndexPage } from './IndexPage';
 
 export interface StartIndexOptions {
   title: string;
+  /** The package the component ships in. */
+  library?: string;
   description?: string;
   /** Whether the component is a gallery. */
   gallery?: boolean;
@@ -69,6 +71,7 @@ export function startIndex(options: StartIndexOptions): () => void {
     if (!globals) return;
     const env: IndexEnv = {
       title: options.title,
+      ...(options.library === undefined ? {} : { library: options.library }),
       ...(options.description === undefined ? {} : { description: options.description }),
       stories: options.stories,
       descriptions: options.descriptions,
