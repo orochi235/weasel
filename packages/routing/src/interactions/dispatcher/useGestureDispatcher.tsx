@@ -199,8 +199,14 @@ export interface UseGestureDispatcherOptions {
    * contextmenu channels stay live. `<SceneCanvas>` wires this to
    * `enableKeybindings`, so opting out of keybindings disables the modern
    * dispatcher key path as well as the legacy `useKeybindings` hook.
+   *
+   * Every dispatcher hears keys on `window`, and a keystroke one of them
+   * claims — or anything else calls `preventDefault` on — is not dispatched by
+   * the rest. `'first'` listens in the capture phase, so this dispatcher gets
+   * the keystroke ahead of every dispatcher listening normally, whatever the
+   * mount order: the shape for chrome that owns a key only when it can act.
    */
-  keyboard?: boolean;
+  keyboard?: boolean | 'first';
   /**
    * Optional affordance classifier. Called with the **world** coordinates of
    * the pointer — this hook applies the routed view's `clientToWorld` before
@@ -716,7 +722,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // -----------------------------------------------------------------------
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (isEditableTarget(e.target)) return;
+      if (e.defaultPrevented || isEditableTarget(e.target)) return;
 
       // Autorepeat for a key that's already engaged a key-held binding is
       // suppressed entirely — no dispatch (no trace flood) and the
@@ -1593,9 +1599,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // Attach
     // -----------------------------------------------------------------------
 
+    const keyCapture = keyboard === 'first';
     if (keyboard) {
-      window.addEventListener('keydown', onKeyDown);
-      window.addEventListener('keyup', onKeyUp);
+      window.addEventListener('keydown', onKeyDown, keyCapture);
+      window.addEventListener('keyup', onKeyUp, keyCapture);
     }
     window.addEventListener('blur', onWindowBlur);
     // Hover-cursor refresh on modifier/hotkey changes — separate listeners
@@ -1629,8 +1636,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     return () => {
       if (keyboard) {
-        window.removeEventListener('keydown', onKeyDown);
-        window.removeEventListener('keyup', onKeyUp);
+        window.removeEventListener('keydown', onKeyDown, keyCapture);
+        window.removeEventListener('keyup', onKeyUp, keyCapture);
       }
       window.removeEventListener('blur', onWindowBlur);
       window.removeEventListener('keydown', scheduleHoverCursorRefresh);

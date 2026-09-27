@@ -111,11 +111,14 @@ function LabZoomControls() {
     return registry.register(action);
   }, [registry]);
 
+  // First, so a story's own zoom keys do not also fire over a trial with a
+  // camera; over one without, the action is disabled and the keys pass on.
   useGestureDispatcher({
     canvasRef: NO_ELEMENT,
     actions: registry,
     toolsById: NO_TOOLS,
     channels: CHANNELS,
+    keyboard: 'first',
   });
 
   const range = camera?.zoomRange();

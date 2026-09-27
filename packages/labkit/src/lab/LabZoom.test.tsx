@@ -1,5 +1,14 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import {
+  ActionsProvider,
+  type ActionsRegistry,
+  ActiveToolContextProvider,
+  DepRegistryProvider,
+  type Tool,
+  useActionsRegistry,
+  useGestureDispatcher,
+} from '@weasel-js/core';
+import { type ReactNode, useEffect } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from './Lab';
@@ -60,6 +69,41 @@ function key(k: string): boolean {
   return prevented;
 }
 
+const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
+
+/** A story's own dispatcher, binding Mod+= the way a `<SceneCanvas>` with keyboard zoom does. */
+function StoryZoomKey({ run }: { run: () => void }) {
+  function Bound() {
+    const registry = useActionsRegistry() as ActionsRegistry;
+    useEffect(
+      () =>
+        registry.register({
+          id: 'story.zoom',
+          label: 'Story zoom',
+          defaultBinding: { kind: 'key', key: '=', mods: { mod: true } },
+          invoker: { timing: 'immediate', run: () => run() },
+        }),
+      [registry],
+    );
+    useGestureDispatcher({
+      canvasRef: { current: null },
+      actions: registry,
+      toolsById: NO_TOOLS,
+      channels: { contextMenu: false, ingest: false },
+    });
+    return null;
+  }
+  return (
+    <DepRegistryProvider>
+      <ActionsProvider>
+        <ActiveToolContextProvider>
+          <Bound />
+        </ActiveToolContextProvider>
+      </ActionsProvider>
+    </DepRegistryProvider>
+  );
+}
+
 function stageZoom(container: HTMLElement, index = 0): number {
   const el = container.querySelectorAll<HTMLElement>('.lk-stage__content')[index];
   if (!el) throw new Error('no stage content');
@@ -118,6 +162,31 @@ describe("the lab header's zoom controls", () => {
     expect(readout()).toBeDisabled();
     expect(readout()).toHaveTextContent('–');
     expect(key('=')).toBe(false);
+  });
+
+  it("take the key ahead of a story's own binding in a trial with a camera", () => {
+    const story = vi.fn();
+    const zooming = defineInstrument<Record<string, never>, Record<string, never>>({
+      ...staged,
+      name: 'Zooming',
+      render: () => <StoryZoomKey run={story} />,
+    });
+    const { container } = render(<Lab instruments={[zooming]} defaultInstrument="Zooming" />);
+    key('=');
+    expect(stageZoom(container)).toBeCloseTo(1.25);
+    expect(story).not.toHaveBeenCalled();
+  });
+
+  it("leave the key to a story's own binding in a trial with no camera", () => {
+    const story = vi.fn();
+    const zooming = defineInstrument<Record<string, never>, Record<string, never>>({
+      ...plain,
+      name: 'ZoomingPlain',
+      render: () => <StoryZoomKey run={story} />,
+    });
+    render(<Lab instruments={[zooming]} defaultInstrument="ZoomingPlain" />);
+    key('=');
+    expect(story).toHaveBeenCalledTimes(1);
   });
 
   it('follow the focus from trial to trial', () => {
