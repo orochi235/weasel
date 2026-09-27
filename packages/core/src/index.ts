@@ -240,7 +240,6 @@ export { createVelocityTracker } from './core/viewport/createVelocityTracker';
 export type { VelocityTracker } from './core/viewport/createVelocityTracker';
 export { useDecayLoop } from './core/viewport/useDecayLoop';
 export type { DecayLoopConfig, PanBounds, InertiaConfig } from './core/viewport/useDecayLoop';
-export { usePinchGesture } from './core/viewport/usePinchGesture';
 export { interpolateView } from './core/viewport/interpolateView';
 export { useViewAnimation, useViewAnimationOn, VIEW_ANIMATION_KEY } from './core/viewport/useViewAnimation';
 

@@ -228,7 +228,6 @@ not routed by the dispatcher — you own the pointer events.
   builds none of its own.
 - `useVelocityTracker()`, `useDecayLoop(config)` — inertial-pan building
   blocks.
-- `usePinchGesture(...)` — raw two-finger pinch, below `viewport.pinchZoom`.
 - `useGridCellHover(...)` — pointer→cell mapping.
 - `usePointerStylus(...)` — pressure/tilt from `PointerEvent`.
 - `useSceneAdapter(...)`, `useArrayAdapter(...)` — adapter construction.
