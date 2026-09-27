@@ -2,10 +2,9 @@ import { AddIcon } from '@weasel-js/ui';
 import { MenuButton, ThemeSwitcher } from '../passthrough/weasel-ui';
 import { useLabContext } from './LabContext';
 
-/** The controls `<Lab>` puts in its header: add a trial, and choose the color
- *  mode. Both drive `LabContext`, which carried them with no UI at all — so
- *  every consumer rebuilt these two. Rendered before a consumer's own header
- *  content, which still lands beside them. */
+/** The control `<Lab>` puts at the start of its header: add a trial. It drives
+ *  `LabContext`, which carried it with no UI at all — so every consumer rebuilt
+ *  it. Rendered before a consumer's own header content. */
 export function LabHeader({ addTrial = true }: { addTrial?: boolean }) {
   const lab = useLabContext();
   const only = lab.instruments.length === 1 ? lab.instruments[0] : null;
@@ -29,8 +28,13 @@ export function LabHeader({ addTrial = true }: { addTrial?: boolean }) {
           onAction={(name) => lab.addTrial(name)}
         />
       )}
-
-      <ThemeSwitcher value={lab.mode} onChange={lab.setMode} />
     </>
   );
+}
+
+/** The lab's color-mode switch, which `<Lab>` puts at the end of its header,
+ *  after a consumer's own header content. */
+export function LabThemeSwitcher() {
+  const lab = useLabContext();
+  return <ThemeSwitcher value={lab.mode} onChange={lab.setMode} />;
 }

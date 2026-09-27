@@ -50,7 +50,7 @@ import {
 } from '../trial/trialOps';
 import { useLabFitWarning } from './fitCheck';
 import { LabContext, type LabContextValue } from './LabContext';
-import { LabHeader } from './LabHeader';
+import { LabHeader, LabThemeSwitcher } from './LabHeader';
 import { LabPalette } from './LabPalette';
 import { LabShell } from './LabShell';
 import type { LabPage } from './LabSwitcher';
@@ -638,6 +638,7 @@ function LabRuntime({
                     <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
                     {children}
                     <LabHeaderRegion contributions={labChromeAll} />
+                    <LabThemeSwitcher />
                   </>
                 }
               >

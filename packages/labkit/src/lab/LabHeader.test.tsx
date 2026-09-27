@@ -77,4 +77,15 @@ describe('<LabHeader>', () => {
     }
     expect(screen.getByRole('button', { name: /^Theme: Auto/ })).toBeInTheDocument();
   });
+
+  it('puts the theme switch after the header content a consumer passes', () => {
+    render(
+      <Lab instruments={[Stub]} defaultInstrument="Stub">
+        <button type="button">Consumer</button>
+      </Lab>,
+    );
+    const consumer = screen.getByRole('button', { name: 'Consumer' });
+    const theme = screen.getByRole('button', { name: /^Theme: / });
+    expect(consumer.compareDocumentPosition(theme) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });
