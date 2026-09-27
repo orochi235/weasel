@@ -1159,8 +1159,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
   - labkit's `weasel-lab`, `minimal` and `drag-lab` examples paint every node gray. Their
     `data.color` isn't read by the default painter.
   - `DiagramLiveDemo`: Relax did nothing on the first press. Not compared against main.
-  - `window.__weaselTest.getActiveToolId()` always returns null. Nothing in `SceneCanvas.tsx`
-    writes the ref behind it, so every browser probe reading it is blind.
 
 - **(P3) Props left with nothing to act on.** After the preset pass, `D3SortableDemo`
   (`selection`, `selectionMode="none"`, `selectionOverlay`), labkit's `schema-lab`
