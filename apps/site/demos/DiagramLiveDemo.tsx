@@ -83,7 +83,7 @@ function DiagramLiveInner() {
           Shake
         </button>
       </div>
-      <SceneCanvas features={['draw']} width={W} height={H} className="ckd-canvas" scene={scene} />
+      <SceneCanvas features={['pick', 'move', 'edit']} width={W} height={H} className="ckd-canvas" scene={scene} />
     </div>
   );
 }

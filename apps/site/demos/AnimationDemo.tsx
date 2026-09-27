@@ -236,7 +236,7 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
         </label>
         <span style={{ opacity: 0.7 }}>Tip: select one card to see the breathing pulse.</span>
       </div>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={['pick', 'move']}
         width={W}
         height={H}
         className="ckd-canvas"
@@ -360,7 +360,7 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
   // canvas would leave whichever mounted first unable to dispatch.
   return (
     <WeaselProvider isolate>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={['pick', 'move']}
         width={FLICK_W}
         height={FLICK_H}
         className="ckd-canvas"

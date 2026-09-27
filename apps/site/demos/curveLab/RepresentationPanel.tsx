@@ -164,23 +164,19 @@ export function RepresentationPanel({
   }), [actionId, layerId]);
 
   const actions = useMemo<ActionsProp>(() => ({
-    enterPathEdit: null,
-    exitPathEdit: null,
-    insertPathAnchor: null,
     [actionId]: dragAnchor,
   }), [actionId, dragAnchor]);
 
   return (
     <div className="curve-lab-panel">
       <div className="curve-lab-panel-title">{rep.label}</div>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas
         ref={canvasRef}
         width={width}
         height={height}
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        defaultTools={['select']}
         actions={actions}
         layers={layers as never}
       />

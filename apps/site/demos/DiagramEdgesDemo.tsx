@@ -70,7 +70,7 @@ function DiagramEdgesInner() {
     systemLayers: [{ id: 'main' }], initial, registry,
   });
 
-  return <SceneCanvas features={['draw']} width={W} height={H} className="ckd-canvas" scene={scene} />;
+  return <SceneCanvas features={['pick', 'move']} width={W} height={H} className="ckd-canvas" scene={scene} />;
 }
 
 export function DiagramEdgesDemo() {

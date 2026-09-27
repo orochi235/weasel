@@ -6,8 +6,6 @@ import {
   useScene,
   useSelection,
   useAnimator,
-  useHandTool,
-  useTools,
   easeInOutCubic,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -82,17 +80,6 @@ function D3SortableDemoInner() {
   const animator = useAnimator();
   const firstRunRef = useRef(true);
 
-  // Provide a minimal `tools` instance so SceneCanvas's auto-mount of
-  // `select` / `resize` / `rotate` doesn't run. Their affordance chrome
-  // uses cubic-Bezier `ellipsePath` for handles — under continuous pose
-  // mutation those paths can hit the path tessellator with degenerate
-  // bounds and overflow the cubic-flatten recursion. The demo has no
-  // need for any of those tools; a single hand-tool registry satisfies
-  // SceneCanvas's "active must be in registry" guard with zero chrome.
-  const hand = useHandTool();
-  const registry = useMemo(() => ({ hand }), [hand]);
-  const tools = useTools({ active: 'hand', registry });
-
   // Drive the scene from `items` via d3Bind. First run: no transition (snap in).
   // Subsequent runs: transition the diff with a per-item delay for stagger.
   useEffect(() => {
@@ -143,14 +130,13 @@ function D3SortableDemoInner() {
           {animating ? ' · animating…' : ''}
         </span>
       </div>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}
         selection={selection}
         selectionMode="none"
-        tools={tools}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => [{

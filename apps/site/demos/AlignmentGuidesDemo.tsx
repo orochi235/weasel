@@ -58,7 +58,7 @@ export function AlignmentGuidesDemo() {
   );
 
   return (
-    <SceneCanvas features={['draw']}
+    <SceneCanvas features={['pick', 'move']}
       width={W}
       height={H}
       className="ckd-canvas"

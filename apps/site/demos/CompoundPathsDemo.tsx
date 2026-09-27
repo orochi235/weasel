@@ -175,7 +175,7 @@ export function CompoundPathsDemo() {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
     <div style={{ position: 'relative', width: W, height: H }}>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={['pick', 'move', 'transform']}
         width={W}
         height={H}
         className="ckd-canvas"

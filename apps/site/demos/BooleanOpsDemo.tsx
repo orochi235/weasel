@@ -80,7 +80,7 @@ function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
   const scene = useScene<PanelItem>({ items: paths });
   return (
     <WeaselProvider isolate>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
@@ -201,7 +201,7 @@ function InteractivePanel() {
           Reset
         </button>
       </div>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={['pick']}
         width={W}
         height={H}
         className="ckd-canvas"

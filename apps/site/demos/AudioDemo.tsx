@@ -194,13 +194,12 @@ export function AudioDemo() {
         <span className="ckd-readout">activeVoices {voices} / 8 per bus</span>
       </div>
       <div className="ckd-row">
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={['pick', 'move']}
           width={W}
           height={H}
           className="ckd-canvas"
           scene={scene}
           selection={selection}
-          defaultTools={['select']}
           animator={animator}
           layers={{
             audio: { layer: overlay, before: 'scene' },
