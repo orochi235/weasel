@@ -62,15 +62,15 @@
   padding: 0 5px;
 }
 
-.segment:first-child {
+.segment:first-of-type {
   border-radius: var(--wzl-radius-pill) 0 0 var(--wzl-radius-pill);
 }
 
-.segment:last-child {
+.segment:last-of-type {
   border-radius: 0 var(--wzl-radius-pill) var(--wzl-radius-pill) 0;
 }
 
-.segment:only-child {
+.segment:only-of-type {
   border-radius: var(--wzl-radius-pill);
 }
 
@@ -205,13 +205,13 @@
 /* Dividers between segments make the mutual-exclusion grouping visible
    without a heavy track. Only the inner edges get a rule — the outer
    border on `.variant_minimal` handles the perimeter. */
-.variant_minimal .segment + .segment {
+.variant_minimal .segment ~ .segment {
   border-left: 1px solid var(--wzl-border);
 }
 
-.variant_minimal .segment:first-child,
-.variant_minimal .segment:last-child,
-.variant_minimal .segment:only-child {
+.variant_minimal .segment:first-of-type,
+.variant_minimal .segment:last-of-type,
+.variant_minimal .segment:only-of-type {
   border-radius: 0;
 }
 
@@ -255,16 +255,16 @@
 }
 
 /* Adjacent cells share one rule rather than stacking two. */
-.variant_flat .segment + .segment {
+.variant_flat .segment ~ .segment {
   margin-inline-start: -1px;
 }
 
-.variant_flat .segment:first-child {
+.variant_flat .segment:first-of-type {
   border-start-start-radius: var(--wzl-radius-sm);
   border-end-start-radius: var(--wzl-radius-sm);
 }
 
-.variant_flat .segment:last-child {
+.variant_flat .segment:last-of-type {
   border-start-end-radius: var(--wzl-radius-sm);
   border-end-end-radius: var(--wzl-radius-sm);
 }
