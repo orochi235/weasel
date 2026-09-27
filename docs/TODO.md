@@ -777,6 +777,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Undecided: move the kernel down into `core/geometry`, or let `arrayAdapter` stay a
   bounds-only adapter and say so in its contract.
 
+- **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
+  a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
+  owner wants that row redesigned; the shape it should take is still open.
+
 - **(P3) A gradient's or pattern's opacity has no control in the paint editors.** Every
   paint kind carries its alpha in `opacity`, and `PaintInput` edits it only for a solid
   (its alpha slider). `GradientEditor`, `PatternPicker` and `MeshEditor` never read or
