@@ -13,6 +13,8 @@ export interface CreateModeRegistryOptions {
  *  ignored. */
 export interface ModeRegistry {
   current(): ModeDefinition;
+  /** Every registered mode, in registration order. */
+  list(): readonly ModeDefinition[];
   setMode(id: string): void;
   byId(id: string): ModeDefinition;
   getVersion(): number;
@@ -36,6 +38,7 @@ export function createModeRegistry(opts: CreateModeRegistryOptions): ModeRegistr
 
   return {
     current: () => active,
+    list: () => opts.modes,
     setMode(id: string): void {
       const next = byIdMap.get(id);
       if (!next) throw new Error(`Unknown mode id: ${id}`);

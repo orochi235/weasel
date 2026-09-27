@@ -32,6 +32,7 @@ export const PATH_EDIT: ModeDefinition = {
   workspace: { tint: '#3b82f6', gradient: 'bottom-up', intensity: 0.12 },
   entry: { trigger: 'double-click-target', shortcut: 'Enter' },
   exit: { shortcut: 'Escape' },
+  discard: { shortcut: 'Meta+Escape' },
 };
 
 /** Working inside one subtree with everything outside it dimmed and inert.
@@ -54,6 +55,7 @@ export const ISOLATION: ModeDefinition = {
   workspace: { tint: '#8b5cf6', gradient: 'bottom-up', intensity: 0.12 },
   entry: { trigger: 'double-click-target' },
   exit: { shortcut: 'Escape' },
+  discard: { shortcut: 'Meta+Escape' },
 };
 
 /** A transaction that transforms the selection: the whole session is one undo
@@ -83,6 +85,7 @@ export const TEXT_EDIT: ModeDefinition = {
   workspace: { tint: '#10b981', gradient: 'bottom-up', intensity: 0.12 },
   entry: { trigger: 'double-click-target' },
   exit: { shortcut: 'Escape' },
+  discard: { shortcut: 'Meta+Escape' },
 };
 
 /** A transaction that changes the page extents, committed with Enter or

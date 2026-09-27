@@ -228,6 +228,19 @@ describe('useTextEdit', () => {
     expect(result.current.editingId).toBeNull();
   });
 
+  it("Escape commits instead when the editor's escape is 'commit'", () => {
+    const h = makeHarness({ a: 'hello' });
+    const { result } = renderHook(() => useTextEdit({ ...h.opts, escape: 'commit' }));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    overlay.innerText = 'edited';
+    act(() => {
+      overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    });
+    expect(h.commits).toEqual([{ id: 'a', text: 'edited' }]);
+    expect(result.current.editingId).toBeNull();
+  });
+
   it('blur commits the current overlay contents', () => {
     const h = makeHarness({ a: 'hello' });
     const { result } = renderHook(() => useTextEdit(h.opts));
