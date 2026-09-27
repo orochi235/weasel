@@ -51,6 +51,10 @@ one tier further in: a view's deps sit in front of its canvas's scope. It was
 the first instance of this rule — one authority per dep, with the narrower
 thing claiming only what is genuinely its.
 
+A canvas with no yoke keeps its own tool: the active tool is scope tier unless a
+yoke is joined, so two unrelated canvases on a page never share one. A toolbar
+outside any yoke sets the tool on the active scope.
+
 Shared *state* still shares the way it does now: a `SelectionContextProvider`
 above two canvases hands both the same selection, and each scope registers
 that same object. Yokes share *input*: bindings, the tool, the gesture in
@@ -126,9 +130,3 @@ One arc, in a worktree, in this order, each step green before the next:
    tier where one is joined.
 7. **Delete** `ActionsScope`, the `IfRoot` wrappers and `warnSharedScope`, and
    update `docs/taxonomy.md`.
-
-## Open questions
-
-- **Which tier the tool lives in when there is no yoke.** Per scope is the
-  honest default — two unrelated canvases should not share a tool — but it
-  changes what a toolbar at the root reaches today.
