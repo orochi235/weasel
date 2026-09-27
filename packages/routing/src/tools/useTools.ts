@@ -64,6 +64,33 @@ function declareSlot<T extends AnyTool>(tool: T, slot: 'focus' | 'always'): T {
   return sameEligibility(tool.eligibility, eligibility) ? tool : { ...tool, eligibility };
 }
 
+const NO_AMBIENT: readonly AnyTool[] = [];
+
+/** `registry` and `ambient` as last passed, kept by identity for as long as
+ *  every tool in them is the same object under the same id. */
+function useStableSources<T extends AnyTool>(
+  registry: Record<string, T>,
+  ambient: readonly T[] | undefined,
+): { registry: Record<string, T>; ambient: readonly T[] } {
+  const next = { registry, ambient: ambient ?? (NO_AMBIENT as readonly T[]) };
+  const ref = useRef(next);
+  const prev = ref.current;
+  if (prev !== next && !(sameRecord(prev.registry, next.registry) && sameList(prev.ambient, next.ambient))) {
+    ref.current = next;
+  }
+  return ref.current;
+}
+
+function sameRecord<T>(a: Record<string, T>, b: Record<string, T>): boolean {
+  const ak = Object.keys(a);
+  if (ak.length !== Object.keys(b).length) return false;
+  return ak.every((k) => k in b && a[k] === b[k]);
+}
+
+function sameList<T>(a: readonly T[], b: readonly T[]): boolean {
+  return a.length === b.length && a.every((t, i) => t === b[i]);
+}
+
 function sameEligibility(a: Eligibility | undefined, b: Eligibility): boolean {
   if (!a) return false;
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]) as Set<keyof Eligibility>;
@@ -98,12 +125,16 @@ export function useTools<TOverlay = unknown>(
 
   const ctx = useActiveToolContext();
 
+  // Rebuilt when the tools themselves change, not the objects holding them:
+  // callers commonly pass `opts.registry` / `opts.ambient` as literals made
+  // every render, while a tool redefined under an existing id must replace it.
+  const sources = useStableSources(opts.registry, opts.ambient);
   const slotted = useMemo(() => {
     const registry: Record<string, AnyToolOf<TOverlay>> = {};
-    for (const [id, tool] of Object.entries(opts.registry)) {
+    for (const [id, tool] of Object.entries(sources.registry)) {
       registry[id] = declareSlot(tool, 'focus');
     }
-    const ambient = (opts.ambient ?? []).map((t) => declareSlot(t, 'always'));
+    const ambient = sources.ambient.map((t) => declareSlot(t, 'always'));
     const byId = new Map<string, Contribution<TOverlay>>();
     for (const tool of [...Object.values(registry), ...ambient]) {
       const prior = byId.get(tool.id);
@@ -111,7 +142,7 @@ export function useTools<TOverlay = unknown>(
       else byId.set(tool.id, tool);
     }
     return { registry, ambient, entries: [...byId.values()] };
-  }, [opts.registry, opts.ambient]);
+  }, [sources]);
 
   const contributions = useContributions<TOverlay>({ entries: slotted.entries, focused: initialActive });
 
@@ -167,12 +198,6 @@ export function useTools<TOverlay = unknown>(
   // setStates from inside `onToolsCreated`.
   const active = contributions.focused;
   const getActiveOverlays = contributions.overlays;
-  // Which tools exist, not which object holds them: callers commonly rebuild
-  // `opts.registry` as a literal every render, and keying the memo on
-  // `slotted` itself would hand them a new `ToolsApi` per render.
-  const registryKey =
-    Object.keys(slotted.registry).sort().join('|')
-    + '#' + slotted.ambient.map((t) => t.id).join('|');
   return useMemo(
     () => ({
       active,
@@ -180,14 +205,11 @@ export function useTools<TOverlay = unknown>(
       hotkeyEngaged,
       engageHotkey,
       disengageHotkey,
-      ambient: slottedRef.current.ambient,
-      registry: slottedRef.current.registry,
+      ambient: slotted.ambient,
+      registry: slotted.registry,
       has,
       getActiveOverlays,
     }),
-    // `registryKey` isn't read in the body on purpose: the body reads
-    // `slottedRef.current`, and the key is what tells us that ref's contents moved.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [active, setActive, hotkeyEngaged, engageHotkey, disengageHotkey, has, getActiveOverlays, registryKey],
+    [active, setActive, hotkeyEngaged, engageHotkey, disengageHotkey, has, getActiveOverlays, slotted],
   );
 }

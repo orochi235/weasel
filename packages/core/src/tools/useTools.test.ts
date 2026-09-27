@@ -75,6 +75,20 @@ describe('useTools', () => {
     expect(result.current).toBe(first);
   });
 
+  it('replaces a tool redefined under the same id', () => {
+    const narrow = defineTool({ id: 'select', cursor: 'crosshair' });
+    const wide = defineTool({ id: 'select', cursor: 'wait' });
+    const { result, rerender } = renderHook(
+      ({ select }: { select: typeof narrow }) => useTools({ active: 'select', registry: { select } }),
+      { wrapper: makeWrapper('select'), initialProps: { select: narrow } },
+    );
+
+    const first = result.current;
+    rerender({ select: wide });
+    expect(result.current).not.toBe(first);
+    expect(result.current.registry.select!.def).toBe(wide.def);
+  });
+
   it('throws when active id is not in registry', () => {
     expect(() =>
       renderHook(() =>
