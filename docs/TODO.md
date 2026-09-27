@@ -1154,11 +1154,13 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P2) Demos found broken during the 2026-09-27 preset pass.** Each one reproduces with
   `features={['draw']}` restored, so the presets didn't cause it:
-  - labkit's `schema-lab`: the ShapeProperties trial renders empty and throws
-    `(stroke.dash ?? []).join is not a function`.
-  - labkit's `weasel-lab`, `minimal` and `drag-lab` examples paint every node gray. Their
-    `data.color` isn't read by the default painter.
   - `DiagramLiveDemo`: Relax did nothing on the first press. Not compared against main.
+
+- **(P3) labkit's `weasel-lab`, `minimal` and `drag-lab` examples don't typecheck.** They pass
+  `layers={{ scene: {} }}`, and `SceneSlotConfig` requires `drawOne`, though at runtime a
+  partial slot merges with the defaults. The root `tsconfig.json` leaves the examples out,
+  which is why nothing fails. Either the slot type should be partial or the examples are
+  wrong; decide which, then bring the examples under a typecheck.
 
 - **(P3) Props left with nothing to act on.** After the preset pass, `D3SortableDemo`
   (`selection`, `selectionMode="none"`, `selectionOverlay`), labkit's `schema-lab`
