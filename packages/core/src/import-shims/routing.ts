@@ -29,3 +29,4 @@ export type {
   DispatchRecord, DispatchRecordInput, RecordCandidate, DroppedCandidate,
   RankedCandidate, PlacedBy, WalkStep, SpecificityPart,
 } from '@weasel-js/routing';
+export type { TraceLogEntry, ModeSwitchLogEntry } from '@weasel-js/routing';

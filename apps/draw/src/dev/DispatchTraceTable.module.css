@@ -16,4 +16,10 @@ tr.mode { color: var(--wzl-fg-muted); cursor: default; }
 .mode > td { background: color-mix(in srgb, var(--wzl-accent) 8%, transparent); }
 .modeDetail { font-style: italic; }
 
-.fired { font-weight: 700; color: var(--wzl-success); }
+.count {
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+/* The live prediction is pinned above the log; it is not a past event. */
+tr.live > td { font-style: italic; border-block-end: 1px solid var(--wzl-border); }

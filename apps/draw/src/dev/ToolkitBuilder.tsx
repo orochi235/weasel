@@ -702,7 +702,7 @@ const CONFLICT_COLUMNS: readonly DataGridColumn<ConflictRow>[] = [
 // ─────────────────────────────────────────────────────────────────────────
 
 function DispatchTraceWidget(): ReactElement {
-  const { entries, now } = useDispatchTraceLog();
+  const { entries, live, now } = useDispatchTraceLog();
   const [showUnhandled, setShowUnhandled] = useState<boolean>(false);
 
   return (
@@ -719,6 +719,7 @@ function DispatchTraceWidget(): ReactElement {
       <div className={s.widgetBodyScrollY}>
         <DispatchTraceTable
           entries={entries}
+          live={live}
           now={now}
           showUnhandled={showUnhandled}
           empty={entries.length > 0

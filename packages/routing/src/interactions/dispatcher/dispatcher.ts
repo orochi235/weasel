@@ -143,6 +143,20 @@ function recordTrace(entry: TraceLogEntry): void {
   if (traceLog.length > TRACE_LIMIT) traceLog.shift();
 }
 
+/**
+ * Dev only: offer the record for what a press at the pointer would do, as a
+ * thunk on `window.__weaselDispatchLive__`. The hover pump offers one per move
+ * and a reader builds the record only when it looks, so no record is built
+ * while nothing is watching. `null` withdraws it when the pointer leaves.
+ *
+ * @internal
+ */
+export function publishLiveDispatch(explain: (() => DispatchRecord) | null): void {
+  if (!DEV || typeof window === 'undefined') return;
+  (window as unknown as { __weaselDispatchLive__?: (() => DispatchRecord) | null })
+    .__weaselDispatchLive__ = explain;
+}
+
 /** Push a mode-switch record into the trace log. Safe to call from
  *  anywhere; no-ops outside DEV. */
 export function recordModeSwitch(

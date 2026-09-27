@@ -7,43 +7,17 @@
  * that visualize it (the floating `DispatchTracePanel` over the WeaselDraw
  * canvas, and the inline trace widget on the Toolkit Builder page) read it
  * through here so the entry types and formatting stay in one place.
- *
- * The entry types are structural copies of the dispatcher's own
- * `DispatchLogEntry` / `ModeSwitchLogEntry` — kept local so these dev panels
- * don't pull non-public symbols across the package boundary. If the kit ever
- * re-exports the types, swap these for the imports.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { DispatchRecord, TraceLogEntry } from '@weasel-js/core/routing';
 
-export interface DispatchLogEntry {
-  kind: 'dispatch';
-  ts: number;
-  eventKind: string;
-  /** For key / key-held events, the key id (`'Escape'`, `' '`, …). */
-  key?: string;
-  candidates: Array<{
-    actionId: string;
-    scope: 'hotkey' | 'active' | 'ambient';
-    enabledResult: boolean | string;
-  }>;
-  fired: string | null;
-  outcome: 'handled' | 'unhandled';
-}
-
-export interface ModeSwitchLogEntry {
-  kind: 'mode';
-  ts: number;
-  mode: string;
-  from: string | null;
-  to: string | null;
-  detail?: string;
-}
-
-export type TraceLogEntry = DispatchLogEntry | ModeSwitchLogEntry;
+export type { DispatchRecord, TraceLogEntry };
 
 interface DispatchLogWindow extends Window {
   __weaselDispatchLog__?: TraceLogEntry[];
+  /** What a press at the pointer would do, built when called. */
+  __weaselDispatchLive__?: (() => DispatchRecord) | null;
 }
 
 /** Snapshot the current log (empty array when absent — i.e. prod builds). */
@@ -70,26 +44,30 @@ export function formatAge(ms: number): string {
   return `${m}m${Math.floor(sec % 60)}s`;
 }
 
-export function formatEnabled(v: boolean | string): string {
-  if (v === true) return 'yes';
-  if (v === false) return 'no';
-  return v;
+/** The record for a press at the pointer, or `null` when the pointer is off
+ *  the canvas (or in prod builds). */
+export function readLive(): DispatchRecord | null {
+  if (typeof window === 'undefined') return null;
+  return (window as DispatchLogWindow).__weaselDispatchLive__?.() ?? null;
 }
 
 const POLL_MS = 250;
 
 export interface DispatchTraceLog {
   entries: readonly TraceLogEntry[];
+  /** A press at the pointer, re-predicted every poll. */
+  live: DispatchRecord | null;
   /** Wall clock at the last poll, for computing each entry's age. */
   now: number;
   clear: () => void;
 }
 
-/** Polls the log every 250 ms while `enabled`. `entries` only changes when
+/** Polls the log, and the live prediction, every 250 ms while `enabled`. `entries` only changes when
  *  the log did; `now` advances every tick so ages count up while idle. */
 export function useDispatchTraceLog(enabled = true): DispatchTraceLog {
   const [entries, setEntries] = useState<TraceLogEntry[]>(() => readLog().slice());
   const [now, setNow] = useState<number>(() => Date.now());
+  const [live, setLive] = useState<DispatchRecord | null>(null);
   const lastLenRef = useRef<number>(entries.length);
   const lastTsRef = useRef<number>(entries.length ? entries[entries.length - 1]!.ts : 0);
 
@@ -104,6 +82,7 @@ export function useDispatchTraceLog(enabled = true): DispatchTraceLog {
         lastTsRef.current = lastTs;
         setEntries(log.slice());
       }
+      setLive(readLive());
       setNow(Date.now());
     }, POLL_MS);
     return () => window.clearInterval(id);
@@ -116,5 +95,5 @@ export function useDispatchTraceLog(enabled = true): DispatchTraceLog {
     lastTsRef.current = 0;
   }, []);
 
-  return { entries, now, clear };
+  return { entries, live, now, clear };
 }

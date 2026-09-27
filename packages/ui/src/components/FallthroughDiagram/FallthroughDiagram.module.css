@@ -27,6 +27,8 @@
   border-radius: var(--wzl-radius-md);
   background: var(--wzl-surface);
   padding: var(--wzl-space-2) var(--wzl-space-3);
+  /* Ids and rules do not wrap mid-word; a narrow host scrolls the stage instead. */
+  overflow-x: auto;
 }
 .stage[data-filter] { background: var(--wzl-surface-sunken); }
 
@@ -54,7 +56,10 @@
   padding: var(--wzl-space-1) var(--wzl-space-2);
   border-top: 1px solid var(--wzl-border);
   vertical-align: top;
+  white-space: nowrap;
 }
+
+.table code { white-space: nowrap; overflow-wrap: normal; }
 
 .routes { display: inline-flex; flex-direction: column; align-items: flex-start; gap: var(--wzl-space-1); }
 

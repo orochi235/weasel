@@ -166,8 +166,8 @@ function RankedStage({ ranked }: { ranked: readonly RankedCandidate[] }) {
       <table className={s.table}>
         <thead>
           <tr>
-            <th className={s.num}>#</th><th>Action</th><th>Route</th><th>Tier</th>
-            <th>Specificity</th><th>Rule</th><th>Placed by</th><th>Walk</th>
+            <th className={s.num}>#</th><th>Action</th><th>Placed by</th><th>Walk</th>
+            <th>Tier</th><th>Specificity</th><th>Rule</th><th>Route</th>
           </tr>
         </thead>
         <tbody>
@@ -184,16 +184,16 @@ function RankedStage({ ranked }: { ranked: readonly RankedCandidate[] }) {
               >
                 <td className={s.num}>{i + 1}</td>
                 <td><Code size="sm">{c.actionId}</Code></td>
-                <td><Routes candidate={c} /></td>
-                <td>{c.scope}</td>
-                <td className={s.num} aria-label="target, modifiers, phase, exact">{c.specificity.join(' ')}</td>
-                <td>{c.eligible ? <Code size="sm" variant="plain">{c.eligible}</Code> : <span className={s.muted}>none</span>}</td>
                 <td>
                   <Badge size="xs" variant="outline" status={r.placedBy.step === 'first' ? 'muted' : 'warn'}>
                     {placedByLabel(r.placedBy)}
                   </Badge>
                 </td>
                 <td className={s.walk} data-walk={r.walk.kind}>{walkLabel(r.walk)}</td>
+                <td>{c.scope}</td>
+                <td className={s.num} aria-label="target, modifiers, phase, exact">{c.specificity.join(' ')}</td>
+                <td>{c.eligible ? <Code size="sm" variant="plain">{c.eligible}</Code> : <span className={s.muted}>none</span>}</td>
+                <td><Routes candidate={c} /></td>
               </tr>
             );
           })}
