@@ -148,8 +148,6 @@ function SceneBody({ config, state, setState }: SceneBodyProps) {
             accentEvery: 5,
           }
         : null,
-      scene: {},
-      selectionOverlay: { handles: true },
     }),
     [config.showGrid, config.cellSize],
   );

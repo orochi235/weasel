@@ -258,7 +258,7 @@ export * from './tools';
 // public surface.
 export { SceneCanvas, DEFAULT_HANDLE_SIZE } from './canvas/SceneCanvas';
 export { defaultDrawOne } from './canvas/defaultDrawOne';
-export type { SceneCanvasProps, SceneCanvasHit } from './canvas/SceneCanvas';
+export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers } from './canvas/SceneCanvas';
 export { hostAnchorRect, hostAnchorCss } from './canvas/hostAnchor';
 export type { HostAnchorInput, HostAnchorAlign, HostAnchorOffset } from './canvas/hostAnchor';
 export { useHostAnchor } from './canvas/useHostAnchor';

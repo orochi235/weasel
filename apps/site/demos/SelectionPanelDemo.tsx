@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   SceneCanvas,
   useScene,
@@ -11,7 +10,7 @@ import {
   solid,
   strokeOf,
 } from '@weasel-js/core';
-import type { FillStyle, PolygonPath, Stroke, View } from '@weasel-js/core';
+import type { FillStyle, PolygonPath, Stroke } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
@@ -46,7 +45,6 @@ export function SelectionPanelDemo() {
     ],
   });
   const selection = useSelection({ mode: 'multi' });
-  const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   return (
     <div className="ckd-row">
@@ -59,8 +57,6 @@ export function SelectionPanelDemo() {
         selection={selection}
         selectionMode="multi"
         routing={defaultNodeRouting}
-        view={view}
-        onViewChange={setView}
         layers={{
           scene: {
             // The renderer's Path union has no ellipse variant, so an
@@ -75,7 +71,6 @@ export function SelectionPanelDemo() {
               ...(n.data.stroke ? { stroke: n.data.stroke } : {}),
             }],
           },
-          selectionOverlay: {},
         }}
       />
       <SelectionPanel
