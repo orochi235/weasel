@@ -4,3 +4,4 @@
 // SidebarPanel, ToolButton, ToolGroup, ToolPalette).
 export * from './CommandPalette';
 export * from './HistoryList';
+export * from './ToolIcon';

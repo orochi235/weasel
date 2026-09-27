@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 import type { GestureSpec } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
-import { Badge, Button, Code, DataGrid, DetailList, DetailRow, GestureRoute, KeyCap, KeySequence, ShapeKindIcon, keySpecFromKey, keySpecsFromMods, keySpecsFromShortcut, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec } from '@weasel-js/ui';
+import { Badge, Button, Code, DataGrid, DetailList, DetailRow, GestureRoute, KeyCap, KeySequence, keySpecFromKey, keySpecsFromMods, keySpecsFromShortcut, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec } from '@weasel-js/ui';
 import type { ParsedModifiers, ModifierKey } from '@weasel-js/core/routing';
 
 /** Minimal inline-markdown renderer — splits on backtick-delimited code
@@ -106,6 +106,7 @@ function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefine
   if (specs.length === 0) return undefined;
   return keySpecsFromMods(specs);
 }
+import { ToolIcon } from '../ui/ToolIcon';
 import s from './RegistryInspector.module.css';
 import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
@@ -1348,7 +1349,7 @@ function ShapeKindDetail({
     <div>
       <div className={s.toolHeader}>
         <span className={s.toolIcon} aria-hidden>
-          <ShapeKindIcon kind={entry.id} />
+          <ToolIcon tool={entry.tool ?? entry.id} />
         </span>
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
