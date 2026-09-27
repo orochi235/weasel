@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ConfigField } from '../controls/types';
 import { fromConfigFields } from './fromConfigField';
+import { schemaNodeAtPath } from './path';
 import { isLeafVisible } from './visible';
 
 const leaf = (fields: ConfigField[], k: string) =>
@@ -75,6 +76,19 @@ describe('fromConfigFields', () => {
       { type: 'checkbox', key: 'a', label: 'A', default: true },
     ]);
     expect(Object.keys(r.group.children)).toEqual(['z', 'a']);
+  });
+
+  it('files a dotted key at the path it names, the one config reads and writes use', () => {
+    const r = fromConfigFields([
+      { type: 'number', key: 'pose.x', label: 'X', default: 0 },
+      { type: 'number', key: 'pose.y', label: 'Y', default: 0 },
+      { type: 'checkbox', key: 'on', label: 'On', default: true },
+    ]);
+    expect(schemaNodeAtPath(r.group, 'pose.x')).toMatchObject({ kind: 'number', name: 'X' });
+    expect(schemaNodeAtPath(r.group, 'pose.y')).toMatchObject({ kind: 'number', name: 'Y' });
+    // The intermediate is headless: a flat field list never asked for a heading.
+    expect(schemaNodeAtPath(r.group, 'pose')).toMatchObject({ name: '' });
+    expect(Object.keys(r.group.children)).toEqual(['pose', 'on']);
   });
 });
 

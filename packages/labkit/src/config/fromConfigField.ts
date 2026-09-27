@@ -1,4 +1,4 @@
-import type { PrefLeaf } from '@weasel-js/ui';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/ui';
 import type { ConfigField } from '../controls/types';
 import type { LeafPatch, ResolvedConfig } from './types';
 
@@ -53,9 +53,13 @@ function toLeaf(field: ConfigField): LeafPatch {
  *
  * Rules do not run here: a hand-written `ConfigField` already states its label
  * and control, which is everything the rule chain would have inferred.
+ *
+ * A dotted `key` is a config path, as it is to every read and write, so its
+ * leaf is filed under headless groups at that path rather than as one child
+ * whose name contains dots — which no path lookup would find.
  */
 export function fromConfigFields(fields: readonly ConfigField[]): ResolvedConfig {
-  const children: Record<string, PrefLeaf> = {};
+  const root: PrefGroup = { name: '', children: {} };
   for (const field of fields) {
     const patch = toLeaf(field);
     for (const key of Object.keys(patch)) {
@@ -63,10 +67,20 @@ export function fromConfigFields(fields: readonly ConfigField[]): ResolvedConfig
         delete (patch as Record<string, unknown>)[key];
       }
     }
-    children[field.key] = { ...patch, default: field.default } as PrefLeaf;
+    const segments = field.key.split('.');
+    const leafKey = segments.pop() as string;
+    let group = root;
+    for (const segment of segments) {
+      const existing = group.children[segment];
+      if (existing === undefined || !('children' in existing) || 'kind' in existing) {
+        group.children[segment] = { name: '', children: {} };
+      }
+      group = group.children[segment] as PrefGroup;
+    }
+    group.children[leafKey] = { ...patch, default: field.default } as PrefLeaf;
   }
   return {
-    group: { name: '', children },
+    group: root,
     sections: [],
     showIf: new Map(),
     renderers: {},

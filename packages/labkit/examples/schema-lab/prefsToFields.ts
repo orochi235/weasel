@@ -1,5 +1,5 @@
 import { isBuiltinToolPref, type ToolPrefGroup } from '@weasel-js/core';
-import type { ConfigField } from '@weasel-js/labkit';
+import { type ConfigField, withValueAtPath } from '@weasel-js/labkit';
 
 /** weasel's own property-schema group. */
 export type PrefGroup = ToolPrefGroup;
@@ -131,27 +131,36 @@ export function prefsToFields(group: PrefGroup): ConfigField[] {
     .filter((f): f is ConfigField => f !== null);
 }
 
-/** Defaults for every field the schema produced, keyed by node path. */
+/** Defaults for every field the schema produced, nested at each field's node
+ *  path — labkit reads and writes a dotted key as a path, not a flat name. */
 export function prefDefaults(group: PrefGroup): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const field of prefsToFields(group)) out[field.key] = field.default;
+  let out: Record<string, unknown> = {};
+  for (const field of prefsToFields(group)) out = withValueAtPath(out, field.key, field.default);
   return out;
 }
 
-/** Undo a leaf's display-unit conversion — the panel edits degrees, the node
- *  stores radians. */
-export function decodePrefValue(leaf: PrefLeaf, value: unknown): unknown {
+/** The stored form of a value the panel holds in display form: a number
+ *  leaves its display unit (the panel edits degrees, the node stores radians),
+ *  and an enum option goes through the leaf's `encoding` (a dash style is
+ *  stored as lengths, no marker as no field). `siblings` is the object the
+ *  leaf is a field of — a dash preset is a multiple of the sibling `width`.
+ *  `undefined` means the field is removed. */
+export function decodePrefValue(leaf: PrefLeaf, value: unknown, siblings?: Record<string, unknown>): unknown {
+  if (isBuiltinToolPref(leaf) && leaf.kind === 'enum' && leaf.encoding && typeof value === 'string') {
+    return leaf.encoding.write(value, siblings);
+  }
   const unit = (leaf as { unit?: { fromDisplay: (v: number) => number } }).unit;
   return unit && typeof value === 'number' ? unit.fromDisplay(value) : value;
 }
 
 /** Write `value` at a dotted path inside `target`, cloning each level so the
- *  scene sees a new object. */
+ *  scene sees a new object. `undefined` deletes the field. */
 export function setAtPath(target: Record<string, unknown>, path: readonly string[], value: unknown): void {
   const [head, ...rest] = path;
   if (head === undefined) return;
   if (rest.length === 0) {
-    target[head] = value;
+    if (value === undefined) delete target[head];
+    else target[head] = value;
     return;
   }
   const next = { ...((target[head] as Record<string, unknown>) ?? {}) };
