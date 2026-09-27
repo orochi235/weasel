@@ -1,52 +1,84 @@
 // Verify that every publishable workspace's current version is on the registry.
 //
+//   npm run check:published              one pass — "did the last release land?"
+//   npm run check:published -- --wait    poll anything missing for up to 15 minutes
+//   npm run check:published -- --wait=20 ... or for that many minutes
+//
 // `changeset publish` has twice printed packages under "Successfully published"
 // that never reached npm: 1.2.0 shipped without `gestures`, 1.4.3 without `hud`
 // and `labkit`. The CLI's progress counter stopped one short of its own summary
 // and no npm error appeared anywhere in the log. Re-dispatching the identical
 // workflow published the stragglers, so the tarballs and the auth were fine —
-// the report was wrong.
+// the report was wrong. So the release job asks the registry instead.
 //
-// So the release job cannot trust what the publish says it did. This asks the
-// registry instead, after the fact, and fails naming the packages to
-// re-dispatch for. Run it by hand any time to answer "did the last release
-// actually land?".
+// The release job runs this with `--wait`: npm holds a fresh upload as staged,
+// invisible to every read, for up to about fifteen minutes (npm/cli#9889), and
+// 1.6.0 failed this check on four packages that listed minutes later.
 //
 // Not a pre-publish gate and not a CI check: between `chore: version packages`
 // merging and the publish finishing, the manifests legitimately hold versions
 // the registry has never seen.
 import { publishableWorkspaces } from './lib/workspaces.mjs';
 import { hasVersion, registryBase } from './lib/registry.mjs';
+import { awaitPublished } from './lib/await-published.mjs';
 
-const packages = publishableWorkspaces();
-const width = String(packages.length).length;
-const missing = [];
+const DEFAULT_WAIT_MINUTES = 15;
 
-for (const [i, { manifest }] of packages.entries()) {
-  const { name, version } = manifest;
-  const live = await hasVersion(name, version);
-  if (!live) missing.push({ name, version });
-  const n = String(i + 1).padStart(width, ' ');
-  console.log(`[published] ${n}/${packages.length} ${name}@${version} — ${live ? 'ok' : 'MISSING'}`);
+function waitMinutes(argv) {
+  const flag = argv.find((a) => a === '--wait' || a.startsWith('--wait='));
+  if (!flag) return 0;
+  if (flag === '--wait') return DEFAULT_WAIT_MINUTES;
+  const n = Number(flag.slice('--wait='.length));
+  if (!Number.isFinite(n) || n < 0) {
+    console.error(`check:published — --wait takes a number of minutes, got "${flag}"`);
+    process.exit(2);
+  }
+  return n;
 }
 
+const minutes = waitMinutes(process.argv.slice(2));
+const packages = publishableWorkspaces().map(({ manifest: { name, version } }) => ({ name, version }));
+
+const { missing } = await awaitPublished(packages, {
+  // When waiting, the polling loop does the retrying; one pass keeps the short
+  // retry that covers read-replica lag.
+  lookup: ({ name, version }) => (minutes > 0 ? hasVersion(name, version, { attempts: 1 }) : hasVersion(name, version)),
+  budgetMs: minutes * 60_000,
+});
+
+// A version npm is still holding as staged cannot be republished, so advice to
+// re-dispatch is only right once the staging window has passed.
+const withoutWaiting = [
+  'If the publish finished less than 15 minutes ago, npm may still be holding',
+  'these as staged. Do not re-dispatch yet; wait them out first:',
+  '',
+  '  npm run check:published -- --wait',
+];
+const afterWaiting = [
+  'The staging window has passed. Re-dispatch the release workflow; it',
+  'republishes only what is missing, and a version npm still holds as staged',
+  'is reported as held rather than failing the run:',
+  '',
+  '  gh workflow run release.yml',
+  '',
+  'If a re-dispatch leaves the same packages behind, npm may have wedged the',
+  'version (npm/cli#9889: "Cannot publish over previously staged version" for',
+  'a version that never lists). A new patch release is the known way out;',
+  'read the job log first.',
+];
+
 if (missing.length > 0) {
+  const waited = minutes > 0 ? ` after waiting ${minutes} minutes` : '';
   console.error(
     [
       '',
-      `[published] ${missing.length} of ${packages.length} package(s) are not on ${registryBase()}:`,
+      `[published] ${missing.length} of ${packages.length} package(s) are not on ${registryBase()}${waited}:`,
       '',
       ...missing.map(({ name, version }) => `  ${name}@${version}`),
       '',
-      'The publish reported success for these and the registry disagrees, which',
-      'leaves consumers installing a version of the fixed group that cannot',
-      'resolve its siblings. Re-dispatch the release workflow — it republishes',
-      'only what is missing, and has twice been enough on its own:',
+      'Consumers installing this release cannot resolve these siblings.',
       '',
-      '  gh workflow run release.yml',
-      '',
-      'If a re-dispatch leaves the same packages behind, it is not the flake',
-      'this check was written for; read the job log before publishing by hand.',
+      ...(minutes > 0 ? afterWaiting : withoutWaiting),
       '',
     ].join('\n'),
   );

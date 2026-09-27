@@ -1154,17 +1154,6 @@ one dead `const` and four stale disable directives.
   ~150s. A depth-sweep repro is a dozen lines against `new JSDOM()`; move off the pin once
   a jsdom release is flat on it.
 
-- **(P2) The release workflow checks the registry before the publish lands.**
-  npm holds an upload as staged, invisible to `npm view`, for minutes before
-  listing it. 1.6.0's `bidi`, `hud`, `labkit` and `svg` went live up to three
-  minutes after the "Verify every version reached the registry" step failed on
-  them; 1.6.1's `hud` was uploaded at 17:30 UTC and listed at 17:44. A
-  re-dispatch inside that window fails too, with `E409 … Cannot publish over
-  previously staged version`, so the check's advice to re-dispatch is wrong
-  while a version is staged. The step needs to poll a missing package for
-  about 15 minutes before failing, and the publish step should treat that
-  E409 as "npm already holds this version" ([npm/cli#9889](https://github.com/npm/cli/issues/9889)).
-
 - **(P2) Benchmark HUD text against a transparent DOM overlay.** Two ways to
   put text over the canvas: `@weasel-js/hud` draws it as canvas commands, or a
   transparent `@weasel-js/ui` layer sits above the canvas and lets the browser

@@ -1,0 +1,3 @@
+#!/bin/sh
+# See scripts/lib/npm-shim.mjs. Only on PATH while scripts/release.mjs runs.
+exec node "$(dirname "$0")/../lib/npm-shim.mjs" "$@"

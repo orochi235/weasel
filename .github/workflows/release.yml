@@ -74,6 +74,11 @@ jobs:
       # it. GitHub auth is the `github-token` input, which defaults to
       # `github.token`; v2 dropped the GITHUB_TOKEN environment variable, so
       # setting it again would read as configuration and do nothing.
+      #
+      # `npm run release` is `changeset publish` behind scripts/npm-shim, which
+      # turns npm's E409 "Cannot publish over previously staged version" into a
+      # success. Changesets otherwise stops at it, stranding every package in
+      # the dependency chunks after it.
       - name: Create Release Pull Request or Publish
         id: changesets
         uses: changesets/action@v2
@@ -88,6 +93,12 @@ jobs:
       # evidence. This asks npm instead, and fails the job naming what to
       # re-dispatch for.
       #
+      # `--wait` polls anything missing for up to 15 minutes before failing:
+      # npm holds a fresh upload as staged, invisible to every read, for that
+      # long (npm/cli#9889), and 1.6.0 failed here on four packages that listed
+      # minutes later. `npm run release` reports a retry that hits the staged
+      # version's E409 as published, so this step is what decides.
+      #
       # The `published` guard is load-bearing, not caution. On the other path
       # the action takes it runs `changeset version` in this same working tree
       # and pushes the result to a branch without resetting, so the manifests
@@ -95,7 +106,8 @@ jobs:
       # version PR would fail.
       - name: Verify every version reached the registry
         if: steps.changesets.outputs.published == 'true'
-        run: npm run check:published
+        timeout-minutes: 20
+        run: npm run check:published -- --wait
       # And the question a consumer actually asks. The group pins its siblings
       # by range, so one missing package fails `npm i @weasel-js/core` while
       # every other version is present — which is how 1.2.0 was found, by a
