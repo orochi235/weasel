@@ -22,7 +22,15 @@ Steps 1 and 2 happen in the React seam, the rest in the pure dispatcher. The
 green boxes are what the canvas's input scope supplies. When an input goes
 unhandled, the three red exits say where to look. `Dispatcher.resolveAll`
 replays steps 4 to 7 without invoking anything, and gives each candidate a
-verdict.
+verdict. Dispatch and prediction share one walk, so the two cannot disagree.
+
+For one real input, the dispatcher's `DispatchRecord` holds every binding that
+matched, what the claim and eligibility filters dropped, the ranked survivors
+with the step that placed each, and what the walk did with each. In dev builds
+every dispatch leaves one in the trace buffer, and `Dispatcher.explain` builds
+one without invoking anything. `FallthroughDiagram` (`@weasel-js/ui`) draws a
+record. apps/draw's dispatch trace opens it from any row, under a Live row
+that predicts a press at the pointer.
 
 ## Which binding wins
 
