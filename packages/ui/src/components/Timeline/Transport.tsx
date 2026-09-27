@@ -1,7 +1,10 @@
 import type { ReactElement } from 'react';
+import { multiplier, qty } from '@weasel-js/quantity';
 import { DetentSlider } from '../DetentSlider';
 import { PauseIcon, PlayIcon } from '../../icons';
 import s from './Timeline.module.css';
+
+const RATE = multiplier({ symbol: 'x' });
 
 /** Playback rates the transport offers. */
 const RATES = [0.25, 0.5, 1, 2, 4] as const;
@@ -56,14 +59,14 @@ export function Transport(props: TransportProps): ReactElement {
         Rate
         <DetentSlider
           ariaLabel="Rate"
-          items={rates}
+          items={rates.map((r) => ({ value: r, ariaLabel: qty(r, RATE).spoken }))}
           value={rate}
           onChange={onRateChange}
-          formatLabel={(r) => `${r}x`}
+          formatLabel={(r) => qty(r, RATE).text}
           labels="none"
           className={s.rateSlider}
         />
-        <span className={s.rateReadout}>{rate}x</span>
+        <span className={s.rateReadout}>{qty(rate, RATE).text}</span>
       </div>
 
       <span className={s.time} data-testid="timeline-time">

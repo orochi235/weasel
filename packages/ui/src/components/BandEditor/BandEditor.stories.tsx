@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { fraction } from '@weasel-js/quantity';
 import { BandEditor } from './BandEditor';
 import type { Band } from './bands';
 
@@ -9,10 +10,7 @@ type Slice = { name: string };
 const MIN = 1 / 64;
 const MAX = 1 / 2;
 
-const TICKS = [1 / 45, 1 / 30, 1 / 24, 1 / 18, 1 / 12, 1 / 6, 1 / 3].map((at) => ({
-  at,
-  label: `1/${Math.round(1 / at)}`,
-}));
+const TICKS = [1 / 45, 1 / 30, 1 / 24, 1 / 18, 1 / 12, 1 / 6, 1 / 3].map((at) => ({ at }));
 
 const LADDER: Band<Slice>[] = [
   { from: MIN, data: { name: 'Radial' } },
@@ -37,6 +35,7 @@ const meta: Meta<typeof TypedBandEditor> = {
     scale: 'log',
     snap: true,
     ticks: TICKS,
+    display: fraction(),
   },
   argTypes: {
     scale: { control: 'inline-radio', options: ['linear', 'log'] },
@@ -45,6 +44,7 @@ const meta: Meta<typeof TypedBandEditor> = {
     max: { control: { type: 'number' } },
     value: { table: { disable: true } },
     ticks: { table: { disable: true } },
+    display: { table: { disable: true } },
     onInput: { table: { disable: true } },
     onChange: { table: { disable: true } },
     onSelect: { table: { disable: true } },

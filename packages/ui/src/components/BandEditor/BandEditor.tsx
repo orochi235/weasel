@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import { amount, decimal, qty, retag, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
 import { clamp01, resolveScale, type BandScale } from './scale';
@@ -30,21 +31,29 @@ import {
 
 export type { Band, BandScale };
 
-export interface BandEditorProps<T> {
-  /** Ascending by `from`. `value[0].from` is normalized to `min` on read. */
-  value: Band<T>[];
+export interface BandEditorProps<T, F extends Quantity = number> {
+  /** Ascending by `from`. `value[0].from` is normalized to `min` on read. A
+   *  tagged `from` stays tagged through every edit, with its display and unit. */
+  value: Band<T, F>[];
   /** Live during a drag — wire for preview, do not write to history. */
-  onInput?: (next: Band<T>[]) => void;
+  onInput?: (next: Band<T, F>[]) => void;
   /** Committed at gesture end: one call per gesture. */
-  onChange: (next: Band<T>[]) => void;
+  onChange: (next: Band<T, F>[]) => void;
   min: number;
   max: number;
   /** Default `'log'`. */
   scale?: 'linear' | 'log' | BandScale;
+  /** A tick with no `label` of its own is labeled through `display`, when given. */
   ticks?: { at: number; label?: ReactNode }[];
+  /**
+   * How a seam's value shows and is spoken — `fraction()` makes a seam at
+   * 1/12 announce `1 over 12` rather than `0.08333333333333333`. A tagged
+   * `from` uses its own display instead. Default: three decimals.
+   */
+  display?: Display;
   /** Snap a dragged seam to a tick within ~6px. Default true; `alt` defeats it per-drag. */
   snap?: boolean;
-  renderBand?: (band: Band<T>, index: number) => ReactNode;
+  renderBand?: (band: Band<T, F>, index: number) => ReactNode;
   selectedIndex?: number | null;
   onSelect?: (index: number) => void;
   /** Payload for a band split off an existing one. Default duplicates `from`. */
@@ -55,6 +64,28 @@ export interface BandEditorProps<T> {
 
 /** A drag under way: the bands as the pointer has them, and which edges it took from where. */
 type Draft<T> = { bands: Band<T>[]; ghost: { seam: number } | { band: number } };
+
+const SEAM_DISPLAY = decimal();
+
+function untag<T, F extends Quantity>(band: Band<T, F>): Band<T> {
+  return typeof band.from === 'number' ? (band as Band<T>) : { from: amount(band.from), data: band.data };
+}
+
+/**
+ * `next` with each `from` in the shape the consumer gave it. A band keeps the
+ * tag of the band at its index when the count is unchanged; after a split or
+ * a merge it takes the tag of the input band carrying the same payload, else
+ * the first tagged one — a split band inherits its parent's presentation.
+ */
+function retagBands<T, F extends Quantity>(input: readonly Band<T, F>[], next: readonly Band<T>[]): Band<T, F>[] {
+  const firstTagged = input.find((b) => typeof b.from !== 'number');
+  if (!firstTagged) return next as Band<T, F>[];
+  return next.map((band, i) => {
+    const source =
+      (next.length === input.length ? input[i] : input.find((b) => b.data === band.data)) ?? firstTagged;
+    return { from: retag(source.from, band.from), data: band.data };
+  });
+}
 
 /** One arrow-key step, as a fraction of the track. */
 const KEY_STEP = 0.01;
@@ -99,11 +130,10 @@ function isTextEntry(target: EventTarget | null): boolean {
  * `scale` defaults to `'log'`, because the interesting part of a width axis
  * is usually its narrow end.
  */
-export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
+export function BandEditor<T, F extends Quantity = number>(props: BandEditorProps<T, F>): ReactElement {
   const {
-    value,
-    onInput,
-    onChange,
+    value: tagged,
+    display = SEAM_DISPLAY,
     min,
     max,
     scale,
@@ -122,10 +152,15 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
   const labelId = useId();
   const [draft, setDraft] = useState<Draft<T> | null>(null);
+  const value = tagged.map(untag);
+  const retagged = (next: Band<T>[]): Band<T, F>[] => retagBands(tagged, next);
+  const onInput = props.onInput && ((next: Band<T>[]) => props.onInput?.(retagged(next)));
+  const onChange = (next: Band<T>[]) => props.onChange(retagged(next));
   const committed = normalizeBands(value, min);
   // Drawn from the drag while one is under way, so the control moves with the pointer whether or not the consumer
   // wires `onInput`. Every edit reads `committed`.
   const bands = draft?.bands ?? committed;
+  const shown = retagged(bands);
   const sc = resolveScale(scale, min);
   const toUnit = (v: number): number => clamp01(sc.toUnit(v, min, max));
   const fromUnit = (u: number): number => sc.fromUnit(clamp01(u), min, max);
@@ -269,12 +304,14 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
             data-tick-at={tick.at}
             style={{ '--be-at': pct(toUnit(tick.at)) } as CSSProperties}
           >
-            {tick.label !== undefined && <span className={s.tickLabel}>{tick.label}</span>}
+            {(tick.label !== undefined || props.display !== undefined) && (
+              <span className={s.tickLabel}>{tick.label ?? qty(tick.at, props.display).text}</span>
+            )}
           </span>
         ))}
       </div>
       <div className={s.bands}>
-        {bands.map((band, i) => {
+        {bands.map((_, i) => {
           const [from, to] = bandBounds(bands, i, min, max);
           const isSelected = selectedIndex === i;
           return (
@@ -289,7 +326,7 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
                 onPointerDown={onBandPointerDown(i)}
                 onFocus={onBandFocus(i)}
               >
-                <span className={s.bandContent}>{renderBand?.(band, i)}</span>
+                <span className={s.bandContent}>{renderBand?.(shown[i]!, i)}</span>
               </button>
               {i < bands.length - 1 && (
                 <div
@@ -302,6 +339,7 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
                   aria-valuemin={seamBounds(bands, i, min, max)[0]}
                   aria-valuemax={seamBounds(bands, i, min, max)[1]}
                   aria-valuenow={bands[i + 1].from}
+                  aria-valuetext={qty(shown[i + 1]!.from, display).spoken}
                   data-seam-index={i}
                   onPointerDown={onSeamPointerDown(i)}
                   onKeyDown={onSeamKeyDown(i)}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { formatNumber, parseNumber, type UnitTable } from '../../format/number';
+import { decimal, parseAs, parseNumber, qty, type Display, type UnitTable } from '@weasel-js/quantity';
 import { fieldClasses } from '../Field/Field';
 import { clampToBounds, spinKey } from '../spin';
 import s from './NumberField.module.css';
@@ -21,6 +21,10 @@ export interface UnitFieldProps {
   /** Units a person may type, each mapped to the factor that turns a number
    *  in it into the unit the field shows: `{ mm: 0.1, cm: 1 }`. */
   accepts?: Readonly<UnitTable>;
+  /** How the value shows, is spoken, and reads back when typed: `fraction()`
+   *  shows `1/12` and reads `1/12` typed. `accepts`, when given, does the
+   *  reading instead. Default: the number with every decimal it has. */
+  display?: Display;
   placeholder?: string;
   /** Up and down buttons beside the value, which repeat while held. */
   steppers?: boolean;
@@ -33,6 +37,8 @@ export interface UnitFieldProps {
   id?: string;
   'aria-label'?: string;
 }
+
+const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
 
 const REPEAT_DELAY_MS = 400;
 const REPEAT_EVERY_MS = 60;
@@ -53,6 +59,7 @@ export function UnitField({
   maxValue,
   step = 1,
   accepts,
+  display = FULL_PRECISION,
   placeholder,
   steppers,
   ghost,
@@ -65,12 +72,13 @@ export function UnitField({
   const canceled = useRef(false);
   const input = useRef<HTMLInputElement>(null);
   const known = Number.isFinite(value);
-  const text = known ? formatNumber(value, { useGrouping: false, maximumFractionDigits: 20 }) : '';
+  const text = known ? qty(value, display).text : '';
+  const read = (typed: string) => (accepts ? parseNumber(typed, accepts) : parseAs(typed, display));
   const bounds = { step, min: minValue, max: maxValue };
 
   // What a step starts from: the text as typed where it reads, else the value.
   const from = (): number => {
-    const typed = draft === null ? value : parseNumber(draft, accepts);
+    const typed = draft === null ? value : read(draft);
     return Number.isFinite(typed) ? typed : Number.isFinite(value) ? value : 0;
   };
   const stepTo = (next: number) => {
@@ -162,7 +170,7 @@ export function UnitField({
           autoComplete="off"
           aria-label={ariaLabel}
           aria-valuenow={known ? value : undefined}
-          aria-valuetext={known ? text : undefined}
+          aria-valuetext={known ? qty(value, display).spoken : undefined}
           aria-valuemin={minValue}
           aria-valuemax={maxValue}
           placeholder={placeholder}
@@ -170,7 +178,7 @@ export function UnitField({
           onChange={(e) => {
             const typed = e.target.value;
             setDraft(typed);
-            const n = parseNumber(typed, accepts);
+            const n = read(typed);
             if (onInput && typed.trim() !== '' && Number.isFinite(n)) onInput(clampToBounds(n, bounds));
           }}
           onFocus={() => {
@@ -178,7 +186,7 @@ export function UnitField({
           }}
           onBlur={() => {
             if (draft !== null && !canceled.current) {
-              const n = parseNumber(draft, accepts);
+              const n = read(draft);
               if (Number.isFinite(n)) {
                 const next = clampToBounds(n, bounds);
                 if (next !== value) onChange(next);

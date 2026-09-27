@@ -9,14 +9,13 @@ import {
 } from 'react';
 import { getAlpha01, toHex8, withAlpha01, type FillStyle, type PaintKind } from '@weasel-js/core';
 import { dlog } from '../../dlog';
-import { formatCompact, formatNumber, parseNumber, type UnitTable } from '../../format/number';
+import { decimal, parseAs, qty, type Display, type UnitTable } from '@weasel-js/quantity';
 import { ColorField } from '../ColorField';
 import { FontFamilySelect } from '../FontFamilySelect';
 import { Input } from '../Input';
 import { UnitField } from '../NumberField';
 import { PaintField } from '../PaintField';
 import { PaintInput } from '../PaintInput';
-import type { PrefNumberFormat } from '../Prefs/schema';
 import { Radio, RadioGroup } from '../RadioGroup';
 import { spinKey } from '../spin';
 import { Select } from '../Select';
@@ -105,10 +104,13 @@ export interface PropertyNumberFieldProps extends FieldBase {
   /** Units a person may type into a typed field, each mapped to the factor
    *  that turns it into the unit shown: `{ mm: 0.1, cm: 1 }`. */
   accepts?: Readonly<UnitTable>;
-  /** A slider readout's display. Defaults to the value at `step`'s precision. */
+  /** How the value shows, is spoken, and reads back when typed —
+   *  `compact()` reads `2.00M`. A slider readout defaults to the value at
+   *  `step`'s precision. */
+  display?: Display;
+  /** A slider readout's text, for what no display expresses — a derived
+   *  value, a word at one end. Wins over `display`, and is spoken as shown. */
   format?: (value: number) => ReactNode;
-  /** A named display for the value: `compact` reads `2.00M`. `format` wins. */
-  notation?: PrefNumberFormat;
   placeholder?: string;
   /** A typed field's up and down buttons. Default `false`: a dense panel
    *  drives its numbers by typing, the arrow keys and the wheel. */
@@ -508,6 +510,7 @@ function NumberInput(p: PropertyNumberFieldProps) {
       maxValue={p.max}
       step={p.step}
       accepts={p.accepts}
+      display={p.display}
       steppers={p.steppers}
       aria-label={p.name}
       // With one callback it is the live one: every keystroke and step reaches
@@ -571,16 +574,7 @@ function SliderReadout(p: PropertyNumberFieldProps) {
   if (!known) return <>{boxedReadout('—')}</>;
   // Precision tracks `step`: integer steps show none, 0.1 one, 0.05 two.
   const decimals = step >= 1 ? 0 : Math.min(6, Math.max(0, Math.ceil(-Math.log10(step))));
-  const format =
-    p.format ??
-    (p.notation === 'compact'
-      ? (n: number) => formatCompact(n, decimals)
-      : (n: number) =>
-          formatNumber(n, {
-            useGrouping: false,
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals,
-          }));
+  const display = p.display ?? decimal({ places: decimals, grouping: false });
   return (
     <EditableReadout
       name={p.name}
@@ -588,7 +582,8 @@ function SliderReadout(p: PropertyNumberFieldProps) {
       min={min}
       max={max}
       step={step}
-      format={format}
+      display={display}
+      format={p.format}
       unit={p.unit}
       onCommit={(next) => {
         p.onInput?.(next);
@@ -623,7 +618,8 @@ interface EditableReadoutProps {
   min: number;
   max: number;
   step: number;
-  format: (value: number) => ReactNode;
+  display: Display;
+  format?: (value: number) => ReactNode;
   unit?: ReactNode;
   onCommit: (next: number) => void;
 }
@@ -633,21 +629,19 @@ interface EditableReadoutProps {
  * cancels on Escape, and steps like the track beside it. Clicks are stopped so
  * a wrapping <label> doesn't forward focus to the slider thumb.
  */
-function EditableReadout({ name, value, min, max, step, format, unit, onCommit }: EditableReadoutProps) {
+function EditableReadout({ name, value, min, max, step, display, format, unit, onCommit }: EditableReadoutProps) {
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
-  const text = (n: number) => {
-    const formatted = format(n);
-    return typeof formatted === 'string' ? formatted : String(formatted);
-  };
+  const text = (n: number) => (format ? String(format(n)) : qty(n, display).text);
+  const read = (typed: string) => parseAs(typed, display);
   const displayValue = draft !== null ? draft : text(value);
   // The widest value the range can show, which the stylesheet widens the box to fit.
   const fit = { '--wzl-property-readout-fit': `${Math.max(text(min).length, text(max).length)}ch` };
 
   const commit = () => {
     if (draft !== null) {
-      const n = parseNumber(draft);
+      const n = read(draft);
       if (Number.isFinite(n)) onCommit(Math.min(max, Math.max(min, n)));
     }
     setDraft(null);
@@ -660,7 +654,7 @@ function EditableReadout({ name, value, min, max, step, format, unit, onCommit }
         role="spinbutton"
         aria-label={name}
         aria-valuenow={value}
-        aria-valuetext={text(value)}
+        aria-valuetext={format ? text(value) : qty(value, display).spoken}
         aria-valuemin={min}
         aria-valuemax={max}
         inputMode="decimal"
@@ -687,7 +681,7 @@ function EditableReadout({ name, value, min, max, step, format, unit, onCommit }
             setDraft(null);
             e.currentTarget.blur();
           } else {
-            const typed = draft === null ? value : parseNumber(draft);
+            const typed = draft === null ? value : read(draft);
             const next = spinKey(e.key, Number.isFinite(typed) ? typed : value, { step, min, max });
             if (next === null) return;
             e.preventDefault();

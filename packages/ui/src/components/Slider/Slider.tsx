@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import s from './Slider.module.css';
-import { formatNumber } from '../../format/number';
+import { decimal, qty, type Display } from '@weasel-js/quantity';
 
 /**
  * Passed to a custom thumb renderer: the thumb box in CSS px, and whether
@@ -133,6 +133,10 @@ export type SliderProps<T extends Thumb = Thumb> = {
    *  Slider matches the property rows. `trackHeight` still wins if given. */
   density?: 'default' | 'slim';
   renderReadout?: (thumb: T, index: number) => ReactNode;
+  /** How a thumb's value shows in the default readout and is spoken as its
+   *  `aria-valuetext` when the thumb gives no `valueText` of its own. Default:
+   *  three decimals shown, nothing spoken beyond `aria-valuenow`. */
+  display?: Display;
   readoutPlacement?: 'none' | 'inline-after' | 'below-thumb';
   ariaLabel?: string;
   className?: string;
@@ -235,9 +239,7 @@ function fractionToPosition(f: number): string {
   return `calc(var(--rp-thumb-inset) + ${f} * (100% - 2 * var(--rp-thumb-inset)))`;
 }
 
-function defaultReadout(thumb: Thumb): string {
-  return formatNumber(thumb.value, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-}
+const READOUT = decimal({ places: 3 });
 
 /**
  * Multi-thumb slider over a shared track. The thumb list is fully controlled:
@@ -552,6 +554,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
 
   const placement = props.readoutPlacement ?? 'none';
   const renderReadout = props.renderReadout;
+  const display = props.display;
 
   const slim = density === 'slim';
   const rootVars: Record<string, string> = {};
@@ -636,7 +639,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
               aria-valuemin={min}
               aria-valuemax={max}
               aria-valuenow={thumb.value}
-              aria-valuetext={thumb.valueText}
+              aria-valuetext={thumb.valueText ?? (display ? qty(thumb.value, display).spoken : undefined)}
               aria-label={[ariaLabel, thumb.label].filter(Boolean).join(' ') || undefined}
               className={cls}
               style={{ left: `${valueToFraction(thumb.value) * 100}%` }}
@@ -653,7 +656,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
       {placement === 'inline-after' && (
         <span data-readout="inline" className={s.readoutInline}>
           {thumbs.map((t, i) => (
-            <span key={i}>{i > 0 ? ' / ' : ''}{renderReadout ? renderReadout(t, i) : defaultReadout(t)}</span>
+            <span key={i}>{i > 0 ? ' / ' : ''}{renderReadout ? renderReadout(t, i) : qty(t.value, display ?? READOUT).text}</span>
           ))}
         </span>
       )}
@@ -667,7 +670,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
               className={s.readoutBelow}
               style={{ left: `${valueToFraction(t.value) * 100}%` }}
             >
-              {renderReadout ? renderReadout(t, i) : defaultReadout(t)}
+              {renderReadout ? renderReadout(t, i) : qty(t.value, display ?? READOUT).text}
             </span>
           ))}
         </div>

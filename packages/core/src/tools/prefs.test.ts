@@ -1,6 +1,6 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
 import { TOOL_PREF_KINDS, isBuiltinToolPref, prefUnit } from './prefs';
-import { ANGLE_RADIANS, METRIC_MM, type UnitSystem } from 'core/units';
+import { ANGLE_RADIANS, METRIC_MM, type UnitSystem } from '@weasel-js/quantity';
 
 /** Temperature is the smallest system whose units disagree about zero. */
 const TEMPERATURE_K: UnitSystem = {

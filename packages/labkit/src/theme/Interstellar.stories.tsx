@@ -3,6 +3,7 @@ import type { TokenName } from '@weasel-js/theme';
 import { useTheme } from '@weasel-js/theme/react';
 import { PropertyField, PropertyList, PropertyPanel } from '@weasel-js/ui';
 import './Interstellar.stories.less';
+import { decimal } from '@weasel-js/quantity';
 
 const meta: Meta = {
   title: 'labkit/Themes/Interstellar',
@@ -151,7 +152,7 @@ function LivePanelPreview() {
             max={1}
             step={0.01}
             onChange={() => {}}
-            format={(v) => v.toFixed(2)}
+            display={decimal({ places: 2 })}
           />
           <PropertyField kind="color" label="Fill" value="#b08adb" onChange={() => {}} />
           <PropertyField kind="color" label="Stroke" value="#1a1428" onChange={() => {}} />

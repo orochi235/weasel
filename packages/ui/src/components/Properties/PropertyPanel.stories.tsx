@@ -11,6 +11,7 @@ import {
   PropertySpan,
 } from './PropertyPanel';
 import { Switch } from '../Switch';
+import { decimal } from '@weasel-js/quantity';
 
 // Args common to most stories — exposed as controls so the
 // title, pack mode, and container width can be tweaked live.
@@ -63,7 +64,7 @@ function Demo({ title, pack, width }: DemoArgs) {
             max={1}
             step={0.01}
             onChange={setOpacity}
-            format={(v) => v.toFixed(2)}
+            display={decimal({ places: 2 })}
           />
           <PropertyField
             kind="number"
@@ -126,7 +127,7 @@ function AllRowsDemo({ title, pack, width }: DemoArgs) {
             max={1}
             step={0.01}
             onChange={setOpacity}
-            format={(v) => v.toFixed(2)}
+            display={decimal({ places: 2 })}
           />
           <PropertyField kind="number" label="Count" value={count} onChange={setCount} min={0} max={100} step={1} />
           <PropertyField kind="color" label="Fill" value={fill} onChange={setFill} />
@@ -399,7 +400,7 @@ function TailBody() {
         min={-1}
         max={1}
         step={0.02}
-        format={(v) => v.toFixed(2)}
+        display={decimal({ places: 2 })}
         onChange={setArc}
       />
       <PropertyField
@@ -434,7 +435,7 @@ function TailBody() {
             min={-1}
             max={1}
             step={0.02}
-            format={(v) => v.toFixed(2)}
+            display={decimal({ places: 2 })}
             onChange={setGap}
           />
           <PropertyField
@@ -470,7 +471,7 @@ function StrokePanel() {
           max={12}
           step={0.5}
           unit="px"
-          format={(v) => v.toFixed(1)}
+          display={decimal({ places: 1 })}
           onChange={setWidth}
         />
         <PropertyField
@@ -507,7 +508,7 @@ function ShadowPanel() {
           max={20}
           step={0.5}
           unit="px"
-          format={(v) => v.toFixed(1)}
+          display={decimal({ places: 1 })}
           onChange={setDx}
         />
         <PropertyField
@@ -519,7 +520,7 @@ function ShadowPanel() {
           max={20}
           step={0.5}
           unit="px"
-          format={(v) => v.toFixed(1)}
+          display={decimal({ places: 1 })}
           onChange={setDy}
         />
         <PropertyField
@@ -531,7 +532,7 @@ function ShadowPanel() {
           max={30}
           step={0.5}
           unit="px"
-          format={(v) => v.toFixed(1)}
+          display={decimal({ places: 1 })}
           onChange={setBlur}
         />
         <PropertyField
@@ -542,7 +543,7 @@ function ShadowPanel() {
           min={0}
           max={1}
           step={0.05}
-          format={(v) => v.toFixed(2)}
+          display={decimal({ places: 2 })}
           onChange={setOpacity}
         />
       </PropertyList>

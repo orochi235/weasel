@@ -1,5 +1,6 @@
 import { ANGLE_RADIANS, prefUnit } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { compact } from '@weasel-js/quantity';
 import { type PrefNumberUnit, PropertyRow } from '@weasel-js/ui';
 import { useState } from 'react';
 import { f } from '../config/builder';
@@ -278,7 +279,7 @@ export const Presentation: Story = {
 
 const inline = f.schema({
   folderPad: f.number(1.1).range(0, 4).step(0.1).label('Folder pad'),
-  glyphs: f.number(1_000_000).range(0, 2_000_000).format('compact'),
+  glyphs: f.number(1_000_000).range(0, 2_000_000).display(compact()),
   names: f.number(60).range(0, 100),
   labels: f.number(0).range(0, 100),
   placement: f.enum('spread', ['spread', 'stack', 'ring']),
@@ -337,7 +338,7 @@ const sidebarSliders = f.schema({
   pad: f.number(0.5).range(0, 4).step(0.25).label('Window pad'),
   folderPad: f.number(1).range(0, 4).step(0.1).label('Folder pad'),
   levels: f.number(2).range(0, 6).step(1).label('Levels'),
-  glyphs: f.number(1_000_000).range(0, 2_000_000).step(2000).format('compact').label('Glyphs'),
+  glyphs: f.number(1_000_000).range(0, 2_000_000).step(2000).display(compact()).label('Glyphs'),
   names: f.number(40).range(0, 200).step(5).label('Names'),
   labels: f.number(0).range(0, 30).step(1).label('Labels'),
   text: f.number(100).range(50, 250).step(5).unit(shownIn('%')).label('Text'),
