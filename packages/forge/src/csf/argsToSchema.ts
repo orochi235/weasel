@@ -14,7 +14,17 @@ export type ArgCondition = ({ arg: string } | { global: string }) & {
 export interface ArgType {
   name?: string;
   description?: string;
-  control?: string | false | { type?: string; min?: number; max?: number; step?: number };
+  control?:
+    | string
+    | false
+    | {
+        type?: string;
+        min?: number;
+        max?: number;
+        step?: number;
+        /** forge's own: an icon (weasel-ui `IconName`) per option, drawn in place of its label. */
+        icons?: Readonly<Record<string, string>>;
+      };
   options?: readonly unknown[];
   table?: { disable?: boolean };
   if?: ArgCondition;
@@ -32,13 +42,14 @@ interface Control {
   min?: number;
   max?: number;
   step?: number;
+  icons?: Readonly<Record<string, string>>;
 }
 
 function controlOf(argType: ArgType): Control | false {
   const { control } = argType;
   if (control === false) return false;
   if (typeof control === 'string') return { type: control };
-  return { type: control?.type, min: control?.min, max: control?.max, step: control?.step };
+  return { type: control?.type, min: control?.min, max: control?.max, step: control?.step, icons: control?.icons };
 }
 
 function stringOptions(argType: ArgType): string[] | null {
@@ -90,7 +101,11 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
     case 'inline-radio':
     case undefined: {
       if (!options) return control.type === undefined && has ? inferred(value) : null;
-      const node = f.enum(def<string>(), options);
+      const { icons } = control;
+      const node = f.enum(
+        def<string>(),
+        icons ? options.map((value) => ({ value, label: value, ...(icons[value] ? { icon: icons[value] } : {}) })) : options,
+      );
       return control.type === 'radio' || control.type === 'inline-radio' ? node.radio() : node;
     }
     case 'object':

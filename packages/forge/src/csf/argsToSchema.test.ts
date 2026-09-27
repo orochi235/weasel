@@ -50,6 +50,17 @@ describe('argsToSchema', () => {
       .toEqual({ kind: 'enum', default: 'minimal', options: options('default', 'minimal'), control: 'radio' });
   });
 
+  it("carries a control's icons onto the options they name", () => {
+    const argTypes = {
+      status: { control: { type: 'inline-radio', icons: { ok: 'statusSuccess', bad: 'error' } }, options: ['ok', 'bad', 'meh'] },
+    };
+    expect(leaf({ status: 'ok' }, argTypes, 'status')?.annotations.options).toEqual([
+      { value: 'ok', label: 'ok', icon: 'statusSuccess' },
+      { value: 'bad', label: 'bad', icon: 'error' },
+      { value: 'meh', label: 'meh' },
+    ]);
+  });
+
   it("maps 'radio' to a radio enum", () => {
     expect(leaf({ size: 'sm' }, { size: { control: 'radio', options: ['sm', 'md'] } }, 'size')?.annotations.control).toBe('radio');
   });

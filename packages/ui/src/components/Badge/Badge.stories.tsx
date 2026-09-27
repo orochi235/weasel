@@ -8,6 +8,7 @@ import type { BadgeShape, BadgeStatus, BadgeVariant } from './types';
 import { BASES, type BadgeBase } from './bases';
 import { EFFECTS, type BadgeEffect, type EffectSpec } from './effects';
 import { SHAPE_CONTROLS, defaultParamsFor } from './shapeControls';
+import { BADGE_STATUS_ICONS } from './statusIcons';
 
 const STATUSES: BadgeStatus[] = ['accent', 'info', 'success', 'warn', 'danger', 'muted', 'neutral'];
 const VARIANTS: BadgeVariant[] = ['outline', 'solid', 'subtle'];
@@ -25,7 +26,7 @@ const meta: Meta<typeof Badge> = {
   argTypes: {
     children: { control: 'text', description: 'Badge label content' },
     shape: { control: 'select', options: ALL_SHAPES },
-    status: { control: 'select', options: STATUSES },
+    status: { control: { type: 'inline-radio', icons: BADGE_STATUS_ICONS }, options: STATUSES },
     variant: { control: 'inline-radio', options: VARIANTS },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
     bloat: {

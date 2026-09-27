@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
 import { Button, type ButtonVariant, type ButtonSize } from './Button';
 import { ToggleBar as KitToggleBar } from '../ToggleBar/ToggleBar';
+import { BADGE_STATUS_ICONS } from '../Badge/statusIcons';
 
 const meta: Meta<typeof Button> = {
   title: 'ui/Foundations/Button',
@@ -12,7 +13,10 @@ const meta: Meta<typeof Button> = {
     size: 'md',
   },
   argTypes: {
-    status: { control: 'inline-radio', options: ['accent', 'neutral', 'muted', 'success', 'warn', 'danger'] },
+    status: {
+      control: { type: 'inline-radio', icons: BADGE_STATUS_ICONS },
+      options: ['accent', 'neutral', 'muted', 'success', 'warn', 'danger'],
+    },
     variant: { control: 'inline-radio', options: ['primary', 'secondary', 'ghost', 'link'] },
     size: { control: 'inline-radio', options: ['sm', 'md'] },
     disabled: { control: 'boolean' },
