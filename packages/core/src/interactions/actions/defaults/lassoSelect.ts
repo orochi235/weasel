@@ -6,8 +6,9 @@
  * Implements lasso-select via the full pointermove stream (accumulated in
  * `InvocationCtx.drag.points` by the dispatcher extension):
  *   - `start`: initializes vertex list from the drag-start world point.
- *   - `onMove`: appends the current world point (skipping duplicates closer
- *     than `minVertexSpacing = 2` world-px).
+ *   - `onMove`: appends the current world point, skipping one closer than
+ *     the binding's `params.minVertexSpacing` (default 2 world-px) to the
+ *     last vertex.
  *   - `onEnd('commit')`: performs hit-testing against the accumulated polygon.
  *     Uses `dep.hitTestLasso(polygon, mode)` when available — `mode` from the
  *     binding's `params.mode`, default `'intersect'` — otherwise falls back to
@@ -94,11 +95,12 @@ function behaviorAdapter(dep: LassoSelectDep, view: ViewApi | undefined): LassoS
 // Internal scratch
 // ---------------------------------------------------------------------------
 
-const MIN_VERTEX_SPACING = 2; // world-px (matches useLassoSelect default)
+const DEFAULT_MIN_VERTEX_SPACING = 2; // world-px
 
 interface LassoScratch {
   dep: LassoSelectDep;
   mode: LassoHitMode;
+  minVertexSpacing: number;
   /** The view the lasso started in: what it does not paint is not taken. */
   view: ViewApi | undefined;
   vertices: Point2[];
@@ -142,7 +144,8 @@ export const lassoSelectAction: Action & { requires: string[] } = {
       const dep = ctx.deps.lassoSelect as LassoSelectDep | undefined;
       if (!dep) return {};
 
-      const params = resolveParams(opts?.params) as { mode?: LassoHitMode } | undefined;
+      const params = resolveParams(opts?.params) as
+        { mode?: LassoHitMode; minVertexSpacing?: number } | undefined;
       const view = ctx.deps.view as ViewApi | undefined;
       const vertices: Point2[] = [{ x: ctx.world.x, y: ctx.world.y }];
       const behaviors = (opts?.behaviors ?? []) as LassoSelectBehavior[];
@@ -168,6 +171,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
       const scratch: LassoScratch = {
         dep,
         mode: params?.mode ?? 'intersect',
+        minVertexSpacing: params?.minVertexSpacing ?? DEFAULT_MIN_VERTEX_SPACING,
         view,
         vertices,
         shiftHeld: ctx.modifiers.shift,
@@ -187,8 +191,8 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           const last = scratch.vertices[scratch.vertices.length - 1];
           const dx = x - last.x;
           const dy = y - last.y;
-          // Skip vertices closer than MIN_VERTEX_SPACING to avoid degenerate polygons.
-          if (dx * dx + dy * dy >= MIN_VERTEX_SPACING * MIN_VERTEX_SPACING) {
+          const min = scratch.minVertexSpacing;
+          if (dx * dx + dy * dy >= min * min) {
             scratch.vertices.push({ x, y });
           }
           const g = scratch.gesture;

@@ -778,12 +778,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Undecided: move the kernel down into `core/geometry`, or let `arrayAdapter` stay a
   bounds-only adapter and say so in its contract.
 
-- **(P3) `useLassoTool` accepts options it never uses.** `transient`, `label`,
-  `onGestureStart`, `onGestureEnd`, `minVertexSpacing` and `debug` are in
-  `UseLassoToolOptions` (picked from `UseLassoSelectOptions`) and reach nothing:
-  `lassoSelectAction` is always transient, spaces vertices at a fixed 2 world-px, and
-  has no gesture callbacks or debug sink. `behaviors` and `mode` are the two that work.
-
 - **(P3) Unconfirmed: apps/draw's fill slider lags a live opacity scrub.** Seen
   2026-09-27 in a browser: holding O and wheeling faded the selected rect, while
   the Properties panel's fill slider still read 100%. Not yet checked whether it

@@ -185,6 +185,21 @@ describe('lassoSelectAction descriptor', () => {
     expect(run({ params: () => ({ mode: 'centers' }) })).toBe('centers');
   });
 
+  it("spaces vertices by the binding's params.minVertexSpacing, 2 world-px when none is given", () => {
+    const invoker = getOngoingInvoker(lassoSelectAction);
+    const run = (opts: Parameters<typeof invoker.start>[1]) => {
+      const handle = invoker.start(makeCtx(makeLassoSelectDep(), { x: 0, y: 0 }), opts);
+      for (const x of [1, 2, 3, 4, 5, 6]) {
+        handle.onMove!({ ...makeCtx(), world: { x, y: 0 }, screen: { x, y: 0 } });
+      }
+      const o = handle.overlay!();
+      return o && 'vertices' in o ? o.vertices.map((v) => v.x) : null;
+    };
+    expect(run(undefined)).toEqual([0, 2, 4, 6]);
+    expect(run({ params: { minVertexSpacing: 0 } })).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(run({ params: () => ({ minVertexSpacing: 5 }) })).toEqual([0, 5]);
+  });
+
   it('onEnd(commit) falls back to hitTestArea AABB when hitTestLasso is absent', () => {
     const invoker = getOngoingInvoker(lassoSelectAction);
     const dep = makeLassoSelectDep(['nodeX']);
