@@ -1014,6 +1014,7 @@ export {
   ROTATED_POSE_DESCRIPTOR,
   poseDescriptorForNode,
   cornerResizeHandles,
+  fixedCornerOf,
   hitCornerHandle,
   pointSnapToGrid,
 } from './interactions/actions/resize';
