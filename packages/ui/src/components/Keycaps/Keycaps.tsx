@@ -24,8 +24,8 @@ export interface KeySequenceProps {
   separator?: string;
   /** Where the separator goes. Defaults to `'key'`.
    *  - `'all'`: between every pair of chips — `⌘ + ⇧ + K`, `⌘ + ⇧`, `A + B`.
-   *  - `'key'`: once, between the last modifier and the first non-modifier —
-   *    `⌘ ⇧ + K`, `⌘ + K L`. A sequence without both kinds gets none.
+   *  - `'key'`: before every non-modifier — `⌘ ⇧ + K`, `⌘ + K + L`, `A + B`.
+   *    Modifiers stay unjoined, so `⌘ ⇧` gets none.
    *  - `'none'`: never. */
   joins?: KeySequenceJoins;
   /** Forwarded to every `KeyCap` in the sequence. `'minimal'` renders
@@ -51,9 +51,9 @@ export function KeySequence({ keys, separator = '+', joins = 'key', variant = 'd
       return am - bm || a.i - b.i;
     })
     .map(({ k }) => k);
-  const keyIdx = ordered.findIndex((k) => inferKeycapKind(k.label) !== 'modifier');
   const sepBefore = (i: number): boolean =>
-    i > 0 && (joins === 'all' || (joins === 'key' && i === keyIdx));
+    i > 0 &&
+    (joins === 'all' || (joins === 'key' && inferKeycapKind(ordered[i]!.label) !== 'modifier'));
   return (
     <span className={[s.keys, className].filter(Boolean).join(' ')}>
       {ordered.map((k, i) => (

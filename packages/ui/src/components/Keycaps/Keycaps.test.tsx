@@ -132,7 +132,7 @@ describe('KeySequence', () => {
     expect(container.querySelector('kbd + span, span + kbd')).toBeNull();
   });
 
-  it('joins="key" (the default) places one separator between the modifiers and the keys', () => {
+  it('joins="key" (the default) separates the modifiers from the key', () => {
     const keys = [{ label: '⌘' }, { label: '⇧' }, { label: 'K' }];
     const a = render(<KeySequence keys={keys} />);
     expect(a.container.textContent).toBe('⌘⇧+K');
@@ -141,11 +141,19 @@ describe('KeySequence', () => {
     expect(b.container.textContent).toBe('⌘⇧+K');
   });
 
-  it('joins="key" with several non-modifiers separates only at the boundary', () => {
+  it('joins="key" puts a separator before every non-modifier', () => {
     const { container } = render(
       <KeySequence keys={[{ label: '⌘' }, { label: 'K' }, { label: 'L' }]} joins="key" />,
     );
-    expect(container.textContent).toBe('⌘+KL');
+    expect(container.textContent).toBe('⌘+K+L');
+  });
+
+  it('joins="key" joins a sequence of plain keys but not one of modifiers', () => {
+    const plain = render(<KeySequence keys={[{ label: 'A' }, { label: 'B' }]} joins="key" />);
+    expect(plain.container.textContent).toBe('A+B');
+    plain.unmount();
+    const mods = render(<KeySequence keys={[{ label: '⌘' }, { label: '⇧' }]} joins="key" />);
+    expect(mods.container.textContent).toBe('⌘⇧');
   });
 
   it('joins="all" separates every adjacent pair of chips', () => {
@@ -169,11 +177,6 @@ describe('KeySequence', () => {
     expect(container.textContent).toBe('K');
   });
 
-  it('omits the separator when there are no modifiers', () => {
-    const { container } = render(<KeySequence keys={[{ label: 'A' }, { label: 'B' }]} />);
-    expect(container.textContent).toBe('AB');
-  });
-
   it('omits the separator when there are no non-modifiers', () => {
     const { container } = render(<KeySequence keys={[{ label: '⌘' }, { label: '⇧' }]} />);
     expect(container.textContent).toBe('⌘⇧');
@@ -193,7 +196,7 @@ describe('KeySequence', () => {
         const [alt, mod, meta] = keySpecsFromMods([{ name: 'alt' }, { name: 'mod' }, { name: 'meta' }], { platform, legend });
         const b = keySpecFromKey('b', { platform, legend });
         const { container, unmount } = render(<KeySequence keys={[{ label: 'A' }, alt, b, mod, meta]} separator="+" />);
-        expect(container.textContent).toBe(`${alt.label}${mod.label}${meta.label}+AB`);
+        expect(container.textContent).toBe(`${alt.label}${mod.label}${meta.label}+A+B`);
         unmount();
       }
     },

@@ -114,8 +114,8 @@ const meta: Meta<StoryArgs> = {
 export default meta;
 type Story = StoryObj<StoryArgs>;
 
-/** Standard Cmd+K. By default (`joins: 'key'`) the separator sits once,
- *  at the modifier/non-modifier boundary. */
+/** Standard Cmd+K. By default (`joins: 'key'`) a separator sits before
+ *  each non-modifier key. */
 export const Default: Story = {};
 
 /** Empty input renders a muted em-dash placeholder. */
@@ -173,7 +173,7 @@ export const JoinAll: Story = {
   },
 };
 
-/** `joins: 'key'` (the default) — one separator, before the key: `⌘ ⇧ + K`. */
+/** `joins: 'key'` (the default) — a separator before each non-modifier: `⌘ ⇧ + K`. */
 export const JoinKey: Story = {
   args: {
     keys: [{ label: '⌘' }, { label: '⇧' }, { label: 'K' }],
