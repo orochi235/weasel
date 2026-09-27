@@ -62,7 +62,7 @@ function ToolReflectionDemoInner() {
         </div>
         <div className={`${styles.panel} ${styles.canvasPanel}`}>
           <h3 className={styles.panelTitle}>Canvas (select + hand)</h3>
-          <SceneCanvas features={['draw']}
+          <SceneCanvas features={['pick', 'move']}
             width={W}
             height={H}
             className="ckd-canvas"

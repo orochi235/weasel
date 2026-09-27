@@ -191,7 +191,7 @@ function GardenBody({ config, state, setState }: BodyProps) {
         onDrop={handleCanvasDrop}
       >
         <div className="lk-garden-canvas__inner">
-          <SceneCanvas features={['draw']}
+          <SceneCanvas features={['view', 'pick', 'move', 'transform']}
             width={size.w}
             height={size.h}
             scene={scene}

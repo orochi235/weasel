@@ -108,7 +108,7 @@ function Pane({
         // One scope per pane: a shared <ActionsProvider> lets only the newest
         // canvas under it respond to input, and the rest go silently dead.
         <WeaselProvider isolate>
-          <SceneCanvas features={['draw']}
+          <SceneCanvas features={['pick', 'move']}
             ref={apiRef}
             width={PANE_W}
             height={PANE_H}
@@ -118,7 +118,6 @@ function Pane({
             paintInto={{ canvas: surface, x, y }}
             inputElement={input}
             backgroundFill={{ color: bg }}
-            defaultTools={['select']}
             {...(loupe ? { ambient: [hudTool] } : {})}
             layers={{
               scene: {

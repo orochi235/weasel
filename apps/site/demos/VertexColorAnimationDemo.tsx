@@ -97,7 +97,7 @@ export function VertexColorAnimationDemo() {
         <button className="ckd-btn" onClick={tween}>tween</button>
         <button className="ckd-btn" onClick={stagger}>stagger</button>
       </div>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
