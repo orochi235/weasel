@@ -56,6 +56,11 @@
     }
   }
 
+  // The browser sets these in its own `monospace`, which no font token reaches.
+  :where(code, kbd, samp, pre) {
+    font-family: var(--wzl-font-mono);
+  }
+
   // A consumer's bare range wears weasel-ui's range skin, extended from its one
   // definition rather than copied. The skin keeps its pseudo-classes inside
   // :where(), so nothing this emits outranks a single class and a weasel-ui

@@ -76,7 +76,7 @@ function ShapeCard({ shape, status, variant, label, params, onChange }: {
       if (next[k] !== params[k]) onChange(k, next[k]);
     }
   };
-  const labelStyle: CSSProperties = { fontSize: 9, opacity: 0.7, fontFamily: 'Helvetica, Arial, sans-serif' };
+  const labelStyle: CSSProperties = { fontSize: 9, opacity: 0.7 };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, borderRadius: 6, background: 'rgba(255,255,255,0.02)', minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', minHeight: 56 }}>
@@ -247,12 +247,12 @@ function AllShapesView({ status, variant, label }: {
           readOnly
           value={exportText}
           rows={Math.min(20, Math.max(4, exportText.split('\n').length + 1))}
-          style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: 11, padding: 8, width: '100%', boxSizing: 'border-box' }}
+          style={{ fontFamily: 'var(--wzl-font-mono)', fontSize: 11, padding: 8, width: '100%', boxSizing: 'border-box' }}
         />
       )}
       {SHAPE_CATEGORIES.map((cat) => (
         <section key={cat.title}>
-          <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: '0 0 12px', fontFamily: 'Helvetica, Arial, sans-serif' }}>{cat.title}</h3>
+          <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: '0 0 12px' }}>{cat.title}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, alignItems: 'start' }}>
             {cat.shapes.map((shape) => (
               <ShapeCard
@@ -1203,7 +1203,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
     if (typeof navigator !== 'undefined' && navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
   };
 
-  const ctrlLabel: CSSProperties = { fontSize: 10, opacity: 0.7, fontFamily: 'Helvetica, Arial, sans-serif' };
+  const ctrlLabel: CSSProperties = { fontSize: 10, opacity: 0.7 };
   const LinkIcon = () => (
     <svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true" focusable="false" style={{ verticalAlign: 'middle', opacity: 0.85 }}>
       <path d="M6.5 4h-1.5a3 3 0 1 0 0 6h1.5M9.5 4h1.5a3 3 0 0 1 0 6h-1.5M5.5 7h5" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
@@ -1330,7 +1330,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
             readOnly
             value={exportText}
             rows={Math.min(20, exportText.split('\n').length + 1)}
-            style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: 11, padding: 8, width: '100%', boxSizing: 'border-box' }}
+            style={{ fontFamily: 'var(--wzl-font-mono)', fontSize: 11, padding: 8, width: '100%', boxSizing: 'border-box' }}
           />
         )}
         <section style={sectionStyle}>
@@ -1347,7 +1347,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
         </section>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, alignItems: 'start' }}>
         <section style={sectionStyle}>
-          <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: '0 0 4px', fontFamily: 'Helvetica, Arial, sans-serif' }}>Appearance</h3>
+          <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: '0 0 4px' }}>Appearance</h3>
           <label style={{ display: 'grid', gridTemplateColumns: '110px 1fr', alignItems: 'center', gap: 8 }}>
             <span style={ctrlLabel}>variant</span>
             {toggleBar<BadgeVariant>(variant, ['outline', 'solid', 'subtle'] as const, setVariant)}
@@ -1394,7 +1394,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
           </label>
         </section>
         <section style={sectionStyle}>
-          <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: '0 0 4px', fontFamily: 'Helvetica, Arial, sans-serif' }}>Type & padding</h3>
+          <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: '0 0 4px' }}>Type & padding</h3>
           <label style={{ display: 'grid', gridTemplateColumns: '60px 1fr', alignItems: 'center', gap: 8 }}>
             <span style={ctrlLabel}>font</span>
             {toggleBar<string>(
@@ -1424,7 +1424,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
             {toggleBar<'normal' | 'small-caps' | 'all-small-caps'>(caps, ['normal', 'small-caps', 'all-small-caps'] as const, setCaps)}
           </label>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, marginBottom: 2 }}>
-            <h4 style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.6, margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>Padding</h4>
+            <h4 style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.6, margin: 0 }}>Padding</h4>
             <div style={{ display: 'flex', gap: 8 }}>
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: 3, ...ctrlLabel }} title="Lock left/right padding">
                 <input type="checkbox" checked={linkPadX} onChange={(e) => toggleLinkPadX(e.target.checked)} />
@@ -1584,7 +1584,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <section style={effectsSectionStyle}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.85, margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>Effects ({labEffects.length})</h3>
+            <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.85, margin: 0 }}>Effects ({labEffects.length})</h3>
             <div style={{ display: 'flex', gap: 4 }}>
               <select
                 onChange={(e) => { if (e.target.value) { addEffect(e.target.value as BadgeEffect); e.target.value = ''; } }}
@@ -1597,7 +1597,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
             </div>
           </div>
           {labEffects.length === 0 && (
-            <p style={{ fontSize: 10, opacity: 0.5, fontFamily: 'Helvetica, Arial, sans-serif', margin: 0 }}>No effects. Add one from the dropdown.</p>
+            <p style={{ fontSize: 10, opacity: 0.5, margin: 0 }}>No effects. Add one from the dropdown.</p>
           )}
           {labEffects.map((eff, i) => (
             <div
@@ -1646,7 +1646,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <code style={{ fontSize: 11, opacity: 0.85, fontFamily: 'Helvetica, Arial, sans-serif' }}>{i + 1}.</code>
+                  <code style={{ fontSize: 11, opacity: 0.85 }}>{i + 1}.</code>
                   <select
                     value={eff.type}
                     onChange={(e) => changeEffectType(eff.id, e.target.value as BadgeEffect)}
@@ -1654,7 +1654,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
                   >
                     {EFFECT_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
                   </select>
-                  <code style={{ fontSize: 9, opacity: 0.6, fontFamily: 'Helvetica, Arial, sans-serif' }}>{EFFECTS[eff.type].offsetAt ? 'offset' : (EFFECTS[eff.type].zone ?? 'foreground')}</code>
+                  <code style={{ fontSize: 9, opacity: 0.6 }}>{EFFECTS[eff.type].offsetAt ? 'offset' : (EFFECTS[eff.type].zone ?? 'foreground')}</code>
                   <CloseButton ariaLabel={`Remove effect ${i + 1}`} onClick={() => removeEffect(eff.id)} />
                 </div>
                 {(EFFECT_LAB_CONTROLS[eff.type] ?? []).map((c) =>
@@ -1667,7 +1667,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
       </div>
     </div>
     <section style={{ ...sectionStyle, gap: 8 }}>
-      <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>Presets</h3>
+      <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: 0 }}>Presets</h3>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
         {LAB_PRESETS.map((p) => (
           <button
@@ -1688,7 +1688,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
             >
               {label}
             </Badge>
-            <code style={{ fontSize: 10, opacity: 0.7, fontFamily: 'Helvetica, Arial, sans-serif' }}>{p.name}</code>
+            <code style={{ fontSize: 10, opacity: 0.7 }}>{p.name}</code>
           </button>
         ))}
       </div>
@@ -1971,8 +1971,8 @@ function OctantSplineEditor({
         {/* Cardinal (s=0) and end (s=1) reference rays */}
         <line x1="0" y1="0" x2={axisLen} y2="0" stroke="rgba(255,255,255,0.25)" strokeWidth="0.4" strokeDasharray="1.5 1.5" />
         <line x1="0" y1="0" x2={(axisLen * Math.cos(maxAngle)).toFixed(2)} y2={(-axisLen * Math.sin(maxAngle)).toFixed(2)} stroke="rgba(255,255,255,0.25)" strokeWidth="0.4" strokeDasharray="1.5 1.5" />
-        <text x="76" y="2" fontSize="3" fill="rgba(255,255,255,0.45)" fontFamily="Helvetica, Arial, sans-serif">cardinal (s = 0)</text>
-        <text x={(axisLen * Math.cos(maxAngle) + 2).toFixed(2)} y={(-axisLen * Math.sin(maxAngle) - 1).toFixed(2)} fontSize="3" fill="rgba(255,255,255,0.45)" fontFamily="Helvetica, Arial, sans-serif">{endLabel}</text>
+        <text x="76" y="2" fontSize="3" fill="rgba(255,255,255,0.45)">cardinal (s = 0)</text>
+        <text x={(axisLen * Math.cos(maxAngle) + 2).toFixed(2)} y={(-axisLen * Math.sin(maxAngle) - 1).toFixed(2)} fontSize="3" fill="rgba(255,255,255,0.45)">{endLabel}</text>
         {/* Spline curve */}
         <polyline points={samplePoints.join(' ')} fill="rgba(127,176,105,0.18)" stroke="#7fb069" strokeWidth="0.7" vectorEffect="non-scaling-stroke" />
         {/* Anchors */}
@@ -2034,14 +2034,14 @@ function OctantSplineEditor({
                   onAnchorChange(idx, { s: a.s, r: a.r, w: newW });
                 }}
               />
-              <text x={x + 2.5} y={y - 1.5} fontSize="2.8" fill="rgba(255,255,255,0.7)" fontFamily="Helvetica, Arial, sans-serif">
+              <text x={x + 2.5} y={y - 1.5} fontSize="2.8" fill="rgba(255,255,255,0.7)">
                 {`(${a.s.toFixed(2)}, ${a.r.toFixed(1)}) w${a.w.toFixed(1)}`}
               </text>
             </g>
           );
         })}
       </svg>
-      <p style={{ fontSize: 9, opacity: 0.55, margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>
+      <p style={{ fontSize: 9, opacity: 0.55, margin: 0 }}>
         <strong>Drag</strong> a dot to move it freely. <strong>Shift-drag</strong> locks motion to the curve's local normal axis (slides the anchor toward/away from the curve without changing its tangential position). <strong>Scroll</strong> over a dot to change its weight (visual size scales with weight). <strong>Right-click</strong> an interior dot to delete it. <strong>Alt-click</strong> anywhere on the canvas to insert a new anchor. Endpoint anchors (cream) are pinned to the cardinal / diagonal axes.
       </p>
     </div>
@@ -2125,7 +2125,7 @@ function OctantCell({ params, label, size = 100 }: { params: Partial<NonNullable
         <polyline points={pts.join(' ')} fill="rgba(127,176,105,0.18)" stroke="#7fb069" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
         <circle cx="0" cy="0" r="1.2" fill="rgba(255,255,255,0.3)" />
       </svg>
-      <code style={{ fontSize: 9, opacity: 0.7, fontFamily: 'Helvetica, Arial, sans-serif' }}>{label}</code>
+      <code style={{ fontSize: 9, opacity: 0.7 }}>{label}</code>
     </div>
   );
 }
@@ -2138,7 +2138,7 @@ function ParamSweep({ title, paramKey, values, fmt }: {
 }) {
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.75, margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>{title}</h3>
+      <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.75, margin: 0 }}>{title}</h3>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
         {values.map((v) => (
           <OctantCell key={`${String(paramKey)}-${v}`} params={{ [paramKey]: v } as Partial<NonNullable<QFParams>>} label={`${String(paramKey)} = ${fmt ? fmt(v) : v}`} />
@@ -2160,7 +2160,7 @@ export const QuatrefoilOctants: Story = {
     padding: { table: { disable: true } },
   },
   render: () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, padding: 16, fontFamily: 'Helvetica, Arial, sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, padding: 16 }}>
       <p style={{ fontSize: 12, opacity: 0.7, margin: 0, maxWidth: 760, lineHeight: 1.5 }}>
         One octant of the quatrefoil curve. The horizontal dashed line is the cardinal axis (s = 0);
         the 45° dashed line is the diagonal axis (s = 1). All other params default; only the

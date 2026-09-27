@@ -37,6 +37,6 @@
 .label { font-size: var(--wzl-font-size-xs); }
 .shortcut {
   color: var(--wzl-fg-muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-2xs);
 }

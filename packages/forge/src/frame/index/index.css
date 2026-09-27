@@ -3,7 +3,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: var(--wzl-space-lg);
-  font-family: var(--wzl-font-body);
+  font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size);
   color: var(--wzl-fg);
 }
@@ -14,7 +14,6 @@
 
 .fg-index__path {
   margin: 0 0 var(--wzl-space-2);
-  font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-lg);
   color: var(--wzl-fg-muted);
 }
@@ -32,6 +31,7 @@
 .fg-index-story__description {
   max-width: 72ch;
   margin: var(--wzl-space-4) 0 0;
+  font-family: var(--wzl-font-body);
   line-height: 1.5;
   color: var(--wzl-fg-muted);
 }
@@ -139,7 +139,6 @@
   grid-template-columns: max-content 1fr;
   gap: var(--wzl-space-3) var(--wzl-space-8);
   margin: var(--wzl-space-8) 0 0;
-  font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-sm);
 }
 
@@ -182,6 +181,5 @@
 .fg-index-deps__none {
   max-width: 72ch;
   margin: var(--wzl-space-8) 0 0;
-  font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-sm);
 }
