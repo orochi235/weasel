@@ -56,6 +56,9 @@
 }
 
 .thumb {
+  /* RAC positions the thumb along the track and translates it by half its own
+     size on both axes; the cross-axis anchor is ours to set. */
+  top: 50%;
   width: 14px;
   height: 14px;
   background: var(--wzl-fg-muted);
@@ -67,6 +70,7 @@
 }
 
 .slider[data-orientation="vertical"] .thumb {
+  left: 50%;
   cursor: ns-resize;
 }
 

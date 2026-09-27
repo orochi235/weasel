@@ -1,6 +1,10 @@
 // The Oswald and Inter faces come from @weasel-js/theme/faces.css, imported at
 // the top of styles.less.
 
+// weasel-ui's native range skin, read for `:extend` below and emitted only
+// through it.
+@import (reference, less) '../../../ui/src/components/range.module.css';
+
 // Resets and global element defaults.
 .lk-root {
   font-family: var(--wzl-font-ui);
@@ -52,47 +56,11 @@
     }
   }
 
-  // Mirrors packages/ui/src/components/range.module.css so a consumer's bare
-  // range matches the kit's. A weasel-ui component's own module class outranks
-  // this, which is what keeps InlineRange's gradient track intact.
-  :where(input[type="range"]) {
-    appearance: none;
-    -webkit-appearance: none;
-    height: 12px;
-    background: transparent;
-    cursor: pointer;
-
-    &::-webkit-slider-runnable-track {
-      height: var(--wzl-slider-track-h);
-      border-radius: var(--wzl-radius-sm);
-      background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-mix), transparent);
-    }
-
-    &::-moz-range-track {
-      height: var(--wzl-slider-track-h);
-      border-radius: var(--wzl-radius-sm);
-      background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-mix), transparent);
-    }
-
-    &::-webkit-slider-thumb {
-      appearance: none;
-      -webkit-appearance: none;
-      width: var(--wzl-slider-thumb-size);
-      height: var(--wzl-slider-thumb-size);
-      border: none;
-      border-radius: 50%;
-      background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-mix), transparent);
-      margin-top: calc((var(--wzl-slider-track-h) - var(--wzl-slider-thumb-size)) / 2);
-    }
-
-    &::-moz-range-thumb {
-      width: var(--wzl-slider-thumb-size);
-      height: var(--wzl-slider-thumb-size);
-      border: none;
-      border-radius: 50%;
-      background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-mix), transparent);
-    }
-  }
+  // A consumer's bare range wears weasel-ui's range skin, extended from its one
+  // definition rather than copied. The skin keeps its pseudo-classes inside
+  // :where(), so nothing this emits outranks a single class and a weasel-ui
+  // component's own module class still wins.
+  :where(input[type="range"]):extend(.range all) {}
 }
 
 // The `.lk-root` prefix convention: a labkit class handed to a weasel-ui

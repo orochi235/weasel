@@ -1,11 +1,12 @@
 /* The one skin for a native <input type="range">. Imported by InlineRange and
    by the property rows, which render the same DOM and used to carry three
-   independently authored copies of these rules.
+   independently authored copies of these rules. labkit's theme/base.less
+   extends it onto a bare range under `.lk-root`, so it is the only copy.
 
    The track is painted here rather than left to `accent-color`: a UA fills the
    left of the track with the accent but draws the remainder near-white on a
    dark surface whatever `color-scheme` says, and overriding the track's
-   background removes the accent fill instead of recolouring the remainder. */
+   background removes the accent fill instead of recoloring the remainder. */
 .range {
   appearance: none;
   -webkit-appearance: none;
@@ -47,8 +48,10 @@
   border: none;
   border-radius: 50%;
   background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-mix), transparent);
-  /* Centres an 8px thumb on a 4px track. Webkit does not centre it for you. */
-  margin-top: calc((var(--wzl-slider-track-h) - var(--wzl-slider-thumb-size)) / 2);
+  /* WebKit and Blink hang the thumb from the track's top edge. A transform, not
+     margin-top: Blink rounds a thumb margin to a whole CSS pixel, which leaves an
+     odd track/thumb gap half a pixel off center at every DPR. */
+  transform: translateY(calc((var(--wzl-slider-track-h) - var(--wzl-slider-thumb-size)) / 2));
 }
 
 .range::-moz-range-thumb {
@@ -59,17 +62,19 @@
   background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-mix), transparent);
 }
 
-.range:focus-visible {
+/* :where() keeps these at the specificity of `.range` alone, which is what a bare
+   labkit range extending this skin needs to stay at zero. */
+.range:where(:focus-visible) {
   outline: 2px solid var(--wzl-focus-ring);
   outline-offset: 2px;
 }
 
-.range:disabled {
+.range:where(:disabled) {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
-/* Alpha variant: a fainter track, used where the row already carries a colour
+/* Alpha variant: a fainter track, used where the row already carries a color
    swatch and the slider must not compete with it. */
 .alpha::-webkit-slider-runnable-track {
   background: var(--wzl-range-track-bg, color-mix(in srgb, var(--wzl-accent) 10%, transparent));
@@ -81,13 +86,20 @@
 
 /* A dead alpha track keeps its groove but loses its thumb, so the affordance
    reads inert rather than merely dimmed. Keyed off `:disabled`, which a color field
-   already sets on the input — not off a class on the row. */
-.alpha:disabled::-webkit-slider-runnable-track,
+   already sets on the input — not off a class on the row. One rule per engine:
+   Blink and WebKit drop a whole selector list that names a -moz- pseudo-element. */
+.alpha:disabled::-webkit-slider-runnable-track {
+  background: color-mix(in srgb, var(--wzl-fg) 5%, transparent);
+}
+
 .alpha:disabled::-moz-range-track {
   background: color-mix(in srgb, var(--wzl-fg) 5%, transparent);
 }
 
-.alpha:disabled::-webkit-slider-thumb,
+.alpha:disabled::-webkit-slider-thumb {
+  background: transparent;
+}
+
 .alpha:disabled::-moz-range-thumb {
   background: transparent;
 }

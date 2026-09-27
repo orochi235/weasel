@@ -159,7 +159,10 @@ function checkLessFile(file: string): void {
     const code = line
       .replace(/\/\/.*$/, '')
       .replace(/'[^']*'/g, "''")
-      .replace(/"[^"]*"/g, '""');
+      .replace(/"[^"]*"/g, '""')
+      // An :extend() target names a class some imported stylesheet defines;
+      // labkit emits only its own selector with that class's rules.
+      .replace(/:extend\([^)]*\)/g, '');
     if (/^\s*@import\b/.test(code)) continue;
     for (const match of code.matchAll(LESS_CLASS_RE)) {
       const cls = match[1] ?? '';
