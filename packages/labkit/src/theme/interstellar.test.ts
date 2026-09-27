@@ -18,7 +18,7 @@ describe('interstellarTheme', () => {
 
     // Values carried over verbatim from the retired Less.
     expect(dark['--wzl-surface']).toBe('#0a0a14');
-    expect(dark['--wzl-accent']).toBe('#b08adb');
+    expect(dark['--wzl-accent']).toBe('#4f46e5');
     // Light mode is weasel's own: interstellar restyles the dark only.
     const weasel = resolveTheme(weaselTheme, { mode: 'light' });
     expect(light['--wzl-surface']).toBe(weasel['--wzl-surface']);

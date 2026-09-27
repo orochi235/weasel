@@ -81,21 +81,28 @@
     "accent": {
       "by": "mode",
       "dark": {
-        "value": "#b08adb",
+        "value": "#4f46e5",
         "type": "color"
       }
     },
     "accent-hover": {
       "by": "mode",
       "dark": {
-        "value": "#c6a3ee",
+        "value": "#6d5dfc",
+        "type": "color"
+      }
+    },
+    "accent-strong": {
+      "by": "mode",
+      "dark": {
+        "value": "#7474fe",
         "type": "color"
       }
     },
     "focus-ring": {
       "by": "mode",
       "dark": {
-        "value": "rgba(176, 138, 219, 0.45)",
+        "value": "rgba(116, 116, 254, 0.5)",
         "type": "color"
       }
     },
