@@ -11,16 +11,23 @@ export interface KeySpec {
   optional?: boolean;
 }
 
+/** Where {@link KeySequence} draws its separator. */
+export type KeySequenceJoins = 'all' | 'key' | 'none';
+
 /** Props for {@link KeySequence}. */
 export interface KeySequenceProps {
   /** Keys to render. `undefined` or empty renders a muted em-dash.
    *  Modifiers are always rendered first regardless of input order; relative
    *  order within each group is preserved. */
   keys: readonly KeySpec[] | undefined;
-  /** Character inserted between the trailing modifier chip and the first
-   *  non-modifier chip (e.g. `'+'` renders `⌘ + K`). `null` or `''`
-   *  suppresses it. Defaults to `'+'`. */
-  separator?: string | null;
+  /** Glyph drawn wherever {@link joins} places a separator. Defaults to `'+'`. */
+  separator?: string;
+  /** Where the separator goes. Defaults to `'key'`.
+   *  - `'all'`: between every pair of chips — `⌘ + ⇧ + K`, `⌘ + ⇧`, `A + B`.
+   *  - `'key'`: once, between the last modifier and the first non-modifier —
+   *    `⌘ ⇧ + K`, `⌘ + K L`. A sequence without both kinds gets none.
+   *  - `'none'`: never. */
+  joins?: KeySequenceJoins;
   /** Forwarded to every `KeyCap` in the sequence. `'minimal'` renders
    *  unfilled chips whose border + legend are `currentColor`. */
   variant?: KeyCapVariant;
@@ -32,7 +39,7 @@ export interface KeySequenceProps {
 
 /** Renders a shortcut as a row of `KeyCap` chips, one per key. Optional
  *  keys render inverted to distinguish them from required ones. */
-export function KeySequence({ keys, separator = '+', variant = 'default', font, className }: KeySequenceProps) {
+export function KeySequence({ keys, separator = '+', joins = 'key', variant = 'default', font, className }: KeySequenceProps) {
   if (!keys || keys.length === 0) {
     return <span className={[s.keysEmpty, className].filter(Boolean).join(' ')}>—</span>;
   }
@@ -44,13 +51,14 @@ export function KeySequence({ keys, separator = '+', variant = 'default', font, 
       return am - bm || a.i - b.i;
     })
     .map(({ k }) => k);
-  const sepIdx = ordered.findIndex((k) => inferKeycapKind(k.label) !== 'modifier');
-  const showSep = !!separator && sepIdx > 0 && sepIdx < ordered.length;
+  const keyIdx = ordered.findIndex((k) => inferKeycapKind(k.label) !== 'modifier');
+  const sepBefore = (i: number): boolean =>
+    i > 0 && (joins === 'all' || (joins === 'key' && i === keyIdx));
   return (
     <span className={[s.keys, className].filter(Boolean).join(' ')}>
       {ordered.map((k, i) => (
         <Fragment key={i}>
-          {showSep && i === sepIdx ? <span className={s.sep}>{separator}</span> : null}
+          {sepBefore(i) ? <span className={s.sep}>{separator}</span> : null}
           <KeyCap label={k.label} inverted={k.optional ?? false} variant={variant} font={font} />
         </Fragment>
       ))}

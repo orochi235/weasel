@@ -131,7 +131,7 @@ describe('argsToSchema', () => {
       expect(shape(leaf({ gap: 0 }, { gap: { control: 'text' } }, 'gap'))).toEqual({ kind: 'string', default: 0 });
     });
 
-    it("keeps Keycaps NoSeparator's separator: null under a text control", () => {
+    it('keeps a null arg under a text control', () => {
       expect(argsToSchema({ separator: null }, { separator: { control: 'text' } }).defaults()).toEqual({ separator: null });
     });
 

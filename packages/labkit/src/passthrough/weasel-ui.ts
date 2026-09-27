@@ -102,6 +102,7 @@ export {
   type KeyCapVariant,
   type KeycapKind,
   KeySequence,
+  type KeySequenceJoins,
   type KeySequenceProps,
   type KeySpec,
   keyGlyph,
