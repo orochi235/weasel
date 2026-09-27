@@ -517,18 +517,38 @@
     },
     "accent-soft": {
       "by": "mode",
-      "dark": { "value": "#262a66", "type": "color" },
-      "light": { "value": "#312e81", "type": "color" }
+      "dark": {
+        "value": "#262a66",
+        "type": "color"
+      },
+      "light": {
+        "value": "#312e81",
+        "type": "color"
+      }
     },
     "accent-base": {
       "by": "mode",
-      "dark": { "value": "#5b63c9", "type": "color", "description": "Periwinkle. Anchors primary actions on dark surfaces." },
-      "light": { "value": "#4338ca", "type": "color", "description": "Indigo. Anchors primary actions on light surfaces." }
+      "dark": {
+        "value": "#5b63c9",
+        "type": "color",
+        "description": "Periwinkle. Anchors primary actions on dark surfaces."
+      },
+      "light": {
+        "value": "#4338ca",
+        "type": "color",
+        "description": "Indigo. Anchors primary actions on light surfaces."
+      }
     },
     "accent-strong": {
       "by": "mode",
-      "dark": { "value": "#8c94ee", "type": "color" },
-      "light": { "value": "#6366f1", "type": "color" }
+      "dark": {
+        "value": "#8c94ee",
+        "type": "color"
+      },
+      "light": {
+        "value": "#6366f1",
+        "type": "color"
+      }
     },
     "danger-base": {
       "value": "#d94a3f",
