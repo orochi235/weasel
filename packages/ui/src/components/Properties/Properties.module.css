@@ -1566,14 +1566,12 @@
   margin: 0;
 }
 
-/* A twisty leads the title, so the head takes over the title's bottom gap and
-   the two sit on one line. */
-.groupHead {
-  margin-bottom: var(--wzl-prop-group-title-gap, 4px);
-}
-
-.groupHead .groupTitle {
-  margin-bottom: 0;
+/* The title between the rules: the twisty, where the group folds, and the text. */
+.groupTitleMid {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-disclosure-gap, 4px);
+  min-width: 0;
 }
 
 /* `hidden` on its own loses to the body's `display: grid` below. */
