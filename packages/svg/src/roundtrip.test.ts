@@ -994,6 +994,22 @@ describe('baseline-shift / relative font-size', () => {
     expect(svg).toContain('<tspan baseline-shift="sub">i</tspan>');
   });
 
+  it('serializes a node-level script on <text>, and reads it back onto every run', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'hi',
+      style: { script: 'sub' },
+    };
+    const svg = serializeSvg([node], { viewBox: box });
+    expect(svg).toMatch(/<text [^>]*baseline-shift="sub"/);
+    const t = parseSvg(svg).nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    // The reader has always carried a <text>-level shift down onto its runs,
+    // which resolves exactly as a node-level script does.
+    expect(t.runs?.every((r) => r.script === 'sub')).toBe(true);
+  });
+
   it('serializes baselineShift as a percentage of the parent font size', () => {
     const node: SvgNode = {
       kind: 'text',

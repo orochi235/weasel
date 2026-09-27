@@ -90,6 +90,13 @@ export interface TextStyle {
   /** CSS `text-transform` for display; the text itself is not rewritten.
    *  Default `'none'`. */
   textTransform?: TextTransform;
+  /**
+   * Set the node's text as a superscript or subscript — the default every run
+   * inherits, exactly as a run's own `StyledRun.script` is for that run. The
+   * lines keep the height and baseline the unscripted text would have had.
+   * Absent is ordinary text.
+   */
+  script?: 'super' | 'sub';
 }
 
 /** `TextStyle` with all fields filled in from defaults — what the renderer actually consumes. */
@@ -114,6 +121,8 @@ export interface ResolvedTextStyle {
   strikethrough: boolean;
   overline: boolean;
   textTransform: TextTransform;
+  /** Absent is ordinary text. */
+  script?: 'super' | 'sub';
   /** Absent means no outline — unlike the other fields, this one has no
    *  default to fall back to. See {@link TextPaint.stroke}. */
   stroke?: Stroke;
@@ -234,6 +243,7 @@ export function resolveTextStyle(
     strikethrough: style.strikethrough ?? DEFAULT_TEXT_STYLE.strikethrough,
     overline: style.overline ?? DEFAULT_TEXT_STYLE.overline,
     textTransform: style.textTransform ?? DEFAULT_TEXT_STYLE.textTransform,
+    ...(style.script !== undefined ? { script: style.script } : {}),
     ...(stroke !== undefined ? { stroke } : {}),
   };
 }

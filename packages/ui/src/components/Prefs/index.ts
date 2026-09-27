@@ -20,6 +20,7 @@ export {
   type BuiltinPref,
   type PrefBoolean,
   type PrefBooleanControl,
+  type PrefBooleanEncoding,
   type PrefColor,
   type PrefCustom,
   type PrefEnum,

@@ -150,6 +150,34 @@ describe('resolveRuns', () => {
     expect(run.fontSize).toBe(40);
   });
 
+  it("takes a node-level script as every run's default", () => {
+    const style = resolveTextStyle({ fontSize: 100, script: 'super' });
+    const [inherited, own] = resolveRuns([{ text: 'a' }, { text: 'b', script: 'sub' }], style);
+    expect(inherited.fontSize).toBeCloseTo(58.3, 6);
+    expect(inherited.baselineShift).toBeCloseTo(33.3, 6);
+    // A run naming its own script replaces the node's rather than stacking.
+    expect(own.fontSize).toBeCloseTo(58.3, 6);
+    expect(own.baselineShift).toBeCloseTo(-33.3, 6);
+  });
+
+  it('holds the line open at the inherited size when a relative size shrinks a run', () => {
+    const style = resolveTextStyle({ fontSize: 100 });
+    const [plain, sup, scaled, absolute] = resolveRuns(
+      [
+        { text: 'a' },
+        { text: 'b', script: 'super' },
+        { text: 'c', fontScale: 0.5 },
+        { text: 'd', script: 'super', fontSize: 20 },
+      ],
+      style,
+    );
+    expect(plain.strutSize).toBeUndefined();
+    expect(sup.strutSize).toBe(100);
+    expect(scaled.strutSize).toBe(100);
+    // An absolute size is the run's own; nothing inherited is left to hold.
+    expect(absolute.strutSize).toBeUndefined();
+  });
+
   it('returns an empty array for empty input', () => {
     const style = resolveTextStyle({});
     expect(resolveRuns([], style)).toEqual([]);

@@ -35,6 +35,14 @@ export const ICON_PATHS = {
   subscript: `<path d="M3.6 3.6 10.4 11.4M10.4 3.6 3.6 11.4"/><path d="M11.9 11.5a2.2 2.2 0 1 1 4.3.8c0 1.4-4.3 2.2-4.3 3.5h4.5"/>`,
   code: `<path d="M7 6.2 3.2 10 7 13.8M13 6.2 16.8 10 13 13.8"/><path d="M11.2 4.8 8.8 15.2"/>`,
 
+  // Paragraph alignment
+  textAlignLeft: `<path d="M3 4.375H17M3 8.125H12M3 11.875H17M3 15.625H12"/>`,
+  textAlignCenter: `<path d="M3 4.375H17M5.5 8.125H14.5M3 11.875H17M5.5 15.625H14.5"/>`,
+  textAlignRight: `<path d="M3 4.375H17M8 8.125H17M3 11.875H17M8 15.625H17"/>`,
+  textAlignTop: `<rect x="1.875" y="1.875" width="16.25" height="16.25" rx="2" stroke-width="1"/><path d="M5.5 5.625H14.5M7 9.375H13"/>`,
+  textAlignMiddle: `<rect x="1.875" y="1.875" width="16.25" height="16.25" rx="2" stroke-width="1"/><path d="M5.5 8.125H14.5M7 11.875H13"/>`,
+  textAlignBottom: `<rect x="1.875" y="1.875" width="16.25" height="16.25" rx="2" stroke-width="1"/><path d="M5.5 10.625H14.5M7 14.375H13"/>`,
+
   // Playback
   play: `<path d="M7.6 5.2 15.6 10 7.6 14.8Z"/>`,
   pause: `<path d="M7.8 5.2v9.6M12.2 5.2v9.6"/>`,
@@ -413,6 +421,17 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
       'superscript',
       'subscript',
       'code',
+    ],
+  },
+  {
+    label: 'Paragraph alignment',
+    names: [
+      'textAlignLeft',
+      'textAlignCenter',
+      'textAlignRight',
+      'textAlignTop',
+      'textAlignMiddle',
+      'textAlignBottom',
     ],
   },
   {

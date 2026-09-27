@@ -7,6 +7,7 @@ export type {
   ToolPref as BuiltinPref,
   ToolPrefBoolean as PrefBoolean,
   ToolPrefBooleanControl as PrefBooleanControl,
+  ToolPrefBooleanEncoding as PrefBooleanEncoding,
   ToolPrefColor as PrefColor,
   ToolPrefCustom as PrefCustom,
   ToolPrefEnum as PrefEnum,

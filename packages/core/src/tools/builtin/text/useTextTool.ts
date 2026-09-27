@@ -79,14 +79,19 @@ useTextTool.options = {
     underline: flag('Underline', 'underline'),
     strikethrough: flag('Strikethrough', 'strikethrough'),
     overline: flag('Overline', 'overline'),
-    // Its own kind rather than an enum: the two values are exclusive *and*
-    // absent is a third state an enum cannot name, so clicking the lit
-    // segment has to clear it. The host draws it and owns that rule.
+    // Clearable: the two values are exclusive *and* absent is a third state,
+    // so clicking the lit segment turns the script off.
     script: {
-      kind: 'script',
+      kind: 'enum',
       name: 'Script',
       description: 'Raise or lower the range off the baseline, at a smaller size.',
+      control: 'toggle',
+      clearable: true,
       default: undefined,
+      options: [
+        { value: 'super', label: 'Superscript', icon: 'superscript' },
+        { value: 'sub', label: 'Subscript', icon: 'subscript' },
+      ],
     },
     textTransform: {
       kind: 'enum',

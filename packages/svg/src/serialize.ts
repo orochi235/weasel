@@ -527,6 +527,7 @@ function textXml(
   }
   const decoration = textDecorationValue(style?.underline, style?.strikethrough, style?.overline);
   if (decoration) attrs.push(`text-decoration="${decoration}"`);
+  if (style?.script) attrs.push(`baseline-shift="${style.script}"`);
   // A CSS property rather than an SVG 1.1 presentation attribute, so it goes
   // where every CSS-aware reader looks for it.
   if (style?.textTransform && style.textTransform !== 'none') {

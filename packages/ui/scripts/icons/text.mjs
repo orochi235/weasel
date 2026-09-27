@@ -54,3 +54,35 @@ export const TEXT_ORDER = [
   'subscript',
   'code',
 ];
+
+// Paragraph alignment: lines of text as rules, the picture every editor uses.
+//
+// Horizontal: four lines alternating long and short, the short ones pushed to
+// the edge (or the middle) the option names. Rows sit on 3.75-unit centers so
+// that at 16px (0.8px a unit) each falls on a pixel center at 1x.
+const ROWS = [4.375, 8.125, 11.875, 15.625];
+const LONG = [3, 17];
+const SHORT = 9;
+const rule = (x1, x2, y) => `M${x1} ${y}H${x2}`;
+const lines = (shortStart) =>
+  `<path d="${ROWS.map((y, i) =>
+    i % 2 === 0 ? rule(LONG[0], LONG[1], y) : rule(shortStart, shortStart + SHORT, y),
+  ).join('')}"/>`;
+
+// Vertical: two lines inside a box, set against its top, its middle or its
+// bottom. The box is structure, so it is a hairline; the lines are ink. Every
+// edge and row sits on a 1x pixel center at 16px, like the rows above, and
+// the block clears the box's inner edge by the same 2.5 units top and bottom,
+// so the three read as one block moved rather than three drawings.
+const BOX = `<rect x="1.875" y="1.875" width="16.25" height="16.25" rx="2" stroke-width="1"/>`;
+const GAP = 3.75;
+const block = (y) => `<path d="${rule(5.5, 14.5, y)}${rule(7, 13, y + GAP)}"/>`;
+
+export const PARAGRAPH = {
+  textAlignLeft: lines(LONG[0]),
+  textAlignCenter: lines(10 - SHORT / 2),
+  textAlignRight: lines(LONG[1] - SHORT),
+  textAlignTop: BOX + block(5.625),
+  textAlignMiddle: BOX + block(10 - GAP / 2),
+  textAlignBottom: BOX + block(14.375 - GAP),
+};

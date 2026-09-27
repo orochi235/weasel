@@ -1,4 +1,4 @@
-import type { BooleanOp, FillStyle, Path, Stroke, StyledRun, TextStyle } from '@weasel-js/core';
+import type { BooleanOp, FillStyle, Path, Stroke, StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/core';
 
 export type ToolKind =
   | 'rect' | 'ellipse' | 'polygon' | 'star' | 'line'
@@ -45,6 +45,8 @@ export interface TextObj extends BaseObj {
    *  is unfilled (SVG `fill="none"`); absent takes the painter's black. */
   fill?: FillStyle | null;
   stroke?: Stroke;
+  /** Where the lines sit in the box's height. Absent is the top. */
+  verticalAlign?: TextVerticalAlign;
 }
 
 export type Obj = PathObj | TextObj;

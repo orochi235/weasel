@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
-import { fontString, resolveAlign, resolveTextStyle } from '@weasel-js/text';
+import { fontString, resolveAlign, resolveTextStyle, SCRIPT_METRICS } from '@weasel-js/text';
 import type { TextPaint, TextVerticalAlign } from '@weasel-js/text';
 import { verticalAlignOffset } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
@@ -986,6 +986,7 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   const decorations: string[] = [];
   if (style.underline) decorations.push('underline');
   if (style.strikethrough) decorations.push('line-through');
+  if (style.overline) decorations.push('overline');
   el.style.textDecoration = decorations.length > 0 ? decorations.join(' ') : 'none';
   el.style.textTransform = style.textTransform;
   // Line breaks follow the node's declared `wrap`, as the canvas's do. Layout
@@ -1064,8 +1065,17 @@ function placeOverlay(
   el.style.left = `${pose.x + pose.width * (pose.zoom ?? 1) * anchor + 1 - (clip?.x ?? 0)}px`;
   el.style.width = style.wrap ? `${pose.width}px` : 'max-content';
   el.style.minWidth = style.wrap ? '' : `${pose.width}px`;
-  el.style.fontSize = `${pose.fontSize}px`;
-  el.style.lineHeight = String(pose.lineHeight ?? style.lineHeight);
+  // A node-level script draws the glyphs smaller and raised on the line the
+  // plain text would hold, so the line height is pinned in pixels of the
+  // unscripted size rather than left to scale with the font. The rise goes in
+  // `translate`, which composes outside `transform` and so is in screen pixels.
+  const script = style.script ? SCRIPT_METRICS[style.script] : undefined;
+  const lineHeight = pose.lineHeight ?? style.lineHeight;
+  el.style.fontSize = `${pose.fontSize * (script?.size ?? 1)}px`;
+  el.style.lineHeight = script ? `${pose.fontSize * lineHeight}px` : String(lineHeight);
+  el.style.translate = script
+    ? `0 ${-script.shift * pose.fontSize * (pose.zoom ?? 1)}px`
+    : '';
   // A top-aligned overlay fills its box, so a click anywhere in it lands in
   // the editor. Any other alignment needs the content's own height, which a
   // min-height would mask; `offsetHeight` is pre-transform, in pose units.

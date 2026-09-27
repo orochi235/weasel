@@ -19,6 +19,7 @@ import {
   classifyKind,
   effectiveSections,
   kindBreakdown,
+  nodeValueAt,
   setAtPath,
   type AnyNode,
   type PanelLeaf,
@@ -89,7 +90,9 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     return <div className={[s.root, className].filter(Boolean).join(' ')}>{emptyState}</div>;
   }
 
-  const commit = (leaf: PanelLeaf, value: unknown): void => {
+  /** Writes, into every selected node, what `next` derives from the value
+   *  that node holds at the leaf's path. */
+  const commit = (leaf: PanelLeaf, next: (prev: unknown) => unknown): void => {
     const [head, ...rest] = leaf.path.split('.');
     if (rest.length === 0) return;
     const ids = selection.current.map(asNodeId);
@@ -97,6 +100,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
       for (const id of ids) {
         const node = scene.get(id);
         if (!node) continue;
+        const value = next(nodeValueAt(node as AnyNode, leaf.path));
         // `setAtPath` spreads plain objects/arrays down the schema path;
         // consumer `pose`/`data` are assumed plain-object-shaped along
         // that path (a class instance's prototype would be dropped by
@@ -190,7 +194,7 @@ function leafCell(
   ariaLabel: string,
   nodes: readonly AnyNode[],
   renderers: Record<string, PropertyRenderer> | undefined,
-  commit: (leaf: PanelLeaf, value: unknown) => void,
+  commit: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void,
   selectionKey: string,
 ): LeafCell {
   const { path, leaf } = panelLeaf;
@@ -204,7 +208,8 @@ function leafCell(
     value,
     mixed,
     unset: !mixed && aggregated === undefined,
-    setValue: (v) => commit(panelLeaf, v),
+    setValue: (v) => commit(panelLeaf, () => v),
+    update: (fn) => commit(panelLeaf, fn),
     valueAt: (p) => {
       const at = aggregateValue(nodes, p);
       return at === MIXED ? { value: undefined, mixed: true } : { value: at, mixed: false };

@@ -455,7 +455,9 @@ Core five + Crop shipped. Remaining:
   `fill: null` through `resolveRuns`, the DOM overlay, the range algebra and
   `@weasel-js/svg`'s `<tspan>` output.
 
-- **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
+- **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected. A node-level `TextStyle.script` adds a second, known offset: the overlay sets the whole node at the scripted size on a line pinned to the unscripted height and raises it by the preset's shift, but CSS centers the smaller glyphs in that line where the canvas hangs them from the unscripted ascent — about `(F − f)(ascent − descent) / 2`, roughly 2px at a 16px node. Correcting it needs the face's ascent and descent in the overlay.
+
+- **(P3) No justified alignment.** `TextAlign` is left / center / right / start / end; layout has no mode that spreads a wrapped line's slack across its word gaps (every line but a paragraph's last). The panel's Align bar offers the three absolute edges and reads `start` / `end` as the edge they paint at, so a justify segment is one option away once `layoutRuns` can do it — the SVG writer would also need `text-align-last` or per-word placement, since `text-anchor` has no justify.
 
 - **(P3) Per-character tracking in the DOM overlay is CSS-approximate.**
   `letterSpacing` is applied per code point rather than per grapheme cluster,
@@ -752,6 +754,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
+
+- **(P3) An encoded field of an object leaf reads and writes without its siblings across a
+  mixed selection.** `SelectionPanel` reports and writes an object leaf's fields per node, but a
+  field whose `encoding` needs the rest of the object — a stroke's dash style, which is a multiple
+  of that stroke's width — is handed no siblings when the selected objects differ. So two strokes
+  at different widths show no dash style, and choosing Dashed writes one array computed for no
+  width into both. The fix is to pass the encoding each node's own object, through
+  `PropertyRenderContext.update`, rather than the one aggregated object that a mixed selection
+  does not have.
 
 - **(P2) Kit actions still tie on a bare drag, and the kit's own check cannot see it.**
   `areaSelect`, `insert` and `viewport.dragPan` each keep a `defaultBinding: { kind: 'drag' }`,

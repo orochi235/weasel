@@ -1219,6 +1219,19 @@ describe('layoutRuns — baseline shift', () => {
     expect(out.groups[0].quads[0].baselineY).toBe(4);
   });
 
+  it('keeps the line a shrunken run would have had at its strut size', async () => {
+    await registerFixture('inter', [{}]);
+    // Half size and raised, but held open at the inherited 32: the line is the
+    // one a plain run at 32 lays out, so a superscript alone on its line does
+    // not shrink the line under it.
+    const small: ResolvedRun = { ...RUN_PLAIN('A'), fontSize: 16, baselineShift: 10, strutSize: 32 };
+    const out = layoutRuns([small], OPTS);
+    const plain = layoutRuns([RUN_PLAIN('A')], OPTS);
+    expect(out.lines[0].baselineY).toBe(plain.lines[0].baselineY);
+    expect(out.bounds.height).toBeCloseTo(32 * 1.2, 6);
+    expect(out.groups[0].quads[0].baselineY).toBe(plain.lines[0].baselineY - 10);
+  });
+
   it('carries a shifted run’s own decoration rules with it', async () => {
     await registerFixture('inter', [{}]);
     const out = layoutRuns(

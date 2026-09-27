@@ -435,6 +435,19 @@ describe('text style round-trip via the bridge', () => {
     expect(t.style?.lineHeight).toBe(1.4);
     expect(t.style).toEqual(text.style);
   });
+
+  it('carries the box alignment, which is a field of the object rather than its style', () => {
+    const text = {
+      id: 't1', tool: 'text' as const,
+      x: 0, y: 0, width: 100, height: 40, text: 'Hi',
+      verticalAlign: 'bottom' as const,
+    };
+    const node = objToSvgNode(text);
+    if (node.kind !== 'text') throw new Error('expected text');
+    expect(node.verticalAlign).toBe('bottom');
+    const [back] = leavesOf([node], ids()) as unknown as { verticalAlign?: string }[];
+    expect(back.verticalAlign).toBe('bottom');
+  });
 });
 
 describe('objToSvgNode — coverage gaps', () => {

@@ -125,6 +125,12 @@ describe('new typography keys', () => {
     expect(s.underline).toBe(true);
     expect(s.strikethrough).toBe(true);
   });
+
+  it('carries a script through, and leaves it absent when none is named', () => {
+    expect(resolveTextStyle({ script: 'sub' }).script).toBe('sub');
+    expect(resolveTextStyle({}).script).toBeUndefined();
+    expect('script' in resolveTextStyle({ fontSize: 12 })).toBe(false);
+  });
 });
 
 describe('resolveTextStyle screen-pixel sizes', () => {
