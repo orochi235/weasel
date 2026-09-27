@@ -7,8 +7,8 @@ export type { Bounds };
 
 /**
  * Read-only state that affordances consult on every render and hit-test
- * call. Built once per Canvas render via `buildChromeState`; affordances
- * must not cache it across calls.
+ * call. Built via `buildChromeState` and held across renders, so affordances
+ * must not cache anything they read from it.
  */
 /** Nothing selected, nothing resolvable — what a caller reads before a
  *  surface has attached, or where chrome state has no owner. */
@@ -30,9 +30,9 @@ export interface ChromeState {
    *  pose bounds). Returns null for unknown ids or ids whose bounds aren't
    *  computable. */
   boundsOf(id: string): Bounds | null;
-  /** Multi-union AABB when `multiActive`. Computed lazily from `boundsOf`
-   *  over every selected id, expanding rotated members to the extent of
-   *  their ink; null otherwise. */
+  /** Multi-union AABB when `multiActive`. Recomputed from `boundsOf` over
+   *  every selected id on each read, expanding rotated members to the extent
+   *  of their ink; null otherwise. */
   readonly unionBounds: Bounds | null;
   /** Active modifier state at the moment of the call. */
   readonly modifiers: ModifierState;
@@ -60,22 +60,17 @@ export interface BuildChromeStateArgs {
 
 export function buildChromeState(args: BuildChromeStateArgs): ChromeState {
   const { selection, multiActive, effectiveBoundsOf, modifiers, canRotate } = args;
-  const cached: { value: Bounds | null; computed: boolean } = { value: null, computed: false };
   return {
     selection,
     multiActive,
     boundsOf: effectiveBoundsOf,
     modifiers,
     canRotate: canRotate ?? (() => true),
+    // Not cached: the state is memoized across renders, and poses move under
+    // it (a committed move, a live preview) without any of its inputs changing.
     get unionBounds() {
-      if (cached.computed) return cached.value;
-      cached.computed = true;
-      if (!multiActive) {
-        cached.value = null;
-        return null;
-      }
-      cached.value = unionAABB(selection.map((id) => effectiveBoundsOf(id)));
-      return cached.value;
+      if (!multiActive) return null;
+      return unionAABB(selection.map((id) => effectiveBoundsOf(id)));
     },
   };
 }

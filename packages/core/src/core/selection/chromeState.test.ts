@@ -78,24 +78,24 @@ describe('buildChromeState', () => {
     expect(state.unionBounds).toEqual({ x: 0, y: 0, width: 60, height: 60 });
   });
 
-  it('unionBounds is computed lazily and cached', () => {
+  it('unionBounds is computed lazily and re-read on every access', () => {
+    let x = 0;
     let calls = 0;
     const state = buildChromeState({
       selection: [asNodeId('a')],
       multiActive: true,
       effectiveBoundsOf: () => {
         calls++;
-        return { x: 0, y: 0, width: 1, height: 1 };
+        return { x, y: 0, width: 1, height: 1 };
       },
       modifiers: NO_MOD,
     });
     // Not consulted until unionBounds is accessed.
     expect(calls).toBe(0);
-    void state.unionBounds;
-    expect(calls).toBe(1);
-    // Cached on subsequent accesses.
-    void state.unionBounds;
-    expect(calls).toBe(1);
+    expect(state.unionBounds!.x).toBe(0);
+    // The state outlives the poses it reads, so a moved member must show.
+    x = 50;
+    expect(state.unionBounds!.x).toBe(50);
   });
 
   it('unionBounds covers a rotated member\'s ink, not its unrotated box', () => {
