@@ -10,9 +10,7 @@ import {
   rectPath,
   textCommandFromRuns,
   useAnimator,
-  useHandTool,
   useScene,
-  useTools,
 } from '@weasel-js/core';
 import type { Dims, DrawCommand, Effect, LayerGroup, RectPose, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import { CAM_SCALE, cameraView, followCamera } from './platformer/camera';
@@ -80,12 +78,6 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
     // each of those writes would undo the point of the imperative camera.
     subscribe: false,
   });
-
-  // A minimal registry so SceneCanvas doesn't auto-mount select/resize/rotate:
-  // their handle chrome tessellates cubic paths against poses this demo
-  // rewrites every frame, and the demo has nothing to select.
-  const hand = useHandTool();
-  const tools = useTools({ active: 'hand', registry: useMemo(() => ({ hand }), [hand]) });
 
   const [running, setRunning] = useState(false);
   const canvas = useRef<SceneCanvasApi | null>(null);
@@ -287,7 +279,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         <button className="ckd-btn" onClick={onRestart}>restart</button>
         <span className="ckd-readout">zoom {CAM_SCALE}x</span>
       </div>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
@@ -298,7 +290,6 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         poseComposition={RIGID_POSE_COMPOSITION}
         selectionMode="none"
         animator={animator}
-        tools={tools}
         ref={canvas}
         defaultView={initialView}
         layerGroups={layerGroups}

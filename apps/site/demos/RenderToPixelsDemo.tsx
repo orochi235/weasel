@@ -112,7 +112,7 @@ export function RenderToPixelsDemo() {
   return (
     <div>
       <SceneCanvas
-        width={W} height={H} className="ckd-canvas" scene={scene} features={['draw']}
+        width={W} height={H} className="ckd-canvas" scene={scene}
         alphaFor={ALPHA_FOR}
         layers={{ scene: { drawOne } }}
       />

@@ -50,7 +50,8 @@ export function SelectionPanelDemo() {
 
   return (
     <div className="ckd-row">
-      <SceneCanvas features={['draw']}
+      <SceneCanvas
+        features={['pick', 'edit']}
         width={W}
         height={H}
         className="ckd-canvas"
@@ -60,7 +61,6 @@ export function SelectionPanelDemo() {
         routing={defaultNodeRouting}
         view={view}
         onViewChange={setView}
-        viewport={{}}
         layers={{
           scene: {
             // The renderer's Path union has no ellipse variant, so an

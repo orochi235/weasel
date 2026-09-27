@@ -295,12 +295,11 @@ function Panel({
       onPointerDownCapture={onPointerDown}
       className="rrmd-panel"
     >
-      <SceneCanvas features={['draw']}
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}
-        enableGestureDispatcher={false}
         layers={{
           grid: GRID,
           scene: { drawOne: drawRect },

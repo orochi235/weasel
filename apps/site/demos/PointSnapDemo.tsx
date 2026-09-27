@@ -58,7 +58,8 @@ function PointSnapDemoInner() {
   }, [setSelection]);
 
   return (
-    <SceneCanvas features={['draw']}
+    <SceneCanvas
+      features={['transform']}
       ref={canvasRef}
       width={W}
       height={H}

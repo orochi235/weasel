@@ -210,7 +210,7 @@ export function RigDemo() {
         </label>
         <span className="ckd-readout">track u {shownTrackBlend.toFixed(2)}</span>
       </div>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"

@@ -91,7 +91,8 @@ export function TextDemo() {
       style={{ position: 'relative', width: W, height: H }}
       onDoubleClick={edit.onDoubleClick}
     >
-      <SceneCanvas features={['draw']}
+      <SceneCanvas
+        features={['pick', 'move', 'transform', 'edit']}
         width={W}
         height={H}
         className="ckd-canvas"

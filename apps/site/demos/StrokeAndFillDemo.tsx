@@ -186,7 +186,8 @@ function StrokeAndFill() {
       <div className="ckd-stack">
         {tools && <ToolPalette tools={tools} orientation="horizontal" />}
         <div className="ckd-canvas-frame" ref={hostRef}>
-          <SceneCanvas features={['draw']}
+          <SceneCanvas
+            features={['pick', 'edit', 'paths']}
             width={W}
             height={H}
             className="ckd-canvas"
@@ -194,7 +195,7 @@ function StrokeAndFill() {
             selection={selection}
             view={view}
             onViewChange={setView}
-            defaultTools={['select', 'pencil']}
+            defaultTools={['pencil']}
             onToolsCreated={setTools}
             insertNodeFactories={insertNodeFactories}
           />

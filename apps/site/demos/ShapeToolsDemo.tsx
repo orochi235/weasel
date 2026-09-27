@@ -32,7 +32,8 @@ export function ShapeToolsDemo() {
         scene={scene}
         selection={selection}
         selectionMode="multi"
-        features={['draw']} defaultTools={BUILTIN_TOOL_IDS}
+        features={['pick']}
+        defaultTools={BUILTIN_TOOL_IDS}
         onToolsCreated={setTools}
       />
     </div>

@@ -181,7 +181,7 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
 
   return (
     <div style={{ position: 'relative', width: DIAGRAM_W, height: DIAGRAM_H }}>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas
         width={DIAGRAM_W}
         height={DIAGRAM_H}
         className="ckd-canvas"

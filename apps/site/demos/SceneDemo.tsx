@@ -23,15 +23,14 @@ export function SceneDemo() {
           Cmd/Ctrl+Z undo · Shift+Cmd/Ctrl+Z redo · drag rects to move
         </span>
       </div>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas
+        features={['pick', 'move', 'edit']}
         width={480}
         height={320}
         className="ckd-canvas"
         scene={scene}
         selection={selection}
         backgroundFill={{ color: '#f4e9d8' }}
-        defaultTools={['select']}
-        layers={{ selectionOverlay: { handles: false } }}
       />
     </div>
   );

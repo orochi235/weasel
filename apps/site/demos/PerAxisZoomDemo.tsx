@@ -71,7 +71,8 @@ export function PerAxisZoomDemo() {
       <span style={{ fontSize: 12, color: '#888' }}>
         Cmd/Ctrl+wheel zooms uniformly · plain wheel pans · Cmd/Ctrl+= / - / 0 for zoom steps.
       </span>
-      <SceneCanvas features={['draw']}
+      <SceneCanvas
+        features={['view']}
         width={W}
         height={H}
         className="ckd-canvas"
@@ -79,7 +80,6 @@ export function PerAxisZoomDemo() {
         selection={selection}
         view={view}
         onViewChange={setView}
-        viewport={{}}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => [{
@@ -89,7 +89,6 @@ export function PerAxisZoomDemo() {
               stroke: { paint: { color: '#d4c4a8' }, width: 2 },
             }],
           },
-          selectionOverlay: { handles: false },
         }}
       />
     </div>
