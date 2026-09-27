@@ -1,10 +1,12 @@
 import { createMemoryAdapter, type RenderContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { ShellConfig } from '../config';
 import { meta, story } from '../story/define';
 import { indexId } from '../story/indexPages';
 import type { IndexEntry } from '../story/types';
+import { FOLLOW_APP } from './globals';
 import { installResizeObserver } from './labHarness';
 import { useStoryRegistry } from './useStoryRegistry';
 import { Workshop } from './Workshop';
@@ -113,6 +115,65 @@ describe('Workshop in the document', () => {
     await waitFor(() => expect(container.querySelector('iframe.fg-frame-view')).not.toBeNull(), { timeout: 5000 });
     expect(container.querySelector('iframe.fg-frame-view')?.getAttribute('src')).toBe('/frame.html#y--c');
     expect(imports['/y.stories.tsx']).not.toHaveBeenCalled();
+    history.replaceState(null, '', '/');
+  });
+});
+
+describe('the lab’s mode switch reaching trials', () => {
+  const following: ShellConfig = {
+    globals: {
+      mode: {
+        label: 'Mode',
+        default: FOLLOW_APP,
+        follows: (chrome) => chrome.mode,
+        options: [
+          { value: 'auto', label: 'Auto (OS)' },
+          { value: 'light', label: 'Light' },
+          { value: 'dark', label: 'Dark' },
+        ],
+      },
+    },
+  };
+  const modes = (spy: ReturnType<typeof vi.fn>) => spy.mock.calls.map(([globals]) => (globals as { mode?: unknown }).mode);
+
+  // One case per kind of trial: an index page must take the globals exactly as a story does.
+  it.each([
+    ['a story', 'x--a'],
+    ['an index page', indexId('X')],
+  ])('%s follows the switch while Mode is App, and a Mode picked in the toolbar overrides it', async (_kind, id) => {
+    location.hash = `#/${id}`;
+    const applyGlobals = vi.fn();
+    render(
+      <Workshop
+        index={[a, b]}
+        frameUrl="/frame.html"
+        importers={importers()}
+        setup={{ applyGlobals }}
+        config={following}
+        storage={createMemoryAdapter()}
+      />,
+    );
+    await waitFor(() => expect(applyGlobals).toHaveBeenCalled(), { timeout: 15_000 });
+    await waitFor(() => expect(modes(applyGlobals).at(-1)).toBe('auto'));
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /^Theme: Auto/ }));
+    });
+    await waitFor(() => expect(modes(applyGlobals).at(-1)).toBe('light'));
+
+    const toolbar = within(screen.getByRole('toolbar', { name: 'Globals' }));
+    expect(toolbar.getByRole('button', { name: /Mode/ })).toHaveTextContent('App');
+    act(() => {
+      fireEvent.click(toolbar.getByRole('button', { name: /Mode/ }));
+    });
+    fireEvent.click(await screen.findByRole('option', { name: 'Dark' }));
+    await waitFor(() => expect(modes(applyGlobals).at(-1)).toBe('dark'));
+    // The switch still styles the lab's own chrome; it just no longer reaches the trial.
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /^Theme: Light/ }));
+    });
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Theme: Dark/ })).toBeInTheDocument());
+    expect(modes(applyGlobals).at(-1)).toBe('dark');
     history.replaceState(null, '', '/');
   });
 });
