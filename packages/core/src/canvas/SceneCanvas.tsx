@@ -63,7 +63,7 @@ import { ViewInputsProvider, type SurfaceViewInputs, type ViewRuleInputs } from 
 import { CanvasView, type CanvasViewProps } from './CanvasView';
 import type { DeviceProfile } from '../core/device/types';
 import { HANDLE_BASE_PX, targetSizesPx } from '../core/device/targets';
-import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
+import { InputScope } from '@weasel-js/routing/react';
 import { useContributionRoles, contributionEntries } from './SceneCanvas/useContributionRoles';
 import type { SurfaceContribution } from './surfaceContribution';
 import { useDepSource } from '@weasel-js/routing/react';
@@ -94,7 +94,6 @@ import { useBuiltinShapeTools, type BuiltinToolOptions } from './SceneCanvas/use
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import type { BuiltinShapeToolId } from 'core/shapeKinds';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
-import { DepRegistryProviderIfRoot } from './SceneCanvas/DepRegistryProviderIfRoot';
 import {
   useViewDepSource,
   useAreaSelectDepSource,
@@ -2182,9 +2181,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   return (
     <DeviceProfileProvider value={device}>
       <ViewInputsProvider value={viewInputs}>
-        <DepRegistryProviderIfRoot>
+        <InputScope>
           <PointerProviderIfRoot>
-            <ActionsProviderIfRoot>
+            <>
               {canvas}
               <PointerPublisher canvasRef={internalCanvasRef} />
               <StandardActionsRegistrar
@@ -2257,9 +2256,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               ))}
               {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
               {children}
-            </ActionsProviderIfRoot>
+            </>
           </PointerProviderIfRoot>
-        </DepRegistryProviderIfRoot>
+        </InputScope>
       </ViewInputsProvider>
     </DeviceProfileProvider>
   );

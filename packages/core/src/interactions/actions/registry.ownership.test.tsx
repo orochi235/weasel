@@ -80,20 +80,6 @@ describe('ActionsRegistry dispatcher ownership', () => {
     expect(slotIsWired()).toBe(false);
   });
 
-  it('names the collision rather than failing silently', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { reg, makeDispatcher } = setup();
-    act(() => { reg.setDispatcher(makeDispatcher()); });
-    expect(warn).not.toHaveBeenCalled();
-    act(() => { reg.setDispatcher(makeDispatcher()); });
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(String(warn.mock.calls[0][0])).toContain('WeaselProvider isolate');
-    // Says it once: the message is about the scope, not about which canvas lost.
-    act(() => { reg.setDispatcher(makeDispatcher()); });
-    expect(warn).toHaveBeenCalledTimes(1);
-    warn.mockRestore();
-  });
-
   it('stays quiet when one canvas re-wires its own dispatcher', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { reg, makeDispatcher } = setup();

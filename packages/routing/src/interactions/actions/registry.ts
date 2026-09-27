@@ -77,10 +77,18 @@ export interface ActionsRegistry {
   begin(id: string, params?: Record<string, unknown>): UiOngoingControl | null;
 
   /** Wire a dispatcher into the registry so `begin()` can delegate to it.
-   *  Returns a release that clears the slot only while this dispatcher still
-   *  holds it: a canvas displaced by a later one must not take input away from
-   *  the canvas now on screen. Call with `null` to detach unconditionally. */
+   *  Returns a release that takes out only this dispatcher; a `null` wires
+   *  nothing. */
   setDispatcher(d: Dispatcher | null): () => void;
+
+  /** Make this registry's scope the one chrome above it reaches: `trigger`,
+   *  `begin` and `list` on any ancestor then answer from here. A dispatcher
+   *  calls it on the pointerdown and focus that land in its scope. */
+  activate(): void;
+
+  /** Whether a lookup made from the root of this registry's tree starts here —
+   *  the question a dispatcher asks before handling a keystroke. */
+  isActive(): boolean;
 
   /** Wire a `DepRegistry` into the registry so `trigger()` / `begin()` can
    *  resolve action deps even when this provider is mounted ABOVE the dep
