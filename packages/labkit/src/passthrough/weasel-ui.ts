@@ -22,6 +22,7 @@ export {
   type BadgeVariant,
   type BoundsCtx,
   type BuiltInEdgeName,
+  type BuiltInProfileName,
   type BuiltinPref,
   Button,
   ButtonBar,

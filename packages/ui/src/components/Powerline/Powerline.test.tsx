@@ -58,6 +58,18 @@ describe('Powerline', () => {
     expect(badges[1].hasAttribute('data-tone')).toBe(false);
   });
 
+  it('draws a puzzle cap as a tab on its segment and a socket in the next', () => {
+    const { container } = render(
+      <Powerline variant="solid" segments={[{ text: 'a', endCap: 'puzzle' }, { text: 'b' }]} />,
+    );
+    const xs = [...container.querySelectorAll('.badge-fill')].map((path) =>
+      [...(path.getAttribute('d') ?? '').matchAll(/[ML] (-?[\d.]+) /g)].map((m) => Number(m[1])),
+    );
+    expect(xs.length).toBe(2);
+    expect(Math.max(...xs[0])).toBeGreaterThan(100);
+    expect(xs[1].some((x) => x > 0 && x < 50)).toBe(true);
+  });
+
   it('renders segment text content', () => {
     const { getByText } = render(
       <Powerline segments={[{ text: 'main' }, { text: '✓ 12' }]} />

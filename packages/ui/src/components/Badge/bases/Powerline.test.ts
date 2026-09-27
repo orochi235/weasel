@@ -91,6 +91,35 @@ describe('Powerline base', () => {
   });
 });
 
+describe('Powerline base puzzle cap', () => {
+  // Parse the viewBox path back to CSS px so two segments can be laid side by side.
+  const cssPoints = (path: string, w: number, h: number) =>
+    [...path.matchAll(/[ML] (-?[\d.]+) (-?[\d.]+)/g)].map((m) => ({
+      x: (Number(m[1]) * w) / 100,
+      y: (Number(m[2]) * h) / 100,
+    }));
+
+  it.each([12, 18, 24, 40])('tab and socket are the same curve at height %ipx', (H) => {
+    const WA = 70;
+    const WB = 50;
+    const a = cssPoints(Powerline.build({ rightEdge: 'puzzle', depth: 6 }, WA, H).bodyPath, WA, H);
+    const b = cssPoints(Powerline.build({ leftEdge: 'puzzle', depth: 6 }, WB, H).bodyPath, WB, H);
+    const tab = a.filter((p) => p.x > WA + 1e-3).map((p) => ({ x: p.x - WA, y: p.y }));
+    const socket = b.filter((p) => p.x > 1e-3 && p.x < WB / 2).reverse();
+    expect(tab.length).toBeGreaterThan(10);
+    expect(socket.length).toBe(tab.length);
+    tab.forEach((p, i) => {
+      expect(socket[i].x).toBeCloseTo(p.x, 2);
+      expect(socket[i].y).toBeCloseTo(p.y, 2);
+    });
+  });
+
+  it('insets keep the socket side clear of the full tab depth', () => {
+    const insets = insetsOf({ leftEdge: 'puzzle', rightEdge: 'flat', depth: 8 });
+    expect(insets.left).toBeGreaterThanOrEqual(8);
+  });
+});
+
 describe('Powerline base registration', () => {
   it('is registered under the "powerline" key', () => {
     const key: BadgeBase = 'powerline';

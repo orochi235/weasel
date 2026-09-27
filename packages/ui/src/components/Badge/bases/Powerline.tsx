@@ -1,4 +1,4 @@
-import { resolveEdge, type EdgeCap } from './edgeProfiles';
+import { resolveEdge, type EdgeCap, type EdgePoint } from './edgeProfiles';
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
 
 export interface PowerlineParams {
@@ -16,40 +16,39 @@ const DEFAULTS: Required<PowerlineParams> = {
   depth: 6,
 };
 
-// Samples per vertical edge. 64 is smooth enough for chevron/round caps and
-// cheap to evaluate; the perimeter is sampled once per `build` call.
-const EDGE_SAMPLES = 64;
+// Insets can't see the measured height. Profile averages don't depend on it;
+// a cap whose shape does (puzzle) is averaged at a typical row height.
+const INSETS_HEIGHT = 20;
 
 const Powerline: BaseModule<PowerlineParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
-    const left = resolveEdge(cfg.leftEdge);
-    const right = resolveEdge(cfg.rightEdge);
-    const depth = cfg.depth;
+    const left = resolveEdge(cfg.leftEdge)(cfg.depth, boxH);
+    const right = resolveEdge(cfg.rightEdge)(cfg.depth, boxH);
     const sx = 100 / boxW;
     const sy = 100 / boxH;
 
     const pts: { x: number; y: number; nx: number; ny: number }[] = [];
 
-    // Top corners follow the same edge profiles as the rest of the verticals,
-    // so a profile that protrudes/cuts at t=0 (e.g. slant-up) doesn't introduce
-    // a corner kink between the flat top and the first vertical sample.
-    pts.push({ x: left(0, depth) * sx, y: 0, nx: 0, ny: -1 });
-    pts.push({ x: (boxW + right(0, depth)) * sx, y: 0, nx: 0, ny: -1 });
+    // Top corners are the edges' own first points, so a profile that
+    // protrudes/cuts at the top (e.g. slant-up) doesn't introduce a corner
+    // kink between the flat top and the edge.
+    const lTop = left[0];
+    const rTop = right[0];
+    pts.push({ x: lTop.x * sx, y: lTop.y * sy, nx: 0, ny: -1 });
+    pts.push({ x: (boxW + rTop.x) * sx, y: rTop.y * sy, nx: 0, ny: -1 });
 
-    for (let i = 1; i < EDGE_SAMPLES; i++) {
-      const t = i / EDGE_SAMPLES;
-      const xCss = boxW + right(t, depth);
-      pts.push({ x: xCss * sx, y: t * 100, nx: 1, ny: 0 });
+    for (let i = 1; i < right.length - 1; i++) {
+      pts.push({ x: (boxW + right[i].x) * sx, y: right[i].y * sy, nx: 1, ny: 0 });
     }
 
-    pts.push({ x: (boxW + right(1, depth)) * sx, y: 100, nx: 0, ny: 1 });
-    pts.push({ x: (0 + left(1, depth)) * sx, y: 100, nx: 0, ny: 1 });
+    const rBot = right[right.length - 1];
+    const lBot = left[left.length - 1];
+    pts.push({ x: (boxW + rBot.x) * sx, y: rBot.y * sy, nx: 0, ny: 1 });
+    pts.push({ x: lBot.x * sx, y: lBot.y * sy, nx: 0, ny: 1 });
 
-    for (let i = EDGE_SAMPLES - 1; i >= 1; i--) {
-      const t = i / EDGE_SAMPLES;
-      const xCss = 0 + left(t, depth);
-      pts.push({ x: xCss * sx, y: t * 100, nx: -1, ny: 0 });
+    for (let i = left.length - 2; i >= 1; i--) {
+      pts.push({ x: left[i].x * sx, y: left[i].y * sy, nx: -1, ny: 0 });
     }
 
     const cum: number[] = [0];
@@ -108,29 +107,23 @@ const Powerline: BaseModule<PowerlineParams> = {
     const depth = params?.depth ?? DEFAULTS.depth;
     const leftCap = params?.leftEdge ?? DEFAULTS.leftEdge;
     const rightCap = params?.rightEdge ?? DEFAULTS.rightEdge;
-    const left = resolveEdge(leftCap);
-    const right = resolveEdge(rightCap);
-    // Sample the profiles to compute (a) each side's average offset, used to
-    // shift padding so text reads centered in the visible silhouette (not the
-    // bounding rect), and (b) each side's deepest inward cut, the floor below
-    // which padding mustn't drop or text would crash into the cap.
-    // Trapezoid integration over [0, 1] — exact for piecewise-linear profiles
-    // (chevron, slant, slant-up) and accurate enough for the curved ones.
-    const N = 32;
-    let avgLeft = 0;
-    let avgRight = 0;
-    let maxLeftInward = 0;
-    let maxRightInward = 0;
-    for (let i = 0; i <= N; i++) {
-      const t = i / N;
-      const l = left(t, depth);
-      const r = right(t, depth);
-      const w = i === 0 || i === N ? 0.5 : 1;
-      avgLeft += (w * l) / N;
-      avgRight += (w * r) / N;
-      if (l > maxLeftInward) maxLeftInward = l;
-      if (-r > maxRightInward) maxRightInward = -r;
-    }
+    const left = resolveEdge(leftCap)(depth, INSETS_HEIGHT);
+    const right = resolveEdge(rightCap)(depth, INSETS_HEIGHT);
+    // Each side's (a) average offset, used to shift padding so text reads
+    // centered in the visible silhouette (not the bounding rect), and (b)
+    // deepest inward cut, the floor below which padding mustn't drop or text
+    // would crash into the cap.
+    const avgOffset = (edge: EdgePoint[]) => {
+      let area = 0;
+      for (let i = 1; i < edge.length; i++) {
+        area += ((edge[i - 1].x + edge[i].x) / 2) * (edge[i].y - edge[i - 1].y);
+      }
+      return area / INSETS_HEIGHT;
+    };
+    const avgLeft = avgOffset(left);
+    const avgRight = avgOffset(right);
+    const maxLeftInward = Math.max(0, ...left.map((p) => p.x));
+    const maxRightInward = Math.max(0, ...right.map((p) => -p.x));
     // Desired asymmetry: padLeft - padRight = avgLeft + avgRight (so the text
     // centroid sits at the silhouette's centroid). Hold padLeft + padRight = 2 * depth.
     const shift = (avgLeft + avgRight) / 2;
