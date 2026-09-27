@@ -1,6 +1,6 @@
 import type { MoveBehavior, ModifierState, SnapStrategy } from '../types';
 import {
-  RECT_ORIGIN_PROJECTION,
+  AUTO_ORIGIN_PROJECTION,
   type OriginProjection,
 } from './strategies/grid';
 
@@ -19,7 +19,8 @@ type ModKey = keyof ModifierState;
  *      ...so the gesture applies the same delta to every dragged id.
  *
  * The pose-shape-aware delta extraction lives here — gestures stay pose-shape
- * agnostic. Default projection is `{x, y}`-bearing (rect / path / polygon).
+ * agnostic. Default projection reads a rect's `{x, y}` or a Path's bounds
+ * origin, matching `gridSnapStrategy`'s own default.
  * Pass `origin` for exotic poses.
  */
 export function snap<TPose>(
@@ -28,7 +29,7 @@ export function snap<TPose>(
 ): MoveBehavior<TPose> {
   const { bypassKey } = opts;
   const proj: OriginProjection<TPose> = opts.origin
-    ?? (RECT_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
+    ?? (AUTO_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
   return {
     onMove(ctx, transform) {
       if (bypassKey && ctx.modifiers[bypassKey]) return;
