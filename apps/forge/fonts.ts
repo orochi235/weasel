@@ -1,5 +1,5 @@
 import type { GlobalDeclarations, StoryContext } from '@weasel-js/forge';
-import { defineTheme, type Theme } from '@weasel-js/theme';
+import { defineTheme, type Theme, weaselTheme } from '@weasel-js/theme';
 
 /** Loads the webfonts the font table names that no system ships. */
 const GOOGLE_FONTS_HREF =
@@ -167,24 +167,61 @@ function nearestStretch(requested: string, supported: string[]): string {
   return supported.reduce((best, value) => (Math.abs(at(value) - from) < Math.abs(at(best) - from) ? value : best), supported[0]!);
 }
 
-/** The rules for the font globals, each snapped to what the chosen font ships. weasel's components read their
- *  family from the font tokens, and form controls do not inherit one, so both are pointed at the choice too. */
-/** The rule for `scope`, `:root` by default: a story host in the workshop names itself instead. */
+const REFERENCE = /^\{([^}.]+)\}$/;
+
+/** Each token of `theme` that aliases a font slot, directly or through another alias, keyed by the slot. */
+function slotAliases(theme: Theme): Map<string, string[]> {
+  const refs = new Map<string, string | null>();
+  for (let t: Theme | null = theme; t; t = t.extends) {
+    for (const [name, raw] of Object.entries(t.tokens)) {
+      if (refs.has(name)) continue;
+      const value = 'value' in raw ? raw.value : undefined;
+      refs.set(name, typeof value === 'string' ? (REFERENCE.exec(value.trim())?.[1] ?? null) : null);
+    }
+  }
+  const slots = new Set<string>(SLOTS.map((slot) => slot.token));
+  const aliases = new Map<string, string[]>();
+  for (const name of refs.keys()) {
+    if (slots.has(name)) continue;
+    const seen = new Set<string>();
+    let at = refs.get(name);
+    while (at && !slots.has(at) && !seen.has(at)) {
+      seen.add(at);
+      at = refs.get(at);
+    }
+    if (at && slots.has(at)) aliases.set(at, [...(aliases.get(at) ?? []), name]);
+  }
+  return aliases;
+}
+
+const ALIASES = slotAliases(weaselTheme);
+
+/**
+ * The rules for the font globals at `scope`, `:root` by default: a story host in the workshop names itself instead.
+ * Each is snapped to what the chosen font ships. The theme resolves a token that aliases a slot, such as the panel
+ * title's font, to the slot's literal family, so restating the slot alone would leave it behind: each alias is pointed
+ * back at its slot.
+ */
 export function fontRule(globals: StoryContext['globals'], scope = ':root'): string {
   const [, font] = fontOf(globals);
   const weight = nearest(Number(globals.fontWeight ?? 500), font.weights);
   const stretch = nearestStretch(String(globals.fontStretch ?? 'normal'), font.stretches);
   const italic = globals.fontStyle === 'italic' && font.italics.includes(true);
   const tokens = chosenSlots(globals)
-    .map((slot) => `--wzl-${slot.token}: ${slot.font.family};`)
+    .flatMap((slot) => [
+      `--wzl-${slot.token}: ${slot.font.family};`,
+      ...(ALIASES.get(slot.token) ?? []).map((alias) => `--wzl-${alias}: var(--wzl-${slot.token});`),
+    ])
     .join(' ');
   return [
-    `${scope} { font-family: ${font.family}; font-weight: ${weight}; font-stretch: ${stretch}; font-style: ${italic ? 'italic' : 'normal'}; }`,
+    `${scope} { font-family: var(--wzl-font-ui); font-weight: ${weight}; font-stretch: ${stretch}; font-style: ${italic ? 'italic' : 'normal'}; }`,
     // applyTheme declares the tokens at [data-wzl-theme][data-wzl-mode] (0,3,0), on the root and on any nested
     // themed box; `:not(#…)` lifts the root's rule above it without `!important`.
     ` ${scope}:not(#fg-font-globals), ${scope} [data-wzl-theme][data-wzl-mode][data-wzl-mode] { ${tokens} }`,
-    // At zero specificity: a story host names itself by attribute, (0,1,0), which would otherwise beat every
-    // one-class component rule that sets its own size, such as a select's trigger.
+    // At zero specificity, so any component rule that sets its own font wins. A story host names itself by
+    // attribute, (0,1,0), which would otherwise beat every one-class component rule, such as a select's trigger.
+    // Form controls do not inherit a font, and code elements take the browser's monospace rather than the theme's.
     ` :where(${scope}) :where(button, input, select, textarea) { font: inherit; }`,
+    ` :where(${scope}) :where(code, kbd, samp, pre) { font-family: var(--wzl-font-mono); }`,
   ].join('');
 }

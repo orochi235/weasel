@@ -4,15 +4,15 @@ import { FONT_GLOBALS, fontRule, fontTheme } from './fonts';
 
 describe('fontRule', () => {
   it('declares Storybook’s defaults, snapped to what Oswald ships', () => {
-    expect(fontRule({})).toContain(
-      'font-family: Oswald, system-ui, sans-serif; font-weight: 400; font-stretch: normal; font-style: normal;',
-    );
+    const rule = fontRule({});
+    expect(rule).toContain('font-family: var(--wzl-font-ui); font-weight: 400; font-stretch: normal; font-style: normal;');
+    expect(rule).toContain('--wzl-font-ui: Oswald, system-ui, sans-serif;');
   });
 
   it('points weasel’s default face at the chosen family, and leaves a slot on Theme alone', () => {
     const rule = fontRule({ fontFamily: 'helvetica' });
     expect(rule).toContain('--wzl-font-ui: "Helvetica Neue", Helvetica, Arial, sans-serif;');
-    for (const face of ['display', 'body', 'mono']) expect(rule).not.toContain(`--wzl-font-${face}`);
+    for (const face of ['display', 'body', 'mono']) expect(rule).not.toContain(`--wzl-font-${face}:`);
   });
 
   it('points each other slot at the family its own global picks', () => {
@@ -26,8 +26,19 @@ describe('fontRule', () => {
     expect(fontRule({})).toMatch(/\[data-wzl-theme\]\[data-wzl-mode\]\[data-wzl-mode\][^{]*\{[^}]*--wzl-font-ui:/);
   });
 
+  it('points each token that aliases a slot back at the slot, which the theme resolves to a literal', () => {
+    const rule = fontRule({ fontDisplay: 'lato', fontMono: 'jetbrains' });
+    expect(rule).toContain('--wzl-panel-title-font: var(--wzl-font-display);');
+    expect(rule).toContain('--wzl-stance-debug-title-font: var(--wzl-font-mono);');
+    expect(fontRule({})).not.toContain('--wzl-panel-title-font');
+  });
+
   it('has form controls inherit the font, which they do not by default', () => {
     expect(fontRule({})).toContain(':where(:root) :where(button, input, select, textarea) { font: inherit; }');
+  });
+
+  it('sets code elements in the mono token rather than the browser’s monospace', () => {
+    expect(fontRule({})).toContain(':where(:root) :where(code, kbd, samp, pre) { font-family: var(--wzl-font-mono); }');
   });
 
   it('snaps a weight to the nearest the font ships, the lighter on a tie', () => {
@@ -47,7 +58,7 @@ describe('fontRule', () => {
   });
 
   it('uses Oswald for a family it does not know', () => {
-    expect(fontRule({ fontFamily: 'comic' })).toContain('font-family: Oswald, system-ui, sans-serif;');
+    expect(fontRule({ fontFamily: 'comic' })).toContain('--wzl-font-ui: Oswald, system-ui, sans-serif;');
   });
 });
 
