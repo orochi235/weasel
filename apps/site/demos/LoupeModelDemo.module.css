@@ -1,0 +1,62 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage {
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.crosshair {
+  stroke: var(--ckd-text);
+  stroke-width: 1.5;
+  fill: none;
+  pointer-events: none;
+}
+
+.lensGround {
+  fill: var(--ckd-surface);
+}
+
+.lensFrame {
+  fill: none;
+  stroke: var(--ckd-accent);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.readout {
+  border-collapse: collapse;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+}
+
+.readout th {
+  text-align: start;
+  font-weight: 500;
+  color: var(--ckd-muted);
+  padding: 2px 12px 2px 0;
+}
+
+.readout td {
+  padding: 2px 0;
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-inline-end: 6px;
+  vertical-align: -1px;
+  outline: 1px solid var(--ckd-border);
+}
+
+.note {
+  margin-inline-start: 12px;
+  color: var(--ckd-accent);
+  font-family: system-ui, sans-serif;
+}

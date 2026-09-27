@@ -636,7 +636,7 @@ const DEMO_META: DemoMeta[] = [
   },
   {
     id: 'bidi',
-    title: 'Bidi',
+    title: 'Bidirectional text',
     package: 'bidi',
     description: "Runs the Unicode Bidirectional Algorithm over one line of mixed Latin, Hebrew, Arabic, digits and brackets. The top row lists each character in logical order with its bidi class and embedding level. The row below is the visual order that `reorder` produces, and outlined characters are ones `mirror` swapped because they sit in a right-to-left run. The last line prints the result with the browser's own bidi switched off, directly under the browser's rendering of the same text, so the two can be compared.",
     hint: 'Pick a preset or type your own mixed-direction text, then switch the paragraph direction between auto, ltr and rtl.',
@@ -645,7 +645,7 @@ const DEMO_META: DemoMeta[] = [
   },
   {
     id: 'cursor',
-    title: 'Cursor',
+    title: 'Tool cursors',
     package: 'cursor',
     description: "Every built-in tool cursor glyph as a tile. Hovering a tile sets its baked CSS cursor, and the red dot marks the hotspot, the point that actually clicks. The size slider declares the selected glyph as a canvas tool's cursor. Browsers silently drop cursor images larger than 128px, so past that size the package switches from a CSS `url()` cursor to one the canvas paints under the pointer, and the tool declaring it does not change.",
     hint: 'Hover the tiles, pick one, then drag the size slider past 128px and move over the canvas.',
@@ -654,7 +654,7 @@ const DEMO_META: DemoMeta[] = [
   },
   {
     id: 'history',
-    title: 'History',
+    title: 'Undo history',
     package: 'history',
     description: "The undo engine on its own, with no scene graph and no canvas: a row of colored chips whose every change is an invertible op, and the undo and redo stacks listed beside them. Dragging the hue slider fires an op on every input event, and because those ops share a coalesce key they merge into one undo entry. Releasing the slider seals that entry, so the next drag gets an entry of its own. An edit session is a `Journal`: it keeps its own undo history while it is open, then either lands in the main history as a single entry or is thrown away.",
     hint: 'Add, remove and recolor chips, then undo; begin an edit session, make several changes, and commit or discard it.',
@@ -663,7 +663,7 @@ const DEMO_META: DemoMeta[] = [
   },
   {
     id: 'geom',
-    title: 'Geom',
+    title: 'Curve geometry',
     package: 'geom',
     description: "A cubic Bézier and what the geometry kernel computes about it: the loose box around its control points next to the tight box around the curve itself, the curve's length, where a parameter t really lands along that length, and the nearest point on the curve to a probe. The points are ordinary scene nodes moved by the kit's own move tool, and the overlay reads their positions while you drag, so every figure updates live. The kernel is plain functions over numbers, with no scene or renderer types, which is why the same calls serve hit-testing, bounds and layout everywhere else in weasel.",
     hint: 'Drag the black endpoints, the hollow control points or the red probe, and slide t to see that equal steps in t are not equal steps along the curve.',
@@ -678,6 +678,42 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Pick a preset or edit the source, then drag or resize shapes on the canvas and watch the exported SVG below change.',
     load: () => import('./demos/SvgDemo').then((m) => m.SvgDemo),
     path: 'apps/site/demos/SvgDemo.tsx',
+  },
+  {
+    id: 'paint',
+    title: 'Paint as data',
+    package: 'paint',
+    description: "In `@weasel-js/paint` a fill or a stroke is a plain object: solid colors, linear, radial and conic gradients, tile patterns, dashes, caps and joins. There is no renderer, class or handle behind any of it. Each swatch's paint goes through `JSON.stringify` and back before its canvas draws it, so the text beside each swatch is exactly what the renderer consumed. The colors and the dash array come from the package's own helpers (`oklchDegToHex`, `contrastLineColor`, `dashForStrokeStyle`).",
+    hint: 'Read each JSON block against the swatch beside it: that object is the whole paint.',
+    load: () => import('./demos/PaintDemo').then((m) => m.PaintDemo),
+    path: 'apps/site/demos/PaintDemo.tsx',
+  },
+  {
+    id: 'loupe-model',
+    title: 'Loupe model',
+    package: 'loupe',
+    description: "The magnifier's model on its own: where the loupe is aimed, how far it magnifies, and what color is under the aim. The mosaic and the lens are one plain SVG. The whole painter is a `LoupeSurface` that knows each cell's color, plus an SVG `viewBox` set from `loupeInnerView`. The Loupe (hud window) and Loupe (lab capability) demos are painters over this same model, for a WebGL canvas and a lab.",
+    hint: 'Move over the mosaic to aim, scroll to change the magnification, and click inside the lens to pick a color.',
+    load: () => import('./demos/LoupeModelDemo').then((m) => m.LoupeModelDemo),
+    path: 'apps/site/demos/LoupeModelDemo.tsx',
+  },
+  {
+    id: 'gesture-grammar',
+    title: 'Route grammar and matcher',
+    package: 'gestures',
+    description: "The gestures package on its own: the route grammar the dispatcher's bindings are written in, and the pure matcher that decides whether an input fits a binding. The top half parses a route like `[initial] click => empty +shift` into its phase, gesture, arg, target and modifier slots, prints it back in canonical form and reads it out in plain English. The bottom half is a plain div with no canvas and no scene. It turns your clicks, drags, wheel and keys into the package's normalized input events and runs `matchSpec` against a list of example specs. The package has no DOM and no React on purpose, so turning browser events into its input events is the consumer's job, and this demo does that itself.",
+    hint: 'Edit the route or pick a preset. Then click, drag, right-click, scroll or type on the pad (Shift, Alt and Cmd/Ctrl count), and drag while you scroll or press Escape to see phase-gated specs match.',
+    load: () => import('./demos/GestureGrammarDemo').then((m) => m.GestureGrammarDemo),
+    path: 'apps/site/demos/GestureGrammarDemo.tsx',
+  },
+  {
+    id: 'modes',
+    title: 'App modes',
+    package: 'modes',
+    description: "Three modes defined by the app (Draw, Focus and Review) share one canvas, and one mode registry holds which of them is active. Each mode lists the capability tags it allows. The canvas and the tool palette check each tool against that list, so a tool the mode doesn't allow greys out and stops responding. Focus uses the package's scoping dim to fade the other shapes and make them ignore the pointer, and each mode has its own workspace tint and decoration painter. Buttons, number keys and Escape all go through the registry, so every one of these effects comes from the active mode rather than from a hand-written switch.",
+    hint: 'Select a shape and press 2 to focus on it, press 3 to review sizes with every editing tool disabled, and Escape to go back to Draw.',
+    load: () => import('./demos/ModesDemo').then((m) => m.ModesDemo),
+    path: 'apps/site/demos/ModesDemo.tsx',
   },
 ];
 
