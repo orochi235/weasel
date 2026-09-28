@@ -1010,7 +1010,6 @@ From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.m
 Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 
 - **(P3) Exit transitions.** Fade before remove — schedule the tween, emit Delete on tween end.
-- **(P3) Typed `data` payload.** `.data(fn)` returns `Record<string, unknown>`; the binding could carry the data type through the chain for autocompletion.
 - **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
   (`useWheelZoomTool` / `useHandTool` / `useViewAnimation`; `useDragGesture`).
   Worth building only for d3 semantics the kit genuinely lacks, not for parity —

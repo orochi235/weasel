@@ -21,14 +21,15 @@ export interface BindOptions<TData, TPose> {
 /**
  * Builder produced by `d3Bind`. Configure with `.pose()` / `.data()` / `.enterFrom()`,
  * then call `.join()` to emit the diff as one batched scene mutation and receive
- * a chainable `D3Selection`.
+ * a chainable `D3Selection`. `TPayload` is the scene's node data type, which
+ * `d3Bind` infers from the scene it is given.
  */
-export interface D3Binding<TData, TPose> {
+export interface D3Binding<TData, TPose, TPayload = Record<string, unknown>> {
   /** Per-datum pose. Called for both enter (initial scene pose) and update (target). */
   pose(fn: (d: TData, i: number) => TPose): this;
 
   /** Per-datum data payload. Replaces the leaf's existing data on update. */
-  data(fn: (d: TData, i: number) => Record<string, unknown>): this;
+  data(fn: (d: TData, i: number) => TPayload): this;
 
   /** Optional initial pose for ENTER nodes — `.transition()` will animate from this
    *  to the declared `.pose()`. Defaults to the same pose (entries snap in). */
