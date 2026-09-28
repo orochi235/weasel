@@ -15,6 +15,7 @@
  */
 import { SINGULAR_RATIO } from './scalar';
 
+/** `[a, b, c, d, e, f]`: `x' = a·x + c·y + e`, `y' = b·x + d·y + f`. */
 export type Mat3 = readonly [number, number, number, number, number, number];
 
 /** The transform that leaves a point where it is. */

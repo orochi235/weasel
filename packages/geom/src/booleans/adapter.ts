@@ -38,6 +38,7 @@ export type Polygon = Ring[];
 /** MultiPolygon: list of polygons (used for boolean op I/O). */
 export type MultiPolygon = Polygon[];
 
+/** Options for `pathToMultiPolygon`. */
 export interface PathToMultiPolygonOptions {
   /** Flattening tolerance for bezier segments. Default: `DEFAULT_FLATTEN_TOLERANCE`. */
   tolerance?: number;
