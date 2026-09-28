@@ -4,7 +4,7 @@
  * surrounding `<ActionsProvider>` and exposes a search-and-run UI.
  *
  * Reads the ambient selection (when an `<SelectionContextProvider>` is in
- * scope) so the palette can show a "N selected" header — purely informational;
+ * scope) so the palette can show "N selected" in its footer — purely informational;
  * action-availability is driven by each Action's own `enabled` predicate.
  *
  * Snapshot semantics: the action list and each row's `enabled` state are
@@ -30,7 +30,7 @@ import {
   type ActionItem,
   type ActionEnabledResult,
 } from '@weasel-js/core';
-import { formatShortcutParts } from '@weasel-js/ui';
+import { Dialog, KeySequence, keySpecFromKey, keySpecsFromShortcut } from '@weasel-js/ui';
 import styles from './CommandPalette.module.css';
 
 /** Display strings for the closed `ActionDisabledReason` enum. Defined here
@@ -47,20 +47,27 @@ const DEFAULT_REASON_LABELS: Record<string, string> = {
  *  bound more than once — Bring to Front has two — so each binding gets its
  *  own group rather than one being picked as canonical. */
 function ShortcutChips({ item }: { item: ActionItem }) {
-  const groups = actionShortcuts(item.action, item.params)
-    .map((s) => formatShortcutParts(s))
-    .filter((parts): parts is readonly string[] => parts !== undefined);
-  if (groups.length === 0) return null;
+  const shortcuts = actionShortcuts(item.action, item.params);
+  if (shortcuts.length === 0) return null;
   return (
     <span className={styles.shortcuts}>
-      {groups.map((parts) => (
-        <span className={styles.shortcutGroup} key={parts.join('')}>
-          {parts.map((part) => <kbd className={styles.kbd} key={part}>{part}</kbd>)}
-        </span>
+      {shortcuts.map((s) => (
+        <KeySequence
+          key={`${s.key}|${s.mod}|${s.alt}|${s.shift}`}
+          keys={keySpecsFromShortcut(s)}
+          joins="none"
+          variant="minimal"
+        />
       ))}
     </span>
   );
 }
+
+const HINTS = [
+  { keys: [keySpecFromKey('ArrowUp'), keySpecFromKey('ArrowDown')], label: 'navigate' },
+  { keys: [keySpecFromKey('Enter')], label: 'run' },
+  { keys: [keySpecFromKey('Escape')], label: 'close' },
+];
 
 export interface CommandPaletteProps {
   open: boolean;
@@ -75,7 +82,6 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
   const selectionCtx = useSelectionContext();
   const [query, setQuery] = useState('');
   const [highlight, setHighlight] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
   const labels = reasonLabels ?? DEFAULT_REASON_LABELS;
@@ -120,15 +126,10 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
     }
   };
 
-  // Reset state on open and focus the input.
   useEffect(() => {
     if (!open) return;
     setQuery('');
     setHighlight(0);
-    const id = window.requestAnimationFrame(() => {
-      inputRef.current?.focus();
-    });
-    return () => window.cancelAnimationFrame(id);
   }, [open]);
 
   // Clamp highlight when filter shrinks the list.
@@ -144,22 +145,6 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
     );
     el?.scrollIntoView({ block: 'nearest' });
   }, [highlight, open]);
-
-  // Document-level Escape so it works even if focus left the overlay.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', onKey, true);
-    return () => document.removeEventListener('keydown', onKey, true);
-  }, [open, onClose]);
-
-  if (!open) return null;
 
   const trigger = (item: ActionItem) => {
     if (!isEnabled(item)) return;
@@ -186,73 +171,79 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
   const headerText = describeSelection(selectionCtx);
 
   return (
-    <div className={styles.backdrop} onMouseDown={onClose}>
-      <div
-        className={styles.palette}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Command palette"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        {headerText && <div className={styles.header}>{headerText}</div>}
-        <input
-          ref={inputRef}
-          className={styles.input}
-          type="text"
-          placeholder="Search actions…"
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); setHighlight(0); }}
-          onKeyDown={onInputKeyDown}
-          spellCheck={false}
-          autoComplete="off"
-        />
-        {!registry ? (
-          <div className={styles.empty}>No actions available.</div>
-        ) : filtered.length === 0 ? (
-          <div className={styles.empty}>No matching actions.</div>
-        ) : (
-          <ul ref={listRef} className={styles.list} role="listbox">
-            {filtered.map((item, idx) => {
-              const enabled = isEnabled(item);
-              const reason = reasonFor(item);
-              const cls = [
-                styles.row,
-                idx === highlight ? styles.rowActive : '',
-                enabled ? '' : styles.rowDisabled,
-              ].filter(Boolean).join(' ');
-              return (
-                <li
-                  key={item.key}
-                  data-idx={idx}
-                  role="option"
-                  aria-selected={idx === highlight}
-                  aria-disabled={!enabled}
-                  className={cls}
-                  onMouseEnter={() => { if (enabled) setHighlight(idx); }}
-                  onMouseDown={(e) => { e.preventDefault(); if (enabled) trigger(item); }}
-                  title={reason}
-                >
-                  <span className={styles.label}>{item.label}</span>
-                  {!enabled && reason && (
-                    <span className={styles.reason}>{reason}</span>
-                  )}
-                  <ShortcutChips item={item} />
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        <div className={styles.footer}>
-          <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-          <span><kbd>↵</kbd> run</span>
-          <span><kbd>Esc</kbd> close</span>
-        </div>
-      </div>
-    </div>
+    <Dialog
+      isOpen={open}
+      onOpenChange={(next) => { if (!next) onClose(); }}
+      isDismissable
+      title="Commands"
+      showCloseButton={false}
+      className={styles.palette}
+      bodyClassName={styles.body}
+      footer={
+        <>
+          {headerText && <span className={styles.selection}>{headerText}</span>}
+          {HINTS.map((h) => (
+            <span className={styles.hint} key={h.label}>
+              <KeySequence keys={h.keys} joins="none" />
+              {h.label}
+            </span>
+          ))}
+        </>
+      }
+    >
+      <input
+        className={styles.input}
+        type="text"
+        placeholder="Search actions…"
+        aria-label="Search actions"
+        value={query}
+        onChange={(e) => { setQuery(e.target.value); setHighlight(0); }}
+        onKeyDown={onInputKeyDown}
+        spellCheck={false}
+        autoComplete="off"
+        autoFocus
+      />
+      {!registry ? (
+        <div className={styles.empty}>No actions available.</div>
+      ) : filtered.length === 0 ? (
+        <div className={styles.empty}>No matching actions.</div>
+      ) : (
+        <ul ref={listRef} className={styles.list} role="listbox" aria-label="Actions">
+          {filtered.map((item, idx) => {
+            const enabled = isEnabled(item);
+            const reason = reasonFor(item);
+            const cls = [
+              styles.row,
+              idx === highlight ? styles.rowActive : '',
+              enabled ? '' : styles.rowDisabled,
+            ].filter(Boolean).join(' ');
+            return (
+              <li
+                key={item.key}
+                data-idx={idx}
+                role="option"
+                aria-selected={idx === highlight}
+                aria-disabled={!enabled}
+                className={cls}
+                onMouseEnter={() => { if (enabled) setHighlight(idx); }}
+                onMouseDown={(e) => { e.preventDefault(); if (enabled) trigger(item); }}
+                title={reason}
+              >
+                <span className={styles.label}>{item.label}</span>
+                {!enabled && reason && (
+                  <span className={styles.reason}>{reason}</span>
+                )}
+                <ShortcutChips item={item} />
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Dialog>
   );
 }
 
-/** Pluralize an English noun for the palette header. Naïve — handles the
+/** Pluralize an English noun for the selection summary. Naïve — handles the
  *  common (-s, -es) cases; consumers wanting an exact form should rename
  *  their kind labels (`'paths'`) or fork this. */
 function pluralize(noun: string, count: number): string {
@@ -262,7 +253,7 @@ function pluralize(noun: string, count: number): string {
   return `${noun}s`;
 }
 
-/** Build the palette's selection header from the ambient context. Returns
+/** Build the palette's selection summary from the ambient context. Returns
  *  `null` when no provider is in scope. */
 function describeSelection(
   ctx: { readonly selection: readonly string[]; readonly kinds?: readonly (string | undefined)[] } | null,
