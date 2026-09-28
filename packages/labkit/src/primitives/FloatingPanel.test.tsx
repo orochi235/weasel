@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DRAG_THRESHOLD_PX } from '@weasel-js/core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryAdapter } from '../state/adapters';
 import { labPrefix } from '../state/labRecords';
 import { Persistence } from '../state/Persistence';

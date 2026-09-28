@@ -1,11 +1,5 @@
 import type { DrawCommand, Path, Stroke } from '@weasel-js/core';
-import {
-  ellipsePath,
-  linePath,
-  PathBuilder,
-  rectPath,
-  textCommand,
-} from '@weasel-js/core';
+import { ellipsePath, linePath, PathBuilder, rectPath, textCommand } from '@weasel-js/core';
 import type { WorldRect } from './frac';
 import type { AnnotationData, FracPoint } from './types';
 

@@ -16,6 +16,7 @@ import {
   createContext,
   useContext,
   useMemo,
+  useState,
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
@@ -128,7 +129,7 @@ export function ActiveToolContextProvider({
   children,
   initialActive = null,
 }: ActiveToolContextProviderProps) {
-  const node = useMemo(() => new ToolNode(null, true, true, initialActive), []);
+  const [node] = useState(() => new ToolNode(null, true, true, initialActive));
   return <ActiveToolContext.Provider value={node}>{children}</ActiveToolContext.Provider>;
 }
 

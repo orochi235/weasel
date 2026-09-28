@@ -1,4 +1,4 @@
-import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
+import { openPointerSession, type PointerSession, pastDragThreshold } from '@weasel-js/core';
 import type React from 'react';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import {
