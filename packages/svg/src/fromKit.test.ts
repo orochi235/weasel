@@ -5,7 +5,7 @@ import {
 import {
   svgImageFromKit, svgLeafFromKit, svgNodesFromKit, svgPaintFromKit, svgStrokeFromKit, type SvgKitTree,
 } from './fromKit';
-import { svgNodesToKitDrafts } from './unpack';
+import { strokeDataFromSvg, svgNodesToKitDrafts } from './unpack';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
 import type { SvgGroupNode, SvgPathNode, SvgTextNode } from './types';
@@ -33,7 +33,7 @@ describe('svgPaintFromKit', () => {
 });
 
 describe('svgStrokeFromKit', () => {
-  it('carries every structural field, and a marker as its key', () => {
+  it('carries every structural field, and a marker with its size', () => {
     const stroke: Stroke = {
       paint: { ...solid('#000000'), opacity: 0.25 }, width: 3, cap: 'round', join: 'bevel',
       dash: [4, 2], miterLimit: 6, align: 'inner',
@@ -42,8 +42,26 @@ describe('svgStrokeFromKit', () => {
     expect(svgStrokeFromKit(stroke, BOX)).toEqual({
       paint: { kind: 'solid', color: '#000000', opacity: 0.25 }, width: 3, opacity: 0.25,
       cap: 'round', join: 'bevel', dash: [4, 2], miterLimit: 6, align: 'inner',
-      markerStart: 'dot', markerEnd: 'arrow',
+      markerStart: 'dot', markerEnd: { key: 'arrow', size: 2 },
     });
+  });
+
+  it('round-trips a marker size through export and import', () => {
+    const line: Path = {
+      kind: 'polygon', commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 50, 0]), fillRule: 'nonzero',
+    };
+    const stroke: Stroke = {
+      paint: solid('#000000'), width: 2,
+      markerStart: { key: 'arrow', size: { px: 12 } }, markerMid: 'arrow', markerEnd: { key: 'arrow', size: 3 },
+    };
+    const box = { x: 0, y: 0, width: 50, height: 0 };
+    const out = serializeSvg([{ kind: 'path', path: line, fill: { kind: 'none' }, stroke: svgStrokeFromKit(stroke, box)! }]);
+    const parsed = parseSvg(out);
+    expect(parsed.warnings).toEqual([]);
+    const back = strokeDataFromSvg((parsed.nodes[0] as SvgPathNode).stroke, box)!;
+    expect(back.markerStart).toEqual({ key: 'arrow', size: { px: 12 } });
+    expect(back.markerMid).toBe('arrow');
+    expect(back.markerEnd).toEqual({ key: 'arrow', size: 3 });
   });
 
   it('writes no stroke for one with no paint or no width', () => {

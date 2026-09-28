@@ -10,7 +10,7 @@
 
 import type { Path, PolygonPath } from '@weasel-js/core';
 import { PATH_L, PATH_M, PATH_Z, pathFromD, getMarker, solid } from '@weasel-js/core';
-import type { MarkerEntry, MarkerPaint } from '@weasel-js/core';
+import type { MarkerEntry, MarkerPaint, MarkerRef } from '@weasel-js/core';
 import {
   rectElementToPath, circleToPath, ellipseToPath, lineToPath,
   parsePoints, polylineToPath, polygonToPath,
@@ -27,7 +27,7 @@ import { boundsOfPath, layoutRuns, resolveRuns, resolveScreenLength, resolveText
 import { IDENTITY_MATRIX } from './types';
 import { anchorOffset } from './textAnchor';
 import { parsePaintAttr } from './color';
-import { collectGradients, type GradientTable } from './gradients';
+import { collectGradients, WEASEL_NS, WEASEL_NS_PREFIX, type GradientTable } from './gradients';
 import { collectPatterns } from './patterns';
 import { collectElementsByTag } from './elements';
 import { deriveStyle, EMPTY_STYLE, ownProp, resolveCurrentColor, type StyleContext } from './cascade';
@@ -1344,6 +1344,11 @@ function ingestMarkers(
         delete stroke[field];
         continue;
       }
+      const sized = sizedMarkerRef(el);
+      if (sized) {
+        stroke[field] = sized;
+        continue;
+      }
       const cacheKey = `${id}\u0000${role}\u0000${w}`;
       if (!minted.has(cacheKey)) minted.set(cacheKey, markerEntryFrom(el, id, role, w, gradients, onWarn));
       const entry = minted.get(cacheKey)!;
@@ -1367,6 +1372,21 @@ function ingestMarkers(
   const out = new Map<string, MarkerEntry>();
   for (const entry of minted.values()) if (entry) out.set(entry.id, entry);
   return [...out.values()];
+}
+
+/** The reference a sized-marker def this package wrote stands for — its key
+ *  and size, read off the private namespace — when that key is registered
+ *  here. Otherwise the def is read as any other document marker. */
+function sizedMarkerRef(el: Element): MarkerRef | undefined {
+  const attr = (name: string): string | null =>
+    el.getAttributeNS(WEASEL_NS, name) ?? el.getAttribute(`${WEASEL_NS_PREFIX}:${name}`);
+  const key = attr('key');
+  const raw = attr('size')?.trim();
+  if (!key || !raw || getMarker(key) === undefined) return undefined;
+  const px = raw.endsWith('px');
+  const n = parseFloat(px ? raw.slice(0, -2) : raw);
+  if (!Number.isFinite(n) || n <= 0) return undefined;
+  return { key, size: px ? { px: n } : n };
 }
 
 /** The cascade as it stands on `el`, walked down from the root. A marker's

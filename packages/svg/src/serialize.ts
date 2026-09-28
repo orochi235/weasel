@@ -164,24 +164,12 @@ function registerTextPaint(
   if (paint && !('color' in paint)) registry.register(paint);
 }
 
-/** A marker reference in either shape — `SvgStroke` stores a bare key, the kit
- *  `Stroke` stores a `MarkerRef`. */
-function markerKeyOfRef(ref: unknown): string | undefined {
-  if (typeof ref === 'string') return ref;
-  if (ref && typeof ref === 'object' && 'key' in ref) return String((ref as { key: string }).key);
-  return undefined;
-}
-
 /** Mint a `<defs>` id for every marker a stroke names, before the body is
  *  written — same reason as the paint pre-pass above. */
-function registerMarkers(
-  stroke: { markerStart?: unknown; markerMid?: unknown; markerEnd?: unknown } | undefined,
-  registry: PaintServerRegistry,
-): void {
+function registerMarkers(stroke: Pick<Stroke, 'markerStart' | 'markerMid' | 'markerEnd'> | undefined, registry: PaintServerRegistry): void {
   if (!stroke) return;
   for (const ref of [stroke.markerStart, stroke.markerMid, stroke.markerEnd]) {
-    const key = markerKeyOfRef(ref);
-    if (key) registry.markerId(key);
+    if (ref !== undefined) registry.markerId(ref);
   }
 }
 
@@ -380,8 +368,7 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegist
   ] as const) {
     const ref = stroke[field];
     if (ref === undefined) continue;
-    const key = typeof ref === 'string' ? ref : ref.key;
-    const id = registry.markerId(key);
+    const id = registry.markerId(ref);
     if (id === undefined) continue;
     attrs.push(`${attr}="url(#${id})"`);
   }

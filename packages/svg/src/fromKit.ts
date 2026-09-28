@@ -11,7 +11,6 @@ import {
   pathInPoseFrame,
   type FillStyle,
   type ImageNodeData,
-  type MarkerRef,
   type Path,
   type Stroke,
   type StyledRun,
@@ -57,8 +56,7 @@ export function svgPaintFromKit(fill: FillStyle | null, box: SvgKitPose): SvgPai
 }
 
 /** A kit `Stroke` as an `SvgStroke` — the inverse of `strokeDataFromSvg`.
- *  One with no paint or no width draws nothing and is written as no stroke.
- *  A marker's `size` has no SVG counterpart here, so only its key is kept. */
+ *  One with no paint or no width draws nothing and is written as no stroke. */
 export function svgStrokeFromKit(stroke: Stroke | null | undefined, box: SvgKitPose): SvgStroke | undefined {
   if (!stroke?.paint) return undefined;
   const width = stroke.width ?? 1;
@@ -73,14 +71,10 @@ export function svgStrokeFromKit(stroke: Stroke | null | undefined, box: SvgKitP
     ...(stroke.dash !== undefined ? { dash: stroke.dash } : {}),
     ...(stroke.miterLimit !== undefined ? { miterLimit: stroke.miterLimit } : {}),
     ...(stroke.align !== undefined ? { align: stroke.align } : {}),
-    ...(stroke.markerStart !== undefined ? { markerStart: markerKey(stroke.markerStart) } : {}),
-    ...(stroke.markerMid !== undefined ? { markerMid: markerKey(stroke.markerMid) } : {}),
-    ...(stroke.markerEnd !== undefined ? { markerEnd: markerKey(stroke.markerEnd) } : {}),
+    ...(stroke.markerStart !== undefined ? { markerStart: stroke.markerStart } : {}),
+    ...(stroke.markerMid !== undefined ? { markerMid: stroke.markerMid } : {}),
+    ...(stroke.markerEnd !== undefined ? { markerEnd: stroke.markerEnd } : {}),
   };
-}
-
-function markerKey(ref: MarkerRef): string {
-  return typeof ref === 'string' ? ref : ref.key;
 }
 
 /** Write a `kit:image` leaf as an `SvgImageNode` — the inverse of the image

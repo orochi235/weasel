@@ -6,8 +6,10 @@
  * emit a fresh `<defs>` block with stable generated ids.
  */
 
-import { getPaintKind, getMarker } from '@weasel-js/core';
-import type { FillStyle, GradStop, GradientUnits, MarkerEntry, MarkerPaint, Path } from '@weasel-js/core';
+import { getPaintKind, getMarker, resolveMarkerSize } from '@weasel-js/core';
+import type {
+  FillStyle, GradStop, GradientUnits, MarkerEntry, MarkerPaint, MarkerRef, Path, ScreenLength,
+} from '@weasel-js/core';
 import { ownProp } from './cascade';
 import { parsePaintAttr } from './color';
 import { trimNumber } from './transform';
@@ -340,12 +342,13 @@ export class PaintServerRegistry {
   private order: FillStyle[] = [];
   private counter = 0;
 
-  // Marker keys referenced by any stroke, in first-use order. The `<defs>`
-  // id is the marker key itself, not a minted counter id: `parseSvg` reads a
-  // `marker-end="url(#id)"` fragment back as the marker key directly when the
-  // registry knows it, so a synthetic id would come back as a stranger.
-  private markerKeys: string[] = [];
-  private markerKeySet = new Set<string>();
+  // Marker defs referenced by any stroke, by `<defs>` id in first-use order.
+  // An unsized reference's id is the marker key itself, not a minted counter
+  // id: `parseSvg` reads a `marker-end="url(#id)"` fragment back as the marker
+  // key directly when the registry knows it, so a synthetic id would come
+  // back as a stranger. A sized one gets a def of its own, stamped with its
+  // key and size so the parser can read the reference back whole.
+  private markers = new Map<string, { key: string; size?: ScreenLength }>();
 
   // Clip paths, in first-use order. Identity, not value: two groups clipped by
   // equal outlines get a def each, which costs bytes and misleads nobody.
@@ -377,20 +380,23 @@ export class PaintServerRegistry {
   /** Whether any registered paint serializes outside SVG's own vocabulary, so
    *  the root has to declare {@link WEASEL_NS}. */
   usesPrivateNamespace(): boolean {
-    return this.order.some((paint) => !hasNativeSvgForm(paint) || usesInterpolateAttr(paint));
+    return this.order.some((paint) => !hasNativeSvgForm(paint) || usesInterpolateAttr(paint))
+      || [...this.markers.values()].some((m) => m.size !== undefined);
   }
 
-  /** The `<defs>` id for a marker key — the key itself, minting nothing.
-   *  `undefined` when nothing is registered under `key`, so a caller emits no
-   *  attribute at all rather than a `url(#…)` pointing at a def that will
-   *  never be written. */
-  markerId(key: string): string | undefined {
+  /** The `<defs>` id for a marker reference — the key itself when it has no
+   *  size, else the key suffixed with the size. `undefined` when nothing is
+   *  registered under the key, so a caller emits no attribute at all rather
+   *  than a `url(#…)` pointing at a def that will never be written. */
+  markerId(ref: MarkerRef): string | undefined {
+    const key = typeof ref === 'string' ? ref : ref.key;
+    const size = typeof ref === 'string' ? undefined : ref.size;
     if (getMarker(key) === undefined) return undefined;
-    if (!this.markerKeySet.has(key)) {
-      this.markerKeySet.add(key);
-      this.markerKeys.push(key);
-    }
-    return key;
+    const id = size === undefined
+      ? key
+      : `${key}-s${typeof size === 'number' ? trimNumber(size) : `${trimNumber(size.px)}px`}`;
+    if (!this.markers.has(id)) this.markers.set(id, size === undefined ? { key } : { key, size });
+    return id;
   }
 
   /** Mint (or recall) the `<defs>` id for a clip outline. */
@@ -406,17 +412,22 @@ export class PaintServerRegistry {
   /** Emit `<defs>...</defs>` XML for every registered paint server, marker
    *  and clip path. */
   toDefsXml(onWarn?: (m: string) => void): string {
-    if (this.order.length === 0 && this.markerKeys.length === 0 && this.clips.length === 0) {
+    if (this.order.length === 0 && this.markers.size === 0 && this.clips.length === 0) {
       return '';
     }
     const parts: string[] = ['<defs>'];
     for (const paint of this.order) {
       parts.push(paintServerXml(this.byPaint.get(paint)!, paint, onWarn));
     }
-    for (const key of this.markerKeys) {
+    for (const [id, { key, size }] of this.markers) {
       const entry = getMarker(key);
       if (!entry) continue;
-      parts.push(entry.toSvg ? entry.toSvg(key, entry) : defaultMarkerXml(key, entry, onWarn));
+      if (entry.toSvg) {
+        if (size !== undefined) onWarn?.(`marker "${key}" writes its own <marker> def, which cannot carry a reference's size; written at its own size`);
+        parts.push(entry.toSvg(id, entry));
+      } else {
+        parts.push(defaultMarkerXml(id, entry, onWarn, key, size));
+      }
     }
     for (const path of this.clips) {
       parts.push(
@@ -430,13 +441,19 @@ export class PaintServerRegistry {
   }
 }
 
-/** The `<marker>` def for an entry with no `toSvg` of its own. */
-function defaultMarkerXml(id: string, entry: MarkerEntry, onWarn?: (m: string) => void): string {
-  const path = entry.path({ size: 1, stroke: { paint: { fill: 'solid', color: '#000' } } });
+/** The `<marker>` def for an entry with no `toSvg` of its own. Unsized, one
+ *  marker unit is one stroke width, as the kit draws it. A sized reference is
+ *  drawn in user space at `resolveMarkerSize`'s reading of its size, and
+ *  records its key and size in the private namespace for the parser. */
+function defaultMarkerXml(
+  id: string, entry: MarkerEntry, onWarn?: (m: string) => void, key?: string, size?: ScreenLength,
+): string {
+  const unit = size === undefined ? 1 : resolveMarkerSize({ key: key ?? id, size }, 1);
+  const path = entry.path({ size: unit, stroke: { paint: { fill: 'solid', color: '#000' } } });
   const d = serializePathD(path);
   const fill = markerPaintAttrs('fill', entry.fill, id, onWarn);
   const outline = entry.outline
-    ? ` ${markerPaintAttrs('stroke', entry.outline.paint, id, onWarn)} stroke-width="${trimNumber(entry.outline.width)}"`
+    ? ` ${markerPaintAttrs('stroke', entry.outline.paint, id, onWarn)} stroke-width="${trimNumber(entry.outline.width * unit)}"`
       + ' stroke-linecap="round" stroke-linejoin="round"'
     : '';
   // The kit turns every start marker around, which is what SVG 2 spells
@@ -444,10 +461,15 @@ function defaultMarkerXml(id: string, entry: MarkerEntry, onWarn?: (m: string) =
   const orient = typeof entry.orient === 'number'
     ? trimNumber((entry.orient * 180) / Math.PI)
     : 'auto-start-reverse';
+  const units = size === undefined
+    ? 'markerUnits="strokeWidth" markerWidth="8" markerHeight="8"'
+    : `markerUnits="userSpaceOnUse" markerWidth="${trimNumber(8 * unit)}" markerHeight="${trimNumber(8 * unit)}"`
+      + ` ${WEASEL_NS_PREFIX}:key="${key}" ${WEASEL_NS_PREFIX}:size="${
+        typeof size === 'number' ? trimNumber(size) : `${trimNumber(size.px)}px`}"`;
   // `overflow="visible"` overrides the UA default of `hidden`, which would
   // otherwise clip the arrowhead to the marker's viewport.
   return (
-    `<marker id="${id}" markerUnits="strokeWidth" markerWidth="8" markerHeight="8"` +
+    `<marker id="${id}" ${units}` +
     ` refX="0" refY="0" orient="${orient}" overflow="visible">` +
     `<path d="${d}" ${fill}${outline}/></marker>`
   );
