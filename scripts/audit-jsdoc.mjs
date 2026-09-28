@@ -127,6 +127,10 @@ for (const name of packageDirs) {
         // `DepSchema`), which are reachable through the barrel but are not
         // definition sites of anything the package publishes.
         if (!file.startsWith(PACKAGES) || file.includes('/node_modules/')) continue;
+        // A package augmenting a sibling's interface (core merging into
+        // routing's `DepSchema`) is a merge site too; the sibling documents it,
+        // and typedoc warns when both declarations carry a comment.
+        if (decl.getFirstAncestor((a) => Node.isModuleDeclaration(a) && Node.isStringLiteral(a.getNameNode()))) continue;
         // Expando assignments (`Toolbar.Group = …`, `usePenTool.prefs = …`) resolve
         // to a bare identifier, not to a declaration site of the export itself.
         if (Node.isIdentifier(decl)) continue;
@@ -203,10 +207,11 @@ console.log(`\n${sites.length} public exports (unique definition sites), ${undoc
 if (!quiet) {
   console.log('\nEntry points scanned:');
   for (const p of perPackage) console.log(`  ${pad(p.pkg, 12)} ${p.entries} entry point(s)${p.note ? ` — ${p.note}` : ''}`);
-  // A `test-seams` entry is where a package parks reset hooks that another
-  // workspace's tests need. Reaching one is a deliberate import of a test
-  // surface, so an @internal symbol there is placed, not leaked.
-  const isSeamEntry = (e) => /(^|\/)test-seams\.ts$/.test(e);
+  // A `test-seams` entry parks reset hooks another workspace's tests need, and
+  // an `internal` entry parks types a sibling package fills across the
+  // boundary. Reaching either is deliberate, so an @internal symbol there is
+  // placed, not leaked.
+  const isSeamEntry = (e) => /(^|\/)(test-seams|internal)\.ts$/.test(e);
   const internal = sites.filter((r) => r.internal);
   const leaked = internal.filter((r) => !r.entries.every(isSeamEntry));
   const parked = internal.length - leaked.length;
@@ -214,5 +219,5 @@ if (!quiet) {
     console.log(`\n${leaked.length} export(s) whose own JSDoc marks them @internal:`);
     for (const r of leaked) console.log(`  ${r.symbol}\t${r.file}:${r.line}\tvia ${r.barrels.join(', ')}`);
   }
-  if (parked) console.log(`\n${parked} @internal export(s) reachable only through a test-seams entry.`);
+  if (parked) console.log(`\n${parked} @internal export(s) reachable only through a test-seams or internal entry.`);
 }

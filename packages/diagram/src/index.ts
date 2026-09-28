@@ -68,7 +68,7 @@ export type {
 export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, diagramLabelOf, labelDerivePose } from './label';
 export type { DiagramLabel, LabelPoseOptions } from './label';
 export { force, forceRelaxation } from './force';
-export type { ForceOptions, ForceRelaxation } from './force';
+export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { EASED_LAYOUTS, easedProducer, forceProducer, useLiveLayout } from './live';
 export type {
   EasedProducerOptions,

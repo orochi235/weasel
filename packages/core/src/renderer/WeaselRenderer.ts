@@ -99,11 +99,18 @@ function now(): number {
   return typeof performance !== 'undefined' ? performance.now() : Date.now();
 }
 
+/** Construction options for {@link WeaselRenderer}. Pass `gl` or `canvas`;
+ *  a context passed in must have a stencil buffer. */
 export interface WeaselRendererOptions {
+  /** A WebGL2 context to draw with. Wins over `canvas`. */
   gl?: WebGL2RenderingContext;
+  /** A canvas to open a stencil-backed WebGL2 context on, when `gl` is absent. */
   canvas?: HTMLCanvasElement;
+  /** Drawing size in CSS pixels. */
   width: number;
+  /** Drawing size in CSS pixels. */
   height: number;
+  /** Device pixels per CSS pixel. */
   dpr: number;
   /** MIN_FILTER strategy for image/pattern textures (`GLImageCache`).
    *  Default `'linear'` — the existing screen behavior. The headless

@@ -1,7 +1,7 @@
 import type { Op } from './types';
 import { createDeleteOp } from './delete';
 import { registerOpFactory } from './registry';
-import { parentOf, resolveSlot, slotFromIndex, type OrderedReader, type Slot } from './slot';
+import { parentOf, resolveSlot, slotFromIndex, type OrderedReader, type SiblingSlot } from './slot';
 
 interface InsertAdapter<TNode> extends OrderedReader {
   /** When `index` is supplied, insert at that position; adapters that ignore
@@ -14,8 +14,8 @@ interface InsertAdapter<TNode> extends OrderedReader {
  *  exists so consumers can name the op type when needed. */
 export type InsertOp = Op;
 
-/** @internal */
-interface InsertArgs<TNode extends { id: string }> {
+/** Arguments to {@link createInsertOp}: the node to insert and where among its siblings. */
+export interface InsertArgs<TNode extends { id: string }> {
   node: TNode;
   label?: string;
   /** Sibling ordinal to insert at. Sugar for `slot: { index }` — the weaker
@@ -23,13 +23,13 @@ interface InsertArgs<TNode extends { id: string }> {
   index?: number;
   /** Full slot, anchor included. Produced only by `captureSlot` (via a
    *  delete op's `invert`), and supersedes `index` when present. */
-  slot?: Slot;
+  slot?: SiblingSlot;
 }
 
 /** Op: insert `node` into the scene; inverts to a delete of the same id. */
 export function createInsertOp<TNode extends { id: string }>(args: InsertArgs<TNode>): InsertOp {
   const { node, label } = args;
-  const slot: Slot = args.slot ?? slotFromIndex(args.index);
+  const slot: SiblingSlot = args.slot ?? slotFromIndex(args.index);
   return {
     name: 'insert',
     args: { node, label, slot },

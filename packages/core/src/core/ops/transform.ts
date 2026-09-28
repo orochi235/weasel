@@ -5,8 +5,8 @@ interface TransformAdapter<TPose> {
   setPose(id: string, pose: TPose): void;
 }
 
-/** @internal */
-interface TransformArgs<TPose> {
+/** Arguments to {@link createTransformOp}: replace node `id`'s pose `from` → `to`. */
+export interface TransformArgs<TPose> {
   id: string;
   from: TPose;
   to: TPose;

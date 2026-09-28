@@ -6,8 +6,8 @@ interface SelectionAdapter {
   setSelection(ids: NodeId[]): void;
 }
 
-/** @internal */
-interface SetSelectionArgs {
+/** Arguments to {@link createSetSelectionOp}: replace the selection `from` → `to`. */
+export interface SetSelectionArgs {
   from: readonly NodeId[];
   to: readonly NodeId[];
   label?: string;

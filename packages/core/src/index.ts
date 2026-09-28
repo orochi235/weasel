@@ -120,6 +120,7 @@ export type { SceneNodeClientRectOpts, NodeClientRect } from './core/viewport/sc
 export * from './core/viewport/useAutoCenter';
 // ─── Keybindings: low-level key → action wiring ─────────────────────────────
 export { isEditableTarget, matchesKeyBinding } from '@weasel-js/routing';
+export type { KeyBinding } from '@weasel-js/routing';
 // ─── Key-state poll: which physical keys are down right now ────────────────
 export { createKeyState } from './input/keyState';
 export type { KeyState, KeyStateAttachOptions, KeyModifiers } from './input/keyState';

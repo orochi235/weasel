@@ -30,20 +30,10 @@
     }
   },
   // Types deliberately kept off the public doc surface. Adapter contracts
-  // (HitAdapter, ReorderAdapter, CanvasAdapter) and per-op `*Args` shapes are
-  // internal composition details — consumers reach them through the op
-  // factories and through SceneCanvas, which synthesizes the adapter.
+  // (HitAdapter, ReorderAdapter, CanvasAdapter) are internal composition
+  // details — consumers reach them through SceneCanvas, which synthesizes the
+  // adapter.
   "intentionallyNotExported": [
-    "DeleteArgs",
-    "InsertArgs",
-    "MoveToIndexArgs",
-    "ReparentArgs",
-    "SetDataArgs",
-    "SetLayerArgs",
-    "SetPathArgs",
-    "SetSelectionArgs",
-    "SetTextArgs",
-    "TransformArgs",
     "CanvasAdapter",
     "Replacer",
     "Reviver",

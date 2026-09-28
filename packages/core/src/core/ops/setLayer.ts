@@ -5,8 +5,8 @@ interface SetLayerAdapter {
   setLayer(id: string, layer: string): void;
 }
 
-/** @internal */
-interface SetLayerArgs {
+/** Arguments to {@link createSetLayerOp}: move node `id` from layer `from` to layer `to`. */
+export interface SetLayerArgs {
   id: string;
   from: string;
   to: string;

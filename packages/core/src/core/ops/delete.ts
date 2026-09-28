@@ -1,7 +1,7 @@
 import type { Op } from './types';
 import { createInsertOp } from './create';
 import { registerOpFactory } from './registry';
-import { captureSlot, parentOf, slotFromIndex, type OrderedReader, type Slot } from './slot';
+import { captureSlot, parentOf, slotFromIndex, type OrderedReader, type SiblingSlot } from './slot';
 
 interface DeleteAdapter<TNode> extends OrderedReader {
   removeNode(id: string): void;
@@ -23,13 +23,13 @@ interface InsertAdapter<TNode> {
 }
 
 /** A captured node plus its slot in its own parent's child list. */
-interface Placed<TNode> {
+export interface PlacedNode<TNode> {
   node: TNode;
   index: number;
 }
 
-/** @internal */
-interface DeleteArgs<TNode extends { id: string }> {
+/** Arguments to {@link createDeleteOp}: the node to remove, plus what undo needs to put it back. */
+export interface DeleteArgs<TNode extends { id: string }> {
   node: TNode;
   label?: string;
   /** Sibling ordinal the node occupies at the moment of delete. Sugar for
@@ -39,14 +39,14 @@ interface DeleteArgs<TNode extends { id: string }> {
    *  where nothing can be observed. */
   index?: number;
   /** Full slot, anchor included. Written by `apply`; supersedes `index`. */
-  slot?: Slot;
+  slot?: SiblingSlot;
   /** Everything `removeNode` takes, `node` itself included — its subtree, and
    *  whatever else the adapter cascades. An inverse that re-inserts `node`
    *  alone brings a container back empty and leaves every dependent deleted.
    *  Ordered so a node's parent precedes it, which is the order they have to
    *  be re-inserted in. Captured on apply; mirrored into the serialized args so
    *  a rebuilt op can invert without having run. */
-  cascaded?: Placed<TNode>[];
+  cascaded?: PlacedNode<TNode>[];
 }
 
 /** `id`'s ordinal among `parentId`'s children, or `-1` when unobservable. */
@@ -72,7 +72,7 @@ function indexIn(a: OrderedReader, parentId: string | null, id: string): number 
 function captureCascade<TNode extends { id: string }>(
   a: DeleteAdapter<TNode>,
   rootId: string,
-): Placed<TNode>[] | null {
+): PlacedNode<TNode>[] | null {
   const { getChildren, getNode } = a;
   if (!getChildren || !getNode) return null;
 
@@ -99,8 +99,8 @@ function captureCascade<TNode extends { id: string }>(
     .map((n) => ({ node: n, index: indexIn(a, parentOf(n), n.id) }))
     .sort((l, r) => l.index - r.index);
 
-  const out: Placed<TNode>[] = [];
-  const emitSubtree = (entry: Placed<TNode>): void => {
+  const out: PlacedNode<TNode>[] = [];
+  const emitSubtree = (entry: PlacedNode<TNode>): void => {
     out.push(entry);
     const kids = getChildren.call(a, entry.node.id);
     for (let i = 0; i < kids.length; i++) {
@@ -116,9 +116,9 @@ function captureCascade<TNode extends { id: string }>(
  *  re-insert of the whole set at its captured slots. */
 export function createDeleteOp<TNode extends { id: string }>(args: DeleteArgs<TNode>): Op {
   const { node, label } = args;
-  let slot: Slot = args.slot ?? slotFromIndex(args.index);
+  let slot: SiblingSlot = args.slot ?? slotFromIndex(args.index);
   const argsForSerial: DeleteArgs<TNode> = { node, label, slot, cascaded: args.cascaded };
-  let captured: Placed<TNode>[] = args.cascaded ?? [];
+  let captured: PlacedNode<TNode>[] = args.cascaded ?? [];
   return {
     name: 'delete',
     args: argsForSerial,

@@ -1,6 +1,6 @@
 import type { Op } from './types';
 import { registerOpFactory } from './registry';
-import { captureSlot, resolveSlot, slotFromIndex, type OrderedReader, type Slot } from './slot';
+import { captureSlot, resolveSlot, slotFromIndex, type OrderedReader, type SiblingSlot } from './slot';
 
 interface ReparentAdapter extends OrderedReader {
   setParent(id: string, parentId: string | null): void;
@@ -9,8 +9,8 @@ interface ReparentAdapter extends OrderedReader {
   setChildOrder?(parentId: string | null, ids: string[]): void;
 }
 
-/** @internal */
-interface ReparentArgs {
+/** Arguments to {@link createReparentOp}: move node `id` from one parent to another. */
+export interface ReparentArgs {
   id: string;
   fromParentId: string | null;
   toParentId: string | null;
@@ -24,9 +24,9 @@ interface ReparentArgs {
   /** Slot under the old parent, anchor included. `invert()` forwards it as
    *  the destination slot; without it undo re-parents with no position and
    *  the node lands last, quietly changing paint order. */
-  fromSlot?: Slot;
+  fromSlot?: SiblingSlot;
   /** Slot under the new parent, anchor included. Omit to append. */
-  toSlot?: Slot;
+  toSlot?: SiblingSlot;
   label?: string;
   coalesceKey?: string;
 }
@@ -38,7 +38,7 @@ function placeAt(
   a: ReparentAdapter,
   parentId: string | null,
   id: string,
-  slot: Slot,
+  slot: SiblingSlot,
 ): void {
   if (!a.getChildren || !a.setChildOrder) return;
   const current = a.getChildren(parentId);
@@ -55,7 +55,7 @@ function placeAt(
 
 /** Present when the caller named a destination at all; `undefined` leaves
  *  placement to the adapter. */
-function optionalSlot(slot: Slot | undefined, index: number | undefined): Slot | undefined {
+function optionalSlot(slot: SiblingSlot | undefined, index: number | undefined): SiblingSlot | undefined {
   if (slot) return slot;
   return index === undefined ? undefined : slotFromIndex(index);
 }

@@ -8,7 +8,7 @@ import { useRef } from 'react';
 import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
 import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
 import { ActiveToolContextProvider } from '@weasel-js/routing/react';
-import { type DispatcherViewTarget } from '@weasel-js/routing/react';
+import type { DispatcherViewTarget } from '@weasel-js/routing/internal';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
 import { createViewResolver } from 'features/viewports/viewResolver';

@@ -1,5 +1,4 @@
 /**
- * @experimental
  * Default boolean-op (Pathfinder) icons shipped with `defaultBooleanActions`.
  * Lifted verbatim from `apps/draw`'s `<PathfinderPanel>` so
  * consumers get a working icon set without having to author or import their
@@ -15,7 +14,11 @@ const SVG_BASE = {
   'aria-hidden': true,
 };
 
-/** Icon for the union operation: two overlapping circles merged into one filled shape. */
+/**
+ * Icon for the union operation: two overlapping circles merged into one filled shape.
+ *
+ * @experimental
+ */
 export function UnionIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -27,7 +30,11 @@ export function UnionIcon() {
   );
 }
 
-/** Icon for the intersect operation: only the overlap of two circles filled. */
+/**
+ * Icon for the intersect operation: only the overlap of two circles filled.
+ *
+ * @experimental
+ */
 export function IntersectIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -42,7 +49,11 @@ export function IntersectIcon() {
   );
 }
 
-/** Icon for the subtract operation: the front circle removed from the back one. */
+/**
+ * Icon for the subtract operation: the front circle removed from the back one.
+ *
+ * @experimental
+ */
 export function SubtractIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -57,7 +68,11 @@ export function SubtractIcon() {
   );
 }
 
-/** Icon for the exclude operation: both circles filled except their overlap. */
+/**
+ * Icon for the exclude operation: both circles filled except their overlap.
+ *
+ * @experimental
+ */
 export function ExcludeIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -73,7 +88,11 @@ export function ExcludeIcon() {
   );
 }
 
-/** Icon for the divide operation: two circles split into their separate regions. */
+/**
+ * Icon for the divide operation: two circles split into their separate regions.
+ *
+ * @experimental
+ */
 export function DivideIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -84,7 +103,11 @@ export function DivideIcon() {
   );
 }
 
-/** Icon for the crop operation: the back shape clipped to the front one. */
+/**
+ * Icon for the crop operation: the back shape clipped to the front one.
+ *
+ * @experimental
+ */
 export function CropIcon() {
   // Back circle clipped to a topmost rect mask — only the portion of the
   // circle inside the rect is filled; the rect is outlined on top.

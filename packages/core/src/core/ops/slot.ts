@@ -1,3 +1,8 @@
+/** Sibling-order read seam. Optional everywhere: a flat adapter has none. */
+export interface OrderedReader {
+  getChildren?(parentId: string | null): string[];
+}
+
 /**
  * A node's position among its siblings, recorded so an op can put it back.
  *
@@ -9,13 +14,7 @@
  * fallback for the cases the anchor cannot cover — an adapter with no
  * `getChildren` seam, or an anchor that is itself gone by replay time.
  */
-
-/** Sibling-order read seam. Optional everywhere: a flat adapter has none. */
-export interface OrderedReader {
-  getChildren?(parentId: string | null): string[];
-}
-
-export interface Slot {
+export interface SiblingSlot {
   /** Ordinal among the siblings. `-1` means "nowhere in particular". */
   index: number;
   /** Id of the sibling that followed at capture time; `null` when the node
@@ -32,7 +31,7 @@ export function captureSlot(
   a: OrderedReader,
   parentId: string | null,
   id: string,
-): Slot | null {
+): SiblingSlot | null {
   const siblings = a.getChildren?.(parentId);
   if (!siblings) return null;
   const i = siblings.indexOf(id);
@@ -47,7 +46,7 @@ export function captureSlot(
  */
 export function resolveSlot(
   siblings: readonly string[] | undefined,
-  slot: Slot,
+  slot: SiblingSlot,
 ): number | undefined {
   if (slot.before === null) return undefined;
   if (slot.before !== undefined && siblings) {
@@ -57,8 +56,8 @@ export function resolveSlot(
   return slot.index >= 0 ? slot.index : undefined;
 }
 
-/** Normalize the `index` sugar every op factory accepts into a `Slot`. */
-export function slotFromIndex(index: number | undefined): Slot {
+/** Normalize the `index` sugar every op factory accepts into a slot. */
+export function slotFromIndex(index: number | undefined): SiblingSlot {
   return { index: index ?? -1 };
 }
 

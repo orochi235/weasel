@@ -1,5 +1,4 @@
 /**
- * @experimental
  * Default distribute icons shipped with the `distribute.*` actions. Three
  * rectangles with visually equal gaps — the implied even-spacing is the
  * glyph. 16x16 viewBox, `fill="currentColor"` for theming via CSS.
@@ -12,7 +11,11 @@ const SVG_BASE = {
   'aria-hidden': true,
 };
 
-/** Distribute horizontally: three evenly spaced columns. */
+/**
+ * Distribute horizontally: three evenly spaced columns.
+ *
+ * @experimental
+ */
 export function DistributeHorizontalIcon() {
   // Three 3-wide rects with 2.5-unit gaps between them.
   return (
@@ -24,7 +27,11 @@ export function DistributeHorizontalIcon() {
   );
 }
 
-/** Distribute vertically: three evenly spaced rows. */
+/**
+ * Distribute vertically: three evenly spaced rows.
+ *
+ * @experimental
+ */
 export function DistributeVerticalIcon() {
   // Three 3-tall rects stacked with 2.5-unit gaps between them.
   return (

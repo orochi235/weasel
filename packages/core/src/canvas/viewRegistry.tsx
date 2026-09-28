@@ -13,7 +13,7 @@ import type { LayerHit } from 'affordances/types';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import type { ViewportLayer } from 'features/viewports/viewportLayer';
-import type { DispatcherViewTarget } from '@weasel-js/routing/react';
+import type { DispatcherViewTarget } from '@weasel-js/routing/internal';
 import { createViewResolver, type ViewResolver } from 'features/viewports/viewResolver';
 
 /**

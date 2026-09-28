@@ -1,5 +1,4 @@
 /**
- * @experimental
  * Default align icons shipped with the `align.*` actions. 16x16 viewBox;
  * shapes use `fill="currentColor"` and the axis line uses
  * `stroke="currentColor"` so the whole icon themes via CSS color. Stroke
@@ -20,7 +19,11 @@ const AXIS = {
   fill: 'none',
 };
 
-/** Align left: two bars flush against a left edge line. */
+/**
+ * Align left: two bars flush against a left edge line.
+ *
+ * @experimental
+ */
 export function AlignLeftIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -31,7 +34,11 @@ export function AlignLeftIcon() {
   );
 }
 
-/** Align right: two bars flush against a right edge line. */
+/**
+ * Align right: two bars flush against a right edge line.
+ *
+ * @experimental
+ */
 export function AlignRightIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -42,7 +49,11 @@ export function AlignRightIcon() {
   );
 }
 
-/** Align top: two bars hanging from a top edge line. */
+/**
+ * Align top: two bars hanging from a top edge line.
+ *
+ * @experimental
+ */
 export function AlignTopIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -53,7 +64,11 @@ export function AlignTopIcon() {
   );
 }
 
-/** Align bottom: two bars standing on a bottom edge line. */
+/**
+ * Align bottom: two bars standing on a bottom edge line.
+ *
+ * @experimental
+ */
 export function AlignBottomIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -64,7 +79,11 @@ export function AlignBottomIcon() {
   );
 }
 
-/** Align centers horizontally: two bars centered on a vertical axis. */
+/**
+ * Align centers horizontally: two bars centered on a vertical axis.
+ *
+ * @experimental
+ */
 export function AlignCenterXIcon() {
   // Center horizontally — rectangles share a vertical center axis (x = 8).
   return (
@@ -76,7 +95,11 @@ export function AlignCenterXIcon() {
   );
 }
 
-/** Align centers vertically: two bars centered on a horizontal axis. */
+/**
+ * Align centers vertically: two bars centered on a horizontal axis.
+ *
+ * @experimental
+ */
 export function AlignCenterYIcon() {
   // Center vertically — rectangles share a horizontal center axis (y = 8).
   return (

@@ -24,19 +24,20 @@ function arraysEqual(a: readonly string[], b: readonly string[]): boolean {
   return true;
 }
 
-interface RestoreEntry {
+/** One parent's child order before a reorder, kept so undo can restore it. */
+export interface ReorderRestoreEntry {
   parentId: string | null;
   before: string[];
 }
 
-/** @internal */
-interface ReorderArgs {
+/** Arguments to {@link createReorderOp}: move `ids` in paint order, one step or to the front/back. */
+export interface ReorderArgs {
   ids: string[];
   direction: ReorderDirection;
   label?: string;
   /** Pre-mutation child order per touched parent. Filled in on first apply;
    *  arrives populated when the op is rebuilt from a snapshot. */
-  prevOrders?: RestoreEntry[];
+  prevOrders?: ReorderRestoreEntry[];
 }
 
 /**
@@ -55,7 +56,7 @@ function createPartitionedReorderOp(args: {
   direction: ReorderDirection;
   fn: ReorderFn;
   label?: string;
-  prevOrders?: RestoreEntry[];
+  prevOrders?: ReorderRestoreEntry[];
 }): Op {
   const { ids, direction, fn, label, prevOrders } = args;
   const argsForSerial: ReorderArgs = {
@@ -64,7 +65,7 @@ function createPartitionedReorderOp(args: {
     label,
     prevOrders: prevOrders ? prevOrders.map((e) => ({ ...e, before: e.before.slice() })) : undefined,
   };
-  let restore: RestoreEntry[] | null =
+  let restore: ReorderRestoreEntry[] | null =
     prevOrders ? prevOrders.map((e) => ({ ...e, before: e.before.slice() })) : null;
 
   return {
@@ -82,7 +83,7 @@ function createPartitionedReorderOp(args: {
         list.push(id);
         byParent.set(parent, list);
       }
-      const snapshots: RestoreEntry[] = [];
+      const snapshots: ReorderRestoreEntry[] = [];
       let mutated = false;
       for (const [parentId, parentIds] of byParent) {
         const before = a.getChildren(parentId);
@@ -146,8 +147,8 @@ export function createReorderOp(args: ReorderArgs): Op {
 
 registerOpFactory<ReorderArgs>('reorder', (args) => createReorderOp(args));
 
-/** @internal */
-interface MoveToIndexArgs {
+/** Arguments to {@link createMoveToIndexOp}: move `ids` to `index` under `parentId`. */
+export interface MoveToIndexArgs {
   ids: string[];
   parentId: string | null;
   index: number;

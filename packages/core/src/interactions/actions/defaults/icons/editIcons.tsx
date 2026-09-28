@@ -1,5 +1,4 @@
 /**
- * @experimental
  * Default icons for the clipboard, duplicate, group, reorder and flip actions.
  * Lifted verbatim from `apps/draw`'s action bar, in the register of the
  * Pathfinder icons beside them: 20x20 viewBox, stroked outlines in
@@ -15,7 +14,11 @@ const SVG_BASE = {
   'aria-hidden': true,
 };
 
-/** Cut: scissors. */
+/**
+ * Cut: scissors.
+ *
+ * @experimental
+ */
 export function CutIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -27,7 +30,11 @@ export function CutIcon() {
   );
 }
 
-/** Copy: a document peeking out behind another. */
+/**
+ * Copy: a document peeking out behind another.
+ *
+ * @experimental
+ */
 export function CopyIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -37,7 +44,11 @@ export function CopyIcon() {
   );
 }
 
-/** Paste: a clipboard with a filled clip. */
+/**
+ * Paste: a clipboard with a filled clip.
+ *
+ * @experimental
+ */
 export function PasteIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -47,7 +58,11 @@ export function PasteIcon() {
   );
 }
 
-/** Duplicate: the source outlined, the copy filled. */
+/**
+ * Duplicate: the source outlined, the copy filled.
+ *
+ * @experimental
+ */
 export function DuplicateIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -57,7 +72,11 @@ export function DuplicateIcon() {
   );
 }
 
-/** Group: corner brackets framing two filled rects. */
+/**
+ * Group: corner brackets framing two filled rects.
+ *
+ * @experimental
+ */
 export function GroupIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -71,7 +90,11 @@ export function GroupIcon() {
   );
 }
 
-/** Ungroup: two filled rects escaping a frame broken to two dashed corners. */
+/**
+ * Ungroup: two filled rects escaping a frame broken to two dashed corners.
+ *
+ * @experimental
+ */
 export function UngroupIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -83,7 +106,11 @@ export function UngroupIcon() {
   );
 }
 
-/** Bring forward: two stacked rects, the front one filled. */
+/**
+ * Bring forward: two stacked rects, the front one filled.
+ *
+ * @experimental
+ */
 export function BringForwardIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -93,7 +120,11 @@ export function BringForwardIcon() {
   );
 }
 
-/** Bring to front: three stacked rects, the frontmost filled. */
+/**
+ * Bring to front: three stacked rects, the frontmost filled.
+ *
+ * @experimental
+ */
 export function BringToFrontIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -104,7 +135,11 @@ export function BringToFrontIcon() {
   );
 }
 
-/** Send backward: two stacked rects, the rear one filled. */
+/**
+ * Send backward: two stacked rects, the rear one filled.
+ *
+ * @experimental
+ */
 export function SendBackwardIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -114,7 +149,11 @@ export function SendBackwardIcon() {
   );
 }
 
-/** Send to back: three stacked rects, the rearmost filled. */
+/**
+ * Send to back: three stacked rects, the rearmost filled.
+ *
+ * @experimental
+ */
 export function SendToBackIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -125,7 +164,11 @@ export function SendToBackIcon() {
   );
 }
 
-/** Flip horizontal: an outlined and a filled chevron either side of a dashed vertical axis. */
+/**
+ * Flip horizontal: an outlined and a filled chevron either side of a dashed vertical axis.
+ *
+ * @experimental
+ */
 export function FlipXIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -136,7 +179,11 @@ export function FlipXIcon() {
   );
 }
 
-/** Flip vertical: an outlined and a filled chevron either side of a dashed horizontal axis. */
+/**
+ * Flip vertical: an outlined and a filled chevron either side of a dashed horizontal axis.
+ *
+ * @experimental
+ */
 export function FlipYIcon() {
   return (
     <svg {...SVG_BASE}>

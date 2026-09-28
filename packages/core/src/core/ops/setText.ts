@@ -5,8 +5,8 @@ interface SetTextAdapter {
   setText(id: string, text: string): void;
 }
 
-/** @internal */
-interface SetTextArgs {
+/** Arguments to {@link createSetTextOp}: replace node `id`'s text `from` → `to`. */
+export interface SetTextArgs {
   id: string;
   from: string;
   to: string;

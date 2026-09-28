@@ -9,13 +9,15 @@ knows nothing about what an action does to a scene — actions themselves, the
 scene graph, the renderer and the concrete dependency interfaces all live in
 `@weasel-js/core`, which consumes this package and re-exports its surface.
 
-## Two entry points
+## Entry points
 
 - `@weasel-js/routing` — the pure half. No React, no DOM: the dispatcher, the
   matcher, the rule algebra, the action and tool types, the invoker.
 - `@weasel-js/routing/react` — the React seam. `useGestureDispatcher` and the
   providers that feed it (`ActionsProvider`, `DepRegistryProvider`,
   `useTools`, `useContributions`). React is an optional peer.
+- `@weasel-js/routing/internal` — not public API. Types `@weasel-js/core` fills
+  from across the package boundary; they change without notice.
 
 ## The dependency schema
 
