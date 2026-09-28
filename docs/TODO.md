@@ -1047,13 +1047,22 @@ only story runner in the repo.
   margin, is not yet known. Each reload also takes a frame from the warm pool
   (`packages/forge/src/shell/framePool.ts`), which is why it keeps two.
 
-- **(P3) forge's lab scrolls sideways with two trials open beside the aside.**
-  labkit's fit check (`packages/labkit/src/lab/fitCheck.ts`) warns that
-  `.lk-shell-body` scrolls: a pane inside a trial's `lk-trial__panes` split
-  reaches 68px past it on x. Reproduced on 2026-09-13 in the dev app at a
-  1718px-wide viewport with the story sidebar, two trials and the CSS Vars
-  aside open. Which pane overflows, and why the trial split does not clamp to
-  its tile, is not yet known.
+- **(P3) A trial tile narrower than 300px cuts off its content pane.** A trial's
+  `Split` (`packages/labkit/src/primitives/Split.tsx`) holds the sidebar at its
+  140px floor and the content at its 160px floor however narrow the tile gets,
+  so below 300px the content pane runs out past the tile. Measured in forge on
+  2026-09-28 with two trials beside the story sidebar and CSS Vars aside: at a
+  1000px viewport each tile is 176px and the content pane reaches 124px past
+  it, at 1100px 74px; at 1718px with default sidebar widths the tiles are 535px
+  and nothing overflows. The 2026-09-13 fit-check warning (`.lk-shell-body`
+  scrolls, a pane 68px past `lk-trial__panes`) was this, but every split zone
+  between the pane and the shell body now has `overflow: hidden`, so the lab
+  no longer scrolls and the fit check stays silent: the story is clipped with
+  no way to reach its right side. Needs a decision on who gives way — the
+  split relaxing its floors (sidebar first) when the zone cannot hold both, or
+  the workspace refusing tiles below the split's floor and reflowing them.
+  At the same 140px the forge Globals group's label/value columns overlap
+  ("MODE" over "Lab").
 
 - **(P3, isolated stories only) Check forge's out-of-view frame unmounting in
   a browser.** `FrameView`
