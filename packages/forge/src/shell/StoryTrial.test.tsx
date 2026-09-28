@@ -1,11 +1,16 @@
+import { Lab } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';
+import { documentInstrument } from './documentInstrument';
+import { installResizeObserver } from './labHarness';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { StoryTrial } from './StoryTrial';
+
+installResizeObserver();
 
 const [counter] = loadNativeModule(
   {
@@ -108,5 +113,45 @@ describe('StoryTrial', () => {
     } finally {
       spy.mockRestore();
     }
+  });
+
+  it("keeps the story's own state through the first press in a lab, which activates the trial", async () => {
+    const renders = vi.fn();
+    const [local] = loadNativeModule(
+      {
+        default: meta({ title: 'Test/Local' }),
+        // A component declared inside `render` is a new type on each call, so any extra call remounts it.
+        Local: story({
+          render: () => {
+            renders();
+            function Toggle() {
+              const [on, setOn] = useState(false);
+              return (
+                <button type="button" onClick={() => setOn(true)}>
+                  {on ? 'on' : 'off'}
+                </button>
+              );
+            }
+            return <Toggle />;
+          },
+        }),
+      },
+      'Test/Local',
+    );
+    const entry = { id: 'test-local--local', title: 'Test/Local', name: 'Local', exportName: 'Local', file: '/local.stories.tsx' };
+    const instrument = documentInstrument({ entry, loaded: { kind: 'story', story: local! }, setup: {} });
+    render(
+      <StoryGlobalsContext.Provider value={{}}>
+        <Lab instruments={[instrument]} defaultInstrument={entry.id} />
+      </StoryGlobalsContext.Provider>,
+    );
+    const button = await screen.findByRole('button', { name: 'off' });
+    const before = renders.mock.calls.length;
+    act(() => {
+      fireEvent.pointerDown(button);
+      fireEvent.click(button);
+    });
+    expect(screen.getByRole('button', { name: 'on' })).toBe(button);
+    expect(renders.mock.calls.length).toBe(before);
   });
 });
