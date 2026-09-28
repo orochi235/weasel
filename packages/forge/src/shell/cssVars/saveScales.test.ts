@@ -4,6 +4,8 @@ import { applyScaleEdits, selectionFor } from './saveScales';
 
 const weasel = THEME_SOURCES.weasel as ThemeDefinition;
 const fontFactors = [0.66, 0.77, 0.85, 1, 1.23, 1.54];
+const uiBase = weasel.seeds?.['ui-base'] as Readonly<Record<string, number | string>>;
+const comfortableBase = uiBase.comfortable as number;
 
 const saved = (result: ReturnType<typeof applyScaleEdits>): ThemeDefinition => {
   if (!result.ok) throw new Error(result.message);
@@ -24,10 +26,14 @@ describe('selectionFor', () => {
 describe('applyScaleEdits', () => {
   it('writes a referenced base into the seed, for the selected density only', () => {
     const next = saved(
-      applyScaleEdits(weasel, { 'font-size': { base: 14, rule: { kind: 'factors', factors: fontFactors } } }, { density: 'comfortable' }),
+      applyScaleEdits(
+        weasel,
+        { 'font-size': { base: comfortableBase + 1, rule: { kind: 'factors', factors: fontFactors } } },
+        { density: 'comfortable' },
+      ),
     );
     expect(next.scales?.['font-size']?.base).toBe('{seeds.ui-base}');
-    expect(next.seeds?.['ui-base']).toEqual({ by: 'density', compact: 11, comfortable: 14, roomy: 15 });
+    expect(next.seeds?.['ui-base']).toEqual({ ...uiBase, comfortable: comfortableBase + 1 });
     expect({ ...next, seeds: weasel.seeds }).toEqual(weasel);
   });
 
@@ -43,7 +49,7 @@ describe('applyScaleEdits', () => {
         weasel,
         {
           space: { base: 3, rule: { kind: 'step', step: 4 } },
-          'font-size': { base: 13, rule: { kind: 'factors', factors: [0.7, 0.77, 0.85, 1, 1.23, 1.54] } },
+          'font-size': { base: comfortableBase, rule: { kind: 'factors', factors: [0.7, 0.77, 0.85, 1, 1.23, 1.54] } },
         },
         { density: 'comfortable' },
       ),

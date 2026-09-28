@@ -20,14 +20,18 @@ describe('findOffenders', () => {
     expect(findOffenders('a.less', '.x { font-size: 100%; }')).toEqual([]);
   });
 
+  const scale = { '--wzl-font-size-sm': '11px' };
+
   it('flags a fallback that disagrees with its token', () => {
-    const out = findOffenders('a.less', '.x { font-size: var(--wzl-font-size-sm, 12px); }');
+    const out = findOffenders('a.less', '.x { font-size: var(--wzl-font-size-sm, 12px); }', scale);
     expect(out).toHaveLength(1);
     expect(out[0].match).toMatch(/disagrees/);
   });
 
   it('accepts a fallback that agrees', () => {
-    expect(findOffenders('a.less', '.x { font-size: var(--wzl-font-size-sm, 11px); }')).toEqual([]);
+    expect(
+      findOffenders('a.less', '.x { font-size: var(--wzl-font-size-sm, 11px); }', scale),
+    ).toEqual([]);
   });
 
   it('accepts a literal on an allowlisted file', () => {

@@ -49,11 +49,11 @@ describe('layerEntries', () => {
   });
 
   it("lists a component layer's own tokens", () => {
-    const def = { ...weasel, components: { 'tb-height': { value: '28px', type: 'dimension' } } } as ThemeDefinition;
-    expect(layerEntries('components', def, derived(def)).find((e) => e.name === 'tb-height')).toMatchObject({
+    const def = { ...weasel, components: { 'demo-gap': { value: '3px', type: 'dimension' } } } as ThemeDefinition;
+    expect(layerEntries('components', def, derived(def)).find((e) => e.name === 'demo-gap')).toMatchObject({
       type: 'dimension',
-      value: '28px',
-      group: 'tb',
+      value: '3px',
+      group: 'demo',
     });
   });
 
