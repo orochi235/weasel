@@ -1036,8 +1036,6 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 - **(P3) `useScene` user-layer `parallax` property wiring to `createParallaxLayer`** at the SceneCanvas adapter seam.
 - **(P3) Animated parallax** — tween pan/zoom for intro effects; compose `useAnimator` over the opts.
 
-### System-registries pattern
-
 ---
 
 ## forge
