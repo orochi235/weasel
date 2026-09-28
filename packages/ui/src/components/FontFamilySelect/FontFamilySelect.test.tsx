@@ -12,7 +12,8 @@ const listFonts = vi.fn();
 const listCanvasFonts = vi.fn();
 const resolveFontVariant = vi.fn();
 
-vi.mock('@weasel-js/font', () => ({
+vi.mock('@weasel-js/font', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@weasel-js/font')>()),
   listFonts: () => listFonts(),
   listCanvasFonts: () => listCanvasFonts(),
   resolveFontVariant: (...args: unknown[]) => resolveFontVariant(...args),
