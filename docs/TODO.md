@@ -1095,13 +1095,11 @@ shipped 2026-08-23/24; `git log` has their numbers, and their traps are in
 `CLAUDE.md`.
 
 - **(P3) `apps/draw` fetches the Inter atlas on the critical path for text.**
-  `inter.json` + `inter.png`, 212 kB together, on every load. Production's first
-  load fetches each file exactly once, so a suspected second `@weasel-js/hud`
-  copy is not reachable on that path — unconfirmed either way. Scope where, if
-  anywhere, a duplicate fetch happens before treating it as a problem. The dev
-  server does fetch it twice (headless Chromium, 2026-09-28): `packages/hud`'s
-  `inter.json?import&url` + `inter.png?import&url` at 2171 ms, then draw's own
-  `draw/inter/inter.json` + `inter.png` at 2419 ms.
+  `inter.json` + `inter.png`, 212 kB together, on every load. It is fetched once, not
+  twice: production's first load fetches each file once, and so does the dev server
+  (headless Chromium, 2026-09-28) — the `packages/hud/src/fonts/inter.*?import&url`
+  requests beside it are ~600-byte modules exporting a URL, not a second download. What
+  is left is only whether text should wait on 212 kB at all.
 
 - **(P3) Re-measure cold dev startup for `apps/draw`.** The two inspector-only
   Vite plugins that dominated it — together, **6,852 ms to 3,556 ms (−48%)** when
