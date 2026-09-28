@@ -1,5 +1,5 @@
 import {
-  splitPathByLine,
+  splitPathBySegment,
   boundsOfPath,
   createDeleteOp,
   createInsertOp,
@@ -101,7 +101,7 @@ export function computeSliceOps(args: ComputeSliceOpsArgs): ComputeSliceResult {
   let sliced = false;
 
   for (const leaf of leaves) {
-    const pieces = splitPathByLine(leaf.worldPath, a, b);
+    const pieces = splitPathBySegment(leaf.worldPath, a, b);
     if (!pieces) continue;
     sliced = true;
 

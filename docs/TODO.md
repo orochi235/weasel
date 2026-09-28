@@ -204,6 +204,11 @@ Priority tags:
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
 
+- **(P3) The slice tool cuts only with a straight segment.** Two cuts it cannot make:
+  scissors (split an open path where the stroke crosses it, rather than closing it
+  implicitly the way a fill does) and a freehand or polyline cut. `splitPathBySegment`
+  is the swap point; a polyline cut is a run of segments sharing its crossing logic.
+
 ### Cursor package follow-ups
 
 All four arcs of `docs/superpowers/specs/2026-09-03-cursor-system-design.md`
@@ -217,12 +222,6 @@ have shipped. What remains:
   152 / macOS 26.5. Safari and Firefox could rasterize an SVG cursor at 1× (the
   fix is `image-set`, already documented) or cap at a different size. Both live
   behind `bake.ts`. `packages/cursor/scripts/probe/` is the instrument.
-
-### Slice tool follow-ups
-
-From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-17):
-
-- **(P3) Bézier-preserving + concave finite-cut (Approach B).** v1 flattens béziers on cut pieces and an infinite-line half-plane clip can over-cut concave shapes the finite stroke only partly crosses (pinned in `splitByLine.test.ts`). `splitPathByLine` is the single swap point for a chord-split Approach B + `schneiderFit` curve re-fitting.
 
 ---
 

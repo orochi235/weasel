@@ -41,7 +41,7 @@ import {
   transformPath,
 } from 'features/paths';
 import type { Path } from 'features/paths/types';
-import { splitPathByLine } from 'features/paths/splitByLine';
+import { splitPathBySegment } from 'features/paths/splitBySegment';
 
 import { resizeAction } from '../defaults/resize';
 import { moveAction } from '../defaults/move';
@@ -358,7 +358,7 @@ const FACTORIES: { name: string; polygonContent: boolean; make: () => TestNode }
     name: 'slice-piece',
     polygonContent: true,
     make: () => {
-      const pieces = splitPathByLine(regularPolygonPath({ x: 60, y: 60 }, 40, 6), { x: 60, y: 0 }, { x: 60, y: 120 });
+      const pieces = splitPathBySegment(regularPolygonPath({ x: 60, y: 60 }, 40, 6), { x: 60, y: 0 }, { x: 60, y: 120 });
       if (!pieces || pieces.length === 0) throw new Error('slice produced no pieces');
       return nodeFromPath('slice', pieces[0]);
     },

@@ -56,7 +56,7 @@ here.
 handle-drag with smooth mirroring, insert-on-segment, delete-with-refit,
 scissors, rect select), `cubicMath.ts` (`splitCubicAtT`,
 `fitCubicThroughDeletion`), `schneiderFit.ts` (curve fitting for freehand),
-`splitByLine.ts`, `splitSubpaths.ts`, `compose.ts`
+`splitBySegment.ts`, `splitSubpaths.ts`, `compose.ts`
 
 **Booleans** — `booleans.ts` + `booleans.adapter.ts` (union / intersect /
 exclude / minus-front)

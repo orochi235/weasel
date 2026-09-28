@@ -787,7 +787,7 @@ export {
   pathIntersectsPolygon,
   pathDistanceToPoint,
   pointAlongPath,
-  splitPathByLine,
+  splitPathBySegment,
   transformPath,
 } from './features/paths';
 export type {
@@ -805,7 +805,7 @@ export type {
   PathInWorldPose,
   PathStation,
   PointAlongPathOptions,
-  SplitByLineOptions,
+  SplitBySegmentOptions,
   PoseRotation,
 } from './features/paths';
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────

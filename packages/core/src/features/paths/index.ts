@@ -79,7 +79,7 @@ export {
 export { pathFromD } from './pathFromD';
 export { composePath, decomposePath } from './compose';
 export { splitSubpaths } from './splitSubpaths';
-export { splitPathByLine, type SplitByLineOptions } from './splitByLine';
+export { splitPathBySegment, type SplitBySegmentOptions } from './splitBySegment';
 export { unionBoundsPath } from './unionBoundsPath';
 export { pathPoseDescriptor } from './poseDescriptor';
 export { pathOriginProjection } from './originProjection';
