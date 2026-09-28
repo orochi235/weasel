@@ -23,6 +23,7 @@ describe('marker inset resolution', () => {
   it('honours both size unit systems', () => {
     expect(resolveMarkerSize({ key: 'arrow', size: 5 }, 2)).toBe(5);
     expect(resolveMarkerSize({ key: 'arrow', size: { px: 12 } }, 2)).toBe(12);
+    expect(resolveMarkerSize({ key: 'arrow', size: { px: 12 } }, 2, 4)).toBe(3);
   });
 
   it('multiplies the entry inset by the size', () => {

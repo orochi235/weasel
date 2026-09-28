@@ -12,6 +12,7 @@ import type { Path, PolygonPath } from '../../core/geometry/path';
 import type { PathDrawCommand } from '../../renderer/DrawCommand';
 import { getMarker, type MarkerEntry, type MarkerPaint } from '../../core/strokeMarkers';
 import { markerKeyOf, resolveMarkerSize } from '../../core/markerInset';
+import { boundsOfPath } from './bounds';
 import { extractPolylines } from './tessellate/polyline';
 import { markerSites, type MarkerSite } from './markerSites';
 
@@ -95,4 +96,34 @@ export function markerDrawCommands(
     }
   }
   return out;
+}
+
+/** Each entry's farthest reach from its anchor at `size` 1, outline included. */
+const UNIT_REACH = new WeakMap<MarkerEntry, number>();
+
+function unitReach(entry: MarkerEntry, stroke: Stroke): number {
+  let reach = UNIT_REACH.get(entry);
+  if (reach === undefined) {
+    const b = boundsOfPath(entry.path({ size: 1, stroke }));
+    reach = Math.max(Math.abs(b.x), Math.abs(b.x + b.width), Math.abs(b.y), Math.abs(b.y + b.height))
+      + (entry.outline ? entry.outline.width / 2 : 0);
+    UNIT_REACH.set(entry, reach);
+  }
+  return reach;
+}
+
+/**
+ * How far any of `stroke`'s markers can paint from the vertex it sits on, in
+ * world units. `strokeWidth` is the resolved width and `scale` the view scale
+ * a `{ px }` size resolves against.
+ */
+export function markerReach(stroke: Stroke, strokeWidth: number, scale = 1): number {
+  let reach = 0;
+  for (const ref of [stroke.markerStart, stroke.markerMid, stroke.markerEnd]) {
+    if (ref === undefined) continue;
+    const entry = getMarker(markerKeyOf(ref));
+    if (entry === undefined) continue;
+    reach = Math.max(reach, unitReach(entry, stroke) * resolveMarkerSize(ref, strokeWidth, scale));
+  }
+  return reach;
 }

@@ -21,20 +21,13 @@ describe('markers on a path node', () => {
     expect(cmds).toHaveLength(1);
   });
 
-  it('appends a command for the marker', () => {
+  // The renderer draws the head, where the view scale a `{ px }` size needs
+  // is known; a painter only passes the marker through on its stroke.
+  it('leaves the marker on the stroke for the renderer to draw', () => {
     const node = nodeWith({ paint: { fill: 'solid', color: '#000' }, width: 2, markerEnd: 'arrow' });
     const cmds = findNodeShape(node)!.paint!(node, POSE as never, {} as never);
-    expect(cmds).toHaveLength(2);
-  });
-
-  it('draws the marker after the stroke, so it sits on top', () => {
-    const node = nodeWith({
-      paint: { fill: 'solid', color: '#000' }, width: 2,
-      markerStart: 'arrow', markerEnd: 'arrow',
-    });
-    const cmds = findNodeShape(node)!.paint!(node, POSE as never, {} as never);
-    expect(cmds).toHaveLength(3);
-    expect((cmds[0] as { stroke?: unknown }).stroke).toBeDefined();
+    expect(cmds).toHaveLength(1);
+    expect((cmds[0] as { stroke?: { markerEnd?: unknown } }).stroke?.markerEnd).toBe('arrow');
   });
 
   it('reaches past the path end for hit-testing', () => {
@@ -45,6 +38,18 @@ describe('markers on a path node', () => {
     const inkOf = (n: unknown) =>
       findNodeShape(n as never)!.ink!(n as never, POSE as never, { scale: 1 } as never);
     expect(inkOf(marked)!.outset).toBeGreaterThan(inkOf(plain)!.outset);
+  });
+
+  it('resolves a { px } marker size against the view scale for its reach', () => {
+    const node = nodeWith({
+      paint: { fill: 'solid', color: '#000' }, width: 2,
+      markerEnd: { key: 'arrow', size: { px: 8 } },
+    });
+    const outset = (scale: number) =>
+      findNodeShape(node)!.ink!(node, POSE as never, { scale } as never)!.outset;
+    // A centered 2-wide stroke reaches 1; the arrow insets 3 size units.
+    expect(outset(1)).toBeCloseTo(1 + 24, 6);
+    expect(outset(4)).toBeCloseTo(1 + 6, 6);
   });
 });
 
@@ -73,15 +78,9 @@ describe('markers on a derived path', () => {
     expect(paint(derivedNodeWith(STROKE))).toHaveLength(1);
   });
 
-  // The hit-test already reserves room for a marker on a derived node, so a
-  // dropped one is a stroke the pointer can reach past and nothing to see.
-  it('appends a command for the marker', () => {
-    expect(paint(derivedNodeWith({ ...STROKE, markerEnd: 'arrow' }))).toHaveLength(2);
-  });
-
-  it('draws the marker after the stroke, so it sits on top', () => {
-    const cmds = paint(derivedNodeWith({ ...STROKE, markerStart: 'arrow', markerEnd: 'arrow' }));
-    expect(cmds).toHaveLength(3);
-    expect((cmds[0] as { stroke?: unknown }).stroke).toBeDefined();
+  it('leaves the marker on the stroke for the renderer to draw', () => {
+    const cmds = paint(derivedNodeWith({ ...STROKE, markerEnd: 'arrow' }));
+    expect(cmds).toHaveLength(1);
+    expect((cmds[0] as { stroke?: { markerEnd?: unknown } }).stroke?.markerEnd).toBe('arrow');
   });
 });

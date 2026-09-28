@@ -150,8 +150,7 @@ export type MarkerKey = KitMarkerKey | (string & {});
  * rather than multiplying it: a bare number is world units, however wide the
  * line. Omitted, one unit is the resolved stroke width — SVG's
  * `markerUnits="strokeWidth"`; given, it is `userSpaceOnUse`. A `{ px }` size
- * is resolved at scale 1, so it is world units too until marker geometry is
- * resolved against the view.
+ * holds its screen size through a zoom, as a `{ px }` stroke width does.
  */
 export type MarkerRef = MarkerKey | { key: MarkerKey; size?: ScreenLength };
 

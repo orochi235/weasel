@@ -10,7 +10,6 @@ describe('stroke markers are public API', () => {
 
   it('exports the geometry helpers a consumer needs', () => {
     expect(typeof kit.markerSites).toBe('function');
-    expect(typeof kit.markerDrawCommands).toBe('function');
     expect(typeof kit.markerInset).toBe('function');
   });
 

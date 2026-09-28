@@ -137,8 +137,10 @@ write a second copy.
 
 ## Rendering
 
-Markers emit their own `PathDrawCommand`s alongside the stroke, rather than appending triangles
-to the ribbon mesh. Folding them in would save draw calls but breaks as soon as an entry has
+The renderer expands a stroke's markers into their own `PathDrawCommand`s after the ribbon,
+once the stroke's `{ px }` lengths are resolved against the transform it is drawn under — so a
+painter only carries the marker on its stroke. They are separate commands rather than triangles
+appended to the ribbon mesh. Folding them in would save draw calls but breaks as soon as an entry has
 both a fill and an outline or a paint differing from the line's, and it would drag the whole
 marker vocabulary into the ribbon cache key. Cost is up to 3× commands on a heavily-marked path,
 which is the right trade at diagram scale.

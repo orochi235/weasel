@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from './DrawCommand';
 import { cullDrawCommands } from './cullDrawCommands';
 import { mat3 } from './math/mat3';
-import { PATH_M, PATH_C } from '@weasel-js/core';
+import { PATH_M, PATH_L, PATH_C } from '@weasel-js/core';
 
 const SCREEN = { x: 0, y: 0, width: 800, height: 600 };
 const paint = { color: '#000000' };
@@ -47,6 +47,34 @@ describe('cullDrawCommands', () => {
     const zoomedOut = mat3.scaled(I, 0.1, 0.1);
     const stroked: PathDrawCommand = { ...rect(-700, 100), stroke: { width: { px: 20 }, paint } };
     expect(cullDrawCommands([stroked], zoomedOut, SCREEN)).toEqual([stroked]);
+  });
+
+  describe('a stroke carrying a marker', () => {
+    // A line 60 above the screen; an arrow spans 1.5 size units either side of
+    // it, so a size-60 head reaches 90 down — 30 into the screen.
+    const line = (stroke: PathDrawCommand['stroke']): PathDrawCommand => ({
+      kind: 'path',
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([PATH_M, PATH_L]),
+        coords: new Float32Array([100, -60, 300, -60]),
+        fillRule: 'nonzero',
+      },
+      stroke,
+    });
+
+    it('keeps a path off-screen whose head reaches in', () => {
+      const marked = line({ width: 1, paint, markerEnd: { key: 'arrow', size: 60 } });
+      expect(cullDrawCommands([marked], I, SCREEN)).toEqual([marked]);
+      expect(cullDrawCommands([line({ width: 1, paint })], I, SCREEN)).toEqual([]);
+    });
+
+    it('resolves a { px } head against the accumulated scale', () => {
+      // At 4x the line sits 240 above the screen, and a 60px head reaches 90.
+      const zoomed = mat3.scaled(I, 4, 4);
+      const marked = line({ width: 1, paint, markerEnd: { key: 'arrow', size: { px: 60 } } });
+      expect(cullDrawCommands([marked], zoomed, SCREEN)).toEqual([]);
+    });
   });
 
   it('bounds a polygon by its control points', () => {

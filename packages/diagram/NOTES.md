@@ -4,10 +4,6 @@ Traps this package's own work hit, kept because none of them is visible in the
 code that resulted. Consumer-facing rationale is in `README.md`; this file is
 not published.
 
-- **A stroke marker on a derived path was dropped by the painter, not by the
-  edge.** `kit:derived` emitted its stroke command and returned; `kit:path`
-  follows with a `markerDrawCommands` pass and it did not.
-
 - **The `orthogonal` router consulted only the departing end's normal**, so an
   edge between two boxes standing side by side dropped onto a west-facing port
   from above and put its arrowhead across the corner. A leg whose two ends face

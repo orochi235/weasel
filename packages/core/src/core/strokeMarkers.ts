@@ -12,7 +12,6 @@
 
 import type { FillStyle, MarkerKey, Stroke } from '@weasel-js/paint';
 import type { Path } from './geometry/path';
-import { bumpNodeMemoGeneration } from './scene/nodeMemo';
 import { BUILTIN_MARKERS } from './strokeMarkerShapes';
 
 /** What an entry's `path` is given. Entries that ignore it may return a
@@ -55,6 +54,16 @@ export interface MarkerEntry {
 }
 
 let MARKERS = new Map<string, MarkerEntry>();
+let generation = 0;
+
+/** Bumped whenever the registered set changes, for caches of marker geometry. */
+export function markerGeneration(): number {
+  return generation;
+}
+
+function changed(): void {
+  generation++;
+}
 
 function seedBuiltins(): void {
   for (const entry of BUILTIN_MARKERS) MARKERS.set(entry.id, entry);
@@ -66,14 +75,12 @@ seedBuiltins();
 export function registerMarker(entry: MarkerEntry): () => void {
   const displaced = MARKERS.get(entry.id);
   MARKERS.set(entry.id, entry);
-  // Marker geometry is read inside `NodeShape`'s per-node paint memo, so the
-  // registered set is ambient state that memo cannot see change.
-  bumpNodeMemoGeneration();
+  changed();
   return () => {
     if (MARKERS.get(entry.id) !== entry) return;
     if (displaced) MARKERS.set(entry.id, displaced);
     else MARKERS.delete(entry.id);
-    bumpNodeMemoGeneration();
+    changed();
   };
 }
 
@@ -91,5 +98,5 @@ export function listMarkers(): readonly MarkerEntry[] {
 export function _resetMarkersForTests(): void {
   MARKERS = new Map();
   seedBuiltins();
-  bumpNodeMemoGeneration();
+  changed();
 }

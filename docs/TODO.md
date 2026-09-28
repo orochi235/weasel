@@ -152,15 +152,6 @@ Priority tags:
   Remaining: check in a browser that it actually looks sharp at zoom — so far
   only jsdom has.
 
-- **(P3) A `{ px }` marker size does not hold its screen size.** Node painters
-  build marker geometry inside the paint memo, which has no view scale, so
-  `resolveMarkerSize` returns `{ px }` as world units and the head zooms with the
-  line. A `{ px }` stroke width has the same problem for the default (unsized)
-  marker unit: the painter resolves it at scale 1, while the renderer re-resolves
-  the ribbon per view. Fixing it means resolving marker geometry where the view
-  scale is known, as `withResolvedStrokeWidth` (`renderer/draw.ts`) does for the
-  ribbon.
-
 - **(P3) External-content ingestion — follow-ups.** Shipped 2026-07-03 (spec
   `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`): drop/paste
   gesture kinds (`DropSpec`/`PasteSpec`, MIME-glob `types`), dispatcher DOM

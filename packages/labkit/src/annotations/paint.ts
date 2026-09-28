@@ -2,7 +2,6 @@ import type { DrawCommand, Path, Stroke } from '@weasel-js/core';
 import {
   ellipsePath,
   linePath,
-  markerDrawCommands,
   PathBuilder,
   rectPath,
   textCommand,
@@ -13,8 +12,7 @@ import type { AnnotationData, FracPoint } from './types';
 /** One loud color, not a themed one: a mark sits over the instrument's own
  *  picture and has to be legible against whatever that picture is. */
 const MARK_COLOR = '#e5484d';
-/** World units, so a mark thickens with the picture it annotates — and so the
- *  marker geometry can be resolved here, which needs a resolved width. */
+/** World units, so a mark thickens with the picture it annotates. */
 const MARK_WIDTH = 2;
 const TEXT_SIZE = 14;
 const POINT_RADIUS = 4;
@@ -97,15 +95,7 @@ export function markCommands(
     case 'arrow': {
       const [a, b] = vertices(m, content);
       // The spec's arrow: a line carrying an end marker, not its own geometry.
-      // Markers are separate commands — a stroke's `markerEnd` is inert unless
-      // something turns it into geometry, and only the kit's own node painter
-      // does that, for the nodes it owns.
-      const marked: Stroke = { ...stroke, markerEnd: 'arrow' };
-      const path = linePath(a, b);
-      return [
-        { kind: 'path', path, stroke: marked },
-        ...markerDrawCommands(path, marked, MARK_WIDTH, undefined),
-      ];
+      return [{ kind: 'path', path: linePath(a, b), stroke: { ...stroke, markerEnd: 'arrow' } }];
     }
     case 'stroke':
       return [{ kind: 'path', path: polyline(vertices(m, content)), stroke }];

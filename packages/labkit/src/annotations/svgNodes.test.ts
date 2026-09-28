@@ -51,16 +51,13 @@ describe('a mark as vector', () => {
     expect(node.stroke?.dash).toEqual([6, 4]);
   });
 
-  it("drops the arrow's marker reference, because its head is already a node", () => {
+  it("keeps the arrow's marker, so the export draws its head", () => {
     const nodes = markSvgNodes(mark('arrow'), CONTENT);
-    expect(nodes.length).toBeGreaterThan(1);
-    for (const node of nodes) {
-      if (node.kind !== 'path') throw new Error('expected path nodes');
-      // Keeping `markerEnd` would make the serializer emit a <marker> def as
-      // well, and the head would be drawn twice.
-      expect(node.stroke?.markerEnd).toBeUndefined();
-    }
-    expect(serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 100, height: 60 } })).not.toContain(
+    expect(nodes).toHaveLength(1);
+    const [node] = nodes;
+    if (node?.kind !== 'path') throw new Error('expected a path node');
+    expect(node.stroke?.markerEnd).toBe('arrow');
+    expect(serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 100, height: 60 } })).toContain(
       '<marker',
     );
   });
