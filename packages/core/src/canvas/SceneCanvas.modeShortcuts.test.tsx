@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
-import { createModeRegistry, DEFAULT_MODES, getActiveModeFor, type ModeRegistry } from '@weasel-js/modes';
+import { createModeRegistry, DEFAULT_MODES, type ModeRegistry } from '@weasel-js/modes';
 import { modeShortcuts, type ModeShortcutHandlers } from '@weasel-js/routing';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
@@ -33,11 +33,10 @@ function setup(initial: string, handlers: ModeShortcutHandlers, { wireMode = tru
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   scene.add({ id: ID, kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   scene.setSelection([ID]);
-  const getActiveMode = getActiveModeFor(registry);
   const { container } = render(
     <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
       ambient={[modeShortcuts(registry, handlers)]}
-      {...(wireMode ? { getActiveMode } : {})} />,
+      {...(wireMode ? { modes: registry } : {})} />,
   );
   const key = (key: string, init: KeyboardEventInit = {}) => act(() => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...init }));

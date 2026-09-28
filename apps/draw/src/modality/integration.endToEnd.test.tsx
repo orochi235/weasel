@@ -26,7 +26,7 @@ import { createModeMachine } from './machine';
 import { dispatchDoubleClickEntry } from './doubleClickEntry';
 import { ModeBreadcrumb } from './chrome/ModeBreadcrumb';
 import { modalityShortcuts } from './shortcuts';
-import { DEFAULT_MODES, getActiveModeFor } from '@weasel-js/modes';
+import { DEFAULT_MODES } from '@weasel-js/modes';
 import { SceneCanvas, createScene } from '@weasel-js/core';
 
 beforeAll(() => {
@@ -85,7 +85,7 @@ function MachineHarness({
       />
       <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         ambient={ambient}
-        getActiveMode={getActiveModeFor(machine.registry)} />
+        modes={machine.registry} />
     </>
   );
 }

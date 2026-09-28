@@ -58,7 +58,7 @@ export function createModeRegistry(opts: CreateModeRegistryOptions): ModeRegistr
 
 /** The active mode as a canvas gates on it: its id, and every capability tag
  *  a tool may carry to be usable in it — the mode's `allows` plus
- *  `IMPLICIT_TAGS`. The shape `<SceneCanvas getActiveMode>` reads. */
+ *  `IMPLICIT_TAGS`. The shape `<SceneCanvas modes>` gates on. */
 export interface ActiveMode {
   id: string;
   allowedCapabilities: ReadonlySet<string>;
@@ -69,9 +69,8 @@ export function activeModeOf(mode: ModeDefinition): ActiveMode {
   return { id: mode.id, allowedCapabilities: new Set<string>([...mode.allows, ...IMPLICIT_TAGS]) };
 }
 
-/** A reader for the registry's active mode, suitable as
- *  `<SceneCanvas getActiveMode>`. It returns the same object until the mode
- *  changes. */
+/** A reader for the registry's active mode, as `<SceneCanvas modes>` builds
+ *  one. It returns the same object until the mode changes. */
 export function getActiveModeFor(registry: ModeRegistry): () => ActiveMode {
   let cached: { version: number; value: ActiveMode } | null = null;
   return () => {

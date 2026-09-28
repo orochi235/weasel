@@ -15,7 +15,6 @@ import {
   createModeDecorations,
   createModeRegistry,
   createScopingDim,
-  getActiveModeFor,
   modeLabel,
   type ModeDefinition,
 } from '@weasel-js/modes';
@@ -107,8 +106,6 @@ export function ModesDemo() {
     [registry, enter],
   );
 
-  const getActiveMode = useMemo(() => getActiveModeFor(registry), [registry]);
-
   const decorations = useMemo(() => {
     const d = createModeDecorations({ registry });
     const boundsOf = (id: string) => scene.get(id as never)?.pose as Rect | undefined;
@@ -168,7 +165,7 @@ export function ModesDemo() {
         features={['pick', 'move', 'transform']}
         defaultTools={['select', 'hand', 'rect', 'ellipse']}
         onToolsCreated={setTools}
-        getActiveMode={getActiveMode}
+        modes={registry}
         ambient={shortcuts}
         alphaFor={scoping.alphaFor}
         isPointerInteractive={scoping.isPointerInteractive}

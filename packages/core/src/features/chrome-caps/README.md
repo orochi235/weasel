@@ -121,7 +121,7 @@ their own ids and gate their own overlays through the same table.
   *everything the default mode permits*; the empty set would make every
   `capability:` rule false and silently hide the chrome it gates. Both
   fallback paths (`resolve.ts` for legacy `ChromeCtx`, `SceneCanvas` when
-  `getActiveMode` is absent) use `DEFAULT_ALLOWED_CAPABILITIES`. Keep it that
+  `modes` is absent) use `DEFAULT_ALLOWED_CAPABILITIES`. Keep it that
   way when adding a third.
 - **`when` is the escape hatch, not the default.** Its closure is opaque to
   introspection, which costs the Bundle Inspector and any future rule-diffing

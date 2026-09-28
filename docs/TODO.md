@@ -736,13 +736,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `PropertyRenderContext.update`, rather than the one aggregated object that a mixed selection
   does not have.
 
-- **(P3) `<SceneCanvas>` cannot hand the route-conflict check its modes.** `findScopedConflicts`
-  reports two gated actions only when some mode lets both rules hold, and checks against the kit's
-  `DEFAULT_MODES` unless it is given `modes`. `SceneCanvas` knows only `getActiveMode`, not the full
-  list, so an app with modes of its own is checked against the kit's instead: a conflict in a mode
-  only it defines goes unreported. Passing the list needs a public prop (a `modes` list, or the
-  `ModeRegistry` itself) — a surface decision, not made.
-
 - **(P2) `arrayAdapter`'s marquee and lasso still test bounding boxes.** `sceneToAdapter`'s
   both run the live silhouette hit-test; `arrayAdapter`'s `hitTestArea` (bounds, or the
   descriptor's `intersectsRect`) and `hitTestLasso` (bounds only) cannot: it sits in `core/`,

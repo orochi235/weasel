@@ -303,7 +303,7 @@ describe('mode-gated defaults', () => {
     expect(resolveVisibility(undefined, anchorish)('selection.outline')).toBe(false);
   });
 
-  // Regression guard: a consumer that never wired `getActiveMode` must not
+  // Regression guard: a consumer that never passed `modes` must not
   // lose its chrome. `resolveVisibility` fills the legacy ChromeCtx shape
   // with normal-mode capabilities, so capability rules stay true.
   it('legacy ChromeCtx (no mode wired) still shows transform chrome', () => {

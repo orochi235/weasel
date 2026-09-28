@@ -150,7 +150,6 @@ import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAM
 import { useModality } from './modality/useModality';
 import type { ModeMachine } from './modality';
 import { dispatchDoubleClickEntry, modalityShortcuts } from './modality';
-import { getActiveModeFor } from '@weasel-js/modes';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { ModeStatusIndicator } from './modality/chrome/ModeStatusIndicator';
 import type { SceneCanvasHit } from '@weasel-js/core';
@@ -1282,8 +1281,6 @@ function EditorWithSharedScene({
     dispatchDoubleClickEntry(hit, modality.machine);
   }, [modality.machine]);
 
-  const getActiveMode = useMemo(() => getActiveModeFor(modality.machine.registry), [modality.machine]);
-
   // TODO(modality): wire non-normal-mode background-click composition
   // (text-edit commit, isolation scoped-clear) through `handleBackgroundClick`
   // from `./modality` once we have a non-leaky hook into the dispatcher.
@@ -1608,7 +1605,7 @@ function EditorWithSharedScene({
             redrawOn={redrawOnScoping}
             isPointerInteractive={modality.scopingDim.isPointerInteractive}
             onDoubleClick={onDoubleClick}
-            getActiveMode={getActiveMode}
+            modes={modality.machine.registry}
             geometryProjection={{
               transform: (node, m) => {
                 const data = node.data as WeaselDrawData;

@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import { SceneCanvas, asNodeId, createScene } from '@weasel-js/core';
-import { DEFAULT_MODES, getActiveModeFor } from '@weasel-js/modes';
+import { DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './machine';
 import { modalityShortcuts } from './shortcuts';
 
@@ -46,7 +46,7 @@ function setup() {
   render(
     <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
       ambient={[modalityShortcuts(machine)]}
-      getActiveMode={getActiveModeFor(machine.registry)} />,
+      modes={machine.registry} />,
   );
   const key = (key: string, init: KeyboardEventInit = {}) => act(() => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...init }));
