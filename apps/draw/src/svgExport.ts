@@ -19,9 +19,12 @@
  */
 import {
   type ImageNodeData,
+  type PoseComposition,
   type Scene,
   type Path,
   type TextStyle,
+  composeWorldPose,
+  definesFrame,
   embedWeaselMetadataInSvg,
   fillInPoseFrame,
   pathInPoseFrame,
@@ -133,11 +136,39 @@ export interface SceneToSvgOptions {
   backgroundColor: string;
   /** Told what the SVG cannot carry the way the canvas draws it. */
   onWarn?: (message: string) => void;
+  /** The strategy the scene's `<SceneCanvas poseComposition>` uses. Given,
+   *  every leaf is lowered at its world pose; absent, at its stored pose. */
+  poseComposition?: PoseComposition<WeaselDrawPose>;
+}
+
+type DrawScene<TLayer extends string> = Scene<WeaselDrawData, TLayer, WeaselDrawPose>;
+
+/** The pose every export reader lowers a node at: stored, or world when a
+ *  composition makes the stored pose local. */
+function poseOfIn<TLayer extends string>(
+  scene: DrawScene<TLayer>,
+  poseComposition: PoseComposition<WeaselDrawPose> | undefined,
+): (id: string) => WeaselDrawPose | undefined {
+  const stored = (id: string) => scene.get(id as never)?.pose;
+  if (!poseComposition) return stored;
+  const adapter = {
+    getPose: (id: string) => stored(id)!,
+    getParent: (id: string) => {
+      const parent = scene.get(id as never)?.parent;
+      return parent == null ? null : String(parent);
+    },
+    definesFrame: (id: string) => {
+      const node = scene.get(id as never);
+      return node === undefined || definesFrame(node);
+    },
+  };
+  return (id) =>
+    stored(id) === undefined ? undefined : composeWorldPose(adapter, id, poseComposition.compose);
 }
 
 /**
  * Build the `SceneSource` `sceneToSvgNodes` walks: `objOf` lowers a leaf's
- * stored `{data, pose}` to an `Obj` (pose baked into the path);
+ * `data` at `poseOf(id)` to an `Obj` (pose baked into the path);
  * `sceneToSvgNodes` stamps each container's scene id onto `wd:group-id` so
  * groups round-trip; `isPainted` drops what a hidden layer holds, so an export
  * carries what the pixel path draws. Shared by {@link sceneToSvgString} (whole
@@ -145,7 +176,8 @@ export interface SceneToSvgOptions {
  * param).
  */
 function sceneSourceOf<TLayer extends string>(
-  scene: Scene<WeaselDrawData, TLayer, WeaselDrawPose>,
+  scene: DrawScene<TLayer>,
+  poseOf: (id: string) => WeaselDrawPose | undefined,
 ): SceneSource {
   const hidden = new Set(
     (scene.layers ?? []).filter((l) => !l.visible).map((l) => String(l.id)),
@@ -161,7 +193,7 @@ function sceneSourceOf<TLayer extends string>(
     objOf: (id) => {
       const node = scene.get(id as never);
       if (!node || node.kind !== 'leaf') return undefined;
-      return leafToObj(id, node.data, node.pose) ?? undefined;
+      return leafToObj(id, node.data, poseOf(id)!) ?? undefined;
     },
   };
 }
@@ -172,7 +204,7 @@ function sceneSourceOf<TLayer extends string>(
  * `./svgInterop`).
  */
 export function sceneToSvgString<TLayer extends string>(
-  scene: Scene<WeaselDrawData, TLayer, WeaselDrawPose>,
+  scene: DrawScene<TLayer>,
   opts: SceneToSvgOptions,
 ): string {
   const nodes: SvgNode[] = [];
@@ -187,7 +219,7 @@ export function sceneToSvgString<TLayer extends string>(
     });
   }
 
-  nodes.push(...sceneToSvgNodes(sceneSourceOf(scene)));
+  nodes.push(...sceneToSvgNodes(sceneSourceOf(scene, poseOfIn(scene, opts.poseComposition))));
 
   return serializeSvg(nodes, {
     ...docToSerializeOptions({
@@ -228,20 +260,22 @@ export function clipboardSnapshotRootIds(
  * page. This is the clipboard `produceFlavors` override's `image/svg+xml`
  * / `text/plain` source (see `apps/draw/src/App.tsx`).
  *
- * Bounds are read directly from each root's own `pose`: a container's pose
- * is already the union-AABB of its leaf descendants (the same convention
- * the kit `group` action maintains), so no re-derivation from children is
- * needed.
+ * Bounds are read from each root's own pose (world, under `poseComposition`):
+ * a container's pose is already the union-AABB of its leaf descendants (the
+ * same convention the kit `group` action maintains), so no re-derivation from
+ * children is needed.
  */
 export function selectionToSvgString<TLayer extends string>(
-  scene: Scene<WeaselDrawData, TLayer, WeaselDrawPose>,
+  scene: DrawScene<TLayer>,
   ids: readonly string[],
+  poseComposition?: PoseComposition<WeaselDrawPose>,
 ): string {
-  const nodes = sceneToSvgNodes(sceneSourceOf(scene), ids);
+  const poseOf = poseOfIn(scene, poseComposition);
+  const nodes = sceneToSvgNodes(sceneSourceOf(scene, poseOf), ids);
 
   const bounds = unionAABB(
     ids
-      .map((id) => scene.get(id as never)?.pose)
+      .map(poseOf)
       .filter((p): p is WeaselDrawPose => p != null),
   ) ?? { x: 0, y: 0, width: 0, height: 0 };
 
@@ -267,9 +301,13 @@ export function selectionToSvgString<TLayer extends string>(
  * decodes to one payload.
  */
 export function selectionToClipboardSvgString<TLayer extends string>(
-  scene: Scene<WeaselDrawData, TLayer, WeaselDrawPose>,
+  scene: DrawScene<TLayer>,
   ids: readonly string[],
   weaselPayloadText: string,
+  poseComposition?: PoseComposition<WeaselDrawPose>,
 ): string {
-  return embedWeaselMetadataInSvg(selectionToSvgString(scene, ids), weaselPayloadText);
+  return embedWeaselMetadataInSvg(
+    selectionToSvgString(scene, ids, poseComposition),
+    weaselPayloadText,
+  );
 }

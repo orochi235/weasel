@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseSvg } from '@weasel-js/svg';
-import type { TextStyle } from '@weasel-js/core';
+import { boundsOfPath, IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type TextStyle } from '@weasel-js/core';
 import { svgNodesToSceneDrafts } from './svgInterop';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
 import { solid, strokeOf } from '@weasel-js/core';
@@ -32,12 +32,17 @@ function fakeScene(nodes: Record<string, {
   };
   children?: string[];
 }>, roots: string[]) {
+  const parentOf = new Map<string, string>();
+  for (const [id, n] of Object.entries(nodes)) for (const c of n.children ?? []) parentOf.set(c, id);
   return {
     roots,
     get: (id: string) => {
       const n = nodes[id];
       if (!n) return undefined;
-      return { kind: n.kind, layer: 'default', pose: n.pose, data: n.data ?? {} };
+      return {
+        kind: n.kind, layer: 'default', pose: n.pose, data: n.data ?? {},
+        parent: parentOf.get(id) ?? null,
+      };
     },
     childrenOf: (id: string) => nodes[id]?.children ?? [],
   } as never;
@@ -493,5 +498,60 @@ describe('image export', () => {
 
     const n = parseSvg(selectionToSvgString(scene, ['im'])).nodes[0];
     expect(n).toMatchObject({ kind: 'image', href: src, x: 3, y: 4, width: 30, height: 20, flipX: true });
+  });
+});
+
+describe('pose composition', () => {
+  // A container whose pose is a frame: turned a quarter about its center
+  // (20, 10). The child's local box centers on (5, 5) in the container's
+  // unrotated frame, which the turn carries to (25, -5).
+  function framedScene() {
+    return fakeScene({
+      g: {
+        kind: 'container',
+        pose: { x: 0, y: 0, width: 40, height: 20, rotation: Math.PI / 2 },
+        children: ['a'],
+      },
+      a: {
+        kind: 'leaf',
+        pose: { x: 0, y: 0, width: 10, height: 10 },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
+      },
+    }, ['g']);
+  }
+
+  function leafOf(svg: string) {
+    const [g] = parseSvg(svg).nodes;
+    if (g.kind !== 'group') throw new Error('expected group');
+    const [a] = g.children;
+    if (a.kind !== 'path') throw new Error('expected path');
+    return a;
+  }
+
+  it('lowers a leaf at its world pose under a composing strategy', () => {
+    const svg = sceneToSvgString(framedScene(), {
+      filename: 'f', paperSize: 'letter', paperWidth: 100, paperHeight: 100,
+      backgroundColor: '#ffffff', poseComposition: RIGID_POSE_COMPOSITION,
+    });
+    const a = leafOf(svg);
+    const b = boundsOfPath(a.path);
+    expect(a.rotation).toBeCloseTo(Math.PI / 2);
+    expect(b.x + b.width / 2).toBeCloseTo(25);
+    expect(b.y + b.height / 2).toBeCloseTo(-5);
+  });
+
+  it('fits a selection to its world bounds under a composing strategy', () => {
+    const parsed = parseSvg(selectionToSvgString(framedScene(), ['a'], RIGID_POSE_COMPOSITION));
+    expect(parsed.viewBox!.x).toBeCloseTo(20);
+    expect(parsed.viewBox!.y).toBeCloseTo(-10);
+    expect(parsed.viewBox!.width).toBeCloseTo(10);
+    expect(parsed.viewBox!.height).toBeCloseTo(10);
+  });
+
+  it('bakes stored poses when no strategy is given, byte-identical to IDENTITY', () => {
+    const scene = framedScene();
+    const bare = selectionToSvgString(scene, ['g']);
+    expect(leafOf(bare).rotation).toBeUndefined();
+    expect(selectionToSvgString(scene, ['g'], IDENTITY_POSE_COMPOSITION as never)).toBe(bare);
   });
 });
