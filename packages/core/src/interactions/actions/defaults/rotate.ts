@@ -29,6 +29,7 @@
  *   TODO: thread shift from InvocationCtx.modifiers.shift into snap logic.
  */
 
+import { gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
@@ -138,7 +139,7 @@ export const rotateAction: Action & { requires: string[] } = {
   // any drag no active tool claimed rotate a non-empty selection. The rotation
   // handle binds it (`selectionTransformBindings`, the `transform` preset).
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'poseComposition'],
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'poseComposition', 'view'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts): OngoingHandle {
@@ -189,6 +190,7 @@ export const rotateAction: Action & { requires: string[] } = {
         ctx.world.x - unionCenter.x,
       );
 
+      const readView = gestureViewReader(ctx.deps);
       const scratch: RotateScratch = {
         ids,
         scene,
@@ -214,6 +216,7 @@ export const rotateAction: Action & { requires: string[] } = {
           snap: null,
           modifiers: { ...ctx.modifiers },
           pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
+          view: readView(),
           adapter: moveGestureAdapter(scene) as unknown as GestureContext<unknown>['adapter'],
           scratch: {},
         },
@@ -248,6 +251,7 @@ export const rotateAction: Action & { requires: string[] } = {
         const gctx = scratch.gestureCtx;
         gctx.modifiers = { ...moveCtx.modifiers };
         gctx.pointer = { worldX: moveCtx.world.x, worldY: moveCtx.world.y, clientX: 0, clientY: 0 };
+        gctx.view = readView();
         const primary = scratch.originWorlds.keys().next().value as NodeId;
         const originRotation = scratch.originRotations.get(primary) ?? 0;
         let delta = raw;

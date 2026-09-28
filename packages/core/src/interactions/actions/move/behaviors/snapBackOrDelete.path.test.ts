@@ -11,6 +11,7 @@ function ctx(originPose: Path, currentPose: Path): GestureContext<Path> {
     snap: null,
     modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 },
+    view: null,
     adapter: {
       getNode: (id: string) => ({ id }),
     } as any,

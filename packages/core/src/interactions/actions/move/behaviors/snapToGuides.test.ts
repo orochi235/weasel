@@ -18,6 +18,7 @@ function ctx(
     snap: null,
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, ...modifiers },
     pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 },
+    view: null,
     adapter: {} as never,
     scratch: {},
   };

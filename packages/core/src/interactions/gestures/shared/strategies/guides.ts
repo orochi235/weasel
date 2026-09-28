@@ -1,7 +1,6 @@
 import type { SnapStrategy } from '../../types';
 import type { Guide } from 'features/guides/types';
-import type { View } from 'core/viewport/view';
-import { pxExtent } from 'core/viewport/pxExtent';
+import { screenTolerance } from '../screenTolerance';
 import type { OriginProjection } from './grid';
 import { AUTO_ORIGIN_PROJECTION } from './grid';
 
@@ -11,17 +10,11 @@ export const DEFAULT_GUIDE_TOLERANCE_PX = 6;
 /** Options for `guideSnapStrategy`. */
 export interface GuideSnapOptions<TPose> {
   /**
-   * Tolerance, in screen pixels (CSS px) when `getView` is provided, or in
-   * world units otherwise. Defaults to `DEFAULT_GUIDE_TOLERANCE_PX`.
+   * Tolerance in screen pixels, divided by the gesture view's scale so the
+   * trigger zone stays the same on screen at every zoom. Defaults to
+   * `DEFAULT_GUIDE_TOLERANCE_PX`.
    */
   tolerance?: number;
-  /**
-   * Read the active view transform. When supplied, `tolerance` is interpreted
-   * in screen pixels and divided by `view.scale` so the trigger zone stays
-   * the same on screen as the user zooms in/out. Without it, `tolerance`
-   * is treated as world units.
-   */
-  getView?: () => View;
   /**
    * Projection used when `TPose` doesn't expose `{x, y}` directly (Path,
    * polygon, etc.) — same contract as `gridSnapStrategy`. Defaults to the
@@ -59,19 +52,17 @@ export function guideSnapStrategy<TPose>(
   options: GuideSnapOptions<TPose> = {},
 ): SnapStrategy<TPose> {
   const tolerance = options.tolerance ?? DEFAULT_GUIDE_TOLERANCE_PX;
-  const getView = options.getView;
   const proj: OriginProjection<TPose> =
     options.origin ?? (AUTO_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
 
   return {
-    snap(pose) {
+    snap(pose, ctx) {
       const guides = getGuides();
       if (guides.length === 0) return null;
 
-      // Convert tolerance to world units, per axis: a guide on the x axis is
-      // matched by a horizontal distance, so it answers to `scale.x` alone.
-      // With no view, treat tolerance as already-world.
-      const tol = getView ? pxExtent(tolerance, getView().scale) : { x: tolerance, y: tolerance };
+      // Per axis: a guide on the x axis is matched by a horizontal distance,
+      // so it answers to `scale.x` alone.
+      const tol = screenTolerance(tolerance, ctx);
 
       const o = proj.getOrigin(pose);
 

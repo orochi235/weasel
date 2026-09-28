@@ -12,6 +12,8 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { RenderLayer } from 'core/layers/render';
 import type { SceneCanvasApi } from './canvasExtension';
+import { snapToGuides } from 'interactions/actions/move/behaviors/snapToGuides';
+import type { Guide } from 'features/guides/types';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -85,6 +87,58 @@ describe('a press over a view', () => {
     );
     drag(container.querySelector('canvas')!, PRESS, 40);
     expect(poseOf(scene, inLens)).toMatchObject({ x: 10, y: 0 });
+  });
+});
+
+describe('snap tolerance is screen pixels through the camera the drag landed in', () => {
+  /** A 6px snap to a vertical guide at world `offset`. */
+  const guideSnap = (offset: number) => ({
+    move: {
+      behaviors: [snapToGuides<P>({
+        getGuides: (): Guide[] => [{ id: 'g', axis: 'x', offset }],
+        tolerance: 6,
+      })],
+    },
+  });
+
+  function dragAt(view: View, guide: number): P {
+    const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
+    const id = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const { container } = render(
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={400} height={300}
+        defaultView={view} selectTool={guideSnap(guide)} />,
+    );
+    // 20 screen px right, starting inside the node.
+    drag(container.querySelector('canvas')!, { x: 5 * view.scale.x, y: 5 * view.scale.y }, 20);
+    return poseOf(scene, id);
+  }
+
+  it('holds 6px on screen at two zoom levels', () => {
+    // Scale 1: lands at x=20; a guide 5 world (5px) off snaps, 7 off does not.
+    expect(dragAt({ x: 0, y: 0, scale: { x: 1, y: 1 } }, 25)).toMatchObject({ x: 25 });
+    expect(dragAt({ x: 0, y: 0, scale: { x: 1, y: 1 } }, 27)).toMatchObject({ x: 20 });
+    // Scale 2: lands at x=10; 2.5 world (5px) snaps, 3.5 world (7px) does not.
+    expect(dragAt({ x: 0, y: 0, scale: { x: 2, y: 2 } }, 12.5)).toMatchObject({ x: 12.5 });
+    expect(dragAt({ x: 0, y: 0, scale: { x: 2, y: 2 } }, 13.5)).toMatchObject({ x: 10 });
+  });
+
+  it("uses a view's own zoom, not the surface's", () => {
+    // Through the 4× lens, 40px lands inLens at x=10. A guide 2 world off is
+    // 8px there — no snap, though it would be 2px on the surface's 1× camera.
+    const run = (guide: number) => {
+      const { scene, inLens } = makeScene();
+      const { container } = render(
+        <SceneCanvas features={['draw']} scene={scene} layers={{}} width={400} height={300}
+          selectTool={guideSnap(guide)}>
+          <CanvasView id="lens" bounds={LENS} defaultView={LENS_VIEW} />
+        </SceneCanvas>,
+      );
+      drag(container.querySelector('canvas')!, PRESS, 40);
+      return poseOf(scene, inLens);
+    };
+    expect(run(12)).toMatchObject({ x: 10 });
+    // 1 world off is 4px through the lens: snaps.
+    expect(run(11)).toMatchObject({ x: 11 });
   });
 });
 

@@ -12,6 +12,7 @@ function ctx(originPose: Pose, currentPose: Pose, objectsById: Record<string, an
     snap: null,
     modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     pointer: { worldX: currentPose.x, worldY: currentPose.y, clientX: 0, clientY: 0 },
+    view: null,
     adapter: {
       getNode: (id: string) => objectsById[id],
     } as any,

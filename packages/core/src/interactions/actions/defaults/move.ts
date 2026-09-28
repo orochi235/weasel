@@ -40,6 +40,7 @@
  * dep (`AUTO_POSE_DESCRIPTOR` when unsourced).
  */
 
+import { gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
 import { resolveParams, DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/routing';
@@ -662,7 +663,7 @@ export const moveAction: Action & { requires: string[] } = {
   // is target-qualified instead of universal.
   defaultBinding: { kind: 'drag', target: 'selected-body' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'poseComposition', 'geometryProjection', 'nodeAtPoint'],
+  requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'poseComposition', 'geometryProjection', 'nodeAtPoint', 'view'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -744,6 +745,7 @@ export const moveAction: Action & { requires: string[] } = {
       const adapter = moveGestureAdapter<unknown>(scene as Scene<unknown, string, unknown>);
       const origin = new Map<string, unknown>();
       for (const [id, pose] of startPoses) origin.set(id as string, pose);
+      const readView = gestureViewReader(ctx.deps);
       const gestureCtx: GestureContext<unknown> = {
         draggedIds: ids as unknown as string[],
         origin,
@@ -751,6 +753,7 @@ export const moveAction: Action & { requires: string[] } = {
         snap: null,
         modifiers: { ...ctx.modifiers },
         pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
+        view: readView(),
         adapter: adapter as unknown as GestureContext<unknown>['adapter'],
         scratch: {},
       };
@@ -1012,6 +1015,7 @@ export const moveAction: Action & { requires: string[] } = {
             const gctx = scratch.gestureCtx;
             gctx.modifiers = { ...moveCtx.modifiers };
             gctx.pointer = { worldX: moveCtx.drag.current.x, worldY: moveCtx.drag.current.y, clientX: 0, clientY: 0 };
+            gctx.view = readView();
             // `current` is pre-populated from the raw cursor delta BEFORE
             // any behavior shapes `transform`. Unlike `onEnd`, it is NOT
             // refreshed after each behavior runs — so onMove behaviors

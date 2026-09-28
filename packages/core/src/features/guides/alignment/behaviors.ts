@@ -5,7 +5,7 @@ import type {
   MoveBehavior,
 } from 'interactions/gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { pxExtent } from 'core/viewport/pxExtent';
+import { screenTolerance } from 'interactions/gestures/shared/screenTolerance';
 import { unionBounds } from 'core/geometry/unionBounds';
 import type {
   AlignAnchor,
@@ -27,9 +27,11 @@ export interface AlignMoveArgs<TPose> extends AlignmentBehaviorBase {
 const activeList = (m: { activeX: Guide | null; activeY: Guide | null }): Guide[] =>
   [m.activeX, m.activeY].filter((g): g is Guide => g !== null);
 
-function worldTol(base: AlignmentBehaviorBase): { x: number; y: number } {
-  const t = base.tolerance ?? 6;
-  return base.getView ? pxExtent(t, base.getView().scale) : { x: t, y: t };
+function worldTol(
+  base: AlignmentBehaviorBase,
+  ctx: Parameters<typeof screenTolerance>[1],
+): { x: number; y: number } {
+  return screenTolerance(base.tolerance ?? 6, ctx);
 }
 
 /** Move behavior: snap the dragged selection's union box (edges + center) to
@@ -55,7 +57,7 @@ export function alignMoveBehavior<TPose>(args: AlignMoveArgs<TPose>): MoveBehavi
       }
       const union = unionBounds(boxes);
       if (union === null) return;
-      const m = matchAlignment(union, args.getCandidates(), worldTol(args), MOVE_ANCHORS);
+      const m = matchAlignment(union, args.getCandidates(), worldTol(args, ctx), MOVE_ANCHORS);
       if (m.activeX === null && m.activeY === null) { args.setActiveGuides([]); return; }
       args.setActiveGuides(activeList(m));
       return { transform: { kind: 'translate', dx: transform.dx + m.dx, dy: transform.dy + m.dy } };
@@ -72,7 +74,7 @@ export function alignInsertBehavior<TPose>(args: AlignmentBehaviorBase): InsertB
     onMove(ctx, { current }) {
       if (args.bypassKey && ctx.modifiers[args.bypassKey]) { args.setActiveGuides([]); return; }
       const box = { x: current.x, y: current.y, width: 0, height: 0 };
-      const m = matchAlignment(box, args.getCandidates(), worldTol(args), pointAnchors);
+      const m = matchAlignment(box, args.getCandidates(), worldTol(args, ctx), pointAnchors);
       if (m.activeX === null && m.activeY === null) { args.setActiveGuides([]); return; }
       args.setActiveGuides(activeList(m));
       return { current: { x: current.x + m.dx, y: current.y + m.dy } };
@@ -93,7 +95,7 @@ export function alignResizeBehavior<TPose extends Bounds>(
       // east/south (max) edge moves, and vice versa.
       const movingX: AlignAnchor[] = anchor.x === 'min' ? ['max'] : anchor.x === 'max' ? ['min'] : [];
       const movingY: AlignAnchor[] = anchor.y === 'min' ? ['max'] : anchor.y === 'max' ? ['min'] : [];
-      const m = matchAlignment(pose, args.getCandidates(), worldTol(args), { x: movingX, y: movingY });
+      const m = matchAlignment(pose, args.getCandidates(), worldTol(args, ctx), { x: movingX, y: movingY });
       if (m.activeX === null && m.activeY === null) { args.setActiveGuides([]); return; }
 
       let { x, y, width, height } = pose;

@@ -38,6 +38,7 @@
  * @see src/interactions/actions/resize/geometry.ts — `PoseDescriptor`.
  */
 
+import { gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
@@ -287,7 +288,7 @@ export const resizeAction: Action & { requires: string[] } = {
   // scope, tying areaSelect's. The resize handles bind it
   // (`selectionTransformBindings`, the `transform` preset).
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'poseComposition'],
+  requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'poseComposition', 'view'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -365,6 +366,7 @@ export const resizeAction: Action & { requires: string[] } = {
 
       // Minimal GestureContext for behaviors. `draggedIds` matches the
       // legacy hook: the starting id (not the expanded leaf set).
+      const readView = gestureViewReader(ctx.deps);
       const gestureCtx: GestureContext<unknown> = {
         draggedIds: ids as unknown as string[],
         origin: new Map<string, unknown>([[ids[0] as string, originPose]]),
@@ -372,6 +374,7 @@ export const resizeAction: Action & { requires: string[] } = {
         snap: null,
         modifiers: { ...ctx.modifiers },
         pointer: { worldX: startWorld.x, worldY: startWorld.y, clientX: 0, clientY: 0 },
+        view: readView(),
         // `adapter` is unused by the kit's behaviors; cast to satisfy the type.
         adapter: undefined as unknown as GestureContext<unknown>['adapter'],
         scratch: {},
@@ -499,6 +502,7 @@ export const resizeAction: Action & { requires: string[] } = {
             clientX: 0,
             clientY: 0,
           };
+          scratch.gestureCtx.view = readView();
 
           let proposedBounds = computeProposedBounds(
             scratch.originBounds,
