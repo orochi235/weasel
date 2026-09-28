@@ -8,6 +8,7 @@ import {
   matchSpec,
   parseKeyRoute,
   parseRoute,
+  pastDragThreshold,
   ROUTE_FIELD_DEFINITIONS,
   routeToSpec,
   specificity,
@@ -58,7 +59,6 @@ const specText = ({ kind, ...rest }: GestureSpec) =>
 
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.platform);
 const SELF = 'pad';
-const THRESHOLD = 4;
 const MODIFIER_KEYS = new Set(['Shift', 'Alt', 'Control', 'Meta']);
 
 const phaseCtx = (engaged: boolean): PhaseContext => ({
@@ -191,7 +191,7 @@ export function GestureGrammarDemo() {
           onPointerMove={(e) => {
             const p = press.current;
             if (!p || p.dragging) return;
-            if (Math.hypot(e.clientX - p.x, e.clientY - p.y) < THRESHOLD) return;
+            if (!pastDragThreshold({ clientX: p.x, clientY: p.y }, e)) return;
             p.dragging = true;
             emit({ kind: 'pointerdown', ...modsOf(e), ...bodyAt(p.x, p.y) });
             setEngagedBoth(true);

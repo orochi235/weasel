@@ -31,18 +31,19 @@ export const SELECTION_TRANSFORM_ID = 'selection.transform';
 export function selectionMoveBindings<TPose>(
   options: SelectionMoveOptions<TPose> = {},
 ): GestureBinding[] {
-  // Shared move-binding opts (reparent-on-drop + behaviors). Applied to
+  // Shared move-binding opts (params + behaviors). Applied to
   // both the selected-body and unselected-body move bindings so a
   // first-touch drag and a re-drag commit identically.
   const moveOpts: { opts?: BindingOpts } = (() => {
-    const reparent = options.reparentOnDrop && options.reparentOnDrop !== 'off'
-      ? { params: { reparentOnDrop: options.reparentOnDrop } }
-      : undefined;
+    const params: Record<string, unknown> = {};
+    if (options.reparentOnDrop && options.reparentOnDrop !== 'off') params.reparentOnDrop = options.reparentOnDrop;
+    if (options.move?.dragThresholdPx !== undefined) params.dragThresholdPx = options.move.dragThresholdPx;
+    const withParams = Object.keys(params).length > 0 ? { params } : undefined;
     const behaviors = options.move?.behaviors?.length
       ? { behaviors: options.move.behaviors as BindingOpts['behaviors'] }
       : undefined;
-    return reparent || behaviors
-      ? { opts: { ...reparent, ...behaviors } satisfies BindingOpts }
+    return withParams || behaviors
+      ? { opts: { ...withParams, ...behaviors } satisfies BindingOpts }
       : {};
   })();
 

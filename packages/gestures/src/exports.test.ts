@@ -6,7 +6,7 @@ import type { LongPressEvent, LongPressSpec } from './index';
 
 describe('package exports', () => {
   it('exposes every runtime helper', () => {
-    for (const name of ['parseRoute', 'formatRoute', 'matchSpec', 'matchModifiers', 'getGestureDescriptor', 'describeRoute']) {
+    for (const name of ['parseRoute', 'formatRoute', 'matchSpec', 'matchModifiers', 'getGestureDescriptor', 'describeRoute', 'pastDragThreshold']) {
       expect(typeof (barrel as Record<string, unknown>)[name]).toBe('function');
     }
   });

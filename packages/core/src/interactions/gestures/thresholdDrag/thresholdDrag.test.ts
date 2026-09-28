@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { DRAG_THRESHOLD_PX } from '@weasel-js/routing';
 import { startThresholdDrag } from './thresholdDrag';
 
 interface FakeReactPointer {
@@ -221,7 +222,7 @@ describe('startThresholdDrag', () => {
     expect(onMove).not.toHaveBeenCalled();
   });
 
-  it('default threshold is 4px', () => {
+  it('default threshold is DRAG_THRESHOLD_PX', () => {
     const start = makeStart(0, 0);
     const onActivate = vi.fn();
     startThresholdDrag(start as unknown as React.PointerEvent, {
@@ -229,13 +230,11 @@ describe('startThresholdDrag', () => {
       onMove: () => {},
       onCommit: () => {},
     });
-    // 3,0 -> 9 < 16; should not activate
-    fireMove(3, 0);
+    fireMove(DRAG_THRESHOLD_PX - 0.5, 0);
     expect(onActivate).not.toHaveBeenCalled();
-    // 5,0 -> 25 > 16; should activate
-    fireMove(5, 0);
+    fireMove(DRAG_THRESHOLD_PX, 0);
     expect(onActivate).toHaveBeenCalledTimes(1);
-    fireUp(5, 0);
+    fireUp(DRAG_THRESHOLD_PX, 0);
   });
 });
 

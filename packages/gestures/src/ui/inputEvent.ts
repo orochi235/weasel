@@ -214,7 +214,7 @@ export interface ClickEvent extends EventModifiers {
   /**
    * World-space coordinates of the *press* that opened this click, as opposed
    * to `x`/`y`, which are the release. The two differ by up to the
-   * drag threshold (4px screen).
+   * drag threshold (`DRAG_THRESHOLD_PX`, in screen pixels).
    *
    * Actions that place geometry at the click want this one — a click's
    * location reads as where the user put the pointer down, and pinning to the

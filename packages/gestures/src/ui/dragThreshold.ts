@@ -1,7 +1,8 @@
 /**
  * How far, in CSS pixels, a press must travel before it is a drag rather than
- * a click. `useGestureDispatcher` holds a pointerdown back until the pointer
- * crosses it, so a press-and-release that stays under it never opens a drag.
+ * a click. `drag` specs match only past it: routing's `useGestureDispatcher`
+ * holds a pointerdown back until the pointer crosses it, so a press-and-release
+ * that stays under it never opens a drag.
  */
 export const DRAG_THRESHOLD_PX = 4;
 

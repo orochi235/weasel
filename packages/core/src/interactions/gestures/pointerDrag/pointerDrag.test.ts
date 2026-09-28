@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import { DRAG_THRESHOLD_PX } from '@weasel-js/routing';
 import { useDragHandle, useDropZone } from './pointerDrag';
 
 beforeAll(() => {
@@ -110,7 +111,7 @@ describe('useDragHandle', () => {
     document.body.removeChild(target);
   });
 
-  it('fetches payload only after movement exceeds threshold', () => {
+  it('fetches payload once movement reaches the kit drag threshold', () => {
     const getPayload = vi.fn(() => ({ kind: 'item', ids: ['a'] }));
     const { result } = renderHook(() => useDragHandle(getPayload));
     const target = document.createElement('div');
@@ -126,12 +127,10 @@ describe('useDragHandle', () => {
     } as unknown as React.PointerEvent<HTMLElement>;
     result.current.onPointerDown(fakeReact);
 
-    // Below threshold (5*5+0 = 25, not > 25)
-    firePointer('pointermove', { clientX: 5, clientY: 0 });
+    firePointer('pointermove', { clientX: DRAG_THRESHOLD_PX - 0.5, clientY: 0 });
     expect(getPayload).not.toHaveBeenCalled();
 
-    // Past threshold
-    firePointer('pointermove', { clientX: 6, clientY: 0 });
+    firePointer('pointermove', { clientX: DRAG_THRESHOLD_PX, clientY: 0 });
     expect(getPayload).toHaveBeenCalledTimes(1);
 
     // Subsequent moves don't re-trigger getPayload (already started)

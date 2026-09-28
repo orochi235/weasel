@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DRAG_THRESHOLD_PX } from '@weasel-js/core';
 import { createMemoryAdapter } from '../state/adapters';
 import { labPrefix } from '../state/labRecords';
 import { Persistence } from '../state/Persistence';
@@ -128,6 +129,16 @@ describe('FloatingPanel dragging', () => {
     expect(panel.dataset.dragging).toBe('true');
     fireEvent.pointerUp(panel);
     expect(panel.dataset.dragging).toBeUndefined();
+  });
+
+  it('becomes a drag at the kit drag threshold, not before', () => {
+    const { panel } = renderPanel(<FloatingPanel>x</FloatingPanel>);
+    fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(panel, { clientX: 100 + DRAG_THRESHOLD_PX - 0.5, clientY: 100 });
+    expect(panel.dataset.dragging).toBeUndefined();
+    fireEvent.pointerMove(panel, { clientX: 100 + DRAG_THRESHOLD_PX, clientY: 100 });
+    expect(panel.dataset.dragging).toBe('true');
+    fireEvent.pointerUp(panel);
   });
 
   it('a press that never moves is not a drag', () => {

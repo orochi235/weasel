@@ -11,6 +11,10 @@ import type { MoveBehavior } from '../../gestures/types';
  *  over the raw drag, and how a gesture expands a group into its leaves. */
 export interface UseMoveOptions<TPose> {
   behaviors?: MoveBehavior<TPose>[];
+  /** Screen travel, in CSS pixels, before the drag moves anything. Default
+   *  `DRAG_THRESHOLD_PX`. The dispatcher opens no drag before that, so a
+   *  smaller value has no effect; a larger one holds the selection in place
+   *  until the pointer has gone that far. */
   dragThresholdPx?: number;
   moveLabel?: string;
   /** Reserved for transient gestures (no history entry). Move is never transient

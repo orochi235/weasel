@@ -22,7 +22,7 @@ import type { ActionsRegistry } from '../actions/registry';
 import type { AffordanceHit } from '../actions/invoker';
 import type { Tool } from '../../tools/types';
 import { createDispatcher, pointerGestureId, type Dispatcher, type DispatcherContext } from './dispatcher';
-import { pastDragThreshold } from './dragThreshold';
+import { pastDragThreshold } from '@weasel-js/gestures';
 import { openPointerSession, type PointerSession } from '../pointerSession';
 import { clientToCanvasRect } from '../../viewport/clientToCanvas';
 import { itemsFromDataTransfer, itemsFromClipboardData } from '../../ingestion/ingestItems';

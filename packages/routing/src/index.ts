@@ -107,7 +107,7 @@ export type { ToolOffhandBindingSpec } from './interactions/actions/toolOffhand'
 export * from './interactions/dispatcher/dispatcher';
 export * from './interactions/dispatcher/matcher';
 export * from './interactions/dispatcher/predicates';
-export { DRAG_THRESHOLD_PX, pastDragThreshold } from './interactions/dispatcher/dragThreshold';
+export { DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/gestures';
 export { openPointerSession } from './interactions/pointerSession';
 export type {
   PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason,

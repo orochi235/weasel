@@ -1,4 +1,4 @@
-import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
 import type React from 'react';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -40,9 +40,6 @@ function borderBoxOf(entry: ResizeObserverEntry): { w: number; h: number } {
   if (box) return { w: box.inlineSize, h: box.blockSize };
   return { w: entry.contentRect.width, h: entry.contentRect.height };
 }
-
-/** How far the pointer must travel before a press becomes a drag. */
-const DRAG_THRESHOLD = 3;
 
 /** A pointerdown on one of these is the child's, not a drag. */
 function isInteractive(target: EventTarget | null): boolean {
@@ -158,7 +155,7 @@ export function FloatingPanel({
       {
         onMove: (ev) => {
           if (!dragging.current) {
-            if (Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < DRAG_THRESHOLD) return;
+            if (!pastDragThreshold({ clientX: start.x, clientY: start.y }, ev)) return;
             dragging.current = { ...start };
             setDragging(true);
             origin.setPointerCapture?.(pointerId);

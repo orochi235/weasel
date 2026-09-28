@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, createEvent, screen, act } from '@testing-library/react';
+import { DRAG_THRESHOLD_PX } from '@weasel-js/core';
 import { Select, SelectItem, SelectSection } from './Select';
 import s from './Select.module.css';
 import { fieldClasses } from '../Field/Field';
@@ -179,6 +180,16 @@ describe('Select', () => {
       const second = createEvent.pointerUp(document, { clientX: 21, clientY: 11 });
       fireEvent(document, second);
       expect(second.defaultPrevented).toBe(false);
+    });
+
+    it('keeps a release that reached the kit drag threshold', () => {
+      render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" />);
+      const trigger = screen.getByRole('button', { name: /Color/ });
+      press(trigger, { clientX: 20, clientY: 10 });
+      act(() => { fireEvent.click(trigger); });
+      const up = createEvent.pointerUp(document, { clientX: 20 + DRAG_THRESHOLD_PX, clientY: 10 });
+      fireEvent(document, up);
+      expect(up.defaultPrevented).toBe(false);
     });
 
     it('keeps a release that travelled — a drag onto a row is a choice', () => {

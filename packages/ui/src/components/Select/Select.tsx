@@ -24,6 +24,7 @@ import {
   type ListBoxItemProps as RACListBoxItemProps,
   type ValidationResult,
 } from 'react-aria-components';
+import { pastDragThreshold } from '@weasel-js/core';
 import { fieldClasses, type FieldOrientation } from '../Field/Field';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import s from './Select.module.css';
@@ -268,7 +269,6 @@ type Press = { x: number; y: number; at: number };
 
 /** How long a press may last and how far it may travel and still be a click. */
 const CLICK_MS = 500;
-const CLICK_SLOP = 4;
 
 const NO_NUDGE: Nudge = { offset: 0, crossOffset: 0 };
 
@@ -370,7 +370,7 @@ function AlignOverTrigger({
       doc.removeEventListener('pointerup', onUp, true);
       const press = pressRef.current;
       if (!press || performance.now() - press.at > CLICK_MS) return;
-      if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > CLICK_SLOP) return;
+      if (pastDragThreshold({ clientX: press.x, clientY: press.y }, e)) return;
       e.preventDefault();
       e.stopPropagation();
     };

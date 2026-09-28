@@ -18,6 +18,11 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P3) Most of `UseMoveOptions` is accepted and ignored.** `moveLabel`, `transient`,
+  `onGestureStart`, `onGestureEnd` and `expandIds` (`packages/core/src/interactions/actions/move/options.ts`)
+  were read by the `useMove` hook deleted on 2026-05-17; the move action reads only `behaviors`
+  and `dragThresholdPx`, which `selectionMoveBindings` threads through. Wire each one into the
+  action or delete it.
 - **(P2) A binding with no phase prints as a route that ranks higher when parsed back.**
   `routesForSpec` (`packages/routing/src/tools/routing/reflection/registry.ts`) prints an
   unphased spec as `[*] drag`, whose `specificity()` phase part is 0. Parsed back, `[*]` is the
@@ -1210,10 +1215,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 ## Demos & visual regression
 
-- **(P3) Drag thresholds disagree across the kit.** Routing exports `DRAG_THRESHOLD_PX` (4)
-  and `pastDragThreshold`, which the gesture dispatcher uses. Core's `pointerDrag.ts` uses 5px,
-  the move action has its own `dragThresholdPx` option, and labkit's `FloatingPanel` uses 3px.
-  Decide which of these should be the one threshold and which are deliberately different.
 - **(P3) A minimal public stage for package demos.** Demos of scene-free packages
   (`quantity`, `text`, `bidi`, `geom`, `audio`) mount a whole `SceneCanvas` just to draw.
   Not the primitive `<Canvas>`, which was unexported on purpose. Enforce its reach in

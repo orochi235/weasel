@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DRAG_THRESHOLD_PX, pastDragThreshold } from '../../index';
+import { DRAG_THRESHOLD_PX, pastDragThreshold } from '../index';
 
 describe('pastDragThreshold', () => {
   const at = (clientX: number, clientY: number) => ({ clientX, clientY });

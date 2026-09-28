@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
+import { DRAG_THRESHOLD_PX } from '@weasel-js/core';
 import { createWindow } from './window';
 import { DEFAULT_WINDOW_METRICS as M } from './zones';
 
@@ -207,6 +208,22 @@ describe('window widget', () => {
     win.onPointer({ type: 'down', x: 200, y: 175, native: null });
     win.onPointer({ type: 'move', x: 201, y: 176, native: null });
     win.onPointer({ type: 'up', x: 201, y: 176, native: null });
+    expect(onContentClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('the click slop is the kit drag threshold', () => {
+    const onContentClick = vi.fn();
+    const win = createWindow({ ...opts, titlebar: false as const, onContentClick });
+    const under = 200 + DRAG_THRESHOLD_PX - 0.5;
+    win.onPointer({ type: 'down', x: 200, y: 175, native: null });
+    win.onPointer({ type: 'move', x: under, y: 175, native: null });
+    win.onPointer({ type: 'up', x: under, y: 175, native: null });
+    expect(onContentClick).toHaveBeenCalledTimes(1);
+
+    const at = 200 + DRAG_THRESHOLD_PX;
+    win.onPointer({ type: 'down', x: 200, y: 175, native: null });
+    win.onPointer({ type: 'move', x: at, y: 175, native: null });
+    win.onPointer({ type: 'up', x: at, y: 175, native: null });
     expect(onContentClick).toHaveBeenCalledTimes(1);
   });
 

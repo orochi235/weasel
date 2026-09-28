@@ -43,7 +43,7 @@
 
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
-import { resolveParams } from '@weasel-js/routing';
+import { resolveParams, DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/routing';
 import { definesFrame, documentPose, effectivePose } from 'core/scene/effectivePose';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
@@ -732,6 +732,9 @@ export const moveAction: Action & { requires: string[] } = {
       }
 
       const behaviors = (opts?.behaviors ?? []) as MoveBehavior<unknown>[];
+      const dragThresholdPx = (resolveParams(opts?.params)?.['dragThresholdPx'] as number | undefined)
+        ?? DRAG_THRESHOLD_PX;
+      let engaged = false;
       const adapter = moveGestureAdapter<unknown>(scene as Scene<unknown, string, unknown>);
       const origin = new Map<string, unknown>();
       for (const [id, pose] of startPoses) origin.set(id as string, pose);
@@ -772,6 +775,11 @@ export const moveAction: Action & { requires: string[] } = {
         kind: 'move',
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
+          if (!engaged) {
+            const s = moveCtx.drag.screenDelta;
+            if (s && !pastDragThreshold({ clientX: 0, clientY: 0 }, { clientX: s.x, clientY: s.y }, dragThresholdPx)) return;
+            engaged = true;
+          }
           let dx = moveCtx.drag.delta.x;
           let dy = moveCtx.drag.delta.y;
 

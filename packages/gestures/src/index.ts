@@ -109,3 +109,6 @@ export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
 
 // Binding precedence
 export { specificity } from './ui/specificity';
+
+// Click-vs-drag travel
+export { DRAG_THRESHOLD_PX, pastDragThreshold } from './ui/dragThreshold';

@@ -268,6 +268,48 @@ describe('moveAction descriptor', () => {
     expect(scene.batchLog).toHaveLength(0);
   });
 
+  it('params.dragThresholdPx holds the move until the pointer travels that far on screen', () => {
+    const invoker = getOngoingInvoker(moveAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: { x: 0, y: 0, width: 10, height: 10 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, { params: { dragThresholdPx: 20 } });
+    const frame = (screen: number, world: number): InvocationCtx => ({
+      ...ctx,
+      drag: {
+        start: { x: 0, y: 0 },
+        current: { x: world, y: 0 },
+        delta: { x: world, y: 0 },
+        screenDelta: { x: screen, y: 0 },
+      },
+    });
+
+    handle.onMove!(frame(19, 9.5));
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+    handle.onMove!(frame(20, 10));
+    handle.onMove!(frame(6, 3));
+    handle.onEnd!(frame(6, 3), 'commit');
+    expect(scene.poses.get('a')).toEqual({ x: 3, y: 0, width: 10, height: 10 });
+  });
+
+  it('a release that never reached params.dragThresholdPx commits nothing', () => {
+    const invoker = getOngoingInvoker(moveAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: { x: 0, y: 0, width: 10, height: 10 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, { params: { dragThresholdPx: 20 } });
+    const frame: InvocationCtx = {
+      ...ctx,
+      drag: { start: { x: 0, y: 0 }, current: { x: 8, y: 0 }, delta: { x: 8, y: 0 }, screenDelta: { x: 16, y: 0 } },
+    };
+    handle.onMove!(frame);
+    handle.onEnd!(frame, 'commit');
+    expect(scene.poses.get('a')).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+    expect(scene.batchLog).toHaveLength(0);
+  });
+
   it('onEnd("cancel") does not write to scene', () => {
     const invoker = getOngoingInvoker(moveAction);
     const { scene, ...ctx } = makeCtx({
