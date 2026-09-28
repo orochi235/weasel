@@ -61,6 +61,8 @@ export interface Graph {
   incoming(id: string): readonly GraphEdge[];
 }
 
+/** Options for {@link buildGraph}: how the trait is read, and how a pose
+ *  yields bounds. Both default to the kit's own. */
 export interface BuildGraphOptions<TPose> {
   read?: DiagramNodeReader;
   geometry?: PoseDescriptor<TPose>;

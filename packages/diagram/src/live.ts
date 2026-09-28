@@ -49,6 +49,7 @@ export interface LiveLayoutFrame {
   done: boolean;
 }
 
+/** One frame of a live layout, called once per frame until it reports `done`. */
 export type LiveLayoutProducer<TPose> = (ctx: LiveLayoutCtx<TPose>) => LiveLayoutFrame;
 
 /** How long an eased layout takes to arrive, in frames. Frame-counted rather
@@ -60,6 +61,7 @@ const EASE_FRAMES = 24;
  *  is a registry of running tweens, not a curve library. */
 const easeInOut: EasingFn = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
 
+/** Options for {@link forceProducer}. */
 export interface ForceProducerOptions<TPose> extends ForceOptions {
   geometry?: PoseDescriptor<TPose>;
   /** Alpha held while something is pinned, so the graph keeps answering a drag
@@ -112,6 +114,7 @@ export function forceProducer<TPose>(
   };
 }
 
+/** Options for {@link easedProducer}. */
 export interface EasedProducerOptions {
   layout?: LayoutOptions;
   /** Frames to arrive in. Default 24. */
@@ -155,6 +158,7 @@ export function easedProducer<TPose>(
   };
 }
 
+/** Options for {@link useLiveLayout}. Only `scene` and `source` are required. */
 export interface UseLiveLayoutOptions<TPose> {
   scene: Scene<unknown, string, TPose>;
   /** Where the graph is read from. The same thunk the port affordance takes. */
@@ -182,6 +186,7 @@ export interface UseLiveLayoutOptions<TPose> {
   cancelFrame?: (handle: number) => void;
 }
 
+/** Controls for a live layout run, from {@link useLiveLayout}. */
 export interface LiveLayout {
   /** Heat and run. Idempotent while running. */
   start(): void;
