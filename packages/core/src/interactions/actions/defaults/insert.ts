@@ -313,7 +313,6 @@ export const insertAction: Action & { requires: string[] } = {
   id: 'insert',
   label: 'Insert',
   group: 'insert',
-  defaultBinding: { kind: 'drag' },
   eligible: { capability: 'creates-shapes' },
   requires: ['insert', 'selection', 'snap', 'textEdit'],
   invoker: {

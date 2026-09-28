@@ -9,7 +9,7 @@
  * core, beside the chrome ids they name.
  */
 export { evaluate, describeRule, ALWAYS, NEVER } from './rule';
-export { rulesExclusive } from './exclusive';
+export { rulesExclusive, ruleCanHoldIn } from './exclusive';
 export type { Rule, Selector, Condition } from './rule';
 export type { RuleCtx, BuildRuleCtxArgs } from './ruleCtx';
 export { buildRuleCtx, DEFAULT_ALLOWED_CAPABILITIES } from './ruleCtx';

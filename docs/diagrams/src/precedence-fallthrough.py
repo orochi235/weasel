@@ -54,8 +54,8 @@ items = [
     ], LW - 40, 'amber'), '4'),
     ('r5', Card('Registration order', [
         'Whatever is still tied keeps the order it was registered in; the sorts are stable.',
-        '▸ `areaSelect` on `[*:*] drag` beats `lassoSelect` on `[*:*] drag ?shift`: same specificity, same '
-        '`creates-selection` rule, and `areaSelect` is registered first.',
+        '▸ Two ambient actions on `[*:*] drag` with no rule between them fire in the order they were registered. '
+        'The route-conflict check warns about exactly this.',
     ], LW - 40, 'amber'), '5'),
     ('elig', Card('Filter: drop ineligible', [
         'An action whose `eligible` rule is false in this mode leaves the list (`filterEligible`). Filtering does not reorder, so it can sit anywhere here.',
@@ -150,15 +150,14 @@ ey = example(ey, 'Escape while editing a path',
              ])
 
 ey = example(ey + 16, 'Bare drag on empty canvas, select tool active',
-             'Default mode, which allows `creates-selection`. Other ambient drag actions (`lassoSelect`, `insert`) are left out.',
+             'Default mode, which allows `creates-selection`.',
              [
                  ('1', '`areaSelect` from the select tool, `[*:*] drag => predicate` (empty canvas)', 'active', '1 0 0 1', 'step 2, tier', '`creates-selection` holds', 'fires', 'green'),
-                 ('2', '`areaSelect` default `[*:*] drag`', 'ambient', '0 0 0 1', 'step 4', '`creates-selection` holds', 'skipped: action already tried', 'white'),
-                 ('3', '`viewport.dragPan` `[*:*] drag`', 'ambient', '0 0 0 1', 'step 4', 'none', 'not asked', 'white'),
+                 ('2', '`viewport.dragPan` `[*:*] drag`', 'ambient', '0 0 0 1', 'step 2, tier', 'none', 'not asked', 'white'),
              ],
              [
-                 'The tier settles this one: the select tool\'s binding sits in the active tier. Step 4 only orders the ambient pair below it, which is what decides when no tool binds the drag.',
-                 'In a mode without `creates-selection`, both `areaSelect` rows are dropped as ineligible and `viewport.dragPan` fires.',
+                 'The tier settles this one: the select tool\'s binding sits in the active tier, above the ambient pan.',
+                 'Under a tool that binds no drag, nothing marquees: `viewport.dragPan` fires, unless the canvas opted in with `areaSelectContribution`. In a mode without `creates-selection`, `areaSelect` is dropped as ineligible and the pan fires.',
              ])
 
 note = Card('What a route cannot show', [

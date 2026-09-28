@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { findConflicts, findScopedConflicts, formatConflict, reportRouteConflicts } from './conflicts';
 import type { Tool } from '../../types';
-import { createModeRegistry, type ModeDefinition } from '@weasel-js/modes';
+import { activeModeOf, createModeRegistry, type ModeDefinition } from '@weasel-js/modes';
 import { modeShortcuts } from '../../../contributions/modeShortcuts';
 import { rulesExclusive } from '../../../eligibility';
 
@@ -311,10 +311,13 @@ describe('findScopedConflicts — mutually exclusive eligibility', () => {
     invoker: { timing: 'immediate', run: () => {} },
   } as never);
 
+  const focusAndReview = [activeModeOf(exitable('focus')), activeModeOf(exitable('review'))];
+
   it('still flags two actions whose rules can hold together', () => {
     const c = findScopedConflicts({
       registry: [],
       actions: [escape('a', { mode: 'focus' }), escape('b', { selection: { empty: false } })],
+      modes: focusAndReview,
     });
     expect(c.map((x) => x.toolIds.join(','))).toEqual(['a,b']);
   });
@@ -323,8 +326,57 @@ describe('findScopedConflicts — mutually exclusive eligibility', () => {
     const c = findScopedConflicts({
       registry: [],
       actions: [escape('a', { mode: 'focus' }), escape('b', { mode: 'review' }), escape('c')],
+      modes: focusAndReview,
     });
     expect(c.map((x) => x.toolIds.join(','))).toEqual(['a,b,c']);
+  });
+});
+
+describe('findScopedConflicts — actions gated by different rules', () => {
+  const dragAction = (id: string, eligible: unknown) => ({
+    id, label: id,
+    defaultBinding: { kind: 'drag' },
+    eligible,
+    invoker: { timing: 'immediate', run: () => {} },
+  } as never);
+  const shapes = dragAction('insert', { capability: 'creates-shapes' });
+  const marquee = dragAction('areaSelect', { capability: 'creates-selection' });
+
+  const exitableMode = (id: string): ModeDefinition => ({ id, kind: 'soft', allows: [], scoping: false });
+
+  it('flags two whose rules the kit\'s normal mode lets hold together', () => {
+    const c = findScopedConflicts({ registry: [], actions: [shapes, marquee] });
+    expect(c.map((x) => x.toolIds.join(','))).toEqual(['insert,areaSelect']);
+  });
+
+  it('does not flag them when no mode allows both', () => {
+    const modes = [
+      { id: 'draw', allowedCapabilities: new Set(['creates-shapes']) },
+      { id: 'pick', allowedCapabilities: new Set(['creates-selection']) },
+    ];
+    expect(findScopedConflicts({ registry: [], actions: [shapes, marquee], modes })).toEqual([]);
+  });
+
+  it('flags them when one of the modes allows both', () => {
+    const modes = [
+      { id: 'draw', allowedCapabilities: new Set(['creates-shapes']) },
+      { id: 'both', allowedCapabilities: new Set(['creates-shapes', 'creates-selection']) },
+    ];
+    expect(findScopedConflicts({ registry: [], actions: [shapes, marquee], modes })).toHaveLength(1);
+  });
+
+  it('reads a mode rule against each mode id', () => {
+    const inFocus = dragAction('a', { mode: 'focus' });
+    const inReview = dragAction('b', { mode: { in: ['review', 'focus'] } });
+    const modes = [activeModeOf(exitableMode('focus')), activeModeOf(exitableMode('review'))];
+    expect(findScopedConflicts({ registry: [], actions: [inFocus, inReview], modes })).toHaveLength(1);
+    const onlyReview = dragAction('b', { mode: 'review' });
+    expect(findScopedConflicts({ registry: [], actions: [inFocus, onlyReview], modes })).toEqual([]);
+  });
+
+  it('does not flag a gated action against an ungated one', () => {
+    const pan = dragAction('viewport.dragPan', undefined);
+    expect(findScopedConflicts({ registry: [], actions: [shapes, pan] })).toEqual([]);
   });
 });
 

@@ -59,10 +59,10 @@ function getOngoingInvoker(action: typeof areaSelectAction) {
 // ---------------------------------------------------------------------------
 
 describe('areaSelectAction descriptor', () => {
-  it('declares id, label, drag defaultBinding, and ongoing timing', () => {
+  it('declares id, label, no default binding, and ongoing timing', () => {
     expect(areaSelectAction.id).toBe('areaSelect');
     expect(areaSelectAction.label).toBe('Area Select');
-    expect(areaSelectAction.defaultBinding).toEqual({ kind: 'drag' });
+    expect(areaSelectAction.defaultBinding).toBeUndefined();
     expect(areaSelectAction.invoker?.timing).toBe('ongoing');
   });
 

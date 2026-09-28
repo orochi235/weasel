@@ -54,7 +54,7 @@ describe('FallthroughDiagram', () => {
     const dragText = rankedRows(drag.container).map((r) => r.textContent ?? '');
     expect(dragText[1]).toContain('tier');
     expect(dragText[1]).toContain('duplicate');
-    expect(dragText[2]).toContain('context');
+    expect(dragText[2]).toContain('specificity · target');
   });
 
   it('says when a filter dropped nothing', () => {
@@ -99,7 +99,7 @@ describe('FallthroughDiagram', () => {
     render(<FallthroughDiagram record={fixtures.bareDragSelect} />);
     const matched = screen.getByRole('region', { name: 'Matched' });
     const tools = within(matched).getAllByRole('row').slice(1).map((r) => r.querySelectorAll('td')[2]?.textContent);
-    expect(tools).toEqual(['select', 'action', 'action']);
+    expect(tools).toEqual(['select', 'selection.areaSelect', 'action']);
   });
 
   it('draws one line when nothing matched', () => {

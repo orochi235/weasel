@@ -36,11 +36,18 @@ const selectAreaSelect = candidate({
   specificity: [1, 0, 0, 1],
   eligible: 'capability: creates-selection',
 });
-const ambientAreaSelect = candidate({ actionId: 'areaSelect', routes: ['[*:*] drag'] });
+const ambientAreaSelect = candidate({
+  actionId: 'areaSelect',
+  routes: ['[*:*] drag => predicate'],
+  ownerToolId: 'selection.areaSelect',
+  specificity: [1, 0, 0, 1],
+  eligible: 'capability: creates-selection',
+});
 const dragPan = candidate({ actionId: 'viewport.dragPan', routes: ['[*:*] drag'] });
 
-/** A bare drag on empty canvas with the select tool: the tool's marquee wins,
- *  and the ambient binding of the same action is skipped as a duplicate. */
+/** A bare drag on empty canvas with the select tool, on a canvas that also
+ *  opted into `areaSelectContribution`: the tool's marquee wins, and the
+ *  contribution's binding of the same action is skipped as a duplicate. */
 export const bareDragSelect: DispatchRecord = {
   kind: 'dispatch',
   ts: 53525020,
@@ -50,7 +57,7 @@ export const bareDragSelect: DispatchRecord = {
   ranked: [
     { candidate: selectAreaSelect, placedBy: { step: 'first' }, walk: { kind: 'fired' } },
     { candidate: ambientAreaSelect, placedBy: { step: 'tier' }, walk: { kind: 'duplicate' } },
-    { candidate: dragPan, placedBy: { step: 'context' }, walk: { kind: 'not-asked' } },
+    { candidate: dragPan, placedBy: { step: 'specificity', part: 'target' }, walk: { kind: 'not-asked' } },
   ],
   predicted: false,
   fired: 'areaSelect',
@@ -106,11 +113,11 @@ export const predictedHover: DispatchRecord = {
   kind: 'dispatch',
   ts: 53528000,
   input: { eventKind: 'pointerdown', modifiers: NO_MODS, viewId: 'main', world: { x: 48, y: 210 }, mode: 'path-edit' },
-  matched: [moveAnchors, transformSelection, ambientAreaSelect],
+  matched: [moveAnchors, transformSelection, dragPan],
   dropped: [{ candidate: transformSelection, filter: 'ineligible', rule: 'capability: has-selection' }],
   ranked: [
     { candidate: moveAnchors, placedBy: { step: 'first' }, walk: { kind: 'would-fire' } },
-    { candidate: ambientAreaSelect, placedBy: { step: 'tier' }, walk: { kind: 'not-asked' } },
+    { candidate: dragPan, placedBy: { step: 'tier' }, walk: { kind: 'not-asked' } },
   ],
   predicted: true,
   fired: 'moveAnchors',

@@ -34,7 +34,8 @@ import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
-import type { ActionDisabledReason } from '@weasel-js/routing';
+import type { ActionDisabledReason, AnyTool } from '@weasel-js/routing';
+import { areaSelectContribution } from '../tools/builtin/select/selectionContributions';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -236,7 +237,6 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
           areaSelect: {
             id: 'areaSelect',
             label: 'Area Select',
-            defaultBinding: { kind: 'drag' },
             // Always enabled so the dispatcher doesn't gate it.
             enabled: () => true as const,
             // Return a non-empty handle so the dispatcher records the
@@ -302,6 +302,43 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     expect(rotateCalls.length).toBeGreaterThanOrEqual(1);
 
     batchSpy.mockRestore();
+  });
+
+  describe('a plain drag on empty canvas with no select tool', () => {
+    function dragEmpty(ambient: AnyTool[]) {
+      const scene = makeScene();
+      const spy = vi.fn();
+      const { container } = render(
+        <SceneCanvas features={['pick']}
+          scene={scene}
+          layers={{}}
+          width={200}
+          height={200}
+          tools={{ select: false }}
+          ambient={ambient}
+          actions={{
+            areaSelect: {
+              id: 'areaSelect',
+              label: 'Area Select',
+              enabled: () => true as const,
+              invoker: { timing: 'ongoing', start: () => { spy(); return { onEnd: () => {} }; } },
+            },
+          }}
+        />,
+      );
+      const canvas = container.querySelector('canvas');
+      if (!canvas) throw new Error('No canvas element');
+      act(() => gesture(canvas, { downX: 150, downY: 150, moveX: 170, moveY: 150 }));
+      return spy;
+    }
+
+    it('selects nothing by default', () => {
+      expect(dragEmpty([])).not.toHaveBeenCalled();
+    });
+
+    it('marquees when the canvas opts in with areaSelectContribution', () => {
+      expect(dragEmpty([areaSelectContribution() as AnyTool])).toHaveBeenCalledTimes(1);
+    });
   });
 
   // --------------------------------------------------------------------------

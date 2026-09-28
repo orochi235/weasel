@@ -3,7 +3,7 @@ export type { CapabilityTag } from './capabilities';
 export { eligibleForMode, modeLabel } from './modeDefinition';
 export type { ModeDefinition, WorkspaceVisual } from './modeDefinition';
 export { DEFAULT_MODES, byId, NORMAL, PATH_EDIT, ISOLATION, FREE_TRANSFORM, TEXT_EDIT, CROP } from './presets/default';
-export { createModeRegistry, getActiveModeFor } from './registry';
+export { activeModeOf, createModeRegistry, getActiveModeFor } from './registry';
 export type { ModeRegistry, CreateModeRegistryOptions, ActiveMode } from './registry';
 export { createModeDecorations } from './decorations';
 export type { ModeDecorations, ModeDecorationPainter, CreateModeDecorationsOptions, ModeDrawCommand } from './decorations';

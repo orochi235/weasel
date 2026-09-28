@@ -80,6 +80,8 @@ function MountDispatcher({
   const toolsById = useRef<ReadonlyMap<string, { bindings?: unknown[] }>>(
     new Map([
       ['rect', {
+        id: 'rect',
+        eligibility: { focus: true },
         bindings: toolBindings?.map((spec) => ({
           spec,
           actionId: 'insert',

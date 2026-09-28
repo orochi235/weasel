@@ -758,16 +758,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `PropertyRenderContext.update`, rather than the one aggregated object that a mixed selection
   does not have.
 
-- **(P2) `areaSelect`, `insert` and `slice` tie on a bare drag in the normal mode, and the
-  route-conflict check cannot see it.** All three default-bind `{ kind: 'drag' }` and are gated on
-  different capabilities (`creates-selection`, `creates-shapes`, `edits-page`), which `NORMAL`
-  grants together, so when the active tool binds no drag, registration order picks `areaSelect`.
-  Seen in apps/draw's dispatch trace on 2026-09-27: all three ranked at specificity 0 0 0 1, placed
-  by order. `findScopedConflicts` compares a gated action only with actions gated by the *same*
-  rule, so it stays silent. Making it mode-aware (given the mode definitions, two gated actions tie
-  when some mode lets both rules hold) is mechanical, but it would warn on every canvas using the
-  stock actions until the tie itself is settled — which action owns an unclaimed bare drag, or
-  whether `insert` and `slice` keep a bare-drag default binding at all, as `resize` no longer does.
+- **(P3) `<SceneCanvas>` cannot hand the route-conflict check its modes.** `findScopedConflicts`
+  reports two gated actions only when some mode lets both rules hold, and checks against the kit's
+  `DEFAULT_MODES` unless it is given `modes`. `SceneCanvas` knows only `getActiveMode`, not the full
+  list, so an app with modes of its own is checked against the kit's instead: a conflict in a mode
+  only it defines goes unreported. Passing the list needs a public prop (a `modes` list, or the
+  `ModeRegistry` itself) — a surface decision, not made.
 
 - **(P2) `arrayAdapter`'s marquee and lasso still test bounding boxes.** `sceneToAdapter`'s
   both run the live silhouette hit-test; `arrayAdapter`'s `hitTestArea` (bounds, or the

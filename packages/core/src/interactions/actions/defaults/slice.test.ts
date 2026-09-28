@@ -13,10 +13,10 @@ const ctxAt = (x: number, y: number, start = { x: 0, y: 0 }): InvocationCtx => (
 });
 
 describe('sliceAction', () => {
-  it('is an ongoing drag action with id "slice"', () => {
+  it('is an ongoing action with id "slice" and no default binding', () => {
     expect(sliceAction.id).toBe('slice');
     expect(sliceAction.invoker?.timing).toBe('ongoing');
-    expect(sliceAction.defaultBinding).toEqual({ kind: 'drag' });
+    expect(sliceAction.defaultBinding).toBeUndefined();
   });
 
   it('enabled reflects slice-dep presence', () => {

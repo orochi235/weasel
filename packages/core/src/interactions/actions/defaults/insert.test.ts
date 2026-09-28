@@ -65,10 +65,10 @@ function getOngoingInvoker(action: typeof insertAction) {
 // ---------------------------------------------------------------------------
 
 describe('insertAction descriptor', () => {
-  it('declares id, label, drag defaultBinding, and ongoing timing', () => {
+  it('declares id, label, no default binding, and ongoing timing', () => {
     expect(insertAction.id).toBe('insert');
     expect(insertAction.label).toBe('Insert');
-    expect(insertAction.defaultBinding).toEqual({ kind: 'drag' });
+    expect(insertAction.defaultBinding).toBeUndefined();
     expect(insertAction.invoker?.timing).toBe('ongoing');
   });
 

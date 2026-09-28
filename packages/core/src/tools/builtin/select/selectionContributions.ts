@@ -149,3 +149,22 @@ export function selectionTransformContribution<TPose>(
     bindings: selectionTransformBindings(options),
   };
 }
+
+/** Id of the entry {@link areaSelectContribution} builds. */
+export const AREA_SELECT_ID = 'selection.areaSelect';
+
+/** A press on empty canvas: no hit, and not on chrome over it — the rotation
+ *  handle and the outer half of a resize handle sit off the body. */
+export const onEmptyCanvas = (hit: unknown, body?: string): boolean => hit == null && body === 'empty';
+
+/** An always-live entry that marquee-selects on a drag across empty canvas,
+ *  under any tool that does not claim the drag itself. No preset installs it:
+ *  the select tool already marquees, and a canvas that wants it under every
+ *  tool adds this to its ambient list. */
+export function areaSelectContribution(): Contribution {
+  return {
+    id: AREA_SELECT_ID,
+    eligibility: { always: true },
+    bindings: [{ spec: { kind: 'drag', target: { kindOf: onEmptyCanvas } }, actionId: 'areaSelect' }],
+  };
+}
