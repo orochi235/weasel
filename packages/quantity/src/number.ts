@@ -32,6 +32,9 @@ export function parseSignedNumber(text: string): number {
   return Number(text.replace(MINUS_SIGN, '-'));
 }
 
+/** A typed unsigned number: thousands commas in the `40,000` shape, or plain digits. */
+const TYPED_NUMBER = String.raw`\d{1,3}(?:,\d{3})+(?:\.\d*)?|\d+(?:\.\d+)?|\.\d+`;
+
 /** Powers of ten a typed magnitude suffix stands for. */
 const EXPONENTS: Record<string, number> = { k: 3, m: 6, b: 9, t: 12 };
 
@@ -74,7 +77,7 @@ export function parseNumber(text: string, units?: Readonly<UnitTable>): number {
   let t = text.trim().replace(MINUS_SIGN, '-');
   const exponent = EXPONENTS[t.slice(-1).toLowerCase()];
   if (exponent !== undefined) t = t.slice(0, -1).trimEnd();
-  if (/^[-+]?\d{1,3}(,\d{3})+(\.\d*)?$/.test(t)) t = t.replace(/,/g, '');
+  if (new RegExp(`^[-+]?(?:${TYPED_NUMBER})$`).test(t)) t = t.replace(/,/g, '');
   if (!/\d/.test(t)) return Number.NaN;
   // Scaled through the exponent rather than by multiplying: 1.1 * 1000 is 1100.0000000000002.
   return Number(exponent === undefined ? t : `${t}e${exponent}`);
@@ -125,7 +128,7 @@ function compoundTermsOf(text: string, units: Readonly<UnitTable>): string[] | u
     if (name === undefined) return undefined;
     names.push(name);
     const before = rest.slice(0, -name.length);
-    const m = /(\d+(?:\.\d+)?|\.\d+)\s*$/.exec(before);
+    const m = new RegExp(`(?:${TYPED_NUMBER})\\s*$`).exec(before);
     if (!m) return undefined;
     rest = before.slice(0, m.index).trimEnd();
     // A sign leads the whole value, so it ends the walk rather than a term.
@@ -141,14 +144,14 @@ function compoundTermsOf(text: string, units: Readonly<UnitTable>): string[] | u
  * so a term carrying one makes the whole value unreadable.
  */
 function compoundValue(names: string[], text: string, units: Readonly<UnitTable>): number {
-  const digits = text.match(/\d+(?:\.\d+)?|\.\d+/g);
+  const digits = text.match(new RegExp(TYPED_NUMBER, 'g'));
   if (!digits || digits.length !== names.length) return Number.NaN;
   const sign = /^\s*[-\u2212]/.test(text) ? -1 : 1;
   let total = 0;
   for (const [i, name] of names.entries()) {
     const { factor, offset } = entryScale(units[name]!);
     if (offset !== 0) return Number.NaN;
-    total += scaled(Number(digits[i]), factor);
+    total += scaled(Number(digits[i]!.replace(/,/g, '')), factor);
   }
   return sign * total;
 }

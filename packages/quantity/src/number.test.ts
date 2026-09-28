@@ -130,6 +130,7 @@ describe('parseNumber', () => {
   it('reads thousands commas only in the thousands shape', () => {
     expect(parseNumber('40,000')).toBe(40_000);
     expect(parseNumber('2,5')).toBeNaN();
+    expect(parseNumber('1,000.')).toBe(1000);
   });
 
   it('is NaN for empty text and for text that names no number', () => {
@@ -187,6 +188,17 @@ describe('parseNumber with compound values', () => {
 
   it('carries the leading sign across the whole value', () => {
     expect(parseNumber('-5ft 3in', imperialInInches)).toBe(-63);
+  });
+
+  it('reads thousands commas inside a term', () => {
+    expect(parseNumber('1,500ft 3in', imperialInInches)).toBe(18_003);
+    expect(parseNumber('1,000,000mm 5cm', metricInCm)).toBe(100_005);
+    expect(parseNumber('1ft 1,200.5in', imperialInInches)).toBe(1_212.5);
+  });
+
+  it('is NaN for a term whose commas are not thousands groups', () => {
+    expect(parseNumber('1,50ft 3in', imperialInInches)).toBeNaN();
+    expect(parseNumber('1500,000ft 3in', imperialInInches)).toBeNaN();
   });
 
   it('is NaN when a term carries no unit', () => {
