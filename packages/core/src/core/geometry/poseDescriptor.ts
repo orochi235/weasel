@@ -29,9 +29,9 @@ export interface PoseDescriptor<TPose, TNode = unknown> {
    *  back to a translation derived from `remapBounds` (origin shifted, no
    *  scale). Path-shaped poses should provide this for performance. */
   translate?(pose: TPose, dx: number, dy: number): TPose;
-  /** True iff any portion of the pose's geometry intersects `rect`. Optional
-   *  — when omitted, area-select and similar callers test against `getBounds`
-   *  AABB (looser, but correct for axis-aligned rect poses). */
+  /** True iff any portion of the pose's geometry intersects `rect`. Optional.
+   *  Marquee and lasso do not read it: both test the node's drawn outline
+   *  (`core/geometry/regionHit`). */
   intersectsRect?(pose: TPose, rect: Bounds): boolean;
   /** Interpolate between two poses. Optional — animation helpers fall back to
    *  rect-shape lerp when omitted (which fails for non-rect poses). */

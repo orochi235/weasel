@@ -180,8 +180,8 @@ export interface AreaSelectAdapter {
  *   - 'intersect' — the node's outline meets the polygon anywhere.
  *   - 'enclosed'  — the node's whole outline is inside the polygon.
  *
- * The outline is the drawn silhouette, rotation included. `arrayAdapter`,
- * which has no painters to ask, tests its descriptor's bounds instead.
+ * The outline is the drawn silhouette, rotation included. `arrayAdapter` asks
+ * its `silhouette` option for it, since the painters sit above `core/`.
  */
 export type LassoHitMode = 'centers' | 'intersect' | 'enclosed';
 

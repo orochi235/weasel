@@ -19,15 +19,10 @@
  */
 import { PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z } from '../commands';
 import { elevateQuadraticToCubic } from '../curve';
-import { flattenCubic } from '../flatten';
+import { DEFAULT_FLATTEN_TOLERANCE, flattenCubic } from '../flatten';
+import type { GeomPath } from '../path';
 
-/** Minimal path input: a rect or a polygon command stream. geom does not
- *  import @weasel-js/core's `Path`; the kit maps `Path` onto this shape. */
-export type GeomPath =
-  | { kind: 'rect'; x: number; y: number; width: number; height: number }
-  | { kind: 'polygon'; commands: ArrayLike<number>; coords: ArrayLike<number>; fillRule?: 'nonzero' | 'evenodd' };
-
-const DEFAULT_FLATTEN_TOLERANCE = 0.5;
+export type { GeomPath };
 
 /** A `[x, y]` 2-tuple. */
 export type Pair = [number, number];

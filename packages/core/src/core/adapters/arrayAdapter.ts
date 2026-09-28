@@ -7,22 +7,25 @@ import type {
   MoveAdapter,
   ResizeAdapter,
 } from './types';
-import {
-  polygonContainsRect,
-  polygonContainsRectCenter,
-  polygonIntersectsRect,
-} from '../geometry/polygonHitTestRect';
 import type { Op } from '../ops/types';
 import { applyOpsTo } from '../applyOps';
 import type { Bounds } from '../viewport/fitViewToBounds';
 import type { ClipboardSnapshot } from './types';
 import {
-  aabbIntersectsRect,
   poseDescriptorForNode,
   translatePoseViaDescriptor,
   RECT_POSE_DESCRIPTOR,
   type PoseDescriptor,
 } from 'core/geometry/poseDescriptor';
+import type { Path } from 'core/geometry/path';
+import {
+  polygonRegion,
+  poseOutline,
+  rectRegion,
+  regionBoundsOf,
+  regionTakes,
+  type SelectRegion,
+} from 'core/geometry/regionHit';
 
 /** Configuration for `arrayAdapter`. */
 export interface ArrayAdapterConfig<TNode extends { id: string }, TPose> {
@@ -58,6 +61,13 @@ export interface ArrayAdapterConfig<TNode extends { id: string }, TPose> {
    *  pose. `AUTO_POSE_DESCRIPTOR` lives above `core/` and so cannot be the
    *  default here; pass it for a scene whose poses may be Paths. */
   poseDescriptor?: PoseDescriptor<TPose>;
+
+  /** The outline a node draws, for marquee and lasso, in world coordinates.
+   *  Return `null` where the pose says it all. Default: none — a polygon pose
+   *  is its own outline, and anything else is its pose rect, rotated by
+   *  `rotation`. The kit's painters live above `core/`, so a scene whose
+   *  nodes they draw passes `findShapeSilhouette` to be tested as drawn. */
+  silhouette?: (node: TNode, pose: TPose) => Path | null;
 
   /** Factory for fresh node ids in `commitPaste`. Default: `crypto.randomUUID()`
    *  when available, otherwise a monotonic `paste-<n>` counter. Override
@@ -129,11 +139,23 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
     setSelection = () => {},
     createDefault,
     nextId = defaultNextId,
+    silhouette,
   } = config;
 
   const d = (config.poseDescriptor ?? RECT_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
 
   const getSelection = selectionRef ? () => selectionRef.current : () => [];
+
+  const takenBy = (region: SelectRegion, mode: LassoHitMode): string[] => {
+    const out: string[] = [];
+    for (const o of ref.current) {
+      const pose = toPose(o);
+      const b = regionBoundsOf(o, pose, poseDescriptorForNode(d, o) as PoseDescriptor<unknown>);
+      const outline = (): Path => silhouette?.(o, pose) ?? poseOutline(pose, b);
+      if (regionTakes(region, mode, pose, b, outline)) out.push(o.id);
+    }
+    return out;
+  };
 
   const adapter: ArrayAdapter<TNode, TPose> = {
     getNode: (id) => ref.current.find((o) => o.id === id),
@@ -158,32 +180,11 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
     getSelection,
     setSelection,
 
-    hitTestArea: (rect) => {
-      const out: string[] = [];
-      for (const o of ref.current) {
-        const pose = toPose(o);
-        const g = poseDescriptorForNode(d, o);
-        const hit = g.intersectsRect
-          ? g.intersectsRect(pose, rect)
-          : aabbIntersectsRect(g.getBounds(pose), rect);
-        if (hit) out.push(o.id);
-      }
-      return out;
-    },
+    hitTestArea: (rect) => takenBy(rectRegion(rect), 'intersect'),
 
     hitTestLasso: (polygon, mode: LassoHitMode) => {
-      if (polygon.length < 3) return [];
-      const out: string[] = [];
-      for (const o of ref.current) {
-        const pose = toPose(o);
-        const b = poseDescriptorForNode(d, o).getBounds(pose);
-        const hit =
-          mode === 'centers' ? polygonContainsRectCenter(polygon, b) :
-          mode === 'enclosed' ? polygonContainsRect(polygon, b) :
-          polygonIntersectsRect(polygon, b);
-        if (hit) out.push(o.id);
-      }
-      return out;
+      const region = polygonRegion(polygon);
+      return region ? takenBy(region, mode) : [];
     },
 
     // Use a method shorthand so `this` is the call-site receiver, not the

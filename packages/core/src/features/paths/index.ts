@@ -58,11 +58,6 @@ export {
 export { pathDistanceToPoint } from './pathDistance';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './pathAt';
 export {
-  polygonContainsRectCenter,
-  polygonContainsRect,
-  polygonIntersectsRect,
-} from 'core/geometry/polygonHitTestRect';
-export {
   translatePath,
   scalePathToBounds,
 } from './transform';
