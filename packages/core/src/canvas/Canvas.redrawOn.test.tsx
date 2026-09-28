@@ -78,6 +78,15 @@ describe('Canvas external redraw sources', () => {
     expect(draw).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps its subscriptions across renders that pass an equal inline array', () => {
+    const src = source();
+    const tracked = { subscribe: vi.fn(src.subscribe) };
+    const layers = { grid: null, probe: { layer: probeLayer(() => {}) } };
+    const { rerender } = render(<Canvas width={100} height={80} layers={layers} redrawOn={[tracked]} />);
+    rerender(<Canvas width={100} height={80} layers={layers} redrawOn={[tracked]} />);
+    expect(tracked.subscribe).toHaveBeenCalledTimes(1);
+  });
+
   it('lets go of every subscription on unmount', async () => {
     const a = source();
     const b = source();

@@ -1404,9 +1404,15 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const redraw = (): void => { requestRedraw(); };
     const offs: (() => void)[] = [];
     for (const layer of layersWithDebug) if (layer.subscribe) offs.push(layer.subscribe(redraw));
-    for (const src of redrawOn ?? []) offs.push(src.subscribe(redraw));
     return () => { for (const off of offs) off(); };
-  }, [layersWithDebug, redrawOn, requestRedraw]);
+  }, [layersWithDebug, requestRedraw]);
+
+  const redrawSources = useSameElements(redrawOn);
+  useEffect(() => {
+    const redraw = (): void => { requestRedraw(); };
+    const offs = (redrawSources ?? []).map((src) => src.subscribe(redraw));
+    return () => { for (const off of offs) off(); };
+  }, [redrawSources, requestRedraw]);
 
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
 
@@ -1692,3 +1698,14 @@ export const Canvas = forwardRef(CanvasInner) as <
 >(
   props: CanvasProps<TNode, TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
 ) => ReturnType<typeof CanvasInner>;
+
+/** `list` as last passed, kept by identity while it holds the same elements —
+ *  so an inline array prop does not read as a change every render. */
+function useSameElements<T>(list: readonly T[] | undefined): readonly T[] | undefined {
+  const ref = useRef(list);
+  const prev = ref.current;
+  if (prev !== list && !(prev && list && prev.length === list.length && prev.every((x, i) => x === list[i]))) {
+    ref.current = list;
+  }
+  return ref.current;
+}
