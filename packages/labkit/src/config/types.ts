@@ -105,6 +105,9 @@ export interface ResolvedConfig {
   renderers: Readonly<Record<string, ControlRenderer>>;
   /** Node-level `.dialog` rows, keyed by path. */
   dialogs: Readonly<Record<string, DialogSpec>>;
+  /** Paths of the groups marked `.resettable()`, whose heading carries a
+   *  button that puts every value beneath it back to its default. */
+  resettable?: ReadonlySet<string>;
 }
 
 /** Options for a row drawn as a button that opens a dialog. */
@@ -160,6 +163,9 @@ export interface BranchOptions {
   /** Show this node only while the predicate holds. On a group it hides the
    *  whole subtree; the values stay in config either way. */
   showIf?: (config: Record<string, unknown>) => boolean;
+  /** Put a button on this group's heading that returns every value beneath it
+   *  to its default. Groups only. */
+  resettable?: boolean;
 }
 
 /** A group's own annotations: what it is called and, optionally, why. */

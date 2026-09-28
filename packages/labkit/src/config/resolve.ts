@@ -27,6 +27,7 @@ interface Sink {
   showIf: Map<string, (config: Record<string, unknown>) => boolean>;
   renderers: Record<string, ControlRenderer>;
   dialogs: Record<string, DialogSpec>;
+  resettable: Set<string>;
   chain: readonly ConfigRule[];
 }
 
@@ -48,6 +49,7 @@ export function resolveConfigSchema<TC>(
     showIf: new Map(),
     renderers: {},
     dialogs: {},
+    resettable: new Set(),
     chain: [...rules, ...builtinRules],
   };
   const group = resolveShape(schema.nodes, '', '', sink);
@@ -57,6 +59,7 @@ export function resolveConfigSchema<TC>(
     showIf: sink.showIf,
     renderers: sink.renderers,
     dialogs: sink.dialogs,
+    resettable: sink.resettable,
   };
 }
 
@@ -89,6 +92,7 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
       if (section.pack !== undefined && spec.pack === undefined) spec.pack = section.pack;
     }
     if (predicate) sink.showIf.set(path, predicate);
+    if (isConfigBranch(entry) && entry.options.resettable) sink.resettable.add(path);
     if (!isConfigBranch(entry) && entry.options.render) sink.renderers[path] = entry.options.render;
     if (!isConfigBranch(entry) && entry.options.dialog) sink.dialogs[path] = entry.options.dialog;
   }

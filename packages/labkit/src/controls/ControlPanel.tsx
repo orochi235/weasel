@@ -1,5 +1,6 @@
 import { getAlpha01, isBuiltinToolPref, toHex8, withAlpha01 } from '@weasel-js/core';
 import {
+  Button,
   DialogRow,
   isPrefLeaf,
   ListEditor,
@@ -17,6 +18,7 @@ import {
   PropertyRow,
   type PropertyRowLayout,
   prefFieldProps,
+  ResetIcon,
   type StanceProps,
 } from '@weasel-js/ui';
 import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
@@ -116,6 +118,45 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
 }
 
 const NO_AUTO: ReadonlySet<string> = new Set();
+
+/** Every leaf beneath a group, as its dotted path and its default. */
+function leavesUnder(group: PrefGroup, at: string): [string, unknown][] {
+  return Object.entries(group.children).flatMap(([key, child]) => {
+    const path = at === '' ? key : `${at}.${key}`;
+    return isPrefLeaf(child) ? [[path, child.default] as [string, unknown]] : leavesUnder(child, path);
+  });
+}
+
+/** The heading button of a `.resettable()` group: writes each changed leaf's
+ *  default, and is disabled while nothing has changed. */
+function ResetGroup({
+  group,
+  path,
+  config,
+  setConfig,
+}: {
+  group: PrefGroup;
+  path: string;
+  config: Record<string, unknown>;
+  setConfig: (path: string, value: unknown) => void;
+}) {
+  const changed = leavesUnder(group, path).filter(([p, d]) => !Object.is(valueAtPath(config, p), d));
+  return (
+    <Button
+      iconOnly
+      variant="ghost"
+      size="sm"
+      ariaLabel={`Reset ${group.name}`}
+      tooltip={`Reset ${group.name} to defaults`}
+      disabled={changed.length === 0}
+      onClick={() => {
+        for (const [p, d] of changed) setConfig(p, d);
+      }}
+    >
+      <ResetIcon />
+    </Button>
+  );
+}
 
 /** Render an instrument's config schema as a stack of controls, each writing
  *  back through `setConfig`. Built on the property rows, so a lab's controls
@@ -224,6 +265,11 @@ export function ControlPanel<TC extends Record<string, unknown>>({
         // two-column grid leaves it laying its own rows out inside a cell,
         // which overlaps them.
         span
+        actions={
+          resolved.resettable?.has(path) ? (
+            <ResetGroup group={found} path={path} config={config as Record<string, unknown>} setConfig={setConfig} />
+          ) : undefined
+        }
         {...fold(path, undefined, rows.grid)}
       >
         {body(found, path, rows)}
