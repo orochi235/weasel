@@ -959,6 +959,7 @@ export type {
   PointSnapContext,
   PointSnapResult,
   PointSnapBehavior,
+  BehaviorEnd,
 } from './interactions/gestures/types';
 export type { ClipboardSnapshot } from './interactions/actions/clipboard/types';
 

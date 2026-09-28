@@ -50,11 +50,14 @@ export interface SnapStrategy<TPose> {
 /**
  * Generalized base behavior. Each hook defines an alias that pins the
  * proposed-pose shape (TProposed) and the onMove return shape (TMoveResult).
- * onEnd is uniform: first non-undefined return wins (Op[] = commit those,
- * null = abort, undefined = defer). It runs only on commit; a canceled
- * gesture (Esc, pointercancel) runs every behavior's `onCancel` instead, so a
- * behavior holding state outside the gesture (published guides, a timer)
- * releases it there too.
+ * onEnd runs on commit for every behavior, in order, and the first
+ * non-undefined return wins (Op[] = commit those, null = abort, undefined =
+ * defer); later answers are ignored. So a behavior holding state outside the
+ * gesture (published guides, a timer) releases it in onEnd even when an
+ * earlier behavior decides. `end.answered` says one did: a behavior that acts
+ * on the scene itself from onEnd (starts an animation, applies ops) only
+ * cleans up then. A canceled gesture (Esc, pointercancel) runs every
+ * behavior's `onCancel` instead, which releases the same state.
  *
  * `defaultTransient`: when one behavior of a move, resize or rotate sets it
  * and the binding leaves `transient` unset, the gesture commits through
@@ -64,8 +67,15 @@ export interface ActionBehavior<TPose, TProposed, TMoveResult> {
   defaultTransient?: boolean;
   onStart?(ctx: GestureContext<TPose>): void;
   onMove?(ctx: GestureContext<TPose>, proposed: TProposed): TMoveResult | void;
-  onEnd?(ctx: GestureContext<TPose>): Op[] | null | void;
+  onEnd?(ctx: GestureContext<TPose>, end: BehaviorEnd): Op[] | null | void;
   onCancel?(ctx: GestureContext<TPose>): void;
+}
+
+/** What a behavior's `onEnd` is told about the commit, beside the gesture. */
+export interface BehaviorEnd {
+  /** An earlier behavior's `onEnd` already decided the commit, so this one's
+   *  answer is ignored. */
+  answered: boolean;
 }
 
 // ----- move -----

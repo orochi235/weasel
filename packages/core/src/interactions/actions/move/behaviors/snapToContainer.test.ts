@@ -76,7 +76,7 @@ describe('snapToContainer', () => {
     const ctx = makeCtx();
     b.onMove!(ctx, tt(1, 1));
     ctx.snap = target;
-    const ops = b.onEnd!(ctx);
+    const ops = b.onEnd!(ctx, { answered: false });
     expect(Array.isArray(ops)).toBe(true);
     expect(ops!.length).toBe(2);
     expect((ops![0] as any).label ?? '').toMatch(/move|Move/i);
@@ -88,13 +88,13 @@ describe('snapToContainer', () => {
     const ctx = makeCtx();
     b.onMove!(ctx, tt(1, 1));
     ctx.snap = target;
-    const ops = b.onEnd!(ctx);
+    const ops = b.onEnd!(ctx, { answered: false });
     expect(ops!.length).toBe(1);
   });
 
   it('onEnd defers (returns undefined) when no snap is active', () => {
     const b = snapToContainer<Pose>({ dwellMs: 0, findTarget: () => null });
     const ctx = makeCtx();
-    expect(b.onEnd!(ctx)).toBeUndefined();
+    expect(b.onEnd!(ctx, { answered: false })).toBeUndefined();
   });
 });

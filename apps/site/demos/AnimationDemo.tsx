@@ -296,7 +296,8 @@ function flickToGrid(args: {
       tracker.record(now.x - prev.x, now.y - prev.y, performance.now());
       ctx.scratch[PREV] = now;
     },
-    onEnd(ctx) {
+    onEnd(ctx, end) {
+      if (end.answered) return undefined;
       const id = ctx.draggedIds[0];
       const start = id ? ctx.current.get(id) : undefined;
       if (!id || !start) return undefined;

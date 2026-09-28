@@ -108,7 +108,8 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
     onMove(ctx) {
       recordSample(ctx);
     },
-    onEnd(ctx): Op[] | null | void {
+    onEnd(ctx, end): Op[] | null | void {
+      if (end.answered) return undefined;
       const samples = getScratch(ctx.scratch, SAMPLES) ?? [];
       if (samples.length < 2) return undefined;
       const last = samples[samples.length - 1];

@@ -6,6 +6,9 @@ import { createTransformOp } from 'core/ops/transform';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { MoveBehavior } from '../../gestures/types';
 import { alignMoveBehavior } from 'features/guides/alignment/behaviors';
+import { snapBackOrDelete } from '../move/behaviors/snapBackOrDelete';
+import { momentum } from '../../../animation/behaviors/momentum';
+import type { Animator } from '../../../animation/types';
 import type { Guide } from 'features/guides/types';
 
 type Pose = { x: number; y: number; width: number; height: number };
@@ -210,5 +213,47 @@ describe('moveAction — cancel', () => {
     expect(active.map((g) => g.id)).toEqual(['L']);
     handle.onEnd?.(frame(base, 5), 'cancel');
     expect(active).toEqual([]);
+  });
+});
+
+describe('moveAction — commit', () => {
+  it('tells every behavior the gesture closed; the first answer decides', () => {
+    const { scene, a, base } = setup();
+    const later = vi.fn(() => [] as never[]);
+    drag(base, { behaviors: [{ onEnd: () => null }, { onEnd: later }] }, 5);
+    expect(later).toHaveBeenCalledTimes(1);
+    expect(scene.get(a)?.pose.x).toBe(0);
+  });
+
+  it('a snap-back release still clears the alignment guides behind it', () => {
+    const { base } = setup();
+    let active: readonly Guide[] = [];
+    const align = alignMoveBehavior({
+      getCandidates: () => [{ id: 'L', axis: 'x', offset: 16 }],
+      setActiveGuides: (g) => { active = g; },
+    });
+    const handle = invoker().start(base as InvocationCtx, {
+      behaviors: [snapBackOrDelete({ radius: 100, onFreeRelease: 'snap-back' }), align],
+    });
+    handle.onMove?.(frame(base, 5));
+    expect(active.map((g) => g.id)).toEqual(['L']);
+    handle.onEnd?.(frame(base, 5), 'commit');
+    expect(active).toEqual([]);
+  });
+
+  it('momentum behind a snap-back does not fling the node', () => {
+    const fling = (behaviors: (animator: Animator) => MoveBehavior<unknown>[]) => {
+      const { base } = setup();
+      const decay = vi.fn(() => ({ cancel() {} }));
+      const animator = { decay } as unknown as Animator;
+      drag(base, { behaviors: behaviors(animator) }, 5);
+      return decay;
+    };
+    const flick = (animator: Animator) =>
+      momentum<Pose>({ animator, threshold: 0, now: () => (t += 16) }) as unknown as MoveBehavior<unknown>;
+    let t = 0;
+    expect(fling((a) => [flick(a)])).toHaveBeenCalledTimes(1);
+    const snapBack = snapBackOrDelete<Pose>({ radius: 100, onFreeRelease: 'snap-back' }) as unknown as MoveBehavior<unknown>;
+    expect(fling((a) => [snapBack, flick(a)])).not.toHaveBeenCalled();
   });
 });

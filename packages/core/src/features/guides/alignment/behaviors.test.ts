@@ -79,7 +79,7 @@ describe('alignMoveBehavior', () => {
       getCandidates: () => [],
       setActiveGuides: (g) => { active = g; },
     });
-    b.onEnd!(ctx());
+    b.onEnd!(ctx(), { answered: false });
     expect(active).toEqual([]);
   });
 

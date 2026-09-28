@@ -37,7 +37,7 @@ describe('selectFromLasso', () => {
     const beh = selectFromLasso();
     const c = ctx({ vertices: [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 5, y: 5 }] });
     (c.adapter as unknown as LassoSelectAdapter).hitTestLasso = undefined;
-    expect(beh.onEnd!(c)).toBeNull();
+    expect(beh.onEnd!(c, { answered: false })).toBeNull();
   });
 
   it('replaces selection with hits in non-shift mode', () => {
@@ -47,7 +47,7 @@ describe('selectFromLasso', () => {
       selection: ['old'],
       hitTestLasso: () => ['a', 'b'],
     });
-    const ops = beh.onEnd!(c)!;
+    const ops = beh.onEnd!(c, { answered: false })!;
     expect(ops).toHaveLength(1);
     let setTo: string[] = [];
     ops[0].apply({ setSelection: (ids: string[]) => { setTo = ids; } });
@@ -62,7 +62,7 @@ describe('selectFromLasso', () => {
       shiftHeld: true,
       hitTestLasso: () => ['a', 'old'],
     });
-    const ops = beh.onEnd!(c)!;
+    const ops = beh.onEnd!(c, { answered: false })!;
     let setTo: string[] = [];
     ops[0].apply({ setSelection: (ids: string[]) => { setTo = ids; } });
     expect(setTo).toEqual(['old', 'a']);
@@ -75,7 +75,7 @@ describe('selectFromLasso', () => {
       vertices: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }],
       hitTestLasso: fn,
     });
-    beh.onEnd!(c);
+    beh.onEnd!(c, { answered: false });
     expect(fn).toHaveBeenCalledWith(expect.anything(), 'enclosed');
   });
 
@@ -86,7 +86,7 @@ describe('selectFromLasso', () => {
       vertices: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }],
       hitTestLasso: fn,
     });
-    beh.onEnd!(c);
+    beh.onEnd!(c, { answered: false });
     expect(fn).toHaveBeenCalledWith(expect.anything(), 'intersect');
   });
 
@@ -96,7 +96,7 @@ describe('selectFromLasso', () => {
       vertices: [{ x: 0, y: 0 }, { x: 1, y: 1 }],
       selection: ['old'],
     });
-    const ops = beh.onEnd!(c)!;
+    const ops = beh.onEnd!(c, { answered: false })!;
     let setTo: string[] = ['sentinel'];
     ops[0].apply({ setSelection: (ids: string[]) => { setTo = ids; } });
     expect(setTo).toEqual([]);
@@ -109,7 +109,7 @@ describe('selectFromLasso', () => {
       selection: ['old'],
       shiftHeld: true,
     });
-    const ops = beh.onEnd!(c)!;
+    const ops = beh.onEnd!(c, { answered: false })!;
     let setTo: string[] = [];
     ops[0].apply({ setSelection: (ids: string[]) => { setTo = ids; } });
     expect(setTo).toEqual(['old']);
@@ -121,7 +121,7 @@ describe('selectFromLasso', () => {
       vertices: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }],   // area 0.5
       selection: ['old'],
     });
-    const ops = beh.onEnd!(c)!;
+    const ops = beh.onEnd!(c, { answered: false })!;
     let setTo: string[] = ['sentinel'];
     ops[0].apply({ setSelection: (ids: string[]) => { setTo = ids; } });
     expect(setTo).toEqual([]);
