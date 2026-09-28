@@ -26,7 +26,8 @@ export default defineConfig({
   // which has none) and ignores the tsconfig `paths` that tsc honors — so types
   // drifted to `never`. .d.ts emission is therefore handled by a dedicated
   // pipeline: see scripts/build-dts.mts, wired as the `build:dts` step after
-  // this build. It externalizes core and inlines the rest, matching the JS here.
+  // this build. Unlike the JS here, it imports the weasel siblings rather than
+  // inlining them; see the comment on `external` there.
   dts: false,
   sourcemap: true,
   clean: true,
