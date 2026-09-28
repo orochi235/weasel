@@ -8,13 +8,32 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { poseFrame } from '../poseFrame';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'features/groups/composePose';
+import { usePointerContext } from 'features/pointer/PointerContext';
+import { resolveSpatialReference, type SpatialReference, type SpatialReferenceSources } from '../spatialReference';
 
 export { visualBoundsViaDescriptor, translatePoseViaDescriptor } from '../resize/geometry';
 import { visualBoundsViaDescriptor, translatePoseViaDescriptor } from '../resize/geometry';
 
-/** Edge or center the selection should align to within the selection's visual
- *  union AABB (rotated members contribute their ink extent). */
+/** Edge or center the selection should align to within the reference's
+ *  bounds (rotated members contribute their ink extent). */
 export type AlignEdge = 'left' | 'right' | 'top' | 'bottom' | 'center-x' | 'center-y';
+
+/** @experimental What the selection aligns to: `'union'` — the selection's
+ *  own visual union AABB, the default — or a {@link SpatialReference}. */
+export type AlignReference = 'union' | SpatialReference;
+
+/** @experimental The bounds each member of `bounds` aligns to under `to`, or
+ *  `null` when there is nothing to align: a union of fewer than two members,
+ *  an empty selection, or a reference that names nothing right now. */
+export function alignTargetBounds(
+  bounds: readonly Bounds[],
+  to: AlignReference | undefined,
+  src: SpatialReferenceSources,
+): Bounds | null {
+  if (to === undefined || to === 'union') return bounds.length < 2 ? null : unionAABB([...bounds]);
+  if (bounds.length === 0) return null;
+  return resolveSpatialReference(to, src);
+}
 
 /** Adapter for `useAlign`. */
 export interface AlignAdapter<TPose> {
@@ -42,8 +61,10 @@ export interface UseAlignOptions<TPose> {
 
 /** Return shape of `useAlign`. */
 export interface UseAlignReturn {
-  /** Imperative trigger. No-op when fewer than 2 items selected. */
-  align(edge: AlignEdge): void;
+  /** Imperative trigger. `to` defaults to `'union'`, which needs two items;
+   *  any other reference aligns a single item too. `'pointer'` reads the
+   *  surrounding `<PointerContextProvider>`. */
+  align(edge: AlignEdge, to?: AlignReference): void;
 }
 
 /** Compute the (dx, dy) translation that moves AABB `b` so that the requested
@@ -59,9 +80,8 @@ export function alignDeltaFor(b: Bounds, u: Bounds, edge: AlignEdge): { dx: numb
   }
 }
 
-/** Align the current multi-selection to a shared edge or center of the
- *  selection's union AABB. No-op when fewer than 2 items selected.
- *  Single batch — one undo step.
+/** Align the current selection to a shared edge or center of the selection's
+ *  union AABB, or of another reference. Single batch — one undo step.
  *
  *  The edge is a world edge: bounds are measured and translated in world, and
  *  each result is stored back in its own parent's frame. */
@@ -73,12 +93,14 @@ export function useAlign<TPose>(
   adapterRef.current = adapter;
   const optsRef = useRef(options);
   optsRef.current = options;
+  const pointer = usePointerContext();
+  const pointerRef = useRef(pointer);
+  pointerRef.current = pointer;
 
-  const align = useCallback((edge: AlignEdge): void => {
+  const align = useCallback((edge: AlignEdge, to?: AlignReference): void => {
     const a = adapterRef.current;
     const o = optsRef.current;
     const sel = a.getSelection();
-    if (sel.length < 2) return;
     const geom =
       o.geometry ??
       (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
@@ -91,11 +113,17 @@ export function useAlign<TPose>(
     );
     const poses = sel.map((id) => frame.world(id));
     const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom));
-    // Guarded non-empty by `sel.length < 2` above → `!` is safe.
-    const union = unionAABB(bounds)!;
+    const target = alignTargetBounds(bounds, to, {
+      pointer: () => {
+        const p = pointerRef.current?.get();
+        return p ? { x: p.worldX, y: p.worldY } : null;
+      },
+      nodeBounds: (id) => visualBoundsViaDescriptor(frame.world(id), geom),
+    });
+    if (target === null) return;
     const ops: Op[] = [];
     for (let i = 0; i < sel.length; i++) {
-      const { dx, dy } = alignDeltaFor(bounds[i], union, edge);
+      const { dx, dy } = alignDeltaFor(bounds[i], target, edge);
       if (dx === 0 && dy === 0) continue;
       const to = translatePoseViaDescriptor(poses[i], dx, dy, geom);
       ops.push(createTransformOp<TPose>({

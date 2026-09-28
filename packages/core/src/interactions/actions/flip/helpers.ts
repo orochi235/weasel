@@ -6,6 +6,7 @@
  * arbitrary `TPose` values through a `PoseDescriptor`.
  */
 import type { PoseDescriptor } from '../resize/geometry';
+import type { SpatialReference } from '../spatialReference';
 
 /** Axis for flip. `'x'` mirrors horizontally (left↔right); `'y'` mirrors vertically (top↔bottom). */
 export type FlipAxis = 'x' | 'y';
@@ -15,8 +16,10 @@ export type FlipAxis = 'x' | 'y';
  *  - `'each'` — every pose mirrors about its own AABB; spatial layout of the
  *    selection is unchanged, individual items are reflected in place.
  *  - `'union'` — every pose mirrors about the selection's union AABB; items
- *    swap sides as well as reflect, matching Illustrator/Figma defaults. */
-export type FlipPivot = 'each' | 'union';
+ *    swap sides as well as reflect, matching Illustrator/Figma defaults.
+ *  - a {@link SpatialReference} — every pose mirrors about the center of the
+ *    bounds it names: the pointer, a world point or rect, or a key node. */
+export type FlipPivot = 'each' | 'union' | SpatialReference;
 
 /** Reflect `pose` across the centerline of `pivotBounds` along `axis`, using
  *  `geometry` to read bounds and remap. The pose's own AABB is read once to

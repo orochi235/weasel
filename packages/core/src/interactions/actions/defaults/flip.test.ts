@@ -291,3 +291,37 @@ describe('flipAction with a rotated member', () => {
 function sortCorners(cs: { x: number; y: number }[]): { x: number; y: number }[] {
   return [...cs].sort((p, q) => (p.x - q.x) || (p.y - q.y));
 }
+
+describe('flip about a reference', () => {
+  const initial = {
+    a: { x: 0, y: 0, width: 10, height: 10 },
+    b: { x: 30, y: 0, width: 10, height: 10 },
+  };
+
+  it("pivot 'pointer' mirrors about the line through the click", () => {
+    const scene = makeStubScene(initial);
+    runFlip({ selection: makeSelection(['a', 'b']), scene }, { axis: 'x', pivot: 'pointer', worldX: 50, worldY: 0 });
+    expect(scene.poses.get('a')).toEqual({ x: 90, y: 0, width: 10, height: 10 });
+    expect(scene.poses.get('b')).toEqual({ x: 60, y: 0, width: 10, height: 10 });
+  });
+
+  it("pivot 'pointer' reads the pointer dep when no click carried a point", () => {
+    const scene = makeStubScene(initial);
+    const pointer = { get: () => ({ worldX: 0, worldY: 20, viewId: null }) };
+    runFlip({ selection: makeSelection(['a']), scene, pointer }, { axis: 'y', pivot: 'pointer' });
+    expect(scene.poses.get('a')).toEqual({ x: 0, y: 30, width: 10, height: 10 });
+  });
+
+  it('pivot on a key node mirrors about its center', () => {
+    const scene = makeStubScene(initial);
+    runFlip({ selection: makeSelection(['a', 'b']), scene }, { axis: 'x', pivot: { node: 'b' } });
+    expect(scene.poses.get('a')).toEqual({ x: 60, y: 0, width: 10, height: 10 });
+    expect(scene.poses.get('b')).toEqual({ x: 30, y: 0, width: 10, height: 10 });
+  });
+
+  it("pivot 'pointer' with no pointer flips nothing", () => {
+    const scene = makeStubScene(initial);
+    runFlip({ selection: makeSelection(['a']), scene, pointer: { get: () => null } }, { axis: 'x', pivot: 'pointer' });
+    expect(scene.batchLog).toHaveLength(0);
+  });
+});

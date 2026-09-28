@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
+import { PointerContextProvider, createPointerStore } from 'features/pointer/PointerContext';
 import { useAlign, alignDeltaFor, translatePoseViaDescriptor } from './align';
 import type { AlignAdapter } from './align';
 import { unionBounds } from 'core/geometry/unionBounds';
@@ -245,5 +247,47 @@ describe('useAlign with a rotated member', () => {
       id: 'r',
       pose: { x: -15, y: 0, rotation: Math.PI / 2 },
     });
+  });
+});
+
+describe('useAlign reference', () => {
+  const poses = {
+    a: { x: 0, y: 0, width: 10, height: 10 },
+    b: { x: 50, y: 5, width: 20, height: 20 },
+  };
+
+  it('aligns a single item to a world point', () => {
+    const helpers = makeRectAdapter(['b'], poses);
+    const { result } = renderHook(() => useAlign(helpers.adapter));
+    act(() => { result.current.align('left', { x: 100, y: 0 }); });
+    expect(helpers.batches).toHaveLength(1);
+    expect(applyOp<RectPose>(helpers.batches[0].ops[0]).pose).toMatchObject({ x: 100, y: 5 });
+  });
+
+  it('aligns to a key node, leaving it in place', () => {
+    const helpers = makeRectAdapter(['a', 'b'], poses);
+    const { result } = renderHook(() => useAlign(helpers.adapter));
+    act(() => { result.current.align('bottom', { node: 'b' as NodeId }); });
+    expect(helpers.batches[0].ops).toHaveLength(1);
+    expect(applyOp<RectPose>(helpers.batches[0].ops[0])).toMatchObject({ id: 'a', pose: { y: 15 } });
+  });
+
+  it("'pointer' reads the surrounding pointer store", () => {
+    const store = createPointerStore();
+    store.set({ worldX: 30, worldY: 0, viewId: null });
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(PointerContextProvider, { store, children });
+    const helpers = makeRectAdapter(['a', 'b'], poses);
+    const { result } = renderHook(() => useAlign(helpers.adapter), { wrapper });
+    act(() => { result.current.align('center-x', 'pointer'); });
+    const moved = helpers.batches[0].ops.map((op) => applyOp<RectPose>(op).pose.x);
+    expect(moved).toEqual([25, 20]);
+  });
+
+  it("'pointer' outside any provider aligns nothing", () => {
+    const helpers = makeRectAdapter(['a', 'b'], poses);
+    const { result } = renderHook(() => useAlign(helpers.adapter));
+    act(() => { result.current.align('left', 'pointer'); });
+    expect(helpers.batches).toEqual([]);
   });
 });
