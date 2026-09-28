@@ -92,7 +92,7 @@ export function TextDemo() {
       onDoubleClick={edit.onDoubleClick}
     >
       <SceneCanvas
-        features={['pick', 'move', 'transform', 'edit']}
+        features={['view', 'pick', 'move', 'transform', 'edit']}
         width={W}
         height={H}
         className="ckd-canvas"
