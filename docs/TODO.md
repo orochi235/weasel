@@ -958,10 +958,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `ColorField` and the flag toggles. Weight is the gap: it is derived from
   the bold flag (`style.bold ? 700 : 400`), so a family's 300 or 600 face
   cannot be asked for.
-- **(P3) The command palette is never mounted.** `apps/draw/src/ui/CommandPalette`
-  is exported from `ui/index.ts`, which nothing imports. If it is revived it
-  should sit on the kit — `Dialog` for the modal, `KeySequence` for the chips —
-  and the core CHANGELOG line saying it moved into `packages/ui` is untrue.
+- **(P3) The command palette lives in draw but only the site mounts it.**
+  `apps/site/WeaselDemos.tsx` reaches into `apps/draw/src/ui/CommandPalette` by
+  relative path and opens it on `/`; WeaselDraw itself never mounts it. It also
+  hand-rolls its modal and shortcut chips — rebuild it on `Dialog` and
+  `KeySequence`, and give it a home that matches who mounts it.
 
 ---
 
@@ -1226,7 +1227,7 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
   nothing until someone runs it once and commits
   `tests/visual/baselines/stroke-and-fill.png`.
 
-- **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`apps/site/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it. (The former `@weasel-js/ui` `CommandPalette`/`PropertiesPanel` half of this item was dropped — those are app-local components in `apps/draw/src/ui/`, not `@weasel-js/ui` exports, so there's no kit-export demo gap.)
+- **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`apps/site/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it.
 
 ---
 
