@@ -44,6 +44,8 @@ import {
   type ScreenBox,
 } from './screen';
 
+/** The camera and the pane it draws into; `width`/`height` are the pane's
+ *  size in the same units as the pointer points. */
 export interface Viewport3d {
   camera: Camera3d;
   width: number;
@@ -57,10 +59,12 @@ export interface Viewport3d {
   originY?: number;
 }
 
+/** Read on every dep call, so a dep always sees the current camera and pane. */
 export type ViewportSource = () => Viewport3d;
 
 /** A 3D scene is core's scene with a `Pose3`. Nothing wraps it. */
 export type Scene3d<TData, TLayer extends string> = Scene<TData, TLayer, Pose3>;
+/** A node of a `Scene3d`. */
 export type Node3d<TData, TLayer extends string> = SceneNode<TData, TLayer, Pose3>;
 
 /**
@@ -76,6 +80,8 @@ export type NodeBounds<TData, TLayer extends string> = (
   node: Node3d<TData, TLayer>,
 ) => Aabb;
 
+/** What every 3D dep is built from: the scene, the viewport, and optionally
+ *  each node's world box. */
 export interface World3d<TData, TLayer extends string> {
   scene: Scene3d<TData, TLayer>;
   viewport: ViewportSource;

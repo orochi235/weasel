@@ -11,6 +11,7 @@ import {
   compose, quatIdentity, transformAabb, type Aabb, type Mat4, type Quat, type Vec3,
 } from '@weasel-js/geom/3d';
 
+/** Position, rotation and scale of a 3D node. */
 export interface Pose3 {
   position: Vec3;
   rotation: Quat;
@@ -25,6 +26,7 @@ export const UNIT_CUBE: Aabb = {
   max: { x: 0.5, y: 0.5, z: 0.5 },
 };
 
+/** A pose at `position`, unscaled and unrotated unless given. */
 export function pose3(
   position: Vec3,
   scale: Vec3 = { x: 1, y: 1, z: 1 },
@@ -33,6 +35,8 @@ export function pose3(
   return { position, rotation, scale };
 }
 
+/** The pose as a matrix: scale, then rotation, then translation to
+ *  `position`. */
 export function poseMatrix(pose: Pose3): Mat4 {
   return compose(pose.position, pose.rotation, pose.scale);
 }
