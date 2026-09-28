@@ -1,6 +1,6 @@
 /**
  * The kit version a build was compiled from, so an app can report what it is
- * running. Substituted at build time — by `tsup.config.ts` for the published
+ * running. Substituted at build time — by `vite.config.ts` for the published
  * package, and by `scripts/vite-build-info.ts` for anything in this repo that
  * bundles core's source through the workspace aliases.
  *

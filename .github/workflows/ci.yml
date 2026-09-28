@@ -92,6 +92,11 @@ jobs:
       # Every path a publishable package advertises in `main`/`module`/`types`/
       # `exports` must actually be in its tarball. See scripts/check-publish-manifests.mjs.
       - run: npm run check:manifests
+      # Importing one small symbol from core's built dist must stay small: a
+      # dist a consumer's bundler cannot tree-shake ships the whole kit, and
+      # every in-repo test resolves source, so nothing else sees it.
+      # See scripts/check-treeshake.mjs.
+      - run: npm run check:treeshake
       # Build the two Vite-built packages a SECOND time and re-check. This is the
       # only step that exercises a WARM build, and a warm build is precisely the
       # blind spot that let @weasel-js/ui@0.5.0 and @weasel-js/hud@0.5.0 ship with

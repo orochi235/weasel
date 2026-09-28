@@ -18,7 +18,7 @@
 //      `debug/flag`) leaking into dist is still fatal, for the original reason.
 //   3. An INLINED sub-package is now a defect, not the fix: a consumer holding
 //      both core and, say, @weasel-js/geom would get two copies — the
-//      duplicate-module-identity hazard documented in core's tsup.config.ts.
+//      duplicate-module-identity hazard, where each copy holds its own registries.
 //
 // Strategy: `npm pack` every published package (so `files`/`exports` are
 // exercised exactly as npm would), extract them into a node_modules tree in a
@@ -71,7 +71,10 @@ const declared = new Set(
 const coreDist = join(repoRoot, 'packages', 'core', 'dist');
 let distFiles;
 try {
-  distFiles = (await readdir(coreDist)).filter((f) => f.endsWith('.js') || f.endsWith('.d.ts'));
+  // Recursive: core's JS is emitted one file per source module.
+  distFiles = (await readdir(coreDist, { recursive: true })).filter(
+    (f) => f.endsWith('.js') || f.endsWith('.d.ts'),
+  );
 } catch {
   fail(`${coreDist} not found — run \`npm run build\` before the smoke test.`);
 }
@@ -82,9 +85,9 @@ try {
 const STMT = /^\s*(?:import|export)\b[^;'"]*?from\s*['"]([^'"]+)['"]/gm;
 const REPO_ALIASES = /^(core|features|affordances|interactions|tools|canvas|debug)\//;
 
-// JS and .d.ts are tracked SEPARATELY and deliberately. tsup derives the
-// declaration bundler's external list from deps+peerDeps, which `noExternal`
-// does not override — so a `noExternal` regression inlines the JS while the
+// JS and .d.ts are tracked SEPARATELY and deliberately. They come from two
+// builds with two external lists — vite.config.ts for the JS, tsup (deps +
+// peerDeps) for the declarations — so the JS can inline a package while the
 // .d.ts still emits clean external specifiers. Merging the two sets hides
 // exactly that state: duplicated at runtime, correct-looking types. It is the
 // worst failure mode, and an earlier version of this script was blind to it.
@@ -160,9 +163,8 @@ if (inlined.length) {
       'external specifier for them — they were INLINED, so a consumer holding both\n' +
       'core and the package gets two copies:',
     inlined.join('\n') +
-      '\n\nCheck for a `noExternal` in packages/core/tsup.config.ts. Note the .d.ts can\n' +
-      'still look correct in this state: tsup derives the declaration external list\n' +
-      'from dependencies, which `noExternal` does not override.',
+      '\n\nCheck `external` in packages/core/vite.config.ts. Note the .d.ts can still\n' +
+      'look correct in this state: tsup builds it with its own external list.',
   );
 }
 const missingTypes = [...declared].filter((d) => !seen.has(d));

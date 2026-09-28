@@ -50,6 +50,8 @@ jobs:
       # Last gate before anything reaches npm: refuse to publish a package whose
       # `exports`/`types` map promises files the tarball does not contain.
       - run: npm run check:manifests
+      # And one that ships the whole kit to a consumer importing one symbol.
+      - run: npm run check:treeshake
       # And refuse to *version* on an unapproved bump above patch. CI already
       # checks this on the PR, but the release path accepts
       # `workflow_dispatch`, which bypasses that entirely.
