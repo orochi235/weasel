@@ -1,6 +1,7 @@
 import { useMemo, createElement } from 'react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
+import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import type { ToolPrefGroup } from '../../prefs';
 import { TextIcon } from '../../../icons';
 
@@ -19,7 +20,8 @@ const PRESENTATION = {
  *  (`enterTextEditAction`'s contract — see
  *  `src/interactions/actions/defaults/enterTextEdit.ts`). Custom node
  *  factories and hit gating belong on those deps, not on the tool. */
-export function useTextTool(): Tool<undefined> {
+export function useTextTool(options: InsertToolOptions = {}): Tool<undefined> {
+  const { behaviors } = options;
   return useMemo<Tool<undefined>>(
     () =>
       defineTool<undefined>({
@@ -29,11 +31,11 @@ export function useTextTool(): Tool<undefined> {
         cursor: 'text',
         presentation: PRESENTATION,
         bindings: [
-          { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'text' } } },
+          { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'text' }, ...insertBindingBehaviors(behaviors) } },
           { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit' },
         ],
       }),
-    [],
+    [behaviors],
   );
 }
 

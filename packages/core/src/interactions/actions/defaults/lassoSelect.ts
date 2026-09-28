@@ -46,6 +46,7 @@ import type { Op } from 'core/ops/types';
 import { applyOpsTo } from 'core/applyOps';
 import type { GestureContext, LassoSelectBehavior, LassoSelectPose } from '../../gestures/types';
 import { LASSO_VERTICES } from '../lasso-select/behaviors/selectFromLasso';
+import { reduceBehaviorEnd } from '../gestureLifecycle';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -223,9 +224,8 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           const { dep: d, mode, view, vertices, shiftHeld, gesture: g } = scratch;
 
           if (g) {
-            for (const b of scratch.behaviors) {
-              const r = b.onEnd?.(g);
-              if (r === undefined) continue;
+            const r = reduceBehaviorEnd(scratch.behaviors, g);
+            if (r !== undefined) {
               if (r !== null) (g.adapter as unknown as LassoSelectAdapter).applyOps!(r);
               return;
             }

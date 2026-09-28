@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { PencilIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
+import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { cursorFor } from '@weasel-js/cursor';
 
 /** A single pointer sample captured during a freehand pencil stroke.
@@ -37,7 +38,8 @@ export interface PencilPoint {
  * `{ kind: 'pencil', samples }`. The kit's default `insert` dep runs
  * `schneiderFit` over the samples to produce a cubic-Bezier path.
  */
-export function usePencilTool(): Tool<null> {
+export function usePencilTool(options: InsertToolOptions = {}): Tool<null> {
+  const { behaviors } = options;
   return useMemo(
     () =>
       defineTool<null>({
@@ -54,10 +56,10 @@ export function usePencilTool(): Tool<null> {
           {
             spec: { kind: 'drag', target: 'empty' },
             actionId: 'insert',
-            opts: { params: { kind: 'pencil' } },
+            opts: { params: { kind: 'pencil' } , ...insertBindingBehaviors(behaviors) },
           },
         ],
       }),
-    [],
+    [behaviors],
   );
 }

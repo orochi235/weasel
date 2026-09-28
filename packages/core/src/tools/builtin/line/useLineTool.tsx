@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { LineIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
+import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { cursorFor } from '@weasel-js/cursor';
 
 /** An endpoint of a line, in world coordinates. */
@@ -19,7 +20,8 @@ export interface LinePoint { x: number; y: number }
  *     half-line) — the line-specific reading of the action's
  *     corner ⇄ center origin toggle
  */
-export function useLineTool(): Tool<null> {
+export function useLineTool(options: InsertToolOptions = {}): Tool<null> {
+  const { behaviors } = options;
   return useMemo(
     () =>
       defineTool<null>({
@@ -36,10 +38,10 @@ export function useLineTool(): Tool<null> {
           {
             spec: { kind: 'drag' },
             actionId: 'insert',
-            opts: { params: { kind: 'line' } },
+            opts: { params: { kind: 'line' } , ...insertBindingBehaviors(behaviors) },
           },
         ],
       }),
-    [],
+    [behaviors],
   );
 }

@@ -47,7 +47,7 @@ import { resolveParams, DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/
 import { definesFrame, documentPose, effectivePose } from 'core/scene/effectivePose';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
-import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
+import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, type GestureLifecycle } from '../gestureLifecycle';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { Mat3 } from '@weasel-js/geom';
@@ -797,19 +797,12 @@ export const moveAction: Action & { requires: string[] } = {
           for (const [id, ori] of scratch.startPoses) {
             gctx.current.set(id as string, translatePoseViaDescriptor(ori, dx, dy, scratch.projection));
           }
-          for (const b of scratch.behaviors) {
-            const r = b.onEnd?.(gctx);
-            if (r === undefined) continue;        // defer to next behavior / default
-            if (r === null) return false;         // abort (e.g. snap-back)
-            // Three-way contract: undefined = defer to next behavior (or
-            // default translate). null = abort (snap-back / delete). Op[]
-            // = claim the gesture and commit those ops — even an EMPTY
-            // array [] claims the commit and suppresses the default
-            // translate (behavior intentionally committed nothing).
+          const r = reduceBehaviorEnd(scratch.behaviors, gctx);
+          if (r === null) return false;           // abort (e.g. snap-back)
+          if (r !== undefined) {
             commitOps(r);
             return true;
           }
-          // all behaviors deferred → fall through to the default path below.
         }
 
         // No-op if no movement (sub-threshold drag or zero delta).

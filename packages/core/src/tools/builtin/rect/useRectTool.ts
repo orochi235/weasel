@@ -2,6 +2,7 @@ import { useMemo, createElement } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { RectIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
+import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { cursorFor } from '@weasel-js/cursor';
 
 /**
@@ -17,7 +18,8 @@ import { cursorFor } from '@weasel-js/cursor';
  * Grid snapping comes from the `snap` dep, also read by `insertAction` —
  * see `SnapDep` in `interactions/actions/depSchema.ts`.
  */
-export function useRectTool(): Tool<null> {
+export function useRectTool(options: InsertToolOptions = {}): Tool<null> {
+  const { behaviors } = options;
   return useMemo(
     () =>
       defineTool<null>({
@@ -37,10 +39,10 @@ export function useRectTool(): Tool<null> {
           {
             spec: { kind: 'drag' },
             actionId: 'insert',
-            opts: { params: { kind: 'rect' } },
+            opts: { params: { kind: 'rect' } , ...insertBindingBehaviors(behaviors) },
           },
         ],
       }),
-    [],
+    [behaviors],
   );
 }

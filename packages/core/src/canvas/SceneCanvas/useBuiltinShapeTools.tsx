@@ -25,7 +25,7 @@ import {
   useStarTool,
   useTextTool,
 } from '@weasel-js/core';
-import type { AnyTool, FillStyle, LassoHitMode, NodeId, Path, PolygonPath, Scene, SceneNode, Stroke } from '@weasel-js/core';
+import type { AnyTool, FillStyle, InsertToolOptions, LassoHitMode, NodeId, Path, PolygonPath, Scene, SceneNode, Stroke } from '@weasel-js/core';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import type { BuiltinShapeToolId } from 'core/shapeKinds';
 
@@ -34,6 +34,11 @@ import type { BuiltinShapeToolId } from 'core/shapeKinds';
  *  — just the knobs that need consumer control under the bundle pattern. */
 export interface BuiltinToolOptions {
   lasso?: { mode?: LassoHitMode };
+  /** Insert-action options for every drag-to-insert tool (rect / ellipse /
+   *  line / polygon / star / pencil / text): `behaviors` become each insert
+   *  binding's `opts.behaviors`, the way `selectTool.move.behaviors` do for
+   *  move. */
+  insert?: InsertToolOptions;
   /** Snap world-space points to the active grid (or any other snap target).
    *
    *  Registered as the `snap` dep, which `insertAction` applies to the
@@ -105,12 +110,13 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
   // dep (`useInsertDepSource`). Tool-side `create` factories were removed
   // when the dispatcher took over — consumers wanting custom node
   // factories override the dep, not the tool.
-  const rect = useRectTool();
-  const ellipse = useEllipseTool();
-  const line = useLineTool();
-  const polygon = usePolygonTool();
-  const star = useStarTool();
-  const pencil = usePencilTool();
+  const insert = options?.insert ?? {};
+  const rect = useRectTool(insert);
+  const ellipse = useEllipseTool(insert);
+  const line = useLineTool(insert);
+  const polygon = usePolygonTool(insert);
+  const star = useStarTool(insert);
+  const pencil = usePencilTool(insert);
   // Pen: takes an opaque "pose" carrier (here, the committed PolygonPath +
   // closed flag + AABB) and an addNode/setSelection adapter. We construct
   // the carrier in `wrapPath` and unpack it in `addNode` into a
@@ -146,6 +152,6 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
     },
   });
   const lasso = useLassoTool(adapter, options?.lasso ?? {});
-  const text = useTextTool();
+  const text = useTextTool(insert);
   return { rect, ellipse, line, polygon, star, pen, pencil, lasso, text };
 }
