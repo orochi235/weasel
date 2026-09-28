@@ -305,6 +305,91 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
   });
 
   // --------------------------------------------------------------------------
+  // selectTool.rotate options reach the rotation handle's binding
+  // --------------------------------------------------------------------------
+
+  describe('selectTool.rotate', () => {
+    type RP = P & { rotation?: number };
+
+    function mount(scene: Scene<D, L, P>, rotate: object, initial: NodeId[]) {
+      const { container } = render(
+        <SceneCanvas features={['draw']}
+          scene={scene}
+          layers={{}}
+          width={200}
+          height={200}
+          selectionOptions={{ initial }}
+          actions={{ rotate: FORCE_ENABLED }}
+          selectTool={{ rotate }}
+        />,
+      );
+      const canvas = container.querySelector('canvas');
+      if (!canvas) throw new Error('No canvas element');
+      return canvas;
+    }
+
+    /** A quarter turn of the handle over a 50×50 rect at the origin. */
+    const quarterTurn = { downX: 25, downY: -24, moveX: 74, moveY: 25 };
+
+    it('names the history entry with rotateLabel', () => {
+      const scene = makeScene();
+      const canvas = mount(scene, { rotateLabel: 'Spin' }, [firstId(scene)]);
+      const batchSpy = vi.spyOn(scene, 'applyBatch');
+      act(() => gesture(canvas, quarterTurn));
+      expect(batchSpy.mock.calls.map(([, label]) => label)).toContain('Spin');
+    });
+
+    it('fires onGestureStart with the rotated ids and onGestureEnd(true) once', () => {
+      const scene = makeScene();
+      const id = firstId(scene);
+      const onGestureStart = vi.fn();
+      const onGestureEnd = vi.fn();
+      const canvas = mount(scene, { onGestureStart, onGestureEnd }, [id]);
+      act(() => gesture(canvas, quarterTurn));
+      expect(onGestureStart).toHaveBeenCalledTimes(1);
+      expect(onGestureStart).toHaveBeenCalledWith([id]);
+      expect(onGestureEnd).toHaveBeenCalledTimes(1);
+      expect(onGestureEnd).toHaveBeenCalledWith(true);
+    });
+
+    it("runs behaviors, whose onMove pose sets the committed rotation", () => {
+      const scene = makeScene();
+      const id = firstId(scene);
+      const snap = { onMove: (_ctx: unknown, proposed: { pose: RP }) => ({ pose: { ...proposed.pose, rotation: 0.25 } }) };
+      const canvas = mount(scene, { behaviors: [snap] }, [id]);
+      act(() => gesture(canvas, quarterTurn));
+      expect((scene.get(id)!.pose as RP).rotation).toBeCloseTo(0.25);
+    });
+
+    it('commits without an undo entry when transient', () => {
+      const scene = makeScene();
+      const id = firstId(scene);
+      const canvas = mount(scene, { transient: true }, [id]);
+      const before = scene.historyEntries().length;
+      act(() => gesture(canvas, quarterTurn));
+      expect((scene.get(id)!.pose as RP).rotation ?? 0).not.toBe(0);
+      expect(scene.historyEntries().length).toBe(before);
+    });
+
+    it("turns each node about its own center under pivot: 'each'", () => {
+      const scene = makeScene();
+      scene.batch('seed', () => {
+        scene.add({
+          kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+          pose: { x: 100, y: 0, width: 50, height: 50 } as P,
+        });
+      });
+      const ids = [...scene.renderOrder()];
+      // The handle sits above the union's top center, (75, -24).
+      const canvas = mount(scene, { pivot: 'each' }, ids);
+      act(() => gesture(canvas, { downX: 75, downY: -24, moveX: 150, moveY: 25 }));
+      const poses = ids.map((i) => scene.get(i)!.pose as RP);
+      expect(poses.every((p) => (p.rotation ?? 0) !== 0)).toBe(true);
+      expect(poses.map((p) => [p.x, p.y])).toEqual([[0, 0], [100, 0]]);
+    });
+  });
+
+  // --------------------------------------------------------------------------
   // Thread 2: drag routes through moveAction (dispatcher)
   // --------------------------------------------------------------------------
 

@@ -18,11 +18,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P3) No test drags a rotation handle on a real `SceneCanvas`.** Unit tests cover
-  `selectionTransformBindings` and `resizePolicyOptions`, but nothing checks end to end that
-  `selectTool.rotate` (`behaviors`, `pivot`, `rotateLabel`, the gesture callbacks) reaches the
-  rotate binding.
-
 - **(P1) "Tool" names too many things. Decide what it means before building on it.**
   In the tree today, a tool is any of:
   - a mode for what the pointer does, chosen from a palette: rect, pen, text;
