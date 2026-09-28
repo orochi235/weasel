@@ -14,7 +14,7 @@ export interface Part {
 
 /** What formatting and parsing need beyond the value and its display. */
 export interface FormatContext {
-  /** BCP 47 locale. Every kind parses `en-US` text, so it is the default. */
+  /** BCP 47 locale. Default `en-US`. */
   locale: string;
   /** The unit the value is measured in, from its tag. */
   unit?: Unit;

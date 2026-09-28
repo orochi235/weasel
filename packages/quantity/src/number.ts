@@ -32,6 +32,9 @@ export function parseSignedNumber(text: string): number {
   return Number(text.replace(MINUS_SIGN, '-'));
 }
 
+/** One unsigned number in the text `readNumber` sees: digits, with an optional `.` fraction. */
+const TERM_NUMBER = String.raw`\d+(?:\.\d+)?|\.\d+`;
+
 /** Powers of ten a typed magnitude suffix stands for. */
 const EXPONENTS: Record<string, number> = { k: 3, m: 6, b: 9, t: 12 };
 
@@ -51,15 +54,27 @@ export function formatCompact(value: number, decimals = 0): string {
 }
 
 /**
- * Reads a typed number: anything {@link parseSignedNumber} reads, plus
- * thousands commas in the `40,000` shape and a `k`/`m`/`b`/`t` suffix in either
- * case (`2.5m` is 2,500,000). Empty text is NaN rather than zero.
+ * Reads a typed number: anything {@link parseSignedNumber} reads, plus the
+ * locale's group and decimal separators (`40,000` and `2.5` in `en-US`,
+ * `40.000` and `2,5` in `de-DE`) and a `k`/`m`/`b`/`t` suffix in either case
+ * (`2.5m` is 2,500,000). Empty text is NaN rather than zero.
+ *
+ * Text the locale's form does not read is tried as `en-US`, so `1.5` is still
+ * one and a half in `de-DE`; where both read, the locale wins. A locale that
+ * groups with a space accepts any space there, since a keyboard types a plain
+ * one where `Intl` writes a no-break space.
  *
  * Given `units` — a suffix mapped to the factor it scales by — a trailing unit
  * name is read first: the longest match wins, exact case before any case, and
  * a unit beats a magnitude suffix, so with `m` accepted `2m` is `2 * units.m`.
  */
-export function parseNumber(text: string, units?: Readonly<UnitTable>): number {
+export function parseNumber(text: string, units?: Readonly<UnitTable>, locale = 'en-US'): number {
+  const n = readNumber(delocalized(text, locale), units);
+  return Number.isNaN(n) && locale !== 'en-US' ? readNumber(delocalized(text, 'en-US'), units) : n;
+}
+
+/** `parseNumber` once every number in the text is in `en-US` form with no grouping. */
+function readNumber(text: string, units?: Readonly<UnitTable>): number {
   if (units) {
     units = withSpellings(units);
     const trimmed = text.trim();
@@ -68,16 +83,60 @@ export function parseNumber(text: string, units?: Readonly<UnitTable>): number {
       const terms = compoundTermsOf(trimmed, units);
       if (terms !== undefined && terms.length > 1) return compoundValue(terms, trimmed, units);
       const { factor, offset } = entryScale(units[name]!);
-      return scaled(parseNumber(trimmed.slice(0, -name.length)), factor) + offset;
+      return scaled(readNumber(trimmed.slice(0, -name.length)), factor) + offset;
     }
   }
   let t = text.trim().replace(MINUS_SIGN, '-');
   const exponent = EXPONENTS[t.slice(-1).toLowerCase()];
   if (exponent !== undefined) t = t.slice(0, -1).trimEnd();
-  if (/^[-+]?\d{1,3}(,\d{3})+(\.\d*)?$/.test(t)) t = t.replace(/,/g, '');
   if (!/\d/.test(t)) return Number.NaN;
   // Scaled through the exponent rather than by multiplying: 1.1 * 1000 is 1100.0000000000002.
   return Number(exponent === undefined ? t : `${t}e${exponent}`);
+}
+
+interface NumberShape {
+  /** A run of digits and separators in a text, a candidate number. */
+  run: RegExp;
+  /** Whether a run is a whole number in the locale's form. */
+  whole: RegExp;
+  group: RegExp;
+  decimal: string;
+}
+
+const shapes = new Map<string, NumberShape>();
+
+/** How `locale` writes a number, read off `Intl`: its separators and group sizes (`12,34,567` in `en-IN`). */
+function shapeOf(locale: string): NumberShape {
+  const known = shapes.get(locale);
+  if (known) return known;
+  const parts = new Intl.NumberFormat(locale).formatToParts(123_456_789.5);
+  const sizes = parts.filter((p) => p.type === 'integer').map((p) => p.value.length);
+  const primary = sizes.at(-1)!;
+  const secondary = sizes.length > 2 ? sizes.at(-2)! : primary;
+  const groupChar = parts.find((p) => p.type === 'group')?.value ?? ',';
+  const decimal = parts.find((p) => p.type === 'decimal')?.value ?? '.';
+  // CLDR versions disagree between a straight and a curly apostrophe, as keyboards do.
+  const g = /\s/.test(groupChar) ? String.raw`\s` : /['’]/.test(groupChar) ? `'’` : escapeClass(groupChar);
+  const d = escapeClass(decimal);
+  const integer = String.raw`\d{1,${secondary}}(?:[${g}]\d{${secondary}})*[${g}]\d{${primary}}|\d*`;
+  const shape: NumberShape = {
+    run: new RegExp(String.raw`(?:\d|[${d}]\d)(?:[\d${g}${d}]*\d)?[${d}]?`, 'g'),
+    whole: new RegExp(String.raw`^(?:${integer})(?:[${d}]\d*)?$`),
+    group: new RegExp(`[${g}]`, 'g'),
+    decimal,
+  };
+  shapes.set(locale, shape);
+  return shape;
+}
+
+const escapeClass = (c: string) => c.replace(/[\\\]^-]/g, '\\$&');
+
+/** `text` with each number in `locale`'s form rewritten ungrouped with a `.` decimal, and the rest untouched. */
+function delocalized(text: string, locale: string): string {
+  const shape = shapeOf(locale);
+  return text.replace(shape.run, (run) =>
+    shape.whole.test(run) ? run.replace(shape.group, '').replace(shape.decimal, '.') : run,
+  );
 }
 
 /** Suffixes a person may type, each mapped to its conversion into the shown unit. */
@@ -125,7 +184,7 @@ function compoundTermsOf(text: string, units: Readonly<UnitTable>): string[] | u
     if (name === undefined) return undefined;
     names.push(name);
     const before = rest.slice(0, -name.length);
-    const m = /(\d+(?:\.\d+)?|\.\d+)\s*$/.exec(before);
+    const m = new RegExp(`(?:${TERM_NUMBER})\\s*$`).exec(before);
     if (!m) return undefined;
     rest = before.slice(0, m.index).trimEnd();
     // A sign leads the whole value, so it ends the walk rather than a term.
@@ -141,7 +200,7 @@ function compoundTermsOf(text: string, units: Readonly<UnitTable>): string[] | u
  * so a term carrying one makes the whole value unreadable.
  */
 function compoundValue(names: string[], text: string, units: Readonly<UnitTable>): number {
-  const digits = text.match(/\d+(?:\.\d+)?|\.\d+/g);
+  const digits = text.match(new RegExp(TERM_NUMBER, 'g'));
   if (!digits || digits.length !== names.length) return Number.NaN;
   const sign = /^\s*[-\u2212]/.test(text) ? -1 : 1;
   let total = 0;

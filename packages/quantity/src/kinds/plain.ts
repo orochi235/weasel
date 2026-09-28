@@ -19,7 +19,7 @@ export const decimalKind: DisplayKind<DecimalDisplay> = {
   kind: 'decimal',
   format: (value, d, ctx) => intlParts(value, ctx.locale, decimalOptions(d)),
   speak: (value, d, ctx) => spokenSign(textOf(intlParts(value, ctx.locale, decimalOptions(d)))),
-  parse: (text) => parseNumber(text),
+  parse: (text, _d, ctx) => parseNumber(text, undefined, ctx.locale),
 };
 
 function decimalOptions(d: DecimalDisplay): Intl.NumberFormatOptions {
@@ -45,7 +45,7 @@ export const integerKind: DisplayKind<IntegerDisplay> = {
     intlParts(value, ctx.locale, { maximumFractionDigits: 0, useGrouping: d.grouping ?? true }),
   speak: (value, d, ctx) =>
     spokenSign(textOf(integerKind.format(value, d, ctx))),
-  parse: (text) => Math.round(parseNumber(text)),
+  parse: (text, _d, ctx) => Math.round(parseNumber(text, undefined, ctx.locale)),
 };
 
 /**

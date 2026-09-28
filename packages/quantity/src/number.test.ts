@@ -130,6 +130,7 @@ describe('parseNumber', () => {
   it('reads thousands commas only in the thousands shape', () => {
     expect(parseNumber('40,000')).toBe(40_000);
     expect(parseNumber('2,5')).toBeNaN();
+    expect(parseNumber('1,000.')).toBe(1000);
   });
 
   it('is NaN for empty text and for text that names no number', () => {
@@ -189,6 +190,17 @@ describe('parseNumber with compound values', () => {
     expect(parseNumber('-5ft 3in', imperialInInches)).toBe(-63);
   });
 
+  it('reads thousands commas inside a term', () => {
+    expect(parseNumber('1,500ft 3in', imperialInInches)).toBe(18_003);
+    expect(parseNumber('1,000,000mm 5cm', metricInCm)).toBe(100_005);
+    expect(parseNumber('1ft 1,200.5in', imperialInInches)).toBe(1_212.5);
+  });
+
+  it('is NaN for a term whose commas are not thousands groups', () => {
+    expect(parseNumber('1,50ft 3in', imperialInInches)).toBeNaN();
+    expect(parseNumber('1500,000ft 3in', imperialInInches)).toBeNaN();
+  });
+
   it('is NaN when a term carries no unit', () => {
     expect(parseNumber('5ft 3', imperialInInches)).toBeNaN();
     expect(parseNumber('5 3in', imperialInInches)).toBeNaN();
@@ -233,5 +245,43 @@ describe('parseNumber with offset units', () => {
 
   it('is NaN for a compound value whose terms disagree about zero', () => {
     expect(parseNumber('1K 2degC', inDegC)).toBeNaN();
+  });
+});
+
+describe('parseNumber in a locale', () => {
+  it('reads the locale\'s own group and decimal separators', () => {
+    expect(parseNumber('1.500', undefined, 'de-DE')).toBe(1500);
+    expect(parseNumber('1,5', undefined, 'de-DE')).toBe(1.5);
+    expect(parseNumber('1.234.567,25', undefined, 'de-DE')).toBe(1_234_567.25);
+    expect(parseNumber('12,34,567', undefined, 'en-IN')).toBe(1_234_567);
+    expect(parseNumber('1’234.5', undefined, 'de-CH')).toBe(1234.5);
+    expect(parseNumber("1'234.5", undefined, 'de-CH')).toBe(1234.5);
+  });
+
+  it('takes any space as the group where the locale groups with one', () => {
+    expect(parseNumber('1 234,5', undefined, 'fr-FR')).toBe(1234.5);
+    expect(parseNumber('1\u202f234,5', undefined, 'fr-FR')).toBe(1234.5);
+    expect(parseNumber('1\u00a0234,5', undefined, 'fr-FR')).toBe(1234.5);
+  });
+
+  it('reads the locale form before the en-US one where they disagree', () => {
+    expect(parseNumber('1,500', undefined, 'fr-FR')).toBe(1.5);
+    expect(parseNumber('1.500', undefined, 'de-DE')).toBe(1500);
+  });
+
+  it('falls back to the en-US reading when the locale reading finds nothing', () => {
+    expect(parseNumber('1.5', undefined, 'de-DE')).toBe(1.5);
+    expect(parseNumber('1,234.5', undefined, 'de-DE')).toBe(1234.5);
+  });
+
+  it('keeps locale separators apart from its units', () => {
+    expect(parseNumber('1 500 mm', { mm: 1 }, 'fr-FR')).toBe(1500);
+    expect(parseNumber('2,5ft 3in', { in: 1, ft: 12 }, 'de-DE')).toBe(33);
+    expect(parseNumber("5' 3\"", { in: 1, ft: 12 }, 'de-CH')).toBe(63);
+  });
+
+  it('does not take two-digit groups where the locale has none', () => {
+    expect(parseNumber('12,34,567')).toBeNaN();
+    expect(parseNumber('1.50.000', undefined, 'de-DE')).toBeNaN();
   });
 });
