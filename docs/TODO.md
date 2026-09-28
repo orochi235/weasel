@@ -1004,56 +1004,6 @@ only story runner in the repo.
 
 ---
 
-## Load cost
-
-Both apps shipped their own source as string literals so a panel could display
-it. Read bundle size against module count: the site produced 10.9 MB from 4,047
-modules, and that ratio — not dependency bloat — is what points at data-as-code.
-
-Measuring before/after in one tree means `dist-demo/` holds whichever build ran
-last, which is not always the one you think. Check the entry chunk's hash
-against the build you mean to inspect before believing a grep over it — the
-failure is silent and reads as a clean result.
-
----
-
-Still open, measured 2026-08-23. The two big load-cost fixes it sat beside —
-the demo site's eager `import.meta.glob` and `apps/draw`'s embedded source —
-shipped 2026-08-23/24; `git log` has their numbers, and their traps are in
-`CLAUDE.md`.
-
-- **(P3) `apps/draw` fetches the Inter atlas on the critical path for text.**
-  `inter.json` + `inter.png`, 212 kB together, on every load. It is fetched once, not
-  twice: production's first load fetches each file once, and so does the dev server
-  (headless Chromium, 2026-09-28) — the `packages/hud/src/fonts/inter.*?import&url`
-  requests beside it are ~600-byte modules exporting a URL, not a second download. What
-  is left is only whether text should wait on 212 kB at all.
-
-- **(P3) Re-measure cold dev startup for `apps/draw`.** The two inspector-only
-  Vite plugins that dominated it — together, **6,852 ms to 3,556 ms (−48%)** when
-  removed — have both moved since. `callbackSourcePlugin` is now opt-in behind
-  `WEASEL_CALLBACK_SOURCE`, and `weasel:trait-schemas` computes lazily in
-  `load()` behind a `React.lazy` dev surface, so its 6,305 ms of ts-morph should
-  no longer be on first paint. Neither claim is measured. Dev-only either way:
-  production cold load is 8 requests / 939,885 bytes / FCP 216 ms, against dev's
-  974 requests / 15,684,571 bytes / FCP 6,852 ms.
-
-**Tree-shaking is exonerated for both apps** — a single-symbol build of
-`@weasel-js/core` is 1.04 kB, and barrel versus deep-path imports of
-`SceneCanvas` agree within 0.04%. Its ~596 kB is genuinely the renderer,
-dispatcher and tools. Nobody should spend time there.
-
-Other hypotheses tested and **false**, recorded so nobody re-tests them: no font is
-base64-embedded and there are no `@font-face` rules; startup does no meaningful
-work beyond bundle parse and first render (shader compile 0.3 ms, `linkProgram`
-0.0 ms, `JSON.parse` 0.1 ms over 508 bytes, localStorage 1.1 ms, no schema
-validation, no migrations); barrel over-inclusion is real but trivial — features
-WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
-702,393 minified bytes are features the app genuinely uses.
-
-
----
-
 ## Demos & visual regression
 
 - **(P3) A minimal public stage for package demos.** A demo of a scene-free package that only
@@ -1120,6 +1070,17 @@ one dead `const` and four stale disable directives.
 ---
 
 ## Release-gate & build hygiene
+
+- **(P2) Importing one symbol from `@weasel-js/core` bundles the whole kit.**
+  Against the built `dist/` (2026-09-28), a consumer importing only `asNodeId`
+  ships 618,592 minified bytes through rolldown and 631,449 through esbuild —
+  the same as importing `SceneCanvas`. Most of it is one 410 kB tsup chunk
+  (`asNodeId` lives in it), so either top-level code in that chunk keeps every
+  module alive or the chunking puts unrelated modules together. This was
+  measured at 1.04 kB on 2026-08-23. Reproduce with a one-line entry
+  (`import { asNodeId } from '@weasel-js/core'`) bundled with `--splitting`
+  and React external, counting the entry plus its static imports; the
+  `opentype.js` it references is a dynamic import and does not count.
 
 - **(P2) jsdom is pinned to exactly 29.0.1.** From 29.0.2 through 30.1.1
   (the latest), reading an inherited property that no ancestor sets — an unset

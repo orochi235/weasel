@@ -9,6 +9,7 @@ one.
 |---|---|---|
 | Renderer and demo specs under real GL, in headless Chromium | `*.spec.ts` | `npm run test:perf` (all), `npm run test:perf -- draw-loop` (one) |
 | Node scripts that drive headless Chromium themselves | `audio-voice-chain.mjs` | `node tests/perf/audio-voice-chain.mjs [--rounds 5] [--base <ref>] [--out <path>]` |
+| Cold dev-server startup of `apps/draw` | `draw-cold-start.mjs` | `node tests/perf/draw-cold-start.mjs [--rounds 3] [--port 4791] [--out <path>]` |
 | Microbenchmarks of pure-JS hot paths, under vitest's `bench` mode | `bench/*.bench.ts` | `npm run perf:bench`, or `npm run perf:bench -- tests/perf/bench/tessellate.bench.ts` |
 
 **Nothing here gates CI.** `.github/workflows/perf.yml` runs `test:perf`
@@ -81,6 +82,34 @@ spec would measure that checkout's code. Some specs take their own —
 `PERF_KINDS` in `frame-budget`, `WEASEL_PERF_N` and `WEASEL_PERF_SIZE` in
 `image-quad` — and record them in `params`.
 
+## apps/draw cold start
+
+`draw-cold-start.mjs` wipes vite's dep cache and starts a fresh server for every
+round, so each load pays for dependency optimization the way a first `npm run
+dev:draw` does. On an Apple M2 Max, 2026-09-28, with the machine heavily loaded
+(1-minute load average 251 on 12 cores), medians of 3 rounds:
+
+| Document | FCP (ms) | Requests | Bytes | Atlas requests |
+|---|---:|---:|---:|---:|
+| starter | 2,220 | 1,135 | 27,955,232 | 2 |
+| empty | 2,264 | 1,133 | 27,743,217 | 0 |
+
+The previous measurement, 2026-08-23, was 6,852 ms FCP over 974 requests and
+15,684,571 bytes. Two dev-only Vite plugins dominated it, and both have moved
+off first paint since: `callbackSourcePlugin` runs only under
+`WEASEL_CALLBACK_SOURCE=1`, and `weasel:trait-schemas` runs its ts-morph
+extraction on the first `load()` of its virtual module, which only the lazy
+registry inspector imports. The bytes have grown 78% since; nothing has
+measured why.
+
+The Inter atlas is registered with `registerFont(…, { lazy: true })`, so a
+document with no text never fetches it — the `empty` row's 212,015 fewer bytes.
+
+When a bundle looks too big, divide its bytes by its module count first. A
+ratio far above normal points at data compiled in as code rather than at
+dependency bloat — how both apps were found embedding their own source as
+strings for a viewer panel.
+
 ## Comparing two runs
 
 ```sh
@@ -117,6 +146,9 @@ Before believing a number, check the traps in the repo's `CLAUDE.md` that
 apply to benchmarks: a loop driven by hover events measures vsync, a shader
 variant the compiler can fold measures nothing, a variant that paints nothing
 measures free, and a single-threaded static server invents load regressions.
+A build measured before and after in one tree reads whichever build ran last:
+`dist-demo/` and `dist-draw/` are emptied and rewritten by each build, so check
+the entry chunk's hash against the build you mean before believing a grep over it.
 
 ## The vitest microbenchmarks
 
