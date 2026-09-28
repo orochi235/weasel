@@ -5,6 +5,8 @@ export type { JobProgressProps } from './JobProgress';
 export { JobProgress } from './JobProgress';
 export type { LegendEntry, LegendMark, LegendProps } from './Legend';
 export { Legend } from './Legend';
+export type { ReadoutProps, ReadoutRow } from './Readout';
+export { Readout } from './Readout';
 export type { ScaleIndicatorProps } from './ScaleIndicator';
 export { ScaleIndicator } from './ScaleIndicator';
 export type { SplitProps } from './Split';

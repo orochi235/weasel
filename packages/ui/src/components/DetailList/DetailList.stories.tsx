@@ -47,6 +47,23 @@ export const Block: Story = {
   render: (args) => <div className={s.narrow}><DetailList {...args}>{rows}</DetailList></div>,
 };
 
+/** `values="figures"` right-aligns each value in tabular numerals with spaces
+ *  kept; a figure space (U+2007) pads a short number onto the decimal point.
+ *  A status dot repeats what the value says, and an absent value holds its row
+ *  with a dash. */
+export const Figures: Story = {
+  render: (args) => (
+    <div className={s.frame}>
+      <DetailList {...args} values="figures">
+        <DetailRow label="Lock margin" status="success">locked +47.9°</DetailRow>
+        <DetailRow label="Score">{' 0.145'}</DetailRow>
+        <DetailRow label="Error" status="danger">over 12.345</DetailRow>
+        <DetailRow label="Cursor" />
+      </DetailList>
+    </div>
+  ),
+};
+
 /** One `--wzl-params-label-width` on an ancestor puts a detail list's labels and a
  *  property list's inline labels on the same rail. */
 export const SharesThePropertyRail: Story = {

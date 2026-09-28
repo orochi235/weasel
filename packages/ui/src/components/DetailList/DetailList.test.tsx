@@ -82,7 +82,79 @@ describe('DetailList', () => {
   });
 });
 
+describe('DetailRow status and absence', () => {
+  it('draws a decorative dot before the value for a status, and names the status on the row', () => {
+    const { container } = render(
+      <DetailList><DetailRow label="lock" status="success">locked</DetailRow></DetailList>,
+    );
+    const row = container.querySelector('dl > div')!;
+    expect(row.getAttribute('data-status')).toBe('success');
+    const dd = row.querySelector('dd')!;
+    const dot = dd.firstElementChild!;
+    expect(dot.getAttribute('aria-hidden')).toBe('true');
+    expect(dot.textContent).toBe('');
+    expect(dd.textContent).toBe('locked');
+  });
+
+  it('draws no dot without a status', () => {
+    const { container } = render(<DetailList><DetailRow label="a">b</DetailRow></DetailList>);
+    expect(container.querySelector('dl > div')!.hasAttribute('data-status')).toBe(false);
+    expect(container.querySelector('[aria-hidden]')).toBeNull();
+  });
+
+  it('keeps a row with no value, showing a dash in its place', () => {
+    const { container } = render(
+      <DetailList>
+        <DetailRow label="margin">{undefined}</DetailRow>
+        <DetailRow label="score">{null}</DetailRow>
+        <DetailRow label="zero">{0}</DetailRow>
+      </DetailList>,
+    );
+    const dds = [...container.querySelectorAll('dd')];
+    expect(dds.map((d) => d.textContent)).toEqual(['–', '–', '0']);
+    expect(dds.map((d) => d.hasAttribute('data-empty'))).toEqual([true, true, false]);
+  });
+
+  it('takes a placeholder of its own for an absent value', () => {
+    render(<DetailList><DetailRow label="a" placeholder="n/a" /></DetailList>);
+    expect(screen.getByText('n/a').closest('dd')).not.toBeNull();
+  });
+
+  it("keeps an absent row's status dot, so the row does not shift when the value arrives", () => {
+    const { container } = render(<DetailList><DetailRow label="a" status="danger" /></DetailList>);
+    expect(container.querySelector('dd > [aria-hidden]')).not.toBeNull();
+  });
+
+  it('reports its value style, text by default', () => {
+    const { container, rerender } = render(<DetailList><DetailRow label="a">b</DetailRow></DetailList>);
+    expect(container.querySelector('dl')!.getAttribute('data-values')).toBe('text');
+    rerender(<DetailList values="figures"><DetailRow label="a">b</DetailRow></DetailList>);
+    expect(container.querySelector('dl')!.getAttribute('data-values')).toBe('figures');
+  });
+});
+
 describe('DetailList styles', () => {
+  it('sets figures right-aligned in a minimum-width column, in equal-width digits, spaces kept', () => {
+    expect(css).toMatch(
+      /\.list\[data-values='figures'\]\s*\{\s*grid-template-columns:\s*var\(--wzl-params-label-width,\s*auto\)\s+minmax\(var\(--wzl-detail-figure-min-width,\s*8ch\),\s*1fr\)/,
+    );
+    const body = rule(".list[data-values='figures'] .value");
+    expect(body).toMatch(/justify-content:\s*flex-end/);
+    expect(body).toMatch(/text-align:\s*end/);
+    expect(body).toMatch(/font-variant-numeric:\s*tabular-nums/);
+    expect(body).toMatch(/white-space:\s*pre/);
+  });
+
+  it('paints each status dot from its semantic token', () => {
+    expect(rule(".row[data-status='success'] .dot")).toMatch(/var\(--wzl-success\)/);
+    expect(rule(".row[data-status='warn'] .dot")).toMatch(/var\(--wzl-warning\)/);
+    expect(rule(".row[data-status='danger'] .dot")).toMatch(/var\(--wzl-danger\)/);
+  });
+
+  it('mutes the placeholder', () => {
+    expect(rule('.value[data-empty]')).toMatch(/color:\s*var\(--wzl-fg-muted\)/);
+  });
+
   it('sizes the label rail from the params label width, so it lines up with property rows', () => {
     expect(rule('.list')).toMatch(/grid-template-columns:\s*var\(--wzl-params-label-width,\s*auto\)\s+minmax\(0,\s*1fr\)/);
   });
