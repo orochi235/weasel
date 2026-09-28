@@ -56,8 +56,13 @@ import { resolveParams } from '../actions/invoker';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { Tool } from '../../tools/types';
 import { scopeBindings } from '../../contributions/assemble';
-import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
-import { matchSorted, specificity } from './matcher';
+import type { InputEvent, BindingScope, MatchResult, ScopedBinding } from './matcher';
+import { matchSortedWithBarred, specificity } from './matcher';
+import { routesForSpec } from '../../tools/routing/reflection/registry';
+import type {
+  DispatchRecord, DroppedCandidate, PlacedBy, RankedCandidate, RecordCandidate, SpecificityPart,
+  WalkStep,
+} from './dispatchRecord';
 import { evaluate, describeRule, type Rule, type RuleCtx, type Condition } from '../../eligibility';
 import { resolveCursor } from '@weasel-js/cursor';
 import type { CapabilityTag } from '@weasel-js/modes';
@@ -92,20 +97,6 @@ const DEV: boolean = (() => {
   }
 })();
 
-/** One entry per `handleInput` call. */
-export interface DispatchLogEntry {
-  kind: 'dispatch';
-  ts: number;
-  eventKind: string;
-  /** For `key` / `key-held` events, the key id (`'Escape'`, `' '`, `'a'`).
-   *  Lives on the event side of the entry — `fired` should describe
-   *  what dispatched, not which key triggered it. */
-  key?: string;
-  candidates: Array<{ actionId: string; scope: BindingScope; enabledResult: boolean | string }>;
-  fired: string | null;
-  outcome: 'handled' | 'unhandled';
-}
-
 /** One entry per "mode change" — a kit state transition that isn't a
  *  dispatched input event but is load-bearing for understanding why an
  *  input was (or wasn't) handled later. Pushed via `recordModeSwitch()`;
@@ -123,7 +114,8 @@ export interface ModeSwitchLogEntry {
   detail?: string;
 }
 
-export type TraceLogEntry = DispatchLogEntry | ModeSwitchLogEntry;
+/** A trace entry: one {@link DispatchRecord} per resolved input, or a mode switch. */
+export type TraceLogEntry = DispatchRecord | ModeSwitchLogEntry;
 
 const TRACE_LIMIT = 200;
 
@@ -149,6 +141,20 @@ function recordTrace(entry: TraceLogEntry): void {
   if (!DEV) return;
   traceLog.push(entry);
   if (traceLog.length > TRACE_LIMIT) traceLog.shift();
+}
+
+/**
+ * Dev only: offer the record for what a press at the pointer would do, as a
+ * thunk on `window.__weaselDispatchLive__`. The hover pump offers one per move
+ * and a reader builds the record only when it looks, so no record is built
+ * while nothing is watching. `null` withdraws it when the pointer leaves.
+ *
+ * @internal
+ */
+export function publishLiveDispatch(explain: (() => DispatchRecord) | null): void {
+  if (!DEV || typeof window === 'undefined') return;
+  (window as unknown as { __weaselDispatchLive__?: (() => DispatchRecord) | null })
+    .__weaselDispatchLive__ = explain;
 }
 
 /** Push a mode-switch record into the trace log. Safe to call from
@@ -321,6 +327,26 @@ export function preferContextual<M extends { binding: GestureBinding; scope: str
   return out;
 }
 
+const SPECIFICITY_PARTS: readonly SpecificityPart[] = ['target', 'mods', 'phase', 'exact'];
+
+/** The ranking step that put `cur` directly below `prev`. `contextual` says
+ *  `prev` is gated by a rule that holds and `cur` is not — the only thing the
+ *  step after specificity looks at. */
+function placedBy(
+  prev: MatchResult,
+  cur: MatchResult,
+  view: string | null,
+  contextual: boolean,
+): PlacedBy {
+  if (namesView(prev.binding, view) !== namesView(cur.binding, view)) return { step: 'view' };
+  if (prev.scope !== cur.scope) return { step: 'tier' };
+  const sp = specificity(prev.binding.spec);
+  const sc = specificity(cur.binding.spec);
+  const i = sp.findIndex((v, k) => v !== sc[k]);
+  if (i >= 0) return { step: 'specificity', part: SPECIFICITY_PARTS[i]! };
+  return contextual ? { step: 'context' } : { step: 'order' };
+}
+
 function sameSpecificity(a: GestureSpec, b: GestureSpec): boolean {
   const sa = specificity(a);
   const sb = specificity(b);
@@ -468,6 +494,15 @@ export interface Dispatcher {
     ctx: DispatcherContext,
     opts?: ResolveAllOptions,
   ): ResolvedCandidate[];
+
+  /**
+   * The full {@link DispatchRecord} for `event` — what matched, what each
+   * filter dropped, how the rest ranked and why, and the walk — without
+   * invoking anything, so `predicted` is true and the winner is `would-fire`.
+   * It is the same computation `handleInput` and `resolveAll` run. Costs more
+   * than `resolveOnly`: it renders every candidate's routes and rule.
+   */
+  explain(event: InputEvent, ctx: DispatcherContext, opts?: ResolveAllOptions): DispatchRecord;
 
   /**
    * Synthesize an end-of-gesture for every in-flight ongoing handle.
@@ -1017,264 +1052,362 @@ export function createDispatcher(opts?: {
       // to start a new ongoing handle on first dispatch.
     }
 
-    // --- Scope assembly ---
-    const scopedBindings = assembleScopedBindings(ctx);
+    const r = rank(event, ctx, DEV);
+    const walked = walk(r, event, ctx, (match, action, deps) => invoke(event, match, action, deps), false);
+    const outcome: 'handled' | 'unhandled' = walked.stop === 'fired' ? 'handled' : 'unhandled';
+    if (DEV) recordTrace(buildRecord(r, walked, event, ctx, false, outcome));
+    return outcome;
+  }
 
-    // --- Match: get every matching binding, best → worst ---
-    // Compute the engaged-channels set once per dispatch — the matcher
-    // uses it to gate `phase`-qualified specs (`[engaged] wheel`, etc.).
-    const engagedChannels = snapshotEngagedChannels();
-    const rawMatches = preferViewScoped(
-      matchSorted(event, scopedBindings, ctx.isMac, engagedChannels), ctx.viewId ?? null,
-    );
-    const traceCandidates: DispatchLogEntry['candidates'] = [];
-    const eventKey =
-      event.kind === 'key' || event.kind === 'key-held' ? event.key : undefined;
-    const finishTrace = (fired: string | null, outcome: 'handled' | 'unhandled') => {
-      recordTrace({
-        kind: 'dispatch',
-        ts: Date.now(),
-        eventKind: event.kind,
-        ...(eventKey !== undefined ? { key: eventKey } : {}),
-        candidates: traceCandidates,
-        fired,
-        outcome,
-      });
-    };
-    if (rawMatches.length === 0) {
-      finishTrace(null, 'unhandled');
-      return 'unhandled';
+  /** Run the winning candidate. `'fired'` ends the walk; `'empty-handle'`
+   *  falls through to the next candidate; `'misbound'` ends it unhandled. */
+  function invoke(
+    event: InputEvent,
+    match: MatchResult,
+    action: Action,
+    deps: ActionDeps,
+  ): 'fired' | 'empty-handle' | 'misbound' {
+    if (action.invoker?.timing === 'immediate') {
+      try {
+        // For wheel / click / doubleclick bindings, merge event-time
+        // delta/position data into params so the immediate invoker
+        // sees both binding-declared params (e.g. `kind: 'wheel'`)
+        // and runtime event data. Option (a) from the design doc —
+        // simpler than extending InvocationCtx for immediate invokers.
+        const resolved = resolveParams(match.binding.opts?.params);
+        let params: Record<string, unknown> | undefined;
+        if (event.kind === 'wheel') {
+          params = {
+            deltaX: event.deltaX,
+            deltaY: event.deltaY,
+            clientX: event.clientX,
+            clientY: event.clientY,
+            affordance: event.affordance,
+            ...resolved,
+          };
+        } else if (event.kind === 'pinch') {
+          params = {
+            scale: event.scale,
+            rotation: event.rotation,
+            clientX: event.clientX,
+            clientY: event.clientY,
+            affordance: event.affordance,
+            ...resolved,
+          };
+        } else if (event.kind === 'click' || event.kind === 'doubleclick') {
+          params = {
+            worldX: event.x,
+            worldY: event.y,
+            affordance: event.affordance,
+            // Press point as well as release point — an action that places
+            // geometry at the click wants the former. See `ClickEvent`.
+            ...(event.kind === 'click'
+              ? { pressX: event.pressX, pressY: event.pressY }
+              : {}),
+            mods: modifiersOf(event),
+            ...resolved,
+          };
+        } else if (event.kind === 'contextmenu' || event.kind === 'longpress') {
+          params = {
+            worldX: event.x,
+            worldY: event.y,
+            affordance: event.affordance,
+            bodyTarget: event.bodyTarget,
+            mods: modifiersOf(event),
+            ...resolved,
+          };
+        } else if (event.kind === 'pointerdown') {
+          // Only `stage: 'press'` events reach an immediate invoker — the
+          // buffered copy matches `drag` specs, which are ongoing.
+          params = {
+            worldX: event.x,
+            worldY: event.y,
+            affordance: event.affordance,
+            bodyTarget: event.bodyTarget,
+            mods: modifiersOf(event),
+            ...resolved,
+          };
+        } else if (event.kind === 'drop' || event.kind === 'paste') {
+          // External-content events: forward the materialized items and,
+          // for drops, the world-space arrival point.
+          params = {
+            items: event.items,
+            via: event.kind,
+            ...(event.kind === 'drop' && event.x !== undefined
+              ? { worldX: event.x, worldY: event.y }
+              : {}),
+            ...resolved,
+          };
+        } else {
+          params = resolved;
+        }
+        action.invoker.run(deps, params);
+      } catch (err) {
+        console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
+      }
+      return 'fired';
     }
 
-    // --- Action lookup ---
-    const actionMap = buildActionMap(ctx.actions);
-
-    // --- Eligibility filter (mode-aware-dispatch) ---
-    // When a `RuleCtx` is available, strip candidates whose action's
-    // `eligible` rule evaluates false. This is defense-in-depth: even
-    // if a stale affordance hit slips through, the dispatcher refuses
-    // to fire an action declared ineligible for the active mode.
-    const ruleCtx = ruleCtxOf(ctx);
-    const matches = ruleCtx
-      ? preferContextual(
-        filterEligible(rawMatches, (id) => actionMap.get(id), ruleCtx),
-        (id) => actionMap.get(id),
-        () => true,
-        ctx.viewId ?? null,
-      )
-      : rawMatches;
-    if (matches.length === 0) {
-      finishTrace(null, 'unhandled');
-      return 'unhandled';
-    }
-
-    // --- Specificity-ordered fall-through ---
-    // For each candidate, check the enabled gate. The first action that is
-    // enabled wins. If every candidate is disabled (or missing), the event
-    // is unhandled.
-    //
-    // Action-level dedup: `assembleScopedBindings` may push the same binding
-    // twice — once from the active tool's `bindings` and once from the
-    // ambient action-registry walk. Without dedup, an empty-handle fall-
-    // through (`continue` below) would invoke the SAME action's start()
-    // twice. We try each *action* at most once per dispatch.
-    const triedActionIds = new Set<string>();
-    for (const match of matches) {
-      if (triedActionIds.has(match.binding.actionId)) continue;
-      triedActionIds.add(match.binding.actionId);
-      const action = actionMap.get(match.binding.actionId);
-      if (!action) {
-        traceCandidates.push({ actionId: match.binding.actionId, scope: match.scope, enabledResult: 'no-such-action' });
-        console.warn(
-          `weasel dispatcher: binding resolved actionId "${match.binding.actionId}" which has ` +
-          `no registered action. Skipping. (misconfiguration)`,
+    if (action.invoker?.timing === 'ongoing') {
+      // A `pointerDown` binding fires at press time, on the same
+      // `pointer-<id>` gesture id the drag will use. Letting an ongoing
+      // action open its handle here would make the drag's own dispatch find
+      // a handle already in flight and silently no-op. `PointerDownSpec`
+      // documents itself as immediate-only; enforce it rather than let the
+      // collision happen quietly.
+      if (event.kind === 'pointerdown' && event.stage === 'press') {
+        console.error(
+          `weasel dispatcher: action "${action.id}" has an ongoing invoker but is bound to a `
+          + `pointerDown spec, which fires at press time. Bind it to a drag spec, or give the `
+          + `action an immediate invoker.`,
         );
-        continue;
+        return 'misbound';
       }
-
-      // Build deps before the enabled gate so deps-aware predicates can inspect
-      // them (selection-gated actions, escape's path-edit fall-through, …). The
-      // gate previously ran `enabled()` with no args, so any predicate reading
-      // `deps?.x` saw `undefined` and either fell through forever (constant
-      // `SelectionRequired` stubs) or silently ignored its gate. The winning
-      // action's invoke path below reuses this same bag.
-      // Shared with `ActionsRegistry.trigger` — includes the dev-mode
-      // undeclared-read guard (Proxy warn on deps not in `requires`).
-      const deps = buildDepsFromRequires(action, ctx.depRegistry);
-
-      if (action.enabled) {
-        const result = action.enabled(deps, worldPointOf(event));
-        if (result !== true) {
-          traceCandidates.push({ actionId: action.id, scope: match.scope, enabledResult: String(result) });
-          // Fall through to the next-best match.
-          continue;
-        }
+      const gestureId = gestureIdFor(event);
+      // Record the drag origin so subsequent pointermove events can compute delta.
+      if (event.kind === 'pointerdown') {
+        dragOrigins.set(gestureId, {
+          x: event.x ?? 0,
+          y: event.y ?? 0,
+          ...(event.clientX !== undefined ? { clientX: event.clientX } : {}),
+          ...(event.clientY !== undefined ? { clientY: event.clientY } : {}),
+        });
+        // Initialize empty drag-points history for the new gesture.
+        dragPoints.set(gestureId, [{
+          x: event.x ?? 0,
+          y: event.y ?? 0,
+          ...(event.pressure !== undefined ? { pressure: event.pressure } : {}),
+          ...(event.tiltX !== undefined ? { tiltX: event.tiltX } : {}),
+          ...(event.tiltY !== undefined ? { tiltY: event.tiltY } : {}),
+        }]);
       }
-      traceCandidates.push({ actionId: action.id, scope: match.scope, enabledResult: true });
-
-      // --- Invoke ---
-
-      if (action.invoker?.timing === 'immediate') {
-        try {
-          // For wheel / click / doubleclick bindings, merge event-time
-          // delta/position data into params so the immediate invoker
-          // sees both binding-declared params (e.g. `kind: 'wheel'`)
-          // and runtime event data. Option (a) from the design doc —
-          // simpler than extending InvocationCtx for immediate invokers.
-          const resolved = resolveParams(match.binding.opts?.params);
-          let params: Record<string, unknown> | undefined;
-          if (event.kind === 'wheel') {
-            params = {
-              deltaX: event.deltaX,
-              deltaY: event.deltaY,
-              clientX: event.clientX,
-              clientY: event.clientY,
-              affordance: event.affordance,
-              ...resolved,
-            };
-          } else if (event.kind === 'pinch') {
-            params = {
-              scale: event.scale,
-              rotation: event.rotation,
-              clientX: event.clientX,
-              clientY: event.clientY,
-              affordance: event.affordance,
-              ...resolved,
-            };
-          } else if (event.kind === 'click' || event.kind === 'doubleclick') {
-            params = {
-              worldX: event.x,
-              worldY: event.y,
-              affordance: event.affordance,
-              // Press point as well as release point — an action that places
-              // geometry at the click wants the former. See `ClickEvent`.
-              ...(event.kind === 'click'
-                ? { pressX: event.pressX, pressY: event.pressY }
-                : {}),
-              mods: modifiersOf(event),
-              ...resolved,
-            };
-          } else if (event.kind === 'contextmenu' || event.kind === 'longpress') {
-            params = {
-              worldX: event.x,
-              worldY: event.y,
-              affordance: event.affordance,
-              bodyTarget: event.bodyTarget,
-              mods: modifiersOf(event),
-              ...resolved,
-            };
-          } else if (event.kind === 'pointerdown') {
-            // Only `stage: 'press'` events reach an immediate invoker — the
-            // buffered copy matches `drag` specs, which are ongoing.
-            params = {
-              worldX: event.x,
-              worldY: event.y,
-              affordance: event.affordance,
-              bodyTarget: event.bodyTarget,
-              mods: modifiersOf(event),
-              ...resolved,
-            };
-          } else if (event.kind === 'drop' || event.kind === 'paste') {
-            // External-content events: forward the materialized items and,
-            // for drops, the world-space arrival point.
-            params = {
-              items: event.items,
-              via: event.kind,
-              ...(event.kind === 'drop' && event.x !== undefined
-                ? { worldX: event.x, worldY: event.y }
-                : {}),
-              ...resolved,
-            };
-          } else {
-            params = resolved;
-          }
-          action.invoker.run(deps, params);
-        } catch (err) {
-          console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
-        }
-        finishTrace(action.id, 'handled');
-        return 'handled';
+      // Record start spread for pinch-zoom gestures.
+      if (event.kind === 'multitouch' && event.spread !== undefined) {
+        pinchStartSpreads.set(gestureId, event.spread);
       }
-
-      if (action.invoker?.timing === 'ongoing') {
-        // A `pointerDown` binding fires at press time, on the same
-        // `pointer-<id>` gesture id the drag will use. Letting an ongoing
-        // action open its handle here would make the drag's own dispatch find
-        // a handle already in flight and silently no-op. `PointerDownSpec`
-        // documents itself as immediate-only; enforce it rather than let the
-        // collision happen quietly.
-        if (event.kind === 'pointerdown' && event.stage === 'press') {
-          console.error(
-            `weasel dispatcher: action "${action.id}" has an ongoing invoker but is bound to a `
-            + `pointerDown spec, which fires at press time. Bind it to a drag spec, or give the `
-            + `action an immediate invoker.`,
-          );
-          finishTrace(action.id, 'unhandled');
-          return 'unhandled';
-        }
-        const gestureId = gestureIdFor(event);
-        // Record the drag origin so subsequent pointermove events can compute delta.
+      const invCtx = buildInvocationCtx(event, deps, gestureId);
+      const handle = action.invoker.start(invCtx, match.binding.opts);
+      // Empty handle = "matched at the binding level but decided at runtime
+      // not to handle this gesture" (missing dep, wrong affordance, wrong
+      // selection kind, etc.). The widely-used early-return-empty pattern
+      // depends on the dispatcher falling through to the next match —
+      // otherwise the binding silently swallows the gesture.
+      if (isEmptyOngoingHandle(handle)) {
+        // Clean up the per-gesture state we set above so a later match
+        // (still on the same pointerdown) sees a fresh slate.
         if (event.kind === 'pointerdown') {
-          dragOrigins.set(gestureId, {
-            x: event.x ?? 0,
-            y: event.y ?? 0,
-            ...(event.clientX !== undefined ? { clientX: event.clientX } : {}),
-            ...(event.clientY !== undefined ? { clientY: event.clientY } : {}),
-          });
-          // Initialize empty drag-points history for the new gesture.
-          dragPoints.set(gestureId, [{
-            x: event.x ?? 0,
-            y: event.y ?? 0,
-            ...(event.pressure !== undefined ? { pressure: event.pressure } : {}),
-            ...(event.tiltX !== undefined ? { tiltX: event.tiltX } : {}),
-            ...(event.tiltY !== undefined ? { tiltY: event.tiltY } : {}),
-          }]);
+          dragOrigins.delete(gestureId);
+          dragPoints.delete(gestureId);
         }
-        // Record start spread for pinch-zoom gestures.
-        if (event.kind === 'multitouch' && event.spread !== undefined) {
-          pinchStartSpreads.set(gestureId, event.spread);
+        if (event.kind === 'multitouch') {
+          pinchStartSpreads.delete(gestureId);
         }
-        const invCtx = buildInvocationCtx(event, deps, gestureId);
-        const handle = action.invoker.start(invCtx, match.binding.opts);
-        // Empty handle = "matched at the binding level but decided at runtime
-        // not to handle this gesture" (missing dep, wrong affordance, wrong
-        // selection kind, etc.). The widely-used early-return-empty pattern
-        // depends on the dispatcher falling through to the next match —
-        // otherwise the binding silently swallows the gesture.
-        if (isEmptyOngoingHandle(handle)) {
-          // Clean up the per-gesture state we set above so a later match
-          // (still on the same pointerdown) sees a fresh slate.
-          if (event.kind === 'pointerdown') {
-            dragOrigins.delete(gestureId);
-            dragPoints.delete(gestureId);
-          }
-          if (event.kind === 'multitouch') {
-            pinchStartSpreads.delete(gestureId);
-          }
-          traceCandidates.push({ actionId: action.id, scope: match.scope, enabledResult: 'empty-handle' });
-          continue;
-        }
-        inFlightHandles.set(gestureId, handle);
-        inFlightOwners.set(gestureId, match.ownerToolId);
-        inFlightActions.set(gestureId, action);
-        finishTrace(action.id, 'handled');
-        return 'handled';
+        return 'empty-handle';
       }
-
-      // No invoker — action is registered but has nothing to do for this
-      // matched binding. Treat as handled (the binding consumed the gesture
-      // and the no-op is intentional) to keep dispatch deterministic.
-      finishTrace(action.id, 'handled');
-      return 'handled';
+      inFlightHandles.set(gestureId, handle);
+      inFlightOwners.set(gestureId, match.ownerToolId);
+      inFlightActions.set(gestureId, action);
+      return 'fired';
     }
 
-    // Every matching candidate was disabled or missing.
-    finishTrace(null, 'unhandled');
-    return 'unhandled';
+    // No invoker — action is registered but has nothing to do for this
+    // matched binding. Treat as handled (the binding consumed the gesture
+    // and the no-op is intentional) to keep dispatch deterministic.
+    return 'fired';
   }
 
   // -------------------------------------------------------------------------
-  // resolveAll / resolveOnly — prediction without invocation
+  // The walk — one computation behind dispatch, prediction and the record
+  // -------------------------------------------------------------------------
+
+  /** One input's candidates, matched, filtered and ranked, before any is asked. */
+  interface Ranking {
+    /** Every match the claim admitted, best first — ineligible ones
+     *  included, in the place they would hold. */
+    ordered: MatchResult[];
+    /** Matches an exclusive claim barred; collected only when recording. */
+    barred: MatchResult[];
+    claimOwner?: string;
+    actionMap: Map<string, Action>;
+    ruleCtx: RuleCtx | undefined;
+    /** Whether a match survives the eligibility filter. */
+    eligible(m: MatchResult): boolean;
+  }
+
+  function rank(event: InputEvent, ctx: DispatcherContext, collectBarred: boolean): Ranking {
+    const view = ctx.viewId ?? null;
+    const outcome = matchSortedWithBarred(
+      event, assembleScopedBindings(ctx), ctx.isMac, snapshotEngagedChannels(), { collectBarred },
+    );
+    const sorted = preferViewScoped(outcome.matches, view);
+    const actionMap = buildActionMap(ctx.actions);
+    const ruleCtx = ruleCtxOf(ctx);
+    // Asked from the ranking, the filter and the record; a rule runs once per input.
+    const held = new Map<Action, boolean>();
+    const holds = (a: Action): boolean => {
+      if (ruleCtx === undefined) return true;
+      let h = held.get(a);
+      if (h === undefined) held.set(a, h = isEligible(a, ruleCtx));
+      return h;
+    };
+    // Ranking the ineligible alongside the rest leaves the survivors in the
+    // order ranking them alone would: `preferContextual` only reorders within
+    // a run of ties, and every tie's members sit together.
+    const ordered = ruleCtx
+      ? preferContextual(sorted, (id) => actionMap.get(id), holds, view)
+      : sorted;
+    return {
+      ordered,
+      barred: outcome.barred,
+      ...(outcome.claimOwner !== undefined ? { claimOwner: outcome.claimOwner } : {}),
+      actionMap,
+      ruleCtx,
+      eligible: (m) => {
+        const a = actionMap.get(m.binding.actionId);
+        return a === undefined || holds(a);
+      },
+    };
+  }
+
+  interface Walked {
+    /** Survivors of both filters, best first, each with what the walk did. */
+    steps: Array<{ match: MatchResult; step: WalkStep }>;
+    /** Why the walk ended: a candidate fired (or would), one was misbound, or
+     *  every candidate was exhausted. */
+    stop: 'fired' | 'misbound' | 'exhausted';
+    winner: { match: MatchResult; action: Action } | null;
+  }
+
+  /**
+   * Walk the ranked survivors, asking each action's `enabled()` in turn. With
+   * `attempt`, the first that passes is run and the walk ends unless it bails;
+   * without, it is the predicted winner. Each action is asked at most once.
+   */
+  function walk(
+    r: Ranking,
+    event: InputEvent,
+    ctx: DispatcherContext,
+    attempt: ((match: MatchResult, action: Action, deps: ActionDeps) => 'fired' | 'empty-handle' | 'misbound') | null,
+    evaluateShadowed: boolean,
+  ): Walked {
+    const steps: Walked['steps'] = [];
+    const tried = new Set<string>();
+    let stop: Walked['stop'] = 'exhausted';
+    let winner: Walked['winner'] = null;
+    for (const match of r.ordered) {
+      if (!r.eligible(match)) continue;
+      const push = (step: WalkStep): void => { steps.push({ match, step }); };
+      const actionId = match.binding.actionId;
+      if (tried.has(actionId)) { push({ kind: 'duplicate' }); continue; }
+      if (stop !== 'exhausted' && !evaluateShadowed) { push({ kind: 'not-asked' }); continue; }
+      tried.add(actionId);
+      const action = r.actionMap.get(actionId);
+      if (!action) {
+        if (attempt) {
+          console.warn(
+            `weasel dispatcher: binding resolved actionId "${actionId}" which has `
+            + `no registered action. Skipping. (misconfiguration)`,
+          );
+        }
+        push({ kind: 'no-such-action' });
+        continue;
+      }
+      // Deps are built before the gate so predicates can read them; the
+      // winner's invoke reuses the same bag. Shared with
+      // `ActionsRegistry.trigger`, including the dev undeclared-read guard.
+      const deps = buildDepsFromRequires(action, ctx.depRegistry);
+      const enabled = action.enabled ? action.enabled(deps, worldPointOf(event)) : true;
+      if (enabled !== true) { push({ kind: 'declined', reason: String(enabled) }); continue; }
+      if (stop !== 'exhausted') { push({ kind: 'outranked' }); continue; }
+      if (!attempt) {
+        push({ kind: 'would-fire' });
+        stop = 'fired';
+        winner = { match, action };
+        continue;
+      }
+      const result = attempt(match, action, deps);
+      if (result === 'empty-handle') { push({ kind: 'empty-handle' }); continue; }
+      push({ kind: result === 'fired' ? 'fired' : 'misbound' });
+      stop = result;
+      winner = { match, action };
+    }
+    return { steps, stop, winner };
+  }
+
+  /** Project a ranking and its walk into a plain {@link DispatchRecord}. */
+  function buildRecord(
+    r: Ranking,
+    walked: Walked,
+    event: InputEvent,
+    ctx: DispatcherContext,
+    predicted: boolean,
+    outcome: 'handled' | 'unhandled',
+  ): DispatchRecord {
+    const view = ctx.viewId ?? null;
+    const candidates = new Map<MatchResult, RecordCandidate>();
+    const candidateOf = (m: MatchResult): RecordCandidate => {
+      let c = candidates.get(m);
+      if (!c) {
+        const eligible = r.actionMap.get(m.binding.actionId)?.eligible;
+        c = {
+          actionId: m.binding.actionId,
+          routes: routesForSpec(m.binding.spec),
+          scope: m.scope,
+          ownerToolId: m.ownerToolId,
+          namesView: namesView(m.binding, view),
+          specificity: specificity(m.binding.spec),
+          ...(eligible !== undefined ? { eligible: describeEligible(eligible) } : {}),
+        };
+        candidates.set(m, c);
+      }
+      return c;
+    };
+    const dropped: DroppedCandidate[] = [
+      ...r.barred.map((m): DroppedCandidate => ({
+        candidate: candidateOf(m),
+        filter: 'claim',
+        ...(r.claimOwner !== undefined ? { owner: r.claimOwner } : {}),
+      })),
+    ];
+    for (const m of r.ordered) {
+      if (r.eligible(m)) continue;
+      const c = candidateOf(m);
+      dropped.push({ candidate: c, filter: 'ineligible', rule: c.eligible ?? '' });
+    }
+    const gated = (m: MatchResult): boolean =>
+      r.actionMap.get(m.binding.actionId)?.eligible !== undefined;
+    const ranked: RankedCandidate[] = walked.steps.map(({ match, step }, i) => {
+      const prev = walked.steps[i - 1]?.match;
+      return {
+        candidate: candidateOf(match),
+        placedBy: prev ? placedBy(prev, match, view, r.ruleCtx !== undefined && gated(prev) && !gated(match)) : { step: 'first' },
+        walk: step,
+      };
+    });
+    const eventKey = event.kind === 'key' || event.kind === 'key-held' ? event.key : undefined;
+    const world = worldPointOf(event);
+    return {
+      kind: 'dispatch',
+      ts: Date.now(),
+      input: {
+        eventKind: event.kind,
+        ...(eventKey !== undefined ? { key: eventKey } : {}),
+        modifiers: modifiersOf(event),
+        viewId: view,
+        ...(world !== undefined ? { world } : {}),
+        ...(r.ruleCtx !== undefined ? { mode: r.ruleCtx.mode } : {}),
+      },
+      matched: [...r.ordered, ...r.barred].map(candidateOf),
+      dropped,
+      ranked,
+      predicted,
+      fired: walked.winner?.action.id ?? null,
+      outcome,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // resolveAll / resolveOnly / explain — prediction without invocation
   // -------------------------------------------------------------------------
 
   function resolveAll(
@@ -1283,56 +1416,38 @@ export function createDispatcher(opts?: {
     // Not `opts` — `createDispatcher`'s own `opts` is in scope here.
     resolveOpts?: ResolveAllOptions,
   ): ResolvedCandidate[] {
-    const scopedBindings = assembleScopedBindings(ctx);
-    const engagedChannels = snapshotEngagedChannels();
-    const sorted = preferViewScoped(
-      matchSorted(event, scopedBindings, ctx.isMac, engagedChannels), ctx.viewId ?? null,
-    );
-    if (sorted.length === 0) return [];
+    const evaluateShadowed = resolveOpts?.evaluateShadowed ?? false;
+    const r = rank(event, ctx, false);
+    if (r.ordered.length === 0) return [];
+    const walked = walk(r, event, ctx, null, evaluateShadowed);
+    const stepOf = new Map(walked.steps.map((s) => [s.match, s.step]));
 
-    const actionMap = buildActionMap(ctx.actions);
-    const ruleCtx = ruleCtxOf(ctx);
-    // The same order handleInput walks, so a prediction names what fires.
-    const matches = ruleCtx
-      ? preferContextual(sorted, (id) => actionMap.get(id), (a) => isEligible(a, ruleCtx), ctx.viewId ?? null)
-      : sorted;
-
-    // Verdict per action id, so a second binding for an action already
-    // evaluated higher up inherits that verdict instead of being re-asked —
-    // mirroring handleInput's `triedActionIds` dedup.
+    // Verdict per action id, so a second binding for an action already judged
+    // higher up inherits that verdict — the walk asks each action once.
     const verdictByAction = new Map<string, ResolvedCandidate['verdict']>();
     let fired = false;
     const out: ResolvedCandidate[] = [];
-
-    for (const match of matches) {
+    for (const match of r.ordered) {
       const actionId = match.binding.actionId;
-      const action = actionMap.get(actionId);
-      // A binding pointing at an unregistered action can never fire. Not a
-      // candidate at all — skip it, as the dispatch loop does.
+      const action = r.actionMap.get(actionId);
+      // A binding pointing at an unregistered action can never fire.
       if (!action) continue;
 
       let verdict = verdictByAction.get(actionId);
       if (verdict === undefined) {
-        if (fired && !resolveOpts?.evaluateShadowed) {
-          verdict = { kind: 'shadowed' };
-        } else if (ruleCtx && action.eligible && !isEligible(action, ruleCtx)) {
-          // `action.eligible &&` is redundant with `isEligible` (which passes a
-          // rule-less action); it narrows the type for `describeEligible`.
-          verdict = { kind: 'ineligible', reason: describeEligible(action.eligible) };
+        if (!r.eligible(match)) {
+          verdict = fired && !evaluateShadowed
+            ? { kind: 'shadowed' }
+            : { kind: 'ineligible', reason: describeEligible(action.eligible!) };
         } else {
-          const disabled = action.enabled
-            ? action.enabled(buildDepsFromRequires(action, ctx.depRegistry), worldPointOf(event))
-            : true;
-          if (disabled !== true) {
-            verdict = { kind: 'disabled', reason: String(disabled) };
-          } else if (fired) {
-            // Only reachable under `evaluateShadowed`: passed both gates, but
-            // something above it already won. This is `shadowed` in its exact
-            // sense — nothing about this candidate stopped it.
-            verdict = { kind: 'shadowed' };
-          } else {
+          const step = stepOf.get(match);
+          if (step?.kind === 'would-fire') {
             verdict = { kind: 'would-fire' };
             fired = true;
+          } else if (step?.kind === 'declined') {
+            verdict = { kind: 'disabled', reason: step.reason };
+          } else {
+            verdict = { kind: 'shadowed' };
           }
         }
         verdictByAction.set(actionId, verdict);
@@ -1355,14 +1470,21 @@ export function createDispatcher(opts?: {
   }
 
   function resolveOnly(event: InputEvent, ctx: DispatcherContext): ResolveOnlyResult | null {
-    const winner = resolveAll(event, ctx).find((c) => c.verdict.kind === 'would-fire');
+    const r = rank(event, ctx, false);
+    const { winner } = walk(r, event, ctx, null, false);
     if (!winner) return null;
     return {
-      actionId: winner.actionId,
+      actionId: winner.action.id,
       action: winner.action,
-      scope: winner.scope,
-      ownerToolId: winner.ownerToolId,
+      scope: winner.match.scope,
+      ownerToolId: winner.match.ownerToolId,
     };
+  }
+
+  function explain(event: InputEvent, ctx: DispatcherContext, explainOpts?: ResolveAllOptions): DispatchRecord {
+    const r = rank(event, ctx, true);
+    const walked = walk(r, event, ctx, null, explainOpts?.evaluateShadowed ?? false);
+    return buildRecord(r, walked, event, ctx, true, walked.winner ? 'handled' : 'unhandled');
   }
 
   // -------------------------------------------------------------------------
@@ -1535,6 +1657,7 @@ export function createDispatcher(opts?: {
     handleInput: handleInputWithNotify,
     resolveOnly,
     resolveAll,
+    explain,
     cancelAll: cancelAllWithNotify,
     inFlight,
     inFlightCursor,

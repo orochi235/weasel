@@ -1,17 +1,14 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
-import { DataGrid, type DataGridColumn } from '@weasel-js/ui';
-import {
-  formatAge,
-  formatEnabled,
-  type DispatchLogEntry,
-  type TraceLogEntry,
-} from './dispatchTraceLog';
+import { DataGrid, FallthroughDiagram, type DataGridColumn } from '@weasel-js/ui';
+import { formatAge, type DispatchRecord, type TraceLogEntry } from './dispatchTraceLog';
 import s from './DispatchTraceTable.module.css';
 
 const DISPLAY_LIMIT = 100;
 
 export interface DispatchTraceTableProps {
   entries: readonly TraceLogEntry[];
+  /** A predicted press at the pointer, pinned above the log as the Live row. */
+  live?: DispatchRecord | null;
   /** Wall clock the Age column is measured against. */
   now: number;
   /** Include dispatches no action handled, and those one did. Mode switches
@@ -25,12 +22,13 @@ export interface DispatchTraceTableProps {
 
 interface TraceRow { id: string; entry: TraceLogEntry }
 
-type Candidate = DispatchLogEntry['candidates'][number] & { id: string };
+const LIVE_ID = 'live';
 
-/** The newest 100 trace entries, newest first. Clicking a dispatch row opens
- *  its candidate actions and why each was or wasn't chosen. */
+/** The newest 100 trace entries, newest first, under an optional Live row.
+ *  Clicking a dispatch row opens its fallthrough diagram. */
 export function DispatchTraceTable({
   entries,
+  live,
   now,
   showHandled = true,
   showUnhandled = false,
@@ -46,6 +44,7 @@ export function DispatchTraceTable({
     })
     .slice(-DISPLAY_LIMIT)
     .reverse();
+  if (live) rows.unshift({ id: LIVE_ID, entry: live });
 
   const columns: readonly DataGridColumn<TraceRow>[] = [
     {
@@ -53,15 +52,16 @@ export function DispatchTraceTable({
       header: 'Age',
       sortable: false,
       className: s.age,
-      render: ({ entry }) => formatAge(Math.max(0, now - entry.ts)),
+      render: ({ id, entry }) => (id === LIVE_ID ? 'live' : formatAge(Math.max(0, now - entry.ts))),
     },
     { id: 'event', header: 'Event', sortable: false, render: ({ entry }) => renderEvent(entry) },
     { id: 'outcome', header: 'Outcome', sortable: false, render: ({ entry }) => renderOutcome(entry) },
     {
       id: 'cands',
-      header: 'Cands',
+      header: 'Matched',
       sortable: false,
-      render: ({ entry }) => (entry.kind === 'mode' ? '—' : entry.candidates.length),
+      className: s.count,
+      render: ({ entry }) => (entry.kind === 'mode' ? '—' : entry.matched.length),
     },
   ];
 
@@ -71,9 +71,11 @@ export function DispatchTraceTable({
       rows={rows}
       columns={columns}
       empty={empty}
-      rowClassName={({ entry }) => (entry.kind === 'mode'
-        ? s.mode
-        : entry.outcome === 'unhandled' ? s.unhandled : undefined)}
+      rowClassName={({ id, entry }) => (id === LIVE_ID
+        ? s.live
+        : entry.kind === 'mode'
+          ? s.mode
+          : entry.outcome === 'unhandled' ? s.unhandled : undefined)}
       rowExpandable={({ entry }) => entry.kind === 'dispatch'}
       expandedIds={expanded}
       onExpandedChange={setExpanded}
@@ -81,28 +83,10 @@ export function DispatchTraceTable({
         if (entry.kind !== 'dispatch') return;
         setExpanded((cur) => (cur.has(id) ? new Set() : new Set([id])));
       }}
-      renderDetail={({ entry }) => (entry.kind === 'dispatch' ? <CandidateDetail entry={entry} /> : null)}
+      renderDetail={({ entry }) => (entry.kind === 'dispatch' ? <FallthroughDiagram record={entry} /> : null)}
     />
   );
 }
-
-function CandidateDetail({ entry }: { entry: DispatchLogEntry }): ReactElement {
-  if (entry.candidates.length === 0) return <em>No candidates considered.</em>;
-  const rows: Candidate[] = entry.candidates.map((c, i) => ({ ...c, id: `${c.actionId}#${i}` }));
-  return (
-    <DataGrid
-      rows={rows}
-      columns={CANDIDATE_COLUMNS}
-      rowClassName={(c) => (c.actionId === entry.fired ? s.fired : undefined)}
-    />
-  );
-}
-
-const CANDIDATE_COLUMNS: readonly DataGridColumn<Candidate>[] = [
-  { id: 'actionId', header: 'Action', sortable: false, render: (c) => <code>{c.actionId}</code> },
-  { id: 'scope', header: 'Scope', sortable: false },
-  { id: 'enabled', header: 'Enabled', sortable: false, render: (c) => formatEnabled(c.enabledResult) },
-];
 
 function renderEvent(entry: TraceLogEntry): ReactNode {
   if (entry.kind === 'mode') {
@@ -115,8 +99,8 @@ function renderEvent(entry: TraceLogEntry): ReactNode {
   }
   return (
     <>
-      {entry.eventKind}
-      {entry.key !== undefined ? <> <code>{entry.key === ' ' ? 'Space' : entry.key}</code></> : null}
+      {entry.input.eventKind}
+      {entry.input.key !== undefined ? <> <code>{entry.input.key === ' ' ? 'Space' : entry.input.key}</code></> : null}
     </>
   );
 }

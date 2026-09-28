@@ -23,3 +23,10 @@ export {
   findConflicts, reportRouteConflicts,
 } from '@weasel-js/routing';
 export type { RegistryEntry, Conflict } from '@weasel-js/routing';
+
+// Dispatch records — what one input matched, dropped, ranked and fired.
+export type {
+  DispatchRecord, DispatchRecordInput, RecordCandidate, DroppedCandidate,
+  RankedCandidate, PlacedBy, WalkStep, SpecificityPart,
+} from '@weasel-js/routing';
+export type { TraceLogEntry, ModeSwitchLogEntry } from '@weasel-js/routing';

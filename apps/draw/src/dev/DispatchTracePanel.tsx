@@ -45,7 +45,7 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
     { align: { x: 'start', y: 'end' }, offset: { x: 8, y: 8 } },
   );
   // Poll only while open.
-  const { entries, now, clear: onClear } = useDispatchTraceLog(!collapsed);
+  const { entries, live, now, clear: onClear } = useDispatchTraceLog(!collapsed);
   const [showHandled, setShowHandled] = useState<boolean>(true);
   // Unhandled events are noisy by default (every mousemove without an active
   // gesture, every wheel scroll over chrome). Hidden by default; toggle to
@@ -121,6 +121,7 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
           <DispatchTraceTable
             className={s.table}
             entries={entries}
+            live={live}
             now={now}
             showHandled={showHandled}
             showUnhandled={showUnhandled}

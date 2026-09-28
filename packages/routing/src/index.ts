@@ -82,6 +82,7 @@ export type { ToolOffhandBindingSpec } from './interactions/actions/toolOffhand'
 
 // ─── dispatcher ───────────────────────────────────────────────────────────
 export * from './interactions/dispatcher/dispatcher';
+export * from './interactions/dispatcher/dispatchRecord';
 export * from './interactions/dispatcher/matcher';
 export * from './interactions/dispatcher/predicates';
 export { openPointerSession } from './interactions/pointerSession';

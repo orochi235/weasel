@@ -21,7 +21,9 @@ import type { DepName, DepSchema } from '../../index';
 import type { ActionsRegistry } from '../actions/registry';
 import type { AffordanceHit } from '../actions/invoker';
 import type { Tool } from '../../tools/types';
-import { createDispatcher, pointerGestureId, type Dispatcher, type DispatcherContext } from './dispatcher';
+import {
+  createDispatcher, pointerGestureId, publishLiveDispatch, type Dispatcher, type DispatcherContext,
+} from './dispatcher';
 import { openPointerSession, type PointerSession } from '../pointerSession';
 import { clientToCanvasRect } from '../../viewport/clientToCanvas';
 import { itemsFromDataTransfer, itemsFromClipboardData } from '../../ingestion/ingestItems';
@@ -1265,10 +1267,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ...(bodyKind !== undefined ? { bodyKind } : {}),
       };
       const ctx = ctxNow();
-      const dragCursor = dispatcherNow().resolveOnly(
-        { kind: 'pointerdown', x: w.x, y: w.y, clientX: h.clientX, clientY: h.clientY, ...where },
-        ctx,
-      )?.action.cursor;
+      const press: InputEvent = {
+        kind: 'pointerdown', x: w.x, y: w.y, clientX: h.clientX, clientY: h.clientY, ...where,
+      };
+      const d = dispatcherNow();
+      publishLiveDispatch(() => d.explain(press, ctx));
+      const dragCursor = d.resolveOnly(press, ctx)?.action.cursor;
       // A drag's hint first; failing that, what a click here would do.
       const cursor = dragCursor ?? dispatcherNow().resolveOnly(
         { kind: 'click', x: w.x, y: w.y, pressX: w.x, pressY: w.y, ...where },
@@ -1299,6 +1303,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     const onHoverPointerLeave = () => {
       lastHover = null;
+      publishLiveDispatch(null);
       paintedCursorRef.current?.()?.clearPointer();
       clearHoverCursor();
     };

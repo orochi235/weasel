@@ -1,10 +1,11 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { DispatchTracePanel } from './DispatchTracePanel';
 import type { TraceLogEntry } from './dispatchTraceLog';
+import { recordOf } from './dispatchTraceFixtures';
 
 const LOG: TraceLogEntry[] = [
-  { kind: 'dispatch', ts: 1000, eventKind: 'drag', outcome: 'handled', fired: 'move', candidates: [] },
-  { kind: 'dispatch', ts: 1100, eventKind: 'hover', outcome: 'unhandled', fired: null, candidates: [] },
+  recordOf({ ts: 1000, eventKind: 'drag', ranked: ['move'] }),
+  recordOf({ ts: 1100, eventKind: 'hover', ranked: [] }),
 ];
 
 beforeEach(() => {

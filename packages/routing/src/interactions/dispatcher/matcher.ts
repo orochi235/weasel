@@ -303,29 +303,61 @@ export function matchSorted(
   engagedChannels?: ReadonlySet<string>,
   warn: (message: string) => void = (m) => console.warn(m),
 ): MatchResult[] {
-  const out: MatchResult[] = [];
+  return matchSortedWithBarred(e, bindings, isMac, engagedChannels, { warn }).matches;
+}
+
+/** {@link matchSorted}, plus what an exclusive claim on the event barred. */
+export interface MatchOutcome {
+  matches: MatchResult[];
+  /** Bindings whose spec matched the event but which the claim barred, in
+   *  the same order `matches` uses. Filled only when `collectBarred` is set. */
+  barred: MatchResult[];
+  /** Owner of the exclusive claim, when one applied. */
+  claimOwner?: string;
+}
+
+/**
+ * {@link matchSorted} that can also report the bindings an exclusive claim
+ * kept out. Collecting them costs a spec match per barred binding, so it is
+ * opt-in — the dispatcher asks only when it is recording.
+ */
+export function matchSortedWithBarred(
+  e: InputEvent,
+  bindings: readonly ScopedBinding[],
+  isMac: boolean,
+  engagedChannels?: ReadonlySet<string>,
+  opts: { collectBarred?: boolean; warn?: (message: string) => void } = {},
+): MatchOutcome {
+  const warn = opts.warn ?? ((m: string) => console.warn(m));
   const engaged = engagedChannels ?? EMPTY_ENGAGED;
   // An exclusive claim outranks the scope tier. Scope is the outermost sort
   // key below, so without this a vague active binding beats the claim owner's
   // precise ambient one — the whole reason chrome got swallowed by whichever
   // tool was active.
   const exclusive = isExclusiveClaim(e);
-  const pool = exclusive
-    ? bindings.filter(sb => targetConsultsAffordance(specTargetOf(sb.binding.spec)))
-    : bindings;
+  const admits = (sb: ScopedBinding): boolean =>
+    !exclusive || targetConsultsAffordance(specTargetOf(sb.binding.spec));
+  const out: MatchResult[] = [];
+  const barred: MatchResult[] = [];
   for (const scope of SCOPE_PRIORITY) {
     const scopeMatches: MatchResult[] = [];
-    for (const sb of pool) {
+    const scopeBarred: MatchResult[] = [];
+    for (const sb of bindings) {
       if (sb.scope !== scope) continue;
+      const admitted = admits(sb);
+      if (!admitted && !opts.collectBarred) continue;
       const phaseCtx: PhaseContext = { selfChannel: sb.ownerToolId, engagedChannels: engaged };
       if (matchSpec(e, sb.binding.spec, isMac, phaseCtx)) {
-        scopeMatches.push({ binding: sb.binding, scope, ownerToolId: sb.ownerToolId });
+        (admitted ? scopeMatches : scopeBarred)
+          .push({ binding: sb.binding, scope, ownerToolId: sb.ownerToolId });
       }
     }
     // Stable sort by specificity descending. Identical-specificity entries
     // keep their registration order (Array.prototype.sort is stable per ES2019).
     scopeMatches.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec));
+    scopeBarred.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec));
     out.push(...scopeMatches);
+    barred.push(...scopeBarred);
   }
   // Checked against the final result, not the pool: a binding can declare a
   // `kindOf`/`affordance:` target and still fail to match this particular
@@ -333,7 +365,8 @@ export function matchSorted(
   if (exclusive && out.length === 0 && bindings.length > 0) {
     reportDeadClaim(claimOf(e)?.owner, warn);
   }
-  return out;
+  const owner = exclusive ? claimOf(e)?.owner : undefined;
+  return { matches: out, barred, ...(owner !== undefined ? { claimOwner: owner } : {}) };
 }
 
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
