@@ -215,10 +215,15 @@ have shipped. What remains:
   a tapered pail with a spout is a pencil silhouette, and the handle that would
   fix it wants a sketch rather than another guess. Nothing is blocked: no fill
   tool consumes it. See the note in `packages/cursor/scripts/glyphs/draw.mjs`.
-- **(P3) Only Chrome is measured.** The spec's browser facts come from Chrome
-  152 / macOS 26.5. Safari and Firefox could rasterize an SVG cursor at 1× (the
-  fix is `image-set`, already documented) or cap at a different size. Both live
-  behind `bake.ts`. `packages/cursor/scripts/probe/` is the instrument.
+- **(P3) Cursor rasterization is measured only in Chrome.** Headless WebKit
+  and Firefox parse, fetch and pick `image-set()` candidates exactly as Chrome
+  does (spec, "WebKit and Firefox, headless"), but whether they rasterize an
+  SVG cursor at 1× or cap below 128 px needs a real window. Firefox: run
+  `node probe.mjs <dir> --browser firefox` from `packages/cursor/scripts/probe/`
+  (the headful path is written but has never been run for anything but
+  Chrome). Safari: Playwright cannot drive it, so open `cursor-probe.html` in
+  it, step the cases with `__setCase(n)` from the Web Inspector console, and
+  capture with `screencapture -C`. A finding lands in `bake.ts`.
 
 ---
 
