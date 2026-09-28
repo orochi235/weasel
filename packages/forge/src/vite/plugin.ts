@@ -1,6 +1,5 @@
-import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
-import { basename, dirname, join, matchesGlob, relative, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { globSync, readFileSync, statSync } from 'node:fs';
+import { basename, matchesGlob, relative, resolve, sep } from 'node:path';
 import type { Logger, Plugin, ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types.ts';
 import { hoistPages, writePages } from './build.ts';
@@ -8,6 +7,7 @@ import { autoTitle } from './autoTitle.ts';
 import { createDepGraph, type DepGraphBuilder, type ResolveImport } from './depGraph.ts';
 import { html } from './html.ts';
 import { indexFile } from './indexFile.ts';
+import { ownEntries } from './ownEntries.ts';
 import { storybookShims } from './storybookShims.ts';
 
 export interface ForgeOptions {
@@ -24,20 +24,6 @@ export interface ForgeOptions {
 const PREFIX = 'virtual:forge/';
 const MODULES = new Set(['index.js', 'importers.js', 'deps.js', 'frame-config.js', 'shell-config.js', 'shell-entry.js', 'frame-entry.js']);
 const PAGES: Record<string, string> = { '/': 'shell-entry.js', '/index.html': 'shell-entry.js', '/frame.html': 'frame-entry.js' };
-
-/** forge's shell and frame entry modules: source beside this file in a checkout, the built entries in an install. */
-function ownEntries(): string[] {
-  const here = fileURLToPath(import.meta.url);
-  for (let dir = dirname(here); dir !== dirname(dir); dir = dirname(dir)) {
-    const manifest = join(dir, 'package.json');
-    if (!existsSync(manifest) || (JSON.parse(readFileSync(manifest, 'utf8')) as { name?: string }).name !== '@weasel-js/forge') {
-      continue;
-    }
-    const source = !relative(join(dir, 'src'), here).startsWith('..');
-    return ['shell', 'frame'].map((realm) => join(dir, source ? `src/${realm}/index.ts` : `dist/${realm}/index.js`));
-  }
-  return [];
-}
 
 export function forge(options: ForgeOptions): Plugin[] {
   let root = process.cwd();
@@ -205,7 +191,7 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
         const entries = [
           ...options.stories,
           ...[options.frameConfig, options.shellConfig].flatMap((path) => (path ? [resolve(at, path)] : [])),
-          ...ownEntries(),
+          ...ownEntries(['shell', 'frame']),
         ];
         const optimizeDeps = { entries };
         if (command !== 'build') return { optimizeDeps };
