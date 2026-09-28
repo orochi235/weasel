@@ -156,10 +156,6 @@ Priority tags:
   scale is known, as `withResolvedStrokeWidth` (`renderer/draw.ts`) does for the
   ribbon.
 
-- **(P3) A container's bounds around a rotated leaf ignore the rotation.** Both the
-  kit SVG walk and draw's import build the container box from the leaf's unrotated
-  box.
-
 - **(P3) External-content ingestion — follow-ups.** Shipped 2026-07-03 (spec
   `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`): drop/paste
   gesture kinds (`DropSpec`/`PasteSpec`, MIME-glob `types`), dispatcher DOM

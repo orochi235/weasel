@@ -36,6 +36,7 @@ import {
   registerMarker,
   resolveTextStyle,
   solid,
+  unionAABB,
   type FillStyle,
   type ImageNodeData,
   type IngestCtx,
@@ -227,10 +228,10 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     return pose;
   };
 
-  // Returns the union AABB of the leaves under `n` so a parent container can
-  // compose its own pose; null for empty groups. `inherited` is the product
-  // of the enclosing groups' opacities.
-  const visit = (n: SvgNode, parentId: string | null, inherited: number): SvgDraftBounds | null => {
+  // Returns the pose `n` was drafted with, so a parent container can union
+  // its children's axis-aligned boxes; null for empty groups. `inherited` is
+  // the product of the enclosing groups' opacities.
+  const visit = (n: SvgNode, parentId: string | null, inherited: number): DraftPose | null => {
     const k = inherited * (n.opacity ?? 1);
     if (n.kind === 'group') {
       const draft: Extract<SvgSceneDraft<TData>, { kind: 'container' }> = {
@@ -240,16 +241,12 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
         pose: { x: 0, y: 0, width: 0, height: 0 },
       };
       drafts.push(draft);
-      let acc: SvgDraftBounds | null = null;
-      for (const c of n.children) {
-        const b = visit(c, draft.id, k);
-        if (b) acc = acc ? unionRect(acc, b) : b;
-      }
+      const acc = unionAABB(n.children.map((c) => visit(c, draft.id, k)));
       if (!acc) {
         drafts.splice(drafts.indexOf(draft), 1);
         return null;
       }
-      draft.pose = { x: acc.x, y: acc.y, width: acc.width, height: acc.height };
+      draft.pose = acc;
       return draft.pose;
     }
 
@@ -350,14 +347,6 @@ function scaleTextData(
   };
 }
 
-function unionRect(a: SvgDraftBounds, b: SvgDraftBounds): SvgDraftBounds {
-  const minX = Math.min(a.x, b.x);
-  const minY = Math.min(a.y, b.y);
-  const maxX = Math.max(a.x + a.width, b.x + b.width);
-  const maxY = Math.max(a.y + a.height, b.y + b.height);
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-}
-
 /**
  * Parse each file and insert its node tree — one undoable `applyOps` batch
  * per file. See the module doc for placement and wrapping policy. A file
@@ -383,7 +372,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
       const roots = drafts.filter((d) => d.parentId === null);
       if (roots.length > 1) {
         const wrapperId = freshSvgNodeId();
-        const union = roots.map((d) => d.pose).reduce(unionRect);
+        const union = unionAABB(roots.map((d) => d.pose))!;
         drafts = [
           { kind: 'container', id: wrapperId, parentId: null, pose: union },
           ...drafts.map((d) => (d.parentId === null ? { ...d, parentId: wrapperId } : d)),
@@ -392,10 +381,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
 
       // Fit-clamp + center, mirroring the image handler. Pose-only: the
       // painter rebases stored geometry into the pose box.
-      const union = drafts
-        .filter((d) => d.parentId === null)
-        .map((d) => d.pose)
-        .reduce(unionRect);
+      const union = unionAABB(drafts.filter((d) => d.parentId === null).map((d) => d.pose))!;
       const view = ctx.viewportWorldRect();
       const scale = Math.min(
         1,

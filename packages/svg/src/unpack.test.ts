@@ -329,6 +329,19 @@ describe('unpackSvgFiles', () => {
     expect(wrapper.pose.y + wrapper.pose.height / 2).toBeCloseTo(300);
   });
 
+  it("sizes the wrapper around a rotated root by its axis-aligned box", async () => {
+    const rotated = `<svg xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="100" height="20" transform="rotate(90 50 10)" fill="#ff0000"/>
+      <rect x="45" y="0" width="10" height="10" fill="#00ff00"/>
+    </svg>`;
+    const { c, batches } = ctx({ point: { x: 400, y: 300 } });
+    await unpackSvgFiles([asFile(rotated)], c);
+    const wrapper = batches[0].ops[0];
+    expect(wrapper.kind).toBe('container');
+    expect(wrapper.pose.width).toBeCloseTo(20);
+    expect(wrapper.pose.height).toBeCloseTo(100);
+  });
+
   it('a single-root svg inserts without a synthesized wrapper', async () => {
     const oneRoot = `<svg xmlns="http://www.w3.org/2000/svg">
       <rect x="0" y="0" width="50" height="50" fill="#0000ff"/>
@@ -484,6 +497,15 @@ describe('svgNodesToKitDrafts — consumer hooks', () => {
 
   it("never gives a container its only child's rotation", () => {
     const g: SvgNode = { kind: 'group', children: [rectNode(0, 0, 10, 10, { rotation: 0.5 })] };
-    expect(svgNodesToKitDrafts([g], seq())[0].pose).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+    expect(svgNodesToKitDrafts([g], seq())[0].pose).not.toHaveProperty('rotation');
+  });
+
+  it("bounds a container by its rotated leaf's axis-aligned box", () => {
+    const g: SvgNode = { kind: 'group', children: [rectNode(0, 0, 100, 20, { rotation: Math.PI / 2 })] };
+    const pose = svgNodesToKitDrafts([g], seq())[0].pose;
+    expect(pose.x).toBeCloseTo(40);
+    expect(pose.y).toBeCloseTo(-40);
+    expect(pose.width).toBeCloseTo(20);
+    expect(pose.height).toBeCloseTo(100);
   });
 });
