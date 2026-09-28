@@ -55,6 +55,9 @@ export function pathCommandCoordCount(cmd: number): number {
  * `false`. The pen advances to the command's last coord pair afterward; `Z`
  * returns it to the subpath's opening `M`, so a command following a `Z`
  * without an intervening `M` starts where SVG says it does.
+ *
+ * A code `PATH_COMMANDS` does not declare throws once the visitor has seen it,
+ * since the walker cannot tell how many coords it consumes.
  */
 export function forEachSegment(
   commands: ArrayLike<number>,
@@ -74,6 +77,7 @@ export function forEachSegment(
     const cmd = commands[i];
     if (visit(cmd, ci, px, py, i) === false) return;
     const len = pathCommandCoordCount(cmd);
+    if (len === undefined) throw new Error(`forEachSegment: unknown command code ${cmd}`);
     if (len > 0) {
       px = coords[ci + len - 2];
       py = coords[ci + len - 1];

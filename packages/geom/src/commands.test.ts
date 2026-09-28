@@ -64,4 +64,18 @@ describe('forEachSegment pen bookkeeping', () => {
     });
     expect(seen).toEqual([0, 2]);
   });
+
+  it('throws on a code PATH_COMMANDS does not declare, since it cannot know how far to advance', () => {
+    const commands = Uint8Array.of(PATH_M, 99, PATH_L);
+    const coords = Float64Array.of(0, 0, 1, 1);
+    expect(() => forEachSegment(commands, coords, () => {})).toThrow(/forEachSegment: unknown command code 99/);
+  });
+
+  it('lets the visitor name the unknown code first', () => {
+    const commands = Uint8Array.of(PATH_M, 99);
+    const coords = Float64Array.of(0, 0);
+    expect(() => forEachSegment(commands, coords, (cmd) => {
+      if (cmd === 99) throw new Error('mine: 99');
+    })).toThrow(/mine: 99/);
+  });
 });
