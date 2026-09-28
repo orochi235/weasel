@@ -1112,13 +1112,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 ## Demos & visual regression
 
-- **(P3) The jsdom vitest projects print "Failed to run dependency scan" on a cold cache.**
-  `npx vitest run --project=core packages/core/src/tools/builtin/hand` with
-  `node_modules/.vite/vitest` removed warns that `virtual:changelogs`, `virtual:demo-sources`,
-  `virtual:demo-timestamps` and `virtual:weasel-trait-schemas` (imported from `apps/site` and
-  `apps/draw`) cannot be resolved. No test fails from it; it is noise that hides a real scan
-  failure. Those projects either want `optimizeDeps.noDiscovery` or entries that stay out of the apps.
-
 - **(P3) A minimal public stage for package demos.** Demos of scene-free packages
   (`quantity`, `text`, `bidi`, `geom`, `audio`) mount a whole `SceneCanvas` just to draw.
   Not the primitive `<Canvas>`, which was unexported on purpose. Enforce its reach in

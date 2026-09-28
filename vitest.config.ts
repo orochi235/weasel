@@ -31,6 +31,10 @@ const shared = {
   plugins: [react()],
 };
 
+// Vitest disables dep discovery everywhere but its vm environment, where vite scans every index.html
+// in the repo and fails on the apps' virtual modules; a scan that worked would pre-bundle react and vitest.
+const vm = { environments: { __vitest_vm__: { optimizeDeps: { noDiscovery: true, include: [] } } } };
+
 const FORGE_NODE = [
   'packages/forge/src/csf/shims/alias.test.ts',
   'packages/forge/src/vite/plugin.test.ts',
@@ -41,6 +45,7 @@ export default defineConfig({
     projects: [
       {
         ...shared,
+        ...vm,
         test: {
           name: 'core',
           environment: 'jsdom',
@@ -58,6 +63,7 @@ export default defineConfig({
       },
       {
         ...shared,
+        ...vm,
         // The demo site reads three virtual modules that only exist because
         // `vite.config.ts` wires their plugins. Vitest does not inherit that
         // config, so without these the site's own shell — `registry.ts`,
@@ -82,6 +88,7 @@ export default defineConfig({
       },
       {
         ...shared,
+        ...vm,
         test: {
           name: 'smoke',
           environment: 'jsdom',
@@ -98,6 +105,7 @@ export default defineConfig({
       },
       {
         ...shared,
+        ...vm,
         test: {
           name: 'weasel-ui',
           environment: 'jsdom',
@@ -114,6 +122,7 @@ export default defineConfig({
       },
       {
         ...shared,
+        ...vm,
         test: {
           name: 'labkit',
           environment: 'jsdom',
@@ -132,6 +141,7 @@ export default defineConfig({
       },
       {
         ...shared,
+        ...vm,
         test: {
           name: 'forge',
           environment: 'jsdom',
@@ -159,6 +169,7 @@ export default defineConfig({
       },
       {
         ...shared,
+        ...vm,
         // The draw app's Bundle Inspector consumes
         // `virtual:weasel-trait-schemas`, served by a Vite plugin that's
         // wired in `apps/draw/vite.config.ts` for dev/build. Vitest
