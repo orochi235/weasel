@@ -1,63 +1,10 @@
-.field {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-width: 0;
-  gap: var(--wzl-space-2);
-}
-
-/* `orientation='row'`: the label keeps its own width and the field takes the
-   rest; description and error wrap onto a line of their own. A `fit` field
-   keeps its own width and centers on the label instead. */
-.field.row {
-  flex-direction: row;
-  align-items: center;
-  flex-wrap: wrap;
-  column-gap: var(--wzl-space-4);
-  row-gap: var(--wzl-space-2);
-}
-.field.row .label { flex: 0 0 auto; }
-.field.row:not(.fit) .frame { flex: 1 1 0; min-width: 0; }
-.field.row.fit { align-items: center; }
-.field.row .below { flex-basis: 100%; }
-
 .frame {
   display: flex;
   align-items: stretch;
-  height: var(--wzl-field-h, var(--wzl-control-h));
-  background: var(--wzl-input-surface, var(--wzl-surface-sunken));
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  color: var(--wzl-fg);
-  font-family: var(--wzl-font-ui);
-  font-size: var(--wzl-font-size);
-  line-height: 1;
   overflow: hidden;
-  transition: border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
-}
-
-.frame:focus-within {
-  border-color: var(--wzl-focus-ring);
-  box-shadow: 0 0 0 1px var(--wzl-focus-ring);
-}
-
-.field[data-invalid] .frame {
-  border-color: var(--wzl-danger);
-}
-
-.field[data-disabled] .frame {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .frame input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: inherit;
-  font: inherit;
   padding: 0 var(--wzl-field-pad-x);
   text-align: right;
   -moz-appearance: textfield;
@@ -120,10 +67,11 @@
 /* Mirrors the property rows' editable readout (`.readoutInput`), so a number
    sitting inside other chrome does not draw a second box around itself. */
 .ghost {
-  height: auto;
-  background: transparent;
-  border-color: transparent;
-  color: var(--wzl-accent-fg);
+  --_frame-h: auto;
+  --_frame-bg: transparent;
+  --_frame-border: 1px solid transparent;
+  --_frame-fg: var(--wzl-accent-fg);
+  --_frame-focus-shadow: none;
   font-weight: var(--wzl-font-weight-medium);
 }
 
@@ -137,18 +85,10 @@
 
 .ghost:focus-within {
   background: var(--wzl-surface-sunken);
-  border-color: var(--wzl-focus-ring);
-  box-shadow: none;
 }
 
 /* `width='fit'` states the field's width in characters: left alone an `<input>`
    asks for its 20-character intrinsic width, wider than most rows it sits in. */
-.fit {
-  width: auto;
-  max-width: 100%;
-  align-items: flex-start;
-}
-
 .fit .frame {
   width: fit-content;
   max-width: 100%;

@@ -10,7 +10,8 @@ import {
   type NumberFieldProps as RACNumberFieldProps,
   type ValidationResult,
 } from 'react-aria-components';
-import { fieldClasses, type FieldOrientation } from '../Field/Field';
+import type { FieldOrientation } from '../Field/Field';
+import f from '../field.module.css';
 import s from './NumberField.module.css';
 
 /** Props for {@link NumberField}, on top of React Aria's `NumberField` props. */
@@ -69,18 +70,17 @@ export const NumberField = forwardRef(function NumberField(
     <RACNumberField
       {...rest}
       className={[
-        s.field,
-        width === 'fit' && s.fit,
-        fieldClasses.root,
-        orientation === 'row' && fieldClasses.row,
-        orientation === 'row' && s.row,
+        f.field,
+        f.control,
+        width === 'fit' && `${f.fit} ${s.fit}`,
+        orientation === 'row' && f.row,
         className,
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      {label !== undefined && <Label className={`${fieldClasses.label} ${s.label}`}>{label}</Label>}
-      <Group className={ghost ? `${s.frame} ${s.ghost}` : s.frame}>
+      {label !== undefined && <Label className={f.label}>{label}</Label>}
+      <Group className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}>
         <RACInput ref={ref} placeholder={placeholder} />
         {!hideSteppers && (
           <div className={s.steppers}>
@@ -90,11 +90,11 @@ export const NumberField = forwardRef(function NumberField(
         )}
       </Group>
       {description !== undefined && (
-        <Text slot="description" className={`${fieldClasses.hint} ${s.below}`}>
+        <Text slot="description" className={`${f.hint} ${f.below}`}>
           {description}
         </Text>
       )}
-      <FieldError className={`${fieldClasses.error} ${s.below}`}>{errorMessage}</FieldError>
+      <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
     </RACNumberField>
   );
 });

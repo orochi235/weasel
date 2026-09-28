@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import s from './Field.module.css';
+import s from '../field.module.css';
 
 /**
  * Whether a {@link Field} stacks its label above the control or sits them

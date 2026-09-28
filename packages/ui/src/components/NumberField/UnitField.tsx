@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { decimal, parseAs, parseNumber, qty, type Display, type UnitTable } from '@weasel-js/quantity';
-import { fieldClasses } from '../Field/Field';
 import { clampToBounds, spinKey } from '../spin';
+import f from '../field.module.css';
 import s from './NumberField.module.css';
 
 /** Props for {@link UnitField}. */
@@ -156,11 +156,11 @@ export function UnitField({
 
   return (
     <div
-      className={[s.field, width === 'fit' && s.fit, fieldClasses.root, className]
+      className={[f.field, f.control, width === 'fit' && `${f.fit} ${s.fit}`, className]
         .filter(Boolean)
         .join(' ')}
     >
-      <div className={ghost ? `${s.frame} ${s.ghost}` : s.frame}>
+      <div className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}>
         <input
           ref={input}
           id={id}

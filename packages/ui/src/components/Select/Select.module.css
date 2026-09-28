@@ -1,63 +1,31 @@
-.field {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-width: 0;
-  gap: var(--wzl-space-2);
-}
-
-/* `orientation='row'`: the label keeps its own width and the trigger takes the
-   rest; description and error wrap onto a line of their own. */
-.field.row {
-  flex-direction: row;
-  align-items: center;
-  flex-wrap: wrap;
-  column-gap: var(--wzl-space-4);
-  row-gap: var(--wzl-space-2);
-}
-.field.row .label { flex: 0 0 auto; }
-.field.row:not(.fit) .trigger { flex: 1 1 0; min-width: 0; }
-.field.row.fit .trigger { width: auto; }
-.field.row .below { flex-basis: 100%; }
+/* `orientation='row'`: the shared layout sets the trigger beside its label; a
+   fit one keeps its own width there rather than the fill width below. */
+.row.fit .trigger { width: auto; }
 
 .trigger {
   display: flex;
   width: 100%;
   align-items: center;
   gap: var(--wzl-space-3);
-  /* Hooks, each defaulting to what the trigger already drew: the visible box is
-     this button, not the `.field` a consumer's `className` lands on, so a
-     surface that has to restyle it sets these rather than reaching in here.
-     Together they draw the bare look too, for a surface that wants it from
-     context rather than from `variant`: a transparent fill, no padding, the
-     chevron hidden, the value underlined and an outline for focus. */
+  /* Hooks, each defaulting to what the frame already draws: the visible box is
+     this button, not the root a consumer's `className` lands on, so a surface
+     that has to restyle it sets these rather than reaching in here. Together
+     they draw the bare look too, for a surface that wants it from context
+     rather than from `variant`: a transparent fill, no padding, the chevron
+     hidden, the value underlined and an outline for focus. */
   padding: var(--wzl-select-pad, 0 var(--wzl-space-3) 0 var(--wzl-space-5));
-  background: var(--wzl-select-bg, var(--wzl-input-surface, var(--wzl-surface-sunken)));
-  height: var(--wzl-select-h, var(--wzl-control-h));
-  border: var(--wzl-select-border, 1px solid var(--wzl-border));
-  border-radius: var(--wzl-radius-sm);
-  color: var(--wzl-select-fg, var(--wzl-fg));
-  font-family: var(--wzl-font-ui);
-  font-size: var(--wzl-font-size);
-  line-height: 1;
+  --_frame-h: var(--wzl-select-h);
+  --_frame-bg: var(--wzl-select-bg);
+  --_frame-border: var(--wzl-select-border);
+  --_frame-fg: var(--wzl-select-fg);
+  --_frame-focus-border: var(--wzl-select-focus-border);
+  --_frame-focus-shadow: var(--wzl-select-focus-shadow);
+  --_frame-focus-outline: var(--wzl-select-focus-outline);
   cursor: pointer;
-  transition: border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
 
 .trigger[data-focus-visible] {
-  border-color: var(--wzl-select-focus-border, var(--wzl-focus-ring));
-  box-shadow: var(--wzl-select-focus-shadow, 0 0 0 1px var(--wzl-focus-ring));
-  outline: var(--wzl-select-focus-outline, none);
   outline-offset: 2px;
-}
-
-.field[data-invalid] .trigger {
-  border-color: var(--wzl-danger);
-}
-
-.trigger[data-disabled] {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .value {
@@ -86,7 +54,7 @@
   text-decoration-color: var(--wzl-fg-muted);
 }
 
-.field[data-open] .value {
+.select[data-open] .value {
   text-decoration-style: solid;
   text-decoration-color: var(--wzl-accent);
 }
@@ -233,11 +201,6 @@
 
 /* `width='fit'`: a hidden stack of every option label shares the value's grid
    cell, so the trigger sizes to its widest option and never resizes on select. */
-.fit {
-  width: auto;
-  max-width: 100%;
-}
-
 .fit .trigger {
   display: grid;
   grid-template-columns: auto auto;

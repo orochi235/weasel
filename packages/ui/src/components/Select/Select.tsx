@@ -25,8 +25,9 @@ import {
   type ValidationResult,
 } from 'react-aria-components';
 import { pastDragThreshold } from '@weasel-js/core';
-import { fieldClasses, type FieldOrientation } from '../Field/Field';
+import type { FieldOrientation } from '../Field/Field';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import s from './Select.module.css';
 import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
@@ -171,21 +172,21 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={onSelectionChange ? (k) => onSelectionChange(k as T) : undefined}
       className={[
-        s.field,
-        width === 'fit' && s.fit,
+        f.field,
+        f.control,
+        s.select,
+        width === 'fit' && `${f.fit} ${s.fit}`,
         variant === 'bare' && s.bare,
         indicator === 'underline' && s.underlined,
         indicator === 'none' && s.plain,
-        fieldClasses.root,
-        orientation === 'row' && fieldClasses.row,
-        orientation === 'row' && s.row,
+        orientation === 'row' && `${f.row} ${s.row}`,
         className,
       ]
         .filter(Boolean)
         .join(' ')}
     >
       {anchor}
-      {label !== undefined && <Label className={`${fieldClasses.label} ${s.label}`}>{label}</Label>}
+      {label !== undefined && <Label className={f.label}>{label}</Label>}
       <TriggerTooltip
         content={segmentTooltipContent({ tooltip, shortcut, ariaLabel: rest['aria-label'], label })}
         disabled={rest.isDisabled}
@@ -193,7 +194,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
         <RACButton
           id={triggerId}
           ref={triggerRef}
-          className={s.trigger}
+          className={`${f.frame} ${s.trigger}`}
           onPointerDown={(e) => {
             pressRef.current = { x: e.clientX, y: e.clientY, at: performance.now() };
           }}
@@ -219,11 +220,11 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
         </RACButton>
       </TriggerTooltip>
       {description !== undefined && (
-        <Text slot="description" className={`${fieldClasses.hint} ${s.below}`}>
+        <Text slot="description" className={`${f.hint} ${f.below}`}>
           {description}
         </Text>
       )}
-      <FieldError className={`${fieldClasses.error} ${s.below}`}>{errorMessage}</FieldError>
+      <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
       {/* `data-weasel-overlay` marks DOM that belongs to this control but
           renders in a portal, outside the subtree the trigger sits in. Any
           consumer reasoning about "did focus leave my component?" via

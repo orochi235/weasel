@@ -14,8 +14,9 @@ import {
   type ListBoxItemProps as RACListBoxItemProps,
   type ValidationResult,
 } from 'react-aria-components';
-import { fieldClasses } from '../Field/Field';
+import type { FieldOrientation } from '../Field/Field';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import s from './ComboBox.module.css';
 
@@ -56,6 +57,12 @@ const admitEverything = () => true;
  */
 export type ComboBoxProps<T extends Key = string> = Omit<RACComboBoxProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {
   label?: ReactNode;
+  /**
+   * `'stacked'` (the default) puts the label above the field; `'row'` sets it
+   * beside the field at its own width, with any description or error on a
+   * line below. Same vocabulary as {@link Field}'s `orientation`.
+   */
+  orientation?: FieldOrientation;
   description?: ReactNode;
   errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
   placeholder?: string;
@@ -101,6 +108,7 @@ export type ComboBoxProps<T extends Key = string> = Omit<RACComboBoxProps<object
 export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
   const {
     label,
+    orientation = 'stacked',
     description,
     errorMessage,
     placeholder,
@@ -136,12 +144,18 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
         onSelectionChange?.(k as T | null);
         if (k !== null) onCommit?.({ source: 'option', key: k as T });
       }}
-      className={[s.field, width === 'fit' && s.fit, fieldClasses.root, className]
+      className={[
+        f.field,
+        f.control,
+        width === 'fit' && `${f.fit} ${s.fit}`,
+        orientation === 'row' && f.row,
+        className,
+      ]
         .filter(Boolean)
         .join(' ')}
     >
       {anchor}
-      {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
+      {label !== undefined && <Label className={f.label}>{label}</Label>}
       <ComboBoxFrame
         placeholder={placeholder}
         isLoading={isLoading}
@@ -157,11 +171,11 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
         )}
       </ComboBoxFrame>
       {description !== undefined && (
-        <Text slot="description" className={fieldClasses.hint}>
+        <Text slot="description" className={`${f.hint} ${f.below}`}>
           {description}
         </Text>
       )}
-      <FieldError className={fieldClasses.error}>{errorMessage}</FieldError>
+      <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
       <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
         <RACListBox
           className={`${listbox.surface} ${listbox.list}`}
@@ -214,7 +228,7 @@ function ComboBoxFrame({
   };
 
   return (
-    <div className={s.frame}>
+    <div className={`${f.frame} ${s.frame}`}>
       <RACInput
         placeholder={placeholder}
         aria-busy={isLoading || undefined}

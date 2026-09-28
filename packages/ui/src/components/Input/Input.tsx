@@ -8,7 +8,8 @@ import {
   type TextFieldProps as RACTextFieldProps,
   type ValidationResult,
 } from 'react-aria-components';
-import { fieldClasses, type FieldOrientation } from '../Field/Field';
+import type { FieldOrientation } from '../Field/Field';
+import f from '../field.module.css';
 import s from './Input.module.css';
 
 /** Props for {@link Input}, on top of React Aria's `TextField` props. */
@@ -55,27 +56,26 @@ export const Input = forwardRef(function Input(
     <TextField
       {...textFieldProps}
       className={[
-        s.field,
-        fieldClasses.root,
-        orientation === 'row' && fieldClasses.row,
-        orientation === 'row' && s.row,
+        f.field,
+        f.control,
+        orientation === 'row' && f.row,
         className,
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      {label !== undefined && <Label className={`${fieldClasses.label} ${s.label}`}>{label}</Label>}
-      <div className={s.frame}>
+      {label !== undefined && <Label className={f.label}>{label}</Label>}
+      <div className={`${f.frame} ${s.frame}`}>
         {leadingAdornment !== undefined && <span className={s.adornment}>{leadingAdornment}</span>}
         <RACInput ref={ref} placeholder={placeholder} />
         {trailingAdornment !== undefined && <span className={s.adornment}>{trailingAdornment}</span>}
       </div>
       {description !== undefined && (
-        <Text slot="description" className={`${fieldClasses.hint} ${s.below}`}>
+        <Text slot="description" className={`${f.hint} ${f.below}`}>
           {description}
         </Text>
       )}
-      <FieldError className={`${fieldClasses.error} ${s.below}`}>{errorMessage}</FieldError>
+      <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
     </TextField>
   );
 });
