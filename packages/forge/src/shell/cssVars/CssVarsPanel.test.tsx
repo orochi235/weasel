@@ -1,7 +1,7 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { THEME_SOURCES } from '@weasel-js/theme';
+import { THEME_SOURCES, type ThemeDefinition } from '@weasel-js/theme';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FromFrame, ToFrame } from '../../protocol/messages';
 import { describeSchema } from '../../protocol/schema';
@@ -10,6 +10,14 @@ import { connectFrame, flush, installResizeObserver } from '../labHarness';
 import { Workshop } from '../Workshop';
 
 installResizeObserver();
+
+const weasel = THEME_SOURCES.weasel as ThemeDefinition;
+const uiBase = weasel.seeds?.['ui-base'] as Readonly<Record<string, number | string>>;
+/** The font base the panel opens on: the default density's seed. */
+const fontBase = uiBase.comfortable as number;
+const editedBase = fontBase + 2;
+const fontSteps = ['2xs', 'xs', 'sm', 'md', 'lg', 'xl'];
+const fontFactors = weasel.scales?.['font-size']?.factors as readonly number[];
 
 const a: IndexEntry = { id: 'x--a', title: 'X', name: 'A', exportName: 'A', file: '/x.stories.tsx' };
 const b: IndexEntry = { id: 'x--b', title: 'X', name: 'B', exportName: 'B', file: '/x.stories.tsx' };
@@ -103,28 +111,23 @@ describe('CssVarsPanel', () => {
     const { received } = await openTrial('A');
     const font = row(vars(), 'font');
     const base = font.getByRole('textbox', { name: 'font base' });
-    expect(base).toHaveValue('13');
-    expect(font.getByRole('textbox', { name: '--wzl-font-size-2xs factor' })).toHaveValue('0.66');
+    expect(base).toHaveValue(String(fontBase));
+    expect(font.getByRole('textbox', { name: '--wzl-font-size-2xs factor' })).toHaveValue(String(fontFactors[0]));
 
     act(() => {
-      fireEvent.change(base, { target: { value: '15' } });
+      fireEvent.change(base, { target: { value: String(editedBase) } });
       fireEvent.blur(base);
     });
     await flush();
     const sets = setsOf(received) as Extract<ToFrame, { type: 'vars.set' }>[];
-    expect(Object.fromEntries(sets.map((m) => [m.name, m.value]))).toEqual({
-      '--wzl-font-size-2xs': '10px',
-      '--wzl-font-size-xs': '12px',
-      '--wzl-font-size-sm': '13px',
-      '--wzl-font-size-md': '15px',
-      '--wzl-font-size-lg': '18px',
-      '--wzl-font-size-xl': '23px',
-    });
-    expect(font.getByRole('textbox', { name: 'font base' })).toHaveValue('15');
+    expect(Object.fromEntries(sets.map((m) => [m.name, m.value]))).toEqual(
+      Object.fromEntries(fontSteps.map((step, i) => [`--wzl-font-size-${step}`, `${Math.round(editedBase * fontFactors[i])}px`])),
+    );
+    expect(font.getByRole('textbox', { name: 'font base' })).toHaveValue(String(editedBase));
 
     fireEvent.click(font.getByRole('button', { name: 'Reset font' }));
     await flush();
-    expect(font.getByRole('textbox', { name: 'font base' })).toHaveValue('13');
+    expect(font.getByRole('textbox', { name: 'font base' })).toHaveValue(String(fontBase));
   });
 
   it('files the theme’s tokens into collapsible sections, with the gray ramp as one row of swatches', async () => {
@@ -199,7 +202,7 @@ describe('CssVarsPanel', () => {
     const calls = stubStore({ status: 200, body: { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] } });
     render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const { received } = await openTrial('A');
-    await editFontBase('15');
+    await editFontBase(String(editedBase));
 
     fireEvent.click(vars().getByRole('button', { name: 'Save scales to theme' }));
     await waitFor(() => expect(vars().getByRole('status')).toHaveTextContent('Saved to themes/weasel.json.'));
@@ -207,13 +210,13 @@ describe('CssVarsPanel', () => {
     expect(put?.url).toMatch(/\/__theme\/weasel$/);
     const body = JSON.parse(String(put?.init?.body));
     expect(body.hash).toBe('h1');
-    expect(body.definition.seeds['ui-base']).toEqual({ by: 'density', compact: 11, comfortable: 15, roomy: 15 });
+    expect(body.definition.seeds['ui-base']).toEqual({ ...uiBase, comfortable: editedBase });
     expect(body.definition.scales['font-size'].base).toBe('{seeds.ui-base}');
 
     await flush();
     const cleared = (setsOf(received) as VarsSet[]).filter((m) => m.value === null);
     expect(cleared.map((m) => m.name).sort()).toEqual(
-      ['2xs', 'xs', 'sm', 'md', 'lg', 'xl'].map((step) => `--wzl-font-size-${step}`).sort(),
+      fontSteps.map((step) => `--wzl-font-size-${step}`).sort(),
     );
     expect(vars().queryByRole('button', { name: 'Save scales to theme' })).toBeNull();
   });
@@ -223,12 +226,12 @@ describe('CssVarsPanel', () => {
     stubStore({ status: 409, body: { status: 'conflict', hash: 'h9' } });
     render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
     const { received } = await openTrial('A');
-    const font = await editFontBase('15');
+    const font = await editFontBase(String(editedBase));
 
     fireEvent.click(vars().getByRole('button', { name: 'Save scales to theme' }));
     await waitFor(() => expect(vars().getByRole('alert')).toHaveTextContent('changed on disk'));
     expect((setsOf(received) as VarsSet[]).some((m) => m.value === null)).toBe(false);
-    expect(font.getByRole('textbox', { name: 'font base' })).toHaveValue('15');
+    expect(font.getByRole('textbox', { name: 'font base' })).toHaveValue(String(editedBase));
     expect(vars().getByRole('button', { name: 'Save scales to theme' })).toBeInTheDocument();
   });
 });
