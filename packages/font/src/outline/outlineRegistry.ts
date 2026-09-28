@@ -315,6 +315,9 @@ async function beginLoad(slot: FaceSlot): Promise<void> {
   } catch (err) {
     slot.status = 'failed';
     slots.bump();
+    // A layout that found this face still loading deferred its judgment on
+    // the family; wake it so it can make one.
+    notifyGlyphReady();
     warnOnce(`load|${slotKey(slot.family, slot.weight, slot.style)}`,
       `weasel registerFontOutlines("${slot.family}" ${slot.weight}/${slot.style}): ` +
       `${err instanceof Error ? err.message : String(err)}. Large text in this face ` +

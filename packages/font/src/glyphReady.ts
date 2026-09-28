@@ -42,9 +42,10 @@ export function glyphGeneration(): number {
 
 /**
  * Subscribe to glyph availability. Fires after a batch of deferred SDF bakes
- * completes, and when an outline face finishes loading — in both cases, text
- * that painted nothing (or painted from a lower tier) can now paint. Returns
- * an unsubscribe.
+ * completes, and when an atlas or outline face finishes loading — text that
+ * painted nothing (or painted from a lower tier) can now paint. Also fires
+ * when such a load fails, since text laid out while it was pending is stale
+ * either way. Returns an unsubscribe.
  */
 export function subscribeGlyphReady(cb: () => void): () => void {
   subscribers.add(cb);
