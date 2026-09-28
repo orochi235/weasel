@@ -17,6 +17,7 @@ import type { FillStyle, PolygonPath, TextStyle } from '@weasel-js/core';
 import {
   fillDataFromSvg,
   strokeDataFromSvg,
+  svgLeafFromKit,
   svgNodesFromKit,
   svgPaintFromKit,
   svgStrokeFromKit,
@@ -158,32 +159,20 @@ function decodePathToolAndParams(
 /** Lower one WeaselDraw object to an SvgNode for serialization. */
 export function objToSvgNode(o: Obj): SvgNode {
   if (o.tool === 'text') {
-    const node: SvgTextNode = {
-      kind: 'text',
-      x: o.x,
-      y: o.y,
-      width: o.width,
-      height: o.height,
+    // weasel-svg does not model `lineHeight` (it has no clean SVG-native
+    // attribute), so it rides in the namespaced meta bag as `wd:line-height`.
+    const { lineHeight, ...style } = o.style ?? {};
+    const node = svgLeafFromKit({
       text: o.text,
-    };
-    if (o.runs && o.runs.length > 0) node.runs = o.runs;
-    if (o.fill !== undefined) node.fill = o.fill;
-    if (o.stroke) node.stroke = o.stroke;
-    if (o.verticalAlign) node.verticalAlign = o.verticalAlign;
-    // Start the WeaselDraw attr bag with `tool: 'text'`; lineHeight (if any)
-    // joins the same bag.
-    const wdAttrs: Record<string, string> = encodeWdAttrs(o);
-    if (o.style) {
-      // weasel-svg does not model `lineHeight` (it has no clean SVG-native
-      // attribute). Lift it into the namespaced meta bag as
-      // `wd:line-height="<n>"` so it round-trips losslessly; pass the
-      // remaining style fields through verbatim.
-      const { lineHeight, ...rest } = o.style;
-      if (Object.keys(rest).length > 0) node.style = rest as TextStyle;
-      if (lineHeight != null) wdAttrs['line-height'] = String(lineHeight);
-    }
+      ...(Object.keys(style).length > 0 ? { style: style as TextStyle } : {}),
+      ...(o.runs && o.runs.length > 0 ? { runs: o.runs } : {}),
+      ...(o.verticalAlign ? { verticalAlign: o.verticalAlign } : {}),
+      ...(o.fill !== undefined ? { fill: o.fill } : {}),
+      ...(o.stroke ? { stroke: o.stroke } : {}),
+    }, o) as SvgTextNode;
+    const wdAttrs = encodeWdAttrs(o);
+    if (lineHeight != null) wdAttrs['line-height'] = String(lineHeight);
     node.meta = { wd: { attrs: wdAttrs } };
-    if (o.rotation) node.rotation = o.rotation;
     return node;
   }
   // Every non-text Obj is a PathObj — its `path` field is either a RectPath
