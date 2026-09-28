@@ -49,7 +49,8 @@ export function refitScale(scale: TokenScale, kind: TokenScaleRule['kind'], amou
   }
 }
 
-export type TokenCategory = 'color' | 'type' | 'size' | 'motion' | 'depth' | 'other';
+/** A section of the token panel; `tokenCategory` files each token under one. */
+export type TokenCategory ='color' | 'type' | 'size' | 'motion' | 'depth' | 'other';
 
 /** The panel's sections, in the order it draws them. */
 export const TOKEN_CATEGORIES: readonly { id: TokenCategory; title: string }[] = [
