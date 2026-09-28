@@ -502,3 +502,124 @@ describe('fontPending', () => {
     expect(fontPending('stuck')).toBe(false);
   });
 });
+
+describe('registerFont — lazy', () => {
+  const fetchCalls = () => (global.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
+
+  it('fetches nothing until text resolves the family', () => {
+    void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+    expect(fetchCalls()).toBe(0);
+    expect(getFont('inter')).toBeNull();
+  });
+
+  it('starts the fetch on first resolve, answers a pending miss, and wakes subscribers when it lands', async () => {
+    const landed = registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+    const redraw = vi.fn();
+    const unsubscribe = subscribeGlyphReady(redraw);
+
+    const first = resolveFontVariant('inter', 400, 'normal');
+    expect(first.entry).toBeNull();
+    expect(first.substituted).toBeUndefined();
+    expect(fetchCalls()).toBe(2);
+    expect(fontPending('inter')).toBe(true);
+
+    await landed;
+    expect(redraw).toHaveBeenCalled();
+    expect(resolveFontVariant('inter', 400, 'normal').entry).not.toBeNull();
+    // A second resolve does not fetch again.
+    expect(fetchCalls()).toBe(2);
+    unsubscribe();
+  });
+
+  it('is pending before anything asks, so a first layout defers its warning', () => {
+    void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+    expect(fontPending('inter')).toBe(true);
+    expect(fetchCalls()).toBe(0);
+  });
+
+  it('does not substitute another family, or reach the outline tier, while its atlas is on the way', () => {
+    return (async () => {
+      await registerFont('other', {}, '/o.json', '/o.png');
+      _resetFontOutlinesForTests();
+      registerFontOutlines('inter', {}, new ArrayBuffer(8), {
+        parser: () => new Promise(() => {}),
+      });
+      void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const r = resolveFontVariant('inter', 400, 'normal');
+      expect(r.entry).toBeNull();
+      expect(r.substituted).toBeUndefined();
+      expect(r.source).toBe('atlas');
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+      _resetFontOutlinesForTests();
+    })();
+  });
+
+  it('is what a substitution falls back to when it is the first family registered', async () => {
+    const landed = registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const pending = resolveFontVariant('missing', 400, 'normal');
+    expect(pending.entry).toBeNull();
+    expect(fetchCalls()).toBe(2);
+    await landed;
+    const r = resolveFontVariant('missing', 400, 'normal');
+    expect(r.substituted).toEqual({ requested: 'missing', resolved: 'inter' });
+    // Only the successful swap warns — never "unusable default" while it loaded.
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it('loads only the variant asked for when that variant was declared', async () => {
+    void registerFont('inter', { weight: 400 }, '/r.json', '/r.png', { lazy: true });
+    void registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
+
+    resolveFontVariant('inter', 700, 'normal');
+    const urls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
+    expect(urls).toEqual(['/b.json', '/b.png']);
+  });
+
+  it('waits for a declared exact variant rather than faking it from another', async () => {
+    await registerFont('inter', { weight: 400 }, '/r.json', '/r.png');
+    const bold = registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
+
+    const r = resolveFontVariant('inter', 700, 'normal');
+    expect(r.entry).toBeNull();
+    await bold;
+    const after = resolveFontVariant('inter', 700, 'normal');
+    expect(after.resolved.weight).toBe(700);
+    expect(after.synthetic.bold).toBe(false);
+  });
+
+  it('lists a declared face before it loads', () => {
+    void registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
+    expect(listFonts()).toEqual([{ family: 'inter', variants: [{ weight: 700, style: 'normal' }] }]);
+    expect(listFontWeights('inter')).toEqual([700]);
+    expect(fetchCalls()).toBe(0);
+  });
+
+  it('an eager registration of a declared variant loads it now', async () => {
+    const lazy = registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+    await registerFont('inter', {}, '/i.json', '/i.png');
+    expect(getFont('inter')).not.toBeNull();
+    await lazy;
+    expect(fetchCalls()).toBe(2);
+  });
+
+  it('rejects the lazy promise when the load it started fails', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('down'));
+    const landed = registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+    resolveFontVariant('inter', 400, 'normal');
+    await expect(landed).rejects.toThrow('weasel registerFont');
+    expect(fontPending('inter')).toBe(false);
+  });
+
+  it('is cleared by the reset seam', () => {
+    void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+    _resetFontRegistryForTests();
+    expect(fontPending('inter')).toBe(false);
+    expect(listFonts()).toEqual([]);
+  });
+});

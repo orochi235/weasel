@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { createButton } from './button';
 import { layoutRuns, resolveTextStyle, verticalAlignOffset } from '@weasel-js/text';
 import { registerDefaultFont, DEFAULT_FONT_FAMILY } from '../fonts/registerDefaultFont';
+import { resolveFontVariant } from '@weasel-js/font';
 import type { TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
@@ -191,7 +192,9 @@ describe('button label placement', () => {
     global.createImageBitmap = vi.fn().mockResolvedValue(
       { width: 512, height: 512, close: vi.fn() } as unknown as ImageBitmap,
     );
-    await registerDefaultFont();
+    const landed = registerDefaultFont();
+    resolveFontVariant(DEFAULT_FONT_FAMILY, 400, 'normal');
+    await landed;
   });
 
   // Where the renderer puts the line box (draw.ts drawText): the layout from

@@ -10,6 +10,8 @@ import type {
 } from '@weasel-js/core';
 import { DEFAULT_WIDGET_CLAIMS, type Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { resolveFontVariant } from '@weasel-js/font';
+import { DEFAULT_FONT_FAMILY } from './fonts/registerDefaultFont';
 import { createPaintedCursorState } from '@weasel-js/core';
 
 const IDENTITY_VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -77,10 +79,16 @@ describe('attachHud', () => {
     expect(seen).toBe('sans-serif');
   });
 
+  it('fetches no atlas until a widget lays out text', () => {
+    attachHud(makeApi(), createHud());
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('fetches the host\'s own copy when given atlas urls', () => {
     attachHud(makeApi(), createHud(), {
       font: { metricsUrl: '/app/inter.json', atlasUrl: '/app/inter.png' },
     });
+    resolveFontVariant(DEFAULT_FONT_FAMILY, 400, 'normal');
     expect(global.fetch).toHaveBeenCalledWith('/app/inter.json');
     expect(global.fetch).toHaveBeenCalledWith('/app/inter.png');
   });

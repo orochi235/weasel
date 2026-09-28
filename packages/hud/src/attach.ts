@@ -40,7 +40,7 @@ export interface AttachHudOptions {
 
 /**
  * Bind a HUD to a canvas: register its render layer, route pointer input to
- * the widget under the cursor, and kick off default-font registration. Returns
+ * the widget under the cursor, and register the default font. Returns
  * the detach function.
  *
  * Throws if the HUD is already attached — a HUD belongs to one canvas at a
@@ -58,10 +58,9 @@ export function attachHud(
     throw new Error('weasel-hud: this HUD is already attached to a canvas.');
   }
 
-  // Kick off default-font registration. Widgets that draw text before this
-  // resolves render via the renderer's existing fallback (warn + skip). A
-  // named family is the host's to have registered, so there is nothing to
-  // fetch and nothing to wait for.
+  // Register the default font. It loads when a widget first lays out text,
+  // which lays out as nothing until then. A named family is the host's to have
+  // registered, so there is nothing to fetch and nothing to wait for.
   const font = options.font;
   const defaultFont = typeof font === 'string' ? font : DEFAULT_FONT_FAMILY;
   if (typeof font !== 'string') {

@@ -44,6 +44,7 @@ export {
   enableLocalFontOutlines,
   canQueryLocalFonts,
 } from '@weasel-js/font';
+export type { RegisterFontOptions } from '@weasel-js/font';
 export { OUTLINE_MIN_SCREEN_PX } from './draw';
 export { buildGradientRamp } from './cache/GradientRampAtlas';
 export { IDENTITY_COLOR_MATRIX } from './state/GroupState';

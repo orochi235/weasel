@@ -60,10 +60,32 @@ function normalizeVariant(v: FontVariant): { weight: number; style: FontStyle } 
  *  reset that clears the map cannot be undone by a late `finally`. */
 const inFlight = new Map<string, Set<object>>();
 
+/** One variant's fetch, keyed `family|weight|style`, so a lazy declaration and
+ *  an eager call for the same face share it. */
+const loads = new Map<string, Promise<void>>();
+
+/** A lazily registered variant nothing has asked for yet. */
+interface Declared {
+  metricsUrl: string;
+  atlasUrl: string;
+  promise: Promise<void>;
+  settle: (load: Promise<void>) => void;
+}
+
+/** Lazy registrations not yet started, per family, keyed like `registry`. */
+const declared = new Map<string, Map<string, Declared>>();
+
+/** Every family `registerFont` was called for, eager or lazy, in call order —
+ *  what "the first registered family" means to the substitute policy. */
+const families = new Set<string>();
+
 /** Test helper. Do not call from product code. */
 export function _resetFontRegistryForTests(): void {
   registry.clear();
   inFlight.clear();
+  loads.clear();
+  declared.clear();
+  families.clear();
   _clearFallbackWarnings();
 }
 
@@ -90,8 +112,13 @@ export interface RegisteredFont {
  */
 export function listFonts(): readonly RegisteredFont[] {
   const out: RegisteredFont[] = [];
-  for (const { key: family, value: variantMap } of registry.entries()) {
-    const variants = [...variantMap.keys()]
+  for (const family of families) {
+    const keys = new Set([
+      ...(registry.get(family)?.keys() ?? []),
+      ...(declared.get(family)?.keys() ?? []),
+    ]);
+    if (keys.size === 0) continue;
+    const variants = [...keys]
       .map((key) => {
         const [w, s] = key.split('|') as [string, FontStyle];
         return { weight: Number(w), style: s };
@@ -112,28 +139,92 @@ export function listFonts(): readonly RegisteredFont[] {
 export function listFontWeights(family: string): readonly number[] {
   const weights = new Set<number>();
   for (const key of registry.get(family)?.keys() ?? []) weights.add(Number(key.split('|')[0]));
+  for (const key of declared.get(family)?.keys() ?? []) weights.add(Number(key.split('|')[0]));
   for (const face of listFontOutlines()) {
     if (face.family === family && face.status !== 'failed') weights.add(face.weight);
   }
   return [...weights].sort((a, b) => a - b);
 }
 
+/** Options for {@link registerFont}. */
+export interface RegisterFontOptions {
+  /**
+   * Fetch nothing until text first resolves this face. Layout treats the face
+   * as pending from registration on, so a run set in it lays out as nothing —
+   * never in a fallback face's metrics — and relays out when the atlas lands.
+   * The returned promise settles with that load, so it never settles for a
+   * face no text uses.
+   */
+  lazy?: boolean;
+}
+
 /**
- * Fetch a baked MSDF atlas and its metrics, and register them as one variant
- * of `family`. Resolves once the face is usable; re-registering a variant that
- * is already present is a no-op.
+ * Register a baked MSDF atlas and its metrics as one variant of `family`.
+ * Resolves once the face is usable; re-registering a variant that is already
+ * present is a no-op.
+ *
+ * Eager by default: both files are fetched now. With `{ lazy: true }` they are
+ * fetched the first time text asks for the family, which keeps the atlas off
+ * the critical path of anything that draws no text.
  */
-export async function registerFont(
+export function registerFont(
   family: string,
   variant: FontVariant,
   metricsUrl: string,
   atlasUrl: string,
+  opts: RegisterFontOptions = {},
 ): Promise<void> {
   const { weight, style } = normalizeVariant(variant);
   const key = variantKey(weight, style);
+  families.add(family);
 
-  if (registry.get(family)?.has(key)) return;
+  if (registry.get(family)?.has(key)) return Promise.resolve();
+  if (!opts.lazy) return loadVariant(family, key, metricsUrl, atlasUrl);
 
+  const running = loads.get(`${family}|${key}`);
+  if (running) return running;
+  const existing = declared.get(family)?.get(key);
+  if (existing) return existing.promise;
+
+  let settle!: (load: Promise<void>) => void;
+  const promise = new Promise<void>((resolve, reject) => {
+    settle = (load) => { load.then(resolve, reject); };
+  });
+  const variants = declared.get(family) ?? new Map<string, Declared>();
+  declared.set(family, variants.set(key, { metricsUrl, atlasUrl, promise, settle }));
+  // A layout that already missed on this family caches that miss until the
+  // generation moves; this is what makes it ask again, and so start the load.
+  notifyGlyphReady();
+  return promise;
+}
+
+/** Start (or join) the fetch for one variant, consuming any lazy declaration. */
+function loadVariant(
+  family: string, key: string, metricsUrl: string, atlasUrl: string,
+): Promise<void> {
+  const id = `${family}|${key}`;
+  const running = loads.get(id);
+  if (running) return running;
+
+  const load = fetchVariant(family, key, metricsUrl, atlasUrl);
+  loads.set(id, load);
+  const settleLoad = () => { if (loads.get(id) === load) loads.delete(id); };
+  load.then(settleLoad, settleLoad);
+
+  const pendingLazy = declared.get(family)?.get(key);
+  if (pendingLazy) {
+    const variants = declared.get(family)!;
+    variants.delete(key);
+    if (variants.size === 0) declared.delete(family);
+    pendingLazy.settle(load);
+  }
+  return load;
+}
+
+async function fetchVariant(
+  family: string, key: string, metricsUrl: string, atlasUrl: string,
+): Promise<void> {
+  const [weight, style] = key.split('|') as [string, FontStyle];
   const token = {};
   const tokens = inFlight.get(family) ?? new Set<object>();
   inFlight.set(family, tokens.add(token));
@@ -161,10 +252,9 @@ export async function registerFont(
     // Copy the family as it is now, not as it was before the await: another
     // variant of it may have landed meanwhile, and a stale copy would drop it.
     registry.set(family, new Map(registry.get(family)).set(key, { font, bitmap }));
+    settle(family, token);
     // Same meaning the lazy tiers give it: text that was painting from a
-    // fallback face — or painting nothing — can now paint from this one. The
-    // early return above covers the already-registered case, so this fires
-    // once per variant that actually lands.
+    // fallback face — or painting nothing — can now paint from this one.
     notifyGlyphReady();
   } catch (err) {
     settle(family, token);
@@ -175,7 +265,28 @@ export async function registerFont(
       `weasel registerFont("${family}" ${weight}/${style}): ${err instanceof Error ? err.message : String(err)}`,
     );
   }
-  settle(family, token);
+}
+
+/**
+ * Start the lazy loads a request for `(family, weight, style)` needs: the
+ * exact variant when it was declared, otherwise every declared variant of the
+ * family, since the within-family chain may land on any of them.
+ */
+function wakeDeclared(family: string, weight: number, style: FontStyle): void {
+  const variants = declared.get(family);
+  if (!variants) return;
+  const exact = variantKey(weight, style);
+  const keys = variants.has(exact) ? [exact] : [...variants.keys()];
+  for (const key of keys) {
+    const { metricsUrl, atlasUrl } = variants.get(key)!;
+    // The declaration's own promise carries the failure to its caller.
+    loadVariant(family, key, metricsUrl, atlasUrl).catch(() => {});
+  }
+}
+
+/** Is an atlas for this family on its way — declared lazily or fetching? */
+function atlasPending(family: string): boolean {
+  return inFlight.has(family) || declared.has(family);
 }
 
 function settle(family: string, token: object): void {
@@ -194,7 +305,7 @@ function settle(family: string, token: object): void {
  * this tells the two apart, so "not registered" is reported only when it is.
  */
 export function fontPending(family: string, weight = 400, style: FontStyle = 'normal'): boolean {
-  if (inFlight.has(family)) return true;
+  if (atlasPending(family)) return true;
   const outline = outlineStatus(family, weight, style === 'italic' ? 'italic' : 'normal');
   return outline === 'idle' || outline === 'loading';
 }
@@ -326,7 +437,7 @@ function missResolveResult(
     // family the `'canvas'` policy auto-enrolled is not served under this
     // policy, so substituting *to* it would report a swap that paints nothing.
     if (fallback !== null && fallback !== family) {
-      if (registry.has(fallback) || isCanvasFont(fallback)) {
+      if (registry.has(fallback) || isCanvasFont(fallback) || atlasPending(fallback)) {
         // Probing whether the fallback family renders, not resolving a
         // top-level request for it — suppress so this recursion can't also
         // land in the `fallback === family` branch below (the fallback
@@ -340,6 +451,8 @@ function missResolveResult(
           if (!suppressWarn) warnMissingFamilyOnce(family, weight, style, fallback);
           return { ...result, substituted: { requested: family, resolved: fallback } };
         }
+        // Still loading: nothing to swap to yet, and nothing to warn about.
+        if (atlasPending(fallback)) return pendingMiss(family, weight, style);
       }
       // Substitution was supposed to happen and produced nothing. Falling
       // through silently here is the invisible-text failure this whole policy
@@ -379,9 +492,22 @@ function missResolveResult(
   };
 }
 
-/** Insertion order of the registry Map — the first family an app registered. */
+/** The first family an app registered that has, or will have, an atlas. */
 function firstRegisteredFamily(): string | null {
-  return registry.entries()[0]?.key ?? null;
+  for (const family of families) {
+    if (registry.has(family) || atlasPending(family)) return family;
+  }
+  return null;
+}
+
+/** A miss that is only late: nothing substituted, nothing warned. */
+function pendingMiss(family: string, weight: number, style: FontStyle): ResolveResult {
+  return {
+    entry: null,
+    resolved: { family, weight, style },
+    synthetic: { bold: false, italic: false },
+    source: 'atlas',
+  };
 }
 
 // Resolution runs per frame, so an unguarded warn would flood the console.
@@ -563,8 +689,15 @@ function resolveFontVariantInternal(
   style: FontStyle,
   suppressWarn: boolean,
 ): ResolveResult {
+  wakeDeclared(family, weight, style);
+  // An atlas on its way outranks every stand-in: laying out in a fallback's
+  // metrics now would reflow the text when the real face lands.
+  if (loads.has(`${family}|${variantKey(weight, style)}`)) {
+    return pendingMiss(family, weight, style);
+  }
   const familyMap = registry.get(family);
   if (!familyMap || familyMap.size === 0) {
+    if (atlasPending(family)) return pendingMiss(family, weight, style);
     return missResolveResult(family, weight, style, suppressWarn);
   }
 
