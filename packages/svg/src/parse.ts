@@ -9,8 +9,8 @@
  */
 
 import type { Path, PolygonPath } from '@weasel-js/core';
-import { PATH_L, PATH_M, PATH_Z, pathFromD, getMarker, solid } from '@weasel-js/core';
-import type { MarkerEntry, MarkerPaint, MarkerRef } from '@weasel-js/core';
+import { PATH_L, PATH_M, PATH_Z, pathFromD, getMarker, resolveMarkerSize, solid } from '@weasel-js/core';
+import type { MarkerEntry, MarkerPaint } from '@weasel-js/core';
 import {
   rectElementToPath, circleToPath, ellipseToPath, lineToPath,
   parsePoints, polylineToPath, polygonToPath,
@@ -1346,7 +1346,14 @@ function ingestMarkers(
       }
       const sized = sizedMarkerRef(el);
       if (sized) {
-        stroke[field] = sized;
+        // An unregistered key comes along as the def's geometry in marker
+        // units: the def is drawn in user space at one unit per resolved size.
+        if (getMarker(sized.key) === undefined && !minted.has(sized.key)) {
+          const entry = markerEntryFrom(el, id, role, resolveMarkerSize(sized, 1), gradients, onWarn);
+          minted.set(sized.key, entry && { ...entry, id: sized.key });
+        }
+        if (minted.get(sized.key) === null) delete stroke[field];
+        else stroke[field] = sized;
         continue;
       }
       const cacheKey = `${id}\u0000${role}\u0000${w}`;
@@ -1374,15 +1381,14 @@ function ingestMarkers(
   return [...out.values()];
 }
 
-/** The reference a sized-marker def this package wrote stands for — its key
- *  and size, read off the private namespace — when that key is registered
- *  here. Otherwise the def is read as any other document marker. */
-function sizedMarkerRef(el: Element): MarkerRef | undefined {
+/** The reference a sized-marker def this package wrote stands for: its key
+ *  and size, read off the private namespace. */
+function sizedMarkerRef(el: Element): { key: string; size: ScreenLength } | undefined {
   const attr = (name: string): string | null =>
     el.getAttributeNS(WEASEL_NS, name) ?? el.getAttribute(`${WEASEL_NS_PREFIX}:${name}`);
   const key = attr('key');
   const raw = attr('size')?.trim();
-  if (!key || !raw || getMarker(key) === undefined) return undefined;
+  if (!key || !raw) return undefined;
   const px = raw.endsWith('px');
   const n = parseFloat(px ? raw.slice(0, -2) : raw);
   if (!Number.isFinite(n) || n <= 0) return undefined;

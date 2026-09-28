@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  createScene, DEFAULT_SHAPE_FILL, solid, type FillStyle, type Path, type Stroke,
+  createScene, DEFAULT_SHAPE_FILL, getMarker, pathFromD, registerMarker, solid,
+  type FillStyle, type Path, type PolygonPath, type Stroke,
 } from '@weasel-js/core';
 import {
   svgImageFromKit, svgLeafFromKit, svgNodesFromKit, svgPaintFromKit, svgStrokeFromKit, type SvgKitTree,
@@ -62,6 +63,34 @@ describe('svgStrokeFromKit', () => {
     expect(back.markerStart).toEqual({ key: 'arrow', size: { px: 12 } });
     expect(back.markerMid).toBe('arrow');
     expect(back.markerEnd).toEqual({ key: 'arrow', size: 3 });
+  });
+
+  it('keeps a sized reference to a marker the importing session never registered', () => {
+    const tick = pathFromD('M0 0 L-2 1 L-2 -1 Z') as PolygonPath;
+    const dispose = registerMarker({
+      id: 'app:tick', fill: 'line',
+      path: ({ size }) => ({ ...tick, coords: tick.coords.map((v) => v * size) }),
+    });
+    const line: Path = {
+      kind: 'polygon', commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 50, 0]), fillRule: 'nonzero',
+    };
+    const stroke: Stroke = {
+      paint: solid('#000000'), width: 2,
+      markerStart: { key: 'app:tick', size: { px: 12 } }, markerEnd: { key: 'app:tick', size: 3 },
+    };
+    const box = { x: 0, y: 0, width: 50, height: 0 };
+    const out = serializeSvg([{ kind: 'path', path: line, fill: { kind: 'none' }, stroke: svgStrokeFromKit(stroke, box)! }]);
+    dispose();
+    expect(getMarker('app:tick')).toBeUndefined();
+
+    const parsed = parseSvg(out);
+    expect(parsed.warnings).toEqual([]);
+    const back = strokeDataFromSvg((parsed.nodes[0] as SvgPathNode).stroke, box)!;
+    expect(back.markerStart).toEqual({ key: 'app:tick', size: { px: 12 } });
+    expect(back.markerEnd).toEqual({ key: 'app:tick', size: 3 });
+    expect(parsed.markers?.map((m) => m.id)).toEqual(['app:tick']);
+    const unit = parsed.markers![0].path({ size: 1, stroke: {} }) as PolygonPath;
+    expect(Array.from(unit.coords)).toEqual(Array.from(tick.coords).map((v) => expect.closeTo(v, 4)));
   });
 
   it('writes no stroke for one with no paint or no width', () => {

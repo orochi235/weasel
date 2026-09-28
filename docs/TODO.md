@@ -156,12 +156,6 @@ Priority tags:
   scale is known, as `withResolvedStrokeWidth` (`renderer/draw.ts`) does for the
   ribbon.
 
-- **(P3) A sized reference to an unregistered marker imports as a plain marker.**
-  SVG export stamps `wzl:key`/`wzl:size` on each sized marker definition, but
-  `parseSvg` restores `{ key, size }` only when that key is registered in the
-  importing session; otherwise it becomes a document marker (geometry divided by the
-  stroke width). It draws the same, but the reference is lost.
-
 - **(P3) A container's bounds around a rotated leaf ignore the rotation.** Both the
   kit SVG walk and draw's import build the container box from the leaf's unrotated
   box.
