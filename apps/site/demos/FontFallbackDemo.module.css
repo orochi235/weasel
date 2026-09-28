@@ -1,0 +1,37 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 520px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label {
+  color: var(--ckd-muted);
+}
+
+.readout {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.readout th,
+.readout td {
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--ckd-border-2);
+  text-align: left;
+}
+
+.readout th {
+  font-weight: 500;
+  color: var(--ckd-muted);
+}
+
+.swap {
+  color: var(--ckd-accent);
+}

@@ -125,16 +125,6 @@ const DEMO_META: DemoMeta[] = [
   },
 
   {
-    id: 'text-outlines',
-    title: 'Outline tier',
-    category: 'Text',
-    description: 'Above a size threshold (48 on-screen px by default) text stops being sampled from a distance field and is drawn as real glyph geometry: registerFontOutlines() supplies the font bytes, the glyph outline is tessellated once in em space, and every instance is a scale-and-translate of the cached triangles into one batched draw call. Exact at any zoom, where an SDF reconstructed from a raster shows contour wobble as you magnify it — and because a glyph becomes an ordinary path, gradient and pattern fills come along for free. The tier is metric-neutral by construction: advances, kerning and line breaking still come from the SDF tier, so crossing the threshold changes what glyphs look like and never where they sit.',
-    hint: 'Toggle the checkbox: the same lines fall back to the baked MSDF atlas, without moving. Zoom in and the small lines cross the threshold too — the rule is on-screen size, not document size.',
-    load: () => import('./demos/TextOutlinesDemo').then((m) => m.TextOutlinesDemo),
-    path: 'apps/site/demos/TextOutlinesDemo.tsx',
-  },
-
-  {
     id: 'point-snap',
     title: 'Point-snap resize',
     category: 'Tools',
@@ -531,6 +521,24 @@ const DEMO_META: DemoMeta[] = [
     hint: 'One node per painter feature. Double-click to edit.',
     load: () => import('./demos/TextNodesDemo').then((m) => m.TextNodesDemo),
     path: 'apps/site/demos/TextNodesDemo.tsx',
+  },
+  {
+    id: 'text-outlines',
+    title: 'Outline tier',
+    package: 'font',
+    description: 'Above a size threshold (48 on-screen px by default) text stops being sampled from a distance field and is drawn as real glyph geometry: registerFontOutlines() supplies the font bytes, the glyph outline is tessellated once in em space, and every instance is a scale-and-translate of the cached triangles into one batched draw call. Exact at any zoom, where an SDF reconstructed from a raster shows contour wobble as you magnify it — and because a glyph becomes an ordinary path, gradient and pattern fills come along for free. The tier is metric-neutral by construction: advances, kerning and line breaking still come from the SDF tier, so crossing the threshold changes what glyphs look like and never where they sit.',
+    hint: 'Toggle the checkbox: the same lines fall back to the baked MSDF atlas, without moving. Zoom in and the small lines cross the threshold too — the rule is on-screen size, not document size.',
+    load: () => import('./demos/TextOutlinesDemo').then((m) => m.TextOutlinesDemo),
+    path: 'apps/site/demos/TextOutlinesDemo.tsx',
+  },
+  {
+    id: 'font-fallback',
+    title: 'Font fallback',
+    package: 'font',
+    description: "Every text run asks for a family, and resolveFontVariant decides where its glyphs come from. A family registered with registerFont draws from its baked MSDF atlas. A family enrolled with registerCanvasFont is rasterized by the browser at runtime and turned into a distance field, so any installed font works at some cost in sharpness. A family that was never registered goes to the fallback policy: 'substitute' draws it in the default family and reports the swap on ResolveResult.substituted, 'canvas' rasterizes the real typeface as if it had been enrolled, and 'none' draws nothing. The policy is process-wide and only decides for families with no registration of their own, which is why the top two lines never change.",
+    hint: 'Switch the policy and watch the bottom line: Inter under substitute, Courier New under canvas, blank under none. The table reads resolveFontVariant for each line.',
+    load: () => import('./demos/FontFallbackDemo').then((m) => m.FontFallbackDemo),
+    path: 'apps/site/demos/FontFallbackDemo.tsx',
   },
   {
     id: 'audio',

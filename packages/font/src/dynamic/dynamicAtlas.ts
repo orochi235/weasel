@@ -89,9 +89,11 @@ function getRasterizer(): GlyphRasterizer {
 /** Mark `family` as canvas-sourced: when no baked atlas covers it,
  *  resolveFontVariant serves it from this dynamic atlas. */
 export function registerCanvasFont(family: string): void {
+  if (isExplicitCanvasFont(family)) return;
   canvasFamilies.add(family);
   // An explicit call promotes a previously auto-enrolled family for good.
   autoEnrolledFamilies.delete(family);
+  notifyGlyphReady();
 }
 
 /**
@@ -167,11 +169,13 @@ export function isExplicitCanvasFont(family: string): boolean {
 /** Remove a canvas family. Its faces are dropped; already-baked glyph
  *  pixels stay in their pages (no eviction in v1). */
 export function unregisterCanvasFont(family: string): void {
+  if (!canvasFamilies.has(family)) return;
   canvasFamilies.delete(family);
   autoEnrolledFamilies.delete(family);
   for (const key of [...faces.keys()]) {
     if (faces.get(key)!.family === family) faces.delete(key);
   }
+  notifyGlyphReady();
 }
 
 /**

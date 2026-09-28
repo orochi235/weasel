@@ -6,6 +6,7 @@ import {
   registerCanvasFont, unregisterCanvasFont, _resetDynamicFontsForTests,
 } from './dynamic/dynamicAtlas';
 import { registerTestFont } from './testing/registerTestFont';
+import { glyphGeneration, subscribeGlyphReady } from './glyphReady';
 import { _resetFallbackForTests as resetFallbackFromSeams } from './test-seams';
 
 const ALL_POLICIES: readonly FontFallbackPolicy[] = ['substitute', 'canvas', 'none'];
@@ -417,5 +418,45 @@ describe("'none' policy", () => {
 
     expect(result.entry).toBeNull();
     expect(result.substituted).toBeUndefined();
+  });
+});
+
+// A change to what a family resolves to changes every layout drawn from it, so
+// it has to reach the caches that poll `glyphGeneration` and the canvases that
+// subscribe — or text keeps painting under the policy it was laid out with.
+describe('changing what a family resolves to', () => {
+  const advances = (change: () => void): boolean => {
+    const before = glyphGeneration();
+    change();
+    return glyphGeneration() !== before;
+  };
+
+  it('advances the glyph generation when the policy changes, and only then', () => {
+    expect(advances(() => setFontFallbackPolicy('canvas'))).toBe(true);
+    expect(advances(() => setFontFallbackPolicy('canvas'))).toBe(false);
+    expect(advances(() => setFontFallbackPolicy('none'))).toBe(true);
+  });
+
+  it('advances it when the default family changes, and only then', () => {
+    expect(advances(() => setDefaultFontFamily('Inter'))).toBe(true);
+    expect(advances(() => setDefaultFontFamily('Inter'))).toBe(false);
+  });
+
+  it('advances it when a canvas family is enrolled or dropped, and only then', () => {
+    expect(advances(() => registerCanvasFont('Georgia'))).toBe(true);
+    expect(advances(() => registerCanvasFont('Georgia'))).toBe(false);
+    expect(advances(() => unregisterCanvasFont('Georgia'))).toBe(true);
+    expect(advances(() => unregisterCanvasFont('Georgia'))).toBe(false);
+  });
+
+  it('tells subscribed canvases to repaint', () => {
+    const cb = vi.fn();
+    const unsubscribe = subscribeGlyphReady(cb);
+    try {
+      setFontFallbackPolicy('none');
+      expect(cb).toHaveBeenCalledTimes(1);
+    } finally {
+      unsubscribe();
+    }
   });
 });
