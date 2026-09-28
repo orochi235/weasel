@@ -806,8 +806,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   floating panel). Check the open menu in both interstellar modes.
   `npm run check:token-reads` now keeps undeclared reads out.
 
-- **(P3) A mark can be selected in two targets at once.** `AnnotationOverlay`
-  leaves `selectionMode` at weasel's default `single`, and each canvas clears
+- **(P3) A mark can be selected in two targets at once.** Each of
+  `AnnotationOverlay`'s canvases builds its own single-mode selection and clears
   only its own scene, so clicking in one target does not clear a selection
   standing in another. `selection()` reports both. A host can enforce exclusivity
   from `subscribe`, awkwardly.
