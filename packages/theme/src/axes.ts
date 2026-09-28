@@ -3,6 +3,7 @@ export interface AxisValue {
   readonly scheme?: 'dark' | 'light';
 }
 
+/** One variant dimension of a theme, such as `mode` or `density`. `default` must name one of `values`. */
 export interface AxisDef {
   readonly default: string;
   readonly values: Readonly<Record<string, AxisValue>>;
@@ -20,10 +21,12 @@ export interface ByAxis<T> {
   readonly [axisValue: string]: Varying<T> | string;
 }
 
+/** A value that is either the same everywhere or chosen per axis value. */
 export type Varying<T> = T | ByAxis<T>;
 
 export type Picked<T> = { ok: true; value: T } | { ok: false; axis: string; value: string };
 
+/** Whether `v` is a {@link ByAxis} value. */
 export function isByAxis(v: unknown): v is ByAxis<unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v) && typeof (v as { by?: unknown }).by === 'string';
 }
@@ -47,6 +50,7 @@ export function mergeAxes(parent: AxisDefs, child: AxisDefs): AxisDefs {
   return out;
 }
 
+/** Every full combination of axis values, the first axis varying slowest. */
 export function enumerateSelections(axes: AxisDefs): Selection[] {
   let out: Record<string, string>[] = [{}];
   for (const [name, def] of Object.entries(axes)) {

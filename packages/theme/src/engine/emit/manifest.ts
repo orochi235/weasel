@@ -20,6 +20,7 @@ const row = (
 ): string =>
   `  { name: '--wzl-${name}', type: ${JSON.stringify(type)}, group: ${JSON.stringify(groupOf(name))}, defaultValue: ${JSON.stringify(value)}, description: ${JSON.stringify(description)}, hook: ${hook} },`;
 
+/** The `manifest.ts` source: `TOKEN_MANIFEST` for this theme at its default selection, then every override hook. */
 export function emitManifest({ baked }: EmitInput): string {
   const all = pickAll(baked.tokens, fullSelection(baked.axes, {}));
   const resolved = resolveTokens(all);

@@ -3,6 +3,7 @@
 
 import type { CursorGlyph } from './types';
 
+/** Every built-in cursor glyph, by name. */
 export const GLYPHS = {
   "pencil": {
     "box": 24,

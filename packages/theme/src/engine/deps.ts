@@ -3,6 +3,7 @@ import type { SemanticRule, ThemeDefinition } from '../definition.ts';
 import { mergeChain, type Lookup } from './merge.ts';
 import { declaredSteps } from './steps.ts';
 
+/** The axes one token's value can change with. */
 export interface AxisDependency {
   /** Axes this token's own entry varies on. */
   readonly own: readonly string[];
@@ -61,6 +62,7 @@ function leaves(v: unknown): unknown[] {
   return isByAxis(v) ? Object.entries(v).filter(([k]) => k !== 'by').flatMap(([, x]) => leaves(x)) : [v];
 }
 
+/** Every token of the definition, `extends` chain included, mapped to the axes it depends on, in axis declaration order. */
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
   const def = mergeChain(definition, lookup);
   const nodes = new Map<string, Node>();

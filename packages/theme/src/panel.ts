@@ -12,6 +12,7 @@
 /** What kind of content a surface holds — a class of content, never a position. */
 export const STANCES = ['scope', 'aside', 'advanced', 'debug', 'danger', 'notice', 'important', 'preview'] as const;
 
+/** One of {@link STANCES}. */
 export type Stance = (typeof STANCES)[number];
 
 /** One styleable property of a stanced surface. */
@@ -21,6 +22,7 @@ export interface StanceSlot {
   readonly drives: string;
 }
 
+/** Every slot a theme can set per stance, as `--wzl-stance-<stance>-<slot>`. */
 export const STANCE_SLOTS: readonly StanceSlot[] = [
   { name: 'surface', drives: 'background' },
   { name: 'border-color', drives: 'border-color' },

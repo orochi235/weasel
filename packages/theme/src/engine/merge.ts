@@ -2,6 +2,7 @@ import { type AxisDefs, isByAxis, mergeAxes } from '../axes.ts';
 import type { ThemeDefinition } from '../definition.ts';
 import { alwaysDeclaredSteps } from './steps.ts';
 
+/** Finds a definition by name, for resolving `extends`. */
 export type Lookup = (name: string) => ThemeDefinition | undefined;
 
 const LAYERS = ['seeds', 'ramps', 'scales', 'semantics', 'components', 'pins'] as const;

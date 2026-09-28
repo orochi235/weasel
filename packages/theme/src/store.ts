@@ -12,11 +12,16 @@ export interface StoredTheme {
   readonly definition: ThemeDefinition;
 }
 
+/** A derive issue and the selection it occurred at. */
 export interface IssueReport {
   readonly selection: Selection;
   readonly issue: Issue;
 }
 
+/**
+ * The outcome of a save. `conflict` means the file changed since `baseHash`, and carries its current hash (null when
+ * it does not exist); `invalid` means the definition was refused and nothing was written.
+ */
 export type PutResult =
   | {
       readonly status: 'saved';
@@ -32,6 +37,7 @@ export type PutResult =
 /** Record order is emission order, so keys are never sorted. */
 export const serializeDefinition = (definition: ThemeDefinition): string => `${JSON.stringify(definition, null, 2)}\n`;
 
+/** Reads and writes theme definition files. `put` sends the hash it last read, or null to create a new file. */
 export interface ThemeApi {
   list(): Promise<StoredTheme[]>;
   get(name: string): Promise<StoredTheme>;

@@ -15,14 +15,18 @@ import type { ResolvedCursor } from './resolve';
 /** The painted arm of `ResolvedCursor` — what this module stores. */
 export type PaintedCursor = Extract<ResolvedCursor, { kind: 'painted' }>;
 
+/** One frame's worth of painted cursor: which glyph, and where. */
 export interface PaintedCursorFrame {
   readonly cursor: PaintedCursor;
   /** Pointer position in the layer's own space: canvas-local CSS px. */
   readonly at: { readonly x: number; readonly y: number };
 }
 
+/** A surface's painted cursor, in two slots: a base and an override that wins while set. */
 export interface PaintedCursorState {
+  /** The active tool's cursor. */
   setBase(cursor: PaintedCursor | null): void;
+  /** An affordance's or action's cursor; wins over the base while set. */
   setOverride(cursor: PaintedCursor | null): void;
   /** Canvas-local CSS px. */
   setPointer(x: number, y: number): void;
@@ -59,6 +63,7 @@ function same(a: PaintedCursor | null, b: PaintedCursor | null): boolean {
   );
 }
 
+/** An empty store: no cursor set, pointer outside the surface. */
 export function createPaintedCursorState(): PaintedCursorState {
   let base: PaintedCursor | null = null;
   let override: PaintedCursor | null = null;

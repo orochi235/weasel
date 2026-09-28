@@ -4,6 +4,7 @@ import { resolveTokens } from '../../dtcg/resolve.ts';
 import type { FlatTokens } from '../../dtcg/types.ts';
 import type { BakedTheme } from '../bake.ts';
 
+/** One theme to write into `themes.ts`: its definition and what it bakes to. */
 export interface ThemesInput {
   readonly definition: ThemeDefinition;
   readonly baked: BakedTheme;
@@ -21,6 +22,7 @@ function tokensAt(chain: readonly BakedTheme[], sel: Selection): FlatTokens {
   return Object.assign({}, ...chain.map((t) => pickAll(t.tokens, sel)));
 }
 
+/** The `themes.ts` source: every theme's resolved tokens at every selection, plus the definitions and baked themes. */
 export function emitThemes(themes: readonly ThemesInput[]): string {
   const byName = new Map(themes.map((t) => [t.baked.name, t.baked]));
   const names = new Set<string>();

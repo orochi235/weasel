@@ -70,14 +70,18 @@ export interface Constraints {
   readonly order: 'hue' | 'farthest';
 }
 
+/** One color of a generated {@link Palette}. */
 export interface Swatch {
   readonly name: string;
   readonly hex: string;
   readonly lch: Lch;
+  /** Came from one of the constraints' anchors. */
   readonly anchored: boolean;
+  /** WCAG contrast against the constraints' `surface`. */
   readonly contrast: number;
 }
 
+/** Measurements of a generated palette as a whole: the minimums are over every swatch, or every pair. */
 export interface Stats {
   readonly meanChroma: number;
   readonly chromaSpread: number;
@@ -90,6 +94,7 @@ export interface Stats {
   readonly minDistance: number;
 }
 
+/** What {@link generate} returns. */
 export interface Palette {
   readonly swatches: readonly Swatch[];
   readonly stats: Stats;
@@ -127,6 +132,7 @@ const HUE_NAMES: readonly (readonly [number, string])[] = [
   [122, 'yellow'], [138, 'lime'], [165, 'green'], [195, 'teal'], [218, 'cyan'],
   [245, 'sky'], [275, 'blue'], [310, 'violet'], [345, 'fuchsia'],
 ];
+/** A plain color name for a hue in degrees: `red`, `teal`, `violet`. */
 export function hueName(H: number): string {
   for (const [ceil, name] of HUE_NAMES) if (H < ceil) return name;
   return 'rose';
@@ -456,6 +462,10 @@ function summarize(swatches: Swatch[], surface: string): Stats {
   };
 }
 
+/**
+ * A categorical palette of `count` swatches, anchors included, satisfying the gates. When no hue arrangement
+ * satisfies them the result is still a full palette, with `feasible` false.
+ */
 export function generate(c: Constraints): Palette {
   const found = searchHues(c);
   const feasible = found !== null;
@@ -507,18 +517,18 @@ export const DEFAULT_CONSTRAINTS: Constraints = {
   order: 'farthest',
 };
 
-/**
- * An anchor taken from an existing color — a brand hex, or a color lifted from
- * somewhere else in the theme. Lightness comes along with the hue, which is the
- * point: the reason to pin a color is usually that the lightness law would not
- * have chosen its lightness.
- */
 /** The color an anchor will actually contribute, for a swatch beside its controls. */
 export function toHexPreview(a: Pick<Anchor, 'hue' | 'lightness' | 'chroma'>): string {
   const cap = chromaCap(a.lightness, a.hue);
   return toHex(a.lightness, a.chroma === undefined ? cap : Math.min(a.chroma, cap), a.hue);
 }
 
+/**
+ * An anchor taken from an existing color — a brand hex, or a color lifted from
+ * somewhere else in the theme. Lightness comes along with the hue, which is the
+ * point: the reason to pin a color is usually that the lightness law would not
+ * have chosen its lightness. `name` defaults to the hue's {@link hueName}.
+ */
 export function anchorFromHex(hex: string, name?: string): Anchor {
   const { L, C, H } = toLch(hex);
   return {
