@@ -146,7 +146,8 @@ function sceneAsHierarchy<TData, TLayer extends string, TPose>(
 ): HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose> {
   return {
     getLayers: () =>
-      paintedSceneLayers(scene.layers, layers).map((l) => ({ id: l.id, visible: l.visible })),
+      paintedSceneLayers(scene.layers, layers)
+        .map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax })),
     getNode: (id) => scene.get(id as NodeId),
     getChildren: (parentId) => {
       if (parentId === null) return scene.roots as readonly string[];

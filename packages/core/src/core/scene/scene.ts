@@ -1,5 +1,6 @@
 import { createHistory, type History, type HistorySelection, type Journal, type SerializedHistory } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
+import type { ParallaxOpts } from 'core/viewport/parallax';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
 import { dwarn } from 'debug/flag';
 import { createDependentsIndex, sameDependsOn } from './dependents';
@@ -46,6 +47,11 @@ const defaultGenerateId = (): NodeId =>
 
 /** One layer record from its snapshot form. A snapshot with no `kind` predates
  *  user layers, so everything in it was a system layer. */
+function setParallax(record: { parallax?: ParallaxOpts }, to: ParallaxOpts | undefined): void {
+  if (to === undefined) delete record.parallax;
+  else record.parallax = to;
+}
+
 function layerFromSerialized<TLayer extends string>(
   spec: SerializedLayer<TLayer>,
 ): LayerRecord<TLayer> {
@@ -53,6 +59,7 @@ function layerFromSerialized<TLayer extends string>(
     id: spec.id,
     visible: spec.visible ?? true,
     locked: spec.locked ?? false,
+    ...(spec.parallax ? { parallax: spec.parallax } : {}),
   };
   return spec.kind === 'user'
     ? { ...base, kind: 'user', name: spec.name ?? spec.id }
@@ -186,6 +193,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       id: spec.id,
       visible: spec.visible ?? true,
       locked: spec.locked ?? false,
+      ...(spec.parallax ? { parallax: spec.parallax } : {}),
     });
     state.layerIndex.set(spec.id, i);
   }
@@ -746,6 +754,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       if (p.to) selection = reachable(selection);
     },
     revert: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.from; },
+  });
+
+  registerKitOp<{ layer: TLayer; from?: ParallaxOpts; to?: ParallaxOpts }>('kit:setLayerParallax', {
+    apply: (p) => { setParallax(state.layers[requireLayerIndex(p.layer)], p.to); },
+    revert: (p) => { setParallax(state.layers[requireLayerIndex(p.layer)], p.from); },
   });
 
   registerKitOp<{ record: UserLayerRecord<TLayer>; index: number }>('kit:addLayer', {
@@ -1363,6 +1376,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       executeAndLog('kit:setLayerLocked', { layer, from: state.layers[i].locked, to: locked }, 'setLayerLocked');
     },
 
+    setLayerParallax(layer, parallax) {
+      const i = requireLayerIndex(layer);
+      executeAndLog(
+        'kit:setLayerParallax',
+        { layer, from: state.layers[i].parallax, to: parallax },
+        'setLayerParallax',
+      );
+    },
+
     isLocked: (id) => isLockedInternal(id),
 
     unlocked: (fn) => withLocksLifted(fn),
@@ -1379,6 +1401,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         name: spec.name,
         visible: spec.visible ?? true,
         locked: spec.locked ?? false,
+        ...(spec.parallax ? { parallax: spec.parallax } : {}),
       };
       executeAndLog('kit:addLayer', { record, index: clamped }, 'addLayer');
     },
@@ -1650,6 +1673,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         const layer: SerializedLayer<TLayer> = { id: l.id };
         if (l.visible === false) layer.visible = false;
         if (l.locked === true) layer.locked = true;
+        if (l.parallax) layer.parallax = l.parallax;
         if (l.kind === 'user') {
           layer.kind = 'user';
           layer.name = l.name;

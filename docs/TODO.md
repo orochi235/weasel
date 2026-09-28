@@ -879,11 +879,28 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
   Worth building only for d3 semantics the kit genuinely lacks, not for parity —
   none identified yet.
 
-### Parallax follow-ups
+### Interactive parallax planes
 
-- **(P3) Dispatcher-aware hit-testing for interactive parallax planes.** Needs design pass on plane registration, click resolution order, selection-chrome projection.
-- **(P3) `useScene` user-layer `parallax` property wiring to `createParallaxLayer`** at the SceneCanvas adapter seam.
-- **(P3) Animated parallax** — tween pan/zoom for intro effects; compose `useAnimator` over the opts.
+A scene layer carrying `parallax` paints through its plane, and clicks, marquees,
+lassos and the selection box all cross into it through `PlaneMap`
+(`core/viewport/parallax.ts`). What does not cross yet:
+
+- **(P3) Editing a node on a plane.** Move, resize, rotate, nudge, snapping,
+  alignment and insert still pair camera-world pointer positions with the node's
+  plane-world pose. Move should be exact on a plane that does not zoom — its
+  map is a pure offset, so a drag delta carries over unchanged — but that is
+  inferred, and none of them is tested on a plane. The fix is to carry each gesture's world input through
+  `toPlane` for the node's layer before the action reads it (and bounds back
+  through `rectFromPlane` wherever an action reports geometry), one seam rather
+  than per action.
+- **(P3) Per-view chrome and the bare-adapter pick paths.** `useSceneSelectTool`'s
+  `boundsOf` maps plane nodes against the surface camera only, so a second
+  `CanvasView` draws their selection box where the surface would. The
+  `useSelectTool` default `pickEvery` and `sceneToAdapter`'s `hitTestArea` build
+  no plane maps at all.
+- **(P3) A container and its child on different planes.** `buildSceneTree` and
+  `pickWalk` accumulate ancestor clips in the ancestor's own world and apply
+  them in the child's, which only agree when both layers share a plane.
 
 ---
 

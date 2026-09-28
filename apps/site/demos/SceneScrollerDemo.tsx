@@ -178,7 +178,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       createParallaxLayer({
         id: `backdrop-${name}`,
         label: `Backdrop ${name}`,
-        pan: { x: pan, y: pan * 0.6 },
+        parallax: { pan: { x: pan, y: pan * 0.6 } },
         source: [backdropBand(name)],
       });
 

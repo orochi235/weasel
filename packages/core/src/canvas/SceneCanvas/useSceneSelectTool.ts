@@ -6,7 +6,9 @@
  */
 import { useMemo } from 'react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
-import { pickWalk, scenePickSource, type ViewPickGates } from 'canvas/pickWalk';
+import { pickWalk, scenePickSource, scenePlaneOf, type PickQuery, type ViewPickGates } from 'canvas/pickWalk';
+import { rectFromPlane, toPlane } from 'core/viewport/parallax';
+import type { View } from 'core/viewport/view';
 import { pathContainsPoint } from '@weasel-js/geom';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
@@ -37,7 +39,21 @@ export const DEFAULT_PICK_TOLERANCE_PX = 4;
  *  was produced under nor what that view paints, so a caller picking for a
  *  view other than the surface's says both. A gate left out is the one this
  *  hook was built with. */
-export interface PickView extends ViewPickGates { scale: { x: number; y: number } }
+export interface PickView extends ViewPickGates {
+  scale: { x: number; y: number };
+  /** The rest of the asking camera. Supplied, it lets a parallax layer be
+   *  picked through its plane; left out, every layer is taken to move with
+   *  the camera. */
+  x?: number;
+  y?: number;
+}
+
+/** A pick view that names a whole camera, or null. */
+function cameraOf(v: Pick<PickView, 'scale' | 'x' | 'y'> | null): View | null {
+  return v && typeof v.x === 'number' && typeof v.y === 'number'
+    ? { x: v.x, y: v.y, scale: v.scale }
+    : null;
+}
 
 export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
@@ -62,7 +78,7 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
    *  world units. A caller picking for another view passes that view's camera
    *  to `pickEvery` / `pickBest` instead. Omitted in tests and non-viewport
    *  hosts, where scale is 1. */
-  getView?: () => Pick<PickView, 'scale'> | null;
+  getView?: () => Pick<PickView, 'scale' | 'x' | 'y'> | null;
   /** The asking view's painted alpha per node — its `alphaFor` times any
    *  per-node override alpha. A node the view paints at alpha 0 is not on
    *  screen, so picking must not answer for it. */
@@ -149,15 +165,10 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         if (r == null) return [];
         return Array.isArray(r) ? r : [r];
       }
-      // Screen-pixel slop → world units, so the grab zone around an outline
-      // stays the same apparent thickness at any zoom.
-      // `scale` also resolves a stroke's `{px}` width into world units; without
-      // it a pixel width is read as a world width and the reach is wrong at
-      // every zoom but 1.
-      const scale = meanScale((view ?? getView?.())?.scale ?? { x: 1, y: 1 });
+      const asked = view ?? getView?.() ?? null;
       const viewAlpha = view?.alphaOf ?? alphaOf;
       const viewLayers = view?.layerIsPainted ?? layerIsPainted;
-      const tolerance = pickTolerancePx / scale;
+      const camera = cameraOf(asked);
       // Through the adapter, not `n.pose`: an ephemeral override is the pose
       // the renderer draws, so it has to be the one picking tests. World, not
       // local, for the same reason — a framed child is drawn in its parent's
@@ -166,34 +177,47 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         getPose: (id) => adapter.getWorldPose(id),
         ...(viewAlpha ? { alphaOf: viewAlpha } : {}),
         ...(viewLayers ? { layerIsPainted: viewLayers } : {}),
+        ...(camera ? { camera } : {}),
       });
-      return pickWalk<TPose>(src, {
-        hits: (n, pose, derived) => {
-          // The pre-filter has to be at least as generous as the refinement
-          // that follows it, or it rejects points the refinement would have
-          // claimed. A stroke reaches past the pose box by `outset` — a whole
-          // stroke width for an outer align — on top of the pointer slop.
-          const outset = shapePicking
-            ? (findShapeInk(n as never, pose, { scale })?.outset ?? 0)
-            : 0;
-          // A derived node's pose is a placeholder — typically zero-sized at
-          // the origin — so its own box rejects every point the path covers.
-          // The path is the region to test instead, and `poseContains` already
-          // reads a path-like pose as one.
-          const admitted = derived
-            ? poseContains(derived as never, wx, wy, tolerance + outset, d as PoseDescriptor<unknown>)
-            : poseContainsRotated(pose, wx, wy, tolerance + outset, d as PoseDescriptor<unknown>);
-          if (!admitted) return false;
-          // `shapeCoversPoint` narrows the rect to the ink the painter actually
-          // lays down (and answers `true` for painters that have no silhouette,
-          // so nothing becomes unpickable).
-          return !shapePicking
-            || shapeCoversPoint(n as never, pose, wx, wy, {
-              tolerance, scale, derivedPath: derived,
-            });
-        },
-        clipAdmits: (clip) => pathContainsPoint(clip, wx, wy),
-      });
+      // `s` converts the screen-pixel slop, so the grab zone stays the same
+      // apparent thickness at any zoom, and a stroke's `{px}` width, which
+      // would otherwise be read as a world width.
+      const pointQuery = (px: number, py: number, s: { x: number; y: number }): PickQuery<TPose> => {
+        const scale = meanScale(s);
+        const tolerance = pickTolerancePx / scale;
+        return {
+          hits: (n, pose, derived) => {
+            // The pre-filter has to be at least as generous as the refinement
+            // that follows it, or it rejects points the refinement would have
+            // claimed. A stroke reaches past the pose box by `outset` — a whole
+            // stroke width for an outer align — on top of the pointer slop.
+            const outset = shapePicking
+              ? (findShapeInk(n as never, pose, { scale })?.outset ?? 0)
+              : 0;
+            // A derived node's pose is a placeholder — typically zero-sized at
+            // the origin — so its own box rejects every point the path covers.
+            // The path is the region to test instead, and `poseContains` already
+            // reads a path-like pose as one.
+            const admitted = derived
+              ? poseContains(derived as never, px, py, tolerance + outset, d as PoseDescriptor<unknown>)
+              : poseContainsRotated(pose, px, py, tolerance + outset, d as PoseDescriptor<unknown>);
+            if (!admitted) return false;
+            // `shapeCoversPoint` narrows the rect to the ink the painter actually
+            // lays down (and answers `true` for painters that have no silhouette,
+            // so nothing becomes unpickable).
+            return !shapePicking
+              || shapeCoversPoint(n as never, pose, px, py, {
+                tolerance, scale, derivedPath: derived,
+              });
+          },
+          clipAdmits: (clip) => pathContainsPoint(clip, px, py),
+          inPlane: (m) => {
+            const p = toPlane(m, { x: px, y: py });
+            return pointQuery(p.x, p.y, { x: s.x / m.scale.x, y: s.y / m.scale.y });
+          },
+        };
+      };
+      return pickWalk<TPose>(src, pointQuery(wx, wy, asked?.scale ?? { x: 1, y: 1 }));
     };
   }, [scene, adapter, pickEveryProp, shapePicking, pickTolerancePx, getView,
       alphaOf, layerIsPainted, d]);
@@ -209,9 +233,14 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       const g = poseDescriptorForNode(d, n);
       const b = g.getBounds(pose);
       const rot = g.getRotation?.(pose) ?? (b as { rotation?: number }).rotation ?? 0;
-      return rot ? { ...b, rotation: rot } : b;
+      const own = rot ? { ...b, rotation: rot } : b;
+      // A plane node is drawn where its plane puts it, and the chrome has to
+      // follow it there.
+      const camera = cameraOf(getView?.() ?? null);
+      const plane = camera ? scenePlaneOf(scene.layers, camera)?.(n.layer) : null;
+      return plane ? rectFromPlane(plane, own) : own;
     };
-  }, [scene, adapter, boundsOfProp, d]);
+  }, [scene, adapter, boundsOfProp, d, getView]);
 
   const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
     pickEvery: wiredHitBody,

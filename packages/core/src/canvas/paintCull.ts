@@ -20,10 +20,14 @@ export function paintMissesView<TNode, TPose>(
   paintBounds: PaintBoundsFn<TNode, TPose>,
   view: View,
   rect: CullRect,
-): (node: TNode, pose: TPose) => boolean {
-  const toScreen = viewToMat3(view);
-  return (node, pose) => {
-    const b = paintBounds(node, pose, view);
+): (node: TNode, pose: TPose, layerView?: View) => boolean {
+  // `layerView` is a parallax plane's own view; planes are few, so one slot
+  // of memo covers a walk that meets them layer by layer.
+  let last = view;
+  let toScreen = viewToMat3(view);
+  return (node, pose, layerView = view) => {
+    if (layerView !== last) { last = layerView; toScreen = viewToMat3(layerView); }
+    const b = paintBounds(node, pose, layerView);
     if (!b) return false;
     const r = poseRotationOf(pose);
     const m = r ? mat3.multiply(toScreen, rotationMatrixAbout(r.cx, r.cy, r.rotation) as GlMat3) : toScreen;
