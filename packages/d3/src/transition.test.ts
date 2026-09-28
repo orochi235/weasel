@@ -572,6 +572,43 @@ describe('d3Bind transition — node removed mid-flight', () => {
     expect(x(s, 'b')).toBeCloseTo(100, 6);
   });
 
+  it('leaves alone a same-id node removed and re-added between two frames', async () => {
+    const s = setupSceneAndAnimator();
+    seed(s, [{ id: 'a', x: 0 }]);
+    const apply = vi.fn();
+    const onEnd = vi.fn();
+    let ended!: Promise<void>;
+    act(() => {
+      ended = bind(s, [{ id: 'a', x: 100 }])
+        .transition()
+        .duration(1000)
+        .ease(linear)
+        .tween({ name: 'n', from: () => 0, to: () => 1, apply })
+        .on('end', onEnd)
+        .end();
+    });
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(300));
+    act(() => {
+      s.scene.current.remove('a' as never);
+      s.scene.current.add({
+        id: 'a' as never,
+        kind: 'leaf',
+        layer: 'graph',
+        pose: { x: 7, y: 0, width: 10, height: 10 },
+        data: {},
+      });
+    });
+    apply.mockClear();
+    act(() => s.clock.advance(300));
+    expect(x(s, 'a')).toBe(7);
+    expect(apply).not.toHaveBeenCalled();
+    act(() => s.clock.advance(1000));
+    await ended;
+    expect(onEnd).toHaveBeenCalledTimes(1);
+    expect(x(s, 'a')).toBe(7);
+  });
+
   it('stops tweening an entering node that an undo removed', () => {
     const s = setupSceneAndAnimator();
     act(() => {

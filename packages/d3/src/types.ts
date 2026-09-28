@@ -104,7 +104,8 @@ export interface D3Transition<TData, TPose = unknown> {
   transition(): D3Transition<TData, TPose>;
   /** Remove each node from the scene when this transition ends on it (d3's
    *  `transition.remove()`), as an undoable delete. An interrupted node is
-   *  not removed. */
+   *  not removed, nor one that left the scene mid-transition — even if
+   *  another node has since taken its id. */
   remove(): this;
   end(): Promise<void>;
   interrupt(): void;

@@ -872,12 +872,7 @@ From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.m
 
 **Shipped.** `useSimulation` + d3-force compat (2026-05-16), then the data-join and transition chain in `@weasel-js/d3`: `d3Bind(scene, data, { key, animator }).pose().data().join()` and `.transition().duration().ease().delay().pose().tween().end()`, chainable with a further `.transition()`. `join()` takes no arguments — enter/update/exit is a diff it performs; `.exit(fn)` on the binding takes over the exit set, and `transition.remove()` deletes each node when its transition ends. Demos: `ForceGraphDemo`, `D3SortableDemo`.
 
-Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
-
-- **(P3) A d3 transition cannot tell a node removed and re-added between two frames.**
-  `transition.ts` checks once per frame that each node still exists, so a node removed and
-  re-added under the same id before the next frame keeps being tweened as though it were the
-  old one. Telling them apart needs a per-node identity the scene does not expose today.
+Nothing open; one item parked:
 
 - **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
   (the `viewport.zoom` / `viewport.pan` actions, `useHandTool`, `useViewAnimation`;

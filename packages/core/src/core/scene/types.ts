@@ -456,6 +456,13 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  entries over the kit's. */
   readonly registry: SceneRegistry<TPose>;
   get(id: NodeId): Node<TData, TLayer, TPose> | undefined;
+  /** A token for the node `id` names right now, for telling one node from a
+   *  later one that reuses its id. It holds for as long as the node stays in
+   *  the scene, whatever edits it takes, and is different every time the id
+   *  enters the scene — by `add`, by an undo or redo that brings it back, or
+   *  by `loadState`. `undefined` when `id` is not in the scene. Compare tokens
+   *  for equality only; their order means nothing. */
+  incarnation(id: NodeId): number | undefined;
   childrenOf(id: NodeId): readonly NodeId[];
   ancestorsOf(id: NodeId): readonly NodeId[];
   renderOrder(): Iterable<NodeId>;
