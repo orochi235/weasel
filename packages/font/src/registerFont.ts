@@ -20,7 +20,7 @@ import {
   getFontFallbackPolicy, getDefaultFontFamily,
   claimFallbackWarning, _clearFallbackWarnings,
 } from './fallback';
-import { outlineMetrics } from './outline/outlineRegistry';
+import { outlineMetrics, outlineStatus } from './outline/outlineRegistry';
 import type { OutlineFace } from './outline/OutlineFace';
 
 /** A registered face: its parsed metrics and the atlas image to sample. */
@@ -56,9 +56,14 @@ function normalizeVariant(v: FontVariant): { weight: number; style: FontStyle } 
   };
 }
 
+/** Atlas registrations still fetching, per family. One token per call, so a
+ *  reset that clears the map cannot be undone by a late `finally`. */
+const inFlight = new Map<string, Set<object>>();
+
 /** Test helper. Do not call from product code. */
 export function _resetFontRegistryForTests(): void {
   registry.clear();
+  inFlight.clear();
   _clearFallbackWarnings();
 }
 
@@ -113,6 +118,9 @@ export async function registerFont(
 
   if (registry.get(family)?.has(key)) return;
 
+  const token = {};
+  const tokens = inFlight.get(family) ?? new Set<object>();
+  inFlight.set(family, tokens.add(token));
   try {
     const [metricsRes, atlasRes] = await Promise.all([
       fetch(metricsUrl),
@@ -143,10 +151,36 @@ export async function registerFont(
     // once per variant that actually lands.
     notifyGlyphReady();
   } catch (err) {
+    settle(family, token);
+    // Layout held back its no-metrics warning while this was in flight; the
+    // relayout this triggers is where that warning finally gets to fire.
+    notifyGlyphReady();
     throw new Error(
       `weasel registerFont("${family}" ${weight}/${style}): ${err instanceof Error ? err.message : String(err)}`,
     );
   }
+  settle(family, token);
+}
+
+function settle(family: string, token: object): void {
+  const tokens = inFlight.get(family);
+  if (!tokens?.delete(token)) return;
+  if (tokens.size === 0) inFlight.delete(family);
+}
+
+/**
+ * Could a registration that has not landed yet still serve this request?
+ * True while any `registerFont` for the family is fetching — the within-family
+ * chain may resolve to whichever variant it brings — or while an outline face
+ * registered for this exact variant has not finished loading.
+ *
+ * A face that resolves to nothing right now is either missing or merely late;
+ * this tells the two apart, so "not registered" is reported only when it is.
+ */
+export function fontPending(family: string, weight = 400, style: FontStyle = 'normal'): boolean {
+  if (inFlight.has(family)) return true;
+  const outline = outlineStatus(family, weight, style === 'italic' ? 'italic' : 'normal');
+  return outline === 'idle' || outline === 'loading';
 }
 
 /**

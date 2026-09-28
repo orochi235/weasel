@@ -7,6 +7,7 @@ import {
   setFontFallbackPolicy,
   registerFontOutlines,
   glyphOutline,
+  subscribeGlyphReady,
 } from '@weasel-js/font';
 import {
   _resetFontRegistryForTests,
@@ -1582,6 +1583,7 @@ describe('layoutRuns — a family with no metrics at all', () => {
     _resetFontRegistryForTests();
     _resetFallbackForTests();
     _resetDynamicFontsForTests();
+    _resetFontOutlinesForTests();
     _resetNoMetricsWarningsForTests();
   });
 
@@ -1613,6 +1615,56 @@ describe('layoutRuns — a family with no metrics at all', () => {
     layoutRuns([run('e', 'also-missing')], OPTS);
 
     expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
+  // apps/draw registers its atlas un-awaited so first paint is not gated on
+  // it; that first paint must not report the face as unregistered.
+  it('stays quiet while an atlas registration is still in flight', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const realFetch = global.fetch;
+    global.fetch = vi.fn(() => new Promise<Response>(() => {})) as typeof fetch;
+
+    void registerFont('pending-atlas', {}, '/p.json', '/p.png');
+    layoutRuns([run('hello', 'pending-atlas')], OPTS);
+
+    expect(warn).not.toHaveBeenCalled();
+    global.fetch = realFetch;
+    warn.mockRestore();
+  });
+
+  it('stays quiet while an outline face is still loading', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    registerFontOutlines('pending-outline', {}, () => new Promise<ArrayBuffer>(() => {}));
+
+    layoutRuns([run('hello', 'pending-outline')], OPTS);
+    layoutRuns([run('hello', 'pending-outline')], OPTS);
+
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('warns once a pending registration fails, on the relayout its failure triggers', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const realFetch = global.fetch;
+    let fail!: (err: Error) => void;
+    global.fetch = vi.fn(() => new Promise<Response>((_, rej) => { fail = rej; })) as typeof fetch;
+    const redraw = vi.fn();
+    const unsubscribe = subscribeGlyphReady(redraw);
+
+    const registration = registerFont('failing-atlas', {}, '/f.json', '/f.png').catch(() => {});
+    layoutRuns([run('hello', 'failing-atlas')], OPTS);
+    expect(warn).not.toHaveBeenCalled();
+
+    fail(new Error('network down'));
+    await registration;
+    expect(redraw).toHaveBeenCalled();
+    layoutRuns([run('hello', 'failing-atlas')], OPTS);
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('no metrics for "failing-atlas"');
+    unsubscribe();
+    global.fetch = realFetch;
     warn.mockRestore();
   });
 });

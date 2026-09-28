@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   registerFont, getFont, resolveFontVariant, resolveGlyphFallback, listFonts, fontRegistry,
+  fontPending,
   _resetFontRegistryForTests,
 } from './registerFont';
 import { setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
@@ -448,5 +449,37 @@ describe('registerFont and the glyph-ready signal', () => {
     } finally {
       unsubscribe();
     }
+  });
+});
+
+describe('fontPending', () => {
+  it('is true from registerFont until it resolves, for any variant of the family', async () => {
+    const landing = registerFont('late', { weight: 700 }, '/late.json', '/late.png');
+
+    expect(fontPending('late', 400, 'normal')).toBe(true);
+    expect(fontPending('other')).toBe(false);
+    await landing;
+    expect(fontPending('late', 700, 'normal')).toBe(false);
+  });
+
+  it('is false once a registration fails, and the failure wakes subscribers', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('down'));
+    const redraw = vi.fn();
+    const unsubscribe = subscribeGlyphReady(redraw);
+
+    await registerFont('broken', {}, '/b.json', '/b.png').catch(() => {});
+
+    expect(fontPending('broken')).toBe(false);
+    expect(redraw).toHaveBeenCalledTimes(1);
+    unsubscribe();
+  });
+
+  it('is cleared by the registry reset seam even with a fetch outstanding', () => {
+    global.fetch = vi.fn(() => new Promise<Response>(() => {})) as typeof fetch;
+    void registerFont('stuck', {}, '/s.json', '/s.png');
+
+    _resetFontRegistryForTests();
+
+    expect(fontPending('stuck')).toBe(false);
   });
 });

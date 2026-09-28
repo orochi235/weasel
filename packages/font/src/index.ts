@@ -16,6 +16,7 @@ export {
   resolveGlyphFallback,
   listFonts,
   fontRegistry,
+  fontPending,
 } from './registerFont';
 export type { FontEntry, FontFamilyFaces, FontVariant, ResolveResult, RegisteredFont } from './registerFont';
 

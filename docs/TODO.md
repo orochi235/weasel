@@ -389,12 +389,6 @@ Core five + Crop shipped. Remaining:
 
 ## Text
 
-- **(P3) apps/draw warns that `sans-serif` 400 has no metrics on load.** `layoutRuns` logs
-  "no metrics for "sans-serif" 400/normal — neither an atlas nor an outline face resolved, so every
-  run set in it lays out as nothing". Seen 2026-09-27 in headless Chromium on a fresh load of the
-  draw dev server; the Welcome box's text still rendered, so either the run it names is a different
-  one or the warning fires before registration lands. Not investigated.
-
 - **(P3) `.dfont` machine faces still can't reach the outline tier.** The
   *silence* closed 2026-08-16 — `isDataForkFont` recognizes a Macintosh
   resource fork by its header offsets and `sfntFromCollection` throws by name,
@@ -1104,7 +1098,10 @@ shipped 2026-08-23/24; `git log` has their numbers, and their traps are in
   `inter.json` + `inter.png`, 212 kB together, on every load. Production's first
   load fetches each file exactly once, so a suspected second `@weasel-js/hud`
   copy is not reachable on that path — unconfirmed either way. Scope where, if
-  anywhere, a duplicate fetch happens before treating it as a problem.
+  anywhere, a duplicate fetch happens before treating it as a problem. The dev
+  server does fetch it twice (headless Chromium, 2026-09-28): `packages/hud`'s
+  `inter.json?import&url` + `inter.png?import&url` at 2171 ms, then draw's own
+  `draw/inter/inter.json` + `inter.png` at 2419 ms.
 
 - **(P3) Re-measure cold dev startup for `apps/draw`.** The two inspector-only
   Vite plugins that dominated it — together, **6,852 ms to 3,556 ms (−48%)** when

@@ -52,7 +52,7 @@
 
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import {
-  resolveFontVariant, resolveGlyphFallback, glyphOutline,
+  resolveFontVariant, resolveGlyphFallback, glyphOutline, fontPending,
   type ResolveResult, type BmFontChar, type BmFont, type FontStyle,
 } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
@@ -624,7 +624,10 @@ export function layoutRuns(
     if (!metrics) {
       // A run with no metrics lays out as nothing, which is indistinguishable
       // from empty text downstream — the only signal a consumer ever gets.
-      warnNoMetricsOnce(run.fontFamily, run.fontWeight, run.fontStyle);
+      // A late face is not a missing one: the settle relayouts and asks again.
+      if (!fontPending(run.fontFamily, run.fontWeight, run.fontStyle)) {
+        warnNoMetricsOnce(run.fontFamily, run.fontWeight, run.fontStyle);
+      }
       // Skipped, but its characters still occupy source offsets — dropping
       // them here would shift every later run's caret indices left.
       srcIndex += run.srcMap?.length ?? run.text.length;
