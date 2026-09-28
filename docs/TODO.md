@@ -321,15 +321,6 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P3) Sync paints do not coalesce.** `CanvasProps.syncPaint`
-  (`Canvas.tsx:234-242`) promises "a synchronous paint per commit", singular,
-  but the loop paints per *request*: one commit carrying a sibling
-  layout-effect `requestRedraw` produced two full GL paints where the async
-  path produced one. Coalescing would mean deferring to a microtask at the end
-  of the commit, which gives up the "pixels land before the surrounding layout
-  effects read the DOM" ordering that `syncPaint` exists for. Either the
-  ordering guarantee or the singular paint — the doc currently claims both.
-
 - **(P3) `paintInputsRef` is written during render.** `Canvas.tsx:1295` assigns
   it in the render body, so a concurrent render React starts and abandons still
   leaves its inputs in the ref, and the next `requestRedraw` from any source —
