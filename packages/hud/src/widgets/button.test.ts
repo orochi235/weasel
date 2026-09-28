@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { createButton } from './button';
+import { layoutRuns, resolveTextStyle, verticalAlignOffset } from '@weasel-js/text';
+import { registerDefaultFont, DEFAULT_FONT_FAMILY } from '../fonts/registerDefaultFont';
 import type { TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
@@ -174,5 +176,43 @@ describe('button widget', () => {
     const cmds = b.draw(customCtx);
     const text = cmds.find(c => c.kind === 'text') as TextDrawCommand;
     expect(text.runs[0].fill).toEqual({ fill: 'solid', color: '#decade' });
+  });
+});
+
+describe('button label placement', () => {
+  beforeAll(async () => {
+    const interJson = await import('../fonts/inter.json');
+    const fakePng = new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], { type: 'image/png' });
+    global.fetch = vi.fn(async (url: string) => {
+      if (url.endsWith('.json')) return new Response(JSON.stringify(interJson.default ?? interJson));
+      if (url.endsWith('.png')) return new Response(fakePng);
+      throw new Error('unexpected url ' + url);
+    }) as never;
+    global.createImageBitmap = vi.fn().mockResolvedValue(
+      { width: 512, height: 512, close: vi.fn() } as unknown as ImageBitmap,
+    );
+    await registerDefaultFont();
+  });
+
+  // Where the renderer puts the line box (draw.ts drawText): the layout from
+  // the command's origin, shifted by the verticalAlign slack.
+  const lineBoxCenter = (cmd: TextDrawCommand): number => {
+    const style = resolveTextStyle(cmd.style);
+    const laid = layoutRuns(cmd.runs, {
+      maxWidth: cmd.maxWidth ?? Infinity, lineHeight: style.lineHeight, align: cmd.align ?? style.align,
+    });
+    const line = laid.lines[0]!;
+    const dy = cmd.y + verticalAlignOffset(cmd.verticalAlign, cmd.height, laid.bounds.height);
+    return dy + (line.y0 + line.y1) / 2;
+  };
+
+  it.each([
+    { y: 0, h: 24, fontSize: 13 },
+    { y: 40, h: 32, fontSize: 18 },
+  ])('centers the line box in a $h px button at $fontSize px', ({ y, h, fontSize }) => {
+    const b = createButton({ id: 'b', x: 0, y, w: 120, h, label: 'Shape', fontSize });
+    const text = b.draw({ ...ctx, defaultFont: DEFAULT_FONT_FAMILY })
+      .find((c): c is TextDrawCommand => c.kind === 'text')!;
+    expect(Math.abs(lineBoxCenter(text) - (y + h / 2))).toBeLessThanOrEqual(1);
   });
 });
