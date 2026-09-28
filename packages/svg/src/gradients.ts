@@ -381,7 +381,7 @@ export class PaintServerRegistry {
    *  the root has to declare {@link WEASEL_NS}. */
   usesPrivateNamespace(): boolean {
     return this.order.some((paint) => !hasNativeSvgForm(paint) || usesInterpolateAttr(paint))
-      || [...this.markers.values()].some((m) => m.size !== undefined);
+      || [...this.markers.values()].some((m) => m.size !== undefined || writesInset(getMarker(m.key)));
   }
 
   /** The `<defs>` id for a marker reference — the key itself when it has no
@@ -441,10 +441,17 @@ export class PaintServerRegistry {
   }
 }
 
+/** Whether `entry`'s def carries `wzl:inset`: SVG has no way to say how far
+ *  a line stops short of its marker, so the parser needs it spelled out. */
+function writesInset(entry: MarkerEntry | undefined): boolean {
+  return entry !== undefined && !entry.toSvg && (entry.inset ?? 0) !== 0;
+}
+
 /** The `<marker>` def for an entry with no `toSvg` of its own. Unsized, one
  *  marker unit is one stroke width, as the kit draws it. A sized reference is
  *  drawn in user space at `resolveMarkerSize`'s reading of its size, and
- *  records its key and size in the private namespace for the parser. */
+ *  records its key and size in the private namespace for the parser. The
+ *  inset goes there too, in marker units either way. */
 function defaultMarkerXml(
   id: string, entry: MarkerEntry, onWarn?: (m: string) => void, key?: string, size?: ScreenLength,
 ): string {
@@ -466,10 +473,11 @@ function defaultMarkerXml(
     : `markerUnits="userSpaceOnUse" markerWidth="${trimNumber(8 * unit)}" markerHeight="${trimNumber(8 * unit)}"`
       + ` ${WEASEL_NS_PREFIX}:key="${key}" ${WEASEL_NS_PREFIX}:size="${
         typeof size === 'number' ? trimNumber(size) : `${trimNumber(size.px)}px`}"`;
+  const inset = writesInset(entry) ? ` ${WEASEL_NS_PREFIX}:inset="${trimNumber(entry.inset!)}"` : '';
   // `overflow="visible"` overrides the UA default of `hidden`, which would
   // otherwise clip the arrowhead to the marker's viewport.
   return (
-    `<marker id="${id}" ${units}` +
+    `<marker id="${id}" ${units}${inset}` +
     ` refX="0" refY="0" orient="${orient}" overflow="visible">` +
     `<path d="${d}" ${fill}${outline}/></marker>`
   );

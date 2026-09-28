@@ -93,6 +93,29 @@ describe('svgStrokeFromKit', () => {
     expect(Array.from(unit.coords)).toEqual(Array.from(tick.coords).map((v) => expect.closeTo(v, 4)));
   });
 
+  // Without its inset a filled head re-imports with the line running under it.
+  it("keeps an unregistered marker's inset through a round trip", () => {
+    const tick = pathFromD('M0 0 L-2 1 L-2 -1 Z') as PolygonPath;
+    const dispose = registerMarker({
+      id: 'app:inset-tick', fill: 'line', inset: 2,
+      path: ({ size }) => ({ ...tick, coords: tick.coords.map((v) => v * size) }),
+    });
+    const line: Path = {
+      kind: 'polygon', commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 50, 0]), fillRule: 'nonzero',
+    };
+    const stroke: Stroke = {
+      paint: solid('#000000'), width: 2,
+      markerStart: 'app:inset-tick', markerEnd: { key: 'app:inset-tick', size: 3 },
+    };
+    const box = { x: 0, y: 0, width: 50, height: 0 };
+    const out = serializeSvg([{ kind: 'path', path: line, fill: { kind: 'none' }, stroke: svgStrokeFromKit(stroke, box)! }]);
+    dispose();
+
+    const parsed = parseSvg(out);
+    expect(parsed.warnings).toEqual([]);
+    expect(parsed.markers?.map((m) => m.inset)).toEqual([2, 2]);
+  });
+
   it('writes no stroke for one with no paint or no width', () => {
     expect(svgStrokeFromKit(undefined, BOX)).toBeUndefined();
     expect(svgStrokeFromKit(null, BOX)).toBeUndefined();

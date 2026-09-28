@@ -1381,18 +1381,27 @@ function ingestMarkers(
   return [...out.values()];
 }
 
+function weaselAttr(el: Element, name: string): string | null {
+  return el.getAttributeNS(WEASEL_NS, name) ?? el.getAttribute(`${WEASEL_NS_PREFIX}:${name}`);
+}
+
 /** The reference a sized-marker def this package wrote stands for: its key
  *  and size, read off the private namespace. */
 function sizedMarkerRef(el: Element): { key: string; size: ScreenLength } | undefined {
-  const attr = (name: string): string | null =>
-    el.getAttributeNS(WEASEL_NS, name) ?? el.getAttribute(`${WEASEL_NS_PREFIX}:${name}`);
-  const key = attr('key');
-  const raw = attr('size')?.trim();
+  const key = weaselAttr(el, 'key');
+  const raw = weaselAttr(el, 'size')?.trim();
   if (!key || !raw) return undefined;
   const px = raw.endsWith('px');
   const n = parseFloat(px ? raw.slice(0, -2) : raw);
   if (!Number.isFinite(n) || n <= 0) return undefined;
   return { key, size: px ? { px: n } : n };
+}
+
+/** How far a line stops short of the marker, in marker units — written by
+ *  this package's serializer, and 0 for any other document's marker. */
+function markerInsetAttr(el: Element): number {
+  const n = parseFloat(weaselAttr(el, 'inset') ?? '');
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 /** The cascade as it stands on `el`, walked down from the root. A marker's
@@ -1564,10 +1573,12 @@ function markerEntryFrom(
   }
   const fillRule = parts[0].path.fillRule ?? 'nonzero';
 
+  const inset = markerInsetAttr(el);
   const round = (v: number): number => Math.round(v * 1e4) / 1e4 + 0;
   const hash = shortHash(JSON.stringify([
     Array.from(commands), Array.from(coords, round), fillRule, fill, outline,
     typeof orient === 'number' ? round(orient) : orient,
+    ...(inset !== 0 ? [round(inset)] : []),
   ]));
   const key = id.endsWith(`-${hash}`) ? id : `${id}-${hash}`;
 
@@ -1581,6 +1592,6 @@ function markerEntryFrom(
     fill,
     outline,
     orient,
-    inset: 0,
+    inset,
   };
 }
