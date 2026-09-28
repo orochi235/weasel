@@ -36,7 +36,7 @@ import {
   pathUnion,
   pathIntersect,
   pathSubtract,
-  splitPathByLine,
+  splitPathBySegment,
 } from '@weasel-js/core';
 import type {
   Path, ResizeAnchor, InvocationCtx, OngoingInvoker, Action, Op, PoseOverrides,
@@ -250,7 +250,7 @@ const FACTORIES: { name: string; make: () => DrawNode }[] = [
   {
     name: 'slice-piece',
     make: () => {
-      const pieces = splitPathByLine(regularPolygonPath({ x: 60, y: 60 }, 40, 6), { x: 60, y: 0 }, { x: 60, y: 120 });
+      const pieces = splitPathBySegment(regularPolygonPath({ x: 60, y: 60 }, 40, 6), { x: 60, y: 0 }, { x: 60, y: 120 });
       if (!pieces || pieces.length === 0) throw new Error('slice produced no pieces');
       return nodeFromPath('slice', pieces[0]);
     },

@@ -447,7 +447,7 @@ export interface ClipboardDep {
 /**
  * Consumer-supplied commit for the Slice action. `commit` receives the finite
  * slice segment (world coords); the consumer scans the scene, splits crossed
- * paths via `splitPathByLine`, and applies the result as one undoable batch.
+ * paths via `splitPathBySegment`, and applies the result as one undoable batch.
  */
 export interface SliceDep {
   commit(a: Point2, b: Point2): void;
@@ -583,7 +583,7 @@ declare module '@weasel-js/routing' {
      * Slice dep — consumer-supplied commit for the Slice action.
      *
      * Receives the finite slice segment in world coordinates; the consumer
-     * scans the scene, splits crossed paths via `splitPathByLine`, and
+     * scans the scene, splits crossed paths via `splitPathBySegment`, and
      * applies the result as one undoable batch.
      *
      * Optional: when absent, `sliceAction` is a no-op.

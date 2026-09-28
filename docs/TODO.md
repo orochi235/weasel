@@ -236,12 +236,6 @@ From `docs/specs/2026-05-03-tool-overlay-channel-design.md`:
 
 - **(P3) Subscription / push model.** Today the channel is pull (Canvas asks each frame, scratch is read via React closure). If a tool needs to push state changes outside the React render cycle, add an imperative `tools.publishOverlay(toolId, layer)` channel.
 
-### Slice tool follow-ups
-
-From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-17):
-
-- **(P3) Bézier-preserving + concave finite-cut (Approach B).** v1 flattens béziers on cut pieces and an infinite-line half-plane clip can over-cut concave shapes the finite stroke only partly crosses (pinned in `splitByLine.test.ts`). `splitPathByLine` is the single swap point for a chord-split Approach B + `schneiderFit` curve re-fitting.
-
 ---
 
 ## Viewport
