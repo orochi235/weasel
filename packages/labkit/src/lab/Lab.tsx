@@ -13,6 +13,7 @@ import {
 import { useStore } from 'zustand/react';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { labAnnotationTools } from '../annotations/toolMap';
+import { CameraRegistryContext, createCameraRegistry } from '../canvas/cameraRegistry';
 import {
   LabAsideRegion,
   LabFooterRegion,
@@ -25,7 +26,6 @@ import type { TrialContribution } from '../chrome/types';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import { Split } from '../primitives/Split';
-import { CameraRegistryContext, createCameraRegistry } from '../canvas/cameraRegistry';
 import { defaultStorage, noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
 import { type OpenedLabStore, openLabStore } from '../state/openLabStore';
@@ -52,10 +52,10 @@ import {
 import { useLabFitWarning } from './fitCheck';
 import { LabContext, type LabContextValue } from './LabContext';
 import { LabHeader, LabThemeSwitcher } from './LabHeader';
-import { LabZoom } from './LabZoom';
 import { LabPalette } from './LabPalette';
 import { LabShell } from './LabShell';
 import type { LabPage } from './LabSwitcher';
+import { LabZoom } from './LabZoom';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 

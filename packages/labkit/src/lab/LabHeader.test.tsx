@@ -69,7 +69,11 @@ describe('<LabHeader>', () => {
     const user = userEvent.setup();
     render(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
     expect(screen.queryByRole('radiogroup')).toBeNull();
-    for (const [now, next] of [['Auto', 'Light'], ['Light', 'Dark'], ['Dark', 'Auto']]) {
+    for (const [now, next] of [
+      ['Auto', 'Light'],
+      ['Light', 'Dark'],
+      ['Dark', 'Auto'],
+    ]) {
       const button = screen.getByRole('button', { name: `Theme: ${now} — click for ${next}` });
       expect(button.querySelector('svg')).not.toBeNull();
       expect(button).toHaveTextContent('');

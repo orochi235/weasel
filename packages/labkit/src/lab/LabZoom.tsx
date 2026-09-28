@@ -16,8 +16,8 @@ import { ZoomInIcon, ZoomOutIcon } from '@weasel-js/ui';
 import { useContext, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import type { CameraView } from '../canvas/CameraInput';
-import { atScale, viewMiddle } from '../canvas/cameraZoom';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
+import { atScale, viewMiddle } from '../canvas/cameraZoom';
 import { formatShortcut } from '../passthrough/weasel-ui';
 import { Toolbar } from '../primitives/Toolbar';
 import { LabStoreContext } from '../state/context';
@@ -86,9 +86,8 @@ function LabZoomControls() {
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] <LabZoom> requires <LabStoreProvider>');
 
-  const camera = useSyncExternalStore(
-    cameras?.subscribe ?? noSubscribe,
-    () => (cameras && focusedTrialId ? cameras.get(focusedTrialId) : null),
+  const camera = useSyncExternalStore(cameras?.subscribe ?? noSubscribe, () =>
+    cameras && focusedTrialId ? cameras.get(focusedTrialId) : null,
   );
   const zoom = useStore(storeCtx.store, (s) => {
     const record = s.trials.find((t) => t.id === focusedTrialId);

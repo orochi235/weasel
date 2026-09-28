@@ -181,9 +181,17 @@ describe('an instrument that declares a stage', () => {
   });
 
   it('zooms about the middle of the view, not the stage origin', () => {
-    const rect = vi
-      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-      .mockReturnValue({ x: 0, y: 0, left: 0, top: 0, right: 240, bottom: 160, width: 240, height: 160, toJSON: () => ({}) });
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      x: 0,
+      y: 0,
+      left: 0,
+      top: 0,
+      right: 240,
+      bottom: 160,
+      width: 240,
+      height: 160,
+      toJSON: () => ({}),
+    });
     try {
       const { container } = render(<Lab instruments={[staged]} defaultInstrument="Staged" />);
       const trialView = within(screen.getByRole('toolbar', { name: 'View' }));

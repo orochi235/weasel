@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { CameraView } from './CameraInput';
 import { zoomCameraTo } from './cameraZoom';
 
-function fakeCamera(host: { width: number; height: number } | null, range = { min: 0.1, max: 32 }): CameraView & {
+function fakeCamera(
+  host: { width: number; height: number } | null,
+  range = { min: 0.1, max: 32 },
+): CameraView & {
   view: { x: number; y: number; scale: { x: number; y: number } };
 } {
   const cam = {

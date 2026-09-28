@@ -41,17 +41,17 @@ function mountTwo() {
   const taps = [vi.fn(), vi.fn()];
   const { container } = render(
     <WeaselProvider isolate>
-        {views.map((onViewChange, i) => (
-          <CanvasStack
-            key={i}
-            layers={[]}
-            view={VIEW}
-            onViewChange={onViewChange}
-            onHitTest={taps[i]}
-            width={100}
-            height={100}
-          />
-        ))}
+      {(['a', 'b'] as const).map((id, i) => (
+        <CanvasStack
+          key={id}
+          layers={[]}
+          view={VIEW}
+          onViewChange={views[i]}
+          onHitTest={taps[i]}
+          width={100}
+          height={100}
+        />
+      ))}
     </WeaselProvider>,
   );
   const hosts = [...container.querySelectorAll<HTMLElement>('.lk-canvas-stack')];

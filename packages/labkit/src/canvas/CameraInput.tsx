@@ -31,8 +31,8 @@ import {
 } from 'react';
 import type { Point, ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
-import { usePublishCamera } from './cameraRegistry';
 import { CameraWheelContext } from './CameraWheelContext';
+import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
 import type { ViewportSize, WorldFrame } from './worldSpec';
 

@@ -7,9 +7,9 @@ import { AnnotationPreloadContext } from '../annotations/preload';
 import { annotationsFromJSON } from '../annotations/store';
 import type { AnnotationStorage, AnnotationTargetInfo } from '../annotations/types';
 import type { CameraView } from '../canvas/CameraInput';
-import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
 import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
+import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
 import { fitStage, Stage } from '../canvas/Stage';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera, type ViewportSize } from '../canvas/worldSpec';
@@ -606,9 +606,7 @@ function TrialRuntime({
   const scopedBody = (
     <WeaselProvider isolate>
       <PointerContextProvider store={pointer}>
-        <CameraPublishContext.Provider value={publishCamera}>
-          {body}
-        </CameraPublishContext.Provider>
+        <CameraPublishContext.Provider value={publishCamera}>{body}</CameraPublishContext.Provider>
       </PointerContextProvider>
     </WeaselProvider>
   );

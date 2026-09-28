@@ -11,6 +11,6 @@ export type { LabShellProps } from './LabShell';
 export { LabShell } from './LabShell';
 export type { LabPage, LabSwitcherProps } from './LabSwitcher';
 export { currentPage, LabSwitcher } from './LabSwitcher';
+export { LabZoom } from './LabZoom';
 export type { PanelDescriptor, TrialLayout, WorkspaceProps } from './Workspace';
 export { Workspace } from './Workspace';
-export { LabZoom } from './LabZoom';

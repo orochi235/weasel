@@ -1,4 +1,10 @@
-import { type KeyboardEvent, type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  useContext,
+  useMemo,
+  useSyncExternalStore,
+} from 'react';
 import { useStore } from 'zustand/react';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { zoomCameraTo } from '../canvas/cameraZoom';
@@ -136,9 +142,8 @@ export function TrialChrome({
 
   const ctx = useMemo<TrialChromeContext>(() => {
     const setZoom = (z: number): void => {
-      if (camera) return zoomCameraTo(camera, z);
-      if (!view2d) return;
-      updateTrialView(trialId, withZoom(view2d, z));
+      if (camera) zoomCameraTo(camera, z);
+      else if (view2d) updateTrialView(trialId, withZoom(view2d, z));
     };
     return {
       trialId,

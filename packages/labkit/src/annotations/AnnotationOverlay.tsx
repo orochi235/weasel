@@ -239,7 +239,8 @@ export function AnnotationOverlay({
         // Isolated so each pane keeps its own selection and tool.
         <WeaselProvider isolate>
           <ToolBridge toolId={annotationToolInfo(activeToolId)?.weaselTool ?? 'select'} />
-          <SceneCanvas<AnnotationData, 'marks', WorldRect> features={['pick', 'move', 'transform', 'edit']}
+          <SceneCanvas<AnnotationData, 'marks', WorldRect>
+            features={['pick', 'move', 'transform', 'edit']}
             ref={attachSceneCanvas}
             scene={scene}
             width={rect.w}

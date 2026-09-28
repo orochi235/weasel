@@ -12,13 +12,6 @@ export {
   STAGE_VIEW_ID,
   useCameraView,
 } from './CameraInput';
-export type { CameraRegistry } from './cameraRegistry';
-export {
-  CameraPublishContext,
-  CameraRegistryContext,
-  createCameraRegistry,
-  usePublishCamera,
-} from './cameraRegistry';
 export type { CameraWheelSlot } from './CameraWheelContext';
 export { CameraWheelContext } from './CameraWheelContext';
 export type { CanvasStackProps } from './CanvasStack';
@@ -27,6 +20,13 @@ export type { CanvasStackContextValue, CanvasStackSurface } from './CanvasStackC
 export { CanvasStackContext } from './CanvasStackContext';
 export type { ZoomAtOptions } from './camera';
 export { centerOn, zoomAt } from './camera';
+export type { CameraRegistry } from './cameraRegistry';
+export {
+  CameraPublishContext,
+  CameraRegistryContext,
+  createCameraRegistry,
+  usePublishCamera,
+} from './cameraRegistry';
 export { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
 export { screenToWorld, worldToScreen } from './canvasCoords';
 export { LinkedCursor } from './LinkedCursor';
