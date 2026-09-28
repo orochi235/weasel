@@ -1533,9 +1533,9 @@ one dead `const` and four stale disable directives.
   on a package's `test-seams` entry (`@weasel-js/font`, `@weasel-js/text`,
   `@weasel-js/core`), never its barrel.
 
-  - **Undocumented exports.** The audit counts 402 of 3574 public exports with
-    no JSDoc (11%), spread across every package; `--undocumented --pkg <name>`
-    lists them.
+  - **One undocumented export: labkit's `rectsEqual`.** `@weasel-js/labkit/surface`
+    exports it, but only `useTiledSurface` and its own test call it, so it reads as
+    internal: document it or take it off the entry. (2026-09-28: 404 → 1.)
   - **Three `@internal` exports still reach a consumer entry**, all in
     `@weasel-js/routing`. `KeyBinding` is the parameter of `matchesKeyBinding`,
     which core's barrel exports, so either the marker is stale (as
