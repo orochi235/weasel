@@ -945,6 +945,11 @@ From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.m
 
 Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 
+- **(P3) A d3 transition cannot tell a node removed and re-added between two frames.**
+  `transition.ts` checks once per frame that each node still exists, so a node removed and
+  re-added under the same id before the next frame keeps being tweened as though it were the
+  old one. Telling them apart needs a per-node identity the scene does not expose today.
+
 - **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
   (`useWheelZoomTool` / `useHandTool` / `useViewAnimation`; `useDragGesture`).
   Worth building only for d3 semantics the kit genuinely lacks, not for parity —
