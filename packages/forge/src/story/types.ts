@@ -2,6 +2,8 @@ import type { ConfigSchema } from '@weasel-js/labkit/config';
 import type { ComponentType, ReactNode } from 'react';
 import type { Globals, Layout, Viewport } from '../protocol/messages.ts';
 
+/** What a story's `render` and its decorators receive: the trial's config and state, the globals in force, and the
+ *  story's own title and name. */
 export interface StoryContext<C = unknown, S = unknown> {
   config: C;
   setConfig: (path: string, value: unknown) => void;
@@ -12,14 +14,17 @@ export interface StoryContext<C = unknown, S = unknown> {
   name: string;
 }
 
+/** What a story's `play` receives. `canvasElement` is the element the story rendered into. */
 export interface PlayContext<C = unknown> {
   canvasElement: HTMLElement;
   config: C;
   globals: Globals;
 }
 
+/** Wraps a story: `story()` renders what it wraps, and the decorator returns that inside whatever it adds. */
 export type Decorator = (story: () => ReactNode, ctx: StoryContext) => ReactNode;
 
+/** What `meta()` takes: settings every story in the file shares. */
 export interface MetaSpec {
   title?: string;
   decorators?: Decorator[];
@@ -55,6 +60,7 @@ export interface IndexContext {
   open: (id: string) => void;
 }
 
+/** Props for `IndexContext.Story`. */
 export interface IndexStoryProps {
   story: LoadedStory;
   /** Merged over the story's defaults; nested groups merge rather than replace. */
@@ -63,8 +69,10 @@ export interface IndexStoryProps {
   label?: string;
 }
 
+/** A custom index page for a component, given as `MetaSpec.index`. */
 export type IndexRender = (ctx: IndexContext) => ReactNode;
 
+/** What `story()` takes. `config` declares the story's controls; `state`, given, seeds its state from the config. */
 export interface StorySpec<C = Record<string, never>, S = undefined> {
   name?: string;
   config?: ConfigSchema<C>;

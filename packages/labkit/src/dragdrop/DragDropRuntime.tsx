@@ -18,12 +18,16 @@ import type {
 } from '../instrument/types';
 import { DragGhost } from './DragGhost';
 
+/** A palette drag in progress. `screenPos` is in client pixels; `feedback` is
+ *  the last `onDragOver` answer — `null` off the canvas or without one. */
 export interface DragState {
   item: PaletteItem;
   screenPos: Point;
   feedback: DragFeedback | null;
 }
 
+/** Inputs to `useDragDrop`: the capability, the element that counts as the
+ *  drop target, and the trial state a drop rewrites. */
 export interface UseDragDropArgs<TS, TC> {
   capability: DragDropCapability<TS, TC>;
   canvasContainerRef: RefObject<HTMLElement | null>;
@@ -37,11 +41,18 @@ export interface UseDragDropArgs<TS, TC> {
   emit: (event: string) => void;
 }
 
+/** The live drag, and the handler a palette item calls on pointerdown. */
 export interface UseDragDropResult {
   drag: DragState | null;
   startDrag: (item: PaletteItem, e: ReactPointerEvent) => void;
 }
 
+/**
+ * Run palette-to-canvas drags for a `DragDropCapability`. Releasing over the
+ * container converts the pointer to world coordinates, applies `onDrop`'s
+ * state and emits `'canvas.itemAdded'`; releasing anywhere else, or a canceled
+ * gesture, drops nothing. `onDragOver` is probed at most once per frame.
+ */
 export function useDragDrop<TS, TC>({
   capability,
   canvasContainerRef,
@@ -162,10 +173,12 @@ export function useDragDrop<TS, TC>({
   return { drag, startDrag };
 }
 
+/** Props for `DragOverlay`. */
 export interface DragOverlayProps {
   drag: DragState | null;
 }
 
+/** The ghost for `drag`, or nothing when no drag is live. */
 export function DragOverlay({ drag }: DragOverlayProps) {
   if (!drag) return null;
   return <DragGhost item={drag.item} screenPos={drag.screenPos} />;

@@ -38,6 +38,7 @@ export interface LoupeBindings {
   toggle: () => void;
 }
 
+/** The trial's undo history as its chrome sees it. */
 export interface UndoBindings {
   canUndo: boolean;
   canRedo: boolean;

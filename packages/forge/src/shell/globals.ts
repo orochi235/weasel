@@ -27,6 +27,7 @@ export interface LabChrome {
   mode: LabMode;
 }
 
+/** The shell config's `globals`: each declaration by the key stories read it under. */
 export type GlobalDeclarations = Readonly<Record<string, GlobalDeclaration>>;
 
 /** The config group every story schema gains, holding the trial's pins. A story never sees it. */

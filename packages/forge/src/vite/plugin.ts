@@ -10,6 +10,7 @@ import { indexFile } from './indexFile.ts';
 import { ownEntries } from './ownEntries.ts';
 import { storybookShims } from './storybookShims.ts';
 
+/** Options for the `forge` vite plugin. */
 export interface ForgeOptions {
   /** Globs of story files, relative to the vite root. */
   stories: string[];
@@ -17,7 +18,7 @@ export interface ForgeOptions {
   frameConfig?: string;
   /** Path to the shell config module, relative to the vite root. Only the workshop page imports it. Optional. */
   shellConfig?: string;
-  /** Alias Storybook's runtime modules to forge shims (Task 13). Default true. */
+  /** Alias Storybook's runtime modules to forge shims. Default true. */
   storybookShims?: boolean;
 }
 
@@ -25,6 +26,10 @@ const PREFIX = 'virtual:forge/';
 const MODULES = new Set(['index.js', 'importers.js', 'deps.js', 'frame-config.js', 'shell-config.js', 'shell-entry.js', 'frame-entry.js']);
 const PAGES: Record<string, string> = { '/': 'shell-entry.js', '/index.html': 'shell-entry.js', '/frame.html': 'frame-entry.js' };
 
+/**
+ * The vite plugin that serves the workshop: it indexes the story files, serves the workshop at `/` and the frame
+ * document at `/frame.html`, pushes a new index to the open page as story files change, and builds both pages.
+ */
 export function forge(options: ForgeOptions): Plugin[] {
   let root = process.cwd();
   let base = '/';

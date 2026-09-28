@@ -17,6 +17,7 @@ import { createOverrides, resolveCssVar, scanCssVars } from './cssVars';
 import { createGlobalsTarget, type GlobalsTarget } from './globalsTarget';
 import { StoryHost } from './StoryHost';
 
+/** The frame config: what `defineFrameConfig` returns and the `frameConfig` module default-exports. */
 export interface FrameSetup {
   /** Wraps every story, outermost; receives the globals. From the frame config (`frameConfig`). */
   decorators?: Decorator[];
@@ -37,6 +38,7 @@ export interface FrameSetup {
   prepare?: (story: LoadedStory) => void | Promise<void>;
 }
 
+/** Inputs to `startFrame`: the story, the channel to the shell, and the element to render into. */
 export interface StartFrameOptions {
   story: LoadedStory;
   channel: Channel<ToFrame, FromFrame>;

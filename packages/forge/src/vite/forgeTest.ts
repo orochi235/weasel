@@ -5,6 +5,7 @@ import { indexFile } from './indexFile.ts';
 import { ownEntries } from './ownEntries.ts';
 import { storybookShims } from './storybookShims.ts';
 
+/** Options for the `forgeTest` vite plugin. */
 export interface ForgeTestOptions {
   /** Globs of story files, relative to the vite root. Each matching file becomes a test file. */
   stories: string[];

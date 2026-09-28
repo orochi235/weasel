@@ -8,10 +8,12 @@ import type { LoadedStory } from '../story/types';
 import { type FrameSetup, reportImportFault, startFrame } from './FrameController';
 import { startIndex } from './index/startIndex';
 
+/** Story modules by file path, each loaded on first use. */
 export interface FrameImporters {
   [file: string]: () => Promise<Record<string, unknown>>;
 }
 
+/** One story as a frame document needs to find it, before its module is loaded. */
 export interface FrameIndexEntry {
   id: string;
   /** The story's title as indexed, which titles the file's stories when its meta names none. */
@@ -26,6 +28,7 @@ export interface FrameIndexEntry {
   tags?: readonly string[];
 }
 
+/** Inputs to `mountFrame`. `load` replaces the default module loader, `loadStories`. */
 export interface MountFrameOptions {
   index: readonly FrameIndexEntry[];
   importers: FrameImporters;

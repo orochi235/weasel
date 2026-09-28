@@ -15,6 +15,7 @@ export interface CameraRegistry {
   subscribe(listener: () => void): () => void;
 }
 
+/** An empty in-memory `CameraRegistry`. */
 export function createCameraRegistry(): CameraRegistry {
   const stacks = new Map<string, CameraView[]>();
   const listeners = new Set<() => void>();

@@ -33,6 +33,7 @@ export type TrialLayout = Record<
   { size?: { w?: number; h?: number }; span?: { cols?: number; rows?: number } }
 >;
 
+/** Props for `Workspace`. */
 export interface WorkspaceProps {
   children: ReactNode;
   /**
@@ -61,7 +62,7 @@ export interface WorkspaceProps {
   padding?: number;
   /** Undocked sidebar panels to render alongside the trials. A `'tile'` panel
    *  joins the grid as a peer of the trials; a `'floating'` one goes into the
-   *  floating zone above it. The body is portalled in by the trial that owns
+   *  floating zone above it. The body is portaled in by the trial that owns
    *  it, so all this renders is the frame and the host. */
   panels?: readonly PanelDescriptor[];
   /**
@@ -80,21 +81,6 @@ function extentOf(store: Store, id: NodeId): TrialLayout[string] | null {
   if (p.span) out.span = p.span;
   return Object.keys(out).length > 0 ? out : null;
 }
-
-/**
- * Auto-balanced tiling of trials, `ceil(sqrt(n))` columns wide.
- *
- * Tiles are absolutely positioned at the rects `gridStrategy` computes, not
- * laid out by CSS — `windease/styles.css` (folded into
- * `@weasel-js/labkit/styles.css`) carries the rules that positioning depends on.
- *
- * `panels` are undocked sidebar sections. A `'tile'` panel is registered as a
- * peer of the trials under `PANEL_KIND`, so the grid places and resizes it like
- * one; a `'floating'` panel goes in the overlay above. Either way this renders
- * only the frame and an empty host: the section's content is portalled in by
- * the trial that owns it, which is what keeps a torn-out section inside its
- * trial's React tree instead of rebuilding it as a sibling.
- */
 
 /** The frame an undocked panel gets: a box, and the host element its trial
  *  portals into. The title and the dock control come through the portal with
@@ -116,6 +102,20 @@ export interface PanelDescriptor {
   as: 'tile' | 'floating';
 }
 
+/**
+ * Auto-balanced tiling of trials, `ceil(sqrt(n))` columns wide.
+ *
+ * Tiles are absolutely positioned at the rects `gridStrategy` computes, not
+ * laid out by CSS — `windease/styles.css` (folded into
+ * `@weasel-js/labkit/styles.css`) carries the rules that positioning depends on.
+ *
+ * `panels` are undocked sidebar sections. A `'tile'` panel is registered as a
+ * peer of the trials under `PANEL_KIND`, so the grid places and resizes it like
+ * one; a `'floating'` panel goes in the overlay above. Either way this renders
+ * only the frame and an empty host: the section's content is portaled in by
+ * the trial that owns it, which is what keeps a torn-out section inside its
+ * trial's React tree instead of rebuilding it as a sibling.
+ */
 export function Workspace({
   children,
   ids,
