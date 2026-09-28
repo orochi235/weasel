@@ -17,12 +17,9 @@
  */
 
 import type { GradStop } from '@weasel-js/paint';
-import {
-  registerPaintKind, asPaint, type PaintBindContext, type PaintKindEntry, type PaintProgram,
-} from '../../core/paintKinds';
+import type { PaintBindContext, PaintKindEntry, PaintProgram } from '../../core/paintKinds';
 import { resolveColor, rgbaToHex } from '../../renderer/math/color';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
-import { registerProgram } from '../../renderer/shaders/registerProgram';
 import type { ColorSpace, FillStyle, GradientUnits } from '@weasel-js/paint';
 import type { FillPoseBox } from '../../core/fillInPoseFrame';
 import { bakeMesh, type BakedMesh } from './bake';
@@ -63,6 +60,12 @@ export function isMeshGradientFill(fill: FillStyle | null | undefined): fill is 
 
 function asMesh(fill: FillStyle): MeshGradientFill {
   return fill as unknown as MeshGradientFill;
+}
+
+// `asPaint`'s cast, kept local: this module must import nothing from the
+// registry, whose state `lazyKind`'s self-contained copy would duplicate.
+function asFill(mesh: MeshGradientFill): FillStyle {
+  return mesh as unknown as FillStyle;
 }
 
 /**
@@ -252,25 +255,24 @@ function bindMesh(ctx: PaintBindContext, fill: FillStyle): PaintProgram | null {
   return program;
 }
 
-registerProgram(MESH_PROGRAM_ID, MESH_VERT_SRC, MESH_FRAG_SRC);
-
-/** The kind's registry entry. Importing this module registers it; core's
- *  paint-kind registry loads it on demand otherwise. */
+/** The kind's registry entry, shader program included. `./register` registers
+ *  it; core's paint-kind registry loads it on demand otherwise. */
 export const meshGradientKind: PaintKindEntry = {
   id: MESH_GRADIENT_KIND,
+  programs: { [MESH_PROGRAM_ID]: { vert: MESH_VERT_SRC, frag: MESH_FRAG_SRC } },
   label: 'Mesh',
   icon: 'paintMesh',
-  seed: (color) => asPaint(seedMeshPatch(color)),
+  seed: (color) => asFill(seedMeshPatch(color)),
   // The first corner of the first patch: a mesh has no single color, and this
   // is the one a fallback swatch and an SVG paint fallback both read.
   colorOf: (paint) => asMesh(paint).patches?.[0]?.colors?.[0],
   stopsOf: (paint) => meshStops(asMesh(paint)),
-  fromStops: (stops) => asPaint(meshFromStops(stops)),
+  fromStops: (stops) => asFill(meshFromStops(stops)),
   bind: bindMesh,
   inPoseFrame: (fill, box: FillPoseBox) => {
     const mesh = asMesh(fill);
     if (mesh.units !== 'bounds') return fill;
-    return asPaint({
+    return asFill({
       ...mesh,
       patches: mapPatches(mesh, (p) => ({
         x: box.x + p.x * box.width,
@@ -282,7 +284,7 @@ export const meshGradientKind: PaintKindEntry = {
   toBoundsFrame: (fill, box: FillPoseBox) => {
     const mesh = asMesh(fill);
     if (mesh.units === 'bounds' || box.width === 0 || box.height === 0) return fill;
-    return asPaint({
+    return asFill({
       ...mesh,
       patches: mapPatches(mesh, (p) => ({
         x: (p.x - box.x) / box.width,
@@ -293,8 +295,6 @@ export const meshGradientKind: PaintKindEntry = {
   },
   toSvg: (id, fill) => meshGradientXml(id, asMesh(fill)),
 };
-
-registerPaintKind(meshGradientKind);
 
 /**
  * The `<defs>` entry for a mesh paint, in weasel's own namespace.

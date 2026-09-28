@@ -1061,14 +1061,6 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
-- **(P3) esbuild with code splitting still ships the mesh paint with any import of core.** With
-  `splitting: true`, esbuild makes an entry import every module a dynamic chunk shares with the
-  barrel's static graph, used or not, so `import { asNodeId }` carries ~19.6 kB — the lazily
-  loaded `mesh-gradient` kind and the paint registry it imports. rolldown (vite's production
-  bundler) and esbuild without splitting both ship under 250 B, which is why
-  `scripts/check-treeshake.mjs` bundles with rolldown. Short of taking the mesh exports off
-  core's root barrel onto a subpath, nothing in core's layout avoids it.
-
 - **(P3) labkit's bundled declarations inline `@weasel-js/quantity` types it does not re-export.**
   `npm run build` warns from rollup-plugin-dts that labkit's `index.d.ts`, `config/index.d.ts` and
   `passthrough/weasel-ui.d.ts` reference `Display` and `UnitTable` with no public re-export, so a

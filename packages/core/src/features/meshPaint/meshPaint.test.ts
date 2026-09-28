@@ -4,6 +4,7 @@ import { getPaintKind, listGradientKinds, listPaintKinds, switchGradientKind } f
 import { fillInPoseFrame, fillToBoundsFrame } from '../../core/fillInPoseFrame';
 import { seedMeshPatch, isMeshGradientFill, meshGradientXml, MESH_GRADIENT_KIND } from './meshPaint';
 import type { MeshGradientFill } from './meshPaint';
+import './register';
 import type { FillStyle } from '@weasel-js/paint';
 import type { PaintBindContext, PaintProgram } from '../../core/paintKinds';
 

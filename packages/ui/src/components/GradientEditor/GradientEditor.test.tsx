@@ -3,12 +3,11 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import {
   asPaint,
   registerPaintKind,
-  seedMeshPatch,
   type FillStyle,
   type GradStop,
   type GradientFill,
-  type MeshGradientFill,
 } from '@weasel-js/core';
+import { seedMeshPatch, type MeshGradientFill } from '@weasel-js/core/mesh';
 import { GradientEditor } from './GradientEditor';
 
 const LINEAR: GradientFill = {

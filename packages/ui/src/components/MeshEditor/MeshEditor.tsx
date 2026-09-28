@@ -1,11 +1,6 @@
 import { type ReactElement } from 'react';
-import {
-  asPaint,
-  isMeshGradientFill,
-  type ColorSpace,
-  type FillStyle,
-  type MeshGradientFill,
-} from '@weasel-js/core';
+import { asPaint, type ColorSpace, type FillStyle } from '@weasel-js/core';
+import { isMeshGradientFill, type MeshGradientFill } from '@weasel-js/core/mesh';
 import { ColorField } from '../ColorField';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import { paintPreviewCss } from '../../paintPreview';

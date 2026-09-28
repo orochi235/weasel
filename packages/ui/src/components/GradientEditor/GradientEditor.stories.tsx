@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { seedMeshPatch, type FillStyle, type GradientFill } from '@weasel-js/core';
+import type { FillStyle, GradientFill } from '@weasel-js/core';
+import { seedMeshPatch } from '@weasel-js/core/mesh';
 import { GradientEditor } from './GradientEditor';
 
 const meta: Meta<typeof GradientEditor> = {

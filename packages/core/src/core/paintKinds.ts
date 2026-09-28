@@ -23,6 +23,7 @@ import { createReflectable, type Reflection } from '@weasel-js/registry';
 import type { FillPoseBox } from './fillInPoseFrame';
 import type { GlMat3 } from '../renderer/math/mat3';
 import type { ShaderProgram } from '../renderer/shaders/ShaderProgram';
+import { getProgramSource, registerProgram, type ProgramSource } from '../renderer/shaders/registerProgram';
 
 /** A compiled GL program. A paint kind gets one from
  *  {@link PaintBindContext.program} and hands it back from `bind`. */
@@ -138,6 +139,13 @@ export interface PaintKindEntry {
    * beside the reference on its own, from `colorOf`.
    */
   toSvg?(id: string, fill: FillStyle): string;
+  /**
+   * Shader programs `bind` looks up through `ctx.program`, keyed by program
+   * id; registering the kind registers them. Declaring them here rather than
+   * calling `registerProgram` at import keeps a kind loaded by
+   * {@link registerPaintKindLoader} free of core's registries.
+   */
+  programs?: Readonly<Record<string, ProgramSource>>;
 }
 
 const BUILTINS: readonly PaintKindEntry[] = [
@@ -234,6 +242,10 @@ export function registerPaintKind(entry: PaintKindEntry): () => void {
       'resize; supply both or neither.',
     );
   }
+  for (const [id, src] of Object.entries(entry.programs ?? {})) {
+    const have = getProgramSource(id);
+    if (!have || have.vert !== src.vert || have.frag !== src.frag) registerProgram(id, src.vert, src.frag);
+  }
   // Re-registering a built-in id is how a consumer closes a gap the kit leaves,
   // so disposing that override puts the built-in back rather than deleting the
   // kind.
@@ -261,7 +273,7 @@ const LOADS = new Map<string, Promise<void>>();
 // A built-in kind heavy enough to keep off a consumer's bundle until a paint
 // of it turns up. Importing the module statically still registers it at once.
 const LAZY_BUILTINS: ReadonlyArray<readonly [string, PaintKindLoader]> = [
-  ['mesh-gradient', async () => (await import('../features/meshPaint/meshPaint')).meshGradientKind],
+  ['mesh-gradient', async () => (await import('../features/meshPaint/lazyKind')).meshGradientKind],
 ];
 
 function seedLoaders(): void {

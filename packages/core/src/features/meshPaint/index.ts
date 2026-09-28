@@ -1,7 +1,7 @@
 /**
- * The mesh-gradient paint kind. Importing any of it registers the kind and its
- * shader program; otherwise the paint-kind registry loads it the first time a
- * mesh paint is looked up.
+ * The mesh-gradient paint kind, published as `@weasel-js/core/mesh`, whose
+ * entry registers the kind; otherwise the paint-kind registry loads it the
+ * first time a mesh paint is looked up.
  */
 
 export {
