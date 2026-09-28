@@ -30,8 +30,13 @@ export function createMarkDrawOne(
   pose: WorldRect,
   view: View,
 ) => DrawCommand[] {
-  return (node, pose) =>
-    markCommands({ pose, data: node.data }, opts.content, resolveMarkStyle(node.data, opts));
+  return (node, pose, view) =>
+    markCommands(
+      { pose, data: node.data },
+      opts.content,
+      resolveMarkStyle(node.data, opts),
+      view.scale,
+    );
 }
 
 /** How a mark looks, as opposed to where it is. Separate from the callback

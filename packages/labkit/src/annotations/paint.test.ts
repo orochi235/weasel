@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { markCommands } from './paint';
+import { registerNodeShape, type SceneNode, shapeCoversPoint } from '@weasel-js/core';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { WorldRect } from './frac';
+import { markCommands, POINT_MARK_SHAPE } from './paint';
 import type { AnnotationData, AnnotationKind, FracPoint } from './types';
 
 const CONTENT = { w: 200, h: 100 };
@@ -101,6 +103,55 @@ describe('markCommands', () => {
     expect(Math.max(...xs)).toBeCloseTo(54, 4);
     expect(Math.min(...ys)).toBeCloseTo(46, 4);
     expect(Math.max(...ys)).toBeCloseTo(54, 4);
+  });
+});
+
+describe('a point mark at different zooms', () => {
+  const POINT = mark('point', { points: [{ x: 0.25, y: 0.5 }] });
+  const radiusAt = (zoom: number) => {
+    const xs = anchors(markCommands(POINT, CONTENT, {}, { x: zoom, y: zoom })).filter(
+      (_, i) => i % 2 === 0,
+    );
+    return (Math.max(...xs) - Math.min(...xs)) / 2;
+  };
+
+  it('sizes the ring in screen pixels, so its world radius scales inversely with zoom', () => {
+    expect(radiusAt(2)).toBeCloseTo(2, 4);
+    expect(radiusAt(4)).toBeCloseTo(1, 4);
+  });
+
+  it('keeps the ring round on screen under a non-uniform scale', () => {
+    const pts = anchors(markCommands(POINT, CONTENT, {}, { x: 2, y: 4 }));
+    const xs = pts.filter((_, i) => i % 2 === 0);
+    const ys = pts.filter((_, i) => i % 2 === 1);
+    expect((Math.max(...xs) - Math.min(...xs)) * 2).toBeCloseTo(
+      (Math.max(...ys) - Math.min(...ys)) * 4,
+      4,
+    );
+  });
+});
+
+describe('picking a point mark', () => {
+  let dispose: () => void = () => {};
+  beforeEach(() => {
+    dispose = registerNodeShape(POINT_MARK_SHAPE, { priority: 'high' });
+  });
+  afterEach(() => dispose());
+
+  const pose: WorldRect = { x: 50, y: 50, width: 0, height: 0 };
+  const node = {
+    id: 'p',
+    kind: 'leaf',
+    layer: 'marks',
+    pose,
+    data: { target: 't', kind: 'point', points: [{ x: 0.25, y: 0.5 }] },
+  } as unknown as SceneNode<AnnotationData, 'marks', WorldRect>;
+
+  // Ring radius 4px plus half the 2px outline: the ring's outer edge is 5px out.
+  it.each([1, 4])('reaches the ring it draws and no further, at zoom %i', (zoom) => {
+    const at = (px: number) => shapeCoversPoint(node, pose, 50 + px / zoom, 50, { scale: zoom });
+    expect(at(4.9)).toBe(true);
+    expect(at(5.5)).toBe(false);
   });
 });
 
