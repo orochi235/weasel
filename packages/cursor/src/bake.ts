@@ -3,6 +3,7 @@ import type { CursorPaintOp } from './paint';
 import { CURSOR_ANGLE_STEPS, CURSOR_MAX_CSS_PX } from './types';
 import type { CursorGlyph } from './types';
 
+/** How {@link bakeCursor} renders a glyph. */
 export interface BakeOptions {
   /** Rendered size in CSS px. Default 24. */
   readonly size?: number;

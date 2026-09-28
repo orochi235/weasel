@@ -19,6 +19,7 @@ export interface CursorPaintOp {
   readonly stroke?: { readonly color: string; readonly width: number };
 }
 
+/** Options for {@link cursorPaintOps}. */
 export interface PaintOptions {
   /**
    * Multiplies every stroke width, leaving geometry alone. Default 1.
@@ -79,6 +80,7 @@ export function cursorPaintOps(glyph: CursorGlyph, opts: PaintOptions = {}): Cur
 /** An affine `[a, b, c, d, e, f]`: `x' = ax + cy + e`, `y' = bx + dy + f`. */
 export type CursorMatrix = readonly [number, number, number, number, number, number];
 
+/** Where and how large {@link cursorPaintMatrix} places a glyph. */
 export interface PaintPlacement {
   /** Rendered size in CSS px, as `bakeCursor` means it. */
   readonly size: number;
