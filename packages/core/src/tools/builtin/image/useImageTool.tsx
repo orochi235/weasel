@@ -2,9 +2,10 @@ import { useMemo } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { ImageIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
+import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 
 /** Options for `useImageTool`. */
-export interface UseImageToolOptions {
+export interface UseImageToolOptions extends InsertToolOptions {
   /** Image source for inserted nodes — a URL, a `blob:` URL, or a
    *  `data:image/…;base64,…` URI. Stored verbatim on each new node's
    *  `data.image.src`. */
@@ -27,7 +28,7 @@ export interface UseImageToolOptions {
  * so the insert dep can stamp it onto the new node.
  */
 export function useImageTool(options: UseImageToolOptions): Tool<null> {
-  const { src, label = 'Image', preview = 'bitmap' } = options;
+  const { src, label = 'Image', preview = 'bitmap', behaviors } = options;
   return useMemo(
     () =>
       defineTool<null>({
@@ -47,10 +48,10 @@ export function useImageTool(options: UseImageToolOptions): Tool<null> {
           {
             spec: { kind: 'drag' },
             actionId: 'insert',
-            opts: { params: { kind: 'image', src, preview } },
+            opts: { params: { kind: 'image', src, preview }, ...insertBindingBehaviors(behaviors) },
           },
         ],
       }),
-    [src, label, preview],
+    [src, label, preview, behaviors],
   );
 }

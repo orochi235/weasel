@@ -26,8 +26,14 @@
  * start and current point (never to freehand pencil samples). The `line`
  * kind additionally honors Shift (constrain to 15°) and reads Alt/center as
  * "mirror the start around the pointer" rather than "grow a symmetric AABB".
- * All of it resolves in `resolveEndpoints`, which both `overlay()` and
- * `onEnd()` call — so the live preview and the committed node can't disagree.
+ * Behaviors from the binding's `opts.behaviors` (`InsertBehavior[]` — e.g.
+ * `snapToGrid`, `snapToGuides`, `alignInsertBehavior`) run over the two
+ * points after those, the way `moveAction` runs its own: `onStart` on the
+ * start point, `onMove` on each frame's proposal, `onEnd` on release, where
+ * the first answer wins (`null` aborts, `Op[]` commits in place of the
+ * insert). `shapeEndpoints` folds them each pump event and `resolveEndpoints`
+ * reads the result, so the live preview and the committed node can't
+ * disagree.
  *
  * ## What this does NOT wire (vs `useInsert`)
  *
@@ -61,6 +67,13 @@ import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay, DragSample } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
 import type { InsertDep, InsertExtras, SnapDep } from '../depSchema';
+import type { Op } from 'core/ops/types';
+import type { Scene } from 'core/scene/types';
+import type { GestureContext, InsertBehavior, InsertPoint } from '../../gestures/types';
+import { gestureViewReader } from '../../gestures/shared/screenTolerance';
+import type { View } from 'core/viewport/view';
+import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd } from '../gestureLifecycle';
+import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { TextEditDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { shapeKindInfo } from 'core/shapeKinds';
@@ -86,11 +99,9 @@ interface InsertScratch {
   /** The active binding's opts — re-resolved at commit time so thunked
    *  params see the latest tool state (e.g. polygon `sides` after ArrowUp). */
   opts: BindingOpts | undefined;
-  /** RAW (unsnapped) drag endpoints in world space. Snapping and the
-   *  line tool's Shift-constrain are applied together in `resolveEndpoints`
-   *  at read time, so the documented modifier ordering — constrain the
-   *  angle first, THEN align the endpoint to the grid — holds for both the
-   *  live preview and the commit. */
+  /** RAW (unsnapped) drag endpoints in world space. `shapeEndpoints`
+   *  constrains the angle first, THEN aligns the endpoint to the grid, so
+   *  the documented modifier ordering holds for the preview and the commit. */
   startX: number;
   startY: number;
   currentX: number;
@@ -111,6 +122,19 @@ interface InsertScratch {
   /** Cleared once `onEnd` runs so subsequent `overlay()` calls report no
    *  in-flight preview (mirrors the areaSelect/lasso convention). */
   open: boolean;
+  /** Behaviors from `opts.behaviors`; empty when none were bound. */
+  behaviors: InsertBehavior<unknown>[];
+  /** Reused gesture context handed to behaviors. Its `origin` holds the
+   *  start point under {@link GESTURE_KEY}, after `onStart` shaped it. */
+  gestureCtx: GestureContext<unknown>;
+  readView: () => View | null;
+  /** The endpoints after Shift-constrain, the `snap` dep and the behaviors,
+   *  recomputed on every pump event so each behavior runs once per frame. */
+  shaped: { start: InsertPoint; current: InsertPoint };
+  /** Captured at `start` for committing a behavior's `Op[]`. */
+  scene: Scene<unknown, string, unknown> | undefined;
+  applyOps: ((ops: Op[], label: string) => void) | undefined;
+  selection: SelectionApi | undefined;
   /** Accumulated user-driven rotation (radians) layered on top of any
    *  drag-direction / params rotation. Driven by `insert.adjustRotation`
    *  (Shift+wheel during engaged phase). Only consulted for kinds that
@@ -177,11 +201,49 @@ function snapTo15Degrees(
   return { x: start.x + len * Math.cos(snapped), y: start.y + len * Math.sin(snapped) };
 }
 
+/** The key an insert's single gesture point rides under in the behaviors'
+ *  `draggedIds` / `origin` / `current` — insert has no node id yet. */
+const GESTURE_KEY = 'gesture';
+
 /**
- * Resolve the effective drag endpoints from the raw ones, applying (in
- * order): the line tool's Shift-constrain, the `snap` dep, and — for the
- * `line` kind only — the alt/center reading as "mirror the end around the
- * start" rather than "grow a symmetric AABB".
+ * Shape the raw drag endpoints, in order: the line tool's Shift-constrain
+ * (on raw coords, so the locked angle survives), the `snap` dep, then each
+ * behavior's `onMove`, each seeing the points the one before it returned.
+ * Stored on `scratch.shaped`; `resolveEndpoints` reads it.
+ */
+function shapeEndpoints(scratch: InsertScratch, modifiers: GestureContext<unknown>['modifiers']): void {
+  const resolved = resolveParams(scratch.opts?.params);
+  const kind = (resolved?.['kind'] as string | undefined) ?? 'rect';
+  const gctx = scratch.gestureCtx;
+  let start = gctx.origin.get(GESTURE_KEY) as InsertPoint;
+  let current = { x: scratch.currentX, y: scratch.currentY };
+  if (kind === 'line' && scratch.shiftHeld) {
+    current = snapTo15Degrees({ x: scratch.startX, y: scratch.startY }, current);
+  }
+  current = scratch.snap(current);
+
+  if (scratch.behaviors.length > 0) {
+    gctx.modifiers = { ...modifiers };
+    gctx.pointer = { worldX: scratch.currentX, worldY: scratch.currentY, clientX: 0, clientY: 0 };
+    gctx.view = scratch.readView();
+    gctx.current.set(GESTURE_KEY, current);
+    const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
+    for (const b of scratch.behaviors) {
+      const bounds = computeBounds(start.x, start.y, current.x, current.y, mode);
+      const r = b.onMove?.(gctx, { start, current, bounds, pose: bounds });
+      if (!r) continue;
+      if (r.start) start = r.start;
+      if (r.current) current = r.current;
+    }
+    gctx.current.set(GESTURE_KEY, current);
+  }
+  scratch.shaped = { start, current };
+}
+
+/**
+ * The effective endpoints: `scratch.shaped`, plus — for the `line` kind
+ * only — the alt/center reading as "mirror the start around the pointer"
+ * rather than "grow a symmetric AABB".
  *
  * Every geometry consumer (bounds, extras, preview) goes through this, so
  * the live overlay and the committed node can't disagree.
@@ -191,15 +253,8 @@ function resolveEndpoints(
   kind: string,
   mode: 'corner' | 'center',
 ): { startX: number; startY: number; currentX: number; currentY: number } {
-  let start = { x: scratch.startX, y: scratch.startY };
-  let current = { x: scratch.currentX, y: scratch.currentY };
-
-  // Constrain on RAW coords so the user's intent (lock the angle) survives,
-  // then align the resulting endpoint to the grid.
-  if (kind === 'line' && scratch.shiftHeld) current = snapTo15Degrees(start, current);
-
-  start = scratch.snap(start);
-  current = scratch.snap(current);
+  let { start } = scratch.shaped;
+  const { current } = scratch.shaped;
 
   // A line has no area, so "from center" means the drag is a half-line:
   // mirror the start to the far side of the pointer.
@@ -314,7 +369,7 @@ export const insertAction: Action & { requires: string[] } = {
   label: 'Insert',
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
-  requires: ['insert', 'selection', 'snap', 'textEdit'],
+  requires: ['insert', 'selection', 'snap', 'textEdit', 'scene', 'applyOps', 'view'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -336,11 +391,36 @@ export const insertAction: Action & { requires: string[] } = {
       const snap = snapDep
         ? (p: { x: number; y: number }) => snapDep.point(p)
         : (p: { x: number; y: number }) => p;
+      const behaviors = (opts?.behaviors ?? []) as InsertBehavior<unknown>[];
+      const readView = gestureViewReader(ctx.deps);
+      const origin = snap({ x: ctx.world.x, y: ctx.world.y });
+      const gestureCtx: GestureContext<unknown> = {
+        draggedIds: [GESTURE_KEY],
+        origin: new Map<string, unknown>([[GESTURE_KEY, origin]]),
+        current: new Map<string, unknown>([[GESTURE_KEY, origin]]),
+        snap: null,
+        modifiers: { ...ctx.modifiers },
+        pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
+        view: readView(),
+        // No node exists to adapt until commit; insert behaviors read points.
+        adapter: undefined as unknown as GestureContext<unknown>['adapter'],
+        scratch: {},
+      };
+      for (const b of behaviors) b.onStart?.(gestureCtx);
+      const startPoint = gestureCtx.origin.get(GESTURE_KEY) as InsertPoint;
+
       const scratch: InsertScratch = {
         dep,
         textEdit: ctx.deps.textEdit as TextEditDep | undefined,
         snap,
         opts,
+        behaviors,
+        gestureCtx,
+        readView,
+        shaped: { start: startPoint, current: startPoint },
+        scene: ctx.deps.scene as Scene<unknown, string, unknown> | undefined,
+        applyOps: ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined,
+        selection,
         startX: ctx.world.x,
         startY: ctx.world.y,
         currentX: ctx.world.x,
@@ -369,6 +449,7 @@ export const insertAction: Action & { requires: string[] } = {
           // attaches the array reference to each InvocationCtx.drag — keep
           // the latest reference in case the dispatcher swaps it.
           if (moveCtx.drag?.points) scratch.points = moveCtx.drag.points;
+          shapeEndpoints(scratch, moveCtx.modifiers);
         },
         overlay(): OngoingOverlay | null {
           if (!scratch.open) return null;
@@ -416,6 +497,26 @@ export const insertAction: Action & { requires: string[] } = {
           // Resolve params at commit time so thunked params (polygon
           // `sides` adjusted mid-drag, etc.) see the latest tool state.
           const resolved = resolveParams(o?.params);
+
+          if (scratch.behaviors.length > 0) {
+            const r = reduceBehaviorEnd(scratch.behaviors, scratch.gestureCtx);
+            if (r === null) return;
+            if (r !== undefined) {
+              if (scratch.scene) {
+                commitGestureOps(
+                  {
+                    scene: scratch.scene,
+                    applyOps: scratch.applyOps,
+                    adapter: defaultCommitAdapter(scratch.scene, scratch.selection?.adapterMethods),
+                  },
+                  readGestureLifecycle(resolved, 'Insert', scratch.behaviors),
+                  r,
+                );
+              }
+              return;
+            }
+          }
+
           const kind = (resolved?.['kind'] as string | undefined) ?? 'rect';
           const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
           const { startX, startY, currentX, currentY } = resolveEndpoints(scratch, kind, mode);

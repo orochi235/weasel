@@ -34,6 +34,7 @@ export {
   type PenSubpath,
 } from './pen';
 export { useRectTool } from './rect';
+export type { InsertToolOptions } from './shared/insertToolOptions';
 export { useEllipseTool } from './ellipse';
 export { useImageTool, type UseImageToolOptions } from './image';
 export {

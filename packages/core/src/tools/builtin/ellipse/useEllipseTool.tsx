@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { EllipseIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
+import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { cursorFor } from '@weasel-js/cursor';
 
 /**
@@ -10,7 +11,8 @@ import { cursorFor } from '@weasel-js/cursor';
  * through the `insert` dep. Alt toggles from-corner ⇄ from-center
  * mid-drag via the action's live modifier read.
  */
-export function useEllipseTool(): Tool<null> {
+export function useEllipseTool(options: InsertToolOptions = {}): Tool<null> {
+  const { behaviors } = options;
   return useMemo(
     () =>
       defineTool<null>({
@@ -27,10 +29,10 @@ export function useEllipseTool(): Tool<null> {
           {
             spec: { kind: 'drag' },
             actionId: 'insert',
-            opts: { params: { kind: 'ellipse' } },
+            opts: { params: { kind: 'ellipse' } , ...insertBindingBehaviors(behaviors) },
           },
         ],
       }),
-    [],
+    [behaviors],
   );
 }

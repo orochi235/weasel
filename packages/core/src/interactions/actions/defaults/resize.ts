@@ -70,7 +70,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { unionBounds } from 'core/geometry/unionBounds';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
-import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
+import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, type GestureLifecycle } from '../gestureLifecycle';
 
 // ---------------------------------------------------------------------------
 // Defaults applied when `resizePolicy` dep is absent. Mirrors the
@@ -415,12 +415,9 @@ export const resizeAction: Action & { requires: string[] } = {
           applyOps: scratch.applyOps,
           adapter: defaultCommitAdapter(scene, selection.adapterMethods),
         };
-        // First non-undefined behavior onEnd wins: null aborts, ops commit
-        // in place of the resize.
-        for (const b of scratch.behaviors) {
-          const r = b.onEnd?.(scratch.gestureCtx as unknown as GestureContext<Bounds>);
-          if (r === undefined) continue;
-          if (r === null) return false;
+        const r = reduceBehaviorEnd(scratch.behaviors, scratch.gestureCtx as unknown as GestureContext<Bounds>);
+        if (r === null) return false;
+        if (r !== undefined) {
           commitGestureOps(target, lifecycle, r);
           return true;
         }

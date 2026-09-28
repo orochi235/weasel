@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { PolygonIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
+import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import type { Action } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 
@@ -9,7 +10,7 @@ import { cursorFor } from '@weasel-js/cursor';
 export interface PolygonPoint { x: number; y: number }
 
 /** Options for `usePolygonTool`. */
-export interface UsePolygonToolOptions {
+export interface UsePolygonToolOptions extends InsertToolOptions {
   label?: string;
   /** Initial side count. Side count persists across gestures
    *  (Illustrator convention) and is adjustable mid-drag via
@@ -34,7 +35,7 @@ const MAX_SIDES = 32;
 export function usePolygonTool<TNode extends { id: string } = { id: string }>(
   options: UsePolygonToolOptions = {},
 ): Tool<null> {
-  const { sides: initialSides = 6 } = options;
+  const { sides: initialSides = 6, behaviors } = options;
   // Side count in a ref so keyDown / wheel mutations are visible
   // synchronously to the insert binding's thunked params (re-resolved
   // every frame for the live preview and at commit time). A useState
@@ -113,6 +114,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
                 kind: 'polygon',
                 sides: sidesRef.current,
               }),
+              ...insertBindingBehaviors(behaviors),
             },
           },
           // Wheel-during-drag → adjust side count. Phase-gated to
@@ -150,6 +152,6 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
           },
         ],
       }),
-    [adjustSidesAction],
+    [adjustSidesAction, behaviors],
   );
 }

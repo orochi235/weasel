@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { defineTool } from '../../overlayBinding';
 import { StarIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
+import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import type { Action } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 
@@ -9,7 +10,7 @@ import { cursorFor } from '@weasel-js/cursor';
 export interface StarPoint { x: number; y: number }
 
 /** Options for `useStarTool`. */
-export interface UseStarToolOptions {
+export interface UseStarToolOptions extends InsertToolOptions {
   label?: string;
   /** Initial point count. Persists across gestures (Illustrator
    *  convention), adjustable mid-drag via ArrowUp/Down or wheel
@@ -40,6 +41,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
   const {
     points: initialPoints = 5,
     innerRatio: initialInnerRatio = 0.5,
+    behaviors,
   } = options;
   const pointsRef = useRef(initialPoints);
   const innerRatioRef = useRef(initialInnerRatio);
@@ -102,6 +104,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
                 points: pointsRef.current,
                 innerRadiusRatio: innerRatioRef.current,
               }),
+              ...insertBindingBehaviors(behaviors),
             },
           },
           {
@@ -128,6 +131,6 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
           },
         ],
       }),
-    [adjustPointsAction],
+    [adjustPointsAction, behaviors],
   );
 }

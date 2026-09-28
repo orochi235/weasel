@@ -96,3 +96,17 @@ export function commitGestureOps(
   if (target.applyOps) target.applyOps(ops, label);
   else target.scene.applyBatch(ops, label, target.adapter);
 }
+
+/** Runs each behavior's `onEnd` in order; the first that answers decides the
+ *  commit. `null` aborts, `Op[]` claims it (an empty array included), and
+ *  `undefined` means every behavior deferred to the action's own commit. */
+export function reduceBehaviorEnd<TCtx>(
+  behaviors: readonly { onEnd?(ctx: TCtx): Op[] | null | void }[],
+  ctx: TCtx,
+): Op[] | null | undefined {
+  for (const b of behaviors) {
+    const r = b.onEnd?.(ctx);
+    if (r !== undefined) return r;
+  }
+  return undefined;
+}

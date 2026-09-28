@@ -49,7 +49,7 @@ import {
   type PoseDescriptor,
 } from '../resize/geometry';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
-import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
+import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, type GestureLifecycle } from '../gestureLifecycle';
 import { moveGestureAdapter } from '../move/gestureAdapter';
 import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestures/types';
 
@@ -278,10 +278,9 @@ export const rotateAction: Action & { requires: string[] } = {
         };
         if (scratch.behaviors.length > 0) {
           syncGestureCurrent(scratch.currentDelta);
-          for (const b of scratch.behaviors) {
-            const r = b.onEnd?.(scratch.gestureCtx);
-            if (r === undefined) continue;
-            if (r === null) return false;
+          const r = reduceBehaviorEnd(scratch.behaviors, scratch.gestureCtx);
+          if (r === null) return false;
+          if (r !== undefined) {
             commitGestureOps(target, lifecycle, r);
             return true;
           }
