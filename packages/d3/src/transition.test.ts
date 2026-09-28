@@ -374,16 +374,16 @@ describe('d3Bind transition — delay', () => {
   });
 });
 
-describe('d3Bind transition — chained .transition()', () => {
-  type Setup = ReturnType<typeof setupSceneAndAnimator>;
-  const bind = ({ scene, animator }: Setup, data: Datum[]) =>
-    d3Bind(scene.current, data, { key: (d) => d.id, animator: animator.current as Animator })
-      .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-      .join();
-  const seed = (s: Setup, data: Datum[]) => act(() => void bind(s, data));
-  const x = ({ scene }: Setup, id: string) => scene.current.get(id as never)?.pose.x;
-  const at = (x: number) => () => ({ x, y: 0, width: 10, height: 10 });
+type Setup = ReturnType<typeof setupSceneAndAnimator>;
+const bind = ({ scene, animator }: Setup, data: Datum[]) =>
+  d3Bind(scene.current, data, { key: (d) => d.id, animator: animator.current as Animator })
+    .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
+    .join();
+const seed = (s: Setup, data: Datum[]) => act(() => void bind(s, data));
+const x = ({ scene }: Setup, id: string) => scene.current.get(id as never)?.pose.x;
+const at = (x: number) => () => ({ x, y: 0, width: 10, height: 10 });
 
+describe('d3Bind transition — chained .transition()', () => {
   it('starts when the previous one ends and inherits its duration and ease', async () => {
     const s = setupSceneAndAnimator();
     seed(s, [{ id: 'a', x: 0 }]);
@@ -540,5 +540,59 @@ describe('d3Bind transition — chained .transition()', () => {
     act(() => s.clock.advance(0));
     act(() => s.clock.advance(100));
     expect(x(s, 'a')).toBeCloseTo(40, 6);
+  });
+});
+
+describe('d3Bind transition — node removed mid-flight', () => {
+  it('stops tweening an updating node removed from the scene, and still ends', async () => {
+    const s = setupSceneAndAnimator();
+    seed(s, [{ id: 'a', x: 0 }, { id: 'b', x: 0 }]);
+    const apply = vi.fn();
+    const onEnd = vi.fn();
+    let ended!: Promise<void>;
+    act(() => {
+      ended = bind(s, [{ id: 'a', x: 100 }, { id: 'b', x: 100 }])
+        .transition()
+        .duration(1000)
+        .ease(linear)
+        .tween({ name: 'n', from: () => 0, to: () => 1, apply })
+        .on('end', onEnd)
+        .end();
+    });
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(300));
+    act(() => s.scene.current.remove('a' as never));
+    apply.mockClear();
+    expect(() => act(() => s.clock.advance(300))).not.toThrow();
+    expect(apply.mock.calls.map(([, id]) => id)).not.toContain('a');
+    act(() => s.clock.advance(1000));
+    await ended;
+    expect(onEnd).toHaveBeenCalledTimes(1);
+    expect(s.scene.current.get('a' as never)).toBeUndefined();
+    expect(x(s, 'b')).toBeCloseTo(100, 6);
+  });
+
+  it('stops tweening an entering node that an undo removed', () => {
+    const s = setupSceneAndAnimator();
+    act(() => {
+      d3Bind(s.scene.current, [{ id: 'a', x: 50 }] as Datum[], {
+        key: (d) => d.id,
+        animator: s.animator.current as Animator,
+      })
+        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
+        .enterFrom(() => ({ x: 0, y: 0, width: 0, height: 0 }))
+        .join()
+        .transition()
+        .duration(1000)
+        .ease(linear)
+        .end();
+    });
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(300));
+    act(() => {
+      for (let n = 0; n < 10 && s.scene.current.get('a' as never); n++) s.scene.current.undo();
+    });
+    expect(s.scene.current.get('a' as never)).toBeUndefined();
+    expect(() => act(() => s.clock.advance(300))).not.toThrow();
   });
 });
