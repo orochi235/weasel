@@ -32,8 +32,19 @@ function mount(mod: Record<string, unknown>, id: string, setup?: FrameSetup) {
 }
 
 describe('mountFrame', () => {
-  beforeEach(() => vi.clearAllMocks());
+  // A mount whose case never hands it a port keeps waiting for one, and would answer the next case's handoff too.
+  const listeners: EventListenerOrEventListenerObject[] = [];
+  beforeEach(() => {
+    vi.clearAllMocks();
+    const add = window.addEventListener.bind(window);
+    vi.spyOn(window, 'addEventListener').mockImplementation((type, listener, opts) => {
+      if (type === 'message' && listener) listeners.push(listener);
+      add(type, listener, opts);
+    });
+  });
   afterEach(() => {
+    vi.restoreAllMocks();
+    for (const listener of listeners.splice(0)) window.removeEventListener('message', listener);
     location.hash = '';
   });
 
