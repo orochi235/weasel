@@ -212,7 +212,8 @@ function CameraDispatch({
       },
     };
     return [
-      viewportDragPanAction,
+      // A trial pans on a plain drag; the kit action binds none of its own.
+      { ...viewportDragPanAction, defaultBinding: { kind: 'drag' } },
       { ...zoom, defaultBinding: wheelOnly as Action['defaultBinding'] },
       tap,
     ];

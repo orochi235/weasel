@@ -99,7 +99,7 @@ describe('FallthroughDiagram', () => {
     render(<FallthroughDiagram record={fixtures.bareDragSelect} />);
     const matched = screen.getByRole('region', { name: 'Matched' });
     const tools = within(matched).getAllByRole('row').slice(1).map((r) => r.querySelectorAll('td')[2]?.textContent);
-    expect(tools).toEqual(['select', 'selection.areaSelect', 'action']);
+    expect(tools).toEqual(['select', 'selection.areaSelect', 'viewport.dragPanBinding']);
   });
 
   it('draws one line when nothing matched', () => {

@@ -38,10 +38,6 @@ Priority tags:
     for half.
   - **`features` now names two things.** The `<SceneCanvas features>` prop is unrelated to the
     `features/` source directories `docs/taxonomy.md` describes, and the two will be confused.
-  - **One ambient drag catch-all remains.** `viewport.dragPan` keeps a bare
-    `{ kind: 'drag' }` default binding, so under a tool that leaves a drag unclaimed, an
-    empty drag pans (with `view`). `areaSelect`, `insert`, `slice`, `lassoSelect`, `rotate`
-    and `clone` lost theirs; a marquee under every tool is opt-in via `areaSelectContribution()`.
   - **`edit` cannot paste from the keyboard alone.** Cmd/Ctrl+V arrives as a DOM `paste`,
     which only `ingest` binds; `clipboard.paste` is the button-and-menu half.
 

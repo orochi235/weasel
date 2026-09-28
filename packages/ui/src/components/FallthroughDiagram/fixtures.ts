@@ -43,11 +43,12 @@ const ambientAreaSelect = candidate({
   specificity: [1, 0, 0, 1],
   eligible: 'capability: creates-selection',
 });
-const dragPan = candidate({ actionId: 'viewport.dragPan', routes: ['[*:*] drag'] });
+const dragPan = candidate({ actionId: 'viewport.dragPan', routes: ['[*:*] drag'], ownerToolId: 'viewport.dragPanBinding' });
 
 /** A bare drag on empty canvas with the select tool, on a canvas that also
- *  opted into `areaSelectContribution`: the tool's marquee wins, and the
- *  contribution's binding of the same action is skipped as a duplicate. */
+ *  opted into `areaSelectContribution` and `dragPanContribution`: the tool's
+ *  marquee wins, and the contribution's binding of the same action is skipped
+ *  as a duplicate. */
 export const bareDragSelect: DispatchRecord = {
   kind: 'dispatch',
   ts: 53525020,

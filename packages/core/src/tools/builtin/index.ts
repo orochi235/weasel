@@ -21,7 +21,7 @@ export {
 // dispatcher-driven via `resizeAction` + the `resizePolicy` dep (constraints,
 // point snap, group expansion); pose geometry comes from `poseDescriptor`.
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
-export { useHandTool } from './hand';
+export { useHandTool, dragPanContribution, DRAG_PAN_ID } from './hand';
 export { useTextTool } from './text';
 // useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool are dissolved.
 // Viewport zoom and pan are now handled by the viewport.zoom and viewport.pan

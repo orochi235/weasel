@@ -59,6 +59,7 @@ export function PanZoomDemo() {
         className="ckd-canvas"
         scene={scene}
         selection={selection}
+        initialActiveTool="hand"
         view={view}
         onViewChange={setView}
         layers={{
