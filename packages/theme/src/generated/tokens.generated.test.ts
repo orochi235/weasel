@@ -13,12 +13,12 @@ function tokenValue(name: string): string | null {
 
 describe('font-size scale', () => {
   it('covers every rank the chrome uses', () => {
-    expect(tokenValue('font-size-2xs')).toBe('9px');
-    expect(tokenValue('font-size-xs')).toBe('10px');
-    expect(tokenValue('font-size-sm')).toBe('11px');
-    expect(tokenValue('font-size-md')).toBe('13px');
-    expect(tokenValue('font-size-lg')).toBe('16px');
-    expect(tokenValue('font-size-xl')).toBe('20px');
+    expect(tokenValue('font-size-2xs')).toBe('10px');
+    expect(tokenValue('font-size-xs')).toBe('12px');
+    expect(tokenValue('font-size-sm')).toBe('13px');
+    expect(tokenValue('font-size-md')).toBe('15px');
+    expect(tokenValue('font-size-lg')).toBe('18px');
+    expect(tokenValue('font-size-xl')).toBe('23px');
   });
 
   // The bare name is the ramp's middle rung, kept because it is what the chrome

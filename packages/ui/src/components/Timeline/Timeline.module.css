@@ -259,7 +259,7 @@
 
 .easingPreview {
   width: 32px;
-  height: 32px;
+  height: 32px; /* not-a-control */
   fill: none;
   stroke: var(--wzl-accent-strong);
   stroke-width: 1;

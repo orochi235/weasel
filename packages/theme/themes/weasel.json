@@ -24,9 +24,9 @@
   "seeds": {
     "ui-base": {
       "by": "density",
-      "compact": 11,
-      "comfortable": 13,
-      "roomy": 15
+      "compact": 13,
+      "comfortable": 15,
+      "roomy": 18
     }
   },
   "ramps": {
@@ -710,17 +710,17 @@
     "tb-height": {
       "by": "density",
       "compact": {
-        "value": "24px",
-        "type": "dimension",
-        "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
-      },
-      "comfortable": {
         "value": "28px",
         "type": "dimension",
         "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
       },
-      "roomy": {
+      "comfortable": {
         "value": "32px",
+        "type": "dimension",
+        "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
+      },
+      "roomy": {
+        "value": "38px",
         "type": "dimension",
         "description": "Height of a horizontal toolbar strip (ButtonBar, OptionsBar, ToolOptionsBar). Taller than control-h so the controls inside a strip are not flush with its edges."
       }
@@ -728,17 +728,17 @@
     "control-h-xs": {
       "by": "density",
       "compact": {
-        "value": "16px",
-        "type": "dimension",
-        "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
-      },
-      "comfortable": {
         "value": "18px",
         "type": "dimension",
         "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
       },
-      "roomy": {
+      "comfortable": {
         "value": "22px",
+        "type": "dimension",
+        "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
+      },
+      "roomy": {
+        "value": "26px",
         "type": "dimension",
         "description": "Height of the smallest interactive control -- a stepper, a keycap, a swatch button in a dense row. The rank below control-h-sm."
       }
@@ -746,17 +746,17 @@
     "control-h-sm": {
       "by": "density",
       "compact": {
-        "value": "18px",
-        "type": "dimension",
-        "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
-      },
-      "comfortable": {
         "value": "20px",
         "type": "dimension",
         "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
       },
-      "roomy": {
+      "comfortable": {
         "value": "24px",
+        "type": "dimension",
+        "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
+      },
+      "roomy": {
+        "value": "28px",
         "type": "dimension",
         "description": "Height of a control in a dense inspector -- a Properties field, a small Button. The rank below control-h, which sizes a standalone control."
       }
@@ -764,17 +764,17 @@
     "control-h": {
       "by": "density",
       "compact": {
-        "value": "20px",
-        "type": "dimension",
-        "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
-      },
-      "comfortable": {
         "value": "24px",
         "type": "dimension",
         "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
       },
-      "roomy": {
+      "comfortable": {
         "value": "28px",
+        "type": "dimension",
+        "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
+      },
+      "roomy": {
+        "value": "34px",
         "type": "dimension",
         "description": "Height of an interactive control — button, input, select, segmented control. Distinct from tb-height, which sizes the strip a row of them sits in."
       }
@@ -782,17 +782,17 @@
     "icon-button-size": {
       "by": "density",
       "compact": {
-        "value": "20px",
-        "type": "dimension",
-        "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
-      },
-      "comfortable": {
         "value": "22px",
         "type": "dimension",
         "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
       },
-      "roomy": {
+      "comfortable": {
         "value": "26px",
+        "type": "dimension",
+        "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
+      },
+      "roomy": {
+        "value": "32px",
         "type": "dimension",
         "description": "Side of a square icon button -- a dialog close, a row remove, a field clear. Smaller than control-h because it carries a glyph rather than a label, and square, so it sizes both axes."
       }
