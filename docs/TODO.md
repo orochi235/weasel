@@ -1153,11 +1153,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
 
-- **(P2) Two text-edit overlay visual checks fail.** In `tests/visual/text-edit-overlay.spec.ts`,
-  "follows the canvas zoom with no view passed" (expected a scale above 1.8, got 1) and
-  "clipped to the canvas, and typing past its edge scrolls nothing" (expected above 972, got
-  843) fail on studio's headless Chromium at `7b1bd6df7` and after `a5a69dcc2`. The other
-  overlay checks pass, the bottom-aligned one included.
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have.
 
 - **(P3) `stroke-and-fill` has no visual baseline.** The demo that replaced
