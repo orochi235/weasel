@@ -24,6 +24,7 @@
       "@weasel-js/registry": ["../registry/src/index.ts"],
       "@weasel-js/routing": ["../routing/src/index.ts"],
       "@weasel-js/routing/react": ["../routing/src/react.ts"],
+      "@weasel-js/routing/internal": ["../routing/src/internal.ts"],
       "@weasel-js/modes/presets/default": ["../modes/src/presets/default.ts"],
       "@weasel-js/svg": ["../svg/src/index.ts"],
       "core/*": ["./src/core/*"],

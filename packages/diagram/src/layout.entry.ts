@@ -46,7 +46,7 @@ export {
   measureBody,
   sizeToBody,
 } from './body';
-export type { ForceOptions, ForceRelaxation } from './force';
+export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { force, forceRelaxation } from './force';
 export type { Graph, GraphEdge, GraphNode } from './graph';
 export { backEdges, layered, ranksOf } from './layered';

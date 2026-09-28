@@ -47,7 +47,9 @@ export interface ForceOptions extends LayoutOptions {
   padding?: number;
 }
 
-interface Body extends SimulationNode {
+/** One node as the relaxation sees it: a simulation point centered on the
+ *  node's box. */
+export interface ForceBody extends SimulationNode {
   id: string;
   /** Half the node's box, so separation can work on the shape the author sees
    *  rather than on a point. */
@@ -72,7 +74,7 @@ const GOLDEN = Math.PI * (3 - Math.sqrt(5));
 const NUDGE = 0.5;
 
 /** Pairwise repulsion, applied to every pair once. */
-function charge(bodies: readonly Body[], strength: number): SimulationForce<Body> {
+function charge(bodies: readonly ForceBody[], strength: number): SimulationForce<ForceBody> {
   return (alpha) => {
     for (let i = 0; i < bodies.length; i++) {
       const a = bodies[i]!;
@@ -94,11 +96,11 @@ function charge(bodies: readonly Body[], strength: number): SimulationForce<Body
 
 /** A spring per edge, pulling both ends toward `distance`. */
 function links(
-  bodies: ReadonlyMap<string, Body>,
+  bodies: ReadonlyMap<string, ForceBody>,
   graph: Graph,
   distance: number,
   strength: number,
-): SimulationForce<Body> {
+): SimulationForce<ForceBody> {
   return (alpha) => {
     for (const edge of graph.edges) {
       const a = bodies.get(edge.from);
@@ -125,7 +127,7 @@ function links(
  * works on the box, and it is not scaled by alpha — an overlap at the end of
  * the run is exactly as wrong as one at the start.
  */
-function separateBoxes(bodies: readonly Body[], padding: number): SimulationForce<Body> {
+function separateBoxes(bodies: readonly ForceBody[], padding: number): SimulationForce<ForceBody> {
   return () => {
     for (let i = 0; i < bodies.length; i++) {
       const a = bodies[i]!;
@@ -152,7 +154,7 @@ function separateBoxes(bodies: readonly Body[], padding: number): SimulationForc
 
 /** A pull toward the seed centroid, so a component with nothing to hold it
  *  does not drift off under pure repulsion. */
-function gravity(bodies: readonly Body[], at: { x: number; y: number }, strength: number): SimulationForce<Body> {
+function gravity(bodies: readonly ForceBody[], at: { x: number; y: number }, strength: number): SimulationForce<ForceBody> {
   return (alpha) => {
     for (const body of bodies) {
       body.vx! += (at.x - body.x) * strength * alpha;
@@ -169,11 +171,11 @@ function gravity(bodies: readonly Body[], at: { x: number; y: number }, strength
  * only thing that would say so is the arrangement they produce.
  */
 export interface ForceRelaxation {
-  bodies: Body[];
-  byId: Map<string, Body>;
+  bodies: ForceBody[];
+  byId: Map<string, ForceBody>;
   /** Ids the caller must not move: declared pins, held as `fx`/`fy`. */
   pinned: ReadonlySet<string>;
-  sim: ReturnType<typeof createSimulation<Body>>;
+  sim: ReturnType<typeof createSimulation<ForceBody>>;
   /** Where a body's node's top-left sits, given the body's center. */
   placed(): Map<string, { x: number; y: number }>;
 }
@@ -191,8 +193,8 @@ export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRel
   } = opts;
 
   const pinned = pinnedSet(graph, opts);
-  const bodies: Body[] = graph.nodes.map((node) => {
-    const body: Body = {
+  const bodies: ForceBody[] = graph.nodes.map((node) => {
+    const body: ForceBody = {
       id: node.id,
       x: center(node.bounds, 'x'),
       y: center(node.bounds, 'y'),
@@ -216,7 +218,7 @@ export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRel
     y: bodies.reduce((sum, b) => sum + b.y, 0) / bodies.length,
   };
 
-  const sim = createSimulation<Body>({
+  const sim = createSimulation<ForceBody>({
     nodes: bodies,
     forces: [
       charge(bodies, chargeStrength),
@@ -262,7 +264,7 @@ force satisfies LayoutFn;
 /** Push coincident bodies apart, deterministically. Two nodes at exactly the
  *  same point feel no repulsion from each other and stay stacked forever. A
  *  pinned body is counted but never moved — a pin outranks this. */
-function separate(bodies: Body[]): void {
+function separate(bodies: ForceBody[]): void {
   const seen = new Map<string, number>();
   bodies.forEach((body, i) => {
     const key = `${body.x},${body.y}`;

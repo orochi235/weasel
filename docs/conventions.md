@@ -114,6 +114,20 @@ That one call is the ergonomic, and it's enough.
 or emit geometry. Internal kit code uses the typed-array form directly —
 this rule governs the consumer boundary, not kit internals.
 
+## Every public export is documented and nameable
+
+`npm run audit:jsdoc` must report zero undocumented exports and no
+`@internal` symbol on a consumer entry; `npx typedoc` must report no
+warnings, and its usual one is a documented export referencing a type the
+barrel does not export. Run both before adding an export. Export the
+referenced type rather than listing it in `typedoc.json`'s
+`intentionallyNotExported`.
+
+Test-only reset hooks go on the package's `test-seams` entry; types a sibling
+package fills across the boundary go on an `internal` entry
+(`@weasel-js/routing/internal`). Neither is public API, and the audit treats an
+`@internal` symbol there as placed rather than leaked.
+
 ## Design tokens
 
 `--wzl-*` tokens are generated. Edit `packages/theme/themes/<theme>.json`

@@ -5,8 +5,8 @@ interface SetDataAdapter<TData> {
   setData(id: string, data: TData): void;
 }
 
-/** @internal */
-interface SetDataArgs<TData> {
+/** Arguments to {@link createSetDataOp}: replace node `id`'s data `from` → `to`. */
+export interface SetDataArgs<TData> {
   id: string;
   from: TData;
   to: TData;

@@ -14,14 +14,8 @@ interface SetPathAdapter {
   setPath(id: string, fields: SetPathFields): void;
 }
 
-/**
- * Op: atomically replace a PathObj's geometric fields (path + closed + params).
- * Used for pen-edit anchor mutations and parametric-shape trapdoor conversions.
- * Reports no-op when `from` and `to` are structurally equal (same path bytes,
- * closed, params), letting history skip the entry.
- */
-/** @internal */
-interface SetPathArgs {
+/** Arguments to {@link createSetPathOp}: replace a path node's geometry fields `from` → `to`. */
+export interface SetPathArgs {
   id: string;
   from: SetPathFields;
   to: SetPathFields;
@@ -29,9 +23,16 @@ interface SetPathArgs {
   coalesceKey?: string;
 }
 
-/** `coalesceKey` defaults to `setPath:${id}` so successive geometry writes to
- *  the same node (dragging a bezier anchor) merge into one undo entry within the
- *  history's coalesce window. Pass an explicit key to opt out. */
+/**
+ * Op: atomically replace a PathObj's geometric fields (path + closed + params).
+ * Used for pen-edit anchor mutations and parametric-shape trapdoor conversions.
+ * Reports no-op when `from` and `to` are structurally equal (same path bytes,
+ * closed, params), letting history skip the entry.
+ *
+ * `coalesceKey` defaults to `setPath:${id}` so successive geometry writes to
+ * the same node (dragging a bezier anchor) merge into one undo entry within the
+ * history's coalesce window. Pass an explicit key to opt out.
+ */
 export function createSetPathOp(args: SetPathArgs): Op {
   const { id, from, to, label, coalesceKey = `setPath:${id}` } = args;
   return {

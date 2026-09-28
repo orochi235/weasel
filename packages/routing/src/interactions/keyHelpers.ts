@@ -8,9 +8,11 @@
  */
 
 /**
- * @internal — runtime shape consumed by `matchesKeyBinding`. Public tool authors
- * should use `ToolKeybinding` from `@weasel-js/core` for declaring
- * configurable activation keys.
+ * A key plus a modifier policy, as {@link matchesKeyBinding} tests it against a
+ * `KeyboardEvent`. Every modifier left unset is forbidden, so `{ key: 'a' }`
+ * does not fire on Cmd+A. The matcher ignores `skipInEditable`, `enabled` and
+ * `preventDefault`; those are for whatever attaches the listener. Tools
+ * declaring an activation key use `ToolKeybinding` instead.
  */
 export interface KeyBinding {
   /**

@@ -467,7 +467,6 @@ export interface SliceDep {
  * (`declare module '@weasel-js/core'`).
  */
 declare module '@weasel-js/routing' {
-  /** The kit's dep names and what each resolves to, merged into routing's empty schema. */
   interface DepSchema {
     /** Kit selection state — ids of currently selected nodes. */
     selection: SelectionApi;

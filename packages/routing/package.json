@@ -17,6 +17,10 @@
       "import": "./dist/react.js",
       "types": "./dist/react.d.ts"
     },
+    "./internal": {
+      "import": "./dist/internal.js",
+      "types": "./dist/internal.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "peerDependencies": {
