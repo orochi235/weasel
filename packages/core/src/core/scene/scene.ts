@@ -282,6 +282,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   });
 
   let version = 0;
+  // Keyed by node object: every entry into `state.nodes` is a fresh object and
+  // every edit mutates it in place, which is exactly an incarnation's lifetime.
+  const incarnations = new WeakMap<object, number>();
+  let nextIncarnation = 1;
   let batchDepth = 0;
   let currentBatch: { label: string; ops: Op[]; selectionBefore: readonly NodeId[] } | null = null;
   /** True while the history engine drives mutations (undo/redo/goto, journal
@@ -1156,6 +1160,16 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     registry,
 
     get(id) { return state.nodes.get(id); },
+    incarnation(id) {
+      const node = state.nodes.get(id);
+      if (!node) return undefined;
+      let token = incarnations.get(node);
+      if (token === undefined) {
+        token = nextIncarnation++;
+        incarnations.set(node, token);
+      }
+      return token;
+    },
 
     childrenOf(id) {
       const n = state.nodes.get(id);

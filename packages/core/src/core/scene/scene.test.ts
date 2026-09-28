@@ -241,6 +241,55 @@ describe('add / remove / move', () => {
   });
 });
 
+describe('incarnation', () => {
+  const add = (scene: ReturnType<typeof makeScene>, id: string, layer: Layer = 'structures') =>
+    scene.add({ id: asNodeId(id), kind: 'container', layer, pose: POSE, data: { label: id } });
+
+  it('holds across every edit to a node that stays in the scene', () => {
+    const scene = makeScene();
+    const a = add(scene, 'a');
+    const b = add(scene, 'b');
+    const before = scene.incarnation(a);
+    expect(before).toBeDefined();
+    scene.setPose(a, { ...POSE, x: 5 });
+    scene.update(a, { data: { label: 'renamed' } });
+    scene.setLayer(a, 'plantings');
+    scene.setLayer(b, 'plantings');
+    scene.move(a, b);
+    scene.reorder(a, 0);
+    scene.undo();
+    expect(scene.incarnation(a)).toBe(before);
+    expect(scene.incarnation(b)).not.toBe(before);
+  });
+
+  it('changes when an id is removed and added again', () => {
+    const scene = makeScene();
+    const a = add(scene, 'a');
+    const first = scene.incarnation(a);
+    scene.remove(a);
+    expect(scene.incarnation(a)).toBeUndefined();
+    add(scene, 'a');
+    expect(scene.incarnation(a)).not.toBe(first);
+  });
+
+  it('changes when undo or redo brings an id back', () => {
+    const scene = makeScene();
+    const a = add(scene, 'a');
+    const first = scene.incarnation(a);
+    scene.remove(a);
+    scene.undo();
+    const restored = scene.incarnation(a);
+    expect(restored).not.toBe(first);
+    scene.undo();
+    scene.redo();
+    expect(scene.incarnation(a)).not.toBe(restored);
+  });
+
+  it('is undefined for an id not in the scene', () => {
+    expect(makeScene().incarnation(asNodeId('nope'))).toBeUndefined();
+  });
+});
+
 describe('setLayer — parent rejection and cascade', () => {
   it('setLayer onto a higher layer than the parent is allowed (renders above)', () => {
     const s = makeScene();

@@ -162,6 +162,30 @@ describe('d3Bind exit transitions', () => {
     expect(seen).toEqual(['a']);
   });
 
+  it('spares a same-id node that replaced the exiting one between two frames', async () => {
+    const { scene, clock, bind } = setup();
+    act(() => void bind([{ id: 'a', x: 0 }]));
+    let ended!: Promise<void>;
+    act(() => void bind([], (exit) => {
+      ended = slideOut(exit).end();
+    }));
+    act(() => clock.advance(0));
+    act(() => clock.advance(300));
+    act(() => {
+      scene.current.remove('a' as never);
+      scene.current.add({
+        id: 'a' as never,
+        kind: 'leaf',
+        layer: 'graph',
+        pose: { x: 7, y: 0, width: 10, height: 10 },
+        data: {},
+      });
+    });
+    act(() => clock.advance(2000));
+    await ended;
+    expect(scene.current.get('a' as never)?.pose.x).toBe(7);
+  });
+
   it('stops tweening a node removed externally, and spares a same-id node added afterward', async () => {
     const { scene, clock, bind } = setup();
     act(() => void bind([{ id: 'a', x: 0 }]));

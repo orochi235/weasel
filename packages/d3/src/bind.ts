@@ -169,6 +169,9 @@ function createSelection<TData, TPose>(
   priorPoses: ReadonlyMap<NodeId, TPose>,
   animator: Animator | undefined,
   geometry: PoseDescriptor<TPose> | undefined,
+  incarnations: ReadonlyMap<NodeId, number | undefined> = new Map(
+    ids.map((id) => [id, scene.incarnation(id)]),
+  ),
 ): D3Selection<TData, TPose> {
   const sel: D3Selection<TData, TPose> = {
     ids,
@@ -182,7 +185,9 @@ function createSelection<TData, TPose>(
           subData.push(data[i]);
         }
       }
-      return createSelection(scene, subset, subData, priorPoses, animator, geometry);
+      return createSelection(
+        scene, subset, subData, priorPoses, animator, geometry, incarnations,
+      );
     },
     each(fn) {
       for (let i = 0; i < ids.length; i++) fn(data[i], ids[i], i);
@@ -203,6 +208,7 @@ function createSelection<TData, TPose>(
         ids,
         data,
         priorPoses,
+        incarnations,
         name: name ?? '',
       });
     },

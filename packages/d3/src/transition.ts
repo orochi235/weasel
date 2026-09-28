@@ -15,6 +15,9 @@ interface TransitionCtx<TData, TPose> {
   ids: readonly NodeId[];
   data: readonly TData[];
   priorPoses: ReadonlyMap<NodeId, TPose>;
+  /** `scene.incarnation` of each id when the selection was made: the nodes
+   *  this transition belongs to, as opposed to later ones reusing an id. */
+  incarnations: ReadonlyMap<NodeId, number | undefined>;
   name: string;
 }
 
@@ -207,25 +210,28 @@ function makeStage<TData, TPose>(
     settleIfDone();
   };
 
-  /** The scene can lose a node mid-tween (an undo, any outside `remove`).
-   *  Stop the item through the whole chain, so neither a tween nor a pending
-   *  `.remove()` touches the id again. */
+  const present = (i: number): boolean => {
+    const token = scene.incarnation(ids[i]);
+    return token !== undefined && token === ctx.incarnations.get(ids[i]);
+  };
+
+  /** The scene can lose a node mid-tween (an undo, any outside `remove`), or
+   *  swap in another under the same id. Stop the item through the whole chain,
+   *  so neither a tween nor a pending `.remove()` touches the id again. */
   const lost = (i: number): boolean => {
-    if (scene.get(ids[i])) return false;
+    if (present(i)) return false;
     stage.root.cancelItem(i);
     return true;
   };
 
   const runItem = (i: number): void => {
-    if (canceled) return;
+    if (canceled || lost(i)) return;
     const id = ids[i];
     const d = data[i];
     let from: TPose | undefined;
     let to: TPose | undefined;
     if (parent) {
-      const node = scene.get(id);
-      if (!node) return finishItem(i);
-      from = node.pose;
+      from = scene.get(id)!.pose;
       to = poseFn ? poseFn(d, i) : undefined;
     } else {
       from = priorPoses.get(id);
@@ -335,7 +341,7 @@ function makeStage<TData, TPose>(
       pendingFor(scene).set(id, set);
       stage.whenItemDone(i, () => {
         unregisterRemoval(scene, id, cancel);
-        if (scene.get(id)) scene.remove(id);
+        if (present(i)) scene.remove(id);
       });
     });
   };
@@ -355,17 +361,16 @@ function makeStage<TData, TPose>(
         parent.schedule();
         ids.forEach((_, i) => parent.whenItemDone(i, () => runItem(i), deferReady));
       } else {
-        for (const id of ids) {
-          const node = scene.get(id);
-          if (node) joinedPoses.set(id, node.pose);
-        }
+        ids.forEach((id, i) => {
+          if (present(i)) joinedPoses.set(id, scene.get(id)!.pose);
+        });
         // Write every from-pose before any tween spawns, or non-delayed tweens
         // flash one frame of the joined pose and delayed ones hold it for the
         // whole delay. Costs one extra setPose per node in the undo log.
-        for (const id of ids) {
+        ids.forEach((id, i) => {
           const from = priorPoses.get(id);
-          if (from !== undefined && scene.get(id)) scene.setPose(id, from);
-        }
+          if (from !== undefined && present(i)) scene.setPose(id, from);
+        });
         ids.forEach((_, i) => runItem(i));
       }
       settleIfDone();
