@@ -15,8 +15,12 @@ vi.mock('./cssVars', async (importOriginal) => {
   return { ...actual, scanCssVars: vi.fn(actual.scanCssVars) };
 });
 
+// A MessagePort delivers in order, but not in order with timers: a reply two hops away can land after a
+// setTimeout(0). A round trip through the same ports arrives behind everything the frame sent before it.
+const barriers = new Set<() => Promise<void>>();
+
 async function flush() {
-  await new Promise((r) => setTimeout(r, 0));
+  await Promise.all([...barriers].map((barrier) => barrier()));
   await act(async () => {});
 }
 
@@ -49,6 +53,21 @@ afterEach(() => {
 
 function start(loaded: LoadedStory, setup?: FrameSetup) {
   const { port1, port2 } = new MessageChannel();
+  const echo = (event: MessageEvent) => {
+    if (event.data?.barrier) port2.postMessage(event.data);
+  };
+  port2.addEventListener('message', echo);
+  const barrier = () =>
+    new Promise<void>((resolve) => {
+      const done = (event: MessageEvent) => {
+        if (!event.data?.barrier) return;
+        port1.removeEventListener('message', done);
+        resolve();
+      };
+      port1.addEventListener('message', done);
+      port1.postMessage({ barrier: true });
+    });
+  barriers.add(barrier);
   const shell = openChannel<FromFrame, ToFrame>(port1);
   const frame = openChannel<ToFrame, FromFrame>(port2);
   const received: FromFrame[] = [];
@@ -57,6 +76,7 @@ function start(loaded: LoadedStory, setup?: FrameSetup) {
   document.body.append(container);
   const stop = startFrame({ story: loaded, channel: frame, container, ...(setup ? { setup } : {}) });
   cleanups.push(() => {
+    barriers.delete(barrier);
     stop();
     container.remove();
     shell.close();
@@ -301,7 +321,10 @@ describe('startFrame', () => {
     );
     const rootStyle = document.createElement('style');
     rootStyle.textContent = ':root { --fg-t-ink: red; }';
-    const settle = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const settle = async (ms: number) => {
+      await new Promise((r) => setTimeout(r, ms));
+      await flush();
+    };
     const empty = { type: 'init', config: {}, state: null, globals: {} } as const;
     const ink = (vars: CssVarReport[] | undefined) => vars?.find((v) => v.name === '--fg-t-ink');
 
