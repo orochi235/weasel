@@ -5,7 +5,7 @@ import type { Point, ViewTransform } from '../instrument/types';
  *  world (0,0) at the element's top-left, y growing downward. */
 export interface WorldSpec {
   /** Where world (0,0) sits at `pan` zero, as a fraction of the viewport.
-   *  `{x:0,y:0}` top-left (default); `{x:0.5,y:0.5}` centre. */
+   *  `{x:0,y:0}` top-left (default); `{x:0.5,y:0.5}` center. */
   origin?: Point;
   /** Which way the world y axis runs on screen. Default `'down'`. */
   yAxis?: 'down' | 'up';
@@ -25,8 +25,10 @@ export interface WorldFrame {
   yDir: 1 | -1;
 }
 
+/** The frame an absent `WorldSpec` resolves to: origin top-left, y down. */
 export const DEFAULT_FRAME: WorldFrame = { originPx: { x: 0, y: 0 }, yDir: 1 };
 
+/** Resolve `spec` against a viewport of `size`; `undefined` gives `DEFAULT_FRAME`. */
 export function resolveFrame(spec: WorldSpec | undefined, size: ViewportSize): WorldFrame {
   if (!spec) return DEFAULT_FRAME;
   const origin = spec.origin ?? { x: 0, y: 0 };

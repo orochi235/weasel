@@ -55,10 +55,19 @@ export type TilePainter = (rect: Rect, frame: SurfaceFrame) => void;
  *  viewport takes. */
 export type SurfaceClear = (size: { width: number; height: number }, dpr: number) => void;
 
+/** Inputs to `useTiledSurface`. `onFrame` runs once per frame that has dirty
+ *  tiles, before any tile paints — the place to size the shared buffer. */
 export interface UseTiledSurfaceOptions {
   onFrame: (frame: SurfaceFrame) => void;
 }
 
+/**
+ * Share one drawing buffer among tiles laid out by the DOM. Tiles register
+ * their elements; the hook measures them against the container, re-measures on
+ * resize, and batches invalidations into one visible-only frame that calls
+ * `onFrame`, then (on a retiled frame) the registered clears, then each dirty
+ * tile's painter.
+ */
 export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHandle {
   const container = useRef<HTMLElement | null>(null);
   const tiles = useRef(new Map<string, HTMLElement>());

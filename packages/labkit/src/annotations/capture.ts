@@ -72,6 +72,8 @@ function markNodesOf(scene: MarkScene, draw: MarkDrawOptions, scale: number) {
   });
 }
 
+/** Inputs to `composeCaptureSvg`. `scale` is output pixels per content-box
+ *  unit; `onWarn` receives non-fatal export warnings. */
 export interface ComposeSvgArgs {
   base?: CaptureSource;
   scene: MarkScene;
@@ -86,7 +88,7 @@ export interface ComposeSvgArgs {
  * The outer `viewBox` is the content box, so marks — which are already in it —
  * need no transform, and `width`/`height` carry the export scale. Both halves
  * nest as child `<svg>` elements, which each establish their own viewport and
- * so keep their own `viewBox` maths out of this function.
+ * so keep their own `viewBox` math out of this function.
  */
 export function composeCaptureSvg(args: ComposeSvgArgs): string {
   const { base, scene, draw, scale, onWarn } = args;

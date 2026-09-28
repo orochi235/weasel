@@ -168,8 +168,6 @@ export interface AnnotationStorage {
   save: (doc: SerializedAnnotations) => void;
 }
 
-/** Declares that an instrument accepts marks: which regions take them,
- *  optionally what a mark is allowed to mean, and optionally where they live. */
 /** The annotation tools a lab's rail can carry. */
 export type AnnotationToolId =
   | 'pointer'
@@ -181,6 +179,8 @@ export type AnnotationToolId =
   | 'ellipse'
   | 'text';
 
+/** Declares that an instrument accepts marks: which regions take them,
+ *  optionally what a mark is allowed to mean, and optionally where they live. */
 export interface AnnotationsCapability<TS = unknown, TC = unknown> {
   /** `trial` is which trial is asking: a declaration made once per instrument
    *  is called once per trial, and its targets are that trial's own. */

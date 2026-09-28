@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JobCapability, JobFailure, JobHandle, JobStatus } from './types';
 
+/** Inputs to `useJob`. `setState` receives each item folded in by the
+ *  capability's `onItem`. */
 export interface UseJobOptions<TS, TC, TItem> {
   capability: JobCapability<TS, TC, TItem>;
   config: TC;
@@ -23,6 +25,12 @@ function sameKey(a: readonly unknown[] | null, b: readonly unknown[] | null): bo
   return a.length === b.length && a.every((v, i) => Object.is(v, b[i]));
 }
 
+/**
+ * Drive a `JobCapability` and report its progress. `start` cancels any run in
+ * flight and begins again; results from a superseded or canceled run are
+ * dropped. With `auto`, it starts on mount and again whenever `key` changes
+ * element-wise. Unmounting aborts the run.
+ */
 export function useJob<TS, TC, TItem>({
   capability,
   config,

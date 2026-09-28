@@ -124,6 +124,7 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
   }
 }
 
+/** A numeric leaf, built by `f.number`. */
 export class NumberNode extends BaseNode<number> {
   readonly kind = 'number';
 
@@ -169,6 +170,7 @@ export class NumberNode extends BaseNode<number> {
   }
 }
 
+/** A true/false leaf, built by `f.boolean`; a checkbox unless `.toggle()`. */
 export class BooleanNode extends BaseNode<boolean> {
   readonly kind = 'boolean';
 
@@ -178,6 +180,7 @@ export class BooleanNode extends BaseNode<boolean> {
   }
 }
 
+/** A text leaf, built by `f.string`. */
 export class StringNode extends BaseNode<string> {
   readonly kind = 'string';
 
@@ -195,6 +198,7 @@ export class StringNode extends BaseNode<string> {
   }
 }
 
+/** A string-list leaf, built by `f.list`. */
 export class ListNode extends BaseNode<string[]> {
   readonly kind = 'list';
 
@@ -204,6 +208,7 @@ export class ListNode extends BaseNode<string[]> {
   }
 }
 
+/** A color leaf holding a hex string, built by `f.color`. */
 export class ColorNode extends BaseNode<string> {
   readonly kind = 'color';
 
@@ -214,6 +219,7 @@ export class ColorNode extends BaseNode<string> {
   }
 }
 
+/** A fixed-choice leaf, built by `f.enum`; a select unless `.radio()`. */
 export class EnumNode<T extends string> extends BaseNode<T> {
   readonly kind = 'enum';
 
