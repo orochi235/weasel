@@ -30,13 +30,12 @@ export function TransformDemo() {
       height={H}
       className="ckd-canvas"
       scene={sceneJson}
-      selectionMode="multi"
       features={['pick', 'move', 'transform']}
       poseDescriptor={ROTATED_POSE_DESCRIPTOR as PoseDescriptor<RotatedPose>}
       selectTool={{
         snap: gridSnapStrategy<RotatedPose>(CELL, UNITS),
       }}
-      selectionOptions={{ initial: [asNodeId('b')] }}
+      selectionOptions={{ mode: 'multi', initial: [asNodeId('b')] }}
       layers={{
         grid: {
           spacing: CELL,

@@ -215,7 +215,7 @@ export function RigDemo() {
         height={H}
         className="ckd-canvas"
         scene={scene}
-        selectionMode="none"
+        selectable={false}
         animator={animator}
         layers={{ selectionOverlay: null }}
       />

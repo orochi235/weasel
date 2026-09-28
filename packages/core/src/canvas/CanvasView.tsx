@@ -376,7 +376,7 @@ export function CanvasView(props: CanvasViewProps): null {
         // An Escape here cancels what is in flight here.
         dispatcher: { cancelAll: (reason) => dispatcherRef.current!.cancelAll(reason) },
         // Only a view with its own selection overlays that one; otherwise the
-        // surface's answer stands, wrappers (`selectionMode`) included.
+        // surface's answer stands, wrappers (`selectable`) included.
         ...(live.current.viewSelection ? { selection: live.current.viewSelection } : {}),
       }),
       // Action eligibility is chrome-caps evaluated against this view, so a

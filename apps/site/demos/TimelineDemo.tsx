@@ -192,7 +192,7 @@ export function TimelineDemo() {
           height={H}
           className="ckd-canvas"
           scene={scene}
-          selectionMode="none"
+          selectable={false}
           animator={animator}
           layers={{
             scene: {

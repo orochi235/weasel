@@ -52,7 +52,6 @@ function MultiSelectDemoInner() {
       className="ckd-canvas"
       scene={scene}
       selection={selection}
-      selectionMode="multi"
       tools={tools}
     />
   );

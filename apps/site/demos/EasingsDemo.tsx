@@ -170,7 +170,7 @@ export function EasingsDemo() {
         height={H}
         className="ckd-canvas"
         scene={scene}
-        selectionMode="none"
+        selectable={false}
         layers={{
           tracks: { layer: trackLayer, before: 'scene' },
           scene: {

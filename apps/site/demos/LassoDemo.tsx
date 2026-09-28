@@ -74,7 +74,6 @@ export function LassoDemo() {
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        selectionMode="multi"
         features={['pick']}
         defaultTools={['lasso']}
         initialActiveTool="lasso"

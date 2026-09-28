@@ -48,7 +48,6 @@ function LayerListDemoInner() {
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        selectionMode="multi"
         tools={tools}
         layers={{
           scene: {

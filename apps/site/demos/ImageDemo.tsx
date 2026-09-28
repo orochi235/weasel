@@ -49,7 +49,6 @@ export function ImageDemo() {
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        selectionMode="multi"
         features={['pick', 'move']}
         tools={{ image: imageTool }}
         onToolsCreated={setTools}

@@ -285,7 +285,7 @@ export function ForceGraphDemo() {
           className="ckd-canvas"
           scene={scene}
           selection={selection}
-          selectionMode="none"
+          selectable={false}
           tools={tools}
           initialActiveTool="pin"
           ambient={PAN_ON_DRAG}

@@ -66,7 +66,6 @@ export function Editor() {
       height={H}
       scene={scene}
       selection={selection}
-      selectionMode="multi"
       features={['draw']}
       defaultTools={BUILTIN_TOOL_IDS}
       selectTool={{ snap: gridSnapStrategy<RectPose>(20) }}

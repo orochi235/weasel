@@ -110,7 +110,6 @@ function ConsumerHarness({ features }: { features: readonly Feature[] }) {
       features={features}
       scene={scene}
       selection={selection}
-      selectionMode="multi"
       tools={tools}
       width={200}
       height={200}

@@ -85,7 +85,7 @@ function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
         height={H}
         className="ckd-canvas"
         scene={scene}
-        selectionMode="multi"
+        selectionOptions={{ mode: 'multi' }}
         layers={{
           scene: {
             drawOne: (node): DrawCommand[] => [{

@@ -82,7 +82,7 @@ function Swatch({ path, paint }: { path: Path; paint: Paint }) {
       className="ckd-canvas"
       backgroundFill={{ color: '#ffffff' }}
       scene={scene}
-      selectionMode="none"
+      selectable={false}
     />
   );
 }

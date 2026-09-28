@@ -1219,14 +1219,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
   `InvocationCtx.viewId` names the view the input landed in, and whether `deps.view`
   answers for that view or for the surface's own camera hasn't been checked.
 
-- **(P3) `selectionMode="multi"` does nothing when the canvas is given a `selection`.**
-  `<SceneCanvas>` forwards the mode only into the selection it builds for itself; a supplied
-  one keeps its own `mode`, which is what `applyClick` reads. So a canvas passed
-  `useSelection()` and `selectionMode="multi"` still replaces on shift-click. Every demo,
-  and `apps/draw`, that passes both also passes `useSelection({ mode: 'multi' })`, which is
-  what makes them work. Either the prop should govern a supplied selection's click policy, or
-  the two should not both be accepted.
-
 - **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
 
 - **(P2) Two text-edit overlay visual checks fail.** In `tests/visual/text-edit-overlay.spec.ts`,

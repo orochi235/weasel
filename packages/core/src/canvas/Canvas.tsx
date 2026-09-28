@@ -225,25 +225,6 @@ export type LayersMap<
 };
 
 /**
- * What `<SceneCanvas selectionMode>` lets the canvas do to the selection.
- *
- *   - `'single'` (default) — a click replaces the selection with the clicked
- *     node, modifiers or not. It sets click policy, not a limit: a marquee,
- *     lasso, select-all or paste can still select several nodes.
- *   - `'multi'` — a click with the extend key (shift by default) toggles the
- *     node in or out of the selection.
- *   - `'none'` — nothing the canvas does writes the selection: no click,
- *     marquee, lasso, action or tool, and no op committed through the adapter
- *     it hands its tools. The consumer's own `SelectionApi` — the `selection`
- *     prop, or `useSelection({ scene })` — still writes, and the canvas draws
- *     what it holds. Undo and redo still restore the selection each history
- *     entry recorded.
- *
- * Several selected nodes draw one union box with corner handles in every mode.
- */
-export type CanvasSelectionMode = 'single' | 'multi' | 'none';
-
-/**
  * Props for `<Canvas>` — the low-level WebGL surface + viewport +
  * pointer routing primitive.
  *

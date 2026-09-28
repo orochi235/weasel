@@ -288,7 +288,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         // local to the bone it hangs off. Everything else in this scene is a
         // root, where local and world are the same value.
         poseComposition={RIGID_POSE_COMPOSITION}
-        selectionMode="none"
+        selectable={false}
         animator={animator}
         ref={canvas}
         defaultView={initialView}
