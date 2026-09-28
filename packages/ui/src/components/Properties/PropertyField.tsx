@@ -36,7 +36,8 @@ export interface PropertyOption<T extends string> {
   /** The option's name. A string also names its segment for a screen reader. */
   label: ReactNode;
   /** What a segment shows in place of `label` when the full one would not fit
-   *  — a glyph or a letter. `label` stays the accessible name. */
+   *  — a glyph or a letter. `label` stays the accessible name. A select has
+   *  room for the label, so it draws a glyph beside it and leaves a letter out. */
   glyph?: ReactNode;
   /** Shown but not choosable: a value the control reports and cannot author. */
   disabled?: boolean;
@@ -765,6 +766,13 @@ function nameOf(label: ReactNode): string | undefined {
   return typeof label === 'string' ? label : undefined;
 }
 
+/** `glyph` when it is drawn rather than a letter or two of text. */
+export function drawnGlyph(glyph: ReactNode): ReactNode {
+  return glyph === undefined || glyph === null || typeof glyph === 'string' || typeof glyph === 'number'
+    ? undefined
+    : glyph;
+}
+
 /** A segment drawing a glyph hides its label, so the label comes back as its tooltip. */
 function glyphTip(o: PropertyOption<string>): ReactNode {
   return o.glyph === undefined || o.glyph === null ? undefined : o.label;
@@ -844,7 +852,12 @@ function EnumControl(p: PropertyEnumFieldProps) {
       aria-label={p.name}
       placeholder={p.mixed ? 'Mixed' : (p.placeholder ?? (p.unset ? '—' : 'Choose option…'))}
       selectedKey={current}
-      options={p.options.map((o) => ({ value: o.value, label: o.label, isDisabled: o.disabled }))}
+      options={p.options.map((o) => ({
+        value: o.value,
+        label: o.label,
+        icon: drawnGlyph(o.glyph),
+        isDisabled: o.disabled,
+      }))}
       onSelectionChange={(v) => {
         dlog('property-panel', 'select', { name: p.name, value: v });
         p.onChange(v);

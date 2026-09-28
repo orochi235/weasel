@@ -33,6 +33,19 @@ describe('Select', () => {
     expect(screen.getByRole('button', { name: /Blue/ })).toBeTruthy();
   });
 
+  it("draws an option's icon before its label, in the trigger and in the list", () => {
+    const icons = [
+      { value: 'r', label: 'Red', icon: <svg data-testid="red-icon" /> },
+      { value: 'g', label: 'Green' },
+    ];
+    render(<Select label="Color" options={icons} defaultSelectedKey="r" />);
+    const trigger = screen.getByRole('button', { name: /Red/ });
+    expect(trigger).toContainElement(screen.getByTestId('red-icon'));
+    act(() => { fireEvent.click(trigger); });
+    const red = screen.getByRole('option', { name: 'Red' });
+    expect(red.querySelector('[data-testid="red-icon"]')).not.toBeNull();
+  });
+
   it('supports the children form with explicit SelectItem rows', () => {
     const onChange = vi.fn();
     render(

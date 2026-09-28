@@ -36,6 +36,8 @@ export type SelectOption = {
   value: string;
   label: ReactNode;
   isDisabled?: boolean;
+  /** A glyph drawn before `label`, in the list and in the trigger. */
+  icon?: ReactNode;
   /**
    * Plain-text form of `label`, for type-to-select and screen readers.
    * Only needed when `label` isn't a bare string — a label built from
@@ -394,7 +396,7 @@ function CheckMark() {
 
 function renderOption<T extends Key>(o: SelectOption & { value: T }) {
   return (
-    <SelectItem key={String(o.value)} id={o.value} isDisabled={o.isDisabled} textValue={o.textValue}>
+    <SelectItem key={String(o.value)} id={o.value} isDisabled={o.isDisabled} icon={o.icon} textValue={o.textValue}>
       {o.label}
     </SelectItem>
   );
@@ -410,11 +412,26 @@ function optionLabels(
   children: ReactNode,
 ): ReactNode[] {
   if (options !== undefined)
-    return options.flatMap((o) => ('options' in o ? o.options.map((g) => g.label) : [o.label]));
+    return options.flatMap((o) =>
+      'options' in o ? o.options.map((g) => withIcon(g.icon, g.label)) : [withIcon(o.icon, o.label)],
+    );
   return Children.toArray(children).flatMap((c) => {
-    if (!isValidElement<{ children?: ReactNode }>(c)) return [c];
-    return c.type === SelectSection ? optionLabels(undefined, c.props.children) : [c.props.children];
+    if (!isValidElement<{ children?: ReactNode; icon?: ReactNode }>(c)) return [c];
+    return c.type === SelectSection
+      ? optionLabels(undefined, c.props.children)
+      : [withIcon(c.props.icon, c.props.children)];
   });
+}
+
+/** A label led by its icon, as a row draws it. */
+function withIcon(icon: ReactNode, label: ReactNode): ReactNode {
+  if (icon === undefined || icon === null) return label;
+  return (
+    <>
+      <span className={s.optionIcon} aria-hidden="true">{icon}</span>
+      {label}
+    </>
+  );
 }
 
 /** Props for {@link SelectSection}. */
@@ -439,6 +456,8 @@ export function SelectSection({ title, children, className }: SelectSectionProps
 /** Props for {@link SelectItem}, on top of React Aria's `ListBoxItem` props. */
 export type SelectItemProps = Omit<RACListBoxItemProps, 'className' | 'children'> & {
   children?: ReactNode;
+  /** A glyph drawn before the label, in the list and in the trigger. */
+  icon?: ReactNode;
   className?: string;
 };
 
@@ -461,7 +480,7 @@ function textValueOf(children: ReactNode, explicit: string | undefined): string 
  * selected. A string child supplies its own `textValue`; anything richer must
  * pass one so type-to-select and screen readers have something to read.
  */
-export function SelectItem({ children, className, textValue, ...rest }: SelectItemProps) {
+export function SelectItem({ children, icon, className, textValue, ...rest }: SelectItemProps) {
   return (
     <RACListBoxItem
       {...rest}
@@ -471,7 +490,7 @@ export function SelectItem({ children, className, textValue, ...rest }: SelectIt
       <CheckMark />
       {/* A box around the label, not just text: landing the list over its
           trigger means measuring where this row's label sits. */}
-      <span className={s.optionLabel}>{children}</span>
+      <span className={s.optionLabel}>{withIcon(icon, children)}</span>
     </RACListBoxItem>
   );
 }
