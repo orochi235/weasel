@@ -9,11 +9,14 @@ import {
   createParallaxPlane,
   createTiledLayer,
   ellipsePath,
+  polygonFromPoints,
+  rectPath,
+  solid,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { ParallaxOpts, View, RenderLayer } from '@weasel-js/core';
+import type { FillStyle, ParallaxOpts, Path, View, RenderLayer } from '@weasel-js/core';
 
-interface NodeData { shape: string; sides?: number; fill: { color: string } }
+type NodeData = { path: Path; fill: FillStyle } | { fill: null };
 interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 600, H = 400;
@@ -74,16 +77,35 @@ const GROUND: Shape[] = [
 // paint through their plane and a click or marquee lands on them where they
 // are drawn. Sky and ground stay paint: tiled render layers under planes.
 type LayerId = 'hills' | 'trees';
-const node = (id: string, layer: LayerId, pose: Pose, data: NodeData) =>
-  ({ id: asNodeId(id), kind: 'leaf' as const, layer, pose, data });
-const hill = (id: string, x: number, width: number, color: string) =>
-  node(id, 'hills', { x, y: 200, width, height: 160 }, { shape: 'ellipse', fill: { color } });
-const tree = (id: string, x: number) =>
-  node(id, 'trees', { x, y: 330, width: 30, height: 50 }, { shape: 'polygon', sides: 3, fill: { color: '#3d5a3d' } });
+const leaf = (id: string, layer: LayerId, pose: Pose, path: Path, color: string, parent?: string) =>
+  ({ id: asNodeId(id), kind: 'leaf' as const, layer, pose, parent: parent ? asNodeId(parent) : null, data: { path, fill: solid(color) } });
+
+// A half-sine bump across the top of the box, flat along the bottom.
+const hill = (id: string, x: number, y: number, w: number, h: number, color: string) => {
+  const N = 16;
+  const top = Array.from({ length: N + 1 }, (_, i) => ({ x: (i / N) * w, y: h * (1 - Math.sin((Math.PI * i) / N)) }));
+  return leaf(id, 'hills', { x, y, width: w, height: h }, polygonFromPoints([...top, { x: w, y: h }, { x: 0, y: h }]), color);
+};
+
+// A tree is a group, so a click selects the whole tree; `fill: null` keeps the
+// rect fallback from painting the group's box. Foliage over the top
+// three quarters of the box, trunk centered below it.
+const TRUNK_COLOR = '#5a3a1f';
+const tree = (id: string, x: number, y: number, w: number, h: number) => {
+  const fh = h * 0.75, tw = w * 0.25;
+  return [
+    { id: asNodeId(id), kind: 'container' as const, layer: 'trees' as const, pose: { x, y, width: w, height: h }, parent: null, data: { fill: null } },
+    leaf(`${id}-foliage`, 'trees', { x, y, width: w, height: fh },
+      polygonFromPoints([{ x: w / 2, y: 0 }, { x: w, y: fh }, { x: 0, y: fh }]), '#3d5a3d', id),
+    leaf(`${id}-trunk`, 'trees', { x: x + (w - tw) / 2, y: y + fh, width: tw, height: h - fh },
+      rectPath(0, 0, tw, h - fh), TRUNK_COLOR, id),
+  ];
+};
 const NODES = [
-  hill('h1', 20, 220, '#8ba898'), hill('h2', 280, 280, '#7a9586'),
-  hill('h3', 600, 260, '#8ba898'), hill('h4', 900, 240, '#7a9586'),
-  tree('t1', 60), tree('t2', 180), tree('t3', 320), tree('t4', 470), tree('t5', 580),
+  hill('h1', 20, 260, 220, 60, '#8ba898'), hill('h2', 280, 250, 280, 70, '#7a9586'),
+  hill('h3', 600, 255, 260, 65, '#8ba898'), hill('h4', 900, 260, 240, 60, '#7a9586'),
+  ...tree('t1', 60, 340, 25, 50), ...tree('t2', 180, 350, 30, 45), ...tree('t3', 320, 345, 28, 48),
+  ...tree('t4', 470, 355, 22, 42), ...tree('t5', 580, 348, 32, 46),
 ];
 
 // Depth per plane, and how far each is thrown before the intro settles it.
