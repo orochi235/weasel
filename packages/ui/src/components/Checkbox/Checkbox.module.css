@@ -1,3 +1,5 @@
+/* The box itself is `checkbox.module.css`, shared with the property rows; this
+   is only the label around it. */
 .checkbox {
   display: inline-flex;
   align-items: center;
@@ -10,51 +12,13 @@
   -webkit-user-select: none;
 }
 
+/* The box dims itself on :disabled, so only the text is dimmed here. */
 .checkbox[data-disabled] {
-  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.box {
-  position: relative;
-  flex: 0 0 auto;
-  width: 14px;
-  height: 14px;
-  background: var(--wzl-surface-sunken);
-  border: 1px solid var(--wzl-border-strong);
-  border-radius: var(--wzl-radius-sm);
-  transition: background-color var(--wzl-motion-fast), border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
-}
-
-.checkbox[data-focus-visible] .box {
-  box-shadow: 0 0 0 2px var(--wzl-focus-ring);
-}
-
-.checkbox[data-hovered]:not([data-disabled]) .box {
-  border-color: var(--wzl-fg-muted);
-}
-
-.checkbox[data-selected] .box,
-.checkbox[data-indeterminate] .box {
-  background: var(--wzl-accent-strong);
-  border-color: var(--wzl-accent-strong);
-}
-
-.checkbox[data-invalid] .box {
-  border-color: var(--wzl-danger);
-}
-
-.checkmark {
-  position: absolute;
-  inset: 0;
-  color: var(--wzl-fg-on-accent);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.checkbox[data-selected] .checkmark,
-.checkbox[data-indeterminate] .checkmark {
-  opacity: 1;
+.checkbox[data-disabled] .label {
+  opacity: 0.5;
 }
 
 .label {

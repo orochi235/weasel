@@ -752,13 +752,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   write it, so an opacity scrub over a gradient node changes nothing the Properties
   panel shows, and a panel edit can't undo it.
 
-- **(P3) The checkbox skin is written twice.** `PropertyField` draws a native
-  `<input type="checkbox">` dressed by `.checkbox` in `Properties/Properties.module.css`,
-  because the kit's `Checkbox` renders a `<label>` of its own that cannot sit inside a
-  property row's. The two read the same tokens but are separate rules, so a change to
-  one does not reach the other. One way to one copy: `Checkbox` draws its box from the
-  same native input and a shared `checkbox.module.css`, as the range skin does.
-
 - **(P2) `tabular-nums` does nothing in the theme's UI face.** Oswald (`--wzl-font-ui`,
   `--wzl-font-display`) has no `tnum` feature upstream and no figure-space glyph, so a column
   of numbers set in it stays proportional: "11.111" measures 25.0px and "88.888" 34.8px with

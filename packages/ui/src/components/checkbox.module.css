@@ -1,0 +1,61 @@
+/* The one skin for a native <input type="checkbox">. Imported by Checkbox and by
+   the property rows, which render the same DOM. The box keys off the input's own
+   pseudo-classes; a label's hover reaches its control's :hover. */
+.checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  background: var(--wzl-surface-sunken);
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-sm);
+  cursor: pointer;
+  transition: background-color var(--wzl-motion-fast), border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
+}
+
+.checkbox:hover:not(:disabled) {
+  border-color: var(--wzl-fg-muted);
+}
+
+.checkbox:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--wzl-focus-ring);
+}
+
+.checkbox:checked,
+.checkbox:indeterminate {
+  background: var(--wzl-accent-strong);
+  border-color: var(--wzl-accent-strong);
+}
+
+.checkbox[aria-invalid='true'] {
+  border-color: var(--wzl-danger);
+}
+
+/* The mark is a mask filled with the on-accent color, so it follows the theme. */
+.checkbox:checked::before,
+.checkbox:indeterminate::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--wzl-fg-on-accent);
+  -webkit-mask: var(--_check-mark) center / 100% 100% no-repeat;
+  mask: var(--_check-mark) center / 100% 100% no-repeat;
+}
+
+.checkbox:checked {
+  --_check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpolyline points='3,7.5 6,10.5 11,4.5' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.checkbox:indeterminate {
+  --_check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cline x1='3' y1='7' x2='11' y2='7' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
