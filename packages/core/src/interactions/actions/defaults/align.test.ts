@@ -112,11 +112,11 @@ describe('alignLeftAction descriptor', () => {
     expect(alignLeftAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
   });
 
-  it('enabled is true once two nodes are selected', () => {
+  it('enabled is true once a node is selected', () => {
+    const none = { selection: makeSelection([]) };
     const one = { selection: makeSelection(['a']) };
-    const two = { selection: makeSelection(['a', 'b']) };
-    expect(alignLeftAction.enabled!(one as never)).toBe(ActionDisabledReason.SelectionRequired);
-    expect(alignLeftAction.enabled!(two as never)).toBe(true);
+    expect(alignLeftAction.enabled!(none as never)).toBe(ActionDisabledReason.SelectionRequired);
+    expect(alignLeftAction.enabled!(one as never)).toBe(true);
   });
 });
 
@@ -247,4 +247,78 @@ describe('align with a rotated member', () => {
     expect(setPose.mock.calls[0][0]).toBe('a');
     expect(setPose.mock.calls[0][1]).toMatchObject({ x: 0, y: -15 });
   });
+});
+
+// ---------------------------------------------------------------------------
+// Reference (`params.to`)
+// ---------------------------------------------------------------------------
+
+function runWith(
+  action: typeof alignLeftAction,
+  deps: Record<string, unknown>,
+  params?: Record<string, unknown>,
+) {
+  (action.invoker as ImmediateInvoker).run(deps as Parameters<ImmediateInvoker['run']>[0], params);
+}
+
+describe('align reference', () => {
+  const poses = {
+    a: { x: 0, y: 0, width: 10, height: 10 },
+    b: { x: 40, y: 20, width: 20, height: 20 },
+  };
+
+  it("'pointer' aligns to the click's world point when a click invoked it", () => {
+    const { scene, current } = makeScene(poses);
+    const selection = makeSelection(['a', 'b']);
+    runWith(alignLeftAction, { selection, scene }, { to: 'pointer', worldX: 100, worldY: 5 });
+    expect(current.a).toMatchObject({ x: 100, y: 0 });
+    expect(current.b).toMatchObject({ x: 100, y: 20 });
+  });
+
+  it("'pointer' falls back to the pointer dep's position", () => {
+    const { scene, current } = makeScene(poses);
+    const selection = makeSelection(['a', 'b']);
+    const pointer = { get: () => ({ worldX: 70, worldY: 50, viewId: null }) };
+    runWith(alignCenterYAction, { selection, scene, pointer }, { to: 'pointer' });
+    expect(current.a).toMatchObject({ y: 45 });
+    expect(current.b).toMatchObject({ y: 40 });
+  });
+
+  it("'pointer' with no pointer over the canvas moves nothing", () => {
+    const { scene, setPose } = makeScene(poses);
+    const selection = makeSelection(['a', 'b']);
+    const pointer = { get: () => null };
+    runWith(alignLeftAction, { selection, scene, pointer }, { to: 'pointer' });
+    expect(setPose).not.toHaveBeenCalled();
+  });
+
+  it('aligns a single selected item to a point', () => {
+    const { scene, current } = makeScene(poses);
+    const selection = makeSelection(['b']);
+    runWith(alignRightAction, { selection, scene }, { to: { x: 200, y: 0 } });
+    expect(current.b).toMatchObject({ x: 180, y: 20 });
+  });
+
+  it('aligns to a world rect', () => {
+    const { scene, current } = makeScene(poses);
+    const selection = makeSelection(['a', 'b']);
+    runWith(alignBottomAction, { selection, scene }, { to: { x: 0, y: 0, width: 300, height: 100 } });
+    expect(current.a).toMatchObject({ y: 90 });
+    expect(current.b).toMatchObject({ y: 80 });
+  });
+
+  it('aligns to a key node, which stays put', () => {
+    const { scene, setPose, current } = makeScene(poses);
+    const selection = makeSelection(['a', 'b']);
+    runWith(alignTopAction, { selection, scene }, { to: { node: 'b' } });
+    expect(setPose).toHaveBeenCalledOnce();
+    expect(current.a).toMatchObject({ y: 20 });
+  });
+
+  it("'union' is the default, and needs two items", () => {
+    const { scene, setPose } = makeScene(poses);
+    runWith(alignLeftAction, { selection: makeSelection(['b']), scene }, { to: 'union' });
+    expect(setPose).not.toHaveBeenCalled();
+  });
+
 });

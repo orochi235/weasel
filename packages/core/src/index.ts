@@ -1137,12 +1137,17 @@ export type {
 export {
   useAlign,
   alignDeltaFor,
+  alignTargetBounds,
   translatePoseViaDescriptor,
   visualBoundsViaDescriptor,
 } from './interactions/actions/align';
+export { resolveSpatialReference } from './interactions/actions/spatialReference';
+export type { SpatialReference, SpatialReferenceSources } from './interactions/actions/spatialReference';
+export type { FlipAxis, FlipPivot } from './interactions/actions/flip/helpers';
 export type {
   AlignAdapter,
   AlignEdge,
+  AlignReference,
   UseAlignOptions,
   UseAlignReturn,
 } from './interactions/actions/align';

@@ -127,6 +127,13 @@ from the `transform` and `move` presets' selection contributions.
 `.divide` / `.crop`, `setFill`, `setStroke`, `setFillOpacity`,
 `setStrokeOpacity` — all UI-driven.
 
+The `align.*` actions take a `to` param and `flip` a `pivot` param naming what
+the selection lines up against: `'union'` (the selection itself — align's
+default), `'pointer'` (the click's world point, else the `pointer` dep's), a
+world point or rect `{ x, y, width?, height? }`, or a key node `{ node: id }`.
+Bind the pointer form to a key and the selection aligns or mirrors to wherever
+the cursor is.
+
 `viewport.wheelPan` and `viewport.zoom` are deliberately **not** in the
 standard set; `<SceneCanvas>` registers them under the `view` preset, from its
 `viewport.pan` / `viewport.zoom` flags.
@@ -203,7 +210,9 @@ registry, not through this hook.
 
 Imperative align/distribute over a narrow adapter, for consumers driving them
 from their own UI rather than through the `align.*` / `distribute.*` actions.
-Useful exports: `alignDeltaFor`, `translatePoseViaDescriptor`.
+`align(edge, to?)` takes the same reference as the actions' `to` param.
+Useful exports: `alignDeltaFor`, `alignTargetBounds`, `resolveSpatialReference`,
+`translatePoseViaDescriptor`.
 
 ## Drag primitives
 

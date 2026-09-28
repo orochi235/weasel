@@ -4,11 +4,14 @@ import type { PoseDescriptor } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import {
   alignDeltaFor,
+  alignTargetBounds,
   translatePoseViaDescriptor,
   visualBoundsViaDescriptor,
   type AlignEdge,
+  type AlignReference,
 } from '../align/align';
-import { unionAABB } from 'core/geometry/unionBounds';
+import { actionReferenceSources } from '../spatialReference';
+import type { PointerContextValue } from 'features/pointer/PointerContext';
 import { scenePoseFrame } from '../poseFrame';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
@@ -53,7 +56,8 @@ const ICON_FOR: Record<AlignEdge, ReactNode> = {
 
 /**
  * Apply an align operation to the current selection via the Scene API.
- * Reads poses through the `poseDescriptor` dep.
+ * Reads poses through the `poseDescriptor` dep; what the selection aligns to
+ * comes from `params.to` (an `AlignReference`, default `'union'`).
  *
  * The edge every member lines up on is a world edge, so the bounds are read
  * and translated in world and each result is stored back in its own parent's
@@ -65,17 +69,22 @@ function alignSelection(
   edge: AlignEdge,
   geom: PoseDescriptor<unknown>,
   poseComposition: unknown,
+  params: Record<string, unknown> | undefined,
+  pointer: PointerContextValue | undefined,
 ): void {
   const ids = selection.get();
-  if (ids.length < 2) return;
   const frame = scenePoseFrame(scene, poseComposition);
   const poses = ids.map((id) => frame.world(id));
   const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom));
-  // Guarded non-empty by `ids.length < 2` above → `!` is safe.
-  const union = unionAABB(bounds)!;
+  const target = alignTargetBounds(
+    bounds,
+    params?.to as AlignReference | undefined,
+    actionReferenceSources(params, pointer, scene, frame, geom),
+  );
+  if (target === null) return;
   scene.batch('Align', () => {
     for (let i = 0; i < ids.length; i++) {
-      const { dx, dy } = alignDeltaFor(bounds[i], union, edge);
+      const { dx, dy } = alignDeltaFor(bounds[i], target, edge);
       if (dx === 0 && dy === 0) continue;
       const to = translatePoseViaDescriptor(poses[i], dx, dy, geom);
       scene.setPose(ids[i], frame.local(ids[i], to));
@@ -94,25 +103,29 @@ function makeAlignAction(edge: AlignEdge): Action {
     icon: ICON_FOR[edge],
     group: 'align',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'poseDescriptor', 'poseComposition'],
+    requires: ['selection', 'scene', 'poseDescriptor', 'poseComposition', 'pointer'],
     // No default keybindings — six edges/centers don't fit a clean default
     // chord set. Wire bindings explicitly via the actions registry override map.
     invoker: {
       timing: 'immediate',
-      run: (deps) => {
+      run: (deps, params) => {
         const selection = deps.selection as SelectionApi | undefined;
         const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
         if (!selection || !scene) return;
-        alignSelection(selection, scene, edge, poseDescriptorOf(deps.poseDescriptor), deps.poseComposition);
+        alignSelection(
+          selection, scene, edge, poseDescriptorOf(deps.poseDescriptor), deps.poseComposition,
+          params, deps.pointer as PointerContextValue | undefined,
+        );
       },
     } satisfies ImmediateInvoker,
-    // Deps-aware, matching `alignSelection`'s own `ids.length < 2` guard: a
+    // One item is enough: `enabled` cannot see the binding's `to`, and every
+    // reference but `'union'` aligns a single item. Deps-aware, since a
     // constant disabled reason greys the entry out forever (see
     // `requiresSelection`).
     enabled: (deps) => {
       const selection = deps?.selection as SelectionApi | undefined;
       const count = selection?.get().length ?? 0;
-      return count >= 2 ? true : ActionDisabledReason.SelectionRequired;
+      return count >= 1 ? true : ActionDisabledReason.SelectionRequired;
     },
   };
 }

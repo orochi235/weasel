@@ -15,6 +15,8 @@ import {
 import { unionAABB } from 'core/geometry/unionBounds';
 import { visualBoundsViaDescriptor } from '../align/align';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
+import { actionReferenceSources, resolveSpatialReference } from '../spatialReference';
+import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { RectPose } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -66,7 +68,8 @@ function localMirror(
  *
  * Pivot: `'each'` (per-item own AABB) unless the caller passes `'union'`,
  * which mirrors every pose about the selection's *visual* union AABB — the
- * rotated ink extents — so items swap sides as well as reflect. A rotated
+ * rotated ink extents — so items swap sides as well as reflect, or a
+ * `SpatialReference`, which mirrors about the center of what it names. A rotated
  * member's own mirrored position needs no expansion: `axisAlignedBounds`
  * keeps the stored box's centre, so mirroring either box lands the same place.
  */
@@ -79,6 +82,8 @@ function flipSelection(
   geometryProjection: GeometryProjection | undefined,
   geom: PoseDescriptor<unknown>,
   poseComposition: unknown,
+  params: Record<string, unknown> | undefined,
+  pointer: PointerContextValue | undefined,
 ): void {
   const ids = selection.get();
   if (ids.length === 0) return;
@@ -88,9 +93,13 @@ function flipSelection(
   for (const id of ids) {
     if (scene.get(id) !== undefined) worlds.set(id as string, frame.world(id));
   }
-  const unionPivot = pivot === 'union'
-    ? unionAABB([...worlds.values()].map((p) => visualBoundsViaDescriptor(p, geom)))
-    : null;
+  let sharedPivot: ReturnType<typeof unionAABB> = null;
+  if (pivot === 'union') {
+    sharedPivot = unionAABB([...worlds.values()].map((p) => visualBoundsViaDescriptor(p, geom)));
+  } else if (pivot !== 'each') {
+    sharedPivot = resolveSpatialReference(pivot, actionReferenceSources(params, pointer, scene, frame, geom));
+    if (sharedPivot === null) return;
+  }
 
   // Read poses BEFORE building ops so each op's `from` is the pre-flip value
   // (the same value the old direct mutation captured implicitly).
@@ -99,8 +108,8 @@ function flipSelection(
     const node = scene.get(id);
     if (!node) continue;
     const world = worlds.get(id as string)!;
-    const flipped = unionPivot
-      ? flipPoseAboutBounds(world, axis, geom, unionPivot)
+    const flipped = sharedPivot
+      ? flipPoseAboutBounds(world, axis, geom, sharedPivot)
       : flipPoseViaDescriptor(world, axis, geom);
     ops.push(createTransformOp<unknown>({
       id: id as string,
@@ -112,7 +121,7 @@ function flipSelection(
     // so a wired geometryProjection reflects the contents in lock-step with
     // the frame. A pose-only flip of a bare-AABB pose is identity, so this
     // data op is the only way an asymmetric shape actually mirrors.
-    const g = unionPivot ?? geom.getBounds(world);
+    const g = sharedPivot ?? geom.getBounds(world);
     const dataOp = geometryDataOp(
       geometryProjection,
       { id: id as string, data: node.data, pose: node.pose },
@@ -134,7 +143,7 @@ function flipSelection(
  * Collapses the old `flip.horizontal` and `flip.vertical` pair into one action
  * with two parametric gesture bindings. The axis (`'x'` | `'y'`) is carried in
  * `opts.params.axis` and forwarded to `invoker.run` by the dispatcher, as is
- * the optional `opts.params.pivot` (`'each'` | `'union'`, default `'each'`).
+ * the optional `opts.params.pivot` (a `FlipPivot`, default `'each'`).
  *
  * Requires dep-schema entries: `selection`, `scene`.
  */
@@ -151,7 +160,7 @@ export const flipAction: Action & { requires: string[] } = {
     { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true } }, opts: { params: { axis: 'y' } } },
   ],
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'poseComposition'],
+  requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'poseComposition', 'pointer'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -165,6 +174,7 @@ export const flipAction: Action & { requires: string[] } = {
       flipSelection(
         selection, scene, axis, pivot, applyOps, geometryProjection,
         poseDescriptorOf(deps.poseDescriptor), deps.poseComposition,
+        params, deps.pointer as PointerContextValue | undefined,
       );
     },
   },

@@ -42,4 +42,5 @@ reads it.
 `useClipboardOps` consumes it when the caller didn't pass an explicit
 `getDropPoint` — that's how "paste lands under the cursor" works without
 threading pointer state through the app. `features/minimap` draws its linked
-crosshair from it.
+crosshair from it. The `align.*` and `flip` actions read the `pointer` dep
+when their reference is `'pointer'` and no click carried a point.
