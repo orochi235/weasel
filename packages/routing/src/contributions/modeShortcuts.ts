@@ -109,7 +109,7 @@ function shortcutAction(
     },
     eligible,
     // `eligible` is the gate the dispatcher and palettes read, but a canvas
-    // with no `getActiveMode` evaluates none; without this the key is
+    // with no `modes` evaluates none; without this the key is
     // swallowed in every mode.
     enabled: () => (live() ? true : ActionDisabledReason.NotApplicable),
     invoker: { timing: 'immediate', run: () => run() },

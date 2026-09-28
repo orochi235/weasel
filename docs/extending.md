@@ -578,7 +578,7 @@ adds the move one.
 rule only when it has a rule context to evaluate against — `getRuleCtx` on
 `useGestureDispatcher`, which answers with the capabilities the current mode
 allows. Leave it unset and every `eligible` rule is skipped and the action
-runs; `<SceneCanvas>` leaves it unset too unless it was given `getActiveMode`.
+runs; `<SceneCanvas>` leaves it unset too unless it was given `modes`.
 Supply one and an action whose capability is missing from that set is dropped
 before its `enabled` gate, silently — a rule context that omits
 `creates-selection` is a click that selects nothing. The rule reads that set

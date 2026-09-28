@@ -145,6 +145,7 @@ import type { WeaselTestHook } from '../test-hook/types';
 import {
   createSelectionOverlayLayer,
 } from 'features/selection/overlay';
+import { getActiveModeFor, type ModeRegistry } from '@weasel-js/modes';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
 import {
   buildChromeCtx,
@@ -773,17 +774,14 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     chromeVisibility?: import('features/chrome-caps').VisibilityRules;
 
     /**
-     * Returns the active mode id + the capability tags the mode allows.
-     * Defaults to `{ id: 'normal', allowedCapabilities: new Set() }` when
-     * omitted. Apps using the modality machine should derive this from
-     * `modality.machine.registry.current()` (mode.id + mode.allows union
-     * with implicit capability tags).
-     *
-     * Threading this through enables mode-aware chrome (selection outline,
-     * resize handles, rotation handle are off in path-edit mode) and the
-     * dispatcher's eligibility filter in later phases.
+     * The app's mode registry (`createModeRegistry` in `@weasel-js/modes`).
+     * The canvas reads the active mode from it to gate chrome, tool
+     * activation and the dispatcher's eligibility filter, repaints when it
+     * switches, and hands every registered mode to the dev-time route-conflict
+     * check. Omitted, the canvas behaves as the kit's normal mode and nothing
+     * revokes anchor editing.
      */
-    getActiveMode?: () => { id: string; allowedCapabilities: ReadonlySet<string> };
+    modes?: ModeRegistry;
 
     /**
      * Override detected device facts. Merged over what `matchMedia` reports;
@@ -974,7 +972,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     isPointerInteractive,
     onDoubleClick,
     chromeVisibility,
-    getActiveMode,
+    modes,
     getFocused: getFocusedProp,
     device,
     ...rest
@@ -1013,7 +1011,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   // Extract view-related props from rest so we can intercept them for the
   // controlled/uncontrolled pattern Canvas exposes without breaking it.
-  const { view: viewProp, onViewChange: onViewChangeProp, defaultView, ...restProps } = rest;
+  const { view: viewProp, onViewChange: onViewChangeProp, defaultView, redrawOn: redrawOnProp, ...restProps } = rest;
+  const getActiveMode = useMemo(() => (modes ? getActiveModeFor(modes) : undefined), [modes]);
+  const redrawOn = useMemo(
+    () => (modes ? [...(redrawOnProp ?? []), modes] : redrawOnProp),
+    [modes, redrawOnProp],
+  );
 
   // Internal canvas ref so the dispatcher can attach its input listeners
   // even when the consumer passes their own forwarded ref.
@@ -1510,6 +1513,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     active: initialActiveTool ?? ('select' in internalRegistry ? 'select' : null),
     registry: internalRegistry,
     ...(mergedAmbient.length ? { ambient: mergedAmbient } : {}),
+    ...(modes ? { modes } : {}),
   });
 
   // Auto-wire keybindings against whichever registry is live.
@@ -2143,6 +2147,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       // callback would interfere with the gesture dispatcher (which handles lasso,
       // marquee, etc.) since tools.dispatcher.hasActiveGesture() only covers the
       // legacy tool channel, not the gesture dispatcher channel.
+      {...(redrawOn ? { redrawOn } : {})}
       {...restProps}
     />
   );
@@ -2651,7 +2656,7 @@ function StandardActionsRegistrar({
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
   editAnchorsExternalState: import('./deps/editAnchors').EditAnchorsStateRef;
-  /** Present only when a mode registry is wired (`getActiveMode`); see
+  /** Present only when a mode registry is wired (`modes`); see
    *  `EditAnchorsDepOptions.anchorEditingAllowed` for why absence — not a
    *  predicate over an empty capability set — is the safe default. */
   anchorEditingAllowed?: () => boolean;

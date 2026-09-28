@@ -1,5 +1,6 @@
 // src/contributions/useContributions.ts
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { activeModeOf, type ModeRegistry } from '@weasel-js/modes';
 import type { ScopedBinding } from '../interactions/dispatcher/matcher';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { useActionsRegistry } from '../interactions/actions/ActionsProvider';
@@ -24,6 +25,10 @@ export interface UseContributionsOptions<TOverlay = KernelOverlay> {
   /** Desired focused entry id, or `null` for none. First-mount-wins against
    *  the shared `ActiveToolContext` — see `useTools` for the full semantics. */
   focused: string | null;
+  /** The modes the canvas can be in. The dev-time route-conflict check reads
+   *  them to decide whether two gated actions can ever compete; without a
+   *  registry it checks against the kit's `DEFAULT_MODES`. */
+  modes?: ModeRegistry;
 }
 
 export interface ContributionsApi<TOverlay = KernelOverlay> {
@@ -142,12 +147,14 @@ export function useContributions<TOverlay = KernelOverlay>(
   // every binding of every entry, and consumers usually rebuild the entry list
   // each render. Actions are read inside the effect, after the registrations
   // that ran in child effects have landed.
-  const lastConflictSigRef = useRef<string | null>(null);
+  const lastConflictSigRef = useRef<{ sig: string; modes: ModeRegistry | undefined } | null>(null);
   const entrySig = opts.entries.map((e) => e.id).join(',');
+  const modesRegistry = opts.modes;
   useEffect(() => {
     if (!isDev()) return;
-    if (lastConflictSigRef.current === entrySig) return;
-    lastConflictSigRef.current = entrySig;
+    const last = lastConflictSigRef.current;
+    if (last?.sig === entrySig && last.modes === modesRegistry) return;
+    lastConflictSigRef.current = { sig: entrySig, modes: modesRegistry };
     // An entry can be in both buckets and usually is: every tool `defineTool`
     // builds declares `focus: true`, and an ambient one carries `always: true`
     // on top of that. Sorting on "not focus-eligible" put ambient tools in the
@@ -163,8 +170,9 @@ export function useContributions<TOverlay = KernelOverlay>(
       registry,
       ambient,
       actions: actionsRegistry?.list() ?? [],
+      ...(modesRegistry ? { modes: modesRegistry.list().map(activeModeOf) } : {}),
     });
-  }, [entrySig, actionsRegistry]);
+  }, [entrySig, actionsRegistry, modesRegistry]);
 
   // Memoized so consumers using the result as an effect dep don't see identity
   // churn every render — which loops infinitely when the consumer setStates

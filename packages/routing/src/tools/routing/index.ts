@@ -2,7 +2,7 @@
 // grammar a route string is written in, plus the registry and conflict
 // checker that walk authored routes.
 //
-// Tool authoring (`defineTool`, `defineViewportTool`, `ToolDef`) is on the
+// Tool authoring (`defineTool`, `ToolDef`) is on the
 // main barrel: `import { defineTool } from '@weasel-js/core'`.
 export { parseRoute, formatRoute, formatPhaseAtom, collapseShiftPairs, describeRoute, describeRouteParts, canonicalModifiers, ROUTE_TERMS, ROUTE_FIELD_DEFINITIONS, RESERVED_ID_PREFIXES, RESERVED_ID_NAMES } from './routeGrammar';
 export type { ParsedRoute, ParsedModifiers, ModifierKey, ModRequirement, PhaseAtom, ChannelRef, DescribeRouteOptions, RouteDescriptionPart, RouteTermLabel, RouteFieldName } from './routeGrammar';

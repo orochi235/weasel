@@ -58,7 +58,7 @@ afterEach(() => {
 
 describe('PathAnchorEditDemo', () => {
   // The demo wires no mode registry. Every assertion below depends on the
-  // SceneCanvas branches that run when `getActiveMode` is absent: no
+  // SceneCanvas branches that run when `modes` is absent: no
   // eligibility filter, and nothing revoking edit mode.
   it('enters anchor editing on double-click, drags one anchor, and exits on Escape', () => {
     const { container } = render(<PathAnchorEditDemo />);

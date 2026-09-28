@@ -1,5 +1,6 @@
 // src/tools/useTools.ts
 import { useCallback, useMemo, useRef } from 'react';
+import type { ModeRegistry } from '@weasel-js/modes';
 import { dlog } from '../dlog';
 import type { AnyTool, AnyToolOf } from './types';
 import type { HotkeyTrigger } from '../contributions/types';
@@ -21,6 +22,9 @@ export interface UseToolsOptions<TOverlay = KernelOverlay> {
   /** Always-on entries — tools or other contributions, live regardless of
    *  the active slot. */
   ambient?: readonly Contribution<TOverlay>[];
+  /** The modes the canvas can be in, read by the dev-time route-conflict
+   *  check; without a registry it checks against the kit's `DEFAULT_MODES`. */
+  modes?: ModeRegistry;
 }
 
 /** The tool registry's runtime surface: which tool is active, which is
@@ -146,7 +150,11 @@ export function useTools<TOverlay = KernelOverlay>(
     return { registry, ambient, entries: [...byId.values()] };
   }, [sources]);
 
-  const contributions = useContributions<TOverlay>({ entries: slotted.entries, focused: initialActive });
+  const contributions = useContributions<TOverlay>({
+    entries: slotted.entries,
+    focused: initialActive,
+    ...(opts.modes ? { modes: opts.modes } : {}),
+  });
 
   const hotkeyEngaged = ctx.hotkeyStack.at(-1) ?? null;
 
