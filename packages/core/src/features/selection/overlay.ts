@@ -245,7 +245,9 @@ export interface SelectionOverlayLayerOpts<TPose>
   /** Pass `false` to render outlines only. */
   handles?: SelectionHandleStyle | false;
   handlesOf?: (bounds: Bounds) => { x: number; y: number }[];
-  /** See {@link SelectionHandlesLayerOpts.rotationHandle}. */
+  /** Draw a rotate badge above the selection's top edge. `true` places it at
+   *  the default offset; `distance` sets the offset in screen pixels. Off by
+   *  default. */
   rotationHandle?:
     | boolean
     | {

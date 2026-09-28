@@ -1,3 +1,4 @@
+/** A scale's base and exactly one of `step`, `ratio` or `factors`. */
 export interface ScaleParams {
   readonly base: number;
   readonly step?: number;
@@ -5,6 +6,10 @@ export interface ScaleParams {
   readonly factors?: readonly number[];
 }
 
+/**
+ * Step name → `<n>px`, rounded to whole pixels. Throws unless exactly one rule is given, or when `factors` has a
+ * length other than `steps`'.
+ */
 export function scale(steps: readonly string[], p: ScaleParams): Record<string, string> {
   const rules = [p.step, p.ratio, p.factors].filter((r) => r !== undefined);
   if (rules.length !== 1) {

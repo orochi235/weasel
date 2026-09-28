@@ -63,6 +63,7 @@ export interface ResolvedLoupe<TS = unknown, TC = unknown> {
   peekKey: string | null;
 }
 
+/** What `resolveLoupe` fills in for anything a declaration leaves unset. */
 export const LOUPE_DEFAULTS = {
   factor: 6,
   minFactor: 2,
@@ -72,6 +73,8 @@ export const LOUPE_DEFAULTS = {
   peekKey: 'Alt',
 } as const satisfies Omit<ResolvedLoupe, 'render' | 'onColorChange'>;
 
+/** A declaration with every default filled in and `factor` clamped to
+ *  `[minFactor, maxFactor]`. A loupe with its own `render` is always `'vector'`. */
 export function resolveLoupe<TS, TC>(declared: LoupeDeclaration<TS, TC>): ResolvedLoupe<TS, TC> {
   const cap = declared === true ? {} : declared;
   const minFactor = cap.minFactor ?? LOUPE_DEFAULTS.minFactor;

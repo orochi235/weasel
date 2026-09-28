@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  registerFont, getFont, resolveFontVariant, resolveGlyphFallback, listFonts, fontRegistry,
-  fontPending,
+  registerFont, getFont, resolveFontVariant, resolveGlyphFallback, listFonts, listFontWeights,
+  fontRegistry, fontPending,
   _resetFontRegistryForTests,
 } from './registerFont';
 import { setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
@@ -12,6 +12,7 @@ import {
 import { BAKE_SIZE } from './dynamic/glyphRasterizer';
 import { registerTestFont } from './testing/registerTestFont';
 import { subscribeGlyphReady } from './glyphReady';
+import { registerFontOutlines, _resetFontOutlinesForTests } from './outline/outlineRegistry';
 
 function stubFetch() {
   const encoder = new TextEncoder();
@@ -310,6 +311,24 @@ describe('resolveFontVariant — canvas-dynamic tier', () => {
     expect(r.source).toBe('atlas');
     expect(r.dynamicFace).toBeUndefined();
     expect(r.synthetic).toEqual({ bold: true, italic: true });
+  });
+});
+
+describe('listFontWeights', () => {
+  it('reports the weights a family has on either tier, once each, lightest first', async () => {
+    await registerTestFont('Inter', 700, 'normal');
+    await registerTestFont('Inter', 400, 'italic');
+    await registerTestFont('Inter', 400, 'normal');
+    registerFontOutlines('Inter', { weight: 300 }, () => new ArrayBuffer(4));
+    registerFontOutlines('Inter', { weight: 700, style: 'italic' }, () => new ArrayBuffer(4));
+    registerFontOutlines('Roboto', { weight: 900 }, () => new ArrayBuffer(4));
+    expect(listFontWeights('Inter')).toEqual([300, 400, 700]);
+    expect(listFontWeights('Roboto')).toEqual([900]);
+    _resetFontOutlinesForTests();
+  });
+
+  it('is empty for a family nothing registered', () => {
+    expect(listFontWeights('Nope')).toEqual([]);
   });
 });
 

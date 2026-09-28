@@ -21,6 +21,8 @@ function cameraDep(deps: unknown): Camera3dDep | undefined {
   return (deps as { camera3d?: Camera3dDep }).camera3d;
 }
 
+/** `camera.orbit`: an ongoing drag that turns the `camera3d` dep about its
+ *  target, relative to the camera as it was when the drag began. */
 export const orbitAction: Action = {
   id: 'camera.orbit',
   label: 'Orbit',
@@ -50,6 +52,8 @@ export const orbitAction: Action = {
   },
 };
 
+/** `camera.dolly`: moves the `camera3d` dep toward or away from its target by
+ *  the wheel's `deltaY`. Bound to the wheel by default, in every tool. */
 export const dollyAction: Action = {
   id: 'camera.dolly',
   label: 'Dolly',
@@ -68,6 +72,8 @@ export const dollyAction: Action = {
   },
 };
 
+/** A tool that binds drag to `camera.orbit`. Register `orbitAction` alongside
+ *  it; the tool only declares the binding. */
 export function useOrbitTool(): Tool<null> {
   return useMemo(() => defineTool<null>({
     id: 'orbit',

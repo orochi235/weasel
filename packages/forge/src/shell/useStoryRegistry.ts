@@ -14,6 +14,7 @@ import type { GlobalDeclarations } from './globals';
 import { type Ready, readyKey } from './readyKey';
 import { storyInstrument } from './storyInstrument';
 
+/** The lab instruments `useStoryRegistry` builds, and the calls that keep them current. */
 export interface StoryRegistry {
   instruments: InstrumentList;
   /** Whether a story's schema is known: its module has loaded, or its frame has reported. An instrument is built

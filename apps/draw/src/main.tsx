@@ -73,9 +73,11 @@ function Root() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+  // The inspector is read rather than worked in, so it sets its text a density up.
+  const inspector = hash.startsWith('#/dev/registry');
   const surface = hash.startsWith('#/dev/toolkits') ? (
     <ToolkitBuilder />
-  ) : hash.startsWith('#/dev/registry') ? (
+  ) : inspector ? (
     <RegistryInspector />
   ) : (
     <App />
@@ -83,7 +85,7 @@ function Root() {
   return (
     <ColorModeProvider>
       {(mode) => (
-        <ThemeProvider theme={drawTheme} selection={{ mode }}>
+        <ThemeProvider theme={drawTheme} selection={{ mode, ...(inspector ? { density: 'roomy' } : {}) }}>
           <Suspense fallback={null}>{surface}</Suspense>
         </ThemeProvider>
       )}

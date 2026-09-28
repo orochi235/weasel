@@ -41,6 +41,7 @@ export const DEFAULT_PORTS: readonly PortSpec[] = Object.freeze([
   { id: 'w', at: COMPASS.w },
 ]);
 
+/** How ports are resolved against a node: its bounds, and its trait. */
 export interface PortsOptions<TPose> {
   /** Reads the AABB a port is placed in, and the node's rotation. Defaults to
    *  the kit's `AUTO_POSE_DESCRIPTOR`, which handles rect and path poses. */

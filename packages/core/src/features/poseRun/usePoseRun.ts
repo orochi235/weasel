@@ -45,8 +45,10 @@ export interface PoseRunStep<TPose> {
   done: boolean;
 }
 
+/** Options for `usePoseRun`. Read fresh each frame, so they may change mid-run. */
 export interface UsePoseRunOptions<TPose> {
   scene: Scene<unknown, string, TPose>;
+  /** Called once per frame while running, for that frame's poses. */
   step: (ctx: PoseRunCtx<TPose>) => PoseRunStep<TPose>;
   /** The undo entry's name. Default `'Layout'`. */
   label?: string;
@@ -57,8 +59,9 @@ export interface UsePoseRunOptions<TPose> {
   cancelFrame?: (handle: number) => void;
 }
 
+/** Controls for a pose run. Stable for the life of the component. */
 export interface PoseRun {
-  /** Begin, or continue where a `stop` left off. Idempotent while running. */
+  /** Begin a new run, counting frames from 0. Idempotent while running. */
   start(): void;
   /** Finish now: commit what is published, then drop the overrides. */
   stop(): void;
@@ -69,6 +72,11 @@ export interface PoseRun {
 
 const EMPTY: ReadonlyMap<NodeId, unknown> = new Map<NodeId, unknown>();
 
+/**
+ * Drive node poses frame by frame through `scene.overrides`, committing them as
+ * one undo entry when `step` reports done or `stop` is called. Idle until
+ * `start`; unmounting abandons the run without writing.
+ */
 export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
   const optsRef = useRef(opts);
   optsRef.current = opts;

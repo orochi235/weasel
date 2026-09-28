@@ -43,6 +43,7 @@ export type ShaderUniform =
   | Float32Array
   | TextureHandle;
 
+/** A registered program's GLSL source. An empty `vert` means the kit's default vertex shader. */
 export interface ProgramSource {
   vert: string;
   frag: string;

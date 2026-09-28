@@ -1,6 +1,7 @@
 import { sampleTrack, type EasingSpec, type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack, type Track } from '@weasel-js/core';
 import { trackAtPath } from './lanes';
 
+/** One keyframe, addressed by its track's place in the tree and its index in that track's `keys`. */
 export interface KeySelection {
   /** Index path into the track tree, outermost first — a `LaneRow.path`. A
    *  top-level track is `[i]`; a track inside the nested timeline at `i` is

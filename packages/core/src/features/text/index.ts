@@ -16,7 +16,7 @@ export type {
 } from './useTextEdit';
 export { useSceneTextEdit } from './useSceneTextEdit';
 export type { UseSceneTextEditOptions } from './useSceneTextEdit';
-export { styleAtRange, applyStyleToRange } from './runs/rangeStyle';
+export { styleAtRange, applyStyleToRange, patchRangeStyle } from './runs/rangeStyle';
 export type { RangeStyle, RunStylePatch, StyleKey } from './runs/rangeStyle';
 export { effectiveRangeStyle } from './runs/effectiveRangeStyle';
 export { setFlagOverRange, nodeHasFlag } from './runs/flagRange';

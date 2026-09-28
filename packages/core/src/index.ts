@@ -89,6 +89,7 @@ export { viewToTransform, normalizeView, viewZoom } from './core/viewport/view';
 export { meanScale } from './core/viewport/meanScale';
 export { isPlainObject } from './core/isPlainObject';
 export { pxExtent, scaleDelta, withinPxBox, withinPxRadius } from './core/viewport/pxExtent';
+export type { Scale2 } from './core/viewport/pxExtent';
 export * from './interactions/gestures/handleDrag';
 export * from './interactions/gestures/pointerDrag';
 export * from './interactions/gestures/thresholdDrag';
@@ -197,6 +198,7 @@ export type { DepName, DepRegistry } from '@weasel-js/routing';
 export type { DepSchema } from './interactions/actions/depSchema';
 export type {
   AreaSelectDep,
+  HitTestView,
   ClipboardIngestCtx,
   EditAnchorsDep,
   IngestionDep,
@@ -228,6 +230,10 @@ export { createDispatcher, // The precedence rule itself, so reflection surfaces
   specificity } from '@weasel-js/routing';
 export { useGestureDispatcher } from '@weasel-js/routing/react';
 export type { Dispatcher, DispatcherContext, InputEvent, BindingScope, ScopedBinding, MatchResult, ResolveOnlyResult, ResolvedCandidate, ResolveAllOptions } from '@weasel-js/routing';
+export type {
+  DispatchRecord, DispatchRecordInput, RecordCandidate, DroppedCandidate,
+  RankedCandidate, PlacedBy, WalkStep, SpecificityPart,
+} from '@weasel-js/routing';
 export type { UseGestureDispatcherOptions, DispatcherChannels } from '@weasel-js/routing/react';
 
 // ─── Scheduling: the visibility gate every weasel frame loop runs behind ────
@@ -273,6 +279,7 @@ export {
   findNodeShape,
   findShapeSilhouette,
   findShapeInk,
+  DEFAULT_INK,
   shapeCoversPoint,
   getNodeShapes,
 } from './canvas/NodeShape';
@@ -409,6 +416,7 @@ export type {
   SelectionMode,
   SelectionExtendKey,
   UseSelectionOptions,
+  SelectionStore,
 } from './core/selection/useSelection';
 // --- @experimental Selection ambient context (2026-05-09) -------------------
 export {
@@ -433,6 +441,7 @@ export { DepRegistryProviderIfRoot } from './canvas/SceneCanvas/DepRegistryProvi
 
 // ─── WeaselProvider: mounts all five kit-root contexts in one wrap ──────────
 export { WeaselProvider } from './WeaselProvider';
+export type { WeaselProviderProps } from './WeaselProvider';
 
 // ─── Canvas focus & visibility gating ───────────────────────────────────────
 export {
@@ -576,6 +585,8 @@ export {
   fontString,
   resolveRuns,
   SCRIPT_METRICS,
+  numericWeight,
+  isBoldWeight,
   transformRunTexts,
   layoutRuns,
   cachedLayoutRuns,
@@ -651,6 +662,7 @@ export {
 } from './features/meshPaint';
 export type {
   BakedMesh,
+  MeshBox,
   MeshGradientFill,
   MeshPatch,
   MeshPoint,
@@ -840,7 +852,6 @@ export {
   paintKindOf,
   switchGradientKind,
   paintKindRegistry,
-  _resetPaintKindsForTests,
 } from './core/paintKinds';
 export type {
   PaintKind,
@@ -849,9 +860,10 @@ export type {
   PaintBindContext,
   PaintProgram,
 } from './core/paintKinds';
+export type { ShaderProgram } from './renderer/shaders/ShaderProgram';
 
 export {
-  registerMarker, getMarker, listMarkers, markerRegistry, _resetMarkersForTests,
+  registerMarker, getMarker, listMarkers, markerRegistry,
 } from './core/strokeMarkers';
 export type { MarkerEntry, MarkerCtx, MarkerPaint } from './core/strokeMarkers';
 export { markerInset, markerKeyOf, resolveMarkerSize, strokeInsets } from './core/markerInset';
@@ -859,6 +871,7 @@ export { markerSites } from './features/paths/markerSites';
 export type { MarkerSite, MarkerSiteRequest } from './features/paths/markerSites';
 export { BUILTIN_MARKERS } from './core/strokeMarkerShapes';
 export { trimPolyline } from './features/paths/tessellate/trim';
+export type { Polyline } from './features/paths/tessellate/polyline';
 
 export {
   DEFAULT_FILL_COLOR,
@@ -904,6 +917,8 @@ export type {
   AddLayerSpec,
   AddNodeSpec,
   DerivedDep,
+  DerivePathFn,
+  DerivePoseFn,
   ContainerNode,
   FeedDelta,
   FeedNode,
@@ -917,6 +932,7 @@ export type {
   RegisteredOp,
   Scene,
   SceneRegistry,
+  SerializedLayer,
   SerializedNode,
   SerializedScene,
   SystemLayerRecord,
@@ -1354,7 +1370,9 @@ export type { TextureHandle } from '@weasel-js/paint';
 // baker reach consumers from here rather than through a second import.
 // Named, not `export *` — a star re-export of an external package survives
 // typecheck and emits no binding in the bundle.
-export { cursorFor, resolveCursor, resolveCursorTier, bakeCursor } from '@weasel-js/cursor';
+export {
+  cursorFor, resolveCursor, resolveCursorTier, bakeCursor, CURSOR_ANGLE_STEPS, CURSOR_MAX_CSS_PX,
+} from '@weasel-js/cursor';
 export type {
   CursorSpec,
   CursorGlyphSpec,
@@ -1378,10 +1396,13 @@ export type {
   StandardSlotConfig,
 } from './canvas/Canvas';
 export type { BuiltinToolId, Feature } from './canvas/SceneCanvas';
+export type { BaseFeature } from './canvas/SceneCanvas/features';
 export { BUILTIN_TOOL_IDS, SCENE_CANVAS_FEATURES, rotateAroundAABBCenter } from './canvas/SceneCanvas';
 export { FEATURE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS } from './canvas/SceneCanvas/features';
-export { KIT_SHAPE_KINDS } from './core/shapeKinds';
-export type { BuiltinShapeToolId, ShapeKind } from './core/shapeKinds';
+export { KIT_SHAPE_KINDS, SHAPE_KINDS } from './core/shapeKinds';
+export type {
+  BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere,
+} from './core/shapeKinds';
 export type { BuiltinToolOptions } from './canvas/SceneCanvas/useBuiltinShapeTools';
 export type { InsertNodeFactory } from './canvas/deps';
 export type {
@@ -1416,6 +1437,7 @@ export type {
   DefaultTextData,
   UseSceneTextEditReturn,
 } from './features/text/useSceneTextEdit';
+export type { StyleToggle } from './features/text/useTextEdit';
 export type { SnapPattern } from './layout/strategies/snapPoint';
 export type { Vec2 } from './core/geometry/vec2';
 export type { Rect } from './core/geometry/polygonHitTestRect';

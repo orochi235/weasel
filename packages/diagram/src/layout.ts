@@ -29,6 +29,7 @@ import type { Bounds } from './outline';
 /** Which way the ranks stack. `force` ignores it. */
 export type LayoutDirection = 'down' | 'up' | 'right' | 'left';
 
+/** Options every layout takes. */
 export interface LayoutOptions {
   /** Default `'down'`. */
   direction?: LayoutDirection;
@@ -51,7 +52,9 @@ export type LayoutResult = ReadonlyMap<string, Vec2>;
 /** Every layout in this package has this shape, and so does a consumer's. */
 export type LayoutFn = (graph: Graph, opts?: LayoutOptions) => LayoutResult;
 
+/** `LayoutOptions.nodeGap`'s default, in world units. */
 export const DEFAULT_NODE_GAP = 48;
+/** `LayoutOptions.rankGap`'s default, in world units. */
 export const DEFAULT_RANK_GAP = 96;
 const DEFAULT_TOLERANCE = 1e-6;
 
@@ -64,6 +67,7 @@ export interface LayoutAxes {
   sign: 1 | -1;
 }
 
+/** The axes a direction lays ranks along. Default `'down'`. */
 export function axesFor(direction: LayoutDirection = 'down'): LayoutAxes {
   switch (direction) {
     case 'up':

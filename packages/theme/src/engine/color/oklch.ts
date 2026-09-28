@@ -4,12 +4,15 @@ import { hexToOklchDeg, oklchDegToHex, srgbU8ToOklab, type OklchDeg } from '@wea
  *  under the name this engine has always called it. */
 export type Lch = OklchDeg;
 
+/** `#rrggbb` to 0–255 channels. */
 export function hexToRgb(hex: string): [number, number, number] {
   const n = Number.parseInt(hex.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+/** OKLCH (lightness 0–1, chroma, hue in degrees) to `#rrggbb`. Chroma past the gamut is clipped at constant lightness. */
 export const toHex = oklchDegToHex;
+/** `#rrggbb` to OKLCH, hue in 0–360. */
 export const toLch: (hex: string) => Lch = hexToOklchDeg;
 
 /** The most chroma this hue can carry at this lightness, inside sRGB. */
@@ -24,6 +27,7 @@ export function luminance(hex: string): number {
   return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
 }
 
+/** WCAG contrast ratio between two hex colors, 1–21, in either order. */
 export function contrast(a: string, b: string): number {
   const [hi, lo] = [luminance(a), luminance(b)].sort((p, q) => q - p);
   return (hi + 0.05) / (lo + 0.05);
@@ -61,6 +65,7 @@ export function toLab(hex: string): [number, number, number] {
  */
 export const CHROMA_WEIGHT = 3;
 
+/** Perceptual distance between two hex colors: OKLab with chroma weighted by {@link CHROMA_WEIGHT}. */
 export function deltaE(a: string, b: string): number {
   const [l1, a1, b1] = toLab(a);
   const [l2, a2, b2] = toLab(b);

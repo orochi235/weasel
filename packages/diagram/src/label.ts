@@ -39,6 +39,8 @@ export function diagramLabelOf(node: { data: unknown }): DiagramLabel | null {
   return 'at' in label ? (label as DiagramLabel) : null;
 }
 
+/** Options for {@link labelDerivePose}. `geometry` defaults to the kit's
+ *  `AUTO_POSE_DESCRIPTOR`. */
 export interface LabelPoseOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
 }

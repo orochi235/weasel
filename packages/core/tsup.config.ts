@@ -26,6 +26,7 @@ export default defineConfig({
     'patterns-builtin': 'src/import-shims/patterns-builtin.ts',
     renderer: 'src/import-shims/renderer.ts',
     routing: 'src/import-shims/routing.ts',
+    'test-seams': 'src/import-shims/test-seams.ts',
   },
   format: ['esm'],
   dts: true,

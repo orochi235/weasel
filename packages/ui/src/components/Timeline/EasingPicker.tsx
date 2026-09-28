@@ -23,11 +23,14 @@ const BEZIER_OF: Partial<Record<string, readonly [number, number, number, number
 
 const DEFAULT_BEZIER: readonly [number, number, number, number] = [0.25, 0.1, 0.25, 1];
 
+/** Props for {@link EasingPicker}. `undefined` is linear. */
 export interface EasingPickerProps {
   value: EasingSpec | undefined;
   onChange: (next: EasingSpec | undefined) => void;
 }
 
+/** A key's easing: a menu of the named curves, a button converting a named
+ *  curve to its cubic-bezier control points, and a plot of the curve. */
 export function EasingPicker(props: EasingPickerProps): ReactElement {
   const { value, onChange } = props;
   const bezier = easingBezier(value);

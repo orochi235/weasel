@@ -111,7 +111,7 @@ describe('useSceneTextEdit — setStyle', () => {
     document.body.innerHTML = '';
   });
 
-  it('un-bolding part of a bold node lowers the node flag and raises it on the rest', async () => {
+  it('un-bolding part of a bold node writes a regular weight over that part alone', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const hook = renderHook(() => {
@@ -143,10 +143,10 @@ describe('useSceneTextEdit — setStyle', () => {
     });
 
     const style = hook.result.current.scene.get(asNodeId('a'))?.data.style;
-    expect(style?.fontWeight).toBe(400);
+    expect(style?.fontWeight).toBe(700);
     act(() => hook.result.current.edit.commit());
     const runs = hook.result.current.scene.get(asNodeId('a'))?.data.runs;
-    expect(runs).toEqual([{ text: 'ab' }, { text: 'cd', bold: true }]);
+    expect(runs).toEqual([{ text: 'ab', fontWeight: 400 }, { text: 'cd', bold: true }]);
   });
 });
 

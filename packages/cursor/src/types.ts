@@ -18,6 +18,7 @@ export interface CursorGlyph {
   readonly paths: readonly CursorPath[];
 }
 
+/** One path of a {@link CursorGlyph}, tagged with the role that decides its paint. */
 export type CursorPath =
   /** A filled part of the silhouette. */
   | { readonly role: 'ink'; readonly d: string }
@@ -34,7 +35,9 @@ export type CursorPath =
  * artwork alike precisely because it does not track the theme.
  */
 export const CURSOR_INK = '#141418';
+/** The outline stroked around every silhouette member. */
 export const CURSOR_HALO = '#ffffff';
+/** Halo stroke width in glyph units; a stroke path's halo adds it to the path's own width. */
 export const CURSOR_HALO_WIDTH = 2.6;
 
 /**

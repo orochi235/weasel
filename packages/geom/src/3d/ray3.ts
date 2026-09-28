@@ -4,6 +4,8 @@ import { SINGULAR_RATIO } from '../scalar';
 import { dot, len, type Vec3 } from './vec3';
 import { transformPoint, type Mat4 } from './mat4';
 
+/** A ray from `origin` along `direction`, which need not be unit length: the
+ *  `t` the intersections return is in multiples of it. */
 export interface Ray {
   origin: Vec3;
   direction: Vec3;

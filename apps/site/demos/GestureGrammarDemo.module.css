@@ -20,7 +20,7 @@
 .route {
   font: 14px ui-monospace, SFMono-Regular, monospace;
   padding: 6px 8px;
-  color: var(--ckd-fg);
+  color: var(--ckd-text);
   background: var(--ckd-surface);
   border: 1px solid var(--ckd-accent);
   border-radius: 4px;
@@ -123,7 +123,7 @@
 
 .selected {
   border: 2px solid var(--ckd-accent);
-  color: var(--ckd-fg);
+  color: var(--ckd-text);
 }
 
 .ellipse {

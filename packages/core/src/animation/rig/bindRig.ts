@@ -13,7 +13,9 @@ export interface RigScene<TPose> {
   batch<T>(label: string, fn: () => T): T;
 }
 
+/** What a `RigApply` knows about the node it is posing. */
 export interface RigApplyContext<TPose> {
+  /** The joint the node rides. */
   joint: string;
   node: NodeId;
   /** The node's document pose when the rig was bound — where it sits at the
@@ -30,6 +32,7 @@ export interface RigApplyContext<TPose> {
  *  part of a rig that knows the scene's pose shape. */
 export type RigApply<TPose> = (world: GlMat3, ctx: RigApplyContext<TPose>) => TPose;
 
+/** Options for `bindRig`. */
 export interface BindRigOptions<TPose> {
   scene: RigScene<TPose>;
   skeleton: Skeleton;
@@ -43,6 +46,7 @@ export interface BindRigOptions<TPose> {
   descriptor?: PoseDescriptor<TPose>;
 }
 
+/** A skeleton bound to scene nodes, as `bindRig` returns it. */
 export interface Rig {
   readonly skeleton: Skeleton;
   /**

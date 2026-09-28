@@ -48,6 +48,7 @@ export function createAnnotationScene(): MarkScene {
   return createScene<AnnotationData, 'marks', MarkPose>({ systemLayers: [{ id: 'marks' }] });
 }
 
+/** Inputs to `createAnnotationStore`. */
 export interface AnnotationStoreOptions {
   /** Re-read on every call, so a target resizing or gaining a dependency takes
    *  effect without rebuilding the store. */

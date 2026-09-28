@@ -1,12 +1,13 @@
 import type { RenderContext } from '@weasel-js/labkit';
-import { type RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
+import { memo, type RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
 import { StoryHost } from '../frame/StoryHost';
 import type { Globals } from '../protocol/messages';
-import type { LoadedStory, StoryContext } from '../story/types';
+import type { Decorator, LoadedStory, StoryContext } from '../story/types';
 import { isGlobalsPath, storyConfig } from './globals';
 import { TrialHost } from './TrialHost';
 
+/** Props for `StoryTrial`. */
 export interface StoryTrialProps {
   story: LoadedStory;
   setup: FrameSetup;
@@ -17,6 +18,27 @@ export interface StoryTrialProps {
   /** A render throw, after the boundary has shown it. */
   onError?: (error: unknown) => void;
 }
+
+const NO_DECORATORS: readonly Decorator[] = [];
+
+interface StoryBodyProps {
+  story: LoadedStory;
+  config: StoryContext['config'];
+  setConfig: StoryContext['setConfig'];
+  state: unknown;
+  setState: StoryContext['setState'];
+  globals: Globals;
+  decorators: readonly Decorator[];
+  resetKey: number;
+  onError: (error: unknown) => void;
+}
+
+/** Calls `render` only when its inputs change, as Storybook does: the lab re-renders a trial for its own reasons, and a
+ *  story declaring a component inside `render` remounts it on every extra call. */
+const StoryBody = memo(function StoryBody({ story, config, setConfig, state, setState, globals, decorators, resetKey, onError }: StoryBodyProps) {
+  const storyCtx: StoryContext = { config, setConfig, state, setState, globals, title: story.title, name: story.name };
+  return <StoryHost story={story} ctx={storyCtx} decorators={decorators} resetKey={resetKey} onError={onError} />;
+});
 
 /** A story rendered in the workshop document, inside a `TrialHost`, from the trial's own config and state. */
 export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: StoryTrialProps) {
@@ -46,27 +68,23 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
   }, []);
   const setState = useCallback((next: unknown) => latest.current.setState(next), []);
 
-  const decorators = setup.decorators ?? [];
-  const render = (globals: Globals) => {
-    const storyCtx: StoryContext = {
-      config,
-      setConfig,
-      state: ctx.state,
-      setState,
-      globals,
-      title: story.title,
-      name: story.name,
-    };
-    return (
-      <StoryHost
-        story={story}
-        ctx={storyCtx}
-        decorators={decorators}
-        resetKey={resetKey}
-        onError={(error) => onError?.(error)}
-      />
-    );
-  };
+  const decorators = setup.decorators ?? NO_DECORATORS;
+  const latestError = useRef(onError);
+  latestError.current = onError;
+  const reportError = useCallback((error: unknown) => latestError.current?.(error), []);
+  const render = (globals: Globals) => (
+    <StoryBody
+      story={story}
+      config={config}
+      setConfig={setConfig}
+      state={ctx.state}
+      setState={setState}
+      globals={globals}
+      decorators={decorators}
+      resetKey={resetKey}
+      onError={reportError}
+    />
+  );
 
   return (
     <TrialHost

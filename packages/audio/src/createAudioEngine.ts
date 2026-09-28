@@ -8,6 +8,9 @@ import { createTickTimer } from './tickTimer';
 import type { AudioEngineOptions, PlayOptions, VoiceHandle } from './types';
 import { createVoicePool, type VoicePool } from './voicePool';
 
+/** A sound engine: named mix buses, a per-bus voice pool, lookahead
+ *  scheduling and 2D spatialization over one `AudioContext`. Times are engine
+ *  ms (`now()`). */
 export interface AudioEngine {
   /** The engine's `AudioContext` — the one passed as `options.context`, or the
    *  one the engine created. Use it for `createBuffer`, for analysis, or for a
@@ -77,6 +80,12 @@ interface LiveVoice {
   cancelled: boolean;
 }
 
+/**
+ * Create an engine. Browsers start the context suspended: `play()` before it
+ * is unlocked drops the voice with a warning. The engine resumes it on the
+ * first pointer, key or touch gesture, or call `unlock()` from one. Call
+ * `dispose()` when done.
+ */
 export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   const ctx = opts.context ?? new AudioContext();
   // A context the engine made is a context the engine closes; a consumer's is

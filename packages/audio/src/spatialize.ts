@@ -1,5 +1,8 @@
+/** A 2D world position, in the consumer's own units. */
 export interface Vec2 { x: number; y: number }
 
+/** Distance and pan model for `spatialize`, in the same units as the
+ *  positions. */
 export interface SpatialOptions {
   /** Distance within which gain stays at 1. Default 1. The inverse model needs
    *  this above 0: at 0 it cliffs gain from 1 to 0 at any nonzero distance. */

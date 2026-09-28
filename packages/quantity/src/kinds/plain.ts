@@ -11,10 +11,12 @@ export type DecimalDisplay = {
   grouping?: boolean;
 };
 
+/** A {@link DecimalDisplay}. */
 export function decimal(options: Omit<DecimalDisplay, 'kind'> = {}): DecimalDisplay {
   return { kind: 'decimal', ...options };
 }
 
+/** The built-in `decimal` kind, to spread into a `registerDisplayKind` replacement. */
 export const decimalKind: DisplayKind<DecimalDisplay> = {
   kind: 'decimal',
   format: (value, d, ctx) => intlParts(value, ctx.locale, decimalOptions(d)),
@@ -35,10 +37,12 @@ export type IntegerDisplay = {
   grouping?: boolean;
 };
 
+/** An {@link IntegerDisplay}. */
 export function integer(options: Omit<IntegerDisplay, 'kind'> = {}): IntegerDisplay {
   return { kind: 'integer', ...options };
 }
 
+/** The built-in `integer` kind, to spread into a `registerDisplayKind` replacement. */
 export const integerKind: DisplayKind<IntegerDisplay> = {
   kind: 'integer',
   format: (value, d, ctx) =>
@@ -58,10 +62,12 @@ export type CompactDisplay = {
   places?: number;
 };
 
+/** A {@link CompactDisplay}. */
 export function compact(options: Omit<CompactDisplay, 'kind'> = {}): CompactDisplay {
   return { kind: 'compact', ...options };
 }
 
+/** The built-in `compact` kind, to spread into a `registerDisplayKind` replacement. */
 export const compactKind: DisplayKind<CompactDisplay> = {
   kind: 'compact',
   format: (value, d) => {

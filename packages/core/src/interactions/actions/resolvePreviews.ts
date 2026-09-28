@@ -13,6 +13,7 @@ import type { GesturePreviewSource } from '../../canvas/gestureBounds';
 import type { Node, NodeId, Scene } from '../../core/scene/types';
 import { asNodeId } from '../../core/scene/types';
 
+/** One node an in-flight gesture is previewing, as {@link resolvePreviews} returns it. */
 export interface PreviewNode<TData, TLayer extends string, TPose> {
   id: NodeId;
   /** The node as committed — the gesture has not touched the scene. */

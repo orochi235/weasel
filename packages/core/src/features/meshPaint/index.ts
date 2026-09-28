@@ -22,4 +22,4 @@ export {
   type MeshPatch,
   type MeshPoint,
 } from './surface';
-export { bakeMesh, meshBounds, MESH_BAKE_SIZE, type BakedMesh } from './bake';
+export { bakeMesh, meshBounds, MESH_BAKE_SIZE, type BakedMesh, type MeshBox } from './bake';

@@ -1,8 +1,11 @@
+/** Options for `createAnalyserTap` and `AudioEngine.analyser`. */
 export interface AnalyserTapOptions {
   /** Power of two, 32..32768. Default 2048. */
   fftSize?: number;
 }
 
+/** An `AnalyserNode` attached to a point in the graph, with readers for its
+ *  spectrum, waveform and level. Each call reads the current window. */
 export interface AnalyserTap {
   /** The underlying node, exposed for disposal assertions and advanced wiring. */
   node: AnalyserNode;
@@ -21,6 +24,8 @@ export interface AnalyserTap {
   dispose(): void;
 }
 
+/** Attach a new `AnalyserNode` to `source`. The tap only listens, adding no
+ *  path to the destination; `dispose()` detaches it. */
 export function createAnalyserTap(
   ctx: AudioContext,
   source: AudioNode,

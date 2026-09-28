@@ -31,6 +31,7 @@ import {
 
 export type { Band, BandScale };
 
+/** Props for {@link BandEditor}. */
 export interface BandEditorProps<T, F extends Quantity = number> {
   /** Ascending by `from`. `value[0].from` is normalized to `min` on read. A
    *  tagged `from` stays tagged through every edit, with its display and unit. */

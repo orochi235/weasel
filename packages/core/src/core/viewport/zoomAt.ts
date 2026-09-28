@@ -8,6 +8,14 @@ export interface ZoomClampOpts {
   max?: ZoomBound;
 }
 
+/** Bound a scale's *magnitude*, keeping its direction. `scale.y < 0` is how a
+ *  `View` spells a y-up camera, so clamping the signed value against positive
+ *  bounds would flip the axis and collapse the zoom rather than limit it. */
+function clampScale(scale: number, min: number, max: number): number {
+  const magnitude = normalizeZoom(Math.min(max, Math.max(min, Math.abs(scale))));
+  return scale < 0 ? -magnitude : magnitude;
+}
+
 /**
  * Pure zoom primitive. Returns a new `View` whose `scale` is multiplied
  * by `factor` (per-axis, clamped) and whose translation is adjusted so
@@ -18,14 +26,6 @@ export interface ZoomClampOpts {
  * `factor: number` means "apply uniformly to both axes". `factor: {x, y}`
  * applies per-axis factors. Likewise for `opts.min` / `opts.max`.
  */
-/** Bound a scale's *magnitude*, keeping its direction. `scale.y < 0` is how a
- *  `View` spells a y-up camera, so clamping the signed value against positive
- *  bounds would flip the axis and collapse the zoom rather than limit it. */
-function clampScale(scale: number, min: number, max: number): number {
-  const magnitude = normalizeZoom(Math.min(max, Math.max(min, Math.abs(scale))));
-  return scale < 0 ? -magnitude : magnitude;
-}
-
 export function zoomAt(
   input: View,
   anchor: { x: number; y: number },

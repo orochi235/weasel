@@ -21,6 +21,7 @@ import { StoryTree } from './tree/StoryTree';
 import { crossesInPlace, readRoute, readRouteEntry, useRoute } from './useRoute';
 import { useStoryRegistry } from './useStoryRegistry';
 
+/** Props for `Workshop`. `index`, `importers` and `dependencies` are what the vite plugin's virtual modules supply. */
 export interface WorkshopProps {
   index: readonly IndexEntry[];
   /** The frame document, for the stories `isolate` keeps in one. */
@@ -95,6 +96,7 @@ function useInfoShortcut(open: (next: boolean) => void): void {
   }, [open]);
 }
 
+/** The workshop page: a labkit `Lab` with a story tree, where each story or index page opens as a trial. */
 export function Workshop({ index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage, dependencies }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
   const [frames] = useState(createTrialFrames);

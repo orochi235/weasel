@@ -63,6 +63,10 @@ function commandFor(op: CursorPaintOp): PathDrawCommand {
   };
 }
 
+/**
+ * A screen-space layer that draws the glyph `state` currently holds at the pointer,
+ * or nothing when it holds none. `<Canvas>` mounts one over its own state already.
+ */
 export function createPaintedCursorLayer(state: PaintedCursorState): RenderLayer<unknown> {
   return {
     id: PAINTED_CURSOR_LAYER_ID,

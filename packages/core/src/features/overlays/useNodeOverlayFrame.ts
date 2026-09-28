@@ -46,6 +46,7 @@ export interface NodeOverlayFrame {
   height: number;
 }
 
+/** Options for `useNodeOverlayFrame`. */
 export interface UseNodeOverlayFrameOptions<TPose> {
   /**
    * Current viewport. A thunk is re-read on every projection, which is what

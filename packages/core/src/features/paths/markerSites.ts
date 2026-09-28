@@ -8,6 +8,7 @@
 
 import type { Polyline } from './tessellate/polyline';
 
+/** One marker placement, in the polyline's own coordinates. */
 export interface MarkerSite {
   x: number;
   y: number;
@@ -17,6 +18,7 @@ export interface MarkerSite {
   role: 'start' | 'mid' | 'end';
 }
 
+/** Which marker roles to place. `start` and `end` are ignored on a closed polyline. */
 export interface MarkerSiteRequest {
   start: boolean;
   mid: boolean;
@@ -44,6 +46,11 @@ function prevDistinct(pl: Polyline, i: number): number {
   return -1;
 }
 
+/**
+ * Where each requested marker sits on `pl` and the angle it points at.
+ * Mid sites fall only on authored vertices, never on flattened curve samples,
+ * and need the polyline to carry anchor data; without it no mid sites are returned.
+ */
 export function markerSites(pl: Polyline, want: MarkerSiteRequest): MarkerSite[] {
   const out: MarkerSite[] = [];
   const n = pl.points.length / 2;

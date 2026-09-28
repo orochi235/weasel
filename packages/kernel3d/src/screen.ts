@@ -44,6 +44,8 @@ export function screenToNdc(
   };
 }
 
+/** Inverse of `screenToNdc`: normalized device coordinates (y up) to a point
+ *  in `rect`'s space (y down). */
 export function ndcToScreen(
   ndc: { x: number; y: number },
   rect: ScreenBox,

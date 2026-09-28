@@ -8,10 +8,13 @@ export interface UndockedPanel {
 /** Undocked panels, keyed by {@link panelKey}. */
 export type UndockedPanels = Record<string, UndockedPanel>;
 
+/** The `UndockedPanels` key for one trial's section. */
 export function panelKey(trialId: string, sectionId: string): string {
   return `${trialId}::${sectionId}`;
 }
 
+/** `panels` with the section marked undocked `as` a tile or a floating panel,
+ *  replacing any earlier entry for it. Returns a new record. */
 export function undockPanel(
   panels: UndockedPanels,
   trialId: string,

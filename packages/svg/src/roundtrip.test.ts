@@ -848,6 +848,32 @@ describe('letter-spacing / text-decoration', () => {
     expect(t.runs?.[0]).toMatchObject({ strikethrough: true, overline: true });
   });
 
+  it('round-trips a run weight, reading 700 back as the bold flag it renders as', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'abcd',
+      style: { fontWeight: 700 },
+      runs: [
+        { text: 'a', fontWeight: 300 },
+        { text: 'b', fontWeight: 400 },
+        { text: 'c', bold: true },
+        { text: 'd', fontWeight: 900 },
+      ],
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 20 } });
+    expect(svg).toContain('<tspan font-weight="300">a</tspan>');
+    const { nodes, warnings } = parseSvg(svg);
+    expect(warnings).toEqual([]);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs).toEqual(node.runs);
+    const normal = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><text font-weight="bold"><tspan font-weight="normal">x</tspan></text></svg>');
+    const n = normal.nodes[0];
+    if (n.kind !== 'text') throw new Error('expected text');
+    expect(n.runs).toEqual([{ text: 'x', fontWeight: 400 }]);
+  });
+
   it('writes textTransform as a CSS style property on the text and its tspans', () => {
     const node: SvgNode = {
       kind: 'text',

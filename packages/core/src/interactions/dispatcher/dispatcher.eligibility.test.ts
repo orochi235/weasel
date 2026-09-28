@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { createDispatcher, filterEligible } from '@weasel-js/routing';
+import { createDispatcher } from '@weasel-js/routing';
 import type { DispatcherContext } from '@weasel-js/routing';
 import type { ActionsRegistry } from '@weasel-js/routing';
 import type { Action } from '@weasel-js/routing';
@@ -153,40 +153,5 @@ describe('dispatcher: action eligibility filter', () => {
     const result = dispatcher.handleInput(dragEvent, makeCtx({ actions: registry }));
     expect(start).toHaveBeenCalledOnce();
     expect(result).toBe('handled');
-  });
-});
-
-describe('filterEligible (helper)', () => {
-  function makeAction(id: string, eligible?: Action['eligible']): Action {
-    return {
-      id,
-      label: id,
-      ...(eligible !== undefined ? { eligible } : {}),
-    };
-  }
-
-  it('keeps candidates whose action has no `eligible`', () => {
-    const a = makeAction('a');
-    const matches = [{ binding: { actionId: 'a' } }];
-    const lookup = (id: string) => (id === 'a' ? a : undefined);
-    const out = filterEligible(matches, lookup, makeRuleCtx({ mode: 'normal' }));
-    expect(out).toHaveLength(1);
-  });
-
-  it('drops candidates whose action `eligible` rule fails', () => {
-    const a = makeAction('a', { mode: 'path-edit' });
-    const matches = [{ binding: { actionId: 'a' } }];
-    const lookup = (id: string) => (id === 'a' ? a : undefined);
-    const out = filterEligible(matches, lookup, makeRuleCtx({ mode: 'normal' }));
-    expect(out).toHaveLength(0);
-  });
-
-  it('keeps candidates whose unknown action lookup returns undefined', () => {
-    // Unknown action — let the existing "no-such-action" trace path
-    // handle it downstream; the eligibility filter is not the place to
-    // strip these.
-    const matches = [{ binding: { actionId: 'unknown' } }];
-    const out = filterEligible(matches, () => undefined, makeRuleCtx());
-    expect(out).toHaveLength(1);
   });
 });

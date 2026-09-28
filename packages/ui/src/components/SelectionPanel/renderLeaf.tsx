@@ -14,7 +14,7 @@ import type {
   ToolPrefLeaf,
   ToolPrefObject,
 } from '@weasel-js/core';
-import { prefFieldProps } from '../Prefs/prefField';
+import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import { drawnGlyph, PropertyControl, type PropertyBooleanFieldProps } from '../Properties/PropertyField';
 import { ToggleBar } from '../ToggleBar';
 import { Icon } from '../../icons/Icon';
@@ -50,15 +50,25 @@ export interface PropertyRenderContext {
    * the array as a style takes both.
    */
   siblings?: Record<string, unknown>;
+  /** The value each selected node holds at this path, in selection order —
+   *  what `value` aggregates, and what a mixed selection still has. */
+  each: readonly unknown[];
+  /**
+   * For a field of an object leaf, each node's own object (parallel to
+   * `each`), which is still there when the nodes' objects differ and
+   * `siblings` is not.
+   */
+  eachSiblings?: readonly (Record<string, unknown> | undefined)[];
   /** Commit a value — fans out to every selected node in one undo step. */
   setValue: (value: unknown) => void;
   /**
    * Commit a value derived from what each node holds at this path, in one undo
    * step. What `setValue` cannot do across a selection whose nodes differ: a
    * field of an object leaf has to land in each node's own object, not in one
-   * object written over all of them.
+   * object written over all of them. `siblings` is that node's object, for a
+   * field of an object leaf.
    */
-  update: (fn: (prev: unknown) => unknown) => void;
+  update: (fn: (prev: unknown, siblings?: Record<string, unknown>) => unknown) => void;
   /**
    * The aggregated value at another node path — what `value` and `mixed` are
    * for this leaf's own path, for any path.
@@ -181,10 +191,11 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
       unset: c.ctx.unset,
       siblings: c.ctx.siblings,
       setValue: c.ctx.setValue,
+      ...perNodeState(c.ctx),
     }) as PropertyBooleanFieldProps;
     return { cell: c, field };
   });
-  const on = flags.filter((f) => !f.cell.ctx.mixed && f.field.value === true).map((f) => f.cell.key);
+  const on = flags.filter((f) => !f.field.mixed && f.field.value === true).map((f) => f.cell.key);
   return (
     <ToggleBar<string>
       mode="multiple"
@@ -202,7 +213,7 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
       // Each flag owns its own path, so only the segment that moved is
       // written — committing the run would write two fields nobody touched,
       // and inside an object leaf would fabricate values for the other two.
-      mixedValues={run.filter((c) => c.ctx.mixed).map((c) => c.key)}
+      mixedValues={flags.filter((f) => f.field.mixed).map((f) => f.cell.key)}
       onChange={(next) => {
         for (const { cell, field } of flags) {
           const now = next.includes(cell.key);
@@ -237,13 +248,16 @@ export function renderBuiltin(
     unset,
     siblings: ctx.siblings,
     setValue,
-    // The substitution probe runs at the node's own weight and style, so the
-    // picker names the variant that will actually paint. A mixed selection
-    // has no single one; the probe falls back to 400/normal there.
+    ...perNodeState(ctx),
+    // The font pickers read the rest of the font from the leaves beside
+    // them: the family's substitution probe runs at the weight and style
+    // that will paint, and a weight lists what its family has. A mixed
+    // selection has no single one; the probe falls back to 400/normal there.
     fontVariant: {
-      weight: ctx.valueAt('data.style.fontWeight').value,
-      style: ctx.valueAt('data.style.fontStyle').value,
+      weight: ctx.valueAt(siblingPath(ctx.path, 'fontWeight')).value,
+      style: ctx.valueAt(siblingPath(ctx.path, 'fontStyle')).value,
     },
+    fontFamily: ctx.valueAt(siblingPath(ctx.path, 'fontFamily')).value,
   });
   if (field === null) {
     return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
@@ -289,6 +303,7 @@ export function renderBuiltin(
         />
       );
     case 'font-family':
+    case 'font-weight':
       return <PropertyControl {...field} name={ariaLabel} className={s.select} />;
     case 'paint':
       return (
@@ -313,6 +328,23 @@ export function renderBuiltin(
 }
 
 const settledOnly = (): void => {};
+
+/** The dotted path of the leaf `key` beside the one at `path`. */
+function siblingPath(path: string, key: string): string {
+  const dot = path.lastIndexOf('.');
+  return dot < 0 ? key : `${path.slice(0, dot + 1)}${key}`;
+}
+
+/** What an `encoding` needs to read and write each node against its own
+ *  object — nothing for a leaf that is not a field of one. */
+function perNodeState(ctx: PropertyRenderContext): Pick<PrefFieldState, 'perNode' | 'update'> {
+  if (ctx.eachSiblings === undefined) return {};
+  const siblings = ctx.eachSiblings;
+  return {
+    perNode: ctx.each.map((value, i) => ({ value, siblings: siblings[i] })),
+    update: ctx.update,
+  };
+}
 
 /**
  * Renders an object leaf: a titled block whose rows are the object's own
@@ -351,6 +383,9 @@ function ObjectLeaf({
   const held = typeof ctx.value === 'object' && ctx.value !== null
     ? (ctx.value as Record<string, unknown>)
     : undefined;
+  const eachObject = ctx.each.map((v) =>
+    typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : undefined,
+  );
 
   // A value whose fields are entirely grouped is titled by those groups — its
   // own heading would stack onto the first one and name nothing new.
@@ -415,7 +450,7 @@ function ObjectLeaf({
       // Each node's own object, with this one field changed. Deriving it per
       // node is what keeps a multi-selection edit from writing one node's
       // object over all the others.
-      const update = (fn: (prev: unknown) => unknown): void =>
+      const update = (fn: (prev: unknown, siblings?: Record<string, unknown>) => unknown): void =>
         ctx.update((prev) => {
           // The node holds no object yet, so writing one field has to
           // materialize the rest: the leaf's `default` is what a complete
@@ -430,7 +465,7 @@ function ObjectLeaf({
                 ?? (typeof pref.default === 'object' && pref.default !== null
                   ? { ...(pref.default as Record<string, unknown>) }
                   : {}));
-          const v = fn(base[key]);
+          const v = fn(base[key], base);
           if (v === undefined) {
             // A field written as absent is absent — leaving the key holding
             // `undefined` says the object has a dash of nothing.
@@ -449,6 +484,8 @@ function ObjectLeaf({
         // with nothing behind it, not with the schema's defaults.
         unset: !field.mixed && field.value === undefined,
         siblings: held,
+        each: eachObject.map((o) => o?.[key]),
+        eachSiblings: eachObject,
         valueAt: ctx.valueAt,
         selectionKey: ctx.selectionKey,
         update,

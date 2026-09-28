@@ -13,6 +13,7 @@ interface Layer {
 
 const REF = /^\{([^}.]+)\}$/;
 
+/** A DTCG document as {@link toDTCG} writes it. */
 export interface DtcgExport {
   readonly name: string;
   readonly defaultMode?: string;

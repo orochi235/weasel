@@ -44,9 +44,6 @@ let defaultIdCounter = 0;
 const defaultGenerateId = (): NodeId =>
   asNodeId(`n${(defaultIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
 
-/** Build a scene outside React. `useScene` is the usual entry point; reach for
- *  this in tests, in headless rendering, or wherever a scene must outlive a
- *  component. Throws if no system layers are declared. */
 /** One layer record from its snapshot form. A snapshot with no `kind` predates
  *  user layers, so everything in it was a system layer. */
 function layerFromSerialized<TLayer extends string>(
@@ -62,6 +59,9 @@ function layerFromSerialized<TLayer extends string>(
     : { ...base, kind: 'system' };
 }
 
+/** Build a scene outside React. `useScene` is the usual entry point; reach for
+ *  this in tests, in headless rendering, or wherever a scene must outlive a
+ *  component. Throws if no system layers are declared. */
 export function createScene<TData, TLayer extends string, TPose = import('../../features/groups/composePose').RectPose>(
   options: UseSceneOptions<TData, TLayer, TPose>,
 ): Scene<TData, TLayer, TPose> {

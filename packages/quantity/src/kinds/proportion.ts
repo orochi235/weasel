@@ -9,10 +9,12 @@ export type PercentDisplay = {
   places?: number;
 };
 
+/** A {@link PercentDisplay}. */
 export function percent(options: Omit<PercentDisplay, 'kind'> = {}): PercentDisplay {
   return { kind: 'percent', ...options };
 }
 
+/** The built-in `percent` kind, to spread into a `registerDisplayKind` replacement. */
 export const percentKind: DisplayKind<PercentDisplay> = {
   kind: 'percent',
   format: (value, d, ctx) =>
@@ -114,6 +116,7 @@ const inDigits = (n: number, digits: string) => String(n).replace(/\d/g, (c) => 
 const fromDigits = (text: string, digits: string) =>
   Number([...text].map((c) => digits.indexOf(c)).join(''));
 
+/** A {@link FractionDisplay}. */
 export function fraction(options: FractionOptions = {}): FractionDisplay {
   return { kind: 'fraction', ...options };
 }
@@ -148,6 +151,7 @@ function parseFraction(text: string): number {
 
 const escape = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+/** The built-in `fraction` kind, to spread into a `registerDisplayKind` replacement. */
 export const fractionKind: DisplayKind<FractionDisplay> = {
   kind: 'fraction',
   format: (value, d) => {
@@ -224,10 +228,12 @@ export type RatioDisplay = {
   maxDenominator?: number;
 };
 
+/** A {@link RatioDisplay}. */
 export function ratio(options: Omit<RatioDisplay, 'kind'> = {}): RatioDisplay {
   return { kind: 'ratio', ...options };
 }
 
+/** The built-in `ratio` kind, to spread into a `registerDisplayKind` replacement. */
 export const ratioKind: DisplayKind<RatioDisplay> = {
   kind: 'ratio',
   format: (value, d) => {
@@ -259,10 +265,12 @@ export type MultiplierDisplay = {
   symbol?: string;
 };
 
+/** A {@link MultiplierDisplay}. */
 export function multiplier(options: Omit<MultiplierDisplay, 'kind'> = {}): MultiplierDisplay {
   return { kind: 'multiplier', ...options };
 }
 
+/** The built-in `multiplier` kind, to spread into a `registerDisplayKind` replacement. */
 export const multiplierKind: DisplayKind<MultiplierDisplay> = {
   kind: 'multiplier',
   format: (value, d, ctx) => [
@@ -283,6 +291,7 @@ export type ZoomDisplay = {
   kind: 'zoom';
 };
 
+/** A {@link ZoomDisplay}. */
 export function zoom(): ZoomDisplay {
   return { kind: 'zoom' };
 }
@@ -296,6 +305,7 @@ function zoomParts(z: number): Part[] {
   return [n(Math.round(z * 10) / 10), { type: 'symbol', value: 'x' }];
 }
 
+/** The built-in `zoom` kind, to spread into a `registerDisplayKind` replacement. */
 export const zoomKind: DisplayKind<ZoomDisplay> = {
   kind: 'zoom',
   format: (value) => zoomParts(value),

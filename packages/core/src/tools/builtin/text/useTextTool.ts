@@ -109,6 +109,14 @@ useTextTool.options = {
       description: 'Typeface for the range.',
       default: undefined,
     },
+    // Listed from the weights the range's family has registered. Bold is a
+    // preset over it: toggling Bold clears it, picking one clears Bold.
+    fontWeight: {
+      kind: 'font-weight',
+      name: 'Weight',
+      description: 'Weight of the range, from the faces its family has.',
+      default: undefined,
+    },
     fontSize: { kind: 'number', name: 'Size', description: 'Type size.', min: 1, step: 1, default: 16 },
     letterSpacing: {
       kind: 'number',

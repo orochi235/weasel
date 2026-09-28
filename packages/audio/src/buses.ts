@@ -1,5 +1,7 @@
 import { writeParam } from './param';
 
+/** Controls for one named bus. `rampMs` slews a gain change over that many
+ *  ms instead of stepping it. */
 export interface BusHandle {
   setGain(value: number, rampMs?: number): void;
   mute(on: boolean): void;
@@ -15,6 +17,8 @@ export interface BusHandle {
   audible(): boolean;
 }
 
+/** The mix graph built by `createBusGraph`. `node(name)` is where a voice
+ *  connects; `master` feeds the destination. Unknown bus names throw. */
 export interface BusGraph {
   master: GainNode;
   node(name: string): GainNode;

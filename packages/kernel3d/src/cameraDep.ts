@@ -9,6 +9,8 @@
 
 import type { Camera3d } from './camera';
 
+/** The `camera3d` dep: the orbit camera a 3D host owns, which the camera
+ *  actions read and replace. */
 export interface Camera3dDep {
   get(): Camera3d;
   set(camera: Camera3d): void;

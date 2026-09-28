@@ -8,6 +8,7 @@ import { emitCss } from './css.ts';
 import { emitManifest } from './manifest.ts';
 import { emitThemes } from './themes.ts';
 
+/** The files {@link generateTokens} produces, or every derive issue that stopped it. */
 export type GeneratedTokens =
   | { readonly ok: true; readonly files: { readonly 'tokens.css': string; readonly 'themes.ts': string; readonly 'manifest.ts': string } }
   | { readonly ok: false; readonly problems: readonly string[] };

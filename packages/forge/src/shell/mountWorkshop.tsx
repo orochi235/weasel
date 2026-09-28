@@ -4,11 +4,13 @@ import type { DepGraph, IndexEntry } from '../story/types';
 import { createStoryChanges } from './storyChanges';
 import { Workshop, type WorkshopProps } from './Workshop';
 
+/** `Workshop`'s props, plus where to mount it. */
 export interface MountWorkshopOptions extends WorkshopProps {
   /** Default: the document's `#root`. */
   container?: HTMLElement;
 }
 
+/** A mounted workshop, for feeding it what the vite plugin pushes after an edit. */
 export interface MountedWorkshop {
   /** Swaps in a re-indexed story list, as the vite plugin's `forge:index` event carries. */
   setIndex(index: readonly IndexEntry[]): void;
@@ -21,6 +23,7 @@ export interface MountedWorkshop {
   unmount(): void;
 }
 
+/** Renders a `Workshop` into its own React root. Throws when no container is given and the page has no `#root`. */
 export function mountWorkshop({ container, ...props }: MountWorkshopOptions): MountedWorkshop {
   const target = container ?? document.getElementById('root');
   if (!target) throw new Error('mountWorkshop: no container given and no #root element');

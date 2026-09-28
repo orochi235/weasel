@@ -160,6 +160,7 @@ export interface SvgKitTree<TId extends string = string> {
   get(id: TId): SvgKitTreeNode | undefined;
 }
 
+/** Options for {@link svgNodesFromKit}. */
 export interface SvgNodesFromKitOptions<TId extends string = string> {
   /** Walk these ids, in this order, instead of the tree's roots. */
   roots?: readonly TId[];

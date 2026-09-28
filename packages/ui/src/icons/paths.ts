@@ -3,6 +3,7 @@
 
 import { ACTION_GLYPHS } from '@weasel-js/core';
 
+/** The SVG body of every glyph, by name — what `<Icon name>` draws. */
 export const ICON_PATHS = {
 
   // View and lifecycle

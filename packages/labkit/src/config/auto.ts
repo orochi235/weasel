@@ -10,6 +10,7 @@ export const auto: unique symbol = Symbol('weasel.auto');
 /** The type of the `auto` sentinel, for widening a value parameter. */
 export type Auto = typeof auto;
 
+/** Whether `value` is the `auto` sentinel. */
 export function isAuto(value: unknown): value is Auto {
   return value === auto;
 }

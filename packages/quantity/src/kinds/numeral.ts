@@ -11,6 +11,7 @@ export type RomanDisplay = {
   lower?: boolean;
 };
 
+/** A {@link RomanDisplay}. */
 export function roman(options: Omit<RomanDisplay, 'kind'> = {}): RomanDisplay {
   return { kind: 'roman', ...options };
 }
@@ -50,6 +51,7 @@ export function fromRoman(text: string): number {
   return i === t.length && toRoman(total) === t ? total : Number.NaN;
 }
 
+/** The built-in `roman` kind, to spread into a `registerDisplayKind` replacement. */
 export const romanKind: DisplayKind<RomanDisplay> = {
   kind: 'roman',
   format: (value, d, ctx) => {
@@ -70,12 +72,14 @@ export type OrdinalDisplay = {
   kind: 'ordinal';
 };
 
+/** An {@link OrdinalDisplay}. */
 export function ordinal(): OrdinalDisplay {
   return { kind: 'ordinal' };
 }
 
 const SUFFIXES: Record<string, string> = { one: 'st', two: 'nd', few: 'rd', other: 'th' };
 
+/** The built-in `ordinal` kind, to spread into a `registerDisplayKind` replacement. */
 export const ordinalKind: DisplayKind<OrdinalDisplay> = {
   kind: 'ordinal',
   format: (value, _d, ctx) => {

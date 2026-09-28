@@ -5,6 +5,7 @@ import type { ViewTransform } from '../instrument/types';
  *  other. Re-exported under its own name so a consumer can say which it means. */
 export type ViewTransform2D = ViewTransform;
 
+/** Zoom 1, no pan. */
 export const DEFAULT_VIEW: ViewTransform2D = { zoom: 1, pan: { x: 0, y: 0 } };
 
 /** A trial's view is opaque to labkit, so anything that needs the 2D shape — the

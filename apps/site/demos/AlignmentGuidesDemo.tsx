@@ -46,9 +46,6 @@ export function AlignmentGuidesDemo() {
   // React re-render per pointer-move.
   const activeRef = useRef<readonly Guide[]>([]);
 
-  // Keyed on `selection.get`: the selection object is new each render, and
-  // rebuilt tools would loop through onToolsCreated -> setTools.
-  const getSelection = selection.get;
   const { selectTool, toolOptions } = useMemo(() => {
     const setActiveGuides = (g: readonly Guide[]) => { activeRef.current = g; };
     // Candidates come from every node not in `exclude`, plus the page.
@@ -59,7 +56,7 @@ export function AlignmentGuidesDemo() {
     return {
       selectTool: { move: { behaviors: [alignMoveBehavior<Pose>({
         tolerance: 6,
-        getCandidates: () => candidates(new Set(getSelection())),
+        getCandidates: () => candidates(new Set(selection.get())),
         setActiveGuides,
       })] } },
       // The rect being drawn is not in the scene yet, so every node counts.
@@ -69,7 +66,7 @@ export function AlignmentGuidesDemo() {
         setActiveGuides,
       })] } },
     };
-  }, [scene, getSelection]);
+  }, [scene, selection]);
 
   const guidesLayer = useMemo(
     () => createGuidesLayer({ getGuides: () => activeRef.current, color: '#e0397f' }),

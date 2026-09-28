@@ -13,7 +13,7 @@
 
 .previewLabel {
   margin: 0;
-  font-size: 12px;
+  font-size: calc(var(--wzl-font-size-sm) + 1px);
   font-weight: 600;
   color: var(--wzl-fg-muted);
 }
@@ -101,7 +101,7 @@
 .railPinned {
   font-variant-numeric: tabular-nums;
   color: var(--wzl-fg-muted);
-  font-size: 12px;
+  font-size: calc(var(--wzl-font-size-sm) + 1px);
 }
 
 .empty {
@@ -115,7 +115,7 @@
 .table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 12px;
+  font-size: calc(var(--wzl-font-size-sm) + 1px);
 }
 
 .table th,
@@ -131,7 +131,6 @@
   outline: 1px solid var(--wzl-border-strong);
 }
 
-/* `.lk-shell-body` is a block container, so the workbench takes its height rather than flexing. */
 .workbench {
   display: grid;
   grid-template-columns: 11rem minmax(0, 1fr) minmax(18rem, 30rem);
@@ -183,7 +182,7 @@
 .overridden {
   font-variant-numeric: tabular-nums;
   color: var(--wzl-fg-muted);
-  font-size: 12px;
+  font-size: calc(var(--wzl-font-size-sm) + 1px);
 }
 
 .dirtyDot {
@@ -258,7 +257,7 @@
 
 .rampTitle {
   margin: 0;
-  font-size: 14px;
+  font-size: calc(var(--wzl-font-size-md) + 1px);
 }
 
 .rampActions {
@@ -269,13 +268,13 @@
 
 .metric {
   color: var(--wzl-fg-muted);
-  font-size: 12px;
+  font-size: calc(var(--wzl-font-size-sm) + 1px);
   font-variant-numeric: tabular-nums;
 }
 
 .strip {
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
 }
 
 .strip th {
@@ -311,12 +310,12 @@
 }
 
 .hex {
-  font-size: 10px;
+  font-size: var(--wzl-font-size-xs);
 }
 
 .paramNote {
   margin: 0;
-  font-size: 12px;
+  font-size: calc(var(--wzl-font-size-sm) + 1px);
   color: var(--wzl-fg-muted);
 }
 
@@ -395,5 +394,5 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 12px;
+  font-size: calc(var(--wzl-font-size-sm) + 1px);
 }

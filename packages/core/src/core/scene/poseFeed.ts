@@ -8,6 +8,8 @@ export interface FeedNode<TData, TLayer extends string, TPose> {
   pose: TPose;
 }
 
+/** What changed since the last `read()`. A node whose effective pose, data or
+ *  layer reference moved is `changed`; `reset` means every node is in `added`. */
 export interface FeedDelta<TData, TLayer extends string, TPose> {
   added: readonly FeedNode<TData, TLayer, TPose>[];
   removed: readonly NodeId[];
@@ -16,6 +18,8 @@ export interface FeedDelta<TData, TLayer extends string, TPose> {
   reset: boolean;
 }
 
+/** A pull-based change feed over a scene. `subscribe` says something moved;
+ *  `read` says what, relative to the previous read. */
 export interface PoseFeed<TData, TLayer extends string, TPose> {
   subscribe(fn: () => void): () => void;
   read(): FeedDelta<TData, TLayer, TPose>;
@@ -31,6 +35,8 @@ interface Snapshot<TData, TLayer extends string, TPose> {
   layer: TLayer;
 }
 
+/** A {@link PoseFeed} over `scene`, reporting effective poses (committed pose
+ *  under any override). The first `read()` is a reset listing every node. */
 export function createPoseFeed<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
 ): PoseFeed<TData, TLayer, TPose> {

@@ -30,6 +30,8 @@ import {
   type LayoutResult,
 } from './layout';
 
+/** Options for {@link force} and {@link forceRelaxation}. `direction` is
+ *  ignored. */
 export interface ForceOptions extends LayoutOptions {
   /** Ticks to run. Default 300 — one full cooling schedule. */
   iterations?: number;
@@ -176,6 +178,9 @@ export interface ForceRelaxation {
   placed(): Map<string, { x: number; y: number }>;
 }
 
+/** Wind up a relaxation of `graph` without ticking it: bodies seeded from
+ *  where the nodes are, pins held fixed. Tick `sim` yourself and read the
+ *  top-lefts from `placed()`. */
 export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRelaxation {
   const {
     linkDistance = DEFAULTS.linkDistance,
@@ -240,6 +245,9 @@ export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRel
   };
 }
 
+/** The force-directed layout. Unlike the others it is not idempotent: a
+ *  re-run keeps relaxing, so pins and `tolerance` are what hold a settled
+ *  diagram still. */
 export const force = (graph: Graph, opts: ForceOptions = {}): LayoutResult => {
   if (graph.nodes.length === 0) return new Map();
   const relaxation = forceRelaxation(graph, opts);

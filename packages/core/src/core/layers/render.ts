@@ -115,6 +115,8 @@ export function subscribeToSources(
   };
 }
 
+/** One layer of a canvas: `draw` turns `data` and the view into draw commands;
+ *  the other fields control caching, visibility, coordinate space and hit-testing. */
 export interface RenderLayer<TData> {
   /** Unique identifier used in visibility maps and ordering arrays. When a
    *  cache is in use, an id must identify the same logical layer across

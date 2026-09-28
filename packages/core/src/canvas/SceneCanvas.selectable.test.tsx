@@ -84,6 +84,7 @@ describe('selectable={false}', () => {
     expect(scene.getSelection()).toEqual([B]);
     // …and the canvas reads it.
     expect(seen.dep!.get()).toEqual([B]);
+    expect(seen.dep!.current).toEqual([B]);
   });
 
   it('keeps the adapter identity stable across renders', () => {

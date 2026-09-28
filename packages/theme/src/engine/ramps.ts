@@ -1,6 +1,7 @@
 import { DEFAULT_CONSTRAINTS, generate, type Anchor, type Constraints } from './color/generate.ts';
 import { toHex, toLch } from './color/oklch.ts';
 
+/** A lightness ramp with every `by` and seed already settled. See {@link lightnessRamp}. */
 export interface LightnessParams {
   readonly steps: readonly string[];
   readonly lightness: readonly [number, number];
@@ -72,6 +73,10 @@ export function lightnessRamp(p: LightnessParams): Record<string, string> {
   return out;
 }
 
+/**
+ * Step name → hex from the palette generator, one swatch per step in step order. `feasible` is false when no palette
+ * met the gates; the colors are then its best unconstrained attempt.
+ */
 export function categoricalRamp(
   steps: readonly string[],
   gates: Partial<Constraints>,

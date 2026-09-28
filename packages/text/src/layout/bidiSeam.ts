@@ -14,6 +14,7 @@
 /** Opaque to this package — whatever the engine needs to carry between calls. */
 export type BidiAnalysis = unknown;
 
+/** One line's visual order, as {@link BidiResolver.reorder} returns it. */
 export interface BidiReordering {
   /**
    * Positions in the analysed sequence, in visual order, left to right.
@@ -24,6 +25,11 @@ export interface BidiReordering {
   levels: ArrayLike<number>;
 }
 
+/**
+ * A bidi engine, passed to `layoutRuns` as `opts.bidi`. `@weasel-js/bidi`'s
+ * `bidi` object satisfies it. `reorder`'s `start` / `end` index the code points
+ * `analyze` was given.
+ */
 export interface BidiResolver {
   analyze(codePoints: readonly number[], direction?: 'ltr' | 'rtl' | 'auto'): BidiAnalysis;
   reorder(analysis: BidiAnalysis, start: number, end: number): BidiReordering;
