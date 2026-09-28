@@ -21,6 +21,7 @@ import { spinKey } from '../spin';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
 import { ToggleBar } from '../ToggleBar';
+import sharedCheckbox from '../checkbox.module.css';
 import shared from '../range.module.css';
 import {
   type PropertyMetricProps,
@@ -454,7 +455,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
         ref={box}
         id={p.id}
         type="checkbox"
-        className={p.className ? `${s.checkbox} ${p.className}` : s.checkbox}
+        className={p.className ? `${sharedCheckbox.checkbox} ${p.className}` : sharedCheckbox.checkbox}
         aria-label={p.name}
         checked={on}
         onChange={(e) => p.onChange(e.target.checked)}

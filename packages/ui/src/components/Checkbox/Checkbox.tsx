@@ -1,55 +1,93 @@
-import { forwardRef, type ReactNode, type Ref } from 'react';
 import {
-  Checkbox as RACCheckbox,
-  type CheckboxProps as RACCheckboxProps,
-} from 'react-aria-components';
+  forwardRef,
+  useEffect,
+  useRef,
+  useState,
+  type FocusEventHandler,
+  type ReactNode,
+  type Ref,
+} from 'react';
+import shared from '../checkbox.module.css';
 import s from './Checkbox.module.css';
 
-/**
- * Props for {@link Checkbox}, on top of React Aria's `Checkbox` props. The
- * label is passed as children.
- */
-export type CheckboxProps = Omit<RACCheckboxProps, 'children' | 'className'> & {
+/** Props for {@link Checkbox}. The label is passed as children. */
+export type CheckboxProps = {
   children?: ReactNode;
   className?: string;
+  /** Controlled selection. */
+  isSelected?: boolean;
+  /** Initial selection when uncontrolled. */
+  defaultSelected?: boolean;
+  onChange?: (isSelected: boolean) => void;
+  /** Draws the mixed mark; the input's `indeterminate` is set to match. */
+  isIndeterminate?: boolean;
+  isDisabled?: boolean;
+  /** Focusable and announced, but a click does not change it. */
+  isReadOnly?: boolean;
+  isInvalid?: boolean;
+  isRequired?: boolean;
+  name?: string;
+  value?: string;
+  id?: string;
+  autoFocus?: boolean;
+  onFocus?: FocusEventHandler<HTMLInputElement>;
+  onBlur?: FocusEventHandler<HTMLInputElement>;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+  'aria-describedby'?: string;
 };
 
 /**
- * Single checkbox wrapping React Aria's Checkbox. Supports indeterminate
- * via `isIndeterminate`. The label is supplied as children.
+ * Single checkbox: a native `<input type="checkbox">` inside a `<label>`, the
+ * box drawn by the shared checkbox skin. Supports indeterminate via
+ * `isIndeterminate`. The label is supplied as children.
  */
 export const Checkbox = forwardRef(function Checkbox(
   props: CheckboxProps,
   ref: Ref<HTMLLabelElement>,
 ) {
-  const { children, className, ...rest } = props;
+  const {
+    children,
+    className,
+    isSelected,
+    defaultSelected = false,
+    onChange,
+    isIndeterminate = false,
+    isDisabled,
+    isReadOnly,
+    isInvalid,
+    isRequired,
+    ...rest
+  } = props;
+  const [uncontrolled, setUncontrolled] = useState(defaultSelected);
+  const checked = isSelected ?? uncontrolled;
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (input.current) input.current.indeterminate = isIndeterminate;
+  });
   return (
-    <RACCheckbox
-      {...rest}
+    <label
       ref={ref}
       className={[s.checkbox, className].filter(Boolean).join(' ')}
+      data-disabled={isDisabled || undefined}
     >
-      {({ isIndeterminate }) => (
-        <>
-          <span className={s.box}>
-            <svg className={s.checkmark} viewBox="0 0 14 14" aria-hidden="true">
-              {isIndeterminate ? (
-                <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              ) : (
-                <polyline
-                  points="3,7.5 6,10.5 11,4.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              )}
-            </svg>
-          </span>
-          {children !== undefined && <span className={s.label}>{children}</span>}
-        </>
-      )}
-    </RACCheckbox>
+      <input
+        {...rest}
+        ref={input}
+        type="checkbox"
+        className={shared.checkbox}
+        checked={checked}
+        disabled={isDisabled}
+        required={isRequired}
+        aria-invalid={isInvalid || undefined}
+        aria-readonly={isReadOnly || undefined}
+        onChange={(e) => {
+          if (isReadOnly) return;
+          if (isSelected === undefined) setUncontrolled(e.target.checked);
+          onChange?.(e.target.checked);
+        }}
+      />
+      {children !== undefined && <span className={s.label}>{children}</span>}
+    </label>
   );
 });
