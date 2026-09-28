@@ -16,6 +16,7 @@
 
 .readout {
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
   white-space: pre;

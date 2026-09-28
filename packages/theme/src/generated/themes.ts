@@ -2177,7 +2177,7 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       "font-numeric": {
         "value": "'Oswald Tabular', var(--wzl-font-ui)",
         "type": "fontFamily",
-        "description": "The UI face with equal-width digits, for numbers read down a column or updated in place. Oswald Tabular carries only 0-9; every other character falls through to the UI face."
+        "description": "The UI face with equal-width digits, for numbers read down a column or updated in place. Oswald Tabular carries only 0-9 and the figure space (U+2007); every other character falls through to the UI face."
       },
       "font-display": {
         "value": [
@@ -3256,7 +3256,7 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       "font-numeric": {
         "type": "fontFamily",
         "value": "'Oswald Tabular', var(--wzl-font-ui)",
-        "description": "The UI face with equal-width digits, for numbers read down a column or updated in place. Oswald Tabular carries only 0-9; every other character falls through to the UI face."
+        "description": "The UI face with equal-width digits, for numbers read down a column or updated in place. Oswald Tabular carries only 0-9 and the figure space (U+2007); every other character falls through to the UI face."
       },
       "font-display": {
         "type": "fontFamily",

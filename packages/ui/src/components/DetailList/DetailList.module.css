@@ -58,8 +58,7 @@
 .row[data-values='figures'] .value {
   justify-content: flex-end;
   text-align: end;
-  /* The display face (Oswald) has no tabular figures, so tabular-nums alone aligns nothing. */
-  font-family: var(--wzl-font-mono);
+  font-family: var(--wzl-font-numeric);
   font-variant-numeric: tabular-nums;
   /* On the cell, not the track, so ch measures the figures' own face. */
   min-width: var(--wzl-detail-figure-min-width, 8ch);

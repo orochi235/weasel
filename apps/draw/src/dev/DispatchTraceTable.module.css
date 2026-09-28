@@ -4,6 +4,7 @@
   width: 7ch;
   min-width: 7ch;
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
   text-align: end;
   white-space: nowrap;
 }
@@ -18,6 +19,7 @@ tr.mode { color: var(--wzl-fg-muted); cursor: default; }
 
 .count {
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
   text-align: end;
 }
 

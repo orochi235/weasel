@@ -171,6 +171,7 @@
 .rule .number {
   flex: 0 1 5ch;
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
   text-align: end;
 }
 
@@ -207,6 +208,7 @@
 
 .stepEdit .number {
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
   text-align: end;
 }
 
@@ -236,10 +238,12 @@
 .tight .number {
   flex: 0 1 16rem;
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
 }
 
 .tight .unit {
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
 }
 
 .tight .scale {

@@ -1,5 +1,6 @@
 """Build Oswald Tabular: Oswald's ten digits, each centered in one shared advance
-at every weight, renamed so it can sit in front of Oswald in a font stack.
+at every weight, plus a figure space that wide, renamed so it can sit in front of
+Oswald in a font stack.
 
     python packages/theme/scripts/oswald-tabular.py
 
@@ -71,6 +72,29 @@ def tabulate(font: TTFont) -> None:
                 (x + shift, y) for x, y in coords[: n - 4]
             ] + [coords[n - 4], (left + want, coords[n - 3][1])] + coords[n - 2 :]
             t.roundDeltas()
+
+    add_figure_space(font, target, regions)
+
+
+def add_figure_space(font: TTFont, target: int, regions: dict[tuple, int]) -> None:
+    """U+2007, a blank one digit wide at every weight. Oswald has none, so padding
+    a readout with it would otherwise take the width of whatever face supplies it."""
+    from fontTools.ttLib.tables._g_l_y_f import Glyph
+    from fontTools.ttLib.tables.TupleVariation import TupleVariation
+
+    name = "uni2007"
+    font.setGlyphOrder(font.getGlyphOrder() + [name])
+    font["glyf"].glyphs[name] = Glyph()
+    font["glyf"].glyphOrder = font.getGlyphOrder()
+    font["hmtx"][name] = (target, 0)
+    for table in font["cmap"].tables:
+        if table.isUnicode():
+            table.cmap[0x2007] = name
+    font["gvar"].variations[name] = [
+        TupleVariation(dict(key), [(0, 0), (delta, 0), (0, 0), (0, 0)])
+        for key, delta in regions.items()
+    ]
+    font["maxp"].numGlyphs = len(font.getGlyphOrder())
 
 
 def rename(font: TTFont) -> None:

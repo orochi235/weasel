@@ -44,6 +44,7 @@
   color: var(--wzl-fg-muted);
   margin-left: auto;
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
 }
 
 .handledIcon { color: var(--wzl-success); }

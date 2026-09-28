@@ -194,6 +194,7 @@
   margin-inline-start: auto;
   text-align: end;
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
   color: var(--wzl-fg-muted);
 }
 .rate { display: inline-flex; align-items: center; gap: var(--wzl-space-3); color: var(--wzl-fg-muted); }
@@ -204,6 +205,7 @@
 .rateReadout {
   min-width: 3ch;
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
   color: var(--wzl-fg);
 }
 
@@ -255,7 +257,7 @@
 .segment:focus-visible { outline: 2px solid var(--wzl-focus-ring); outline-offset: -2px; }
 
 .easingPicker { display: inline-flex; align-items: center; gap: var(--wzl-space-3); }
-.easingLabel { font-variant-numeric: tabular-nums; color: var(--wzl-fg-muted); }
+.easingLabel { font-family: var(--wzl-font-numeric); font-variant-numeric: tabular-nums; color: var(--wzl-fg-muted); }
 
 .easingPreview {
   width: 32px;
