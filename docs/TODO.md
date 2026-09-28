@@ -1003,12 +1003,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) `mountFrame.test.ts` depends on the order its cases run in.** Alone it passes
-  16/16; under `--sequence.shuffle` one or two cases fail per run, a different set each
-  time ("loads a native module with the native loader", "takes only the first port…",
-  "ignores a port handed over from another origin"), some by timing out at 1 s. Some
-  state one case leaves behind is what the next one needs.
-
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show
   no Marks section and the tool rail holds only Info. The removed wiring — the
