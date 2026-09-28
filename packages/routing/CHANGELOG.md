@@ -1,5 +1,142 @@
 # @weasel-js/routing
 
+## 1.7.0
+
+### Patch Changes
+
+- 6819653: The route-conflict check now compares actions gated by different `eligible` rules, where it used to assume they never hold together. Two such actions on one route conflict when some mode lets both rules hold and the rules don't exclude each other. The modes are the kit's `DEFAULT_MODES` unless `findScopedConflicts` / `reportRouteConflicts` is given a `modes` list. `ruleCanHoldIn(rule, mode)` answers the per-mode question, and `activeModeOf(definition)` in `@weasel-js/modes` builds the `ActiveMode` it reads — the same shape `getActiveModeFor` returns, which now uses it.
+- af5281e: The route-conflict check now reads a binding's `opts.views`. A view-scoped binding and an unscoped one on the same route never tie — outside its views the scoped one is not live, and inside them it outranks the unscoped one — so the check no longer warns about them; two bindings scoped to overlapping views still conflict. This silences the warning `createMinimapContribution`'s drag raised against `viewport.dragPan`. `RegistryEntry` gains an optional `views`.
+- 240138b: "Tool" now names only a contribution that can hold focus — one a user picks from a palette or holds on a key — and `isTool(entry)` is the test. What holds every kind of entry takes `Contribution` and says "entry":
+  
+  - `useGestureDispatcher`'s and `DispatcherContext`'s `toolsById` is `entriesById`, a map of `Contribution`.
+  - `ownerToolId` is `ownerId` on `ScopedBinding`, `MatchResult` and a dispatch record's `RecordCandidate`.
+  - `RegistryEntry.toolId` is `ownerId`, and `Conflict.toolIds` is `ownerIds`.
+  - `<SceneCanvas ambient>` takes `SurfaceContribution[]`, and `useTools`'s `ambient` (and `ToolsApi.ambient`) takes `Contribution[]`, so a contribution no longer needs casting to `AnyTool`.
+  - `findConflicts`, `findScopedConflicts` and `buildRouteRegistry` take `Contribution`s.
+  - `defineViewportTool` and `ViewportToolDef` are removed; they were `defineTool` and `ToolDef` under another name.
+  - `FallthroughDiagram`'s "Tool" column is "Owner".
+  
+  These are breaking renames for any consumer reading those fields or calling the removed function.
+- 32bb3be: New `DispatchRecord`: for one input, every binding that matched, what the claim and eligibility filters dropped, the ranked survivors with the step that placed each one below the last (`view`, `tier`, `specificity`, `context`, `order`), and what the walk did with each. `Dispatcher.explain` returns one without invoking anything. In dev builds the trace buffer on `window.__weaselDispatchLog__` now holds these records. They replace `DispatchLogEntry`, which is removed, so a reader of that buffer must move to the new shape. `handleInput`, `resolveAll` and `resolveOnly` now share one walk, so a prediction ranks candidates exactly as a dispatch does. `matchSortedWithBarred` reports the bindings an exclusive claim kept out. The types are also exported from `@weasel-js/core/routing`.
+  
+  New `FallthroughDiagram` in `@weasel-js/ui` draws one record: the input, the matched set, one band per filter, and the ranked list with its walk, with the winner marked.
+- 9647b3c: `routeToSpec` turns a parsed route into the `GestureSpec` it describes, so a route string can drive `matchSpec` directly. It throws on a route no spec can express: `keyUp`, a key or finger-count wildcard, or a target that is not a target form.
+  
+  `specificity` now lives in `@weasel-js/gestures` beside the matcher. `@weasel-js/routing` and `@weasel-js/core` still re-export it.
+  
+  `describeRoute` reads two or more required modifiers as a held chord ("the user holds Mod and Alt and drags anywhere") rather than "the user Mod and Alt-drags anywhere". It also names the modifiers on multi-finger taps, drops and pastes, which it used to leave out; puts the target on wheel routes; and says "long-presses" for `longPress`.
+- 0cecdcf: A tool's `hotkey` can be any key. Besides `'space'` and the modifier names, a
+  tool may declare an ordinary key such as `hotkey: 'o'` and it engages while
+  that key is held, matched case-insensitively as every key spec is and never
+  while typing in a text field. A held key now releases even when its keyup
+  reports it differently from its keydown — Shift pressed mid-hold makes an `o`
+  press come up as `O`, which used to leave the tool stuck on.
+  
+  Held-key engagement also works in a `<SceneCanvas>` with no `ActionsProvider`
+  of the consumer's own. Before, nothing registered `tool.offhand` there and
+  Space-for-hand did nothing. The registration is exported as
+  `useOffhandAction` for hosts that assemble their tools above their provider.
+  
+  `Tool.onActivate` now actually fires — it was declared and forwarded by
+  `defineTool` but nothing called it. A tool is live while it holds the active
+  slot or is held by its `hotkey`: `onActivate` fires as it becomes live in
+  either, and `onDeactivate` as it stops being live in both, or when the canvas
+  unmounts. `onDeactivate` used to fire only when the active tool changed, never
+  when a held tool was released. Both receive `ToolLifecycleCtx` — just
+  `{ scratch }`, which is all `onDeactivate` was ever given; the parameter was
+  typed as a full `ToolCtx`, so a callback annotated that way no longer
+  typechecks and should close over what else it reads.
+  
+  `ToolPresentation` takes `hide: true` to keep a tool off `ToolPalette` — for a
+  tool that is only ever held. It stays registered and selectable by id.
+- 722b267: Every canvas now routes its own input. `<SceneCanvas>`, labkit's `<CanvasStack>` and `<Stage>` each mount an `<InputScope>` — an actions registry, dep registry and active tool of their own — under whatever registries are in scope, so two canvases under one provider no longer hand the newest one everyone's gestures. Registries above a canvas read through to the canvas last used: `trigger`, `begin`, `list` and `useActiveToolContext` there answer from the scope that last took a pointerdown or wheel, and keystrokes dispatch only in that scope.
+  
+  When bindings tie on scope and specificity, an action gated by an `eligible` rule that holds now outranks one with no rule: in path edit Escape exits the edit instead of resetting the tool, and a bare drag no tool binds marquees where selection is on offer and pans where it is not. The route-conflict check follows the same rule. Escape with nothing selected now returns to the default tool, as `tool.resetToDefault` documents; the standard `escape` action used to spend that press clearing an empty selection.
+  
+  Canvases that should share input join one yoke: `const yoke = useYoke()`, then `yoke={yoke}` on each canvas and `<Yoke value={yoke}>` around a toolbar. A canvas with no yoke keeps its own tool.
+  
+  Breaking: `ActionsScope`, `ActionsRegistry.setDepRegistry` and labkit's `CameraScopeContext` are removed; `ActionsRegistry` gains `activate()` and `isActive()`, which a hand-built registry must now supply. A registration made inside one canvas is no longer visible from a sibling canvas — a registry above reaches it only through the active scope. A nested `<WeaselProvider>` now hands its children the outer registry itself.
+- 52078c5: A keystroke is dispatched once. Every gesture dispatcher listens for keys on
+  `window`, and one now skips a keydown that another dispatcher — or anything
+  else — has already claimed with `preventDefault`; before, two dispatchers
+  binding the same key both ran it. `keyboard: 'first'` makes a dispatcher listen
+  in the capture phase, ahead of the rest whatever the mount order. The lab
+  header's zoom uses it, so Mod+= over a trial with a camera zooms the trial and
+  not also a story's own canvas; over a trial without one, the key passes to the
+  story.
+- fd178be: A mode's declared shortcuts now reach the dispatcher. `modeShortcuts(registry, handlers)` returns an always-on contribution with one action per `entry` / `exit` / `discard` / `commit` / `cancel` chord, gated on the mode it acts on and riding the hotkey tier, so leaving a mode outranks Escape clearing the selection while a gesture in flight still cancels first. Pass it in `<SceneCanvas ambient>`; a role with no handler binds nothing. `ModeDefinition` gains `discard` (the soft presets declare Meta+Escape), and `ModeRegistry` gains `list()` — a hand-written registry has to add it.
+  
+  `useTextEdit` / `useSceneTextEdit` take `escape: 'commit'` to keep the text on Escape instead of dropping it.
+- ca2f45f: Every click-versus-drag decision in the kit now reads one threshold, `DRAG_THRESHOLD_PX` (4 CSS pixels), through `pastDragThreshold`. Both now live in `@weasel-js/gestures`; `@weasel-js/routing` and `@weasel-js/core` re-export them as before. `useDragHandle` starts a drag at 4px instead of past 5px, labkit's `FloatingPanel` and the hud window's content click at 4px instead of 3px, and `startThresholdDrag`, `useReorderDragList` and `Select` default to the constant rather than their own literal 4.
+  
+  The move action's `dragThresholdPx` option works again: set as `selectTool.move.dragThresholdPx` on `<SceneCanvas>`, it holds the selection in place until the pointer has travelled that far on screen. It has been ignored since the `useMove` hook was removed. It cannot lower the threshold below the dispatcher's.
+- 242e9f7: `routeGestureForSpecKind` and its inverse `specKindForRouteGesture` now live in `@weasel-js/gestures`, read from one table; `routeToSpec` and routing's route registry both use it. `@weasel-js/routing` and `@weasel-js/core/routing` re-export both.
+  
+  Every routing type with an overlay parameter — `Tool`, `ToolDef`, `ViewportToolDef`, `Contribution`, `ContributionChrome`, `useTools` and `useContributions` with their option and result types — now defaults it to the kernel's overlay type (`KernelOverlay`), as `defineTool` already did. Under core that is `RenderLayer`, so a routing `Tool<S>` fits `<SceneCanvas tools>` without naming the overlay. Functions that read tools without reading overlays (`buildRouteRegistry`, `findConflicts`, `reportRouteConflicts`, the dispatcher's `toolsById`) take any overlay explicitly.
+- aad77d3: The route-conflict check no longer reports two bindings whose actions' `eligible` rules can never hold together, so each mode's own Escape exit from `modeShortcuts` stops warning. The new `rulesExclusive(a, b)` is the test it uses: `true` only when no context passes both rules.
+  
+  `createDepRegistry()` returns the stock dep registry `<DepRegistryProvider>` mounts, from routing's React-free entry and from core, for a dispatcher driven without a provider tree.
+  
+  `DRAG_THRESHOLD_PX` and `pastDragThreshold(from, to)` expose the distance a press travels before `useGestureDispatcher` treats it as a drag, and the dispatcher reads that same definition.
+  
+  There is one `defineTool` now. Routing's defaulted its overlay type to `unknown`, so its tools failed core's `tools` prop; routing now defaults it to `KernelOverlay`, which a kernel sets by merging into the new `OverlaySchema` interface, and core merges `RenderLayer` there and re-exports routing's `defineTool` and `defineViewportTool` instead of wrapping them.
+- 94cf4cd: **Breaking.** A bare `<SceneCanvas>` now only renders. It keeps a selection that
+  no input sets and runs the gesture dispatcher for bindings you add, but it no
+  longer picks, moves, transforms or edits, draws no selection chrome, pans and
+  zooms nothing, and binds no keys. `features={['draw']}` restores everything it
+  used to do, and adds the hand tool (H, or hold Space), which it used to register
+  only when `viewport` was passed.
+  
+  `features` takes presets that compose in any combination: `view` (wheel pan and
+  zoom, pinch, zoom keys, the hand tool — passing `viewport` implies it), `pick`
+  (the select tool and the selection outline), `move` (drag to move, Alt-drag to
+  clone), `transform` (resize and rotation handles), `edit` (undo/redo, delete,
+  duplicate, group, nudge, select-all, Escape, clipboard, fill and stroke, with
+  their keys), `arrange` (align, distribute, reorder, flip), `paths` (pathfinder
+  and anchor editing), `ingest` (dropped and pasted content), and `draw` for all
+  of them. `FEATURE_ACTION_IDS` lists which kit action each one registers. A tool
+  brings the actions it binds, so `defaultTools={['rect']}` registers `insert`
+  under any preset; `defaultTools` now defaults to none.
+  
+  `toolBundle` and `BUNDLE_TOOLS` are removed. `toolBundle="minimal"` is
+  `features={['draw']}`; `"standard"` adds `defaultTools={['rect', 'ellipse',
+  'line']}`, and `"exhaustive"` adds `defaultTools={BUILTIN_TOOL_IDS}`.
+  
+  The select tool only chooses now: pick, marquee, clear. Moving, cloning,
+  resizing and rotating the selection are always-live bindings of their own,
+  `selectionMoveContribution` and `selectionTransformContribution`, so they work
+  under any tool that leaves the drag unclaimed. `useSelectTool` no longer takes
+  `move` or `reparentOnDrop`; pass them to `selectionMoveContribution`, or give
+  `<SceneCanvas>` a `selectTool.move`. A host mounting `useSelectTool` on its own
+  dispatcher has to add those entries itself to keep drag-to-move.
+  
+  `rotate` and `clone` no longer carry a bare-drag default binding, which made
+  any drag no tool claimed rotate a non-empty selection.
+  
+  A canvas can run with no active tool: `useTools` takes `active` as optional or
+  `null`, and `ToolsApi.active` and `ActiveToolContext.active` can be `null`.
+  `ActiveToolContextProvider` starts empty rather than at `'select'`, and the
+  first `useTools` call seeds it unless the provider was given `initialActive`.
+- 38f524c: `<SceneCanvas>` takes the app's mode registry as `modes` in place of `getActiveMode`. This is a breaking change: replace `getActiveMode={getActiveModeFor(registry)}` with `modes={registry}`. The canvas now repaints when the mode switches, and the dev-time route-conflict check reads the app's own modes instead of the kit's `DEFAULT_MODES`, so a clash that only an app-defined mode allows is reported. `useTools` and `useContributions` take the same `modes` option for a consumer assembling its own tools.
+- dbc3c3e: A tool redefined under an id that is already registered now replaces the old definition. `useTools` used to rebuild its `ToolsApi` only when the set of tool ids changed, so a new tool object under the same id — a `cursor` whose size changed, say, passed to `<SceneCanvas tools>` — kept the first definition, and the canvas went on showing the old cursor. The `ToolsApi` now changes whenever any tool in `registry` or `ambient` is a different object, and stays the same while every tool is the same object, even when the record holding them is rebuilt each render.
+  
+  Tools passed to `<SceneCanvas tools>` should therefore keep their identity between renders, as the kit's own tool hooks do: a tool rebuilt every render now rebuilds the `ToolsApi` every render, which loops a canvas whose `onToolsCreated` sets state.
+- f8f6041: A binding with no `phase` now prints as `[*:*]` rather than `[*]` in `routesForSpec`, conflict messages and the dispatch record. `[*]` is shorthand for `[&:*]`, which an ambient binding never matches and which ranks higher on phase, so a route copied out of the inspector used to describe a different binding from the one it was printed from. `routeToSpec` now reads `[*:*]` as "no phase" and keeps `[*]` as the `&:*` atom it abbreviates; a route string that relied on `[*]` meaning "no phase" should say `[*:*]`.
+- Updated dependencies [6819653]
+- Updated dependencies [9647b3c]
+- Updated dependencies [7c3cc5d]
+- Updated dependencies [fd178be]
+- Updated dependencies [5201b8e]
+- Updated dependencies [ca2f45f]
+- Updated dependencies [242e9f7]
+- Updated dependencies [a028cc3]
+- Updated dependencies [38f524c]
+- Updated dependencies [f8f6041]
+  - @weasel-js/modes@1.7.0
+  - @weasel-js/gestures@1.7.0
+  - @weasel-js/history@1.7.0
+  - @weasel-js/cursor@1.7.0
+
 ## 1.6.1
 
 ### Patch Changes

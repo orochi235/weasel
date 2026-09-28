@@ -1,5 +1,12 @@
 # @weasel-js/geom
 
+## 1.7.0
+
+### Patch Changes
+
+- ad0378f: geom gains nearest-point queries and de Casteljau splitting. `nearestOnLine`, `nearestOnQuadratic` and `nearestOnCubic` return the nearest point to a probe with its `t` and distance; `nearestOnPath` does the same over a whole command stream, closing edges included, and says which command's segment it landed on. `splitLineAt`, `splitQuadraticAt` and `splitCubicAt` split a segment at `t` into two that trace it exactly, and `quadraticEvalAt` joins `cubicEvalAt`. Core's `pathDistanceToPoint`, `splitCubicAtT` and the anchor editor's nearest-segment search now run on these, so curve distances in picking are exact rather than read off a 16-sample polyline.
+- da20f95: `forEachSegment` throws on a command code `PATH_COMMANDS` does not declare, instead of carrying on with the coord stream misaligned from that command onward. The visitor still sees the code first, so a caller's own error message wins.
+
 ## 1.6.1
 
 No changes in this release.

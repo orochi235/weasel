@@ -1,5 +1,26 @@
 # @weasel-js/modes
 
+## 1.7.0
+
+### Patch Changes
+
+- 6819653: The route-conflict check now compares actions gated by different `eligible` rules, where it used to assume they never hold together. Two such actions on one route conflict when some mode lets both rules hold and the rules don't exclude each other. The modes are the kit's `DEFAULT_MODES` unless `findScopedConflicts` / `reportRouteConflicts` is given a `modes` list. `ruleCanHoldIn(rule, mode)` answers the per-mode question, and `activeModeOf(definition)` in `@weasel-js/modes` builds the `ActiveMode` it reads — the same shape `getActiveModeFor` returns, which now uses it.
+- fd178be: A mode's declared shortcuts now reach the dispatcher. `modeShortcuts(registry, handlers)` returns an always-on contribution with one action per `entry` / `exit` / `discard` / `commit` / `cancel` chord, gated on the mode it acts on and riding the hotkey tier, so leaving a mode outranks Escape clearing the selection while a gesture in flight still cancels first. Pass it in `<SceneCanvas ambient>`; a role with no handler binds nothing. `ModeDefinition` gains `discard` (the soft presets declare Meta+Escape), and `ModeRegistry` gains `list()` — a hand-written registry has to add it.
+  
+  `useTextEdit` / `useSceneTextEdit` take `escape: 'commit'` to keep the text on Escape instead of dropping it.
+- 5201b8e: A mode switch now repaints the canvas with no consumer code.
+  
+  - `@weasel-js/modes`: `getActiveModeFor(registry)` returns the reader `<SceneCanvas getActiveMode>` takes — the active mode's id and its allowed capability tags, implicit ones included — so apps stop rebuilding it. `ScopingDim` and `ModeDecorations` gain `subscribe` and `getVersion`, both following the registry; `ScopingDim.invalidate()` tells subscribers the target set moved inside one mode.
+  - `@weasel-js/core`: `RenderLayer.subscribe` lets a layer name the outside state its `draw` reads, and `<Canvas>`/`<SceneCanvas>` take `redrawOn` for sources no layer declares, such as the `ScopingDim` an `alphaFor` consults. Either one repaints the canvas when it notifies. `gateLayer`, `createTiledLayer`, `createViewportLayer` and `createParallaxLayer` pass their sources' `subscribe` through, and `subscribeToSources` builds the same for a layer of your own that draws others. `workspaceTintLayer({ registry, page?, intensity? })` paints the active mode's `WorkspaceVisual` — the whole canvas, or only the workspace around a page — and `modeDecorationLayer(decorations)` draws a `ModeDecorations`; both subscribe for themselves. Core now depends on `@weasel-js/modes`.
+- a028cc3: New package `@weasel-js/registry`: `createReflectable()` is a keyed store a registry embeds to hand out a uniform read-only `Reflection` — `get`, `has`, `entries()`, `subscribe` and `getVersion`, shaped for `useSyncExternalStore`. Each entry reports the registrant's `source` and the registrants it displaced (`shadowed`), so overrides of one key show up as conflicts.
+  
+  The kit's module-level registries now expose one: `paintKindRegistry`, `markerRegistry`, `opFactoryRegistry`, `fontRegistry`, `fontOutlineRegistry` (which also notifies as a face's load state moves), and, from `@weasel-js/core/renderer`, `programSourceRegistry` and `textureRegistry`. `ModeRegistry` gains `reflection`. Built-in paint kinds and markers report `source: 'kit'`.
+  
+  Fixes paint-kind and marker overrides disposed out of order: with two overrides of one id, disposing the earlier and then the later used to restore the already-disposed earlier one instead of the built-in. Overrides now stack, and each disposer removes only its own entry.
+- 38f524c: `<SceneCanvas>` takes the app's mode registry as `modes` in place of `getActiveMode`. This is a breaking change: replace `getActiveMode={getActiveModeFor(registry)}` with `modes={registry}`. The canvas now repaints when the mode switches, and the dev-time route-conflict check reads the app's own modes instead of the kit's `DEFAULT_MODES`, so a clash that only an app-defined mode allows is reported. `useTools` and `useContributions` take the same `modes` option for a consumer assembling its own tools.
+- Updated dependencies [a028cc3]
+  - @weasel-js/registry@1.7.0
+
 ## 1.6.1
 
 No changes in this release.

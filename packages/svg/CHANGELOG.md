@@ -1,5 +1,79 @@
 # @weasel-js/svg
 
+## 1.7.0
+
+### Patch Changes
+
+- b4227b8: `GradientEditor` offers every registered gradient kind, mesh included, instead of a fixed linear / radial / conic list. A kind counts as a gradient when its registry entry carries the two new optional `PaintKindEntry` slots, `stopsOf` (the stop list a paint reads as) and `fromStops` (a paint built from one); `listGradientKinds()` returns those kinds, and `switchGradientKind(paint, kind)` converts between any two of them. Between linear, radial and conic it is `withGradientKind` and keeps the geometry; to a mesh, a stop list becomes one full-height patch per gap between stops, so a horizontal ramp survives unchanged, and a mesh reads back as the ramp across its patches' top edges. `meshFromStops` and `meshStops` are exported. A mesh value shows `MeshEditor`'s corner colors; a registered kind's own `Editor` wins, as it does in `PaintInput`. `PaintInput` now converts through `switchGradientKind` too, so switching a gradient to a mesh carries its colors instead of seeding a new mesh from one color.
+  
+  `GradientEditor`'s `value`, `onInput` and `onChange` are now typed `FillStyle` rather than `GradientFill`, since a mesh is not a `GradientFill`; a handler typed to take `GradientFill` needs widening.
+  
+  `GradientEditor` also takes `svg`, off by default, which limits the choices to what an SVG file carries natively: the linear and radial gradients, blended in sRGB. A value already outside that set keeps its own kind and space on offer. `@weasel-js/svg` exports the rule as `nativeSvgKind(kind)` and `nativeSvgSpace(space)`, the same predicates its serializer uses to decide when a paint needs a fallback color or a `wzl:interpolate` attribute.
+- b8f2007: A `MarkerEntry` can declare `reads`, the stroke fields its `path` reads besides `size`. The renderer then reuses a head across stroke objects whose listed fields are equal, so a painter that builds a new stroke every frame no longer rebuilds its heads every frame; a new paint recolors the cached geometry. Every built-in, and every marker `@weasel-js/svg` imports, declares `reads: []`.
+  
+  A marker's reach — what culling and a path node's grab band reserve for its head — is now measured per value of those fields, or per stroke object for an entry that does not declare them. Before, it was measured once per entry, so a custom head whose shape grows with a stroke field could be culled while still on screen.
+- 793987a: `TextStyle.script: 'super' | 'sub'` sets a whole text node as a superscript or subscript. It is the default every run inherits, the way `StyledRun.script` is for one run, and a run naming its own script replaces it.
+  
+  A run shrunk by a relative size (`script` or `fontScale`) now holds its line open at the size it inherited: `ResolvedRun.strutSize` carries that size, and layout measures the line's height and baseline from it. A superscript alone on a line used to collapse the line to the superscript's own size, which contradicted the rule that a shifted run rides its line rather than reflowing it.
+  
+  The edit overlay shows a node-level script, and now shows a node-level overline, which it had been dropping. The SVG writer puts a node-level script on `<text>` as `baseline-shift`, which the reader already carries onto every run.
+- 7950ba1: `svgNodesToKitDrafts` takes an `options.leaf` hook and hands `nextId` the node each id is for, so an app whose leaf data is shaped differently, or that keeps ids or metadata the document carries, can reuse the walk instead of copying it. `leaf(id, { pose, data }, source)` receives the kit data the default would have written — opacity folded in, gradients rebased — and returns the app's own, or `null` to leave the leaf out; a group left with nothing is dropped like an empty one. `SvgSceneDraft` is generic over the leaf data, and `SvgLeafNode` and `SvgNodesToKitDraftsOptions` are exported. A container's pose no longer inherits its only child's rotation.
+- 38ca7d4: Add `svgNodesFromKit`, the inverse of `svgNodesToKitDrafts`: it walks a scene (or any tree with `roots`, `childrenOf` and `get`) back to `SvgNode`s for `serializeSvg`, writing each leaf the way the kit's path, text or image painter draws it. `svgLeafFromKit`, `svgPaintFromKit` and `svgStrokeFromKit` are exported for single leaves, beside the existing `svgImageFromKit`, and `fillDataFromSvg` joins `strokeDataFromSvg` on the import side.
+  
+  `svgNodesToKitDrafts` now keeps `fill-opacity`, multiplies element and group `opacity` into the paints of the leaves under them, and, when handed a whole `ParseResult`, registers the document's markers as `unpackSvgFiles` does. `fill-opacity` on a gradient-filled shape now survives both parse and serialize.
+- 1490e8f: SVG export now writes a marker's inset as `wzl:inset` on its `<marker>` def, and `parseSvg` reads it back, so a re-imported marker that is not registered in the importing session still stops the line short of a filled head instead of running it underneath.
+- 440a9ef: A marker reference's `size` survives SVG export and import. `SvgStroke.markerStart` / `markerMid` / `markerEnd` are now the kit's `MarkerRef` rather than a bare key, and `svgStrokeFromKit` keeps the size. The serializer writes a sized reference to a `<marker>` def of its own, drawn in user space at that size so any viewer shows it right, and stamps it with `wzl:key` / `wzl:size`, which `parseSvg` reads back as `{ key, size }` when the key is registered. A marker whose entry writes its own def through `toSvg` still goes out at its own size, with a warning.
+- 760017b: `svgNodesToKitDrafts` bounds a `<g>` container by its rotated leaves' axis-aligned boxes rather than their unrotated ones, and `unpackSvgFiles` does the same for its multi-root wrapper and fit-clamp. A container around a rotated shape used to be too small, so its selection box and resize handles missed the shape.
+- 58a3a58: `parseSvg` keeps a sized marker reference (`{ key, size }`) whose key the importing session has not registered. The document's `<marker>` def comes back in `ParseResult.markers` under that key, in marker units, so registering it (as `unpackSvgFiles` does) draws the same head. It used to import as an anonymous document marker, losing the key and the size.
+- Updated dependencies [b1142a7]
+- Updated dependencies [96adc78]
+- Updated dependencies [240138b]
+- Updated dependencies [21ee45b]
+- Updated dependencies [32bb3be]
+- Updated dependencies [2e34d59]
+- Updated dependencies [32c5fb4]
+- Updated dependencies [0047d33]
+- Updated dependencies [ad0378f]
+- Updated dependencies [da20f95]
+- Updated dependencies [b4227b8]
+- Updated dependencies [0cecdcf]
+- Updated dependencies [7c3cc5d]
+- Updated dependencies [722b267]
+- Updated dependencies [52078c5]
+- Updated dependencies [197fdf7]
+- Updated dependencies [5acf166]
+- Updated dependencies [7f7b04f]
+- Updated dependencies [fc3de06]
+- Updated dependencies [b8f2007]
+- Updated dependencies [fd178be]
+- Updated dependencies [5201b8e]
+- Updated dependencies [bc2a7ef]
+- Updated dependencies [6819653]
+- Updated dependencies [793987a]
+- Updated dependencies [ca2f45f]
+- Updated dependencies [082c63f]
+- Updated dependencies [242e9f7]
+- Updated dependencies [f8f0160]
+- Updated dependencies [455e4bc]
+- Updated dependencies [a028cc3]
+- Updated dependencies
+- Updated dependencies [667f14f]
+- Updated dependencies [e442bcb]
+- Updated dependencies [aad77d3]
+- Updated dependencies [8999210]
+- Updated dependencies [94cf4cd]
+- Updated dependencies [d647c9b]
+- Updated dependencies [d7aaeb1]
+- Updated dependencies [38f524c]
+- Updated dependencies [2336d9c]
+- Updated dependencies [71d54e4]
+- Updated dependencies [03e9385]
+- Updated dependencies [8c1cd8d]
+- Updated dependencies [d5a9fbf]
+- Updated dependencies [3a20620]
+  - @weasel-js/core@1.7.0
+  - @weasel-js/geom@1.7.0
+
 ## 1.6.1
 
 ### Patch Changes

@@ -1,5 +1,68 @@
 # @weasel-js/hud
 
+## 1.7.0
+
+### Patch Changes
+
+- ca2f45f: Every click-versus-drag decision in the kit now reads one threshold, `DRAG_THRESHOLD_PX` (4 CSS pixels), through `pastDragThreshold`. Both now live in `@weasel-js/gestures`; `@weasel-js/routing` and `@weasel-js/core` re-export them as before. `useDragHandle` starts a drag at 4px instead of past 5px, labkit's `FloatingPanel` and the hud window's content click at 4px instead of 3px, and `startThresholdDrag`, `useReorderDragList` and `Select` default to the constant rather than their own literal 4.
+  
+  The move action's `dragThresholdPx` option works again: set as `selectTool.move.dragThresholdPx` on `<SceneCanvas>`, it holds the selection in place until the pointer has travelled that far on screen. It has been ignored since the `useMove` hook was removed. It cannot lower the threshold below the dispatcher's.
+- Updated dependencies [05da5a4]
+- Updated dependencies [b1142a7]
+- Updated dependencies [96adc78]
+- Updated dependencies [240138b]
+- Updated dependencies [21ee45b]
+- Updated dependencies [32bb3be]
+- Updated dependencies [2e34d59]
+- Updated dependencies [32c5fb4]
+- Updated dependencies [0047d33]
+- Updated dependencies [ad0378f]
+- Updated dependencies [da20f95]
+- Updated dependencies [b4227b8]
+- Updated dependencies [0cecdcf]
+- Updated dependencies [7c3cc5d]
+- Updated dependencies [722b267]
+- Updated dependencies [1eac15b]
+- Updated dependencies [52078c5]
+- Updated dependencies [197fdf7]
+- Updated dependencies [5acf166]
+- Updated dependencies [7f7b04f]
+- Updated dependencies [fc3de06]
+- Updated dependencies [b8f2007]
+- Updated dependencies [6357f14]
+- Updated dependencies [fd178be]
+- Updated dependencies [5201b8e]
+- Updated dependencies [bc2a7ef]
+- Updated dependencies [6819653]
+- Updated dependencies [793987a]
+- Updated dependencies [ca2f45f]
+- Updated dependencies [082c63f]
+- Updated dependencies [242e9f7]
+- Updated dependencies [f8f0160]
+- Updated dependencies [455e4bc]
+- Updated dependencies [a028cc3]
+- Updated dependencies
+- Updated dependencies [667f14f]
+- Updated dependencies [e442bcb]
+- Updated dependencies [aad77d3]
+- Updated dependencies [8999210]
+- Updated dependencies [94cf4cd]
+- Updated dependencies [d647c9b]
+- Updated dependencies [d7aaeb1]
+- Updated dependencies [38f524c]
+- Updated dependencies [2336d9c]
+- Updated dependencies [71d54e4]
+- Updated dependencies [03e9385]
+- Updated dependencies [8c1cd8d]
+- Updated dependencies [d5a9fbf]
+- Updated dependencies [3a20620]
+  - @weasel-js/theme@1.7.0
+  - @weasel-js/core@1.7.0
+  - @weasel-js/geom@1.7.0
+  - @weasel-js/paint@1.7.0
+  - @weasel-js/font@1.7.0
+  - @weasel-js/loupe@1.7.0
+
 ## 1.6.1
 
 ### Patch Changes

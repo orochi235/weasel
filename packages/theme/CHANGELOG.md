@@ -1,5 +1,15 @@
 # @weasel-js/theme
 
+## 1.7.0
+
+### Patch Changes
+
+- 05da5a4: The weasel theme's accent is now indigo in light mode and periwinkle in dark, replacing the single midnight blue-violet. The accent ramp's soft, base and strong steps each take a per-mode value, so everything derived from them — hover, focus ring, accent text — follows the mode.
+- 1eac15b: ComboBox, MenuButton's trigger and ListEditor's input now read `--wzl-input-surface`, as Input, NumberField and Select already did. Inside a Prefs pane, which sets it, they now match the fields beside them instead of sitting on the default sunken surface.
+- Updated dependencies [fc3de06]
+- Updated dependencies [6357f14]
+  - @weasel-js/paint@1.7.0
+
 ## 1.6.1
 
 ### Patch Changes

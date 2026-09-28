@@ -1,5 +1,247 @@
 # Changelog
 
+## 1.7.0
+
+### Patch Changes
+
+- b1142a7: `backgroundFill` now draws beneath every other layer. It used to be slotted just before the scene, which put it above the grid and above any custom layer also anchored `before: 'scene'`, so a canvas with a background fill painted over both.
+- 96adc78: `<Canvas redrawOn>` compares its sources element by element, so an inline `redrawOn={[source]}` no longer unsubscribes and resubscribes on every render. Layer subscriptions and `redrawOn` subscriptions are now held by separate effects, so a layer change no longer churns the `redrawOn` ones either.
+- 240138b: "Tool" now names only a contribution that can hold focus — one a user picks from a palette or holds on a key — and `isTool(entry)` is the test. What holds every kind of entry takes `Contribution` and says "entry":
+  
+  - `useGestureDispatcher`'s and `DispatcherContext`'s `toolsById` is `entriesById`, a map of `Contribution`.
+  - `ownerToolId` is `ownerId` on `ScopedBinding`, `MatchResult` and a dispatch record's `RecordCandidate`.
+  - `RegistryEntry.toolId` is `ownerId`, and `Conflict.toolIds` is `ownerIds`.
+  - `<SceneCanvas ambient>` takes `SurfaceContribution[]`, and `useTools`'s `ambient` (and `ToolsApi.ambient`) takes `Contribution[]`, so a contribution no longer needs casting to `AnyTool`.
+  - `findConflicts`, `findScopedConflicts` and `buildRouteRegistry` take `Contribution`s.
+  - `defineViewportTool` and `ViewportToolDef` are removed; they were `defineTool` and `ToolDef` under another name.
+  - `FallthroughDiagram`'s "Tool" column is "Owner".
+  
+  These are breaking renames for any consumer reading those fields or calling the removed function.
+- 21ee45b: `<Canvas>`'s debug HUDs (cursor coordinates, pick list, modality) share one stylesheet instead of carrying three copies of the same box. The cursor-coordinates HUD no longer styles itself inline. Nothing renders differently.
+- 32bb3be: New `DispatchRecord`: for one input, every binding that matched, what the claim and eligibility filters dropped, the ranked survivors with the step that placed each one below the last (`view`, `tier`, `specificity`, `context`, `order`), and what the walk did with each. `Dispatcher.explain` returns one without invoking anything. In dev builds the trace buffer on `window.__weaselDispatchLog__` now holds these records. They replace `DispatchLogEntry`, which is removed, so a reader of that buffer must move to the new shape. `handleInput`, `resolveAll` and `resolveOnly` now share one walk, so a prediction ranks candidates exactly as a dispatch does. `matchSortedWithBarred` reports the bindings an exclusive claim kept out. The types are also exported from `@weasel-js/core/routing`.
+  
+  New `FallthroughDiagram` in `@weasel-js/ui` draws one record: the input, the matched set, one band per filter, and the ranked list with its walk, with the winner marked.
+- 2e34d59: `viewport.dragPan` no longer declares a default binding, so a plain drag that no tool claims no longer pans the view. The hand tool still pans (H, or hold space), and a canvas that should pan on any unclaimed drag — a viewer, a map — adds the new `dragPanContribution()` to its `ambient` list; it takes the same `axis` and `inertia` params the hand tool passes. labkit's trial cameras keep panning on a plain drag.
+  
+  This is a behavior change for any canvas with the `view` preset that relied on a plain drag panning under a tool that binds none.
+- 32c5fb4: Path fills tessellate with earcut 3, which handles holes faster. earcut 3 ships its own typings and is ESM-only, as both packages already are.
+- 0047d33: `fixedCornerOf(bounds, anchor)` is now exported from `@weasel-js/core`. It returns the corner a resize with that anchor leaves in place, the same one `resizeAction` pins, so code that reports or draws that corner no longer has to restate the rule.
+- ad0378f: geom gains nearest-point queries and de Casteljau splitting. `nearestOnLine`, `nearestOnQuadratic` and `nearestOnCubic` return the nearest point to a probe with its `t` and distance; `nearestOnPath` does the same over a whole command stream, closing edges included, and says which command's segment it landed on. `splitLineAt`, `splitQuadraticAt` and `splitCubicAt` split a segment at `t` into two that trace it exactly, and `quadraticEvalAt` joins `cubicEvalAt`. Core's `pathDistanceToPoint`, `splitCubicAtT` and the anchor editor's nearest-segment search now run on these, so curve distances in picking are exact rather than read off a 16-sample polyline.
+- b4227b8: `GradientEditor` offers every registered gradient kind, mesh included, instead of a fixed linear / radial / conic list. A kind counts as a gradient when its registry entry carries the two new optional `PaintKindEntry` slots, `stopsOf` (the stop list a paint reads as) and `fromStops` (a paint built from one); `listGradientKinds()` returns those kinds, and `switchGradientKind(paint, kind)` converts between any two of them. Between linear, radial and conic it is `withGradientKind` and keeps the geometry; to a mesh, a stop list becomes one full-height patch per gap between stops, so a horizontal ramp survives unchanged, and a mesh reads back as the ramp across its patches' top edges. `meshFromStops` and `meshStops` are exported. A mesh value shows `MeshEditor`'s corner colors; a registered kind's own `Editor` wins, as it does in `PaintInput`. `PaintInput` now converts through `switchGradientKind` too, so switching a gradient to a mesh carries its colors instead of seeding a new mesh from one color.
+  
+  `GradientEditor`'s `value`, `onInput` and `onChange` are now typed `FillStyle` rather than `GradientFill`, since a mesh is not a `GradientFill`; a handler typed to take `GradientFill` needs widening.
+  
+  `GradientEditor` also takes `svg`, off by default, which limits the choices to what an SVG file carries natively: the linear and radial gradients, blended in sRGB. A value already outside that set keeps its own kind and space on offer. `@weasel-js/svg` exports the rule as `nativeSvgKind(kind)` and `nativeSvgSpace(space)`, the same predicates its serializer uses to decide when a paint needs a fallback color or a `wzl:interpolate` attribute.
+- 0cecdcf: A tool's `hotkey` can be any key. Besides `'space'` and the modifier names, a
+  tool may declare an ordinary key such as `hotkey: 'o'` and it engages while
+  that key is held, matched case-insensitively as every key spec is and never
+  while typing in a text field. A held key now releases even when its keyup
+  reports it differently from its keydown — Shift pressed mid-hold makes an `o`
+  press come up as `O`, which used to leave the tool stuck on.
+  
+  Held-key engagement also works in a `<SceneCanvas>` with no `ActionsProvider`
+  of the consumer's own. Before, nothing registered `tool.offhand` there and
+  Space-for-hand did nothing. The registration is exported as
+  `useOffhandAction` for hosts that assemble their tools above their provider.
+  
+  `Tool.onActivate` now actually fires — it was declared and forwarded by
+  `defineTool` but nothing called it. A tool is live while it holds the active
+  slot or is held by its `hotkey`: `onActivate` fires as it becomes live in
+  either, and `onDeactivate` as it stops being live in both, or when the canvas
+  unmounts. `onDeactivate` used to fire only when the active tool changed, never
+  when a held tool was released. Both receive `ToolLifecycleCtx` — just
+  `{ scratch }`, which is all `onDeactivate` was ever given; the parameter was
+  typed as a full `ToolCtx`, so a callback annotated that way no longer
+  typechecks and should close over what else it reads.
+  
+  `ToolPresentation` takes `hide: true` to keep a tool off `ToolPalette` — for a
+  tool that is only ever held. It stays registered and selectable by id.
+- 7c3cc5d: A `Journal` can now be observed and coalesces like its parent. It gains `subscribe` and `getVersion` (ready for `useSyncExternalStore`), which fire on every apply, undo, redo and coalesce inside the session and on each lifecycle transition, and `seal`, which ends a coalescing run as `History.seal` does. A journal now inherits its parent's `coalesceWindowMs`, clock and debug logger, so a session whose ops carry a `coalesceKey` merges rapid edits where it previously never did; pass `coalesceWindowMs: 0` to `beginJournal` to keep every push separate.
+  
+  `HistoryEntry.pushes` says how many pushes an entry holds: 1 when pushed once, plus one for each push coalesced into it. It round-trips through `serialize`/`restore`; snapshots written before it read as 1.
+  
+  The journals a `Scene` hands out forward all three new members.
+- 722b267: Every canvas now routes its own input. `<SceneCanvas>`, labkit's `<CanvasStack>` and `<Stage>` each mount an `<InputScope>` — an actions registry, dep registry and active tool of their own — under whatever registries are in scope, so two canvases under one provider no longer hand the newest one everyone's gestures. Registries above a canvas read through to the canvas last used: `trigger`, `begin`, `list` and `useActiveToolContext` there answer from the scope that last took a pointerdown or wheel, and keystrokes dispatch only in that scope.
+  
+  When bindings tie on scope and specificity, an action gated by an `eligible` rule that holds now outranks one with no rule: in path edit Escape exits the edit instead of resetting the tool, and a bare drag no tool binds marquees where selection is on offer and pans where it is not. The route-conflict check follows the same rule. Escape with nothing selected now returns to the default tool, as `tool.resetToDefault` documents; the standard `escape` action used to spend that press clearing an empty selection.
+  
+  Canvases that should share input join one yoke: `const yoke = useYoke()`, then `yoke={yoke}` on each canvas and `<Yoke value={yoke}>` around a toolbar. A canvas with no yoke keeps its own tool.
+  
+  Breaking: `ActionsScope`, `ActionsRegistry.setDepRegistry` and labkit's `CameraScopeContext` are removed; `ActionsRegistry` gains `activate()` and `isActive()`, which a hand-built registry must now supply. A registration made inside one canvas is no longer visible from a sibling canvas — a registry above reaches it only through the active scope. A nested `<WeaselProvider>` now hands its children the outer registry itself.
+- 52078c5: A keystroke is dispatched once. Every gesture dispatcher listens for keys on
+  `window`, and one now skips a keydown that another dispatcher — or anything
+  else — has already claimed with `preventDefault`; before, two dispatchers
+  binding the same key both ran it. `keyboard: 'first'` makes a dispatcher listen
+  in the capture phase, ahead of the rest whatever the mount order. The lab
+  header's zoom uses it, so Mod+= over a trial with a camera zooms the trial and
+  not also a story's own canvas; over a trial without one, the key passes to the
+  story.
+- 197fdf7: `useLassoTool({ behaviors })` now runs the behaviors it is given. They used to be dropped before they reached the lasso action. Each behavior's `onStart`, `onMove` and `onEnd` run as the gesture does. The first `onEnd` that returns ops has them applied in place of the default selection, and one that returns `null` leaves the selection alone. `selectFromLasso({ mode })` hit-tests through the canvas's own lasso, in its own mode.
+  
+  `sceneToAdapter(...).hitTestLasso` gives the same answer as the lasso tool: shapes are tested by their drawn outline with rotation applied, not by their bounding box. An ancestor's clip now has to overlap the lasso itself, not just the shape. It still returns containers, as its `hitTestArea` does. `arrayAdapter.hitTestLasso` still tests bounding boxes.
+  
+  Lasso `intersect` mode and the marquee now test curves by the drawn curve, not by their control points, so a lasso next to an ellipse no longer takes it. They also treat a path that is left open as a line with no fill.
+- 5acf166: `useLassoTool({ minVertexSpacing })` now spaces the lasso's vertices by the value given; it used to be accepted and ignored. `transient`, `label`, `onGestureStart`, `onGestureEnd` and `debug` are removed from `UseLassoToolOptions` and `UseLassoSelectOptions`: nothing read them, so passing one did nothing. This is a breaking change to those types for any caller that passed one.
+- 7f7b04f: The lasso tool selects by the polygon you draw rather than its bounding box. `SceneCanvas`'s lasso used to pick every shape its polygon's bounding box touched, in every hit mode, and `toolOptions.lasso.mode` never reached it. Now `intersect` (the default) takes shapes whose outline meets the polygon, `enclosed` takes shapes wholly inside it, and `centers` takes shapes whose center is inside it. Each test uses the shape's drawn outline with its rotation applied.
+  
+  A marquee also tests a rotated shape that has no painter by its rotated rect instead of that rect's bounding box.
+- fc3de06: A `{ px }` marker size now holds its screen size through a zoom, as a `{ px }` stroke width does, and so does a default-sized marker under a `{ px }` stroke width. The line stops short of the head by the same resolved size, and a node's grab reach resolves it against the view scale.
+  
+  The renderer now draws a stroke's markers itself, for any path command whose stroke carries one — so a painter only sets `markerStart` / `markerMid` / `markerEnd`. `markerDrawCommands` is no longer exported: a painter that appended its commands would now draw every head twice. labkit's annotation arrows rely on the renderer, and their SVG export keeps the marker reference so the head is drawn there too.
+- b8f2007: A `MarkerEntry` can declare `reads`, the stroke fields its `path` reads besides `size`. The renderer then reuses a head across stroke objects whose listed fields are equal, so a painter that builds a new stroke every frame no longer rebuilds its heads every frame; a new paint recolors the cached geometry. Every built-in, and every marker `@weasel-js/svg` imports, declares `reads: []`.
+  
+  A marker's reach — what culling and a path node's grab band reserve for its head — is now measured per value of those fields, or per stroke object for an entry that does not declare them. Before, it was measured once per entry, so a custom head whose shape grows with a stroke field could be culled while still on screen.
+- fd178be: A mode's declared shortcuts now reach the dispatcher. `modeShortcuts(registry, handlers)` returns an always-on contribution with one action per `entry` / `exit` / `discard` / `commit` / `cancel` chord, gated on the mode it acts on and riding the hotkey tier, so leaving a mode outranks Escape clearing the selection while a gesture in flight still cancels first. Pass it in `<SceneCanvas ambient>`; a role with no handler binds nothing. `ModeDefinition` gains `discard` (the soft presets declare Meta+Escape), and `ModeRegistry` gains `list()` — a hand-written registry has to add it.
+  
+  `useTextEdit` / `useSceneTextEdit` take `escape: 'commit'` to keep the text on Escape instead of dropping it.
+- 5201b8e: A mode switch now repaints the canvas with no consumer code.
+  
+  - `@weasel-js/modes`: `getActiveModeFor(registry)` returns the reader `<SceneCanvas getActiveMode>` takes — the active mode's id and its allowed capability tags, implicit ones included — so apps stop rebuilding it. `ScopingDim` and `ModeDecorations` gain `subscribe` and `getVersion`, both following the registry; `ScopingDim.invalidate()` tells subscribers the target set moved inside one mode.
+  - `@weasel-js/core`: `RenderLayer.subscribe` lets a layer name the outside state its `draw` reads, and `<Canvas>`/`<SceneCanvas>` take `redrawOn` for sources no layer declares, such as the `ScopingDim` an `alphaFor` consults. Either one repaints the canvas when it notifies. `gateLayer`, `createTiledLayer`, `createViewportLayer` and `createParallaxLayer` pass their sources' `subscribe` through, and `subscribeToSources` builds the same for a layer of your own that draws others. `workspaceTintLayer({ registry, page?, intensity? })` paints the active mode's `WorkspaceVisual` — the whole canvas, or only the workspace around a page — and `modeDecorationLayer(decorations)` draws a `ModeDecorations`; both subscribe for themselves. Core now depends on `@weasel-js/modes`.
+- bc2a7ef: Multi-select corner and rotation handles now follow the selection after a group
+  move. They used to stay where the union had been, so the next drag on the real
+  corner moved the set instead of resizing it. `ChromeState.unionBounds` is now
+  computed again on every read instead of being cached for the life of the state.
+- 6819653: `areaSelect`, `insert`, `slice` and `lassoSelect` no longer declare a default binding. A plain drag carries no intent of its own, so none of them answers one unless something binds it: the select tool marquees on empty canvas, the shape tools insert, and the slice and lasso tools bind their own actions, as before. A canvas that relied on a plain drag marqueeing under a tool that binds no drag now opts in with the new `areaSelectContribution()` in its `ambient` list. `onEmptyCanvas` is the empty-canvas predicate the select tool and that contribution share.
+  
+  This is a behavior change for any consumer that registered these actions without a tool binding them.
+- 793987a: `TextStyle.script: 'super' | 'sub'` sets a whole text node as a superscript or subscript. It is the default every run inherits, the way `StyledRun.script` is for one run, and a run naming its own script replaces it.
+  
+  A run shrunk by a relative size (`script` or `fontScale`) now holds its line open at the size it inherited: `ResolvedRun.strutSize` carries that size, and layout measures the line's height and baseline from it. A superscript alone on a line used to collapse the line to the superscript's own size, which contradicted the rule that a shifted run rides its line rather than reflowing it.
+  
+  The edit overlay shows a node-level script, and now shows a node-level overline, which it had been dropping. The SVG writer puts a node-level script on `<text>` as `baseline-shift`, which the reader already carries onto every run.
+- ca2f45f: Every click-versus-drag decision in the kit now reads one threshold, `DRAG_THRESHOLD_PX` (4 CSS pixels), through `pastDragThreshold`. Both now live in `@weasel-js/gestures`; `@weasel-js/routing` and `@weasel-js/core` re-export them as before. `useDragHandle` starts a drag at 4px instead of past 5px, labkit's `FloatingPanel` and the hud window's content click at 4px instead of 3px, and `startThresholdDrag`, `useReorderDragList` and `Select` default to the constant rather than their own literal 4.
+  
+  The move action's `dragThresholdPx` option works again: set as `selectTool.move.dragThresholdPx` on `<SceneCanvas>`, it holds the selection in place until the pointer has travelled that far on screen. It has been ignored since the `useMove` hook was removed. It cannot lower the threshold below the dispatcher's.
+- 082c63f: A path node's grab reach now covers the full painted extent of its marker heads, the same measure culling uses. Before, it grew only by each head's inset, so `arrow-open` and `bar` — which inset nothing — painted arms outside the clickable band.
+- 242e9f7: `routeGestureForSpecKind` and its inverse `specKindForRouteGesture` now live in `@weasel-js/gestures`, read from one table; `routeToSpec` and routing's route registry both use it. `@weasel-js/routing` and `@weasel-js/core/routing` re-export both.
+  
+  Every routing type with an overlay parameter — `Tool`, `ToolDef`, `ViewportToolDef`, `Contribution`, `ContributionChrome`, `useTools` and `useContributions` with their option and result types — now defaults it to the kernel's overlay type (`KernelOverlay`), as `defineTool` already did. Under core that is `RenderLayer`, so a routing `Tool<S>` fits `<SceneCanvas tools>` without naming the overlay. Functions that read tools without reading overlays (`buildRouteRegistry`, `findConflicts`, `reportRouteConflicts`, the dispatcher's `toolsById`) take any overlay explicitly.
+- f8f0160: A plain object made in another realm (an iframe, a VM context, or `structuredClone` under jsdom) is now treated as a plain object. labkit's config defaults used to overwrite a stored config that came from another realm instead of filling it, and forge's story-arg handling treated one as opaque. `@weasel-js/core` exports the check as `isPlainObject`.
+- 455e4bc: New package, `@weasel-js/quantity`: a number anywhere the engine takes one can be bare or tagged (`{ value, unit?, display? }`), and a tagged value keeps its unit and display through JSON, history and every edit (`retag`). A display is plain data — `fraction()`, `ratio()`, `percent()`, `unit('mm')`, `currency('USD')`, `duration()`, `bytes()`, `roman()`, `ordinal()`, `multiplier()`, `zoom()`, `compact()`, `decimal()`, `integer()` — and `qty(value, display)` gives its text, spoken text, unstyled HTML and, for fractions, MathML. `registerDisplayKind` adds a kind or replaces a built-in one.
+  
+  Breaking: the unit system (`UnitSystem`, `resolveUnit`, `formatUnit`, …) now lives in `@weasel-js/quantity`; core still re-exports the same names. `formatNumber`, `formatCompact`, `parseNumber`, `parseSignedNumber` and `MINUS_SIGN` are no longer exported from `@weasel-js/ui` — import them from `@weasel-js/quantity`. `formatZoom` is gone: use `qty(z, zoom()).text`. A pref's `format: 'plain' | 'compact'` is now `display: Display` (`ToolPrefNumberFormat` and `PrefNumberFormat` are removed), `PropertyField`'s `notation` is now `display`, and labkit's `f.number().format('compact')` is `.display(compact())`.
+  
+  `PropertyField`, `UnitField`, `Slider` and `BandEditor` take a `display`, which drives what they show, what they read back when typed, and their `aria-valuetext`. A `BandEditor` seam at 1/12 with `display={fraction()}` announces "1 over 12" rather than `0.08333333333333333`, and a band whose `from` is tagged stays tagged through drags, splits and merges. The Timeline rate slider now speaks "4 times" rather than "4x".
+- a028cc3: New package `@weasel-js/registry`: `createReflectable()` is a keyed store a registry embeds to hand out a uniform read-only `Reflection` — `get`, `has`, `entries()`, `subscribe` and `getVersion`, shaped for `useSyncExternalStore`. Each entry reports the registrant's `source` and the registrants it displaced (`shadowed`), so overrides of one key show up as conflicts.
+  
+  The kit's module-level registries now expose one: `paintKindRegistry`, `markerRegistry`, `opFactoryRegistry`, `fontRegistry`, `fontOutlineRegistry` (which also notifies as a face's load state moves), and, from `@weasel-js/core/renderer`, `programSourceRegistry` and `textureRegistry`. `ModeRegistry` gains `reflection`. Built-in paint kinds and markers report `source: 'kit'`.
+  
+  Fixes paint-kind and marker overrides disposed out of order: with two overrides of one id, disposing the earlier and then the later used to restore the already-disposed earlier one instead of the built-in. Overrides now stack, and each disposer removes only its own entry.
+- 667f14f: `usePinchGesture` is removed. This is a breaking change for anyone importing it. It attached its own pointer
+  listeners beside the gesture dispatcher, which already handles a two-finger touch pinch: its `multitouch` channel
+  carries the centroid and spread of the held pointers, and `viewport.pinchZoom` (`pinchZoomAction` /
+  `makePinchZoomAction`) binds to it. Bind an action to `{ kind: 'multiTouch', fingers: 2 }` in place of the hook.
+- e442bcb: `resizeAction` no longer has a default binding. Its bare `{ kind: 'drag' }` claimed every drag at ambient scope and tied `areaSelect`'s, so a canvas with `pick` and `transform` warned `route conflict: [*] drag — declared by resize, areaSelect` on load. Resize handles still route to it through the `transform` preset. Code that registers `resizeAction` without that preset has to bind it to its handles itself, the way `selectionTransformBindings()` does.
+- aad77d3: The route-conflict check no longer reports two bindings whose actions' `eligible` rules can never hold together, so each mode's own Escape exit from `modeShortcuts` stops warning. The new `rulesExclusive(a, b)` is the test it uses: `true` only when no context passes both rules.
+  
+  `createDepRegistry()` returns the stock dep registry `<DepRegistryProvider>` mounts, from routing's React-free entry and from core, for a dispatcher driven without a provider tree.
+  
+  `DRAG_THRESHOLD_PX` and `pastDragThreshold(from, to)` expose the distance a press travels before `useGestureDispatcher` treats it as a drag, and the dispatcher reads that same definition.
+  
+  There is one `defineTool` now. Routing's defaulted its overlay type to `unknown`, so its tools failed core's `tools` prop; routing now defaults it to `KernelOverlay`, which a kernel sets by merging into the new `OverlaySchema` interface, and core merges `RenderLayer` there and re-exports routing's `defineTool` and `defineViewportTool` instead of wrapping them.
+- 8999210: `sceneToAdapter(...).hitTestArea` gives the same answer as the marquee in `SceneCanvas`: shapes are tested by their drawn outline with rotation applied, not by their bounding box. It still returns containers.
+- 94cf4cd: **Breaking.** A bare `<SceneCanvas>` now only renders. It keeps a selection that
+  no input sets and runs the gesture dispatcher for bindings you add, but it no
+  longer picks, moves, transforms or edits, draws no selection chrome, pans and
+  zooms nothing, and binds no keys. `features={['draw']}` restores everything it
+  used to do, and adds the hand tool (H, or hold Space), which it used to register
+  only when `viewport` was passed.
+  
+  `features` takes presets that compose in any combination: `view` (wheel pan and
+  zoom, pinch, zoom keys, the hand tool — passing `viewport` implies it), `pick`
+  (the select tool and the selection outline), `move` (drag to move, Alt-drag to
+  clone), `transform` (resize and rotation handles), `edit` (undo/redo, delete,
+  duplicate, group, nudge, select-all, Escape, clipboard, fill and stroke, with
+  their keys), `arrange` (align, distribute, reorder, flip), `paths` (pathfinder
+  and anchor editing), `ingest` (dropped and pasted content), and `draw` for all
+  of them. `FEATURE_ACTION_IDS` lists which kit action each one registers. A tool
+  brings the actions it binds, so `defaultTools={['rect']}` registers `insert`
+  under any preset; `defaultTools` now defaults to none.
+  
+  `toolBundle` and `BUNDLE_TOOLS` are removed. `toolBundle="minimal"` is
+  `features={['draw']}`; `"standard"` adds `defaultTools={['rect', 'ellipse',
+  'line']}`, and `"exhaustive"` adds `defaultTools={BUILTIN_TOOL_IDS}`.
+  
+  The select tool only chooses now: pick, marquee, clear. Moving, cloning,
+  resizing and rotating the selection are always-live bindings of their own,
+  `selectionMoveContribution` and `selectionTransformContribution`, so they work
+  under any tool that leaves the drag unclaimed. `useSelectTool` no longer takes
+  `move` or `reparentOnDrop`; pass them to `selectionMoveContribution`, or give
+  `<SceneCanvas>` a `selectTool.move`. A host mounting `useSelectTool` on its own
+  dispatcher has to add those entries itself to keep drag-to-move.
+  
+  `rotate` and `clone` no longer carry a bare-drag default binding, which made
+  any drag no tool claimed rotate a non-empty selection.
+  
+  A canvas can run with no active tool: `useTools` takes `active` as optional or
+  `null`, and `ToolsApi.active` and `ActiveToolContext.active` can be `null`.
+  `ActiveToolContextProvider` starts empty rather than at `'select'`, and the
+  first `useTools` call seeds it unless the provider was given `initialActive`.
+- d647c9b: `<SceneCanvas>`'s `layers` doc now says the default scene slot paints each node's `data.fill`. It named `data.color`, which the default painter stopped reading when node paint moved onto `FillStyle`.
+- d7aaeb1: `<SceneCanvas layers>` now types its scene slot as partial, matching what it already did at runtime: a slot such as `{ scene: { cull: true } }` keeps the default `drawOne` and no longer needs one restated to typecheck. The prop's type is exported as `SceneCanvasLayers`. `LayersMap` takes an optional third parameter for the scene slot's type; it defaults to the full `SceneSlotConfig`, so existing uses are unchanged.
+- 38f524c: `<SceneCanvas>` takes the app's mode registry as `modes` in place of `getActiveMode`. This is a breaking change: replace `getActiveMode={getActiveModeFor(registry)}` with `modes={registry}`. The canvas now repaints when the mode switches, and the dev-time route-conflict check reads the app's own modes instead of the kit's `DEFAULT_MODES`, so a clash that only an app-defined mode allows is reported. `useTools` and `useContributions` take the same `modes` option for a consumer assembling its own tools.
+- 2336d9c: `splitPathByLine` is renamed `splitPathBySegment`, and `SplitByLineOptions` is renamed `SplitBySegmentOptions` — breaking for anyone importing either name. The function now cuts only where the segment itself crosses the shape. It used to clip against the infinite line through the segment, so a concave shape crossed at one arm was also cut at every other arm the line's extension reached. A stretch of the segment that begins or ends inside the fill cuts nothing; the chords it crosses end to end still cut. Curves stay curves: quadratic and cubic segments are split exactly at the crossings, so the pieces trace the original outline instead of a flattened polyline. Each connected piece comes back as its own path, and contours the segment misses come back together as one final piece. A cut through an exact vertex now splits the shape too. Paths whose contours cross each other or themselves are still flattened, because they are resolved by a polygon union before cutting.
+- 71d54e4: `guideSnapStrategy` and `snapBackOrDelete` now default to `AUTO_ORIGIN_PROJECTION`, like `gridSnapStrategy` and `snap`, so a `Path` pose snaps to guides and snaps back without passing `pathOriginProjection`. Rect poses behave as before.
+- 03e9385: Dragging a `Path`-posed node with `selectTool.snap` set no longer turns every coordinate to `NaN`. The `snap` behavior read the pose's origin as a rect's `x`/`y` by default, which a `Path` doesn't have. It now defaults to `AUTO_ORIGIN_PROJECTION`, the same projection `gridSnapStrategy` uses, which reads a `Path`'s bounds origin.
+- 8c1cd8d: `window.__weaselTest.getActiveToolId()` now reports the canvas's active tool. It read a ref nothing wrote, so it returned `null` whatever tool was active; it now reads the tool registry directly.
+- d5a9fbf: The text node's properties now cover every authored `TextStyle` field. Italic, underline, strikethrough, overline, superscript and subscript sit in one row of glyph toggles; Italic was a Normal / Italic dropdown, and superscript and subscript were missing. Alignment is drawn with glyphs, and reads a `start` / `end` alignment as the edge it paints at. New rows: Wrap, Direction, and the box's vertical alignment (`data.verticalAlign`, the field the `kit:text` painter and the editor already read). New glyphs: `textAlignLeft` / `Center` / `Right` and `textAlignTop` / `Middle` / `Bottom`.
+  
+  Two schema additions make that possible and are general: `ToolPrefBoolean.encoding` (`ToolPrefBooleanEncoding`, `PrefBooleanEncoding` in `@weasel-js/ui`) stores a flag as another value, which is how Italic writes `fontStyle`; and `ToolPrefEnum.clearable` lets a toggle's lit segment be clicked off, removing the field. `PropertyControl`'s enum takes the matching `onClear`. The text tool's Script control in the options bar is now such an enum, replacing the app-drawn renderer it needed.
+  
+  Fixed: in `SelectionPanel`, editing any field of an object leaf (the text style, the stroke) with several nodes selected wrote one object over every node, dropping each node's other fields, and reported every field as mixed. Fields are now read and written node by node; `PropertyRenderContext.update` is the new per-node write.
+- 3a20620: The move, resize and rotate options that had been accepted and ignored since their hooks were deleted now work again, through the action pipeline:
+  
+  - `moveLabel` / `resizeLabel` / `rotateLabel` name the history entry. Unset, a move takes the label of the ops a behavior or layout drop commits, where it used to say `Move` regardless.
+  - `transient` commits through `scene.untracked`, with no undo entry and without calling the consumer `applyOps` hook. Unset, a behavior's `defaultTransient: true` turns it on.
+  - `onGestureStart(ids)` fires when the gesture starts changing poses, and `onGestureEnd(committed)` exactly once after it. Resize and rotate now pass the id list rather than a single id.
+  - `UseMoveOptions.expandIds` replaces the moved id set, so a drag can carry linked nodes; `[]` declines the drag.
+  - `UseRotateOptions.behaviors` run as a rotate behavior chain, and `pivot: 'each'` turns each node about its own center.
+  
+  `SELECTION_TRANSFORM_BINDINGS` and the `selectionTransformContribution` constant become the functions `selectionTransformBindings(options)` and `selectionTransformContribution(options)`, which take the rotate options; resize options travel in the `resizePolicy` dep, which `useResizePolicy` and `<SceneCanvas selectTool.resize>` now fill with the lifecycle fields too.
+  
+  A resize behavior's `onEnd` returning ops now commits them in place of the resize, as the behavior contract says. A move whose behavior claimed or aborted the commit no longer leaves its preview poses published over the document.
+  
+  Removed, since nothing read them: `UseInsertOptions` (the insert action takes binding params and the `insert` dep); `debug`, `handleHitRadius` and `rotationHandleDistance` on the resize and rotate options and `debug` on `UseSelectToolOptions` (`<SceneCanvas debug>` records handle hitboxes, and `selectTool.handleHitRadius` sizes them); `CloneBehavior.defaultTransient`.
+- Updated dependencies [6819653]
+- Updated dependencies [af5281e]
+- Updated dependencies [240138b]
+- Updated dependencies [32bb3be]
+- Updated dependencies [ad0378f]
+- Updated dependencies [da20f95]
+- Updated dependencies [9647b3c]
+- Updated dependencies [0cecdcf]
+- Updated dependencies [7c3cc5d]
+- Updated dependencies [722b267]
+- Updated dependencies [52078c5]
+- Updated dependencies [fc3de06]
+- Updated dependencies [6357f14]
+- Updated dependencies [fd178be]
+- Updated dependencies [5201b8e]
+- Updated dependencies [793987a]
+- Updated dependencies [ca2f45f]
+- Updated dependencies [242e9f7]
+- Updated dependencies [f257369]
+- Updated dependencies [408ce25]
+- Updated dependencies [455e4bc]
+- Updated dependencies [a028cc3]
+- Updated dependencies [aad77d3]
+- Updated dependencies [94cf4cd]
+- Updated dependencies [38f524c]
+- Updated dependencies [dbc3c3e]
+- Updated dependencies [f8f6041]
+  - @weasel-js/routing@1.7.0
+  - @weasel-js/modes@1.7.0
+  - @weasel-js/geom@1.7.0
+  - @weasel-js/gestures@1.7.0
+  - @weasel-js/history@1.7.0
+  - @weasel-js/paint@1.7.0
+  - @weasel-js/text@1.7.0
+  - @weasel-js/quantity@1.7.0
+  - @weasel-js/registry@1.7.0
+  - @weasel-js/font@1.7.0
+  - @weasel-js/cursor@1.7.0
+
 ## 1.6.1
 
 ### Patch Changes

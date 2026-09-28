@@ -1,5 +1,238 @@
 # @weasel-js/labkit
 
+## 1.7.0
+
+### Patch Changes
+
+- 357831c: An annotation overlay's canvas now turns on only picking, moving, resizing and editing marks (undo, delete and the rest of `edit`). A wheel or Space-drag over a target no longer reaches a weasel camera of its own, and arrange, path-editing and paste-ingest keys no longer act on marks.
+- be5bccd: New `CloseButton`: the kit's `close` glyph at 16px in a square `--wzl-icon-button-size` target, named by a required `ariaLabel`, with an optional `tooltip`. `SidebarPanel`'s hide button, `Dialog`, `Callout` and `Toast`'s close buttons, the remove buttons in `ListEditor` and `LayerList`, and labkit's mark list now all draw it. Most of them drew a text `×`, whose ink was about 5px across, so the enlarged close glyph never reached them. Accessible names and behavior are unchanged. labkit's `weasel-ui` passthrough re-exports it.
+- 2e34d59: `viewport.dragPan` no longer declares a default binding, so a plain drag that no tool claims no longer pans the view. The hand tool still pans (H, or hold space), and a canvas that should pan on any unclaimed drag — a viewer, a map — adds the new `dragPanContribution()` to its `ambient` list; it takes the same `axis` and `inertia` params the hand tool passes. labkit's trial cameras keep panning on a plain drag.
+  
+  This is a behavior change for any canvas with the `view` preset that relied on a plain drag panning under a tool that binds none.
+- 32c5fb4: Path fills tessellate with earcut 3, which handles holes faster. earcut 3 ships its own typings and is ESM-only, as both packages already are.
+- fa22963: Text reads its family from the font tokens in more places.
+  
+  - forge's index pages set their chrome and every story in `--wzl-font-ui`, and only the descriptions in `--wzl-font-body`. The whole page used to be set in the body face, so any story text that inherits its font — most of `SelectionPanel`, `Prefs`, `Tree`, `ItemList` — showed in Inter on the index page and in Oswald on the story's own page.
+  - `Slider`'s thumb labels and readouts, `ToolButton`'s shortcut, and the `Foundations` specimens read `--wzl-font-ui` / `--wzl-font-mono` instead of hard-coded font stacks.
+  - `NumberField`'s steppers, the property help button, `Timeline`'s transport buttons and `CurveField`'s actions take `font: inherit`. They are buttons, which don't inherit a font by default, so outside a host that resets form controls they rendered in the browser's own control font.
+  - labkit sets `code`, `kbd`, `samp` and `pre` inside `.lk-root` in `--wzl-font-mono`, at zero specificity. The browser's default `monospace` reaches no token.
+  
+  `Keycaps` still sets its own sans stack: its stylesheet documents that as a deliberate exception.
+- 69a7fff: The sidebar has a Gallery view beside Tree and Components. Every story tagged `gallery` lists there, grouped the way Components groups, and no longer lists in the other two views; the sidebar's gallery mark is gone, since the view now says it. The fold mark sits 8px from its label instead of 4px. The `ui` package badge is amber and `forge`'s is blue.
+  
+  labkit's `Lab/FullChrome` stories are tagged `gallery` as a file rather than only `AllChrome`, so all of them list in the Gallery view.
+- c755d1e: Add `GestureRoute`, which draws a dispatcher route string such as
+  `[initial] drag => node +shift` as a `Powerline`: phase, gesture, modifiers and
+  target as one chevron-linked chain. `gestureRouteSegments` returns the segments
+  on their own. labkit re-exports both through `@weasel-js/labkit/weasel-ui`.
+- b4227b8: `GradientEditor` offers every registered gradient kind, mesh included, instead of a fixed linear / radial / conic list. A kind counts as a gradient when its registry entry carries the two new optional `PaintKindEntry` slots, `stopsOf` (the stop list a paint reads as) and `fromStops` (a paint built from one); `listGradientKinds()` returns those kinds, and `switchGradientKind(paint, kind)` converts between any two of them. Between linear, radial and conic it is `withGradientKind` and keeps the geometry; to a mesh, a stop list becomes one full-height patch per gap between stops, so a horizontal ramp survives unchanged, and a mesh reads back as the ramp across its patches' top edges. `meshFromStops` and `meshStops` are exported. A mesh value shows `MeshEditor`'s corner colors; a registered kind's own `Editor` wins, as it does in `PaintInput`. `PaintInput` now converts through `switchGradientKind` too, so switching a gradient to a mesh carries its colors instead of seeding a new mesh from one color.
+  
+  `GradientEditor`'s `value`, `onInput` and `onChange` are now typed `FillStyle` rather than `GradientFill`, since a mesh is not a `GradientFill`; a handler typed to take `GradientFill` needs widening.
+  
+  `GradientEditor` also takes `svg`, off by default, which limits the choices to what an SVG file carries natively: the linear and radial gradients, blended in sRGB. A value already outside that set keeps its own kind and space on offer. `@weasel-js/svg` exports the rule as `nativeSvgKind(kind)` and `nativeSvgSpace(space)`, the same predicates its serializer uses to decide when a paint needs a fallback color or a `wzl:interpolate` attribute.
+- 722b267: Every canvas now routes its own input. `<SceneCanvas>`, labkit's `<CanvasStack>` and `<Stage>` each mount an `<InputScope>` — an actions registry, dep registry and active tool of their own — under whatever registries are in scope, so two canvases under one provider no longer hand the newest one everyone's gestures. Registries above a canvas read through to the canvas last used: `trigger`, `begin`, `list` and `useActiveToolContext` there answer from the scope that last took a pointerdown or wheel, and keystrokes dispatch only in that scope.
+  
+  When bindings tie on scope and specificity, an action gated by an `eligible` rule that holds now outranks one with no rule: in path edit Escape exits the edit instead of resetting the tool, and a bare drag no tool binds marquees where selection is on offer and pans where it is not. The route-conflict check follows the same rule. Escape with nothing selected now returns to the default tool, as `tool.resetToDefault` documents; the standard `escape` action used to spend that press clearing an empty selection.
+  
+  Canvases that should share input join one yoke: `const yoke = useYoke()`, then `yoke={yoke}` on each canvas and `<Yoke value={yoke}>` around a toolbar. A canvas with no yoke keeps its own tool.
+  
+  Breaking: `ActionsScope`, `ActionsRegistry.setDepRegistry` and labkit's `CameraScopeContext` are removed; `ActionsRegistry` gains `activate()` and `isActive()`, which a hand-built registry must now supply. A registration made inside one canvas is no longer visible from a sibling canvas — a registry above reaches it only through the active scope. A nested `<WeaselProvider>` now hands its children the outer registry itself.
+- b8ff2c7: Interstellar's dark accent moves from a grayed lavender to an indigo ramp:
+  `#4f46e5` fills selections under white text (5.8:1, where the lavender gave
+  2.6:1), periwinkle `#6d5dfc` is the hover, and `#7474fe` is the accent drawn
+  straight on the dark surface — text, curves and the focus ring.
+- 50bf819: JobProgress's fill animates over `--wzl-motion-fast` rather than a literal 120ms, so a theme that retimes its motion retimes the bar with it.
+- 52078c5: A keystroke is dispatched once. Every gesture dispatcher listens for keys on
+  `window`, and one now skips a keydown that another dispatcher — or anything
+  else — has already claimed with `preventDefault`; before, two dispatchers
+  binding the same key both ran it. `keyboard: 'first'` makes a dispatcher listen
+  in the capture phase, ahead of the rest whatever the mount order. The lab
+  header's zoom uses it, so Mod+= over a trial with a camera zooms the trial and
+  not also a story's own canvas; over a trial without one, the key passes to the
+  story.
+- f400d11: `KeySequence` takes a new `joins` prop saying where its separator goes: `'all'` puts one between every pair of chips (`⌘ + ⇧ + K`), `'key'`, the default, puts one before every non-modifier key (`⌘ ⇧ + K`, `⌘ + K + L`) — the same as before for a single key, but a second key is now joined too, and `'none'` draws none. The `KeySequenceJoins` type is exported, and labkit's `weasel-ui` passthrough carries it.
+  
+  Breaking: `separator` is now only the glyph and no longer accepts `null`, and an empty string no longer means "no separator". Pass `joins="none"` instead.
+- 843a477: The lab header's theme switch now sits at the header's end, after a consumer's
+  own header content and chrome contributions, instead of before them.
+- a251594: The lab header has zoom controls for the focused trial: zoom out, the zoom as a
+  percentage, and zoom in, with Mod+=, Mod+- and Mod+0 as keys. Clicking the
+  percentage resets to actual size, about the middle of the view. They drive the
+  trial's camera through core's `viewport.zoom`, so a step stops at the camera's
+  own zoom limits. Over a trial with no camera they stay in place, disabled, and
+  leave the keys to the browser. `<Lab zoom={false}>` leaves them out, and
+  `<LabZoom>` places them somewhere else.
+  
+  A camera now publishes itself to the lab: `useCameraView` returns a `CameraView`,
+  which adds `zoomRange()`, and `<Stage>` and `<CanvasStack>` register it under
+  their trial's id in the lab's `CameraRegistry`. A component with a camera of its
+  own can do the same with `usePublishCamera`.
+- 49460d0: labkit's default look for a bare `<button>` now reaches only a button with no class or a labkit (`lk-`) class. It used to reach every weasel-ui button inside a lab too, filling in whatever the component left unset: ToolButton, Disclosure's twisty, SidebarPanel's hide button, Timeline's transport buttons, BandEditor's bands and others were forced to the control height (a tall one clipped its own icon), picked up a backdrop blur, and turned accent on hover. Inside a lab those components now look as they do anywhere else.
+  
+  A consumer's own classed `<button>` inside a lab no longer gets the default either. Leave it unclassed to keep the default, or style it through its class. The rules several ui components carried to undo the default are gone.
+- f478bd7: labkit's test setup moves to `@testing-library/jest-dom` 7. Development-only; nothing a consumer installs changes.
+- 4aee366: labkit's new `Readout` shows values a lab only reads — measurements beside its picture, such as "Lock margin +47.9°" — from a `rows` array of `{ label, value, status?, values? }`, with children drawn below the rows. It is a `DetailList` underneath, so its labels share the params label rail with a `ControlPanel` beside it. labkit now also re-exports `DetailList` and `DetailRow`.
+  
+  `DetailList` takes `values="figures"`: each value sits right-aligned in a column at least `--wzl-detail-figure-min-width` (`8ch`) wide, in the mono face with spaces kept, so figure-space padding lines a column up on its decimal point. `DetailRow` takes a `status` (`success`, `warn` or `danger`) that draws a dot in that token's color before the value, and a row with no value now stays in place showing an en dash (or its `placeholder`) instead of an empty cell. A `DetailRow` (or a `Readout` row) may set its own `values`, so a sentence among figures wraps inside the list instead of pushing past it.
+- 5ef8167: `f.group(...).resettable()` puts a reset button on the group's heading in `ControlPanel`. It writes the default of every value beneath the group that differs from it, leaving the rest of the config alone, and is disabled while nothing has changed. The trial's own Reset still returns everything.
+- 9ce0b96: `@weasel-js/labkit/weasel-ui` now passes through `sampleByInterpolation`, so a lab can sample the same curve a `CurveEditor` draws without importing a second copy of `@weasel-js/ui`.
+- 8922a1f: labkit depends on windease 2. labkit never used the APIs windease 2 removed (`hasFocus`, `canAccept`, `overflowMode: 'unplace'`), so nothing changes for a labkit consumer. A consumer importing windease directly alongside labkit now resolves the 2.x line.
+- 4080df8: A `configSchema()` field whose `key` contains dots now draws in the control panel. The key is read and written as a config path everywhere else, but the panel filed the field as one child named `pose.x`, so the lookup by path found nothing and the row never drew. The field now sits under headless groups at the path its key names. Keep such an instrument's `defaultConfig()` nested to match: `{ pose: { x: 0 } }`, not `{ 'pose.x': 0 }`.
+- 56e85e2: Drops `.lk-mark-list__title`, which restated the width `Input` already gives itself. Nothing renders differently.
+- fc3de06: A `{ px }` marker size now holds its screen size through a zoom, as a `{ px }` stroke width does, and so does a default-sized marker under a `{ px }` stroke width. The line stops short of the head by the same resolved size, and a node's grab reach resolves it against the view scale.
+  
+  The renderer now draws a stroke's markers itself, for any path command whose stroke carries one — so a painter only sets `markerStart` / `markerMid` / `markerEnd`. `markerDrawCommands` is no longer exported: a painter that appended its commands would now draw every head twice. labkit's annotation arrows rely on the renderer, and their SVG export keeps the marker reference so the head is drawn there too.
+- ca2f45f: Every click-versus-drag decision in the kit now reads one threshold, `DRAG_THRESHOLD_PX` (4 CSS pixels), through `pastDragThreshold`. Both now live in `@weasel-js/gestures`; `@weasel-js/routing` and `@weasel-js/core` re-export them as before. `useDragHandle` starts a drag at 4px instead of past 5px, labkit's `FloatingPanel` and the hud window's content click at 4px instead of 3px, and `startThresholdDrag`, `useReorderDragList` and `Select` default to the constant rather than their own literal 4.
+  
+  The move action's `dragThresholdPx` option works again: set as `selectTool.move.dragThresholdPx` on `<SceneCanvas>`, it holds the selection in place until the pointer has travelled that far on screen. It has been ignored since the `useMove` hook was removed. It cannot lower the threshold below the dispatcher's.
+- f8f0160: A plain object made in another realm (an iframe, a VM context, or `structuredClone` under jsdom) is now treated as a plain object. labkit's config defaults used to overwrite a stored config that came from another realm instead of filling it, and forge's story-arg handling treated one as opaque. `@weasel-js/core` exports the check as `isPlainObject`.
+- f72459c: Add a `puzzle` cap to `Powerline`: `endCap: 'puzzle'` joins a segment to the next like jigsaw pieces, with a round knob on a narrower neck protruding from the segment into a matching socket in its neighbor. The knob's protrusion is `depth`, and it shrinks to fit a segment too short to hold it. Because the knob overhangs its neck it is not a function of `t`, so it has no entry in `EDGE_PROFILES`: that record is now typed by the new `BuiltInProfileName`, and code indexing it with a `BuiltInEdgeName` needs the narrower type.
+- 5c20713: `PropertyField`, `PropertyControl` and `PropertyRow` no longer take `chrome`, and the
+  `PropertyFieldChrome` type is gone — a breaking change for any caller that passed it.
+  Each field kind now draws one widget on every surface:
+  
+  - A typed number is a `UnitField`: it reads a typed unit (`accepts`) everywhere, reports
+    each keystroke through a lone `onChange` or through `onInput` beside a settled
+    `onChange`, is a spin button (arrows, Page Up/Down, Home/End, the wheel while focused),
+    and draws steppers with `steppers`, which now defaults to off. A caller that wants
+    settled values only passes a no-op `onInput`.
+  - Text is an `Input`; a textarea always wears the field frame.
+  - A choice is a `Select` — borderless with an underlined value when set directly in a
+    property row, boxed where a surface wraps it — a `ToggleBar` for `control="toggle"`, and
+    a `RadioGroup` for `control="radio"`. labkit's `.radio()` draws segments, as it says, through the toggle.
+  - A color is a `ColorField`, which gains `id` and `alphaDisabled` and commits when the
+    picker closes as well as on blur. An alpha held apart (`alpha={0.5}`) still reports
+    through `onAlphaChange` / `onAlphaInput`.
+  - A checkbox is a native box dressed as the kit's `Checkbox`, so the row's label still
+    toggles it.
+  - A slider's track is the shared range skin with no fill; its readout is the tab stop
+    and steps like the track.
+  
+  `UnitField` gains `onInput`, `steppers` and `id` and is `role="spinbutton"`.
+  `NumberField` and `Select` fill with `--wzl-input-surface` where a surface sets it. `Select`
+  gains look hooks (`--wzl-select-bg`, `-pad`, `-chevron`, `-underline`, `-focus-border`,
+  `-focus-shadow`, `-focus-outline`) that draw the bare look from context.
+- 455e4bc: New package, `@weasel-js/quantity`: a number anywhere the engine takes one can be bare or tagged (`{ value, unit?, display? }`), and a tagged value keeps its unit and display through JSON, history and every edit (`retag`). A display is plain data — `fraction()`, `ratio()`, `percent()`, `unit('mm')`, `currency('USD')`, `duration()`, `bytes()`, `roman()`, `ordinal()`, `multiplier()`, `zoom()`, `compact()`, `decimal()`, `integer()` — and `qty(value, display)` gives its text, spoken text, unstyled HTML and, for fractions, MathML. `registerDisplayKind` adds a kind or replaces a built-in one.
+  
+  Breaking: the unit system (`UnitSystem`, `resolveUnit`, `formatUnit`, …) now lives in `@weasel-js/quantity`; core still re-exports the same names. `formatNumber`, `formatCompact`, `parseNumber`, `parseSignedNumber` and `MINUS_SIGN` are no longer exported from `@weasel-js/ui` — import them from `@weasel-js/quantity`. `formatZoom` is gone: use `qty(z, zoom()).text`. A pref's `format: 'plain' | 'compact'` is now `display: Display` (`ToolPrefNumberFormat` and `PrefNumberFormat` are removed), `PropertyField`'s `notation` is now `display`, and labkit's `f.number().format('compact')` is `.display(compact())`.
+  
+  `PropertyField`, `UnitField`, `Slider` and `BandEditor` take a `display`, which drives what they show, what they read back when typed, and their `aria-valuetext`. A `BandEditor` seam at 1/12 with `display={fraction()}` announces "1 over 12" rather than `0.08333333333333333`, and a band whose `from` is tagged stays tagged through drags, splits and merges. The Timeline rate slider now speaks "4 times" rather than "4x".
+- 779b3cc: Range thumbs sit on the center of their tracks. `RangeSlider`'s thumb hung from the track's top edge, 2px above center inside labkit and 3px outside it; it now centers on both axes. The native range skin (`InlineRange`, `ColorField`'s alpha slider, `PropertyField` rows) centers its thumb with a transform instead of a margin, so a track and thumb whose sizes differ by an odd number of pixels no longer land half a pixel off in Chromium and WebKit. A disabled alpha slider now drops its thumb and fades its track in Chromium and WebKit too; those rules were being discarded there. labkit's skin for a bare `<input type="range">` is now extended from weasel-ui's skin instead of copied, so a bare range also gets the skin's focus ring, disabled state and full width.
+- d665712: Sidebar section titles are bold and take a `title-weight` stance slot, and
+  sidebar sections and forge's story tree have wider side gutters. labkit's
+  `h1`–`h3` defaults now sit in `:where()`, so a heading's own class sets its
+  font instead of losing to them.
+- d17c0a5: Status glyphs and icon options in segmented controls. `@weasel-js/ui` adds `statusAccent`, `statusNeutral`, `statusMuted` and `statusSuccess` to the icon set, and `BADGE_STATUS_ICONS` maps every `BadgeStatus` but `custom` to a glyph (info, warn and danger reuse `info`, `warning` and `error`). A `PropertyField` enum segment that draws a glyph now shows its label as a tooltip. labkit's `ConfigOption` takes an `icon`, and a forge argType takes `control: { type, icons: { option: iconName } }` to put one on each option.
+- fab839f: Removes style rules no component renders: `CurveEditor`'s `.hidden`, and labkit's `.lk-toolbar__zoom-label` and `.lk-sidebar__placeholder`.
+- 1052a77: Drops the fallback values kit stylesheets carried on theme tokens. Every theme declares those tokens, so the fallbacks never applied; several were stale colors from an earlier palette. Nothing renders differently.
+- d5a9fbf: The text node's properties now cover every authored `TextStyle` field. Italic, underline, strikethrough, overline, superscript and subscript sit in one row of glyph toggles; Italic was a Normal / Italic dropdown, and superscript and subscript were missing. Alignment is drawn with glyphs, and reads a `start` / `end` alignment as the edge it paints at. New rows: Wrap, Direction, and the box's vertical alignment (`data.verticalAlign`, the field the `kit:text` painter and the editor already read). New glyphs: `textAlignLeft` / `Center` / `Right` and `textAlignTop` / `Middle` / `Bottom`.
+  
+  Two schema additions make that possible and are general: `ToolPrefBoolean.encoding` (`ToolPrefBooleanEncoding`, `PrefBooleanEncoding` in `@weasel-js/ui`) stores a flag as another value, which is how Italic writes `fontStyle`; and `ToolPrefEnum.clearable` lets a toggle's lit segment be clicked off, removing the field. `PropertyControl`'s enum takes the matching `onClear`. The text tool's Script control in the options bar is now such an enum, replacing the app-drawn renderer it needed.
+  
+  Fixed: in `SelectionPanel`, editing any field of an object leaf (the text style, the stroke) with several nodes selected wrote one object over every node, dropping each node's other fields, and reported every field as mixed. Fields are now read and written node by node; `PropertyRenderContext.update` is the new per-node write.
+- 865184c: `ThemeSwitcher` is one icon button that steps through an ordered list of options — by default the color modes Auto,
+  Light and Dark — showing the current one's glyph. A click moves to the next option and a shift-click to the previous,
+  both wrapping; the accessible name and tooltip read `Theme: Auto — click for Light`. It is controlled, like
+  `ColorModeControl`, and `COLOR_MODE_OPTIONS` is the default list. labkit re-exports both.
+  
+  The lab header's color mode is now a `ThemeSwitcher` in place of the three-segment `ColorModeControl`, sized like the
+  header's other icon buttons.
+- d985954: A trial's own zoom buttons, its zoom slider and its actual-size button now zoom
+  through the trial's camera, the way the lab header's zoom does: about the middle
+  of the view rather than the frame's origin, and inside the instrument's
+  `minZoom` / `maxZoom`.
+- Updated dependencies [05da5a4]
+- Updated dependencies [b1142a7]
+- Updated dependencies [fc21474]
+- Updated dependencies [96adc78]
+- Updated dependencies [be5bccd]
+- Updated dependencies [240138b]
+- Updated dependencies [21ee45b]
+- Updated dependencies [32bb3be]
+- Updated dependencies [a2bb168]
+- Updated dependencies [2e34d59]
+- Updated dependencies [32c5fb4]
+- Updated dependencies [0047d33]
+- Updated dependencies [fa22963]
+- Updated dependencies [ad0378f]
+- Updated dependencies [da20f95]
+- Updated dependencies [c755d1e]
+- Updated dependencies [b4227b8]
+- Updated dependencies [5faffa6]
+- Updated dependencies [0cecdcf]
+- Updated dependencies [7c3cc5d]
+- Updated dependencies [722b267]
+- Updated dependencies [1eac15b]
+- Updated dependencies [52078c5]
+- Updated dependencies [f400d11]
+- Updated dependencies [49460d0]
+- Updated dependencies [4aee366]
+- Updated dependencies [197fdf7]
+- Updated dependencies [5acf166]
+- Updated dependencies [7f7b04f]
+- Updated dependencies [fc3de06]
+- Updated dependencies [b8f2007]
+- Updated dependencies [fd178be]
+- Updated dependencies [5201b8e]
+- Updated dependencies [bc2a7ef]
+- Updated dependencies [6819653]
+- Updated dependencies [793987a]
+- Updated dependencies [ca2f45f]
+- Updated dependencies [082c63f]
+- Updated dependencies [42d2591]
+- Updated dependencies [242e9f7]
+- Updated dependencies [7607fea]
+- Updated dependencies [f8f0160]
+- Updated dependencies [f72459c]
+- Updated dependencies [5c20713]
+- Updated dependencies [89dcbe2]
+- Updated dependencies [f257369]
+- Updated dependencies [408ce25]
+- Updated dependencies [455e4bc]
+- Updated dependencies [779b3cc]
+- Updated dependencies [a028cc3]
+- Updated dependencies
+- Updated dependencies [ef9396c]
+- Updated dependencies [667f14f]
+- Updated dependencies [e442bcb]
+- Updated dependencies [aad77d3]
+- Updated dependencies [8999210]
+- Updated dependencies [94cf4cd]
+- Updated dependencies [d647c9b]
+- Updated dependencies [d7aaeb1]
+- Updated dependencies [38f524c]
+- Updated dependencies [38480ce]
+- Updated dependencies [d665712]
+- Updated dependencies [2336d9c]
+- Updated dependencies [ffacd5e]
+- Updated dependencies [71d54e4]
+- Updated dependencies [03e9385]
+- Updated dependencies [d17c0a5]
+- Updated dependencies [fab839f]
+- Updated dependencies [1052a77]
+- Updated dependencies [7950ba1]
+- Updated dependencies [38ca7d4]
+- Updated dependencies [1490e8f]
+- Updated dependencies [440a9ef]
+- Updated dependencies [760017b]
+- Updated dependencies [58a3a58]
+- Updated dependencies [8c1cd8d]
+- Updated dependencies [d5a9fbf]
+- Updated dependencies [865184c]
+- Updated dependencies [e49f76f]
+- Updated dependencies [5bb86f5]
+- Updated dependencies [c526214]
+- Updated dependencies [ea9a314]
+- Updated dependencies [3a20620]
+  - @weasel-js/theme@1.7.0
+  - @weasel-js/core@1.7.0
+  - @weasel-js/ui@1.7.0
+  - @weasel-js/geom@1.7.0
+  - @weasel-js/svg@1.7.0
+  - @weasel-js/kernel3d@1.7.0
+  - @weasel-js/quantity@1.7.0
+  - @weasel-js/loupe@1.7.0
+
 ## 1.6.1
 
 ### Patch Changes

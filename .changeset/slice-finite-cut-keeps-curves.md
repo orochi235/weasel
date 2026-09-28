@@ -1,5 +1,0 @@
----
-'@weasel-js/core': patch
----
-
-`splitPathByLine` is renamed `splitPathBySegment`, and `SplitByLineOptions` is renamed `SplitBySegmentOptions` — breaking for anyone importing either name. The function now cuts only where the segment itself crosses the shape. It used to clip against the infinite line through the segment, so a concave shape crossed at one arm was also cut at every other arm the line's extension reached. A stretch of the segment that begins or ends inside the fill cuts nothing; the chords it crosses end to end still cut. Curves stay curves: quadratic and cubic segments are split exactly at the crossings, so the pieces trace the original outline instead of a flattened polyline. Each connected piece comes back as its own path, and contours the segment misses come back together as one final piece. A cut through an exact vertex now splits the shape too. Paths whose contours cross each other or themselves are still flattened, because they are resolved by a polygon union before cutting.

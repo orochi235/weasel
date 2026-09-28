@@ -1,5 +1,154 @@
 # @weasel-js/forge
 
+## 1.7.0
+
+### Patch Changes
+
+- fa22963: Text reads its family from the font tokens in more places.
+  
+  - forge's index pages set their chrome and every story in `--wzl-font-ui`, and only the descriptions in `--wzl-font-body`. The whole page used to be set in the body face, so any story text that inherits its font — most of `SelectionPanel`, `Prefs`, `Tree`, `ItemList` — showed in Inter on the index page and in Oswald on the story's own page.
+  - `Slider`'s thumb labels and readouts, `ToolButton`'s shortcut, and the `Foundations` specimens read `--wzl-font-ui` / `--wzl-font-mono` instead of hard-coded font stacks.
+  - `NumberField`'s steppers, the property help button, `Timeline`'s transport buttons and `CurveField`'s actions take `font: inherit`. They are buttons, which don't inherit a font by default, so outside a host that resets form controls they rendered in the browser's own control font.
+  - labkit sets `code`, `kbd`, `samp` and `pre` inside `.lk-root` in `--wzl-font-mono`, at zero specificity. The browser's default `monospace` reaches no token.
+  
+  `Keycaps` still sets its own sans stack: its stylesheet documents that as a deliberate exception.
+- 7c6b81a: forge's story indexer parses with `@babel/parser` 8. That parser needs Node `^22.18.0 || >=24.11.0`, so forge's `engines` now says so, where it said `>=22` before.
+- edbe3f3: A component's index page lists the listed components it uses and the ones that use it, each linking to that
+  component's page. The vite plugin derives them from source, following the meta's `component` through imports and
+  re-exports to the file declaring it, and serves them as `virtual:forge/deps.js`; `mountWorkshop` takes them through
+  `setDependencies`. A story file tagged `gallery` in its meta's `tags` (or a single story tagged so) is marked in the
+  sidebar and on its index page, and a component made only of galleries is left out of the lists. `Meta`, `StoryObj`,
+  `MetaSpec` and `StorySpec` accept `tags`; `IndexContext` adds `Dependencies` and `gallery`.
+- de70b29: The sidebar folds a folder that holds nothing but a gallery into that gallery. `ui/Cursors/Gallery` now lists as a `Cursors` row with its stories directly beneath it. The gallery keeps its title, so story ids and `#/` routes are unchanged.
+- 69a7fff: The sidebar has a Gallery view beside Tree and Components. Every story tagged `gallery` lists there, grouped the way Components groups, and no longer lists in the other two views; the sidebar's gallery mark is gone, since the view now says it. The fold mark sits 8px from its label instead of 4px. The `ui` package badge is amber and `forge`'s is blue.
+  
+  labkit's `Lab/FullChrome` stories are tagged `gallery` as a file rather than only `AllChrome`, so all of them list in the Gallery view.
+- e35e49d: Index page cells size to their story instead of filling the page, and a row of variants wraps rather than stretching each cell to a grid column. A fullscreen story still gets the full width.
+- 046a8ec: Index page cells pad their story by 4px instead of 2px.
+- f617d2e: An index page heads its path with its package as a badge, toned as the sidebar tags that package, in place of a first
+  title segment naming it.
+- e4d03e6: Index pages keep their styles in the workshop document. `IndexPage` now imports
+  its own stylesheet; before, only the iframe entry did, so an index page rendered
+  in the document had no padding, width limit or cell styling.
+- cfc1a99: The sidebar's package badges hold at least 5:1 contrast in light mode, where labkit's measured 3.9:1 and forge's 4.4:1;
+  each tone now mixes further toward the foreground in light mode only.
+- d6ec7cd: The workshop takes no marks for now: story and index trials no longer declare an
+  annotation target, so the Marks section and the annotation tools are gone from
+  every trial. The globals toolbar puts its "More … settings" buttons after every
+  select, at the toolbar's end.
+- e7097f4: The workshop's tool rail carries only Interact and Info; the drawing tools are
+  off for now. Index pages pad evenly on every side and show their breadcrumb at
+  the large text size.
+- 71d9622: A global can follow the lab's own chrome. A declaration with `follows` offers
+  `App` first on the lab's toolbar, and while the lab's value is `App` the global
+  takes what `follows` reads from the chrome (`LabChrome`, which carries the lab
+  header's mode switch). Picking any other value overrides the chrome for the
+  trials; a trial's pin still follows the lab or names a value. `FOLLOW_APP` and
+  `LabChrome` are exported.
+  
+  The repo's workshop uses it for Mode, whose default is now `App`: the header's
+  Auto/Light/Dark switch reaches every story and index page until a Mode is picked,
+  where before it styled only the workshop's chrome. A new Theme global picks the
+  theme trials are rendered in, from weasel and interstellar, lab-wide or pinned
+  per trial in Settings → Globals.
+- 4657a9d: forge accepts vitest 5 as well as 4 for `forgeTest`, and a story's `play` asserts through `@vitest/expect` 5. Nothing in forge's API changed.
+- f8f0160: A plain object made in another realm (an iframe, a VM context, or `structuredClone` under jsdom) is now treated as a plain object. labkit's config defaults used to overwrite a stored config that came from another realm instead of filling it, and forge's story-arg handling treated one as opaque. `@weasel-js/core` exports the check as `isPlainObject`.
+- d665712: Sidebar section titles are bold and take a `title-weight` stance slot, and
+  sidebar sections and forge's story tree have wider side gutters. labkit's
+  `h1`–`h3` defaults now sit in `:where()`, so a heading's own class sets its
+  font instead of losing to them.
+- d17c0a5: Status glyphs and icon options in segmented controls. `@weasel-js/ui` adds `statusAccent`, `statusNeutral`, `statusMuted` and `statusSuccess` to the icon set, and `BADGE_STATUS_ICONS` maps every `BadgeStatus` but `custom` to a glyph (info, warn and danger reuse `info`, `warning` and `error`). A `PropertyField` enum segment that draws a glyph now shows its label as a tooltip. labkit's `ConfigOption` takes an `icon`, and a forge argType takes `control: { type, icons: { option: iconName } }` to put one on each option.
+- Updated dependencies [05da5a4]
+- Updated dependencies [357831c]
+- Updated dependencies [b1142a7]
+- Updated dependencies [fc21474]
+- Updated dependencies [96adc78]
+- Updated dependencies [be5bccd]
+- Updated dependencies [240138b]
+- Updated dependencies [21ee45b]
+- Updated dependencies [32bb3be]
+- Updated dependencies [a2bb168]
+- Updated dependencies [2e34d59]
+- Updated dependencies [32c5fb4]
+- Updated dependencies [0047d33]
+- Updated dependencies [fa22963]
+- Updated dependencies [69a7fff]
+- Updated dependencies [ad0378f]
+- Updated dependencies [c755d1e]
+- Updated dependencies [b4227b8]
+- Updated dependencies [5faffa6]
+- Updated dependencies [0cecdcf]
+- Updated dependencies [7c3cc5d]
+- Updated dependencies [722b267]
+- Updated dependencies [1eac15b]
+- Updated dependencies [b8ff2c7]
+- Updated dependencies [50bf819]
+- Updated dependencies [52078c5]
+- Updated dependencies [f400d11]
+- Updated dependencies [843a477]
+- Updated dependencies [a251594]
+- Updated dependencies [49460d0]
+- Updated dependencies [f478bd7]
+- Updated dependencies [4aee366]
+- Updated dependencies [5ef8167]
+- Updated dependencies [9ce0b96]
+- Updated dependencies [8922a1f]
+- Updated dependencies [197fdf7]
+- Updated dependencies [5acf166]
+- Updated dependencies [7f7b04f]
+- Updated dependencies [4080df8]
+- Updated dependencies [56e85e2]
+- Updated dependencies [fc3de06]
+- Updated dependencies [b8f2007]
+- Updated dependencies [fd178be]
+- Updated dependencies [5201b8e]
+- Updated dependencies [bc2a7ef]
+- Updated dependencies [6819653]
+- Updated dependencies [793987a]
+- Updated dependencies [ca2f45f]
+- Updated dependencies [082c63f]
+- Updated dependencies [242e9f7]
+- Updated dependencies [7607fea]
+- Updated dependencies [f8f0160]
+- Updated dependencies [f72459c]
+- Updated dependencies [5c20713]
+- Updated dependencies [89dcbe2]
+- Updated dependencies [455e4bc]
+- Updated dependencies [779b3cc]
+- Updated dependencies [a028cc3]
+- Updated dependencies
+- Updated dependencies [ef9396c]
+- Updated dependencies [667f14f]
+- Updated dependencies [e442bcb]
+- Updated dependencies [aad77d3]
+- Updated dependencies [8999210]
+- Updated dependencies [94cf4cd]
+- Updated dependencies [d647c9b]
+- Updated dependencies [d7aaeb1]
+- Updated dependencies [38f524c]
+- Updated dependencies [38480ce]
+- Updated dependencies [d665712]
+- Updated dependencies [2336d9c]
+- Updated dependencies [ffacd5e]
+- Updated dependencies [71d54e4]
+- Updated dependencies [03e9385]
+- Updated dependencies [d17c0a5]
+- Updated dependencies [fab839f]
+- Updated dependencies [1052a77]
+- Updated dependencies [8c1cd8d]
+- Updated dependencies [d5a9fbf]
+- Updated dependencies [865184c]
+- Updated dependencies [e49f76f]
+- Updated dependencies [5bb86f5]
+- Updated dependencies [c526214]
+- Updated dependencies [ea9a314]
+- Updated dependencies [3a20620]
+- Updated dependencies [d985954]
+  - @weasel-js/theme@1.7.0
+  - @weasel-js/labkit@1.7.0
+  - @weasel-js/core@1.7.0
+  - @weasel-js/ui@1.7.0
+
 ## 1.6.1
 
 ### Patch Changes
