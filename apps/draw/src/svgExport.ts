@@ -144,7 +144,7 @@ function sceneSourceOf<TLayer extends string>(
   return {
     roots: scene.roots.map(String),
     childrenOf: (id) => scene.childrenOf(id as never).map(String),
-    kindOf: (id) => (scene.get(id as never)?.kind === 'container' ? 'container' : 'leaf'),
+    get: (id) => scene.get(id as never),
     isPainted: (id) => {
       const layer = scene.get(id as never)?.layer;
       return layer === undefined || !hidden.has(String(layer));

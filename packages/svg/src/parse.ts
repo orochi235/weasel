@@ -565,7 +565,7 @@ function readPaint(
       onWarn(`${attr} references unknown gradient #${parsed.id}`);
       return { kind: 'solid', color: defaultColor };
     }
-    return { kind: 'gradient', paint };
+    return { kind: 'gradient', paint: opacity != null ? { ...paint, opacity } : paint };
   }
   const out: SvgPaint = { kind: 'solid', color: parsed.color };
   const a = opacity ?? (parsed.alpha < 1 ? parsed.alpha : undefined);

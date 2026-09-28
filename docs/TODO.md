@@ -145,11 +145,18 @@ Priority tags:
   re-rasterizes at its drawn size (see `features/images/README.md`); that it
   actually looks sharp at zoom has only been checked in jsdom, never in a
   browser. Remaining: weaseldraw's
-  file-menu import still uses its own app-local `svgInterop` mapping (richer:
-  `wd:` tool metadata, paper size) — fold the shared walk if they drift, and
-  note it now *drops* `<image>` nodes, since the app's `Obj` union is path/text
-  only. The stroke lowering is already shared: both importers call
-  `strokeDataFromSvg`.
+  file-menu import still walks the tree with its own app-local `svgInterop`
+  mapping (richer: `wd:` tool metadata, paper size), and the walks have
+  drifted: `svgNodesToKitDrafts` folds element and group `opacity` into leaf
+  paints and registers the document's markers, while draw's
+  `svgNodesToSceneDrafts` does neither, and it *drops* `<image>` nodes, since
+  the app's `Obj` union is path/text only. Paint lowering is already shared
+  (`fillDataFromSvg`, `strokeDataFromSvg`), as is the whole export side
+  (`svgNodesFromKit`).
+
+- **(P3) SVG export drops a marker's `size`.** `SvgStroke` names a marker by key
+  alone, so `svgStrokeFromKit` writes a kit `MarkerRef`'s `{ key, size }` as just
+  the key, and the marker comes back one stroke width per unit.
 
 - **(P3) External-content ingestion — follow-ups.** Shipped 2026-07-03 (spec
   `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`): drop/paste
@@ -1208,11 +1215,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 - **(P2) Public API gaps the package demos worked around.** Each demo under the site's
   Packages section imports only its own package, and building them turned these up. Each one
   is duplicated consumer code today:
-  - `svg`: no kit-to-SVG inverse for shapes and text — only `svgImageFromKit` for images.
-    `SvgDemo.tsx` (`svgNodeOf`, `svgPaintOf`, `svgStrokeOf`) and `apps/draw/src/svgExport.ts` /
-    `svgInterop.ts` each carry their own copy. `svgNodesToKitDrafts` also drops `fill-opacity`
-    and element `opacity` (read in `packages/svg/src/unpack.ts`, `fillFromPaint`; not run), and
-    does not register `parsed.markers` — only `unpackSvgFiles` does.
   - `gestures`: nothing converts a `ParsedRoute` into a `GestureSpec`, so a typed route cannot
     drive `matchSpec`; `specificity()` lives in `routing`, not `gestures`; `describeRoute` with
     two modifiers reads "the user Mod and Alt-drags anywhere".

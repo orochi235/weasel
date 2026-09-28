@@ -1,9 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { SvgNode } from './types';
-import { svgImageFromKit, svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
+import { svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
 import { parseSvg } from './parse';
-import { serializeSvg } from './serialize';
-import { getMarker, _resetMarkersForTests, type IngestCtx, type Op } from '@weasel-js/core';
+import { DEFAULT_TEXT_STYLE, getMarker, _resetMarkersForTests, type IngestCtx, type Op } from '@weasel-js/core';
 
 const rectNode = (x: number, y: number, w: number, h: number, extra: Record<string, unknown> = {}): SvgNode => ({
   kind: 'path',
@@ -402,25 +401,58 @@ describe('unpackSvgFiles — document markers', () => {
   });
 });
 
-describe('svgImageFromKit', () => {
-  it('writes a kit:image leaf back as the SvgImageNode it was read from', () => {
-    const original = parseSvg(serializeSvg([{
-      kind: 'image', href: 'a.png', x: 5, y: 6, width: 40, height: 30,
-      source: { x: 0.25, y: 0.5, width: 0.5, height: 0.25 }, flipX: true,
-      opacity: 0.5, rotation: Math.PI / 4,
-    }])).nodes;
-    const [d] = svgNodesToKitDrafts(original, seq());
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
-    const back = svgImageFromKit(
-      d.data.image as Parameters<typeof svgImageFromKit>[0], d.pose,
-    );
-    expect(back).toEqual(original[0]);
-    expect(parseSvg(serializeSvg([back])).nodes).toEqual(original);
+describe('svgNodesToKitDrafts — opacity', () => {
+  const leafOf = (svg: string, index = 0) => {
+    const d = svgNodesToKitDrafts(parseSvg(svg).nodes, seq()).filter((x) => x.kind === 'leaf')[index];
+    if (d?.kind !== 'leaf') throw new Error('expected leaf');
+    return d.data;
+  };
+  const doc = (body: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`;
+
+  it('keeps fill-opacity on a solid fill', () => {
+    const data = leafOf(doc('<rect width="10" height="10" fill="#ff0000" fill-opacity="0.5"/>'));
+    expect(data.fill).toEqual({ color: '#ff0000', opacity: 0.5 });
   });
 
-  it('writes a plain image without source, flips, opacity or rotation', () => {
-    expect(svgImageFromKit({ src: 'a.png' }, { x: 1, y: 2, width: 3, height: 4 })).toEqual({
-      kind: 'image', href: 'a.png', x: 1, y: 2, width: 3, height: 4,
-    });
+  it("folds a path's element opacity into its fill and stroke", () => {
+    const data = leafOf(doc(
+      '<rect width="10" height="10" fill="#ff0000" fill-opacity="0.5" stroke="#000000" opacity="0.5"/>',
+    ));
+    expect(data.fill).toEqual({ color: '#ff0000', opacity: 0.25 });
+    expect((data.stroke as { paint: unknown }).paint).toEqual({ color: '#000000', opacity: 0.5 });
+  });
+
+  it("multiplies a group's opacity into every leaf under it", () => {
+    const svg = doc('<g opacity="0.5"><g opacity="0.5">'
+      + '<rect width="10" height="10" fill="#ff0000"/>'
+      + '<image href="a.png" width="10" height="10" opacity="0.5"/>'
+      + '</g></g>');
+    expect(leafOf(svg, 0).fill).toEqual({ color: '#ff0000', opacity: 0.25 });
+    expect((leafOf(svg, 1).image as { opacity: number }).opacity).toBe(0.125);
+  });
+
+  it("gives text with an element opacity the default fill at that opacity", () => {
+    const data = leafOf(doc('<text x="0" y="20" opacity="0.5">hi</text>'));
+    expect(data.fill).toEqual({ ...DEFAULT_TEXT_STYLE.fill, opacity: 0.5 });
+  });
+
+  it("leaves text with fill=none unfilled under an element opacity", () => {
+    const data = leafOf(doc('<text x="0" y="20" fill="none" stroke="#000000" opacity="0.5">hi</text>'));
+    expect(data.fill).toBeNull();
+    expect((data.stroke as { paint: unknown }).paint).toMatchObject({ color: '#000000', opacity: 0.5 });
+  });
+});
+
+describe('svgNodesToKitDrafts — document markers', () => {
+  it('registers the markers of a ParseResult it is handed', () => {
+    const parsed = parseSvg('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+      + '<defs><marker id="tip" refX="3" refY="2" orient="auto"><path d="M0 0 L3 2 L0 4 Z"/></marker></defs>'
+      + '<path d="M10 10 L90 10" stroke="#000" marker-end="url(#tip)"/></svg>');
+    const [d] = svgNodesToKitDrafts(parsed, seq());
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    const key = (d.data.stroke as { markerEnd: string }).markerEnd;
+    expect(key).toMatch(/^tip-/);
+    expect(getMarker(key)).toBeDefined();
+    _resetMarkersForTests();
   });
 });

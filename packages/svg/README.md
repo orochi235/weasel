@@ -83,6 +83,21 @@ gradient — it just blends the stops in sRGB, which moves the midpoint rather
 than losing the paint. A space this package does not know is dropped on import
 rather than carried through.
 
+## Scene nodes, both ways
+
+`svgNodesToKitDrafts(parseSvg(text), nextId)` lowers a document to scene-node
+drafts the kit's built-in path, text and image painters draw, and registers
+the document's markers. Containers carry no opacity, so an element or group
+`opacity` is multiplied into the paints of the leaves under it.
+
+`svgNodesFromKit(scene)` goes the other way: containers become groups, and
+each leaf is written the way its painter draws it, with the pose baked into
+the geometry and box-relative paints resolved into that box. Hand
+`serializeSvg` the result. Options pick the roots, skip nodes (a hidden
+layer), replace a leaf's lowering or decorate a group. The per-leaf pieces are
+public too: `svgLeafFromKit`, `svgPaintFromKit`, `svgStrokeFromKit`,
+`svgImageFromKit`.
+
 ## Raster images
 
 `<image>` parses to an `SvgImageNode` holding the `href` verbatim — an

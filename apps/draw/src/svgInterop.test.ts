@@ -38,6 +38,9 @@ interface PathObjT {
   closed: boolean; fill: FillStyle | null; stroke: Stroke | null;
 }
 
+// `sceneToSvgNodes` reads only a node's kind; the leaf itself comes from `objOf`.
+const nodeOf = (kind: 'leaf' | 'container') => ({ kind, data: {}, pose: { x: 0, y: 0, width: 0, height: 0 } });
+
 function ids(): () => string {
   let n = 0;
   return () => `i${n++}`;
@@ -239,7 +242,7 @@ describe('sceneToSvgNodes — scene container tree → <g>', () => {
     const source: SceneSource = {
       roots: ['c1'],
       childrenOf: (id) => (id === 'c1' ? ['a', 'b'] : []),
-      kindOf: (id) => (id === 'c1' ? 'container' : 'leaf'),
+      get: (id) => nodeOf(id === 'c1' ? 'container' : 'leaf'),
       objOf: (id) => (id === 'a' ? (a as never) : id === 'b' ? (b as never) : undefined),
     };
     const nodes = sceneToSvgNodes(source);
@@ -260,7 +263,7 @@ describe('sceneToSvgNodes — scene container tree → <g>', () => {
     const source: SceneSource = {
       roots: ['a'],
       childrenOf: () => [],
-      kindOf: () => 'leaf',
+      get: () => nodeOf('leaf'),
       objOf: (id) => (id === 'a' ? (a as never) : undefined),
     };
     const nodes = sceneToSvgNodes(source);
@@ -277,7 +280,7 @@ describe('sceneToSvgNodes — scene container tree → <g>', () => {
     const source: SceneSource = {
       roots: ['outer'],
       childrenOf: (id) => (id === 'outer' ? ['inner'] : id === 'inner' ? ['a'] : []),
-      kindOf: (id) => (id === 'a' ? 'leaf' : 'container'),
+      get: (id) => nodeOf(id === 'a' ? 'leaf' : 'container'),
       objOf: (id) => (id === 'a' ? (a as never) : undefined),
     };
     const nodes = sceneToSvgNodes(source);
@@ -304,7 +307,7 @@ describe('sceneToSvgNodes — hidden layers', () => {
   const sourceWith = (isPainted?: (id: string) => boolean): SceneSource => ({
     roots: ['a', 'c1'],
     childrenOf: (id) => (id === 'c1' ? ['b'] : []),
-    kindOf: (id) => (id === 'c1' ? 'container' : 'leaf'),
+    get: (id) => nodeOf(id === 'c1' ? 'container' : 'leaf'),
     objOf: (id) => (id === 'a' ? (rect('a', 0) as never)
       : id === 'b' ? (rect('b', 20) as never) : undefined),
     ...(isPainted ? { isPainted } : {}),
@@ -345,7 +348,7 @@ describe('sceneToSvgNodes — optional roots override', () => {
   const source: SceneSource = {
     roots: ['a', 'b'],
     childrenOf: () => [],
-    kindOf: () => 'leaf',
+    get: () => nodeOf('leaf'),
     objOf: (id) => (id === 'a' ? (a as never) : id === 'b' ? (b as never) : undefined),
   };
 
@@ -387,7 +390,7 @@ describe('container round-trip: drafts → svg → drafts (stable ids)', () => {
     const source: SceneSource = {
       roots: ['c1'],
       childrenOf: (id) => (id === 'c1' ? ['a', 'b'] : []),
-      kindOf: (id) => (id === 'c1' ? 'container' : 'leaf'),
+      get: (id) => nodeOf(id === 'c1' ? 'container' : 'leaf'),
       objOf: (id) => (id === 'a' ? (a as never) : id === 'b' ? (b as never) : undefined),
     };
 
@@ -605,5 +608,28 @@ describe('stroke is a whole Stroke', () => {
     const drafts = svgNodesToSceneDrafts(parsed.nodes, ids());
     const leaf = drafts.find((d) => d.kind === 'leaf') as { obj: { stroke: Stroke } };
     expect(leaf.obj.stroke).toEqual({ paint: { color: '#00ff00' }, width: 3 });
+  });
+});
+
+describe('paint fidelity through the kit bridge', () => {
+  it('exports a solid fill with its opacity', () => {
+    const rect: RectObjT = {
+      id: 'r', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+      fill: { ...solid('#ff0000'), opacity: 0.5 }, stroke: null,
+    };
+    expect((objToSvgNode(rect as never) as SvgPathNode).fill)
+      .toEqual({ kind: 'solid', color: '#ff0000', opacity: 0.5 });
+  });
+
+  it('imports an objectBoundingBox gradient as the box-relative gradient it already is', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">'
+      + '<linearGradient id="g" x1="0" y1="0" x2="1" y2="0">'
+      + '<stop offset="0" stop-color="#ff0000"/><stop offset="1" stop-color="#0000ff"/></linearGradient>'
+      + '<rect x="50" y="50" width="100" height="40" fill="url(#g)"/></svg>';
+    const [obj] = leavesOf(parseSvg(svg).nodes, ids());
+    expect((obj as { fill: unknown }).fill).toMatchObject({
+      fill: 'linear-gradient', units: 'bounds', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+    });
   });
 });
