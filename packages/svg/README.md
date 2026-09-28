@@ -88,7 +88,9 @@ rather than carried through.
 `svgNodesToKitDrafts(parseSvg(text), nextId)` lowers a document to scene-node
 drafts the kit's built-in path, text and image painters draw, and registers
 the document's markers. Containers carry no opacity, so an element or group
-`opacity` is multiplied into the paints of the leaves under it.
+`opacity` is multiplied into the paints of the leaves under it. `nextId` is
+handed the node each id is for, and `options.leaf` maps each leaf's kit data
+into data of your own shape, from the source node's metadata too.
 
 `svgNodesFromKit(scene)` goes the other way: containers become groups, and
 each leaf is written the way its painter draws it, with the pose baked into
