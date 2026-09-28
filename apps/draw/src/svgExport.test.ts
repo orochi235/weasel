@@ -31,6 +31,8 @@ function fakeScene(nodes: Record<string, {
     runs?: StyledRun[]; stroke?: Stroke | null; image?: unknown;
   };
   children?: string[];
+  dependsOn?: readonly string[];
+  derivePose?: () => { x: number; y: number; width: number; height: number } | null;
 }>, roots: string[]) {
   const parentOf = new Map<string, string>();
   for (const [id, n] of Object.entries(nodes)) for (const c of n.children ?? []) parentOf.set(c, id);
@@ -40,8 +42,9 @@ function fakeScene(nodes: Record<string, {
       const n = nodes[id];
       if (!n) return undefined;
       return {
-        kind: n.kind, layer: 'default', pose: n.pose, data: n.data ?? {},
+        id, kind: n.kind, layer: 'default', pose: n.pose, data: n.data ?? {},
         parent: parentOf.get(id) ?? null,
+        ...(n.dependsOn ? { dependsOn: n.dependsOn, derivePose: n.derivePose } : {}),
       };
     },
     childrenOf: (id: string) => nodes[id]?.children ?? [],
@@ -498,6 +501,24 @@ describe('image export', () => {
 
     const n = parseSvg(selectionToSvgString(scene, ['im'])).nodes[0];
     expect(n).toMatchObject({ kind: 'image', href: src, x: 3, y: 4, width: 30, height: 20, flipX: true });
+  });
+});
+
+describe('derived poses', () => {
+  it('lowers a leaf at the pose it derives, not the one it stores', () => {
+    const scene = fakeScene({
+      src: { kind: 'leaf', pose: { x: 0, y: 0, width: 1, height: 1 } },
+      a: {
+        kind: 'leaf',
+        pose: { x: 0, y: 0, width: 10, height: 10 },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
+        dependsOn: ['src'],
+        derivePose: () => ({ x: 50, y: 60, width: 10, height: 10 }),
+      },
+    }, ['a']);
+    const [a] = parseSvg(selectionToSvgString(scene, ['a'])).nodes;
+    if (a.kind !== 'path') throw new Error('expected path');
+    expect(boundsOfPath(a.path)).toMatchObject({ x: 50, y: 60 });
   });
 });
 

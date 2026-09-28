@@ -25,6 +25,7 @@ import {
   type TextStyle,
   composeWorldPose,
   definesFrame,
+  documentPose,
   embedWeaselMetadataInSvg,
   fillInPoseFrame,
   pathInPoseFrame,
@@ -143,13 +144,17 @@ export interface SceneToSvgOptions {
 
 type DrawScene<TLayer extends string> = Scene<WeaselDrawData, TLayer, WeaselDrawPose>;
 
-/** The pose every export reader lowers a node at: stored, or world when a
- *  composition makes the stored pose local. */
+/** The pose every export reader lowers a node at: the document pose (derived
+ *  where the node derives one, never a gesture's override), composed to world
+ *  when a composition makes it local. */
 function poseOfIn<TLayer extends string>(
   scene: DrawScene<TLayer>,
   poseComposition: PoseComposition<WeaselDrawPose> | undefined,
 ): (id: string) => WeaselDrawPose | undefined {
-  const stored = (id: string) => scene.get(id as never)?.pose;
+  const stored = (id: string) => {
+    const node = scene.get(id as never);
+    return node === undefined ? undefined : documentPose(scene, node);
+  };
   if (!poseComposition) return stored;
   const adapter = {
     getPose: (id: string) => stored(id)!,
