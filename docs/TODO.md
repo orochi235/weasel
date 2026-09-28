@@ -620,17 +620,6 @@ terse, single-purpose demo convention: an exception, not a precedent.
 
 What it surfaced:
 
-- **(P3) A rig's mirror lives in the pose data, not in a container.** The
-  platformer's eleven bones are parented now, under
-  `RIGID_POSE_COMPOSITION` — but `facing` used to be a `scaleX: -1` in the
-  rig-to-world matrix, and `RectPose` carries no scale term, so
-  `apps/site/demos/platformer/boneRig.ts` conjugates the chain instead:
-  mirroring negates every local rotation and every local x offset. That is
-  exact for a rigid chain and it is the only move available, but every
-  consumer mirroring a rig has to rediscover it. The engine could carry it —
-  either a pose composition with a reflection term, or a rig-side
-  `mirrorPose(pose)` beside `blendPoses`.
-
 - **(P3) View-bounds culling is opt-in and stops short of the painter.** The
   scene slot's `cull` option (`layers={{ scene: { cull: true } }}`, on in this
   demo) drops commands outside the view via `cullDrawCommands`, but only after
