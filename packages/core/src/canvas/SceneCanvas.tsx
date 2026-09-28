@@ -2143,6 +2143,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       tools={tools}
       layers={wiredLayers}
       pickEvery={internalPickEvery}
+      // The chrome's bounds are the picker's: a node on a parallax plane is
+      // boxed where the plane draws it, and a `geometry.boundsOf` reaches both.
+      boundsOf={internalBoundsOf}
       getIsVisible={getIsVisibleForCanvas}
       previewIdsExtra={previewIdsExtra}
       // The gesture surface behind `helpersRef.getGestureBounds()` /
