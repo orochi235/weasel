@@ -21,6 +21,7 @@ interface StyleState {
   underline: boolean;
   strikethrough: boolean;
   overline: boolean;
+  fontWeight?: number;
   fontSize?: number;
   fontFamily?: string;
   color?: string;
@@ -64,7 +65,10 @@ function parseLetterSpacing(raw: string): number | undefined {
 function styleStateFromElement(el: Element, parent: StyleState): StyleState {
   const next: StyleState = { ...parent };
   const tag = el.tagName;
-  if (tag === 'B' || tag === 'STRONG') next.bold = true;
+  if (tag === 'B' || tag === 'STRONG') {
+    next.bold = true;
+    next.fontWeight = undefined;
+  }
   if (tag === 'I' || tag === 'EM') next.italic = true;
   // `runsToDom` never emits these, but a browser contenteditable can (Cmd+U
   // runs the native `underline` command, which produces `<u>` in Chrome), so
@@ -74,9 +78,20 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
   if (tag === 'SUP') next.script = 'super';
   if (tag === 'SUB') next.script = 'sub';
   if (el instanceof HTMLElement) {
+    // 700 and 400 are the bold flag on and off, which is what pasted markup
+    // means by them. A run's own weight is written with an attribute beside
+    // the CSS, so a stored 400 or 700 comes back as the weight it was.
     const fw = el.style.fontWeight;
-    if (fw === '700' || fw === 'bold') next.bold = true;
-    if (fw === '400' || fw === 'normal') next.bold = false;
+    const ownWeight = Number(el.getAttribute('data-font-weight') ?? fw);
+    if (el.hasAttribute('data-font-weight') || !['', '700', 'bold', '400', 'normal'].includes(fw)) {
+      if (Number.isFinite(ownWeight) && ownWeight > 0) {
+        next.fontWeight = ownWeight;
+        next.bold = false;
+      }
+    } else if (fw !== '') {
+      next.bold = fw === '700' || fw === 'bold';
+      next.fontWeight = undefined;
+    }
     const fs = el.style.fontStyle;
     if (fs === 'italic') next.italic = true;
     if (fs === 'normal') next.italic = false;
@@ -137,6 +152,7 @@ function styleEquals(a: StyleState, b: StyleState): boolean {
     a.underline === b.underline &&
     a.strikethrough === b.strikethrough &&
     a.overline === b.overline &&
+    a.fontWeight === b.fontWeight &&
     a.fontSize === b.fontSize &&
     a.fontFamily === b.fontFamily &&
     a.color === b.color &&
@@ -152,6 +168,7 @@ function toRun(text: string, style: StyleState): StyledRun {
   const run: StyledRun = { text };
   if (style.bold) run.bold = true;
   if (style.italic) run.italic = true;
+  if (style.fontWeight != null) run.fontWeight = style.fontWeight;
   if (style.fontSize != null) run.fontSize = style.fontSize;
   if (style.fontFamily != null) run.fontFamily = style.fontFamily;
   if (style.color != null) run.fill = { fill: 'solid', color: style.color };
@@ -223,7 +240,10 @@ export function runsToDom(runs: readonly StyledRun[], parent: HTMLElement): void
     const span = document.createElement('span');
     span.setAttribute('data-run', '');
     span.textContent = run.text;
-    if (run.bold) span.style.fontWeight = '700';
+    if (run.fontWeight != null) {
+      span.style.fontWeight = String(run.fontWeight);
+      span.setAttribute('data-font-weight', String(run.fontWeight));
+    } else if (run.bold) span.style.fontWeight = '700';
     if (run.italic) span.style.fontStyle = 'italic';
     // An absolute size wins over a relative one, as it does in `resolveRuns`.
     if (run.fontSize != null) span.style.fontSize = `${run.fontSize}px`;

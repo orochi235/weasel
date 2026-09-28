@@ -18,8 +18,9 @@ import { verticalAlignOffset } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import { runsToPlainText } from '@weasel-js/text';
 import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
-import { applyStyleToRange, runsCarryStyling, styleAtRange } from './runs/rangeStyle';
-import { nodeHasFlag, setFlagOverRange, type FlagKey } from './runs/flagRange';
+import { applyStyleToRange, patchRangeStyle, runsCarryStyling, styleAtRange, supersededKey } from './runs/rangeStyle';
+import { nodeHasFlag, setFlagOverRange, unboldPatch, type FlagKey } from './runs/flagRange';
+import { rangeWeight } from './runs/effectiveRangeStyle';
 import type { RangeStyle, RunStylePatch } from './runs/rangeStyle';
 
 type StyleFlag = FlagKey;
@@ -92,7 +93,9 @@ function patchForToggle(
   if (toggle === 'super' || toggle === 'sub') {
     return { script: current.script === toggle ? undefined : toggle };
   }
-  const on = current[toggle] === true || nodeHasFlag(nodeStyle, toggle);
+  const on = toggle === 'bold'
+    ? rangeWeight(current, nodeStyle).bold === true
+    : current[toggle] === true || nodeHasFlag(nodeStyle, toggle);
   return { [toggle]: !on };
 }
 
@@ -209,10 +212,13 @@ const NO_PENDING: RunStylePatch = Object.freeze({});
 /**
  * Merge `patch` into a pending style. A key set to `false` or `undefined` is
  * deleted rather than stored — the same canonical form `patchRun` keeps, so
- * the pending style and a stored run agree on what "off" looks like.
+ * the pending style and a stored run agree on what "off" looks like, and
+ * bold and a weight supersede each other here as they do there.
  */
 function mergePending(prev: RunStylePatch, patch: RunStylePatch): RunStylePatch {
   const next: Record<string, unknown> = { ...prev };
+  const superseded = supersededKey(patch);
+  if (superseded !== undefined) delete next[superseded];
   for (const [key, value] of Object.entries(patch)) {
     if (value === undefined || value === false) delete next[key];
     else next[key] = value;
@@ -506,10 +512,9 @@ export interface UseTextEditReturn {
    * what gets typed next rather than on text the user didn't select.
    *
    * Lowering a flag the *node* sets is neither of those — a run cannot say
-   * "not bold" — so it rewrites instead: the node flag is cleared and raised
-   * on every run outside the range. That path can decline (a node at
-   * `fontWeight: 900` has no run boolean to move it to), in which case
-   * nothing is written.
+   * "not italic" — so it rewrites instead: the node flag is cleared and raised
+   * on every run outside the range. Bold is spared that: a run's own
+   * `fontWeight` can say "regular", so it is written over the range.
    *
    * The caret survives, so a second style can be applied without
    * re-selecting, and `rangeStyle` reflects the write before this returns.
@@ -688,15 +693,18 @@ export function useTextEdit(
     const id = editingIdRef.current;
     const setStyle = optsRef.current.setStyle;
     const runs = domToRuns(overlay);
+    if (patch.bold === false && !('fontWeight' in patch) && id !== null) {
+      patch = { ...patch, ...unboldPatch(optsRef.current.getStyle(id) ?? {}) };
+    }
     const unsetFlag = id !== null && setStyle
       ? (Object.keys(patch) as FlagKey[]).find((key) =>
-          patch[key] === false
+          key !== 'bold'
+          && patch[key] === false
           && nodeHasFlag(optsRef.current.getStyle(id) ?? {}, key))
       : undefined;
     if (unsetFlag !== undefined && id !== null && setStyle) {
       const nodeStyle = optsRef.current.getStyle(id) ?? {};
       const r = setFlagOverRange(runs, nodeStyle, range.start, range.end, unsetFlag, false);
-      if (!r.applied) return;
       setStyle(id, r.style);
       writeRunsPreservingSelection(overlay, r.runs, range.start, range.end);
       publishRange(overlay, range);
@@ -745,7 +753,7 @@ export function useTextEdit(
     // whatever is already armed, so pressing Cmd+B twice disarms rather than
     // arming a second time.
     const current = range.start === range.end
-      ? { ...styleAtCaret(runs, range.start), ...pendingRef.current }
+      ? patchRangeStyle(styleAtCaret(runs, range.start), pendingRef.current)
       : styleAtRange(runs, range.start, range.end);
     applyStyleToSelection(patchForToggle(current, toggle, nodeStyle));
   }, [applyStyleToSelection]);

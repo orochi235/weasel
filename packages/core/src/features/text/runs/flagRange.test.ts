@@ -39,7 +39,6 @@ describe('setFlagOverRange — the additive paths are unchanged', () => {
   it('turning a flag on writes the run and leaves the style alone', () => {
     const style: TextStyle = {};
     const r = setFlagOverRange(plain, style, ...TWO, 'underline', true);
-    expect(r.applied).toBe(true);
     expect(r.style).toBe(style);
     expect(styleAtRange(r.runs, ...TWO).underline).toBe(true);
     expect(styleAtRange(r.runs, 0, 4).underline).toBe(false);
@@ -48,7 +47,6 @@ describe('setFlagOverRange — the additive paths are unchanged', () => {
   it('turning it off in a node that never set it just deletes the key', () => {
     const on = setFlagOverRange(plain, {}, ...TWO, 'underline', true).runs;
     const r = setFlagOverRange(on, {}, ...TWO, 'underline', false);
-    expect(r.applied).toBe(true);
     expect(r.runs).toEqual([{ text: 'one two three' }]);
   });
 });
@@ -58,7 +56,6 @@ describe('setFlagOverRange — un-setting a flag the node sets', () => {
     const style: TextStyle = { underline: true };
     const r = setFlagOverRange(plain, style, ...TWO, 'underline', false);
 
-    expect(r.applied).toBe(true);
     expect(r.style.underline).toBeUndefined();
     expect(r.runs.map((x) => x.text)).toEqual(['one ', 'two', ' three']);
     expect(r.runs[0].underline).toBe(true);
@@ -105,28 +102,28 @@ describe('setFlagOverRange — un-setting a flag the node sets', () => {
 
   it('drops italic to normal at the node and raises it on the complement', () => {
     const r = setFlagOverRange(plain, { fontStyle: 'italic' }, ...TWO, 'italic', false);
-    expect(r.applied).toBe(true);
     expect(r.style.fontStyle).toBe('normal');
     expect(r.runs[0].italic).toBe(true);
     expect(r.runs[1].italic).toBeUndefined();
   });
 
-  it('drops a 700 node weight to 400 and raises bold on the complement', () => {
-    const r = setFlagOverRange(plain, { fontWeight: 700 }, ...TWO, 'bold', false);
-    expect(r.applied).toBe(true);
-    expect(r.style.fontWeight).toBe(400);
-    expect(r.runs[0].bold).toBe(true);
-    expect(r.runs[1].bold).toBeUndefined();
+  it('lowers a bold node over the range by writing a regular weight there, leaving the node alone', () => {
+    for (const fontWeight of [700, 900, 'bold'] as const) {
+      const style: TextStyle = { fontWeight };
+      const r = setFlagOverRange(plain, style, ...TWO, 'bold', false);
+      expect(r.style).toBe(style);
+      expect(r.runs).toEqual([
+        { text: 'one ' },
+        { text: 'two', fontWeight: 400 },
+        { text: ' three' },
+      ]);
+    }
   });
 
-  it("refuses a node weight `run.bold` can't reproduce, rather than downgrading it", () => {
-    // `run.bold` resolves to exactly 700 everywhere, so pushing a 900 node
-    // weight onto its runs would silently lighten the text that was NOT edited.
-    const style: TextStyle = { fontWeight: 900 };
-    const r = setFlagOverRange(plain, style, ...TWO, 'bold', false);
-    expect(r.applied).toBe(false);
-    expect(r.style).toBe(style);
-    expect(r.runs).toEqual(plain);
+  it('lowering bold drops a bold flag the range carried', () => {
+    const runs: StyledRun[] = [{ text: 'one ' }, { text: 'two', bold: true }, { text: ' three' }];
+    const r = setFlagOverRange(runs, { fontWeight: 700 }, ...TWO, 'bold', false);
+    expect(r.runs[1]).toEqual({ text: 'two', fontWeight: 400 });
   });
 
   it('preserves other run styling across the rewrite', () => {

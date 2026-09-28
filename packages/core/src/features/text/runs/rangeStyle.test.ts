@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { styleAtRange, applyStyleToRange, runsCarryStyling, MIXED } from './rangeStyle';
+import { styleAtRange, applyStyleToRange, runsCarryStyling, patchRangeStyle, MIXED } from './rangeStyle';
 import type { StyledRun } from '@weasel-js/text';
 
 const runs: StyledRun[] = [
@@ -303,5 +303,39 @@ describe('textTransform over a range', () => {
     expect(out).toEqual([{ text: 'a', textTransform: 'lowercase' }, { text: 'b', textTransform: 'none' }]);
     expect(styleAtRange(out, 0, 2).textTransform).toBe(MIXED);
     expect(runsCarryStyling([{ text: 'a', textTransform: 'capitalize' }])).toBe(true);
+  });
+});
+
+describe('fontWeight and bold', () => {
+  it('reads and writes a numeric weight like any other override', () => {
+    const out = applyStyleToRange([{ text: 'ab' }], 0, 1, { fontWeight: 300 });
+    expect(out).toEqual([{ text: 'a', fontWeight: 300 }, { text: 'b' }]);
+    expect(styleAtRange(out, 0, 1).fontWeight).toBe(300);
+    expect(styleAtRange(out, 0, 2).fontWeight).toBe(MIXED);
+    expect(runsCarryStyling(out)).toBe(true);
+  });
+
+  it('a weight write drops the bold preset it supersedes', () => {
+    expect(applyStyleToRange([{ text: 'a', bold: true }], 0, 1, { fontWeight: 300 }))
+      .toEqual([{ text: 'a', fontWeight: 300 }]);
+  });
+
+  it('a bold write drops the weight, so the preset is what shows', () => {
+    expect(applyStyleToRange([{ text: 'a', fontWeight: 300 }], 0, 1, { bold: true }))
+      .toEqual([{ text: 'a', bold: true }]);
+    expect(applyStyleToRange([{ text: 'a', fontWeight: 800 }], 0, 1, { bold: false }))
+      .toEqual([{ text: 'a' }]);
+  });
+
+  it('patchRangeStyle lays a patch over a range as a write would', () => {
+    expect(patchRangeStyle({ fontWeight: 300, italic: true }, { bold: true }))
+      .toEqual({ bold: true, italic: true });
+    expect(patchRangeStyle({ bold: MIXED }, { fontWeight: 500 })).toEqual({ fontWeight: 500 });
+    expect(patchRangeStyle({ fontSize: 12 }, { fontSize: undefined })).toEqual({ fontSize: 12 });
+  });
+
+  it('a patch naming both keys writes both as given', () => {
+    expect(applyStyleToRange([{ text: 'a', bold: true }], 0, 1, { bold: false, fontWeight: 400 }))
+      .toEqual([{ text: 'a', fontWeight: 400 }]);
   });
 });

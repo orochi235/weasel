@@ -14,15 +14,19 @@
  * matters while the flags are heading for a persisted format.
  *
  * The alternative was a tri-state run flag (`true` / `false` / inherit). It
- * cannot cover `bold` or `italic`: those are booleans on a run but
- * `fontWeight` and `fontStyle` on the node, so a run's `false` has no node-level
- * boolean to override. Tri-state fixes two of the five flags; this fixes all
- * five.
+ * cannot cover `italic`: that is a boolean on a run but `fontStyle` on the
+ * node, so a run's `false` has no node-level boolean to override.
+ *
+ * `bold` needs neither: a run carries a numeric `fontWeight`, which overrides
+ * the node's outright, so lowering bold writes a regular weight over the
+ * range and leaves the node and the rest of the text alone.
  */
 
+import { isBoldWeight } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import type { TextStyle } from '@weasel-js/text';
 import { applyStyleToRange } from './rangeStyle';
+import type { RunStylePatch } from './rangeStyle';
 
 /** The additive run flags. */
 export type FlagKey = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'overline';
@@ -32,20 +36,12 @@ export type FlagKey = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'overl
 export interface SetFlagResult {
   runs: StyledRun[];
   style: TextStyle;
-  /**
-   * False when the node flag could not be lowered without changing what is
-   * drawn, and nothing was written. The only case is a `fontWeight` the run
-   * boolean cannot express: `run.bold` resolves to exactly 700 everywhere, so
-   * a node at 900 cannot have its weight pushed onto its runs. Callers should
-   * disable the control rather than apply a silent downgrade.
-   */
-  applied: boolean;
 }
 
 /** Does the node style carry this flag? */
 export function nodeHasFlag(style: TextStyle, key: FlagKey): boolean {
   switch (key) {
-    case 'bold': return isBoldWeight(style.fontWeight);
+    case 'bold': return style.fontWeight !== undefined && isBoldWeight(style.fontWeight);
     case 'italic': return style.fontStyle === 'italic';
     case 'underline': return style.underline === true;
     case 'strikethrough': return style.strikethrough === true;
@@ -53,22 +49,16 @@ export function nodeHasFlag(style: TextStyle, key: FlagKey): boolean {
   }
 }
 
-function isBoldWeight(w: TextStyle['fontWeight']): boolean {
-  if (w === undefined) return false;
-  if (typeof w === 'number') return w >= 600;
-  return w === 'bold' || w === 'bolder';
-}
-
-/** Can `run.bold` reproduce this node weight exactly? It resolves to 700. */
-function weightIsExpressibleAsRunBold(w: TextStyle['fontWeight']): boolean {
-  return w === 700 || w === 'bold';
+/** The patch that takes bold off a range: the flag, and — in a node that is
+ *  itself bold — a regular weight to override the node's. */
+export function unboldPatch(style: TextStyle): RunStylePatch {
+  return nodeHasFlag(style, 'bold') ? { bold: false, fontWeight: 400 } : { bold: false };
 }
 
 /** The node style with `key` cleared. */
-function clearNodeFlag(style: TextStyle, key: FlagKey): TextStyle {
+function clearNodeFlag(style: TextStyle, key: Exclude<FlagKey, 'bold'>): TextStyle {
   const next = { ...style };
   switch (key) {
-    case 'bold': next.fontWeight = 400; break;
     case 'italic': next.fontStyle = 'normal'; break;
     case 'underline': delete next.underline; break;
     case 'strikethrough': delete next.strikethrough; break;
@@ -83,7 +73,8 @@ function clearNodeFlag(style: TextStyle, key: FlagKey): TextStyle {
  * Turning a flag **on**, or off in a node that doesn't set it, is the ordinary
  * additive write and leaves `style` alone. Turning it off in a node that *does*
  * set it takes the rewrite: the node flag is cleared and the flag is written
- * onto the complement of the range.
+ * onto the complement of the range. Bold is the exception, written as a
+ * weight over the range alone (see {@link unboldPatch}).
  *
  * `runs` is normalized on every path, so the complement collapses back to one
  * run when the range is empty and the whole array coalesces as usual.
@@ -97,15 +88,11 @@ export function setFlagOverRange(
   value: boolean,
 ): SetFlagResult {
   if (value || !nodeHasFlag(style, key)) {
-    return {
-      runs: applyStyleToRange(runs, start, end, { [key]: value }),
-      style,
-      applied: true,
-    };
+    return { runs: applyStyleToRange(runs, start, end, { [key]: value }), style };
   }
 
-  if (key === 'bold' && !weightIsExpressibleAsRunBold(style.fontWeight)) {
-    return { runs: [...runs], style, applied: false };
+  if (key === 'bold') {
+    return { runs: applyStyleToRange(runs, start, end, unboldPatch(style)), style };
   }
 
   const total = runs.reduce((n, r) => n + r.text.length, 0);
@@ -118,5 +105,5 @@ export function setFlagOverRange(
   let next = applyStyleToRange(runs, 0, total, { [key]: true });
   if (lo < hi) next = applyStyleToRange(next, lo, hi, { [key]: false });
 
-  return { runs: next, style: clearNodeFlag(style, key), applied: true };
+  return { runs: next, style: clearNodeFlag(style, key) };
 }

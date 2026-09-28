@@ -12,6 +12,7 @@ import { dlog } from '../../dlog';
 import { decimal, parseAs, qty, type Display, type UnitTable } from '@weasel-js/quantity';
 import { ColorField } from '../ColorField';
 import { FontFamilySelect } from '../FontFamilySelect';
+import { FontWeightSelect } from '../FontWeightSelect';
 import { Input } from '../Input';
 import { UnitField } from '../NumberField';
 import { PaintField } from '../PaintField';
@@ -208,6 +209,15 @@ export interface PropertyFontFamilyFieldProps extends FieldBase {
   fontStyle?: 'normal' | 'italic';
 }
 
+/** A font weight, picked from the weights its family has registered. */
+export interface PropertyFontWeightFieldProps extends FieldBase {
+  kind: 'font-weight';
+  value: number | undefined;
+  onChange: (next: number) => void;
+  /** The family whose weights to offer. */
+  family?: string;
+}
+
 /**
  * One field for {@link PropertyControl} and {@link PropertyField}, keyed by
  * `kind`.
@@ -219,7 +229,8 @@ export type PropertyControlProps<T extends string = string> =
   | PropertyEnumFieldProps<T>
   | PropertyColorFieldProps
   | PropertyPaintFieldProps
-  | PropertyFontFamilyFieldProps;
+  | PropertyFontFamilyFieldProps
+  | PropertyFontWeightFieldProps;
 
 /** The kinds a {@link PropertyControl} draws. */
 export type PropertyFieldKind = PropertyControlProps['kind'];
@@ -306,9 +317,11 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
     className: rowClassName,
     variant: shape.variant,
     group: shape.group,
-    // The font picker takes no id; any other single control is named by the
+    // The font pickers take no id; any other single control is named by the
     // row's `<label>` through this one.
-    htmlFor: shape.group || control.kind === 'font-family' ? undefined : id,
+    htmlFor: shape.group || control.kind === 'font-family' || control.kind === 'font-weight'
+      ? undefined
+      : id,
   };
 
   if (control.kind === 'number' && control.control === 'slider') {
@@ -391,6 +404,17 @@ function ControlBody(props: PropertyControlProps) {
           onChange={props.onChange}
           weight={props.weight}
           fontStyle={props.fontStyle}
+          aria-label={props.name}
+        />
+      );
+    case 'font-weight':
+      return (
+        <FontWeightSelect
+          className={props.className}
+          value={props.mixed ? undefined : props.value}
+          mixed={props.mixed}
+          family={props.family}
+          onChange={props.onChange}
           aria-label={props.name}
         />
       );

@@ -187,7 +187,7 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                       children: {
                         fontFamily: { kind: 'font-family', name: 'Font', description: 'Registered font family.', default: 'sans-serif' },
                         fontSize: { kind: 'number', name: 'Size', description: 'Font size, world units.', default: 16, min: 1, step: 1, pair: 'Size / weight' },
-                        fontWeight: { kind: 'number', name: 'Weight', description: 'Font weight, 100–900.', default: 400, min: 100, max: 900, step: 100, pair: 'Size / weight' },
+                        fontWeight: { kind: 'font-weight', name: 'Weight', description: 'Font weight, from the faces the family has.', default: 400, pair: 'Size / weight' },
                         // One row of segments, the strip every text editor
                         // draws: the slant, the three rules, then the two
                         // scripts. Italic is a flag here although the field

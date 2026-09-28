@@ -5,8 +5,8 @@
  * either form into the array shape used by the renderer.
  *
  * Every field except `text` is optional; missing fields fall back to the
- * node-level `TextStyle`. `bold`/`italic` are toggles; richer weight axes
- * (300/500/900) are out of scope for slice 1.
+ * node-level `TextStyle`. `bold`/`italic` are toggles; `fontWeight` is the
+ * numeric weight `bold` is a preset over.
  */
 
 import type { FillStyle, ScreenLength, Stroke } from '@weasel-js/paint';
@@ -17,7 +17,11 @@ import type { TextTransform } from './runs/textTransform';
  *  and a fully resolved one. */
 export interface StyledRun {
   text: string;
+  /** Draw at weight 700. A preset over `fontWeight`, which wins when both
+   *  are present. */
   bold?: boolean;
+  /** Numeric weight, 100–900. Overrides the node's weight and `bold`. */
+  fontWeight?: number;
   italic?: boolean;
   fontFamily?: string;
   /** World units, or `{ px }` for screen pixels — resolved against the view

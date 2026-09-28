@@ -13,7 +13,7 @@ export const Editing: Story = {
   render: () => (
     <div style={{ width: 1180 }}>
       <CharacterOptions
-        style={{ bold: true, underline: true, fontFamily: 'Inter', fontSize: 24, fill: { color: '#1e293b' } }}
+        style={{ bold: true, fontWeight: 700, underline: true, fontFamily: 'Inter', fontSize: 24, fill: { color: '#1e293b' } }}
         onPatch={() => {}}
       />
     </div>
@@ -24,7 +24,7 @@ export const MixedRange: Story = {
   render: () => (
     <div style={{ width: 1180 }}>
       <CharacterOptions
-        style={{ bold: MIXED, fontSize: MIXED, script: MIXED, fill: MIXED, fontFamily: 'Inter' }}
+        style={{ bold: MIXED, fontWeight: MIXED, fontSize: MIXED, script: MIXED, fill: MIXED, fontFamily: 'Inter' }}
         onPatch={() => {}}
       />
     </div>

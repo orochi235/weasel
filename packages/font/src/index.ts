@@ -15,6 +15,7 @@ export {
   resolveFontVariant,
   resolveGlyphFallback,
   listFonts,
+  listFontWeights,
   fontRegistry,
   fontPending,
 } from './registerFont';
