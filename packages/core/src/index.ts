@@ -447,6 +447,8 @@ export type {
 
 // ─── Layer primitives: RenderLayer, ordered children ────────────────────────
 export * from './core/layers/render';
+export { workspaceTintLayer, modeDecorationLayer } from './features/modes/modeLayers';
+export type { WorkspaceTintLayerOptions } from './features/modes/modeLayers';
 export { createChildrenLayer } from './features/groups/children';
 export type { CreateChildrenLayerOpts } from './features/groups/children';
 

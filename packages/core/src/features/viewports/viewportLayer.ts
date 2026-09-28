@@ -1,5 +1,5 @@
 import type { DrawCommand, GroupDrawCommand } from '../../renderer';
-import { drawOneLayer, type Dims, type RenderLayer } from 'core/layers/render';
+import { drawOneLayer, subscribeToSources, type Dims, type RenderLayer } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
 import { mat3, type GlMat3 } from '../../renderer/math/mat3';
 import type { ResolvableView } from './viewResolver';
@@ -119,6 +119,7 @@ export function createViewportLayer<TData, TSource = TData>(
     id,
     label,
     space: 'screen',
+    subscribe: subscribeToSources(sourceAt),
     resolvable(outer, dims) {
       return { id, view: viewAt(outer, dims), rect: bounds(outer, dims) };
     },

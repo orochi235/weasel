@@ -1,4 +1,4 @@
-import { drawOneLayer, type RenderLayer } from '../../core/layers/render';
+import { drawOneLayer, subscribeToSources, type RenderLayer } from '../../core/layers/render';
 import type { View } from '../../core/viewport/view';
 import { deriveParallaxView, type ParallaxOpts } from './deriveParallaxView';
 
@@ -39,6 +39,7 @@ export function createParallaxLayer<TData>(
     id,
     label,
     space: 'screen',
+    subscribe: subscribeToSources(source),
     draw: (data, outer, dims) => {
       const inner = deriveParallaxView(getOuterView?.() ?? outer, { pan, zoom, anchor });
       return source.flatMap((layer) => drawOneLayer(layer, data, inner, dims));

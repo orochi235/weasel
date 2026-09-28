@@ -25,6 +25,8 @@ export interface ModeDecorations {
   paint(): ModeDrawCommand[];
   /** Monotonic version. Bumps on mode change or painter registration. */
   getVersion(): number;
+  /** Notified whenever `getVersion` bumps — what a canvas repaints on. */
+  subscribe(listener: () => void): () => void;
 }
 
 /** Build a decoration registry bound to a mode registry, so switching modes
@@ -32,22 +34,28 @@ export interface ModeDecorations {
 export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeDecorations {
   const { registry } = opts;
   const painters = new Map<string, ModeDecorationPainter>();
-  let ver = 0;
-
-  registry.subscribe(() => {
-    ver++;
-  });
+  const listeners = new Set<() => void>();
+  let registrations = 0;
 
   return {
     register(modeId: string, painter: ModeDecorationPainter): void {
       painters.set(modeId, painter);
-      ver++;
+      registrations++;
+      for (const l of [...listeners]) l();
     },
     paint(): ModeDrawCommand[] {
       const painter = painters.get(registry.current().id);
       if (!painter) return [];
       return painter();
     },
-    getVersion: () => ver,
+    getVersion: () => registry.getVersion() + registrations,
+    subscribe(listener: () => void): () => void {
+      listeners.add(listener);
+      const offMode = registry.subscribe(listener);
+      return () => {
+        listeners.delete(listener);
+        offMode();
+      };
+    },
   };
 }

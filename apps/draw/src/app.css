@@ -112,8 +112,8 @@
   overflow: hidden;
 }
 
-/* Mode tint is painted by the kit's render pipeline (`workspaceTintLayer`
- * in App.tsx) so it can mask out the document page in world space.
+/* Mode tint is painted by the kit's `workspaceTintLayer`
+ * (see App.tsx) so it can leave the document page uncovered.
  * No CSS-side tint here. */
 
 .wd-canvas-host canvas {

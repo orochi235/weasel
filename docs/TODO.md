@@ -1213,10 +1213,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
     `svgInterop.ts` each carry their own copy. `svgNodesToKitDrafts` also drops `fill-opacity`
     and element `opacity` (read in `packages/svg/src/unpack.ts`, `fillFromPaint`; not run), and
     does not register `parsed.markers` — only `unpackSvgFiles` does.
-  - `modes`: every consumer rebuilds `getActiveMode` from a registry by hand (`ModesDemo.tsx`,
-    draw's `activeModeOf`, `SceneCanvas.modeShortcuts.test.tsx`); a mode switch does not
-    repaint on its own because `ScopingDim` and `ModeDecorations` expose no version; nothing
-    paints `WorkspaceVisual` (the demo and draw's `workspaceTintLayer` each do).
   - `gestures`: nothing converts a `ParsedRoute` into a `GestureSpec`, so a typed route cannot
     drive `matchSpec`; `specificity()` lives in `routing`, not `gestures`; `describeRoute` with
     two modifiers reads "the user Mod and Alt-drags anywhere".
