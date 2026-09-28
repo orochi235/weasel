@@ -67,10 +67,24 @@ export interface ForceProducerOptions<TPose> extends ForceOptions {
   /** Alpha held while something is pinned, so the graph keeps answering a drag
    *  instead of freezing under it. Default 0.3. */
   dragAlpha?: number;
+  /** The run is at rest once no node moves this far in a tick, in world units.
+   *  Default 0.1. `0` never rests, leaving the run to the cooling schedule. */
+  restDistance?: number;
+  /** Consecutive ticks at rest before the run finishes. Default 5. */
+  restTicks?: number;
 }
 
+const REST_DISTANCE = 0.1;
+const REST_TICKS = 5;
+
 /**
- * A relaxation, one tick a frame, done when the simulation settles.
+ * A relaxation, one tick a frame, done when the graph stops moving.
+ *
+ * Motion ends long before alpha cools — a few dozen ticks against three
+ * hundred — so a run that waited for alpha would sit visibly still for
+ * seconds while still reporting itself running. It finishes on whichever
+ * comes first: `restTicks` ticks in a row with no node moving `restDistance`,
+ * or the cooling schedule running out. Nothing rests while a node is held.
  *
  * The forces are `forceRelaxation`'s — the same ones the one-shot `force`
  * runs, wound up once here and ticked rather than run to completion.
@@ -89,6 +103,10 @@ export function forceProducer<TPose>(
   const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const relaxation = forceRelaxation(graph, opts);
   const dragAlpha = opts.dragAlpha ?? 0.3;
+  const restDistance = opts.restDistance ?? REST_DISTANCE;
+  const restTicks = opts.restTicks ?? REST_TICKS;
+  const was = relaxation.bodies.map((b) => ({ x: b.x, y: b.y }));
+  let still = 0;
 
   return ({ pinned }) => {
     for (const node of graph.nodes) {
@@ -110,7 +128,18 @@ export function forceProducer<TPose>(
     // pointer lets go.
     relaxation.sim.alphaTarget(pinned.size > 0 ? dragAlpha : 0);
     relaxation.sim.tick();
-    return { result: relaxation.placed(), done: relaxation.sim.isSettled() };
+
+    let moved = 0;
+    relaxation.bodies.forEach((body, i) => {
+      const at = was[i]!;
+      moved = Math.max(moved, Math.hypot(body.x - at.x, body.y - at.y));
+      at.x = body.x;
+      at.y = body.y;
+    });
+    still = pinned.size === 0 && moved < restDistance ? still + 1 : 0;
+
+    const done = still >= restTicks || relaxation.sim.isSettled();
+    return { result: relaxation.placed(), done };
   };
 }
 
@@ -167,7 +196,8 @@ export interface UseLiveLayoutOptions<TPose> {
    *  continuously; anything else eases to its answer. Default `'force'`. */
   algorithm?: string | LayoutFn;
   layout?: LayoutOptions;
-  force?: ForceOptions;
+  /** The relaxation's forces, and when a live run of it counts as at rest. */
+  force?: Omit<ForceProducerOptions<TPose>, 'geometry'>;
   /** Frames an eased layout takes to arrive. Default 24. */
   frames?: number;
   easing?: EasingFn;
