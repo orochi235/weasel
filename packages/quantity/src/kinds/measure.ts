@@ -56,10 +56,12 @@ export type UnitDisplay = {
   spoken?: readonly [string, string];
 };
 
+/** A {@link UnitDisplay} in `name`. With no name, the unit comes from the value's tag. */
 export function unit(name?: string, options: Omit<UnitDisplay, 'kind' | 'unit'> = {}): UnitDisplay {
   return name === undefined ? { kind: 'unit', ...options } : { kind: 'unit', unit: name, ...options };
 }
 
+/** The built-in `unit` kind, to spread into a `registerDisplayKind` replacement. */
 export const unitKind: DisplayKind<UnitDisplay> = {
   kind: 'unit',
   format: (value, d, ctx) => {
@@ -99,6 +101,7 @@ export type CurrencyDisplay = {
   places?: number;
 };
 
+/** A {@link CurrencyDisplay} in the ISO 4217 currency `code`. */
 export function currency(code: string, options: Omit<CurrencyDisplay, 'kind' | 'currency'> = {}): CurrencyDisplay {
   return { kind: 'currency', currency: code, ...options };
 }
@@ -112,6 +115,7 @@ function currencyOptions(d: CurrencyDisplay): Intl.NumberFormatOptions {
   return options;
 }
 
+/** The built-in `currency` kind, to spread into a `registerDisplayKind` replacement. */
 export const currencyKind: DisplayKind<CurrencyDisplay> = {
   kind: 'currency',
   format: (value, d, ctx) => intlParts(value, ctx.locale, currencyOptions(d)),
@@ -133,6 +137,7 @@ export type DurationDisplay = {
   places?: number;
 };
 
+/** A {@link DurationDisplay}. */
 export function duration(options: Omit<DurationDisplay, 'kind'> = {}): DurationDisplay {
   return { kind: 'duration', ...options };
 }
@@ -149,6 +154,7 @@ function hms(value: number, places: number) {
 
 const DURATION_UNITS: UnitTable = { h: 3600, m: 60, min: 60, s: 1, ms: 0.001 };
 
+/** The built-in `duration` kind, to spread into a `registerDisplayKind` replacement. */
 export const durationKind: DisplayKind<DurationDisplay> = {
   kind: 'duration',
   format: (value, d) => {
@@ -212,6 +218,7 @@ export type BytesDisplay = {
   places?: number;
 };
 
+/** A {@link BytesDisplay}. */
 export function bytes(options: Omit<BytesDisplay, 'kind'> = {}): BytesDisplay {
   return { kind: 'bytes', ...options };
 }
@@ -232,6 +239,7 @@ const BYTE_UNITS: UnitTable = Object.fromEntries([
   ...BINARY_BYTES.slice(1).map((u, i) => [u, 1024 ** (i + 1)] as const),
 ]);
 
+/** The built-in `bytes` kind, to spread into a `registerDisplayKind` replacement. */
 export const bytesKind: DisplayKind<BytesDisplay> = {
   kind: 'bytes',
   format: (value, d, ctx) => {
