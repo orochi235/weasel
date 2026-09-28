@@ -28,6 +28,8 @@ import { asNodeId } from 'core/scene/types';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { resolveDerivedPath } from './derivedPath';
 import { composeWorldPose, type PoseAdapter, type PoseComposition } from 'features/groups/composePose';
+import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
+import type { View } from 'core/viewport/view';
 
 /** Shared, never mutated: most scenes are flat and every node returns it. */
 const EMPTY_PARENTS: readonly never[] = [];
@@ -74,6 +76,9 @@ export interface PickSource<TPose> {
    *  the dependencies' poses — so a bare adapter omits it, and every derived
    *  node there keeps answering from its own (placeholder) pose. */
   derivedPathOf?(node: PickCandidate<TPose>): Path | null;
+  /** How the asking view's world maps into a parallax layer's, or null for a
+   *  layer that moves with the camera. Omit for a source with no planes. */
+  planeOf?(layer: string): PlaneMap | null;
 }
 
 /** One hit-test question: what region, and what counts as covering it. */
@@ -103,6 +108,11 @@ export interface PickQuery<TPose> {
     pose: TPose,
     derived?: Path | null,
   ): boolean;
+  /** The same question asked in a parallax plane's world: the region carried
+   *  through `map`, and any screen-pixel slop re-derived at the plane's scale.
+   *  A query without it cannot reach nodes on a plane — it would test them
+   *  where their poses sit rather than where they are painted. */
+  inPlane?(map: PlaneMap): PickQuery<TPose>;
 }
 
 /** The clip a container imposes on its subtree, or null when it imposes none. */
@@ -149,6 +159,20 @@ export function pickWalk<TPose>(
     return resolved;
   };
 
+  // One reprojected query per plane per walk; `null` marks a plane this
+  // query cannot reach.
+  const planeQueries = new Map<string, PickQuery<TPose> | null>();
+  const queryFor = (layer: string | undefined): PickQuery<TPose> | null => {
+    if (layer === undefined || src.planeOf === undefined) return q;
+    let found = planeQueries.get(layer);
+    if (found === undefined) {
+      const map = src.planeOf(layer);
+      found = map === null ? q : (q.inPlane?.(map) ?? null);
+      planeQueries.set(layer, found);
+    }
+    return found;
+  };
+
   for (const node of src.order()) {
     if (!includeContainers && node.kind === 'container') continue;
     // Transparent to picking: the click belongs to whatever is behind it,
@@ -158,14 +182,16 @@ export function pickWalk<TPose>(
     if (src.alphaOf !== undefined && src.alphaOf(node.id) <= 0) continue;
     if (isLocked !== undefined && isLocked(node)) continue;
 
+    const query = queryFor(node.layer);
+    if (query === null) continue;
     const pose = src.poseOf(node);
     const derived = src.derivedPathOf?.(node);
-    if (!q.hits(node, pose, derived)) continue;
+    if (!query.hits(node, pose, derived)) continue;
 
     let clipped = false;
     for (const ancestor of src.parentsOf(node)) {
       const clip = clipOf(ancestor);
-      if (clip !== null && !q.clipAdmits(clip, node, pose, derived)) { clipped = true; break; }
+      if (clip !== null && !query.clipAdmits(clip, node, pose, derived)) { clipped = true; break; }
     }
     if (clipped) continue;
 
@@ -244,6 +270,10 @@ export interface ScenePickSourceOptions<TPose> extends ViewPickGates {
    *  is not where its own pose says. Ignored when `getPose` already answers in
    *  world coordinates. */
   poseComposition?: PoseComposition<TPose>;
+  /** The asking view's camera. With it, a layer carrying `parallax` is picked
+   *  through its plane; without it, every layer is taken to move with the
+   *  camera. */
+  camera?: View;
 }
 
 export function scenePickSource<TData, TLayer extends string, TPose>(
@@ -318,7 +348,10 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     return resolveDerivedPath(n, depOf, childrenOf);
   };
 
+  const planeOf = opts.camera ? scenePlaneOf(scene.layers, opts.camera) : null;
+
   return {
+    ...(planeOf ? { planeOf } : {}),
     order: () => scene.renderOrderNodes() as unknown as readonly PickCandidate<TPose>[],
     derivedPathOf,
     poseOf,
@@ -347,6 +380,21 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
       }
       : {}),
   };
+}
+
+/** Each parallax layer's plane map under `camera`, or null when no layer is a
+ *  plane — which keeps the per-layer lookup off the walk entirely. */
+export function scenePlaneOf(
+  layers: readonly { id: string; parallax?: ParallaxOpts }[] | undefined,
+  camera: View,
+): ((layer: string) => PlaneMap | null) | null {
+  let maps: Map<string, PlaneMap> | null = null;
+  for (const l of layers ?? []) {
+    if (l.parallax) (maps ??= new Map()).set(l.id, planeMap(camera, l.parallax));
+  }
+  if (maps === null) return null;
+  const found = maps;
+  return (layer) => found.get(layer) ?? null;
 }
 
 /** The adapter surface the walk can reach without a `Scene`. */

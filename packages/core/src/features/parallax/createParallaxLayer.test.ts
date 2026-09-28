@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createParallaxLayer } from './createParallaxLayer';
+import { createParallaxPlane } from './createParallaxPlane';
 import type { RenderLayer } from '../../core/layers/render';
 import type { View } from '../../core/viewport/view';
 
@@ -17,14 +18,14 @@ function makeSpyLayer(): { layer: RenderLayer<unknown>; draw: ReturnType<typeof 
 describe('createParallaxLayer', () => {
   it('declares space: screen', () => {
     const l = createParallaxLayer({
-      id: 'p', label: 'P', source: [], pan: 0.5,
+      id: 'p', label: 'P', source: [], parallax: { pan: 0.5 },
     });
     expect(l.space).toBe('screen');
   });
 
   it('returns [] when source is empty', () => {
     const l = createParallaxLayer({
-      id: 'p', label: 'P', source: [], pan: 0.5,
+      id: 'p', label: 'P', source: [], parallax: { pan: 0.5 },
     });
     expect(l.draw(undefined, outer, dims)).toEqual([]);
   });
@@ -32,7 +33,7 @@ describe('createParallaxLayer', () => {
   it('passes the derived view to source layers', () => {
     const { layer, draw } = makeSpyLayer();
     const l = createParallaxLayer({
-      id: 'p', label: 'P', source: [layer], pan: 0.5,
+      id: 'p', label: 'P', source: [layer], parallax: { pan: 0.5 },
     });
     l.draw(undefined, outer, dims);
     expect(draw).toHaveBeenCalledOnce();
@@ -45,7 +46,7 @@ describe('createParallaxLayer', () => {
   it('identity wrapper passes outer view through unchanged', () => {
     const { layer, draw } = makeSpyLayer();
     const l = createParallaxLayer({
-      id: 'p', label: 'P', source: [layer], pan: 1, zoom: 1,
+      id: 'p', label: 'P', source: [layer], parallax: { pan: 1, zoom: 1 },
     });
     l.draw(undefined, outer, dims);
     const passedView = draw.mock.calls[0]![1] as View;
@@ -61,7 +62,7 @@ describe('createParallaxLayer', () => {
       id: 'b', label: 'b', space: 'world',
       draw: () => [{ kind: 'path', path: { kind: 'rect', x: 2, y: 2, width: 2, height: 2 } }],
     };
-    const l = createParallaxLayer({ id: 'p', label: 'P', source: [a, b], pan: 1 });
+    const l = createParallaxLayer({ id: 'p', label: 'P', source: [a, b], parallax: { pan: 1 } });
     const out = l.draw(undefined, outer, dims);
     expect(out).toHaveLength(2);
     // A world-space source arrives wrapped in the plane's inner view, which is
@@ -76,7 +77,7 @@ describe('createParallaxLayer', () => {
     const cmd = { kind: 'path' as const, path: { kind: 'rect' as const, x: 1, y: 1, width: 1, height: 1 } };
     const screen: RenderLayer<unknown> = { id: 's', label: 's', space: 'screen', draw: () => [cmd] };
     const world: RenderLayer<unknown> = { id: 'w', label: 'w', space: 'world', draw: () => [cmd] };
-    const l = createParallaxLayer({ id: 'p', label: 'P', source: [screen, world], pan: 0.5 });
+    const l = createParallaxLayer({ id: 'p', label: 'P', source: [screen, world], parallax: { pan: 0.5 } });
     const out = l.draw(undefined, outer, dims);
     expect(out[0]!.kind).toBe('path');
     expect(out[1]!.kind).toBe('group');
@@ -86,7 +87,7 @@ describe('createParallaxLayer', () => {
   it('forwards dims to source layers', () => {
     const { layer, draw } = makeSpyLayer();
     const l = createParallaxLayer({
-      id: 'p', label: 'P', source: [layer], pan: 0.5,
+      id: 'p', label: 'P', source: [layer], parallax: { pan: 0.5 },
     });
     l.draw(undefined, outer, dims);
     expect(draw.mock.calls[0]![2]).toEqual(dims);
@@ -99,7 +100,7 @@ describe('createParallaxLayer — getOuterView', () => {
   it('derives from the supplied camera rather than the view the Canvas passes', () => {
     const { layer, draw } = makeSpyLayer();
     const l = createParallaxLayer({
-      id: 'p', label: 'P', source: [layer], pan: 0.5,
+      id: 'p', label: 'P', source: [layer], parallax: { pan: 0.5 },
       getOuterView: () => outer,
     });
     // The Canvas hands it identity — a ref-driven camera pins the `view` prop.
@@ -111,7 +112,7 @@ describe('createParallaxLayer — getOuterView', () => {
     const { layer, draw } = makeSpyLayer();
     let camera: View = IDENTITY;
     const l = createParallaxLayer({
-      id: 'p', label: 'P', source: [layer], pan: 0.5,
+      id: 'p', label: 'P', source: [layer], parallax: { pan: 0.5 },
       getOuterView: () => camera,
     });
     l.draw(undefined, IDENTITY, dims);
@@ -119,5 +120,37 @@ describe('createParallaxLayer — getOuterView', () => {
     l.draw(undefined, IDENTITY, dims);
     expect((draw.mock.calls[0][1] as View).x).toBe(0);
     expect((draw.mock.calls[1][1] as View).x).toBe(100);
+  });
+});
+
+describe('createParallaxLayer — a live plane', () => {
+  it('reads the plane per draw, so an animator writing it moves the layer', () => {
+    const { layer, draw } = makeSpyLayer();
+    const plane = createParallaxPlane({ pan: 0 });
+    const l = createParallaxLayer({ id: 'p', label: 'P', source: [layer], parallax: plane });
+    l.draw(undefined, outer, dims);
+    plane.set({ pan: 0.5 });
+    l.draw(undefined, outer, dims);
+    expect((draw.mock.calls[0]![1] as View).x).toBe(0);
+    expect((draw.mock.calls[1]![1] as View).x).toBe(50);
+  });
+
+  it('repaints when the plane changes, alongside its sources', () => {
+    const plane = createParallaxPlane({ pan: 1 });
+    let sourceListener: (() => void) | null = null;
+    const src: RenderLayer<unknown> = {
+      id: 's', label: 's', draw: () => [],
+      subscribe: (fn) => { sourceListener = fn; return () => { sourceListener = null; }; },
+    };
+    const l = createParallaxLayer({ id: 'p', label: 'P', source: [src], parallax: plane });
+    const heard = vi.fn();
+    const off = l.subscribe!(heard);
+    plane.set({ zoom: 0.5 });
+    sourceListener!();
+    expect(heard).toHaveBeenCalledTimes(2);
+    off();
+    plane.set({ pan: 0 });
+    expect(heard).toHaveBeenCalledTimes(2);
+    expect(sourceListener).toBeNull();
   });
 });

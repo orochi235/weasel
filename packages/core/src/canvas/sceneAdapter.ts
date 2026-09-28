@@ -311,7 +311,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       });
     },
     getLayers() {
-      return scene.layers.map((l) => ({ id: l.id, visible: l.visible }));
+      return scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax }));
     },
     ...(options.layouts
       ? {

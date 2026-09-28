@@ -1,5 +1,6 @@
 import type { Path } from '../geometry/path';
 import type { History, SerializedHistory } from '@weasel-js/history';
+import type { ParallaxOpts } from '../viewport/parallax';
 
 /**
  * Axis-aligned rectangle pose with optional rotation. The canonical pose
@@ -200,6 +201,10 @@ interface LayerRecordBase<TLayer extends string> {
   id: TLayer;
   visible: boolean;
   locked: boolean;
+  /** Draw this layer as a parallax plane: through a view derived from the
+   *  camera's (see `deriveParallaxView`), and picked through the same one.
+   *  Absent means the layer moves with the camera. */
+  parallax?: ParallaxOpts;
 }
 
 /** A layer declared when the scene was created. Fixed set, no display name —
@@ -260,6 +265,8 @@ export interface SystemLayerSpec<TLayer extends string> {
   id: TLayer;
   visible?: boolean;
   locked?: boolean;
+  /** See `LayerRecord.parallax`. */
+  parallax?: ParallaxOpts;
 }
 
 /** Argument to `Scene.addLayer`. Always produces a `UserLayerRecord`
@@ -271,6 +278,8 @@ export interface AddLayerSpec<TLayer extends string> {
   visible?: boolean;
   /** Default `false`. */
   locked?: boolean;
+  /** See `LayerRecord.parallax`. */
+  parallax?: ParallaxOpts;
   /** Render-stack position. Default: top of stack (highest render index). */
   index?: number;
 }
@@ -537,6 +546,10 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  drops them, and every node mutation on them throws. Locking is never
    *  blocked by the lock, and neither are the other layer operations. */
   setLayerLocked(layer: TLayer, locked: boolean): void;
+  /** Set or clear (`undefined`) a layer's parallax — see
+   *  `LayerRecord.parallax`. Undoable; an animation tweening it writes inside
+   *  {@link Scene.untracked} so no frame becomes an undo step. */
+  setLayerParallax(layer: TLayer, parallax: ParallaxOpts | undefined): void;
   /** Whether `id` sits on a locked layer or under a container that does.
    *  A container's lock covers its whole subtree, whatever layers the
    *  descendants are tagged to. An id not in the scene is not locked. */

@@ -1,13 +1,18 @@
 import { drawOneLayer, subscribeToSources, type RenderLayer } from '../../core/layers/render';
 import type { View } from '../../core/viewport/view';
-import { deriveParallaxView, type ParallaxOpts } from './deriveParallaxView';
+import { deriveParallaxView, type ParallaxOpts } from '../../core/viewport/parallax';
+import { isParallaxSource, type ParallaxSource } from './createParallaxPlane';
 
 /** Options for `createParallaxLayer`. */
-export interface CreateParallaxLayerOpts<TData> extends ParallaxOpts {
+export interface CreateParallaxLayerOpts<TData> {
   id: string;
   label: string;
   /** Layers re-rendered through the derived inner view. */
   source: RenderLayer<TData>[];
+  /** How the plane tracks the camera. Pass a `ParallaxSource` (such as
+   *  `createParallaxPlane`) to change it after the layer is built — an
+   *  animator tweening `pan` or `zoom` writes the plane, not the layer. */
+  parallax: ParallaxOpts | ParallaxSource;
   /** Where the camera view comes from. Defaults to the view the Canvas hands
    *  the layer — the `view` prop. A consumer running a 60 Hz camera through
    *  refs pins that prop to identity, and would otherwise get identity back
@@ -23,10 +28,9 @@ export interface CreateParallaxLayerOpts<TData> extends ParallaxOpts {
  * plane itself is emitted as `space: 'screen'` — its children already carry
  * whatever transform they need, and the outer Canvas must add none.
  *
- * **Cosmetic only (v1):** pointer events still target the outer view.
- * Objects on parallax planes are paint, not clickable scene nodes. Use the
- * standalone `deriveParallaxView` helper if you need to project pointer
- * positions for a v2 interactive plane.
+ * What this draws is paint: pointer events target the camera's view. Content
+ * that should be clickable belongs on a scene layer carrying `parallax`
+ * instead, which `<SceneCanvas>` renders and picks through the same view.
  *
  * **Screen-space source layers don't compose meaningfully** — they ignore
  * the derived view by definition. Same constraint as `createViewportLayer`.
@@ -34,14 +38,22 @@ export interface CreateParallaxLayerOpts<TData> extends ParallaxOpts {
 export function createParallaxLayer<TData>(
   opts: CreateParallaxLayerOpts<TData>,
 ): RenderLayer<TData> {
-  const { id, label, source, pan, zoom, anchor, getOuterView } = opts;
+  const { id, label, source, parallax, getOuterView } = opts;
+  const read = isParallaxSource(parallax) ? () => parallax.get() : () => parallax;
+  const fromSources = subscribeToSources(source);
   return {
     id,
     label,
     space: 'screen',
-    subscribe: subscribeToSources(source),
+    subscribe: isParallaxSource(parallax)
+      ? (listener) => {
+        const offSources = fromSources(listener);
+        const offPlane = parallax.subscribe(listener);
+        return () => { offSources(); offPlane(); };
+      }
+      : fromSources,
     draw: (data, outer, dims) => {
-      const inner = deriveParallaxView(getOuterView?.() ?? outer, { pan, zoom, anchor });
+      const inner = deriveParallaxView(getOuterView?.() ?? outer, read());
       return source.flatMap((layer) => drawOneLayer(layer, data, inner, dims));
     },
   };

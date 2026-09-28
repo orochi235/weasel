@@ -1,4 +1,5 @@
 import type { Op } from '../ops/types';
+import type { ParallaxOpts } from '../viewport/parallax';
 
 /**
  * Opaque clipboard payload. `items` is `unknown[]` so each app's clipboard
@@ -252,7 +253,7 @@ export interface InsertAdapter<TNode extends { id: string }> {
  * scene layer.
  */
 export interface LayerEnumerableAdapter<TLayer extends string = string> {
-  getLayers?(): readonly { id: TLayer; visible: boolean }[];
+  getLayers?(): readonly { id: TLayer; visible: boolean; parallax?: ParallaxOpts }[];
 }
 
 /**

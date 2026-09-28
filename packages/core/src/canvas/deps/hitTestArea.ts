@@ -22,8 +22,10 @@ import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescri
 import {
   pickWalk,
   scenePickSource,
+  type PickQuery,
   type ScenePickSourceOptions,
 } from 'canvas/pickWalk';
+import { rectToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
 export { hiddenLayerIds } from 'canvas/pickWalk';
 import type { HitTestView } from 'interactions/actions/depSchema';
@@ -56,16 +58,19 @@ export interface RegionQueryOptions {
 
 
 /** The pick options a region dep hands the shared walk: the asking view's
- *  layer gate, the surface's alpha, and the scene's pose composition. */
+ *  layer gate and camera, the surface's alpha, and the scene's pose
+ *  composition. */
 export function regionPickOptions(
   view: HitTestView | undefined,
   alphaOf: ((id: string) => number) | undefined,
   poseComposition: PoseComposition<unknown> | undefined,
 ): ScenePickSourceOptions<unknown> {
+  const camera = view?.get?.();
   return {
     ...(poseComposition ? { poseComposition } : {}),
     ...(alphaOf ? { alphaOf } : {}),
     ...(view?.layerIsPainted ? { layerIsPainted: (layer: string) => view.layerIsPainted!(layer) } : {}),
+    ...(camera ? { camera } : {}),
   };
 }
 
@@ -129,20 +134,33 @@ function walkArea(
   descriptor: PoseDescriptor<unknown>,
   query: RegionQueryOptions,
 ): NodeId[] {
-  return pickWalk<unknown>(scenePickSource(scene, opts), {
+  const regionQuery = (r: SelectRegion): PickQuery<unknown> => ({
     includeContainers: query.includeContainers === true,
     clipAdmits: (clip, node, pose) => {
       const g = poseDescriptorForNode(descriptor, node);
       return pathIntersectsRect(clip, visualBoundsViaDescriptor(pose, g))
-        && pathIntersectsRect(clip, region.bounds);
+        && pathIntersectsRect(clip, r.bounds);
     },
     hits: (node, pose) => {
       // The descriptor sees the node here, so a pose shape whose extent
       // depends on `node.data` bounds itself rather than its pose's default.
       const g = poseDescriptorForNode(descriptor, node);
       const b = regionBoundsOf(node as object, pose, g);
-      return regionTakes(region, mode, pose, b, () =>
+      return regionTakes(r, mode, pose, b, () =>
         findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b));
     },
-  }) as NodeId[];
+    inPlane: (m) => regionQuery(regionInPlane(r, m)),
+  });
+  return pickWalk<unknown>(scenePickSource(scene, opts), regionQuery(region)) as NodeId[];
+}
+
+/** `r` carried into a plane's world. The map is axis-aligned, so a rect stays
+ *  one; a flipped axis reverses the winding, which no region test reads. */
+function regionInPlane(r: SelectRegion, m: PlaneMap): SelectRegion {
+  const coords: number[] = [];
+  for (const v of r.verts) {
+    const p = toPlane(m, v);
+    coords.push(p.x, p.y);
+  }
+  return regionOf(coords, rectToPlane(m, r.bounds), r.isRect)!;
 }

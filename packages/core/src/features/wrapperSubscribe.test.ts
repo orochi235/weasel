@@ -27,7 +27,7 @@ const wrappers: [string, (src: RenderLayer<unknown>) => RenderLayer<unknown>][] 
     id: 'v', label: 'v', source: [src], view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     bounds: () => ({ x: 0, y: 0, w: 10, h: 10 }),
   })],
-  ['createParallaxLayer', (src) => createParallaxLayer({ id: 'p', label: 'p', source: [src], pan: 0.5 })],
+  ['createParallaxLayer', (src) => createParallaxLayer({ id: 'p', label: 'p', source: [src], parallax: { pan: 0.5 } })],
 ];
 
 describe.each(wrappers)('%s', (_name, wrap) => {

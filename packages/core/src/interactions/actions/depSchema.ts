@@ -75,8 +75,9 @@ export interface ViewApi {
   layerIsPainted?(layerId: string): boolean;
 }
 
-/** The part of the asking view a region hit-test consults. */
-export type HitTestView = Pick<ViewApi, 'layerIsPainted'>;
+/** The part of the asking view a region hit-test consults. `get` is its
+ *  camera, which a parallax layer is picked through. */
+export type HitTestView = Pick<ViewApi, 'layerIsPainted'> & Partial<Pick<ViewApi, 'get'>>;
 
 /**
  * Adapter dep for `areaSelectAction`.

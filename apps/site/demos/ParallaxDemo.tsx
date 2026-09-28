@@ -2,20 +2,18 @@ import { useMemo, useState } from 'react';
 import {
   SceneCanvas,
   WeaselProvider,
+  asNodeId,
+  useAnimator,
   useScene,
-  useSelection,
-  useHandTool,
-  useTools,
   createParallaxLayer,
+  createParallaxPlane,
   createTiledLayer,
   ellipsePath,
-  polygonFromPoints,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { View, RenderLayer } from '@weasel-js/core';
+import type { ParallaxOpts, View, RenderLayer } from '@weasel-js/core';
 
-interface NodeData { color: string }
-type LayerId = 'default';
+interface NodeData { shape: string; sides?: number; fill: { color: string } }
 interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 600, H = 400;
@@ -60,69 +58,6 @@ function paintClouds(id: string, shapes: Shape[]): RenderLayer<unknown> {
   };
 }
 
-// Hills: half-sine bump across the top, flat bottom.
-function paintHills(id: string, shapes: Shape[]): RenderLayer<unknown> {
-  return {
-    id, label: id, space: 'world',
-    draw: (): DrawCommand[] =>
-      shapes.map((s) => {
-        const N = 16;
-        const pts: { x: number; y: number }[] = [];
-        for (let i = 0; i <= N; i++) {
-          const t = i / N;
-          pts.push({
-            x: s.x + t * s.w,
-            y: s.y + s.h * (1 - Math.sin(Math.PI * t)),
-          });
-        }
-        pts.push({ x: s.x + s.w, y: s.y + s.h });
-        pts.push({ x: s.x,       y: s.y + s.h });
-        return {
-          kind: 'path',
-          path: polygonFromPoints(pts),
-          fill: { fill: 'solid', color: s.color },
-        };
-      }),
-  };
-}
-
-// Trees: triangle foliage on top + small brown trunk at the bottom-center.
-// Foliage takes 75% of the bbox height; trunk fills the remaining 25%.
-const TRUNK_COLOR = '#5a3a1f';
-function paintTrees(id: string, shapes: Shape[]): RenderLayer<unknown> {
-  return {
-    id, label: id, space: 'world',
-    draw: (): DrawCommand[] =>
-      shapes.flatMap((s) => {
-        const foliageH = s.h * 0.75;
-        const trunkH = s.h - foliageH;
-        const trunkW = s.w * 0.25;
-        return [
-          {
-            kind: 'path' as const,
-            path: polygonFromPoints([
-              { x: s.x + s.w / 2, y: s.y },
-              { x: s.x,           y: s.y + foliageH },
-              { x: s.x + s.w,     y: s.y + foliageH },
-            ]),
-            fill: { fill: 'solid' as const, color: s.color },
-          },
-          {
-            kind: 'path' as const,
-            path: {
-              kind: 'rect' as const,
-              x: s.x + (s.w - trunkW) / 2,
-              y: s.y + foliageH,
-              width: trunkW,
-              height: trunkH,
-            },
-            fill: { fill: 'solid' as const, color: TRUNK_COLOR },
-          },
-        ];
-      }),
-  };
-}
-
 const SKY: Shape[] = [
   { x:  40, y:  30, w: 90, h: 40, color: '#c7e0f5' },
   { x: 220, y:  60, w: 120, h: 35, color: '#c7e0f5' },
@@ -131,138 +66,129 @@ const SKY: Shape[] = [
   { x: 880, y:  35, w: 95, h: 42, color: '#c7e0f5' },
 ];
 
-const HILLS: Shape[] = [
-  { x:  20, y: 200, w: 220, h: 60, color: '#8ba898' },
-  { x: 280, y: 220, w: 280, h: 70, color: '#7a9586' },
-  { x: 600, y: 210, w: 260, h: 65, color: '#8ba898' },
-  { x: 900, y: 230, w: 240, h: 60, color: '#7a9586' },
-];
-
 const GROUND: Shape[] = [
   { x: -200, y: 320, w: 1600, h: 80, color: '#a0875a' },
 ];
 
-const FOREGROUND: Shape[] = [
-  { x:  60, y: 340, w: 25, h: 50, color: '#3d5a3d' },
-  { x: 180, y: 350, w: 30, h: 45, color: '#3d5a3d' },
-  { x: 320, y: 345, w: 28, h: 48, color: '#3d5a3d' },
-  { x: 470, y: 355, w: 22, h: 42, color: '#3d5a3d' },
-  { x: 580, y: 348, w: 32, h: 46, color: '#3d5a3d' },
+// Hills and trees are scene nodes on layers that carry `parallax`, so they
+// paint through their plane and a click or marquee lands on them where they
+// are drawn. Sky and ground stay paint: tiled render layers under planes.
+type LayerId = 'hills' | 'trees';
+const node = (id: string, layer: LayerId, pose: Pose, data: NodeData) =>
+  ({ id: asNodeId(id), kind: 'leaf' as const, layer, pose, data });
+const hill = (id: string, x: number, width: number, color: string) =>
+  node(id, 'hills', { x, y: 200, width, height: 160 }, { shape: 'ellipse', fill: { color } });
+const tree = (id: string, x: number) =>
+  node(id, 'trees', { x, y: 330, width: 30, height: 50 }, { shape: 'polygon', sides: 3, fill: { color: '#3d5a3d' } });
+const NODES = [
+  hill('h1', 20, 220, '#8ba898'), hill('h2', 280, 280, '#7a9586'),
+  hill('h3', 600, 260, '#8ba898'), hill('h4', 900, 240, '#7a9586'),
+  tree('t1', 60), tree('t2', 180), tree('t3', 320), tree('t4', 470), tree('t5', 580),
 ];
+
+// Depth per plane, and how far each is thrown before the intro settles it.
+const DEPTH = {
+  sky: { pan: 0.1, zoom: 0 },
+  hills: { pan: 0.4, zoom: 0.3 },
+  ground: { pan: 1, zoom: 1 },
+  trees: { pan: 1.3, zoom: 1.5 },
+};
+type Plane = keyof typeof DEPTH;
+const INTRO_FROM = -1200;
+const opts = (p: Plane, zoomParallax: boolean, anchorX: number): ParallaxOpts => ({
+  pan: DEPTH[p].pan,
+  zoom: zoomParallax ? DEPTH[p].zoom : 1,
+  anchor: { x: anchorX, y: 0 },
+});
 
 function ParallaxDemoInner() {
   const scene = useScene<NodeData, LayerId, Pose>({
-    systemLayers: [{ id: 'default' }],
-    initial: [],
+    systemLayers: [
+      { id: 'hills', parallax: opts('hills', false, 0) },
+      { id: 'trees', parallax: opts('trees', false, 0) },
+    ],
+    initial: NODES,
   });
-  const selection = useSelection();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const [zoomParallax, setZoomParallax] = useState(false);
-  const hand = useHandTool({ inertia: {}, axis: 'x' });
-  const tools = useTools({ active: 'hand', registry: { hand } });
+  const animator = useAnimator();
+  const [skyPlane] = useState(() => createParallaxPlane(opts('sky', false, 0)));
+  const [groundPlane] = useState(() => createParallaxPlane(opts('ground', false, 0)));
 
-  const sky = useMemo(
-    () => createParallaxLayer<unknown>({
-      id: 'parallax-sky', label: 'Sky',
+  // One writer for every plane: the two render-layer planes, and the two
+  // scene layers — written untracked, since a frame of an intro is not an edit.
+  const apply = (zoom: boolean, anchorX: number) => {
+    skyPlane.set(opts('sky', zoom, anchorX));
+    groundPlane.set(opts('ground', zoom, anchorX));
+    scene.untracked(() => {
+      scene.setLayerParallax('hills', opts('hills', zoom, anchorX));
+      scene.setLayerParallax('trees', opts('trees', zoom, anchorX));
+    });
+  };
+  const playIntro = () => animator.tween({
+    from: INTRO_FROM, to: 0, ms: 1400, easing: 'easeOutCubic',
+    onTick: (x) => apply(zoomParallax, x), cancelKey: 'intro',
+  });
+
+  const [sky, ground] = useMemo(() => [
+    createParallaxLayer<unknown>({
+      id: 'parallax-sky', label: 'Sky', parallax: skyPlane,
       source: [createTiledLayer<unknown>({
         id: 'sky-tiled', label: 'Sky', source: [paintClouds('sky-shapes', SKY)], period: 1000,
       })],
-      pan: 0.1,
-      ...(zoomParallax ? { zoom: 0 } : {}),
     }),
-    [zoomParallax],
-  );
-  const hills = useMemo(
-    () => createParallaxLayer<unknown>({
-      id: 'parallax-hills', label: 'Hills',
-      source: [createTiledLayer<unknown>({
-        id: 'hills-tiled', label: 'Hills', source: [paintHills('hills-shapes', HILLS)], period: 1140,
-      })],
-      pan: 0.4,
-      ...(zoomParallax ? { zoom: 0.3 } : {}),
-    }),
-    [zoomParallax],
-  );
-  const ground = useMemo(
-    () => createParallaxLayer<unknown>({
-      id: 'parallax-ground', label: 'Ground',
+    createParallaxLayer<unknown>({
+      id: 'parallax-ground', label: 'Ground', parallax: groundPlane,
       source: [createTiledLayer<unknown>({
         id: 'ground-tiled', label: 'Ground', source: [paintRects('ground-shapes', GROUND)],
         // The one rect starts 200 units left of the cell, so the lattice has
         // to be told or the copy left of the view never draws.
         period: 1600, bleed: 200,
       })],
-      pan: 1.0,
-      ...(zoomParallax ? { zoom: 1 } : {}),
     }),
-    [zoomParallax],
-  );
-  const foreground = useMemo(
-    () => createParallaxLayer<unknown>({
-      id: 'parallax-foreground', label: 'Foreground',
-      source: [createTiledLayer<unknown>({
-        id: 'fg-tiled', label: 'Foreground', source: [paintTrees('fg-shapes', FOREGROUND)], period: 640,
-      })],
-      pan: 1.3,
-      ...(zoomParallax ? { zoom: 1.5 } : {}),
-    }),
-    [zoomParallax],
-  );
+  ], [skyPlane, groundPlane]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: 'monospace' }}>
-          view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) ×{view.scale.x.toFixed(2)}
-        </span>
-        <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>
-          Reset view
+    <>
+      <div className="ckd-toolbar">
+        <button className="ckd-btn" onClick={playIntro}>play intro</button>
+        <button className="ckd-btn" onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>
+          reset view
         </button>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <label className="ckd-field">
           zoom
           <input
-            type="range"
-            min={0.5}
-            max={3}
-            step={0.05}
-            value={view.scale.x}
+            type="range" min={0.5} max={3} step={0.05} value={view.scale.x}
             onChange={(e) => {
               const z = Number(e.target.value);
               setView({ ...view, scale: { x: z, y: z } });
             }}
           />
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <label className="ckd-field">
           <input
-            type="checkbox"
-            checked={zoomParallax}
-            onChange={(e) => setZoomParallax(e.target.checked)}
+            type="checkbox" checked={zoomParallax}
+            onChange={(e) => { setZoomParallax(e.target.checked); apply(e.target.checked, 0); }}
           />
           per-plane zoom
         </label>
-        <span style={{ color: '#888' }}>
-          Drag or scroll-wheel to pan (x only, loops forever). Sky lags · hills slow · ground 1:1 · foreground leads. Toggle per-plane zoom to see depth-aware scaling.
-        </span>
       </div>
-      <SceneCanvas features={['view']}
+      <SceneCanvas
+        features={['view', 'pick']}
         width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}
-        selection={selection}
         view={view}
         onViewChange={setView}
         viewport={{ pan: { axis: 'x' } }}
-        tools={tools}
+        selectionOptions={{ mode: 'multi' }}
         layers={{
-          scene: { drawOne: () => [] },
-          paraSky:        { layer: sky,        after: 'scene' },
-          paraHills:      { layer: hills,      after: 'paraSky' },
-          paraGround:     { layer: ground,     after: 'paraHills' },
-          paraForeground: { layer: foreground, after: 'paraGround' },
+          paraSky: { layer: sky, before: 'scene:hills' },
+          paraGround: { layer: ground, before: 'scene:trees' },
         }}
       />
-    </div>
+    </>
   );
 }
 

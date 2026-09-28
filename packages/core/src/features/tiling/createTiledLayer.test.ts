@@ -108,7 +108,7 @@ describe('createTiledLayer', () => {
   it('composes under createParallaxLayer: the lattice resolves against the derived view', () => {
     const { layer, draw } = spyLayer();
     const tiled = createTiledLayer({ id: 't', label: 'T', source: [layer], period: 200 });
-    const plane = createParallaxLayer({ id: 'p', label: 'P', source: [tiled], pan: 0.5 });
+    const plane = createParallaxLayer({ id: 'p', label: 'P', source: [tiled], parallax: { pan: 0.5 } });
     plane.draw(undefined, { x: 1000, y: 0, scale: { x: 1, y: 1 } }, dims);
     // pan 0.5 puts the plane's camera at x = 500, so the first visible copy is
     // the one covering [400, 600) — index 2.

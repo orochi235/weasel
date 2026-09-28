@@ -4,6 +4,8 @@ import { findShapeSilhouette } from './NodeShape';
 import type { Node } from 'core/scene/types';
 import type { Path } from 'features/paths/types';
 import { definesFrame } from 'core/scene/effectivePose';
+import { deriveParallaxView, planeMap, type ParallaxOpts } from 'core/viewport/parallax';
+import { mat3 } from '../renderer/math/mat3';
 
 /**
  * The scene-tree reading surface `buildSceneTree` walks. A `SceneCanvasAdapter`
@@ -12,7 +14,7 @@ import { definesFrame } from 'core/scene/effectivePose';
  * and feature-detects them at draw time.
  */
 export interface HierarchicalAdapter<TNode, TPose> {
-  getLayers(): readonly { id: string; visible: boolean }[];
+  getLayers(): readonly { id: string; visible: boolean; parallax?: ParallaxOpts }[];
   getNode(id: string): TNode | undefined;
   getChildren(parentId: string | null): readonly string[];
   getPose(id: string): TPose;
@@ -55,6 +57,10 @@ function wrapInClips(
  * With no `composePose` on the adapter the fold is the identity, every node
  * paints at its stored pose, and this is the absolute-pose behavior the kit
  * shipped before frames existed.
+ *
+ * A layer carrying `parallax` is a plane: its painters and its cull see the
+ * view derived for it, and its group carries the transform from its world to
+ * the camera's, so the caller's single camera wrap still lands it right.
  */
 export function buildSceneTree<
   TNode extends { id: string; layer: string },
@@ -74,11 +80,15 @@ export function buildSceneTree<
   derivedPathOf?: (node: TNode, pose: TPose) => Path | null,
   /** True for a node whose paint cannot be seen — see `paintMissesView`. Its
    *  painter is not called; its clip and its children are walked as usual. */
-  culled?: (node: TNode, pose: TPose) => boolean,
+  culled?: (node: TNode, pose: TPose, view: View) => boolean,
 ): DrawCommand[] {
   const layers = adapter.getLayers();
   const buckets = new Map<string, DrawCommand[]>();
   for (const l of layers) buckets.set(l.id, []);
+  let planeViews: Map<string, View> | null = null;
+  for (const l of layers) {
+    if (l.parallax) (planeViews ??= new Map()).set(l.id, deriveParallaxView(view, l.parallax));
+  }
 
   const compose = adapter.composePose?.bind(adapter);
 
@@ -96,7 +106,8 @@ export function buildSceneTree<
     // Skip the (potentially expensive) painter for nodes we won't emit; their
     // clip still extends the chain for descendants below.
     const paints = forLayer === undefined || node.layer === forLayer;
-    const self = paints && !culled?.(node, pose) ? drawOne(node, pose, view) : [];
+    const v = planeViews?.get(node.layer) ?? view;
+    const self = paints && !culled?.(node, pose, v) ? drawOne(node, pose, v) : [];
 
     // Extend the clip chain with this node's own clip when it is a container.
     let ownClips = ancestorClips;
@@ -141,7 +152,20 @@ export function buildSceneTree<
   for (const layer of layers) {
     if (!layer.visible) continue;
     if (forLayer !== undefined && layer.id !== forLayer) continue;
-    out.push({ kind: 'group', children: buckets.get(layer.id) ?? [] });
+    const children = buckets.get(layer.id) ?? [];
+    out.push(layer.parallax
+      ? { kind: 'group', transform: planeToCamera(view, layer.parallax), children }
+      : { kind: 'group', children });
   }
   return out;
+}
+
+/** The plane's world expressed in the camera's: the inverse of `planeMap`. */
+function planeToCamera(camera: View, parallax: ParallaxOpts) {
+  const m = planeMap(camera, parallax);
+  return mat3.translated(
+    mat3.scaled(mat3.identity(), 1 / m.scale.x, 1 / m.scale.y),
+    -m.offset.x,
+    -m.offset.y,
+  );
 }
