@@ -648,33 +648,7 @@ export type {
 export { createTilePattern } from './features/patterns';
 export type { TilePatternOpts } from './features/patterns';
 
-// ─── Mesh gradients: PDF shading types 6 and 7 ──────────────────────────────
-// Importing the module registers the kind, so the kind bar and the renderer
-// both see it without a consumer opting in.
-export {
-  MESH_GRADIENT_KIND,
-  MESH_BAKE_SIZE,
-  bakeMesh,
-  cornerWeights,
-  evalPatch,
-  isMeshGradientFill,
-  isTensorPatch,
-  isValidPatch,
-  meshBounds,
-  meshFromStops,
-  meshGradientXml,
-  meshStops,
-  patchBounds,
-  patchCorner,
-  seedMeshPatch,
-} from './features/meshPaint';
-export type {
-  BakedMesh,
-  MeshBox,
-  MeshGradientFill,
-  MeshPatch,
-  MeshPoint,
-} from './features/meshPaint';
+// Mesh gradients live on `@weasel-js/core/mesh`, off the root barrel.
 export {
   resolvePatternSpec,
   resolveFillPattern,
@@ -871,6 +845,7 @@ export type {
   PaintBindContext,
   PaintProgram,
 } from './core/paintKinds';
+export type { ProgramSource } from './renderer/shaders/registerProgram';
 export type { ShaderProgram } from './renderer/shaders/ShaderProgram';
 
 export {

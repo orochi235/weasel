@@ -14,7 +14,12 @@
     "url": "https://github.com/orochi235/weasel/issues"
   },
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/import-shims/mesh.ts",
+    "./src/features/meshPaint/register.ts",
+    "./dist/mesh.js",
+    "./dist/features/meshPaint/register.js"
+  ],
   "engines": {
     "node": ">=22"
   },
@@ -35,6 +40,10 @@
     "./math": {
       "import": "./dist/math.js",
       "types": "./dist/math.d.ts"
+    },
+    "./mesh": {
+      "import": "./dist/mesh.js",
+      "types": "./dist/mesh.d.ts"
     },
     "./move": {
       "import": "./dist/move.js",

@@ -1,6 +1,7 @@
 /** Published entry points, keyed by their `dist/<key>.js` name; read by both build configs. */
 const shims = [
   'math',
+  'mesh',
   'move',
   'resize',
   'insert',

@@ -1053,13 +1053,6 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
-- **(P3) esbuild with code splitting still ships the mesh paint with any import of core.** With
-  `splitting: true`, esbuild makes an entry import every module a dynamic chunk shares with the
-  barrel's static graph, used or not, so `import { asNodeId }` carries ~19.6 kB — the lazily
-  loaded `mesh-gradient` kind and the paint registry it imports. rolldown (vite's production
-  bundler) and esbuild without splitting both ship under 250 B, which is why
-  `scripts/check-treeshake.mjs` bundles with rolldown. Short of taking the mesh exports off
-  core's root barrel onto a subpath, nothing in core's layout avoids it.
 
 - **(P2) jsdom is pinned to exactly 29.0.1.** From 29.0.2 through 30.1.1
   (the latest), reading an inherited property that no ancestor sets — an unset

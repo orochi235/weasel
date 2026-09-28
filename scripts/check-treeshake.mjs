@@ -9,11 +9,13 @@
 // call kept all of it alive, and `import { asNodeId }` shipped ~630 kB while
 // every in-repo test (which resolves source) stayed green.
 //
-// Bundled with rolldown, which is what vite ships a consumer's production build
-// with. Not esbuild: with code splitting on, it makes an entry import every
-// module a dynamic import's chunk shares with the barrel's graph, used or not,
-// so the lazily loaded mesh paint would read as statically imported.
+// Bundled twice: with rolldown, which is what vite ships a consumer's
+// production build with, and with esbuild with code splitting on. esbuild makes
+// an entry import every module a dynamic import's chunk shares with the
+// barrel's graph, used or not, so a lazily loaded paint kind that imports any
+// of core's own modules loads with every import of core.
 import { rolldown } from 'rolldown';
+import { build as esbuild } from 'esbuild';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -26,24 +28,26 @@ const BUDGET = 512;
 const PROBES = ['asNodeId', 'unionBounds', 'screenToWorld', 'VERSION'];
 
 // The mesh paint kind loads on demand: reaching the paint-kind registry must
-// leave it in a dynamic chunk, while importing a mesh export must carry its
-// registration, so an app using mesh code never draws a blank first frame.
+// leave it in a dynamic chunk, while importing from `@weasel-js/core/mesh` must
+// carry its registration, so an app using mesh code never draws a blank first
+// frame.
 const MESH_MODULE = /features\/meshPaint\//;
-const MESH_REGISTRATION = /label:(`Mesh`|"Mesh")/;
+const MESH_REGISTRATION = /label:\s*(`Mesh`|"Mesh")/;
 
-/** Minified bytes, module ids and code of a one-line consumer entry plus every
- *  chunk it imports statically. */
-async function measure(symbol) {
+const entryCode = (symbol, from) => `import { ${symbol} } from '${from}';\nconsole.log(${symbol});\n`;
+const EXTERNAL = [/^react($|\/)/, /^react-dom($|\/)/];
+
+/** A one-line consumer entry plus every chunk it imports statically, as
+ *  `{ bytes, modules, code }` over minified output. */
+async function withRolldown(symbol, from) {
   const bundle = await rolldown({
     input: 'entry',
     cwd: repoRoot,
-    external: [/^react($|\/)/, /^react-dom($|\/)/],
+    external: EXTERNAL,
     plugins: [{
       name: 'probe-entry',
       resolveId: (id) => (id === 'entry' ? '\0entry' : null),
-      load: (id) => (id === '\0entry'
-        ? `import { ${symbol} } from '@weasel-js/core';\nconsole.log(${symbol});\n`
-        : null),
+      load: (id) => (id === '\0entry' ? entryCode(symbol, from) : null),
     }],
     // Core's dist ships an index.css no JS imports; nothing here should load CSS.
     moduleTypes: { '.css': 'empty' },
@@ -52,78 +56,120 @@ async function measure(symbol) {
   const { output } = await bundle.generate({ format: 'es', minify: true });
   await bundle.close();
   const chunks = new Map(output.filter((o) => o.type === 'chunk').map((o) => [o.fileName, o]));
+  return collect(
+    [...chunks.values()].find((c) => c.isEntry).fileName,
+    (name) => chunks.get(name)?.imports ?? [],
+    (name) => ({ code: chunks.get(name).code, modules: chunks.get(name).moduleIds }),
+  );
+}
+
+async function withEsbuild(symbol, from) {
+  const outdir = join(repoRoot, 'treeshake-probe');
+  const result = await esbuild({
+    stdin: { contents: entryCode(symbol, from), resolveDir: repoRoot, loader: 'js' },
+    absWorkingDir: repoRoot,
+    bundle: true,
+    splitting: true,
+    format: 'esm',
+    minify: true,
+    write: false,
+    metafile: true,
+    outdir,
+    external: ['react', 'react/*', 'react-dom', 'react-dom/*'],
+    loader: { '.css': 'empty' },
+    // The repo's tsconfig maps @weasel-js/* to source; a consumer resolves dist.
+    tsconfigRaw: '{}',
+    logLevel: 'silent',
+  });
+  const outputs = result.metafile.outputs;
+  const files = new Map(result.outputFiles.map((f) => [f.path, f.text]));
+  return collect(
+    Object.keys(outputs).find((k) => outputs[k].entryPoint),
+    (name) => outputs[name].imports.filter((i) => i.kind === 'import-statement').map((i) => i.path),
+    (name) => ({ code: files.get(join(repoRoot, name)), modules: Object.keys(outputs[name].inputs) }),
+  );
+}
+
+function collect(entry, importsOf, contentOf) {
   const reached = new Set();
   const walk = (name) => {
-    if (reached.has(name) || !chunks.has(name)) return;
+    if (reached.has(name)) return;
     reached.add(name);
-    for (const imp of chunks.get(name).imports) walk(imp);
+    for (const imp of importsOf(name)) walk(imp);
   };
-  walk([...chunks.values()].find((c) => c.isEntry).fileName);
+  walk(entry);
   let bytes = 0;
   const modules = [];
   let code = '';
   for (const name of reached) {
-    const chunk = chunks.get(name);
-    bytes += Buffer.byteLength(chunk.code);
-    modules.push(...chunk.moduleIds);
-    code += chunk.code;
+    const c = contentOf(name);
+    bytes += Buffer.byteLength(c.code);
+    modules.push(...c.modules);
+    code += c.code;
+  }
+  if (modules.some((m) => m.includes('packages/core/src/'))) {
+    throw new Error('the probe resolved core\'s source rather than its dist');
   }
   return { bytes, modules, code };
 }
 
-async function measureOrExplain(symbol) {
+const BUNDLERS = { rolldown: withRolldown, esbuild: withEsbuild };
+
+async function measureOrExplain(bundler, symbol, from) {
   try {
-    return await measure(symbol);
+    return await BUNDLERS[bundler](symbol, from);
   } catch (err) {
-    console.error(`[treeshake] could not bundle \`${symbol}\` — run \`npm run build\` first.\n`);
+    console.error(`[treeshake] could not bundle \`${symbol}\` with ${bundler} — run \`npm run build\` first.\n`);
     throw err;
   }
 }
 
 const failures = [];
 const width = Math.max(...PROBES.map((p) => p.length), 'seedMeshPatch'.length);
-const total = PROBES.length + 2;
-for (const [i, symbol] of PROBES.entries()) {
-  const { bytes } = await measureOrExplain(symbol);
-  const verdict = bytes > BUDGET ? 'OVER' : 'ok';
-  console.log(
-    `[treeshake] ${i + 1}/${total}  ${symbol.padEnd(width)}  ${String(bytes).padStart(9)} B  ${verdict}`,
-  );
-  if (bytes > BUDGET) {
-    failures.push(
-      `importing ${symbol} from @weasel-js/core ships ${bytes} B, over the ${BUDGET} B budget.\n` +
-        'Core\'s dist is no longer tree-shakeable. Check that packages/core/vite.config.ts still\n' +
-        'emits one file per module (`preserveModules`), and that nothing registers itself at\n' +
-        'module load where a one-symbol import can reach it.',
-    );
-  }
-}
+const total = (PROBES.length + 2) * Object.keys(BUNDLERS).length;
+let n = 0;
+const line = (bundler, symbol, bytes, verdict) => console.log(
+  `[treeshake] ${String(++n).padStart(2)}/${total}  ${bundler.padEnd(8)}  ${symbol.padEnd(width)}  ${String(bytes).padStart(9)} B  ${verdict}`,
+);
 
-{
-  const { bytes, modules } = await measureOrExplain('getPaintKind');
-  const eager = modules.some((m) => MESH_MODULE.test(m));
-  console.log(
-    `[treeshake] ${total - 1}/${total}  ${'getPaintKind'.padEnd(width)}  ${String(bytes).padStart(9)} B  ${eager ? 'MESH STATIC' : 'ok, mesh lazy'}`,
-  );
-  if (eager) {
-    failures.push(
-      'importing getPaintKind statically carries the mesh paint, which the paint-kind\n' +
-        'registry is meant to load on demand.',
-    );
+for (const bundler of Object.keys(BUNDLERS)) {
+  for (const symbol of PROBES) {
+    const { bytes } = await measureOrExplain(bundler, symbol, '@weasel-js/core');
+    line(bundler, symbol, bytes, bytes > BUDGET ? 'OVER' : 'ok');
+    if (bytes > BUDGET) {
+      failures.push(
+        `${bundler}: importing ${symbol} from @weasel-js/core ships ${bytes} B, over the ${BUDGET} B budget.\n` +
+          'Check that packages/core/vite.config.ts still emits one file per module\n' +
+          '(`preserveModules`), that nothing registers itself at module load where a\n' +
+          'one-symbol import can reach it, and that every lazily loaded paint kind is\n' +
+          'still rebuilt as a self-contained file (`LAZY_KINDS`).',
+      );
+    }
   }
-}
 
-{
-  const { bytes, code } = await measureOrExplain('seedMeshPatch');
-  const registers = MESH_REGISTRATION.test(code);
-  console.log(
-    `[treeshake] ${total}/${total}  ${'seedMeshPatch'.padEnd(width)}  ${String(bytes).padStart(9)} B  ${registers ? 'ok, registers' : 'NO REGISTRATION'}`,
-  );
-  if (!registers) {
-    failures.push(
-      'importing seedMeshPatch no longer carries the mesh kind\'s registration, so an app\n' +
-        'using mesh code would draw nothing for a mesh fill until it loads.',
-    );
+  {
+    const { bytes, modules } = await measureOrExplain(bundler, 'getPaintKind', '@weasel-js/core');
+    const eager = modules.some((m) => MESH_MODULE.test(m));
+    line(bundler, 'getPaintKind', bytes, eager ? 'MESH STATIC' : 'ok, mesh lazy');
+    if (eager) {
+      failures.push(
+        `${bundler}: importing getPaintKind statically carries the mesh paint, which the\n` +
+          'paint-kind registry is meant to load on demand.',
+      );
+    }
+  }
+
+  {
+    const { bytes, code } = await measureOrExplain(bundler, 'seedMeshPatch', '@weasel-js/core/mesh');
+    const registers = MESH_REGISTRATION.test(code);
+    line(bundler, 'seedMeshPatch', bytes, registers ? 'ok, registers' : 'NO REGISTRATION');
+    if (!registers) {
+      failures.push(
+        `${bundler}: importing seedMeshPatch from @weasel-js/core/mesh no longer carries the\n` +
+          'mesh kind\'s registration, so an app using mesh code would draw nothing for a mesh\n' +
+          'fill until it loads.',
+      );
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
-import { seedMeshPatch } from '@weasel-js/core';
+import { seedMeshPatch } from '@weasel-js/core/mesh';
 import type { SvgNode } from './types';
 
 const MESH = seedMeshPatch('#e2574cff');

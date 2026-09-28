@@ -7,7 +7,7 @@ The `mesh-gradient` paint kind now loads on demand instead of shipping with
 every import of `@weasel-js/core` (about 19 kB minified). A mesh fill that
 arrives as data — a loaded document, an SVG import — draws nothing on the
 first frame that meets it, starts the load, and `<SceneCanvas>` repaints it
-when it lands. Importing anything from the mesh module (`seedMeshPatch`,
+when it lands. Importing anything from `@weasel-js/core/mesh` (`seedMeshPatch`,
 `isMeshGradientFill`, `MeshEditor` in `@weasel-js/ui`, …) still registers it
 at once.
 

@@ -15,7 +15,7 @@ import {
 import type { PaintKindEntry } from './paintKinds';
 import { fillInPoseFrame, fillToBoundsFrame } from './fillInPoseFrame';
 import { findNodeShape } from '../canvas/NodeShape';
-import { registerProgram } from '../renderer/shaders/registerProgram';
+import { getProgramSource, registerProgram } from '../renderer/shaders/registerProgram';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
 import { WeaselRenderer } from '../renderer/WeaselRenderer';
 import type { DrawCommand } from '../renderer/DrawCommand';
@@ -117,6 +117,19 @@ describe('paint-kind registry', () => {
     expect(listPaintKinds().map((k) => k.id)).toEqual([
       'solid', 'linear-gradient', 'radial-gradient', 'conic-gradient', 'pattern',
     ]);
+  });
+
+  it('registers the shader programs a kind declares, and re-registering the same source is not a duplicate', () => {
+    const programs = { 'test-declared': { vert: '', frag: WASH_FRAG } };
+    dispose = registerPaintKind({ ...washEntry(), programs });
+    expect(getProgramSource('test-declared')).toEqual(programs['test-declared']);
+    // registerProgram throws on a duplicate id in production.
+    vi.stubEnv('NODE_ENV', 'production');
+    try {
+      expect(() => registerPaintKind({ ...washEntry(), programs })()).not.toThrow();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('adds a sixth kind to the list and removes it on dispose', () => {

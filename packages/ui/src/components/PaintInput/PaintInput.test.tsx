@@ -4,10 +4,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import {
   asPaint,
   registerPaintKind,
-  seedMeshPatch,
   type FillStyle,
   type GradientFill,
 } from '@weasel-js/core';
+import { seedMeshPatch } from '@weasel-js/core/mesh';
 import { PaintInput } from './PaintInput';
 
 const LINEAR: GradientFill = {
