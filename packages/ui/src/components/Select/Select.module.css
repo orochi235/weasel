@@ -17,7 +17,7 @@
   --_frame-h: var(--wzl-select-h);
   --_frame-bg: var(--wzl-select-bg);
   --_frame-border: var(--wzl-select-border);
-  --_frame-fg: var(--wzl-select-fg);
+  --_frame-fg: var(--wzl-select-fg, var(--wzl-fg));
   --_frame-focus-border: var(--wzl-select-focus-border);
   --_frame-focus-shadow: var(--wzl-select-focus-shadow);
   --_frame-focus-outline: var(--wzl-select-focus-outline);
