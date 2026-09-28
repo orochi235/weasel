@@ -8,10 +8,11 @@ export {
   selectionMoveContribution,
   selectionMoveBindings,
   selectionTransformContribution,
-  SELECTION_TRANSFORM_BINDINGS,
+  selectionTransformBindings,
   SELECTION_MOVE_ID,
   SELECTION_TRANSFORM_ID,
   type SelectionMoveOptions,
+  type SelectionTransformOptions,
 } from './select';
 // `useResizeTool` and the legacy `useResize` hook are deleted. Resize is
 // dispatcher-driven via `resizeAction` + the `resizePolicy` dep (constraints,

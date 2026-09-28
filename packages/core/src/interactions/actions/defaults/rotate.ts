@@ -21,7 +21,8 @@
  * - Reads and writes poses through the `poseDescriptor` dep; a pose whose
  *   descriptor has no `withRotation`, or reports `supportsRotation` false, is
  *   left alone.
- * - No behavior pipeline (snap, etc.). Behaviors wait for a later phase.
+ * - Behaviors (`opts.behaviors`) see the first rotated node's turned pose; a
+ *   pose one returns from `onMove` sets the rotation for the whole selection.
  * - No overlay rendering — deferred to Phase 7 overlay surface.
  * - Shift-snap (15° quantum) is NOT wired in this phase — omitted deliberately
  *   to keep the invoker self-contained (would need to read shift from onMove ctx).
@@ -30,6 +31,7 @@
 
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import { resolveParams } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
 import type { Op } from 'core/ops/types';
@@ -46,6 +48,9 @@ import {
   type PoseDescriptor,
 } from '../resize/geometry';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
+import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
+import { moveGestureAdapter } from '../move/gestureAdapter';
+import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestures/types';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -106,6 +111,10 @@ interface RotateScratch {
    *  ops-based commits route through it (consumer history) instead of
    *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
   applyOps?: (ops: Op[], label: string) => void;
+  lifecycle: GestureLifecycle;
+  behaviors: RotateBehavior<unknown>[];
+  /** Reused gesture context handed to behaviors across the drag. */
+  gestureCtx: GestureContext<unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -127,15 +136,17 @@ export const rotateAction: Action & { requires: string[] } = {
   label: 'Rotate',
   // No default binding. It used to be a bare `{ kind: 'drag' }`, which made
   // any drag no active tool claimed rotate a non-empty selection. The rotation
-  // handle binds it (`SELECTION_TRANSFORM_BINDINGS`, the `transform` preset).
+  // handle binds it (`selectionTransformBindings`, the `transform` preset).
   eligible: { capability: 'transforms-selection' },
   requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'poseComposition'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, _opts): OngoingHandle {
+    start(ctx: InvocationCtx, opts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
       const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
       const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+      const params = resolveParams(opts?.params);
+      const behaviors = (opts?.behaviors ?? []) as RotateBehavior<unknown>[];
 
       if (!selection || !scene) return {};
 
@@ -190,33 +201,120 @@ export const rotateAction: Action & { requires: string[] } = {
         unionCenter,
         startPointerAngle,
         currentDelta: 0,
-        useUnionPivot: ids.length > 1,
+        useUnionPivot: ids.length > 1 && params?.['pivot'] !== 'each',
         previews: new Map<NodeId, unknown>(),
         overrideEntries: new Map<NodeId, { pose: unknown }>(),
         applyOps,
+        lifecycle: readGestureLifecycle(params, 'Rotate', behaviors),
+        behaviors,
+        gestureCtx: {
+          draggedIds: [...originPoses.keys()] as string[],
+          origin: new Map([...originWorlds].map(([id, p]) => [id as string, p])),
+          current: new Map([...originWorlds].map(([id, p]) => [id as string, p])),
+          snap: null,
+          modifiers: { ...ctx.modifiers },
+          pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
+          adapter: moveGestureAdapter(scene) as unknown as GestureContext<unknown>['adapter'],
+          scratch: {},
+        },
+      };
+      const { lifecycle } = scratch;
+
+      /** Each rotated node's world pose turned by `delta`. */
+      const turnedWorlds = (delta: number): Map<NodeId, unknown> => {
+        const out = new Map<NodeId, unknown>();
+        for (const [id, origin] of scratch.originWorlds) {
+          out.set(id, applyRotationDelta(
+            scratch.descriptor,
+            origin,
+            scratch.originRotations.get(id) ?? 0,
+            delta,
+            scratch.originCenters.get(id) ?? { x: 0, y: 0 },
+            scratch.unionCenter,
+            scratch.useUnionPivot,
+          ));
+        }
+        return out;
+      };
+
+      const syncGestureCurrent = (delta: number): Map<NodeId, unknown> => {
+        const turned = turnedWorlds(delta);
+        for (const [id, pose] of turned) scratch.gestureCtx.current.set(id as string, pose);
+        return turned;
+      };
+
+      /** The pointer's delta as the behaviors reshape it. */
+      const shapeDelta = (moveCtx: InvocationCtx, raw: number): number => {
+        const gctx = scratch.gestureCtx;
+        gctx.modifiers = { ...moveCtx.modifiers };
+        gctx.pointer = { worldX: moveCtx.world.x, worldY: moveCtx.world.y, clientX: 0, clientY: 0 };
+        const primary = scratch.originWorlds.keys().next().value as NodeId;
+        const originRotation = scratch.originRotations.get(primary) ?? 0;
+        let delta = raw;
+        let proposed: RotateProposed<unknown> = {
+          pose: syncGestureCurrent(raw).get(primary),
+          rotation: originRotation + raw,
+        };
+        for (const b of scratch.behaviors) {
+          const r = b.onMove?.(gctx, proposed);
+          if (!r || r.pose === undefined) continue;
+          const rotation = scratch.descriptor.getRotation?.(r.pose) ?? 0;
+          delta = rotation - originRotation;
+          proposed = { pose: r.pose, rotation };
+        }
+        return delta;
+      };
+
+      // Returns whether anything reached the document.
+      const commitRotate = (): boolean => {
+        const target = {
+          scene,
+          applyOps: scratch.applyOps,
+          adapter: defaultCommitAdapter(scene, selection.adapterMethods),
+        };
+        if (scratch.behaviors.length > 0) {
+          syncGestureCurrent(scratch.currentDelta);
+          for (const b of scratch.behaviors) {
+            const r = b.onEnd?.(scratch.gestureCtx);
+            if (r === undefined) continue;
+            if (r === null) return false;
+            commitGestureOps(target, lifecycle, r);
+            return true;
+          }
+        }
+        if (scratch.currentDelta === 0) return false;
+        // One transform op per node: `from` is the origin pose captured at drag
+        // start, `to` the rotated preview. A single batch, so one undo entry.
+        const ops: Op[] = [];
+        for (const id of scratch.ids) {
+          const next = scratch.previews.get(id);
+          if (next === undefined) continue;
+          const from = scratch.originPoses.get(id);
+          if (from === undefined) continue;
+          ops.push(createTransformOp<unknown>({
+            id: id as string,
+            from,
+            to: next,
+            label: lifecycle.label,
+          }));
+        }
+        if (ops.length === 0) return false;
+        commitGestureOps(target, lifecycle, ops);
+        return true;
       };
 
       const recomputePreviews = (delta: number) => {
         scratch.previews.clear();
-        if (delta === 0) { syncPreviewOverrides(scratch); return; }
-        for (const id of scratch.ids) {
-          const origin = scratch.originWorlds.get(id);
-          if (origin === undefined) continue;
-          const originRotation = scratch.originRotations.get(id) ?? 0;
-          const originCenter = scratch.originCenters.get(id) ?? { x: 0, y: 0 };
-          const turned = applyRotationDelta(
-            scratch.descriptor,
-            origin,
-            originRotation,
-            delta,
-            originCenter,
-            scratch.unionCenter,
-            scratch.useUnionPivot,
-          );
-          scratch.previews.set(id, scratch.frame.local(id, turned));
+        if (delta !== 0) {
+          for (const [id, turned] of turnedWorlds(delta)) {
+            scratch.previews.set(id, scratch.frame.local(id, turned));
+          }
         }
         syncPreviewOverrides(scratch);
       };
+
+      for (const b of behaviors) b.onStart?.(scratch.gestureCtx);
+      lifecycle.start(scratch.gestureCtx.draggedIds);
 
       return {
         kind: 'rotate',
@@ -225,46 +323,19 @@ export const rotateAction: Action & { requires: string[] } = {
             moveCtx.world.y - scratch.unionCenter.y,
             moveCtx.world.x - scratch.unionCenter.x,
           );
-          scratch.currentDelta = pointerAngle - scratch.startPointerAngle;
+          const raw = pointerAngle - scratch.startPointerAngle;
+          scratch.currentDelta = scratch.behaviors.length > 0 ? shapeDelta(moveCtx, raw) : raw;
           recomputePreviews(scratch.currentDelta);
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
-          if (reason === 'cancel') {
+          let committed = false;
+          try {
+            if (reason === 'commit') committed = commitRotate();
+          } finally {
             dropPreviewOverrides(scratch);
             scratch.previews.clear();
-            return;
+            lifecycle.end(committed);
           }
-          // No movement — no-op.
-          if (scratch.currentDelta === 0) {
-            dropPreviewOverrides(scratch);
-            scratch.previews.clear();
-            return;
-          }
-          // Build one transform op per affected node — `from` is the
-          // pre-mutation origin pose captured at drag start, `to` the rotated
-          // preview pose. Routing through the consumer `applyOps` hook (when
-          // present) captures the whole drag as one undo entry in the
-          // consumer's history; otherwise `scene.applyBatch` records it in the
-          // scene's own history. Either way: a single batch / undo entry.
-          const ops: Op[] = [];
-          for (const id of scratch.ids) {
-            const next = scratch.previews.get(id);
-            if (next === undefined) continue;
-            const from = scratch.originPoses.get(id);
-            if (from === undefined) continue;
-            ops.push(createTransformOp<unknown>({
-              id: id as string,
-              from,
-              to: next,
-              label: 'Rotate',
-            }));
-          }
-          if (ops.length > 0) {
-            if (scratch.applyOps) scratch.applyOps(ops, 'Rotate');
-            else scratch.scene.applyBatch(ops, 'Rotate', defaultCommitAdapter(scratch.scene, selection.adapterMethods));
-          }
-          dropPreviewOverrides(scratch);
-          scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),
         previewPose: (id: string) => scratch.previews.get(id as NodeId) ?? null,

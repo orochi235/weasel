@@ -1042,7 +1042,6 @@ export type {
   UseRotateOptions,
   RotationHandle,
 } from './interactions/actions/rotate';
-export type { UseInsertOptions } from './interactions/actions/insert';
 export { useDragRect } from './interactions/gestures/dragRect';
 export type {
   DragRectController,

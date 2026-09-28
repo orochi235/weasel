@@ -4,8 +4,8 @@ import { snapToContainer } from '../../../interactions/actions/move/behaviors/sn
 import {
   selectionMoveBindings,
   selectionMoveContribution,
+  selectionTransformBindings,
   selectionTransformContribution,
-  SELECTION_TRANSFORM_BINDINGS,
 } from './selectionContributions';
 
 describe('selectionMoveBindings — binding opts', () => {
@@ -25,6 +25,21 @@ describe('selectionMoveBindings — binding opts', () => {
     }
   });
 
+  it('threads the move lifecycle options and expandIds into the move binding params', () => {
+    const onGestureStart = () => {};
+    const onGestureEnd = () => {};
+    const expandIds = (ids: string[]) => ids;
+    const bindings = selectionMoveBindings({
+      move: { moveLabel: 'Drag', transient: true, onGestureStart, onGestureEnd, expandIds },
+    }).filter((b) => b.actionId === 'move');
+    expect(bindings.length).toBeGreaterThan(0);
+    for (const b of bindings) {
+      expect(b.opts?.params).toEqual({
+        label: 'Drag', transient: true, onGestureStart, onGestureEnd, expandIds,
+      });
+    }
+  });
+
   it('carries BOTH params.reparentOnDrop AND behaviors when both are set', () => {
     const behavior = snapToContainer({ dwellMs: 0, findTarget: () => null });
     const moveBinding = selectionMoveBindings({ reparentOnDrop: 'top', move: { behaviors: [behavior] } })
@@ -36,7 +51,7 @@ describe('selectionMoveBindings — binding opts', () => {
 
 describe('selection contributions', () => {
   it('are always live and carry only bindings', () => {
-    for (const entry of [selectionMoveContribution(), selectionTransformContribution]) {
+    for (const entry of [selectionMoveContribution(), selectionTransformContribution()]) {
       expect(entry.eligibility).toEqual({ always: true });
       expect(entry.actions).toBeUndefined();
       expect(entry.bindings?.length).toBeGreaterThan(0);
@@ -118,11 +133,33 @@ describe('selectionMoveBindings — drag on an unselected body routes to move', 
   );
 });
 
-describe('SELECTION_TRANSFORM_BINDINGS', () => {
+describe('selectionTransformBindings', () => {
   it('binds resize and rotate to their handles only', () => {
-    expect(SELECTION_TRANSFORM_BINDINGS.map((b) => b.actionId)).toEqual(['resize', 'rotate']);
-    for (const b of SELECTION_TRANSFORM_BINDINGS) {
+    const bindings = selectionTransformBindings();
+    expect(bindings.map((b) => b.actionId)).toEqual(['resize', 'rotate']);
+    for (const b of bindings) {
       expect(typeof (b.spec as { target?: { kindOf?: unknown } }).target?.kindOf).toBe('function');
     }
+  });
+
+  it('threads the rotate options into the rotate binding', () => {
+    const behavior = { onMove: () => undefined };
+    const onGestureStart = () => {};
+    const onGestureEnd = () => {};
+    const rotate = selectionTransformBindings({
+      rotate: {
+        behaviors: [behavior] as never,
+        rotateLabel: 'Turn', transient: true, onGestureStart, onGestureEnd, pivot: 'each',
+      },
+    }).find((b) => b.actionId === 'rotate');
+    expect(rotate?.opts?.behaviors).toEqual([behavior]);
+    expect(rotate?.opts?.params).toEqual({
+      label: 'Turn', transient: true, onGestureStart, onGestureEnd, pivot: 'each',
+    });
+  });
+
+  it('leaves the rotate binding bare with no options', () => {
+    const rotate = selectionTransformBindings().find((b) => b.actionId === 'rotate');
+    expect(rotate?.opts).toBeUndefined();
   });
 });

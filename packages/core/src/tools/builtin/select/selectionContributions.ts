@@ -9,11 +9,13 @@ import type { BindingOpts, GestureBinding } from '@weasel-js/routing';
 import { isResizeHandle, isRotateHandle, isAnchorOrControl } from '@weasel-js/routing';
 import type { Contribution } from '../../overlayBinding';
 import type { UseMoveOptions } from '../../../interactions/actions/move/options';
+import type { UseRotateOptions } from '../../../interactions/actions/rotate/options';
+import { gestureLifecycleParams } from '../../../interactions/actions/gestureLifecycle';
 
 /** Options for {@link selectionMoveContribution}. */
 export interface SelectionMoveOptions<TPose = unknown> {
-  /** Move-action options. Only `behaviors` is read, as the move bindings'
-   *  `opts.behaviors`. */
+  /** Move-action options: `behaviors` become the move bindings'
+   *  `opts.behaviors`, everything else their `opts.params`. */
   move?: UseMoveOptions<TPose>;
   /** Reparent-on-drop behavior for drag-to-move. `'off'` (default) keeps
    *  translate-only commits. `'top'` lands the moved nodes at the top of the
@@ -35,9 +37,11 @@ export function selectionMoveBindings<TPose>(
   // both the selected-body and unselected-body move bindings so a
   // first-touch drag and a re-drag commit identically.
   const moveOpts: { opts?: BindingOpts } = (() => {
-    const params: Record<string, unknown> = {};
+    const move = options.move ?? {};
+    const params: Record<string, unknown> = gestureLifecycleParams({ ...move, label: move.moveLabel });
     if (options.reparentOnDrop && options.reparentOnDrop !== 'off') params.reparentOnDrop = options.reparentOnDrop;
-    if (options.move?.dragThresholdPx !== undefined) params.dragThresholdPx = options.move.dragThresholdPx;
+    if (move.dragThresholdPx !== undefined) params.dragThresholdPx = move.dragThresholdPx;
+    if (move.expandIds) params.expandIds = move.expandIds;
     const withParams = Object.keys(params).length > 0 ? { params } : undefined;
     const behaviors = options.move?.behaviors?.length
       ? { behaviors: options.move.behaviors as BindingOpts['behaviors'] }
@@ -93,11 +97,34 @@ export function selectionMoveBindings<TPose>(
   ];
 }
 
+/** Options for {@link selectionTransformContribution}. Resize takes its
+ *  options through the `resizePolicy` dep (`useResizePolicy`), not here. */
+export interface SelectionTransformOptions<TPose = unknown> {
+  /** Rotate-action options: `behaviors` become the rotate binding's
+   *  `opts.behaviors`, everything else its `opts.params`. */
+  rotate?: UseRotateOptions<TPose>;
+}
+
 /** Drag a resize handle to resize the selection, the rotation handle to rotate it. */
-export const SELECTION_TRANSFORM_BINDINGS: readonly GestureBinding[] = [
-  { spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle } }, actionId: 'resize' },
-  { spec: { kind: 'drag' as const, target: { kindOf: isRotateHandle } }, actionId: 'rotate' },
-];
+export function selectionTransformBindings<TPose>(
+  options: SelectionTransformOptions<TPose> = {},
+): GestureBinding[] {
+  const rotate = options.rotate ?? {};
+  const params: Record<string, unknown> = gestureLifecycleParams({ ...rotate, label: rotate.rotateLabel });
+  if (rotate.pivot) params.pivot = rotate.pivot;
+  const opts: BindingOpts = {
+    ...(Object.keys(params).length > 0 ? { params } : {}),
+    ...(rotate.behaviors?.length ? { behaviors: rotate.behaviors as BindingOpts['behaviors'] } : {}),
+  };
+  return [
+    { spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle } }, actionId: 'resize' },
+    {
+      spec: { kind: 'drag' as const, target: { kindOf: isRotateHandle } },
+      actionId: 'rotate',
+      ...(Object.keys(opts).length > 0 ? { opts } : {}),
+    },
+  ];
+}
 
 /** An always-live entry carrying {@link selectionMoveBindings}. Add it to a
  *  canvas's ambient list; `<SceneCanvas features={['move']}>` does. */
@@ -111,10 +138,14 @@ export function selectionMoveContribution<TPose>(
   };
 }
 
-/** An always-live entry carrying {@link SELECTION_TRANSFORM_BINDINGS}. Add it
+/** An always-live entry carrying {@link selectionTransformBindings}. Add it
  *  to a canvas's ambient list; `<SceneCanvas features={['transform']}>` does. */
-export const selectionTransformContribution: Contribution = {
-  id: SELECTION_TRANSFORM_ID,
-  eligibility: { always: true },
-  bindings: [...SELECTION_TRANSFORM_BINDINGS],
-};
+export function selectionTransformContribution<TPose>(
+  options: SelectionTransformOptions<TPose> = {},
+): Contribution {
+  return {
+    id: SELECTION_TRANSFORM_ID,
+    eligibility: { always: true },
+    bindings: selectionTransformBindings(options),
+  };
+}

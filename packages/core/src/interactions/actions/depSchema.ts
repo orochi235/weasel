@@ -28,6 +28,7 @@ import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
+import type { GestureLifecycleOptions } from './gestureLifecycle';
 import type { InsertAdapter } from 'core/adapters/types';
 import type { History } from '@weasel-js/history';
 import type { ActiveToolContextValue } from '@weasel-js/routing/react';
@@ -374,7 +375,7 @@ export interface InsertDep {
  * The generic is erased to `unknown` at the schema entry; consumers cast at
  * the call site (mirrors the `scene` entry's convention).
  */
-export interface ResizePolicy<TPose> {
+export interface ResizePolicy<TPose> extends GestureLifecycleOptions {
   /** Bounds-frame constraints. Constrained to `TPose extends Bounds` since
    *  constraints read/write `{x,y,width,height}`. For non-rect TPose pass `[]`. */
   constraints: TPose extends Bounds ? BoundsConstraint<TPose>[] : never[];

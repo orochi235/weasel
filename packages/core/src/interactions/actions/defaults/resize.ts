@@ -5,8 +5,9 @@
  *
  * Performs real anchor-relative resize math for rect-shaped poses. Reads
  * `ctx.drag.affordance.anchor` to determine which corner is fixed, captures
- * start poses, applies per-frame bounds remapping, and commits a single
- * `scene.batch` entry on end.
+ * start poses, applies per-frame bounds remapping, and commits one batch on
+ * end — labeled, transient and observed per the `resizePolicy` dep's
+ * lifecycle fields.
  *
  * ## Behaviors / point-snap / expandIds — via the `resizePolicy` dep
  *
@@ -68,6 +69,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { unionBounds } from 'core/geometry/unionBounds';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
+import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
 
 // ---------------------------------------------------------------------------
 // Defaults applied when `resizePolicy` dep is absent. Mirrors the
@@ -82,6 +84,7 @@ function resolveDeps(ctx: InvocationCtx): {
   pointSnap: PointSnapBehavior<Bounds>[];
   expandIds: (ids: string[]) => string[];
   geometry: PoseDescriptor<unknown>;
+  policy: ResizePolicy<unknown> | undefined;
 } {
   const geometry = poseDescriptorOf(ctx.deps.poseDescriptor);
   const dep = ctx.deps.resizePolicy as ResizePolicy<unknown> | undefined;
@@ -93,6 +96,7 @@ function resolveDeps(ctx: InvocationCtx): {
       pointSnap: EMPTY_POINT_SNAP,
       expandIds: IDENTITY_EXPAND,
       geometry,
+      policy: undefined,
     };
   }
   return {
@@ -100,6 +104,7 @@ function resolveDeps(ctx: InvocationCtx): {
     pointSnap: dep.pointSnap as unknown as PointSnapBehavior<Bounds>[],
     expandIds: dep.expandIds,
     geometry,
+    policy: dep,
   };
 }
 
@@ -259,6 +264,8 @@ interface ResizeScratch {
    *  commit emits a `setData` op per leaf mapping its data-held geometry by
    *  the box→box affine the pose underwent. Undefined → pose-only commit. */
   geometryProjection?: GeometryProjection;
+  /** Label, history and callbacks from the `resizePolicy` dep. */
+  lifecycle: GestureLifecycle;
 }
 
 // ---------------------------------------------------------------------------
@@ -278,7 +285,7 @@ export const resizeAction: Action & { requires: string[] } = {
   label: 'Resize',
   // No default binding: a bare `{ kind: 'drag' }` claimed every drag at ambient
   // scope, tying areaSelect's. The resize handles bind it
-  // (`SELECTION_TRANSFORM_BINDINGS`, the `transform` preset).
+  // (`selectionTransformBindings`, the `transform` preset).
   eligible: { capability: 'transforms-selection' },
   requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'poseComposition'],
   invoker: {
@@ -298,7 +305,7 @@ export const resizeAction: Action & { requires: string[] } = {
       const anchor = affordance?.anchor;
       if (!anchor) return {};
 
-      const { behaviors, pointSnap, expandIds, geometry } = resolveDeps(ctx);
+      const { behaviors, pointSnap, expandIds, geometry, policy } = resolveDeps(ctx);
 
       // Group expansion. When the starting selection is a single id but
       // `expandIds` returns a different set, we're in the group path:
@@ -393,6 +400,88 @@ export const resizeAction: Action & { requires: string[] } = {
         gestureCtx,
         applyOps,
         geometryProjection,
+        lifecycle: readGestureLifecycle(policy, 'Resize', behaviors),
+      };
+      const { lifecycle } = scratch;
+      lifecycle.start(writeIds as string[]);
+
+      // Returns whether anything reached the document.
+      const commitResize = (): boolean => {
+        const target = {
+          scene,
+          applyOps: scratch.applyOps,
+          adapter: defaultCommitAdapter(scene, selection.adapterMethods),
+        };
+        // First non-undefined behavior onEnd wins: null aborts, ops commit
+        // in place of the resize.
+        for (const b of scratch.behaviors) {
+          const r = b.onEnd?.(scratch.gestureCtx as unknown as GestureContext<Bounds>);
+          if (r === undefined) continue;
+          if (r === null) return false;
+          commitGestureOps(target, lifecycle, r);
+          return true;
+        }
+
+        if (scratch.previews.size === 0) return false;
+
+        // One transform op per write id (from = pre-drag start pose, to =
+        // final preview pose), committed as a single batch → one undo entry.
+        const ops: Op[] = [];
+        for (const id of scratch.writeIds) {
+          const next = scratch.previews.get(id);
+          if (next === undefined) continue;
+          const from = scratch.startPoses.get(id);
+          if (from === undefined) continue;
+          let committed = next;
+          // Eager-sync: map data-held geometry by the box→box affine the
+          // pose underwent (start-pose bounds → final-pose bounds). Opt-in
+          // via the geometryProjection seam; a no-op when the dep is absent.
+          if (scratch.geometryProjection) {
+            const node = scratch.scene.get(id);
+            if (node) {
+              const sb = scratch.geometry.getBounds(from);
+              const db = scratch.geometry.getBounds(next);
+              const m: Mat3 = boxToBox(
+                sb.x, sb.y, sb.width, sb.height,
+                db.x, db.y, db.width, db.height,
+              );
+              const dataOp = geometryDataOp(
+                scratch.geometryProjection,
+                { id: id as string, data: node.data, pose: from },
+                m,
+                lifecycle.label,
+              );
+              if (dataOp) {
+                ops.push(dataOp);
+                // The data absorbed the affine — including any mirror from a
+                // drag past the opposite edge — so the pose must commit as a
+                // normalized AABB. Leaving signed extents on the pose makes
+                // the node unhittable (hit-testing assumes normalized boxes).
+                // Without the seam the signed pose is kept: a bare-AABB pose
+                // is the only carrier of the flip there.
+                if (db.width < 0 || db.height < 0) {
+                  const nb = {
+                    ...db,
+                    x: db.width < 0 ? db.x + db.width : db.x,
+                    y: db.height < 0 ? db.y + db.height : db.y,
+                    width: Math.abs(db.width),
+                    height: Math.abs(db.height),
+                  };
+                  committed = scratch.geometry.remapBounds(next, db, nb) as typeof next;
+                }
+              }
+            }
+          }
+          ops.push(createTransformOp<unknown>({
+            id: id as string,
+            from,
+            to: committed,
+            label: lifecycle.label,
+          }));
+        }
+        if (ops.length === 0) return false;
+        commitGestureOps(target, lifecycle, ops);
+        return true;
       };
 
       return {
@@ -509,95 +598,14 @@ export const resizeAction: Action & { requires: string[] } = {
         },
 
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
-          if (reason === 'cancel') {
+          let committed = false;
+          try {
+            if (reason === 'commit') committed = commitResize();
+          } finally {
             dropPreviewOverrides(scratch);
             scratch.previews.clear();
-            return;
+            lifecycle.end(committed);
           }
-
-          // Allow behavior onEnd to abort (return null) or override (return
-          // ops). For dispatcher-path simplicity we honor null (abort) but
-          // ignore ops overrides — the kit's standard behaviors only ever
-          // return null/undefined. Document if a future behavior needs op
-          // injection.
-          for (const b of scratch.behaviors) {
-            const r = b.onEnd?.(scratch.gestureCtx as unknown as GestureContext<Bounds>);
-            if (r === null) {
-              dropPreviewOverrides(scratch);
-              scratch.previews.clear();
-              return;
-            }
-            // r === undefined or ops[] — ignore ops and proceed with the
-            // standard commit path.
-          }
-
-          if (scratch.previews.size === 0) { dropPreviewOverrides(scratch); return; }
-
-          // Emit the final poses as transform ops (from = pre-drag start pose,
-          // to = final preview pose) and route them through the consumer's
-          // `applyOps` hook when present (consumer history captures the resize
-          // as one undo entry); otherwise commit straight to the scene's own
-          // history via `scene.applyBatch`. Either way it's a single batch →
-          // one undo entry, matching the prior `scene.batch('Resize', …)`.
-          const ops: Op[] = [];
-          for (const id of scratch.writeIds) {
-            const next = scratch.previews.get(id);
-            if (next === undefined) continue;
-            const from = scratch.startPoses.get(id);
-            if (from === undefined) continue;
-            let committed = next;
-            // Eager-sync: map data-held geometry by the box→box affine the
-            // pose underwent (start-pose bounds → final-pose bounds). Opt-in
-            // via the geometryProjection seam; a no-op when the dep is absent.
-            if (scratch.geometryProjection) {
-              const node = scratch.scene.get(id);
-              if (node) {
-                const sb = scratch.geometry.getBounds(from);
-                const db = scratch.geometry.getBounds(next);
-                const m: Mat3 = boxToBox(
-                  sb.x, sb.y, sb.width, sb.height,
-                  db.x, db.y, db.width, db.height,
-                );
-                const dataOp = geometryDataOp(
-                  scratch.geometryProjection,
-                  { id: id as string, data: node.data, pose: from },
-                  m,
-                  'Resize',
-                );
-                if (dataOp) {
-                  ops.push(dataOp);
-                  // The data absorbed the affine — including any mirror from a
-                  // drag past the opposite edge — so the pose must commit as a
-                  // normalized AABB. Leaving signed extents on the pose makes
-                  // the node unhittable (hit-testing assumes normalized boxes).
-                  // Without the seam the signed pose is kept: a bare-AABB pose
-                  // is the only carrier of the flip there.
-                  if (db.width < 0 || db.height < 0) {
-                    const nb = {
-                      ...db,
-                      x: db.width < 0 ? db.x + db.width : db.x,
-                      y: db.height < 0 ? db.y + db.height : db.y,
-                      width: Math.abs(db.width),
-                      height: Math.abs(db.height),
-                    };
-                    committed = scratch.geometry.remapBounds(next, db, nb) as typeof next;
-                  }
-                }
-              }
-            }
-            ops.push(createTransformOp<unknown>({
-              id: id as string,
-              from,
-              to: committed,
-              label: 'Resize',
-            }));
-          }
-          if (ops.length > 0) {
-            if (scratch.applyOps) scratch.applyOps(ops, 'Resize');
-            else scratch.scene.applyBatch(ops, 'Resize', defaultCommitAdapter(scratch.scene, selection.adapterMethods));
-          }
-          dropPreviewOverrides(scratch);
-          scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),
         previewPose: (id: string) => scratch.previews.get(id as NodeId) ?? null,

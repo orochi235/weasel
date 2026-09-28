@@ -18,11 +18,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P3) Most of `UseMoveOptions` is accepted and ignored.** `moveLabel`, `transient`,
-  `onGestureStart`, `onGestureEnd` and `expandIds` (`packages/core/src/interactions/actions/move/options.ts`)
-  were read by the `useMove` hook deleted on 2026-05-17; the move action reads only `behaviors`
-  and `dragThresholdPx`, which `selectionMoveBindings` threads through. Wire each one into the
-  action or delete it.
 - **(P2) A binding with no phase prints as a route that ranks higher when parsed back.**
   `routesForSpec` (`packages/routing/src/tools/routing/reflection/registry.ts`) prints an
   unphased spec as `[*] drag`, whose `specificity()` phase part is 0. Parsed back, `[*]` is the

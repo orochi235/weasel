@@ -1,14 +1,10 @@
-/** Option surface for the `move` action.
- *
- *  Lives in a sibling file (not `move.ts`) so the type contract stays stable
- *  even after the legacy `useMove` hook is gone.
- *  Consumers should import from here directly; `move.ts` re-exports the
- *  same symbol for back-compat. */
+/** Option surface for the `move` action. */
 
 import type { MoveBehavior } from '../../gestures/types';
 
 /** Options for the `move` action: the behaviors (snapping, momentum) layered
- *  over the raw drag, and how a gesture expands a group into its leaves. */
+ *  over the raw drag, the ids a drag carries, and its history and lifecycle.
+ *  `selectionMoveBindings` threads them into the move bindings. */
 export interface UseMoveOptions<TPose> {
   behaviors?: MoveBehavior<TPose>[];
   /** Screen travel, in CSS pixels, before the drag moves anything. Default
@@ -16,17 +12,21 @@ export interface UseMoveOptions<TPose> {
    *  smaller value has no effect; a larger one holds the selection in place
    *  until the pointer has gone that far. */
   dragThresholdPx?: number;
+  /** History label for the committed move. Unset, a behavior's or a layout
+   *  drop's own op label names it, else `'Move'`. */
   moveLabel?: string;
-  /** Reserved for transient gestures (no history entry). Move is never transient
-   *  in practice; accepted for API consistency but ignored. */
+  /** Commit without an undo entry (`scene.untracked`), bypassing the
+   *  consumer `applyOps` hook. Unset, a behavior's `defaultTransient` decides. */
   transient?: boolean;
+  /** Fired once the drag passes its threshold, with the ids it moves. */
   onGestureStart?(ids: string[]): void;
+  /** Fired once per `onGestureStart`: `true` when the move wrote to the
+   *  document, `false` on cancel, a behavior abort, or no net movement. */
   onGestureEnd?(committed: boolean): void;
-  /** Optional: expand the incoming id list before pose lookups. Used for
-   *  group expansion (groups have no pose; their leaves do).
-   *  Called once at `start()`. The returned list flows through ctx,
-   *  overlay (`overlay.draggedIds` is the **expanded** leaves), and op
-   *  generation. Returning `[]` aborts the gesture cleanly.
-   *  Default: identity. */
+  /** Replace the selection with the ids the drag moves — to carry linked
+   *  nodes along, say. Called once at drag start; the result is what
+   *  behaviors see as `draggedIds` and what the commit writes (each id's
+   *  descendants follow it as usual). Returning `[]` declines the drag.
+   *  Default: the selection. */
   expandIds?: (ids: string[]) => string[];
 }

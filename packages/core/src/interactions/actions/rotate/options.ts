@@ -1,35 +1,25 @@
-/** Option surface for the `rotate` action.
- *
- *  Lives in a sibling file (not `rotate.ts`) so the type contract stays stable
- *  even after the legacy `useRotate` hook is gone.
- *  Consumers should import from here directly; `rotate.ts` re-exports the
- *  same symbols for back-compat. */
+/** Option surface for the `rotate` action. */
 
 import type { RotateBehavior, RotatedPose } from '../../gestures/types';
-import type { DebugSink } from '../../../debug/types';
 
-/** Options for the `rotate` action. */
+/** Options for the `rotate` action. `selectionTransformBindings` threads
+ *  them into the rotation handle's binding. */
 export interface UseRotateOptions<TPose> {
-  /** Behaviors are typed against the pose shape; the kit ships none yet
-   *  (rotation snap behaviors are deferred). For non-rect TPose, behaviors
-   *  are typed `never` for a pose without a numeric `rotation`. */
+  /** Behaviors are typed against the pose shape; typed `never` for a pose
+   *  without a numeric `rotation`. `onMove` sees the first rotated node's
+   *  turned pose, and a pose it returns sets the rotation for the whole
+   *  selection. */
   behaviors?: TPose extends RotatedPose ? RotateBehavior<TPose>[] : never;
+  /** History label for the committed rotation. Default `'Rotate'`. */
   rotateLabel?: string;
-  /** Reserved; rotate is never transient in practice. Ignored. */
+  /** Commit without an undo entry (`scene.untracked`), bypassing the
+   *  consumer `applyOps` hook. Unset, a behavior's `defaultTransient` decides. */
   transient?: boolean;
-  onGestureStart?: (id: string) => void;
+  /** Fired when the rotation starts, with the ids it turns. */
+  onGestureStart?: (ids: string[]) => void;
+  /** Fired once per `onGestureStart`: `true` when the rotation wrote to the
+   *  document, `false` on cancel, a behavior abort, or no net turn. */
   onGestureEnd?: (committed: boolean) => void;
-  /** Optional debug sink. When supplied, records the rotation-handle
-   *  position + circular hitbox at gesture start. Tree-shakes via
-   *  optional-chain when omitted. */
-  debug?: DebugSink;
-  /** World-pixel distance from the AABB top edge to the rotation handle.
-   *  Used for debug-recording the handle position. Default
-   *  `DEFAULT_ROTATION_HANDLE_DISTANCE`. */
-  rotationHandleDistance?: number;
-  /** Hit-test radius for the rotation handle, in screen pixels. Used for
-   *  the recorded debug hitbox circle. Default `8`. */
-  handleHitRadius?: number;
   /** Multi-selection pivot mode. Default `'union'`.
    *  - `'each'`: each item rotates around its own center.
    *  - `'union'`: each item rotates around the selection's union center;

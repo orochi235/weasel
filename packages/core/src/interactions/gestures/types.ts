@@ -46,10 +46,9 @@ export interface SnapStrategy<TPose> {
  * onEnd is uniform: first non-undefined return wins (Op[] = commit those,
  * null = abort, undefined = defer).
  *
- * `defaultTransient`: when at least one behavior in a gesture sets this true
- * AND the hook's `options.transient` is not explicitly set, the gesture
- * commits its ops via `adapter.applyOps(ops)` (no history entry). When
- * `options.transient` is set explicitly, that value wins.
+ * `defaultTransient`: when one behavior of a move, resize or rotate sets it
+ * and the binding leaves `transient` unset, the gesture commits through
+ * `scene.untracked` (no history entry). An explicit `transient` wins.
  */
 export interface ActionBehavior<TPose, TProposed, TMoveResult> {
   defaultTransient?: boolean;
@@ -313,8 +312,6 @@ export type CloneLayer = 'structures' | 'zones' | 'plantings';
 /** A behavior plugged into `useClone`; gates on modifier state and emits ops at gesture end. */
 export interface CloneBehavior {
   id: string;
-  /** Default true. */
-  defaultTransient?: boolean;
   /** Decides whether this gesture should activate at start. */
   activates: (modifiers: ModifierState) => boolean;
   /** On end, returns ops to commit (or [] for no-op). */

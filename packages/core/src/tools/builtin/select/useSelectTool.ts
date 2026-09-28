@@ -12,7 +12,6 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Tool } from '../../overlayBinding';
-import type { DebugSink } from '../../../debug/types';
 import { pickTopMostHit } from '../pickTopMostHit';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
@@ -91,9 +90,6 @@ export interface UseSelectToolOptions<TPose> {
    * clicking a different node exits edit mode as usual.
    */
   extendClickLocked?: () => boolean;
-  /** Optional debug sink. Reserved for future overlay/affordance hitbox
-   *  recording. */
-  debug?: DebugSink;
 }
 
 /** Intersection of the move + area-select adapter interfaces.
@@ -404,7 +400,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         ],
       };
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [options.debug, pickAction, collapseDeferredAction],
+    [pickAction, collapseDeferredAction],
   );
 }

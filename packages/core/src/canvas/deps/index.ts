@@ -15,6 +15,7 @@ export { useSnapDepSource } from './snap';
 export { useDispatcherDepSource } from './dispatcher';
 export {
   useResizePolicy,
+  resizePolicyOptions,
   type UseResizePolicyOptions,
 } from './resizePolicy';
 export { usePoseDescriptorDepSource } from './poseDescriptor';
