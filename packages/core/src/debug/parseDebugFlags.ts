@@ -1,6 +1,8 @@
 import type { DebugConfig, DebugFeature } from './types';
 
-const ALL_FEATURES: DebugFeature[] = ['hitboxes', 'handles', 'bounds', 'origins', 'snap', 'layers'];
+const ALL_FEATURES: DebugFeature[] = [
+  'hitboxes', 'handles', 'bounds', 'origins', 'snap', 'layers', 'ids', 'fps', 'viewport',
+];
 
 /**
  * Parse a URL query string (with or without leading `?`) for a `debug` param.

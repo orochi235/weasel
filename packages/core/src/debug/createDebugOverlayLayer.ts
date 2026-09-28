@@ -8,19 +8,22 @@ import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'features/paths/types';
 import { textCommandFromRuns } from 'features/text/textCommand';
 import type {
   DebugConfig,
-  DebugSink,
   DebugSnapshot,
   DebugStroke,
   DebugStrokes,
   DebugTheme,
+  FrameStats,
+  RecordedViewport,
 } from './types';
 import { DEFAULT_DEBUG_STROKES, DEFAULT_DEBUG_THEME } from './defaultTheme';
 
 /** @internal */
 interface CreateDebugOverlayLayerOpts {
-  sink: DebugSink & { snapshot(): DebugSnapshot };
+  sink: { snapshot(): DebugSnapshot };
   config: DebugConfig;
 }
+
+const FPS_WINDOW = 60;
 
 /**
  * Screen-space `RenderLayer` that paints the sink's snapshot. Appended at
@@ -32,42 +35,57 @@ export function createDebugOverlayLayer({
   sink,
   config,
 }: CreateDebugOverlayLayerOpts): RenderLayer<unknown> {
-  const theme: DebugTheme = { ...DEFAULT_DEBUG_THEME, ...(config.theme ?? {}) };
-  const strokes: DebugStrokes = { ...DEFAULT_DEBUG_STROKES, ...(config.strokes ?? {}) };
-  // Rolling timestamps for FPS — ring buffer of the last N draw-callback fires.
-  // Closure-state survives across draws within one Canvas mount.
+  // Timestamps of the last FPS_WINDOW draws; survives across draws within
+  // one Canvas mount.
   const fpsHistory: number[] = [];
-  const FPS_WINDOW = 60;
   return {
     id: 'debug-overlay',
     label: 'Debug overlay',
     space: 'screen',
     alwaysOn: true,
     draw: (_data, view, dims) => {
-      const s = sink.snapshot();
-      const t = viewToTransform(view);
-      const out: DrawCommand[] = [];
-
-      if (config.hitboxes) emitHitboxes(out, s, view, t, theme, strokes);
-      if (config.bounds) emitBounds(out, s, view, t, theme, strokes);
-      if (config.handles) emitHandles(out, s, t, theme, strokes);
-      if (config.origins) emitOrigins(out, s, t, theme);
-      if (config.snap) emitSnap(out, s, t, theme, strokes);
-      if (config.ids) emitIds(out, s, t, theme);
-      if (config.layers) emitLayersPanel(out, s, dims, theme);
       if (config.fps) {
-        const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-        fpsHistory.push(now);
+        fpsHistory.push(typeof performance !== 'undefined' ? performance.now() : Date.now());
         if (fpsHistory.length > FPS_WINDOW) fpsHistory.shift();
-        emitFps(out, fpsHistory, theme);
       } else if (fpsHistory.length > 0) {
-        // Reset history when toggled off so re-enabling starts fresh.
         fpsHistory.length = 0;
       }
-
-      return out;
+      return buildDebugOverlayCommands(sink.snapshot(), config, view, dims, fpsHistory);
     },
   };
+}
+
+/**
+ * The debug overlay's draw commands for one snapshot, in screen space (CSS
+ * pixels of a `dims`-sized canvas looking through `view`). What the overlay
+ * layer paints each frame, and what `renderDebugSnapshot` rasterizes.
+ *
+ * `frameTimes` are `performance.now()` stamps of recent paints, oldest first;
+ * the frame panel derives its rate from them and shows none without two.
+ */
+export function buildDebugOverlayCommands(
+  snapshot: DebugSnapshot,
+  config: DebugConfig,
+  view: View,
+  dims: Dims,
+  frameTimes: readonly number[] = [],
+): DrawCommand[] {
+  const theme: DebugTheme = { ...DEFAULT_DEBUG_THEME, ...(config.theme ?? {}) };
+  const strokes: DebugStrokes = { ...DEFAULT_DEBUG_STROKES, ...(config.strokes ?? {}) };
+  const s = snapshot;
+  const t = viewToTransform(view);
+  const out: DrawCommand[] = [];
+
+  if (config.viewport && s.viewport) emitViewport(out, s.viewport, view, dims, theme, strokes);
+  if (config.hitboxes) emitHitboxes(out, s, view, t, theme, strokes);
+  if (config.bounds) emitBounds(out, s, view, t, theme, strokes);
+  if (config.handles) emitHandles(out, s, t, theme, strokes);
+  if (config.origins) emitOrigins(out, s, t, theme);
+  if (config.snap) emitSnap(out, s, t, theme, strokes);
+  if (config.ids) emitIds(out, s, t, theme);
+  if (config.layers) emitLayersPanel(out, s, dims, theme);
+  if (config.fps) emitFramePanel(out, frameTimes, s.frame, theme);
+  return out;
 }
 
 // --- emitters (screen-space) ---
@@ -264,34 +282,116 @@ function emitLayersPanel(
   }
 }
 
-function emitFps(
+const MONO = { fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11 };
+const MONO_CHAR_W = 6.6;
+const LINE_H = 14;
+
+/** A dark box holding monospace lines, at `(x, y)`; `y < 0` anchors its bottom
+ *  that far above `bottom`. Width is estimated from the character count — there
+ *  is no text measurer here, and a debug panel does not need one. */
+function emitTextPanel(
   out: DrawCommand[],
-  history: readonly number[],
-  theme: DebugTheme,
+  lines: readonly string[],
+  x: number,
+  y: number,
+  color: string,
+  bg: string,
 ): void {
-  // Need at least two timestamps to derive a rate.
-  const text =
-    history.length < 2
-      ? 'fps —'
-      : `fps ${Math.round(((history.length - 1) * 1000) / (history[history.length - 1] - history[0]))}`;
   const padX = 6;
   const padY = 4;
-  const lineH = 14;
-  const charW = 6.6;
-  const boxW = text.length * charW + padX * 2;
-  const boxH = lineH + padY * 2;
-  const x = 8;
-  const y = 8;
+  let maxLen = 0;
+  for (const l of lines) maxLen = Math.max(maxLen, l.length);
   out.push({
     kind: 'path',
-    path: rectPath(x, y, boxW, boxH),
-    fill: { fill: 'solid', color: theme.fpsTextBg },
+    path: rectPath(x, y, maxLen * MONO_CHAR_W + padX * 2, lines.length * LINE_H + padY * 2),
+    fill: { fill: 'solid', color: bg },
   });
-  out.push(textCommandFromRuns(
-    x + padX,
-    y + padY,
-    [{ text, fill: { fill: 'solid', color: theme.fpsText } }],
-    { fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11 },
-  ));
+  for (let i = 0; i < lines.length; i++) {
+    out.push(textCommandFromRuns(
+      x + padX,
+      y + padY + i * LINE_H,
+      [{ text: lines[i], fill: { fill: 'solid', color } }],
+      MONO,
+    ));
+  }
 }
 
+/** Fixed-width number, right-aligned, `decimals` places: `%{width}.{decimals}f`. */
+function fixed(v: number, width: number, decimals: number): string {
+  return v.toFixed(decimals).padStart(width);
+}
+
+function emitFramePanel(
+  out: DrawCommand[],
+  history: readonly number[],
+  frame: FrameStats | null,
+  theme: DebugTheme,
+): void {
+  const span = history.length >= 2 ? history[history.length - 1] - history[0] : 0;
+  const interval = span > 0 ? span / (history.length - 1) : null;
+  // Columns: label, draw-call count, value, unit — every row the same width,
+  // so decimals line up down the panel.
+  const rows: [label: string, count: number | null, value: number | null, unit: string][] = [
+    ['fps', null, interval ? 1000 / interval : null, '  '],
+    ['frame', null, interval, 'ms'],
+  ];
+  if (frame) {
+    rows.push(['paint', frame.drawCalls, frame.paintMs, 'ms']);
+    for (const l of frame.layers) rows.push([l.id, l.drawCalls, l.ms, 'ms']);
+  }
+  let labelW = 0;
+  for (const [label] of rows) labelW = Math.max(labelW, label.length);
+  const line = (label: string, count: string, value: string, unit: string) =>
+    `${label.padEnd(labelW)} ${count.padStart(5)} ${value.padStart(7)} ${unit}`;
+  const lines = rows.map(([label, count, value, unit]) =>
+    line(label, count === null ? '' : String(count), value === null ? '—' : fixed(value, 7, 2), unit));
+  if (frame) lines.splice(2, 0, line('', 'draws', 'cpu', '  '));
+  emitTextPanel(out, lines, 8, 8, theme.fpsText, theme.fpsTextBg);
+}
+
+function emitViewport(
+  out: DrawCommand[],
+  rec: RecordedViewport,
+  view: View,
+  dims: Dims,
+  theme: DebugTheme,
+  strokes: DebugStrokes,
+): void {
+  const t = viewToTransform(view);
+  const stroke = strokeOf(strokes.viewport, theme.viewport);
+  // Where the viewport the gesture started from sits in the current camera.
+  const { from, to } = rec;
+  const [fx, fy] = worldToScreen(from.x, from.y, t);
+  out.push({
+    kind: 'path',
+    path: rectPath(fx, fy, (dims.width / from.scale.x) * view.scale.x, (dims.height / from.scale.y) * view.scale.y),
+    stroke,
+  });
+  if (rec.anchor) {
+    const [ax0, ay0] = worldToScreen(rec.anchor.x, rec.anchor.y, viewToTransform(from));
+    const [ax1, ay1] = worldToScreen(rec.anchor.x, rec.anchor.y, t);
+    out.push({ kind: 'path', path: approxCircleScreen(ax0, ay0, 2.5), fill: { fill: 'solid', color: theme.viewport } });
+    if (Math.hypot(ax1 - ax0, ay1 - ay0) > 0.5) {
+      out.push({ kind: 'path', path: segment(ax0, ay0, ax1, ay1), stroke });
+    }
+    out.push({ kind: 'path', path: approxCircleScreen(ax1, ay1, 6), stroke: strokeOf({ width: strokes.viewport.width }, theme.viewport) });
+  }
+  const text = rec.kind === 'pan'
+    ? `pan   Δ ${signed((from.x - to.x) * to.scale.x)} ${signed((from.y - to.y) * to.scale.y)} px`
+    : `zoom  ×${(to.scale.x / from.scale.x).toFixed(3)}  ${from.scale.x.toFixed(3)} → ${to.scale.x.toFixed(3)}`;
+  emitTextPanel(out, [text], 8, dims.height - LINE_H - 16, theme.viewport, theme.layerTextBg);
+}
+
+function signed(v: number): string {
+  const r = Math.abs(v) < 0.05 ? 0 : v;
+  return `${r >= 0 ? '+' : '-'}${Math.abs(r).toFixed(1)}`.padStart(8);
+}
+
+function segment(x0: number, y0: number, x1: number, y1: number): PolygonPath {
+  return {
+    kind: 'polygon',
+    commands: new Uint8Array([PATH_M, PATH_L]),
+    coords: new Float32Array([x0, y0, x1, y1]),
+    fillRule: 'nonzero',
+  };
+}

@@ -20,7 +20,7 @@
  * outranks `swapAxis`: a shift-wheel routed into a barred axis moves nothing.
  */
 
-import type { Action } from '@weasel-js/routing';
+import type { Action, DebugSink } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
 import { wheelPan } from 'core/viewport/wheelHandler';
 
@@ -53,7 +53,7 @@ export const viewportWheelPanAction: Action & { requires: string[] } = {
     { spec: { kind: 'wheel' }, opts: {} },
     { spec: { kind: 'wheel', mods: { shift: true } }, opts: { params: { swapAxis: true } } },
   ],
-  requires: ['view'],
+  requires: ['view', 'debug'],
   invoker: {
     timing: 'immediate',
     run(deps, params) {
@@ -62,9 +62,10 @@ export const viewportWheelPanAction: Action & { requires: string[] } = {
       const axis = (params?.axis as 'both' | 'x' | 'y' | undefined) ?? 'both';
       const deltaX = (params?.deltaX as number | undefined) ?? 0;
       const deltaY = (params?.deltaY as number | undefined) ?? 0;
-      view.set(
-        wheelPan(view.get(), { deltaX, deltaY }, { axis, swapAxis: params?.swapAxis === true }),
-      );
+      const from = view.get();
+      const next = wheelPan(from, { deltaX, deltaY }, { axis, swapAxis: params?.swapAxis === true });
+      view.set(next);
+      (deps.debug as DebugSink | undefined)?.recordViewport('pan', from, next);
     },
   },
   enabled: () => true,

@@ -31,6 +31,7 @@ function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
     subscribeView: vi.fn(() => () => {}),
     getPaintedVersion: vi.fn(() => 0),
     paintedCursor: createPaintedCursorState(),
+    getDebug: () => null,
   };
   return api;
 }
@@ -174,6 +175,7 @@ describe('attachHud', () => {
         subscribeView: vi.fn(() => () => {}),
         getPaintedVersion: vi.fn(() => 0),
         paintedCursor: createPaintedCursorState(),
+        getDebug: () => null,
       };
       const theme = { ...resolveTheme(weaselTheme, { mode: 'dark' }), '--wzl-surface-raised': '#123456' };
       attachHud(api, hud, { theme });

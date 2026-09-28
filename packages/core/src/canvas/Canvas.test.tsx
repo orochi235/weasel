@@ -12,7 +12,7 @@ import { WeaselProvider } from '../WeaselProvider';
 import type { RenderLayer } from 'core/layers/render';
 import { registerProgram } from '../renderer';
 import type { DrawCommand } from '../renderer';
-import type { DebugSink, DebugSnapshot } from '../debug/types';
+import type { CanvasDebugSink } from '../debug/types';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { createScene } from 'core/scene/scene';
 import { sceneToAdapter } from './sceneAdapter';
@@ -489,7 +489,7 @@ describe('Canvas debug overlay', () => {
       { id: 'b', x: 20, y: 30, w: 5, h: 5 },
       { id: 'c', x: 40, y: 50, w: 8, h: 8 },
     ];
-    const sinkRef: { current: (DebugSink & { snapshot(): DebugSnapshot }) | null } = { current: null };
+    const sinkRef: { current: CanvasDebugSink | null } = { current: null };
     render(
       <Canvas
         width={100} height={100}
@@ -510,7 +510,7 @@ describe('Canvas debug overlay', () => {
   });
 
   it('records layer metadata once per non-overlay layer when layers flag is on', async () => {
-    const sinkRef: { current: (DebugSink & { snapshot(): DebugSnapshot }) | null } = { current: null };
+    const sinkRef: { current: CanvasDebugSink | null } = { current: null };
     render(
       <Canvas
         width={100} height={100}
@@ -671,7 +671,7 @@ describe('Canvas baseBoundsOf synthesis', () => {
   });
 
   it('requestRedraw on the ref bumps the redraw effect', async () => {
-    const sinkRef: { current: (DebugSink & { snapshot(): DebugSnapshot }) | null } = { current: null };
+    const sinkRef: { current: CanvasDebugSink | null } = { current: null };
     const ref = React.createRef<CanvasExtensionApi>();
     render(
       <Canvas
@@ -764,7 +764,7 @@ describe('Canvas baseBoundsOf synthesis', () => {
     // Under jsdom the GL path bails before layer.draw runs, so we observe
     // draw-pass participation indirectly via debugSink.beginFrame (same proxy
     // the requestRedraw test uses).
-    const sinkRef: { current: (DebugSink & { snapshot(): DebugSnapshot }) | null } = { current: null };
+    const sinkRef: { current: CanvasDebugSink | null } = { current: null };
     const extra: RenderLayer<unknown> = {
       id: 'extra', label: 'extra', space: 'screen',
       draw: () => [],

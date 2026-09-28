@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   DEFAULT_HANDLE_SIZE,
   gridSnapStrategy,
+  rasterToPng,
+  renderDebugSnapshot,
   SceneCanvas,
   useScene,
 } from '@weasel-js/core';
 import type {
   DebugConfig,
   DebugFeature,
+  SceneCanvasApi,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
@@ -29,8 +32,20 @@ const FEATURES: { key: DebugFeature; label: string; help: string }[] = [
   { key: 'snap',     label: 'snap',     help: 'Snap candidates considered during the most recent gesture — green ring = accepted, dim ring = considered.' },
   { key: 'layers',   label: 'layers',   help: 'Layer-id + space + draw-order labels in the corner. Use to debug layer ordering.' },
   { key: 'ids',      label: 'ids',      help: 'Per-node id label rendered at the top-left of each tracked bounds — useful for tying scene ids to what you see on the canvas.' },
-  { key: 'fps',      label: 'fps',      help: 'Rolling frames-per-second counter (top-left). Tracks the rate of the debug overlay\'s own draw callback, which matches the canvas\'s effective repaint rate.' },
+  { key: 'fps',      label: 'fps',      help: 'Frame panel (top-left): repaint rate and interval, then the last paint\'s CPU time and GL draw calls, in total and per render layer.' },
+  { key: 'viewport', label: 'viewport', help: 'The last pan or zoom: the viewport it started from, outlined in the current view, and the world point it held fixed. Wheel to pan, Cmd/Ctrl+wheel to zoom, hold Space and drag to pan.' },
 ];
+
+const NONE: Record<DebugFeature, boolean> = {
+  bounds: false, origins: false, hitboxes: false, handles: false,
+  snap: false, layers: false, ids: false, fps: false, viewport: false,
+};
+
+const drawBox = (_node: unknown, p: Box): DrawCommand[] => [{
+  kind: 'path',
+  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+  fill: { color: p.color },
+}];
 
 const btn: React.CSSProperties = {
   padding: '4px 10px', fontSize: 12, cursor: 'pointer',
@@ -48,21 +63,37 @@ export function DebugOverlayDemo() {
   const scene = useScene<Box>({ items: INITIAL });
 
   const [enabled, setEnabled] = useState<Record<DebugFeature, boolean>>({
-    bounds: true, origins: true, hitboxes: false,
-    handles: false, snap: false, layers: false, ids: false, fps: false,
+    ...NONE, bounds: true, origins: true,
   });
+  const canvasRef = useRef<SceneCanvasApi | null>(null);
+  const [snapshotUrl, setSnapshotUrl] = useState<string | null>(null);
+  // One object URL at a time: revoke the last when a new one replaces it or the demo unmounts.
+  useEffect(() => () => { if (snapshotUrl) URL.revokeObjectURL(snapshotUrl); }, [snapshotUrl]);
 
   const toggle = (k: DebugFeature) =>
     setEnabled((e) => ({ ...e, [k]: !e[k] }));
   const allOn = () =>
-    setEnabled({ bounds: true, origins: true, hitboxes: true, handles: true, snap: true, layers: true, ids: true, fps: true });
-  const allOff = () =>
-    setEnabled({ bounds: false, origins: false, hitboxes: false, handles: false, snap: false, layers: false, ids: false, fps: false });
+    setEnabled(Object.fromEntries(Object.keys(NONE).map((k) => [k, true])) as Record<DebugFeature, boolean>);
+  const allOff = () => setEnabled(NONE);
 
-  const debug: DebugConfig | false = (
-    enabled.bounds || enabled.origins || enabled.hitboxes ||
-    enabled.handles || enabled.snap || enabled.layers || enabled.ids || enabled.fps
-  ) ? enabled : false;
+  const debug: DebugConfig | false = Object.values(enabled).some(Boolean) ? enabled : false;
+
+  const snapshot = async () => {
+    const api = canvasRef.current;
+    const sink = api?.getDebug();
+    if (!api || !sink || !debug) return;
+    const image = renderDebugSnapshot({
+      scene,
+      drawOne: drawBox,
+      view: api.getView(),
+      size: { width: W, height: H },
+      pixelRatio: window.devicePixelRatio || 1,
+      background: '#6a6a6a', // .ckd-canvas's CSS background, which the GL canvas composites over
+      debug: sink.snapshot(),
+      config: debug,
+    });
+    setSnapshotUrl(URL.createObjectURL(await rasterToPng(image)));
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -79,8 +110,10 @@ export function DebugOverlayDemo() {
         ))}
         <button style={btn} onClick={allOn}>all on</button>
         <button style={btn} onClick={allOff}>all off</button>
+        <button style={btn} onClick={snapshot} disabled={!debug}>snapshot</button>
       </div>
-      <SceneCanvas features={['pick', 'move', 'transform']}
+      <SceneCanvas features={['view', 'pick', 'move', 'transform']}
+        ref={canvasRef}
         width={W}
         height={H}
         className="ckd-canvas"
@@ -91,21 +124,22 @@ export function DebugOverlayDemo() {
         }}
         debug={debug}
         layers={{
-          scene: {
-            drawOne: (_node, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: p.color },
-            }],
-          },
+          scene: { drawOne: drawBox },
           selectionOverlay: { handles: { size: HANDLE } },
         }}
       />
       <div style={{ fontSize: 12, color: '#a89878', maxWidth: W }}>
         Click a box to select; drag the body to move (snaps to a 20px grid); drag a
-        corner to resize. Toggle features above to layer in the kit's view of the
-        scene. Hover any chip for a one-line description of what it shows.
+        corner to resize; wheel to pan and Cmd/Ctrl+wheel to zoom. Toggle features
+        above to layer in the kit's view of the scene. Hover any chip for a one-line
+        description of what it shows. Snapshot rasterizes the scene and the overlay
+        into one PNG, below.
       </div>
+      {snapshotUrl && (
+        <a href={snapshotUrl} download="weasel-debug-snapshot.png">
+          <img src={snapshotUrl} width={W} height={H} alt="Debug snapshot of the canvas above" />
+        </a>
+      )}
     </div>
   );
 }

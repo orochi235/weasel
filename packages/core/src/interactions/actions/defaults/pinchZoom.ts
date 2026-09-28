@@ -34,6 +34,9 @@ import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';
+import { viewToTransform } from 'core/viewport/view';
+import { screenToWorld } from 'core/viewport/viewTransform';
+import type { DebugSink } from '@weasel-js/routing';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
 
 // ---------------------------------------------------------------------------
@@ -80,7 +83,7 @@ export function makePinchZoomAction(
     label: 'Pinch Zoom',
     group: 'viewport',
     defaultBinding: { kind: 'multiTouch', fingers: 2 },
-    requires: ['view'],
+    requires: ['view', 'debug'],
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -95,6 +98,9 @@ export function makePinchZoomAction(
         const startSpread = multiTouch.spread > 0 ? multiTouch.spread : 1;
 
         const scratch: PinchScratch = { view, startSpread, centroid: multiTouch.centroid };
+        const debug = ctx.deps.debug as DebugSink | undefined;
+        const startView = view.get();
+        const [ax, ay] = screenToWorld(multiTouch.centroid.x, multiTouch.centroid.y, viewToTransform(startView));
 
         return {
           kind: 'pinch',
@@ -115,11 +121,13 @@ export function makePinchZoomAction(
             // centroid as it moves. Anchoring on the new centroid instead drops
             // the translation half, so a two-finger drag zooms without panning.
             const zoomed = zoomAt(current, prev, factor, clamp);
-            scratch.view.set({
+            const next = {
               scale: zoomed.scale,
               x: zoomed.x - (centroid.x - prev.x) / zoomed.scale.x,
               y: zoomed.y - (centroid.y - prev.y) / zoomed.scale.y,
-            });
+            };
+            scratch.view.set(next);
+            debug?.recordViewport('zoom', startView, next, { x: ax, y: ay });
           },
           // onEnd: nothing to do — zoom was applied each frame.
         };

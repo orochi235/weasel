@@ -51,7 +51,7 @@ import { clampView } from 'core/viewport/clampView';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import {
   drawLayers, isLayerPainted,
-  type Dims, type LayerCommandCache, type LayerGroup, type RedrawSource, type RenderLayer,
+  type Dims, type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
 import { WeaselRenderer, viewToMat3, cullDrawCommands, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
@@ -73,10 +73,11 @@ import {
 } from 'features/selection/overlay';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import type { DebugConfig, DebugSink, DebugSnapshot } from '../debug/types';
+import type { CanvasDebugSink, DebugConfig, DebugSink } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
 import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
+import { frameStatsOf } from '../debug/frameStats';
 
 const alwaysVisible = (_id: string): boolean => true;
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
@@ -445,7 +446,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
 
   /** Test-only escape hatch: writes the live debug sink to this ref so tests
    *  can call `snapshot()` after a render. No effect when debug is off. */
-  debugSinkRef?: React.MutableRefObject<(DebugSink & { snapshot(): DebugSnapshot }) | null>;
+  debugSinkRef?: React.MutableRefObject<CanvasDebugSink | null>;
 
   /**
    * Custom shader programs to compile on the renderer. Each handle must come
@@ -847,22 +848,24 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
-  // `false` forces off.
+  // `false` forces off. Keyed on content, so a config written inline does not
+  // rebuild the sink, and lose what it has recorded, on every render.
+  const debugKey = debugProp === undefined ? undefined : JSON.stringify(debugProp);
   const resolvedDebugConfig = useMemo<DebugConfig | null>(() => {
-    if (debugProp === false) return null;
-    if (debugProp !== undefined) return debugProp;
+    if (debugKey !== undefined) return (JSON.parse(debugKey) as DebugConfig | false) || null;
     if (typeof window === 'undefined') return null;
     return parseDebugFlags(window.location.search);
-  }, [debugProp]);
+  }, [debugKey]);
 
   // Lazily build one sink per Canvas mount (per resolved config).
-  const debugSink = useMemo<(DebugSink & { snapshot(): DebugSnapshot }) | null>(() => {
+  const debugSink = useMemo<CanvasDebugSink | null>(() => {
     if (resolvedDebugConfig === null) return null;
     return createDebugSink(resolvedDebugConfig);
   }, [resolvedDebugConfig]);
   if (debugSinkRef) debugSinkRef.current = debugSink;
-  const debugSinkRefForCtx = useRef<DebugSink | null>(null);
+  const debugSinkRefForCtx = useRef<CanvasDebugSink | null>(null);
   debugSinkRefForCtx.current = debugSink;
+  const getDebug = useCallback(() => debugSinkRefForCtx.current, []);
 
   const adapter = adapterProp;
 
@@ -1046,10 +1049,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     subscribeView,
     getPaintedVersion,
     paintedCursor,
+    getDebug,
   }), [canvasRef, ownCanvasRef, detached, inputElement, paintInto?.canvas,
        getSurfaceRect, requestRedraw, subscribeFrame, registerLayer,
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
-       paintedCursor]);
+       paintedCursor, getDebug]);
 
   // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
@@ -1421,11 +1425,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // render, not commit: an abandoned render still leaves its inputs here.
   const paintInputsRef = useRef({
     layers: layersWithDebug, width, height, debugSink,
+    frameStats: resolvedDebugConfig?.fps === true,
     dpr: dprProp, layerVisibility, layerOrder, layerGroups, shaders,
     flattenTolerance,
   });
   paintInputsRef.current = {
     layers: layersWithDebug, width, height, debugSink,
+    frameStats: resolvedDebugConfig?.fps === true,
     dpr: dprProp, layerVisibility, layerOrder, layerGroups, shaders,
     flattenTolerance,
   };
@@ -1435,7 +1441,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (!c) return false;
     const rect = paintRectRef.current;
     const {
-      layers: paintLayers, width: w, height: h, debugSink: sink,
+      layers: paintLayers, width: w, height: h, debugSink: sink, frameStats,
       dpr: dprIn, layerVisibility: vis, layerOrder: order,
       flattenTolerance: paintFlattenTolerance,
       layerGroups: groups, shaders: paintShaders,
@@ -1493,6 +1499,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     renderer.setTarget(rect ? { origin: { x: rect.x, y: rect.y } } : null);
 
     const view = viewRef.current;
+    const spans: LayerDrawSpan[] | undefined = sink && frameStats ? [] : undefined;
+    const paintT0 = spans ? performance.now() : 0;
     const commands = drawLayers(
       paintLayers,
       helpersForLayersRef.current,
@@ -1503,8 +1511,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       layerCacheRef.current,
       undefined,
       groups,
+      spans,
     );
-    renderer.render(commands, viewToMat3(view));
+    renderer.render(commands, viewToMat3(view), spans ? { spans } : undefined);
+    if (sink && spans) sink.recordFrame(frameStatsOf(spans, renderer.lastFrameStats(), performance.now() - paintT0));
     paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
     return true;
   }, []);

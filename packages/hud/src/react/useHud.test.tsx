@@ -22,6 +22,7 @@ function makeApi(): CanvasExtensionApi {
     subscribeView: vi.fn(() => () => {}),
     getPaintedVersion: vi.fn(() => 0),
     paintedCursor: createPaintedCursorState(),
+    getDebug: () => null,
   };
 }
 

@@ -105,6 +105,10 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
    *  world units against the larger scale axis and passed to the renderer's
    *  `flattenTolerance`. Explicitly passing 0.25 is always valid. */
   flattenTolerancePx?: number;
+  /** Commands drawn over the scene in output-pixel space — origin at the
+   *  output's top-left, one unit per output pixel. Annotations, watermarks,
+   *  and `renderDebugSnapshot`'s overlay ride here. */
+  overlay?: readonly DrawCommand[];
 }
 
 /** The result of planning a headless render: how big the output is, the view
@@ -159,6 +163,7 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
   commands.push(...buildSceneViewCommands(
     args.scene, view, drawOne, undefined, args.alphaFor, undefined, undefined, args.colorOverrides,
   ));
+  if (args.overlay) commands.push(...args.overlay);
   return { width, height, view, commands };
 }
 

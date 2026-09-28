@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { PathDrawCommand } from '../renderer';
-import { createDebugOverlayLayer } from './createDebugOverlayLayer';
+import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '../renderer';
+import { buildDebugOverlayCommands, createDebugOverlayLayer } from './createDebugOverlayLayer';
 import { createDebugSink } from './createDebugSink';
 
 const DIMS = { width: 800, height: 600 };
@@ -61,4 +61,60 @@ describe('createDebugOverlayLayer', () => {
     // bounds: 1 path. origins: 0.
     expect(tree.filter((c) => c.kind === 'path')).toHaveLength(1);
   });
+
+  it('outlines the previous viewport and trails a pan\'s grab point to where it is now', () => {
+    const sink = createDebugSink({ viewport: true });
+    const from = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const to = { x: -100, y: -40, scale: { x: 1, y: 1 } };
+    sink.recordViewport('pan', from, to, { x: 50, y: 50 });
+    const tree = createDebugOverlayLayer({ sink, config: { viewport: true } }).draw(null, to, DIMS);
+    const outline = tree[0] as PathDrawCommand;
+    // The old viewport's top-left, seen through the panned camera.
+    expect(outline.path).toMatchObject({ kind: 'rect', x: 100, y: 40, width: 800, height: 600 });
+    const trail = tree.find((c) => c.kind === 'path' && c.path.kind === 'polygon'
+      && (c.path as { commands: Uint8Array }).commands.length === 2) as PathDrawCommand;
+    const coords = Array.from((trail.path as { coords: Float32Array }).coords);
+    expect(coords).toEqual([50, 50, 150, 90]);
+    expect(texts(tree).some((t) => t.includes('+100.0') && t.includes('+40.0'))).toBe(true);
+  });
+
+  it('reads a zoom as a factor and the scale it moved between', () => {
+    const sink = createDebugSink({ viewport: true });
+    const from = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const to = { x: 25, y: 25, scale: { x: 2, y: 2 } };
+    sink.recordViewport('zoom', from, to, { x: 50, y: 50 });
+    const tree = createDebugOverlayLayer({ sink, config: { viewport: true } }).draw(null, to, DIMS);
+    const outline = tree[0] as PathDrawCommand;
+    expect(outline.path).toMatchObject({ x: -50, y: -50, width: 1600, height: 1200 });
+    expect(texts(tree).some((t) => t.includes('×2.000') && t.includes('1.000 → 2.000'))).toBe(true);
+  });
+
+  it('prints frame stats with every number in a fixed-width, decimal-aligned column', () => {
+    const debug = {
+      ...createDebugSink({ fps: true }).snapshot(),
+      frame: {
+        paintMs: 12.25,
+        drawCalls: 117,
+        layers: [
+          { id: 'scene', drawCalls: 110, ms: 11.5 },
+          { id: 'selection-overlay', drawCalls: 7, ms: 0.75 },
+        ],
+      },
+    };
+    const lines = texts(buildDebugOverlayCommands(debug, { fps: true }, VIEW, DIMS, [0, 16, 32, 48]));
+    expect(lines[0]).toMatch(/^fps +62\.50 +$/);
+    const msLines = lines.filter((l) => l.endsWith(' ms'));
+    // frame, paint, and one per layer.
+    expect(msLines).toHaveLength(4);
+    const dotColumns = new Set(msLines.map((l) => l.lastIndexOf('.')));
+    expect(dotColumns.size).toBe(1);
+    expect(new Set(lines.map((l) => l.length)).size).toBe(1);
+    expect(lines.find((l) => l.startsWith('scene'))).toMatch(/ 110 +11\.50 ms$/);
+  });
 });
+
+function texts(tree: readonly DrawCommand[]): string[] {
+  return tree
+    .filter((c): c is TextDrawCommand => c.kind === 'text')
+    .map((c) => c.runs.map((r) => r.text).join(''));
+}

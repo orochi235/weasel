@@ -112,6 +112,9 @@ export type HitShape =
   | { kind: 'circle'; cx: number; cy: number; r: number }
   | { kind: 'path'; d: Path2D };
 
+/** What a recorded viewport change was: a translation or a scale change. */
+export type ViewportGestureKind = 'pan' | 'zoom';
+
 /**
  * Where a tool reports its internal hit math so the debug overlay can draw it.
  * Routing threads a sink through `ToolCtx` and never calls one.
@@ -123,6 +126,13 @@ export interface DebugSink {
   recordOrigin(id: string, point: { x: number; y: number }): void;
   recordSnapCandidate(point: { x: number; y: number }, accepted: boolean): void;
   recordLayer(id: string, label: string, space: 'world' | 'screen', index: number): void;
+  /**
+   * A viewport change a gesture made: the view it started from, the view it
+   * produced, and the world point it held fixed — a pan's grab point, a zoom's
+   * focal point — when it had one. Survives `beginFrame`; the next record
+   * replaces it.
+   */
+  recordViewport(kind: ViewportGestureKind, from: View, to: View, anchor?: { x: number; y: number }): void;
   /** Clears every non-snap array. Called at the start of each Canvas render. */
   beginFrame(): void;
   /** Clears the snap array. Called at gesture end. */

@@ -243,6 +243,20 @@ export interface RenderLayer<TData> {
   onUncapturedLeave?: () => void;
 }
 
+/** Where one layer's commands landed in {@link drawLayers}' output,
+ *  `[start, end)`, and the CPU milliseconds its `draw` took. A layer group's
+ *  run is one span under the group's id. */
+export interface LayerDrawSpan {
+  id: string;
+  start: number;
+  end: number;
+  buildMs: number;
+}
+
+function clockMs(): number {
+  return typeof performance !== 'undefined' ? performance.now() : Date.now();
+}
+
 /**
  * Walk visible layers and concatenate their emitted DrawCommand arrays into
  * one flat list, ready to feed to `WeaselRenderer.render(commands)`.
@@ -263,6 +277,8 @@ export interface RenderLayer<TData> {
  * `groups` brackets runs of consecutive layers so they composite as one — see
  * `LayerGroup`. A layer named by no group is emitted exactly as it was before
  * groups existed, and a frame that declares none allocates nothing.
+ *
+ * `spans`, when passed, receives one {@link LayerDrawSpan} per layer drawn.
  */
 export function drawLayers<TData>(
   layers: RenderLayer<TData>[],
@@ -274,6 +290,7 @@ export function drawLayers<TData>(
   cache?: LayerCommandCache,
   onLayerError: (failure: LayerDrawFailure) => void = reportLayerFailure,
   groups?: readonly LayerGroup[],
+  spans?: LayerDrawSpan[],
 ): DrawCommand[] {
   const layerById = new Map(layers.map((l) => [l.id, l]));
   const sequence = order
@@ -290,11 +307,14 @@ export function drawLayers<TData>(
 
   const groupOf = groupMembership(groups, layerById.keys());
   const bracketed = new Set<LayerGroup>();
-  let run: { group: LayerGroup; children: DrawCommand[] } | null = null;
+  let run: { group: LayerGroup; children: DrawCommand[]; buildMs: number } | null = null;
 
   const closeRun = () => {
     if (!run) return;
+    const start = out.length;
+    const t0 = spans ? clockMs() : 0;
     for (const c of wrapGroup(run.group, run.children, v, dims)) out.push(c);
+    spans?.push({ id: run.group.id, start, end: out.length, buildMs: run.buildMs + clockMs() - t0 });
     run = null;
   };
 
@@ -303,16 +323,23 @@ export function drawLayers<TData>(
     // second, redundant lookup for the same answer.
     if (!isLayerVisible(layer, visibility)) continue;
 
+    const t0 = spans ? clockMs() : 0;
     const cmds = drawOneLayer(layer, data, v, dims, cache, onLayerError);
+    const buildMs = spans ? clockMs() - t0 : 0;
     // A layer that painted nothing neither joins a run nor breaks one. Letting
     // it break one would split a group over a debug overlay that is switched
     // on but currently empty.
-    if (cmds.length === 0) continue;
+    if (cmds.length === 0) {
+      spans?.push({ id: layer.id, start: out.length, end: out.length, buildMs });
+      continue;
+    }
 
     const group = groupOf?.get(layer.id);
     if (run && run.group !== group) closeRun();
     if (!group) {
+      const start = out.length;
       for (const c of cmds) out.push(c);
+      spans?.push({ id: layer.id, start, end: out.length, buildMs });
       continue;
     }
     if (!run) {
@@ -324,8 +351,9 @@ export function drawLayers<TData>(
         );
       }
       bracketed.add(group);
-      run = { group, children: [] };
+      run = { group, children: [], buildMs: 0 };
     }
+    run.buildMs += buildMs;
     for (const c of cmds) run.children.push(c);
   }
   closeRun();
