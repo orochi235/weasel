@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { SceneCanvas, useScene, defaultDrawOne, textCommand, solid } from '@weasel-js/core';
 import {
-  SceneCanvas, useScene, defaultDrawOne, textCommand,
   registerCanvasFont, registerFontOutlines, unregisterFontOutlines, outlineStatus,
-  solid,
-} from '@weasel-js/core';
+} from '@weasel-js/font';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/core/renderer';
 import type { FillStyle, SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle } from '@weasel-js/core';
 

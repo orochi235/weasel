@@ -6,6 +6,8 @@
  * invisible".
  */
 
+import { notifyGlyphReady } from './glyphReady';
+
 /**
  * What happens when a requested family has no baked atlas:
  *   - `'substitute'` — render with the default family (see
@@ -23,7 +25,9 @@ let defaultFamily: string | null = null;
 /** Set what happens when text asks for a family that was never registered.
  *  Process-wide; defaults to `'substitute'`. */
 export function setFontFallbackPolicy(next: FontFallbackPolicy): void {
+  if (next === policy) return;
   policy = next;
+  notifyGlyphReady();
 }
 
 /** The cross-family fallback policy currently in force. */
@@ -35,7 +39,9 @@ export function getFontFallbackPolicy(): FontFallbackPolicy {
  *  registered family wins — the right answer for the common case of an app
  *  that registers exactly one. */
 export function setDefaultFontFamily(family: string): void {
+  if (family === defaultFamily) return;
   defaultFamily = family;
+  notifyGlyphReady();
 }
 
 /** The family `setDefaultFontFamily` named, or `null` if none was set — in
