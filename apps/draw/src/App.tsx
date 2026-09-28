@@ -83,6 +83,7 @@ import {
   type RangeStyle,
   type Scene,
   type SceneCanvasApi,
+  type ImageNodeData,
   buildSceneViewCommands,
   defaultDrawOne,
   toHex8,
@@ -195,6 +196,9 @@ interface WeaselDrawData {
   fill?: FillStyle | null;
   /** The whole stroke — paint, width, dash, cap, join, align. */
   stroke?: Stroke | null;
+  /** A dropped bitmap, a dropped SVG kept whole, or an imported `<image>` —
+   *  what the `kit:image` painter draws. */
+  image?: ImageNodeData['image'];
   label?: string;
 }
 
@@ -869,7 +873,9 @@ function Toolbar({
                       ...(o.runs ? { runs: o.runs } : {}),
                       ...(o.verticalAlign ? { verticalAlign: o.verticalAlign } : {}),
                     }
-                  : { path: o.path, fill: o.fill, stroke: o.stroke };
+                  : o.tool === 'image'
+                    ? { image: o.image }
+                    : { path: o.path, fill: o.fill, stroke: o.stroke };
                 const sceneId = scene.add({
                   kind: 'leaf',
                   layer: 'default',

@@ -1,8 +1,8 @@
-import type { BooleanOp, FillStyle, Path, Stroke, StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/core';
+import type { BooleanOp, FillStyle, ImageNodeData, Path, Stroke, StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/core';
 
 export type ToolKind =
   | 'rect' | 'ellipse' | 'polygon' | 'star' | 'line'
-  | 'pen' | 'pencil' | 'text' | 'imported';
+  | 'pen' | 'pencil' | 'text' | 'image' | 'imported';
 
 /** Non-bounds-derivable shape parameters. Bounds-derived params
  *  (ellipse rx/ry, polygon outer radius, line endpoints) are NOT
@@ -10,6 +10,9 @@ export type ToolKind =
 export type PathParams =
   | { sides: number }                  // tool === 'polygon'
   | { points: number; ratio: number }; // tool === 'star'
+
+/** The tools whose objects are a `PathObj`. */
+export type PathToolKind = Exclude<ToolKind, 'text' | 'image'>;
 
 export interface BaseObj {
   id: string;
@@ -19,7 +22,7 @@ export interface BaseObj {
 }
 
 export interface PathObj extends BaseObj {
-  tool: Exclude<ToolKind, 'text'>;
+  tool: PathToolKind;
   path: Path;
   closed: boolean;
   /** The object's paint — solid, gradient or pattern. A non-solid one is
@@ -49,7 +52,13 @@ export interface TextObj extends BaseObj {
   verticalAlign?: TextVerticalAlign;
 }
 
-export type Obj = PathObj | TextObj;
+/** A bitmap (or embedded SVG) drawn into its box by the kit's image painter. */
+export interface ImageObj extends BaseObj {
+  tool: 'image';
+  image: ImageNodeData['image'];
+}
+
+export type Obj = PathObj | TextObj | ImageObj;
 
 /** Pose, including optional rotation in radians (pivot = unrotated AABB
  *  center). `rotation` left undefined means "do not change"; explicit 0

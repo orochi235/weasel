@@ -141,12 +141,11 @@ Priority tags:
   instead (`@weasel-js/svg`'s `unpack.ts`: kit-painter-native path/text leaves under
   containers mirroring `<g>` structure, multi-root files wrapped in one
   container, pose-only fit-clamp + drop-point placement, one undoable
-  batch per file). weaseldraw runs with `unpack` on. An embedded SVG
-  re-rasterizes at its drawn size (see `features/images/README.md`); that it
-  actually looks sharp at zoom has only been checked in jsdom, never in a
-  browser. Remaining: weaseldraw's file-menu import runs the package walk
-  (`svgNodesToKitDrafts` with a `leaf` hook for its `wd:` metadata), but still
-  drops `<image>` nodes, since the app's `Obj` union is path/text only.
+  batch per file). weaseldraw runs with `unpack` on, and its file-menu import
+  and export carry `<image>` as an image object. An embedded SVG
+  re-rasterizes at its drawn size (see `features/images/README.md`).
+  Remaining: check in a browser that it actually looks sharp at zoom — so far
+  only jsdom has.
 
 - **(P3) A `{ px }` marker size does not hold its screen size.** Node painters
   build marker geometry inside the paint memo, which has no view scale, so

@@ -651,9 +651,45 @@ describe('svgNodesToSceneDrafts — what the kit import gives it', () => {
       + '<line x1="0" y1="0" x2="50" y2="0" stroke="#000" marker-end="url(#tri)"/></svg>';
     const parsed = parseSvg(svg);
     const leaf = svgNodesToSceneDrafts(parsed, ids()).find((d) => d.kind === 'leaf')!;
-    if (leaf.kind !== 'leaf' || leaf.obj.tool === 'text') throw new Error('expected a path leaf');
+    if (leaf.kind !== 'leaf' || !('path' in leaf.obj)) throw new Error('expected a path leaf');
     const key = leaf.obj.stroke?.markerEnd;
     expect(key).toBe(parsed.markers![0].id);
     expect(getMarker(key as string)).toBeDefined();
+  });
+});
+
+describe('images', () => {
+  const PNG = 'data:image/png;base64,iVBORw0KGgo=';
+
+  it('imports an <image> as an image Obj and exports it back as <image>', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">'
+      + `<image href="${PNG}" x="10" y="20" width="80" height="40" opacity="0.5"/></svg>`;
+    const [obj] = leavesOf(parseSvg(svg).nodes, ids());
+    expect(obj).toMatchObject({
+      tool: 'image', x: 10, y: 20, width: 80, height: 40,
+      image: { src: PNG, opacity: 0.5 },
+    });
+
+    const back = parseSvg(serializeSvg([objToSvgNode(obj)])).nodes[0];
+    expect(back).toMatchObject({
+      kind: 'image', href: PNG, x: 10, y: 20, width: 80, height: 40, opacity: 0.5,
+    });
+  });
+
+  it('keeps an image leaf inside its group through sceneToSvgNodes', () => {
+    const img = {
+      id: 'im', tool: 'image' as const, x: 0, y: 0, width: 5, height: 5,
+      image: { src: PNG },
+    };
+    const source: SceneSource = {
+      roots: ['g'],
+      childrenOf: (id) => (id === 'g' ? ['im'] : []),
+      get: (id) => (id === 'g'
+        ? { kind: 'container', data: {}, pose: { x: 0, y: 0, width: 5, height: 5 } }
+        : { kind: 'leaf', data: {}, pose: { x: 0, y: 0, width: 5, height: 5 } }),
+      objOf: (id) => (id === 'im' ? img : undefined),
+    };
+    const [g] = sceneToSvgNodes(source) as SvgGroupNode[];
+    expect(g.children[0]).toMatchObject({ kind: 'image', href: PNG });
   });
 });

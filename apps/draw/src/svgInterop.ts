@@ -1,9 +1,9 @@
 /**
  * Bridge between WeaselDraw's `Obj` discriminated union (`PathObj |
- * TextObj`, discriminated by `tool`) and `@weasel-js/svg`'s
+ * TextObj | ImageObj`, discriminated by `tool`) and `@weasel-js/svg`'s
  * `SvgNode` discriminated union, layered over the package's own
  * `svgNodesFromKit` / `svgNodesToKitDrafts` walks. What it adds is the `wd:`
- * namespace; an imported `<image>` is dropped, since `Obj` has no place for it.
+ * namespace.
  *
  * `tool` and `params` ride on `meta.wd.attrs` under the local names
  * `tool`, `params-sides`, `params-points`, `params-ratio`. On import, a
@@ -13,6 +13,7 @@
 
 import type { FillStyle, PolygonPath, TextStyle } from '@weasel-js/core';
 import {
+  svgImageFromKit,
   svgLeafFromKit,
   svgNodesFromKit,
   svgPaintFromKit,
@@ -29,7 +30,7 @@ import type {
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
-import type { Obj, PathObj, PathParams, TextObj, ToolKind } from './poseUpdate';
+import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './poseUpdate';
 
 /**
  * The `wd:` XML namespace, used to ride WeaselDraw-specific metadata
@@ -113,7 +114,7 @@ export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
  */
 function encodeWdAttrs(o: Obj): Record<string, string> {
   const attrs: Record<string, string> = { tool: o.tool };
-  if (o.tool !== 'text' && o.params) {
+  if (o.tool !== 'text' && o.tool !== 'image' && o.params) {
     if ('sides' in o.params) attrs['params-sides'] = String(o.params.sides);
     if ('points' in o.params) attrs['params-points'] = String(o.params.points);
     if ('ratio' in o.params) attrs['params-ratio'] = String(o.params.ratio);
@@ -121,7 +122,7 @@ function encodeWdAttrs(o: Obj): Record<string, string> {
   return attrs;
 }
 
-/** Recognized values of `wd:tool` for PathObjs (everything except `'text'`). */
+/** Recognized values of `wd:tool` for PathObjs. */
 const PATH_TOOL_VALUES = new Set<string>([
   'rect', 'ellipse', 'polygon', 'star', 'line', 'pen', 'pencil', 'imported',
 ]);
@@ -135,11 +136,11 @@ const PATH_TOOL_VALUES = new Set<string>([
 function decodePathToolAndParams(
   attrs: Record<string, string> | undefined,
   pathKind: 'rect' | 'polygon',
-): { tool: Exclude<ToolKind, 'text'>; params?: PathParams } {
+): { tool: PathToolKind; params?: PathParams } {
   const raw = attrs?.['tool'];
-  const tool: Exclude<ToolKind, 'text'> =
+  const tool: PathToolKind =
     raw && PATH_TOOL_VALUES.has(raw)
-      ? (raw as Exclude<ToolKind, 'text'>)
+      ? (raw as PathToolKind)
       : (pathKind === 'rect' ? 'rect' : 'imported');
   let params: PathParams | undefined;
   if (tool === 'polygon' && attrs) {
@@ -174,7 +175,12 @@ export function objToSvgNode(o: Obj): SvgNode {
     node.meta = { wd: { attrs: wdAttrs } };
     return node;
   }
-  // Every non-text Obj is a PathObj — its `path` field is either a RectPath
+  if (o.tool === 'image') {
+    const node = svgImageFromKit(o.image, o);
+    node.meta = { wd: { attrs: encodeWdAttrs(o) } };
+    return node;
+  }
+  // Every other Obj is a PathObj — its `path` field is either a RectPath
   // (rect tool) or a PolygonPath (every other tool, including imported).
   const node: SvgPathNode = {
     kind: 'path',
@@ -198,7 +204,7 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  * ordered parent-before-child so the caller can `scene.add` each draft in
  * turn, resolving `parentId` against the ids it has already inserted.
  *
- *   - `leaf`    — an `Obj` (path/text); the caller lowers it to the scene's
+ *   - `leaf`    — an `Obj` (path/text/image); the caller lowers it to the scene's
  *                 `{pose, data}` shape exactly as it does for root leaves.
  *   - `container` — an SVG `<g>`. Carries the union-AABB of its leaf
  *                 descendants as `pose` so resize handles land sensibly,
@@ -214,7 +220,6 @@ export type SceneDraft =
 /**
  * Lift the kit's lowering of one leaf into an `Obj`, adding what the `wd:`
  * namespace carries: a path's `tool` and `params`, a text's `lineHeight`.
- * `null` for an image, which this app's `Obj` union has no place for.
  */
 function kitLeafToObj(
   id: string,
@@ -223,6 +228,11 @@ function kitLeafToObj(
 ): Obj | null {
   const attrs = source.meta?.wd?.attrs;
   const box = { x: pose.x, y: pose.y, width: pose.width, height: pose.height };
+  if (data.image) {
+    const o: ImageObj = { id, tool: 'image', ...box, image: { ...data.image } };
+    if (pose.rotation) o.rotation = pose.rotation;
+    return o;
+  }
   if (data.text != null) {
     const o: TextObj = { id, tool: 'text', ...box, text: data.text };
     if (data.runs && data.runs.length > 0) o.runs = [...data.runs];

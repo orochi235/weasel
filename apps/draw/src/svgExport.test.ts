@@ -28,7 +28,7 @@ function fakeScene(nodes: Record<string, {
   pose: { x: number; y: number; width: number; height: number; rotation?: number };
   data?: {
     path?: unknown; fill?: FillStyle | null; text?: string; style?: unknown;
-    runs?: StyledRun[]; stroke?: Stroke | null;
+    runs?: StyledRun[]; stroke?: Stroke | null; image?: unknown;
   };
   children?: string[];
 }>, roots: string[]) {
@@ -444,7 +444,7 @@ describe('gradient fills', () => {
     const drafts = svgNodesToSceneDrafts(parseSvg(svg).nodes, () => `n${n++}`);
     const leaf = drafts.find((d) => d.kind === 'leaf');
     if (leaf?.kind !== 'leaf') throw new Error('expected a leaf draft');
-    if (leaf.obj.tool === 'text') throw new Error('expected a path draft');
+    if (!('path' in leaf.obj)) throw new Error('expected a path draft');
     const fill = leaf.obj.fill as {
       fill: string; units: string; from: { x: number; y: number }; to: { x: number; y: number };
     };
@@ -477,5 +477,21 @@ describe('what the SVG cannot carry', () => {
     });
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toContain('inner');
+  });
+});
+
+describe('image export', () => {
+  it('writes a kit:image leaf as <image>', () => {
+    const src = 'data:image/png;base64,iVBORw0KGgo=';
+    const scene = fakeScene({
+      im: {
+        kind: 'leaf',
+        pose: { x: 3, y: 4, width: 30, height: 20 },
+        data: { image: { src, flipX: true } },
+      },
+    }, ['im']);
+
+    const n = parseSvg(selectionToSvgString(scene, ['im'])).nodes[0];
+    expect(n).toMatchObject({ kind: 'image', href: src, x: 3, y: 4, width: 30, height: 20, flipX: true });
   });
 });

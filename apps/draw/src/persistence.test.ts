@@ -165,6 +165,16 @@ describe('persistence — scene snapshot → node specs', () => {
     const coords = (specs[0].data as { coords: unknown }).coords;
     expect(coords).toBeInstanceOf(Float32Array);
   });
+  it('keeps an image node\'s data through the JSON hop', () => {
+    const image = { src: 'data:image/png;base64,iVBORw0KGgo=', opacity: 0.5, source: { x: 0, y: 0, width: 0.5, height: 1 }, flipY: true };
+    const json = JSON.parse(JSON.stringify({
+      version: 1,
+      systemLayers: [{ id: 'default' }],
+      nodes: [{ id: 'im', kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { image } }],
+    }, serializeReplacer)) as SerializedScene<{ image: typeof image }, Layer, Pose>;
+
+    expect(nodeSpecsFromSnapshot(json)[0].data).toEqual({ image });
+  });
 });
 
 // `collapse WeaselDraw's own fill and stroke onto the kit shapes` (7af35c53,
