@@ -54,7 +54,8 @@
   grid-template-columns: var(--wzl-params-label-width, auto) minmax(min-content, 1fr);
 }
 
-.list[data-values='figures'] .value {
+.list[data-values='figures'] .row:not([data-values='text']) .value,
+.row[data-values='figures'] .value {
   justify-content: flex-end;
   text-align: end;
   /* The display face (Oswald) has no tabular figures, so tabular-nums alone aligns nothing. */

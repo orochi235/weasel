@@ -133,12 +133,29 @@ describe('DetailRow status and absence', () => {
   });
 });
 
+describe('DetailRow values', () => {
+  it("marks a row that sets its value against the list's", () => {
+    const { container } = render(
+      <DetailList values="figures">
+        <DetailRow label="a">1</DetailRow>
+        <DetailRow label="b" values="text">a sentence</DetailRow>
+      </DetailList>,
+    );
+    const [a, b] = [...container.querySelectorAll('dl > div')];
+    expect(a.hasAttribute('data-values')).toBe(false);
+    expect(b.getAttribute('data-values')).toBe('text');
+  });
+});
+
 describe('DetailList styles', () => {
   it('sets figures right-aligned in a minimum-width column, in equal-width digits, spaces kept', () => {
     expect(css).toMatch(
       /\.list\[data-values='figures'\]\s*\{\s*grid-template-columns:\s*var\(--wzl-params-label-width,\s*auto\)\s+minmax\(min-content,\s*1fr\)/,
     );
-    const body = rule(".list[data-values='figures'] .value");
+    expect(css).toMatch(
+      /\.list\[data-values='figures'\] \.row:not\(\[data-values='text'\]\) \.value,\s*\.row\[data-values='figures'\] \.value\s*\{/,
+    );
+    const body = rule(".row[data-values='figures'] .value");
     expect(body).toMatch(/justify-content:\s*flex-end/);
     expect(body).toMatch(/text-align:\s*end/);
     expect(body).toMatch(/font-family:\s*var\(--wzl-font-mono\)/);

@@ -104,3 +104,34 @@ test('a status dot is drawn before its value, on the same line', () => {
   expect(dot.top).toBeGreaterThanOrEqual(value.top - 1);
   expect(dot.bottom).toBeLessThanOrEqual(value.bottom + 1);
 });
+
+test('a text row wraps inside a figures readout instead of overflowing it', () => {
+  const { container } = render(
+    <div style={{ width: 300, fontFamily: 'var(--wzl-font-display)' }}>
+      <Readout
+        rows={[
+          { label: 'Score', value: <span data-v>0.145</span> },
+          {
+            label: 'Sides',
+            value: (
+              <span data-t>
+                1 flat, 2 tab, 3 blank, 4 blank, 5 flat, 6 tab, 7 blank, 8 blank, 9 flat
+              </span>
+            ),
+            values: 'text',
+          },
+        ]}
+      />
+    </div>,
+  );
+  const dl = must(container.querySelector('dl'));
+  expect(dl.scrollWidth).toBeLessThanOrEqual(dl.clientWidth);
+  const text = must(container.querySelector('[data-t]'));
+  expect(box(text).right).toBeLessThanOrEqual(box(dl).right + 0.5);
+  expect(box(text).height).toBeGreaterThan(
+    box(must(container.querySelector('[data-v]'))).height * 1.5,
+  );
+  expect(
+    Math.abs(box(must(container.querySelector('[data-v]'))).right - box(dl).right),
+  ).toBeLessThan(0.5);
+});

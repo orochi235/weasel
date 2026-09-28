@@ -1,4 +1,4 @@
-import { DetailList, DetailRow, type DetailRowStatus } from '@weasel-js/ui';
+import { DetailList, type DetailListValues, DetailRow, type DetailRowStatus } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
 
 /** One measurement in a {@link Readout}. */
@@ -12,6 +12,8 @@ export interface ReadoutRow {
   /** A dot in the status color before the value. Color is never the only
    *  signal: the value has to say the same thing in words. */
   status?: DetailRowStatus;
+  /** `text` sets this row's value as wrapping prose instead of a figure. */
+  values?: DetailListValues;
 }
 
 /** Props for {@link Readout}. */
@@ -42,6 +44,7 @@ export function Readout({ rows, title, children, className }: ReadoutProps) {
             key={row.key ?? (typeof row.label === 'string' ? row.label : i)}
             label={row.label}
             status={row.status}
+            values={row.values}
           >
             {row.value}
           </DetailRow>

@@ -51,6 +51,9 @@ export interface DetailRowProps {
    * itself has to say the same thing — "locked", not just a green dot.
    */
   status?: DetailRowStatus;
+  /** Sets this row's value as `text` or `figures`, whatever the list's
+   *  `values` says — a sentence among figures, or one figure among text. */
+  values?: DetailListValues;
   className?: string;
 }
 
@@ -82,10 +85,10 @@ export function DetailList({ children, title, layout = 'inline', values = 'text'
 }
 
 /** One label and its value in a {@link DetailList}. */
-export function DetailRow({ label, children, placeholder = '–', status, className }: DetailRowProps) {
+export function DetailRow({ label, children, placeholder = '–', status, values, className }: DetailRowProps) {
   const empty = children == null;
   return (
-    <div className={className ? `${s.row} ${className}` : s.row} data-status={status}>
+    <div className={className ? `${s.row} ${className}` : s.row} data-status={status} data-values={values}>
       <dt className={s.label}>{label}</dt>
       <dd className={s.value} data-empty={empty || undefined}>
         {status && <span className={s.dot} aria-hidden="true" />}
