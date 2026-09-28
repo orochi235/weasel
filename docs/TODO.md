@@ -1118,13 +1118,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have.
 
-- **(P3) `stroke-and-fill` has no visual baseline.** The demo that replaced
-  `gradients`, `pattern-playground`, `vertex-colors` and `vertex-widths` carries
-  `tests/visual/stroke-and-fill.spec.ts`, but its baseline PNG was never
-  captured — a missing baseline auto-writes and passes, so the spec asserts
-  nothing until someone runs it once and commits
-  `tests/visual/baselines/stroke-and-fill.png`.
-
 ---
 
 ## Backends (WebGL future)
