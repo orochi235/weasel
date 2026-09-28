@@ -1,4 +1,4 @@
-// The property-panel family, LayerList, Input, Select, TokenPanel, ToggleBar and Button live in
+// The property-panel family, DetailList, LayerList, Input, Select, TokenPanel, ToggleBar and Button live in
 // `@weasel-js/ui`; labkit re-exports them so chrome built on labkit needs no
 // direct ui dependency. Named, not `export *` — a star re-export of an external
 // package emits no binding in the bundle.
@@ -10,6 +10,11 @@ export type {
   ButtonVariant,
   CurveFieldProps,
   CurveMark,
+  DetailListLayout,
+  DetailListProps,
+  DetailListValues,
+  DetailRowProps,
+  DetailRowStatus,
   IconProps,
   InputProps,
   JogProps,
@@ -41,6 +46,8 @@ export {
   CloseIcon,
   CollapseIcon,
   CurveField,
+  DetailList,
+  DetailRow,
   ExpandIcon,
   Icon,
   Input,

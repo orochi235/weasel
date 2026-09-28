@@ -186,7 +186,8 @@ start whatever the alignment, because the readout holds the end.
 
 `DetailList`, the read-only label/value list, reads all four too: its label
 column is `--wzl-params-label-width` wide, so one declaration lines its labels
-up with a property panel's inline rows.
+up with a property panel's inline rows. labkit's `Readout` is a `DetailList`,
+so a lab's measurements line up with its `ControlPanel` the same way.
 
 Custom properties are the mechanism because they inherit across the CSS-module
 boundary: labkit's Less cannot name `PropertyPanel`'s label class, and before
