@@ -42,6 +42,7 @@ export type PointerSessionCancelReason =
   /** A new press arrived on this pointer, so the tracked one had ended. */
   | 'superseded';
 
+/** What {@link openPointerSession} reports. Exactly one of `onEnd` / `onCancel` fires when the session ends. */
 export interface PointerSessionCallbacks {
   /** Every move belonging to this pointer, while it is still held. */
   onMove?: (e: PointerEvent) => void;
@@ -51,6 +52,7 @@ export interface PointerSessionCallbacks {
   onCancel?: (reason: PointerSessionCancelReason) => void;
 }
 
+/** Options for {@link openPointerSession}. */
 export interface PointerSessionOptions {
   /** Ask the origin element to capture the pointer. Default `true`. Capture
    *  keeps hover and click off everything the drag passes over; the session
@@ -58,7 +60,9 @@ export interface PointerSessionOptions {
   capture?: boolean;
 }
 
+/** A live drag opened by {@link openPointerSession}. */
 export interface PointerSession {
+  /** The pointer this session follows, taken from the press. */
   readonly pointerId: number;
   /** False once the session has ended, by any route. */
   readonly active: boolean;

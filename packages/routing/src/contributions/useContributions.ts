@@ -18,6 +18,7 @@ import type { Contribution, OverlayPosition } from './types';
 import { isDev } from '../devFlag';
 import type { KernelOverlay } from '../index';
 
+/** Options for {@link useContributions}. */
 export interface UseContributionsOptions<TOverlay = KernelOverlay> {
   /** Every registry entry, in declaration order. Order decides which of two
    *  same-specificity bindings in one scope tier wins. */
@@ -31,6 +32,7 @@ export interface UseContributionsOptions<TOverlay = KernelOverlay> {
   modes?: ModeRegistry;
 }
 
+/** The assembled registry {@link useContributions} returns. */
 export interface ContributionsApi<TOverlay = KernelOverlay> {
   /** Every entry, as passed in. */
   entries: readonly Contribution<TOverlay>[];
