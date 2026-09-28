@@ -256,12 +256,6 @@ have shipped. What remains:
   Composing would mean a view's camera derived from the view under its aim, and
   a resolver that descends rather than picking one rect.
 
-- **(P3) A bare HUD window with a passing interior cannot be moved.**
-  `hud.window({ titlebar: false, interior: 'pass' })` gives the interior away,
-  and the interior is a bare window's only move handle, so it resizes from its
-  edges but never translates. The loupe demo turns the titlebar on while
-  editing; the window itself should offer a handle instead.
-
 - **(P3) Two `meanScale` residuals under non-uniform zoom.** The hit-test half
   shipped 2026-08-12: `core/viewport/pxExtent` (`pxExtent` / `withinPxBox` /
   `withinPxRadius`), affordance `point` regions compared in screen space, the

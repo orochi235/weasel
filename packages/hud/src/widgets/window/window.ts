@@ -20,7 +20,8 @@ export interface WindowOptions {
   minH?: number;
   /** Draw a titlebar with the title and a close box. Default `true`. When
    *  `false` the window is bare — and dragging its interior moves it, since
-   *  there is no bar to grab. */
+   *  there is no bar to grab. A bare window whose interior passes grows a
+   *  grip strip across its top to be moved by instead. */
   titlebar?: boolean;
   metrics?: Partial<WindowMetrics>;
   /** The class of content the window holds. The theme's
@@ -43,7 +44,8 @@ export interface WindowOptions {
    * under the window on the canvas. `'pass'` gives it up to a view the
    * interior shows — `createLoupe`'s `interactive` lens — while widgets
    * beneath still stay unreachable through it. A passing interior is never a
-   * move handle and never reports `onContentClick`.
+   * move handle and never reports `onContentClick`; a bare window moves by
+   * the grip strip it grows instead.
    */
   interior?: 'claim' | 'pass';
   /** A press and release inside the interior that never became a drag,
@@ -85,13 +87,29 @@ function casedTitle(title: string, textCase: string): string {
   return title;
 }
 
+/** `<DragGrip>`'s six dots turned on their side, centered on `(cx, cy)`. */
+function gripDots(cx: number, cy: number, color: string): PathDrawCommand {
+  const r = 1.1;
+  let d = '';
+  for (const dx of [-5, 0, 5]) {
+    for (const dy of [-2, 2]) {
+      const px = cx + dx - r, py = cy + dy;
+      d += `M ${px} ${py} A ${r} ${r} 0 1 0 ${px + 2 * r} ${py} A ${r} ${r} 0 1 0 ${px} ${py} Z `;
+    }
+  }
+  return { kind: 'path', path: pathFromD(d), fill: { fill: 'solid', color } };
+}
+
 export function createWindow(opts: WindowOptions): WindowWidget {
   const chrome = opts.titlebar ?? true;
   const passing = opts.interior === 'pass';
   const configured: WindowMetrics = { ...DEFAULT_WINDOW_METRICS, ...opts.metrics };
-  // Without a titlebar the top inset is just the resize band, which keeps the
-  // content clear of it and makes `zoneAt`'s titlebar branch unreachable.
-  const m: WindowMetrics = chrome ? configured : { ...configured, titleH: configured.edge };
+  // Without a titlebar the top inset is the resize band — or, when the
+  // interior passes and so cannot be the move handle, a grip strip whose
+  // titlebar zone is that handle.
+  const gripped = !chrome && passing;
+  const m: WindowMetrics = chrome ? configured
+    : { ...configured, titleH: gripped ? configured.grip : configured.edge };
   const minW = opts.minW ?? 80;
   const minH = opts.minH ?? m.titleH + m.edge + 40;
 
@@ -130,8 +148,11 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   // With no titlebar to grab, the interior is the move handle — it is inert
   // otherwise, and a window you cannot move is worse than one you cannot
   // click through.
-  const asDrag = (z: WindowZone | null): WindowZone | null =>
-    !chrome && !passing && z === 'content' ? 'title' : z;
+  const asDrag = (z: WindowZone | null): WindowZone | null => {
+    if (chrome) return z;
+    if (z === 'close') return 'title';
+    return !passing && z === 'content' ? 'title' : z;
+  };
 
   const closeBox = (): WidgetBounds => ({
     x: bounds.x + bounds.w - m.edge - m.closeSize,
@@ -207,6 +228,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         out.push(ring);
       }
 
+      if (gripped) out.push(gripDots(x + w / 2, y + (m.edge + m.grip) / 2, look['title-color']));
       if (!chrome) return out;
 
       out.push(textCommandFromRuns(

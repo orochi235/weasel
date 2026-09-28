@@ -35,7 +35,8 @@ export interface LoupeBaseOptions {
   bounds?: WidgetBounds;
   title?: string;
   /** Draw the window's titlebar and close box. Default `true`. Pass `false`
-   *  for a bare lens; the interior then doubles as the move handle. */
+   *  for a bare lens; the interior then doubles as the move handle, or, for an
+   *  `interactive` lens, a grip strip across its top does. */
   titlebar?: boolean;
   /** Called with the hex color under the aim point whenever it changes.
    *  Sampled from the framebuffer in both modes — vector content is a
