@@ -1,5 +1,5 @@
 import type { Op } from './op';
-import { createHistory, type History, type HistoryEntry, type HistorySelection } from './history';
+import { createHistory, type CreateHistoryOptions, type History, type HistoryEntry } from './history';
 
 const RESUMERS = new WeakMap<Journal, () => void>();
 
@@ -19,6 +19,9 @@ export interface BeginJournalOptions {
    *  read it back off the journal to decide whether a suspended journal
    *  matches what they are about to edit. */
   targetId?: string;
+  /** Coalesce window for the journal's own entries, as
+   *  `CreateHistoryOptions.coalesceWindowMs`. Defaults to the parent's. */
+  coalesceWindowMs?: number;
 }
 
 /**
@@ -46,6 +49,14 @@ export interface Journal {
   canUndo(): boolean;
   canRedo(): boolean;
   entries(): { undo: readonly HistoryEntry[]; redo: readonly HistoryEntry[] };
+  /** As `History.seal`, for the journal's own entries. */
+  seal(): void;
+  /** Counter bumped on every change a reader of this journal could see: an
+   *  apply, undo, redo or coalesce inside it, and every lifecycle transition
+   *  (`isActive` changes). Pairs with `subscribe` for `useSyncExternalStore`. */
+  getVersion(): number;
+  /** Fires whenever `getVersion` bumps. Returns an unsubscribe fn. */
+  subscribe(listener: () => void): () => void;
 
   // Lifecycle
   commit(label: string): void;
@@ -62,9 +73,20 @@ export function createJournalInternal(
   adapter: unknown,
   opts: BeginJournalOptions,
   onClose?: () => void,
-  selection?: HistorySelection,
+  inherited: Pick<CreateHistoryOptions, 'coalesceWindowMs' | 'now' | 'debug' | 'selection'> = {},
 ): Journal {
-  const inner = createHistory(adapter, selection ? { selection } : {});
+  const inner = createHistory(adapter, {
+    ...inherited,
+    ...(opts.coalesceWindowMs !== undefined ? { coalesceWindowMs: opts.coalesceWindowMs } : {}),
+  });
+  const selection = inherited.selection;
+  let version = 0;
+  const listeners = new Set<() => void>();
+  function bump(): void {
+    version++;
+    for (const l of listeners) l();
+  }
+  inner.subscribe(bump);
   const forkedAtEntryId = parent.currentEntryId();
   // The whole session collapses to one parent entry, so the selection that
   // entry restores is the one the session opened under — not whatever the
@@ -99,6 +121,14 @@ export function createJournalInternal(
     entries() {
       return inner.entries();
     },
+    seal(): void {
+      inner.seal();
+    },
+    getVersion: () => version,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
     commit(label: string): void {
       if (state !== 'active') throw new Error('Journal is not active');
       const netOps = inner.allForwardOps();
@@ -108,6 +138,7 @@ export function createJournalInternal(
       state = 'closed';
       RESUMERS.delete(journal);
       onClose?.();
+      bump();
     },
     cancel(): void {
       if (state !== 'active') throw new Error('Journal is not active');
@@ -115,11 +146,13 @@ export function createJournalInternal(
       state = 'closed';
       RESUMERS.delete(journal);
       onClose?.();
+      bump();
     },
     suspend(): void {
       if (state !== 'active') throw new Error('Journal is not active');
       state = 'suspended';
       onClose?.();
+      bump();
     },
     isActive(): boolean {
       return state === 'active';
@@ -129,6 +162,7 @@ export function createJournalInternal(
   RESUMERS.set(journal, () => {
     if (state !== 'suspended') throw new Error('Journal is not suspended');
     state = 'active';
+    bump();
   });
 
   return journal;

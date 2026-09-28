@@ -105,3 +105,9 @@
   font-variant-numeric: tabular-nums;
   color: var(--ckd-faint);
 }
+
+.pushes {
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--ckd-accent);
+}

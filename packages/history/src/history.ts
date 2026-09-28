@@ -16,6 +16,8 @@ interface Entry {
   label: string;
   /** ms timestamp at last push or coalesce; used to gate the coalesce window. */
   timestamp: number;
+  /** See `HistoryEntry.pushes`. */
+  pushes: number;
   /** Node ids touched by ops in this entry. See `HistoryEntry.touchedIds`. */
   touchedIds: ReadonlySet<string>;
   /** Selection as of just before this entry's ops ran; restored by undo.
@@ -43,6 +45,8 @@ export interface SerializedHistoryEntry {
   label: string;
   forwardOps: SerializedOp[];
   baseOps: SerializedOp[];
+  /** See `HistoryEntry.pushes`. Absent in snapshots that predate it; read as 1. */
+  pushes?: number;
   selectionBefore?: readonly string[];
   selectionAfter?: readonly string[];
 }
@@ -82,6 +86,9 @@ export interface HistoryEntry {
   label: string;
   /** Push/last-coalesce timestamp (ms). */
   timestamp: number;
+  /** How many pushes this entry holds: 1 when it was pushed once, plus one
+   *  for every later push coalesced into it. */
+  pushes: number;
   /** Set of node ids touched by any op in this entry. Populated from ops
    *  whose `args` carry an `id` field (transform, setPath, reparent) or a
    *  `node.id` field (insert, delete). Ops without a recognisable id field
@@ -394,6 +401,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     if (top && canCoalesce(top, ops)) {
       top.forwardOps = ops;
       top.timestamp = now();
+      top.pushes++;
       // Merge incoming touched ids into the coalesced entry's set.
       if (incoming.size > 0) {
         const merged = new Set(top.touchedIds);
@@ -412,7 +420,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     }
     logger.log(`push '${label}' (${ops.length} ops)`);
     undoStack.push({
-      id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), touchedIds: incoming,
+      id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), pushes: 1, touchedIds: incoming,
       ...(selectionBefore ? { selectionBefore } : {}),
     });
     dropRedo();
@@ -457,7 +465,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
     entries() {
       const toView = (e: Entry): HistoryEntry => ({
-        id: e.id, label: e.label, timestamp: e.timestamp, touchedIds: e.touchedIds,
+        id: e.id, label: e.label, timestamp: e.timestamp, pushes: e.pushes, touchedIds: e.touchedIds,
         ...(e.selectionBefore ? { selectionBefore: e.selectionBefore } : {}),
         ...(e.selectionAfter ? { selectionAfter: e.selectionAfter } : {}),
       });
@@ -511,7 +519,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     recordEntry(ops: Op[], label: string, options: RecordEntryOptions = {}): void {
       if (ops.length === 0) return;
       undoStack.push({
-        id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(),
+        id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), pushes: 1,
         touchedIds: touchedIdsFromOps(ops),
         ...(options.selectionBefore ? { selectionBefore: [...options.selectionBefore] } : {}),
       });
@@ -536,7 +544,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // `adapter` is the closure-captured adapter passed to createHistory.
       // The returned History object's `this` doesn't carry it, so we pass
       // it through to the factory directly.
-      const j = createJournalInternal(this, adapter, opts, () => { activeJournal = null; }, selection);
+      const j = createJournalInternal(this, adapter, opts, () => { activeJournal = null; }, {
+        coalesceWindowMs, now, debug: logger,
+        ...(selection ? { selection } : {}),
+      });
       activeJournal = j;
       return j;
     },
@@ -617,7 +628,7 @@ function entryToSerial(e: Entry, logger: HistoryLogger): SerializedHistoryEntry 
     baseOps.push(s);
   }
   return {
-    id: e.id, label: e.label, forwardOps, baseOps,
+    id: e.id, label: e.label, forwardOps, baseOps, pushes: e.pushes,
     ...(e.selectionBefore ? { selectionBefore: e.selectionBefore } : {}),
     ...(e.selectionAfter ? { selectionAfter: e.selectionAfter } : {}),
   };
@@ -668,6 +679,7 @@ function serialToEntry(se: SerializedHistoryEntry, custom: CustomRebuild | undef
     // Coalescing is a within-session concept; a restored entry is never a
     // coalesce anchor, so its timestamp only has to be non-null.
     timestamp: 0,
+    pushes: se.pushes ?? 1,
     // Re-derive touchedIds from the rebuilt ops rather than trying to
     // round-trip the Set through the serialized form (Sets aren't JSON-safe).
     touchedIds: touchedIdsFromOps(forwardOps),

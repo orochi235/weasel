@@ -1074,6 +1074,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       canUndo: () => raw.canUndo(),
       canRedo: () => raw.canRedo(),
       entries: () => raw.entries(),
+      seal: () => raw.seal(),
+      getVersion: () => raw.getVersion(),
+      subscribe: (listener) => raw.subscribe(listener),
       commit(label) {
         // Flushes the session's net ops to the parent stack — no apply, but
         // the parent's undo depth changes and listeners read that.

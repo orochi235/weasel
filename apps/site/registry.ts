@@ -656,7 +656,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'history',
     title: 'Undo history',
     package: 'history',
-    description: "The undo engine on its own, with no scene graph and no canvas: a row of colored chips whose every change is an invertible op, and the undo and redo stacks listed beside them. Dragging the hue slider fires an op on every input event, and because those ops share a coalesce key they merge into one undo entry. Releasing the slider seals that entry, so the next drag gets an entry of its own. An edit session is a `Journal`: it keeps its own undo history while it is open, then either lands in the main history as a single entry or is thrown away.",
+    description: "The undo engine on its own, with no scene graph and no canvas: a row of colored chips whose every change is an invertible op, and the undo and redo stacks listed beside them. Dragging the hue slider fires an op on every input event, and because those ops share a coalesce key they merge into one undo entry, which counts the pushes it holds. Releasing the slider seals that entry, so the next drag gets an entry of its own. An edit session is a `Journal`: it keeps its own undo history while it is open, then either lands in the main history as a single entry or is thrown away.",
     hint: 'Add, remove and recolor chips, then undo; begin an edit session, make several changes, and commit or discard it.',
     load: () => import('./demos/HistoryDemo').then((m) => m.HistoryDemo),
     path: 'apps/site/demos/HistoryDemo.tsx',

@@ -1215,9 +1215,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
     does not register `parsed.markers` — only `unpackSvgFiles` does.
   - `geom`: no nearest-point-on-curve and no split-at-t (de Casteljau). `GeomDemo.tsx` flattens
     and walks segments for the first and cannot show the second.
-  - `history`: a `Journal` has no coalesce window and no `subscribe`/`getVersion`, and a
-    `HistoryEntry` does not say how many pushes merged into it. `HistoryDemo.tsx` re-renders by
-    hand and cannot show a merge.
   - `modes`: every consumer rebuilds `getActiveMode` from a registry by hand (`ModesDemo.tsx`,
     draw's `activeModeOf`, `SceneCanvas.modeShortcuts.test.tsx`); a mode switch does not
     repaint on its own because `ScopingDim` and `ModeDecorations` expose no version; nothing
