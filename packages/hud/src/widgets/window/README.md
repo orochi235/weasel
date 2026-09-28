@@ -47,6 +47,10 @@ is reported as `onContentClick`, so the interior can be a surface as well as
 the move handle a bare window makes of it — the loupe picks the color under the
 click that way. Anything past that threshold is the drag, and fires nothing.
 
+`interior: 'pass'` gives the interior away, so a bare window that passes grows
+a grip strip across its top (`metrics.grip` px, dotted like `<DragGrip>`) and
+moves by that instead.
+
 ## Related
 
 - [`../../loupe`](../../loupe) — the first consumer: window plus a magnified lens.

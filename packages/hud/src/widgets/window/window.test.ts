@@ -336,6 +336,65 @@ describe('window interior', () => {
     expect(win.bounds.x).toBe(opts.x);
   });
 
+  describe('bare and passing', () => {
+    const bp = { ...opts, titlebar: false as const, interior: 'pass' as const };
+    const gripY = 100 + (M.edge + M.grip) / 2;
+
+    it('grows a grip strip across the top, and insets the content below it', () => {
+      expect(createWindow(bp).contentRect).toEqual({
+        x: 100 + M.edge, y: 100 + M.grip,
+        w: 200 - M.edge * 2, h: 150 - M.grip - M.edge,
+      });
+    });
+
+    it('moves when the grip is dragged, anywhere along it', () => {
+      for (const x of [110, 200, 290]) {
+        const onMove = vi.fn();
+        const win = createWindow({ ...bp, onMove });
+        expect(win.cursorAt?.(x, gripY)).toBe('move');
+        win.onPointer({ type: 'down', x, y: gripY, native: null });
+        win.onPointer({ type: 'move', x: x + 30, y: gripY + 20, native: null });
+        win.onPointer({ type: 'up', x: x + 30, y: gripY + 20, native: null });
+        expect(win.bounds).toEqual({ x: 130, y: 120, w: 200, h: 150 });
+        expect(onMove).toHaveBeenCalled();
+      }
+    });
+
+    it('never closes from the grip strip', () => {
+      const onClose = vi.fn();
+      const win = createWindow({ ...bp, onClose });
+      win.onPointer({ type: 'down', x: 290, y: gripY, native: null });
+      win.onPointer({ type: 'up', x: 290, y: gripY, native: null });
+      expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('claims the grip and still passes the interior', () => {
+      const win = createWindow(bp);
+      expect(win.hitTest(200, gripY)).toBe(true);
+      expect(win.passes?.(200, gripY)).toBe(false);
+      const p = at(win);
+      expect(win.hitTest(p.x, p.y)).toBe(false);
+      expect(win.passes?.(p.x, p.y)).toBe(true);
+    });
+
+    it('still resizes from its top edge', () => {
+      const win = createWindow(bp);
+      win.onPointer({ type: 'down', x: 200, y: 101, native: null });
+      win.onPointer({ type: 'move', x: 200, y: 81, native: null });
+      expect(win.bounds).toMatchObject({ y: 80, h: 170 });
+    });
+
+    it('draws a grip, and no title', () => {
+      const cmds = createWindow(bp).draw(ctx);
+      expect(cmds.some((c) => c.kind === 'text')).toBe(false);
+      expect(cmds.some((c) => c.kind === 'path' && c.path.kind === 'polygon')).toBe(true);
+    });
+
+    it('a claiming bare window grows no grip', () => {
+      expect(createWindow({ ...bp, interior: 'claim' }).contentRect.y).toBe(100 + M.edge);
+    });
+  });
+
   it('a hidden window passes nothing', () => {
     const win = createWindow({ ...opts, interior: 'pass' });
     win.setHidden(true);

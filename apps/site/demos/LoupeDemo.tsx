@@ -120,12 +120,7 @@ export function LoupeDemo() {
       mode: settings.current.mode,
       factor: settings.current.factor,
       requestRedraw: () => api.requestRedraw(),
-      // A bare lens moves by its interior. An editing lens gives the interior
-      // to the scene, so it needs a titlebar to be moved by; its close box
-      // leaves edit mode.
-      titlebar: editing,
-      title: 'Editing',
-      onClose: () => setEditing(false),
+      titlebar: false,
       background: PAPER,
       onColorChange: setColor,
       onPick: setPicked,

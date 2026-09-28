@@ -15,10 +15,13 @@ export interface WindowMetrics {
   edge: number;
   /** Side length of the square close box. */
   closeSize: number;
+  /** Height in CSS px of the grip strip a bare window with a passing interior
+   *  moves by, top resize band included. */
+  grip: number;
 }
 
 /** Frame dimensions a window uses unless its options override them. */
-export const DEFAULT_WINDOW_METRICS: WindowMetrics = { titleH: 24, edge: 6, closeSize: 14 };
+export const DEFAULT_WINDOW_METRICS: WindowMetrics = { titleH: 24, edge: 6, closeSize: 14, grip: 14 };
 
 /** The eight resize zones a drag can start in, plus title/close/content. */
 export function zoneAt(
