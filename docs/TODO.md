@@ -746,12 +746,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
   owner wants that row redesigned; the shape it should take is still open.
 
-- **(P3) A gradient's or pattern's opacity has no control in the paint editors.** Every
-  paint kind carries its alpha in `opacity`, and `PaintInput` edits it only for a solid
-  (its alpha slider). `GradientEditor`, `PatternPicker` and `MeshEditor` never read or
-  write it, so an opacity scrub over a gradient node changes nothing the Properties
-  panel shows, and a panel edit can't undo it.
-
 - **(P3) The checkbox skin is written twice.** `PropertyField` draws a native
   `<input type="checkbox">` dressed by `.checkbox` in `Properties/Properties.module.css`,
   because the kit's `Checkbox` renders a `<label>` of its own that cannot sit inside a
