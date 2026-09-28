@@ -1069,13 +1069,6 @@ one dead `const` and four stale disable directives.
   `scripts/check-treeshake.mjs` bundles with rolldown. Short of taking the mesh exports off
   core's root barrel onto a subpath, nothing in core's layout avoids it.
 
-- **(P3) labkit's bundled declarations inline `@weasel-js/quantity` types it does not re-export.**
-  `npm run build` warns from rollup-plugin-dts that labkit's `index.d.ts`, `config/index.d.ts` and
-  `passthrough/weasel-ui.d.ts` reference `Display` and `UnitTable` with no public re-export, so a
-  consumer whose inferred types reach them can get TS2742. Both are public in quantity; labkit's
-  `noExternal` bundling of siblings (`packages/labkit/tsup.config.ts`) is what copies them in.
-  Keep quantity external in labkit's declaration build, or re-export the two from labkit.
-
 - **(P2) jsdom is pinned to exactly 29.0.1.** From 29.0.2 through 30.1.1
   (the latest), reading an inherited property that no ancestor sets — an unset
   custom property is enough — costs twice as much for every level of DOM depth:

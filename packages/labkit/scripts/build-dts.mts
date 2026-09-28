@@ -19,7 +19,7 @@
  *
  * Run via `tsx` (not plain node) so it can import the TypeScript helper above.
  */
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import alias from '@rollup/plugin-alias';
@@ -60,22 +60,25 @@ const input = Object.fromEntries(
   Object.entries(entries).map(([name, rel]) => [name, resolve(pkgRoot, rel)]),
 );
 
-// Third-party libs are declared labkit deps (and react* are peers): keep them as
-// external `import` statements in the emitted types instead of inlining them.
-// @weasel-js/core and @weasel-js/theme are external for the same reason they
-// are in tsup.config.ts — both are exact peers, resolved once at the consumer.
-// The rest of @weasel-js/* is redirected to built declarations by the alias
-// plugin and inlined, matching the JS bundle.
-const external = [
-  /^react($|\/)/,
-  /^react-dom($|\/)/,
-  'react-aria-components',
-  'earcut',
-  'polygon-clipping',
-  /^zustand($|\/)/,
-  /^@weasel-js\/core($|\/)/,
-  /^@weasel-js\/theme($|\/)/,
-];
+const manifest = JSON.parse(readFileSync(resolve(pkgRoot, 'package.json'), 'utf8')) as {
+  dependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+};
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Everything a consumer installs alongside labkit stays an `import` in the
+// emitted types: third-party libs, the core/theme peers, and every weasel
+// sibling labkit declares as a dependency. The JS bundle inlines those
+// siblings, but their types must not be copied in: a copied type labkit never
+// re-exports leaves a consumer whose inferred types reach it with TS2742.
+// Shipped source imports nothing else under @weasel-js today, so the alias
+// plugin below inlines nothing; it is what would inline an undeclared one.
+const external = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies }).map(
+  (name) => new RegExp(`^${escapeRegex(name)}($|/)`),
+);
 
 /**
  * Fail with the fix rather than with a rollup resolution error, since building
@@ -88,7 +91,7 @@ function requireBuilt(entries: ReturnType<typeof weaselDtsAliases>): void {
     .map((f) => relative(weaselRoot, f));
   if (missing.length === 0) return;
   console.error(
-    `labkit's .d.ts bundle inlines its dependencies' built declarations, and ${missing.length} are missing:\n` +
+    `labkit's .d.ts build type-checks against its dependencies' built declarations, and ${missing.length} are missing:\n` +
       `${missing.map((f) => `  ${f}`).join('\n')}\n` +
       'Run `npm run build` from the repo root, which builds those tiers first.',
   );
@@ -97,7 +100,7 @@ function requireBuilt(entries: ReturnType<typeof weaselDtsAliases>): void {
 
 // labkit's own modules must reach each other through source, not through the
 // `.d.ts` this build is producing; core and theme are excluded because they
-// stay external specifiers in the output rather than being inlined.
+// are peers, resolved once at the consumer.
 const DTS_EXCLUDE = ['@weasel-js/labkit', '@weasel-js/core', '@weasel-js/theme'];
 
 // Only packages labkit's manifests reach: a package built after labkit (forge

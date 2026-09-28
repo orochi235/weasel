@@ -4,9 +4,10 @@
 //
 // labkit's `dist` bundles its weasel siblings — with ONE deliberate exception.
 // tsup inlines every transitively-used `@weasel-js/*` package (`noExternal` in
-// tsup.config.ts) and the dts pipeline inlines their types (scripts/build-dts.mts),
-// so a downstream consumer installs only the third-party deps (react*, zustand,
-// earcut, …). `@weasel-js/core` and `@weasel-js/theme` are the exceptions: exact
+// tsup.config.ts), so the JS needs only the third-party deps (react*, zustand,
+// earcut, …). The declarations do not inline the siblings labkit declares as
+// dependencies: they import them (scripts/build-dts.mts), because a copied type
+// labkit never re-exports gives a consumer TS2742. `@weasel-js/core` and `@weasel-js/theme` are the exceptions: exact
 // PEERS, kept as external specifiers, because each owns module-global state (core
 // its registries, theme its React context and stylesheet handle) and a second copy
 // fails silently. See docs/proposals/2026-08-31-singleton-packages-as-peers.md.
@@ -24,8 +25,9 @@
 //      it and this exits non-zero. (Mirrors the core's
 //      scripts/smoke-consumer-bundle.mjs.)
 //
-//   2. No `@weasel-js` specifier other than a peer's survives in dist — in `.js`
-//      OR `.d.ts` — and every peer's DOES, in both. The bundle check (1) only exercises
+//   2. No `@weasel-js` specifier other than a peer's survives in dist `.js`, none
+//      but a peer's or a declared dependency's survives in `.d.ts`, and every
+//      peer's DOES survive, in both. The bundle check (1) only exercises
 //      runtime JS, and it marks core external, so neither half of this is
 //      reachable from it: a leaked sibling would resolve inside the smoke tree if
 //      it were merely mismarked, and an INLINED core resolves perfectly while
@@ -126,6 +128,14 @@ function stripComments(text) {
   });
 }
 
+// The weasel siblings in `dependencies`: bundled into the JS, imported by the
+// `.d.ts`. Read off package.json so a new sibling needs no edit here.
+const declaredSiblings = new Set(
+  Object.keys(pkg.dependencies ?? {}).filter((dep) => dep.startsWith('@weasel-js/')),
+);
+const declaredSiblingOf = (spec) =>
+  [...declaredSiblings].find((d) => spec === d || spec.startsWith(`${d}/`));
+
 const leaks = [];
 const peerCounts = Object.fromEntries(PEERS.map((p) => [p, { js: 0, dts: 0 }]));
 for (const file of await walk(distDir)) {
@@ -138,12 +148,13 @@ for (const file of await walk(distDir)) {
       peerCounts[peer][file.endsWith('.d.ts') ? 'dts' : 'js'] += 1;
       return;
     }
+    if (file.endsWith('.d.ts') && declaredSiblingOf(m[1])) return;
     leaks.push(`${file.slice(pkgRoot.length + 1)}:${i + 1}: ${line.trim()}`);
   });
 }
 if (leaks.length) {
   console.error(
-    `[smoke] dist leaks @weasel-js specifiers other than the peers (${PEERS.join(', ')}) — these should be inlined:\n`,
+    `[smoke] dist carries @weasel-js specifiers that are neither peers (${PEERS.join(', ')}) nor, in .d.ts, declared dependencies — these should be inlined:\n`,
   );
   console.error(leaks.join('\n'));
   console.error(
@@ -192,14 +203,11 @@ const jsEntries = Object.entries(pkg.exports)
  * `windease` was added as a dependency without being added here, and the check
  * failed on a bundle that was correct.
  */
-const bundledSiblings = new Set(
-  Object.keys(pkg.dependencies ?? {}).filter((dep) => dep.startsWith('@weasel-js/')),
-);
 const thirdPartyExternals = Object.keys({
   ...pkg.dependencies,
   ...pkg.peerDependencies,
 })
-  .filter((dep) => !bundledSiblings.has(dep))
+  .filter((dep) => !declaredSiblings.has(dep))
   .flatMap((dep) => [dep, `${dep}/*`]);
 
 const workDir = await mkdtemp(join(tmpdir(), 'labkit-smoke-'));
@@ -279,7 +287,7 @@ if (missing.size) {
 
 console.log(
   `[smoke] OK — ${jsEntries.length} labkit entries bundle against the peers alone; ` +
-    'no other @weasel-js specifiers in dist (js+dts); peers stay external ' +
+    'no other @weasel-js specifiers in dist js, only declared dependencies in dts; peers stay external ' +
     `(${PEERS.map((p) => `${p} ${peerCounts[p].js} js/${peerCounts[p].dts} dts`).join(', ')}); ` +
     "every CSS module's stylesheet shipped.",
 );
