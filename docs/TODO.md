@@ -88,11 +88,9 @@ Priority tags:
   predicate.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
-  Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`
-  from npm — published Jul 26 20:03, i.e. 54 commits and one whole dispatch
-  architecture behind. The installed dist still ships `createToolsDispatcher` and
-  `claimsAll`, so it runs the **phase-table pipeline deleted on main** (`adc17bec`),
-  where affordance hits reached actions through `composeAffordanceLayer`'s layer
+  Reported 2026-07-28 against **lbx-editor**, then on `@weasel-js/core@0.6.0` from
+  npm — a build that still ran the **phase-table pipeline deleted on main**
+  (`adc17bec`), where affordance hits reached actions through `composeAffordanceLayer`'s layer
   `hitTest` rather than through `affordanceAt`. lbx-editor also passes
   `selectTool={{ rotate: false }}`, and that older mechanism needed the rotate tool
   mounted as `ambient` to see selection chrome at all — a plausible mechanism for
@@ -102,7 +100,8 @@ Priority tags:
   handle, several zooms — all dispatch `resize` against the selected node with the
   selection intact. `select.pick` declines chrome in its *spec*, so a press carrying
   an affordance never reaches it, and the hit radius is scale-corrected.
-  Re-test when lbx-editor next takes a kit bump; close if it's gone.
+  lbx-editor has since taken the bump: it pins `^0.7.2` (lbx-editor `87a6242`,
+  2026-08-01), which contains `adc17bec`. Re-test there; close if it's gone.
 
 - **(P3) SVG-file ingestion — follow-ups.** Shipped 2026-07-04: `kit:svg`
   content handler (`packages/core/src/features/ingestion/svgHandler.ts`, priority -90 —
@@ -138,8 +137,7 @@ Priority tags:
   itself: a dropped/pasted string has no drag rect, so the handler must choose
   a **box size** — either measure the string (needs a text-measure context) or
   default to a fixed box and let edit reflow it. Whether we even want
-  drop/paste-text-to-canvas is an open question (see the discussion that
-  spawned this — it's a marginal convenience with no consumer asking).
+  drop/paste-text-to-canvas is an open question.
   Closed 2026-08-16: (d) `drop` and `paste` are route-grammar gesture names,
   targetless, carrying the MIME-glob filter as their arg (`drop(image/*)`);
   (e) paste now dispatches first and `preventDefault`s only on `'handled'`,
@@ -162,10 +160,11 @@ Priority tags:
   Not a stale consumer: `<Lab>` is the trial runtime — it requires a non-empty
   `instruments` list, seeds a trial, and renders `children` into the header
   while its body is fixed as the surface buffers plus a `Workspace` of trials.
-  PaletteLab's page *is* the shell body, sized `height: 100%` against
-  `.lk-shell-body`. Moving it in means making it an instrument and running it in
-  a trial pane, with labkit's per-trial store and persistence beside its own,
-  and a trial titlebar beside its own `PropertyPanel`. Worth doing only as its
+  PaletteLab's page *is* the shell body, flexing to fill `.lk-shell-body`, and
+  the `#/theme` workbench beside it is a second bare `LabShell` page. Moving
+  them in means making each an instrument and running it in a trial pane, with
+  labkit's per-trial store and persistence beside its own, and a trial
+  titlebar beside its own `PropertyPanel`. Worth doing only as its
   own arc, and worth asking first whether labkit should support a lab with no
   trials at all.
 
@@ -177,11 +176,13 @@ Priority tags:
   the type does not free it). `view` is not an obstruction but the design —
   viewport deps are per-kernel, and `kernel3d` declares `camera3d`.
   `editAnchors` and `booleansAdapter` are 2D *features* — anchor editing and
-  path booleans — that a 3D kernel simply does not declare. The remaining five —
-  `snap`, `lassoSelect`, `poseDescriptor`, `slice`, `ingestion` — are
-  satisfiable as typed (the tenth, `pointer`, has since been removed), because every coordinate in them is a screen point
+  path booleans — that a 3D kernel simply does not declare. The remaining six —
+  `snap`, `lassoSelect`, `poseDescriptor`, `slice`, `ingestion`, `pointer` — are
+  satisfiable as typed, because every coordinate in them is a screen point
   under the identity `clientToWorld` a 3D host passes. Re-measured 2026-09-13,
-  dep by dep.
+  dep by dep; `pointer` was removed 2026-09-18 and came back 2026-09-25 as the
+  pointer store (a world `{ worldX, worldY, viewId }`), and has not been
+  re-measured since.
 
   The routing package itself declares `View` in `tools/types.ts` (`ToolCtx`) and
   in its barrel. `RuleCtx` no longer does: it carries `zoom?: number`, so a host
@@ -280,8 +281,6 @@ have shipped. What remains:
   Grid hairline strokes (`1 / meanScale`) have no per-axis analog at all — the
   renderer takes one width.
 
-- **(P3) Typed discriminated union for multi-type insert.** Current shape splits into `posefromBounds(bounds) → TPose` + `pointInsert(point) → TNode` (`packages/core/src/interactions/actions/insert/options.ts`); multi-type canvases (rect vs image vs ellipse from one `<SceneCanvas>`) wire their own `tools` array (one `useInsertTool` per type) rather than folding a variant switch into the insert options. The single-canvas multi-type ergonomic is the open design question.
-
 ---
 
 ## Paths & booleans
@@ -299,16 +298,19 @@ Core five + Crop shipped. Remaining:
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
 - **(P3) Boolean ops on stroked paths.** Treat a stroke as a filled region, then clip. Blocked on stroke-to-fill (round/bevel/miter joins, end caps — its own design problem).
 - **(P3) Pathfinder against text glyphs.** The boolean ops take a `Path`, and
-  `glyphOutline(family, weight, style, codepoint)` in
-  `packages/font/src/outline/outlineRegistry.ts` returns a glyph's SVG `d`,
-  so `pathFromD` covers the extraction. What is left is the run walk: laying
-  out the string, placing each glyph's path at its pen position and scaling
-  units-per-em to font size, then unioning the result before the op.
+  `layoutRuns` (`packages/text/src/layout/layoutRuns.ts`) already does the run
+  walk for the outline tier: each `LaidOutOutlineGlyph` carries the glyph's
+  em-space `d` from `glyphOutline`, its pen `x`, `baselineY` and `scale`, so
+  `pathFromD` covers the extraction. What is left is getting that geometry for
+  any text node — layout emits it only for a face with registered outlines,
+  above `outlineMinSize` or for a stroked run, and never for synthetic bold —
+  then placing each glyph in world space through the node's transform and
+  unioning the result before the op.
 - **(P3) "Create Outlines".** The destructive text→path conversion every
   vector editor has: replace a text node with the path geometry of its
-  glyphs, giving up editability. Same run walk as the pathfinder entry
-  above, plus the scene surgery — one undoable batch that deletes the text
-  node and inserts a path node carrying the union.
+  glyphs, giving up editability. Same glyph extraction as the pathfinder
+  entry above, plus the scene surgery — one undoable batch that deletes the
+  text node and inserts a path node carrying the union.
 
 ---
 
@@ -322,15 +324,16 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P3) `paintInputsRef` is written during render.** `Canvas.tsx:1295` assigns
+- **(P3) `paintInputsRef` is written during render.** `Canvas.tsx` assigns
   it in the render body, so a concurrent render React starts and abandons still
   leaves its inputs in the ref, and the next `requestRedraw` from any source —
   a gesture, a HUD, the view — paints inputs that were never committed. This is
-  a second `startTransition` hazard, distinct from the documented one (that one
-  is about DOM lagging the canvas; this one is about the canvas painting a
-  render that does not exist), and it is documented nowhere. Writing the ref
-  from a layout effect instead would fix it and cost the sync-paint ordering,
-  which is the same trade as the entry above.
+  a second `startTransition` hazard, distinct from the one `docs/concepts.md`
+  documents (that one is about DOM lagging the canvas; this one is about the
+  canvas painting a render that does not exist), and only the comment above
+  the assignment records it. Writing the ref from a layout effect instead would
+  fix it and cost the ordering `syncPaint` exists for — pixels landing before
+  the surrounding layout effects read the DOM.
 
 
 - **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner
@@ -342,23 +345,25 @@ Core five + Crop shipped. Remaining:
 - **(P3) A mesh paint bakes at a fixed 256 texels.** Enough for a smooth field at
   shape size, but a mesh filling a poster is resolution-bound in a way the three
   gradients are not (their ramp is 1-D, so 256 covers any size). The bake is
-  keyed by paint identity in a `WeakMap`, so a size-aware bake would need the
-  draw scale in the key — `packages/core/src/features/meshPaint/bake.ts`.
+  keyed by paint identity in a `WeakMap` (`BAKES` in
+  `packages/core/src/features/meshPaint/meshPaint.ts`), so a size-aware bake
+  would need the draw scale in the key; the size itself is `MESH_BAKE_SIZE` in
+  `bake.ts`.
 
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
   `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in
-  WeaselDraw. Three things it deliberately did not do:
+  WeaselDraw. What it deliberately did not do:
 
   - **Image-upload patterns.** The picker covers the four built-in tiles only.
     A user-supplied bitmap needs a payload variant that persists the image
     itself (data URI, or a document-scoped asset table), which is a storage
     question rather than a paint one.
-  - **Patterns on text.** `data.style.fill` takes a `FillStyle`, and above the
-    outline-tier threshold a glyph is a `PolygonPath` drawn through
-    `drawPathFillByKind`, so this already renders. What's missing is the panel
-    routing: the fill-kind switch edits `data.fill`, so reaching text means
-    the switch has to write the text branch instead.
+  - **Patterns on small text.** A text node's paint is its `data.fill`, so the
+    panel already sets a pattern on one, and above the outline-tier threshold
+    a glyph is geometry drawn through `drawPathFillByKind`, so it paints. Below
+    the threshold `drawTextGroup` samples an SDF atlas with one color — the
+    paint's `color`, or black — so the same text shows the pattern flat.
   - **Tile rotation / skew.** SVG has `patternTransform`; the paint has only an
     origin. Rotating a hatch is the obvious first ask.
 
@@ -418,10 +423,15 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) No justified alignment.** `TextAlign` is left / center / right / start / end; layout has no mode that spreads a wrapped line's slack across its word gaps (every line but a paragraph's last). The panel's Align bar offers the three absolute edges and reads `start` / `end` as the edge they paint at, so a justify segment is one option away once `layoutRuns` can do it — the SVG writer would also need `text-align-last` or per-word placement, since `text-anchor` has no justify.
 
-- **(P3) Per-character tracking in the DOM overlay is CSS-approximate.**
-  `letterSpacing` is applied per code point rather than per grapheme cluster,
-  matching CSS rather than the GL path's cluster walk. Visible only on text
-  with combining marks or emoji sequences.
+- **(P3) Letter-spacing counts characters three different ways.**
+  The DOM overlay sets CSS `letter-spacing`, which the browser applies per
+  grapheme cluster; `layoutRuns` adds tracking per code point
+  (`packages/text/src/layout/layoutRuns.ts`); and the 2D `measuredWidth`
+  adds `text.length * letterSpacing` — per UTF-16 unit
+  (`packages/text/src/measure/measureText.ts`). Visible only on text with
+  combining marks (the GL and 2D paths over-track against the overlay) or
+  astral characters such as emoji (2D over-tracks against GL, so the two can
+  wrap a line differently).
 
 - **(P3) Decoration and script metrics are derived, not read from the font.**
   The underline / strikethrough / overline offsets and weight are the fixed
@@ -441,19 +451,24 @@ Core five + Crop shipped. Remaining:
   properly means baking the metrics into the atlas JSON in
   `packages/font/scripts/gen-font.ts`, not just reading them at runtime.
 
-- **(P3) `ToggleBar.module.css` is a near-copy of the segmented-control
+- **(P3) `ToggleBar.module.css` is a drifted copy of the segmented-control
   styles.** The `ButtonBar` / `OptionsBar` duplication closed 2026-08-15 —
   both now import `components/segmentedControl.module.css`. `ToggleBar` was the
-  third copy nobody had counted: 216 lines carrying all 188 shared ones plus a
-  `.segmentMixed` third state (`aria-pressed="mixed"`) and a `.variant_minimal`
-  that genuinely diverges — bordered box, square corners, inner dividers,
-  `gap: 0` — where the shared one uses rounded gapped segments.
+  third copy nobody had counted: the shared rules plus a `.segmentMixed` third
+  state (`aria-pressed="mixed"`), a `.variant_minimal` that genuinely diverges —
+  bordered box, square corners, inner dividers, `gap: 0` — and a
+  `.variant_flat`, where the shared one uses rounded gapped segments.
 
-  Left alone deliberately: those divergences read as design, not drift, and
-  folding them in means the shared module becomes a base that `ToggleBar`
+  It has since drifted: fixes landed on `ToggleBar` alone — `min-width:
+  max-content` so segments don't collapse in a squeezed row (the shared
+  `.segment` still has `min-width: 0`), `:first-of-type` / `:last-of-type` so
+  tooltip markers don't break the end caps, and icon-segment padding. Check
+  whether `ButtonBar` and `OptionsBar` need the same fixes.
+
+  Folding them in means the shared module becomes a base that `ToggleBar`
   overrides through descendant selectors (`.variant_minimal .segment`), which
-  `composes` handles badly. Worth doing only alongside a decision about whether
-  the three bars are one component with different affordances.
+  `composes` handles badly. Do it alongside a decision about whether the three
+  bars are one component with different affordances.
 
   Note the dedup was a source win, not a payload one: the merged stylesheet is
   the same size either way (52933 → 52934 bytes), since identical content
@@ -467,7 +482,7 @@ Core five + Crop shipped. Remaining:
   that carries a size today; the honest version splits the entry walk's size
   off the run, or reads the `smcp` OpenType feature, which needs shaping. Real
   small caps is a face, not a synthesis, and would fall out of the HarfBuzz
-  entry below. The case half is there to build on: `textTransform` already
+  entry above. The case half is there to build on: `textTransform` already
   maps drawn characters back to source ones through `ResolvedRun.srcMap`, so
   the uppercase glyphs a synthesis draws need no new caret bookkeeping.
 
@@ -517,12 +532,13 @@ intercepting the press that drags the body.
   its own placeholder pose. Closing it means giving the adapter surface a
   dependency read, which is a bigger decision than picking.
 
-
-  Either way the pull covers poses only. A derivation is handed `DerivedDep`,
-  so it can read a dependency's `data` and its `layer` too, which is why the
-  scene invalidates on `kit:setData` and `kit:setLayer` at all. Widening the
-  pull to those means deciding what a derivation is allowed to read, not just
-  how a pose is compared.
+- **(P3) A derived path's pull covers poses only.** `resolveDerivedPath`
+  value-compares its dependencies' poses on a memo hit, so a moved dependency
+  re-routes with nothing pushed behind it. But a derivation is handed
+  `DerivedDep`, so it can read a dependency's `data` and its `layer` too, and
+  those still ride on the scene's pushed invalidation on `kit:setData` and
+  `kit:setLayer`. Widening the pull to those means deciding what a derivation
+  is allowed to read, not just how a pose is compared.
 
 - **(P3) `Scene<TData, TLayer, TPose>` is contravariant in `TPose`** via
   `clipFromPose` and `derivePath`, so no concretely-typed scene satisfies the
@@ -532,15 +548,27 @@ intercepting the press that drags the body.
 
 ### `useScene` follow-ups
 
-- **(P3) Container layout strategies in `useScene`** (today: absolute-positioning only).
-- **(P3) Selection-in-Scene vs external.**
+- **(P3) Container layout as a scene semantic.** Layout strategies exist
+  (`freeform` / `snapPoint` / `tileGrid`, wired per container through
+  `sceneToAdapter({ layouts })`), but only `move` applies them — the resting
+  arrangement (`childPoses`) runs during a drag's reflow and nowhere else, so an
+  insert, delete or resize inside a laid-out container leaves its children where
+  they were. The deeper move is the scene holding a container's layout and
+  applying it on any change to its children.
 - **(P3) Full tier unification** (collapse inline-props/explicit-adapter onto Scene). Same effort as the P2 "`arrayAdapter` as the default Canvas adapter — full unification" above — track there.
-- **(P3) Container-pose cascade as a scene-primitive semantic.** Today opt-in via `sceneToAdapter({ cascadeContainerPose: 'rect' })` shipped 2026-05-11 to absorb NestingDemo boilerplate — the deeper move is letting `scene.setPose` on a container cascade natively, which would require a `translatePose` plumbing decision on the `useScene` constructor.
+- **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is
+  adapter-level configuration, two mutually exclusive ways:
+  `sceneToAdapter({ cascadeContainerPose: true })` translates every descendant
+  by a container's delta through the pose descriptor, and `poseComposition`
+  makes a container's pose a frame its children are relative to. `Scene.setPose`
+  itself still stores absolute poses. The deeper move is the scene owning one
+  of these natively, which needs a decision on where the descriptor or
+  composition is supplied to the `useScene` constructor.
 
 ### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
 
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only), as does choosing the destination container (`<SceneCanvas layoutDropTarget>`, `LayoutStrategy.dropRegion`). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-- **(P3) Tile-grid overflow policy.** Children beyond `cols * rows` are skipped from `childPoses`. Scroll, grow-grid, and rejection are the three policies worth designing between.
+- **(P3) Tile-grid overflow policy.** A drop into a full `tileGrid` is rejected, but a child that arrives any other way (an insert or reparent op) past `cols * rows` is skipped from `childPoses` and left unplaced. Scroll, grow-grid, and rejection-at-the-op are the policies worth designing between.
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
 - **(P3) Animated reflow transitions.** Sibling reflow is snap-to-target in v1. Smooth interpolation likely needs a `useAnimatedReflow` hook over the animation primitive.
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
@@ -633,13 +661,12 @@ sprite-sheet gap closed independently (`ImageDrawCommand.source` / `flipX` /
 
 ### Earlier deferrals
 
-All from `docs/specs/2026-05-04-animation-primitive-design.md`. The first two are
-absorbed by the timeline arc above:
+All from `docs/specs/2026-05-04-animation-primitive-design.md`. The timeline arc's
+decomposition meant to absorb the first two; neither has landed:
 
 - **(P3) Animation events / observability** — global subscribe API for debug overlays / analytics.
 - **(P3) Animation-aware undo** — "rewind the animation" instead of cancel + jump.
 - **(P3) GPU / Web Animations API bridge** — offload to compositor for very large concurrent counts.
-- **(P3) Scroll-driven / pointer-driven progress** — animation progress as a function of an external value, not time.
 - **(P3) Layout-strategy reflow integration** — explicit hookup; today consumers compose `animateOnSetPose` over a layout-driven adapter.
 
 ---
@@ -832,7 +859,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `gesturestart` / `gesturechange` stops the page zoom in the Safari versions
   that send both channels.
 
-- **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects). Rotated-object alignment is done: both ends read `AlignBoundsProjection.boundsOf`, which returns the rotated AABB.
+- **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects). Rotated-object alignment is done: both ends measure through the pose descriptor (`visualBoundsViaDescriptor`), which returns the rotated shape's ink AABB.
 
 - **(P3) Reconcile `BandEditor` with `Slider`.** `BandEditor` (bands: a contiguous tiling of an axis, seams draggable, each band carrying a payload) ships alongside `Slider` (a thumb list on an axis, `constraint: 'ordered'`, `onAddThumb`/`onRemoveThumb`, `renderTrack`). Under a contiguous tiling the two are the same control — N seams determine N+1 bands, so seams *are* an ordered thumb list — and they were kept separate deliberately: bridging them means teaching `Slider` about the region *between* thumbs (payload, hit-testing, selection), which is the wider change the reconciliation actually requires. The other trigger is `Slider` needing a non-linear axis. A third option arrived with `windease` 1.0 (2026-08-20): its `LayoutStrategy` is public API — `layout()` returns placements plus affordances, `reduce()` folds a gutter drag into strategy state — so a band control is a strategy you write rather than a control you build, and it brings widened gutter grab targets, `affects` for lock suppression, and — as of 1.2.0 — keyboard-operable gutters with it (`role="separator"` with the value triple, arrows plus Home/End, each keypress synthesized into the same drag event the pointer sends so the strategy clamps once). It ships no band strategy of its own: the two built-ins are `gridStrategy` and `stripStrategy`, and strip is `LayoutStrategy<void>` whose gutters are single-child `resize-x` affordances writing pixel `placement.size`. Mapping domain values onto seams is still the consumer's. Note `Slider` is the former `RangePicker`; its spec carries a banner saying so.
 
@@ -843,11 +870,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   and roughly 70 `rgba()` values that are depth geometry (box-shadow insets, gloss gradient
   stops, the dialog scrim) for which the theme ships no shadow, gloss or scrim token. Each needs
   a semantic name before it can become one.
-
-- **(P3) A config group's `.describe()` reaches `PrefsForm` and not
-  `ControlPanel`.** `PropertyGroup` has no description slot, and its heading
-  sits in a two-column grid with nowhere obvious to put a paragraph. Wants a
-  browser to decide the shape, not a guess.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
@@ -920,12 +942,14 @@ Rollback path is small: split `layers` into `layers: FooLayers` (provider) + `wr
 
 ### weasel-den deferrals
 
-From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.md` first** — the spec's `{ registry, alwaysOn, keybindings }` pack shape was superseded by core's `Contribution` + `mergeContributions`, and its convenience layer shipped inside core as `ToolBundle`. The items below are what survives that.
+From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.md` first** — the spec's `{ registry, alwaysOn, keybindings }` pack shape was superseded by core's `Contribution` + `mergeContributions`, and its convenience layer shipped inside core as the `features` presets plus `defaultTools` / `toolOptions` on `SceneCanvas`. The items below are what survives that.
 
 - **(P3) Additional domain bundles.** `useWhiteboardPack` (sticky notes, freeform pen, text), `usePresentationPack` (frame tools, slide nav). Each is its own arc, and each is a `Contribution` bundle rather than a den pack. The diagram bundle shipped as `@weasel-js/diagram`; don't propose another.
-- **(P3) Migrate `useSelectTool` / `useTextTool` / `usePenTool` /
-  `usePencilTool` to weasel-den.** Defer until each is stable post-overlay-chrome
-  work. (`useInsertTool` was removed as a duplicate of `useRectTool`, and
+- **(P3) Move `useSelectTool` / `useTextTool` / `usePenTool` /
+  `usePencilTool` out of core's builtin tools.** The den's one motivation nothing
+  has absorbed: separating finished, stable tools' test surface from core's. It
+  needs no new package — `packages/den` is a README, not a package — and core's
+  own workspace layout can hold them. Defer until each is stable. (`useInsertTool` was removed as a duplicate of `useRectTool`, and
   `useUserPenTool` never existed — this entry named both for months.)
 
 ### d3 integration plugin
@@ -940,7 +964,8 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
   old one. Telling them apart needs a per-node identity the scene does not expose today.
 
 - **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
-  (`useWheelZoomTool` / `useHandTool` / `useViewAnimation`; `useDragGesture`).
+  (the `viewport.zoom` / `viewport.pan` actions, `useHandTool`, `useViewAnimation`;
+  `useDragGesture`).
   Worth building only for d3 semantics the kit genuinely lacks, not for parity —
   none identified yet.
 
@@ -982,12 +1007,6 @@ only story runner in the repo.
   `applyScaleEdits` (`packages/forge/src/shell/cssVars/saveScales.ts`). A save
   also refuses a param that differs by `mode` while the trial's mode is Auto,
   since the panel does not know which scheme the frame resolved.
-
-- **(P3) Storybook's secondary-panel addon has no forge equivalent.** It pinned
-  a second addon panel into a fixed column beside the first, so controls and
-  CSS vars could be read at once. forge tiles its panels through labkit's
-  `Workspace`, which may already cover it — check before building anything.
-  (The CSS-vars addon does have an equivalent: `packages/forge/src/shell/cssVars/`.)
 
 - **(P3) A captured forge story loses what `:root`, `html` and `body` style.**
   The frame serializes its story into a `<foreignObject>` whose root is a
@@ -1094,9 +1113,10 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 ## Demos & visual regression
 
-- **(P3) A minimal public stage for package demos.** Demos of scene-free packages
-  (`quantity`, `text`, `bidi`, `geom`, `audio`) mount a whole `SceneCanvas` just to draw.
-  Not the primitive `<Canvas>`, which was unexported on purpose. Enforce its reach in
+- **(P3) A minimal public stage for package demos.** A demo of a scene-free package that only
+  draws still has to mount a whole `SceneCanvas`: `TextScriptDemo` (`text`) does, with no
+  features. (`GeomDemo` and `AudioDemo` use it for pick/move dragging, and `QuantityDemo` and
+  `BidiDemo` draw nothing on a canvas.) Not the primitive `<Canvas>`, which was unexported on purpose. Enforce its reach in
   `packageDemos.test.ts` so it cannot spread: only a Packages-section demo of a scene-free
   package may import it.
 - **(P2) Demos found broken during the 2026-09-27 preset pass.** Each one reproduces with
@@ -1193,9 +1213,9 @@ one dead `const` and four stale disable directives.
   what the kit recommends for HUDs, inspectors and labels, so it wants numbers
   rather than an argument.
 
-- **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test asserts ops/shape-kinds/bundles parity; public exports remain uncovered.
+- **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op factories, shape kinds and the `features` presets; public exports remain uncovered.
 
-- **(P3) Last 4 React `act()` warnings in CI vitest.** The June 2026 sweep took the `ci.yml` "not wrapped in act(...)" count 200 → 4 (and killed the ~91 jsdom `getContext` stack dumps); see `vitest.setup.ts` (global `getContext` stub) and the test-side `act()` wrapping. The remaining 4 all come from `packages/core/src/canvas/SceneCanvas.tools.test.tsx`'s *"omitted defaultTools: resize is registered"* test — a SceneCanvas-internal deferred update from the resize-gesture commit that resists every test-side `act()` strategy tried (async microtask flush, `setTimeout(0)` macrotask flush, dispatching the whole down→move→up gesture inside one `act()`). A real fix has to live in SceneCanvas's update scheduling, not the test. Note: these warnings only reproduce under CI (ubuntu/worker timing), not locally — verify via the `ci.yml` log. Low value; defer.
+- **(P3) React `act()` warnings in CI vitest are back in the hundreds.** The June 2026 sweep took the `ci.yml` "not wrapped in act(...)" count 200 → 4 (and killed the ~91 jsdom `getContext` stack dumps); see `vitest.setup.ts` (global `getContext` stub) and the test-side `act()` wrapping. The last green main run (36271062844, 2026-09-26) prints 650 per Node leg, nearly all from labkit and forge: `LabRuntime`, `StoreContainer`, `Trial` and `LabSections` updates, led by `packages/forge/src/shell/storyInstrument.test.tsx`, `packages/forge/src/frame/FrameController.test.tsx`, `packages/labkit/src/lab/Lab.test.tsx` and `packages/forge/src/shell/cssVars/CssVarsPanel.test.tsx`. The old residue remains: `packages/core/src/canvas/SceneCanvas.tools.test.tsx`'s *"omitted defaultTools: resize is registered"* test raises a SceneCanvas-internal deferred update from the resize-gesture commit that resists every test-side `act()` strategy tried (async microtask flush, `setTimeout(0)` macrotask flush, dispatching the whole down→move→up gesture inside one `act()`); a real fix there has to live in SceneCanvas's update scheduling, not the test. Note: these warnings only reproduce under CI (ubuntu/worker timing), not locally — verify via the `ci.yml` log.
 
 - **(P2) Per-command draw cost, for everything that is not batched solid
   geometry.** `tests/perf/draw-loop.spec.ts` sweeps commands per frame under
@@ -1531,10 +1551,12 @@ one dead `const` and four stale disable directives.
     internal: document it or take it off the entry. (2026-09-28: 404 → 1.)
   - **`forceRelaxation` exposes an unexported type.** `@weasel-js/diagram` exports it and
     `ForceRelaxation` from both its barrel and `/layout`, but the type's `Body[]` is not
-    exported: export `Body`, or keep the function private to `live.ts`.
-  - **Two stray `@experimental` tags in core's icon files.** The align and distribute icon
-    files carry the tag in a file header, where it attaches to a private constant and marks
-    nothing. Move it onto the icons or drop it.
+    exported: export `Body`, or take the function off both entries (its only callers are
+    `force` in `force.ts` and `live.ts`).
+  - **Four stray `@experimental` tags in core's icon files.** The align, distribute, boolean
+    and edit icon files (`packages/core/src/interactions/actions/defaults/icons/`) carry the
+    tag in a file header, where it attaches to a private constant and marks nothing. Move it
+    onto the icons or drop it.
   - **Three `@internal` exports still reach a consumer entry**, all in
     `@weasel-js/routing`. `KeyBinding` is the parameter of `matchesKeyBinding`,
     which core's barrel exports, so either the marker is stale (as

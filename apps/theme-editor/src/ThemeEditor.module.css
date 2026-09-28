@@ -131,7 +131,6 @@
   outline: 1px solid var(--wzl-border-strong);
 }
 
-/* `.lk-shell-body` is a block container, so the workbench takes its height rather than flexing. */
 .workbench {
   display: grid;
   grid-template-columns: 11rem minmax(0, 1fr) minmax(18rem, 30rem);
