@@ -9,6 +9,8 @@ import {
   parseKeyRoute,
   parseRoute,
   ROUTE_FIELD_DEFINITIONS,
+  routeToSpec,
+  specificity,
   type BodyTarget,
   type GestureSpec,
   type InputEvent,
@@ -21,14 +23,14 @@ const PRESETS = [
   '[initial] click => empty +shift',
   '[engaged] wheel(up) ?shift',
   '[*:engaged] keyDown(Escape)',
-  '[initial,engaged] contextMenu => node',
+  '[initial,engaged] contextMenu => kind:rect',
   '[rect:initial] drag +mod +alt',
   '[*] multiTouchTap(3)',
 ];
 
-function parse(route: string): { parsed: ParsedRoute } | { error: string } {
+function attempt<T>(f: () => T): { ok: T } | { error: string } {
   try {
-    return { parsed: parseRoute(route) };
+    return { ok: f() };
   } catch (e) {
     return { error: (e as Error).message };
   }
@@ -58,6 +60,11 @@ const IS_MAC = typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(nav
 const SELF = 'pad';
 const THRESHOLD = 4;
 const MODIFIER_KEYS = new Set(['Shift', 'Alt', 'Control', 'Meta']);
+
+const phaseCtx = (engaged: boolean): PhaseContext => ({
+  selfChannel: SELF,
+  engagedChannels: new Set(engaged ? [SELF] : []),
+});
 
 function modsOf(e: { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) {
   return { altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey };
@@ -91,12 +98,16 @@ interface Logged {
   n: number;
   event: InputEvent;
   engaged: boolean;
-  matched: number[];
+  matched: number;
 }
 
 export function GestureGrammarDemo() {
   const [route, setRoute] = useState(PRESETS[0]!);
-  const result = parse(route);
+  const result = attempt(() => parseRoute(route));
+  const typed = 'ok' in result ? attempt(() => routeToSpec(result.ok)) : undefined;
+  const specs = typed && 'ok' in typed ? [typed.ok, ...SPECS] : SPECS;
+  const specsRef = useRef(specs);
+  specsRef.current = specs;
 
   const [log, setLog] = useState<Logged[]>([]);
   const [engaged, setEngaged] = useState(false);
@@ -106,11 +117,8 @@ export function GestureGrammarDemo() {
   const counter = useRef(0);
 
   const emit = (event: InputEvent) => {
-    const ctx: PhaseContext = {
-      selfChannel: SELF,
-      engagedChannels: new Set(engagedRef.current ? [SELF] : []),
-    };
-    const matched = SPECS.flatMap((spec, i) => (matchSpec(event, spec, IS_MAC, ctx) ? [i] : []));
+    const ctx = phaseCtx(engagedRef.current);
+    const matched = specsRef.current.filter((spec) => matchSpec(event, spec, IS_MAC, ctx)).length;
     const entry = { n: ++counter.current, event, engaged: engagedRef.current, matched };
     setLog((prev) => [entry, ...prev].slice(0, 8));
   };
@@ -158,8 +166,11 @@ export function GestureGrammarDemo() {
         {'error' in result ? (
           <p className={s.error}>{result.error}</p>
         ) : (
-          <ParsedView parsed={result.parsed} />
+          <ParsedView parsed={result.ok} />
         )}
+        {typed && ('ok' in typed
+          ? <p className={s.prose}>As a spec, first in the table below: <code>{specText(typed.ok)}</code></p>
+          : <p className={s.error}>{typed.error}</p>)}
       </section>
 
       <section className={s.section}>
@@ -223,14 +234,15 @@ export function GestureGrammarDemo() {
 
         <table className={s.table}>
           <thead>
-            <tr><th>spec</th><th>last event</th></tr>
+            <tr><th>spec</th><th title="target, modifiers, phase, exact">specificity</th><th>last event</th></tr>
           </thead>
           <tbody>
-            {SPECS.map((spec, i) => {
-              const hit = latest?.matched.includes(i) ?? false;
+            {specs.map((spec, i) => {
+              const hit = latest ? matchSpec(latest.event, spec, IS_MAC, phaseCtx(latest.engaged)) : false;
               return (
                 <tr key={i} className={hit ? s.hit : undefined}>
                   <td className={s.code}>{specText(spec)}</td>
+                  <td className={s.code}>{specificity(spec).join(' ')}</td>
                   <td className={s.mark}>{latest ? (hit ? 'match' : '—') : ''}</td>
                 </tr>
               );
@@ -244,7 +256,7 @@ export function GestureGrammarDemo() {
               <span className={s.num}>{String(l.n).padStart(3)}</span>
               <span className={s.code}>{summarize(l.event)}</span>
               <span className={s.muted}>
-                {l.engaged ? ' · engaged' : ''} · {l.matched.length} matched
+                {l.engaged ? ' · engaged' : ''} · {l.matched} matched
               </span>
             </li>
           ))}
