@@ -2,6 +2,7 @@ import type { GestureSpec, ModSpec, PhaseSpec, TargetSpec } from '../ui/spec';
 import { parseTargetSpec } from '../ui/match';
 import { formatRoute, type ParsedRoute } from './routeGrammar';
 import { parseKeyRoute } from './keyRouteGrammar';
+import { specKindForRouteGesture } from './specKinds';
 
 /**
  * Build the `GestureSpec` a parsed route describes, so a route string can
@@ -48,33 +49,36 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
   }
   const t = target === undefined ? {} : { target };
 
-  switch (parsed.gesture) {
-    case 'click': return withMods({ kind: 'click', ...t });
-    case 'pointerDown': return withMods({ kind: 'pointerDown', ...t });
-    case 'dblTap': return withMods({ kind: 'doubleClick', ...t });
-    case 'drag': return withMods({ kind: 'drag', ...t });
-    case 'contextMenu': return withMods({ kind: 'contextMenu', ...t });
-    case 'longPress': return withMods({ kind: 'longPress', ...t });
+  const kind = specKindForRouteGesture(parsed.gesture);
+  switch (kind) {
+    case undefined:
+      return fail(`${parsed.gesture} has no GestureSpec kind`);
+    case 'click':
+    case 'pointerDown':
+    case 'doubleClick':
+    case 'drag':
+    case 'contextMenu':
+    case 'longPress':
+      return withMods({ kind, ...t });
     case 'wheel':
-      return withMods({ kind: 'wheel', ...(arg ? { direction: arg as 'up' | 'down' } : {}), ...t });
+      return withMods({ kind, ...(arg ? { direction: arg as 'up' | 'down' } : {}), ...t });
     case 'pinch':
-      return withMods({ kind: 'pinch', ...(arg ? { direction: arg as 'in' | 'out' } : {}), ...t });
-    case 'keyDown':
-    case 'keyHeld': {
+      return withMods({ kind, ...(arg ? { direction: arg as 'in' | 'out' } : {}), ...t });
+    case 'key':
+    case 'key-held': {
       if (arg === undefined) return fail('a key spec needs a concrete key');
       const { key, optionalMods } = parseKeyRoute(arg);
       const optional: ModSpec = {};
       for (const m of optionalMods) optional[m] = 'optional';
-      const kind = parsed.gesture === 'keyDown' ? 'key' : 'key-held';
       return withMods({ kind, key, ...(optionalMods.length > 0 ? { mods: optional } : {}) });
     }
-    case 'keyUp':
-      return fail('keyUp has no GestureSpec kind');
     case 'multiTouchTap':
       if (arg === undefined) return fail('a multiTouchTap spec needs concrete fingers');
-      return withMods({ kind: 'multiTouchTap', fingers: Number(arg) });
+      return withMods({ kind, fingers: Number(arg) });
     case 'drop':
     case 'paste':
-      return withMods({ kind: parsed.gesture, ...(arg ? { types: arg.split('|') } : {}) });
+      return withMods({ kind, ...(arg ? { types: arg.split('|') } : {}) });
+    case 'multiTouch':
+      return fail('multiTouch has no route gesture');
   }
 }

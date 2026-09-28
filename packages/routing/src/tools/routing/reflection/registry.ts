@@ -1,8 +1,9 @@
 import type { Tool } from '../../types';
+import { routeGestureForSpecKind, specKindForRouteGesture } from '@weasel-js/gestures';
 import type { GestureSpec, ModSpec, TargetSpec, PhaseSpec } from '@weasel-js/gestures';
 import type { ParsedModifiers, ModifierKey, PhaseAtom } from '../routeGrammar';
 import { formatRoute } from '../routeGrammar';
-import { getGestureDescriptor, isKnownGestureName, type GestureName } from '../gestures';
+import { getGestureDescriptor, type GestureName } from '../gestures';
 
 /**
  * One row in the route registry — a single `GestureBinding` on one tool,
@@ -59,28 +60,6 @@ export interface RegistryEntry {
  */
 export const PREDICATE_TARGET = 'predicate';
 
-/** `GestureSpec.kind` → route-grammar gesture name. `multiTouch` has no
- *  route-grammar gesture (only its tap synthesis does), so specs of that kind
- *  are skipped. Read it through {@link routeGestureForSpecKind} — a second
- *  copy of this table typechecks while silently disagreeing, which is how
- *  drop and paste went missing from the draw inspector. */
-const SPEC_KIND_TO_GESTURE: Record<GestureSpec['kind'], GestureName | undefined> = {
-  key: 'keyDown',
-  'key-held': 'keyHeld',
-  wheel: 'wheel',
-  pinch: 'pinch',
-  click: 'click',
-  doubleClick: 'dblTap',
-  contextMenu: 'contextMenu',
-  longPress: 'longPress',
-  drag: 'drag',
-  pointerDown: 'pointerDown',
-  multiTouch: undefined,
-  multiTouchTap: 'multiTouchTap',
-  drop: 'drop',
-  paste: 'paste',
-};
-
 /**
  * Flatten every tool's `bindings` into route-registry rows.
  *
@@ -93,7 +72,7 @@ const SPEC_KIND_TO_GESTURE: Record<GestureSpec['kind'], GestureName | undefined>
  * suggested otherwise.
  */
 export function buildRouteRegistry(
-  tools: readonly Tool<unknown>[],
+  tools: readonly Tool<unknown, unknown>[],
 ): RegistryEntry[] {
   const out: RegistryEntry[] = [];
   for (const tool of tools) {
@@ -103,15 +82,6 @@ export function buildRouteRegistry(
     }
   }
   return out;
-}
-
-/** The route-grammar gesture a `GestureSpec.kind` routes as, or `undefined`
- *  for kinds the grammar has no name for. */
-export function routeGestureForSpecKind(
-  kind: GestureSpec['kind'],
-): GestureName | undefined {
-  const gesture = SPEC_KIND_TO_GESTURE[kind];
-  return gesture && isKnownGestureName(gesture) ? gesture : undefined;
 }
 
 /**
@@ -145,8 +115,8 @@ function entryFor(
   spec: GestureSpec,
   actionId: string,
 ): RegistryEntry | null {
-  const gesture = SPEC_KIND_TO_GESTURE[spec.kind];
-  if (!gesture || !isKnownGestureName(gesture)) return null;
+  const gesture = routeGestureForSpecKind(spec.kind);
+  if (!gesture) return null;
   const descriptor = getGestureDescriptor(gesture);
   return {
     toolId,
@@ -238,5 +208,5 @@ function argAlternativesOf(
 }
 
 // Re-export for downstream consumers.
-export { getGestureDescriptor };
+export { getGestureDescriptor, routeGestureForSpecKind, specKindForRouteGesture };
 export type { GestureName };

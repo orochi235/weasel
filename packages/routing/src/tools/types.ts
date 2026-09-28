@@ -3,6 +3,7 @@ import type { Op } from '@weasel-js/history';
 import type { SelectionApi, View, Bounds, DebugSink, ModifierState } from '../vocabulary';
 import type { Contribution } from '../contributions/types';
 import type { CursorSpec } from '@weasel-js/cursor';
+import type { KernelOverlay } from '../index';
 
 /**
  * Configurable activation-key descriptor for tools that expose their
@@ -82,7 +83,7 @@ export type ToolBounds = Bounds;
  * activate/deactivate, live preview, `cursor`). Everything else — bindings,
  * actions, overlay, presentation — is inherited.
  */
-export interface Tool<TScratch = unknown, TOverlay = unknown> extends Contribution<TOverlay> {
+export interface Tool<TScratch = unknown, TOverlay = KernelOverlay> extends Contribution<TOverlay> {
   /** Optional caller-supplied key. Most built-in tools have their activation
    *  key declared in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`; this field
    *  is for tools that want their activation key to be configurable by the

@@ -6,10 +6,11 @@ import type { HotkeyTrigger } from '../contributions/types';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { useContributions } from '../contributions/useContributions';
 import type { Contribution, Eligibility, OverlayPosition } from '../contributions/types';
+import type { KernelOverlay } from '../index';
 
 /** Options for `useTools`: which tools exist, which one starts active, and
  *  which run continuously regardless of the active one. */
-export interface UseToolsOptions<TOverlay = unknown> {
+export interface UseToolsOptions<TOverlay = KernelOverlay> {
   /** Initial active-slot tool id, which must exist in `registry`. Omit, or
    *  pass `null`, for no active tool: only hotkey and ambient bindings run. */
   active?: string | null;
@@ -23,7 +24,7 @@ export interface UseToolsOptions<TOverlay = unknown> {
 
 /** The tool registry's runtime surface: which tool is active, which is
  *  temporarily held by a hotkey, and how to change either. */
-export interface ToolsApi<TOverlay = unknown> {
+export interface ToolsApi<TOverlay = KernelOverlay> {
   /** Current active-slot tool id, or `null` when no tool is active. */
   active: string | null;
   /** Set the active-slot tool, or `null` to clear it. The gesture dispatcher
@@ -115,7 +116,7 @@ function sameEligibility(a: Eligibility | undefined, b: Eligibility): boolean {
  * `opts.active` to the context. Subsequent mounts respect whatever the
  * context currently holds (the first caller wins).
  */
-export function useTools<TOverlay = unknown>(
+export function useTools<TOverlay = KernelOverlay>(
   opts: UseToolsOptions<TOverlay>,
 ): ToolsApi<TOverlay> {
   const initialActive = opts.active ?? null;

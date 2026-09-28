@@ -54,7 +54,7 @@ export interface Conflict {
  *  over-reports, because registry tools take turns in the active slot and
  *  can't collide with each other — see {@link findScopedConflicts}.
  */
-export function findConflicts(tools: readonly Tool<unknown>[]): Conflict[] {
+export function findConflicts(tools: readonly Tool<unknown, unknown>[]): Conflict[] {
   return findConflictsKeyed(tools).map((k) => k.conflict);
 }
 
@@ -68,7 +68,7 @@ export function findConflicts(tools: readonly Tool<unknown>[]): Conflict[] {
  * told them apart in the first place.
  */
 function findConflictsKeyed(
-  tools: readonly Tool<unknown>[],
+  tools: readonly Tool<unknown, unknown>[],
   rules?: ReadonlyMap<string, Rule>,
 ): { key: string; conflict: Conflict }[] {
   const entries = buildRouteRegistry(tools);
@@ -146,9 +146,9 @@ function predicateId(pred: object): number {
  */
 export interface ToolScopes {
   /** Tools eligible for the active slot, keyed by id or as a flat list. */
-  registry: readonly Tool<unknown>[] | Readonly<Record<string, Tool<unknown>>>;
+  registry: readonly Tool<unknown, unknown>[] | Readonly<Record<string, Tool<unknown, unknown>>>;
   /** Always-on tools. Every one of these is live at once. */
-  ambient?: readonly Tool<unknown>[];
+  ambient?: readonly Tool<unknown, unknown>[];
   /** Registered actions. Their `defaultBinding`s assemble at ambient scope
    *  (hotkey scope when `Action.scope` says so), alongside the tools above. */
   actions?: readonly Action[];
@@ -156,7 +156,7 @@ export interface ToolScopes {
 
 /** An action's `defaultBinding`s in the shape the route registry reads, so a
  *  tool-vs-action collision buckets with the tool-vs-tool ones. */
-function actionAsTool(action: Action): Tool<unknown> {
+function actionAsTool(action: Action): Tool<unknown, unknown> {
   return { id: action.id, eligibility: {}, bindings: actionBindings(action) };
 }
 
@@ -209,8 +209,8 @@ function contextKey(action: Action): string | null {
  */
 export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   const registry = Array.isArray(scopes.registry)
-    ? (scopes.registry as readonly Tool<unknown>[])
-    : Object.values(scopes.registry as Readonly<Record<string, Tool<unknown>>>);
+    ? (scopes.registry as readonly Tool<unknown, unknown>[])
+    : Object.values(scopes.registry as Readonly<Record<string, Tool<unknown, unknown>>>);
   const actions = scopes.actions ?? [];
   const rules = new Map<string, Rule>();
   for (const a of actions) {
@@ -218,8 +218,8 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     if (rule) rules.set(a.id, rule);
   }
   const hotkeyActions = actions.filter((a) => a.scope === 'hotkey').map(actionAsTool);
-  const gated = new Map<string, Tool<unknown>[]>();
-  const ungated: Tool<unknown>[] = [];
+  const gated = new Map<string, Tool<unknown, unknown>[]>();
+  const ungated: Tool<unknown, unknown>[] = [];
   for (const a of actions) {
     if (a.scope === 'hotkey') continue;
     const key = contextKey(a);

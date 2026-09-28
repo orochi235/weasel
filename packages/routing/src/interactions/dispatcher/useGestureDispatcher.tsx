@@ -177,7 +177,7 @@ export interface UseGestureDispatcherOptions {
   /** Action registry (ActionsRegistry from registry.tsx). */
   actions: ActionsRegistry;
   /** Tool definitions keyed by id. Typically passes an empty Map. */
-  toolsById: ReadonlyMap<string, Tool>;
+  toolsById: ReadonlyMap<string, Tool<unknown, unknown>>;
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
   /**
@@ -503,7 +503,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const toolsByIdRef = useRef(toolsById);
   toolsByIdRef.current = toolsById;
   const fireLifecycle = (id: string, hook: 'onActivate' | 'onDeactivate'): void => {
-    const tool = toolsByIdRef.current.get(id) as Tool<unknown> | undefined;
+    const tool = toolsByIdRef.current.get(id) as Tool<unknown, unknown> | undefined;
     const fn = tool?.[hook];
     if (!fn) return;
     try {

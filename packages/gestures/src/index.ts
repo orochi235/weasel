@@ -53,6 +53,7 @@ export type { ParsedKeyRoute, OptionalMod } from './grammar/keyRouteGrammar';
 
 // Route → GestureSpec
 export { routeToSpec } from './grammar/routeToSpec';
+export { routeGestureForSpecKind, specKindForRouteGesture } from './grammar/specKinds';
 
 // Plain-English route descriptions
 export { describeRoute, describeRouteParts, ROUTE_TERMS, ROUTE_FIELD_DEFINITIONS } from './grammar/describeRoute';
