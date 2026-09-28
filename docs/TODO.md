@@ -244,14 +244,6 @@ have shipped. What remains:
   (`726f85e0`), selection is per-view (`7c202d28`). Tests:
   `packages/core/src/canvas/CanvasView.test.tsx`.
 
-- **(P3) The raw `createViewportLayer` path still carries a re-projection
-  prototype.** Views are the input answer — `<CanvasView>`, the `views` prop,
-  `SceneCanvasApi.addView` — and `<CanvasView interactive={false}>` is the
-  paint-only viewport. `layer.reproject` and `viewportsAt` are left over from
-  before, and `apps/site/demos/ViewportLayerDemo.tsx` still hand-rolls a click
-  probe on them. Retire both and rebuild the demo on views, or keep the raw
-  layer as the paint primitive and drop only the prototype.
-
 - **(P3) Views do not nest.** A view paints and routes the surface's own stack,
   never another view, and a loupe magnifies the canvas's camera — aimed over a
   `<CanvasView>` panel it shows and edits the canvas's world, not the panel's.

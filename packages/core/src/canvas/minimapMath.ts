@@ -160,8 +160,7 @@ export function computeFitView<TData, TLayer extends string, TPose>(
  * That world rect is then transformed into the minimap's screen
  * coordinates through `minimapView`.
  *
- * The returned command is a dashed-stroke `path` rect with no fill —
- * matching the `ViewportLayerDemo` indicator math.
+ * The returned command is a dashed-stroke `path` rect with no fill.
  */
 export function computeIndicatorCommand(
   mainView: View,

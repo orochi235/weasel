@@ -130,7 +130,7 @@ describe('routing a viewport layer', () => {
     bounds: () => ({ x: 8, y: 232, w: 240, h: 160 }),
   });
 
-  it('lands a client point where the layer says it reprojects', () => {
+  it('lands a client point where the layer paints that world point', () => {
     const r = createViewResolver({
       views: () => [pip.resolvable(ROOT, DIMS)],
       root: () => ROOT,
@@ -139,10 +139,8 @@ describe('routing a viewport layer', () => {
     const [cx, cy] = client(88, 312);
     const t = r.at(null, cx, cy);
     expect(t.id).toBe('pip');
-    // The resolver's origin fed to clientToWorld must agree with the layer's
-    // own inverse — they are two paths to the same inner world point.
-    expect(clientToWorld(cx, cy, t.origin, t.view))
-      .toEqual([pip.reproject(ROOT, DIMS, { x: 88, y: 312 })!.x,
-                pip.reproject(ROOT, DIMS, { x: 88, y: 312 })!.y]);
+    // Canvas (88, 312) is (80, 80) into the rect; at 1.6x that is 50 world
+    // units past the inner view's (250, 200) origin.
+    expect(clientToWorld(cx, cy, t.origin, t.view)).toEqual([300, 250]);
   });
 });
