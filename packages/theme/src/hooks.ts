@@ -27,6 +27,12 @@ export interface TokenHook {
 
 export const TOKEN_HOOKS: readonly TokenHook[] = [
   {
+    name: 'detail-figure-min-width',
+    type: 'dimension',
+    value: '8ch',
+    description: 'Least width of a value cell in a `values="figures"` DetailList.',
+  },
+  {
     name: 'disclosure-gap',
     type: 'dimension',
     value: '4px',
