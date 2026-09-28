@@ -6,7 +6,9 @@
 import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { ViewApi } from 'interactions/actions/depSchema';
 
+/** Action id for `minimapCenterAction`. */
 export const MINIMAP_CENTER = 'minimap.center';
+/** Action id for `minimapPanAction`. */
 export const MINIMAP_PAN = 'minimap.pan';
 
 /** Move `root` so world point (`x`, `y`) sits at the center of its host,

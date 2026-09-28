@@ -21,6 +21,10 @@ import {
   type SimulationOptions,
 } from './types';
 
+/**
+ * A d3-force-compatible simulation with no clock: nothing moves until `tick()`.
+ * Nodes are mutated in place, and primed with `index`, `vx` and `vy` on creation.
+ */
 export function createSimulation<TNode extends SimulationNode>(
   opts: SimulationOptions<TNode>,
 ): SimulationCore<TNode> {

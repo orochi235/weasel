@@ -8,6 +8,7 @@
  * and the next pinch frame would clamp it back to 8x.
  */
 export const DEFAULT_MIN_ZOOM = 0.1;
+/** Upper end of the kit's default zoom clamp — 800%. See {@link DEFAULT_MIN_ZOOM}. */
 export const DEFAULT_MAX_ZOOM = 8;
 
 /**

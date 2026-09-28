@@ -34,6 +34,8 @@ function circle(cx: number, r: number, size: number, segments = 32): PolygonPath
   return poly(pts, size);
 }
 
+/** The markers the registry is seeded with: `arrow`, `arrow-open`,
+ *  `arrow-concave`, `diamond`, `diamond-hollow`, `circle`, `square` and `bar`. */
 export const BUILTIN_MARKERS: readonly MarkerEntry[] = [
   {
     id: 'arrow',

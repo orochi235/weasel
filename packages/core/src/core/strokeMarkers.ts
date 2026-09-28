@@ -29,6 +29,7 @@ export interface MarkerCtx {
  *  default rather than an opt-in. */
 export type MarkerPaint = FillStyle | 'line' | 'none';
 
+/** A stroke-marker registry entry: a terminator's geometry, paint and inset. */
 export interface MarkerEntry {
   /** `'kit:'`-free for built-ins so the key matches the SVG attribute value;
    *  consumers should prefix (`'app-my-head'`). A key becomes the `id` of the

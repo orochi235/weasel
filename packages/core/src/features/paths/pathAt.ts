@@ -11,12 +11,14 @@ import type { Vec2 } from 'core/geometry/vec2';
 import type { Path } from 'core/geometry/path';
 import { extractPolylines } from './tessellate/polyline';
 
+/** The answer `pointAlongPath` gives: a point on the path and its heading there. */
 export interface PathStation {
   point: Vec2;
   /** Unit vector along the path at `point`, pointing toward the end. */
   tangent: Vec2;
 }
 
+/** Options for `pointAlongPath`. */
 export interface PointAlongPathOptions {
   /** Curve flattening tolerance, in world units. Default 0.5. */
   flattenTolerance?: number;

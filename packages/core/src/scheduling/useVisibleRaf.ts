@@ -14,6 +14,7 @@ import { type RefObject, useCallback, useLayoutEffect, useMemo, useRef } from 'r
  *  so a ref filled in after mount still starts the observer. */
 export type VisibleRafTarget = RefObject<Element | null> | (() => Element | null);
 
+/** Options for {@link useVisibleRaf}. */
 export interface VisibleRafOptions {
   /** Also gate on this element's intersection with the viewport. Omit it and
    *  the loop is gated on document visibility alone. */
@@ -36,6 +37,7 @@ export interface VisibleRafOptions {
   onResume?: () => void;
 }
 
+/** The handle {@link useVisibleRaf} returns. Nothing runs until `request()` is called. */
 export interface VisibleRaf {
   /** Ask for a frame. Idempotent while one is outstanding, and held rather than
    *  dropped while suspended. Identity is stable for the component's lifetime. */

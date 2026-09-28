@@ -19,6 +19,7 @@ export function resolveMarkerSize(ref: MarkerRef, strokeWidth: number, scale = 1
   return resolveScreenLength(ref.size, scale);
 }
 
+/** The registry key a `MarkerRef` names, whether given bare or with a size. */
 export function markerKeyOf(ref: MarkerRef): string {
   return typeof ref === 'string' ? ref : ref.key;
 }

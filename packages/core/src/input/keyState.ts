@@ -7,6 +7,7 @@
 
 import { isEditableTarget } from '@weasel-js/routing';
 
+/** Which modifier keys are held, on either side of the keyboard. */
 export interface KeyModifiers {
   shift: boolean;
   ctrl: boolean;
@@ -14,6 +15,7 @@ export interface KeyModifiers {
   meta: boolean;
 }
 
+/** Options for {@link KeyState.attach}. */
 export interface KeyStateAttachOptions {
   /** Ignore presses whose target is an input, textarea or contenteditable
    *  element. Their releases are always taken. Default `true`. */
@@ -24,6 +26,7 @@ export interface KeyStateAttachOptions {
   preventDefault?: readonly string[];
 }
 
+/** A poll of which physical keys are down, fed by {@link KeyState.attach}. */
 export interface KeyState {
   /** Whether any of these physical keys, by `KeyboardEvent.code`
    *  (`'KeyA'`, `'Space'`, `'ArrowLeft'`), is down. Codes name positions, so
@@ -64,6 +67,8 @@ const MODIFIER_SET = new Set(Object.values(MODIFIER_CODES).flat());
 const fold = (key: string): string => (key.length === 1 ? key.toLowerCase() : key);
 const list = (v: string | readonly string[]): readonly string[] => (typeof v === 'string' ? [v] : v);
 
+/** A new {@link KeyState} with nothing down. It hears nothing until attached;
+ *  in React, `useKeyState` attaches one for a component's lifetime. */
 export function createKeyState(): KeyState {
   // code → the folded key it produced when pressed
   const down = new Map<string, string>();

@@ -43,6 +43,7 @@ export type InsertPreviewGeometry =
     }
   | { kind: 'pencil'; samples: ReadonlyArray<Point> };
 
+/** An in-flight insert's shape, resolved from its drag rect and `extras`. */
 export interface InsertPreviewExtent {
   /** The insert kind, verbatim from the caller. */
   shape: string;
@@ -51,8 +52,11 @@ export interface InsertPreviewExtent {
   geometry: InsertPreviewGeometry;
 }
 
+/** The `insertPreview` member of `OngoingOverlay`, which `insertAction` publishes during a drag-to-insert. */
 export type InsertPreviewOverlay = Extract<OngoingOverlay, { kind: 'insertPreview' }>;
 
+/** Resolve an in-flight insert's geometry and world AABB. Uses the geometry in
+ *  `extras` where the shape carries it; an unknown shape falls back to its drag rect. */
 export function insertPreviewExtent(ov: InsertPreviewLike): InsertPreviewExtent {
   const b = ov.bounds;
   const box = { x: b.x, y: b.y, width: b.width, height: b.height };

@@ -5,11 +5,6 @@ import { unionAABB } from 'core/geometry/unionBounds';
 
 export type { Bounds };
 
-/**
- * Read-only state that affordances consult on every render and hit-test
- * call. Built via `buildChromeState` and held across renders, so affordances
- * must not cache anything they read from it.
- */
 /** Nothing selected, nothing resolvable — what a caller reads before a
  *  surface has attached, or where chrome state has no owner. */
 export const EMPTY_CHROME_STATE: ChromeState = {
@@ -20,6 +15,11 @@ export const EMPTY_CHROME_STATE: ChromeState = {
   modifiers: { alt: false, shift: false, meta: false, ctrl: false },
 };
 
+/**
+ * Read-only state that affordances consult on every render and hit-test
+ * call. Built via `buildChromeState` and held across renders, so affordances
+ * must not cache anything they read from it.
+ */
 export interface ChromeState {
   /** Currently selected ids. Live; reflects useSelection's React state. */
   readonly selection: readonly NodeId[];

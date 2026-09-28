@@ -10,6 +10,7 @@ export interface JointTransform {
   scaleY: number;
 }
 
+/** One joint of a `Skeleton`. */
 export interface Joint {
   name: string;
   /** Parent joint name, or null for a root. */
@@ -27,6 +28,7 @@ export interface Skeleton {
  *  absent fields mean "no change from bind". */
 export type Pose = Record<string, Partial<JointTransform>>;
 
+/** The transform that changes nothing: origin, no rotation, unit scale. */
 export const IDENTITY_JOINT: JointTransform = {
   x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1,
 };
