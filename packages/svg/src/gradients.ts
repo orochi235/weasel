@@ -511,9 +511,12 @@ function paintServerXml(id: string, paint: FillStyle, onWarn?: (m: string) => vo
   if (paint.fill === 'pattern') return patternXml(id, paint, onWarn);
   const builtin = gradientXml(id, paint);
   if (builtin) return builtin;
-  const custom = getPaintKind(paint.fill)?.toSvg?.(id, paint);
+  const kind = getPaintKind(paint.fill);
+  const custom = kind?.toSvg?.(id, paint);
   if (custom) return custom;
-  onWarn?.(`${paint.fill} fill has no vector form — omitted from <defs>`);
+  onWarn?.(kind
+    ? `${paint.fill} fill has no vector form — omitted from <defs>`
+    : `${paint.fill} fill is not registered — omitted from <defs>; a kind loaded on demand needs \`await warmPaintKinds()\` before a synchronous export`);
   return '';
 }
 

@@ -142,8 +142,10 @@ compatibility and stops at Coons.
 
 `mesh-gradient` takes option 1 and PDF's taxonomy, and it goes through
 `registerPaintKind` rather than into the renderer's own branch list — so every
-slot it uses, a consumer's kind can use too. Three things fell out of building
-it that this document did not predict:
+slot it uses, a consumer's kind can use too. It is also loaded on demand
+through `registerPaintKindLoader`, so an app that never meets a mesh paint does
+not ship the kind. Three things fell out of building it that this document did
+not predict:
 
 **A patch stores all twelve of its points, and sixteen for a tensor patch.** SVG's
 implicit edge sharing saves bytes and buys a reader a way to be subtly wrong; the

@@ -316,6 +316,12 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
+- **(P3) The paint controls read the kind registry without subscribing to it.** `PaintInput`,
+  `GradientEditor` and `PaintField` (`packages/ui/src/components/`) call `listPaintKinds` /
+  `getPaintKind` during render, so a kind registered after they mount — a consumer's own, or one
+  arriving through `registerPaintKindLoader` — is missing from the kind bar and unlabeled until
+  something else re-renders them. `paintKindRegistry` is shaped for `useSyncExternalStore`.
+
 - **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
   `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
   still derives framing from document poses, so a node overridden outside the
@@ -1054,6 +1060,14 @@ one dead `const` and four stale disable directives.
 ---
 
 ## Release-gate & build hygiene
+
+- **(P3) esbuild with code splitting still ships the mesh paint with any import of core.** With
+  `splitting: true`, esbuild makes an entry import every module a dynamic chunk shares with the
+  barrel's static graph, used or not, so `import { asNodeId }` carries ~19.6 kB — the lazily
+  loaded `mesh-gradient` kind and the paint registry it imports. rolldown (vite's production
+  bundler) and esbuild without splitting both ship under 250 B, which is why
+  `scripts/check-treeshake.mjs` bundles with rolldown. Short of taking the mesh exports off
+  core's root barrel onto a subpath, nothing in core's layout avoids it.
 
 - **(P3) labkit's bundled declarations inline `@weasel-js/quantity` types it does not re-export.**
   `npm run build` warns from rollup-plugin-dts that labkit's `index.d.ts`, `config/index.d.ts` and

@@ -210,6 +210,10 @@ function unpremultiply(data: Uint8ClampedArray): void {
  * rendering the same region at a higher scale is a real resolution increase
  * rather than an upscale: curves are re-flattened and glyphs re-rasterized for
  * the output resolution.
+ *
+ * Synchronous, so nothing lands mid-render: a paint kind loaded on demand
+ * (`mesh-gradient`, or one declared with `registerPaintKindLoader`) that has
+ * not loaded yet draws nothing. `await warmPaintKinds()` first.
  */
 export function renderSceneToPixels<TData, TLayer extends string, TPose>(
   args: RenderSceneToPixelsArgs<TData, TLayer, TPose>,

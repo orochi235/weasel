@@ -10,6 +10,7 @@ import { serializeSvg } from '@weasel-js/svg';
 import type { SvgNode } from '@weasel-js/svg';
 import {
   registerPaintKind, asPaint, _resetPaintKindsForTests, listPaintKinds, getPaintKind, paintKindRegistry,
+  registerPaintKindLoader, warmPaintKinds,
 } from './paintKinds';
 import type { PaintKindEntry } from './paintKinds';
 import { fillInPoseFrame, fillToBoundsFrame } from './fillInPoseFrame';
@@ -247,3 +248,90 @@ describe('paint-kind registry', () => {
     expect(() => r.render([{ kind: 'path', path: triangle(), fill: WASH } as DrawCommand])).not.toThrow();
   });
 });
+
+describe('paint kinds loaded on demand', () => {
+  beforeEach(() => {
+    _resetPaintKindsForTests();
+  });
+
+  afterEach(() => {
+    _resetPaintKindsForTests();
+  });
+
+  it('starts a lazy kind\'s load on first lookup, once, and registers what it resolves to', async () => {
+    const load = vi.fn(async () => washEntry());
+    registerPaintKindLoader('test-wash', load);
+    const listener = vi.fn();
+    const off = paintKindRegistry.subscribe(listener);
+
+    expect(getPaintKind('test-wash')).toBeUndefined();
+    expect(getPaintKind('test-wash')).toBeUndefined();
+    expect(load).toHaveBeenCalledTimes(1);
+
+    await warmPaintKinds(['test-wash']);
+    expect(getPaintKind('test-wash')?.label).toBe('Wash');
+    expect(listener).toHaveBeenCalled();
+    expect(load).toHaveBeenCalledTimes(1);
+    off();
+  });
+
+  it('draws nothing for a cold kind, starts its load, and draws it once it lands', async () => {
+    registerProgram(WASH_PROGRAM, '', WASH_FRAG);
+    const load = vi.fn(async () => washEntry());
+    registerPaintKindLoader('test-wash', load);
+    const recorder = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: recorder.gl, width: 400, height: 300, dpr: 1 });
+    const frame = () => {
+      recorder.reset();
+      r.render([{ kind: 'path', path: triangle(), fill: WASH } as DrawCommand]);
+      return recorder.calls.some((c) => c.name === 'drawElements');
+    };
+
+    expect(frame()).toBe(false);
+    expect(load).toHaveBeenCalledTimes(1);
+    await warmPaintKinds(['test-wash']);
+    expect(frame()).toBe(true);
+  });
+
+  it('warms every lazily loadable built-in when given no list', async () => {
+    expect(listPaintKinds().map((k) => k.id)).not.toContain('mesh-gradient');
+    await warmPaintKinds();
+    expect(getPaintKind('mesh-gradient')?.label).toBe('Mesh');
+  });
+
+  it('resolves at once for a kind that is already registered', async () => {
+    await expect(warmPaintKinds(['solid'])).resolves.toBeUndefined();
+  });
+
+  it('rejects a kind that is neither registered nor loadable', async () => {
+    await expect(warmPaintKinds(['no-such-kind'])).rejects.toThrow(/no-such-kind/);
+  });
+
+  it('does not retry a failed load on every lookup', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const load = vi.fn(async () => { throw new Error('offline'); });
+    registerPaintKindLoader('test-wash', load);
+    await expect(warmPaintKinds(['test-wash'])).rejects.toThrow(/offline/);
+    expect(getPaintKind('test-wash')).toBeUndefined();
+    expect(load).toHaveBeenCalledTimes(1);
+    error.mockRestore();
+  });
+
+  it('rejects a loader that resolves to a different kind', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    registerPaintKindLoader('test-other', async () => washEntry());
+    await expect(warmPaintKinds(['test-other'])).rejects.toThrow(/resolved to "test-wash"/);
+    expect(getPaintKind('test-wash')).toBeUndefined();
+    error.mockRestore();
+  });
+
+  it('never calls a loader for a kind registered before its first lookup', () => {
+    const load = vi.fn(async () => washEntry());
+    registerPaintKindLoader('test-wash', load);
+    const off = registerPaintKind(washEntry());
+    expect(getPaintKind('test-wash')?.label).toBe('Wash');
+    expect(load).not.toHaveBeenCalled();
+    off();
+  });
+});
+

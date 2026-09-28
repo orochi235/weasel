@@ -14,10 +14,7 @@
     "url": "https://github.com/orochi235/weasel/issues"
   },
   "type": "module",
-  "sideEffects": [
-    "./src/features/meshPaint/meshPaint.ts",
-    "./dist/features/meshPaint/meshPaint.js"
-  ],
+  "sideEffects": false,
   "engines": {
     "node": ">=22"
   },

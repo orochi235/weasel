@@ -26,6 +26,7 @@ import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { subscribeImageReady } from 'features/images/imageCache';
 import { subscribeGlyphReady } from '@weasel-js/font';
+import { paintKindRegistry } from 'core/paintKinds';
 import { defaultDrawOne, defaultPaintBounds, paintBoundsFor } from './defaultDrawOne';
 import type { FillStyle } from '@weasel-js/paint';
 import { Canvas } from './Canvas';
@@ -1093,6 +1094,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Deferred dynamic-glyph bakes (over-budget frames) redraw exactly like
   // late image decodes: bake lands → notify → repaint with the new quads.
   useEffect(() => subscribeGlyphReady(() => {
+    canvasApiRef.current?.requestRedraw?.();
+  }), []);
+
+  // A paint kind that registers late — a lazily loaded built-in landing, or a
+  // consumer's kind — can now draw fills that painted nothing.
+  useEffect(() => paintKindRegistry.subscribe(() => {
     canvasApiRef.current?.requestRedraw?.();
   }), []);
 
