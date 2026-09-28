@@ -1172,7 +1172,13 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
   nothing until someone runs it once and commits
   `tests/visual/baselines/stroke-and-fill.png`.
 
-- **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`apps/site/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it.
+- **(P3) A HUD button's label sits at the bottom of the button.** `createButton`
+  places its label at `y + h / 2 + fontSize / 3`, treating the text command's
+  `y` as a baseline, but `textCommandFromRuns` takes the top of the line — a
+  `text` widget at `y` draws its glyphs from `y` down. So the label's top lands
+  just below center and its descenders reach the bottom edge. Seen in headless
+  Chromium in both `hud` and `hud-gallery` demos (2026-09-28); centering it
+  properly wants the line height from the font's metrics rather than `fontSize`.
 
 ---
 
