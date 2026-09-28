@@ -14,7 +14,10 @@
     "url": "https://github.com/orochi235/weasel/issues"
   },
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/features/meshPaint/meshPaint.ts",
+    "./dist/features/meshPaint/meshPaint.js"
+  ],
   "engines": {
     "node": ">=22"
   },
@@ -75,7 +78,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "vite build && tsup",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {

@@ -107,27 +107,15 @@ the rig for the first time:
 
 ## Adding a `@weasel-js/*` sub-package
 
-The sub-packages under `packages/` (e.g. `gestures`, `history`, `modes`) are
-**not independently published**. They reach back into this package's `packages/core/src/`
-internals (via the shared tsconfig aliases) and are **bundled into
-`@weasel-js/core`'s `dist/`** — both JS and `.d.ts`. They are an internal
-source-organization tool, not public dependencies.
+Every package under `packages/` is published on its own. When
+`@weasel-js/core` imports from one, list it in core's `dependencies` (or
+`peerDependencies`, for a package whose instance must be single). Core's build
+keeps every `@weasel-js/*` specifier external, so the consumer resolves one copy;
+an undeclared one fails the smoke test below rather than reaching npm.
 
-When `@weasel-js/core` imports from a new sub-package, do **all** of the
-following or the built `dist` will leak unresolvable specifiers to consumers
-(bare `@weasel-js/<name>` / `core/ops/*` imports → `TS2307`, and worse, a
-silently-empty `DepSchema`):
-
-1. **`package.json` — list it under `devDependencies`, never `dependencies`.**
-   tsup builds its `.d.ts` `external` set from `dependencies` + `peerDependencies`;
-   anything there is force-externalized in the emitted declarations even though
-   the JS is inlined. (It's bundled, so consumers never `npm install` it.)
-2. **`tsconfig.json` — add a `paths` alias** mapping `@weasel-js/<name>` →
-   `./packages/<name>/src/index.ts` (mirror the existing `@weasel-js/ui`
-   entries). This makes both esbuild and `rollup-plugin-dts` treat it as
-   program-internal source and inline its declarations alongside `core/*`.
-3. **`tsup.config.ts`** already inlines `^@weasel-js/` for the JS bundle via
-   `noExternal`; no change needed, but read the comment there for why.
+Inside core, import from the module that defines a symbol, never from
+`@weasel-js/core` itself — that specifier is external to core's own build.
+Type-only imports of it are fine.
 
 Avoid cross-module **`declare module './other'` augmentations** for any type
 that ships in the public API (e.g. how `DepSchema` is assembled): those do
@@ -138,5 +126,6 @@ one place (consumers can still augment via `declare module '@weasel-js/core'`).
 
 **Guard:** `npm run test:smoke:consumer` (part of `prepublishOnly` / CI) bundles
 *and* typechecks a synthetic third-party consumer against the built `dist`,
-outside the monorepo. It fails on any leaked specifier or empty `DepSchema`. If
-you change packaging, run it locally.
+outside the monorepo. It fails on any leaked specifier or empty `DepSchema`.
+`npm run check:treeshake` fails when importing one small symbol from core's
+`dist` ships more than a small budget. If you change packaging, run both locally.

@@ -1,18 +1,12 @@
 import earcut from 'earcut';
 import { forEachSegment, pointInPolygon, rectToContour } from '@weasel-js/geom';
+import type { Path, PolygonPath, RectPath } from '@weasel-js/core';
+import { PATH_M, PATH_L, PATH_Z, PATH_C, PATH_Q } from 'core/geometry/path';
 import {
-  type Path,
-  type PolygonPath,
-  type RectPath,
-  PATH_M,
-  PATH_L,
-  PATH_Z,
-  PATH_C,
-  PATH_Q,
   DEFAULT_FLATTEN_TOLERANCE,
   flattenCubicWithArcLen,
   flattenQuadraticWithArcLen,
-} from '@weasel-js/core';
+} from '../flatten';
 import type { Mesh } from '../../../renderer/cache/mesh';
 
 /** Options for `tessellate`. A smaller tolerance means more triangles and

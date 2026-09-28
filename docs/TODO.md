@@ -1055,17 +1055,6 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
-- **(P2) Importing one symbol from `@weasel-js/core` bundles the whole kit.**
-  Against the built `dist/` (2026-09-28), a consumer importing only `asNodeId`
-  ships 618,592 minified bytes through rolldown and 631,449 through esbuild —
-  the same as importing `SceneCanvas`. Most of it is one 410 kB tsup chunk
-  (`asNodeId` lives in it), so either top-level code in that chunk keeps every
-  module alive or the chunking puts unrelated modules together. This was
-  measured at 1.04 kB on 2026-08-23. Reproduce with a one-line entry
-  (`import { asNodeId } from '@weasel-js/core'`) bundled with `--splitting`
-  and React external, counting the entry plus its static imports; the
-  `opentype.js` it references is a dynamic import and does not count.
-
 - **(P2) jsdom is pinned to exactly 29.0.1.** From 29.0.2 through 30.1.1
   (the latest), reading an inherited property that no ancestor sets — an unset
   custom property is enough — costs twice as much for every level of DOM depth:

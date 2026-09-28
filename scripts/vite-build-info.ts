@@ -9,7 +9,7 @@
  * than a copy per config.
  *
  * Published builds get `__WEASEL_CORE_VERSION__` from core's own
- * `tsup.config.ts` instead; both paths read `packages/core/package.json`, so
+ * `vite.config.ts` instead; both paths read `packages/core/package.json`, so
  * there is a single source of truth and changesets' version bump is the only
  * place the number is edited.
  */
