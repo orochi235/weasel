@@ -28,7 +28,7 @@ export const percentKind: DisplayKind<PercentDisplay> = {
         }),
       ),
     ),
-  parse: (text) => parseNumber(text.replace(/%\s*$/, '')) / 100,
+  parse: (text, _d, ctx) => parseNumber(text.replace(/^\s*%|%\s*$/, ''), undefined, ctx.locale) / 100,
 };
 
 /**
@@ -271,7 +271,7 @@ export const multiplierKind: DisplayKind<MultiplierDisplay> = {
   ],
   speak: (value, d, ctx) =>
     spokenSign(`${numberPart(value, ctx.locale, { maximumFractionDigits: d.places ?? 2 }).value} times`),
-  parse: (text) => parseNumber(text.replace(/\s*[x×X]\s*$/, '')),
+  parse: (text, _d, ctx) => parseNumber(text.replace(/\s*[x×X]\s*$/, ''), undefined, ctx.locale),
 };
 
 /**

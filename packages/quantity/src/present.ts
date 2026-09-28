@@ -45,7 +45,7 @@ export function displayKindOf(display: Display | undefined): DisplayKind<Display
 
 /** Options for presenting or parsing a quantity. */
 export interface PresentOptions {
-  /** BCP 47 locale. Default `en-US`, which every kind parses. */
+  /** BCP 47 locale. Default `en-US`. */
   locale?: string;
 }
 
@@ -108,7 +108,7 @@ export function parseAs(text: string, display?: Display, options?: PresentOption
   const kind = displayKindOf(d);
   const ctx: FormatContext = { locale: options?.locale ?? 'en-US' };
   if (options?.unit !== undefined) ctx.unit = options.unit;
-  return kind.parse ? kind.parse(text, d, ctx) : parseNumber(text);
+  return kind.parse ? kind.parse(text, d, ctx) : parseNumber(text, undefined, ctx.locale);
 }
 
 /**

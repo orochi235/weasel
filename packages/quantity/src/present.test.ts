@@ -198,6 +198,18 @@ describe('round trips', () => {
   });
 });
 
+describe('round trips in a locale', () => {
+  const displays: Display[] = [decimal({ maxPlaces: 6 }), integer(), unit('mm', { places: 2 }), currency('EUR'), percent({ places: 2 })];
+  it.each(['de-DE', 'fr-FR', 'de-CH', 'en-IN', 'es-ES'])('reads back what %s shows', (locale) => {
+    for (const display of displays) {
+      for (const v of [0.5, 3, 1234.5, 1_234_567]) {
+        const shown = present(v, display, { locale }).text;
+        expect(present(parseAs(shown, display, { locale }), display, { locale }).text).toBe(shown);
+      }
+    }
+  });
+});
+
 describe('html', () => {
   it('wraps named parts in data-part spans inside <data value>', () => {
     expect(present(1 / 4, fraction()).html).toBe(

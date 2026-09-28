@@ -87,7 +87,7 @@ export const unitKind: DisplayKind<UnitDisplay> = {
   },
   parse: (text, d, ctx) => {
     const name = d.unit ?? ctx.unit;
-    return parseNumber(text, d.accepts ?? (name ? { [name]: 1 } : undefined));
+    return parseNumber(text, d.accepts ?? (name ? { [name]: 1 } : undefined), ctx.locale);
   },
 };
 
@@ -117,7 +117,7 @@ export const currencyKind: DisplayKind<CurrencyDisplay> = {
   format: (value, d, ctx) => intlParts(value, ctx.locale, currencyOptions(d)),
   speak: (value, d, ctx) =>
     spokenSign(textOf(intlParts(value, ctx.locale, { ...currencyOptions(d), currencyDisplay: 'name' }))),
-  parse: (text) => parseNumber(text.replace(/[^\d.,+\-−]/g, '')),
+  parse: (text, _d, ctx) => parseNumber(text.replace(/[^\d.,'’+\-−]/g, ''), undefined, ctx.locale),
 };
 
 /**
@@ -187,9 +187,9 @@ export const durationKind: DisplayKind<DurationDisplay> = {
     if (s > 0 || terms.length === 0) terms.push(`${s} ${plural(s, ctx.locale, 'second', 'seconds')}`);
     return `${negative ? 'minus ' : ''}${terms.join(', ')}`;
   },
-  parse: (text) => {
+  parse: (text, _d, ctx) => {
     const m = /^\s*([-−+]?)\s*(?:(\d+):)?(\d+):(\d+(?:\.\d+)?)\s*$/.exec(text);
-    if (!m) return parseNumber(text, DURATION_UNITS);
+    if (!m) return parseNumber(text, DURATION_UNITS, ctx.locale);
     const total = Number(m[2] ?? 0) * 3600 + Number(m[3]) * 60 + Number(m[4]);
     return m[1] === '-' || m[1] === '−' ? -total : total;
   },
@@ -247,7 +247,7 @@ export const bytesKind: DisplayKind<BytesDisplay> = {
     const { scaled, step } = byteScale(value, base);
     const name = (base === 1024 ? BINARY_NAMES : DECIMAL_NAMES)[step]!;
     const number = numberPart(scaled, ctx.locale, { maximumFractionDigits: step === 0 ? 0 : (d.places ?? 1) }).value;
-    return spokenSign(`${number} ${plural(Number(number.replace(/[^\d.]/g, '')), ctx.locale, name, `${name}s`)}`);
+    return spokenSign(`${number} ${plural(Math.abs(parseNumber(number, undefined, ctx.locale)), ctx.locale, name, `${name}s`)}`);
   },
-  parse: (text) => parseNumber(text, BYTE_UNITS),
+  parse: (text, _d, ctx) => parseNumber(text, BYTE_UNITS, ctx.locale),
 };

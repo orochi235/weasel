@@ -58,9 +58,9 @@ export const romanKind: DisplayKind<RomanDisplay> = {
     return [{ type: 'numeral', value: d.lower ? r.toLowerCase() : r }];
   },
   speak: (value, _d, ctx) => spokenSign(numberPart(Math.round(value), ctx.locale, { maximumFractionDigits: 0, useGrouping: false }).value),
-  parse: (text) => {
+  parse: (text, _d, ctx) => {
     const r = fromRoman(text);
-    return Number.isNaN(r) ? parseNumber(text) : r;
+    return Number.isNaN(r) ? parseNumber(text, undefined, ctx.locale) : r;
   },
 };
 
@@ -85,5 +85,5 @@ export const ordinalKind: DisplayKind<OrdinalDisplay> = {
     const rule = new Intl.PluralRules('en-US', { type: 'ordinal' }).select(n);
     return [number, { type: 'ordinal', value: SUFFIXES[rule] ?? 'th' }];
   },
-  parse: (text) => Math.round(parseNumber(text.replace(/(st|nd|rd|th)\s*$/i, ''))),
+  parse: (text, _d, ctx) => Math.round(parseNumber(text.replace(/(st|nd|rd|th)\s*$/i, ''), undefined, ctx.locale)),
 };
