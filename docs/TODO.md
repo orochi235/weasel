@@ -18,6 +18,11 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P3) No test drags a rotation handle on a real `SceneCanvas`.** Unit tests cover
+  `selectionTransformBindings` and `resizePolicyOptions`, but nothing checks end to end that
+  `selectTool.rotate` (`behaviors`, `pivot`, `rotateLabel`, the gesture callbacks) reaches the
+  rotate binding.
+
 - **(P2) A binding with no phase prints as a route that ranks higher when parsed back.**
   `routesForSpec` (`packages/routing/src/tools/routing/reflection/registry.ts`) prints an
   unphased spec as `[*] drag`, whose `specificity()` phase part is 0. Parsed back, `[*]` is the
