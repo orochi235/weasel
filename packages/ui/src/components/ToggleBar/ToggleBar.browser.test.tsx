@@ -27,3 +27,24 @@ test.each(['tree', 'components', 'gallery'] as const)(
     }
   },
 );
+
+// A bar beside a greedy sibling in a narrow flex row must keep its labels
+// whole: the row takes width from the sibling, never from the segments.
+test.each(['glass', 'flat', 'minimal'] as const)('a squeezed %s bar keeps its text segments whole', (variant) => {
+  render(
+    <div style={{ display: 'flex', width: 120 }}>
+      <input style={{ flex: 1 }} />
+      <ToggleBar
+        ariaLabel="View"
+        variant={variant === 'glass' ? undefined : variant}
+        items={[...ITEMS]}
+        value="tree"
+        onChange={() => {}}
+      />
+    </div>,
+  );
+  for (const seg of screen.getAllByRole('radio')) {
+    expect(seg.scrollWidth).toBeLessThanOrEqual(seg.clientWidth);
+    expect(seg.clientWidth).toBeGreaterThan(0);
+  }
+});

@@ -40,7 +40,6 @@ export function BidiDemo() {
           onChange={(v) => v && setDirection(v)}
           ariaLabel="Paragraph direction"
           size="sm"
-          className={s.direction}
         />
       </div>
       <div className={s.controls}>

@@ -23,12 +23,16 @@
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
+  /* The track clips, so without this a squeezing row shrinks it to nothing. */
+  min-width: max-content;
 }
 
 .segment {
   position: relative;
   flex: 1 1 0;
-  min-width: 0;
+  /* Equal widths when there is room, never narrower than the label. The
+     segment clips its gloss, which otherwise drops its flex minimum to 0. */
+  min-width: max-content;
   padding: 0 var(--wzl-space-6);
   display: inline-flex;
   align-items: center;
@@ -50,14 +54,7 @@
   transition: color var(--wzl-motion-fast);
 }
 
-/* A glyph label is a fixed box, not text that can reflow: without this it is
-   the only thing in the segment flex can take width from, and three bars in
-   one property row squeeze it to nothing. The side padding drops with it —
-   8px around a 14px glyph is most of a segment. */
-.segment > svg {
-  flex: none;
-}
-
+/* 8px around a 14px glyph is most of a segment. */
 .segment:has(> svg) {
   padding: 0 5px;
 }
