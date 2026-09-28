@@ -55,6 +55,12 @@ export interface ViewResolver {
   clear(): void;
 }
 
+/**
+ * @experimental
+ *
+ * Options for `createViewResolver`. Each field is a function called afresh on
+ * every query, so views and the canvas may move between events.
+ */
 export interface CreateViewResolverOpts {
   /** Candidate views in paint order — the last one containing a point wins. */
   views: () => readonly ResolvableView[];
@@ -70,6 +76,7 @@ export interface CreateViewResolverOpts {
   occluded?: (x: number, y: number) => boolean;
 }
 
+/** @experimental Build a `ViewResolver` over `opts.views`, falling back to `opts.root`. */
 export function createViewResolver(opts: CreateViewResolverOpts): ViewResolver {
   const { views, root, canvasOrigin, occluded } = opts;
   const pinned = new Map<number, string | null>();

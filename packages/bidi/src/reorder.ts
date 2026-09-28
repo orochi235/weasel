@@ -11,6 +11,7 @@
 import type { BidiClass } from './types';
 import type { BidiResult } from './resolve';
 
+/** One line's visual order, from `reorderLine`. */
 export interface ReorderedLine {
   /**
    * Original indices in visual order, left to right, with the characters X9

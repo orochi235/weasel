@@ -35,9 +35,11 @@ export interface MeshBox {
   height: number;
 }
 
+/** The bitmap `bakeMesh` produces, and the paint-space box it covers. */
 export interface BakedMesh {
-  /** `MESH_BAKE_SIZE` square, straight RGBA. */
+  /** `size` × `size` texels, straight RGBA. */
   pixels: Uint8ClampedArray;
+  /** Texels on a side; `MESH_BAKE_SIZE` unless the caller asked otherwise. */
   size: number;
   /** Where the bitmap sits in paint space, which is what the shader maps a
    *  fragment through. */

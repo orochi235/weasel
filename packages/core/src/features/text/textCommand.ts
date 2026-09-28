@@ -24,6 +24,8 @@ import { resolveRuns } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import type { TextVerticalAlign } from '@weasel-js/text';
 
+/** Build a draw command from styled runs, for text with no pose. `style`
+ *  supplies the defaults each run inherits; the rest match `textCommand`. */
 export function textCommandFromRuns(
   x: number,
   y: number,

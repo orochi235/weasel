@@ -1,6 +1,7 @@
 import { type RefObject, useEffect, useState } from 'react';
 import { createKeyState, type KeyState, type KeyStateAttachOptions } from './keyState';
 
+/** Options for {@link useKeyState}. */
 export interface UseKeyStateOptions extends KeyStateAttachOptions {
   /** Scope the poll to keys typed while focus is inside this element — a
    *  canvas host, say. Omit it to poll the whole window. */

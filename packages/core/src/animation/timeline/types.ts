@@ -36,7 +36,9 @@ export interface EventBookingHandle {
   stop(): void;
 }
 
+/** One entry on an `EventTrack`. Give it `fire`, `book`, or both. */
 export interface TimelineEvent {
+  /** Time within the track's timeline, in ms. */
   t: number;
   /** Runs on the frame that crosses the edge, told how far behind the frame it
    *  was crossed, in ms — never negative, and measured against `duration` on
@@ -60,6 +62,7 @@ export interface EventTrack {
   events: TimelineEvent[];
 }
 
+/** How a timeline books its events against an outside clock. */
 export interface EventBooking {
   clock: TimelineClock;
   /** How far ahead of the playhead to book, in clock ms. Default 100. An event
@@ -80,6 +83,7 @@ export interface TimelineTrack {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+/** Any track a timeline can hold. */
 export type Track = SampledTrack<any> | EventTrack | TimelineTrack;
 
 /** What a child timeline may declare. The parent owns playback, so `loop`,
@@ -90,12 +94,15 @@ export interface NestedTimeline {
   duration?: number;
 }
 
+/** What `animator.timeline` takes: a root timeline, which owns playback. */
 export interface TimelineOptions extends NestedTimeline {
   /** `true` loops forever, `n` loops n additional times. Default false. */
   loop?: boolean | number;
   /** Default true. When false the timeline registers but holds at t=0 until resumed. */
   autoplay?: boolean;
+  /** Called when playback reaches the end of its last lap. */
   onDone?: () => void;
+  /** Any new animation passed the same `cancelKey` cancels this one. */
   cancelKey?: string;
   /** Books each event's `book` against a clock the timeline does not own, so a
    *  consumer on that clock lands it at its true sub-frame time. The frame
@@ -103,6 +110,7 @@ export interface TimelineOptions extends NestedTimeline {
   booking?: EventBooking;
 }
 
+/** What `animator.timeline` returns: playback control plus live editing. */
 export interface TimelineHandle extends AnimationHandle {
   /** Move the playhead. Never fires event tracks, at any depth. */
   seek(t: number): void;

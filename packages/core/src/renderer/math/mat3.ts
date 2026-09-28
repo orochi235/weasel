@@ -14,6 +14,7 @@
 
 import { invert as invertAffine, type Mat3 as Affine } from '@weasel-js/geom';
 
+/** A 2D affine transform as a column-major 9-element `Float32Array`, laid out as above. */
 export type GlMat3 = Float32Array;
 
 function create(a: number, b: number, c: number, d: number, tx: number, ty: number): GlMat3 {

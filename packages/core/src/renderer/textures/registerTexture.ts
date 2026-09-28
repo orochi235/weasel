@@ -14,6 +14,7 @@ import { createReflectable, type Reflection } from '@weasel-js/registry';
 
 export type { TextureHandle };
 
+/** A registered texture's image source, uploaded to GL lazily at first draw. */
 export interface TextureEntry {
   source: HTMLImageElement | ImageBitmap;
 }
