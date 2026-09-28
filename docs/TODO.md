@@ -726,12 +726,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   tagged ones; and nothing styles the `data-part` spans the HTML form emits, so `PropertyField`
   still draws its suffix from its own `unit` prop.
 
-- **(P3) `@weasel-js/quantity` still misses a few locale forms when parsing.** `parseNumber` reads
-  each locale's own separators, but a duration typed on the clock (`4:05,5`) accepts only a `.`
-  before its fraction of a second, and a locale that writes non-Latin digits (`ar-EG`'s `١٬٢٣٤`)
-  parses back as NaN. Each fix is local: the clock regex in `durationKind.parse`, and mapping
-  the digits in `delocalized` in `number.ts`.
-
 - **(P3) An encoded field of an object leaf reads and writes without its siblings across a
   mixed selection.** `SelectionPanel` reports and writes an object leaf's fields per node, but a
   field whose `encoding` needs the rest of the object — a stroke's dash style, which is a multiple

@@ -101,6 +101,8 @@ interface NumberShape {
   whole: RegExp;
   group: RegExp;
   decimal: string;
+  /** The locale's own digits, where they are not `0`–`9`, each mapped to its Latin one. */
+  digits?: { pattern: RegExp; latin: ReadonlyMap<string, string> };
 }
 
 const shapes = new Map<string, NumberShape>();
@@ -117,6 +119,10 @@ function shapeOf(locale: string): NumberShape {
   const decimal = parts.find((p) => p.type === 'decimal')?.value ?? '.';
   // CLDR versions disagree between a straight and a curly apostrophe, as keyboards do.
   const g = /\s/.test(groupChar) ? String.raw`\s` : /['’]/.test(groupChar) ? `'’` : escapeClass(groupChar);
+  const own = [...new Intl.NumberFormat(locale, { useGrouping: false }).format(9_876_543_210)].reverse();
+  const digits = own.join('') === '0123456789'
+    ? undefined
+    : { pattern: new RegExp(`[${own.join('')}]`, 'gu'), latin: new Map(own.map((c, i) => [c, String(i)])) };
   const d = escapeClass(decimal);
   const integer = String.raw`\d{1,${secondary}}(?:[${g}]\d{${secondary}})*[${g}]\d{${primary}}|\d*`;
   const shape: NumberShape = {
@@ -124,20 +130,36 @@ function shapeOf(locale: string): NumberShape {
     whole: new RegExp(String.raw`^(?:${integer})(?:[${d}]\d*)?$`),
     group: new RegExp(`[${g}]`, 'g'),
     decimal,
+    digits,
   };
   shapes.set(locale, shape);
   return shape;
 }
 
-const escapeClass = (c: string) => c.replace(/[\\\]^-]/g, '\\$&');
+export const escapeClass = (c: string) => c.replace(/[\\\]^-]/g, '\\$&');
 
 /** `text` with each number in `locale`'s form rewritten ungrouped with a `.` decimal, and the rest untouched. */
 function delocalized(text: string, locale: string): string {
   const shape = shapeOf(locale);
-  return text.replace(shape.run, (run) =>
+  return latinDigits(text, locale).replace(shape.run, (run) =>
     shape.whole.test(run) ? run.replace(shape.group, '').replace(shape.decimal, '.') : run,
   );
 }
+
+/**
+ * `text` with `locale`'s own digits written `0`–`9` and the bidi marks `Intl`
+ * puts around a sign (`؜-` in `ar-EG`) dropped.
+ */
+export function latinDigits(text: string, locale: string): string {
+  const { digits } = shapeOf(locale);
+  const t = text.replace(BIDI_MARKS, '');
+  return digits ? t.replace(digits.pattern, (c) => digits.latin.get(c)!) : t;
+}
+
+const BIDI_MARKS = /[\u061c\u200e\u200f]/g;
+
+/** The mark `locale` writes before a fraction: `.` in `en-US`, `,` in `de-DE`. */
+export const decimalOf = (locale: string): string => shapeOf(locale).decimal;
 
 /** Suffixes a person may type, each mapped to its conversion into the shown unit. */
 export type UnitTable = Record<string, UnitEntry>;

@@ -280,6 +280,14 @@ describe('parseNumber in a locale', () => {
     expect(parseNumber("5' 3\"", { in: 1, ft: 12 }, 'de-CH')).toBe(63);
   });
 
+  it('reads the digits a locale writes in', () => {
+    expect(parseNumber('١٬٢٣٤', undefined, 'ar-EG')).toBe(1234);
+    expect(parseNumber('؜-١٬٢٣٤٫٥', undefined, 'ar-EG')).toBe(-1234.5);
+    expect(parseNumber('۱٬۲۳۴٬۵۶۷٫۵', undefined, 'fa-IR')).toBe(1_234_567.5);
+    expect(parseNumber('१२,३४,५६७.५', undefined, 'hi-IN-u-nu-deva')).toBe(1_234_567.5);
+    expect(parseNumber('1234', undefined, 'ar-EG')).toBe(1234);
+  });
+
   it('does not take two-digit groups where the locale has none', () => {
     expect(parseNumber('12,34,567')).toBeNaN();
     expect(parseNumber('1.50.000', undefined, 'de-DE')).toBeNaN();
