@@ -1213,8 +1213,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
     `svgInterop.ts` each carry their own copy. `svgNodesToKitDrafts` also drops `fill-opacity`
     and element `opacity` (read in `packages/svg/src/unpack.ts`, `fillFromPaint`; not run), and
     does not register `parsed.markers` — only `unpackSvgFiles` does.
-  - `geom`: no nearest-point-on-curve and no split-at-t (de Casteljau). `GeomDemo.tsx` flattens
-    and walks segments for the first and cannot show the second.
   - `modes`: every consumer rebuilds `getActiveMode` from a registry by hand (`ModesDemo.tsx`,
     draw's `activeModeOf`, `SceneCanvas.modeShortcuts.test.tsx`); a mode switch does not
     repaint on its own because `ScopingDim` and `ModeDecorations` expose no version; nothing

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cubicEvalAt, elevateQuadraticToCubic, cubicBounds } from './curve';
+import { cubicEvalAt, elevateQuadraticToCubic, cubicBounds, quadraticEvalAt, splitCubicAt, splitQuadraticAt, splitLineAt } from './curve';
 import { approxEq } from './scalar';
 
 describe('cubicEvalAt', () => {
@@ -34,5 +34,71 @@ describe('cubicBounds', () => {
     expect(approxEq(b[1], 0)).toBe(true);   // minY
     expect(approxEq(b[2], 10)).toBe(true);  // maxX
     expect(approxEq(b[3], 7.5)).toBe(true); // maxY (curve apex < control hull)
+  });
+});
+
+describe('quadraticEvalAt', () => {
+  it('hits the endpoints and the Bernstein midpoint', () => {
+    expect(quadraticEvalAt(0, 0, 2, 4, 4, 0, 0)).toEqual([0, 0]);
+    expect(quadraticEvalAt(0, 0, 2, 4, 4, 0, 1)).toEqual([4, 0]);
+    expect(quadraticEvalAt(0, 0, 2, 4, 4, 0, 0.5)).toEqual([2, 2]);
+  });
+});
+
+const close = (a: readonly number[], b: readonly number[]) => {
+  expect(a).toHaveLength(b.length);
+  a.forEach((v, i) => expect(v).toBeCloseTo(b[i], 9));
+};
+
+describe('splitCubicAt', () => {
+  const C = [0, 0, 1, 3, 5, -2, 6, 1] as const;
+
+  it('meets at the point on the curve at t, and each half traces its span', () => {
+    const t = 0.3;
+    const [left, right] = splitCubicAt(...C, t);
+    close(left.slice(0, 2), [0, 0]);
+    close(right.slice(6), [6, 1]);
+    close(left.slice(6), cubicEvalAt(...C, t));
+    close(right.slice(0, 2), cubicEvalAt(...C, t));
+    for (const s of [0.1, 0.5, 0.9]) {
+      close(cubicEvalAt(...left, s), cubicEvalAt(...C, s * t));
+      close(cubicEvalAt(...right, s), cubicEvalAt(...C, t + s * (1 - t)));
+    }
+  });
+
+  it('at the endpoints yields a degenerate half and the whole curve', () => {
+    const [l0, r0] = splitCubicAt(...C, 0);
+    close(l0, [0, 0, 0, 0, 0, 0, 0, 0]);
+    close(r0, C);
+    const [l1, r1] = splitCubicAt(...C, 1);
+    close(l1, C);
+    close(r1, [6, 1, 6, 1, 6, 1, 6, 1]);
+  });
+});
+
+describe('splitQuadraticAt', () => {
+  const Q = [0, 0, 2, 4, 4, 0] as const;
+
+  it('meets at the point on the curve at t, and each half traces its span', () => {
+    const t = 0.7;
+    const [left, right] = splitQuadraticAt(...Q, t);
+    close(left.slice(4), quadraticEvalAt(...Q, t));
+    close(right.slice(0, 2), quadraticEvalAt(...Q, t));
+    for (const s of [0.25, 0.75]) {
+      close(quadraticEvalAt(...left, s), quadraticEvalAt(...Q, s * t));
+      close(quadraticEvalAt(...right, s), quadraticEvalAt(...Q, t + s * (1 - t)));
+    }
+  });
+
+  it('at the endpoints yields a degenerate half and the whole curve', () => {
+    const [l0, r0] = splitQuadraticAt(...Q, 0);
+    close(l0, [0, 0, 0, 0, 0, 0]);
+    close(r0, Q);
+  });
+});
+
+describe('splitLineAt', () => {
+  it('splits at the interpolated point', () => {
+    expect(splitLineAt(0, 0, 10, 20, 0.25)).toEqual([[0, 0, 2.5, 5], [2.5, 5, 10, 20]]);
   });
 });

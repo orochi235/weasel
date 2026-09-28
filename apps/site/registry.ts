@@ -665,7 +665,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'geom',
     title: 'Curve geometry',
     package: 'geom',
-    description: "A cubic Bézier and what the geometry kernel computes about it: the loose box around its control points next to the tight box around the curve itself, the curve's length, where a parameter t really lands along that length, and the nearest point on the curve to a probe. The points are ordinary scene nodes moved by the kit's own move tool, and the overlay reads their positions while you drag, so every figure updates live. The kernel is plain functions over numbers, with no scene or renderer types, which is why the same calls serve hit-testing, bounds and layout everywhere else in weasel.",
+    description: "A cubic Bézier and what the geometry kernel computes about it: the loose box around its control points next to the tight box around the curve itself, the curve's length, the curve split at a parameter t into a cubic of its own (with its control points) and how much of the length it holds, and the nearest point on the curve to a probe, with its t. The points are ordinary scene nodes moved by the kit's own move tool, and the overlay reads their positions while you drag, so every figure updates live. The kernel is plain functions over numbers, with no scene or renderer types, which is why the same calls serve hit-testing, bounds and layout everywhere else in weasel.",
     hint: 'Drag the black endpoints, the hollow control points or the red probe, and slide t to see that equal steps in t are not equal steps along the curve.',
     load: () => import('./demos/GeomDemo').then((m) => m.GeomDemo),
     path: 'apps/site/demos/GeomDemo.tsx',

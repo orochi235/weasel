@@ -4,7 +4,7 @@ import { pathUnion } from '@weasel-js/geom/booleans';
 
 describe('package exports', () => {
   it('core barrel exposes the tiers', () => {
-    for (const name of ['cross', 'boxToBox', 'pointInPolygon', 'transformCoords', 'cubicBounds', 'forEachSegment', 'placeRect', 'clampRectWithin']) {
+    for (const name of ['cross', 'boxToBox', 'pointInPolygon', 'transformCoords', 'cubicBounds', 'forEachSegment', 'placeRect', 'clampRectWithin', 'quadraticEvalAt', 'splitCubicAt', 'splitQuadraticAt', 'splitLineAt', 'nearestOnLine', 'nearestOnQuadratic', 'nearestOnCubic', 'nearestOnPath']) {
       expect(typeof (core as Record<string, unknown>)[name]).toBe('function');
     }
   });
