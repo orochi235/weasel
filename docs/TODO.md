@@ -92,18 +92,6 @@ Priority tags:
   the declaration, or have `TargetSpec` carry the answer instead of the
   predicate.
 
-- **[x] (P2) The render path composes world poses.** A container's pose can
-  define a frame: `<SceneCanvas poseComposition={RIGID_POSE_COMPOSITION}>` makes
-  `buildSceneTree` fold each node's pose into its parent's on the way down, and
-  picking, chrome, `getNodeAtPoint` and the clipboard read `getWorldPose`.
-  Omitting the prop leaves the absolute-pose model untouched. Design and the
-  list of what it deliberately does not cover:
-  `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
-  A container deriving its pose from its children is an envelope, not a frame
-  (`definesFrame` in `core/scene/effectivePose.ts`).
-  Open follow-up: `apps/draw`'s SVG export bakes stored poses and would need
-  world ones if that app ever opts in.
-
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`
   from npm — published Jul 26 20:03, i.e. 54 commits and one whole dispatch

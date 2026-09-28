@@ -83,6 +83,7 @@ import {
   type RangeStyle,
   type Scene,
   type SceneCanvasApi,
+  type PoseComposition,
   type ImageNodeData,
   buildSceneViewCommands,
   defaultDrawOne,
@@ -173,6 +174,10 @@ const DispatchTracePanel = import.meta.env.DEV
 interface WeaselDrawPose {
   x: number; y: number; width: number; height: number; rotation?: number;
 }
+
+/** How a container's pose composes into its children's. The canvas and the
+ *  SVG export both read it; absent, every stored pose is already world. */
+const DRAW_POSE_COMPOSITION: PoseComposition<WeaselDrawPose> | undefined = undefined;
 
 /** Data stored on every leaf — kit-native shape consumed by PATH_PAINTER
  *  and the text painter. Tools synthesized by `defaultTools={BUILTIN_TOOL_IDS}`
@@ -706,7 +711,7 @@ function Toolbar({
     // The SVG flavors carry `json` embedded in <metadata> too: Chromium's
     // DOM paste event exposes ONLY text/plain, so this is what preserves
     // full fidelity (labels, typed data) on a draw→draw paste.
-    const svg = selectionToClipboardSvgString(scene, roots, json);
+    const svg = selectionToClipboardSvgString(scene, roots, json, DRAW_POSE_COMPOSITION);
     return {
       [WEASEL_CLIPBOARD_MIME]: json,
       'image/svg+xml': svg,
@@ -816,6 +821,7 @@ function Toolbar({
             paperHeight: paper.height,
             backgroundColor,
             onWarn: (w) => console.warn('[svg export]', w),
+            poseComposition: DRAW_POSE_COMPOSITION,
           });
           const safe = filename.trim() || DEFAULT_FILENAME;
           downloadSvg(svg, /\.svg$/i.test(safe) ? safe : `${safe}.svg`);
@@ -1558,6 +1564,7 @@ function EditorWithSharedScene({
             view={view}
             onViewChange={setView}
             scene={scene}
+            poseComposition={DRAW_POSE_COMPOSITION}
             selection={selection}
             selectionMode="multi"
             defaultTools={BUILTIN_TOOL_IDS}
