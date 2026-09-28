@@ -272,13 +272,15 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
  *
  * The tuple is printed through {@link formatRoute}, so the message names the
  * collision in the same grammar the author wrote the binding in — modulo the
- * phase slot, which prints as a bare `'&'`-channel atom because the bucket key
- * collapses channel-bearing phase specs (`sel:engaged` and `&:engaged` collide
- * with each other, and the collapse is what made them collide).
+ * phase slot, which the bucket key collapses: a single phase prints as a bare
+ * `'&'`-channel atom (`sel:engaged` and `&:engaged` collide, and the collapse
+ * is what made them collide), and `'any'` prints as `*:*`.
  */
 export function formatConflict(conflict: Conflict): string {
   const route = formatRoute({
-    phases: [{ channel: '&', phase: conflict.phase === 'any' ? '*' : conflict.phase }],
+    phases: [conflict.phase === 'any'
+      ? { channel: '*', phase: '*' }
+      : { channel: '&', phase: conflict.phase }],
     gesture: conflict.gesture,
     arg: conflict.arg,
     target: conflict.target,

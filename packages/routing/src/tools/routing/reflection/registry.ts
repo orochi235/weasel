@@ -163,7 +163,7 @@ function parseModSpec(mods: ModSpec | undefined): ParsedModifiers {
 /** Expand a `PhaseSpec` to the atoms `formatRoute` renders. A spec with no
  *  `phase` matches in either phase, which the grammar spells `[*]`. */
 function phaseAtomsForSpec(phase: PhaseSpec | undefined): readonly PhaseAtom[] {
-  if (phase === undefined) return [{ channel: '&', phase: '*' }];
+  if (phase === undefined) return [{ channel: '*', phase: '*' }];
   if (phase === 'initial' || phase === 'engaged' || phase === '*') {
     return [{ channel: '&', phase }];
   }

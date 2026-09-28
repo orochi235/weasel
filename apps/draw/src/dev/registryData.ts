@@ -108,7 +108,7 @@ export interface ToolEntry {
    *  de-duping — the row-level view `routes` flattens. Several bindings can
    *  format to the same route string yet dispatch to different actions
    *  (select's resize / rotate / move drags all render as
-   *  `[*] drag => predicate`, because the grammar has no notation for a
+   *  `[*:*] drag => predicate`, because the grammar has no notation for a
    *  predicate target), so collapsing on the string loses real routes. */
   declaredRoutes: readonly DeclaredRoute[];
   /** Where the tool currently sits in the mounted SceneCanvas. `registry`

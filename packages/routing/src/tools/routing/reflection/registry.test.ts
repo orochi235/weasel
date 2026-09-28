@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildRouteRegistry, routesForSpec, routeGestureForSpecKind, PREDICATE_TARGET, type RegistryEntry } from './registry';
 import type { Tool } from '../../types';
-import type { GestureSpec } from '@weasel-js/gestures';
+import { parseRoute, routeToSpec, specificity, type GestureSpec } from '@weasel-js/gestures';
 
 function tool(id: string, bindings: unknown[]): Tool<unknown> {
   return { id, bindings } as unknown as Tool<unknown>;
@@ -201,20 +201,20 @@ describe('routesForSpec', () => {
   });
 
   it('routes the content-ingestion gestures', () => {
-    expect(routesForSpec({ kind: 'drop' } as GestureSpec)).toEqual(['[*] drop']);
-    expect(routesForSpec({ kind: 'paste' } as GestureSpec)).toEqual(['[*] paste']);
+    expect(routesForSpec({ kind: 'drop' } as GestureSpec)).toEqual(['[*:*] drop']);
+    expect(routesForSpec({ kind: 'paste' } as GestureSpec)).toEqual(['[*:*] paste']);
     expect(routesForSpec({ kind: 'drop', types: ['image/png'] } as GestureSpec))
-      .toEqual(['[*] drop(image/png)']);
+      .toEqual(['[*:*] drop(image/png)']);
   });
 
   it('routes a pinch with its direction arg', () => {
-    expect(routesForSpec({ kind: 'pinch' } as GestureSpec)).toEqual(['[*] pinch']);
-    expect(routesForSpec({ kind: 'pinch', direction: 'out' } as GestureSpec)).toEqual(['[*] pinch(out)']);
+    expect(routesForSpec({ kind: 'pinch' } as GestureSpec)).toEqual(['[*:*] pinch']);
+    expect(routesForSpec({ kind: 'pinch', direction: 'out' } as GestureSpec)).toEqual(['[*:*] pinch(out)']);
   });
 
   it('emits one route per key alternative', () => {
     expect(routesForSpec({ kind: 'key', key: ['ArrowUp', 'ArrowDown'] } as GestureSpec))
-      .toEqual(['[*] keyDown(ArrowUp)', '[*] keyDown(ArrowDown)']);
+      .toEqual(['[*:*] keyDown(ArrowUp)', '[*:*] keyDown(ArrowDown)']);
   });
 
   it('renders a predicate target with the same sentinel the registry uses', () => {
@@ -224,5 +224,19 @@ describe('routesForSpec', () => {
 
   it('skips kinds the grammar has no name for', () => {
     expect(routesForSpec({ kind: 'multiTouch' } as GestureSpec)).toEqual([]);
+  });
+
+  it('prints a route that parses back to a spec of the same specificity', () => {
+    const specs = [
+      { kind: 'drag' },
+      { kind: 'drag', phase: '*' },
+      { kind: 'drag', phase: 'engaged', target: 'empty' },
+      { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'initial' }] },
+      { kind: 'click', target: 'selected-body', mods: { shift: true } },
+    ] as GestureSpec[];
+    for (const spec of specs) {
+      const [route] = routesForSpec(spec);
+      expect(specificity(routeToSpec(parseRoute(route!))), route).toEqual(specificity(spec));
+    }
   });
 });

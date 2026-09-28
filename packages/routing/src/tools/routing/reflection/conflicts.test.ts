@@ -90,7 +90,7 @@ describe('formatConflict', () => {
     const a = tool('a', [{ spec: { kind: 'click', target: 'empty', mods: { shift: true } }, actionId: 'x' }]);
     const b = tool('b', [{ spec: { kind: 'click', target: 'empty', mods: { shift: true } }, actionId: 'y' }]);
     const [c] = findConflicts([a, b]);
-    expect(formatConflict(c)).toBe('[*] click => empty +shift — declared by a, b');
+    expect(formatConflict(c)).toBe('[*:*] click => empty +shift — declared by a, b');
   });
 
   it('prints a phase-restricted conflict with its phase slot', () => {
@@ -191,7 +191,7 @@ describe('reportRouteConflicts', () => {
     expect(found).toHaveLength(1);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toContain('route conflict');
-    expect(warn.mock.calls[0][0]).toContain('[*] click => empty — declared by a, b');
+    expect(warn.mock.calls[0][0]).toContain('[*:*] click => empty — declared by a, b');
   });
 
   it('stays silent on a conflict-free tool set', () => {

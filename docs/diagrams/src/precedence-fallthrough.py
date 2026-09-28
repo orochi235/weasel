@@ -16,25 +16,25 @@ doc.text('The order `handleInput` leaves its candidates in, best first, and wher
 items = [
     ('in', Card('Every binding whose spec matches the input', [
         'Kind, key, modifiers, target and phase all match (`matchSpec`).',
-        '▸ Escape with no drag in flight matches `[*:initial] keyDown(Escape)` and `[*] keyDown(Escape)`, '
+        '▸ Escape with no drag in flight matches `[*:initial] keyDown(Escape)` and `[*:*] keyDown(Escape)`, '
         'not `[*:engaged] keyDown(Escape)`.',
-        '▸ Shift+Up matches `[*] keyDown(ArrowUp) +shift` and not `[*] keyDown(ArrowUp)`: a modifier the route '
+        '▸ Shift+Up matches `[*:*] keyDown(ArrowUp) +shift` and not `[*:*] keyDown(ArrowUp)`: a modifier the route '
         'does not name must not be held.',
     ], LW, 'gray'), None),
     ('claim', Card('Filter: exclusive affordance claim', [
         'When the pressed affordance claims this gesture exclusively, only bindings whose target consults the affordance stay (`affordance:<kind>` or a `kindOf` predicate).',
-        '▸ A drag from a diagram port keeps `[*] drag => affordance:layer:diagram-ports` and drops '
-        '`[*] drag => unselected-body` and `[*] drag`.',
+        '▸ A drag from a diagram port keeps `[*:*] drag => affordance:layer:diagram-ports` and drops '
+        '`[*:*] drag => unselected-body` and `[*:*] drag`.',
     ], LW - 40, 'red'), 'filter'),
     ('r1', Card('Names the routed view', [
         'A binding whose `views` includes this view goes ahead of every binding that does not, across all tiers (`preferViewScoped`).',
-        '▸ In the minimap, `minimap.pan` on `[*] drag` beats the space-held hand tool\'s `[*] drag`. '
+        '▸ In the minimap, `minimap.pan` on `[*:*] drag` beats the space-held hand tool\'s `[*:*] drag`. '
         'The routes are identical: the grammar has no notation for `views`, so the difference lives in the '
         'binding\'s `opts.views`.',
     ], LW - 40, 'amber'), '1'),
     ('r2', Card('Scope tier', [
         'Hotkey-held tool, then the active tool, then ambient bindings.',
-        '▸ With space held, the hand tool\'s `[*] drag` beats the select tool\'s `[*] drag => predicate`: '
+        '▸ With space held, the hand tool\'s `[*:*] drag` beats the select tool\'s `[*:*] drag => predicate`: '
         'the tier is compared before specificity. The grammar does not show the tier.',
     ], LW - 40, 'amber'), '2'),
     ('r3', Card('Specificity, four parts compared in order', [
@@ -42,19 +42,19 @@ items = [
         '• required modifiers: how many',
         '• phase: 2 when channel and phase are both named, 1 when one is a wildcard, 0 for none',
         '• drop or paste with a MIME filter: 2, anything else 1',
-        '▸ target: `[*] drag => unselected-body` (`move`) beats `[*] drag` (`viewport.dragPan`).',
-        '▸ modifiers: `[*] drag +shift` beats `[*] drag ?shift` (`lassoSelect`); an optional modifier counts for nothing.',
-        '▸ phase: `[*:engaged] keyDown(Escape)` (`cancelGesture`) beats `[*] keyDown(Escape)` (`tool.resetToDefault`).',
-        '▸ MIME: `[*] drop(text/csv)` beats `[*] drop ?shift ?alt ?ctrl ?meta` (`ingest`).',
+        '▸ target: `[*:*] drag => unselected-body` (`move`) beats `[*:*] drag` (`viewport.dragPan`).',
+        '▸ modifiers: `[*:*] drag +shift` beats `[*:*] drag ?shift` (`lassoSelect`); an optional modifier counts for nothing.',
+        '▸ phase: `[*:engaged] keyDown(Escape)` (`cancelGesture`) beats `[*:*] keyDown(Escape)` (`tool.resetToDefault`).',
+        '▸ MIME: `[*:*] drop(text/csv)` beats `[*:*] drop ?shift ?alt ?ctrl ?meta` (`ingest`).',
     ], LW - 40, 'amber'), '3'),
     ('r4', Card('Context-gated before ungated', [
         'Within a run tied on tier and specificity, an action whose `eligible` rule holds now goes ahead of one with no rule (`preferContextual`).',
-        '▸ In path edit, `exitPathEdit` on `[*] keyDown(Escape)` beats `tool.resetToDefault` on the same route. '
+        '▸ In path edit, `exitPathEdit` on `[*:*] keyDown(Escape)` beats `tool.resetToDefault` on the same route. '
         'Only the `eligible` rule tells them apart, and the grammar has no notation for it.',
     ], LW - 40, 'amber'), '4'),
     ('r5', Card('Registration order', [
         'Whatever is still tied keeps the order it was registered in; the sorts are stable.',
-        '▸ `areaSelect` on `[*] drag` beats `lassoSelect` on `[*] drag ?shift`: same specificity, same '
+        '▸ `areaSelect` on `[*:*] drag` beats `lassoSelect` on `[*:*] drag ?shift`: same specificity, same '
         '`creates-selection` rule, and `areaSelect` is registered first.',
     ], LW - 40, 'amber'), '5'),
     ('elig', Card('Filter: drop ineligible', [
@@ -65,7 +65,7 @@ items = [
     ('walk', Card('Walk the list; the first action that runs wins', [
         'Each action is tried once. `enabled()` returning anything but `true`, or an ongoing `start()` returning an empty handle, passes the turn to the next candidate. Nothing left: unhandled.',
         '▸ With nothing selected, `escape` on `[*:initial] keyDown(Escape)` declines and '
-        '`tool.resetToDefault` on `[*] keyDown(Escape)` fires.',
+        '`tool.resetToDefault` on `[*:*] keyDown(Escape)` fires.',
     ], LW, 'purple'), None),
 ]
 
@@ -142,8 +142,8 @@ ey = example(ey, 'Escape while editing a path',
              [
                  ('—', '`cancelGesture` `[*:engaged] keyDown(Escape)`', 'ambient', '', 'the match, phase', '', 'not a candidate', 'gray'),
                  ('1', '`escape` `[*:initial] keyDown(Escape)`', 'ambient', '0 0 1 1', 'step 3, phase part', 'none', '`enabled()` declines while a path is edited', 'white'),
-                 ('2', '`exitPathEdit` `[*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', '`mode: path-edit` holds', 'fires', 'green'),
-                 ('3', '`tool.resetToDefault` `[*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', 'none', 'not asked', 'white'),
+                 ('2', '`exitPathEdit` `[*:*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', '`mode: path-edit` holds', 'fires', 'green'),
+                 ('3', '`tool.resetToDefault` `[*:*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', 'none', 'not asked', 'white'),
              ],
              [
                  '`escape` leads on specificity (step 3, its phase part) and declines. `exitPathEdit` and `tool.resetToDefault` tie through step 3; step 4 puts the one whose rule holds first. Outside path edit, `exitPathEdit` is dropped as ineligible instead.',
@@ -152,9 +152,9 @@ ey = example(ey, 'Escape while editing a path',
 ey = example(ey + 16, 'Bare drag on empty canvas, select tool active',
              'Default mode, which allows `creates-selection`. Other ambient drag actions (`lassoSelect`, `insert`) are left out.',
              [
-                 ('1', '`areaSelect` from the select tool, `[*] drag => predicate` (empty canvas)', 'active', '1 0 0 1', 'step 2, tier', '`creates-selection` holds', 'fires', 'green'),
-                 ('2', '`areaSelect` default `[*] drag`', 'ambient', '0 0 0 1', 'step 4', '`creates-selection` holds', 'skipped: action already tried', 'white'),
-                 ('3', '`viewport.dragPan` `[*] drag`', 'ambient', '0 0 0 1', 'step 4', 'none', 'not asked', 'white'),
+                 ('1', '`areaSelect` from the select tool, `[*:*] drag => predicate` (empty canvas)', 'active', '1 0 0 1', 'step 2, tier', '`creates-selection` holds', 'fires', 'green'),
+                 ('2', '`areaSelect` default `[*:*] drag`', 'ambient', '0 0 0 1', 'step 4', '`creates-selection` holds', 'skipped: action already tried', 'white'),
+                 ('3', '`viewport.dragPan` `[*:*] drag`', 'ambient', '0 0 0 1', 'step 4', 'none', 'not asked', 'white'),
              ],
              [
                  'The tier settles this one: the select tool\'s binding sits in the active tier. Step 4 only orders the ambient pair below it, which is what decides when no tool binds the drag.',
@@ -164,7 +164,6 @@ ey = example(ey + 16, 'Bare drag on empty canvas, select tool active',
 note = Card('What a route cannot show', [
     '• A binding\'s `views`, its action\'s `eligible` rule, its tier and its registration order have no notation, so steps 1, 2, 4 and 5 and the eligibility filter compare routes that can read the same.',
     '• A `kindOf` predicate target prints as `predicate`, whatever the function tests.',
-    '• A binding with no phase prints as `[*]` and ranks 0 on phase. Written by hand, `[*]` means `[&:*]` and ranks 1; `[*:*]` is the form that ranks 0.',
 ], RW, 'white')
 note.draw(doc, RX, ey + 16)
 ey = note.y + note.h

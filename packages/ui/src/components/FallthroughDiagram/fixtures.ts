@@ -7,8 +7,8 @@ function candidate(c: Partial<RecordCandidate> & Pick<RecordCandidate, 'actionId
 }
 
 const escape = candidate({ actionId: 'escape', routes: ['[*:initial] keyDown(Escape)'], specificity: [0, 0, 1, 1] });
-const exitPathEdit = candidate({ actionId: 'exitPathEdit', routes: ['[*] keyDown(Escape)'], eligible: 'mode: path-edit' });
-const resetToDefault = candidate({ actionId: 'tool.resetToDefault', routes: ['[*] keyDown(Escape)'] });
+const exitPathEdit = candidate({ actionId: 'exitPathEdit', routes: ['[*:*] keyDown(Escape)'], eligible: 'mode: path-edit' });
+const resetToDefault = candidate({ actionId: 'tool.resetToDefault', routes: ['[*:*] keyDown(Escape)'] });
 
 /** Escape while a path is being edited: the more specific `escape` declines,
  *  and `exitPathEdit` fires. */
@@ -30,14 +30,14 @@ export const escapeInPathEdit: DispatchRecord = {
 
 const selectAreaSelect = candidate({
   actionId: 'areaSelect',
-  routes: ['[*] drag => predicate'],
+  routes: ['[*:*] drag => predicate'],
   scope: 'active',
   ownerToolId: 'select',
   specificity: [1, 0, 0, 1],
   eligible: 'capability: creates-selection',
 });
-const ambientAreaSelect = candidate({ actionId: 'areaSelect', routes: ['[*] drag'] });
-const dragPan = candidate({ actionId: 'viewport.dragPan', routes: ['[*] drag'] });
+const ambientAreaSelect = candidate({ actionId: 'areaSelect', routes: ['[*:*] drag'] });
+const dragPan = candidate({ actionId: 'viewport.dragPan', routes: ['[*:*] drag'] });
 
 /** A bare drag on empty canvas with the select tool: the tool's marquee wins,
  *  and the ambient binding of the same action is skipped as a duplicate. */
@@ -59,14 +59,14 @@ export const bareDragSelect: DispatchRecord = {
 
 const moveBody = candidate({
   actionId: 'move',
-  routes: ['[*] drag => unselected-body'],
+  routes: ['[*:*] drag => unselected-body'],
   scope: 'active',
   ownerToolId: 'select',
   specificity: [1, 0, 0, 1],
 });
 const portsConnect = candidate({
   actionId: 'ports.connect',
-  routes: ['[*] drag => affordance:layer:diagram-ports'],
+  routes: ['[*:*] drag => affordance:layer:diagram-ports'],
   specificity: [1, 0, 0, 1],
 });
 
@@ -89,14 +89,14 @@ export const claimDropped: DispatchRecord = {
 
 const moveAnchors = candidate({
   actionId: 'moveAnchors',
-  routes: ['[*] drag => anchor', '[*] drag => anchor +shift'],
+  routes: ['[*:*] drag => anchor', '[*:*] drag => anchor +shift'],
   scope: 'active',
   ownerToolId: 'path-edit',
   specificity: [1, 0, 0, 1],
 });
 const transformSelection = candidate({
   actionId: 'transformSelection',
-  routes: ['[*] drag => selection'],
+  routes: ['[*:*] drag => selection'],
   specificity: [1, 0, 0, 1],
   eligible: 'capability: has-selection',
 });

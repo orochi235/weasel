@@ -91,8 +91,8 @@ describe('FallthroughDiagram', () => {
 
   it('draws every route of a candidate', () => {
     render(<FallthroughDiagram record={fixtures.predictedHover} />);
-    expect(screen.getAllByLabelText('[*] drag => anchor +shift').length).toBeGreaterThan(0);
-    expect(screen.getAllByLabelText('[*] drag => anchor').length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText('[*:*] drag => anchor +shift').length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText('[*:*] drag => anchor').length).toBeGreaterThan(0);
   });
 
   it('shows the owning tool, or "action" for an action binding', () => {

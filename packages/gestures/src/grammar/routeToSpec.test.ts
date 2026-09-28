@@ -9,29 +9,38 @@ const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false 
 
 describe('routeToSpec', () => {
   it('maps each pointer gesture to its spec kind', () => {
-    expect(spec('[*] click').kind).toBe('click');
-    expect(spec('[*] pointerDown').kind).toBe('pointerDown');
-    expect(spec('[*] dblTap').kind).toBe('doubleClick');
-    expect(spec('[*] drag').kind).toBe('drag');
-    expect(spec('[*] contextMenu').kind).toBe('contextMenu');
-    expect(spec('[*] longPress').kind).toBe('longPress');
+    expect(spec('[*:*] click').kind).toBe('click');
+    expect(spec('[*:*] pointerDown').kind).toBe('pointerDown');
+    expect(spec('[*:*] dblTap').kind).toBe('doubleClick');
+    expect(spec('[*:*] drag').kind).toBe('drag');
+    expect(spec('[*:*] contextMenu').kind).toBe('contextMenu');
+    expect(spec('[*:*] longPress').kind).toBe('longPress');
   });
 
-  it('omits a wildcard target and phase, and keeps no empty mods', () => {
-    expect(spec('[*] drag')).toEqual({ kind: 'drag' });
+  it('omits a wildcard target and an any-channel, any-phase slot, and keeps no empty mods', () => {
+    expect(spec('[*:*] drag')).toEqual({ kind: 'drag' });
+  });
+
+  it('keeps [*] as the self-channel atom it abbreviates', () => {
+    const s = spec('[*] click => empty');
+    expect(s.phase).toEqual([{ channel: '&', phase: '*' }]);
+    const ambient: PhaseContext = { selfChannel: null, engagedChannels: new Set() };
+    expect(matchSpec({ kind: 'click', ...noMods, bodyTarget: 'empty' }, s, false, ambient)).toBe(false);
+    expect(matchSpec({ kind: 'click', ...noMods, bodyTarget: 'empty' }, spec('[*:*] click => empty'), false, ambient)).toBe(true);
+    expect(specificity(s)[2]).toBeGreaterThan(specificity(spec('[*:*] click => empty'))[2]!);
   });
 
   it('carries a target form through', () => {
-    expect(spec('[*] click => empty')).toEqual({ kind: 'click', target: 'empty' });
-    expect(spec('[*] drag => kind:rect:selected')).toEqual({ kind: 'drag', target: 'kind:rect:selected' });
+    expect(spec('[*:*] click => empty')).toEqual({ kind: 'click', target: 'empty' });
+    expect(spec('[*:*] drag => kind:rect:selected')).toEqual({ kind: 'drag', target: 'kind:rect:selected' });
   });
 
   it('rejects a target no TargetSpec form can hold', () => {
-    expect(() => spec('[*] click => node')).toThrow(/target/);
+    expect(() => spec('[*:*] click => node')).toThrow(/target/);
   });
 
   it('turns required and optional modifiers into a ModSpec', () => {
-    expect(spec('[*] drag +mod +alt ?shift')).toEqual({
+    expect(spec('[*:*] drag +mod +alt ?shift')).toEqual({
       kind: 'drag', mods: { mod: true, alt: true, shift: 'optional' },
     });
   });
@@ -44,28 +53,28 @@ describe('routeToSpec', () => {
   });
 
   it('maps wheel and pinch directions, dropping the wildcard', () => {
-    expect(spec('[*] wheel(up)')).toEqual({ kind: 'wheel', direction: 'up' });
-    expect(spec('[*] wheel')).toEqual({ kind: 'wheel' });
-    expect(spec('[*] pinch(out)')).toEqual({ kind: 'pinch', direction: 'out' });
+    expect(spec('[*:*] wheel(up)')).toEqual({ kind: 'wheel', direction: 'up' });
+    expect(spec('[*:*] wheel')).toEqual({ kind: 'wheel' });
+    expect(spec('[*:*] pinch(out)')).toEqual({ kind: 'pinch', direction: 'out' });
   });
 
   it('reads a key arg through the key-route grammar', () => {
-    expect(spec('[*] keyDown(z?shift) +mod')).toEqual({
+    expect(spec('[*:*] keyDown(z?shift) +mod')).toEqual({
       kind: 'key', key: 'z', mods: { mod: true, shift: 'optional' },
     });
-    expect(spec('[*] keyHeld(Space)')).toEqual({ kind: 'key-held', key: 'Space' });
+    expect(spec('[*:*] keyHeld(Space)')).toEqual({ kind: 'key-held', key: 'Space' });
   });
 
   it('maps fingers and MIME lists', () => {
-    expect(spec('[*] multiTouchTap(3)')).toEqual({ kind: 'multiTouchTap', fingers: 3 });
-    expect(spec('[*] drop(image/*|text/plain)')).toEqual({ kind: 'drop', types: ['image/*', 'text/plain'] });
-    expect(spec('[*] paste')).toEqual({ kind: 'paste' });
+    expect(spec('[*:*] multiTouchTap(3)')).toEqual({ kind: 'multiTouchTap', fingers: 3 });
+    expect(spec('[*:*] drop(image/*|text/plain)')).toEqual({ kind: 'drop', types: ['image/*', 'text/plain'] });
+    expect(spec('[*:*] paste')).toEqual({ kind: 'paste' });
   });
 
   it('rejects routes no GestureSpec can express', () => {
-    expect(() => spec('[*] keyUp(a)')).toThrow(/keyUp/);
-    expect(() => spec('[*] keyDown')).toThrow(/key/);
-    expect(() => spec('[*] multiTouchTap')).toThrow(/fingers/);
+    expect(() => spec('[*:*] keyUp(a)')).toThrow(/keyUp/);
+    expect(() => spec('[*:*] keyDown')).toThrow(/key/);
+    expect(() => spec('[*:*] multiTouchTap')).toThrow(/fingers/);
   });
 
   it('drives matchSpec', () => {

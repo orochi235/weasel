@@ -74,7 +74,7 @@ function summarizeActionParams(
   return { paramNames: Array.from(names), rows };
 }
 
-/** Plain-text route notation for a `GestureSpec` — `[*] drop`,
+/** Plain-text route notation for a `GestureSpec` — `[*:*] drop`,
  *  `[initial] drag(left) => * +shift` — one route per arg alternative,
  *  comma-joined. Falls back to the bare kind for kinds the route grammar
  *  has no name for. */

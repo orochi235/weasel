@@ -9,9 +9,10 @@ import { specKindForRouteGesture } from './specKinds';
  * drive `matchSpec` and `specificity` directly.
  *
  * Wildcards become omitted fields: a `*` target, direction or MIME list, and a
- * `[*]` phase slot. A `keyDown` / `keyHeld` arg is read as a key route, so
- * `keyDown(z?shift)` yields `mods.shift: 'optional'`; a drop or paste arg is
- * a `|`-separated MIME list.
+ * `[*:*]` phase slot. `[*]` is `[&:*]`, which an ambient binding never
+ * matches, so it stays a phase atom. A `keyDown` / `keyHeld` arg is read as a
+ * key route, so `keyDown(z?shift)` yields `mods.shift: 'optional'`; a drop or
+ * paste arg is a `|`-separated MIME list.
  *
  * Throws on a route no spec can express: `keyUp`, a key or finger-count
  * wildcard, or a target that is not a `TargetSpec` form.
@@ -28,9 +29,9 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
   }
 
   const common: { mods?: ModSpec; phase?: PhaseSpec } = {};
-  const isAnySelfPhase = parsed.phases.length === 1
-    && parsed.phases[0]!.channel === '&' && parsed.phases[0]!.phase === '*';
-  if (!isAnySelfPhase) common.phase = parsed.phases;
+  const isUnconstrained = parsed.phases.length === 1
+    && parsed.phases[0]!.channel === '*' && parsed.phases[0]!.phase === '*';
+  if (!isUnconstrained) common.phase = parsed.phases;
 
   const withMods = <S extends GestureSpec>(spec: S): S => {
     const extra = spec.mods;
