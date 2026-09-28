@@ -208,6 +208,7 @@ function leafCell(
     value,
     mixed,
     unset: !mixed && aggregated === undefined,
+    each: nodes.map((n) => nodeValueAt(n, path)),
     setValue: (v) => commit(panelLeaf, () => v),
     update: (fn) => commit(panelLeaf, fn),
     valueAt: (p) => {

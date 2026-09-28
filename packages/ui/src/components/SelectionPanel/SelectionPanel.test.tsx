@@ -846,6 +846,44 @@ describe('SelectionPanel — object leaf', () => {
       renderDash(undefined);
       expect(lit()).toEqual([]);
     });
+
+    // The two strokes differ, so there is no one object to read the style
+    // against — each array has to be read against its own node's width.
+    describe('across strokes of different widths', () => {
+      const renderPair = () => {
+        const scene = sceneWithStroke(strokeOfWidth(2, dashForStrokeStyle('dashed', 2)));
+        scene.add({
+          id: asNodeId('q'),
+          kind: 'leaf',
+          layer: 'default',
+          pose: { x: 0, y: 0, width: 10, height: 10 },
+          data: { kind: 'path', stroke: strokeOfWidth(4, dashForStrokeStyle('dashed', 4)) },
+        });
+        render(
+          <SelectionPanel
+            scene={scene}
+            selection={selectionOf(['p', 'q'])}
+            properties={dashProperties}
+            routing={strokeRouting}
+          />,
+        );
+        return scene;
+      };
+
+      it('reads the style both hold', () => {
+        renderPair();
+        expect(lit()).toEqual(['Dashed']);
+      });
+
+      it('writes each stroke an array scaled by its own width', () => {
+        const scene = renderPair();
+        fireEvent.click(screen.getByLabelText('Dotted'));
+        expect((scene.get(asNodeId('p'))?.data.stroke as Record<string, unknown>).dash)
+          .toEqual(dashForStrokeStyle('dotted', 2));
+        expect((scene.get(asNodeId('q'))?.data.stroke as Record<string, unknown>).dash)
+          .toEqual(dashForStrokeStyle('dotted', 4));
+      });
+    });
   });
 
   /**

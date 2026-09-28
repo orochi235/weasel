@@ -17,6 +17,14 @@ export interface PrefFieldState {
   siblings?: Record<string, unknown>;
   /** Writes a value in the leaf's stored form. */
   setValue: (value: unknown) => void;
+  /**
+   * Each selected node's stored value with its own `siblings`. Given with
+   * `update`, an `encoding` reads and writes every node against its own object
+   * — which a selection whose objects differ needs, having no one `siblings`.
+   */
+  perNode?: readonly { value: unknown; siblings: Record<string, unknown> | undefined }[];
+  /** Writes each node a value derived from its own `siblings`. */
+  update?: (fn: (prev: unknown, siblings?: Record<string, unknown>) => unknown) => void;
   /** A font family's weight and slant, where they are not `siblings`' own
    *  `fontWeight` / `fontStyle`. */
   fontVariant?: { weight?: unknown; style?: unknown };
@@ -54,21 +62,15 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
   if (!isBuiltinToolPref(leaf)) return null;
   switch (leaf.kind) {
     case 'boolean': {
-      const encoding = leaf.encoding;
+      const coded = leaf.encoding ? throughEncoding(leaf.encoding, state) : undefined;
       return {
         kind: 'boolean',
         control: leaf.control,
-        value: encoding
-          ? mixed
-            ? undefined
-            : encoding.read(value, siblings)
-          : typeof value === 'boolean'
-            ? value
-            : undefined,
-        mixed,
+        value: coded ? coded.value : typeof value === 'boolean' ? value : undefined,
+        mixed: coded ? coded.mixed : mixed,
         unset,
         glyph: glyphOf(leaf.icon) ?? leaf.short,
-        onChange: encoding ? (on: boolean) => setValue(encoding.write(on, siblings)) : setValue,
+        onChange: coded ? coded.write : setValue,
       };
     }
     case 'number': {
@@ -106,15 +108,13 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
         onChange: setValue,
       };
     case 'enum': {
-      const encoding = leaf.encoding;
       // An encoded leaf stores something other than the option string (a dash
       // array), so the option comes from the encoding — and an absent field is
       // one of the things it reads (no dash is `solid`), which is why `unset`
       // does not blank it.
-      const option = encoding
-        ? mixed
-          ? undefined
-          : encoding.read(value, siblings)
+      const coded = leaf.encoding ? throughEncoding(leaf.encoding, state) : undefined;
+      const option = coded
+        ? coded.value
         : mixed || unset
           ? undefined
           : typeof value === 'string'
@@ -124,7 +124,7 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
         kind: 'enum',
         control: leaf.control,
         value: option,
-        mixed,
+        mixed: coded ? coded.mixed : mixed,
         unset,
         options: leaf.options.map((o) => ({
           value: o.value,
@@ -132,7 +132,7 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
           glyph: glyphOf(o.icon) ?? o.short,
           disabled: o.disabled,
         })),
-        onChange: (next: string) => setValue(encoding ? encoding.write(next, siblings) : next),
+        onChange: coded ? coded.write : setValue,
         onClear: leaf.clearable ? () => setValue(undefined) : undefined,
       };
     }
@@ -178,6 +178,37 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
       );
     }
   }
+}
+
+/**
+ * An encoded leaf's shown value and its writer. Across nodes whose objects
+ * differ, each node is read against its own object and the option is shown
+ * only where every node reads the same one; a write lands in each node
+ * computed from that node's object.
+ */
+function throughEncoding<T>(
+  encoding: {
+    read: (stored: unknown, siblings: Record<string, unknown> | undefined) => T | undefined;
+    write: (option: T, siblings: Record<string, unknown> | undefined) => unknown;
+  },
+  state: PrefFieldState,
+): { value: T | undefined; mixed: boolean; write: (option: T) => void } {
+  const { perNode, update } = state;
+  if (perNode !== undefined && perNode.length > 0 && update !== undefined) {
+    const reads = perNode.map((n) => encoding.read(n.value, n.siblings));
+    const agree = reads.every((r) => r === reads[0]);
+    return {
+      value: agree ? reads[0] : undefined,
+      mixed: !agree,
+      write: (option) => update((_prev, siblings) => encoding.write(option, siblings)),
+    };
+  }
+  const mixed = state.mixed === true;
+  return {
+    value: mixed ? undefined : encoding.read(state.value, state.siblings),
+    mixed,
+    write: (option) => state.setValue(encoding.write(option, state.siblings)),
+  };
 }
 
 /** A leaf's `icon` as a glyph, where the kit's icon set has it. */
