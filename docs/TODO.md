@@ -1216,15 +1216,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
   - `gestures`: nothing converts a `ParsedRoute` into a `GestureSpec`, so a typed route cannot
     drive `matchSpec`; `specificity()` lives in `routing`, not `gestures`; `describeRoute` with
     two modifiers reads "the user Mod and Alt-drags anywhere".
-  - `routing`: `modeShortcuts` gives each mode its own Escape exit, eligible only in that mode,
-    and the route-conflict check warns that they collide (`[initial] keyDown(Escape) — declared
-    by mode.focus.exit, mode.review.exit`) though they can never both fire. The check ignores
-    mutually exclusive eligibility. Seen in `ModesDemo`; any app with two exitable modes hits it.
-  - `routing`: no stock `DepRegistry` is exported (only the type, from `routing/react`), and the
-    drag-vs-click threshold lives only inside `useGestureDispatcher`, so a sceneless
-    dispatcher (`RoutingDemo.tsx`) stubs the first and repeats the second.
-  - `routing` / `core`: two `defineTool`s. Routing's returns a tool core's `tools` prop rejects
-    (TS2322), so `CursorDemo` imports core's.
   - `ui`: a `ToggleBar` squeezed in a flex row collapses its text segments to nothing — segments
     are `flex: 1 1 0; min-width: 0` and only glyph labels are pinned (`> svg { flex: none }`).
 - **(P3) A minimal public stage for package demos.** Demos of scene-free packages

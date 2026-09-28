@@ -48,7 +48,7 @@
 
 import type { Action, ActionSource } from '../actions/action';
 import { actionBindings } from '../actions/binding';
-import type { DepRegistry } from '../actions/depRegistry';
+import type { DepRegistry } from '../actions/depNode';
 import type { GestureBinding } from '../actions/binding';
 import type { GestureSpec } from '@weasel-js/gestures';
 import type { OngoingHandle, InvocationCtx, ActionDeps, AffordanceHit, DragSample, Point2 } from '../actions/invoker';

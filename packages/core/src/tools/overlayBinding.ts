@@ -8,7 +8,6 @@
  * re-exports these names under the ones they have always had.
  */
 import type { RenderLayer } from 'core/layers/render';
-import { defineTool as routingDefineTool, defineViewportTool as routingDefineViewportTool } from '@weasel-js/routing';
 import { useTools as routingUseTools, useContributions as routingUseContributions } from '@weasel-js/routing/react';
 import type {
   Contribution as RoutingContribution,
@@ -28,6 +27,10 @@ import type {
 /** What a canvas overlay is, at this layer. */
 export type Overlay = RenderLayer<unknown>;
 
+declare module '@weasel-js/routing' {
+  interface OverlaySchema { overlay: RenderLayer<unknown> }
+}
+
 export type Contribution = RoutingContribution<Overlay>;
 export type ContributionChrome = RoutingContributionChrome<Overlay>;
 export type Tool<TScratch = unknown> = RoutingTool<TScratch, Overlay>;
@@ -39,16 +42,9 @@ export type UseToolsOptions = RoutingUseToolsOptions<Overlay>;
 export type ContributionsApi = RoutingContributionsApi<Overlay>;
 export type UseContributionsOptions = RoutingUseContributionsOptions<Overlay>;
 
-// The value-side seam. Each of these is routing's own function with `TOverlay`
-// instantiated at `Overlay`, so a `defineTool({ overlay })` in core or in a
-// consumer produces a `Tool` whose overlay is a `RenderLayer` rather than
-// `unknown`, and nothing downstream has to name the parameter.
-export function defineTool<TScratch = void>(def: ToolDef<TScratch>): Tool<TScratch> {
-  return routingDefineTool<TScratch, Overlay>(def);
-}
-export function defineViewportTool<TScratch = void>(def: ViewportToolDef<TScratch>): Tool<TScratch> {
-  return routingDefineViewportTool<TScratch, Overlay>(def);
-}
+// Routing's own authoring functions: the `OverlaySchema` merge above makes
+// their overlay default `Overlay`, so there is one `defineTool`, not a wrapper.
+export { defineTool, defineViewportTool } from '@weasel-js/routing';
 export const useTools: (opts: UseToolsOptions) => ToolsApi = routingUseTools;
 export const useContributions: (opts: UseContributionsOptions) => ContributionsApi =
   routingUseContributions;

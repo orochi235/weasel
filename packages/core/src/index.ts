@@ -189,8 +189,8 @@ export type { ActiveToolContextValue, ActiveToolContextProviderProps } from '@we
 
 // ─── Dep registry ───
 export { DepRegistryProvider, useDepRegistry, useOptionalDepRegistry, useDepSource } from '@weasel-js/routing/react';
-export type { DepName } from '@weasel-js/routing';
-export type { DepRegistry } from '@weasel-js/routing/react';
+export { createDepRegistry } from '@weasel-js/routing';
+export type { DepName, DepRegistry } from '@weasel-js/routing';
 // Exported from its defining module rather than through depRegistry's
 // re-export, so `DepName = keyof DepSchema` resolves to a documented symbol.
 export type { DepSchema } from './interactions/actions/depSchema';
@@ -1071,7 +1071,7 @@ export type {
   UseDragRadialOptions,
   DragRadialController,
 } from './interactions/gestures/dragRadial';
-export { openPointerSession } from '@weasel-js/routing';
+export { openPointerSession, DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/routing';
 export type { PointerSession, PointerSessionCallbacks, PointerSessionCancelReason, PointerSessionOptions } from '@weasel-js/routing';
 export { useHandleDrag } from './interactions/gestures/handleDrag';
 export type {
