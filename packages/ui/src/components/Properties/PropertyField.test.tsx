@@ -123,6 +123,22 @@ describe('PropertyField enum choices', () => {
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
+  it("draws a select option's glyph beside its label, in the trigger and in the list", () => {
+    render(<PropertyField kind="enum" label="Mode" value="a" options={GLYPHED} onChange={() => {}} />);
+    const trigger = screen.getByRole('button', { name: /Mode/ });
+    expect(trigger).toContainElement(screen.getByTestId('alpha-glyph'));
+    expect(trigger).toHaveTextContent('Alpha');
+    act(() => { fireEvent.click(trigger); });
+    const alpha = screen.getByRole('option', { name: 'Alpha' });
+    expect(alpha.querySelector('[data-testid="alpha-glyph"]')).not.toBeNull();
+  });
+
+  it('leaves a letter glyph out of a select, which has room for the label', () => {
+    const lettered = [{ value: 'a', label: 'Alpha', glyph: 'A' }];
+    render(<PropertyField kind="enum" label="Mode" value="a" options={lettered} onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: /Mode/ }).textContent).not.toContain('AAlpha');
+  });
+
   it('draws a radio as a radio group, with its disabled options', () => {
     render(
       <PropertyField

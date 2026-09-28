@@ -919,6 +919,28 @@ describe('<ControlPanel> option icons', () => {
     expect(ok.textContent).toBe('');
     expect(screen.getByRole('radio', { name: 'bad' }).textContent).toBe('bad');
   });
+
+  it("draws an option's icon beside its label in a select's trigger and list", () => {
+    const status = f.enum('ok', [
+      { value: 'ok', label: 'ok', icon: 'statusSuccess' },
+      { value: 'bad', label: 'bad' },
+    ]);
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ status }), [])}
+        config={{ status: 'ok' }}
+        setConfig={() => {}}
+      />,
+    );
+    const trigger = screen.getByRole('button', { name: /ok/ });
+    expect(trigger.querySelector('[aria-hidden="true"] > svg')).not.toBeNull();
+    expect(trigger).toHaveTextContent('ok');
+    act(() => {
+      fireEvent.click(trigger);
+    });
+    expect(screen.getByRole('option', { name: 'ok' }).querySelector('[aria-hidden="true"] > svg')).not.toBeNull();
+    expect(screen.getByRole('option', { name: 'bad' }).querySelectorAll('svg')).toHaveLength(1);
+  });
 });
 
 describe('<ControlPanel> pair', () => {

@@ -199,6 +199,16 @@
   white-space: nowrap;
 }
 
+.optionIcon {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-inline-end: var(--wzl-space-3);
+}
+
+.optionIcon > svg {
+  display: block;
+}
+
 /* A trigger that sets its value against its end edge gets a list that does the
    same, so the row that opened over the value stays on top of it. */
 .popover[data-align='end'] .option {
