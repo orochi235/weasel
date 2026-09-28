@@ -240,9 +240,99 @@ export function registerPaintKind(entry: PaintKindEntry): () => void {
   return KINDS.push(entry.id, entry);
 }
 
-/** The entry for `kind`, or `undefined`. */
+/** The entry for `kind`, or `undefined`. A lookup that misses on a kind with
+ *  a loader starts that load; see {@link registerPaintKindLoader}. */
 export function getPaintKind(kind: string | undefined): PaintKindEntry | undefined {
-  return KINDS.get(kind ?? 'solid');
+  const id = kind ?? 'solid';
+  const entry = KINDS.get(id);
+  if (!entry && LOADERS.has(id)) void startLoad(id).catch(() => {});
+  return entry;
+}
+
+/** Resolves with the entry for a kind that is loaded on first use. */
+export type PaintKindLoader = () => Promise<PaintKindEntry>;
+
+const LOADERS = new Map<string, PaintKindLoader>();
+
+/** One load per kind, kept after it settles: a failed load is not retried on
+ *  every frame that meets the kind. */
+const LOADS = new Map<string, Promise<void>>();
+
+// A built-in kind heavy enough to keep off a consumer's bundle until a paint
+// of it turns up. Importing the module statically still registers it at once.
+const LAZY_BUILTINS: ReadonlyArray<readonly [string, PaintKindLoader]> = [
+  ['mesh-gradient', async () => (await import('../features/meshPaint/meshPaint')).meshGradientKind],
+];
+
+function seedLoaders(): void {
+  LOADERS.clear();
+  LOADS.clear();
+  for (const [id, load] of LAZY_BUILTINS) LOADERS.set(id, load);
+}
+seedLoaders();
+
+/**
+ * Declare a paint kind that is loaded the first time something looks it up,
+ * so its code stays out of the bundle until a paint of it appears — typically
+ * `() => import('./myKind').then((m) => m.myKindEntry)`.
+ *
+ * Until it lands the kind is unregistered: the renderer draws nothing for its
+ * paints, and every other reader treats it as unknown. Registering it fires
+ * `paintKindRegistry`'s subscribers, which is what `<SceneCanvas>` repaints
+ * on. Call {@link warmPaintKinds} to load ahead of the first frame instead.
+ *
+ * A kind that is already registered never calls its loader. Returns a
+ * disposer that removes the loader.
+ */
+export function registerPaintKindLoader(id: string, load: PaintKindLoader): () => void {
+  LOADERS.set(id, load);
+  return () => {
+    if (LOADERS.get(id) === load) LOADERS.delete(id);
+  };
+}
+
+function startLoad(id: string): Promise<void> {
+  const running = LOADS.get(id);
+  if (running) return running;
+  const load = LOADERS.get(id)!;
+  const done = load().then(
+    (entry) => {
+      if (entry.id !== id) {
+        throw new Error(`weasel: the loader for paint kind "${id}" resolved to "${entry.id}".`);
+      }
+      if (!KINDS.has(id)) registerPaintKind(entry);
+    },
+  ).catch((err: unknown) => {
+    console.error(`weasel: paint kind "${id}" failed to load:`, err);
+    throw err;
+  });
+  LOADS.set(id, done);
+  return done;
+}
+
+/**
+ * Load paint kinds ahead of their first use, so the first frame that meets
+ * one draws it rather than a blank. With no list, loads every kind that has a
+ * loader — the kit's lazily loaded built-ins (`mesh-gradient`) plus any a
+ * consumer declared with {@link registerPaintKindLoader}.
+ *
+ * Resolves once every kind is registered; a kind already registered counts
+ * as loaded. Rejects when a load fails, or for a kind that is neither
+ * registered nor loadable.
+ */
+export function warmPaintKinds(kinds?: readonly string[]): Promise<void> {
+  const ids = kinds ?? [...LOADERS.keys()];
+  const loads: Promise<void>[] = [];
+  for (const id of ids) {
+    if (KINDS.has(id)) continue;
+    if (!LOADERS.has(id)) {
+      return Promise.reject(new Error(
+        `weasel warmPaintKinds: "${id}" is neither registered nor loadable.`,
+      ));
+    }
+    loads.push(startLoad(id));
+  }
+  return Promise.all(loads).then(() => undefined);
 }
 
 /** Every registered kind, built-ins first, in registration order. */
@@ -291,4 +381,5 @@ export function paintKindOf(fill: FillStyle): PaintKindEntry | undefined {
 export function _resetPaintKindsForTests(): void {
   KINDS.clear();
   seedBuiltins();
+  seedLoaders();
 }

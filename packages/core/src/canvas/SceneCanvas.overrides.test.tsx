@@ -5,6 +5,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { createScene } from 'core/scene/scene';
 import type { SceneCanvasApi } from './canvasExtension';
+import { registerPaintKind, getPaintKind } from 'core/paintKinds';
 
 type Layer = 'main';
 interface Data { label: string }
@@ -23,6 +24,23 @@ describe('SceneCanvas — override repaint', () => {
       scene.overrides.set(id, { pose: { x: 5, y: 5, width: 10, height: 10 } });
       scene.overrides.commit();
     });
+
+    expect(requestRedraw).toHaveBeenCalled();
+  });
+});
+
+describe('SceneCanvas — paint kind repaint', () => {
+  it('requests a redraw when a paint kind registers, as a lazily loaded one does on landing', async () => {
+    const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
+    const ref = createRef<SceneCanvasApi>();
+    render(<SceneCanvas ref={ref} width={100} height={100} scene={scene} layers={{}} />);
+
+    const requestRedraw = vi.spyOn(ref.current!, 'requestRedraw');
+    let off = () => {};
+    await act(async () => {
+      off = registerPaintKind({ ...getPaintKind('solid')!, id: 'test-late' });
+    });
+    off();
 
     expect(requestRedraw).toHaveBeenCalled();
   });

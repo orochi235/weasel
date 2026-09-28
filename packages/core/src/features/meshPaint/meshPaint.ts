@@ -17,7 +17,9 @@
  */
 
 import type { GradStop } from '@weasel-js/paint';
-import { registerPaintKind, asPaint, type PaintBindContext, type PaintProgram } from '../../core/paintKinds';
+import {
+  registerPaintKind, asPaint, type PaintBindContext, type PaintKindEntry, type PaintProgram,
+} from '../../core/paintKinds';
 import { resolveColor, rgbaToHex } from '../../renderer/math/color';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import { registerProgram } from '../../renderer/shaders/registerProgram';
@@ -252,7 +254,9 @@ function bindMesh(ctx: PaintBindContext, fill: FillStyle): PaintProgram | null {
 
 registerProgram(MESH_PROGRAM_ID, MESH_VERT_SRC, MESH_FRAG_SRC);
 
-registerPaintKind({
+/** The kind's registry entry. Importing this module registers it; core's
+ *  paint-kind registry loads it on demand otherwise. */
+export const meshGradientKind: PaintKindEntry = {
   id: MESH_GRADIENT_KIND,
   label: 'Mesh',
   icon: 'paintMesh',
@@ -288,7 +292,9 @@ registerPaintKind({
     });
   },
   toSvg: (id, fill) => meshGradientXml(id, asMesh(fill)),
-});
+};
+
+registerPaintKind(meshGradientKind);
 
 /**
  * The `<defs>` entry for a mesh paint, in weasel's own namespace.

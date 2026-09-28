@@ -1,6 +1,7 @@
 /**
- * The mesh-gradient paint kind. Importing this module registers the kind and
- * its shader program, which is why core's barrel imports it for effect.
+ * The mesh-gradient paint kind. Importing any of it registers the kind and its
+ * shader program; otherwise the paint-kind registry loads it the first time a
+ * mesh paint is looked up.
  */
 
 export {
