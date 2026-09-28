@@ -1124,3 +1124,33 @@ describe('<ControlPanel> title, stance and tone', () => {
     expect(panel.querySelector('.lk-control-panel')).not.toBeNull();
   });
 });
+
+describe('<ControlPanel> resettable group', () => {
+  const schema = resolveConfigSchema(
+    f.schema({
+      name: f.string('a'),
+      modes: f.group({ one: f.number(0), two: f.number(0), inner: f.group({ three: f.number(1) }) }).resettable(),
+      plain: f.group({ four: f.number(0) }),
+    }),
+  );
+
+  it('puts a reset button on the group heading, disabled while nothing has changed', () => {
+    render(
+      <ControlPanel schema={schema} config={{ name: 'a', modes: { one: 0, two: 0, inner: { three: 1 } }, plain: { four: 0 } }} setConfig={vi.fn()} />,
+    );
+    expect(screen.getByRole('button', { name: 'Reset Modes' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Reset Plain' })).toBeNull();
+  });
+
+  it('writes the default of every changed value beneath the group and nothing else', () => {
+    const setConfig = vi.fn();
+    render(
+      <ControlPanel schema={schema} config={{ name: 'b', modes: { one: 2, two: 0, inner: { three: 5 } }, plain: { four: 3 } }} setConfig={setConfig} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Modes' }));
+    expect(setConfig.mock.calls).toEqual([
+      ['modes.one', 0],
+      ['modes.inner.three', 1],
+    ]);
+  });
+});

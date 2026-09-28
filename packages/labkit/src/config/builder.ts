@@ -287,6 +287,12 @@ export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
   showIf(predicate: (config: Record<string, unknown>) => boolean): GroupNode<S> {
     return this.with(this.annotations, { ...this.options, showIf: predicate });
   }
+
+  /** Put a button on the group's heading that returns every value beneath it
+   *  to its default, leaving the rest of the config alone. */
+  resettable(): GroupNode<S> {
+    return this.with(this.annotations, { ...this.options, resettable: true });
+  }
 }
 
 /** Every default in a shape, nested the way the shape is. */
