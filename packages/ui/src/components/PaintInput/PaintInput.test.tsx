@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import {
   asPaint,
   registerPaintKind,
+  seedMeshPatch,
   type FillStyle,
   type GradientFill,
 } from '@weasel-js/core';
@@ -256,5 +257,43 @@ describe('PaintInput — solid opacity', () => {
     fireEvent.input(opacitySlider(), { target: { value: '70' } });
     fireEvent.pointerUp(opacitySlider());
     expect(onChange).toHaveBeenLastCalledWith({ color: '#336699', opacity: 0.7 });
+  });
+});
+
+describe('PaintInput — opacity of a paint with no single color', () => {
+  const PATTERN: FillStyle = {
+    fill: 'pattern',
+    pattern: { tile: 'hatch', color: '#336699', size: 8 },
+    units: 'bounds',
+  };
+  const MESH: FillStyle = asPaint(seedMeshPatch('#ff0000ff'));
+
+  // Exact name: a gradient's stop swatches carry opacity sliders of their own.
+  const opacitySlider = (): HTMLInputElement =>
+    screen.getByRole('slider', { name: 'Opacity' }) as HTMLInputElement;
+
+  for (const [name, paint] of [['gradient', LINEAR], ['pattern', PATTERN], ['mesh', MESH]] as const) {
+    it(`writes a ${name}'s opacity slot, keeping the rest of the paint`, () => {
+      const onInput = vi.fn();
+      const onChange = vi.fn();
+      render(<PaintInput value={paint} onInput={onInput} onChange={onChange} />);
+      fireEvent.input(opacitySlider(), { target: { value: '30' } });
+      expect(onInput).toHaveBeenLastCalledWith({ ...paint, opacity: 0.3 });
+      fireEvent.pointerUp(opacitySlider());
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenLastCalledWith({ ...paint, opacity: 0.3 });
+    });
+
+    it(`follows a ${name}'s opacity written from outside the control`, () => {
+      const { rerender } = render(<PaintInput value={paint} onChange={() => {}} />);
+      expect(opacitySlider().value).toBe('100');
+      rerender(<PaintInput value={{ ...paint, opacity: 0.25 }} onChange={() => {}} />);
+      expect(opacitySlider().value).toBe('25');
+    });
+  }
+
+  it('shows one opacity control for a solid, not a second beside the swatch', () => {
+    render(<PaintInput value={SOLID} onChange={() => {}} />);
+    expect(screen.getAllByRole('slider', { name: /opacity/i })).toHaveLength(1);
   });
 });

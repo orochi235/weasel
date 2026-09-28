@@ -4,6 +4,7 @@ import {
   getPaintKind,
   listPaintKinds,
   paintAlpha,
+  paintWithAlpha,
   solid,
   switchGradientKind,
   toHex8,
@@ -14,6 +15,7 @@ import {
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import { ColorField } from '../ColorField';
+import { OpacityRange } from '../ColorField/OpacityRange';
 import { GradientEditor } from '../GradientEditor';
 import { PatternPicker, type PatternFill } from '../PatternPicker';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
@@ -167,6 +169,24 @@ export function PaintInput(props: PaintInputProps): ReactElement {
     </div>
   );
 
+  /** A solid's alpha rides its swatch; every other kind has no one color to
+   *  carry it, so its `opacity` gets the same slider under the body. */
+  function withOpacity(paint: FillStyle, body: ReactElement): ReactElement {
+    return (
+      <>
+        {body}
+        <div className={s.opacity}>
+          <OpacityRange
+            value={paintAlpha(paint)}
+            aria-label={ariaLabel}
+            onInput={(a01) => onInput?.(paintWithAlpha(paint, a01))}
+            onChange={(a01) => onChange(paintWithAlpha(paint, a01))}
+          />
+        </div>
+      </>
+    );
+  }
+
   function renderBody(): ReactElement | null {
     if (mixed || value === undefined) {
       return (
@@ -185,20 +205,23 @@ export function PaintInput(props: PaintInputProps): ReactElement {
     const entry = getPaintKind(kindOf(value) ?? 'solid');
     if (entry?.Editor) {
       const Editor = entry.Editor;
-      return <Editor value={value} onInput={onInput} onChange={onChange} />;
+      return withOpacity(value, <Editor value={value} onInput={onInput} onChange={onChange} />);
     }
     if (entry?.stopsOf) {
-      return (
+      return withOpacity(value, (
         <GradientEditor
           value={value}
           kindSwitch={false}
           onInput={onInput}
           onChange={onChange}
         />
-      );
+      ));
     }
     if (isPattern(value)) {
-      return <PatternPicker value={value} color={currentColor()} onChange={onChange} />;
+      return withOpacity(
+        value,
+        <PatternPicker value={value} color={currentColor()} onChange={onChange} />,
+      );
     }
     const kind = kindOf(value);
     if (kind !== 'solid') {

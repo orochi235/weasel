@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toHex8, getAlpha01, withAlpha01 } from '@weasel-js/core';
-import { InlineRange } from '../InlineRange';
-import shared from '../range.module.css';
+import { OpacityRange } from './OpacityRange';
 import s from './ColorField.module.css';
 
 /**
@@ -108,27 +107,16 @@ export function ColorField(props: ColorFieldProps) {
         />
       </span>
       {alpha && (
-        <>
-          <InlineRange
-            className={`${s.alphaRange} ${shared.alpha}`}
-            min={0}
-            max={100}
-            step={1}
-            value={visibleAlphaPct}
-            disabled={alphaLocked || alphaDisabled}
-            aria-label={props['aria-label'] ? `${props['aria-label']} opacity` : 'Opacity'}
-            onInput={(e) => {
-              const pct = Number((e.target as HTMLInputElement).value);
-              setAlphaDraft(pct);
-              onInput?.(compose(visibleRgb, pct / 100));
-            }}
-            onPointerUp={() => commit(visibleRgb, visibleAlphaPct / 100)}
-            onPointerCancel={() => commit(visibleRgb, visibleAlphaPct / 100)}
-            onKeyUp={() => commit(visibleRgb, visibleAlphaPct / 100)}
-            onBlur={() => commit(visibleRgb, visibleAlphaPct / 100)}
-          />
-          <span className={s.alphaReadout} aria-hidden="true">{visibleAlphaPct}%</span>
-        </>
+        <OpacityRange
+          value={visibleAlphaPct / 100}
+          disabled={alphaLocked || alphaDisabled}
+          aria-label={props['aria-label']}
+          onInput={(a01) => {
+            setAlphaDraft(Math.round(a01 * 100));
+            onInput?.(compose(visibleRgb, a01));
+          }}
+          onChange={(a01) => commit(visibleRgb, a01)}
+        />
       )}
     </span>
   );

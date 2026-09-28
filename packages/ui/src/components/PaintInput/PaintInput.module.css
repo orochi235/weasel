@@ -16,3 +16,11 @@
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
 }
+
+/* The opacity slider under a paint with no single color, laid out as the
+ * solid's sits beside its swatch. */
+.opacity {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+}

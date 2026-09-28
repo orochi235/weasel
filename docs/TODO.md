@@ -746,12 +746,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
   owner wants that row redesigned; the shape it should take is still open.
 
-- **(P3) A gradient's or pattern's opacity has no control in the paint editors.** Every
-  paint kind carries its alpha in `opacity`, and `PaintInput` edits it only for a solid
-  (its alpha slider). `GradientEditor`, `PatternPicker` and `MeshEditor` never read or
-  write it, so an opacity scrub over a gradient node changes nothing the Properties
-  panel shows, and a panel edit can't undo it.
-
 - **(P2) `tabular-nums` does nothing in the theme's UI face.** Oswald (`--wzl-font-ui`,
   `--wzl-font-display`) has no `tnum` feature upstream and no figure-space glyph, so a column
   of numbers set in it stays proportional: "11.111" measures 25.0px and "88.888" 34.8px with
