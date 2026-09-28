@@ -9,6 +9,8 @@ import type { InsertBehavior } from '../../gestures/types';
 import type { View } from 'core/viewport/view';
 import { createScene } from 'core/scene/scene';
 import type { Op } from 'core/ops/types';
+import { alignInsertBehavior } from 'features/guides/alignment/behaviors';
+import type { Guide } from 'features/guides/types';
 
 function makeInsertDep(): InsertDep & { calls: Array<{ bounds: unknown }> } {
   const calls: Array<{ bounds: unknown }> = [];
@@ -106,5 +108,20 @@ describe('insertAction behavior pipeline', () => {
     expect(onStart).toHaveBeenCalledTimes(1);
     expect(onEnd).not.toHaveBeenCalled();
     expect(dep.calls).toEqual([]);
+  });
+
+  it('a cancel runs onCancel, and Esc mid-drag clears published alignment guides', () => {
+    let active: readonly Guide[] = [];
+    const align = alignInsertBehavior<unknown>({
+      getCandidates: () => [{ id: 'L', axis: 'x', offset: 12 }],
+      setActiveGuides: (g) => { active = g; },
+    });
+    const onCancel = vi.fn();
+    const handle = invoker.start(ctxAt({ x: 0, y: 0 }, { insert: makeInsertDep() }), { behaviors: [align, { onCancel }] });
+    handle.onMove!(ctxAt({ x: 10, y: 10 }, {}));
+    expect(active.map((g) => g.id)).toEqual(['L']);
+    handle.onEnd!(ctxAt({ x: 10, y: 10 }, {}), 'cancel');
+    expect(active).toEqual([]);
+    expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });

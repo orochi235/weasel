@@ -1146,11 +1146,12 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
     finish when the motion stops rather than when alpha does? A shorter run also closes the
     window for a mid-run drag, which the demo's hint asks for.
 
-- **(P3) A canceled gesture leaves alignment guides lit.** `alignMoveBehavior`,
-  `alignInsertBehavior` and `alignResizeBehavior` clear their published guides in `onEnd`,
-  but move, resize, rotate and insert run behaviors' `onEnd` only on commit, so Esc
-  mid-drag leaves the last matched line on screen until the next gesture. Either the
-  actions call a cleanup hook on cancel too, or `ActionBehavior` grows one.
+- **(P3) A behavior after the one that answers `onEnd` never cleans up.**
+  `reduceBehaviorEnd` stops at the first behavior whose `onEnd` returns ops or `null`, so in
+  `[snapBackOrDelete(), alignMoveBehavior(…)]` a snap-back release skips the align
+  behavior's `onEnd` and its guides stay lit (read from the code, not reproduced). Cancel is
+  covered by `onCancel`; commit needs every behavior told the gesture closed, either a
+  cleanup hook run on both paths or `onEnd` called on the rest with its answer ignored.
 
 - **(P3) No demo draws with an `InsertBehavior`.** `toolOptions.insert.behaviors` (or a
   drag-to-insert tool hook's `behaviors` option) now reaches `insertAction`, but

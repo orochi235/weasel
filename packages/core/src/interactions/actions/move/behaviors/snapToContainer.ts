@@ -90,6 +90,8 @@ export function snapToContainer<TPose>(args: {
       return;
     },
 
+    onCancel(ctx) { clearTimer(getState<TPose>(ctx)); },
+
     onEnd(ctx) {
       const s = getState<TPose>(ctx);
       clearTimer(s);

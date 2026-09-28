@@ -47,7 +47,7 @@ import { resolveParams, DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/
 import { definesFrame, documentPose, effectivePose } from 'core/scene/effectivePose';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
-import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, type GestureLifecycle } from '../gestureLifecycle';
+import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { Mat3 } from '@weasel-js/geom';
@@ -1065,6 +1065,7 @@ export const moveAction: Action & { requires: string[] } = {
             // On cancel the document was never mutated — dropping the
             // ephemeral overrides below restores the committed poses.
             if (reason === 'commit') committed = commitMove(endCtx);
+            else runBehaviorCancel(scratch.behaviors, scratch.gestureCtx);
           } finally {
             // After the commit, so no frame can paint the pre-drag pose between
             // the override going away and the document catching up.

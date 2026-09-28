@@ -38,7 +38,7 @@ function worldTol(
  *  candidates, shaping the proposed translate. The gesture applies the
  *  transform uniformly to every dragged id, so the selection shifts together
  *  and stays rigid. Single-select is the degenerate one-box union. Publishes
- *  the matched line(s); clears on miss/end. */
+ *  the matched line(s); clears on miss, end and cancel. */
 export function alignMoveBehavior<TPose>(args: AlignMoveArgs<TPose>): MoveBehavior<TPose> {
   const d = (args.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   return {
@@ -63,6 +63,7 @@ export function alignMoveBehavior<TPose>(args: AlignMoveArgs<TPose>): MoveBehavi
       return { transform: { kind: 'translate', dx: transform.dx + m.dx, dy: transform.dy + m.dy } };
     },
     onEnd() { args.setActiveGuides([]); },
+    onCancel() { args.setActiveGuides([]); },
   };
 }
 
@@ -80,6 +81,7 @@ export function alignInsertBehavior<TPose>(args: AlignmentBehaviorBase): InsertB
       return { current: { x: current.x + m.dx, y: current.y + m.dy } };
     },
     onEnd() { args.setActiveGuides([]); },
+    onCancel() { args.setActiveGuides([]); },
   };
 }
 
@@ -109,5 +111,6 @@ export function alignResizeBehavior<TPose extends Bounds>(
       return { pose: { ...pose, x, y, width, height } };
     },
     onEnd() { args.setActiveGuides([]); },
+    onCancel() { args.setActiveGuides([]); },
   };
 }
