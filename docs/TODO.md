@@ -607,29 +607,6 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 - **(P3) Serializable clips** — follows from tracks being typed callbacks rather
   than data. Revisit with the editor's experience in hand.
 
-### Side-scroller demo — landed
-
-`apps/site/demos/SceneScrollerDemo.tsx`, with its game logic in
-`apps/site/demos/platformer/`. A load test on the timeline, audio and scene-graph
-arcs rather than a showcase: 254 leaf nodes drawn by the built-in painters, the
-camera as the canvas `view`, animation state changing every few frames and
-one-shots overlapping continuously. Its HUD carries the instrument readouts, a
-collision-box overlay, and a swarm button that pushes the voice pool past its
-limit. A platformer in `apps/site/demos/` is a deliberate exception to the
-terse, single-purpose demo convention: an exception, not a precedent.
-
-What it surfaced:
-
-- **No tiled-content layer primitive exists** (the P3 under Tiling) — the run
-  cycle and the parallax bands are second sites wanting it.
-
-Two predictions the demo **disproved**, recorded so they are not re-raised: the
-sprite-sheet gap closed independently (`ImageDrawCommand.source` / `flipX` /
-`flipY` / `frameRect`, see
-`docs/superpowers/specs/2026-08-22-image-source-rect-flip-design.md`), and the
-"public frame tick" the arc expected to need was already shipped as
-`Animator.onTick` plus `keepAlive`.
-
 ### Earlier deferrals
 
 All from `docs/specs/2026-05-04-animation-primitive-design.md`. The timeline arc's

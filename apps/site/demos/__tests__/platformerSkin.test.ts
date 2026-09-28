@@ -1,29 +1,75 @@
 // apps/site/demos/__tests__/platformerSkin.test.ts
 import { describe, it, expect } from 'vitest';
-import { cameraView, createCamera } from '../platformer/camera';
-import { TILE } from '../platformer/level';
-import { drawBackdrop, drawEnding } from '../platformer/skin';
+import type { View } from '@weasel-js/core';
+import { BANDS, backdropBand, drawEnding, drawSky } from '../platformer/skin';
 
 const DIMS = { width: 640, height: 360 };
-const VIEW = cameraView(createCamera({ x: 5 * TILE, y: 3 * TILE }), DIMS);
 
-describe('skin', () => {
-  it('draws every backdrop band, and only the far one paints sky', () => {
-    for (const band of ['far', 'mid', 'near'] as const) {
-      expect(drawBackdrop(VIEW, DIMS, band).length, band).toBeGreaterThan(0);
+type Cmd = { kind: string; transform?: Float32Array; children?: Cmd[]; path?: Path };
+type Path = { kind: string; x: number; y: number; width: number; height: number; coords: Float32Array };
+
+/** Every path a band drew, in the band's own world units: each tiled copy is
+ *  a group translated by its lattice offset. */
+function paths(cmds: Cmd[], dx = 0): { path: Path; dx: number }[] {
+  return cmds.flatMap((c) => c.kind === 'group'
+    ? paths(c.children ?? [], dx + (c.transform?.[6] ?? 0))
+    : c.path ? [{ path: c.path, dx }] : []);
+}
+
+// Two camera positions on either side of the origin, neither on a lattice line.
+const VIEWS: View[] = [
+  { x: 137.5, y: 40, scale: { x: 2, y: 2 } },
+  { x: -913.25, y: -12, scale: { x: 2, y: 2 } },
+];
+
+describe('backdrop', () => {
+  it('fills the whole viewport with sky', () => {
+    const [sky] = drawSky(DIMS) as Cmd[];
+    expect(sky.path).toMatchObject({ kind: 'rect', x: 0, y: 0, width: DIMS.width, height: DIMS.height });
+  });
+
+  for (const band of ['far', 'mid', 'near'] as const) {
+    const { period, height, baseline } = BANDS[band];
+    for (const view of VIEWS) {
+      const spanX = DIMS.width / view.scale.x;
+      const bottom = view.y + DIMS.height / view.scale.y;
+      const drawn = paths(backdropBand(band).draw(null, view, DIMS) as Cmd[]);
+
+      it(`${band} at x=${view.x}: ground spans the view with no gap`, () => {
+        const ground = drawn
+          .filter(({ path }) => path.kind === 'rect')
+          .map(({ path, dx }) => {
+            expect(path.y).toBe(baseline);
+            expect(path.y + path.height).toBeGreaterThanOrEqual(bottom);
+            return [path.x + dx, path.x + path.width + dx] as const;
+          })
+          .sort((a, b) => a[0] - b[0]);
+        let reach = ground[0][0];
+        expect(reach).toBeLessThanOrEqual(view.x);
+        for (const [from, to] of ground) {
+          expect(from).toBeLessThanOrEqual(reach);
+          reach = Math.max(reach, to);
+        }
+        expect(reach).toBeGreaterThanOrEqual(view.x + spanX);
+      });
+
+      it(`${band} at x=${view.x}: a hill peaks at every period the view can see`, () => {
+        const peaks = drawn
+          .filter(({ path }) => path.kind === 'polygon')
+          .map(({ path, dx }) => {
+            let top = 0;
+            for (let i = 1; i < path.coords.length; i += 2) if (path.coords[i] < path.coords[top + 1]) top = i - 1;
+            expect(path.coords[top + 1]).toBe(baseline - height);
+            return path.coords[top] + dx;
+          });
+        const want: number[] = [];
+        for (let k = Math.floor(view.x / period) - 1; k * period - period / 2 < view.x + spanX; k++) {
+          if (k * period + period / 2 > view.x) want.push(k * period);
+        }
+        for (const x of want) expect(peaks, `peak at ${x}`).toContainEqual(x);
+      });
     }
-    // The far band is bottom-most, so it is the one that fills the sky — its
-    // wider hill period means fewer triangles, so the counts can tie but far
-    // never has fewer.
-    expect(drawBackdrop(VIEW, DIMS, 'far').length)
-      .toBeGreaterThanOrEqual(drawBackdrop(VIEW, DIMS, 'mid').length);
-  });
-
-  it('repeats hills across the whole viewport so panning never runs out', () => {
-    const far = drawBackdrop(VIEW, DIMS, 'far').filter((c) => c.kind === 'path');
-    expect(far.length).toBeGreaterThan(2);
-  });
-
+  }
 });
 
 describe('drawEnding', () => {
