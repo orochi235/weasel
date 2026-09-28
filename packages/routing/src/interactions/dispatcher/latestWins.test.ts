@@ -43,7 +43,7 @@ function ctxOf(actions: ActionsRegistry, tools: [string, Tool][], hotkeyStack: s
   };
   return {
     depRegistry, actions, activeToolId: 'select', hotkeyStack,
-    toolsById: new Map(tools), isMac: false,
+    entriesById: new Map(tools), isMac: false,
   };
 }
 

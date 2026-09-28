@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
-import type { AnyTool } from '@weasel-js/routing';
 import { SceneCanvas } from '../../../canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
 import { dragPanContribution } from './dragPanContribution';
+import type { Contribution } from '../../overlayBinding';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -21,7 +21,7 @@ const START: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /** Mount a view-only canvas, drag 30px right and 20px down, and return the
  *  last view it reported. */
-function dragOnce(ambient: AnyTool[]): View {
+function dragOnce(ambient: Contribution[]): View {
   const scene = createScene<unknown, 'main', { x: number; y: number }>({ systemLayers: [{ id: 'main' }] });
   let last = START;
   const { container } = render(
@@ -53,12 +53,12 @@ describe('dragPanContribution', () => {
   });
 
   it('pans the view on a plain drag once the canvas opts in', () => {
-    const v = dragOnce([dragPanContribution() as AnyTool]);
+    const v = dragOnce([dragPanContribution()]);
     expect([v.x, v.y]).toEqual([-30, -20]);
   });
 
   it("passes its params to the pan: axis 'x' leaves y alone", () => {
-    const v = dragOnce([dragPanContribution({ axis: 'x' }) as AnyTool]);
+    const v = dragOnce([dragPanContribution({ axis: 'x' })]);
     expect([v.x, v.y]).toEqual([-30, 0]);
   });
 });

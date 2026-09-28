@@ -75,7 +75,7 @@ function mount(harness: Harness, toolId: string) {
 
     useAction(orbitAction);
     const orbit = useOrbitTool();
-    const toolsById = useMemo(() => new Map<string, Tool>([['orbit', orbit as Tool]]), [orbit]);
+    const entriesById = useMemo(() => new Map<string, Tool>([['orbit', orbit as Tool]]), [orbit]);
 
     // Identity: the pane is at the origin in jsdom, and the lab's whole point is
     // that the dispatcher's "world" point is the screen point.
@@ -84,7 +84,7 @@ function mount(harness: Harness, toolId: string) {
     useGestureDispatcher({
       canvasRef: paneRef,
       actions: actions!,
-      toolsById,
+      entriesById,
       clientToWorld,
     });
 

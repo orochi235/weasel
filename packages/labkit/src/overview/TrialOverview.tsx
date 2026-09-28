@@ -343,7 +343,7 @@ function OverviewDispatch({
     canvasRef: boxRef,
     // Always present: `OverviewInput` mounts the provider directly above.
     actions: registry as NonNullable<typeof registry>,
-    toolsById: TOOLS_BY_ID,
+    entriesById: TOOLS_BY_ID,
     clientToWorld: clientToLocal,
     keyboard: false,
     channels: CHANNELS,

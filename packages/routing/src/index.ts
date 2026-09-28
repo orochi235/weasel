@@ -66,8 +66,8 @@ export type DepName = keyof DepSchema;
  * }
  * ```
  *
- * `defineTool` and `defineViewportTool` default their overlay type to it, so a
- * tool built by either fits the kernel's `tools` without naming the parameter.
+ * `defineTool` defaults its overlay type to it, so a
+ * tool it builds fits the kernel's `tools` without naming the parameter.
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface OverlaySchema {}
@@ -133,9 +133,9 @@ export type { ModeShortcutHandlers } from './contributions/modeShortcuts';
 export type {
   Tool, AnyTool, AnyToolOf, ToolCtx, ToolLifecycleCtx, ToolBounds, ToolModifiers, ToolKeybinding, ToolSlot,
 } from './tools/types';
-export type { ToolDef, ViewportToolDef } from './tools/routeTypes';
+export type { ToolDef } from './tools/routeTypes';
 export { defineTool } from './tools/defineTool';
-export { defineViewportTool } from './tools/defineViewportTool';
+export { isTool } from './tools/types';
 
 // ─── route grammar reflection ─────────────────────────────────────────────
 export * from './tools/routing';

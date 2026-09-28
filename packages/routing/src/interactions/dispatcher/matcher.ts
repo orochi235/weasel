@@ -28,19 +28,19 @@ export type BindingScope = 'ambient' | 'active' | 'hotkey';
 export interface ScopedBinding {
   binding: GestureBinding;
   scope: BindingScope;
-  /** Tool id that owns this binding — `'&'`-channel phase atoms resolve
-   *  to this. `null` for ambient bindings that came from a registered
-   *  Action with no owning tool. */
-  ownerToolId: string | null;
+  /** Id of the tool or contribution that declared this binding —
+   *  `'&'`-channel phase atoms resolve to it. `null` for a registered
+   *  action's own binding. */
+  ownerId: string | null;
 }
 
 /** The binding that won a match. */
 export interface MatchResult {
   binding: GestureBinding;
   scope: BindingScope;
-  /** Tool id that owns the binding — propagated from `ScopedBinding`
-   *  so the dispatcher can record it as the handle owner. */
-  ownerToolId: string | null;
+  /** Id of the entry that declared the binding — propagated from
+   *  `ScopedBinding` so the dispatcher can record it as the handle owner. */
+  ownerId: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -234,10 +234,10 @@ export function matchSortedWithBarred(
       if (sb.scope !== scope) continue;
       const admitted = admits(sb);
       if (!admitted && !opts.collectBarred) continue;
-      const phaseCtx: PhaseContext = { selfChannel: sb.ownerToolId, engagedChannels: engaged };
+      const phaseCtx: PhaseContext = { selfChannel: sb.ownerId, engagedChannels: engaged };
       if (matchSpec(e, sb.binding.spec, isMac, phaseCtx)) {
         (admitted ? scopeMatches : scopeBarred)
-          .push({ binding: sb.binding, scope, ownerToolId: sb.ownerToolId });
+          .push({ binding: sb.binding, scope, ownerId: sb.ownerId });
       }
     }
     // Stable sort by specificity descending. Identical-specificity entries

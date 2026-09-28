@@ -79,14 +79,14 @@ describe('selectionMoveBindings — drag on an unselected body routes to move', 
   const ambientCatchAll: ScopedBinding = {
     binding: { spec: { kind: 'drag' }, actionId: 'catchAll' },
     scope: 'ambient',
-    ownerToolId: null,
+    ownerId: null,
   };
 
   function moveBindings(): ScopedBinding[] {
     return selectionMoveBindings().map((binding: GestureBinding) => ({
       binding,
       scope: 'ambient' as const,
-      ownerToolId: 'selection.move',
+      ownerId: 'selection.move',
     }));
   }
 

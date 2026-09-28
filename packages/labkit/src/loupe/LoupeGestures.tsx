@@ -50,7 +50,7 @@ function LoupeDispatch({
   useGestureDispatcher({
     canvasRef: hostRef,
     actions: registry,
-    toolsById: NO_TOOLS,
+    entriesById: NO_TOOLS,
     channels: CHANNELS,
     enabled: ownDispatcher,
   });

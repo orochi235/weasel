@@ -1,5 +1,5 @@
 import { useMemo, useRef, createElement } from 'react';
-import { defineViewportTool } from '../../overlayBinding';
+import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { HandIcon } from '../../../icons';
 import type { View } from 'core/viewport/view';
@@ -53,7 +53,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
   optsRef.current = opts;
   return useMemo(
     () =>
-      Object.assign(defineViewportTool<HandScratch>({
+      Object.assign(defineTool<HandScratch>({
         id: 'hand',
         capabilities: ['navigation'],
         hotkey: 'space',

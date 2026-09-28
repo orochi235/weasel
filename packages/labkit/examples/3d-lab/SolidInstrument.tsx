@@ -328,7 +328,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   // The select tool only picks; dragging a solid to move it is the
   // selection's own ambient binding, live under every tool here.
   const selectionMove = useMemo(() => selectionMoveContribution() as Tool, []);
-  const toolsById = useMemo(
+  const entriesById = useMemo(
     () =>
       new Map<string, Tool>([
         ['select', select as Tool],
@@ -352,13 +352,13 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   // normally registers them. Mounting tools directly means doing it here.
   useEffect(() => {
     if (!actions) return;
-    const unregister = [...toolsById.values()].flatMap((tool) =>
+    const unregister = [...entriesById.values()].flatMap((tool) =>
       (tool.actions ?? []).map((action) => actions.register(action)),
     );
     return () => {
       for (const undo of unregister) undo?.();
     };
-  }, [actions, toolsById]);
+  }, [actions, entriesById]);
 
   // The select tool's bindings are keyed on what the press landed on, so the
   // dispatcher needs this as well as the pick dep. Both take a screen point.
@@ -410,7 +410,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     canvasRef: paneRef,
     dispatcher,
     actions: actions!,
-    toolsById,
+    entriesById,
     clientToWorld,
     classifyTarget,
     getRuleCtx,

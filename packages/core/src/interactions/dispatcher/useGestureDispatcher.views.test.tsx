@@ -16,7 +16,7 @@ import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../actions/depSchema';
 import { viewportDragPanAction } from '../actions/defaults/viewportDragPan';
 import { dragPanContribution, DRAG_PAN_ID } from '../../tools/builtin/hand/dragPanContribution';
-import type { AnyTool, InputEvent } from '@weasel-js/routing';
+import type { InputEvent } from '@weasel-js/routing';
 
 /** The panel occupies x ∈ [100, 200) of a canvas whose origin is (0, 0). */
 const PANEL_RECT = { x: 100, y: 0, w: 100, h: 100 };
@@ -46,7 +46,7 @@ function Probe({ root, panel }: { root: Dispatcher; panel: DispatcherViewTarget 
   useGestureDispatcher({
     canvasRef,
     actions: registry!,
-    toolsById: new Map(),
+    entriesById: new Map(),
     dispatcher: root,
     clientToWorld: (x, y) => ({ x, y }),
     views: { targets: () => [panel], resolver: resolver.current! },
@@ -140,7 +140,7 @@ describe('useGestureDispatcher view routing', () => {
     const rootHold = { current: rootView };
     const panelHold = { current: panelView };
 
-    const PAN_ON_DRAG = new Map([[DRAG_PAN_ID, dragPanContribution()]]) as unknown as ReadonlyMap<string, AnyTool>;
+    const PAN_ON_DRAG = new Map([[DRAG_PAN_ID, dragPanContribution()]]);
 
     function Panner() {
       const registry = useActionsRegistry();
@@ -150,7 +150,7 @@ describe('useGestureDispatcher view routing', () => {
       useGestureDispatcher({
         canvasRef,
         actions: registry!,
-        toolsById: PAN_ON_DRAG,
+        entriesById: PAN_ON_DRAG,
         clientToWorld: (x, y) => ({ x, y }),
         views: {
           targets: () => [{
@@ -196,7 +196,7 @@ describe('useGestureDispatcher view routing', () => {
       useGestureDispatcher({
         canvasRef,
         actions: registry!,
-        toolsById: new Map(),
+        entriesById: new Map(),
         dispatcher: root.d,
         views: {
           // The resolver still names a view the target list no longer holds.

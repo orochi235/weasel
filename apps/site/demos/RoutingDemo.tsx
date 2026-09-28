@@ -257,7 +257,7 @@ export function RoutingDemo() {
       depRegistry: NO_DEPS,
       activeToolId: f.hand ? HAND.id : null,
       hotkeyStack: f.space ? [HAND.id] : [],
-      toolsById: TOOLS,
+      entriesById: TOOLS,
       isMac: IS_MAC,
       getRuleCtx: () => buildRuleCtx({
         focused: true,
@@ -419,7 +419,7 @@ export function RoutingDemo() {
                     <tr key={i} className={c.verdict.kind === 'would-fire' ? s.winner : undefined}>
                       <td className={s.mono}>{c.actionId}</td>
                       <td className={s.mono}>{routesForSpec(c.binding.spec).join(', ') || c.binding.spec.kind}</td>
-                      <td>{c.scope}{c.ownerToolId ? ` (${c.ownerToolId})` : ''}</td>
+                      <td>{c.scope}{c.ownerId ? ` (${c.ownerId})` : ''}</td>
                       <td className={s.mono}>{c.specificity.join(' ')}</td>
                       <td className={s[c.verdict.kind]}>{verdictText(c.verdict)}</td>
                     </tr>

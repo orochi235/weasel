@@ -54,7 +54,7 @@ import type { GestureSpec } from '@weasel-js/gestures';
 import type { OngoingHandle, InvocationCtx, ActionDeps, AffordanceHit, DragSample, Point2 } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
 import { buildDepsFromRequires } from '../actions/buildDeps';
-import type { Tool } from '../../tools/types';
+import type { Contribution } from '../../contributions/types';
 import { scopeBindings } from '../../contributions/assemble';
 import type { InputEvent, BindingScope, MatchResult, ScopedBinding } from './matcher';
 import { matchSortedWithBarred, specificity } from './matcher';
@@ -193,8 +193,8 @@ export interface DispatcherContext {
   activeToolId: string | null;
   /** Held-hotkey stack, top of stack last. */
   hotkeyStack: readonly string[];
-  /** Lookup for tool definitions. */
-  toolsById: ReadonlyMap<string, Tool<unknown, unknown>>;
+  /** Every registered entry, tools and ambient contributions alike, by id. */
+  entriesById: ReadonlyMap<string, Contribution<unknown>>;
   /** Platform flag for `mod` shorthand resolution. */
   isMac: boolean;
   /**
@@ -379,7 +379,7 @@ export interface ResolveOnlyResult {
   action: Action;
   scope: BindingScope;
   /** Tool id owning the winning binding; `null` for ambient action bindings. */
-  ownerToolId: string | null;
+  ownerId: string | null;
 }
 
 /**
@@ -404,7 +404,7 @@ export interface ResolvedCandidate {
   action: Action;
   binding: GestureBinding;
   scope: BindingScope;
-  ownerToolId: string | null;
+  ownerId: string | null;
   /** The tuple from `specificity(binding.spec)`, surfaced so a reader can see
    *  why one candidate outranks another rather than inferring it. */
   specificity: readonly [number, number, number, number];
@@ -868,14 +868,14 @@ export function createDispatcher(opts?: {
     // the top as the engaged one (`ToolsApi.hotkeyEngaged` is `.at(-1)`), so
     // walking the stack bottom-first handed ties to the oldest hold and routed
     // a drag to a tool the rest of the kit did not consider engaged.
-    const ordered: Tool<unknown, unknown>[] = [];
+    const ordered: Contribution<unknown>[] = [];
     for (let i = ctx.hotkeyStack.length - 1; i >= 0; i--) {
       const id = ctx.hotkeyStack[i]!;
-      const tool = ctx.toolsById.get(id);
-      if (tool && !ordered.includes(tool)) ordered.push(tool);
+      const entry = ctx.entriesById.get(id);
+      if (entry && !ordered.includes(entry)) ordered.push(entry);
     }
-    for (const tool of ctx.toolsById.values()) {
-      if (!ordered.includes(tool)) ordered.push(tool);
+    for (const entry of ctx.entriesById.values()) {
+      if (!ordered.includes(entry)) ordered.push(entry);
     }
     // `Eligibility.capabilities` is a tool-level gate over the same tags the
     // `capability:` selector reads. It is the only one that fires for a tool
@@ -900,7 +900,7 @@ export function createDispatcher(opts?: {
       const targetScope: BindingScope = action.scope === 'hotkey' ? 'hotkey' : 'ambient';
       for (const binding of actionBindings(action)) {
         if (!liveInView(binding, view)) continue;
-        result.push({ binding, scope: targetScope, ownerToolId: null });
+        result.push({ binding, scope: targetScope, ownerId: null });
       }
     }
 
@@ -1205,7 +1205,7 @@ export function createDispatcher(opts?: {
         return 'empty-handle';
       }
       inFlightHandles.set(gestureId, handle);
-      inFlightOwners.set(gestureId, match.ownerToolId);
+      inFlightOwners.set(gestureId, match.ownerId);
       inFlightActions.set(gestureId, action);
       return 'fired';
     }
@@ -1353,7 +1353,7 @@ export function createDispatcher(opts?: {
           actionId: m.binding.actionId,
           routes: routesForSpec(m.binding.spec),
           scope: m.scope,
-          ownerToolId: m.ownerToolId,
+          ownerId: m.ownerId,
           namesView: namesView(m.binding, view),
           specificity: specificity(m.binding.spec),
           ...(eligible !== undefined ? { eligible: describeEligible(eligible) } : {}),
@@ -1461,7 +1461,7 @@ export function createDispatcher(opts?: {
         action,
         binding: match.binding,
         scope: match.scope,
-        ownerToolId: match.ownerToolId,
+        ownerId: match.ownerId,
         specificity: specificity(match.binding.spec),
         verdict,
       });
@@ -1477,7 +1477,7 @@ export function createDispatcher(opts?: {
       actionId: winner.action.id,
       action: winner.action,
       scope: winner.match.scope,
-      ownerToolId: winner.match.ownerToolId,
+      ownerId: winner.match.ownerId,
     };
   }
 

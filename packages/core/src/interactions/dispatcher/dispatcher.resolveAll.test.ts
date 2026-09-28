@@ -56,7 +56,7 @@ function makeCtx(
     depRegistry: makeDepRegistry(),
     activeToolId: 'select',
     hotkeyStack: [],
-    toolsById: new Map(),
+    entriesById: new Map(),
     isMac: false,
     ...overrides,
   };
@@ -105,7 +105,7 @@ describe('resolveAll', () => {
       actions: makeRegistry([action('hk'), action('act'), action('amb')]),
       activeToolId: 'activeTool',
       hotkeyStack: ['hotkeyTool'],
-      toolsById: new Map<string, Tool<unknown>>([
+      entriesById: new Map<string, Tool<unknown>>([
         ['hotkeyTool', tool('hotkeyTool', [bind('hk')])],
         ['activeTool', tool('activeTool', [bind('act')])],
         ['ambientTool', tool('ambientTool', [bind('amb')], { always: true })],
@@ -121,7 +121,7 @@ describe('resolveAll', () => {
     const ctx = makeCtx({
       actions: makeRegistry([action('first'), action('second')]),
       activeToolId: 't',
-      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+      entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
         { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'first' },
         { spec: { kind: 'drag' }, actionId: 'second' },
       ])]]),
@@ -135,7 +135,7 @@ describe('resolveAll', () => {
     const ctx = makeCtx({
       actions: makeRegistry([action('narrow'), action('broad')]),
       activeToolId: 't',
-      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+      entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
         // `shift: 'optional'` so the broad binding still matches a shift-held
         // event (unlisted modifiers are forbidden by default). `'optional'`
         // does not count toward specificity, so this stays a [0,0,0,1] spec.
@@ -161,7 +161,7 @@ describe('resolveAll', () => {
         action('on'),
       ]),
       activeToolId: 't',
-      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+      entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
         { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'off' },
         { spec: { kind: 'drag' }, actionId: 'on' },
       ])]]),
@@ -183,7 +183,7 @@ describe('resolveAll', () => {
         action('below', { enabled: belowEnabled as never }),
       ]),
       activeToolId: 't',
-      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+      entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
         { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'off' },
         { spec: { kind: 'drag' }, actionId: 'on' },
         { spec: { kind: 'drag' }, actionId: 'below' },
@@ -207,7 +207,7 @@ describe('resolveAll', () => {
       ]),
       activeToolId: 't',
       getRuleCtx: () => makeRuleCtx({ allowedCapabilities: new Set() }),
-      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+      entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
         { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'gated' },
         { spec: { kind: 'drag' }, actionId: 'open' },
       ])]]),
@@ -229,7 +229,7 @@ describe('resolveAll', () => {
       ]),
       activeToolId: 't',
       getRuleCtx: () => makeRuleCtx({ allowedCapabilities: new Set() }),
-      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+      entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
         { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'win' },
         { spec: { kind: 'drag' }, actionId: 'gated' },
       ])]]),
@@ -246,7 +246,7 @@ describe('resolveAll', () => {
     const ctx = makeCtx({
       actions: makeRegistry([action('same', { enabled: () => 'scene-empty' as never })]),
       activeToolId: 't',
-      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+      entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
         { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'same' },
         { spec: { kind: 'drag' }, actionId: 'same' },
       ])]]),
@@ -262,7 +262,7 @@ describe('resolveAll', () => {
     const ctx = makeCtx({
       actions: makeRegistry([action('same')]),
       activeToolId: 't',
-      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+      entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
         { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'same' },
         { spec: { kind: 'drag' }, actionId: 'same' },
       ])]]),
@@ -300,7 +300,7 @@ describe('resolveAll({ evaluateShadowed })', () => {
       ]),
       activeToolId: 't',
       getRuleCtx: () => makeRuleCtx({ allowedCapabilities: new Set() }),
-      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+      entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
         { spec: { kind: 'drag', target: 'selected-body', mods: { shift: true } }, actionId: 'win' },
         { spec: { kind: 'drag', target: 'selected-body', mods: { shift: 'optional' } }, actionId: 'offBelow' },
         { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'gatedBelow' },
@@ -384,7 +384,7 @@ describe('resolveAll({ evaluateShadowed })', () => {
         action('same', { enabled: () => 'scene-empty' as never }),
       ]),
       activeToolId: 't',
-      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+      entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
         { spec: { kind: 'drag', target: 'selected-body', mods: { shift: true } }, actionId: 'win' },
         { spec: { kind: 'drag', target: 'selected-body', mods: { shift: 'optional' } }, actionId: 'same' },
         { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'same' },
@@ -403,7 +403,7 @@ describe('resolveAll({ evaluateShadowed })', () => {
     const ctx = makeCtx({
       actions: makeRegistry([action('same')]),
       activeToolId: 't',
-      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+      entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
         { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'same' },
         { spec: { kind: 'drag' }, actionId: 'same' },
       ])]]),
@@ -440,7 +440,7 @@ describe('resolveOnly agrees with resolveAll', () => {
       ctx: () => makeCtx({
         actions: makeRegistry([action('only')]),
         activeToolId: 't',
-        toolsById: new Map<string, Tool<unknown>>([
+        entriesById: new Map<string, Tool<unknown>>([
           ['t', tool('t', [{ spec: { kind: 'drag' }, actionId: 'only' }])],
         ]),
       }),
@@ -453,7 +453,7 @@ describe('resolveOnly agrees with resolveAll', () => {
           action('on'),
         ]),
         activeToolId: 't',
-        toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+        entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
           { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'off' },
           { spec: { kind: 'drag' }, actionId: 'on' },
         ])]]),
@@ -464,7 +464,7 @@ describe('resolveOnly agrees with resolveAll', () => {
       ctx: () => makeCtx({
         actions: makeRegistry([action('off', { enabled: () => 'not-applicable' as never })]),
         activeToolId: 't',
-        toolsById: new Map<string, Tool<unknown>>([
+        entriesById: new Map<string, Tool<unknown>>([
           ['t', tool('t', [{ spec: { kind: 'drag' }, actionId: 'off' }])],
         ]),
       }),
@@ -479,7 +479,7 @@ describe('resolveOnly agrees with resolveAll', () => {
           actions: makeRegistry([action('hk'), action('act'), action('amb')]),
           activeToolId: 'activeTool',
           hotkeyStack: ['hotkeyTool'],
-              toolsById: new Map<string, Tool<unknown>>([
+              entriesById: new Map<string, Tool<unknown>>([
             ['hotkeyTool', tool('hotkeyTool', [bind('hk')])],
             ['activeTool', tool('activeTool', [bind('act')])],
             ['ambientTool', tool('ambientTool', [bind('amb')], { always: true })],
@@ -498,7 +498,7 @@ describe('resolveOnly agrees with resolveAll', () => {
         ]),
         activeToolId: 't',
         getRuleCtx: () => makeRuleCtx({ allowedCapabilities: new Set() }),
-        toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+        entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
           { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'gated' },
           { spec: { kind: 'drag' }, actionId: 'open' },
         ])]]),
@@ -511,7 +511,7 @@ describe('resolveOnly agrees with resolveAll', () => {
       ctx: () => makeCtx({
         actions: makeRegistry([action('same')]),
         activeToolId: 't',
-        toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+        entriesById: new Map<string, Tool<unknown>>([['t', tool('t', [
           { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'same' },
           { spec: { kind: 'drag' }, actionId: 'same' },
         ])]]),
@@ -532,7 +532,7 @@ describe('resolveOnly agrees with resolveAll', () => {
         expect(only).not.toBeNull();
         expect(only!.actionId).toBe(first.actionId);
         expect(only!.scope).toBe(first.scope);
-        expect(only!.ownerToolId).toBe(first.ownerToolId);
+        expect(only!.ownerId).toBe(first.ownerId);
         expect(only!.action).toBe(first.action);
       }
     });

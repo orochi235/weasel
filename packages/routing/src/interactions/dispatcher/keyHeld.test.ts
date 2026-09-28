@@ -55,19 +55,19 @@ function makeCtx(
     depRegistry: makeDepRegistry(),
     activeToolId: 'select',
     hotkeyStack: [],
-    toolsById: new Map(),
+    entriesById: new Map(),
     isMac: false,
     ...overrides,
   };
 }
 
-/** Build a tool with the given bindings registered in a toolsById map. */
+/** Build a tool with the given bindings registered in a entriesById map. */
 function makeTool(
   toolId: string,
   bindings: Tool['bindings'],
-): { tool: Tool; toolsById: Map<string, Tool> } {
+): { tool: Tool; entriesById: Map<string, Tool> } {
   const tool: Tool = { id: toolId, eligibility: { focus: true }, bindings };
-  return { tool, toolsById: new Map([[toolId, tool]]) };
+  return { tool, entriesById: new Map([[toolId, tool]]) };
 }
 
 /** Minimal ongoing action. Default mock returns a non-empty handle
@@ -186,13 +186,13 @@ describe('keyHeld engagement', () => {
     }, engagedRun);
 
     const registry = makeRegistry([engageAction, engagedKeyAction]);
-    const { toolsById } = makeTool('myTool', [
+    const { entriesById } = makeTool('myTool', [
       { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'space-held' },
       { spec: { kind: 'key', key: 'x', phase: 'engaged' }, actionId: 'engaged-key' },
     ]);
 
     const dispatcher = createDispatcher();
-    const ctx = makeCtx({ actions: registry, activeToolId: 'myTool', toolsById });
+    const ctx = makeCtx({ actions: registry, activeToolId: 'myTool', entriesById });
 
     // Before keydown — 'x' with [engaged] phase should NOT fire.
     const preResult = dispatcher.handleInput(keyDown('x'), ctx);
@@ -231,13 +231,13 @@ describe('keyHeld engagement', () => {
     }, engagedRun);
 
     const registry = makeRegistry([engageAction, engagedKeyAction]);
-    const { toolsById } = makeTool('myTool', [
+    const { entriesById } = makeTool('myTool', [
       { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'space-held' },
       { spec: { kind: 'key', key: 'x', phase: 'engaged' }, actionId: 'engaged-key' },
     ]);
 
     const dispatcher = createDispatcher();
-    const ctx = makeCtx({ actions: registry, activeToolId: 'myTool', toolsById });
+    const ctx = makeCtx({ actions: registry, activeToolId: 'myTool', entriesById });
 
     // Engage.
     dispatcher.handleInput(keyHeldDown(' '), ctx);
@@ -274,7 +274,7 @@ describe('keyHeld engagement', () => {
     }, clickRun);
 
     const registry = makeRegistry([engageAction, clickAction]);
-    const { toolsById } = makeTool('myTool', [
+    const { entriesById } = makeTool('myTool', [
       { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'space-held' },
       { spec: { kind: 'click', phase: 'engaged' }, actionId: 'engaged-click' },
     ]);
@@ -288,7 +288,7 @@ describe('keyHeld engagement', () => {
     };
 
     const dispatcher = createDispatcher();
-    const ctx = makeCtx({ actions: registry, activeToolId: 'myTool', toolsById });
+    const ctx = makeCtx({ actions: registry, activeToolId: 'myTool', entriesById });
 
     // Click before hold — should not fire.
     expect(dispatcher.handleInput(clickEvent, ctx)).toBe('unhandled');
@@ -332,13 +332,13 @@ describe('keyHeld engagement', () => {
     }, engagedRun);
 
     const registry = makeRegistry([engageAction, engagedAction]);
-    const { toolsById } = makeTool('myTool', [
+    const { entriesById } = makeTool('myTool', [
       { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'space-held' },
       { spec: { kind: 'key', key: 'z', phase: 'engaged' }, actionId: 'engaged-action' },
     ]);
 
     const dispatcher = createDispatcher();
-    const ctx = makeCtx({ actions: registry, activeToolId: 'myTool', toolsById });
+    const ctx = makeCtx({ actions: registry, activeToolId: 'myTool', entriesById });
 
     // Engage Space.
     dispatcher.handleInput(keyHeldDown(' '), ctx);
@@ -392,14 +392,14 @@ describe('keyHeld engagement', () => {
     }, dragShiftStart);
 
     const registry = makeRegistry([engageAction, dragNoShift, dragShift]);
-    const { toolsById } = makeTool('myTool', [
+    const { entriesById } = makeTool('myTool', [
       { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'space-held' },
       { spec: { kind: 'drag', phase: 'engaged' }, actionId: 'engaged-drag' },
       { spec: { kind: 'drag', mods: { shift: true }, phase: 'engaged' }, actionId: 'engaged-drag-shift' },
     ]);
 
     const dispatcher = createDispatcher();
-    const ctx = makeCtx({ actions: registry, activeToolId: 'myTool', toolsById });
+    const ctx = makeCtx({ actions: registry, activeToolId: 'myTool', entriesById });
 
     // Engage Space.
     dispatcher.handleInput(keyHeldDown(' '), ctx);
@@ -476,7 +476,7 @@ describe('keyHeld engagement', () => {
         { spec: { kind: 'key', key: 'q', phase: [{ channel: 'toolB', phase: 'engaged' }] }, actionId: 'a-engaged' },
       ],
     };
-    const toolsById = new Map([['toolA', toolA], ['toolB', toolB]]);
+    const entriesById = new Map([['toolA', toolA], ['toolB', toolB]]);
 
     const dispatcher = createDispatcher();
 
@@ -485,7 +485,7 @@ describe('keyHeld engagement', () => {
       actions: registry,
       activeToolId: 'toolA',
       hotkeyStack: ['toolB'],
-      toolsById,
+      entriesById,
     });
 
     // Engage toolA by holding Space.

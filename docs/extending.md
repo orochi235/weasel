@@ -546,11 +546,11 @@ import { useActionsRegistry } from '@weasel-js/core';
 const registry = useActionsRegistry();
 useEffect(() => {
   if (!registry) return;
-  const undo = [...toolsById.values()].flatMap((tool) =>
+  const undo = [...entriesById.values()].flatMap((tool) =>
     (tool.actions ?? []).map((action) => registry.register(action)),
   );
   return () => { for (const u of undo) u(); };
-}, [registry, toolsById]);
+}, [registry, entriesById]);
 ```
 
 Skip it and the gesture still matches. The dispatcher finds nothing registered
@@ -568,7 +568,7 @@ so that a tool hook stays callable from anywhere.
 **Add the selection's own bindings.** The select tool only chooses. Dragging
 the selection to move or clone it, and its resize and rotation handles, are the
 `always` entries `selectionMoveContribution()` and
-`selectionTransformContribution()`; put them in the dispatcher's `toolsById`
+`selectionTransformContribution()`; put them in the dispatcher's `entriesById`
 beside your tools (transform first, since a handle sits over the body it
 resizes). The 3d lab (`packages/labkit/examples/3d-lab/SolidInstrument.tsx`)
 adds the move one.

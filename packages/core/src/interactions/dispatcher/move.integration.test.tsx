@@ -73,7 +73,7 @@ function MountDispatcher({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasE
   useGestureDispatcher({
     canvasRef,
     actions: registry!,
-    toolsById: new Map(),
+    entriesById: new Map(),
     classifyTarget: () => ({ body: 'selected-body' }),
   });
   return <canvas ref={canvasRef} data-testid="canvas" />;

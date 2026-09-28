@@ -19,7 +19,7 @@ export function scopeBindings(
     const scope = liveScope(entry.id, entry.eligibility ?? {}, state);
     if (scope === null) continue;
     for (const binding of entry.bindings ?? []) {
-      out.push({ binding, scope, ownerToolId: entry.id });
+      out.push({ binding, scope, ownerId: entry.id });
     }
   }
   return out;

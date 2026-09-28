@@ -14,7 +14,6 @@ import type {
   ContributionChrome as RoutingContributionChrome,
   Tool as RoutingTool,
   ToolDef as RoutingToolDef,
-  ViewportToolDef as RoutingViewportToolDef,
   AnyToolOf,
 } from '@weasel-js/routing';
 import type {
@@ -36,7 +35,6 @@ export type ContributionChrome = RoutingContributionChrome<Overlay>;
 export type Tool<TScratch = unknown> = RoutingTool<TScratch, Overlay>;
 export type AnyTool = AnyToolOf<Overlay>;
 export type ToolDef<TScratch = void> = RoutingToolDef<TScratch, Overlay>;
-export type ViewportToolDef<TScratch = void> = RoutingViewportToolDef<TScratch, Overlay>;
 export type ToolsApi = RoutingToolsApi<Overlay>;
 export type UseToolsOptions = RoutingUseToolsOptions<Overlay>;
 export type ContributionsApi = RoutingContributionsApi<Overlay>;
@@ -44,7 +42,7 @@ export type UseContributionsOptions = RoutingUseContributionsOptions<Overlay>;
 
 // Routing's own authoring functions: the `OverlaySchema` merge above makes
 // their overlay default `Overlay`, so there is one `defineTool`, not a wrapper.
-export { defineTool, defineViewportTool } from '@weasel-js/routing';
+export { defineTool } from '@weasel-js/routing';
 export const useTools: (opts: UseToolsOptions) => ToolsApi = routingUseTools;
 export const useContributions: (opts: UseContributionsOptions) => ContributionsApi =
   routingUseContributions;

@@ -24,6 +24,7 @@ import { ActiveToolContextProvider } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { lassoSelectAction } from '../actions/defaults/lassoSelect';
 import type { LassoSelectDep } from '../actions/depSchema';
+import type { Contribution } from '../../tools/overlayBinding';
 
 // ---------------------------------------------------------------------------
 // Canvas mock
@@ -65,17 +66,17 @@ function makeLassoDepFactory(hits: string[] = [], initial: string[] = []) {
 }
 
 /** The active lasso tool, carrying the binding `useLassoTool` declares. */
-const LASSO_TOOLS = new Map([
+const LASSO_TOOLS: ReadonlyMap<string, Contribution> = new Map([
   ['lasso', {
     id: 'lasso',
     eligibility: { focus: true },
     bindings: [{ spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'lassoSelect' }],
   }],
-]) as unknown as ReadonlyMap<string, import('@weasel-js/routing').AnyTool>;
+]);
 
 function MountDispatcher({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement | null> }) {
   const registry = useActionsRegistry();
-  useGestureDispatcher({ canvasRef, actions: registry!, toolsById: LASSO_TOOLS });
+  useGestureDispatcher({ canvasRef, actions: registry!, entriesById: LASSO_TOOLS });
   return <canvas ref={canvasRef} data-testid="canvas" />;
 }
 

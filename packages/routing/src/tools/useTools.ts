@@ -18,8 +18,9 @@ export interface UseToolsOptions<TOverlay = KernelOverlay> {
    *  tool ids; the values are the tool records. A tool with `hotkey` set
    *  is wired into the hotkey slot whenever the engagement state matches. */
   registry: Record<string, AnyToolOf<TOverlay>>;
-  /** Always-on tools — listen continuously regardless of active slot. */
-  ambient?: AnyToolOf<TOverlay>[];
+  /** Always-on entries — tools or other contributions, live regardless of
+   *  the active slot. */
+  ambient?: readonly Contribution<TOverlay>[];
 }
 
 /** The tool registry's runtime surface: which tool is active, which is
@@ -37,8 +38,8 @@ export interface ToolsApi<TOverlay = KernelOverlay> {
   engageHotkey: (id: string) => void;
   /** Disengage the hotkey-slot tool, if any. */
   disengageHotkey: () => void;
-  /** All always-on tools, in registration order. */
-  ambient: readonly AnyToolOf<TOverlay>[];
+  /** All always-on entries, in registration order. */
+  ambient: readonly Contribution<TOverlay>[];
   /** Full registry — for userland UI (palette buttons, etc.). */
   registry: Readonly<Record<string, AnyToolOf<TOverlay>>>;
   /** Returns true if a tool with the given id is in the registry or ambient list. */
@@ -55,7 +56,7 @@ export interface ToolsApi<TOverlay = KernelOverlay> {
  *  the authored form via the `def` reflection handle. A tool that already
  *  declares what its slot implies is returned as-is: `ToolsApi.registry`
  *  hands back the objects the caller passed, and consumers compare identity. */
-function declareSlot<T extends AnyTool>(tool: T, slot: 'focus' | 'always'): T {
+function declareSlot<T extends Contribution<unknown>>(tool: T, slot: 'focus' | 'always'): T {
   const hotkey = (tool.def as { hotkey?: HotkeyTrigger } | undefined)?.hotkey;
   const eligibility: Eligibility = {
     ...tool.eligibility,
@@ -65,15 +66,15 @@ function declareSlot<T extends AnyTool>(tool: T, slot: 'focus' | 'always'): T {
   return sameEligibility(tool.eligibility, eligibility) ? tool : { ...tool, eligibility };
 }
 
-const NO_AMBIENT: readonly AnyTool[] = [];
+const NO_AMBIENT: readonly never[] = [];
 
 /** `registry` and `ambient` as last passed, kept by identity for as long as
  *  every tool in them is the same object under the same id. */
-function useStableSources<T extends AnyTool>(
+function useStableSources<T extends AnyTool, A extends Contribution<unknown>>(
   registry: Record<string, T>,
-  ambient: readonly T[] | undefined,
-): { registry: Record<string, T>; ambient: readonly T[] } {
-  const next = { registry, ambient: ambient ?? (NO_AMBIENT as readonly T[]) };
+  ambient: readonly A[] | undefined,
+): { registry: Record<string, T>; ambient: readonly A[] } {
+  const next = { registry, ambient: ambient ?? NO_AMBIENT };
   const ref = useRef(next);
   const prev = ref.current;
   if (prev !== next && !(sameRecord(prev.registry, next.registry) && sameList(prev.ambient, next.ambient))) {

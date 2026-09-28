@@ -37,7 +37,7 @@ describe('dev-flag reads survive a runtime with no process', () => {
     } as never;
     const pool = [{
       binding: { spec: { kind: 'drag' }, actionId: 'insert' },
-      scope: 'active', ownerToolId: 'rect',
+      scope: 'active', ownerId: 'rect',
     }] as never;
     expect(withoutProcess(() => matchSorted(event, pool, false, undefined, warn))).toEqual([]);
     expect(warn).toHaveBeenCalledOnce();

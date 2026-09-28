@@ -48,7 +48,7 @@ function makeCtx(
     depRegistry: makeDepRegistry(),
     activeToolId: 'select',
     hotkeyStack: [],
-    toolsById: new Map(),
+    entriesById: new Map(),
     isMac: false,
     ...overrides,
   };
@@ -218,12 +218,12 @@ describe('createDispatcher', () => {
         eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
       };
-      const toolsById = new Map([['myTool', activeTool]]);
+      const entriesById = new Map([['myTool', activeTool]]);
 
       const dispatcher = createDispatcher();
       const result = dispatcher.handleInput(
         keyAEvent,
-        makeCtx({ actions: registry, activeToolId: 'myTool', toolsById }),
+        makeCtx({ actions: registry, activeToolId: 'myTool', entriesById }),
       );
 
       expect(result).toBe('handled');
@@ -250,7 +250,7 @@ describe('createDispatcher', () => {
         eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'hotkey-action' }],
       };
-      const toolsById = new Map([
+      const entriesById = new Map([
         ['myTool', activeTool],
         ['hotkeyTool', hotkeyTool],
       ]);
@@ -262,7 +262,7 @@ describe('createDispatcher', () => {
           actions: registry,
           activeToolId: 'myTool',
           hotkeyStack: ['hotkeyTool'],
-          toolsById,
+          entriesById,
         }),
       );
 
@@ -271,7 +271,7 @@ describe('createDispatcher', () => {
       expect(activeRun).not.toHaveBeenCalled();
     });
 
-    it('toolsById lookup for active tool when present', () => {
+    it('entriesById lookup for active tool when present', () => {
       const activeRun = vi.fn();
       const activeAction = immediateAction('active', 'a', activeRun);
       const registry = makeRegistry([activeAction]);
@@ -281,12 +281,12 @@ describe('createDispatcher', () => {
         eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
       };
-      const toolsById = new Map([['myTool', activeTool]]);
+      const entriesById = new Map([['myTool', activeTool]]);
 
       const dispatcher = createDispatcher();
       dispatcher.handleInput(
         keyAEvent,
-        makeCtx({ actions: registry, activeToolId: 'myTool', toolsById }),
+        makeCtx({ actions: registry, activeToolId: 'myTool', entriesById }),
       );
       expect(activeRun).toHaveBeenCalledOnce();
     });
@@ -309,9 +309,9 @@ describe('createDispatcher', () => {
         eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active.a' }],
       };
-      const toolsById = new Map([['editor', activeTool]]);
+      const entriesById = new Map([['editor', activeTool]]);
       const dispatcher = createDispatcher();
-      const ctx = makeCtx({ actions: registry, activeToolId: 'editor', toolsById });
+      const ctx = makeCtx({ actions: registry, activeToolId: 'editor', entriesById });
 
       expect(dispatcher.handleInput(keyAEvent, ctx)).toBe('handled');
       expect(hotkeyRun).toHaveBeenCalledOnce();
@@ -638,14 +638,14 @@ describe('createDispatcher', () => {
         eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'nonexistent' }],
       };
-      const toolsById = new Map([['myTool', activeTool]]);
+      const entriesById = new Map([['myTool', activeTool]]);
 
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const dispatcher = createDispatcher();
 
       const result = dispatcher.handleInput(
         keyAEvent,
-        makeCtx({ actions: registry, activeToolId: 'myTool', toolsById }),
+        makeCtx({ actions: registry, activeToolId: 'myTool', entriesById }),
       );
 
       expect(result).toBe('unhandled');
@@ -734,12 +734,12 @@ describe('createDispatcher', () => {
         eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
       };
-      const toolsById = new Map([['myTool', activeTool]]);
+      const entriesById = new Map([['myTool', activeTool]]);
 
       const dispatcher = createDispatcher();
       const result = dispatcher.handleInput(
         keyAEvent,
-        makeCtx({ actions: registry, activeToolId: 'myTool', toolsById }),
+        makeCtx({ actions: registry, activeToolId: 'myTool', entriesById }),
       );
 
       expect(result).toBe('handled');
@@ -766,12 +766,12 @@ describe('createDispatcher', () => {
         eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
       };
-      const toolsById = new Map([['myTool', activeTool]]);
+      const entriesById = new Map([['myTool', activeTool]]);
 
       const dispatcher = createDispatcher();
       const result = dispatcher.handleInput(
         keyAEvent,
-        makeCtx({ actions: registry, activeToolId: 'myTool', toolsById }),
+        makeCtx({ actions: registry, activeToolId: 'myTool', entriesById }),
       );
 
       expect(result).toBe('unhandled');
@@ -790,13 +790,13 @@ describe('createDispatcher', () => {
         // References an actionId that doesn't exist in the registry.
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'ghost' }],
       };
-      const toolsById = new Map([['myTool', activeTool]]);
+      const entriesById = new Map([['myTool', activeTool]]);
 
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const dispatcher = createDispatcher();
       const result = dispatcher.handleInput(
         keyAEvent,
-        makeCtx({ actions: registry, activeToolId: 'myTool', toolsById }),
+        makeCtx({ actions: registry, activeToolId: 'myTool', entriesById }),
       );
 
       expect(result).toBe('handled');
@@ -818,12 +818,12 @@ describe('createDispatcher', () => {
         eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
       };
-      const toolsById = new Map([['myTool', activeTool]]);
+      const entriesById = new Map([['myTool', activeTool]]);
 
       const dispatcher = createDispatcher();
       dispatcher.handleInput(
         keyAEvent,
-        makeCtx({ actions: registry, activeToolId: 'myTool', toolsById }),
+        makeCtx({ actions: registry, activeToolId: 'myTool', entriesById }),
       );
 
       expect(activeRun).toHaveBeenCalledOnce();
@@ -941,12 +941,12 @@ describe('createDispatcher', () => {
         makeCtx({
           actions: registry,
           activeToolId: 'hand',
-          toolsById: new Map([['hand', activeTool]]),
+          entriesById: new Map([['hand', activeTool]]),
         }),
       );
       expect(result?.actionId).toBe('hand.pan');
       expect(result?.scope).toBe('active');
-      expect(result?.ownerToolId).toBe('hand');
+      expect(result?.ownerId).toBe('hand');
     });
   });
 });
@@ -1162,30 +1162,30 @@ describe('view-scoped bindings', () => {
       eligibility: { focus: true },
       bindings: [{ spec: { kind: 'drag' }, actionId: 'tool.drag' }],
     };
-    const toolsById = new Map([['mini', mini], ['select', tool]]);
-    return { registry, toolsById, miniStart, toolStart };
+    const entriesById = new Map([['mini', mini], ['select', tool]]);
+    return { registry, entriesById, miniStart, toolStart };
   }
 
   it('is not live for input routed to another view', () => {
-    const { registry, toolsById, miniStart } = setup();
-    const onlyMini = new Map([['mini', toolsById.get('mini')!]]);
+    const { registry, entriesById, miniStart } = setup();
+    const onlyMini = new Map([['mini', entriesById.get('mini')!]]);
     const result = createDispatcher().handleInput(
-      down, makeCtx({ actions: registry, toolsById: onlyMini, viewId: null }),
+      down, makeCtx({ actions: registry, entriesById: onlyMini, viewId: null }),
     );
     expect(result).toBe('unhandled');
     expect(miniStart).not.toHaveBeenCalled();
   });
 
   it('outranks an active-tier binding for input in the view it names', () => {
-    const { registry, toolsById, miniStart, toolStart } = setup();
-    createDispatcher().handleInput(down, makeCtx({ actions: registry, toolsById, viewId: 'mini' }));
+    const { registry, entriesById, miniStart, toolStart } = setup();
+    createDispatcher().handleInput(down, makeCtx({ actions: registry, entriesById, viewId: 'mini' }));
     expect(miniStart).toHaveBeenCalledOnce();
     expect(toolStart).not.toHaveBeenCalled();
   });
 
   it('hands the routed view to the invoker', () => {
-    const { registry, toolsById, miniStart } = setup();
-    createDispatcher().handleInput(down, makeCtx({ actions: registry, toolsById, viewId: 'mini' }));
+    const { registry, entriesById, miniStart } = setup();
+    createDispatcher().handleInput(down, makeCtx({ actions: registry, entriesById, viewId: 'mini' }));
     expect((miniStart.mock.calls[0][0] as InvocationCtx).viewId).toBe('mini');
   });
 
@@ -1206,7 +1206,7 @@ describe('view-scoped bindings', () => {
       bindings: [{ spec: { kind: 'drag' }, actionId: 'mini.pan', opts: { views: ['mini'] } }],
     };
     createDispatcher().handleInput(down, makeCtx({
-      actions: registry, toolsById: new Map([['mini', mini]]), getRuleCtx: () => ruleCtx, viewId: 'mini',
+      actions: registry, entriesById: new Map([['mini', mini]]), getRuleCtx: () => ruleCtx, viewId: 'mini',
     }));
     expect(miniStart).toHaveBeenCalledOnce();
     expect(gatedStart).not.toHaveBeenCalled();

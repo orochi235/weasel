@@ -26,7 +26,7 @@ function makeCtx(actions: ActionsRegistry, tool: Tool): DispatcherContext {
     actions,
     activeToolId: 'lasso',
     hotkeyStack: [],
-    toolsById: new Map([['lasso', tool]]),
+    entriesById: new Map([['lasso', tool]]),
     isMac: false,
   };
 }

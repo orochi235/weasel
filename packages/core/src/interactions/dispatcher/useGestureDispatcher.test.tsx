@@ -22,7 +22,7 @@ function Probe({ actionDef, enabled = true, keyboard, affordanceAt, classifyTarg
   useGestureDispatcher({
     canvasRef,
     actions: registry!,
-    toolsById: new Map(),
+    entriesById: new Map(),
     enabled,
     ...(keyboard !== undefined ? { keyboard } : {}),
     affordanceAt,
@@ -161,7 +161,7 @@ describe('useGestureDispatcher', () => {
       function MountDispatcher() {
         const ref = useRef<HTMLCanvasElement | null>(null);
         const r = useActionsRegistry();
-        useGestureDispatcher({ canvasRef: ref, actions: r!, toolsById: new Map() });
+        useGestureDispatcher({ canvasRef: ref, actions: r!, entriesById: new Map() });
         return <canvas ref={ref} />;
       }
 
@@ -219,7 +219,7 @@ describe('useGestureDispatcher', () => {
       function MountDispatcher() {
         const ref = useRef<HTMLCanvasElement | null>(null);
         const r = useActionsRegistry();
-        useGestureDispatcher({ canvasRef: ref, actions: r!, toolsById: new Map() });
+        useGestureDispatcher({ canvasRef: ref, actions: r!, entriesById: new Map() });
         return <canvas ref={ref} />;
       }
 
@@ -421,7 +421,7 @@ describe('useGestureDispatcher', () => {
         registry?.register(pressAction(pressSpy));
         registry?.register(dragAction);
         useGestureDispatcher({
-          canvasRef, actions: registry!, toolsById: new Map(), enabled: true,
+          canvasRef, actions: registry!, entriesById: new Map(), enabled: true,
           classifyTarget: () => ({ body: 'empty' as const }),
         });
         return <canvas ref={canvasRef} />;

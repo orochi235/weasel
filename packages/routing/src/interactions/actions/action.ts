@@ -172,7 +172,7 @@ export interface ActionDispatch extends BindingSource {
    * gesture.
    *
    * This is where mid-gesture cursors live now. They used to come from the
-   * tool side — `ViewportToolDef.engaged.cursor` for a phase-gated string,
+   * tool side — an `engaged` phase entry's cursor,
    * or a function-form `Tool.cursor` reading the gesture scratch out of the
    * tool-routing dispatcher. Both belonged to a pipeline whose whole job was
    * being taken over by bindings, and neither could describe a cursor for an

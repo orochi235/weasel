@@ -46,8 +46,8 @@ export interface RecordCandidate {
   /** The binding's spec in route grammar — one per arg alternative. */
   routes: readonly string[];
   scope: BindingScope;
-  /** Tool owning the binding; `null` for an action's own binding. */
-  ownerToolId: string | null;
+  /** The tool or contribution that declared the binding; `null` for an action's own binding. */
+  ownerId: string | null;
   /** Whether the binding's `views` names the routed view. */
   namesView: boolean;
   /** `specificity(spec)`: target, modifiers, phase, exact. */

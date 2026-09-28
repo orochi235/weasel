@@ -23,6 +23,7 @@ import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
 import { createGestureSource } from 'canvas/SceneCanvas/dispatcherGestureBounds';
 import { unionAABB } from 'core/geometry/unionBounds';
 import type { InsertDep } from '../actions/depSchema';
+import type { Contribution } from '../../tools/overlayBinding';
 import type { NodeId } from 'core/scene/types';
 
 // ---------------------------------------------------------------------------
@@ -76,8 +77,8 @@ function MountDispatcher({
 }) {
   const registry = useActionsRegistry();
 
-  // Build a fake toolsById map with a single tool that has the given bindings.
-  const toolsById = useRef<ReadonlyMap<string, { bindings?: unknown[] }>>(
+  // Build a fake entriesById map with a single tool that has the given bindings.
+  const entriesById = useRef<ReadonlyMap<string, Contribution>>(
     new Map([
       ['rect', {
         id: 'rect',
@@ -89,12 +90,12 @@ function MountDispatcher({
         })) ?? [],
       }],
     ])
-  ).current as ReadonlyMap<string, import('@weasel-js/routing').AnyTool>;
+  ).current;
 
   useGestureDispatcher({
     canvasRef,
     actions: registry!,
-    toolsById,
+    entriesById,
     // All clicks land on 'empty' — no bodies to hit.
     classifyTarget: () => ({ body: 'empty' }),
     dispatcher,

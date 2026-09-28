@@ -1,4 +1,4 @@
-import type { Tool } from '../../types';
+import type { Contribution } from '../../../contributions/types';
 import type { Action } from '../../../interactions/actions/action';
 import { actionBindings } from '../../../interactions/actions/binding';
 import type { ParsedModifiers } from '../routeGrammar';
@@ -17,9 +17,9 @@ export interface Conflict {
   arg: string | undefined;
   target: string | undefined;
   modifiers: ParsedModifiers;
-  /** All tool ids that registered the same tuple. At least 2 by
-   *  construction. Order matches the input tools[] order. */
-  toolIds: string[];
+  /** The ids of every entry that declared the same tuple. At least 2 by
+   *  construction, in input order. */
+  ownerIds: string[];
 }
 
 /** Detect exact-tuple overlaps across a tool registration set.
@@ -58,8 +58,8 @@ export interface Conflict {
  *  over-reports, because registry tools take turns in the active slot and
  *  can't collide with each other — see {@link findScopedConflicts}.
  */
-export function findConflicts(tools: readonly Tool<unknown, unknown>[]): Conflict[] {
-  return findConflictsKeyed(tools).map((k) => k.conflict);
+export function findConflicts(entries: readonly Contribution<unknown>[]): Conflict[] {
+  return findConflictsKeyed(entries).map((k) => k.conflict);
 }
 
 /**
@@ -72,13 +72,13 @@ export function findConflicts(tools: readonly Tool<unknown, unknown>[]): Conflic
  * told them apart in the first place.
  */
 function findConflictsKeyed(
-  tools: readonly Tool<unknown, unknown>[],
+  entries: readonly Contribution<unknown>[],
   rules?: ReadonlyMap<string, Rule>,
   modes: readonly ActiveMode[] = KIT_MODES,
 ): { key: string; conflict: Conflict }[] {
-  const entries = buildRouteRegistry(tools);
+  const rows = buildRouteRegistry(entries);
   const groups = new Map<string, RegistryEntry[]>();
-  for (const entry of entries) {
+  for (const entry of rows) {
     // One bucket per arg the binding answers to, not one per display token.
     // `key: ['h','H']` and `key: 'H'` really do collide — `matchKey` takes any
     // member, case-insensitively — and joining the alternatives into `'h|H'`
@@ -91,8 +91,8 @@ function findConflictsKeyed(
       else groups.set(key, [entry]);
     }
   }
-  // Tools carry no rule, so a tool's bindings count as eligible always.
-  const ruleOf = (entry: RegistryEntry): Rule => rules?.get(entry.toolId) ?? ALWAYS;
+  // Only actions carry a rule, so a tool's or contribution's bindings count as eligible always.
+  const ruleOf = (entry: RegistryEntry): Rule => rules?.get(entry.ownerId) ?? ALWAYS;
   const tie = (e: RegistryEntry, f: RegistryEntry): boolean =>
     viewsTie(e.views, f.views) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
   const conflicts: { key: string; conflict: Conflict }[] = [];
@@ -109,7 +109,7 @@ function findConflictsKeyed(
         arg: first.arg,
         target: first.target,
         modifiers: first.modifiers,
-        toolIds: bucket.map((e) => e.toolId),
+        ownerIds: bucket.map((e) => e.ownerId),
       },
     });
   }
@@ -165,9 +165,9 @@ function predicateId(pred: object): number {
  */
 export interface ToolScopes {
   /** Tools eligible for the active slot, keyed by id or as a flat list. */
-  registry: readonly Tool<unknown, unknown>[] | Readonly<Record<string, Tool<unknown, unknown>>>;
-  /** Always-on tools. Every one of these is live at once. */
-  ambient?: readonly Tool<unknown, unknown>[];
+  registry: readonly Contribution<unknown>[] | Readonly<Record<string, Contribution<unknown>>>;
+  /** Always-on entries. Every one of these is live at once. */
+  ambient?: readonly Contribution<unknown>[];
   /** Registered actions. Their `defaultBinding`s assemble at ambient scope
    *  (hotkey scope when `Action.scope` says so), alongside the tools above. */
   actions?: readonly Action[];
@@ -188,7 +188,7 @@ function rulesCanHoldTogether(a: Rule, b: Rule, modes: readonly ActiveMode[]): b
 
 const KIT_MODES: readonly ActiveMode[] = DEFAULT_MODES.map(activeModeOf);
 
-function actionAsTool(action: Action): Tool<unknown, unknown> {
+function actionAsEntry(action: Action): Contribution<unknown> {
   return { id: action.id, eligibility: {}, bindings: actionBindings(action) };
 }
 
@@ -230,20 +230,20 @@ function eligibleRule(action: Action): Rule | undefined {
  */
 export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   const registry = Array.isArray(scopes.registry)
-    ? (scopes.registry as readonly Tool<unknown, unknown>[])
-    : Object.values(scopes.registry as Readonly<Record<string, Tool<unknown, unknown>>>);
+    ? (scopes.registry as readonly Contribution<unknown>[])
+    : Object.values(scopes.registry as Readonly<Record<string, Contribution<unknown>>>);
   const actions = scopes.actions ?? [];
   const rules = new Map<string, Rule>();
   for (const a of actions) {
     const rule = eligibleRule(a);
     if (rule) rules.set(a.id, rule);
   }
-  const hotkeyActions = actions.filter((a) => a.scope === 'hotkey').map(actionAsTool);
-  const gatedActions: Tool<unknown, unknown>[] = [];
-  const ungated: Tool<unknown, unknown>[] = [];
+  const hotkeyActions = actions.filter((a) => a.scope === 'hotkey').map(actionAsEntry);
+  const gatedActions: Contribution<unknown>[] = [];
+  const ungated: Contribution<unknown>[] = [];
   for (const a of actions) {
     if (a.scope === 'hotkey') continue;
-    (a.eligible !== undefined ? gatedActions : ungated).push(actionAsTool(a));
+    (a.eligible !== undefined ? gatedActions : ungated).push(actionAsEntry(a));
   }
   const modes = scopes.modes ?? KIT_MODES;
   const ambient = [...(scopes.ambient ?? []), ...ungated];
@@ -252,7 +252,7 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   const seen = new Set<string>();
   const add = (keyed: readonly { key: string; conflict: Conflict }[]): void => {
     for (const { key, conflict } of keyed) {
-      const dedupeKey = `${key}|${conflict.toolIds.join(',')}`;
+      const dedupeKey = `${key}|${conflict.ownerIds.join(',')}`;
       if (seen.has(dedupeKey)) continue;
       seen.add(dedupeKey);
       out.push(conflict);
@@ -300,7 +300,7 @@ export function formatConflict(conflict: Conflict): string {
     target: conflict.target,
     modifiers: conflict.modifiers,
   });
-  return `${route} — declared by ${conflict.toolIds.join(', ')}`;
+  return `${route} — declared by ${conflict.ownerIds.join(', ')}`;
 }
 
 /**

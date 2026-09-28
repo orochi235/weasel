@@ -108,14 +108,14 @@ function MatchedStage({ matched }: { matched: readonly RecordCandidate[] }) {
     <Stage title="Matched" note="every binding that fits the input">
       <table className={s.table}>
         <thead>
-          <tr><th>Action</th><th>Route</th><th>Tool</th><th>Tier</th></tr>
+          <tr><th>Action</th><th>Route</th><th>Owner</th><th>Tier</th></tr>
         </thead>
         <tbody>
           {matched.map((c, i) => (
             <tr key={i}>
               <td><Code size="sm">{c.actionId}</Code></td>
               <td><Routes candidate={c} /></td>
-              <td className={c.ownerToolId === null ? s.muted : undefined}>{c.ownerToolId ?? 'action'}</td>
+              <td className={c.ownerId === null ? s.muted : undefined}>{c.ownerId ?? 'action'}</td>
               <td>{c.scope}</td>
             </tr>
           ))}

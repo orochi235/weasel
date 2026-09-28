@@ -24,7 +24,6 @@ Priority tags:
   - a held-key temporary tool: Space for hand, hold-O opacity scrub;
   - an always-on contribution in the `ambient` slot: the viewport, the HUD, the loupe;
   - a command given a place on a tool rail: forge's Info, labkit's `ToolItem` with `onActivate`;
-  - a viewport behavior: `useHandTool`, `defineViewportTool`, which exists only as a naming signal;
   - `select`, which only chooses: pick, marquee, clear. Moving, cloning, resizing and
     rotating the selection are always-live entries of their own (`selectionContributions.ts`),
     which fit none of the meanings above either.

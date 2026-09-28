@@ -74,7 +74,7 @@ function Mount({
     });
   }
 
-  const toolsById = new Map<string, Tool>([
+  const entriesById = new Map<string, Tool>([
     ['eyedropper', eyedropper as unknown as Tool],
     ...(rivalSpy ? ([[RIVAL_ID, makeRival() as Tool]] as const) : []),
   ]);
@@ -82,7 +82,7 @@ function Mount({
   useGestureDispatcher({
     canvasRef,
     actions: registry!,
-    toolsById,
+    entriesById,
     enabled: true,
     classifyTarget: () => ({ body: 'empty' }),
   });

@@ -47,7 +47,7 @@ function ctxOf(actions: Action[], extra: Partial<DispatcherContext> = {}): Dispa
     depRegistry: { register: vi.fn().mockReturnValue(() => {}), get: vi.fn() },
     activeToolId: null,
     hotkeyStack: [],
-    toolsById: new Map(),
+    entriesById: new Map(),
     isMac: false,
     ...extra,
   };
@@ -125,7 +125,7 @@ function dragScenario(allowed: string[]) {
   };
   const ctx = ctxOf([areaSelect, dragPan], {
     activeToolId: 'select',
-    toolsById: new Map([['select', select]]),
+    entriesById: new Map([['select', select]]),
     getRuleCtx: () => ruleCtxIn('normal', allowed),
   });
   return { start, ctx };
@@ -155,7 +155,7 @@ describe('the dispatch record', () => {
     const [escape, exit, reset] = r.ranked.map((x) => x.candidate);
     expect(escape).toEqual({
       actionId: 'escape', routes: ['[*:initial] keyDown(Escape)'], scope: 'ambient',
-      ownerToolId: null, namesView: false, specificity: [0, 0, 1, 1],
+      ownerId: null, namesView: false, specificity: [0, 0, 1, 1],
     });
     expect(exit).toMatchObject({ specificity: [0, 0, 0, 1], eligible: 'mode:path-edit' });
     expect(reset!.eligible).toBeUndefined();
@@ -175,7 +175,7 @@ describe('the dispatch record', () => {
       'areaSelect tier duplicate',
       'viewport.dragPan context not-asked',
     ]);
-    expect(r.ranked.map((x) => [x.candidate.scope, x.candidate.ownerToolId, x.candidate.specificity]))
+    expect(r.ranked.map((x) => [x.candidate.scope, x.candidate.ownerId, x.candidate.specificity]))
       .toEqual([
         ['active', 'select', [1, 0, 0, 1]],
         ['ambient', null, [0, 0, 0, 1]],

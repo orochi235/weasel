@@ -1,4 +1,4 @@
-import type { Tool } from '../../types';
+import type { Contribution } from '../../../contributions/types';
 import { routeGestureForSpecKind, specKindForRouteGesture } from '@weasel-js/gestures';
 import type { GestureSpec, ModSpec, TargetSpec, PhaseSpec } from '@weasel-js/gestures';
 import type { ParsedModifiers, ModifierKey, PhaseAtom } from '../routeGrammar';
@@ -14,7 +14,8 @@ import { getGestureDescriptor, type GestureName } from '../gestures';
  * declare them; consumers walk the list and group client-side.
  */
 export interface RegistryEntry {
-  toolId: string;
+  /** The id of the entry that declared the binding: a tool, or a contribution. */
+  ownerId: string;
   /** Which phase the binding's `phase` spec restricts it to. `'any'` when it
    *  declares none, declares `'*'`, or declares an atom list whose atoms
    *  don't agree on one phase — such a binding fires in either phase, and
@@ -75,15 +76,15 @@ export const PREDICATE_TARGET = 'predicate';
  * suggested otherwise.
  */
 export function buildRouteRegistry(
-  tools: readonly Tool<unknown, unknown>[],
+  entries: readonly Contribution<unknown>[],
 ): RegistryEntry[] {
   const out: RegistryEntry[] = [];
-  for (const tool of tools) {
-    for (const binding of tool.bindings ?? []) {
-      const entry = entryFor(tool.id, binding.spec, binding.actionId);
-      if (!entry) continue;
+  for (const owner of entries) {
+    for (const binding of owner.bindings ?? []) {
+      const row = entryFor(owner.id, binding.spec, binding.actionId);
+      if (!row) continue;
       const views = binding.opts?.views;
-      out.push(views === undefined ? entry : { ...entry, views });
+      out.push(views === undefined ? row : { ...row, views });
     }
   }
   return out;
@@ -116,7 +117,7 @@ export function routesForSpec(spec: GestureSpec): readonly string[] {
 }
 
 function entryFor(
-  toolId: string,
+  ownerId: string,
   spec: GestureSpec,
   actionId: string,
 ): RegistryEntry | null {
@@ -124,7 +125,7 @@ function entryFor(
   if (!gesture) return null;
   const descriptor = getGestureDescriptor(gesture);
   return {
-    toolId,
+    ownerId,
     actionId,
     gesture,
     phase: phaseOf('phase' in spec ? spec.phase : undefined),

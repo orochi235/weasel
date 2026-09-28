@@ -256,7 +256,7 @@ describe('useSelectTool — press and drag bindings do not collide', () => {
     return (tool.bindings ?? []).map((binding) => ({
       binding,
       scope: 'active' as const,
-      ownerToolId: 'select',
+      ownerId: 'select',
     }));
   }
 

@@ -67,7 +67,7 @@ function mount(handOpts: UseHandToolOptions, decay?: (c: DecayLoopConfig) => voi
     useGestureDispatcher({
       canvasRef,
       actions: registry!,
-      toolsById: new Map(Object.entries(tools.registry)),
+      entriesById: new Map(Object.entries(tools.registry)),
     });
     return <canvas ref={canvasRef} data-testid="c" />;
   }

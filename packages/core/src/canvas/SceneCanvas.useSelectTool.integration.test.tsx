@@ -34,7 +34,8 @@ import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
-import type { ActionDisabledReason, AnyTool } from '@weasel-js/routing';
+import type { ActionDisabledReason } from '@weasel-js/routing';
+import type { Contribution } from '../tools/overlayBinding';
 import { areaSelectContribution } from '../tools/builtin/select/selectionContributions';
 
 // ---------------------------------------------------------------------------
@@ -305,7 +306,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
   });
 
   describe('a plain drag on empty canvas with no select tool', () => {
-    function dragEmpty(ambient: AnyTool[]) {
+    function dragEmpty(ambient: Contribution[]) {
       const scene = makeScene();
       const spy = vi.fn();
       const { container } = render(
@@ -337,7 +338,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     });
 
     it('marquees when the canvas opts in with areaSelectContribution', () => {
-      expect(dragEmpty([areaSelectContribution() as AnyTool])).toHaveBeenCalledTimes(1);
+      expect(dragEmpty([areaSelectContribution()])).toHaveBeenCalledTimes(1);
     });
   });
 

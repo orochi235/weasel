@@ -43,7 +43,7 @@ function ctxOf(action: Action, allowed: string[] | null): DispatcherContext {
   } as unknown as ActionsRegistry;
   return {
     depRegistry, actions, activeToolId: 'slice', hotkeyStack: [],
-    toolsById: new Map([['slice', sliceTool]]), isMac: false,
+    entriesById: new Map([['slice', sliceTool]]), isMac: false,
     ...(allowed === null ? {} : {
       getRuleCtx: () => ({
         focused: true, selection: [], multiActive: false,

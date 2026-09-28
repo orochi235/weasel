@@ -60,7 +60,7 @@ function makeCtx(
     depRegistry: makeDepRegistry(),
     activeToolId: 'select',
     hotkeyStack: [],
-    toolsById: new Map(),
+    entriesById: new Map(),
     isMac: false,
     ...overrides,
   };
