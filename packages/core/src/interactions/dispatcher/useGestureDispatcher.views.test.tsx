@@ -15,7 +15,8 @@ import { createViewResolver } from 'features/viewports/viewResolver';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../actions/depSchema';
 import { viewportDragPanAction } from '../actions/defaults/viewportDragPan';
-import type { InputEvent } from '@weasel-js/routing';
+import { dragPanContribution, DRAG_PAN_ID } from '../../tools/builtin/hand/dragPanContribution';
+import type { AnyTool, InputEvent } from '@weasel-js/routing';
 
 /** The panel occupies x ∈ [100, 200) of a canvas whose origin is (0, 0). */
 const PANEL_RECT = { x: 100, y: 0, w: 100, h: 100 };
@@ -139,6 +140,8 @@ describe('useGestureDispatcher view routing', () => {
     const rootHold = { current: rootView };
     const panelHold = { current: panelView };
 
+    const PAN_ON_DRAG = new Map([[DRAG_PAN_ID, dragPanContribution()]]) as unknown as ReadonlyMap<string, AnyTool>;
+
     function Panner() {
       const registry = useActionsRegistry();
       const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -147,7 +150,7 @@ describe('useGestureDispatcher view routing', () => {
       useGestureDispatcher({
         canvasRef,
         actions: registry!,
-        toolsById: new Map(),
+        toolsById: PAN_ON_DRAG,
         clientToWorld: (x, y) => ({ x, y }),
         views: {
           targets: () => [{

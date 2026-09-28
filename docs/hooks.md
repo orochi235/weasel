@@ -101,20 +101,24 @@ curly quote, so both codepoints are listed.
 | Action id | Default binding |
 |---|---|
 | `move` | drag on `selected-body` |
-| `resize`, `rotate`, `areaSelect`, `insert`, `clone`, `slice` | drag |
-| `insert.adjustRotation` | drag |
-| `lassoSelect` | drag, `shift` optional |
 | `editAnchors` | drag whose press hit an anchor or control-handle affordance — higher specificity than a bare `drag`, so it wins over `move` without any opt-out |
 | `marqueeAnchors` | drag on `empty` |
 | `enterPathEdit` | double-click on a body |
 | `selectAnchor` | click |
 | `insertPathAnchor` | Alt+click |
 | `cutPathAtAnchor` | Alt+Shift+click |
-| `viewport.dragPan` | drag (cursor `grab`, `grabbing` while running) |
 | `viewport.pinchZoom` | two-finger `multiTouch` |
 | `ingest` | `drop` or `paste`, any modifiers |
 
 **No default binding**
+
+A plain drag carries no intent, so no action answers one by default. The tools
+and contributions that want one bind it: `areaSelect` from the select tool (or,
+under every tool, `areaSelectContribution()`), `insert` and
+`insert.adjustRotation` from the shape tools, `lassoSelect` from the lasso tool,
+`slice` from the slice tool, `viewport.dragPan` from the hand tool (or, on any
+unclaimed drag, `dragPanContribution()`), and `resize`, `rotate` and `clone`
+from the `transform` and `move` presets' selection contributions.
 
 `clearSelection` (fires from `useSelectTool`'s empty-click binding),
 `enterTextEdit` (from `useTextTool`'s binding), `align.left` / `.right` /

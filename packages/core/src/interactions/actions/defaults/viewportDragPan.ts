@@ -2,7 +2,8 @@
  * `viewportDragPanAction` — ongoing Action descriptor for drag-to-pan the viewport.
  *
  * ## Bindings
- * - Plain drag (any target) → pan the viewport in screen space
+ * None of its own. The hand tool binds a drag to it, and a canvas that pans on
+ * any unclaimed drag adds `dragPanContribution`.
  *
  * ## Design notes
  * The drag delta from the dispatcher is in screen space (pixels). The pan
@@ -98,7 +99,6 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
   id: 'viewport.dragPan',
   label: 'Drag to pan viewport',
   group: 'viewport',
-  defaultBinding: { kind: 'drag' },
   // Hover hint: when this action would win the drag at the hovered point
   // (e.g. empty canvas with no marquee-capable tool ahead of it), the
   // hover-cursor pump shows the open hand.

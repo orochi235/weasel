@@ -389,10 +389,10 @@ rest are ranked best-first:
 
 It fires the first whose `enabled()` passes. Step 4 is how context wins a tie:
 in path edit, Escape exits the edit instead of resetting the tool. A plain drag
-carries no intent of its own, so no kit action but the pan binds one by default:
-the select tool marquees and the shape tools insert through their own bindings,
-and a canvas that wants a marquee under every tool adds
-`areaSelectContribution()`. Two actions tied through
+carries no intent of its own, so no kit action binds one by default: the select
+tool marquees, the shape tools insert and the hand tool pans through their own
+bindings, and a canvas that wants a marquee or a pan under every tool adds
+`areaSelectContribution()` or `dragPanContribution()`. Two actions tied through
 step 4 fall to registration order, and the kit's route-conflict check reports
 them (`reportRouteConflicts`). Two actions gated by different rules count as
 tied unless the rules exclude each other, or, when the check is given the

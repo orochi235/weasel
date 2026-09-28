@@ -4,6 +4,7 @@ import {
   PointerContextProvider,
   SceneCanvas,
   createMinimapContribution,
+  dragPanContribution,
   useScene,
   useSelection,
   type SceneViewDrawOne,
@@ -54,6 +55,7 @@ export function MinimapDemo() {
   // visible-rect indicator and the linked crosshair. Built once — the entry
   // holds the state its layers read.
   const inset = useMemo(() => createMinimapContribution({ rect: INSET }), []);
+  const ambient = useMemo(() => [inset, dragPanContribution()], [inset]);
 
   // Simplified drawOne for the minimap — AABB fill only, no chrome.
   // Demonstrates the spec's point that minimap drawOnes are typically a
@@ -90,7 +92,7 @@ export function MinimapDemo() {
             selection={selection}
             view={view}
             onViewChange={setView}
-            ambient={[inset]}
+            ambient={ambient}
             layers={{
               scene: {
                 drawOne: (n, p): DrawCommand[] => [{

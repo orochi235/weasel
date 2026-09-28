@@ -42,7 +42,7 @@ items = [
         '• required modifiers: how many',
         '• phase: 2 when channel and phase are both named, 1 when one is a wildcard, 0 for none',
         '• drop or paste with a MIME filter: 2, anything else 1',
-        '▸ target: `[*:*] drag => unselected-body` (`move`) beats `[*:*] drag` (`viewport.dragPan`).',
+        '▸ target: `[*:*] drag => unselected-body` (`move`) beats `[*:*] drag` (`viewport.dragPan`, from `dragPanContribution`).',
         '▸ modifiers: `[*:*] drag +shift` beats `[*:*] drag ?shift` (`lassoSelect`); an optional modifier counts for nothing.',
         '▸ phase: `[*:engaged] keyDown(Escape)` (`cancelGesture`) beats `[*:*] keyDown(Escape)` (`tool.resetToDefault`).',
         '▸ MIME: `[*:*] drop(text/csv)` beats `[*:*] drop ?shift ?alt ?ctrl ?meta` (`ingest`).',
@@ -150,14 +150,14 @@ ey = example(ey, 'Escape while editing a path',
              ])
 
 ey = example(ey + 16, 'Bare drag on empty canvas, select tool active',
-             'Default mode, which allows `creates-selection`.',
+             'Default mode, which allows `creates-selection`, on a canvas that opted into `dragPanContribution`.',
              [
                  ('1', '`areaSelect` from the select tool, `[*:*] drag => predicate` (empty canvas)', 'active', '1 0 0 1', 'step 2, tier', '`creates-selection` holds', 'fires', 'green'),
-                 ('2', '`viewport.dragPan` `[*:*] drag`', 'ambient', '0 0 0 1', 'step 2, tier', 'none', 'not asked', 'white'),
+                 ('2', '`viewport.dragPan` from `dragPanContribution`, `[*:*] drag`', 'ambient', '0 0 0 1', 'step 2, tier', 'none', 'not asked', 'white'),
              ],
              [
                  'The tier settles this one: the select tool\'s binding sits in the active tier, above the ambient pan.',
-                 'Under a tool that binds no drag, nothing marquees: `viewport.dragPan` fires, unless the canvas opted in with `areaSelectContribution`. In a mode without `creates-selection`, `areaSelect` is dropped as ineligible and the pan fires.',
+                 'Under a tool that binds no drag, the pan fires. Without the opt-in, nothing would: no kit action binds a plain drag by default. In a mode without `creates-selection`, `areaSelect` is dropped as ineligible and the pan fires.',
              ])
 
 note = Card('What a route cannot show', [

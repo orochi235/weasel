@@ -3,6 +3,7 @@ import { forceManyBody, forceLink, forceCollide, forceCenter } from 'd3-force';
 import {
   SceneCanvas,
   defineTool,
+  dragPanContribution,
   useScene,
   useSelection,
   useSimulation,
@@ -43,6 +44,8 @@ interface GraphLink {
 }
 
 const GROUP_COLORS = ['#e25c4c', '#4ca7e2', '#5cc46e', '#e2b34c', '#9c6cd4'];
+
+const PAN_ON_DRAG = [dragPanContribution()];
 
 function makeInitial(): { nodes: GraphNode[]; links: GraphLink[] } {
   const nodes: GraphNode[] = [];
@@ -154,7 +157,7 @@ function usePinTool(
     presentation: { label: 'Pin', group: 'select' },
     actions: [pinAction],
     // Body target rather than a catch-all drag, so a drag on empty canvas
-    // falls through to the ambient viewport pan instead of being swallowed.
+    // falls through to the canvas's `dragPanContribution` instead of being swallowed.
     bindings: [{
       spec: {
         kind: 'drag',
@@ -272,7 +275,7 @@ export function ForceGraphDemo() {
           zoom {view.scale.x.toFixed(2)}× {settled ? '· settled' : ''}
         </span>
         <span style={{ color: '#888' }}>
-          drag node to pin · ctrl/⌘+wheel zoom · wheel pan · H drag to pan · ⌘+0 reset
+          drag node to pin · drag empty canvas to pan · ctrl/⌘+wheel zoom · wheel pan · ⌘+0 reset
         </span>
       </div>
       <div style={{ display: 'inline-block' }}>
@@ -285,6 +288,7 @@ export function ForceGraphDemo() {
           selectionMode="none"
           tools={tools}
           initialActiveTool="pin"
+          ambient={PAN_ON_DRAG}
           view={view}
           onViewChange={setView}
           layers={{
