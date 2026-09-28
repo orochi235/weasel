@@ -424,13 +424,6 @@ Core five + Crop shipped. Remaining:
   eight glyphs to this repo's icon standard is its own piece of work and was
   deferred out of the stroke-markers arc.
 
-- **(P3) An open marker head is not hittable past the line.** `inkReach`
-  (`packages/core/src/canvas/NodeShape.ts`) grows grab reach by each marker's
-  *inset*, not its extent, so `arrow-open` and `bar` — inset 0 — add nothing,
-  and their arms paint outside the pickable band. Culling already reserves the
-  full extent through `markerReach` (`features/paths/markerCommands.ts`);
-  `inkReach` should use the same measure.
-
 ---
 
 ## Text

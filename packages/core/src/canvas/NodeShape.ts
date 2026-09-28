@@ -58,7 +58,7 @@ import { pathContainsPoint } from 'features/paths/pathHitTest';
 import { boundsOfPath } from 'features/paths/bounds';
 import { strokeHitTest } from 'features/paths/hitTest';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
-import { markerInset } from '../core/markerInset';
+import { markerReach } from 'features/paths/markerCommands';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
 import { fillInPoseFrame, type FillPoseBox } from '../core/fillInPoseFrame';
@@ -578,11 +578,7 @@ function inkReach(
   const w = resolveStrokeWidth(stroke.width ?? 1, scale ?? 1);
   // A marker paints past the path's own end, and the kit's rule is that
   // visible chrome is hittable — so the reach has to cover it.
-  const reach = Math.max(
-    markerInset(stroke.markerStart, w, scale),
-    markerInset(stroke.markerEnd, w, scale),
-    markerInset(stroke.markerMid, w, scale),
-  );
+  const reach = markerReach(stroke, w, scale);
   switch (stroke.align ?? 'center') {
     case 'inner':
       return { outset: reach, inset: w };

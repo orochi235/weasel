@@ -40,6 +40,19 @@ describe('markers on a path node', () => {
     expect(inkOf(marked)!.outset).toBeGreaterThan(inkOf(plain)!.outset);
   });
 
+  // An open head stops the ribbon nowhere, but its arms still paint past the
+  // line, and visible chrome is hittable.
+  it.each(['arrow-open', 'bar'])('covers the painted extent of %s, which insets nothing', (key) => {
+    const plain = nodeWith({ paint: { fill: 'solid', color: '#000' }, width: 2 });
+    const marked = nodeWith({ paint: { fill: 'solid', color: '#000' }, width: 2, markerEnd: key });
+    const inkOf = (n: unknown) =>
+      findNodeShape(n as never)!.ink!(n as never, POSE as never, { scale: 1 } as never)!.outset;
+    // arrow-open's arms reach 2.867 units back, bar's 1.5 across; both carry a
+    // 1-unit outline, half of which lies outside the geometry.
+    const reach = key === 'arrow-open' ? 2.867 + 0.5 : 1.5 + 0.5;
+    expect(inkOf(marked)).toBeCloseTo(inkOf(plain) + reach * 2, 3);
+  });
+
   it('resolves a { px } marker size against the view scale for its reach', () => {
     const node = nodeWith({
       paint: { fill: 'solid', color: '#000' }, width: 2,
