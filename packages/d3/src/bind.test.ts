@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { asNodeId, useScene } from '@weasel-js/core';
 import { d3Bind } from './bind';
+import type { D3Binding } from './types';
 
 interface Datum {
   id: string;
@@ -277,5 +278,57 @@ describe('d3Bind — the diff is scoped to the target layer', () => {
     expect(scene.get(asNodeId('box'))).toBeDefined();
     expect(scene.get(asNodeId('stale'))).toBeUndefined();
     expect(scene.get(asNodeId('a'))).toBeDefined();
+  });
+});
+
+describe('d3Bind — typed data payload', () => {
+  it("types .data()'s return as the scene's node data", () => {
+    const scene = setupScene();
+    const binding = d3Bind(scene.current, [] as Datum[], { key: (d) => d.id });
+    expectTypeOf(binding).toEqualTypeOf<D3Binding<Datum, Pose, { label: string }>>();
+    expectTypeOf<Parameters<typeof binding.data>[0]>().returns.toEqualTypeOf<{
+      label: string;
+    }>();
+    // @ts-expect-error — `label` must be a string on this scene.
+    binding.data((d) => ({ label: d.x }));
+    // @ts-expect-error — this scene's node data requires `label`.
+    binding.data(() => ({}));
+  });
+
+  it('carries the payload type through the builder chain', () => {
+    const scene = setupScene();
+    const chained = d3Bind(scene.current, [] as Datum[], { key: (d) => d.id })
+      .pose((d) => ({ x: d.x, y: 0, width: 1, height: 1 }))
+      .enterFrom(() => ({ x: 0, y: 0, width: 0, height: 0 }))
+      .data((d) => ({ label: d.label }));
+    expectTypeOf(chained).toEqualTypeOf<D3Binding<Datum, Pose, { label: string }>>();
+  });
+
+  it('writes the typed payload to entering and updating leaves', () => {
+    const scene = setupScene();
+    act(() => {
+      d3Bind(scene.current, [{ id: 'a', label: 'A', x: 0 }] as Datum[], { key: (d) => d.id })
+        .pose((d) => ({ x: d.x, y: 0, width: 1, height: 1 }))
+        .data((d) => ({ label: d.label }))
+        .join();
+    });
+    act(() => {
+      d3Bind(scene.current, [{ id: 'a', label: 'B', x: 0 }] as Datum[], { key: (d) => d.id })
+        .pose((d) => ({ x: d.x, y: 0, width: 1, height: 1 }))
+        .data((d) => ({ label: d.label }))
+        .join();
+    });
+    const data = scene.current.get(asNodeId('a'))?.data;
+    expectTypeOf(data).toEqualTypeOf<{ label: string } | undefined>();
+    expect(data).toEqual({ label: 'B' });
+  });
+
+  it('keeps accepting any record on a scene typed with unknown data', () => {
+    const { result } = renderHook(() =>
+      useScene<unknown, 'graph', Pose>({ systemLayers: [{ id: 'graph' }], initial: [] }),
+    );
+    const binding = d3Bind(result.current, [] as Datum[], { key: (d) => d.id });
+    binding.data((d) => ({ anything: d.x }));
+    expectTypeOf(binding).toEqualTypeOf<D3Binding<Datum, Pose, unknown>>();
   });
 });

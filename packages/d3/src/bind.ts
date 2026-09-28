@@ -19,16 +19,21 @@ import type {
  * All mutations dispatch through `scene.batch('d3Bind.join', ...)` so one join
  * is one undo entry.
  */
-export function d3Bind<TData, TLayer extends string, TPose>(
-  scene: Scene<unknown, TLayer, TPose>,
+export function d3Bind<
+  TData,
+  TLayer extends string,
+  TPose,
+  TPayload = Record<string, unknown>,
+>(
+  scene: Scene<TPayload, TLayer, TPose>,
   data: readonly TData[],
   options: BindOptions<TData, TPose>,
-): D3Binding<TData, TPose> {
+): D3Binding<TData, TPose, TPayload> {
   let poseFn: ((d: TData, i: number) => TPose) | null = null;
-  let dataFn: ((d: TData, i: number) => Record<string, unknown>) | null = null;
+  let dataFn: ((d: TData, i: number) => TPayload) | null = null;
   let enterFromFn: ((d: TData, i: number) => TPose) | null = null;
 
-  const binding: D3Binding<TData, TPose> = {
+  const binding: D3Binding<TData, TPose, TPayload> = {
     pose(fn) {
       poseFn = fn;
       return binding;
@@ -89,7 +94,7 @@ export function d3Bind<TData, TLayer extends string, TPose>(
         for (const i of enterIndices) {
           const id = dataKeys[i];
           const pose = poseFn ? poseFn(data[i], i) : (undefined as unknown as TPose);
-          const payload = dataFn ? dataFn(data[i], i) : ({} as Record<string, unknown>);
+          const payload = dataFn ? dataFn(data[i], i) : ({} as TPayload);
           if (pose === undefined) {
             throw new Error(
               'd3Bind.join: enter node has no pose. Call `.pose(fn)` before `.join()`.',
@@ -100,16 +105,13 @@ export function d3Bind<TData, TLayer extends string, TPose>(
             kind: 'leaf',
             layer,
             pose,
-            // The scene is typed `Scene<unknown, TLayer, TPose>` — payload is
-            // unknown to the kit and consumer's drawOne reads it as a typed
-            // record.
-            data: payload as never,
+            data: payload,
           });
         }
         for (const i of updateIndices) {
           const id = dataKeys[i];
           if (poseFn) scene.setPose(id, poseFn(data[i], i));
-          if (dataFn) scene.update(id, { data: dataFn(data[i], i) as never });
+          if (dataFn) scene.update(id, { data: dataFn(data[i], i) });
         }
         for (const id of exitIds) {
           scene.remove(id);
