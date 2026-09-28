@@ -518,7 +518,7 @@ kit's internal partial order.
 
 3. **The kit's main barrel (`packages/core/src/index.ts`) imports from feature barrels, not from feature-internal paths.** This is the load-bearing discipline — once enforced, internal restructures (renaming a file, splitting a primitive into two) don't ripple through the main barrel.
 
-4. **The [Role taxonomy](#role-taxonomy) is a thinking tool, not a code shape.** When authoring a feature's primitives, sort them mentally: which are state surfaces (api), which contribute DOM attrs (attrs), which contribute render layers (layers). The categorization helps decide what belongs in the barrel and what stays internal. It does NOT manifest as TypeScript types or runtime structures — there's no `Api<S>` alias, no `useFooFeature()` convenience hook by convention. (`<SceneCanvas features>` is unrelated: it names behavior presets, not these directories.)
+4. **The [Role taxonomy](#role-taxonomy) is a thinking tool, not a code shape.** When authoring a feature's primitives, sort them mentally: which are state surfaces (api), which contribute DOM attrs (attrs), which contribute render layers (layers). The categorization helps decide what belongs in the barrel and what stays internal. It does NOT manifest as TypeScript types or runtime structures — there's no `Api<S>` alias and no `useFooFeature()` hook. (`<SceneCanvas features>` is unrelated: it names behavior presets, not these directories.)
 
 5. **Protocol-shaped features document their protocol surface explicitly.** Selection's `SelectionApi`, `AreaSelectAdapter`, and the `getSelection`/`setSelection` methods threaded into Move/Resize/Rotate adapters are the model. When a feature introduces a cross-cutting concept other code must honor, name the contracts in TypeScript interfaces and reference them in the feature's docs.
 
@@ -532,9 +532,7 @@ directly; features are directories.
 
 ### Role taxonomy
 
-A thinking tool for shaping a feature's primitives into a consistent bundle shape.
-Three roles a feature's parts fall into (from `docs/TODO.md` "Feature-roles taxonomy"
-and `docs/superpowers/specs/2026-05-09-feature-roles-focus-grid-design.md` §A):
+A thinking tool for sorting a feature's primitives — not a code shape. Three roles:
 
 - **`api`** — typed surface for cross-feature consumption: live state, refs,
   getters/setters. Cross-feature deps are typed function arguments
@@ -542,15 +540,10 @@ and `docs/superpowers/specs/2026-05-09-feature-roles-focus-grid-design.md` §A):
 - **`attrs`** — native DOM attributes and handlers to spread onto the canvas
   host element: `tabIndex`, `onFocus`, `onPointerMove`, `aria-*`. Distinct from
   React props the `<SceneCanvas>` component itself defines.
-- **`layers`** — slot-keyed render-layer contributions. Each entry is a
-  `<T>(current: RenderLayer<T>) => RenderLayer<T>` function. Provider and wrapper
-  roles are deliberately collapsed: a "provider" returns a fresh layer ignoring
-  `current`; a "wrapper" composes on top of it. `<SceneCanvas>` seeds each slot
-  with `EMPTY_LAYER` and reduces contributions in registration order.
+- **`layers`** — render layers the feature contributes.
 
-A `useFooFeature()` hook returns any subset of `{ api?, attrs?, layers? }`. The
-taxonomy is `@experimental` — promoted to stable once ≥3 features have shipped in
-this shape.
+A feature that ships as one installable unit is a `SurfaceContribution`
+(`docs/extending.md`), not an `{ api, attrs, layers }` object.
 
 ### Chrome state
 
