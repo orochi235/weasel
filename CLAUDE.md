@@ -353,6 +353,15 @@ comes back as a recording *function*, so a y-flip computed from a mistyped
 `drawingbufferheight` is silently `NaN`. Add the constant to `GL_CONSTANTS` first, and
 watch the assertion fail before trusting it.
 
+**Every jsdom test file runs in its own realm (`pool: 'vmThreads'`).** Its `Object`,
+`Set`, `RegExp` and `Uint8Array` are not Node's, and `structuredClone` hands back Node's,
+so an `instanceof` or `=== Object.prototype` check fails on a clone and `toEqual(new
+Set(…))` reports two identical values as different. Use `isPlainObject` from core, or
+check the tag with `Object.prototype.toString`. Node globals no longer leak in either — a
+browser API jsdom lacks goes in `vitest.setup.ts`. A test that starts a real vite server
+belongs in `forge-node`, on the threads pool: rolldown's native binding rejects a foreign
+`RegExp`.
+
 **A test file that passes alone and fails in a full run is measuring load, not your
 change.** Bisecting with the file in isolation at one end and the whole suite at the
 other produced a clean, entirely false "both parents green, merge red" — the two ends
