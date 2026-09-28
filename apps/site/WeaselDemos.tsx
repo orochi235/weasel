@@ -26,14 +26,8 @@ function formatRelativeOrIso(iso: string): string {
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
-// CommandPalette / useCommandPaletteShortcut live in
-// apps/draw/src/ui/ after the kit/app split. The demo harness uses
-// them for its own command-palette chrome via this relative import.
 import { InlineMarkdown } from './InlineMarkdown';
-import {
-  CommandPalette,
-  useCommandPaletteShortcut,
-} from '../draw/src/ui/CommandPalette';
+import { CommandPalette, useCommandPaletteShortcut } from './CommandPalette/CommandPalette';
 import logoUrl from './assets/weasel-logo.svg';
 import { VERSION } from '@weasel-js/core';
 import { buildTitle } from '../shared/buildInfo';

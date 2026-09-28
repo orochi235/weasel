@@ -775,7 +775,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   against `Button`'s ghost icon button; labkit's `StatusBar` and `DragGhost` against the ui
   ones of the same name; `SidebarRegion`'s section head and undock button against
   `SidebarPanel`; `LabHeader`'s bare "Add trial" button beside the `MenuButton` it becomes
-  with more than one instrument; draw's `CommandPalette` against `Dialog`; the theme editor's
+  with more than one instrument; the theme editor's
   swatch tabs against `ToggleBar`'s flat variant and its hex and number inputs against `Input`
   and `NumberField`.
 
@@ -940,11 +940,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `ColorField` and the flag toggles. Weight is the gap: it is derived from
   the bold flag (`style.bold ? 700 : 400`), so a family's 300 or 600 face
   cannot be asked for.
-- **(P3) The command palette lives in draw but only the site mounts it.**
-  `apps/site/WeaselDemos.tsx` reaches into `apps/draw/src/ui/CommandPalette` by
-  relative path and opens it on `/`; WeaselDraw itself never mounts it. It also
-  hand-rolls its modal and shortcut chips — rebuild it on `Dialog` and
-  `KeySequence`, and give it a home that matches who mounts it.
 
 ---
 
