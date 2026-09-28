@@ -22,7 +22,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import alias from '@rollup/plugin-alias';
 import { rollup } from 'rollup';
 import { dts } from 'rollup-plugin-dts';
 import {
@@ -74,8 +73,6 @@ function escapeRegex(s: string): string {
 // sibling labkit declares as a dependency. The JS bundle inlines those
 // siblings, but their types must not be copied in: a copied type labkit never
 // re-exports leaves a consumer whose inferred types reach it with TS2742.
-// Shipped source imports nothing else under @weasel-js today, so the alias
-// plugin below inlines nothing; it is what would inline an undeclared one.
 const external = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies }).map(
   (name) => new RegExp(`^${escapeRegex(name)}($|/)`),
 );
@@ -115,7 +112,6 @@ async function main(): Promise<void> {
     input,
     external,
     plugins: [
-      alias({ entries: aliases }),
       // Stub style imports: CSS carries no type information, but a bare
       // side-effect import (e.g. Toast's toastViewTransitions.css) survives
       // tree-shaking, and rollup would otherwise parse the CSS as JS.
