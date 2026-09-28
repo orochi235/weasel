@@ -2,6 +2,7 @@ import { matchesGlob, relative, resolve, sep } from 'node:path';
 import type { Plugin } from 'vite';
 import { autoTitle } from './autoTitle.ts';
 import { indexFile } from './indexFile.ts';
+import { ownEntries } from './ownEntries.ts';
 import { storybookShims } from './storybookShims.ts';
 
 export interface ForgeTestOptions {
@@ -34,6 +35,15 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
     {
       name: 'weaselforge:test',
       enforce: 'pre',
+      config(config) {
+        const at = resolve(config.root ?? process.cwd());
+        const entries = [
+          ...options.stories,
+          ...(options.frameConfig ? [resolve(at, options.frameConfig)] : []),
+          ...ownEntries(['test']),
+        ];
+        return { optimizeDeps: { entries } };
+      },
       configResolved(config) {
         root = config.root;
       },

@@ -97,6 +97,18 @@ export const Edge = story({ isolate: 'asserts placement against the window edge'
     expect(transformer({ stories: ['*.stories.tsx'] })('export const x = 1;\n', `${ROOT}/a.stories.tsx`)).toBeUndefined();
   });
 
+  // The imports runStory reaches are appended by transform, which vite's dependency scan never runs, so a cold
+  // cache discovers react-dom/client mid-run, re-optimizes, reloads the page and fails with a second React.
+  it('points the dependency scan at the stories, the frame config and its own test runtime', () => {
+    const main = forgeTest({ stories: ['apps/**/*.stories.tsx'], frameConfig: 'forge.frame.tsx' }).find(
+      (p) => p.name === 'weaselforge:test',
+    ) as Plugin;
+    const config = (main.config as (c: { root?: string }) => { optimizeDeps?: { entries?: string[] } })({ root: ROOT });
+    const entries = config.optimizeDeps?.entries ?? [];
+    expect(entries.slice(0, 2)).toEqual(['apps/**/*.stories.tsx', `${ROOT}/forge.frame.tsx`]);
+    expect(entries.some((e) => /[/\\]test[/\\]index\.(ts|js)$/.test(e))).toBe(true);
+  });
+
   it('includes the storybook preview-api shims', () => {
     expect(forgeTest({ stories: [] }).map((p) => p.name)).toContain('weaselforge:storybook-shims');
   });
