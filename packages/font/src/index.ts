@@ -19,7 +19,9 @@ export {
   fontRegistry,
   fontPending,
 } from './registerFont';
-export type { FontEntry, FontFamilyFaces, FontVariant, ResolveResult, RegisteredFont } from './registerFont';
+export type {
+  FontEntry, FontFamilyFaces, FontVariant, ResolveResult, RegisteredFont, RegisterFontOptions,
+} from './registerFont';
 
 export {
   setFontFallbackPolicy,

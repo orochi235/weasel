@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerDefaultFont, DEFAULT_FONT_FAMILY } from './registerDefaultFont';
-import { getFont } from '@weasel-js/font';
+import { getFont, resolveFontVariant } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 
 describe('registerDefaultFont', () => {
@@ -19,7 +19,10 @@ describe('registerDefaultFont', () => {
       { width: 512, height: 512, close: vi.fn() } as unknown as ImageBitmap,
     );
 
-    await registerDefaultFont();
+    const landed = registerDefaultFont();
+    expect(global.fetch).not.toHaveBeenCalled();
+    resolveFontVariant(DEFAULT_FONT_FAMILY, 400, 'normal');
+    await landed;
     expect(getFont(DEFAULT_FONT_FAMILY)).not.toBeNull();
   });
 
@@ -35,7 +38,9 @@ describe('registerDefaultFont', () => {
       { width: 512, height: 512, close: vi.fn() } as unknown as ImageBitmap,
     );
 
-    await registerDefaultFont();
+    const landed = registerDefaultFont();
+    resolveFontVariant(DEFAULT_FONT_FAMILY, 400, 'normal');
+    await landed;
     const fetchCalls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
     await registerDefaultFont();
     // registerFont in core dedupes by family — second call should be a no-op

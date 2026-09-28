@@ -32,14 +32,16 @@ if (!container) throw new Error('Missing #root element');
 // `assets/fonts/` via vite's `publicDir` (see vite.config.ts).
 // `import.meta.env.BASE_URL` injects the vite `base` setting so atlas
 // URLs survive the base prefix (e.g. `/weasel/draw/`).
-// Deliberately not awaited: awaiting here gates first paint on the atlas
-// round-trip. `<SceneCanvas>` subscribes to `subscribeGlyphReady`, which
-// `registerFont` fires, so text repaints once the atlas lands.
+// Lazy: the 212 kB atlas is fetched the first time text lays out, so a
+// document with none never pays for it. `<SceneCanvas>` subscribes to
+// `subscribeGlyphReady`, which `registerFont` fires, so text repaints once the
+// atlas lands.
 void registerFont(
   'sans-serif',
   { weight: 400, style: 'normal' },
   `${import.meta.env.BASE_URL}inter/inter.json`,
   `${import.meta.env.BASE_URL}inter/inter.png`,
+  { lazy: true },
 ).catch((err) => {
   console.warn('WeaselDraw: failed to register default font', err);
 });

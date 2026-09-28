@@ -16,8 +16,9 @@ export interface FontAtlasUrls {
 }
 
 /**
- * Register an Inter-shaped atlas under {@link DEFAULT_FONT_FAMILY}. `attachHud`
- * calls this; calling it again is a no-op.
+ * Register an Inter-shaped atlas under {@link DEFAULT_FONT_FAMILY}, lazily: it
+ * is fetched the first time a widget lays out text, and the promise settles
+ * with that load. `attachHud` calls this; calling it again is a no-op.
  *
  * `urls` points the family at a copy the host already serves. The bundled atlas
  * is the same Inter every weasel app ships in its own publicDir, and fetching
@@ -30,5 +31,6 @@ export async function registerDefaultFont(urls?: FontAtlasUrls): Promise<void> {
     {},
     urls?.metricsUrl ?? metricsUrl,
     urls?.atlasUrl ?? atlasUrl,
+    { lazy: true },
   );
 }
