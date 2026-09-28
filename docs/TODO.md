@@ -864,14 +864,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   stops, the dialog scrim) for which the theme ships no shadow, gloss or scrim token. Each needs
   a semantic name before it can become one.
 
-- **(P3) `ZoomControl`'s row may still wrap under a narrow toolbar — confirm
-  before fixing.** The slider already shrinks: `ZoomControl.less` gives it
-  `flex: 0 1 108px` and a `min-width: 64px` floor, so this entry's original
-  diagnosis — that its width pins the row's min-content contribution — was
-  wrong. If the row still wraps, the fixed `--wzl-number-field-width: 6ch` on
-  the field beside it is the likelier cause. Reproduce in a browser before
-  scoping a fix.
-
 - **(P3) A config group's `.describe()` reaches `PrefsForm` and not
   `ControlPanel`.** `PropertyGroup` has no description slot, and its heading
   sits in a two-column grid with nowhere obvious to put a paragraph. Wants a

@@ -17,6 +17,12 @@
   backdrop-filter: blur(var(--wzl-glass-blur));
 }
 
+// Without this a rendered control's floor is its content's min-content, and the
+// zoom slider's fixed width then runs it out past the cluster on a narrow well.
+.lk-viewport-controls__item {
+  min-width: 0;
+}
+
 .lk-viewport-controls__button {
   display: inline-flex;
   align-items: center;
