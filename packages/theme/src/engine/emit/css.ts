@@ -4,6 +4,7 @@ import type { RawToken } from '../../dtcg/types.ts';
 import type { BakedTheme } from '../bake.ts';
 import type { AxisDependency } from '../deps.ts';
 
+/** One theme to write as CSS: its baked tokens and the axes each token depends on. */
 export interface EmitInput {
   readonly baked: BakedTheme;
   readonly deps: Readonly<Record<string, AxisDependency>>;
@@ -149,6 +150,10 @@ function blocks(lines: string[], plan: Plan, selector: (attrs: string) => string
   }
 }
 
+/**
+ * The `tokens.css` text for a set of themes. Each non-default theme is written as its difference from the default,
+ * scoped to `[data-wzl-theme]`. Throws unless exactly one theme is the default.
+ */
 export function emitCss(themes: readonly EmitInput[]): string {
   const defaults = themes.filter((t) => t.isDefault);
   if (defaults.length !== 1) throw new Error(`emitCss needs exactly one default theme, got ${defaults.length}`);

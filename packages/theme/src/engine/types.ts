@@ -1,7 +1,9 @@
 import type { FlatTokens, RawToken } from '../dtcg/types.ts';
 
+/** The definition layer that produced a token. */
 export type Layer = 'ramps' | 'scales' | 'semantics' | 'components' | 'pins';
 
+/** Where one derived token came from. */
 export interface Provenance {
   readonly layer: Layer;
   /** `lightness`, `categorical`, `linear`, `geometric`, `step`, `offset`, `contrast`, `ref`, `value`. */
@@ -12,6 +14,7 @@ export interface Provenance {
   readonly generated?: RawToken;
 }
 
+/** A problem `derive` found. Every one is reported, never thrown; the tokens still come back without what failed. */
 export type Issue =
   | { readonly kind: 'missing-axis-value'; readonly path: string; readonly axis: string; readonly value: string }
   | { readonly kind: 'untyped-pin'; readonly token: string }
@@ -28,6 +31,7 @@ export type Issue =
   | { readonly kind: 'check-failed'; readonly token: string; readonly against: string; readonly min: number; readonly ratio: number }
   | { readonly kind: 'invalid'; readonly path: string; readonly message: string };
 
+/** What `derive` produces for one selection. */
 export interface DeriveResult {
   /** In layer order, then definition order within a layer. */
   readonly tokens: FlatTokens;

@@ -1,6 +1,7 @@
 /** The one `$extensions` key this kit defines. */
 export const ALPHA_EXT = 'com.weasel.alpha';
 
+/** A token's value as authored: a string (which may be a `{ref}`), a number, or a list of those, such as a font stack. */
 export type TokenValue = string | number | readonly (string | number)[];
 
 /**
