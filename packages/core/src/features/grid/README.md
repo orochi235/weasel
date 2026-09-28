@@ -2,14 +2,7 @@
 
 World-space grid rendering, cell hover tracking, and cell-snap helpers.
 
-## Two levels of API
-
-**`useGridFeature`** is the one-call entry point. It returns the
-role-taxonomy shape `{ api, attrs, layers }` — wire those three into your
-canvas and you have a grid with hover highlighting.
-
-The low-level primitives it composes stay exported for cases the feature hook
-doesn't cover:
+## Primitives
 
 | File | Role |
 | --- | --- |
@@ -17,11 +10,6 @@ doesn't cover:
 | `cellHighlight.ts` | `createCellHighlightLayer` — highlights one cell (snap-target preview). Stack alongside the grid layer. |
 | `useGridCellHover.ts` | Pointer → hovered cell tracking. |
 | `roundToCell.ts` | Scalar quantizer. |
-
-> `useGridFeature` is the **migration test for the feature-roles taxonomy** —
-> see `docs/TODO.md` → "Feature-roles taxonomy". If you're adding another
-> feature in that shape, read this one first; changes to the taxonomy should
-> land here before they're copied elsewhere.
 
 ## World space, not screen space
 
