@@ -1,6 +1,7 @@
 import type { Vec2 } from './spatialize';
 import type { StealPolicy } from './voicePool';
 
+/** Options for `AudioEngine.play`. */
 export interface PlayOptions {
   /** Default: the first configured bus. */
   bus?: string;
@@ -22,6 +23,8 @@ export interface PlayOptions {
   onDone?: () => void;
 }
 
+/** Controls for one voice from `play()`. Safe to keep past the voice's end:
+ *  every setter is then a no-op and `isPlaying()` is false. */
 export interface VoiceHandle {
   id: number;
   /** `fadeMs` ramps the voice out and stops it at the end of the ramp. */
@@ -37,6 +40,7 @@ export interface VoiceHandle {
   isPlaying(): boolean;
 }
 
+/** Options for `createAudioEngine`. */
 export interface AudioEngineOptions {
   /** Injectable for tests and for consumers that own the context. */
   context?: AudioContext;

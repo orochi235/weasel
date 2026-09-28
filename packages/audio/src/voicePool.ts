@@ -1,5 +1,7 @@
+/** Which voice a full pool evicts: the earliest started, or the lowest gain. */
 export type StealPolicy = 'oldest' | 'quietest';
 
+/** Options for `createVoicePool`. */
 export interface VoicePoolOptions {
   /** Maximum concurrent voices, at least 1. Beyond this, `acquire` steals. */
   limit: number;
@@ -7,6 +9,7 @@ export interface VoicePoolOptions {
   steal?: StealPolicy;
 }
 
+/** What the pool knows about a voice, for choosing one to steal. */
 export interface VoiceRecord {
   /** Engine time the voice started, in ms. */
   startedAt: number;
@@ -14,6 +17,7 @@ export interface VoiceRecord {
   gain: number;
 }
 
+/** The result of `VoicePool.acquire`. */
 export interface Acquisition {
   slot: number;
   /** Identifies this voice, not its slot: a stolen slot is reissued at once,
@@ -24,6 +28,7 @@ export interface Acquisition {
   stolen: number | null;
 }
 
+/** Slot accounting for concurrent voices. See `createVoicePool`. */
 export interface VoicePool {
   acquire(record: VoiceRecord): Acquisition;
   release(slot: number, token: number): void;

@@ -1,6 +1,7 @@
 /** Opaque reference to a decoded sound. Mirrors `TextureHandle` in core. */
 export interface SoundHandle { readonly id: string }
 
+/** Decoded buffers behind opaque `SoundHandle`s. Nothing is ever evicted. */
 export interface SoundCache {
   load(url: string): Promise<SoundHandle>;
   loadAll(urls: Record<string, string>): Promise<Record<string, SoundHandle>>;
@@ -11,6 +12,9 @@ export interface SoundCache {
   buffer(handle: SoundHandle): AudioBuffer | null;
 }
 
+/** Create a cache that decodes through `ctx`. `load` fetches with `fetchFn`,
+ *  returns the existing handle for a url already loaded, and shares one fetch
+ *  between concurrent loads of it; a failed load is not cached. */
 export function createSoundCache(
   ctx: AudioContext,
   fetchFn: typeof fetch = fetch,
