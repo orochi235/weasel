@@ -12,21 +12,27 @@ import type { TimeWindow } from './timeScale';
 export type { KeySelection } from './keys';
 export type { TimeWindow } from './timeScale';
 
+/** What `renderKeyEditor` is handed for the selected keyframe. */
 export interface KeyEditorCtx<T = unknown> {
   key: Keyframe<T>;
   track: SampledTrack<T>;
   selection: KeySelection;
-  /** Replace the selected key; routed through this component's `onChange`. */
+  /** Replace the selected key's value — `next`'s time and easing are ignored.
+   *  Routed through this component's `onChange`. */
   commit: (next: Keyframe<T>) => void;
   /** Set the easing shaping the approach into this key. */
   setEasing: (easing: EasingSpec | undefined) => void;
 }
 
+/** Props for {@link Timeline}. Times are in ms. `selection` and `window` are
+ *  controlled when given and held internally otherwise. */
 export interface TimelineProps {
   tracks: readonly Track[];
   duration: number;
   playhead: number;
 
+  /** Keys as marks on a row (`'dope'`, the default), or plotted as a value
+   *  curve (`'graph'`) on rows whose values are numbers. */
   mode?: 'dope' | 'graph';
   onModeChange?: (mode: 'dope' | 'graph') => void;
 
@@ -49,6 +55,9 @@ export interface TimelineProps {
   className?: string;
 }
 
+/** A keyframe editor for a set of tracks: a ruler to scrub and zoom on, a
+ *  lane per track, and a transport. Every edit comes back through `onChange`
+ *  as a new track array; Delete or Backspace removes the selected key. */
 export function Timeline(props: TimelineProps): ReactElement {
   const {
     tracks, duration, playhead,

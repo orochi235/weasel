@@ -1,29 +1,3 @@
-/**
- * A hierarchy of rows that expand and collapse: a file tree, a registry
- * browser, an outline.
- *
- * **Semantics.** WAI-ARIA `tree`: each node is a `treeitem` carrying
- * `aria-level`, `aria-setsize` and `aria-posinset`; a branch carries
- * `aria-expanded` and nests its children in a `group`, which is rendered only
- * while the branch is open. `aria-selected` appears only when `selectionMode`
- * is set. A treeitem may not contain interactive content, so `leading` and
- * `trailing` are decoration — an icon, a count — and the twisty is a drawn
- * `DisclosureMark`, not a button.
- *
- * **Keyboard.** One treeitem is in the tab order: the one last focused, else
- * the first selected, else the first. Up/Down move between visible rows,
- * Home/End go to the first and last. Right opens a closed branch, then moves
- * into it; Left closes an open branch, else moves to the parent. Enter and
- * Space activate, as a click does. Typing moves to the next row whose text
- * starts with what was typed.
- *
- * **Activating** a row — click, Enter, Space — toggles it if it is a branch,
- * selects it under `selectionMode`, and calls `onAction`. Clicking the twisty
- * only toggles.
- *
- * **Filtering** is the consumer's: narrow `nodes` with `filterTree`, and pass
- * `treeBranchIds` of the result as `expandedIds` so every match shows.
- */
 import {
   forwardRef,
   useId,
@@ -62,6 +36,7 @@ export interface TreeNode {
 /** Whether and how rows are selectable. */
 export type TreeSelectionMode = 'none' | 'single' | 'multiple';
 
+/** Props for {@link Tree}. */
 export interface TreeProps {
   nodes: readonly TreeNode[];
   /** Shown in place of the tree when `nodes` is empty. */
@@ -99,6 +74,32 @@ interface Visible {
 
 const TYPEAHEAD_MS = 500;
 
+/**
+ * A hierarchy of rows that expand and collapse: a file tree, a registry
+ * browser, an outline.
+ *
+ * **Semantics.** WAI-ARIA `tree`: each node is a `treeitem` carrying
+ * `aria-level`, `aria-setsize` and `aria-posinset`; a branch carries
+ * `aria-expanded` and nests its children in a `group`, which is rendered only
+ * while the branch is open. `aria-selected` appears only when `selectionMode`
+ * is set. A treeitem may not contain interactive content, so `leading` and
+ * `trailing` are decoration — an icon, a count — and the twisty is a drawn
+ * `DisclosureMark`, not a button.
+ *
+ * **Keyboard.** One treeitem is in the tab order: the one last focused, else
+ * the first selected, else the first. Up/Down move between visible rows,
+ * Home/End go to the first and last. Right opens a closed branch, then moves
+ * into it; Left closes an open branch, else moves to the parent. Enter and
+ * Space activate, as a click does. Typing moves to the next row whose text
+ * starts with what was typed.
+ *
+ * **Activating** a row — click, Enter, Space — toggles it if it is a branch,
+ * selects it under `selectionMode`, and calls `onAction`. Clicking the twisty
+ * only toggles.
+ *
+ * **Filtering** is the consumer's: narrow `nodes` with `filterTree`, and pass
+ * `treeBranchIds` of the result as `expandedIds` so every match shows.
+ */
 export const Tree = forwardRef(function Tree(
   {
     nodes, empty, className,

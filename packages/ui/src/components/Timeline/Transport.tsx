@@ -9,9 +9,13 @@ const RATE = multiplier({ symbol: 'x' });
 /** Playback rates the transport offers. */
 const RATES = [0.25, 0.5, 1, 2, 4] as const;
 
+/** Props for {@link Transport}. Times are in ms. */
 export interface TransportProps {
   paused: boolean;
+  /** A `TimelineHandle`'s loop policy. The switch shows any value but
+   *  `false` or `0` as on, and toggles between `true` and `false`. */
   loop: boolean | number;
+  /** Playback speed multiplier. A rate off the offered detents gets one of its own. */
   rate: number;
   playhead: number;
   duration: number;
@@ -23,6 +27,8 @@ export interface TransportProps {
 
 const seconds = (ms: number): string => `${(ms / 1000).toFixed(2)}s`;
 
+/** Play/pause, a loop switch, a rate slider, and the playhead over the
+ *  duration in seconds. Holds no state: every control reports through a callback. */
 export function Transport(props: TransportProps): ReactElement {
   const { paused, loop, rate, playhead, duration, onPlay, onPause, onLoopChange, onRateChange } = props;
   const looping = loop !== false && loop !== 0;

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef, type ReactElement } from 'r
 import { useVisibleRaf, type TimelineHandle, type Track } from '@weasel-js/core';
 import { Timeline, type TimelineProps } from './Timeline';
 
+/** Props for {@link AnimatedTimeline}: `<Timeline>`'s, less what it reads off `handle`. */
 export interface AnimatedTimelineProps
   extends Omit<TimelineProps, 'tracks' | 'duration' | 'playhead' | 'onChange' | 'onScrub' | 'transport'> {
   handle: TimelineHandle;

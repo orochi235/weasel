@@ -25,6 +25,7 @@ export interface PaintedNodeData {
   stroke?: Stroke | null;
 }
 
+/** Props for {@link SceneGradientHandles}. */
 export interface SceneGradientHandlesProps<
   TData extends PaintedNodeData,
   TLayer extends string,

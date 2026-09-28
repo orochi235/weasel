@@ -1,16 +1,7 @@
-/**
- * Font-weight picker for one family, driven by the live font registry.
- *
- * It offers the weights `listFontWeights` reports for `family` — the faces
- * that will actually paint rather than be faked. A family with none on file
- * (the canvas tier, which rasterizes any weight it is asked for, or no family
- * at all because the selection spans several) gets the nine CSS weights. A
- * value outside the list is kept as its own entry, as `FontFamilySelect` keeps
- * an unregistered family: dropping it would rewrite the text on the next edit.
- */
 import { listFontWeights } from '@weasel-js/font';
 import { Select } from '../Select';
 
+/** Props for {@link FontWeightSelect}. */
 export interface FontWeightSelectProps {
   /** Current weight, or `undefined` when the sources disagree (`mixed`). */
   value?: number;
@@ -43,6 +34,16 @@ export function fontWeightLabel(weight: number): string {
   return name ? `${weight} ${name}` : String(weight);
 }
 
+/**
+ * Font-weight picker for one family, driven by the live font registry.
+ *
+ * It offers the weights `listFontWeights` reports for `family` — the faces
+ * that will actually paint rather than be faked. A family with none on file
+ * (the canvas tier, which rasterizes any weight it is asked for, or no family
+ * at all because the selection spans several) gets the nine CSS weights. A
+ * value outside the list is kept as its own entry, as `FontFamilySelect` keeps
+ * an unregistered family: dropping it would rewrite the text on the next edit.
+ */
 export function FontWeightSelect(props: FontWeightSelectProps) {
   const { value, mixed = false, family, onChange, className } = props;
   const registered = family === undefined ? [] : listFontWeights(family);

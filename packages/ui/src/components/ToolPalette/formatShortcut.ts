@@ -1,5 +1,7 @@
 import { keyGlyph } from '../Keycaps/keyGlyph';
 
+/** The key and modifiers the shortcut formatters read. A tool's `keybinding`
+ *  has this shape and passes as-is. */
 export interface ShortcutInput {
   key: string | readonly string[];
   mod?: boolean;

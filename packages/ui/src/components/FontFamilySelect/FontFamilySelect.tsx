@@ -1,25 +1,7 @@
-/**
- * Font-family picker driven by the live font registry.
- *
- * **What it offers.** Both tiers that can actually paint: `listFonts()` for
- * families with a baked atlas, and `listCanvasFonts()` for families the
- * dynamic canvas-SDF tier will serve. Offer what will render, invent
- * nothing — and `listCanvasFonts` reports service rather than membership,
- * so a family auto-enrolled under a policy that is no longer in force
- * doesn't appear.
- *
- * **What it does with a value it can't offer.** Nothing about the model
- * stops a node from naming a family that was never registered — a pasted
- * node, an imported SVG, a document from a session that loaded more fonts.
- * The control keeps that value visible as its own entry and names what is
- * actually painting instead, read structurally off
- * `resolveFontVariant().substituted`. Dropping the value would silently
- * rewrite the document on the next edit; showing it bare would claim a font
- * is in use that isn't.
- */
 import { listCanvasFonts, listFonts, resolveFontVariant } from '@weasel-js/font';
 import { Select } from '../Select';
 
+/** Props for {@link FontFamilySelect}. */
 export interface FontFamilySelectProps {
   /** Current family, or `undefined` when the sources disagree (`mixed`). */
   value?: string;
@@ -43,6 +25,25 @@ function unregisteredLabel(family: string, weight: number, style: 'normal' | 'it
     : `${family} — not loaded`;
 }
 
+/**
+ * Font-family picker driven by the live font registry.
+ *
+ * **What it offers.** Both tiers that can actually paint: `listFonts()` for
+ * families with a baked atlas, and `listCanvasFonts()` for families the
+ * dynamic canvas-SDF tier will serve. Offer what will render, invent
+ * nothing — and `listCanvasFonts` reports service rather than membership,
+ * so a family auto-enrolled under a policy that is no longer in force
+ * doesn't appear.
+ *
+ * **What it does with a value it can't offer.** Nothing about the model
+ * stops a node from naming a family that was never registered — a pasted
+ * node, an imported SVG, a document from a session that loaded more fonts.
+ * The control keeps that value visible as its own entry and names what is
+ * actually painting instead, read structurally off
+ * `resolveFontVariant().substituted`. Dropping the value would silently
+ * rewrite the document on the next edit; showing it bare would claim a font
+ * is in use that isn't.
+ */
 export function FontFamilySelect(props: FontFamilySelectProps) {
   const { value, mixed = false, onChange, weight = 400, fontStyle = 'normal', className } = props;
   // Both tiers that actually render: families with a baked atlas, and
