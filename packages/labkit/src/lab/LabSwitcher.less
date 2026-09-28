@@ -59,6 +59,8 @@
   display: flex;
   flex-direction: column;
   padding: var(--wzl-space-xs);
+  // A host's title class lands on the wrapper, so the menu would inherit its weight.
+  font-weight: var(--wzl-font-weight-normal);
   // `--wzl-surface-raised` is translucent by design -- it is for panels that
   // blur what sits behind them. A menu has to be read, so it takes the opaque
   // surface, the way `FloatingPanel` does.
