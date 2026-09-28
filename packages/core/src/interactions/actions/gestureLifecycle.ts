@@ -8,6 +8,7 @@
  */
 import type { Op } from 'core/ops/types';
 import type { Scene } from 'core/scene/types';
+import type { BehaviorEnd } from 'interactions/gestures/types';
 
 /** The lifecycle options, as a binding's params or the resize policy carry
  *  them. */
@@ -97,18 +98,20 @@ export function commitGestureOps(
   else target.scene.applyBatch(ops, label, target.adapter);
 }
 
-/** Runs each behavior's `onEnd` in order; the first that answers decides the
- *  commit. `null` aborts, `Op[]` claims it (an empty array included), and
- *  `undefined` means every behavior deferred to the action's own commit. */
+/** Runs every behavior's `onEnd` in order; the first that answers decides the
+ *  commit and later answers are ignored. `null` aborts, `Op[]` claims it (an
+ *  empty array included), and `undefined` means every behavior deferred to the
+ *  action's own commit. */
 export function reduceBehaviorEnd<TCtx>(
-  behaviors: readonly { onEnd?(ctx: TCtx): Op[] | null | void }[],
+  behaviors: readonly { onEnd?(ctx: TCtx, end: BehaviorEnd): Op[] | null | void }[],
   ctx: TCtx,
 ): Op[] | null | undefined {
+  let answer: Op[] | null | undefined;
   for (const b of behaviors) {
-    const r = b.onEnd?.(ctx);
-    if (r !== undefined) return r;
+    const r = b.onEnd?.(ctx, { answered: answer !== undefined });
+    if (answer === undefined && r !== undefined) answer = r;
   }
-  return undefined;
+  return answer;
 }
 
 /** Runs every behavior's `onCancel`, for a gesture closing without a commit. */

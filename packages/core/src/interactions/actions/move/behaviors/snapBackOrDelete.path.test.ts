@@ -33,7 +33,7 @@ describe('snapBackOrDelete + pathOriginProjection', () => {
       origin: pathOriginProjection,
     });
     const moved = pathOriginProjection.translate(TRI, 1, 2); // delta (1,2), |d|≈2.24
-    expect(b.onEnd!(ctx(TRI, moved))).toBeNull();
+    expect(b.onEnd!(ctx(TRI, moved), { answered: false })).toBeNull();
   });
 
   it('emits a delete op when the Path bounds origin moved beyond radius and policy is delete', () => {
@@ -43,7 +43,7 @@ describe('snapBackOrDelete + pathOriginProjection', () => {
       origin: pathOriginProjection,
     });
     const moved = pathOriginProjection.translate(TRI, 50, 50);
-    const ops = b.onEnd!(ctx(TRI, moved));
+    const ops = b.onEnd!(ctx(TRI, moved), { answered: false });
     expect(Array.isArray(ops)).toBe(true);
     expect((ops as any[])[0].label).toMatch(/delete/i);
   });
