@@ -7,6 +7,7 @@ import {
   Popover as RACPopover,
 } from 'react-aria-components';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import s from './MenuButton.module.css';
 import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
@@ -61,7 +62,7 @@ export function MenuButton<T extends string = string>({
         disabled={isDisabled}
       >
         <RACButton
-          className={[s.trigger, className].filter(Boolean).join(' ')}
+          className={[f.frame, s.trigger, className].filter(Boolean).join(' ')}
           isDisabled={isDisabled}
           aria-label={ariaLabel}
         >

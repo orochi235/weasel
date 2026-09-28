@@ -1,53 +1,11 @@
-.field {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-width: 0;
-  gap: var(--wzl-space-2);
-}
-
 .frame {
   display: flex;
   align-items: stretch;
-  height: var(--wzl-field-h, var(--wzl-control-h));
-  background: var(--wzl-input-surface, var(--wzl-surface-sunken));
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  color: var(--wzl-fg);
-  font-family: var(--wzl-font-ui);
-  font-size: var(--wzl-font-size);
-  line-height: 1;
   overflow: hidden;
-  transition: border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
-}
-
-.frame:focus-within {
-  border-color: var(--wzl-focus-ring);
-  box-shadow: 0 0 0 1px var(--wzl-focus-ring);
-}
-
-.field[data-invalid] .frame {
-  border-color: var(--wzl-danger);
-}
-
-.field[data-disabled] .frame {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .frame input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: inherit;
-  font: inherit;
   padding: 0 var(--wzl-field-pad-x);
-}
-
-.frame input::placeholder {
-  color: var(--wzl-fg-subtle);
 }
 
 /* A request is out: the rows on screen are the previous query's, so mark them
@@ -144,11 +102,6 @@
 /* `width='fit'`: a hidden stack of every option label shares the input's grid
    cell, so the field is wide enough for whichever option is chosen and takes
    no more of the row than that. */
-.fit {
-  width: auto;
-  max-width: 100%;
-}
-
 .fit .frame {
   display: grid;
   grid-template-columns: auto auto;

@@ -1,0 +1,113 @@
+/* The form-row layout and the boxed frame a value sits in. Field and RadioGroup
+   use the layout (`field`, `row`, `label`, `hint`, `error`); Input, Select,
+   NumberField, UnitField and ComboBox add `control` to it and draw their value
+   in a `frame`, which MenuButton's trigger and ListEditor's inputs wear too. */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+  font-family: var(--wzl-font-ui);
+  color: var(--wzl-fg);
+}
+
+.label {
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-medium);
+  color: var(--wzl-fg);
+  cursor: default;
+}
+
+.hint {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+  line-height: 1.4;
+}
+
+.error {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-danger);
+  line-height: 1.4;
+}
+
+.row {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--wzl-space-4);
+}
+
+.row .label {
+  flex: 1;
+  min-width: 0;
+}
+
+/* A control fills its row. Beside its label, the label keeps its own width and
+   the frame takes the rest; description and error (`below`) wrap onto a line of
+   their own. A `fit` control keeps its own width instead. */
+.control {
+  width: 100%;
+  min-width: 0;
+}
+
+.control.row {
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: var(--wzl-space-2);
+}
+
+.control.row .label { flex: 0 0 auto; }
+.control.row:not(.fit) .frame { flex: 1 1 0; min-width: 0; }
+.control.row .below { flex-basis: 100%; }
+
+.fit {
+  width: auto;
+  max-width: 100%;
+  align-items: flex-start;
+}
+
+/* A control restyling part of the frame sets the matching `--_frame-*`
+   property rather than restating the declaration, so no rule here ties with
+   one of its own on specificity and neither stylesheet has to load first. */
+.frame {
+  height: var(--_frame-h, var(--wzl-field-h, var(--wzl-control-h)));
+  background: var(--_frame-bg, var(--wzl-input-surface, var(--wzl-surface-sunken)));
+  border: var(--_frame-border, 1px solid var(--wzl-border));
+  border-radius: var(--wzl-radius-sm);
+  color: var(--_frame-fg, var(--wzl-fg));
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size);
+  line-height: 1;
+  transition: border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
+}
+
+/* A frame holding a text box rings whenever it has focus; a button frame only
+   for keyboard focus, which React Aria marks. */
+.frame:focus-within:not(button),
+.frame[data-focus-visible] {
+  border-color: var(--_frame-focus-border, var(--wzl-focus-ring));
+  box-shadow: var(--_frame-focus-shadow, 0 0 0 1px var(--wzl-focus-ring));
+  outline: var(--_frame-focus-outline, none);
+}
+
+.field[data-invalid] .frame {
+  border-color: var(--wzl-danger);
+}
+
+.field[data-disabled] .frame,
+.frame[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.frame input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font: inherit;
+}
+
+.frame input::placeholder {
+  color: var(--wzl-fg-subtle);
+}

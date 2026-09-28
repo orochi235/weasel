@@ -753,14 +753,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `--wzl-font-mono` for this reason. The kit-wide answer is either a numeric face token that
   those rules read, or a UI face that carries tabular figures.
 
-- **(P2) The field frame is written four times.** `Input`, `Select`, `NumberField` and
-  `ComboBox` each restate the same `.field` column, the `.field.row` layout, and the `.frame`
-  box with its focus ring, invalid border and disabled fade; `MenuButton`'s trigger and
-  `ListEditor`'s input repeat the frame again. `Field` already exports `fieldClasses` for
-  the layout half. One shared `field.module.css` would hold both halves. The copies have
-  drifted: `ComboBox` has no `orientation="row"`, and three of them ignored
-  `--wzl-input-surface` until 2026-09-27.
-
 - **(P3) labkit's `LabSwitcher.less` menu is a fork of the weasel-ui popover skin.** It copies
   `MenuButton`'s menu and items, but with an opaque surface and a different shadow from
   `components/listbox.module.css`, which `MenuButton`, `Select`, `ComboBox` and `PaintField`

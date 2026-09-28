@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
+import f from '../field.module.css';
 import s from './ListEditor.module.css';
 
 /** Props for {@link ListEditor}. */
@@ -76,7 +77,7 @@ export function ListEditor({
                   inputs.current[i] = el;
                 }}
                 type="text"
-                className={s.input}
+                className={`${f.frame} ${s.input}`}
                 aria-label={name(i)}
                 value={entry}
                 placeholder={placeholder}
