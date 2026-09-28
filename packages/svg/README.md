@@ -100,6 +100,36 @@ layer), replace a leaf's lowering or decorate a group. The per-leaf pieces are
 public too: `svgLeafFromKit`, `svgPaintFromKit`, `svgStrokeFromKit`,
 `svgImageFromKit`.
 
+## Stroke markers
+
+A marker reference goes out as `marker-start` / `-mid` / `-end="url(#id)"` with
+one `<marker>` def per distinct reference. The path keeps its full-length `d`:
+baking the kit's inset in would have a re-import trim the line a second time.
+The cost is that other renderers draw the line under a hollow head.
+
+| Reference | Def id | What the def carries |
+|---|---|---|
+| `'arrow'` | `arrow` | `markerUnits="strokeWidth"` |
+| `{ key: 'arrow', size: 3 }` | `arrow-s3` | `markerUnits="userSpaceOnUse"`, `wzl:key="arrow"`, `wzl:size="3"` |
+| `{ key: 'arrow', size: { px: 6 } }` | `arrow-s6px` | the same, drawn at 6 user units, `wzl:size="6px"` |
+
+Any entry with a nonzero inset adds `wzl:inset` in marker units, and the root
+declares the `wzl` namespace whenever one of these attributes appears. `orient`
+is `auto-start-reverse`, because the kit turns every start head around, or an
+entry's fixed angle in degrees. An entry with its own `toSvg` writes its own
+def and gets none of the `wzl` attributes (a sized reference to one warns). A
+reference to a key nothing registered writes no attribute.
+
+On import, `url(#id)` naming a registered key reads back as that key, so an
+unsized built-in needs no def. A def with `wzl:key` and `wzl:size` reads back
+as that sized reference, registering the def's geometry under the key if
+nothing else has. Any other `<marker>` becomes an entry in
+`ParseResult.markers`, keyed by its id plus a hash of what it draws, and
+`svgNodesToKitDrafts` registers it. It is minted per reference rather than per
+def, because a `userSpaceOnUse` size and an `orient="auto"` start both depend on
+the referencing stroke. `wzl:inset` restores the inset; without it the inset is
+0. A reference to a marker neither registered nor defined warns and is dropped.
+
 ## Raster images
 
 `<image>` parses to an `SvgImageNode` holding the `href` verbatim — an
