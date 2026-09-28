@@ -16,7 +16,6 @@ export const sliceAction: Action & { requires: string[] } = {
   id: 'slice',
   label: 'Slice',
   group: 'edit',
-  defaultBinding: { kind: 'drag' },
   eligible: { capability: 'edits-page' },
   requires: ['slice'],
   invoker: {

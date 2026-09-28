@@ -113,8 +113,8 @@ describe('RegistryDetail', () => {
   // formatter that only reports modifiers set to `true` renders both as the
   // empty string and the action vanishes from the gesture's binding list.
   it.each([
-    ['drop', '[*] drop ?shift ?alt ?ctrl ?meta'],
-    ['paste', '[*] paste ?shift ?alt ?ctrl ?meta'],
+    ['drop', '[*:*] drop ?shift ?alt ?ctrl ?meta'],
+    ['paste', '[*:*] paste ?shift ?alt ?ctrl ?meta'],
   ])(
     'lists the ingest action on the %s gesture as %s',
     (gestureKind, route) => {

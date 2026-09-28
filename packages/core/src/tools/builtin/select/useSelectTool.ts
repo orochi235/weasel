@@ -13,6 +13,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
+import { onEmptyCanvas } from './selectionContributions';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
@@ -376,15 +377,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             },
             actionId: 'select.collapseDeferred',
           },
-          // Empty drag → marquee, but not a drag that starts on chrome over
-          // empty canvas. The rotation handle and the outer half of a resize
-          // handle sit off the body; the ambient bindings that own them rank
-          // below this active one, so a bare `'empty'` target took them.
+          // Empty drag → marquee. `onEmptyCanvas` rather than a bare `'empty'`
+          // target: the ambient bindings that own the handles rank below this
+          // active one, so `'empty'` took drags that start on them.
           {
-            spec: {
-              kind: 'drag' as const,
-              target: { kindOf: (hit: unknown, body?: string) => hit == null && body === 'empty' },
-            },
+            spec: { kind: 'drag' as const, target: { kindOf: onEmptyCanvas } },
             actionId: 'areaSelect',
           },
           // resize/rotate bind only drag (no click), so a click on either handle

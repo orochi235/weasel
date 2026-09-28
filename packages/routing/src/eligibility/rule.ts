@@ -86,14 +86,14 @@ function checkSelection(s: NonNullable<Selector['selection']>, ctx: RuleCtx): bo
   return true;
 }
 
-function checkMode(m: NonNullable<Selector['mode']>, ctx: RuleCtx): boolean {
+export function checkMode(m: NonNullable<Selector['mode']>, ctx: Pick<RuleCtx, 'mode'>): boolean {
   if (typeof m === 'string') return ctx.mode === m;
   if ('not' in m) return ctx.mode !== m.not;
   if ('in' in m) return m.in.includes(ctx.mode);
   return false;
 }
 
-function checkCapability(c: NonNullable<Selector['capability']>, ctx: RuleCtx): boolean {
+export function checkCapability(c: NonNullable<Selector['capability']>, ctx: Pick<RuleCtx, 'allowedCapabilities'>): boolean {
   if (typeof c === 'string') return ctx.allowedCapabilities.has(c);
   if (Array.isArray(c)) return c.every((tag) => ctx.allowedCapabilities.has(tag));
   if ('in' in c) return c.in.some((tag) => ctx.allowedCapabilities.has(tag));

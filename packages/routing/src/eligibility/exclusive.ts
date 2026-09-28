@@ -1,5 +1,5 @@
-import type { CapabilityTag } from '@weasel-js/modes';
-import { isAllRule, isAnyRule, isNotRule, isWhenRule, type Rule, type Selector } from './rule';
+import type { ActiveMode, CapabilityTag } from '@weasel-js/modes';
+import { checkCapability, checkMode, isAllRule, isAnyRule, isNotRule, isWhenRule, type Rule, type Selector } from './rule';
 
 /**
  * Whether two rules can never hold at once — no `RuleCtx` passes both.
@@ -20,6 +20,43 @@ export function rulesExclusive(a: Rule, b: Rule): boolean {
   if (isNotRule(b)) return rulesEqual(b.not, a);
   if (isWhenRule(a) || isWhenRule(b)) return false;
   return selectorsExclusive(a, b);
+}
+
+/**
+ * Whether `rule` can hold while `mode` is active. Only its `mode` and
+ * `capability` tests are settled by the mode; every other test could go either
+ * way, so `false` is a proof and `true` means "may hold".
+ */
+export function ruleCanHoldIn(rule: Rule, mode: ActiveMode): boolean {
+  return decideIn(rule, mode) !== false;
+}
+
+/** Three-valued: `undefined` when the mode alone does not settle the rule. */
+function decideIn(rule: Rule, mode: ActiveMode): boolean | undefined {
+  if (isAllRule(rule)) return all3(rule.all.map((r) => decideIn(r, mode)));
+  if (isAnyRule(rule)) {
+    const parts = rule.any.map((r) => decideIn(r, mode));
+    if (parts.includes(true)) return true;
+    return parts.every((p) => p === false) ? false : undefined;
+  }
+  if (isNotRule(rule)) {
+    const inner = decideIn(rule.not, mode);
+    return inner === undefined ? undefined : !inner;
+  }
+  if (isWhenRule(rule)) return undefined;
+  const ctx = { mode: mode.id, allowedCapabilities: mode.allowedCapabilities as ReadonlySet<CapabilityTag> };
+  const settled = [
+    rule.mode === undefined ? true : checkMode(rule.mode, ctx),
+    rule.capability === undefined ? true : checkCapability(rule.capability, ctx),
+  ];
+  const { mode: _m, capability: _c, ...rest } = rule;
+  void _m; void _c;
+  return all3([...settled, Object.keys(rest).length > 0 ? undefined : true]);
+}
+
+function all3(parts: readonly (boolean | undefined)[]): boolean | undefined {
+  if (parts.includes(false)) return false;
+  return parts.every((p) => p === true) ? true : undefined;
 }
 
 const BOOLEAN_KEYS = [

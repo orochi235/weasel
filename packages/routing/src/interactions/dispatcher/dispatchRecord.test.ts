@@ -181,7 +181,7 @@ describe('the dispatch record', () => {
         ['ambient', null, [0, 0, 0, 1]],
         ['ambient', null, [0, 0, 0, 1]],
       ]);
-    expect(r.ranked[0]!.candidate.routes).toEqual(['[*] drag => predicate']);
+    expect(r.ranked[0]!.candidate.routes).toEqual(['[*:*] drag => predicate']);
     expect(r.fired).toBe('areaSelect');
   });
 

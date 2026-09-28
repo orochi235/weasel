@@ -424,7 +424,7 @@ describe('setInstruments', () => {
     const seen = (store.getState().savedSnapshots[0]?.state as { seen: Set<string> } | undefined)
       ?.seen;
     expect(Object.prototype.toString.call(seen)).toBe('[object Set]');
-    expect([...seen]).toEqual(['a']);
+    expect([...seen!]).toEqual(['a']);
   });
 
   it('changes neither hooks nor state when a new default config throws', () => {

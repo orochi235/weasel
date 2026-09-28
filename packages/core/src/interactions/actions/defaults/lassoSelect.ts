@@ -135,7 +135,6 @@ interface LassoScratch {
 export const lassoSelectAction: Action & { requires: string[] } = {
   id: 'lassoSelect',
   label: 'Lasso Select',
-  defaultBinding: { kind: 'drag', mods: { shift: 'optional' } },
   eligible: { capability: 'creates-selection' },
   requires: ['lassoSelect', 'view'],
   invoker: {

@@ -18,21 +18,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P3) No test drags a rotation handle on a real `SceneCanvas`.** Unit tests cover
-  `selectionTransformBindings` and `resizePolicyOptions`, but nothing checks end to end that
-  `selectTool.rotate` (`behaviors`, `pivot`, `rotateLabel`, the gesture callbacks) reaches the
-  rotate binding.
-
-- **(P2) A binding with no phase prints as a route that ranks higher when parsed back.**
-  `routesForSpec` (`packages/routing/src/tools/routing/reflection/registry.ts`) prints an
-  unphased spec as `[*] drag`, whose `specificity()` phase part is 0. Parsed back, `[*]` is the
-  bare-phase shorthand for `[&:*]`, whose phase part is 1; `[*:*]` scores 0 like the original.
-  The text round-trips, so nothing notices, but a route copied out of a conflict message, the
-  reflection panel or `docs/diagrams/precedence-fallthrough.svg` into a binding outranks the one it
-  was printed from. Either the printer emits `[*:*]` for no phase, or `[*]` stops meaning
-  `[&:*]` — the second changes the grammar's documented shorthand. Measured with a throwaway
-  `npx tsx` script comparing `specificity()` of the spec and of `parseRoute(printed)`.
-
 - **(P1) "Tool" names too many things. Decide what it means before building on it.**
   In the tree today, a tool is any of:
   - a mode for what the pointer does, chosen from a palette: rect, pen, text;
@@ -433,6 +418,12 @@ Core five + Crop shipped. Remaining:
 
 ## Text
 
+- **(P3) apps/draw warns that `sans-serif` 400 has no metrics on load.** `layoutRuns` logs
+  "no metrics for "sans-serif" 400/normal — neither an atlas nor an outline face resolved, so every
+  run set in it lays out as nothing". Seen 2026-09-27 in headless Chromium on a fresh load of the
+  draw dev server; the Welcome box's text still rendered, so either the run it names is a different
+  one or the warning fires before registration lands. Not investigated.
+
 - **(P3) `.dfont` machine faces still can't reach the outline tier.** The
   *silence* closed 2026-08-16 — `isDataForkFont` recognizes a Macintosh
   resource fork by its header offsets and `sfntFromCollection` throws by name,
@@ -767,14 +758,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `PropertyRenderContext.update`, rather than the one aggregated object that a mixed selection
   does not have.
 
-- **(P2) The minimap tool and `viewport.dragPan` still tie on a bare drag.** Both are ungated
-  ambient bindings, so registration order picks the winner; the `minimap` demo warns on load. The
-  other kit ties the 2026-09-27 browser sweep found are settled by context-gated precedence (see
-  "Interaction" in `docs/taxonomy.md`): `areaSelect` and `insert` are gated on
-  `creates-selection` and `creates-shapes`, so each beats `viewport.dragPan` where its capability
-  is granted, and in path edit the anchor-editing key bindings are the only ones eligible. The
-  route-conflict check trusts that actions gated by different rules never hold together — true of
-  the default modes, not checked for a consumer's.
+- **(P3) `<SceneCanvas>` cannot hand the route-conflict check its modes.** `findScopedConflicts`
+  reports two gated actions only when some mode lets both rules hold, and checks against the kit's
+  `DEFAULT_MODES` unless it is given `modes`. `SceneCanvas` knows only `getActiveMode`, not the full
+  list, so an app with modes of its own is checked against the kit's instead: a conflict in a mode
+  only it defines goes unreported. Passing the list needs a public prop (a `modes` list, or the
+  `ModeRegistry` itself) — a surface decision, not made.
 
 - **(P2) `arrayAdapter`'s marquee and lasso still test bounding boxes.** `sceneToAdapter`'s
   both run the live silhouette hit-test; `arrayAdapter`'s `hitTestArea` (bounds, or the

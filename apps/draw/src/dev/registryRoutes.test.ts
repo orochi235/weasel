@@ -16,7 +16,7 @@ function routesOf(specs: unknown[]): readonly string[] {
 describe('inspector route projection', () => {
   it('routes drop and paste bindings', () => {
     expect(routesOf([{ kind: 'drop' }, { kind: 'paste' }]))
-      .toEqual(['[*] drop', '[*] paste']);
+      .toEqual(['[*:*] drop', '[*:*] paste']);
   });
 
   it('agrees with the kit for every binding it projects', () => {

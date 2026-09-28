@@ -68,6 +68,11 @@ export interface ActiveMode {
   allowedCapabilities: ReadonlySet<string>;
 }
 
+/** A mode definition as a canvas gates on it. */
+export function activeModeOf(mode: ModeDefinition): ActiveMode {
+  return { id: mode.id, allowedCapabilities: new Set<string>([...mode.allows, ...IMPLICIT_TAGS]) };
+}
+
 /** A reader for the registry's active mode, suitable as
  *  `<SceneCanvas getActiveMode>`. It returns the same object until the mode
  *  changes. */
@@ -75,13 +80,7 @@ export function getActiveModeFor(registry: ModeRegistry): () => ActiveMode {
   let cached: { version: number; value: ActiveMode } | null = null;
   return () => {
     const version = registry.getVersion();
-    if (cached?.version !== version) {
-      const mode = registry.current();
-      cached = {
-        version,
-        value: { id: mode.id, allowedCapabilities: new Set<string>([...mode.allows, ...IMPLICIT_TAGS]) },
-      };
-    }
+    if (cached?.version !== version) cached = { version, value: activeModeOf(registry.current()) };
     return cached.value;
   };
 }

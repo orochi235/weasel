@@ -75,8 +75,8 @@ describe('RegistryProbe', () => {
     const rect = last.tools.find((t) => t.id === 'rect');
     expect(rect, 'rect tool should be probed').toBeTruthy();
     // rect's only routing path is `bindings: [{ spec: { kind: 'drag' }, ... }]`.
-    // The `[*]` phase + bare drag formats as `[*] drag`.
-    expect(rect!.routes).toContain('[*] drag');
+    // An unphased bare drag formats as `[*:*] drag`.
+    expect(rect!.routes).toContain('[*:*] drag');
   });
 
   // `useSelectTool` attaches its bindings to the Tool it returns (it spreads
@@ -109,7 +109,7 @@ describe('RegistryProbe', () => {
     // Moving and transforming the selection are ambient bindings of the
     // `move` / `transform` presets, not the select tool's.
     expect(actionIds).not.toContain('move');
-    const predicateDrags = select!.declaredRoutes.filter((d) => d.route === '[*] drag => predicate');
+    const predicateDrags = select!.declaredRoutes.filter((d) => d.route === '[*:*] drag => predicate');
     expect(predicateDrags.map((d) => d.actionId)).toEqual(['areaSelect']);
   });
 

@@ -5,7 +5,7 @@ import type { DispatchRecord, RecordCandidate } from '@weasel-js/core/routing';
 export function recordOf(o: { ts: number; eventKind: string; ranked: readonly string[] }): DispatchRecord {
   const candidates = o.ranked.map((actionId): RecordCandidate => ({
     actionId,
-    routes: ['[*] drag'],
+    routes: ['[*:*] drag'],
     scope: 'ambient',
     ownerToolId: null,
     namesView: false,

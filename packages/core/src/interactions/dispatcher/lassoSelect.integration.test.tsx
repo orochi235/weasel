@@ -64,9 +64,18 @@ function makeLassoDepFactory(hits: string[] = [], initial: string[] = []) {
   return dep;
 }
 
+/** The active lasso tool, carrying the binding `useLassoTool` declares. */
+const LASSO_TOOLS = new Map([
+  ['lasso', {
+    id: 'lasso',
+    eligibility: { focus: true },
+    bindings: [{ spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'lassoSelect' }],
+  }],
+]) as unknown as ReadonlyMap<string, import('@weasel-js/routing').AnyTool>;
+
 function MountDispatcher({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement | null> }) {
   const registry = useActionsRegistry();
-  useGestureDispatcher({ canvasRef, actions: registry!, toolsById: new Map() });
+  useGestureDispatcher({ canvasRef, actions: registry!, toolsById: LASSO_TOOLS });
   return <canvas ref={canvasRef} data-testid="canvas" />;
 }
 
@@ -89,7 +98,7 @@ function buildHarness(dep: LassoSelectDep, shiftHeld = false) {
     const ref = useRef<HTMLCanvasElement | null>(null);
     return (
       <DepRegistryProvider>
-        <ActiveToolContextProvider>
+        <ActiveToolContextProvider initialActive="lasso">
             <ActionsProvider>
               <RegisterLassoSelectDep dep={dep} />
               <RegisterLassoSelect />

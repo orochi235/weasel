@@ -78,7 +78,6 @@ export const areaSelectAction: Action & { requires: string[] } = {
   // Crosshair while the marquee is being pulled — the select tool used to
   // read this off its own gesture scratch.
   activeCursor: 'crosshair',
-  defaultBinding: { kind: 'drag' },
   eligible: { capability: 'creates-selection' },
   requires: ['areaSelect', 'editAnchors', 'view'],
   invoker: {

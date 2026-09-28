@@ -1,5 +1,5 @@
 import type { NodeId, DeviceProfile, ModifierState } from '../vocabulary';
-import { IMPLICIT_TAGS, NORMAL, type CapabilityTag } from '@weasel-js/modes';
+import { activeModeOf, NORMAL, type CapabilityTag } from '@weasel-js/modes';
 
 /**
  * Live state read by rule evaluation. Built once per frame on the consuming
@@ -93,10 +93,7 @@ export interface BuildRuleCtxArgs {
  * opted into modality. `NORMAL.allows` plus the implicit tags is what a
  * mode-less canvas actually behaves like.
  */
-export const DEFAULT_ALLOWED_CAPABILITIES: ReadonlySet<CapabilityTag> = new Set<CapabilityTag>([
-  ...NORMAL.allows,
-  ...IMPLICIT_TAGS,
-]);
+export const DEFAULT_ALLOWED_CAPABILITIES = activeModeOf(NORMAL).allowedCapabilities as ReadonlySet<CapabilityTag>;
 
 /** Gather the current canvas and mode state into the context that action
  *  eligibility and chrome-visibility rules are evaluated against. */

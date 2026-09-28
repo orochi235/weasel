@@ -193,7 +193,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
  *  routes are NOT: several bindings legitimately format to the same string
  *  while dispatching to different actions — select declares three
  *  predicate-target drags (resize / rotate / move) and the grammar renders
- *  every one of them `[*] drag => predicate`. Collapsing those hid two real
+ *  every one of them `[*:*] drag => predicate`. Collapsing those hid two real
  *  routes and mislabeled the third.
  *
  *  `bindings` is read off the runtime `Tool`, not off `def`, because that's

@@ -388,13 +388,15 @@ rest are ranked best-first:
 | 5 | Registration order |
 
 It fires the first whose `enabled()` passes. Step 4 is how context wins a tie:
-in path edit, Escape exits the edit instead of resetting the tool, and a bare
-drag no tool binds marquees (`areaSelect`, gated on `creates-selection`) where
-selection is on offer and pans (`viewport.dragPan`) where it is not. With the
-select tool active its own drag binding wins earlier, on scope tier. Two actions tied through
+in path edit, Escape exits the edit instead of resetting the tool. A plain drag
+carries no intent of its own, so no kit action but the pan binds one by default:
+the select tool marquees and the shape tools insert through their own bindings,
+and a canvas that wants a marquee under every tool adds
+`areaSelectContribution()`. Two actions tied through
 step 4 fall to registration order, and the kit's route-conflict check reports
-them (`reportRouteConflicts`); it treats actions gated by different rules as
-applying in different contexts.
+them (`reportRouteConflicts`). Two actions gated by different rules count as
+tied unless the rules exclude each other, or, when the check is given the
+canvas's modes, no mode lets both hold.
 
 ### Behavior
 

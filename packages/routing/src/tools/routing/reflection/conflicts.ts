@@ -3,7 +3,8 @@ import type { Action } from '../../../interactions/actions/action';
 import { actionBindings } from '../../../interactions/actions/binding';
 import type { ParsedModifiers } from '../routeGrammar';
 import { canonicalModifiers, formatRoute } from '../routeGrammar';
-import { ALWAYS, rulesExclusive, type Rule } from '../../../eligibility';
+import { activeModeOf, DEFAULT_MODES, type ActiveMode } from '@weasel-js/modes';
+import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
 import { buildRouteRegistry, PREDICATE_TARGET, type RegistryEntry, type GestureName } from './registry';
 
 /** Two or more tools declare the same exact (phase, gesture, arg, target,
@@ -46,6 +47,9 @@ export interface Conflict {
  *  - Two actions whose `eligible` rules can never hold together — each
  *    mode's own Escape exit, say. See {@link rulesExclusive}.
  *
+ *  - Two bindings whose `opts.views` keep them from being live and equally
+ *    ranked in any one view. See {@link viewsTie}.
+ *
  *  Note that two bindings sharing a tuple on the SAME tool are now possible
  *  (bindings are an array, where phase tables were objects with unique
  *  keys) — so a conflict may name one tool twice.
@@ -70,6 +74,7 @@ export function findConflicts(tools: readonly Tool<unknown, unknown>[]): Conflic
 function findConflictsKeyed(
   tools: readonly Tool<unknown, unknown>[],
   rules?: ReadonlyMap<string, Rule>,
+  modes: readonly ActiveMode[] = KIT_MODES,
 ): { key: string; conflict: Conflict }[] {
   const entries = buildRouteRegistry(tools);
   const groups = new Map<string, RegistryEntry[]>();
@@ -88,10 +93,12 @@ function findConflictsKeyed(
   }
   // Tools carry no rule, so a tool's bindings count as eligible always.
   const ruleOf = (entry: RegistryEntry): Rule => rules?.get(entry.toolId) ?? ALWAYS;
+  const tie = (e: RegistryEntry, f: RegistryEntry): boolean =>
+    viewsTie(e.views, f.views) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
   const conflicts: { key: string; conflict: Conflict }[] = [];
   for (const [key, all] of groups) {
-    // Keep only members that could be eligible alongside another member.
-    const bucket = all.filter((e) => all.some((f) => f !== e && !rulesExclusive(ruleOf(e), ruleOf(f))));
+    // Keep only members that could tie with another member.
+    const bucket = all.filter((e) => all.some((f) => f !== e && tie(e, f)));
     if (bucket.length < 2) continue;
     const first = bucket[0];
     conflicts.push({
@@ -107,6 +114,18 @@ function findConflictsKeyed(
     });
   }
   return conflicts;
+}
+
+/** Whether two bindings' `views` let them tie in some view. A binding is live
+ *  only in the views it names, and there it outranks one that names none
+ *  (`preferViewScoped`), so a scoped and an unscoped binding never tie; two
+ *  scoped ones tie where their views overlap. */
+function viewsTie(
+  a: readonly (string | null)[] | undefined,
+  b: readonly (string | null)[] | undefined,
+): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return a.some((v) => b.includes(v));
 }
 
 /** Every arg value an entry buckets under, lowercased — `matchKey` is
@@ -152,10 +171,23 @@ export interface ToolScopes {
   /** Registered actions. Their `defaultBinding`s assemble at ambient scope
    *  (hotkey scope when `Action.scope` says so), alongside the tools above. */
   actions?: readonly Action[];
+  /** Every mode the canvas can be in (`activeModeOf` builds one from a
+   *  definition). Two gated actions conflict only when some mode lets both
+   *  rules hold. Default: the kit's `DEFAULT_MODES`. */
+  modes?: readonly ActiveMode[];
 }
 
 /** An action's `defaultBinding`s in the shape the route registry reads, so a
  *  tool-vs-action collision buckets with the tool-vs-tool ones. */
+/** Whether two rules can hold at once: never when {@link rulesExclusive}
+ *  proves it, and given the modes, only when one of them lets both hold. */
+function rulesCanHoldTogether(a: Rule, b: Rule, modes: readonly ActiveMode[]): boolean {
+  if (rulesExclusive(a, b)) return false;
+  return modes.some((m) => ruleCanHoldIn(a, m) && ruleCanHoldIn(b, m));
+}
+
+const KIT_MODES: readonly ActiveMode[] = DEFAULT_MODES.map(activeModeOf);
+
 function actionAsTool(action: Action): Tool<unknown, unknown> {
   return { id: action.id, eligibility: {}, bindings: actionBindings(action) };
 }
@@ -164,16 +196,6 @@ function eligibleRule(action: Action): Rule | undefined {
   const eligible = action.eligible;
   if (eligible === undefined) return undefined;
   return typeof eligible === 'function' ? eligible.rule : eligible;
-}
-
-/** Which context an action applies in: `null` for everywhere, otherwise its
- *  `eligible` rule, keyed so equal rules group together. */
-function contextKey(action: Action): string | null {
-  const eligible = action.eligible;
-  if (eligible === undefined) return null;
-  const rule = typeof eligible === 'function' ? (eligible as { rule?: unknown }).rule : eligible;
-  if (rule !== null && typeof rule === 'object') return JSON.stringify(rule);
-  return `action:${action.id}`;
 }
 
 /**
@@ -199,13 +221,12 @@ function contextKey(action: Action): string | null {
  * ambient tool and an action claiming one tuple really do fall back on
  * declaration order. An ambient action gated by an `eligible` rule is the
  * exception: when its rule holds it outranks every ungated binding
- * (`preferContextual`), so it is compared only with actions gated by the same
- * rule. Actions gated by different rules are taken to apply in different
- * contexts, which the modes that grant them decide.
+ * (`preferContextual`), so it is compared only with other gated actions.
  *
  * Within any of these groups, two actions whose `eligible` rules can never
- * hold together ({@link rulesExclusive}) don't collide — each mode's own
- * hotkey-scope Escape exit, say.
+ * hold together don't collide — each mode's own hotkey-scope Escape exit, say.
+ * `rulesExclusive` proves some of those from the rules alone; the rest are the
+ * pairs no mode in `scopes.modes` lets hold at once.
  */
 export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   const registry = Array.isArray(scopes.registry)
@@ -218,19 +239,13 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     if (rule) rules.set(a.id, rule);
   }
   const hotkeyActions = actions.filter((a) => a.scope === 'hotkey').map(actionAsTool);
-  const gated = new Map<string, Tool<unknown, unknown>[]>();
+  const gatedActions: Tool<unknown, unknown>[] = [];
   const ungated: Tool<unknown, unknown>[] = [];
   for (const a of actions) {
     if (a.scope === 'hotkey') continue;
-    const key = contextKey(a);
-    if (key === null) {
-      ungated.push(actionAsTool(a));
-      continue;
-    }
-    const group = gated.get(key);
-    if (group) group.push(actionAsTool(a));
-    else gated.set(key, [actionAsTool(a)]);
+    (a.eligible !== undefined ? gatedActions : ungated).push(actionAsTool(a));
   }
+  const modes = scopes.modes ?? KIT_MODES;
   const ambient = [...(scopes.ambient ?? []), ...ungated];
 
   const out: Conflict[] = [];
@@ -247,13 +262,12 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   // Self-collisions: every entry, whichever slot it lands in — actions
   // included. Both group passes below are guarded on having more than one
   // member, so a lone action is checked by nothing else.
-  const gatedActions = [...gated.values()].flat();
   for (const tool of [...registry, ...ambient, ...gatedActions, ...hotkeyActions]) {
-    add(findConflictsKeyed([tool], rules));
+    add(findConflictsKeyed([tool], rules, modes));
   }
   // Ambient tools and ungated ambient actions are all live together.
-  if (ambient.length > 1) add(findConflictsKeyed(ambient, rules));
-  for (const group of gated.values()) if (group.length > 1) add(findConflictsKeyed(group, rules));
+  if (ambient.length > 1) add(findConflictsKeyed(ambient, rules, modes));
+  if (gatedActions.length > 1) add(findConflictsKeyed(gatedActions, rules, modes));
   // Hotkey-capable tools can stack on each other. `hotkey` is declared on the
   // authored `ToolDef`, not carried onto the runtime `Tool` — `Tool.def` is
   // the reflection handle for exactly this kind of read, and it's typed
@@ -262,7 +276,7 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     ...registry.filter((t) => (t.def as { hotkey?: unknown } | undefined)?.hotkey !== undefined),
     ...hotkeyActions,
   ];
-  if (hotkey.length > 1) add(findConflictsKeyed(hotkey, rules));
+  if (hotkey.length > 1) add(findConflictsKeyed(hotkey, rules, modes));
 
   return out;
 }
@@ -272,13 +286,15 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
  *
  * The tuple is printed through {@link formatRoute}, so the message names the
  * collision in the same grammar the author wrote the binding in — modulo the
- * phase slot, which prints as a bare `'&'`-channel atom because the bucket key
- * collapses channel-bearing phase specs (`sel:engaged` and `&:engaged` collide
- * with each other, and the collapse is what made them collide).
+ * phase slot, which the bucket key collapses: a single phase prints as a bare
+ * `'&'`-channel atom (`sel:engaged` and `&:engaged` collide, and the collapse
+ * is what made them collide), and `'any'` prints as `*:*`.
  */
 export function formatConflict(conflict: Conflict): string {
   const route = formatRoute({
-    phases: [{ channel: '&', phase: conflict.phase === 'any' ? '*' : conflict.phase }],
+    phases: [conflict.phase === 'any'
+      ? { channel: '*', phase: '*' }
+      : { channel: '&', phase: conflict.phase }],
     gesture: conflict.gesture,
     arg: conflict.arg,
     target: conflict.target,
