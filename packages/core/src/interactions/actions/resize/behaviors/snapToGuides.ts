@@ -3,8 +3,7 @@ import type {
   BoundsConstraint,
 } from '../../../gestures/types';
 import type { Guide } from 'features/guides/types';
-import type { View } from 'core/viewport/view';
-import { pxExtent } from 'core/viewport/pxExtent';
+import { screenTolerance } from '../../../gestures/shared/screenTolerance';
 import { DEFAULT_GUIDE_TOLERANCE_PX } from '../../../gestures/shared/strategies/guides';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
@@ -14,10 +13,8 @@ type ModKey = keyof ModifierState;
 export interface SnapToGuidesResizeArgs {
   /** Stable getter into the live guide list (typically from `useGuides`). */
   getGuides: () => readonly Guide[];
-  /** Snap tolerance (screen px when `getView` is set, world units otherwise). */
+  /** Snap tolerance in screen px, read through the gesture's view. */
   tolerance?: number;
-  /** Read the active view; required for screen-pixel tolerance. */
-  getView?: () => View;
   /** Modifier key that bypasses snapping while held. */
   bypassKey?: ModKey;
 }
@@ -36,7 +33,6 @@ export function snapToGuides<TPose extends Bounds>(
   args: SnapToGuidesResizeArgs,
 ): BoundsConstraint<TPose> {
   const tolerance = args.tolerance ?? DEFAULT_GUIDE_TOLERANCE_PX;
-  const getView = args.getView;
   const bypassKey = args.bypassKey;
 
   return {
@@ -47,7 +43,7 @@ export function snapToGuides<TPose extends Bounds>(
 
       // Per axis: a vertical guide is matched by a horizontal distance, so it
       // answers to `scale.x` alone.
-      const tol = getView ? pxExtent(tolerance, getView().scale) : { x: tolerance, y: tolerance };
+      const tol = screenTolerance(tolerance, ctx);
 
       let { x, y, width, height } = pose;
       let changed = false;

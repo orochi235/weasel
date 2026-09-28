@@ -26,6 +26,7 @@ function ctx(opts: {
     snap: null,
     modifiers: { alt: false, shift: !!opts.shiftHeld, meta: false, ctrl: false },
     pointer: { worldX: 1, worldY: 1, clientX: 0, clientY: 0 },
+    view: null,
     adapter: adapter as unknown as GestureContext<LassoSelectPose>['adapter'],
     scratch: { 'lassoSelect.vertices': opts.vertices },
   };

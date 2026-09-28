@@ -15,6 +15,7 @@ function makeCtx(): GestureContext<Pose> {
     snap: null,
     modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     pointer: { worldX: 5, worldY: 5, clientX: 100, clientY: 100 },
+    view: null,
     adapter: { getParent: () => 'oldParent' } as any,
     scratch: {},
   };

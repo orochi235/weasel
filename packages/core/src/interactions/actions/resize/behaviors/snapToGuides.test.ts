@@ -11,7 +11,11 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 type P = Bounds;
 
-function ctx(origin: P, mods: Partial<ModifierState> = {}): GestureContext<P> {
+function ctx(
+  origin: P,
+  mods: Partial<ModifierState> = {},
+  view: GestureContext<P>['view'] = null,
+): GestureContext<P> {
   return {
     draggedIds: ['a'],
     origin: new Map([['a', origin]]),
@@ -19,6 +23,7 @@ function ctx(origin: P, mods: Partial<ModifierState> = {}): GestureContext<P> {
     snap: null,
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, ...mods },
     pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 },
+    view,
     adapter: {} as never,
     scratch: {},
   };
@@ -102,20 +107,17 @@ describe('resize/snapToGuides', () => {
   it('view scaling: tolerance shrinks when zoomed in', () => {
     const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 100 }];
     // 6 px / scale 2 → 3 world units of tolerance.
-    const b = snapToGuides<P>({
-      getGuides: () => guides,
-      tolerance: 6,
-      getView: () => ({ x: 0, y: 0, scale: { x: 2, y: 2 } }),
-    });
+    const b = snapToGuides<P>({ getGuides: () => guides, tolerance: 6 });
+    const zoomed = { x: 0, y: 0, scale: { x: 2, y: 2 } };
     // 3 world units away — snaps.
     const a = b.onMove!(
-      ctx({ x: 0, y: 0, width: 50, height: 50 }),
+      ctx({ x: 0, y: 0, width: 50, height: 50 }, {}, zoomed),
       proposed({ x: 0, y: 0, width: 103, height: 50 }, { x: 'min', y: 'free' }),
     );
     expect(a).toEqual({ pose: { x: 0, y: 0, width: 100, height: 50 } });
     // 4 world units away — outside.
     const c = b.onMove!(
-      ctx({ x: 0, y: 0, width: 50, height: 50 }),
+      ctx({ x: 0, y: 0, width: 50, height: 50 }, {}, zoomed),
       proposed({ x: 0, y: 0, width: 104, height: 50 }, { x: 'min', y: 'free' }),
     );
     expect(c).toBeUndefined();

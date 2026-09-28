@@ -1,6 +1,7 @@
 import type { Op } from 'core/ops/types';
 import type { InsertAdapter, MoveAdapter, SnapTarget } from 'core/adapters/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { View } from 'core/viewport/view';
 
 import type { ModifierState } from '@weasel-js/routing';
 export type { ModifierState };
@@ -26,6 +27,12 @@ export interface GestureContext<TPose, TNode extends { id: string } = { id: stri
   snap: SnapTarget<TPose> | null;
   modifiers: ModifierState;
   pointer: PointerState;
+  /**
+   * Camera of the view the input landed in (a `<CanvasView>`'s own, not the
+   * surface's), current as of this frame. `null` where no view answered; a
+   * screen-pixel length then reads as one world unit.
+   */
+  view: View | null;
   adapter: MoveAdapter<TNode, TPose>;
   /**
    * Per-gesture mutable store. Keys should be namespaced by behavior name to avoid

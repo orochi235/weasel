@@ -27,6 +27,7 @@ function makeCtx(initialPose: RectPose, setPose: (id: string, p: RectPose) => vo
     snap: null,
     modifiers: { shift: false, alt: false, ctrl: false, meta: false },
     pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 },
+    view: null,
     adapter: {
       getNode: () => ({ id: 'a' }),
       getNodes: () => [{ id: 'a' }],

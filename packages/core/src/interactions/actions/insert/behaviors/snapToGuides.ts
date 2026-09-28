@@ -4,8 +4,7 @@ import type {
   ModifierState,
 } from '../../../gestures/types';
 import type { Guide } from 'features/guides/types';
-import type { View } from 'core/viewport/view';
-import { pxExtent } from 'core/viewport/pxExtent';
+import { screenTolerance } from '../../../gestures/shared/screenTolerance';
 import { DEFAULT_GUIDE_TOLERANCE_PX } from '../../../gestures/shared/strategies/guides';
 
 type ModKey = keyof ModifierState;
@@ -14,10 +13,8 @@ type ModKey = keyof ModifierState;
 export interface SnapToGuidesInsertArgs {
   /** Stable getter into the live guide list (typically from `useGuides`). */
   getGuides: () => readonly Guide[];
-  /** Snap tolerance (screen px when `getView` is set, world units otherwise). */
+  /** Snap tolerance in screen px, read through the gesture's view. */
   tolerance?: number;
-  /** Read the active view; required for screen-pixel tolerance. */
-  getView?: () => View;
   /** Modifier key that bypasses snapping while held. */
   bypassKey?: ModKey;
 }
@@ -64,13 +61,7 @@ export function snapToGuides<TPose>(
   args: SnapToGuidesInsertArgs,
 ): InsertBehavior<TPose> {
   const tolerance = args.tolerance ?? DEFAULT_GUIDE_TOLERANCE_PX;
-  const getView = args.getView;
   const bypassKey = args.bypassKey;
-
-  // Per axis: a vertical guide is matched by a horizontal distance, so it
-  // answers to `scale.x` alone.
-  const computeWorldTol = (): { x: number; y: number } =>
-    getView ? pxExtent(tolerance, getView().scale) : { x: tolerance, y: tolerance };
 
   return {
     onStart(ctx) {
@@ -80,14 +71,14 @@ export function snapToGuides<TPose>(
       const id = ctx.draggedIds[0];
       const o = ctx.origin.get(id) as unknown as InsertPoint | undefined;
       if (!o) return;
-      const snapped = snapPoint(o, guides, computeWorldTol());
+      const snapped = snapPoint(o, guides, screenTolerance(tolerance, ctx));
       if (snapped) ctx.origin.set(id, snapped as unknown as TPose);
     },
     onMove(ctx, { current }) {
       if (bypassKey && ctx.modifiers[bypassKey]) return;
       const guides = args.getGuides();
       if (guides.length === 0) return;
-      const snapped = snapPoint(current, guides, computeWorldTol());
+      const snapped = snapPoint(current, guides, screenTolerance(tolerance, ctx));
       if (!snapped) return;
       return { current: snapped };
     },

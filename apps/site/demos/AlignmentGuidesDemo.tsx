@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   SceneCanvas,
   useScene,
@@ -7,7 +7,7 @@ import {
   deriveAlignmentGuides,
   alignMoveBehavior,
 } from '@weasel-js/core';
-import type { Guide, View } from '@weasel-js/core';
+import type { Guide } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
 interface NodeData { color: string }
@@ -30,7 +30,6 @@ export function AlignmentGuidesDemo() {
   // Multi-select so shift-clicking several rects and dragging snaps the
   // selection's union box, not just one rect.
   const selection = useSelection({ mode: 'multi' });
-  const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   // Active guides live in a ref so the layer reads them each draw without a
   // React re-render per pointer-move.
@@ -39,7 +38,6 @@ export function AlignmentGuidesDemo() {
   const behaviors = useMemo(() => [
     alignMoveBehavior<Pose>({
       tolerance: 6,
-      getView: () => view,
       // Derive from every node EXCEPT the one(s) being dragged, plus the page.
       getCandidates: () => {
         const dragged = new Set(selection.get());
@@ -50,7 +48,7 @@ export function AlignmentGuidesDemo() {
       },
       setActiveGuides: (g) => { activeRef.current = g; },
     }),
-  ], [scene, selection, view]);
+  ], [scene, selection]);
 
   const guidesLayer = useMemo(
     () => createGuidesLayer({ getGuides: () => activeRef.current, color: '#e0397f' }),
@@ -65,8 +63,6 @@ export function AlignmentGuidesDemo() {
       scene={scene}
       selection={selection}
       selectTool={{ move: { behaviors } }}
-      view={view}
-      onViewChange={setView}
       viewport={{}}
       layers={{
         scene: {

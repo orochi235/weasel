@@ -26,6 +26,7 @@ function ctx(
     snap: null,
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, ...modifiers },
     pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 },
+    view: null,
     adapter: {} as never,
     scratch: {},
   };
@@ -46,6 +47,19 @@ describe('alignMoveBehavior', () => {
     const res = b.onMove!(ctx(), tt(0, 0));
     expect(res).toEqual({ transform: { kind: 'translate', dx: -4, dy: 0 } });
     expect(active).toEqual([{ id: 'L', axis: 'x', offset: 96 }]);
+  });
+
+  it("reads tolerance in screen px through the gesture's view", () => {
+    const b = alignMoveBehavior<Pose>({
+      getCandidates: () => [{ id: 'L', axis: 'x', offset: 96 }],
+      setActiveGuides: () => {},
+      tolerance: 5,
+    });
+    const at = (scale: number): GestureContext<Pose> =>
+      ({ ...ctx(), view: { x: 0, y: 0, scale: { x: scale, y: scale } } });
+    // 4 world is 8px at 2×: outside 5px. At 0.5× it is 2px: inside.
+    expect(b.onMove!(at(2), tt(0, 0))).toBeUndefined();
+    expect(b.onMove!(at(0.5), tt(0, 0))).toEqual({ transform: { kind: 'translate', dx: -4, dy: 0 } });
   });
 
   it('clears actives and returns nothing on a miss', () => {
@@ -91,6 +105,7 @@ describe('alignMoveBehavior', () => {
       draggedIds: ['a', 'b'], origin: o, current: new Map(), snap: null,
       modifiers: { alt: false, shift: false, meta: false, ctrl: false },
       pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 },
+      view: null,
       adapter: {} as never, scratch: {},
     };
     let active: readonly Guide[] = [];
@@ -114,6 +129,7 @@ describe('alignMoveBehavior', () => {
       draggedIds: ['a', 'b'], origin: o, current: new Map(), snap: null,
       modifiers: { alt: false, shift: false, meta: false, ctrl: false },
       pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 },
+      view: null,
       adapter: {} as never, scratch: {},
     };
     let active: readonly Guide[] = [];

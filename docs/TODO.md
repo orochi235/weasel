@@ -1183,15 +1183,12 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
     finish when the motion stops rather than when alpha does? A shorter run also closes the
     window for a mid-run drag, which the demo's hint asks for.
 
-- **(P3) Snap and alignment behaviors can't see the view.** `alignMoveBehavior`, the three
-  `snapToGuides` behaviors and `guideSnapStrategy` read tolerance in screen pixels only when
-  handed a `getView`; without one it is in world units, so it grows and shrinks with zoom.
-  The gesture context they run in carries no view, so every consumer that zooms has to
-  thread one in: `AlignmentGuidesDemo` holds a controlled `view` state for nothing but that.
-  The fix is to put the view the gesture landed in on `GestureContext` (move, resize, insert)
-  and make screen pixels the default. The open question is a multi-view surface:
-  `InvocationCtx.viewId` names the view the input landed in, and whether `deps.view`
-  answers for that view or for the surface's own camera hasn't been checked.
+- **(P3) Nothing runs an `InsertBehavior`.** `insertAction` takes no `opts.behaviors`
+  and builds no `GestureContext`, so `alignInsertBehavior`, insert's `snapToGuides` and
+  `snapToGrid` are exported and unit-tested but have no way into a gesture. Wiring them
+  means `insertAction.start` building a context the way `moveAction` does (including
+  `view`, read through `gestureViewReader`) and running `onStart`/`onMove`/`onEnd` over
+  the start and current points.
 
 - **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
 

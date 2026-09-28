@@ -6,6 +6,8 @@ import type { GestureContext } from '../../types';
 interface Pose { x: number; y: number }
 
 const dummyCtx = {} as unknown as GestureContext<Pose>;
+const viewCtx = (scale: number): GestureContext<Pose> =>
+  ({ view: { x: 0, y: 0, scale: { x: scale, y: scale } } }) as unknown as GestureContext<Pose>;
 
 describe('guideSnapStrategy', () => {
   it('returns null when there are no guides', () => {
@@ -71,26 +73,22 @@ describe('guideSnapStrategy', () => {
     expect(s.snap({ x: 107, y: 0 }, dummyCtx)).toBeNull();
   });
 
-  it('scales tolerance from screen px through getView', () => {
+  it("scales tolerance from screen px through the gesture's view", () => {
     const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 100 }];
     // tolerance = 6 px, scale = 2 → world tolerance = 3.
-    const s = guideSnapStrategy<Pose>(() => guides, {
-      tolerance: 6,
-      getView: () => ({ x: 0, y: 0, scale: { x: 2, y: 2 } }),
-    });
-    expect(s.snap({ x: 103, y: 0 }, dummyCtx)).toEqual({ x: 100, y: 0 });
-    expect(s.snap({ x: 104, y: 0 }, dummyCtx)).toBeNull();
+    const s = guideSnapStrategy<Pose>(() => guides, { tolerance: 6 });
+    const zoomed = viewCtx(2);
+    expect(s.snap({ x: 103, y: 0 }, zoomed)).toEqual({ x: 100, y: 0 });
+    expect(s.snap({ x: 104, y: 0 }, zoomed)).toBeNull();
   });
 
   it('zoomed-out view (scale 0.5) widens the world trigger zone', () => {
     const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 100 }];
     // tolerance = 6 px, scale = 0.5 → world tolerance = 12.
-    const s = guideSnapStrategy<Pose>(() => guides, {
-      tolerance: 6,
-      getView: () => ({ x: 0, y: 0, scale: { x: 0.5, y: 0.5 } }),
-    });
-    expect(s.snap({ x: 110, y: 0 }, dummyCtx)).toEqual({ x: 100, y: 0 });
-    expect(s.snap({ x: 113, y: 0 }, dummyCtx)).toBeNull();
+    const s = guideSnapStrategy<Pose>(() => guides, { tolerance: 6 });
+    const zoomedOut = viewCtx(0.5);
+    expect(s.snap({ x: 110, y: 0 }, zoomedOut)).toEqual({ x: 100, y: 0 });
+    expect(s.snap({ x: 113, y: 0 }, zoomedOut)).toBeNull();
   });
 
   it('returns null when pose origin is exactly on the guide (no movement)', () => {

@@ -37,6 +37,7 @@
  * - Debug sink recording.
  */
 
+import { gestureViewReader } from '../../gestures/shared/screenTolerance';
 import { resolveParams, setScratch, type Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import type { LassoSelectDep, ViewApi } from '../depSchema';
@@ -149,6 +150,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
       const vertices: Point2[] = [{ x: ctx.world.x, y: ctx.world.y }];
       const behaviors = (opts?.behaviors ?? []) as LassoSelectBehavior[];
       let gesture: GestureContext<LassoSelectPose> | null = null;
+      const readView = gestureViewReader(ctx.deps);
       if (behaviors.length > 0) {
         const pose: LassoSelectPose = {
           worldX: ctx.world.x, worldY: ctx.world.y, shiftHeld: ctx.modifiers.shift,
@@ -160,6 +162,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           snap: null,
           modifiers: { ...ctx.modifiers },
           pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
+          view: readView(),
           adapter: behaviorAdapter(dep, view) as unknown as GestureContext<LassoSelectPose>['adapter'],
           scratch: {},
         };
@@ -198,6 +201,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           if (g) {
             g.modifiers = { ...moveCtx.modifiers };
             g.pointer = { worldX: x, worldY: y, clientX: 0, clientY: 0 };
+            g.view = readView();
             g.current.set('gesture', { worldX: x, worldY: y, shiftHeld: scratch.shiftHeld });
             const proposed = { vertices: scratch.vertices, shiftHeld: scratch.shiftHeld };
             for (const b of scratch.behaviors) b.onMove?.(g, proposed);

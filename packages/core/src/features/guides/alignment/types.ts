@@ -1,4 +1,3 @@
-import type { View } from 'core/viewport/view';
 import type { ModifierState } from 'interactions/gestures/types';
 import type { Guide } from '../types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -39,10 +38,8 @@ export interface AlignmentBehaviorBase {
   /** Publish the currently-matched line(s). Called every onMove; cleared
    *  (`[]`) on a miss and on onEnd. */
   setActiveGuides: (guides: readonly Guide[]) => void;
-  /** Tolerance (screen px when `getView` set, world units otherwise). */
+  /** Tolerance in screen px, read through the gesture's view. Default 6. */
   tolerance?: number;
-  /** Read the active view; required for screen-pixel tolerance. */
-  getView?: () => View;
   /** Modifier key that bypasses snapping while held. */
   bypassKey?: keyof ModifierState;
 }
