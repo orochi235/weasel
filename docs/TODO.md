@@ -977,18 +977,6 @@ only story runner in the repo.
   story as the one annotation target, sized and captured through the trial's
   frame registry — is in `git log --grep 'take marks out of forge'`.
 
-- **(P2) The Dialog story's "Open dialog" button opens nothing in forge.** Seen 2026-09-27
-  in headless Chromium, with the current `Dialog.tsx` and with the version before `CloseButton`
-  replaced its `×`, so it predates that change. Unchecked whether it is the story, the in-document
-  workshop, or the first-press remount below.
-
-- **(P2) The first press in a story may remount it and drop the first edit.**
-  Seen 2026-09-26 while checking property fields in the workshop: the first
-  edit made in a freshly opened story was lost, as if the press activated the
-  trial and remounted the story under it. It happens before any field logic
-  runs, which points at trial activation rather than the control. Unconfirmed:
-  reproduce it, then find what remounts.
-
 - **(P3) `ToastRegion` portals to `document.body` and cannot be told otherwise.**
   React Aria's `UNSTABLE_ToastRegion` takes its container from
   `UNSAFE_PortalProvider` only, which `@weasel-js/ui` avoids
