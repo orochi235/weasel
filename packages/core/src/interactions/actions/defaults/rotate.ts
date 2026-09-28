@@ -49,7 +49,7 @@ import {
   type PoseDescriptor,
 } from '../resize/geometry';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
-import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, type GestureLifecycle } from '../gestureLifecycle';
+import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 import { moveGestureAdapter } from '../move/gestureAdapter';
 import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestures/types';
 
@@ -334,6 +334,7 @@ export const rotateAction: Action & { requires: string[] } = {
           let committed = false;
           try {
             if (reason === 'commit') committed = commitRotate();
+            else runBehaviorCancel(scratch.behaviors, scratch.gestureCtx);
           } finally {
             dropPreviewOverrides(scratch);
             scratch.previews.clear();

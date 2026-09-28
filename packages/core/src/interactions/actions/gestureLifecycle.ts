@@ -110,3 +110,11 @@ export function reduceBehaviorEnd<TCtx>(
   }
   return undefined;
 }
+
+/** Runs every behavior's `onCancel`, for a gesture closing without a commit. */
+export function runBehaviorCancel<TCtx>(
+  behaviors: readonly { onCancel?(ctx: TCtx): void }[],
+  ctx: TCtx,
+): void {
+  for (const b of behaviors) b.onCancel?.(ctx);
+}

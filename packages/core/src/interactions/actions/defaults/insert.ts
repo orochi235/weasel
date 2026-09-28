@@ -72,7 +72,7 @@ import type { Scene } from 'core/scene/types';
 import type { GestureContext, InsertBehavior, InsertPoint } from '../../gestures/types';
 import { gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { View } from 'core/viewport/view';
-import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd } from '../gestureLifecycle';
+import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel } from '../gestureLifecycle';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { TextEditDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -489,7 +489,10 @@ export const insertAction: Action & { requires: string[] } = {
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           scratch.open = false;
           if (liveInsertScratch === scratch) liveInsertScratch = null;
-          if (reason === 'cancel') return;
+          if (reason === 'cancel') {
+            runBehaviorCancel(scratch.behaviors, scratch.gestureCtx);
+            return;
+          }
 
           const { dep: d, opts: o } = scratch;
           const points = endCtx.drag?.points ?? scratch.points;

@@ -4,6 +4,8 @@ import { resizeAction } from './resize';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { ResizePolicy } from '../depSchema';
+import { alignResizeBehavior } from 'features/guides/alignment/behaviors';
+import type { Guide } from 'features/guides/types';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -47,6 +49,22 @@ function resize(s: ReturnType<typeof setup>, reason: 'commit' | 'cancel' = 'comm
   handle.onMove?.(s.grown);
   handle.onEnd?.(s.grown, reason);
 }
+
+describe('resizeAction — cancel', () => {
+  it('Esc mid-drag clears the alignment guides a constraint published', () => {
+    let active: readonly Guide[] = [];
+    const align = alignResizeBehavior({
+      getCandidates: () => [{ id: 'R', axis: 'x', offset: 152 }],
+      setActiveGuides: (g) => { active = g; },
+    });
+    const s = setup({ constraints: [align] as never });
+    const handle = invoker().start(s.base, undefined);
+    handle.onMove?.(s.grown);
+    expect(active.map((g) => g.id)).toEqual(['R']);
+    handle.onEnd?.(s.grown, 'cancel');
+    expect(active).toEqual([]);
+  });
+});
 
 describe('resizeAction — lifecycle via the resizePolicy dep', () => {
   it('label names the history entry', () => {

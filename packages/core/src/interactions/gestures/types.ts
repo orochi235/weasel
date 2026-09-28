@@ -51,7 +51,10 @@ export interface SnapStrategy<TPose> {
  * Generalized base behavior. Each hook defines an alias that pins the
  * proposed-pose shape (TProposed) and the onMove return shape (TMoveResult).
  * onEnd is uniform: first non-undefined return wins (Op[] = commit those,
- * null = abort, undefined = defer).
+ * null = abort, undefined = defer). It runs only on commit; a canceled
+ * gesture (Esc, pointercancel) runs every behavior's `onCancel` instead, so a
+ * behavior holding state outside the gesture (published guides, a timer)
+ * releases it there too.
  *
  * `defaultTransient`: when one behavior of a move, resize or rotate sets it
  * and the binding leaves `transient` unset, the gesture commits through
@@ -62,6 +65,7 @@ export interface ActionBehavior<TPose, TProposed, TMoveResult> {
   onStart?(ctx: GestureContext<TPose>): void;
   onMove?(ctx: GestureContext<TPose>, proposed: TProposed): TMoveResult | void;
   onEnd?(ctx: GestureContext<TPose>): Op[] | null | void;
+  onCancel?(ctx: GestureContext<TPose>): void;
 }
 
 // ----- move -----

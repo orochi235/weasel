@@ -5,6 +5,8 @@ import { createScene } from 'core/scene/scene';
 import { createTransformOp } from 'core/ops/transform';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { MoveBehavior } from '../../gestures/types';
+import { alignMoveBehavior } from 'features/guides/alignment/behaviors';
+import type { Guide } from 'features/guides/types';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -183,5 +185,30 @@ describe('moveAction — preview overrides', () => {
     const { scene, a, base } = setup();
     drag(base, { behaviors: [{ onEnd: () => [] }] }, 5);
     expect(scene.overrides.has(a)).toBe(false);
+  });
+});
+
+describe('moveAction — cancel', () => {
+  it('runs each behavior\'s onCancel, not its onEnd', () => {
+    const { base } = setup();
+    const onEnd = vi.fn();
+    const onCancel = vi.fn();
+    drag(base, { behaviors: [{ onEnd, onCancel }] }, 5, 'cancel');
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onEnd).not.toHaveBeenCalled();
+  });
+
+  it('Esc mid-drag clears the alignment guides it published', () => {
+    const { base } = setup();
+    let active: readonly Guide[] = [];
+    const align = alignMoveBehavior({
+      getCandidates: () => [{ id: 'L', axis: 'x', offset: 16 }],
+      setActiveGuides: (g) => { active = g; },
+    });
+    const handle = invoker().start(base as InvocationCtx, { behaviors: [align] });
+    handle.onMove?.(frame(base, 5));
+    expect(active.map((g) => g.id)).toEqual(['L']);
+    handle.onEnd?.(frame(base, 5), 'cancel');
+    expect(active).toEqual([]);
   });
 });

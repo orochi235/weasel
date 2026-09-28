@@ -70,7 +70,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { unionBounds } from 'core/geometry/unionBounds';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
-import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, type GestureLifecycle } from '../gestureLifecycle';
+import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 
 // ---------------------------------------------------------------------------
 // Defaults applied when `resizePolicy` dep is absent. Mirrors the
@@ -602,6 +602,7 @@ export const resizeAction: Action & { requires: string[] } = {
           let committed = false;
           try {
             if (reason === 'commit') committed = commitResize();
+            else runBehaviorCancel(scratch.behaviors, scratch.gestureCtx as unknown as GestureContext<Bounds>);
           } finally {
             dropPreviewOverrides(scratch);
             scratch.previews.clear();

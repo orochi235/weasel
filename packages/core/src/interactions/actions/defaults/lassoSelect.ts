@@ -46,7 +46,7 @@ import type { Op } from 'core/ops/types';
 import { applyOpsTo } from 'core/applyOps';
 import type { GestureContext, LassoSelectBehavior, LassoSelectPose } from '../../gestures/types';
 import { LASSO_VERTICES } from '../lasso-select/behaviors/selectFromLasso';
-import { reduceBehaviorEnd } from '../gestureLifecycle';
+import { reduceBehaviorEnd, runBehaviorCancel } from '../gestureLifecycle';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -219,7 +219,10 @@ export const lassoSelectAction: Action & { requires: string[] } = {
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           scratch.open = false;
-          if (reason === 'cancel') return;
+          if (reason === 'cancel') {
+            if (scratch.gesture) runBehaviorCancel(scratch.behaviors, scratch.gesture);
+            return;
+          }
 
           const { dep: d, mode, view, vertices, shiftHeld, gesture: g } = scratch;
 
