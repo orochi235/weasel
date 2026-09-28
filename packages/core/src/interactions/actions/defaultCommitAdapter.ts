@@ -29,7 +29,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
  *
  *  Pass `selection` (a `SelectionApi`'s `adapterMethods`) and selection reads
  *  and writes go through it rather than the scene, so a canvas that gates its
- *  selection — `selectionMode="none"` — gates what these batches select too. */
+ *  selection — `selectable={false}` — gates what these batches select too. */
 export function defaultCommitAdapter<TPose>(
   scene: Scene<unknown, string, TPose>,
   selection?: SelectionApi['adapterMethods'],

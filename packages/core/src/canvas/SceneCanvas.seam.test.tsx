@@ -6,7 +6,7 @@
  * coverage in the existing test files are exercised here.
  *
  * Behaviors covered:
- *   2. selectionMode='multi' accumulates via shift-click through SceneCanvas
+ *   2. a supplied multi selection accumulates via shift-click through SceneCanvas
  *   3. pickEvery receives view-adjusted worldXY (pan offset applied)
  *   7. SceneCanvas backgroundFill wires a layer (mounts, layer appears in debug)
  *   8. cursorCoordsHud / pickHud render into the DOM when enabled
@@ -90,10 +90,10 @@ function pu(canvas: HTMLCanvasElement, x: number, y: number, opts: PointerEventI
 }
 
 // ---------------------------------------------------------------------------
-// Behavior 2: selectionMode='multi' allows multi-select via shift-click
+// Behavior 2: a supplied multi selection allows multi-select via shift-click
 // ---------------------------------------------------------------------------
 
-describe('Behavior 2: selectionMode=multi accumulates selection', () => {
+describe('Behavior 2: a supplied multi selection accumulates', () => {
   it('shift-click on a second node adds it to the selection (does not replace)', () => {
     const scene = makeScene();
     const [idA, idB] = idsOf(scene);
@@ -140,7 +140,6 @@ describe('Behavior 2: selectionMode=multi accumulates selection', () => {
         width={400}
         height={400}
         selection={selApi as Parameters<typeof SceneCanvas>[0]['selection']}
-        selectionOptions={{ mode: 'multi' }}
       />,
     );
 

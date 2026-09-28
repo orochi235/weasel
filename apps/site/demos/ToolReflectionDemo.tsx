@@ -68,7 +68,6 @@ function ToolReflectionDemoInner() {
             className="ckd-canvas"
             scene={scene}
             selection={selection}
-            selectionMode="multi"
             tools={tools}
             layers={{
               scene: {

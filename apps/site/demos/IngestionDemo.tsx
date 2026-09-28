@@ -49,7 +49,6 @@ export function IngestionDemo() {
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        selectionMode="multi"
         features={['ingest']}
         ingestion={{ handlers: textHandler }}
       />

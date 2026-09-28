@@ -1563,7 +1563,6 @@ function EditorWithSharedScene({
             scene={scene}
             poseComposition={DRAW_POSE_COMPOSITION}
             selection={selection}
-            selectionMode="multi"
             defaultTools={BUILTIN_TOOL_IDS}
             tools={{ slice: sliceTool, opacityScrub: opacityScrubTool }}
             actions={{ slice: sliceAction }}

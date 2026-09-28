@@ -155,7 +155,6 @@ function SvgRoundTrip() {
           backgroundFill={{ color: '#ffffff' }}
           scene={scene}
           selection={selection}
-          selectionMode="multi"
         />
       </div>
       <div className={s.output}>

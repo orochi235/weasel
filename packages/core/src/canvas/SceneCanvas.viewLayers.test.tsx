@@ -113,11 +113,11 @@ describe('<SceneCanvas layerVisibility> hides a layer in that view only', () => 
     return (
       <>
         <div data-view="hidden">
-          <SceneCanvas features={['draw']} scene={scene} selection={hidden} selectionMode="multi" width={300} height={200}
+          <SceneCanvas features={['draw']} scene={scene} selection={hidden} width={300} height={200}
             layers={LAYERS} layerVisibility={HIDE_FX} />
         </div>
         <div data-view="shown">
-          <SceneCanvas features={['draw']} scene={scene} selection={shown} selectionMode="multi" width={300} height={200}
+          <SceneCanvas features={['draw']} scene={scene} selection={shown} width={300} height={200}
             layers={LAYERS} />
         </div>
       </>

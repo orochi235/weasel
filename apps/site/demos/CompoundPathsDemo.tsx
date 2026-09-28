@@ -181,7 +181,7 @@ export function CompoundPathsDemo() {
         className="ckd-canvas"
         scene={scene}
         backgroundFill={{ color: '#87ceeb' }}
-        selectionMode="multi"
+        selectionOptions={{ mode: 'multi' }}
         selectTool={{ handleHitRadius: HANDLE }}
         layers={{
           scene: {

@@ -1,4 +1,4 @@
-/** Synthetic id used by `<Canvas selectionMode="multi">` to address the
+/** Synthetic id a canvas uses to address the
  *  union-AABB target when 2+ real ids are selected. The selection-overlay
  *  layer and the affordance hit-tester both resolve it to `ChromeState`'s
  *  `unionBounds`; consumers wiring their own selection-overlay layer can

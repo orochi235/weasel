@@ -31,7 +31,6 @@ export function ShapeToolsDemo() {
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        selectionMode="multi"
         features={['pick']}
         defaultTools={BUILTIN_TOOL_IDS}
         onToolsCreated={setTools}

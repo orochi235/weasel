@@ -141,10 +141,6 @@ describe('<Canvas>', () => {
     expect(canvas).toBeInstanceOf(HTMLCanvasElement);
   });
 
-  // The `selectionMode` describe went with the two above. Single- vs
-  // multi-mode `applyClick` semantics belong to `useSelection` and are pinned
-  // in `core/selection/useSelection.test.ts`.
-
   it('layer.onUncapturedMove fires on pointermove when no gesture is captured', () => {
     const moveSpy = vi.fn();
     const layer: RenderLayer<unknown> = {

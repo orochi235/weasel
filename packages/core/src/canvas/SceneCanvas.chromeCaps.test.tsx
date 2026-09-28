@@ -210,11 +210,11 @@ describe('SceneCanvas — resize-handles gated by selectTool.resize.resizable', 
   });
 });
 
-/** Variant harness for selectionMode tests — returns the rendered container
+/** Variant harness for `selectable` tests — returns the rendered container
  *  so tests can drive pointer events on the canvas to start a real marquee. */
 function renderWithMode(
   scene: Scene<D, L, P>,
-  selectionMode: 'single' | 'none',
+  selectable: boolean,
 ): {
   helpersRef: React.MutableRefObject<CanvasHelpers<P> | null>;
   container: HTMLElement;
@@ -231,7 +231,7 @@ function renderWithMode(
         layers={{}}
         width={400}
         height={400}
-        selectionMode={selectionMode}
+        selectable={selectable}
         helpersRef={localRef}
       />
     );
@@ -240,7 +240,7 @@ function renderWithMode(
   return { helpersRef, container };
 }
 
-describe('SceneCanvas — selectionMode none suppresses marquee chrome', () => {
+describe('SceneCanvas — selectable={false} suppresses marquee chrome', () => {
   function dragOnEmpty(container: HTMLElement) {
     const canvas = container.querySelector('canvas')!;
     act(() => {
@@ -250,18 +250,18 @@ describe('SceneCanvas — selectionMode none suppresses marquee chrome', () => {
     return canvas;
   }
 
-  it('control: default mode shows action.marquee while an empty-drag is in flight', () => {
+  it('control: a selectable canvas shows action.marquee while an empty-drag is in flight', () => {
     const scene = makeScene();
-    const { helpersRef, container } = renderWithMode(scene, 'single');
+    const { helpersRef, container } = renderWithMode(scene, true);
     act(() => {});
     dragOnEmpty(container);
     const isVisible = helpersRef.current!.getIsVisible();
     expect(isVisible('action.marquee')).toBe(true);
   });
 
-  it('selectionMode none: action.marquee stays hidden mid-drag', () => {
+  it('selectable={false}: action.marquee stays hidden mid-drag', () => {
     const scene = makeScene();
-    const { helpersRef, container } = renderWithMode(scene, 'none');
+    const { helpersRef, container } = renderWithMode(scene, false);
     act(() => {});
     dragOnEmpty(container);
     const isVisible = helpersRef.current!.getIsVisible();

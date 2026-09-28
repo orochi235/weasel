@@ -500,21 +500,22 @@ source of truth for what shortcuts exist (the inspector reads from it).
 
 ## Selection mode
 
-`<Canvas selectionMode="single" | "multi" | "none">` is a single switch for
-click/drag/resize semantics:
+Click policy belongs to the selection, not the canvas:
+`useSelection({ mode })`, or `<SceneCanvas selectionOptions={{ mode }}>` for
+the selection the canvas builds when it is not handed one.
 
-- `single` (default): click replaces the selection with one id. Drag moves
-  the clicked object. Corner handles resize it.
-- `multi`: shift/meta/ctrl-click toggles. With multiple ids selected the
-  overlay draws one union AABB, clicks inside drag the whole set, and
-  corner handles resize the union (each member scaled via
-  `geometry.remapBounds`).
-- `none`: canvas interactions never mutate selection. `onBodyHit` /
-  `onTapEmpty` still fire so consumers can do their own picking.
+- `single` (default): a click replaces the selection with the clicked node,
+  modifiers or not. It is a click rule, not a cap — a marquee, lasso,
+  select-all or paste can still select several nodes.
+- `multi`: a click with the extend key (`extend`, shift by default) toggles
+  the node in or out of the selection.
 
-Override per-prop (`selection`, `pickEvery`, `boundsOf`, `resizeTarget`,
-`onBodyHit`, `onTapEmpty`, `selectionOptions.mode`) when the mode-derived
-default isn't enough.
+Several selected nodes draw one union box whose corner handles resize the set,
+whichever mode made the selection.
+
+`<SceneCanvas selectable={false}>` is the canvas's own switch: nothing the
+canvas does writes the selection — no click, marquee, lasso, action or tool.
+The consumer's `SelectionApi` still writes, and the canvas draws what it holds.
 
 ## Picking
 

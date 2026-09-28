@@ -55,7 +55,6 @@ export function SelectionPanelDemo() {
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        selectionMode="multi"
         routing={defaultNodeRouting}
         layers={{
           scene: {

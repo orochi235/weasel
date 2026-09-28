@@ -161,7 +161,7 @@ export function ModesDemo() {
         className="ckd-canvas"
         backgroundFill={{ color: '#ffffff' }}
         scene={scene}
-        selectionMode="multi"
+        selectionOptions={{ mode: 'multi' }}
         features={['pick', 'move', 'transform']}
         defaultTools={['select', 'hand', 'rect', 'ellipse']}
         onToolsCreated={setTools}

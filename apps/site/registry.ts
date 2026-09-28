@@ -167,7 +167,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'multi-select',
     title: 'Multi-select',
     category: 'Selection & actions',
-    description: 'selectionMode="multi" — shift-click to extend the selection. With more than one item selected, the overlay collapses to a single union AABB with corner handles, clicks inside the union drag the whole set, and the corner handles resize the union (each member is scaled via the same remapBounds path).',
+    description: 'useSelection({ mode: "multi" }) — shift-click to extend the selection. With more than one item selected, the overlay collapses to a single union AABB with corner handles, clicks inside the union drag the whole set, and the corner handles resize the union (each member is scaled via the same remapBounds path).',
     hint: 'Click a rect to select; shift-click another to add it; drag the body or grab a corner.',
     load: () => import('./demos/MultiSelectDemo').then((m) => m.MultiSelectDemo),
     path: 'apps/site/demos/MultiSelectDemo.tsx',

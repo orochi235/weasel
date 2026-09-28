@@ -78,7 +78,7 @@ export function StrokeMarkersDemo() {
       height={H}
       className="ckd-canvas"
       scene={scene}
-      selectionMode="none"
+      selectable={false}
     />
   );
 }

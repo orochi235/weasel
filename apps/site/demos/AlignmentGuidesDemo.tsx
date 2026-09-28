@@ -64,7 +64,6 @@ export function AlignmentGuidesDemo() {
       className="ckd-canvas"
       scene={scene}
       selection={selection}
-      selectionMode="multi"
       selectTool={{ move: { behaviors } }}
       view={view}
       onViewChange={setView}

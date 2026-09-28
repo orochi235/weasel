@@ -29,7 +29,7 @@ import { subscribeGlyphReady } from '@weasel-js/font';
 import { defaultDrawOne } from './defaultDrawOne';
 import type { FillStyle } from '@weasel-js/paint';
 import { Canvas } from './Canvas';
-import type { CanvasProps, LayersMap, CanvasSelectionMode, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
+import type { CanvasProps, LayersMap, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
 import { wireSceneSlotToScene, composeAlphaFor } from './sceneSlotWiring';
 import type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from './canvasExtension';
 import type { Animator } from '../animation/types';
@@ -522,10 +522,18 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     selectionOptions?: UseSelectionOptions;
 
     /**
-     * What the canvas may do to the selection. See {@link CanvasSelectionMode}.
-     * Default `'single'`.
+     * `false` stops the canvas writing the selection: no click, marquee,
+     * lasso, action or tool, and no op committed through the adapter it hands
+     * its tools. The consumer's own `SelectionApi` — the `selection` prop, or
+     * `useSelection({ scene })` — still writes, and the canvas draws what it
+     * holds. Undo and redo still restore the selection each history entry
+     * recorded. Default `true`.
+     *
+     * Click policy (whether shift-click extends) is the selection's `mode`:
+     * `useSelection({ mode: 'multi' })`, or `selectionOptions={{ mode: 'multi' }}`
+     * for the selection the canvas builds itself.
      */
-    selectionMode?: CanvasSelectionMode;
+    selectable?: boolean;
 
     /**
      * Behavior presets to turn on, composable in any combination. A canvas
@@ -941,7 +949,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     routing,
     selection: selectionProp,
     selectionOptions,
-    selectionMode = 'single',
+    selectable = true,
     tools: toolsProp,
     features,
     enableKeybindings = true,
@@ -1147,30 +1155,26 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Selection: caller-supplied wins; otherwise build from selectionOptions.
   // Hooks always run unconditionally — when a caller supplies `selection`,
   // the internally-built one is unused but the hook still fires.
-  // When selectionMode === 'multi', forward that into the options so the
-  // internal selection hook uses multi-select semantics.
-  const derivedSelectionOptions = useMemo<UseSelectionOptions>(() => {
-    // Bound to the scene, so the selection an edit was made under rides on
-    // the scene's history entries and undo can put it back.
-    const base = { scene, ...(selectionOptions ?? {}) };
-    if (base.mode !== undefined) return base;
-    if (selectionMode === 'multi') return { ...base, mode: 'multi' };
-    return base;
-  }, [scene, selectionOptions, selectionMode]);
+  // Bound to the scene, so the selection an edit was made under rides on the
+  // scene's history entries and undo can put it back.
+  const derivedSelectionOptions = useMemo<UseSelectionOptions>(
+    () => ({ scene, ...(selectionOptions ?? {}) }),
+    [scene, selectionOptions],
+  );
   const internalSelection = useSelection(derivedSelectionOptions);
   const baseSelection = selectionProp ?? internalSelection;
 
   // Everything the kit writes selection through — the `selection` dep, the
   // adapter's `setSelection`, ops committed through either — reads this api,
-  // so under 'none' every write path here is closed. The consumer's own api
-  // is not wrapped and still writes.
+  // so on an unselectable canvas every write path here is closed. The
+  // consumer's own api is not wrapped and still writes.
   const baseAdapterMethods = baseSelection.adapterMethods;
   const readOnlyAdapterMethods = useMemo(() => ({
     getSelection: () => baseAdapterMethods.getSelection(),
     setSelection: () => {},
   }), [baseAdapterMethods]);
   const selection: SelectionApi = useMemo(() => {
-    if (selectionMode !== 'none') return baseSelection;
+    if (selectable) return baseSelection;
     const noopSet = () => {};
     return {
       ...baseSelection,
@@ -1182,7 +1186,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       applyClick: noopSet,
       adapterMethods: readOnlyAdapterMethods,
     };
-  }, [baseSelection, selectionMode, readOnlyAdapterMethods]);
+  }, [baseSelection, selectable, readOnlyAdapterMethods]);
 
   // Publish the current selection (with optional per-id kind labels) into any
   // surrounding `<SelectionContextProvider>` so non-canvas UI can read it.
@@ -1738,8 +1742,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // `pick`, the handles to `transform`. `never` also takes a handle out of
   // hit-testing, so a hidden handle cannot be grabbed.
   //
-  // selectionMode 'none' suppresses the marquee / lasso chrome by default:
-  // every selection write no-ops in that mode, so the select tool's
+  // `selectable={false}` suppresses the marquee / lasso chrome by default:
+  // every selection write no-ops then, so the select tool's
   // empty-drag binding still CLAIMS the gesture (keeping it from falling
   // through to other ambient drag actions like insert) but paints nothing.
   // An explicit consumer rule for either id still wins.
@@ -1751,7 +1755,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       defaults['selection.resize-handles'] = never;
       defaults['selection.rotation-handle'] = never;
     }
-    if (selectionMode === 'none') {
+    if (!selectable) {
       defaults['action.marquee'] = never;
       defaults['action.lasso'] = never;
     }
@@ -1760,7 +1764,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     if (selectToolOpts?.rotate === false) defaults['selection.rotation-handle'] = never;
     if (Object.keys(defaults).length === 0) return chromeVisibility;
     return { ...defaults, ...chromeVisibility };
-  }, [chromeVisibility, selectionMode, selectToolOpts?.rotate, enabled]);
+  }, [chromeVisibility, selectable, selectToolOpts?.rotate, enabled]);
   const chromeVisibilityRef = useRef(effectiveChromeVisibility);
   chromeVisibilityRef.current = effectiveChromeVisibility;
   const getActiveModeRef = useRef(getActiveMode);

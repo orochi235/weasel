@@ -103,7 +103,7 @@ export function VertexColorAnimationDemo() {
         className="ckd-canvas"
         scene={scene}
         animator={animator}
-        selectionMode="none"
+        selectable={false}
       />
     </div>
   );

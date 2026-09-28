@@ -67,7 +67,6 @@ function PointSnapDemoInner() {
       scene={scene}
       selection={selection}
       poseDescriptor={ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect>}
-      selectionMode="multi"
       tools={tools}
       layers={{
         grid: {

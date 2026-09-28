@@ -111,7 +111,7 @@ export function TextNodesDemo() {
           className="ckd-canvas"
           backgroundFill={{ color: '#ffffff' }}
           scene={scene}
-          selectionMode="none"
+          selectable={false}
           // The overlay stands in for the node while it is edited.
           alphaFor={(id) => (id === edit.editingId ? 0 : 1)}
         />

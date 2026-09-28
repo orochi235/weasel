@@ -312,7 +312,6 @@ export type {
   CanvasHelpers,
   CanvasViewHelpers,
   CanvasSurfaceHelpers,
-  CanvasSelectionMode,
   StandardSlotName,
   CustomLayerEntry,
   GridSlotConfig,
