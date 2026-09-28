@@ -72,9 +72,6 @@ export function WeaselDemos() {
           <p><a href="./docs/ui/forge/">Component workshop →</a></p>
           <p><a href="./draw/">WeaselDraw →</a></p>
           <p><a href="./draw/#/dev/toolkits">Toolkit builder →</a></p>
-          <p className="ckd-sidebar-hint">
-            Press <kbd>/</kbd> for the command palette.
-          </p>
         </header>
         <nav className="ckd-nav">
           <section className="ckd-nav-section ckd-nav-whatsnew">

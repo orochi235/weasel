@@ -86,21 +86,6 @@ a:hover { text-decoration: underline; }
   margin: 0 0 6px;
 }
 
-.ckd-sidebar-header .ckd-sidebar-hint {
-  margin-top: 10px;
-}
-
-.ckd-sidebar-hint kbd {
-  display: inline-block;
-  font: var(--wzl-font-size-sm) ui-monospace, SFMono-Regular, Menlo, monospace;
-  padding: 1px 5px;
-  border: 1px solid var(--ckd-border);
-  border-radius: var(--wzl-radius-sm);
-  background: var(--ckd-bg);
-  color: var(--ckd-text);
-  vertical-align: 1px;
-}
-
 .ckd-nav {
   margin-top: 18px;
   display: flex;
