@@ -17,6 +17,8 @@ import {
   __getCachedRendererForTest,
 } from './sceneViewRender';
 import { rotateAroundAABBCenter } from './poseRotation';
+import { defaultDrawOne } from './defaultDrawOne';
+import { getNodeShapes } from './NodeShape';
 
 // ---------------------------------------------------------------------------
 // Mock WeaselRenderer
@@ -380,6 +382,26 @@ describe('renderSceneToCanvas', () => {
     const dispatched = renderMock.mock.calls[0][0];
     const expected = buildSceneViewCommands(scene, identityView, drawOne);
     expect(dispatched).toEqual(expected);
+  });
+
+  it('culls to its own size, bounding defaultDrawOne without being told how', () => {
+    const scene = makeScene();
+    const canvas = makeCanvas();
+    const painter = getNodeShapes().find((e) => e.id === 'kit:rect-fallback')!;
+    const paint = vi.spyOn(painter, 'paint');
+    // The second node starts at x 50, past this 40-wide view.
+    renderSceneToCanvas({
+      canvas, scene, view: identityView, width: 40, height: 30, drawOne: defaultDrawOne, dpr: 1, cull: true,
+    });
+    const rects: number[] = [];
+    const walk = (c: DrawCommand): void => {
+      if (c.kind === 'group') c.children.forEach(walk);
+      else if (c.kind === 'path' && c.path.kind === 'rect') rects.push(c.path.x);
+    };
+    renderMock.mock.calls[0][0].forEach(walk);
+    expect(rects).toEqual([10]);
+    expect(paint).toHaveBeenCalledTimes(1);
+    paint.mockRestore();
   });
 
   it('reuses the WeaselRenderer cached on the canvas across calls', () => {

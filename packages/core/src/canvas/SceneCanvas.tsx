@@ -26,7 +26,7 @@ import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { subscribeImageReady } from 'features/images/imageCache';
 import { subscribeGlyphReady } from '@weasel-js/font';
-import { defaultDrawOne } from './defaultDrawOne';
+import { defaultDrawOne, defaultPaintBounds, paintBoundsFor } from './defaultDrawOne';
 import type { FillStyle } from '@weasel-js/paint';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
@@ -254,10 +254,13 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   targetScale = 1,
 ): LayersMap<Node<TData, TLayer, TPose>, TPose> {
   const defaults = {
-    scene: { drawOne: defaultDrawOne as (
-      node: Node<TData, TLayer, TPose>,
-      pose: TPose,
-    ) => DrawCommand[] },
+    scene: {
+      drawOne: defaultDrawOne as (
+        node: Node<TData, TLayer, TPose>,
+        pose: TPose,
+      ) => DrawCommand[],
+      paintBounds: defaultPaintBounds<TData, TLayer, TPose>,
+    },
     selectionOverlay: { handles: { size: targetSizesPx(targetScale).handle } },
   };
 
@@ -271,7 +274,10 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   } else if (user.scene === null) {
     result.scene = null;
   } else {
-    result.scene = { ...defaults.scene, ...user.scene };
+    const scene = { ...defaults.scene, ...user.scene };
+    result.scene = user.scene && 'paintBounds' in user.scene
+      ? scene
+      : { ...scene, paintBounds: paintBoundsFor<TData, TLayer, TPose>(scene.drawOne) };
   }
 
   if (!('selectionOverlay' in user)) {

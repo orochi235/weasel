@@ -29,6 +29,9 @@ import { withColorOverrides } from './colorOverrides';
 import type { ColorOverrideRegistry } from '../animation/colorRegistry';
 import type { SceneViewDrawOne } from './NodeShape';
 import { paintedSceneLayers } from './sceneLayerPaint';
+import { cullDrawCommands } from '../renderer/cullDrawCommands';
+import { paintMissesView, type PaintBoundsFn } from './paintCull';
+import { paintBoundsFor } from './defaultDrawOne';
 
 export type { SceneViewDrawOne } from './NodeShape';
 
@@ -43,6 +46,14 @@ export interface SceneViewLayers {
   /** Paint order, bottom first. A listed order is the whole list: a scene
    *  layer left out of it is not painted. */
   layerOrder?: readonly string[];
+}
+
+/** The view size `buildSceneViewCommands` culls to, and how it bounds a
+ *  node's paint before painting it. */
+export interface SceneViewCull<TData, TLayer extends string, TPose> {
+  width: number;
+  height: number;
+  paintBounds?: PaintBoundsFn<Node<TData, TLayer, TPose>, TPose>;
 }
 
 /** What to draw into an existing canvas: the scene, the view, and the same
@@ -81,6 +92,14 @@ export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
   /** Animated vertex colors to paint, typically an animator's
    *  `colorOverrides` — see `NodePaintCtx.vertexColors`. */
   colorOverrides?: ColorOverrideRegistry;
+  /** Skip what cannot reach the `width × height` view: nodes `paintBounds`
+   *  places outside it are not painted, and scene commands that cannot reach
+   *  it are dropped before the renderer — the scene slot's `cull`. Off by
+   *  default. `extraCommands` are never culled. */
+  cull?: boolean;
+  /** Where `drawOne`'s output for a node can reach, as on the scene slot.
+   *  Defaults to `defaultPaintBounds` when `drawOne` is `defaultDrawOne`. */
+  paintBounds?: PaintBoundsFn<Node<TData, TLayer, TPose>, TPose>;
   /** Optional device-pixel ratio. Defaults to `window.devicePixelRatio || 1`
    *  when available, otherwise 1. Tests typically pin this to 1 or 2. */
   dpr?: number;
@@ -175,6 +194,9 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   layers?: SceneViewLayers,
   /** Animated vertex colors to paint, typically an animator's `colorOverrides`. */
   colorOverrides?: ColorOverrideRegistry,
+  /** Cull the scene to this CSS-pixel view size — see
+   *  `RenderSceneToCanvasArgs.cull`. Omit to paint every node. */
+  cull?: SceneViewCull<TData, TLayer, TPose>,
 ): DrawCommand[] {
   // The scene is in scope here, so this is where the override's alpha and the
   // derived paths are applied on the headless path; `SceneCanvas` does the same
@@ -200,7 +222,9 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     ? { ...sceneAsHierarchy(scene, layers), composePose: poseComposition!.compose }
     : sceneAsHierarchy(scene, layers);
 
-  const children: DrawCommand[] = buildSceneTree(
+  const cullRect = cull ? { x: 0, y: 0, width: cull.width, height: cull.height } : undefined;
+  const culled = cullRect && cull?.paintBounds ? paintMissesView(cull.paintBounds, view, cullRect) : undefined;
+  const tree: DrawCommand[] = buildSceneTree(
     hierarchy as Parameters<typeof buildSceneTree>[0],
     wrappedDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
     view,
@@ -209,7 +233,9 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
       resolveDerivedPath(
         node as Node<TData, TLayer, TPose>, depLookup, (id) => scene.childrenOf(id),
       )) as Parameters<typeof buildSceneTree>[4],
+    culled as Parameters<typeof buildSceneTree>[5],
   );
+  const children = cullRect ? cullDrawCommands(tree, viewToMat3(view), cullRect) : tree;
   if (extraCommands && extraCommands.length > 0) {
     for (const cmd of extraCommands) children.push(cmd);
   }
@@ -240,7 +266,7 @@ export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
 ): void {
   const {
     canvas, scene, view, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
-    colorOverrides,
+    colorOverrides, cull,
   } = args;
   const dpr = args.dpr
     ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
@@ -276,6 +302,7 @@ export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
 
   const commands = buildSceneViewCommands(
     scene, view, drawOne, extraCommands, alphaFor, undefined, { layerVisibility, layerOrder }, colorOverrides,
+    cull ? { width, height, paintBounds: args.paintBounds ?? paintBoundsFor(drawOne) } : undefined,
   );
   entry.renderer.render(commands, viewToMat3(view));
 }

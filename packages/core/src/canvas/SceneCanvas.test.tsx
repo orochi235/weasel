@@ -7,6 +7,7 @@ import {
   defaultDrawOne,
   mergeLayersWithDefaults,
 } from './SceneCanvas';
+import { defaultPaintBounds } from './defaultDrawOne';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {
@@ -182,6 +183,18 @@ describe('SceneCanvas defaults', () => {
     it('a scene slot without drawOne keeps the default painter', () => {
       const merged = mergeLayersWithDefaults({ scene: { cull: true } });
       expect(merged.scene).toMatchObject({ drawOne: defaultDrawOne, cull: true });
+    });
+
+    it('bounds the default painter for culling, and nothing a custom drawOne paints', () => {
+      expect(mergeLayersWithDefaults({ scene: { cull: true } }).scene)
+        .toMatchObject({ paintBounds: defaultPaintBounds });
+      expect(mergeLayersWithDefaults({ scene: { drawOne: defaultDrawOne as never } }).scene)
+        .toMatchObject({ paintBounds: defaultPaintBounds });
+      const custom = mergeLayersWithDefaults({ scene: { drawOne: (() => []) as never } }).scene;
+      expect((custom as { paintBounds?: unknown }).paintBounds).toBeUndefined();
+      const own = () => null;
+      expect(mergeLayersWithDefaults({ scene: { drawOne: (() => []) as never, paintBounds: own } }).scene)
+        .toMatchObject({ paintBounds: own });
     });
 
     it('null slot suppresses the default', () => {

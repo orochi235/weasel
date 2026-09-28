@@ -58,6 +58,8 @@ import { pathContainsPoint, strokeHitTest } from '@weasel-js/geom';
 import { boundsOfPath } from 'features/paths/bounds';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { markerReach } from 'features/paths/markerCommands';
+import { strokeReachAt } from '../renderer/cullDrawCommands';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { poseRotationOf, rotatePathAround } from 'core/geometry/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
 import { fillInPoseFrame, type FillPoseBox } from '../core/fillInPoseFrame';
@@ -162,6 +164,16 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  `ctx.scale` carries the view scale so a `{ px }` stroke width resolves to
    *  world units; without it a screen-pixel width is read as world units. */
   ink?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeInkCtx): NodeInk | null;
+  /** Optional: a box enclosing every pixel `paint` can put down for this node,
+   *  stroke, markers and miter spikes included, in the frame `paint` emits in
+   *  — before the pose's rotation is applied around it.
+   *
+   *  Culling reads it to skip `paint` for a node outside the view, so a box
+   *  that is too small makes the node vanish before it reaches the screen
+   *  edge. Leave it undefined, or return `null`, when no cheap conservative
+   *  answer exists (`kit:text` has none short of laying out its glyphs); such
+   *  a node is always painted. Same cheap-reads rule as `ink`. */
+  bounds?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeInkCtx): Bounds | null;
 }
 
 /** How a painter inks its silhouette. See {@link NodeShapeEntry.ink}.
@@ -334,6 +346,32 @@ export function findShapeInk<TData, TPose>(
   ctx?: NodeInkCtx,
 ): NodeInk | null {
   return findNodeShape(node)?.ink?.(node, pose, ctx) ?? null;
+}
+
+/** Find the painter for `node` and ask for the box its paint fits in. `null`
+ *  when no painter matches, or the one that does cannot say — see
+ *  {@link NodeShapeEntry.bounds}. */
+export function findShapeBounds<TData, TPose>(
+  node: Node<TData, string, TPose>,
+  pose: TPose,
+  ctx?: NodeInkCtx,
+): Bounds | null {
+  return findNodeShape(node)?.bounds?.(node, pose, ctx) ?? null;
+}
+
+/** The pose rect grown by how far `stroke` can paint outside it — the paint
+ *  box of every built-in painter whose geometry the pose box contains. */
+function poseBoxBounds(pose: unknown, stroke: Stroke | null, scale: number | undefined): Bounds | null {
+  if (!isRectPose(pose)) return null;
+  const reach = stroke ? strokeReachAt(stroke, scale ?? 1) : 0;
+  const x = Math.min(pose.x, pose.x + pose.width);
+  const y = Math.min(pose.y, pose.y + pose.height);
+  return {
+    x: x - reach,
+    y: y - reach,
+    width: Math.abs(pose.width) + 2 * reach,
+    height: Math.abs(pose.height) + 2 * reach,
+  };
 }
 
 /** Options for {@link shapeCoversPoint}. */
@@ -669,6 +707,9 @@ const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
       ...inkReach(stroke, ctx?.scale),
     };
   },
+  // `pathInPoseFrame` fits the path's own bounds to the pose box.
+  bounds: (node, pose, ctx) =>
+    poseBoxBounds(pose, resolveNodeStroke((node.data as { stroke?: Stroke | null }).stroke), ctx?.scale),
 };
 
 /** Built-in shape dispatcher — matches when `data.shape` names a kit-known
@@ -713,6 +754,9 @@ const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
       ...inkReach(resolveNodeStroke(d.stroke), ctx?.scale),
     };
   },
+  // Every shape kind is inscribed in the pose box.
+  bounds: (node, pose, ctx) =>
+    poseBoxBounds(pose, resolveNodeStroke((node.data as { stroke?: Stroke | null }).stroke), ctx?.scale),
 };
 
 const SHAPE_KINDS = new Set(['rect', 'ellipse', 'polygon', 'star']);
@@ -817,7 +861,11 @@ const IMAGE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const p = pose;
     return { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height };
   },
+  // The placeholder's 1-unit outline is the only thing that leaves the box.
+  bounds: (_node, pose, ctx) => poseBoxBounds(pose, IMAGE_PLACEHOLDER_STROKE, ctx?.scale),
 };
+
+const IMAGE_PLACEHOLDER_STROKE: Stroke = { paint: { color: '#000' }, width: 1 };
 
 /**
  * Built-in painter for nodes whose geometry is computed from other nodes'
@@ -898,6 +946,7 @@ const RECT_FALLBACK_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const p = pose;
     return { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height };
   },
+  bounds: (_node, pose) => poseBoxBounds(pose, null, undefined),
 };
 
 function registerBuiltInShapePainters(): void {

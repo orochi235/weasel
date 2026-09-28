@@ -27,7 +27,7 @@ function mat3ToRenderMatrix(m: Mat3): Float32Array {
 /** Rotation by `rotation` about `(cx, cy)` as the render-tree's column-major
  *  3×3 affine. Composes on the kernel's `rotateAboutPoint` (single owner of the
  *  rotate-about-point math); this only reshapes 6→9 for the WebGL upload. */
-function rotationMatrixAbout(cx: number, cy: number, rotation: number): Float32Array {
+export function rotationMatrixAbout(cx: number, cy: number, rotation: number): Float32Array {
   return mat3ToRenderMatrix(rotateAboutPoint(cx, cy, rotation));
 }
 

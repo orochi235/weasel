@@ -620,16 +620,10 @@ terse, single-purpose demo convention: an exception, not a precedent.
 
 What it surfaced:
 
-- **(P3) View-bounds culling is opt-in and stops short of the painter.** The
-  scene slot's `cull` option (`layers={{ scene: { cull: true } }}`, on in this
-  demo) drops commands outside the view via `cullDrawCommands`, but only after
-  every node's `drawOne` has run, so an off-screen node still pays its painter.
-  It is opt-in because it makes the scene layer's world-space output
-  view-dependent, which a cache keyed without `view` would serve under the
-  wrong camera. `<SceneViewCanvas>` / `<MinimapCanvas>` (`sceneViewRender.ts`)
-  do not cull at all. Text and shader commands are never culled — nothing
-  bounds them cheaply. The demo's frame time with culling on has not been
-  measured in a browser.
+- **Measure the frame time culling buys, in a browser.** Culling now skips
+  the painter for off-screen nodes, and `platformerCull.test.ts` counts the
+  painter calls it saves headlessly; what that is worth in milliseconds per
+  frame has not been read off a real GPU.
 
 - **No tiled-content layer primitive exists** (the P3 under Tiling) — the run
   cycle and the parallax bands are second sites wanting it.
