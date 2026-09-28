@@ -7,7 +7,7 @@
  * `useDepSource` (which reads via a ref internally), so callers can pass
  * fresh closures without triggering re-registration.
  *
- * @see SliceDep — the dep contract (`commit(a, b)` in world coords).
+ * @see SliceDep — the dep contract (`commit(cut)`, a world-space polyline).
  */
 import { useRef } from 'react';
 import { useDepSource } from '@weasel-js/routing/react';

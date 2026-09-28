@@ -77,7 +77,7 @@ export function SliceDepPublisher({
   useSliceDep(
     useMemo(
       () => ({
-        commit(a: { x: number; y: number }, b: { x: number; y: number }) {
+        commit(cut: ReadonlyArray<{ x: number; y: number }>) {
           const order = [...scene.renderOrder()];
           const leaves: SliceLeaf[] = [];
 
@@ -94,8 +94,7 @@ export function SliceDepPublisher({
 
           const { ops, nextSelection } = computeSliceOps({
             leaves,
-            a,
-            b,
+            cut,
             nextId: () => `s-${idCounterRef.current++}`,
             // Pass the live selection so sliced pieces inherit their source's
             // selected state.

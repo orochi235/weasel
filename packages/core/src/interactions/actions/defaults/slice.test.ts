@@ -33,7 +33,7 @@ describe('sliceAction', () => {
     expect(() => handle.onEnd?.(ctxAt(10, 10), 'commit')).not.toThrow();
   });
 
-  it('calls dep.commit(start, current) on commit', () => {
+  it('calls dep.commit with the straight cut [start, current] on commit', () => {
     const commit = vi.fn();
     const dep: SliceDep = { commit };
     const start = { x: 1, y: 2 };
@@ -41,7 +41,44 @@ describe('sliceAction', () => {
     const handle = (sliceAction.invoker as OngoingInvoker).start(startCtx);
     handle.onMove?.({ ...ctxAt(40, 60, start), deps: { slice: dep } as never });
     handle.onEnd?.({ ...ctxAt(40, 60, start), deps: { slice: dep } as never }, 'commit');
-    expect(commit).toHaveBeenCalledWith({ x: 1, y: 2 }, { x: 40, y: 60 });
+    expect(commit).toHaveBeenCalledWith([{ x: 1, y: 2 }, { x: 40, y: 60 }]);
+  });
+
+  describe("with params { cut: 'freehand' }", () => {
+    const trail = [{ x: 0, y: 0 }, { x: 10, y: 5 }, { x: 20, y: -5 }, { x: 30, y: 0 }];
+    const at = (points: typeof trail, dep: SliceDep): InvocationCtx => {
+      const last = points[points.length - 1];
+      const base = ctxAt(last.x, last.y);
+      return { ...base, deps: { slice: dep } as never, drag: { ...base.drag!, points } };
+    };
+    const opts = { params: { cut: 'freehand' } };
+
+    it('commits the whole drag trail', () => {
+      const commit = vi.fn();
+      const dep: SliceDep = { commit };
+      const handle = (sliceAction.invoker as OngoingInvoker).start({ ...ctxAt(0, 0), deps: { slice: dep } as never }, opts);
+      handle.onMove?.(at(trail.slice(0, 2), dep));
+      handle.onEnd?.(at(trail, dep), 'commit');
+      expect(commit).toHaveBeenCalledWith(trail);
+    });
+
+    it('publishes the trail so far as the overlay', () => {
+      const dep: SliceDep = { commit: vi.fn() };
+      const handle = (sliceAction.invoker as OngoingInvoker).start({ ...ctxAt(0, 0), deps: { slice: dep } as never }, opts);
+      handle.onMove?.(at(trail.slice(0, 3), dep));
+      expect(handle.overlay?.()).toEqual({ kind: 'polyline', points: trail.slice(0, 3), role: 'cut' });
+    });
+
+    it('reads a thunked param', () => {
+      const commit = vi.fn();
+      const dep: SliceDep = { commit };
+      const handle = (sliceAction.invoker as OngoingInvoker).start(
+        { ...ctxAt(0, 0), deps: { slice: dep } as never },
+        { params: () => ({ cut: 'freehand' }) },
+      );
+      handle.onEnd?.(at(trail, dep), 'commit');
+      expect(commit).toHaveBeenCalledWith(trail);
+    });
   });
 
   it('does not commit on cancel', () => {

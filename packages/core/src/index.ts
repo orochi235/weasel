@@ -787,6 +787,8 @@ export {
   pathDistanceToPoint,
   pointAlongPath,
   splitPathBySegment,
+  splitPathByPolyline,
+  snipPathByPolyline,
   transformPath,
 } from './features/paths';
 export type {

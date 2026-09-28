@@ -199,10 +199,11 @@ Priority tags:
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
 
-- **(P3) The slice tool cuts only with a straight segment.** Two cuts it cannot make:
-  scissors (split an open path where the stroke crosses it, rather than closing it
-  implicitly the way a fill does) and a freehand or polyline cut. `splitPathBySegment`
-  is the swap point; a polyline cut is a run of segments sharing its crossing logic.
+- **(P3) The slice tool cannot place a cut click by click.** `sliceAction` cuts along a
+  drag — straight, or its whole trail with `cut: 'freehand'` — and `splitPathByPolyline`
+  / `snipPathByPolyline` take any polyline, but no gesture builds one vertex per click
+  the way the pen tool does. Separately, a loop the cut draws inside the fill is
+  dropped rather than cutting out the region it encloses.
 
 ### Cursor package follow-ups
 

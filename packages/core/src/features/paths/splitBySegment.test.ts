@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { splitPathBySegment } from './splitBySegment';
+import { splitPathBySegment, splitPathByPolyline, snipPathByPolyline } from './splitBySegment';
 import { PathBuilder, rectPath, polygonFromPoints } from './builder';
 import { extractPolylines } from './tessellate/polyline';
 import { boundsOfPath } from './bounds';
@@ -321,5 +321,235 @@ describe('splitPathBySegment', () => {
       expect(pieces.length).toBe(2);
       expect(pieces.reduce((s, p) => s + area(p), 0)).toBeCloseTo(60 * 60 * 2 - 30 * 30, 3);
     });
+  });
+});
+
+/** Every subpath's endpoints and whether it closes. */
+const subpathsOf = (p: PolygonPath): { start: Point; end: Point; closed: boolean }[] => {
+  const out: { start: Point; end: Point; closed: boolean }[] = [];
+  let k = 0;
+  let cur: { start: Point; end: Point; closed: boolean } | null = null;
+  for (const cmd of p.commands) {
+    const c = p.coords;
+    if (cmd === PATH_M) {
+      cur = { start: { x: c[k], y: c[k + 1] }, end: { x: c[k], y: c[k + 1] }, closed: false };
+      out.push(cur);
+      k += 2;
+    } else if (cmd === PATH_Z) {
+      cur!.closed = true;
+    } else {
+      const n = cmd === PATH_L ? 2 : cmd === PATH_Q ? 4 : 6;
+      cur!.end = { x: c[k + n - 2], y: c[k + n - 1] };
+      k += n;
+    }
+  }
+  return out;
+};
+
+const near = (p: Point, x: number, y: number) => {
+  expect(p.x).toBeCloseTo(x, 3);
+  expect(p.y).toBeCloseTo(y, 3);
+};
+
+describe('splitPathByPolyline', () => {
+  const sq = rectPath(0, 0, 100, 100);
+
+  it('matches splitPathBySegment for a two-point cut', () => {
+    const a = { x: -5, y: -10 }, b = { x: 110, y: 105 };
+    const byLine = splitPathBySegment(sq, a, b)!;
+    const byPolyline = splitPathByPolyline(sq, [a, b])!;
+    expect(byPolyline.map(area)).toEqual(byLine.map((p) => expect.closeTo(area(p), 6)));
+  });
+
+  it('returns null for fewer than two distinct points', () => {
+    expect(splitPathByPolyline(sq, [])).toBeNull();
+    expect(splitPathByPolyline(sq, [{ x: 50, y: 50 }])).toBeNull();
+    expect(splitPathByPolyline(sq, [{ x: 50, y: 50 }, { x: 50, y: 50 }])).toBeNull();
+  });
+
+  it('cuts along a bent cut, keeping the bend in the new edge', () => {
+    const pieces = splitPathByPolyline(sq, [{ x: 50, y: -10 }, { x: 50, y: 50 }, { x: 110, y: 50 }])!;
+    expect(pieces.length).toBe(2);
+    expect(pieces.map(area).sort((a, b) => a - b)).toEqual([expect.closeTo(2500, 3), expect.closeTo(7500, 3)]);
+    const corner = pieces.find((p) => area(p) < 5000)!;
+    expect(boundsOfPath(corner)).toMatchObject({ x: 50, y: 0, width: 50, height: 50 });
+    expect(inside(corner, 75, 25)).toBe(true);
+  });
+
+  it('cuts every chord of a cut that weaves in and out', () => {
+    // Down through the square at x=20, then back up through it at x=60.
+    const pieces = splitPathByPolyline(sq, [
+      { x: 20, y: -10 }, { x: 20, y: 110 }, { x: 60, y: 110 }, { x: 60, y: -10 },
+    ])!;
+    expect(pieces.length).toBe(3);
+    expect(pieces.map(area).sort((a, b) => a - b)).toEqual([
+      expect.closeTo(2000, 3), expect.closeTo(4000, 3), expect.closeTo(4000, 3),
+    ]);
+  });
+
+  it('returns null when the cut enters but never leaves', () => {
+    expect(splitPathByPolyline(sq, [{ x: -10, y: 50 }, { x: 50, y: 50 }, { x: 50, y: 80 }])).toBeNull();
+  });
+
+  it('cuts only the chords crossed end to end on a concave shape', () => {
+    // Crosses the left arm, then turns down into the base and stops there.
+    const pieces = splitPathByPolyline(uShape, [{ x: -10, y: 60 }, { x: 50, y: 60 }, { x: 50, y: 15 }])!;
+    expect(pieces.length).toBe(2);
+    expect(pieces.map(area).sort((a, b) => a - b)[0]).toBeCloseTo(30 * 40, 3);
+  });
+
+  it('drops a loop the cut makes inside the fill', () => {
+    // Across at y=50, back over its own track at (40, 50), and out at y=70.
+    const pieces = splitPathByPolyline(sq, [
+      { x: -10, y: 50 }, { x: 60, y: 50 }, { x: 60, y: 30 }, { x: 40, y: 30 }, { x: 40, y: 70 }, { x: 110, y: 70 },
+    ])!;
+    expect(pieces.length).toBe(2);
+    expect(pieces.map(area).sort((a, b) => a - b)).toEqual([expect.closeTo(3800, 3), expect.closeTo(6200, 3)]);
+  });
+
+  it('cuts chords that cross each other', () => {
+    // Down through x=50, around outside, then across at y=50.
+    const pieces = splitPathByPolyline(sq, [
+      { x: 50, y: -10 }, { x: 50, y: 110 }, { x: -10, y: 110 }, { x: -10, y: 50 }, { x: 110, y: 50 },
+    ])!;
+    expect(pieces.length).toBe(4);
+    for (const p of pieces) expect(area(p)).toBeCloseTo(2500, 3);
+  });
+
+  it('cuts a grid drawn as one continuous stroke into every cell', () => {
+    const pieces = splitPathByPolyline(sq, [
+      { x: 30, y: -10 }, { x: 30, y: 110 }, { x: 70, y: 110 }, { x: 70, y: -10 }, { x: 110, y: -10 },
+      { x: 110, y: 30 }, { x: -10, y: 30 }, { x: -10, y: 70 }, { x: 110, y: 70 },
+    ])!;
+    expect(pieces.map(area).sort((a, b) => a - b)).toEqual(
+      [900, 900, 900, 900, 1200, 1200, 1200, 1200, 1600].map((v) => expect.closeTo(v, 3)),
+    );
+  });
+
+  it('keeps curves when the cut bends', () => {
+    const c = circle(50, 50, 40);
+    const pieces = splitPathByPolyline(c, [{ x: 0, y: 60 }, { x: 50, y: 40 }, { x: 100, y: 60 }])!;
+    expect(pieces.length).toBe(2);
+    const original = segmentsOf(c);
+    for (const piece of pieces) {
+      const segs = segmentsOf(piece as PolygonPath);
+      expect(segs.filter((s) => s.cmd === PATH_L).length).toBe(2);
+      const cubics = segs.filter((s) => s.cmd === PATH_C);
+      expect(cubics.length).toBeGreaterThan(0);
+      for (const s of cubics) {
+        for (let i = 0; i <= 8; i++) expect(distToSegs(evalSeg(s, i / 8), original)).toBeLessThan(1e-3);
+      }
+    }
+    expect(pieces.reduce((s, p) => s + area(p), 0)).toBeCloseTo(area(c), 0);
+  });
+});
+
+describe('snipPathByPolyline', () => {
+  const line = new PathBuilder().moveTo(0, 50).lineTo(100, 50).build();
+
+  it('returns null when the cut misses the stroke', () => {
+    expect(snipPathByPolyline(line, [{ x: 200, y: 0 }, { x: 200, y: 100 }])).toBeNull();
+  });
+
+  it('splits an open path into two open pieces at the crossing', () => {
+    const pieces = snipPathByPolyline(line, [{ x: 40, y: 0 }, { x: 40, y: 100 }])!;
+    expect(pieces.length).toBe(2);
+    const subs = pieces.map((p) => subpathsOf(p as PolygonPath));
+    expect(subs.every((s) => s.length === 1 && !s[0].closed)).toBe(true);
+    near(subs[0][0].start, 0, 50); near(subs[0][0].end, 40, 50);
+    near(subs[1][0].start, 40, 50); near(subs[1][0].end, 100, 50);
+  });
+
+  it('leaves the pieces open where the knife would close them', () => {
+    const vee = new PathBuilder().moveTo(0, 0).lineTo(50, 100).lineTo(100, 0).build();
+    const cut = [{ x: -10, y: 50 }, { x: 110, y: 50 }];
+    const knifed = splitPathByPolyline(vee, cut)!;
+    expect(knifed.every((p) => subpathsOf(p as PolygonPath).every((s) => s.closed))).toBe(true);
+    const snipped = snipPathByPolyline(vee, cut)!;
+    expect(snipped.length).toBe(3);
+    expect(snipped.every((p) => subpathsOf(p as PolygonPath).every((s) => !s.closed))).toBe(true);
+  });
+
+  it('keeps a cubic as cubics lying on the original curve', () => {
+    const s = new PathBuilder().moveTo(0, 0).curveTo(30, 100, 70, -100, 100, 0).build();
+    const pieces = snipPathByPolyline(s, [{ x: 50, y: -60 }, { x: 50, y: 60 }])!;
+    expect(pieces.length).toBe(2);
+    const original = segmentsOf(s);
+    for (const piece of pieces) {
+      const segs = segmentsOf(piece as PolygonPath);
+      expect(segs.length).toBe(1);
+      expect(segs[0].cmd).toBe(PATH_C);
+      for (let i = 0; i <= 8; i++) expect(distToSegs(evalSeg(segs[0], i / 8), original)).toBeLessThan(1e-3);
+    }
+    near(subpathsOf(pieces[0] as PolygonPath)[0].end, 50, 0);
+  });
+
+  it('splits at every crossing of a polyline cut', () => {
+    const pieces = snipPathByPolyline(line, [
+      { x: 20, y: 0 }, { x: 20, y: 100 }, { x: 50, y: 100 }, { x: 50, y: 0 }, { x: 80, y: 0 }, { x: 80, y: 100 },
+    ])!;
+    expect(pieces.length).toBe(4);
+    expect(pieces.map((p) => boundsOfPath(p).x)).toEqual([
+      expect.closeTo(0, 3), expect.closeTo(20, 3), expect.closeTo(50, 3), expect.closeTo(80, 3),
+    ]);
+  });
+
+  it('counts a crossing at a joint of the cut once', () => {
+    // The cut's corner sits exactly on the stroke.
+    const pieces = snipPathByPolyline(line, [{ x: 30, y: 0 }, { x: 40, y: 50 }, { x: 50, y: 100 }])!;
+    expect(pieces.length).toBe(2);
+  });
+
+  it('counts a crossing through a vertex of the path once', () => {
+    const zig = new PathBuilder().moveTo(0, 0).lineTo(50, 50).lineTo(100, 100).build();
+    const pieces = snipPathByPolyline(zig, [{ x: 0, y: 100 }, { x: 100, y: 0 }])!;
+    expect(pieces.length).toBe(2);
+    near(subpathsOf(pieces[0] as PolygonPath)[0].end, 50, 50);
+  });
+
+  it('does not split where the path only touches the cut', () => {
+    const vee = new PathBuilder().moveTo(0, 0).lineTo(50, 50).lineTo(100, 0).build();
+    expect(snipPathByPolyline(vee, [{ x: -10, y: 50 }, { x: 110, y: 50 }])).toBeNull();
+  });
+
+  it('ignores a cut through an end of the path', () => {
+    expect(snipPathByPolyline(line, [{ x: 0, y: 0 }, { x: 0, y: 100 }])).toBeNull();
+  });
+
+  it('opens a closed path at each crossing', () => {
+    const sq = rectPath(0, 0, 100, 100);
+    const across = snipPathByPolyline(sq, [{ x: -10, y: 50 }, { x: 110, y: 50 }])!;
+    expect(across.length).toBe(2);
+    for (const p of across) {
+      const [sub] = subpathsOf(p as PolygonPath);
+      expect(sub.closed).toBe(false);
+      expect(sub.start.y).toBeCloseTo(50, 3);
+      expect(sub.end.y).toBeCloseTo(50, 3);
+    }
+    const once = snipPathByPolyline(sq, [{ x: 50, y: -10 }, { x: 50, y: 50 }])!;
+    expect(once.length).toBe(1);
+    const [sub] = subpathsOf(once[0] as PolygonPath);
+    expect(sub.closed).toBe(false);
+    near(sub.start, 50, 0);
+    near(sub.end, 50, 0);
+    expect(segmentsOf(once[0] as PolygonPath).length).toBe(5);
+  });
+
+  it('returns subpaths the cut misses together as a final piece', () => {
+    const two = new PathBuilder()
+      .moveTo(0, 0).lineTo(100, 0)
+      .moveTo(0, 50).lineTo(100, 50).lineTo(100, 80).close()
+      .build();
+    const pieces = snipPathByPolyline(two, [{ x: 50, y: -10 }, { x: 50, y: 10 }])!;
+    expect(pieces.length).toBe(3);
+    const rest = subpathsOf(pieces[2] as PolygonPath);
+    expect(rest.length).toBe(1);
+    expect(rest[0].closed).toBe(true);
+  });
+
+  it('keeps the fill rule', () => {
+    const p = new PathBuilder().setFillRule('evenodd').moveTo(0, 50).lineTo(100, 50).build();
+    const pieces = snipPathByPolyline(p, [{ x: 40, y: 0 }, { x: 40, y: 100 }])!;
+    expect(pieces.every((q) => q.kind === 'polygon' && q.fillRule === 'evenodd')).toBe(true);
   });
 });
