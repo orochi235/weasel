@@ -1241,7 +1241,14 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 - **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
 
-- **(P3) Run the bottom-aligned edit-overlay visual check.** `tests/visual/text-edit-overlay.spec.ts`'s "a bottom-aligned node keeps its text on the box bottom while typing" was written without a browser and has never run. The overlay's `verticalAlign` placement is otherwise covered only by jsdom proxies (stubbed `offsetHeight`), so run it once and fix whichever side is wrong.
+- **(P2) Two text-edit overlay visual checks fail.** In `tests/visual/text-edit-overlay.spec.ts`,
+  "follows the canvas zoom with no view passed" (expected a scale above 1.8, got 1) and
+  "clipped to the canvas, and typing past its edge scrolls nothing" (expected above 972, got
+  843) fail on studio's headless Chromium at `7b1bd6df7` and after `a5a69dcc2`. The other
+  overlay checks pass, the bottom-aligned one included.
+- **(P3) The minimap crosshair visual check is flaky.** `tests/visual/minimap.spec.ts`'s "the
+  crosshair follows the pointer into every other view" failed 1 run in 4 on studio, before and
+  after `a5a69dcc2` (expected a count above 0, got 0).
 
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have.
 
