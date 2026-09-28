@@ -8,7 +8,7 @@
   background: color-mix(in srgb, var(--wzl-surface-raised) 78%, transparent);
   backdrop-filter: blur(var(--wzl-glass-blur));
   color: var(--wzl-fg);
-  font-family: var(--wzl-font-ui);
+  font-family: var(--wzl-font-numeric);
   font-size: var(--wzl-font-size-sm);
   font-weight: var(--wzl-font-weight-bold);
   font-variant-numeric: tabular-nums;

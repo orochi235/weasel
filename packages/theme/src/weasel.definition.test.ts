@@ -32,7 +32,7 @@ const EXPECTED_NAMES = [
   'line-subtle', 'line', 'line-strong', 'curve-color',
   'swatch-fuchsia', 'swatch-green', 'swatch-sky', 'swatch-amber', 'swatch-teal',
   'swatch-red', 'swatch-blue', 'swatch-citron', 'swatch-rose', 'swatch-violet',
-  'font-ui', 'font-display', 'font-body', 'font-mono',
+  'font-ui', 'font-numeric', 'font-display', 'font-body', 'font-mono',
   'font-weight-light', 'font-weight-normal', 'font-weight-medium', 'font-weight-bold',
   'surface', 'surface-raised', 'surface-sunken',
   'fg', 'fg-muted', 'fg-subtle', 'fg-on-accent',

@@ -38,4 +38,5 @@
   margin: 0;
   font-size: var(--wzl-font-size-sm);
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
 }

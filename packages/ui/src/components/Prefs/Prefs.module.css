@@ -255,6 +255,7 @@
   margin-left: auto;
   font-size: var(--wzl-font-size-xs);
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
   opacity: 0.6;
 }
 

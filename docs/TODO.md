@@ -744,15 +744,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
   owner wants that row redesigned; the shape it should take is still open.
 
-- **(P2) `tabular-nums` does nothing in the theme's UI face.** Oswald (`--wzl-font-ui`,
-  `--wzl-font-display`) has no `tnum` feature upstream and no figure-space glyph, so a column
-  of numbers set in it stays proportional: "11.111" measures 25.0px and "88.888" 34.8px with
-  `tabular-nums` applied (headless Chromium, `fonts.css` loaded). Every weasel-ui and labkit
-  rule that relies on it while inheriting the UI face aligns nothing — Slider, RangeSlider,
-  Jog, Prefs, Timeline, Plot2D among them. `DetailList`'s figures mode switched its values to
-  `--wzl-font-mono` for this reason. The kit-wide answer is either a numeric face token that
-  those rules read, or a UI face that carries tabular figures.
-
 - **(P3) labkit's `LabSwitcher.less` menu is a fork of the weasel-ui popover skin.** It copies
   `MenuButton`'s menu and items, but with an opaque surface and a different shadow from
   `components/listbox.module.css`, which `MenuButton`, `Select`, `ComboBox` and `PaintField`

@@ -214,6 +214,8 @@
   --wzl-ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
   /* Condensed UI/display face. The heavier cuts get blocky at any size, so the weight tokens stay in the 200-400 range. */
   --wzl-font-ui: Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif;
+  /* The UI face with equal-width digits, for numbers read down a column or updated in place. Oswald Tabular carries only 0-9 and the figure space (U+2007); every other character falls through to the UI face. */
+  --wzl-font-numeric: 'Oswald Tabular', var(--wzl-font-ui);
   --wzl-font-display: Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif;
   --wzl-font-body: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --wzl-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

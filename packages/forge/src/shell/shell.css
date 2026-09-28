@@ -407,6 +407,7 @@
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-sm);
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
 }
 
 .fg-a11y__group {
@@ -419,6 +420,7 @@
   margin: 0;
   font-size: var(--wzl-font-size-sm);
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
 }
 
 .fg-a11y__findings,
@@ -532,6 +534,7 @@
   border-collapse: collapse;
   font-size: var(--wzl-font-size-sm);
   font-variant-numeric: tabular-nums;
+  font-family: var(--wzl-font-numeric);
   text-align: start;
 }
 

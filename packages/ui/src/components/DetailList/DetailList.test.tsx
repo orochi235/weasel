@@ -158,7 +158,7 @@ describe('DetailList styles', () => {
     const body = rule(".row[data-values='figures'] .value");
     expect(body).toMatch(/justify-content:\s*flex-end/);
     expect(body).toMatch(/text-align:\s*end/);
-    expect(body).toMatch(/font-family:\s*var\(--wzl-font-mono\)/);
+    expect(body).toMatch(/font-family:\s*var\(--wzl-font-numeric\)/);
     expect(body).toMatch(/min-width:\s*var\(--wzl-detail-figure-min-width,\s*8ch\)/);
     expect(body).toMatch(/white-space:\s*pre/);
   });
