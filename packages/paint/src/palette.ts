@@ -30,6 +30,7 @@ export interface ColorFnContext {
 /** A color computed at resolve time — typically derived from another entry. */
 export type ColorFn = (ctx: ColorFnContext) => ColorSource | null | undefined;
 
+/** Anything that resolves to a color: a literal, a named reference, or a function computing one. */
 export type ColorSource = ColorLiteral | ColorRef | ColorFn;
 
 /** A sequence of colors, read lazily, so it may be endless. A factory rather
@@ -37,10 +38,12 @@ export type ColorSource = ColorLiteral | ColorRef | ColorFn;
  *  pass the `function*` itself. */
 export type ColorSeqFn = (ctx: ColorFnContext) => Iterable<ColorSource>;
 
+/** A named palette slot holding either one color (`color`) or a sequence (`colors`) that refs index into. */
 export type PaletteEntry =
   | { readonly name: string; readonly color: ColorSource }
   | { readonly name: string; readonly colors: ColorSeqFn };
 
+/** A set of named colors that {@link ColorRef}s resolve against. When two entries share a name, the first wins. */
 export interface Palette {
   readonly entries: readonly PaletteEntry[];
 }

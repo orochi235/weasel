@@ -141,6 +141,7 @@ export type KitMarkerKey =
   | 'arrow' | 'arrow-open' | 'arrow-concave'
   | 'diamond' | 'diamond-hollow'
   | 'circle' | 'square' | 'bar';
+/** A marker shape's key: a built-in {@link KitMarkerKey} or a consumer-registered name. */
 export type MarkerKey = KitMarkerKey | (string & {});
 
 /**
