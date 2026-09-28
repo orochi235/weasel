@@ -1,8 +1,7 @@
 // apps/site/demos/platformer/skin.ts
-import { polygonFromPoints, rectPath, textCommandFromRuns } from '@weasel-js/core';
-import type { Dims, DrawCommand, View } from '@weasel-js/core';
+import { createTiledLayer, polygonFromPoints, rectPath, textCommandFromRuns } from '@weasel-js/core';
+import type { Dims, DrawCommand, RenderLayer, View } from '@weasel-js/core';
 import { calloutAge, calloutScreenPos, type Callout } from './callouts';
-import { worldToScreen } from './camera';
 
 const COLORS = {
   sky: '#1b2536',
@@ -43,40 +42,50 @@ const rect = (x: number, y: number, w: number, h: number, color: string): DrawCo
 
 export type Band = 'far' | 'mid' | 'near';
 
-const BANDS: Record<Band, { color: string; period: number; height: number; baseline: number }> = {
+export const BANDS: Record<Band, { color: string; period: number; height: number; baseline: number }> = {
   far: { color: COLORS.far, period: 420, height: 150, baseline: 210 },
   mid: { color: COLORS.mid, period: 260, height: 110, baseline: 250 },
   near: { color: COLORS.near, period: 170, height: 70, baseline: 290 },
 };
 
+/** The sky behind every band, fixed to the screen. */
+export function drawSky(dims: Dims): DrawCommand[] {
+  return [rect(0, 0, dims.width, dims.height, COLORS.sky)];
+}
+
 /**
- * One band of hills, repeated along x so panning never runs out of scenery.
- * The parallax layer wrapping this supplies an inner view moving at the band's
- * own rate, so this function never knows how fast it is going. `far` also paints
- * the sky, since it is the bottom-most band.
+ * One band of hills in the band's own world units: a single hill and the ground
+ * under it, authored once and repeated by the tiled layer. The parallax layer
+ * wrapping this supplies the band's view, so it never knows how fast it moves.
  */
-export function drawBackdrop(view: View, dims: Dims, band: Band): DrawCommand[] {
+export function backdropBand(band: Band): RenderLayer<unknown> {
   const { color, period, height, baseline } = BANDS[band];
-  const out: DrawCommand[] = band === 'far' ? [rect(0, 0, dims.width, dims.height, COLORS.sky)] : [];
-  const horizon = worldToScreen(view, 0, baseline).y;
-  const stepPx = period * view.scale.x;
-  const originX = worldToScreen(view, 0, 0).x;
-  const first = Math.floor(-originX / stepPx) - 1;
-  const count = Math.ceil(dims.width / stepPx) + 3;
-  for (let i = first; i < first + count; i++) {
-    const cx = originX + i * stepPx;
-    out.push({
-      kind: 'path',
-      path: polygonFromPoints([
-        { x: cx - (period / 2) * view.scale.x, y: horizon },
-        { x: cx, y: horizon - height * view.scale.y },
-        { x: cx + (period / 2) * view.scale.x, y: horizon },
-      ]),
-      fill: solid(color),
-    });
-  }
-  out.push(rect(0, horizon, dims.width, Math.max(0, dims.height - horizon), color));
-  return out;
+  const half = period / 2;
+  const cell: RenderLayer<unknown> = {
+    id: `backdrop-${band}-cell`,
+    label: `Backdrop ${band}`,
+    draw: (_d, view, dims) => [
+      {
+        kind: 'path',
+        path: polygonFromPoints([
+          { x: -half, y: baseline },
+          { x: 0, y: baseline - height },
+          { x: half, y: baseline },
+        ]),
+        fill: solid(color),
+      },
+      // Reaches a unit into the next copy so neighbors overlap rather than abut,
+      // leaving no antialiased seam between them.
+      rect(-half, baseline, period + 1, Math.max(0, view.y + dims.height / view.scale.y - baseline), color),
+    ],
+  };
+  return createTiledLayer({
+    id: `backdrop-${band}-tiles`,
+    label: `Backdrop ${band}`,
+    source: [cell],
+    period,
+    bleed: half,
+  });
 }
 
 /** World units a callout floats upward over its lifetime. */

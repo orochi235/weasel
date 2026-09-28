@@ -15,7 +15,7 @@ import {
 import type { Dims, DrawCommand, Effect, LayerGroup, RectPose, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import { CAM_SCALE, cameraView, followCamera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
-import { COLORS, drawBackdrop, drawCallouts, drawEnding } from './platformer/skin';
+import { backdropBand, COLORS, drawCallouts, drawEnding, drawSky } from './platformer/skin';
 import { createEnemies, ENEMY_H, ENEMY_W } from './platformer/entities';
 import { BODY_H, BODY_W } from './platformer/physics';
 import { usePlatformerAudio } from './platformer/usePlatformerAudio';
@@ -95,11 +95,11 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
   });
   const { hooks, beginFrame, endFrame, stats: soundStats } = sound;
 
-  // The world is the three parallax bands and the scene, consecutive in the
-  // stack below, so a knock blurs them as one buffer and leaves the HUD sharp.
+  // The world is the sky, the three parallax bands and the scene, consecutive
+  // in the stack below, so a knock blurs them as one buffer and leaves the HUD sharp.
   const layerGroups = useMemo<LayerGroup[]>(() => [{
     id: 'world',
-    layers: ['backdrop-far', 'backdrop-mid', 'backdrop-near', 'scene'],
+    layers: ['backdrop-sky', 'backdrop-far', 'backdrop-mid', 'backdrop-near', 'scene'],
     effects: (): Effect[] => {
       // No passes between knocks, so the offscreen buffer is never allocated.
       return blurRadius.value > 0 ? blur({ radius: blurRadius.value }) : [];
@@ -168,17 +168,18 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
   }, [animator, running, input, scene, hooks, beginFrame, endFrame, impact, blurRadius]);
 
   const layers = useMemo(() => {
+    const sky: RenderLayer<unknown> = {
+      id: 'backdrop-sky',
+      label: 'Sky',
+      space: 'screen',
+      draw: (_d, _v, dims) => drawSky(dims),
+    };
     const band = (name: 'far' | 'mid' | 'near', pan: number): RenderLayer<unknown> =>
       createParallaxLayer({
         id: `backdrop-${name}`,
         label: `Backdrop ${name}`,
         pan: { x: pan, y: pan * 0.6 },
-        source: [{
-          id: `backdrop-${name}-src`,
-          label: `Backdrop ${name}`,
-          space: 'screen',
-          draw: (_d, v, dims) => drawBackdrop(v, dims, name),
-        }],
+        source: [backdropBand(name)],
       });
 
     const hud: RenderLayer<unknown> = {
@@ -234,7 +235,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       },
     };
 
-    return { far: band('far', 0.2), mid: band('mid', 0.45), near: band('near', 0.7), debug, hud, callouts, ending };
+    return { sky, far: band('far', 0.2), mid: band('mid', 0.45), near: band('near', 0.7), debug, hud, callouts, ending };
   }, []);
 
   /** Insert forty enemies mid-run — the retained-tree counterpart to the load
@@ -295,6 +296,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         layerGroups={layerGroups}
         layers={{
           scene: { drawOne: defaultDrawOne, cull: true },
+          sky: { layer: layers.sky, before: 'scene' },
           far: { layer: layers.far, before: 'scene' },
           mid: { layer: layers.mid, before: 'scene' },
           near: { layer: layers.near, before: 'scene' },
