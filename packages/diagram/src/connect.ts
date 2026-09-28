@@ -72,6 +72,7 @@ export const defaultCanConnect: CanConnect = (from, to) => {
   return from.type === to.type;
 };
 
+/** Options for {@link createConnectAction}. Only `participants` is required. */
 export interface ConnectActionOptions<TPose> {
   /** Where the droppable ports come from. The same source the port affordance
    *  reads, so what is grabbable and what is landable cannot disagree. */

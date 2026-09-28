@@ -28,6 +28,7 @@ export const LAYOUTS: Readonly<Record<string, LayoutFn>> = Object.freeze({
   force,
 });
 
+/** Options for {@link applyLayout}. */
 export interface ApplyLayoutOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
   /** The undo entry's name. Default `'Layout'`. */
@@ -111,6 +112,7 @@ function subtreeOf<TPose>(scene: Scene<unknown, string, TPose>, id: string): str
 /** The default action id. */
 export const LAYOUT_ACTION_ID = 'diagram.layout';
 
+/** Options for {@link createLayoutAction}. Only `source` is required. */
 export interface LayoutActionOptions<TPose> {
   /** Where the graph is read from. The same thunk the port affordance takes. */
   source: GraphSource<TPose>;

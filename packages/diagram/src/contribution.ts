@@ -28,6 +28,7 @@ import type { PortAffordanceOptions } from './portAffordance';
 
 export { CONNECT_ACTION_ID };
 
+/** The connect action's options and the port affordance's, in one bag. */
 export interface DiagramContributionOptions<TPose>
   extends ConnectActionOptions<TPose>, PortAffordanceOptions<TPose> {}
 

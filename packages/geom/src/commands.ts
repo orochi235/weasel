@@ -28,10 +28,15 @@ export type PathCommandName = keyof typeof PATH_COMMANDS;
 /** Numeric code of a declared command. */
 export type PathCommandCode = (typeof PATH_COMMANDS)[PathCommandName]['code'];
 
+/** Command code of `M` (moveTo). */
 export const PATH_M = PATH_COMMANDS.M.code;
+/** Command code of `L` (lineTo). */
 export const PATH_L = PATH_COMMANDS.L.code;
+/** Command code of `C` (cubic bezier). */
 export const PATH_C = PATH_COMMANDS.C.code;
+/** Command code of `Q` (quadratic bezier). */
 export const PATH_Q = PATH_COMMANDS.Q.code;
+/** Command code of `Z` (close subpath). */
 export const PATH_Z = PATH_COMMANDS.Z.code;
 
 /** Float coords consumed by each command, indexed by command code. */

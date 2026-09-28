@@ -8,10 +8,12 @@ import { cross, dot, len, normalize, sub, vec3, type Quat, type Vec3 } from './v
 /** 16 numbers, column-major. */
 export type Mat4 = readonly number[];
 
+/** The identity matrix. */
 export function identity(): Mat4 {
   return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 }
 
+/** The product `a · b`: applied to a point, `b` acts first. */
 export function multiply(a: Mat4, b: Mat4): Mat4 {
   const out = new Array<number>(16);
   for (let c = 0; c < 4; c++) {
@@ -101,6 +103,8 @@ export function invert(m: Mat4): Mat4 | null {
   ];
 }
 
+/** Translation · rotation · scale: the matrix that scales a point, then
+ *  rotates it, then moves it by `position`. */
 export function compose(position: Vec3, rotation: Quat, scaling: Vec3): Mat4 {
   const [x, y, z, w] = rotation;
   const x2 = x + x;
@@ -125,6 +129,8 @@ export function compose(position: Vec3, rotation: Quat, scaling: Vec3): Mat4 {
   ];
 }
 
+/** A GL-convention projection: vertical field of view `fovY` in radians, the
+ *  camera looking down −z, and `near`..`far` mapped to clip z −1..1. */
 export function perspective(fovY: number, aspect: number, near: number, far: number): Mat4 {
   const f = 1 / Math.tan(fovY / 2);
   const range = near - far;

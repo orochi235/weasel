@@ -13,6 +13,7 @@ self.onmessage = (e) => {
 };
 `;
 
+/** The timer pair `createTickTimer` returns, shaped for `SchedulerOptions`. */
 export interface TickTimer {
   /** One-shot, as `createScheduler` expects. */
   setTimer(cb: () => void, ms: number): unknown;

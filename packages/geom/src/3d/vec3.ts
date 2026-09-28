@@ -16,22 +16,27 @@ export interface Vec3 {
 /** `[x, y, z, w]`, w last — the layout three.js and glMatrix both use. */
 export type Quat = readonly [number, number, number, number];
 
+/** `a + b`. */
 export function add(a: Vec3, b: Vec3): Vec3 {
   return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
 }
 
+/** `a - b`. */
 export function sub(a: Vec3, b: Vec3): Vec3 {
   return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
 }
 
+/** `a` multiplied by the scalar `k`. */
 export function scale(a: Vec3, k: number): Vec3 {
   return { x: a.x * k, y: a.y * k, z: a.z * k };
 }
 
+/** Dot product. */
 export function dot(a: Vec3, b: Vec3): number {
   return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+/** Cross product `a × b`. */
 export function cross(a: Vec3, b: Vec3): Vec3 {
   return {
     x: a.y * b.z - a.z * b.y,
@@ -45,6 +50,7 @@ export function len2(a: Vec3): number {
   return dot(a, a);
 }
 
+/** Euclidean length. */
 export function len(a: Vec3): number {
   return Math.sqrt(len2(a));
 }
@@ -61,10 +67,13 @@ export function vec3(x: number, y: number, z: number): Vec3 {
   return { x, y, z };
 }
 
+/** The quaternion for no rotation, `[0, 0, 0, 1]`. */
 export function quatIdentity(): Quat {
   return [0, 0, 0, 1];
 }
 
+/** Rotation by `angle` radians about `axis`, which must be nonzero but need
+ *  not be unit length. */
 export function quatFromAxisAngle(axis: Vec3, angle: number): Quat {
   const a = normalize(axis);
   const half = angle / 2;

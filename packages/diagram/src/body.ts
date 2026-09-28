@@ -49,6 +49,7 @@ export interface RowTextStyle {
 /** Measures one run of text. Returns its advance width and its line height. */
 export type MeasureRowText = (text: string, style: RowTextStyle) => { width: number; height: number };
 
+/** A body's content: the outline it draws and the rows stacked inside it. */
 export interface BodySpec {
   outline: Outline;
   rows: readonly Row[];
@@ -302,6 +303,9 @@ export function bodyOutline(spec: BodySpec, bounds: Bounds) {
  *  arrive with `text` empty and are the usual ones to decline. */
 export type RowNodeData<TData> = (text: string, box: RowBox) => TData | null;
 
+/** Options for {@link buildBody}: the layer and data of each node it emits.
+ *  Without `measure`, rows are sized from a fallback line height rather than
+ *  their text. */
 export interface BuildBodyOptions<TData, TLayer extends string, TPose extends Bounds> {
   layer: TLayer;
   /** The container's id. Edges name it, so pass one for anything an edge or a

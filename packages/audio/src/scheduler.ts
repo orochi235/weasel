@@ -1,3 +1,4 @@
+/** Clock and timer for `createScheduler`. */
 export interface SchedulerOptions {
   /** Engine time in ms. Backed by `AudioContext.currentTime * 1000` in production. */
   now: () => number;
@@ -17,6 +18,7 @@ interface Entry {
   key?: string;
 }
 
+/** A queue of callbacks keyed to engine time. See `createScheduler`. */
 export interface Scheduler {
   start(): void;
   /** Stop the timer. The queue survives; `clear()` empties it. */

@@ -77,6 +77,9 @@ export function ranksOf(graph: Graph, back: ReadonlySet<string>): Map<string, nu
   return ranks;
 }
 
+/** The ranked layout: each edge points one rank further along `direction`.
+ *  Within a rank, nodes keep their current cross-axis order, so a re-run
+ *  moves nothing. */
 export const layered: LayoutFn = (graph, opts = {}) => {
   const axes = axesFor(opts.direction);
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;

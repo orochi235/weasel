@@ -207,6 +207,7 @@ export function resolveEnd<TPose>(
   return best;
 }
 
+/** Options for {@link edgeDerivePath}. */
 export interface EdgeRouteOptions<TPose> extends PortsOptions<TPose> {
   /** Routers by key. Defaults to {@link ROUTERS}. */
   routers?: Readonly<Record<string, Router>>;

@@ -22,6 +22,7 @@ import {
 import { outlinePath } from './outline';
 import { diagramNodeOf, type DiagramNodeReader } from './trait';
 
+/** Options for {@link diagramShape} and {@link registerDiagramShape}. */
 export interface DiagramShapeOptions<TPose> {
   /** Distinguishes one registration from another, and is what the disposer
    *  removes. Default `'diagram:outline'`. */

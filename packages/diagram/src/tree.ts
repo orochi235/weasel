@@ -79,6 +79,9 @@ export function forestOf(graph: Graph, crossAxis: 'x' | 'y'): Forest {
   return { roots, children, depth };
 }
 
+/** The hierarchy layout: each parent centered over its children's block, one
+ *  rank per depth. A graph that is not a tree lays out as the forest
+ *  {@link forestOf} reads from it. */
 export const tree: LayoutFn = (graph, opts = {}) => {
   const axes = axesFor(opts.direction);
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;

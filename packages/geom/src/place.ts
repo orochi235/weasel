@@ -100,6 +100,12 @@ function fitsAlongSide(rect: Rect, boundary: Rect, side: PlacementSide, padding:
   return start >= low && end <= high;
 }
 
+/**
+ * Position an overlay beside `anchor` at the requested placement. With `flip`,
+ * a side that overflows the boundary is swapped for the opposite one when that
+ * fits. The result then slides along the alignment axis to stay inside the
+ * boundary; along the side axis it is left where it is, even if it overflows.
+ */
 export function placeRect(options: PlaceRectOptions): PlacedRect {
   const { anchor, overlay, boundary, placement, offset = 0, crossOffset = 0 } = options;
   const { padding = 0, flip = true } = options;

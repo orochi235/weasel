@@ -64,6 +64,8 @@ export interface PortScratch {
   port: Port;
 }
 
+/** Options for {@link createPortAffordance}: which ports show, and how they
+ *  are painted and hit. */
 export interface PortAffordanceOptions<TPose> {
   /** Also the chrome-caps visibility id. Default {@link PORT_LAYER_ID}. */
   id?: string;
