@@ -12,7 +12,7 @@
 import { describe, it, expect } from 'vitest';
 import { rotateAroundAABBCenter } from './poseRotation';
 import { pathInWorld } from 'features/paths/pathInWorld';
-import { poseRotationOf } from 'features/paths/poseRotation';
+import { poseRotationOf } from 'core/geometry/poseRotation';
 import { poseContainsRotated } from './SceneCanvas/poseGeometry';
 import { rotatedRectCorners, rotatePoint } from 'interactions/actions/rotate/geometry';
 import type { PolygonPath } from 'features/paths/types';

@@ -42,14 +42,14 @@ upstream silently loses the optimization).
 > data via `pathFromD` — the kit does not define a bespoke path DSL. Builders
 > are a co-equal choice, not a lesser one. See `docs/conventions.md`.
 
-**Query** — `bounds.ts`, `hitTest.ts` (`pointInPath`, `strokeHitTest`),
-`pathHitTest.ts`, `pathDistance.ts`, `unionBoundsPath.ts`. The polygon-vs-rect
-kernel `pathHitTest.ts` builds on lives in `core/geometry/polygonHitTestRect.ts`
-— `core/adapters/arrayAdapter.ts` needs it too, and core may not import from
-here.
+**Query** — `bounds.ts`, `pathDistance.ts`, `unionBoundsPath.ts`. Path
+hit-testing (`pointInPath`, `strokeHitTest`, path vs rect and polygon) lives in
+`@weasel-js/geom`, and the pose-rotation convention in
+`core/geometry/poseRotation.ts`: `core/adapters/arrayAdapter.ts` needs both,
+and core may not import from here.
 
 **Transform** — `transform.ts`, `transformPath.ts`, `pathInWorld.ts`,
-`poseRotation.ts`, `poseDescriptor.ts`, `originProjection.ts`
+`poseDescriptor.ts`, `originProjection.ts`
 
 **Editing** — `anchors.ts` (`pathToAnchors` / `anchorsToPath`, `PenAnchor`,
 `nearestSegmentT`), `anchorEdits.ts` (the anchor-set mutations: translate,

@@ -18,7 +18,7 @@
 import type { View } from 'core/viewport/view';
 import { pxExtent, withinPxBox } from 'core/viewport/pxExtent';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
-import { poseRotationOf } from 'features/paths/poseRotation';
+import { poseRotationOf } from 'core/geometry/poseRotation';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 
 /** What the walk found: the region, plus the ids needed to describe it. */

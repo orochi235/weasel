@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { arrayAdapter } from './arrayAdapter';
+import { boundsOfCoords } from '@weasel-js/geom';
+import { arrayAdapter, type ArrayAdapterConfig } from './arrayAdapter';
+import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'core/geometry/path';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import {
   circle,
   CIRCLE_POSE_DESCRIPTOR,
@@ -178,5 +181,83 @@ describe('arrayAdapter — non-rect poses', () => {
     });
     expect(adapter.hitTestArea!({ x: 0, y: 0, width: 20, height: 20 })).toEqual(['a']);
     expect(adapter.hitTestArea!({ x: 30, y: 30, width: 5, height: 5 })).toEqual([]);
+  });
+});
+
+/**
+ * Marquee and lasso test the drawn outline, not the bounding box. The right
+ * triangle (0,0) → (100,0) → (0,100) leaves the upper-right half of its box
+ * [0,0]-[100,100] empty.
+ */
+describe('arrayAdapter — silhouette hit-test', () => {
+  const TRIANGLE: PolygonPath = {
+    kind: 'polygon',
+    commands: Uint8Array.of(PATH_M, PATH_L, PATH_L, PATH_Z),
+    coords: Float32Array.of(0, 0, 100, 0, 0, 100),
+    fillRule: 'nonzero',
+  };
+
+  /** Reads a polygon pose's box from its coords; no `intersectsRect`. */
+  const PATH_DESCRIPTOR: PoseDescriptor<PolygonPath> = {
+    getBounds: (p) => {
+      const b = boundsOfCoords(p.coords)!;
+      return { x: b[0], y: b[1], width: b[2] - b[0], height: b[3] - b[1] };
+    },
+    remapBounds: (p) => p,
+    fromBounds: (_b, t) => t,
+  };
+
+  function adapterOf<T extends { id: string }, P>(
+    items: T[],
+    toPose: (o: T) => P,
+    extra: Partial<ArrayAdapterConfig<T, P>> = {},
+  ) {
+    return arrayAdapter<T, P>({ ref: { current: items }, setItems: () => {}, toPose, ...extra });
+  }
+
+  const polygonPosed = () => adapterOf(
+    [{ id: 't', path: TRIANGLE }],
+    (o) => o.path,
+    { poseDescriptor: PATH_DESCRIPTOR },
+  );
+
+  it('marquee over the empty corner of a polygon pose selects nothing', () => {
+    expect(polygonPosed().hitTestArea!({ x: 90, y: 90, width: 8, height: 8 })).toEqual([]);
+    expect(polygonPosed().hitTestArea!({ x: 0, y: 0, width: 8, height: 8 })).toEqual(['t']);
+  });
+
+  it('lasso intersect over the empty corner selects nothing', () => {
+    const corner = [{ x: 80, y: 80 }, { x: 99, y: 80 }, { x: 99, y: 99 }];
+    expect(polygonPosed().hitTestLasso!(corner, 'intersect')).toEqual([]);
+  });
+
+  it('lasso enclosed takes a triangle whose box pokes out of the lasso', () => {
+    // Hypotenuse x + y = 155: the triangle fits, its box corner (100,100) does not.
+    const lasso = [{ x: -5, y: -5 }, { x: 160, y: -5 }, { x: -5, y: 160 }];
+    expect(polygonPosed().hitTestLasso!(lasso, 'enclosed')).toEqual(['t']);
+  });
+
+  it('marquee meets a rotated rect where it is drawn, not where its pose box sits', () => {
+    type R = { id: string; x: number; y: number; width: number; height: number; rotation: number };
+    const adapter = adapterOf<R, R>(
+      [{ id: 'r', x: 0, y: 0, width: 100, height: 20, rotation: Math.PI / 4 }],
+      (o) => o,
+    );
+    // 100x20 at 45 deg puts a corner at (21.7, -32.4), above the pose box.
+    expect(adapter.hitTestArea!({ x: 15, y: -40, width: 15, height: 15 })).toEqual(['r']);
+    expect(adapter.hitTestArea!({ x: 40, y: -30, width: 20, height: 15 })).toEqual([]);
+  });
+
+  it('asks the silhouette resolver for a node whose pose is only its box', () => {
+    type N = { id: string; x: number; y: number; width: number; height: number };
+    const adapter = adapterOf<N, N>(
+      [{ id: 'n', x: 0, y: 0, width: 100, height: 100 }],
+      (o) => o,
+      { silhouette: () => TRIANGLE },
+    );
+    expect(adapter.hitTestArea!({ x: 90, y: 90, width: 8, height: 8 })).toEqual([]);
+    expect(adapter.hitTestLasso!([{ x: 80, y: 80 }, { x: 99, y: 80 }, { x: 99, y: 99 }], 'intersect'))
+      .toEqual([]);
+    expect(adapter.hitTestArea!({ x: 0, y: 0, width: 8, height: 8 })).toEqual(['n']);
   });
 });

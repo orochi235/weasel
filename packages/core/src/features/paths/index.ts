@@ -47,27 +47,25 @@ export {
   type SegmentHit,
 } from './anchorEdits';
 export { splitCubicAtT, fitCubicThroughDeletion, type Point } from './cubicMath';
-export { pointInPath, strokeHitTest, type PointInPathOptions, type StrokeHitTestOptions } from './hitTest';
 export {
+  pointInPath,
+  strokeHitTest,
+  type PointInPathOptions,
+  type StrokeHitTestOptions,
   pathContainsPoint,
   pathContainsRect,
   pathIntersectsRect,
   pathContainsPolygon,
   pathIntersectsPolygon,
-} from './pathHitTest';
+} from '@weasel-js/geom';
 export { pathDistanceToPoint } from './pathDistance';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './pathAt';
-export {
-  polygonContainsRectCenter,
-  polygonContainsRect,
-  polygonIntersectsRect,
-} from 'core/geometry/polygonHitTestRect';
 export {
   translatePath,
   scalePathToBounds,
 } from './transform';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './pathInWorld';
-export { poseRotationOf, rotatePathAround, type PoseRotation } from './poseRotation';
+export { poseRotationOf, rotatePathAround, type PoseRotation } from 'core/geometry/poseRotation';
 export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export {
   flattenCubic,

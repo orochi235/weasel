@@ -1440,7 +1440,7 @@ export type {
 export type { StyleToggle } from './features/text/useTextEdit';
 export type { SnapPattern } from './layout/strategies/snapPoint';
 export type { Vec2 } from './core/geometry/vec2';
-export type { Rect } from './core/geometry/polygonHitTestRect';
+export type { Rect } from '@weasel-js/geom';
 
 // The read-only surface each kit registry hands out (`paintKindRegistry`,
 // `markerRegistry`, `fontRegistry`, …), and the store behind it.

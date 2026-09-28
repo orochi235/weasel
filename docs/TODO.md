@@ -733,12 +733,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   tagged ones; and nothing styles the `data-part` spans the HTML form emits, so `PropertyField`
   still draws its suffix from its own `unit` prop.
 
-- **(P2) `arrayAdapter`'s marquee and lasso still test bounding boxes.** `sceneToAdapter`'s
-  both run the live silhouette hit-test; `arrayAdapter`'s `hitTestArea` (bounds, or the
-  descriptor's `intersectsRect`) and `hitTestLasso` (bounds only) cannot: it sits in `core/`,
-  and that hit-test needs painters and path flattening from `canvas/` and `features/`.
-  Undecided: move the kernel down into `core/geometry`, or let `arrayAdapter` stay a
-  bounds-only adapter and say so in its contract.
+- **(P3) Nothing reads `PoseDescriptor.intersectsRect` any more.** `arrayAdapter`'s marquee was
+  its last reader; marquee and lasso now both test the node's drawn outline
+  (`core/geometry/regionHit.ts`). `RECT_POSE_DESCRIPTOR`, `ROTATED_POSE_DESCRIPTOR`,
+  `pathPoseDescriptor`, `AUTO_POSE_DESCRIPTOR` and kernel3d's descriptor still implement it.
+  Undecided: remove the field, or give it a reader — as the outline test for a pose shape no
+  painter draws.
 
 - **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The

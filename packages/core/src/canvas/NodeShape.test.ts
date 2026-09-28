@@ -11,7 +11,7 @@ import {
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { solid, strokeOf } from '../util/paint';
-import { pathContainsPoint } from 'features/paths/pathHitTest';
+import { pathContainsPoint } from '@weasel-js/geom';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand } from '../renderer';
 import type { PolygonPath } from 'features/paths/types';

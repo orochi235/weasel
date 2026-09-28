@@ -10,11 +10,10 @@
  * …)` gate. If the convention ever changes (different pivot, a transform
  * field, etc.), it changes here.
  *
- * Lives in `features/paths` (the low layer) so both `features` and `canvas`
- * can share it without `features` importing `canvas`.
+ * Lives in `core/geometry` so `core/`'s own adapters can bake rotation too.
  */
 import { forEachSegment, pathCommandCoordCount } from '@weasel-js/geom';
-import { PATH_L, PATH_M, PATH_Z, type Path, type PolygonPath } from './types';
+import { PATH_L, PATH_M, PATH_Z, type Path, type PolygonPath } from './path';
 
 /** Pivot (`cx`, `cy`) and angle resolved from a pose's rotation convention. */
 export interface PoseRotation {

@@ -54,7 +54,7 @@ const adapter = {
     // Optional — needed for `commitInsert` to mint new objects.
     createDefault: (b) => ({ id: nextId(), ...b, color: pickColor() }),
     // Optional — needed for non-rect poses (path, polygon, …).
-    intersectsRect: (pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect),
+    poseDescriptor: AUTO_POSE_DESCRIPTOR,
   }),
   ...selection.adapterMethods,
 };
@@ -63,6 +63,11 @@ const adapter = {
 Spreading `selection.adapterMethods` wires `getSelection` / `setSelection`
 through the same `useSelection` instance the canvas uses, so action hooks
 and gestures stay in sync.
+
+Marquee and lasso take a node by its outline, the same test `sceneToAdapter`
+runs. A polygon pose is its own outline; any other pose is its rect, rotated
+by `rotation`. When the items are scene nodes drawn by the kit's painters,
+pass `silhouette: findShapeSilhouette` so they are tested as drawn.
 
 `arrayAdapter` does **not** supply `applyBatch`. Hooks fall back to a
 built-in dispatcher (`dispatchApplyBatch`) that applies each op against the

@@ -1,6 +1,6 @@
 import { useMemo, useRef, createElement } from 'react';
 import { SelectIcon } from '../../../icons';
-import { pathContainsPoint } from 'features/paths/pathHitTest';
+import { pathContainsPoint } from '@weasel-js/geom';
 import { shapeCoversPoint } from 'canvas/NodeShape';
 import { pickWalk, adapterPickSource, ownClipOf } from 'canvas/pickWalk';
 import type { Node } from 'core/scene/types';

@@ -1,46 +1,45 @@
 /**
- * Path-vs-geometry hit-test helpers: pure functions covering path-vs-point,
+ * Path hit-testing: path-vs-point (filled region and stroke distance),
  * path-vs-rect, and path-vs-polygon in both directions.
  *
- * `RectPath` short-circuits to AABB arithmetic. A `PolygonPath` is treated as
- * its filled region: whether a point is inside comes from `pointInPath`, so
- * beziers are flattened and `fillRule` is honored, and every closed subpath
- * counts — the hole of a donut is not part of the shape under `evenodd`. Open
- * subpaths enclose no area and are ignored, matching `pointInPath`.
+ * A `rect` path short-circuits to AABB arithmetic. A `polygon` path is its
+ * filled region: beziers are flattened, `fillRule` is honored (default
+ * `nonzero`), and every closed subpath counts — the hole of a donut is not
+ * part of the shape under `evenodd`. Open subpaths enclose no area, so the
+ * filled-region tests ignore them.
  */
 
-import { forEachSegment, pointInPolygon, segmentsCross } from '@weasel-js/geom';
-import { pointInPath, type PointInPathOptions } from './hitTest';
-import { flattenCubic, flattenQuadratic, DEFAULT_FLATTEN_TOLERANCE } from './flatten';
-import type { Vec2 } from 'core/geometry/vec2';
-import type { Rect } from 'core/geometry/polygonHitTestRect';
-import {
-  PATH_M,
-  PATH_L,
-  PATH_C,
-  PATH_Q,
-  PATH_Z,
-  type Path,
-  type PolygonPath,
-} from './types';
+import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from './commands';
+import { DEFAULT_FLATTEN_TOLERANCE, flattenCubic, flattenQuadratic } from './flatten';
+import { pointInPolygon, pointSegmentDist2, segmentsCross } from './polyline';
+import type { Rect } from './box';
+import type { GeomPath } from './path';
 
-/**
- * Every closed subpath of `path`, flattened to interleaved `[x, y, …]`. The
- * closing edge back to the first vertex is implicit. `keepOpen` also returns
- * the open subpaths, indistinguishable from the closed ones in the result.
- */
-function closedSubpaths(path: PolygonPath, tolerance: number, keepOpen = false): number[][] {
-  const { closed, open } = flatSubpaths(path, tolerance);
-  return keepOpen ? [...closed, ...open] : closed;
+type PolygonGeomPath = Extract<GeomPath, { kind: 'polygon' }>;
+type XY = { x: number; y: number };
+
+/** Options for the path hit-tests. */
+export interface PointInPathOptions {
+  /** Bezier flattening tolerance in world units. Default 0.5. */
+  tolerance?: number;
 }
+
+/** Options for {@link strokeHitTest}. */
+export interface StrokeHitTestOptions {
+  /** Bezier flattening tolerance in world units. Default 0.5. */
+  tolerance?: number;
+}
+
+// ─── Flattening ─────────────────────────────────────────────────────────────
 
 /**
  * `path` flattened to interleaved `[x, y, …]` runs, sorted by whether each
  * subpath encloses area. A `Z` closing fewer than three points yields an open
- * run, as does any subpath a `Z` never ends.
+ * run, as does any subpath a `Z` never ends. The closing edge of a closed run
+ * back to its first vertex is implicit.
  */
 function flatSubpaths(
-  path: PolygonPath,
+  path: PolygonGeomPath,
   tolerance: number,
 ): { closed: number[][]; open: number[][] } {
   const { commands, coords } = path;
@@ -87,7 +86,79 @@ function flatSubpaths(
   return { closed, open };
 }
 
-function rectToVerts(r: Rect): Vec2[] {
+function closedSubpaths(path: PolygonGeomPath, opts: PointInPathOptions): number[][] {
+  return flatSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE).closed;
+}
+
+// ─── Point vs path ──────────────────────────────────────────────────────────
+
+/** Filled-region hit-test for a path. Rect short-circuits to AABB; polygons run ray-cast / winding per `fillRule`. */
+export function pointInPath(
+  path: GeomPath,
+  x: number,
+  y: number,
+  opts: PointInPathOptions = {},
+): boolean {
+  if (path.kind === 'rect') {
+    return x >= path.x && x <= path.x + path.width && y >= path.y && y <= path.y + path.height;
+  }
+  let crossings = 0;
+  let winding = 0;
+  for (const sub of closedSubpaths(path, opts)) {
+    const n = sub.length;
+    for (let i = 0; i < n; i += 2) {
+      const j = (i + 2) % n;
+      const ay = sub[i + 1], by = sub[j + 1];
+      if ((ay > y) === (by > y)) continue;
+      const ax = sub[i], bx = sub[j];
+      if (x >= ax + ((y - ay) / (by - ay)) * (bx - ax)) continue;
+      crossings++;
+      winding += ay <= y ? 1 : -1;
+    }
+  }
+  return path.fillRule === 'evenodd' ? (crossings & 1) === 1 : winding !== 0;
+}
+
+/**
+ * Stroke-distance hit-test. True when (x, y) lies within `threshold` world
+ * units of the path's outline — when a stroke of total width `2 * threshold`
+ * drawn along the path would cover the point. Works for open and closed
+ * subpaths alike; OR it with {@link pointInPath} for fill-plus-stroke picking.
+ * Every flattened segment is treated as a capsule of radius `threshold`.
+ */
+export function strokeHitTest(
+  path: GeomPath,
+  x: number,
+  y: number,
+  threshold: number,
+  opts: StrokeHitTestOptions = {},
+): boolean {
+  const t2 = threshold * threshold;
+  if (path.kind === 'rect') {
+    const { x: rx, y: ry, width: w, height: h } = path;
+    return (
+      pointSegmentDist2(x, y, rx, ry, rx + w, ry) <= t2
+      || pointSegmentDist2(x, y, rx + w, ry, rx + w, ry + h) <= t2
+      || pointSegmentDist2(x, y, rx + w, ry + h, rx, ry + h) <= t2
+      || pointSegmentDist2(x, y, rx, ry + h, rx, ry) <= t2
+    );
+  }
+  const { closed, open } = flatSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE);
+  const near = (run: readonly number[], wrap: boolean): boolean => {
+    const n = run.length;
+    const last = wrap ? n : n - 2;
+    for (let i = 0; i < last; i += 2) {
+      const j = (i + 2) % n;
+      if (pointSegmentDist2(x, y, run[i], run[i + 1], run[j], run[j + 1]) <= t2) return true;
+    }
+    return false;
+  };
+  return closed.some((run) => near(run, true)) || open.some((run) => near(run, false));
+}
+
+// ─── Region vs path ─────────────────────────────────────────────────────────
+
+function rectToVerts(r: Rect): XY[] {
   return [
     { x: r.x, y: r.y },
     { x: r.x + r.width, y: r.y },
@@ -96,8 +167,8 @@ function rectToVerts(r: Rect): Vec2[] {
   ];
 }
 
-/** Flatten a Vec2 array into an interleaved [x0,y0,x1,y1,...] array. */
-function flattenVerts(poly: readonly Vec2[]): number[] {
+/** Flatten a vertex array into an interleaved [x0,y0,x1,y1,...] array. */
+function flattenVerts(poly: readonly XY[]): number[] {
   const flat: number[] = new Array(poly.length * 2);
   for (let i = 0; i < poly.length; i++) {
     flat[i * 2] = poly[i].x;
@@ -107,12 +178,10 @@ function flattenVerts(poly: readonly Vec2[]): number[] {
 }
 
 /** Edge-vs-edge segment intersection check between two closed polygons. */
-function polygonsIntersect(a: readonly Vec2[], b: readonly Vec2[]): boolean {
-  if (a.length === 0 || b.length === 0) return false; // nothing to intersect
-  // Quick containment check — one polygon fully inside the other?
+function polygonsIntersect(a: readonly XY[], b: readonly XY[]): boolean {
+  if (a.length === 0 || b.length === 0) return false;
   if (pointInPolygon(flattenVerts(a), b[0].x, b[0].y)) return true;
   if (pointInPolygon(flattenVerts(b), a[0].x, a[0].y)) return true;
-  // Edge-vs-edge crossings.
   for (let i = 0; i < a.length; i++) {
     const a0 = a[i], a1 = a[(i + 1) % a.length];
     for (let j = 0; j < b.length; j++) {
@@ -148,7 +217,7 @@ function anyEdgeCrossesRect(subpaths: readonly number[][], r: Rect): boolean {
   );
 }
 
-function anyEdgeCrossesPolygon(subpaths: readonly number[][], poly: readonly Vec2[]): boolean {
+function anyEdgeCrossesPolygon(subpaths: readonly number[][], poly: readonly XY[]): boolean {
   if (poly.length === 0) return false;
   return anyEdge(subpaths, (ax, ay, bx, by) => {
     for (let i = 0; i < poly.length; i++) {
@@ -160,7 +229,7 @@ function anyEdgeCrossesPolygon(subpaths: readonly number[][], poly: readonly Vec
 }
 
 /** `anyEdgeCrossesPolygon` for open runs: no edge back to the first vertex. */
-function anyOpenEdgeCrossesPolygon(runs: readonly number[][], poly: readonly Vec2[]): boolean {
+function anyOpenEdgeCrossesPolygon(runs: readonly number[][], poly: readonly XY[]): boolean {
   for (const run of runs) {
     for (let i = 0; i + 3 < run.length; i += 2) {
       const ax = run[i], ay = run[i + 1], bx = run[i + 2], by = run[i + 3];
@@ -192,15 +261,9 @@ function anyVertexInPolygon(subpaths: readonly number[][], flatPoly: readonly nu
   return false;
 }
 
-function subpathsOf(path: PolygonPath, opts: PointInPathOptions): number[][] {
-  return closedSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE);
-}
-
-// ─── Public API ─────────────────────────────────────────────────────────────
-
 /** Returns true if (x, y) lies within the filled region of `path`. */
 export function pathContainsPoint(
-  path: Path,
+  path: GeomPath,
   x: number,
   y: number,
   opts: PointInPathOptions = {},
@@ -209,7 +272,7 @@ export function pathContainsPoint(
 }
 
 /** Returns true if `rect` is entirely contained within `path`. */
-export function pathContainsRect(path: Path, rect: Rect, opts: PointInPathOptions = {}): boolean {
+export function pathContainsRect(path: GeomPath, rect: Rect, opts: PointInPathOptions = {}): boolean {
   if (path.kind === 'rect') {
     return (
       rect.x >= path.x &&
@@ -218,7 +281,7 @@ export function pathContainsRect(path: Path, rect: Rect, opts: PointInPathOption
       rect.y + rect.height <= path.y + path.height
     );
   }
-  const subpaths = subpathsOf(path, opts);
+  const subpaths = closedSubpaths(path, opts);
   if (subpaths.length === 0) return false;
   for (const c of rectToVerts(rect)) {
     if (!pointInPath(path, c.x, c.y, opts)) return false;
@@ -229,7 +292,7 @@ export function pathContainsRect(path: Path, rect: Rect, opts: PointInPathOption
 }
 
 /** Returns true if `rect` overlaps (intersects or contains) `path`. */
-export function pathIntersectsRect(path: Path, rect: Rect, opts: PointInPathOptions = {}): boolean {
+export function pathIntersectsRect(path: GeomPath, rect: Rect, opts: PointInPathOptions = {}): boolean {
   if (path.kind === 'rect') {
     return (
       rect.x < path.x + path.width &&
@@ -238,7 +301,7 @@ export function pathIntersectsRect(path: Path, rect: Rect, opts: PointInPathOpti
       rect.y + rect.height > path.y
     );
   }
-  const subpaths = subpathsOf(path, opts);
+  const subpaths = closedSubpaths(path, opts);
   if (subpaths.length === 0) return false;
   for (const c of rectToVerts(rect)) {
     if (pointInPath(path, c.x, c.y, opts)) return true;
@@ -249,11 +312,11 @@ export function pathIntersectsRect(path: Path, rect: Rect, opts: PointInPathOpti
 
 /** Returns true if every vertex of `polygon` lies inside `path`. */
 export function pathContainsPolygon(
-  path: Path,
-  polygon: readonly Vec2[],
+  path: GeomPath,
+  polygon: readonly XY[],
   opts: PointInPathOptions = {},
 ): boolean {
-  if (polygon.length === 0) return false; // empty polygon can't be "contained"
+  if (polygon.length === 0) return false;
   if (path.kind === 'rect') {
     return polygon.every(
       (p) =>
@@ -263,7 +326,7 @@ export function pathContainsPolygon(
         p.y <= path.y + path.height,
     );
   }
-  const subpaths = subpathsOf(path, opts);
+  const subpaths = closedSubpaths(path, opts);
   if (subpaths.length === 0) return false;
   for (const p of polygon) {
     if (!pointInPath(path, p.x, p.y, opts)) return false;
@@ -274,15 +337,15 @@ export function pathContainsPolygon(
 
 /** Returns true if `polygon` overlaps (intersects or is contained by) `path`. */
 export function pathIntersectsPolygon(
-  path: Path,
-  polygon: readonly Vec2[],
+  path: GeomPath,
+  polygon: readonly XY[],
   opts: PointInPathOptions = {},
 ): boolean {
   if (polygon.length === 0) return false;
   if (path.kind === 'rect') {
     return polygonsIntersect(rectToVerts(path), polygon);
   }
-  const subpaths = subpathsOf(path, opts);
+  const subpaths = closedSubpaths(path, opts);
   if (subpaths.length === 0) return false;
   for (const p of polygon) {
     if (pointInPath(path, p.x, p.y, opts)) return true;
@@ -297,14 +360,18 @@ export function pathIntersectsPolygon(
  * {@link pathContainsPolygon}. A lasso enclosing a shape asks this.
  */
 export function polygonContainsPath(
-  polygon: readonly Vec2[],
-  path: Path,
+  polygon: readonly XY[],
+  path: GeomPath,
   opts: PointInPathOptions = {},
 ): boolean {
   if (polygon.length < 3) return false;
-  const subpaths = path.kind === 'rect'
-    ? [flattenVerts(rectToVerts(path))]
-    : closedSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE, true);
+  let subpaths: number[][];
+  if (path.kind === 'rect') {
+    subpaths = [flattenVerts(rectToVerts(path))];
+  } else {
+    const { closed, open } = flatSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE);
+    subpaths = [...closed, ...open];
+  }
   if (subpaths.length === 0) return false;
   const flatPoly = flattenVerts(polygon);
   for (const sub of subpaths) {
@@ -324,8 +391,8 @@ export function polygonContainsPath(
  * {@link polygonContainsPath}; a lasso touching a shape asks this.
  */
 export function polygonIntersectsPath(
-  polygon: readonly Vec2[],
-  path: Path,
+  polygon: readonly XY[],
+  path: GeomPath,
   opts: PointInPathOptions = {},
 ): boolean {
   if (polygon.length < 3) return false;

@@ -64,7 +64,7 @@ import type {
   DropTarget as LayoutDropTarget,
   DropRegion,
 } from '../../../layout/types';
-import { pointInPath } from 'features/paths/hitTest';
+import { pointInPath } from '@weasel-js/geom';
 import {
   poseDescriptorForNode,
   translatePoseViaDescriptor,

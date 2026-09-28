@@ -15,5 +15,13 @@ export {
   flattenCubicWithArcLen, flattenQuadraticWithArcLen,
 } from './flatten';
 export { pointInPolygon, segmentsCross, pointSegmentDist2 } from './polyline';
+export type { GeomPath } from './path';
+export {
+  pointInPath, strokeHitTest,
+  pathContainsPoint, pathContainsRect, pathIntersectsRect,
+  pathContainsPolygon, pathIntersectsPolygon,
+  polygonContainsPath, polygonIntersectsPath,
+  type PointInPathOptions, type StrokeHitTestOptions,
+} from './pathHitTest';
 export { transformCoords } from './affine';
 export { placeRect, clampRectWithin, type Placement, type PlacementSide, type PlacementAlign, type PlaceRectOptions, type PlacedRect } from './place';

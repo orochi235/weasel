@@ -38,7 +38,7 @@ import {
   DEFAULT_ROTATION_HANDLE_DISTANCE,
 } from 'interactions/actions/rotate/handle';
 import { rotatePoint } from 'interactions/actions/rotate/geometry';
-import { poseRotationOf } from 'features/paths/poseRotation';
+import { poseRotationOf } from 'core/geometry/poseRotation';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ChromeState } from 'core/selection/chromeState';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';

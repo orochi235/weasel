@@ -21,7 +21,7 @@ import { useCanvasSize } from '../../core/viewport/useCanvasSize';
 import type { View } from '../../core/viewport/view';
 import { composeRectPose, composeWorldPose } from '../groups/composePose';
 import { effectivePose } from 'core/scene/effectivePose';
-import { poseRotationOf } from '../paths/poseRotation';
+import { poseRotationOf } from 'core/geometry/poseRotation';
 
 /** Structural point, matching every other `{ x, y }` the kit passes across a
  *  boundary. */
