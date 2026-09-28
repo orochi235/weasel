@@ -1,11 +1,12 @@
 # Bundled fonts
 
-Two OFL-1.1 faces, vendored so the kit never fetches a stylesheet from a
+OFL-1.1 faces, vendored so the kit never fetches a stylesheet from a
 third-party host at runtime.
 
 | file | token | role |
 |---|---|---|
 | `oswald-latin-variable.woff2` | `--wzl-font-ui`, `--wzl-font-display` | condensed UI/display face, variable `wght 200–700` |
+| `oswald-tabular-digits.woff2` | `--wzl-font-numeric` | Oswald's digits 0–9 only, each centered in the widest digit's advance at every weight, as family `Oswald Tabular` |
 | `inter-latin.woff2` | `--wzl-font-body` | body/prose face, weight 400 |
 
 Loading them is opt-in: `import '@weasel-js/theme/fonts.css'`, or
@@ -19,7 +20,7 @@ with no error anywhere.
 
 ## Tooling
 
-Both commands need `fontTools` **with the Brotli extension** — without it,
+These commands need `fontTools` **with the Brotli extension** — without it,
 `--flavor=woff2` fails with `ImportError: No module named brotli`. Homebrew's
 `fonttools` formula does not include it, so use a throwaway venv:
 
@@ -53,6 +54,25 @@ in the kit reads hints.
 Oswald's OFL notice carries **no Reserved Font Name**, so a subset may keep the
 family name.
 
+## Provenance — Oswald Tabular
+
+Built from `oswald-latin-variable.woff2` by `scripts/oswald-tabular.py` (same
+venv): subset to U+0030–0039 with no layout features, then every digit gets the
+widest digit's advance at the default weight and at each `wght` master, its
+outline shifted by half the difference so it stays centered, and `HVAR` is
+rebuilt from the patched `gvar`. Oswald ships no `tnum` feature, so this is the
+only way its figures line up in a column. The widest digit is `0` at every
+weight, so no digit is padded past Oswald's own widest.
+
+```sh
+/tmp/fontvenv/bin/python packages/theme/scripts/oswald-tabular.py
+```
+
+It is a separate family rather than a patched Oswald so that only text asking
+for `--wzl-font-numeric` gets tabular digits; running text keeps Oswald's
+proportional ones. The face covers digits alone, so the browser takes every
+other character from the next family in the stack.
+
 ## Provenance — Inter
 
 Re-flavored from `assets/fonts/inter/inter.ttf`, which is already Inter v4.1
@@ -70,6 +90,6 @@ README for the original command):
 
 ## License
 
-Both faces are SIL Open Font License 1.1 — `OFL-Oswald.txt` and `OFL-Inter.txt`,
+All three faces are SIL Open Font License 1.1 — `OFL-Oswald.txt` and `OFL-Inter.txt`,
 redistributed with the fonts as the license requires. The OFL covers these font
 binaries only; the package's code is MIT (see `../LICENSE`).

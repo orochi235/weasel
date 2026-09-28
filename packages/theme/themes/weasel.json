@@ -975,6 +975,11 @@
       "type": "fontFamily",
       "description": "Condensed UI/display face. The heavier cuts get blocky at any size, so the weight tokens stay in the 200-400 range."
     },
+    "font-numeric": {
+      "value": "'Oswald Tabular', var(--wzl-font-ui)",
+      "type": "fontFamily",
+      "description": "The UI face with equal-width digits, for numbers read down a column or updated in place. Oswald Tabular carries only 0-9; every other character falls through to the UI face."
+    },
     "font-display": {
       "value": [
         "Oswald",

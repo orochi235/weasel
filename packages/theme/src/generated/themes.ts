@@ -41,6 +41,7 @@ export type TokenName =
   | '--wzl-font-body'
   | '--wzl-font-display'
   | '--wzl-font-mono'
+  | '--wzl-font-numeric'
   | '--wzl-font-size'
   | '--wzl-font-size-2xs'
   | '--wzl-font-size-lg'
@@ -345,6 +346,7 @@ export const THEMES = {
         '--wzl-ease-in-out-cubic': "cubic-bezier(0.65, 0, 0.35, 1)",
         '--wzl-ease-out-back': "cubic-bezier(0.34, 1.56, 0.64, 1)",
         '--wzl-font-ui': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-numeric': "'Oswald Tabular', var(--wzl-font-ui)",
         '--wzl-font-body': "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
@@ -511,6 +513,7 @@ export const THEMES = {
         '--wzl-ease-in-out-cubic': "cubic-bezier(0.65, 0, 0.35, 1)",
         '--wzl-ease-out-back': "cubic-bezier(0.34, 1.56, 0.64, 1)",
         '--wzl-font-ui': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-numeric': "'Oswald Tabular', var(--wzl-font-ui)",
         '--wzl-font-body': "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
@@ -677,6 +680,7 @@ export const THEMES = {
         '--wzl-ease-in-out-cubic': "cubic-bezier(0.65, 0, 0.35, 1)",
         '--wzl-ease-out-back': "cubic-bezier(0.34, 1.56, 0.64, 1)",
         '--wzl-font-ui': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-numeric': "'Oswald Tabular', var(--wzl-font-ui)",
         '--wzl-font-body': "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
@@ -843,6 +847,7 @@ export const THEMES = {
         '--wzl-ease-in-out-cubic': "cubic-bezier(0.65, 0, 0.35, 1)",
         '--wzl-ease-out-back': "cubic-bezier(0.34, 1.56, 0.64, 1)",
         '--wzl-font-ui': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-numeric': "'Oswald Tabular', var(--wzl-font-ui)",
         '--wzl-font-body': "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
@@ -1009,6 +1014,7 @@ export const THEMES = {
         '--wzl-ease-in-out-cubic': "cubic-bezier(0.65, 0, 0.35, 1)",
         '--wzl-ease-out-back': "cubic-bezier(0.34, 1.56, 0.64, 1)",
         '--wzl-font-ui': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-numeric': "'Oswald Tabular', var(--wzl-font-ui)",
         '--wzl-font-body': "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
@@ -1175,6 +1181,7 @@ export const THEMES = {
         '--wzl-ease-in-out-cubic': "cubic-bezier(0.65, 0, 0.35, 1)",
         '--wzl-ease-out-back': "cubic-bezier(0.34, 1.56, 0.64, 1)",
         '--wzl-font-ui': "Oswald, 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+        '--wzl-font-numeric': "'Oswald Tabular', var(--wzl-font-ui)",
         '--wzl-font-body': "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif",
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
@@ -2166,6 +2173,11 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         ],
         "type": "fontFamily",
         "description": "Condensed UI/display face. The heavier cuts get blocky at any size, so the weight tokens stay in the 200-400 range."
+      },
+      "font-numeric": {
+        "value": "'Oswald Tabular', var(--wzl-font-ui)",
+        "type": "fontFamily",
+        "description": "The UI face with equal-width digits, for numbers read down a column or updated in place. Oswald Tabular carries only 0-9; every other character falls through to the UI face."
       },
       "font-display": {
         "value": [
@@ -3240,6 +3252,11 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
           "sans-serif"
         ],
         "description": "Condensed UI/display face. The heavier cuts get blocky at any size, so the weight tokens stay in the 200-400 range."
+      },
+      "font-numeric": {
+        "type": "fontFamily",
+        "value": "'Oswald Tabular', var(--wzl-font-ui)",
+        "description": "The UI face with equal-width digits, for numbers read down a column or updated in place. Oswald Tabular carries only 0-9; every other character falls through to the UI face."
       },
       "font-display": {
         "type": "fontFamily",
