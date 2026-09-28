@@ -1,3 +1,4 @@
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { IMPLICIT_TAGS } from './capabilities';
 import type { ModeDefinition } from './modeDefinition';
 
@@ -20,43 +21,38 @@ export interface ModeRegistry {
   byId(id: string): ModeDefinition;
   getVersion(): number;
   subscribe(listener: () => void): () => void;
+  /** The registered modes keyed by id. Shares this registry's version, so it
+   *  also advances on `setMode`. */
+  readonly reflection: Reflection<ModeDefinition>;
 }
 
 /** Build a mode registry. Throws if `initial` does not name one of `modes`. */
 export function createModeRegistry(opts: CreateModeRegistryOptions): ModeRegistry {
-  const byIdMap = new Map(opts.modes.map((m) => [m.id, m]));
-  const initial = byIdMap.get(opts.initial);
+  const modes = createReflectable<ModeDefinition>();
+  for (const m of opts.modes) modes.set(m.id, m);
+  const initial = modes.get(opts.initial);
   if (!initial) throw new Error(`Initial mode "${opts.initial}" not in modes list`);
 
   let active: ModeDefinition = initial;
-  let version = 0;
-  const listeners = new Set<() => void>();
-
-  function bump(): void {
-    version++;
-    for (const l of listeners) l();
-  }
 
   return {
     current: () => active,
     list: () => opts.modes,
     setMode(id: string): void {
-      const next = byIdMap.get(id);
+      const next = modes.get(id);
       if (!next) throw new Error(`Unknown mode id: ${id}`);
       if (next === active) return;
       active = next;
-      bump();
+      modes.bump();
     },
     byId(id: string): ModeDefinition {
-      const m = byIdMap.get(id);
+      const m = modes.get(id);
       if (!m) throw new Error(`Unknown mode id: ${id}`);
       return m;
     },
-    getVersion: () => version,
-    subscribe(listener: () => void): () => void {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    getVersion: modes.getVersion,
+    subscribe: modes.subscribe,
+    reflection: modes.reflection,
   };
 }
 

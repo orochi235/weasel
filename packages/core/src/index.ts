@@ -838,6 +838,7 @@ export {
   listPaintKinds,
   paintKindOf,
   switchGradientKind,
+  paintKindRegistry,
   _resetPaintKindsForTests,
 } from './core/paintKinds';
 export type {
@@ -849,7 +850,7 @@ export type {
 } from './core/paintKinds';
 
 export {
-  registerMarker, getMarker, listMarkers, _resetMarkersForTests,
+  registerMarker, getMarker, listMarkers, markerRegistry, _resetMarkersForTests,
 } from './core/strokeMarkers';
 export type { MarkerEntry, MarkerCtx, MarkerPaint } from './core/strokeMarkers';
 export { markerInset, markerKeyOf, resolveMarkerSize, strokeInsets } from './core/markerInset';
@@ -1330,10 +1331,14 @@ export {
   hasFontOutlines,
   outlineStatus,
   listFontOutlines,
+  fontRegistry,
+  fontOutlineRegistry,
   enableLocalFontOutlines,
   canQueryLocalFonts,
 } from '@weasel-js/font';
 export type {
+  FontFamilyFaces,
+  OutlineFaceInfo,
   OutlineSource,
   OutlineVariant,
   OutlineStatus,
@@ -1412,3 +1417,14 @@ export type {
 export type { SnapPattern } from './layout/strategies/snapPoint';
 export type { Vec2 } from './core/geometry/vec2';
 export type { Rect } from './core/geometry/polygonHitTestRect';
+
+// The read-only surface each kit registry hands out (`paintKindRegistry`,
+// `markerRegistry`, `fontRegistry`, …), and the store behind it.
+export { createReflectable } from '@weasel-js/registry';
+export type {
+  Reflectable,
+  Reflection,
+  ReflectedEntry,
+  Registrant,
+  RegisterOptions,
+} from '@weasel-js/registry';

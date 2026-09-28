@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   registerFontOutlines, unregisterFontOutlines, hasFontOutlines,
-  outlineStatus, listFontOutlines, glyphOutline, _resetFontOutlinesForTests,
+  outlineStatus, listFontOutlines, fontOutlineRegistry, glyphOutline, _resetFontOutlinesForTests,
 } from './outlineRegistry';
 import type { OutlineFace, OutlineParser } from './OutlineFace';
 import { subscribeGlyphReady, glyphGeneration, _clearGlyphReadySubscribers } from '../glyphReady';
@@ -231,6 +231,19 @@ describe('outline registry', () => {
       { family: 'Abe', weight: 400, style: 'normal', status: 'idle' },
       { family: 'Zed', weight: 700, style: 'normal', status: 'idle' },
     ]);
+  });
+
+  it('reflects each face under family|weight|style and notifies as its load state moves', async () => {
+    const listener = vi.fn();
+    const off = fontOutlineRegistry.subscribe(listener);
+    registerFontOutlines('Fake', { weight: 700 }, new ArrayBuffer(4), { parser: stubParser });
+    expect(listener).toHaveBeenCalledTimes(1);
+    glyphOutline('Fake', 700, 'normal', 65);
+    await settle();
+    const [entry] = fontOutlineRegistry.entries();
+    expect(entry).toMatchObject({ key: 'Fake|700|normal', value: { family: 'Fake', weight: 700, status: 'ready' } });
+    expect(listener).toHaveBeenCalledTimes(3);
+    off();
   });
 
   // `layoutCache` keys nothing on the font set and polls `glyphGeneration()`

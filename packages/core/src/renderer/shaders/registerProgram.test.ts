@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   registerProgram,
+  programSourceRegistry,
   getProgramSource,
   _resetProgramRegistryForTests,
 } from './registerProgram';
@@ -52,6 +53,17 @@ describe('registerProgram', () => {
     } finally {
       process.env.NODE_ENV = origEnv;
     }
+  });
+
+  it('reflects each id once, the latest source replacing the earlier with no conflict', () => {
+    const listener = vi.fn();
+    const off = programSourceRegistry.subscribe(listener);
+    registerProgram('refl', 'v1', MINIMAL_FRAG);
+    registerProgram('refl', 'v2', MINIMAL_FRAG);
+    const entries = programSourceRegistry.entries().filter((e) => e.key === 'refl');
+    expect(entries.map((e) => [e.value.vert, e.shadowed.length])).toEqual([['v2', 0]]);
+    expect(listener).toHaveBeenCalledTimes(2);
+    off();
   });
 
   it('handle id matches the registered id', () => {

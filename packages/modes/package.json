@@ -32,6 +32,9 @@
   "engines": {
     "node": ">=22"
   },
+  "dependencies": {
+    "@weasel-js/registry": "1.6.1"
+  },
   "files": [
     "dist",
     "README.md",

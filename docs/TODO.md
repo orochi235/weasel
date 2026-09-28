@@ -1043,8 +1043,6 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 
 ### System-registries pattern
 
-- **(P3) `createReflectable<T>()` utility for the system-registries pattern.** Surfaced 2026-05-12. The kit maintains ≥8 registries with different lifecycles (fonts, tools, ops, actions, easings, shaders, Canvas layers, object-kind). The documentation half shipped — `docs/concepts.md:364` now has a "System registries" section cataloging every registry. Remaining: ship a small `createReflectable<T>()` utility for the cross-cutting reflection concern (debug overlay enumeration, conflict detection). A grand unification is still probably wrong — promote "pick one shape per scope category" only after 3+ registries in the same category exist.
-
 ---
 
 - [ ] (P3) **labkit `point` marks are sized in world units.** `markCommands` draws the ring at

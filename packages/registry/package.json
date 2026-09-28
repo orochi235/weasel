@@ -1,7 +1,7 @@
 {
-  "name": "@weasel-js/font",
+  "name": "@weasel-js/registry",
   "version": "1.6.1",
-  "description": "MSDF font atlases, glyph metrics, and runtime glyph rasterization for @weasel-js/core. Registry, kerning-aware glyph layout, and the SDF text shader source.",
+  "description": "Keyed registries with a uniform reflection surface: enumerate the entries, see which ones displaced others, subscribe to changes. No React, no DOM.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -13,22 +13,14 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
-    "./test-seams": {
-      "import": "./dist/test-seams.js",
-      "types": "./dist/test-seams.d.ts"
-    },
     "./package.json": "./package.json"
-  },
-  "scripts": {
-    "test": "vitest run",
-    "build": "tsup"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/orochi235/weasel.git",
-    "directory": "packages/font"
+    "directory": "packages/registry"
   },
   "bugs": {
     "url": "https://github.com/orochi235/weasel/issues"
@@ -41,12 +33,11 @@
     "README.md",
     "LICENSE"
   ],
+  "scripts": {
+    "build": "tsup"
+  },
   "publishConfig": {
     "access": "public",
     "provenance": true
-  },
-  "dependencies": {
-    "@weasel-js/registry": "1.6.1",
-    "opentype.js": "2.0.0"
   }
 }

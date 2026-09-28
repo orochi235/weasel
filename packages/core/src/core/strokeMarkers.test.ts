@@ -1,6 +1,6 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
-  registerMarker, getMarker, listMarkers, _resetMarkersForTests,
+  registerMarker, getMarker, listMarkers, markerRegistry, _resetMarkersForTests,
   type MarkerEntry,
 } from './strokeMarkers';
 import { PATH_M, PATH_L, PATH_Z } from './geometry/path';
@@ -48,6 +48,26 @@ describe('marker registry', () => {
     registerMarker({ ...TRIANGLE, inset: 9 });
     first();
     expect(getMarker('app:tri')?.inset).toBe(9);
+  });
+
+  it('restores the built-in when two overrides are disposed out of order', () => {
+    const builtin = getMarker('arrow');
+    const a = registerMarker({ ...TRIANGLE, id: 'arrow', inset: 1 });
+    const b = registerMarker({ ...TRIANGLE, id: 'arrow', inset: 2 });
+    a();
+    expect(getMarker('arrow')?.inset).toBe(2);
+    b();
+    expect(getMarker('arrow')).toBe(builtin);
+  });
+
+  it('reflects an override as a conflict over the kit entry, and notifies subscribers', () => {
+    const listener = vi.fn();
+    const off = markerRegistry.subscribe(listener);
+    registerMarker({ ...TRIANGLE, id: 'arrow' });
+    const arrow = markerRegistry.entries().find((e) => e.key === 'arrow')!;
+    expect(arrow.shadowed.map((s) => s.source)).toEqual(['kit']);
+    expect(listener).toHaveBeenCalledTimes(1);
+    off();
   });
 
   it('enumerates the built-in vocabulary', () => {
