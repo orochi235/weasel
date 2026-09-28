@@ -161,4 +161,29 @@ describe('d3Bind exit transitions', () => {
     }));
     expect(seen).toEqual(['a']);
   });
+
+  it('stops tweening a node removed externally, and spares a same-id node added afterward', async () => {
+    const { scene, clock, bind } = setup();
+    act(() => void bind([{ id: 'a', x: 0 }]));
+    const onEnd = vi.fn();
+    let ended!: Promise<void>;
+    act(() => void bind([], (exit) => {
+      ended = slideOut(exit).on('end', onEnd).end();
+    }));
+    act(() => clock.advance(0));
+    act(() => clock.advance(300));
+    act(() => scene.current.remove('a' as never));
+    expect(() => act(() => clock.advance(100))).not.toThrow();
+    act(() => void scene.current.add({
+      id: 'a' as never,
+      kind: 'leaf',
+      layer: 'graph',
+      pose: { x: 7, y: 0, width: 10, height: 10 },
+      data: {},
+    }));
+    act(() => clock.advance(2000));
+    await ended;
+    expect(onEnd).toHaveBeenCalledTimes(1);
+    expect(scene.current.get('a' as never)?.pose.x).toBe(7);
+  });
 });

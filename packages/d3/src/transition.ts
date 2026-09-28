@@ -207,6 +207,15 @@ function makeStage<TData, TPose>(
     settleIfDone();
   };
 
+  /** The scene can lose a node mid-tween (an undo, any outside `remove`).
+   *  Stop the item through the whole chain, so neither a tween nor a pending
+   *  `.remove()` touches the id again. */
+  const lost = (i: number): boolean => {
+    if (scene.get(ids[i])) return false;
+    stage.root.cancelItem(i);
+    return true;
+  };
+
   const runItem = (i: number): void => {
     if (canceled) return;
     const id = ids[i];
@@ -242,7 +251,9 @@ function makeStage<TData, TPose>(
             easing,
             cancelKey: ns,
             interpolate: (a, b, t) => lerp(a, b, t),
-            onTick: (pose) => scene.setPose(id, pose),
+            onTick: (pose) => {
+              if (!lost(i)) scene.setPose(id, pose);
+            },
             onDone: done,
           }),
         );
@@ -276,7 +287,9 @@ function makeStage<TData, TPose>(
                     `d3Bind.transition.tween("${ct.name}"): non-numeric value without an interpolate factory`,
                   );
                 }),
-            onTick: (value) => ct.apply(d, id, value),
+            onTick: (value) => {
+              if (!lost(i)) ct.apply(d, id, value);
+            },
             onDone: () => {
               untrackCustomKey(ns, customKey);
               done();
@@ -351,7 +364,7 @@ function makeStage<TData, TPose>(
         // whole delay. Costs one extra setPose per node in the undo log.
         for (const id of ids) {
           const from = priorPoses.get(id);
-          if (from !== undefined) scene.setPose(id, from);
+          if (from !== undefined && scene.get(id)) scene.setPose(id, from);
         }
         ids.forEach((_, i) => runItem(i));
       }
