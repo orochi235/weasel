@@ -233,8 +233,8 @@ export interface LongPressSpec {
 
 `packages/gestures/src/grammar/gestures.ts` gains `'longPress'` to
 `GestureName` and `{ name: 'longPress', hasTarget: true }` to
-`GESTURE_DESCRIPTORS`. `tools/routing/reflection/registry.ts` maps
-`longPress: 'longPress'` in `SPEC_KIND_TO_GESTURE`, so the route inspector
+`GESTURE_DESCRIPTORS`. The spec-kind table in gestures' `grammar/specKinds.ts` maps
+`longPress: 'longPress'`, so the route inspector
 reports long-press bindings rather than skipping them.
 
 Dispatcher synthesis in `useGestureDispatcher.tsx`:
