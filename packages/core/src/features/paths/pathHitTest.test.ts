@@ -5,7 +5,7 @@ import {
   pathIntersectsRect,
   pathContainsPolygon,
   pathIntersectsPolygon,
-} from './pathHitTest';
+} from '@weasel-js/geom';
 import { rectPath, polygonFromPoints } from './builder';
 import { pathFromD } from './pathFromD';
 import type { PolygonPath } from './types';

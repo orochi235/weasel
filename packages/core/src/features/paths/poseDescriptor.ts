@@ -1,6 +1,5 @@
-import { boxToBox } from '@weasel-js/geom';
+import { boxToBox, pointInPath } from '@weasel-js/geom';
 import { boundsOfPath } from './bounds';
-import { pointInPath } from './hitTest';
 import { translatePath } from './transform';
 import { transformPath } from './transformPath';
 import type { Path } from './types';

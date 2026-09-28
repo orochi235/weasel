@@ -3,7 +3,7 @@ import { splitPathBySegment, splitPathByPolyline, snipPathByPolyline } from './s
 import { PathBuilder, rectPath, polygonFromPoints } from './builder';
 import { extractPolylines } from './tessellate/polyline';
 import { boundsOfPath } from './bounds';
-import { pointInPath } from './hitTest';
+import { pointInPath } from '@weasel-js/geom';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
 import type { Point } from './cubicMath';
 

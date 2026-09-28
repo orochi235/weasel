@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pointInPath } from './hitTest';
+import { pointInPath, strokeHitTest } from '@weasel-js/geom';
 import { PathBuilder, polygonFromPoints, rectPath } from './builder';
 
 describe('pointInPath', () => {
@@ -87,7 +87,6 @@ describe('pointInPath', () => {
   });
 });
 
-import { strokeHitTest } from './hitTest';
 
 describe('strokeHitTest', () => {
   it('hits within threshold of a horizontal line segment', () => {

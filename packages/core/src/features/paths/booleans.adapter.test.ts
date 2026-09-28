@@ -3,7 +3,7 @@ import { pathToMultiPolygon, multiPolygonToPath } from './booleans.adapter';
 import type { RectPath, PolygonPath } from './types';
 import type { MultiPolygon } from './booleans.adapter';
 import { PATH_M, PATH_L, PATH_Z } from './types';
-import { pointInPath } from './hitTest';
+import { pointInPath } from '@weasel-js/geom';
 
 describe('pathToMultiPolygon', () => {
   it('emits a single 4-corner ring for a RectPath', () => {

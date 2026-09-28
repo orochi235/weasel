@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PATH_CMD_LENGTHS as GEOM_PATH_CMD_LENGTHS } from '@weasel-js/geom';
 import { PATH_CMD_LENGTHS, PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, type PolygonPath } from './types';
 import { translatePath } from './transform';
-import { rotatePathAround } from './poseRotation';
+import { rotatePathAround } from 'core/geometry/poseRotation';
 import { pathPoseDescriptor } from './poseDescriptor';
 
 /** One command of every code the table declares, with distinct nonzero coords. */

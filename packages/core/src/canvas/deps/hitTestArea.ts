@@ -11,7 +11,7 @@
  * the pose is.
  */
 import type { Scene, NodeId } from 'core/scene/types';
-import { pathIntersectsRect } from 'features/paths/pathHitTest';
+import { pathIntersectsRect } from '@weasel-js/geom';
 import type { LassoHitMode } from 'core/adapters/types';
 import {
   poseDescriptorForNode,

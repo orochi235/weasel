@@ -58,7 +58,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ResizePolicy } from '../depSchema';
 import { DEFAULT_RESIZE_BEHAVIORS } from '../resize/behaviors';
 import { remapRotatedLeaf, translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
-import { poseRotationOf } from 'features/paths/poseRotation';
+import { poseRotationOf } from 'core/geometry/poseRotation';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { fixedCornerOf } from '../resize/cornerHandles';
 import { rotatePoint } from '../rotate/geometry';

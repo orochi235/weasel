@@ -15,7 +15,7 @@ import { group } from './group';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
 import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
 import type { Scene } from 'core/scene/types';
-import { pointInPath } from 'features/paths/hitTest';
+import { pointInPath } from '@weasel-js/geom';
 import { curvyPath, polygonPath, scatterScene } from './fixtures';
 
 const NODE_COUNTS = [100, 1000, 10000];

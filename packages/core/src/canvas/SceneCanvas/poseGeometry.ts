@@ -7,11 +7,10 @@
  * extraction, so a consumer-supplied descriptor reaches all three.
  */
 import type { Bounds } from 'tools/builtin/select';
-import { applyToPoint, rotateAboutPoint } from '@weasel-js/geom';
+import { applyToPoint, pointInPath, rotateAboutPoint, strokeHitTest } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR, isPathLike } from 'interactions/actions/resize/autoPoseDescriptor';
-import { poseRotationOf } from 'features/paths/poseRotation';
-import { pointInPath, strokeHitTest } from 'features/paths/hitTest';
+import { poseRotationOf } from 'core/geometry/poseRotation';
 
 export { isPathLike };
 

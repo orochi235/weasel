@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { pathUnion } from './booleans';
-import { pointInPath } from './hitTest';
+import { pointInPath } from '@weasel-js/geom';
 import type { RectPath, PolygonPath } from './types';
 import { PATH_M, PATH_L, PATH_C, PATH_Z } from './types';
 

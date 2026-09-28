@@ -43,10 +43,10 @@ upstream silently loses the optimization).
 > are a co-equal choice, not a lesser one. See `docs/conventions.md`.
 
 **Query** — `bounds.ts`, `pathDistance.ts`, `unionBoundsPath.ts`. Path
-hit-testing (`hitTest.ts`, `pathHitTest.ts`) lives in `@weasel-js/geom`, and
-the pose-rotation convention (`poseRotation.ts`) in `core/geometry`; the files
-here re-export them, since `core/adapters/arrayAdapter.ts` needs them and core
-may not import from here.
+hit-testing (`pointInPath`, `strokeHitTest`, path vs rect and polygon) lives in
+`@weasel-js/geom`, and the pose-rotation convention in
+`core/geometry/poseRotation.ts`: `core/adapters/arrayAdapter.ts` needs both,
+and core may not import from here.
 
 **Transform** — `transform.ts`, `transformPath.ts`, `pathInWorld.ts`,
 `poseDescriptor.ts`, `originProjection.ts`

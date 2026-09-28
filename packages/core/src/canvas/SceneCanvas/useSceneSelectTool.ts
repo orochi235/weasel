@@ -7,7 +7,7 @@
 import { useMemo } from 'react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import { pickWalk, scenePickSource, type ViewPickGates } from 'canvas/pickWalk';
-import { pathContainsPoint } from 'features/paths/pathHitTest';
+import { pathContainsPoint } from '@weasel-js/geom';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
 import type { Node, Scene } from 'core/scene/types';

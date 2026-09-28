@@ -13,7 +13,7 @@
  * preview), so every code path produces rotated geometry uniformly.
  */
 import type { DrawCommand } from '../renderer';
-import { poseRotationOf } from 'features/paths/poseRotation';
+import { poseRotationOf } from 'core/geometry/poseRotation';
 import { rotateAboutPoint, type Mat3 } from '@weasel-js/geom';
 
 /** Expand a kernel 6-tuple affine `[a, b, c, d, e, f]` (DOMMatrix order) into
