@@ -210,6 +210,28 @@ describe('round trips in a locale', () => {
   });
 });
 
+describe('duration clock in a locale', () => {
+  it("reads the locale's decimal before a fraction of a second", () => {
+    expect(parseAs('4:05,5', duration(), { locale: 'de-DE' })).toBe(245.5);
+    expect(parseAs('4:05.5', duration(), { locale: 'de-DE' })).toBe(245.5);
+    expect(parseAs('1:02,500', duration(), { locale: 'de-DE' })).toBe(62.5);
+    expect(parseAs('٤:٠٥٫٥', duration(), { locale: 'ar-EG' })).toBe(245.5);
+  });
+
+  it('keeps a comma out of the clock where it is not the decimal', () => {
+    expect(parseAs('4:05,5', duration())).toBeNaN();
+  });
+});
+
+it('reads back what ar-EG shows', () => {
+  for (const display of [decimal({ maxPlaces: 6 }), integer()]) {
+    for (const v of [0.5, 3, 1234.5, -1_234_567]) {
+      const shown = present(v, display, { locale: 'ar-EG' }).text;
+      expect(present(parseAs(shown, display, { locale: 'ar-EG' }), display, { locale: 'ar-EG' }).text).toBe(shown);
+    }
+  }
+});
+
 describe('html', () => {
   it('wraps named parts in data-part spans inside <data value>', () => {
     expect(present(1 / 4, fraction()).html).toBe(

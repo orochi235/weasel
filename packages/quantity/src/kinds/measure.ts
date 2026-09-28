@@ -1,5 +1,5 @@
 import { intlParts, numberPart, plural, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
-import { parseNumber, type UnitTable } from '../number';
+import { decimalOf, escapeClass, latinDigits, parseNumber, type UnitTable } from '../number';
 
 /**
  * Units `Intl` can name aloud, by the symbol a field shows. A unit outside it
@@ -188,9 +188,11 @@ export const durationKind: DisplayKind<DurationDisplay> = {
     return `${negative ? 'minus ' : ''}${terms.join(', ')}`;
   },
   parse: (text, _d, ctx) => {
-    const m = /^\s*([-−+]?)\s*(?:(\d+):)?(\d+):(\d+(?:\.\d+)?)\s*$/.exec(text);
+    const d = escapeClass(decimalOf(ctx.locale));
+    const clock = new RegExp(String.raw`^\s*([-−+]?)\s*(?:(\d+):)?(\d+):(\d+)(?:[.${d}](\d+))?\s*$`);
+    const m = clock.exec(latinDigits(text, ctx.locale));
     if (!m) return parseNumber(text, DURATION_UNITS, ctx.locale);
-    const total = Number(m[2] ?? 0) * 3600 + Number(m[3]) * 60 + Number(m[4]);
+    const total = Number(m[2] ?? 0) * 3600 + Number(m[3]) * 60 + Number(`${m[4]}.${m[5] ?? 0}`);
     return m[1] === '-' || m[1] === '−' ? -total : total;
   },
 };
