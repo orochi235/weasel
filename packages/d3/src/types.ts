@@ -35,6 +35,15 @@ export interface D3Binding<TData, TPose, TPayload = Record<string, unknown>> {
    *  to the declared `.pose()`. Defaults to the same pose (entries snap in). */
   enterFrom(fn: (d: TData, i: number) => TPose): this;
 
+  /** Take over the EXIT set (d3's `join(enter, update, exit)` exit callback).
+   *  Without it, `.join()` removes exiting leaves in its own batch. With it,
+   *  they stay in the scene and `fn` receives them as a selection whose data
+   *  is each node's scene payload — typically to run
+   *  `exit.transition()…remove().end()`. A key that comes back in a later
+   *  join while its node is still exiting cancels that node's pending
+   *  removal and rebinds it as an UPDATE. */
+  exit(fn: (exit: D3Selection<TPayload, TPose>) => void): this;
+
   /** Emit the diff against the scene as one batched op group. Returns the merged
    *  selection (enter + update). Order of the selection matches the order of the
    *  bound `data` array. */
@@ -93,6 +102,10 @@ export interface D3Transition<TData, TPose = unknown> {
    *  with the same name and this one's duration and ease (d3's
    *  `transition.transition()`). Interrupting this one interrupts it too. */
   transition(): D3Transition<TData, TPose>;
+  /** Remove each node from the scene when this transition ends on it (d3's
+   *  `transition.remove()`), as an undoable delete. An interrupted node is
+   *  not removed. */
+  remove(): this;
   end(): Promise<void>;
   interrupt(): void;
 }

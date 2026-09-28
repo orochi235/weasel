@@ -1,6 +1,6 @@
 import { asNodeId, RECT_POSE_DESCRIPTOR } from '@weasel-js/core';
 import type { Animator, NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
-import { createTransition, takeCustomKeys } from './transition';
+import { cancelPendingRemoval, createTransition, takeCustomKeys } from './transition';
 import type {
   BindOptions,
   D3Binding,
@@ -14,7 +14,8 @@ import type {
  * Diff semantics (by `options.key`):
  * - data has key not in scene → ENTER (scene.add)
  * - data has key in scene → UPDATE (scene.setPose + scene.update)
- * - scene has leaf on the target layer with key not in data → EXIT (scene.remove)
+ * - scene has leaf on the target layer with key not in data → EXIT (scene.remove,
+ *   or handed to the `.exit()` callback, which decides when they go)
  *
  * All mutations dispatch through `scene.batch('d3Bind.join', ...)` so one join
  * is one undo entry.
@@ -32,6 +33,7 @@ export function d3Bind<
   let poseFn: ((d: TData, i: number) => TPose) | null = null;
   let dataFn: ((d: TData, i: number) => TPayload) | null = null;
   let enterFromFn: ((d: TData, i: number) => TPose) | null = null;
+  let exitFn: ((exit: D3Selection<TPayload, TPose>) => void) | null = null;
 
   const binding: D3Binding<TData, TPose, TPayload> = {
     pose(fn) {
@@ -44,6 +46,10 @@ export function d3Bind<
     },
     enterFrom(fn) {
       enterFromFn = fn;
+      return binding;
+    },
+    exit(fn) {
+      exitFn = fn;
       return binding;
     },
     join() {
@@ -70,6 +76,9 @@ export function d3Bind<
       for (const node of scene.nodesOnLayer(layer)) {
         if (node.kind === 'leaf' && !dataKeySet.has(node.id)) exitIds.push(node.id);
       }
+      // A node already on its way out stops that exit here: re-entering keys
+      // rebind as UPDATE, and still-absent ones exit afresh.
+      for (const id of [...dataKeys, ...exitIds]) cancelPendingRemoval(scene, id);
 
       // Snapshot prior poses for nodes that will be updated. Captured BEFORE the
       // batch mutates them so `.transition()` can interpolate from prior → new.
@@ -113,10 +122,30 @@ export function d3Bind<
           if (poseFn) scene.setPose(id, poseFn(data[i], i));
           if (dataFn) scene.update(id, { data: dataFn(data[i], i) });
         }
-        for (const id of exitIds) {
-          scene.remove(id);
+        if (!exitFn) {
+          for (const id of exitIds) scene.remove(id);
         }
       });
+
+      if (exitFn) {
+        const exitPoses = new Map<NodeId, TPose>();
+        const exitData: TPayload[] = [];
+        for (const id of exitIds) {
+          const node = scene.get(id)!;
+          exitPoses.set(id, node.pose);
+          exitData.push(node.data as TPayload);
+        }
+        exitFn(
+          createSelection<TPayload, TPose>(
+            scene,
+            exitIds,
+            exitData,
+            exitPoses,
+            options.animator,
+            options.geometry,
+          ),
+        );
+      }
 
       return createSelection<TData, TPose>(
         scene,
