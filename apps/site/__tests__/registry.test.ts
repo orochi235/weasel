@@ -58,9 +58,9 @@ describe('the demo registry', () => {
     expect(wrong.map((d) => d.id)).toEqual([]);
   });
 
-  it('derives categories and packages in first-appearance order, with no duplicates', () => {
+  it('derives categories in first-appearance order and packages by name, with no duplicates', () => {
     expect(CATEGORIES).toEqual([...new Set(DEMOS.flatMap((d) => (d.category ? [d.category] : [])))]);
-    expect(PACKAGES).toEqual([...new Set(DEMOS.flatMap((d) => (d.package ? [d.package] : [])))]);
+    expect(PACKAGES).toEqual([...new Set(DEMOS.flatMap((d) => (d.package ? [d.package] : [])))].sort());
   });
 
   it('renders every demo under exactly one heading', () => {

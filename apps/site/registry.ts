@@ -761,8 +761,8 @@ export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({
 
 export const CATEGORIES = Array.from(new Set(DEMOS.flatMap((d) => (d.category ? [d.category] : []))));
 
-/** Package names (unscoped) that have at least one demo, in registry order. */
-export const PACKAGES = Array.from(new Set(DEMOS.flatMap((d) => (d.package ? [d.package] : []))));
+/** Package names (unscoped) that have at least one demo, sorted by name. */
+export const PACKAGES = Array.from(new Set(DEMOS.flatMap((d) => (d.package ? [d.package] : [])))).sort();
 
 /** The heading a demo is filed under. */
 export function placeOf(d: DemoMeta): string {
