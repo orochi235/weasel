@@ -112,6 +112,7 @@ function FocusedA11y() {
   );
 }
 
+/** The lab aside section showing the focused trial's accessibility audit. */
 export const A11Y_SECTION: LabContribution = {
   id: 'fg-a11y',
   region: 'aside',

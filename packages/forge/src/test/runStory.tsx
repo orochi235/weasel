@@ -44,6 +44,7 @@ function TestTrial({ story, setup, hostRef, onConfig, onRendered, onError }: Tes
   return <StoryTrial story={story} setup={setup} ctx={ctx} hostRef={hostRef} onRendered={onRendered} onError={onError} />;
 }
 
+/** Options for `runStory`. */
 export interface RunStoryOptions {
   /** The frame config (`frameConfig`). */
   setup?: FrameSetup;

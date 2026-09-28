@@ -7,6 +7,7 @@ import type { Decorator, LoadedStory, StoryContext } from '../story/types';
 import { isGlobalsPath, storyConfig } from './globals';
 import { TrialHost } from './TrialHost';
 
+/** Props for `StoryTrial`. */
 export interface StoryTrialProps {
   story: LoadedStory;
   setup: FrameSetup;

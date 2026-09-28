@@ -22,6 +22,7 @@ import { effectiveGlobals, GLOBALS_KEY } from './globals';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { type A11yOutcome, TrialFramesContext } from './trialFrames';
 
+/** Props for `TrialHost`. */
 export interface TrialHostProps {
   layout: Layout;
   setup: FrameSetup;

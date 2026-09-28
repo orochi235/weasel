@@ -101,6 +101,7 @@ export function createTrialFrames(): TrialFrames {
   };
 }
 
+/** The workshop's `TrialFrames`; `null` outside a `Workshop`. */
 export const TrialFramesContext = createContext<TrialFrames | null>(null);
 
 /** The frame of the trial `trialId` names, re-read when it connects or reports. */
