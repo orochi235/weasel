@@ -9,6 +9,7 @@ import { getPaintKind, type FillStyle, type PaintKind } from '@weasel-js/core';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { paintPreviewCss } from '../../paintPreview';
 import { PaintInput } from '../PaintInput';
+import listbox from '../listbox.module.css';
 import s from './PaintField.module.css';
 
 /** Props for {@link PaintField}. `onInput` fires throughout a gesture inside
@@ -79,7 +80,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
       {/* `data-weasel-overlay`: see Select — the popover renders in a portal,
           outside the subtree the trigger sits in. */}
       <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
-        <RACDialog className={s.body} aria-label={ariaLabel ? `${ariaLabel} editor` : 'Paint editor'}>
+        <RACDialog className={`${listbox.surface} ${s.body}`} aria-label={ariaLabel ? `${ariaLabel} editor` : 'Paint editor'}>
           <PaintInput
             value={value}
             mixed={mixed}

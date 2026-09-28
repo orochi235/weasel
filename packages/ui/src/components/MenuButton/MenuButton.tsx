@@ -7,6 +7,7 @@ import {
   Popover as RACPopover,
 } from 'react-aria-components';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import listbox from '../listbox.module.css';
 import s from './MenuButton.module.css';
 import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 
@@ -73,7 +74,7 @@ export function MenuButton<T extends string = string>({
       {/* `data-weasel-overlay`: see Select — the list renders in a portal,
           outside the subtree the trigger sits in. */}
       <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
-        <RACMenu className={s.menu} onAction={(key) => onAction(key as T)}>
+        <RACMenu className={`${listbox.surface} ${listbox.list}`} onAction={(key) => onAction(key as T)}>
           {items.map((item) => (
             <RACMenuItem
               key={item.value}

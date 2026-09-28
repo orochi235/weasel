@@ -782,12 +782,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   drifted: `ComboBox` has no `orientation="row"`, and three of them ignored
   `--wzl-input-surface` until 2026-09-27.
 
-- **(P3) The popover listbox skin is written three times.** `MenuButton`'s `.menu`,
-  `Select`'s `.listbox` and `ComboBox`'s `.listbox` are the same ten declarations, including a
-  literal `0 8px 24px` shadow that `PaintField`'s popover repeats. labkit's
-  `LabSwitcher.less` menu copies `MenuButton`'s menu and items too, with an opaque surface and
-  a different shadow; its items are links, which `MenuButton` has no way to render yet. One
-  `listbox.module.css`, and a decision on whether the switcher's differences are intended.
+- **(P3) labkit's `LabSwitcher.less` menu is a fork of the weasel-ui popover skin.** It copies
+  `MenuButton`'s menu and items, but with an opaque surface and a different shadow from
+  `components/listbox.module.css`, which `MenuButton`, `Select`, `ComboBox` and `PaintField`
+  share. Decide whether those differences are intended; if not, it wants the shared skin — and
+  its items are links, which `MenuButton` has no way to render yet.
 
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each differs a little
   from the ui component, so swapping changes pixels and needs a call on which look wins:

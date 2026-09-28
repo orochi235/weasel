@@ -16,6 +16,7 @@ import {
 } from 'react-aria-components';
 import { fieldClasses } from '../Field/Field';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import listbox from '../listbox.module.css';
 import s from './ComboBox.module.css';
 
 /**
@@ -163,7 +164,7 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
       <FieldError className={fieldClasses.error}>{errorMessage}</FieldError>
       <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
         <RACListBox
-          className={s.listbox}
+          className={`${listbox.surface} ${listbox.list}`}
           renderEmptyState={() =>
             loadError !== null ? (
               <div className={s.error} role="alert">{errorLabel}</div>
