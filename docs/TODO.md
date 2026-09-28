@@ -1005,12 +1005,11 @@ From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.m
 
 ### d3 integration plugin
 
-**Shipped.** `useSimulation` + d3-force compat (2026-05-16), then the data-join and transition chain in `@weasel-js/d3`: `d3Bind(scene, data, { key, animator }).pose().data().join()` and `.transition().duration().ease().delay().tween().end()`. Note `join()` takes no arguments — enter/update/exit is a diff it performs, not callbacks you pass. Demos: `ForceGraphDemo`, `D3SortableDemo`.
+**Shipped.** `useSimulation` + d3-force compat (2026-05-16), then the data-join and transition chain in `@weasel-js/d3`: `d3Bind(scene, data, { key, animator }).pose().data().join()` and `.transition().duration().ease().delay().pose().tween().end()`, chainable with a further `.transition()`. Note `join()` takes no arguments — enter/update/exit is a diff it performs, not callbacks you pass. Demos: `ForceGraphDemo`, `D3SortableDemo`.
 
 Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 
 - **(P3) Exit transitions.** Fade before remove — schedule the tween, emit Delete on tween end.
-- **(P3) Chained transitions.** `.transition().transition()`; the animator's loop primitive already sequences, the chain just needs to thread it.
 - **(P3) Typed `data` payload.** `.data(fn)` returns `Record<string, unknown>`; the binding could carry the data type through the chain for autocompletion.
 - **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
   (`useWheelZoomTool` / `useHandTool` / `useViewAnimation`; `useDragGesture`).

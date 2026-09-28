@@ -373,3 +373,172 @@ describe('d3Bind transition — delay', () => {
     await endPromise;
   });
 });
+
+describe('d3Bind transition — chained .transition()', () => {
+  type Setup = ReturnType<typeof setupSceneAndAnimator>;
+  const bind = ({ scene, animator }: Setup, data: Datum[]) =>
+    d3Bind(scene.current, data, { key: (d) => d.id, animator: animator.current as Animator })
+      .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
+      .join();
+  const seed = (s: Setup, data: Datum[]) => act(() => void bind(s, data));
+  const x = ({ scene }: Setup, id: string) => scene.current.get(id as never)?.pose.x;
+  const at = (x: number) => () => ({ x, y: 0, width: 10, height: 10 });
+
+  it('starts when the previous one ends and inherits its duration and ease', async () => {
+    const s = setupSceneAndAnimator();
+    seed(s, [{ id: 'a', x: 0 }]);
+    let endPromise!: Promise<void>;
+    act(() => {
+      endPromise = bind(s, [{ id: 'a', x: 100 }])
+        .transition()
+        .duration(1000)
+        .ease(linear)
+        .transition()
+        .pose(at(200))
+        .end();
+    });
+    act(() => s.clock.advance(0));
+    expect(x(s, 'a')).toBeCloseTo(0, 6);
+    act(() => s.clock.advance(500));
+    expect(x(s, 'a')).toBeCloseTo(50, 4);
+    act(() => s.clock.advance(500));
+    expect(x(s, 'a')).toBeCloseTo(100, 4);
+    act(() => s.clock.advance(500));
+    expect(x(s, 'a')).toBeCloseTo(150, 4);
+    act(() => s.clock.advance(500));
+    expect(x(s, 'a')).toBeCloseTo(200, 6);
+    await endPromise;
+  });
+
+  it('lets the chained transition override duration and ease', () => {
+    const s = setupSceneAndAnimator();
+    seed(s, [{ id: 'a', x: 0 }]);
+    const easeQuad = vi.fn((t: number) => t * t);
+    act(() => {
+      bind(s, [{ id: 'a', x: 100 }])
+        .transition()
+        .duration(1000)
+        .ease(linear)
+        .transition()
+        .duration(200)
+        .ease(easeQuad)
+        .pose(at(200))
+        .end();
+    });
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(1000));
+    expect(x(s, 'a')).toBeCloseTo(100, 4);
+    act(() => s.clock.advance(100));
+    expect(x(s, 'a')).toBeCloseTo(125, 4);
+    expect(easeQuad).toHaveBeenCalled();
+    act(() => s.clock.advance(100));
+    expect(x(s, 'a')).toBeCloseTo(200, 6);
+  });
+
+  it('runs a chained transition without its own .end() once the chain starts', () => {
+    const s = setupSceneAndAnimator();
+    seed(s, [{ id: 'a', x: 0 }]);
+    const apply = vi.fn();
+    act(() => {
+      const first = bind(s, [{ id: 'a', x: 100 }]).transition().duration(100).ease(linear);
+      first.transition().tween({ name: 'fade', from: () => 1, to: () => 0, apply });
+      first.end();
+    });
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(100));
+    act(() => s.clock.advance(100));
+    expect(apply).toHaveBeenLastCalledWith({ id: 'a', x: 100 }, 'a', 0);
+  });
+
+  it('sequences per element, so a staggered chain stays staggered', async () => {
+    const s = setupSceneAndAnimator();
+    seed(s, [
+      { id: 'a', x: 0 },
+      { id: 'b', x: 0 },
+    ]);
+    const onEnd = vi.fn();
+    let endPromise!: Promise<void>;
+    act(() => {
+      endPromise = bind(s, [
+        { id: 'a', x: 100 },
+        { id: 'b', x: 100 },
+      ])
+        .transition()
+        .duration(100)
+        .ease(linear)
+        .delay((_d, i) => i * 1000)
+        .transition()
+        .pose(at(300))
+        .on('end', onEnd)
+        .end();
+    });
+    act(() => s.clock.advance(100));
+    act(() => s.clock.advance(100));
+    // a's second stage is done while b is still waiting out its delay.
+    expect(x(s, 'a')).toBeCloseTo(300, 4);
+    expect(x(s, 'b')).toBeCloseTo(0, 4);
+    expect(onEnd).not.toHaveBeenCalled();
+    await new Promise((r) => setTimeout(r, 1100));
+    act(() => s.clock.advance(100));
+    act(() => s.clock.advance(100));
+    expect(x(s, 'b')).toBeCloseTo(300, 4);
+    await endPromise;
+    expect(onEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires start on the chained transition when it begins, not when the chain does', () => {
+    const s = setupSceneAndAnimator();
+    seed(s, [{ id: 'a', x: 0 }]);
+    const onStart = vi.fn();
+    act(() => {
+      bind(s, [{ id: 'a', x: 100 }])
+        .transition()
+        .duration(100)
+        .transition()
+        .pose(at(200))
+        .on('start', onStart)
+        .end();
+    });
+    expect(onStart).not.toHaveBeenCalled();
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(100));
+    expect(onStart).toHaveBeenCalledTimes(1);
+  });
+
+  it('interrupting a transition cancels the ones chained after it', async () => {
+    const s = setupSceneAndAnimator();
+    seed(s, [{ id: 'a', x: 0 }]);
+    const onEnd = vi.fn();
+    const onInterrupt = vi.fn();
+    let first!: ReturnType<ReturnType<ReturnType<typeof d3Bind>['join']>['transition']>;
+    let secondEnd!: Promise<void>;
+    act(() => {
+      first = bind(s, [{ id: 'a', x: 100 }]).transition().duration(1000).ease(linear);
+      secondEnd = first
+        .transition()
+        .pose(at(200))
+        .on('end', onEnd)
+        .on('interrupt', onInterrupt)
+        .end();
+    });
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(500));
+    act(() => first.interrupt());
+    act(() => s.clock.advance(2000));
+    expect(x(s, 'a')).toBeCloseTo(50, 4);
+    await secondEnd;
+    expect(onEnd).not.toHaveBeenCalled();
+    expect(onInterrupt).toHaveBeenCalledTimes(1);
+  });
+
+  it('a transition-level .pose() retargets the first transition too', () => {
+    const s = setupSceneAndAnimator();
+    seed(s, [{ id: 'a', x: 0 }]);
+    act(() => {
+      bind(s, [{ id: 'a', x: 100 }]).transition().duration(100).ease(linear).pose(at(40)).end();
+    });
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(100));
+    expect(x(s, 'a')).toBeCloseTo(40, 6);
+  });
+});
