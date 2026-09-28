@@ -126,6 +126,12 @@ describe('SelectionPanel — the text style', () => {
       expect(button('Superscript')).toHaveAttribute('aria-pressed', 'false');
     });
 
+    // Different stored values, one reading: both are upright.
+    it('reads an encoded flag per node, not off the stored values', () => {
+      renderText({ fontStyle: 'normal', fontSize: 12 }, { fontSize: 30 });
+      expect(button('Italic')).toHaveAttribute('aria-pressed', 'false');
+    });
+
     it('marks both scripts mixed when the nodes disagree on one', () => {
       renderText({ script: 'super' }, {});
       expect(button('Superscript')).toHaveAttribute('aria-pressed', 'mixed');

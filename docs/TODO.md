@@ -706,15 +706,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   tagged ones; and nothing styles the `data-part` spans the HTML form emits, so `PropertyField`
   still draws its suffix from its own `unit` prop.
 
-- **(P3) An encoded field of an object leaf reads and writes without its siblings across a
-  mixed selection.** `SelectionPanel` reports and writes an object leaf's fields per node, but a
-  field whose `encoding` needs the rest of the object — a stroke's dash style, which is a multiple
-  of that stroke's width — is handed no siblings when the selected objects differ. So two strokes
-  at different widths show no dash style, and choosing Dashed writes one array computed for no
-  width into both. The fix is to pass the encoding each node's own object, through
-  `PropertyRenderContext.update`, rather than the one aggregated object that a mixed selection
-  does not have.
-
 - **(P2) `arrayAdapter`'s marquee and lasso still test bounding boxes.** `sceneToAdapter`'s
   both run the live silhouette hit-test; `arrayAdapter`'s `hitTestArea` (bounds, or the
   descriptor's `intersectsRect`) and `hitTestLasso` (bounds only) cannot: it sits in `core/`,
