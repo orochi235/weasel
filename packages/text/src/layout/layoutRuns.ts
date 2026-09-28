@@ -95,6 +95,7 @@ export interface LaidOutOutlineGlyph {
   scale: number;
 }
 
+/** Glyphs that share a resolved face, glyph source and paint — one draw call's worth. */
 export interface LaidOutGroup {
   /** Resolved atlas family — may differ from the requested family when the
    *  cross-family fallback policy substituted a default. This is what the
@@ -216,6 +217,7 @@ export interface LaidOutLineBox {
   srcEnd: number;
 }
 
+/** What {@link layoutRuns} returns. Every coordinate is relative to the text's own top-left. */
 export interface LaidOutRuns {
   groups: LaidOutGroup[];
   /** Decoration rules, in line order; within a span, underline then
@@ -264,6 +266,7 @@ function atlasMetrics(font: BmFont): MetricsSource {
   };
 }
 
+/** Options for {@link layoutRuns}. */
 export interface LayoutRunsOpts {
   /** Wrap width. `Infinity` never wraps. */
   maxWidth: number;
@@ -567,6 +570,10 @@ export function _resetNoMetricsWarningsForTests(): void {
   warnedNoMetrics.clear();
 }
 
+/**
+ * Lay out `runs` into draw groups, decoration rules and line boxes. Wrapping,
+ * baselines, tracking and decorations follow the rules in this file's module doc.
+ */
 export function layoutRuns(
   runs: readonly ResolvedRun[],
   opts: LayoutRunsOpts,
