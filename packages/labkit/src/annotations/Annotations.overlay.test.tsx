@@ -15,6 +15,7 @@ import { TrialIdProvider } from '../state/context';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
 import type { SurfaceClear, SurfaceHandle } from '../surface/useTiledSurface';
 import { useTiledSurface } from '../surface/useTiledSurface';
+import { insertedGeometry } from './AnnotationOverlay';
 import { AnnotationTargets } from './AnnotationTargets';
 import { createAnnotationStore } from './store';
 import type { AnnotationsCapability, AnnotationTarget } from './types';
@@ -352,5 +353,35 @@ describe('two trials of one instrument', () => {
       '0px',
       '500px',
     ]);
+  });
+});
+
+describe('the geometry a drawn mark is inserted with', () => {
+  it("boxes a line's ends and stores them against that box", () => {
+    const got = insertedGeometry({ kind: 'line', a: { x: 10, y: 40 }, b: { x: 50, y: 20 } });
+    expect(got).toEqual({
+      pose: { x: 10, y: 20, width: 40, height: 20 },
+      shape: [
+        { x: 0, y: 1 },
+        { x: 1, y: 0 },
+      ],
+    });
+  });
+
+  it('boxes every freehand sample', () => {
+    const samples = [
+      { x: 0, y: 0 },
+      { x: 20, y: 10 },
+      { x: 40, y: 0 },
+    ];
+    expect(insertedGeometry({ kind: 'pencil', samples })?.shape).toEqual([
+      { x: 0, y: 0 },
+      { x: 0.5, y: 1 },
+      { x: 1, y: 0 },
+    ]);
+  });
+
+  it('leaves a box-shaped insert to its drag bounds', () => {
+    expect(insertedGeometry({ kind: 'rect' })).toBeUndefined();
   });
 });

@@ -31,12 +31,7 @@ export function createMarkDrawOne(
   view: View,
 ) => DrawCommand[] {
   return (node, pose, view) =>
-    markCommands(
-      { pose, data: node.data },
-      opts.content,
-      resolveMarkStyle(node.data, opts),
-      view.scale,
-    );
+    markCommands({ pose, data: node.data }, resolveMarkStyle(node.data, opts), view.scale);
 }
 
 /** How a mark looks, as opposed to where it is. Separate from the callback

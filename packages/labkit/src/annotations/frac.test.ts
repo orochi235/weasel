@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { fracContains, fracEncloses, fracToWorld, roundFrac, worldToFrac } from './frac';
+import {
+  boundsOf,
+  fracContains,
+  fracEncloses,
+  fracToWorld,
+  fromShape,
+  roundFrac,
+  toShape,
+  worldToFrac,
+} from './frac';
 import type { FracRect } from './types';
 
 const CONTENT = { w: 256, h: 170 };
@@ -62,5 +71,32 @@ describe('fraction hit geometry', () => {
     expect(fracEncloses({ x: 0, y: 0, w: 1, h: 1 }, box)).toBe(true);
     // Overlapping is not containing: a marquee takes what it encloses.
     expect(fracEncloses({ x: 0.4, y: 0.4, w: 0.4, h: 0.4 }, box)).toBe(false);
+  });
+});
+
+describe('a shape', () => {
+  const pts = [
+    { x: 0.1, y: 0.6 },
+    { x: 0.6, y: 0.2 },
+  ];
+
+  it('round-trips through the box that bounds it', () => {
+    const box = boundsOf(pts);
+    const back = fromShape(toShape(pts, box), box);
+    back.forEach((p, i) => {
+      expect(p.x).toBeCloseTo(pts[i]?.x ?? Number.NaN, 9);
+      expect(p.y).toBeCloseTo(pts[i]?.y ?? Number.NaN, 9);
+    });
+  });
+
+  it('puts every point on the edge of an axis the box has no extent along', () => {
+    const flat = [
+      { x: 0.1, y: 0.5 },
+      { x: 0.4, y: 0.5 },
+    ];
+    expect(toShape(flat, boundsOf(flat))).toEqual([
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+    ]);
   });
 });

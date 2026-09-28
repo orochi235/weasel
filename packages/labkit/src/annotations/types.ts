@@ -22,8 +22,8 @@ export interface FracRect {
 }
 
 /** What shape a mark is. The kinds map onto weasel's own tools; an arrow is a
- *  line carrying an end marker, not a separate geometry. A point holds one
- *  entry in `points` and zero-size bounds at that position. */
+ *  line carrying an end marker, not a separate geometry. A point is zero-size
+ *  bounds at its position. */
 export type AnnotationKind = 'stroke' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'text' | 'point';
 
 /** One selectable status in an instrument's meaning tier. */
@@ -47,8 +47,11 @@ export interface AnnotationData {
   target: string;
   kind: AnnotationKind;
   /** Vertices for the kinds a bounding box cannot describe — a line's two
-   *  ends, a stroke's path. In fractions, like the bounds. */
-  points?: readonly FracPoint[];
+   *  ends, a stroke's path — in fractions of the mark's own bounds, so moving
+   *  or resizing the bounds carries them along. A point stores none: it is its
+   *  bounds' origin. `Annotation.points` is this restated in the target's
+   *  content box. */
+  shape?: readonly FracPoint[];
   title?: string;
   status?: string;
   tags?: readonly string[];
@@ -61,10 +64,13 @@ export interface AnnotationData {
 
 /** A mark, as the store reports it. `id` is `<target>/<node>`: one scene per
  *  target means a node id is only unique within one. */
-export interface Annotation extends AnnotationData {
+export interface Annotation extends Omit<AnnotationData, 'shape'> {
   id: string;
   /** Bounds in fractions of the target's content box. */
   frac: FracRect;
+  /** Vertices in fractions of the target's content box, wherever the bounds
+   *  now are. A point's one entry is its bounds' origin. */
+  points?: readonly FracPoint[];
 }
 
 /** A new mark, before the store gives it an id and dates it. */
@@ -72,6 +78,8 @@ export interface AnnotationInit {
   target: string;
   kind: AnnotationKind;
   frac: FracRect;
+  /** In the target's content box. Stored relative to `frac`, so they should
+   *  lie inside it; a point takes its position from `frac` alone. */
   points?: readonly FracPoint[];
   title?: string;
   status?: string;
@@ -89,7 +97,8 @@ export interface AnnotationQuery {
 }
 
 /** What a mark's meaning can be patched to. Geometry moves through `frac` /
- *  `points`; everything else is the meaning tier. */
+ *  `points`; everything else is the meaning tier. `frac` alone carries the
+ *  vertices with it; `points` alone moves the bounds to enclose them. */
 export type AnnotationPatch = Partial<
   Pick<Annotation, 'frac' | 'points' | 'title' | 'status' | 'tags' | 'meta'>
 >;

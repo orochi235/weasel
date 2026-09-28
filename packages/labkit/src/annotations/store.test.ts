@@ -1,6 +1,8 @@
+import { asNodeId } from '@weasel-js/core';
 import { describe, expect, it, vi } from 'vitest';
+import { markCommands } from './paint';
 import { annotationsFromJSON, createAnnotationStore } from './store';
-import type { AnnotationInit, AnnotationTargetInfo } from './types';
+import type { AnnotationInit, AnnotationsApi, AnnotationTargetInfo, FracPoint } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
   { id: 'naive', content: { w: 256, h: 170 }, positionDependsOn: ['angle', 'shading'] },
@@ -292,6 +294,134 @@ describe('the annotation store', () => {
     });
     expect(svg).not.toContain('#111111');
     expect(svg).toContain('#222222');
+  });
+});
+
+/** What a target's first mark draws, as its path's points in fractions of the
+ *  content box — the drawn side, to hold against what the store hit-tests. */
+function drawn(store: AnnotationsApi, target = 'naive'): FracPoint[] {
+  const { w, h } = TARGETS.find((t) => t.id === target)?.content ?? { w: 0, h: 0 };
+  const [painted] = store.paintedMarks(target);
+  if (!painted) throw new Error('no mark painted');
+  const [cmd] = markCommands(painted.mark, painted.style);
+  if (cmd?.kind !== 'path') throw new Error('expected a path command');
+  const coords = [...((cmd.path as { coords?: Float32Array }).coords ?? [])];
+  const out: FracPoint[] = [];
+  for (let i = 0; i < coords.length; i += 2) {
+    out.push({ x: (coords[i] ?? 0) / w, y: (coords[i + 1] ?? 0) / h });
+  }
+  return out;
+}
+
+const centerOf = (pts: FracPoint[]): FracPoint => {
+  const xs = pts.map((p) => p.x);
+  const ys = pts.map((p) => p.y);
+  return {
+    x: (Math.min(...xs) + Math.max(...xs)) / 2,
+    y: (Math.min(...ys) + Math.max(...ys)) / 2,
+  };
+};
+
+const expectNear = (got: readonly FracPoint[], want: readonly FracPoint[]) => {
+  expect(got).toHaveLength(want.length);
+  got.forEach((p, i) => {
+    expect(p.x).toBeCloseTo(want[i]?.x ?? Number.NaN, 3);
+    expect(p.y).toBeCloseTo(want[i]?.y ?? Number.NaN, 3);
+  });
+};
+
+describe('a moved mark', () => {
+  const POINT: AnnotationInit = {
+    target: 'naive',
+    kind: 'point',
+    frac: { x: 0.25, y: 0.5, w: 0, h: 0 },
+    points: [{ x: 0.25, y: 0.5 }],
+  };
+  const LINE: AnnotationInit = {
+    target: 'naive',
+    kind: 'line',
+    frac: { x: 0.1, y: 0.2, w: 0.5, h: 0.4 },
+    points: [
+      { x: 0.1, y: 0.6 },
+      { x: 0.6, y: 0.2 },
+    ],
+  };
+
+  it('draws a point where the store hit-tests it after update moves it', () => {
+    const store = makeStore();
+    const id = store.add(POINT);
+    store.update(id, { frac: { x: 0.75, y: 0.25, w: 0, h: 0 } });
+
+    expectNear([centerOf(drawn(store))], [{ x: 0.75, y: 0.25 }]);
+    expect(store.hitTest('naive', { x: 0.75, y: 0.25 }, 0.001).map((a) => a.id)).toEqual([id]);
+    expect(store.get(id)?.points).toEqual([{ x: 0.75, y: 0.25 }]);
+  });
+
+  it('carries a line and a stroke along with their bounds', () => {
+    for (const kind of ['line', 'arrow', 'stroke'] as const) {
+      const store = makeStore();
+      const id = store.add({ ...LINE, kind });
+      store.update(id, { frac: { x: 0.3, y: 0.3, w: 0.5, h: 0.4 } });
+      const moved = [
+        { x: 0.3, y: 0.7 },
+        { x: 0.8, y: 0.3 },
+      ];
+      expectNear(drawn(store), moved);
+      expect(store.get(id)?.points).toEqual(moved);
+    }
+  });
+
+  it('stretches stored vertices with a resized box', () => {
+    const store = makeStore();
+    const id = store.add(LINE);
+    store.update(id, { frac: { x: 0.1, y: 0.2, w: 0.25, h: 0.8 } });
+    expectNear(drawn(store), [
+      { x: 0.1, y: 1 },
+      { x: 0.35, y: 0.2 },
+    ]);
+  });
+
+  it('follows a pose written straight to the scene, the way the pane moves a mark', () => {
+    const store = makeStore();
+    const id = store.add(POINT);
+    const node = asNodeId(id.slice(id.lastIndexOf('/') + 1));
+    store.sceneFor('naive').setPose(node, { x: 0.5 * 256, y: 0.1 * 170, width: 0, height: 0 });
+
+    expectNear([centerOf(drawn(store))], [{ x: 0.5, y: 0.1 }]);
+    expect(store.get(id)?.points).toEqual([{ x: 0.5, y: 0.1 }]);
+  });
+
+  it('moves the bounds when only the points are patched', () => {
+    const store = makeStore();
+    const id = store.add(POINT);
+    store.update(id, { points: [{ x: 0.9, y: 0.9 }] });
+
+    expect(store.get(id)?.frac).toEqual({ x: 0.9, y: 0.9, w: 0, h: 0 });
+    expectNear([centerOf(drawn(store))], [{ x: 0.9, y: 0.9 }]);
+  });
+
+  it('reads points a store saved in content fractions, before they followed the bounds', () => {
+    const legacy = {
+      version: 1,
+      scenes: {
+        naive: {
+          version: 1,
+          systemLayers: [{ id: 'marks' }],
+          nodes: [
+            {
+              id: 'n1',
+              kind: 'leaf',
+              layer: 'marks',
+              pose: { x: 0.1 * 256, y: 0.2 * 170, width: 0.5 * 256, height: 0.4 * 170 },
+              data: { target: 'naive', kind: 'line', points: LINE.points },
+            },
+          ],
+        },
+      },
+    };
+    const store = annotationsFromJSON(legacy, () => TARGETS);
+    expectNear(drawn(store), LINE.points ?? []);
+    expect(store.get('naive/n1')?.points).toEqual(LINE.points);
   });
 });
 

@@ -65,3 +65,38 @@ export function fracEncloses(outer: FracRect, inner: FracRect): boolean {
     inner.y + inner.h <= outer.y + outer.h
   );
 }
+
+/** The smallest box holding every point — zero-size for a single one. */
+export function boundsOf(points: readonly FracPoint[]): FracRect {
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+}
+
+/** Points restated as fractions of `box` itself, so they move and stretch with
+ *  it. Unit-agnostic: `points` and `box` only have to share one. A box with no
+ *  width or height puts every point on its edge along that axis. */
+export function toShape(points: readonly FracPoint[], box: FracRect): FracPoint[] {
+  return points.map((p) => ({
+    x: box.w === 0 ? 0 : (p.x - box.x) / box.w,
+    y: box.h === 0 ? 0 : (p.y - box.y) / box.h,
+  }));
+}
+
+/** `toShape`'s inverse: a shape placed in `box`, in `box`'s units. */
+export function fromShape(shape: readonly FracPoint[], box: FracRect): FracPoint[] {
+  return shape.map((s) => ({ x: box.x + s.x * box.w, y: box.y + s.y * box.h }));
+}
+
+/** A world rect as the `{ x, y, w, h }` the shape helpers take. */
+export const boxOf = (r: WorldRect): FracRect => ({ x: r.x, y: r.y, w: r.width, h: r.height });
+
+const roundPoint = (p: FracPoint): FracPoint => ({
+  x: Math.round(p.x * DP) / DP,
+  y: Math.round(p.y * DP) / DP,
+});
+
+/** `roundFrac` for points. */
+export const roundPoints = (pts: readonly FracPoint[]): FracPoint[] => pts.map(roundPoint);

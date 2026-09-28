@@ -9,8 +9,8 @@ import {
   rectPath,
   textCommand,
 } from '@weasel-js/core';
-import type { WorldRect } from './frac';
-import type { AnnotationData, FracPoint } from './types';
+import { boxOf, fromShape, type WorldRect } from './frac';
+import type { AnnotationData } from './types';
 
 /** One loud color, not a themed one: a mark sits over the instrument's own
  *  picture and has to be legible against whatever that picture is. */
@@ -41,16 +41,11 @@ export interface MarkStyle {
   stale?: boolean;
 }
 
-const toWorld = (p: FracPoint, content: { w: number; h: number }) => ({
-  x: p.x * content.w,
-  y: p.y * content.h,
-});
-
-/** A mark's stored vertices in world units, or the pose's diagonal — a stored
- *  mark whose `points` did not survive still has to draw somewhere. */
-function vertices(m: PaintableMark, content: { w: number; h: number }): { x: number; y: number }[] {
-  const stored = m.data.points;
-  if (stored && stored.length >= 2) return stored.map((p) => toWorld(p, content));
+/** A mark's stored vertices placed in its pose, or the pose's diagonal — a
+ *  stored mark whose `shape` did not survive still has to draw somewhere. */
+function vertices(m: PaintableMark): { x: number; y: number }[] {
+  const stored = m.data.shape;
+  if (stored && stored.length >= 2) return fromShape(stored, boxOf(m.pose));
   const { x, y, width, height } = m.pose;
   return [
     { x, y },
@@ -70,9 +65,9 @@ function polyline(points: { x: number; y: number }[]): Path {
 /**
  * What one mark draws, in its target's world.
  *
- * Pure: a node and the target's content box in, draw commands out. Geometry
- * that a bounding box cannot describe — a line's ends, a stroke's path — comes
- * from `data.points`, which is in fractions like the bounds.
+ * Pure: a node in, draw commands out, in its target's world. Geometry that a
+ * bounding box cannot describe — a line's ends, a stroke's path — comes from
+ * `data.shape`, placed in the pose.
  *
  * `scale` is the view's, world to screen. Only a point reads it — its ring is
  * sized in screen pixels — and the default draws that ring as though a world
@@ -80,7 +75,6 @@ function polyline(points: { x: number; y: number }[]): Path {
  */
 export function markCommands(
   m: PaintableMark,
-  content: { w: number; h: number },
   style: MarkStyle = {},
   scale: View['scale'] = UNIT_SCALE,
 ): DrawCommand[] {
@@ -101,19 +95,18 @@ export function markCommands(
     case 'ellipse':
       return [{ kind: 'path', path: ellipsePath(m.pose), stroke }];
     case 'line': {
-      const [a, b] = vertices(m, content);
+      const [a, b] = vertices(m);
       return [{ kind: 'path', path: linePath(a, b), stroke }];
     }
     case 'arrow': {
-      const [a, b] = vertices(m, content);
+      const [a, b] = vertices(m);
       // The spec's arrow: a line carrying an end marker, not its own geometry.
       return [{ kind: 'path', path: linePath(a, b), stroke: { ...stroke, markerEnd: 'arrow' } }];
     }
     case 'stroke':
-      return [{ kind: 'path', path: polyline(vertices(m, content)), stroke }];
+      return [{ kind: 'path', path: polyline(vertices(m)), stroke }];
     case 'point': {
-      const stored = m.data.points?.[0];
-      const c = stored ? toWorld(stored, content) : { x: m.pose.x, y: m.pose.y };
+      const c = { x: m.pose.x, y: m.pose.y };
       const r = pxExtent(POINT_RADIUS_PX, scale);
       const ring = { x: c.x - r.x, y: c.y - r.y, width: 2 * r.x, height: 2 * r.y };
       const px = 1 / meanScale(scale);
@@ -160,9 +153,8 @@ export const POINT_MARK_SHAPE: NodeShapeEntry<AnnotationData, WorldRect> = {
   matches: (node) =>
     node.layer === 'marks' && node.data?.kind === 'point' && typeof node.data.target === 'string',
   // The overlay paints through its own draw callback. This is for a scene
-  // drawn without one, which has no content box to place a stored point in.
-  paint: (node, pose) =>
-    markCommands({ pose, data: { ...node.data, points: undefined } }, { w: 0, h: 0 }),
+  // drawn without one.
+  paint: (node, pose) => markCommands({ pose, data: node.data }),
   silhouette: (_node, pose) => rectPath(pose.x, pose.y, 0, 0),
   // Filled, so a click inside the ring lands on it as it would on a handle.
   ink: (_node, _pose, ctx) => {

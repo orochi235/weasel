@@ -67,9 +67,8 @@ function toSvgNode(cmd: DrawCommand, m: PaintableMark): SvgNode {
  */
 export function markSvgNodes(
   m: PaintableMark,
-  content: { w: number; h: number },
   style: MarkStyle = {},
   scale?: View['scale'],
 ): SvgNode[] {
-  return markCommands(m, content, style, scale).map((cmd) => toSvgNode(cmd, m));
+  return markCommands(m, style, scale).map((cmd) => toSvgNode(cmd, m));
 }
