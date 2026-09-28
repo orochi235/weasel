@@ -343,6 +343,40 @@ describe('SceneCanvas views prop', () => {
 
     expect(registry.list().map((r) => r.id)).toEqual(['under', 'over', 'child']);
   });
+
+  it('follows a selection change the surface owns, with no parent re-render', () => {
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    scene.add({ id: 'a' as NodeId, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    let seen: Record<string, unknown> | undefined;
+    const probe: RenderLayer<unknown> = {
+      id: 'probe',
+      label: 'probe',
+      draw: (data) => { seen = data as Record<string, unknown>; return []; },
+    };
+    let registry!: ViewRegistry;
+    function Peek() {
+      const r = useOptionalViewRegistry()!;
+      useEffect(() => { registry = r; }, [r]);
+      return null;
+    }
+    render(
+      <SceneCanvas features={['draw']}
+        scene={scene}
+        layers={{ probe: { layer: probe } }}
+        width={300}
+        height={200}
+      >
+        <CanvasView id="panel" bounds={PANEL} />
+        <Peek />
+      </SceneCanvas>,
+    );
+
+    act(() => { scene.setSelection(['a' as NodeId]); });
+    registry.list()[0]!.layer.draw({}, OUTER, DIMS);
+
+    const chrome = (seen as { getChromeState(): { selection: readonly NodeId[] } }).getChromeState();
+    expect(chrome.selection).toEqual(['a']);
+  });
 });
 
 describe('<CanvasView> chrome', () => {

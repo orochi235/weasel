@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { NodeId } from 'core/scene/types';
 import { dlog } from 'debug/flag';
 
@@ -55,6 +55,10 @@ const NEVER_CHANGES = (): (() => void) => () => {};
  * const selection = useSelection({ mode: 'multi' });
  * const adapter = { ...arrayAdapter({...}), ...selection.adapterMethods };
  * ```
+ *
+ * Returns the same object for the life of the component, so it is safe as a
+ * memo or effect dependency. The calling component re-renders when the
+ * selection changes; key anything derived from the ids on `selection.current`.
  */
 export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
   const { mode = 'single', extend = 'shift', initial = [], lock = false, scene } = opts;
@@ -68,8 +72,6 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
     scene ? () => scene.getSelection() : EMPTY_SNAPSHOT,
   );
 
-  const current = (scene ? fromStore : local) as NodeId[];
-
   // A store that already holds a selection wins: the hook is joining it, not
   // resetting it. In an effect, not during render — the store has other
   // subscribers.
@@ -81,102 +83,51 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
       scene.setSelection([...initialRef.current]);
     }
   }, [scene]);
-  const ref = useRef<NodeId[]>(current);
-  ref.current = current;
-  // Keep the lock flag in a ref so the memoized mutators below don't have to
-  // re-create when it toggles (and reading inside a stable closure is fine).
-  const lockRef = useRef(lock);
-  lockRef.current = lock;
 
-  const get = useCallback(
-    () => (storeRef.current ? (storeRef.current.getSelection() as NodeId[]) : ref.current),
-    [],
-  );
+  const ref = useRef<NodeId[]>(local);
+  ref.current = (scene ? fromStore : local) as NodeId[];
+  const optsRef = useRef({ mode, extend, lock });
+  optsRef.current = { mode, extend, lock };
 
-  const set = useCallback((ids: NodeId[]) => {
-    if (lockRef.current) return;
-    dlog('selection', 'set', { from: ref.current.length, to: ids.length, ids });
-    ref.current = ids;
-    const store = storeRef.current;
-    if (store) store.setSelection(ids);
-    else setLocal(ids);
-  }, []);
-
-  const add = useCallback(
-    (id: NodeId) => {
-      if (mode === 'single') {
-        set([id]);
-        return;
-      }
-      if (get().includes(id)) return;
-      set([...get(), id]);
-    },
-    [get, mode, set],
-  );
-
-  const remove = useCallback(
-    (id: NodeId) => {
-      if (!get().includes(id)) return;
-      set(get().filter((x) => x !== id));
-    },
-    [get, set],
-  );
-
-  const toggle = useCallback(
-    (id: NodeId) => {
-      if (get().includes(id)) {
-        set(get().filter((x) => x !== id));
-      } else {
-        set(mode === 'single' ? [id] : [...get(), id]);
-      }
-    },
-    [get, mode, set],
-  );
-
-  const clear = useCallback(() => {
-    set([]);
-  }, [set]);
-
-  const contains = useCallback((id: NodeId) => get().includes(id), [get]);
-
-  const applyClick = useCallback(
-    (id: NodeId, modifiers: { shift: boolean; meta: boolean; ctrl: boolean }) => {
-      if (mode === 'single') {
-        set([id]);
-        return;
-      }
-      const extending = modifiers[extend];
-      if (extending) {
-        if (get().includes(id)) {
-          set(get().filter((x) => x !== id));
-        } else {
-          set([...get(), id]);
-        }
-      } else {
-        set([id]);
-      }
-    },
-    [get, mode, extend, set],
-  );
-
-  const adapterMethods = useMemo(
-    () => ({
-      getSelection: () => get(),
-      setSelection: (ids: NodeId[]) => set(ids),
-    }),
-    [get, set],
-  );
-
-  return {
-    current,
-    get,
-    set,
-    add,
-    remove,
-    toggle,
-    clear,
-    contains,
-    applyClick,
-    adapterMethods,
-  };
+  const [api] = useState<SelectionApi>(() => {
+    const get = (): NodeId[] =>
+      storeRef.current ? (storeRef.current.getSelection() as NodeId[]) : ref.current;
+    const set = (ids: NodeId[]): void => {
+      if (optsRef.current.lock) return;
+      dlog('selection', 'set', { from: ref.current.length, to: ids.length, ids });
+      ref.current = ids;
+      const store = storeRef.current;
+      if (store) store.setSelection(ids);
+      else setLocal(ids);
+    };
+    const without = (id: NodeId) => get().filter((x) => x !== id);
+    return {
+      get current() { return get(); },
+      get,
+      set,
+      add(id) {
+        if (optsRef.current.mode === 'single') set([id]);
+        else if (!get().includes(id)) set([...get(), id]);
+      },
+      remove(id) {
+        if (get().includes(id)) set(without(id));
+      },
+      toggle(id) {
+        if (get().includes(id)) set(without(id));
+        else set(optsRef.current.mode === 'single' ? [id] : [...get(), id]);
+      },
+      clear() { set([]); },
+      contains: (id) => get().includes(id),
+      applyClick(id, modifiers) {
+        const { mode: m, extend: key } = optsRef.current;
+        if (m === 'multi' && modifiers[key]) set(get().includes(id) ? without(id) : [...get(), id]);
+        else set([id]);
+      },
+      adapterMethods: {
+        getSelection: () => get(),
+        setSelection: (ids: NodeId[]) => set(ids),
+      },
+    };
+  });
+  return api;
 }

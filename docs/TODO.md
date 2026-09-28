@@ -1144,13 +1144,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
     finish when the motion stops rather than when alpha does? A shorter run also closes the
     window for a mid-run drag, which the demo's hint asks for.
 
-- **(P3) `useSelection` returns a new object every render.** A consumer memoizing on
-  `selection` — the natural dep for behaviors that read it — recomputes every render. With
-  those behaviors passed as `selectTool` or `toolOptions`, the tools rebuild each render, and
-  an `onToolsCreated={setTools}` then loops ("Maximum update depth exceeded").
-  `AlignmentGuidesDemo` keys its memo on the stable `selection.get` instead; memoizing the
-  returned API (it changes only with `current`, `mode` or `extend`) removes the trap.
-
 - **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
 
 - **(P2) Two text-edit overlay visual checks fail.** In `tests/visual/text-edit-overlay.spec.ts`,
