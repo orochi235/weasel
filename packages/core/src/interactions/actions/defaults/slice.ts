@@ -1,16 +1,18 @@
 import type { Action } from '@weasel-js/routing';
 import type { SliceDep } from '../depSchema';
-import { ActionDisabledReason } from '@weasel-js/routing';
-import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
+import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
+import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 
 /**
  * @experimental
  * Static descriptor for the `slice` Action.
  *
- * Ongoing drag invoker: tracks a slice line from drag start to current
- * pointer, publishes it as a `'cut'` overlay while the gesture is in flight,
- * and on commit calls `SliceDep.commit(a, b)`. No-ops gracefully when
- * the `slice` dep is absent.
+ * Ongoing drag invoker: tracks the cut while the gesture is in flight,
+ * publishes it as a `'cut'` overlay, and on commit hands it to
+ * `SliceDep.commit(cut)`. No-ops gracefully when the `slice` dep is absent.
+ *
+ * The cut is a straight line from drag start to the pointer by default. With
+ * the binding param `cut: 'freehand'` it is the whole drag trail instead.
  */
 export const sliceAction: Action & { requires: string[] } = {
   id: 'slice',
@@ -20,26 +22,35 @@ export const sliceAction: Action & { requires: string[] } = {
   requires: ['slice'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const dep = ctx.deps['slice'] as SliceDep | undefined;
       const a: Point2 = ctx.drag?.start ?? ctx.world;
       let current: Point2 = ctx.drag?.current ?? ctx.world;
+      let trail: ReadonlyArray<Point2> | undefined;
       let open = true;
+
+      const freehand = () => resolveParams(opts?.params)?.['cut'] === 'freehand';
+      const cut = (): Point2[] =>
+        freehand() && trail && trail.length >= 2
+          ? trail.map((p) => ({ x: p.x, y: p.y }))
+          : [a, current];
 
       return {
         kind: 'slice',
         onMove(moveCtx: InvocationCtx): void {
           current = moveCtx.drag?.current ?? moveCtx.world;
+          trail = moveCtx.drag?.points;
         },
         overlay(): OngoingOverlay | null {
           if (!open) return null;
-          return { kind: 'polyline', points: [a, current], role: 'cut' };
+          return { kind: 'polyline', points: cut(), role: 'cut' };
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           open = false;
           if (reason === 'cancel' || !dep) return;
-          const b: Point2 = endCtx.drag?.current ?? endCtx.world;
-          dep.commit(a, b);
+          current = endCtx.drag?.current ?? endCtx.world;
+          trail = endCtx.drag?.points ?? trail;
+          dep.commit(cut());
         },
       };
     },

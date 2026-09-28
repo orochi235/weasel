@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { computeSliceOps, type SliceLeaf, type WDLeafNode } from './sliceCommit';
-import { rectPath, type NodeId } from '@weasel-js/core';
+import { rectPath, polylineFromPoints, PATH_Z, type NodeId, type PolygonPath } from '@weasel-js/core';
 import { solid, strokeOf } from '@weasel-js/core';
 
 
@@ -50,8 +50,8 @@ describe('computeSliceOps', () => {
     // Slice horizontally across the middle of the 100×100 square.
     const { ops } = computeSliceOps({
       leaves: [leaf],
-      a: { x: -10, y: 50 },
-      b: { x: 110, y: 50 },
+      cut: [{ x: -10, y: 50 },
+        { x: 110, y: 50 }],
       nextId,
     });
 
@@ -82,8 +82,8 @@ describe('computeSliceOps', () => {
     // Slice segment entirely to the right of the square — no crossings.
     const { ops } = computeSliceOps({
       leaves: [leaf],
-      a: { x: 200, y: 0 },
-      b: { x: 200, y: 100 },
+      cut: [{ x: 200, y: 0 },
+        { x: 200, y: 100 }],
       nextId,
     });
 
@@ -107,8 +107,8 @@ describe('computeSliceOps', () => {
 
     const { ops } = computeSliceOps({
       leaves: [leaf],
-      a: { x: -10, y: 50 },
-      b: { x: 110, y: 50 },
+      cut: [{ x: -10, y: 50 },
+        { x: 110, y: 50 }],
       nextId,
     });
 
@@ -137,8 +137,8 @@ describe('computeSliceOps', () => {
 
     const { ops } = computeSliceOps({
       leaves: [leafA, leafB],
-      a: { x: -10, y: 50 },
-      b: { x: 110, y: 50 },
+      cut: [{ x: -10, y: 50 },
+        { x: 110, y: 50 }],
       nextId,
     });
 
@@ -167,11 +167,40 @@ describe('computeSliceOps', () => {
     expect(new Set(insertedIds).size).toBe(4);
   });
 
+  it('an open path is snipped into open pieces rather than closed by the knife', () => {
+    const open = polylineFromPoints([{ x: 0, y: 50 }, { x: 50, y: 0 }, { x: 100, y: 50 }]);
+    const leaf: SliceLeaf = { node: makeLeafNode({ data: { path: open } }), index: 0, worldPath: open };
+    const { ops } = computeSliceOps({ leaves: [leaf], cut: [{ x: -10, y: 30 }, { x: 110, y: 30 }], nextId });
+    const pieces = ops.slice(1).map((o) => (o as { args: { node: WDLeafNode } }).args.node.data.path as PolygonPath);
+    expect(pieces).toHaveLength(3);
+    for (const p of pieces) expect(Array.from(p.commands)).not.toContain(PATH_Z);
+  });
+
+  it('a closed path is still knifed into closed pieces', () => {
+    const leaf: SliceLeaf = { node: makeLeafNode(), index: 0, worldPath: squarePath };
+    const { ops } = computeSliceOps({ leaves: [leaf], cut: [{ x: -10, y: 50 }, { x: 110, y: 50 }], nextId });
+    for (const op of ops.slice(1)) {
+      const p = (op as { args: { node: WDLeafNode } }).args.node.data.path as PolygonPath;
+      expect(Array.from(p.commands)).toContain(PATH_Z);
+    }
+  });
+
+  it('a bent cut splits along every point of it', () => {
+    const leaf: SliceLeaf = { node: makeLeafNode(), index: 0, worldPath: squarePath };
+    const { ops } = computeSliceOps({
+      leaves: [leaf],
+      cut: [{ x: 50, y: -10 }, { x: 50, y: 50 }, { x: 110, y: 50 }],
+      nextId,
+    });
+    const poses = ops.slice(1).map((o) => (o as { args: { node: WDLeafNode } }).args.node.pose);
+    expect(poses).toContainEqual({ x: 50, y: 0, width: 50, height: 50 });
+  });
+
   it('no `selection` arg → nextSelection is null (pure-geometry callers unchanged)', () => {
     const leaf: SliceLeaf = { node: makeLeafNode(), index: 0, worldPath: squarePath };
     const { nextSelection } = computeSliceOps({
       leaves: [leaf],
-      a: { x: -10, y: 50 }, b: { x: 110, y: 50 },
+      cut: [{ x: -10, y: 50 }, { x: 110, y: 50 }],
       nextId,
     });
     expect(nextSelection).toBeNull();
@@ -181,7 +210,7 @@ describe('computeSliceOps', () => {
 describe('computeSliceOps — post-op selection (pieces inherit source state)', () => {
   beforeEach(() => { _idCounter = 0; });
 
-  const horizontalSlice = { a: { x: -10, y: 50 }, b: { x: 110, y: 50 } };
+  const horizontalSlice = { cut: [{ x: -10, y: 50 }, { x: 110, y: 50 }] };
 
   /** Piece ids minted by the inserts, in order. */
   function insertedIds(ops: ReturnType<typeof computeSliceOps>['ops']): string[] {
@@ -257,7 +286,7 @@ describe('computeSliceOps — post-op selection (pieces inherit source state)', 
     const leaf: SliceLeaf = { node: makeLeafNode({ id: 'a' as NodeId }), index: 0, worldPath: squarePath };
     const { ops, nextSelection } = computeSliceOps({
       leaves: [leaf],
-      a: { x: 200, y: 0 }, b: { x: 200, y: 100 }, // misses the square
+      cut: [{ x: 200, y: 0 }, { x: 200, y: 100 }], // misses the square
       nextId,
       selection: ['a'],
     });

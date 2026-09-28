@@ -1,5 +1,7 @@
 import {
-  splitPathBySegment,
+  splitPathByPolyline,
+  snipPathByPolyline,
+  pathToAnchors,
   boundsOfPath,
   createDeleteOp,
   createInsertOp,
@@ -49,8 +51,8 @@ export interface SliceLeaf {
 
 export interface ComputeSliceOpsArgs {
   leaves: readonly SliceLeaf[];
-  a: { x: number; y: number };
-  b: { x: number; y: number };
+  /** The cut, as an open polyline in world space. */
+  cut: ReadonlyArray<{ x: number; y: number }>;
   nextId: () => string;
   /** Current selection ids. When provided AND at least one leaf is sliced,
    *  the op list ends with a `setSelection` op so pieces inherit their
@@ -79,10 +81,13 @@ export interface ComputeSliceResult {
 }
 
 /**
- * Pure function: given crossed scene leaves and a finite slice segment a→b,
- * returns the undoable op list and the post-op selection.
+ * Pure function: given crossed scene leaves and a cut polyline, returns the
+ * undoable op list and the post-op selection.
  *
- * For each leaf whose `worldPath` is properly split by the segment:
+ * A path with an open subpath is snipped along its stroke (scissors); a closed
+ * one is knifed into closed pieces.
+ *
+ * For each leaf whose `worldPath` the cut splits:
  * - emits one `delete` op for the original node (with full node for undo)
  * - emits one `insert` op per resulting piece (preserving fill/stroke/etc.)
  *
@@ -90,7 +95,7 @@ export interface ComputeSliceResult {
  * stays the input selection / null).
  */
 export function computeSliceOps(args: ComputeSliceOpsArgs): ComputeSliceResult {
-  const { leaves, a, b, nextId, selection } = args;
+  const { leaves, cut, nextId, selection } = args;
   const ops: Op[] = [];
 
   const selSet = selection ? new Set(selection) : null;
@@ -101,7 +106,9 @@ export function computeSliceOps(args: ComputeSliceOpsArgs): ComputeSliceResult {
   let sliced = false;
 
   for (const leaf of leaves) {
-    const pieces = splitPathBySegment(leaf.worldPath, a, b);
+    const pieces = hasOpenSubpath(leaf.worldPath)
+      ? snipPathByPolyline(leaf.worldPath, cut)
+      : splitPathByPolyline(leaf.worldPath, cut);
     if (!pieces) continue;
     sliced = true;
 
@@ -131,3 +138,6 @@ export function computeSliceOps(args: ComputeSliceOpsArgs): ComputeSliceResult {
 
   return { ops, nextSelection };
 }
+
+const hasOpenSubpath = (path: Path): boolean =>
+  path.kind === 'polygon' && pathToAnchors(path).closed.some((closed) => !closed);
