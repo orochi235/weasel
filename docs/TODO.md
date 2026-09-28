@@ -941,11 +941,10 @@ From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.m
 
 ### d3 integration plugin
 
-**Shipped.** `useSimulation` + d3-force compat (2026-05-16), then the data-join and transition chain in `@weasel-js/d3`: `d3Bind(scene, data, { key, animator }).pose().data().join()` and `.transition().duration().ease().delay().pose().tween().end()`, chainable with a further `.transition()`. Note `join()` takes no arguments — enter/update/exit is a diff it performs, not callbacks you pass. Demos: `ForceGraphDemo`, `D3SortableDemo`.
+**Shipped.** `useSimulation` + d3-force compat (2026-05-16), then the data-join and transition chain in `@weasel-js/d3`: `d3Bind(scene, data, { key, animator }).pose().data().join()` and `.transition().duration().ease().delay().pose().tween().end()`, chainable with a further `.transition()`. `join()` takes no arguments — enter/update/exit is a diff it performs; `.exit(fn)` on the binding takes over the exit set, and `transition.remove()` deletes each node when its transition ends. Demos: `ForceGraphDemo`, `D3SortableDemo`.
 
 Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 
-- **(P3) Exit transitions.** Fade before remove — schedule the tween, emit Delete on tween end.
 - **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
   (`useWheelZoomTool` / `useHandTool` / `useViewAnimation`; `useDragGesture`).
   Worth building only for d3 semantics the kit genuinely lacks, not for parity —

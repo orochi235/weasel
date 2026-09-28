@@ -80,13 +80,52 @@ export function takeCustomKeys(ns: string): string[] {
   return [...set];
 }
 
+/** Per scene, the nodes a `.remove()` transition will delete when it ends,
+ *  each with the cancel that keeps it. Keyed weakly so a dropped scene takes
+ *  its entries with it. */
+const PENDING_REMOVALS = new WeakMap<object, Map<NodeId, Set<() => void>>>();
+
+function pendingFor(scene: object): Map<NodeId, Set<() => void>> {
+  let map = PENDING_REMOVALS.get(scene);
+  if (!map) {
+    map = new Map();
+    PENDING_REMOVALS.set(scene, map);
+  }
+  return map;
+}
+
+function unregisterRemoval(scene: object, id: NodeId, cancel: () => void): void {
+  const map = PENDING_REMOVALS.get(scene);
+  const set = map?.get(id);
+  if (!map || !set) return;
+  set.delete(cancel);
+  if (set.size === 0) map.delete(id);
+}
+
+/**
+ * @internal Stop every transition chain that would remove `id` when it ends,
+ * for that node only, so the node stays in the scene. The join calls this for
+ * a key that re-enters while its node is still exiting (d3's rebinding of an
+ * exiting element).
+ */
+export function cancelPendingRemoval(scene: object, id: NodeId): void {
+  const set = PENDING_REMOVALS.get(scene)?.get(id);
+  if (!set) return;
+  for (const cancel of [...set]) cancel();
+}
+
 /** One transition in a chain, as the transition chained after it sees it. */
 interface Stage {
+  /** The first transition in this one's chain. */
+  root: Stage;
   schedule(deferReady?: boolean): void;
   /** Run `fn` once item `i` has finished this transition. Never runs if the
    *  transition is interrupted first. */
   whenItemDone(i: number, fn: () => void, defer?: boolean): void;
   interrupt(): void;
+  /** Stop item `i` in this transition and every one chained after it, as if
+   *  it had finished without running what waits on it. */
+  cancelItem(i: number): void;
 }
 
 export function createTransition<TData, TPose>(
@@ -110,6 +149,9 @@ function makeStage<TData, TPose>(
   const onEnd: Array<() => void> = [];
   const onInterrupt: Array<() => void> = [];
   const children: Stage[] = [];
+  let removeOnEnd = false;
+  let removalArmed = false;
+  const removalCancels: Array<[NodeId, () => void]> = [];
 
   let scheduled = false;
   let startFired = false;
@@ -120,16 +162,32 @@ function makeStage<TData, TPose>(
   let itemsLeft = ids.length;
   /** Where the first transition in a chain heads by default: the post-join pose. */
   const joinedPoses = new Map<NodeId, TPose>();
-  /** (namespace, key) pairs this transition put in `LIVE_CUSTOM_KEYS`.
-   *  `handle.cancel()` does not run a tween's `onDone`, so `interrupt()`
+  /** (namespace, key) pairs this transition put in `LIVE_CUSTOM_KEYS`, per
+   *  item. `handle.cancel()` does not run a tween's `onDone`, so a cancel
    *  drains these itself or the keys outlive their tweens. */
-  const spawnedCustom: Array<[string, string]> = [];
+  const spawnedCustom = new Map<number, Array<[string, string]>>();
   let resolveEnd: (() => void) | null = null;
   const endPromise = new Promise<void>((resolve) => {
     resolveEnd = resolve;
   });
-  const handles: AnimationHandle[] = [];
-  const pendingDelays = new Set<ReturnType<typeof setTimeout>>();
+  const handles = new Map<number, AnimationHandle[]>();
+  const pendingDelays = new Map<number, ReturnType<typeof setTimeout>>();
+
+  const stopItem = (i: number): void => {
+    const timer = pendingDelays.get(i);
+    if (timer !== undefined) clearTimeout(timer);
+    pendingDelays.delete(i);
+    for (const h of handles.get(i) ?? []) h.cancel();
+    handles.delete(i);
+    for (const [ns, key] of spawnedCustom.get(i) ?? []) untrackCustomKey(ns, key);
+    spawnedCustom.delete(i);
+  };
+
+  const pushTo = <V>(map: Map<number, V[]>, i: number, v: V): void => {
+    const list = map.get(i) ?? [];
+    list.push(v);
+    map.set(i, list);
+  };
 
   const settleIfDone = (): void => {
     if (itemsLeft === 0 && !endResolved) {
@@ -174,7 +232,9 @@ function makeStage<TData, TPose>(
       const poseFrom = from;
       const poseTo = to;
       jobs.push((done) => {
-        handles.push(
+        pushTo(
+          handles,
+          i,
           ctx.animator.tween<TPose>({
             from: poseFrom,
             to: poseTo,
@@ -194,8 +254,10 @@ function makeStage<TData, TPose>(
       const customKey = `${ns}:${ct.name}`;
       jobs.push((done) => {
         trackCustomKey(ns, customKey);
-        spawnedCustom.push([ns, customKey]);
-        handles.push(
+        pushTo(spawnedCustom, i, [ns, customKey] as [string, string]);
+        pushTo(
+          handles,
+          i,
           ctx.animator.tween({
             from: fromVal,
             to: toVal,
@@ -240,19 +302,37 @@ function makeStage<TData, TPose>(
     const delayMs = delayFn ? Math.max(0, delayFn(d, i)) : 0;
     if (delayMs > 0) {
       const timer = setTimeout(() => {
-        pendingDelays.delete(timer);
+        pendingDelays.delete(i);
         spawn();
       }, delayMs);
-      pendingDelays.add(timer);
+      pendingDelays.set(i, timer);
     } else {
       spawn();
     }
   };
 
+  const armRemoval = (): void => {
+    if (removalArmed || canceled) return;
+    removalArmed = true;
+    ids.forEach((id, i) => {
+      const cancel = (): void => stage.root.cancelItem(i);
+      removalCancels.push([id, cancel]);
+      const set = pendingFor(scene).get(id) ?? new Set<() => void>();
+      set.add(cancel);
+      pendingFor(scene).set(id, set);
+      stage.whenItemDone(i, () => {
+        unregisterRemoval(scene, id, cancel);
+        if (scene.get(id)) scene.remove(id);
+      });
+    });
+  };
+
   const stage: Stage = {
+    root: undefined as unknown as Stage,
     schedule(deferReady = false) {
       if (scheduled || canceled) return;
       scheduled = true;
+      if (removeOnEnd) armRemoval();
       if (!ctx.geometry.lerp) {
         throw new Error(
           'd3Bind.transition: provided geometry has no `lerp` — pass a PoseDescriptor with lerp in BindOptions',
@@ -292,20 +372,30 @@ function makeStage<TData, TPose>(
     interrupt() {
       if (!canceled && !endResolved) {
         canceled = true;
-        for (const timer of pendingDelays) clearTimeout(timer);
-        pendingDelays.clear();
-        for (const h of handles) h.cancel();
-        handles.length = 0;
-        for (const [ns, key] of spawnedCustom) untrackCustomKey(ns, key);
-        spawnedCustom.length = 0;
+        ids.forEach((_, i) => stopItem(i));
         itemWaiters.clear();
+        for (const [id, cancel] of removalCancels) unregisterRemoval(scene, id, cancel);
+        removalCancels.length = 0;
         onInterrupt.forEach((fn) => fn());
         endResolved = true;
         resolveEnd?.();
       }
       for (const child of children) child.interrupt();
     },
+    cancelItem(i) {
+      if (!canceled && !itemDone[i]) {
+        itemDone[i] = true;
+        itemsLeft--;
+        itemWaiters.delete(i);
+        stopItem(i);
+      }
+      const cancel = removalCancels.find(([id]) => id === ids[i])?.[1];
+      if (cancel) unregisterRemoval(scene, ids[i], cancel);
+      for (const child of children) child.cancelItem(i);
+      settleIfDone();
+    },
   };
+  stage.root = parent ? parent.root : stage;
 
   const t: D3Transition<TData, TPose> = {
     duration(ms) {
@@ -353,6 +443,11 @@ function makeStage<TData, TPose>(
     },
     interrupt() {
       stage.interrupt();
+    },
+    remove() {
+      removeOnEnd = true;
+      if (scheduled) armRemoval();
+      return t;
     },
     end() {
       stage.schedule();
