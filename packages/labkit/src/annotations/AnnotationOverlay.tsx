@@ -1,5 +1,6 @@
 import {
   type InsertNodeFactory,
+  registerNodeShape,
   SceneCanvas,
   type SceneCanvasApi,
   useActiveToolContext,
@@ -13,6 +14,7 @@ import type { Rect } from '../surface/rect';
 import { useSurfaceCanvas, useSurfaceOptional, useTileId } from '../surface/useSurfaceTile';
 import { createMarkDrawOne } from './drawOne';
 import type { WorldRect } from './frac';
+import { POINT_MARK_SHAPE } from './paint';
 import { seenFrom } from './staleness';
 import type { MarkScene } from './store';
 import { ANNOTATION_WEASEL_TOOLS, annotationToolInfo } from './toolMap';
@@ -92,6 +94,7 @@ export function AnnotationOverlay({
   const [rect, setRect] = useState<Rect | null>(null);
   const [input, setInput] = useState<HTMLDivElement | null>(null);
   const sceneCanvas = useRef<SceneCanvasApi | null>(null);
+  useEffect(() => registerNodeShape(POINT_MARK_SHAPE, { priority: 'high' }), []);
 
   // Read in the insert factory, which is built once and must see the tool the
   // pane is holding now — `arrow` and `stroke` are indistinguishable from

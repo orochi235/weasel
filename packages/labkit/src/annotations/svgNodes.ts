@@ -1,4 +1,4 @@
-import type { DrawCommand, FillStyle, Stroke } from '@weasel-js/core';
+import type { DrawCommand, FillStyle, Stroke, View } from '@weasel-js/core';
 import type { SvgNode, SvgPaint, SvgStroke } from '@weasel-js/svg';
 import { type MarkStyle, markCommands, type PaintableMark } from './paint';
 
@@ -69,6 +69,7 @@ export function markSvgNodes(
   m: PaintableMark,
   content: { w: number; h: number },
   style: MarkStyle = {},
+  scale?: View['scale'],
 ): SvgNode[] {
-  return markCommands(m, content, style).map((cmd) => toSvgNode(cmd, m));
+  return markCommands(m, content, style, scale).map((cmd) => toSvgNode(cmd, m));
 }

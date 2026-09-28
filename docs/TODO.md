@@ -825,11 +825,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   instrument mounts the lens, and the trial's toolbar toggle finds it through
   context rather than the capability.
 
-- **(P3) labkit `point` marks are sized in world units.** `markCommands` draws the ring at
-  `POINT_RADIUS` world units, so it grows with the picture; a point should hold a fixed screen
-  size like a handle. `markCommands` has no zoom to read — `drawOne` would have to pass it
-  through, or the ring becomes a marker the renderer sizes. Landed 2026-09-25 with the kind.
-
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap and loupe route through weasel's dispatcher (`CameraInput`),
   but dragging a palette item onto a canvas is `useDragDrop`

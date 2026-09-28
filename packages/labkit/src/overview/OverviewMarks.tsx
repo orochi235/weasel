@@ -40,10 +40,19 @@ function elementOf(target: object): HTMLElement | null {
   return (target as { ref?: RefObject<HTMLElement | null> }).ref?.current ?? null;
 }
 
-function markupOf(api: AnnotationsApi, target: string, content: { w: number; h: number }): string {
+function markupOf(
+  api: AnnotationsApi,
+  target: string,
+  content: { w: number; h: number },
+  shown: { w: number; h: number },
+): string {
   const painted = api.paintedMarks(target);
   if (painted.length === 0) return '';
-  const nodes = painted.flatMap(({ mark, style }) => markSvgNodes(mark, content, style));
+  // The document is shown at `shown` px, fitted like any SVG viewBox.
+  const k = Math.min(shown.w / content.w, shown.h / content.h) || 1;
+  const nodes = painted.flatMap(({ mark, style }) =>
+    markSvgNodes(mark, content, style, { x: k, y: k }),
+  );
   return serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: content.w, height: content.h } });
 }
 
@@ -69,7 +78,7 @@ export function OverviewMarks({ fit, camera }: OverviewMarksProps) {
       {api.targets().map((t) => {
         const el = elementOf(t);
         const box = el ? localRectOf(el, camera) : null;
-        const markup = box ? markupOf(api, t.id, t.content) : '';
+        const markup = box ? markupOf(api, t.id, t.content, { w: box.w * s, h: box.h * s }) : '';
         if (!box || !markup) return null;
         const place = {
           ['--lk-overview-mx' as string]: `${(box.x - fit.x) * s}px`,

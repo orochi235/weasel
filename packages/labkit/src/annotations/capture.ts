@@ -60,7 +60,7 @@ function embedRasterBase(
 }
 
 /** Every mark on a scene, as SVG nodes, styled the way the pane styles them. */
-function markNodesOf(scene: MarkScene, draw: MarkDrawOptions) {
+function markNodesOf(scene: MarkScene, draw: MarkDrawOptions, scale: number) {
   return [...scene.renderOrder()].flatMap((id) => {
     const node = scene.get(asNodeId(String(id)));
     if (!node) return [];
@@ -68,6 +68,7 @@ function markNodesOf(scene: MarkScene, draw: MarkDrawOptions) {
       { pose: node.pose, data: node.data as AnnotationData },
       draw.content,
       resolveMarkStyle(node.data as AnnotationData, draw),
+      { x: scale, y: scale },
     );
   });
 }
@@ -99,7 +100,7 @@ export function composeCaptureSvg(args: ComposeSvgArgs): string {
         : embedRasterBase(base, w, h, onWarn);
   // No width/height on the marks document: a nested <svg> without them fills
   // the outer viewport exactly, which is the alignment this relies on.
-  const marksXml = serializeSvg(markNodesOf(scene, draw), {
+  const marksXml = serializeSvg(markNodesOf(scene, draw, scale), {
     viewBox: { x: 0, y: 0, width: w, height: h },
     onWarn,
   });
