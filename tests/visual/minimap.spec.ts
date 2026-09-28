@@ -1,10 +1,14 @@
 /**
  * Linked cursors across the minimap demo's three views.
  *
- * No committed baseline: the demo's scene is random, so the claim is
- * structural — hovering one view changes pixels in each of the others (the
- * crosshair appears there), and leaves them as they were once the pointer
- * goes. `MINIMAP_SHOTS=<dir>` also writes each state as a PNG.
+ * No committed baseline; the claim is structural — hovering one view changes
+ * pixels in each of the others (the crosshair appears there), and leaves them
+ * as they were once the pointer goes. `MINIMAP_SHOTS=<dir>` also writes each
+ * state as a PNG.
+ *
+ * The demo's scene is random and the detached minimap fits it, so where a
+ * hover there lands on the main canvas moves with the scene — sometimes off
+ * the region read, or off the canvas. `seedRandom` pins the scene.
  */
 import { test, expect, type Page } from '@playwright/test';
 
@@ -12,7 +16,8 @@ const DEMO_ID = 'minimap';
 /** From `apps/site/demos/MinimapDemo.tsx`: the main canvas is 600×400 with
  *  the inset at x ∈ [432, 592), y ∈ [8, 120); the detached one is 200×140. */
 const INSET = { x: 432, y: 8, w: 160, h: 112 };
-const MAIN_ONLY = { x: 8, y: 180, w: 400, h: 200 };
+/** The main canvas below the inset. */
+const MAIN_ONLY = { x: 0, y: 124, w: 600, h: 276 };
 
 type Rect = { x: number; y: number; w: number; h: number };
 
@@ -43,7 +48,37 @@ const changed = (a: number[], b: number[]) => {
 async function hoverCanvas(page: Page, index: number, x: number, y: number) {
   const box = (await page.locator('canvas').nth(index).boundingBox())!;
   await page.mouse.move(box.x + x, box.y + y, { steps: 4 });
-  await page.waitForTimeout(150);
+}
+
+/** Replaces `Math.random` with a fixed-seed PRNG (mulberry32) before any page script runs. */
+async function seedRandom(page: Page, seed: number) {
+  await page.addInitScript((seed) => {
+    let a = seed >>> 0;
+    Math.random = () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }, seed);
+}
+
+/** Reads `rect` until two consecutive reads agree, so a baseline is not taken mid-paint. */
+async function settled(page: Page, index: number, rect: Rect | null): Promise<number[]> {
+  let prev = await read(page, index, rect);
+  await expect.poll(async () => {
+    const next = await read(page, index, rect);
+    const n = changed(prev, next);
+    prev = next;
+    return n;
+  }).toBe(0);
+  return prev;
+}
+
+/** Pixels of `rect` differing from `base`, as a poll to assert on. */
+function changedFrom(page: Page, index: number, rect: Rect | null, base: number[]) {
+  return expect.poll(async () => changed(base, await read(page, index, rect)));
 }
 
 async function shoot(page: Page, name: string) {
@@ -52,43 +87,41 @@ async function shoot(page: Page, name: string) {
 }
 
 test(`${DEMO_ID} — the crosshair follows the pointer into every other view`, async ({ page }) => {
+  await seedRandom(page, 1);
   await page.goto(`/#${DEMO_ID}`);
   await page.waitForSelector('canvas');
-  await page.waitForTimeout(600);
   expect(await page.locator('canvas').count()).toBe(2);
 
   await page.mouse.move(2, 2);
-  await page.waitForTimeout(150);
   const idle = {
-    inset: await read(page, 0, INSET),
-    main: await read(page, 0, MAIN_ONLY),
-    detached: await read(page, 1, null),
+    inset: await settled(page, 0, INSET),
+    main: await settled(page, 0, MAIN_ONLY),
+    detached: await settled(page, 1, null),
   };
   await shoot(page, '0-idle');
 
   // Over the main canvas: the crosshair appears in both minimaps.
   await hoverCanvas(page, 0, 200, 250);
+  await changedFrom(page, 0, INSET, idle.inset).toBeGreaterThan(0);
+  await changedFrom(page, 1, null, idle.detached).toBeGreaterThan(0);
   await shoot(page, '1-over-main');
-  expect(changed(idle.inset, await read(page, 0, INSET))).toBeGreaterThan(0);
-  expect(changed(idle.detached, await read(page, 1, null))).toBeGreaterThan(0);
 
   // Over the detached minimap: it appears on the main canvas and in the inset.
   await hoverCanvas(page, 1, 100, 70);
+  await changedFrom(page, 0, MAIN_ONLY, idle.main).toBeGreaterThan(0);
+  await changedFrom(page, 0, INSET, idle.inset).toBeGreaterThan(0);
   await shoot(page, '2-over-detached');
-  expect(changed(idle.main, await read(page, 0, MAIN_ONLY))).toBeGreaterThan(0);
-  expect(changed(idle.inset, await read(page, 0, INSET))).toBeGreaterThan(0);
 
   // Over the inset: on the main canvas and the detached minimap.
   await hoverCanvas(page, 0, INSET.x + INSET.w / 2, INSET.y + INSET.h / 2);
+  await changedFrom(page, 0, MAIN_ONLY, idle.main).toBeGreaterThan(0);
+  await changedFrom(page, 1, null, idle.detached).toBeGreaterThan(0);
   await shoot(page, '3-over-inset');
-  expect(changed(idle.main, await read(page, 0, MAIN_ONLY))).toBeGreaterThan(0);
-  expect(changed(idle.detached, await read(page, 1, null))).toBeGreaterThan(0);
 
   // Gone once the pointer leaves every view.
   await page.mouse.move(2, 2);
-  await page.waitForTimeout(200);
-  expect(changed(idle.inset, await read(page, 0, INSET))).toBe(0);
-  expect(changed(idle.detached, await read(page, 1, null))).toBe(0);
+  await changedFrom(page, 0, INSET, idle.inset).toBe(0);
+  await changedFrom(page, 1, null, idle.detached).toBe(0);
 });
 
 test(`${DEMO_ID} — pressing the inset recenters the main view on that point`, async ({ page }) => {

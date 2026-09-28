@@ -1159,10 +1159,6 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
   "clipped to the canvas, and typing past its edge scrolls nothing" (expected above 972, got
   843) fail on studio's headless Chromium at `7b1bd6df7` and after `a5a69dcc2`. The other
   overlay checks pass, the bottom-aligned one included.
-- **(P3) The minimap crosshair visual check is flaky.** `tests/visual/minimap.spec.ts`'s "the
-  crosshair follows the pointer into every other view" failed 1 run in 4 on studio, before and
-  after `a5a69dcc2` (expected a count above 0, got 0).
-
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have.
 
 - **(P3) `stroke-and-fill` has no visual baseline.** The demo that replaced
