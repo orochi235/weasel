@@ -82,8 +82,8 @@ export interface TimelineTrack {
   timeline: NestedTimeline;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 /** Any track a timeline can hold. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Track = SampledTrack<any> | EventTrack | TimelineTrack;
 
 /** What a child timeline may declare. The parent owns playback, so `loop`,
