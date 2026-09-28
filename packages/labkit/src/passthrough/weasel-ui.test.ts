@@ -20,6 +20,7 @@ import {
   paintGradientTrack,
   RadioGroup,
   RangeSlider,
+  sampleByInterpolation,
   Select,
   Sidebar,
   Slider,
@@ -38,6 +39,7 @@ describe('weasel-ui passthrough', () => {
     expect(typeof useReorderDragList).toBe('function');
     expect(typeof paintGradientTrack).toBe('function');
     expect(typeof oklchToHex).toBe('function');
+    expect(typeof sampleByInterpolation).toBe('function');
     expect(typeof chromaAt).toBe('function');
   });
 

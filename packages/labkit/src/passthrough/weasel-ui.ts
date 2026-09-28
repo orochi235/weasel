@@ -199,6 +199,7 @@ export {
   type StanceProps,
   Switch,
   type SwitchProps,
+  sampleByInterpolation,
   Tab,
   TabList,
   type TabListProps,
