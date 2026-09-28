@@ -65,10 +65,12 @@ export function planeMap(outer: View, opts: ParallaxOpts): PlaneMap {
   };
 }
 
+/** Map a point from the outer view's world into the plane's world. */
 export function toPlane(m: PlaneMap, p: { x: number; y: number }): { x: number; y: number } {
   return { x: p.x * m.scale.x + m.offset.x, y: p.y * m.scale.y + m.offset.y };
 }
 
+/** Map a point from the plane's world back into the outer view's world. */
 export function fromPlane(m: PlaneMap, p: { x: number; y: number }): { x: number; y: number } {
   return { x: (p.x - m.offset.x) / m.scale.x, y: (p.y - m.offset.y) / m.scale.y };
 }

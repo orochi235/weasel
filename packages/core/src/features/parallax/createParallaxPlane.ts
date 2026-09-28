@@ -14,6 +14,8 @@ export interface ParallaxPlane extends ParallaxSource {
   set(patch: Partial<ParallaxOpts>): void;
 }
 
+/** A {@link ParallaxPlane} starting at `initial`. Pass it as a parallax
+ *  layer's `parallax` and write to it to move the plane. */
 export function createParallaxPlane(initial: ParallaxOpts): ParallaxPlane {
   let current: ParallaxOpts = { ...initial };
   const listeners = new Set<() => void>();

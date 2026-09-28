@@ -5,7 +5,7 @@
 import { Project, Node } from 'ts-morph';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = join(ROOT, 'packages');
@@ -36,13 +36,24 @@ const quiet = args.includes('--quiet');
 const exclude = args.includes('--exclude') ? args[args.indexOf('--exclude') + 1].split(',') : [];
 
 /**
- * Public entry source files for a package. The tsup `entry` map is
+ * Public entry source files for a package. A package-level `entries.ts` (the
+ * list both of core's build configs read) wins, then the tsup `entry` map, which is
  * authoritative when present, since it is what actually produces the published
  * bundles; otherwise the `exports` map is walked and each dist path mapped back
  * to its source.
  */
-function entryPoints(pkgDir) {
+async function entryPoints(pkgDir) {
   const files = new Set();
+
+  const entriesPath = join(pkgDir, 'entries.ts');
+  if (existsSync(entriesPath)) {
+    const { entries } = await import(pathToFileURL(entriesPath).href);
+    for (const rel of Object.values(entries)) {
+      const abs = resolve(pkgDir, rel);
+      if (existsSync(abs)) files.add(abs);
+    }
+    return [...files].sort();
+  }
 
   const tsupPath = join(pkgDir, 'tsup.config.ts');
   if (existsSync(tsupPath)) {
@@ -109,7 +120,7 @@ const perPackage = [];
 
 for (const name of packageDirs) {
   const pkgDir = join(ROOT, 'packages', name);
-  const entries = entryPoints(pkgDir);
+  const entries = await entryPoints(pkgDir);
   if (entries.length === 0) { perPackage.push({ pkg: name, entries: 0, total: 0, undocumented: 0, note: 'no resolvable src entry points' }); continue; }
 
   const seen = new Set();
