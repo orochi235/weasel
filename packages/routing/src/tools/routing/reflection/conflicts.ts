@@ -46,6 +46,9 @@ export interface Conflict {
  *  - Two actions whose `eligible` rules can never hold together — each
  *    mode's own Escape exit, say. See {@link rulesExclusive}.
  *
+ *  - Two bindings whose `opts.views` keep them from being live and equally
+ *    ranked in any one view. See {@link viewsTie}.
+ *
  *  Note that two bindings sharing a tuple on the SAME tool are now possible
  *  (bindings are an array, where phase tables were objects with unique
  *  keys) — so a conflict may name one tool twice.
@@ -88,10 +91,12 @@ function findConflictsKeyed(
   }
   // Tools carry no rule, so a tool's bindings count as eligible always.
   const ruleOf = (entry: RegistryEntry): Rule => rules?.get(entry.toolId) ?? ALWAYS;
+  const tie = (e: RegistryEntry, f: RegistryEntry): boolean =>
+    viewsTie(e.views, f.views) && !rulesExclusive(ruleOf(e), ruleOf(f));
   const conflicts: { key: string; conflict: Conflict }[] = [];
   for (const [key, all] of groups) {
-    // Keep only members that could be eligible alongside another member.
-    const bucket = all.filter((e) => all.some((f) => f !== e && !rulesExclusive(ruleOf(e), ruleOf(f))));
+    // Keep only members that could tie with another member.
+    const bucket = all.filter((e) => all.some((f) => f !== e && tie(e, f)));
     if (bucket.length < 2) continue;
     const first = bucket[0];
     conflicts.push({
@@ -107,6 +112,18 @@ function findConflictsKeyed(
     });
   }
   return conflicts;
+}
+
+/** Whether two bindings' `views` let them tie in some view. A binding is live
+ *  only in the views it names, and there it outranks one that names none
+ *  (`preferViewScoped`), so a scoped and an unscoped binding never tie; two
+ *  scoped ones tie where their views overlap. */
+function viewsTie(
+  a: readonly (string | null)[] | undefined,
+  b: readonly (string | null)[] | undefined,
+): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return a.some((v) => b.includes(v));
 }
 
 /** Every arg value an entry buckets under, lowercased — `matchKey` is

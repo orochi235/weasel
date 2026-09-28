@@ -47,6 +47,9 @@ export interface RegistryEntry {
    *  specificity tuple, a `kindOf` predicate identity — read it here rather
    *  than re-walking `Tool.bindings`. */
   spec: GestureSpec;
+  /** The binding's `opts.views`: the views it is live in. Absent when it is
+   *  live in every view. */
+  views?: readonly (string | null)[];
 }
 
 /**
@@ -78,7 +81,9 @@ export function buildRouteRegistry(
   for (const tool of tools) {
     for (const binding of tool.bindings ?? []) {
       const entry = entryFor(tool.id, binding.spec, binding.actionId);
-      if (entry) out.push(entry);
+      if (!entry) continue;
+      const views = binding.opts?.views;
+      out.push(views === undefined ? entry : { ...entry, views });
     }
   }
   return out;

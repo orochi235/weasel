@@ -50,6 +50,23 @@ describe('findConflicts', () => {
     expect(findConflicts([a, b])).toEqual([]);
   });
 
+  it('does NOT flag a view-scoped binding against an unscoped one', () => {
+    // Outside its views the scoped one is not live; inside them it names the
+    // view and outranks the unscoped one. Either way nothing ties.
+    const a = tool('a', [{ spec: { kind: 'drag' }, actionId: 'x', opts: { views: ['mini'] } }]);
+    const b = tool('b', [{ spec: { kind: 'drag' }, actionId: 'y' }]);
+    expect(findConflicts([a, b])).toEqual([]);
+  });
+
+  it('flags two bindings scoped to overlapping views, and not disjoint ones', () => {
+    const a = tool('a', [{ spec: { kind: 'drag' }, actionId: 'x', opts: { views: ['mini', null] } }]);
+    const b = tool('b', [{ spec: { kind: 'drag' }, actionId: 'y', opts: { views: [null] } }]);
+    const c = tool('c', [{ spec: { kind: 'drag' }, actionId: 'z', opts: { views: ['pip'] } }]);
+    const conflicts = findConflicts([a, b, c]);
+    expect(conflicts).toHaveLength(1);
+    expect(conflicts[0].toolIds).toEqual(['a', 'b']);
+  });
+
   it('separates conflicts by phase', () => {
     const a = tool('a', [{ spec: { kind: 'wheel', phase: 'engaged' }, actionId: 'x' }]);
     const b = tool('b', [{ spec: { kind: 'wheel', phase: 'engaged' }, actionId: 'y' }]);
