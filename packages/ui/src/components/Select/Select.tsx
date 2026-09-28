@@ -27,6 +27,7 @@ import {
 import { pastDragThreshold } from '@weasel-js/core';
 import { fieldClasses, type FieldOrientation } from '../Field/Field';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import listbox from '../listbox.module.css';
 import s from './Select.module.css';
 import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 
@@ -244,7 +245,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
             onMeasure={setNudge}
           />
         )}
-        <RACListBox className={s.listbox}>
+        <RACListBox className={`${listbox.surface} ${listbox.list}`}>
           {options !== undefined
             ? options.map((entry, i) =>
                 isGroup(entry) ? (
