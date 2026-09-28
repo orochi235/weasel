@@ -123,7 +123,9 @@ const NO_AUTO: ReadonlySet<string> = new Set();
 function leavesUnder(group: PrefGroup, at: string): [string, unknown][] {
   return Object.entries(group.children).flatMap(([key, child]) => {
     const path = at === '' ? key : `${at}.${key}`;
-    return isPrefLeaf(child) ? [[path, child.default] as [string, unknown]] : leavesUnder(child, path);
+    return isPrefLeaf(child)
+      ? [[path, child.default] as [string, unknown]]
+      : leavesUnder(child, path);
   });
 }
 
@@ -140,7 +142,9 @@ function ResetGroup({
   config: Record<string, unknown>;
   setConfig: (path: string, value: unknown) => void;
 }) {
-  const changed = leavesUnder(group, path).filter(([p, d]) => !Object.is(valueAtPath(config, p), d));
+  const changed = leavesUnder(group, path).filter(
+    ([p, d]) => !Object.is(valueAtPath(config, p), d),
+  );
   return (
     <Button
       iconOnly
@@ -267,7 +271,12 @@ export function ControlPanel<TC extends Record<string, unknown>>({
         span
         actions={
           resolved.resettable?.has(path) ? (
-            <ResetGroup group={found} path={path} config={config as Record<string, unknown>} setConfig={setConfig} />
+            <ResetGroup
+              group={found}
+              path={path}
+              config={config as Record<string, unknown>}
+              setConfig={setConfig}
+            />
           ) : undefined
         }
         {...fold(path, undefined, rows.grid)}
