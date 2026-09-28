@@ -74,4 +74,22 @@ describe('useSceneSelectTool — parallax layers', () => {
     expect(result.current.pickEvery(15, 15)).toEqual(['sun']);
     expect(result.current.pickEvery(30, 30)).toEqual([]);
   });
+
+  it('picks a container and its child through the plane', () => {
+    const { result } = renderHook(() => {
+      const scene = useScene<unknown, 'trees', Pose>({
+        systemLayers: [{ id: 'trees', parallax: { pan: 1.3 } }],
+        initial: [
+          { id: asNodeId('tree'), kind: 'container', layer: 'trees', pose: { x: 400, y: 300, width: 30, height: 50 }, data: { fill: null } },
+          { id: asNodeId('trunk'), kind: 'leaf', layer: 'trees', parent: asNodeId('tree'), pose: { x: 410, y: 330, width: 10, height: 20 }, data: {} },
+        ],
+      });
+      const adapter = useSceneAdapter(scene);
+      return useSceneSelectTool({ scene, adapter, getView: () => ({ x: 100, y: 0, scale: { x: 1, y: 1 } }) });
+    });
+    // The plane has moved 130 to the camera's 100: the trunk paints at 380..390.
+    expect(result.current.pickEvery(385, 340)).toEqual(['tree', 'trunk']);
+    expect(result.current.pickEvery(415, 340)).toEqual([]);
+    expect(result.current.boundsOf('tree')).toEqual({ x: 370, y: 300, width: 30, height: 50 });
+  });
 });

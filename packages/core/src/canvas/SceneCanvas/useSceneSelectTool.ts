@@ -4,7 +4,7 @@
  * boundsOf derived from pose shape. Caller-supplied `pickEvery` / `boundsOf`
  * overrides via the `geometry` arg take precedence.
  */
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import { pickWalk, scenePickSource, scenePlaneOf, type PickQuery, type ViewPickGates } from 'canvas/pickWalk';
 import { rectFromPlane, toPlane } from 'core/viewport/parallax';
@@ -222,6 +222,11 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   }, [scene, adapter, pickEveryProp, shapePicking, pickTolerancePx, getView,
       alphaOf, layerIsPainted, d]);
 
+  // Read through a ref: this is the chrome's bounds source, and a caller's
+  // inline `getView` would otherwise rebuild it, and everything keyed on it,
+  // every render.
+  const getViewRef = useRef(getView);
+  getViewRef.current = getView;
   const wiredBoundsOf = useMemo(() => {
     return (id: string): Bounds | null => {
       if (boundsOfProp) return boundsOfProp(id);
@@ -236,11 +241,11 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       const own = rot ? { ...b, rotation: rot } : b;
       // A plane node is drawn where its plane puts it, and the chrome has to
       // follow it there.
-      const camera = cameraOf(getView?.() ?? null);
+      const camera = cameraOf(getViewRef.current?.() ?? null);
       const plane = camera ? scenePlaneOf(scene.layers, camera)?.(n.layer) : null;
       return plane ? rectFromPlane(plane, own) : own;
     };
-  }, [scene, adapter, boundsOfProp, d, getView]);
+  }, [scene, adapter, boundsOfProp, d]);
 
   const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
     pickEvery: wiredHitBody,
