@@ -151,8 +151,8 @@ Priority tags:
   paints and registers the document's markers, while draw's
   `svgNodesToSceneDrafts` does neither, and it *drops* `<image>` nodes, since
   the app's `Obj` union is path/text only. Paint lowering is already shared
-  (`fillDataFromSvg`, `strokeDataFromSvg`), as is the whole export side
-  (`svgNodesFromKit`).
+  (`fillDataFromSvg`, `strokeDataFromSvg`), as is the export walk
+  (`svgNodesFromKit`, with draw's own `Obj` leaf lowering hooked in).
 
 - **(P3) SVG export drops a marker's `size`.** `SvgStroke` names a marker by key
   alone, so `svgStrokeFromKit` writes a kit `MarkerRef`'s `{ key, size }` as just
