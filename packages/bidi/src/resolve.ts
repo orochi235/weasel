@@ -15,6 +15,7 @@ import { resolveImplicit } from './implicit';
 /** How the paragraph's own direction is decided. */
 export type BidiDirection = 'ltr' | 'rtl' | 'auto';
 
+/** One paragraph's analysis from `resolveLevels`, indexed by input character; `reorderLine` consumes it per line. */
 export interface BidiResult {
   /** Embedding level per input character. */
   levels: Uint8Array;
@@ -22,6 +23,7 @@ export interface BidiResult {
   classes: BidiClass[];
   /** X9 — true where the character is a formatting code the output drops. */
   removed: boolean[];
+  /** Base level of the paragraph: 0 for LTR, 1 for RTL. */
   paragraphLevel: 0 | 1;
 }
 
