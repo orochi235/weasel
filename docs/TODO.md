@@ -230,12 +230,6 @@ have shipped. What remains:
   fix is `image-set`, already documented) or cap at a different size. Both live
   behind `bake.ts`. `packages/cursor/scripts/probe/` is the instrument.
 
-### Tool overlay channel deferrals
-
-From `docs/specs/2026-05-03-tool-overlay-channel-design.md`:
-
-- **(P3) Subscription / push model.** Today the channel is pull (Canvas asks each frame, scratch is read via React closure). If a tool needs to push state changes outside the React render cycle, add an imperative `tools.publishOverlay(toolId, layer)` channel.
-
 ### Slice tool follow-ups
 
 From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-17):
@@ -867,6 +861,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   instrument mounts the lens, and the trial's toolbar toggle finds it through
   context rather than the capability.
 
+- **(P3) labkit `point` marks are sized in world units.** `markCommands` draws the ring at
+  `POINT_RADIUS` world units, so it grows with the picture; a point should hold a fixed screen
+  size like a handle. `markCommands` has no zoom to read — `drawOne` would have to pass it
+  through, or the ring becomes a marker the renderer sizes. Landed 2026-09-25 with the kind.
+
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap and loupe route through weasel's dispatcher (`CameraInput`),
   but dragging a palette item onto a canvas is `useDragDrop`
@@ -1046,11 +1045,6 @@ Open, from `docs/superpowers/specs/2026-05-17-d3-plugin-design.md`:
 - **(P3) `createReflectable<T>()` utility for the system-registries pattern.** Surfaced 2026-05-12. The kit maintains ≥8 registries with different lifecycles (fonts, tools, ops, actions, easings, shaders, Canvas layers, object-kind). The documentation half shipped — `docs/concepts.md:364` now has a "System registries" section cataloging every registry. Remaining: ship a small `createReflectable<T>()` utility for the cross-cutting reflection concern (debug overlay enumeration, conflict detection). A grand unification is still probably wrong — promote "pick one shape per scope category" only after 3+ registries in the same category exist.
 
 ---
-
-- [ ] (P3) **labkit `point` marks are sized in world units.** `markCommands` draws the ring at
-  `POINT_RADIUS` world units, so it grows with the picture; a point should hold a fixed screen
-  size like a handle. `markCommands` has no zoom to read — `drawOne` would have to pass it
-  through, or the ring becomes a marker the renderer sizes. Landed 2026-09-25 with the kind.
 
 ## forge
 
@@ -1614,13 +1608,14 @@ one dead `const` and four stale disable directives.
 
   What is left is not the draw. `tests/perf/flush-anatomy.spec.ts` reproduces
   the flush's call sequence over the same ring and removes one GL call per row,
-  so adjacent rows differ by that call's cost: 3.87 us for the whole sequence
-  against 0.34 for bind-and-draw alone. Per flush — vertex `bufferSubData` 1.84
-  us, index `bufferSubData` 0.89, `u_color` + `u_alpha` 0.75,
-  `bindVertexArray(null)` 0.19, `useProgram` 0.03, the stencil disable below
-  resolution. So about 1.6 us of the 3.87 is removable in principle, and the
-  vertex upload — the one thing a flush exists to do — is the largest single
-  item. See the flush-slimming entry below for what it would take.
+  so adjacent rows differ by that call's cost, against a 0.34 us floor for
+  bind-and-draw alone. The index upload and the `u_color` / `u_alpha` writes
+  are now skipped when the GPU already holds those bytes (a ring slot remembers
+  its index pattern; both uniforms go through `UploadedUniforms`), which took a
+  flush from 5.39 to 3.22 us and a clip entry from 12.47 to 9.53 in one A/B.
+  The vertex `bufferSubData`, 1.84 us, is the largest item left — the one thing
+  a flush exists to do — and text is the bigger target now (see the boundary
+  entry below).
 
 - **(P2) A boundary between two command kinds costs 0.3–2.5 us, and solid is
   the expensive one.** `tests/perf/transition-matrix.spec.ts` prices each
@@ -1650,25 +1645,6 @@ one dead `const` and four stale disable directives.
   **Text is what is left.** At 15% of the mix and 6.5 us a label it contributes
   more of the mixed row than everything else together, which is the same
   per-draw allocation the transition entry above names.
-
-- **(P2) [x] A flush's redundant uploads are gone; what remains is the vertex
-  upload.** `flush-anatomy.spec.ts` priced a flush's calls against a 0.34 us
-  bind-and-draw floor and found two re-sending bytes the GPU already had. Both
-  landed. Measured as one A/B, the two halves back to back: a flush 5.39 ->
-  3.22 us, entering a clip 12.47 -> 9.53 (`clip-cost.spec.ts`). Read the
-  difference and not the absolutes — the same spec measured a 4.35 us flush an
-  hour earlier on a cooler machine, which is the drift these specs' headers
-  warn about.
-
-  A ring slot now remembers the rect count whose index pattern it holds, and a
-  flush matching it skips the upload. The win needs slots to come round, so a
-  frame with fewer flushes than the ring is wide sees none of it. `u_color` and
-  `u_alpha` joined `UploadedUniforms`, which required routing all eleven writes
-  through `setColorUniform` / `setAlphaUniform`; that is what makes the cache
-  right per program instead of dependent on knowing which caller uses which.
-
-  What is left is the vertex upload, 1.84 us and the one thing a flush exists
-  to do. Text is the larger target now — see the boundary entry above.
 
 ---
 

@@ -13,6 +13,8 @@ import { render, act, cleanup } from '@testing-library/react';
 import { Canvas } from './Canvas';
 import type { RenderLayer } from '../core/layers/render';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { defineTool, useTools } from '../tools/overlayBinding';
+import { WeaselProvider } from '../WeaselProvider';
 
 beforeAll(() => {
   const recorder = makeGLRecorder();
@@ -61,6 +63,25 @@ describe('Canvas external redraw sources', () => {
     await frame();
 
     expect(draw).toHaveBeenCalledTimes(2);
+  });
+
+  it("repaints when an active tool's overlay notifies, outside any React render", async () => {
+    const draw = vi.fn();
+    const src = source();
+    const tool = defineTool({ id: 't', overlay: probeLayer(draw, { subscribe: src.subscribe }) });
+    function Harness() {
+      const tools = useTools({ active: 't', registry: { t: tool } });
+      return <Canvas width={100} height={80} layers={{ grid: null }} tools={tools} />;
+    }
+    render(<WeaselProvider><Harness /></WeaselProvider>);
+    await frame();
+    const before = draw.mock.calls.length;
+    expect(before).toBeGreaterThan(0);
+
+    act(() => { src.notify(); });
+    await frame();
+
+    expect(draw.mock.calls.length).toBe(before + 1);
   });
 
   it('repaints when a redrawOn source notifies', async () => {
