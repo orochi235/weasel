@@ -1053,7 +1053,6 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
-
 - **(P2) jsdom is pinned to exactly 29.0.1.** From 29.0.2 through 30.1.1
   (the latest), reading an inherited property that no ancestor sets — an unset
   custom property is enough — costs twice as much for every level of DOM depth:
