@@ -9,11 +9,16 @@
 // `History.restore()` register their factories at app bootstrap, before
 // `createHistory` is called.
 
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import type { Op } from './types';
 
-type Builder = (args: unknown) => Op;
+/** Rebuilds an op from its serialized `args`. */
+export type OpFactory = (args: unknown) => Op;
 
-const FACTORIES = new Map<string, Builder>();
+const FACTORIES = createReflectable<OpFactory>();
+
+/** Every registered op factory, keyed by op name, in registration order. */
+export const opFactoryRegistry: Reflection<OpFactory> = FACTORIES.reflection;
 
 /** Register an op-factory builder under a stable name. The builder receives
  *  the serialized `args` and must return an `Op` equivalent to one freshly
@@ -22,7 +27,7 @@ const FACTORIES = new Map<string, Builder>();
  *  with a different builder silently overwrites — kit modules import each
  *  factory exactly once at init, so this never races in practice. */
 export function registerOpFactory<A>(name: string, build: (args: A) => Op): void {
-  FACTORIES.set(name, build as Builder);
+  FACTORIES.set(name, build as OpFactory);
 }
 
 /** Rebuild an op from its serialized `(name, args)`. Returns `null` when
@@ -45,5 +50,5 @@ export function _clearOpFactoriesForTest(): void {
  *  built-ins self-register at module init, so importing the barrel is enough
  *  to see all of them; consumer factories appear once their module has run. */
 export function registeredOpNames(): readonly string[] {
-  return [...FACTORIES.keys()];
+  return FACTORIES.entries().map((e) => e.key);
 }

@@ -12,6 +12,7 @@
 
 import type { FillStyle, MarkerKey, Stroke } from '@weasel-js/paint';
 import type { Path } from './geometry/path';
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { BUILTIN_MARKERS } from './strokeMarkerShapes';
 
 /** What an entry's `path` is given. Entries that ignore it may return a
@@ -58,35 +59,25 @@ export interface MarkerEntry {
   toSvg?(id: string, entry: MarkerEntry): string;
 }
 
-let MARKERS = new Map<string, MarkerEntry>();
-let generation = 0;
-
-/** Bumped whenever the registered set changes, for caches of marker geometry. */
-export function markerGeneration(): number {
-  return generation;
-}
-
-function changed(): void {
-  generation++;
-}
+const MARKERS = createReflectable<MarkerEntry>();
 
 function seedBuiltins(): void {
-  for (const entry of BUILTIN_MARKERS) MARKERS.set(entry.id, entry);
+  for (const entry of BUILTIN_MARKERS) MARKERS.push(entry.id, entry, { source: 'kit' });
 }
 seedBuiltins();
 
-/** Register a marker. Returns a disposer. Re-registering a built-in id is an
- *  override; disposing it restores the built-in rather than deleting the key. */
+/** Every registered marker, with the overrides each displaced. */
+export const markerRegistry: Reflection<MarkerEntry> = MARKERS.reflection;
+
+/** Bumped whenever the registered set changes, for caches of marker geometry. */
+export function markerGeneration(): number {
+  return MARKERS.getVersion();
+}
+
+/** Register a marker. Returns a disposer. Re-registering an existing id is an
+ *  override; disposing it uncovers whatever it displaced rather than deleting the key. */
 export function registerMarker(entry: MarkerEntry): () => void {
-  const displaced = MARKERS.get(entry.id);
-  MARKERS.set(entry.id, entry);
-  changed();
-  return () => {
-    if (MARKERS.get(entry.id) !== entry) return;
-    if (displaced) MARKERS.set(entry.id, displaced);
-    else MARKERS.delete(entry.id);
-    changed();
-  };
+  return MARKERS.push(entry.id, entry);
 }
 
 /** The entry for `key`, or `undefined`. */
@@ -96,12 +87,11 @@ export function getMarker(key: string | undefined): MarkerEntry | undefined {
 
 /** Every registered marker, built-ins first, in registration order. */
 export function listMarkers(): readonly MarkerEntry[] {
-  return [...MARKERS.values()];
+  return MARKERS.entries().map((e) => e.value);
 }
 
 /** Test helper. Do not call from product code. */
 export function _resetMarkersForTests(): void {
-  MARKERS = new Map();
+  MARKERS.clear();
   seedBuiltins();
-  changed();
 }

@@ -15,8 +15,9 @@ export {
   resolveFontVariant,
   resolveGlyphFallback,
   listFonts,
+  fontRegistry,
 } from './registerFont';
-export type { FontEntry, FontVariant, ResolveResult, RegisteredFont } from './registerFont';
+export type { FontEntry, FontFamilyFaces, FontVariant, ResolveResult, RegisteredFont } from './registerFont';
 
 export {
   setFontFallbackPolicy,
@@ -47,6 +48,7 @@ export {
   hasFontOutlines,
   outlineStatus,
   listFontOutlines,
+  fontOutlineRegistry,
   glyphOutline,
   outlineMetrics,
 } from './outline/outlineRegistry';
@@ -55,6 +57,7 @@ export type {
   OutlineVariant,
   OutlineFontOptions,
   OutlineStatus,
+  OutlineFaceInfo,
 } from './outline/outlineRegistry';
 export type { OutlineFace, OutlineParser } from './outline/OutlineFace';
 export type { FontStyle } from './fontStyle';

@@ -4,11 +4,13 @@
  * kit edits. Each assertion here is a kit dispatch site that would otherwise
  * fall off the end of a switch.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { FillStyle, PolygonPath } from '@weasel-js/core';
 import { serializeSvg } from '@weasel-js/svg';
 import type { SvgNode } from '@weasel-js/svg';
-import { registerPaintKind, asPaint, _resetPaintKindsForTests, listPaintKinds, getPaintKind } from './paintKinds';
+import {
+  registerPaintKind, asPaint, _resetPaintKindsForTests, listPaintKinds, getPaintKind, paintKindRegistry,
+} from './paintKinds';
 import type { PaintKindEntry } from './paintKinds';
 import { fillInPoseFrame, fillToBoundsFrame } from './fillInPoseFrame';
 import { findNodeShape } from '../canvas/NodeShape';
@@ -136,6 +138,27 @@ describe('paint-kind registry', () => {
     off();
     expect(getPaintKind('conic-gradient')?.label).toBe('Conic');
     expect(getPaintKind('conic-gradient')?.toSvg).toBeUndefined();
+  });
+
+  it('restores the built-in when two overrides are disposed out of order', () => {
+    const conic = getPaintKind('conic-gradient')!;
+    const a = registerPaintKind({ ...conic, label: 'A' });
+    const b = registerPaintKind({ ...conic, label: 'B' });
+    a();
+    expect(getPaintKind('conic-gradient')?.label).toBe('B');
+    b();
+    expect(getPaintKind('conic-gradient')).toBe(conic);
+  });
+
+  it('reflects an override as a conflict over the kit entry, and notifies subscribers', () => {
+    const listener = vi.fn();
+    const off = paintKindRegistry.subscribe(listener);
+    dispose = registerPaintKind({ ...getPaintKind('solid')!, label: 'Mine' });
+    const solid = paintKindRegistry.entries().find((e) => e.key === 'solid')!;
+    expect(solid.value.label).toBe('Mine');
+    expect(solid.shadowed.map((s) => s.source)).toEqual(['kit']);
+    expect(listener).toHaveBeenCalledTimes(1);
+    off();
   });
 
   it('refuses a kind that converts one frame direction but not the other', () => {

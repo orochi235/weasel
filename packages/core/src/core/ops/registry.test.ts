@@ -14,7 +14,7 @@ import { createSetTextOp } from './setText';
 import { createReparentOp } from './reparent';
 import { createMoveToIndexOp } from './reorder';
 import { createSetSelectionOp } from './select';
-import { rebuildOp } from './registry';
+import { opFactoryRegistry, rebuildOp, registeredOpNames } from './registry';
 import { asNodeId } from '../scene';
 import type { Op } from './types';
 
@@ -174,5 +174,13 @@ describe('op-factory registry — per-factory round trip', () => {
       () => createSetSelectionOp({ from: [asNodeId('a')], to: [asNodeId('b'), asNodeId('c')] }),
       (ad) => ad.selectionCalls,
     );
+  });
+});
+
+describe('opFactoryRegistry', () => {
+  it('reflects the same names registeredOpNames lists, each with its builder', () => {
+    const entries = opFactoryRegistry.entries();
+    expect(entries.map((e) => e.key)).toEqual([...registeredOpNames()]);
+    expect(entries.every((e) => typeof e.value === 'function')).toBe(true);
   });
 });

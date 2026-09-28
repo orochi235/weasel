@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  registerFont, getFont, resolveFontVariant, resolveGlyphFallback, listFonts,
+  registerFont, getFont, resolveFontVariant, resolveGlyphFallback, listFonts, fontRegistry,
   _resetFontRegistryForTests,
 } from './registerFont';
 import { setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
@@ -322,6 +322,18 @@ describe('listFonts', () => {
       { family: 'Inter', variants: [{ weight: 400, style: 'normal' }, { weight: 700, style: 'normal' }] },
       { family: 'Roboto', variants: [{ weight: 400, style: 'italic' }] },
     ]);
+  });
+
+  it('reflects each family with its variants, and notifies once per variant that lands', async () => {
+    const listener = vi.fn();
+    const off = fontRegistry.subscribe(listener);
+    await registerTestFont('Inter', 400, 'normal');
+    await registerTestFont('Inter', 700, 'normal');
+    await registerTestFont('Inter', 700, 'normal');
+    const entries = fontRegistry.entries();
+    expect(entries.map((e) => [e.key, [...e.value.keys()]])).toEqual([['Inter', ['400|normal', '700|normal']]]);
+    expect(listener).toHaveBeenCalledTimes(2);
+    off();
   });
 
   it('is empty before anything registers', () => {

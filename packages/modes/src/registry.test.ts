@@ -14,6 +14,17 @@ describe('createModeRegistry', () => {
     expect(r.list().map((m) => m.id)).toEqual(DEFAULT_MODES.map((m) => m.id));
   });
 
+  it('reflects the registered modes by id, versioned with the registry', () => {
+    const r = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
+    expect(r.reflection.entries().map((e) => e.key)).toEqual(DEFAULT_MODES.map((m) => m.id));
+    expect(r.reflection.get('path-edit')).toBe(PATH_EDIT);
+    const listener = vi.fn();
+    r.reflection.subscribe(listener);
+    r.setMode('path-edit');
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(r.reflection.getVersion()).toBe(r.getVersion());
+  });
+
   it('setMode swaps the active mode and bumps version', () => {
     const r = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
     const v0 = r.getVersion();

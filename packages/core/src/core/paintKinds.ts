@@ -19,6 +19,7 @@ import type {
 import { gradientForBounds, isGradientFill, withGradientKind } from './gradient';
 import { bumpNodeMemoGeneration } from './scene/nodeMemo';
 import type { ComponentType } from 'react';
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import type { FillPoseBox } from './fillInPoseFrame';
 import type { GlMat3 } from '../renderer/math/mat3';
 import type { ShaderProgram } from '../renderer/shaders/ShaderProgram';
@@ -189,12 +190,18 @@ function twoStopRamp(color: string): GradStop[] {
   return [{ offset: 0, color }, { offset: 1, color: isWhite ? '#000000ff' : '#ffffffff' }];
 }
 
-let KINDS = new Map<string, PaintKindEntry>();
+const KINDS = createReflectable<PaintKindEntry>();
 
 function seedBuiltins(): void {
-  for (const entry of BUILTINS) KINDS.set(entry.id, entry);
+  for (const entry of BUILTINS) KINDS.push(entry.id, entry, { source: 'kit' });
 }
 seedBuiltins();
+// `NodeShape`'s paint slot memoizes per node and resolves a fill's frame
+// inside it, so the kind set is ambient state that memo cannot see change.
+KINDS.subscribe(bumpNodeMemoGeneration);
+
+/** Every registered paint kind, with the overrides each displaced. */
+export const paintKindRegistry: Reflection<PaintKindEntry> = KINDS.reflection;
 
 /**
  * A consumer's own paint, typed as a `FillStyle`.
@@ -209,7 +216,8 @@ export function asPaint<T extends { fill: string }>(paint: T): FillStyle {
   return paint as unknown as FillStyle;
 }
 
-/** Register a paint kind. Returns a disposer that removes it. */
+/** Register a paint kind. Returns a disposer that removes it. Re-registering an
+ *  existing id is an override; disposing it uncovers whatever it displaced. */
 export function registerPaintKind(entry: PaintKindEntry): () => void {
   if ((entry.stopsOf === undefined) !== (entry.fromStops === undefined)) {
     const missing = entry.stopsOf === undefined ? 'stopsOf' : 'fromStops';
@@ -229,17 +237,7 @@ export function registerPaintKind(entry: PaintKindEntry): () => void {
   // Re-registering a built-in id is how a consumer closes a gap the kit leaves,
   // so disposing that override puts the built-in back rather than deleting the
   // kind.
-  const displaced = KINDS.get(entry.id);
-  KINDS.set(entry.id, entry);
-  // `NodeShape`'s paint slot memoizes per node and resolves a fill's frame
-  // inside it, so the kind set is ambient state that memo cannot see change.
-  bumpNodeMemoGeneration();
-  return () => {
-    if (KINDS.get(entry.id) !== entry) return;
-    if (displaced) KINDS.set(entry.id, displaced);
-    else KINDS.delete(entry.id);
-    bumpNodeMemoGeneration();
-  };
+  return KINDS.push(entry.id, entry);
 }
 
 /** The entry for `kind`, or `undefined`. */
@@ -249,7 +247,7 @@ export function getPaintKind(kind: string | undefined): PaintKindEntry | undefin
 
 /** Every registered kind, built-ins first, in registration order. */
 export function listPaintKinds(): readonly PaintKindEntry[] {
-  return [...KINDS.values()];
+  return KINDS.entries().map((e) => e.value);
 }
 
 /** Every registered gradient kind — the ones that read as and build from a
@@ -291,7 +289,6 @@ export function paintKindOf(fill: FillStyle): PaintKindEntry | undefined {
 
 /** @internal Test helper — do not call from product code. */
 export function _resetPaintKindsForTests(): void {
-  KINDS = new Map();
+  KINDS.clear();
   seedBuiltins();
-  bumpNodeMemoGeneration();
 }

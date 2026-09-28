@@ -86,6 +86,7 @@
     "@weasel-js/modes": "1.6.1",
     "@weasel-js/quantity": "1.6.1",
     "@weasel-js/paint": "1.6.1",
+    "@weasel-js/registry": "1.6.1",
     "@weasel-js/routing": "1.6.1",
     "@weasel-js/text": "1.6.1",
     "earcut": "3.2.3",

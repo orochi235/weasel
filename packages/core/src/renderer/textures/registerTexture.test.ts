@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   registerTexture,
+  textureRegistry,
   getTexture,
   _resetTextureRegistryForTests,
 } from './registerTexture';
@@ -33,6 +34,12 @@ describe('registerTexture', () => {
 
   it('getTexture returns null for an unknown id', () => {
     expect(getTexture('nonexistent')).toBeNull();
+  });
+
+  it('reflects every registered texture under its handle id', () => {
+    const img = makeImageStub();
+    const h = registerTexture(img);
+    expect(textureRegistry.entries().map((e) => [e.key, e.value.source])).toEqual([[h.id, img]]);
   });
 
   it('ids are stable — same handle object as returned', () => {

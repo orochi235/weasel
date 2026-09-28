@@ -36,6 +36,8 @@ export {
   hasFontOutlines,
   outlineStatus,
   listFontOutlines,
+  fontRegistry,
+  fontOutlineRegistry,
   enableLocalFontOutlines,
   canQueryLocalFonts,
 } from '@weasel-js/font';
@@ -45,10 +47,12 @@ export { IDENTITY_COLOR_MATRIX } from './state/GroupState';
 export type { Mesh } from './cache/mesh';
 export {
   registerProgram,
+  programSourceRegistry,
+  type ProgramSource,
   type ShaderProgramHandle,
   type ShaderUniform,
 } from './shaders/registerProgram';
-export { registerTexture, type TextureHandle } from './textures/registerTexture';
+export { registerTexture, textureRegistry, type TextureEntry, type TextureHandle } from './textures/registerTexture';
 export { registerEffect, type Effect } from './effects/types';
 export { blur, vignette } from './effects/builtins';
 export { EFFECT_VERT_SRC, EFFECT_KIT_UNIFORMS } from './effects/effectPrelude';

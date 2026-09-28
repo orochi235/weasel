@@ -49,6 +49,7 @@
  * tier could not get bytes.
  */
 
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { notifyGlyphReady } from '../glyphReady';
 import type { OutlineFace, OutlineParser } from './OutlineFace';
 import type { FontStyle } from '../fontStyle';
@@ -84,10 +85,15 @@ export interface OutlineFontOptions {
 /** Load state of one registered face. */
 export type OutlineStatus = 'idle' | 'loading' | 'ready' | 'failed';
 
-interface FaceSlot {
-  family: string;
-  weight: number;
-  style: FontStyle;
+/** One registered outline face and its load state. */
+export interface OutlineFaceInfo {
+  readonly family: string;
+  readonly weight: number;
+  readonly style: FontStyle;
+  readonly status: OutlineStatus;
+}
+
+interface FaceSlot extends OutlineFaceInfo {
   source: OutlineSource;
   parser: OutlineParser;
   status: OutlineStatus;
@@ -98,7 +104,10 @@ interface FaceSlot {
   glyphs: Map<number, string | null>;
 }
 
-let slots = new Map<string, FaceSlot>();
+const slots = createReflectable<FaceSlot>();
+
+/** Every registered outline face, keyed `family|weight|style`. */
+export const fontOutlineRegistry: Reflection<OutlineFaceInfo> = slots.reflection;
 
 function slotKey(family: string, weight: number, style: FontStyle): string {
   return `${family}|${weight}|${style}`;
@@ -171,11 +180,9 @@ export function outlineStatus(
 
 /** Every registered outline face and its load state — the enumeration a
  *  debug overlay or font picker needs, mirroring `listFonts`. */
-export function listFontOutlines(): readonly {
-  family: string; weight: number; style: FontStyle; status: OutlineStatus;
-}[] {
-  return [...slots.values()]
-    .map(({ family, weight, style, status }) => ({ family, weight, style, status }))
+export function listFontOutlines(): readonly OutlineFaceInfo[] {
+  return slots.entries()
+    .map(({ value: { family, weight, style, status } }) => ({ family, weight, style, status }))
     .sort((a, b) => a.family.localeCompare(b.family) || a.weight - b.weight
       || a.style.localeCompare(b.style));
 }
@@ -296,15 +303,18 @@ export function outlineMetrics(
 
 async function beginLoad(slot: FaceSlot): Promise<void> {
   slot.status = 'loading';
+  slots.bump();
   try {
     slot.face = await slot.parser(await readSource(slot.source));
     slot.status = 'ready';
+    slots.bump();
     // The frame that asked for these glyphs has long since drawn. Without
     // this the outlines sit in memory until something else invalidates the
     // canvas, which on a static document is "never".
     notifyGlyphReady();
   } catch (err) {
     slot.status = 'failed';
+    slots.bump();
     warnOnce(`load|${slotKey(slot.family, slot.weight, slot.style)}`,
       `weasel registerFontOutlines("${slot.family}" ${slot.weight}/${slot.style}): ` +
       `${err instanceof Error ? err.message : String(err)}. Large text in this face ` +
@@ -335,6 +345,6 @@ function warnOnce(key: string, message: string): void {
 
 /** @internal Test seam — registry and warn-once keys are module state. */
 export function _resetFontOutlinesForTests(): void {
-  slots = new Map();
+  slots.clear();
   warned.clear();
 }

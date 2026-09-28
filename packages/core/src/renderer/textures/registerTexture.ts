@@ -10,6 +10,7 @@
  */
 
 import type { TextureHandle } from '@weasel-js/paint';
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 
 export type { TextureHandle };
 
@@ -18,11 +19,14 @@ export interface TextureEntry {
 }
 
 let counter = 0;
-let registry = new Map<string, TextureEntry>();
+const registry = createReflectable<TextureEntry>();
+
+/** Every registered texture, keyed by its handle id. */
+export const textureRegistry: Reflection<TextureEntry> = registry.reflection;
 
 /** @internal Test helper — do not call from product code. */
 export function _resetTextureRegistryForTests(): void {
-  registry = new Map();
+  registry.clear();
   counter = 0;
 }
 

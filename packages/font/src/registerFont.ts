@@ -7,6 +7,7 @@
  * variants for the fallback chain.
  */
 
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import type { FontStyle } from './fontStyle';
 import { notifyGlyphReady } from './glyphReady';
 import { parseBmFont, type BmFont } from './FontAtlas';
@@ -35,7 +36,14 @@ export interface FontVariant {
 }
 
 
-let registry = new Map<string, Map<string, FontEntry>>();
+/** One family's registered faces, keyed `${weight}|${style}`. */
+export type FontFamilyFaces = ReadonlyMap<string, FontEntry>;
+
+const registry = createReflectable<FontFamilyFaces>();
+
+/** Every registered family and its faces, in registration order. `listFonts`
+ *  is the same set shaped for a font picker. */
+export const fontRegistry: Reflection<FontFamilyFaces> = registry.reflection;
 
 function variantKey(weight: number, style: FontStyle): string {
   return `${weight}|${style}`;
@@ -50,7 +58,7 @@ function normalizeVariant(v: FontVariant): { weight: number; style: FontStyle } 
 
 /** Test helper. Do not call from product code. */
 export function _resetFontRegistryForTests(): void {
-  registry = new Map();
+  registry.clear();
   _clearFallbackWarnings();
 }
 
@@ -77,7 +85,7 @@ export interface RegisteredFont {
  */
 export function listFonts(): readonly RegisteredFont[] {
   const out: RegisteredFont[] = [];
-  for (const [family, variantMap] of registry) {
+  for (const { key: family, value: variantMap } of registry.entries()) {
     const variants = [...variantMap.keys()]
       .map((key) => {
         const [w, s] = key.split('|') as [string, FontStyle];
@@ -126,18 +134,9 @@ export async function registerFont(
     const font = parseBmFont(rawJson);
     const bitmap = await createImageBitmap(blob);
 
-    // Re-read the registry here (not the pre-await snapshot): concurrent
-    // registerFont() calls for other variants of the same family (e.g. the
-    // 400/700 weights registered together in Promise.all) may have created
-    // the family's Map while this call was awaiting its fetch. Reusing a
-    // stale local reference would recreate the Map and silently drop
-    // whichever variant's registerFont() resolved first.
-    let familyMap = registry.get(family);
-    if (!familyMap) {
-      familyMap = new Map();
-      registry.set(family, familyMap);
-    }
-    familyMap.set(key, { font, bitmap });
+    // Copy the family as it is now, not as it was before the await: another
+    // variant of it may have landed meanwhile, and a stale copy would drop it.
+    registry.set(family, new Map(registry.get(family)).set(key, { font, bitmap }));
     // Same meaning the lazy tiers give it: text that was painting from a
     // fallback face — or painting nothing — can now paint from this one. The
     // early return above covers the already-registered case, so this fires
@@ -332,8 +331,7 @@ function missResolveResult(
 
 /** Insertion order of the registry Map — the first family an app registered. */
 function firstRegisteredFamily(): string | null {
-  for (const family of registry.keys()) return family;
-  return null;
+  return registry.entries()[0]?.key ?? null;
 }
 
 // Resolution runs per frame, so an unguarded warn would flood the console.

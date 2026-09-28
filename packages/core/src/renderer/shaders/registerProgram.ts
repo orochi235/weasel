@@ -12,6 +12,7 @@
  * Lifecycle: program sources live for the module lifetime. No unregister in v1.
  */
 
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { type TextureHandle } from '../textures/registerTexture';
 
 export type { TextureHandle };
@@ -47,11 +48,14 @@ export interface ProgramSource {
   frag: string;
 }
 
-let registry = new Map<string, ProgramSource>();
+const registry = createReflectable<ProgramSource>();
+
+/** Every registered program's GLSL source, keyed by program id. */
+export const programSourceRegistry: Reflection<ProgramSource> = registry.reflection;
 
 /** @internal Test helper — do not call from product code. */
 export function _resetProgramRegistryForTests(): void {
-  registry = new Map();
+  registry.clear();
 }
 
 export function getProgramSource(id: string): ProgramSource | null {
