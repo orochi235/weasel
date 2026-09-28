@@ -65,6 +65,7 @@ vi.mock('./Canvas', async (importOriginal) => {
         subscribeView: () => () => {},
         getPaintedVersion: () => 0,
         paintedCursor: createPaintedCursorState(),
+        getDebug: () => null,
         registerLayer: () => () => {},
         hitTestExtras: () => null,
       } satisfies CanvasExtensionApi;

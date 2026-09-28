@@ -56,6 +56,7 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { dlog } from '../debug/flag';
+import type { DebugConfig } from '../debug/types';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { ViewRegistryProvider, useOptionalViewRegistry } from './viewRegistry';
 import { createSceneLayerGate, type ViewLayerPaint } from './sceneLayerPaint';
@@ -98,6 +99,7 @@ import {
   useViewDepSource,
   useAreaSelectDepSource,
   useNodeAtPointDepSource,
+  useDebugDepSource,
   useInsertDepSource,
   useSnapDepSource,
   useLassoSelectDepSource,
@@ -303,6 +305,13 @@ export interface SceneCanvasHit {
   kind: string;
 }
 
+/** `<SceneCanvas debug>` minus the flag only SceneCanvas reads. */
+function canvasDebug(debug: (DebugConfig & { slops?: boolean }) | false): DebugConfig | false {
+  if (debug === false) return false;
+  const { slops: _slops, ...rest } = debug;
+  return rest;
+}
+
 /** Props for `<SceneCanvas>`. A scene is the only thing it needs. With nothing
  *  else it renders that scene and keeps a selection no input sets; `features`
  *  turns behavior on by preset, and the rest configures what those turn on. */
@@ -318,6 +327,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'getIsVisible'    // SceneCanvas synthesizes this from chromeVisibility
     | 'contentVersion'  // SceneCanvas wires this to the scene's own version
     | 'layerVisibility' | 'layerOrder' // re-declared below: they gate picking here too
+    | 'debug'           // re-declared below with SceneCanvas's own `slops`
   >
   & {
     /** A `Scene` (typically from `useScene`) — or a `SerializedScene`
@@ -845,12 +855,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      */
     pickHud?: boolean;
     /**
-     * Dev overlay flags. `slops: true` renders translucent halos at every
-     * affordance hit zone.
+     * The debug overlay: `<Canvas debug>`'s config, plus `slops: true` for
+     * translucent halos at every affordance hit zone. `false` turns it off;
+     * absent reads `?debug=…` from the URL, as `<Canvas>` does.
      */
-    debug?: {
-      slops?: boolean;
-    };
+    debug?: (DebugConfig & { slops?: boolean }) | false;
     /**
      * Dev HUD: when true (or object), mounts a fixed-position widget below
      * the pick HUD showing the active modality mode, active-slot tool, and
@@ -1898,6 +1907,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // staying pinned to its committed position until the drag commits.
   const sceneRefForOverlay = useRef(scene);
   sceneRefForOverlay.current = scene;
+  const slopsOn = debug !== undefined && debug !== false && debug.slops === true;
   // Debug: slops viz layer (off by default). Builds the affordance halos
   // once and reads live state through refs every frame — the same pattern
   // the chrome layers use. Identity stays stable so wiredLayers below
@@ -2016,8 +2026,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
     ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
     pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
-    ...(debug?.slops ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [mergedLayers, sceneSlot, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, debug?.slops, slopsLayer]);
+    ...(slopsOn ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
+  }), [mergedLayers, sceneSlot, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, slopsOn, slopsLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`
@@ -2137,6 +2147,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       cursorCoordsHud={cursorCoordsHud}
       pickHud={pickHud}
       modalityHud={modalityHud}
+      {...(debug !== undefined ? { debug: canvasDebug(debug) } : {})}
       pickBest={internalPickBest}
       contentVersion={scene.getVersion}
       layerVisibility={layerVisibility}
@@ -2220,6 +2231,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 insertNodeFactories={insertNodeFactories}
                 snapPoint={toolOptions?.snapPoint}
                 canvasRef={internalCanvasRef}
+                canvasApiRef={canvasApiRef}
                 ingestionResolveSrc={ingestion?.resolveSrc}
                 ingestionSvg={ingestion?.svg}
                 ingestionClipboard={ingestionClipboard}
@@ -2599,6 +2611,7 @@ function StandardActionsRegistrar({
   insertNodeFactories,
   snapPoint,
   canvasRef,
+  canvasApiRef,
   ingestionResolveSrc,
   ingestionSvg,
   ingestionClipboard,
@@ -2680,6 +2693,8 @@ function StandardActionsRegistrar({
   /** The canvas element ref, so `useIngestionDepSource` can compute the
    *  visible world rect from the client rect + current view. */
   canvasRef: React.RefObject<HTMLElement | null>;
+  /** The canvas handle, whose debug sink backs the `debug` dep. */
+  canvasApiRef: React.RefObject<CanvasExtensionApi | null>;
   /** Forwarded from `SceneCanvasProps.ingestion.resolveSrc` — consumer
    *  file→src override for the kit image handler. */
   ingestionResolveSrc?: (file: File) => Promise<string>;
@@ -2758,6 +2773,7 @@ function StandardActionsRegistrar({
   useLayoutDepSource(layouts, layoutDropTarget);
   useInsertDepSource(scene, adapter, insertNodeFactories);
   useSnapDepSource(snapPoint);
+  useDebugDepSource(canvasApiRef);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
   useLassoSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
   useTextEditDepSource(scene);

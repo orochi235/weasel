@@ -3,8 +3,8 @@
  * `@weasel-js/routing` — `ToolCtx.debug` carries a sink, so routing has to
  * name the type. Re-exported here, beside the overlay that reads one.
  */
-import type { DebugSink, HitShape, HandleKind } from '@weasel-js/routing';
-export type { DebugSink, HitShape, HandleKind };
+import type { DebugSink, HitShape, HandleKind, View, ViewportGestureKind } from '@weasel-js/routing';
+export type { DebugSink, HitShape, HandleKind, ViewportGestureKind };
 
 /** One bit per debug feature; absent keys are off. */
 export interface DebugConfig {
@@ -18,10 +18,15 @@ export interface DebugConfig {
    *  bounds. Pulls from the same `recordBounds` stream `bounds` uses, so
    *  no extra sink calls are required to enable. */
   ids?: boolean;
-  /** Rolling FPS counter rendered in the top-left corner of the canvas.
-   *  Tracks the rate at which the debug overlay's draw callback runs;
-   *  this matches the canvas's effective repaint rate. */
+  /** Frame panel in the top-left corner: repaint rate and interval, the
+   *  CPU cost and GL draw-call count of the last paint, and both again per
+   *  render layer. The rate tracks the overlay's own draw callback, so it is
+   *  the canvas's repaint rate — a canvas that is not repainting shows the
+   *  last numbers, not zero. */
   fps?: boolean;
+  /** The last viewport change a pan or zoom made: the viewport it started
+   *  from, outlined in the current view, and the world point it held fixed. */
+  viewport?: boolean;
   /** Optional per-feature color overrides; falls back to the default theme. */
   theme?: Partial<DebugTheme>;
   /** Optional per-feature line-width / dash overrides; falls back to
@@ -31,7 +36,8 @@ export interface DebugConfig {
 
 /** The name of one debug-overlay feature — the keys of {@link DebugConfig}
  *  that toggle a visualization. */
-export type DebugFeature = 'hitboxes' | 'handles' | 'bounds' | 'origins' | 'snap' | 'layers' | 'ids' | 'fps';
+export type DebugFeature =
+  | 'hitboxes' | 'handles' | 'bounds' | 'origins' | 'snap' | 'layers' | 'ids' | 'fps' | 'viewport';
 
 /** Colors the debug overlay draws with, one entry per feature. */
 export interface DebugTheme {
@@ -48,6 +54,8 @@ export interface DebugTheme {
   /** Foreground / background for the FPS panel. */
   fpsText: string;
   fpsTextBg: string;
+  /** Previous-viewport outline, anchor trail and readout. */
+  viewport: string;
 }
 
 /** Line width and dash pattern for one stroked debug feature. An empty (or
@@ -66,6 +74,8 @@ export interface DebugStrokes {
   handle: DebugStroke;
   /** Rejected snap candidates only; accepted ones paint as a filled dot. */
   snap: DebugStroke;
+  /** The previous-viewport outline and the anchor's trail. */
+  viewport: DebugStroke;
 }
 
 
@@ -112,6 +122,35 @@ export interface RecordedLayer {
   index: number;
 }
 
+/** The last viewport change a gesture made. See `DebugSink.recordViewport`. */
+export interface RecordedViewport {
+  kind: ViewportGestureKind;
+  from: View;
+  to: View;
+  /** World point the gesture held fixed, when it had one. */
+  anchor?: { x: number; y: number };
+}
+
+/** What one render layer cost in a paint. */
+export interface LayerFrameStats {
+  id: string;
+  /** GL draw calls issued while this layer's commands were dispatched. A
+   *  batched run is drawn when it closes, so it counts toward the layer that
+   *  closed it. */
+  drawCalls: number;
+  /** CPU milliseconds: building the layer's commands plus dispatching them. */
+  ms: number;
+}
+
+/** What one paint cost, for the frame panel. */
+export interface FrameStats {
+  /** CPU milliseconds for the whole paint — command build and dispatch. GPU
+   *  time is not included; the GPU runs asynchronously. */
+  paintMs: number;
+  drawCalls: number;
+  layers: LayerFrameStats[];
+}
+
 /** Everything the sink collected, ready for the overlay to draw. */
 export interface DebugSnapshot {
   hitboxes: RecordedHitbox[];
@@ -120,6 +159,19 @@ export interface DebugSnapshot {
   origins: RecordedOrigin[];
   snap: RecordedSnap[];
   layers: RecordedLayer[];
+  /** Latest viewport change; survives frames until replaced. */
+  viewport: RecordedViewport | null;
+  /** The previous paint's cost. The overlay draws before the paint it is part
+   *  of is dispatched, so this is always one paint behind. */
+  frame: FrameStats | null;
+}
+
+/** The sink `<Canvas>` creates: what tools record into, plus the canvas-side
+ *  half — the frame stats only the painter knows — and the read the overlay
+ *  draws from. */
+export interface CanvasDebugSink extends DebugSink {
+  recordFrame(stats: FrameStats): void;
+  snapshot(): DebugSnapshot;
 }
 
 /**

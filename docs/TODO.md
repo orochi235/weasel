@@ -888,12 +888,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) Cursor-relative align** (e.g. align to mouse position rather than union).
 - **(P3) Selection-handles-locked alignment** (align relative to the dragged corner during a resize gesture).
 
-### Debug overlay follow-ups
-
-- **(P3) Debug overlay for hand/zoom tools.**
-- **(P3) Printable snapshot mode** — rasterize debug + scene to a single image for bug reports. Should compose with `renderSceneToPixels` (`packages/core/src/canvas/renderSceneToPixels.ts`) as the underlying primitive.
-- **(P3) FPS panel extensions** — ms-per-frame readout alongside FPS, draw-call count per frame, per-layer draw-cost breakdown (needs renderer-side instrumentation seams).
-
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) Palette presets / recently-used colors.**

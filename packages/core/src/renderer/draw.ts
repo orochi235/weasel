@@ -121,6 +121,16 @@ export interface DrawContext {
    *  owns that rect — see `WeaselRenderer.applyTarget` — and a second copy of
    *  its y-flip here would be a second thing to keep in step. */
   restoreTargetRect?(): void;
+  /** Per-frame counters the renderer reads back after the stream ends.
+   *  Absent, nothing is counted. */
+  stats?: { drawCalls: number };
+}
+
+/** Every GL draw the renderer issues goes through here, so the frame's
+ *  draw-call count cannot miss one. */
+function drawTriangles(ctx: DrawContext, count: number, type: number): void {
+  ctx.gl.drawElements(ctx.gl.TRIANGLES, count, type, 0);
+  if (ctx.stats) ctx.stats.drawCalls++;
 }
 
 /**
@@ -431,7 +441,7 @@ function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
   }
 
   applyClipTest(ctx);
-  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+  drawTriangles(ctx, 6, ctx.gl.UNSIGNED_SHORT);
 
   if (aPosLoc !== undefined) gl.disableVertexAttribArray(aPosLoc);
   if (aUvLoc  !== undefined) gl.disableVertexAttribArray(aUvLoc);
@@ -585,7 +595,7 @@ function drawFullscreenQuad(
     }
   }
 
-  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+  drawTriangles(ctx, 6, ctx.gl.UNSIGNED_SHORT);
 
   if (aPos !== undefined && aPos >= 0) gl.disableVertexAttribArray(aPos);
   if (aUv !== undefined && aUv >= 0) gl.disableVertexAttribArray(aUv);
@@ -1219,7 +1229,7 @@ export function flushBatch(ctx: DrawContext): void {
   }
   gl.uniform1iv(prog.uniform('u_samplers')!, SAMPLER_UNITS);
   applyClipTest(ctx, staged.clipDepth);
-  gl.drawElements(gl.TRIANGLES, indexCount, gl.UNSIGNED_INT, 0);
+  drawTriangles(ctx, indexCount, ctx.gl.UNSIGNED_INT);
   // Everything else in the renderer binds its texture to unit 0 and some of it
   // does so without an `activeTexture` of its own, so leaving unit 6 selected
   // sends the next such bind to a unit nothing samples.
@@ -1280,7 +1290,7 @@ function drawPathFillVColor(
   }
 
   applyClipTest(ctx);
-  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+  drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
   gl.bindVertexArray(null);
   // The per-vertex color VBO is freshly allocated per draw; free it now
   // (after unbinding the VAO) so we don't leak one buffer per vColor draw.
@@ -1363,7 +1373,7 @@ function drawPathFillByKind(ctx: DrawContext, fill: FillStyle, handle: GLMeshHan
   const gl = ctx.gl;
   gl.bindVertexArray(handle.vao);
   applyClipTest(ctx);
-  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+  drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
   gl.bindVertexArray(null);
 }
 
@@ -1535,7 +1545,7 @@ function rasterizePathToStencil(ctx: DrawContext, path: Path): void {
   gl.useProgram(ctx.pathFill.handle);
   gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.pathFill);
-  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+  drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
   gl.bindVertexArray(null);
 }
 
@@ -1618,7 +1628,7 @@ function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHa
   gl.stencilMask(0x01);
   gl.stencilFunc(gl.ALWAYS, 0, 0x01);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.INVERT);
-  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+  drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
 
   const clipMask = ancestorMask(ctx.clipDepth);
   gl.colorMask(true, true, true, true);
@@ -1628,7 +1638,7 @@ function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHa
   // uniform missed here renders black while the GL-recorder tests still pass.
   // Not `drawPathFillByKind` — its `applyClipTest` would disable this stencil.
   if (bindPathFillByKind(ctx, fill)) {
-    gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+    drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
   }
 
   // Narrow to bit 0 first: clear only zeroes bits the mask enables, and
@@ -1734,7 +1744,7 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand): voi
       gl.vertexAttribPointer(aVColorLoc, 4, gl.FLOAT, false, 0, 0);
     }
     applyClipTest(ctx);
-    gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+    drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
     gl.bindVertexArray(null);
     // Per-draw color VBO; free after VAO unbind to avoid leak per stroke vColor draw.
     gl.deleteBuffer(colorVbo);
@@ -1747,7 +1757,7 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand): voi
   setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
   setColorMatrixUniforms(ctx, ctx.pathFill);
   applyClipTest(ctx);
-  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+  drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
   gl.bindVertexArray(null);
 }
 
@@ -1802,7 +1812,7 @@ function drawPathStrokeStenciled(
   gl.stencilFunc(gl.ALWAYS, 1, 0x01);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
   gl.bindVertexArray(fillHandle.vao);
-  gl.drawElements(gl.TRIANGLES, fillHandle.indexCount, gl.UNSIGNED_INT, 0);
+  drawTriangles(ctx, fillHandle.indexCount, ctx.gl.UNSIGNED_INT);
 
   const clipMask = ancestorMask(ctx.clipDepth);
   gl.colorMask(true, true, true, true);
@@ -1847,7 +1857,7 @@ function drawPathStrokeStenciled(
     }
   }
 
-  gl.drawElements(gl.TRIANGLES, ribbonHandle.indexCount, gl.UNSIGNED_INT, 0);
+  drawTriangles(ctx, ribbonHandle.indexCount, ctx.gl.UNSIGNED_INT);
 
   // Narrow to bit 0 first: clear only zeroes bits the mask enables, and
   // pushClip owns bits 1-7.

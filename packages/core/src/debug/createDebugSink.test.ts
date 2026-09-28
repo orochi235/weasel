@@ -55,4 +55,34 @@ describe('createDebugSink', () => {
     expect(s.snap).toHaveLength(0);
     expect(s.bounds).toHaveLength(1);
   });
+
+  it('keeps the latest viewport record across frames, replacing the previous one', () => {
+    const sink = createDebugSink({ viewport: true });
+    const v0 = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const v1 = { x: 10, y: 0, scale: { x: 1, y: 1 } };
+    const v2 = { x: 0, y: 0, scale: { x: 2, y: 2 } };
+    sink.recordViewport('pan', v0, v1, { x: 5, y: 5 });
+    sink.beginFrame();
+    expect(sink.snapshot().viewport).toEqual({ kind: 'pan', from: v0, to: v1, anchor: { x: 5, y: 5 } });
+    sink.recordViewport('zoom', v0, v2);
+    expect(sink.snapshot().viewport).toEqual({ kind: 'zoom', from: v0, to: v2 });
+  });
+
+  it('drops viewport records when the feature is off', () => {
+    const sink = createDebugSink({ bounds: true });
+    const v = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    sink.recordViewport('pan', v, v);
+    expect(sink.snapshot().viewport).toBeNull();
+  });
+
+  it('records frame stats only while the fps panel is on', () => {
+    const stats = { paintMs: 2, drawCalls: 3, layers: [{ id: 'scene', drawCalls: 3, ms: 1.5 }] };
+    const on = createDebugSink({ fps: true });
+    on.recordFrame(stats);
+    on.beginFrame();
+    expect(on.snapshot().frame).toEqual(stats);
+    const off = createDebugSink({ bounds: true });
+    off.recordFrame(stats);
+    expect(off.snapshot().frame).toBeNull();
+  });
 });

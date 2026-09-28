@@ -1,7 +1,7 @@
 export { isDebugEnabled, dlog, dwarn } from './flag';
 export { parseDebugFlags } from './parseDebugFlags';
 export { createDebugSink } from './createDebugSink';
-export { createDebugOverlayLayer } from './createDebugOverlayLayer';
+export { createDebugOverlayLayer, buildDebugOverlayCommands } from './createDebugOverlayLayer';
 export { DEFAULT_DEBUG_THEME, DEFAULT_DEBUG_STROKES } from './defaultTheme';
 export type {
   DebugConfig,
@@ -19,4 +19,9 @@ export type {
   RecordedOrigin,
   RecordedSnap,
   RecordedLayer,
+  RecordedViewport,
+  ViewportGestureKind,
+  FrameStats,
+  LayerFrameStats,
+  CanvasDebugSink,
 } from './types';

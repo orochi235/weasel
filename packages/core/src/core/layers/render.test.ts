@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { type LayerCommandCache, type LayerGroup, type RenderLayer, drawLayers, drawOneLayer } from './render';
+import { type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RenderLayer, drawLayers, drawOneLayer } from './render';
 import type { DrawCommand } from '../../renderer';
 
 describe('drawLayers', () => {
@@ -12,6 +12,25 @@ describe('drawLayers', () => {
     const b: RenderLayer<unknown> = { id: 'b', label: 'B', space: 'screen', draw: () => [bCmd] };
     const out = drawLayers([a, b], null, {}, undefined, undefined, { width: 10, height: 10 });
     expect(out).toEqual([aCmd, bCmd]);
+  });
+
+  it('reports each layer\'s slice of the output, and a group run as one slice', () => {
+    const cmd = (): DrawCommand => ({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } });
+    const a: RenderLayer<unknown> = { id: 'a', label: 'A', space: 'screen', draw: () => [cmd(), cmd()] };
+    const empty: RenderLayer<unknown> = { id: 'empty', label: 'E', space: 'screen', draw: () => [] };
+    const b: RenderLayer<unknown> = { id: 'b', label: 'B', space: 'screen', draw: () => [cmd()] };
+    const c: RenderLayer<unknown> = { id: 'c', label: 'C', space: 'screen', draw: () => [cmd()] };
+    const spans: LayerDrawSpan[] = [];
+    const out = drawLayers(
+      [a, empty, b, c], null, {}, undefined, undefined, { width: 10, height: 10 },
+      undefined, undefined, [{ id: 'bc', layers: ['b', 'c'], effects: [] }], spans,
+    );
+    expect(spans.map(({ id, start, end }) => ({ id, start, end }))).toEqual([
+      { id: 'a', start: 0, end: 2 },
+      { id: 'empty', start: 2, end: 2 },
+      { id: 'bc', start: 2, end: out.length },
+    ]);
+    for (const s of spans) expect(s.buildMs).toBeGreaterThanOrEqual(0);
   });
 
   it('honors the order array', () => {

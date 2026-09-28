@@ -398,6 +398,9 @@ export type {
   HeadlessCanvasLike,
   PixelRenderPlan,
 } from './canvas/renderSceneToPixels';
+export { renderDebugSnapshot } from './canvas/renderDebugSnapshot';
+export type { RenderDebugSnapshotArgs } from './canvas/renderDebugSnapshot';
+export { rasterToPng } from './canvas/rasterToPng';
 export {
   FALLBACK_FIT_VIEW,
   computeFitView,

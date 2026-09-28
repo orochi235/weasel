@@ -32,7 +32,7 @@
  * @see useHandTool — the React hook this descriptor parallels.
  */
 
-import type { Action } from '@weasel-js/routing';
+import type { Action, DebugSink } from '@weasel-js/routing';
 import { resolveParams, type InvocationCtx, type OngoingHandle, type BindingOpts } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
@@ -108,7 +108,7 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
   // on a tool, which meant a consumer who bound `viewport.dragPan` without
   // the hand tool got no state cursor at all.
   activeCursor: 'grabbing',
-  requires: ['view'],
+  requires: ['view', 'debug'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -132,6 +132,8 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
         tracker: inertia && view.decay ? createVelocityTracker() : undefined,
         lastScreen: { x: 0, y: 0 },
       };
+      const debug = ctx.deps.debug as DebugSink | undefined;
+      const grab = ctx.drag?.start;
 
       return {
         kind: 'pan',
@@ -159,11 +161,13 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
           const sv = scratch.startView;
           // 1 screen px maps to 1/scale world units (at 2x zoom, 100 px →
           // 50 world units of pan).
-          scratch.view.set({
+          const next = {
             ...sv,
             x: sv.x - screenDx / sv.scale.x,
             y: sv.y - screenDy / sv.scale.y,
-          });
+          };
+          scratch.view.set(next);
+          debug?.recordViewport('pan', sv, next, grab && { x: grab.x, y: grab.y });
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           // No scene ops to commit; the pan itself is already live. What is

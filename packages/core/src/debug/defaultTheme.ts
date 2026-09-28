@@ -17,6 +17,7 @@ export const DEFAULT_DEBUG_THEME: DebugTheme = {
   idText: '#ffeb3b',
   fpsText: '#e0e0e0',
   fpsTextBg: 'rgba(0, 0, 0, 0.6)',
+  viewport: '#b388ff',
 };
 
 /**
@@ -30,4 +31,5 @@ export const DEFAULT_DEBUG_STROKES: DebugStrokes = {
   bounds: { width: 1 },
   handle: { width: 1 },
   snap: { width: 1 },
+  viewport: { width: 1, dash: [6, 4] },
 };

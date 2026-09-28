@@ -19,7 +19,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { Canvas } from './Canvas';
-import type { DebugSink, DebugSnapshot } from '../debug/types';
+import type { CanvasDebugSink } from '../debug/types';
 
 // ---------------------------------------------------------------------------
 // jsdom canvas setup
@@ -64,7 +64,7 @@ describe('<Canvas> backgroundFill prop', () => {
   });
 
   it('includes a scene-background-fill layer before scene in the debug snapshot', () => {
-    const sinkRef: { current: (DebugSink & { snapshot(): DebugSnapshot }) | null } =
+    const sinkRef: { current: CanvasDebugSink | null } =
       { current: null };
 
     render(
@@ -95,7 +95,7 @@ describe('<Canvas> backgroundFill prop', () => {
   });
 
   it('omitting backgroundFill produces no scene-background-fill layer', () => {
-    const sinkRef: { current: (DebugSink & { snapshot(): DebugSnapshot }) | null } =
+    const sinkRef: { current: CanvasDebugSink | null } =
       { current: null };
 
     render(

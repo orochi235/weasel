@@ -66,6 +66,39 @@ function customUniformNames(vertSrc: string, fragSrc: string): string[] {
 /** How to construct a `WeaselRenderer`: the GL context or canvas to draw
  *  into, the output size, and the quality knobs that separate screen
  *  rendering from print. */
+/** A run of top-level commands, `[start, end)` by index, that
+ *  {@link WeaselRenderer.lastFrameStats} accounts for separately — one render
+ *  layer's commands, say. Spans are in order and do not overlap. */
+export interface RenderSpan {
+  id: string;
+  start: number;
+  end: number;
+}
+
+/** Per-frame options for {@link WeaselRenderer.render}. */
+export interface RenderOptions {
+  spans?: readonly RenderSpan[];
+}
+
+/** What one span cost. A batched run is drawn when something closes it, so
+ *  its draw call counts toward the span that closed it. */
+export interface RenderSpanStats {
+  id: string;
+  drawCalls: number;
+  ms: number;
+}
+
+/** What one `render()` cost. See {@link WeaselRenderer.lastFrameStats}. */
+export interface RenderStats {
+  drawCalls: number;
+  ms: number;
+  spans: RenderSpanStats[];
+}
+
+function now(): number {
+  return typeof performance !== 'undefined' ? performance.now() : Date.now();
+}
+
 export interface WeaselRendererOptions {
   gl?: WebGL2RenderingContext;
   canvas?: HTMLCanvasElement;
@@ -126,6 +159,7 @@ export interface RenderTarget {
  */
 export class WeaselRenderer {
   private readonly gl: WebGL2RenderingContext;
+  private stats: RenderStats = { drawCalls: 0, ms: 0, spans: [] };
   private pathFill: ShaderProgram;
   private pathFillVColor: ShaderProgram;
   private imageFill: ShaderProgram;
@@ -475,8 +509,12 @@ export class WeaselRenderer {
    * it — every other command carries its own transform in the stream, so
    * callers with no view concept can keep calling `render(commands)`.
    */
-  render(commands: DrawCommand[], viewMatrix?: GlMat3): void {
+  render(commands: DrawCommand[], viewMatrix?: GlMat3, opts?: RenderOptions): void {
     if (this.contextLost || this.disposed) return;
+    const t0 = now();
+    const counters = { drawCalls: 0 };
+    const spanStats: RenderSpanStats[] = [];
+    this.stats = { drawCalls: 0, ms: 0, spans: spanStats };
     const gl = this.gl;
     // Free GL resources whose Mesh was GC'd since the last frame. Done here
     // (top of render, before any draws) because GL state is known clean —
@@ -524,8 +562,21 @@ export class WeaselRenderer {
       deviceWidth: Math.round(this.widthCss * this.dpr),
       deviceHeight: Math.round(this.heightCss * this.dpr),
       restoreTargetRect: () => this.applyTarget(),
+      stats: counters,
     };
-    for (const cmd of commands) dispatch(ctx, cmd);
+    const spans = opts?.spans ?? [];
+    let next = 0;
+    for (let si = 0; si < spans.length; si++) {
+      const span = spans[si];
+      for (; next < span.start; next++) dispatch(ctx, commands[next]);
+      const drawsBefore = counters.drawCalls;
+      const spanT0 = now();
+      for (; next < span.end; next++) dispatch(ctx, commands[next]);
+      // The stream's closing flush belongs to whatever it closes.
+      if (si === spans.length - 1 && next >= commands.length) flushBatch(ctx);
+      spanStats.push({ id: span.id, drawCalls: counters.drawCalls - drawsBefore, ms: now() - spanT0 });
+    }
+    for (; next < commands.length; next++) dispatch(ctx, commands[next]);
     // The stream ended, so whatever is still staged has nothing left that
     // could merge with it.
     flushBatch(ctx);
@@ -533,6 +584,15 @@ export class WeaselRenderer {
     // stroke ribbons from tessellateStroke). Done after all draws complete
     // so we never delete a buffer that's still bound to a pending draw.
     this.meshCache.freeTransient();
+    this.stats.drawCalls = counters.drawCalls;
+    this.stats.ms = now() - t0;
+  }
+
+  /** What the last `render()` cost: GL draw calls issued and CPU milliseconds
+   *  spent issuing them, in total and per requested span. GPU time is not
+   *  measured; the GPU runs asynchronously. */
+  lastFrameStats(): RenderStats {
+    return this.stats;
   }
 
   /** Change the curve-flattening tolerance after construction. `undefined`

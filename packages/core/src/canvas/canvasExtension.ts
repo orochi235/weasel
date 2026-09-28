@@ -6,6 +6,7 @@ import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
 import type { PaintedCursorState } from '@weasel-js/cursor';
 import type { DrawCommand } from '../renderer';
 import type { CanvasViewProps } from './CanvasView';
+import type { CanvasDebugSink } from '../debug/types';
 
 /**
  * A view added through {@link SceneCanvasApi.addView}.
@@ -106,6 +107,9 @@ export interface CanvasExtensionApi {
    * and so should an input layer built against a bare `<Canvas>`.
    */
   paintedCursor: PaintedCursorState;
+  /** The sink this canvas's debug overlay reads, or null while `debug` is off.
+   *  Its `snapshot()` is what `renderDebugSnapshot` rasterizes. */
+  getDebug(): CanvasDebugSink | null;
   /** Register an externally-owned RenderLayer. The layer participates in the
    *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}. */
   registerLayer(layer: RenderLayer<unknown>): () => void;

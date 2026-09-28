@@ -40,12 +40,13 @@
  * This matches the behaviour of the dissolved `useKeyboardZoomTool`.
  */
 
-import type { Action } from '@weasel-js/routing';
+import type { Action, DebugSink } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';
 import { wheelZoomFactor } from 'core/viewport/wheelHandler';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
-import type { View } from 'core/viewport/view';
+import { viewToTransform, type View } from 'core/viewport/view';
+import { screenToWorld } from 'core/viewport/viewTransform';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 
 // Multiplicative step for keyboard zoom (matches useKeyboardZoomTool default).
@@ -159,13 +160,20 @@ export function makeViewportZoomAction(
         opts: { params: { kind: 'reset' } },
       },
     ],
-    requires: ['view'],
+    requires: ['view', 'debug'],
     invoker: {
       timing: 'immediate',
       run(deps, params) {
         const view = deps.view as ViewApi | undefined;
         if (!view) return;
+        const debug = deps.debug as DebugSink | undefined;
         const current = view.get();
+        // Report a zoom about `anchor` (canvas-local px) from `from` to `to`.
+        const record = (from: View, to: View, anchor: { x: number; y: number }) => {
+          if (!debug) return;
+          const [wx, wy] = screenToWorld(anchor.x, anchor.y, viewToTransform(from));
+          debug.recordViewport('zoom', from, to, { x: wx, y: wy });
+        };
         const kind = params?.kind as string | undefined;
 
         const canAnimate = tweenOpts !== null && typeof view.animate === 'function';
@@ -183,7 +191,9 @@ export function makeViewportZoomAction(
         });
         const scaleBy = (factor: number) => {
           if (!(factor > 0) || !Number.isFinite(factor)) return;
-          view.set(zoomAt(current, focal(), factor, clamp));
+          const next = zoomAt(current, focal(), factor, clamp);
+          view.set(next);
+          record(current, next, focal());
         };
 
         switch (kind) {
@@ -194,11 +204,13 @@ export function makeViewportZoomAction(
             scaleBy((params?.scale as number | undefined) ?? Number.NaN);
             break;
           case 'in':
-            stepTo(zoomAt(stepFrom(), keyAnchor(view), KEY_STEP, clamp));
+          case 'out': {
+            const from = stepFrom();
+            const target = zoomAt(from, keyAnchor(view), kind === 'in' ? KEY_STEP : 1 / KEY_STEP, clamp);
+            stepTo(target);
+            record(from, target, keyAnchor(view));
             break;
-          case 'out':
-            stepTo(zoomAt(stepFrom(), keyAnchor(view), 1 / KEY_STEP, clamp));
-            break;
+          }
           case 'reset': {
             // Prefer the consumer-supplied recenter when available — typically
             // re-fits the document page into the workspace. A recenter that

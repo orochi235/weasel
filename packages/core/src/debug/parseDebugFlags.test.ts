@@ -25,7 +25,14 @@ describe('parseDebugFlags', () => {
       origins: true,
       snap: true,
       layers: true,
+      ids: true,
+      fps: true,
+      viewport: true,
     });
+  });
+
+  it('parses the panel and viewport features', () => {
+    expect(parseDebugFlags('?debug=fps,viewport,ids')).toEqual({ fps: true, viewport: true, ids: true });
   });
 
   it('ignores unknown feature keys but keeps known siblings', () => {

@@ -39,7 +39,7 @@ import type {
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
-import type { Point2, DragSample } from '@weasel-js/routing';
+import type { Point2, DragSample, DebugSink } from '@weasel-js/routing';
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
@@ -515,6 +515,12 @@ declare module '@weasel-js/routing' {
      * absent means no snapping (identity).
      */
     snap?: SnapDep;
+    /**
+     * The canvas's debug sink — the one tools reach as `ToolCtx.debug`.
+     * Sourced by `<SceneCanvas>`; absent while its `debug` overlay is off.
+     * Actions report what they did here, and the overlay draws it.
+     */
+    debug?: DebugSink;
     /**
      * Lasso-select dep — polygon hit-test + selection read/write.
      *
