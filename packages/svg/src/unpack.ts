@@ -73,6 +73,7 @@ export type SvgSceneDraft<TData = Record<string, unknown>> =
 /** A leaf `SvgNode`: everything but a group. */
 export type SvgLeafNode = Exclude<SvgNode, SvgGroupNode>;
 
+/** Options for {@link svgNodesToKitDrafts}. */
 export interface SvgNodesToKitDraftsOptions<TData> {
   /** Lower a leaf yourself, from the kit data the default writes for it and
    *  the node it came from — for data shaped other than the kit painters', or
