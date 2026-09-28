@@ -104,7 +104,13 @@ export {
 export type { ToolOffhandBindingSpec } from './interactions/actions/toolOffhand';
 
 // ─── dispatcher ───────────────────────────────────────────────────────────
-export * from './interactions/dispatcher/dispatcher';
+export {
+  pointerGestureId, recordModeSwitch, createDispatcher,
+} from './interactions/dispatcher/dispatcher';
+export type {
+  ModeSwitchLogEntry, TraceLogEntry, DispatcherContext, UiOngoingControl,
+  ResolveOnlyResult, ResolvedCandidate, ResolveAllOptions, Dispatcher,
+} from './interactions/dispatcher/dispatcher';
 export * from './interactions/dispatcher/dispatchRecord';
 export * from './interactions/dispatcher/matcher';
 export * from './interactions/dispatcher/predicates';

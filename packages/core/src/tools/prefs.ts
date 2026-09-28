@@ -14,7 +14,8 @@ import type { Display, Unit, UnitEntry, UnitScale, UnitSystem } from '@weasel-js
 export type ToolPrefKind =
   | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object';
 
-interface ToolPrefBase<K extends string, Value> {
+/** The fields every leaf pref shares, keyed by its `kind` and typed by its stored value. */
+export interface ToolPrefBase<K extends string, Value> {
   kind: K;
   /** Human-readable label. */
   name: string;

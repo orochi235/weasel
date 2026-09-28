@@ -195,7 +195,7 @@ export interface NodeInkCtx {
 }
 
 /** What a painter that declares no `ink` is assumed to do. */
-const DEFAULT_INK: NodeInk = { filled: true, outset: 0, inset: 0 };
+export const DEFAULT_INK: Readonly<NodeInk> = Object.freeze({ filled: true, outset: 0, inset: 0 });
 
 /** Options for `registerNodeShape`. */
 export interface RegisterNodeShapeOptions {

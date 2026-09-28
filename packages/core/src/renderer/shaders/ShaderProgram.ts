@@ -18,6 +18,7 @@ export class ShaderCompileError extends Error {
   }
 }
 
+/** A linked GL program with its uniform and attribute locations cached by name. */
 export class ShaderProgram {
   readonly handle: WebGLProgram;
   private readonly uniforms = new Map<string, WebGLUniformLocation>();

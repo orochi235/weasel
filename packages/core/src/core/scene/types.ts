@@ -101,6 +101,20 @@ export interface DerivedDep<TPose> {
   readonly path: Path | null;
 }
 
+/** Computes a node's path from its dependencies: the type of a node's
+ *  `derivePath` and of each entry in `SceneRegistry.derivePath`. */
+export type DerivePathFn<TPose> = (
+  node: Node<unknown, string, TPose>,
+  deps: readonly (DerivedDep<TPose> | undefined)[],
+) => Path | null;
+
+/** Computes a node's pose from its dependencies: the type of a node's
+ *  `derivePose` and of each entry in `SceneRegistry.derivePose`. */
+export type DerivePoseFn<TPose> = (
+  node: Node<unknown, string, TPose>,
+  deps: readonly (DerivedDep<TPose> | undefined)[],
+) => TPose | null;
+
 interface NodeBase<TData, TLayer extends string, TPose> {
   id: NodeId;
   layer: TLayer;
@@ -138,10 +152,7 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  `node` is deliberately widened: naming `TData`/`TLayer` here puts them in
    *  a contravariant position, making `Scene` invariant in both and breaking
    *  assignment kit-wide. The cost is that a `derivePath` casts to read `node.data`. */
-  derivePath?: (
-    node: Node<unknown, string, TPose>,
-    deps: readonly (DerivedDep<TPose> | undefined)[],
-  ) => Path | null;
+  derivePath?: DerivePathFn<TPose>;
   /** Computes this node's pose from its dependencies' poses, the same way
    *  `derivePath` computes its path — same `dependsOn` list, same widened
    *  `node`, same registry-keyed serialization.
@@ -155,10 +166,7 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  Returning `null` means "I have nothing to derive from right now", and
    *  the node falls back to its authored `pose`. `setPose` on a derived node
    *  still writes that authored pose; it is simply not what anything reads. */
-  derivePose?: (
-    node: Node<unknown, string, TPose>,
-    deps: readonly (DerivedDep<TPose> | undefined)[],
-  ) => TPose | null;
+  derivePose?: DerivePoseFn<TPose>;
 }
 
 /** A node with no children — a shape, a label, an image. */
@@ -235,15 +243,9 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   dependsOn?: readonly NodeId[] | 'children';
   /** Mirrors `SceneNode.derivePath`. Taken as a live function; its registry key is
    *  looked up from it, never passed in. */
-  derivePath?: (
-    node: Node<unknown, string, TPose>,
-    deps: readonly (DerivedDep<TPose> | undefined)[],
-  ) => Path | null;
+  derivePath?: DerivePathFn<TPose>;
   /** Mirrors `SceneNode.derivePose`, on the same terms as `derivePath`. */
-  derivePose?: (
-    node: Node<unknown, string, TPose>,
-    deps: readonly (DerivedDep<TPose> | undefined)[],
-  ) => TPose | null;
+  derivePose?: DerivePoseFn<TPose>;
 }
 
 /** A custom scene mutation registered with `Scene.registerOp`: how to apply
@@ -326,15 +328,9 @@ export interface SceneRegistry<TPose> {
   /** Maps registry keys to `clipFromPose` factory functions for container nodes. */
   clipFromPose?: Readonly<Record<string, (pose: TPose) => Path | null>>;
   /** Maps registry keys to `derivePath` functions for nodes with `dependsOn`. */
-  derivePath?: Readonly<Record<string, (
-    node: Node<unknown, string, TPose>,
-    deps: readonly (DerivedDep<TPose> | undefined)[],
-  ) => Path | null>>;
+  derivePath?: Readonly<Record<string, DerivePathFn<TPose>>>;
   /** Maps registry keys to `derivePose` functions for nodes with `dependsOn`. */
-  derivePose?: Readonly<Record<string, (
-    node: Node<unknown, string, TPose>,
-    deps: readonly (DerivedDep<TPose> | undefined)[],
-  ) => TPose | null>>;
+  derivePose?: Readonly<Record<string, DerivePoseFn<TPose>>>;
   // A new function field is a row in `NODE_FN_FIELDS` (core/scene/nodeFnFields.ts)
   // plus its entry here; the field name is the registry key by construction.
 }

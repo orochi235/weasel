@@ -27,6 +27,8 @@ describe('unionOfChildrenVia', () => {
 
   it('returns null for an emptied container', () => {
     const union = unionOfChildrenVia(CIRCLE_POSE_DESCRIPTOR);
-    expect(union({ pose: circle(0, 0, 0) }, [])).toBeNull();
+    const scene = createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' as const }] });
+    const g = scene.add({ kind: 'container', layer: 'main', pose: circle(0, 0, 0), data: {} });
+    expect(union(scene.get(g)!, [])).toBeNull();
   });
 });

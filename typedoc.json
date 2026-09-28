@@ -57,8 +57,6 @@
     "ReorderAdapter",
     "CreateDebugOverlayLayerOpts",
     "STANDARD_SLOTS",
-    "KeyBinding",
-    "PenAnchor",
-    "View"
+    "PenAnchor"
   ]
 }

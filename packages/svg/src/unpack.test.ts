@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import type { SvgNode } from './types';
 import { svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
 import { parseSvg } from './parse';
-import { DEFAULT_TEXT_STYLE, getMarker, _resetMarkersForTests, type IngestCtx, type Op } from '@weasel-js/core';
+import { DEFAULT_TEXT_STYLE, getMarker, type IngestCtx, type Op } from '@weasel-js/core';
+import { _resetMarkersForTests } from '@weasel-js/core/test-seams';
 
 const rectNode = (x: number, y: number, w: number, h: number, extra: Record<string, unknown> = {}): SvgNode => ({
   kind: 'path',

@@ -22,14 +22,12 @@ import { applyStyleToRange, runsCarryStyling, styleAtRange } from './runs/rangeS
 import { nodeHasFlag, setFlagOverRange, type FlagKey } from './runs/flagRange';
 import type { RangeStyle, RunStylePatch } from './runs/rangeStyle';
 
-type StyleFlag = FlagKey;
-
 /**
  * A styling a shortcut or a control toggles. The additive booleans, plus the
  * two `script` values — which are exclusive rather than additive, so they
  * toggle against one enum rather than each owning a boolean.
  */
-export type StyleToggle = StyleFlag | 'super' | 'sub';
+export type StyleToggle = FlagKey | 'super' | 'sub';
 
 /**
  * The shortcut each styling answers to. Strikethrough takes Cmd+Shift+X
