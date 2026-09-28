@@ -623,13 +623,6 @@ What it surfaced:
 - **No tiled-content layer primitive exists** (the P3 under Tiling) — the run
   cycle and the parallax bands are second sites wanting it.
 
-- **Tune `DEAD_ZONE_X` in the browser.** It sits at 28 in
-  `apps/site/demos/platformer/camera.ts` (vs `DEAD_ZONE_Y` at 20), picked
-  rather than chosen on feel. A dead-zone camera settles at exactly
-  `DEAD_ZONE_X` from a stationary target, so `platformerCamera.test.ts` asserts
-  that invariant rather than a fixed distance — changing it does not break a
-  test.
-
 Two predictions the demo **disproved**, recorded so they are not re-raised: the
 sprite-sheet gap closed independently (`ImageDrawCommand.source` / `flipX` /
 `flipY` / `frameRect`, see
