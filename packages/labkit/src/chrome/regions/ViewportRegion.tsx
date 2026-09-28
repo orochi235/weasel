@@ -23,7 +23,13 @@ export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
       onKeyDown={onKeyDown}
     >
       {contributions.map((c) => {
-        if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
+        if (c.render) {
+          return (
+            <span key={c.id} className="lk-viewport-controls__item">
+              {c.render(ctx)}
+            </span>
+          );
+        }
         if (c.region !== 'viewport' || !c.item) return null;
         const { icon: Icon, label, disabled, onActivate } = c.item;
         return (
