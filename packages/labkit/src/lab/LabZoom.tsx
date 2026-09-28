@@ -115,7 +115,7 @@ function LabZoomControls() {
   useGestureDispatcher({
     canvasRef: NO_ELEMENT,
     actions: registry,
-    toolsById: NO_TOOLS,
+    entriesById: NO_TOOLS,
     channels: CHANNELS,
     keyboard: 'first',
   });

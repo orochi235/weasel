@@ -35,7 +35,7 @@ function KeyDispatchHarness() {
   useGestureDispatcher({
     canvasRef,
     actions: actions!,
-    toolsById: new Map(),
+    entriesById: new Map(),
   });
   return null;
 }

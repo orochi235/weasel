@@ -148,6 +148,12 @@ interaction. See `packages/routing/src/tools/types.ts`.
 
 Not every entry is a Tool. `@weasel-js/hud` contributes bindings and actions and
 declares `claimed`; it has no scratch, no palette icon, and nothing to preview.
+`isTool(entry)` is the test — `focus` or `offhand` eligibility — and the focus
+hooks run only for entries it passes. So "tool" names only what a user picks from
+a palette or holds on a key. Anything that holds every kind of entry takes
+`Contribution` and says "entry": `<SceneCanvas ambient>`, `useTools`'s `ambient`,
+the dispatcher's `entriesById`, and `ownerId` on a scoped binding, a route-registry
+row and a dispatch record.
 
 The **select tool** is a Tool in this sense and only chooses: `select.pick` on
 press, the deferred multi-click collapse on release, `areaSelect` on an empty

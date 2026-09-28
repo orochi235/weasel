@@ -349,7 +349,7 @@ function RoutesWidget({
 }): ReactElement {
   const ambientSet = new Set(slots.ambient);
   const sorted = [...routes].sort((a, b) =>
-    a.toolId.localeCompare(b.toolId)
+    a.ownerId.localeCompare(b.ownerId)
     || a.phase.localeCompare(b.phase)
     || a.gesture.localeCompare(b.gesture)
     || (a.arg ?? '').localeCompare(b.arg ?? '')
@@ -357,9 +357,9 @@ function RoutesWidget({
   const rows = withUniqueIds(sorted.map((r): Omit<RouteRow, 'id'> => {
     const mods = canonicalModifiers(r.modifiers);
     return {
-      key: [r.toolId, r.phase, r.gesture, r.arg ?? '', r.target ?? '', mods, r.actionId].join('|'),
-      toolId: r.toolId,
-      slot: ambientSet.has(r.toolId) ? 'ambient' : 'registry',
+      key: [r.ownerId, r.phase, r.gesture, r.arg ?? '', r.target ?? '', mods, r.actionId].join('|'),
+      ownerId: r.ownerId,
+      slot: ambientSet.has(r.ownerId) ? 'ambient' : 'registry',
       phase: r.phase,
       gesture: r.gesture,
       arg: r.arg,
@@ -384,7 +384,7 @@ function RoutesWidget({
 interface RouteRow {
   id: string;
   key: string;
-  toolId: string;
+  ownerId: string;
   slot: 'ambient' | 'registry';
   phase: string;
   gesture: string;
@@ -404,7 +404,7 @@ const SPECIFICITY_HEADER = (
 );
 
 const ROUTE_COLUMNS: readonly DataGridColumn<RouteRow>[] = [
-  { id: 'toolId', header: 'Tool', render: (r) => <code>{r.toolId}</code> },
+  { id: 'ownerId', header: 'Owner', render: (r) => <code>{r.ownerId}</code> },
   { id: 'slot', header: 'Slot' },
   { id: 'phase', header: 'Phase' },
   { id: 'gesture', header: 'Gesture' },
@@ -535,7 +535,7 @@ export function ResolutionWidget({
         depRegistry: STUB_DEP_REGISTRY,
         activeToolId,
         hotkeyStack: [],
-        toolsById: new Map(tools.map((t) => [t.id, t])),
+        entriesById: new Map(tools.map((t) => [t.id, t])),
         isMac: false,
       },
       // The question this panel exists to answer is "why didn't MY binding
@@ -588,7 +588,7 @@ export function ResolutionWidget({
         ) : (
           <DataGrid
             rows={withUniqueIds(candidates.map((c, i) => ({
-              key: `${c.scope}|${c.ownerToolId ?? ''}|${c.actionId}`,
+              key: `${c.scope}|${c.ownerId ?? ''}|${c.actionId}`,
               rank: i + 1,
               candidate: c,
             })))}
@@ -612,7 +612,7 @@ const RESOLUTION_COLUMNS: readonly DataGridColumn<ResolutionRow>[] = [
     sortable: false,
     render: ({ candidate: c }) => (
       <>
-        <code>{c.ownerToolId ?? '—'}</code>
+        <code>{c.ownerId ?? '—'}</code>
         {isPredicateTarget(c.binding.spec) && (
           <Caveat text="Evaluated against a synthesized hit — a predicate reading more than `kind` may differ at runtime." />
         )}
@@ -676,7 +676,7 @@ function ConflictsWidget({ conflicts }: { conflicts: readonly Conflict[] }): Rea
           rows={withUniqueIds(conflicts.map((c) => {
             const route = `${c.phase}.${c.gesture}${c.arg != null ? `(${c.arg})` : ''}${c.target != null ? `.${c.target}` : ''}`;
             const mods = canonicalModifiers(c.modifiers);
-            return { key: `${route}|${mods}`, route, mods, toolIds: c.toolIds.join(', ') };
+            return { key: `${route}|${mods}`, route, mods, ownerIds: c.ownerIds.join(', ') };
           }))}
           columns={CONFLICT_COLUMNS}
         />
@@ -685,12 +685,12 @@ function ConflictsWidget({ conflicts }: { conflicts: readonly Conflict[] }): Rea
   );
 }
 
-interface ConflictRow { id: string; route: string; mods: string; toolIds: string }
+interface ConflictRow { id: string; route: string; mods: string; ownerIds: string }
 
 const CONFLICT_COLUMNS: readonly DataGridColumn<ConflictRow>[] = [
   { id: 'route', header: 'Route', render: (r) => <code>{r.route}</code> },
   { id: 'mods', header: 'Mods', render: (r) => codeOrDash(r.mods) },
-  { id: 'toolIds', header: 'Claimed by', render: (r) => <code>{r.toolIds}</code> },
+  { id: 'ownerIds', header: 'Claimed by', render: (r) => <code>{r.ownerIds}</code> },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -58,7 +58,7 @@ function makeViewApi(initial: View): ViewApi & { current: View } {
 
 function MountDispatcher({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement | null> }) {
   const registry = useActionsRegistry();
-  useGestureDispatcher({ canvasRef, actions: registry!, toolsById: new Map() });
+  useGestureDispatcher({ canvasRef, actions: registry!, entriesById: new Map() });
   return <canvas ref={canvasRef} data-testid="canvas" />;
 }
 

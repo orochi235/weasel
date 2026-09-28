@@ -20,7 +20,8 @@ import { useDepRegistry, type DepRegistry } from '../actions/depRegistry';
 import type { DepName, DepSchema } from '../../index';
 import type { ActionsRegistry } from '../actions/registry';
 import type { AffordanceHit } from '../actions/invoker';
-import type { Tool } from '../../tools/types';
+import { isTool } from '../../tools/types';
+import type { Contribution } from '../../contributions/types';
 import {
   createDispatcher, pointerGestureId, publishLiveDispatch, type Dispatcher, type DispatcherContext,
 } from './dispatcher';
@@ -179,7 +180,7 @@ export interface UseGestureDispatcherOptions {
   /** Action registry (ActionsRegistry from registry.tsx). */
   actions: ActionsRegistry;
   /** Tool definitions keyed by id. Typically passes an empty Map. */
-  toolsById: ReadonlyMap<string, Tool<unknown, unknown>>;
+  entriesById: ReadonlyMap<string, Contribution<unknown>>;
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
   /**
@@ -422,7 +423,7 @@ function computeMultiTouchGeometry(
  * providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onDoubleClick, views, channels } = opts;
+  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onDoubleClick, views, channels } = opts;
   // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
@@ -454,7 +455,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     depRegistry,
     activeToolId: activeTool.active,
     hotkeyStack: activeTool.hotkeyStack,
-    toolsById,
+    entriesById,
     isMac: IS_MAC,
   });
   ctxRef.current = {
@@ -462,7 +463,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     depRegistry,
     activeToolId: activeTool.active,
     hotkeyStack: activeTool.hotkeyStack,
-    toolsById,
+    entriesById,
     isMac: IS_MAC,
   };
 
@@ -502,11 +503,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   // tools' setup.
   const liveToolsRef = useRef<ReadonlySet<string>>(new Set());
   const prevActiveRef = useRef(activeTool.active);
-  const toolsByIdRef = useRef(toolsById);
-  toolsByIdRef.current = toolsById;
+  const entriesByIdRef = useRef(entriesById);
+  entriesByIdRef.current = entriesById;
   const fireLifecycle = (id: string, hook: 'onActivate' | 'onDeactivate'): void => {
-    const tool = toolsByIdRef.current.get(id) as Tool<unknown, unknown> | undefined;
-    const fn = tool?.[hook];
+    const tool = entriesByIdRef.current.get(id);
+    if (!tool || !isTool(tool)) return;
+    const fn = tool[hook];
     if (!fn) return;
     try {
       fn({ scratch: tool.initScratch?.() });

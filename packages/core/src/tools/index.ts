@@ -1,5 +1,5 @@
-export { defineTool, defineViewportTool } from './overlayBinding';
-export type { ToolDef, ViewportToolDef } from './overlayBinding';
+export { defineTool } from './overlayBinding';
+export type { ToolDef } from './overlayBinding';
 export { useTools } from './overlayBinding';
 export type { UseToolsOptions, ToolsApi } from './overlayBinding';
 export { useKeybindings } from './useKeybindings';

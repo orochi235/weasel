@@ -7,7 +7,7 @@ export function recordOf(o: { ts: number; eventKind: string; ranked: readonly st
     actionId,
     routes: ['[*:*] drag'],
     scope: 'ambient',
-    ownerToolId: null,
+    ownerId: null,
     namesView: false,
     specificity: [0, 0, 0, 1],
   }));

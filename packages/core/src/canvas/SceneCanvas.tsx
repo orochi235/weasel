@@ -50,7 +50,7 @@ import type { Bounds } from 'tools/builtin/select';
 import { useTools } from '../tools/overlayBinding';
 import { type ToolsApi } from '../tools/overlayBinding';
 import { useKeybindings } from 'tools/useKeybindings';
-import type { AnyTool } from '../tools/overlayBinding';
+import type { AnyTool, Contribution } from '../tools/overlayBinding';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
@@ -632,13 +632,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  own `tools` prop. */
     initialActiveTool?: string;
 
-    /** Always-on entries to register alongside the internal tools:
-     *  tools, and features written as a `SurfaceContribution` — whose views,
-     *  deps, overlay, bindings, actions and `attach` all install from this one
-     *  list, and uninstall when the entry leaves it. If you supply your own
-     *  `tools` prop, this is ignored — wire `ambient` through your own
-     *  `useTools` call instead. */
-    ambient?: readonly (AnyTool | SurfaceContribution)[];
+    /** Always-on entries to register alongside the internal tools — every one
+     *  a `SurfaceContribution`, whose views, deps, overlay, bindings, actions
+     *  and `attach` all install from this one list, and uninstall when the
+     *  entry leaves it. A tool is a contribution too, so one can go here. If
+     *  you supply your own `tools` prop, this is ignored — wire `ambient`
+     *  through your own `useTools` call instead. */
+    ambient?: readonly SurfaceContribution[];
 
     /** Configures the `view` preset, and implies it: passing this turns
      *  `view` on.
@@ -1426,11 +1426,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // viewport is absent — the tool is simply not added to the registry.
   const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
 
-  // Keyboard zoom and wheel zoom/pan are handled by the viewport.pan and
-  // viewport.zoom descriptors via the gesture dispatcher.
-  // viewportAmbient no longer includes keyZoom/wheelZoom tool instances.
-  const viewportAmbient: AnyTool[] = [];
-
   // Built-ins to mount: what `defaultTools` lists, plus the tool each preset
   // brings — `pick` the select tool, `view` the hand.
   const baseRequestedTools: readonly BuiltinToolId[] = [
@@ -1470,7 +1465,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // (lasso mode, clone-selection) thread through `toolOptions`.
   const shapeTools = useBuiltinShapeTools({ scene, adapter, options: toolOptions });
 
-  const mergedAmbient = [...viewportAmbient, ...((ambient ?? []) as AnyTool[])];
+  const mergedAmbient = ambient ?? [];
 
   const internalRegistry: Record<string, AnyTool> = {};
   if (wants('select')) internalRegistry.select = internalSelect;
@@ -1564,9 +1559,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const rotateOptions = selectToolOpts?.rotate || undefined;
   // Transform first: a handle sits over the selected body, so the move
   // binding matches a handle drag too, and a tie goes to whichever is first.
-  const featureContributions = useMemo<AnyTool[]>(() => [
-    ...(enabled.has('transform') ? [selectionTransformContribution({ rotate: rotateOptions }) as AnyTool] : []),
-    ...(enabled.has('move') ? [selectionMoveContribution(selectionMoveOptions) as AnyTool] : []),
+  const featureContributions = useMemo<Contribution[]>(() => [
+    ...(enabled.has('transform') ? [selectionTransformContribution({ rotate: rotateOptions })] : []),
+    ...(enabled.has('move') ? [selectionMoveContribution(selectionMoveOptions)] : []),
   ], [enabled, selectionMoveOptions, rotateOptions]);
 
   // Kit-standard actions to register: every preset's own, plus whichever a
@@ -2343,7 +2338,7 @@ function GestureDispatcherMounter({
   /** Always-live entries the canvas installs beside `tools` — the selection's
    *  `move` / `transform` bindings. Ahead of the tools' ambient entries, so a
    *  tie at one specificity goes to the kit's. */
-  contributions: readonly AnyTool[];
+  contributions: readonly Contribution[];
   enabled: boolean;
   /** When false, the dispatcher leaves keyboard listeners unattached so
    *  keyboard-bound actions never fire. Wired to `enableKeybindings`. */
@@ -2387,15 +2382,15 @@ function GestureDispatcherMounter({
   const registry = useActionsRegistry();
   const depRegistry = useDepRegistry();
   const viewRegistry = useOptionalViewRegistry();
-  const toolsById = useMemo<ReadonlyMap<string, AnyTool>>(() => {
-    const m = new Map<string, AnyTool>();
+  const entriesById = useMemo<ReadonlyMap<string, Contribution>>(() => {
+    const m = new Map<string, Contribution>();
     for (const [id, tool] of Object.entries(tools.registry)) {
       m.set(id, tool);
     }
     for (const entry of contributions) m.set(entry.id, entry);
-    // Ambient tools too — their bindings assemble at ambient scope, and the
+    // Ambient entries too — their bindings assemble at ambient scope, and the
     // dispatcher resolves them through this same map.
-    for (const tool of tools.ambient) m.set(tool.id, tool);
+    for (const entry of tools.ambient) m.set(entry.id, entry);
     return m;
   }, [tools.registry, tools.ambient, contributions]);
 
@@ -2545,7 +2540,7 @@ function GestureDispatcherMounter({
   useGestureDispatcher({
     canvasRef,
     actions: registry!,
-    toolsById,
+    entriesById,
     enabled,
     keyboard,
     affordanceAt: affordanceWithLayers,

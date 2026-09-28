@@ -91,7 +91,3 @@ export interface ToolDef<TScratch = void, TOverlay = KernelOverlay> {
   overlayPosition?: OverlayPosition;
 }
 
-/** Viewport-tool spec. Once phase tables went away this stopped differing
- *  from `ToolDef` in any structural way; `defineViewportTool` survives as the
- *  authoring signal that a tool pans/zooms the view rather than the scene. */
-export type ViewportToolDef<TScratch = void, TOverlay = KernelOverlay> = ToolDef<TScratch, TOverlay>;

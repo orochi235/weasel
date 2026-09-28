@@ -106,8 +106,8 @@ function RegistryTable({ rows }: { rows: RegistryEntry[] }) {
         {rows.map((r, i) => {
           const modKey = canonicalModifiers(r.modifiers);
           return (
-          <tr key={`${r.toolId}.${r.phase}.${r.gesture}.${r.target}.${modKey}.${i}`}>
-            <td>{r.toolId}</td>
+          <tr key={`${r.ownerId}.${r.phase}.${r.gesture}.${r.target}.${modKey}.${i}`}>
+            <td>{r.ownerId}</td>
             <td>{r.phase}</td>
             <td>{r.gesture}</td>
             <td>{r.target}</td>
@@ -134,7 +134,7 @@ function ConflictsReport({ conflicts }: { conflicts: Conflict[] }) {
             {c.phase}.{c.gesture}[{c.target}]
             {modKey !== '' && `:${modKey}`}
           </code>{' '}
-          claimed by {c.toolIds.join(', ')}
+          claimed by {c.ownerIds.join(', ')}
         </li>
         );
       })}

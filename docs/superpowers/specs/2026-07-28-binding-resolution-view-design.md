@@ -48,7 +48,7 @@ export interface ResolvedCandidate {
   action: Action;
   binding: GestureBinding;
   scope: BindingScope;
-  ownerToolId: string | null;
+  ownerId: string | null;
   /** The tuple from `specificity(binding.spec)`, surfaced so a reader can see
    *  why one candidate outranks another rather than inferring it. */
   specificity: readonly [number, number, number, number];

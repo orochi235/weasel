@@ -13,7 +13,7 @@ import type { InputEvent } from '@weasel-js/gestures';
 const vagueActive: ScopedBinding = {
   binding: { spec: { kind: 'drag' }, actionId: 'insert' },
   scope: 'active',
-  ownerToolId: 'rect',
+  ownerId: 'rect',
 };
 
 const namedAmbient: ScopedBinding = {
@@ -25,7 +25,7 @@ const namedAmbient: ScopedBinding = {
     actionId: 'hud.drag',
   },
   scope: 'ambient',
-  ownerToolId: 'weasel-hud',
+  ownerId: 'weasel-hud',
 };
 
 function dragOn(affordance: unknown): InputEvent {
@@ -62,7 +62,7 @@ describe('exclusive claims outrank the scope tier', () => {
     const bodyOnly: ScopedBinding = {
       binding: { spec: { kind: 'drag', target: 'empty' }, actionId: 'areaSelect' },
       scope: 'active',
-      ownerToolId: 'select',
+      ownerId: 'select',
     };
     const e = { ...dragOn({ kind: 'layer:weasel-hud', owner: 'weasel-hud', strength: 'exclusive' }), bodyTarget: 'empty' } as unknown as InputEvent;
     const sorted = matchSorted(e, [bodyOnly, namedAmbient], false);
@@ -73,7 +73,7 @@ describe('exclusive claims outrank the scope tier', () => {
     const namedByString: ScopedBinding = {
       binding: { spec: { kind: 'drag', target: 'affordance:layer:weasel-hud' }, actionId: 'hud.drag' },
       scope: 'ambient',
-      ownerToolId: 'weasel-hud',
+      ownerId: 'weasel-hud',
     };
     const hit = { kind: 'layer:weasel-hud', owner: 'weasel-hud', strength: 'exclusive' };
     const sorted = matchSorted(dragOn(hit), [vagueActive, namedByString], false);
@@ -86,7 +86,7 @@ describe('exclusive claims outrank the scope tier', () => {
     const activeConsulting: ScopedBinding = {
       binding: { spec: { kind: 'drag', target: 'affordance:layer:weasel-hud' }, actionId: 'tool.onHud' },
       scope: 'active',
-      ownerToolId: 'rect',
+      ownerId: 'rect',
     };
     const hit = { kind: 'layer:weasel-hud', owner: 'weasel-hud', strength: 'exclusive' };
     const sorted = matchSorted(dragOn(hit), [namedAmbient, activeConsulting], false);
@@ -131,7 +131,7 @@ describe('an exclusive claim no binding can receive warns in dev', () => {
     const nearMiss: ScopedBinding = {
       binding: { spec: { kind: 'drag', target: { kindOf: () => false } }, actionId: 'never' },
       scope: 'active',
-      ownerToolId: 'some-tool',
+      ownerId: 'some-tool',
     };
     const warn = vi.fn();
     const hit = { kind: 'layer:almost-taken', owner: 'almost-taken', strength: 'exclusive' };
@@ -151,7 +151,7 @@ describe('per-kind claims', () => {
   const viewportZoom: ScopedBinding = {
     binding: { spec: { kind: 'wheel' }, actionId: 'viewport.zoom' },
     scope: 'ambient',
-    ownerToolId: null,
+    ownerId: null,
   };
 
   it('a claim that lists only pointer does not bar a wheel binding', () => {
@@ -190,7 +190,7 @@ describe('body predicates do not survive an exclusive claim', () => {
   const enterPathEdit: ScopedBinding = {
     binding: { spec: { kind: 'doubleClick', target: { kindOf: isBody } }, actionId: 'enterPathEdit' },
     scope: 'ambient',
-    ownerToolId: null,
+    ownerId: null,
   };
 
   it('targetConsultsAffordance is false for the kit body predicates', () => {

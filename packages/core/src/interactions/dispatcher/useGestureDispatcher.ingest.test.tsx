@@ -21,7 +21,7 @@ function Probe({ actionDef }: { actionDef: Action }) {
   useGestureDispatcher({
     canvasRef,
     actions: registry!,
-    toolsById: new Map(),
+    entriesById: new Map(),
   });
   return <canvas ref={canvasRef} />;
 }

@@ -95,7 +95,7 @@ describe('FallthroughDiagram', () => {
     expect(screen.getAllByLabelText('[*:*] drag => anchor').length).toBeGreaterThan(0);
   });
 
-  it('shows the owning tool, or "action" for an action binding', () => {
+  it('shows the owning tool or contribution, or "action" for an action binding', () => {
     render(<FallthroughDiagram record={fixtures.bareDragSelect} />);
     const matched = screen.getByRole('region', { name: 'Matched' });
     const tools = within(matched).getAllByRole('row').slice(1).map((r) => r.querySelectorAll('td')[2]?.textContent);

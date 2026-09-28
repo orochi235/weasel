@@ -11,7 +11,6 @@ import {
   type ToolOffhandBindingSpec,
 } from '../interactions/actions/toolOffhand';
 import { reportRouteConflicts } from '../tools/routing/reflection/conflicts';
-import type { Tool } from '../tools/types';
 import type { HotkeyTrigger } from './types';
 import { scopeBindings } from './assemble';
 import { liveScope } from './eligibility';
@@ -161,8 +160,8 @@ export function useContributions<TOverlay = KernelOverlay>(
     // on top of that. Sorting on "not focus-eligible" put ambient tools in the
     // registry bucket, which is never compared against itself — registry tools
     // take turns in the active slot — so ambient-vs-ambient went unreported.
-    const registry: Tool<unknown, TOverlay>[] = [];
-    const ambient: Tool<unknown, TOverlay>[] = [];
+    const registry: Contribution<TOverlay>[] = [];
+    const ambient: Contribution<TOverlay>[] = [];
     for (const entry of entriesRef.current) {
       if (entry.eligibility?.focus) registry.push(entry);
       if (entry.eligibility?.always || entry.eligibility?.claimed) ambient.push(entry);

@@ -90,7 +90,7 @@ can produce, because it would move the boundary the whole doc rests on.
 ## The interaction spine
 
 `useGestureDispatcher` requires three options — `canvasRef`, `actions`,
-`toolsById` — and `canvasRef` is typed `HTMLElement`, so the 3D pane's own div
+`entriesById` — and `canvasRef` is typed `HTMLElement`, so the 3D pane's own div
 serves. The provider stack is `<WeaselProvider isolate>`: one registry and one
 dispatcher per trial, so a second trial cannot displace the first.
 

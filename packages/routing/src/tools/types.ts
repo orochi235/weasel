@@ -118,6 +118,13 @@ export interface Tool<TScratch = unknown, TOverlay = KernelOverlay> extends Cont
   previewIds?: () => Iterable<string> | null;
 }
 
+/** Whether `entry` is a tool: a contribution that can hold focus, chosen from
+ *  a palette or held on a key. Only a tool's focus hooks (`initScratch`,
+ *  `cursor`, `onActivate`, the previews) ever run. */
+export function isTool<TOverlay>(entry: Contribution<TOverlay>): entry is Tool<unknown, TOverlay> {
+  return !!(entry.eligibility?.focus || entry.eligibility?.offhand);
+}
+
 /** Internal — which slot a tool occupies in the dispatch order. */
 export type ToolSlot = 'hotkey' | 'active' | 'ambient';
 

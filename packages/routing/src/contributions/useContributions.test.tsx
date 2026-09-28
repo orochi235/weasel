@@ -40,8 +40,8 @@ describe('useContributions', () => {
       { wrapper },
     );
     const scoped = result.current.scopedBindings();
-    expect(scoped.find((s) => s.ownerToolId === 'rect')?.scope).toBe('active');
-    expect(scoped.find((s) => s.ownerToolId === 'weasel-hud')?.scope).toBe('ambient');
+    expect(scoped.find((s) => s.ownerId === 'rect')?.scope).toBe('active');
+    expect(scoped.find((s) => s.ownerId === 'weasel-hud')?.scope).toBe('ambient');
   });
 
   it('omits an unfocused focus-only entry entirely', () => {
@@ -49,7 +49,7 @@ describe('useContributions', () => {
       () => useContributions({ entries: [rect, hud], focused: 'other' }),
       { wrapper },
     );
-    expect(result.current.scopedBindings().some((s) => s.ownerToolId === 'rect')).toBe(false);
+    expect(result.current.scopedBindings().some((s) => s.ownerId === 'rect')).toBe(false);
   });
 });
 
@@ -72,7 +72,7 @@ describe('ContributionsApi.entries tracks the entry list', () => {
     );
     expect(result.current.entries.map((e) => e.id)).toEqual(['rect', 'weasel-hud']);
     rerender({ entries: [rect, hud, pen] });
-    expect(result.current.scopedBindings().some((s) => s.ownerToolId === 'pen')).toBe(true);
+    expect(result.current.scopedBindings().some((s) => s.ownerId === 'pen')).toBe(true);
     expect(result.current.entries.map((e) => e.id)).toEqual(['rect', 'weasel-hud', 'pen']);
   });
 
@@ -183,7 +183,7 @@ describe('a declared offhand trigger engages its entry', () => {
     const registry = useActionsRegistry();
     onCtx(useActiveToolContext());
     useContributions({ entries: [hand], focused: 'select' });
-    useGestureDispatcher({ canvasRef, actions: registry!, toolsById: new Map() });
+    useGestureDispatcher({ canvasRef, actions: registry!, entriesById: new Map() });
     return <canvas ref={canvasRef} />;
   }
 

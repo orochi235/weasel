@@ -241,7 +241,7 @@ function CameraDispatch({
   useGestureDispatcher({
     canvasRef: hostRef,
     actions: registry,
-    toolsById: NO_TOOLS,
+    entriesById: NO_TOOLS,
     clientToWorld,
     channels: CHANNELS,
   });

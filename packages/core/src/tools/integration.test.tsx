@@ -56,7 +56,7 @@ describe('integration: define → use → key → dispatch', () => {
       useGestureDispatcher({
         canvasRef,
         actions: actions!,
-        toolsById: new Map<string, Tool>([['select', select as Tool], ['pen', pen as Tool]]),
+        entriesById: new Map<string, Tool>([['select', select as Tool], ['pen', pen as Tool]]),
       });
       return <canvas ref={canvasRef} />;
     }

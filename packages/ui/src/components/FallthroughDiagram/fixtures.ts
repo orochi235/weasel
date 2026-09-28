@@ -3,7 +3,7 @@ import type { DispatchRecord, RecordCandidate } from '@weasel-js/core/routing';
 const NO_MODS = { alt: false, ctrl: false, meta: false, shift: false };
 
 function candidate(c: Partial<RecordCandidate> & Pick<RecordCandidate, 'actionId' | 'routes'>): RecordCandidate {
-  return { scope: 'ambient', ownerToolId: null, namesView: false, specificity: [0, 0, 0, 1], ...c };
+  return { scope: 'ambient', ownerId: null, namesView: false, specificity: [0, 0, 0, 1], ...c };
 }
 
 const escape = candidate({ actionId: 'escape', routes: ['[*:initial] keyDown(Escape)'], specificity: [0, 0, 1, 1] });
@@ -32,18 +32,18 @@ const selectAreaSelect = candidate({
   actionId: 'areaSelect',
   routes: ['[*:*] drag => predicate'],
   scope: 'active',
-  ownerToolId: 'select',
+  ownerId: 'select',
   specificity: [1, 0, 0, 1],
   eligible: 'capability: creates-selection',
 });
 const ambientAreaSelect = candidate({
   actionId: 'areaSelect',
   routes: ['[*:*] drag => predicate'],
-  ownerToolId: 'selection.areaSelect',
+  ownerId: 'selection.areaSelect',
   specificity: [1, 0, 0, 1],
   eligible: 'capability: creates-selection',
 });
-const dragPan = candidate({ actionId: 'viewport.dragPan', routes: ['[*:*] drag'], ownerToolId: 'viewport.dragPanBinding' });
+const dragPan = candidate({ actionId: 'viewport.dragPan', routes: ['[*:*] drag'], ownerId: 'viewport.dragPanBinding' });
 
 /** A bare drag on empty canvas with the select tool, on a canvas that also
  *  opted into `areaSelectContribution` and `dragPanContribution`: the tool's
@@ -69,7 +69,7 @@ const moveBody = candidate({
   actionId: 'move',
   routes: ['[*:*] drag => unselected-body'],
   scope: 'active',
-  ownerToolId: 'select',
+  ownerId: 'select',
   specificity: [1, 0, 0, 1],
 });
 const portsConnect = candidate({
@@ -99,7 +99,7 @@ const moveAnchors = candidate({
   actionId: 'moveAnchors',
   routes: ['[*:*] drag => anchor', '[*:*] drag => anchor +shift'],
   scope: 'active',
-  ownerToolId: 'path-edit',
+  ownerId: 'path-edit',
   specificity: [1, 0, 0, 1],
 });
 const transformSelection = candidate({

@@ -88,7 +88,7 @@ function StoryZoomKey({ run }: { run: () => void }) {
     useGestureDispatcher({
       canvasRef: { current: null },
       actions: registry,
-      toolsById: NO_TOOLS,
+      entriesById: NO_TOOLS,
       channels: { contextMenu: false, ingest: false },
     });
     return null;

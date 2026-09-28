@@ -48,7 +48,7 @@ function Mount({ onCtx }: { onCtx: (v: ActiveToolContextValue) => void }) {
   useGestureDispatcher({
     canvasRef,
     actions: registry!,
-    toolsById: new Map(Object.entries(tools.registry)),
+    entriesById: new Map(Object.entries(tools.registry)),
   });
   return <canvas ref={canvasRef} />;
 }

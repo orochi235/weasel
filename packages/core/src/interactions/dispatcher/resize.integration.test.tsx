@@ -112,7 +112,7 @@ function MountDispatcher({
     actions: registry!,
     // resize has no default binding; the `transform` preset's handle binding
     // is what routes a handle drag to it.
-    toolsById: new Map([[SELECTION_TRANSFORM_ID, selectionTransformContribution()]]),
+    entriesById: new Map([[SELECTION_TRANSFORM_ID, selectionTransformContribution()]]),
     affordanceAt,
   });
   return <canvas ref={canvasRef} data-testid="canvas" />;

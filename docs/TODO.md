@@ -18,16 +18,15 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P1) "Tool" names too many things. Decide what it means before building on it.**
-  In the tree today, a tool is any of:
-  - a mode for what the pointer does, chosen from a palette: rect, pen, text;
-  - a held-key temporary tool: Space for hand, hold-O opacity scrub;
-  - an always-on contribution in the `ambient` slot: the viewport, the HUD, the loupe;
-  - a command given a place on a tool rail: forge's Info, labkit's `ToolItem` with `onActivate`;
-  - a viewport behavior: `useHandTool`, `defineViewportTool`, which exists only as a naming signal;
-  - `select`, which only chooses: pick, marquee, clear. Moving, cloning, resizing and
-    rotating the selection are always-live entries of their own (`selectionContributions.ts`),
-    which fit none of the meanings above either.
+- **(P1) "Tool" still names two things outside the kit's own code.** Inside the kit it now
+  means one: a contribution that can hold focus, picked from a palette or held on a key
+  (`isTool`), and every container holding any entry says "entry" (see "Tool" in
+  `docs/taxonomy.md`). Still undecided:
+  - a command given a place on a tool rail: forge's Info, labkit's `ToolItem` with `onActivate`.
+    It takes a palette slot but holds no focus and binds no input;
+  - `select`, which only chooses: pick, marquee, clear. It is a tool by the definition above,
+    though acting on the selection belongs to the always-live contributions in
+    `selectionContributions.ts`.
 
   A bare `<SceneCanvas>` now only renders, and `features` presets turn behavior on
   (`canvas/SceneCanvas/features.ts`). Still waiting on the answer:
@@ -1177,6 +1176,12 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 ---
 
 ## Demos & visual regression
+
+- **(P3) `FallthroughDiagram.stories.tsx`'s story checks fail in a local multi-project run.**
+  All five fail when the file runs in one `vitest run` alongside core and routing directories,
+  and all pass when the directory runs alone. Seen twice on 2026-09-27/28 in fresh worktrees; the
+  same checks passed in both full fleet runs. The error was not captured, so first-launch browser
+  startup in the `forge-stories (chromium)` project is a guess, not a finding.
 
 - **(P3) A minimal public stage for package demos.** Demos of scene-free packages
   (`quantity`, `text`, `bidi`, `geom`, `audio`) mount a whole `SceneCanvas` just to draw.

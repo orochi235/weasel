@@ -16,7 +16,7 @@ describe('matchBest (precedence)', () => {
 
   it('returns null when no bindings match', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
-    expect(matchBest(e, [{ binding: binding({ kind: 'key', key: 'b' }), scope: 'ambient', ownerToolId: null }], false)).toBeNull();
+    expect(matchBest(e, [{ binding: binding({ kind: 'key', key: 'b' }), scope: 'ambient', ownerId: null }], false)).toBeNull();
   });
 
   it('returns null for empty bindings list', () => {
@@ -27,7 +27,7 @@ describe('matchBest (precedence)', () => {
   it('returns a single matching binding', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
     const b = binding({ kind: 'key', key: 'a' }, 'select-all');
-    const result = matchBest(e, [{ binding: b, scope: 'ambient', ownerToolId: null }], false);
+    const result = matchBest(e, [{ binding: b, scope: 'ambient', ownerId: null }], false);
     expect(result?.binding.actionId).toBe('select-all');
     expect(result?.scope).toBe('ambient');
   });
@@ -35,9 +35,9 @@ describe('matchBest (precedence)', () => {
   it('precedence: hotkey beats active beats ambient', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'key', key: 'a' }, 'ambient-a'), scope: 'ambient', ownerToolId: null },
-      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active', ownerToolId: 'test-tool' },
-      { binding: binding({ kind: 'key', key: 'a' }, 'hotkey-a'), scope: 'hotkey', ownerToolId: 'test-tool' },
+      { binding: binding({ kind: 'key', key: 'a' }, 'ambient-a'), scope: 'ambient', ownerId: null },
+      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active', ownerId: 'test-tool' },
+      { binding: binding({ kind: 'key', key: 'a' }, 'hotkey-a'), scope: 'hotkey', ownerId: 'test-tool' },
     ];
     const result = matchBest(e, bs, false);
     expect(result?.binding.actionId).toBe('hotkey-a');
@@ -46,8 +46,8 @@ describe('matchBest (precedence)', () => {
   it('within scope, first-declared wins', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'key', key: 'a' }, 'first'), scope: 'ambient', ownerToolId: null },
-      { binding: binding({ kind: 'key', key: 'a' }, 'second'), scope: 'ambient', ownerToolId: null },
+      { binding: binding({ kind: 'key', key: 'a' }, 'first'), scope: 'ambient', ownerId: null },
+      { binding: binding({ kind: 'key', key: 'a' }, 'second'), scope: 'ambient', ownerId: null },
     ];
     const result = matchBest(e, bs, false);
     expect(result?.binding.actionId).toBe('first');
@@ -56,8 +56,8 @@ describe('matchBest (precedence)', () => {
   it('active scope wins over ambient even when both match', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'key', key: 'a' }, 'ambient-a'), scope: 'ambient', ownerToolId: null },
-      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active', ownerToolId: 'test-tool' },
+      { binding: binding({ kind: 'key', key: 'a' }, 'ambient-a'), scope: 'ambient', ownerId: null },
+      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active', ownerId: 'test-tool' },
     ];
     expect(matchBest(e, bs, false)?.binding.actionId).toBe('active-a');
   });
@@ -65,8 +65,8 @@ describe('matchBest (precedence)', () => {
   it('hotkey scope wins over active', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active', ownerToolId: 'test-tool' },
-      { binding: binding({ kind: 'key', key: 'a' }, 'hotkey-a'), scope: 'hotkey', ownerToolId: 'test-tool' },
+      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active', ownerId: 'test-tool' },
+      { binding: binding({ kind: 'key', key: 'a' }, 'hotkey-a'), scope: 'hotkey', ownerId: 'test-tool' },
     ];
     expect(matchBest(e, bs, false)?.binding.actionId).toBe('hotkey-a');
   });
@@ -74,7 +74,7 @@ describe('matchBest (precedence)', () => {
   it('result includes correct scope', () => {
     const e: InputEvent = { kind: 'key', key: 'z', ...noMods };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'key', key: 'z' }, 'z-active'), scope: 'active', ownerToolId: 'test-tool' },
+      { binding: binding({ kind: 'key', key: 'z' }, 'z-active'), scope: 'active', ownerId: 'test-tool' },
     ];
     const result = matchBest(e, bs, false);
     expect(result?.scope).toBe('active');
@@ -83,7 +83,7 @@ describe('matchBest (precedence)', () => {
   it('wheel gesture routed correctly through matchBest', () => {
     const e: InputEvent = { kind: 'wheel', ...noMods, ...noWheelData, ctrlKey: true };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'wheel', mods: { ctrl: true } }, 'zoom'), scope: 'ambient', ownerToolId: null },
+      { binding: binding({ kind: 'wheel', mods: { ctrl: true } }, 'zoom'), scope: 'ambient', ownerId: null },
     ];
     expect(matchBest(e, bs, false)?.binding.actionId).toBe('zoom');
   });
@@ -119,12 +119,12 @@ describe('matchSorted (specificity ordering)', () => {
     };
     const bs: ScopedBinding[] = [
       // BARE binding registered FIRST.
-      { binding: binding({ kind: 'drag' }, 'move'), scope: 'ambient', ownerToolId: null },
+      { binding: binding({ kind: 'drag' }, 'move'), scope: 'ambient', ownerId: null },
       // Targeted binding registered SECOND — should still win.
       {
         binding: binding({ kind: 'drag', target: { kindOf: anchorPredicate } }, 'editAnchors'),
         scope: 'ambient',
-        ownerToolId: null,
+        ownerId: null,
       },
     ];
     const sorted = matchSorted(e, bs, false);
@@ -134,9 +134,9 @@ describe('matchSorted (specificity ordering)', () => {
   it('equal-specificity bindings retain registration order', () => {
     const e: InputEvent = { kind: 'pointerdown', x: 0, y: 0, ...noMods };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'drag' }, 'a'), scope: 'ambient', ownerToolId: null },
-      { binding: binding({ kind: 'drag' }, 'b'), scope: 'ambient', ownerToolId: null },
-      { binding: binding({ kind: 'drag' }, 'c'), scope: 'ambient', ownerToolId: null },
+      { binding: binding({ kind: 'drag' }, 'a'), scope: 'ambient', ownerId: null },
+      { binding: binding({ kind: 'drag' }, 'b'), scope: 'ambient', ownerId: null },
+      { binding: binding({ kind: 'drag' }, 'c'), scope: 'ambient', ownerId: null },
     ];
     const sorted = matchSorted(e, bs, false);
     expect(sorted.map((m) => m.binding.actionId)).toEqual(['a', 'b', 'c']);
@@ -154,14 +154,14 @@ describe('matchSorted (specificity ordering)', () => {
       {
         binding: binding({ kind: 'drag', target: { kindOf: () => true } }, 'ambient-targeted'),
         scope: 'ambient',
-        ownerToolId: null,
+        ownerId: null,
       },
       {
         binding: binding({ kind: 'drag', target: { kindOf: () => true } }, 'active-targeted'),
         scope: 'active',
-        ownerToolId: 't',
+        ownerId: 't',
       },
-      { binding: binding({ kind: 'drag' }, 'hotkey-bare'), scope: 'hotkey', ownerToolId: 't' },
+      { binding: binding({ kind: 'drag' }, 'hotkey-bare'), scope: 'hotkey', ownerId: 't' },
     ];
     const sorted = matchSorted(e, bs, false);
     expect(sorted.map((m) => m.binding.actionId)).toEqual([
@@ -179,9 +179,9 @@ describe('matchSorted (specificity ordering)', () => {
     };
     const bs: ScopedBinding[] = [
       // Untyped catch-all registered FIRST (the kit's ambient ingest binding).
-      { binding: binding({ kind: 'drop' }, 'ingest'), scope: 'ambient', ownerToolId: null },
+      { binding: binding({ kind: 'drop' }, 'ingest'), scope: 'ambient', ownerId: null },
       // Typed consumer binding registered SECOND — should still sort first.
-      { binding: binding({ kind: 'drop', types: ['text/csv'] }, 'csv-import'), scope: 'ambient', ownerToolId: null },
+      { binding: binding({ kind: 'drop', types: ['text/csv'] }, 'csv-import'), scope: 'ambient', ownerId: null },
     ];
     const sorted = matchSorted(e, bs, false);
     expect(sorted.map((m) => m.binding.actionId)).toEqual(['csv-import', 'ingest']);

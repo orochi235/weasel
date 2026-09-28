@@ -22,12 +22,12 @@ describe('buildRouteRegistry', () => {
       { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'move' },
     ])]);
     expect(r).toContainEqual<RegistryEntry>({
-      toolId: 'select', actionId: 'clearSelection', phase: 'any',
+      ownerId: 'select', actionId: 'clearSelection', phase: 'any',
       gesture: 'click', arg: undefined, target: 'empty', modifiers: {},
       spec: { kind: 'click', target: 'empty' },
     });
     expect(r).toContainEqual<RegistryEntry>({
-      toolId: 'select', actionId: 'move', phase: 'any',
+      ownerId: 'select', actionId: 'move', phase: 'any',
       gesture: 'drag', arg: undefined, target: 'selected-body', modifiers: {},
       spec: { kind: 'drag', target: 'selected-body' },
     });
@@ -114,7 +114,7 @@ describe('buildRouteRegistry', () => {
       tool('a', [{ spec: { kind: 'click' }, actionId: 'x' }]),
       tool('b', [{ spec: { kind: 'click' }, actionId: 'y' }]),
     ]);
-    expect(r.map((e) => e.toolId)).toEqual(['a', 'b']);
+    expect(r.map((e) => e.ownerId)).toEqual(['a', 'b']);
   });
 
   it('carries the source spec on each row', () => {

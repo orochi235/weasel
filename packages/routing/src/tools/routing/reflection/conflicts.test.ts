@@ -19,7 +19,7 @@ describe('findConflicts', () => {
   it('flags two tools claiming the same tuple', () => {
     const c = findConflicts([tool('a', [clickRect()]), tool('b', [clickRect()])]);
     expect(c).toHaveLength(1);
-    expect(c[0].toolIds.sort()).toEqual(['a', 'b']);
+    expect(c[0].ownerIds.sort()).toEqual(['a', 'b']);
     expect(c[0].gesture).toBe('click');
     expect(c[0].target).toBe('empty');
   });
@@ -27,7 +27,7 @@ describe('findConflicts', () => {
   it('flags a three-way conflict', () => {
     const c = findConflicts([tool('a', [clickRect()]), tool('b', [clickRect()]), tool('c', [clickRect()])]);
     expect(c).toHaveLength(1);
-    expect(c[0].toolIds.sort()).toEqual(['a', 'b', 'c']);
+    expect(c[0].ownerIds.sort()).toEqual(['a', 'b', 'c']);
   });
 
   it('does NOT flag different targets', () => {
@@ -64,7 +64,7 @@ describe('findConflicts', () => {
     const c = tool('c', [{ spec: { kind: 'drag' }, actionId: 'z', opts: { views: ['pip'] } }]);
     const conflicts = findConflicts([a, b, c]);
     expect(conflicts).toHaveLength(1);
-    expect(conflicts[0].toolIds).toEqual(['a', 'b']);
+    expect(conflicts[0].ownerIds).toEqual(['a', 'b']);
   });
 
   it('separates conflicts by phase', () => {
@@ -81,7 +81,7 @@ describe('findConflicts', () => {
     // whose duplicate keys collapsed.
     const c = findConflicts([tool('a', [clickRect('x'), clickRect('y')])]);
     expect(c).toHaveLength(1);
-    expect(c[0].toolIds).toEqual(['a', 'a']);
+    expect(c[0].ownerIds).toEqual(['a', 'a']);
   });
 
   it('does NOT flag an any-phase binding against an initial-phase one', () => {
@@ -161,7 +161,7 @@ describe('findScopedConflicts', () => {
     const b = tool('b', [clickRect('y')]);
     const found = findScopedConflicts({ registry: [], ambient: [a, b] });
     expect(found).toHaveLength(1);
-    expect(found[0].toolIds).toEqual(['a', 'b']);
+    expect(found[0].ownerIds).toEqual(['a', 'b']);
   });
 
   it('does NOT flag an ambient tool against a registry tool — scope decides', () => {
@@ -233,7 +233,7 @@ describe('findScopedConflicts — buckets nothing escapes', () => {
       invoker: { timing: 'immediate', run: () => {} },
     } as never;
     const c = findScopedConflicts({ registry: [], ambient: [], actions: [doubled] });
-    expect(c.map((x) => x.toolIds.join(','))).toContain('zoomStep,zoomStep');
+    expect(c.map((x) => x.ownerIds.join(','))).toContain('zoomStep,zoomStep');
   });
 
   // `Conflict.target` renders every predicate as the flat token `'predicate'`,
@@ -271,7 +271,7 @@ describe('findConflicts — key alternatives', () => {
 
   it('flags an alternative list against a single key it contains', () => {
     const c = findConflicts([keyTool('flip', ['h', 'H']), keyTool('mine', 'H')]);
-    expect(c.map((x) => x.toolIds.sort().join(','))).toContain('flip,mine');
+    expect(c.map((x) => x.ownerIds.sort().join(','))).toContain('flip,mine');
   });
 
   it('flags two lists that overlap without being equal', () => {
@@ -279,7 +279,7 @@ describe('findConflicts — key alternatives', () => {
       keyTool('a', ['Delete', 'Backspace']),
       keyTool('b', ['Backspace', 'Escape']),
     ]);
-    expect(c.map((x) => x.toolIds.sort().join(','))).toContain('a,b');
+    expect(c.map((x) => x.ownerIds.sort().join(','))).toContain('a,b');
   });
 
   it('still says nothing for lists that do not overlap', () => {
@@ -319,7 +319,7 @@ describe('findScopedConflicts — mutually exclusive eligibility', () => {
       actions: [escape('a', { mode: 'focus' }), escape('b', { selection: { empty: false } })],
       modes: focusAndReview,
     });
-    expect(c.map((x) => x.toolIds.join(','))).toEqual(['a,b']);
+    expect(c.map((x) => x.ownerIds.join(','))).toEqual(['a,b']);
   });
 
   it('keeps an ungated action in conflict with each gated one', () => {
@@ -328,7 +328,7 @@ describe('findScopedConflicts — mutually exclusive eligibility', () => {
       actions: [escape('a', { mode: 'focus' }), escape('b', { mode: 'review' }), escape('c')],
       modes: focusAndReview,
     });
-    expect(c.map((x) => x.toolIds.join(','))).toEqual(['a,b,c']);
+    expect(c.map((x) => x.ownerIds.join(','))).toEqual(['a,b,c']);
   });
 });
 
@@ -346,7 +346,7 @@ describe('findScopedConflicts — actions gated by different rules', () => {
 
   it('flags two whose rules the kit\'s normal mode lets hold together', () => {
     const c = findScopedConflicts({ registry: [], actions: [shapes, marquee] });
-    expect(c.map((x) => x.toolIds.join(','))).toEqual(['insert,areaSelect']);
+    expect(c.map((x) => x.ownerIds.join(','))).toEqual(['insert,areaSelect']);
   });
 
   it('does not flag them when no mode allows both', () => {

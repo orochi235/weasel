@@ -59,7 +59,7 @@ function mount(kinds: Kind[]): HTMLElement {
     useGestureDispatcher({
       canvasRef: ref,
       actions: registry!,
-      toolsById: new Map(),
+      entriesById: new Map(),
       classifyTarget: () => ({ body: 'empty' as const }),
     });
     return <canvas ref={ref} data-testid="canvas" />;

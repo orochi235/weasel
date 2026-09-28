@@ -34,7 +34,7 @@ function Bound({ run, keyboard }: { run: () => void; keyboard?: boolean | 'first
   useGestureDispatcher({
     canvasRef: NO_ELEMENT,
     actions: registry,
-    toolsById: NO_TOOLS,
+    entriesById: NO_TOOLS,
     channels: { contextMenu: false, ingest: false },
     ...(keyboard !== undefined ? { keyboard } : {}),
   });

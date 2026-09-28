@@ -61,7 +61,7 @@ function buildHarness(
 ) {
   function Mount({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement | null> }) {
     const registry = useActionsRegistry();
-    useGestureDispatcher({ canvasRef, actions: registry!, toolsById: new Map(), channels });
+    useGestureDispatcher({ canvasRef, actions: registry!, entriesById: new Map(), channels });
     return <canvas ref={canvasRef} data-testid="canvas" />;
   }
   function Register() {

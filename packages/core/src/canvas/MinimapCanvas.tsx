@@ -214,7 +214,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   useGestureDispatcher({
     canvasRef: localCanvasRef,
     actions: actions!,
-    toolsById: TOOLS_BY_ID,
+    entriesById: TOOLS_BY_ID,
     clientToWorld,
     keyboard: false,
     channels: CHANNELS,
