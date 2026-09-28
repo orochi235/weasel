@@ -119,6 +119,29 @@ describe('domToRuns', () => {
     ]);
   });
 
+  it('round-trips a numeric weight, including 400 and 700, apart from the bold flag', () => {
+    const runs: StyledRun[] = [
+      { text: 'a', fontWeight: 300 },
+      { text: 'b', fontWeight: 400 },
+      { text: 'c', fontWeight: 700 },
+      { text: 'd', bold: true },
+    ];
+    runsToDom(runs, parent);
+    expect((parent.children[0] as HTMLElement).style.fontWeight).toBe('300');
+    expect(domToRuns(parent)).toEqual(runs);
+  });
+
+  it('reads a pasted weight other than 400 and 700 as a numeric weight', () => {
+    parent.innerHTML = '<span style="font-weight: 300">a</span><span style="font-weight: 600">b</span>'
+      + '<b>c<span style="font-weight: normal">d</span></b>';
+    expect(domToRuns(parent)).toEqual([
+      { text: 'a', fontWeight: 300 },
+      { text: 'b', fontWeight: 600 },
+      { text: 'c', bold: true },
+      { text: 'd' },
+    ]);
+  });
+
   it('coalesces adjacent identical runs', () => {
     const s1 = document.createElement('span');
     s1.setAttribute('data-run', '');

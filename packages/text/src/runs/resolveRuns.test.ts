@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveRuns, SCRIPT_METRICS, type ResolvedRun } from './resolveRuns';
+import { isBoldWeight, resolveRuns, SCRIPT_METRICS, type ResolvedRun } from './resolveRuns';
 import { resolveTextStyle } from '../textStyle';
 import type { StyledRun } from '../runs';
 
@@ -56,6 +56,22 @@ describe('resolveRuns', () => {
     const style = resolveTextStyle({ fontWeight: 300 });
     const runs: StyledRun[] = [{ text: 'a', bold: true }];
     expect(resolveRuns(runs, style)[0].fontWeight).toBe(700);
+  });
+
+  it('a run fontWeight overrides both the node weight and the bold flag', () => {
+    const style = resolveTextStyle({ fontWeight: 700 });
+    const out = resolveRuns([
+      { text: 'a', fontWeight: 300 },
+      { text: 'b', fontWeight: 600, bold: true },
+      { text: 'c', bold: true },
+    ], style);
+    expect(out.map((r) => r.fontWeight)).toEqual([300, 600, 700]);
+  });
+
+  it('isBoldWeight reads 600 and up as bold, including the CSS keywords', () => {
+    expect([100, 400, 500, 600, 700, 900].map(isBoldWeight)).toEqual([false, false, false, true, true, true]);
+    expect(isBoldWeight('bold')).toBe(true);
+    expect(isBoldWeight('normal')).toBe(false);
   });
 
   it('resolves letterSpacing run-over-style, defaulting to 0', () => {

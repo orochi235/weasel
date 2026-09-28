@@ -139,7 +139,7 @@ import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { useColorContext } from './tools/colorContext';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { OpacityHud } from './opacityScrub/OpacityHud';
-import { useSceneAdapter, effectiveRangeStyle } from '@weasel-js/core';
+import { useSceneAdapter, effectiveRangeStyle, patchRangeStyle } from '@weasel-js/core';
 import { sliceAction } from '@weasel-js/core';
 import type { SerializedHistory } from '@weasel-js/history';
 import { serializeReplacer, reviveSnapshot, clipboardJsonReviver, nodeSpecsFromSnapshot } from './persistence';
@@ -1451,14 +1451,11 @@ function EditorWithSharedScene({
   const editingNode = textEdit.editingId != null
     ? scene.get(asNodeId(textEdit.editingId))
     : undefined;
-  const barStyle: RangeStyle = {
-    ...effectiveRangeStyle(
-      textEdit.rangeStyle,
-      editingNode?.data.style,
-      { fill: editingNode?.data.fill, stroke: editingNode?.data.stroke },
-    ),
-    ...textEdit.pendingStyle,
-  };
+  const barStyle: RangeStyle = effectiveRangeStyle(
+    patchRangeStyle(textEdit.rangeStyle ?? {}, textEdit.pendingStyle),
+    editingNode?.data.style,
+    { fill: editingNode?.data.fill, stroke: editingNode?.data.stroke },
+  );
 
   const onCharacterPatch = textEdit.applyStyleToSelection;
 

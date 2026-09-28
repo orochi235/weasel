@@ -585,6 +585,8 @@ export {
   fontString,
   resolveRuns,
   SCRIPT_METRICS,
+  numericWeight,
+  isBoldWeight,
   transformRunTexts,
   layoutRuns,
   cachedLayoutRuns,

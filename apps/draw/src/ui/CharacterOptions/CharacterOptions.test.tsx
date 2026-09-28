@@ -54,6 +54,23 @@ describe('CharacterOptions — flag toggles', () => {
   });
 });
 
+describe('CharacterOptions — weight', () => {
+  it('shows the weight and patches a picked one', () => {
+    const onPatch = vi.fn();
+    render(<CharacterOptions style={{ fontWeight: 400 }} onPatch={onPatch} />);
+    const weight = screen.getByRole('button', { name: /Weight/ });
+    expect(weight).toHaveTextContent('400 Regular');
+    fireEvent.click(weight);
+    fireEvent.click(screen.getByRole('option', { name: '300 Light' }));
+    expect(onPatch).toHaveBeenCalledWith({ fontWeight: 300 });
+  });
+
+  it('draws a mixed weight as Mixed', () => {
+    render(<CharacterOptions style={{ fontWeight: MIXED }} onPatch={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /Weight/ })).toHaveTextContent('Mixed');
+  });
+});
+
 describe('CharacterOptions — script', () => {
   it('sets superscript', () => {
     const onPatch = vi.fn();

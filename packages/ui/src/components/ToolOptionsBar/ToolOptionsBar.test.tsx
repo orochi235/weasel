@@ -3,6 +3,28 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ToolPrefGroup } from '@weasel-js/core';
 import { ToolOptionsBar } from './ToolOptionsBar';
 
+const listFontWeights = vi.fn((_family: string) => [300, 600]);
+vi.mock('@weasel-js/font', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@weasel-js/font')>()),
+  listFontWeights: (family: string) => listFontWeights(family),
+}));
+
+describe('ToolOptionsBar font weight', () => {
+  it('lists the weights of the family in the leaf beside it', () => {
+    const schema: ToolPrefGroup = {
+      name: 'Text',
+      children: {
+        fontFamily: { kind: 'font-family', name: 'Font', description: 'Family.', default: undefined },
+        fontWeight: { kind: 'font-weight', name: 'Weight', description: 'Weight.', default: undefined },
+      },
+    };
+    render(<ToolOptionsBar schema={schema} values={{ fontFamily: 'Inter', fontWeight: 300 }} />);
+    fireEvent.click(screen.getByRole('button', { name: /Weight/ }));
+    expect(listFontWeights).toHaveBeenCalledWith('Inter');
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['300 Light', '600 Semibold']);
+  });
+});
+
 describe('ToolOptionsBar', () => {
   it('renders its label and children', () => {
     render(

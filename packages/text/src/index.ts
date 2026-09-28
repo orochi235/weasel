@@ -23,7 +23,7 @@ export type {
   TextStyle, TextPaint, ResolvedTextStyle, TextAlign, TextDirection,
 } from './textStyle';
 
-export { resolveRuns, SCRIPT_METRICS } from './runs/resolveRuns';
+export { resolveRuns, SCRIPT_METRICS, numericWeight, isBoldWeight } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
 export { transformRunTexts } from './runs/textTransform';
 export type { TextTransform, RunSourceMap, TransformedRunText } from './runs/textTransform';

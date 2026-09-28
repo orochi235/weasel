@@ -237,13 +237,15 @@ export function renderBuiltin(
     unset,
     siblings: ctx.siblings,
     setValue,
-    // The substitution probe runs at the node's own weight and style, so the
-    // picker names the variant that will actually paint. A mixed selection
-    // has no single one; the probe falls back to 400/normal there.
+    // The font pickers read the rest of the font from the leaves beside
+    // them: the family's substitution probe runs at the weight and style
+    // that will paint, and a weight lists what its family has. A mixed
+    // selection has no single one; the probe falls back to 400/normal there.
     fontVariant: {
-      weight: ctx.valueAt('data.style.fontWeight').value,
-      style: ctx.valueAt('data.style.fontStyle').value,
+      weight: ctx.valueAt(siblingPath(ctx.path, 'fontWeight')).value,
+      style: ctx.valueAt(siblingPath(ctx.path, 'fontStyle')).value,
     },
+    fontFamily: ctx.valueAt(siblingPath(ctx.path, 'fontFamily')).value,
   });
   if (field === null) {
     return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
@@ -289,6 +291,7 @@ export function renderBuiltin(
         />
       );
     case 'font-family':
+    case 'font-weight':
       return <PropertyControl {...field} name={ariaLabel} className={s.select} />;
     case 'paint':
       return (
@@ -313,6 +316,12 @@ export function renderBuiltin(
 }
 
 const settledOnly = (): void => {};
+
+/** The dotted path of the leaf `key` beside the one at `path`. */
+function siblingPath(path: string, key: string): string {
+  const dot = path.lastIndexOf('.');
+  return dot < 0 ? key : `${path.slice(0, dot + 1)}${key}`;
+}
 
 /**
  * Renders an object leaf: a titled block whose rows are the object's own

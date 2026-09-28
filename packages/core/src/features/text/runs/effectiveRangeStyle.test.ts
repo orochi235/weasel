@@ -43,6 +43,22 @@ describe('effectiveRangeStyle', () => {
     expect(effectiveRangeStyle({ bold: MIXED }, { fontWeight: 400 }).bold).toBe(MIXED);
   });
 
+  it('reports the weight that renders, and reads bold off it', () => {
+    const at = (range: Parameters<typeof effectiveRangeStyle>[0], fontWeight?: number) => {
+      const s = effectiveRangeStyle(range, fontWeight === undefined ? {} : { fontWeight });
+      return [s.fontWeight, s.bold];
+    };
+    expect(at(null)).toEqual([400, false]);
+    expect(at(null, 700)).toEqual([700, true]);
+    expect(at({ bold: true })).toEqual([700, true]);
+    expect(at({ fontWeight: 300 }, 700)).toEqual([300, false]);
+    expect(at({ fontWeight: 800 })).toEqual([800, true]);
+    expect(at({ fontWeight: MIXED })).toEqual([MIXED, MIXED]);
+    expect(at({ bold: MIXED })).toEqual([MIXED, MIXED]);
+    // Bold runs and a heavy node differ in weight but are bold throughout.
+    expect(at({ bold: MIXED }, 900)).toEqual([MIXED, true]);
+  });
+
   it('passes the run-only styling straight through', () => {
     const s = effectiveRangeStyle(
       { script: 'super', baselineShift: 0.333, fontScale: 0.583 },

@@ -899,11 +899,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) Palette presets / recently-used colors.**
 - **(P3) Multi-page documents.**
-- **(P3) A numeric font-weight picker.** `CharacterOptions` has the rest of
-  the strip — `FontFamilySelect`, Size, Tracking, Baseline shift, Scale, a
-  `ColorField` and the flag toggles. Weight is the gap: it is derived from
-  the bold flag (`style.bold ? 700 : 400`), so a family's 300 or 600 face
-  cannot be asked for.
 
 ---
 

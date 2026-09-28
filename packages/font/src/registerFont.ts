@@ -20,7 +20,7 @@ import {
   getFontFallbackPolicy, getDefaultFontFamily,
   claimFallbackWarning, _clearFallbackWarnings,
 } from './fallback';
-import { outlineMetrics, outlineStatus } from './outline/outlineRegistry';
+import { listFontOutlines, outlineMetrics, outlineStatus } from './outline/outlineRegistry';
 import type { OutlineFace } from './outline/OutlineFace';
 
 /** A registered face: its parsed metrics and the atlas image to sample. */
@@ -100,6 +100,22 @@ export function listFonts(): readonly RegisteredFont[] {
     out.push({ family, variants });
   }
   return out;
+}
+
+/**
+ * The weights `family` has a real face for, on the atlas tier or the outline
+ * tier, in either style — what a weight picker can honestly offer. Ascending
+ * and deduplicated; empty for a family nothing registered. An outline face
+ * whose load failed is left out. The canvas tier is not consulted: it
+ * rasterizes whatever weight it is asked for, so it has no list to report.
+ */
+export function listFontWeights(family: string): readonly number[] {
+  const weights = new Set<number>();
+  for (const key of registry.get(family)?.keys() ?? []) weights.add(Number(key.split('|')[0]));
+  for (const face of listFontOutlines()) {
+    if (face.family === family && face.status !== 'failed') weights.add(face.weight);
+  }
+  return [...weights].sort((a, b) => a - b);
 }
 
 /**

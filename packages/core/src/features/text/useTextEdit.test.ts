@@ -739,10 +739,9 @@ describe('useTextEdit — pending style at a collapsed caret', () => {
     expect(result.current.pendingStyle).toEqual({});
   });
 
-  it('lowers a node flag rather than arming an unsayable "not bold"', () => {
-    // A run cannot say "not bold", so "stop being bold from here on" inside a
-    // bold node is the one styling a collapsed caret writes to existing text:
-    // the node flag drops and every existing run takes it up.
+  it('arms a regular weight to take bold off inside a bold node', () => {
+    // "Stop being bold from here on" in a bold node is a weight, not a flag:
+    // the node keeps its weight and the next character is drawn at 400.
     const styles: Record<string, TextStyle> = { a: { fontSize: 16, fontWeight: 700 } };
     const h = makeRichHarness({ a: { text: 'ab', runs: [{ text: 'ab' }] } });
     h.opts.getStyle = (id) => styles[id];
@@ -752,10 +751,11 @@ describe('useTextEdit — pending style at a collapsed caret', () => {
     const overlay = getOverlay(h.container)!;
     placeCaretAtChar(overlay, 2);
     act(() => { pressKey(overlay, 'b', { meta: true }); });
-    expect(styles.a.fontWeight).toBe(400);
+    expect(styles.a.fontWeight).toBe(700);
+    expect(result.current.pendingStyle).toEqual({ fontWeight: 400 });
     act(() => dispatchBeforeInput(overlay, 'c'));
     act(() => result.current.commit());
-    expect(h.runCommits[0].runs).toEqual([{ text: 'ab', bold: true }, { text: 'c' }]);
+    expect(h.runCommits[0].runs).toEqual([{ text: 'ab' }, { text: 'c', fontWeight: 400 }]);
   });
 });
 
@@ -789,6 +789,21 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
     act(() => pressKey(overlay, 'b', { meta: true }));
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'one two three' }]);
+  });
+
+  it('Cmd-B reads bold off the weight: a light range turns bold, a heavy one turns regular', () => {
+    const h = makeRichHarness({
+      a: { text: 'ab', runs: [{ text: 'a', fontWeight: 300 }, { text: 'b', fontWeight: 800 }] },
+    });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 1);
+    act(() => pressKey(overlay, 'b', { meta: true }));
+    selectChars(overlay, 1, 2);
+    act(() => pressKey(overlay, 'b', { meta: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'a', bold: true }, { text: 'b' }]);
   });
 
   it('Cmd-I toggles italic independently of bold', () => {

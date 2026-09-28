@@ -14,10 +14,11 @@
  *
  * **Run-level flags are additive over the node's `TextStyle`: a run can
  * turn `bold` / `italic` / `underline` / `strikethrough` on, never off.**
- * So a flag is stored only when true, and absent reads as `false`. For
- * `bold` this falls out of the model — node weight is numeric, and
- * `run.bold ? 700 : baseWeight` has nowhere to put "not bold." For the
- * boolean decorations it does not: both levels are booleans, so a tri-state
+ * So a flag is stored only when true, and absent reads as `false`. A run
+ * that must be lighter than a bold node says so with its own numeric
+ * `fontWeight`, which `bold` is a preset over (see {@link supersededKey}).
+ * For the boolean decorations there is no such primitive: both levels are
+ * booleans, so a tri-state
  * (`true` / `false` / inherit) is expressible and we are collapsing it by
  * choice, to keep one canonical form per styling. Resolution must therefore
  * read decorations as `run.underline || style.underline` — a `??` would
@@ -53,6 +54,7 @@ export type StyleKey = Exclude<keyof StyledRun, 'text'>;
 
 const STYLE_KEYS = [
   'bold',
+  'fontWeight',
   'italic',
   'underline',
   'strikethrough',
@@ -214,9 +216,39 @@ export function runsCarryStyling(runs: readonly StyledRun[]): boolean {
   );
 }
 
+/**
+ * The key a patch clears without naming it. `bold` is a preset over
+ * `fontWeight`, and a run keeps at most one of the two: writing either drops
+ * the other, so a Bold toggle is not hidden under a weight it cannot beat and
+ * a picked weight is not shadowed by a stale flag. Naming both writes both.
+ */
+export function supersededKey(patch: RunStylePatch): 'bold' | 'fontWeight' | undefined {
+  if ('bold' in patch && !('fontWeight' in patch)) return 'fontWeight';
+  if (patch.fontWeight !== undefined && !('bold' in patch)) return 'bold';
+  return undefined;
+}
+
+/**
+ * `range` with `patch` laid over it, keyed as a write of `patch` would leave
+ * the runs — for showing styling armed for the next keystroke over the
+ * styling at the caret. A key the patch leaves `undefined` keeps the range's
+ * value; the key it supersedes is dropped.
+ */
+export function patchRangeStyle(range: RangeStyle, patch: RunStylePatch): RangeStyle {
+  const out: Record<string, unknown> = { ...range };
+  const superseded = supersededKey(patch);
+  if (superseded !== undefined) delete out[superseded];
+  for (const [key, value] of Object.entries(patch)) {
+    if (value !== undefined) out[key] = value;
+  }
+  return out as RangeStyle;
+}
+
 /** Apply `patch` to one run, deleting rather than storing "no override". */
 function patchRun(run: StyledRun, patch: RunStylePatch): StyledRun {
   const next: StyledRun = { ...run };
+  const superseded = supersededKey(patch);
+  if (superseded !== undefined) delete next[superseded];
   for (const key of STYLE_KEYS) {
     if (!(key in patch)) continue;
     const value = patch[key];

@@ -1162,7 +1162,10 @@ function readTspanRun(
   const text = el.textContent ?? '';
   const run: StyledRun = { text };
   const fw = ownProp(el, 'font-weight');
+  // 700 is the bold flag's own spelling; any other weight is the run's.
   if (fw === 'bold' || fw === '700' || fw === 'bolder') run.bold = true;
+  else if (fw === 'normal') run.fontWeight = 400;
+  else if (fw != null && Number.isFinite(Number(fw)) && Number(fw) > 0) run.fontWeight = Number(fw);
   const fs = ownProp(el, 'font-style');
   if (fs === 'italic' || fs === 'oblique') run.italic = true;
   const ff = ownProp(el, 'font-family');

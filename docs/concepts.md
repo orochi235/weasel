@@ -587,7 +587,7 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 
 | Registry | Keyed by | Scope | Mutability | Where it lives | Reflection | Used by |
 |---|---|---|---|---|---|---|
-| **Fonts** | `family` → `weight\|style` | App (module) lifetime | Runtime-mutable; entries are idempotent | Module-global reflectable in `registerFont.ts` | `fontRegistry`; `listFonts()` | `WeaselRenderer`, text layout |
+| **Fonts** | `family` → `weight\|style` | App (module) lifetime | Runtime-mutable; entries are idempotent | Module-global reflectable in `registerFont.ts` | `fontRegistry`; `listFonts()`; `listFontWeights(family)` | `WeaselRenderer`, text layout |
 | **Font outlines** | `family\|weight\|style` | App (module) lifetime | Runtime-mutable; register / unregister | Module-global reflectable in `outline/outlineRegistry.ts` | `fontOutlineRegistry` (notifies on load-state changes too); `listFontOutlines()` | `layoutRuns` (above the size threshold) |
 | **Tools** | Tool id string | Component lifetime, pinned at `useTools` call | Constructor-fixed (registry reference is live, but entries are set at hook call) | Hook return (`ToolsApi.registry`) in `packages/routing/src/tools/useTools.ts` | Implicitly — `registry` field is enumerable | Gesture dispatcher, tool palette UI |
 | **Ops** | Op kind string (`kit:*` reserved) | Scene lifetime | Constructor-fixed via `ops` option; runtime additions via `scene.registerOp()` | Internal `Map` inside `createScene` closure | No | `Scene.undo()`, `Scene.redo()`, `scene.recordOp()` |

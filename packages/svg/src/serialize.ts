@@ -558,7 +558,8 @@ function textXml(
 
 function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerRegistry, warn: Warn): string {
   const attrs: string[] = [];
-  if (run.bold) attrs.push(`font-weight="700"`);
+  if (run.fontWeight != null) attrs.push(`font-weight="${run.fontWeight}"`);
+  else if (run.bold) attrs.push(`font-weight="700"`);
   if (run.italic) attrs.push(`font-style="italic"`);
   if (run.fontFamily) attrs.push(`font-family="${escapeAttr(run.fontFamily)}"`);
   // A percentage `font-size` is relative to the parent's, which is what

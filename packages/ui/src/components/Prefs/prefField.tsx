@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { isBuiltinToolPref, type FillStyle } from '@weasel-js/core';
+import { isBuiltinToolPref, numericWeight, type FillStyle } from '@weasel-js/core';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import { isPaint } from '../paintValue';
@@ -20,6 +20,8 @@ export interface PrefFieldState {
   /** A font family's weight and slant, where they are not `siblings`' own
    *  `fontWeight` / `fontStyle`. */
   fontVariant?: { weight?: unknown; style?: unknown };
+  /** A font weight's family, where it is not `siblings`' own `fontFamily`. */
+  fontFamily?: unknown;
 }
 
 /**
@@ -38,6 +40,17 @@ export interface PrefFieldState {
  */
 export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyControlProps | null {
   const { value, mixed = false, unset = false, siblings, setValue } = state;
+  if (leaf.kind === 'font-weight') {
+    const family = 'fontFamily' in state ? state.fontFamily : siblings?.fontFamily;
+    return {
+      kind: 'font-weight',
+      value: typeof value === 'number' || typeof value === 'string' ? numericWeight(value) : undefined,
+      mixed,
+      unset,
+      onChange: setValue,
+      family: typeof family === 'string' ? family : undefined,
+    };
+  }
   if (leaf.kind === 'font-family') {
     const weight = state.fontVariant ? state.fontVariant.weight : siblings?.fontWeight;
     const style = state.fontVariant ? state.fontVariant.style : siblings?.fontStyle;

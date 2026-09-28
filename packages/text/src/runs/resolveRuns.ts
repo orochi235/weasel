@@ -5,7 +5,9 @@
  * canonical shape the renderer consumes.
  *
  * `bold`/`italic` toggles on a run are folded into `fontWeight`/`fontStyle`:
- * `bold: true` → fontWeight 700, `italic: true` → fontStyle 'italic'.
+ * `bold: true` → fontWeight 700, `italic: true` → fontStyle 'italic'. A run's
+ * own numeric `fontWeight` is the primitive `bold` is a preset over, so it
+ * wins over both the flag and the node weight.
  * Explicit `fontFamily` / `fontSize` / `fill` / `letterSpacing` on the run
  * override the node-level value (`letterSpacing: 0` on a run is an override,
  * not an absence — it zeroes inherited tracking).
@@ -103,12 +105,20 @@ export const SCRIPT_METRICS: Readonly<
   sub: Object.freeze({ size: 0.583, shift: -0.333 }),
 });
 
-function numericWeight(w: number | string): number {
+/** A `TextStyle.fontWeight` as a number: the CSS keywords `bold` and
+ *  `normal` read as 700 and 400, anything unparseable as 400. */
+export function numericWeight(w: number | string): number {
   if (typeof w === 'number') return w;
-  if (w === 'bold') return 700;
+  if (w === 'bold' || w === 'bolder') return 700;
   if (w === 'normal') return 400;
   const parsed = Number(w);
   return Number.isFinite(parsed) ? parsed : 400;
+}
+
+/** Whether a weight reads as bold — 600 and up, the same line the font
+ *  registry draws between its regular and bold buckets. */
+export function isBoldWeight(w: number | string): boolean {
+  return numericWeight(w) >= 600;
 }
 
 /** Resolve each run's styling against the node's text style, filling in
@@ -145,7 +155,7 @@ export function resolveRuns(
       fontSize: run.fontSize !== undefined
         ? resolveScreenLength(run.fontSize, viewScale)
         : style.fontSize * scale,
-      fontWeight: run.bold ? 700 : baseWeight,
+      fontWeight: run.fontWeight ?? (run.bold ? 700 : baseWeight),
       fontStyle: run.italic ? 'italic' : style.fontStyle,
       fill: run.fill ?? style.fill,
       // Unlike the decorations below, a run's stroke *replaces* the node's
