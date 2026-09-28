@@ -58,8 +58,7 @@ import { pathContainsPoint } from 'features/paths/pathHitTest';
 import { boundsOfPath } from 'features/paths/bounds';
 import { strokeHitTest } from 'features/paths/hitTest';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
-import { markerDrawCommands } from 'features/paths/markerCommands';
-import { markerInset } from '../core/markerInset';
+import { markerReach } from 'features/paths/markerCommands';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
 import { fillInPoseFrame, type FillPoseBox } from '../core/fillInPoseFrame';
@@ -579,11 +578,7 @@ function inkReach(
   const w = resolveStrokeWidth(stroke.width ?? 1, scale ?? 1);
   // A marker paints past the path's own end, and the kit's rule is that
   // visible chrome is hittable — so the reach has to cover it.
-  const reach = Math.max(
-    markerInset(stroke.markerStart, w),
-    markerInset(stroke.markerEnd, w),
-    markerInset(stroke.markerMid, w),
-  );
+  const reach = markerReach(stroke, w, scale);
   switch (stroke.align ?? 'center') {
     case 'inner':
       return { outset: reach, inset: w };
@@ -595,7 +590,7 @@ function inkReach(
 }
 
 /** Apply {@link NodePaintCtx.vertexColors} to a path painter's body — its first
- *  command, ahead of any markers. Applied outside the paint memo, whose key
+ *  command. Applied outside the paint memo, whose key
  *  cannot see an override: `cmds` comes back as-is when nothing changes, and
  *  otherwise as a copy, since a memoized list is not ours to edit. Colors whose
  *  length does not match the path's anchors are dropped. */
@@ -653,10 +648,7 @@ const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
       ...(fill && d.vertexColors ? { vertexColors: d.vertexColors } : {}),
       ...(stroke ? { stroke } : {}),
     };
-    if (!stroke) return [cmd];
-    // Markers paint after the ribbon so they sit on top of it.
-    const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-    return [cmd, ...markerDrawCommands(projected, stroke, width, undefined)];
+    return [cmd];
   }), ctx),
   silhouette: (node, pose) => {
     const d = node.data as { path: Path };
@@ -869,12 +861,7 @@ const DERIVED_PAINTER: NodeShapeEntry = {
       ...(fill && d?.vertexColors ? { vertexColors: d.vertexColors } : {}),
       ...(stroke ? { stroke } : {}),
     };
-    if (!stroke) return withAnimatedVertexColors([cmd], ctx);
-    // The same marker pass `kit:path` runs, and for the same reason a diagram
-    // edge is a stroke like any other: an arrowhead is `markerEnd`, not
-    // geometry the router appends. `ink` already reserves the reach for one.
-    const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-    return withAnimatedVertexColors([cmd, ...markerDrawCommands(path, stroke, width, undefined)], ctx);
+    return withAnimatedVertexColors([cmd], ctx);
   },
   // The derived path *is* the silhouette, and it is already absolute — the
   // pose is a placeholder, so nothing here can be recovered from it. Without

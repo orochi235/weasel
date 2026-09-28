@@ -189,8 +189,8 @@ export type { ActiveToolContextValue, ActiveToolContextProviderProps } from '@we
 
 // ─── Dep registry ───
 export { DepRegistryProvider, useDepRegistry, useOptionalDepRegistry, useDepSource } from '@weasel-js/routing/react';
-export type { DepName } from '@weasel-js/routing';
-export type { DepRegistry } from '@weasel-js/routing/react';
+export { createDepRegistry } from '@weasel-js/routing';
+export type { DepName, DepRegistry } from '@weasel-js/routing';
 // Exported from its defining module rather than through depRegistry's
 // re-export, so `DepName = keyof DepSchema` resolves to a documented symbol.
 export type { DepSchema } from './interactions/actions/depSchema';
@@ -447,6 +447,8 @@ export type {
 
 // ─── Layer primitives: RenderLayer, ordered children ────────────────────────
 export * from './core/layers/render';
+export { workspaceTintLayer, modeDecorationLayer } from './features/modes/modeLayers';
+export type { WorkspaceTintLayerOptions } from './features/modes/modeLayers';
 export { createChildrenLayer } from './features/groups/children';
 export type { CreateChildrenLayerOpts } from './features/groups/children';
 
@@ -852,7 +854,6 @@ export type { MarkerEntry, MarkerCtx, MarkerPaint } from './core/strokeMarkers';
 export { markerInset, markerKeyOf, resolveMarkerSize, strokeInsets } from './core/markerInset';
 export { markerSites } from './features/paths/markerSites';
 export type { MarkerSite, MarkerSiteRequest } from './features/paths/markerSites';
-export { markerDrawCommands } from './features/paths/markerCommands';
 export { BUILTIN_MARKERS } from './core/strokeMarkerShapes';
 export { trimPolyline } from './features/paths/tessellate/trim';
 
@@ -1041,7 +1042,6 @@ export type {
   UseRotateOptions,
   RotationHandle,
 } from './interactions/actions/rotate';
-export type { UseInsertOptions } from './interactions/actions/insert';
 export { useDragRect } from './interactions/gestures/dragRect';
 export type {
   DragRectController,
@@ -1069,7 +1069,7 @@ export type {
   UseDragRadialOptions,
   DragRadialController,
 } from './interactions/gestures/dragRadial';
-export { openPointerSession } from '@weasel-js/routing';
+export { openPointerSession, DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/routing';
 export type { PointerSession, PointerSessionCallbacks, PointerSessionCancelReason, PointerSessionOptions } from '@weasel-js/routing';
 export { useHandleDrag } from './interactions/gestures/handleDrag';
 export type {

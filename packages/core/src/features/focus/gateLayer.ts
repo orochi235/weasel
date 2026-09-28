@@ -8,7 +8,7 @@
  * a static value would lock in whatever the predicate returned at
  * construction time.
  */
-import type { RenderLayer } from 'core/layers/render';
+import { subscribeToSources, type RenderLayer } from 'core/layers/render';
 
 /** Options for `gateLayer`. */
 export interface GateLayerOptions<TData> {
@@ -32,5 +32,6 @@ export function gateLayer<TData>(opts: GateLayerOptions<TData>): RenderLayer<TDa
   if (layer.defaultVisible !== undefined) wrapped.defaultVisible = layer.defaultVisible;
   if (layer.alwaysOn !== undefined) wrapped.alwaysOn = layer.alwaysOn;
   if (layer.space !== undefined) wrapped.space = layer.space;
+  if (layer.subscribe) wrapped.subscribe = subscribeToSources([layer]);
   return wrapped;
 }

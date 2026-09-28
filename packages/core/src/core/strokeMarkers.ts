@@ -12,7 +12,6 @@
 
 import type { FillStyle, MarkerKey, Stroke } from '@weasel-js/paint';
 import type { Path } from './geometry/path';
-import { bumpNodeMemoGeneration } from './scene/nodeMemo';
 import { BUILTIN_MARKERS } from './strokeMarkerShapes';
 
 /** What an entry's `path` is given. Entries that ignore it may return a
@@ -50,11 +49,26 @@ export interface MarkerEntry {
   /** `'auto'` (default) follows the line; a number is a fixed angle in
    *  radians, ignoring the line — SVG's `orient="<angle>"`. */
   orient?: 'auto' | number;
+  /** The stroke fields `path` reads besides `ctx.size` — `[]` for a shape
+   *  drawn from size alone. Declared, a head is reused across stroke objects
+   *  whose listed fields are equal; omitted, only across frames that pass the
+   *  same stroke object, since `path` might read any of it. */
+  reads?: readonly (keyof Stroke)[];
   /** Emits the `<marker>` def. Consumed by `@weasel-js/svg`. */
   toSvg?(id: string, entry: MarkerEntry): string;
 }
 
 let MARKERS = new Map<string, MarkerEntry>();
+let generation = 0;
+
+/** Bumped whenever the registered set changes, for caches of marker geometry. */
+export function markerGeneration(): number {
+  return generation;
+}
+
+function changed(): void {
+  generation++;
+}
 
 function seedBuiltins(): void {
   for (const entry of BUILTIN_MARKERS) MARKERS.set(entry.id, entry);
@@ -66,14 +80,12 @@ seedBuiltins();
 export function registerMarker(entry: MarkerEntry): () => void {
   const displaced = MARKERS.get(entry.id);
   MARKERS.set(entry.id, entry);
-  // Marker geometry is read inside `NodeShape`'s per-node paint memo, so the
-  // registered set is ambient state that memo cannot see change.
-  bumpNodeMemoGeneration();
+  changed();
   return () => {
     if (MARKERS.get(entry.id) !== entry) return;
     if (displaced) MARKERS.set(entry.id, displaced);
     else MARKERS.delete(entry.id);
-    bumpNodeMemoGeneration();
+    changed();
   };
 }
 
@@ -91,5 +103,5 @@ export function listMarkers(): readonly MarkerEntry[] {
 export function _resetMarkersForTests(): void {
   MARKERS = new Map();
   seedBuiltins();
-  bumpNodeMemoGeneration();
+  changed();
 }

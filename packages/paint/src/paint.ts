@@ -146,10 +146,11 @@ export type MarkerKey = KitMarkerKey | (string & {});
 /**
  * A marker on one end (or every interior vertex) of a stroke.
  *
- * `size` reuses `Stroke.width`'s unit system: a bare number scales with the
- * resolved stroke width, `{ px }` pins screen pixels. That is SVG's
- * `markerUnits` in the idiom this codebase already resolves at draw time.
- * Omitted, the marker is one stroke width per unit.
+ * `size` is the length of one marker unit, and replaces the stroke width
+ * rather than multiplying it: a bare number is world units, however wide the
+ * line. Omitted, one unit is the resolved stroke width — SVG's
+ * `markerUnits="strokeWidth"`; given, it is `userSpaceOnUse`. A `{ px }` size
+ * holds its screen size through a zoom, as a `{ px }` stroke width does.
  */
 export type MarkerRef = MarkerKey | { key: MarkerKey; size?: ScreenLength };
 

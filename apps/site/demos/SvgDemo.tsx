@@ -1,49 +1,17 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import {
-  SceneCanvas,
-  WeaselProvider,
-  fillInPoseFrame,
-  pathInPoseFrame,
-  useScene,
-  useSelection,
-  type FillStyle,
-  type ImageNodeData,
-  type NodeId,
-  type Path,
-  type Scene,
-  type Stroke,
-  type StyledRun,
-  type TextStyle,
-  type TextVerticalAlign,
-} from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider, useScene, useSelection } from '@weasel-js/core';
 import {
   parseSvg,
   serializeSvg,
-  svgImageFromKit,
+  svgNodesFromKit,
   svgNodesToKitDrafts,
-  type SvgNode,
-  type SvgPaint,
-  type SvgStroke,
+  type SvgKitLeafData,
+  type SvgKitPose,
 } from '@weasel-js/svg';
 import s from './SvgDemo.module.css';
 
 const W = 420, H = 320;
 const VIEW = { x: 0, y: 0, width: W, height: H };
-
-interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
-
-/** The union of what `svgNodesToKitDrafts` writes for the kit's path, text
- *  and image painters — so every imported leaf is drawn by a built-in one. */
-interface LeafData {
-  path?: Path;
-  fill?: FillStyle | null;
-  stroke?: Stroke;
-  text?: string;
-  style?: TextStyle;
-  runs?: StyledRun[];
-  verticalAlign?: TextVerticalAlign;
-  image?: ImageNodeData['image'];
-}
 
 type LayerId = 'default';
 
@@ -91,7 +59,7 @@ const PRESETS: { name: string; svg: string }[] = [
 function sceneFromSvg(source: string) {
   const parsed = parseSvg(source);
   let seq = 0;
-  const drafts = svgNodesToKitDrafts(parsed.nodes, () => `svg-${seq++}`);
+  const drafts = svgNodesToKitDrafts(parsed, () => `svg-${seq++}`);
   return {
     parsed,
     json: {
@@ -102,62 +70,10 @@ function sceneFromSvg(source: string) {
         kind: d.kind,
         layer: 'default' as const,
         pose: d.pose,
-        data: (d.kind === 'leaf' ? d.data : {}) as LeafData,
+        data: (d.kind === 'leaf' ? d.data : {}) as SvgKitLeafData,
         ...(d.parentId ? { parent: d.parentId } : {}),
       })),
     },
-  };
-}
-
-// The package ships the scene-ward half of the bridge (`svgNodesToKitDrafts`)
-// and the image leaf's way back (`svgImageFromKit`); paths and text are
-// written back here.
-function svgPaintOf(fill: FillStyle | null | undefined, pose: Pose): SvgPaint {
-  if (!fill) return { kind: 'none' };
-  if (fill.fill === undefined || fill.fill === 'solid') {
-    return { kind: 'solid', color: fill.color, ...(fill.opacity != null ? { opacity: fill.opacity } : {}) };
-  }
-  return { kind: 'gradient', paint: fillInPoseFrame(fill, pose) };
-}
-
-function svgStrokeOf(stroke: Stroke | undefined, pose: Pose): SvgStroke | undefined {
-  if (!stroke?.paint) return undefined;
-  return {
-    paint: svgPaintOf(stroke.paint, pose),
-    width: stroke.width ?? 1,
-    cap: stroke.cap,
-    join: stroke.join,
-    dash: stroke.dash,
-    miterLimit: stroke.miterLimit,
-  };
-}
-
-function svgNodeOf(scene: Scene<LeafData, LayerId, Pose>, id: NodeId): SvgNode | null {
-  const node = scene.get(id);
-  if (!node) return null;
-  const { data, pose } = node;
-  if (node.kind === 'container') {
-    return {
-      kind: 'group',
-      children: scene.childrenOf(id).map((c) => svgNodeOf(scene, c)).filter((n) => n !== null),
-    };
-  }
-  if (data.image) return svgImageFromKit(data.image, pose);
-  if (data.text != null) {
-    return {
-      kind: 'text', x: pose.x, y: pose.y, width: pose.width, height: pose.height,
-      text: data.text, style: data.style, runs: data.runs, verticalAlign: data.verticalAlign,
-      fill: data.fill, stroke: data.stroke, rotation: pose.rotation,
-    };
-  }
-  if (!data.path) return null;
-  return {
-    kind: 'path',
-    // Stored geometry stays in its source frame; the pose is where it is drawn.
-    path: pathInPoseFrame(data.path, pose),
-    fill: svgPaintOf(data.fill, pose),
-    stroke: svgStrokeOf(data.stroke, pose),
-    rotation: pose.rotation,
   };
 }
 
@@ -166,8 +82,8 @@ function svgNodeOf(scene: Scene<LeafData, LayerId, Pose>, id: NodeId): SvgNode |
  *
  * The source is parsed with `parseSvg` and lowered by `svgNodesToKitDrafts`
  * into leaves the kit's own painters draw, loaded into an ordinary scene. The
- * select tool edits that scene, and the output is `serializeSvg` over whatever
- * the scene holds now — so a drag shows up as changed coordinates.
+ * select tool edits that scene, and the output is `serializeSvg` over
+ * `svgNodesFromKit(scene)` — so a drag shows up as changed coordinates.
  */
 export function SvgDemo() {
   return <WeaselProvider><SvgRoundTrip /></WeaselProvider>;
@@ -175,7 +91,7 @@ export function SvgDemo() {
 
 function SvgRoundTrip() {
   const [source, setSource] = useState(PRESETS[0].svg);
-  const scene = useScene<LeafData, LayerId, Pose>({ systemLayers: [{ id: 'default' }] });
+  const scene = useScene<SvgKitLeafData, LayerId, SvgKitPose>({ systemLayers: [{ id: 'default' }] });
   const selection = useSelection({ mode: 'multi' });
 
   const imported = useMemo(() => {
@@ -196,7 +112,7 @@ function SvgRoundTrip() {
   const version = useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
   const exported = useMemo(() => {
     const warnings: string[] = [];
-    const nodes = scene.roots.map((id) => svgNodeOf(scene, id)).filter((n) => n !== null);
+    const nodes = svgNodesFromKit(scene);
     const viewBox = ('parsed' in imported && imported.parsed.viewBox) || VIEW;
     const text = serializeSvg(nodes, { viewBox, pretty: true, onWarn: (m) => warnings.push(m) });
     return { text, warnings };

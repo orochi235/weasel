@@ -10,8 +10,7 @@
  */
 
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
-import { forEachSegment } from '@weasel-js/geom';
-import { cubicPointAt } from './cubicMath';
+import { forEachSegment, nearestOnCubic, nearestOnLine } from '@weasel-js/geom';
 import { PathBuilder } from './builder';
 
 /** One anchor of an editable path: its on-curve point plus the two control
@@ -188,56 +187,17 @@ export function isStraightSegment(a: PenAnchor, b: PenAnchor): boolean {
   return a.outHandle == null && b.inHandle == null;
 }
 
-const COARSE_SAMPLES = 32;
-const REFINE_STEPS = 48;
-const GOLDEN = (Math.sqrt(5) - 1) / 2;
-
 /** Nearest parameter on one segment to `(x, y)`, with its squared distance.
  *  A straight segment is parameterized by arc length (`t` is the fraction of
  *  the way from `a` to `b`), matching how {@link insertAnchorOnSegment}
  *  splits one. */
 function nearestOnSegment(a: PenAnchor, b: PenAnchor, x: number, y: number): { t: number; d2: number } {
-  if (isStraightSegment(a, b)) {
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const len2 = dx * dx + dy * dy;
-    const t = len2 === 0 ? 0 : Math.min(1, Math.max(0, ((x - a.x) * dx + (y - a.y) * dy) / len2));
-    const ex = a.x + dx * t - x;
-    const ey = a.y + dy * t - y;
-    return { t, d2: ex * ex + ey * ey };
-  }
   const p1 = a.outHandle ?? a;
   const p2 = b.inHandle ?? b;
-  const d2At = (t: number): number => {
-    const q = cubicPointAt(a, p1, p2, b, t);
-    return (q.x - x) ** 2 + (q.y - y) ** 2;
-  };
-  let bestT = 0;
-  let bestD2 = Infinity;
-  for (let k = 0; k <= COARSE_SAMPLES; k++) {
-    const t = k / COARSE_SAMPLES;
-    const d2 = d2At(t);
-    if (d2 < bestD2) { bestD2 = d2; bestT = t; }
-  }
-  // Golden-section search over the bracket either side of the best sample.
-  let lo = Math.max(0, bestT - 1 / COARSE_SAMPLES);
-  let hi = Math.min(1, bestT + 1 / COARSE_SAMPLES);
-  let m1 = hi - GOLDEN * (hi - lo);
-  let m2 = lo + GOLDEN * (hi - lo);
-  let f1 = d2At(m1);
-  let f2 = d2At(m2);
-  for (let i = 0; i < REFINE_STEPS; i++) {
-    if (f1 < f2) {
-      hi = m2; m2 = m1; f2 = f1;
-      m1 = hi - GOLDEN * (hi - lo); f1 = d2At(m1);
-    } else {
-      lo = m1; m1 = m2; f1 = f2;
-      m2 = lo + GOLDEN * (hi - lo); f2 = d2At(m2);
-    }
-  }
-  const t = (lo + hi) / 2;
-  const d2 = d2At(t);
-  return d2 < bestD2 ? { t, d2 } : { t: bestT, d2: bestD2 };
+  const hit = isStraightSegment(a, b)
+    ? nearestOnLine(x, y, a.x, a.y, b.x, b.y)
+    : nearestOnCubic(x, y, a.x, a.y, p1.x, p1.y, p2.x, p2.y, b.x, b.y);
+  return { t: hit.t, d2: hit.dist * hit.dist };
 }
 
 /** The segment of a decoded path nearest `(wx, wy)`, and the parameter `t`

@@ -16,9 +16,6 @@ function toSvgPaint(paint: FillStyle | undefined): SvgPaint {
   return { kind: 'gradient', paint };
 }
 
-/** Marker references are deliberately dropped: `markCommands` already resolves
- *  a marker into its own path command, and keeping the reference would make
- *  the serializer emit a `<marker>` def that draws the head a second time. */
 function toSvgStroke(stroke: Stroke): SvgStroke {
   return {
     paint: toSvgPaint(stroke.paint),
@@ -28,6 +25,9 @@ function toSvgStroke(stroke: Stroke): SvgStroke {
     ...(stroke.dash ? { dash: [...stroke.dash] } : {}),
     ...(stroke.miterLimit != null ? { miterLimit: stroke.miterLimit } : {}),
     ...(stroke.align ? { align: stroke.align } : {}),
+    ...(stroke.markerStart ? { markerStart: stroke.markerStart } : {}),
+    ...(stroke.markerMid ? { markerMid: stroke.markerMid } : {}),
+    ...(stroke.markerEnd ? { markerEnd: stroke.markerEnd } : {}),
   };
 }
 

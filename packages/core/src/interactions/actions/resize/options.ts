@@ -1,31 +1,32 @@
-/** Option surface for the `resize` action.
- *
- *  Lives in a sibling file (not `resize.ts`) so the type contract stays stable
- *  even after the legacy `useResize` hook is gone.
- *  Consumers should import from here directly; `resize.ts` re-exports the
- *  same symbol for back-compat. */
+/** Option surface for the `resize` action. */
 
 import type {
   PointSnapBehavior,
   BoundsConstraint,
 } from '../../gestures/types';
-import type { DebugSink } from '../../../debug/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** Options for the `resize` action: the constraints applied to the dragged
- *  bounding box, and how a gesture expands a group into its leaves. */
+ *  bounding box, how a gesture expands a group into its leaves, and its
+ *  history and lifecycle. `<SceneCanvas>` publishes them as the
+ *  `resizePolicy` dep (`resizePolicyOptions`). */
 export interface UseResizeOptions<TPose> {
   /** Behaviors are rect-typed: they read/write `{x,y,width,height}`. For a
    *  non-rect `TPose`, constraints are typed `never`; the pose descriptor
    *  comes from `<SceneCanvas poseDescriptor>`. */
   behaviors?: TPose extends Bounds ? BoundsConstraint<TPose>[] : never;
+  /** History label for the committed resize. Default `'Resize'`. */
   resizeLabel?: string;
-  /** Reserved; resize is never transient in practice. Ignored. */
+  /** Commit without an undo entry (`scene.untracked`), bypassing the
+   *  consumer `applyOps` hook. Unset, a behavior's `defaultTransient` decides. */
   transient?: boolean;
-  onGestureStart?: (id: string) => void;
+  /** Fired when the resize starts, with the ids it writes. */
+  onGestureStart?: (ids: string[]) => void;
+  /** Fired once per `onGestureStart`: `true` when the resize wrote to the
+   *  document, `false` on cancel, a behavior abort, or no change. */
   onGestureEnd?: (committed: boolean) => void;
   /** Optional: expand the incoming id into leaf ids before pose lookups.
-   *  Mirrors `useMove`'s `expandIds`. Used for group expansion: when the
+   *  Used for group expansion: when the
    *  gesture is started against a group id, the kit
    *  resizes by computing the union AABB of the leaves' origin bounds,
    *  running the compute pipeline on that union rect (group bounds), and
@@ -44,15 +45,6 @@ export interface UseResizeOptions<TPose> {
    *  the hook back-solves the local pose so the chosen frame's world point
    *  lands on the snap target. First non-null result wins. */
   pointSnapBehaviors?: TPose extends Bounds ? PointSnapBehavior<TPose>[] : never;
-  /** Optional debug sink. When supplied, records corner-handle positions +
-   *  circular hitboxes when the gesture starts (covers the on-screen
-   *  handles for the resized target). Tree-shakes via optional-chain
-   *  when omitted. */
-  debug?: DebugSink;
-  /** Hit-test radius for corner handles, in screen pixels. Used purely for
-   *  the recorded debug hitbox circle radius — does not affect actual hit
-   *  math (which lives in `usePointerGestures`). Default `8`. */
-  handleHitRadius?: number;
   /** Per-node resizability predicate. Returns `false` for nodes that should
    *  never show resize handles (and thus can't start a resize gesture) — e.g.
    *  fixed-footprint icons, locked layers. `<SceneCanvas>` folds this over the

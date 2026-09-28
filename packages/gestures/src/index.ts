@@ -51,6 +51,10 @@ export type {
 export { parseKeyRoute, formatKeyRoute, keyRouteToSpec } from './grammar/keyRouteGrammar';
 export type { ParsedKeyRoute, OptionalMod } from './grammar/keyRouteGrammar';
 
+// Route → GestureSpec
+export { routeToSpec } from './grammar/routeToSpec';
+export { routeGestureForSpecKind, specKindForRouteGesture } from './grammar/specKinds';
+
 // Plain-English route descriptions
 export { describeRoute, describeRouteParts, ROUTE_TERMS, ROUTE_FIELD_DEFINITIONS } from './grammar/describeRoute';
 export type { DescribeRouteOptions, RouteDescriptionPart, RouteTermLabel, RouteFieldName } from './grammar/describeRoute';
@@ -102,3 +106,9 @@ export type {
 // Pure matcher functions
 export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, mimeMatchesGlob, matchIngestTypes, parseTargetSpec } from './ui/match';
 export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
+
+// Binding precedence
+export { specificity } from './ui/specificity';
+
+// Click-vs-drag travel
+export { DRAG_THRESHOLD_PX, pastDragThreshold } from './ui/dragThreshold';

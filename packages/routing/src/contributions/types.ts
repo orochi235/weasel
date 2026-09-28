@@ -1,7 +1,7 @@
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { Action } from '../interactions/actions/action';
 import type { CapabilityTag } from '@weasel-js/modes';
-import type { DepName, DepSchema } from '../index';
+import type { DepName, DepSchema, KernelOverlay } from '../index';
 
 /** Hotkey-slot trigger key. The slot is engaged while this key is held —
  *  hence "hotkey": active as long as the key is hot. Omitted means the tool
@@ -84,7 +84,7 @@ export interface ContributionRouting {
  * What an entry draws and how a palette shows it. None of it reaches the
  * dispatcher.
  */
-export interface ContributionChrome<TOverlay = unknown> {
+export interface ContributionChrome<TOverlay = KernelOverlay> {
   /** One layer, or several composed in the given order.
    *
    *  Routing never reads a layer — it collects the live ones and hands them
@@ -101,7 +101,7 @@ export interface ContributionChrome<TOverlay = unknown> {
  * is optional and independent — an entry that only routes input declares only
  * `bindings` and `actions`.
  */
-export interface Contribution<TOverlay = unknown>
+export interface Contribution<TOverlay = KernelOverlay>
   extends ContributionRouting, ContributionChrome<TOverlay> {
   /** Reflection escape hatch — the authored form, when there was one. */
   def?: unknown;

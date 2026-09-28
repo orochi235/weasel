@@ -13,7 +13,7 @@
 
 import { identity, type Mat3 } from '@weasel-js/geom';
 import type {
-  Path, FillStyle, MarkerEntry, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
+  Path, FillStyle, MarkerEntry, MarkerRef, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
   TextVerticalAlign,
 } from '@weasel-js/core';
 
@@ -104,10 +104,12 @@ export interface SvgStroke {
    *  writes the stroke centered and says so through `onWarn`; the parser
    *  never sets it. */
   align?: StrokeAlign;
-  /** `marker-start` / `marker-mid` / `marker-end`, as the bare `url(#id)` key. */
-  markerStart?: string;
-  markerMid?: string;
-  markerEnd?: string;
+  /** `marker-start` / `marker-mid` / `marker-end` as the kit's `MarkerRef`: the
+   *  bare `url(#id)` key, or a key with the `size` the serializer writes into a
+   *  def of its own. */
+  markerStart?: MarkerRef;
+  markerMid?: MarkerRef;
+  markerEnd?: MarkerRef;
 }
 
 /**

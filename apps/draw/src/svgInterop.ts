@@ -1,10 +1,9 @@
 /**
  * Bridge between WeaselDraw's `Obj` discriminated union (`PathObj |
- * TextObj`, discriminated by `tool`) and `@weasel-js/svg`'s
- * `SvgNode` discriminated union. Each direction is intentionally lossy
- * at the edges (PathObj's stroke compresses to an SvgStroke;
- * SvgGroupNode flattens on import) — see comments inline for the
- * specifics.
+ * TextObj | ImageObj`, discriminated by `tool`) and `@weasel-js/svg`'s
+ * `SvgNode` discriminated union, layered over the package's own
+ * `svgNodesFromKit` / `svgNodesToKitDrafts` walks. What it adds is the `wd:`
+ * namespace.
  *
  * `tool` and `params` ride on `meta.wd.attrs` under the local names
  * `tool`, `params-sides`, `params-points`, `params-ratio`. On import, a
@@ -12,20 +11,26 @@
  * path-then-rect detector fired, else `tool: 'imported'`.
  */
 
-import { boundsOfPath, fillToBoundsFrame, solid } from '@weasel-js/core';
-import type { FillStyle, PolygonPath, Stroke, TextStyle } from '@weasel-js/core';
-import { strokeDataFromSvg } from '@weasel-js/svg';
+import type { FillStyle, PolygonPath, TextStyle } from '@weasel-js/core';
+import {
+  svgImageFromKit,
+  svgLeafFromKit,
+  svgNodesFromKit,
+  svgPaintFromKit,
+  svgNodesToKitDrafts,
+  svgStrokeFromKit,
+} from '@weasel-js/svg';
 import type {
   ParseResult,
   SerializeOptions,
+  SvgKitLeafData,
+  SvgKitTree,
+  SvgLeafNode,
   SvgNode,
-  SvgGroupNode,
-  SvgPaint,
   SvgPathNode,
-  SvgStroke,
   SvgTextNode,
 } from '@weasel-js/svg';
-import type { Obj, PathObj, PathParams, TextObj, ToolKind } from './poseUpdate';
+import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './poseUpdate';
 
 /**
  * The `wd:` XML namespace, used to ride WeaselDraw-specific metadata
@@ -109,7 +114,7 @@ export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
  */
 function encodeWdAttrs(o: Obj): Record<string, string> {
   const attrs: Record<string, string> = { tool: o.tool };
-  if (o.tool !== 'text' && o.params) {
+  if (o.tool !== 'text' && o.tool !== 'image' && o.params) {
     if ('sides' in o.params) attrs['params-sides'] = String(o.params.sides);
     if ('points' in o.params) attrs['params-points'] = String(o.params.points);
     if ('ratio' in o.params) attrs['params-ratio'] = String(o.params.ratio);
@@ -117,7 +122,7 @@ function encodeWdAttrs(o: Obj): Record<string, string> {
   return attrs;
 }
 
-/** Recognized values of `wd:tool` for PathObjs (everything except `'text'`). */
+/** Recognized values of `wd:tool` for PathObjs. */
 const PATH_TOOL_VALUES = new Set<string>([
   'rect', 'ellipse', 'polygon', 'star', 'line', 'pen', 'pencil', 'imported',
 ]);
@@ -131,11 +136,11 @@ const PATH_TOOL_VALUES = new Set<string>([
 function decodePathToolAndParams(
   attrs: Record<string, string> | undefined,
   pathKind: 'rect' | 'polygon',
-): { tool: Exclude<ToolKind, 'text'>; params?: PathParams } {
+): { tool: PathToolKind; params?: PathParams } {
   const raw = attrs?.['tool'];
-  const tool: Exclude<ToolKind, 'text'> =
+  const tool: PathToolKind =
     raw && PATH_TOOL_VALUES.has(raw)
-      ? (raw as Exclude<ToolKind, 'text'>)
+      ? (raw as PathToolKind)
       : (pathKind === 'rect' ? 'rect' : 'imported');
   let params: PathParams | undefined;
   if (tool === 'polygon' && attrs) {
@@ -151,73 +156,38 @@ function decodePathToolAndParams(
   return { tool, params };
 }
 
-/**
- * Lower an object's paint to an SVG paint. A non-solid one is turned by the
- * serializer into a `<defs>` gradient and a `url(#…)` reference.
- */
-function objPaintToSvg(fill: FillStyle): SvgPaint {
-  if (fill.fill === undefined || fill.fill === 'solid') {
-    return { kind: 'solid', color: fill.color };
-  }
-  return { kind: 'gradient', paint: fill };
-}
-
-/** Lower an object's stroke onto an `SvgStroke`. */
-function objStrokeToSvg(stroke: Stroke | null): SvgStroke | undefined {
-  const paint = stroke?.paint;
-  if (stroke === null || paint === undefined) return undefined;
-  const width = stroke.width ?? 1;
-  if ((typeof width === 'object' ? width.px : width) <= 0) return undefined;
-  return {
-    paint: objPaintToSvg(paint),
-    width,
-    ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),
-    ...(stroke.join !== undefined ? { join: stroke.join } : {}),
-    ...(stroke.dash !== undefined ? { dash: stroke.dash } : {}),
-    ...(stroke.miterLimit !== undefined ? { miterLimit: stroke.miterLimit } : {}),
-    ...(stroke.align !== undefined ? { align: stroke.align } : {}),
-  };
-}
-
 /** Lower one WeaselDraw object to an SvgNode for serialization. */
 export function objToSvgNode(o: Obj): SvgNode {
   if (o.tool === 'text') {
-    const node: SvgTextNode = {
-      kind: 'text',
-      x: o.x,
-      y: o.y,
-      width: o.width,
-      height: o.height,
+    // weasel-svg does not model `lineHeight` (it has no clean SVG-native
+    // attribute), so it rides in the namespaced meta bag as `wd:line-height`.
+    const { lineHeight, ...style } = o.style ?? {};
+    const node = svgLeafFromKit({
       text: o.text,
-    };
-    if (o.runs && o.runs.length > 0) node.runs = o.runs;
-    if (o.fill !== undefined) node.fill = o.fill;
-    if (o.stroke) node.stroke = o.stroke;
-    if (o.verticalAlign) node.verticalAlign = o.verticalAlign;
-    // Start the WeaselDraw attr bag with `tool: 'text'`; lineHeight (if any)
-    // joins the same bag.
-    const wdAttrs: Record<string, string> = encodeWdAttrs(o);
-    if (o.style) {
-      // weasel-svg does not model `lineHeight` (it has no clean SVG-native
-      // attribute). Lift it into the namespaced meta bag as
-      // `wd:line-height="<n>"` so it round-trips losslessly; pass the
-      // remaining style fields through verbatim.
-      const { lineHeight, ...rest } = o.style;
-      if (Object.keys(rest).length > 0) node.style = rest as TextStyle;
-      if (lineHeight != null) wdAttrs['line-height'] = String(lineHeight);
-    }
+      ...(Object.keys(style).length > 0 ? { style: style as TextStyle } : {}),
+      ...(o.runs && o.runs.length > 0 ? { runs: o.runs } : {}),
+      ...(o.verticalAlign ? { verticalAlign: o.verticalAlign } : {}),
+      ...(o.fill !== undefined ? { fill: o.fill } : {}),
+      ...(o.stroke ? { stroke: o.stroke } : {}),
+    }, o) as SvgTextNode;
+    const wdAttrs = encodeWdAttrs(o);
+    if (lineHeight != null) wdAttrs['line-height'] = String(lineHeight);
     node.meta = { wd: { attrs: wdAttrs } };
-    if (o.rotation) node.rotation = o.rotation;
     return node;
   }
-  // Every non-text Obj is a PathObj — its `path` field is either a RectPath
+  if (o.tool === 'image') {
+    const node = svgImageFromKit(o.image, o);
+    node.meta = { wd: { attrs: encodeWdAttrs(o) } };
+    return node;
+  }
+  // Every other Obj is a PathObj — its `path` field is either a RectPath
   // (rect tool) or a PolygonPath (every other tool, including imported).
   const node: SvgPathNode = {
     kind: 'path',
     path: o.path,
-    fill: o.closed && o.fill !== null ? objPaintToSvg(o.fill) : { kind: 'none' },
+    fill: svgPaintFromKit(o.closed ? o.fill : null, o),
   };
-  const stroke = objStrokeToSvg(o.stroke);
+  const stroke = svgStrokeFromKit(o.stroke, o);
   if (stroke) node.stroke = stroke;
   node.meta = { wd: { attrs: encodeWdAttrs(o) } };
   if (o.rotation) node.rotation = o.rotation;
@@ -234,7 +204,7 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  * ordered parent-before-child so the caller can `scene.add` each draft in
  * turn, resolving `parentId` against the ids it has already inserted.
  *
- *   - `leaf`    — an `Obj` (path/text); the caller lowers it to the scene's
+ *   - `leaf`    — an `Obj` (path/text/image); the caller lowers it to the scene's
  *                 `{pose, data}` shape exactly as it does for root leaves.
  *   - `container` — an SVG `<g>`. Carries the union-AABB of its leaf
  *                 descendants as `pose` so resize handles land sensibly,
@@ -248,196 +218,109 @@ export type SceneDraft =
   | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds };
 
 /**
- * Lower one path/text `SvgNode` to its `Obj`. Group nodes are not handled
- * here (they have no `Obj` representation) — see {@link svgNodesToSceneDrafts}.
+ * Lift the kit's lowering of one leaf into an `Obj`, adding what the `wd:`
+ * namespace carries: a path's `tool` and `params`, a text's `lineHeight`.
  */
-function svgLeafToObj(
-  n: SvgPathNode | SvgTextNode,
+function kitLeafToObj(
   id: string,
-): Obj {
-  if (n.kind === 'text') {
-    const o: TextObj = {
-      id,
-      tool: 'text',
-      x: n.x, y: n.y, width: n.width, height: n.height,
-      text: n.text,
-    };
-    if (n.runs && n.runs.length > 0) o.runs = n.runs;
-    if (n.fill !== undefined) o.fill = n.fill;
-    if (n.stroke) o.stroke = n.stroke;
-    if (n.verticalAlign) o.verticalAlign = n.verticalAlign;
-    if (n.rotation) o.rotation = n.rotation;
-    // Reconstitute the full TextStyle from weasel-svg's style + the
-    // namespaced lineHeight from the meta bag. weasel-svg doesn't model
-    // `lineHeight` so it rides on `meta.wd.attrs['line-height']`.
-    const lhStr = n.meta?.wd?.attrs?.['line-height'];
-    const lh = lhStr != null ? parseFloat(lhStr) : undefined;
-    if (n.style || (lh != null && Number.isFinite(lh))) {
-      o.style = { ...(n.style ?? {}) };
-      if (lh != null && Number.isFinite(lh)) o.style.lineHeight = lh;
+  { pose, data }: { pose: RectBounds & { rotation?: number }; data: SvgKitLeafData },
+  source: SvgLeafNode,
+): Obj | null {
+  const attrs = source.meta?.wd?.attrs;
+  const box = { x: pose.x, y: pose.y, width: pose.width, height: pose.height };
+  if (data.image) {
+    const o: ImageObj = { id, tool: 'image', ...box, image: { ...data.image } };
+    if (pose.rotation) o.rotation = pose.rotation;
+    return o;
+  }
+  if (data.text != null) {
+    const o: TextObj = { id, tool: 'text', ...box, text: data.text };
+    if (data.runs && data.runs.length > 0) o.runs = [...data.runs];
+    if (data.fill !== undefined) o.fill = data.fill;
+    if (data.stroke) o.stroke = data.stroke;
+    if (data.verticalAlign) o.verticalAlign = data.verticalAlign;
+    if (pose.rotation) o.rotation = pose.rotation;
+    const lh = attrs?.['line-height'] != null ? parseFloat(attrs['line-height']) : NaN;
+    if (data.style || Number.isFinite(lh)) {
+      o.style = { ...(data.style ?? {}) };
+      if (Number.isFinite(lh)) o.style.lineHeight = lh;
     }
     return o;
   }
-  const { tool, params } = decodePathToolAndParams(n.meta?.wd?.attrs, n.path.kind);
-  let bounds: RectBounds;
-  let closed: boolean;
-  if (n.path.kind === 'rect') {
-    bounds = { x: n.path.x, y: n.path.y, width: n.path.width, height: n.path.height };
-    closed = true;
-  } else {
-    const b = boundsOfPath(n.path);
-    bounds = { x: b.x, y: b.y, width: b.width, height: b.height };
-    closed = isClosedPolygon(n.path);
-  }
-  // After `bounds`: a gradient fill — and a gradient stroke paint — are
-  // normalized against them. `strokeDataFromSvg` is the same lowering the
-  // drag-and-drop ingestion path uses, so the two importers can't drift.
-  const fill = fillFromPaint(n.fill, bounds, DEFAULT_IMPORT_FILL);
-  const stroke = strokeDataFromSvg(n.stroke, bounds) ?? null;
+  if (!data.path) return null;
+  const { tool, params } = decodePathToolAndParams(attrs, data.path.kind);
   const o: PathObj = {
     id,
     tool,
-    x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
-    path: n.path, closed, fill, stroke,
+    ...box,
+    path: data.path,
+    closed: data.path.kind === 'rect' || isClosedPolygon(data.path),
+    fill: data.fill ?? DEFAULT_IMPORT_FILL,
+    stroke: data.stroke ?? null,
     ...(params ? { params } : {}),
   };
-  if (n.rotation) o.rotation = n.rotation;
+  if (pose.rotation) o.rotation = pose.rotation;
   return o;
 }
 
 /**
- * Walk an `SvgNode[]` tree and emit a flat, parent-before-child list of
- * {@link SceneDraft}s the caller can replay into the scene graph.
+ * Lower a parsed SVG to a flat, parent-before-child list of
+ * {@link SceneDraft}s the caller can replay into the scene graph — the kit's
+ * `svgNodesToKitDrafts`, with each leaf lifted into an `Obj` and each `<g>`
+ * keeping its `wd:group-id` as its container id so round-trips are stable.
  *
- * Each SVG `<g>` becomes a `kind:'container'` draft; its children are
- * reparented under it (nested `<g>` → nested containers). The container id
- * is taken from `meta.wd.attrs['group-id']` when present (so round-trips
- * are stable), else synthesized via `nextId()`. Leaf path/text nodes
- * become `kind:'leaf'` drafts carrying their `Obj` and a `parentId`.
- *
- * Container poses are the union-AABB of their leaf descendants — the same
- * "container pose = members' bounds" convention the kit `group` action
- * uses. Empty containers fall back to a zero-size box.
+ * Handed the whole `ParseResult`, it registers the document's markers too.
  */
 export function svgNodesToSceneDrafts(
-  nodes: readonly SvgNode[],
+  input: ParseResult | readonly SvgNode[],
   nextId: () => string,
 ): SceneDraft[] {
-  const drafts: SceneDraft[] = [];
-
-  // Visit a node, appending its draft(s). Returns the union-AABB of the
-  // leaves under `n` (a single leaf's own bounds, or a container's
-  // descendants' union) so a parent container can compose its own pose.
-  const visit = (n: SvgNode, parentId: string | null): RectBounds | null => {
-    if (n.kind === 'group') {
-      const gid = n.meta?.wd?.attrs?.['group-id'] ?? nextId();
-      // Emit the container draft first (parent-before-child) with a
-      // placeholder pose; patch it once the descendants' bounds are known.
-      const draft: Extract<SceneDraft, { kind: 'container' }> = {
-        kind: 'container', id: gid, parentId, pose: { x: 0, y: 0, width: 0, height: 0 },
-      };
-      drafts.push(draft);
-      let acc: RectBounds | null = null;
-      for (const c of n.children) {
-        const b = visit(c, gid);
-        if (b) acc = acc ? unionRect(acc, b) : b;
-      }
-      if (acc) draft.pose = acc;
-      return acc;
-    }
-    // This app's `Obj` union is path/text only, so a parsed `<image>` has
-    // nowhere to land. The kit's own `unpackSvgFiles` keeps them.
-    if (n.kind === 'image') return null;
-    const obj = svgLeafToObj(n, nextId());
-    drafts.push({ kind: 'leaf', id: obj.id, parentId, obj });
-    return { x: obj.x, y: obj.y, width: obj.width, height: obj.height };
-  };
-
-  for (const n of nodes) visit(n, null);
-  return drafts;
-}
-
-/** Union of two AABBs. */
-function unionRect(a: RectBounds, b: RectBounds): RectBounds {
-  const minX = Math.min(a.x, b.x);
-  const minY = Math.min(a.y, b.y);
-  const maxX = Math.max(a.x + a.width, b.x + b.width);
-  const maxY = Math.max(a.y + a.height, b.y + b.height);
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  const drafts = svgNodesToKitDrafts(
+    input,
+    (n) => (n.kind === 'group' ? n.meta?.wd?.attrs?.['group-id'] : undefined) ?? nextId(),
+    { leaf: kitLeafToObj },
+  );
+  return drafts.map((d): SceneDraft => (d.kind === 'container'
+    ? { kind: 'container', id: d.id, parentId: d.parentId, pose: d.pose }
+    : { kind: 'leaf', id: d.id, parentId: d.parentId, obj: d.data }));
 }
 
 /**
- * Read-only view of the scene the exporter walks. Decouples
- * {@link sceneToSvgNodes} from the kit `Scene` type so it can be unit-tested
- * with a plain object and reused against any tree shape.
+ * The scene the exporter walks: the kit tree `svgNodesFromKit` reads, plus
+ * how this app lowers a leaf.
  *
- *   - `roots` — top-level node ids in z-order.
- *   - `childrenOf(id)` — a container's child ids in z-order (empty for leaves).
- *   - `kindOf(id)` — `'container'` for `<g>`-bound nodes, else `'leaf'`.
  *   - `objOf(id)` — the leaf's `Obj`, or `undefined` to skip (e.g. a leaf
  *     with no drawable data).
  *   - `isPainted(id)` — false for a node on a hidden layer, which is skipped
  *     along with everything under it. Omit it and everything is emitted.
  */
-export interface SceneSource {
-  roots: readonly string[];
-  childrenOf(id: string): readonly string[];
-  kindOf(id: string): 'leaf' | 'container';
+export interface SceneSource extends SvgKitTree<string> {
   objOf(id: string): Obj | undefined;
   isPainted?(id: string): boolean;
 }
 
 /**
  * Walk a scene's container tree and emit an `SvgNode[]`. Every container
- * becomes an `SvgGroupNode` (recursing into its children) stamped with
- * `meta.wd.attrs['group-id']` = its scene id, so the structure round-trips
- * back through {@link svgNodesToSceneDrafts}. Every leaf becomes the result
- * of {@link objToSvgNode}.
+ * becomes an `SvgGroupNode` stamped with `meta.wd.attrs['group-id']` = its
+ * scene id, so the structure round-trips back through
+ * {@link svgNodesToSceneDrafts}. Every leaf becomes the result of
+ * {@link objToSvgNode}.
  *
  * `roots`, when supplied, walks exactly those ids (in the given order)
  * instead of `source.roots` — used for a selection-subset export (see
- * `selectionToSvgString` in `svgExport.ts`). Omitting it is byte-identical
- * to the whole-scene walk. A hidden node is skipped either way: a selection
- * naming one still must not export it.
+ * `selectionToSvgString` in `svgExport.ts`). A hidden node is skipped either
+ * way: a selection naming one still must not export it.
  */
 export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]): SvgNode[] {
-  const emit = (id: string): SvgNode | null => {
-    if (source.isPainted && !source.isPainted(id)) return null;
-    if (source.kindOf(id) === 'container') {
-      const children: SvgNode[] = [];
-      for (const childId of source.childrenOf(id)) {
-        const child = emit(childId);
-        if (child) children.push(child);
-      }
-      const node: SvgGroupNode = { kind: 'group', children };
-      node.meta = { wd: { attrs: { 'group-id': id } } };
-      return node;
-    }
-    const obj = source.objOf(id);
-    return obj ? objToSvgNode(obj) : null;
-  };
-  const out: SvgNode[] = [];
-  for (const id of roots ?? source.roots) {
-    const n = emit(id);
-    if (n) out.push(n);
-  }
-  return out;
-}
-
-/**
- * Lift an imported SVG paint into a WeaselDraw fill. Gradients are kept and
- * normalized against the node's own bounds, so an imported gradient tracks
- * its object under move and resize exactly like one drawn in the app —
- * `userSpaceOnUse` coordinates would otherwise stay pinned to the page.
- */
-function fillFromPaint(
-  paint: SvgPathNode['fill'],
-  bounds: RectBounds,
-  fallback: FillStyle,
-): FillStyle {
-  if (paint.kind === 'none') return fallback;
-  if (paint.kind === 'solid') return solid(paint.color);
-  return fillToBoundsFrame(paint.paint, bounds);
+  return svgNodesFromKit(source, {
+    ...(roots ? { roots } : {}),
+    ...(source.isPainted ? { include: (id: string) => source.isPainted!(id) } : {}),
+    leaf: (id) => {
+      const obj = source.objOf(id);
+      return obj ? objToSvgNode(obj) : null;
+    },
+    group: (id, g) => ({ ...g, meta: { wd: { attrs: { 'group-id': id } } } }),
+  });
 }
 
 /** What an imported `fill="none"` path is filled with. WeaselDraw's own

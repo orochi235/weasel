@@ -8,14 +8,15 @@
  * line ends.
  */
 
-import type { MarkerRef, Stroke } from '@weasel-js/paint';
+import { resolveScreenLength, type MarkerRef, type Stroke } from '@weasel-js/paint';
 import { getMarker } from './strokeMarkers';
 
-/** The size of one marker unit, in the same world units as `strokeWidth`. */
-export function resolveMarkerSize(ref: MarkerRef, strokeWidth: number): number {
+/** The size of one marker unit, in the same world units as `strokeWidth`.
+ *  `scale` is the view scale a `{ px }` size resolves against, as a `{ px }`
+ *  stroke width does. */
+export function resolveMarkerSize(ref: MarkerRef, strokeWidth: number, scale = 1): number {
   if (typeof ref === 'string' || ref.size === undefined) return strokeWidth;
-  const { size } = ref;
-  return typeof size === 'number' ? size : size.px;
+  return resolveScreenLength(ref.size, scale);
 }
 
 export function markerKeyOf(ref: MarkerRef): string {
@@ -27,11 +28,11 @@ export function markerKeyOf(ref: MarkerRef): string {
  * marker, an unregistered key, or an open head — never throws, because an
  * unknown key is a data problem and dropping the head is the graceful answer.
  */
-export function markerInset(ref: MarkerRef | undefined, strokeWidth: number): number {
+export function markerInset(ref: MarkerRef | undefined, strokeWidth: number, scale = 1): number {
   if (ref === undefined) return 0;
   const entry = getMarker(markerKeyOf(ref));
   if (entry === undefined) return 0;
-  return (entry.inset ?? 0) * resolveMarkerSize(ref, strokeWidth);
+  return (entry.inset ?? 0) * resolveMarkerSize(ref, strokeWidth, scale);
 }
 
 /** The start and end insets a stroke asks for. `markerMid` never insets —

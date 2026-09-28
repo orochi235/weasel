@@ -28,7 +28,7 @@ function fakeScene(nodes: Record<string, {
   pose: { x: number; y: number; width: number; height: number; rotation?: number };
   data?: {
     path?: unknown; fill?: FillStyle | null; text?: string; style?: unknown;
-    runs?: StyledRun[]; stroke?: Stroke | null;
+    runs?: StyledRun[]; stroke?: Stroke | null; image?: unknown;
   };
   children?: string[];
 }>, roots: string[]) {
@@ -399,6 +399,35 @@ describe('gradient fills', () => {
     expect(paint.to).toEqual({ x: 300, y: 100 });
   });
 
+  it('resolves a text node\'s box-relative gradient against its pose too', () => {
+    const scene = fakeScene({
+      t: {
+        kind: 'leaf',
+        pose: { x: 100, y: 50, width: 200, height: 100 },
+        data: {
+          text: 'Hi',
+          fill: {
+            fill: 'linear-gradient', from: { x: 0, y: 0.5 }, to: { x: 1, y: 0.5 }, stops: STOPS, units: 'bounds',
+          },
+          runs: [{
+            text: 'Hi',
+            fill: {
+              fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0, y: 1 }, stops: STOPS, units: 'bounds',
+            },
+          }],
+        },
+      },
+    }, ['t']);
+    const n = parseSvg(selectionToSvgString(scene, ['t'])).nodes[0];
+    if (n.kind !== 'text') throw new Error('expected text');
+    const fill = n.fill as { from: { x: number; y: number }; to: { x: number; y: number } };
+    expect(fill.from).toEqual({ x: 100, y: 100 });
+    expect(fill.to).toEqual({ x: 300, y: 100 });
+    const run = n.runs![0].fill as { from: { x: number; y: number }; to: { x: number; y: number } };
+    expect(run.from).toEqual({ x: 100, y: 50 });
+    expect(run.to).toEqual({ x: 100, y: 150 });
+  });
+
   it('emits the stops in order', () => {
     const svg = selectionToSvgString(gradientScene(), ['a']);
     const parsed = parseSvg(svg);
@@ -415,7 +444,7 @@ describe('gradient fills', () => {
     const drafts = svgNodesToSceneDrafts(parseSvg(svg).nodes, () => `n${n++}`);
     const leaf = drafts.find((d) => d.kind === 'leaf');
     if (leaf?.kind !== 'leaf') throw new Error('expected a leaf draft');
-    if (leaf.obj.tool === 'text') throw new Error('expected a path draft');
+    if (!('path' in leaf.obj)) throw new Error('expected a path draft');
     const fill = leaf.obj.fill as {
       fill: string; units: string; from: { x: number; y: number }; to: { x: number; y: number };
     };
@@ -448,5 +477,21 @@ describe('what the SVG cannot carry', () => {
     });
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toContain('inner');
+  });
+});
+
+describe('image export', () => {
+  it('writes a kit:image leaf as <image>', () => {
+    const src = 'data:image/png;base64,iVBORw0KGgo=';
+    const scene = fakeScene({
+      im: {
+        kind: 'leaf',
+        pose: { x: 3, y: 4, width: 30, height: 20 },
+        data: { image: { src, flipX: true } },
+      },
+    }, ['im']);
+
+    const n = parseSvg(selectionToSvgString(scene, ['im'])).nodes[0];
+    expect(n).toMatchObject({ kind: 'image', href: src, x: 3, y: 4, width: 30, height: 20, flipX: true });
   });
 });

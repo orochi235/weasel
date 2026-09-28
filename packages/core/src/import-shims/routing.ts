@@ -19,7 +19,7 @@ export type {
 
 // Reflection consumers — registry / conflict checker / debug overlay.
 export {
-  buildRouteRegistry, routesForSpec, routeGestureForSpecKind, PREDICATE_TARGET,
+  buildRouteRegistry, routesForSpec, routeGestureForSpecKind, specKindForRouteGesture, PREDICATE_TARGET,
   findConflicts, reportRouteConflicts,
 } from '@weasel-js/routing';
 export type { RegistryEntry, Conflict } from '@weasel-js/routing';

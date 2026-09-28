@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { findConflicts, findScopedConflicts, formatConflict, reportRouteConflicts } from './conflicts';
 import type { Tool } from '../../types';
+import { createModeRegistry, type ModeDefinition } from '@weasel-js/modes';
+import { modeShortcuts } from '../../../contributions/modeShortcuts';
+import { rulesExclusive } from '../../../eligibility';
 
 function tool(id: string, bindings: unknown[]): Tool<unknown> {
   return { id, bindings } as unknown as Tool<unknown>;
@@ -264,5 +267,74 @@ describe('findConflicts — key alternatives', () => {
 
   it('still says nothing for lists that do not overlap', () => {
     expect(findConflicts([keyTool('a', ['q']), keyTool('b', ['w', 'e'])])).toEqual([]);
+  });
+});
+
+// Two bindings on one tuple collide only if both can be eligible at once. A
+// mode's Escape exit is eligible only in that mode, so two modes' exits share
+// `keyDown(Escape)` and can never both fire.
+describe('findScopedConflicts — mutually exclusive eligibility', () => {
+  const exitable = (id: string): ModeDefinition => ({
+    id, kind: 'soft', allows: [], scoping: false, exit: { shortcut: 'Escape' },
+  });
+
+  it('does not flag two modes that each exit on Escape', () => {
+    const registry = createModeRegistry({
+      modes: [{ id: 'draw', kind: 'soft', allows: [], scoping: false }, exitable('focus'), exitable('review')],
+      initial: 'draw',
+    });
+    const { actions } = modeShortcuts(registry, { exit: () => {} });
+    expect(findScopedConflicts({ registry: [], actions })).toEqual([]);
+  });
+
+  const escape = (id: string, eligible?: unknown) => ({
+    id, label: id, scope: 'hotkey',
+    defaultBinding: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'initial' }] },
+    eligible,
+    invoker: { timing: 'immediate', run: () => {} },
+  } as never);
+
+  it('still flags two actions whose rules can hold together', () => {
+    const c = findScopedConflicts({
+      registry: [],
+      actions: [escape('a', { mode: 'focus' }), escape('b', { selection: { empty: false } })],
+    });
+    expect(c.map((x) => x.toolIds.join(','))).toEqual(['a,b']);
+  });
+
+  it('keeps an ungated action in conflict with each gated one', () => {
+    const c = findScopedConflicts({
+      registry: [],
+      actions: [escape('a', { mode: 'focus' }), escape('b', { mode: 'review' }), escape('c')],
+    });
+    expect(c.map((x) => x.toolIds.join(','))).toEqual(['a,b,c']);
+  });
+});
+
+describe('rulesExclusive', () => {
+  it.each([
+    [{ mode: 'a' }, { mode: 'b' }, true],
+    [{ mode: 'a' }, { mode: 'a' }, false],
+    [{ mode: 'a' }, { mode: { not: 'a' } }, true],
+    [{ mode: { in: ['a', 'b'] } }, { mode: { in: ['c'] } }, true],
+    [{ mode: { in: ['a', 'b'] } }, { mode: { not: 'a' } }, false],
+    [{ mode: { not: 'a' } }, { mode: { not: 'b' } }, false],
+    [{ selection: { empty: true } }, { selection: { empty: false } }, true],
+    [{ selection: { empty: true } }, { selection: { atLeast: 1 } }, true],
+    [{ selection: { is: 2 } }, { selection: { is: 3 } }, true],
+    [{ selection: { atLeast: 2 } }, { selection: { is: 3 } }, false],
+    [{ focused: true }, { focused: false }, true],
+    [{ actionIs: 'move' }, { actionIs: 'resize' }, true],
+    [{ actionIs: 'move' }, { gesturing: false }, true],
+    [{ all: [{ focused: true }, { mode: 'a' }] }, { mode: 'b' }, true],
+    [{ any: [{ mode: 'a' }, { mode: 'b' }] }, { mode: 'c' }, true],
+    [{ any: [{ mode: 'a' }, { mode: 'b' }] }, { mode: 'b' }, false],
+    [{ not: { mode: 'a' } }, { mode: 'a' }, true],
+    [{ any: [] }, { mode: 'a' }, true],
+    [{ when: () => false }, { mode: 'a' }, false],
+    [{ capability: 'x' }, { capability: { not: 'x' } }, true],
+  ] as const)('%j vs %j → %s', (a, b, expected) => {
+    expect(rulesExclusive(a as never, b as never)).toBe(expected);
+    expect(rulesExclusive(b as never, a as never)).toBe(expected);
   });
 });

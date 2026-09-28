@@ -2,7 +2,7 @@ import type {
   Widget, WidgetBounds, HudDrawCtx, HudContentCtx, HudPointerEvent,
 } from '../../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
-import { textCommandFromRuns, pathFromD, parseColor } from '@weasel-js/core';
+import { textCommandFromRuns, pathFromD, parseColor, pastDragThreshold } from '@weasel-js/core';
 import { clampRectWithin } from '@weasel-js/geom';
 import { dashForStrokeStyle, mixOklab } from '@weasel-js/paint';
 import { resolveStanceSlots, type Stance } from '@weasel-js/theme';
@@ -10,10 +10,6 @@ import {
   zoneAt, windowContentRect, applyWindowDrag, cursorForZone,
   DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
 } from './zones';
-
-/** How far a press may travel and still count as a click on the interior.
- *  Above this the press is a drag — which, on a bare window, moves it. */
-const CLICK_SLOP = 3;
 
 /** Options for a window widget. */
 export interface WindowOptions {
@@ -262,7 +258,10 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         }
         case 'move': {
           if (!dragZone) break;
-          if (Math.hypot(evt.x - dragOrigin.x, evt.y - dragOrigin.y) > CLICK_SLOP) {
+          if (pastDragThreshold(
+            { clientX: dragOrigin.x, clientY: dragOrigin.y },
+            { clientX: evt.x, clientY: evt.y },
+          )) {
             pressMoved = true;
           }
           const dragged = applyWindowDrag(

@@ -27,7 +27,7 @@ export interface UseReorderDragListOptions {
    *  also handles `click` sees one press, not two. A press that starts on a
    *  control inside the row (a toggle) is left to the control. */
   onPress?(id: string, mods: PressModifiers): void;
-  /** Pointer-move distance (px) before pending drag engages. Default 4. */
+  /** Pointer-move distance (px) before pending drag engages. Default `DRAG_THRESHOLD_PX`. */
   threshold?: number;
   /** Selector matching the container's children that are rows, for a list
    *  that interleaves other elements (a table's detail rows). Default: every
@@ -222,7 +222,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       // a threshold nothing can cross is what keeps it from ever engaging.
       threshold: optsRef.current.items[index]?.locked
         ? Number.POSITIVE_INFINITY
-        : (optsRef.current.threshold ?? 4),
+        : optsRef.current.threshold,
       onActivate: (ev) => {
         draggedIds = draggedIdsFor(optsRef.current.items, optsRef.current.selectedIds, id, index);
         targetIndex = computeTargetIndex(ev.clientY, index);

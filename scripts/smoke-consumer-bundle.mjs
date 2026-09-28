@@ -529,6 +529,23 @@ await writeFile(
     `const _augKey: keyof DepSchema = 'smokeDep';\n` +
     `declare const _augAction: Action;\n` +
     `const _augRequires: readonly DepName[] = ['smokeDep', ..._augAction.requires ?? []];\n` +
+    // Core merges `RenderLayer` into routing's `OverlaySchema` the same way,
+    // and routing's `defineTool` and `Tool` default their overlay to it — so a
+    // tool routing builds must fit core's `tools` prop. If that merge is lost
+    // in the published .d.ts, the overlay falls back to `unknown` and these
+    // fail TS2322. The @ts-expect-error line keeps the prop from passing as `any`.
+    `import { defineTool as routingDefineTool, type Tool as RoutingTool } from '@weasel-js/routing';\n` +
+    `import type { RenderLayer, SceneCanvasProps } from '@weasel-js/core';\n` +
+    `declare const _layer: RenderLayer<unknown>;\n` +
+    `declare const _routingTool: RoutingTool<null>;\n` +
+    `const _tools: NonNullable<SceneCanvasProps<unknown, string, unknown>['tools']> = {\n` +
+    `  bare: routingDefineTool({ id: 'smoke-bare' }),\n` +
+    `  drawn: routingDefineTool<null>({ id: 'smoke-drawn', overlay: _layer }),\n` +
+    `  typed: _routingTool,\n` +
+    `  // @ts-expect-error an overlay that is not the kernel's must not fit\n` +
+    `  foreign: routingDefineTool<null, number>({ id: 'smoke-foreign', overlay: 1 }),\n` +
+    `};\n` +
+    `export const _t = _tools;\n` +
     `export type { _Sel, _View, _Scene, _Hist, _Tool, _M, _G, _S, _O, _Ui, _Hud, _UiSubpath, _Augmented };\n` +
     `export const _key = _k;\n` +
     `export const _augK = _augKey;\n` +
@@ -577,6 +594,8 @@ try {
       "  • a consumer's `declare module '@weasel-js/core'` no longer merges into\n" +
       '    DepSchema — the interface must be DECLARED in the module the\n' +
       '    augmentation names, not merely re-exported from it\n' +
+      "  • routing's defineTool/Tool no longer default to core's overlay type —\n" +
+      "    core's OverlaySchema merge is missing from the published .d.ts\n" +
       '  • core inlined a sibling\'s declarations instead of importing them, so the\n' +
       '    re-exported type is no longer identical to the sibling\'s own.',
   );

@@ -11,7 +11,7 @@ import type { Contribution } from './types';
  * of two same-specificity bindings in one tier wins.
  */
 export function scopeBindings(
-  entries: Iterable<Contribution>,
+  entries: Iterable<Contribution<unknown>>,
   state: EligibilityState,
 ): ScopedBinding[] {
   const out: ScopedBinding[] = [];

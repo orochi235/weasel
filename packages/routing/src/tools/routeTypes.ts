@@ -5,6 +5,7 @@ import type { GestureBinding } from '../interactions/actions/binding';
 import type { CapabilityTag } from '@weasel-js/modes';
 import type { OverlayPosition } from '../contributions/types';
 import type { CursorSpec } from '@weasel-js/cursor';
+import type { KernelOverlay } from '../index';
 
 /**
  * What a tool declares.
@@ -15,7 +16,7 @@ import type { CursorSpec } from '@weasel-js/cursor';
  * definition is mostly `bindings`, plus presentation and any actions the tool
  * itself introduces.
  */
-export interface ToolDef<TScratch = void, TOverlay = unknown> {
+export interface ToolDef<TScratch = void, TOverlay = KernelOverlay> {
   id: string;
   /** Capability tags for modality eligibility. `defineTool` forwards these
    *  onto `Tool.eligibility.capabilities`, which is where every gate reads
@@ -93,4 +94,4 @@ export interface ToolDef<TScratch = void, TOverlay = unknown> {
 /** Viewport-tool spec. Once phase tables went away this stopped differing
  *  from `ToolDef` in any structural way; `defineViewportTool` survives as the
  *  authoring signal that a tool pans/zooms the view rather than the scene. */
-export type ViewportToolDef<TScratch = void, TOverlay = unknown> = ToolDef<TScratch, TOverlay>;
+export type ViewportToolDef<TScratch = void, TOverlay = KernelOverlay> = ToolDef<TScratch, TOverlay>;

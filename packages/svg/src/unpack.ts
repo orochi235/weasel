@@ -24,16 +24,19 @@
  *
  */
 import { parseSvg } from './parse';
-import type { SvgImageNode, SvgNode, SvgPaint, SvgStroke } from './types';
+import type { ParseResult, SvgGroupNode, SvgNode, SvgPaint, SvgStroke } from './types';
+import type { SvgKitLeafData } from './fromKit';
 import {
   boundsOfPath,
   createInsertOp,
+  DEFAULT_TEXT_STYLE,
   dwarn,
   fillToBoundsFrame,
   getMarker,
   registerMarker,
   resolveTextStyle,
   solid,
+  unionAABB,
   type FillStyle,
   type ImageNodeData,
   type IngestCtx,
@@ -63,9 +66,19 @@ type DraftPose = SvgDraftBounds & { rotation?: number };
  * order (a draft's `parentId` always names an earlier draft, or `null` for
  * roots). Leaf `data` is kit-painter-native (see module doc).
  */
-export type SvgSceneDraft =
+export type SvgSceneDraft<TData = Record<string, unknown>> =
   | { kind: 'container'; id: string; parentId: string | null; pose: DraftPose }
-  | { kind: 'leaf'; id: string; parentId: string | null; pose: DraftPose; data: Record<string, unknown> };
+  | { kind: 'leaf'; id: string; parentId: string | null; pose: DraftPose; data: TData };
+
+/** A leaf `SvgNode`: everything but a group. */
+export type SvgLeafNode = Exclude<SvgNode, SvgGroupNode>;
+
+export interface SvgNodesToKitDraftsOptions<TData> {
+  /** Lower a leaf yourself, from the kit data the default writes for it and
+   *  the node it came from — for data shaped other than the kit painters', or
+   *  metadata the document carries. `null` leaves it out. */
+  leaf?(id: string, draft: { pose: DraftPose; data: SvgKitLeafData }, source: SvgLeafNode): TData | null;
+}
 
 /** `File.text()` via FileReader — same engine-compat choice as the image
  *  handler's `readAsDataURL` (jsdom ships `FileReader` but not `Blob.text`). */
@@ -88,22 +101,43 @@ function freshSvgNodeId(): string {
 
 /** Lower an `SvgPaint` onto the `kit:path` painter's `data.fill` — a
  *  `FillStyle`, or `null` for SVG's `fill="none"` (the painter skips the
- *  fill rather than falling back to its default).
+ *  fill rather than falling back to its default). A solid paint keeps its
+ *  `fill-opacity`.
  *
  *  A gradient rides through as the `FillStyle` it already is, normalized to
  *  the leaf's own box: `objectBoundingBox` gradients already are, and a
  *  `userSpaceOnUse` one is rebased so it survives the fit-clamp and the
  *  drop-point placement that move the geometry out from under it. */
-function fillFromPaint(
+export function fillDataFromSvg(
   paint: SvgPaint | undefined,
   box: SvgDraftBounds,
 ): FillStyle | null | undefined {
   if (!paint) return undefined;
   if (paint.kind === 'none') return null;
-  if (paint.kind === 'solid') return solid(paint.color);
-  const g = paint.paint;
-  const units = 'units' in g ? g.units : undefined;
-  return units === 'world' ? fillToBoundsFrame(g, box) : g;
+  if (paint.kind === 'solid') {
+    return paint.opacity != null ? { ...solid(paint.color), opacity: paint.opacity } : solid(paint.color);
+  }
+  return fillInBoxFrame(paint.paint, box);
+}
+
+/** Scale a paint's opacity by `k` — how an element or group `opacity` reaches
+ *  leaves whose data has no opacity of its own. Where a fill and a stroke
+ *  overlap this is not SVG's group compositing, which flattens first. */
+function fadeFill(fill: FillStyle, k: number): FillStyle {
+  return k === 1 ? fill : { ...fill, opacity: (fill.opacity ?? 1) * k };
+}
+
+function fadeStroke(stroke: Stroke, k: number): Stroke {
+  return k === 1 || !stroke.paint ? stroke : { ...stroke, paint: fadeFill(stroke.paint, k) };
+}
+
+function fadeRun(run: StyledRun, k: number): StyledRun {
+  if (k === 1 || (!run.fill && !run.stroke)) return run;
+  return {
+    ...run,
+    ...(run.fill ? { fill: fadeFill(run.fill, k) } : {}),
+    ...(run.stroke ? { stroke: fadeStroke(run.stroke, k) } : {}),
+  };
 }
 
 /** Lower an `SvgStroke` onto the leaf's `data.stroke`.
@@ -118,7 +152,7 @@ export function strokeDataFromSvg(
   box: SvgDraftBounds,
 ): Stroke | undefined {
   if (!stroke || stroke.paint.kind === 'none') return undefined;
-  const paint = fillFromPaint(stroke.paint, box);
+  const paint = fillDataFromSvg(stroke.paint, box);
   if (paint === undefined || paint === null) return undefined;
   return {
     paint: stroke.opacity !== undefined ? { ...paint, opacity: stroke.opacity } : paint,
@@ -133,23 +167,8 @@ export function strokeDataFromSvg(
   };
 }
 
-/** Write a `kit:image` leaf as an `SvgImageNode` — the inverse of the image
- *  arm of {@link svgNodesToKitDrafts}. The pose is the image's box. */
-export function svgImageFromKit(image: ImageNodeData['image'], pose: DraftPose): SvgImageNode {
-  const node: SvgImageNode = {
-    kind: 'image', href: image.src,
-    x: pose.x, y: pose.y, width: pose.width, height: pose.height,
-  };
-  if (image.source) node.source = { ...image.source };
-  if (image.flipX) node.flipX = true;
-  if (image.flipY) node.flipY = true;
-  if (image.opacity != null) node.opacity = image.opacity;
-  if (pose.rotation) node.rotation = pose.rotation;
-  return node;
-}
-
 /** A text node's paint arrives already lowered to a kit `FillStyle`, not as
- *  the `SvgPaint` a path carries, so it skips `fillFromPaint` — but a
+ *  the `SvgPaint` a path carries, so it skips `fillDataFromSvg` — but a
  *  `userSpaceOnUse` gradient still needs the same rebase onto the leaf's own
  *  box, or it survives neither the fit-clamp nor the drop-point placement. */
 function fillInBoxFrame(fill: FillStyle, box: SvgDraftBounds): FillStyle {
@@ -180,35 +199,55 @@ function strokeInBoxFrame(stroke: Stroke, box: SvgDraftBounds): Stroke {
  * {@link SvgSceneDraft}s. Each `<g>` becomes a container whose pose is the
  * union AABB of its descendants (the kit `group` action's convention);
  * path/text leaves carry kit-painter-native data. Empty groups are dropped.
+ *
+ * Handed a whole `ParseResult`, it also registers the document's markers
+ * (`parsed.markers`), without which the strokes naming them draw bare.
+ * Containers carry no opacity, so an element or group `opacity` is multiplied
+ * into the paints of every leaf under it.
+ *
+ * `nextId` is handed the node each id is for. `options.leaf` replaces a leaf's
+ * data; a group whose leaves it all leaves out is dropped like an empty one.
  */
-export function svgNodesToKitDrafts(
-  nodes: readonly SvgNode[],
-  nextId: () => string,
-): SvgSceneDraft[] {
-  const drafts: SvgSceneDraft[] = [];
+export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
+  input: ParseResult | readonly SvgNode[],
+  nextId: (source: SvgNode) => string,
+  options: SvgNodesToKitDraftsOptions<TData> = {},
+): SvgSceneDraft<TData>[] {
+  const nodes = isNodeList(input) ? input : input.nodes;
+  // Keyed by what they draw, so one already registered is this same marker
+  // and re-registering it would only churn the paint memo.
+  if (!isNodeList(input)) {
+    for (const m of input.markers ?? []) if (getMarker(m.id) === undefined) registerMarker(m);
+  }
+  const drafts: SvgSceneDraft<TData>[] = [];
+  const pushLeaf = (source: SvgLeafNode, parentId: string | null, pose: DraftPose, data: SvgKitLeafData): DraftPose | null => {
+    const id = nextId(source);
+    const out = options.leaf ? options.leaf(id, { pose, data }, source) : (data as TData);
+    if (out === null) return null;
+    drafts.push({ kind: 'leaf', id, parentId, pose, data: out });
+    return pose;
+  };
 
-  // Returns the union AABB of the leaves under `n` so a parent container can
-  // compose its own pose; null for empty groups.
-  const visit = (n: SvgNode, parentId: string | null): SvgDraftBounds | null => {
+  // Returns the pose `n` was drafted with, so a parent container can union
+  // its children's axis-aligned boxes; null for empty groups. `inherited` is
+  // the product of the enclosing groups' opacities.
+  const visit = (n: SvgNode, parentId: string | null, inherited: number): DraftPose | null => {
+    const k = inherited * (n.opacity ?? 1);
     if (n.kind === 'group') {
-      const draft: Extract<SvgSceneDraft, { kind: 'container' }> = {
+      const draft: Extract<SvgSceneDraft<TData>, { kind: 'container' }> = {
         kind: 'container',
-        id: nextId(),
+        id: nextId(n),
         parentId,
         pose: { x: 0, y: 0, width: 0, height: 0 },
       };
       drafts.push(draft);
-      let acc: SvgDraftBounds | null = null;
-      for (const c of n.children) {
-        const b = visit(c, draft.id);
-        if (b) acc = acc ? unionRect(acc, b) : b;
-      }
+      const acc = unionAABB(n.children.map((c) => visit(c, draft.id, k)));
       if (!acc) {
         drafts.splice(drafts.indexOf(draft), 1);
         return null;
       }
       draft.pose = acc;
-      return acc;
+      return draft.pose;
     }
 
     if (n.kind === 'text') {
@@ -219,46 +258,35 @@ export function svgNodesToKitDrafts(
       const box: SvgDraftBounds = {
         x: pose.x, y: pose.y, width: pose.width, height: pose.height,
       };
-      drafts.push({
-        kind: 'leaf',
-        id: nextId(),
-        parentId,
-        pose,
-        data: {
-          text: n.text,
-          ...(n.style ? { style: n.style } : {}),
-          ...(n.verticalAlign ? { verticalAlign: n.verticalAlign } : {}),
-          ...(n.runs ? { runs: n.runs.map((r) => runInBoxFrame(r, box)) } : {}),
-          // `!== undefined`, not a truthiness test: `null` is the document
-          // saying `fill="none"`, and absent takes the painter's default.
-          ...(n.fill !== undefined
-            ? { fill: n.fill === null ? null : fillInBoxFrame(n.fill, box) }
-            : {}),
-          ...(n.stroke !== undefined ? { stroke: strokeInBoxFrame(n.stroke, box) } : {}),
-        },
+      // Absent takes the painter's default, which has to be spelled out once
+      // there is an opacity to carry.
+      const fill = n.fill === undefined && k !== 1 ? DEFAULT_TEXT_STYLE.fill : n.fill;
+      return pushLeaf(n, parentId, pose, {
+        text: n.text,
+        ...(n.style ? { style: n.style } : {}),
+        ...(n.verticalAlign ? { verticalAlign: n.verticalAlign } : {}),
+        ...(n.runs ? { runs: n.runs.map((r) => fadeRun(runInBoxFrame(r, box), k)) } : {}),
+        // `!== undefined`, not a truthiness test: `null` is the document
+        // saying `fill="none"`, and absent takes the painter's default.
+        ...(fill !== undefined
+          ? { fill: fill === null ? null : fadeFill(fillInBoxFrame(fill, box), k) }
+          : {}),
+        ...(n.stroke !== undefined ? { stroke: fadeStroke(strokeInBoxFrame(n.stroke, box), k) } : {}),
       });
-      return pose;
     }
 
     if (n.kind === 'image') {
       const pose: DraftPose = { x: n.x, y: n.y, width: n.width, height: n.height };
       if (n.rotation) pose.rotation = n.rotation;
-      drafts.push({
-        kind: 'leaf',
-        id: nextId(),
-        parentId,
-        pose,
-        data: {
-          image: {
-            src: n.href,
-            ...(n.opacity != null ? { opacity: n.opacity } : {}),
-            ...(n.source ? { source: { ...n.source } } : {}),
-            ...(n.flipX ? { flipX: true } : {}),
-            ...(n.flipY ? { flipY: true } : {}),
-          } satisfies ImageNodeData['image'],
-        },
+      return pushLeaf(n, parentId, pose, {
+        image: {
+          src: n.href,
+          ...(k !== 1 ? { opacity: k } : {}),
+          ...(n.source ? { source: { ...n.source } } : {}),
+          ...(n.flipX ? { flipX: true } : {}),
+          ...(n.flipY ? { flipY: true } : {}),
+        } satisfies ImageNodeData['image'],
       });
-      return pose;
     }
 
     // Path leaf. Bounds come from the geometry; `pathInPoseFrame` rebases
@@ -268,24 +296,21 @@ export function svgNodesToKitDrafts(
       : boundsOfPath(n.path);
     const pose: DraftPose = { x: b.x, y: b.y, width: b.width, height: b.height };
     if (n.rotation) pose.rotation = n.rotation;
-    const fill = fillFromPaint(n.fill, b);
+    const fill = fillDataFromSvg(n.fill, b);
     const strokeFromSvg = strokeDataFromSvg(n.stroke, b);
-    drafts.push({
-      kind: 'leaf',
-      id: nextId(),
-      parentId,
-      pose,
-      data: {
-        path: n.path,
-        ...(fill !== undefined ? { fill } : {}),
-        ...(strokeFromSvg !== undefined ? { stroke: strokeFromSvg } : {}),
-      },
+    return pushLeaf(n, parentId, pose, {
+      path: n.path,
+      ...(fill !== undefined ? { fill: fill && fadeFill(fill, k) } : {}),
+      ...(strokeFromSvg !== undefined ? { stroke: fadeStroke(strokeFromSvg, k) } : {}),
     });
-    return pose;
   };
 
-  for (const n of nodes) visit(n, null);
+  for (const n of nodes) visit(n, null, 1);
   return drafts;
+}
+
+function isNodeList(input: ParseResult | readonly SvgNode[]): input is readonly SvgNode[] {
+  return Array.isArray(input);
 }
 
 
@@ -322,14 +347,6 @@ function scaleTextData(
   };
 }
 
-function unionRect(a: SvgDraftBounds, b: SvgDraftBounds): SvgDraftBounds {
-  const minX = Math.min(a.x, b.x);
-  const minY = Math.min(a.y, b.y);
-  const maxX = Math.max(a.x + a.width, b.x + b.width);
-  const maxY = Math.max(a.y + a.height, b.y + b.height);
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-}
-
 /**
  * Parse each file and insert its node tree — one undoable `applyOps` batch
  * per file. See the module doc for placement and wrapping policy. A file
@@ -344,10 +361,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
       const text = await readFileText(file);
       const parsed = parseSvg(text);
       for (const w of parsed.warnings) dwarn('ingest', `svg "${file.name}":`, w);
-      // Keyed by what they draw, so one already registered is this same
-      // marker and re-registering it would only churn the paint memo.
-      for (const m of parsed.markers ?? []) if (getMarker(m.id) === undefined) registerMarker(m);
-      let drafts = svgNodesToKitDrafts(parsed.nodes, freshSvgNodeId);
+      let drafts = svgNodesToKitDrafts(parsed, freshSvgNodeId);
       if (drafts.length === 0) {
         console.warn(`weasel ingest: svg "${file.name}" parsed to no drawable nodes`);
         continue;
@@ -358,7 +372,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
       const roots = drafts.filter((d) => d.parentId === null);
       if (roots.length > 1) {
         const wrapperId = freshSvgNodeId();
-        const union = roots.map((d) => d.pose).reduce(unionRect);
+        const union = unionAABB(roots.map((d) => d.pose))!;
         drafts = [
           { kind: 'container', id: wrapperId, parentId: null, pose: union },
           ...drafts.map((d) => (d.parentId === null ? { ...d, parentId: wrapperId } : d)),
@@ -367,10 +381,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
 
       // Fit-clamp + center, mirroring the image handler. Pose-only: the
       // painter rebases stored geometry into the pose box.
-      const union = drafts
-        .filter((d) => d.parentId === null)
-        .map((d) => d.pose)
-        .reduce(unionRect);
+      const union = unionAABB(drafts.filter((d) => d.parentId === null).map((d) => d.pose))!;
       const view = ctx.viewportWorldRect();
       const scale = Math.min(
         1,

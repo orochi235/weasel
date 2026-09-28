@@ -34,11 +34,6 @@ describe('cloneByAltDrag', () => {
     expect(b.activates({ alt: false, shift: true, meta: true, ctrl: true })).toBe(false);
   });
 
-  it('is non-transient (clone produces a history entry)', () => {
-    const b = cloneByAltDrag();
-    expect(b.defaultTransient).toBeFalsy();
-  });
-
   it('onEnd returns InsertOps + SetSelectionOp from commitPaste output', () => {
     const adapter = makeAdapter(['orig']);
     const b = cloneByAltDrag();

@@ -70,3 +70,55 @@ export function cubicBounds(
   }
   return [minX, minY, maxX, maxY];
 }
+
+/** Quadratic Bezier point at parameter t (Bernstein form). */
+export function quadraticEvalAt(
+  x0: number, y0: number, x1: number, y1: number, x2: number, y2: number, t: number,
+): [number, number] {
+  const u = 1 - t;
+  const a = u * u, b = 2 * u * t, c = t * t;
+  return [a * x0 + b * x1 + c * x2, a * y0 + b * y1 + c * y2];
+}
+
+/** A line segment's coords: start, end. */
+export type LineCoords = [number, number, number, number];
+/** A quadratic Bezier's coords: start, control, end. */
+export type QuadraticCoords = [number, number, number, number, number, number];
+/** A cubic Bezier's coords: start, two controls, end. */
+export type CubicCoords = [number, number, number, number, number, number, number, number];
+
+/**
+ * Split a cubic at parameter t (de Casteljau). The two halves share the point
+ * at t and together trace the original exactly. A t outside [0, 1] splits the
+ * curve's polynomial extension.
+ */
+export function splitCubicAt(
+  x0: number, y0: number, x1: number, y1: number,
+  x2: number, y2: number, x3: number, y3: number, t: number,
+): [CubicCoords, CubicCoords] {
+  const ax = x0 + (x1 - x0) * t, ay = y0 + (y1 - y0) * t;
+  const bx = x1 + (x2 - x1) * t, by = y1 + (y2 - y1) * t;
+  const cx = x2 + (x3 - x2) * t, cy = y2 + (y3 - y2) * t;
+  const dx = ax + (bx - ax) * t, dy = ay + (by - ay) * t;
+  const ex = bx + (cx - bx) * t, ey = by + (cy - by) * t;
+  const mx = dx + (ex - dx) * t, my = dy + (ey - dy) * t;
+  return [[x0, y0, ax, ay, dx, dy, mx, my], [mx, my, ex, ey, cx, cy, x3, y3]];
+}
+
+/** Split a quadratic at parameter t (de Casteljau). See {@link splitCubicAt}. */
+export function splitQuadraticAt(
+  x0: number, y0: number, x1: number, y1: number, x2: number, y2: number, t: number,
+): [QuadraticCoords, QuadraticCoords] {
+  const ax = x0 + (x1 - x0) * t, ay = y0 + (y1 - y0) * t;
+  const bx = x1 + (x2 - x1) * t, by = y1 + (y2 - y1) * t;
+  const mx = ax + (bx - ax) * t, my = ay + (by - ay) * t;
+  return [[x0, y0, ax, ay, mx, my], [mx, my, bx, by, x2, y2]];
+}
+
+/** Split a line segment at parameter t. See {@link splitCubicAt}. */
+export function splitLineAt(
+  x0: number, y0: number, x1: number, y1: number, t: number,
+): [LineCoords, LineCoords] {
+  const mx = x0 + (x1 - x0) * t, my = y0 + (y1 - y0) * t;
+  return [[x0, y0, mx, my], [mx, my, x1, y1]];
+}

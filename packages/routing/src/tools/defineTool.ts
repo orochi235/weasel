@@ -3,6 +3,7 @@ import type { Tool, ToolCtx } from './types';
 import type { ToolDef } from './routeTypes';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES } from '@weasel-js/gestures';
 import type { CursorSpec } from '@weasel-js/cursor';
+import type { KernelOverlay } from '../index';
 
 /** Validate that `id` is usable as a tool / channel id in the route
  *  grammar. Rejects ids that start with a reserved sigil (would shadow
@@ -40,7 +41,7 @@ function validateId(id: string, kind: 'tool' | 'action'): void {
  * and the `initScratch` / `cursor` defaults are worth applying uniformly, and
  * because `Tool.def` gives reflection a handle on the authored form.
  */
-export function defineTool<TScratch = void, TOverlay = unknown>(
+export function defineTool<TScratch = void, TOverlay = KernelOverlay>(
   def: ToolDef<TScratch, TOverlay>,
 ): Tool<TScratch, TOverlay> {
   validateId(def.id, 'tool');

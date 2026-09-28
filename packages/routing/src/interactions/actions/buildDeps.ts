@@ -6,7 +6,7 @@
  * Proxy that warns on undeclared reads.
  */
 import type { Action } from './action';
-import type { DepRegistry } from './depRegistry';
+import type { DepRegistry } from './depNode';
 import type { ActionDeps } from './invoker';
 
 /** True in dev builds; false in production. Tree-shakes the Proxy out of

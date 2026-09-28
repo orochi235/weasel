@@ -12,10 +12,10 @@ describe('marker fields on Stroke', () => {
   });
 
   it('accepts a sized reference in both unit systems', () => {
-    const scaled: MarkerRef = { key: 'arrow', size: 3 };
-    const pinned: MarkerRef = { key: 'arrow', size: { px: 12 } };
-    expect(scaled).toEqual({ key: 'arrow', size: 3 });
-    expect(pinned).toEqual({ key: 'arrow', size: { px: 12 } });
+    const world: MarkerRef = { key: 'arrow', size: 3 };
+    const screen: MarkerRef = { key: 'arrow', size: { px: 12 } };
+    expect(world).toEqual({ key: 'arrow', size: 3 });
+    expect(screen).toEqual({ key: 'arrow', size: { px: 12 } });
   });
 
   it('accepts all three positions and a consumer key', () => {

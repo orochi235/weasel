@@ -24,6 +24,7 @@ import type { Tool } from '../../tools/types';
 import {
   createDispatcher, pointerGestureId, publishLiveDispatch, type Dispatcher, type DispatcherContext,
 } from './dispatcher';
+import { pastDragThreshold } from '@weasel-js/gestures';
 import { openPointerSession, type PointerSession } from '../pointerSession';
 import { clientToCanvasRect } from '../../viewport/clientToCanvas';
 import { itemsFromDataTransfer, itemsFromClipboardData } from '../../ingestion/ingestItems';
@@ -178,7 +179,7 @@ export interface UseGestureDispatcherOptions {
   /** Action registry (ActionsRegistry from registry.tsx). */
   actions: ActionsRegistry;
   /** Tool definitions keyed by id. Typically passes an empty Map. */
-  toolsById: ReadonlyMap<string, Tool>;
+  toolsById: ReadonlyMap<string, Tool<unknown, unknown>>;
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
   /**
@@ -504,7 +505,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const toolsByIdRef = useRef(toolsById);
   toolsByIdRef.current = toolsById;
   const fireLifecycle = (id: string, hook: 'onActivate' | 'onDeactivate'): void => {
-    const tool = toolsByIdRef.current.get(id) as Tool<unknown> | undefined;
+    const tool = toolsByIdRef.current.get(id) as Tool<unknown, unknown> | undefined;
     const fn = tool?.[hook];
     if (!fn) return;
     try {
@@ -652,15 +653,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     let multiTouchStart: { fingers: number; centroid: { x: number; y: number } } | null = null;
     const TAP_THRESHOLD_PX = 8;
 
-    // Pixel distance the pointer must travel between pointerdown and the first
-    // pointermove before we treat the gesture as a drag and forward the
-    // pointerdown to the dispatcher. Below this, pointerup is treated as a
-    // click — no drag handle is ever opened, so `moveAction` (and other
-    // ongoing drag actions) don't fire on a stationary press-and-release.
-    const DRAG_THRESHOLD_PX = 4;
-
     // Long-press synthesis. Armed on pointerdown for touch/pen, cancelled by
-    // movement past DRAG_THRESHOLD_PX, by release, by cancel, or by a second
+    // movement past `DRAG_THRESHOLD_PX`, by release, by cancel, or by a second
     // pointer landing (so it can never fire mid-pinch).
     const LONG_PRESS_MS = 500;
     const longPressTimers = new Map<number, ReturnType<typeof setTimeout>>();
@@ -1102,9 +1096,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // exists.
       const buffered = rec?.buffered;
       if (rec && buffered) {
-        const dx = e.clientX - buffered.clientX;
-        const dy = e.clientY - buffered.clientY;
-        if (Math.hypot(dx, dy) >= DRAG_THRESHOLD_PX) {
+        if (pastDragThreshold(buffered, e)) {
           rec.buffered = null;
           cancelLongPress(e.pointerId);
           dispatch(buffered.ev);

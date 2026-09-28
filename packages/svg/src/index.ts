@@ -10,6 +10,8 @@
  *   leaf serializes as a `<path>`; gradients are gathered into a single
  *   `<defs>` block with stable ids.
  *
+ * `svgNodesToKitDrafts` lowers a parsed tree to scene nodes the kit's own
+ * painters draw, and `svgNodesFromKit` walks a scene back to `SvgNode`s.
  * `unpackSvgFiles` bridges the two into `@weasel-js/core`'s ingestion
  * pipeline — pass it as `<SceneCanvas ingestion={{ svg: { unpack:
  * unpackSvgFiles } }}>`. It lives here, not in core, because core would
@@ -26,11 +28,25 @@ export { nativeSvgKind, nativeSvgSpace } from './gradients';
 export {
   unpackSvgFiles,
   svgNodesToKitDrafts,
-  svgImageFromKit,
+  fillDataFromSvg,
   strokeDataFromSvg,
   type SvgSceneDraft,
   type SvgDraftBounds,
+  type SvgLeafNode,
+  type SvgNodesToKitDraftsOptions,
 } from './unpack';
+export {
+  svgNodesFromKit,
+  svgLeafFromKit,
+  svgImageFromKit,
+  svgPaintFromKit,
+  svgStrokeFromKit,
+  type SvgKitTree,
+  type SvgKitTreeNode,
+  type SvgKitLeafData,
+  type SvgKitPose,
+  type SvgNodesFromKitOptions,
+} from './fromKit';
 export type {
   NamespaceMeta,
   NamespacedElement,

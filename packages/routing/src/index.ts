@@ -54,6 +54,27 @@ export type DepName = keyof DepSchema;
 // unless the declaration sits at the export site.
 
 
+// ─── overlay schema ───────────────────────────────────────────────────────
+/**
+ * What the kernel drawing these tools takes as an overlay. Routing never reads
+ * an overlay, so it has no type of its own for one; the kernel merges its type
+ * in, the same way and for the same reason as {@link DepSchema}:
+ *
+ * ```ts
+ * declare module '@weasel-js/routing' {
+ *   interface OverlaySchema { overlay: RenderLayer<unknown> }
+ * }
+ * ```
+ *
+ * `defineTool` and `defineViewportTool` default their overlay type to it, so a
+ * tool built by either fits the kernel's `tools` without naming the parameter.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface OverlaySchema {}
+
+/** The overlay type merged into {@link OverlaySchema}; `unknown` when none is. */
+export type KernelOverlay = OverlaySchema extends { overlay: infer O } ? O : unknown;
+
 // ─── actions ──────────────────────────────────────────────────────────────
 export type {
   Action, ActionDispatch, ActionPresentation, ActionSource, ActionVariant,
@@ -68,6 +89,8 @@ export type { GestureBinding, BoundGesture, BindingSource } from './interactions
 export { evaluateEnabled } from './interactions/actions/actionEnabled';
 export type { ActionEnabledResult } from './interactions/actions/actionEnabled';
 export { buildDepsFromRequires } from './interactions/actions/buildDeps';
+export { createDepRegistry } from './interactions/actions/depNode';
+export type { DepRegistry } from './interactions/actions/depNode';
 export { validateActionId, validateActionDefaultBinding } from './interactions/actions/registry';
 export type { ActionsRegistry, ActionEntry, ActionsProp } from './interactions/actions/registry';
 export { resolveParams } from './interactions/actions/invoker';
@@ -85,6 +108,7 @@ export * from './interactions/dispatcher/dispatcher';
 export * from './interactions/dispatcher/dispatchRecord';
 export * from './interactions/dispatcher/matcher';
 export * from './interactions/dispatcher/predicates';
+export { DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/gestures';
 export { openPointerSession } from './interactions/pointerSession';
 export type {
   PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason,

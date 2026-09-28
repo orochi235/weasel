@@ -90,10 +90,17 @@ function concreteArg(parsed: ParsedRoute): string | undefined {
   return parsed.arg === '*' ? undefined : parsed.arg;
 }
 
+/** One modifier reads as a compound verb ("Shift-clicks"); more read as a
+ *  held chord ("holds Mod and Alt and drags"). */
+function userDoes(required: readonly string[], verb: string): string {
+  if (required.length === 0) return `the user ${verb}`;
+  if (required.length === 1) return `the user ${required[0]}-${verb}`;
+  return `the user holds ${joinAnd(required)} and ${verb}`;
+}
+
 function actionClause(parsed: ParsedRoute, required: readonly string[]): string {
   const desc = getGestureDescriptor(parsed.gesture as GestureName);
   const arg = concreteArg(parsed);
-  const modPrefix = required.length > 0 ? `${joinAnd(required)}-` : '';
   const target = targetClause(parsed.target, desc.hasTarget);
 
   switch (parsed.gesture) {
@@ -112,32 +119,32 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
       const direction = arg === 'up' ? ' up'
         : arg === 'down' ? ' down'
         : '';
-      return `the user ${modPrefix}scrolls${direction}`;
+      return userDoes(required, `scrolls${direction}${target}`);
     }
     case 'pinch': {
       const direction = arg === 'in' ? ' in'
         : arg === 'out' ? ' out'
         : '';
-      return `the user ${modPrefix}pinches${direction}${target}`;
+      return userDoes(required, `pinches${direction}${target}`);
     }
     case 'multiTouchTap':
-      return `the user taps with ${arg ?? 'multiple'} fingers`;
+      return userDoes(required, `taps with ${arg ?? 'multiple'} fingers`);
     case 'contextMenu':
-      return `the user ${modPrefix}opens the context menu${target}`;
+      return userDoes(required, `opens the context menu${target}`);
     case 'longPress':
-      return `the user ${modPrefix}presses and holds${target}`;
+      return userDoes(required, `long-presses${target}`);
     case 'click':
-      return `the user ${modPrefix}clicks${target}`;
+      return userDoes(required, `clicks${target}`);
     case 'pointerDown':
-      return `the user ${modPrefix}presses${target}`;
+      return userDoes(required, `presses${target}`);
     case 'dblTap':
-      return `the user ${modPrefix}double-taps${target}`;
+      return userDoes(required, `double-taps${target}`);
     case 'drag':
-      return `the user ${modPrefix}drags${target}`;
+      return userDoes(required, `drags${target}`);
     case 'drop':
-      return `the user drops ${arg ?? 'any'} content onto the canvas`;
+      return userDoes(required, `drops ${arg ?? 'any'} content onto the canvas`);
     case 'paste':
-      return `the user pastes ${arg ?? 'any'} content`;
+      return userDoes(required, `pastes ${arg ?? 'any'} content`);
   }
 }
 

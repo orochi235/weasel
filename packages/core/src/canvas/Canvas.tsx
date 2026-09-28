@@ -51,7 +51,7 @@ import { clampView } from 'core/viewport/clampView';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import {
   drawLayers, isLayerPainted,
-  type Dims, type LayerCommandCache, type LayerGroup, type RenderLayer,
+  type Dims, type LayerCommandCache, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
 import { WeaselRenderer, viewToMat3, cullDrawCommands, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
@@ -287,6 +287,12 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  `subscribeFrame` callback, still waits for a frame — painting it in place
    *  would recurse. */
   syncPaint?: boolean;
+
+  /** External state the paint reads that no layer declares — typically what
+   *  an `alphaFor` consults. Each source is subscribed while mounted and
+   *  repaints the canvas when it notifies. A layer that reads outside state
+   *  declares it on `RenderLayer.subscribe` instead. */
+  redrawOn?: readonly RedrawSource[];
 
   /**
    * Combined adapter for scene-slot rendering, bounds computation, and
@@ -799,6 +805,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     flattenTolerance,
     contentVersion,
     syncPaint = false,
+    redrawOn,
     adapter: adapterProp,
     layers: layersMap,
     selection,
@@ -1393,6 +1400,20 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   }, [layers, debugSink, resolvedDebugConfig, extrasVersion, viewRegistry, viewRegistryVersion,
       paintedCursorLayer]);
 
+  useEffect(() => {
+    const redraw = (): void => { requestRedraw(); };
+    const offs: (() => void)[] = [];
+    for (const layer of layersWithDebug) if (layer.subscribe) offs.push(layer.subscribe(redraw));
+    return () => { for (const off of offs) off(); };
+  }, [layersWithDebug, requestRedraw]);
+
+  const redrawSources = useSameElements(redrawOn);
+  useEffect(() => {
+    const redraw = (): void => { requestRedraw(); };
+    const offs = (redrawSources ?? []).map((src) => src.subscribe(redraw));
+    return () => { for (const off of offs) off(); };
+  }, [redrawSources, requestRedraw]);
+
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
 
   // Everything the paint reads that a React render owns. Written during
@@ -1677,3 +1698,14 @@ export const Canvas = forwardRef(CanvasInner) as <
 >(
   props: CanvasProps<TNode, TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
 ) => ReturnType<typeof CanvasInner>;
+
+/** `list` as last passed, kept by identity while it holds the same elements —
+ *  so an inline array prop does not read as a change every render. */
+function useSameElements<T>(list: readonly T[] | undefined): readonly T[] | undefined {
+  const ref = useRef(list);
+  const prev = ref.current;
+  if (prev !== list && !(prev && list && prev.length === list.length && prev.every((x, i) => x === list[i]))) {
+    ref.current = list;
+  }
+  return ref.current;
+}

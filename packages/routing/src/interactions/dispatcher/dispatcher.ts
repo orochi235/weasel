@@ -48,7 +48,7 @@
 
 import type { Action, ActionSource } from '../actions/action';
 import { actionBindings } from '../actions/binding';
-import type { DepRegistry } from '../actions/depRegistry';
+import type { DepRegistry } from '../actions/depNode';
 import type { GestureBinding } from '../actions/binding';
 import type { GestureSpec } from '@weasel-js/gestures';
 import type { OngoingHandle, InvocationCtx, ActionDeps, AffordanceHit, DragSample, Point2 } from '../actions/invoker';
@@ -194,7 +194,7 @@ export interface DispatcherContext {
   /** Held-hotkey stack, top of stack last. */
   hotkeyStack: readonly string[];
   /** Lookup for tool definitions. */
-  toolsById: ReadonlyMap<string, Tool>;
+  toolsById: ReadonlyMap<string, Tool<unknown, unknown>>;
   /** Platform flag for `mod` shorthand resolution. */
   isMac: boolean;
   /**
@@ -868,7 +868,7 @@ export function createDispatcher(opts?: {
     // the top as the engaged one (`ToolsApi.hotkeyEngaged` is `.at(-1)`), so
     // walking the stack bottom-first handed ties to the oldest hold and routed
     // a drag to a tool the rest of the kit did not consider engaged.
-    const ordered: Tool[] = [];
+    const ordered: Tool<unknown, unknown>[] = [];
     for (let i = ctx.hotkeyStack.length - 1; i >= 0; i--) {
       const id = ctx.hotkeyStack[i]!;
       const tool = ctx.toolsById.get(id);

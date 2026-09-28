@@ -8,9 +8,9 @@
  */
 import { useEffect, useMemo } from 'react';
 import {
+  modeDecorationLayer,
   sceneSelectionStore,
   type RenderLayer,
-  type DrawCommand,
   type Scene,
 } from '@weasel-js/core';
 import { createHistory, type History } from '@weasel-js/history';
@@ -103,19 +103,7 @@ export function useModality(
   // zoom, unlike the kit's screen-space ones). Nothing here needs to
   // re-add it.
 
-  // Build a RenderLayer<unknown> whose draw() calls decorations.paint().
-  // World-space commands; drawLayers wraps in viewToMat3 automatically
-  // (default `space: 'world'`).
-  const decorationLayer = useMemo<RenderLayer<unknown>>(
-    () => ({
-      id: 'mode-decorations',
-      label: 'Mode decorations',
-      draw: () => {
-        return decorations.paint() as DrawCommand[];
-      },
-    }),
-    [decorations],
-  );
+  const decorationLayer = useMemo(() => modeDecorationLayer(decorations), [decorations]);
 
   return { machine, decorations, scopingDim, decorationLayer, history };
 }

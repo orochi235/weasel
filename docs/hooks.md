@@ -134,7 +134,7 @@ standard set; `<SceneCanvas>` registers them under the `view` preset, from its
 | `useMove` | `move` action (`defaults/move.ts`); `UseMoveOptions` type survives |
 | `useResize` | `resize` action; `UseResizeOptions`, `PoseDescriptor`, `RECT_POSE_DESCRIPTOR`, `cornerResizeHandles`, `hitCornerHandle` survive |
 | `useRotate` | `rotate` action; `rotationHandle`, `hitRotationHandle`, `pointInRotatedRect`, `DEFAULT_ROTATION_HANDLE_DISTANCE` survive |
-| `useInsert` | `insert` action; `UseInsertOptions` survives |
+| `useInsert` | `insert` action, configured by binding params and the `insert` dep |
 | `useAreaSelect` | `areaSelect` action (marquee is its built-in behavior, not opt-in) |
 | `useClone` | `clone` action; `cloneByAltDrag()` behavior survives |
 | `useEditAnchors` | `editAnchors` action, plus the `nudgeAnchors.*` / `deleteAnchors` / `marqueeAnchors` / `selectAnchor` / `cutPathAtAnchor` set; `hitAnchor`, `enumerateAnchors`, `withCoord` survive |

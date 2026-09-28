@@ -3,9 +3,11 @@ import {
   ActionDisabledReason,
   DEFAULT_ALLOWED_CAPABILITIES,
   buildRuleCtx,
+  createDepRegistry,
   createDispatcher,
   defineTool,
   openPointerSession,
+  pastDragThreshold,
   resolveParams,
   routesForSpec,
   type Action,
@@ -17,7 +19,6 @@ import {
   type Rule,
   type Tool,
 } from '@weasel-js/routing';
-import type { DepRegistry } from '@weasel-js/routing/react';
 import s from './RoutingDemo.module.css';
 
 interface Box { id: NodeId; x: number; y: number; color: number }
@@ -28,7 +29,6 @@ const W = 380;
 const H = 240;
 const SIZE = 56;
 const COLORS = 4;
-const DRAG_THRESHOLD = 4;
 const LOG_LINES = 6;
 const MODIFIER_KEYS = new Set(['Shift', 'Alt', 'Control', 'Meta']);
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iP(hone|ad)/.test(navigator.platform);
@@ -47,7 +47,7 @@ const INITIAL: Board = {
 };
 
 // No action here reads a dep; each closes over the board instead.
-const NO_DEPS: DepRegistry = { register: () => () => {}, get: () => undefined };
+const NO_DEPS = createDepRegistry();
 const UNLOCKED: Rule = { mode: { not: 'locked' } };
 
 const HAND = defineTool<unknown>({ id: 'hand', bindings: [{ spec: { kind: 'drag' }, actionId: 'pan' }] });
@@ -309,7 +309,7 @@ export function RoutingDemo() {
     openPointerSession(svg, e, {
       onMove: (m) => {
         if (!dragging) {
-          if (Math.hypot(m.clientX - e.clientX, m.clientY - e.clientY) < DRAG_THRESHOLD) return;
+          if (!pastDragThreshold(e, m)) return;
           dragging = true;
           route(
             { kind: 'pointerdown', ...mods, ...body, x: start.x, y: start.y, clientX: e.clientX, clientY: e.clientY, pointerId },

@@ -1,4 +1,4 @@
-import { openPointerSession } from '@weasel-js/routing';
+import { openPointerSession, pastDragThreshold } from '@weasel-js/routing';
 
 /**
  * A drag that does not start until the pointer has moved far enough to mean
@@ -9,6 +9,7 @@ import { openPointerSession } from '@weasel-js/routing';
  * and missed-release recovery, teardown — belongs to `openPointerSession`.
  */
 export interface ThresholdDragOptions {
+  /** Travel, in CSS pixels, that makes the press a drag. Default `DRAG_THRESHOLD_PX`. */
   threshold?: number;
   /** Element the session opens on. Defaults to `e.currentTarget`; a list must
    *  pass its container, since a grabbed row unmounting drops capture. */
@@ -36,16 +37,12 @@ export function startThresholdDrag(
   e: React.PointerEvent,
   opts: ThresholdDragOptions,
 ): ThresholdDragHandle {
-  const startX = e.clientX;
-  const startY = e.clientY;
-  const threshold = opts.threshold ?? 4;
+  const start = { clientX: e.clientX, clientY: e.clientY };
   let activated = false;
 
   const maybeActivate = (ev: PointerEvent) => {
     if (activated) return;
-    const dx = ev.clientX - startX;
-    const dy = ev.clientY - startY;
-    if (dx * dx + dy * dy < threshold * threshold) return;
+    if (!pastDragThreshold(start, ev, opts.threshold)) return;
     activated = true;
     opts.onActivate?.(ev);
   };

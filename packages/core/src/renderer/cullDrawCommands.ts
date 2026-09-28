@@ -2,6 +2,8 @@ import type { Path } from 'features/paths/types';
 import type { Stroke } from '@weasel-js/paint';
 import { SPRITE_STRIDE, type DrawCommand } from './DrawCommand';
 import { mat3, type GlMat3 } from './math/mat3';
+import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
+import { markerReach } from 'features/paths/markerCommands';
 
 /** A screen-space rectangle, CSS pixels. */
 export interface CullRect {
@@ -111,15 +113,17 @@ function pathMisses(path: Path, stroke: Stroke | undefined, m: GlMat3, box: Box)
 
 /** How far outside the geometry a stroke can paint, in the path's own units.
  *  A full width rather than half covers `'outer'` alignment, which the
- *  renderer draws as a doubled ribbon; the miter limit covers every join. */
+ *  renderer draws as a doubled ribbon; the miter limit covers every join. A
+ *  marker head sits on a vertex, so its reach is measured from the hull too. */
 function strokeReach(stroke: Stroke, m: GlMat3): number {
-  const w = stroke.width ?? 1;
-  let width = typeof w === 'number' ? w : w.px / (mat3.meanScaleOf(m) || 1);
+  const scale = mat3.meanScaleOf(m);
+  const base = resolveStrokeWidth(stroke.width ?? 1, scale);
+  let width = base;
   if (stroke.vertexWidths) {
     for (const v of stroke.vertexWidths) if (v > width) width = v;
   }
   const spike = Math.max(stroke.miterLimit ?? DEFAULT_MITER_LIMIT, Math.SQRT2);
-  return Math.abs(width) * spike;
+  return Math.max(Math.abs(width) * spike, markerReach(stroke, base, scale));
 }
 
 function spritesMiss(sprites: Float32Array, m: GlMat3, box: Box): boolean {

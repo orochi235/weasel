@@ -245,8 +245,9 @@ Each action pins the proposed/result shape; pick the matching alias
 - `ctx.scratch` is a per-gesture mutable map, wiped on every `start`.
   Namespace by behavior id to avoid collisions:
   `ctx.scratch['snapToContainer']`.
-- `defaultTransient: true` flips the gesture to `applyOps` (no history
-  entry) unless the consumer overrides `transient` explicitly.
+- `defaultTransient: true` makes a move, resize or rotate commit through
+  `scene.untracked` (no history entry) unless the binding sets `transient`
+  explicitly.
 
 **Reference behaviors in the source:**
 
@@ -567,7 +568,7 @@ so that a tool hook stays callable from anywhere.
 **Add the selection's own bindings.** The select tool only chooses. Dragging
 the selection to move or clone it, and its resize and rotation handles, are the
 `always` entries `selectionMoveContribution()` and
-`selectionTransformContribution`; put them in the dispatcher's `toolsById`
+`selectionTransformContribution()`; put them in the dispatcher's `toolsById`
 beside your tools (transform first, since a handle sits over the body it
 resizes). The 3d lab (`packages/labkit/examples/3d-lab/SolidInstrument.tsx`)
 adds the move one.

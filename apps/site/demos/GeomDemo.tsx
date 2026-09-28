@@ -5,12 +5,12 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import {
   boundsOfCoords,
   cubicBounds,
-  cubicEvalAt,
-  dot,
   flattenCubicWithArcLen,
-  len2,
-  pointSegmentDist2,
+  nearestOnCubic,
+  splitCubicAt,
   type Box,
+  type CubicCoords,
+  type CurveNearest,
 } from '@weasel-js/geom';
 import s from './GeomDemo.module.css';
 
@@ -39,57 +39,43 @@ const PROBE = { color: '#c0392b' };
 const AT_T = { color: '#e08a1e' };
 
 interface Measure {
-  /** Eight control coords, for the functions that take them spread. */
-  c: [number, number, number, number, number, number, number, number];
+  c: CubicCoords;
   hull: Box;
   tight: Box;
-  /** Flattened curve, starting vertex included, with cumulative arc length per vertex. */
+  /** Flattened curve, starting vertex included. */
   line: number[];
-  arc: number[];
   length: number;
-  atT: [number, number];
-  atTArc: number;
-  near: { x: number; y: number; dist: number; arc: number };
+  /** The curve up to t, as a cubic of its own, and that cubic flattened. */
+  before: CubicCoords;
+  beforeLine: number[];
+  beforeLength: number;
+  near: CurveNearest;
 }
 
-/** Closest point on the flattened curve, and how far along it that point sits. */
-function nearestOnLine(line: number[], arc: number[], px: number, py: number) {
-  let best = { x: line[0], y: line[1], d2: Infinity, arc: 0 };
-  for (let i = 0; i + 3 < line.length; i += 2) {
-    const ax = line[i], ay = line[i + 1], bx = line[i + 2], by = line[i + 3];
-    const d2 = pointSegmentDist2(px, py, ax, ay, bx, by);
-    if (d2 >= best.d2) continue;
-    const vv = len2(bx - ax, by - ay);
-    const u = vv === 0 ? 0 : Math.min(1, Math.max(0, dot(px - ax, py - ay, bx - ax, by - ay) / vv));
-    const k = i >> 1;
-    best = { x: ax + u * (bx - ax), y: ay + u * (by - ay), d2, arc: arc[k] + u * (arc[k + 1] - arc[k]) };
-  }
-  return best;
-}
+const flatten = (c: CubicCoords) => {
+  const line = [c[0], c[1]];
+  const length = flattenCubicWithArcLen(...c, 0.25, line, [0]);
+  return { line, length };
+};
 
 function measure(centers: Map<string, { x: number; y: number }>, t: number): Measure {
   const [a, b, c, d] = CURVE_IDS.map((id) => centers.get(id)!);
   const probe = centers.get('probe')!;
-  const cs: Measure['c'] = [a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y];
-
-  const line = [a.x, a.y];
-  const arc = [0];
-  const length = flattenCubicWithArcLen(...cs, 0.25, line, arc);
-
-  const atT = cubicEvalAt(...cs, t);
-  const onLine = nearestOnLine(line, arc, atT[0], atT[1]);
-  const near = nearestOnLine(line, arc, probe.x, probe.y);
+  const cs: CubicCoords = [a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y];
+  const whole = flatten(cs);
+  const [before] = splitCubicAt(...cs, t);
+  const part = flatten(before);
 
   return {
     c: cs,
     hull: boundsOfCoords(cs)!,
     tight: cubicBounds(...cs),
-    line,
-    arc,
-    length,
-    atT,
-    atTArc: onLine.arc,
-    near: { x: near.x, y: near.y, dist: Math.sqrt(near.d2), arc: near.arc },
+    line: whole.line,
+    length: whole.length,
+    before,
+    beforeLine: part.line,
+    beforeLength: part.length,
+    near: nearestOnCubic(probe.x, probe.y, ...cs),
   };
 }
 
@@ -109,9 +95,11 @@ function drawMeasure(m: Measure, probe: { x: number; y: number }): DrawCommand[]
     { kind: 'path', path: polylineFromPoints([{ x: x0, y: y0 }, { x: x1, y: y1 }]), stroke: thin(MUTED) },
     { kind: 'path', path: polylineFromPoints([{ x: x3, y: y3 }, { x: x2, y: y2 }]), stroke: thin(MUTED) },
     { kind: 'path', path: polylineFromPoints(pts(m.line)), stroke: { paint: INK, width: { px: 2.5 } } },
+    { kind: 'path', path: polylineFromPoints(pts(m.before)), stroke: thin(AT_T, [4, 3]) },
+    { kind: 'path', path: polylineFromPoints(pts(m.beforeLine)), stroke: { paint: AT_T, width: { px: 2.5 } } },
     { kind: 'path', path: polylineFromPoints([probe, m.near]), stroke: thin(PROBE, [3, 3]) },
     { kind: 'path', path: circlePath(m.near.x, m.near.y, 4), fill: PROBE },
-    { kind: 'path', path: circlePath(m.atT[0], m.atT[1], 5), fill: AT_T },
+    { kind: 'path', path: circlePath(m.before[6], m.before[7], 5), fill: AT_T },
   ];
 }
 
@@ -153,8 +141,6 @@ export function GeomDemo() {
     },
   }), [scene, t]);
 
-  const pct = (arc: number) => (100 * arc) / m.length;
-
   return (
     <div className={s.demo}>
       <SceneCanvas
@@ -179,7 +165,7 @@ export function GeomDemo() {
         }}
       />
       <label className={s.control}>
-        <span><code>cubicEvalAt</code> at t</span>
+        <span><code>splitCubicAt</code> t</span>
         <input
           type="range" min={0} max={1} step={0.01} value={t}
           className={s.slider}
@@ -206,13 +192,13 @@ export function GeomDemo() {
             <td className={s.num}>{fmt(m.length)}</td>
           </tr>
           <tr>
-            <td className={s.fn}><span className={s.swatchT} />cubicEvalAt</td>
-            <td>t = {t.toFixed(2)} lands this far along the length</td>
-            <td className={s.num}>{fmt(pct(m.atTArc))}%</td>
+            <td className={s.fn}><span className={s.swatchT} />splitCubicAt</td>
+            <td>share of the length in the curve up to t, split off as a cubic of its own</td>
+            <td className={s.num}>{fmt((100 * m.beforeLength) / m.length)}%</td>
           </tr>
           <tr>
-            <td className={s.fn}><span className={s.swatchProbe} />pointSegmentDist2</td>
-            <td>probe to the nearest point on the curve</td>
+            <td className={s.fn}><span className={s.swatchProbe} />nearestOnCubic</td>
+            <td>probe to the nearest point on the curve, at t = {m.near.t.toFixed(2)}</td>
             <td className={s.num}>{fmt(m.near.dist)}</td>
           </tr>
         </tbody>

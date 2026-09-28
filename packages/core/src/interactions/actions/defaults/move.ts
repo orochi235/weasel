@@ -7,10 +7,9 @@
  *   - `onMove`: update the in-scratch `currentDelta`, and publish the frame's
  *     poses as ephemeral overrides. No *document* writes, so the undo stack
  *     still sees one entry for the whole drag.
- *   - `onEnd('commit')`: emit the final delta as transform ops and route
- *     them through the consumer `applyOps` hook when present, else
- *     `scene.applyBatch(ops, 'Move', adapter)` — either way a single batch
- *     → exactly one undo entry for the whole drag.
+ *   - `onEnd('commit')`: emit the final delta as transform ops and commit
+ *     them as one batch (`commitGestureOps`) → at most one undo entry for the
+ *     whole drag, none when the binding's params make it transient.
  *   - `onEnd('cancel')`: drop the overrides — the document was never mutated,
  *     so the committed poses are the restoration.
  *
@@ -43,10 +42,11 @@
 
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
-import { resolveParams } from '@weasel-js/routing';
+import { resolveParams, DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/routing';
 import { definesFrame, documentPose, effectivePose } from 'core/scene/effectivePose';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
+import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { Mat3 } from '@weasel-js/geom';
@@ -361,14 +361,14 @@ function translateCommitOps(
       id: id as string,
       from: authored,
       to: translatePoseViaDescriptor(authored, l.dx, l.dy, scratch.projection),
-      label: 'Move',
+      label: scratch.lifecycle.label,
     }));
     if (scratch.geometryProjection) {
       const dataOp = geometryDataOp(
         scratch.geometryProjection,
         { id: id as string, data: node.data, pose: authored },
         m,
-        'Move',
+        scratch.lifecycle.label,
       );
       if (dataOp) ops.push(dataOp);
     }
@@ -517,6 +517,8 @@ interface MoveScratch {
    *  translate-only commit path emits a `setData` op per moved node mapping
    *  its data-held geometry by the (dx,dy) translation. Undefined → pose-only. */
   geometryProjection?: GeometryProjection;
+  /** Label, history and callbacks from the binding's params. */
+  lifecycle: GestureLifecycle;
 }
 
 /** Resolved drop target — the new parent + layer + (for `'above'` mode)
@@ -682,7 +684,10 @@ export const moveAction: Action & { requires: string[] } = {
       // specificity; with no mode registry to filter move out, declining is what lets it through.
       if (isAnchorOrControl(ctx.drag?.affordance)) return {};
 
-      const ids = selection.get() as NodeId[];
+      const params = resolveParams(opts?.params);
+      const expandIds = params?.['expandIds'] as ((ids: string[]) => string[]) | undefined;
+      const selected = [...selection.get()] as string[];
+      const ids = (expandIds ? expandIds(selected) : selected) as NodeId[];
       if (ids.length === 0) return {};
 
       // Capture origin poses once at drag start. Walk descendants so
@@ -732,6 +737,10 @@ export const moveAction: Action & { requires: string[] } = {
       }
 
       const behaviors = (opts?.behaviors ?? []) as MoveBehavior<unknown>[];
+      const dragThresholdPx = (params?.['dragThresholdPx'] as number | undefined)
+        ?? DRAG_THRESHOLD_PX;
+      const lifecycle = readGestureLifecycle(params, 'Move', behaviors);
+      let engaged = false;
       const adapter = moveGestureAdapter<unknown>(scene as Scene<unknown, string, unknown>);
       const origin = new Map<string, unknown>();
       for (const [id, pose] of startPoses) origin.set(id as string, pose);
@@ -766,12 +775,236 @@ export const moveAction: Action & { requires: string[] } = {
         pc,
         applyOps,
         geometryProjection,
+        lifecycle,
+      };
+
+      // Returns whether anything reached the document.
+      const commitMove = (endCtx: InvocationCtx): boolean => {
+        // Apply the final delta as a single batch → one undo entry.
+        const { dx, dy } = scratch.currentDelta;
+        let committed = false;
+        const commitOps = (ops: Op[]): void => {
+          commitGestureOps(scratch, lifecycle, ops);
+          committed = true;
+        };
+
+        // Behavior pipeline owns the commit if any behavior returns non-undefined.
+        if (scratch.behaviors.length > 0) {
+          const gctx = scratch.gestureCtx;
+          for (const [id, ori] of scratch.startPoses) {
+            gctx.current.set(id as string, translatePoseViaDescriptor(ori, dx, dy, scratch.projection));
+          }
+          for (const b of scratch.behaviors) {
+            const r = b.onEnd?.(gctx);
+            if (r === undefined) continue;        // defer to next behavior / default
+            if (r === null) return false;         // abort (e.g. snap-back)
+            // Three-way contract: undefined = defer to next behavior (or
+            // default translate). null = abort (snap-back / delete). Op[]
+            // = claim the gesture and commit those ops — even an EMPTY
+            // array [] claims the commit and suppresses the default
+            // translate (behavior intentionally committed nothing).
+            commitOps(r);
+            return true;
+          }
+          // all behaviors deferred → fall through to the default path below.
+        }
+
+        // No-op if no movement (sub-threshold drag or zero delta).
+        if (dx === 0 && dy === 0) return false;
+
+        // Layout drop commit — takes precedence over reparent-on-drop when a
+        // layout container accepted the drag this gesture. One placement per
+        // dragged child, replayed in the order the preview resolved them.
+        // TODO: geometryProjection for drop-reflow — left pose-only because the
+        // reflow distributes per-child poses with no single global delta; not
+        // exercised by the geometry contract gate.
+        if (scratch.layout && scratch.layoutPass) {
+          const lp = scratch.layoutPass;
+          const pc = scratch.pc;
+          const commitAdapter = scenePoseAdapter(scratch.scene);
+          const destId = lp.container.id;
+          const draggedIds = new Set<string>(scratch.ids.map((id) => id as string));
+          // commitDrop returns world poses (the contract is world in/out).
+          // Rebase each transform op to local: a dragged id lands under the
+          // destination container; any other id keeps its current parent.
+          // `from` rebases under the node's PRE-commit parent.
+          const rebaseOpToLocal = (op: Op): Op => {
+            if (op.name !== 'transform') return op;
+            const a = op.args as { id: string; from: unknown; to: unknown; label?: string; coalesceKey?: string };
+            const curParent = scratch.scene.get(asNodeId(a.id))?.parent ?? null;
+            const toParent = draggedIds.has(a.id) ? destId : curParent;
+            return createTransformOp<unknown>({
+              id: a.id,
+              from: rebaseLocalPose(commitAdapter, a.from, curParent, pc.compose, pc.decompose),
+              to: rebaseLocalPose(commitAdapter, a.to, toParent, pc.compose, pc.decompose),
+              label: a.label,
+              coalesceKey: a.coalesceKey,
+            });
+          };
+          // Cross-container drop: reparent each dragged node under the
+          // destination container so its tree position matches its new
+          // visual home. Scene v1's absolute-pose semantics mean the
+          // subsequent pose op still lands the child at the snapped cell.
+          // Every reparent precedes every drop.
+          const reparentOps: Op[] = [];
+          const dropOps: Op[] = [];
+          for (const placement of lp.placements) {
+            if (placement.dragged.sourceContainerId !== destId) {
+              reparentOps.push(createReparentOp({
+                id: placement.dragged.id,
+                fromParentId: placement.dragged.sourceContainerId,
+                toParentId: destId,
+                label: 'Reparent',
+              }));
+            }
+            const ops = lp.layout.commitDrop(
+              lp.container,
+              placement.children,
+              placement.dragged,
+              placement.target,
+            );
+            for (const op of ops) dropOps.push(rebaseOpToLocal(op));
+          }
+          const reflowOps: Op[] = [];
+          for (const [cid, worldPose] of lp.sourceReflow) {
+            const parent = scratch.scene.get(asNodeId(cid))?.parent ?? null;
+            // Source-reflow siblings keep their parent, so `from` is already
+            // the live local pose (no rebase); only `to` (a world pose stored
+            // in `lp.sourceReflow`) is rebased to local. This is the
+            // intentional counterpart to the dropOps rebaser above, where
+            // `from` comes from a world `commitDrop` op and so does rebase.
+            reflowOps.push(createTransformOp<unknown>({
+              id: cid,
+              from: scratch.scene.get(asNodeId(cid))!.pose,
+              to: rebaseLocalPose(commitAdapter, worldPose, parent, pc.compose, pc.decompose),
+              label: 'Source reflow',
+            }));
+          }
+          const ops = [...reparentOps, ...dropOps, ...reflowOps];
+          if (ops.length > 0) commitOps(ops);
+          return committed;
+        }
+
+        // No container accepted the drop. Each source layout gets a say
+        // over its own children before they are left wherever the pointer
+        // stopped; the rest of the selection falls through to the translate.
+        const released = new Set<NodeId>();
+        const releasedOps: Op[] = [];
+        if (scratch.layout && !scratch.layoutPass) {
+          const pc = scratch.pc;
+          const commitAdapter = scenePoseAdapter(scratch.scene);
+          // Released children keep their parent, so both ends of a transform
+          // rebase under the same frame.
+          const rebaseReleased = (op: Op): Op => {
+            if (op.name !== 'transform') return op;
+            const a = op.args as { id: string; from: unknown; to: unknown; label?: string; coalesceKey?: string };
+            const parent = scratch.scene.get(asNodeId(a.id))?.parent ?? null;
+            return createTransformOp<unknown>({
+              id: a.id,
+              from: rebaseLocalPose(commitAdapter, a.from, parent, pc.compose, pc.decompose),
+              to: rebaseLocalPose(commitAdapter, a.to, parent, pc.compose, pc.decompose),
+              label: a.label,
+              coalesceKey: a.coalesceKey,
+            });
+          };
+          const sources = groupBySourceContainer(
+            scratch.ids.map((id) => ({
+              id,
+              sourceContainerId: (scratch.scene.get(id)?.parent ?? null) as string | null,
+            })),
+            null,
+          );
+          for (const [srcId, leaving] of sources) {
+            const srcLayout = scratch.layout.getLayout(srcId);
+            if (!srcLayout?.releaseDrop) continue;
+            const srcContainer: LayoutContainer = {
+              id: srcId,
+              bounds: scratch.projection.getBounds(
+                composeWorldPose(commitAdapter, srcId, pc.compose),
+              ),
+            };
+            // What the container is left holding — grown back as each
+            // release puts one of its own home again.
+            let srcChildren: LayoutChild<unknown>[] =
+              scratch.scene.childrenOf(asNodeId(srcId))
+                .filter((cid) => !leaving.has(cid))
+                .map((cid) => ({
+                  id: cid as string,
+                  pose: composeWorldPose(commitAdapter, cid as string, pc.compose),
+                }));
+            for (const id of leaving) {
+              const startWorld = composeWorldPose(commitAdapter, id as string, pc.compose);
+              const ops = srcLayout.releaseDrop!(srcContainer, srcChildren, {
+                id: id as string,
+                originPose: startWorld,
+                pose: translatePoseViaDescriptor(startWorld, dx, dy, scratch.projection),
+                sourceContainerId: srcId,
+              });
+              if (ops === null) continue;
+              released.add(id);
+              let landed: unknown = startWorld;
+              for (const op of ops) {
+                const a = op.args as { id?: string; to?: unknown };
+                if (op.name === 'transform' && a.id === (id as string)) landed = a.to;
+                releasedOps.push(rebaseReleased(op));
+              }
+              srcChildren = [...srcChildren, { id: id as string, pose: landed }];
+            }
+          }
+        }
+        if (released.size > 0) {
+          const ops = [
+            ...releasedOps,
+            ...translateCommitOps(scratch, unreleasedIds(scratch, released), dx, dy),
+          ];
+          if (ops.length > 0) commitOps(ops);
+          return committed;
+        }
+
+        // Reparent-on-drop, when opted in via `opts.params.reparentOnDrop`.
+        // Resolves the drop target via the `nodeAtPoint` dep (sourced by
+        // `<SceneCanvas>`) and reparents each moved root under it, then
+        // writes the translated pose in the new parent's frame so the
+        // visual position is preserved across the parent swap.
+        const reparentMode = ((resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off');
+        const dropTarget = reparentMode !== 'off'
+          ? resolveDropTarget(endCtx, scratch)
+          : null;
+
+        if (dropTarget) {
+          // Reparent-on-drop still commits directly to the scene. Routing
+          // this path through `commitOps` is a separate later task.
+          const reparent = () => applyReparent(scratch, dropTarget, reparentMode, dx, dy, scratch.pc);
+          if (lifecycle.transient) scratch.scene.untracked(reparent);
+          else scratch.scene.batch(lifecycle.label, reparent);
+          committed = true;
+        } else {
+          // No reparent — translate-only commit, emitted as transform ops so
+          // it routes through the consumer `applyOps` hook (consumer history)
+          // when present, else the scene's own history. Under scene v1's
+          // absolute-pose semantics every node stores world coords
+          // independently, so a container drag must explicitly re-stamp every
+          // cascaded descendant by the same dx/dy — otherwise children stay at
+          // their old absolute positions (visually they snap to the
+          // container's former location).
+          // Translate the data-held geometry by the same (dx,dy). Opt-in via
+          // the geometryProjection seam; a no-op when the dep is absent.
+          const ops = translateCommitOps(scratch, [...scratch.ids, ...scratch.cascadeIds], dx, dy);
+          if (ops.length > 0) commitOps(ops);
+        }
+        return committed;
       };
 
       return {
         kind: 'move',
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
+          if (!engaged) {
+            const s = moveCtx.drag.screenDelta;
+            if (s && !pastDragThreshold({ clientX: 0, clientY: 0 }, { clientX: s.x, clientY: s.y }, dragThresholdPx)) return;
+            engaged = true;
+            lifecycle.start(scratch.ids as string[]);
+          }
           let dx = moveCtx.drag.delta.x;
           let dy = moveCtx.drag.delta.y;
 
@@ -830,243 +1063,18 @@ export const moveAction: Action & { requires: string[] } = {
           syncPreviewOverrides(scratch);
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
-          if (reason === 'cancel') {
-            // The document was never mutated — only the ephemeral overrides,
-            // and dropping them restores the committed poses.
+          let committed = false;
+          try {
+            // On cancel the document was never mutated — dropping the
+            // ephemeral overrides below restores the committed poses.
+            if (reason === 'commit') committed = commitMove(endCtx);
+          } finally {
+            // After the commit, so no frame can paint the pre-drag pose between
+            // the override going away and the document catching up.
             dropPreviewOverrides(scratch);
             scratch.previews.clear();
-            return;
+            lifecycle.end(committed);
           }
-          // 'commit': apply final delta as a single batch → one undo entry.
-          const { dx, dy } = scratch.currentDelta;
-
-          // Route ops-based commits through the consumer hook when present
-          // (so an app with its own history captures the gesture as one undo
-          // entry); otherwise commit straight to the scene's own history.
-          const commitOps = (ops: Op[], label: string): void => {
-            if (scratch.applyOps) scratch.applyOps(ops, label);
-            else scratch.scene.applyBatch(ops, label, scratch.adapter);
-          };
-
-          // Behavior pipeline owns the commit if any behavior returns non-undefined.
-          if (scratch.behaviors.length > 0) {
-            const gctx = scratch.gestureCtx;
-            for (const [id, ori] of scratch.startPoses) {
-              gctx.current.set(id as string, translatePoseViaDescriptor(ori, dx, dy, scratch.projection));
-            }
-            for (const b of scratch.behaviors) {
-              const r = b.onEnd?.(gctx);
-              if (r === undefined) continue;        // defer to next behavior / default
-              if (r === null) {                     // abort (e.g. snap-back)
-                scratch.previews.clear();
-                return;
-              }
-              // Three-way contract: undefined = defer to next behavior (or
-              // default translate). null = abort (snap-back / delete). Op[]
-              // = claim the gesture and commit those ops — even an EMPTY
-              // array [] claims the commit and suppresses the default
-              // translate (behavior intentionally committed nothing).
-              commitOps(r, 'Move');
-              scratch.previews.clear();
-              return;
-            }
-            // all behaviors deferred → fall through to the default path below.
-          }
-
-          // No-op if no movement (sub-threshold drag or zero delta).
-          if (dx === 0 && dy === 0) {
-            scratch.previews.clear();
-            return;
-          }
-
-          // Layout drop commit — takes precedence over reparent-on-drop when a
-          // layout container accepted the drag this gesture. One placement per
-          // dragged child, replayed in the order the preview resolved them.
-          // TODO: geometryProjection for drop-reflow — left pose-only because the
-          // reflow distributes per-child poses with no single global delta; not
-          // exercised by the geometry contract gate.
-          if (scratch.layout && scratch.layoutPass) {
-            const lp = scratch.layoutPass;
-            const pc = scratch.pc;
-            const commitAdapter = scenePoseAdapter(scratch.scene);
-            const destId = lp.container.id;
-            const draggedIds = new Set<string>(scratch.ids.map((id) => id as string));
-            // commitDrop returns world poses (the contract is world in/out).
-            // Rebase each transform op to local: a dragged id lands under the
-            // destination container; any other id keeps its current parent.
-            // `from` rebases under the node's PRE-commit parent.
-            const rebaseOpToLocal = (op: Op): Op => {
-              if (op.name !== 'transform') return op;
-              const a = op.args as { id: string; from: unknown; to: unknown; label?: string; coalesceKey?: string };
-              const curParent = scratch.scene.get(asNodeId(a.id))?.parent ?? null;
-              const toParent = draggedIds.has(a.id) ? destId : curParent;
-              return createTransformOp<unknown>({
-                id: a.id,
-                from: rebaseLocalPose(commitAdapter, a.from, curParent, pc.compose, pc.decompose),
-                to: rebaseLocalPose(commitAdapter, a.to, toParent, pc.compose, pc.decompose),
-                label: a.label,
-                coalesceKey: a.coalesceKey,
-              });
-            };
-            // Cross-container drop: reparent each dragged node under the
-            // destination container so its tree position matches its new
-            // visual home. Scene v1's absolute-pose semantics mean the
-            // subsequent pose op still lands the child at the snapped cell.
-            // Every reparent precedes every drop.
-            const reparentOps: Op[] = [];
-            const dropOps: Op[] = [];
-            for (const placement of lp.placements) {
-              if (placement.dragged.sourceContainerId !== destId) {
-                reparentOps.push(createReparentOp({
-                  id: placement.dragged.id,
-                  fromParentId: placement.dragged.sourceContainerId,
-                  toParentId: destId,
-                  label: 'Reparent',
-                }));
-              }
-              const ops = lp.layout.commitDrop(
-                lp.container,
-                placement.children,
-                placement.dragged,
-                placement.target,
-              );
-              for (const op of ops) dropOps.push(rebaseOpToLocal(op));
-            }
-            const reflowOps: Op[] = [];
-            for (const [cid, worldPose] of lp.sourceReflow) {
-              const parent = scratch.scene.get(asNodeId(cid))?.parent ?? null;
-              // Source-reflow siblings keep their parent, so `from` is already
-              // the live local pose (no rebase); only `to` (a world pose stored
-              // in `lp.sourceReflow`) is rebased to local. This is the
-              // intentional counterpart to the dropOps rebaser above, where
-              // `from` comes from a world `commitDrop` op and so does rebase.
-              reflowOps.push(createTransformOp<unknown>({
-                id: cid,
-                from: scratch.scene.get(asNodeId(cid))!.pose,
-                to: rebaseLocalPose(commitAdapter, worldPose, parent, pc.compose, pc.decompose),
-                label: 'Source reflow',
-              }));
-            }
-            const ops = [...reparentOps, ...dropOps, ...reflowOps];
-            if (ops.length > 0) {
-              commitOps(ops, ops[0].label ?? 'Move');
-            }
-            scratch.previews.clear();
-            return;
-          }
-
-          // No container accepted the drop. Each source layout gets a say
-          // over its own children before they are left wherever the pointer
-          // stopped; the rest of the selection falls through to the translate.
-          const released = new Set<NodeId>();
-          const releasedOps: Op[] = [];
-          if (scratch.layout && !scratch.layoutPass) {
-            const pc = scratch.pc;
-            const commitAdapter = scenePoseAdapter(scratch.scene);
-            // Released children keep their parent, so both ends of a transform
-            // rebase under the same frame.
-            const rebaseReleased = (op: Op): Op => {
-              if (op.name !== 'transform') return op;
-              const a = op.args as { id: string; from: unknown; to: unknown; label?: string; coalesceKey?: string };
-              const parent = scratch.scene.get(asNodeId(a.id))?.parent ?? null;
-              return createTransformOp<unknown>({
-                id: a.id,
-                from: rebaseLocalPose(commitAdapter, a.from, parent, pc.compose, pc.decompose),
-                to: rebaseLocalPose(commitAdapter, a.to, parent, pc.compose, pc.decompose),
-                label: a.label,
-                coalesceKey: a.coalesceKey,
-              });
-            };
-            const sources = groupBySourceContainer(
-              scratch.ids.map((id) => ({
-                id,
-                sourceContainerId: (scratch.scene.get(id)?.parent ?? null) as string | null,
-              })),
-              null,
-            );
-            for (const [srcId, leaving] of sources) {
-              const srcLayout = scratch.layout.getLayout(srcId);
-              if (!srcLayout?.releaseDrop) continue;
-              const srcContainer: LayoutContainer = {
-                id: srcId,
-                bounds: scratch.projection.getBounds(
-                  composeWorldPose(commitAdapter, srcId, pc.compose),
-                ),
-              };
-              // What the container is left holding — grown back as each
-              // release puts one of its own home again.
-              let srcChildren: LayoutChild<unknown>[] =
-                scratch.scene.childrenOf(asNodeId(srcId))
-                  .filter((cid) => !leaving.has(cid))
-                  .map((cid) => ({
-                    id: cid as string,
-                    pose: composeWorldPose(commitAdapter, cid as string, pc.compose),
-                  }));
-              for (const id of leaving) {
-                const startWorld = composeWorldPose(commitAdapter, id as string, pc.compose);
-                const ops = srcLayout.releaseDrop!(srcContainer, srcChildren, {
-                  id: id as string,
-                  originPose: startWorld,
-                  pose: translatePoseViaDescriptor(startWorld, dx, dy, scratch.projection),
-                  sourceContainerId: srcId,
-                });
-                if (ops === null) continue;
-                released.add(id);
-                let landed: unknown = startWorld;
-                for (const op of ops) {
-                  const a = op.args as { id?: string; to?: unknown };
-                  if (op.name === 'transform' && a.id === (id as string)) landed = a.to;
-                  releasedOps.push(rebaseReleased(op));
-                }
-                srcChildren = [...srcChildren, { id: id as string, pose: landed }];
-              }
-            }
-          }
-          if (released.size > 0) {
-            const ops = [
-              ...releasedOps,
-              ...translateCommitOps(scratch, unreleasedIds(scratch, released), dx, dy),
-            ];
-            if (ops.length > 0) commitOps(ops, ops[0].label ?? 'Move');
-            scratch.previews.clear();
-            return;
-          }
-
-          // Reparent-on-drop, when opted in via `opts.params.reparentOnDrop`.
-          // Resolves the drop target via the `nodeAtPoint` dep (sourced by
-          // `<SceneCanvas>`) and reparents each moved root under it, then
-          // writes the translated pose in the new parent's frame so the
-          // visual position is preserved across the parent swap.
-          const resolved = resolveParams(opts?.params);
-          const reparentMode = ((resolved?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off');
-          const dropTarget = reparentMode !== 'off'
-            ? resolveDropTarget(endCtx, scratch)
-            : null;
-
-          if (dropTarget) {
-            // Reparent-on-drop still commits directly to the scene. Routing
-            // this path through `commitOps` is a separate later task.
-            scratch.scene.batch('Move', () => {
-              applyReparent(scratch, dropTarget, reparentMode, dx, dy, scratch.pc);
-            });
-          } else {
-            // No reparent — translate-only commit, emitted as transform ops so
-            // it routes through the consumer `applyOps` hook (consumer history)
-            // when present, else the scene's own history. Under scene v1's
-            // absolute-pose semantics every node stores world coords
-            // independently, so a container drag must explicitly re-stamp every
-            // cascaded descendant by the same dx/dy — otherwise children stay at
-            // their old absolute positions (visually they snap to the
-            // container's former location).
-            // Translate the data-held geometry by the same (dx,dy). Opt-in via
-            // the geometryProjection seam; a no-op when the dep is absent.
-            const ops = translateCommitOps(scratch, [...scratch.ids, ...scratch.cascadeIds], dx, dy);
-            if (ops.length > 0) commitOps(ops, 'Move');
-          }
-          // After the commit, so no frame can paint the pre-drag pose between
-          // the override going away and the document catching up.
-          dropPreviewOverrides(scratch);
-          scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),
         previewPose: (id: string) => scratch.previews.get(id as NodeId) ?? null,

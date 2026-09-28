@@ -1,4 +1,4 @@
-import { cubicEvalAt } from '@weasel-js/geom';
+import { cubicEvalAt, splitCubicAt, type CubicCoords } from '@weasel-js/geom';
 
 export interface Point { x: number; y: number; }
 
@@ -15,29 +15,16 @@ interface AnchorRef {
   outHandle?: Point;
 }
 
-/**
- * De Casteljau subdivision of a cubic Bezier at parameter t ∈ [0, 1].
- * Returns the two halves as cubic control-point tuples. The point at parameter
- * t on the original curve is shared between `left[3]` and `right[0]`.
- */
+/** De Casteljau subdivision of a cubic at parameter t. The point-shaped face
+ *  of geom's `splitCubicAt`; `left[3]` and `right[0]` are the point at t. */
 export function splitCubicAtT(
   p0: Point, p1: Point, p2: Point, p3: Point,
   t: number,
 ): { left: [Point, Point, Point, Point]; right: [Point, Point, Point, Point] } {
-  const lerp = (a: Point, b: Point): Point => ({
-    x: a.x + (b.x - a.x) * t,
-    y: a.y + (b.y - a.y) * t,
-  });
-  const q0 = lerp(p0, p1);
-  const q1 = lerp(p1, p2);
-  const q2 = lerp(p2, p3);
-  const r0 = lerp(q0, q1);
-  const r1 = lerp(q1, q2);
-  const s0 = lerp(r0, r1);
-  return {
-    left: [p0, q0, r0, s0],
-    right: [s0, r1, q2, p3],
-  };
+  const [l, r] = splitCubicAt(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, t);
+  const quad = (c: CubicCoords): [Point, Point, Point, Point] =>
+    [{ x: c[0], y: c[1] }, { x: c[2], y: c[3] }, { x: c[4], y: c[5] }, { x: c[6], y: c[7] }];
+  return { left: quad(l), right: quad(r) };
 }
 
 /**

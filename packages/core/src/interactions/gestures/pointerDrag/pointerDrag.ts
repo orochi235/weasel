@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { openPointerSession, type PointerSession } from '@weasel-js/routing';
+import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/routing';
 
 /** Payload carried by an in-flight pointer drag — `kind` routes to drop zones, `ids` lists the dragged items. */
 export interface DragPayload {
@@ -131,8 +131,6 @@ function beginPointerDrag(
   };
 }
 
-const DRAG_THRESHOLD_PX_SQ = 25;
-
 /** Options for `useDragHandle`; supply `createGhost` to override the default DOM-clone ghost. */
 export interface DragHandleOptions {
   createGhost?: (source: HTMLElement, payload: DragPayload) => HTMLElement;
@@ -156,8 +154,7 @@ export function useDragHandle(
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     const target = e.currentTarget as HTMLElement;
     if (e.target instanceof HTMLElement && e.target.closest('input, button, select, textarea')) return;
-    const startX = e.clientX;
-    const startY = e.clientY;
+    const start = { clientX: e.clientX, clientY: e.clientY };
     let ghost: GhostDrag | null = null;
     let past = false;
 
@@ -168,9 +165,7 @@ export function useDragHandle(
       onMove: (ev) => {
         if (ghost) { ghost.move(ev); return; }
         if (past) return;
-        const dx = ev.clientX - startX;
-        const dy = ev.clientY - startY;
-        if (dx * dx + dy * dy <= DRAG_THRESHOLD_PX_SQ) return;
+        if (!pastDragThreshold(start, ev)) return;
         past = true;
         const payload = getPayload();
         if (!payload) return;

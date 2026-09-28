@@ -107,6 +107,7 @@ import {
   usePoseDescriptorDepSource,
   usePoseCompositionDepSource,
   useResizePolicy,
+  resizePolicyOptions,
   useLayoutDepSource,
   useGeometryProjection,
   useIngestionDepSource,
@@ -1556,12 +1557,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     () => ({ move: internalMoveOptions }),
     [internalMoveOptions],
   );
+  const rotateOptions = selectToolOpts?.rotate || undefined;
   // Transform first: a handle sits over the selected body, so the move
   // binding matches a handle drag too, and a tie goes to whichever is first.
   const featureContributions = useMemo<AnyTool[]>(() => [
-    ...(enabled.has('transform') ? [selectionTransformContribution as AnyTool] : []),
+    ...(enabled.has('transform') ? [selectionTransformContribution({ rotate: rotateOptions }) as AnyTool] : []),
     ...(enabled.has('move') ? [selectionMoveContribution(selectionMoveOptions) as AnyTool] : []),
-  ], [enabled, selectionMoveOptions]);
+  ], [enabled, selectionMoveOptions, rotateOptions]);
 
   // Kit-standard actions to register: every preset's own, plus whichever a
   // tool or contribution on this canvas binds — a tool brings the actions it
@@ -2791,11 +2793,7 @@ function ResizePolicyRegistrar({
 }: {
   options: UseResizeOptions<unknown>;
 }) {
-  useResizePolicy<unknown>({
-    constraints: options.behaviors as never[] | undefined,
-    pointSnap: options.pointSnapBehaviors as never[] | undefined,
-    expandIds: options.expandIds,
-  });
+  useResizePolicy<unknown>(resizePolicyOptions(options));
   return null;
 }
 

@@ -164,24 +164,12 @@ function registerTextPaint(
   if (paint && !('color' in paint)) registry.register(paint);
 }
 
-/** A marker reference in either shape — `SvgStroke` stores a bare key, the kit
- *  `Stroke` stores a `MarkerRef`. */
-function markerKeyOfRef(ref: unknown): string | undefined {
-  if (typeof ref === 'string') return ref;
-  if (ref && typeof ref === 'object' && 'key' in ref) return String((ref as { key: string }).key);
-  return undefined;
-}
-
 /** Mint a `<defs>` id for every marker a stroke names, before the body is
  *  written — same reason as the paint pre-pass above. */
-function registerMarkers(
-  stroke: { markerStart?: unknown; markerMid?: unknown; markerEnd?: unknown } | undefined,
-  registry: PaintServerRegistry,
-): void {
+function registerMarkers(stroke: Pick<Stroke, 'markerStart' | 'markerMid' | 'markerEnd'> | undefined, registry: PaintServerRegistry): void {
   if (!stroke) return;
   for (const ref of [stroke.markerStart, stroke.markerMid, stroke.markerEnd]) {
-    const key = markerKeyOfRef(ref);
-    if (key) registry.markerId(key);
+    if (ref !== undefined) registry.markerId(ref);
   }
 }
 
@@ -318,15 +306,20 @@ function paintAttrs(
   includeOpacity = true,
 ): string[] {
   if (paint.kind === 'none') return [`${name}="none"`];
-  if (paint.kind === 'solid') {
-    const out = [`${name}="${paint.color}"`];
-    if (includeOpacity && paint.opacity != null && paint.opacity !== 1) {
-      out.push(`${name}-opacity="${trimNumber(paint.opacity)}"`);
-    }
-    return out;
-  }
-  // gradient
-  return [`${name}="${registry.ref(paint.paint)}"`];
+  const out = [`${name}="${paint.kind === 'solid' ? paint.color : registry.ref(paint.paint)}"`];
+  if (includeOpacity) out.push(...opacityAttr(`${name}-opacity`, svgPaintOpacity(paint)));
+  return out;
+}
+
+/** The opacity an `SvgPaint` carries, whichever kind holds it. */
+function svgPaintOpacity(paint: SvgPaint): number | undefined {
+  if (paint.kind === 'solid') return paint.opacity;
+  return paint.kind === 'gradient' ? paint.paint.opacity : undefined;
+}
+
+/** `name="v"`, or nothing when `v` is absent or fully opaque. */
+function opacityAttr(name: string, v: number | undefined): string[] {
+  return v != null && v !== 1 ? [`${name}="${trimNumber(v)}"`] : [];
 }
 
 /**
@@ -359,15 +352,8 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegist
   const width = stroke.width ?? 1;
   if (!((typeof width === 'object' ? width.px : width) > 0)) return [];
   warnStrokeAlign(stroke.align, warn);
-  const attrs: string[] = [];
-  if ('color' in paint) {
-    attrs.push(`stroke="${paint.color}"`);
-    if (paint.opacity != null && paint.opacity !== 1) {
-      attrs.push(`stroke-opacity="${trimNumber(paint.opacity)}"`);
-    }
-  } else {
-    attrs.push(`stroke="${registry.ref(paint)}"`);
-  }
+  const attrs: string[] = [`stroke="${'color' in paint ? paint.color : registry.ref(paint)}"`];
+  attrs.push(...opacityAttr('stroke-opacity', paint.opacity));
   attrs.push(...strokeWidthAttrs(width));
   if (stroke.cap) attrs.push(`stroke-linecap="${stroke.cap}"`);
   if (stroke.join) attrs.push(`stroke-linejoin="${stroke.join}"`);
@@ -382,8 +368,7 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegist
   ] as const) {
     const ref = stroke[field];
     if (ref === undefined) continue;
-    const key = typeof ref === 'string' ? ref : ref.key;
-    const id = registry.markerId(key);
+    const id = registry.markerId(ref);
     if (id === undefined) continue;
     attrs.push(`${attr}="url(#${id})"`);
   }
@@ -397,11 +382,7 @@ function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry, warn: 
   // `stroke-opacity` twice, which is not well-formed XML at all.
   const attrs = paintAttrs(stroke.paint, 'stroke', registry, false);
   attrs.push(...strokeWidthAttrs(stroke.width));
-  const opacity = stroke.opacity
-    ?? (stroke.paint.kind === 'solid' ? stroke.paint.opacity : undefined);
-  if (opacity != null && opacity !== 1) {
-    attrs.push(`stroke-opacity="${trimNumber(opacity)}"`);
-  }
+  attrs.push(...opacityAttr('stroke-opacity', stroke.opacity ?? svgPaintOpacity(stroke.paint)));
   if (stroke.cap) {
     attrs.push(`stroke-linecap="${stroke.cap}"`);
   }
@@ -553,14 +534,8 @@ function textXml(
   if (node.fill === null) {
     attrs.push('fill="none"');
   } else if (node.fill) {
-    if ('color' in node.fill) {
-      attrs.push(`fill="${node.fill.color}"`);
-      if (node.fill.opacity != null && node.fill.opacity !== 1) {
-        attrs.push(`fill-opacity="${trimNumber(node.fill.opacity)}"`);
-      }
-    } else {
-      attrs.push(`fill="${registry.ref(node.fill)}"`);
-    }
+    attrs.push(`fill="${'color' in node.fill ? node.fill.color : registry.ref(node.fill)}"`);
+    attrs.push(...opacityAttr('fill-opacity', node.fill.opacity));
   }
   for (const a of coreStrokeAttrs(node.stroke, registry, warn)) attrs.push(a);
   if (node.opacity != null && node.opacity !== 1) {

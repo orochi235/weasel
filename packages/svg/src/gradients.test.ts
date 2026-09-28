@@ -164,3 +164,20 @@ describe('gradient serialization', () => {
     }
   });
 });
+
+describe('fill-opacity on a gradient', () => {
+  const SVG = `<svg xmlns="http://www.w3.org/2000/svg">`
+    + `<linearGradient id="g"><stop offset="0" stop-color="#ff0000"/>`
+    + `<stop offset="1" stop-color="#0000ff"/></linearGradient>`
+    + `<rect x="0" y="0" width="10" height="10" fill="url(#g)" fill-opacity="0.5"/></svg>`;
+
+  it('is read onto the gradient paint', () => {
+    expect(gradientOf(SVG).opacity).toBe(0.5);
+  });
+
+  it('is written back as fill-opacity', () => {
+    const out = serializeSvg(parseSvg(SVG).nodes);
+    expect(out).toContain('fill-opacity="0.5"');
+    expect(gradientOf(out).opacity).toBe(0.5);
+  });
+});

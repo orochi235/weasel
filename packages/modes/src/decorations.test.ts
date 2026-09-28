@@ -51,4 +51,17 @@ describe('createModeDecorations', () => {
     registry.setMode('path-edit');
     expect(d.getVersion()).toBeGreaterThan(v0);
   });
+
+  it('notifies subscribers on a mode switch and on registration, and not after unsubscribing', () => {
+    const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
+    const d = createModeDecorations({ registry });
+    const listener = vi.fn();
+    const off = d.subscribe(listener);
+    registry.setMode('path-edit');
+    d.register('path-edit', () => []);
+    expect(listener).toHaveBeenCalledTimes(2);
+    off();
+    registry.setMode('normal');
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
 });

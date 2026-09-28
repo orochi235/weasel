@@ -4,8 +4,9 @@ import {
   useScene,
   textCommandFromRuns,
   solid,
+  modeDecorationLayer,
+  workspaceTintLayer,
   type DrawCommand,
-  type RenderLayer,
   type ToolsApi,
 } from '@weasel-js/core';
 import {
@@ -14,6 +15,7 @@ import {
   createModeDecorations,
   createModeRegistry,
   createScopingDim,
+  getActiveModeFor,
   modeLabel,
   type ModeDefinition,
 } from '@weasel-js/modes';
@@ -49,7 +51,7 @@ const MODES: readonly ModeDefinition[] = [
     kind: 'soft',
     allows: ['creates-selection', 'transforms-selection'],
     scoping: true,
-    workspace: { tint: '#8b5cf6', intensity: 0.22 },
+    workspace: { tint: '#8b5cf6', gradient: 'bottom-up', intensity: 0.22 },
     entry: { shortcut: '2' },
     exit: { shortcut: 'Escape' },
   },
@@ -60,7 +62,7 @@ const MODES: readonly ModeDefinition[] = [
     kind: 'soft',
     allows: [],
     scoping: false,
-    workspace: { tint: '#f59e0b', intensity: 0.22 },
+    workspace: { tint: '#f59e0b', gradient: 'bottom-up', intensity: 0.22 },
     entry: { shortcut: '3' },
     exit: { shortcut: 'Escape' },
   },
@@ -82,7 +84,7 @@ export function ModesDemo() {
   const [tools, setTools] = useState<ToolsApi | null>(null);
 
   const registry = useMemo(() => createModeRegistry({ modes: MODES, initial: 'draw' }), []);
-  const version = useSyncExternalStore(registry.subscribe, registry.getVersion);
+  useSyncExternalStore(registry.subscribe, registry.getVersion);
   const mode = registry.current();
 
   const target = useRef<ReadonlySet<string>>(new Set());
@@ -95,19 +97,17 @@ export function ModesDemo() {
     if (id === 'focus') {
       const selected = scene.getSelection().map(String);
       target.current = new Set(selected.length > 0 ? selected : [SHAPES[1]!.id]);
+      scoping.invalidate();
     }
     registry.setMode(id);
-  }, [registry, scene]);
+  }, [registry, scene, scoping]);
 
   const shortcuts = useMemo(
     () => [modeShortcuts(registry, { enter, exit: () => registry.setMode('draw') })],
     [registry, enter],
   );
 
-  const getActiveMode = useCallback(() => {
-    const m = registry.current();
-    return { id: m.id, allowedCapabilities: new Set<string>([...m.allows, ...IMPLICIT_TAGS]) };
-  }, [registry]);
+  const getActiveMode = useMemo(() => getActiveModeFor(registry), [registry]);
 
   const decorations = useMemo(() => {
     const d = createModeDecorations({ registry });
@@ -132,40 +132,9 @@ export function ModesDemo() {
     return d;
   }, [registry, scene]);
 
-  // Each layer and predicate is rebuilt per registry version, so a mode
-  // switch reaches the canvas as a prop change and repaints it.
-  const decorationLayer = useMemo<RenderLayer<unknown>>(() => ({
-    id: 'mode-decorations',
-    label: 'Mode decorations',
-    draw: () => decorations.paint() as DrawCommand[],
-  }), [decorations, version]);
-
-  const tintLayer = useMemo<RenderLayer<unknown>>(() => ({
-    id: 'mode-tint',
-    label: 'Mode tint',
-    space: 'screen',
-    draw: (_data, _view, dims) => {
-      const ws = registry.current().workspace;
-      if (!ws?.tint) return [];
-      return [{
-        kind: 'path',
-        path: { kind: 'rect', x: 0, y: 0, width: dims.width, height: dims.height },
-        fill: {
-          fill: 'linear-gradient',
-          from: { x: 0, y: dims.height },
-          to: { x: 0, y: 0 },
-          stops: [{ offset: 0, color: ws.tint }, { offset: 1, color: 'transparent' }],
-          opacity: ws.intensity ?? 0.12,
-        },
-      }];
-    },
-  }), [registry, version]);
-
-  const alphaFor = useCallback((id: string) => scoping.alphaFor(id), [scoping, version]);
-  const isPointerInteractive = useCallback(
-    (id: string) => scoping.isPointerInteractive(id),
-    [scoping, version],
-  );
+  const decorationLayer = useMemo(() => modeDecorationLayer(decorations), [decorations]);
+  const tintLayer = useMemo(() => workspaceTintLayer({ registry }), [registry]);
+  const redrawOn = useMemo(() => [scoping], [scoping]);
 
   const allowed = new Set<string>(mode.allows);
 
@@ -201,8 +170,9 @@ export function ModesDemo() {
         onToolsCreated={setTools}
         getActiveMode={getActiveMode}
         ambient={shortcuts}
-        alphaFor={alphaFor}
-        isPointerInteractive={isPointerInteractive}
+        alphaFor={scoping.alphaFor}
+        isPointerInteractive={scoping.isPointerInteractive}
+        redrawOn={redrawOn}
         decorationLayer={decorationLayer}
         layers={{ modeTint: { layer: tintLayer, before: 'scene' } }}
       />

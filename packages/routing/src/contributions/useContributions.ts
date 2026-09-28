@@ -16,8 +16,9 @@ import { scopeBindings } from './assemble';
 import { liveScope } from './eligibility';
 import type { Contribution, OverlayPosition } from './types';
 import { isDev } from '../devFlag';
+import type { KernelOverlay } from '../index';
 
-export interface UseContributionsOptions<TOverlay = unknown> {
+export interface UseContributionsOptions<TOverlay = KernelOverlay> {
   /** Every registry entry, in declaration order. Order decides which of two
    *  same-specificity bindings in one scope tier wins. */
   entries: readonly Contribution<TOverlay>[];
@@ -26,7 +27,7 @@ export interface UseContributionsOptions<TOverlay = unknown> {
   focused: string | null;
 }
 
-export interface ContributionsApi<TOverlay = unknown> {
+export interface ContributionsApi<TOverlay = KernelOverlay> {
   /** Every entry, as passed in. */
   entries: readonly Contribution<TOverlay>[];
   /** Currently focused entry id, or `null` when nothing is focused. */
@@ -51,7 +52,7 @@ export interface ContributionsApi<TOverlay = unknown> {
  * in the context so the gesture dispatcher and every sibling caller read the
  * same source of truth.
  */
-export function useContributions<TOverlay = unknown>(
+export function useContributions<TOverlay = KernelOverlay>(
   opts: UseContributionsOptions<TOverlay>,
 ): ContributionsApi<TOverlay> {
   const ctx = useActiveToolContext();

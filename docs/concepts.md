@@ -371,8 +371,8 @@ interface ActionBehavior<TPose, TProposed, TMoveResult> {
 Behaviors run in array order; later ones see refinements from earlier ones.
 `onEnd` returns: `Op[]` to commit, `null` to abort, `undefined` to fall
 through. `ctx.scratch` is per-gesture mutable state. `defaultTransient`
-flips the gesture to `applyOps` (no history) unless `transient` is set
-explicitly. See [extending.md](./extending.md) for writing one.
+makes a move, resize or rotate commit without a history entry unless
+`transient` is set explicitly. See [extending.md](./extending.md) for writing one.
 
 Built-in behaviors: `snap(gridSnapStrategy(...))`, `snapToContainer(...)`,
 `snapBackOrDelete(...)` for move; `snapToGrid`, `clampMinSize` for resize;

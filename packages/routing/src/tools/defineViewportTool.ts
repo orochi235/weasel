@@ -1,6 +1,7 @@
 import type { Tool } from './types';
 import type { ViewportToolDef } from './routeTypes';
 import { defineTool } from './defineTool';
+import type { KernelOverlay } from '../index';
 
 /**
  * Define a tool that acts on the viewport rather than the scene.
@@ -15,7 +16,7 @@ import { defineTool } from './defineTool';
  * hook says "this tool moves the camera, not the drawing", which is worth
  * more than the type gymnastics it replaced.
  */
-export function defineViewportTool<TScratch = void, TOverlay = unknown>(
+export function defineViewportTool<TScratch = void, TOverlay = KernelOverlay>(
   def: ViewportToolDef<TScratch, TOverlay>,
 ): Tool<TScratch, TOverlay> {
   return defineTool<TScratch, TOverlay>(def);

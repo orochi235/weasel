@@ -1,9 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { SvgNode } from './types';
-import { svgImageFromKit, svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
+import { svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
 import { parseSvg } from './parse';
-import { serializeSvg } from './serialize';
-import { getMarker, _resetMarkersForTests, type IngestCtx, type Op } from '@weasel-js/core';
+import { DEFAULT_TEXT_STYLE, getMarker, _resetMarkersForTests, type IngestCtx, type Op } from '@weasel-js/core';
 
 const rectNode = (x: number, y: number, w: number, h: number, extra: Record<string, unknown> = {}): SvgNode => ({
   kind: 'path',
@@ -330,6 +329,19 @@ describe('unpackSvgFiles', () => {
     expect(wrapper.pose.y + wrapper.pose.height / 2).toBeCloseTo(300);
   });
 
+  it("sizes the wrapper around a rotated root by its axis-aligned box", async () => {
+    const rotated = `<svg xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="100" height="20" transform="rotate(90 50 10)" fill="#ff0000"/>
+      <rect x="45" y="0" width="10" height="10" fill="#00ff00"/>
+    </svg>`;
+    const { c, batches } = ctx({ point: { x: 400, y: 300 } });
+    await unpackSvgFiles([asFile(rotated)], c);
+    const wrapper = batches[0].ops[0];
+    expect(wrapper.kind).toBe('container');
+    expect(wrapper.pose.width).toBeCloseTo(20);
+    expect(wrapper.pose.height).toBeCloseTo(100);
+  });
+
   it('a single-root svg inserts without a synthesized wrapper', async () => {
     const oneRoot = `<svg xmlns="http://www.w3.org/2000/svg">
       <rect x="0" y="0" width="50" height="50" fill="#0000ff"/>
@@ -402,25 +414,98 @@ describe('unpackSvgFiles — document markers', () => {
   });
 });
 
-describe('svgImageFromKit', () => {
-  it('writes a kit:image leaf back as the SvgImageNode it was read from', () => {
-    const original = parseSvg(serializeSvg([{
-      kind: 'image', href: 'a.png', x: 5, y: 6, width: 40, height: 30,
-      source: { x: 0.25, y: 0.5, width: 0.5, height: 0.25 }, flipX: true,
-      opacity: 0.5, rotation: Math.PI / 4,
-    }])).nodes;
-    const [d] = svgNodesToKitDrafts(original, seq());
-    if (d.kind !== 'leaf') throw new Error('expected leaf');
-    const back = svgImageFromKit(
-      d.data.image as Parameters<typeof svgImageFromKit>[0], d.pose,
-    );
-    expect(back).toEqual(original[0]);
-    expect(parseSvg(serializeSvg([back])).nodes).toEqual(original);
+describe('svgNodesToKitDrafts — opacity', () => {
+  const leafOf = (svg: string, index = 0) => {
+    const d = svgNodesToKitDrafts(parseSvg(svg).nodes, seq()).filter((x) => x.kind === 'leaf')[index];
+    if (d?.kind !== 'leaf') throw new Error('expected leaf');
+    return d.data;
+  };
+  const doc = (body: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`;
+
+  it('keeps fill-opacity on a solid fill', () => {
+    const data = leafOf(doc('<rect width="10" height="10" fill="#ff0000" fill-opacity="0.5"/>'));
+    expect(data.fill).toEqual({ color: '#ff0000', opacity: 0.5 });
   });
 
-  it('writes a plain image without source, flips, opacity or rotation', () => {
-    expect(svgImageFromKit({ src: 'a.png' }, { x: 1, y: 2, width: 3, height: 4 })).toEqual({
-      kind: 'image', href: 'a.png', x: 1, y: 2, width: 3, height: 4,
+  it("folds a path's element opacity into its fill and stroke", () => {
+    const data = leafOf(doc(
+      '<rect width="10" height="10" fill="#ff0000" fill-opacity="0.5" stroke="#000000" opacity="0.5"/>',
+    ));
+    expect(data.fill).toEqual({ color: '#ff0000', opacity: 0.25 });
+    expect((data.stroke as { paint: unknown }).paint).toEqual({ color: '#000000', opacity: 0.5 });
+  });
+
+  it("multiplies a group's opacity into every leaf under it", () => {
+    const svg = doc('<g opacity="0.5"><g opacity="0.5">'
+      + '<rect width="10" height="10" fill="#ff0000"/>'
+      + '<image href="a.png" width="10" height="10" opacity="0.5"/>'
+      + '</g></g>');
+    expect(leafOf(svg, 0).fill).toEqual({ color: '#ff0000', opacity: 0.25 });
+    expect((leafOf(svg, 1).image as { opacity: number }).opacity).toBe(0.125);
+  });
+
+  it("gives text with an element opacity the default fill at that opacity", () => {
+    const data = leafOf(doc('<text x="0" y="20" opacity="0.5">hi</text>'));
+    expect(data.fill).toEqual({ ...DEFAULT_TEXT_STYLE.fill, opacity: 0.5 });
+  });
+
+  it("leaves text with fill=none unfilled under an element opacity", () => {
+    const data = leafOf(doc('<text x="0" y="20" fill="none" stroke="#000000" opacity="0.5">hi</text>'));
+    expect(data.fill).toBeNull();
+    expect((data.stroke as { paint: unknown }).paint).toMatchObject({ color: '#000000', opacity: 0.5 });
+  });
+});
+
+describe('svgNodesToKitDrafts — document markers', () => {
+  it('registers the markers of a ParseResult it is handed', () => {
+    const parsed = parseSvg('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+      + '<defs><marker id="tip" refX="3" refY="2" orient="auto"><path d="M0 0 L3 2 L0 4 Z"/></marker></defs>'
+      + '<path d="M10 10 L90 10" stroke="#000" marker-end="url(#tip)"/></svg>');
+    const [d] = svgNodesToKitDrafts(parsed, seq());
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    const key = (d.data.stroke as { markerEnd: string }).markerEnd;
+    expect(key).toMatch(/^tip-/);
+    expect(getMarker(key)).toBeDefined();
+    _resetMarkersForTests();
+  });
+});
+
+describe('svgNodesToKitDrafts — consumer hooks', () => {
+  it('hands nextId the node it is minting for, so a consumer can keep ids the document carries', () => {
+    const g: SvgNode = { kind: 'group', meta: { app: { attrs: { id: 'kept' } } }, children: [rectNode(0, 0, 10, 10)] };
+    let n = 0;
+    const drafts = svgNodesToKitDrafts([g], (node) => node.meta?.app?.attrs?.id ?? `m${n++}`);
+    expect(drafts.map((d) => d.id)).toEqual(['kept', 'm0']);
+  });
+
+  it('lowers a leaf through options.leaf, from the data it would have written', () => {
+    const src = rectNode(0, 0, 10, 10, { opacity: 0.5, meta: { app: { attrs: { tag: 't' } } } });
+    const drafts = svgNodesToKitDrafts([src], seq(), {
+      leaf: (id, { data, pose }, source) => ({ id, tag: source.meta?.app?.attrs?.tag, fill: data.fill, w: pose.width }),
     });
+    expect(drafts[0]).toMatchObject({
+      kind: 'leaf', id: 'd1', data: { id: 'd1', tag: 't', fill: { color: '#ff0000', opacity: 0.5 }, w: 10 },
+    });
+  });
+
+  it('leaves out a leaf options.leaf returns null for, and a group left empty by it', () => {
+    const g: SvgNode = { kind: 'group', children: [rectNode(0, 0, 10, 10)] };
+    expect(svgNodesToKitDrafts([g, rectNode(5, 5, 1, 1)], seq(), {
+      leaf: (_id, { pose }) => (pose.x === 0 ? null : {}),
+    }).map((d) => d.kind)).toEqual(['leaf']);
+  });
+
+  it("never gives a container its only child's rotation", () => {
+    const g: SvgNode = { kind: 'group', children: [rectNode(0, 0, 10, 10, { rotation: 0.5 })] };
+    expect(svgNodesToKitDrafts([g], seq())[0].pose).not.toHaveProperty('rotation');
+  });
+
+  it("bounds a container by its rotated leaf's axis-aligned box", () => {
+    const g: SvgNode = { kind: 'group', children: [rectNode(0, 0, 100, 20, { rotation: Math.PI / 2 })] };
+    const pose = svgNodesToKitDrafts([g], seq())[0].pose;
+    expect(pose.x).toBeCloseTo(40);
+    expect(pose.y).toBeCloseTo(-40);
+    expect(pose.width).toBeCloseTo(20);
+    expect(pose.height).toBeCloseTo(100);
   });
 });

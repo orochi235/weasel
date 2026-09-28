@@ -9,7 +9,7 @@
  */
 
 import type { Path, PolygonPath } from '@weasel-js/core';
-import { PATH_L, PATH_M, PATH_Z, pathFromD, getMarker, solid } from '@weasel-js/core';
+import { PATH_L, PATH_M, PATH_Z, pathFromD, getMarker, resolveMarkerSize, solid } from '@weasel-js/core';
 import type { MarkerEntry, MarkerPaint } from '@weasel-js/core';
 import {
   rectElementToPath, circleToPath, ellipseToPath, lineToPath,
@@ -27,7 +27,7 @@ import { boundsOfPath, layoutRuns, resolveRuns, resolveScreenLength, resolveText
 import { IDENTITY_MATRIX } from './types';
 import { anchorOffset } from './textAnchor';
 import { parsePaintAttr } from './color';
-import { collectGradients, type GradientTable } from './gradients';
+import { collectGradients, WEASEL_NS, WEASEL_NS_PREFIX, type GradientTable } from './gradients';
 import { collectPatterns } from './patterns';
 import { collectElementsByTag } from './elements';
 import { deriveStyle, EMPTY_STYLE, ownProp, resolveCurrentColor, type StyleContext } from './cascade';
@@ -565,7 +565,7 @@ function readPaint(
       onWarn(`${attr} references unknown gradient #${parsed.id}`);
       return { kind: 'solid', color: defaultColor };
     }
-    return { kind: 'gradient', paint };
+    return { kind: 'gradient', paint: opacity != null ? { ...paint, opacity } : paint };
   }
   const out: SvgPaint = { kind: 'solid', color: parsed.color };
   const a = opacity ?? (parsed.alpha < 1 ? parsed.alpha : undefined);
@@ -1344,6 +1344,18 @@ function ingestMarkers(
         delete stroke[field];
         continue;
       }
+      const sized = sizedMarkerRef(el);
+      if (sized) {
+        // An unregistered key comes along as the def's geometry in marker
+        // units: the def is drawn in user space at one unit per resolved size.
+        if (getMarker(sized.key) === undefined && !minted.has(sized.key)) {
+          const entry = markerEntryFrom(el, id, role, resolveMarkerSize(sized, 1), gradients, onWarn);
+          minted.set(sized.key, entry && { ...entry, id: sized.key });
+        }
+        if (minted.get(sized.key) === null) delete stroke[field];
+        else stroke[field] = sized;
+        continue;
+      }
       const cacheKey = `${id}\u0000${role}\u0000${w}`;
       if (!minted.has(cacheKey)) minted.set(cacheKey, markerEntryFrom(el, id, role, w, gradients, onWarn));
       const entry = minted.get(cacheKey)!;
@@ -1367,6 +1379,29 @@ function ingestMarkers(
   const out = new Map<string, MarkerEntry>();
   for (const entry of minted.values()) if (entry) out.set(entry.id, entry);
   return [...out.values()];
+}
+
+function weaselAttr(el: Element, name: string): string | null {
+  return el.getAttributeNS(WEASEL_NS, name) ?? el.getAttribute(`${WEASEL_NS_PREFIX}:${name}`);
+}
+
+/** The reference a sized-marker def this package wrote stands for: its key
+ *  and size, read off the private namespace. */
+function sizedMarkerRef(el: Element): { key: string; size: ScreenLength } | undefined {
+  const key = weaselAttr(el, 'key');
+  const raw = weaselAttr(el, 'size')?.trim();
+  if (!key || !raw) return undefined;
+  const px = raw.endsWith('px');
+  const n = parseFloat(px ? raw.slice(0, -2) : raw);
+  if (!Number.isFinite(n) || n <= 0) return undefined;
+  return { key, size: px ? { px: n } : n };
+}
+
+/** How far a line stops short of the marker, in marker units — written by
+ *  this package's serializer, and 0 for any other document's marker. */
+function markerInsetAttr(el: Element): number {
+  const n = parseFloat(weaselAttr(el, 'inset') ?? '');
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 /** The cascade as it stands on `el`, walked down from the root. A marker's
@@ -1538,15 +1573,18 @@ function markerEntryFrom(
   }
   const fillRule = parts[0].path.fillRule ?? 'nonzero';
 
+  const inset = markerInsetAttr(el);
   const round = (v: number): number => Math.round(v * 1e4) / 1e4 + 0;
   const hash = shortHash(JSON.stringify([
     Array.from(commands), Array.from(coords, round), fillRule, fill, outline,
     typeof orient === 'number' ? round(orient) : orient,
+    ...(inset !== 0 ? [round(inset)] : []),
   ]));
   const key = id.endsWith(`-${hash}`) ? id : `${id}-${hash}`;
 
   return {
     id: key,
+    reads: [],
     path: ({ size }) => {
       const scaled = new Float32Array(coords.length);
       for (let i = 0; i < coords.length; i++) scaled[i] = coords[i] * size;
@@ -1555,6 +1593,6 @@ function markerEntryFrom(
     fill,
     outline,
     orient,
-    inset: 0,
+    inset,
   };
 }

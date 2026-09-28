@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createScopingDim } from './scopingLayer';
 import { createModeRegistry } from './registry';
 import { DEFAULT_MODES } from './presets/default';
@@ -36,5 +36,42 @@ describe('createScopingDim', () => {
     const dim = createScopingDim({ registry: reg, getTargetIds: () => new Set(['t']) });
     expect(dim.isPointerInteractive('t')).toBe(true);
     expect(dim.isPointerInteractive('x')).toBe(false);
+  });
+});
+
+describe('createScopingDim change notification', () => {
+  it('notifies subscribers and bumps its version on a mode switch', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
+    const dim = createScopingDim({ registry: reg, getTargetIds: () => new Set(['t']) });
+    const listener = vi.fn();
+    dim.subscribe(listener);
+    const v0 = dim.getVersion();
+    reg.setMode('path-edit');
+    expect(listener).toHaveBeenCalledOnce();
+    expect(dim.getVersion()).toBeGreaterThan(v0);
+  });
+
+  it('invalidate() notifies when the target set changes inside one mode', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    let targets = new Set(['a']);
+    const dim = createScopingDim({ registry: reg, getTargetIds: () => targets });
+    const listener = vi.fn();
+    dim.subscribe(listener);
+    const v0 = dim.getVersion();
+    targets = new Set(['b']);
+    dim.invalidate();
+    expect(listener).toHaveBeenCalledOnce();
+    expect(dim.getVersion()).toBeGreaterThan(v0);
+  });
+
+  it('stops notifying once unsubscribed', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
+    const dim = createScopingDim({ registry: reg, getTargetIds: () => new Set() });
+    const listener = vi.fn();
+    const off = dim.subscribe(listener);
+    off();
+    reg.setMode('path-edit');
+    dim.invalidate();
+    expect(listener).not.toHaveBeenCalled();
   });
 });

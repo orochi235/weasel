@@ -1,5 +1,5 @@
 import type { DrawCommand } from '../../renderer';
-import type { Dims, RenderLayer } from '../../core/layers/render';
+import { subscribeToSources, type Dims, type RenderLayer } from '../../core/layers/render';
 import type { View } from '../../core/viewport/view';
 import { tiledProject } from './tiledProject';
 
@@ -80,6 +80,7 @@ export function createTiledLayer<TData>(
     id,
     label,
     space: 'world',
+    subscribe: subscribeToSources(source),
     draw: (data, view, dims) => {
       const p = axes(typeof period === 'function' ? period(view, dims) : period, Infinity);
       const b = axes(bleed, 0);

@@ -11,4 +11,4 @@ export { dispatchDoubleClickEntry } from './doubleClickEntry';
 export type { HitLike } from './doubleClickEntry';
 
 
-export { modalityShortcuts, activeModeOf } from './shortcuts';
+export { modalityShortcuts } from './shortcuts';

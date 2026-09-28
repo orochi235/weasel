@@ -1,4 +1,4 @@
-import { useReducer, useState, type CSSProperties } from 'react';
+import { useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { createHistory, type HistoryEntry, type Journal, type Op } from '@weasel-js/history';
 import s from './HistoryDemo.module.css';
 
@@ -59,6 +59,9 @@ function create() {
   return { board: b, mint, history: createHistory(b, { coalesceWindowMs: 600 }) };
 }
 
+const noSubscribe = () => () => {};
+const noVersion = () => 0;
+
 function Stack({ title, entries, next, empty }: { title: string; entries: readonly HistoryEntry[]; next?: number; empty: string }) {
   return (
     <section className={s.stack}>
@@ -68,6 +71,7 @@ function Stack({ title, entries, next, empty }: { title: string; entries: readon
         {entries.map((e) => (
           <li key={e.id} className={e.id === next ? `${s.entry} ${s.next}` : s.entry}>
             <span className={s.label}>{e.label}</span>
+            {e.pushes > 1 && <span className={s.pushes}>×{e.pushes}</span>}
             <span className={s.id}>#{e.id}</span>
           </li>
         ))}
@@ -80,17 +84,14 @@ export function HistoryDemo() {
   const [{ board: b, mint, history }] = useState(create);
   const [journal, setJournal] = useState<Journal | null>(null);
   const [selected, setSelected] = useState<string | null>(b.chips[0]?.id ?? null);
-  const [, rerender] = useReducer((n: number) => n + 1, 0);
+  useSyncExternalStore(history.subscribe, history.getVersion);
+  useSyncExternalStore(journal?.subscribe ?? noSubscribe, journal?.getVersion ?? noVersion);
 
   const run = (ops: Op[], label: string) => {
     if (journal) journal.applyBatch(ops, label);
     else history.applyOps(ops, label);
-    rerender();
   };
-  const step = (dir: 'undo' | 'redo') => {
-    (journal ?? history)[dir]();
-    rerender();
-  };
+  const step = (dir: 'undo' | 'redo') => (journal ?? history)[dir]();
 
   const chip = b.chips.find((c) => c.id === selected);
   const add = () => {
@@ -150,7 +151,7 @@ export function HistoryDemo() {
             value={chip?.hue ?? 0}
             disabled={!chip}
             onChange={(e) => recolor(Number(e.currentTarget.value))}
-            onPointerUp={() => history.seal()}
+            onPointerUp={() => active.seal()}
           />
           <span className={s.readout}>{chip ? chip.hue : ''}</span>
         </label>

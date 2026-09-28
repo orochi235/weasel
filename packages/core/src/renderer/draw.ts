@@ -1,4 +1,4 @@
-import type { ColorSpace, Stroke, FillStyle, GradientUnits, GradStop } from '@weasel-js/paint';
+import type { ColorSpace, Stroke, FillStyle, GradientUnits, GradStop, MarkerRef } from '@weasel-js/paint';
 import type { Path } from '@weasel-js/core';
 import { getPaintKind } from 'core/paintKinds';
 import type { PaintBindContext } from 'core/paintKinds';
@@ -42,6 +42,8 @@ import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
 import { strokeMesh, quantizeStrokeScale } from './cache/strokeMeshCache';
+import { cachedMarkerCommands } from './cache/markerCommandCache';
+import { resolveMarkerSize } from '../core/markerInset';
 import { DrawBatch, type GradientUV } from './drawBatch';
 import {
   BATCH_TEXTURE_SLOTS, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL, PAINT_MODE_CONIC,
@@ -1637,28 +1639,52 @@ function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHa
   gl.bindVertexArray(null);
 }
 
-/** `cmd` with a `{ px }` stroke width resolved against the accumulated
- *  transform's quantized scale, so everything downstream — the ribbon cache key included — sees
- *  a world-unit number. */
-function withResolvedStrokeWidth(ctx: DrawContext, cmd: StrokedPathCommand): StrokedPathCommand {
+/** `cmd` with its `{ px }` lengths — the stroke width and any marker size —
+ *  resolved against the accumulated transform's quantized scale, so everything
+ *  downstream (the ribbon cache key, the insets, the heads) sees world units. */
+function withResolvedStrokeLengths(ctx: DrawContext, cmd: StrokedPathCommand): StrokedPathCommand {
   const stroke = cmd.stroke;
-  if (typeof stroke.width !== 'object') return cmd;
-  const scale = quantizeStrokeScale(stroke.width.px, mat3.meanScaleOf(ctx.state.transform));
-  const width = resolveStrokeWidth(stroke.width, scale);
-  return { ...cmd, stroke: { ...stroke, width } };
+  const { markerStart, markerMid, markerEnd } = stroke;
+  if (typeof stroke.width !== 'object' && !isPxMarker(markerStart)
+    && !isPxMarker(markerMid) && !isPxMarker(markerEnd)) {
+    return cmd;
+  }
+  const scale = mat3.meanScaleOf(ctx.state.transform);
+  const resolved: Stroke & { paint: FillStyle } = { ...stroke };
+  if (typeof stroke.width === 'object') {
+    resolved.width = resolveStrokeWidth(stroke.width, quantizeStrokeScale(stroke.width.px, scale));
+  }
+  if (isPxMarker(markerStart)) resolved.markerStart = resolvedMarker(markerStart, scale);
+  if (isPxMarker(markerMid)) resolved.markerMid = resolvedMarker(markerMid, scale);
+  if (isPxMarker(markerEnd)) resolved.markerEnd = resolvedMarker(markerEnd, scale);
+  return { ...cmd, stroke: resolved };
+}
+
+type PxMarker = Exclude<MarkerRef, string> & { size: { px: number } };
+
+function isPxMarker(ref: MarkerRef | undefined): ref is PxMarker {
+  return typeof ref === 'object' && typeof ref.size === 'object';
+}
+
+function resolvedMarker(ref: PxMarker, scale: number): MarkerRef {
+  return { ...ref, size: resolveMarkerSize(ref, 0, quantizeStrokeScale(ref.size.px, scale)) };
 }
 
 function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
-  const cmd = withResolvedStrokeWidth(ctx, rawCmd);
+  const cmd = withResolvedStrokeLengths(ctx, rawCmd);
   const stroke = cmd.stroke;
   const align = stroke.align ?? 'center';
   if (cmd.path.kind === 'polygon' && align !== 'center') {
     flushBatch(ctx);
     drawPathStrokeStenciled(ctx, cmd, align);
-    return;
+  } else {
+    drawPathStrokeUnclipped(ctx, cmd);
   }
-
-  drawPathStrokeUnclipped(ctx, cmd);
+  // After the ribbon, so a head sits on top of the line it caps.
+  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
+  for (const marker of cachedMarkerCommands(cmd.path, rawCmd.stroke, stroke, width, ctx.flattenTolerance)) {
+    drawPath(ctx, marker);
+  }
 }
 
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand): void {

@@ -18,6 +18,7 @@
  * with a redundant first node.
  */
 import {
+  type ImageNodeData,
   type Scene,
   type Path,
   type TextStyle,
@@ -40,7 +41,7 @@ import {
   type WeaselDrawPaperSize,
 } from './svgInterop';
 import type { FillStyle, Stroke, StyledRun, TextVerticalAlign } from '@weasel-js/core';
-import type { Obj, PathObj, TextObj } from './poseUpdate';
+import type { ImageObj, Obj, PathObj, TextObj } from './poseUpdate';
 
 interface WeaselDrawPose {
   x: number; y: number; width: number; height: number; rotation?: number;
@@ -55,6 +56,7 @@ interface WeaselDrawData {
   fill?: FillStyle | null;
   stroke?: Stroke | null;
   verticalAlign?: TextVerticalAlign;
+  image?: ImageNodeData['image'];
 }
 
 const WHITE = /^#?fff(fff)?(ff)?$/i;
@@ -69,6 +71,13 @@ const WHITE = /^#?fff(fff)?(ff)?$/i;
 const EXPORT_FALLBACK_FILL = { color: '#000000' };
 
 function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj | null {
+  if (data.image) {
+    const o: ImageObj = {
+      id, tool: 'image', x: pose.x, y: pose.y, width: pose.width, height: pose.height, image: data.image,
+    };
+    if (pose.rotation) o.rotation = pose.rotation;
+    return o;
+  }
   if (data.text != null) {
     const o: TextObj = {
       id,
@@ -144,7 +153,7 @@ function sceneSourceOf<TLayer extends string>(
   return {
     roots: scene.roots.map(String),
     childrenOf: (id) => scene.childrenOf(id as never).map(String),
-    kindOf: (id) => (scene.get(id as never)?.kind === 'container' ? 'container' : 'leaf'),
+    get: (id) => scene.get(id as never),
     isPainted: (id) => {
       const layer = scene.get(id as never)?.layer;
       return layer === undefined || !hidden.has(String(layer));

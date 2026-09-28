@@ -12,10 +12,6 @@
   flex-wrap: wrap;
 }
 
-.direction {
-  flex: none;
-}
-
 .entry {
   --wzl-field-h: 26px;
   --wzl-font-size: 14px;
