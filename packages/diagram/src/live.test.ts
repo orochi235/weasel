@@ -103,6 +103,59 @@ describe('forceProducer', () => {
     for (let i = 1; i < 400; i++) frame = producer({ pinned, frame: i });
     expect(frame.done).toBe(false);
   });
+
+  /** Frames until the producer reports done, and the largest move any node
+   *  made on each frame. */
+  function runOut(producer: ReturnType<typeof forceProducer<RectPose>>, cap = 1000) {
+    const moves: number[] = [];
+    let prev = producer({ pinned: NO_PINS, frame: 0 });
+    moves.push(Infinity);
+    let i = 1;
+    for (; !prev.done && i < cap; i++) {
+      const next = producer({ pinned: NO_PINS, frame: i });
+      let max = 0;
+      for (const [id, at] of next.result) {
+        const was = prev.result.get(id)!;
+        max = Math.max(max, Math.hypot(at.x - was.x, at.y - was.y));
+      }
+      moves.push(max);
+      prev = next;
+    }
+    return { frames: i, moves, last: prev };
+  }
+
+  it('finishes when the motion stops, long before alpha cools', () => {
+    const s = scene();
+    const { frames, moves } = runOut(forceProducer<RectPose>(graphOf(s.scene)));
+    // Alpha takes ~300 ticks to cool; the graph stops moving far sooner.
+    expect(frames).toBeLessThan(150);
+    // It ended on still frames, not on a lull between two moving ones.
+    for (const move of moves.slice(-5)) expect(move).toBeLessThan(0.1);
+  });
+
+  it('does not finish while nodes are still visibly moving', () => {
+    const s = scene();
+    const { moves } = runOut(forceProducer<RectPose>(graphOf(s.scene)));
+    expect(moves.slice(1, 4).some((m) => m >= 0.1)).toBe(true);
+  });
+
+  it('runs the whole cooling schedule when restDistance is 0', () => {
+    const s = scene();
+    const { frames } = runOut(forceProducer<RectPose>(graphOf(s.scene), { restDistance: 0 }));
+    expect(frames).toBeGreaterThan(250);
+  });
+
+  it('finishes promptly once a released drag has settled', () => {
+    const s = scene();
+    const producer = forceProducer<RectPose>(graphOf(s.scene));
+    const pinned = new Map<NodeId, RectPose>([[s.a, box(500, 500)]]);
+    // Held long enough for everything else to go still around it.
+    for (let i = 0; i < 200; i++) expect(producer({ pinned, frame: i }).done).toBe(false);
+    let frame = producer({ pinned: NO_PINS, frame: 200 });
+    let i = 201;
+    for (; !frame.done && i < 1000; i++) frame = producer({ pinned: NO_PINS, frame: i });
+    expect(i - 200).toBeLessThan(150);
+  });
 });
 
 describe('easedProducer', () => {
@@ -196,6 +249,14 @@ describe('useLiveLayout', () => {
     act(() => { clock.frames(1); });
     expect(s.overrides.ids()).not.toContain(label);
     expect(s.overrides.ids()).not.toContain(b);
+  });
+
+  it('commits a force run once its motion stops', () => {
+    const { scene: s, clock, handle } = live('force');
+    act(() => { handle().start(); });
+    act(() => { clock.frames(150); });
+    expect(handle().isRunning()).toBe(false);
+    expect(s.overrides.ids()).toEqual([]);
   });
 
   it('re-heats when the graph gains a node mid-run', () => {
