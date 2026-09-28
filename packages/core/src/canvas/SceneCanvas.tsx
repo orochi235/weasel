@@ -1177,7 +1177,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     if (selectable) return baseSelection;
     const noopSet = () => {};
     return {
-      ...baseSelection,
+      get current() { return baseSelection.current; },
+      get: baseSelection.get,
+      contains: baseSelection.contains,
       set: noopSet,
       add: noopSet,
       remove: noopSet,

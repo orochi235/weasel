@@ -190,3 +190,42 @@ describe('useSelection — seeding a scene', () => {
     expect(result.current.current).toEqual([a]);
   });
 });
+
+describe('useSelection — identity', () => {
+  it('returns the same object across re-renders and selection changes', () => {
+    const { result, rerender } = renderHook(() => useSelection({ mode: 'multi' }));
+    const first = result.current;
+
+    rerender();
+    expect(result.current).toBe(first);
+
+    act(() => { first.set([a, b]); });
+    expect(result.current).toBe(first);
+    expect(first.current).toEqual([a, b]);
+  });
+
+  it('stays the same object when bound to a scene, and reads the scene live', () => {
+    const scene = createScene<{ label: string }, 'default'>({ systemLayers: [{ id: 'default' }] });
+    const { result } = renderHook(() => useSelection({ scene }));
+    const first = result.current;
+
+    act(() => { scene.setSelection([c]); });
+
+    expect(result.current).toBe(first);
+    expect(first.current).toEqual([c]);
+  });
+
+  it('follows a changed mode without changing identity', () => {
+    const { result, rerender } = renderHook(
+      ({ mode }: { mode: 'single' | 'multi' }) => useSelection({ mode, initial: [a] }),
+      { initialProps: { mode: 'single' as 'single' | 'multi' } },
+    );
+    const first = result.current;
+
+    rerender({ mode: 'multi' });
+    act(() => { result.current.applyClick(b, { ...NO_MODS, shift: true }); });
+
+    expect(result.current).toBe(first);
+    expect(first.current).toEqual([a, b]);
+  });
+});
