@@ -831,7 +831,7 @@ function Toolbar({
             const docPatch = parsedToDoc(parsed);
             if (docPatch.paperSize) setPaperSize(docPatch.paperSize);
             let seq = 0;
-            const drafts = svgNodesToSceneDrafts(parsed.nodes, () => `svg-${++seq}`);
+            const drafts = svgNodesToSceneDrafts(parsed, () => `svg-${++seq}`);
             scene.batch('Import SVG', () => {
               // Drafts arrive parent-before-child, so each draft's `parentId`
               // (when set) has already been inserted and mapped. Map the

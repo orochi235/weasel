@@ -9,10 +9,10 @@
  * tree (`sceneToSvgNodes`).
  */
 
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect } from 'vitest';
 import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@weasel-js/svg';
 import { parseSvg, serializeSvg } from '@weasel-js/svg';
-import { solid, strokeOf } from '@weasel-js/core';
+import { _resetMarkersForTests, getMarker, solid, strokeOf } from '@weasel-js/core';
 import type { FillStyle, Stroke } from '@weasel-js/core';
 import {
   objToSvgNode,
@@ -631,5 +631,29 @@ describe('paint fidelity through the kit bridge', () => {
     expect((obj as { fill: unknown }).fill).toMatchObject({
       fill: 'linear-gradient', units: 'bounds', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
     });
+  });
+});
+
+describe('svgNodesToSceneDrafts — what the kit import gives it', () => {
+  afterEach(() => { _resetMarkersForTests(); });
+
+  it('multiplies element and group opacity into the paint', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+      + '<g opacity="0.5"><rect x="0" y="0" width="10" height="10" fill="#ff0000" opacity="0.5"/></g></svg>';
+    const [obj] = leavesOf(parseSvg(svg).nodes, ids());
+    expect((obj as { fill: FillStyle }).fill).toEqual({ ...solid('#ff0000'), opacity: 0.25 });
+  });
+
+  it("registers a ParseResult's document markers, under the key its stroke names", () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+      + '<defs><marker id="tri" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6"'
+      + ' orient="auto"><path d="M0 0 L10 5 L0 10 Z"/></marker></defs>'
+      + '<line x1="0" y1="0" x2="50" y2="0" stroke="#000" marker-end="url(#tri)"/></svg>';
+    const parsed = parseSvg(svg);
+    const leaf = svgNodesToSceneDrafts(parsed, ids()).find((d) => d.kind === 'leaf')!;
+    if (leaf.kind !== 'leaf' || leaf.obj.tool === 'text') throw new Error('expected a path leaf');
+    const key = leaf.obj.stroke?.markerEnd;
+    expect(key).toBe(parsed.markers![0].id);
+    expect(getMarker(key as string)).toBeDefined();
   });
 });

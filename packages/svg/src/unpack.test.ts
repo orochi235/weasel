@@ -456,3 +456,34 @@ describe('svgNodesToKitDrafts — document markers', () => {
     _resetMarkersForTests();
   });
 });
+
+describe('svgNodesToKitDrafts — consumer hooks', () => {
+  it('hands nextId the node it is minting for, so a consumer can keep ids the document carries', () => {
+    const g: SvgNode = { kind: 'group', meta: { app: { attrs: { id: 'kept' } } }, children: [rectNode(0, 0, 10, 10)] };
+    let n = 0;
+    const drafts = svgNodesToKitDrafts([g], (node) => node.meta?.app?.attrs?.id ?? `m${n++}`);
+    expect(drafts.map((d) => d.id)).toEqual(['kept', 'm0']);
+  });
+
+  it('lowers a leaf through options.leaf, from the data it would have written', () => {
+    const src = rectNode(0, 0, 10, 10, { opacity: 0.5, meta: { app: { attrs: { tag: 't' } } } });
+    const drafts = svgNodesToKitDrafts([src], seq(), {
+      leaf: (id, { data, pose }, source) => ({ id, tag: source.meta?.app?.attrs?.tag, fill: data.fill, w: pose.width }),
+    });
+    expect(drafts[0]).toMatchObject({
+      kind: 'leaf', id: 'd1', data: { id: 'd1', tag: 't', fill: { color: '#ff0000', opacity: 0.5 }, w: 10 },
+    });
+  });
+
+  it('leaves out a leaf options.leaf returns null for, and a group left empty by it', () => {
+    const g: SvgNode = { kind: 'group', children: [rectNode(0, 0, 10, 10)] };
+    expect(svgNodesToKitDrafts([g, rectNode(5, 5, 1, 1)], seq(), {
+      leaf: (_id, { pose }) => (pose.x === 0 ? null : {}),
+    }).map((d) => d.kind)).toEqual(['leaf']);
+  });
+
+  it("never gives a container its only child's rotation", () => {
+    const g: SvgNode = { kind: 'group', children: [rectNode(0, 0, 10, 10, { rotation: 0.5 })] };
+    expect(svgNodesToKitDrafts([g], seq())[0].pose).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+  });
+});

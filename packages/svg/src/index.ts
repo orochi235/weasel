@@ -32,6 +32,8 @@ export {
   strokeDataFromSvg,
   type SvgSceneDraft,
   type SvgDraftBounds,
+  type SvgLeafNode,
+  type SvgNodesToKitDraftsOptions,
 } from './unpack';
 export {
   svgNodesFromKit,
