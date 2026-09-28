@@ -95,7 +95,7 @@ export function createViewResolver(opts: CreateViewResolverOpts): ViewResolver {
   }
 
   /** Right and bottom edges are exclusive, so neighbouring views never both
-   *  claim a pixel — the same rule `ViewportLayer.reproject` follows. */
+   *  claim a pixel. */
   function hit(clientX: number, clientY: number): ResolvableView | undefined {
     const c = canvasOrigin();
     const x = clientX - c.left;

@@ -23,12 +23,11 @@ import type { ResolvableView } from './viewResolver';
  * bounds.y` and clips to `(bounds.w, bounds.h)`. Caller chooses
  * `innerView.{x,y,scale}` to control which slice of source-world is shown.
  *
- * **Input is re-projected on request, not automatically.** `reproject` maps a
- * screen point into the inner view's world; a consumer that wants a click
- * inside a viewport to mean something calls it from its own handler, or feeds
- * `resolvable` to `createViewResolver` to route a whole pointer stream.
- * `<CanvasView>` is that wiring done for you; build on this directly for a
- * viewport that takes no input, or to route it yourself.
+ * **This layer paints; it does not take input.** `<CanvasView>` is built on
+ * it and routes the pointer stream through the kit's gesture dispatcher —
+ * declare one of those for a viewport that should be clickable. `resolvable`
+ * is the seam it uses: feed it to `createViewResolver` to route input to a
+ * raw viewport yourself.
  *
  * **Screen-space source layers** (e.g., debug overlays, selection chrome)
  * draw in the viewport's own CSS-pixel space: their coords are relative to
@@ -54,7 +53,7 @@ export interface CreateViewportLayerOpts<TData, TSource = TData> {
   data?: (outer: TData) => TSource;
   /**
    * The inner view. Pass a thunk for a camera that moves — it is read fresh
-   * on every `draw`, `reproject` and `resolvable`, so those three cannot
+   * on every `draw` and `resolvable`, so the two cannot
    * disagree about where the viewport is looking mid-gesture.
    *
    * The thunk receives the outer view and dims, so a derived camera
@@ -74,39 +73,23 @@ export interface CreateViewportLayerOpts<TData, TSource = TData> {
 /**
  * @experimental
  *
- * A {@link RenderLayer} that also answers where a screen point lands inside
- * its inner view. Returned by {@link createViewportLayer}.
+ * A {@link RenderLayer} that can also describe itself as a routing target.
+ * Returned by {@link createViewportLayer}.
  */
 export interface ViewportLayer<TData> extends RenderLayer<TData> {
-  /**
-   * Map a screen point (CSS px, canvas top-left origin) to a point in the
-   * inner view's world space. Returns `null` when the point falls outside
-   * the viewport rect; the right and bottom edges are exclusive, so
-   * neighbouring viewports never both claim a pixel.
-   *
-   * Pass the same `outer` view and `dims` the frame was drawn with —
-   * `bounds` is a pure function of those, so this reproduces the exact rect
-   * that was painted rather than a remembered one.
-   *
-   * This does not touch the dispatcher: a consumer that wants a click inside
-   * a viewport to mean something calls this from its own handler, or declares
-   * the viewport as a `<CanvasView>` and lets the canvas route to it.
-   */
-  reproject(outer: View, dims: Dims, screen: { x: number; y: number }): { x: number; y: number } | null;
   /**
    * This viewport as a routing candidate for {@link createViewResolver} —
    * its inner view and the rect it paints into for the given outer frame.
    *
-   * Pass the `outer` view and `dims` the frame was drawn with, for the same
-   * reason `reproject` wants them: `bounds` is recomputed, not remembered.
+   * Pass the `outer` view and `dims` the frame was drawn with: `bounds` is a
+   * pure function of those, so this reproduces the exact rect that was
+   * painted rather than a remembered one.
    */
   resolvable(outer: View, dims: Dims): ResolvableView;
 }
 
 /** Build a layer that renders other layers through a second view, inside a
- *  sub-region of the canvas — a minimap, an inset, a magnifier. Its
- *  `reproject` maps screen points back through the inner view so the region
- *  can be interacted with. */
+ *  sub-region of the canvas — a minimap, an inset, a magnifier. */
 export function createViewportLayer<TData, TSource = TData>(
   opts: CreateViewportLayerOpts<TData, TSource>,
 ): ViewportLayer<TData> {
@@ -122,20 +105,6 @@ export function createViewportLayer<TData, TSource = TData>(
     subscribe: subscribeToSources(sourceAt),
     resolvable(outer, dims) {
       return { id, view: viewAt(outer, dims), rect: bounds(outer, dims) };
-    },
-    reproject(outer, dims, screen) {
-      const b = bounds(outer, dims);
-      if (
-        screen.x < b.x || screen.x >= b.x + b.w ||
-        screen.y < b.y || screen.y >= b.y + b.h
-      ) return null;
-      // Inverse of what `draw` paints: the source applies the inner view, then
-      // the group translates by the rect origin.
-      const v = viewAt(outer, dims);
-      return {
-        x: (screen.x - b.x) / v.scale.x + v.x,
-        y: (screen.y - b.y) / v.scale.y + v.y,
-      };
     },
     draw: (data, outerView, dims): DrawCommand[] => {
       const b = bounds(outerView, dims);
@@ -167,25 +136,4 @@ export function createViewportLayer<TData, TSource = TData>(
       return [group];
     },
   };
-}
-
-/**
- * @experimental
- *
- * Find which of `layers` owns a screen point, and where that point lands in
- * its inner world. Pass the layers in paint order; the last one containing
- * the point wins, since that is the one drawn on top.
- */
-export function viewportsAt<TData>(
-  layers: readonly ViewportLayer<TData>[],
-  outer: View,
-  dims: Dims,
-  screen: { x: number; y: number },
-): { layer: ViewportLayer<TData>; point: { x: number; y: number } } | null {
-  for (let i = layers.length - 1; i >= 0; i--) {
-    const layer = layers[i]!;
-    const point = layer.reproject(outer, dims, screen);
-    if (point) return { layer, point };
-  }
-  return null;
 }
