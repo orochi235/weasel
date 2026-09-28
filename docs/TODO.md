@@ -144,19 +144,25 @@ Priority tags:
   batch per file). weaseldraw runs with `unpack` on. An embedded SVG
   re-rasterizes at its drawn size (see `features/images/README.md`); that it
   actually looks sharp at zoom has only been checked in jsdom, never in a
-  browser. Remaining: weaseldraw's
-  file-menu import still walks the tree with its own app-local `svgInterop`
-  mapping (richer: `wd:` tool metadata, paper size), and the walks have
-  drifted: `svgNodesToKitDrafts` folds element and group `opacity` into leaf
-  paints and registers the document's markers, while draw's
-  `svgNodesToSceneDrafts` does neither, and it *drops* `<image>` nodes, since
-  the app's `Obj` union is path/text only. Paint lowering is already shared
-  (`fillDataFromSvg`, `strokeDataFromSvg`), as is the export walk
-  (`svgNodesFromKit`, with draw's own `Obj` leaf lowering hooked in).
+  browser. Remaining: weaseldraw's file-menu import runs the package walk
+  (`svgNodesToKitDrafts` with a `leaf` hook for its `wd:` metadata), but still
+  drops `<image>` nodes, since the app's `Obj` union is path/text only.
 
-- **(P3) SVG export drops a marker's `size`.** `SvgStroke` names a marker by key
-  alone, so `svgStrokeFromKit` writes a kit `MarkerRef`'s `{ key, size }` as just
-  the key, and the marker comes back one stroke width per unit.
+- **(P3) Marker `size` docs contradict the code.** `packages/paint/src/paint.ts`
+  says a bare-number `size` scales with the resolved stroke width;
+  `resolveMarkerSize` (`core/markerInset.ts`) treats it as absolute world units and
+  returns `{ px }` unscaled as world units. SVG export follows the code. One of the
+  two has to change.
+
+- **(P3) A sized reference to an unregistered marker imports as a plain marker.**
+  SVG export stamps `wzl:key`/`wzl:size` on each sized marker definition, but
+  `parseSvg` restores `{ key, size }` only when that key is registered in the
+  importing session; otherwise it becomes a document marker (geometry divided by the
+  stroke width). It draws the same, but the reference is lost.
+
+- **(P3) A container's bounds around a rotated leaf ignore the rotation.** Both the
+  kit SVG walk and draw's import build the container box from the leaf's unrotated
+  box.
 
 - **(P3) External-content ingestion — follow-ups.** Shipped 2026-07-03 (spec
   `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`): drop/paste
