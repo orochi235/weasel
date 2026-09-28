@@ -41,13 +41,7 @@ export function cullDrawCommands(
   transform: GlMat3,
   rect: CullRect,
 ): DrawCommand[] {
-  const box = {
-    minX: rect.x - SLACK_PX,
-    minY: rect.y - SLACK_PX,
-    maxX: rect.x + rect.width + SLACK_PX,
-    maxY: rect.y + rect.height + SLACK_PX,
-  };
-  return cullList(cmds, transform, box);
+  return cullList(cmds, transform, slackBox(rect));
 }
 
 interface Box { minX: number; minY: number; maxX: number; maxY: number }
@@ -116,7 +110,12 @@ function pathMisses(path: Path, stroke: Stroke | undefined, m: GlMat3, box: Box)
  *  renderer draws as a doubled ribbon; the miter limit covers every join. A
  *  marker head sits on a vertex, so its reach is measured from the hull too. */
 function strokeReach(stroke: Stroke, m: GlMat3): number {
-  const scale = mat3.meanScaleOf(m);
+  return strokeReachAt(stroke, mat3.meanScaleOf(m));
+}
+
+/** {@link strokeReach} at a known world-to-screen scale — what a painter
+ *  bounding its own output before it paints can know. */
+export function strokeReachAt(stroke: Stroke, scale: number): number {
   const base = resolveStrokeWidth(stroke.width ?? 1, scale);
   let width = base;
   if (stroke.vertexWidths) {
@@ -136,6 +135,32 @@ function spritesMiss(sprites: Float32Array, m: GlMat3, box: Box): boolean {
   }
   if (minX === Infinity) return false;
   return quadMisses(minX, minY, maxX, maxY, m, box);
+}
+
+/**
+ * True when `bounds`, taken through `transform` to screen space, cannot put a
+ * pixel inside `rect` — the per-command test above, for a caller holding a box
+ * rather than a command. Same slack, same NaN-keeps rule.
+ */
+export function boundsMissRect(
+  bounds: { x: number; y: number; width: number; height: number },
+  transform: GlMat3,
+  rect: CullRect,
+): boolean {
+  const x0 = Math.min(bounds.x, bounds.x + bounds.width);
+  const x1 = Math.max(bounds.x, bounds.x + bounds.width);
+  const y0 = Math.min(bounds.y, bounds.y + bounds.height);
+  const y1 = Math.max(bounds.y, bounds.y + bounds.height);
+  return quadMisses(x0, y0, x1, y1, transform, slackBox(rect));
+}
+
+function slackBox(rect: CullRect): Box {
+  return {
+    minX: rect.x - SLACK_PX,
+    minY: rect.y - SLACK_PX,
+    maxX: rect.x + rect.width + SLACK_PX,
+    maxY: rect.y + rect.height + SLACK_PX,
+  };
 }
 
 /** True when the local rect, taken through `m`, lies wholly outside `box`.

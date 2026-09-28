@@ -34,7 +34,7 @@ import {
 import type { Ref } from 'react';
 import { useFrameLoop } from './useFrameLoop';
 import { renderSceneToCanvas } from './sceneViewRender';
-import type { SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
+import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import { normalizeView, type View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
@@ -71,6 +71,14 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
   layerVisibility?: SceneViewLayers['layerVisibility'];
   /** Paint order for this view, keyed as `layerVisibility`. */
   layerOrder?: SceneViewLayers['layerOrder'];
+  /** Skip nodes and commands that cannot reach this view — the scene slot's
+   *  `cull`. Off by default; worth it when the view shows a small part of a
+   *  large scene. */
+  cull?: boolean;
+  /** Where `drawOne`'s output for a node can reach — the scene slot's
+   *  `paintBounds`. Defaults to `defaultPaintBounds` when `drawOne` is
+   *  `defaultDrawOne`. */
+  paintBounds?: RenderSceneToCanvasArgs<TData, TLayer, TPose>['paintBounds'];
   /** Optional animator, as on `<SceneCanvas>`: the view repaints on its ticks
    *  and paints its `colorOverrides`. Pass the main canvas's animator so both
    *  show the same colors. */
@@ -88,7 +96,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
 ) {
   const {
     scene, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
-    animator, className, canvasRef,
+    animator, className, canvasRef, cull, paintBounds,
   } = props;
   const view = normalizeView(props.view);
 
@@ -130,6 +138,8 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
       layerVisibility,
       layerOrder,
       colorOverrides: animator?.colorOverrides,
+      cull,
+      paintBounds,
     });
     return true;
   };

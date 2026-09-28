@@ -27,7 +27,8 @@ import type { Node } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../renderer';
 import { textCommandFromRuns } from 'features/text/textCommand';
-import { findNodeShape, type NodePaintCtx } from './NodeShape';
+import { findNodeShape, findShapeBounds, type NodePaintCtx } from './NodeShape';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 function pixelScaleOf(view: View): number {
   const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
@@ -81,4 +82,31 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
   // `buildSceneViewCommands`) and the preview-ghost layer, so that
   // consumer-supplied painters get them too. Doing it here would double-wrap.
   return primary;
+}
+
+/**
+ * The box {@link defaultDrawOne}'s output for `node` fits in — the matched
+ * painter's `bounds` — or `null` when it has none, or when a `data.label`
+ * overlay adds text nothing bounds cheaply. The scene slot's `cull` reads it
+ * to skip painting nodes the view cannot see.
+ */
+export function defaultPaintBounds<TData, TLayer extends string, TPose>(
+  node: Node<TData, TLayer, TPose>,
+  pose: TPose,
+  view: View,
+): Bounds | null {
+  const data = node.data as { label?: string; text?: string } | null;
+  if (data?.label && data.text == null) return null;
+  return findShapeBounds(node, pose, { scale: Math.sqrt(Math.abs(view.scale.x * view.scale.y)) });
+}
+
+/**
+ * `defaultPaintBounds` when `drawOne` is `defaultDrawOne`, and nothing
+ * otherwise: a painter's box says nothing about what a replacement
+ * `drawOne` paints.
+ */
+export function paintBoundsFor<TData, TLayer extends string, TPose>(
+  drawOne: unknown,
+): typeof defaultPaintBounds<TData, TLayer, TPose> | undefined {
+  return drawOne === defaultDrawOne ? defaultPaintBounds : undefined;
 }

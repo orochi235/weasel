@@ -65,7 +65,7 @@ export type {
   TimelineTrack,
   Track,
 } from './timeline';
-export { bindRig, blendPoses, resolveSkeleton, rigidRigApply, useRig, IDENTITY_JOINT } from './rig';
+export { bindRig, blendPoses, mirrorPose, resolveSkeleton, rigidRigApply, useRig, IDENTITY_JOINT } from './rig';
 export type {
   BindRigOptions, Joint, JointTransform, Pose, Rig, RigApply, RigApplyContext, RigScene, Skeleton,
 } from './rig';

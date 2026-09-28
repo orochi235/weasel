@@ -104,6 +104,7 @@ type CanvasAdapter<TNode extends { id: string }, TPose> = MoveAdapter<TNode, TPo
   OptionalSceneHierarchy<TNode, TPose>;
 import { wrapNodeOutput } from './wrapNodeOutput';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { CursorCoordsHud } from './CursorCoordsHud';
 import { PickHud } from './PickHud';
 import { ModalityHud } from './ModalityHud';
@@ -161,10 +162,11 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
    */
   postProcess?: (cmds: DrawCommand[], view: View, dims: Dims) => DrawCommand[];
   /**
-   * Drop commands that cannot reach the view before they reach the renderer,
-   * so an off-screen node costs its painter and nothing after. Applied last,
-   * after `postProcess`, to the `dims` rectangle under `view`; see
-   * `cullDrawCommands` for what it can and cannot bound.
+   * Skip what cannot reach the view. A node `paintBounds` places outside the
+   * `dims` rectangle under `view` is not painted at all; then, after
+   * `postProcess`, `cullDrawCommands` drops any remaining command that cannot
+   * reach it — see there for what it can and cannot bound. So `postProcess`
+   * sees an empty group where a culled node would have painted.
    *
    * Off by default because it makes the layer's world-space output depend on
    * the view: anything that draws this layer once and shows the result under
@@ -172,6 +174,18 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
    * commands — would show the first view's cull.
    */
   cull?: boolean;
+  /**
+   * Where `drawOne`'s output for a node can reach, in the frame it paints in
+   * — before the pose rotation the slot wraps it in. `null` for a node it
+   * cannot bound cheaply. Read only under `cull`, which skips `drawOne` for a
+   * node whose box misses the view, so it must enclose everything `drawOne`
+   * paints: a box too small makes a node vanish before it leaves the screen.
+   *
+   * `<SceneCanvas>` supplies `defaultPaintBounds` while `drawOne` is
+   * `defaultDrawOne`. Omit it with any other `drawOne` and culling only
+   * trims commands after painting.
+   */
+  paintBounds?: PaintBoundsFn<TNode, TPose>;
 }
 
 /** Selection-overlay slot config — passed through to `createSelectionOverlayLayer`,
@@ -626,6 +640,10 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
     ? (cmds: DrawCommand[], view: View, dims: Dims): DrawCommand[] =>
       cullDrawCommands(cmds, viewToMat3(view), { x: 0, y: 0, width: dims.width, height: dims.height })
     : (cmds: DrawCommand[]): DrawCommand[] => cmds;
+  const paintBounds = cfg.cull ? cfg.paintBounds : undefined;
+  const culledIn = (view: View, dims: Dims) => paintBounds
+    ? paintMissesView(paintBounds, view, { x: 0, y: 0, width: dims.width, height: dims.height })
+    : undefined;
   return {
     id: slot?.id ?? 'scene',
     label: slot ? `Scene: ${slot.forLayer}` : 'Scene',
@@ -670,6 +688,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           view,
           slot?.forLayer,
           cfg.derivedPathOf as Parameters<typeof buildSceneTree>[4],
+          culledIn(view, dims) as Parameters<typeof buildSceneTree>[5],
         );
         return finish(postProcess ? postProcess(tree, view, dims) : tree, view, dims);
       }
@@ -678,10 +697,11 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
       // so the `scene:<layer>` split is a no-op and we emit the whole scene.)
       const objects = cfg.objects ?? adapter?.getNodes() ?? [];
       const children: DrawCommand[] = [];
+      const culled = culledIn(view, dims);
       for (const obj of objects) {
         if (hidden && hidden.has(obj.id)) continue;
         const pose: TPose = toPose(obj);
-        if (drawOne) {
+        if (drawOne && !culled?.(obj, pose)) {
           const cmds = drawOne(obj, pose, view);
           const wrapped = wrapNodeOutput(cmds, pose, cfg.alphaFor ? cfg.alphaFor(obj.id) : 1);
           for (const cmd of wrapped) children.push(cmd);

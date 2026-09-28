@@ -4,6 +4,7 @@ import * as kit from '../../index';
 describe('rig public surface', () => {
   it('exports the rig helpers from the package entry', () => {
     expect(typeof kit.blendPoses).toBe('function');
+    expect(typeof kit.mirrorPose).toBe('function');
     expect(typeof kit.resolveSkeleton).toBe('function');
     expect(typeof kit.bindRig).toBe('function');
     expect(typeof kit.useRig).toBe('function');

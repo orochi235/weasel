@@ -72,6 +72,9 @@ export function buildSceneTree<
    *  so the bare-adapter path omits it and a derived container contributes no
    *  clip there, exactly as before. */
   derivedPathOf?: (node: TNode, pose: TPose) => Path | null,
+  /** True for a node whose paint cannot be seen — see `paintMissesView`. Its
+   *  painter is not called; its clip and its children are walked as usual. */
+  culled?: (node: TNode, pose: TPose) => boolean,
 ): DrawCommand[] {
   const layers = adapter.getLayers();
   const buckets = new Map<string, DrawCommand[]>();
@@ -93,7 +96,7 @@ export function buildSceneTree<
     // Skip the (potentially expensive) painter for nodes we won't emit; their
     // clip still extends the chain for descendants below.
     const paints = forLayer === undefined || node.layer === forLayer;
-    const self = paints ? drawOne(node, pose, view) : [];
+    const self = paints && !culled?.(node, pose) ? drawOne(node, pose, view) : [];
 
     // Extend the clip chain with this node's own clip when it is a container.
     let ownClips = ancestorClips;

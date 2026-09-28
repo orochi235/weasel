@@ -264,7 +264,8 @@ export * from './tools';
 // configs, etc.) remain exported below because they form part of SceneCanvas's
 // public surface.
 export { SceneCanvas, DEFAULT_HANDLE_SIZE } from './canvas/SceneCanvas';
-export { defaultDrawOne } from './canvas/defaultDrawOne';
+export { defaultDrawOne, defaultPaintBounds } from './canvas/defaultDrawOne';
+export type { PaintBoundsFn } from './canvas/paintCull';
 export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers } from './canvas/SceneCanvas';
 export { hostAnchorRect, hostAnchorCss } from './canvas/hostAnchor';
 export type { HostAnchorInput, HostAnchorAlign, HostAnchorOffset } from './canvas/hostAnchor';
@@ -279,6 +280,7 @@ export {
   findNodeShape,
   findShapeSilhouette,
   findShapeInk,
+  findShapeBounds,
   DEFAULT_INK,
   shapeCoversPoint,
   getNodeShapes,
@@ -390,7 +392,9 @@ export {
   buildSceneViewCommands,
   renderSceneToCanvas,
 } from './canvas/sceneViewRender';
-export type { SceneViewDrawOne, RenderSceneToCanvasArgs, SceneViewLayers } from './canvas/sceneViewRender';
+export type {
+  SceneViewDrawOne, RenderSceneToCanvasArgs, SceneViewLayers, SceneViewCull,
+} from './canvas/sceneViewRender';
 export { renderSceneToPixels, planPixelRender } from './canvas/renderSceneToPixels';
 export type {
   RenderSceneToPixelsArgs,
