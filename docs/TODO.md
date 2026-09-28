@@ -1177,6 +1177,12 @@ WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
 
 ## Demos & visual regression
 
+- **(P3) `FallthroughDiagram.stories.tsx`'s story checks fail in a local multi-project run.**
+  All five fail when the file runs in one `vitest run` alongside core and routing directories,
+  and all pass when the directory runs alone. Seen twice on 2026-09-27/28 in fresh worktrees; the
+  same checks passed in both full fleet runs. The error was not captured, so first-launch browser
+  startup in the `forge-stories (chromium)` project is a guess, not a finding.
+
 - **(P3) A minimal public stage for package demos.** Demos of scene-free packages
   (`quantity`, `text`, `bidi`, `geom`, `audio`) mount a whole `SceneCanvas` just to draw.
   Not the primitive `<Canvas>`, which was unexported on purpose. Enforce its reach in
