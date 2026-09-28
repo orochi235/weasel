@@ -420,7 +420,11 @@ describe('setInstruments', () => {
     store.getState().addTrial(mappedTrial);
     store.getState().setInstruments([{ ...small, name: 'Mapped' }]);
     store.getState().saveSnapshot('m', 'one');
-    expect(store.getState().savedSnapshots[0]?.state).toEqual({ seen: new Set(['a']) });
+    // By tag, not `toEqual(new Set(…))`: under jsdom structuredClone hands back Node's Set.
+    const seen = (store.getState().savedSnapshots[0]?.state as { seen: Set<string> } | undefined)
+      ?.seen;
+    expect(Object.prototype.toString.call(seen)).toBe('[object Set]');
+    expect([...seen]).toEqual(['a']);
   });
 
   it('changes neither hooks nor state when a new default config throws', () => {

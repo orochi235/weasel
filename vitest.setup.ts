@@ -87,6 +87,16 @@ if (typeof globalThis.ImageData === 'undefined') {
   (globalThis as { ImageData: unknown }).ImageData = ImageDataStub;
 }
 
+// Every browser has these; jsdom has none. The threads pool leaked Node's copies
+// in by accident, and a VM context does not, so they are given on purpose.
+if (typeof globalThis.CompressionStream === 'undefined') {
+  const web = await import('node:stream/web');
+  Object.assign(globalThis, {
+    CompressionStream: web.CompressionStream,
+    DecompressionStream: web.DecompressionStream,
+  });
+}
+
 if (typeof window !== 'undefined' && !window.PointerEvent) {
   class PointerEvent extends MouseEvent {
     // PointerEvent-specific fields

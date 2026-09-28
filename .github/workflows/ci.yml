@@ -73,7 +73,7 @@ jobs:
       - run: npm run check:test-projects
       - run: npm run check:forge-boundary
       - run: npm run check:forge-isolate
-      - run: npx vitest run --project=core --project=weasel-ui --project=draw --project=labkit --project=forge
+      - run: npx vitest run --project=core --project=weasel-ui --project=draw --project=labkit --project=forge --project=forge-node
       # Tests that need real layout or real IndexedDB (`*.browser.test.*`), in headless Chromium.
       - run: npx playwright install --with-deps chromium-headless-shell
       - run: npm run test:browser
@@ -86,7 +86,7 @@ jobs:
       # The suite above runs before any dist exists, so it skips forge's check
       # that the built plugin resolves its published shims. Rerun that file now;
       # FORGE_BUILT makes a missing dist a failure rather than a skip.
-      - run: npx vitest run --project=forge packages/forge/src/csf/shims/alias.test.ts
+      - run: npx vitest run --project=forge-node packages/forge/src/csf/shims/alias.test.ts
         env:
           FORGE_BUILT: '1'
       # Every path a publishable package advertises in `main`/`module`/`types`/

@@ -461,10 +461,7 @@ describe('Canvas debug overlay', () => {
 
   it('debug={false} produces no overlay layer even when URL has ?debug=all', () => {
     const original = window.location.search;
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, search: '?debug=all' },
-      writable: true,
-    });
+    window.history.replaceState(null, '', '?debug=all');
     try {
       const { container } = render(
         <Canvas
@@ -475,10 +472,7 @@ describe('Canvas debug overlay', () => {
       );
       expect(container.querySelector('canvas')).toBeTruthy();
     } finally {
-      Object.defineProperty(window, 'location', {
-        value: { ...window.location, search: original },
-        writable: true,
-      });
+      window.history.replaceState(null, '', original || window.location.pathname);
     }
   });
 
@@ -540,10 +534,7 @@ describe('Canvas debug overlay', () => {
 
   it('debug undefined falls back to URL parse', () => {
     const original = window.location.search;
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, search: '?debug=bounds' },
-      writable: true,
-    });
+    window.history.replaceState(null, '', '?debug=bounds');
     try {
       const { container } = render(
         <Canvas
@@ -553,10 +544,7 @@ describe('Canvas debug overlay', () => {
       );
       expect(container.querySelector('canvas')).toBeTruthy();
     } finally {
-      Object.defineProperty(window, 'location', {
-        value: { ...window.location, search: original },
-        writable: true,
-      });
+      window.history.replaceState(null, '', original || window.location.pathname);
     }
   });
 });

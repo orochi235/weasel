@@ -1,3 +1,4 @@
+import { isPlainObject, isPlainPrototype } from '../isPlainObject';
 /**
  * Comparing a pose against what it was, by value.
  *
@@ -16,12 +17,6 @@
 /** How deep the walk goes before it stops copying and keeps the reference.
  *  A pose is a handful of numbers; nothing legitimate is nested this far. */
 const DEPTH = 4;
-
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  if (typeof v !== 'object' || v === null) return false;
-  const proto = Object.getPrototypeOf(v) as object | null;
-  return proto === Object.prototype || proto === null;
-}
 
 function isTypedArray(v: unknown): v is ArrayLike<number> & { slice(): unknown } {
   return ArrayBuffer.isView(v) && !(v instanceof DataView);
@@ -58,9 +53,8 @@ export function samePoseValue(snapshot: unknown, value: unknown, depth = DEPTH):
   if (depth <= 0) return false;
 
   const proto = Object.getPrototypeOf(snapshot) as object | null;
-  if (proto === Object.prototype || proto === null) {
-    const other = Object.getPrototypeOf(value) as object | null;
-    if (other !== Object.prototype && other !== null) return false;
+  if (isPlainPrototype(proto)) {
+    if (!isPlainPrototype(Object.getPrototypeOf(value) as object | null)) return false;
     const a = snapshot as Record<string, unknown>;
     const b = value as Record<string, unknown>;
     let count = 0;

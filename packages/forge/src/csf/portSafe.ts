@@ -1,3 +1,5 @@
+import { isPlainObject } from './isPlainObject';
+
 const g = globalThis as Record<string, unknown>;
 const CLONED_WHOLE = new Set<unknown>(
   [
@@ -56,15 +58,9 @@ export function isPortSafe(value: unknown): boolean {
   }
 }
 
-const isPlainOrNull = (v: unknown): v is Record<string, unknown> => {
-  if (!v || typeof v !== 'object') return false;
-  const proto = Object.getPrototypeOf(v);
-  return proto === Object.prototype || proto === null;
-};
-
 /** A plain object or array whose members can be split: React elements are plain objects, but whole. */
 const splittable = (v: unknown): v is Record<string, unknown> | unknown[] =>
-  (Array.isArray(v) ? Object.getPrototypeOf(v) === Array.prototype : isPlainOrNull(v) && !('$$typeof' in v)) &&
+  (Array.isArray(v) ? Object.getPrototypeOf(v) === Array.prototype : isPlainObject(v) && !('$$typeof' in v)) &&
   hasOnlyClonedKeys(v as object);
 
 /**
@@ -102,7 +98,7 @@ export function withUnsent(sent: unknown, original: unknown): unknown {
   if (sent === null && portSafePart(original) === null) return original;
   if (Array.isArray(original) && Array.isArray(sent))
     return sent.map((member, i) => (i < original.length ? withUnsent(member, original[i]) : member));
-  if (!splittable(original) || Array.isArray(original) || !isPlainOrNull(sent)) return sent;
+  if (!splittable(original) || Array.isArray(original) || !isPlainObject(sent)) return sent;
   const out: Record<string, unknown> = {};
   for (const [key, member] of Object.entries(original)) {
     if (key in sent) out[key] = withUnsent(sent[key], member);

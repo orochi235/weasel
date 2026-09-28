@@ -1,3 +1,4 @@
+import { isPlainObject } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/ui';
 
 /**
@@ -9,11 +10,7 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/ui';
 /** A plain object a config tree can be walked into. An array, a `Date`, a
  *  `Map` or a class instance is a leaf value: a walk that descended into one
  *  would rebuild it as a bare `{}`. */
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  if (typeof value !== 'object' || value === null) return false;
-  const proto = Object.getPrototypeOf(value);
-  return proto === Object.prototype || proto === null;
-}
+export const isRecord = isPlainObject;
 
 /** The value at a dotted path. `undefined` when a segment is missing or the
  *  walk hits something that is not a record. */

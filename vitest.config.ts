@@ -31,6 +31,11 @@ const shared = {
   plugins: [react()],
 };
 
+const FORGE_NODE = [
+  'packages/forge/src/csf/shims/alias.test.ts',
+  'packages/forge/src/vite/plugin.test.ts',
+];
+
 export default defineConfig({
   test: {
     projects: [
@@ -39,6 +44,7 @@ export default defineConfig({
         test: {
           name: 'core',
           environment: 'jsdom',
+          pool: 'vmThreads',
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
           include: [
@@ -67,6 +73,7 @@ export default defineConfig({
         test: {
           name: 'site',
           environment: 'jsdom',
+          pool: 'vmThreads',
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
           include: ['apps/site/**/*.test.{ts,tsx}'],
@@ -78,6 +85,7 @@ export default defineConfig({
         test: {
           name: 'smoke',
           environment: 'jsdom',
+          pool: 'vmThreads',
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
           include: [
@@ -93,6 +101,7 @@ export default defineConfig({
         test: {
           name: 'weasel-ui',
           environment: 'jsdom',
+          pool: 'vmThreads',
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
           include: ['packages/**/*.test.{ts,tsx}'],
@@ -108,6 +117,7 @@ export default defineConfig({
         test: {
           name: 'labkit',
           environment: 'jsdom',
+          pool: 'vmThreads',
           globals: true,
           // labkit ships its own setup (jest-dom matchers, cleanup, storage
           // hoist) and imports component CSS, so it needs css handling — the
@@ -125,12 +135,26 @@ export default defineConfig({
         test: {
           name: 'forge',
           environment: 'jsdom',
+          pool: 'vmThreads',
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
           // A test that mounts the whole workshop takes ~1 s alone and blows the 5 s default under a full fleet run.
           testTimeout: 20_000,
           include: ['packages/forge/src/**/*.test.{ts,tsx}', 'apps/forge/*.test.{ts,tsx}'],
-          exclude: ['**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
+          exclude: [...FORGE_NODE, '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
+        },
+      },
+      {
+        ...shared,
+        test: {
+          // These start a real vite server, and rolldown's native binding
+          // rejects a RegExp made in another realm, so they cannot run in a VM
+          // context the way every jsdom project does.
+          name: 'forge-node',
+          environment: 'node',
+          pool: 'threads',
+          testTimeout: 20_000,
+          include: FORGE_NODE,
         },
       },
       {
@@ -145,6 +169,7 @@ export default defineConfig({
         test: {
           name: 'draw',
           environment: 'jsdom',
+          pool: 'vmThreads',
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
           // `apps/shared/` holds modules both in-repo apps import (buildInfo),

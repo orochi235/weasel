@@ -87,6 +87,7 @@ export * from './core/viewport/viewTransform';
 export type { View, ZoomFactor, ZoomBound } from './core/viewport/view';
 export { viewToTransform, normalizeView, viewZoom } from './core/viewport/view';
 export { meanScale } from './core/viewport/meanScale';
+export { isPlainObject } from './core/isPlainObject';
 export { pxExtent, scaleDelta, withinPxBox, withinPxRadius } from './core/viewport/pxExtent';
 export * from './interactions/gestures/handleDrag';
 export * from './interactions/gestures/pointerDrag';
