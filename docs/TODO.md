@@ -861,18 +861,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   outside it via the `flat` variant. Doing this generally is a theme decision
   about the glass, not a component change.
 
-### Align/distribute/flip follow-ups
-
-- **(P3) Resize alignment on a rotated node.** Aligning the dragged corner
-  during a resize is already built: `alignResizeBehavior`
-  (`features/guides/alignment/behaviors.ts`) snaps the moving edges to derived
-  guides, and a `PointSnapBehavior` returning `frame: 'dragged-corner'` pins the
-  handle to any world point. But `resizeAction` runs constraints on the
-  unrotated box, before its fixed-corner correction, so on a rotated node the
-  edges it matches are not the ones drawn (read from the code, not reproduced).
-  Either snap the dragged corner's world point — an alignment
-  `PointSnapBehavior` — or have the constraint stand down on a rotated pose.
-
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) Palette presets / recently-used colors.**
