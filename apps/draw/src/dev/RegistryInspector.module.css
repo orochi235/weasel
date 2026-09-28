@@ -25,7 +25,7 @@
   overflow-y: auto;
 }
 .filterInput { margin-bottom: var(--wzl-space-4); }
-.empty { color: var(--wzl-fg-muted); font-size: 15px; font-style: italic; }
+.empty { color: var(--wzl-fg-muted); font-size: calc(var(--wzl-font-size-lg) - 1px); font-style: italic; }
 
 .breadcrumb {
   display: flex;
@@ -47,9 +47,9 @@
   height: 1px;
   overflow: hidden;
 }
-.leafBadge { --badge-font-size: 8px; --badge-pad-y: 1px; transform: scale(0.85); transform-origin: right center; }
+.leafBadge { --badge-font-size: calc(var(--wzl-font-size-2xs) - 1px); --badge-pad-y: 1px; transform: scale(0.85); transform-origin: right center; }
 
-.detailHeading { margin: 0 0 var(--wzl-space-6); font-size: 19px; }
+.detailHeading { margin: 0 0 var(--wzl-space-6); font-size: calc(var(--wzl-font-size-xl) - 1px); }
 .diffSection { margin-top: var(--wzl-space-8); }
 .routeBadge { display: inline-flex; align-items: center; gap: var(--wzl-space-1); margin-right: var(--wzl-space-3); }
 
@@ -61,7 +61,7 @@
 /* Modifier group sits adjacent to the gesture badge, prefixed with a `+`
    sigil so the visual binding to the gesture is unambiguous. */
 .modGroup { display: inline-flex; align-items: center; gap: var(--wzl-space-1); }
-.modSigil { color: var(--wzl-fg-muted); font-size: 12px; font-weight: 600; }
+.modSigil { color: var(--wzl-fg-muted); font-size: calc(var(--wzl-font-size-sm) + 1px); font-weight: 600; }
 /* The gesture badge is `align-items: baseline` (so plain text baselines
    correctly with adjacent badges), but a KeyCap dropped inside has its own
    box and ends up sitting low. `align-self: center` overrides the parent's
@@ -97,7 +97,7 @@
    color and constrain the width to keep it from dwarfing the value column. */
 .routeFieldExplanation {
   color: var(--wzl-fg-muted);
-  font-size: 12px;
+  font-size: calc(var(--wzl-font-size-sm) + 1px);
   line-height: 1.4;
   max-width: 420px;
 }
@@ -134,7 +134,7 @@
   border: 1px solid var(--wzl-border);
   border-radius: 4px;
   padding: var(--wzl-space-4);
-  font-size: 14px;
+  font-size: calc(var(--wzl-font-size-md) + 1px);
   white-space: pre-wrap;
   margin: var(--wzl-space-4) 0 0;
 }
@@ -180,8 +180,8 @@
 .schemaDefault {
   font-family: var(--wzl-font-mono);
   color: var(--wzl-success);
-  font-size: 12px;
+  font-size: calc(var(--wzl-font-size-sm) + 1px);
 }
 .schemaMuted { color: var(--wzl-fg-muted); }
-.schemaSource { color: var(--wzl-fg-muted); font-size: 12px; margin-top: var(--wzl-space-2); }
-.schemaNote { color: var(--wzl-fg-muted); font-size: 12px; font-style: italic; margin: var(--wzl-space-2) 0 var(--wzl-space-4); }
+.schemaSource { color: var(--wzl-fg-muted); font-size: calc(var(--wzl-font-size-sm) + 1px); margin-top: var(--wzl-space-2); }
+.schemaNote { color: var(--wzl-fg-muted); font-size: calc(var(--wzl-font-size-sm) + 1px); font-style: italic; margin: var(--wzl-space-2) 0 var(--wzl-space-4); }

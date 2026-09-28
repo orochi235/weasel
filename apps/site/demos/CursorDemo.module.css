@@ -20,7 +20,7 @@
   border: 1px solid var(--ckd-border);
   border-radius: 6px;
   background: var(--ckd-surface);
-  color: var(--ckd-fg);
+  color: var(--ckd-text);
   font: inherit;
 }
 

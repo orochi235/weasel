@@ -750,11 +750,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   swatch tabs against `ToggleBar`'s flat variant and its hex and number inputs against `Input`
   and `NumberField`.
 
-- **(P3) App chrome sizes text in pixels, so it ignores density.** `apps/site`'s
-  `canvas-kit-demo.css` runs on its own `--ckd-*` palette rather than theme tokens, and
-  `RegistryInspector`, `ThemeEditor`, `CommandPalette` and `ToolReflectionDemo` set
-  `font-size` and radii as px literals. Moving them to `--wzl-font-size-*` changes their size
-  under compact and roomy, so each needs a look rather than a find-and-replace.
+- **(P3) The site's chrome colors come from its own `--ckd-*` palette, not theme tokens.**
+  `canvas-kit-demo.css` declares `--ckd-*`, and it and the demos'
+  stylesheets read them directly, so the site ignores light mode and any theme a reader picks.
+  Its `:root` block already feeds most of them into `--wzl-*` (`--ckd-text` → `--wzl-fg`,
+  `--ckd-muted` → `--wzl-fg-muted`, …), but `--ckd-bg` and `--ckd-surface-2` have no
+  counterpart there, and `--ckd-accent` / `--ckd-accent-dim` split what `--wzl-accent` means.
+  Migrating means picking tokens for those and deciding whether the site keeps its fixed dark
+  look or follows mode.
 
 - **(P3) A mark can be selected in two targets at once.** Each of
   `AnnotationOverlay`'s canvases builds its own single-mode selection and clears
