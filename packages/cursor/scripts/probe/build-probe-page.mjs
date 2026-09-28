@@ -1,7 +1,7 @@
 // Builds the cursor test corpus: the same pencil glyph as SVG data URIs and as
 // resvg-rasterized PNGs at several sizes, then an HTML harness that can switch
 // the page cursor between them one at a time.
-import { writeFileSync, readFileSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 const DIR = process.argv[2];
@@ -27,38 +27,55 @@ const svg = (px) =>
 // Hotspot: pencil tip at glyph (3,17) -> padded (5,19) -> scaled to px, rounded.
 const hotspot = (px) => [Math.round((5 / VB) * px), Math.round((19 / VB) * px)];
 
-const svgUri = (px) => `url("data:image/svg+xml,${encodeURIComponent(svg(px))}")`;
-
-const pngUri = (px) => {
-  const s = `${DIR}/_g${px}.svg`, p = `${DIR}/_g${px}.png`;
+// Every asset is written to assets/ and referenced two ways: inline as a data
+// URI (cursor-probe.html, for the headful capture) and by relative path
+// (cursor-probe-http.html, for the headless run, which can only see what the
+// engine chose to fetch).
+mkdirSync(`${DIR}/assets`, { recursive: true });
+const asset = (name, mime, bytes) => {
+  writeFileSync(`${DIR}/assets/${name}`, bytes);
+  // SVG stays percent-encoded, the form bake.ts emits and Chrome was measured on.
+  const data = mime === 'image/svg+xml'
+    ? `data:${mime},${encodeURIComponent(bytes)}`
+    : `data:${mime};base64,${Buffer.from(bytes).toString('base64')}`;
+  return { data: `url("${data}")`,
+           http: `url("assets/${name}")` };
+};
+const svgRef = (px) => asset(`g${px}.svg`, 'image/svg+xml', svg(px));
+const pngRef = (px) => {
+  const s = `${DIR}/assets/_g${px}.svg`, p = `${DIR}/assets/g${px}.png`;
   writeFileSync(s, svg(px));
   execFileSync('resvg', ['-w', String(px), '-h', String(px), s, p]);
-  return `url("data:image/png;base64,${readFileSync(p).toString('base64')}")`;
+  return asset(`g${px}.png`, 'image/png', readFileSync(p));
 };
+const iset = (a, b) => ({ data: `image-set(${a.data} 1x, ${b.data} 2x)`,
+                          http: `image-set(${a.http} 1x, ${b.http} 2x)` });
 
-// Each case is [id, label, cursor-value-without-hotspot-or-fallback, hotspotPx]
-// hotspotPx is the size the hotspot should be computed against (CSS px).
+// Each case is [id, label, {data, http} cursor value without hotspot or
+// fallback, hotspotPx, fallback]. hotspotPx is the size (CSS px) the hotspot
+// is computed against. An empty fallback omits the comma and keyword.
 const CASES = [
-  ['svg24',      'SVG data URI, width/height=24',            svgUri(24), 24],
-  ['svg48',      'SVG data URI, width/height=48',            svgUri(48), 48],
-  ['png24',      'PNG 24x24',                                pngUri(24), 24],
-  ['png48',      'PNG 48x48 (is image px == CSS px?)',        pngUri(48), 48],
-  ['iset',       'image-set(png24 1x, png48 2x)',
-     `image-set(${pngUri(24)} 1x, ${pngUri(48)} 2x)`, 24],
-  ['isetsvg',    'image-set(svg24 1x, svg48 2x)',
-     `image-set(${svgUri(24)} 1x, ${svgUri(48)} 2x)`, 24],
-  ['png128',     'PNG 128x128 (at the documented cap)',      pngUri(128), 128],
-  ['png160',     'PNG 160x160 (over the cap?)',              pngUri(160), 160],
-  ['png256',     'PNG 256x256 (well over)',                  pngUri(256), 256],
-  ['svg160',     'SVG 160x160 (over the cap?)',              svgUri(160), 160],
+  ['svg24',      'SVG, width/height=24',                      svgRef(24), 24],
+  ['svg48',      'SVG, width/height=48',                      svgRef(48), 48],
+  ['png24',      'PNG 24x24',                                 pngRef(24), 24],
+  ['png48',      'PNG 48x48 (is image px == CSS px?)',        pngRef(48), 48],
+  ['iset',       'image-set(png24 1x, png48 2x)',             iset(pngRef(24), pngRef(48)), 24],
+  ['isetsvg',    'image-set(svg24 1x, svg48 2x)',             iset(svgRef(24), svgRef(48)), 24],
+  ['png128',     'PNG 128x128 (at the documented cap)',       pngRef(128), 128],
+  ['png160',     'PNG 160x160 (over the cap?)',               pngRef(160), 160],
+  ['png256',     'PNG 256x256 (well over)',                   pngRef(256), 256],
+  ['svg160',     'SVG 160x160 (over the cap?)',               svgRef(160), 160],
+  ['nofallback', 'SVG 24, no keyword fallback',               svgRef(24), 24, ''],
 ];
 
-const decls = CASES.map(([id, label, val, hp]) => {
+const decls = (form) => CASES.map(([id, label, val, hp, fb = 'crosshair']) => {
   const [hx, hy] = hotspot(hp);
-  return { id, label, css: `${val} ${hx} ${hy}, crosshair` };
+  // Tag each fetch with its case so the headless run can attribute requests.
+  const v = form === 'http' ? val.http.replace(/(url\("assets\/[^"]+)"\)/g, `$1?${id}")`) : val.data;
+  return { id, label, css: `${v} ${hx} ${hy}${fb ? `, ${fb}` : ''}` };
 });
 
-const html = `<!doctype html><meta charset="utf-8"><title>cursor probe</title>
+const page = (form) => `<!doctype html><meta charset="utf-8"><title>cursor probe</title>
 <style>
   html,body{margin:0;height:100%}
   #stage{position:fixed;inset:0;background:#6f7d8c;cursor:crosshair}
@@ -67,7 +84,7 @@ const html = `<!doctype html><meta charset="utf-8"><title>cursor probe</title>
 </style>
 <div id="stage"></div><div id="hud"></div>
 <script>
-const CASES = ${JSON.stringify(decls)};
+const CASES = ${JSON.stringify(decls(form))};
 const stage = document.getElementById('stage');
 const hud = document.getElementById('hud');
 window.__setCase = (i) => {
@@ -86,5 +103,6 @@ window.__geom = () => ({
 });
 window.__cases = CASES.map(c => c.id);
 </script>`;
-writeFileSync(`${DIR}/cursor-probe.html`, html);
-console.log(`wrote cursor-probe.html with ${CASES.length} cases`);
+writeFileSync(`${DIR}/cursor-probe.html`, page('data'));
+writeFileSync(`${DIR}/cursor-probe-http.html`, page('http'));
+console.log(`wrote cursor-probe.html and cursor-probe-http.html with ${CASES.length} cases`);

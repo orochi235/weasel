@@ -217,7 +217,32 @@ keyword after the comma, with no error anywhere. This is the origin of the
 escalation threshold. (Sizes 130–148 were dropped and 150–154 appeared to
 render; the non-monotonicity is capture-timing noise, not a second cap. 128 is
 also Chrome's documented constant.) **Always declare a keyword fallback** —
-without one the cursor becomes `auto` when the image is rejected.
+a `url()` cursor without one is invalid CSS, so the whole declaration is
+dropped at parse time and the element keeps whatever cursor it would otherwise
+have had.
+
+### WebKit and Firefox, headless
+
+Measured in Playwright's headless WebKit 26.6 and Firefox 155.0, and Chromium
+153 as the control, on macOS at DPR 1 and 2, with the probe's `--headless`
+mode. A headless browser draws no cursor, so this covers only what the engine
+does before the image reaches the OS:
+
+| | Chromium | WebKit | Firefox |
+|---|---|---|---|
+| SVG and PNG `url()` cursors, 24–256 px, parse and are fetched | yes | yes | yes |
+| `image-set()` in `cursor` parses | yes | yes | yes |
+| `image-set()` fetches only the candidate for the DPR (1x at 1, 2x at 2) | yes | yes | yes |
+| `url()` with no keyword fallback is dropped at parse | yes | yes | yes |
+
+All three fetch a 256 px image, so none of them applies a size cap at parse or
+fetch time; wherever a cap lives, it is downstream of what headless can see.
+
+**Not measured in WebKit or Firefox:** the scale an SVG cursor is rasterized at,
+the size cap, and hotspot placement. Those need the headful probe. Playwright's
+Firefox is a Firefox Nightly build, so its headful results should carry over to
+release Firefox; Playwright's WebKit is not Safari, and Playwright cannot drive
+Safari at all.
 
 ## First cursor set
 
@@ -275,7 +300,8 @@ Two things tests here cannot establish, so do not write ones that appear to:
 
 ## Residual risk
 
-The browser facts are Chrome-only. Safari and Firefox may rasterize SVG cursors
-at 1× or cap at a different size. Measuring them is worthwhile but does not
-block this work: both the crispness fallback (`image-set`) and the cap
-(a threshold constant) are contained inside `bake.ts`.
+How Safari and Firefox rasterize a cursor is unmeasured: either may rasterize
+an SVG cursor at 1× or cap at a different size. Their parsers and image
+selection match Chrome's (see *WebKit and Firefox, headless*), so the fix for
+either finding is contained inside `bake.ts` — switch to `image-set()`, which
+both select correctly, or lower the threshold constant.
