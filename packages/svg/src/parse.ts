@@ -1584,6 +1584,7 @@ function markerEntryFrom(
 
   return {
     id: key,
+    reads: [],
     path: ({ size }) => {
       const scaled = new Float32Array(coords.length);
       for (let i = 0; i < coords.length; i++) scaled[i] = coords[i] * size;

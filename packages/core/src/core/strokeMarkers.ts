@@ -49,6 +49,11 @@ export interface MarkerEntry {
   /** `'auto'` (default) follows the line; a number is a fixed angle in
    *  radians, ignoring the line — SVG's `orient="<angle>"`. */
   orient?: 'auto' | number;
+  /** The stroke fields `path` reads besides `ctx.size` — `[]` for a shape
+   *  drawn from size alone. Declared, a head is reused across stroke objects
+   *  whose listed fields are equal; omitted, only across frames that pass the
+   *  same stroke object, since `path` might read any of it. */
+  reads?: readonly (keyof Stroke)[];
   /** Emits the `<marker>` def. Consumed by `@weasel-js/svg`. */
   toSvg?(id: string, entry: MarkerEntry): string;
 }

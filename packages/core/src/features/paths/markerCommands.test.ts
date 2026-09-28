@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { markerDrawCommands } from './markerCommands';
-import { registerMarker } from '../../core/strokeMarkers';
+import { markerDrawCommands, markerReach } from './markerCommands';
+import { registerMarker, type MarkerEntry } from '../../core/strokeMarkers';
+import { PATH_Z } from '../../core/geometry/path';
 import { PATH_M, PATH_L, type PolygonPath } from '../../core/geometry/path';
 import type { Stroke } from '@weasel-js/paint';
 
@@ -120,6 +121,55 @@ describe('markerDrawCommands', () => {
       const path = cmds[0].path as PolygonPath;
       // Both endpoints share an x — the bar did not rotate with the line.
       expect(path.coords[0]).toBeCloseTo(path.coords[2], 6);
+    } finally {
+      dispose();
+    }
+  });
+});
+
+/** A head whose length is the stroke's miter limit, in marker units. */
+function growingHead(reads?: MarkerEntry['reads']): MarkerEntry {
+  return {
+    id: 'app-grow',
+    ...(reads ? { reads } : {}),
+    path: ({ size, stroke }) => {
+      const len = (stroke.miterLimit ?? 1) * size;
+      return {
+        kind: 'polygon',
+        commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_Z]),
+        coords: new Float32Array([0, 0, -len, -0.5 * size, -len, 0.5 * size]),
+        fillRule: 'nonzero',
+      };
+    },
+  };
+}
+
+describe('markerReach', () => {
+  const at = (miterLimit: number): Stroke => ({ ...BASE, miterLimit, markerEnd: 'app-grow' });
+
+  it.each([
+    ['a head that does not say what it reads', undefined],
+    ['a head that declares the field it reads', ['miterLimit'] as const],
+  ])('follows the stroke field that shapes %s', (_, reads) => {
+    const dispose = registerMarker(growingHead(reads as MarkerEntry['reads']));
+    try {
+      expect(markerReach(at(1), 2)).toBeCloseTo(2, 6);
+      expect(markerReach(at(10), 2)).toBeCloseTo(20, 6);
+    } finally {
+      dispose();
+    }
+  });
+
+  it('measures a head once across equal strokes when it declares what it reads', () => {
+    let built = 0;
+    const head = growingHead(['miterLimit']);
+    const counted: MarkerEntry = { ...head, path: (ctx) => { built++; return head.path(ctx); } };
+    const dispose = registerMarker(counted);
+    try {
+      markerReach(at(3), 2);
+      markerReach(at(3), 2);
+      markerReach(at(3), 5);
+      expect(built).toBe(1);
     } finally {
       dispose();
     }
