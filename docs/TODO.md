@@ -620,11 +620,6 @@ terse, single-purpose demo convention: an exception, not a precedent.
 
 What it surfaced:
 
-- **Measure the frame time culling buys, in a browser.** Culling now skips
-  the painter for off-screen nodes, and `platformerCull.test.ts` counts the
-  painter calls it saves headlessly; what that is worth in milliseconds per
-  frame has not been read off a real GPU.
-
 - **No tiled-content layer primitive exists** (the P3 under Tiling) — the run
   cycle and the parallax bands are second sites wanting it.
 
