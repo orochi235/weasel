@@ -1536,6 +1536,12 @@ one dead `const` and four stale disable directives.
   - **One undocumented export: labkit's `rectsEqual`.** `@weasel-js/labkit/surface`
     exports it, but only `useTiledSurface` and its own test call it, so it reads as
     internal: document it or take it off the entry. (2026-09-28: 404 → 1.)
+  - **`forceRelaxation` exposes an unexported type.** `@weasel-js/diagram` exports it and
+    `ForceRelaxation` from both its barrel and `/layout`, but the type's `Body[]` is not
+    exported: export `Body`, or keep the function private to `live.ts`.
+  - **Two stray `@experimental` tags in core's icon files.** The align and distribute icon
+    files carry the tag in a file header, where it attaches to a private constant and marks
+    nothing. Move it onto the icons or drop it.
   - **Three `@internal` exports still reach a consumer entry**, all in
     `@weasel-js/routing`. `KeyBinding` is the parameter of `matchesKeyBinding`,
     which core's barrel exports, so either the marker is stale (as
