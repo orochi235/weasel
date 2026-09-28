@@ -88,13 +88,16 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
         fill: { fill: 'solid', color: bodyColor },
       };
       const text = textCommandFromRuns(
-        x + 8,                    // 8px left padding
-        y + h / 2 + fontSize / 3, // rough vertical center
+        x + 8, // 8px left padding
+        y,
         [{ text: label, fill: { fill: 'solid', color: textColor } }],
         {
           fontFamily: opts.fontFamily ?? ctx.defaultFont,
           fontSize,
         },
+        undefined,
+        h,
+        'center',
       );
       return [body, text];
     },
