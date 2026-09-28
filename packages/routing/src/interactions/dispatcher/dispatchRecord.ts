@@ -26,6 +26,7 @@ export interface DispatchRecord {
   outcome: 'handled' | 'unhandled';
 }
 
+/** The input a {@link DispatchRecord} describes, reduced to plain data. */
 export interface DispatchRecordInput {
   /** `InputEvent.kind`: `'key'`, `'pointerdown'`, `'wheel'`, … */
   eventKind: string;
@@ -56,6 +57,7 @@ export interface RecordCandidate {
   eligible?: string;
 }
 
+/** A matched candidate a filter removed before ranking, and which filter. */
 export type DroppedCandidate =
   /** An exclusive claim on the input barred bindings that do not read the
    *  claim's affordance. */
@@ -63,6 +65,7 @@ export type DroppedCandidate =
   /** The action's `eligible` rule does not hold. */
   | { candidate: RecordCandidate; filter: 'ineligible'; rule: string };
 
+/** One field of the `specificity` tuple, in the order it is compared. */
 export type SpecificityPart = 'target' | 'mods' | 'phase' | 'exact';
 
 /** The ranking step that put a candidate below the one before it. */
@@ -99,6 +102,8 @@ export type WalkStep =
   /** Below the winner, asked anyway (`evaluateShadowed`), and it passed. */
   | { kind: 'outranked' };
 
+/** A candidate that survived the filters: why it sits where it does, and
+ *  what the walk did with it. */
 export interface RankedCandidate {
   candidate: RecordCandidate;
   placedBy: PlacedBy;

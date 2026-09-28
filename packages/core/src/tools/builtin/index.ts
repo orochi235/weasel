@@ -30,6 +30,7 @@ export {
   usePenTool,
   type UsePenToolOptions,
   type PenScratch,
+  type PenContinuation,
   type PenAnchor,
   type PenSubpath,
 } from './pen';

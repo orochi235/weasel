@@ -4,11 +4,7 @@ import {
   visualBoundsViaDescriptor,
   type PoseDescriptor,
 } from 'interactions/actions/resize/geometry';
-
-type DerivePose<TPose> = (
-  node: { pose: TPose },
-  deps: readonly ({ pose: TPose } | undefined)[],
-) => TPose | null;
+import type { DerivePoseFn } from 'core/scene/types';
 
 /**
  * A container's pose as the envelope of what it holds, read through
@@ -21,7 +17,7 @@ type DerivePose<TPose> = (
  */
 export function unionOfChildrenVia<TPose>(
   descriptor: PoseDescriptor<TPose>,
-): DerivePose<TPose> {
+): DerivePoseFn<TPose> {
   return (node, deps) => {
     const boxes = [];
     for (const d of deps) {

@@ -285,15 +285,13 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   return result;
 }
 
-/** Built-in tool ids that aren't shape tools — the ones with no entry in
- *  the `core/shapeKinds` table. */
-const NON_SHAPE_BUILTIN_TOOLS = ['select', 'hand'] as const;
-
 /** Built-in tool ids SceneCanvas knows how to mount when no `tools` prop
  *  is supplied, via `defaultTools`. */
-export type BuiltinToolId =
-  | (typeof NON_SHAPE_BUILTIN_TOOLS)[number]
-  | BuiltinShapeToolId;
+export type BuiltinToolId = 'select' | 'hand' | BuiltinShapeToolId;
+
+/** Built-in tool ids that aren't shape tools — the ones with no entry in
+ *  the `core/shapeKinds` table. */
+const NON_SHAPE_BUILTIN_TOOLS: readonly Exclude<BuiltinToolId, BuiltinShapeToolId>[] = ['select', 'hand'];
 
 /** Every built-in tool id, shape tools included. */
 export const BUILTIN_TOOL_IDS: readonly BuiltinToolId[] = [...NON_SHAPE_BUILTIN_TOOLS, ...KIT_SHAPE_KINDS];

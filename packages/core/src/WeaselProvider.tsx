@@ -31,6 +31,7 @@ import { PointerContextProvider } from './features/pointer/PointerContext';
 
 type Wrapper = ComponentType<{ children: ReactNode }>;
 
+/** Props for {@link WeaselProvider}. */
 export interface WeaselProviderProps {
   children: ReactNode;
   /**

@@ -4,6 +4,8 @@ export { asNodeId } from './types';
 export type {
   AddLayerSpec,
   DerivedDep,
+  DerivePathFn,
+  DerivePoseFn,
   AddNodeSpec,
   ContainerNode,
   LayerRecord,
@@ -16,6 +18,7 @@ export type {
   Scene,
   SceneRegistry,
   SerializedNode,
+  SerializedLayer,
   SerializedScene,
   SystemLayerRecord,
   SystemLayerSpec,

@@ -11,6 +11,7 @@ import {
 } from '@weasel-js/geom';
 import type { Path, PolygonPath, RectPath } from '../../../core/geometry/path';
 
+/** One contour of a path, flattened to straight segments. */
 export interface Polyline {
   /** Interleaved x,y vertices (length = 2 × point count). */
   points: number[];

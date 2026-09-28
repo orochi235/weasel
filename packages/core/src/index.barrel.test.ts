@@ -166,3 +166,15 @@ describe('draw command exports', () => {
     expect(Barrel.SPRITE_STRIDE).toBe(9);
   });
 });
+
+describe('reset seams', () => {
+  it('keeps them off the package barrel', () => {
+    expect(Object.keys(Barrel).filter((k) => k.endsWith('ForTests'))).toEqual([]);
+  });
+
+  it('reaches every one through the test-seams entry', async () => {
+    const seams = await import('@weasel-js/core/test-seams');
+    expect(Object.keys(seams).length).toBeGreaterThan(0);
+    expect(Object.keys(seams).every((k) => k.endsWith('ForTests'))).toBe(true);
+  });
+});

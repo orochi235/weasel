@@ -1568,62 +1568,28 @@ one dead `const` and four stale disable directives.
 
 ## Documentation
 
-- **(P3) JSDoc audit at definition sites — done; two follow-ups open.** Every
-  public export of every package, `@weasel-js/ui` included, now has a JSDoc
-  string at its definition site. `npm run audit:jsdoc` re-derives the claim: it
-  walks each package's published entry points, resolves every reachable export
-  to where it is declared, and reports what is missing. It also reports any
-  export whose own JSDoc says `@internal` yet reaches a consumer entry point;
-  that count is currently zero. Run it before adding an export, not as a
-  periodic sweep.
+- **(P3) Public API surface: what the JSDoc audit and typedoc still report.**
+  `npm run audit:jsdoc` resolves every export reachable from each package's
+  published entry points to its definition site and reports what is missing;
+  `npx typedoc` reports types a documented export references but the barrel
+  does not export. Run both before adding an export. Test-only reset hooks go
+  on a package's `test-seams` entry (`@weasel-js/font`, `@weasel-js/text`,
+  `@weasel-js/core`), never its barrel.
 
-  What the sweep turned up. The first two are resolved; the last two are open:
-
-  - **`@weasel-js/font`'s reset seams moved off the package barrel** to a
-    `@weasel-js/font/test-seams` entry point. Six of them, not the four the
-    audit first reported — `_resetFontRegistryForTests` and
-    `_resetFallbackForTests` are the same kind of thing without the `@internal`
-    marker that made the others visible to the script. They exist because font
-    registration, the fallback policy, the dynamic atlas and the outline
-    registry are global module state, so a test in another workspace that sets
-    one has to put it back; that need is unchanged, and the seams are still
-    published — an application importing the barrel just no longer sees them.
-    `packages/font/src/barrel.test.ts` pins both halves. `@weasel-js/core` is
-    not affected: its barrel never exported a test helper, and its own tests
-    reach them relatively.
-  - **`evaluateEnabled` is public, and its detached `@internal` marker was the
-    stale part.** `@weasel-js/ui`'s `ActionBar` and weaseldraw's command palette
-    both call it through core's barrel, so marking it internal would have
-    described two existing consumers out of existence. It is now `@experimental`
-    at its own definition, matching `ActionEnabledResult` and the rest of the
-    `enabled` predicate surface.
-  - **Seventeen typedoc warnings, all barrel decisions.** Thirteen are a type
-    referenced by an exported symbol but not itself exported —
-    `NON_SHAPE_BUILTIN_TOOLS`, `SHAPE_KINDS`, `ShapeKindsWhere`,
-    `KitInsertShape`, `ShaderProgram`, `ToolPrefBase`, `SelectionStore`,
-    `Polyline`, `ReorderArgs`, `Scale2`, `WeaselProviderProps`,
-    `PinchZoomTarget`, `StyleToggle`. Four are `{@link}`s to symbols in the
-    same position (`DEFAULT_INK` twice, `SelectionHandlesLayerOpts.rotationHandle`,
-    `useContributions`). Each one asks the same question — export it, or leave
-    it internal and accept the warning — and answering them is an API pass, not
-    a docs fix. The stale `intentionallyNotExported` entries and the dangling
-    `TextStyle.stroke` link are gone. Note that typedoc does not warn about
-    missing JSDoc, so its warning count was never a coverage measure.
-  - **`@weasel-js/ui`'s live/committed callback pair is now spelled one way:
-    `onInput` live, `onChange` committed.** It used to be four ways, two of
-    which disagreed about what `onChange` meant. `Slider`, `ResizeHandle`,
-    `CurveEditor` and `PointPlotter` renamed toward the sense `ColorField`,
-    `GradientEditor` and `GradientHandles` already used, which is also the
-    DOM's — `input` fires continuously, `change` on commit.
-
-    Which of the two is *required* still differs, and that is deliberate:
-    `Slider`, `ResizeHandle`, `CurveEditor` and `PointPlotter` are fully
-    controlled, so without `onInput` the control freezes mid-drag and it is the
-    required one. `ColorField` and `GradientEditor` buffer internally, so
-    `onChange` is theirs. Required-ness follows the control's state model, not
-    the naming.
-
-    Untouched on purpose, all different concepts that merely share a word:
-    `CurveEditor`'s layer-gesture `onCommit(state, ctx)` in `layerTypes.ts`,
-    core's `thresholdDrag` `onCommit(e)`, and `SelectionPanel`'s
-    commit-on-blur text edit, which has no live counterpart to pair with.
+  - **Undocumented exports.** The audit counts 402 of 3574 public exports with
+    no JSDoc (11%), spread across every package; `--undocumented --pkg <name>`
+    lists them.
+  - **Three `@internal` exports still reach a consumer entry**, all in
+    `@weasel-js/routing`. `KeyBinding` is the parameter of `matchesKeyBinding`,
+    which core's barrel exports, so either the marker is stale (as
+    `evaluateEnabled`'s was) or `matchesKeyBinding` comes off core's barrel.
+    `DispatcherViewTarget` and `ViewIdResolver` type the `@internal`
+    `UseGestureDispatcherOptions.views` option, which core's view registry
+    fills from across the package boundary; routing has no non-public entry
+    to put them on, so this is a question of whether it should get one.
+  - **typedoc's one remaining warning is `ReorderArgs`.** Every other op's
+    `*Args` shape is listed in `typedoc.json`'s `intentionallyNotExported`
+    as an internal composition detail, yet each is the parameter type of a
+    public `create*Op` factory, so a consumer calling one cannot name what it
+    passes. Export the `*Args` family or keep it off the barrel; `ReorderArgs`
+    follows whichever is decided.
