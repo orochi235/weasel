@@ -15,6 +15,11 @@ describe('marker inset resolution', () => {
     expect(resolveMarkerSize({ key: 'arrow' }, 2)).toBe(2);
   });
 
+  it('reads a bare-number size as world units, not a multiple of the stroke width', () => {
+    expect(resolveMarkerSize({ key: 'arrow', size: 5 }, 2)).toBe(5);
+    expect(resolveMarkerSize({ key: 'arrow', size: 5 }, 10)).toBe(5);
+  });
+
   it('honours both size unit systems', () => {
     expect(resolveMarkerSize({ key: 'arrow', size: 5 }, 2)).toBe(5);
     expect(resolveMarkerSize({ key: 'arrow', size: { px: 12 } }, 2)).toBe(12);

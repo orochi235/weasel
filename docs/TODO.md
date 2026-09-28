@@ -148,11 +148,14 @@ Priority tags:
   (`svgNodesToKitDrafts` with a `leaf` hook for its `wd:` metadata), but still
   drops `<image>` nodes, since the app's `Obj` union is path/text only.
 
-- **(P3) Marker `size` docs contradict the code.** `packages/paint/src/paint.ts`
-  says a bare-number `size` scales with the resolved stroke width;
-  `resolveMarkerSize` (`core/markerInset.ts`) treats it as absolute world units and
-  returns `{ px }` unscaled as world units. SVG export follows the code. One of the
-  two has to change.
+- **(P3) A `{ px }` marker size does not hold its screen size.** Node painters
+  build marker geometry inside the paint memo, which has no view scale, so
+  `resolveMarkerSize` returns `{ px }` as world units and the head zooms with the
+  line. A `{ px }` stroke width has the same problem for the default (unsized)
+  marker unit: the painter resolves it at scale 1, while the renderer re-resolves
+  the ribbon per view. Fixing it means resolving marker geometry where the view
+  scale is known, as `withResolvedStrokeWidth` (`renderer/draw.ts`) does for the
+  ribbon.
 
 - **(P3) A sized reference to an unregistered marker imports as a plain marker.**
   SVG export stamps `wzl:key`/`wzl:size` on each sized marker definition, but

@@ -39,9 +39,9 @@ type MarkerRef = MarkerKey | { key: MarkerKey; size?: number | { px: number } }
 type MarkerKey = KitMarkerKey | (string & {})   // KitMarkerKey = the built-in table below
 ```
 
-`size` reuses the `number | { px: number }` idiom `Stroke.width` already has: a bare number
-scales with stroke width, `{ px }` pins absolute size. That is SVG's `markerUnits` in an idiom
-the codebase already resolves at draw time.
+`size` reuses the `number | { px: number }` idiom `Stroke.width` already has: a bare number is
+world units, `{ px }` screen pixels. Either one replaces the stroke-width default rather than
+multiplying it — SVG's `markerUnits="userSpaceOnUse"` against the default's `strokeWidth`.
 
 **One size unit is the resolved marker size**, which defaults to the resolved stroke width. All
 geometry and every inset below is expressed in those units, so one entry is correct at any line
