@@ -51,13 +51,17 @@
 }
 
 .list[data-values='figures'] {
-  grid-template-columns: var(--wzl-params-label-width, auto) minmax(var(--wzl-detail-figure-min-width, 8ch), 1fr);
+  grid-template-columns: var(--wzl-params-label-width, auto) minmax(min-content, 1fr);
 }
 
 .list[data-values='figures'] .value {
   justify-content: flex-end;
   text-align: end;
+  /* The display face (Oswald) has no tabular figures, so tabular-nums alone aligns nothing. */
+  font-family: var(--wzl-font-mono);
   font-variant-numeric: tabular-nums;
+  /* On the cell, not the track, so ch measures the figures' own face. */
+  min-width: var(--wzl-detail-figure-min-width, 8ch);
   white-space: pre;
   overflow-wrap: normal;
 }

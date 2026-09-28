@@ -1,4 +1,5 @@
 import '@weasel-js/theme/tokens.css';
+import '@weasel-js/theme/fonts.css';
 import '../styles.less';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
@@ -41,14 +42,22 @@ test('values sit right-aligned at the edge of the list', () => {
   expect(box(values[0]).width).not.toBeCloseTo(box(values[2]).width, 0);
 });
 
-test('figure-space padding lines figures up on the decimal point', () => {
+test('figures are equal width, so padding lines a column up on the decimal point', async () => {
+  // 1 and 8 differ in width wherever digits are proportional, as they are in
+  // the theme's display face, which has no tabular figures to switch on.
   const { container } = render(
-    <div style={{ width: 320 }}>
-      <Readout rows={rows(true)} />
+    <div style={{ width: 320, fontFamily: 'var(--wzl-font-display)' }}>
+      <Readout
+        rows={[
+          { label: 'a', value: <span data-v>{`${FIGURE_SPACE}1.111`}</span> },
+          { label: 'b', value: <span data-v>88.888</span> },
+        ]}
+      />
     </div>,
   );
-  const [, padded, full] = [...container.querySelectorAll('[data-v]')];
-  expect(Math.abs(box(padded).width - box(full).width)).toBeLessThan(0.5);
+  await document.fonts.ready;
+  const [narrow, wide] = [...container.querySelectorAll('[data-v]')];
+  expect(Math.abs(box(narrow).width - box(wide).width)).toBeLessThan(0.5);
 });
 
 test('the value column holds a minimum width in a shrink-wrapped readout', () => {

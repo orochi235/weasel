@@ -771,6 +771,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   one does not reach the other. One way to one copy: `Checkbox` draws its box from the
   same native input and a shared `checkbox.module.css`, as the range skin does.
 
+- **(P2) `tabular-nums` does nothing in the theme's UI face.** Oswald (`--wzl-font-ui`,
+  `--wzl-font-display`) has no `tnum` feature upstream and no figure-space glyph, so a column
+  of numbers set in it stays proportional: "11.111" measures 25.0px and "88.888" 34.8px with
+  `tabular-nums` applied (headless Chromium, `fonts.css` loaded). Every weasel-ui and labkit
+  rule that relies on it while inheriting the UI face aligns nothing — Slider, RangeSlider,
+  Jog, Prefs, Timeline, Plot2D among them. `DetailList`'s figures mode switched its values to
+  `--wzl-font-mono` for this reason. The kit-wide answer is either a numeric face token that
+  those rules read, or a UI face that carries tabular figures.
+
 - **(P2) The field frame is written four times.** `Input`, `Select`, `NumberField` and
   `ComboBox` each restate the same `.field` column, the `.field.row` layout, and the `.frame`
   box with its focus ring, invalid border and disabled fade; `MenuButton`'s trigger and

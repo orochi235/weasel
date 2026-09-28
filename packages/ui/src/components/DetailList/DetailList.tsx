@@ -7,7 +7,7 @@ export type DetailListLayout = 'inline' | 'block';
 /**
  * How a list sets its values. `text` starts each value at the column's edge
  * and wraps it; `figures` right-aligns it in a column at least
- * `--wzl-detail-figure-min-width` (default `8ch`) wide, in tabular numerals,
+ * `--wzl-detail-figure-min-width` (default `8ch`) wide, in the mono face,
  * with spaces kept, so figure-space padding lines a column up on its decimal
  * point.
  */

@@ -28,8 +28,8 @@ export interface ReadoutProps {
  * Values a lab only reads — measurements shown beside its picture, such as
  * "Lock margin +47.9°". A {@link DetailList} set as figures: labels take the
  * params label recipe and `--wzl-params-label-width` rail, so a readout lines
- * up with a `ControlPanel` beside it, and values sit right-aligned in tabular
- * numerals with spaces kept, so figure-space padding aligns a column on its
+ * up with a `ControlPanel` beside it, and values sit right-aligned in the mono
+ * face with spaces kept, so figure-space padding aligns a column on its
  * decimal point. Rows compose by hand as `DetailRow`s inside a `DetailList`
  * with `values="figures"`.
  */

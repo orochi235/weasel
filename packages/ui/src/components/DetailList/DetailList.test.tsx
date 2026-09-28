@@ -136,12 +136,13 @@ describe('DetailRow status and absence', () => {
 describe('DetailList styles', () => {
   it('sets figures right-aligned in a minimum-width column, in equal-width digits, spaces kept', () => {
     expect(css).toMatch(
-      /\.list\[data-values='figures'\]\s*\{\s*grid-template-columns:\s*var\(--wzl-params-label-width,\s*auto\)\s+minmax\(var\(--wzl-detail-figure-min-width,\s*8ch\),\s*1fr\)/,
+      /\.list\[data-values='figures'\]\s*\{\s*grid-template-columns:\s*var\(--wzl-params-label-width,\s*auto\)\s+minmax\(min-content,\s*1fr\)/,
     );
     const body = rule(".list[data-values='figures'] .value");
     expect(body).toMatch(/justify-content:\s*flex-end/);
     expect(body).toMatch(/text-align:\s*end/);
-    expect(body).toMatch(/font-variant-numeric:\s*tabular-nums/);
+    expect(body).toMatch(/font-family:\s*var\(--wzl-font-mono\)/);
+    expect(body).toMatch(/min-width:\s*var\(--wzl-detail-figure-min-width,\s*8ch\)/);
     expect(body).toMatch(/white-space:\s*pre/);
   });
 
