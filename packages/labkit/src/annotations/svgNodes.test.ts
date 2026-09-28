@@ -4,14 +4,12 @@ import { markCommands } from './paint';
 import { markSvgNodes } from './svgNodes';
 import type { AnnotationData, AnnotationKind } from './types';
 
-const CONTENT = { w: 100, h: 60 };
-
 const mark = (kind: AnnotationKind, extra: Partial<AnnotationData> = {}) => ({
   pose: { x: 10, y: 12, width: 30, height: 20 },
   data: {
     target: 'flat',
     kind,
-    points: [
+    shape: [
       { x: 0.1, y: 0.2 },
       { x: 0.5, y: 0.6 },
     ],
@@ -24,8 +22,8 @@ const KINDS: AnnotationKind[] = ['rect', 'ellipse', 'line', 'arrow', 'stroke'];
 describe('a mark as vector', () => {
   it.each(KINDS)('emits %s off the same geometry the screen draws', (kind) => {
     const m = mark(kind);
-    const cmds = markCommands(m, CONTENT);
-    const nodes = markSvgNodes(m, CONTENT);
+    const cmds = markCommands(m);
+    const nodes = markSvgNodes(m);
     expect(nodes).toHaveLength(cmds.length);
     for (const [i, cmd] of cmds.entries()) {
       if (cmd.kind !== 'path') throw new Error('expected path commands');
@@ -46,13 +44,13 @@ describe('a mark as vector', () => {
   });
 
   it('carries a stale mark′s dash through', () => {
-    const [node] = markSvgNodes(mark('rect'), CONTENT, { stale: true });
+    const [node] = markSvgNodes(mark('rect'), { stale: true });
     if (node?.kind !== 'path') throw new Error('expected a path node');
     expect(node.stroke?.dash).toEqual([6, 4]);
   });
 
   it("keeps the arrow's marker, so the export draws its head", () => {
-    const nodes = markSvgNodes(mark('arrow'), CONTENT);
+    const nodes = markSvgNodes(mark('arrow'));
     expect(nodes).toHaveLength(1);
     const [node] = nodes;
     if (node?.kind !== 'path') throw new Error('expected a path node');
@@ -64,11 +62,11 @@ describe('a mark as vector', () => {
 
   it('emits text as text, at the pose, in the mark color', () => {
     const m = mark('text', { title: 'missing edge' });
-    const [node] = markSvgNodes(m, CONTENT);
+    const [node] = markSvgNodes(m);
     expect(node).toMatchObject({ kind: 'text', text: 'missing edge', x: 10, y: 12 });
   });
 
   it('emits nothing for a text mark with no words', () => {
-    expect(markSvgNodes(mark('text'), CONTENT)).toEqual([]);
+    expect(markSvgNodes(mark('text'))).toEqual([]);
   });
 });

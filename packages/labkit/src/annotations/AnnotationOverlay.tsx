@@ -13,7 +13,7 @@ import { CameraWheelContext } from '../canvas/CameraWheelContext';
 import type { Rect } from '../surface/rect';
 import { useSurfaceCanvas, useSurfaceOptional, useTileId } from '../surface/useSurfaceTile';
 import { createMarkDrawOne } from './drawOne';
-import type { WorldRect } from './frac';
+import { boundsOf, roundPoints, toShape, type WorldRect } from './frac';
 import { POINT_MARK_SHAPE } from './paint';
 import { seenFrom } from './staleness';
 import type { MarkScene } from './store';
@@ -55,22 +55,29 @@ function ToolBridge({ toolId }: { toolId: string }) {
   return null;
 }
 
-/** Every vertex the insert carried, in fractions of the content box. */
-function pointsOf(
-  extras: Record<string, unknown>,
-  content: { w: number; h: number },
-): readonly FracPoint[] | undefined {
-  const toFrac = (p: { x: number; y: number }): FracPoint => ({
-    x: content.w === 0 ? 0 : p.x / content.w,
-    y: content.h === 0 ? 0 : p.y / content.h,
-  });
-  if (extras.kind === 'line') {
-    return [toFrac(extras.a as FracPoint), toFrac(extras.b as FracPoint)];
-  }
+/** Every vertex the insert carried, in world units. */
+function verticesOf(extras: Record<string, unknown>): readonly FracPoint[] | undefined {
+  if (extras.kind === 'line') return [extras.a as FracPoint, extras.b as FracPoint];
   if (extras.kind === 'pencil') {
-    return (extras.samples as { x: number; y: number }[]).map(toFrac);
+    const samples = extras.samples as FracPoint[];
+    return samples.length > 0 ? samples : undefined;
   }
   return undefined;
+}
+
+/** The pose and shape an insert's vertices make: the box that holds them, and
+ *  the vertices stored against that very box. Undefined for an insert that
+ *  carries no vertices, whose drag bounds are the whole geometry. */
+export function insertedGeometry(
+  extras: Record<string, unknown>,
+): { pose: WorldRect; shape: readonly FracPoint[] } | undefined {
+  const vertices = verticesOf(extras);
+  if (!vertices) return undefined;
+  const box = boundsOf(vertices);
+  return {
+    pose: { x: box.x, y: box.y, width: box.w, height: box.h },
+    shape: roundPoints(toShape(vertices, box)),
+  };
 }
 
 /**
@@ -203,14 +210,11 @@ export function AnnotationOverlay({
       const info = annotationToolInfo(toolRef.current);
       const kind: AnnotationKind | undefined = info?.kind;
       if (!kind) return null;
-      const points = pointsOf(extras as unknown as Record<string, unknown>, target.content);
-      const data: AnnotationData = {
-        target: id,
-        kind,
-        ...(points ? { points } : {}),
-        seen: seenFrom(configRef.current, target.positionDependsOn ?? []),
-      };
-      return { data };
+      const seen = seenFrom(configRef.current, target.positionDependsOn ?? []);
+      const geometry = insertedGeometry(extras as unknown as Record<string, unknown>);
+      if (!geometry) return { data: { target: id, kind, seen } satisfies AnnotationData };
+      const data: AnnotationData = { target: id, kind, shape: geometry.shape, seen };
+      return { data, pose: geometry.pose };
     };
   }
 

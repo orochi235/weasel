@@ -8,7 +8,17 @@ import {
 import { captureTarget } from './capture';
 import { type MarkDrawOptions, resolveMarkStyle } from './drawOne';
 import type { WorldRect } from './frac';
-import { fracContains, fracEncloses, fracToWorld, roundFrac, worldToFrac } from './frac';
+import {
+  boundsOf,
+  fracContains,
+  fracEncloses,
+  fracToWorld,
+  fromShape,
+  roundFrac,
+  roundPoints,
+  toShape,
+  worldToFrac,
+} from './frac';
 import { MarkHistory } from './history';
 import { isStale as isStaleAgainst, seenFrom } from './staleness';
 import type {
@@ -66,6 +76,34 @@ export interface CaptureDeps {
 
 const NO_CONTENT = { w: 0, h: 0 };
 
+/** Where a mark's vertices sit in its own bounds, from points in the content
+ *  box. A point has none to store: its bounds are its position. */
+function shapeFor(
+  kind: AnnotationData['kind'],
+  points: readonly FracPoint[] | undefined,
+  frac: FracRect,
+): readonly FracPoint[] | undefined {
+  if (!points || kind === 'point') return undefined;
+  return roundPoints(toShape(points, frac));
+}
+
+type SerializedMarks = SerializedScene<AnnotationData, 'marks', MarkPose>;
+
+/** Scenes saved before vertices followed the bounds hold them as `points` in
+ *  the content box. Restated against each mark's bounds as saved. */
+function migrateLegacyPoints(
+  raw: SerializedMarks,
+  content: { w: number; h: number },
+): SerializedMarks {
+  const nodes = raw.nodes.map((n) => {
+    const { points, ...data } = n.data as AnnotationData & { points?: readonly FracPoint[] };
+    if (!points || data.shape) return n;
+    const shape = shapeFor(data.kind, points, worldToFrac(n.pose, content));
+    return { ...n, data: { ...data, ...(shape ? { shape } : {}) } };
+  });
+  return { ...raw, nodes };
+}
+
 /** A mark's id is its target and its node. One scene per target, so a node id
  *  is only unique within one — and an annotation is addressed by both. */
 function splitId(id: string): { target: string; node: string } | undefined {
@@ -92,13 +130,18 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
     for (const fn of subs) fn();
   };
 
+  const targetOf = (id: string): AnnotationTargetInfo | undefined =>
+    targets().find((t) => t.id === id);
+
+  const contentOf = (id: string) => targetOf(id)?.content ?? NO_CONTENT;
+
   const sceneFor = (target: string): MarkScene => {
     const known = scenes.get(target);
     if (known) return known;
     const raw = restore?.[target];
     const scene = raw
       ? sceneFromJSON<AnnotationData, 'marks', MarkPose>(
-          raw as SerializedScene<AnnotationData, 'marks', MarkPose>,
+          migrateLegacyPoints(raw as SerializedMarks, contentOf(target)),
           {},
         )
       : createAnnotationScene();
@@ -120,10 +163,6 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
   // a mark a sidebar cannot list.
   for (const target of Object.keys(restore ?? {})) sceneFor(target);
 
-  const targetOf = (id: string): AnnotationTargetInfo | undefined =>
-    targets().find((t) => t.id === id);
-
-  const contentOf = (id: string) => targetOf(id)?.content ?? NO_CONTENT;
   /** How a target's marks are drawn right now — one answer for the pane, an
    *  export and an overview, so none can disagree on a color or a dash. */
   const drawOptionsFor = (info: AnnotationTargetInfo): MarkDrawOptions => ({
@@ -136,12 +175,13 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
   const project = (target: string, node: string): Annotation | undefined => {
     const found = scenes.get(target)?.get(asNodeId(node));
     if (!found) return undefined;
-    return {
-      ...found.data,
-      target,
-      id: `${target}/${node}`,
-      frac: roundFrac(worldToFrac(found.pose as MarkPose, contentOf(target))),
-    };
+    const { shape, ...data } = found.data;
+    const frac = roundFrac(worldToFrac(found.pose as MarkPose, contentOf(target)));
+    const points =
+      data.kind === 'point'
+        ? [{ x: frac.x, y: frac.y }]
+        : shape && roundPoints(fromShape(shape, frac));
+    return { ...data, target, id: `${target}/${node}`, frac, ...(points ? { points } : {}) };
   };
 
   /** Every target with a scene, in declaration order — then any whose target
@@ -270,10 +310,12 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
 
     add(init: AnnotationInit, config?: unknown) {
       const target = targetOf(init.target);
+      const frac = roundFrac(init.frac);
+      const shape = shapeFor(init.kind, init.points, frac);
       const data: AnnotationData = {
         target: init.target,
         kind: init.kind,
-        ...(init.points ? { points: init.points } : {}),
+        ...(shape ? { shape } : {}),
         ...(init.title !== undefined ? { title: init.title } : {}),
         ...(init.status !== undefined ? { status: init.status } : {}),
         ...(init.tags !== undefined ? { tags: init.tags } : {}),
@@ -283,7 +325,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       const node = sceneFor(init.target).add({
         kind: 'leaf',
         layer: 'marks',
-        pose: fracToWorld(roundFrac(init.frac), target?.content ?? NO_CONTENT),
+        pose: fracToWorld(frac, target?.content ?? NO_CONTENT),
         data,
       });
       return `${init.target}/${String(node)}`;
@@ -292,14 +334,18 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
     update(id, patch: AnnotationPatch) {
       const found = nodeOf(id);
       if (!found) return;
-      const { frac, ...meaning } = patch;
+      const { frac: fracPatch, points, ...meaning } = patch;
       const nid = asNodeId(found.node.id);
-      if (Object.keys(meaning).length > 0) {
-        found.scene.update(nid, { data: { ...found.node.data, ...meaning } });
+      const content = contentOf(found.target);
+      const frac = fracPatch ?? (points && points.length > 0 ? boundsOf(points) : undefined);
+      const bounds = roundFrac(frac ?? worldToFrac(found.node.pose as MarkPose, content));
+      const shape = points ? shapeFor(found.node.data.kind, points, bounds) : undefined;
+      if (Object.keys(meaning).length > 0 || shape) {
+        found.scene.update(nid, {
+          data: { ...found.node.data, ...meaning, ...(shape ? { shape } : {}) },
+        });
       }
-      if (frac) {
-        found.scene.setPose(nid, fracToWorld(roundFrac(frac), contentOf(found.target)));
-      }
+      if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
     },
 
     setMeta(id, meta) {

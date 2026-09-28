@@ -50,9 +50,7 @@ function markupOf(
   if (painted.length === 0) return '';
   // The document is shown at `shown` px, fitted like any SVG viewBox.
   const k = Math.min(shown.w / content.w, shown.h / content.h) || 1;
-  const nodes = painted.flatMap(({ mark, style }) =>
-    markSvgNodes(mark, content, style, { x: k, y: k }),
-  );
+  const nodes = painted.flatMap(({ mark, style }) => markSvgNodes(mark, style, { x: k, y: k }));
   return serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: content.w, height: content.h } });
 }
 

@@ -66,7 +66,6 @@ function markNodesOf(scene: MarkScene, draw: MarkDrawOptions, scale: number) {
     if (!node) return [];
     return markSvgNodes(
       { pose: node.pose, data: node.data as AnnotationData },
-      draw.content,
       resolveMarkStyle(node.data as AnnotationData, draw),
       { x: scale, y: scale },
     );
