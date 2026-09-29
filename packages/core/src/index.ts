@@ -1144,6 +1144,7 @@ export {
   extractWeaselClipboardFromSvg,
 } from './interactions/actions/clipboard';
 export type {
+  ClipboardFlavors,
   UseClipboardOpsOptions,
   UseClipboardOpsReturn,
 } from './interactions/actions/clipboard';
