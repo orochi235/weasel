@@ -630,7 +630,7 @@ the default absolute-pose model a parent imposes no transform, so local and
 world coincide; configure a `poseComposition` and a container's pose becomes a
 frame its children are expressed in, which `getWorldPose` folds.
 See `packages/core/src/interactions/gestures/types.ts:108` (`ResizePose`, `RotatedPose`) and
-`packages/core/src/features/paths/types.ts` (`Path`).
+`packages/geom/src/path.ts` (`Path`).
 
 ### PoseDescriptor
 
@@ -706,7 +706,7 @@ is an SVG-style command stream (`commands: Uint8Array`, `coords: Float32Array`);
 `RectPath` is an axis-aligned-rectangle fast path. Multi-contour shapes use
 multiple `M`/`Z` pairs. The `kind` discriminant lets the polygon kernels
 short-circuit on `'rect'` without the full path kernel. See
-`packages/core/src/features/paths/types.ts`.
+`packages/geom/src/path.ts`.
 
 ---
 

@@ -26,7 +26,7 @@ export { frameRect, type SpriteSheet } from './spriteSheet';
 export { mat3, type GlMat3 } from './math/mat3';
 export { viewToMat3, type View as ViewLike } from './math/viewToMat3';
 export { cullDrawCommands, type CullRect } from './cullDrawCommands';
-export { tessellate, type TessellateOptions } from 'features/paths/tessellate/tessellate';
+export { tessellate, type TessellateOptions } from '@weasel-js/geom/tessellate';
 export { tessellateStroke, type StrokeOptions } from 'features/paths/tessellate/stroke';
 export {
   registerFont,
@@ -49,7 +49,7 @@ export type { RegisterFontOptions } from '@weasel-js/font';
 export { OUTLINE_MIN_SCREEN_PX } from './draw';
 export { buildGradientRamp } from './cache/GradientRampAtlas';
 export { IDENTITY_COLOR_MATRIX } from './state/GroupState';
-export type { Mesh } from './cache/mesh';
+export type { Mesh } from '@weasel-js/geom/tessellate';
 export {
   registerProgram,
   programSourceRegistry,

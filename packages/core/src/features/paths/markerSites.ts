@@ -6,7 +6,7 @@
  * ribbon was cut.
  */
 
-import type { Polyline } from './tessellate/polyline';
+import type { Polyline } from '@weasel-js/geom/tessellate';
 
 /** One marker placement, in the polyline's own coordinates. */
 export interface MarkerSite {

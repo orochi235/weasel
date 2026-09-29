@@ -36,7 +36,7 @@ import {
   linePath,
   regularPolygonPath,
   starPath,
-} from 'features/paths/builder';
+} from '@weasel-js/geom';
 import { getImageBitmap } from 'features/images/imageCache';
 import { resolveOverlays } from 'interactions/actions/resolveOverlays';
 import { gestureOverlaysFrom, isVisibleFrom } from '../drawEnvelope';

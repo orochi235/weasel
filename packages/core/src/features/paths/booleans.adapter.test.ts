@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { pathToMultiPolygon, multiPolygonToPath } from './booleans.adapter';
-import type { RectPath, PolygonPath } from './types';
+import { type RectPath, type PolygonPath, PATH_M, PATH_L, PATH_Z, pointInPath } from '@weasel-js/geom';
 import type { MultiPolygon } from './booleans.adapter';
-import { PATH_M, PATH_L, PATH_Z } from './types';
-import { pointInPath } from '@weasel-js/geom';
 
 describe('pathToMultiPolygon', () => {
   it('emits a single 4-corner ring for a RectPath', () => {

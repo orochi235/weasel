@@ -4,6 +4,14 @@ The kit's vector-geometry primitive. `Path` is the canonical shape type — it
 replaced the per-shape ad-hoc poses, so rect, ellipse, polygon, star, line, pen
 output, and boolean results are all the same type.
 
+The type and the pure math over it — construction, `pathFromD`, bounds,
+transforms, distance, sampling, splitting, curve fitting, curve
+representations and tessellation — live in `@weasel-js/geom`
+(`packages/geom/src/path.ts`, `paths/`, `curves/`, `tessellate/`, and
+`booleans/` for the splitting that needs a union). This directory holds what
+needs the scene, the renderer or `@weasel-js/paint`, and re-exports the rest by
+name so core's public API is unchanged.
+
 ## Storage: two typed arrays
 
 An SVG-style command stream, split across:
@@ -34,36 +42,38 @@ upstream silently loses the optimization).
 
 ## Map of the directory
 
-**Construction**
-`builder.ts` (`PathBuilder`, `rectPath`, `ellipsePath`, `regularPolygonPath`,
-`starPath`, `linePath`, `polygonFromPoints`), `pathFromD.ts` (parse SVG `d`).
+**In `@weasel-js/geom`** — `paths/builder.ts` (`PathBuilder`, `rectPath`,
+`ellipsePath`, `regularPolygonPath`, `starPath`, `linePath`,
+`polygonFromPoints`), `paths/pathFromD.ts` (parse SVG `d`), `paths/bounds.ts`,
+`paths/pathDistance.ts`, `paths/pathAt.ts`, `paths/unionBoundsPath.ts`,
+`paths/transform.ts`, `paths/transformPath.ts`, `paths/compose.ts`,
+`paths/splitSubpaths.ts`, `paths/cubicMath.ts`, `paths/schneiderFit.ts`
+(curve fitting for freehand), `pathHitTest.ts`, `flatten.ts`, `curves/`
+(`./curves` subpath), `tessellate/` (`./tessellate` subpath: fill
+tessellation, polylines, trim), `booleans/splitBySegment.ts` (`./booleans`).
 
 > **Path language stance:** external/terse geometry is expressed as SVG path
 > data via `pathFromD` — the kit does not define a bespoke path DSL. Builders
 > are a co-equal choice, not a lesser one. See `docs/conventions.md`.
 
-**Query** — `bounds.ts`, `pathDistance.ts`, `unionBoundsPath.ts`. Path
-hit-testing (`pointInPath`, `strokeHitTest`, path vs rect and polygon) lives in
-`@weasel-js/geom`, and the pose-rotation convention in
-`core/geometry/poseRotation.ts`: `core/adapters/arrayAdapter.ts` needs both,
-and core may not import from here.
+**Here** — the pose-rotation convention is in `core/geometry/poseRotation.ts`,
+because `core/adapters/arrayAdapter.ts` needs it and core may not import from
+here.
 
-**Transform** — `transform.ts`, `transformPath.ts`, `pathInWorld.ts`,
-`poseDescriptor.ts`, `originProjection.ts`
+**Transform** — `pathInWorld.ts`, `poseDescriptor.ts`, `originProjection.ts`
 
 **Editing** — `anchors.ts` (`pathToAnchors` / `anchorsToPath`, `PenAnchor`,
 `nearestSegmentT`), `anchorEdits.ts` (the anchor-set mutations: translate,
 handle-drag with smooth mirroring, insert-on-segment, delete-with-refit,
-scissors, rect select), `cubicMath.ts` (`splitCubicAtT`,
-`fitCubicThroughDeletion`), `schneiderFit.ts` (curve fitting for freehand),
-`splitBySegment.ts`, `splitSubpaths.ts`, `compose.ts`
+scissors, rect select)
 
-**Booleans** — `booleans.ts` + `booleans.adapter.ts` (union / intersect /
-exclude / minus-front)
+**Booleans** — `booleans.ts` + `booleans.adapter.ts`, named re-exports of
+`@weasel-js/geom/booleans` (union / intersect / exclude / minus-front)
 
-**Rendering** — `pathLayer.ts`, `markers.ts`, `flatten.ts`, `tessellate/`,
-`curves/`, plus `penPreviewLayer.ts` (the pen's in-progress path) and
-`pathEditingOverlayLayer.ts` (anchor-edit chrome)
+**Rendering** — `pathLayer.ts`, `markers.ts`, `markerCommands.ts`,
+`markerSites.ts`, `tessellate/stroke.ts` (stroke ribbons; stays in core because
+it reads `@weasel-js/paint`'s `Stroke`), plus `penPreviewLayer.ts` (the pen's
+in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome)
 
 ## Anchors are a view, not the storage
 

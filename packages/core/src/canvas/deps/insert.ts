@@ -26,8 +26,8 @@ import {
   starPath,
   linePath,
   polygonFromPoints,
-} from 'features/paths/builder';
-import { schneiderFit } from 'features/paths/schneiderFit';
+  schneiderFit,
+} from '@weasel-js/geom';
 import { insertPreviewExtent } from '../insertPreviewExtent';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
 

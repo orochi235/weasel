@@ -9,7 +9,7 @@
 import { type DrawCommand } from '../../renderer';
 import { type FillStyle, type Stroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
-import type { Path } from './types';
+import type { Path } from '@weasel-js/geom';
 import { countPathAnchors } from './anchors';
 import type { ColorOverrideRegistry } from '../../animation/colorRegistry';
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { ColorOverrideRegistry } from '../animation/colorRegistry';
-import { pathFromD } from 'features/paths/pathFromD';
+import { pathFromD } from '@weasel-js/geom';
 import { countPathAnchors } from 'features/paths/anchors';
 import { defaultDrawOne } from './defaultDrawOne';
 import { wireSceneSlotToScene } from './sceneSlotWiring';

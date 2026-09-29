@@ -1,4 +1,4 @@
-import type { Path } from '../geometry/path';
+import type { Path } from '@weasel-js/geom';
 import type { History, SerializedHistory } from '@weasel-js/history';
 import type { ParallaxOpts } from '../viewport/parallax';
 

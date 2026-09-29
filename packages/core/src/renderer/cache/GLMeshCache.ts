@@ -1,4 +1,4 @@
-import type { Mesh } from './mesh';
+import type { Mesh } from '@weasel-js/geom/tessellate';
 
 export interface GLMeshHandle {
   readonly vao: WebGLVertexArrayObject;

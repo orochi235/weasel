@@ -21,11 +21,11 @@ import { describe, expect, it, afterEach, beforeEach } from 'vitest';
 import { defaultDrawOne } from './defaultDrawOne';
 import { registerNodeShape, _resetShapePaintersForTests } from './NodeShape';
 import { getMesh, _resetCacheForTests } from '../renderer/cache/cache';
-import type { Mesh } from '../renderer/cache/mesh';
+import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { PathDrawCommand } from '../renderer';
 import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import { ellipsePath, regularPolygonPath, starPath } from 'features/paths/builder';
+import { ellipsePath, regularPolygonPath, starPath } from '@weasel-js/geom';
 
 interface RectPose { x: number; y: number; width: number; height: number }
 

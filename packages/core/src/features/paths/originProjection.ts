@@ -1,6 +1,4 @@
-import { boundsOfPath } from './bounds';
-import { translatePath } from './transform';
-import type { Path } from './types';
+import { boundsOfPath, translatePath, type Path } from '@weasel-js/geom';
 import type { OriginProjection } from 'interactions/gestures/shared/strategies/grid';
 
 /**

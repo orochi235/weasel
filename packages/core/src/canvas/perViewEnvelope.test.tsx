@@ -20,8 +20,7 @@ import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLay
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
 import { chromeAffordances } from './affordanceAt';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
-import { polygonFromPoints } from 'features/paths/builder';
-import type { PolygonPath } from 'features/paths/types';
+import { polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
 import { asNodeId } from 'core/scene/types';
 
 interface Data { label: string }

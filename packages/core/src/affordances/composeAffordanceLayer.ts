@@ -7,7 +7,7 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import { pxExtent } from 'core/viewport/pxExtent';
 import type { DebugSink } from '../debug/types';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
-import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
+import { PATH_M, PATH_L, PATH_Z } from '@weasel-js/geom';
 import {
   angleOf,
   annulusSemiAxes,

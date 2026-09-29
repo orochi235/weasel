@@ -3,7 +3,7 @@ import {
   registerMarker, getMarker, listMarkers, markerRegistry, _resetMarkersForTests,
   type MarkerEntry,
 } from './strokeMarkers';
-import { PATH_M, PATH_L, PATH_Z } from './geometry/path';
+import { PATH_M, PATH_L, PATH_Z } from '@weasel-js/geom';
 
 afterEach(() => { _resetMarkersForTests(); });
 

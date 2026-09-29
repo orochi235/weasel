@@ -9,7 +9,7 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import { PATH_M, type PolygonPath } from 'core/geometry/path';
+import { PATH_M, type PolygonPath } from '@weasel-js/geom';
 
 // ---------------------------------------------------------------------------
 // Stub scene — tracks removals, roots/children for index capture, and an

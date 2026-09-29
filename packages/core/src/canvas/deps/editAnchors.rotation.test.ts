@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveEditablePathOf } from './editAnchors';
-import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from 'features/paths/types';
+import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { pathInWorld, worldEditToStorage } from 'features/paths/pathInWorld';
 
 /** Unit square as a stored (origin-aligned) polygon path. */

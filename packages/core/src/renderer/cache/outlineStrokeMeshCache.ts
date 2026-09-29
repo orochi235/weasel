@@ -23,10 +23,10 @@
  * the `Stroke` in hand.
  */
 
-import { pathFromD } from 'features/paths/pathFromD';
+import { pathFromD } from '@weasel-js/geom';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
 import type { Stroke } from '@weasel-js/paint';
-import type { Mesh } from './mesh';
+import type { Mesh } from '@weasel-js/geom/tessellate';
 import { OUTLINE_FLATTEN_TOLERANCE } from './outlineMeshCache';
 
 /** Cached ribbons before the cache is dropped wholesale. Matches the fill

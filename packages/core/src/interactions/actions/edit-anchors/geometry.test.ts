@@ -13,7 +13,7 @@ import {
   PATH_Q,
   PATH_Z,
   type PolygonPath,
-} from 'features/paths/types';
+} from '@weasel-js/geom';
 
 const path = (commands: number[], coords: number[]): PolygonPath => ({
   kind: 'polygon',

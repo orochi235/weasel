@@ -10,7 +10,7 @@
  */
 import { useRef } from 'react';
 import { asNodeId } from 'core/scene/types';
-import { boundsOfPath } from 'features/paths/bounds';
+import { boundsOfPath } from '@weasel-js/geom';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
 import { useEllipseTool } from 'tools/builtin/ellipse/useEllipseTool';
 import { useLassoTool } from 'tools/builtin/lasso/useLassoTool';

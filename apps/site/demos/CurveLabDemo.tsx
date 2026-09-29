@@ -5,7 +5,7 @@ import {
   nurbs,
   spiro,
   type SharedAnchor,
-} from '@weasel-js/core';
+} from '@weasel-js/geom/curves';
 import { CURVE_PRESETS } from './curveLab/presets';
 import { RepresentationPanel, type OverlayFlags } from './curveLab/RepresentationPanel';
 

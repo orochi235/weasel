@@ -1,12 +1,4 @@
-import { forEachSegment } from '@weasel-js/geom';
-import {
-  PATH_C,
-  PATH_L,
-  PATH_M,
-  PATH_Q,
-  PATH_Z,
-  type PolygonPath,
-} from 'features/paths/types';
+import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 
 /** A single anchor on a `PolygonPath`, with its incoming/outgoing bezier
  *  control points (when present). `coordIndex` points at the anchor's own

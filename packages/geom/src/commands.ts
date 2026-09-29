@@ -1,6 +1,6 @@
 /**
  * SVG-style command-stream encoding — the kit's single declaration of the path
- * opcodes. `Path` in @weasel-js/core wraps this with `kind` + `fillRule`.
+ * opcodes. `Path` (`./path`) wraps this with `kind` + `fillRule`.
  *
  * The codes index a `Uint8Array` command stream whose coords live in a
  * parallel float array, so a code declared anywhere but `PATH_COMMANDS` makes

@@ -29,7 +29,7 @@
  * bitmaps no longer breaks a run per command.
  */
 
-import type { Mesh } from './cache/mesh';
+import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { GlMat3 } from './math/mat3';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { PAINT_MODE_PLAIN, WHITE_SLOT, packSlot } from './shaders/batchFill';

@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { markerDrawCommands, markerReach } from './markerCommands';
 import { registerMarker, type MarkerEntry } from '../../core/strokeMarkers';
-import { PATH_Z } from '../../core/geometry/path';
-import { PATH_M, PATH_L, type PolygonPath } from '../../core/geometry/path';
+import { PATH_Z, PATH_M, PATH_L, type PolygonPath } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
 
 const LINE: PolygonPath = {

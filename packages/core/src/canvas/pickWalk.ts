@@ -21,7 +21,7 @@
  * a locked node is on screen and still out of reach.
  */
 
-import type { Path } from 'features/paths/types';
+import type { Path } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';

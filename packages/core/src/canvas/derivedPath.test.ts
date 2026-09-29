@@ -9,11 +9,10 @@ import { buildSceneViewCommands } from './sceneViewRender';
 import { planPixelRender } from './renderSceneToPixels';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type DerivedDep, type Node, type NodeId, type RectPose } from 'core/scene/types';
-import type { Path } from 'core/geometry/path';
+import { type Path, linePath } from '@weasel-js/geom';
 import type { FillStyle } from '@weasel-js/paint';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../renderer';
-import { linePath } from 'features/paths/builder';
 
 /** No node in these fixtures uses `dependsOn: 'children'`. */
 const NO_CHILDREN = (): readonly NodeId[] => [];

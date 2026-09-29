@@ -13,8 +13,7 @@
  * and similar transient/decorative geometry.
  */
 
-import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from './types';
-import { rectToContour } from '@weasel-js/geom';
+import { PATH_L, PATH_M, PATH_Z, type PolygonPath, rectToContour } from '@weasel-js/geom';
 
 /**
  * N-segment polygon approximation of a circle. Default 32 segments → max

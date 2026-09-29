@@ -12,7 +12,7 @@ import {
   PATH_L,
   PATH_Z,
   type PolygonPath,
-} from 'features/paths/types';
+} from '@weasel-js/geom';
 
 const polyTriangle: PolygonPath = {
   kind: 'polygon',

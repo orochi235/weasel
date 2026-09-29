@@ -814,13 +814,13 @@ export {
   nurbs,
   spiro,
   CURVE_REPS,
-} from './features/paths/curves';
+} from '@weasel-js/geom/curves';
 export type {
   SharedAnchor,
   CurveRepKind,
   CurveRepresentation,
   Discriminator,
-} from './features/paths/curves';
+} from '@weasel-js/geom/curves';
 // ─── Utility: 45° axis constraint ───────────────────────────────────────────
 export { constrainTo45 } from './util/constrainTo45';
 
@@ -861,8 +861,8 @@ export { markerInset, markerKeyOf, resolveMarkerSize, strokeInsets } from './cor
 export { markerSites } from './features/paths/markerSites';
 export type { MarkerSite, MarkerSiteRequest } from './features/paths/markerSites';
 export { BUILTIN_MARKERS } from './core/strokeMarkerShapes';
-export { trimPolyline } from './features/paths/tessellate/trim';
-export type { Polyline } from './features/paths/tessellate/polyline';
+export { trimPolyline } from '@weasel-js/geom/tessellate';
+export type { Polyline } from '@weasel-js/geom/tessellate';
 
 export {
   DEFAULT_FILL_COLOR,

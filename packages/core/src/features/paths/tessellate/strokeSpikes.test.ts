@@ -9,8 +9,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { tessellateStroke } from './stroke';
-import { extractPolylines } from './polyline';
-import { pathFromD } from '../pathFromD';
+import { extractPolylines } from '@weasel-js/geom/tessellate';
+import { pathFromD } from '@weasel-js/geom';
 
 /** A capital W: two acute interior apexes, one per V. */
 const W = 'M0 0 L14 70 L26 70 L36 22 L46 70 L58 70 L72 0 L60 0 L51 52 L42 0 L30 0 L21 52 L12 0 Z';

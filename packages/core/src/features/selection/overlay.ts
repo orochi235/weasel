@@ -46,7 +46,7 @@ import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { screenAngleOf } from 'core/viewport/pxExtent';
-import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '../paths/types';
+import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { HANDLE_BASE_PX } from 'core/device/targets';
 
 /** Project world AABB into screen-space AABB using the active view. */

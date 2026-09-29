@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PATH_L, PATH_M, PATH_Z } from './types';
+import { PATH_L, PATH_M, PATH_Z } from '@weasel-js/geom';
 import { circlePath, rectMarkerPath, roundRectPath, squarePath } from './markers';
 
 describe('marker builders', () => {

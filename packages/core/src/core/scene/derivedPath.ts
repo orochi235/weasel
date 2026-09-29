@@ -18,7 +18,7 @@
  * The pull covers poses only. A derivation is handed each dependency's whole
  * node, so one reading `data` or `layer` still rides on the scene's push.
  */
-import type { Path } from 'core/geometry/path';
+import type { Path } from '@weasel-js/geom';
 import { dependencyIdsOf } from './dependents';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
 import { recordDeps, sameDeps, type DepRecord } from './depMemo';

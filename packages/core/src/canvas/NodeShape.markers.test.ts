@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { findNodeShape } from './NodeShape';
-import { PATH_M, PATH_L, type PolygonPath } from '../core/geometry/path';
+import { PATH_M, PATH_L, type PolygonPath } from '@weasel-js/geom';
 
 const LINE: PolygonPath = {
   kind: 'polygon',

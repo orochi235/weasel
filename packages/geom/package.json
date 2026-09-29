@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/geom",
   "version": "1.7.0",
-  "description": "Pure geometry kernel for @weasel-js/core: affine, box, curve, polyline in 2D. Dependency-free core; polygon booleans in the ./booleans subpath, vectors, quaternions, 4x4 matrices and ray intersection in ./3d.",
+  "description": "Pure geometry kernel for @weasel-js/core: affine, box, curve, polyline, the Path command stream and its math, and easing curves in 2D. Dependency-free core; curve representations in ./curves, tessellation in ./tessellate (earcut), polygon booleans and path splitting in ./booleans (polygon-clipping), vectors, quaternions, 4x4 matrices and ray intersection in ./3d.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -21,17 +21,30 @@
       "import": "./dist/3d/index.js",
       "types": "./dist/3d/index.d.ts"
     },
+    "./curves": {
+      "import": "./dist/curves/index.js",
+      "types": "./dist/curves/index.d.ts"
+    },
+    "./tessellate": {
+      "import": "./dist/tessellate/index.js",
+      "types": "./dist/tessellate/index.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "peerDependencies": {
+    "earcut": "3.2.3",
     "polygon-clipping": "^0.15.7"
   },
   "peerDependenciesMeta": {
+    "earcut": {
+      "optional": true
+    },
     "polygon-clipping": {
       "optional": true
     }
   },
   "devDependencies": {
+    "earcut": "3.2.3",
     "polygon-clipping": "^0.15.7"
   },
   "scripts": {

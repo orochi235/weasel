@@ -33,9 +33,8 @@
  * an LRU's bookkeeping would cost more than the misses it avoids.
  */
 
-import { pathFromD } from 'features/paths/pathFromD';
-import { tessellate } from 'features/paths/tessellate/tessellate';
-import type { Mesh } from './mesh';
+import { pathFromD } from '@weasel-js/geom';
+import { tessellate, type Mesh } from '@weasel-js/geom/tessellate';
 
 /** Curve flattening tolerance for glyph outlines, in em. See the header. */
 export const OUTLINE_FLATTEN_TOLERANCE = 1 / 4096;

@@ -129,7 +129,7 @@ import type { GeometryProjection } from 'interactions/actions/geometryProjection
 import type { ClipboardIngestCtx, SvgIngestOptions } from 'interactions/actions/depSchema';
 import type { InsertAdapter } from 'core/adapters/types';
 import { resolveEditablePathOf } from './deps/editAnchors';
-import type { PolygonPath } from 'features/paths/types';
+import type { PolygonPath } from '@weasel-js/geom';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
 import { useViewportActions } from './SceneCanvas/useViewportActions';
 import type { ViewportZoomAnimateOptions, ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { countPathAnchors, pathToAnchors } from './anchors';
-import { PathBuilder, polygonFromPoints, rectPath } from './builder';
+import { PathBuilder, polygonFromPoints, rectPath } from '@weasel-js/geom';
 
 describe('pathToAnchors', () => {
   it('extracts a single open subpath of corner anchors from M+L+L', () => {

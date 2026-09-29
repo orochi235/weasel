@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createScene, sceneFromJSON } from './scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from './types';
 import { nodeMemo } from './nodeMemo';
-import { PATH_L, PATH_M, type PolygonPath } from '../geometry/path';
+import { PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
 
 const LAYERS = [{ id: 'main' as const }];
 

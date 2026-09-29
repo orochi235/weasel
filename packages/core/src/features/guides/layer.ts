@@ -11,7 +11,7 @@
 import type { DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { type Stroke } from '@weasel-js/paint';
-import { PATH_L, PATH_M, type PolygonPath } from '../paths/types';
+import { PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
 import type { Guide } from './types';
 
 /** Options for `createGuidesLayer`. */

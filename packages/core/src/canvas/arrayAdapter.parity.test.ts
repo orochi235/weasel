@@ -7,7 +7,7 @@ import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import type { LassoHitMode } from 'core/adapters/types';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
-import { PATH_L, PATH_M, PATH_Z } from 'core/geometry/path';
+import { PATH_L, PATH_M, PATH_Z } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { findShapeSilhouette } from './NodeShape';
 import { sceneToAdapter } from './sceneAdapter';

@@ -7,9 +7,8 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
-import { boundsOfPath } from 'features/paths/bounds';
+import { boundsOfPath, type Path } from '@weasel-js/geom';
 import { pathInWorld } from 'features/paths/pathInWorld';
-import type { Path } from 'features/paths/types';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
 

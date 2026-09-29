@@ -1,4 +1,4 @@
-import { resolveEasing } from './easingSpec';
+import { resolveEasing } from '@weasel-js/geom';
 import type {
   AnimationHandle,
   Animator,

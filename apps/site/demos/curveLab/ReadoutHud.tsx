@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { CurveRepresentation, SharedAnchor } from '@weasel-js/core';
+import type { CurveRepresentation, SharedAnchor } from '@weasel-js/geom/curves';
 
 interface ReadoutHudProps {
   rep: CurveRepresentation;

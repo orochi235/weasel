@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
-import type { Path } from 'features/paths/types';
+import type { Path } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 

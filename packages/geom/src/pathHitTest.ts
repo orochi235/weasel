@@ -13,11 +13,10 @@ import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from './comman
 import { DEFAULT_FLATTEN_TOLERANCE, flattenCubic, flattenQuadratic } from './flatten';
 import { pointInPolygon, pointSegmentDist2, segmentsCross } from './polyline';
 import type { Rect } from './box';
-import type { GeomPath } from './path';
+import type { Path, PolygonPath } from './path';
 import type { Mat3 } from './mat3';
 import { capsuleWithinPx, isSimilarity, stretchOf, type Linear2 } from './screenBand';
 
-type PolygonGeomPath = Extract<GeomPath, { kind: 'polygon' }>;
 type XY = { x: number; y: number };
 
 /** Options for the path hit-tests. */
@@ -47,7 +46,7 @@ export interface StrokeHitTestOptions {
  * back to its first vertex is implicit.
  */
 function flatSubpaths(
-  path: PolygonGeomPath,
+  path: PolygonPath,
   tolerance: number,
 ): { closed: number[][]; open: number[][] } {
   const { commands, coords } = path;
@@ -94,7 +93,7 @@ function flatSubpaths(
   return { closed, open };
 }
 
-function closedSubpaths(path: PolygonGeomPath, opts: PointInPathOptions): number[][] {
+function closedSubpaths(path: PolygonPath, opts: PointInPathOptions): number[][] {
   return flatSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE).closed;
 }
 
@@ -102,7 +101,7 @@ function closedSubpaths(path: PolygonGeomPath, opts: PointInPathOptions): number
 
 /** Filled-region hit-test for a path. Rect short-circuits to AABB; polygons run ray-cast / winding per `fillRule`. */
 export function pointInPath(
-  path: GeomPath,
+  path: Path,
   x: number,
   y: number,
   opts: PointInPathOptions = {},
@@ -135,7 +134,7 @@ export function pointInPath(
  * Every flattened segment is treated as a capsule of radius `threshold`.
  */
 export function strokeHitTest(
-  path: GeomPath,
+  path: Path,
   x: number,
   y: number,
   threshold: number,
@@ -161,7 +160,7 @@ export function strokeHitTest(
 /** Does `visit` answer true for any outline segment — every edge of a rect,
  *  closing edges of closed subpaths included? */
 function someSegment(
-  path: GeomPath,
+  path: Path,
   tolerance: number | undefined,
   visit: (ax: number, ay: number, bx: number, by: number) => boolean,
 ): boolean {
@@ -290,7 +289,7 @@ function anyVertexInPolygon(subpaths: readonly number[][], flatPoly: readonly nu
 
 /** Returns true if (x, y) lies within the filled region of `path`. */
 export function pathContainsPoint(
-  path: GeomPath,
+  path: Path,
   x: number,
   y: number,
   opts: PointInPathOptions = {},
@@ -299,7 +298,7 @@ export function pathContainsPoint(
 }
 
 /** Returns true if `rect` is entirely contained within `path`. */
-export function pathContainsRect(path: GeomPath, rect: Rect, opts: PointInPathOptions = {}): boolean {
+export function pathContainsRect(path: Path, rect: Rect, opts: PointInPathOptions = {}): boolean {
   if (path.kind === 'rect') {
     return (
       rect.x >= path.x &&
@@ -319,7 +318,7 @@ export function pathContainsRect(path: GeomPath, rect: Rect, opts: PointInPathOp
 }
 
 /** Returns true if `rect` overlaps (intersects or contains) `path`. */
-export function pathIntersectsRect(path: GeomPath, rect: Rect, opts: PointInPathOptions = {}): boolean {
+export function pathIntersectsRect(path: Path, rect: Rect, opts: PointInPathOptions = {}): boolean {
   if (path.kind === 'rect') {
     return (
       rect.x < path.x + path.width &&
@@ -339,7 +338,7 @@ export function pathIntersectsRect(path: GeomPath, rect: Rect, opts: PointInPath
 
 /** Returns true if every vertex of `polygon` lies inside `path`. */
 export function pathContainsPolygon(
-  path: GeomPath,
+  path: Path,
   polygon: readonly XY[],
   opts: PointInPathOptions = {},
 ): boolean {
@@ -364,7 +363,7 @@ export function pathContainsPolygon(
 
 /** Returns true if `polygon` overlaps (intersects or is contained by) `path`. */
 export function pathIntersectsPolygon(
-  path: GeomPath,
+  path: Path,
   polygon: readonly XY[],
   opts: PointInPathOptions = {},
 ): boolean {
@@ -388,7 +387,7 @@ export function pathIntersectsPolygon(
  */
 export function polygonContainsPath(
   polygon: readonly XY[],
-  path: GeomPath,
+  path: Path,
   opts: PointInPathOptions = {},
 ): boolean {
   if (polygon.length < 3) return false;
@@ -419,7 +418,7 @@ export function polygonContainsPath(
  */
 export function polygonIntersectsPath(
   polygon: readonly XY[],
-  path: GeomPath,
+  path: Path,
   opts: PointInPathOptions = {},
 ): boolean {
   if (polygon.length < 3) return false;

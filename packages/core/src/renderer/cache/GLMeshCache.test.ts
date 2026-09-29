@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { makeGLRecorder } from '../test-utils/glRecorder';
-import type { Mesh } from './mesh';
+import type { Mesh } from '@weasel-js/geom/tessellate';
 import { GLMeshCache } from './GLMeshCache';
 
 const sampleMesh: Mesh = {

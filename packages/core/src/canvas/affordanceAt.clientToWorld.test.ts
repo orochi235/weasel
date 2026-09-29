@@ -20,8 +20,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildAffordanceAt, buildClassifyTarget, type AnchorState } from './affordanceAt';
-import { PATH_M, PATH_L, PATH_C, PATH_Z } from 'features/paths/types';
-import type { PolygonPath } from 'features/paths/types';
+import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 
 // ---------------------------------------------------------------------------
 // Helper: replicate the clientToWorld formula from GestureDispatcherMounter.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { polygonContainsPath, polygonIntersectsPath } from './pathHitTest';
-import type { GeomPath } from './path';
+import type { Path } from './path';
 
 const SQUARE = [
   { x: 0, y: 0 },
@@ -9,7 +9,7 @@ const SQUARE = [
   { x: 0, y: 10 },
 ];
 
-const rect = (x: number, y: number, width: number, height: number): GeomPath =>
+const rect = (x: number, y: number, width: number, height: number): Path =>
   ({ kind: 'rect', x, y, width, height });
 
 describe('polygonContainsPath — rect paths', () => {

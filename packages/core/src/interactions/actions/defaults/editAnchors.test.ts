@@ -120,8 +120,7 @@ describe('editAnchorsAction descriptor', () => {
 // Happy-path tests — anchors (REAL invoker)
 // ---------------------------------------------------------------------------
 
-import { PATH_M, PATH_L, PATH_C, PATH_Z } from 'features/paths/types';
-import type { PolygonPath } from 'features/paths/types';
+import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 
 /** M(0,0) L(10,0) L(5,10) Z — three anchors at (0,0), (10,0), (5,10). */
 function makeTriangle(): PolygonPath {

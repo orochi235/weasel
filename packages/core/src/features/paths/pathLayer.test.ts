@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createPathLayer } from './pathLayer';
-import { polygonFromPoints, rectPath } from './builder';
-import type { Path } from './types';
+import { polygonFromPoints, rectPath, type Path } from '@weasel-js/geom';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { ColorOverrideRegistry } from '../../animation/colorRegistry';
 
