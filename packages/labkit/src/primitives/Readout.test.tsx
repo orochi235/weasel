@@ -81,8 +81,8 @@ describe('Readout', () => {
   });
 
   it('merges a consumer className on its root', () => {
-    const { container } = render(<Readout className="mine" rows={[]} />);
-    expect(must(container.firstElementChild).className).toMatch(/\blk-readout\b.*\bmine\b/);
+    const { container } = render(<Readout className="is-mine" rows={[]} />);
+    expect(must(container.firstElementChild).className).toMatch(/\blk-readout\b.*\bis-mine\b/);
   });
 
   it('is exported from the labkit barrel, with the list it is built on', () => {
