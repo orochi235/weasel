@@ -14,6 +14,7 @@ import type {
   SerializedScene,
   UnitSystem,
 } from '@weasel-js/core';
+import { createGridLayer } from '@weasel-js/guides';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { defineInstrument, type RenderContext } from '@weasel-js/labkit';
 
@@ -105,10 +106,12 @@ function Body({ config, state, setState }: BodyProps) {
     () => ({
       grid: config.showGrid
         ? {
-            spacing: { value: 20, unit: 'px' as const },
-            unitSystem: UNITS,
-            bounds: () => ({ x: 0, y: 0, width: 2000, height: 2000 }),
-            accentEvery: 5,
+            layer: createGridLayer({
+              spacing: { value: 20, unit: 'px' },
+              unitSystem: UNITS,
+              bounds: () => ({ x: 0, y: 0, width: 2000, height: 2000 }),
+              accentEvery: 5,
+            }),
           }
         : null,
     }),

@@ -424,10 +424,13 @@ which do not exist yet. See `packages/core/src/interactions/gestures/types.ts` f
 `snap(pose, ctx): TPose | null`. Returns the snapped pose or `null` to skip.
 Passed through the action layer (e.g. the `resizePolicy` dep's `pointSnap`) or
 via the `ToolCtx` snap field to tools. World-space point snapping for insertion
-is the `snap` dep — see `SnapDep` in `interactions/actions/depSchema.ts`. Built-in: `gridSnapStrategy(spacing)`
-snaps the pose origin to the nearest grid multiple; `OriginProjection` adapts
-non-rect poses (e.g. `Path`) so `gridSnapStrategy` can read and write the
-correct origin. See `packages/core/src/interactions/gestures/shared/strategies/grid.ts`.
+is the `snap` dep — see `SnapDep` in `interactions/actions/depSchema.ts`. Core
+owns the contract and `OriginProjection`, which adapts non-rect poses (e.g.
+`Path`) so a strategy can read and write the correct origin — see
+`packages/core/src/interactions/gestures/shared/originProjection.ts`. The
+strategies themselves are in `@weasel-js/guides`: `gridSnapStrategy(spacing)`
+snaps the pose origin to the nearest grid multiple, `guideSnapStrategy` to the
+nearest guide line.
 
 ### Layout strategy
 
@@ -435,9 +438,10 @@ correct origin. See `packages/core/src/interactions/gestures/shared/strategies/g
 `getChildPositions`, `getDropTargets`, `reflowFor`, `commitDrop`, `snap`, and
 an optional `contains` predicate. When a container in the scene exposes a layout
 strategy via the `layout` dep, `moveAction` runs a layout pass on
-drag: reflows siblings live and calls `commitDrop` on release. Built-in strategies:
+drag: reflows siblings live and calls `commitDrop` on release. The contract is
+in `packages/core/src/layout/types.ts`; the strategies are in `@weasel-js/guides`:
 `freeform` (absolute positioning), `tileGrid` (row/column grid), `snapPoint`
-(named anchor positions). See `packages/core/src/layout/types.ts` and `packages/core/src/layout/strategies/`.
+(named anchor positions), under `packages/guides/src/layout/strategies/`.
 
 ### Selection
 
@@ -527,7 +531,7 @@ kit's internal partial order.
 An exported building block from a feature — a hook, layer factory, type, helper,
 or utility function. The unit of public consumption. Per-feature primitives compose
 into the consumer-side abstractions. Examples: `useCanvasFocus`, `gateLayer`,
-`createGridLayer`, `useGridCellHover`, `gridSnapStrategy`. Primitives are exported
+`createSelectionOverlayLayer`, `pathOriginProjection`. Primitives are exported
 directly; features are directories.
 
 ### Role taxonomy

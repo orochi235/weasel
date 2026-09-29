@@ -27,7 +27,7 @@
  * kind additionally honors Shift (constrain to 15°) and reads Alt/center as
  * "mirror the start around the pointer" rather than "grow a symmetric AABB".
  * Behaviors from the binding's `opts.behaviors` (`InsertBehavior[]` — e.g.
- * `snapToGrid`, `snapToGuides`, `alignInsertBehavior`) run over the two
+ * `@weasel-js/guides`' `snapToGrid` and `alignInsertBehavior`) run over the two
  * points after those, the way `moveAction` runs its own: `onStart` on the
  * start point, `onMove` on each frame's proposal, `onEnd` on release, where
  * the first answer wins (`null` aborts, `Op[]` commits in place of the

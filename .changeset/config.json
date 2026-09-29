@@ -20,6 +20,7 @@
       "@weasel-js/svg",
       "@weasel-js/d3",
       "@weasel-js/diagram",
+      "@weasel-js/guides",
       "@weasel-js/theme",
       "@weasel-js/ui",
       "@weasel-js/hud",

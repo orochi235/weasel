@@ -1,11 +1,17 @@
 import { useRef } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
+import { createGridLayer } from '@weasel-js/guides';
 import type { FillStyle, RenderLayer, CanvasHelpers } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: FillStyle }
 
 const W = 480, H = 360;
+const GRID_LAYER = createGridLayer({
+  spacing: 20,
+  bounds: () => ({ x: 0, y: 0, width: W, height: H }),
+  accentEvery: 5,
+});
 
 const INITIAL: Rect[] = [
   { id: 'a', x:  40, y:  40, width: 120, height:  90, fill: { color: '#7fb069' } },
@@ -96,11 +102,7 @@ export function QuadtreeDemo() {
       scene={scene}
       helpersRef={helpersRef}
       layers={{
-        grid: {
-          spacing: 20,
-          bounds: () => ({ x: 0, y: 0, width: W, height: H }),
-          accentEvery: 5,
-        },
+        grid: { layer: GRID_LAYER },
         quadtree: {
           layer: createQuadtreeLayer(
             () => [...scene.renderOrder()].map((id) => scene.get(id)!.data),

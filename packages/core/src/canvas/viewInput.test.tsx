@@ -12,8 +12,8 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { RenderLayer } from 'core/layers/render';
 import type { SceneCanvasApi } from './canvasExtension';
-import { snapToGuides } from 'interactions/actions/move/behaviors/snapToGuides';
-import type { Guide } from 'features/guides/types';
+import { snap } from 'interactions/gestures/shared/snap';
+import { screenTolerance } from 'interactions/gestures/shared/screenTolerance';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -91,12 +91,12 @@ describe('a press over a view', () => {
 });
 
 describe('snap tolerance is screen pixels through the camera the drag landed in', () => {
-  /** A 6px snap to a vertical guide at world `offset`. */
+  /** A 6px snap to a vertical line at world `offset`. */
   const guideSnap = (offset: number) => ({
     move: {
-      behaviors: [snapToGuides<P>({
-        getGuides: (): Guide[] => [{ id: 'g', axis: 'x', offset }],
-        tolerance: 6,
+      behaviors: [snap<P>({
+        snap: (p, ctx) =>
+          Math.abs(p.x - offset) <= screenTolerance(6, ctx).x ? { ...p, x: offset } : null,
       })],
     },
   });

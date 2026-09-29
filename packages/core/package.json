@@ -53,10 +53,6 @@
       "import": "./dist/resize.js",
       "types": "./dist/resize.d.ts"
     },
-    "./insert": {
-      "import": "./dist/insert.js",
-      "types": "./dist/insert.d.ts"
-    },
     "./clipboard": {
       "import": "./dist/clipboard.js",
       "types": "./dist/clipboard.d.ts"

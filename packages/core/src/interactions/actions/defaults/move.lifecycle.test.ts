@@ -5,13 +5,24 @@ import { createScene } from 'core/scene/scene';
 import { createTransformOp } from 'core/ops/transform';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { MoveBehavior } from '../../gestures/types';
-import { alignMoveBehavior } from 'features/guides/alignment/behaviors';
 import { snapBackOrDelete } from '../move/behaviors/snapBackOrDelete';
 import { momentum } from '../../../animation/behaviors/momentum';
 import type { Animator } from '../../../animation/types';
-import type { Guide } from 'features/guides/types';
 
 type Pose = { x: number; y: number; width: number; height: number };
+
+/** A behavior that publishes something while the drag moves and withdraws it
+ *  when told the gesture closed, either way — the shape of an alignment-guide
+ *  overlay. */
+function publisher() {
+  const state = { active: [] as string[] };
+  const behavior: MoveBehavior<unknown> = {
+    onMove: () => { state.active = ['L']; return undefined; },
+    onEnd: () => { state.active = []; return undefined; },
+    onCancel: () => { state.active = []; },
+  };
+  return { state, behavior };
+}
 
 function setup(selected: 'a' | 'ab' = 'a') {
   const scene = createScene<{ kind: string }, 'main', Pose>({
@@ -201,18 +212,14 @@ describe('moveAction — cancel', () => {
     expect(onEnd).not.toHaveBeenCalled();
   });
 
-  it('Esc mid-drag clears the alignment guides it published', () => {
+  it('Esc mid-drag lets a behavior withdraw what it published', () => {
     const { base } = setup();
-    let active: readonly Guide[] = [];
-    const align = alignMoveBehavior({
-      getCandidates: () => [{ id: 'L', axis: 'x', offset: 16 }],
-      setActiveGuides: (g) => { active = g; },
-    });
-    const handle = invoker().start(base as InvocationCtx, { behaviors: [align] });
+    const { state, behavior } = publisher();
+    const handle = invoker().start(base as InvocationCtx, { behaviors: [behavior] });
     handle.onMove?.(frame(base, 5));
-    expect(active.map((g) => g.id)).toEqual(['L']);
+    expect(state.active).toEqual(['L']);
     handle.onEnd?.(frame(base, 5), 'cancel');
-    expect(active).toEqual([]);
+    expect(state.active).toEqual([]);
   });
 });
 
@@ -225,20 +232,16 @@ describe('moveAction — commit', () => {
     expect(scene.get(a)?.pose.x).toBe(0);
   });
 
-  it('a snap-back release still clears the alignment guides behind it', () => {
+  it('a snap-back release still lets the behavior behind it withdraw', () => {
     const { base } = setup();
-    let active: readonly Guide[] = [];
-    const align = alignMoveBehavior({
-      getCandidates: () => [{ id: 'L', axis: 'x', offset: 16 }],
-      setActiveGuides: (g) => { active = g; },
-    });
+    const { state, behavior } = publisher();
     const handle = invoker().start(base as InvocationCtx, {
-      behaviors: [snapBackOrDelete({ radius: 100, onFreeRelease: 'snap-back' }), align],
+      behaviors: [snapBackOrDelete({ radius: 100, onFreeRelease: 'snap-back' }), behavior],
     });
     handle.onMove?.(frame(base, 5));
-    expect(active.map((g) => g.id)).toEqual(['L']);
+    expect(state.active).toEqual(['L']);
     handle.onEnd?.(frame(base, 5), 'commit');
-    expect(active).toEqual([]);
+    expect(state.active).toEqual([]);
   });
 
   it('momentum behind a snap-back does not fling the node', () => {

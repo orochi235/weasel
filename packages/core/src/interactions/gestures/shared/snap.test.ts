@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { snap } from './snap';
 import type { GestureContext, GroupTransform, SnapStrategy } from '../types';
-import { gridSnapStrategy } from './strategies/grid';
+import { AUTO_ORIGIN_PROJECTION } from './originProjection';
 import { polygonFromPoints, type Path } from 'features/paths';
 
 interface Pose { x: number; y: number }
@@ -89,7 +89,16 @@ describe('snap on a Path pose', () => {
       { x: 100, y: 90 },
     ]);
     const c = { ...ctx(), origin: new Map<string, Path>([['a', tri]]) } as unknown as GestureContext<Path>;
-    const b = snap(gridSnapStrategy<Path>(20));
+    // Rounds whatever origin the projection reads to a 20-unit lattice.
+    const grid20: SnapStrategy<Path> = {
+      snap: (p) => {
+        const o = AUTO_ORIGIN_PROJECTION.getOrigin(p);
+        const dx = Math.round(o.x / 20) * 20 - o.x;
+        const dy = Math.round(o.y / 20) * 20 - o.y;
+        return AUTO_ORIGIN_PROJECTION.translate(p, dx, dy) as Path;
+      },
+    };
+    const b = snap(grid20);
     // bounds origin (83,47) + (5,5) = (88,52) → grid (80,60) → delta (-3,13).
     expect(b.onMove!(c, tt(5, 5))).toEqual({ transform: { kind: 'translate', dx: -3, dy: 13 } });
   });

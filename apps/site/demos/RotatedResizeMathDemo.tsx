@@ -49,6 +49,7 @@ import {
   hitCornerHandle,
   asNodeId,
 } from '@weasel-js/core';
+import { createGridLayer } from '@weasel-js/guides';
 import type {
   HandleDragEnd,
   HandleDragPoint,
@@ -120,10 +121,12 @@ const COUPLED_ROTATION_DESCRIPTOR: PoseDescriptor<Rect> = {
 };
 
 const GRID = {
-  spacing: 20,
-  bounds: () => ({ x: 0, y: 0, width: W, height: H }),
-  accentEvery: 5,
-} as const;
+  layer: createGridLayer({
+    spacing: 20,
+    bounds: () => ({ x: 0, y: 0, width: W, height: H }),
+    accentEvery: 5,
+  }),
+};
 
 // ─── Resize math (mirrors `src/interactions/actions/defaults/resize.ts`) ───
 

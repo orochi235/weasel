@@ -2,12 +2,18 @@ import { describe, it, expect } from 'vitest';
 import { moveAction } from './move';
 import { snapToContainer } from '../move/behaviors/snapToContainer';
 import { snapBackOrDelete } from '../move/behaviors/snapBackOrDelete';
-import { snapToGrid } from '../move/behaviors/snapToGrid';
+import { snap } from '../../gestures/shared/snap';
 import type { InvocationCtx, BindingOpts, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { SnapTarget } from 'core/adapters/types';
+
+/** A move snap that rounds the dragged origin to a 20-unit lattice. */
+const grid20 = () =>
+  snap<{ x: number; y: number }>({
+    snap: (p) => ({ ...p, x: Math.round(p.x / 20) * 20, y: Math.round(p.y / 20) * 20 }),
+  });
 
 interface D { color: string }
 type L = 'main';
@@ -68,9 +74,9 @@ describe('moveAction behavior pipeline', () => {
     expect(scene.get(asNodeId(leaf))?.pose).toEqual(before);
   });
 
-  it('snapToGrid quantizes the committed delta', () => {
+  it('a grid snap quantizes the committed delta', () => {
     const { scene, leaf } = fixture();
-    const opts: BindingOpts = { behaviors: [snapToGrid<P>({ spacing: 20 }) as never] };
+    const opts: BindingOpts = { behaviors: [grid20() as never] };
     const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [leaf]), opts) as OngoingHandle;
     handle.onMove!(ctx(scene, [leaf], { start: { x: 0, y: 0 }, current: { x: 23, y: 19 }, delta: { x: 23, y: 19 } }));
     handle.onEnd!(ctx(scene, [leaf], { start: { x: 0, y: 0 }, current: { x: 23, y: 19 }, delta: { x: 23, y: 19 } }), 'commit');
@@ -87,15 +93,15 @@ describe('moveAction behavior pipeline', () => {
     expect(scene.get(asNodeId(leaf))?.pose).toEqual({ x: 30, y: 40, width: 20, height: 20 });
   });
 
-  it('multi-behavior ordering: first-defer second-claim — snapToContainer wins over snapToGrid', () => {
-    // snapToGrid only implements onMove (no onEnd) → returns undefined at
+  it('multi-behavior ordering: first-defer second-claim — snapToContainer wins over a grid snap', () => {
+    // The grid snap only implements onMove (no onEnd) → returns undefined at
     // onEnd → defers. snapToContainer returns Op[] at onEnd → claims the
     // commit. The container snap should win regardless of ordering.
     const { scene, box, leaf } = fixture();
     const target: SnapTarget<P> = { parentId: box, slotPose: { x: 210, y: 10, width: 20, height: 20 } };
     const opts: BindingOpts = {
       behaviors: [
-        snapToGrid<P>({ spacing: 20 }) as never,
+        grid20() as never,
         snapToContainer<P>({
           dwellMs: 0,
           isInstant: () => true,
@@ -121,7 +127,7 @@ describe('moveAction behavior pipeline', () => {
     const poseABefore = { ...scene.get(asNodeId(leafA))!.pose };
     const poseBBefore = { ...scene.get(asNodeId(leafB))!.pose };
 
-    const opts: BindingOpts = { behaviors: [snapToGrid<P>({ spacing: 20 }) as never] };
+    const opts: BindingOpts = { behaviors: [grid20() as never] };
     const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [leafA, leafB]), opts) as OngoingHandle;
     const delta = { x: 40, y: 60 };
     handle.onMove!(ctx(scene, [leafA, leafB], { start: { x: 0, y: 0 }, current: { x: delta.x, y: delta.y }, delta }));

@@ -2,7 +2,6 @@ import {
   SceneCanvas,
   WeaselProvider,
   createScene,
-  gridSnapStrategy,
   sceneFromJSON,
   solid,
   useSelection,
@@ -15,6 +14,7 @@ import type {
   SerializedScene,
   UnitSystem,
 } from '@weasel-js/core';
+import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { type ConfigOf, defineInstrument, f, type RenderContext } from '@weasel-js/labkit';
 
@@ -142,10 +142,12 @@ function SceneBody({ config, state, setState }: SceneBodyProps) {
     () => ({
       grid: config.showGrid
         ? {
-            spacing: { value: config.cellSize, unit: 'px' as const },
-            unitSystem: UNITS,
-            bounds: () => ({ x: 0, y: 0, width: 2000, height: 2000 }),
-            accentEvery: 5,
+            layer: createGridLayer({
+              spacing: { value: config.cellSize, unit: 'px' },
+              unitSystem: UNITS,
+              bounds: () => ({ x: 0, y: 0, width: 2000, height: 2000 }),
+              accentEvery: 5,
+            }),
           }
         : null,
     }),

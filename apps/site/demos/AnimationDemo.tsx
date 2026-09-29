@@ -16,6 +16,7 @@ import {
   useTools,
   useVelocityTracker,
 } from '@weasel-js/core';
+import { createGridLayer } from '@weasel-js/guides';
 import type { Animator, MoveBehavior, PhysicsHandle } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
@@ -34,6 +35,10 @@ const INITIAL: Card[] = [
 // Flick-snap panel: a second canvas below the cards, showing decay → snap.
 const FLICK_W = 600, FLICK_H = 160;
 const FLICK_GRID = 60;
+const FLICK_GRID_LAYER = createGridLayer({
+  spacing: FLICK_GRID,
+  bounds: () => ({ x: 0, y: 0, width: FLICK_W, height: FLICK_H }),
+});
 const FLICK_BLOCK = 40;
 const FLICK_COAST_MS = 180;
 
@@ -369,10 +374,7 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
         selection={selection}
         selectTool={{ move: { behaviors } }}
         layers={{
-          grid: {
-            spacing: FLICK_GRID,
-            bounds: () => ({ x: 0, y: 0, width: FLICK_W, height: FLICK_H }),
-          },
+          grid: { layer: FLICK_GRID_LAYER },
           scene: {
             drawOne: (n, p): DrawCommand[] => [{
               kind: 'path',

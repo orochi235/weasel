@@ -2,10 +2,8 @@ import { useState, useMemo, useSyncExternalStore } from 'react';
 import {
   SceneCanvas,
   sceneFromJSON,
-  freeform,
-  tileGrid,
-  snapPoint,
 } from '@weasel-js/core';
+import { freeform, snapPoint, tileGrid } from '@weasel-js/guides';
 import type { SerializedScene } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import sceneJson from './data/layout.scene.json';

@@ -2,11 +2,11 @@ import { useState } from 'react';
 import {
   asNodeId,
   polygonFromPoints,
-  gridSnapStrategy,
   SceneCanvas,
   useScene,
   useSelection,
 } from '@weasel-js/core';
+import { gridSnapStrategy } from '@weasel-js/guides';
 import type {
   Path,
   DebugConfig,

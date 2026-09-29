@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { useLayoutDepSource } from './layout';
-import { freeform } from '../../layout/strategies';
+import type { LayoutStrategy } from '../../layout/types';
+
+/** Only identity is under test, so any object stands in for a strategy. */
+const strategy = () => ({}) as unknown as LayoutStrategy<unknown>;
 
 function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
   const r = useDepRegistry();
@@ -12,7 +15,7 @@ function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
 
 describe('useLayoutDepSource', () => {
   it('resolves a static map by container id', () => {
-    const ff = freeform<unknown>();
+    const ff = strategy();
     let reg!: DepRegistry;
     function Wire() {
       useLayoutDepSource({ C: ff });
@@ -29,7 +32,7 @@ describe('useLayoutDepSource', () => {
   });
 
   it('resolves a resolver function', () => {
-    const ff = freeform<unknown>();
+    const ff = strategy();
     let reg!: DepRegistry;
     function Wire() {
       useLayoutDepSource((id) => (id === 'X' ? ff : null));

@@ -47,11 +47,11 @@ A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from
 Interactions are **actions** — descriptors registered into an actions registry — reached by **gesture bindings**. A tool is a list of `{ spec, actionId }` pairs and nothing more; the kit's own select, shape and viewport tools are built that way.
 
 ```tsx
-import {
-  SceneCanvas, BUILTIN_TOOL_IDS, useScene, useSelection, gridSnapStrategy, type RectPose,
-} from '@weasel-js/core';
+import { SceneCanvas, BUILTIN_TOOL_IDS, useScene, useSelection, type RectPose } from '@weasel-js/core';
+import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
 
 const W = 800, H = 600;
+const grid = createGridLayer({ spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }) });
 
 export function Editor() {
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: [] });
@@ -69,9 +69,7 @@ export function Editor() {
       features={['draw']}
       defaultTools={BUILTIN_TOOL_IDS}
       selectTool={{ snap: gridSnapStrategy<RectPose>(20) }}
-      layers={{
-        grid: { spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }) },
-      }}
+      layers={{ grid: { layer: grid } }}
     />
   );
 }
@@ -167,7 +165,7 @@ Core's main entry carries the everyday surface. A few narrower ones have their o
 | Import | Holds |
 |---|---|
 | `@weasel-js/core/renderer` | the renderer, `registerProgram`, `registerTexture`, draw commands |
-| `@weasel-js/core/move`, `/resize`, `/insert`, `/clone`, `/clipboard` | helpers for building on those actions, e.g. `snapToGrid`, `clampMinSize` |
+| `@weasel-js/core/move`, `/resize`, `/clone`, `/clipboard` | helpers for building on those actions, e.g. `snapBackOrDelete`, `clampMinSize` |
 | `@weasel-js/core/patterns-builtin` | the built-in fill patterns |
 | `@weasel-js/core/routing` | route grammar and introspection: parsing, the route registry, conflict checks |
 
@@ -189,6 +187,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `svg` | SVG import and export |
 | `modes` | app-level modality: capability tags, mode definitions, a mode registry |
 | `diagram` | node-link diagrams: ports on any node's perimeter, flowchart-style bodies |
+| `guides` | placement aids: grids, guide lines, alignment and snapping to them, container layout strategies |
 | `hud` | WebGL-rendered widgets composited into a canvas |
 | `cursor` | tool cursors as authored glyphs, baked to CSS or painted when too large |
 | `loupe` | a magnifier model: where it's aimed, how far it magnifies, what's under it |

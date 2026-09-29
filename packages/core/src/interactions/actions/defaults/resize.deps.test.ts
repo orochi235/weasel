@@ -29,10 +29,19 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from '../resize/geometry';
 import { ROTATED_POSE_DESCRIPTOR } from '../resize/geometry';
 import { clampMinSize } from '../resize/behaviors/clampMinSize';
-import { pointSnapToGrid } from '../resize/behaviors/pointSnapToGrid';
 import { circle, CIRCLE_POSE_DESCRIPTOR } from 'core/geometry/circlePose.fixture';
 
 type RectPose = Bounds;
+
+/** Rounds the dragged corner to a 20-unit lattice. */
+const draggedCornerTo20: PointSnapBehavior<Bounds> = {
+  id: 'draggedCornerTo20',
+  onMove: (ctx) => ctx.draggedCorner && {
+    frame: 'dragged-corner',
+    worldX: Math.round(ctx.draggedCorner.worldX / 20) * 20,
+    worldY: Math.round(ctx.draggedCorner.worldY / 20) * 20,
+  },
+};
 
 const ANCHOR_BR: ResizeAnchor = { x: 'min', y: 'min' };
 
@@ -197,7 +206,7 @@ describe('resizeAction — pointSnap[] via resizePolicy dep', () => {
       deps: {
         resizePolicy: {
           constraints: [],
-          pointSnap: [pointSnapToGrid({ spacing: 20 })] as PointSnapBehavior<Bounds>[],
+          pointSnap: [draggedCornerTo20] as PointSnapBehavior<Bounds>[],
           expandIds: (ids: string[]) => ids,
         },
         poseDescriptor: { getBounds: (p: Bounds) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,

@@ -1,8 +1,8 @@
 import type { RenderLayer } from '../core/layers/render';
 
 /** Standard slot names — render in this canonical order.
- *  `cellHighlight` is internal: emitted from the `grid` slot's nested
- *  `highlight` config, not a top-level layer key. */
+ *  `cellHighlight` is not an anchor for custom layers: it sits between the
+ *  grid and the scene, so anchor to one of those. */
 /** @internal */
 export const STANDARD_SLOTS = [
   'grid',

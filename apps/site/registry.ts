@@ -97,15 +97,6 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/MoveSnapDemo.tsx',
   },
   {
-    id: 'alignment-guides',
-    title: 'Alignment guides',
-    category: 'Tools',
-    description: 'Drag the purple rect: its edges and center snap to the other rects and the page, drawing a full-length guide line. With the rect tool, the corner being drawn snaps the same way. Candidates are derived from sibling bounds via deriveAlignmentGuides; alignMoveBehavior shapes the move and alignInsertBehavior the insert (through toolOptions.insert.behaviors), and both publish the matched line to a ref the createGuidesLayer overlay reads each frame.',
-    hint: 'Drag the purple rectangle near another rect’s edge or center, or pick the rect tool and draw one beside them.',
-    load: () => import('./demos/AlignmentGuidesDemo').then((m) => m.AlignmentGuidesDemo),
-    path: 'apps/site/demos/AlignmentGuidesDemo.tsx',
-  },
-  {
     id: 'insert',
     title: 'Insert',
     category: 'Tools',
@@ -124,15 +115,6 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/TextDemo.tsx',
   },
 
-  {
-    id: 'point-snap',
-    title: 'Point-snap resize',
-    category: 'Tools',
-    description: 'useResize with pointSnapBehaviors — drag the bottom-right corner of the rotated rectangle and watch the world-space dragged corner snap to a 20-unit grid intersection. The local-frame pose back-solves automatically.',
-    hint: 'Drag the bottom-right corner.',
-    load: () => import('./demos/PointSnapDemo').then((m) => m.PointSnapDemo),
-    path: 'apps/site/demos/PointSnapDemo.tsx',
-  },
   {
     id: 'image',
     title: 'Image (embedded)',
@@ -236,15 +218,6 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/StrokeMarkersDemo.tsx',
   },
 
-  {
-    id: 'layout',
-    title: 'Layout',
-    category: 'Composition',
-    description: 'Three containers side by side, one per layout strategy — freeform (absolute placement), tileGrid (2x2 cells), and snapPoint (corner snapping). All three share a single adapter and one useSelectTool. Dragging a child within its container exercises the in-container layout (cell swap, corner snap); dragging across containers reflows both sides via the layout-aware move pass.',
-    hint: 'Drag a child rect within its container or into another to see layout-driven reflow.',
-    load: () => import('./demos/LayoutDemo').then((m) => m.LayoutDemo),
-    path: 'apps/site/demos/LayoutDemo.tsx',
-  },
 
   // ─── Animation ────────────────────────────────────────────────────────────
   {
@@ -695,6 +668,33 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Click "play all" to fire every easing at once; drag the slider to change duration.',
     load: () => import('./demos/EasingsDemo').then((m) => m.EasingsDemo),
     path: 'apps/site/demos/EasingsDemo.tsx',
+  },
+  {
+    id: 'alignment-guides',
+    title: 'Alignment guides',
+    package: 'guides',
+    description: 'Drag the purple rect: its edges and center snap to the other rects and the page, drawing a full-length guide line. With the rect tool, the corner being drawn snaps the same way. Candidates are derived from sibling bounds via deriveAlignmentGuides; alignMoveBehavior shapes the move and alignInsertBehavior the insert (through toolOptions.insert.behaviors), and both publish the matched line to a ref the createGuidesLayer overlay reads each frame.',
+    hint: 'Drag the purple rectangle near another rect’s edge or center, or pick the rect tool and draw one beside them.',
+    load: () => import('./demos/AlignmentGuidesDemo').then((m) => m.AlignmentGuidesDemo),
+    path: 'apps/site/demos/AlignmentGuidesDemo.tsx',
+  },
+  {
+    id: 'point-snap',
+    title: 'Point-snap resize',
+    package: 'guides',
+    description: 'useResize with pointSnapBehaviors — drag the bottom-right corner of the rotated rectangle and watch the world-space dragged corner snap to a 20-unit grid intersection. The local-frame pose back-solves automatically.',
+    hint: 'Drag the bottom-right corner.',
+    load: () => import('./demos/PointSnapDemo').then((m) => m.PointSnapDemo),
+    path: 'apps/site/demos/PointSnapDemo.tsx',
+  },
+  {
+    id: 'layout',
+    title: 'Layout',
+    package: 'guides',
+    description: 'Three containers side by side, one per layout strategy — freeform (absolute placement), tileGrid (2x2 cells), and snapPoint (corner snapping). All three share a single adapter and one useSelectTool. Dragging a child within its container exercises the in-container layout (cell swap, corner snap); dragging across containers reflows both sides via the layout-aware move pass.',
+    hint: 'Drag a child rect within its container or into another to see layout-driven reflow.',
+    load: () => import('./demos/LayoutDemo').then((m) => m.LayoutDemo),
+    path: 'apps/site/demos/LayoutDemo.tsx',
   },
   {
     id: 'svg',

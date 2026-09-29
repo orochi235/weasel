@@ -10,8 +10,7 @@
  *     `screenToWorld`, `fitZoom`, `useCanvasSize`,
  *     `useAutoCenter`, `zoomAt`,
  *     `wheelHandler`.
- *   - Layer composition: `RenderLayer`,
- *     `createGridLayer`, `createCellHighlightLayer`, `createChildrenLayer`,
+ *   - Layer composition: `RenderLayer`, `createChildrenLayer`,
  *     `createSelectionOverlayLayer` and friends, `createTextLayer`,
  *     `createTilePattern`.
  *   - Interactions (gesture hooks): `useTextEdit`, plus `useDragHandle` /
@@ -38,25 +37,20 @@
  *     `AUTO_POSE_DESCRIPTOR`, which handles both `{x,y,width,height}` and
  *     `Path`. Pass via `<SceneCanvas poseDescriptor>`.
  *   - `OriginProjection<TPose>` — read snap-origin + translate by delta. Used
- *     by `gridSnapStrategy`, `guideSnapStrategy`, `snap` and `snapBackOrDelete`.
- *     All of them default to `AUTO_ORIGIN_PROJECTION`, which reads rects and
- *     `Path`s alike. Pass via
- *     `gridSnapStrategy(spacing, { origin })` or `snapBackOrDelete({ ...,
- *     origin })`.
+ *     by `snap` and `snapBackOrDelete`, and by `@weasel-js/guides`' snap
+ *     strategies. All of them default to `AUTO_ORIGIN_PROJECTION`, which reads
+ *     rects and `Path`s alike. Pass via `snap(strategy, { origin })` or
+ *     `snapBackOrDelete({ ..., origin })`.
  *
- * Per-hook subpath imports: `snapToGrid` exists for move, resize, and insert
- * with different return shapes. Import from the hook-specific subpath to pick
- * the right one:
- *   import { snapToGrid } from '@weasel-js/core/move';
- *   import { snapToGrid, clampMinSize } from '@weasel-js/core/resize';
- *   import { snapToGrid } from '@weasel-js/core/insert';
+ * Placement aids — grids, guides, snapping to them, layout strategies — live
+ * in `@weasel-js/guides`, built on the seams here (`SnapStrategy`,
+ * `MoveBehavior`, `BoundsConstraint`, `PointSnapBehavior`, `snap`).
  */
 
 // ─── Build identity ─────────────────────────────────────────────────────────
 export { VERSION } from './version';
 
-// ─── Features: grids, multi-viewport composition ────────────────────────────
-export * from './features/grid';
+// ─── Features: multi-viewport composition ───────────────────────────────────
 export * from './features/viewports';
 export * from './features/parallax';
 export * from './features/tiling';
@@ -328,7 +322,6 @@ export type {
   CanvasSurfaceHelpers,
   StandardSlotName,
   CustomLayerEntry,
-  GridSlotConfig,
 } from './canvas/Canvas';
 export type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from './canvas/canvasExtension';
 // The in-flight gesture seam behind `CanvasHelpers.getGestureBounds()` /
@@ -987,39 +980,18 @@ export type {
   GestureSpec,
 } from './interactions/gestures/spec';
 
-// ─── Snap strategies: grid + guide-line, with pluggable origin projection ───
+// ─── Snapping seam: `snap` wraps a SnapStrategy as a MoveBehavior; an origin
+// projection says how a pose is read and moved. The strategies themselves
+// (grid, guides) are in @weasel-js/guides.
 export {
   snap,
-  gridSnapStrategy,
-  pointToGridCell,
+  AUTO_ORIGIN_PROJECTION,
   RECT_ORIGIN_PROJECTION,
+  screenTolerance,
+  gestureViewReader,
+  gesturePlaneReader,
 } from './interactions/gestures/shared';
 export type { OriginProjection } from './interactions/gestures/shared';
-export {
-  guideSnapStrategy,
-  DEFAULT_GUIDE_TOLERANCE_PX,
-} from './interactions/gestures/shared/strategies/guides';
-export type { GuideSnapOptions } from './interactions/gestures/shared/strategies/guides';
-export {
-  useGuides,
-  createGuidesLayer,
-  deriveAlignmentGuides,
-  matchAlignment,
-  MOVE_ANCHORS,
-  alignMoveBehavior,
-  alignInsertBehavior,
-  alignResizeBehavior,
-} from './features/guides';
-export type {
-  Guide,
-  UseGuidesReturn,
-  GuidesLayerOpts,
-  AlignAnchor,
-  AlignMatchResult,
-  DeriveAlignmentGuidesOptions,
-  AlignmentBehaviorBase,
-  AlignMoveArgs,
-} from './features/guides';
 
 // ─── Drag-action hooks: move / resize / rotate / insert / area-select / etc. ─
 export type { UseMoveOptions } from './interactions/actions/move';
@@ -1033,7 +1005,6 @@ export {
   cornerResizeHandles,
   fixedCornerOf,
   hitCornerHandle,
-  pointSnapToGrid,
 } from './interactions/actions/resize';
 export type {
   UseResizeOptions,
@@ -1153,8 +1124,8 @@ export type {
 } from './interactions/actions/distribute';
 export { cloneByAltDrag } from './interactions/actions/clone';
 export type { ClonePose, CloneLayer, CloneBehavior } from './interactions/gestures/types';
-// snapToGrid / snapToContainer / snapBackOrDelete are NOT re-exported at top level —
-// import from './move' to disambiguate from resize/insert siblings.
+// snapToContainer / snapBackOrDelete are NOT re-exported at top level —
+// import them from '@weasel-js/core/move'.
 
 // ─── Reorder: ops ───────────────────────────────────────────────────────────
 export {
@@ -1185,7 +1156,8 @@ export * from './debug';
 // ─── Animation primitives (tween, spring, easings) ──────────────────────────
 export * from './animation';
 
-// ─── Layout strategies (snap, point-snap, grid alignment) ───────────────────
+// ─── Layout: the contract a container's layout strategy implements. The
+// strategies themselves (freeform, tileGrid, snapPoint) are in @weasel-js/guides.
 export * from './layout';
 
 // ─── Color helpers (parse / normalize / convert) ────────────────────────────
@@ -1439,7 +1411,6 @@ export type {
   UseSceneTextEditReturn,
 } from './features/text/useSceneTextEdit';
 export type { StyleToggle } from './features/text/useTextEdit';
-export type { SnapPattern } from './layout/strategies/snapPoint';
 export type { Vec2 } from './core/geometry/vec2';
 export type { Rect } from '@weasel-js/geom';
 

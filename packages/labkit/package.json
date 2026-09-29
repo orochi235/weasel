@@ -136,6 +136,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.12",
     "@testing-library/jest-dom": "^7.0.1",
+    "@weasel-js/guides": "1.7.0",
     "@weasel-js/modes": "1.7.0",
     "less": "^4.2.0",
     "rollup-plugin-dts": "^6.4.1",

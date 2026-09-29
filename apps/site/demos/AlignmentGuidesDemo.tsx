@@ -3,14 +3,12 @@ import {
   SceneCanvas,
   useScene,
   useSelection,
-  createGuidesLayer,
-  deriveAlignmentGuides,
-  alignMoveBehavior,
-  alignInsertBehavior,
   rectPath,
   solid,
 } from '@weasel-js/core';
-import type { FillStyle, Guide, NodeId, Path, ToolsApi } from '@weasel-js/core';
+import { alignInsertBehavior, alignMoveBehavior, createGuidesLayer, deriveAlignmentGuides } from '@weasel-js/guides';
+import type { Guide } from '@weasel-js/guides';
+import type { FillStyle, NodeId, Path, ToolsApi } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui';
 
 // The same `{ path, fill }` shape the rect tool's insert dep mints, so the
