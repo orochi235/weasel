@@ -3,6 +3,7 @@ import type { FillStyle } from '@weasel-js/core';
 import { paintPreviewCss } from '../../paintPreview';
 import { solidColorOf } from '../paintValue';
 import { Button } from '../Button';
+import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import type { PaintSlot } from '../GradientEditor';
 import s from './FillStrokeSwatch.module.css';
 
@@ -47,6 +48,7 @@ function Chip(props: {
   const { slot, paint, focused } = props;
   // Tracks the picker through a pick; the prop only catches up on commit.
   const [draft, setDraft] = useState<string | null>(null);
+  const record = useRecordRecentColor();
   const none = paint === null;
   const preview = paintPreviewCss(paint);
   const pickerValue = (solidColorOf(paint) ?? PICKER_FALLBACK[slot]).slice(0, 7);
@@ -85,6 +87,7 @@ function Chip(props: {
           if (draft === null) return;
           setDraft(null);
           props.onChange(slot, draft);
+          record(draft);
         }}
       />
     </span>

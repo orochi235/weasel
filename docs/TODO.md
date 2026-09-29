@@ -730,7 +730,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ### WeaselDraw app follow-ups (defer)
 
-- **(P3) Palette presets / recently-used colors.**
 - **(P3) Multi-page documents.**
 
 ---

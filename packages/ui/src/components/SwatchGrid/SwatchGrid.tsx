@@ -1,4 +1,5 @@
 import { useRef, type CSSProperties, type KeyboardEvent, type ReactElement } from 'react';
+import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import s from './SwatchGrid.module.css';
 
 /** One swatch. `value: null` is the "no paint" swatch. */
@@ -39,7 +40,16 @@ function nameOf(o: SwatchGridOption): string {
  * write the selection through `useOngoingAction`'s `commit`, or both.
  */
 export function SwatchGrid(props: SwatchGridProps): ReactElement {
-  const { options, value, onChange, onAltChange, className } = props;
+  const { options, value, className } = props;
+  const record = useRecordRecentColor();
+  const onChange = (v: string | null): void => {
+    props.onChange(v);
+    if (v !== null) record(v);
+  };
+  const onAltChange = props.onAltChange && ((v: string | null): void => {
+    props.onAltChange?.(v);
+    if (v !== null) record(v);
+  });
   const columns = props.columns ?? 6;
   const rootRef = useRef<HTMLDivElement | null>(null);
 
