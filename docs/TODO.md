@@ -337,6 +337,14 @@ Core five + Crop shipped. Remaining:
 
 ## Text
 
+- **(P3) The first edit of a session can open in the fallback font.** The edit overlay's
+  face (`weasel-face-*`, built from the outline font's bytes) is added only when an edit
+  starts and loads with `font-display: swap`, so until it lands the overlay lays out in a
+  fallback font, and a wrapped line breaks differently from the canvas and then reflows.
+  Found by the overlay line-break test flaking on exactly this (2026-09-29); the test now
+  waits for the face. Loading the face when the outline font registers, rather than when
+  an edit opens, would close it for users.
+
 - **(P3) `.dfont` machine faces still can't reach the outline tier.** The
   *silence* closed 2026-08-16 — `isDataForkFont` recognizes a Macintosh
   resource fork by its header offsets and `sfntFromCollection` throws by name,
