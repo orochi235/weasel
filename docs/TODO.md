@@ -441,7 +441,10 @@ intercepting the press that drags the body.
   `UseSceneOptions.layoutFrame` unless a canvas installs its handler, so a scene whose
   canvas composes poses or uses a custom descriptor states that twice — folds away once
   composition is a scene property (see the cascade entry below); and whether the `layouts` prop, now a second way to name a container's layout, should
-  be retired in favor of the node declaration.
+  be retired in favor of the node declaration. Also: an op-driven edit opens the
+  arrival window on a layout-less scene only when it carries a `setLayout` op, so a
+  custom op that calls `adapter.setLayout` itself does not arrange until the
+  container's next change (inferred from the code, untested).
 - **(P3) Full tier unification** (collapse inline-props/explicit-adapter onto Scene). Same effort as the P2 "`arrayAdapter` as the default Canvas adapter — full unification" above — track there.
 - **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is
   adapter-level configuration, two mutually exclusive ways:
