@@ -85,7 +85,7 @@ describe('SelectionPanel — the text style', () => {
     const { styleOf } = renderText({ align: 'center' });
     const bar = barWith('Left');
     const segs = within(bar).getAllByRole('radio');
-    expect(segs.map((b) => b.getAttribute('aria-label'))).toEqual(['Left', 'Center', 'Right']);
+    expect(segs.map((b) => b.getAttribute('aria-label'))).toEqual(['Left', 'Center', 'Right', 'Justify']);
     expect(segs.every((b) => b.querySelector('svg') !== null)).toBe(true);
     expect(within(bar).getByRole('radio', { name: 'Center' })).toHaveAttribute('aria-checked', 'true');
     fireEvent.click(within(bar).getByRole('radio', { name: 'Right' }));
