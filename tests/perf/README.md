@@ -172,7 +172,10 @@ nothing fails when they are exceeded. `baseline.json` is a vitest report, not
 `weasel-perf-result/1`; `BASELINE.md` is rendered from it by `bench-report.mjs`.
 The committed one predates vitest 5 and is in vitest 4's `--outputJson` shape;
 a re-record writes vitest 5's JSON reporter instead, and
-`lib/vitest-bench.ts` reads both.
+`lib/vitest-bench.ts` reads both. It also predates `beforeEach`, so its
+`getMesh miss` row includes a cache reset and its cold `renderOrder` group
+has the old row names, including a `layer reorder only` row the suite no
+longer has.
 
 ```sh
 npm run perf:bench:baseline   # re-measure, overwrite both files
@@ -192,6 +195,12 @@ the root `vitest.config.ts`, so no `--project` selection and no bare
 built by `bench/group.ts`, which runs its benchmarks together; vitest prints
 one table per group as each finishes; the result file holds each benchmark's
 median, min, mean and `rme`.
+
+Setup that has to run before every iteration but is not the thing under test
+— resetting a cache, invalidating a walk — goes in the benchmark's
+`beforeEach` option, `bench(name, { beforeEach }, fn)`. tinybench runs it
+outside the timed window, so the row measures the body alone and nothing
+needs recovering by subtraction.
 
 Fixtures are in `bench/fixtures.ts`, all seeded through `mulberry32` — no bare
 `Math.random()`, so two runs on the same machine are comparable. Two fixture
