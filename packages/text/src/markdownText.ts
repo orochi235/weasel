@@ -5,7 +5,7 @@ import { numericWeight, scriptMetrics } from './runs/resolveRuns';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
 import { transformRunTexts } from './runs/textTransform';
 import { smallCapsScale, smallCapsText } from './runs/smallCaps';
-import { isHardLineBreak, lineBreakOpportunities, NO_BREAK } from './layout/lineBreak/lineBreaks';
+import { wrapLines } from './layout/lineBreak/wrapLines';
 
 export type { StyledRun };
 
@@ -121,8 +121,6 @@ export function layoutMarkdown(
       endOf.push(at);
     }
   });
-  const breaks = Number.isFinite(maxWidth) ? lineBreakOpportunities(cps) : null;
-
   // Already a screen-pixel layout, so a run's `{ px }` size is its size.
   const placed = segs.map(({ smallCaps, source: _source, ...run }) => {
     const face = faceOf?.(run.bold ?? false, run.italic ?? false);
@@ -130,7 +128,7 @@ export function layoutMarkdown(
     // The run's size holds the line, as on the GL tier, however small its capitals.
     return { run, face, y, runSize, size: smallCaps ? runSize * smallCapsScale(face) : runSize };
   });
-  const widthOf = (p: Piece): number => {
+  const pieceWidth = (p: Piece): number => {
     const { run, size } = placed[p.run];
     return measure(run.text.slice(p.start, p.end), size, run.bold ?? false, run.italic ?? false);
   };
@@ -138,9 +136,9 @@ export function layoutMarkdown(
   /** A UTF-16 span of one run's text, set on the current line. */
   interface Piece { run: number; start: number; end: number }
 
-  /** `line` with the code points `[from, to)` appended, a run's pieces merged. */
-  function extend(line: Piece[], from: number, to: number): Piece[] {
-    const out = line.slice();
+  /** Code points `[from, to)` as spans of their runs' texts. */
+  function piecesOf(from: number, to: number): Piece[] {
+    const out: Piece[] = [];
     for (let k = from; k < to; k++) {
       const last = out[out.length - 1];
       if (last && last.run === runOf[k] && last.end === startOf[k]) {
@@ -152,24 +150,7 @@ export function layoutMarkdown(
     return out;
   }
 
-  /** `line` without its trailing spaces, which hang past the edge as they do in `layoutRuns`. */
-  function trimmed(line: Piece[]): Piece[] {
-    const out = line.slice();
-    while (out.length > 0) {
-      const p = out[out.length - 1];
-      const text = segs[p.run].text;
-      let end = p.end;
-      while (end > p.start && text.charCodeAt(end - 1) === 32) end--;
-      if (end > p.start) { out[out.length - 1] = { ...p, end }; break; }
-      out.pop();
-    }
-    return out;
-  }
-
-  const inkWidth = (line: Piece[]): number => trimmed(line).reduce((w, p) => w + widthOf(p), 0);
-
   const lines: LayoutLine[] = [];
-  let cur: Piece[] = [];
 
   function commitLine(line: Piece[]) {
     let x = 0;
@@ -177,36 +158,22 @@ export function layoutMarkdown(
     const positioned: PositionedRun[] = [];
     for (const p of line) {
       const { run, face, size, y, runSize } = placed[p.run];
-      const width = widthOf(p);
+      const width = pieceWidth(p);
       positioned.push({ ...run, text: run.text.slice(p.start, p.end), x, width, y, size, ...(face ? { face } : {}) });
       x += width;
       maxSize = Math.max(maxSize, runSize);
     }
     lines.push({ runs: positioned, width: x, height: (maxSize > 0 ? maxSize : fontSize) * lineHeightFactor });
-    cur = [];
   }
 
-  // A word runs from one break opportunity to the next, spaces after it
-  // included; only its ink has to fit.
-  let i = 0;
-  while (i < cps.length) {
-    if (isHardLineBreak(cps[i])) {
-      commitLine(cur);
-      i += cps[i] === 13 && cps[i + 1] === 10 ? 2 : 1;
-      continue;
-    }
-    let j = i + 1;
-    while (j < cps.length && !isHardLineBreak(cps[j]) && (!breaks || breaks[j] === NO_BREAK)) j++;
-    const next = extend(cur, i, j);
-    if (breaks && cur.length > 0 && inkWidth(next) > maxWidth && cps.slice(i, j).some((c) => c !== 32)) {
-      commitLine(trimmed(cur));
-      cur = extend(cur, i, j);
-    } else {
-      cur = next;
-    }
-    i = j;
+  const widthOf = (start: number, end: number): number =>
+    piecesOf(start, end).reduce((w, p) => w + pieceWidth(p), 0);
+  for (const line of wrapLines(cps, maxWidth, widthOf)) {
+    let end = line.end;
+    // A wrapped line's trailing spaces hang past the edge, as they do in `layoutRuns`.
+    if (line.wrapped) while (end > line.start && cps[end - 1] === 32) end--;
+    commitLine(piecesOf(line.start, end));
   }
-  if (cur.length > 0) commitLine(cur);
 
   const width = Math.max(...lines.map((l) => l.width));
   const height = lines.reduce((sum, l) => sum + l.height, 0);
