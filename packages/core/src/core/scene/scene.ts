@@ -394,10 +394,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     return activeHandler() !== null && arrivals === null && batchDepth === 0 && !suppressRecording;
   }
 
-  /** Open the arrival window when a handler wants one and no enclosing edit
-   *  holds it already; true when this caller now owns it. */
-  function openArrivals(): boolean {
-    if (activeHandler() === null || arrivals !== null) return false;
+  /** Open the arrival window when a handler wants one — or `always`, for an
+   *  edit that may give the scene its first layout partway through — and no
+   *  enclosing edit holds it already; true when this caller now owns it. */
+  function openArrivals(always = false): boolean {
+    if (arrivals !== null || (!always && activeHandler() === null)) return false;
     arrivals = new Map();
     departures = new Map();
     changed = new Set();
@@ -451,10 +452,17 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     scene.setPose(asNodeId(id), pose as TPose);
   }
 
+  /** Whether `op` is a `createSetLayoutOp` giving a container a layout. An
+   *  edit's op list is fixed before it runs, so a layout-less scene has to see
+   *  this coming to append the arrange op its first layout needs. */
+  function givesLayout(op: Op): boolean {
+    return op.name === 'setLayout' && (op.args as { to?: unknown } | undefined)?.to != null;
+  }
+
   /** `ops` plus the op that settles their arrivals, when this call owns the
    *  window; `ops` unchanged otherwise. */
   function withArrivalOps(ops: Op[]): { ops: Op[]; owned: boolean } {
-    if (!openArrivals()) return { ops, owned: false };
+    if (!openArrivals(ops.some(givesLayout))) return { ops, owned: false };
     return { ops: [...ops, createArrangeOp({}, settleArrivals, writePose)], owned: true };
   }
 
@@ -1877,7 +1885,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // the selection has already moved to wherever the batch put it.
       const outermost = batchDepth === 0;
       if (outermost) currentBatch = { label, ops: [], selectionBefore: selection };
-      const ownsArrivals = outermost && openArrivals();
+      const ownsArrivals = outermost && openArrivals(true);
       batchDepth++;
       try {
         if (!outermost) return fn();
@@ -1926,7 +1934,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const versionBefore = version;
       suppressRecording = true;
       untrackedDepth++;
-      const ownsArrivals = openArrivals();
+      const ownsArrivals = openArrivals(true);
       batchDepth++;
       try {
         const result = atomically(() => {

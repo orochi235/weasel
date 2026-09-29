@@ -482,6 +482,67 @@ describe('scene container layout', () => {
       expect(posOf(scene, 'b')).toEqual([100, 110]);
     });
 
+    describe('in a scene that has never had a layout', () => {
+      function bare(registry?: { layout: Record<string, LayoutStrategy<RectPose>> }) {
+        const scene = createScene<null, 'l', RectPose>({
+          systemLayers: [{ id: 'l' }],
+          ...(registry ? { registry } : {}),
+          initial: [{ id: C, kind: 'container', layer: 'l', pose: CONTAINER, data: null }],
+        });
+        scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'l', pose: LOOSE, data: null, parent: C });
+        scene.add({ id: asNodeId('b'), kind: 'leaf', layer: 'l', pose: LOOSE, data: null, parent: C });
+        return scene;
+      }
+      const adapterOf = (scene: ReturnType<typeof bare>) => ({
+        setLayout: (id: string, layout: LayoutStrategy<RectPose> | string | null) => scene.setLayout(asNodeId(id), layout),
+        setPose: (id: string, pose: RectPose) => scene.setPose(asNodeId(id), pose),
+      });
+
+      it('arranges the container from an applyBatch op, and one undo takes both back', () => {
+        const scene = bare();
+        const layout = stack();
+        const depth = scene.historyIndex();
+        scene.applyBatch([createSetLayoutOp({ id: C as string, from: null, to: layout })], 'Lay out', adapterOf(scene));
+        expect(scene.layoutOf(C)).toBe(layout);
+        expect(posOf(scene, 'b')).toEqual([100, 110]);
+        expect(scene.historyIndex()).toBe(depth + 1);
+
+        scene.undo();
+        expect(scene.layoutOf(C)).toBeNull();
+        expect(scene.get(asNodeId('b'))!.pose).toEqual(LOOSE);
+        scene.redo();
+        expect(scene.layoutOf(C)).toBe(layout);
+        expect(posOf(scene, 'b')).toEqual([100, 110]);
+      });
+
+      it('arranges the container from a setLayout inside scene.batch', () => {
+        const scene = bare();
+        scene.batch('Lay out', () => scene.setLayout(C, stack()));
+        expect(posOf(scene, 'b')).toEqual([100, 110]);
+        scene.undo();
+        expect(scene.layoutOf(C)).toBeNull();
+        expect(scene.get(asNodeId('b'))!.pose).toEqual(LOOSE);
+      });
+
+      it('undoes and redoes a restored history of that op', () => {
+        const registry = { layout: { stack: stack() } };
+        const scene = bare(registry);
+        scene.applyBatch([createSetLayoutOp({ id: C as string, from: null, to: 'stack' })], 'Lay out', adapterOf(scene));
+        const saved = JSON.parse(JSON.stringify({ doc: scene.toJSON(), history: scene.serializeHistory() }));
+
+        const back = sceneFromJSON<null, 'l', RectPose>(saved.doc, { registry });
+        back.setHistoryAdapter(() => adapterOf(back));
+        back.restoreHistory(saved.history);
+        expect(posOf(back, 'b')).toEqual([100, 110]);
+        back.undo();
+        expect(back.layoutOf(C)).toBeNull();
+        expect(back.get(asNodeId('b'))!.pose).toEqual(LOOSE);
+        back.redo();
+        expect(back.layoutOf(C)).toBe(registry.layout.stack);
+        expect(posOf(back, 'b')).toEqual([100, 110]);
+      });
+    });
+
     it('rebuilds an op that names its layouts by key', () => {
       const op = rebuildOp('setLayout', { id: 'C', from: 'stack', to: null })!;
       const calls: unknown[] = [];
