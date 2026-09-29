@@ -583,10 +583,6 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 - **(P3) Serializable clips** — follows from tracks being typed callbacks rather
   than data. Revisit with the editor's experience in hand.
 
-- **(P3) The fluent `stagger(items, delay).tween(...)` takes no options.** So a staggered
-  run can set neither a `cancelKey` nor the `label` that `animator.watch` and `live()` report,
-  where every other animation option type takes both.
-
 ### Earlier deferrals
 
 All from `docs/specs/2026-05-04-animation-primitive-design.md`. The timeline arc's

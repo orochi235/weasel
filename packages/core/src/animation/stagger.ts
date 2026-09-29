@@ -278,8 +278,8 @@ function makeBuilder<TItem>(
   delay: StaggerDelay,
 ): StaggerBuilder<TItem> {
   return {
-    each: (factory) =>
-      runStagger(timers, createSupervisor, watchCompletion, items, delay, factory),
+    each: (factory, opts) =>
+      runStagger(timers, createSupervisor, watchCompletion, items, delay, factory, opts),
     tween: <T,>(opts: StaggerTweenOptions<T, TItem>) =>
       runStagger(timers, createSupervisor, watchCompletion, items, delay, (item, i) =>
         animator.tween<T>({
@@ -291,6 +291,7 @@ function makeBuilder<TItem>(
           onTick: (v) => opts.onTick(v, item, i),
           onDone: opts.onDone ? () => opts.onDone!(item, i) : undefined,
         }),
+        opts,
       ),
     springPose: <TPose,>(
       adapter: SceneAdapter<{ id: string }, TPose>,
@@ -309,6 +310,7 @@ function makeBuilder<TItem>(
           recordOp: opts.recordOp,
           opLabel: opts.opLabel,
         }),
+        opts,
       ),
   };
 }
