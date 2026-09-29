@@ -61,7 +61,8 @@ import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 import type { BidiResolver } from './bidiSeam';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorationMetrics';
 import { graphemeEnds } from '../measure/graphemes';
-import { isHardLineBreak, lineBreakOpportunities } from './lineBreak/lineBreaks';
+import { isHardLineBreak } from './lineBreak/lineBreaks';
+import { wrapLines } from './lineBreak/wrapLines';
 
 /** One textured glyph quad, origin-relative — see the header. */
 export interface LaidOutQuad {
@@ -798,87 +799,56 @@ export function layoutRuns(
     warnLogicalRtlOnce();
   }
 
-  const breaks = Number.isFinite(opts.maxWidth) ? lineBreakOpportunities(entries.map((e) => e.cp)) : null;
-
-  // 2. Walk entries, accumulating lines bounded by maxWidth when finite.
-  //    A "word" runs from a non-space entry to the next UAX #14 break
-  //    opportunity, spaces after it included; after each word, decide
-  //    whether it fits on the current line.
+  // 2. Break the entries into lines — at hard breaks, and at UAX #14
+  //    opportunities when `maxWidth` is finite — then fill each one.
   interface Line {
     entries: Entry[];
     width: number;
     height: number;
-    /** Set only for a line with no entries at all — the newline that closed
-     *  it, which is the only carrier of the style a blank line should take
-     *  its height and baseline from. */
+    /** Set only for a line with no entries at all — the hard break that
+     *  closed it, which is the only carrier of the style a blank line should
+     *  take its height and baseline from. */
     blank?: Entry;
-    /** Closed by the wrap rather than by a newline or the end of the text —
-     *  the lines `justify` spreads. */
+    /** Closed by the wrap rather than by a hard break or the end of the
+     *  text — the lines `justify` spreads. */
     wrapped?: boolean;
   }
+
+  // An entry opening a line drops the kerning before it, and a space opening
+  // one is a slot, not an indent — it keeps its cell so every code point
+  // stays addressable, but takes no width.
+  const openingWidth = (e: Entry): number => (e.isSpace ? 0 : e.advance + e.tracking);
+  /** `sum[k]`: width of entries `[0, k)` set end to end. */
+  const sum = new Float64Array(entries.length + 1);
+  for (let k = 0; k < entries.length; k++) {
+    const e = entries[k];
+    sum[k + 1] = sum[k] + e.kerningBefore + e.advance + e.tracking;
+  }
+  const widthOf = (start: number, end: number): number =>
+    openingWidth(entries[start]) + sum[end] - sum[start + 1];
+
   const lines: Line[] = [];
-  let cur: Line = { entries: [], width: 0, height: 0 };
-
-  function commitLine(): void {
-    lines.push(cur);
-    cur = { entries: [], width: 0, height: 0 };
+  for (const span of wrapLines(entries.map((e) => e.cp), opts.maxWidth, widthOf)) {
+    const line: Line = { entries: [], width: 0, height: 0, ...(span.wrapped ? { wrapped: true } : {}) };
+    if (span.start === span.end) {
+      // A blank line still advances the pen, at the size of the break that
+      // closed it, since no other entry can supply one. Without this `"a\n\nb"`
+      // painted `b` directly under `a`.
+      const brk = entries[span.end];
+      line.height = lineSize(brk) * opts.lineHeight;
+      line.blank = brk;
+    }
+    for (let k = span.start; k < span.end; k++) {
+      const e = entries[k];
+      const placed = k > span.start ? e
+        : e.isSpace ? { ...e, kerningBefore: 0, advance: 0, tracking: 0 }
+        : { ...e, kerningBefore: 0 };
+      line.entries.push(placed);
+      line.width += placed.kerningBefore + placed.advance + placed.tracking;
+      line.height = Math.max(line.height, lineSize(e) * opts.lineHeight);
+    }
+    lines.push(line);
   }
-
-  let i = 0;
-  while (i < entries.length) {
-    const e = entries[i];
-    if (e.isNewline) {
-      // A blank line still advances the pen. `cur.height` is only raised when
-      // an entry is pushed, so without this a line holding nothing but the
-      // newline itself measured zero and `"a\n\nb"` painted `b` directly
-      // under `a` — the blank line vanished instead of opening a gap. The
-      // newline's own run supplies the style, since no other entry can.
-      if (cur.entries.length === 0) {
-        cur.height = Math.max(cur.height, lineSize(e) * opts.lineHeight);
-        cur.blank = e;
-      }
-      commitLine();
-      i += e.cp === 13 && entries[i + 1]?.cp === 10 ? 2 : 1;
-      continue;
-    }
-    if (e.isSpace) {
-      if (cur.entries.length > 0) {
-        cur.entries.push(e);
-        cur.width += e.kerningBefore + e.advance + e.tracking;
-      } else {
-        // A space opening a line is a slot, not an indent — it keeps its cell
-        // so every code point stays addressable, but takes no width.
-        cur.entries.push({ ...e, kerningBefore: 0, advance: 0, tracking: 0 });
-      }
-      cur.height = Math.max(cur.height, lineSize(e) * opts.lineHeight);
-      i++;
-      continue;
-    }
-    // Accumulate the upcoming word. Only its ink has to fit: the spaces
-    // closing it hang.
-    let j = i;
-    let wordWidth = 0;
-    let inkWidth = 0;
-    while (j < entries.length && !entries[j].isNewline && (j === i || !breaks || breaks[j] === 0)) {
-      const w = entries[j];
-      wordWidth += w.kerningBefore + w.advance + w.tracking;
-      if (!w.isSpace) inkWidth = wordWidth;
-      j++;
-    }
-    if (breaks && cur.width + inkWidth > opts.maxWidth && cur.entries.length > 0) {
-      cur.wrapped = true;
-      commitLine();
-    }
-    for (let k = i; k < j; k++) {
-      const w = entries[k];
-      const kerningBefore = cur.entries.length === 0 ? 0 : w.kerningBefore;
-      cur.entries.push({ ...w, kerningBefore });
-      cur.width += kerningBefore + w.advance + w.tracking;
-      cur.height = Math.max(cur.height, lineSize(w) * opts.lineHeight);
-    }
-    i = j;
-  }
-  if (cur.entries.length > 0) commitLine();
 
   /**
    * Em-space outline for `e`, or `null` to leave it on its SDF tier.

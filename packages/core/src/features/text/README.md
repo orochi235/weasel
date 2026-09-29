@@ -66,9 +66,9 @@ destroys the distance field.
 `measureText` (advance/metrics) and `measureTextBounds` (ink bounds) are
 distinct; `fitTextPose.ts` and `verticalAlign.ts` build on them for
 fit-to-box and baseline placement. Every 2D-side width goes through
-`measuredWidth`, which adds tracking the way `layoutRuns` does — `fitTextPose`
-is the last caller that wraps by `ctx.measureText`, and a box it sizes has to
-break where the GL path breaks.
+`measuredWidth`, which adds tracking the way `layoutRuns` does, and
+`measureText` wraps through the same `wrapLines` as `layoutRuns`, so a box it
+sizes breaks where the GL path breaks.
 
 `lineBoxes.ts` answers the other measurement question: not how big is the
 text, but **where inside its box does it sit**. A text pose is a layout box —

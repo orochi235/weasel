@@ -58,6 +58,12 @@ describe('measureText', () => {
     expect(blank.lineStarts).toEqual([0, 2, 3]);
   });
 
+  it('lays out no line for empty text or after a trailing hard break, as layoutRuns does', () => {
+    const ctx = makeCtx();
+    expect(measureText(ctx, '', 1000, DEFAULT_TEXT_STYLE).lines).toEqual([]);
+    expect(measureText(ctx, 'a\n', 1000, DEFAULT_TEXT_STYLE).lines).toEqual(['a']);
+  });
+
   it('reports total height as lines * fontSize * lineHeight', () => {
     const ctx = makeCtx();
     const r = measureText(ctx, 'a\nb\nc', 1000, {
