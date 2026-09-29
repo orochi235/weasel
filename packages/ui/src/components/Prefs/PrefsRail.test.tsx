@@ -160,3 +160,47 @@ describe('PrefsForm rail layout', () => {
     expect(screen.getByRole('button', { name: /Canvas/ })).toHaveAttribute('aria-current', 'page');
   });
 });
+
+describe('PrefsForm rail layout with subPages', () => {
+  const renderRail = (props: Partial<Parameters<typeof PrefsForm>[0]> = {}) =>
+    render(<PrefsForm schema={SCHEMA} onChange={() => {}} layout="rail" subPages {...props} />);
+
+  it('gives a top-level entry only its own leaves, not its subgroups', () => {
+    renderRail();
+    expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Enabled' })).not.toBeInTheDocument();
+  });
+
+  it('opens a subentry as its own page, marked as the page', async () => {
+    const user = userEvent.setup();
+    const onSectionChange = vi.fn();
+    renderRail({ onSectionChange });
+    await user.click(screen.getByRole('button', { name: /Snapping/ }));
+    expect(onSectionChange).toHaveBeenCalledWith('canvas.snapping');
+    expect(screen.getByRole('button', { name: /Snapping/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('checkbox', { name: 'Enabled' })).toBeInTheDocument();
+    // Deeper groups still render inside the subentry's page.
+    expect(screen.getByRole('region', { name: 'Wrapping' })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Show grid' })).not.toBeInTheDocument();
+  });
+
+  it('opens the first subentry when a top-level entry has no leaves of its own', () => {
+    const bare: PrefGroup = {
+      name: 'Preferences',
+      children: {
+        view: {
+          name: 'View',
+          children: {
+            cards: {
+              name: 'Cards',
+              children: { cap: { kind: 'number', name: 'Cap', description: 'Tallest card.', default: 3 } },
+            },
+          },
+        },
+      },
+    };
+    render(<PrefsForm schema={bare} onChange={() => {}} layout="rail" subPages section="view" />);
+    expect(screen.getByRole('button', { name: /Cards/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('spinbutton', { name: 'Cap' })).toBeInTheDocument();
+  });
+});

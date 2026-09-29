@@ -6,13 +6,14 @@ import s from './Prefs.module.css';
 /** Props for {@link PrefsRail}. */
 export interface PrefsRailProps {
   items: readonly PrefRailItem[];
-  /** Path of the open depth-0 group. */
+  /** Path of the open group: depth 0, or depth 1 under `subPages`. */
   section: string;
   /** Path of the depth-1 group in view, from the pane's scroll spy. */
   current: string | null;
   /** A depth-0 entry was chosen: open its pane. */
   onOpen: (path: string) => void;
-  /** A depth-1 entry was chosen: scroll the open pane to it. */
+  /** A depth-1 entry was chosen: scroll the open pane to it, or, under
+   *  `subPages`, open it. */
   onScrollTo: (path: string) => void;
   /** Accessible name for the rail's landmark. */
   ariaLabel: string;
@@ -50,7 +51,7 @@ export function PrefsRail(props: PrefsRailProps) {
       {header}
       <div className={s.railList} ref={roving.rootRef} onKeyDown={roving.onKeyDown}>
         {items.map((item, index) => {
-          const open = item.depth === 0 && item.path === section;
+          const open = item.path === section;
           const inView = item.depth === 1 && item.path === current;
           return (
             <button
