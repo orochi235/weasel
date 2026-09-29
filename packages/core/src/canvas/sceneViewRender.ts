@@ -63,7 +63,7 @@ export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
   /** The DOM canvas to paint into. The helper owns its WebGL2 context: the
    *  first call on a given canvas creates a renderer and stashes it; subsequent
    *  calls reuse the same renderer (and resize the drawing buffer on dim
-   *  changes). */
+   *  changes). `releaseCanvasRenderer(canvas)` frees it. */
   canvas: HTMLCanvasElement;
   /** Scene to walk. `scene.renderOrder()` provides the per-node order. */
   scene: Scene<TData, TLayer, TPose>;
@@ -227,24 +227,35 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
 }
 
 /**
+ * The commands `renderSceneToCanvas` paints for one frame — everything in
+ * `args` but the canvas. `<SceneViewCanvas>` paints these through its own
+ * renderer lease.
+ */
+export function sceneViewFrame<TData, TLayer extends string, TPose>(
+  args: Omit<RenderSceneToCanvasArgs<TData, TLayer, TPose>, 'canvas'>,
+): DrawCommand[] {
+  const {
+    scene, view, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
+    colorOverrides, cull,
+  } = args;
+  return buildSceneViewCommands(
+    scene, view, drawOne, extraCommands, alphaFor, undefined, { layerVisibility, layerOrder }, colorOverrides,
+    cull ? { width, height, paintBounds: args.paintBounds ?? paintBoundsFor(drawOne) } : undefined,
+  );
+}
+
+/**
  * Render one frame of `scene` at `view` into `canvas`. See module docstring
  * for the design context.
  *
  * Paints through `paintCanvas` (`./canvasRenderer`): one renderer per canvas,
  * created on the first call and resized when `width` / `height` / `dpr`
  * change. Where no WebGL2 context is available (jsdom) the call paints
- * nothing.
+ * nothing. The renderer lives until `releaseCanvasRenderer(canvas)`.
  */
 export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
   args: RenderSceneToCanvasArgs<TData, TLayer, TPose>,
 ): void {
-  const {
-    canvas, scene, view, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
-    colorOverrides, cull,
-  } = args;
-  const commands = buildSceneViewCommands(
-    scene, view, drawOne, extraCommands, alphaFor, undefined, { layerVisibility, layerOrder }, colorOverrides,
-    cull ? { width, height, paintBounds: args.paintBounds ?? paintBoundsFor(drawOne) } : undefined,
-  );
-  paintCanvas(canvas, commands, view, { width, height, dpr: args.dpr });
+  const { canvas, view, width, height, dpr } = args;
+  paintCanvas(canvas, sceneViewFrame(args), view, { width, height, dpr });
 }

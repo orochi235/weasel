@@ -402,6 +402,7 @@ export {
   buildSceneViewCommands,
   renderSceneToCanvas,
 } from './canvas/sceneViewRender';
+export { releaseCanvasRenderer } from './canvas/canvasRenderer';
 export type {
   SceneViewDrawOne, RenderSceneToCanvasArgs, SceneViewLayers, SceneViewCull,
 } from './canvas/sceneViewRender';
