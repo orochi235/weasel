@@ -34,3 +34,20 @@
   outline: 2px solid var(--wzl-accent);
   outline-offset: 2px;
 }
+
+/* A point that shapes an edge rather than ending one — drawn dark-on-light,
+ * the inverse of the handle it hangs off, so the two read apart at a glance. */
+.control {
+  fill: #222222;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+}
+
+/* A patch edge: the outline the handles reshape, solid so it reads as the
+ * artwork's structure rather than as a construction line. */
+.edge {
+  fill: none;
+  stroke: #ffffff;
+  stroke-opacity: 0.85;
+  stroke-width: 1;
+}
