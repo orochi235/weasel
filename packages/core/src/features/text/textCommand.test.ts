@@ -126,4 +126,24 @@ describe('screen-pixel sizes', () => {
     if (cmd.kind !== 'text') throw new Error('unreachable');
     expect(cmd.style.fontSize).toEqual({ px: 24 });
   });
+
+  it('maps a bounds paint on a pose onto the pose box, stroke included', () => {
+    const grad = {
+      fill: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }], units: 'bounds' as const,
+    };
+    const cmd = textCommandFromPose({
+      x: 10, y: 20, width: 100, height: 40, text: 'x',
+      fill: grad, stroke: { paint: grad, width: 1 },
+    });
+    const want = { from: { x: 10, y: 20 }, to: { x: 110, y: 20 }, units: 'local' };
+    expect(cmd.runs[0].fill).toMatchObject(want);
+    expect(cmd.runs[0].stroke?.paint).toMatchObject(want);
+  });
+
+  it('hands solid runs through untouched', () => {
+    const fill = { fill: 'solid' as const, color: '#123' };
+    const cmd = textCommandFromPose({ x: 0, y: 0, width: 10, height: 10, text: 'x', fill });
+    expect(cmd.runs[0].fill).toBe(fill);
+  });
 });

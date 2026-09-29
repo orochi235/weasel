@@ -11,6 +11,7 @@
 
 import type { FillStyle, ScreenLength, Stroke } from '@weasel-js/paint';
 import type { TextTransform } from './runs/textTransform';
+import type { FontVariantCaps } from './runs/smallCaps';
 
 /** A span of text with its own styling, as authored. Fields left absent
  *  inherit from the node's text style — this is the difference between a run
@@ -67,6 +68,13 @@ export interface StyledRun {
    * off.
    */
   textTransform?: TextTransform;
+  /**
+   * `'small-caps'` draws this run's lowercase letters as capitals at a
+   * smaller size — synthesized, at the face's x-height over its cap height.
+   * Like `textTransform`, only what is drawn changes. Overrides the node's
+   * own; `'normal'` turns an inherited one off.
+   */
+  fontVariantCaps?: FontVariantCaps;
 }
 
 /** Normalize the two accepted spellings of text content — a plain string or

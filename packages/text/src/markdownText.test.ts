@@ -47,6 +47,18 @@ describe('layoutMarkdown', () => {
     expect(result.width).toBe(70);
   });
 
+  it('sets small caps as runs of capitals, the lowercase ones at the small size', () => {
+    const sized = (t: string, size: number) => t.length * size;
+    const result = layoutMarkdown([{ text: 'Hello', fontVariantCaps: 'small-caps' }], Infinity, 20, sized);
+    const [h, ello] = result.lines[0].runs;
+    expect([h.text, ello.text]).toEqual(['H', 'ELLO']);
+    expect(h.size).toBe(20);
+    expect(ello.size).toBeCloseTo(14, 9);
+    expect(ello.x).toBe(20);
+    expect(result.lines[0].height).toBe(20 * 1.3);
+    expect('smallCaps' in ello).toBe(false);
+  });
+
   it('breaks on newline', () => {
     const runs = markdownToRuns('a\nb');
     const result = layoutMarkdown(runs, Infinity, 13, mockMeasure);

@@ -18,9 +18,9 @@ recomputes from the TTF's tables — `1984 / 2048 = 0.96875` and `494 / 2048`,
 where Inter's `hhea` and typo values coincide. Advances and kerning in the
 atlas are the TTF's own at full precision, so a line laid out from the atlas
 ends where a browser setting `inter.ttf` ends it.
-The rest of that block — underline, strikeout and script metrics — is derived
-from the TTF's `post` and `OS/2` tables by the same function, so both tiers
-place rules and scripts alike too.
+The rest of that block — underline, strikeout, script metrics, x-height and
+cap height — is derived from the TTF's `post` and `OS/2` tables by the same
+function, so both tiers place rules, scripts and small caps alike too.
 
 ## Provenance
 

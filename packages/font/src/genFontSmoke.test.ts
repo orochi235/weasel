@@ -44,7 +44,7 @@ describe.skipIf(!existsSync(FONT_PATH))('gen-font.ts smoke test', () => {
         expect(font.chars.length).toBeGreaterThanOrEqual(95);
         // Arial ships hhea, post and OS/2 values for every entry the block carries.
         expect(Object.keys(font.faceMetrics ?? {}).sort())
-          .toEqual(['ascent', 'descent', 'strikethrough', 'subscript', 'superscript', 'underline']);
+          .toEqual(['ascent', 'capHeight', 'descent', 'strikethrough', 'subscript', 'superscript', 'underline', 'xHeight']);
 
         expect(existsSync(pngPath)).toBe(true);
         const pngHead = readFileSync(pngPath).subarray(0, 8);

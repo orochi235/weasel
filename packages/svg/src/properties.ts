@@ -10,7 +10,7 @@
  * it substitutes. A value is honored when it is read and nothing is warned.
  */
 
-import type { TextTransform } from '@weasel-js/core';
+import type { FontVariantCaps, TextTransform } from '@weasel-js/core';
 import { parsePaintAttr, type ParsedColor } from './color';
 
 export type Warn = (message: string) => void;
@@ -167,6 +167,17 @@ function readDecoration(v: string, warn: Warn): Decoration {
   return out;
 }
 
+/** `small-caps` or `normal`, out of what may be a CSS 3 shorthand; any other
+ *  variant is one the run model does not carry. */
+function readFontVariant(v: string, warn: Warn): FontVariantCaps | undefined {
+  let out: FontVariantCaps | undefined;
+  for (const t of v.toLowerCase().split(/\s+/)) {
+    if (t === 'small-caps' || t === 'normal') out = t;
+    else if (t) warn(`font-variant "${v}": "${t}" is not modeled; dropped`);
+  }
+  return out;
+}
+
 function readTextTransform(v: string): TextTransform | undefined {
   const t = v.toLowerCase();
   return TEXT_TRANSFORMS.has(t) ? (t as TextTransform) : undefined;
@@ -219,6 +230,7 @@ export const PROPERTIES = {
   'text-decoration': inherited(readDecoration),
   'direction': inherited(keyword('ltr', 'rtl')),
   'text-transform': inherited(readTextTransform),
+  'font-variant': inherited(readFontVariant),
   'opacity': own(readRatio),
   'stop-color': own(readSolidColor),
   'stop-opacity': own(readRatio),

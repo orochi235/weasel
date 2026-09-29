@@ -24,15 +24,22 @@ export type {
 } from './textStyle';
 
 export {
-  resolveRuns, SCRIPT_METRICS, scriptMetrics, scriptMetricsFor, numericWeight, isBoldWeight,
+  resolveRuns, resolveRunFace, SCRIPT_METRICS, scriptMetrics, scriptMetricsFor, numericWeight, isBoldWeight,
 } from './runs/resolveRuns';
 export type { ResolvedRun, ScriptPreset } from './runs/resolveRuns';
 export { DEFAULT_DECORATION_METRICS, decorationMetrics } from './layout/decorationMetrics';
 export type { DecorationKind } from './layout/decorationMetrics';
 export { transformRunTexts } from './runs/textTransform';
 export type { TextTransform, RunSourceMap, TransformedRunText } from './runs/textTransform';
+export {
+  SMALL_CAPS_SCALE, smallCapsScale, smallCapsScaleFor, smallCapsText, isSmallCapsLetter,
+} from './runs/smallCaps';
+export type { FontVariantCaps, SmallCapsText } from './runs/smallCaps';
 
 export { layoutRuns } from './layout/layoutRuns';
+export {
+  lineBreakOpportunities, NO_BREAK, BREAK_ALLOWED, BREAK_MANDATORY,
+} from './layout/lineBreak/lineBreaks';
 export {
   cachedLayoutRuns,
   LAYOUT_CACHE_VARIANT_LIMIT,

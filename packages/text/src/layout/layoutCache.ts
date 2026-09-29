@@ -162,7 +162,8 @@ function runsKey(runs: readonly ResolvedRun[]): string {
       + `|${r.baselineShift}`
       + `|${paintKey(r.fill)}|${strokeKey(r.stroke)}`
       // Ends follow from starts and the length, so the two pin the cells.
-      + `|${r.srcMap ? `${r.srcMap.length}:${r.srcMap.starts.join(',')}` : ''}|`;
+      + `|${r.srcMap ? `${r.srcMap.length}:${r.srcMap.starts.join(',')}` : ''}`
+      + `|${r.sizeMap ? r.sizeMap.join(',') : ''}|`;
   }
   return out;
 }

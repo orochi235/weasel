@@ -927,6 +927,40 @@ describe('letter-spacing / text-decoration', () => {
     expect(t.runs?.[1]?.textTransform).toBeUndefined();
   });
 
+  it('writes fontVariantCaps as font-variant on the text and its tspans, and reads it back', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'ab',
+      style: { fontVariantCaps: 'small-caps' },
+      runs: [{ text: 'a', fontVariantCaps: 'normal' }, { text: 'b', fontVariantCaps: 'small-caps' }],
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 20 } });
+    expect(svg).toMatch(/<text [^>]*font-variant="small-caps"/);
+    expect(svg).toContain('<tspan font-variant="normal">a</tspan>');
+    expect(svg).toContain('<tspan font-variant="small-caps">b</tspan>');
+    const { nodes, warnings } = parseSvg(svg);
+    expect(warnings).toEqual([]);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.style?.fontVariantCaps).toBe('small-caps');
+    expect(t.runs).toEqual(node.runs);
+  });
+
+  it('reads font-variant from a style or an ancestor, and warns on a value it does not model', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <g style="font-variant: small-caps"><text x="0" y="0">A<tspan font-variant="all-small-caps">b</tspan></text></g>
+    </svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    const g = nodes[0];
+    if (g.kind !== 'group') throw new Error('expected group');
+    const t = g.children[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.style?.fontVariantCaps).toBe('small-caps');
+    expect(t.runs?.[1]?.fontVariantCaps).toBeUndefined();
+    expect(warnings.some((w) => w.includes('all-small-caps'))).toBe(true);
+  });
+
   it('accepts letter-spacing with a unit suffix and drops the "normal" keyword', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
       <text x="0" y="0"><tspan letter-spacing="2px">a</tspan><tspan letter-spacing="normal">b</tspan></text>

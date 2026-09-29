@@ -33,7 +33,7 @@ export function rangeWeight(
  *  have no node-level counterpart, so they only ever come from the range. */
 const OVERRIDES = [
   'fontFamily', 'fontSize', 'letterSpacing', 'fill', 'script', 'baselineShift', 'fontScale',
-  'textTransform',
+  'textTransform', 'fontVariantCaps',
 ] as const;
 
 /**
@@ -61,6 +61,7 @@ export function effectiveRangeStyle(
     fontSize: resolved.fontSize,
     letterSpacing: resolved.letterSpacing,
     textTransform: resolved.textTransform,
+    fontVariantCaps: resolved.fontVariantCaps,
   };
   if (resolved.fill !== null) out.fill = resolved.fill;
   Object.assign(out, rangeWeight(range, style));

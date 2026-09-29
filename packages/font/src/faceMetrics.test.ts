@@ -17,6 +17,7 @@ const INTER_TABLES = {
     yStrikeoutPosition: 671, yStrikeoutSize: 140,
     ySuperscriptYSize: 1229, ySuperscriptYOffset: 717,
     ySubscriptYSize: 1229, ySubscriptYOffset: 154,
+    sxHeight: 1118, sCapHeight: 1490,
   },
 };
 
@@ -29,7 +30,15 @@ describe('faceMetricsFromTables', () => {
       strikethrough: { offset: -671 / 2048, thickness: 140 / 2048 },
       superscript: { size: 1229 / 2048, shift: 717 / 2048 },
       subscript: { size: 1229 / 2048, shift: -154 / 2048 },
+      xHeight: 1118 / 2048,
+      capHeight: 1490 / 2048,
     });
+  });
+
+  it('drops a height an OS/2 table older than version 2 leaves at zero', () => {
+    const m = faceMetricsFromTables({ ...INTER_TABLES, os2: { ...INTER_TABLES.os2, sxHeight: 0, sCapHeight: 0 } });
+    expect(m?.xHeight).toBeUndefined();
+    expect(m?.capHeight).toBeUndefined();
   });
 
   it('drops an entry the font left blank rather than drawing a zero-weight rule', () => {
@@ -88,10 +97,16 @@ describe('parseFaceMetrics', () => {
     expect(() => parseFaceMetrics({ superscript: { size: 0, shift: 0.3 } })).toThrow(/faceMetrics.superscript/);
     expect(() => parseFaceMetrics(3)).toThrow();
     expect(() => parseFaceMetrics({ ascent: 0.9 })).toThrow(/ascent\/descent/);
+    expect(() => parseFaceMetrics({ xHeight: -0.5 })).toThrow(/faceMetrics.xHeight/);
+    expect(() => parseFaceMetrics({ capHeight: '0.7' })).toThrow(/faceMetrics.capHeight/);
   });
 
   it('keeps the ascent and descent', () => {
     expect(parseFaceMetrics({ ascent: 0.9, descent: 0.25 })).toEqual({ ascent: 0.9, descent: 0.25 });
+  });
+
+  it('reads the two heights', () => {
+    expect(parseFaceMetrics({ xHeight: 0.5, capHeight: 0.7 })).toEqual({ xHeight: 0.5, capHeight: 0.7 });
   });
 });
 

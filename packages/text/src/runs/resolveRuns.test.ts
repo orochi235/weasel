@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { isBoldWeight, resolveRuns, SCRIPT_METRICS, type ResolvedRun } from './resolveRuns';
+import { SMALL_CAPS_SCALE, smallCapsScale } from './smallCaps';
 import { resolveTextStyle } from '../textStyle';
 import type { StyledRun } from '../runs';
 
@@ -236,5 +237,84 @@ describe('resolveRuns text-transform', () => {
     const [run] = resolveRuns([{ text: 'aß', textTransform: 'uppercase' }], style);
     expect(run.text).toBe('ASS');
     expect(run.srcMap).toEqual({ length: 2, starts: [0, 1, 1], ends: [1, 2, 2] });
+  });
+});
+
+describe('resolveRuns small caps', () => {
+  // No font is registered here, so every run takes the default scale.
+  const small = 20 * SMALL_CAPS_SCALE;
+
+  it('draws lowercase as capitals at the small-caps size, and leaves the rest full size', () => {
+    const style = resolveTextStyle({ fontSize: 20 });
+    const [run] = resolveRuns([{ text: 'Ab1c', fontVariantCaps: 'small-caps' }], style);
+    expect(run.text).toBe('AB1C');
+    expect(run.fontSize).toBe(20);
+    expect(run.sizeMap).toEqual([20, small, 20, small]);
+    expect(run.srcMap).toBeUndefined();
+  });
+
+  it('inherits the node variant, and a run can turn it off with normal', () => {
+    const style = resolveTextStyle({ fontSize: 20, fontVariantCaps: 'small-caps' });
+    const out = resolveRuns([{ text: 'ab' }, { text: 'cd', fontVariantCaps: 'normal' }], style);
+    expect(out.map((r) => r.text)).toEqual(['AB', 'cd']);
+    expect(out[1].sizeMap).toBeUndefined();
+  });
+
+  it('carries no size map for a run with nothing to shrink', () => {
+    const [run] = resolveRuns([{ text: 'AB 12', fontVariantCaps: 'small-caps' }], resolveTextStyle({ fontSize: 20 }));
+    expect(run.sizeMap).toBeUndefined();
+  });
+
+  it('sees the transformed text, so uppercase leaves nothing small and lowercase makes everything small', () => {
+    const style = resolveTextStyle({ fontSize: 20 });
+    const [up, low] = resolveRuns([
+      { text: 'Ab', fontVariantCaps: 'small-caps', textTransform: 'uppercase' },
+      { text: 'Ab', fontVariantCaps: 'small-caps', textTransform: 'lowercase' },
+    ], style);
+    expect(up.sizeMap).toBeUndefined();
+    expect(low.text).toBe('AB');
+    expect(low.sizeMap).toEqual([small, small]);
+  });
+
+  it('maps a lowercase letter whose capital is longer back to its one source character', () => {
+    const [run] = resolveRuns([{ text: 'aßb', fontVariantCaps: 'small-caps' }], resolveTextStyle({ fontSize: 20 }));
+    expect(run.text).toBe('ASSB');
+    expect(run.srcMap).toEqual({ length: 3, starts: [0, 1, 1, 2], ends: [1, 2, 2, 3] });
+    expect(run.sizeMap).toEqual([small, small, small, small]);
+  });
+
+  it('composes with a transform that already changed a length', () => {
+    // `ß` → `SS` under uppercase, then `ﬁ` → `FI` under small caps.
+    const [run] = resolveRuns(
+      [{ text: 'ßﬁ', fontVariantCaps: 'small-caps', textTransform: 'uppercase' }],
+      resolveTextStyle({ fontSize: 20 }),
+    );
+    // Uppercase already turned `ﬁ` into `FI`, so nothing is left to shrink.
+    expect(run.text).toBe('SSFI');
+    expect(run.srcMap).toEqual({ length: 2, starts: [0, 0, 1, 1], ends: [1, 1, 2, 2] });
+    expect(run.sizeMap).toBeUndefined();
+    const [capped] = resolveRuns(
+      [{ text: 'ßﬁ', fontVariantCaps: 'small-caps', textTransform: 'capitalize' }],
+      resolveTextStyle({ fontSize: 20 }),
+    );
+    // Capitalize titlecases `ß` to `Ss`; small caps then shrinks the `s` and
+    // spells out `ﬁ`.
+    expect(capped.text).toBe('SSFI');
+    expect(capped.srcMap).toEqual({ length: 2, starts: [0, 0, 1, 1], ends: [1, 1, 2, 2] });
+    expect(capped.sizeMap).toEqual([20, small, small, small]);
+  });
+
+  it('scales the size a script or fontScale already settled on', () => {
+    const [run] = resolveRuns([{ text: 'Ab', fontVariantCaps: 'small-caps', fontScale: 0.5 }], resolveTextStyle({ fontSize: 20 }));
+    expect(run.fontSize).toBe(10);
+    expect(run.sizeMap).toEqual([10, 10 * SMALL_CAPS_SCALE]);
+  });
+});
+
+describe('smallCapsScale', () => {
+  it("is the face's x-height over its cap height, and the default without both", () => {
+    expect(smallCapsScale({ xHeight: 0.5, capHeight: 0.8 })).toBeCloseTo(0.625, 12);
+    expect(smallCapsScale({ xHeight: 0.5 })).toBe(SMALL_CAPS_SCALE);
+    expect(smallCapsScale(undefined)).toBe(SMALL_CAPS_SCALE);
   });
 });

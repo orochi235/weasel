@@ -142,6 +142,7 @@ describe('inferredNodeProperties', () => {
       'script',
       'letterSpacing',
       'textTransform',
+      'fontVariantCaps',
       // No `fill`: a text node's color is its own `data.fill`, in Appearance,
       // the same leaf every other node kind paints from.
     ]);
@@ -155,7 +156,7 @@ describe('inferredNodeProperties', () => {
     const offered: Record<Exclude<keyof TextStyle, EditOverlayChrome>, true> = {
       fontSize: true, fontFamily: true, fontWeight: true, fontStyle: true, align: true,
       direction: true, lineHeight: true, wrap: true, letterSpacing: true, underline: true,
-      strikethrough: true, overline: true, textTransform: true, script: true,
+      strikethrough: true, overline: true, textTransform: true, fontVariantCaps: true, script: true,
     };
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
     const style = ((entry.schema.children.text as ToolPrefGroup).children['data.style']) as ToolPrefObject;

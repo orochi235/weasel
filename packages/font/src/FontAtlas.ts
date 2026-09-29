@@ -56,6 +56,10 @@ export interface BmFont {
    *  `faceMetrics` block, and an atlas without one leaves layout on its
    *  defaults. */
   faceMetrics?: FaceMetrics;
+  /** Atlas texels over which the distance field runs from 0 to 1, edge at
+   *  0.5 — msdf-bmfont-xml's `distanceField.distanceRange`. Absent when the
+   *  file does not record it. */
+  distanceRange?: number;
 }
 
 /** Two-glyph fixture for unit tests. */
@@ -99,5 +103,10 @@ export function parseBmFont(raw: unknown): BmFont {
   }
 
   const faceMetrics = parseFaceMetrics(r.faceMetrics);
-  return { info, common, chars, kernings, charMap, kerningMap, ...(faceMetrics ? { faceMetrics } : {}) };
+  const range = (r.distanceField as { distanceRange?: unknown } | undefined)?.distanceRange;
+  return {
+    info, common, chars, kernings, charMap, kerningMap,
+    ...(faceMetrics ? { faceMetrics } : {}),
+    ...(typeof range === 'number' && range > 0 ? { distanceRange: range } : {}),
+  };
 }
