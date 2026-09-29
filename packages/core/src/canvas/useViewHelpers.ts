@@ -1,4 +1,5 @@
-import { useCallback, useInsertionEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds, toolPreviewSources } from './toolPreview';
 import type { GestureSource, GesturePreviewSource } from './gestureBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
@@ -236,9 +237,7 @@ export function useViewHelpers<TPose>(
 
   const multiActive = selection.length > 1;
 
-  const previewExtraRef = useRef({ previewPoseExtra, previewIdsExtra });
-  // Committed renders only: the paint reads this through the helpers.
-  useInsertionEffect(() => { previewExtraRef.current = { previewPoseExtra, previewIdsExtra }; });
+  const previewExtraRef = useLatest({ previewPoseExtra, previewIdsExtra });
 
   const effectiveBoundsOf = useMemo(() => boundsOf ?? baseBoundsOf, [boundsOf, baseBoundsOf]);
 
@@ -256,7 +255,7 @@ export function useViewHelpers<TPose>(
       if (p != null) return p as TPose;
     }
     return null;
-  }, [tools]);
+  }, [tools, previewExtraRef]);
   const previewToolBounds = useCallback((id: string): Bounds | null => {
     if (tools) {
       const b = firstPreviewBounds(tools, id);
@@ -270,7 +269,7 @@ export function useViewHelpers<TPose>(
       if (p != null) return boxOf(id, p as TPose);
     }
     return null;
-  }, [tools, boxOf]);
+  }, [tools, boxOf, previewExtraRef]);
 
   /**
    * Bounds for `id` with any in-flight gesture folded in — what the user can

@@ -11,7 +11,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import { Profiler, StrictMode, useEffect } from 'react';
-import { renderThenAbandon } from '../test-utils/abandonRender';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { SceneCanvas, type SceneCanvasProps } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { SceneCanvasApi } from './canvasExtension';

@@ -8,7 +8,8 @@
  * This replaces the per-tool `drawGhost` fold-in — a single SceneCanvas
  * concern instead of every consumer wiring it.
  */
-import { useEffect, useInsertionEffect, useMemo, useReducer, useRef } from 'react';
+import { useEffect, useMemo, useReducer } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { type DrawCommand, type GroupDrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { LayersMap } from '../Canvas';
@@ -40,12 +41,8 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
 
   // Refs let the layer body read the last committed scene/slot without
   // re-creating the layer on every host render.
-  const sceneRef = useRef(scene);
-  const sceneSlotRef = useRef(sceneSlot);
-  useInsertionEffect(() => {
-    sceneRef.current = scene;
-    sceneSlotRef.current = sceneSlot;
-  });
+  const sceneRef = useLatest(scene);
+  const sceneSlotRef = useLatest(sceneSlot);
 
   // Subscribe to dispatcher state changes so the canvas re-renders on every
   // ongoing-action pump (preview poses mutate silently inside handles
@@ -128,5 +125,5 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       if (ghosted.length > 0) out.push({ kind: 'group', alpha: GHOST_ALPHA, children: ghosted });
       return out;
     },
-  }), []);
+  }), [sceneRef, sceneSlotRef]);
 }

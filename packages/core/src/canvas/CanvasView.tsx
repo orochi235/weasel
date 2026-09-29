@@ -5,7 +5,7 @@
  * Mount one inside `<SceneCanvas>`, or declare the same thing through the
  * surface's `views` prop, which renders one of these per descriptor.
  */
-import { useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
 import { clientToWorld } from 'core/viewport/clientToWorld';
@@ -21,7 +21,7 @@ import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
 import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
 import { pathFromPlane } from './planeClips';
-import { useOptionalDepRegistry } from '@weasel-js/routing/react';
+import { useLatest, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { useDeviceProfile } from 'core/device/useDeviceProfile';
 import {
   createGestureSource,
@@ -144,7 +144,7 @@ export function CanvasView(props: CanvasViewProps): null {
 
   const registry = useOptionalViewRegistry();
   const depRegistry = useOptionalDepRegistry();
-  const depRegistryRef = useRef(depRegistry);
+  const depRegistryRef = useLatest(depRegistry);
 
   // Hooks run unconditionally; the owned selection goes unused unless this
   // view asked for one.
@@ -154,21 +154,23 @@ export function CanvasView(props: CanvasViewProps): null {
   const [internalView, setInternalView] = useState<View>(() => normalizeView(defaultView ?? IDENTITY_VIEW));
   const effectiveView = viewProp ?? internalView;
 
+  const inputs = useOptionalViewInputs();
+  // The selection this view acts on: its own when it has one, the surface's
+  // otherwise.
+  const selection = viewSelection ?? inputs?.selectionApi ?? ownSelection;
+
   // Everything the registration reads is behind a ref: the registration object
   // is registered once and must not churn, but what it answers with has to be
-  // the last committed render's. Published by the insertion effect below.
-  const live = useRef({
+  // the last committed render's.
+  const live = useLatest({
     view: effectiveView, bounds, layers, layerVisibility, layerOrder, onViewChange, viewBounds, viewProp,
-    viewSelection,
-    // The selection this view acts on: its own when it has one, the
-    // surface's otherwise.
-    selection: viewSelection ?? ownSelection,
+    viewSelection, selection,
   });
 
   const rectAt = useCallback((outer: View, dims: Dims): ViewRect => {
     const b = live.current.bounds;
     return typeof b === 'function' ? b(outer, dims) : b;
-  }, []);
+  }, [live]);
 
   /** The rect for the surface's current frame — what a client point and a
    *  clamp are measured against outside a draw call. */
@@ -180,7 +182,7 @@ export function CanvasView(props: CanvasViewProps): null {
   const cameraAt = useCallback((outer: View, dims: Dims): View => {
     const v = live.current.view;
     return normalizeView(typeof v === 'function' ? v(outer, dims) : v);
-  }, []);
+  }, [live]);
 
   /** The camera for the surface's current frame. */
   const camera = useCallback((): View => {
@@ -191,13 +193,13 @@ export function CanvasView(props: CanvasViewProps): null {
   /** The surface's layers this view draws, in the order it draws them. */
   const drawnLayers = useCallback((): readonly RenderLayer<unknown>[] => (
     paintedLayers(registry?.surface()?.layers() ?? [], live.current)
-  ), [registry]);
+  ), [registry, live]);
 
   const [sceneLayerGate] = useState(createSceneLayerGate);
   /** What this view's picks, marquees and select-alls ask of a scene layer. */
   const layerIsPainted = useCallback((layerId: string): boolean => (
     sceneLayerGate(registry?.surface()?.layers() ?? [], live.current)(layerId)
-  ), [registry, sceneLayerGate]);
+  ), [registry, sceneLayerGate, live]);
 
   const setView = useCallback((next: View) => {
     const { viewBounds: vb, onViewChange: cb, viewProp: controlled } = live.current;
@@ -207,7 +209,7 @@ export function CanvasView(props: CanvasViewProps): null {
     if (controlled === undefined) setInternalView(clamped);
     cb?.(clamped);
     registry?.surface()?.requestRedraw();
-  }, [registry, rectNow]);
+  }, [registry, rectNow, live]);
 
   const viewApi = useMemo<ViewApi>(() => ({
     get: camera,
@@ -233,7 +235,7 @@ export function CanvasView(props: CanvasViewProps): null {
       get svg() { return base()?.svg; },
       get clipboard() { return base()?.clipboard; },
     };
-  }, [camera, rectNow]);
+  }, [camera, rectNow, depRegistryRef]);
 
   // One dispatcher per view: in-flight handles are per-view state, and two
   // views must not be able to see each other's.
@@ -243,15 +245,13 @@ export function CanvasView(props: CanvasViewProps): null {
   // This view's overlay-aware state. The scene half comes from the surface —
   // same adapter, same tools — but everything gesture-shaped is read off this
   // view's own dispatcher, which is where a gesture inside this view lands.
-  const inputs = useOptionalViewInputs();
   const rotationBadge = inputs?.rotationBadge ?? null;
   const own = useMemo(() => ({
     gestureSource: createGestureSource(() => dispatcherRef.current),
     ...createDispatcherPreviewSources(() => dispatcherRef.current),
   }), []);
-  const selection = viewSelection ?? inputs?.selectionApi ?? ownSelection;
 
-  const inputsRef = useRef(inputs);
+  const inputsRef = useLatest(inputs);
 
   /** The chrome-caps context this view answers for: its selection, its camera,
    *  its dispatcher's in-flight action. */
@@ -259,7 +259,7 @@ export function CanvasView(props: CanvasViewProps): null {
     selection: live.current.selection.get(),
     view: camera(),
     action: dispatcherRef.current!.getActiveAction(),
-  }), [camera]);
+  }), [camera, live]);
 
   // The surface's resolver, asked for this view's camera.
   const surfaceBoundsOf = inputs?.boundsOf;
@@ -284,18 +284,7 @@ export function CanvasView(props: CanvasViewProps): null {
     getIsVisible: () =>
       inputsRef.current?.chromeCaps?.isVisible(ruleInputs()) ?? ALWAYS_VISIBLE,
   });
-  const helpersRef = useRef(helpers);
-
-  // Committed renders only, ahead of every layout effect in the commit.
-  useInsertionEffect(() => {
-    depRegistryRef.current = depRegistry;
-    live.current = {
-      view: effectiveView, bounds, layers, layerVisibility, layerOrder, onViewChange, viewBounds, viewProp,
-      viewSelection, selection,
-    };
-    inputsRef.current = inputs;
-    helpersRef.current = helpers;
-  });
+  const helpersRef = useLatest(helpers);
 
   /** A client point in this view's world. The rect moves with the outer
    *  camera, so it is read per call rather than closed over. */
@@ -314,7 +303,7 @@ export function CanvasView(props: CanvasViewProps): null {
   const getAnchorState = useMemo(() => anchorStateFrom(
     () => depRegistryRef.current,
     (id, path) => pathFromPlane(path, inputsRef.current?.planeOfNode?.(id, camera()) ?? null),
-  ), [camera]);
+  ), [camera, depRegistryRef, inputsRef]);
 
   const { targetScale } = useDeviceProfile();
 
@@ -352,7 +341,7 @@ export function CanvasView(props: CanvasViewProps): null {
       }
       return inner(world);
     };
-  }, [getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge]);
+  }, [getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, helpersRef]);
 
   const classifyTarget = useMemo(() => {
     const inner = buildClassifyTarget(
@@ -370,7 +359,7 @@ export function CanvasView(props: CanvasViewProps): null {
       (id) => inputsRef.current?.kindOfNode?.(id),
     );
     return (world: { x: number; y: number }) => inner(world);
-  }, [camera, layerIsPainted]);
+  }, [camera, layerIsPainted, live, inputsRef]);
 
   const registration = useMemo<ViewRegistration>(() => ({
     id,
@@ -411,7 +400,7 @@ export function CanvasView(props: CanvasViewProps): null {
     },
   }), [id, order, interactive, paint, label, background, rectAt, cameraAt, viewApi,
        affordanceAt, classifyTarget, clientToWorldHere, ruleInputs, ingestionApi, drawnLayers,
-       layerIsPainted]);
+       layerIsPainted, live, inputsRef, helpersRef]);
 
   useEffect(() => {
     if (!registry) return;

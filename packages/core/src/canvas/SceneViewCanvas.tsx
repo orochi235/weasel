@@ -26,13 +26,13 @@
  */
 import {
   useCallback,
-  useInsertionEffect,
   useEffect,
   useLayoutEffect,
   useRef,
   useSyncExternalStore,
 } from 'react';
 import type { Ref } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { useFrameLoop } from './useFrameLoop';
 import { renderSceneToCanvas } from './sceneViewRender';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
@@ -144,10 +144,9 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
     });
     return true;
   };
-  const paintRef = useRef<() => boolean>(() => false);
-  useInsertionEffect(() => { paintRef.current = paint; });
+  const paintRef = useLatest(paint);
 
-  const { requestRedraw } = useFrameLoop(useCallback(() => paintRef.current(), []));
+  const { requestRedraw } = useFrameLoop(useCallback(() => paintRef.current(), [paintRef]));
 
   // Every render — a prop change or a scene-version bump — marks the surface
   // dirty. No dependency array: the paint reads all of them.
