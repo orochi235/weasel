@@ -51,6 +51,7 @@ import { worldEditToStorage } from 'features/paths/pathInWorld';
 // based on the node's path-storage shape); no direct op or dispatch
 // helpers needed here.
 import type { PolygonPath } from 'features/paths/types';
+import { inPlane, editingLayer } from '../planeInput';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -133,7 +134,7 @@ interface EditAnchorsScratch {
  *
  * Requires dep-schema entries: `selection`, `editAnchors`.
  */
-export const editAnchorsAction: Action & { requires: string[] } = {
+export const editAnchorsAction: Action & { requires: string[] } = inPlane({
   id: 'editAnchors',
   label: 'Edit Anchors',
   defaultBinding: {
@@ -283,4 +284,4 @@ export const editAnchorsAction: Action & { requires: string[] } = {
     },
   },
   enabled: () => true,
-};
+}, editingLayer);

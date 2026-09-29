@@ -1,5 +1,6 @@
 import type { Op } from '../ops/types';
 import type { ParallaxOpts } from '../viewport/parallax';
+import type { View } from '../viewport/view';
 
 /**
  * Opaque clipboard payload. `items` is `unknown[]` so each app's clipboard
@@ -147,10 +148,15 @@ export interface RotateAdapter<
   applyOps?(ops: Op[], label: string): void;
 }
 
-/**
- * Narrow adapter for `useAreaSelect`. Transient: no checkpoint, no
- * history. The hook calls `applyOps(ops)` instead of `applyOps(ops, label)`.
- */
+/** The view a region pick answers for. */
+export interface RegionPickView {
+  /** The camera the region was drawn under. With it, a node on a parallax
+   *  layer is tested where that camera's plane paints it. */
+  get?(): View;
+  /** Whether that view paints a layer at all. */
+  layerIsPainted?(layer: string): boolean;
+}
+
 /**
  * Narrow adapter for `useAreaSelect`. Transient: no checkpoint, no
  * history. The hook calls `applyOps(ops)` instead of `applyOps(ops, label)`.
@@ -163,8 +169,12 @@ export interface RotateAdapter<
  * Demos that don't need marquee selection can omit these methods entirely.
  */
 export interface AreaSelectAdapter {
-  /** Returns ids of nodes intersecting the world-space rect. */
-  hitTestArea?(rect: { x: number; y: number; width: number; height: number }): string[];
+  /** Returns ids of nodes intersecting the world-space rect, as the view the
+   *  rect was drawn in paints them. */
+  hitTestArea?(
+    rect: { x: number; y: number; width: number; height: number },
+    view?: RegionPickView,
+  ): string[];
   /** Current selection — read by behaviors to compute additive merges. */
   getSelection?(): string[];
   /** Mutator wired by `setSelection` op. */
@@ -198,6 +208,7 @@ export interface LassoSelectAdapter extends AreaSelectAdapter {
   hitTestLasso?(
     polygon: ReadonlyArray<{ x: number; y: number }>,
     mode: LassoHitMode,
+    view?: RegionPickView,
   ): string[];
 }
 

@@ -24,12 +24,13 @@
 
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
+import type { PlaneMap } from 'core/viewport/parallax';
 import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { GestureLifecycleOptions } from './gestureLifecycle';
-import type { InsertAdapter } from 'core/adapters/types';
+import type { InsertAdapter, RegionPickView } from 'core/adapters/types';
 import type { History } from '@weasel-js/history';
 import type { ActiveToolContextValue } from '@weasel-js/routing/react';
 import type {
@@ -45,6 +46,10 @@ import type { Point2, DragSample, DebugSink } from '@weasel-js/routing';
 export interface ViewApi {
   get(): View;
   set(v: View): void;
+  /** How this camera's world maps into the world the invocation edits in,
+   *  when that is a parallax plane — set by `inPlane` on the view it hands a
+   *  wrapped action. Absent or null: the camera's own world. */
+  plane?(): PlaneMap | null;
   /** Optional recenter callback. When wired, `viewportZoomAction`'s `reset`
    *  branch (Cmd-0) calls this instead of resetting to identity — letting
    *  consumers re-fit the page (or other reference bounds) into the workspace.
@@ -77,7 +82,7 @@ export interface ViewApi {
 
 /** The part of the asking view a region hit-test consults. `get` is its
  *  camera, which a parallax layer is picked through. */
-export type HitTestView = Pick<ViewApi, 'layerIsPainted'> & Partial<Pick<ViewApi, 'get'>>;
+export type HitTestView = RegionPickView;
 
 /**
  * Adapter dep for `areaSelectAction`.
@@ -358,6 +363,10 @@ export interface InsertDep {
     bounds: { x: number; y: number; width: number; height: number },
     extras: InsertExtras,
   ): NodeId | null;
+  /** The scene layer `commit` puts the node on. An insert on a layer carrying
+   *  `parallax` is dragged out in that plane's world, so `bounds` arrive
+   *  there too. Omitted: the camera's world. */
+  layer?(): string;
 }
 
 /**

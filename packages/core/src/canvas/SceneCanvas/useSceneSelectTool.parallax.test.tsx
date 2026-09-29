@@ -93,3 +93,45 @@ describe('useSceneSelectTool — parallax layers', () => {
     expect(result.current.boundsOf('tree')).toEqual({ x: 370, y: 300, width: 30, height: 50 });
   });
 });
+
+describe('useSceneSelectTool — a container and its child on different planes', () => {
+  // Camera at 2x over a plane that does not zoom: plane = 2 * camera.
+  const ZOOMED: View = { x: 0, y: 0, scale: { x: 2, y: 2 } };
+
+  it('clips a plane child by its camera-layer parent where the parent is drawn', () => {
+    const { result } = renderHook(() => {
+      const scene = useScene<unknown, 'sky' | 'main', Pose>({
+        systemLayers: [{ id: 'main' }, { id: 'sky', parallax: { pan: 1, zoom: 0 } }],
+        initial: [
+          { id: asNodeId('box'), kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 }, data: {} },
+          { id: asNodeId('kid'), kind: 'leaf', layer: 'sky', parent: asNodeId('box'), pose: { x: 0, y: 0, width: 200, height: 200 }, data: {} },
+        ],
+      });
+      const adapter = useSceneAdapter(scene);
+      return useSceneSelectTool({ scene, adapter, getView: () => ZOOMED, geometry: { pickTolerancePx: 0 } });
+    });
+    // The kid paints over camera 0..100, the box's clip over 0..50.
+    expect(result.current.pickEvery(40, 40)).toEqual(['box', 'kid']);
+    expect(result.current.pickEvery(70, 70)).toEqual([]);
+  });
+});
+
+describe('useSceneSelectTool — boxing a pose on a plane', () => {
+  it('boxes a pose the node is not yet at where the plane would draw it', () => {
+    const r = harness();
+    // An in-flight pose 100 right of the stored one, carried the plane's 300.
+    expect(r.current.boundsOfPose('hill', { x: 100, y: 0, width: 50, height: 50 }))
+      .toEqual({ x: 400, y: 0, width: 50, height: 50 });
+  });
+});
+
+describe('useSceneSelectTool — a node\'s plane', () => {
+  it('names the plane a node is drawn through under a camera, and none off a plane', () => {
+    const r = harness();
+    // pan 0.25 under a camera at x=400: the plane sits 300 left of it.
+    expect(r.current.planeOfNode('hill')).toEqual({ scale: { x: 1, y: 1 }, offset: { x: -300, y: 0 } });
+    expect(r.current.planeOfNode('crate')).toBeNull();
+    expect(r.current.planeOfNode('hill', { x: 0, y: 0, scale: { x: 1, y: 1 } }))
+      .toEqual({ scale: { x: 1, y: 1 }, offset: { x: 0, y: 0 } });
+  });
+});

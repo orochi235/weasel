@@ -116,3 +116,24 @@ describe('guideSnapStrategy', () => {
     expect(out).toEqual({ points: [{ x: 50, y: 10 }, { x: 58, y: 10 }] });
   });
 });
+
+describe('guideSnapStrategy on a parallax plane', () => {
+  // The gesture's poses are in a plane whose world is the camera's doubled
+  // and shifted: plane = 2 * camera - 100 on x, 2 * camera on y. Guides are
+  // the camera's, so each is carried into the plane before it is compared.
+  const plane = { scale: { x: 2, y: 2 }, offset: { x: -100, y: 0 } };
+  const ctx = { view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, plane } as unknown as GestureContext<Pose>;
+
+  it('snaps to where the camera\'s guide lies in the plane', () => {
+    const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 110 }, { id: 'h', axis: 'y', offset: 30 }];
+    const s = guideSnapStrategy<Pose>(() => guides, { tolerance: 5 });
+    // Camera x=110 is plane 120; camera y=30 is plane 60.
+    expect(s.snap({ x: 118, y: 57 }, ctx)).toEqual({ x: 120, y: 60 });
+  });
+
+  it('does not snap to the guide\'s camera coordinate read as a plane one', () => {
+    const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 110 }];
+    const s = guideSnapStrategy<Pose>(() => guides, { tolerance: 5 });
+    expect(s.snap({ x: 111, y: 0 }, ctx)).toBeNull();
+  });
+});

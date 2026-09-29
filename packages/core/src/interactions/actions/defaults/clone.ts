@@ -46,6 +46,7 @@ import { freshNodeId } from './freshNodeId';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
+import { inPlane, selectionLayer } from '../planeInput';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -90,7 +91,7 @@ interface CloneScratch {
  *
  * @see useClone — the React hook this descriptor partially mirrors.
  */
-export const cloneAction: Action & { requires: string[] } = {
+export const cloneAction: Action & { requires: string[] } = inPlane({
   id: 'clone',
   label: 'Clone',
   // No default binding: a bare `{ kind: 'drag' }` would clone a non-empty
@@ -214,4 +215,4 @@ export const cloneAction: Action & { requires: string[] } = {
     },
   },
   enabled: () => true,
-};
+}, selectionLayer);

@@ -29,7 +29,7 @@
  *   TODO: thread shift from InvocationCtx.modifiers.shift into snap logic.
  */
 
-import { gestureViewReader } from '../../gestures/shared/screenTolerance';
+import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
@@ -52,6 +52,7 @@ import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 import { moveGestureAdapter } from '../move/gestureAdapter';
 import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestures/types';
+import { inPlane, selectionLayer } from '../planeInput';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -132,7 +133,7 @@ interface RotateScratch {
  *
  * @see useRotate — the React hook this descriptor mirrors for the rect case.
  */
-export const rotateAction: Action & { requires: string[] } = {
+export const rotateAction: Action & { requires: string[] } = inPlane({
   id: 'rotate',
   label: 'Rotate',
   // No default binding. It used to be a bare `{ kind: 'drag' }`, which made
@@ -191,6 +192,8 @@ export const rotateAction: Action & { requires: string[] } = {
       );
 
       const readView = gestureViewReader(ctx.deps);
+
+      const readPlane = gesturePlaneReader(ctx.deps);
       const scratch: RotateScratch = {
         ids,
         scene,
@@ -217,6 +220,7 @@ export const rotateAction: Action & { requires: string[] } = {
           modifiers: { ...ctx.modifiers },
           pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
           view: readView(),
+          plane: readPlane(),
           adapter: moveGestureAdapter(scene) as unknown as GestureContext<unknown>['adapter'],
           scratch: {},
         },
@@ -252,6 +256,7 @@ export const rotateAction: Action & { requires: string[] } = {
         gctx.modifiers = { ...moveCtx.modifiers };
         gctx.pointer = { worldX: moveCtx.world.x, worldY: moveCtx.world.y, clientX: 0, clientY: 0 };
         gctx.view = readView();
+        gctx.plane = readPlane();
         const primary = scratch.originWorlds.keys().next().value as NodeId;
         const originRotation = scratch.originRotations.get(primary) ?? 0;
         let delta = raw;
@@ -347,4 +352,4 @@ export const rotateAction: Action & { requires: string[] } = {
     },
   },
   enabled: () => true,
-};
+}, selectionLayer);

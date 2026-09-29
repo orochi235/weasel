@@ -1,4 +1,6 @@
-export { deriveParallaxView, planeMap, toPlane, fromPlane, rectToPlane, rectFromPlane } from '../../core/viewport/parallax';
+export {
+  deriveParallaxView, planeMap, toPlane, fromPlane, rectToPlane, rectFromPlane, planeToPlane, planeMatrix,
+} from '../../core/viewport/parallax';
 export type { ParallaxOpts, ScalarOrXY, PlaneMap } from '../../core/viewport/parallax';
 export { createParallaxLayer } from './createParallaxLayer';
 export type { CreateParallaxLayerOpts } from './createParallaxLayer';

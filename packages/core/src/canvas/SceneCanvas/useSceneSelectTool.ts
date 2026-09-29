@@ -7,7 +7,7 @@
 import { useMemo, useRef } from 'react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import { pickWalk, scenePickSource, scenePlaneOf, type PickQuery, type ViewPickGates } from 'canvas/pickWalk';
-import { rectFromPlane, toPlane } from 'core/viewport/parallax';
+import { rectFromPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { pathContainsPoint } from '@weasel-js/geom';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
@@ -118,8 +118,19 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
   pickBest: (worldX: number, worldY: number, view?: PickView | null) => string | null;
   /** World-space AABB of `id`, or null. Same as what the selection overlay +
    *  affordance hit-test need. Exposed so SceneCanvas can pass it to the
-   *  `affordanceAt` thunk without re-deriving it. */
-  boundsOf: (id: string) => import('core/viewport/fitViewToBounds').Bounds | null;
+   *  `affordanceAt` thunk without re-deriving it. `view` is the camera the
+   *  box is drawn under — a plane node sits somewhere else in each — and
+   *  defaults to the surface's. */
+  boundsOf: (id: string, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null) =>
+    import('core/viewport/fitViewToBounds').Bounds | null;
+  /** How `view`'s world (the surface's camera by default) maps into the plane
+   *  `id` is drawn through, or null when its layer moves with the camera. */
+  planeOfNode: (id: string, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null) => PlaneMap | null;
+  /** `boundsOf` for `id` drawn at `pose` rather than its own — how chrome
+   *  boxes an in-flight preview. Ignores a `geometry.boundsOf` override, which
+   *  answers only for a node's own pose. */
+  boundsOfPose: (id: string, pose: TPose, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null) =>
+    import('core/viewport/fitViewToBounds').Bounds | null;
   /** `selectTool.move` with `selectTool.snap` folded into its behaviors — what
    *  the `move` preset's bindings carry. */
   moveOptions: UseMoveOptions<TPose>;
@@ -229,25 +240,39 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   // every render.
   const getViewRef = useRef(getView);
   getViewRef.current = getView;
-  const wiredBoundsOf = useMemo(() => {
-    return (id: string): Bounds | null => {
-      if (boundsOfProp) return boundsOfProp(id);
+  const wiredPlaneOfNode = useMemo(() => {
+    return (id: string, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null): PlaneMap | null => {
+      const n = scene.get(asNodeId(id));
+      const camera = cameraOf(view ?? getViewRef.current?.() ?? null);
+      if (!n || !camera) return null;
+      return scenePlaneOf(scene.layers, camera)?.(n.layer) ?? null;
+    };
+  }, [scene]);
+
+  const wiredBoundsOfPose = useMemo(() => {
+    return (id: string, pose: TPose, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null): Bounds | null => {
       const n = scene.get(asNodeId(id));
       if (!n) return null;
-      // World, not local: a framed child is drawn in its parent's frame, and
-      // the chrome has to land on the ink.
-      const pose = adapter.getWorldPose(id);
       const g = poseDescriptorForNode(d, n);
       const b = g.getBounds(pose);
       const rot = g.getRotation?.(pose) ?? (b as { rotation?: number }).rotation ?? 0;
       const own = rot ? { ...b, rotation: rot } : b;
       // A plane node is drawn where its plane puts it, and the chrome has to
       // follow it there.
-      const camera = cameraOf(getViewRef.current?.() ?? null);
-      const plane = camera ? scenePlaneOf(scene.layers, camera)?.(n.layer) : null;
+      const plane = wiredPlaneOfNode(id, view);
       return plane ? rectFromPlane(plane, own) : own;
     };
-  }, [scene, adapter, boundsOfProp, d]);
+  }, [scene, d, wiredPlaneOfNode]);
+
+  const wiredBoundsOf = useMemo(() => {
+    return (id: string, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null): Bounds | null => {
+      if (boundsOfProp) return boundsOfProp(id);
+      if (!scene.get(asNodeId(id))) return null;
+      // World, not local: a framed child is drawn in its parent's frame, and
+      // the chrome has to land on the ink.
+      return wiredBoundsOfPose(id, adapter.getWorldPose(id), view);
+    };
+  }, [scene, adapter, boundsOfProp, wiredBoundsOfPose]);
 
   const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
     pickEvery: wiredHitBody,
@@ -268,6 +293,8 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     pickEvery: wiredHitBody,
     pickBest: wiredPickBest,
     boundsOf: wiredBoundsOf,
+    boundsOfPose: wiredBoundsOfPose,
+    planeOfNode: wiredPlaneOfNode,
     moveOptions: wiredMoveOptions,
   };
 }

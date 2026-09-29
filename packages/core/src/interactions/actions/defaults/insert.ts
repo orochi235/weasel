@@ -70,7 +70,7 @@ import type { InsertDep, InsertExtras, SnapDep } from '../depSchema';
 import type { Op } from 'core/ops/types';
 import type { Scene } from 'core/scene/types';
 import type { GestureContext, InsertBehavior, InsertPoint } from '../../gestures/types';
-import { gestureViewReader } from '../../gestures/shared/screenTolerance';
+import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { View } from 'core/viewport/view';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel } from '../gestureLifecycle';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -78,6 +78,8 @@ import type { TextEditDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { shapeKindInfo } from 'core/shapeKinds';
 import type { KitInsertShape } from 'core/shapeKinds';
+import { inPlane, insertLayer } from '../planeInput';
+import type { PlaneMap } from 'core/viewport/parallax';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -128,6 +130,7 @@ interface InsertScratch {
    *  start point under {@link GESTURE_KEY}, after `onStart` shaped it. */
   gestureCtx: GestureContext<unknown>;
   readView: () => View | null;
+  readPlane: () => PlaneMap | null;
   /** The endpoints after Shift-constrain, the `snap` dep and the behaviors,
    *  recomputed on every pump event so each behavior runs once per frame. */
   shaped: { start: InsertPoint; current: InsertPoint };
@@ -226,6 +229,7 @@ function shapeEndpoints(scratch: InsertScratch, modifiers: GestureContext<unknow
     gctx.modifiers = { ...modifiers };
     gctx.pointer = { worldX: scratch.currentX, worldY: scratch.currentY, clientX: 0, clientY: 0 };
     gctx.view = scratch.readView();
+    gctx.plane = scratch.readPlane();
     gctx.current.set(GESTURE_KEY, current);
     const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
     for (const b of scratch.behaviors) {
@@ -364,7 +368,7 @@ function buildExtras(
  *
  * @see useInsert — the React hook this descriptor mirrors for the simple case.
  */
-export const insertAction: Action & { requires: string[] } = {
+export const insertAction: Action & { requires: string[] } = inPlane({
   id: 'insert',
   label: 'Insert',
   group: 'insert',
@@ -393,6 +397,7 @@ export const insertAction: Action & { requires: string[] } = {
         : (p: { x: number; y: number }) => p;
       const behaviors = (opts?.behaviors ?? []) as InsertBehavior<unknown>[];
       const readView = gestureViewReader(ctx.deps);
+      const readPlane = gesturePlaneReader(ctx.deps);
       const origin = snap({ x: ctx.world.x, y: ctx.world.y });
       const gestureCtx: GestureContext<unknown> = {
         draggedIds: [GESTURE_KEY],
@@ -402,6 +407,7 @@ export const insertAction: Action & { requires: string[] } = {
         modifiers: { ...ctx.modifiers },
         pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
         view: readView(),
+        plane: readPlane(),
         // No node exists to adapt until commit; insert behaviors read points.
         adapter: undefined as unknown as GestureContext<unknown>['adapter'],
         scratch: {},
@@ -417,6 +423,7 @@ export const insertAction: Action & { requires: string[] } = {
         behaviors,
         gestureCtx,
         readView,
+        readPlane,
         shaped: { start: startPoint, current: startPoint },
         scene: ctx.deps.scene as Scene<unknown, string, unknown> | undefined,
         applyOps: ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined,
@@ -568,7 +575,7 @@ export const insertAction: Action & { requires: string[] } = {
    * placeholder that was silently blocking all dispatcher-routed inserts.
    */
   enabled: () => true as const,
-};
+}, insertLayer);
 
 /** Whether a drag produced enough extent to be worth committing, per kind.
  *  See the call site in `onEnd` for why this isn't one uniform test. */

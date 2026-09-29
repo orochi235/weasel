@@ -38,7 +38,7 @@
  * @see src/interactions/actions/resize/geometry.ts — `PoseDescriptor`.
  */
 
-import { gestureViewReader } from '../../gestures/shared/screenTolerance';
+import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
@@ -71,6 +71,8 @@ import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { unionBounds } from 'core/geometry/unionBounds';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
+import { inPlane, selectionLayer } from '../planeInput';
+import { fromPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
 // ---------------------------------------------------------------------------
 // Defaults applied when `resizePolicy` dep is absent. Mirrors the
@@ -186,6 +188,34 @@ function applyPointSnap<TPose extends Bounds>(
   return { ...pose, x: newCx - newWidth / 2, y: newCy - newHeight / 2, width: newWidth, height: newHeight };
 }
 
+/** `ctx`'s points in the camera's world, for a snap rule written against it. */
+function pointSnapToCamera<TPose extends Bounds>(
+  ctx: PointSnapContext<TPose>,
+  m: PlaneMap,
+): PointSnapContext<TPose> {
+  const cam = (p: { worldX: number; worldY: number }) => {
+    const w = fromPlane(m, { x: p.worldX, y: p.worldY });
+    return { worldX: w.x, worldY: w.y };
+  };
+  return {
+    ...ctx,
+    draggedCorner: ctx.draggedCorner && cam(ctx.draggedCorner),
+    fixedCorner: ctx.fixedCorner && cam(ctx.fixedCorner),
+    center: cam(ctx.center),
+    origin: cam(ctx.origin),
+  };
+}
+
+/** A snap rule's answer, back in the plane the resize works in. */
+function pointSnapFromPlane(
+  r: PointSnapResult | null | undefined,
+  m: PlaneMap,
+): PointSnapResult | null | undefined {
+  if (!r) return r;
+  const p = toPlane(m, { x: r.worldX, y: r.worldY });
+  return { ...r, worldX: p.x, worldY: p.y };
+}
+
 // ---------------------------------------------------------------------------
 // Anchor math (rotated and unrotated).
 // ---------------------------------------------------------------------------
@@ -281,7 +311,7 @@ interface ResizeScratch {
  * Reads optional `resizePolicy` dep when present.
  * Requires `InvocationCtx.drag.affordance` with a `handle:*` kind.
  */
-export const resizeAction: Action & { requires: string[] } = {
+export const resizeAction: Action & { requires: string[] } = inPlane({
   id: 'resize',
   label: 'Resize',
   // No default binding: a bare `{ kind: 'drag' }` claimed every drag at ambient
@@ -367,6 +397,7 @@ export const resizeAction: Action & { requires: string[] } = {
       // Minimal GestureContext for behaviors. `draggedIds` matches the
       // legacy hook: the starting id (not the expanded leaf set).
       const readView = gestureViewReader(ctx.deps);
+      const readPlane = gesturePlaneReader(ctx.deps);
       const gestureCtx: GestureContext<unknown> = {
         draggedIds: ids as unknown as string[],
         origin: new Map<string, unknown>([[ids[0] as string, originPose]]),
@@ -375,6 +406,7 @@ export const resizeAction: Action & { requires: string[] } = {
         modifiers: { ...ctx.modifiers },
         pointer: { worldX: startWorld.x, worldY: startWorld.y, clientX: 0, clientY: 0 },
         view: readView(),
+        plane: readPlane(),
         // `adapter` is unused by the kit's behaviors; cast to satisfy the type.
         adapter: undefined as unknown as GestureContext<unknown>['adapter'],
         scratch: {},
@@ -500,6 +532,7 @@ export const resizeAction: Action & { requires: string[] } = {
             clientY: 0,
           };
           scratch.gestureCtx.view = readView();
+          scratch.gestureCtx.plane = readPlane();
 
           let proposedBounds = computeProposedBounds(
             scratch.originBounds,
@@ -575,8 +608,13 @@ export const resizeAction: Action & { requires: string[] } = {
                 scratch.anchor,
                 scratch.gestureCtx.modifiers,
               );
+              // Point snaps are the surface's rules over the camera's world, so
+              // on a plane their points cross at this boundary.
+              const plane = scratch.gestureCtx.plane ?? null;
               for (const beh of scratch.pointSnap) {
-                const result = beh.onMove(psCtx);
+                const result = plane
+                  ? pointSnapFromPlane(beh.onMove(pointSnapToCamera(psCtx, plane)), plane)
+                  : beh.onMove(psCtx);
                 if (result) {
                   proposedPose = applyPointSnap(poseAsRect, rotation, result, psCtx) as unknown;
                   break;
@@ -627,4 +665,4 @@ export const resizeAction: Action & { requires: string[] } = {
    * — that broke every dispatcher-routed resize. See git blame.
    */
   enabled: () => true,
-};
+}, selectionLayer);

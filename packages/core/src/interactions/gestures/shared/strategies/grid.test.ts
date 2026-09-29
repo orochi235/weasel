@@ -108,3 +108,15 @@ describe('gridSnapStrategy — debug recording', () => {
     expect(() => strat.snap({ id: 'a', x: 13, y: 27 }, {} as never)).not.toThrow();
   });
 });
+
+describe('gridSnapStrategy on a parallax plane', () => {
+  // plane = 2 * camera - 100 on x, 2 * camera on y. The grid is the camera's.
+  const plane = { scale: { x: 2, y: 2 }, offset: { x: -100, y: 0 } };
+  const onPlane = { plane } as unknown as GestureContext<Pose>;
+
+  it('snaps to the camera\'s grid lines where they lie in the plane', () => {
+    const s = gridSnapStrategy<Pose>(10);
+    // Plane (112, 34) is camera (106, 17), which rounds to (110, 20): plane (120, 40).
+    expect(s.snap({ x: 112, y: 34 }, onPlane)).toEqual({ x: 120, y: 40 });
+  });
+});

@@ -147,6 +147,10 @@ export interface UseViewHelpersOpts<TPose> {
   geometry: PoseDescriptor<TPose>;
   /** Consumer-supplied bounds resolver. Falls back to the adapter's pose. */
   boundsOf: ((id: string) => Bounds | null) | undefined;
+  /** Bounds of `id` drawn at an in-flight `pose`. Falls back to the
+   *  geometry's box of that pose, which is wrong wherever the surface draws a
+   *  node somewhere its pose does not say — a parallax plane. */
+  boundsOfPose?: ((id: string, pose: TPose) => Bounds | null) | undefined;
   selection: readonly NodeId[];
   tools: ToolsApi | undefined;
   gestureSource: GestureSource | undefined;
@@ -195,9 +199,14 @@ export function useViewHelpers<TPose>(
   opts: UseViewHelpersOpts<TPose>,
 ): ViewHelpersBundle<TPose> {
   const {
-    adapter, geometry, boundsOf, selection, tools, gestureSource,
+    adapter, geometry, boundsOf, boundsOfPose, selection, tools, gestureSource,
     previewPoseExtra, previewIdsExtra, getIsVisible,
   } = opts;
+  const boxOf = useCallback(
+    (id: string, pose: TPose): Bounds | null =>
+      (boundsOfPose ? boundsOfPose(id, pose) : geometry.getBounds(pose)),
+    [boundsOfPose, geometry],
+  );
 
   const baseBoundsOf = useMemo(() => {
     if (boundsOf) return boundsOf;
@@ -253,15 +262,15 @@ export function useViewHelpers<TPose>(
       const b = firstPreviewBounds(tools, id);
       if (b) return b;
       const p = firstPreviewPose(tools, id);
-      if (p != null) return geometry.getBounds(p as TPose);
+      if (p != null) return boxOf(id, p as TPose);
     }
     const extra = previewExtraRef.current.previewPoseExtra;
     if (extra) {
       const p = extra(id);
-      if (p != null) return geometry.getBounds(p as TPose);
+      if (p != null) return boxOf(id, p as TPose);
     }
     return null;
-  }, [tools, geometry]);
+  }, [tools, boxOf]);
 
   /**
    * Bounds for `id` with any in-flight gesture folded in — what the user can

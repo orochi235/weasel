@@ -19,6 +19,10 @@ import type { Dispatcher } from '@weasel-js/routing';
 import { previewSourcesFrom } from '../drawEnvelope';
 import { resolvePreviews, type PreviewNode } from 'interactions/actions/resolvePreviews';
 import { resolveDerivedPath, sceneDepLookup } from '../derivedPath';
+import { scenePlaneOf } from '../pickWalk';
+import { planeTransform } from '../planeClips';
+import { deriveParallaxView } from 'core/viewport/parallax';
+import type { PlaneMap } from 'core/viewport/parallax';
 
 const GHOST_ALPHA = 0.85;
 
@@ -71,21 +75,33 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       // container ghosts with the clip it will actually impose.
       const depOf = sceneDepLookup(sc);
 
+      // A node on a parallax layer ghosts where its plane draws it: through
+      // the plane's view, inside a group carrying it into its parent's world.
+      const planeOf = scenePlaneOf(sc.layers, view);
+      const mapOf = (layer: string): PlaneMap | null => planeOf?.(layer) ?? null;
+      const viewOf = (layer: string) => {
+        const parallax = planeOf ? sc.layers.find((l) => l.id === layer)?.parallax : undefined;
+        return parallax ? deriveParallaxView(view, parallax) : view;
+      };
+
       // Mirrors buildSceneTree's structure — a container group carries a clip
       // from its painter's silhouette — but drawn from the previewed pose and
       // data, so children are clipped to the shape the container is taking.
       const drawEntry = (
         entry: PreviewNode<TData, TLayer, TPose>,
+        parentPlane: PlaneMap | null,
       ): DrawCommand[] => {
         const effNode = entry.data === entry.node.data
           ? entry.node
           : ({ ...entry.node, data: entry.data } as typeof entry.node);
-        const self = drawOne(effNode, entry.pose, view);
+        const plane = mapOf(entry.node.layer);
+        const self = drawOne(effNode, entry.pose, viewOf(entry.node.layer));
         const children: DrawCommand[] = [...wrapWithPoseRotation(self, entry.pose as unknown)];
         for (const child of entry.children) {
-          for (const cmd of drawEntry(child)) children.push(cmd);
+          for (const cmd of drawEntry(child, plane)) children.push(cmd);
         }
-        const group: GroupDrawCommand = { kind: 'group', children };
+        const transform = planeTransform(plane, parentPlane);
+        const group: GroupDrawCommand = transform ? { kind: 'group', transform, children } : { kind: 'group', children };
         if (effNode.kind === 'container') {
           const clip = findShapeSilhouette(
             effNode as unknown as Node<unknown, string, TPose>,
@@ -103,7 +119,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       const settled: DrawCommand[] = [];
       for (const root of roots) {
         const sink = root.opaque ? settled : ghosted;
-        for (const cmd of drawEntry(root)) sink.push(cmd);
+        for (const cmd of drawEntry(root, null)) sink.push(cmd);
       }
       if (ghosted.length === 0 && settled.length === 0) return [];
       // World-space commands; drawLayers wraps in viewToMat3 automatically.

@@ -1,3 +1,4 @@
+import type { PlaneMap } from 'core/viewport/parallax';
 import type { Op } from 'core/ops/types';
 import type { InsertAdapter, MoveAdapter, SnapTarget } from 'core/adapters/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -33,6 +34,13 @@ export interface GestureContext<TPose, TNode extends { id: string } = { id: stri
    * screen-pixel length then reads as one world unit.
    */
   view: View | null;
+  /**
+   * How the camera's world maps into the world this gesture's poses are in,
+   * when that is a parallax plane; absent or null otherwise. The camera draws
+   * its guides and grid in its own world, so a snap strategy carries them
+   * through this before comparing them with a pose.
+   */
+  plane?: PlaneMap | null;
   adapter: MoveAdapter<TNode, TPose>;
   /**
    * Per-gesture mutable store. Keys should be namespaced by behavior name to avoid

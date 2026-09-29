@@ -68,7 +68,9 @@ export function useInsertDepSource(
     const sc = sceneRef.current;
     const ad = adapterRef.current;
 
+    const layer = (sc.layers[0]?.id ?? 'default') as string;
     return {
+      layer: () => layer,
       commit(bounds, extras): NodeId | null {
         const kind = extras.kind;
         // Walk the seq counter forward until we land on an id that doesn't
@@ -85,7 +87,6 @@ export function useInsertDepSource(
         }
         const color = cycleFill(seq);
         const fill = solid(color);
-        const layer = (sc.layers[0]?.id ?? 'default') as string;
 
         // The nascent node's extent — drag AABB reconciled with whatever
         // richer geometry `extras` carries.

@@ -46,3 +46,23 @@ describe('useViewHelpers chrome state', () => {
     expect(cornerAt('max-max')).toEqual({ x: seBefore!.x + 100, y: seBefore!.y + 100 });
   });
 });
+
+describe('useViewHelpers preview bounds', () => {
+  // A node on a parallax plane is previewed at a pose in its plane's world;
+  // the surface's `boundsOfPose` is what carries that into the camera's.
+  it('boxes a previewed pose through the surface\'s boundsOfPose', () => {
+    const adapter = { getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }) };
+    const { result } = renderHook(() => useViewHelpers({
+      adapter,
+      geometry: RECT_POSE_DESCRIPTOR,
+      boundsOf: undefined,
+      boundsOfPose: (_id: string, p: Bounds) => ({ x: p.x / 2, y: p.y / 2, width: p.width / 2, height: p.height / 2 }),
+      selection: [asNodeId('a')],
+      tools: undefined,
+      gestureSource: undefined,
+      previewPoseExtra: () => ({ x: 100, y: 40, width: 20, height: 20 }),
+      previewIdsExtra: () => ['a'],
+    }));
+    expect(result.current.helpers.getEffectiveBounds('a')).toEqual({ x: 50, y: 20, width: 10, height: 10 });
+  });
+});

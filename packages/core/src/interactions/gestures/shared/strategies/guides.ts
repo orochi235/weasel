@@ -71,16 +71,23 @@ export function guideSnapStrategy<TPose>(
       let bestDy = 0;
       let bestAbsDy = Infinity;
 
+      // Guides are drawn by the camera; on a plane each is carried into the
+      // pose's world, which on one axis is a scale and an offset.
+      const m = ctx.plane ?? null;
+      const at = (g: Guide) => (m === null ? g.offset
+        : g.axis === 'x' ? g.offset * m.scale.x + m.offset.x
+        : g.offset * m.scale.y + m.offset.y);
+
       for (const g of guides) {
         if (g.axis === 'x') {
-          const d = g.offset - o.x;
+          const d = at(g) - o.x;
           const ad = Math.abs(d);
           if (ad <= tol.x && ad < bestAbsDx) {
             bestAbsDx = ad;
             bestDx = d;
           }
         } else {
-          const d = g.offset - o.y;
+          const d = at(g) - o.y;
           const ad = Math.abs(d);
           if (ad <= tol.y && ad < bestAbsDy) {
             bestAbsDy = ad;

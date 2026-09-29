@@ -19,6 +19,7 @@ import type {
   InsertAdapter,
   LassoHitMode,
   LassoSelectAdapter,
+  RegionPickView,
   LayerEnumerableAdapter,
   MoveAdapter,
   ResizeAdapter,
@@ -31,7 +32,7 @@ import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
 import { asNodeId } from 'core/scene/types';
 import { applyOpsTo } from 'core/applyOps';
-import { hitTestArea, hitTestLassoPolygon } from 'canvas/deps/hitTestArea';
+import { hitTestArea, hitTestLassoPolygon, regionPickOptions } from 'canvas/deps/hitTestArea';
 import type { ScenePickSourceOptions } from 'canvas/pickWalk';
 import {
   poseDescriptorForNode,
@@ -207,6 +208,9 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   const pickOpts: ScenePickSourceOptions<unknown> = composition
     ? { poseComposition: composition as PoseComposition<unknown> }
     : {};
+  // The asking view's layer gate and camera, over the adapter's own options.
+  const pickOptsFor = (view: RegionPickView | undefined): ScenePickSourceOptions<unknown> =>
+    (view ? { ...pickOpts, ...regionPickOptions(view, undefined, undefined) } : pickOpts);
   if (composes && options.cascadeContainerPose) {
     throw new Error(
       'sceneToAdapter: poseComposition and cascadeContainerPose contradict each other. ' +
@@ -370,21 +374,21 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     setSelection,
     // The live marquee's and lasso's own hit-tests. Containers come back:
     // this adapter's consumer has nothing to fold children into them.
-    hitTestArea(rect: Bounds) {
+    hitTestArea(rect: Bounds, view?: RegionPickView) {
       return hitTestArea(
         scene as unknown as Scene<unknown, string, unknown>,
         rect,
-        pickOpts,
+        pickOptsFor(view),
         d as PoseDescriptor<unknown>,
         { includeContainers: true },
       );
     },
-    hitTestLasso(polygon, mode: LassoHitMode) {
+    hitTestLasso(polygon, mode: LassoHitMode, view?: RegionPickView) {
       return hitTestLassoPolygon(
         scene as unknown as Scene<unknown, string, unknown>,
         polygon,
         mode,
-        pickOpts,
+        pickOptsFor(view),
         d as PoseDescriptor<unknown>,
         { includeContainers: true },
       );
