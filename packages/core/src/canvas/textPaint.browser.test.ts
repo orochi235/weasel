@@ -71,12 +71,15 @@ function pixelAt(img: RasterImage, wx: number, wy: number, scale: number): numbe
 }
 
 /** World points, on a half-unit grid, that both renders cover with solid ink —
- *  well inside a glyph, where the two tiers' edges cannot differ. */
-function sharedInk(a: RasterImage, sa: number, b: RasterImage, sb: number): [number, number][] {
+ *  well inside a glyph, where the two tiers' edges cannot differ. `floor` is
+ *  the alpha that counts as ink. */
+function sharedInk(
+  a: RasterImage, sa: number, b: RasterImage, sb: number, floor = 250,
+): [number, number][] {
   const out: [number, number][] = [];
   for (let wy = POSE.y; wy < POSE.y + POSE.height; wy += 0.5) {
     for (let wx = POSE.x; wx < POSE.x + POSE.width; wx += 0.5) {
-      if (pixelAt(a, wx, wy, sa)[3] >= 250 && pixelAt(b, wx, wy, sb)[3] >= 250) out.push([wx, wy]);
+      if (pixelAt(a, wx, wy, sa)[3] >= floor && pixelAt(b, wx, wy, sb)[3] >= floor) out.push([wx, wy]);
     }
   }
   return out;
@@ -309,10 +312,10 @@ describe('a registered paint kind on text', () => {
   beforeAll(() => registerPaintKind(SPLIT_KIND));
 
   /** Solid ink in the left and right fifths of the text, at `scale`. */
-  function sides(fill: FillStyle, scale: number): { left: number[][]; right: number[][] } {
+  function sides(fill: FillStyle, scale: number, floor?: number): { left: number[][]; right: number[][] } {
     const img = renderNode(fill, scale);
     const mask = renderNode({ fill: 'solid', color: '#ffffff' }, scale);
-    const ink = sharedInk(mask, scale, mask, scale);
+    const ink = sharedInk(mask, scale, mask, scale, floor);
     const at = ([x, y]: [number, number]) => pixelAt(img, x, y, scale);
     return {
       left: ink.filter(([x]) => x < POSE.x + POSE.width * 0.2).map(at),
@@ -321,7 +324,9 @@ describe('a registered paint kind on text', () => {
   }
 
   it('paints a mesh gradient on 12px text rather than black', () => {
-    const { left, right } = sides(MESH, 12 / FONT_SIZE);
+    // A 12px stem is about a pixel wide, so its antialiased band keeps most
+    // of it short of full coverage; 200 still means "inside a glyph".
+    const { left, right } = sides(MESH, 12 / FONT_SIZE, 200);
     expect(left.length).toBeGreaterThan(3);
     expect(right.length).toBeGreaterThan(3);
     for (const p of left) expect(p[0]).toBeGreaterThan(p[2] + 64);
