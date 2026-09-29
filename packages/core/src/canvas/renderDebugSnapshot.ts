@@ -30,20 +30,28 @@ export interface RenderDebugSnapshotArgs<TData, TLayer extends string, TPose>
  * Rasterize the scene through `view` at `size` and paint the debug overlay
  * over it, the way the canvas composed them. Built on `renderSceneToPixels`,
  * so the scene pixels are the screen's pixels at that resolution, and
- * synchronous like it: `await warmRender()` first. Encode the result with
- * `rasterToPng` to attach it somewhere.
+ * synchronous like it: `await warmRender({ render: debugSnapshotArgs(args) })`
+ * first. Encode the result with `rasterToPng` to attach it somewhere.
  */
 export function renderDebugSnapshot<TData, TLayer extends string, TPose>(
   args: RenderDebugSnapshotArgs<TData, TLayer, TPose>,
 ): RasterImage {
+  return renderSceneToPixels(debugSnapshotArgs(args));
+}
+
+/** What {@link renderDebugSnapshot} hands `renderSceneToPixels`: the source
+ *  rect and scale that reproduce the canvas, with the overlay composed on top. */
+export function debugSnapshotArgs<TData, TLayer extends string, TPose>(
+  args: RenderDebugSnapshotArgs<TData, TLayer, TPose>,
+): RenderSceneToPixelsArgs<TData, TLayer, TPose> {
   const { view, size, debug, config, pixelRatio = 1, ...rest } = args;
   const overlay = buildDebugOverlayCommands(debug, config, view, size);
-  return renderSceneToPixels({
+  return {
     ...rest,
     sourceRect: { x: view.x, y: view.y, width: size.width / view.scale.x, height: size.height / view.scale.y },
     scale: { x: view.scale.x * pixelRatio, y: view.scale.y * pixelRatio },
     overlay: pixelRatio === 1
       ? overlay
       : [{ kind: 'group', transform: mat3.scaled(mat3.identity(), pixelRatio, pixelRatio), children: overlay }],
-  });
+  };
 }

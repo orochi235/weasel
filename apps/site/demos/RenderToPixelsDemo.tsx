@@ -95,7 +95,7 @@ export function RenderToPixelsDemo() {
     } as const;
     let live = true;
     // The render is synchronous, so a font or paint kind still loading would draw nothing.
-    void warmRender().catch(() => {}).then(() => {
+    void warmRender({ render: opts }).catch(() => {}).then(() => {
       if (!live) return;
       const first = renderSceneToPixels(opts);
       const second = renderSceneToPixels(opts);

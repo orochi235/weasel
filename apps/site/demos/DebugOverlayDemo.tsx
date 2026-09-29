@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   DEFAULT_HANDLE_SIZE,
   rasterToPng,
+  debugSnapshotArgs,
   renderDebugSnapshot,
   SceneCanvas,
   useScene,
@@ -83,8 +84,7 @@ export function DebugOverlayDemo() {
     const api = canvasRef.current;
     const sink = api?.getDebug();
     if (!api || !sink || !debug) return;
-    await warmRender().catch(() => {});
-    const image = renderDebugSnapshot({
+    const args = {
       scene,
       drawOne: drawBox,
       view: api.getView(),
@@ -93,7 +93,9 @@ export function DebugOverlayDemo() {
       background: '#6a6a6a', // .ckd-canvas's CSS background, which the GL canvas composites over
       debug: sink.snapshot(),
       config: debug,
-    });
+    };
+    await warmRender({ render: debugSnapshotArgs(args) }).catch(() => {});
+    const image = renderDebugSnapshot(args);
     setSnapshotUrl(URL.createObjectURL(await rasterToPng(image)));
   };
 

@@ -174,13 +174,14 @@ async function stackRaster(
   if (base?.kind === 'image') ctx.drawImage(await loadImage(base.src), 0, 0, width, height);
   else if (base?.kind === 'canvas') ctx.drawImage(base.canvas, 0, 0, width, height);
 
-  await warmRender();
-  const raster = renderSceneToPixels({
+  const render = {
     scene,
     sourceRect: { x: 0, y: 0, width: draw.content.w, height: draw.content.h },
     scale: { x: scale, y: scale },
     drawOne: createMarkDrawOne(draw),
-  });
+  };
+  await warmRender({ render });
+  const raster = renderSceneToPixels(render);
   // Through a second canvas rather than `putImageData` on this one, which
   // replaces pixels instead of compositing and would erase the base.
   const marks = context2d(raster.width, raster.height);
