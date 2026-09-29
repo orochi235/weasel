@@ -29,3 +29,37 @@ engine.play(jump, { bus: 'sfx', position: { x: 40, y: 0 } });
 Browsers start an `AudioContext` suspended until a user gesture. The engine
 resumes on the first gesture automatically; `play()` before that drops the voice
 with a dev warning rather than queueing it.
+
+## Notes and patterns
+
+`playNote` plays a synthesized voice — an `OscillatorNode` under an ADSR
+envelope — with no buffer at all. It is a voice like a buffer voice: the same
+handle, bus pool, stealing and `cancelKey`. Pitch is hertz, a name (`'C#4'`) or
+`{ midi: 61 }`. `wave` is a built-in shape or the amplitudes of harmonic
+partials, built once into a `PeriodicWave` and reused. A note with a `duration`
+releases on its own; one without holds until `release()`, which runs the
+envelope's release from wherever it has got to.
+
+```ts
+const pluck = { wave: [1, 0.5, 0.33], envelope: { attack: 4, decay: 120, sustain: 0.3, release: 80 } };
+engine.playNote({ ...pluck, pitch: 'E4', duration: 150, bus: 'music' });
+engine.playNote({ pitch: 260, duration: 80, glide: { to: 660 } });
+```
+
+`createPatternPlayer` is a step sequencer on top. Events sit on steps — a note
+with a `length` in steps, or a buffer `sound` — and each step is booked through
+`engine.schedule` only when the lookahead window reaches it, so `setTempo` and
+`setEvents` take effect from the next step. A step that fires more than a step
+late skips ahead in phase instead of playing what it missed in a burst.
+
+```ts
+const player = createPatternPlayer(engine, {
+  tempo: 120, // four steps a beat by default
+  events: [
+    { step: 0, pitch: 'C3', length: 8, wave: 'triangle' },
+    { step: 4, sound: snare },
+  ],
+});
+player.start();
+player.setTempo(140);
+```

@@ -1,7 +1,41 @@
-import type { AudioEngine, SoundHandle } from '@weasel-js/audio';
+import type { AudioEngine, NoteOptions, PlayOptions, SoundHandle } from '@weasel-js/audio';
 
-export const SOUND_NAMES = ['step', 'jump', 'land', 'coin', 'stomp', 'hurt', 'goal', 'bed'] as const;
-export type SoundName = (typeof SOUND_NAMES)[number];
+/** Sounds rendered to PCM: noise, and the bed's struck metal, whose partials sit
+ *  off the harmonic series where an oscillator cannot reach. */
+export const PCM_SOUND_NAMES = ['step', 'land', 'bed'] as const;
+export type PcmSoundName = (typeof PCM_SOUND_NAMES)[number];
+
+/** A synth note `at` ms after the sound is triggered. */
+type TimedNote = NoteOptions & { at?: number };
+
+/** A pitch sweep with an optional second harmonic: a 1% attack, full level to
+ *  the midpoint, then a linear release over the back half. */
+const sweep = (ms: number, from: number, to: number, gain: number, harmonic = 0): NoteOptions => ({
+  pitch: from,
+  duration: ms / 2,
+  gain,
+  wave: harmonic ? [1, harmonic] : 'sine',
+  envelope: { attack: ms * 0.01, release: ms / 2 },
+  ...(from !== to ? { glide: { to, ms, curve: 'linear' as const } } : {}),
+});
+
+/** Sounds that are synth voices. */
+export const NOTE_SOUNDS = {
+  jump: [sweep(160, 260, 660, 0.32, 0.25)],
+  stomp: [sweep(180, 420, 90, 0.3, 0.4)],
+  hurt: [sweep(300, 400, 120, 0.34, 0.5)],
+  coin: [sweep(73, 988, 988, 0.28, 0.3), { at: 73, ...sweep(147, 1319, 1319, 0.24, 0.3) }],
+  /** C major arpeggio, each note ringing on under the next. */
+  goal: [523.25, 659.25, 783.99, 1046.5].map(
+    (f, k): TimedNote => ({ at: k * 225, ...sweep(900 - k * 225, f, f, 0.16, 0.3) }),
+  ),
+} satisfies Record<string, readonly TimedNote[]>;
+export type NoteSoundName = keyof typeof NOTE_SOUNDS;
+
+export type SoundName = PcmSoundName | NoteSoundName;
+export const SOUND_NAMES: readonly SoundName[] = [
+  ...PCM_SOUND_NAMES, ...(Object.keys(NOTE_SOUNDS) as NoteSoundName[]),
+];
 
 /** Deterministic noise — `Math.random` would make the tests unrepeatable. */
 function noise(seed: number): () => number {
@@ -226,7 +260,7 @@ function bed(rate: number): Float32Array {
 }
 
 /** Pure PCM for one sound. Mono, in [-1, 1]. */
-export function renderSound(name: SoundName, rate: number): Float32Array {
+export function renderSound(name: PcmSoundName, rate: number): Float32Array {
   switch (name) {
     case 'step': {
       const n = Math.floor(rate * 0.07);
@@ -237,8 +271,6 @@ export function renderSound(name: SoundName, rate: number): Float32Array {
       for (let i = 0; i < n; i++) out[i] *= 0.55 * env(i, n, 0.02, 0.8);
       return out;
     }
-    case 'jump':
-      return tone(Math.floor(rate * 0.16), rate, 260, 660, 0.32, 0.25);
     case 'land': {
       const n = Math.floor(rate * 0.14);
       const rnd = noise(0x0dd1e5);
@@ -249,35 +281,6 @@ export function renderSound(name: SoundName, rate: number): Float32Array {
       for (let i = 0; i < n; i++) out[i] = out[i] + thump[i] * 0.25 * env(i, n, 0.01, 0.9);
       return out;
     }
-    case 'coin': {
-      const n = Math.floor(rate * 0.22);
-      const out = new Float32Array(n);
-      const half = Math.floor(n / 3);
-      const a = tone(half, rate, 988, 988, 0.28, 0.3);
-      const b = tone(n - half, rate, 1319, 1319, 0.24, 0.3);
-      out.set(a, 0);
-      for (let i = 0; i < b.length; i++) out[half + i] += b[i];
-      return out;
-    }
-    case 'stomp': {
-      const n = Math.floor(rate * 0.18);
-      const out = tone(n, rate, 420, 90, 0.3, 0.4);
-      return out;
-    }
-    case 'hurt':
-      return tone(Math.floor(rate * 0.3), rate, 400, 120, 0.34, 0.5);
-    case 'goal': {
-      const n = Math.floor(rate * 0.9);
-      const out = new Float32Array(n);
-      const notes = [523.25, 659.25, 783.99, 1046.5];
-      const seg = Math.floor(n / notes.length);
-      notes.forEach((f, k) => {
-        const part = tone(n - k * seg, rate, f, f, 0.16, 0.3);
-        for (let i = 0; i < part.length; i++) out[k * seg + i] += part[i];
-      });
-      for (let i = 0; i < n; i++) out[i] = Math.max(-1, Math.min(1, out[i]));
-      return out;
-    }
     case 'bed':
       return bed(rate);
     default:
@@ -286,17 +289,36 @@ export function renderSound(name: SoundName, rate: number): Float32Array {
 }
 
 /**
- * Render every sound into the engine's context and hand back the handles.
+ * Render every PCM sound into the engine's context and hand back the handles.
  * Nothing is fetched — the demo ships no audio files.
  */
-export function registerSounds(engine: AudioEngine): Record<SoundName, SoundHandle> {
+export function registerSounds(engine: AudioEngine): Record<PcmSoundName, SoundHandle> {
   const rate = engine.context.sampleRate;
-  const out = {} as Record<SoundName, SoundHandle>;
-  for (const name of SOUND_NAMES) {
+  const out = {} as Record<PcmSoundName, SoundHandle>;
+  for (const name of PCM_SOUND_NAMES) {
     const pcm = renderSound(name, rate);
     const buffer = engine.context.createBuffer(1, pcm.length, rate);
     buffer.getChannelData(0).set(pcm);
     out[name] = engine.register(buffer);
   }
   return out;
+}
+
+/** Play a sound by name: its notes if it is a synth sound, else its buffer.
+ *  `opts` applies to every note, with `gain` scaling each note's own. */
+export function playSound(
+  engine: AudioEngine,
+  buffers: Record<PcmSoundName, SoundHandle>,
+  name: SoundName,
+  opts: PlayOptions = {},
+): void {
+  if (!(name in NOTE_SOUNDS)) {
+    engine.play(buffers[name as PcmSoundName], opts);
+    return;
+  }
+  const t0 = opts.when ?? engine.now();
+  const { loop: _loop, rate: _rate, ...shared } = opts;
+  for (const { at = 0, ...note } of NOTE_SOUNDS[name as NoteSoundName] as readonly TimedNote[]) {
+    engine.playNote({ ...note, ...shared, gain: (note.gain ?? 1) * (opts.gain ?? 1), when: t0 + at });
+  }
 }

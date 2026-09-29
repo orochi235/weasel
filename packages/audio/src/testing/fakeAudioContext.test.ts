@@ -178,4 +178,50 @@ describe('createFakeAudioContext', () => {
     a.getByteFrequencyData(out);
     expect([...out]).toEqual([200, 200, 200]);
   });
+
+  it('records an oscillator and ends it only at its scheduled stop', () => {
+    const ctx = createFakeAudioContext();
+    const o = ctx.createOscillator();
+    const done = vi.fn();
+    o.onended = done;
+    o.frequency.value = 220;
+    o.start(0);
+    ctx._advance(10_000);
+    expect(done).not.toHaveBeenCalled();
+    o.stop(10.5);
+    ctx._advance(600);
+    expect(done).toHaveBeenCalledTimes(1);
+    expect(ctx._oscillators).toEqual([o]);
+    expect(ctx._sources).toEqual([]);
+  });
+
+  it('applies the last stop when a source is stopped twice, as the specification says', () => {
+    const ctx = createFakeAudioContext();
+    const o = ctx.createOscillator();
+    const done = vi.fn();
+    o.onended = done;
+    o.start(0);
+    o.stop(1);
+    o.stop(0.2);
+    ctx._advance(300);
+    expect(done).toHaveBeenCalledTimes(1);
+  });
+
+  it('records a periodic wave and the oscillator it is set on', () => {
+    const ctx = createFakeAudioContext();
+    const wave = ctx.createPeriodicWave(new Float32Array([0, 0]), new Float32Array([0, 1]));
+    const o = ctx.createOscillator();
+    o.setPeriodicWave(wave);
+    expect(o.type).toBe('custom');
+    expect(o.periodicWave).toBe(wave);
+    expect([...wave.imag]).toEqual([0, 1]);
+  });
+
+  it('records exponential ramps apart from linear ones', () => {
+    const ctx = createFakeAudioContext();
+    const o = ctx.createOscillator();
+    o.frequency.exponentialRampToValueAtTime(880, 1);
+    expect(o.frequency.expRamps).toEqual([{ value: 880, at: 1 }]);
+    expect(o.frequency.ramps).toEqual([]);
+  });
 });

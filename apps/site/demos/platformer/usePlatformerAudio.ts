@@ -4,7 +4,7 @@ import type { Animator, TimelineHandle } from '@weasel-js/core';
 import { createAudioEngine } from '@weasel-js/audio';
 import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
 import { MOVE_SPEED } from './physics';
-import { registerSounds, type SoundName } from './sfx';
+import { playSound, registerSounds, type PcmSoundName, type SoundName } from './sfx';
 import { CLIPS } from './clips';
 import { footstepTrack } from './footsteps';
 import type { GameRefs, WorldHooks } from './world';
@@ -13,7 +13,7 @@ import type { GameRefs, WorldHooks } from './world';
  *  steady — the gap would measure speed change, not scheduling jitter. */
 const JITTER_SCALE_TOLERANCE = 0.02;
 
-type Audio = { engine: AudioEngine; sounds: Record<SoundName, SoundHandle>; bed: VoiceHandle | null };
+type Audio = { engine: AudioEngine; sounds: Record<PcmSoundName, SoundHandle>; bed: VoiceHandle | null };
 
 export interface PlatformerAudio {
   /** What the world calls for sound and impact. Read it through the ref from
@@ -141,7 +141,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   const fire = (name: SoundName, gain = 0.8) => {
     const a = audio.current;
     if (!a || a.engine.state() !== 'running') return;
-    a.engine.play(a.sounds[name], { bus: 'sfx', gain });
+    playSound(a.engine, a.sounds, name, { bus: 'sfx', gain });
   };
 
   /** For sounds with a place in the world — the engine spatializes against the
@@ -149,7 +149,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   const fireAt = (name: SoundName, position: { x: number; y: number }, gain = 0.8) => {
     const a = audio.current;
     if (!a || a.engine.state() !== 'running') return;
-    a.engine.play(a.sounds[name], { bus: 'sfx', gain, position });
+    playSound(a.engine, a.sounds, name, { bus: 'sfx', gain, position });
   };
 
   /** A hit drops the music under the hurt sound and brings it back. */
@@ -199,7 +199,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
     const a = audio.current;
     if (!a || a.engine.state() !== 'running') return;
     points.forEach((p, i) =>
-      a.engine.play(a.sounds.stomp, {
+      playSound(a.engine, a.sounds, 'stomp', {
         bus: 'sfx',
         gain: 0.2,
         position: p,

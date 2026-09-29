@@ -13,6 +13,17 @@ describe('@weasel-js/audio public surface', () => {
     expect(typeof audio.createTickTimer).toBe('function');
   });
 
+  it('exports the note layer: pitch, envelope and the pattern player', () => {
+    expect(audio.toFrequency('A4')).toBe(440);
+    expect(audio.midiToFrequency(69)).toBe(440);
+    expect(audio.noteToMidi('C4')).toBe(60);
+    expect(typeof audio.envelopeLevel).toBe('function');
+    expect(typeof audio.createPatternPlayer).toBe('function');
+    const note: audio.NoteOptions = { pitch: { midi: 60 }, wave: [1, 0.5], envelope: { attack: 2 } };
+    const event: audio.PatternEvent = { step: 0, ...note };
+    expect(event.step).toBe(0);
+  });
+
   it('names the option and record types a pool consumer has to write down', () => {
     // Types erase, so this is a compile-time assertion: the names must resolve.
     const opts: audio.VoicePoolOptions = { limit: 2, steal: 'quietest' };

@@ -607,17 +607,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
   Its plan file has every box unchecked too; the CHANGELOG and registry are the
   record. The follow-ups below are what is left.
-- **(P2) Synth voices and a pattern player.** Today the engine plays
-  `AudioBuffer`s: everything must be recorded or pre-rendered, so the
-  side-scroller hand-writes PCM into a buffer for every sound it makes. The
-  missing layer is a *note* — pitch, duration, envelope, a cheap waveform with
-  harmonics — plus a pattern player that books notes through the existing
-  lookahead scheduler instead of the caller booking each `play()`. The
-  scheduling, buses, voice pooling and stealing all already exist and are the
-  hard part; this sits on top of them. Wanted independently by anything that
-  needs music it did not ship as an asset.
+- **(P3) Noise and inharmonic synth voices.** `playNote` covers anything an
+  `OscillatorNode` can make: harmonic partials under an ADSR envelope, with a
+  pitch glide. The side-scroller's footsteps and landings are filtered noise,
+  and its music bed is struck metal whose partials sit off the harmonic series
+  (`platformer/sfx.ts`, `CLANK_RATIOS`), so all three are still hand-written
+  PCM. What is missing is a noise source voice (a looped noise buffer through a
+  `BiquadFilterNode`, under the same envelope) and a voice summing detuned
+  oscillators at arbitrary ratios.
 
-- **(P3) Trope-aware generative scoring.** Builds on the synth voices above.
+- **(P3) Trope-aware generative scoring.** Builds on `playNote` and `createPatternPlayer`.
   Screen scoring for factual content — news packages, documentaries — runs on a
   small, highly codified set of devices, and each one is reachable from a few
   nearly-orthogonal parameters: mode, tempo, subdivision density, articulation
