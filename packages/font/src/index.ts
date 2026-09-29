@@ -22,6 +22,7 @@ export {
   listFontWeights,
   fontRegistry,
   fontPending,
+  warmFonts,
 } from './registerFont';
 export type {
   FontEntry, FontFamilyFaces, FontVariant, ResolveResult, RegisteredFont, RegisterFontOptions,

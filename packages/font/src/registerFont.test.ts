@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   registerFont, getFont, resolveFontVariant, resolveGlyphFallback, listFonts, listFontWeights,
-  fontRegistry, fontPending,
+  fontRegistry, fontPending, warmFonts,
   _resetFontRegistryForTests,
 } from './registerFont';
 import { setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
@@ -636,5 +636,56 @@ describe('registerFont — lazy', () => {
     _resetFontRegistryForTests();
     expect(fontPending('inter')).toBe(false);
     expect(listFonts()).toEqual([]);
+  });
+});
+
+describe('warmFonts', () => {
+  const urls = () => (global.fetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
+
+  it('loads every lazily declared face with no text asking, and resolves once they land', async () => {
+    void registerFont('inter', { weight: 400 }, '/r.json', '/r.png', { lazy: true });
+    void registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
+    void registerFont('mono', {}, '/m.json', '/m.png', { lazy: true });
+
+    await warmFonts();
+    expect(urls()).toEqual(['/r.json', '/r.png', '/b.json', '/b.png', '/m.json', '/m.png']);
+    expect(getFont('inter', 700, 'normal')).not.toBeNull();
+    expect(getFont('mono')).not.toBeNull();
+    expect(fontPending('inter')).toBe(false);
+  });
+
+  it('loads only the families named', async () => {
+    void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+    void registerFont('mono', {}, '/m.json', '/m.png', { lazy: true });
+    await warmFonts(['mono']);
+    expect(urls()).toEqual(['/m.json', '/m.png']);
+    expect(fontPending('inter')).toBe(true);
+  });
+
+  it('joins a fetch already running rather than starting another', async () => {
+    const eager = registerFont('inter', {}, '/i.json', '/i.png');
+    let warmed = false;
+    const warm = warmFonts(['inter']).then(() => { warmed = true; });
+    expect(warmed).toBe(false);
+    await Promise.all([eager, warm]);
+    expect(warmed).toBe(true);
+    expect(urls()).toEqual(['/i.json', '/i.png']);
+  });
+
+  it('counts a registered family as loaded', async () => {
+    await registerFont('inter', {}, '/i.json', '/i.png');
+    await warmFonts(['inter']);
+    expect(urls()).toHaveLength(2);
+  });
+
+  it('rejects for a family that was never registered', async () => {
+    await expect(warmFonts(['nope'])).rejects.toThrow('weasel warmFonts: "nope"');
+  });
+
+  it('rejects when a load fails', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('down'));
+    const lazy = registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+    lazy.catch(() => {});
+    await expect(warmFonts()).rejects.toThrow('weasel registerFont');
   });
 });
