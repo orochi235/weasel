@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDragRadial } from './dragRadial';
+import { createElement } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 
 const NO_MODS = { shift: false, alt: false, meta: false, ctrl: false };
 
@@ -66,5 +68,22 @@ describe('useDragRadial', () => {
     act(() => { result.current.move(1, 1, NO_MODS); });
     act(() => result.current.end());
     expect(sub).toBe(true);
+  });
+});
+
+describe('useDragRadial — abandoned render', () => {
+  it('fires the committed callbacks, not ones from a render React threw away', () => {
+    const onStartA = vi.fn();
+    const onStartB = vi.fn();
+    let api: ReturnType<typeof useDragRadial> | undefined;
+    function Probe({ onStart }: { onStart: () => void }) {
+      const r = useDragRadial({ onStart });
+      if (onStart === onStartA) api = r;
+      return null;
+    }
+    renderThenAbandon(onStartA, onStartB, (onStart) => createElement(Probe, { onStart }));
+    act(() => api!.start(0, 0, NO_MODS));
+    expect(onStartA).toHaveBeenCalledOnce();
+    expect(onStartB).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { createElement } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { useSimulation } from './useSimulation';
 import {
   DEFAULT_ALPHA_DECAY,
@@ -528,5 +530,38 @@ describe('useSimulation handle methods', () => {
     expect(result.current.alpha()).toBe(0.8);
     expect(result.current.alphaTarget()).toBe(0.3);
     expect(result.current.velocityDecay()).toBe(0.2);
+  });
+});
+
+describe('useSimulation — abandoned renders', () => {
+  function Sim(props: { onTick: (nodes: TestNode[]) => void; clock: ReturnType<typeof makeClock> }): null {
+    useSimulation<TestNode>({
+      nodes: [node('a'), node('b', 5, 5)],
+      onTick: props.onTick,
+      requestFrame: props.clock.requestFrame,
+      cancelFrame: props.clock.cancelFrame,
+    });
+    return null;
+  }
+
+  it('does not start a loop for a mount React abandons', () => {
+    const clock = makeClock();
+    const onTick = vi.fn();
+    renderThenAbandon<boolean>(false, true, (show) =>
+      show ? createElement(Sim, { onTick, clock }) : null);
+    expect(clock.pendingCount()).toBe(0);
+    act(() => { clock.frame(); });
+    expect(onTick).not.toHaveBeenCalled();
+  });
+
+  it('ticks into the committed onTick, not an abandoned render\'s', () => {
+    const clock = makeClock();
+    const tickA = vi.fn();
+    const tickB = vi.fn();
+    renderThenAbandon<'a' | 'b'>('a', 'b', (w) =>
+      createElement(Sim, { onTick: w === 'a' ? tickA : tickB, clock }));
+    act(() => { clock.frame(); });
+    expect(tickA).toHaveBeenCalled();
+    expect(tickB).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, render } from '@testing-library/react';
 import { usePenTool, type PenScratch } from './usePenTool';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import type { Tool } from '../../overlayBinding';
 import { PATH_C, PATH_CMD_LENGTHS, PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'features/paths/types';
 import { pathFromD } from 'features/paths/pathFromD';
 import { pathToAnchors } from 'features/paths/anchors';
@@ -1030,5 +1032,29 @@ describe('usePenTool', () => {
       expect(worldPoints(scene, 'a')).toEqual([[[40, 40], [140, 40]]]);
       expect(worldPoints(scene, 'b')).toEqual([[[350, 250], [350, 350]]]);
     });
+  });
+});
+
+describe('usePenTool — abandoned renders', () => {
+  it('commits through the committed options, not an abandoned render\'s', () => {
+    const adapter = makeAdapter();
+    const wrapPath = (path: PolygonPath, o: { closed: boolean }): Pose => ({ kind: 'path', path, closed: o.closed });
+    let tool = null as Tool<PenScratch> | null;
+    function Probe({ autoSelect }: { autoSelect: boolean }) {
+      tool = usePenTool<Pose>({ wrapPath, adapter, autoSelect });
+      return null;
+    }
+    renderThenAbandon(true, false, (autoSelect) => <Probe autoSelect={autoSelect} />);
+    const deps = {} as ActionDeps;
+    const run = (id: string, params?: Record<string, unknown>) => {
+      const invoker = tool!.actions!.find((a) => a.id === id)!.invoker;
+      if (invoker?.timing !== 'immediate') throw new Error(`${id} is not immediate`);
+      act(() => { invoker.run(deps, params); });
+    };
+    run('pen.placeAnchor', { pressX: 0, pressY: 0 });
+    run('pen.placeAnchor', { pressX: 50, pressY: 0 });
+    run('pen.finish');
+    expect(adapter.addNode).toHaveBeenCalledTimes(1);
+    expect(adapter.setSelection).toHaveBeenCalledWith([adapter.ids[0]]);
   });
 });

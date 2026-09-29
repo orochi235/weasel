@@ -3,6 +3,8 @@ import { renderHook } from '@testing-library/react';
 import { useLassoTool } from './useLassoTool';
 import type { LassoSelectAdapter } from 'core/adapters/types';
 import { resolveParams } from '@weasel-js/routing';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import type { Tool } from '../../overlayBinding';
 
 function makeAdapter(hits: string[] = []): LassoSelectAdapter & { applyOps: ReturnType<typeof vi.fn> } {
   const applyOps = vi.fn();
@@ -81,5 +83,16 @@ describe('useLassoTool', () => {
     expect(withSome.result.current.bindings![0].opts?.behaviors).toBe(behaviors);
     const withNone = renderHook(() => useLassoTool(adapter));
     expect(withNone.result.current.bindings![0].opts?.behaviors).toBeUndefined();
+  });
+
+  it('the params thunk reads the committed mode, not an abandoned render\'s', () => {
+    const adapter = makeAdapter();
+    let tool = null as Tool<undefined> | null;
+    function Probe({ mode }: { mode: 'intersect' | 'enclosed' }) {
+      tool = useLassoTool(adapter, { mode });
+      return null;
+    }
+    renderThenAbandon<'intersect' | 'enclosed'>('intersect', 'enclosed', (mode) => <Probe mode={mode} />);
+    expect(resolveParams(tool!.bindings![0].opts?.params)).toEqual({ mode: 'intersect' });
   });
 });

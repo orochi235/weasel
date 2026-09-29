@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { InsertAdapter } from 'core/adapters/types';
@@ -59,14 +60,10 @@ export function useClipboardOps<TNode extends { id: string }>(
   const effectiveGetDropPoint = getDropPoint ?? pointerCtx?.getDropPoint;
   const clipboardRef = useRef<ClipboardSnapshot>(EMPTY);
   // Keep callbacks stable across renders.
-  const adapterRef = useRef(adapter);
-  adapterRef.current = adapter;
-  const optsRef = useRef({
+  const adapterRef = useLatest(adapter);
+  const optsRef = useLatest({
     getSelection, onPaste, pasteLabel, getDropPoint: effectiveGetDropPoint, produceFlavors, jsonReplacer,
   });
-  optsRef.current = {
-    getSelection, onPaste, pasteLabel, getDropPoint: effectiveGetDropPoint, produceFlavors, jsonReplacer,
-  };
 
   const copy = useCallback(() => {
     const ids = optsRef.current.getSelection();
@@ -88,7 +85,7 @@ export function useClipboardOps<TNode extends { id: string }>(
       dwarn('clipboard', `flavor producer threw — skipping OS write: ${String(err)}`);
     }
     if (flavors) void writeOsClipboard(flavors);
-  }, []);
+  }, [adapterRef, optsRef]);
 
   const paste = useCallback(() => {
     const cb = clipboardRef.current;
@@ -107,7 +104,7 @@ export function useClipboardOps<TNode extends { id: string }>(
     // and the next paste would no-op.
     clipboardRef.current = { items: result.created };
     optsRef.current.onPaste?.(result.newIds as NodeId[]);
-  }, []);
+  }, [adapterRef, optsRef]);
 
   const isEmpty = useCallback(() => clipboardRef.current.items.length === 0, []);
 

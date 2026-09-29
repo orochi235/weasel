@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useRef, useEffect } from 'react';
 import { useHoverTracking } from './useHoverTracking';
 import { asNodeId } from '../../core/scene/types';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 
 function fireMove(el: Element, clientX: number, clientY: number): void {
   const ev = new Event('pointermove', { bubbles: true }) as PointerEvent;
@@ -82,5 +83,27 @@ describe('useHoverTracking', () => {
     act(() => { fireMove(canvas, 10, 20); });
     expect(seen).toEqual([{ x: 20, y: 40 }]);
     cleanup();
+  });
+});
+
+describe('useHoverTracking — abandoned renders', () => {
+  it('hit-tests with the committed picker, not an abandoned render\'s', () => {
+    const canvas = document.createElement('canvas');
+    document.body.appendChild(canvas);
+    const ref = { current: canvas };
+    const pickers = {
+      a: () => ({ id: asNodeId('a') }),
+      b: () => ({ id: asNodeId('b') }),
+    };
+    let getHover: (() => unknown) | null = null;
+    function Probe({ which }: { which: 'a' | 'b' }) {
+      const g = useHoverTracking({ canvasRef: ref, nodeAtClientPoint: pickers[which] });
+      if (which === 'a') getHover = g;
+      return null;
+    }
+    renderThenAbandon<'a' | 'b'>('a', 'b', (which) => <Probe which={which} />);
+    act(() => { fireMove(canvas, 1, 1); });
+    expect(getHover!()).toBe(asNodeId('a'));
+    canvas.remove();
   });
 });

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { useDragGesture } from '../dragGesture';
 import type { ModifierState } from '../types';
 import { dlog } from '../../../debug/flag';
@@ -81,12 +82,9 @@ function stateFrom(s: DragRadialScratch<unknown>): DragRadialState {
 export function useDragRadial<TScratch = unknown>(
   options: UseDragRadialOptions<TScratch> = {},
 ): DragRadialController {
-  const optsRef = useRef(options);
-  optsRef.current = options;
+  const optsRef = useLatest(options);
 
   const [overlay, setOverlay] = useState<DragRadialState | null>(null);
-  const overlayRef = useRef(overlay);
-  overlayRef.current = overlay;
 
   const scratchRef = useRef<DragRadialScratch<TScratch> | null>(null);
 
@@ -181,7 +179,7 @@ export function useDragRadial<TScratch = unknown>(
     move,
     end: gesture.end,
     cancel: gesture.cancel,
-    get overlay() { return overlayRef.current; },
-    get isActive() { return overlayRef.current !== null; },
-  }), [start, move, gesture.end, gesture.cancel]);
+    overlay,
+    isActive: overlay !== null,
+  }), [start, move, gesture.end, gesture.cancel, overlay]);
 }

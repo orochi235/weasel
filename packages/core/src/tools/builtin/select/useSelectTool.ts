@@ -1,4 +1,5 @@
 import { useMemo, useRef, createElement } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { SelectIcon } from '../../../icons';
 import { pathContainsPoint } from '@weasel-js/geom';
 import { shapeCoversPoint } from 'canvas/NodeShape';
@@ -208,8 +209,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     }), pointQuery(worldX, worldY, tolerance));
   });
 
-  const pickEveryRef = useRef(pickEveryFn);
-  pickEveryRef.current = pickEveryFn;
+  const pickEveryRef = useLatest(pickEveryFn);
 
   // What the last press classified. Written by `select.pick`, read by
   // `select.collapseDeferred` and the cursor. See `PressClassification`.
@@ -217,10 +217,8 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
   // Options in a ref so the actions — built once — always see the live
   // callbacks without rebuilding the Tool record.
-  const optionsRef = useRef(options);
-  optionsRef.current = options;
-  const adapterRef = useRef(adapter);
-  adapterRef.current = adapter;
+  const optionsRef = useLatest(options);
+  const adapterRef = useLatest(adapter);
 
   /**
    * `select.pick` — classifies the press and updates the node selection.
@@ -289,7 +287,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         pressRef.current = { deferredClickId: deferClick ? top : null };
       },
     },
-  }), []);
+  }), [optionsRef, pickEveryRef, adapterRef]);
 
   /**
    * `select.collapseDeferred` — the release half of the deferred multi-click.

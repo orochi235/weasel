@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDragRect, type DragRectCtx, type DragRectEndCtx } from './dragRect';
+import { createElement } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 
 const NO_MODS = { shift: false, alt: false, meta: false, ctrl: false };
 
@@ -183,5 +185,22 @@ describe('useDragRect', () => {
     expect(onGestureEnd).not.toHaveBeenCalled();
     expect(onStart).toHaveBeenCalledTimes(2);
     expect(result.current.overlay!.start).toEqual({ x: 50, y: 50 });
+  });
+});
+
+describe('useDragRect — abandoned render', () => {
+  it('fires the committed callbacks, not ones from a render React threw away', () => {
+    const onStartA = vi.fn();
+    const onStartB = vi.fn();
+    let api: ReturnType<typeof useDragRect> | undefined;
+    function Probe({ onStart }: { onStart: () => void }) {
+      const r = useDragRect({ onStart });
+      if (onStart === onStartA) api = r;
+      return null;
+    }
+    renderThenAbandon(onStartA, onStartB, (onStart) => createElement(Probe, { onStart }));
+    act(() => api!.start(0, 0, NO_MODS));
+    expect(onStartA).toHaveBeenCalledOnce();
+    expect(onStartB).not.toHaveBeenCalled();
   });
 });

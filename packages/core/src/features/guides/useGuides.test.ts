@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, render, renderHook } from '@testing-library/react';
+import { Suspense, createElement, startTransition, use, useState } from 'react';
 import { useGuides } from './useGuides';
 
 describe('useGuides', () => {
@@ -78,5 +79,32 @@ describe('useGuides', () => {
     });
     rerender();
     expect(result.current.getGuides).toBe(before);
+  });
+});
+
+describe('useGuides — abandoned renders', () => {
+  it('getGuides answers with the committed list, not one a suspended transition rendered', () => {
+    const NEVER = new Promise<never>(() => {});
+    let api: ReturnType<typeof useGuides> | null = null;
+    let hang: (h: boolean) => void = () => {};
+    function Hang({ on }: { on: boolean }): null {
+      if (on) use(NEVER);
+      return null;
+    }
+    function Host(): ReturnType<typeof createElement> {
+      const [on, setOn] = useState(false);
+      hang = setOn;
+      api = useGuides();
+      return createElement(Suspense, { fallback: null }, createElement(Hang, { on }));
+    }
+    render(createElement(Host));
+    const committed = api!;
+    act(() => {
+      startTransition(() => {
+        committed.addGuide({ id: 'g', axis: 'x', offset: 5 });
+        hang(true);
+      });
+    });
+    expect(committed.getGuides()).toEqual([]);
   });
 });

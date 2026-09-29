@@ -10,6 +10,7 @@ import { render, act, cleanup } from '@testing-library/react';
 import { useRef } from 'react';
 import { useVisibleRaf } from './useVisibleRaf';
 import type { VisibleRaf, VisibleRafOptions } from './useVisibleRaf';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 
 let hidden = false;
 let observerCallbacks: IntersectionObserverCallback[] = [];
@@ -241,5 +242,25 @@ describe('useVisibleRaf', () => {
     expect(loop().isVisible()).toBe(true);
     act(() => { setHidden(true); });
     expect(loop().isVisible()).toBe(false);
+  });
+
+  it('runs the committed frame callback and clock, not an abandoned render\'s', () => {
+    const committed = makeClock();
+    const abandoned = makeClock();
+    const frameA = vi.fn();
+    const frameB = vi.fn();
+    const loopRef = { current: null as VisibleRaf | null };
+    renderThenAbandon<'a' | 'b'>('a', 'b', (w) => (
+      <Host
+        loopRef={loopRef}
+        frame={w === 'a' ? frameA : frameB}
+        options={w === 'a' ? committed : abandoned}
+      />
+    ));
+    act(() => { loopRef.current!.request(); });
+    expect(abandoned.pending()).toBe(0);
+    act(() => { committed.flush(); });
+    expect(frameA).toHaveBeenCalledTimes(1);
+    expect(frameB).not.toHaveBeenCalled();
   });
 });

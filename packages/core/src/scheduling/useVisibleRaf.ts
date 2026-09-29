@@ -9,6 +9,7 @@
  */
 
 import { type RefObject, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 
 /** What a loop names as its element, resolved every time the gate is consulted
  *  so a ref filled in after mount still starts the observer. */
@@ -62,10 +63,8 @@ export function useVisibleRaf(
   frame: (time: number) => void,
   options: VisibleRafOptions = {},
 ): VisibleRaf {
-  const frameRef = useRef(frame);
-  frameRef.current = frame;
-  const optsRef = useRef(options);
-  optsRef.current = options;
+  const frameRef = useLatest(frame);
+  const optsRef = useLatest(options);
 
   const rafRef = useRef<number | null>(null);
   const pendingRef = useRef(false);
@@ -79,14 +78,14 @@ export function useVisibleRaf(
     (): boolean =>
       optsRef.current.dangerouslyRunWhenHidden === true ||
       (!documentHidden() && intersectingRef.current),
-    [],
+    [optsRef],
   );
 
   const cancelRaf = useCallback(() => {
     if (rafRef.current === null) return;
     (optsRef.current.cancelFrame ?? cancelAnimationFrame)(rafRef.current);
     rafRef.current = null;
-  }, []);
+  }, [optsRef]);
 
   const scheduleRaf = useCallback(() => {
     if (rafRef.current !== null || !aliveRef.current) return;
@@ -98,7 +97,7 @@ export function useVisibleRaf(
       pendingRef.current = false;
       frameRef.current(time);
     });
-  }, [isVisible]);
+  }, [frameRef, isVisible, optsRef]);
 
   /** Attaches the observer once the named element exists. Ref callbacks and
    *  lazily-mounted hosts fill their refs after this hook's effect has run. */
@@ -112,7 +111,7 @@ export function useVisibleRaf(
     // An element that has gone away stops gating rather than stopping the loop.
     intersectingRef.current = true;
     if (el) io.observe(el);
-  }, []);
+  }, [optsRef]);
 
   /** Re-reads the gate after something that could have changed it. Suspending
    *  drops the outstanding frame but keeps the request; resuming hands the
@@ -129,7 +128,7 @@ export function useVisibleRaf(
     if (!aliveRef.current) return;
     optsRef.current.onResume?.();
     if (pendingRef.current) scheduleRaf();
-  }, [cancelRaf, isVisible, scheduleRaf]);
+  }, [cancelRaf, isVisible, optsRef, scheduleRaf]);
 
   const request = useCallback(() => {
     if (!aliveRef.current) return;

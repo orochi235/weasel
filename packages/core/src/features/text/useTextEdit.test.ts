@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, render, renderHook } from '@testing-library/react';
+import { Suspense, createElement, startTransition, use, useState } from 'react';
 import { overlayTop, useTextEdit } from './useTextEdit';
 import type { UseTextEditOptions } from './useTextEdit';
 import type { StyledRun } from '@weasel-js/text';
@@ -1728,5 +1729,38 @@ describe('useTextEdit — decoration shortcuts route through the run algebra', (
       { text: 'a' },
       { text: 'Z', underline: true, strikethrough: true },
     ]);
+  });
+});
+
+describe('useTextEdit — abandoned renders', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('commits through the committed options, not an abandoned render\'s', () => {
+    const h = makeHarness({ a: 'hi' });
+    const setB = vi.fn();
+    const NEVER = new Promise<never>(() => {});
+    function Hang({ on }: { on: boolean }): null {
+      if (on) use(NEVER);
+      return null;
+    }
+    let api: ReturnType<typeof useTextEdit> | null = null;
+    let abandon: () => void = () => {};
+    function Host(): ReturnType<typeof createElement> {
+      const [b, setB2] = useState(false);
+      abandon = () => setB2(true);
+      api = useTextEdit(b ? { ...h.opts, setText: setB } : h.opts);
+      return createElement(Suspense, { fallback: null }, createElement(Hang, { on: b }));
+    }
+    render(createElement(Host));
+    act(() => api!.startEdit('a'));
+    act(() => { startTransition(() => abandon()); });
+    const el = getOverlay(h.container)!;
+    act(() => {
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+    expect(setB).not.toHaveBeenCalled();
+    expect(h.commits).toEqual([{ id: 'a', text: 'hi' }]);
   });
 });

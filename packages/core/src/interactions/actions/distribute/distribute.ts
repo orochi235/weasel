@@ -1,4 +1,5 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
@@ -58,10 +59,8 @@ export function useDistribute<TPose>(
   adapter: DistributeAdapter<TPose>,
   options: UseDistributeOptions<TPose> = {},
 ): UseDistributeReturn {
-  const adapterRef = useRef(adapter);
-  adapterRef.current = adapter;
-  const optsRef = useRef(options);
-  optsRef.current = options;
+  const adapterRef = useLatest(adapter);
+  const optsRef = useLatest(options);
 
   const distribute = useCallback((axis: DistributeAxis, mode?: DistributeMode): void => {
     const a = adapterRef.current;
@@ -102,7 +101,7 @@ export function useDistribute<TPose>(
     }
     if (ops.length === 0) return;
     dispatchApplyBatch(a, ops, o.label ?? 'Distribute');
-  }, []);
+  }, [adapterRef, optsRef]);
 
   return { distribute };
 }

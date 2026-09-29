@@ -1,6 +1,6 @@
 // src/tools/useKeybindings.ts
 import { useEffect, useRef } from 'react';
-import { useActionsRegistry } from '@weasel-js/routing/react';
+import { useActionsRegistry, useLatest } from '@weasel-js/routing/react';
 import {
   makeToolActivateAction,
   buildToolActivateBindings,
@@ -50,10 +50,8 @@ export function useKeybindings(
   tools: ToolsApi,
   options: UseKeybindingsOptions = {},
 ): void {
-  const toolsRef = useRef(tools);
-  toolsRef.current = tools;
-  const optionsRef = useRef(options);
-  optionsRef.current = options;
+  const toolsRef = useLatest(tools);
+  const optionsRef = useLatest(options);
   // Snapshot the initial active tool — used as the Escape target when the
   // consumer doesn't pass an explicit `defaultTool`. Captured in a ref
   // (not state) so it survives re-renders without re-syncing.
@@ -133,6 +131,6 @@ export function useKeybindings(
     })));
 
     return () => { for (const u of unregisters) u(); };
-  }, [registry, tools]);
+  }, [registry, tools, toolsRef, optionsRef]);
 }
 

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import { easeOut, SPRING_PRESETS } from './easings';
 import { resolveEasing } from './easingSpec';
@@ -47,8 +48,7 @@ function resolveSpringConstants(o: { preset?: string; stiffness?: number; dampin
 /** Create the animator for a canvas. One rAF loop drives every animation it
  *  owns, and everything still running is cancelled on unmount. */
 export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
-  const optsRef = useRef(opts);
-  optsRef.current = opts;
+  const optsRef = useLatest(opts);
   const animations = useRef<Map<number, ActiveAnimation>>(new Map());
   const nextId = useRef(1);
   /**
@@ -68,7 +68,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   const tickSubscribers = useRef<Set<() => void>>(new Set());
 
   // The loop runs behind the visibility gate. `tickAll` is built inside the
-  // memo below, so the frame callback reaches it through a ref.
+  // memo below, so the frame callback reaches it through a ref, published
+  // once the memo's render commits.
   const tickAllRef = useRef<((t: number) => void) | null>(null);
   const frameLoop = useVisibleRaf(
     useCallback((t: number) => { tickAllRef.current?.(t); }, []),
@@ -82,16 +83,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       },
     },
   );
-  const frameLoopRef = useRef(frameLoop);
-  frameLoopRef.current = frameLoop;
+  const frameLoopRef = useLatest(frameLoop);
 
-  // StrictMode-safe cleanup: when the component unmounts (including the
-  // dev-mode double-mount that StrictMode performs), cancel every running
-  // animation and stop the RAF loop. Without this, the FIRST mount's
-  // animator keeps ticking with stale callbacks pointing at the unmounted
-  // adapter, while the SECOND mount creates its own animator on top —
-  // visible to the user as every animation playing twice.
-  const cleanupRef = useRef<(() => void) | null>(null);
   // Tripwire: dev-only flag that every tween/spring/decay's tick reads to
   // detect "animation fired after the host component unmounted." This is a
   // symptom of cleanup not running (regression) — typically because someone
@@ -99,15 +92,6 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   // flips false on cleanup; ticks see it and log a one-time error so the
   // bug is loud rather than just visually-doubled animation.
   const mountedRef = useRef(true);
-  useEffect(() => {
-    const overrides = colorOverrides.current;
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-      cleanupRef.current?.();
-      overrides.clearAll();
-    };
-  }, []);
   const trippedRef = useRef(false);
   const tripwire = (): boolean => {
     if (mountedRef.current) return false;
@@ -125,7 +109,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     return true;
   };
 
-  return useMemo<Animator>(() => {
+  const { api, tickAll } = useMemo(() => {
     // Default to performance.now() so the time origin matches the
     // requestAnimationFrame callback's DOMHighResTimeStamp argument.
     // Using Date.now() here would mix epoch-millis with page-relative-millis,
@@ -208,7 +192,6 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       }
       if (animations.current.size > 0) frameLoopRef.current.request();
     };
-    tickAllRef.current = tickAll;
 
     const ensureLoop = (): void => {
       if (animations.current.size === 0) return;
@@ -445,12 +428,6 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       for (const id of ids) fireCompletion(id);
       frameLoopRef.current.cancel();
     };
-    cleanupRef.current = cancelAll;
-    // Self-reference: loop/tweenLoop need to invoke methods on this same
-    // animator object (specifically, factory closures call animator.tween).
-    // We can't reference `api` while constructing it, so route via a ref
-    // that we fill in just before returning.
-    const animatorRef: { current: Animator | null } = { current: null };
     const api: Animator = {
       tween,
       spring,
@@ -489,10 +466,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       },
       loop: (factory, loopOpts) => createLoop(createSupervisor, factory, loopOpts),
       tweenLoop: (tweenLoopOpts) =>
-        createTweenLoop(animatorRef.current!, createSupervisor, tweenLoopOpts),
+        createTweenLoop(api, createSupervisor, tweenLoopOpts),
       stagger: ((items, delay, factory, staggerOpts) =>
         createStagger(
-          animatorRef.current!,
+          api,
           staggerTimers,
           createSupervisor,
           watchCompletion,
@@ -512,7 +489,28 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         return () => sup.cancel();
       },
     };
-    animatorRef.current = api;
-    return api;
-  }, []);
+    return { api, tickAll };
+  }, [frameLoopRef, optsRef]);
+
+  useInsertionEffect(() => {
+    tickAllRef.current = tickAll;
+  }, [tickAll]);
+
+  // StrictMode-safe cleanup: when the component unmounts (including the
+  // dev-mode double-mount that StrictMode performs), cancel every running
+  // animation and stop the RAF loop. Without this, the FIRST mount's
+  // animator keeps ticking with stale callbacks pointing at the unmounted
+  // adapter, while the SECOND mount creates its own animator on top —
+  // visible to the user as every animation playing twice.
+  useEffect(() => {
+    const overrides = colorOverrides.current;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      api.cancelAll();
+      overrides.clearAll();
+    };
+  }, [api]);
+
+  return api;
 }

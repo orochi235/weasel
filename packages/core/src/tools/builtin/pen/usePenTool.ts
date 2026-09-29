@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useReducer, useRef, createElement } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { ToolPrefGroup } from '../../prefs';
@@ -200,8 +201,7 @@ export function usePenTool<TPose>(
 
   // Latest options stashed so handlers see fresh values without rebuilding
   // the Tool record (which would lose scratch identity in the dispatcher).
-  const optsRef = useRef({ wrapPath, adapter, autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint });
-  optsRef.current = { wrapPath, adapter, autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint };
+  const optsRef = useLatest({ wrapPath, adapter, autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint });
 
   // Scratch is a mutable ref (so click-by-click state survives the
   // dispatcher's per-gesture initScratch contract). Mutations alone don't
@@ -211,9 +211,7 @@ export function usePenTool<TPose>(
   // <Canvas layers={{...}}> literal gets a new identity and the paint
   // useEffect fires. Pull the trigger via ref so the memoized Tool record
   // doesn't need to rebuild.
-  const [, forceRenderInternal] = useReducer((x: number) => x + 1, 0);
-  const forceRenderRef = useRef(forceRenderInternal);
-  forceRenderRef.current = forceRenderInternal;
+  const [, forceRender] = useReducer((x: number) => x + 1, 0);
 
   // Geometry helpers shared by the actions below. They read `optsRef` so a
   // re-render with new options is visible without rebuilding the actions
@@ -241,7 +239,7 @@ export function usePenTool<TPose>(
       edit.applyEdit(cont.id, next, 'Continue path');
       if (optsRef.current.autoSelect) optsRef.current.adapter.setSelection([cont.id]);
     },
-    [],
+    [optsRef],
   );
 
   const commit = useCallback((s: PenScratch, deps: ActionDeps): void => {
@@ -260,7 +258,7 @@ export function usePenTool<TPose>(
     const id = optsRef.current.adapter.addNode(pose);
     if (optsRef.current.autoSelect) optsRef.current.adapter.setSelection([id]);
     resetScratch(s);
-  }, [commitContinuation]);
+  }, [commitContinuation, optsRef]);
 
   /** Whether an anchor about to land on `hit` finishes the path by joining
    *  onto another open subpath. Its own continued subpath never counts —
@@ -274,7 +272,7 @@ export function usePenTool<TPose>(
     if (!scene && !deps.applyOps) return false;
     if (!(cont ? (deps.editAnchors as EditAnchorsDep).editOps : optsRef.current.adapter.makeNode)) return false;
     return cont?.id === hit.id || scene?.get(hit.id as never) !== undefined;
-  }, []);
+  }, [optsRef]);
 
   /** Finish the path onto `hit`, the endpoint its last anchor was just placed
    *  on: the other subpath's anchors follow on from it, turned around when
@@ -332,7 +330,7 @@ export function usePenTool<TPose>(
     else scene!.applyBatch(ops, label, defaultCommitAdapter(scene!));
     if (optsRef.current.autoSelect) optsRef.current.adapter.setSelection([keptId]);
     resetScratch(s);
-  }, []);
+  }, [optsRef]);
 
   /** From idle, a press on an open subpath's end anchor picks that subpath
    *  up: it becomes `current`, turned so the pressed end is last. Returns
@@ -350,12 +348,12 @@ export function usePenTool<TPose>(
     scratch.current = { anchors: reversed ? reverseAnchors(picked) : picked, closed: false };
     scratch.continuing = { id: hit.id, sub: hit.sub, reversed, original };
     return true;
-  }, []);
+  }, [optsRef]);
 
   const snap = useCallback((x: number, y: number): { x: number; y: number } => {
     const fn = optsRef.current.snapPoint;
     return fn ? fn({ x, y }) : { x, y };
-  }, []);
+  }, [optsRef]);
 
   /** Where an anchor pressed at `(x, y)` lands: on an existing path's anchor
    *  when one is within `anchorSnapRadius`, else wherever `snapPoint` puts it.
@@ -367,7 +365,7 @@ export function usePenTool<TPose>(
       if (hit) return { x: hit.x, y: hit.y, hit };
     }
     return { ...snap(x, y), hit: null };
-  }, [snap]);
+  }, [snap, optsRef]);
 
   /** Is a world point within the close-hit radius of `(ax, ay)`? Measured as a
    *  screen-space circle, so the zone stays round under non-uniform zoom. */
@@ -375,7 +373,7 @@ export function usePenTool<TPose>(
     (deps: ActionDeps, ax: number, ay: number, wx: number, wy: number): boolean => {
       return withinPxRadius(ax - wx, ay - wy, optsRef.current.closeHitRadius, viewScale(deps));
     },
-    [],
+    [optsRef],
   );
 
   /**
@@ -406,7 +404,7 @@ export function usePenTool<TPose>(
             // pointer down. Snapping happens here rather than at press time
             // so the snapped value is what the geometry records.
             if (pickUpEndpoint(deps, p.pressX, p.pressY)) {
-              forceRenderRef.current();
+              forceRender();
               return;
             }
             const { x: wx, y: wy, hit } = placeAt(deps, p.pressX, p.pressY);
@@ -425,7 +423,7 @@ export function usePenTool<TPose>(
                 scratch.current = null;
                 scratch.closeHintActive = false;
                 if (optsRef.current.autoCommitOnClose) commit(scratch, deps);
-                forceRenderRef.current();
+                forceRender();
                 return;
               }
             }
@@ -435,7 +433,7 @@ export function usePenTool<TPose>(
             if (!scratch.current) scratch.current = { anchors: [], closed: false };
             scratch.current.anchors.push({ x: wx, y: wy });
             if (join) commitJoin(scratch, deps, hit);
-            forceRenderRef.current();
+            forceRender();
           },
         },
       },
@@ -472,7 +470,7 @@ export function usePenTool<TPose>(
             }
 
             commit(scratch, deps);
-            forceRenderRef.current();
+            forceRender();
           },
         },
       },
@@ -511,7 +509,7 @@ export function usePenTool<TPose>(
             // segment into it, which the pen does not reshape.
             const linked = !pickedUp;
             applyOutHandle(scratch, ctx.world, ctx.modifiers.shift, linked, optsRef.current.snapPoint);
-            forceRenderRef.current();
+            forceRender();
 
             return {
               onMove: (moveCtx: InvocationCtx) => {
@@ -521,7 +519,7 @@ export function usePenTool<TPose>(
                   sm.current.anchors[sm.draggingHandleAt].altBroken = true;
                 }
                 applyOutHandle(sm, moveCtx.world, moveCtx.modifiers.shift, linked, optsRef.current.snapPoint);
-                forceRenderRef.current();
+                forceRender();
               },
               onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
                 const se = s();
@@ -537,7 +535,7 @@ export function usePenTool<TPose>(
                     if (se.current.anchors.length === 0) se.current = null;
                   }
                   se.draggingHandleAt = null;
-                  forceRenderRef.current();
+                  forceRender();
                   return;
                 }
                 if (se.draggingHandleAt !== null) {
@@ -548,7 +546,7 @@ export function usePenTool<TPose>(
                   se.draggingHandleAt = null;
                 }
                 if (joinHit && se.current) commitJoin(se, ctx.deps, joinHit);
-                forceRenderRef.current();
+                forceRender();
               },
             };
           },
@@ -565,7 +563,7 @@ export function usePenTool<TPose>(
           timing: 'immediate' as const,
           run: (deps) => {
             commit(s(), deps);
-            forceRenderRef.current();
+            forceRender();
           },
         },
       },
@@ -587,12 +585,12 @@ export function usePenTool<TPose>(
           timing: 'immediate' as const,
           run: () => {
             resetScratch(s());
-            forceRenderRef.current();
+            forceRender();
           },
         },
       },
     ];
-  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint, joinable, commitJoin]);
+  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint, joinable, commitJoin, optsRef]);
 
   return useMemo(() => {
     return defineTool<PenScratch>({
@@ -624,7 +622,7 @@ export function usePenTool<TPose>(
         // ask for. Mirrors Escape's behavior so "stop drawing" is
         // consistent across exits.
         resetScratch(scratchRef.current!);
-        forceRenderRef.current();
+        forceRender();
       },
 
       bindings: [

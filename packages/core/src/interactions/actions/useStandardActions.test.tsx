@@ -5,6 +5,7 @@ import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import { useStandardActions, KIT_STANDARD_ACTION_IDS } from './useStandardActions';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import type { UseStandardActionsOptions } from './useStandardActions';
 
 // Import depSchema augmentation so DepSchema entries are typed
@@ -333,5 +334,21 @@ describe('useStandardActions — Providers helper', () => {
     render(<Providers><Probe /></Providers>);
     expect(sawActions).toBe(true);
     expect(sawDeps).toBe(true);
+  });
+});
+
+describe('useStandardActions — abandoned render', () => {
+  it('dep sources answer with the committed options, not ones from a render React threw away', () => {
+    const selA = { tag: 'A' } as unknown as UseStandardActionsOptions['selection'];
+    const selB = { tag: 'B' } as unknown as UseStandardActionsOptions['selection'];
+    let depReg: ReturnType<typeof useDepRegistry> | undefined;
+    function Capture() { depReg = useDepRegistry(); return null; }
+    renderThenAbandon(selA, selB, (selection) => (
+      <Providers>
+        <Host opts={{ selection }} />
+        <Capture />
+      </Providers>
+    ));
+    expect((depReg as any).get('selection')).toBe(selA);
   });
 });

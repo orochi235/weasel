@@ -14,6 +14,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { screenToWorld, type ViewTransform } from 'core/viewport/viewTransform';
 import { pointToGridCell } from 'interactions/gestures/shared/strategies/grid';
 import type { UnitSystem, UnitValue } from '@weasel-js/quantity';
@@ -61,8 +62,7 @@ function cellsEqual(
 export function useGridCellHover(opts: UseGridCellHoverOptions): UseGridCellHoverReturn {
   const [cell, setCell] = useState<{ col: number; row: number } | null>(null);
   const cellRef = useRef<{ col: number; row: number } | null>(null);
-  const optsRef = useRef(opts);
-  optsRef.current = opts;
+  const optsRef = useLatest(opts);
 
   const getCell = useCallback(() => cellRef.current, []);
 
@@ -97,7 +97,7 @@ export function useGridCellHover(opts: UseGridCellHoverOptions): UseGridCellHove
       el.removeEventListener('pointerleave', onLeave);
       el.removeEventListener('pointercancel', onLeave);
     };
-  }, [enabled, opts.ref]);
+  }, [enabled, opts.ref, optsRef]);
 
   return { cell, getCell };
 }

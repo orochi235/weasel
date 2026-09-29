@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/routing';
 
 /** Payload carried by an in-flight pointer drag — `kind` routes to drop zones, `ids` lists the dragged items. */
@@ -141,8 +142,7 @@ export function useDragHandle(
   getPayload: () => DragPayload | null,
   options?: DragHandleOptions,
 ) {
-  const optsRef = useRef(options);
-  optsRef.current = options;
+  const optsRef = useLatest(options);
   // One session spans the whole press, threshold and all, so a release that
   // never arrives — the row unmounts under the pointer — cannot strand the
   // ghost or its listeners. Before, the two phases owned separate listener
@@ -182,7 +182,7 @@ export function useDragHandle(
       onEnd: (ev) => { live.current = null; ghost?.drop(ev); },
       onCancel: () => { live.current = null; ghost?.cancel(); },
     }, { capture: false });
-  }, [getPayload]);
+  }, [getPayload, optsRef]);
 
   return { onPointerDown, style: { touchAction: 'none' as const } };
 }
@@ -197,8 +197,7 @@ export interface DropZoneOptions {
 
 /** Register an element as a drop zone for `useDragHandle` payloads. Returns a ref-callback. */
 export function useDropZone<T extends HTMLElement>(opts: DropZoneOptions): (el: T | null) => void {
-  const optsRef = useRef(opts);
-  optsRef.current = opts;
+  const optsRef = useLatest(opts);
   const cleanupRef = useRef<(() => void) | null>(null);
   return useCallback((el: T | null) => {
     cleanupRef.current?.();
@@ -211,5 +210,5 @@ export function useDropZone<T extends HTMLElement>(opts: DropZoneOptions): (el: 
       onOver: (a) => optsRef.current.onOver?.(a),
       onMove: (p, x, y) => optsRef.current.onMove?.(p, x, y),
     });
-  }, []);
+  }, [optsRef]);
 }
