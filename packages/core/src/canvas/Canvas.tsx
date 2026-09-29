@@ -39,6 +39,7 @@ import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
 import { useOptionalViewRegistry } from './viewRegistry';
 import { useFrameLoop } from './useFrameLoop';
+import { useRedrawOn } from './useRedrawOn';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
 import type { ToolCtx } from '@weasel-js/routing';
@@ -1356,12 +1357,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     return () => { for (const off of offs) off(); };
   }, [layersWithDebug, requestRedraw]);
 
-  const redrawSources = useSameElements(redrawOn);
-  useEffect(() => {
-    const redraw = (): void => { requestRedraw(); };
-    const offs = (redrawSources ?? []).map((src) => src.subscribe(redraw));
-    return () => { for (const off of offs) off(); };
-  }, [redrawSources, requestRedraw]);
+  useRedrawOn(redrawOn, requestRedraw);
 
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
 
@@ -1662,15 +1658,3 @@ export const Canvas = forwardRef(CanvasInner) as <
   props: CanvasProps<TNode, TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
 ) => ReturnType<typeof CanvasInner>;
 
-/** `list` as last passed, kept by identity while it holds the same elements —
- *  so an inline array prop does not read as a change every render. */
-function useSameElements<T>(list: readonly T[] | undefined): readonly T[] | undefined {
-  // Derived state rather than a ref, so a render React throws away can't
-  // leave its list behind as the one the next render compares against.
-  const [kept, setKept] = useState(list);
-  if (kept !== list && !(kept && list && kept.length === list.length && kept.every((x, i) => x === list[i]))) {
-    setKept(list);
-    return list;
-  }
-  return kept;
-}

@@ -15,7 +15,8 @@
  * in sync by hand where it matters (DPR handling, viewToMat3 wrap).
  */
 
-import { WeaselRenderer } from '../renderer/WeaselRenderer';
+import type { WeaselRenderer } from '../renderer/WeaselRenderer';
+import { cachedCanvasRenderer, paintCanvas } from './canvasRenderer';
 import type { PoseComposition } from 'features/groups/composePose';
 import { viewToMat3 } from '../renderer/math/viewToMat3';
 import type { DrawCommand } from '../renderer/DrawCommand';
@@ -105,34 +106,12 @@ export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
   dpr?: number;
 }
 
-interface CacheEntry {
-  renderer: WeaselRenderer;
-  width: number;
-  height: number;
-  dpr: number;
-}
-
-/**
- * Per-canvas renderer cache. We can't put state on the canvas element
- * (would leak into DOM); a module-level `WeakMap` keyed by the canvas
- * lets us reuse the WeaselRenderer across calls while letting GC reclaim
- * everything when the canvas unmounts.
- */
-const RENDERER_CACHE: WeakMap<HTMLCanvasElement, CacheEntry> = new WeakMap();
-
-/**
- * Test seam: inspect the cached renderer for a canvas without exporting
- * the cache itself. Returns `undefined` if no renderer has been mounted
- * on this canvas yet.
- *
- * Not part of the kit's public surface — consumers should not rely on
- * this. (Step 6 of the spec exports the React components; this internal
- * is never re-exported from `src/index.ts`.)
- */
+/** Test seam: the renderer `renderSceneToCanvas` created for a canvas. Not
+ *  re-exported from the barrel. */
 export function __getCachedRendererForTest(
   canvas: HTMLCanvasElement,
 ): WeaselRenderer | undefined {
-  return RENDERER_CACHE.get(canvas)?.renderer;
+  return cachedCanvasRenderer(canvas);
 }
 
 /**
@@ -251,16 +230,10 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
  * Render one frame of `scene` at `view` into `canvas`. See module docstring
  * for the design context.
  *
- * Idempotent at the GL-context level: on first call a `WeaselRenderer` is
- * constructed against the canvas's WebGL2 context and cached in a
- * module-level WeakMap keyed by the canvas element. Subsequent calls reuse
- * that renderer. When `width` / `height` / `dpr` change between calls, the
- * renderer's `resize` is invoked (which also updates the canvas's `width` /
- * `height` attributes and CSS `style.width` / `style.height`).
- *
- * Returns `void`. If the underlying environment can't supply a WebGL2 context
- * (e.g. jsdom in tests), the call is a silent no-op — mirroring `<Canvas>`'s
- * `getContext` bail-out (`Canvas.tsx` line ~1445).
+ * Paints through `paintCanvas` (`./canvasRenderer`): one renderer per canvas,
+ * created on the first call and resized when `width` / `height` / `dpr`
+ * change. Where no WebGL2 context is available (jsdom) the call paints
+ * nothing.
  */
 export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
   args: RenderSceneToCanvasArgs<TData, TLayer, TPose>,
@@ -269,41 +242,9 @@ export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
     canvas, scene, view, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
     colorOverrides, cull,
   } = args;
-  const dpr = args.dpr
-    ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
-
-  let entry = RENDERER_CACHE.get(canvas);
-  if (!entry) {
-    const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
-    if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') {
-      // jsdom / no-WebGL2 environment. Silent bail-out matches `<Canvas>`.
-      return;
-    }
-    let renderer: WeaselRenderer;
-    try {
-      renderer = new WeaselRenderer({
-        gl: gl as WebGL2RenderingContext,
-        canvas,
-        width,
-        height,
-        dpr,
-      });
-    } catch {
-      // Same bail-out reasoning as <Canvas>: test env or context-creation failure.
-      return;
-    }
-    entry = { renderer, width, height, dpr };
-    RENDERER_CACHE.set(canvas, entry);
-  } else if (entry.width !== width || entry.height !== height || entry.dpr !== dpr) {
-    entry.renderer.resize({ width, height, dpr });
-    entry.width = width;
-    entry.height = height;
-    entry.dpr = dpr;
-  }
-
   const commands = buildSceneViewCommands(
     scene, view, drawOne, extraCommands, alphaFor, undefined, { layerVisibility, layerOrder }, colorOverrides,
     cull ? { width, height, paintBounds: args.paintBounds ?? paintBoundsFor(drawOne) } : undefined,
   );
-  entry.renderer.render(commands, viewToMat3(view));
+  paintCanvas(canvas, commands, view, { width, height, dpr: args.dpr });
 }

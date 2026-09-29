@@ -949,12 +949,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) A minimal public stage for package demos.** A demo of a scene-free package that only
-  draws still has to mount a whole `SceneCanvas`: `TextScriptDemo` (`text`) does, with no
-  features. (`GeomDemo` and `AudioDemo` use it for pick/move dragging, and `QuantityDemo` and
-  `BidiDemo` draw nothing on a canvas.) Not the primitive `<Canvas>`, which was unexported on purpose. Enforce its reach in
-  `packageDemos.test.ts` so it cannot spread: only a Packages-section demo of a scene-free
-  package may import it.
 - **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
 
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.

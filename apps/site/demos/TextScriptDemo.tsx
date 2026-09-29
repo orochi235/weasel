@@ -1,28 +1,17 @@
-import { useEffect, useState } from 'react';
-import { SceneCanvas, useScene, textCommandFromRuns, solid } from '@weasel-js/core';
-import type { FillStyle, SceneViewDrawOne } from '@weasel-js/core';
+import { useMemo, useState } from 'react';
+import { DrawCanvas, textCommandFromRuns, solid } from '@weasel-js/core';
 import { SCRIPT_METRICS } from '@weasel-js/text';
 import type { StyledRun, TextStyle } from '@weasel-js/text';
 import styles from './TextScriptDemo.module.css';
 
 const W = 620, H = 320;
 
-interface NodeData { runs: StyledRun[]; style: TextStyle; fill: FillStyle }
-type LayerId = 'default';
-interface Pose { x: number; y: number; width: number; height: number }
-
 const INK = solid('#1a1a1a');
 const ACCENT = solid('#c0392b');
 
-/** One row per node, so every line is an ordinary scene leaf the default
- *  machinery moves, picks and redraws — no per-row bookkeeping here. */
-const row = (id: string, y: number, fontSize: number, runs: StyledRun[]) => ({
-  id: id as never,
-  kind: 'leaf' as const,
-  layer: 'default' as const,
-  pose: { x: 24, y, width: W - 48, height: fontSize * 1.6 },
-  data: { runs, style: { fontSize } as TextStyle, fill: INK },
-});
+interface Row { y: number; fontSize: number; runs: StyledRun[] }
+
+const row = (y: number, fontSize: number, runs: StyledRun[]): Row => ({ y, fontSize, runs });
 
 /** The row the sliders drive, built from the current shift and scale. */
 const liveRuns = (shift: number, scale: number): StyledRun[] => [
@@ -34,7 +23,7 @@ const liveRuns = (shift: number, scale: number): StyledRun[] => [
 const ROWS = [
   // The pair `script` exists for: a formula and an exponent, each one run
   // list with no positioning arithmetic at the call site.
-  row('chem', 16, 32, [
+  row(16, 32, [
     { text: 'H' }, { text: '2', script: 'sub' },
     { text: 'SO' }, { text: '4', script: 'sub' },
     { text: '   x' }, { text: 'n+1', script: 'super' },
@@ -43,7 +32,7 @@ const ROWS = [
 
   // Ordinals — the other everyday superscript, and the one where the size
   // scale carries more of the look than the rise does.
-  row('ordinals', 68, 26, [
+  row(68, 26, [
     { text: '1' }, { text: 'st', script: 'super' },
     { text: ', 2' }, { text: 'nd', script: 'super' },
     { text: ', 3' }, { text: 'rd', script: 'super' },
@@ -52,7 +41,7 @@ const ROWS = [
 
   // All three decorations at once, so their offsets read against each other
   // rather than one at a time.
-  row('rules', 112, 26, [
+  row(112, 26, [
     { text: 'underline', underline: true },
     { text: '   ' },
     { text: 'strikethrough', strikethrough: true },
@@ -62,7 +51,7 @@ const ROWS = [
 
   // A shifted run carries its own rules with it: they hang off its displaced
   // baseline, not the line's.
-  row('rules-shifted', 156, 24, [
+  row(156, 24, [
     { text: 'a decorated ' },
     { text: 'superscript', script: 'super', underline: true, overline: true },
     { text: ' takes its rules along' },
@@ -71,21 +60,19 @@ const ROWS = [
   // Three sizes on one baseline. Before the line sank a single baseline deep
   // enough for all of them, each run hung from the line *top* at its own
   // ascent, and the small ones floated up level with the big one's cap.
-  row('mixed', 196, 40, [
+  row(196, 40, [
     { text: 'big ' },
     { text: 'small ', fontScale: 0.4 },
     { text: 'medium', fontScale: 0.7 },
   ]),
 
-  row('live', 252, 34, liveRuns(SCRIPT_METRICS.super.shift, SCRIPT_METRICS.super.size)),
 ];
 
-const drawOne: SceneViewDrawOne<NodeData, LayerId, Pose> = (node, pose) => [
-  textCommandFromRuns(
-    pose.x, pose.y, node.data.runs, node.data.style,
-    undefined, undefined, undefined, { fill: node.data.fill },
-  ),
-];
+const LIVE_Y = 252, LIVE_SIZE = 34;
+
+const drawRow = ({ y, fontSize, runs }: Row) => textCommandFromRuns(
+  24, y, runs, { fontSize } as TextStyle, undefined, undefined, undefined, { fill: INK },
+);
 
 /**
  * Superscript, subscript, and the two primitives underneath them.
@@ -103,20 +90,10 @@ export function TextScriptDemo() {
   const [shift, setShift] = useState(SCRIPT_METRICS.super.shift);
   const [scale, setScale] = useState(SCRIPT_METRICS.super.size);
 
-  const scene = useScene<NodeData, LayerId, Pose>({
-    systemLayers: [{ id: 'default' }],
-    initial: ROWS,
-  });
-
-  // The sliders edit the scene, not a render-time shortcut — the row is an
-  // ordinary node and this is the ordinary way to change one.
-  useEffect(() => {
-    const node = scene.get('live' as never);
-    if (!node) return;
-    scene.update('live' as never, {
-      data: { ...node.data, runs: liveRuns(shift, scale) },
-    });
-  }, [scene, shift, scale]);
+  const commands = useMemo(
+    () => [...ROWS, row(LIVE_Y, LIVE_SIZE, liveRuns(shift, scale))].map(drawRow),
+    [shift, scale],
+  );
 
   return (
     <div className={styles.demo}>
@@ -147,13 +124,12 @@ export function TextScriptDemo() {
         {(SCRIPT_METRICS.super.size * 100).toFixed(1)}% size,{' '}
         {(SCRIPT_METRICS.super.shift * 100).toFixed(1)}% rise.
       </p>
-      <SceneCanvas
+      <DrawCanvas
         width={W}
         height={H}
         className="ckd-canvas"
-        backgroundFill={{ color: '#ffffff' }}
-        scene={scene}
-        layers={{ scene: { drawOne } }}
+        background={{ fill: 'solid', color: '#ffffff' }}
+        draw={commands}
       />
     </div>
   );
