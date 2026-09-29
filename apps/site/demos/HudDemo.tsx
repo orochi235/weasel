@@ -27,7 +27,11 @@ export function HudDemo() {
     const btn = hud.button({ id: 'inc', x: 12, y: 12, w: 140, h: 34, label: 'Click me' });
     btn.on('press', () => setCount(c => c + 1));
     btnRef.current = btn;
+    // Buttons take keyboard focus: Tab reaches them, Enter or Space presses.
+    const reset = hud.button({ id: 'reset', x: 164, y: 12, w: 80, h: 34, label: 'Reset' });
+    reset.on('press', () => setCount(0));
     return () => {
+      reset.dispose();
       btn.dispose();
       btnRef.current = null;
     };
@@ -45,7 +49,8 @@ export function HudDemo() {
       <p>
         Click the button rendered in the WebGL canvas. The counter increments
         each click. The button is a HUD widget drawn in screen space via
-        <code> @weasel-js/hud</code>.
+        <code> @weasel-js/hud</code>. Focus the canvas and press Tab to move
+        between the buttons, and Enter or Space to press the focused one.
       </p>
       <SceneCanvas features={['pick']}
         width={W}

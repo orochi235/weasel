@@ -1,4 +1,4 @@
-import type { Widget } from './widget';
+import { isFocusable, type Widget } from './widget';
 import type { HudHost } from './host';
 import { createRect, type RectOptions, type RectWidget } from './widgets/rect';
 import { createText, type TextOptions, type TextWidget } from './widgets/text';
@@ -6,6 +6,14 @@ import { createImage, type ImageOptions, type ImageWidget } from './widgets/imag
 import { createLabel, type LabelOptions, type LabelWidget } from './widgets/label';
 import { createButton, type ButtonOptions, type ButtonWidget } from './widgets/button';
 import { createWindow, type WindowOptions, type WindowWidget } from './widgets/window/window';
+
+/** How a focus change came about. */
+export interface HudFocusOptions {
+  /** Whether the focused widget should show a focus ring — the HUD's
+   *  `:focus-visible`. Keyboard moves show one; a press does not. Default
+   *  `false` for {@link Hud.focus}, `true` for {@link Hud.moveFocus}. */
+  readonly visible?: boolean;
+}
 
 /**
  * A HUD: an ordered set of widgets drawn in screen space over the canvas, and
@@ -29,6 +37,23 @@ export interface Hud {
   subscribeFrame(fn: () => void): () => void;
   /** True after bind() and before unbind(). */
   readonly attached: boolean;
+  /** The widget holding keyboard focus, or null. One per HUD. */
+  readonly focused: Widget | null;
+  /** Whether the focused widget shows its focus ring. */
+  readonly focusVisible: boolean;
+  /** Focus `widget`, or blur with `null`. Returns whether `widget` now holds
+   *  focus — false when it is not in this HUD or cannot take focus
+   *  (see `isFocusable`), in which case focus is unchanged. */
+  focus(widget: Widget | null, options?: HudFocusOptions): boolean;
+  /** Move focus one step through {@link tabOrder}. From nothing, `'next'`
+   *  lands on the first widget and `'prev'` on the last; stepping past either
+   *  end blurs and returns null, which is where focus leaves the HUD. */
+  moveFocus(direction: 'next' | 'prev', options?: HudFocusOptions): Widget | null;
+  /** The widgets Tab visits, in order: those declaring `tabOrder` first,
+   *  ascending, then the rest in the order they were added. */
+  tabOrder(): Widget[];
+  /** Run `fn` whenever the focused widget changes. Returns an unsubscribe. */
+  subscribeFocus(fn: (focused: Widget | null) => void): () => void;
   /** Create a rect widget, add it to the HUD, and wire onChange → markDirty. */
   rect(opts: RectOptions): RectWidget;
   /** Create a text widget, add it to the HUD, and wire onChange → markDirty. */
@@ -53,6 +78,42 @@ export function createHud(): Hud {
 
   const requestRedraw = () => { host?.requestRedraw(); };
 
+  let focused: Widget | null = null;
+  let focusVisible = false;
+  const focusSubs = new Set<(w: Widget | null) => void>();
+
+  const setFocus = (next: Widget | null, visible: boolean): void => {
+    const was = focused;
+    const wasVisible = focusVisible;
+    focused = next;
+    focusVisible = next !== null && visible;
+    if (was === next) {
+      if (wasVisible !== focusVisible) requestRedraw();
+      return;
+    }
+    was?.onFocusChange?.(false);
+    next?.onFocusChange?.(true);
+    for (const fn of [...focusSubs]) fn(next);
+    requestRedraw();
+  };
+
+  const tabOrder = (): Widget[] => {
+    const order = list.filter(isFocusable);
+    // Array.prototype.sort is stable, so ties and the undeclared keep list order.
+    return order.sort((a, b) =>
+      (a.tabOrder ?? Number.POSITIVE_INFINITY) - (b.tabOrder ?? Number.POSITIVE_INFINITY));
+  };
+
+  /** Every path that takes a widget out of the list, so a focused one is
+   *  always blurred on the way out. */
+  const drop = (w: Widget): boolean => {
+    const i = list.indexOf(w);
+    if (i === -1) return false;
+    list.splice(i, 1);
+    if (focused === w) setFocus(null, false);
+    return true;
+  };
+
   // One subscription on the host fans out to all of ours, so a subscriber
   // taken while unbound is not lost and bind/unbind stays cheap.
   const attachFrames = () => {
@@ -73,12 +134,7 @@ export function createHud(): Hud {
   /** Build the removeFromHud callback for a factory-created widget. */
   const makeRemoveFromHud = (getWidget: () => Widget | null) => () => {
     const w = getWidget();
-    if (!w) return;
-    const i = list.indexOf(w);
-    if (i !== -1) {
-      list.splice(i, 1);
-      requestRedraw();
-    }
+    if (w && drop(w)) requestRedraw();
   };
 
   /** Every path that puts a widget in the list, so the detached guard is one
@@ -96,15 +152,50 @@ export function createHud(): Hud {
     get attached() { return host !== null; },
     add(widget) { push(widget, 'add()'); },
     remove(widget) {
-      const i = list.indexOf(widget);
-      if (i === -1) return;
-      list.splice(i, 1);
+      if (!drop(widget)) return;
       try { widget.dispose(); } catch (e) {
         console.error('weasel-hud: widget.dispose threw', e);
       }
       requestRedraw();
     },
     widgets() { return list; },
+    get focused() { return focused; },
+    get focusVisible() { return focusVisible; },
+    focus(widget, options) {
+      if (widget === null) { setFocus(null, false); return false; }
+      if (!list.includes(widget) || !isFocusable(widget)) return false;
+      setFocus(widget, options?.visible ?? false);
+      return true;
+    },
+    moveFocus(direction, options) {
+      const visible = options?.visible ?? true;
+      const order = tabOrder();
+      let at: number;
+      if (focused === null) {
+        at = direction === 'next' ? 0 : order.length - 1;
+      } else {
+        // A focused widget that has since been hidden is out of the order;
+        // step from where it sits in the list instead.
+        const here = order.indexOf(focused);
+        if (here !== -1) {
+          at = here + (direction === 'next' ? 1 : -1);
+        } else {
+          const pos = list.indexOf(focused);
+          const after = order.findIndex((w) => list.indexOf(w) > pos);
+          at = direction === 'next'
+            ? (after === -1 ? order.length : after)
+            : (after === -1 ? order.length : after) - 1;
+        }
+      }
+      const next = order[at] ?? null;
+      setFocus(next, visible);
+      return next;
+    },
+    tabOrder,
+    subscribeFocus(fn) {
+      focusSubs.add(fn);
+      return () => { focusSubs.delete(fn); };
+    },
     markDirty() { requestRedraw(); },
     bind(h) {
       if (host) throw new Error('weasel-hud: HUD is already bound to a host.');

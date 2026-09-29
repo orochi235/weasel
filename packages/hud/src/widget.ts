@@ -76,6 +76,29 @@ export type HudPointerEvent =
       deltaX: number; deltaY: number; native: PointerEvent | null;
     };
 
+/**
+ * A key event delivered to the focused widget, from the canvas element that
+ * holds DOM focus. `native` is the originating `KeyboardEvent` when there is
+ * one; a test or a headless host may pass `null`.
+ */
+export interface HudKeyEvent {
+  type: 'keydown' | 'keyup';
+  key: string;
+  code: string;
+  altKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+  repeat: boolean;
+  native: KeyboardEvent | null;
+}
+
+/** True when `w` can take keyboard focus right now: it declares `focusable`,
+ *  is showing, and has not been disposed. */
+export function isFocusable(w: Widget): boolean {
+  return w.focusable === true && !w.hidden && w.disposed !== true;
+}
+
 /** What a widget consumes when it declares nothing: chrome is opaque to every
  *  pointer-family gesture except the wheel, which stays with the viewport
  *  unless a widget asks for it. */
@@ -128,6 +151,20 @@ export interface Widget {
    *  runs for a point and hover state may lag it. */
   cursorAt?(x: number, y: number): string;
   onPointer(evt: HudPointerEvent): void;
+  /** True if the widget takes keyboard focus. A press on it focuses it, and
+   *  Tab reaches it. Absent means false. */
+  readonly focusable?: boolean;
+  /** Position in the HUD's tab order. Widgets that declare one come first,
+   *  ascending; the rest follow in the order they were added. */
+  readonly tabOrder?: number;
+  /** What assistive tech announces when this widget takes focus. */
+  readonly accessibleName?: string;
+  /** Key input while this widget is focused. Return `true` for a key the
+   *  widget handled: it then never reaches the canvas's key bindings. Return
+   *  `false` and the key falls through to them as if nothing were focused. */
+  onKey?(evt: HudKeyEvent): boolean;
+  /** Called when the widget gains (`true`) or loses (`false`) focus. */
+  onFocusChange?(focused: boolean): void;
   /** Called by Hud.remove or widget.dispose. Detach event listeners, etc. */
   dispose(): void;
   /** True once disposed. A consumer holding a widget after `hud.remove`

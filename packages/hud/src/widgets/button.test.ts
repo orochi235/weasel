@@ -219,3 +219,42 @@ describe('button label placement', () => {
     expect(Math.abs(lineBoxCenter(text) - (y + h / 2))).toBeLessThanOrEqual(1);
   });
 });
+
+describe('button keyboard', () => {
+  const k = (key: string, type: 'keydown' | 'keyup' = 'keydown') => ({
+    type, key, code: '', altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+    repeat: false, native: null,
+  });
+
+  it('is focusable by default, and named by its label', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'Save' });
+    expect(b.focusable).toBe(true);
+    expect(b.accessibleName).toBe('Save');
+    b.setLabel('Saved');
+    expect(b.accessibleName).toBe('Saved');
+  });
+
+  it('opts out with focusable: false and takes a tab order', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x', focusable: false, tabOrder: 3 });
+    expect(b.focusable).toBe(false);
+    expect(b.tabOrder).toBe(3);
+  });
+
+  it('Enter and Space press it, and say so', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const press = vi.fn();
+    b.on('press', press);
+    expect(b.onKey!(k('Enter'))).toBe(true);
+    expect(b.onKey!(k(' '))).toBe(true);
+    expect(press).toHaveBeenCalledTimes(2);
+  });
+
+  it('leaves every other key for the canvas', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const press = vi.fn();
+    b.on('press', press);
+    expect(b.onKey!(k('Delete'))).toBe(false);
+    expect(b.onKey!(k('Enter', 'keyup'))).toBe(false);
+    expect(press).not.toHaveBeenCalled();
+  });
+});

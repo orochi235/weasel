@@ -8,7 +8,10 @@ import {
   registerDefaultFont,
   type FontAtlasUrls,
 } from './fonts/registerDefaultFont';
-import { claimsOf, cursorOf, type Widget, type HudPointerEvent } from './widget';
+import {
+  claimsOf, cursorOf, isFocusable,
+  type Widget, type HudKeyEvent, type HudPointerEvent,
+} from './widget';
 import type { HudHitPayload } from './tool';
 import {
   colorAt, resolveTheme, themeTones, weaselTheme,
@@ -116,6 +119,9 @@ export function attachHud(
         if (w.hidden) continue;
         for (const cmd of w.draw(ctx)) out.push(cmd);
       }
+      // Pass 3: the focus ring, over every frame so a neighbor can't hide it.
+      const f = hud.focused;
+      if (f && hud.focusVisible && !f.hidden) out.push(focusRing(f, theme['--wzl-focus-ring']));
       return out;
     },
     hitTest: (worldX, worldY, _data, view, _dims): LayerHit | null => {
@@ -168,6 +174,7 @@ export function attachHud(
   };
 
   const detachLayer = api.registerLayer(layer);
+  const detachFocus = api.element ? wireFocus(api.element, hud, findTopmostHit) : () => {};
 
   // Bind the HUD to a host shim. registerLayer is a no-op because the HUD has
   // already registered its single layer via api.registerLayer above.
@@ -185,7 +192,115 @@ export function attachHud(
       lastHovered.onPointer({ type: 'hoverleave', native: null } satisfies HudPointerEvent);
       lastHovered = null;
     }
+    detachFocus();
     detachLayer();
     hud.unbind();
   };
+}
+
+const RING_WIDTH = 2;
+const RING_GAP = 2;
+
+/** A stroked rect just outside `w`'s bounds, so the ring never covers the
+ *  widget's own edge. */
+function focusRing(w: Widget, color: string): DrawCommand {
+  const { x, y, w: bw, h } = w.bounds;
+  const out = RING_GAP + RING_WIDTH / 2;
+  return {
+    kind: 'path',
+    path: { kind: 'rect', x: x - out, y: y - out, width: bw + out * 2, height: h + out * 2 },
+    stroke: { paint: { fill: 'solid', color }, width: RING_WIDTH },
+  };
+}
+
+function keyEvent(e: KeyboardEvent, type: HudKeyEvent['type']): HudKeyEvent {
+  return {
+    type, key: e.key, code: e.code,
+    altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
+    repeat: e.repeat, native: e,
+  };
+}
+
+/**
+ * The DOM half of HUD focus, on the element that holds the canvas's DOM
+ * focus. Keys are heard there, at the target, which is ahead of the gesture
+ * dispatcher's `window` listener: a key the focused widget handles is
+ * `preventDefault`ed, and the dispatcher skips any key that arrives that way.
+ */
+function wireFocus(
+  element: HTMLElement,
+  hud: Hud,
+  hitAt: (sx: number, sy: number) => Widget | null,
+): () => void {
+  const onPointerDown = (e: PointerEvent) => {
+    const r = element.getBoundingClientRect();
+    const hit = hitAt(e.clientX - r.left, e.clientY - r.top);
+    hud.focus(hit && isFocusable(hit) ? hit : null, { visible: false });
+  };
+
+  const liveFocused = (): Widget | null => {
+    const f = hud.focused;
+    if (f && !isFocusable(f)) { hud.focus(null); return null; }
+    return f;
+  };
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.defaultPrevented) return;
+    const f = liveFocused();
+    // Any key on a focused widget means the keyboard is in use: show the ring.
+    if (f && !hud.focusVisible) hud.focus(f, { visible: true });
+    if (f?.onKey?.(keyEvent(e, 'keydown'))) { e.preventDefault(); return; }
+    if (e.key !== 'Tab' || e.ctrlKey || e.metaKey || e.altKey) return;
+    const direction = e.shiftKey ? 'prev' : 'next';
+    // Backward from the canvas itself, and forward off the last widget, are
+    // the browser's: focus leaves the canvas. Backward off the first widget
+    // lands on the canvas, which is a stop of its own.
+    if (f === null && direction === 'prev') return;
+    const next = hud.moveFocus(direction);
+    if (next !== null || direction === 'prev') e.preventDefault();
+  };
+
+  const onKeyUp = (e: KeyboardEvent) => {
+    if (e.defaultPrevented) return;
+    if (liveFocused()?.onKey?.(keyEvent(e, 'keyup'))) e.preventDefault();
+  };
+
+  const onBlur = () => { hud.focus(null); };
+
+  const region = createLiveRegion(element.ownerDocument);
+  const unsubscribe = hud.subscribeFocus((w) => {
+    region.textContent = w?.accessibleName ?? '';
+  });
+
+  element.addEventListener('pointerdown', onPointerDown);
+  element.addEventListener('keydown', onKeyDown);
+  element.addEventListener('keyup', onKeyUp);
+  element.addEventListener('blur', onBlur);
+  return () => {
+    element.removeEventListener('pointerdown', onPointerDown);
+    element.removeEventListener('keydown', onKeyDown);
+    element.removeEventListener('keyup', onKeyUp);
+    element.removeEventListener('blur', onBlur);
+    unsubscribe();
+    region.remove();
+  };
+}
+
+/** A polite live region, visually hidden, that names the focused widget. The
+ *  widgets are pixels with no DOM of their own, so there is nothing for
+ *  `aria-activedescendant` to point at; announcing is the lightest correct
+ *  way to tell assistive tech where focus went. */
+function createLiveRegion(doc: Document): HTMLElement {
+  const el = doc.createElement('div');
+  el.setAttribute('aria-live', 'polite');
+  el.setAttribute('aria-atomic', 'true');
+  el.dataset.weaselHud = 'focus';
+  // No stylesheet ships with this package; these are the standard
+  // visually-hidden declarations, on an element only this code owns.
+  Object.assign(el.style, {
+    position: 'absolute', width: '1px', height: '1px', margin: '-1px', padding: '0',
+    overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: '0',
+  });
+  doc.body.appendChild(el);
+  return el;
 }

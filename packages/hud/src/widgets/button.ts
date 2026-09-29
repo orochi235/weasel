@@ -1,4 +1,4 @@
-import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
+import type { Widget, WidgetBounds, HudDrawCtx, HudKeyEvent, HudPointerEvent } from '../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { textCommandFromRuns } from '@weasel-js/core';
 
@@ -21,6 +21,11 @@ export interface ButtonOptions {
   fontFamily?: string;
   /** CSS cursor over the button's bounds. Defaults to `'pointer'`. */
   cursor?: string;
+  /** Whether Tab and a press give the button keyboard focus. Default true;
+   *  a focused button presses on Enter or Space. */
+  focusable?: boolean;
+  /** Position in the HUD's tab order; see {@link Widget.tabOrder}. */
+  tabOrder?: number;
   /** Injected by Hud factories to trigger redraw on mutation. */
   onChange?: () => void;
   /** Injected by Hud factories. Called from dispose() to remove this widget
@@ -70,6 +75,14 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
     get bounds() { return bounds; },
     get hidden() { return hidden; },
     get disposed() { return disposed; },
+    focusable: opts.focusable ?? true,
+    ...(opts.tabOrder !== undefined ? { tabOrder: opts.tabOrder } : {}),
+    get accessibleName() { return label; },
+    onKey(evt: HudKeyEvent): boolean {
+      if (evt.type !== 'keydown' || (evt.key !== 'Enter' && evt.key !== ' ')) return false;
+      emit('press');
+      return true;
+    },
     setBounds(b) { assertNotDisposed(); bounds = { ...b }; opts.onChange?.(); },
     setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
     setLabel(l) { assertNotDisposed(); label = l; opts.onChange?.(); },
