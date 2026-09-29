@@ -18,7 +18,7 @@ import type { RenderLayer } from '../core/layers/render';
 import type { View } from '../core/viewport/view';
 import type { CanvasHelpers } from './useViewHelpers';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 beforeAll(() => {
   const recorder = makeGLRecorder();

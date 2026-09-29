@@ -6,7 +6,8 @@
  * when no layout is configured, so the reflow pass is a no-op without churning
  * dep registration on prop changes.
  */
-import { useDepSource, useLatest } from '@weasel-js/routing/react';
+import { useDepSource } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { LayoutDep } from 'interactions/actions/depSchema';
 import type { LayoutDropTargetMode } from '../../layout/types';
 import type { SceneToAdapterOptions } from '../sceneAdapter';

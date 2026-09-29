@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { NodeId } from 'core/scene/types';
 import { dlog } from 'debug/flag';
 

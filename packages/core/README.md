@@ -181,6 +181,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `geom` | pure 2D geometry — affine, box, curve, polyline; polygon booleans under `./booleans` |
 | `gestures` | the gesture taxonomy, route grammars and matchers; no React, no DOM |
 | `history` | undo/redo with scoped sub-histories; no React, no DOM |
+| `react` | generic React hooks the other packages share: `useLatest`, `useStableByContent` |
 | `paint` | fills, strokes, gradients and dashes as plain data |
 | `text` | styled runs, kerned layout, wrapping and measurement |
 | `bidi` | the Unicode Bidirectional Algorithm (UAX #9) |

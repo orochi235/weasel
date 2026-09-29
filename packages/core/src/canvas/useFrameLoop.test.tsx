@@ -9,7 +9,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import { useFrameLoop } from './useFrameLoop';
 import type { FrameLoop } from './useFrameLoop';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 afterEach(() => { cleanup(); });
 

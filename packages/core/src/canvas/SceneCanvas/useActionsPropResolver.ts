@@ -15,7 +15,8 @@
  */
 import { useEffect } from 'react';
 import type { ActionsProp } from '@weasel-js/routing';
-import { useActionsRegistry, useLatest } from '@weasel-js/routing/react';
+import { useActionsRegistry } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { Action } from '@weasel-js/routing';
 
 /** `rev` re-applies the overrides when it changes — pass whatever changes when

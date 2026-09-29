@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDragGesture, type DragGestureCtx, type DragGestureEndCtx } from './dragGesture';
 import { createElement } from 'react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { ModifierState } from '../types';
 
 const NO_MODS: ModifierState = { shift: false, alt: false, meta: false, ctrl: false };

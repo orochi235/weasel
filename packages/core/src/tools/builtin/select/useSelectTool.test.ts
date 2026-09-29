@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { useSelectTool } from './useSelectTool';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Action } from '@weasel-js/routing';

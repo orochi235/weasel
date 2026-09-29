@@ -6,7 +6,7 @@
 
 import { act, render } from '@testing-library/react';
 import { createPointerStore, PointerContextProvider } from '@weasel-js/core';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { useState } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ViewTransform } from '../instrument/types';

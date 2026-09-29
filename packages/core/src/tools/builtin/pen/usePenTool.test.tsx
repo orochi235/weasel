@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, render } from '@testing-library/react';
 import { usePenTool, type PenScratch } from './usePenTool';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { Tool } from '../../overlayBinding';
 import { PATH_C, PATH_CMD_LENGTHS, PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'features/paths/types';
 import { pathFromD } from 'features/paths/pathFromD';

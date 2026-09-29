@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import { easeOut, SPRING_PRESETS } from './easings';
 import { resolveEasing } from './easingSpec';

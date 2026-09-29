@@ -16,7 +16,8 @@
  * last-writer-wins ordering resolves the `pinchZoom` overlap.
  */
 import { useEffect } from 'react';
-import { useActionsRegistry, useLatest } from '@weasel-js/routing/react';
+import { useActionsRegistry } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import {
   makeViewportWheelPanAction,
   type WheelPanOptions,

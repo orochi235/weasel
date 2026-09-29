@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { PointerContextProvider, createPointerStore } from 'features/pointer/PointerContext';
 import { useAlign, alignDeltaFor, translatePoseViaDescriptor } from './align';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { AlignAdapter } from './align';
 import { unionBounds } from 'core/geometry/unionBounds';
 import type { Op } from 'core/ops/types';

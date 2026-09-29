@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement, createRef } from 'react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { useGridCellHover } from './useGridCellHover';
 import type { ViewTransform } from 'core/viewport/viewTransform';
 

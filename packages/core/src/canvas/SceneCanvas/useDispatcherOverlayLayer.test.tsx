@@ -23,7 +23,7 @@ import type { Dispatcher } from '@weasel-js/routing';
 import type { OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { createGestureSource } from './dispatcherGestureBounds';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 800, height: 600 };

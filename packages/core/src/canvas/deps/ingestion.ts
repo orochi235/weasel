@@ -5,7 +5,8 @@
  * optional `resolveSrc`. A `<CanvasView>` overlays this dep with its own rect.
  */
 import type { RefObject } from 'react';
-import { useDepSource, useLatest } from '@weasel-js/routing/react';
+import { useDepSource } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { ClipboardIngestCtx, IngestionDep, SvgIngestOptions } from 'interactions/actions/depSchema';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import type { View } from 'core/viewport/view';

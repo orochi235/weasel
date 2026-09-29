@@ -22,7 +22,7 @@
  * supply their own `getScreenPose`.
  */
 import { useCallback, useRef, type MouseEvent } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { asNodeId } from '../../core/scene/types';
 import { effectivePose } from '../../core/scene/effectivePose';
 import type { Scene } from '../../core/scene/types';

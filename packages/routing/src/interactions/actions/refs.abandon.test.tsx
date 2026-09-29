@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { act } from '@testing-library/react';
 import { useEffect, useLayoutEffect } from 'react';
-import { renderThenAbandon } from '../../testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { DepRegistryProvider, useDepRegistry, useDepSource, type DepRegistry } from './depRegistry';
 import { ActionsProvider, useAction, useActionsRegistry } from './ActionsProvider';
 import { createDispatcher } from '../dispatcher/dispatcher';

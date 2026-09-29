@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { useArrayAdapter } from './useArrayAdapter';
 import type { ArrayAdapter } from './arrayAdapter';
 

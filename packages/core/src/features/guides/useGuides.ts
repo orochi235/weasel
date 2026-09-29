@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { Guide } from './types';
 
 /** Return shape for `useGuides`. */

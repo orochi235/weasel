@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { useDragGesture } from '../dragGesture';
 import type { ModifierState } from '../types';
 import { dlog } from '../../../debug/flag';

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds, toolPreviewSources } from './toolPreview';
 import type { GestureSource, GesturePreviewSource } from './gestureBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';

@@ -11,7 +11,7 @@ import { useActionsRegistry } from '@weasel-js/routing/react';
 import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { useRef } from 'react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 function press(key: string, type: 'keydown' | 'keyup' = 'keydown'): void {
   document.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));

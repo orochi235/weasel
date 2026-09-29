@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useActionsRegistry } from './ActionsProvider';
 import type { ActionsRegistry, UiOngoingControl } from './registry';
-import { useLatest } from '../../useLatest';
+import { useLatest } from '@weasel-js/react';
 
 /**
  * One UI control's hold on an ongoing action — the handle a color picker, a

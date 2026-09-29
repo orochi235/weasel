@@ -16,7 +16,7 @@ import { scopeBindings } from './assemble';
 import { liveScope } from './eligibility';
 import type { Contribution, OverlayPosition } from './types';
 import { isDev } from '../devFlag';
-import { sameList, useStableByContent } from '../useStableByContent';
+import { sameList, useStableByContent } from '@weasel-js/react';
 import type { KernelOverlay } from '../index';
 
 /** Options for {@link useContributions}. */

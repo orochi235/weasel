@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useEffect } from 'react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { SceneCanvas } from './SceneCanvas';
 import { CanvasView } from './CanvasView';
 import { createScene } from 'core/scene/scene';

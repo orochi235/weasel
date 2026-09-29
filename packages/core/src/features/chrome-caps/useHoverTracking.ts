@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useRef, type RefObject } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { NodeId } from '../../core/scene/types';
 
 /** Options for `useHoverTracking`. */

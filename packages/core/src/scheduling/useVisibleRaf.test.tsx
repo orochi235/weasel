@@ -10,7 +10,7 @@ import { render, act, cleanup } from '@testing-library/react';
 import { useRef } from 'react';
 import { useVisibleRaf } from './useVisibleRaf';
 import type { VisibleRaf, VisibleRafOptions } from './useVisibleRaf';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 let hidden = false;
 let observerCallbacks: IntersectionObserverCallback[] = [];

@@ -13,7 +13,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Action } from './action';
-import { useLatest } from '../../useLatest';
+import { useLatest } from '@weasel-js/react';
 import {
   useOptionalDepRegistry,
   type DepRegistry,

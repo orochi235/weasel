@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useRef, useEffect } from 'react';
 import { useHoverTracking } from './useHoverTracking';
 import { asNodeId } from '../../core/scene/types';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 function fireMove(el: Element, clientX: number, clientY: number): void {
   const ev = new Event('pointermove', { bubbles: true }) as PointerEvent;

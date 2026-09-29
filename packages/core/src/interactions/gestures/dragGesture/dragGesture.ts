@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { ModifierState } from '../types';
 
 /** Pointer position in both world (gesture-coord) and client (CSS-px) space. */

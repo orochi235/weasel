@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import {
   hostAnchorCss, hostAnchorRect,

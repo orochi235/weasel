@@ -5,7 +5,7 @@
  * overrides via the `geometry` arg take precedence.
  */
 import { useMemo } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import { pickWalk, scenePickSource, scenePlaneOf, type PickQuery, type ViewPickGates } from 'canvas/pickWalk';
 import { rectFromPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';

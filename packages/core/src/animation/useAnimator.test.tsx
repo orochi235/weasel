@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
 import { linear, SPRING_PRESETS } from './easings';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { Animator, UseAnimatorOptions } from './types';
 
 /** Minimal manual rAF driver for deterministic tests. */

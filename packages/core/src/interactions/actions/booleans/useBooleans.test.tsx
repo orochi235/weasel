@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useBooleans } from './useBooleans';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { BooleansAdapter } from './booleans';
 import type { Path } from 'features/paths/types';
 import type { Op } from 'core/ops/types';

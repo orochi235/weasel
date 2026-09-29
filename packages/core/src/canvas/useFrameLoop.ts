@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useInsertionEffect, useLayoutEffect, useRef } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { useVisibleRaf, type VisibleRafTarget } from '../scheduling/useVisibleRaf';
 
 export interface FrameLoop {

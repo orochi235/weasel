@@ -13,7 +13,7 @@
  * stability, etc.) has a single home next to the other dep modules.
  */
 import { useMemo } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type React from 'react';
 import type { ViewApi } from 'interactions/actions/depSchema';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';

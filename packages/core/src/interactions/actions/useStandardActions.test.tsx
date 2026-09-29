@@ -5,7 +5,7 @@ import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import { useStandardActions, KIT_STANDARD_ACTION_IDS } from './useStandardActions';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { UseStandardActionsOptions } from './useStandardActions';
 
 // Import depSchema augmentation so DepSchema entries are typed

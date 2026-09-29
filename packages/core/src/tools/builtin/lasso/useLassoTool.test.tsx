@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { useLassoTool } from './useLassoTool';
 import type { LassoSelectAdapter } from 'core/adapters/types';
 import { resolveParams } from '@weasel-js/routing';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { Tool } from '../../overlayBinding';
 
 function makeAdapter(hits: string[] = []): LassoSelectAdapter & { applyOps: ReturnType<typeof vi.fn> } {

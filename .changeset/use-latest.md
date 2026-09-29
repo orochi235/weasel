@@ -1,9 +1,9 @@
 ---
-"@weasel-js/routing": patch
+"@weasel-js/react": patch
 "@weasel-js/core": patch
 ---
 
-New `useLatest(value)` (`@weasel-js/routing/react`, re-exported by
+New `useLatest(value)` (`@weasel-js/react`, re-exported by
 `@weasel-js/core`): a ref holding the value of the last committed render, for
 event handlers and frame loops that must not re-subscribe when it changes.
 Unlike writing `ref.current = value` in the render body, a render React throws

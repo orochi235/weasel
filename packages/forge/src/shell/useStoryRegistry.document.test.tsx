@@ -1,7 +1,7 @@
 import { createMemoryAdapter, type RenderContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { useLayoutEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ShellConfig } from '../config';

@@ -8,8 +8,7 @@ import { useActiveToolContext } from '../interactions/actions/activeToolContext'
 import { useContributions } from '../contributions/useContributions';
 import type { Contribution, Eligibility, OverlayPosition } from '../contributions/types';
 import type { KernelOverlay } from '../index';
-import { useLatest } from '../useLatest';
-import { sameList, useStableByContent } from '../useStableByContent';
+import { sameList, useLatest, useStableByContent } from '@weasel-js/react';
 
 /** Options for `useTools`: which tools exist, which one starts active, and
  *  which run continuously regardless of the active one. */

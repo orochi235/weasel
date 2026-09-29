@@ -32,7 +32,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import type { Ref } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { useFrameLoop } from './useFrameLoop';
 import { renderSceneToCanvas } from './sceneViewRender';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';

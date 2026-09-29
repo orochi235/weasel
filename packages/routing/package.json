@@ -33,7 +33,8 @@
     "@weasel-js/cursor": "1.7.0",
     "@weasel-js/gestures": "1.7.0",
     "@weasel-js/history": "1.7.0",
-    "@weasel-js/modes": "1.7.0"
+    "@weasel-js/modes": "1.7.0",
+    "@weasel-js/react": "1.7.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

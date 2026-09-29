@@ -14,7 +14,7 @@
  * paths emits a `console.warn`.
  */
 import { useCallback } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { applyBooleanOp, type BooleansAdapter, type BooleanOp } from './booleans';
 
 /** The six Boolean path operations, each acting on the current selection and

@@ -33,5 +33,3 @@ export { useTools } from './tools/useTools';
 export type { UseToolsOptions, ToolsApi } from './tools/useTools';
 export { useContributions, useOffhandAction } from './contributions/useContributions';
 export type { ContributionsApi, UseContributionsOptions } from './contributions/useContributions';
-
-export { useLatest } from './useLatest';

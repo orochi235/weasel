@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { createElement } from 'react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { useSelection, type SelectionApi, type SelectionStore } from './useSelection';
 import { asNodeId } from 'core/scene/types';
 import { createScene } from 'core/scene/scene';
