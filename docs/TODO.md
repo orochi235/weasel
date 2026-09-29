@@ -778,11 +778,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   walk, because a bare-adapter consumer has no selection parent-folding to fold
   them back in.
 
-- **(P2) Some packages never import `geom`.** Found 2026-08-29 by the cascade
-  audit, outside the duplication it was hunting: `packages/{labkit,modes,d3,paint}`
-  never import `@weasel-js/geom` at all, and `ui` only from a story
-  (`Badge.stories.tsx`). An observation, not yet a decision — whether any of them
-  hand-roll geometry `geom` already has is the open question.
+  From the 2026-09-28 geom-adoption audit of labkit, modes, d3, paint and ui:
+  labkit's camera (`worldToScreen`, `zoomAt`, `centerOn`, `clampZoomAbout`) is a
+  pan/zoom/`yDir` view model, not affine kernel math. labkit's `fitView` anchors at
+  the origin where `TrialOverview`'s `fitRect` centers with padding. `toShape`
+  collapses a zero-size axis to 0 where `boxToBox` keeps scale 1, and Plot2D's
+  `modelToPlot` fails on a zero range where `boxToBox` would silently not scale.
+  `toDeviceRect` is a y-flip plus device-pixel snap. Badge's `polygonSampler`
+  parameterizes a polygon by CSS-pixel arc length under the viewBox's anisotropic
+  scale, and Powerline carries its own normals. paint's `lerpHueDeg` is CSS Color 4
+  hue interpolation, not angle geometry. CurveEditor's Catmull-Rom and monotone
+  splines are curves geom does not have, and its bezier easing already goes through
+  core's `cubicBezierEasing`. The scalar `Math.max(lo, Math.min(hi, v))` clamps
+  scattered through ui and labkit are not geometry; geom has no scalar clamp. d3
+  and modes do no geometry at all.
 
 - **(P3) Confirm Safari's trackpad pinch in real Safari.** `useGestureDispatcher`
   dispatches WebKit `gesturechange` as a `pinch` gesture, which `viewport.zoom`

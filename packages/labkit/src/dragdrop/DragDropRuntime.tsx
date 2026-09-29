@@ -1,4 +1,5 @@
 import { openPointerSession, type PointerSession, useVisibleRaf } from '@weasel-js/core';
+import { boxContainsPoint } from '@weasel-js/geom';
 import {
   type PointerEvent as ReactPointerEvent,
   type RefObject,
@@ -81,12 +82,7 @@ export function useDragDrop<TS, TC>({
       const el = canvasContainerRef.current;
       if (!el) return false;
       const r = el.getBoundingClientRect();
-      return (
-        screenPos.x >= r.left &&
-        screenPos.x <= r.right &&
-        screenPos.y >= r.top &&
-        screenPos.y <= r.bottom
-      );
+      return boxContainsPoint([r.left, r.top, r.right, r.bottom], screenPos.x, screenPos.y);
     },
     [canvasContainerRef],
   );

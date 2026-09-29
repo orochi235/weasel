@@ -1,13 +1,17 @@
+import {
+  type Box,
+  boundsOfCoords,
+  boxContainsBox,
+  boxContainsPoint,
+  type Rect,
+} from '@weasel-js/geom';
 import type { FracPoint, FracRect } from './types';
 
 /** A mark's box in its target's world: CSS pixels at zoom 1. Matches weasel's
  *  default `RectPose`, which is what the scene stores. */
-export interface WorldRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type WorldRect = Rect;
+
+const boxOfFrac = (f: FracRect): Box => [f.x, f.y, f.x + f.w, f.y + f.h];
 
 /** Where a fraction lands on a content box of this size. */
 export function fracToWorld(f: FracRect, content: { w: number; h: number }): WorldRect {
@@ -46,33 +50,22 @@ export function roundFrac(f: FracRect): FracRect {
 /** Whether `pt` falls in `box`, widened by `tol` on every side so a hairline
  *  mark stays reachable. */
 export function fracContains(box: FracRect, pt: FracPoint, tol = 0): boolean {
-  return (
-    pt.x >= box.x - tol &&
-    pt.x <= box.x + box.w + tol &&
-    pt.y >= box.y - tol &&
-    pt.y <= box.y + box.h + tol
-  );
+  const [x0, y0, x1, y1] = boxOfFrac(box);
+  return boxContainsPoint([x0 - tol, y0 - tol, x1 + tol, y1 + tol], pt.x, pt.y);
 }
 
 /** Whether `outer` wholly encloses `inner`. A marquee takes what it encloses,
  *  not what it grazes — brushing selection is a different gesture, and this
  *  answers false for two rects that merely overlap. */
 export function fracEncloses(outer: FracRect, inner: FracRect): boolean {
-  return (
-    inner.x >= outer.x &&
-    inner.y >= outer.y &&
-    inner.x + inner.w <= outer.x + outer.w &&
-    inner.y + inner.h <= outer.y + outer.h
-  );
+  return boxContainsBox(boxOfFrac(outer), boxOfFrac(inner));
 }
 
-/** The smallest box holding every point — zero-size for a single one. */
-export function boundsOf(points: readonly FracPoint[]): FracRect {
-  const xs = points.map((p) => p.x);
-  const ys = points.map((p) => p.y);
-  const x = Math.min(...xs);
-  const y = Math.min(...ys);
-  return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+/** The smallest box holding every point — zero-size for a single one, and
+ *  `null` for none. */
+export function boundsOf(points: readonly FracPoint[]): FracRect | null {
+  const b = boundsOfCoords(points.flatMap((p) => [p.x, p.y]));
+  return b && { x: b[0], y: b[1], w: b[2] - b[0], h: b[3] - b[1] };
 }
 
 /** Points restated as fractions of `box` itself, so they move and stretch with

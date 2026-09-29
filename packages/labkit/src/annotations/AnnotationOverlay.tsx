@@ -74,6 +74,7 @@ export function insertedGeometry(
   const vertices = verticesOf(extras);
   if (!vertices) return undefined;
   const box = boundsOf(vertices);
+  if (!box) return undefined;
   return {
     pose: { x: box.x, y: box.y, width: box.w, height: box.h },
     shape: roundPoints(toShape(vertices, box)),

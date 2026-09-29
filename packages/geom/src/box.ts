@@ -34,6 +34,12 @@ export function boxContainsPoint(b: Box, x: number, y: number): boolean {
   return x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3];
 }
 
+/** Whether `outer` wholly holds `inner`, edges inclusive. Two boxes that merely
+ *  overlap answer false. */
+export function boxContainsBox(outer: Box, inner: Box): boolean {
+  return inner[0] >= outer[0] && inner[1] >= outer[1] && inner[2] <= outer[2] && inner[3] <= outer[3];
+}
+
 /** Interleaved corner ring for a rect at (x,y,w,h), wound clockwise from the
  *  origin corner. The closing edge is implicit — the same unclosed shape
  *  `pointInPolygon` takes, and what a repeated first vertex would leave as a

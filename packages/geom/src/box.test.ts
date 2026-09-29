@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { boundsOfCoords, unionBox, boxContainsPoint, rectToContour, type Box } from './box';
+import { boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, rectToContour, type Box } from './box';
 
 describe('box', () => {
   it('boundsOfCoords sweeps interleaved coords', () => {
@@ -18,6 +18,13 @@ describe('box', () => {
     const b: Box = [0, 0, 10, 10];
     expect(boxContainsPoint(b, 0, 10)).toBe(true);
     expect(boxContainsPoint(b, 11, 5)).toBe(false);
+  });
+  it('boxContainsBox takes a box touching the edges and refuses one that overlaps', () => {
+    const b: Box = [0, 0, 10, 10];
+    expect(boxContainsBox(b, [0, 0, 10, 10])).toBe(true);
+    expect(boxContainsBox(b, [2, 2, 4, 4])).toBe(true);
+    expect(boxContainsBox(b, [5, 5, 11, 8])).toBe(false);
+    expect(boxContainsBox([2, 2, 4, 4], b)).toBe(false);
   });
   it('rectToContour emits the four corners with the closing edge implicit', () => {
     expect(Array.from(rectToContour(0, 0, 2, 3))).toEqual([0, 0, 2, 0, 2, 3, 0, 3]);
