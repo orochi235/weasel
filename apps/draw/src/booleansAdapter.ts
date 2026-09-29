@@ -18,9 +18,9 @@ export type DrawScene = Scene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
 export function textSourceOf(scene: DrawScene, id: string): TextNodeSource | undefined {
   const node = scene.get(asNodeId(id));
   if (!node || node.kind !== 'leaf') return undefined;
-  const { text, runs, style, verticalAlign, path } = node.data;
+  const { text, runs, style, verticalAlign, path, fill, stroke } = node.data;
   if (text === undefined || path) return undefined;
-  return { data: { text, runs, style, verticalAlign }, pose: node.pose };
+  return { data: { text, runs, style, verticalAlign, fill, stroke }, pose: node.pose };
 }
 
 /** The adapter the kit's Pathfinder actions run WeaselDraw's boolean ops
