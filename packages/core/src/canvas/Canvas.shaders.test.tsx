@@ -5,7 +5,7 @@
  * no WebGL2 methods, so no renderer is ever built there.
  */
 
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { Canvas } from './Canvas';
 import { WeaselRenderer } from '../renderer/WeaselRenderer';
@@ -24,7 +24,11 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
+afterEach(() => { vi.restoreAllMocks(); });
+
 const waitForFrame = () => new Promise<void>(r => requestAnimationFrame(() => r()));
+/** Past the mount frame and any redraw the mount commit queued behind it. */
+const settle = async () => { await waitForFrame(); await waitForFrame(); await waitForFrame(); };
 
 const FRAGMENT = `#version 300 es
 precision highp float;
@@ -57,6 +61,34 @@ describe('Canvas shaders prop', () => {
     await waitForFrame();
 
     expect(spy.mock.calls.map(([h]) => h.id)).toContain('canvas-shaders-second');
+    spy.mockRestore();
+  });
+
+  // Nothing else on this canvas asks for a frame, so the renderer's own
+  // recompile-on-next-frame would never run without this repaint.
+  it('repaints when a program it names is re-registered with new source', async () => {
+    const handle = registerProgram('canvas-shaders-hot', '', FRAGMENT);
+    render(<Canvas width={100} height={100} layers={{}} shaders={[handle]} />);
+    await settle();
+
+    const spy = vi.spyOn(WeaselRenderer.prototype, 'render');
+    registerProgram('canvas-shaders-hot', '', FRAGMENT.replace('0.0, 0.0, 0.0', '1.0, 0.0, 0.0'));
+    await waitForFrame();
+
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('does not repaint for a program it does not name', async () => {
+    const handle = registerProgram('canvas-shaders-mine', '', FRAGMENT);
+    render(<Canvas width={100} height={100} layers={{}} shaders={[handle]} />);
+    await settle();
+
+    const spy = vi.spyOn(WeaselRenderer.prototype, 'render');
+    registerProgram('canvas-shaders-theirs', '', FRAGMENT);
+    await waitForFrame();
+
+    expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
   });
 });

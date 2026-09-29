@@ -23,7 +23,7 @@ export interface ShaderProgramHandle {
 }
 
 /**
- * Scalar and vector uniform types accepted by the custom shader uniform binder.
+ * A value for one uniform in `ShaderDrawCommand.uniforms`.
  *
  * | TS type                 | GL call                              |
  * |-------------------------|--------------------------------------|
@@ -34,13 +34,25 @@ export interface ShaderProgramHandle {
  * | Float32Array length 9   | uniformMatrix3fv (column-major)      |
  * | Float32Array length 16  | uniformMatrix4fv (column-major)      |
  * | TextureHandle           | bind to next tex unit + uniform1i    |
+ *
+ * **Array uniforms.** Keyed by an array's bare name (`u_ripples` for
+ * `uniform vec3 u_ripples[8]`), a flat `number[]`, `Float32Array`,
+ * `Int32Array` or `Uint32Array` fills the array from slot 0 in one
+ * `uniform*v` call chosen by the declared element type (`vec3` →
+ * `uniform3fv`, `ivec2` → `uniform2iv`, `mat4` → `uniformMatrix4fv`, …).
+ * Its length must be a whole number of elements and at most the declared
+ * size; a shorter value leaves the remaining slots as they were. Per-slot
+ * keys (`u_ripples[2]`) keep working and take the table above.
  */
 export type ShaderUniform =
   | number
   | [number, number]
   | [number, number, number]
   | [number, number, number, number]
+  | readonly number[]
   | Float32Array
+  | Int32Array
+  | Uint32Array
   | TextureHandle;
 
 /** A registered program's GLSL source. An empty `vert` means the kit's default vertex shader. */
@@ -82,9 +94,11 @@ const isDev = (): boolean =>
  * Opaque fragments (a=1) are unaffected; only fragments with a < 1 differ.
  *
  * **Re-registration behavior:**
- * - Dev mode (`NODE_ENV !== 'production'`): calling with an existing id replaces
- *   the source (hot-reload). Each renderer must call `WeaselRenderer.registerProgram(handle)`
- *   again to pick up the new source.
+ * - Dev mode (`NODE_ENV !== 'production'`): calling with an existing id and new
+ *   source replaces it (hot reload). Every renderer that compiled the old source
+ *   recompiles on its next frame and deletes the program it replaces; a
+ *   `<Canvas shaders>` naming the id repaints to show it. If the new source fails
+ *   to compile, the renderer logs the error once and keeps drawing the old one.
  * - Prod mode: calling with an existing id throws.
  *
  * Actual GL compilation and `ShaderCompileError` throwing happen in

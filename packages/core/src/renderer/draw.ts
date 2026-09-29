@@ -21,7 +21,7 @@ import type { GLMeshCache, GLMeshHandle } from './cache/GLMeshCache';
 import type { GLTextureCache } from './cache/GLTextureCache';
 import type { GLImageCache } from './cache/GLImageCache';
 import type { GradientRampAtlas } from './cache/GradientRampAtlas';
-import type { ShaderProgram } from './shaders/ShaderProgram';
+import type { ShaderProgram, UniformArray } from './shaders/ShaderProgram';
 import { mat3, type GlMat3 } from './math/mat3';
 import { patternTileSpace } from './math/patternSpace';
 import { getMesh } from './cache/cache';
@@ -392,6 +392,93 @@ export function setUniform(
   }
 }
 
+/** How an array's element type is uploaded: the `uniform*v` call and the
+ *  number of components per element. */
+const ARRAY_UPLOADS: Readonly<Record<string, { fn: string; n: number; matrix?: true }>> = {
+  float: { fn: 'uniform1fv', n: 1 }, vec2: { fn: 'uniform2fv', n: 2 },
+  vec3: { fn: 'uniform3fv', n: 3 }, vec4: { fn: 'uniform4fv', n: 4 },
+  int: { fn: 'uniform1iv', n: 1 }, ivec2: { fn: 'uniform2iv', n: 2 },
+  ivec3: { fn: 'uniform3iv', n: 3 }, ivec4: { fn: 'uniform4iv', n: 4 },
+  bool: { fn: 'uniform1iv', n: 1 }, bvec2: { fn: 'uniform2iv', n: 2 },
+  bvec3: { fn: 'uniform3iv', n: 3 }, bvec4: { fn: 'uniform4iv', n: 4 },
+  uint: { fn: 'uniform1uiv', n: 1 }, uvec2: { fn: 'uniform2uiv', n: 2 },
+  uvec3: { fn: 'uniform3uiv', n: 3 }, uvec4: { fn: 'uniform4uiv', n: 4 },
+  mat2: { fn: 'uniformMatrix2fv', n: 4, matrix: true },
+  mat3: { fn: 'uniformMatrix3fv', n: 9, matrix: true },
+  mat4: { fn: 'uniformMatrix4fv', n: 16, matrix: true },
+  mat2x2: { fn: 'uniformMatrix2fv', n: 4, matrix: true },
+  mat3x3: { fn: 'uniformMatrix3fv', n: 9, matrix: true },
+  mat4x4: { fn: 'uniformMatrix4fv', n: 16, matrix: true },
+  mat2x3: { fn: 'uniformMatrix2x3fv', n: 6, matrix: true },
+  mat2x4: { fn: 'uniformMatrix2x4fv', n: 8, matrix: true },
+  mat3x2: { fn: 'uniformMatrix3x2fv', n: 6, matrix: true },
+  mat3x4: { fn: 'uniformMatrix3x4fv', n: 12, matrix: true },
+  mat4x2: { fn: 'uniformMatrix4x2fv', n: 8, matrix: true },
+  mat4x3: { fn: 'uniformMatrix4x3fv', n: 12, matrix: true },
+};
+
+type ArrayValue = readonly number[] | Float32Array | Int32Array | Uint32Array;
+
+function isArrayValue(value: ShaderUniform): value is ArrayValue {
+  return Array.isArray(value) || value instanceof Float32Array
+    || value instanceof Int32Array || value instanceof Uint32Array;
+}
+
+/** Fill an array uniform from slot 0 with one call. Throws in dev on a value
+ *  that is not a whole number of elements or overruns the declaration. */
+function setUniformArray(
+  gl: WebGL2RenderingContext,
+  name: string,
+  arr: UniformArray,
+  value: ArrayValue,
+): void {
+  const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
+  const upload = ARRAY_UPLOADS[arr.type];
+  if (!upload) {
+    if (isDev) console.warn(`weasel setUniform: array uniform "${name}" has type ${arr.type}, which cannot be written as a whole`);
+    return;
+  }
+  if (value.length % upload.n !== 0 || value.length > upload.n * arr.size) {
+    if (isDev) {
+      throw new TypeError(
+        `weasel setUniform: "${name}" is ${arr.type}[${arr.size}], so its value must hold a multiple of ${upload.n} `
+        + `numbers, at most ${upload.n * arr.size}; got ${value.length}`,
+      );
+    }
+    return;
+  }
+  if (value.length === 0) return;
+  const fn = (gl as unknown as Record<string, (...args: unknown[]) => void>)[upload.fn];
+  if (upload.matrix) fn.call(gl, arr.location, false, value);
+  else fn.call(gl, arr.location, value);
+}
+
+/** Write every entry of a command's `uniforms` map. A key naming an array
+ *  uniform with an array value fills the array; anything else goes to the
+ *  location of that exact name. */
+function setUniforms(
+  gl: WebGL2RenderingContext,
+  program: ShaderProgram,
+  programId: string,
+  uniforms: Record<string, ShaderUniform>,
+  textureCache: GLTextureCache,
+  nextTexUnit: { value: number },
+): void {
+  for (const [name, value] of Object.entries(uniforms)) {
+    const arr = program.uniformArray(name);
+    if (arr && isArrayValue(value)) {
+      setUniformArray(gl, name, arr, value);
+      continue;
+    }
+    const loc = program.uniform(name);
+    if (loc === undefined) {
+      warnOnceUniform(programId, name);
+      continue;
+    }
+    setUniform(gl, loc, value, textureCache, nextTexUnit);
+  }
+}
+
 function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
   const { gl, programRegistry, quadVbo, quadIbo, textureCache } = ctx;
 
@@ -436,15 +523,7 @@ function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
   const uView = program.uniform('u_view');
   if (uView !== undefined) gl.uniformMatrix3fv(uView, false, ctx.state.transform);
 
-  const nextTexUnit = { value: 1 };
-  for (const [name, value] of Object.entries(cmd.uniforms)) {
-    const loc = program.uniform(name);
-    if (loc === undefined) {
-      warnOnceUniform(cmd.program.id, name);
-      continue;
-    }
-    setUniform(gl, loc, value, textureCache, nextTexUnit);
-  }
+  setUniforms(gl, program, cmd.program.id, cmd.uniforms, textureCache, { value: 1 });
 
   applyClipTest(ctx);
   drawTriangles(ctx, 6, ctx.gl.UNSIGNED_SHORT);
@@ -588,18 +667,8 @@ function drawFullscreenQuad(
     setColorMatrixUniforms(ctx, program, composite.colorMatrix);
   }
 
-  if (uniforms) {
-    // Unit 0 is `u_source`; a consumer texture starts above it.
-    const nextTexUnit = { value: 1 };
-    for (const [name, value] of Object.entries(uniforms)) {
-      const loc = program.uniform(name);
-      if (loc === undefined) {
-        warnOnceUniform(programId ?? 'effect', name);
-        continue;
-      }
-      setUniform(gl, loc, value, ctx.textureCache, nextTexUnit);
-    }
-  }
+  // Unit 0 is `u_source`; a consumer texture starts above it.
+  if (uniforms) setUniforms(gl, program, programId ?? 'effect', uniforms, ctx.textureCache, { value: 1 });
 
   drawTriangles(ctx, 6, ctx.gl.UNSIGNED_SHORT);
 

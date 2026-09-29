@@ -53,15 +53,26 @@ import {
   CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
   QUAD_VERTICES, QUAD_INDICES,
 } from './shaders/customPrelude';
-import { getProgramSource, type ShaderProgramHandle } from './shaders/registerProgram';
+import { getProgramSource, type ProgramSource, type ShaderProgramHandle } from './shaders/registerProgram';
 import { EffectTargets } from './effects/EffectTargets';
-import { extractUniformNames } from './shaders/extractUniformNames';
+import { extractUniformArrays, extractUniformNames } from './shaders/extractUniformNames';
 
 /** Every uniform a custom program may be written through. Both stages, not
  *  just the fragment one: a name never looked up is written through `null`,
  *  which GL accepts silently, so the uniform keeps its zero default. */
 function customUniformNames(vertSrc: string, fragSrc: string): string[] {
   return [...CUSTOM_KIT_UNIFORMS, ...extractUniformNames(vertSrc), ...extractUniformNames(fragSrc)];
+}
+
+/** Compile a registered program's source against `gl`, with every uniform
+ *  location and array base it may be written through. */
+function compileCustomProgram(gl: WebGL2RenderingContext, src: ProgramSource): ShaderProgram {
+  const vertSrc = src.vert === '' ? CUSTOM_VERT_SRC : src.vert;
+  const program = new ShaderProgram(gl, vertSrc, src.frag);
+  program.lookupUniforms(customUniformNames(vertSrc, src.frag));
+  program.lookupUniformArrays(new Map([...extractUniformArrays(vertSrc), ...extractUniformArrays(src.frag)]));
+  program.lookupAttributes(CUSTOM_ATTRIBUTES);
+  return program;
 }
 
 /** How to construct a `WeaselRenderer`: the GL context or canvas to draw
@@ -179,6 +190,9 @@ export class WeaselRenderer {
   private imageCache: GLImageCache;
   private gradRamps: GradientRampAtlas;
   private programRegistry = new Map<string, ShaderProgram>();
+  /** The source each compiled custom program was built from — or, after a
+   *  failed recompile, the source that failed, so it is not retried every frame. */
+  private programSources = new Map<string, ProgramSource>();
   private quadVbo: WebGLBuffer | null = null;
   private quadIbo: WebGLBuffer | null = null;
   private drawBatch: DrawBatch;
@@ -326,14 +340,33 @@ export class WeaselRenderer {
         `Call the module-level registerProgram() first.`,
       );
     }
-    const vertSrc = src.vert === '' ? CUSTOM_VERT_SRC : src.vert;
-    const fragSrc = src.frag;
-    const program = new ShaderProgram(this.gl, vertSrc, fragSrc);
-    program.lookupUniforms(customUniformNames(vertSrc, fragSrc));
-    program.lookupAttributes(CUSTOM_ATTRIBUTES);
-    const previous = this.programRegistry.get(handle.id);
+    this.installProgram(handle.id, src, compileCustomProgram(this.gl, src));
+  }
+
+  private installProgram(id: string, src: ProgramSource, program: ShaderProgram): void {
+    const previous = this.programRegistry.get(id);
     if (previous) this.gl.deleteProgram(previous.handle);
-    this.programRegistry.set(handle.id, program);
+    this.programRegistry.set(id, program);
+    this.programSources.set(id, src);
+  }
+
+  /** Recompile every program whose module-level source was re-registered
+   *  since it was compiled. A source that fails keeps the old program drawing. */
+  private refreshPrograms(): void {
+    for (const [id, compiled] of this.programSources) {
+      const src = getProgramSource(id);
+      if (!src || src === compiled) continue;
+      if (src.vert === compiled.vert && src.frag === compiled.frag) {
+        this.programSources.set(id, src);
+        continue;
+      }
+      try {
+        this.installProgram(id, src, compileCustomProgram(this.gl, src));
+      } catch (e) {
+        this.programSources.set(id, src);
+        console.error(`weasel: failed to recompile re-registered program "${id}"; still drawing the previous one:`, e);
+      }
+    }
   }
 
   /**
@@ -450,12 +483,9 @@ export class WeaselRenderer {
     for (const id of this.programRegistry.keys()) {
       const src = getProgramSource(id);
       if (!src) continue;
-      const vertSrc = src.vert === '' ? CUSTOM_VERT_SRC : src.vert;
       try {
-        const program = new ShaderProgram(this.gl, vertSrc, src.frag);
-        program.lookupUniforms(customUniformNames(vertSrc, src.frag));
-        program.lookupAttributes(CUSTOM_ATTRIBUTES);
-        this.programRegistry.set(id, program);
+        this.programRegistry.set(id, compileCustomProgram(this.gl, src));
+        this.programSources.set(id, src);
       } catch (e) {
         console.error(`weasel: failed to recompile program "${id}" after context restore:`, e);
       }
@@ -491,6 +521,7 @@ export class WeaselRenderer {
       gl.deleteProgram(prog.handle);
     }
     this.programRegistry.clear();
+    this.programSources.clear();
     this.textureCache.free();
     this.imageCache.dispose();
     this.gradRamps.free();
@@ -522,6 +553,7 @@ export class WeaselRenderer {
     // no VAO bound, no draw in flight. Deleting from the FinalizationRegistry
     // callback directly was racy and caused mid-draw crashes.
     this.meshCache.drainPendingDeletes();
+    this.refreshPrograms();
     // New frame: refill the dynamic-glyph synchronous bake budget.
     resetBakeBudget(this.bakeBudget);
     this.groupState.reset();

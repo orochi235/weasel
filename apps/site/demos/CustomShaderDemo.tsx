@@ -3,7 +3,7 @@ import { SceneCanvas, useHandleDrag, useLatest, useScene, useVisibleRaf } from '
 import type { Action, RenderLayer } from '@weasel-js/core';
 import {
   registerProgram, registerTexture,
-  type DrawCommand, type ShaderProgramHandle, type TextureHandle,
+  type DrawCommand, type ShaderProgramHandle, type ShaderUniform, type TextureHandle,
 } from '@weasel-js/core/renderer';
 import weaselMarkUrl from '../assets/weasel-mark.png';
 
@@ -81,29 +81,7 @@ const RIPPLE_PROGRAM:  ShaderProgramHandle = registerProgram('demo-ripple',  '',
 const VORONOI_PROGRAM: ShaderProgramHandle = registerProgram('demo-voronoi', '', VORONOI_FRAG);
 const SHADERS = [PLASMA_PROGRAM, RIPPLE_PROGRAM, VORONOI_PROGRAM];
 
-// ---------------------------------------------------------------------------
-// Uniform helpers (per-slot, not Float32Array)
-// ---------------------------------------------------------------------------
-
 interface Ripple { x: number; y: number; t: number; }
-
-function rippleUniforms(ripples: Ripple[]): Record<string, [number, number, number]> {
-  const out: Record<string, [number, number, number]> = {};
-  for (let i = 0; i < 8; i++) {
-    const r = ripples[i];
-    out[`u_ripples[${i}]`] = r ? [r.x, r.y, r.t] : [0, 0, -1];
-  }
-  return out;
-}
-
-function seedUniforms(seeds: { x: number; y: number }[]): Record<string, [number, number]> {
-  const out: Record<string, [number, number]> = {};
-  for (let i = 0; i < 8; i++) {
-    const s = seeds[i] ?? { x: -1, y: -1 };
-    out[`u_seeds[${i}]`] = [s.x, s.y];
-  }
-  return out;
-}
 
 function clamp01(n: number): number { return Math.max(0, Math.min(1, n)); }
 
@@ -131,7 +109,7 @@ function useWeaselMarkTexture(): TextureHandle | null {
 // Panel component
 // ---------------------------------------------------------------------------
 
-type ShaderUniforms = Record<string, number | [number, number] | [number, number, number] | [number, number, number, number] | TextureHandle>;
+type ShaderUniforms = Record<string, ShaderUniform>;
 
 function Panel({
   title,
@@ -337,13 +315,15 @@ export function CustomShaderDemo() {
   const rippleUniforms_ = useMemo((): ShaderUniforms => ({
     u_time: time,
     ...(tex ? { u_image: tex } : {}),
-    ...rippleUniforms(ripples),
-    u_rippleCount: ripples.length,
+    // A press can land a ninth ripple before the trim below runs, and a value
+    // longer than the declared `u_ripples[8]` is rejected.
+    u_ripples: ripples.slice(-8).flatMap((r) => [r.x, r.y, r.t]),
+    u_rippleCount: Math.min(ripples.length, 8),
   }), [time, tex, ripples]);
 
   const voronoiUniforms = useMemo((): ShaderUniforms => ({
     u_time: time,
-    ...seedUniforms(mutableSeeds),
+    u_seeds: mutableSeeds.flatMap((s) => [s.x, s.y]),
     u_seedCount: mutableSeeds.length,
   }), [time, mutableSeeds]);
 
