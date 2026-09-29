@@ -274,11 +274,6 @@ Core five + Crop shipped. Remaining:
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
 - **(P3) Boolean ops on stroked paths.** Treat a stroke as a filled region, then clip. Blocked on stroke-to-fill (round/bevel/miter joins, end caps — its own design problem).
-- **(P3) Create Outlines drops per-run paint.** `applyCreateOutlines` makes
-  one path per text node, and WeaselDraw's `createPathNode` gives it the node's
-  `data.fill` / `data.stroke`. A run with its own `fill` loses its color. To
-  keep it, `textToPath` would return one path per paint group
-  (`LaidOutGroup.fill`), and the action would insert a group of paths.
 
 ---
 

@@ -28,5 +28,7 @@ export {
   charOffsetToDomPosition,
   domPositionToCharOffset,
 } from './domRuns';
-export { textToPath, loadTextOutlines, TextOutlinesError } from './textToPath';
-export type { TextOutlineSource, TextNodeSource, TextToPathOptions, TextOutlinesFailure } from './textToPath';
+export { textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError } from './textToPath';
+export type {
+  TextOutlineSource, TextNodeSource, TextPaintPath, TextToPathOptions, TextOutlinesFailure,
+} from './textToPath';

@@ -42,7 +42,6 @@ import {
   contrastLineColor,
   type CreateOutlinesAdapter,
   DEFAULT_STROKE_COLOR,
-  DEFAULT_TEXT_STYLE,
   defaultCommitAdapter,
   defaultDrawOne,
   type FillStyle,
@@ -69,6 +68,8 @@ import {
   solid,
   splitSubpaths,
   type Stroke,
+  UNION_OF_CHILDREN,
+  unionOfChildren,
   strokeOf,
   type StyledRun,
   type TextStyle,
@@ -1021,7 +1022,7 @@ function BooleansAdapterPublisher({
 }
 
 /** Publishes the adapter the kit's `createOutlines` action converts text
- *  through. Each path takes its text node's parent, paint and slot. */
+ *  through. A text wearing several paints becomes a group of paths. */
 function CreateOutlinesAdapterPublisher({
   scene,
   selection,
@@ -1034,25 +1035,28 @@ function CreateOutlinesAdapterPublisher({
     const a: CreateOutlinesAdapter = {
       ...defaultCommitAdapter(scene, selection.adapterMethods),
       getTextSource: (id) => textSourceOf(scene, id),
-      createPathNode: (path, sourceId) => {
-        const src = scene.get(sourceId);
-        const data = src?.kind === 'leaf' ? src.data : undefined;
+      createPathNode: (path, sourceId, { fill, stroke, parent }) => {
         const b = boundsOfPath(path);
         return {
           id: `o-${Date.now().toString(36)}-${idCounterRef.current++}`,
           kind: 'leaf',
-          layer: src?.layer ?? 'default',
-          parent: src?.parent ?? null,
+          layer: scene.get(sourceId)?.layer ?? 'default',
+          parent,
           pose: { x: b.x, y: b.y, width: b.width, height: b.height },
-          data: {
-            path,
-            // An absent text fill means the text painter's default, which is
-            // not the path painter's: state it.
-            fill: data?.fill !== undefined ? data.fill : DEFAULT_TEXT_STYLE.fill,
-            ...(data?.stroke !== undefined ? { stroke: data.stroke } : {}),
-          },
+          data: { path, fill, ...(stroke !== undefined ? { stroke } : {}) },
         } as { id: string };
       },
+      // The kit `group` action's container: an envelope tracking its members.
+      createContainerNode: (sourceId, { parent, bounds }) => ({
+        id: `o-${Date.now().toString(36)}-${idCounterRef.current++}`,
+        kind: 'container',
+        layer: scene.get(sourceId)?.layer ?? 'default',
+        parent,
+        pose: bounds,
+        data: {},
+        dependsOn: 'children',
+        derivePose: scene.registry.derivePose?.[UNION_OF_CHILDREN] ?? unionOfChildren,
+      }) as { id: string },
       applyOps: (ops, label) => {
         scene.applyBatch(ops, label ?? 'Create Outlines', a);
       },

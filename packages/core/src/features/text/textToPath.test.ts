@@ -11,7 +11,9 @@ import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { layoutTextPose, type TextPose } from '@weasel-js/text';
 import { boundsOfPath, pointInPath, pathFromD, PATH_C, PATH_Q, type Path } from '@weasel-js/geom';
-import { textToPath, loadTextOutlines, TextOutlinesError, type TextOutlineSource } from './textToPath';
+import {
+  textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError, type TextOutlineSource,
+} from './textToPath';
 
 const INTER = resolve(import.meta.dirname, '../../../../../assets/fonts/inter');
 
@@ -256,5 +258,73 @@ describe('textToPath failures', () => {
     await loadFontOutlines('broken');
     const src = { text: 'H', style: { fontFamily: 'broken', fontSize: 40 } };
     expect(() => textToPath(src, POSE)).toThrow(expect.objectContaining({ reason: 'outlines-failed' }));
+  });
+});
+
+describe('textToPathsByPaint', () => {
+  const RED = { fill: 'solid', color: '#c00' } as const;
+  const BLUE = { fill: 'solid', color: '#00c' } as const;
+  const OUTLINE = { width: 2, paint: { fill: 'solid', color: '#0c0' } } as const;
+
+  /** Whether `p` covers `(x, y)` in any of `paths` — their union, sampled. */
+  const inAny = (paths: readonly Path[], x: number, y: number) => paths.some((p) => pointInPath(p, x, y));
+
+  it('splits a node into one path per paint, whose union is the whole outline', () => {
+    const src: TextOutlineSource = {
+      ...text(''),
+      runs: [{ text: 'He' }, { text: 'll', fill: BLUE }, { text: 'o', underline: true }],
+      fill: RED,
+    };
+    const groups = textToPathsByPaint(src, POSE);
+    expect(groups.map((g) => g.fill)).toEqual([RED, BLUE]);
+    expect(groups.every((g) => g.stroke === undefined)).toBe(true);
+
+    const whole = textToPath(src, POSE);
+    const parts = groups.map((g) => g.path);
+    expect(parts.reduce((n, p) => n + p.commands.length, 0)).toBe(whole.commands.length);
+    const b = boundsOfPath(whole);
+    let inked = 0;
+    for (let x = b.x; x <= b.x + b.width; x += 1.5) {
+      for (let y = b.y; y <= b.y + b.height; y += 1.5) {
+        const w = pointInPath(whole, x, y);
+        if (w) inked++;
+        expect(inAny(parts, x, y)).toBe(w);
+      }
+    }
+    expect(inked).toBeGreaterThan(100);
+    // 'll' is the blue group, and nothing else is in it.
+    const blue = boundsOfPath(groups[1]!.path);
+    const red = groups[0]!.path;
+    expect(pointInPath(red, blue.x + blue.width / 2, blue.y + blue.height * 0.5)).toBe(false);
+  });
+
+  it('keys a group on fill and stroke together', () => {
+    const src: TextOutlineSource = {
+      ...text(''),
+      runs: [{ text: 'A' }, { text: 'B', stroke: OUTLINE }, { text: 'C' }],
+      fill: RED,
+    };
+    const groups = textToPathsByPaint(src, POSE);
+    expect(groups).toHaveLength(2);
+    expect(groups[0]).toMatchObject({ fill: RED });
+    expect(groups[0]!.stroke).toBeUndefined();
+    expect(groups[1]).toMatchObject({ fill: RED, stroke: OUTLINE });
+  });
+
+  it('gives plain text one group in the default text fill, and outlines unfilled text too', () => {
+    const plain = textToPathsByPaint(text('Hi'), POSE);
+    expect(plain).toHaveLength(1);
+    expect(plain[0]!.fill).toEqual({ fill: 'solid', color: '#000' });
+
+    const unfilled = textToPathsByPaint({ ...text('Hi'), fill: null }, POSE);
+    expect(unfilled).toHaveLength(1);
+    expect(unfilled[0]!.fill).toBeNull();
+    expect(unfilled[0]!.path.commands.length).toBe(textToPath(text('Hi'), POSE).commands.length);
+  });
+
+  it('leaves out a paint whose runs have no ink', () => {
+    const src: TextOutlineSource = { ...text(''), runs: [{ text: 'Hi' }, { text: '  ', fill: BLUE }] };
+    expect(textToPathsByPaint(src, POSE)).toHaveLength(1);
+    expect(textToPathsByPaint(text('   '), POSE)).toEqual([]);
   });
 });

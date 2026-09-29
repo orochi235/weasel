@@ -1210,6 +1210,7 @@ export {
 export type {
   CreateOutlinesAdapter,
   CreateOutlinesResult,
+  OutlinePathSpec,
 } from './interactions/actions/outlines';
 
 // ─── Debug overlay subsystem (URL-flagged tree-shakeable) ───────────────────
