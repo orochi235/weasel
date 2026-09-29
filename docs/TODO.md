@@ -666,12 +666,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) `PrefsDialog`'s rail pane never scrolls unless the consumer gives the modal a height.**
-  `.railLayout` asks for `block-size: 100%`, but the modal only sets `max-height`, so the chain
-  has no definite height, the pane grows to its content (4,241px measured in astv) and a rail
-  subentry's `scrollTo` moves nothing. astv works around it with `block-size: min(88vh, 44rem)`
-  on its `dialogClassName`. The fix belongs in `railBody` or the modal. Found 2026-09-28.
-
 - **(P3) `@weasel-js/quantity` has no composites and no styling.** A value is one number, so a
   range (`1/64–1/2`, which `BandEditor`'s bands would want to report) or a vector readout has no
   display of its own yet; `Slider`'s thumbs still take bare numbers where `BandEditor`'s bands take

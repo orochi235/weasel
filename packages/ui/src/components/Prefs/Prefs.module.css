@@ -168,6 +168,11 @@
 .railBody {
   padding: 0;
   overflow: hidden;
+  /* The modal sets only `max-height`, so the layout's `block-size: 100%`
+     resolves against nothing and the pane grows to fit every row. As a flex
+     item the layout takes the body's flexed height, which the cap does bound. */
+  display: flex;
+  flex-direction: column;
   /* A settled height: without one the dialog grows and shrinks as the reader
      moves between a two-row group and a twenty-row one, and the rail entry
      they are aiming at moves while they aim at it. */
@@ -175,6 +180,10 @@
   /* Same reason across: a filter that narrows the schema to two rows should
      not pull the dialog's edges in around them. */
   min-inline-size: min(760px, 90vw);
+}
+
+.railBody > .railLayout {
+  flex: 1 1 auto;
 }
 
 .rail {
