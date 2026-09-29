@@ -5,6 +5,7 @@ import { numericWeight, scriptMetrics } from './runs/resolveRuns';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
 import { transformRunTexts } from './runs/textTransform';
 import { smallCapsScale, smallCapsText } from './runs/smallCaps';
+import { isHardLineBreak, lineBreakOpportunities, NO_BREAK } from './layout/lineBreak/lineBreaks';
 
 export type { StyledRun };
 
@@ -70,7 +71,11 @@ export interface LayoutResult {
   height: number;
 }
 
-/** Word-wrap parsed runs into lines bounded by `maxWidth`; pass `Infinity` for single-line layout. */
+/**
+ * Word-wrap parsed runs into lines bounded by `maxWidth`, breaking at the
+ * UAX #14 opportunities `layoutRuns` breaks at; pass `Infinity` for
+ * single-line layout.
+ */
 export function layoutMarkdown(
   runs: StyledRun[],
   maxWidth: number,
@@ -99,87 +104,109 @@ export function layoutMarkdown(
     }
   });
 
-  const lines: LayoutLine[] = [];
-  let currentRuns: PositionedRun[] = [];
-  let lineX = 0;
-  let lineMaxSize = 0;
+  // One sequence across every run, so a break opportunity that depends on a
+  // neighbor in the next run is found the way `layoutRuns` finds it.
+  const cps: number[] = [];
+  /** Per code point: its run, and its UTF-16 span in that run's text. */
+  const runOf: number[] = [];
+  const startOf: number[] = [];
+  const endOf: number[] = [];
+  segs.forEach((r, ri) => {
+    let at = 0;
+    for (const ch of r.text) {
+      cps.push(ch.codePointAt(0)!);
+      runOf.push(ri);
+      startOf.push(at);
+      at += ch.length;
+      endOf.push(at);
+    }
+  });
+  const breaks = Number.isFinite(maxWidth) ? lineBreakOpportunities(cps) : null;
 
-  function commitLine() {
-    const effectiveFontSize = lineMaxSize > 0 ? lineMaxSize : fontSize;
-    const lineHeight = effectiveFontSize * lineHeightFactor;
-    lines.push({ runs: currentRuns, width: lineX, height: lineHeight });
-    currentRuns = [];
-    lineX = 0;
-    lineMaxSize = 0;
-  }
-
-  function processSegment(seg: Segment) {
-    const { smallCaps, source: _source, ...segRun } = seg;
-    // Already a screen-pixel layout, so a run's `{ px }` size is its size.
-    const face = faceOf?.(segRun.bold ?? false, segRun.italic ?? false);
-    const { size: runSize, y: runY } = runMetrics(segRun, fontSize, face);
-    const effectiveSize = smallCaps ? runSize * smallCapsScale(face) : runSize;
-    const at = face ? { face } : {};
+  // Already a screen-pixel layout, so a run's `{ px }` size is its size.
+  const placed = segs.map(({ smallCaps, source: _source, ...run }) => {
+    const face = faceOf?.(run.bold ?? false, run.italic ?? false);
+    const { size: runSize, y } = runMetrics(run, fontSize, face);
     // The run's size holds the line, as on the GL tier, however small its capitals.
-    lineMaxSize = Math.max(lineMaxSize, runSize);
+    return { run, face, y, runSize, size: smallCaps ? runSize * smallCapsScale(face) : runSize };
+  });
+  const widthOf = (p: Piece): number => {
+    const { run, size } = placed[p.run];
+    return measure(run.text.slice(p.start, p.end), size, run.bold ?? false, run.italic ?? false);
+  };
 
-    if (maxWidth === Infinity) {
-      const w = measure(segRun.text, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
-      currentRuns.push({ ...segRun, x: lineX, width: w, y: runY, size: effectiveSize, ...at });
-      lineX += w;
-      return;
-    }
+  /** A UTF-16 span of one run's text, set on the current line. */
+  interface Piece { run: number; start: number; end: number }
 
-    // Word-wrap: split run text by spaces
-    const words = segRun.text.split(/ /);
-    let wordBuf = '';
-
-    for (let wi = 0; wi < words.length; wi++) {
-      const word = words[wi];
-      const candidate = wordBuf.length > 0 ? wordBuf + ' ' + word : word;
-      const candidateW = measure(candidate, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
-
-      if (lineX + candidateW > maxWidth && (lineX > 0 || wordBuf.length > 0)) {
-        // Flush current wordBuf as a run on the current line
-        if (wordBuf.length > 0) {
-          const w = measure(wordBuf, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
-          currentRuns.push({ ...segRun, text: wordBuf, x: lineX, width: w, y: runY, size: effectiveSize, ...at });
-          lineX += w;
-        }
-        commitLine();
-        lineMaxSize = Math.max(lineMaxSize, effectiveSize);
-        wordBuf = word;
+  /** `line` with the code points `[from, to)` appended, a run's pieces merged. */
+  function extend(line: Piece[], from: number, to: number): Piece[] {
+    const out = line.slice();
+    for (let k = from; k < to; k++) {
+      const last = out[out.length - 1];
+      if (last && last.run === runOf[k] && last.end === startOf[k]) {
+        out[out.length - 1] = { ...last, end: endOf[k] };
       } else {
-        // Either fits, or is an oversized single word starting a fresh line — accept it
-        wordBuf = candidate;
+        out.push({ run: runOf[k], start: startOf[k], end: endOf[k] });
       }
     }
+    return out;
+  }
 
-    // Flush remaining wordBuf
-    if (wordBuf.length > 0) {
-      const w = measure(wordBuf, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
-      currentRuns.push({ ...segRun, text: wordBuf, x: lineX, width: w, y: runY, size: effectiveSize, ...at });
-      lineX += w;
+  /** `line` without its trailing spaces, which hang past the edge as they do in `layoutRuns`. */
+  function trimmed(line: Piece[]): Piece[] {
+    const out = line.slice();
+    while (out.length > 0) {
+      const p = out[out.length - 1];
+      const text = segs[p.run].text;
+      let end = p.end;
+      while (end > p.start && text.charCodeAt(end - 1) === 32) end--;
+      if (end > p.start) { out[out.length - 1] = { ...p, end }; break; }
+      out.pop();
     }
+    return out;
   }
 
-  for (const run of segs) {
-    // markdownToRuns embeds newlines inside runs; split on '\n' so each
-    // segment becomes its own line via commitLine().
-    const segments = run.text.split('\n');
-    for (let si = 0; si < segments.length; si++) {
-      if (si > 0) commitLine();
-      const seg = segments[si];
-      if (seg.length > 0) {
-        processSegment({ ...run, text: seg });
-      }
+  const inkWidth = (line: Piece[]): number => trimmed(line).reduce((w, p) => w + widthOf(p), 0);
+
+  const lines: LayoutLine[] = [];
+  let cur: Piece[] = [];
+
+  function commitLine(line: Piece[]) {
+    let x = 0;
+    let maxSize = 0;
+    const positioned: PositionedRun[] = [];
+    for (const p of line) {
+      const { run, face, size, y, runSize } = placed[p.run];
+      const width = widthOf(p);
+      positioned.push({ ...run, text: run.text.slice(p.start, p.end), x, width, y, size, ...(face ? { face } : {}) });
+      x += width;
+      maxSize = Math.max(maxSize, runSize);
     }
+    lines.push({ runs: positioned, width: x, height: (maxSize > 0 ? maxSize : fontSize) * lineHeightFactor });
+    cur = [];
   }
 
-  // Commit final line
-  if (currentRuns.length > 0) {
-    commitLine();
+  // A word runs from one break opportunity to the next, spaces after it
+  // included; only its ink has to fit.
+  let i = 0;
+  while (i < cps.length) {
+    if (isHardLineBreak(cps[i])) {
+      commitLine(cur);
+      i += cps[i] === 13 && cps[i + 1] === 10 ? 2 : 1;
+      continue;
+    }
+    let j = i + 1;
+    while (j < cps.length && !isHardLineBreak(cps[j]) && (!breaks || breaks[j] === NO_BREAK)) j++;
+    const next = extend(cur, i, j);
+    if (breaks && cur.length > 0 && inkWidth(next) > maxWidth && cps.slice(i, j).some((c) => c !== 32)) {
+      commitLine(trimmed(cur));
+      cur = extend(cur, i, j);
+    } else {
+      cur = next;
+    }
+    i = j;
   }
+  if (cur.length > 0) commitLine(cur);
 
   const width = Math.max(...lines.map((l) => l.width));
   const height = lines.reduce((sum, l) => sum + l.height, 0);

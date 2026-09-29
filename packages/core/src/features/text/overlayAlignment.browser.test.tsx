@@ -220,6 +220,10 @@ describe('edit overlay alignment', () => {
     // Justified: the wrapped lines reach the box's right edge, so `dRight`
     // checks the spread and the centroid checks where the gaps opened.
     { family: 'Inter', fontSize: 24, x: 20, y: 20, text: 'Hxgd Hxgd Hxgd Hxgd', justifyLines: 2 },
+    // A line or paragraph separator ends a line the way a newline does, and
+    // the line it ends is not spread.
+    { family: 'Inter', fontSize: 24, x: 20, y: 20, text: 'Hxgd Hxgd Hxgd Hxgd\u2028Hxgd Hxgd', justifyLines: 3 },
+    { family: 'Inter', fontSize: 24, x: 20, y: 20, text: 'Hxgd Hxgd Hxgd Hxgd\u2029Hxgd Hxgd', justifyLines: 3 },
     // Small caps, sized by the face's own heights on the canvas, which no
     // browser synthesis matches — the overlay has to set the same size.
     { family: 'Inter', fontSize: 72, x: 20, y: 20, text: 'Hgd', smallCaps: true },
@@ -228,7 +232,8 @@ describe('edit overlay alignment', () => {
   ];
 
   for (const c of CASES) {
-    const label = `${c.text ? `"${c.text}" ` : ''}${c.family} ${c.fontSize}px${c.script ? ` ${c.script}` : ''}`
+    const shown = c.text?.replace(/[\u2028\u2029]/g, (ch) => `\\u${ch.charCodeAt(0).toString(16)}`);
+    const label = `${shown ? `"${shown}" ` : ''}${c.family} ${c.fontSize}px${c.script ? ` ${c.script}` : ''}`
       + (c.justifyLines ? ' justified' : '') + (c.smallCaps ? ' small caps' : '');
     it(`${label} lands on the canvas glyphs`, async () => {
       const d = await offset(c);

@@ -1592,8 +1592,7 @@ describe('useTextEdit — editing chrome', () => {
   });
 });
 
-/** Stand in for what typing left in a runs-less node's overlay: its text as
- *  one text node, the shape `startEdit` seeds it with. */
+/** Replace a plain-text overlay's contents with `text`, standing in for an edit. */
 function seedPlainOverlay(overlay: HTMLElement, text: string): void {
   overlay.replaceChildren(document.createTextNode(text));
 }
@@ -1644,13 +1643,11 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     expect(h.runCommits).toEqual([{ id: 'a', runs: [{ text: 'ab' }] }]);
   });
 
-  it('trims the caret-holder newline the way the plain path does', async () => {
+  it('trims the caret-holder newline on the rich path too', async () => {
     // A contenteditable keeps a trailing `<br>` so the caret has somewhere to
-    // sit on the last line. The plain-text path stripped it; `domToRuns` maps
-    // it to a literal '\n' and did not. The divergence was unreachable while only nodes that
-    // already had runs took the rich path — styling a previously-plain node
-    // reaches it, and one edit would commit text a byte longer than the same
-    // edit without the styling.
+    // sit on the last line, and `domToRuns` maps it to a literal '\n'.
+    // Styling a previously-plain node takes the rich path, where one edit
+    // would otherwise commit text a byte longer than the same edit unstyled.
     const h = makeRichHarness({ a: { text: 'one' } });
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));

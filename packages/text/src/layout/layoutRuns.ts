@@ -18,10 +18,10 @@
  *
  * Word wrap is applied when `maxWidth` is finite: words — the text between
  * UAX #14 break opportunities — are committed to a new line when they would
- * exceed the current line width. Forced line
- * breaks are emitted for `\n` codepoints. Every run on a line shares one
- * baseline, sunk to clear the tallest run's ascent, so mixing sizes or faces
- * aligns them the way inline text aligns everywhere else; line height is
+ * exceed the current line width. Forced line breaks are emitted at UAX #14's
+ * hard breaks — `\n`, CR, CRLF as one, VT, FF, NEL, U+2028 and U+2029 — none
+ * of which lays out a cell. Every run on a line shares one baseline, sunk to
+ * clear the tallest run's ascent, so mixing sizes or faces aligns them the way inline text aligns everywhere else; line height is
  * `max(fontSize * lineHeight)` across the line. A run a relative size shrank
  * measures at its `strutSize` for both, the way a CSS line keeps its parent's
  * strut under a `<sup>`.
@@ -61,7 +61,7 @@ import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 import type { BidiResolver } from './bidiSeam';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorationMetrics';
 import { graphemeEnds } from '../measure/graphemes';
-import { lineBreakOpportunities } from './lineBreak/lineBreaks';
+import { isHardLineBreak, lineBreakOpportunities } from './lineBreak/lineBreaks';
 
 /** One textured glyph quad, origin-relative — see the header. */
 export interface LaidOutQuad {
@@ -675,7 +675,7 @@ export function layoutRuns(
       const fontSize = sizes ? sizes[at] : run.fontSize;
       const scale = fontSize / metrics.size;
       const tracking = clusterEnds === null || clusterEnds.has(at + ch.length) ? runTracking : 0;
-      const isNewline = cp === 10;
+      const isNewline = isHardLineBreak(cp);
       const isSpace = cp === 32;
       // A transformed run draws characters its source does not have; each
       // one takes the source span of the character it was mapped from.
@@ -837,7 +837,9 @@ export function layoutRuns(
         cur.height = Math.max(cur.height, lineSize(e) * opts.lineHeight);
         cur.blank = e;
       }
-      commitLine(); i++; continue;
+      commitLine();
+      i += e.cp === 13 && entries[i + 1]?.cp === 10 ? 2 : 1;
+      continue;
     }
     if (e.isSpace) {
       if (cur.entries.length > 0) {
