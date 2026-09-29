@@ -104,6 +104,7 @@ import {
   useNodeAtPointDepSource,
   useDebugDepSource,
   useInsertDepSource,
+  useSliceDepSource,
   useSnapDepSource,
   useLassoSelectDepSource,
   useTextEditDepSource,
@@ -2823,6 +2824,7 @@ function StandardActionsRegistrar({
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts, layoutDropTarget, reflowTransition);
   useInsertDepSource(scene, adapter, insertNodeFactories);
+  useSliceDepSource(scene, selection, adapter, poseComposition);
   useSnapDepSource(snapPoint);
   useDebugDepSource(canvasApiRef);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);

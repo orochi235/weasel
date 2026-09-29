@@ -148,7 +148,6 @@ import { useSceneAdapter, effectiveRangeStyle, patchRangeStyle } from '@weasel-j
 import type { SerializedHistory } from '@weasel-js/history';
 import { serializeReplacer, reviveSnapshot, clipboardJsonReviver, nodeSpecsFromSnapshot } from './persistence';
 import { useSliceTool } from '@weasel-js/core';
-import { SliceDepPublisher } from './tools/slice/SliceDepPublisher';
 import { parseSvg, unpackSvgFiles } from '@weasel-js/svg';
 import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { useModality } from './modality/useModality';
@@ -1033,7 +1032,7 @@ function BooleansAdapterPublisher({
       },
       createPathNode: (path) => {
         // Mint convention: pose = boundsOfPath(path); geometry lives in data.path.
-        // Booleans, slice (sliceCommit.ts), and release-compound (onReleaseCompound)
+        // Booleans, the kit slice dep, and release-compound (onReleaseCompound)
         // all follow this same convention — the data payload that varies per site
         // is too context-specific (style inheritance source) to share a helper.
         // Inherit the topmost selected leaf's paint so the result reads as a
@@ -1668,7 +1667,6 @@ function EditorWithSharedScene({
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
             <CreateOutlinesAdapterPublisher scene={scene} selection={selection} />
-            <SliceDepPublisher scene={scene} selection={selection} />
             <TextEditDepPublisher
               edit={textEdit}
               scene={scene as unknown as Scene<unknown, string, unknown>}

@@ -106,6 +106,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/InsertDemo.tsx',
   },
   {
+    id: 'slice',
+    title: 'Slice',
+    category: 'Tools',
+    description: 'useSliceTool — the knife. A drag cuts along a straight line and an Alt-drag along its freehand trail. Clicks place a cut one point at a time; Enter or a double-click cuts along them, and a click on the first point closes the cut into a loop, which cuts the region it encloses out of the fill as its own piece. `<SceneCanvas>` publishes the `slice` dep the tool commits through: every path the cut crosses is swapped for its pieces in one undo step, and the pieces of a selected shape stay selected. A consumer replaces that with `useSliceDep`.',
+    hint: 'Drag across a shape to cut it. Click points and press Enter, or click back on the first point to cut out a hole. Cmd/Ctrl+Z undoes a cut; V selects and drags the pieces apart, K returns to the knife.',
+    load: () => import('./demos/SliceDemo').then((m) => m.SliceDemo),
+    path: 'apps/site/demos/SliceDemo.tsx',
+  },
+  {
     id: 'text',
     title: 'Text editing',
     package: 'text',

@@ -221,7 +221,15 @@ export { usePoseDescriptorDepSource } from './canvas/deps/poseDescriptor';
 export { usePoseCompositionDepSource } from './canvas/deps/poseComposition';
 export { CORNER_ANCHORS, cornerPoint } from './interactions/actions/resize/cornerHandles';
 export type { CornerAnchor, CornerEdge } from './interactions/actions/resize/cornerHandles';
-export { useSliceDep } from './canvas/deps/slice';
+export { useSliceDep, useSliceDepSource } from './canvas/deps/slice';
+export {
+  computeSliceOps,
+  type ComputeSliceOpsArgs,
+  type ComputeSliceResult,
+  type SliceableNode,
+  type SliceBounds,
+  type SliceLeaf,
+} from './interactions/actions/defaults/sliceOps';
 
 // ─── Gesture dispatcher ───
 export { createDispatcher, // The precedence rule itself, so reflection surfaces can show WHY one
