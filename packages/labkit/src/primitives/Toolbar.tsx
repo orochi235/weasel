@@ -1,5 +1,5 @@
 import type { MouseEventHandler, ReactNode } from 'react';
-import { useRovingTabIndex } from './useRovingTabIndex';
+import { useRovingTabIndex } from '../passthrough/weasel-ui';
 
 /** Props for `<Toolbar>`. */
 export interface ToolbarProps {
@@ -12,10 +12,10 @@ export interface ToolbarProps {
 /** A horizontal bar of controls. Fill it with `<Toolbar.Title>`,
  *  `<Toolbar.Group>`, `<Toolbar.Button>` and `<Toolbar.Spacer>`. */
 export function Toolbar({ children, 'aria-label': ariaLabel }: ToolbarProps) {
-  const { ref, onKeyDown } = useRovingTabIndex<HTMLDivElement>();
+  const { rootRef, onKeyDown } = useRovingTabIndex<HTMLDivElement>({ orientation: 'horizontal' });
   return (
     <div
-      ref={ref}
+      ref={rootRef}
       className="lk-toolbar"
       role="toolbar"
       aria-label={ariaLabel}

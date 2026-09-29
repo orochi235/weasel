@@ -62,16 +62,15 @@ describe('PaletteRegion', () => {
 
   it('walks the vertical strip with ArrowDown, and leaves ArrowRight to the page', () => {
     render(<PaletteRegion contributions={[tool('brush'), tool('eraser')]} ctx={ctxWith(null)} />);
-    const strip = screen.getByRole('toolbar', { name: 'Tools' });
     const brush = screen.getByRole('button', { name: 'brush' });
     const eraser = screen.getByRole('button', { name: 'eraser' });
 
     brush.focus();
-    fireEvent.keyDown(strip, { key: 'ArrowDown' });
+    fireEvent.keyDown(brush, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(eraser);
     expect(eraser).toHaveAttribute('tabindex', '0');
 
-    fireEvent.keyDown(strip, { key: 'ArrowRight' });
+    fireEvent.keyDown(eraser, { key: 'ArrowRight' });
     expect(document.activeElement).toBe(eraser);
   });
 });
