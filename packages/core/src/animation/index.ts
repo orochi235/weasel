@@ -27,6 +27,10 @@ export {
   type TweenPoseOptions, type SpringPoseOptions,
 } from './poseHelpers';
 export * from './wrappers';
+export {
+  createReflowTransition, useAnimatedReflow,
+  type AnimatedReflow, type ReflowScene, type ReflowTransitionOptions,
+} from './reflow';
 export { momentum, type MomentumOptions } from './behaviors/momentum';
 export { createSlew, slewToward, type Slew, type SlewRates } from './slew';
 export {

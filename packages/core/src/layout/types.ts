@@ -62,6 +62,29 @@ export type DropRegion = Path | ((point: { x: number; y: number }) => boolean);
  */
 export type LayoutDropTargetMode = 'innermost' | 'topmost' | 'region';
 
+/**
+ * Carries a layout's sibling reflow to its targets over time rather than in
+ * one frame. `moveAction` hands every sibling a drag displaces to `glide`
+ * instead of snapping it, and `settle`s each one when it stops reflowing or
+ * the gesture ends. What the node shows meanwhile is published through the
+ * scene's pose overrides; the document is never written.
+ *
+ * `useAnimatedReflow` builds one over the animator. Supply it through
+ * `<SceneCanvas reflowTransition>` or `LayoutDep.reflow`.
+ */
+export interface ReflowTransition<TPose = unknown> {
+  /** Move what `id` shows toward `pose`, in the node's stored frame. A glide
+   *  already running is retargeted from where it is now; naming the pose it
+   *  is already heading for changes nothing. */
+  glide(id: string, pose: TPose): void;
+  /** Glide `id` onto its document pose, then stop overriding it. */
+  settle(id: string): void;
+  /** Stop overriding `id` now, wherever it is. */
+  stop(id: string): void;
+  /** What `id` is being shown at, or `undefined` when this is not moving it. */
+  poseOf(id: string): TPose | undefined;
+}
+
 /** The container a layout strategy is arranging children within. */
 export interface LayoutContainer {
   id: string;

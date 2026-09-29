@@ -92,7 +92,8 @@ import { inPlane, selectionLayer } from '../planeInput';
  *  center (by `LayoutDep.dropTarget`), then places each dragged child in
  *  turn — every child sees the container state the previous one produced — and
  *  folds destination + source reflow poses into `scratch.previews` (so they
- *  render as ghosts). Sets `scratch.layoutPass` when one container accepts
+ *  render as ghosts), or into `scratch.reflowTargets` when a reflow transition
+ *  carries them there. Sets `scratch.layoutPass` when one container accepts
  *  every member of the selection. */
 function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   const layoutDep = scratch.layout;
@@ -101,6 +102,10 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   const pc = scratch.pc;
   const poseAdapter = scenePoseAdapter(scene);
   const { dx, dy } = scratch.currentDelta;
+  const showReflow = (id: NodeId, localPose: unknown): void => {
+    if (layoutDep.reflow) scratch.reflowTargets.set(id, localPose);
+    else scratch.previews.set(id, localPose);
+  };
 
   type AABB = { x: number; y: number; width: number; height: number };
   interface DraggedChild {
@@ -269,7 +274,7 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   const reflowIds = new Set<NodeId>();
   for (const [cid, pose] of destReflow) {
     const parent = scene.get(cid)?.parent ?? null;
-    scratch.previews.set(cid, rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose));
+    showReflow(cid, rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose));
     reflowIds.add(cid);
   }
 
@@ -302,7 +307,7 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
       if (same) continue;
       sourceReflow.set(cid, pose); // WORLD — rebased at each consumption point
       const parent = scene.get(asNodeId(cid))?.parent ?? null;
-      scratch.previews.set(asNodeId(cid), rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose));
+      showReflow(asNodeId(cid), rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose));
       reflowIds.add(asNodeId(cid));
     }
   }
@@ -495,6 +500,11 @@ interface MoveScratch {
   /** The override entry published to the scene for each previewed id, held by
    *  reference so a frame mutates it in place — see `PoseOverrides`. */
   overrideEntries: Map<NodeId, { pose: unknown }>;
+  /** This frame's reflow poses (local) when `layout.reflow` carries them
+   *  instead of `previews`. */
+  reflowTargets: Map<NodeId, unknown>;
+  /** Every id handed to `layout.reflow` this gesture and not yet settled. */
+  gliding: Set<NodeId>;
   /** Pose descriptor captured at drag start. */
   projection: PoseDescriptor<unknown>;
   /** Behaviors from `opts.behaviors`; empty array when none supplied. */
@@ -700,9 +710,13 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       const cascadeIds: NodeId[] = [];
       const seen = new Set<NodeId>();
       const queue: NodeId[] = [];
+      // A node still gliding from an earlier reflow is picked up where its
+      // document says it is, not mid-glide.
+      const reflow = layout?.reflow ?? null;
       for (const id of ids) {
         const node = scene.get(id);
         if (!node) continue;
+        reflow?.stop(id as string);
         startPoses.set(id, effectivePose(scene, node));
         seen.add(id);
         queue.push(id);
@@ -714,6 +728,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           seen.add(childId);
           const childNode = scene.get(childId);
           if (!childNode) continue;
+          reflow?.stop(childId as string);
           startPoses.set(childId, effectivePose(scene, childNode));
           cascadeIds.push(childId);
           queue.push(childId);
@@ -772,6 +787,8 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         currentDelta: { dx: 0, dy: 0 },
         previews: new Map<NodeId, unknown>(),
         overrideEntries: new Map<NodeId, { pose: unknown }>(),
+        reflowTargets: new Map<NodeId, unknown>(),
+        gliding: new Set<NodeId>(),
         projection,
         behaviors,
         gestureCtx,
@@ -1058,7 +1075,20 @@ export const moveAction: Action & { requires: string[] } = inPlane({
 
           // Layout reflow pass — no-op without a layout dep.
           scratch.layoutPass = null;
+          scratch.reflowTargets.clear();
           runLayoutPass(scratch, moveCtx);
+          const reflow = scratch.layout?.reflow;
+          if (reflow) {
+            for (const [id, pose] of scratch.reflowTargets) {
+              reflow.glide(id as string, pose);
+              scratch.gliding.add(id);
+            }
+            for (const id of scratch.gliding) {
+              if (scratch.reflowTargets.has(id)) continue;
+              reflow.settle(id as string);
+              scratch.gliding.delete(id);
+            }
+          }
 
           // After the layout pass, so a reflowed sibling publishes too.
           syncPreviewOverrides(scratch);
@@ -1075,6 +1105,11 @@ export const moveAction: Action & { requires: string[] } = inPlane({
             // the override going away and the document catching up.
             dropPreviewOverrides(scratch);
             scratch.previews.clear();
+            // Also after the commit: each glide settles onto the pose the
+            // document now holds, or back home on a cancel.
+            const reflow = scratch.layout?.reflow;
+            if (reflow) for (const id of scratch.gliding) reflow.settle(id as string);
+            scratch.gliding.clear();
             lifecycle.end(committed);
           }
         },
