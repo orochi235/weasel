@@ -347,6 +347,11 @@ function startLoad(id: string): Promise<void> {
   return done;
 }
 
+/** Is `id` registered, or declared with a loader? */
+export function isPaintKindKnown(id: string): boolean {
+  return KINDS.has(id) || LOADERS.has(id);
+}
+
 /**
  * Load paint kinds ahead of their first use, so the first frame that meets
  * one draws it rather than a blank. With no list, loads every kind that has a

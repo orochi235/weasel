@@ -688,4 +688,59 @@ describe('warmFonts', () => {
     lazy.catch(() => {});
     await expect(warmFonts()).rejects.toThrow('weasel registerFont');
   });
+
+  describe('given the variants a render sets text in', () => {
+    beforeEach(() => {
+      _resetFallbackForTests();
+      _resetFontOutlinesForTests();
+    });
+
+    it('loads only the declared variant asked for', async () => {
+      void registerFont('inter', { weight: 400 }, '/r.json', '/r.png', { lazy: true });
+      void registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
+      await warmFonts([{ family: 'inter', weight: 700 }]);
+      expect(urls()).toEqual(['/b.json', '/b.png']);
+    });
+
+    it('loads every declared variant when none matches, since the chain may land on any', async () => {
+      void registerFont('inter', { weight: 400 }, '/r.json', '/r.png', { lazy: true });
+      void registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
+      await warmFonts([{ family: 'inter', weight: 500, style: 'italic' }]);
+      expect(urls()).toEqual(['/r.json', '/r.png', '/b.json', '/b.png']);
+    });
+
+    it('fetches nothing for a variant already registered', async () => {
+      await registerFont('inter', {}, '/i.json', '/i.png');
+      void registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
+      await warmFonts([{ family: 'inter' }]);
+      expect(urls()).toEqual(['/i.json', '/i.png']);
+    });
+
+    it('loads the family the substitute policy would draw an unregistered one in', async () => {
+      void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+      void registerFont('mono', {}, '/m.json', '/m.png', { lazy: true });
+      await warmFonts([{ family: 'Helvetica' }]);
+      expect(urls()).toEqual(['/i.json', '/i.png']);
+    });
+
+    it('resolves for an unregistered family with nothing to substitute', async () => {
+      setFontFallbackPolicy('none');
+      void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+      await expect(warmFonts([{ family: 'Helvetica' }])).resolves.toBeUndefined();
+      expect(urls()).toEqual([]);
+    });
+
+    it('loads the outline face registered for the variant', async () => {
+      const source = vi.fn(() => new ArrayBuffer(4));
+      registerFontOutlines('serif', { weight: 700 }, source, { parser: () => Promise.reject(new Error('x')) });
+      await warmFonts([{ family: 'serif', weight: 700 }]);
+      expect(source).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects when a variant it needs fails to load', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('down'));
+      registerFont('inter', {}, '/i.json', '/i.png', { lazy: true }).catch(() => {});
+      await expect(warmFonts([{ family: 'inter' }])).rejects.toThrow('weasel registerFont');
+    });
+  });
 });

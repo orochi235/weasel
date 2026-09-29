@@ -51,8 +51,9 @@ import type { Node, Scene } from 'core/scene/types';
 import { buildSceneViewCommands, type SceneViewDrawOne } from './sceneViewRender';
 import type { ColorOverrideRegistry } from '../animation/colorRegistry';
 import { defaultDrawOne } from './defaultDrawOne';
-import { warmFonts } from '@weasel-js/font';
-import { warmPaintKinds } from '../core/paintKinds';
+import { warmFonts, type FontRequest } from '@weasel-js/font';
+import { isPaintKindKnown, warmPaintKinds } from '../core/paintKinds';
+import { renderNeeds } from './renderNeeds';
 
 /** Plain RGBA raster — structurally `ImageData`-compatible ({ width, height,
  *  data }), deliberately free of printer/dpi/physical-unit concepts. */
@@ -325,12 +326,21 @@ function isLost(gl: WebGL2RenderingContext): boolean {
   return typeof gl.isContextLost === 'function' && gl.isContextLost() === true;
 }
 
-/** What {@link warmRender} loads. Each list narrows its half; omitted, that
- *  half loads everything it knows about. */
-export interface WarmRenderOptions {
-  /** Font families, as `warmFonts` takes them. */
-  families?: readonly string[];
-  /** Paint kinds, as `warmPaintKinds` takes them. */
+/** What {@link warmRender} loads. */
+export interface WarmRenderOptions<TData = unknown, TLayer extends string = string, TPose = unknown> {
+  /** The render about to happen, as `renderSceneToPixels` or
+   *  `RasterSession.render` will take it. Its commands are built the way the
+   *  render builds them, and only the faces and paint kinds they draw with
+   *  load. */
+  render?: RasterRenderArgs<TData, TLayer, TPose>;
+  /** Commands about to be drawn, read the same way as `render`'s. Both may be
+   *  given; what either needs loads. */
+  commands?: readonly DrawCommand[];
+  /** Fonts to load in place of the ones derived — family names or single
+   *  variants, as `warmFonts` takes them. */
+  families?: readonly (string | FontRequest)[];
+  /** Paint kinds to load in place of the ones derived, as `warmPaintKinds`
+   *  takes them. */
   paintKinds?: readonly string[];
 }
 
@@ -338,13 +348,35 @@ export interface WarmRenderOptions {
  * Load everything a synchronous render would otherwise draw as nothing — the
  * lazily registered font atlases and the paint kinds loaded on demand — so
  * that a `renderSceneToPixels` or `RasterSession.render` issued after it
- * resolves is complete. `warmFonts` and `warmPaintKinds` together.
+ * resolves is complete.
  *
- * Rejects when either does: a failed load, or a family or kind nothing
- * registered.
+ * Pass the render (`{ render: args }`) or its commands, and only what they
+ * draw with loads: each face their text is set in, through the same
+ * resolution the renderer does, and each paint kind they name. A rejection
+ * then means something this render needs failed to load. `families` and
+ * `paintKinds` replace either derived list.
+ *
+ * With neither `render` nor `commands`, an omitted list loads everything
+ * registered: every font family and every kind that has a loader — which
+ * fails when any one of them does, and fetches what nothing draws.
  */
-export function warmRender(opts: WarmRenderOptions = {}): Promise<void> {
-  return Promise.all([warmFonts(opts.families), warmPaintKinds(opts.paintKinds)]).then(() => undefined);
+export function warmRender<TData, TLayer extends string, TPose>(
+  opts: WarmRenderOptions<TData, TLayer, TPose> = {},
+): Promise<void> {
+  let { families, paintKinds } = opts;
+  if (opts.render || opts.commands) {
+    let planned: DrawCommand[];
+    try {
+      planned = opts.render ? planPixelRender(opts.render).commands : [];
+    } catch (err) {
+      return Promise.reject(err);
+    }
+    const needs = renderNeeds([...planned, ...(opts.commands ?? [])]);
+    families ??= needs.fonts;
+    // A kind nothing registered draws nothing whether or not this waits.
+    paintKinds ??= needs.paintKinds.filter(isPaintKindKnown);
+  }
+  return Promise.all([warmFonts(families), warmPaintKinds(paintKinds)]).then(() => undefined);
 }
 
 /**
@@ -360,7 +392,7 @@ export function warmRender(opts: WarmRenderOptions = {}): Promise<void> {
  * (`mesh-gradient`, or one declared with `registerPaintKindLoader`) that has
  * not loaded yet draws nothing, and neither does text set in a font atlas
  * still fetching — one registered `{ lazy: true }` is not fetched until text
- * first asks for it. `await warmRender()` first.
+ * first asks for it. `await warmRender({ render: args })` first.
  *
  * Each call opens a {@link RasterSession} and disposes it before returning.
  * Rendering many scenes, open one with `createRasterSession` instead.

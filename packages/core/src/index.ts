@@ -415,6 +415,8 @@ export type {
   SceneViewDrawOne, RenderSceneToCanvasArgs, SceneViewLayers, SceneViewCull,
 } from './canvas/sceneViewRender';
 export { renderSceneToPixels, planPixelRender, createRasterSession, warmRender } from './canvas/renderSceneToPixels';
+export { renderNeeds } from './canvas/renderNeeds';
+export type { RenderNeeds } from './canvas/renderNeeds';
 export type {
   RenderSceneToPixelsArgs,
   WarmRenderOptions,
@@ -425,7 +427,7 @@ export type {
   HeadlessCanvasLike,
   PixelRenderPlan,
 } from './canvas/renderSceneToPixels';
-export { renderDebugSnapshot } from './canvas/renderDebugSnapshot';
+export { renderDebugSnapshot, debugSnapshotArgs } from './canvas/renderDebugSnapshot';
 export type { RenderDebugSnapshotArgs } from './canvas/renderDebugSnapshot';
 export { rasterToPng } from './canvas/rasterToPng';
 export {
@@ -1343,7 +1345,7 @@ export { mat3 } from './renderer';
 
 // MSDF font registration — consumers register (family, variant, metrics
 // JSON URL, atlas PNG URL) at startup so TextDrawCommand can resolve glyphs.
-export { registerFont, warmFonts, type FontVariant, type RegisterFontOptions } from '@weasel-js/font';
+export { registerFont, warmFonts, type FontVariant, type FontRequest, type RegisterFontOptions } from '@weasel-js/font';
 
 // Canvas-sourced dynamic SDF fonts — render any installed machine font with
 // no baked atlas (canvas fillText → distance transform → R8 glyph pages).
