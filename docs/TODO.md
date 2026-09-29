@@ -414,16 +414,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) No justified alignment.** `TextAlign` is left / center / right / start / end; layout has no mode that spreads a wrapped line's slack across its word gaps (every line but a paragraph's last). The panel's Align bar offers the three absolute edges and reads `start` / `end` as the edge they paint at, so a justify segment is one option away once `layoutRuns` can do it — the SVG writer would also need `text-align-last` or per-word placement, since `text-anchor` has no justify.
 
-- **(P3) Letter-spacing counts characters three different ways.**
-  The DOM overlay sets CSS `letter-spacing`, which the browser applies per
-  grapheme cluster; `layoutRuns` adds tracking per code point
-  (`packages/text/src/layout/layoutRuns.ts`); and the 2D `measuredWidth`
-  adds `text.length * letterSpacing` — per UTF-16 unit
-  (`packages/text/src/measure/measureText.ts`). Visible only on text with
-  combining marks (the GL and 2D paths over-track against the overlay) or
-  astral characters such as emoji (2D over-tracks against GL, so the two can
-  wrap a line differently).
-
 - **(P3) Decoration and script metrics are derived, not read from the font.**
   The underline / strikethrough / overline offsets and weight are the fixed
   `0.10` / `-0.30` / `-0.90` / `0.05` em constants in

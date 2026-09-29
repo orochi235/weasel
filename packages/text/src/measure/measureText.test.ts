@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { measureText } from './measureText';
+import { measureText, measuredWidth } from './measureText';
 import { DEFAULT_TEXT_STYLE } from '../textStyle';
 
 /** Stub ctx where each char is 10 wide. */
@@ -97,5 +97,23 @@ describe('measureText — tracking', () => {
     const style = { ...DEFAULT_TEXT_STYLE, letterSpacing: 2 };
     expect(measureText(ctx, 'abcde fg', 59, style).lines).toEqual(['abcde', 'fg']);
     expect(measureText(ctx, 'abcde fg', 60, style).lines).toEqual(['abcde', 'fg']);
+  });
+});
+
+describe('measuredWidth — tracking per grapheme cluster', () => {
+  // Glyph width is stubbed to 0 so the result is the tracking alone.
+  const ctx = makeCtx(0);
+  const style = { ...DEFAULT_TEXT_STYLE, letterSpacing: 4 };
+
+  it('tracks a base and its combining mark once, as CSS does', () => {
+    expect(measuredWidth(ctx, 'e\u0301x', style)).toBe(2 * 4);
+  });
+
+  it('tracks an astral character once, not per UTF-16 unit', () => {
+    expect(measuredWidth(ctx, '\u{1F600}x', style)).toBe(2 * 4);
+  });
+
+  it('tracks a ZWJ sequence once', () => {
+    expect(measuredWidth(ctx, '\u{1F468}\u200D\u{1F469}', style)).toBe(4);
   });
 });

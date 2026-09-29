@@ -37,9 +37,8 @@ from the schema-driven property panel.
 > style.flag`. See that file's header for why, and `docs/TODO.md` for the two
 > ways out if it needs to change.
 
-`letterSpacing` is **world units**, applied after every glyph including the
-last (CSS semantics), per code point rather than per grapheme cluster. Note
-that `letter-spacing` is not part of the CSS `font` shorthand — every
+`letterSpacing` is **world units**, applied after every grapheme cluster
+including the last (CSS semantics). Note that `letter-spacing` is not part of the CSS `font` shorthand — every
 `ctx.font = fontString(style)` / `el.style.font = …` site needs its own
 assignment, which is what `measuredWidth` exists to keep consistent.
 

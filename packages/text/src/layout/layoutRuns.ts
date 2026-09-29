@@ -7,14 +7,14 @@
  * so the renderer issues one draw call per atlas+color group.
  *
  * A run's `letterSpacing` (world units, so it does not scale with `fontSize`)
- * is added to the advance *after* every character of that run, including the
- * last one on a line — the CSS `letter-spacing` rule, chosen so a DOM overlay
- * rendering the same text can be made to agree. Trailing tracking therefore
- * widens the measured line width and counts toward wrapping. Spaces are
- * tracked like any other character; a newline is not (it consumes no advance).
- * One caveat against CSS: tracking is applied per *code point*, not per
- * grapheme cluster, so `e` + U+0301 takes tracking twice where CSS would
- * space the cluster once.
+ * is added to the advance *after* every grapheme cluster of that run,
+ * including the last one on a line — the CSS `letter-spacing` rule, chosen so
+ * a DOM overlay rendering the same text can be made to agree. The last code
+ * point of a cluster carries it, so a combining mark hangs off its base
+ * before the gap opens. Clusters are segmented per run. Trailing tracking
+ * therefore widens the measured line width and counts toward wrapping. Spaces
+ * are tracked like any other character; a newline is not (it consumes no
+ * advance).
  *
  * Word wrap is applied when `maxWidth` is finite: words are committed to
  * a new line when they would exceed the current line width. Forced line
@@ -59,6 +59,7 @@ import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 import type { BidiResolver } from './bidiSeam';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorationMetrics';
+import { graphemeEnds } from '../measure/graphemes';
 
 /** One textured glyph quad, origin-relative — see the header. */
 export interface LaidOutQuad {
@@ -163,7 +164,8 @@ export interface LaidOutCell {
    *  stay in logical order and their x values do not. Sort on `x` for visual
    *  order; never assume `cells[i + 1].x` is this cell's right edge. */
   x: number;
-  /** Width of the cell: its glyph's advance plus its run's tracking. */
+  /** Width of the cell: its glyph's advance, plus its run's tracking when it
+   *  closes a grapheme cluster. */
   advance: number;
   /** Resolved bidi embedding level — even reads left-to-right. 0 with no
    *  engine, which is the same as saying the text was laid out logically. */
@@ -591,7 +593,7 @@ export function layoutRuns(
     glyph: BmFontChar | null;
     cp: number;
     advance: number;         // xadvance in world units (already scaled)
-    tracking: number;        // run letterSpacing, added after this glyph (world units)
+    tracking: number;        // run letterSpacing if this closes a cluster, else 0 (world units)
     kerningBefore: number;   // kerning gap consumed before this glyph
     isSpace: boolean;
     isNewline: boolean;
@@ -647,10 +649,12 @@ export function layoutRuns(
     const scale = run.fontSize / metrics.size;
     // World units — deliberately not scaled by fontSize, so the same tracking
     // opens the same visual gap whatever size the run is set at.
-    const tracking = run.letterSpacing;
+    const runTracking = run.letterSpacing;
+    const clusterEnds = runTracking === 0 ? null : new Set(graphemeEnds(run.text));
 
     for (const ch of [...run.text]) {
       const cp = ch.codePointAt(0)!;
+      const tracking = clusterEnds === null || clusterEnds.has(at + ch.length) ? runTracking : 0;
       const isNewline = cp === 10;
       const isSpace = cp === 32;
       // A transformed run draws characters its source does not have; each
