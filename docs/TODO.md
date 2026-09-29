@@ -145,6 +145,16 @@ Priority tags:
   result is known while the default can still be suppressed, and a paste no
   binding wanted stays the page's.
 
+- **(P3) The image and SVG drop handlers could leave core.** `kitImageHandler`
+  / `embedFilesAsImageNodes`, `kitSvgHandler` (which reuses the image embed) and
+  `openFilePicker` in `packages/core/src/features/ingestion/` are about 310 lines
+  no kernel path needs; the registry, the `ingest` action, the `ingestion` dep
+  and the weasel-JSON handler stay, since Cmd+V of the canvas's own content runs
+  through them. Moving them makes a file drop do nothing on a bare
+  `<SceneCanvas>` until the consumer installs the handlers. Deferred 2026-09-28
+  because the package would be thin and no name is settled (`ingest` was turned
+  down).
+
 - **(P3) The action pipeline's coordinates are 2D, so another kernel can't
   reuse it.** World points arrive as `{x, y}` or flat scalars in
   `InvocationCtx`, the dep payloads, the pick functions and
