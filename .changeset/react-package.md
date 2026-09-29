@@ -11,6 +11,6 @@ compared only against what last committed.
 
 `@weasel-js/routing/react` no longer exports `useLatest`; import it from
 `@weasel-js/react`, or from `@weasel-js/core` as before. No released version of
-routing carried it, so nothing published breaks. `@weasel-js/react` takes
-`react` as a peer, so installing `@weasel-js/routing` now brings a React peer
-requirement with it even when only its React-free main entry is used.
+routing carried it, so nothing published breaks. `react` is an optional peer
+of `@weasel-js/react`, as it is of routing and theme, so installing routing for
+its React-free main entry still brings no React.
