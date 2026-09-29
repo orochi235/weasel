@@ -64,6 +64,7 @@
     "check:forge-stories": "node packages/forge/scripts/check-stories.ts",
     "audit:jsdoc": "node scripts/audit-jsdoc.mjs",
     "gen:bidi-tables": "node packages/bidi/scripts/gen-bidi-tables.mjs",
+    "gen:line-break-table": "node packages/text/scripts/gen-line-break-table.mjs",
     "gen:font": "node packages/font/scripts/gen-font.ts",
     "test:stories:forge": "vitest run --project=forge-stories",
     "test:watch": "vitest",

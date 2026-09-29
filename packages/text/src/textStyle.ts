@@ -63,7 +63,9 @@ export interface TextStyle {
   /** Multiplier applied to `fontSize`. Default 1.2. */
   lineHeight?: number;
   /**
-   * Break lines between words where they would pass the box width. Default
+   * Break lines where they would pass the box width, at the break
+   * opportunities of Unicode's line breaking algorithm (UAX #14) — between
+   * words, after a hyphen, between CJK characters. Default
    * `false`: a line runs as long as its text, and the box width only resolves
    * `align`. A word longer than the box is never broken.
    */
