@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { act, render, renderHook } from '@testing-library/react';
-import { useRef, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { useContributions } from './useContributions';
 import type { Contribution } from './types';
 import {
@@ -17,6 +17,7 @@ import { DepRegistryProvider, useDepSource } from '../interactions/actions/depRe
 import { useGestureDispatcher } from '../interactions/dispatcher/useGestureDispatcher';
 import { ActionsProvider, useAction, useActionsRegistry } from '../interactions/actions/ActionsProvider';
 import type { Action } from '../interactions/actions/action';
+import { renderThenAbandon } from '../testing/abandonRender';
 
 const rect: Contribution = {
   id: 'rect',
@@ -53,11 +54,10 @@ describe('useContributions', () => {
   });
 });
 
-// `scopedBindings()` and `overlays()` read the entry list through a ref, so
-// they are always current. `entries` was a property captured inside a memo
-// keyed only on the focused tool, so a consumer adding a tool without
-// switching tools saw a live, hittable binding with no palette entry and no
-// chrome — the "visible implies hittable" invariant inverted.
+// `entries` was once captured inside a memo keyed only on the focused tool, so
+// a consumer adding a tool without switching tools saw a live, hittable
+// binding with no palette entry and no chrome — the "visible implies hittable"
+// invariant inverted.
 describe('ContributionsApi.entries tracks the entry list', () => {
   const pen: Contribution = {
     id: 'pen',
@@ -76,14 +76,37 @@ describe('ContributionsApi.entries tracks the entry list', () => {
     expect(result.current.entries.map((e) => e.id)).toEqual(['rect', 'weasel-hud', 'pen']);
   });
 
-  it('keeps one API identity across that re-render', () => {
+  it('keeps one API identity while a rebuilt list holds the same entries', () => {
     const { result, rerender } = renderHook(
       ({ entries }: { entries: Contribution[] }) => useContributions({ entries, focused: 'rect' }),
       { wrapper, initialProps: { entries: [rect, hud] } },
     );
     const before = result.current;
-    rerender({ entries: [rect, hud, pen] });
+    rerender({ entries: [rect, hud] });
     expect(result.current).toBe(before);
+  });
+
+  // Read while rendering — `<Canvas>` composes its layer list from
+  // `overlays()` in a memo — so each render's API has to answer with that
+  // render's entries, and an abandoned render's must not linger.
+  it('answers a render-time read with that render\'s entries, and drops an abandoned render\'s', () => {
+    const overlayOf = (id: string): Contribution => ({ id, eligibility: { always: true }, overlay: { id } as never });
+    const a = overlayOf('a');
+    const b = overlayOf('b');
+    const seen: string[][] = [];
+    let api!: ReturnType<typeof useContributions>;
+    function Probe({ entries }: { entries: Contribution[] }): null {
+      const rendered = useContributions({ entries, focused: null });
+      seen.push(rendered.overlays().map((o) => (o as { id: string }).id));
+      useLayoutEffect(() => { api = rendered; });
+      return null;
+    }
+    renderThenAbandon([a], [a, b], (entries) => (
+      <ActiveToolContextProvider><Probe entries={entries} /></ActiveToolContextProvider>
+    ));
+    expect(seen).toContainEqual(['a', 'b']);
+    expect(api.overlays().map((o) => (o as { id: string }).id)).toEqual(['a']);
+    expect(api.entries.map((e) => e.id)).toEqual(['a']);
   });
 });
 

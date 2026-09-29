@@ -1,5 +1,6 @@
 import type { RenderContext } from '@weasel-js/labkit';
-import { memo, type RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useLatest } from '@weasel-js/core';
+import { memo, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
 import { StoryHost } from '../frame/StoryHost';
 import type { Globals } from '../protocol/messages';
@@ -42,8 +43,7 @@ const StoryBody = memo(function StoryBody({ story, config, setConfig, state, set
 
 /** A story rendered in the workshop document, inside a `TrialHost`, from the trial's own config and state. */
 export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: StoryTrialProps) {
-  const latest = useRef(ctx);
-  latest.current = ctx;
+  const latest = useLatest(ctx);
   const config = useMemo(() => storyConfig(ctx.config), [ctx.config]);
 
   // A trial opened on the provisional instrument starts at `null`; the story's own initial state fills it once.
@@ -55,23 +55,24 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
   }, [ctx, story, config]);
 
   // Each new input retries a render the boundary caught, as the frame did on each message.
-  const input = useRef({ config, state: ctx.state, key: 0 });
-  if (input.current.config !== config || input.current.state !== ctx.state) {
-    input.current = { config, state: ctx.state, key: input.current.key + 1 };
+  // State, not a ref: a render React throws away takes its bump with it.
+  const [input, setInput] = useState({ config, state: ctx.state, key: 0 });
+  let resetKey = input.key;
+  if (input.config !== config || input.state !== ctx.state) {
+    resetKey = input.key + 1;
+    setInput({ config, state: ctx.state, key: resetKey });
   }
-  const resetKey = input.current.key;
 
   // Stable, as the frame's were: a story may list them as effect dependencies.
   // The pins belong to the trial; a story cannot see them, so it cannot set them either.
   const setConfig = useCallback((path: string, value: unknown) => {
     if (!isGlobalsPath(path)) latest.current.setConfig(path, value);
-  }, []);
-  const setState = useCallback((next: unknown) => latest.current.setState(next), []);
+  }, [latest]);
+  const setState = useCallback((next: unknown) => latest.current.setState(next), [latest]);
 
   const decorators = setup.decorators ?? NO_DECORATORS;
-  const latestError = useRef(onError);
-  latestError.current = onError;
-  const reportError = useCallback((error: unknown) => latestError.current?.(error), []);
+  const latestError = useLatest(onError);
+  const reportError = useCallback((error: unknown) => latestError.current?.(error), [latestError]);
   const render = (globals: Globals) => (
     <StoryBody
       story={story}

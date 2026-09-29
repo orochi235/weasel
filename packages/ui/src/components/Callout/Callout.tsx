@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
+import { useLatest } from '@weasel-js/core';
 import {
   DialogTrigger,
   Popover as RACPopover,
@@ -107,8 +108,7 @@ export function Callout(props: CalloutProps) {
   // RAC's Dialog runs its props through filterDOMProps, which drops handlers
   // it doesn't know, so the listener goes on the section itself. RAC's own
   // Escape handling is untouched — this only adds the signal.
-  const onDismissRef = useRef(onDismiss);
-  onDismissRef.current = onDismiss;
+  const onDismissRef = useLatest(onDismiss);
   const escapeListener = useRef((e: KeyboardEvent) => {
     if (e.key === 'Escape') onDismissRef.current?.();
   });

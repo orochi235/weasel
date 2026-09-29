@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { LayerList, type LayerListItem, type LayerListProps, moveLayers } from './LayerList';
 
 const FLAT: LayerListItem[] = [
@@ -96,6 +97,15 @@ describe('LayerList selection', () => {
     list({ selectedIds: [], onSelect });
     click('Beta');
     expect(onSelect).toHaveBeenLastCalledWith(['b']);
+  });
+
+  it('selects from the committed props, not an abandoned render\'s', () => {
+    const committed = { selectedIds: ['a'], onSelect: vi.fn() };
+    const abandoned = { selectedIds: ['c'], onSelect: vi.fn() };
+    renderThenAbandon(committed, abandoned, (p) => <LayerList items={FLAT} {...p} />);
+    click('Beta', { shiftKey: true });
+    expect(abandoned.onSelect).not.toHaveBeenCalled();
+    expect(committed.onSelect).toHaveBeenLastCalledWith(['a', 'b']);
   });
 
   it('adds and removes a row on shift-click', () => {

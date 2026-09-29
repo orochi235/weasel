@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { createElement, useLayoutEffect } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { createScene, type NodeId, type RectPose } from '@weasel-js/core';
 import { buildGraph, type Graph } from './graph';
 import { force } from './force';
-import { easedProducer, forceProducer, useLiveLayout } from './live';
+import { easedProducer, forceProducer, useLiveLayout, type LiveLayout } from './live';
 import { sceneParticipants } from './portLayer';
 import { layered } from './layered';
 
@@ -220,6 +222,32 @@ describe('useLiveLayout', () => {
     expect(s.get(b)!.pose).not.toEqual(before);
     expect(s.overrides.ids()).toEqual([]);
     expect(s.historyEntries().at(-1)?.label).toBe('Layout');
+  });
+
+  it('settles through the committed options, not an abandoned render\'s', () => {
+    const s = scene();
+    const clock = makeClock();
+    const committed = vi.fn();
+    const abandoned = vi.fn();
+    let layout!: LiveLayout;
+    function Probe({ onSettle }: { onSettle: () => void }): null {
+      const l = useLiveLayout<RectPose>({
+        scene: s.scene,
+        source: sceneParticipants<RectPose>(s.scene as never),
+        algorithm: 'layered',
+        frames: 4,
+        requestFrame: clock.requestFrame,
+        cancelFrame: clock.cancelFrame,
+        onSettle,
+      });
+      useLayoutEffect(() => { layout = l; });
+      return null;
+    }
+    renderThenAbandon(committed, abandoned, (onSettle) => createElement(Probe, { onSettle }));
+    act(() => { layout.start(); });
+    act(() => { clock.frames(4); });
+    expect(abandoned).not.toHaveBeenCalled();
+    expect(committed).toHaveBeenCalledTimes(1);
   });
 
   it('leaves the document alone when canceled', () => {

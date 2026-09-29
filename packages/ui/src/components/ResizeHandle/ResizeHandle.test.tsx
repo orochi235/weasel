@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { ResizeHandle } from './ResizeHandle';
 
 function setup(props: Partial<React.ComponentProps<typeof ResizeHandle>> = {}) {
@@ -35,6 +36,22 @@ describe('ResizeHandle', () => {
     fireEvent.pointerDown(handle, { button: 0, clientX: 500 });
     fireEvent.pointerMove(handle, { clientX: 540 });
     expect(onInput).toHaveBeenLastCalledWith(300);
+  });
+
+  it('drags with the committed props, not an abandoned render\'s', () => {
+    const committed = { onInput: vi.fn(), onChange: vi.fn(), max: 600 };
+    const abandoned = { onInput: vi.fn(), onChange: vi.fn(), max: 280 };
+    renderThenAbandon(committed, abandoned, (p) => (
+      <ResizeHandle value={260} min={200} ariaLabel="Resize sidebar" {...p} />
+    ));
+    const handle = document.querySelector<HTMLElement>('[role="separator"]')!;
+    fireEvent.pointerDown(handle, { button: 0, clientX: 500 });
+    fireEvent.pointerMove(handle, { clientX: 540 });
+    fireEvent.pointerUp(handle, { clientX: 540 });
+    expect(abandoned.onInput).not.toHaveBeenCalled();
+    expect(abandoned.onChange).not.toHaveBeenCalled();
+    expect(committed.onInput).toHaveBeenLastCalledWith(300);
+    expect(committed.onChange).toHaveBeenCalledWith(300);
   });
 
   it('measures every move against the gesture origin, not the last sample', () => {

@@ -1,10 +1,11 @@
 /** The React seam over the dep registry in `./depNode`: its provider and hooks. */
 import {
-  createContext, useContext, useEffect, useMemo, useRef,
+  createContext, useContext, useEffect, useMemo,
   type ReactNode,
 } from 'react';
 import type { DepSchema, DepName } from '../../index';
 import { createDepRegistry, type DepRegistry } from './depNode';
+import { useLatest } from '../../useLatest';
 
 export type { DepSchema, DepName, DepRegistry };
 export { DepNode, depNodeOf, createDepRegistry } from './depNode';
@@ -42,9 +43,8 @@ export function useOptionalDepRegistry(): DepRegistry | null {
  *  return the latest value. */
 export function useDepSource<K extends DepName>(name: K, source: () => DepSchema[K]) {
   const registry = useDepRegistry();
-  const sourceRef = useRef(source);
-  sourceRef.current = source;
+  const sourceRef = useLatest(source);
   useEffect(() => {
     return registry.register(name, () => sourceRef.current());
-  }, [name, registry]);
+  }, [name, registry, sourceRef]);
 }

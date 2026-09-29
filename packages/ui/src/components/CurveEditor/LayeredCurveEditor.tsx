@@ -5,7 +5,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
 import {
   Plot2D,
   type Plot2DHandle,
@@ -128,12 +128,9 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   // window listeners close over these refs, never over render-time
   // values, so mid-drag re-renders (including cross-layer state
   // updates) are visible to the next pointermove tick.
-  const layersRef = useRef(layers);
-  layersRef.current = layers;
-  const modelRangeRef = useRef(modelRange);
-  modelRangeRef.current = modelRange;
-  const plotSizeRef = useRef(plotSize);
-  plotSizeRef.current = plotSize;
+  const layersRef = useLatest(layers);
+  const modelRangeRef = useLatest(modelRange);
+  const plotSizeRef = useLatest(plotSize);
 
   const plotRef = useRef<Plot2DHandle | null>(null);
 
@@ -148,7 +145,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       toModel: (p) => plotToModel(p, mr, ps),
       modifiers,
     };
-  }, []);
+  }, [modelRangeRef, plotSizeRef]);
 
   // ── Gesture routing ────────────────────────────────────────────────
   const activeRef = useRef(null as ActiveGesture | null);
@@ -162,7 +159,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     const m = new Map<string, unknown>();
     for (const b of layersRef.current) m.set(b.layer.id, b.state);
     return m;
-  }, []);
+  }, [layersRef]);
 
   const restore = useCallback((snap: Map<string, unknown>) => {
     const current = layersRef.current;
@@ -172,7 +169,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
         onLayerChange(b.layer.id, prev);
       }
     }
-  }, [onLayerChange]);
+  }, [onLayerChange, layersRef]);
 
   const undo = useCallback(() => {
     if (!historyEnabled) return;
@@ -194,12 +191,8 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
 
   // ── Pointer routing during an active gesture ───────────────────────
   // The session's callbacks are fixed at gesture start, so they delegate
-  // through refs holding the latest per-render impl — a mid-drag re-render
+  // through refs holding the latest committed impl — a mid-drag re-render
   // must reach the next pointermove tick.
-  const onGestureMoveRef = useRef<(e: PointerEvent) => void>(() => {});
-  const onGestureEndRef = useRef<(e: PointerEvent) => void>(() => {});
-  const onGestureCancelRef = useRef<() => void>(() => {});
-
   const sessionRef = useRef<PointerSession | null>(null);
 
   const cleanupGesture = useCallback(() => {
@@ -211,9 +204,9 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   const findLayerState = useCallback((id: string): unknown | undefined => {
     for (const b of layersRef.current) if (b.layer.id === id) return b.state;
     return undefined;
-  }, []);
+  }, [layersRef]);
 
-  onGestureMoveRef.current = (e: PointerEvent) => {
+  const onGestureMoveRef = useLatest((e: PointerEvent) => {
     const a = activeRef.current;
     if (!a) return;
     const h = plotRef.current;
@@ -224,9 +217,9 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     const ctx = makeCtx(readModifiers(e));
     const next = a.gesture.onMove(current, model, e, ctx);
     if (next !== current) onLayerChange(a.layerId, next);
-  };
+  });
 
-  onGestureEndRef.current = (e: PointerEvent) => {
+  const onGestureEndRef = useLatest((e: PointerEvent) => {
     const a = activeRef.current;
     if (!a) return;
     const current = findLayerState(a.layerId);
@@ -240,9 +233,9 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     }
     if (onLayerCommit) onLayerCommit(a.layerId, finalState, a.startSelfState);
     cleanupGesture();
-  };
+  });
 
-  onGestureCancelRef.current = () => {
+  const onGestureCancelRef = useLatest(() => {
     const a = activeRef.current;
     if (!a) return;
     const current = findLayerState(a.layerId);
@@ -251,7 +244,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     const restored = a.gesture.onCancel ? a.gesture.onCancel(current, ctx) : a.startSelfState;
     if (restored !== current) onLayerChange(a.layerId, restored);
     cleanupGesture();
-  };
+  });
 
   // No pointer capture: consumers render their own SVG chrome into the plot
   // through `children`, and capture would retarget pointerup away from it.
@@ -273,7 +266,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       onEnd: (e) => onGestureEndRef.current(e),
       onCancel: () => onGestureCancelRef.current(),
     }, { capture: false });
-  }, [snapshot]);
+  }, [snapshot, onGestureCancelRef, onGestureEndRef, onGestureMoveRef]);
 
   // ── pointerdown dispatch ───────────────────────────────────────────
   const onSvgPointerDown = useCallback((
@@ -368,7 +361,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       }
       onLayerCommit?.(pendingCommit.id, pendingCommit.next, pendingCommit.prev);
     }
-  }, [makeCtx, installGesture, onLayerChange, onLayerCommit, historyEnabled, snapshot]);
+  }, [makeCtx, installGesture, onLayerChange, onLayerCommit, historyEnabled, snapshot, layersRef]);
 
   // ── keyboard ───────────────────────────────────────────────────────
   const onSvgKeyDown = useCallback((e: ReactKeyboardEvent<SVGSVGElement>) => {
@@ -406,7 +399,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       // event's `isDefaultPrevented` does not observe.
       if (e.nativeEvent.defaultPrevented) return;
     }
-  }, [historyEnabled, undo, redo, makeCtx, snapshot, onLayerChange, onLayerCommit]);
+  }, [historyEnabled, undo, redo, makeCtx, snapshot, onLayerChange, onLayerCommit, layersRef]);
 
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 

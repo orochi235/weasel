@@ -9,11 +9,11 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   type ReactElement,
   type ReactNode,
 } from 'react';
 import type { Action } from './action';
+import { useLatest } from '../../useLatest';
 import {
   useOptionalDepRegistry,
   type DepRegistry,
@@ -202,9 +202,8 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   // `trigger` consults the dep registry in scope, so actions can be fired
   // imperatively from ActionBar / palette callers.
   const depReg = useOptionalDepRegistry();
-  const depRegRef = useRef<DepRegistry | null>(depReg);
-  depRegRef.current = depReg;
-  const node = useMemo(() => new ActionsNode(null, true, () => depRegRef.current), []);
+  const depRegRef = useLatest<DepRegistry | null>(depReg);
+  const node = useMemo(() => new ActionsNode(null, true, () => depRegRef.current), [depRegRef]);
   return <ActionsContext.Provider value={node.registry}>{children}</ActionsContext.Provider>;
 }
 

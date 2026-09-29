@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { CurveEditor, type ControlPoint } from './CurveEditor';
 import { handleSize } from '../../handles';
 
@@ -691,6 +692,22 @@ describe('CurveEditor — pointer session', () => {
     fireEvent.pointerMove(document, { clientX: 160, clientY: 10, pointerId: 1, buttons: 0 });
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onInput.mock.calls.length).toBe(moves);
+  });
+
+  it('drags through the committed callbacks, not an abandoned render\'s', () => {
+    const committed = { onInput: vi.fn() };
+    const abandoned = { onInput: vi.fn() };
+    const value = [{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }];
+    renderThenAbandon(committed, abandoned, (cbs) => (
+      <CurveEditor value={value} width={200} height={100} {...cbs} />
+    ));
+    const middle = document.querySelectorAll('[data-anchor-index]')[1] as Element;
+    // Inside act, the suspended transition holds back every render the drag
+    // asks for, so each event reads what the abandoned render left — or not.
+    fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1, buttons: 1 });
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 30, pointerId: 1, buttons: 1 });
+    expect(abandoned.onInput).not.toHaveBeenCalled();
+    expect(committed.onInput).toHaveBeenCalled();
   });
 
   it('unmounting mid-gesture stops the drag reaching the document', () => {

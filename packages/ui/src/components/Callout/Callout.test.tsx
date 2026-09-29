@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { Pressable } from 'react-aria-components';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { Callout, CalloutTrigger } from './Callout';
 
 function TriggerSubject() {
@@ -196,6 +197,15 @@ describe('Callout', () => {
     render(<ProgrammaticSubject onDismiss={onDismiss} />);
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports Escape to the committed onDismiss, not an abandoned render\'s', () => {
+    const committed = vi.fn();
+    const abandoned = vi.fn();
+    renderThenAbandon(committed, abandoned, (onDismiss) => <ProgrammaticSubject onDismiss={onDismiss} />);
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    expect(abandoned).not.toHaveBeenCalled();
+    expect(committed).toHaveBeenCalledTimes(1);
   });
 
   it('does not report interaction or focus leaving as a dismissal', () => {

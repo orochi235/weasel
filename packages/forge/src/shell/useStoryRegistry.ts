@@ -1,3 +1,4 @@
+import { useLatest } from '@weasel-js/core';
 import type { Instrument, InstrumentList } from '@weasel-js/labkit';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
@@ -99,8 +100,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
 
   // One import per file, shared by every entry it holds; a reload drops the file's promise and asks again.
   const imports = useRef(new Map<string, Promise<Record<string, unknown>>>());
-  const live = useRef({ index, importers, setup, load });
-  live.current = { index, importers, setup, load };
+  const live = useLatest({ index, importers, setup, load });
 
   const importOf = useCallback((file: string): Promise<Record<string, unknown>> => {
     let loading = imports.current.get(file);
@@ -110,7 +110,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
       imports.current.set(file, loading);
     }
     return loading;
-  }, []);
+  }, [live]);
 
   const request = useCallback(
     (entry: IndexEntry): void => {
@@ -177,7 +177,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
         })
         .catch((error: unknown) => fail(ids, error));
     },
-    [importOf],
+    [importOf, live],
   );
 
   const reload = useCallback(
@@ -189,7 +189,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
       setFaults((prev) => pruned(prev, new Set([...prev.keys()].filter((id) => !ids.has(id)))));
       setGenerations((prev) => new Map(prev).set(file, (prev.get(file) ?? 0) + 1));
     },
-    [],
+    [live],
   );
 
   const committed = useRef<Cache>({ built: new Map(), books: new Map(), list: [] });

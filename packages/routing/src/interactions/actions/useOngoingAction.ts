@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useActionsRegistry } from './ActionsProvider';
 import type { ActionsRegistry, UiOngoingControl } from './registry';
+import { useLatest } from '../../useLatest';
 
 /**
  * One UI control's hold on an ongoing action — the handle a color picker, a
@@ -32,10 +33,8 @@ export interface OngoingAction {
  */
 export function useOngoingAction(actionId: string): OngoingAction {
   const reg = useActionsRegistry();
-  const regRef = useRef<ActionsRegistry | null>(reg);
-  regRef.current = reg;
-  const idRef = useRef(actionId);
-  idRef.current = actionId;
+  const regRef = useLatest<ActionsRegistry | null>(reg);
+  const idRef = useLatest(actionId);
   const ctrlRef = useRef<UiOngoingControl | null>(null);
 
   const edit = useMemo<OngoingAction>(() => {
@@ -60,7 +59,7 @@ export function useOngoingAction(actionId: string): OngoingAction {
         end('cancel');
       },
     };
-  }, []);
+  }, [regRef, idRef]);
 
   useEffect(() => () => edit.commit(), [edit, actionId]);
 

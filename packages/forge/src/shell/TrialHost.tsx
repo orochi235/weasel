@@ -1,3 +1,4 @@
+import { useLatest } from '@weasel-js/core';
 import { LabBoundary, TrialIdContext } from '@weasel-js/labkit';
 import { OverlayPortalProvider } from '@weasel-js/ui';
 import {
@@ -81,8 +82,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
   const inView = useInView(elementRef);
   const [pending, setPending] = useState(true);
   const overridesRef = useRef<Overrides | null>(null);
-  const latest = useRef({ setup, onRendered });
-  latest.current = { setup, onRendered };
+  const latest = useLatest({ setup, onRendered });
 
   // Everything the host owns for its lifetime: the globals target, the overrides rule, the registry connection.
   useLayoutEffect(() => {
@@ -159,7 +159,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       overridesRef.current = null;
       if (frames && trialId && frames.hostRef(trialId).current === host) frames.hostRef(trialId).current = null;
     };
-  }, [host, hostId, trialId, frames]);
+  }, [host, hostId, trialId, frames, latest]);
 
   // The overrides the trial persisted, put back on every mount and kept in step with the panel's edits.
   const applied = useRef<Record<string, string>>({});
@@ -176,7 +176,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
     const target = createGlobalsTarget(host, scopeOf(hostId));
     latest.current.setup.applyGlobals?.(globals, target);
     return () => target.dispose();
-  }, [host, hostId, globals]);
+  }, [host, hostId, globals, latest]);
 
   // The host is hidden until its first commit has painted with its fonts, so a new trial never shows a jump.
   const announced = useRef(false);
@@ -199,7 +199,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
     return () => {
       canceled = true;
     };
-  }, [host, inView]);
+  }, [host, inView, latest]);
 
   return (
     <div

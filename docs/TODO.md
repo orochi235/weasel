@@ -336,23 +336,15 @@ Core five + Crop shipped. Remaining:
   |---|---:|---:|
   | `packages/core` | 139 | 56 |
   | `packages/labkit` | 45 | 18 |
-  | `packages/routing` | 21 | 6 |
-  | `packages/ui` | 14 | 9 |
   | `apps/site` | 13 | 8 |
   | `apps/draw` | 10 | 5 |
-  | `packages/forge` | 7 | 4 |
   | `apps/theme-editor` | 1 | 1 |
-  | `packages/diagram` | 1 | 1 |
 
   - `packages/core` — `canvas/SceneCanvas.tsx` (24), `canvas/Canvas.tsx` (7), `canvas/deps/editAnchors.ts` (6), `animation/useAnimator.ts` (5), `canvas/deps/areaSelect.ts` (4), `canvas/deps/ingestion.ts` (4), `canvas/deps/lassoSelect.ts` (4), `canvas/MinimapCanvas.tsx` (4), `interactions/actions/useStandardActions.ts` (4), `canvas/deps/insert.ts` (3), `canvas/deps/view.ts` (3), `canvas/useFrameLoop.ts` (3), `core/selection/useSelection.ts` (3), `features/focus/useCanvasFocus.ts` (3), `features/text/useSceneTextEdit.ts` (3), `interactions/actions/align/align.ts` (3), `tools/builtin/select/useSelectTool.ts` (3), `core/scene/useScene.ts` (2), `core/viewport/useViewAnimation.ts` (2), `features/selection/SelectionContext.tsx` (2), `features/simulation/useSimulation.ts` (2), `features/text/useTextEdit.ts` (2), `interactions/actions/clipboard/clipboardOps.ts` (2), `interactions/actions/distribute/distribute.ts` (2), `interactions/gestures/dragRadial/dragRadial.ts` (2), `interactions/gestures/dragRect/dragRect.ts` (2), `interactions/gestures/pointerDrag/pointerDrag.ts` (2), `scheduling/useVisibleRaf.ts` (2), `tools/builtin/eyedropper/useEyedropperTool.ts` (2), `tools/builtin/pen/usePenTool.ts` (2), `tools/useKeybindings.ts` (2), `canvas/deps/dispatcher.ts`, `canvas/deps/geometryProjection.ts`, `canvas/deps/layout.ts`, `canvas/deps/nodeAtPoint.ts`, `canvas/deps/poseComposition.ts`, `canvas/deps/poseDescriptor.ts`, `canvas/deps/resizePolicy.ts`, `canvas/deps/slice.ts`, `canvas/deps/snap.ts`, `canvas/deps/textEdit.ts`, `canvas/SceneCanvas/useActionsPropResolver.ts`, `canvas/SceneCanvas/useSceneSelectTool.ts`, `canvas/SceneCanvas/useViewportActions.ts`, `canvas/useHostAnchor.ts`, `core/adapters/useArrayAdapter.ts`, `core/stylus/usePointerStylus.ts`, `features/chrome-caps/useHoverTracking.ts`, `features/grid/useGridCellHover.ts`, `features/guides/useGuides.ts`, `features/overlays/useNodeOverlayFrame.ts`, `features/poseRun/usePoseRun.ts`, `interactions/actions/booleans/useBooleans.ts`, `interactions/gestures/dragGesture/dragGesture.ts`, `tools/builtin/hand/useHandTool.ts`, `tools/builtin/lasso/useLassoTool.ts`.
   - `packages/labkit` — `canvas/CameraInput.tsx` (6), `lab/Workspace.tsx` (5), `trial/Trial.tsx` (5), `annotations/AnnotationOverlay.tsx` (4), `job/useJob.ts` (4), `loupe/useLoupe.ts` (4), `examples/3d-lab/SolidInstrument.tsx` (3), `dragdrop/DragDropRuntime.tsx` (2), `primitives/Split.tsx` (2), `state/useOpenOnce.ts` (2), `canvas/CanvasStack.tsx`, `canvas/Stage.tsx`, `lab/Lab.tsx`, `lab/LabZoom.tsx`, `loupe/CanvasLoupe.tsx`, `overview/TrialOverview.tsx`, `primitives/FloatingPanel.tsx`, `surface/useTiledSurface.ts`.
-  - `packages/routing` — `interactions/dispatcher/useGestureDispatcher.tsx` (8), `contributions/useContributions.ts` (5), `tools/useTools.ts` (4), `interactions/actions/useOngoingAction.ts` (2), `interactions/actions/ActionsProvider.tsx`, `interactions/actions/depRegistry.tsx`.
-  - `packages/ui` — `components/CurveEditor/LayeredCurveEditor.tsx` (6), `components/Callout/Callout.tsx`, `components/CurveEditor/CurveEditor.tsx`, `components/LayerList/LayerList.tsx`, `components/ResizeHandle/ResizeHandle.tsx`, `components/Timeline/AnimatedTimeline.tsx`, `components/Timeline/LaneGraph.tsx`, `useAsyncOptions.ts`, `useReorderDragList.ts`.
   - `apps/site` — `demos/BooleanOpsDemo.tsx` (2), `demos/curveLab/RepresentationPanel.tsx` (2), `demos/CustomShaderDemo.tsx` (2), `demos/GestureGrammarDemo.tsx` (2), `demos/TimelineDemo.tsx` (2), `demos/Kernel3dDemo.tsx`, `demos/LoupeDemo.tsx`, `demos/platformer/usePlatformerAudio.ts`.
   - `apps/draw` — `App.tsx` (2), `opacityScrub/useOpacityScrub.ts` (2), `tools/colorContext/ColorContextProvider.tsx` (2), `ui/CharacterOptions/TextEditDepPublisher.tsx` (2), `useLoupe.ts` (2).
-  - `packages/forge` — `shell/StoryTrial.tsx` (3), `shell/FrameView.tsx` (2), `shell/TrialHost.tsx`, `shell/useStoryRegistry.ts`.
   - `apps/theme-editor` — `ThemeWorkbench.tsx`.
-  - `packages/diagram` — `live.ts`.
 
 - **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner
   colors and the blend space; a patch's twelve control points are only reachable

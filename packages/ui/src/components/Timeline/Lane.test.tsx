@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
 import type { Track } from '@weasel-js/core';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { Lane } from './Lane';
 import { buildLanes } from './lanes';
 
@@ -172,6 +173,15 @@ describe('Lane in graph mode', () => {
   it('selects a key on pointerdown', () => {
     const onSelect = vi.fn();
     render(<Lane {...base} mode="graph" row={laneOf(sampled)} onSelect={onSelect} />);
+    fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 2, button: 0 });
+    expect(onSelect).toHaveBeenCalledWith(1);
+  });
+
+  it('compares a pressed key against the committed selection, not an abandoned render\'s', () => {
+    const onSelect = vi.fn();
+    renderThenAbandon<number | null>(null, 1, (selection) => (
+      <Lane {...base} mode="graph" row={laneOf(sampled)} selection={selection} onSelect={onSelect} />
+    ));
     fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 2, button: 0 });
     expect(onSelect).toHaveBeenCalledWith(1);
   });

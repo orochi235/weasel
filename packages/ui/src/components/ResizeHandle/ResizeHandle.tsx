@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react';
-import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
 import s from './ResizeHandle.module.css';
 
 /**
@@ -79,8 +79,7 @@ export function ResizeHandle(props: ResizeHandleProps) {
 
   // The session reads current props rather than the ones the pointerdown
   // closed over, so a bound or a step changed mid-drag takes effect.
-  const latest = useRef(props);
-  latest.current = props;
+  const latest = useLatest(props);
 
   // Drag origin. Measured on pointerdown so every move is measured against
   // the gesture's start rather than the previous sample — accumulating
@@ -89,18 +88,18 @@ export function ResizeHandle(props: ResizeHandleProps) {
   const session = useRef<PointerSession | null>(null);
   useEffect(() => () => { session.current?.cancel(); }, []);
 
-  const valueAt = (axis: number): number => {
+  const valueAt = useCallback((axis: number): number => {
     const d = drag.current!;
     const p = latest.current;
     const delta = axis - d.origin;
     return settle(d.startValue + (p.invert ? -delta : delta), p.min, p.max, p.step ?? 1);
-  };
+  }, [latest]);
 
-  const finish = (next: number) => {
+  const finish = useCallback((next: number) => {
     drag.current = null;
     session.current = null;
     latest.current.onChange?.(next);
-  };
+  }, [latest]);
 
   const onPointerDown = useCallback((e: PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0 || session.current) return;
@@ -125,7 +124,7 @@ export function ResizeHandle(props: ResizeHandleProps) {
       onCancel: () => { finish(drag.current!.last); },
     });
     e.preventDefault();
-  }, []);
+  }, [finish, latest, valueAt]);
 
   const onKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
     const grow = orientation === 'vertical' ? 'ArrowRight' : 'ArrowDown';

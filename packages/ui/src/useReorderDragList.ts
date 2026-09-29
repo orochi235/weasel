@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
-import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
+import { startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
 import { isInControlWithin } from './interactiveTarget';
 
 /** One row in a reorderable list. */
@@ -160,8 +160,7 @@ function isNoopDrop(items: readonly ReorderItem[], draggedIds: readonly string[]
  * and go as the list re-renders, and a drag must outlive the row it grabbed.
  */
 export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDragHandlers {
-  const optsRef = useRef(opts);
-  optsRef.current = opts;
+  const optsRef = useLatest(opts);
   const containerRef = useRef<HTMLElement | null>(null);
   const dragRef = useRef<ThresholdDragHandle | null>(null);
   const [state, setState] = useState<ReorderDragState>(IDLE);
@@ -182,7 +181,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       if (clientY < r.bottom) { raw = i; break; }
     }
     return Math.max(lo, Math.min(raw, hi));
-  }, []);
+  }, [optsRef]);
 
   const refCb = useCallback<RefCallback<HTMLElement>>((el) => {
     containerRef.current = el;
@@ -252,7 +251,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       // where they were.
       onCancel: reset,
     });
-  }, [computeTargetIndex, reset]);
+  }, [computeTargetIndex, reset, optsRef]);
 
   const nudge = useCallback((id: string, index: number, delta: -1 | 1): boolean => {
     const { items, selectedIds, onReorder } = optsRef.current;
@@ -267,7 +266,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     if (target < lo || target > hi || isNoopDrop(items, ids, target)) return false;
     onReorder(ids, target);
     return true;
-  }, []);
+  }, [optsRef]);
 
   return {
     nudge,
