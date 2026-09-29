@@ -1,6 +1,7 @@
 /**
  * Every annotation target's marks, drawn read-only on the overview through the
- * export's own vector path: `markSvgNodes`, then `serializeSvg`.
+ * export's own vector path: `markSvgNodes`, then `serializeSvg` — synchronous
+ * with no `warmSvg`, since marks export nothing that loads on demand.
  */
 import type { View } from '@weasel-js/core';
 import { serializeSvg } from '@weasel-js/svg';

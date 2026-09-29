@@ -5,6 +5,7 @@ import {
   serializeSvg,
   svgNodesFromKit,
   svgNodesToKitDrafts,
+  warmSvg,
   type SvgKitLeafData,
   type SvgKitPose,
 } from '@weasel-js/svg';
@@ -50,6 +51,19 @@ const PRESETS: { name: string; svg: string }[] = [
     fill="none" stroke="#7fb069" stroke-width="8" stroke-linecap="round"/>
   <path d="M60 60 Q 110 10 160 60 T 260 60 L 260 110 L 60 110 Z" fill="#d4a574"/>
   <text x="40" y="270" font-size="28" fill="#1a130d">round trip</text>
+</svg>`,
+  },
+  {
+    name: 'Mesh gradient',
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wzl="urn:weasel-js:svg" viewBox="0 0 420 320">
+  <defs>
+    <wzl:meshGradient id="mesh" gradientUnits="objectBoundingBox">
+      <wzl:patch points="0,0 0.33,-0.12 0.67,-0.12 1,0 1.12,0.33 1.12,0.67 1,1
+        0.67,1.12 0.33,1.12 0,1 -0.12,0.67 -0.12,0.33"
+        colors="#7fb069 #7ab8d4 #a48bd4 #d4a574"/>
+    </wzl:meshGradient>
+  </defs>
+  <rect x="100" y="70" width="220" height="180" fill="url(#mesh) #7fb069"/>
 </svg>`,
   },
 ];
@@ -110,14 +124,24 @@ function SvgRoundTrip() {
   }, [scene, imported]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const version = useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
-  const exported = useMemo(() => {
-    const warnings: string[] = [];
+  const [exported, setExported] = useState<{ text: string; warnings: string[] }>({ text: '', warnings: [] });
+  useEffect(() => {
     const nodes = svgNodesFromKit(scene);
     const viewBox = ('parsed' in imported && imported.parsed.viewBox) || VIEW;
-    const text = serializeSvg(nodes, { viewBox, pretty: true, onWarn: (m) => warnings.push(m) });
-    return { text, warnings };
+    const warnings: string[] = [];
+    let current = true;
+    // `serializeSvg` is synchronous, so a paint kind that loads on demand has
+    // to be loaded before it runs, or its def is left out.
+    void warmSvg(nodes)
+      .catch((err: unknown) => { warnings.push(String(err)); })
+      .then(() => {
+        if (!current) return;
+        const text = serializeSvg(nodes, { viewBox, pretty: true, onWarn: (m) => warnings.push(m) });
+        setExported({ text, warnings });
+      });
+    return () => { current = false; };
     // `version` is the scene's change signal; the scene object itself is stable.
-  }, [scene, imported, version]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scene, imported, version]);
 
   const importWarnings = 'parsed' in imported ? imported.parsed.warnings : [imported.error];
 

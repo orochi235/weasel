@@ -452,6 +452,28 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
     expect(await blobText(item, 'web image/svg+xml')).toBe('<svg/>');
   });
 
+  it('(e2) a flavor produced as a promise is written once it resolves, in the same write', async () => {
+    const write = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { write } });
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    let resolve!: (svg: string) => void;
+    const svg = new Promise<string>((r) => { resolve = r; });
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, {
+        getSelection: () => [asNodeId('a')],
+        produceFlavors: () => ({ 'image/svg+xml': svg, 'text/plain': 'now' }),
+      }),
+    );
+    act(() => { result.current.copy(); });
+    // The write is issued before the flavor settles, so it stays inside the gesture.
+    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+    const item = write.mock.calls[0][0][0] as InstanceType<typeof FakeClipboardItem>;
+    resolve('<svg/>');
+    expect(await blobText(item, 'web image/svg+xml')).toBe('<svg/>');
+    expect(await blobText(item, 'text/plain')).toBe('now');
+  });
+
   it('(f) produceFlavors returning an empty object skips the write entirely', async () => {
     const write = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { write } });

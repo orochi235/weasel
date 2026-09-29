@@ -5,12 +5,12 @@
  * their bounds rather than the page.
  */
 
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { parseSvg } from '@weasel-js/svg';
 import { boundsOfPath, IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type TextStyle } from '@weasel-js/core';
 import { svgNodesToSceneDrafts } from './svgInterop';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
-import { solid, strokeOf } from '@weasel-js/core';
+import { asPaint, registerPaintKindLoader, solid, strokeOf } from '@weasel-js/core';
 import type { FillStyle, Stroke, StyledRun } from '@weasel-js/core';
 import {
   sceneToSvgString,
@@ -58,7 +58,7 @@ describe('text export', () => {
    * dropped all of it, so a styled text node came back as unstyled black
    * text.
    */
-  it('carries the node style through to the <text> element', () => {
+  it('carries the node style through to the <text> element', async () => {
     const scene = fakeScene({
       t: {
         kind: 'leaf',
@@ -71,7 +71,7 @@ describe('text export', () => {
       },
     }, ['t']);
 
-    const parsed = parseSvg(selectionToSvgString(scene, ['t']));
+    const parsed = parseSvg(await selectionToSvgString(scene, ['t']));
     const n = parsed.nodes[0];
     if (n.kind !== 'text') throw new Error('expected text');
     expect(n.style?.fontSize).toBe(32);
@@ -79,7 +79,7 @@ describe('text export', () => {
     expect(n.fill).toEqual({ fill: 'solid', color: '#123456' });
   });
 
-  it('exports the leaf stroke as a text stroke', () => {
+  it('exports the leaf stroke as a text stroke', async () => {
     const scene = fakeScene({
       t: {
         kind: 'leaf',
@@ -88,13 +88,13 @@ describe('text export', () => {
       },
     }, ['t']);
 
-    const parsed = parseSvg(selectionToSvgString(scene, ['t']));
+    const parsed = parseSvg(await selectionToSvgString(scene, ['t']));
     const n = parsed.nodes[0];
     if (n.kind !== 'text') throw new Error('expected text');
     expect(n.stroke).toEqual({ paint: { fill: 'solid', color: '#c0392b' }, width: 3 });
   });
 
-  it('keeps unfilled text unfilled through scene → SVG → parse → import drafts', () => {
+  it('keeps unfilled text unfilled through scene → SVG → parse → import drafts', async () => {
     const scene = fakeScene({
       t: {
         kind: 'leaf',
@@ -103,7 +103,7 @@ describe('text export', () => {
       },
     }, ['t']);
 
-    const svg = selectionToSvgString(scene, ['t']);
+    const svg = await selectionToSvgString(scene, ['t']);
     expect(svg).toMatch(/<text[^>]*fill="none"/);
     let n = 0;
     const drafts = svgNodesToSceneDrafts(parseSvg(svg).nodes, () => `n${n++}`);
@@ -113,7 +113,7 @@ describe('text export', () => {
     expect(leaf.obj.fill).toBeNull();
   });
 
-  it('survives the whole loop: scene → SVG → parse → import drafts', () => {
+  it('survives the whole loop: scene → SVG → parse → import drafts', async () => {
     const scene = fakeScene({
       t: {
         kind: 'leaf',
@@ -122,7 +122,7 @@ describe('text export', () => {
       },
     }, ['t']);
 
-    const parsed = parseSvg(selectionToSvgString(scene, ['t']));
+    const parsed = parseSvg(await selectionToSvgString(scene, ['t']));
     let n = 0;
     const drafts = svgNodesToSceneDrafts(parsed.nodes, () => `n${n++}`);
     const leaf = drafts.find(
@@ -136,7 +136,7 @@ describe('text export', () => {
     });
   });
 
-  it('carries run styling through export and back into import drafts', () => {
+  it('carries run styling through export and back into import drafts', async () => {
     const runs: StyledRun[] = [
       { text: 'Plain ' },
       { text: 'bold', bold: true, fill: { fill: 'solid', color: '#c0392b' } },
@@ -151,7 +151,7 @@ describe('text export', () => {
       },
     }, ['t']);
 
-    const parsed = parseSvg(selectionToSvgString(scene, ['t']));
+    const parsed = parseSvg(await selectionToSvgString(scene, ['t']));
     const n = parsed.nodes[0];
     if (n.kind !== 'text') throw new Error('expected text');
     expect(n.runs).toEqual(runs);
@@ -164,7 +164,7 @@ describe('text export', () => {
     expect(leaf.obj.runs).toEqual(runs);
   });
 
-  it('does not invent a stroke for a null or absent one', () => {
+  it('does not invent a stroke for a null or absent one', async () => {
     for (const data of [
       { text: 'Hi', stroke: null },
       { text: 'Hi' },
@@ -172,7 +172,7 @@ describe('text export', () => {
       const scene = fakeScene({
         t: { kind: 'leaf', pose: { x: 0, y: 0, width: 50, height: 20 }, data },
       }, ['t']);
-      const parsed = parseSvg(selectionToSvgString(scene, ['t']));
+      const parsed = parseSvg(await selectionToSvgString(scene, ['t']));
       const n = parsed.nodes[0];
       if (n.kind !== 'text') throw new Error('expected text');
       expect(n.stroke).toBeUndefined();
@@ -181,7 +181,7 @@ describe('text export', () => {
 });
 
 describe('selectionToSvgString', () => {
-  it('emits only the selected subtree, matching the full-scene walk for that node', () => {
+  it('emits only the selected subtree, matching the full-scene walk for that node', async () => {
     const scene = fakeScene({
       a: {
         kind: 'leaf',
@@ -195,7 +195,7 @@ describe('selectionToSvgString', () => {
       },
     }, ['a', 'b']);
 
-    const svg = selectionToSvgString(scene, ['a']);
+    const svg = await selectionToSvgString(scene, ['a']);
     const parsed = parseSvg(svg);
 
     expect(parsed.nodes).toHaveLength(1);
@@ -204,7 +204,7 @@ describe('selectionToSvgString', () => {
     expect(parsed.nodes[0].fill).toEqual({ kind: 'solid', color: '#ff0000' });
   });
 
-  it('fits the viewBox to the selected node(s), not the full scene', () => {
+  it('fits the viewBox to the selected node(s), not the full scene', async () => {
     const scene = fakeScene({
       a: {
         kind: 'leaf',
@@ -218,13 +218,13 @@ describe('selectionToSvgString', () => {
       },
     }, ['a', 'b']);
 
-    const svg = selectionToSvgString(scene, ['a']);
+    const svg = await selectionToSvgString(scene, ['a']);
     const parsed = parseSvg(svg);
 
     expect(parsed.viewBox).toEqual({ x: 0, y: 0, width: 10, height: 10 });
   });
 
-  it('unions bounds across multiple selected roots', () => {
+  it('unions bounds across multiple selected roots', async () => {
     const scene = fakeScene({
       a: {
         kind: 'leaf',
@@ -238,14 +238,14 @@ describe('selectionToSvgString', () => {
       },
     }, ['a', 'b']);
 
-    const svg = selectionToSvgString(scene, ['a', 'b']);
+    const svg = await selectionToSvgString(scene, ['a', 'b']);
     const parsed = parseSvg(svg);
 
     expect(parsed.nodes).toHaveLength(2);
     expect(parsed.viewBox).toEqual({ x: 0, y: 0, width: 30, height: 10 });
   });
 
-  it('fits the viewBox to a rotated node\'s ink, not its unrotated pose box', () => {
+  it('fits the viewBox to a rotated node\'s ink, not its unrotated pose box', async () => {
     const scene = fakeScene({
       a: {
         kind: 'leaf',
@@ -254,14 +254,14 @@ describe('selectionToSvgString', () => {
       },
     }, ['a']);
 
-    const parsed = parseSvg(selectionToSvgString(scene, ['a']));
+    const parsed = parseSvg(await selectionToSvgString(scene, ['a']));
 
     // The quarter-turned rect occupies x 15..25, y -15..25.
     expect(parsed.viewBox!.y).toBeCloseTo(-15);
     expect(parsed.viewBox!.height).toBeCloseTo(40);
   });
 
-  it('walks a selected container subtree (only its descendants, wd:group-id preserved)', () => {
+  it('walks a selected container subtree (only its descendants, wd:group-id preserved)', async () => {
     const scene = fakeScene({
       g1: {
         kind: 'container',
@@ -285,7 +285,7 @@ describe('selectionToSvgString', () => {
       },
     }, ['g1', 'c']);
 
-    const svg = selectionToSvgString(scene, ['g1']);
+    const svg = await selectionToSvgString(scene, ['g1']);
     const parsed = parseSvg(svg, { namespaces: { wd: 'https://weaseldraw.app/svg-ext' } });
 
     expect(parsed.nodes).toHaveLength(1);
@@ -313,14 +313,14 @@ describe('selectionToClipboardSvgString', () => {
     { id: 'a', parent: null, pose: { x: 0, y: 0, width: 10, height: 10 }, data: { fill: solid('#ff0000'), label: 'my label' } },
   ]);
 
-  it('embeds the weasel payload extractably, byte-equal to the JSON flavor text', () => {
-    const svg = selectionToClipboardSvgString(scene(), ['a'], payload());
+  it('embeds the weasel payload extractably, byte-equal to the JSON flavor text', async () => {
+    const svg = await selectionToClipboardSvgString(scene(), ['a'], payload());
     expect(extractWeaselClipboardFromSvg(svg)).toBe(payload());
   });
 
-  it('external parse is unaffected: parseSvg succeeds and renders the same shapes', () => {
-    const plain = parseSvg(selectionToSvgString(scene(), ['a']));
-    const withMeta = parseSvg(selectionToClipboardSvgString(scene(), ['a'], payload()));
+  it('external parse is unaffected: parseSvg succeeds and renders the same shapes', async () => {
+    const plain = parseSvg(await selectionToSvgString(scene(), ['a']));
+    const withMeta = parseSvg(await selectionToClipboardSvgString(scene(), ['a'], payload()));
     expect(withMeta.warnings).toEqual(plain.warnings);
     expect(withMeta.nodes).toEqual(plain.nodes);
     expect(withMeta.nodes).toHaveLength(1);
@@ -329,7 +329,7 @@ describe('selectionToClipboardSvgString', () => {
 });
 
 describe('clipboardSnapshotRootIds', () => {
-  it('returns the selected roots when the selection is leaves-only', () => {
+  it('returns the selected roots when the selection is leaves-only', async () => {
     const items = [
       { id: 'a', parent: null },
       { id: 'b', parent: null },
@@ -337,7 +337,7 @@ describe('clipboardSnapshotRootIds', () => {
     expect(clipboardSnapshotRootIds(items)).toEqual(['a', 'b']);
   });
 
-  it('excludes descendants a copied container flattens alongside it', () => {
+  it('excludes descendants a copied container flattens alongside it', async () => {
     // Mirrors sceneAdapter.snapshotSelection's shape for a copied group:
     // the container plus its full subtree, parents-before-children.
     const items = [
@@ -348,14 +348,14 @@ describe('clipboardSnapshotRootIds', () => {
     expect(clipboardSnapshotRootIds(items)).toEqual(['g1']);
   });
 
-  it('treats an item whose parent is outside the snapshot as its own root', () => {
+  it('treats an item whose parent is outside the snapshot as its own root', async () => {
     // e.g. a selected child of an unselected container — snapshotSelection
     // still only captures the selected node itself.
     const items = [{ id: 'a', parent: 'not-in-snapshot' }];
     expect(clipboardSnapshotRootIds(items)).toEqual(['a']);
   });
 
-  it('handles multiple independent copied groups', () => {
+  it('handles multiple independent copied groups', async () => {
     const items = [
       { id: 'g1', parent: null },
       { id: 'a', parent: 'g1' },
@@ -393,8 +393,8 @@ describe('gradient fills', () => {
     }, ['a']);
   }
 
-  it('resolves box-relative coordinates against the pose, not into a corner', () => {
-    const svg = selectionToSvgString(gradientScene(), ['a']);
+  it('resolves box-relative coordinates against the pose, not into a corner', async () => {
+    const svg = await selectionToSvgString(gradientScene(), ['a']);
     const parsed = parseSvg(svg);
     const n = parsed.nodes[0];
     if (n.kind !== 'path') throw new Error('expected path');
@@ -407,7 +407,7 @@ describe('gradient fills', () => {
     expect(paint.to).toEqual({ x: 300, y: 100 });
   });
 
-  it('resolves a text node\'s box-relative gradient against its pose too', () => {
+  it('resolves a text node\'s box-relative gradient against its pose too', async () => {
     const scene = fakeScene({
       t: {
         kind: 'leaf',
@@ -426,7 +426,7 @@ describe('gradient fills', () => {
         },
       },
     }, ['t']);
-    const n = parseSvg(selectionToSvgString(scene, ['t'])).nodes[0];
+    const n = parseSvg(await selectionToSvgString(scene, ['t'])).nodes[0];
     if (n.kind !== 'text') throw new Error('expected text');
     const fill = n.fill as { from: { x: number; y: number }; to: { x: number; y: number } };
     expect(fill.from).toEqual({ x: 100, y: 100 });
@@ -436,8 +436,8 @@ describe('gradient fills', () => {
     expect(run.to).toEqual({ x: 100, y: 150 });
   });
 
-  it('emits the stops in order', () => {
-    const svg = selectionToSvgString(gradientScene(), ['a']);
+  it('emits the stops in order', async () => {
+    const svg = await selectionToSvgString(gradientScene(), ['a']);
     const parsed = parseSvg(svg);
     const n = parsed.nodes[0];
     if (n.kind !== 'path' || n.fill.kind !== 'gradient') throw new Error('expected a gradient fill');
@@ -446,8 +446,8 @@ describe('gradient fills', () => {
     expect(paint.stops.map((s) => s.color.slice(0, 7))).toEqual(['#ff0000', '#0000ff']);
   });
 
-  it('re-imports as a box-relative gradient, so it still tracks its node', () => {
-    const svg = selectionToSvgString(gradientScene(), ['a']);
+  it('re-imports as a box-relative gradient, so it still tracks its node', async () => {
+    const svg = await selectionToSvgString(gradientScene(), ['a']);
     let n = 0;
     const drafts = svgNodesToSceneDrafts(parseSvg(svg).nodes, () => `n${n++}`);
     const leaf = drafts.find((d) => d.kind === 'leaf');
@@ -466,7 +466,7 @@ describe('gradient fills', () => {
 });
 
 describe('what the SVG cannot carry', () => {
-  it('reports an inner-aligned stroke through onWarn instead of dropping it silently', () => {
+  it('reports an inner-aligned stroke through onWarn instead of dropping it silently', async () => {
     const scene = fakeScene({
       r: {
         kind: 'leaf',
@@ -479,7 +479,7 @@ describe('what the SVG cannot carry', () => {
       },
     }, ['r']);
     const warnings: string[] = [];
-    sceneToSvgString(scene, {
+    await sceneToSvgString(scene, {
       filename: 'a', paperSize: 'letter' as never, paperWidth: 100, paperHeight: 100,
       backgroundColor: '#ffffff', onWarn: (w) => warnings.push(w),
     });
@@ -489,7 +489,7 @@ describe('what the SVG cannot carry', () => {
 });
 
 describe('image export', () => {
-  it('writes a kit:image leaf as <image>', () => {
+  it('writes a kit:image leaf as <image>', async () => {
     const src = 'data:image/png;base64,iVBORw0KGgo=';
     const scene = fakeScene({
       im: {
@@ -499,13 +499,13 @@ describe('image export', () => {
       },
     }, ['im']);
 
-    const n = parseSvg(selectionToSvgString(scene, ['im'])).nodes[0];
+    const n = parseSvg(await selectionToSvgString(scene, ['im'])).nodes[0];
     expect(n).toMatchObject({ kind: 'image', href: src, x: 3, y: 4, width: 30, height: 20, flipX: true });
   });
 });
 
 describe('derived poses', () => {
-  it('lowers a leaf at the pose it derives, not the one it stores', () => {
+  it('lowers a leaf at the pose it derives, not the one it stores', async () => {
     const scene = fakeScene({
       src: { kind: 'leaf', pose: { x: 0, y: 0, width: 1, height: 1 } },
       a: {
@@ -516,7 +516,7 @@ describe('derived poses', () => {
         derivePose: () => ({ x: 50, y: 60, width: 10, height: 10 }),
       },
     }, ['a']);
-    const [a] = parseSvg(selectionToSvgString(scene, ['a'])).nodes;
+    const [a] = parseSvg(await selectionToSvgString(scene, ['a'])).nodes;
     if (a.kind !== 'path') throw new Error('expected path');
     expect(boundsOfPath(a.path)).toMatchObject({ x: 50, y: 60 });
   });
@@ -549,8 +549,8 @@ describe('pose composition', () => {
     return a;
   }
 
-  it('lowers a leaf at its world pose under a composing strategy', () => {
-    const svg = sceneToSvgString(framedScene(), {
+  it('lowers a leaf at its world pose under a composing strategy', async () => {
+    const svg = await sceneToSvgString(framedScene(), {
       filename: 'f', paperSize: 'letter', paperWidth: 100, paperHeight: 100,
       backgroundColor: '#ffffff', poseComposition: RIGID_POSE_COMPOSITION,
     });
@@ -561,18 +561,71 @@ describe('pose composition', () => {
     expect(b.y + b.height / 2).toBeCloseTo(-5);
   });
 
-  it('fits a selection to its world bounds under a composing strategy', () => {
-    const parsed = parseSvg(selectionToSvgString(framedScene(), ['a'], RIGID_POSE_COMPOSITION));
+  it('fits a selection to its world bounds under a composing strategy', async () => {
+    const parsed = parseSvg(await selectionToSvgString(framedScene(), ['a'], RIGID_POSE_COMPOSITION));
     expect(parsed.viewBox!.x).toBeCloseTo(20);
     expect(parsed.viewBox!.y).toBeCloseTo(-10);
     expect(parsed.viewBox!.width).toBeCloseTo(10);
     expect(parsed.viewBox!.height).toBeCloseTo(10);
   });
 
-  it('bakes stored poses when no strategy is given, byte-identical to IDENTITY', () => {
+  it('bakes stored poses when no strategy is given, byte-identical to IDENTITY', async () => {
     const scene = framedScene();
-    const bare = selectionToSvgString(scene, ['g']);
+    const bare = await selectionToSvgString(scene, ['g']);
     expect(leafOf(bare).rotation).toBeUndefined();
-    expect(selectionToSvgString(scene, ['g'], IDENTITY_POSE_COMPOSITION as never)).toBe(bare);
+    expect(await selectionToSvgString(scene, ['g'], IDENTITY_POSE_COMPOSITION as never)).toBe(bare);
+  });
+});
+
+describe('a paint kind that loads on demand', () => {
+  const disposers: (() => void)[] = [];
+  afterEach(() => {
+    for (const d of disposers.splice(0)) d();
+    vi.restoreAllMocks();
+  });
+
+  /** A scene holding one rect filled by `id`, a kind declared with a loader
+   *  and not loaded yet. A loaded kind stays registered, so each test takes
+   *  its own id. */
+  function lazyScene(id: string, load: () => Promise<never> | undefined = () => undefined) {
+    disposers.push(registerPaintKindLoader(id, async () => load() ?? {
+      id, label: id, seed: () => asPaint({ fill: id }), colorOf: () => '#123456',
+      toSvg: (defId: string) => `<linearGradient id="${defId}" data-kind="${id}"/>`,
+    }));
+    return fakeScene({
+      a: {
+        kind: 'leaf',
+        pose: { x: 0, y: 0, width: 10, height: 10 },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: asPaint({ fill: id }) },
+      },
+    }, ['a']);
+  }
+
+  const PAGE = { filename: 'f', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff' } as const;
+
+  it('writes its def in a page export', async () => {
+    const warnings: string[] = [];
+    const svg = await sceneToSvgString(lazyScene('test-lazy-page'), { ...PAGE, onWarn: (w) => warnings.push(w) });
+    expect(svg).toContain('data-kind="test-lazy-page"');
+    expect(warnings).toEqual([]);
+  });
+
+  it('writes its def in a selection export', async () => {
+    expect(await selectionToSvgString(lazyScene('test-lazy-selection'), ['a']))
+      .toContain('data-kind="test-lazy-selection"');
+  });
+
+  it('writes its def in the clipboard flavor', async () => {
+    expect(await selectionToClipboardSvgString(lazyScene('test-lazy-clipboard'), ['a'], '{}'))
+      .toContain('data-kind="test-lazy-clipboard"');
+  });
+
+  it('still exports, and says why the def is missing, when the kind fails to load', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const scene = lazyScene('test-lazy-broken', () => Promise.reject(new Error('offline')));
+    const warnings: string[] = [];
+    const svg = await sceneToSvgString(scene, { ...PAGE, onWarn: (w) => warnings.push(w) });
+    expect(svg).toContain('<svg');
+    expect(warnings.join(' ')).toMatch(/offline/);
   });
 });
