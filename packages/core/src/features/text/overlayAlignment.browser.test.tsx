@@ -18,6 +18,7 @@ import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'features/groups/composePose';
 import { renderSceneToPixels, type RasterImage } from '../../canvas/renderSceneToPixels';
 import { useTextEdit, type TextEditScreenPose } from './useTextEdit';
+import { overlayReady } from './test-utils/overlayReady';
 import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../../assets/fonts/inter/inter.ttf?url';
@@ -150,8 +151,7 @@ function Editor({ c }: { c: Case }) {
 
 async function renderOverlay(c: Case): Promise<RasterImage> {
   flushSync(() => root.render(createElement(Editor, { key: JSON.stringify(c), c })));
-  await document.fonts.ready;
-  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  await overlayReady(host);
   // Unsaved, it answers with the base64 PNG.
   return decodePng(await page.screenshot({ element: host, save: false }));
 }

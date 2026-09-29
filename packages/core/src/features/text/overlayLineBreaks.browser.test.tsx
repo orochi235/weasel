@@ -13,6 +13,7 @@ import { flushSync } from 'react-dom';
 import { registerFont, registerFontOutlines, registerCanvasFont } from '@weasel-js/font';
 import { layoutTextPose, type TextStyle } from '@weasel-js/text';
 import { useTextEdit, type TextEditScreenPose } from './useTextEdit';
+import { overlayReady } from './test-utils/overlayReady';
 import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../../assets/fonts/inter/inter.ttf?url';
@@ -67,9 +68,7 @@ function Editor({ c }: { c: Case }) {
 
 async function openOverlay(c: Case): Promise<HTMLElement> {
   flushSync(() => root.render(createElement(Editor, { key: c.name, c })));
-  await document.fonts.ready;
-  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  return host.querySelector<HTMLElement>('[contenteditable]')!;
+  return overlayReady(host);
 }
 
 beforeAll(async () => {
