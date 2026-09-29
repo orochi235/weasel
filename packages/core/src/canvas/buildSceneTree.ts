@@ -5,6 +5,8 @@ import type { Node } from 'core/scene/types';
 import type { Path } from 'features/paths/types';
 import { definesFrame } from 'core/scene/effectivePose';
 import { deriveParallaxView, planeMap, type ParallaxOpts } from 'core/viewport/parallax';
+import { scenePlaneOf } from './pickWalk';
+import { clipCarrier } from './planeClips';
 import { mat3 } from '../renderer/math/mat3';
 
 /**
@@ -24,15 +26,20 @@ export interface HierarchicalAdapter<TNode, TPose> {
   composePose?(parent: TPose, child: TPose): TPose;
 }
 
+/** A clip on the chain, with the layer whose world it is drawn in. */
+interface ChainClip { path: Path; layer: string }
+
 /** Wrap `cmds` in one nested group per clip so the renderer intersects them.
  *  Outermost group carries the ancestor-most clip; innermost holds `cmds`. */
 function wrapInClips(
   cmds: DrawCommand[],
-  clips: readonly GroupDrawCommand['clip'][],
+  clips: readonly ChainClip[],
+  toLayer: string,
+  carry: ReturnType<typeof clipCarrier>,
 ): DrawCommand {
   let node: GroupDrawCommand = { kind: 'group', children: cmds };
   for (let i = clips.length - 1; i >= 0; i--) {
-    node = { kind: 'group', children: [node], clip: clips[i] };
+    node = { kind: 'group', children: [node], clip: carry(clips[i].path, clips[i].layer, toLayer) };
   }
   return node;
 }
@@ -52,7 +59,8 @@ function wrapInClips(
  * drawn outside its parent's group, the tree nesting cannot carry geometry as
  * renderer state; instead the walk folds each node's pose into its parent's
  * frame on the way down and hands the painter a **world** pose. Clips are
- * accumulated the same way and are world-space for the same reason.
+ * accumulated the same way and are world-space for the same reason — each in
+ * its container's plane, carried into the plane of the node it clips.
  *
  * With no `composePose` on the adapter the fold is the identity, every node
  * paints at its stored pose, and this is the absolute-pose behavior the kit
@@ -91,10 +99,11 @@ export function buildSceneTree<
   }
 
   const compose = adapter.composePose?.bind(adapter);
+  const carry = clipCarrier(planeViews ? scenePlaneOf(layers, view) : null);
 
   function visit(
     id: string,
-    ancestorClips: readonly GroupDrawCommand['clip'][],
+    ancestorClips: readonly ChainClip[],
     parentFrame: TPose | null,
   ): void {
     const node = adapter.getNode(id);
@@ -128,7 +137,7 @@ export function buildSceneTree<
           { derivedPath: derivedPathOf?.(node, pose) },
         );
       }
-      if (clip) ownClips = [...ancestorClips, clip as GroupDrawCommand['clip']];
+      if (clip) ownClips = [...ancestorClips, { path: clip as Path, layer: node.layer }];
     }
 
     // Emit this node's own paint into its own layer's bucket, clipped by the
@@ -137,7 +146,7 @@ export function buildSceneTree<
     if (paints) {
       const bucket = buckets.get(node.layer);
       if (bucket) {
-        bucket.push(ownClips.length > 0 ? wrapInClips(self, ownClips) : { kind: 'group', children: self });
+        bucket.push(ownClips.length > 0 ? wrapInClips(self, ownClips, node.layer, carry) : { kind: 'group', children: self });
       }
     }
 

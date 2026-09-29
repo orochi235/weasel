@@ -7,6 +7,8 @@ import { deriveParallaxView } from 'core/viewport/parallax';
 import { viewToMat3 } from '../renderer/math/viewToMat3';
 import { mat3, type GlMat3 } from '../renderer/math/mat3';
 import { buildSceneViewCommands } from './sceneViewRender';
+import { asNodeId } from 'core/scene/types';
+import type { DrawCommand } from '../renderer';
 
 type Pose = { x: number; y: number; width: number; height: number };
 const POSE: Pose = { x: 0, y: 0, width: 10, height: 10 };
@@ -61,5 +63,51 @@ describe('buildSceneTree — parallax layers', () => {
     const layers = (out[0] as { children: { transform?: GlMat3 }[] }).children;
     expect(layers[0].transform).toBeDefined();
     expect(layers[1].transform).toBeUndefined();
+  });
+});
+
+describe('buildSceneTree — a container and its child on different planes', () => {
+  // Camera at 2x; `sky` does not zoom, so its world is the camera's doubled:
+  // plane = 2 * camera.
+  const ZOOMED: View = { x: 0, y: 0, scale: { x: 2, y: 2 } };
+  const STILL = { pan: 1, zoom: 0 };
+
+  function clipsOf(cmd: DrawCommand): unknown[] {
+    const out: unknown[] = [];
+    let cur = cmd as { kind: string; clip?: unknown; children?: DrawCommand[] };
+    while (cur && cur.kind === 'group') {
+      if (cur.clip) out.push(cur.clip);
+      cur = cur.children?.[0] as typeof cur;
+    }
+    return out;
+  }
+
+  it('clips a plane child by its camera-layer parent where the parent is drawn', () => {
+    // A child may not sit below its parent's layer, so the plane is on top.
+    const scene = createScene<unknown, 'sky' | 'main', Pose>({
+      systemLayers: [{ id: 'main' }, { id: 'sky', parallax: STILL }],
+      initial: [
+        { id: asNodeId('box'), kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 }, data: {} },
+        { id: asNodeId('kid'), kind: 'leaf', layer: 'sky', parent: asNodeId('box'), pose: { x: 0, y: 0, width: 200, height: 200 }, data: {} },
+      ],
+    });
+    const out = buildSceneTree(sceneToAdapter(scene) as never, (() => []) as never, ZOOMED);
+    const sky = out[1] as { children: DrawCommand[] };
+    // The kid's group sits under the sky plane's transform, so its clip is
+    // read in the sky's world: the box's 50 camera units are 100 there.
+    expect(clipsOf(sky.children[0])).toEqual([{ kind: 'rect', x: 0, y: 0, width: 100, height: 100 }]);
+  });
+
+  it('clips a camera-layer child by its plane parent where the parent is drawn', () => {
+    const scene = createScene<unknown, 'sky' | 'main', Pose>({
+      systemLayers: [{ id: 'sky', parallax: STILL }, { id: 'main' }],
+      initial: [
+        { id: asNodeId('box'), kind: 'container', layer: 'sky', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {} },
+        { id: asNodeId('kid'), kind: 'leaf', layer: 'main', parent: asNodeId('box'), pose: { x: 0, y: 0, width: 200, height: 200 }, data: {} },
+      ],
+    });
+    const out = buildSceneTree(sceneToAdapter(scene) as never, (() => []) as never, ZOOMED);
+    const main = out[1] as { children: DrawCommand[] };
+    expect(clipsOf(main.children[0])).toEqual([{ kind: 'rect', x: 0, y: 0, width: 50, height: 50 }]);
   });
 });

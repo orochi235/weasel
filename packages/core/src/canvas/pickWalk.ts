@@ -30,6 +30,7 @@ import { resolveDerivedPath } from './derivedPath';
 import { composeWorldPose, type PoseAdapter, type PoseComposition } from 'features/groups/composePose';
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
+import { clipCarrier } from './planeClips';
 
 /** Shared, never mutated: most scenes are flat and every node returns it. */
 const EMPTY_PARENTS: readonly never[] = [];
@@ -148,6 +149,8 @@ export function pickWalk<TPose>(
   // per candidate — `clipAdmits` needs the candidate, and caching its answer
   // per container would answer the wrong question for an area query.
   const clipPath = new Map<string, Path | null>();
+  // A clip is in its container's plane; the query is in the candidate's.
+  const carry = clipCarrier(src.planeOf ?? null);
 
   const clipOf = (ancestor: PickCandidate<TPose>): Path | null => {
     const cached = clipPath.get(ancestor.id);
@@ -191,7 +194,11 @@ export function pickWalk<TPose>(
     let clipped = false;
     for (const ancestor of src.parentsOf(node)) {
       const clip = clipOf(ancestor);
-      if (clip !== null && !query.clipAdmits(clip, node, pose, derived)) { clipped = true; break; }
+      if (clip === null) continue;
+      if (!query.clipAdmits(carry(clip, ancestor.layer, node.layer), node, pose, derived)) {
+        clipped = true;
+        break;
+      }
     }
     if (clipped) continue;
 
@@ -252,6 +259,12 @@ export interface ViewPickGates {
   alphaOf?: (id: string) => number;
   /** Whether a node's `layer` reaches the screen in the asking view. */
   layerIsPainted?: (layer: string) => boolean;
+}
+
+/** The gates a bare adapter takes from its view, plus how that view's camera
+ *  maps into each parallax layer — see `scenePlaneOf`. */
+export interface AdapterPickGates extends ViewPickGates {
+  planeOf?: (layer: string) => PlaneMap | null;
 }
 
 export interface ScenePickSourceOptions<TPose> extends ViewPickGates {
@@ -421,7 +434,7 @@ interface PickAdapter<TPose> {
  */
 export function adapterPickSource<TPose>(
   adapter: PickAdapter<TPose>,
-  gates: ViewPickGates = {},
+  gates: AdapterPickGates = {},
 ): PickSource<TPose> {
   const hier = adapter as Required<Pick<PickAdapter<TPose>, 'getNode' | 'getChildren'>>;
   const hierarchical =
@@ -465,6 +478,7 @@ export function adapterPickSource<TPose>(
     },
     ...(gates.alphaOf ? { alphaOf: gates.alphaOf } : {}),
     ...(gates.layerIsPainted ? { layerIsPainted: gates.layerIsPainted } : {}),
+    ...(gates.planeOf ? { planeOf: gates.planeOf } : {}),
     poseOf: (node) => worldPose(node.id),
     parentsOf(node) {
       const chain: PickCandidate<TPose>[] = [];

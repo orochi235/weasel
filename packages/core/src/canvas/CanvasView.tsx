@@ -267,8 +267,16 @@ export function CanvasView(props: CanvasViewProps): null {
     action: dispatcherRef.current!.getActiveAction(),
   }), [camera]);
 
+  // The surface's resolver, asked for this view's camera.
+  const surfaceBoundsOf = inputs?.boundsOf;
+  const boundsOf = useMemo(
+    () => (surfaceBoundsOf ? (id: string) => surfaceBoundsOf(id, camera()) : undefined),
+    [surfaceBoundsOf, camera],
+  );
+
   const { helpers } = useViewHelpers<unknown>({
     ...(inputs ?? NO_INPUTS),
+    boundsOf,
     ...own,
     selection: selection.current,
     getIsVisible: () =>

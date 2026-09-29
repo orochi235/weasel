@@ -118,8 +118,11 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
   pickBest: (worldX: number, worldY: number, view?: PickView | null) => string | null;
   /** World-space AABB of `id`, or null. Same as what the selection overlay +
    *  affordance hit-test need. Exposed so SceneCanvas can pass it to the
-   *  `affordanceAt` thunk without re-deriving it. */
-  boundsOf: (id: string) => import('core/viewport/fitViewToBounds').Bounds | null;
+   *  `affordanceAt` thunk without re-deriving it. `view` is the camera the
+   *  box is drawn under — a plane node sits somewhere else in each — and
+   *  defaults to the surface's. */
+  boundsOf: (id: string, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null) =>
+    import('core/viewport/fitViewToBounds').Bounds | null;
   /** `selectTool.move` with `selectTool.snap` folded into its behaviors — what
    *  the `move` preset's bindings carry. */
   moveOptions: UseMoveOptions<TPose>;
@@ -228,7 +231,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const getViewRef = useRef(getView);
   getViewRef.current = getView;
   const wiredBoundsOf = useMemo(() => {
-    return (id: string): Bounds | null => {
+    return (id: string, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null): Bounds | null => {
       if (boundsOfProp) return boundsOfProp(id);
       const n = scene.get(asNodeId(id));
       if (!n) return null;
@@ -241,7 +244,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       const own = rot ? { ...b, rotation: rot } : b;
       // A plane node is drawn where its plane puts it, and the chrome has to
       // follow it there.
-      const camera = cameraOf(getViewRef.current?.() ?? null);
+      const camera = cameraOf(view ?? getViewRef.current?.() ?? null);
       const plane = camera ? scenePlaneOf(scene.layers, camera)?.(n.layer) : null;
       return plane ? rectFromPlane(plane, own) : own;
     };

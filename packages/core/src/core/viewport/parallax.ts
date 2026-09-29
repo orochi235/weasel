@@ -98,3 +98,27 @@ export function rectToPlane<R extends Rect>(m: PlaneMap, r: R): R {
 export function rectFromPlane<R extends Rect>(m: PlaneMap, r: R): R {
   return { ...r, ...mapRect(r, (p) => fromPlane(m, p)) };
 }
+
+/** The map from one world into another, where `null` is the camera's own:
+ *  `fromPlane(from)`, then `toPlane(to)`. Null when the two are the same
+ *  world, so a caller can skip the work. */
+export function planeToPlane(from: PlaneMap | null, to: PlaneMap | null): PlaneMap | null {
+  if (from === to) return null;
+  const f = from ?? IDENTITY_MAP;
+  const t = to ?? IDENTITY_MAP;
+  const sx = t.scale.x / f.scale.x;
+  const sy = t.scale.y / f.scale.y;
+  const m = {
+    scale: { x: sx, y: sy },
+    offset: { x: t.offset.x - f.offset.x * sx, y: t.offset.y - f.offset.y * sy },
+  };
+  return m.scale.x === 1 && m.scale.y === 1 && m.offset.x === 0 && m.offset.y === 0 ? null : m;
+}
+
+const IDENTITY_MAP: PlaneMap = { scale: { x: 1, y: 1 }, offset: { x: 0, y: 0 } };
+
+/** The map as an affine matrix in `@weasel-js/geom`'s `[a, b, c, d, e, f]`
+ *  order, for `transformPath` and friends. */
+export function planeMatrix(m: PlaneMap): [number, number, number, number, number, number] {
+  return [m.scale.x, 0, 0, m.scale.y, m.offset.x, m.offset.y];
+}
