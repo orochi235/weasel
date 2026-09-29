@@ -14,7 +14,7 @@ import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
 import { fontString, resolveAlign, resolveTextStyle, SCRIPT_METRICS } from '@weasel-js/text';
 import type { TextPaint, TextVerticalAlign } from '@weasel-js/text';
-import { verticalAlignOffset } from '@weasel-js/text';
+import { layoutTextPose, verticalAlignOffset } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import { runsToPlainText } from '@weasel-js/text';
 import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
@@ -1031,12 +1031,64 @@ const ALIGN_ANCHOR = { left: 0, center: 0.5, right: 1 } as const;
 /**
  * The overlay's `top`, in container pixels, for content `contentHeight` tall
  * (pre-scale, like the rest of `pose`): the pose's top, shifted by the same
- * `verticalAlign` slack the canvas applies, less the 1px rasterization nudge.
+ * `verticalAlign` slack the canvas applies, plus `drop` — how far below the
+ * CSS line's baseline the canvas puts its own, from {@link baselineDrop}.
  * @internal
  */
-export function overlayTop(pose: TextEditScreenPose, contentHeight: number): number {
+export function overlayTop(pose: TextEditScreenPose, contentHeight: number, drop = 0): number {
   const slack = verticalAlignOffset(pose.verticalAlign, pose.height, contentHeight);
-  return pose.y + slack * (pose.zoom ?? 1) - 1;
+  return pose.y + (slack + drop) * (pose.zoom ?? 1);
+}
+
+/**
+ * The canvas hangs a line's baseline one ascent below the line top; CSS adds
+ * half the leading first, and each engine rounds the font's metrics and that
+ * leading its own way. So the difference is read
+ * from both sides rather than predicted: the canvas's from its own layout, the
+ * overlay's from a zero-height inline box on a hidden line set exactly as the
+ * overlay is. Pre-scale; `0` when either side has nothing to measure.
+ */
+function baselineDrop(el: HTMLElement, style: ResolvedTextStyle, pose: TextEditScreenPose, lineHeight: number): number {
+  const canvas = layoutTextPose({
+    x: 0, y: 0, width: pose.width, height: pose.height, text: ' ',
+    style: {
+      fontFamily: style.fontFamily, fontWeight: style.fontWeight, fontStyle: style.fontStyle,
+      fontSize: pose.fontSize, lineHeight, script: style.script,
+    },
+  }).laid.lines[0]?.baselineY ?? 0;
+  const css = cssBaseline(el);
+  return canvas > 0 && css > 0 ? canvas - css : 0;
+}
+
+const CSS_BASELINES = new Map<string, number>();
+
+function cssBaseline(el: HTMLElement): number {
+  const parent = el.parentElement;
+  if (!parent) return 0;
+  const { fontFamily, fontWeight, fontStyle, fontSize, lineHeight } = el.style;
+  const key = [fontFamily, fontWeight, fontStyle, fontSize, lineHeight].join('|');
+  const cached = CSS_BASELINES.get(key);
+  if (cached !== undefined) return cached;
+  const line = document.createElement('div');
+  Object.assign(line.style, {
+    position: 'absolute', left: '0', top: '0', width: '100px', margin: '0', padding: '0', border: '0',
+    visibility: 'hidden', whiteSpace: 'pre', fontFamily, fontWeight, fontStyle, fontSize, lineHeight,
+  });
+  const mark = document.createElement('span');
+  Object.assign(mark.style, { display: 'inline-block', width: '0', height: '0', verticalAlign: 'baseline' });
+  line.appendChild(mark);
+  parent.appendChild(line);
+  const box = line.getBoundingClientRect();
+  // Rect over layout width undoes any transform on an ancestor.
+  const scale = box.width / 100;
+  const baseline = scale > 0 ? (mark.getBoundingClientRect().top - box.top) / scale : 0;
+  line.remove();
+  // A web font still loading is measured as its fallback; ask again later.
+  if (baseline > 0 && document.fonts?.status !== 'loading') {
+    if (CSS_BASELINES.size >= 64) CSS_BASELINES.clear();
+    CSS_BASELINES.set(key, baseline);
+  }
+  return baseline;
 }
 
 function placeOverlay(
@@ -1057,10 +1109,6 @@ function placeOverlay(
   clipBox.style.top = `${clip?.y ?? 0}px`;
   clipBox.style.width = `${clip?.width ?? 0}px`;
   clipBox.style.height = `${clip?.height ?? 0}px`;
-  // CSS lays out a contenteditable's first glyph one CSS pixel below and one
-  // CSS pixel right of where canvas's `textBaseline = 'top'` rasterizes the
-  // same glyph (empirically; varies by browser/font/DPR — the constant is a
-  // pragmatic fix for the dev setup, not universally correct).
   el.style.display = '';
   // An unwrapped line can be wider than its box, and the canvas aligns it
   // about the box's left edge, center or right edge regardless. The overlay
@@ -1068,32 +1116,29 @@ function placeOverlay(
   // there and a trailing translate pulls the box back by that fraction of its
   // own width.
   const anchor = style.wrap ? 0 : ALIGN_ANCHOR[resolveAlign(style.align, style.direction)];
-  el.style.left = `${pose.x + pose.width * (pose.zoom ?? 1) * anchor + 1 - (clip?.x ?? 0)}px`;
+  el.style.left = `${pose.x + pose.width * (pose.zoom ?? 1) * anchor - (clip?.x ?? 0)}px`;
   el.style.width = style.wrap ? `${pose.width}px` : 'max-content';
   el.style.minWidth = style.wrap ? '' : `${pose.width}px`;
   // A node-level script draws the glyphs smaller and raised on the line the
   // plain text would hold, so the line height is pinned in pixels of the
-  // unscripted size rather than left to scale with the font. The rise goes in
-  // `translate`, which composes outside `transform` and so is in screen pixels.
+  // unscripted size rather than left to scale with the font. The rise is
+  // added to `top` with the baseline correction.
   const script = style.script ? SCRIPT_METRICS[style.script] : undefined;
   const lineHeight = pose.lineHeight ?? style.lineHeight;
   el.style.fontSize = `${pose.fontSize * (script?.size ?? 1)}px`;
   el.style.lineHeight = script ? `${pose.fontSize * lineHeight}px` : String(lineHeight);
-  el.style.translate = script
-    ? `0 ${-script.shift * pose.fontSize * (pose.zoom ?? 1)}px`
-    : '';
   // A top-aligned overlay fills its box, so a click anywhere in it lands in
   // the editor. Any other alignment needs the content's own height, which a
   // min-height would mask; `offsetHeight` is pre-transform, in pose units.
   const aligned = pose.verticalAlign !== undefined && pose.verticalAlign !== 'top';
   el.style.minHeight = aligned ? '' : `${pose.height}px`;
-  el.style.top = `${overlayTop(pose, aligned ? el.offsetHeight : pose.height) - (clip?.y ?? 0)}px`;
+  const drop = baselineDrop(el, style, pose, lineHeight) - (script?.shift ?? 0) * pose.fontSize;
+  el.style.top = `${overlayTop(pose, aligned ? el.offsetHeight : pose.height, drop) - (clip?.y ?? 0)}px`;
   // A declared `zoom` means every size on the pose is pre-scale and the
   // overlay carries the view scale as a transform. Anchored at the top-left so
-  // `left`/`top` stay screen pixels — including the +1/-1 nudge above, which
-  // is a screen-pixel rasterization correction and must not scale with the
-  // view. Written unconditionally (`none` at zoom 1) because the overlay
-  // element outlives an edit session and would otherwise keep a stale scale.
+  // `left`/`top` stay screen pixels. Written unconditionally (`none` at zoom
+  // 1) because the overlay element outlives an edit session and would
+  // otherwise keep a stale scale.
   el.style.transformOrigin = '0 0';
   const transforms: string[] = [];
   if (pose.zoom !== undefined && pose.zoom !== 1) transforms.push(`scale(${pose.zoom})`);

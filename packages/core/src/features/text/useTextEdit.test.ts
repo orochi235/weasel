@@ -32,22 +32,23 @@ function getOverlay(container: HTMLElement): HTMLDivElement | null {
 describe('overlayTop', () => {
   const pose = { x: 0, y: 100, width: 200, height: 90, fontSize: 16 };
 
-  it('sits at the pose top, less the nudge, when top-aligned or unaligned', () => {
-    expect(overlayTop(pose, 30)).toBe(99);
-    expect(overlayTop({ ...pose, verticalAlign: 'top' }, 30)).toBe(99);
+  it('sits at the pose top when top-aligned or unaligned', () => {
+    expect(overlayTop(pose, 30)).toBe(100);
+    expect(overlayTop({ ...pose, verticalAlign: 'top' }, 30)).toBe(100);
   });
 
   it('shifts by half the slack when centered and all of it at the bottom', () => {
-    expect(overlayTop({ ...pose, verticalAlign: 'center' }, 30)).toBe(129);
-    expect(overlayTop({ ...pose, verticalAlign: 'bottom' }, 30)).toBe(159);
+    expect(overlayTop({ ...pose, verticalAlign: 'center' }, 30)).toBe(130);
+    expect(overlayTop({ ...pose, verticalAlign: 'bottom' }, 30)).toBe(160);
   });
 
   it('rises above the box when the content overflows it, as the canvas does', () => {
-    expect(overlayTop({ ...pose, verticalAlign: 'bottom' }, 120)).toBe(69);
+    expect(overlayTop({ ...pose, verticalAlign: 'bottom' }, 120)).toBe(70);
   });
 
-  it('scales the pre-scale slack by the zoom but not the nudge', () => {
-    expect(overlayTop({ ...pose, verticalAlign: 'bottom', zoom: 2 }, 30)).toBe(219);
+  it('scales the pre-scale slack and baseline drop by the zoom', () => {
+    expect(overlayTop({ ...pose, verticalAlign: 'bottom', zoom: 2 }, 30)).toBe(220);
+    expect(overlayTop({ ...pose, zoom: 2 }, 30, -1.5)).toBe(97);
   });
 });
 
@@ -69,7 +70,7 @@ describe('useTextEdit — verticalAlign', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const el = getOverlay(h.container)!;
-    expect(el.style.top).toBe('99px');
+    expect(el.style.top).toBe('100px');
     expect(el.style.minHeight).toBe('90px');
   });
 
@@ -94,11 +95,11 @@ describe('useTextEdit — verticalAlign', () => {
     spy.mockRestore();
     const el = getOverlay(h.container)!;
     expect(el.style.minHeight).toBe('');
-    expect(el.style.top).toBe('159px');
+    expect(el.style.top).toBe('160px');
 
     height = 60;
     el.dispatchEvent(new Event('input', { bubbles: true }));
-    expect(el.style.top).toBe('129px');
+    expect(el.style.top).toBe('130px');
   });
 });
 
@@ -123,9 +124,9 @@ describe('useTextEdit — clip rect', () => {
     expect([clip.style.left, clip.style.top, clip.style.width, clip.style.height])
       .toEqual(['10px', '20px', '300px', '100px']);
     expect(el.style.pointerEvents).toBe('auto');
-    // Pose (50, 30) in container pixels, less the box origin, plus the nudge.
-    expect(el.style.left).toBe('41px');
-    expect(el.style.top).toBe('9px');
+    // Pose (50, 30) in container pixels, less the box origin.
+    expect(el.style.left).toBe('40px');
+    expect(el.style.top).toBe('10px');
   });
 
   it('clips nothing without a clip rect', () => {
@@ -134,7 +135,7 @@ describe('useTextEdit — clip rect', () => {
     act(() => result.current.startEdit('a'));
     const el = getOverlay(h.container)!;
     expect(el.parentElement!.style.overflow).toBe('visible');
-    expect(el.style.left).toBe('1px');
+    expect(el.style.left).toBe('0px');
   });
 
   it('removes the clip box when the edit ends', () => {
@@ -947,10 +948,8 @@ describe('useTextEdit — zoom-scaled overlay', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    // The same +1 / -1 CSS-vs-canvas nudge as the unscaled path: it is a
-    // screen-pixel correction and `left`/`top` are outside the scaled box.
-    expect(overlay.style.left).toBe('11px');
-    expect(overlay.style.top).toBe('19px');
+    expect(overlay.style.left).toBe('10px');
+    expect(overlay.style.top).toBe('20px');
   });
 
   it('leaves width / height / fontSize pre-scale — the transform does the scaling', () => {
@@ -968,9 +967,9 @@ describe('useTextEdit — zoom-scaled overlay', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    // 10 + 200 * 2, plus the nudge; the translate is pre-scale, so it moves
-    // the box back by its own scaled width.
-    expect(overlay.style.left).toBe('411px');
+    // 10 + 200 * 2; the translate is pre-scale, so it moves the box back by
+    // its own scaled width.
+    expect(overlay.style.left).toBe('410px');
     expect(overlay.style.minWidth).toBe('200px');
     expect(overlay.style.transform).toBe('scale(2) translateX(-100%)');
   });
@@ -1028,7 +1027,7 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     expect(parseFloat(overlay.style.fontSize)).toBeCloseTo(16 * 0.583, 3);
     // The line keeps the unscripted size's height, as the canvas's does.
     expect(parseFloat(overlay.style.lineHeight)).toBeCloseTo(16 * 1.2, 3);
-    expect(overlay.style.translate).toMatch(/^0(px)? -5\.328px$/);
+    expect(overlay.style.top).toBe('-5.328px');
     // Node styling, so it must not come back as run styling.
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'abc' }]);

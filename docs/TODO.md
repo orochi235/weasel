@@ -418,7 +418,24 @@ Core five + Crop shipped. Remaining:
   `fill: null` through `resolveRuns`, the DOM overlay, the range algebra and
   `@weasel-js/svg`'s `<tspan>` output.
 
-- **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected. A node-level `TextStyle.script` adds a second, known offset: the overlay sets the whole node at the scripted size on a line pinned to the unscripted height and raises it by the preset's shift, but CSS centers the smaller glyphs in that line where the canvas hangs them from the unscripted ascent — about `(F − f)(ascent − descent) / 2`, roughly 2px at a 16px node. Correcting it needs the face's ascent and descent in the overlay.
+- **(P2) The edit overlay sets a generic family in a different face than the
+  canvas.** Both apps register the Inter atlas as `sans-serif`, so the canvas
+  draws Inter while the overlay's CSS resolves `sans-serif` to the system face
+  (Helvetica on macOS). Baselines agree since the overlay started placing by
+  measured baselines, but the glyphs don't: "Hxgd" at 72px ends ~8px short in
+  Chromium, WebKit and Firefox alike. The fix is handing the overlay the face
+  the canvas draws — e.g. loading the family's registered outline file as a
+  `FontFace` under a private name. `npx vitest run -c
+  scripts/measure-overlay-alignment.config.ts` measures it (the `sans-serif`
+  rows).
+
+- **(P2) Inter lays out on its atlas's whole-unit advances.** The atlas bakes
+  at 32px with integer `xadvance`, and layout reads those even at sizes the
+  outline tier paints: "Hxgd" at 72px lays out 182.25px wide against the face's
+  179.44px (the DOM's width in all three engines), every cell on a multiple of
+  72/32. The canvas-font tier, which measures advances with `measureText`,
+  matches the DOM to 0.01px. Layout should take advances from the outline face
+  when one is registered, or the atlas should carry fractional advances.
 
 - **(P3) No justified alignment.** `TextAlign` is left / center / right / start / end; layout has no mode that spreads a wrapped line's slack across its word gaps (every line but a paragraph's last). The panel's Align bar offers the three absolute edges and reads `start` / `end` as the edge they paint at, so a justify segment is one option away once `layoutRuns` can do it — the SVG writer would also need `text-align-last` or per-word placement, since `text-anchor` has no justify.
 
