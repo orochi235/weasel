@@ -1,6 +1,7 @@
 export type { Op } from './types';
 export { applyOpsTo, dispatchApplyBatch } from '../applyOps';
 export { createTransformOp, type TransformArgs } from './transform';
+export { createArrangeOp, type ArrangeArgs, type ArrangedPose } from './arrange';
 export { createReparentOp, type ReparentArgs } from './reparent';
 export { createInsertOp, type InsertOp, type InsertArgs } from './create';
 export { createDeleteOp, type DeleteArgs, type PlacedNode } from './delete';

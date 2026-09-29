@@ -54,3 +54,38 @@ describe('layoutRuns — wrap at UAX #14 break opportunities', () => {
     expect(lineTexts('ABABAB AB', { maxWidth: 50, lineHeight: 1.2 })).toEqual(['ABABAB ', 'AB']);
   });
 });
+
+describe('layoutRuns — hard line breaks', () => {
+  const laid = (texts: string[], opts: Partial<LayoutRunsOpts> = {}) =>
+    layoutRuns(texts.map(RUN), { align: 'left', maxWidth: Infinity, lineHeight: 1.2, ...opts });
+
+  for (const [name, sep] of [
+    ['VT', '\u000b'], ['FF', '\u000c'], ['CR', '\r'], ['NEL', '\u0085'],
+    ['LINE SEPARATOR', ' '], ['PARAGRAPH SEPARATOR', ' '], ['CRLF', '\r\n'],
+  ]) {
+    it(`ends a line at ${name}, wrapped or not`, () => {
+      expect(lineTexts(`AB${sep}AB`, { maxWidth: Infinity, lineHeight: 1.2 })).toEqual(['AB', 'AB']);
+      expect(lineTexts(`AB AB${sep}AB`, { maxWidth: 1000, lineHeight: 1.2 })).toEqual(['AB AB', 'AB']);
+    });
+  }
+
+  it('takes CRLF as one break, even split across runs', () => {
+    expect(lineTexts('AB\r\n\r\nAB', { maxWidth: Infinity, lineHeight: 1.2 })).toEqual(['AB', '', 'AB']);
+    expect(laid(['AB\r', '\nAB']).lines.map((l) => l.cells.length)).toEqual([2, 2]);
+  });
+
+  it('keeps caret offsets on both sides of a CRLF', () => {
+    const { lines } = laid(['AB\r\n\r\nAB']);
+    // The first line closes before its CR, the blank one at its own CR, and
+    // the last starts past the second LF.
+    expect(lines.map((l) => l.srcEnd)).toEqual([2, 4, 8]);
+    expect(lines[2].cells.map((c) => [c.srcIndex, c.srcEnd])).toEqual([[6, 7], [7, 8]]);
+  });
+
+  it('does not spread a justified line that a line or paragraph separator ends', () => {
+    for (const sep of [' ', ' ']) {
+      const { lines } = laid([`AB AB${sep}AB`], { maxWidth: 200, align: 'justify' });
+      expect(lines[0].x1 - lines[0].x0, `before U+${sep.codePointAt(0)!.toString(16)}`).toBe(96);
+    }
+  });
+});

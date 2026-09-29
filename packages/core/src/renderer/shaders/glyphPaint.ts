@@ -1,6 +1,6 @@
 /**
- * GLSL ES 3.0 sources for atlas glyphs filled by a texture paint — a pattern or
- * a gradient — rather than one color.
+ * GLSL ES 3.0 sources for atlas glyphs filled by a texture paint — a pattern, a
+ * gradient or a registered kind — rather than one color.
  *
  * **The glyph is a mask over the paint.** The fragment takes its coverage from
  * the distance field exactly as the batch program does, and its color from the
@@ -67,10 +67,28 @@ void main() {
 `;
 }
 
+/**
+ * A registered paint kind binds a whole program of its own, which nothing can
+ * wrap in a mask, so it renders into an offscreen buffer first and the glyphs
+ * sample that. `u_worldInv` takes the screen position straight to the
+ * buffer's texture coordinate, and the texel is already premultiplied and
+ * faded — the kind's own program did both.
+ */
+const TEXTURE_PAINT_GLSL = /* glsl */ `
+uniform sampler2D u_sampler;
+vec4 shadePaint(vec2 uv) {
+  return texture(u_sampler, uv);
+}
+`;
+
 export const GLYPH_PATTERN_FRAG_SRC = fragSrc(PATTERN_PAINT_GLSL);
 export const GLYPH_GRAD_FRAG_SRC = fragSrc(GRAD_PAINT_GLSL);
+export const GLYPH_TEXTURE_FRAG_SRC = fragSrc(TEXTURE_PAINT_GLSL);
 
 const GLYPH_UNIFORMS = ['u_atlas', 'u_synthBold', 'u_fieldScale'] as const;
 export const GLYPH_PATTERN_UNIFORMS = [...PATTERN_FILL_UNIFORMS, ...GLYPH_UNIFORMS] as const;
 export const GLYPH_GRAD_UNIFORMS = [...GRAD_FILL_UNIFORMS, ...GLYPH_UNIFORMS] as const;
+export const GLYPH_TEXTURE_UNIFORMS = [
+  'u_proj', 'u_model', 'u_worldInv', 'u_sampler', ...GLYPH_UNIFORMS,
+] as const;
 export const GLYPH_PAINT_ATTRIBUTES = ['a_position', 'a_uv', 'a_texSlot'] as const;

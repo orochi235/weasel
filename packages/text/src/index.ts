@@ -38,7 +38,7 @@ export type { FontVariantCaps, SmallCapsText } from './runs/smallCaps';
 
 export { layoutRuns } from './layout/layoutRuns';
 export {
-  lineBreakOpportunities, NO_BREAK, BREAK_ALLOWED, BREAK_MANDATORY,
+  lineBreakOpportunities, isHardLineBreak, NO_BREAK, BREAK_ALLOWED, BREAK_MANDATORY,
 } from './layout/lineBreak/lineBreaks';
 export {
   cachedLayoutRuns,

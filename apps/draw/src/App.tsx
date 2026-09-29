@@ -699,7 +699,8 @@ function Toolbar({
   // not live scene nodes — but their `id`s are the ORIGINAL scene ids at copy
   // time, and `produceFlavors` runs synchronously inside `clipboard.copy()`,
   // so walking the live `scene` by those ids here is correct: nothing has
-  // had a chance to mutate the scene in between. (Verified: `sceneToSvgNodes`
+  // had a chance to mutate the scene in between. Only the serialization
+  // waits, on paint kinds that load on demand; the walk has already run. (Verified: `sceneToSvgNodes`
   // skips ids it can't resolve — `kindOf`/`objOf` both fall through to
   // "not found" — rather than throwing, so no id-existence filter is needed
   // even in the shouldn't-happen case.)
@@ -814,7 +815,8 @@ function Toolbar({
         onSaveSvg={() => {
           onClearJournalCache();
           const paper = PAPER_PRESETS[paperSize];
-          const svg = sceneToSvgString(scene, {
+          const safe = filename.trim() || DEFAULT_FILENAME;
+          void sceneToSvgString(scene, {
             filename,
             paperSize,
             paperWidth: paper.width,
@@ -822,9 +824,7 @@ function Toolbar({
             backgroundColor,
             onWarn: (w) => console.warn('[svg export]', w),
             poseComposition: DRAW_POSE_COMPOSITION,
-          });
-          const safe = filename.trim() || DEFAULT_FILENAME;
-          downloadSvg(svg, /\.svg$/i.test(safe) ? safe : `${safe}.svg`);
+          }).then((svg) => downloadSvg(svg, /\.svg$/i.test(safe) ? safe : `${safe}.svg`));
         }}
         onOpenSvg={() => {
           // Pop the file picker, parse the chosen SVG, lower its nodes back

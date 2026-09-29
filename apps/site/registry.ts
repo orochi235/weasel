@@ -718,7 +718,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'svg',
     title: 'SVG round trip',
     package: 'svg',
-    description: "Editable SVG source on the left. `parseSvg` reads it, `svgNodesToKitDrafts` turns it into ordinary scene nodes, and the kit's built-in path, text and image painters draw them on the canvas. The select tool moves and resizes those nodes, and the text below is `serializeSvg` over whatever the scene holds now, so every edit shows up as changed coordinates in the output. Warnings from both directions are listed instead of thrown.",
+    description: "Editable SVG source on the left. `parseSvg` reads it, `svgNodesToKitDrafts` turns it into ordinary scene nodes, and the kit's built-in path, text and image painters draw them on the canvas. The select tool moves and resizes those nodes, and the text below is `serializeSvg` over whatever the scene holds now, so every edit shows up as changed coordinates in the output. `serializeSvg` is synchronous, so the export first awaits `warmSvg`, which loads a paint kind kept out of the bundle until used, like the mesh preset's. Warnings from both directions are listed instead of thrown.",
     hint: 'Pick a preset or edit the source, then drag or resize shapes on the canvas and watch the exported SVG below change.',
     load: () => import('./demos/SvgDemo').then((m) => m.SvgDemo),
     path: 'apps/site/demos/SvgDemo.tsx',

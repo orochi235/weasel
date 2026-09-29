@@ -31,7 +31,15 @@ const DOTTED_CIRCLE = 0x25cc;
 
 const isQU = (c: number): boolean => c === QU || c === QU_PI || c === QU_PF;
 const isHard = (c: number): boolean => c === BK || c === CR || c === LF || c === NL;
-const isAlpha = (c: number): boolean => c === AL || c === HL;
+/**
+ * Whether a line must end after `cp`: UAX #14's hard breaks, which are LF,
+ * VT, FF, CR, NEL, U+2028 LINE SEPARATOR and U+2029 PARAGRAPH SEPARATOR. A CR
+ * directly before an LF makes one break with it, not two.
+ */
+export function isHardLineBreak(cp: number): boolean {
+  return isHard(lineBreakPropsOf(cp) & CLASS_MASK);
+}
+const isAlpha =(c: number): boolean => c === AL || c === HL;
 const isKorean = (c: number): boolean => c === JL || c === JV || c === JT || c === H2 || c === H3;
 const isIdeoLike = (c: number): boolean => c === ID || c === EB || c === EM;
 

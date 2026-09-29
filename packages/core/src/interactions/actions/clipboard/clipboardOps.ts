@@ -30,12 +30,18 @@ export interface UseClipboardOpsOptions {
    *  `application/x-weasel-clipboard+json` plus `text/plain` carrying the
    *  same JSON. Apps override to add richer flavors (e.g. real SVG) or to
    *  replace the text flavor. Return an empty object to skip the OS write
-   *  entirely. */
-  produceFlavors?: (snapshot: ClipboardSnapshot) => Record<string, string>;
+   *  entirely. A value may be a promise — an SVG flavor waiting on
+   *  `warmSvg`, say: the write is still issued inside the copy gesture and
+   *  the clipboard takes the text when it resolves. The producer itself runs
+   *  synchronously, so it reads the selection as it stood at the copy. */
+  produceFlavors?: (snapshot: ClipboardSnapshot) => ClipboardFlavors;
   /** Replacer for the kit-default JSON flavor (typed arrays etc.). Ignored
    *  when `produceFlavors` is supplied. */
   jsonReplacer?: Replacer;
 }
+
+/** MIME type to payload, as `produceFlavors` returns it. */
+export type ClipboardFlavors = Record<string, string | Promise<string>>;
 
 /** Return shape of `useClipboardOps`: imperative `copy`, `paste`, and `isEmpty` functions. */
 export interface UseClipboardOpsReturn {
@@ -77,7 +83,7 @@ export function useClipboardOps<TNode extends { id: string }>(
     // no API at all). The flavor producer itself is untrusted consumer code
     // (`produceFlavors`), so guard its call too — a throwing producer must
     // not break `copy()`, it just skips the OS write.
-    let flavors: Record<string, string> | null = null;
+    let flavors: ClipboardFlavors | null = null;
     try {
       flavors = optsRef.current.produceFlavors?.(clipboardRef.current)
         ?? defaultFlavors(clipboardRef.current, optsRef.current.jsonReplacer);
@@ -111,7 +117,7 @@ export function useClipboardOps<TNode extends { id: string }>(
   return { copy, paste, isEmpty };
 }
 
-function defaultFlavors(snapshot: ClipboardSnapshot, replacer?: Replacer): Record<string, string> {
+function defaultFlavors(snapshot: ClipboardSnapshot, replacer?: Replacer): ClipboardFlavors {
   const text = buildWeaselClipboardText(snapshot.items, replacer);
   return { [WEASEL_CLIPBOARD_MIME]: text, 'text/plain': text };
 }
@@ -127,16 +133,17 @@ const WELL_KNOWN_CLIPBOARD_MIMES = new Set(['text/plain', 'text/html', 'image/pn
  *  @internal test seam — exported so unit tests can await the fire-and-forget
  *  write directly; tests should still exercise this at least once through
  *  the public `copy()` (see clipboardOps.test.tsx). */
-export async function writeOsClipboard(flavors: Record<string, string>): Promise<void> {
+export async function writeOsClipboard(flavors: ClipboardFlavors): Promise<void> {
   const entries = Object.entries(flavors);
   if (entries.length === 0) return;
   const cb = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
   if (!cb?.write || typeof ClipboardItem === 'undefined') return;
   const wireMime = (mime: string) => (WELL_KNOWN_CLIPBOARD_MIMES.has(mime) ? mime : `web ${mime}`);
-  const toItem = (fs: [string, string][]) => new ClipboardItem(Object.fromEntries(
+  const toItem = (fs: [string, string | Promise<string>][]) => new ClipboardItem(Object.fromEntries(
     fs.map(([mime, text]) => {
       const wire = wireMime(mime);
-      return [wire, new Blob([text], { type: wire })];
+      const blob = (t: string) => new Blob([t], { type: wire });
+      return [wire, typeof text === 'string' ? blob(text) : text.then(blob)];
     }),
   ));
   try {

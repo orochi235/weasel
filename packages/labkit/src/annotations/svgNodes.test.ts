@@ -1,4 +1,4 @@
-import { serializeSvg } from '@weasel-js/svg';
+import { serializeSvg, svgNeeds } from '@weasel-js/svg';
 import { describe, expect, it } from 'vitest';
 import { markCommands } from './paint';
 import { markSvgNodes } from './svgNodes';
@@ -68,5 +68,19 @@ describe('a mark as vector', () => {
 
   it('emits nothing for a text mark with no words', () => {
     expect(markSvgNodes(mark('text'))).toEqual([]);
+  });
+
+  // Why `composeCaptureSvg` and `<OverviewMarks>` serialize without awaiting
+  // `warmSvg`: a mark exports nothing that loads on demand. A mark gaining a
+  // gradient paint or a script run fails this, and those two then need it.
+  it('needs nothing loaded to serialize, stale or not', () => {
+    const all: AnnotationKind[] = [...KINDS, 'point', 'text'];
+    for (const stale of [false, true]) {
+      const nodes = all.flatMap((k) =>
+        markSvgNodes(mark(k, { title: 'words' }), { stale, color: '#123456' }),
+      );
+      expect(nodes.length).toBeGreaterThan(all.length - 1);
+      expect(svgNeeds(nodes)).toEqual({ fonts: [], paintKinds: [] });
+    }
   });
 });

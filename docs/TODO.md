@@ -308,15 +308,6 @@ Core five + Crop shipped. Remaining:
     A user-supplied bitmap needs a payload variant that persists the image
     itself (data URI, or a document-scoped asset table), which is a storage
     question rather than a paint one.
-  - **Registered paint kinds on small text.** Patterns and the three
-    gradients paint on atlas-tier text through a glyph-mask program
-    (`shaders/glyphPaint.ts`) that runs the same `shadePaint` GLSL as their
-    path program. A kind registered through `registerPaintKind` binds its own
-    program, which the kit cannot wrap in a coverage mask, so on the atlas tier
-    `drawTextGroup` still paints it black while the outline tier paints it
-    properly — `mesh-gradient` text changes color across the threshold. A fix
-    needs the kind to supply its paint as a GLSL function the kit composes,
-    rather than a whole program.
 
   The gradient half's own gap is closed: a conic gradient serializes as a
   `<wzl:conicGradient>` def in `urn:weasel-js:svg` and reads back losslessly,
@@ -466,7 +457,7 @@ intercepting the press that drags the body.
 ### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
 
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only), as does choosing the destination container (`<SceneCanvas layoutDropTarget>`, `LayoutStrategy.dropRegion`). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-- **(P3) Tile-grid overflow policy.** A drop into a full `tileGrid` is rejected, but a child that arrives any other way (an insert or reparent op) past `cols * rows` is skipped from `childPoses` and left unplaced. Scroll, grow-grid, and rejection-at-the-op are the policies worth designing between.
+- **(P3) Tile-grid overflow: a `'grow'` grid never shrinks, and nothing scrolls a `'scroll'` one.** `tileGrid({ overflow })` holds for every arrival through the scene's arrival handler (`scene.setArrivalHandler`, installed by `<SceneCanvas layouts>`). Removals never reach a layout (see "Container layout as a scene semantic"). So when a child leaves a grown grid, the source reflow spreads the remaining rows over the grown container and the cells stretch. No kit host reads `LayoutStrategy.contentExtent` yet either: a `'scroll'` grid's overflow just sits past its bounds.
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
 - **(P3) Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle.
@@ -882,9 +873,7 @@ only story runner in the repo.
   Either the drop should reparent it out, or the demo's containers should not clip. Seen
   in headless Chromium 2026-09-29; predates the reflow glide work.
 
-- **(P3) `layoutMarkdown` wraps only at spaces.** `packages/text/src/markdownText.ts` finds its break points with `text.split(/ /)`, while `layoutRuns` breaks at UAX #14 opportunities, so a markdown line never breaks after a hyphen or between CJK characters and wraps differently from the same text in a plain text node. Its word loop should take its breaks from `lineBreakOpportunities`, the way `layoutRuns` does.
-
-- **(P3) `layoutRuns` forces a line break only at `\n`.** UAX #14 also makes CR, VT, FF, NEL, U+2028 and U+2029 hard breaks, and `lineBreakOpportunities` reports them as `BREAK_MANDATORY`, but the wrap starts a new line only at a newline entry, so none of them ends a line on the canvas. Whether the edit overlay breaks at them is unchecked.
+- **(P3) `measureText` still wraps at whitespace and breaks only at `\n`.** `packages/text/src/measure/measureText.ts`, exported from `@weasel-js/text`, is a third wrap alongside `layoutRuns` and `layoutMarkdown`: it splits on `/(\s+)/` and `'\n'`, so it disagrees with both about hyphens, CJK, punctuation and the other UAX #14 hard breaks. Nothing in the repo calls it. Either move it onto `lineBreakOpportunities` and `isHardLineBreak` too, or retire it in favor of `layoutRuns`' line boxes.
 
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 

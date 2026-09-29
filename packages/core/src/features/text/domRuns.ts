@@ -3,7 +3,10 @@
  * used by `useTextEdit`. The overlay's children are a flat sequence of
  * `<span data-run>` elements, each carrying one run's text and inline
  * styles. Newlines inside a run are literal `\n` characters; the overlay
- * has `white-space: pre-wrap` so they render as line breaks.
+ * has `white-space: pre-wrap` so they render as line breaks. The browser
+ * breaks at no other UAX #14 hard break, so each of those is written as a
+ * `<span data-break>` holding a `\n` in its place — one character for one,
+ * which keeps DOM offsets equal to source offsets.
  *
  * A small-caps run is the one exception to one text node per span: its
  * lowercase letters sit in `<span data-small-caps>` pieces, uppercased and
@@ -14,7 +17,7 @@
 
 import type { FillStyle } from '@weasel-js/paint';
 import {
-  DEFAULT_TEXT_STYLE, numericWeight, smallCapsScaleFor, smallCapsText, transformRunTexts,
+  DEFAULT_TEXT_STYLE, isHardLineBreak, numericWeight, smallCapsScaleFor, smallCapsText, transformRunTexts,
   SMALL_CAPS_SCALE,
   type FontVariantCaps, type ResolvedTextStyle, type StyledRun, type TextTransform,
 } from '@weasel-js/text';
@@ -218,6 +221,36 @@ function toRun(text: string, style: StyleState): StyledRun {
   return run;
 }
 
+const BREAK_ATTR = 'data-break';
+
+/** A break stand-in's source text: its hard break, and anything typed into it after. */
+function restoreBreak(el: Element): string {
+  const text = el.textContent ?? '';
+  const code = parseInt(el.getAttribute(BREAK_ATTR) ?? '', 16);
+  return text.startsWith('\n') && Number.isFinite(code) ? String.fromCharCode(code) + text.slice(1) : text;
+}
+
+/**
+ * Append `text` to `parent` as the overlay sets it: a hard break the browser
+ * would not break at becomes a `<span data-break>` holding a `\n`, carrying
+ * the original's code as hex for `domToRuns` to restore. A CR that opens a
+ * CRLF is left as it is — the LF breaks, and the CR draws nothing.
+ */
+export function appendOverlayText(parent: Node, text: string): void {
+  let from = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (c === 10 || !isHardLineBreak(c) || (c === 13 && text.charCodeAt(i + 1) === 10)) continue;
+    if (i > from) parent.appendChild(document.createTextNode(text.slice(from, i)));
+    const span = document.createElement('span');
+    span.setAttribute(BREAK_ATTR, c.toString(16));
+    span.textContent = '\n';
+    parent.appendChild(span);
+    from = i + 1;
+  }
+  if (from < text.length) parent.appendChild(document.createTextNode(text.slice(from)));
+}
+
 /** Walk an overlay tree and emit a coalesced `StyledRun[]`. */
 export function domToRuns(parent: HTMLElement): StyledRun[] {
   const fragments: Array<{ text: string; style: StyleState }> = [];
@@ -232,6 +265,11 @@ export function domToRuns(parent: HTMLElement): StyledRun[] {
     const el = node as Element;
     if (el.tagName === 'BR') {
       fragments.push({ text: '\n', style });
+      return;
+    }
+    if (el.hasAttribute(BREAK_ATTR)) {
+      const restored = restoreBreak(el);
+      if (restored.length > 0) fragments.push({ text: restored, style });
       return;
     }
     if (el.tagName === 'DIV' && fragments.length > 0) {
@@ -295,7 +333,7 @@ function smallCapsPieces(text: string, transform: TextTransform): Array<{ text: 
 function writeSmallCaps(span: HTMLElement, text: string, transform: TextTransform): void {
   span.replaceChildren();
   for (const p of smallCapsPieces(text, transform)) {
-    if (!p.small) { span.appendChild(document.createTextNode(p.text)); continue; }
+    if (!p.small) { appendOverlayText(span, p.text); continue; }
     const piece = document.createElement('span');
     piece.setAttribute('data-small-caps', '');
     piece.style.fontSize = `calc(var(${SMALL_CAPS_SCALE_PROPERTY}, ${SMALL_CAPS_SCALE}) * 1em)`;
@@ -329,7 +367,7 @@ export function runsToDom(
       span.style.setProperty(SMALL_CAPS_SCALE_PROPERTY, String(scale));
       writeSmallCaps(span, run.text, run.textTransform ?? base.textTransform);
     } else {
-      span.textContent = run.text;
+      appendOverlayText(span, run.text);
     }
     // CSS as well as the pieces: it is what pasted markup says, and it gives a
     // letter typed outside a piece a small cap until the next normalize.
@@ -379,16 +417,27 @@ export function runsToDom(
   }
 }
 
+/** `el`'s text as `domToRuns` reads it: each break stand-in restored. */
+function sourceText(el: Element): string {
+  let out = '';
+  for (const n of el.childNodes) {
+    if (n.nodeType === Node.TEXT_NODE) out += (n as Text).data;
+    else if (n instanceof Element) out += n.hasAttribute(BREAK_ATTR) ? restoreBreak(n) : sourceText(n);
+  }
+  return out;
+}
+
 /** Whether `span`'s children are the pieces `writeSmallCaps` would write. */
 function piecesMatch(span: HTMLElement, transform: TextTransform): boolean {
-  const want = smallCapsPieces(span.textContent ?? '', transform);
+  const want = smallCapsPieces(sourceText(span), transform);
   const have: Array<{ text: string; small: boolean }> = [];
   for (const n of span.childNodes) {
     let small: boolean;
-    if (n.nodeType === Node.TEXT_NODE) small = false;
-    else if (n instanceof HTMLElement && isSmallCapsPiece(n) && n.children.length === 0) small = true;
+    let text: string;
+    if (n.nodeType === Node.TEXT_NODE) { small = false; text = (n as Text).data; }
+    else if (n instanceof HTMLElement && n.hasAttribute(BREAK_ATTR)) { small = false; text = restoreBreak(n); }
+    else if (n instanceof HTMLElement && isSmallCapsPiece(n) && n.children.length === 0) { small = true; text = n.textContent ?? ''; }
     else return false;
-    const text = n.textContent ?? '';
     if (text.length === 0) continue;
     const last = have[have.length - 1];
     if (last && last.small === small) last.text += text;
@@ -412,9 +461,11 @@ export function normalizeSmallCaps(parent: HTMLElement): boolean {
     const t = TRANSFORMS.has(tt) ? (tt as TextTransform) : transform;
     if (el.hasAttribute('data-run')) {
       if (v === 'small-caps') {
-        if (!piecesMatch(el, t)) { writeSmallCaps(el, el.textContent ?? '', t); changed = true; }
+        if (!piecesMatch(el, t)) { writeSmallCaps(el, sourceText(el), t); changed = true; }
       } else if (el.querySelector('[data-small-caps]')) {
-        el.textContent = el.textContent ?? '';
+        const text = sourceText(el);
+        el.replaceChildren();
+        appendOverlayText(el, text);
         changed = true;
       }
       return;

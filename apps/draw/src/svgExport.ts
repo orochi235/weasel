@@ -34,6 +34,8 @@ import {
 } from '@weasel-js/core';
 import {
   serializeSvg,
+  warmSvg,
+  type SerializeOptions,
   type SvgNode,
 } from '@weasel-js/svg';
 
@@ -204,14 +206,30 @@ function sceneSourceOf<TLayer extends string>(
 }
 
 /**
- * Serialize a WeaselDraw scene to an SVG document string. Caller is
- * responsible for triggering the download (see `downloadSvg` in
- * `./svgInterop`).
+ * `serializeSvg` once every paint kind and face `nodes` export with has
+ * loaded. A load that fails is reported through `onWarn` and the export goes
+ * ahead without that def, the way `serializeSvg` treats any paint it cannot
+ * write.
+ */
+async function serializeWarm(nodes: SvgNode[], opts: SerializeOptions): Promise<string> {
+  try {
+    await warmSvg(nodes);
+  } catch (err) {
+    opts.onWarn?.(`a paint kind or font this export uses failed to load: ${String(err)}`);
+  }
+  return serializeSvg(nodes, opts);
+}
+
+/**
+ * Serialize a WeaselDraw scene to an SVG document string. The scene is read
+ * when this is called; only the serialization waits for lazily loaded paint
+ * kinds. Caller is responsible for triggering the download (see `downloadSvg`
+ * in `./svgInterop`).
  */
 export function sceneToSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,
   opts: SceneToSvgOptions,
-): string {
+): Promise<string> {
   const nodes: SvgNode[] = [];
 
   // Background — prepend so it paints first (SVG paint order is document
@@ -226,7 +244,7 @@ export function sceneToSvgString<TLayer extends string>(
 
   nodes.push(...sceneToSvgNodes(sceneSourceOf(scene, poseOfIn(scene, opts.poseComposition))));
 
-  return serializeSvg(nodes, {
+  return serializeWarm(nodes, {
     ...docToSerializeOptions({
       title: opts.filename,
       size: { width: opts.paperWidth, height: opts.paperHeight },
@@ -274,7 +292,7 @@ export function selectionToSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,
   ids: readonly string[],
   poseComposition?: PoseComposition<WeaselDrawPose>,
-): string {
+): Promise<string> {
   const poseOf = poseOfIn(scene, poseComposition);
   const nodes = sceneToSvgNodes(sceneSourceOf(scene, poseOf), ids);
 
@@ -284,7 +302,7 @@ export function selectionToSvgString<TLayer extends string>(
       .filter((p): p is WeaselDrawPose => p != null),
   ) ?? { x: 0, y: 0, width: 0, height: 0 };
 
-  return serializeSvg(nodes, {
+  return serializeWarm(nodes, {
     viewBox: bounds,
     width: bounds.width,
     height: bounds.height,
@@ -305,14 +323,14 @@ export function selectionToSvgString<TLayer extends string>(
  * carries (built by `buildWeaselClipboardText`), so every flavor of one copy
  * decodes to one payload.
  */
-export function selectionToClipboardSvgString<TLayer extends string>(
+export async function selectionToClipboardSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,
   ids: readonly string[],
   weaselPayloadText: string,
   poseComposition?: PoseComposition<WeaselDrawPose>,
-): string {
+): Promise<string> {
   return embedWeaselMetadataInSvg(
-    selectionToSvgString(scene, ids, poseComposition),
+    await selectionToSvgString(scene, ids, poseComposition),
     weaselPayloadText,
   );
 }

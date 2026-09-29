@@ -2,6 +2,8 @@ import { createHistory, type History, type HistorySelection, type Journal, type 
 import type { Op } from 'core/ops/types';
 import type { ParallaxOpts } from 'core/viewport/parallax';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
+import { createArrangeOp, type ArrangedPose } from 'core/ops/arrange';
+import { SceneArrivalRefused } from './arrivals';
 import { dwarn } from 'debug/flag';
 import { createDependentsIndex, sameDependsOn } from './dependents';
 import { withKitRegistry } from './kitRegistry';
@@ -26,6 +28,7 @@ import {
   type NodeId,
   type RegisteredOp,
   type Scene,
+  type SceneArrivalHandler,
   type SceneRegistry,
   type SerializedNode,
   type SerializedScene,
@@ -315,6 +318,72 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   // depend on `scene.history` can wire it after construction.
   let activeJournalAccessor: (() => Journal | null) | null =
     options.getActiveJournal ?? null;
+
+  // Arrival handling. `arrivals` is open (non-null) while a live edit is
+  // collecting the nodes that joined a container, and whoever opened it
+  // settles it before the edit closes. Undo, redo and journal replays never
+  // open it: they restore an arrangement that was already decided.
+  let arrivalHandler: SceneArrivalHandler<TPose> | null = null;
+  let arrivals: Map<NodeId, NodeId[]> | null = null;
+
+  function noteArrival(id: NodeId, parent: NodeId | null, from: NodeId | null): void {
+    if (arrivals === null || parent === null || parent === from) return;
+    const list = arrivals.get(parent);
+    if (list === undefined) arrivals.set(parent, [id]);
+    else if (!list.includes(id)) list.push(id);
+  }
+
+  /** Open the arrival window when a handler wants one and no enclosing edit
+   *  holds it already; true when this caller now owns it. */
+  function openArrivals(): boolean {
+    if (arrivalHandler === null || arrivals !== null) return false;
+    arrivals = new Map();
+    return true;
+  }
+
+  /** Close the window and ask the handler what the arrivals get. Throws
+   *  `SceneArrivalRefused` when it refuses, which reverts the edit. */
+  function settleArrivals(): ArrangedPose[] {
+    const pending = arrivals;
+    arrivals = null;
+    if (pending === null || arrivalHandler === null) return [];
+    // Only what is still there once the edit's other mutations have landed.
+    const landed = new Map<NodeId, NodeId[]>();
+    for (const [parent, ids] of pending) {
+      const still = ids.filter((id) => state.nodes.get(id)?.parent === parent);
+      if (still.length > 0 && state.nodes.has(parent)) landed.set(parent, still);
+    }
+    if (landed.size === 0) return [];
+    const poses = arrivalHandler(landed);
+    if (poses === null) throw new SceneArrivalRefused(landed);
+    const out: ArrangedPose[] = [];
+    for (const [id, to] of poses) {
+      const node = state.nodes.get(id);
+      if (node) out.push({ id, from: node.pose, to });
+    }
+    return out;
+  }
+
+  /** `ops` plus the op that settles their arrivals, when this call owns the
+   *  window; `ops` unchanged otherwise. */
+  function withArrivalOps(ops: Op[]): { ops: Op[]; owned: boolean } {
+    if (!openArrivals()) return { ops, owned: false };
+    const write = (id: string, pose: unknown): void => scene.setPose(asNodeId(id), pose as TPose);
+    return { ops: [...ops, createArrangeOp({}, settleArrivals, write)], owned: true };
+  }
+
+  /** Run an op-driven edit that may carry arrivals: a refusal reverts it and
+   *  is swallowed, the way a drop onto a full container is — nothing lands. */
+  function runArrivalEdit(ops: Op[], run: (ops: Op[]) => void): void {
+    const { ops: all, owned } = withArrivalOps(ops);
+    try {
+      run(all);
+    } catch (err) {
+      if (!(err instanceof SceneArrivalRefused)) throw err;
+    } finally {
+      if (owned) arrivals = null;
+    }
+  }
 
   function isLockedInternal(id: NodeId): boolean {
     if (!state.layers.some((l) => l.locked)) return false;
@@ -1077,8 +1146,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       targetId: raw.targetId,
       forkedAtEntryId: raw.forkedAtEntryId,
       applyBatch(ops, label) {
-        atomically(() => withRecordingSuppressed(() => raw.applyBatch(ops, label)), () => true);
-        notify();
+        runArrivalEdit(ops, (all) => {
+          atomically(() => withRecordingSuppressed(() => raw.applyBatch(all, label)), () => true);
+          notify();
+        });
       },
       undo() {
         withLocksLifted(() => withRecordingSuppressed(() => raw.undo()));
@@ -1115,13 +1186,20 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     // Mutating: applied ops re-enter the scene's own mutation methods.
     apply(op, label) {
       refuseUntracked('history.apply');
-      atomically(() => withRecordingSuppressed(() => history.apply(op, label)), () => true);
-      notify();
+      runArrivalEdit([op], (all) => {
+        const run = () => (all.length === 1
+          ? history.apply(op, label)
+          : history.applyOps(all, label ?? op.label ?? ''));
+        atomically(() => withRecordingSuppressed(run), () => true);
+        notify();
+      });
     },
     applyOps(ops, label) {
       refuseUntracked('history.applyOps');
-      atomically(() => withRecordingSuppressed(() => history.applyOps(ops, label)), () => true);
-      notify();
+      runArrivalEdit(ops, (all) => {
+        atomically(() => withRecordingSuppressed(() => history.applyOps(all, label)), () => true);
+        notify();
+      });
     },
     undo: () => { scene.undo(); },
     redo: () => { scene.redo(); },
@@ -1152,6 +1230,48 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     beginJournal: (opts) => wrapJournal(history.beginJournal(opts)),
     resumeJournal: (journal) => history.resumeJournal(rawJournals.get(journal) ?? journal),
   };
+
+  function applyBatchNow(ops: Op[], label: string, adapter: unknown): void {
+    const journal: Journal | null = (activeJournalAccessor ?? (() => null))();
+    // Either route drives mutations from a history engine (the journal's
+    // inner history, or the scene's own), so scene-side recording is
+    // suppressed for the duration: op applies that re-enter scene
+    // mutation methods via the adapter must mutate without re-recording.
+    // batchDepth coalesces the per-op notify() calls (same as
+    // scene.batch); exactly one listener dispatch fires at the end —
+    // mirroring the single-notification semantics callers expect.
+    const prevSuppress = suppressRecording;
+    const prevDirty = batchDirty;
+    suppressRecording = true;
+    batchDepth++;
+    batchDirty = false;
+    try {
+      atomically(() => {
+        if (journal) {
+          journal.applyBatch(ops, label);
+        } else {
+          // Native path: record the external ops themselves as one engine
+          // entry — coalescible across applyBatch calls via their own
+          // coalesceKeys — rebound to this call's adapter.
+          history.applyOps(ops.map((op) => bindOpToAdapter(op, adapter)), label);
+        }
+      }, () => true);
+    } finally {
+      batchDepth--;
+      suppressRecording = prevSuppress;
+      // Re-merge any outer batch's pending dirt so a nested call can't
+      // swallow it; at true top level prevDirty is always false.
+      batchDirty = batchDirty || prevDirty;
+      // Flush inside finally so a throwing op can't strand subscribers
+      // after earlier ops in the batch already mutated state (mirrors
+      // scene.batch). Depth-guarded: a nested context defers to the
+      // outermost flush.
+      if (batchDepth === 0 && batchDirty) {
+        batchDirty = false;
+        for (const listener of listeners) listener();
+      }
+    }
+  }
 
   const scene: Scene<TData, TLayer, TPose> = {
     get nodes() { return state.nodes; },
@@ -1227,8 +1347,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         assertSubtreeLayer(spec.id, spec.layer, parent, p.layer);
         refuseLocked(parent, 'add under');
       }
+      if (parent !== null && arrivalHandler !== null && arrivals === null && batchDepth === 0 && !suppressRecording) {
+        // A bare add under a container is an edit of its own, so it settles
+        // its arrival like one — as a batch, which is what makes the
+        // arrangement part of the same undo step.
+        return scene.batch(`add ${spec.kind}`, () => scene.add(spec));
+      }
       const sibs = siblingsOf(parent);
       const index = spec.index ?? sibs.length;
+      noteArrival(id, parent, null);
       executeAndLog('kit:add', {
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
@@ -1361,10 +1488,16 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           throw new Error('Scene: cannot parent a node to its own descendant');
         }
       }
+      if (parent !== null && parent !== node.parent && arrivalHandler !== null
+        && arrivals === null && batchDepth === 0 && !suppressRecording) {
+        scene.batch('move', () => scene.move(id, parent, index));
+        return;
+      }
       const fromSibs = siblingsOf(node.parent);
       const fromIndex = fromSibs.indexOf(id);
       const toSibs = parent === node.parent ? fromSibs : siblingsOf(parent);
       const toIndex = index ?? toSibs.length;
+      noteArrival(id, parent, node.parent);
       executeAndLog('kit:move', {
         id, fromParent: node.parent, fromIndex, toParent: parent, toIndex,
       }, 'move');
@@ -1488,45 +1621,14 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     applyBatch(ops, label, adapter) {
       refuseUntracked('applyBatch');
-      const journal: Journal | null = (activeJournalAccessor ?? (() => null))();
-      // Either route drives mutations from a history engine (the journal's
-      // inner history, or the scene's own), so scene-side recording is
-      // suppressed for the duration: op applies that re-enter scene
-      // mutation methods via the adapter must mutate without re-recording.
-      // batchDepth coalesces the per-op notify() calls (same as
-      // scene.batch); exactly one listener dispatch fires at the end —
-      // mirroring the single-notification semantics callers expect.
-      const prevSuppress = suppressRecording;
-      const prevDirty = batchDirty;
-      suppressRecording = true;
-      batchDepth++;
-      batchDirty = false;
-      try {
-        atomically(() => {
-          if (journal) {
-            journal.applyBatch(ops, label);
-          } else {
-            // Native path: record the external ops themselves as one engine
-            // entry — coalescible across applyBatch calls via their own
-            // coalesceKeys — rebound to this call's adapter.
-            history.applyOps(ops.map((op) => bindOpToAdapter(op, adapter)), label);
-          }
-        }, () => true);
-      } finally {
-        batchDepth--;
-        suppressRecording = prevSuppress;
-        // Re-merge any outer batch's pending dirt so a nested call can't
-        // swallow it; at true top level prevDirty is always false.
-        batchDirty = batchDirty || prevDirty;
-        // Flush inside finally so a throwing op can't strand subscribers
-        // after earlier ops in the batch already mutated state (mirrors
-        // scene.batch). Depth-guarded: a nested context defers to the
-        // outermost flush.
-        if (batchDepth === 0 && batchDirty) {
-          batchDirty = false;
-          for (const listener of listeners) listener();
-        }
-      }
+      runArrivalEdit(ops, (all) => applyBatchNow(all, label, adapter));
+    },
+
+    setArrivalHandler(handler) {
+      arrivalHandler = handler;
+      return () => {
+        if (arrivalHandler === handler) arrivalHandler = null;
+      };
     },
 
     overrides,
@@ -1604,11 +1706,16 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // the selection has already moved to wherever the batch put it.
       const outermost = batchDepth === 0;
       if (outermost) currentBatch = { label, ops: [], selectionBefore: selection };
+      const ownsArrivals = outermost && openArrivals();
       batchDepth++;
       try {
         if (!outermost) return fn();
         try {
-          return atomically(fn, () => (currentBatch?.ops.length ?? 0) > 0);
+          return atomically(() => {
+            const result = fn();
+            if (ownsArrivals) for (const p of settleArrivals()) scene.setPose(asNodeId(p.id), p.to as TPose);
+            return result;
+          }, () => (currentBatch?.ops.length ?? 0) > 0);
         } catch (err) {
           // Reverted already; the half-built entry must not reach history.
           currentBatch = null;
@@ -1616,6 +1723,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         }
       } finally {
         batchDepth--;
+        if (ownsArrivals) arrivals = null;
         if (batchDepth === 0) {
           if (currentBatch) {
             const finished = currentBatch;
@@ -1642,11 +1750,17 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const versionBefore = version;
       suppressRecording = true;
       untrackedDepth++;
+      const ownsArrivals = openArrivals();
       batchDepth++;
       try {
-        return atomically(fn, () => false);
+        return atomically(() => {
+          const result = fn();
+          if (ownsArrivals) for (const p of settleArrivals()) scene.setPose(asNodeId(p.id), p.to as TPose);
+          return result;
+        }, () => false);
       } finally {
         batchDepth--;
+        if (ownsArrivals) arrivals = null;
         untrackedDepth--;
         suppressRecording = prevSuppress;
         if (version !== versionBefore) history.seal();

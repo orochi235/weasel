@@ -89,6 +89,9 @@ export interface ComposeSvgArgs {
  * need no transform, and `width`/`height` carry the export scale. Both halves
  * nest as child `<svg>` elements, which each establish their own viewport and
  * so keep their own `viewBox` math out of this function.
+ *
+ * Synchronous with no `warmSvg`: marks export nothing that loads on demand,
+ * which `svgNodes.test.ts` pins.
  */
 export function composeCaptureSvg(args: ComposeSvgArgs): string {
   const { base, scene, draw, scale, onWarn } = args;

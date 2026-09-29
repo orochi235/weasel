@@ -17,7 +17,12 @@ import type { FillStyle } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'features/groups/composePose';
 import { resolveFillPattern } from 'features/patterns/resolveSpec';
+import { meshFromStops } from 'features/meshPaint/meshPaint';
+import 'features/meshPaint/register';
+import { asPaint, registerPaintKind, type PaintKindEntry } from 'core/paintKinds';
 import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
+import { defaultDrawOne } from './defaultDrawOne';
+import { registerEffect } from '../renderer/effects/types';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import { OUTLINE_MIN_SCREEN_PX } from '../renderer/draw';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
@@ -66,12 +71,15 @@ function pixelAt(img: RasterImage, wx: number, wy: number, scale: number): numbe
 }
 
 /** World points, on a half-unit grid, that both renders cover with solid ink —
- *  well inside a glyph, where the two tiers' edges cannot differ. */
-function sharedInk(a: RasterImage, sa: number, b: RasterImage, sb: number): [number, number][] {
+ *  well inside a glyph, where the two tiers' edges cannot differ. `floor` is
+ *  the alpha that counts as ink. */
+function sharedInk(
+  a: RasterImage, sa: number, b: RasterImage, sb: number, floor = 250,
+): [number, number][] {
   const out: [number, number][] = [];
   for (let wy = POSE.y; wy < POSE.y + POSE.height; wy += 0.5) {
     for (let wx = POSE.x; wx < POSE.x + POSE.width; wx += 0.5) {
-      if (pixelAt(a, wx, wy, sa)[3] >= 250 && pixelAt(b, wx, wy, sb)[3] >= 250) out.push([wx, wy]);
+      if (pixelAt(a, wx, wy, sa)[3] >= floor && pixelAt(b, wx, wy, sb)[3] >= floor) out.push([wx, wy]);
     }
   }
   return out;
@@ -242,5 +250,206 @@ describe('texture-painted atlas text in a batched frame', () => {
     // Everything under the last rect is the last rect.
     expect(greenOver).toBeGreaterThan(20);
     expect(other).toBe(0);
+  });
+});
+
+/** The gradient's red-to-blue ramp as a mesh — a kind registered through
+ *  `registerPaintKind`, which binds a program of its own. */
+const MESH = asPaint(meshFromStops([
+  { offset: 0, color: '#ff0000ff' }, { offset: 1, color: '#0000ffff' },
+]));
+
+/** A kind the kit knows nothing about: red left of world x = 56 and blue
+ *  right of it, from a program only it registers. */
+const SPLIT_X = 56;
+const SPLIT = asPaint({ fill: 'test-split' });
+const SPLIT_KIND: PaintKindEntry = {
+  id: 'test-split',
+  label: 'Split',
+  seed: () => SPLIT,
+  colorOf: () => undefined,
+  programs: {
+    'test:split': {
+      vert: `#version 300 es
+in vec2 a_position;
+uniform mat3 u_proj;
+uniform mat3 u_model;
+uniform mat3 u_worldInv;
+out vec2 v_world;
+void main() {
+  vec3 screen = u_model * vec3(a_position, 1.0);
+  gl_Position = vec4((u_proj * vec3(screen.xy, 1.0)).xy, 0.0, 1.0);
+  v_world = (u_worldInv * vec3(screen.xy, 1.0)).xy;
+}
+`,
+      frag: `#version 300 es
+precision highp float;
+in vec2 v_world;
+uniform float u_split;
+uniform float u_alpha;
+out vec4 outColor;
+void main() {
+  vec3 c = v_world.x < u_split ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 0.0, 1.0);
+  outColor = vec4(c * u_alpha, u_alpha);
+}
+`,
+    },
+  },
+  bind(ctx) {
+    const inverse = ctx.spaceInverse('world');
+    const program = ctx.program('test:split');
+    if (!inverse || !program) return null;
+    ctx.gl.useProgram(program.handle);
+    ctx.setProjAndModel(program);
+    ctx.gl.uniformMatrix3fv(program.uniform('u_worldInv')!, false, inverse);
+    ctx.gl.uniform1f(program.uniform('u_split')!, SPLIT_X);
+    ctx.gl.uniform1f(program.uniform('u_alpha')!, ctx.alpha);
+    return program;
+  },
+};
+
+describe('a registered paint kind on text', () => {
+  beforeAll(() => registerPaintKind(SPLIT_KIND));
+
+  /** Solid ink in the left and right fifths of the text, at `scale`. */
+  function sides(fill: FillStyle, scale: number, floor?: number): { left: number[][]; right: number[][] } {
+    const img = renderNode(fill, scale);
+    const mask = renderNode({ fill: 'solid', color: '#ffffff' }, scale);
+    const ink = sharedInk(mask, scale, mask, scale, floor);
+    const at = ([x, y]: [number, number]) => pixelAt(img, x, y, scale);
+    return {
+      left: ink.filter(([x]) => x < POSE.x + POSE.width * 0.2).map(at),
+      right: ink.filter(([x]) => x > POSE.x + POSE.width * 0.8).map(at),
+    };
+  }
+
+  it('paints a mesh gradient on 12px text rather than black', () => {
+    // A 12px stem is about a pixel wide, so its antialiased band keeps most
+    // of it short of full coverage; 200 still means "inside a glyph".
+    const { left, right } = sides(MESH, 12 / FONT_SIZE, 200);
+    expect(left.length).toBeGreaterThan(3);
+    expect(right.length).toBeGreaterThan(3);
+    for (const p of left) expect(p[0]).toBeGreaterThan(p[2] + 64);
+    for (const p of right) expect(p[2]).toBeGreaterThan(p[0] + 64);
+  });
+
+  it('paints a kind registered outside the kit on atlas-tier text', () => {
+    const { left, right } = sides(SPLIT, SDF_SCALE);
+    expect(left.length).toBeGreaterThan(10);
+    expect(right.length).toBeGreaterThan(10);
+    for (const p of left) expect(p.slice(0, 3)).toEqual([255, 0, 0]);
+    for (const p of right) expect(p.slice(0, 3)).toEqual([0, 0, 255]);
+  });
+
+  it.each([
+    ['mesh-gradient', MESH],
+    ['a consumer kind', SPLIT],
+  ])('%s reads the same color at the same world point on either side of the threshold', (_name, fill) => {
+    const sdf = renderNode(fill, SDF_SCALE);
+    const outline = renderNode(fill, OUTLINE_SCALE);
+    const ink = sharedInk(sdf, SDF_SCALE, outline, OUTLINE_SCALE)
+      // A pixel straddling the split is the split's own edge on either grid.
+      .filter(([x]) => Math.abs(x - SPLIT_X) > 1);
+    expect(ink.length).toBeGreaterThan(100);
+    const worst = Math.max(...ink.map(([x, y]) => rgbDistance(
+      pixelAt(sdf, x, y, SDF_SCALE), pixelAt(outline, x, y, OUTLINE_SCALE))));
+    expect(worst).toBeLessThanOrEqual(8);
+  });
+
+  it('paints the underline with the kind too', () => {
+    const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    scene.add({
+      kind: 'leaf', layer: 'main', pose: POSE,
+      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE, underline: true }, fill: SPLIT },
+    });
+    const img = renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: 1, y: 1 } });
+    const inked = (x: number, y: number) => pixelAt(img, x, y + 0.5, 1)[3] >= 128;
+    let row = -1;
+    for (let y = img.height - 1; y >= 0 && row < 0; y--) {
+      if (inked(POSE.x + 4, y) && inked(POSE.x + 80, y)) row = y;
+    }
+    expect(row).toBeGreaterThan(0);
+    expect(pixelAt(img, POSE.x + 4, row + 0.5, 1).slice(0, 3)).toEqual([255, 0, 0]);
+    expect(pixelAt(img, POSE.x + 80, row + 0.5, 1).slice(0, 3)).toEqual([0, 0, 255]);
+  });
+
+  it('draws in painter order between staged solids and under a clip, leaving solid text beside it solid', () => {
+    const run = (text: string, fill: FillStyle) => ({
+      text, fontFamily: FAMILY, fontSize: FONT_SIZE, fontWeight: 400, fontStyle: 'normal',
+      fill, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
+    });
+    const text = (a: FillStyle, b: FillStyle) => ({
+      kind: 'text', x: 4, y: 4, align: 'left', style: { fontFamily: FAMILY, fontSize: FONT_SIZE },
+      runs: [run('HH', a), run('HH', b)],
+    }) as DrawCommand;
+    // The clip leaves off the lower rows: the paint's own pass must not take
+    // the stencil the glyphs are tested against with it.
+    const CLIP_BOTTOM = 30;
+    const img = renderCommands([
+      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { color: '#00ffff' } },
+      {
+        kind: 'group',
+        clip: { kind: 'rect', x: 0, y: 0, width: 112, height: CLIP_BOTTOM },
+        children: [text(SPLIT, { fill: 'solid', color: '#ffff00' })],
+      } as DrawCommand,
+      { kind: 'path', path: { kind: 'rect', x: 84, y: 0, width: 28, height: 52 }, fill: { color: '#00ff00' } },
+    ]);
+    const mask = renderCommands([
+      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { color: '#000000' } },
+      text({ color: '#ffffff' }, { color: '#ffffff' }),
+    ]);
+    const px = (x: number, y: number) => pixelAt(img, x + 0.5, y + 0.5, 1).join();
+    const inMask = (x: number, y: number) => pixelAt(mask, x + 0.5, y + 0.5, 1)[0] >= 250;
+
+    expect(px(1, 1)).toBe('0,255,255,255');
+    const counts = new Map<string, number>();
+    const bump = (k: string) => counts.set(k, (counts.get(k) ?? 0) + 1);
+    for (let y = 0; y < 52; y++) {
+      for (let x = 0; x < 112; x++) {
+        if (!inMask(x, y)) continue;
+        const p = px(x, y);
+        if (x >= 84) bump(p === '0,255,0,255' ? 'green over' : 'other');
+        else if (y >= CLIP_BOTTOM) bump(p === '0,255,255,255' ? 'clipped' : 'other');
+        else if (p === '255,0,0,255') bump('red');
+        else if (p === '255,255,0,255') bump('yellow');
+      }
+    }
+    // The kind's run, which sits left of the split.
+    expect(counts.get('red') ?? 0).toBeGreaterThan(20);
+    // The solid run staged after it paints its own color.
+    expect(counts.get('yellow') ?? 0).toBeGreaterThan(20);
+    // Below the clip, the ground shows through every glyph.
+    expect(counts.get('clipped') ?? 0).toBeGreaterThan(20);
+    // Everything under the last rect is the last rect.
+    expect(counts.get('green over') ?? 0).toBeGreaterThan(20);
+    expect(counts.get('other') ?? 0).toBe(0);
+  });
+
+  it('lands in a group\'s effect buffer, not the frame under it', () => {
+    // Red and blue trade places, so glyphs that escaped to the default
+    // framebuffer would read unswapped.
+    const swap = registerEffect('test:swap-rb', `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_source;
+out vec4 outColor;
+void main() { outColor = texture(u_source, v_uv).bgra; }
+`);
+    const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    scene.add({
+      kind: 'leaf', layer: 'main', pose: POSE,
+      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE }, fill: SPLIT },
+    });
+    const plain = renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: SDF_SCALE, y: SDF_SCALE } });
+    const img = renderSceneToPixels({
+      scene, sourceRect: SOURCE, scale: { x: SDF_SCALE, y: SDF_SCALE },
+      drawOne: (node, pose, view, ctx) => [{
+        kind: 'group', effects: [{ program: swap }], children: defaultDrawOne(node, pose, view, ctx),
+      }],
+    });
+    const ink = sharedInk(plain, SDF_SCALE, plain, SDF_SCALE);
+    const left = ink.filter(([x]) => x < SPLIT_X - 8);
+    expect(left.length).toBeGreaterThan(10);
+    for (const [x, y] of left) expect(pixelAt(img, x, y, SDF_SCALE).slice(0, 3)).toEqual([0, 0, 255]);
   });
 });

@@ -346,6 +346,24 @@ export interface SceneRegistry<TPose> {
 
 /** Options for `useScene` — the layers the scene has, what it starts out
  *  holding, and how its history behaves. */
+/**
+ * Decides what happens to the nodes that joined a container during one edit —
+ * by an `add` under it or a `move` into it, whatever op or call made them.
+ * `arrivals` maps each container to the ids that joined it, in the order they
+ * arrived, read once the edit's other mutations have landed.
+ *
+ * Return the poses to write, in each node's stored frame; they become part of
+ * the same edit, and so of the same undo step. An empty map writes nothing.
+ * Return `null` to refuse: the whole edit is reverted (see
+ * `SceneArrivalRefused`).
+ *
+ * Runs only for live edits. Undo, redo and a restored history replay the
+ * arrangement that was decided the first time.
+ */
+export type SceneArrivalHandler<TPose> = (
+  arrivals: ReadonlyMap<NodeId, readonly NodeId[]>,
+) => ReadonlyMap<NodeId, TPose> | null;
+
 export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose> {
   systemLayers: readonly SystemLayerSpec<TLayer>[];
   initial?: readonly AddNodeSpec<TData, TLayer, TPose>[];
@@ -586,6 +604,12 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   setActiveJournalAccessor(
     fn: (() => import('@weasel-js/history').Journal | null) | null,
   ): void;
+
+  /** Install what the scene does when nodes join a container, replacing any
+   *  handler installed before; `null` removes it. Returns a function that
+   *  removes this handler, and does nothing once another has replaced it.
+   *  See {@link SceneArrivalHandler}. */
+  setArrivalHandler(handler: SceneArrivalHandler<TPose> | null): () => void;
 
   /** Apply a batch of ops with journal-aware routing.
    *
