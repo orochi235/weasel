@@ -13,13 +13,12 @@ import type {
   ActionsProp,
   Affordance,
   AffordanceRegion,
-  CurveRepresentation,
   InvocationCtx,
   OngoingHandle,
   RenderLayer,
   SceneCanvasApi,
-  SharedAnchor,
 } from '@weasel-js/core';
+import type { CurveRepresentation, SharedAnchor } from '@weasel-js/geom/curves';
 import {
   createAnchorsLayer,
   createCurvatureCombLayer,
