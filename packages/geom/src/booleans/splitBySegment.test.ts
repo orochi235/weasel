@@ -399,13 +399,73 @@ describe('splitPathByPolyline', () => {
     expect(pieces.map(area).sort((a, b) => a - b)[0]).toBeCloseTo(30 * 40, 3);
   });
 
-  it('drops a loop the cut makes inside the fill', () => {
+  it('cuts out a loop the cut makes inside the fill, leaving a hole', () => {
     // Across at y=50, back over its own track at (40, 50), and out at y=70.
     const pieces = splitPathByPolyline(sq, [
       { x: -10, y: 50 }, { x: 60, y: 50 }, { x: 60, y: 30 }, { x: 40, y: 30 }, { x: 40, y: 70 }, { x: 110, y: 70 },
     ])!;
-    expect(pieces.length).toBe(2);
-    expect(pieces.map(area).sort((a, b) => a - b)).toEqual([expect.closeTo(3800, 3), expect.closeTo(6200, 3)]);
+    expect(pieces.length).toBe(3);
+    expect(pieces.map(area).sort((a, b) => a - b)).toEqual([
+      expect.closeTo(400, 3), expect.closeTo(3800, 3), expect.closeTo(5800, 3),
+    ]);
+    const loop = pieces.find((p) => area(p) < 1000)!;
+    expect(boundsOfPath(loop)).toMatchObject({ x: 40, y: 30, width: 20, height: 20 });
+    const top = pieces.find((p) => area(p) > 5000)!;
+    expect(inside(top, 50, 40)).toBe(false);
+    expect(inside(top, 80, 40)).toBe(true);
+  });
+
+  it('cuts out a loop in a stretch that cuts no chord', () => {
+    // Starts inside, loops over its own track at (40, 50), and stops inside.
+    const pieces = splitPathByPolyline(sq, [
+      { x: 10, y: 50 }, { x: 60, y: 50 }, { x: 60, y: 30 }, { x: 40, y: 30 }, { x: 40, y: 70 },
+    ])!;
+    expect(pieces.map(area).sort((a, b) => a - b)).toEqual([expect.closeTo(400, 3), expect.closeTo(9600, 3)]);
+  });
+
+  it('cuts out the region a closed cut encloses inside the fill', () => {
+    const pieces = splitPathByPolyline(sq, [
+      { x: 20, y: 20 }, { x: 60, y: 20 }, { x: 60, y: 60 }, { x: 20, y: 60 }, { x: 20, y: 20 },
+    ])!;
+    expect(pieces.map(area).sort((a, b) => a - b)).toEqual([expect.closeTo(1600, 3), expect.closeTo(8400, 3)]);
+    const rest = pieces.find((p) => area(p) > 5000)!;
+    expect(inside(rest, 40, 40)).toBe(false);
+    expect(inside(rest, 10, 10)).toBe(true);
+  });
+
+  it('takes a hole the loop encloses with the piece it cuts out', () => {
+    const donut = new PathBuilder()
+      .setFillRule('evenodd')
+      .moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close()
+      .moveTo(20, 20).lineTo(80, 20).lineTo(80, 80).lineTo(20, 80).close()
+      .build();
+    const pieces = splitPathByPolyline(donut, [
+      { x: 10, y: 10 }, { x: 90, y: 10 }, { x: 90, y: 90 }, { x: 10, y: 90 }, { x: 10, y: 10 },
+    ])!;
+    expect(pieces.map(area).sort((a, b) => a - b)).toEqual([expect.closeTo(2800, 3), expect.closeTo(3600, 3)]);
+    const band = pieces.find((p) => area(p) < 3000)!;
+    expect(inside(band, 15, 15)).toBe(true);
+    expect(inside(band, 50, 50)).toBe(false);
+    const rim = pieces.find((p) => area(p) > 3000)!;
+    expect(inside(rim, 5, 5)).toBe(true);
+    expect(inside(rim, 15, 15)).toBe(false);
+  });
+
+  it('cuts a closed cut that starts inside and crosses the boundary', () => {
+    const pieces = splitPathByPolyline(sq, [
+      { x: 50, y: 50 }, { x: 150, y: 50 }, { x: 150, y: 80 }, { x: 50, y: 80 }, { x: 50, y: 50 },
+    ])!;
+    expect(pieces.map(area).sort((a, b) => a - b)).toEqual([expect.closeTo(1500, 3), expect.closeTo(8500, 3)]);
+  });
+
+  it('leaves a loop uncut where another chord of the cut crosses it', () => {
+    // A loop at [50,70]x[40,60] made inside the fill, then out the top and
+    // down through the loop at x=60.
+    const pieces = splitPathByPolyline(sq, [
+      { x: 50, y: 20 }, { x: 50, y: 60 }, { x: 70, y: 60 }, { x: 70, y: 40 }, { x: 30, y: 40 },
+      { x: 30, y: -10 }, { x: 60, y: -10 }, { x: 60, y: 110 },
+    ])!;
+    expect(pieces.map(area).sort((a, b) => a - b)).toEqual([expect.closeTo(4000, 3), expect.closeTo(6000, 3)]);
   });
 
   it('cuts chords that cross each other', () => {
