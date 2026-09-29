@@ -41,15 +41,14 @@ export function PrefsRail(props: PrefsRailProps) {
     else onScrollTo(item.path);
   };
   const roving = useRovingTabIndex<HTMLDivElement>({
-    items: items.map(() => ({})),
-    itemClassName: s.railItem,
+    itemSelector: `.${s.railItem}`,
     tabStopIndex: Math.max(0, items.findIndex((i) => i.path === section)),
   });
 
   return (
     <nav className={s.rail} aria-label={ariaLabel}>
       {header}
-      <div className={s.railList} ref={roving.rootRef}>
+      <div className={s.railList} ref={roving.rootRef} onKeyDown={roving.onKeyDown}>
         {items.map((item, index) => {
           const open = item.depth === 0 && item.path === section;
           const inView = item.depth === 1 && item.path === current;
@@ -61,8 +60,6 @@ export function PrefsRail(props: PrefsRailProps) {
                 .filter(Boolean)
                 .join(' ')}
               aria-current={open ? 'page' : inView ? 'location' : undefined}
-              tabIndex={roving.tabIndexFor(index)}
-              onKeyDown={roving.onKeyDown(index)}
               onClick={() => activate(index)}
             >
               <span className={s.railName}>{item.name}</span>

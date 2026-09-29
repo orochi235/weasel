@@ -48,7 +48,7 @@ export function OptionsBar<V extends string | number = string>(props: OptionsBar
     item.onChange(!item.selected);
   };
 
-  const roving = useRovingTabIndex({ items, itemClassName: s.segment, onActivate: toggle });
+  const roving = useRovingTabIndex({ itemSelector: `.${s.segment}`, onActivate: toggle });
 
   const style: CSSProperties | undefined = height !== undefined
     ? ({ ['--wzl-tb-height' as string]: `${height}px` } as CSSProperties)
@@ -64,6 +64,7 @@ export function OptionsBar<V extends string | number = string>(props: OptionsBar
   return (
     <div
       ref={roving.rootRef}
+      onKeyDown={roving.onKeyDown}
       className={rootCls}
       role="group"
       aria-label={ariaLabel}
@@ -78,10 +79,8 @@ export function OptionsBar<V extends string | number = string>(props: OptionsBar
             aria-pressed={item.selected}
             aria-label={item.ariaLabel}
             disabled={item.disabled}
-            tabIndex={roving.tabIndexFor(i)}
             className={cls}
             onClick={() => toggle(i)}
-            onKeyDown={roving.onKeyDown(i)}
           >
             {item.label}
           </button>

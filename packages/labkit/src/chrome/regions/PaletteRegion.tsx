@@ -1,5 +1,4 @@
-import { ToolButton, ToolGroup } from '../../passthrough/weasel-ui';
-import { useRovingTabIndex } from '../../primitives/useRovingTabIndex';
+import { ToolButton, ToolGroup, useRovingTabIndex } from '../../passthrough/weasel-ui';
 import type { RegionContribution, ToolItem, ToolSlotContext, TrialChromeContext } from '../types';
 
 /** Props for `<PaletteRegion>`. */
@@ -19,11 +18,11 @@ export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>
   ctx,
   region = 'palette',
 }: PaletteRegionProps<TCtx>) {
-  const { ref, onKeyDown } = useRovingTabIndex<HTMLDivElement>('vertical');
+  const { rootRef, onKeyDown } = useRovingTabIndex<HTMLDivElement>({ orientation: 'vertical' });
   if (contributions.length === 0) return null;
   return (
     <div
-      ref={ref}
+      ref={rootRef}
       className="lk-palette-region"
       role="toolbar"
       aria-label="Tools"

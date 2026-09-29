@@ -104,17 +104,15 @@ export function ToolPalette(props: ToolPaletteProps) {
   );
   const activeIndex = ordered.findIndex((t) => t.id === tools.active);
   const roving = useRovingTabIndex({
-    items: eligibility.map((enabled) => ({ disabled: !enabled })),
-    itemClassName: s.paletteBtn,
-    // An ineligible active tool can't hold the tab stop; fall back to the
-    // hook's first-enabled default.
-    ...(activeIndex >= 0 && eligibility[activeIndex] ? { tabStopIndex: activeIndex } : {}),
+    itemSelector: `.${s.paletteBtn}`,
+    tabStopIndex: activeIndex >= 0 ? activeIndex : undefined,
   });
   let index = -1;
 
   return (
     <div
       ref={roving.rootRef}
+      onKeyDown={roving.onKeyDown}
       className={cls}
       role="toolbar"
       aria-label="Tools"
@@ -146,12 +144,10 @@ export function ToolPalette(props: ToolPaletteProps) {
                   label={label}
                   shortcut={shortcut}
                   active={tools.active === tool.id}
-                  tabbable={roving.tabIndexFor(i) === 0}
                   ariaDisabled={!enabled}
                   className={[s.paletteBtn, !enabled && s.ineligibleBtn].filter(Boolean).join(' ')}
                   title={resolvedTitle}
                   onClick={enabled ? () => tools.setActive(tool.id) : () => {}}
-                  onKeyDown={roving.onKeyDown(i)}
                 />
               );
             })}

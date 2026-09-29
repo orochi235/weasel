@@ -182,7 +182,7 @@ export {
   type ReorderDragHandlers,
   type ReorderDragState,
   type ReorderGhost,
-  type RovingItem,
+  type RovingOrientation,
   type RovingTabIndex,
   type SegmentTooltipFields,
   Select,

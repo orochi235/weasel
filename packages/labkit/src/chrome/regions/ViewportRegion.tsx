@@ -1,4 +1,4 @@
-import { useRovingTabIndex } from '../../primitives/useRovingTabIndex';
+import { useRovingTabIndex } from '../../passthrough/weasel-ui';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
 /** Props for `<ViewportRegion>`. */
@@ -12,11 +12,11 @@ export interface ViewportRegionProps {
  * rather than in the toolbar, which acts on the trial itself.
  */
 export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
-  const { ref, onKeyDown } = useRovingTabIndex<HTMLDivElement>();
+  const { rootRef, onKeyDown } = useRovingTabIndex<HTMLDivElement>({ orientation: 'horizontal' });
   if (contributions.length === 0) return null;
   return (
     <div
-      ref={ref}
+      ref={rootRef}
       className="lk-viewport-controls"
       role="toolbar"
       aria-label="View"

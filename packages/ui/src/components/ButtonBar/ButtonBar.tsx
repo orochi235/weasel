@@ -47,7 +47,7 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
     item.onAction();
   };
 
-  const roving = useRovingTabIndex({ items, itemClassName: s.segment, onActivate: fire });
+  const roving = useRovingTabIndex({ itemSelector: `.${s.segment}`, onActivate: fire });
 
   const style: CSSProperties | undefined = height !== undefined
     ? ({ ['--wzl-tb-height' as string]: `${height}px` } as CSSProperties)
@@ -63,6 +63,7 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
   return (
     <div
       ref={roving.rootRef}
+      onKeyDown={roving.onKeyDown}
       className={rootCls}
       role="toolbar"
       aria-label={ariaLabel}
@@ -74,10 +75,8 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
             type="button"
             aria-label={item.ariaLabel}
             disabled={item.disabled}
-            tabIndex={roving.tabIndexFor(i)}
             className={s.segment}
             onClick={() => fire(i)}
-            onKeyDown={roving.onKeyDown(i)}
           >
             {item.label}
           </button>
