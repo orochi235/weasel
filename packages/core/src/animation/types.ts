@@ -370,7 +370,8 @@ export interface LoopOptions {
   label?: string;
 }
 
-/** Options for the top-level `Animator.stagger` factory form (third overload). */
+/** A stagger run's own options: the factory form's fourth argument, and part
+ *  of every fluent builder method's options. */
 export interface StaggerOptions {
   /** Cancel-key for the supervising registration. `animator.cancelKey(key)`
    *  cancels the whole stagger; `animator.isActive(key)` returns true while
@@ -397,8 +398,9 @@ export type StaggerFactory<TItem> = (item: TItem, index: number) => AnimationHan
 export type StaggerPerItem<T, TItem> = T | ((item: TItem, index: number) => T);
 
 /** Options for the stagger builder's `.tween`: a tween per item, where
- *  `from`, `to` and `ms` may each vary by item. */
-export interface StaggerTweenOptions<T, TItem> {
+ *  `from`, `to` and `ms` may each vary by item. `cancelKey` and `label` belong
+ *  to the stagger as a whole, as in {@link StaggerOptions}. */
+export interface StaggerTweenOptions<T, TItem> extends StaggerOptions {
   from: StaggerPerItem<T, TItem>;
   to: StaggerPerItem<T, TItem>;
   ms: StaggerPerItem<number, TItem>;
@@ -409,8 +411,10 @@ export interface StaggerTweenOptions<T, TItem> {
 }
 
 /** Options for the stagger builder's `.springPose`: the spring tuning, and
- *  whether each item's settle is recorded as an undoable op. */
-export interface StaggerSpringPoseOptions<TPose> {
+ *  whether each item's settle is recorded as an undoable op. `cancelKey` and
+ *  `label` belong to the stagger as a whole, as in {@link StaggerOptions};
+ *  each item's spring keeps its own per-node key. */
+export interface StaggerSpringPoseOptions<TPose> extends StaggerOptions {
   preset?: SpringPresetName;
   stiffness?: number;
   damping?: number;
@@ -424,7 +428,7 @@ export interface StaggerSpringPoseOptions<TPose> {
  *  items and the delay schedule are already fixed. */
 export interface StaggerBuilder<TItem> {
   /** Run an arbitrary per-item factory. */
-  each(factory: StaggerFactory<TItem>): AnimationHandle;
+  each(factory: StaggerFactory<TItem>, opts?: StaggerOptions): AnimationHandle;
   /** Sugar: per-item `animator.tween` with per-item-varying options. */
   tween<T>(opts: StaggerTweenOptions<T, TItem>): AnimationHandle;
   /** Sugar: per-item `springPose` against an adapter. `poseFn` returns the

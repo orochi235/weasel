@@ -1,7 +1,10 @@
 import { useState, useMemo, useSyncExternalStore } from 'react';
 import {
   SceneCanvas,
+  easeOutCubic,
   sceneFromJSON,
+  useAnimatedReflow,
+  useAnimator,
 } from '@weasel-js/core';
 import { freeform, snapPoint, tileGrid } from '@weasel-js/guides';
 import type { SerializedScene } from '@weasel-js/core';
@@ -34,6 +37,11 @@ export function LayoutDemo() {
     S: snapPoint<P>({ pattern: 'corners' }),
   }), []);
 
+  // Opt-in: siblings a drag displaces glide to their slots instead of snapping.
+  const [animate, setAnimate] = useState(true);
+  const animator = useAnimator();
+  const reflow = useAnimatedReflow(scene, animator, animate ? { ms: 220, easing: easeOutCubic } : null);
+
   // Committed-pose ledger: walk each container's leaf children and surface
   // their live pose + parent. Because the demo re-renders on scene version
   // change, these rows update the instant a drag commits — letting you watch
@@ -57,6 +65,7 @@ export function LayoutDemo() {
         height={260}
         scene={scene}
         layouts={layouts}
+        reflowTransition={reflow}
         layers={{
           scene: {
             drawOne: (node, p): DrawCommand[] => {
@@ -77,6 +86,10 @@ export function LayoutDemo() {
           },
         }}
       />
+      <label className="ckd-field">
+        <input type="checkbox" checked={animate} onChange={(e) => setAnimate(e.target.checked)} />
+        animate reflow
+      </label>
       <ul className="ld-ledger">
         {rows.map((row) => (
           <li

@@ -691,7 +691,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'layout',
     title: 'Layout',
     package: 'guides',
-    description: 'Three containers side by side, one per layout strategy — freeform (absolute placement), tileGrid (2x2 cells), and snapPoint (corner snapping). All three share a single adapter and one useSelectTool. Dragging a child within its container exercises the in-container layout (cell swap, corner snap); dragging across containers reflows both sides via the layout-aware move pass.',
+    description: 'Three containers side by side, one per layout strategy — freeform (absolute placement), tileGrid (2x2 cells), and snapPoint (corner snapping). All three share a single adapter and one useSelectTool. Dragging a child within its container exercises the in-container layout (cell swap, corner snap); dragging across containers reflows both sides via the layout-aware move pass. With "animate reflow" on, `useAnimatedReflow` glides the displaced siblings to their slots through the animator.',
     hint: 'Drag a child rect within its container or into another to see layout-driven reflow.',
     load: () => import('./demos/LayoutDemo').then((m) => m.LayoutDemo),
     path: 'apps/site/demos/LayoutDemo.tsx',

@@ -38,7 +38,7 @@ import { useAnimator } from '../animation/useAnimator';
 import { useViewAnimationOn } from 'core/viewport/useViewAnimation';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import { useSceneAdapter, type SceneToAdapterOptions } from './sceneAdapter';
-import type { LayoutDropTargetMode } from '../layout/types';
+import type { LayoutDropTargetMode, ReflowTransition } from '../layout/types';
 import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
 import type { WheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
 import { normalizeView, viewZoom, type View } from 'core/viewport/view';
@@ -375,6 +375,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  containers whose strategy declares a `dropRegion`. Decides both the
      *  drag-time reflow preview and the commit. */
     layoutDropTarget?: LayoutDropTargetMode;
+
+    /** Carries the siblings a drag's layout reflow displaces to their slots
+     *  over time instead of snapping them — `useAnimatedReflow` builds one.
+     *  Absent or `null`, they snap. */
+    reflowTransition?: ReflowTransition<TPose> | null;
 
     /** How a child's stored pose folds into its parent's frame. Omit for the
      *  absolute-pose model, where a container groups its children but imposes
@@ -963,6 +968,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ingestion,
     layouts,
     layoutDropTarget,
+    reflowTransition,
     poseComposition,
     geometryProjection,
     routing,
@@ -2254,6 +2260,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 anchorEditingAllowed={anchorEditingAllowed}
                 layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
                 layoutDropTarget={layoutDropTarget}
+                reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
                 poseComposition={poseComposition as SceneCanvasProps<unknown, string, unknown>['poseComposition']}
                 insertNodeFactories={insertNodeFactories}
                 snapPoint={toolOptions?.snapPoint}
@@ -2650,6 +2657,7 @@ function StandardActionsRegistrar({
   poseComposition,
   layouts,
   layoutDropTarget,
+  reflowTransition,
   insertNodeFactories,
   snapPoint,
   canvasRef,
@@ -2723,6 +2731,7 @@ function StandardActionsRegistrar({
    *  the per-container layout strategy lookup consumed by `moveAction`. */
   layouts?: SceneCanvasProps<unknown, string, unknown>['layouts'];
   layoutDropTarget?: LayoutDropTargetMode;
+  reflowTransition?: ReflowTransition<unknown> | null;
   /** Forwarded from `SceneCanvasProps` so the marquee and lasso dep sources
    *  test where a node is drawn rather than where its pose is stored. */
   poseComposition?: SceneCanvasProps<unknown, string, unknown>['poseComposition'];
@@ -2812,7 +2821,7 @@ function StandardActionsRegistrar({
   // dep's contract and trade-offs.
   useAreaSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
   useNodeAtPointDepSource(pickEvery);
-  useLayoutDepSource(layouts, layoutDropTarget);
+  useLayoutDepSource(layouts, layoutDropTarget, reflowTransition);
   useInsertDepSource(scene, adapter, insertNodeFactories);
   useSnapDepSource(snapPoint);
   useDebugDepSource(canvasApiRef);

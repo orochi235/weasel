@@ -408,6 +408,8 @@ export interface LayoutDep {
   /** Which container wins when several contain the drop point. Default
    *  `'innermost'`. */
   dropTarget?: import('../../layout/types').LayoutDropTargetMode;
+  /** Carries displaced siblings to their slots over time. Absent, they snap. */
+  reflow?: import('../../layout/types').ReflowTransition<unknown> | null;
 }
 
 /**

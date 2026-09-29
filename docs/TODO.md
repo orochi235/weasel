@@ -513,7 +513,7 @@ intercepting the press that drags the body.
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only), as does choosing the destination container (`<SceneCanvas layoutDropTarget>`, `LayoutStrategy.dropRegion`). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
 - **(P3) Tile-grid overflow policy.** A drop into a full `tileGrid` is rejected, but a child that arrives any other way (an insert or reparent op) past `cols * rows` is skipped from `childPoses` and left unplaced. Scroll, grow-grid, and rejection-at-the-op are the policies worth designing between.
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
-- **(P3) Animated reflow transitions.** Sibling reflow is snap-to-target in v1. Smooth interpolation likely needs a `useAnimatedReflow` hook over the animation primitive.
+- **(P3) The dropped child still snaps into its slot.** `useAnimatedReflow` glides the siblings a drag displaces, but on release the dragged child jumps from the pointer to its committed cell: `moveAction` drops its preview override before the transition could take the node over. Handing the dragged ids to `reflow.glide` from their last preview pose (a `from` the transition does not take today) would land it the same way.
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
 - **(P3) Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle.
 
@@ -548,10 +548,6 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 - **(P3) Serializable clips** — follows from tracks being typed callbacks rather
   than data. Revisit with the editor's experience in hand.
 
-- **(P3) The fluent `stagger(items, delay).tween(...)` takes no options.** So a staggered
-  run can set neither a `cancelKey` nor the `label` that `animator.watch` and `live()` report,
-  where every other animation option type takes both.
-
 ### Earlier deferrals
 
 All from `docs/specs/2026-05-04-animation-primitive-design.md`. The timeline arc's
@@ -559,7 +555,6 @@ decomposition meant to absorb the first; it has not landed:
 
 - **(P3) Animation-aware undo** — "rewind the animation" instead of cancel + jump.
 - **(P3) GPU / Web Animations API bridge** — offload to compositor for very large concurrent counts.
-- **(P3) Layout-strategy reflow integration** — explicit hookup; today consumers compose `animateOnSetPose` over a layout-driven adapter.
 
 ---
 

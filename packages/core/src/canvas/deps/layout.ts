@@ -9,7 +9,7 @@
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { LayoutDep } from 'interactions/actions/depSchema';
-import type { LayoutDropTargetMode } from '../../layout/types';
+import type { LayoutDropTargetMode, ReflowTransition } from '../../layout/types';
 import type { SceneToAdapterOptions } from '../sceneAdapter';
 
 // Reuse the canonical `layouts` option type from the scene adapter under the
@@ -20,8 +20,9 @@ type LayoutsProp = NonNullable<SceneToAdapterOptions<unknown, string, unknown>['
 export function useLayoutDepSource(
   layouts: LayoutsProp | undefined,
   dropTarget?: LayoutDropTargetMode,
+  reflow?: ReflowTransition<unknown> | null,
 ): void {
-  const ref = useLatest({ layouts, dropTarget });
+  const ref = useLatest({ layouts, dropTarget, reflow });
 
   useDepSource('layout', (): LayoutDep => ({
     getLayout: (containerId) => {
@@ -30,5 +31,6 @@ export function useLayoutDepSource(
       return typeof l === 'function' ? l(containerId) : (l[containerId] ?? null);
     },
     dropTarget: ref.current.dropTarget,
+    get reflow() { return ref.current.reflow ?? null; },
   }));
 }
