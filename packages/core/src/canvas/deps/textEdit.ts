@@ -6,7 +6,8 @@
  * dep via their own `useDepSource('textEdit', ...)` sourced from a
  * `useSceneTextEdit` instance.
  */
-import { useDepSource, useLatest } from '@weasel-js/routing/react';
+import { useDepSource } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { TextEditDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 

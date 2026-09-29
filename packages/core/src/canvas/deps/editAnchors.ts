@@ -30,7 +30,8 @@
  * triple — this dep doesn't own preview state.
  */
 import { useCallback, useState } from 'react';
-import { useDepSource, useLatest } from '@weasel-js/routing/react';
+import { useDepSource } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId, RectPose } from 'core/scene/types';
 import { isRectPose } from 'interactions/actions/resize/autoPoseDescriptor';

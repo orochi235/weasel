@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDragRect, type DragRectCtx, type DragRectEndCtx } from './dragRect';
 import { createElement } from 'react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 const NO_MODS = { shift: false, alt: false, meta: false, ctrl: false };
 

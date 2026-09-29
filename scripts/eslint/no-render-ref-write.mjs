@@ -121,7 +121,7 @@ export default {
     messages: {
       renderWrite:
         '`{{target}}` is written during render, so a render React abandons leaves its value behind. '
-        + 'Mirror a value with `useLatest(value)`, or write it from an effect or handler.',
+        + 'Mirror a value with `useLatest(value)` from `@weasel-js/react`, or write it from an effect or handler.',
     },
   },
   create(context) {

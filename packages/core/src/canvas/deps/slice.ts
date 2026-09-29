@@ -9,7 +9,8 @@
  *
  * @see SliceDep — the dep contract (`commit(cut)`, a world-space polyline).
  */
-import { useDepSource, useLatest } from '@weasel-js/routing/react';
+import { useDepSource } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { SliceDep } from 'interactions/actions/depSchema';
 
 /** Publish how a slice (knife cut) is performed, so the `slice` action can

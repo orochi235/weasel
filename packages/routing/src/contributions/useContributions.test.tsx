@@ -17,7 +17,7 @@ import { DepRegistryProvider, useDepSource } from '../interactions/actions/depRe
 import { useGestureDispatcher } from '../interactions/dispatcher/useGestureDispatcher';
 import { ActionsProvider, useAction, useActionsRegistry } from '../interactions/actions/ActionsProvider';
 import type { Action } from '../interactions/actions/action';
-import { renderThenAbandon } from '../testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 const rect: Contribution = {
   id: 'rect',

@@ -42,7 +42,7 @@ import { useFrameLoop } from './useFrameLoop';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
 import type { ToolCtx } from '@weasel-js/routing';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { Op } from 'core/ops/types';
 import type { Path } from '@weasel-js/geom';
 import { dispatchApplyBatch } from 'core/applyOps';

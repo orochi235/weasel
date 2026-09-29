@@ -12,7 +12,8 @@
  */
 import { useEffect } from 'react';
 import type { Action } from '@weasel-js/routing';
-import { useActionsRegistry, useLatest } from '@weasel-js/routing/react';
+import { useActionsRegistry } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { type DepName, type DepSchema } from '@weasel-js/routing';
 import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 // Reaches depSchema.ts so tsup's per-entry dts compiler resolves `DepSchema['selection']`

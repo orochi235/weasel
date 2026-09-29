@@ -13,7 +13,8 @@
  * and the reported gesture bounds use.
  */
 import { useRef } from 'react';
-import { useDepSource, useLatest } from '@weasel-js/routing/react';
+import { useDepSource } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertExtras } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';

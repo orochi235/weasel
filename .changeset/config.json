@@ -14,6 +14,7 @@
       "@weasel-js/history",
       "@weasel-js/quantity",
       "@weasel-js/registry",
+      "@weasel-js/react",
       "@weasel-js/loupe",
       "@weasel-js/modes",
       "@weasel-js/svg",

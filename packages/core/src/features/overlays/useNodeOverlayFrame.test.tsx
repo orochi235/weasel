@@ -5,7 +5,7 @@ import { createScene } from '../../core/scene';
 import { asNodeId, type NodeId, type RectPose } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
 import { useNodeOverlayFrame, type NodeOverlayFrame } from './useNodeOverlayFrame';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 beforeAll(() => {
   if (typeof (globalThis as { ResizeObserver?: unknown }).ResizeObserver === 'undefined') {

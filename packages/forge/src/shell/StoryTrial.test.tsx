@@ -2,7 +2,7 @@ import { Lab } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { renderOutsideAct, renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderOutsideAct, renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';

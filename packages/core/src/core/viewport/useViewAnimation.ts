@@ -1,5 +1,5 @@
 import { useId, useMemo, useRef } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { useAnimator } from '../../animation/useAnimator';
 import { easeOutCubic } from '@weasel-js/geom';
 import type { Animator, EasingSpec, InterpolatorFactory } from '../../animation/types';

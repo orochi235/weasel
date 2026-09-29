@@ -10,7 +10,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement } from 'react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { createScene } from '../../core/scene/scene';
 import type { NodeId, RectPose } from '../../core/scene/types';
 import { effectivePose } from '../../core/scene/effectivePose';

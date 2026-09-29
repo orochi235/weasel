@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { getStylusData, type StylusData } from './stylus';
 
 /** State exposed by `usePointerStylus` — the most recent stylus snapshot

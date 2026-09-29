@@ -9,7 +9,8 @@
  * topmost id that isn't in `exclude`, which lets callers ignore the
  * node(s) they're currently manipulating without separate plumbing.
  */
-import { useDepSource, useLatest } from '@weasel-js/routing/react';
+import { useDepSource } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { NodeAtPointDep } from 'interactions/actions/depSchema';
 import { asNodeId } from 'core/scene/types';
 

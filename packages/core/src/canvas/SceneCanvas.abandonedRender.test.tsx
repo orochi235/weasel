@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { SceneCanvas, type SceneCanvasProps } from './SceneCanvas';
 import type { CanvasHelpers } from './Canvas';
 import { createScene } from 'core/scene/scene';

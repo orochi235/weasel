@@ -8,7 +8,8 @@
  * `cancelAll(reason)` — not the full dispatcher API. Keeps the dep's
  * blast radius narrow.
  */
-import { useDepSource, useLatest } from '@weasel-js/routing/react';
+import { useDepSource } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { Dispatcher } from '@weasel-js/routing';
 
 export function useDispatcherDepSource(dispatcher: Dispatcher): void {

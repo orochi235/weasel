@@ -5,7 +5,7 @@ import {
 } from 'react';
 import type { DepSchema, DepName } from '../../index';
 import { createDepRegistry, type DepRegistry } from './depNode';
-import { useLatest } from '../../useLatest';
+import { useLatest } from '@weasel-js/react';
 
 export type { DepSchema, DepName, DepRegistry };
 export { DepNode, depNodeOf, createDepRegistry } from './depNode';

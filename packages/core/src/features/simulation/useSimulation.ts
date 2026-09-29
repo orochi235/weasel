@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import { createSimulation } from './createSimulation';
 import {

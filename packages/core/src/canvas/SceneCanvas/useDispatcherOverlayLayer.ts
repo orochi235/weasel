@@ -21,7 +21,7 @@
  * user-visible result is identical.
  */
 import { useEffect, useMemo, useReducer } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { DrawCommand, PathDrawCommand } from '../../renderer';
 import type { Stroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';

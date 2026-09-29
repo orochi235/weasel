@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { useLayoutEffect, useState } from 'react';
-import { renderOutsideAct, renderThenAbandon } from '../testing/abandonRender';
+import { renderOutsideAct, renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
 import { useTools, type ToolsApi } from './useTools';
 import type { AnyTool } from './types';

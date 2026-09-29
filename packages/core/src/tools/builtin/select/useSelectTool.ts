@@ -1,5 +1,5 @@
 import { useMemo, useRef, createElement } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { SelectIcon } from '../../../icons';
 import { pathContainsPoint } from '@weasel-js/geom';
 import { shapeCoversPoint } from 'canvas/NodeShape';

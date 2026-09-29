@@ -15,7 +15,7 @@ import type { Dispatcher } from '@weasel-js/routing';
 import type { OngoingHandle } from '@weasel-js/routing';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
 import { toolPreviewSources } from '../toolPreview';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { GesturePreviewSource } from '../gestureBounds';
 
 interface Data { label: string }

@@ -22,7 +22,7 @@ import type {
   PathDrawCommand,
 } from '../renderer/DrawCommand';
 import { MinimapCanvas } from './MinimapCanvas';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { computeFitView } from './minimapMath';
 import { defaultDrawOne } from './defaultDrawOne';
 import { ColorOverrideRegistry } from '../animation/colorRegistry';

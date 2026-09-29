@@ -99,6 +99,7 @@
     "@weasel-js/modes": "1.7.0",
     "@weasel-js/quantity": "1.7.0",
     "@weasel-js/paint": "1.7.0",
+    "@weasel-js/react": "1.7.0",
     "@weasel-js/registry": "1.7.0",
     "@weasel-js/routing": "1.7.0",
     "@weasel-js/text": "1.7.0",

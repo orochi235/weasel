@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { isEditableTarget } from '../keyHelpers';
-import { useLatest } from '../../useLatest';
+import { useLatest } from '@weasel-js/react';
 import { useActiveToolContext } from '../actions/activeToolContext';
 import { useDepRegistry, type DepRegistry } from '../actions/depRegistry';
 import type { DepName, DepSchema } from '../../index';

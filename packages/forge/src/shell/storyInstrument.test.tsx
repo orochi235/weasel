@@ -3,7 +3,7 @@ import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type Channel, openChannel } from '../protocol/channel';
 import { FRAME_HELLO, type FromFrame, type Globals, PORT_HANDOFF, stableStringify, type ToFrame } from '../protocol/messages';

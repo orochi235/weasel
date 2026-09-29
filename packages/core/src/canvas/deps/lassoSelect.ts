@@ -3,7 +3,8 @@
  * `lassoSelectAction`: `hitTestLasso` tests the lasso polygon itself, and
  * `hitTestArea` is the same silhouette-aware rect test `areaSelect` uses.
  */
-import { useDepSource, useLatest } from '@weasel-js/routing/react';
+import { useDepSource } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { LassoSelectDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';

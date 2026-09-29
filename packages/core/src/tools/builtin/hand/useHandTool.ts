@@ -1,5 +1,5 @@
 import { useMemo, createElement } from 'react';
-import { useLatest } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { HandIcon } from '../../../icons';

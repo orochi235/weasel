@@ -9,7 +9,8 @@
  * supplied the dep's `point` is the identity function, which is the same
  * behavior actions fall back to when the dep is absent entirely.
  */
-import { useDepSource, useLatest } from '@weasel-js/routing/react';
+import { useDepSource } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import type { SnapDep } from 'interactions/actions/depSchema';
 
 export function useSnapDepSource(

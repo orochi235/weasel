@@ -9,7 +9,7 @@
  * insert factories.
  */
 import type { InsertNodeFactory, SceneCanvasApi } from '@weasel-js/core';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { type Ref, useLayoutEffect } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';

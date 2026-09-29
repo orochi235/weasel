@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { ResizeHandle } from './ResizeHandle';
 
 function setup(props: Partial<React.ComponentProps<typeof ResizeHandle>> = {}) {

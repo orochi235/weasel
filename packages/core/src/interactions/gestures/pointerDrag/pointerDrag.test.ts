@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { DRAG_THRESHOLD_PX } from '@weasel-js/routing';
 import { useDragHandle, useDropZone } from './pointerDrag';
 import { createElement } from 'react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 beforeAll(() => {
   // jsdom doesn't implement elementFromPoint; default to null so findZone returns null

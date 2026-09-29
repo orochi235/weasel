@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act } from '@testing-library/react';
 import { useRef, type ReactNode } from 'react';
-import { renderThenAbandon } from '../../testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { DepRegistryProvider } from '../actions/depRegistry';

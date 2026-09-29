@@ -21,7 +21,8 @@ import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
 import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
 import { pathFromPlane } from './planeClips';
-import { useLatest, useOptionalDepRegistry } from '@weasel-js/routing/react';
+import { useOptionalDepRegistry } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/react';
 import { useDeviceProfile } from 'core/device/useDeviceProfile';
 import {
   createGestureSource,

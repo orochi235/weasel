@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDistribute } from './distribute';
 import { createElement } from 'react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { DistributeAdapter } from './distribute';
 import type { Op } from 'core/ops/types';
 import { type NodeId } from 'core/scene/types';

@@ -1,6 +1,6 @@
 import { TrialIdContext } from '@weasel-js/labkit';
 import { act, render, waitFor } from '@testing-library/react';
-import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FrameSetup } from '../frame/FrameController';
 import type { Globals } from '../protocol/messages';
