@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useInsertionEffect, useMemo, useRef } from 'react';
 import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds, toolPreviewSources } from './toolPreview';
 import type { GestureSource, GesturePreviewSource } from './gestureBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
@@ -228,7 +228,8 @@ export function useViewHelpers<TPose>(
   const multiActive = selection.length > 1;
 
   const previewExtraRef = useRef({ previewPoseExtra, previewIdsExtra });
-  previewExtraRef.current = { previewPoseExtra, previewIdsExtra };
+  // Committed renders only: the paint reads this through the helpers.
+  useInsertionEffect(() => { previewExtraRef.current = { previewPoseExtra, previewIdsExtra }; });
 
   const effectiveBoundsOf = useMemo(() => boundsOf ?? baseBoundsOf, [boundsOf, baseBoundsOf]);
 

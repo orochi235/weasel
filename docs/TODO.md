@@ -321,16 +321,16 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P3) `<Canvas>` still hands the paint some refs written during render.**
-  The paint's own inputs (`paintInputsRef`, the `paintInto` target and rect,
-  `contentVersion`) are published from an insertion effect, so an abandoned
-  concurrent render never paints. Three refs the paint reads alongside them are
-  still assigned in the render body of `Canvas.tsx`: `viewRef` under a
-  controlled `view` prop, `helpersForLayersRef`, and `dimsRef`. A render React
-  starts and abandons — a `startTransition` that suspends — leaves its view,
-  size and chrome helpers there, and the next `requestRedraw` paints them. The
-  same refs also feed hit-testing and the view registry, so moving them to the
-  insertion effect needs those readers checked for a same-render read first.
+- **(P3) `<CanvasView>` and `<SceneCanvas>` still publish refs during render.**
+  `<Canvas>` publishes every ref its paint, hit-testing, view registry and
+  event handlers read from an insertion effect, so an abandoned concurrent
+  render (a `startTransition` that suspends) never reaches them. `<CanvasView>`
+  still assigns `live`, `helpersRef` and `inputsRef` in its render body, and
+  its own paint reads them through the view registry; `<SceneCanvas>` does the
+  same with `currentViewRef` under a controlled `view`, which its HUD, pick and
+  pinch paths read. `live` backs `viewApi.get`, so check for a call during
+  render before moving it. `Canvas.frameLoop.test.tsx`'s "state a render
+  abandons" harness is the test shape.
 
 
 - **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner

@@ -862,7 +862,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (resolvedDebugConfig === null) return null;
     return createDebugSink(resolvedDebugConfig);
   }, [resolvedDebugConfig]);
-  if (debugSinkRef) debugSinkRef.current = debugSink;
   const debugSinkRefForCtx = useRef<CanvasDebugSink | null>(null);
   debugSinkRefForCtx.current = debugSink;
   const getDebug = useCallback(() => debugSinkRefForCtx.current, []);
@@ -897,13 +896,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // Read by `hitTestExtras`, which is built once and must see live values.
   const helpersForLayersRef = useRef<CanvasHelpers<TPose> | null>(null);
   const dimsRef = useRef({ width, height });
-  dimsRef.current = { width, height };
   const getIsVisibleRef = useRef(getIsVisible);
-  getIsVisibleRef.current = getIsVisible;
   const layerVisibilityRef = useRef(layerVisibility);
-  layerVisibilityRef.current = layerVisibility;
   const layerOrderRef = useRef(layerOrder);
-  layerOrderRef.current = layerOrder;
 
   // React does not drive the paint; the frame loop does. The thunk defers to
   // `paint` below, which needs inputs this render has not computed yet.
@@ -974,14 +969,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // at 60 Hz costs no React render; DOM that mirrors it subscribes instead.
   const viewRef = useRef<View>(normalizeView(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } }));
   const isControlled = viewProp !== undefined;
-  if (isControlled) viewRef.current = normalizeView(viewProp);
+  const controlledView = isControlled ? normalizeView(viewProp) : undefined;
   const viewSubsRef = useRef<Set<(v: View) => void>>(new Set());
   const onViewChangeRef = useRef(onViewChange);
-  onViewChangeRef.current = onViewChange;
   const viewBoundsRef = useRef(viewBounds);
-  viewBoundsRef.current = viewBounds;
   const isControlledRef = useRef(isControlled);
-  isControlledRef.current = isControlled;
   const controlledWarnedRef = useRef(false);
 
   const setView = useCallback((next: View | ((current: View) => View)) => {
@@ -1120,7 +1112,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   effectiveAdapterRefForCtx.current = effectiveAdapter;
 
   const clientToWorldRef = useRef(clientToWorld);
-  clientToWorldRef.current = clientToWorld;
   const toolsCtxBase = useMemo(
     () => (overrides?: {
       clientX?: number;
@@ -1163,9 +1154,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // changes (e.g. when SceneCanvas re-renders with a new lambda reference).
   // pickEvery and pickBest are HUD-only.
   const pickEveryRef = useRef(pickEvery);
-  pickEveryRef.current = pickEvery;
   const pickBestRef = useRef(pickBest);
-  pickBestRef.current = pickBest;
   const stablePickEveryForHud = useCallback(
     (wx: number, wy: number): readonly string[] => {
       const pe = pickEveryRef.current;
@@ -1216,8 +1205,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     getDebug: () => debugSink,
   };
   const helpersForLayers: CanvasHelpers<TPose> = { ...viewHelpers, ...surfaceHelpers, viewId: null };
-  helpersForLayersRef.current = helpersForLayers;
-  if (helpersRef) helpersRef.current = helpersForLayers;
 
   // Pointer-pressed flag. The only thing `<Canvas>` still needs to know about
   // pointer state: `onUncapturedMove` means "hover", so it stands down while a
@@ -1365,7 +1352,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // the views themselves are folded in — otherwise a view would contain
   // itself. Published by reference and read at draw time.
   const surfaceLayersRef = useRef<readonly RenderLayer<unknown>[]>(layers);
-  surfaceLayersRef.current = layers;
   useEffect(() => {
     viewRegistry?.attachSurface({
       origin: () => {
@@ -1427,9 +1413,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
 
-  // Everything the paint reads that a React render owns. Published from an
-  // insertion effect: only a committed render reaches it, and it runs ahead
-  // of every layout effect in the commit, any of which may ask for a sync paint.
+  // Everything the paint, hit-testing and the view registry read that a React
+  // render owns. Published from an insertion effect: only a committed render
+  // reaches it, and it runs ahead of every layout effect in the commit, any of
+  // which may ask for a sync paint.
   const paintInputs = {
     layers: layersWithDebug, width, height, debugSink,
     frameStats: resolvedDebugConfig?.fps === true,
@@ -1442,6 +1429,21 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     paintTargetRef.current = paintTarget;
     paintRectRef.current = paintRect;
     contentVersionRef.current = contentVersion;
+    dimsRef.current = { width, height };
+    if (controlledView) viewRef.current = controlledView;
+    getIsVisibleRef.current = getIsVisible;
+    layerVisibilityRef.current = layerVisibility;
+    layerOrderRef.current = layerOrder;
+    helpersForLayersRef.current = helpersForLayers;
+    if (helpersRef) helpersRef.current = helpersForLayers;
+    surfaceLayersRef.current = layers;
+    onViewChangeRef.current = onViewChange;
+    viewBoundsRef.current = viewBounds;
+    isControlledRef.current = isControlled;
+    clientToWorldRef.current = clientToWorld;
+    pickEveryRef.current = pickEvery;
+    pickBestRef.current = pickBest;
+    if (debugSinkRef) debugSinkRef.current = debugSink;
   });
 
   const paint = useCallback((): boolean => {
@@ -1566,7 +1568,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shaderIdKey]);
 
-  const toolsCursorTier = tools ? resolveToolsCursor(tools, toolsCtxBase) : undefined;
+  // Resolved during render, so it reads this render's view, not the ref's
+  // last committed one.
+  const toolsCursorTier = tools
+    ? resolveToolsCursor(tools, controlledView ? () => ({ ...toolsCtxBase(), view: controlledView }) : toolsCtxBase)
+    : undefined;
   // A painted tool cursor gets `none` here and the layer draws it instead.
   const toolsCursor =
     toolsCursorTier === undefined
@@ -1595,7 +1601,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // Everything else about pointer input already attaches to `canvasRef`, which
   // is that same element.
   const layersForMoveRef = useRef(layersWithDebug);
-  layersForMoveRef.current = layersWithDebug;
+  useInsertionEffect(() => { layersForMoveRef.current = layersWithDebug; });
   useEffect(() => {
     if (!detached || !inputElement) return;
     const el = inputElement;
