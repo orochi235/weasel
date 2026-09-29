@@ -37,6 +37,14 @@ import {
   PATTERN_FILL_UNIFORMS,
   PATTERN_FILL_ATTRIBUTES,
 } from './shaders/patternFill';
+import {
+  GLYPH_PAINT_VERT_SRC,
+  GLYPH_PATTERN_FRAG_SRC,
+  GLYPH_GRAD_FRAG_SRC,
+  GLYPH_PATTERN_UNIFORMS,
+  GLYPH_GRAD_UNIFORMS,
+  GLYPH_PAINT_ATTRIBUTES,
+} from './shaders/glyphPaint';
 import { GLMeshCache } from './cache/GLMeshCache';
 import { GLTextureCache } from './cache/GLTextureCache';
 import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
@@ -45,7 +53,7 @@ import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import type { GlMat3 } from './math/mat3';
 import {
-  dispatch, flushBatch, OUTLINE_MIN_SCREEN_PX, type DrawContext,
+  dispatch, flushBatch, OUTLINE_MIN_SCREEN_PX, type DrawContext, type GlyphPaintKind,
 } from './draw';
 import { DrawBatch } from './drawBatch';
 import {
@@ -173,6 +181,8 @@ export class WeaselRenderer {
   private batchFill: ShaderProgram;
   private gradFill: ShaderProgram;
   private patternFill: ShaderProgram;
+  /** Compiled on first use: only atlas text under a texture paint needs one. */
+  private glyphPaintPrograms = new Map<GlyphPaintKind, ShaderProgram>();
   private meshCache: GLMeshCache;
   private textureCache: GLTextureCache;
   private imageCache: GLImageCache;
@@ -351,6 +361,18 @@ export class WeaselRenderer {
     return this.programRegistry.get(id) ?? null;
   }
 
+  private glyphPaintProgram(kind: GlyphPaintKind): ShaderProgram {
+    const existing = this.glyphPaintPrograms.get(kind);
+    if (existing) return existing;
+    const program = kind === 'pattern'
+      ? new ShaderProgram(this.gl, GLYPH_PAINT_VERT_SRC, GLYPH_PATTERN_FRAG_SRC)
+      : new ShaderProgram(this.gl, GLYPH_PAINT_VERT_SRC, GLYPH_GRAD_FRAG_SRC);
+    program.lookupUniforms(kind === 'pattern' ? GLYPH_PATTERN_UNIFORMS : GLYPH_GRAD_UNIFORMS);
+    program.lookupAttributes(GLYPH_PAINT_ATTRIBUTES);
+    this.glyphPaintPrograms.set(kind, program);
+    return program;
+  }
+
   /** The GL state every frame assumes. Applied per `render()` rather than once
    *  at construction because a co-tenant sharing this context moves all of it
    *  between our frames. */
@@ -429,6 +451,7 @@ export class WeaselRenderer {
     this.patternFill = new ShaderProgram(this.gl, PATTERN_VERT_SRC, PATTERN_FRAG_SRC);
     this.patternFill.lookupUniforms(PATTERN_FILL_UNIFORMS);
     this.patternFill.lookupAttributes(PATTERN_FILL_ATTRIBUTES);
+    this.glyphPaintPrograms.clear();
     const aPos = this.pathFill.attribute('a_position');
     if (aPos === undefined) throw new Error('a_position missing after restore');
     this.meshCache = new GLMeshCache(this.gl, aPos);
@@ -477,9 +500,13 @@ export class WeaselRenderer {
       this.canvas.removeEventListener('webglcontextrestored', this.boundOnRestored);
     }
     this.meshCache.dispose();
-    for (const prog of [this.pathFill, this.pathFillVColor, this.imageFill, this.batchFill, this.gradFill, this.patternFill]) {
+    for (const prog of [
+      this.pathFill, this.pathFillVColor, this.imageFill, this.batchFill, this.gradFill, this.patternFill,
+      ...this.glyphPaintPrograms.values(),
+    ]) {
       gl.deleteProgram(prog.handle);
     }
+    this.glyphPaintPrograms.clear();
     for (const prog of this.programRegistry.values()) {
       gl.deleteProgram(prog.handle);
     }
@@ -540,6 +567,7 @@ export class WeaselRenderer {
       gradRamps: this.gradRamps,
       programRegistry: this.programRegistry,
       ensureProgram: (id) => this.ensureProgram(id),
+      glyphPaintProgram: (kind) => this.glyphPaintProgram(kind),
       quadVbo: this.quadVbo,
       quadIbo: this.quadIbo,
       drawBatch: this.drawBatch,

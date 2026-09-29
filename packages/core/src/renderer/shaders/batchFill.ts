@@ -121,6 +121,16 @@ export function paintModeOf(packed: number): number {
   return Math.floor((packed + 0.5) / BATCH_TEXTURE_SLOTS);
 }
 
+/**
+ * Where each batch attribute lives, pinned rather than left to the linker so
+ * `glyphPaint`'s program can draw from the same VAO.
+ */
+export const BATCH_ATTRIBUTE_LOCATIONS = {
+  a_position: 0, a_vertexColor: 1, a_uv: 2, a_post: 3, a_texSlot: 4,
+} as const;
+
+const L = BATCH_ATTRIBUTE_LOCATIONS;
+
 function sampleChain(slots: number): string {
   const arms: string[] = [];
   for (let i = 1; i < slots; i++) {
@@ -130,11 +140,11 @@ function sampleChain(slots: number): string {
 }
 
 export const BATCH_VERT_SRC = /* glsl */ `#version 300 es
-in vec2 a_position;
-in vec4 a_vertexColor;
-in vec2 a_uv;
-in float a_post;
-in float a_texSlot;
+layout(location = ${L.a_position}) in vec2 a_position;
+layout(location = ${L.a_vertexColor}) in vec4 a_vertexColor;
+layout(location = ${L.a_uv}) in vec2 a_uv;
+layout(location = ${L.a_post}) in float a_post;
+layout(location = ${L.a_texSlot}) in float a_texSlot;
 uniform mat3 u_proj;
 uniform mat3 u_model;
 out vec4 v_vertexColor;

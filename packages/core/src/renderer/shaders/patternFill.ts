@@ -26,22 +26,34 @@ void main() {
 }
 `;
 
-export const PATTERN_FRAG_SRC = /* glsl */ `#version 300 es
-precision highp float;
-in vec2 v_world;
+/**
+ * The pattern's color at a paint-space point, premultiplied — the whole of the
+ * fragment stage but the point it is asked about, so the glyph program can
+ * mask the same paint the path program draws.
+ */
+export const PATTERN_PAINT_GLSL = /* glsl */ `
 uniform sampler2D u_sampler;
 uniform vec2  u_tileSize;
 uniform float u_opacity;
 uniform float u_alpha;
 uniform mat4  u_colorMatrix;
 uniform vec4  u_colorBias;
-out vec4 outColor;
-void main() {
-  vec2 uv = v_world / max(u_tileSize, vec2(0.0001));
+vec4 shadePaint(vec2 world) {
+  vec2 uv = world / max(u_tileSize, vec2(0.0001));
   vec4 texel = texture(u_sampler, uv);
   vec4 mapped = clamp(u_colorMatrix * texel + u_colorBias, 0.0, 1.0);
   float a = mapped.a * u_opacity * u_alpha;
-  outColor = vec4(mapped.rgb * a, a);
+  return vec4(mapped.rgb * a, a);
+}
+`;
+
+export const PATTERN_FRAG_SRC = /* glsl */ `#version 300 es
+precision highp float;
+in vec2 v_world;
+${PATTERN_PAINT_GLSL}
+out vec4 outColor;
+void main() {
+  outColor = shadePaint(v_world);
 }
 `;
 

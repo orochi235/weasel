@@ -30,9 +30,12 @@ void main() {
 }
 `;
 
-export const GRAD_FRAG_SRC = /* glsl */ `#version 300 es
-precision highp float;
-in vec2 v_world;
+/**
+ * The gradient's color at a gradient-space point, premultiplied — the whole
+ * of the fragment stage but the point it is asked about, so the glyph program
+ * can mask the same paint the path program draws.
+ */
+export const GRAD_PAINT_GLSL = /* glsl */ `
 uniform sampler2D u_ramp;
 uniform float u_rampV;
 uniform float u_alpha;
@@ -45,30 +48,39 @@ uniform vec2  u_gradDir;
 uniform float u_gradLen;
 uniform float u_gradRadius;
 uniform float u_gradAngle;
-out vec4 outColor;
 
 const float PI = 3.14159265358979323846;
 
-void main() {
+vec4 shadePaint(vec2 world) {
   float t;
   if (u_gradKind == 0) {
-    vec2 d = v_world - u_gradP0;
+    vec2 d = world - u_gradP0;
     t = dot(d, u_gradDir) / max(u_gradLen, 0.0001);
   } else if (u_gradKind == 1) {
-    t = length(v_world - u_gradP0) / max(u_gradRadius, 0.0001);
+    t = length(world - u_gradP0) / max(u_gradRadius, 0.0001);
   } else {
-    float a = atan(v_world.y - u_gradP0.y, v_world.x - u_gradP0.x) - u_gradAngle;
+    float a = atan(world.y - u_gradP0.y, world.x - u_gradP0.x) - u_gradAngle;
     t = fract(a / (2.0 * PI));
   }
   t = clamp(t, 0.0, 1.0);
   vec4 rampColor = texture(u_ramp, vec2(t, u_rampV));
   // Fill opacity into the alpha channel before the matrix, which is where the
-  // batch program's vertex alpha sits — the two have to agree, since a linear
+  // batch program's vertex alpha sits. The two have to agree, since a linear
   // gradient goes through that one and a radial through this.
   vec4 src = vec4(rampColor.rgb, rampColor.a * u_opacity);
   vec4 mapped = clamp(u_colorMatrix * src + u_colorBias, 0.0, 1.0);
   float a = mapped.a * u_alpha;
-  outColor = vec4(mapped.rgb * a, a);
+  return vec4(mapped.rgb * a, a);
+}
+`;
+
+export const GRAD_FRAG_SRC = /* glsl */ `#version 300 es
+precision highp float;
+in vec2 v_world;
+${GRAD_PAINT_GLSL}
+out vec4 outColor;
+void main() {
+  outColor = shadePaint(v_world);
 }
 `;
 
