@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractUniformNames as extract } from './extractUniformNames';
+import { extractUniformArrays, extractUniformNames as extract } from './extractUniformNames';
 
 describe('extractUniformNames', () => {
   it('extracts scalar/vector uniforms', () => {
@@ -161,5 +161,30 @@ describe('extractUniformNames', () => {
       void main() { outColor = vec4(helper(v_uv.x)); }
     `;
     expect(extract(src)).toEqual([]);
+  });
+});
+
+describe('extractUniformArrays', () => {
+  it('reports each array of a basic type with its element type and declared size', () => {
+    const arrays = extractUniformArrays(`
+      #define N 4
+      uniform float u_time;
+      uniform highp vec3 u_ripples[8];
+      uniform int u_flags[N * 2];
+    `);
+    expect(arrays.get('u_ripples')).toEqual({ type: 'vec3', size: 8 });
+    expect(arrays.get('u_flags')).toEqual({ type: 'int', size: 8 });
+    expect(arrays.has('u_time')).toBe(false);
+    expect(arrays.size).toBe(2);
+  });
+
+  it('names an array inside a struct by its full path, and not an array of structs', () => {
+    const arrays = extractUniformArrays(`
+      struct Light { vec3 pos; float weights[3]; };
+      uniform Light u_lights[2];
+    `);
+    expect(arrays.get('u_lights[0].weights')).toEqual({ type: 'float', size: 3 });
+    expect(arrays.get('u_lights[1].weights')).toEqual({ type: 'float', size: 3 });
+    expect(arrays.has('u_lights')).toBe(false);
   });
 });

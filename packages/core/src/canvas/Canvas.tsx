@@ -55,6 +55,7 @@ import {
   type Dims, type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
 import { WeaselRenderer, viewToMat3, cullDrawCommands, type DrawCommand, type ShaderProgramHandle } from '../renderer';
+import { getProgramSource, programSourceRegistry } from '../renderer/shaders/registerProgram';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
@@ -445,6 +446,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * from a module-level `registerProgram()` call. Compiled once per handle id
    * on first render (or on context restore). Pass a stable reference (e.g.
    * defined at module scope) — the array is read at renderer init time.
+   * Re-registering one of these ids with new source repaints the canvas, and
+   * the renderer recompiles it for that frame.
    */
   shaders?: ShaderProgramHandle[];
 
@@ -1497,6 +1500,18 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       viewSubs.clear();
     };
   }, []);
+
+  useEffect(() => {
+    if (!shaderIdKey) return;
+    const ids = shaderIdKey.split('|');
+    let seen = ids.map(getProgramSource);
+    return programSourceRegistry.subscribe(() => {
+      const now = ids.map(getProgramSource);
+      const changed = now.some((src, i) => src !== seen[i]);
+      seen = now;
+      if (changed) requestRedraw();
+    });
+  }, [shaderIdKey, requestRedraw]);
 
   useEffect(() => {
     const renderer = glRendererRef.current;

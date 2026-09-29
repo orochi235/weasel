@@ -18,10 +18,19 @@ export class ShaderCompileError extends Error {
   }
 }
 
+/** An array uniform a program can be written as a whole: its element type as
+ *  declared, its declared length, and the location of slot 0. */
+export interface UniformArray {
+  readonly type: string;
+  readonly size: number;
+  readonly location: WebGLUniformLocation;
+}
+
 /** A linked GL program with its uniform and attribute locations cached by name. */
 export class ShaderProgram {
   readonly handle: WebGLProgram;
   private readonly uniforms = new Map<string, WebGLUniformLocation>();
+  private readonly arrays = new Map<string, UniformArray>();
   private readonly attributes = new Map<string, number>();
 
   constructor(
@@ -79,6 +88,16 @@ export class ShaderProgram {
     }
   }
 
+  /** Record each array's slot-0 location under its bare name. An array the
+   *  driver optimized away has no location and is left out. */
+  lookupUniformArrays(decls: ReadonlyMap<string, { type: string; size: number }>): void {
+    for (const [name, { type, size }] of decls) {
+      const base = `${name}[0]`;
+      const location = this.uniforms.get(base) ?? this.gl.getUniformLocation(this.handle, base);
+      if (location !== null) this.arrays.set(name, { type, size, location });
+    }
+  }
+
   lookupAttributes(names: readonly string[]): void {
     for (const name of names) {
       const loc = this.gl.getAttribLocation(this.handle, name);
@@ -88,6 +107,10 @@ export class ShaderProgram {
 
   uniform(name: string): WebGLUniformLocation | undefined {
     return this.uniforms.get(name);
+  }
+
+  uniformArray(name: string): UniformArray | undefined {
+    return this.arrays.get(name);
   }
 
   attribute(name: string): number | undefined {

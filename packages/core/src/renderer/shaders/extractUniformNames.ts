@@ -28,11 +28,33 @@ interface Member {
  * it warns.
  */
 export function extractUniformNames(glsl: string): string[] {
+  return [...scanUniforms(glsl).names];
+}
+
+/** An array uniform of a basic type: its element type as spelled (`vec3`,
+ *  `int`, `mat4`) and its declared length. */
+export interface UniformArrayDecl {
+  readonly type: string;
+  readonly size: number;
+}
+
+/**
+ * Every array of a basic type a program declares, keyed by the name its slots
+ * hang off (`u_ripples` for `u_ripples[0]`). An array inside a struct is keyed
+ * by its full path (`u_lights[1].weights`); an array of structs is not an
+ * entry, since it has no single element type.
+ */
+export function extractUniformArrays(glsl: string): Map<string, UniformArrayDecl> {
+  return scanUniforms(glsl).arrays;
+}
+
+function scanUniforms(glsl: string): { names: Set<string>; arrays: Map<string, UniformArrayDecl> } {
   const { code, defines } = preprocess(glsl);
   const toks = tokenize(code);
   const consts = new Map<string, number>();
   const structs = new Map<string, Member[]>();
   const out = new Set<string>();
+  const arrays = new Map<string, UniformArrayDecl>();
 
   const resolveName = (name: string, depth: number): number | null => {
     if (depth > MAX_DEPTH) return null;
@@ -116,6 +138,10 @@ export function extractUniformNames(glsl: string): string[] {
   const expand = (name: string, type: string | readonly Member[], size: number | null, depth: number): void => {
     if (depth > MAX_DEPTH) return;
     if (size !== null) {
+      if (typeof type === 'string' && !structs.has(type)) {
+        const prior = arrays.get(name);
+        if (!prior || size > prior.size) arrays.set(name, { type, size });
+      }
       for (let k = 0; k < size; k++) expand(`${name}[${k}]`, type, null, depth + 1);
       return;
     }
@@ -164,7 +190,7 @@ export function extractUniformNames(glsl: string): string[] {
       i = term;
     }
   }
-  return [...out];
+  return { names: out, arrays };
 }
 
 /** Comments stripped and directives removed. Every conditional branch is kept:
