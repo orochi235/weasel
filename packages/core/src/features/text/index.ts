@@ -5,7 +5,7 @@ export { pointInTextPose, caretIndexAt } from './hitTest';
 export type { PointInTextPoseOpts } from './hitTest';
 export { fitTextPose } from './fitTextPose';
 export type { FitTextPoseOptions } from './fitTextPose';
-export { useTextEdit } from './useTextEdit';
+export { useTextEdit, TEXT_EDIT_FONT_HOLD } from './useTextEdit';
 export type {
   TextEditScreenPose,
   TextEditClipRect,

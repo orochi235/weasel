@@ -16,7 +16,7 @@ import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
 import {
   fontString, numericWeight, resolveAlign, resolveTextStyle, scriptMetricsFor, smallCapsScaleFor,
 } from '@weasel-js/text';
-import { cssFontFamily } from '@weasel-js/font';
+import { cssFontFamily, cssFontFamilyLoading } from '@weasel-js/font';
 import type { TextPaint, TextVerticalAlign } from '@weasel-js/text';
 import { layoutTextPose, verticalAlignOffset } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
@@ -456,7 +456,25 @@ export interface UseTextEditOptions {
   /** What Escape does to the edit: `'cancel'` (the default) drops it,
    *  `'commit'` keeps the text as Enter would. */
   escape?: 'cancel' | 'commit';
+  /**
+   * How long, in ms, an edit opening waits for the overlay's face before
+   * showing the text in the fallback. Defaults to {@link TEXT_EDIT_FONT_HOLD}.
+   *
+   * The overlay stands in for canvas text the host has hidden, so the wait
+   * shows nothing at all; past it, the fallback shows and reflows to the real
+   * face when that lands. A face already loaded — the usual case, since
+   * `@weasel-js/font` builds it as soon as its bytes arrive — shows at once.
+   * `0` never waits.
+   */
+  fontHold?: number;
 }
+
+/**
+ * The default {@link UseTextEditOptions.fontHold}: at 100ms a blank edit
+ * still reads as an instant response, and it is the block period CSS gives
+ * `font-display: fallback` for the same trade.
+ */
+export const TEXT_EDIT_FONT_HOLD = 100;
 
 /** Options for `useTextEdit().startEdit`. */
 export interface StartEditOptions {
@@ -784,6 +802,8 @@ export function useTextEdit(
       appendOverlayText(overlay, getText(editingId));
     }
     applyOverlayStyle(overlay, style);
+    const hold = holdForFaces(style, initialRuns ?? []);
+    if (hold) overlay.style.opacity = '0';
     const styleEl = installSelectionStyle(overlayClass, style);
     const clipBox = createClipBox();
     clipBox.appendChild(overlay);
@@ -795,6 +815,17 @@ export function useTextEdit(
       placeOverlay(overlay, clipBox, optsRef.current.getScreenPose(editingId), clip, style);
     };
     place();
+    // Measured again on release: the first `place` ran in the fallback face.
+    let held = hold !== null;
+    const release = () => {
+      if (!held) return;
+      held = false;
+      clearTimeout(holdTimer);
+      place();
+      overlay.style.opacity = '';
+    };
+    const holdTimer = held ? setTimeout(release, optsRef.current.fontHold ?? TEXT_EDIT_FONT_HOLD) : undefined;
+    void hold?.then(release);
 
     const range = document.createRange();
     const initial = initialCaretRef.current;
@@ -940,6 +971,8 @@ export function useTextEdit(
     frameLoop.request();
 
     return () => {
+      held = false;
+      clearTimeout(holdTimer);
       frameLoop.cancel();
       tickRef.current = () => {};
       overlay.removeEventListener('keydown', onKeyDown);
@@ -963,6 +996,23 @@ export function useTextEdit(
 }
 
 let OVERLAY_SEQ = 0;
+
+/**
+ * The loads the overlay's faces are still waiting on — the node's and each
+ * run's that names its own family — or `null` when every one is in hand.
+ */
+function holdForFaces(style: ResolvedTextStyle, runs: readonly StyledRun[]): Promise<unknown> | null {
+  const pending = [
+    cssFontFamilyLoading(style.fontFamily, {
+      weight: numericWeight(style.fontWeight), style: style.fontStyle,
+    }),
+    ...runs.filter((r) => r.fontFamily != null).map((r) => cssFontFamilyLoading(r.fontFamily!, {
+      weight: r.fontWeight ?? (r.bold ? 700 : undefined),
+      style: r.italic ? 'italic' : undefined,
+    })),
+  ].filter((p) => p !== null);
+  return pending.length === 0 ? null : Promise.all(pending);
+}
 
 /**
  * Place a collapsed caret `offset` characters into the overlay's text,
