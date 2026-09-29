@@ -23,7 +23,8 @@
     "../apps/**/*.browser.test.ts",
     "../apps/**/*.browser.test.tsx",
     "*/src/**/*.d.ts",
-    "../apps/**/*.d.ts"
+    "../apps/**/*.d.ts",
+    "../scripts/vitest-browser-commands.ts"
   ],
   "exclude": ["**/node_modules", "**/dist"]
 }

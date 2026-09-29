@@ -129,7 +129,10 @@ function defaultFlavors(snapshot: ClipboardSnapshot, replacer?: Replacer): Clipb
 const WELL_KNOWN_CLIPBOARD_MIMES = new Set(['text/plain', 'text/html', 'image/png']);
 
 /** Degradation ladder: full map (every non-well-known MIME web-prefixed) →
- *  well-known-only → give up with a dwarn.
+ *  the same minus any promised flavor that rejected → well-known-only → give
+ *  up with a dwarn. Chromium writes nothing when one flavor rejects, so a
+ *  rejection costs only that flavor, never the clipboard's previous content
+ *  half-overwritten.
  *  @internal test seam — exported so unit tests can await the fire-and-forget
  *  write directly; tests should still exercise this at least once through
  *  the public `copy()` (see clipboardOps.test.tsx). */
@@ -138,23 +141,42 @@ export async function writeOsClipboard(flavors: ClipboardFlavors): Promise<void>
   if (entries.length === 0) return;
   const cb = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
   if (!cb?.write || typeof ClipboardItem === 'undefined') return;
+  const rejected = new Set<string>();
+  for (const [mime, text] of entries) {
+    if (typeof text !== 'string') text.catch(() => { rejected.add(mime); });
+  }
   const wireMime = (mime: string) => (WELL_KNOWN_CLIPBOARD_MIMES.has(mime) ? mime : `web ${mime}`);
-  const toItem = (fs: [string, string | Promise<string>][]) => new ClipboardItem(Object.fromEntries(
+  const toItem = (fs: Flavor[]) => new ClipboardItem(Object.fromEntries(
     fs.map(([mime, text]) => {
       const wire = wireMime(mime);
       const blob = (t: string) => new Blob([t], { type: wire });
-      return [wire, typeof text === 'string' ? blob(text) : text.then(blob)];
+      if (typeof text === 'string') return [wire, blob(text)];
+      const promised = text.then(blob);
+      // Chromium leaves a ClipboardItem's rejected promise unhandled.
+      promised.catch(() => {});
+      return [wire, promised];
     }),
   ));
-  try {
-    await cb.write([toItem(entries)]);
-  } catch {
-    const standard = entries.filter(([mime]) => WELL_KNOWN_CLIPBOARD_MIMES.has(mime));
-    if (standard.length === 0) { dwarn('clipboard', 'OS write failed; no standard flavors to fall back to'); return; }
-    try {
-      await cb.write([toItem(standard)]);
-    } catch (err) {
-      dwarn('clipboard', `OS clipboard write failed twice — copy stays in-memory only: ${String(err)}`);
+  // Writes `fs`, dropping flavors whose promise rejected and retrying the
+  // rest. Returns the last error, or null once a write lands.
+  const writeLive = async (fs: Flavor[]): Promise<unknown> => {
+    let live = fs;
+    for (;;) {
+      try {
+        await cb.write([toItem(live)]);
+        return null;
+      } catch (err) {
+        const next = live.filter(([mime]) => !rejected.has(mime));
+        if (next.length === live.length || next.length === 0) return err;
+        live = next;
+      }
     }
-  }
+  };
+  if (await writeLive(entries) === null) return;
+  const standard = entries.filter(([mime]) => WELL_KNOWN_CLIPBOARD_MIMES.has(mime) && !rejected.has(mime));
+  if (standard.length === 0) { dwarn('clipboard', 'OS write failed; no standard flavors to fall back to'); return; }
+  const err = await writeLive(standard);
+  if (err !== null) dwarn('clipboard', `OS clipboard write failed twice — copy stays in-memory only: ${String(err)}`);
 }
+
+type Flavor = [mime: string, text: string | Promise<string>];
