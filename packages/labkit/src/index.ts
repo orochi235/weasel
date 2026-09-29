@@ -80,6 +80,7 @@ export type {
   AnnotationMeaning,
   AnnotationPatch,
   AnnotationQuery,
+  AnnotationSelectionMode,
   AnnotationStatus,
   AnnotationStoreOptions,
   AnnotationsApi,

@@ -23,6 +23,7 @@ export type {
   AnnotationMeaning,
   AnnotationPatch,
   AnnotationQuery,
+  AnnotationSelectionMode,
   AnnotationStatus,
   AnnotationsApi,
   AnnotationsCapability,

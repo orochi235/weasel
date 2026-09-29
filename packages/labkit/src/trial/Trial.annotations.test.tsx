@@ -219,6 +219,40 @@ describe('targets that follow the trial state', () => {
   });
 });
 
+describe("the capability's selection mode", () => {
+  const twoTargets = (selection?: 'per-target') =>
+    defineInstrument<Record<string, never>, Record<string, never>>({
+      ...annotating,
+      name: 'Two',
+      annotations: {
+        targets: () => [
+          { id: 'a', ref: { current: null }, content: { w: 200, h: 100 } },
+          { id: 'b', ref: { current: null }, content: { w: 200, h: 100 } },
+        ],
+        ...(selection ? { selection } : {}),
+      },
+    });
+  const selectBoth = (): readonly string[] => {
+    const onA = marks().add({ target: 'a', kind: 'rect', frac: { x: 0, y: 0, w: 0.1, h: 0.1 } });
+    const onB = marks().add({ target: 'b', kind: 'rect', frac: { x: 0, y: 0, w: 0.1, h: 0.1 } });
+    act(() => marks().setSelection([onA, onB]));
+    return [onA, onB];
+  };
+
+  it('keeps the selection to one target by default', () => {
+    render(<Lab instruments={[twoTargets()]} defaultInstrument="Two" />);
+    const [onA] = selectBoth();
+    expect(marks().selection()).toEqual([onA]);
+  });
+
+  it("reaches the trial's store when the instrument asks for per-target", () => {
+    render(<Lab instruments={[twoTargets('per-target')]} defaultInstrument="Two" />);
+    expect(marks().selection()).toEqual([]);
+    const both = selectBoth();
+    expect(marks().selection()).toEqual(both);
+  });
+});
+
 describe('an instrument that declares none', () => {
   it('gets no store and no palette', () => {
     render(<Lab instruments={[plain]} defaultInstrument="Plain" />);

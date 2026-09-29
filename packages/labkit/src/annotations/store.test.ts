@@ -164,7 +164,7 @@ describe('the annotation store', () => {
   // because jsdom has no WebGL2 and the overlay's canvas never paints or
   // hit-tests. That the canvas is bound to this scene is core's claim.
   it('merges the selection across targets, and maps it back to annotation ids', () => {
-    const store = makeStore();
+    const store = createAnnotationStore({ targets: () => TARGETS, selection: 'per-target' });
     const onNaive = store.add(RING);
     const onOcct = store.add({ ...RING, target: 'occt' });
 
@@ -227,6 +227,86 @@ describe('the annotation store', () => {
     const before = fn.mock.calls.length;
     store.setSelection([id]);
     expect(fn.mock.calls.length).toBe(before);
+  });
+
+  describe('across targets', () => {
+    /** Selects a mark the way its pane's canvas does: on that target's scene. */
+    const click = (store: AnnotationsApi, id: string): void => {
+      const [target, node] = id.split('/') as [string, string];
+      store.sceneFor(target).setSelection([asNodeId(node)]);
+    };
+
+    it('clears a selection standing in one target when a mark is selected in another', () => {
+      const store = makeStore();
+      const onNaive = store.add(RING);
+      const onOcct = store.add({ ...RING, target: 'occt' });
+
+      click(store, onNaive);
+      click(store, onOcct);
+      expect(store.selection()).toEqual([onOcct]);
+      expect(store.sceneFor('naive').getSelection()).toEqual([]);
+    });
+
+    it('tells subscribers once, after the other target is already cleared', () => {
+      const store = makeStore();
+      const onNaive = store.add(RING);
+      const onOcct = store.add({ ...RING, target: 'occt' });
+      click(store, onNaive);
+
+      const seen: (readonly string[])[] = [];
+      store.subscribe(() => seen.push(store.selection()));
+      click(store, onOcct);
+      expect(seen).toEqual([[onOcct]]);
+    });
+
+    it('keeps a setSelection naming two targets to the first one, in one event', () => {
+      const store = makeStore();
+      const onNaive = store.add(RING);
+      const onOcct = store.add({ ...RING, target: 'occt' });
+      click(store, onNaive);
+
+      const fn = vi.fn();
+      store.subscribe(fn);
+      store.setSelection([onOcct, onNaive]);
+      expect(store.selection()).toEqual([onOcct]);
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves the other target alone for a change that selects nothing new', () => {
+      const store = makeStore();
+      const onNaive = store.add(RING);
+      store.add({ ...RING, target: 'occt' });
+      click(store, onNaive);
+
+      store.add({ ...RING, target: 'occt' });
+      store.sceneFor('occt').setSelection([]);
+      expect(store.selection()).toEqual([onNaive]);
+    });
+
+    it("keeps each target's own selection under `selection: 'per-target'`", () => {
+      const store = createAnnotationStore({ targets: () => TARGETS, selection: 'per-target' });
+      const onNaive = store.add(RING);
+      const onOcct = store.add({ ...RING, target: 'occt' });
+
+      click(store, onNaive);
+      click(store, onOcct);
+      expect(store.selection()).toEqual([onNaive, onOcct]);
+
+      store.setSelection([onOcct, onNaive]);
+      expect(store.selection()).toEqual([onNaive, onOcct]);
+    });
+
+    it('reads the mode at each change, for a capability swapped under a live store', () => {
+      let mode: 'exclusive' | 'per-target' = 'per-target';
+      const store = createAnnotationStore({ targets: () => TARGETS, selection: () => mode });
+      const onNaive = store.add(RING);
+      const onOcct = store.add({ ...RING, target: 'occt' });
+
+      click(store, onNaive);
+      mode = 'exclusive';
+      click(store, onOcct);
+      expect(store.selection()).toEqual([onOcct]);
+    });
   });
 
   it('round-trips through JSON, and the snapshot is JSON-clean', () => {

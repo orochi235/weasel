@@ -179,6 +179,11 @@ export type AnnotationToolId =
   | 'ellipse'
   | 'text';
 
+/** Whether a selection can stand in several of a trial's targets at once.
+ *  `'exclusive'` clears every other target when a mark is selected in one;
+ *  `'per-target'` lets each target keep its own. */
+export type AnnotationSelectionMode = 'exclusive' | 'per-target';
+
 /** Declares that an instrument accepts marks: which regions take them,
  *  optionally what a mark is allowed to mean, and optionally where they live. */
 export interface AnnotationsCapability<TS = unknown, TC = unknown> {
@@ -197,6 +202,9 @@ export interface AnnotationsCapability<TS = unknown, TC = unknown> {
    *  notification, not an interception: a host wanting its own flow calls
    *  `capture()` from its own UI, which is the surface the chrome uses. */
   onCapture?: (result: CaptureResult) => void;
+  /** Defaults to `'exclusive'`: selecting a mark in one target clears the
+   *  selection in every other. */
+  selection?: AnnotationSelectionMode;
 }
 
 /** A persisted mark set. Versioned by this arc rather than by labkit's
@@ -238,11 +246,13 @@ export interface AnnotationsApi {
    *  annotation ids. Every one resolves through `get`. */
   selection(): readonly string[];
   /** Replace the selection. An id naming a target or a mark that is not
-   *  there is dropped, the way `update` and `remove` ignore one. */
+   *  there is dropped, the way `update` and `remove` ignore one. Under an
+   *  `'exclusive'` selection, so is every id outside the first id's target. */
   setSelection(ids: readonly string[]): void;
   /** Fires after every mutation *and* after a selection change — weasel keeps
    *  a canvas's selection on the scene, so both already arrive on this one
-   *  channel. No delta: re-query, and re-read `selection()`. */
+   *  channel. A selection change touching several targets is one event. No
+   *  delta: re-query, and re-read `selection()`. */
   subscribe(fn: () => void): () => void;
 
   /** Whether the last mark change on any target can be taken back. Weasel

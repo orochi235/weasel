@@ -28,6 +28,7 @@ import type {
   AnnotationMeaning,
   AnnotationPatch,
   AnnotationQuery,
+  AnnotationSelectionMode,
   AnnotationsApi,
   AnnotationTargetInfo,
   CaptureOptions,
@@ -64,6 +65,10 @@ export interface AnnotationStoreOptions {
   config?: () => unknown;
   /** Notified after every finished export. */
   onCapture?: (result: CaptureResult) => void;
+  /** Whether a selection can stand in several targets at once. `'exclusive'`
+   *  (the default) clears every other target when a mark is selected in one.
+   *  A thunk is read at each selection change. */
+  selection?: AnnotationSelectionMode | (() => AnnotationSelectionMode | undefined);
 }
 
 /** Everything a capture needs that is not the store's own state. Split out so
@@ -131,6 +136,38 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
     for (const fn of subs) fn();
   };
 
+  // Scene changes made while held are told to subscribers as one, once the
+  // outermost hold ends — so a click that also clears another target, or a
+  // `setSelection` spanning several, is one event with the final answer.
+  let holding = 0;
+  let heldDirty = false;
+  const hold = (fn: () => void): void => {
+    holding += 1;
+    try {
+      fn();
+    } finally {
+      holding -= 1;
+    }
+    if (holding === 0 && heldDirty) {
+      heldDirty = false;
+      notify();
+    }
+  };
+
+  const exclusive = (): boolean =>
+    (typeof opts.selection === 'function' ? opts.selection() : opts.selection) !== 'per-target';
+
+  /** Each scene's selection as last seen, to tell a selection change from any
+   *  other change arriving on the same channel. */
+  const lastSelection = new Map<string, string>();
+  const selectionKey = (scene: MarkScene): string => scene.getSelection().map(String).join(' ');
+
+  const clearOthers = (keep: string): void => {
+    for (const [target, scene] of scenes) {
+      if (target !== keep && scene.getSelection().length > 0) scene.setSelection([]);
+    }
+  };
+
   const targetOf = (id: string): AnnotationTargetInfo | undefined =>
     targets().find((t) => t.id === id);
 
@@ -148,9 +185,24 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       : createAnnotationScene();
     scenes.set(target, scene);
     history.track(target, scene);
+    lastSelection.set(target, selectionKey(scene));
     scene.subscribe(() => {
       history.observe(target, scene);
-      notify();
+      const selected = selectionKey(scene);
+      const newlySelected = selected !== '' && selected !== lastSelection.get(target);
+      lastSelection.set(target, selected);
+      if (holding > 0) {
+        heldDirty = true;
+        return;
+      }
+      if (newlySelected && exclusive()) {
+        hold(() => {
+          heldDirty = true;
+          clearOthers(target);
+        });
+      } else {
+        notify();
+      }
     });
     return scene;
   };
@@ -286,20 +338,24 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
 
     setSelection(ids) {
       const wanted = new Map<string, string[]>();
+      const only = exclusive();
       for (const id of ids) {
         const found = nodeOf(id);
         if (!found) continue;
+        if (only && wanted.size > 0 && !wanted.has(found.target)) continue;
         const node = String(found.node.id);
         const on = wanted.get(found.target);
         if (!on) wanted.set(found.target, [node]);
         else if (!on.includes(node)) on.push(node);
       }
-      for (const [target, scene] of scenes) {
-        const next = wanted.get(target) ?? [];
-        const now = scene.getSelection();
-        if (now.length === next.length && next.every((n, i) => String(now[i]) === n)) continue;
-        scene.setSelection(next.map(asNodeId));
-      }
+      hold(() => {
+        for (const [target, scene] of scenes) {
+          const next = wanted.get(target) ?? [];
+          const now = scene.getSelection();
+          if (now.length === next.length && next.every((n, i) => String(now[i]) === n)) continue;
+          scene.setSelection(next.map(asNodeId));
+        }
+      });
     },
 
     subscribe(fn) {

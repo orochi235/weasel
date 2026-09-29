@@ -619,12 +619,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Migrating means picking tokens for those and deciding whether the site keeps its fixed dark
   look or follows mode.
 
-- **(P3) A mark can be selected in two targets at once.** Each of
-  `AnnotationOverlay`'s canvases builds its own single-mode selection and clears
-  only its own scene, so clicking in one target does not clear a selection
-  standing in another. `selection()` reports both. A host can enforce exclusivity
-  from `subscribe`, awkwardly.
-
 - **(P3) Overlays still set React Aria's deprecated `UNSTABLE_portalContainer`.**
   Its replacement, `UNSAFE_PortalProvider`, is exported by `react-aria` but not
   re-exported by `react-aria-components` 1.18, and depending on `react-aria`
