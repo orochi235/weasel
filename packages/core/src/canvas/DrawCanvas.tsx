@@ -72,7 +72,7 @@ export function DrawCanvas(props: DrawCanvasProps) {
     else if (canvasRef) (canvasRef as { current: HTMLCanvasElement | null }).current = el;
   }, [canvasRef]);
 
-  const paintCanvas = useCanvasRenderer();
+  const { paint: paintCanvas } = useCanvasRenderer();
   const paint = (): boolean => {
     const el = canvasElRef.current;
     if (!el) return false;

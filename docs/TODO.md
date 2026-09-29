@@ -284,16 +284,6 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P2) `<Canvas>` keeps painting into the first `paintInto` canvas it saw.**
-  Its renderer is created once, on the context of whichever element
-  `paintInto.canvas` named at the first paint, and nothing rebinds it when that
-  prop moves to another element: later frames go to the old buffer and the old
-  renderer is freed only at unmount. Read from `Canvas.tsx`, not reproduced.
-  The detached surfaces solved the same thing with `leaseCanvasRenderer`
-  (`canvas/canvasRenderer.ts`), which releases the old canvas's renderer when
-  the target changes; `<Canvas>` holding its renderer through the same lease
-  would fix it and leave one renderer lifetime in core.
-
 - **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
   `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
   still derives framing from document poses, so a node overridden outside the
