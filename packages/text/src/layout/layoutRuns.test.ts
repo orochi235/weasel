@@ -1857,3 +1857,78 @@ describe('layoutRuns — alignWidth', () => {
     for (const line of out.lines) expect(line.x0).toBeCloseTo(single.lines[0].x0, 10);
   });
 });
+
+// A face's stated ascent and descent place its baseline the way CSS does:
+// half the line box's leading above the ascent, and when ascent plus descent
+// outgrow the line box the leading goes negative rather than the box growing.
+describe('layoutRuns — baseline from the face ascent and descent', () => {
+  const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+  /** CSS's baseline for a line box `lh` tall around a face of ascent `a` and descent `d`. */
+  const cssBaseline = (lh: number, a: number, d: number) => (lh - a - d) / 2 + a;
+
+  async function registerAtlas(family: string, faceMetrics: object): Promise<void> {
+    const prior = global.fetch;
+    global.fetch = vi.fn().mockImplementation((url: string) => url.endsWith(`${family}.json`)
+      ? Promise.resolve({ ok: true, json: () => Promise.resolve({ ...FIXTURE_FONT, faceMetrics }) })
+      : (prior as unknown as (u: string) => unknown)(url)) as typeof fetch;
+    await registerFont(family, {}, `/fonts/${family}.json`, `/fonts/${family}.png`);
+    global.fetch = prior;
+  }
+
+  it('puts an atlas face at half-leading plus its ascent', async () => {
+    await registerAtlas('stated', { ascent: 0.9, descent: 0.2 });
+    const out = layoutRuns([{ ...RUN_PLAIN('AB'), fontFamily: 'stated' }], OPTS);
+    expect(out.lines[0].baselineY).toBeCloseTo(32 * cssBaseline(1.2, 0.9, 0.2), 6);
+    // The glyph quads hang off that baseline, in the atlas's own frame.
+    expect(out.groups[0].quads[0].baselineY).toBeCloseTo(out.lines[0].baselineY, 6);
+    expect(out.groups[0].quads[0].y0).toBeCloseTo(out.lines[0].baselineY + (4 - 29), 6);
+  });
+
+  it('lets the leading go negative when ascent and descent outgrow the line box', async () => {
+    // Papyrus on macOS: 0.938 + 0.604 = 1.542 em in a 1.2 em line.
+    await registerAtlas('papyrus', { ascent: 0.938, descent: 0.604 });
+    const out = layoutRuns([{ ...RUN_PLAIN('AB\nAB'), fontFamily: 'papyrus' }], OPTS);
+    expect(out.lines[0].baselineY).toBeCloseTo(32 * cssBaseline(1.2, 0.938, 0.604), 6);
+    expect(out.lines[0].baselineY).toBeLessThan(32 * 0.938);
+    // The line box keeps its height; the glyphs overflow it instead.
+    expect(out.lines[0].y1 - out.lines[0].y0).toBeCloseTo(32 * 1.2, 6);
+    expect(out.lines[1].baselineY - out.lines[0].baselineY).toBeCloseTo(32 * 1.2, 6);
+  });
+
+  it('shares one baseline across sizes, set by the run reaching highest above it', async () => {
+    await registerAtlas('stated', { ascent: 0.9, descent: 0.2 });
+    const small = { ...RUN_PLAIN('A'), fontFamily: 'stated', fontSize: 16 };
+    const big = { ...RUN_PLAIN('B'), fontFamily: 'stated', fontSize: 40 };
+    const out = layoutRuns([small, big], OPTS);
+    expect(out.lines[0].baselineY).toBeCloseTo(40 * cssBaseline(1.2, 0.9, 0.2), 6);
+    expect(new Set(out.groups.flatMap((g) => g.quads).map((q) => q.baselineY)).size).toBe(1);
+  });
+
+  it('puts an outline face on the same baseline as an atlas stating the same metrics', async () => {
+    await registerAtlas('stated', { ascent: 0.9, descent: 0.2 });
+    registerFontOutlines('outlined', {}, new ArrayBuffer(4), {
+      parser: () => ({
+        unitsPerEm: 1000, ascender: 0.9, faceMetrics: { ascent: 0.9, descent: 0.2 },
+        advanceOf: () => 0.6, kernOf: () => 0, glyphD: () => 'M0 0L1 0L1 -1Z',
+      }),
+    });
+    glyphOutline('outlined', 400, 'normal', 65);
+    await new Promise<void>((r) => setTimeout(r, 0));
+    const outline = layoutRuns([{ ...RUN_PLAIN('AB'), fontFamily: 'outlined' }], { ...OPTS, outlineMinSize: 20 });
+    const atlas = layoutRuns([{ ...RUN_PLAIN('AB'), fontFamily: 'stated' }], OPTS);
+    expect(outline.groups[0].source).toBe('outline');
+    expect(outline.lines[0].baselineY).toBeCloseTo(atlas.lines[0].baselineY, 6);
+  });
+
+  it('places a canvas face by the browser ascent and descent', () => {
+    _resetDynamicFontsForTests();
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({ width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255), left: 0, top: 26, advance: 22 }),
+    });
+    registerCanvasFont('DynMetrics');
+    const out = layoutRuns([{ ...RUN_PLAIN('A'), fontFamily: 'DynMetrics', fontSize: 24 }], OPTS);
+    // 40 and 8 at the 48px bake size.
+    expect(out.lines[0].baselineY).toBeCloseTo(24 * cssBaseline(1.2, 40 / 48, 8 / 48), 6);
+  });
+});

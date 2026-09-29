@@ -21,8 +21,12 @@
  * exceed the current line width. Forced line breaks are emitted at UAX #14's
  * hard breaks — `\n`, CR, CRLF as one, VT, FF, NEL, U+2028 and U+2029 — none
  * of which lays out a cell. Every run on a line shares one baseline, sunk to
- * clear the tallest run's ascent, so mixing sizes or faces aligns them the way inline text aligns everywhere else; line height is
- * `max(fontSize * lineHeight)` across the line. A run a relative size shrank
+ * clear whichever run reaches highest above it, so mixing sizes or faces aligns
+ * them the way inline text aligns everywhere else; line height is
+ * `max(fontSize * lineHeight)` across the line. A face that states its ascent
+ * and descent sits in its line the way CSS sets it — half the leading above the
+ * ascent, negative when the face is taller than the line, so its glyphs overflow
+ * the box rather than growing it. A run a relative size shrank
  * measures at its `strutSize` for both, the way a CSS line keeps its parent's
  * strut under a `<sup>`.
  *
@@ -254,17 +258,29 @@ export interface LaidOutRuns {
 interface MetricsSource {
   /** Units per em of whatever `advance`, `base` and `kernOf` are measured in. */
   size: number;
-  /** Line top to baseline, in those same units. */
+  /** Line top to baseline in the glyph frame, in those same units: what an
+   *  atlas glyph's `yoffset` is measured against. */
   base: number;
+  /** Baseline to the top and bottom of the face's line box, in those same
+   *  units — the ascent and descent a browser sets the face with. `descent`
+   *  is absent for a face that states neither, which hangs its baseline
+   *  `base` below the line top instead of centering the face in the line. */
+  ascent: number;
+  descent?: number;
   /** Advance for `cp`, or null when this source has no glyph for it. */
   advanceOf(cp: number): number | null;
   kernOf(left: number, right: number): number;
 }
 
 function atlasMetrics(font: BmFont): MetricsSource {
+  const size = font.info.size;
+  const { ascent, descent } = font.faceMetrics ?? {};
   return {
-    size: font.info.size,
+    size,
     base: font.common.base,
+    ...(ascent !== undefined && descent !== undefined
+      ? { ascent: ascent * size, descent: descent * size }
+      : { ascent: font.common.base }),
     advanceOf: (cp) => font.charMap.get(cp)?.xadvance ?? null,
     kernOf: (l, r) => font.kerningMap.get(l)?.get(r) ?? 0,
   };
@@ -625,6 +641,19 @@ export function layoutRuns(
    *  shrunken run inherited. Glyphs are drawn at their own `fontSize`
    *  regardless, which small caps sets below the run's. */
   const lineSize = (e: Entry): number => Math.max(e.run.fontSize, e.run.strutSize ?? 0);
+  /**
+   * How far above the baseline an entry's inline box reaches, CSS's way: the
+   * face's ascent plus half the leading its line height leaves around ascent
+   * and descent. A face taller than its line box gets negative leading and
+   * overflows the box rather than growing it — the box stays `lineHeight`
+   * tall either way.
+   */
+  const aboveBaseline = (e: Entry): number => {
+    const k = lineSize(e) / e.metrics.size;
+    const ascent = e.metrics.ascent * k;
+    if (e.metrics.descent === undefined) return ascent;
+    return (lineSize(e) * opts.lineHeight - ascent - e.metrics.descent * k) / 2 + ascent;
+  };
 
   // 1. Flatten all runs into entries with per-glyph data, computing
   //    kerning using the left glyph's atlas+scale across run boundaries.
@@ -645,7 +674,14 @@ export function layoutRuns(
     // Em space is unit-scale, so a parsed face divides by 1 and its advances
     // are already the world-unit fractions of `fontSize` layout wants.
     const metrics: MetricsSource | undefined = outlineFace
-      ? { size: 1, base: outlineFace.ascender, advanceOf: (cp) => outlineFace.advanceOf(cp), kernOf: (l, r) => outlineFace.kernOf(l, r) }
+      ? {
+        size: 1,
+        base: outlineFace.ascender,
+        ascent: outlineFace.faceMetrics?.ascent ?? outlineFace.ascender,
+        ...(outlineFace.faceMetrics?.descent !== undefined ? { descent: outlineFace.faceMetrics.descent } : {}),
+        advanceOf: (cp) => outlineFace.advanceOf(cp),
+        kernOf: (l, r) => outlineFace.kernOf(l, r),
+      }
       : font ? atlasMetrics(font) : undefined;
     if (!metrics) {
       // A run with no metrics lays out as nothing, which is indistinguishable
@@ -991,22 +1027,17 @@ export function layoutRuns(
     })();
     const lineX0 = alignShift;
     // One baseline for the whole line, sunk far enough below the line top to
-    // clear the tallest run's ascent — so runs set at different sizes sit on
-    // it together instead of each hanging from the line top at its own depth.
-    // A blank line has no entry to measure, so it falls back to the newline
-    // that closed it.
+    // clear whichever run reaches highest above it — so runs set at different
+    // sizes sit on it together instead of each hanging from the line top at
+    // its own depth. A blank line has no entry to measure, so it falls back
+    // to the newline that closed it.
     //
     // Deliberately computed from *unshifted* ascents: a run's `baselineShift`
     // moves it off this baseline, so letting the shift feed back into the
     // baseline it is measured against would drag the rest of the line with it.
     let lineAscent = 0;
-    for (const e of line.entries) {
-      lineAscent = Math.max(lineAscent, e.metrics.base * (lineSize(e) / e.metrics.size));
-    }
-    if (line.entries.length === 0 && line.blank) {
-      lineAscent = line.blank.metrics.base
-        * (lineSize(line.blank) / line.blank.metrics.size);
-    }
+    for (const e of line.entries) lineAscent = Math.max(lineAscent, aboveBaseline(e));
+    if (line.entries.length === 0 && line.blank) lineAscent = aboveBaseline(line.blank);
     const lineBaselineY = penY + lineAscent;
 
     const cells: LaidOutCell[] = new Array(line.entries.length);

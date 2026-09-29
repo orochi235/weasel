@@ -80,7 +80,7 @@ silhouette is built from it, which is how shape-accurate picking stops a text
 box from swallowing clicks on whatever is behind it.
 
 > **`TextDrawCommand.y` is the top of the first line box, not a baseline.**
-> `layoutRuns` walks down from it by `common.base * scale`, and
+> `layoutRuns` walks down from it by half the leading plus the face's ascent, and
 > `verticalAlign` aligns the block within `[y, y + height]`. Passing a
 > baseline there — the canvas-2D `fillText` convention — puts the text about
 > an em too low and hands `verticalAlign` the wrong box.

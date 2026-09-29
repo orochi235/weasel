@@ -35,9 +35,9 @@ export interface OutlineFace {
    * Distance from the line top to the baseline, in em units — the outline
    * tier's analogue of a `BmFont`'s `common.base`.
    *
-   * Read from `hhea`, which is what `msdf-bmfont-xml` bakes, so a face used
-   * for metrics puts text on the same baseline as an atlas of the same font.
-   * `docs/TODO.md` tracks the wider disagreement with `sTypoAscender`.
+   * The default parser reports `faceMetrics.ascent`, the ascent a browser
+   * sets the face with, so a face used for metrics puts text on the same
+   * baseline as an atlas of the same font and as the DOM edit overlay.
    */
   ascender: number;
   /** The face's decoration and script metrics, derived with

@@ -1088,14 +1088,16 @@ export function overlayTop(pose: TextEditScreenPose, contentHeight: number, drop
 }
 
 /**
- * The canvas hangs a line's baseline one ascent below the line top; CSS adds
- * half the leading first, and each engine rounds the font's metrics and that
- * leading its own way. So the difference is read
- * from both sides rather than predicted: the canvas's from its own layout, the
+ * The canvas and CSS both hang a line's baseline half the leading plus one
+ * ascent below the line top, from the same ascent rule, but each engine
+ * rounds the font's metrics and that leading its own way, and a face that
+ * states no ascent and descent hangs from its ascent alone. So the difference
+ * is read from both sides rather than predicted: the canvas's from its own layout, the
  * overlay's from a zero-height inline box on a hidden line set exactly as the
  * overlay is. Pre-scale; `0` when either side has nothing to measure.
+ * @internal
  */
-function baselineDrop(el: HTMLElement, style: ResolvedTextStyle, pose: TextEditScreenPose, lineHeight: number): number {
+export function baselineDrop(el: HTMLElement, style: ResolvedTextStyle, pose: TextEditScreenPose, lineHeight: number): number {
   const canvas = layoutTextPose({
     x: 0, y: 0, width: pose.width, height: pose.height, text: ' ',
     style: {
