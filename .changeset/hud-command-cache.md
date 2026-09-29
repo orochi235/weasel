@@ -16,6 +16,7 @@ change. Every kit widget declares it, invalidated by its own setters and
 pointer state. A hand-written widget without `deps` is drawn on every repaint,
 as before; a widget declaring it must treat the commands it returned as
 immutable. A window's `content` painter is still called on every repaint.
+A text widget that only moved keeps its runs array, so its layout stays cached.
 
 `@weasel-js/core` exports `depsUnchanged`, the comparison `RenderLayer.deps`
 uses.
