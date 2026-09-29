@@ -59,9 +59,8 @@ describe('useSceneTextEdit — view projection', () => {
     const { hook, container } = renderEdit();
     act(() => hook.result.current.startEdit('a'));
     const el = overlayOf(container);
-    // +1 / -1 is the hook's CSS-vs-canvas rasterization nudge.
-    expect(el.style.left).toBe('101px');
-    expect(el.style.top).toBe('49px');
+    expect(el.style.left).toBe('100px');
+    expect(el.style.top).toBe('50px');
     expect(el.style.minWidth).toBe('200px');
     expect(el.style.transform).toBe('none');
   });
@@ -70,9 +69,9 @@ describe('useSceneTextEdit — view projection', () => {
     const { hook, container } = renderEdit({ x: 20, y: 10, scale: { x: 2, y: 2 } });
     act(() => hook.result.current.startEdit('a'));
     const el = overlayOf(container);
-    // (100 - 20) * 2 = 160, (50 - 10) * 2 = 80, plus the nudge.
-    expect(el.style.left).toBe('161px');
-    expect(el.style.top).toBe('79px');
+    // (100 - 20) * 2 = 160, (50 - 10) * 2 = 80.
+    expect(el.style.left).toBe('160px');
+    expect(el.style.top).toBe('80px');
   });
 
   it('leaves the box and the font size in world units, scaled by the transform', () => {
@@ -96,7 +95,7 @@ describe('useSceneTextEdit — view projection', () => {
     const el = overlayOf(container);
     // jsdom measures the content as 0 tall, so the whole 40px box is slack.
     expect(el.style.minHeight).toBe('');
-    expect(el.style.top).toBe('89px');
+    expect(el.style.top).toBe('90px');
   });
 });
 
@@ -182,19 +181,18 @@ describe('useSceneTextEdit — view thunk', () => {
       const { hook, container } = renderThunkEdit(() => live);
       act(() => hook.result.current.startEdit('a'));
       const el = overlayOf(container);
-      // (100 - 0) * 1 + the hook's +1 / -1 rasterization nudge.
-      expect(el.style.left).toBe('101px');
-      expect(el.style.top).toBe('49px');
+      expect(el.style.left).toBe('100px');
+      expect(el.style.top).toBe('50px');
 
       live = { x: 40, y: 10, scale: { x: 1, y: 1 } };
       act(() => { frames[frames.length - 1]!(0); });
-      expect(el.style.left).toBe('61px');
-      expect(el.style.top).toBe('39px');
+      expect(el.style.left).toBe('60px');
+      expect(el.style.top).toBe('40px');
 
       live = { x: 90, y: 45, scale: { x: 2, y: 2 } };
       act(() => { frames[frames.length - 1]!(0); });
-      expect(el.style.left).toBe('21px');
-      expect(el.style.top).toBe('9px');
+      expect(el.style.left).toBe('20px');
+      expect(el.style.top).toBe('10px');
       expect(el.style.transform).toBe('scale(2)');
     } finally {
       globalThis.requestAnimationFrame = realRaf;
@@ -294,9 +292,9 @@ describe('useSceneTextEdit — the canvas inside the container', () => {
     try {
       act(() => hook.result.current.startEdit('a'));
       const el = overlayOf(container);
-      // (100 - 20) * 2 = 160, (50 - 10) * 2 = 80, plus the nudge.
-      expect(el.style.left).toBe('161px');
-      expect(el.style.top).toBe('79px');
+      // (100 - 20) * 2 = 160, (50 - 10) * 2 = 80.
+      expect(el.style.left).toBe('160px');
+      expect(el.style.top).toBe('80px');
       expect(el.style.transform).toBe('scale(2)');
     } finally {
       dispose();
@@ -320,9 +318,9 @@ describe('useSceneTextEdit — the canvas inside the container', () => {
       expect([clip.style.left, clip.style.top, clip.style.width, clip.style.height])
         .toEqual(['40px', '30px', '600px', '400px']);
       // World (100, 50) is canvas (100, 50), container (140, 80), clip box
-      // (100, 50) — plus the nudge.
-      expect(el.style.left).toBe('101px');
-      expect(el.style.top).toBe('49px');
+      // (100, 50).
+      expect(el.style.left).toBe('100px');
+      expect(el.style.top).toBe('50px');
     } finally {
       dispose();
     }
@@ -419,7 +417,7 @@ describe('useSceneTextEdit — a derived pose', () => {
   it('places the overlay at the derived pose', () => {
     const { hook, container } = renderDerived();
     act(() => hook.result.current.startEdit('label'));
-    expect(overlayOf(container).style.left).toBe('301px');
+    expect(overlayOf(container).style.left).toBe('300px');
   });
 });
 
@@ -497,8 +495,8 @@ describe('useSceneTextEdit — a line longer than its box', () => {
     const el = overlayOf(container);
     expect(el.style.width).toBe('max-content');
     expect(el.style.minWidth).toBe('50px');
-    // Anchored on the box center (100 + 25), plus the nudge.
-    expect(el.style.left).toBe('126px');
+    // Anchored on the box center (100 + 25).
+    expect(el.style.left).toBe('125px');
     expect(el.style.transform).toBe('translateX(-50%)');
   });
 
