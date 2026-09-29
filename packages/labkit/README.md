@@ -143,7 +143,6 @@ provide the corresponding chrome; they compose freely.
 | `canvas` | A stack of layered `<canvas>` elements with pan and zoom, redrawing only the layers that changed |
 | `layers` | A sidebar list that hides and reorders those layers |
 | `annotations` | Drawing tools, an overlay on each region you name, a Marks panel, undo and export |
-| `loupe` | A magnifier toggle that redraws the canvas through a zoomed camera, or calls your own `render` for DOM content |
 | `dragDrop` | A palette to drag items from, and a drop pipeline that hands you world coordinates |
 | `undo` | Undo and redo buttons, snapshotting state on the events you name |
 | `job` | Starts async work, aborts it on unmount and on a key change, and renders progress and a cancel control |
@@ -307,14 +306,15 @@ directly. Several expose more than the root does, `/state` most of all.
 
 | Subpath | |
 | --- | --- |
-| `@weasel-js/labkit` | Everything |
+| `@weasel-js/labkit` | Everything but `/loupe` and `/overview` |
 | `/styles.css` | The one stylesheet |
 | `/primitives` | Toolbar, Sidebar, StatusBar, Legend, FloatingPanel, meters |
 | `/chrome` | Regions, contribution types, built-in contributions |
 | `/controls` | `<ControlPanel>` and the config field types |
 | `/canvas` | `<CanvasStack>`, coordinate helpers, `usePanZoom`, `useOrbit` |
 | `/layers` | `<LayerList>` from `@weasel-js/ui`, and the layers capability types |
-| `/loupe` | Magnifier components and `useLoupe` |
+| `/loupe` | `<TrialLoupe>`, the magnifier an instrument mounts in its content; the trial offers a Loupe toggle while one is mounted. Not in the root barrel |
+| `/overview` | `<TrialOverview>`, a floating panel showing a trial's whole content. Not in the root barrel |
 | `/surface` | Tiled surface hooks for your own renderer |
 | `/job` | `useJob` and the job capability types |
 | `/state` | The lab store, storage adapters, `useTrialState`, serialization helpers |

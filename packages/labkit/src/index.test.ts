@@ -49,6 +49,11 @@ describe('public export surface', () => {
     expect(labkit).toHaveProperty('useTrialState');
     expect(labkit).toHaveProperty('useTrialId');
   });
+
+  it('leaves the loupe to its own entry, so a lab without one does not load it', () => {
+    expect(labkit).not.toHaveProperty('TrialLoupe');
+    expect(labkit).not.toHaveProperty('useLoupe');
+  });
 });
 
 describe('ui re-exports', () => {

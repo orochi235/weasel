@@ -267,7 +267,6 @@ export * from './job';
 export * from './lab';
 export type { LayerListItem, LayerListProps, LayerMove } from './layers';
 export { LayerList, moveLayers } from './layers';
-export * from './loupe';
 export * from './primitives';
 export { SPECIMEN_SECTIONS, Specimen } from './specimen/Specimen';
 export {

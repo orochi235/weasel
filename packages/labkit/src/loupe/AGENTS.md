@@ -1,7 +1,9 @@
 # Loupe — Agent Guide
 
-`src/loupe/` is the `loupe` instrument capability: a magnifier a trial can turn
-on, painted by whichever painter suits the instrument's content.
+`src/loupe/` is `@weasel-js/labkit/loupe`: `<TrialLoupe>`, a magnifier the
+instrument mounts in its own content, painted by whichever painter suits it.
+Its own bundle entry; nothing in the main bundle imports it, so a lab that
+mounts no lens never loads it.
 
 The magnifier itself is not here. `@weasel-js/loupe` holds the model — aim,
 factor, mode, color, picking — over a `LoupeSurface` it asks five questions.
@@ -11,29 +13,40 @@ This directory binds that model to a labkit trial and draws it.
 
 | File | Role |
 |---|---|
-| `types.ts` | `LoupeCapability`, and `resolveLoupe` filling in every default |
+| `types.ts` | `LoupeOptions`, and `resolveLoupe` filling in every default |
 | `useLoupe.ts` | The model over a host element, and pointer aiming |
 | `loupeActions.ts` | `loupe.peek` and `loupe.magnify`, as `Action` descriptors |
 | `LoupeGestures.tsx` | Registers those, and mounts a dispatcher on the host when no camera has one there |
-| `TrialLoupe.tsx` | Picks the painter and mounts the lens |
+| `TrialLoupe.tsx` | Finds its host and the trial's switch, picks the painter, mounts the lens |
 | `LoupeBubble.tsx` | The circular clip, positioned on the aim |
 | `CanvasLoupe.tsx` | Painter for a `<CanvasStack>` |
 | `canvasLens.ts` | That painter's geometry and drawing, with no React in it |
 | `DomLoupe.tsx` | Painter for DOM content |
 | `useHostSize.ts` | The host's measured box, for the DOM stage |
 
+## How it reads the trial
+
+Only through context, the way `<TrialOverview>` does. `CanvasStackContext`'s
+`surface` gives the canvas painter the stack's layers, pixels and `worldSpec`;
+`CameraContext` gives a lens in a `<Stage>` its element and camera. Outside
+both, it tracks `hostRef`, or failing that wraps its `children` in a
+`.lk-loupe-host` box of its own.
+
+The toolbar toggle is `LoupeSwitchContext` (`src/trial/loupeSwitch.ts`, main
+bundle). A lens with no `enabled` prop calls `mount` and follows `on`; the
+trial offers its Loupe toggle while any lens is mounted. `enabled` opts a lens
+out of the switch entirely. Because the lens mounts after the trial's first
+render, `loupe` is in `TRANSIENT_BUILTINS`, so suppressing it before then is
+not a typo.
+
 ## Which painter
 
-`LoupeCapability.render` decides. Absent, the lens re-runs the instrument's own
-canvas layers through `lensCamera` — sharp at any factor, and `mode: 'pixel'`
-enlarges the presented pixels with smoothing off instead. Present, the
-instrument is handed a camera and draws itself again; a DOM loupe is always
-`vector`, since DOM has no framebuffer to enlarge.
-
-The canvas painter needs the stack's own pixels and layers, which is why
-`TrialLoupe` mounts *inside* `<CanvasStack>` for a drawing instrument and reads
-`CanvasStackContext`'s `surface`. A DOM instrument gets a
-`.lk-trial__loupe-host` wrapper from `Trial` and the lens tracks that.
+`render` decides. Absent, the lens re-runs the stack's canvas layers through
+`lensCamera` — sharp at any factor, and `mode: 'pixel'` enlarges the presented
+pixels with smoothing off instead. Present, it is handed a camera and draws the
+content again; a DOM loupe is always `vector`, since DOM has no framebuffer to
+enlarge. The canvas painter needs the stack's own pixels, which is why a
+drawing instrument mounts the lens in its `render`, inside `<CanvasStack>`.
 
 ## Traps
 
@@ -51,7 +64,7 @@ In a trial the loupe's actions join the camera's dispatcher (`CameraInput`).
 `loupe.magnify` sits in the hotkey tier, so while the lens is up it outranks
 the camera's wheel zoom; while it is down its `enabled` returns a disabled
 reason and the dispatcher falls through to the zoom. Outside a camera — the DOM
-`.lk-trial__loupe-host` — `<LoupeGestures>` mounts a dispatcher of its own.
+`.lk-loupe-host` — `<LoupeGestures>` mounts a dispatcher of its own.
 
 **Aiming is a plain listener because a hover is not a gesture.**
 `GESTURE_DESCRIPTORS` names no continuous-motion gesture, so `pointermove` /

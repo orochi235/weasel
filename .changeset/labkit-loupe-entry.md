@@ -1,0 +1,7 @@
+---
+'@weasel-js/labkit': patch
+---
+
+The loupe moves out of labkit's main bundle and onto the shape the overview already has: `<TrialLoupe>` comes from `@weasel-js/labkit/loupe`, and the instrument mounts it in its own content — in a canvas instrument's `render` (inside the stack, so the lens re-draws its layers), in a stage's `overlay`, or wrapped around DOM content with a `render` of its own. It reads the trial through context: the canvas stack or stage around it, and the trial's new `LoupeSwitchContext`, which offers the Loupe toolbar toggle while any lens is mounted. `enabled` takes a lens off that switch, `view` overrides the camera a DOM lens composes onto, and `hostRef` names the element to track.
+
+Breaking: the `loupe` field on an instrument is gone, and nothing loupe-related is exported from the root `@weasel-js/labkit` any more. `LoupeCapability` is now `LoupeOptions` (the props `<TrialLoupe>` spreads), `LoupeDeclaration` is removed, `resolveLoupe` takes options rather than `true`, `LoupeRenderArgs` no longer carries `state` / `config` (the instrument closes over its own), `useLoupe` takes `options` rather than `capability`, and the DOM host class is `.lk-loupe-host` rather than `.lk-trial__loupe-host`. Additive: `TrialChromeContext.hasLoupe`, `CanvasStackSurface.worldSpec`, a `transient` set on `suppressContributions`, and `TRANSIENT_BUILTINS` from `/chrome`, so `suppress={['loupe']}` still works before the lens has mounted.

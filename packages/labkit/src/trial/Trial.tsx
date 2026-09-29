@@ -6,6 +6,7 @@ import {
 } from '@weasel-js/core';
 import {
   type ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useLayoutEffect,
@@ -40,8 +41,6 @@ import type {
 } from '../instrument/types';
 import { useJob } from '../job/useJob';
 import { useLabContext } from '../lab/LabContext';
-import { TrialLoupe } from '../loupe/TrialLoupe';
-import { resolveLoupe } from '../loupe/types';
 import { LayerList, type LayerListItem, moveLayers } from '../passthrough/weasel-ui';
 import { LabStoreContext, TrialIdProvider } from '../state/context';
 import type { LabStore } from '../state/store';
@@ -50,6 +49,7 @@ import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { resolveLabTool } from '../tools/labTool';
 import { createEventBus, type EventBus } from '../undo/eventBus';
 import { pushSnapshot, redo as undoRedo, undo as undoUndo } from '../undo/undoStack';
+import { LoupeSwitchContext } from './loupeSwitch';
 import type { LoupeBindings, UndoBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
 
@@ -158,7 +158,6 @@ function TrialRuntime({
   );
   const [pointer] = useState(createPointerStore);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
-  const loupeHostRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
@@ -180,6 +179,12 @@ function TrialRuntime({
   const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({});
   const [layerOrder, setLayerOrder] = useState<string[] | null>(null);
   const [loupeOn, setLoupeOn] = useState(false);
+  const [lenses, setLenses] = useState(0);
+  const mountLens = useCallback(() => {
+    setLenses((n) => n + 1);
+    return () => setLenses((n) => n - 1);
+  }, []);
+  const loupeSwitch = useMemo(() => ({ on: loupeOn, mount: mountLens }), [loupeOn, mountLens]);
 
   const visibleLayers = useMemo(
     () =>
@@ -418,14 +423,8 @@ function TrialRuntime({
         }
       : undefined;
 
-  const loupeCap = useMemo(() => {
-    const declared = instrument.loupe;
-    if (declared == null) return null;
-    return resolveLoupe(typeof declared === 'function' ? declared(config) : declared);
-  }, [instrument.loupe, config]);
-  const loupeBindings: LoupeBindings | undefined = loupeCap
-    ? { on: loupeOn, toggle: () => setLoupeOn((v) => !v) }
-    : undefined;
+  const loupeBindings: LoupeBindings | undefined =
+    lenses > 0 ? { on: loupeOn, toggle: () => setLoupeOn((v) => !v) } : undefined;
 
   const canvasLayers: CanvasLayerDescriptor[] = useMemo(() => {
     if (!instrument.canvas) return [];
@@ -516,20 +515,6 @@ function TrialRuntime({
     ];
   }, [canvasLayers, dragDropResult.drag]);
 
-  // The lens tracks the pointer over whatever box holds the content: the canvas
-  // stack's own element, which it takes from context, or the wrapper below.
-  const lens = loupeCap ? (
-    <TrialLoupe
-      capability={loupeCap}
-      enabled={loupeOn}
-      state={record.state}
-      config={config}
-      view={view2d ?? DEFAULT_VIEW}
-      worldSpec={instrument.canvas?.worldSpec}
-      hostRef={loupeHostRef}
-    />
-  ) : null;
-
   let body: ReactNode;
   if (instrument.canvas) {
     body = (
@@ -544,7 +529,6 @@ function TrialRuntime({
           maxZoom={instrument.canvas.maxZoom}
         >
           {instrument.render(renderCtx)}
-          {lens}
         </CanvasStack>
         <DragOverlay drag={dragDropResult.drag} />
       </div>
@@ -558,23 +542,10 @@ function TrialRuntime({
         onResize={placeView}
         minZoom={stage.minZoom}
         maxZoom={stage.maxZoom}
-        hostRef={loupeHostRef}
-        overlay={
-          <>
-            {stage.overlay?.(renderCtx)}
-            {lens}
-          </>
-        }
+        overlay={stage.overlay?.(renderCtx)}
       >
         {instrument.render(renderCtx)}
       </Stage>
-    );
-  } else if (lens) {
-    body = (
-      <div ref={loupeHostRef} className="lk-trial__loupe-host">
-        {instrument.render(renderCtx)}
-        {lens}
-      </div>
     );
   } else {
     body = instrument.render(renderCtx);
@@ -644,7 +615,9 @@ function TrialRuntime({
   const scopedBody = (
     <WeaselProvider isolate>
       <PointerContextProvider store={pointer}>
-        <CameraPublishContext.Provider value={publishCamera}>{body}</CameraPublishContext.Provider>
+        <CameraPublishContext.Provider value={publishCamera}>
+          <LoupeSwitchContext.Provider value={loupeSwitch}>{body}</LoupeSwitchContext.Provider>
+        </CameraPublishContext.Provider>
       </PointerContextProvider>
     </WeaselProvider>
   );

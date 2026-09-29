@@ -1,3 +1,5 @@
+export type { LoupeSwitch } from './loupeSwitch';
+export { LoupeSwitchContext } from './loupeSwitch';
 export type { TrialProps } from './Trial';
 export { Trial } from './Trial';
 export type { TrialBodyProps } from './TrialBody';

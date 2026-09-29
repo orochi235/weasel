@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { LOUPE_DEFAULTS, resolveLoupe } from './types';
 
 describe('resolveLoupe', () => {
-  it('takes every default from a bare `true`', () => {
-    expect(resolveLoupe(true)).toMatchObject(LOUPE_DEFAULTS);
+  it('takes every default when given nothing', () => {
+    expect(resolveLoupe()).toMatchObject(LOUPE_DEFAULTS);
   });
 
-  it('keeps what the instrument declared', () => {
+  it('keeps what it was given', () => {
     const cap = resolveLoupe({ factor: 12, diameter: 320, minFactor: 1, maxFactor: 40 });
     expect(cap).toMatchObject({ factor: 12, diameter: 320, minFactor: 1, maxFactor: 40 });
   });

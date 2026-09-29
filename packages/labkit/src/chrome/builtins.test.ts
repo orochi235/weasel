@@ -23,6 +23,7 @@ const ctx: TrialChromeContext = {
   canRedo: false,
   undo: () => {},
   redo: () => {},
+  hasLoupe: false,
   loupeOn: false,
   toggleLoupe: () => {},
   configFields: [],
@@ -72,21 +73,21 @@ describe('builtinContributions', () => {
     expect(ids({ ...bare, undo: {} })).toContain('redo');
   });
 
-  it('contributes the loupe toggle only when the instrument declares one', () => {
+  it('contributes the loupe toggle only while a lens is mounted', () => {
     expect(ids(bare)).not.toContain('loupe');
-    expect(ids({ ...bare, loupe: true })).toContain('loupe');
-    expect(ids({ ...bare, loupe: { render: () => null } })).toContain('loupe');
+    const mounted = builtinContributions(bare, { ...ctx, hasLoupe: true });
+    expect(mounted.map((c) => c.id)).toContain('loupe');
   });
 
   it('offers the loupe to a DOM instrument, which declares no canvas', () => {
-    const contributions = builtinContributions({ ...bare, loupe: true }, ctx);
+    const contributions = builtinContributions(bare, { ...ctx, hasLoupe: true });
     const loupe = contributions.find((c) => c.id === 'loupe');
     expect(loupe?.region).toBe('toolbar');
   });
 
   it('reports the loupe switch position, so the button reads as held', () => {
-    const off = builtinContributions({ ...bare, loupe: true }, ctx);
-    const on = builtinContributions({ ...bare, loupe: true }, { ...ctx, loupeOn: true });
+    const off = builtinContributions(bare, { ...ctx, hasLoupe: true });
+    const on = builtinContributions(bare, { ...ctx, hasLoupe: true, loupeOn: true });
     expect(off.find((c) => c.id === 'loupe')?.item).toMatchObject({ pressed: false });
     expect(on.find((c) => c.id === 'loupe')?.item).toMatchObject({ pressed: true });
   });

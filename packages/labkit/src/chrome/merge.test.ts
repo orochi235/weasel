@@ -44,6 +44,11 @@ describe('suppressContributions', () => {
     );
   });
 
+  it('passes over an absent id it was told may come and go', () => {
+    const out = suppressContributions([toolbarItem('a')], ['late'], new Set(['late']));
+    expect(out.map((c) => c.id)).toEqual(['a']);
+  });
+
   it('is a no-op for an empty suppress list', () => {
     const bundle = [toolbarItem('a')];
     expect(suppressContributions(bundle, [])).toEqual(bundle);

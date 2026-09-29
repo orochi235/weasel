@@ -6,7 +6,6 @@ import type { TrialContribution } from '../chrome/types';
 import type { ConfigPath, ConfigSchema } from '../config/types';
 import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';
-import type { LoupeDeclaration } from '../loupe/types';
 import type { TrialInfo } from '../state/types';
 import type { ToolCapability } from '../tools/types';
 
@@ -182,11 +181,6 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
    *  is allowed to mean. Declaring it is what makes the trial provide the
    *  annotation overlay and its chrome. */
   annotations?: AnnotationsCapability<TS, TC>;
-  /** Magnification. `true` takes every default and re-draws the instrument's
-   *  canvas layers through a zoomed camera; an instrument whose content is DOM
-   *  gives a `render` that draws it again at a camera it is handed. A function
-   *  is re-read as the config changes, so a setting can drive the lens. */
-  loupe?: LoupeDeclaration<TS, TC> | ((config: TC) => LoupeDeclaration<TS, TC>);
   /** Chrome this instrument contributes beyond what its capabilities imply. */
   chrome?: TrialContribution[];
   /** Work too slow to do during a render. The runtime starts it, aborts it on

@@ -3,11 +3,9 @@ import type { ReactNode } from 'react';
 import type { ViewportSize } from '../canvas/worldSpec';
 import type { ViewTransform } from '../instrument/types';
 
-/** What a DOM instrument's loupe `render` is handed: the same data its own
- *  `render` gets, and the camera to draw it through. */
-export interface LoupeRenderArgs<TS = unknown, TC = unknown> {
-  state: TS;
-  config: TC;
+/** What a DOM loupe's `render` is handed: the camera to draw the content
+ *  through again. */
+export interface LoupeRenderArgs {
   /** The trial's own camera composed with the magnification, about the aimed
    *  point — so drawing the same content through it magnifies in place. */
   view: ViewTransform;
@@ -21,14 +19,14 @@ export interface LoupeRenderArgs<TS = unknown, TC = unknown> {
 }
 
 /**
- * Declares that an instrument can be magnified.
+ * How a lens magnifies.
  *
- * With no `render`, the loupe re-draws the instrument's canvas layers through a
- * zoomed camera, so it stays sharp at any factor. An instrument whose content is
- * DOM supplies `render` instead: given a camera, draw me again.
+ * With no `render`, the lens re-draws the canvas stack's layers through a
+ * zoomed camera, so it stays sharp at any factor. Over DOM content, `render`
+ * draws it instead: given a camera, draw me again.
  */
-export interface LoupeCapability<TS = unknown, TC = unknown> {
-  render?: (args: LoupeRenderArgs<TS, TC>) => ReactNode;
+export interface LoupeOptions {
+  render?: (args: LoupeRenderArgs) => ReactNode;
   /** Opening magnification, clamped to the bounds below. Default 6. */
   factor?: number;
   /** What the wheel clamps to. Defaults 2 and 32. */
@@ -48,12 +46,9 @@ export interface LoupeCapability<TS = unknown, TC = unknown> {
   onColorChange?: (hex: string) => void;
 }
 
-/** An instrument's loupe declaration. `true` takes every default. */
-export type LoupeDeclaration<TS = unknown, TC = unknown> = true | LoupeCapability<TS, TC>;
-
-/** A {@link LoupeCapability} with every default filled in. */
-export interface ResolvedLoupe<TS = unknown, TC = unknown> {
-  render?: (args: LoupeRenderArgs<TS, TC>) => ReactNode;
+/** {@link LoupeOptions} with every default filled in. */
+export interface ResolvedLoupe {
+  render?: (args: LoupeRenderArgs) => ReactNode;
   onColorChange?: (hex: string) => void;
   factor: number;
   minFactor: number;
@@ -73,21 +68,20 @@ export const LOUPE_DEFAULTS = {
   peekKey: 'Alt',
 } as const satisfies Omit<ResolvedLoupe, 'render' | 'onColorChange'>;
 
-/** A declaration with every default filled in and `factor` clamped to
+/** `options` with every default filled in and `factor` clamped to
  *  `[minFactor, maxFactor]`. A loupe with its own `render` is always `'vector'`. */
-export function resolveLoupe<TS, TC>(declared: LoupeDeclaration<TS, TC>): ResolvedLoupe<TS, TC> {
-  const cap = declared === true ? {} : declared;
-  const minFactor = cap.minFactor ?? LOUPE_DEFAULTS.minFactor;
-  const maxFactor = cap.maxFactor ?? LOUPE_DEFAULTS.maxFactor;
+export function resolveLoupe(options: LoupeOptions = {}): ResolvedLoupe {
+  const minFactor = options.minFactor ?? LOUPE_DEFAULTS.minFactor;
+  const maxFactor = options.maxFactor ?? LOUPE_DEFAULTS.maxFactor;
   return {
-    render: cap.render,
-    onColorChange: cap.onColorChange,
+    render: options.render,
+    onColorChange: options.onColorChange,
     minFactor,
     maxFactor,
-    factor: Math.min(maxFactor, Math.max(minFactor, cap.factor ?? LOUPE_DEFAULTS.factor)),
-    diameter: cap.diameter ?? LOUPE_DEFAULTS.diameter,
-    peekKey: cap.peekKey === undefined ? LOUPE_DEFAULTS.peekKey : cap.peekKey,
+    factor: Math.min(maxFactor, Math.max(minFactor, options.factor ?? LOUPE_DEFAULTS.factor)),
+    diameter: options.diameter ?? LOUPE_DEFAULTS.diameter,
+    peekKey: options.peekKey === undefined ? LOUPE_DEFAULTS.peekKey : options.peekKey,
     // A DOM loupe has no framebuffer, so `pixel` would have nothing to enlarge.
-    mode: cap.render ? 'vector' : (cap.mode ?? LOUPE_DEFAULTS.mode),
+    mode: options.render ? 'vector' : (options.mode ?? LOUPE_DEFAULTS.mode),
   };
 }

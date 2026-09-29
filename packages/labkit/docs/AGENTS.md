@@ -115,7 +115,6 @@ An instrument may declare any of these on its `defineInstrument({...})` spec:
 | `annotations` | Marks drawn over named regions | Adds the annotation tool palette, an overlay per target, a `Marks` sidebar panel, an `Export` toolbar button, and undo/redo |
 | `tools` | Instrument-owned tools | Adds a palette region and a trial tool slot |
 | `job` | Async work with progress | Starts on mount, aborts on unmount and key change; renders progress and cancel into the chrome |
-| `loupe` | Magnifier | Adds a `loupe` toolbar toggle; the lens re-draws the canvas layers at a zoomed camera, or calls the capability's own `render` for DOM content |
 | `undo` | Undo/redo bindings | Wires toolbar buttons; snapshots `state` on `snapshotOn` events |
 
 Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all three behaviors automatically. See `src/trial/Trial.tsx` for the wiring.
@@ -127,6 +126,7 @@ Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all
 - Adding a new layer type to canvas? Push a `CanvasLayer` into `instrument.canvas.layers`. See `src/canvas/AGENTS.md`.
 - Adding undoable actions beyond state changes? Call `ctx.emit('myEvent')` and list `'myEvent'` in `instrument.undo.snapshotOn`.
 - Letting users draw on the instrument? Declare `annotations.targets`; read the marks with `useAnnotations()`. See `docs/RECIPES.md`.
+- Magnifying an instrument? Mount `<TrialLoupe>` from `@weasel-js/labkit/loupe` in its content — the canvas `render`, a stage's `overlay`, or around DOM content. See `src/loupe/AGENTS.md`.
 - Adding a button or a panel to the trial? A `TrialContribution` on `instrument.chrome` or `<Lab chrome>` — not a fork of the region components.
 
 ### Property UI

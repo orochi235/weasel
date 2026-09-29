@@ -39,6 +39,10 @@ function groupFolds(
   return out;
 }
 
+/** Built-in ids contributed only while runtime state says so — the loupe
+ *  toggle appears once a lens mounts, after the trial's first render. */
+export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set(['loupe']);
+
 /**
  * The contributions a trial gets from what its instrument declared. This is
  * the whole "declaring a capability provides the chrome" rule — it replaces
@@ -93,7 +97,7 @@ export function builtinContributions(
     });
   }
 
-  if (instrument.loupe != null) {
+  if (ctx.hasLoupe) {
     out.push({
       id: 'loupe',
       region: 'toolbar',
