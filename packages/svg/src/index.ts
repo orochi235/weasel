@@ -25,6 +25,8 @@ export { parseSvg } from './parse';
 export { serializeSvg } from './serialize';
 export { tilePreviewSvg, tilePreviewCssUrl } from './patterns';
 export { nativeSvgKind, nativeSvgSpace } from './gradients';
+export { evaluateMediaQuery, DEFAULT_MEDIA_ENVIRONMENT, type SvgMediaEnvironment } from './media';
+export { evaluateSupports, type SupportsOptions } from './supports';
 export {
   unpackSvgFiles,
   svgNodesToKitDrafts,

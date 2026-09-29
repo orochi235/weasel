@@ -283,7 +283,7 @@ have shipped. What remains:
 
 ## Paths & booleans
 
-- **(P3) Conditional at-rules in `@weasel-js/svg` stylesheets.** `<style>` rules, selector matching and `!important` resolve in `packages/svg/src/cascade.ts`, but every at-rule is skipped whole: a rule inside `@media` or `@supports` never applies, even one a static render would match (`@media screen`, `@supports (fill: red)`), and `@import` is not fetched. A `<style media="…">` applies only when its list names `all` or `screen`. Evaluating these needs a stance on which media a parse represents.
+- **(P3) `@layer` in `@weasel-js/svg` stylesheets.** `@media` and `@supports` evaluate in `packages/svg/src/cascade.ts`, but a rule inside `@layer` is still skipped whole, so an SVG that puts its styles in a layer loses them. Applying them needs layer ordering in the cascade sort: layered normal rules rank below unlayered ones, and the order reverses for `!important`. `@container` is skipped the same way.
 
 ### Pathfinder follow-ups (post-v1)
 

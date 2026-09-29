@@ -323,3 +323,71 @@ describe('<style> stylesheets', () => {
     expect(t.runs?.find((r) => r.fill)?.fill).toMatchObject({ color: '#ff0000' });
   });
 });
+
+describe('conditional at-rules', () => {
+  const fillWith = (css: string, opts: Parameters<typeof parseSvg>[1], attrs = 'width="800" height="600"'): unknown =>
+    (parseSvg(`<svg xmlns="http://www.w3.org/2000/svg" ${attrs}><style>${css}</style><rect width="1" height="1"/></svg>`, opts)
+      .nodes[0] as SvgPathNode).fill;
+  const fillOf = (css: string, attrs?: string): unknown => fillWith(css, {}, attrs);
+  const RED = { kind: 'solid', color: '#ff0000' };
+  const BLACK = { kind: 'solid', color: '#000000' };
+
+  it('applies a rule inside a matching @media', () => {
+    expect(fillOf('@media screen { rect { fill: red } }')).toEqual(RED);
+    expect(fillOf('@media all and (min-width: 500px) { rect { fill: red } }')).toEqual(RED);
+    expect(fillOf('@media (orientation: landscape) { rect { fill: red } }')).toEqual(RED);
+  });
+  it('skips a rule inside a non-matching @media', () => {
+    expect(fillOf('@media print { rect { fill: red } }')).toEqual(BLACK);
+    expect(fillOf('@media (min-width: 900px) { rect { fill: red } }')).toEqual(BLACK);
+    expect(fillOf('@media (prefers-color-scheme: dark) { rect { fill: red } }')).toEqual(BLACK);
+    expect(fillOf('@media (hover: hover) { rect { fill: red } }')).toEqual(BLACK);
+  });
+  it('takes the viewport from the viewBox when the root has no size', () => {
+    expect(fillOf('@media (width: 40px) { rect { fill: red } }', 'viewBox="0 0 40 20"')).toEqual(RED);
+  });
+  it('evaluates against the media option', () => {
+    const css = '@media (prefers-color-scheme: dark) { rect { fill: red } }';
+    expect(fillWith(css, { media: { prefersColorScheme: 'dark' } })).toEqual(RED);
+    expect(fillWith('@media print { rect { fill: red } }', { media: { type: 'print' } })).toEqual(RED);
+    expect(fillWith('@media (min-width: 1000px) { rect { fill: red } }', { media: { width: 1200 } })).toEqual(RED);
+  });
+  it('applies a rule inside a @supports the parser honors', () => {
+    expect(fillOf('@supports (fill: red) { rect { fill: red } }')).toEqual(RED);
+    expect(fillOf('@supports not (display: grid) { rect { fill: red } }')).toEqual(RED);
+    expect(fillOf('@supports (display: grid) { rect { fill: red } }')).toEqual(BLACK);
+    expect(fillOf('@supports selector(rect > g) { rect { fill: red } }')).toEqual(RED);
+    expect(fillOf('@supports selector(rect >>> g) { rect { fill: red } }')).toEqual(BLACK);
+  });
+  it('nests conditional at-rules', () => {
+    expect(fillOf('@media screen { @supports (fill: red) { @media (width > 10px) { rect { fill: red } } } }'))
+      .toEqual(RED);
+    expect(fillOf('@media screen { @supports (display: grid) { rect { fill: red } } }')).toEqual(BLACK);
+    expect(fillOf('@media print { @supports (fill: red) { rect { fill: red } } }')).toEqual(BLACK);
+  });
+  it('keeps source order across at-rule boundaries', () => {
+    expect(fillOf('@media screen { rect { fill: red } } rect { fill: blue }'))
+      .toEqual({ kind: 'solid', color: '#0000ff' });
+    expect(fillOf('rect { fill: blue } @media screen { rect { fill: red } }')).toEqual(RED);
+  });
+  it('still skips other block at-rules, and resumes after them', () => {
+    expect(fillOf('@font-face { font-family: X } @keyframes k { from { fill: blue } } rect { fill: red }')).toEqual(RED);
+    expect(fillOf('@layer base { rect { fill: red } }')).toEqual(BLACK);
+  });
+  it('routes <style media> through the same evaluator', () => {
+    const svg = (media: string): string => `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">
+      <style media="${media}">rect { fill: red }</style><rect width="1" height="1"/></svg>`;
+    const fill = (media: string, opts = {}): unknown => (parseSvg(svg(media), opts).nodes[0] as SvgPathNode).fill;
+    expect(fill('screen and (min-width: 500px)')).toEqual(RED);
+    expect(fill('(min-width: 900px)')).toEqual(BLACK);
+    expect(fill('print')).toEqual(BLACK);
+    expect(fill('print', { media: { type: 'print' } })).toEqual(RED);
+    expect(fill('not print')).toEqual(RED);
+  });
+  it('reports each @import, which is not fetched', () => {
+    const { warnings } = parseSvg(`<svg xmlns="http://www.w3.org/2000/svg">
+      <style>@import url("theme.css") screen; @media screen { @import "late.css"; } rect { fill: red }</style>
+      <rect width="1" height="1"/></svg>`);
+    expect(warnings).toEqual(['@import url("theme.css") screen is not fetched; its rules do not apply']);
+  });
+});
