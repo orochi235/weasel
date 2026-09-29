@@ -70,3 +70,60 @@ describe('ToastRegion', () => {
     expect(items[1].textContent).toContain('one');
   });
 });
+
+describe('ToastRegion given a container', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function setup() {
+    const q = createToastQueue();
+    const host = document.body.appendChild(document.createElement('div'));
+    render(<ToastRegion queue={q} portalContainer={host} />);
+    return { q, host };
+  }
+
+  it('renders the region inside the container', () => {
+    const { q, host } = setup();
+    act(() => q.add('info', 'Inside', { ttlMs: null }));
+    expect(screen.getByRole('region', { name: /notifications/i }).parentElement).toBe(host);
+    expect(host.textContent).toContain('Inside');
+  });
+
+  it('dismisses via the close button and auto-dismisses after the ttl', () => {
+    const { q } = setup();
+    act(() => {
+      q.add('info', 'Clicked', { ttlMs: null });
+      q.add('info', 'Timed');
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: /dismiss/i })[1]);
+    expect(screen.queryByText('Clicked')).toBeNull();
+    act(() => vi.advanceTimersByTime(8100));
+    expect(screen.queryByText('Timed')).toBeNull();
+    expect(screen.queryByRole('region', { name: /notifications/i })).toBeNull();
+  });
+
+  it('pauses the timers while hovered', () => {
+    const { q } = setup();
+    act(() => q.add('info', 'Held'));
+    fireEvent.pointerEnter(screen.getByRole('region', { name: /notifications/i }));
+    act(() => vi.advanceTimersByTime(20_000));
+    expect(screen.getByText('Held')).toBeTruthy();
+    fireEvent.pointerLeave(screen.getByRole('region', { name: /notifications/i }));
+    act(() => vi.advanceTimersByTime(8100));
+    expect(screen.queryByText('Held')).toBeNull();
+  });
+
+  it('returns focus to where it came from when the last toast closes', () => {
+    const { q } = setup();
+    const origin = document.body.appendChild(document.createElement('button'));
+    origin.focus();
+    act(() => q.add('info', 'Focused', { ttlMs: null }));
+    act(() => screen.getByRole('button', { name: /dismiss/i }).focus());
+    fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
+    expect(document.activeElement).toBe(origin);
+  });
+});

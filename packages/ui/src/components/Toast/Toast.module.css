@@ -67,3 +67,12 @@
   font-size: var(--wzl-font-size);
   color: var(--wzl-fg-muted);
 }
+
+/* Given a container, the stack sits in its corner rather than the viewport's. */
+.contained {
+  position: absolute;
+}
+
+.list {
+  display: contents;
+}

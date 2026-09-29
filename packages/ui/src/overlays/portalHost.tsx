@@ -38,6 +38,16 @@ export function OverlayPortalProvider({ container, children }: OverlayPortalProv
   );
 }
 
+/**
+ * The container an overlay has been *told* to use: its own `portalContainer`
+ * prop, else the nearest {@link OverlayPortalProvider}. `undefined` when
+ * neither said, which leaves the choice to the overlay.
+ */
+export function useAssignedPortalContainer(explicit?: Element | null): Element | null | undefined {
+  const fromProvider = useContext(OverlayPortalContext);
+  return explicit !== undefined ? explicit : fromProvider;
+}
+
 /** The `portalContainer` prop every weasel overlay accepts. */
 export interface OverlayPortalProps {
   /**
@@ -78,14 +88,8 @@ export function useOverlayPortal(explicit?: Element | null): {
   portalProps: OverlayPortalTarget;
 } {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const fromProvider = useContext(OverlayPortalContext);
-
-  const resolved =
-    explicit !== undefined
-      ? explicit
-      : fromProvider !== undefined
-        ? fromProvider
-        : nearestPortalHost(anchorEl);
+  const assigned = useAssignedPortalContainer(explicit);
+  const resolved = assigned !== undefined ? assigned : nearestPortalHost(anchorEl);
 
   return {
     anchor: <span hidden ref={setAnchorEl} />,

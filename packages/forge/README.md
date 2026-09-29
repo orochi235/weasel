@@ -19,8 +19,8 @@ with a `viewport` renders as a fixed-size box the trial pans and zooms.
 A story that needs a document of its own says so, with the reason:
 
 ```tsx
-export const Interactive = story({ isolate: 'ToastRegion portals to document.body', render: … });
-// CSF: parameters: { forge: { isolate: 'ToastRegion portals to document.body' } }
+export const Interactive = story({ isolate: 'asserts placement against the window edge', render: … });
+// CSF: parameters: { forge: { isolate: 'asserts placement against the window edge' } }
 ```
 
 It then renders in an iframe, as every story once did. The frame path is kept
