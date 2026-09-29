@@ -7,14 +7,14 @@
  * so the renderer issues one draw call per atlas+color group.
  *
  * A run's `letterSpacing` (world units, so it does not scale with `fontSize`)
- * is added to the advance *after* every character of that run, including the
- * last one on a line — the CSS `letter-spacing` rule, chosen so a DOM overlay
- * rendering the same text can be made to agree. Trailing tracking therefore
- * widens the measured line width and counts toward wrapping. Spaces are
- * tracked like any other character; a newline is not (it consumes no advance).
- * One caveat against CSS: tracking is applied per *code point*, not per
- * grapheme cluster, so `e` + U+0301 takes tracking twice where CSS would
- * space the cluster once.
+ * is added to the advance *after* every grapheme cluster of that run,
+ * including the last one on a line — the CSS `letter-spacing` rule, chosen so
+ * a DOM overlay rendering the same text can be made to agree. The last code
+ * point of a cluster carries it, so a combining mark hangs off its base
+ * before the gap opens. Clusters are segmented per run. Trailing tracking
+ * therefore widens the measured line width and counts toward wrapping. Spaces
+ * are tracked like any other character; a newline is not (it consumes no
+ * advance).
  *
  * Word wrap is applied when `maxWidth` is finite: words are committed to
  * a new line when they would exceed the current line width. Forced line
@@ -59,6 +59,7 @@ import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 import type { BidiResolver } from './bidiSeam';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorationMetrics';
+import { graphemeEnds } from '../measure/graphemes';
 
 /** One textured glyph quad, origin-relative — see the header. */
 export interface LaidOutQuad {
@@ -163,7 +164,8 @@ export interface LaidOutCell {
    *  stay in logical order and their x values do not. Sort on `x` for visual
    *  order; never assume `cells[i + 1].x` is this cell's right edge. */
   x: number;
-  /** Width of the cell: its glyph's advance plus its run's tracking. */
+  /** Width of the cell: its glyph's advance, plus its run's tracking when it
+   *  closes a grapheme cluster, plus a justified gap's share of the slack. */
   advance: number;
   /** Resolved bidi embedding level — even reads left-to-right. 0 with no
    *  engine, which is the same as saying the text was laid out logically. */
@@ -280,9 +282,18 @@ export interface LayoutRunsOpts {
   lineHeight: number;
   /**
    * `start` / `end` resolve against `direction`; `left` / `right` are absolute
-   * and ignore it, the way CSS `text-align` treats the same five values.
+   * and ignore it, the way CSS `text-align` treats the same values. `justify`
+   * is `justify: true` with the start edge.
    */
   align: TextAlign;
+  /**
+   * Spread each line that wrapped across `alignWidth`, widening its word gaps
+   * (spaces between words; not leading or hanging trailing ones) by equal
+   * shares of the slack. A line that closes its paragraph, or has no gap, or
+   * no slack, keeps `align` — so `align` is CSS `text-align-last` here.
+   * Implied by `align: 'justify'`. Default `false`.
+   */
+  justify?: boolean;
   /**
    * Bidi engine. Omit and the text lays out in logical order, which is correct
    * for left-to-right text and wrong for right-to-left text — see the warning
@@ -580,6 +591,7 @@ export function layoutRuns(
 ): LaidOutRuns {
   const ctx: LayoutContext = { groups: new Map() };
   const align = resolveAlign(opts.align, opts.direction ?? 'ltr');
+  const justify = opts.justify === true || opts.align === 'justify';
 
   // Per-glyph entry produced by walking runs codepoint-by-codepoint.
   // Position (x) is filled in during the line-fitting pass.
@@ -591,7 +603,7 @@ export function layoutRuns(
     glyph: BmFontChar | null;
     cp: number;
     advance: number;         // xadvance in world units (already scaled)
-    tracking: number;        // run letterSpacing, added after this glyph (world units)
+    tracking: number;        // run letterSpacing if this closes a cluster, else 0 (world units)
     kerningBefore: number;   // kerning gap consumed before this glyph
     isSpace: boolean;
     isNewline: boolean;
@@ -647,10 +659,12 @@ export function layoutRuns(
     const scale = run.fontSize / metrics.size;
     // World units — deliberately not scaled by fontSize, so the same tracking
     // opens the same visual gap whatever size the run is set at.
-    const tracking = run.letterSpacing;
+    const runTracking = run.letterSpacing;
+    const clusterEnds = runTracking === 0 ? null : new Set(graphemeEnds(run.text));
 
     for (const ch of [...run.text]) {
       const cp = ch.codePointAt(0)!;
+      const tracking = clusterEnds === null || clusterEnds.has(at + ch.length) ? runTracking : 0;
       const isNewline = cp === 10;
       const isSpace = cp === 32;
       // A transformed run draws characters its source does not have; each
@@ -785,6 +799,9 @@ export function layoutRuns(
      *  it, which is the only carrier of the style a blank line should take
      *  its height and baseline from. */
     blank?: Entry;
+    /** Closed by the wrap rather than by a newline or the end of the text —
+     *  the lines `justify` spreads. */
+    wrapped?: boolean;
   }
   const lines: Line[] = [];
   let cur: Line = { entries: [], width: 0, height: 0 };
@@ -831,6 +848,7 @@ export function layoutRuns(
       j++;
     }
     if (Number.isFinite(opts.maxWidth) && cur.width + wordWidth > opts.maxWidth && cur.entries.length > 0) {
+      cur.wrapped = true;
       commitLine();
     }
     for (let k = i; k < j; k++) {
@@ -926,7 +944,22 @@ export function layoutRuns(
       hung += e.kerningBefore + e.advance + e.tracking;
     }
     const inkWidth = line.width - hung;
+    // Justification: the interior spaces, each widened by an equal share of
+    // the slack. Leading spaces are zero-width slots and trailing ones hang,
+    // so neither is a gap between words.
+    const gaps = new Set<number>();
+    let gapExtra = 0;
+    if (justify && line.wrapped && Number.isFinite(alignWidth) && alignWidth > inkWidth) {
+      let first = 0;
+      while (first < line.entries.length && line.entries[first].isSpace) first++;
+      let last = line.entries.length - 1;
+      while (last > first && line.entries[last].isSpace) last--;
+      for (let k = first + 1; k < last; k++) if (line.entries[k].isSpace) gaps.add(k);
+      if (gaps.size > 0) gapExtra = (alignWidth - inkWidth) / gaps.size;
+    }
+    const spread = gapExtra * gaps.size;
     const alignShift = (() => {
+      if (spread > 0) return 0;
       if (align === 'left') return 0;
       // The boxless anchor matches the canvas-2D `renderLabel` model, so
       // point-anchored labels center on x in both backends.
@@ -1020,16 +1053,17 @@ export function layoutRuns(
         : prevPos === pos + 1 ? line.entries[prevPos].kerningBefore
         : 0;
       prevPos = pos;
+      // One step per character: the glyph's advance plus its run's tracking,
+      // plus a justified gap's share of the slack. Every branch below moves
+      // the pen by exactly this, so glyph positions stay in step with the line
+      // width accumulated above.
+      const step = e.advance + e.tracking + (gaps.has(pos) ? gapExtra : 0);
       const cell: LaidOutCell = {
         srcIndex: e.srcIndex, srcEnd: e.srcEnd, cp: e.cp, x: penX,
-        advance: e.advance + e.tracking, level: levelOf(pos),
+        advance: step, level: levelOf(pos),
         drawsInk: e.drawsInk,
       };
       cells[pos] = cell;
-      // One step per character: the glyph's advance plus its run's tracking.
-      // Every branch below moves the pen by exactly this, so glyph positions
-      // stay in step with the line width accumulated above.
-      const step = e.advance + e.tracking;
       const scale = e.fontSize / e.metrics.size;
       // Positive raises, and y grows down, so the shift subtracts. Everything
       // below places against `baselineY` and so follows the run up or down —
@@ -1145,13 +1179,13 @@ export function layoutRuns(
     lineBoxes.push({
       x0: lineX0,
       y0: penY,
-      x1: lineX0 + line.width,
+      x1: lineX0 + line.width + spread,
       y1: penY + line.height,
       baselineY: lineBaselineY,
       cells,
       srcEnd,
     });
-    maxLineWidth = Math.max(maxLineWidth, inkWidth);
+    maxLineWidth = Math.max(maxLineWidth, inkWidth + spread);
     penY += line.height;
   }
 

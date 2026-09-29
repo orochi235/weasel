@@ -58,7 +58,8 @@ export const TEXT_ORDER = [
 // Paragraph alignment: lines of text as rules, the picture every editor uses.
 //
 // Horizontal: four lines alternating long and short, the short ones pushed to
-// the edge (or the middle) the option names. Rows sit on 3.75-unit centers so
+// the edge (or the middle) the option names. Justify runs every line long but
+// the last, which is short at the start edge, as a justified paragraph's is. Rows sit on 3.75-unit centers so
 // that at 16px (0.8px a unit) each falls on a pixel center at 1x.
 const ROWS = [4.375, 8.125, 11.875, 15.625];
 const LONG = [3, 17];
@@ -82,6 +83,9 @@ export const PARAGRAPH = {
   textAlignLeft: lines(LONG[0]),
   textAlignCenter: lines(10 - SHORT / 2),
   textAlignRight: lines(LONG[1] - SHORT),
+  textAlignJustify: `<path d="${ROWS.map((y, i) =>
+    i < ROWS.length - 1 ? rule(LONG[0], LONG[1], y) : rule(LONG[0], LONG[0] + SHORT, y),
+  ).join('')}"/>`,
   textAlignTop: BOX + block(5.625),
   textAlignMiddle: BOX + block(10 - GAP / 2),
   textAlignBottom: BOX + block(14.375 - GAP),

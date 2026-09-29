@@ -443,6 +443,26 @@ describe('round-trip', () => {
       .not.toContain('data-weasel-wrap');
   });
 
+  it('justified text anchors at its start edge and reads back as justified', () => {
+    const base = parseSvg(F.TEXT_PLAIN_SVG).nodes[0];
+    if (base.kind !== 'text') throw new Error('expected text');
+    for (const direction of ['ltr', 'rtl'] as const) {
+      const node: SvgNode = {
+        ...base, x: 10, width: 180, style: { ...base.style, align: 'justify', direction, wrap: true },
+      };
+      const out = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 100 } });
+      // Every line SVG draws closes its paragraph, so `start` is all of it.
+      expect(out).not.toContain('text-anchor=');
+      expect(out).toContain(`x="${direction === 'ltr' ? 10 : 190}"`);
+      expect(out).toContain('data-weasel-align="justify"');
+      const back = parseSvg(out).nodes[0];
+      if (back.kind !== 'text') throw new Error('expected text');
+      expect(back.style?.align).toBe('justify');
+      expect(back.style?.direction ?? 'ltr').toBe(direction);
+      expect(back.x).toBeCloseTo(10);
+    }
+  });
+
   it('unstroked text emits no stroke attribute at all', () => {
     const first = parseSvg(F.TEXT_PLAIN_SVG);
     const out = serializeSvg(first.nodes, { viewBox: { x: 0, y: 0, width: 200, height: 100 } });

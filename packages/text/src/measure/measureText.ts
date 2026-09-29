@@ -17,13 +17,14 @@
  */
 
 import type { ResolvedTextStyle } from '../textStyle';
+import { graphemeCount } from './graphemes';
 
 /**
  * Advance width of `text` in world units, tracking included.
  *
  * `letter-spacing` is not part of the CSS `font` shorthand, so a context
  * whose `font` was set from `fontString(style)` measures glyphs only. The
- * GL path (`layoutRuns`) adds `letterSpacing` after **every** code point
+ * GL path (`layoutRuns`) adds `letterSpacing` after every grapheme cluster
  * including the last, matching CSS, so this does too — and every 2D-side
  * width has to go through here or the two paths disagree about where a line
  * breaks.
@@ -33,7 +34,8 @@ export function measuredWidth(
   text: string,
   style: ResolvedTextStyle,
 ): number {
-  return ctx.measureText(text).width + text.length * style.letterSpacing;
+  return ctx.measureText(text).width
+    + (style.letterSpacing === 0 ? 0 : graphemeCount(text) * style.letterSpacing);
 }
 
 /** Result of `measureText`: wrapped lines, per-line source offsets, and total block height. */

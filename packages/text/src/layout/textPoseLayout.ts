@@ -20,7 +20,7 @@ import type { TextPose } from '../pose';
 export interface TextPoseLayoutInput {
   style: ResolvedTextStyle;
   runs: ResolvedRun[];
-  opts: LayoutRunsOpts & { align: 'left' | 'center' | 'right' };
+  opts: LayoutRunsOpts & { align: 'left' | 'center' | 'right'; justify: boolean };
 }
 
 /**
@@ -46,6 +46,7 @@ export function textPoseLayoutInput(pose: TextPose, scale = 1): TextPoseLayoutIn
       alignWidth: pose.width,
       lineHeight: style.lineHeight,
       align: resolveAlign(style.align, style.direction),
+      justify: style.align === 'justify',
     },
   };
 }

@@ -111,6 +111,9 @@ export interface TextDrawCommand {
   /** Wrap width. Absent never wraps. */
   maxWidth?: number;
   align?: 'left' | 'center' | 'right';
+  /** Spread each wrapped line across `width` — see `LayoutRunsOpts.justify`.
+   *  `align` then sets only the lines it does not spread. Default `false`. */
+  justify?: boolean;
   /** Box width `align` resolves within, from `x`. Default `maxWidth`; with
    *  neither, `x` is the line's left edge, midpoint or right edge. */
   width?: number;

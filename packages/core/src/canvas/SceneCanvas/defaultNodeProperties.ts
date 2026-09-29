@@ -62,12 +62,13 @@ const italicEncoding: ToolPrefBooleanEncoding = {
   write: (on) => (on ? 'italic' : undefined),
 };
 
-/** `TextStyle.align` read as the edge that paints. The model also holds the
- *  reading-order pair `start` / `end`, which the three segments would otherwise
- *  leave unlit; they read through `direction`, and a click writes the edge. */
+/** `TextStyle.align` read as the edge that paints, or as `justify`. The model
+ *  also holds the reading-order pair `start` / `end`, which the segments would
+ *  otherwise leave unlit; they read through `direction`, and a click writes the
+ *  edge. */
 const alignEncoding: ToolPrefEnumEncoding = {
   read: (stored, style) => {
-    if (stored === undefined) return undefined;
+    if (stored === undefined || stored === 'justify') return stored;
     const direction = style?.direction === 'rtl' ? 'rtl' : 'ltr';
     return resolveAlign(stored as TextAlign, direction);
   },
@@ -209,7 +210,7 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                         direction: { kind: 'enum', name: 'Direction', description: 'Reading direction.', default: 'ltr', control: 'toggle', options: [{ value: 'ltr', label: 'Left to right', short: 'LTR' }, { value: 'rtl', label: 'Right to left', short: 'RTL' }] },
                         // Last, so the box's vertical alignment — a field of
                         // the node rather than of its style — follows it.
-                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', default: 'left', control: 'toggle', encoding: alignEncoding, options: [{ value: 'left', label: 'Left', icon: 'textAlignLeft' }, { value: 'center', label: 'Center', icon: 'textAlignCenter' }, { value: 'right', label: 'Right', icon: 'textAlignRight' }] },
+                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', default: 'left', control: 'toggle', encoding: alignEncoding, options: [{ value: 'left', label: 'Left', icon: 'textAlignLeft' }, { value: 'center', label: 'Center', icon: 'textAlignCenter' }, { value: 'right', label: 'Right', icon: 'textAlignRight' }, { value: 'justify', label: 'Justify', icon: 'textAlignJustify' }] },
                       },
                     },
                   },

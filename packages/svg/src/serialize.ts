@@ -497,11 +497,15 @@ function textXml(
     // absolute pair has to be turned into an edge the reader resolves the same
     // way. Under `ltr` this collapses to what it always wrote.
     const align = style?.align ?? 'left';
+    // SVG text does not wrap, so every line written closes its paragraph and
+    // a justified node draws at its start edge. `data-weasel-align` keeps the
+    // justification for weasel's own reader.
     const anchor = align === 'center' ? 'middle'
-      : align === 'start' ? 'start'
+      : align === 'start' || align === 'justify' ? 'start'
       : align === 'end' ? 'end'
       : (align === 'left') === (direction === 'ltr') ? 'start' : 'end';
     if (anchor !== 'start') attrs.push(`text-anchor="${anchor}"`);
+    if (align === 'justify') attrs.push('data-weasel-align="justify"');
   }
   if (style?.letterSpacing != null && style.letterSpacing !== 0) {
     attrs.push(`letter-spacing="${trimNumber(resolveScreenLength(style.letterSpacing, 1))}"`);

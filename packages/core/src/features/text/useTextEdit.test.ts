@@ -898,6 +898,30 @@ describe('useTextEdit — letter-spacing on the overlay', () => {
   });
 });
 
+describe('useTextEdit — alignment on the overlay', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('justifies, setting the last line at the start edge the canvas uses', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, align: 'justify', direction: 'rtl' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.textAlign).toBe('justify');
+    expect(overlay.style.getPropertyValue('text-align-last')).toBe('right');
+  });
+
+  it('leaves the last line to text-align when not justifying', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, align: 'end' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.textAlign).toBe('right');
+    expect(overlay.style.getPropertyValue('text-align-last')).toBe('');
+  });
+});
+
 /** Same as `makeTrackingHarness`, but the pose declares an explicit `zoom`
  *  so every metric on it is pre-scale (world) and the overlay carries the
  *  view scale as a CSS transform instead. */

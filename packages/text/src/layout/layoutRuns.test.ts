@@ -477,6 +477,49 @@ describe('layoutRuns — letterSpacing', () => {
     expect(lineCount(tracked)).toBe(3);
   });
 
+  // A face with a zero-advance combining acute and two astral glyphs, so a
+  // cluster of several code points can be measured end to end.
+  const MARKS_FONT = {
+    ...FIXTURE_FONT,
+    chars: [
+      ...FIXTURE_FONT.chars,
+      { id: 0x301, x: 50, y: 0, width: 6, height: 6, xoffset: -8, yoffset: 0, xadvance: 0, page: 0 },
+      { id: 0x1f468, x: 60, y: 0, width: 28, height: 28, xoffset: 1, yoffset: 4, xadvance: 30, page: 0 },
+      { id: 0x1f469, x: 90, y: 0, width: 28, height: 28, xoffset: 1, yoffset: 4, xadvance: 30, page: 0 },
+      { id: 0x200d, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
+    ],
+  };
+  async function registerMarksFont(): Promise<void> {
+    const prior = global.fetch;
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('marks.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(MARKS_FONT) });
+      }
+      return (prior as unknown as (u: string) => unknown)(url);
+    }) as typeof fetch;
+    await registerFont('marks', {}, '/fonts/marks/marks.json', '/fonts/marks/marks.png');
+    global.fetch = prior;
+  }
+  const MARKS = (text: string, letterSpacing: number): ResolvedRun =>
+    ({ ...RUN_PLAIN(text), fontFamily: 'marks', letterSpacing });
+
+  it('tracks a base and its combining mark once, as CSS does', async () => {
+    await registerMarksFont();
+    // A(23) + U+0301(0) + B(22), no kerning across the mark: two clusters.
+    const out = layoutRuns([MARKS('A\u0301B', 4)], OPTS);
+    expect(out.bounds.width).toBeCloseTo(45 + 2 * 4);
+    // The mark sits against its base, before the tracking gap, not after it.
+    const cells = out.lines[0].cells;
+    expect(cells.map((c) => c.x)).toEqual([0, 23, 27]);
+    expect(cells.map((c) => c.advance)).toEqual([23, 4, 26]);
+  });
+
+  it('tracks a ZWJ sequence once', async () => {
+    await registerMarksFont();
+    const out = layoutRuns([MARKS('\u{1F468}\u200D\u{1F469}', 4)], OPTS);
+    expect(out.bounds.width).toBeCloseTo(60 + 4);
+  });
+
   it('reaches layout through resolveRuns (run value wins, style value inherited)', async () => {
     await registerFixture('inter', [{}]);
     const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32, letterSpacing: 4 });
