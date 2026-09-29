@@ -17,6 +17,12 @@ export type {
   ScreenLength,
 } from './paint';
 export {
+  composePatternTransform,
+  decomposePatternTransform,
+  type PatternTransform,
+  type PatternTransformParts,
+} from './patternTransform';
+export {
   alignedStrokeRect,
   resolveScreenLength,
   STROKE_DASH_RATIOS,

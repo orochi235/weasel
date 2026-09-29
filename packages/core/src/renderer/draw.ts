@@ -22,6 +22,7 @@ import type { GLImageCache } from './cache/GLImageCache';
 import type { GradientRampAtlas } from './cache/GradientRampAtlas';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { mat3, type GlMat3 } from './math/mat3';
+import { patternTileSpace } from './math/patternSpace';
 import { getMesh } from './cache/cache';
 import { tessellate, type Mesh } from '@weasel-js/geom/tessellate';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
@@ -1401,6 +1402,8 @@ function bindPathFillPattern(
   }
   const inverse = gradientSpaceInverse(ctx, fill.units);
   if (!inverse) return null;
+  const tileSpace = patternTileSpace(inverse, fill.origin ?? { x: 0, y: 0 }, fill.transform);
+  if (!tileSpace) return null;
   ctx.textureCache.upload(tex.id, entry.source, 'repeat');
 
   // A path fill mesh carries a_position only, so the tile coordinate is
@@ -1411,10 +1414,8 @@ function bindPathFillPattern(
   gl.useProgram(ctx.patternFill.handle);
   setProjAndModel(ctx, ctx.patternFill);
   setColorMatrixUniforms(ctx, ctx.patternFill);
-  gl.uniformMatrix3fv(ctx.patternFill.uniform('u_worldInv')!, false, inverse);
+  gl.uniformMatrix3fv(ctx.patternFill.uniform('u_worldInv')!, false, tileSpace);
   const [tw, th] = textureSize(entry.source);
-  const origin = fill.origin ?? { x: 0, y: 0 };
-  gl.uniform2f(ctx.patternFill.uniform('u_tileOrigin')!, origin.x, origin.y);
   gl.uniform2f(ctx.patternFill.uniform('u_tileSize')!, tw, th);
   ctx.textureCache.bind(tex.id, 0);
   gl.uniform1i(ctx.patternFill.uniform('u_sampler')!, 0);

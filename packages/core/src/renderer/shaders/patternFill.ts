@@ -2,9 +2,10 @@
  * GLSL ES 3.0 sources for pattern-fill paths.
  *
  * The vertex stage is `gradFill`'s: a path fill mesh carries `a_position`
- * only, so paint-space coordinates are recovered per fragment from the
+ * only, so tile-space coordinates are recovered per fragment from the
  * screen position via `u_worldInv` rather than read from a UV attribute.
- * `u_tileSize` then converts those coordinates to texture space, and
+ * That matrix also carries the tile's origin and transform
+ * (`patternTileSpace`). `u_tileSize` then converts to texture space, and
  * `REPEAT` wrapping (set at upload) tiles the result.
  *
  * Output convention §2: PREMULTIPLIED alpha.
@@ -29,7 +30,6 @@ export const PATTERN_FRAG_SRC = /* glsl */ `#version 300 es
 precision highp float;
 in vec2 v_world;
 uniform sampler2D u_sampler;
-uniform vec2  u_tileOrigin;
 uniform vec2  u_tileSize;
 uniform float u_opacity;
 uniform float u_alpha;
@@ -37,7 +37,7 @@ uniform mat4  u_colorMatrix;
 uniform vec4  u_colorBias;
 out vec4 outColor;
 void main() {
-  vec2 uv = (v_world - u_tileOrigin) / max(u_tileSize, vec2(0.0001));
+  vec2 uv = v_world / max(u_tileSize, vec2(0.0001));
   vec4 texel = texture(u_sampler, uv);
   vec4 mapped = clamp(u_colorMatrix * texel + u_colorBias, 0.0, 1.0);
   float a = mapped.a * u_opacity * u_alpha;
@@ -47,7 +47,7 @@ void main() {
 
 export const PATTERN_FILL_UNIFORMS = [
   'u_proj', 'u_model', 'u_worldInv', 'u_sampler',
-  'u_tileOrigin', 'u_tileSize', 'u_opacity', 'u_alpha',
+  'u_tileSize', 'u_opacity', 'u_alpha',
   'u_colorMatrix', 'u_colorBias',
 ] as const;
 

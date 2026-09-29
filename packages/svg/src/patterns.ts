@@ -18,7 +18,7 @@
 import { tileGeometry, type TileShape } from '@weasel-js/core/patterns-builtin';
 import type { FillStyle, TilePatternSpec } from '@weasel-js/core';
 import { collectElementsByTag } from './elements';
-import { trimNumber } from './transform';
+import { applyMatrix, formatMatrix, isIdentity, parseTransform, trimNumber } from './transform';
 
 type PatternFill = Extract<FillStyle, { fill: 'pattern' }>;
 
@@ -45,7 +45,13 @@ export function patternXml(id: string, paint: PatternFill, onWarn?: (m: string) 
     `width="${trimNumber(geometry.size)}"`,
     `height="${trimNumber(geometry.size)}"`,
   ];
-  if (origin.x !== 0 || origin.y !== 0) {
+  // A transform carries the origin as its translation, since SVG applies
+  // patternTransform to x/y as well; without one, x/y is the plainer form.
+  const [a, b, c, d] = paint.transform ?? [1, 0, 0, 1];
+  const placement = formatMatrix([a, b, c, d, origin.x, origin.y]);
+  if (paint.transform && !isIdentity([a, b, c, d, 0, 0]) && placement) {
+    attrs.push(`patternTransform="${placement}"`);
+  } else if (origin.x !== 0 || origin.y !== 0) {
     attrs.push(`x="${trimNumber(origin.x)}"`, `y="${trimNumber(origin.y)}"`);
   }
   attrs.push(`data-weasel-tile="${escapeAttr(JSON.stringify(spec))}"`);
@@ -135,8 +141,11 @@ function readPattern(el: Element, onWarn?: (m: string) => void): FillStyle | nul
   }
   const x = parseFloat(el.getAttribute('x') ?? '0');
   const y = parseFloat(el.getAttribute('y') ?? '0');
+  const m = parseTransform(el.getAttribute('patternTransform'), onWarn);
+  const origin = applyMatrix(m, x, y);
   const paint: PatternFill = { fill: 'pattern', pattern: spec };
-  if (x !== 0 || y !== 0) paint.origin = { x, y };
+  if (origin.x !== 0 || origin.y !== 0) paint.origin = origin;
+  if (!isIdentity([m[0], m[1], m[2], m[3], 0, 0])) paint.transform = [m[0], m[1], m[2], m[3]];
   return paint;
 }
 

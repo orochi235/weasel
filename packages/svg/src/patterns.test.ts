@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { serializeSvg } from './serialize';
 import { parseSvg } from './parse';
 import type { SvgNode } from './types';
-import type { FillStyle, TilePatternSpec } from '@weasel-js/core';
+import { composePatternTransform, type FillStyle, type TilePatternSpec } from '@weasel-js/core';
+import { trimNumber } from './transform';
 
 function patternedRect(pattern: FillStyle): SvgNode[] {
   return [{
@@ -64,6 +65,42 @@ describe('pattern serialization', () => {
 
     const back = firstFill(parseSvg(svg).nodes) as Extract<FillStyle, { fill: 'pattern' }>;
     expect(back.origin).toEqual({ x: 12, y: -4 });
+  });
+
+  it('writes a transform as patternTransform, folding the origin into it', () => {
+    const transform = composePatternTransform({ rotation: Math.PI / 6, scaleX: 2, skewX: 0.25 });
+    const paint: FillStyle = {
+      fill: 'pattern', pattern: TILES[0], origin: { x: 12, y: -4 }, transform,
+    };
+    const svg = serializeSvg(patternedRect(paint));
+    const [a, b, c, d] = transform.map((n) => trimNumber(n));
+    expect(svg).toContain(`patternTransform="matrix(${a} ${b} ${c} ${d} 12 -4)"`);
+    expect(svg).not.toMatch(/<pattern [^>]*\sx="/);
+
+    const back = firstFill(parseSvg(svg).nodes) as Extract<FillStyle, { fill: 'pattern' }>;
+    expect(back.origin!.x).toBeCloseTo(12, 5);
+    expect(back.origin!.y).toBeCloseTo(-4, 5);
+    back.transform!.forEach((v, i) => expect(v).toBeCloseTo(transform[i], 5));
+  });
+
+  it('omits patternTransform for an identity transform', () => {
+    const svg = serializeSvg(patternedRect({
+      fill: 'pattern', pattern: TILES[0], transform: [1, 0, 0, 1],
+    }));
+    expect(svg).not.toContain('patternTransform');
+  });
+
+  it('reads a hand-written patternTransform list and x/y into origin and transform', () => {
+    const spec = JSON.stringify(TILES[0]).replace(/"/g, '&quot;');
+    const doc = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>'
+      + '<pattern id="p" patternUnits="userSpaceOnUse" width="5" height="5" x="2" y="0" '
+      + `patternTransform="translate(10 20) rotate(90) skewX(45)" data-weasel-tile="${spec}"/>`
+      + '</defs><rect x="0" y="0" width="100" height="100" fill="url(#p)"/></svg>';
+    const back = firstFill(parseSvg(doc).nodes) as Extract<FillStyle, { fill: 'pattern' }>;
+    // M = T(10, 20) · R(90°) · K(45°); the tile starts at M · (2, 0) = (10, 22).
+    expect(back.origin!.x).toBeCloseTo(10, 5);
+    expect(back.origin!.y).toBeCloseTo(22, 5);
+    [0, 1, -1, 1].forEach((v, i) => expect(back.transform![i]).toBeCloseTo(v, 5));
   });
 
   it('warns and drops a pattern carrying a TextureHandle', () => {

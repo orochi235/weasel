@@ -17,6 +17,7 @@
 
 import type { TextureHandle } from './texture';
 import type { ColorSpace } from './colorSpaces';
+import type { PatternTransform } from './patternTransform';
 
 /**
  * Color/texture strategy for fills (and, via `Stroke.paint`, strokes).
@@ -43,10 +44,13 @@ import type { ColorSpace } from './colorSpaces';
  * node and a resize reveals more tiles rather than stretching them;
  * `fillInPoseFrame` resolves that to a `'local'` paint with an explicit
  * `origin` before the renderer sees it.
+ *
+ * `transform` on a pattern rotates, scales or skews the tile about `origin`
+ * (SVG's `patternTransform`, less its translation). See `PatternTransform`.
  */
 export type FillStyle =
   | { fill?: 'solid'; color: string; opacity?: number }
-  | { fill: 'pattern'; pattern: TextureHandle | TilePatternSpec; units?: GradientUnits; origin?: { x: number; y: number }; opacity?: number }
+  | { fill: 'pattern'; pattern: TextureHandle | TilePatternSpec; units?: GradientUnits; origin?: { x: number; y: number }; transform?: PatternTransform; opacity?: number }
   | { fill: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; units?: GradientUnits; interpolate?: ColorSpace; opacity?: number }
   | { fill: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; units?: GradientUnits; interpolate?: ColorSpace; opacity?: number }
   | { fill: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; units?: GradientUnits; interpolate?: ColorSpace; opacity?: number };
