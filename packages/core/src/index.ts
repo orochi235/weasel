@@ -405,9 +405,10 @@ export {
 export type {
   SceneViewDrawOne, RenderSceneToCanvasArgs, SceneViewLayers, SceneViewCull,
 } from './canvas/sceneViewRender';
-export { renderSceneToPixels, planPixelRender, createRasterSession } from './canvas/renderSceneToPixels';
+export { renderSceneToPixels, planPixelRender, createRasterSession, warmRender } from './canvas/renderSceneToPixels';
 export type {
   RenderSceneToPixelsArgs,
+  WarmRenderOptions,
   RasterSession,
   RasterSessionOptions,
   RasterRenderArgs,

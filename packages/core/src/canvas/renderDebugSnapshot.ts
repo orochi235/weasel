@@ -29,8 +29,9 @@ export interface RenderDebugSnapshotArgs<TData, TLayer extends string, TPose>
 /**
  * Rasterize the scene through `view` at `size` and paint the debug overlay
  * over it, the way the canvas composed them. Built on `renderSceneToPixels`,
- * so the scene pixels are the screen's pixels at that resolution. Encode the
- * result with `rasterToPng` to attach it somewhere.
+ * so the scene pixels are the screen's pixels at that resolution, and
+ * synchronous like it: `await warmRender()` first. Encode the result with
+ * `rasterToPng` to attach it somewhere.
  */
 export function renderDebugSnapshot<TData, TLayer extends string, TPose>(
   args: RenderDebugSnapshotArgs<TData, TLayer, TPose>,

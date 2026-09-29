@@ -51,6 +51,8 @@ import type { Node, Scene } from 'core/scene/types';
 import { buildSceneViewCommands, type SceneViewDrawOne } from './sceneViewRender';
 import type { ColorOverrideRegistry } from '../animation/colorRegistry';
 import { defaultDrawOne } from './defaultDrawOne';
+import { warmFonts } from '@weasel-js/font';
+import { warmPaintKinds } from '../core/paintKinds';
 
 /** Plain RGBA raster — structurally `ImageData`-compatible ({ width, height,
  *  data }), deliberately free of printer/dpi/physical-unit concepts. */
@@ -323,6 +325,28 @@ function isLost(gl: WebGL2RenderingContext): boolean {
   return typeof gl.isContextLost === 'function' && gl.isContextLost() === true;
 }
 
+/** What {@link warmRender} loads. Each list narrows its half; omitted, that
+ *  half loads everything it knows about. */
+export interface WarmRenderOptions {
+  /** Font families, as `warmFonts` takes them. */
+  families?: readonly string[];
+  /** Paint kinds, as `warmPaintKinds` takes them. */
+  paintKinds?: readonly string[];
+}
+
+/**
+ * Load everything a synchronous render would otherwise draw as nothing — the
+ * lazily registered font atlases and the paint kinds loaded on demand — so
+ * that a `renderSceneToPixels` or `RasterSession.render` issued after it
+ * resolves is complete. `warmFonts` and `warmPaintKinds` together.
+ *
+ * Rejects when either does: a failed load, or a family or kind nothing
+ * registered.
+ */
+export function warmRender(opts: WarmRenderOptions = {}): Promise<void> {
+  return Promise.all([warmFonts(opts.families), warmPaintKinds(opts.paintKinds)]).then(() => undefined);
+}
+
 /**
  * Render part of a scene to raw pixels, with no canvas mounted and no React
  * involved — for export, thumbnails, print, and pixel-diff tests.
@@ -336,7 +360,7 @@ function isLost(gl: WebGL2RenderingContext): boolean {
  * (`mesh-gradient`, or one declared with `registerPaintKindLoader`) that has
  * not loaded yet draws nothing, and neither does text set in a font atlas
  * still fetching — one registered `{ lazy: true }` is not fetched until text
- * first asks for it. `await warmPaintKinds()` and `await warmFonts()` first.
+ * first asks for it. `await warmRender()` first.
  *
  * Each call opens a {@link RasterSession} and disposes it before returning.
  * Rendering many scenes, open one with `createRasterSession` instead.
