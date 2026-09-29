@@ -32,6 +32,7 @@ vi.mock('../renderer/WeaselRenderer', () => {
       constructor(opts: unknown) { ctorSpy(opts); }
       render(commands: DrawCommand[]): void { renderMock(commands); }
       resize(dims: { width: number; height: number; dpr: number }): void { resizeMock(dims); }
+      dispose(): void {}
     },
   };
 });

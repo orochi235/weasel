@@ -1,9 +1,14 @@
 /**
- * One `WeaselRenderer` per detached `<canvas>`, created on first paint and
- * resized when the surface's size or density changes. The on-screen path for
- * every canvas that owns its whole GL context and is not a `<Canvas>`:
- * `<SceneViewCanvas>`, `<MinimapCanvas>` and `<DrawCanvas>` all paint through
- * it.
+ * One `WeaselRenderer` per detached `<canvas>`, created on first paint,
+ * resized when the surface's size or density changes, and freed by
+ * `releaseCanvasRenderer`. The on-screen path for every canvas that owns its
+ * whole GL context and is not a `<Canvas>`: `<SceneViewCanvas>`,
+ * `<MinimapCanvas>` and `<DrawCanvas>` all hold it through
+ * `leaseCanvasRenderer` (via `useCanvasRenderer`), so they share one setup and
+ * one teardown.
+ *
+ * Release frees only what the renderer created. A context something else also
+ * paints into keeps that tenant's objects; the context itself is never lost.
  */
 import { WeaselRenderer } from '../renderer/WeaselRenderer';
 import { viewToMat3 } from '../renderer/math/viewToMat3';
@@ -79,4 +84,31 @@ export function releaseCanvasRenderer(canvas: HTMLCanvasElement): void {
   if (!entry) return;
   RENDERER_CACHE.delete(canvas);
   entry.renderer.dispose();
+}
+
+/** A canvas renderer held for a surface's lifetime: `paint` draws into
+ *  whichever canvas the surface currently has, and `release` frees the
+ *  renderer of every canvas it painted. */
+export interface CanvasRendererLease {
+  /** `paintCanvas`, releasing the previous canvas's renderer first if the
+   *  surface has moved to a different element. */
+  paint(canvas: HTMLCanvasElement, commands: DrawCommand[], view: View, size: CanvasPaintSize): boolean;
+  /** Free the held renderer. A later `paint` creates a fresh one. */
+  release(): void;
+}
+
+/** Hold the renderer of the canvas a surface paints into, until released. */
+export function leaseCanvasRenderer(): CanvasRendererLease {
+  let held: HTMLCanvasElement | null = null;
+  return {
+    paint(canvas, commands, view, size) {
+      if (held && held !== canvas) releaseCanvasRenderer(held);
+      held = canvas;
+      return paintCanvas(canvas, commands, view, size);
+    },
+    release() {
+      if (held) releaseCanvasRenderer(held);
+      held = null;
+    },
+  };
 }

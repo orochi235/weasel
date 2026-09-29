@@ -15,12 +15,14 @@
  *     paint is synchronous so the first frame the user sees is the scene, not
  *     a blank canvas,
  *   - attaches **no** event listeners (consumers attach their own via
- *     `canvasRef`).
+ *     `canvasRef`),
+ *   - frees its renderer and every GL object it owns on unmount
+ *     (`useCanvasRenderer`).
  *
  * Sizing follows `<SceneCanvas>`'s convention: the consumer passes `width` /
  * `height` in CSS pixels. The HTML `width` / `height` attributes of the
  * `<canvas>` (drawing-buffer size) are set to `width × dpr` and `height × dpr`
- * by `renderSceneToCanvas` (via the underlying renderer's `resize`). The CSS
+ * by the canvas renderer (via the underlying renderer's `resize`). The CSS
  * size — what the consumer sees on screen — is managed via the `className`
  * prop; no inline styles are emitted (per project rules).
  */
@@ -35,7 +37,8 @@ import type { Ref } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { useFrameLoop } from './useFrameLoop';
 import { useLateContentRedraw } from './useLateContentRedraw';
-import { renderSceneToCanvas } from './sceneViewRender';
+import { useCanvasRenderer } from './useCanvasRenderer';
+import { sceneViewFrame } from './sceneViewRender';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import { normalizeView, type View } from '../core/viewport/view';
@@ -125,11 +128,11 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   // without a render. The thunk defers to `paintRef`, which every committed
   // render republishes from an insertion effect — ahead of the layout effect
   // below, and never from a render React abandoned.
+  const paintCanvas = useCanvasRenderer();
   const paint = (): boolean => {
     const canvas = localRef.current;
     if (!canvas) return false;
-    renderSceneToCanvas({
-      canvas,
+    const commands = sceneViewFrame({
       scene,
       view,
       width,
@@ -143,6 +146,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
       cull,
       paintBounds,
     });
+    paintCanvas(canvas, commands, view, { width, height });
     return true;
   };
   const paintRef = useLatest(paint);
