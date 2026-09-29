@@ -119,6 +119,14 @@ describe('domToRuns', () => {
     ]);
   });
 
+  it('reads a run\'s family from its attribute, not the face its CSS maps it to', () => {
+    runsToDom([{ text: 'a', fontFamily: 'sans-serif' }], parent);
+    const span = parent.children[0] as HTMLElement;
+    expect(span.getAttribute('data-font-family')).toBe('sans-serif');
+    span.style.fontFamily = '"weasel-face-0", sans-serif';
+    expect(domToRuns(parent)).toEqual([{ text: 'a', fontFamily: 'sans-serif' }]);
+  });
+
   it('round-trips a numeric weight, including 400 and 700, apart from the bold flag', () => {
     const runs: StyledRun[] = [
       { text: 'a', fontWeight: 300 },

@@ -22,23 +22,39 @@ import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../../assets/fonts/inter/inter.ttf?url';
 
-const W = 240;
+const W = 360;
 const H = 160;
-// One glyph, so the centroid measures placement alone. Across several, the
-// Inter atlas's whole-unit advances drift from the face's own (docs/TODO.md).
+/** One glyph, so the centroid measures placement alone; cases with `text` measure advances. */
 const TEXT = 'H';
 
-/** Intensity-weighted centroid of light ink on black, in CSS px, and its mass. */
-function inkOf(img: RasterImage, dpr: number): { cx: number; cy: number; mass: number } {
+interface Ink { cx: number; cy: number; mass: number; right: number }
+
+/** Share of the ink `right` leaves beyond it: deep enough in the last glyph to be subpixel-smooth. */
+const TAIL = 0.03;
+
+/**
+ * Intensity-weighted centroid of light ink on black and its mass, plus where
+ * the line's ink ends: the column all but {@link TAIL} of the ink lies left
+ * of, interpolated within the column. CSS px.
+ */
+function inkOf(img: RasterImage, dpr: number): Ink {
   let mass = 0, sx = 0, sy = 0;
+  const cols = new Float64Array(img.width);
   for (let y = 0; y < img.height; y++) {
     for (let x = 0; x < img.width; x++) {
       const i = (y * img.width + x) * 4;
       const v = (img.data[i] + img.data[i + 1] + img.data[i + 2]) / (3 * 255);
       mass += v; sx += v * (x + 0.5); sy += v * (y + 0.5);
+      cols[x] += v;
     }
   }
-  return { cx: sx / mass / dpr, cy: sy / mass / dpr, mass };
+  let right = img.width;
+  for (let x = 0, acc = 0; x < img.width; x++) {
+    const goal = mass * (1 - TAIL);
+    if (acc + cols[x] >= goal) { right = x + (goal - acc) / cols[x]; break; }
+    acc += cols[x];
+  }
+  return { cx: sx / mass / dpr, cy: sy / mass / dpr, mass, right: right / dpr };
 }
 
 async function decodePng(base64: string): Promise<RasterImage> {
@@ -53,7 +69,7 @@ async function decodePng(base64: string): Promise<RasterImage> {
   return ctx.getImageData(0, 0, c.width, c.height);
 }
 
-interface Case { family: string; fontSize: number; script?: 'super' | 'sub'; x: number; y: number }
+interface Case { family: string; fontSize: number; script?: 'super' | 'sub'; x: number; y: number; text?: string }
 
 function styleOf(c: Case): TextStyle {
   return { fontFamily: c.family, fontSize: c.fontSize, lineHeight: 1.2, ...(c.script ? { script: c.script } : {}) };
@@ -66,7 +82,7 @@ function renderCanvas(c: Case, dpr: number): RasterImage {
   scene.add({
     kind: 'leaf', layer: 'main',
     pose: { x: c.x, y: c.y, width: 200, height: c.fontSize * 1.2 },
-    data: { text: TEXT, style: styleOf(c), fill: WHITE },
+    data: { text: c.text ?? TEXT, style: styleOf(c), fill: WHITE },
   });
   return renderSceneToPixels({
     scene,
@@ -95,7 +111,7 @@ let root: Root;
 function Editor({ c }: { c: Case }) {
   const edit = useTextEdit({
     container: host,
-    getText: () => TEXT,
+    getText: () => c.text ?? TEXT,
     getStyle: () => ({ ...styleOf(c), caretColor: 'transparent' }),
     getPaint: () => ({ fill: WHITE }),
     getScreenPose: (): TextEditScreenPose => ({
@@ -104,7 +120,8 @@ function Editor({ c }: { c: Case }) {
     setText: () => {},
   });
   const { startEdit } = edit;
-  useEffect(() => { startEdit('n', { caret: TEXT.length }); }, [startEdit]);
+  const caret = (c.text ?? TEXT).length;
+  useEffect(() => { startEdit('n', { caret }); }, [startEdit, caret]);
   return null;
 }
 
@@ -126,12 +143,11 @@ beforeAll(async () => {
   document.body.appendChild(host);
   root = createRoot(document.createElement('div'));
 
-  const face = new FontFace('Inter', `url(${ttfUrl})`);
-  await face.load();
-  document.fonts.add(face);
+  // No FontFace of its own: the overlay must get the face from the registration.
   await registerFont('Inter', {}, metricsUrl, atlasUrl);
   await registerFont('sans-serif', {}, metricsUrl, atlasUrl);
   registerFontOutlines('Inter', {}, ttfUrl);
+  registerFontOutlines('sans-serif', {}, ttfUrl);
   registerCanvasFont('Georgia');
   registerCanvasFont('Arial');
 });
@@ -146,12 +162,12 @@ function browserName(): string {
   return ua.includes('Firefox') ? 'firefox' : ua.includes('Chrome') ? 'chromium' : 'webkit';
 }
 
-/** Overlay ink minus canvas ink, in CSS px. */
-async function offset(c: Case): Promise<{ dx: number; dy: number }> {
+/** Overlay ink minus canvas ink, in CSS px: centroid, and where the ink ends. */
+async function offset(c: Case): Promise<{ dx: number; dy: number; dRight: number }> {
   const dpr = window.devicePixelRatio;
   const a = inkOf(await settledCanvas(c, dpr), dpr);
   const b = inkOf(await renderOverlay(c), dpr);
-  return { dx: b.cx - a.cx, dy: b.cy - a.cy };
+  return { dx: b.cx - a.cx, dy: b.cy - a.cy, dRight: b.right - a.right };
 }
 
 declare module 'vitest' {
@@ -159,10 +175,10 @@ declare module 'vitest' {
 }
 
 describe('edit overlay alignment', () => {
-  // The atlas, outline and canvas-font tiers, each with and without a script.
-  // `sans-serif` is left out on purpose: the canvas draws it from the Inter
-  // atlas, the overlay from whatever face the browser picks, and no placement
-  // makes two different faces coincide.
+  // The atlas, outline and canvas-font tiers, each with and without a script;
+  // then whole words, whose ends land together only if advances and kerning
+  // agree; then `sans-serif`, which the canvas draws in Inter and the overlay
+  // must too.
   const CASES: Case[] = [
     { family: 'Inter', fontSize: 16, x: 20, y: 20 },
     { family: 'Inter', fontSize: 24, script: 'super', x: 20, y: 20 },
@@ -170,25 +186,34 @@ describe('edit overlay alignment', () => {
     { family: 'Inter', fontSize: 72, x: 20, y: 20 },
     { family: 'Georgia', fontSize: 40, script: 'sub', x: 20, y: 20 },
     { family: 'Arial', fontSize: 40, x: 20, y: 20 },
+    { family: 'Inter', fontSize: 72, x: 20, y: 20, text: 'Hxgd' },
+    { family: 'Inter', fontSize: 72, x: 20, y: 20, text: 'AVATAR' },
+    { family: 'sans-serif', fontSize: 72, x: 20, y: 20, text: 'Hxgd' },
+    { family: 'sans-serif', fontSize: 16, x: 20, y: 20 },
   ];
 
   for (const c of CASES) {
-    it(`${c.family} ${c.fontSize}px${c.script ? ` ${c.script}` : ''} lands on the canvas glyphs`, async () => {
-      const { dx, dy } = await offset(c);
-      expect(Math.abs(dx)).toBeLessThan(0.75);
-      expect(Math.abs(dy)).toBeLessThan(0.75);
+    const label = `${c.text ? `"${c.text}" ` : ''}${c.family} ${c.fontSize}px${c.script ? ` ${c.script}` : ''}`;
+    it(`${label} lands on the canvas glyphs`, async () => {
+      const d = await offset(c);
+      const at = `dx ${d.dx.toFixed(2)} dy ${d.dy.toFixed(2)} dRight ${d.dRight.toFixed(2)}`;
+      expect(Math.abs(d.dx), at).toBeLessThan(0.75);
+      expect(Math.abs(d.dy), at).toBeLessThan(0.75);
+      expect(Math.abs(d.dRight), at).toBeLessThan(0.75);
     });
   }
 
   it.runIf(inject('overlayAlignmentMatrix'))('measures the full matrix', async () => {
-    const rows = ['browser\tdpr\tfamily\tsize\tscript\tx,y\tdx\tdy'];
-    for (const family of ['Inter', 'Georgia', 'Arial', 'sans-serif']) {
-      for (const fontSize of [12, 16, 24, 40, 72]) {
-        for (const script of [undefined, 'super', 'sub'] as const) {
-          for (const [x, y] of [[20, 20], [20.5, 20.4]] as const) {
-            const { dx, dy } = await offset({ family, fontSize, script, x, y });
-            rows.push([browserName(), window.devicePixelRatio, family, fontSize, script ?? '-', `${x},${y}`,
-              dx.toFixed(2), dy.toFixed(2)].join('\t'));
+    const rows = ['browser\tdpr\ttext\tfamily\tsize\tscript\tx,y\tdx\tdy\tdRight'];
+    for (const text of [TEXT, 'Hxgd']) {
+      for (const family of ['Inter', 'Georgia', 'Arial', 'sans-serif']) {
+        for (const fontSize of [12, 16, 24, 40, 72]) {
+          for (const script of text === TEXT ? [undefined, 'super', 'sub'] as const : [undefined]) {
+            for (const [x, y] of [[20, 20], [20.5, 20.4]] as const) {
+              const { dx, dy, dRight } = await offset({ family, fontSize, script, x, y, text });
+              rows.push([browserName(), window.devicePixelRatio, text, family, fontSize, script ?? '-', `${x},${y}`,
+                dx.toFixed(2).padStart(6), dy.toFixed(2).padStart(6), dRight.toFixed(2).padStart(6)].join('\t'));
+            }
           }
         }
       }

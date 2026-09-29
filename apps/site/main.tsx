@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { registerFont } from '@weasel-js/core/renderer';
+import { registerFont, registerFontOutlines } from '@weasel-js/core/renderer';
 import { WeaselDemos } from './WeaselDemos';
 import { ActionsProvider } from '@weasel-js/core';
 import { SelectionContextProvider } from '@weasel-js/core';
@@ -38,6 +38,15 @@ void registerFont(
 ).catch((err) => {
   console.warn('weasel demo: failed to register default font', err);
 });
+
+// The file the atlas was baked from. Large text draws from its outlines, and
+// the text edit overlay sets its glyphs in it, so editing shows the same face
+// the canvas draws. Fetched on first use.
+registerFontOutlines(
+  'sans-serif',
+  { weight: 400, style: 'normal' },
+  `${import.meta.env.BASE_URL}inter/inter.ttf`,
+);
 
 // Top-level <ActionsProvider> consolidates standalone hooks
 // (useSelectAll / useEscape / etc.) onto a single keydown listener.

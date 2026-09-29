@@ -34,6 +34,7 @@ export {
   isCanvasFont,
   unregisterCanvasFont,
   subscribeGlyphReady,
+  cssFontFamily,
   registerFontOutlines,
   unregisterFontOutlines,
   hasFontOutlines,

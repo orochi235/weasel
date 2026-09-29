@@ -162,6 +162,9 @@ export async function enableLocalFontOutlines(
       // The PostScript name is how a member is picked out of a `.ttc`
       // collection, which is what most macOS system families ship as.
       parser: createOpenTypeParser(font.postscriptName),
+      // The DOM already has every installed face; naming it avoids reading
+      // the collection file a second time.
+      cssSrc: `local(${JSON.stringify(font.postscriptName)})`,
     });
     families.add(font.family);
   }

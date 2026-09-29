@@ -8,6 +8,7 @@
 
 import type { FillStyle } from '@weasel-js/paint';
 import type { StyledRun, TextTransform } from '@weasel-js/text';
+import { cssFontFamily } from '@weasel-js/font';
 
 function solidColor(p: FillStyle | undefined): string | null {
   if (!p) return null;
@@ -132,7 +133,9 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
     }
     const tt = el.style.textTransform;
     if (TRANSFORMS.has(tt)) next.textTransform = tt as TextTransform;
-    if (el.style.fontFamily) next.fontFamily = el.style.fontFamily;
+    // The attribute holds the run's family; the CSS holds the face it maps to.
+    const family = el.getAttribute('data-font-family') ?? el.style.fontFamily;
+    if (family) next.fontFamily = family;
     if (el.style.color) next.color = el.style.color;
     const ls = el.style.letterSpacing;
     if (ls === 'normal') {
@@ -248,7 +251,13 @@ export function runsToDom(runs: readonly StyledRun[], parent: HTMLElement): void
     // An absolute size wins over a relative one, as it does in `resolveRuns`.
     if (run.fontSize != null) span.style.fontSize = `${run.fontSize}px`;
     else if (run.fontScale != null) span.style.fontSize = `${run.fontScale * 100}%`;
-    if (run.fontFamily != null) span.style.fontFamily = run.fontFamily;
+    if (run.fontFamily != null) {
+      span.style.fontFamily = cssFontFamily(run.fontFamily, {
+        weight: run.fontWeight ?? (run.bold ? 700 : undefined),
+        style: run.italic ? 'italic' : undefined,
+      });
+      span.setAttribute('data-font-family', run.fontFamily);
+    }
     const color = solidColor(run.fill);
     if (color != null) span.style.color = color;
     // Decoration goes on the span as an inline style rather than `<u>`/`<s>`

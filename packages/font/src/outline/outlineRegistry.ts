@@ -80,6 +80,14 @@ export interface OutlineFontOptions {
   /** Override the default opentype.js parser. Mostly a test seam; also the
    *  hook for a consumer who already has a font parser in their bundle. */
   parser?: OutlineParser;
+  /**
+   * The `@font-face` `src` that gives DOM text this face — what the text edit
+   * overlay sets its glyphs in, so they match the canvas's. Defaults to
+   * `url(…)` of a URL source and to the bytes themselves otherwise; a face
+   * whose bytes the browser cannot load directly, such as one member of a
+   * `.ttc`, names it here instead (`local("Helvetica-Bold")`).
+   */
+  cssSrc?: string;
 }
 
 /** Load state of one registered face. */
@@ -95,6 +103,7 @@ export interface OutlineFaceInfo {
 
 interface FaceSlot extends OutlineFaceInfo {
   source: OutlineSource;
+  cssSrc: string | undefined;
   parser: OutlineParser;
   status: OutlineStatus;
   face: OutlineFace | null;
@@ -140,6 +149,7 @@ export function registerFontOutlines(
   const { weight, style } = normalize(variant);
   slots.set(slotKey(family, weight, style), {
     family, weight, style, source,
+    cssSrc: opts.cssSrc,
     parser: opts.parser ?? openTypeParser,
     status: 'idle',
     face: null,
@@ -323,6 +333,21 @@ async function beginLoad(slot: FaceSlot): Promise<void> {
       `${err instanceof Error ? err.message : String(err)}. Large text in this face ` +
       `keeps rendering from the SDF tier.`);
   }
+}
+
+/**
+ * Where DOM text gets this face: the registration's `cssSrc`, a URL source as
+ * `url(…)`, or the bytes. `null` when nothing is registered. In-package only.
+ */
+export function outlineCssSource(
+  family: string, weight: number, style: FontStyle,
+): { src: string } | { source: OutlineSource; bytes: () => Promise<ArrayBuffer> } | null {
+  const slot = slots.get(slotKey(family, weight, style));
+  if (!slot) return null;
+  if (slot.cssSrc !== undefined) return { src: slot.cssSrc };
+  if (typeof slot.source === 'string') return { src: `url(${JSON.stringify(slot.source)})` };
+  const source = slot.source;
+  return { source, bytes: () => readSource(source) };
 }
 
 async function readSource(source: OutlineSource): Promise<ArrayBuffer> {

@@ -51,7 +51,8 @@ void registerFont(
 // is exact at any zoom and takes the same fills paths do. The TTF is a subset
 // of Inter cut to the atlas's own charset (U+0020–00FF) so the two tiers
 // cover exactly the same characters and neither can serve one the other
-// can't — 27 kB, fetched lazily the first time large text is drawn.
+// can't — 27 kB, fetched lazily the first time large text is drawn. It is
+// also the face the text edit overlay sets its glyphs in.
 registerFontOutlines(
   'sans-serif',
   { weight: 400, style: 'normal' },
