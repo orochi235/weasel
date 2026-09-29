@@ -36,3 +36,12 @@ export function planeTransform(from: PlaneMap | null, to: PlaneMap | null): GlMa
   const m = planeToPlane(from, to);
   return m === null ? undefined : mat3.fromAffine(planeMatrix(m));
 }
+
+/** A path in a plane's world, in the camera's. Anything that is not a path
+ *  passes through. */
+export function pathFromPlane<T>(path: T, m: PlaneMap | null): T {
+  const p = path as { kind?: string } | null;
+  if (m === null || !p || (p.kind !== 'polygon' && p.kind !== 'rect')) return path;
+  const back = planeToPlane(m, null);
+  return back === null ? path : transformPath(path as unknown as Path, planeMatrix(back)) as unknown as T;
+}

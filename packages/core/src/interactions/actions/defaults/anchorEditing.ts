@@ -45,6 +45,7 @@ import {
 import { pathToAnchors } from 'features/paths/anchors';
 import type { PolygonPath } from 'features/paths/types';
 import { selectionAfterAnchorPress } from './editAnchors';
+import { inPlane, editingLayer } from '../planeInput';
 
 // ---------------------------------------------------------------------------
 // Shared plumbing
@@ -129,7 +130,7 @@ function requiresAnchorSelection(deps?: ActionDeps): true | ActionDisabledReason
  * empty canvas clears the node selection instead of selecting the anchor.
  * Anchors over the path body are unaffected.
  */
-export const selectAnchorAction: Action & { requires: string[] } = {
+export const selectAnchorAction: Action & { requires: string[] } = inPlane({
   id: 'selectAnchor',
   label: 'Select anchor',
   defaultBinding: [
@@ -162,7 +163,7 @@ export const selectAnchorAction: Action & { requires: string[] } = {
     },
   } as ImmediateInvoker,
   enabled: (deps) => (depOf(deps) ? true : ActionDisabledReason.SelectionRequired),
-};
+}, editingLayer);
 
 // ---------------------------------------------------------------------------
 // nudgeAnchors
@@ -280,7 +281,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
  *
  * No-ops on an open subpath: there's nothing to cut.
  */
-export const cutPathAtAnchorAction: Action & { requires: string[] } = {
+export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
   id: 'cutPathAtAnchor',
   label: 'Cut path at anchor',
   defaultBinding: { kind: 'click', mods: { alt: true, shift: true } },
@@ -309,7 +310,7 @@ export const cutPathAtAnchorAction: Action & { requires: string[] } = {
     },
   } as ImmediateInvoker,
   enabled: (deps) => (depOf(deps) ? true : ActionDisabledReason.SelectionRequired),
-};
+}, editingLayer);
 
 /** Flat index of the anchor nearest `(wx, wy)` within `slop`, else -1. */
 function nearestAnchorIndex(
@@ -350,7 +351,7 @@ function nearestAnchorIndex(
  * overlay can draw it — same "ongoing action owns the state, chrome
  * draws it" split the move ghosts and the node marquee use.
  */
-export const marqueeAnchorsAction: Action & { requires: string[] } = {
+export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
   id: 'marqueeAnchors',
   label: 'Marquee-select anchors',
   defaultBinding: { kind: 'drag', target: 'empty' },
@@ -396,7 +397,7 @@ export const marqueeAnchorsAction: Action & { requires: string[] } = {
     },
   },
   enabled: () => true,
-};
+}, editingLayer);
 
 // ---------------------------------------------------------------------------
 // Local geometry helper

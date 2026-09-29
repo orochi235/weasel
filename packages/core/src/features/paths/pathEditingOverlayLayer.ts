@@ -46,8 +46,11 @@ export interface CreatePathEditingOverlayLayerOptions {
    * `previews` are the drawing view's in-flight preview surfaces, so an
    * anchor dragged in one panel does not move in the others. Resolve against
    * them before falling back to the committed pose.
+   *
+   * `view` is the drawing view's camera. Answer in its world: a node whose
+   * layer is a parallax plane stores its path in the plane's.
    */
-  getPose(id: string, previews: readonly GesturePreviewSource[]): Path | null;
+  getPose(id: string, previews: readonly GesturePreviewSource[], view: View): Path | null;
   /** Flat indices of the selected anchors. Selected anchors render
    *  filled; unselected ones hollow — the standard vector-editor cue for
    *  "these are what the arrow keys and Delete will act on". Omit when
@@ -55,7 +58,7 @@ export interface CreatePathEditingOverlayLayerOptions {
   getSelectedAnchors?(): ReadonlySet<number>;
   /** In-flight anchor-marquee rect in world coords, or null. Drawn as a
    *  rubber band while `marqueeAnchorsAction` is dragging. */
-  getMarquee?(): { x: number; y: number; width: number; height: number } | null;
+  getMarquee?(view: View): { x: number; y: number; width: number; height: number } | null;
   /** Optional styling overrides. */
   style?: PathEditingOverlayStyle;
 }
@@ -123,7 +126,7 @@ export function createPathEditingOverlayLayer(
       // the chrome still gets grabbable invisible anchors, or vice versa.
       const isVisible = isVisibleFrom(data);
       if (isVisible && !isVisible('path-edit.anchors')) return [];
-      const pose = opts.getPose(id, previewSourcesFrom(data));
+      const pose = opts.getPose(id, previewSourcesFrom(data), view);
       if (!pose || pose.kind !== 'polygon') return [];
 
       const { anchors } = pathToAnchors(pose as PolygonPath);
@@ -182,7 +185,7 @@ export function createPathEditingOverlayLayer(
       }
 
       // Marquee rubber band, on top of everything.
-      const marquee = opts.getMarquee?.();
+      const marquee = opts.getMarquee?.(view);
       if (marquee) {
         const [mx, my] = w2s(marquee.x, marquee.y, view);
         const [mx2, my2] = w2s(marquee.x + marquee.width, marquee.y + marquee.height, view);

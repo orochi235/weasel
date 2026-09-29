@@ -29,7 +29,7 @@
  *   TODO: thread shift from InvocationCtx.modifiers.shift into snap logic.
  */
 
-import { gestureViewReader } from '../../gestures/shared/screenTolerance';
+import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
@@ -192,6 +192,8 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
       );
 
       const readView = gestureViewReader(ctx.deps);
+
+      const readPlane = gesturePlaneReader(ctx.deps);
       const scratch: RotateScratch = {
         ids,
         scene,
@@ -218,6 +220,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
           modifiers: { ...ctx.modifiers },
           pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
           view: readView(),
+          plane: readPlane(),
           adapter: moveGestureAdapter(scene) as unknown as GestureContext<unknown>['adapter'],
           scratch: {},
         },
@@ -253,6 +256,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
         gctx.modifiers = { ...moveCtx.modifiers };
         gctx.pointer = { worldX: moveCtx.world.x, worldY: moveCtx.world.y, clientX: 0, clientY: 0 };
         gctx.view = readView();
+        gctx.plane = readPlane();
         const primary = scratch.originWorlds.keys().next().value as NodeId;
         const originRotation = scratch.originRotations.get(primary) ?? 0;
         let delta = raw;

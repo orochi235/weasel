@@ -879,28 +879,26 @@ Nothing open; one item parked:
 
 ### Interactive parallax planes
 
-A scene layer carrying `parallax` paints through its plane. Picking, chrome and
-the editing actions cross into it: `inPlane` (`interactions/actions/planeInput.ts`)
-carries a move, resize, rotate, clone or insert into the plane of the layer it
-edits. What does not cross yet:
+A scene layer carrying `parallax` paints through its plane. Picking, chrome,
+snapping and the editing actions cross into it: `inPlane`
+(`interactions/actions/planeInput.ts`) carries a move, resize, rotate, clone,
+insert or anchor edit into the plane of the layer it edits. What does not
+cross yet:
 
 - **(P3) A selection spanning planes that scale differently.** `inPlane` edits
   the whole invocation in one plane — a handle's target's, else the first
-  selected node's — so a move carries every node by that plane's delta and a node on
-  a plane that scales differently drifts off the pointer. The same holds for a
-  container dragged with a child on another plane, and for reparent-on-drop or
-  a layout drop onto a container on another plane. Needs the delta per node,
-  which `inPlane` cannot give: move's commit and preview would each have to
-  map through the node's own plane.
-- **(P3) Snap references drawn by the camera.** Inside `inPlane` a move's
-  behaviors see the plane's world, so `snapToGrid` snaps to the node's own
-  grid and `snapToGuides` compares the camera's guide lines against plane
-  coordinates. The `snap` point dep is converted at the seam; behaviors get
-  poses, not points, so they cannot be. Carrying the plane map on
-  `GestureContext` would let `snap()` convert the origin it tests.
-- **(P3) Anchor editing on a plane.** `editAnchorsAction` is not wrapped, and
-  the path-edit chrome that its affordances are hit against draws anchors at
-  their pose coordinates in the camera's world.
+  selected node's — so a move carries every node by that plane's delta, and a
+  node on a plane that scales differently drifts off the pointer. The same
+  holds for a container dragged with a child on another plane, and for
+  reparent-on-drop or a layout drop onto a container on another plane.
+  The fix is a delta per node rather than per invocation: leave the action's
+  input in the camera's world and hand it a `planeOf(id)` dep instead, so move
+  translates each node by `toPlane(own map, current) − toPlane(own map, start)`
+  and resize / rotate map the pivot into each node's plane before applying the
+  per-node transform. Snapping keeps using the primary node's plane and
+  shifts the rest by the snapped camera-world delta. A reparent across planes
+  carries the pose through `planeToPlane(source, destination)` with the pose
+  descriptor's box-to-box rescale, so the node lands where it was drawn.
 
 ---
 

@@ -26,6 +26,7 @@ import {
   type AnchorSet,
   type SegmentHit,
 } from 'features/paths/anchorEdits';
+import { inPlane, editingLayer } from '../planeInput';
 
 /** Screen-px reach of a segment, and the radius around each anchor that
  *  stays the anchor's. Matches the path-anchor affordance's default hit
@@ -51,7 +52,7 @@ function segmentUnder(
   return hit ? { dep, hit } : null;
 }
 
-export const insertPathAnchorAction: Action & { requires: string[] } = {
+export const insertPathAnchorAction: Action & { requires: string[] } = inPlane({
   id: 'insertPathAnchor',
   label: 'Insert anchor',
   defaultBinding: { kind: 'click', mods: { alt: true } },
@@ -84,4 +85,4 @@ export const insertPathAnchorAction: Action & { requires: string[] } = {
     if (at && !segmentUnder(deps, at.x, at.y)) return ActionDisabledReason.NotApplicable;
     return true;
   },
-};
+}, editingLayer);

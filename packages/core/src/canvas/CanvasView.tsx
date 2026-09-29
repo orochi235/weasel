@@ -20,6 +20,7 @@ import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescri
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
 import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
+import { pathFromPlane } from './planeClips';
 import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { useDeviceProfile } from 'core/device/useDeviceProfile';
 import {
@@ -306,7 +307,11 @@ export function CanvasView(props: CanvasViewProps): null {
     return { x, y };
   }, [registry, rectNow, camera]);
 
-  const getAnchorState = useMemo(() => anchorStateFrom(() => depRegistryRef.current), []);
+  // Anchors are hit in this view's camera world, where its plane draws them.
+  const getAnchorState = useMemo(() => anchorStateFrom(
+    () => depRegistryRef.current,
+    (id, path) => pathFromPlane(path, inputsRef.current?.planeOfNode?.(id, camera()) ?? null),
+  ), [camera]);
 
   const { targetScale } = useDeviceProfile();
 

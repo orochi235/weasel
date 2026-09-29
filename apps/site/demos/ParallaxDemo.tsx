@@ -197,7 +197,7 @@ function ParallaxDemoInner() {
         </label>
       </div>
       <SceneCanvas
-        features={['view', 'pick', 'move', 'transform', 'edit']}
+        features={['view', 'pick', 'move', 'transform', 'edit', 'paths']}
         width={W}
         height={H}
         className="ckd-canvas"

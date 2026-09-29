@@ -24,6 +24,7 @@
 
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
+import type { PlaneMap } from 'core/viewport/parallax';
 import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 import type { Scene, NodeId } from 'core/scene/types';
@@ -45,6 +46,10 @@ import type { Point2, DragSample, DebugSink } from '@weasel-js/routing';
 export interface ViewApi {
   get(): View;
   set(v: View): void;
+  /** How this camera's world maps into the world the invocation edits in,
+   *  when that is a parallax plane — set by `inPlane` on the view it hands a
+   *  wrapped action. Absent or null: the camera's own world. */
+  plane?(): PlaneMap | null;
   /** Optional recenter callback. When wired, `viewportZoomAction`'s `reset`
    *  branch (Cmd-0) calls this instead of resetting to identity — letting
    *  consumers re-fit the page (or other reference bounds) into the workspace.

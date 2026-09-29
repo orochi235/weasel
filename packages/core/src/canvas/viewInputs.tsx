@@ -11,6 +11,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { PlaneMap } from 'core/viewport/parallax';
 import type { RuleCtx } from 'features/chrome-caps';
 import type { PickView } from './SceneCanvas/useSceneSelectTool';
 
@@ -37,6 +38,9 @@ export interface SurfaceViewInputs
   /** A node's box for chrome, drawn under `view` — the camera of the view
    *  asking, since a node on a parallax plane lands somewhere else in each. */
   boundsOf: ((id: string, view?: View | null) => Bounds | null) | undefined;
+  /** How `view`'s world maps into the parallax plane `id` is drawn through,
+   *  or null when its layer moves with the camera. */
+  planeOfNode?: ((id: string, view?: View | null) => PlaneMap | null) | undefined;
   /** `boundsOf` for `id` drawn at an in-flight `pose`, under `view`. */
   boundsOfPose?: ((id: string, pose: unknown, view?: View | null) => Bounds | null) | undefined;
   /** Every id under a world point, bottom-first. `view` is the view the

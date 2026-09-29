@@ -28,8 +28,9 @@ export interface CreateSlopsDebugLayerOptions {
   getEditingId: () => string | null;
   /** Returns the pose for a given id — used to pull the polygon path when
    *  the editing target is a polygon-pose node. `previews` are the drawing
-   *  view's in-flight preview surfaces. */
-  getPose: (id: string, previews: readonly GesturePreviewSource[]) => Path | null;
+   *  view's in-flight preview surfaces, `view` its camera, whose world the
+   *  answer is in. */
+  getPose: (id: string, previews: readonly GesturePreviewSource[], view: View) => Path | null;
   /** Pointer-size multiplier from the live `DeviceProfile`. Resolves the same
    *  sizes `buildAffordanceAt` hit-tests with. Default 1. */
   targetScale?: number;
@@ -111,7 +112,7 @@ export function createSlopsDebugLayer(
       const editingId = opts.getEditingId();
       if (editingId) {
         const anchorR = sizes.anchor;
-        const pose = opts.getPose(editingId, previewSourcesFrom(data));
+        const pose = opts.getPose(editingId, previewSourcesFrom(data), view);
         if (pose && pose.kind === 'polygon') {
           const anchors = enumerateAnchors(pose as PolygonPath);
           for (const a of anchors) {

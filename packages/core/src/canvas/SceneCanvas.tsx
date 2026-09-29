@@ -89,6 +89,8 @@ import type { PickView } from './SceneCanvas/useSceneSelectTool';
 import type { GesturePreviewSource } from './gestureBounds';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
+import { pathFromPlane } from './planeClips';
+import { rectFromPlane } from 'core/viewport/parallax';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
 import type { PenScratch } from 'tools/builtin/pen';
 import type { Tool } from '../tools/overlayBinding';
@@ -1381,7 +1383,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const {
     selectTool: internalSelect, pickEvery: internalPickEvery, pickBest: internalPickBest,
-    boundsOf: internalBoundsOf, boundsOfPose: internalBoundsOfPose, moveOptions: internalMoveOptions,
+    boundsOf: internalBoundsOf, boundsOfPose: internalBoundsOfPose, planeOfNode: internalPlaneOfNode,
+    moveOptions: internalMoveOptions,
   } = useSceneSelectTool({
     scene,
     adapter,
@@ -1396,6 +1399,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(viewLayerGate ? { layerIsPainted: viewLayerGate } : {}),
     selectTool: selectToolWithDefaults,
   });
+  // Read through a ref by the chrome layers, which are built once.
+  const planeOfNodeRef = useRef(internalPlaneOfNode);
+  planeOfNodeRef.current = internalPlaneOfNode;
 
   // Build getNodeAtPoint from the adapter + internalPickEvery. Canvas no longer
   // synthesizes this itself — it accepts it as a prop (seam refactor).
@@ -1931,7 +1937,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       // Halos follow the live (preview-aware) polygon so they sit on
       // top of the rendered anchors during anchor-edit drags AND when
       // the whole path is being moved.
-      getPose: (id, previews) => livePathFor(id, previews) as never,
+      getPose: (id, previews, view) => livePathFor(id, previews, view) as never,
       targetScale: deviceProfile.targetScale,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1948,6 +1954,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const livePathFor = (
     id: string,
     previews: readonly GesturePreviewSource[],
+    view: View,
   ): PolygonPath | null => {
     const node = sceneRefForOverlay.current?.get(id as never);
     if (!node) return null;
@@ -1967,15 +1974,25 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const d = source.previewData?.(id);
       if (d != null) { data = d; touched = true; }
     }
-    return resolveEditablePathOf({ pose, data } as { pose: unknown; data: unknown });
+    // In the drawing camera's world: a path on a parallax plane is stored in
+    // the plane's.
+    return pathFromPlane(
+      resolveEditablePathOf({ pose, data } as { pose: unknown; data: unknown }),
+      planeOfNodeRef.current(id, view),
+    );
   };
 
   const pathEditingOverlayLayer = useMemo(
     () => createPathEditingOverlayLayer({
       getEditingId: () => effectivePathEditingId() || null,
-      getPose: (id, previews) => livePathFor(id, previews) as never,
+      getPose: (id, previews, view) => livePathFor(id, previews, view) as never,
       getSelectedAnchors: () => selectedAnchorsRef.current,
-      getMarquee: () => anchorMarqueeRef.current,
+      // Drawn by an action that ran in the edited path's plane.
+      getMarquee: (view) => {
+        const rect = anchorMarqueeRef.current;
+        const plane = rect ? planeOfNodeRef.current(effectivePathEditingId(), view) : null;
+        return rect && plane ? rectFromPlane(plane, rect) : rect;
+      },
     }),
     // Stable identity — closure reads live state through refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2133,13 +2150,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     geometry: descriptor,
     boundsOf: internalBoundsOf,
     boundsOfPose: internalBoundsOfPose as SurfaceViewInputs['boundsOfPose'],
+    planeOfNode: internalPlaneOfNode,
     tools,
     pickEvery: internalPickEvery,
     pickBest: internalPickBest,
     kindOfNode,
     chromeCaps,
     selectionApi: selection,
-  }), [adapter, descriptor, internalBoundsOf, internalBoundsOfPose, tools, internalPickEvery,
+  }), [adapter, descriptor, internalBoundsOf, internalBoundsOfPose, internalPlaneOfNode, tools,
+       internalPickEvery,
        internalPickBest, kindOfNode, chromeCaps, selection]);
 
   const canvas = (
@@ -2264,6 +2283,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 keyboard={enableKeybindings}
                 selectionRef={selectionRef}
                 boundsOf={internalBoundsOf}
+                planeOfNode={internalPlaneOfNode}
                 pickEvery={internalPickEvery}
                 pickBest={internalPickBest}
                 kindOfNode={kindOfNode}
@@ -2353,6 +2373,7 @@ function GestureDispatcherMounter({
   keyboard,
   selectionRef,
   boundsOf,
+  planeOfNode,
   pickEvery,
   pickBest,
   kindOfNode,
@@ -2379,6 +2400,9 @@ function GestureDispatcherMounter({
   keyboard: boolean;
   selectionRef?: React.RefObject<import('core/selection/useSelection').SelectionApi>;
   boundsOf?: (id: string) => import('core/viewport/fitViewToBounds').Bounds | null;
+  /** The parallax plane a node is drawn through, under the surface's camera —
+   *  so path anchors are hit where the plane draws them. */
+  planeOfNode?: (id: string) => import('core/viewport/parallax').PlaneMap | null;
   pickEvery?: (worldX: number, worldY: number) => string[];
   /** Single topmost hit (collapses parent/child via `pickTopMostHit`), used to
    *  classify the body under the pointer. Must match the select tool's own
@@ -2444,7 +2468,12 @@ function GestureDispatcherMounter({
   // `editAnchors` dep from the registry at call time.
   const depRegistryRef = useRef(depRegistry);
   depRegistryRef.current = depRegistry;
-  const getAnchorState = useMemo(() => anchorStateFrom(() => depRegistryRef.current), []);
+  const planeOfNodeRef = useRef(planeOfNode);
+  planeOfNodeRef.current = planeOfNode;
+  const getAnchorState = useMemo(() => anchorStateFrom(
+    () => depRegistryRef.current,
+    (id, path) => pathFromPlane(path, planeOfNodeRef.current?.(id) ?? null),
+  ), []);
 
   // Build the `affordanceAt` thunk. Takes world coords and delegates to
   // `buildAffordanceAt` for handle hit-testing.

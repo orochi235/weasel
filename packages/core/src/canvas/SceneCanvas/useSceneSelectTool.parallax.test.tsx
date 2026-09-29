@@ -124,3 +124,14 @@ describe('useSceneSelectTool — boxing a pose on a plane', () => {
       .toEqual({ x: 400, y: 0, width: 50, height: 50 });
   });
 });
+
+describe('useSceneSelectTool — a node\'s plane', () => {
+  it('names the plane a node is drawn through under a camera, and none off a plane', () => {
+    const r = harness();
+    // pan 0.25 under a camera at x=400: the plane sits 300 left of it.
+    expect(r.current.planeOfNode('hill')).toEqual({ scale: { x: 1, y: 1 }, offset: { x: -300, y: 0 } });
+    expect(r.current.planeOfNode('crate')).toBeNull();
+    expect(r.current.planeOfNode('hill', { x: 0, y: 0, scale: { x: 1, y: 1 } }))
+      .toEqual({ scale: { x: 1, y: 1 }, offset: { x: 0, y: 0 } });
+  });
+});

@@ -73,6 +73,10 @@ export interface BuildAffordanceAtOptions {
  */
 export function anchorStateFrom(
   getRegistry: () => { get(name: 'editAnchors'): EditAnchorsDep | undefined } | null,
+  /** The editable path in the world the hit-test is asked in. A node on a
+   *  parallax plane stores its path in the plane's world; the surface carries
+   *  it into the asking camera's. Default: unchanged. */
+  toCamera?: (id: string, path: unknown) => unknown,
 ): () => AnchorState | null {
   return () => {
     const dep = getRegistry()?.get('editAnchors');
@@ -82,7 +86,7 @@ export function anchorStateFrom(
       // The hit-test reads world-coord anchor positions, so route through
       // `getEditablePath`: both pose-as-polygon and `data.path` consumers
       // resolve correctly.
-      getPose: (id) => dep.getEditablePath(id),
+      getPose: (id) => (toCamera ? toCamera(id, dep.getEditablePath(id)) : dep.getEditablePath(id)),
     };
   };
 }

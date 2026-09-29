@@ -5,6 +5,7 @@ import { isPathLike } from 'interactions/actions/resize/autoPoseDescriptor';
 import { boundsOfPath } from 'features/paths/bounds';
 import { translatePath } from 'features/paths/transform';
 import type { Path } from 'features/paths/types';
+import { fromPlane, toPlane } from 'core/viewport/parallax';
 
 /**
  * Projection used by `gridSnapStrategy` when `TPose` doesn't expose `{x,y}`
@@ -83,10 +84,14 @@ export function gridSnapStrategy<TPose>(
   const debug: DebugSink | undefined = optsArg ? optsArg.debug : undefined;
   const c = resolveUnit(spacing, unitSystem);
   return {
-    snap(pose) {
+    snap(pose, ctx) {
       const o = proj.getOrigin(pose);
-      const sx = Math.round(o.x / c) * c;
-      const sy = Math.round(o.y / c) * c;
+      // The grid is the camera's: on a plane, round where the origin lies in
+      // the camera's world and carry the lattice point back.
+      const m = ctx?.plane ?? null;
+      const w = m ? fromPlane(m, o) : o;
+      const cell = { x: Math.round(w.x / c) * c, y: Math.round(w.y / c) * c };
+      const { x: sx, y: sy } = m ? toPlane(m, cell) : cell;
       debug?.recordSnapCandidate({ x: sx, y: sy }, true);
       return proj.translate(pose, sx - o.x, sy - o.y);
     },

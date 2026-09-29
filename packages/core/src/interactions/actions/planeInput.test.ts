@@ -19,6 +19,12 @@ import { cloneAction } from './defaults/clone';
 import { insertAction } from './defaults/insert';
 import { nudgeRightAction } from './defaults/nudge';
 import { snapToGrid } from './move/behaviors/snapToGrid';
+import { snapToGuides } from './move/behaviors/snapToGuides';
+import { pointSnapToGrid } from './resize/behaviors/pointSnapToGrid';
+import { editAnchorsAction } from './defaults/editAnchors';
+import { selectAnchorAction, marqueeAnchorsAction } from './defaults/anchorEditing';
+import { makeEditAnchorsDep } from './testUtils';
+import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'features/paths/types';
 import { inPlane, selectionLayer } from './planeInput';
 import type { InsertDep, ViewApi } from './depSchema';
 
@@ -81,6 +87,14 @@ function drag(
   return handle;
 }
 
+/** M(100,100) L(140,100) L(120,140) Z, in the sky's world. */
+const triangle = (): PolygonPath => ({
+  kind: 'polygon',
+  commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_Z]),
+  coords: new Float32Array([100, 100, 140, 100, 120, 140]),
+  fillRule: 'nonzero',
+});
+
 const poseOf = (scene: S, id: string) => scene.get(asNodeId(id))!.pose as RectPose;
 
 describe('editing a node on a parallax plane', () => {
@@ -117,12 +131,74 @@ describe('editing a node on a parallax plane', () => {
     expect(copy.pose).toMatchObject({ x: 120, y: 100 });
   });
 
-  it('snaps a move to the grid of the node\'s own world', () => {
+  it('snaps a move to the camera\'s grid where it lies in the plane', () => {
     const scene = makeScene();
-    // 3.3 camera units is 6.6 in the sky, which a 10-unit grid rounds up.
-    drag(moveAction, scene, { x: 110, y: 60 }, { x: 113.3, y: 60 }, {},
+    // 6 camera units is 12 in the sky: origin sky 112 is camera 106, which a
+    // 10-unit camera grid rounds to 110 — sky 120.
+    drag(moveAction, scene, { x: 110, y: 60 }, { x: 116, y: 60 }, {},
       { behaviors: [snapToGrid({ spacing: 10 })] });
-    expect(poseOf(scene, 'sun')).toMatchObject({ x: 110, y: 100 });
+    expect(poseOf(scene, 'sun')).toMatchObject({ x: 120, y: 100 });
+  });
+
+  it('snaps a move to a camera guide where it lies in the plane', () => {
+    const scene = makeScene();
+    // The guide at camera x=111 is sky 122. A 10.5-unit drag puts the origin
+    // at sky 121, inside the 6px tolerance (6 sky units at the sky's 1x).
+    drag(moveAction, scene, { x: 110, y: 60 }, { x: 120.5, y: 60 }, {},
+      { behaviors: [snapToGuides({ getGuides: () => [{ id: 'g', axis: 'x', offset: 111 }] })] });
+    expect(poseOf(scene, 'sun')).toMatchObject({ x: 122, y: 100 });
+  });
+
+  it('snaps a resize point to the camera\'s grid where it lies in the plane', () => {
+    const scene = makeScene();
+    // The corner lands at sky 166 (camera 133); a camera grid rounds it to
+    // 130 — sky 160 — not the sky grid's 170.
+    const resizePolicy = {
+      constraints: [], expandIds: (ids: string[]) => ids,
+      pointSnap: [pointSnapToGrid({ spacing: 10 })],
+    };
+    drag(resizeAction, scene, { x: 120, y: 70 }, { x: 133, y: 83 }, {
+      deps: { resizePolicy },
+      affordance: { kind: 'handle:bottom-right', targetIds: ['sun'], anchor: { x: 'min', y: 'min' } },
+    });
+    expect(poseOf(scene, 'sun')).toMatchObject({ x: 100, y: 100, width: 60, height: 60 });
+  });
+
+  it('drags a path anchor on a plane as far as the pointer went', () => {
+    const scene = makeScene();
+    const edits: PolygonPath[] = [];
+    const editAnchors = makeEditAnchorsDep({
+      editingId: 'sun',
+      getEditablePath: () => triangle(),
+      applyEdit: (_id, p) => { edits.push(p as PolygonPath); },
+    });
+    // Anchor 0 is sky (100,100), camera (100,50); 10 camera right is 20 sky.
+    drag(editAnchorsAction, scene, { x: 100, y: 50 }, { x: 110, y: 50 }, {
+      deps: { editAnchors },
+      affordance: { kind: 'anchor:0', targetIds: ['sun'] },
+    });
+    expect(Array.from(edits[0].coords.slice(0, 2))).toEqual([120, 100]);
+  });
+
+  it('selects the path anchor a click lands on where the plane draws it', () => {
+    const scene = makeScene();
+    const editAnchors = makeEditAnchorsDep({ editingId: 'sun', getEditablePath: () => triangle() });
+    const run = selectAnchorAction.invoker;
+    if (run?.timing !== 'immediate') throw new Error('expected immediate');
+    // Anchor 1 is sky (140,100): camera (120,50).
+    run.run(
+      { editAnchors, scene, view: viewDep(), selection: { get: () => [] } } as never,
+      { worldX: 120, worldY: 50, additive: false },
+    );
+    expect([...editAnchors.selectedAnchors]).toEqual([1]);
+  });
+
+  it('marquees path anchors on a plane where the plane draws them', () => {
+    const scene = makeScene();
+    const editAnchors = makeEditAnchorsDep({ editingId: 'sun', getEditablePath: () => triangle() });
+    // Camera 115..125 x 45..55 is sky 130..150 x 90..110: anchor 1 only.
+    drag(marqueeAnchorsAction, scene, { x: 115, y: 45 }, { x: 125, y: 55 }, { deps: { editAnchors } });
+    expect([...editAnchors.selectedAnchors]).toEqual([1]);
   });
 
   it('nudges a plane node one unit of its own world, whatever the camera', () => {

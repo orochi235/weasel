@@ -7,7 +7,7 @@
 import { useMemo, useRef } from 'react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import { pickWalk, scenePickSource, scenePlaneOf, type PickQuery, type ViewPickGates } from 'canvas/pickWalk';
-import { rectFromPlane, toPlane } from 'core/viewport/parallax';
+import { rectFromPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { pathContainsPoint } from '@weasel-js/geom';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
@@ -123,6 +123,9 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
    *  defaults to the surface's. */
   boundsOf: (id: string, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null) =>
     import('core/viewport/fitViewToBounds').Bounds | null;
+  /** How `view`'s world (the surface's camera by default) maps into the plane
+   *  `id` is drawn through, or null when its layer moves with the camera. */
+  planeOfNode: (id: string, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null) => PlaneMap | null;
   /** `boundsOf` for `id` drawn at `pose` rather than its own — how chrome
    *  boxes an in-flight preview. Ignores a `geometry.boundsOf` override, which
    *  answers only for a node's own pose. */
@@ -235,6 +238,15 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   // every render.
   const getViewRef = useRef(getView);
   getViewRef.current = getView;
+  const wiredPlaneOfNode = useMemo(() => {
+    return (id: string, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null): PlaneMap | null => {
+      const n = scene.get(asNodeId(id));
+      const camera = cameraOf(view ?? getViewRef.current?.() ?? null);
+      if (!n || !camera) return null;
+      return scenePlaneOf(scene.layers, camera)?.(n.layer) ?? null;
+    };
+  }, [scene]);
+
   const wiredBoundsOfPose = useMemo(() => {
     return (id: string, pose: TPose, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null): Bounds | null => {
       const n = scene.get(asNodeId(id));
@@ -245,11 +257,10 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       const own = rot ? { ...b, rotation: rot } : b;
       // A plane node is drawn where its plane puts it, and the chrome has to
       // follow it there.
-      const camera = cameraOf(view ?? getViewRef.current?.() ?? null);
-      const plane = camera ? scenePlaneOf(scene.layers, camera)?.(n.layer) : null;
+      const plane = wiredPlaneOfNode(id, view);
       return plane ? rectFromPlane(plane, own) : own;
     };
-  }, [scene, d]);
+  }, [scene, d, wiredPlaneOfNode]);
 
   const wiredBoundsOf = useMemo(() => {
     return (id: string, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null): Bounds | null => {
@@ -281,6 +292,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     pickBest: wiredPickBest,
     boundsOf: wiredBoundsOf,
     boundsOfPose: wiredBoundsOfPose,
+    planeOfNode: wiredPlaneOfNode,
     moveOptions: wiredMoveOptions,
   };
 }
