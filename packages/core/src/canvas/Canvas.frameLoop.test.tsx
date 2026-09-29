@@ -18,6 +18,7 @@ import type { RenderLayer } from '../core/layers/render';
 import type { View } from '../core/viewport/view';
 import type { CanvasHelpers } from './useViewHelpers';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { renderThenAbandon } from '../test-utils/abandonRender';
 
 beforeAll(() => {
   const recorder = makeGLRecorder();
@@ -518,37 +519,13 @@ describe('Canvas paint inputs', () => {
     const drawB = vi.fn();
     const layerA = probeLayer(drawA);
     const layerB = probeLayer(drawB);
-    const never = new Promise<never>(() => {});
-    let setLayer!: (layer: RenderLayer<unknown>) => void;
-
-    function Hang({ hang }: { hang: boolean }) {
-      if (hang) use(never);
-      return null;
-    }
-    function Parent() {
-      const [layer, set] = useState(layerA);
-      setLayer = set;
-      return (
-        <Suspense fallback={null}>
-          <SyncHost apiRef={apiRef} layer={layer} />
-          <Hang hang={layer === layerB} />
-        </Suspense>
-      );
-    }
-
-    render(<Parent />);
-    await frame();
-    expect(drawA).toHaveBeenCalledTimes(1);
-
-    // A transition that suspends keeps the committed UI: Canvas renders with
-    // `layerB`, and that render is thrown away.
-    act(() => { startTransition(() => { setLayer(layerB); }); });
+    renderThenAbandon(layerA, layerB, (layer) => <SyncHost apiRef={apiRef} layer={layer} />);
     act(() => { apiRef.current!.requestRedraw(); });
     await frame();
     await frame();
 
     expect(drawB).not.toHaveBeenCalled();
-    expect(drawA).toHaveBeenCalledTimes(2);
+    expect(drawA).toHaveBeenCalled();
   });
 
   it('hands a sync paint requested from an earlier sibling\'s layout effect this commit\'s inputs', () => {

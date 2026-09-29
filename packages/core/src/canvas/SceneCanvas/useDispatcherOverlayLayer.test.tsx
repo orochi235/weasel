@@ -23,6 +23,7 @@ import type { Dispatcher } from '@weasel-js/routing';
 import type { OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { createGestureSource } from './dispatcherGestureBounds';
+import { renderThenAbandon } from '../../test-utils/abandonRender';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 800, height: 600 };
@@ -384,5 +385,23 @@ describe('useDispatcherOverlayLayer', () => {
       const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
       expect(collectPaths(result.current.draw(env(dispatcher), VIEW, DIMS))).toHaveLength(2);
     });
+  });
+});
+
+describe('useDispatcherOverlayLayer — a render React abandons', () => {
+  it('paints with the committed style', () => {
+    const dispatcher = makeDispatcher([{
+      overlay: (): OngoingOverlay =>
+        ({ kind: 'polyline', points: [{ x: 0, y: 0 }, { x: 30, y: 0 }] }) as OngoingOverlay,
+    }]);
+    let layer!: ReturnType<typeof useDispatcherOverlayLayer>;
+    function Probe({ stroke }: { stroke: string }) {
+      layer = useDispatcherOverlayLayer({ dispatcher, style: { stroke } });
+      return null;
+    }
+    renderThenAbandon('#aaaaaa', '#bbbbbb', (stroke) => <Probe stroke={stroke} />);
+
+    const path = collectPaths(layer.draw(env(dispatcher), VIEW, DIMS))[0]!;
+    expect(path.stroke?.paint).toEqual({ color: '#aaaaaa' });
   });
 });

@@ -15,6 +15,7 @@ import type { Dispatcher } from '@weasel-js/routing';
 import type { OngoingHandle } from '@weasel-js/routing';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
 import { toolPreviewSources } from '../toolPreview';
+import { renderThenAbandon } from '../../test-utils/abandonRender';
 import type { GesturePreviewSource } from '../gestureBounds';
 
 interface Data { label: string }
@@ -228,5 +229,35 @@ describe('usePreviewGhostLayer — previewOpaqueIds', () => {
 
     const cmds = result.current.draw(env(makeToolsApi(), [handle]), VIEW, DIMS) as GroupDrawCommand[];
     expect(cmds.map((c) => c.alpha)).toEqual([0.85]);
+  });
+});
+
+describe('usePreviewGhostLayer — a render React abandons', () => {
+  it('ghosts through the committed scene and slot', () => {
+    const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
+    const a = scene.add({ kind: 'leaf', layer: 'main', pose: COMMITTED_POSE, data: { label: 'a' } });
+    const other = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
+    const handle: OngoingHandle = {
+      previewIds: () => [a],
+      previewPose: (id) => (id === a ? PREVIEW_POSE : null),
+    };
+    const dispatcher = makeDispatcher([handle]);
+    const drawnB: unknown[] = [];
+    const slotA = { drawOne };
+    const slotB = { drawOne: (...args: Parameters<typeof drawOne>) => { drawnB.push(args); return drawOne(...args); } };
+    let layer!: ReturnType<typeof usePreviewGhostLayer>;
+    function Probe({ which }: { which: 'a' | 'b' }) {
+      layer = usePreviewGhostLayer<Data, 'main', Pose>({
+        scene: which === 'a' ? scene : other,
+        sceneSlot: which === 'a' ? slotA : slotB,
+        dispatcher,
+      });
+      return null;
+    }
+    renderThenAbandon<'a' | 'b'>('a', 'b', (which) => <Probe which={which} />);
+
+    const rects = collectRects(layer.draw(env(makeToolsApi(), [handle]), VIEW, DIMS));
+    expect(rects).toEqual([{ x: PREVIEW_POSE.x, y: PREVIEW_POSE.y }]);
+    expect(drawnB).toEqual([]);
   });
 });

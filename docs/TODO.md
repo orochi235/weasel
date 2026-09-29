@@ -321,16 +321,21 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P3) `<CanvasView>` and `<SceneCanvas>` still publish refs during render.**
-  `<Canvas>` publishes every ref its paint, hit-testing, view registry and
-  event handlers read from an insertion effect, so an abandoned concurrent
-  render (a `startTransition` that suspends) never reaches them. `<CanvasView>`
-  still assigns `live`, `helpersRef` and `inputsRef` in its render body, and
-  its own paint reads them through the view registry; `<SceneCanvas>` does the
-  same with `currentViewRef` under a controlled `view`, which its HUD, pick and
-  pinch paths read. `live` backs `viewApi.get`, so check for a call during
-  render before moving it. `Canvas.frameLoop.test.tsx`'s "state a render
-  abandons" harness is the test shape.
+- **(P3) Refs read by event paths are still assigned during render across the kit.**
+  A ref written in a render body keeps what an abandoned concurrent render (a
+  `startTransition` that suspends) computed, and the next event reads it. The
+  paint paths are fixed — `<Canvas>`, `<CanvasView>`, `<SceneViewCanvas>`, the
+  preview-ghost and dispatcher-overlay layers, and `<SceneCanvas>`'s controlled
+  view publish from `useInsertionEffect`. What is left is the event side: about
+  170 assignments in some 80 files, `<SceneCanvas>`'s other mirrors, the
+  `canvas/deps/*` sources, tools, actions, gestures, `<MinimapCanvas>`, and the
+  ui and labkit components with their own loops (`CameraInput`,
+  `AnnotationOverlay`, `useLoupe`, `CurveEditor`). Each needs its readers
+  checked for a read during render — the function-form tool cursor was one,
+  and now takes its view explicitly — before it moves. List them with
+  `grep -rEn "^  (if \(.*\) )?[a-zA-Z_]+\.current(\.[a-zA-Z]+)? = " packages/{core,ui,labkit}/src`
+  (misses writes nested deeper in a render body). `test-utils/abandonRender.tsx`
+  is the test shape.
 
 
 - **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner

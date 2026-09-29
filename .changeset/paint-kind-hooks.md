@@ -16,6 +16,8 @@ array until the registry changes.
 that suspends used to leave its layers, size, controlled `view`, paint target,
 layer helpers (and the consumer's `helpersRef`), preview extras and event
 callbacks such as `onViewChange` behind, for the next redraw, hit test or
-pointer event to use. A `syncPaint` redraw requested from a layout
+pointer event to use. `<CanvasView>`, `<SceneViewCanvas>`, the preview-ghost
+and dispatcher-overlay layers, and `<SceneCanvas>`'s `view` dep under a
+controlled `view` get the same treatment. A `syncPaint` redraw requested from a layout
 effect that runs before the canvas's own — an earlier sibling's — now paints
 that commit's inputs rather than bailing until the canvas's effect ran.

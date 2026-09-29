@@ -5,7 +5,7 @@
  * Mount one inside `<SceneCanvas>`, or declare the same thing through the
  * surface's `views` prop, which renders one of these per descriptor.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from 'react';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
 import { clientToWorld } from 'core/viewport/clientToWorld';
@@ -144,7 +144,6 @@ export function CanvasView(props: CanvasViewProps): null {
   const registry = useOptionalViewRegistry();
   const depRegistry = useOptionalDepRegistry();
   const depRegistryRef = useRef(depRegistry);
-  depRegistryRef.current = depRegistry;
 
   // Hooks run unconditionally; the owned selection goes unused unless this
   // view asked for one.
@@ -156,19 +155,14 @@ export function CanvasView(props: CanvasViewProps): null {
 
   // Everything the registration reads is behind a ref: the registration object
   // is registered once and must not churn, but what it answers with has to be
-  // this render's.
+  // the last committed render's. Published by the insertion effect below.
   const live = useRef({
     view: effectiveView, bounds, layers, layerVisibility, layerOrder, onViewChange, viewBounds, viewProp,
     viewSelection,
     // The selection this view acts on: its own when it has one, the
-    // surface's otherwise. Filled in below, once the surface's is in hand.
+    // surface's otherwise.
     selection: viewSelection ?? ownSelection,
   });
-  live.current = {
-    ...live.current,
-    view: effectiveView, bounds, layers, layerVisibility, layerOrder, onViewChange, viewBounds, viewProp,
-    viewSelection,
-  };
 
   const rectAt = useCallback((outer: View, dims: Dims): ViewRect => {
     const b = live.current.bounds;
@@ -254,10 +248,8 @@ export function CanvasView(props: CanvasViewProps): null {
     ...createDispatcherPreviewSources(() => dispatcherRef.current),
   }), []);
   const selection = viewSelection ?? inputs?.selectionApi ?? ownSelection;
-  live.current.selection = selection;
 
   const inputsRef = useRef(inputs);
-  inputsRef.current = inputs;
 
   /** The chrome-caps context this view answers for: its selection, its camera,
    *  its dispatcher's in-flight action. */
@@ -275,7 +267,17 @@ export function CanvasView(props: CanvasViewProps): null {
       inputsRef.current?.chromeCaps?.isVisible(ruleInputs()) ?? ALWAYS_VISIBLE,
   });
   const helpersRef = useRef(helpers);
-  helpersRef.current = helpers;
+
+  // Committed renders only, ahead of every layout effect in the commit.
+  useInsertionEffect(() => {
+    depRegistryRef.current = depRegistry;
+    live.current = {
+      view: effectiveView, bounds, layers, layerVisibility, layerOrder, onViewChange, viewBounds, viewProp,
+      viewSelection, selection,
+    };
+    inputsRef.current = inputs;
+    helpersRef.current = helpers;
+  });
 
   /** A client point in this view's world. The rect moves with the outer
    *  camera, so it is read per call rather than closed over. */
