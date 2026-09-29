@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { evaluateSupports } from './supports';
-import { isDeclarationHonored } from './properties';
+import { isDeclarationHonored, PROPERTIES, type PropertyName } from './properties';
 import { parseSvg } from './parse';
 
 describe('isDeclarationHonored', () => {
@@ -20,15 +20,16 @@ describe('isDeclarationHonored', () => {
     ['baseline-shift', 'super'], ['baseline-shift', '20%'], ['baseline-shift', '0.3em'],
     ['vector-effect', 'non-scaling-stroke'],
     ['fill', 'inherit'], ['FILL', 'RED'],
+    ['opacity', '50%'], ['fill-opacity', '25%'], ['font-size', '150%'], ['fill', 'context-stroke'],
   ])('honors %s: %s', (prop, value) => {
     expect(isDeclarationHonored(prop, value)).toBe(true);
   });
 
   it.each([
-    ['fill', 'bogus'], ['fill', 'context-fill'], ['color', 'url(#g)'],
+    ['fill', 'bogus'], ['color', 'url(#g)'], ['stop-color', 'currentColor'],
     ['stroke-linejoin', 'arcs'], ['stroke-linecap', 'triangle'], ['fill-rule', 'odd'],
     ['stroke-width', '2em'], ['stroke-width', 'thick'], ['stroke-dasharray', '4 -2'], ['stroke-miterlimit', '0.5'],
-    ['opacity', '50%'], ['letter-spacing', '0.1em'], ['font-size', '1em'], ['font-weight', 'lighter'],
+    ['opacity', '0.5x'], ['font-style', 'oblique'], ['stroke-linejoin', 'miter-clip'], ['letter-spacing', '0.1em'], ['font-size', '1em'], ['font-weight', 'lighter'],
     ['text-anchor', 'left'], ['direction', 'sideways'], ['text-transform', 'full-width'],
     ['marker-end', 'url(other.svg#m)'], ['vector-effect', 'non-scaling-size'],
     ['display', 'none'], ['transform', 'rotate(10deg)'], ['clip-path', 'url(#c)'], ['--custom', 'x'],
@@ -74,16 +75,78 @@ describe('evaluateSupports', () => {
   });
 });
 
-describe('isDeclarationHonored agrees with the parser', () => {
-  const fillOf = (css: string): unknown => {
-    const { nodes } = parseSvg(`<svg xmlns="http://www.w3.org/2000/svg"><style>rect { ${css} }</style><rect width="1" height="1"/></svg>`);
-    return nodes[0];
+describe('PROPERTIES is the parser\'s one pathway', () => {
+  const SHAPE = '<path class="t" d="M0 0 L10 0 L10 10 Z"/>';
+  const STOP = '<linearGradient id="g"><stop class="t" offset="0"/><stop offset="1" stop-color="white"/></linearGradient>'
+    + '<rect width="1" height="1" fill="url(#g)"/>';
+  const TEXT = '<text class="t">hi there</text>';
+  interface Sample { readonly honored: string; readonly rejected?: string; readonly on: string; readonly base?: string }
+  const shape = (honored: string, rejected?: string, base?: string): Sample => ({ honored, rejected, on: SHAPE, base });
+  const stroked = (honored: string, rejected: string): Sample => shape(honored, rejected, 'stroke: black;');
+  const text = (honored: string, rejected?: string): Sample => ({ honored, rejected, on: TEXT });
+  // Typed against the table, so a property added there cannot go unsampled here.
+  const SAMPLES: Record<PropertyName, Sample> = {
+    'fill': shape('red', 'bogus'),
+    'fill-opacity': shape('0.5', 'half'),
+    'fill-rule': shape('evenodd', 'odd'),
+    'stroke': shape('blue', 'bogus'),
+    'stroke-width': stroked('3px', '3em'),
+    'stroke-opacity': stroked('50%', 'half'),
+    'stroke-linecap': stroked('round', 'triangle'),
+    'stroke-linejoin': stroked('bevel', 'arcs'),
+    'stroke-dasharray': stroked('4 2', '4 -2'),
+    'stroke-miterlimit': stroked('8', '0.5'),
+    'marker-start': stroked('url(#m)', 'url(a.svg#m)'),
+    'marker-mid': stroked('url(#m)', 'url(a.svg#m)'),
+    'marker-end': stroked('url(#m)', 'url(a.svg#m)'),
+    'color': shape('red', 'url(#g)', 'fill: currentColor;'),
+    'opacity': shape('0.5', 'half'),
+    'vector-effect': stroked('non-scaling-stroke', 'non-scaling-size'),
+    'font-size': text('20px', '2em'),
+    'font-family': text('serif'),
+    'font-weight': text('600', 'lighter'),
+    'font-style': text('italic', 'oblique'),
+    'text-anchor': text('middle', 'left'),
+    'letter-spacing': text('2px', '0.1em'),
+    'text-decoration': text('underline', 'underline wavy'),
+    'direction': text('rtl', 'sideways'),
+    'text-transform': text('uppercase', 'full-width'),
+    'baseline-shift': text('super', '3pt'),
+    'stop-color': { honored: 'blue', rejected: 'currentColor', on: STOP },
+    'stop-opacity': { honored: '0.5', rejected: 'half', on: STOP },
   };
-  it.each([
-    ['fill', 'red'], ['stroke', 'blue'], ['fill-opacity', '0.5'], ['opacity', '0.5'],
-    ['stroke-width', '3px'], ['stroke-linecap', 'round'], ['stroke-dasharray', '4 2'],
-  ])('a declaration it calls honored changes the parse: %s: %s', (prop, value) => {
-    const base = prop.startsWith('stroke-') ? 'stroke: black;' : '';
-    expect(fillOf(`${base} ${prop}: ${value}`)).not.toEqual(fillOf(base));
+  const parse = (css: string, body: string) => parseSvg(
+    `<svg xmlns="http://www.w3.org/2000/svg"><defs><marker id="m"><path d="M0 0 L1 1"/></marker></defs>`
+    + `<style>.t { ${css} }</style>${body}</svg>`,
+  );
+
+  it('samples every property in the table', () => {
+    expect(Object.keys(SAMPLES).sort()).toEqual(Object.keys(PROPERTIES).sort());
+  });
+  it.each(Object.entries(SAMPLES))('a value it honors changes the parse, and cleanly: %s', (prop, s) => {
+    expect(isDeclarationHonored(prop, s.honored)).toBe(true);
+    const base = s.base ?? '';
+    const out = parse(`${base} ${prop}: ${s.honored}`, s.on);
+    expect(out.nodes).not.toEqual(parse(base, s.on).nodes);
+    expect(out.warnings).toEqual([]);
+  });
+  it.each(Object.entries(SAMPLES).filter(([, s]) => s.rejected != null))(
+    'a value it rejects is ignored or reported: %s',
+    (prop, s) => {
+      expect(isDeclarationHonored(prop, s.rejected!)).toBe(false);
+      const base = s.base ?? '';
+      const out = parse(`${base} ${prop}: ${s.rejected}`, s.on);
+      if (out.warnings.length === 0) expect(out.nodes).toEqual(parse(base, s.on).nodes);
+    },
+  );
+  it('is the only way the parser reads a presentation property', () => {
+    const files = import.meta.glob('./*.ts', { query: '?raw', import: 'default', eager: true });
+    const names = Object.keys(PROPERTIES).join('|');
+    const bypass = new RegExp(`getAttribute\\(\\s*['"](${names})['"]`);
+    expect(Object.keys(files)).toContain('./parse.ts');
+    const offenders = Object.entries(files)
+      .filter(([path, src]) => !path.endsWith('.test.ts') && bypass.test(src as string))
+      .map(([path]) => path);
+    expect(offenders).toEqual([]);
   });
 });

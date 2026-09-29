@@ -274,7 +274,7 @@ have shipped. What remains:
 
 ## Paths & booleans
 
-- **(P3) `@layer` in `@weasel-js/svg` stylesheets.** `@media` and `@supports` evaluate in `packages/svg/src/cascade.ts`, but a rule inside `@layer` is still skipped whole, so an SVG that puts its styles in a layer loses them. Applying them needs layer ordering in the cascade sort: layered normal rules rank below unlayered ones, and the order reverses for `!important`. `@container` is skipped the same way.
+- **(P3) `@container` in `@weasel-js/svg` stylesheets.** `packages/svg/src/cascade.ts` evaluates `@media`, `@supports` and `@layer`, but skips a `@container` block whole, so its rules never apply. That is deliberate for now: a static parse lays nothing out, so no element is a size container and no query can hold. Applying them needs container sizes from somewhere — the root's viewport as the one container, or boxes supplied by the caller.
 
 ### Pathfinder follow-ups (post-v1)
 

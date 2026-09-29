@@ -274,3 +274,75 @@ describe('parseStylesheet conditional at-rules', () => {
     expect(parseStylesheet(css, 0, { selector: () => true }).map((r) => r.selector)).toEqual(['.s']);
   });
 });
+
+describe('cascade layers', () => {
+  const fill = (css: string, attrs = ''): string | null => {
+    const get = els(`<svg xmlns="http://www.w3.org/2000/svg"><style>${css}</style><rect id="r" ${attrs}/></svg>`);
+    return ownProp(get('r'), 'fill');
+  };
+
+  it('applies the rules inside a layer', () => {
+    expect(fill('@layer base { rect { fill: #f00 } }')).toBe('#f00');
+  });
+  it('ranks unlayered rules above layered ones, whatever their specificity', () => {
+    expect(fill('#r { fill: #f00 } rect { fill: #0f0 }')).toBe('#f00');
+    expect(fill('@layer a { #r { fill: #f00 } } rect { fill: #0f0 }')).toBe('#0f0');
+    expect(fill('rect { fill: #0f0 } @layer a { #r { fill: #f00 } }')).toBe('#0f0');
+  });
+  it('ranks a later layer above an earlier one', () => {
+    expect(fill('@layer a { #r { fill: #f00 } } @layer b { rect { fill: #0f0 } }')).toBe('#0f0');
+  });
+  it('orders layers by the @layer statement', () => {
+    expect(fill('@layer b, a; @layer a { rect { fill: #f00 } } @layer b { #r { fill: #0f0 } }')).toBe('#f00');
+  });
+  it('keeps a reopened layer at its first position', () => {
+    expect(fill('@layer a { rect { fill: #f00 } } @layer b { rect { fill: #0f0 } } @layer a { #r { fill: #00f } }'))
+      .toBe('#0f0');
+  });
+  it('ranks a layer\'s own rules above its sublayers, and sublayers in their own order', () => {
+    expect(fill('@layer a { rect { fill: #0f0 } @layer x { #r { fill: #f00 } } }')).toBe('#0f0');
+    expect(fill('@layer a { @layer x { #r { fill: #f00 } } @layer y { rect { fill: #0f0 } } }')).toBe('#0f0');
+    expect(fill('@layer a.y, a.x; @layer a { @layer x { rect { fill: #f00 } } @layer y { #r { fill: #0f0 } } }'))
+      .toBe('#f00');
+  });
+  it('reopens a nested layer by its dotted name', () => {
+    expect(fill('@layer a { @layer x { #r { fill: #f00 } } } @layer b { rect { fill: #0f0 } } @layer a.x { #r { fill: #00f } }'))
+      .toBe('#0f0');
+    expect(fill('@layer a { @layer x { rect { fill: #f00 } } } @layer a.x { #r { fill: #00f } }')).toBe('#00f');
+  });
+  it('gives every anonymous layer its own place', () => {
+    expect(fill('@layer { #r { fill: #f00 } } @layer { rect { fill: #0f0 } }')).toBe('#0f0');
+    expect(fill('@layer { #r { fill: #f00 } } rect { fill: #0f0 }')).toBe('#0f0');
+  });
+  it('reverses layer order for !important', () => {
+    expect(fill('@layer a { rect { fill: #f00 !important } } @layer b { rect { fill: #0f0 !important } }')).toBe('#f00');
+    expect(fill('@layer a { rect { fill: #f00 !important } } #r { fill: #0f0 !important }')).toBe('#f00');
+    expect(fill('@layer a { @layer x { rect { fill: #f00 !important } } #r { fill: #0f0 !important } }')).toBe('#f00');
+    expect(fill('@layer a { rect { fill: #f00 !important } }', 'style="fill: #00f"')).toBe('#f00');
+  });
+  it('keeps specificity and source order inside a layer for !important', () => {
+    expect(fill('@layer a { #r { fill: #f00 !important } rect { fill: #0f0 !important } }')).toBe('#f00');
+    expect(fill('@layer a { rect { fill: #f00 !important } rect { fill: #0f0 !important } }')).toBe('#0f0');
+  });
+  it('ranks inline style above every layer', () => {
+    expect(fill('@layer a { #r { fill: #f00 } }', 'style="fill: #00f"')).toBe('#00f');
+    expect(fill('@layer a { #r { fill: #f00 !important } }', 'style="fill: #00f !important"')).toBe('#00f');
+  });
+  it('shares one layer order across <style> elements', () => {
+    const get = els('<svg xmlns="http://www.w3.org/2000/svg"><style>@layer b, a;</style><rect id="r"/>'
+      + '<style>@layer a { rect { fill: #f00 } } @layer b { #r { fill: #0f0 } }</style></svg>');
+    expect(ownProp(get('r'), 'fill')).toBe('#f00');
+  });
+  it('declares no layer from a condition that does not hold', () => {
+    expect(fill('@media print { @layer a; } @layer b { rect { fill: #f00 } } @layer a { rect { fill: #0f0 } }')).toBe('#0f0');
+    expect(fill('@media screen { @layer a; } @layer b { rect { fill: #f00 } } @layer a { rect { fill: #0f0 } }')).toBe('#f00');
+  });
+  it('skips a block @layer naming more than one layer', () => {
+    expect(fill('@layer a, b { rect { fill: #f00 } }')).toBeNull();
+  });
+  it('still allows @import after a @layer statement', () => {
+    const warnings: string[] = [];
+    parseStylesheet('@layer a; @import "a.css"; .x { fill: red }', 0, { onWarn: (m) => warnings.push(m) });
+    expect(warnings).toEqual(['@import "a.css" is not fetched; its rules do not apply']);
+  });
+});

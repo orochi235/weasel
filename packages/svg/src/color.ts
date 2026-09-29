@@ -28,7 +28,7 @@ export function parsePaintAttr(raw: string | null | undefined): ParsedColor | nu
   const s = raw.trim();
   if (s === '') return null;
   if (s === 'none') return { kind: 'none' };
-  if (s === 'currentColor' || s === 'currentcolor') {
+  if (s.toLowerCase() === 'currentcolor') {
     return { kind: 'solid', color: '#000000', alpha: 1 };
   }
   // url(#id) reference, optionally followed by the fallback paint SVG's own

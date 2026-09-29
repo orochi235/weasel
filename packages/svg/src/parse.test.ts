@@ -372,7 +372,12 @@ describe('conditional at-rules', () => {
   });
   it('still skips other block at-rules, and resumes after them', () => {
     expect(fillOf('@font-face { font-family: X } @keyframes k { from { fill: blue } } rect { fill: red }')).toEqual(RED);
-    expect(fillOf('@layer base { rect { fill: red } }')).toEqual(BLACK);
+    expect(fillOf('@container (min-width: 1px) { rect { fill: red } }')).toEqual(BLACK);
+    expect(fillOf('@container (min-width: 1px) { rect { fill: blue } } rect { fill: red }')).toEqual(RED);
+  });
+  it('applies rules inside @layer, below unlayered ones', () => {
+    expect(fillOf('@layer base { rect { fill: red } }')).toEqual(RED);
+    expect(fillOf('rect { fill: red } @layer base { rect { fill: blue } }')).toEqual(RED);
   });
   it('routes <style media> through the same evaluator', () => {
     const svg = (media: string): string => `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">
@@ -389,5 +394,29 @@ describe('conditional at-rules', () => {
       <style>@import url("theme.css") screen; @media screen { @import "late.css"; } rect { fill: red }</style>
       <rect width="1" height="1"/></svg>`);
     expect(warnings).toEqual(['@import url("theme.css") screen is not fetched; its rules do not apply']);
+  });
+});
+
+describe('values read through the property table', () => {
+  const parse = (body: string) => parseSvg(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`);
+  it('reads a percentage opacity as a ratio', () => {
+    const p = parse('<rect width="1" height="1" opacity="50%" fill-opacity="25%"/>').nodes[0] as SvgPathNode;
+    expect(p.opacity).toBe(0.5);
+    expect(p.fill).toMatchObject({ opacity: 0.25 });
+  });
+  it('resolves a percentage font-size on <text> against the default, and says so', () => {
+    const { nodes, warnings } = parse('<text font-size="150%">hi</text>');
+    expect(nodes[0]).toMatchObject({ style: { fontSize: 24 } });
+    expect(warnings).toEqual(['font-size "150%" on <text> is resolved against the 16px default']);
+  });
+  it('paints nothing for context-fill on a shape outside a marker', () => {
+    const { nodes, warnings } = parse('<rect width="1" height="1" fill="context-fill"/>');
+    expect((nodes[0] as SvgPathNode).fill).toEqual({ kind: 'none' });
+    expect(warnings).toEqual([]);
+  });
+  it('lets color: currentColor inherit', () => {
+    const g = parse('<g color="red"><rect width="1" height="1" color="currentColor" fill="currentColor"/></g>')
+      .nodes[0] as { children: SvgPathNode[] };
+    expect(g.children[0].fill).toMatchObject({ color: '#ff0000' });
   });
 });

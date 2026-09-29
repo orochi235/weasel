@@ -21,20 +21,19 @@ import type {
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
   ScreenLength,
 } from './types';
-import type { StyledRun, TextStyle, TextPaint, TextTransform, FillStyle, Stroke } from '@weasel-js/core';
+import type { StyledRun, TextStyle, TextPaint, FillStyle, Stroke } from '@weasel-js/core';
 import { multiply, parseTransform, decomposeRotation, rebaseTransform, rotationComponent, isIdentity } from './transform';
 import { boundsOfPath, layoutRuns, resolveRuns, resolveScreenLength, resolveTextStyle } from '@weasel-js/core';
 import { IDENTITY_MATRIX } from './types';
 import { anchorOffset } from './textAnchor';
-import { parsePaintAttr } from './color';
 import { collectGradients, WEASEL_NS, WEASEL_NS_PREFIX, type GradientTable } from './gradients';
 import { collectPatterns } from './patterns';
 import { collectElementsByTag } from './elements';
 import {
-  bindStylesheets, deriveStyle, EMPTY_STYLE, ownProp, resolveCurrentColor, type StyleContext,
+  bindStylesheets, deriveStyle, EMPTY_STYLE, ownProp, ownValue, resolveCurrentColor, styleValue, type StyleContext,
 } from './cascade';
 import { mediaEnvironmentFor } from './media';
-import { TEXT_TRANSFORMS } from './properties';
+import { readProperty, type InheritedPropertyName } from './properties';
 
 // Every tag set here is compared against a lowercased `tagName`.
 /** Element tags we accept and lower; anything else triggers a warning. */
@@ -353,7 +352,7 @@ function parseElement(
     const childCtm = multiply(ctm, local);
     const childStyle = deriveStyle(style, el);
     const children = parseChildren(el, childCtm, childStyle, gradients, clips, onWarn, uriToPrefix);
-    const opacity = readOpacityAttr(el, 'opacity');
+    const opacity = ownValue(el, 'opacity');
     const group: SvgNode = { kind: 'group', children };
     const clip = clipFor(el, childCtm, clips, onWarn);
     if (clip) group.clip = clip;
@@ -428,11 +427,10 @@ function parseElement(
   const leafStyle = deriveStyle(style, el);
   const fill = readPaint(leafStyle, 'fill', '#000000', gradients, onWarn);
   const stroke = readStroke(leafStyle, gradients, onWarn, isNonScalingStroke(el));
-  const opacity = readOpacityAttr(el, 'opacity');
+  const opacity = ownValue(el, 'opacity');
   // `fill-rule` defaults to `nonzero`; only stamp when explicitly `evenodd`
   // and the lowered geometry is a PolygonPath (RectPath has no fillRule slot).
-  const fillRuleRaw = leafStyle['fill-rule'] ?? null;
-  if (fillRuleRaw === 'evenodd' && path.kind === 'polygon') {
+  if (styleValue(leafStyle, 'fill-rule') === 'evenodd' && path.kind === 'polygon') {
     path = { ...path, fillRule: 'evenodd' };
   }
   const node: SvgPathNode = { kind: 'path', path, fill };
@@ -542,20 +540,20 @@ function readPaint(
   onWarn: (msg: string) => void,
 ): SvgPaint {
   const raw = resolveCurrentColor(style[attr] ?? null, style);
-  const opacityRaw = style[`${attr}-opacity`] ?? null;
-  const opacity = opacityRaw != null ? clamp01(parseFloat(opacityRaw)) : undefined;
+  const opacity = styleValue(style, `${attr}-opacity`, onWarn);
   if (raw == null) {
     if (attr === 'stroke') return { kind: 'none' };
     const out: SvgPaint = { kind: 'solid', color: defaultColor };
     if (opacity != null) (out as { opacity?: number }).opacity = opacity;
     return out;
   }
-  const parsed = parsePaintAttr(raw);
+  const parsed = readProperty(attr, raw, onWarn);
   if (!parsed) {
     onWarn(`unrecognized ${attr} value: ${raw}`);
     return { kind: 'solid', color: defaultColor };
   }
-  if (parsed.kind === 'none') return { kind: 'none' };
+  // Outside a marker there is no context element, and SVG paints `none`.
+  if (parsed.kind === 'none' || parsed.kind === 'context') return { kind: 'none' };
   if (parsed.kind === 'ref') {
     const paint = gradients.get(parsed.id);
     if (!paint) {
@@ -590,40 +588,18 @@ function readStroke(
   if (inheritedStroke == null && inheritedWidth == null) return undefined;
   const paint = readPaint(style, 'stroke', '#000000', gradients, onWarn);
   if (paint.kind === 'none') return undefined;
-  const n = inheritedWidth != null ? parseFloat(inheritedWidth) : 1;
+  const n = styleValue(style, 'stroke-width', onWarn) ?? 1;
   const stroke: SvgStroke = { paint, width: nonScaling ? { px: n } : n };
-  const opacityRaw = style['stroke-opacity'] ?? null;
-  if (opacityRaw != null) {
-    const a = clamp01(parseFloat(opacityRaw));
-    if (Number.isFinite(a)) stroke.opacity = a;
-  }
-  const cap = style['stroke-linecap'] ?? null;
-  if (cap === 'butt' || cap === 'round' || cap === 'square') {
-    stroke.cap = cap;
-  } else if (cap != null) {
-    onWarn(`unsupported stroke-linecap: ${cap}`);
-  }
-  const join = style['stroke-linejoin'] ?? null;
-  if (join === 'miter' || join === 'round' || join === 'bevel') {
-    stroke.join = join;
-  } else if (join === 'arcs' || join === 'miter-clip') {
-    onWarn(`stroke-linejoin "${join}" not supported; falling back to miter`);
-    stroke.join = 'miter';
-  } else if (join != null) {
-    onWarn(`unsupported stroke-linejoin: ${join}`);
-  }
-  const dashAttr = style['stroke-dasharray'] ?? null;
-  if (dashAttr != null && dashAttr.trim() !== '' && dashAttr.trim() !== 'none') {
-    const parsed = parseDashArray(dashAttr);
-    if (parsed) stroke.dash = parsed;
-    else onWarn(`unrecognized stroke-dasharray: ${dashAttr}`);
-  }
-  const miterAttr = style['stroke-miterlimit'] ?? null;
-  if (miterAttr != null) {
-    const m = parseFloat(miterAttr);
-    if (Number.isFinite(m) && m >= 1) stroke.miterLimit = m;
-    else onWarn(`unrecognized stroke-miterlimit: ${miterAttr}`);
-  }
+  const opacity = styleValue(style, 'stroke-opacity', onWarn);
+  if (opacity != null) stroke.opacity = opacity;
+  const cap = styleValue(style, 'stroke-linecap', onWarn);
+  if (cap) stroke.cap = cap;
+  const join = styleValue(style, 'stroke-linejoin', onWarn);
+  if (join) stroke.join = join;
+  const dash = styleValue(style, 'stroke-dasharray', onWarn);
+  if (dash) stroke.dash = dash;
+  const miterLimit = styleValue(style, 'stroke-miterlimit', onWarn);
+  if (miterLimit != null) stroke.miterLimit = miterLimit;
   for (const [attr, field] of [
     ['marker-start', 'markerStart'],
     ['marker-mid', 'markerMid'],
@@ -631,19 +607,10 @@ function readStroke(
   ] as const) {
     // An id with no registered entry stays as-is for `ingestMarkers`, which
     // reads the document's own `<marker>` once the tree is built.
-    const id = parseMarkerRef(style[attr] ?? null);
-    if (id !== undefined) stroke[field] = id;
+    const id = styleValue(style, attr, onWarn);
+    if (id) stroke[field] = id;
   }
   return stroke;
-}
-
-/** `url(#id)` -> `id`; `none`, an empty value, or anything else -> undefined. */
-function parseMarkerRef(raw: string | null): string | undefined {
-  if (!raw) return undefined;
-  const v = raw.trim();
-  if (v === '' || v === 'none') return undefined;
-  const m = /^url\(\s*#([^)\s]+)\s*\)/.exec(v);
-  return m ? m[1] : undefined;
 }
 
 /**
@@ -655,11 +622,11 @@ function parseMarkerRef(raw: string | null): string | undefined {
  * lifting an inherited value onto the run would write the same paint twice
  * and make an unstyled run look deliberately styled.
  */
-const STROKE_KEYS = [
+const STROKE_KEYS: readonly InheritedPropertyName[] = [
   'stroke', 'stroke-width', 'stroke-opacity', 'stroke-linecap',
   'stroke-linejoin', 'stroke-dasharray', 'stroke-miterlimit',
   'marker-start', 'marker-mid', 'marker-end',
-] as const;
+];
 
 /** Whether this element pins its stroke width to rendered pixels.
  *
@@ -667,11 +634,11 @@ const STROKE_KEYS = [
  *  few presentation attributes SVG does not inherit, so a `<g>` carrying it
  *  must not hand it to its children. */
 function isNonScalingStroke(el: Element): boolean {
-  return ownProp(el, 'vector-effect') === 'non-scaling-stroke';
+  return ownValue(el, 'vector-effect') === 'non-scaling-stroke';
 }
 
 function ownStrokeStyle(el: Element): StyleContext {
-  const out: Record<string, string> = {};
+  const out: Partial<Record<InheritedPropertyName, string>> = {};
   for (const k of STROKE_KEYS) {
     const v = ownProp(el, k);
     if (v != null) out[k] = v;
@@ -705,118 +672,6 @@ function coreStroke(stroke: SvgStroke | undefined): Stroke | undefined {
   if (stroke.markerMid) out.markerMid = stroke.markerMid;
   if (stroke.markerEnd) out.markerEnd = stroke.markerEnd;
   return out;
-}
-
-/**
- * Parse an SVG `stroke-dasharray` value into a non-negative number array.
- * Per spec, odd-length lists are duplicated to make the dash pattern even.
- * Returns null if any token fails to parse as a non-negative finite number.
- */
-function parseDashArray(s: string): number[] | null {
-  const tokens = s.trim().split(/[\s,]+/).filter(Boolean);
-  if (tokens.length === 0) return null;
-  const nums: number[] = [];
-  for (const t of tokens) {
-    const n = parseFloat(t);
-    if (!Number.isFinite(n) || n < 0) return null;
-    nums.push(n);
-  }
-  return nums.length % 2 === 1 ? [...nums, ...nums] : nums;
-}
-
-function readOpacityAttr(el: Element, name: string): number | undefined {
-  const raw = ownProp(el, name);
-  if (raw == null) return undefined;
-  const n = parseFloat(raw);
-  return Number.isFinite(n) ? clamp01(n) : undefined;
-}
-
-function clamp01(n: number): number {
-  return n < 0 ? 0 : n > 1 ? 1 : n;
-}
-
-/**
- * Parse an SVG `letter-spacing` value into world units. Accepts a bare
- * number, a `px` suffix, or the `normal` keyword (→ `undefined`, via the
- * `NaN` from `parseFloat('normal')`). Any other unit suffix (`em`, `%`,
- * `pt`, …) is still numerically coerced — `parseFloat` reads the leading
- * digits — but flagged, since e.g. `0.1em` silently becomes `0.1` world
- * units, off by a factor of the font size.
- */
-function parseLetterSpacing(raw: string, onWarn: (m: string) => void): number | undefined {
-  const n = parseFloat(raw);
-  if (!Number.isFinite(n)) return undefined;
-  const unit = /^-?[\d.]+([a-z%]+)$/i.exec(raw.trim())?.[1]?.toLowerCase();
-  if (unit && unit !== 'px') {
-    onWarn(`letter-spacing "${raw}" uses unit "${unit}", which is not converted; treated as ${n} world units`);
-  }
-  return n;
-}
-
-/**
- * Parse an SVG `text-decoration` value into the boolean flags the runs model
- * uses. `text-decoration` is a space-separated list of line tokens
- * (`underline`, `line-through`, `overline`, `blink`, `none`), matched
- * case-insensitively per CSS keyword rules; we model `underline`,
- * `line-through` (→ `strikethrough`) and `overline` — any other token
- * (including `none`) is dropped without warning, since it's either the
- * explicit "no decoration" case or a decoration kind the runs model has no
- * key for.
- */
-function parseTextDecoration(
-  raw: string | null,
-): { underline?: boolean; strikethrough?: boolean; overline?: boolean } {
-  if (raw == null) return {};
-  const tokens = raw.trim().toLowerCase().split(/\s+/);
-  const out: { underline?: boolean; strikethrough?: boolean; overline?: boolean } = {};
-  if (tokens.includes('underline')) out.underline = true;
-  if (tokens.includes('line-through')) out.strikethrough = true;
-  if (tokens.includes('overline')) out.overline = true;
-  return out;
-}
-
-/**
- * Parse an SVG `baseline-shift` value into the run keys it maps to. `super`
- * and `sub` are the presets `script` names; a percentage resolves against the
- * parent's font size, which is the unit `baselineShift` is already in; and
- * `baseline` (or a bare zero) is no shift at all. Any other value is read as
- * ems, with a unit suffix other than `em` flagged the way
- * `parseLetterSpacing` flags one.
- */
-function parseBaselineShift(
-  raw: string,
-  onWarn: (m: string) => void,
-): { script?: 'super' | 'sub'; baselineShift?: number } {
-  const keyword = raw.trim().toLowerCase();
-  if (keyword === 'super' || keyword === 'sub') return { script: keyword };
-  const n = parseFloat(raw);
-  if (!Number.isFinite(n)) return {};
-  const unit = /^-?[\d.]+([a-z%]+)$/i.exec(raw.trim())?.[1]?.toLowerCase();
-  if (unit === '%') return { baselineShift: n / 100 };
-  if (unit && unit !== 'em') {
-    onWarn(`baseline-shift "${raw}" uses unit "${unit}", which is not converted; treated as ${n} em`);
-  }
-  return n === 0 ? {} : { baselineShift: n };
-}
-
-/**
- * Parse a run's `font-size` into the key it maps to: a percentage is relative
- * to the parent's size, which is `fontScale`, and a length is the absolute
- * `fontSize`. Units other than `px` are numerically coerced and flagged, as
- * in `parseLetterSpacing`.
- */
-function parseRunFontSize(
-  raw: string,
-  onWarn: (m: string) => void,
-): { fontSize?: number; fontScale?: number } {
-  const n = parseFloat(raw);
-  if (!Number.isFinite(n)) return {};
-  const unit = /^-?[\d.]+([a-z%]+)$/i.exec(raw.trim())?.[1]?.toLowerCase();
-  if (unit === '%') return { fontScale: n / 100 };
-  if (unit && unit !== 'px') {
-    onWarn(`font-size "${raw}" uses unit "${unit}", which is not converted; treated as ${n} world units`);
-  }
-  return { fontSize: n };
 }
 
 /**
@@ -892,7 +747,7 @@ function imageNodeAt(
     width: Math.abs(x1 - x0),
     height: Math.abs(y1 - y0),
   };
-  const opacity = readOpacityAttr(ownerEl, 'opacity');
+  const opacity = ownValue(ownerEl, 'opacity');
   if (opacity != null) node.opacity = opacity;
   const localTransform = parseTransform(ownerEl.getAttribute('transform'), onWarn);
   if (!isIdentity(localTransform)) {
@@ -1062,8 +917,7 @@ function parseTextElement(
   // every other run key it has no node-level home to be read into — so a bare
   // text child would drop it. Seed those children with it instead; a <tspan>
   // naming its own still wins, as the SVG cascade says.
-  const ownShift = ownProp(el, 'baseline-shift');
-  const inheritedShift = ownShift != null ? parseBaselineShift(ownShift, onWarn) : {};
+  const inheritedShift = ownValue(el, 'baseline-shift', onWarn) ?? {};
 
   // Walk children: text nodes become plain run text; <tspan> elements
   // become StyledRuns with their attribute overrides applied.
@@ -1097,7 +951,7 @@ function parseTextElement(
   const lines = (plain.match(/\n/g)?.length ?? 0) + 1;
   const height = Number.isFinite(dataH) ? dataH : fontSize * lineHeight * lines;
 
-  const opacity = readOpacityAttr(el, 'opacity');
+  const opacity = ownValue(el, 'opacity');
   const node: SvgTextNode = {
     kind: 'text',
     x: ax - anchorOffset(textStyle, width),
@@ -1151,13 +1005,6 @@ function parseTextElement(
   return node;
 }
 
-/** A CSS `text-transform` keyword the runs model carries, or undefined for
- *  anything else — `full-width` and friends included. */
-function parseTextTransform(raw: string | null): TextTransform | undefined {
-  const v = raw?.trim().toLowerCase();
-  return v !== undefined && TEXT_TRANSFORMS.has(v) ? (v as TextTransform) : undefined;
-}
-
 function readTspanRun(
   el: Element,
   gradients: GradientTable,
@@ -1166,42 +1013,32 @@ function readTspanRun(
 ): StyledRun {
   const text = el.textContent ?? '';
   const run: StyledRun = { text };
-  const fw = ownProp(el, 'font-weight');
+  const fw = ownValue(el, 'font-weight', onWarn);
   // 700 is the bold flag's own spelling; any other weight is the run's.
-  if (fw === 'bold' || fw === '700' || fw === 'bolder') run.bold = true;
+  if (fw === 'bold' || fw === 'bolder' || fw === 700) run.bold = true;
   else if (fw === 'normal') run.fontWeight = 400;
-  else if (fw != null && Number.isFinite(Number(fw)) && Number(fw) > 0) run.fontWeight = Number(fw);
-  const fs = ownProp(el, 'font-style');
-  if (fs === 'italic' || fs === 'oblique') run.italic = true;
-  const ff = ownProp(el, 'font-family');
+  else if (typeof fw === 'number') run.fontWeight = fw;
+  if (ownValue(el, 'font-style', onWarn) === 'italic') run.italic = true;
+  const ff = ownValue(el, 'font-family', onWarn);
   if (ff) run.fontFamily = ff;
-  const sz = ownProp(el, 'font-size');
-  if (sz != null) {
-    const size = parseRunFontSize(sz, onWarn);
-    if (size.fontSize != null) run.fontSize = size.fontSize;
-    if (size.fontScale != null) run.fontScale = size.fontScale;
-  }
-  const ls = ownProp(el, 'letter-spacing');
-  if (ls != null) {
-    const n = parseLetterSpacing(ls, onWarn);
-    if (n != null) run.letterSpacing = n;
-  }
-  const bs = ownProp(el, 'baseline-shift');
-  if (bs != null) {
-    const shift = parseBaselineShift(bs, onWarn);
-    if (shift.script != null) run.script = shift.script;
-    if (shift.baselineShift != null) run.baselineShift = shift.baselineShift;
-  }
-  const decoration = parseTextDecoration(ownProp(el, 'text-decoration'));
-  if (decoration.underline) run.underline = true;
-  if (decoration.strikethrough) run.strikethrough = true;
-  if (decoration.overline) run.overline = true;
-  const transform = parseTextTransform(ownProp(el, 'text-transform'));
+  const size = ownValue(el, 'font-size', onWarn);
+  if (size?.fontSize != null) run.fontSize = size.fontSize;
+  if (size?.fontScale != null) run.fontScale = size.fontScale;
+  const ls = ownValue(el, 'letter-spacing', onWarn);
+  if (ls != null) run.letterSpacing = ls;
+  const shift = ownValue(el, 'baseline-shift', onWarn);
+  if (shift?.script != null) run.script = shift.script;
+  if (shift?.baselineShift != null) run.baselineShift = shift.baselineShift;
+  const decoration = ownValue(el, 'text-decoration', onWarn);
+  if (decoration?.underline) run.underline = true;
+  if (decoration?.strikethrough) run.strikethrough = true;
+  if (decoration?.overline) run.overline = true;
+  const transform = ownValue(el, 'text-transform', onWarn);
   if (transform) run.textTransform = transform;
   const tspanStyle = deriveStyle(style, el);
   const fillAttr = resolveCurrentColor(ownProp(el, 'fill'), tspanStyle);
   if (fillAttr) {
-    const parsed = parsePaintAttr(fillAttr);
+    const parsed = readProperty('fill', fillAttr);
     if (parsed?.kind === 'solid') {
       run.fill = { fill: 'solid', color: parsed.color };
     } else if (parsed?.kind === 'ref') {
@@ -1221,21 +1058,21 @@ function readTextStyle(
   onWarn: (m: string) => void,
 ): TextStyle {
   const out: TextStyle = {};
-  const sz = style['font-size'];
-  if (sz != null) {
-    const n = parseFloat(sz);
-    if (Number.isFinite(n)) out.fontSize = n;
+  const size = styleValue(style, 'font-size', onWarn);
+  if (size?.fontSize != null) out.fontSize = size.fontSize;
+  else if (size?.fontScale != null) {
+    // The cascade carries raw values, so the parent size a percentage is
+    // relative to has already been overwritten by the time it is read here.
+    onWarn(`font-size "${style['font-size']}" on <text> is resolved against the 16px default`);
+    out.fontSize = 16 * size.fontScale;
   }
-  const ff = style['font-family'];
+  const ff = styleValue(style, 'font-family', onWarn);
   if (ff) out.fontFamily = ff;
-  const fw = style['font-weight'];
-  if (fw != null) {
-    const n = parseFloat(fw);
-    out.fontWeight = Number.isFinite(n) ? n : fw;
-  }
-  const fs = style['font-style'];
-  if (fs === 'italic' || fs === 'normal') out.fontStyle = fs;
-  if (style['direction'] === 'rtl') out.direction = 'rtl';
+  const fw = styleValue(style, 'font-weight', onWarn);
+  if (fw != null) out.fontWeight = fw;
+  const fs = styleValue(style, 'font-style', onWarn);
+  if (fs) out.fontStyle = fs;
+  if (styleValue(style, 'direction') === 'rtl') out.direction = 'rtl';
   // Read back as an absolute edge against the direction just parsed: SVG has
   // one relative pair where this model has a relative pair and an absolute
   // one, so the spelling cannot survive the trip — the rendered edge does.
@@ -1244,20 +1081,17 @@ function readTextStyle(
   // `ltr` and only there, so an absent anchor has to be written down when the
   // direction is what makes them disagree.
   const ltr = out.direction !== 'rtl';
-  const anchor = style['text-anchor'] ?? (ltr ? undefined : 'start');
+  const anchor = styleValue(style, 'text-anchor') ?? (ltr ? undefined : 'start');
   if (anchor === 'start') out.align = ltr ? 'left' : 'right';
   else if (anchor === 'middle') out.align = 'center';
   else if (anchor === 'end') out.align = ltr ? 'right' : 'left';
-  const ls = style['letter-spacing'];
-  if (ls != null) {
-    const n = parseLetterSpacing(ls, onWarn);
-    if (n != null) out.letterSpacing = n;
-  }
-  const decoration = parseTextDecoration(style['text-decoration'] ?? null);
-  if (decoration.underline) out.underline = true;
-  if (decoration.strikethrough) out.strikethrough = true;
-  if (decoration.overline) out.overline = true;
-  const transform = parseTextTransform(style['text-transform'] ?? null);
+  const ls = styleValue(style, 'letter-spacing', onWarn);
+  if (ls != null) out.letterSpacing = ls;
+  const decoration = styleValue(style, 'text-decoration', onWarn);
+  if (decoration?.underline) out.underline = true;
+  if (decoration?.strikethrough) out.strikethrough = true;
+  if (decoration?.overline) out.overline = true;
+  const transform = styleValue(style, 'text-transform', onWarn);
   if (transform && transform !== 'none') out.textTransform = transform;
   // Note: `lineHeight` is no longer read from a `data-weasel-line-height`
   // attribute. WeaselDraw carries it through the generic namespace bag
@@ -1281,7 +1115,7 @@ function readTextPaint(
   const out: TextPaint = {};
   const fillRaw = resolveCurrentColor(style['fill'] ?? null, style);
   if (fillRaw) {
-    const parsed = parsePaintAttr(fillRaw);
+    const parsed = readProperty('fill', fillRaw);
     if (parsed?.kind === 'solid') {
       out.fill = { fill: 'solid', color: parsed.color } as FillStyle;
     } else if (parsed?.kind === 'ref') {
@@ -1454,10 +1288,9 @@ function markerPaint(
   gradients: GradientTable,
   onWarn: (m: string) => void,
 ): MarkerPaint {
-  const raw = style[attr]?.trim();
-  if (raw === 'context-stroke') return 'line';
-  if (raw === 'context-fill') {
-    onWarn(`a marker's ${attr}="context-fill" is read as the line's stroke paint`);
+  const context = readProperty(attr, style[attr]);
+  if (context?.kind === 'context') {
+    if (context.of === 'fill') onWarn(`a marker's ${attr}="context-fill" is read as the line's stroke paint`);
     return 'line';
   }
   const paint = readPaint(style, attr, '#000000', gradients, onWarn);
