@@ -29,6 +29,7 @@
 
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
+import { faceMetricsOf, resolveFontVariant, type FaceMetrics, type FontStyle } from '@weasel-js/font';
 import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 import { transformRunTexts, type RunSourceMap } from './textTransform';
@@ -80,30 +81,55 @@ export interface ResolvedRun {
   strutSize?: number;
 }
 
+/** What one script preset expands to. */
+export type ScriptPreset = Readonly<{ size: number; shift: number }>;
+
 /**
- * What `script: 'super'` and `script: 'sub'` expand to, as fractions of the
- * inherited font size: `size` scales it, `shift` raises (positive) or lowers
- * (negative) the baseline.
+ * What `script: 'super'` and `script: 'sub'` expand to for a face that states
+ * no script metrics of its own, as fractions of the inherited font size:
+ * `size` scales it, `shift` raises (positive) or lowers (negative) the
+ * baseline.
  *
  * These are Adobe's defaults — InDesign and Illustrator ship 58.3% size and
- * 33.3% position for both — chosen because a drawing tool's users have those
- * numbers in their fingers already. They are not read from the font: the
- * `OS/2` table carries real `ySuperscript*` / `ySubscript*` metrics, but the
- * baked atlas tier has no slot for them (see `layoutRuns`'s note on the
- * decoration constants, which are derived for the same reason), and metrics
- * that applied on one glyph tier and not the other would reflow text as it
- * crossed the size threshold.
- *
- * Exported so a consumer building a character panel can show the percentages
- * it is about to apply. Override either half per run with `baselineShift` /
- * `fontScale`.
+ * 33.3% position for both. A face that carries `OS/2` script metrics uses
+ * those instead; {@link scriptMetricsFor} is what a run actually gets.
  */
-export const SCRIPT_METRICS: Readonly<
-  Record<'super' | 'sub', Readonly<{ size: number; shift: number }>>
-> = Object.freeze({
+export const SCRIPT_METRICS: Readonly<Record<'super' | 'sub', ScriptPreset>> = Object.freeze({
   super: Object.freeze({ size: 0.583, shift: 0.333 }),
   sub: Object.freeze({ size: 0.583, shift: -0.333 }),
 });
+
+const resolvedScripts = new WeakMap<FaceMetrics, Readonly<Record<'super' | 'sub', ScriptPreset>>>();
+
+/** The script presets for a face: its own `OS/2` values where it states
+ *  them, {@link SCRIPT_METRICS} per half where it does not. */
+export function scriptMetrics(face?: FaceMetrics): Readonly<Record<'super' | 'sub', ScriptPreset>> {
+  if (!face || (!face.superscript && !face.subscript)) return SCRIPT_METRICS;
+  let out = resolvedScripts.get(face);
+  if (!out) {
+    out = Object.freeze({
+      super: face.superscript ?? SCRIPT_METRICS.super,
+      sub: face.subscript ?? SCRIPT_METRICS.sub,
+    });
+    resolvedScripts.set(face, out);
+  }
+  return out;
+}
+
+/**
+ * The script presets a run set in `(family, weight, style)` gets — resolved
+ * through the font registry exactly as layout resolves the run, so a
+ * character panel, an SVG export and the DOM edit overlay read the numbers
+ * the canvas draws with. Override either half per run with `baselineShift` /
+ * `fontScale`.
+ */
+export function scriptMetricsFor(
+  family: string,
+  weight: number,
+  style: FontStyle,
+): Readonly<Record<'super' | 'sub', ScriptPreset>> {
+  return scriptMetrics(faceMetricsOf(resolveFontVariant(family, weight, style)));
+}
 
 /** A `TextStyle.fontWeight` as a number: the CSS keywords `bold` and
  *  `normal` read as 700 and 400, anything unparseable as 400. */
@@ -140,7 +166,10 @@ export function resolveRuns(
     const run = runs[i];
     const { text, srcMap } = shown[i];
     const scriptKey = run.script ?? style.script;
-    const script = scriptKey ? SCRIPT_METRICS[scriptKey] : undefined;
+    const fontFamily = run.fontFamily ?? style.fontFamily;
+    const fontWeight = run.fontWeight ?? (run.bold ? 700 : baseWeight);
+    const fontStyle = run.italic ? 'italic' : style.fontStyle;
+    const script = scriptKey ? scriptMetricsFor(fontFamily, fontWeight, fontStyle)[scriptKey] : undefined;
     // Against the inherited size, not the run's own: a superscript that also
     // shrank its rise would climb less the smaller it got.
     const shiftEm = run.baselineShift ?? script?.shift ?? 0;
@@ -149,14 +178,14 @@ export function resolveRuns(
     out.push({
       text,
       ...(srcMap ? { srcMap } : {}),
-      fontFamily: run.fontFamily ?? style.fontFamily,
+      fontFamily,
       // An absolute size wins over a relative one; naming both is a consumer
       // saying "this size exactly", which a multiplier cannot improve on.
       fontSize: run.fontSize !== undefined
         ? resolveScreenLength(run.fontSize, viewScale)
         : style.fontSize * scale,
-      fontWeight: run.fontWeight ?? (run.bold ? 700 : baseWeight),
-      fontStyle: run.italic ? 'italic' : style.fontStyle,
+      fontWeight,
+      fontStyle,
       fill: run.fill ?? style.fill,
       // Unlike the decorations below, a run's stroke *replaces* the node's
       // rather than adding to it — there is only one outline to paint.

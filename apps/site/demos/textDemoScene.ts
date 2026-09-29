@@ -34,11 +34,11 @@ export const INITIAL_TEXT_NODES: TextNode[] = [
   },
   {
     // The only scene that pins decoration geometry and tracking by pixels.
-    // Underline / strikethrough offsets and rule weight are derived constants
-    // (0.10 / -0.30 / 0.05 em) rather than font metrics — the BmFont atlas
-    // doesn't carry `underlinePosition` — so this baseline is what would
-    // catch them drifting. Keep the three effects on separate runs: a single
-    // run carrying all of them can't show that the rules are per-span.
+    // Underline / strikethrough offsets and rule weight come from the atlas's
+    // baked `faceMetrics` — Inter's own `post` and `OS/2` values — so this
+    // baseline is what would catch them drifting. Keep the three effects on
+    // separate runs: a single run carrying all of them can't show that the
+    // rules are per-span.
     id: 't6',
     x: 30,
     y: 130,

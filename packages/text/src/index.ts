@@ -23,8 +23,12 @@ export type {
   TextStyle, TextPaint, ResolvedTextStyle, TextAlign, TextDirection,
 } from './textStyle';
 
-export { resolveRuns, SCRIPT_METRICS, numericWeight, isBoldWeight } from './runs/resolveRuns';
-export type { ResolvedRun } from './runs/resolveRuns';
+export {
+  resolveRuns, SCRIPT_METRICS, scriptMetrics, scriptMetricsFor, numericWeight, isBoldWeight,
+} from './runs/resolveRuns';
+export type { ResolvedRun, ScriptPreset } from './runs/resolveRuns';
+export { DEFAULT_DECORATION_METRICS, decorationMetrics } from './layout/decorationMetrics';
+export type { DecorationKind } from './layout/decorationMetrics';
 export { transformRunTexts } from './runs/textTransform';
 export type { TextTransform, RunSourceMap, TransformedRunText } from './runs/textTransform';
 
@@ -63,6 +67,7 @@ export { createMarkdownRenderer, layoutMarkdown } from './markdownText';
 export type {
   MarkdownFontOptions,
   MeasureFn,
+  FaceMetricsFn,
   PositionedRun,
   LayoutLine,
   LayoutResult,

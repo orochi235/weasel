@@ -23,6 +23,8 @@
  * text.
  */
 
+import type { FaceMetrics } from '../faceMetrics';
+
 /** A parsed font face, viewed only as a source of glyph outlines. See the
  *  module comment for the em-space contract `glyphD` returns. */
 export interface OutlineFace {
@@ -38,6 +40,11 @@ export interface OutlineFace {
    * `docs/TODO.md` tracks the wider disagreement with `sTypoAscender`.
    */
   ascender: number;
+  /** The face's decoration and script metrics, derived with
+   *  `faceMetricsFromTables` so they match an atlas baked from the same
+   *  font. Optional: a custom parser that omits it leaves layout on its
+   *  defaults. */
+  faceMetrics?: FaceMetrics;
   /**
    * Em-space SVG path data for `cp`, or `null` when this face has no glyph
    * for the codepoint *or* the glyph has no contours (a space). Both answers

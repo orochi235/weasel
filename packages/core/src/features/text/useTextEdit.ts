@@ -13,7 +13,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
-import { fontString, numericWeight, resolveAlign, resolveTextStyle, SCRIPT_METRICS } from '@weasel-js/text';
+import { fontString, numericWeight, resolveAlign, resolveTextStyle, scriptMetricsFor } from '@weasel-js/text';
 import { cssFontFamily } from '@weasel-js/font';
 import type { TextPaint, TextVerticalAlign } from '@weasel-js/text';
 import { layoutTextPose, verticalAlignOffset } from '@weasel-js/text';
@@ -1131,7 +1131,9 @@ function placeOverlay(
   // plain text would hold, so the line height is pinned in pixels of the
   // unscripted size rather than left to scale with the font. The rise is
   // added to `top` with the baseline correction.
-  const script = style.script ? SCRIPT_METRICS[style.script] : undefined;
+  const script = style.script
+    ? scriptMetricsFor(style.fontFamily, numericWeight(style.fontWeight), style.fontStyle)[style.script]
+    : undefined;
   const lineHeight = pose.lineHeight ?? style.lineHeight;
   el.style.fontSize = `${pose.fontSize * (script?.size ?? 1)}px`;
   el.style.lineHeight = script ? `${pose.fontSize * lineHeight}px` : String(lineHeight);

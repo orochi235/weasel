@@ -1,6 +1,7 @@
 import { resolveScreenLength } from '@weasel-js/paint';
 import { markdownToRuns, type StyledRun } from './runs';
-import { SCRIPT_METRICS } from './runs/resolveRuns';
+import { faceMetricsFor, type FaceMetrics } from '@weasel-js/font';
+import { numericWeight, scriptMetrics } from './runs/resolveRuns';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
 import { transformRunTexts } from './runs/textTransform';
 
@@ -8,6 +9,11 @@ export type { StyledRun };
 
 /** Width-measurement strategy for `layoutMarkdown`; canvas-backed default supplied by `createMarkdownRenderer`. */
 export type MeasureFn = (text: string, fontSize: number, bold: boolean, italic: boolean) => number;
+
+/** The face a run's rules and script presets come from, for `layoutMarkdown`.
+ *  `createMarkdownRenderer` supplies one that looks the family up in the font
+ *  registry, so a registered face places them as it does on the GL tier. */
+export type FaceMetricsFn = (bold: boolean, italic: boolean) => FaceMetrics | undefined;
 
 /** A `StyledRun` with its resolved size and its position relative to the
  *  start of its line: `x` along the line, `y` off its baseline. */
@@ -21,6 +27,8 @@ export interface PositionedRun extends StyledRun {
   /** The run's font size in px, with `fontScale` and `script` already folded
    *  in. Resolved once here so layout and paint cannot disagree about it. */
   size: number;
+  /** The face that placed the run's script and places its rules. */
+  face?: FaceMetrics;
 }
 
 /**
@@ -29,8 +37,8 @@ export interface PositionedRun extends StyledRun {
  * the rise is measured against the *inherited* size so it does not shrink
  * along with the run.
  */
-function runMetrics(run: StyledRun, fontSize: number): { size: number; y: number } {
-  const script = run.script ? SCRIPT_METRICS[run.script] : undefined;
+function runMetrics(run: StyledRun, fontSize: number, face: FaceMetrics | undefined): { size: number; y: number } {
+  const script = run.script ? scriptMetrics(face)[run.script] : undefined;
   const scale = run.fontScale ?? script?.size ?? 1;
   const shiftEm = run.baselineShift ?? script?.shift ?? 0;
   return {
@@ -64,6 +72,7 @@ export function layoutMarkdown(
   fontSize: number,
   measure: MeasureFn,
   lineHeightFactor: number = 1.3,
+  faceOf?: FaceMetricsFn,
 ): LayoutResult {
   if (runs.length === 0) return { lines: [], width: 0, height: 0 };
   // No caret reads this layout, so the transformed text simply replaces the source.
@@ -86,12 +95,14 @@ export function layoutMarkdown(
 
   function processSegment(segRun: StyledRun) {
     // Already a screen-pixel layout, so a run's `{ px }` size is its size.
-    const { size: effectiveSize, y: runY } = runMetrics(segRun, fontSize);
+    const face = faceOf?.(segRun.bold ?? false, segRun.italic ?? false);
+    const { size: effectiveSize, y: runY } = runMetrics(segRun, fontSize, face);
+    const at = face ? { face } : {};
     lineMaxSize = Math.max(lineMaxSize, effectiveSize);
 
     if (maxWidth === Infinity) {
       const w = measure(segRun.text, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
-      currentRuns.push({ ...segRun, x: lineX, width: w, y: runY, size: effectiveSize });
+      currentRuns.push({ ...segRun, x: lineX, width: w, y: runY, size: effectiveSize, ...at });
       lineX += w;
       return;
     }
@@ -109,7 +120,7 @@ export function layoutMarkdown(
         // Flush current wordBuf as a run on the current line
         if (wordBuf.length > 0) {
           const w = measure(wordBuf, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
-          currentRuns.push({ ...segRun, text: wordBuf, x: lineX, width: w, y: runY, size: effectiveSize });
+          currentRuns.push({ ...segRun, text: wordBuf, x: lineX, width: w, y: runY, size: effectiveSize, ...at });
           lineX += w;
         }
         commitLine();
@@ -124,7 +135,7 @@ export function layoutMarkdown(
     // Flush remaining wordBuf
     if (wordBuf.length > 0) {
       const w = measure(wordBuf, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
-      currentRuns.push({ ...segRun, text: wordBuf, x: lineX, width: w, y: runY, size: effectiveSize });
+      currentRuns.push({ ...segRun, text: wordBuf, x: lineX, width: w, y: runY, size: effectiveSize, ...at });
       lineX += w;
     }
   }
@@ -237,7 +248,11 @@ export function createMarkdownRenderer(
 ): { renderer: TextRenderer; strokeRenderer: TextRenderer; width: number; height: number } {
   const measure = canvasMeasure(ctx, fontOpts);
   const parsed = typeof text === 'string' ? markdownToRuns(text) : text;
-  const layout = layoutMarkdown(parsed, maxWidth, fontSize, measure, fontOpts.lineHeight);
+  const family = fontOpts.family ?? 'sans-serif';
+  const weight = numericWeight(fontOpts.weight ?? 400);
+  const faceOf: FaceMetricsFn = (bold, italic) =>
+    faceMetricsFor(family, bold ? 700 : weight, italic ? 'italic' : 'normal');
+  const layout = layoutMarkdown(parsed, maxWidth, fontSize, measure, fontOpts.lineHeight, faceOf);
 
   /** Walk the layout, setting each run's font and handing over its
    *  left-aligned paint position and the index of its line. */
@@ -267,6 +282,7 @@ export function createMarkdownRenderer(
       flags: Record<DecorationKind, boolean>;
       fill: string;
       size: number;
+      face: FaceMetrics | undefined;
       baselineY: number;
       line: number;
       x0: number;
@@ -280,7 +296,7 @@ export function createMarkdownRenderer(
       _ctx.fillStyle = s.fill;
       for (const kind of DECORATION_KINDS) {
         if (!s.flags[kind]) continue;
-        const { y0, y1 } = decorationRule(kind, s.baselineY, s.size);
+        const { y0, y1 } = decorationRule(kind, s.baselineY, s.size, s.face);
         _ctx.fillRect(s.x0, y0, s.x1 - s.x0, y1 - y0);
       }
     };
@@ -308,13 +324,14 @@ export function createMarkdownRenderer(
         && open.x1 === rx
         && open.fill === fill
         && open.size === run.size
+        && open.face === run.face
         && open.baselineY === baselineY
         && DECORATION_KINDS.every((k) => open.flags[k] === flags[k])
       ) {
         open.x1 = rx + run.width;
       } else {
         flush();
-        span = { flags, fill, size: run.size, baselineY, line, x0: rx, x1: rx + run.width };
+        span = { flags, fill, size: run.size, face: run.face, baselineY, line, x0: rx, x1: rx + run.width };
       }
     });
     flush();

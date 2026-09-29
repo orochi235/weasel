@@ -14,15 +14,18 @@
  *
  * Pinned here:
  * - exactly two rule bands exist (underline + strikethrough), not one or three
- * - their vertical separation is `0.40 em` — the gap between the `0.10` and
- *   `-0.30` em constants in `layoutRuns`. Asserting the separation rather than
- *   two absolute offsets keeps this independent of where the baseline lands,
- *   which is the ascender question `docs/TODO.md` tracks separately.
+ * - their vertical separation is the gap between the demo font's own
+ *   `post.underlinePosition` and `OS/2.yStrikeoutPosition`, as `gen-font`
+ *   baked them into the atlas's `faceMetrics`. Asserting the separation rather
+ *   than two absolute offsets keeps this independent of where the baseline
+ *   lands, which is the ascender question `docs/TODO.md` tracks separately.
  * - each rule spans only its own run, not the whole line. `t6` puts
  *   `underline` on the first word and `strikethrough` on a later one, so a
  *   rule that leaked across spans would show up as one starting at the wrong x.
  */
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 // Node `t6` from apps/site/demos/textDemoScene.ts: x 30, y 130, 540×60,
 // fontSize 16, one solid fill (#1c1c1c). Runs: 'Underline' (underline),
@@ -30,16 +33,25 @@ import { test, expect } from '@playwright/test';
 const BOX = { x0: 30, y0: 130, x1: 570, y1: 190 };
 const FONT_SIZE = 16;
 
+// The atlas the demo registers as `sans-serif`. Its rule offsets are em
+// fractions measured down from the baseline to each rule's top edge.
+const FACE = JSON.parse(readFileSync(
+  resolve(import.meta.dirname, '../../assets/fonts/inter/inter.json'), 'utf8',
+)).faceMetrics as Record<'underline' | 'strikethrough', { offset: number; thickness: number }>;
+// The bands below are measured at their centers, half a rule below each top edge.
+const centerEm = (r: { offset: number; thickness: number }) => r.offset + r.thickness / 2;
+const SEPARATION_EM = centerEm(FACE.underline) - centerEm(FACE.strikethrough);
+
 // #1c1c1c on white is ink 227 of 255. Count a pixel as ink at half coverage —
-// a 0.05 em rule is under a pixel thick, so it lands antialiased across two
-// rows and neither is full strength.
+// Inter's 140/2048 em rule is barely a pixel thick, so it lands antialiased
+// across two rows and neither is full strength.
 const INK_MIN = 60;
 
 // A rule under 'Underline' at 16px is ~65px wide; the widest glyph feature in
 // this string is a crossbar of a few px. 30 sits far from both.
 const RULE_MIN_RUN = 30;
 
-test('text decoration — rules are gap-free runs at the em offsets layoutRuns declares', async ({ page }) => {
+test("text decoration — rules are gap-free runs at the font's own em offsets", async ({ page }) => {
   await page.goto('/#text');
   await page.waitForSelector('canvas');
   await expect
@@ -108,13 +120,12 @@ test('text decoration — rules are gap-free runs at the em offsets layoutRuns d
   };
   const [upper, lower] = bands;
   const separation = centerOf(lower) - centerOf(upper);
-  // 0.10 em - (-0.30 em) = 0.40 em = 6.4px at fontSize 16, and the run-weighted
-  // centers measure 6.5 — the estimate is good to a tenth of a pixel, so the
-  // window below is slack for cross-driver AA, not for the measurement.
-  // Verified to catch the constant drifting: UNDERLINE_OFFSET 0.10 -> 0.18
-  // reads 8.0 and fails.
-  expect(separation).toBeGreaterThan(0.4 * FONT_SIZE - 1.2);
-  expect(separation).toBeLessThan(0.4 * FONT_SIZE + 1.2);
+  // Inter: (348 + 671) / 2048 em = 7.96px at fontSize 16. The window is slack
+  // for cross-driver AA, not for the measurement. The derived constants this
+  // replaced put the gap at 0.40 em, 6.4px, which falls outside it.
+  expect(SEPARATION_EM).toBeCloseTo((348 + 671) / 2048, 9);
+  expect(separation).toBeGreaterThan(SEPARATION_EM * FONT_SIZE - 1.2);
+  expect(separation).toBeLessThan(SEPARATION_EM * FONT_SIZE + 1.2);
 
   // The upper band is the strikethrough, on 'strikethrough' — a run that
   // starts partway along the line. The lower is the underline, on

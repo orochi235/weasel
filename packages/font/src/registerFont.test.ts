@@ -531,6 +531,21 @@ describe('registerFont — lazy', () => {
     unsubscribe();
   });
 
+  it('resolves the landed atlas from inside the wake-up it sends', async () => {
+    const landed = registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
+    // A subscriber that re-resolves synchronously — React's
+    // useSyncExternalStore does — must not still be told the face is on its way.
+    const seen: (unknown)[] = [];
+    const unsubscribe = subscribeGlyphReady(() => {
+      seen.push(resolveFontVariant('inter', 400, 'normal').entry);
+    });
+    resolveFontVariant('inter', 400, 'normal');
+    await landed;
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen[0]).not.toBeNull();
+    unsubscribe();
+  });
+
   it('is pending before anything asks, so a first layout defers its warning', () => {
     void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
     expect(fontPending('inter')).toBe(true);

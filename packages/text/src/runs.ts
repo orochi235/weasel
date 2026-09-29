@@ -43,8 +43,9 @@ export interface StyledRun {
    *
    * A preset over the two primitives below, not a third mechanism: it supplies
    * a `baselineShift` and a `fontScale`, and naming either of those directly
-   * overrides that half while leaving the other alone. The numbers are in
-   * {@link SCRIPT_METRICS}.
+   * overrides that half while leaving the other alone. The numbers are the
+   * face's own `OS/2` script metrics, or {@link SCRIPT_METRICS} for a face
+   * that states none — `scriptMetricsFor` answers which.
    */
   script?: 'super' | 'sub';
   /**

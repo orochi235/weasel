@@ -10,12 +10,17 @@
  * rounds `xadvance` to whole pixels at the bake size and reads no GPOS
  * extension lookups, so text laid out from its numbers drifts from the same
  * face set by a browser — 2.8px over "Hxgd" at 72px for Inter.
+ *
+ * The font's underline, strikeout and script metrics go in a top-level
+ * `faceMetrics` block, which BMFont has no slot for, derived by the same
+ * function the outline tier reads them with.
  */
 import generateBMFont from 'msdf-bmfont-xml';
 import * as opentype from 'opentype.js';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { gposPairKerning } from '../src/outline/gposKerning.ts';
+import { faceMetricsFromTables, type FaceMetricTables } from '../src/faceMetrics.ts';
 
 function charset(kind: string): string {
   const range = (a: number, b: number) =>
@@ -40,7 +45,9 @@ const outDir = arg('out');
 const fontSize = Number(arg('size', '42'));
 
 interface BakedChar { id: number; xadvance: number }
-interface Baked { info: { face: string; size: number }; chars: BakedChar[]; kernings: unknown[] }
+interface Baked {
+  info: { face: string; size: number }; chars: BakedChar[]; kernings: unknown[]; faceMetrics?: unknown;
+}
 
 /** Four decimals at the bake size is under 0.001px at 200px. */
 const round = (n: number) => Math.round(n * 1e4) / 1e4;
@@ -66,6 +73,11 @@ function exactMetrics(data: Baked, file: string): void {
   }
   data.kernings = kernings;
   data.info.face = font.getEnglishName('postScriptName') ?? data.info.face;
+  // Unrounded: an em fraction the outline tier recomputes at runtime must
+  // come out bit-identical, or the two tiers place rules differently.
+  const { post, os2 } = font.tables as Pick<FaceMetricTables, 'post' | 'os2'>;
+  const faceMetrics = faceMetricsFromTables({ unitsPerEm: font.unitsPerEm, post, os2 });
+  if (faceMetrics) data.faceMetrics = faceMetrics;
 }
 
 generateBMFont(
