@@ -34,11 +34,14 @@ export function ActiveSwatches(): ReactElement {
   const edits = { fill: useOngoingAction('setFill'), stroke: useOngoingAction('setStroke') };
 
   // The native picker has no alpha, so a pick keeps the paint's own.
-  const pick = (slot: 'fill' | 'stroke', color: string): string => {
+  const withAlpha = (slot: 'fill' | 'stroke', color: string): string => {
     const cur = slot === 'fill' ? colors.fill : colors.stroke;
     const prev = cur.kind === 'solid' ? cur.color
       : slot === 'fill' ? DEFAULT_FILL_COLOR : DEFAULT_STROKE_COLOR;
-    const merged = mergeAlphaFromPrev(color, prev);
+    return mergeAlphaFromPrev(color, prev);
+  };
+  const pick = (slot: 'fill' | 'stroke', color: string): string => {
+    const merged = withAlpha(slot, color);
     if (slot === 'fill') colors.setFill({ kind: 'solid', color: merged });
     else colors.setStroke({ kind: 'solid', color: merged });
     return merged;
@@ -52,7 +55,10 @@ export function ActiveSwatches(): ReactElement {
       focused={colors.focused}
       onFocusChange={colors.setFocus}
       onInput={(slot, color) => edits[slot].input({ color: pick(slot, color) })}
-      onChange={(slot) => edits[slot].commit()}
+      onChange={(slot, color) => {
+        edits[slot].commit();
+        return withAlpha(slot, color);
+      }}
       onToggleNone={(slot) => {
         colors.setFocus(slot);
         const set = slot === 'fill' ? colors.setFill : colors.setStroke;

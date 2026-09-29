@@ -18,8 +18,11 @@ export interface FillStrokeSwatchProps {
   onFocusChange: (slot: PaintSlot) => void;
   /** Every tick of the color picker, as `#rrggbb`. */
   onInput?: (slot: PaintSlot, color: string) => void;
-  /** Once when the picker closes, with its last color, if it moved. */
-  onChange: (slot: PaintSlot, color: string) => void;
+  /** Once when the picker closes, with its last color, if it moved. Return
+   *  the color actually applied when it differs from the picker's — the picker
+   *  is opaque, so an app keeping the paint's own alpha returns that — and the
+   *  recent colors record it instead. */
+  onChange: (slot: PaintSlot, color: string) => string | void;
   /** Toggle a slot between no paint and a paint. Given, it adds the None
    *  button (acting on `focused`) and shift-click on a chip. */
   onToggleNone?: (slot: PaintSlot) => void;
@@ -42,7 +45,7 @@ function Chip(props: {
   focused: boolean;
   onFocusChange: (slot: PaintSlot) => void;
   onInput?: (slot: PaintSlot, color: string) => void;
-  onChange: (slot: PaintSlot, color: string) => void;
+  onChange: (slot: PaintSlot, color: string) => string | void;
   onToggleNone?: (slot: PaintSlot) => void;
 }): ReactElement {
   const { slot, paint, focused } = props;
@@ -86,8 +89,7 @@ function Chip(props: {
         onBlur={() => {
           if (draft === null) return;
           setDraft(null);
-          props.onChange(slot, draft);
-          record(draft);
+          record(props.onChange(slot, draft) ?? draft);
         }}
       />
     </span>

@@ -82,4 +82,18 @@ describe('recent-color recording', () => {
     pick('Stroke', '#123456');
     expect(store.get()).toEqual(['#123456ff']);
   });
+
+  it('records the color a FillStrokeSwatch consumer says it applied', () => {
+    const store = setup(
+      <FillStrokeSwatch
+        fill={{ color: '#ffffffff' }}
+        stroke={{ color: '#00000080' }}
+        focused="fill"
+        onFocusChange={() => {}}
+        onChange={(_slot, color) => `${color}80`}
+      />,
+    );
+    pick('Stroke', '#123456');
+    expect(store.get()).toEqual(['#12345680']);
+  });
 });

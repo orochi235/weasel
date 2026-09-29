@@ -565,11 +565,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P3) A `FillStrokeSwatch` pick records an opaque recent color.** The native picker
-  returns an opaque color, and WeaselDraw keeps the paint's existing opacity when it
-  applies it, so for a see-through paint the recent-colors strip holds the opaque swatch
-  rather than the color that was applied. Found by reading the code, not reproduced.
-
 - **(P3) Are `ToggleBar`, `ButtonBar` and `OptionsBar` one component?** They
   differ only in what a segment does, yet `ToggleBar` keeps its own copy of the
   segmented-control styles (`ToggleBar.module.css`) while the other two share
