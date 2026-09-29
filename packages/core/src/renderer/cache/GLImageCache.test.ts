@@ -85,10 +85,34 @@ describe('releasing a source', () => {
     cacheA.upload(key, fakeImgData);
     cacheB.upload(key, fakeImgData);
     cacheB.dispose();
+    b.reset();
     releaseImageSource(key);
     expect(a.calls.some((c) => c.name === 'deleteTexture')).toBe(true);
     expect(b.calls.some((c) => c.name === 'deleteTexture')).toBe(false);
     cacheA.dispose();
+  });
+
+  it('dispose() deletes every texture it uploaded, once', () => {
+    const rec = makeGLRecorder();
+    const cache = new GLImageCache(rec.gl);
+    const t1 = cache.upload(fakeImg1, fakeImgData);
+    const t2 = cache.upload(fakeImg2, fakeImgData);
+    cache.release(fakeImg1);
+    rec.reset();
+    cache.dispose();
+    cache.dispose();
+    expect(rec.calls.filter((c) => c.name === 'deleteTexture').map((c) => c.args[0])).toEqual([t2]);
+    expect(t1).not.toBe(t2);
+  });
+
+  it('abandon() forgets its textures without deleting them', () => {
+    const rec = makeGLRecorder();
+    const cache = new GLImageCache(rec.gl);
+    cache.upload(fakeImg1, fakeImgData);
+    rec.reset();
+    cache.abandon();
+    cache.dispose();
+    expect(rec.calls.some((c) => c.name === 'deleteTexture')).toBe(false);
   });
 });
 

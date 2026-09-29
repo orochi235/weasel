@@ -49,7 +49,10 @@ export class GLMeshCache {
   /** Meshes this context has drawn at least once; see `uploadRecurring`. */
   private readonly seen = new WeakSet<Mesh>();
   private readonly finalizer: FinalizationRegistry<MeshResources>;
+  /** Every persistent upload not yet freed, so `dispose` can reach them. */
+  private readonly persistent = new Set<MeshResources>();
   private readonly pendingDeletes: MeshResources[] = [];
+  private disposed = false;
   /** Transient resources allocated this frame; freed at end of render(). */
   private readonly transientThisFrame: MeshResources[] = [];
 
@@ -62,6 +65,7 @@ export class GLMeshCache {
       // when no VAO/buffer is bound mid-draw. Direct deletion from the
       // finalizer caused use-after-free crashes when GC fired between
       // bindVertexArray and drawElements inside dispatch().
+      if (!this.persistent.delete(resources)) return;
       this.pendingDeletes.push(resources);
     });
   }
@@ -71,10 +75,12 @@ export class GLMeshCache {
     if (cached) return cached;
     const { handle, vbo, ibo } = this.upload(mesh);
     this.map.set(mesh, handle);
+    const resources = { vao: handle.vao, vbo, ibo };
+    this.persistent.add(resources);
     // Register so the GL resources get freed when `mesh` is GC'd. The
     // unregister token (mesh) lets us cancel if the Mesh is somehow
     // re-uploaded under a different cache, though that's not a normal flow.
-    this.finalizer.register(mesh, { vao: handle.vao, vbo, ibo }, mesh);
+    this.finalizer.register(mesh, resources, mesh);
     return handle;
   }
 
@@ -146,6 +152,21 @@ export class GLMeshCache {
       gl.deleteBuffer(r.ibo);
     }
     this.pendingDeletes.length = 0;
+  }
+
+  /**
+   * Free every GL resource this cache holds — persistent, pending and
+   * transient — and ignore finalizers from here on. Idempotent. Unlike the
+   * other paths this does not wait on GC, which is what lets a renderer on a
+   * context it does not own give back everything it uploaded.
+   */
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.freeTransient();
+    for (const r of this.persistent) this.pendingDeletes.push(r);
+    this.persistent.clear();
+    this.drainPendingDeletes();
   }
 
   /** @internal — for tests asserting the queue size. */

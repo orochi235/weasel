@@ -433,7 +433,7 @@ export class WeaselRenderer {
     if (aPos === undefined) throw new Error('a_position missing after restore');
     this.meshCache = new GLMeshCache(this.gl, aPos);
     this.textureCache = new GLTextureCache(this.gl);
-    this.imageCache.dispose();
+    this.imageCache.abandon();
     this.imageCache = new GLImageCache(this.gl, this.imageMinification);
     this.gradRamps = new GradientRampAtlas(this.gl);
     markAllFontsNotUploaded();
@@ -456,27 +456,15 @@ export class WeaselRenderer {
     }
   }
 
-  /** Free the GL resources this renderer itself owns and detach context-loss
+  /** Free every GL resource this renderer created and detach context-loss
    *  listeners when a canvas was supplied. Idempotent.
    *
-   *  Scope: built-in shader programs, any consumer-registered programs, the
-   *  shared quad/rect geometry, any in-flight transient meshes, and the
-   *  enumerable Map-keyed caches (`GLTextureCache` atlas/image textures,
-   *  `GradientRampAtlas`'s ramp texture) ARE freed.
-   *
-   *  NOT freed: `GLImageCache` (bitmap/pattern textures) and `GLMeshCache`'s
-   *  persistent per-Path mesh cache are keyed by `WeakMap`, not enumerable,
-   *  and are only reclaimed when the GL context itself goes away (cf.
-   *  `GLImageCache`'s own "deferred to v2" note). On a caller-owned
-   *  long-lived context — the headless render-to-pixels path hands the same
-   *  `gl` to many short-lived renderers — the image/pattern textures and
-   *  persistent Path meshes each renderer uploads DO accumulate across
-   *  renderer instances until the caller recycles the context.
-   *
-   *  Also: a Mesh that gets GC'd after `dispose()` still lands in
-   *  `GLMeshCache`'s `pendingDeletes` queue via its `FinalizationRegistry`,
-   *  but nothing drains that queue post-dispose (only `render()` does) —
-   *  those GL resources leak until the context goes away too.
+   *  That covers the built-in and consumer-registered programs (their shaders
+   *  go with them), the shared quad geometry, the batch, the effect targets,
+   *  and every cache: atlas and gradient-ramp textures, bitmap and pattern
+   *  textures, and meshes — transient, persistent, and those whose Path was
+   *  already collected. The context itself is left alone, so a caller-owned
+   *  context can host renderer after renderer without accumulating anything.
    *
    *  A disposed renderer ignores further `render()` and `registerProgram()`
    *  calls. */
@@ -488,8 +476,7 @@ export class WeaselRenderer {
       this.canvas.removeEventListener('webglcontextlost', this.boundOnLost);
       this.canvas.removeEventListener('webglcontextrestored', this.boundOnRestored);
     }
-    this.meshCache.freeTransient();
-    this.meshCache.drainPendingDeletes();
+    this.meshCache.dispose();
     for (const prog of [this.pathFill, this.pathFillVColor, this.imageFill, this.batchFill, this.gradFill, this.patternFill]) {
       gl.deleteProgram(prog.handle);
     }
