@@ -594,6 +594,16 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  **No-op elision** — declaring what the node already declares does nothing
    *  and pushes no history entry. */
   setDependsOn(id: NodeId, dependsOn: readonly NodeId[] | 'children' | undefined): void;
+  /** Give container `id` a different layout — a strategy, its key in
+   *  `SceneRegistry.layout`, or `null` for none — and re-arrange its children
+   *  under it, as one undoable step. Throws for a leaf, or a key the registry
+   *  does not hold. A registered layout is recorded by its key, so a
+   *  serialized history restores it; an unregistered one lives only as long
+   *  as the session.
+   *
+   *  **No-op elision** — setting the layout a container already has does
+   *  nothing and pushes no history entry. */
+  setLayout(id: NodeId, layout: LayoutStrategy<TPose> | string | null): void;
   /** Reparent `id` under `parent` (or to a root when `parent` is `null`) at
    *  `index` within the new sibling list, appending when `index` is omitted.
    *  Siblings are reindexed. Recorded as one undoable step.

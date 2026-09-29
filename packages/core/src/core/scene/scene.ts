@@ -19,6 +19,7 @@ import {
 } from './nodeFnFields';
 import { createPoseOverrides } from './poseOverrides';
 import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
+import type { LayoutStrategy } from '../../layout/types';
 import {
   asNodeId,
   type LayoutMove,
@@ -885,6 +886,29 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     revert: (p) => { retarget(p.id, p.from); },
   });
 
+  /** The strategies each live `kit:setLayout` payload swaps between. A payload
+   *  replayed from a persisted history has none, and resolves its keys. */
+  const layoutRefs = new WeakMap<object, { from: LayoutStrategy<TPose> | null; to: LayoutStrategy<TPose> | null }>();
+  interface SetLayoutPayload { id: NodeId; fromKey?: string; toKey?: string }
+  function placeLayout(p: SetLayoutPayload, side: 'from' | 'to'): void {
+    const node = requireNode(p.id) as unknown as FnBearingNode;
+    const field = fnField('layout');
+    const live = layoutRefs.get(p);
+    const key = side === 'from' ? p.fromKey : p.toKey;
+    if (live === undefined && key !== undefined) {
+      delete node.layout;
+      restoreFn(field, node, key, 'kit:setLayout', dwarn);
+      return;
+    }
+    const layout = live?.[side] ?? null;
+    if (layout === null) delete node.layout;
+    else field.write(node, layout);
+  }
+  registerKitOp<SetLayoutPayload>('kit:setLayout', {
+    apply: (p) => { placeLayout(p, 'to'); },
+    revert: (p) => { placeLayout(p, 'from'); },
+  });
+
   registerKitOp<{
     id: NodeId; fromParent: NodeId | null; fromIndex: number;
     toParent: NodeId | null; toIndex: number;
@@ -1569,6 +1593,37 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         { id, from: node.dependsOn, to: dependsOn },
         'setDependsOn',
       );
+    },
+
+    setLayout(id, layout) {
+      const node = requireNode(id);
+      if (node.kind !== 'container') throw new Error(`Scene: "${id}" is not a container`);
+      refuseLocked(id, 'set the layout of');
+      const field = fnField('layout');
+      let to: LayoutStrategy<TPose> | null;
+      if (typeof layout === 'string') {
+        to = (field.fnOf(layout) as LayoutStrategy<TPose> | undefined) ?? null;
+        if (to === null) throw new Error(`Scene: no layout "${layout}" in this scene's registry`);
+      } else {
+        to = layout;
+      }
+      const from = node.layout ?? null;
+      if (from === to) return;
+      if (to !== null) hasLayouts = true;
+      if (bareLayoutEdit()) {
+        scene.batch('setLayout', () => scene.setLayout(id, to));
+        return;
+      }
+      noteChange(id);
+      const fromKey = from === null ? undefined : field.keyOf(from);
+      const toKey = to === null ? undefined : field.keyOf(to);
+      const payload: SetLayoutPayload = {
+        id,
+        ...(fromKey !== undefined ? { fromKey } : {}),
+        ...(toKey !== undefined ? { toKey } : {}),
+      };
+      layoutRefs.set(payload, { from, to });
+      executeAndLog('kit:setLayout', payload, 'setLayout');
     },
 
     move(id, parent, index) {

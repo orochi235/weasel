@@ -9,6 +9,7 @@ export { createSetSelectionOp, type SetSelectionArgs } from './select';
 export { createSetTextOp, type SetTextArgs } from './setText';
 export { createSetDataOp, type SetDataArgs } from './setData';
 export { createSetLayerOp, type SetLayerArgs } from './setLayer';
+export { createSetLayoutOp, type SetLayoutArgs, type LayoutRef } from './setLayout';
 export {
   createReorderOp,
   createMoveToIndexOp,

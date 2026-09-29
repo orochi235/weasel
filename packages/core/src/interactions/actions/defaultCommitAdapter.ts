@@ -5,8 +5,8 @@
  * consumer's `applyOps` commit hook when one is present; when it isn't, they
  * fall back to applying the committed ops directly against the scene through
  * this adapter. It carries the scene-backed op-apply methods (`setPose` /
- * `setParent` / `setData` / `setLayer` / `removeNode` / `insertNode` /
- * `setChildOrder`) plus the read-side queries (`getNode` / `getNodes` /
+ * `setParent` / `setData` / `setLayer` / `setLayout` / `removeNode` /
+ * `insertNode` / `setChildOrder`) plus the read-side queries (`getNode` / `getNodes` /
  * `getPose` / `getParent` / `getChildren` / `getSelection`) and
  * `setSelection`. Known exclusions from the op factory roster — surfaces the
  * scene doesn't own: `setPath` and `setText`.
@@ -21,6 +21,7 @@ import { documentPose } from 'core/scene/effectivePose';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
+import type { LayoutStrategy } from '../../layout/types';
 
 /** Build the adapter the default actions commit through when the consumer
  *  supplies no `applyOps` hook of its own — it applies ops straight to the
@@ -71,6 +72,8 @@ export function defaultCommitAdapter<TPose>(
       scene.move(asNodeId(id), parentId == null ? null : asNodeId(parentId)),
     setData: (id: string, data: unknown) => scene.update(asNodeId(id), { data } as never),
     setLayer: (id: string, layer: string) => scene.setLayer(asNodeId(id), layer as never),
+    setLayout: (id: string, layout: LayoutStrategy<TPose> | string | null) =>
+      scene.setLayout(asNodeId(id), layout),
     removeNode: (id: string) => scene.remove(asNodeId(id)),
     insertNode: (node: Node<unknown, string, TPose>, index?: number) =>
       scene.add({

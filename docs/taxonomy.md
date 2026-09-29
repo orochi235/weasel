@@ -447,8 +447,9 @@ nearest guide line.
 
 `LayoutStrategy<TPose>` — a pluggable container-layout policy. Implements
 `childPoses`, `getDropTargets`, `reflowPoses`, `commitDrop`, `snap`, and
-optional hooks (`contains`, `dropRegion`, `acceptsDrop`, `releaseDrop`). A
-container declares one on its scene node (`ContainerNode.layout`), or a canvas
+optional hooks (`contains`, `dropRegion`, `acceptsDrop`, `releaseDrop`, `arrive`,
+`depart`, `contentExtent`). A container declares one on its scene node
+(`ContainerNode.layout`, swapped undoably by `scene.setLayout`), or a canvas
 supplies one (`<SceneCanvas layouts>`). The scene's layout pass hands children
 that leave the container to `depart`, children that join it to `arrive`, and
 any other change to its child set, order or size to `childPoses`, recording the

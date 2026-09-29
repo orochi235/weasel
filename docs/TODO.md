@@ -436,13 +436,16 @@ intercepting the press that drags the body.
 - **(P3) Scene layout: what the first cut left.** A container declares its layout
   on its node (`ContainerNode.layout`), and the scene's one layout pass
   (`core/scene/layoutPass.ts`, run through the arrival window) applies it to every
-  arrival, departure, reorder and resize. Still open: a layout is fixed at `add` time,
-  with no undoable `scene.setLayout(id, strategy)`; a declared layout is measured by
+  arrival, departure, reorder and resize, and to a layout swapped in by
+  `scene.setLayout` / `createSetLayoutOp`. Still open: a declared layout is measured by
   `UseSceneOptions.layoutFrame` unless a canvas installs its handler, so a scene whose
   canvas composes poses or uses a custom descriptor states that twice — folds away once
-  composition is a scene property (see the cascade entry below); and whether the
-  `layouts` prop, now a second way to name a container's layout, should be retired in
-  favor of the node declaration.
+  composition is a scene property (see the cascade entry below); a `createSetLayoutOp`
+  applied through `applyBatch` to a scene that has never had a layout sets it but does
+  not arrange the container until its next change, because the arrival window is only
+  opened once the scene holds a layout (the bare `scene.setLayout` call does arrange);
+  and whether the `layouts` prop, now a second way to name a container's layout, should
+  be retired in favor of the node declaration.
 - **(P3) Full tier unification** (collapse inline-props/explicit-adapter onto Scene). Same effort as the P2 "`arrayAdapter` as the default Canvas adapter — full unification" above — track there.
 - **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is
   adapter-level configuration, two mutually exclusive ways:

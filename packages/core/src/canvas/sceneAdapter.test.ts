@@ -5,6 +5,8 @@ import type { NodeId } from 'core/scene/types';
 import { useClipboardOps } from 'interactions/actions/clipboard/clipboardOps';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 import { sceneToAdapter } from './sceneAdapter';
+import { createSetLayoutOp } from 'core/ops/setLayout';
+import type { LayoutStrategy } from '../layout/types';
 
 interface Data { label: string; }
 interface Pose { x: number; y: number; width: number; height: number; }
@@ -644,5 +646,31 @@ describe('sceneToAdapter — non-rect poses', () => {
     const adapter = sceneToAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR, cascadeContainerPose: true });
     adapter.setPose(box, circle(60, 50, 50));
     expect(scene.get(kid)!.pose).toEqual(circle(50, 40, 5));
+  });
+});
+
+describe('sceneToAdapter — setLayout', () => {
+  it('applies a setLayout op as one undo step with the arrangement it causes', () => {
+    const scene = createScene<object, 'bg', Pose>({ systemLayers: [{ id: 'bg' }] });
+    const box = scene.add({ kind: 'container', layer: 'bg', pose: { x: 0, y: 0, width: 40, height: 40 }, data: {} });
+    const kid = scene.add({ kind: 'leaf', layer: 'bg', parent: box, pose: { x: 5, y: 5, width: 1, height: 1 }, data: {} });
+    const fill: LayoutStrategy<Pose> = {
+      snap: { pickTarget: () => null },
+      childPoses: (c, children) => new Map(children.map((ch) => [ch.id, { ...c.bounds }])),
+      getDropTargets: () => [],
+      reflowPoses: () => new Map(),
+      commitDrop: () => [],
+    };
+    const other: LayoutStrategy<Pose> = { ...fill, childPoses: () => new Map() };
+    scene.setLayout(box, other);
+    const depth = scene.historyIndex();
+    const adapter = sceneToAdapter(scene);
+    adapter.applyOps([createSetLayoutOp({ id: box, from: other, to: fill })], 'Relayout');
+    expect(scene.layoutOf(box)).toBe(fill);
+    expect(scene.get(kid)!.pose).toEqual({ x: 0, y: 0, width: 40, height: 40 });
+    expect(scene.historyIndex()).toBe(depth + 1);
+    scene.undo();
+    expect(scene.layoutOf(box)).toBe(other);
+    expect(scene.get(kid)!.pose).toEqual({ x: 5, y: 5, width: 1, height: 1 });
   });
 });
