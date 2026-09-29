@@ -9,7 +9,7 @@ machinery under [`alignment/`](./alignment).
 | --- | --- |
 | `types.ts` | The `Guide` shape. |
 | `useGuides.ts` | State: `addGuide` / `removeGuide` / `clearGuides`. |
-| `layer.ts` | `createGuidesLayer` — draws them. |
+| `layer.ts` | `createGuidesLayer` — draws them: a guide with a `span` as a ticked segment (`extent: 'full'` for a canvas-long line), one without across the canvas, plus any `SpacingGap`s from `getGaps` with size labels. |
 
 `useGuides` returns **both** a live `guides` array and a stable `getGuides()`
 getter. That's not redundancy:
@@ -33,8 +33,9 @@ into view.
 | File | Role |
 | --- | --- |
 | `derive.ts` | `deriveAlignmentGuides` — candidate lines from sibling AABBs plus an optional page box. Each box contributes up to 3 guides per axis (two edges + center); overlapping offsets collapse to one candidate, first writer wins for a stable id. |
-| `match.ts` | `matchAlignment` — which candidate the dragged bounds is close enough to. `MOVE_ANCHORS`. Poses are read through the caller's `poseDescriptor`. |
-| `behaviors.ts` | `alignMoveBehavior` / `alignInsertBehavior` / `alignResizeBehavior` — plugs the above into the move / insert / resize gestures. |
+| `match.ts` | `matchAlignment` — which candidate the dragged bounds is close enough to. `MOVE_ANCHORS`. Poses are read through the caller's `poseDescriptor`. A matched guide's `span` is stretched to reach the snapped box. |
+| `spacing.ts` | `measureGaps` / `matchSpacing` — equal spacing: snap a box so its gap to a neighbor in its row or column equals a gap already between two other boxes, or center it between its two neighbors. Returns the equal gaps as `SpacingGap`s to draw. |
+| `behaviors.ts` | `alignMoveBehavior` / `alignInsertBehavior` / `alignResizeBehavior` — plugs the above into the move / insert / resize gestures. Given `getSpacingTargets`, move and unrotated resize also snap to equal gaps, the nearer snap winning per axis, and publish them through `setActiveGaps`. |
 
 Because both halves produce `Guide`s, `createGuidesLayer` draws user-placed and
 derived guides through the same path — the user can't tell which is which, and

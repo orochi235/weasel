@@ -53,7 +53,9 @@ function bestAxis(
  * Match a moving box's selected edge/center features against candidate guide
  * lines. Returns the per-axis snap delta and the matched candidate line(s).
  * The two axes resolve independently; on each axis the closest in-tolerance
- * (feature, candidate) pair wins.
+ * (feature, candidate) pair wins. A matched guide that carries a `span` comes
+ * back with it stretched to cover the snapped box, so the drawn segment runs
+ * from the aligned siblings to the box being dragged.
  *
  * `worldTolerance` is per axis because a screen-pixel tolerance is not one
  * world distance under non-uniform zoom — and each axis here is matched by a
@@ -68,5 +70,18 @@ export function matchAlignment(
 ): AlignMatchResult {
   const x = bestAxis(bounds, 'x', anchors.x, candidates, worldTolerance.x);
   const y = bestAxis(bounds, 'y', anchors.y, candidates, worldTolerance.y);
-  return { dx: x.delta, dy: y.delta, activeX: x.guide, activeY: y.guide };
+  const top = bounds.y + y.delta;
+  const left = bounds.x + x.delta;
+  return {
+    dx: x.delta,
+    dy: y.delta,
+    activeX: stretchSpan(x.guide, top, top + bounds.height),
+    activeY: stretchSpan(y.guide, left, left + bounds.width),
+  };
+}
+
+/** A matched guide whose span also covers the snapped box. */
+export function stretchSpan(g: Guide | null, min: number, max: number): Guide | null {
+  if (g === null || g.span === undefined) return g;
+  return { ...g, span: { min: Math.min(g.span.min, min), max: Math.max(g.span.max, max) } };
 }

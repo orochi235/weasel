@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { alignMoveBehavior, alignInsertBehavior, alignResizeBehavior } from './behaviors';
 import { deriveAlignmentGuides } from './derive';
-import type { Guide } from '../types';
+import type { Guide, SpacingGap } from '../types';
 import type {
   GestureContext,
   GroupTransform,
@@ -214,5 +214,75 @@ describe('alignMoveBehavior with a rotated pose', () => {
     const res = b.onMove!(ctx({}, dragged), tt(-48, 0));
     expect(res).toEqual({ transform: { kind: 'translate', dx: -50, dy: 0 } });
     expect(active.map((g) => g.offset)).toEqual([65]);
+  });
+});
+
+describe('equal-spacing snaps', () => {
+  // A 0..20 and B 40..60 share the dragged box's row (y 100..150): a 20 gap.
+  const row: Bounds[] = [
+    { x: 0, y: 100, width: 20, height: 50 },
+    { x: 40, y: 100, width: 20, height: 50 },
+  ];
+
+  it('move snaps the gap to the left neighbor to an existing gap and publishes the markers', () => {
+    let gaps: readonly SpacingGap[] = [];
+    const b = alignMoveBehavior<Pose>({
+      getCandidates: () => [],
+      setActiveGuides: () => {},
+      getSpacingTargets: () => row,
+      setActiveGaps: (g) => { gaps = g; },
+      tolerance: 5,
+    });
+    // Origin x=100; translate -18 puts it at 82, 22 from B. 60 + 20 = 80.
+    expect(b.onMove!(ctx(), tt(-18, 0))).toEqual({ transform: { kind: 'translate', dx: -20, dy: 0 } });
+    expect(gaps.map((g) => [g.axis, g.min, g.max])).toEqual([['x', 20, 40], ['x', 60, 80]]);
+  });
+
+  it('a closer alignment line beats the spacing snap on the same axis', () => {
+    let active: readonly Guide[] = [];
+    let gaps: readonly SpacingGap[] = [{ axis: 'x', min: 0, max: 1, at: 0 }];
+    const b = alignMoveBehavior<Pose>({
+      getCandidates: () => [{ id: 'L', axis: 'x', offset: 81 }],
+      setActiveGuides: (g) => { active = g; },
+      getSpacingTargets: () => row,
+      setActiveGaps: (g) => { gaps = g; },
+      tolerance: 5,
+    });
+    expect(b.onMove!(ctx(), tt(-18, 0))).toEqual({ transform: { kind: 'translate', dx: -19, dy: 0 } });
+    expect(active.map((g) => g.id)).toEqual(['L']);
+    expect(gaps).toEqual([]);
+  });
+
+  it('clears the markers on a miss and on end', () => {
+    let gaps: readonly SpacingGap[] = [];
+    const b = alignMoveBehavior<Pose>({
+      getCandidates: () => [],
+      setActiveGuides: () => {},
+      getSpacingTargets: () => row,
+      setActiveGaps: (g) => { gaps = g; },
+      tolerance: 5,
+    });
+    b.onMove!(ctx(), tt(-18, 0));
+    expect(gaps).toHaveLength(2);
+    expect(b.onMove!(ctx(), tt(0, 0))).toBeUndefined();
+    expect(gaps).toEqual([]);
+    b.onMove!(ctx(), tt(-18, 0));
+    b.onEnd!(ctx(), { answered: false });
+    expect(gaps).toEqual([]);
+  });
+
+  it('resize snaps the moving edge so its gap to the next box equals an existing gap', () => {
+    let gaps: readonly SpacingGap[] = [];
+    const b = alignResizeBehavior<Bounds>({
+      getCandidates: () => [],
+      setActiveGuides: () => {},
+      getSpacingTargets: () => [...row, { x: 170, y: 100, width: 20, height: 50 }],
+      setActiveGaps: (g) => { gaps = g; },
+      tolerance: 5,
+    });
+    // East edge at 148; C starts at 170, so 170 - 20 = 150.
+    const res = b.onMove!(ctx(), { pose: { x: 100, y: 100, width: 48, height: 50 }, anchor: { x: 'min', y: 'free' } });
+    expect(res).toEqual({ pose: { x: 100, y: 100, width: 50, height: 50 } });
+    expect(gaps.map((g) => [g.min, g.max])).toEqual([[20, 40], [150, 170]]);
   });
 });

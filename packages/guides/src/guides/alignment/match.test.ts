@@ -66,6 +66,22 @@ describe('matchAlignment', () => {
     expect(m.activeX!.id).toBe('r');
     expect(m.dx).toBe(2); // 152 - 150
   });
+
+  it('stretches a matched span to reach the snapped box', () => {
+    // Sibling spans y 0..20; the box ends at y 97..147 after its own y snap.
+    const cands: Guide[] = [
+      { id: 'a', axis: 'x', offset: 96, span: { min: 0, max: 20 } },
+      { id: 'b', axis: 'y', offset: 97 },
+    ];
+    const m = matchAlignment(box, cands, tol(5), MOVE_ANCHORS);
+    expect(m.activeX).toEqual({ id: 'a', axis: 'x', offset: 96, span: { min: 0, max: 147 } });
+    expect(cands[0].span).toEqual({ min: 0, max: 20 });
+  });
+
+  it('leaves a guide with no span without one', () => {
+    const cands: Guide[] = [{ id: 'a', axis: 'x', offset: 96 }];
+    expect(matchAlignment(box, cands, tol(5), MOVE_ANCHORS).activeX).toEqual(cands[0]);
+  });
 });
 
 describe('per-axis tolerance', () => {

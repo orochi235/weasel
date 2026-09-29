@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { PathDrawCommand } from '@weasel-js/core';
+import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '@weasel-js/core';
 import { createGuidesLayer } from './layer';
-import type { Guide } from './types';
+import type { Guide, SpacingGap } from './types';
 
 describe('createGuidesLayer', () => {
   it('exposes default id "guides", label "Guides", and screen space', () => {
@@ -72,6 +72,51 @@ describe('createGuidesLayer', () => {
     const v = tree[0] as PathDrawCommand;
     expect(v.stroke?.width).toBe(2);
     expect((v.stroke?.paint as { color: string } | undefined)?.color).toBe('#ff00aa');
+  });
+
+  const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+  const dims = { width: 200, height: 100 };
+  const coords = (c: DrawCommand) => {
+    const p = (c as PathDrawCommand).path;
+    return p.kind === 'polygon' ? Array.from(p.coords) : [];
+  };
+
+  it('draws a guide with a span as a segment with end ticks', () => {
+    const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 50, span: { min: 10, max: 60 } }];
+    const [v] = createGuidesLayer({ getGuides: () => guides, ticks: 6 }).draw(undefined, view, dims);
+    expect(coords(v)).toEqual([50, 10, 50, 60, 47, 10, 53, 10, 47, 60, 53, 60]);
+  });
+
+  it('projects a span through the view', () => {
+    const guides: Guide[] = [{ id: 'g', axis: 'y', offset: 20, span: { min: 10, max: 60 } }];
+    const tree = createGuidesLayer({ getGuides: () => guides, ticks: 0 })
+      .draw(undefined, { x: 5, y: 0, scale: { x: 2, y: 2 } }, dims);
+    expect(coords(tree[0])).toEqual([10, 40, 110, 40]);
+  });
+
+  it("extent: 'full' draws a spanned guide across the canvas", () => {
+    const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 50, span: { min: 10, max: 60 } }];
+    const [v] = createGuidesLayer({ getGuides: () => guides, extent: 'full' }).draw(undefined, view, dims);
+    expect(coords(v)).toEqual([50, 0, 50, 100]);
+  });
+
+  it('draws each gap as a ticked segment with its size labeled', () => {
+    const gaps: SpacingGap[] = [{ axis: 'x', min: 20, max: 40, at: 30 }];
+    const tree = createGuidesLayer({ getGuides: () => [], getGaps: () => gaps, ticks: 6 }).draw(undefined, view, dims);
+    expect(coords(tree[0])).toEqual([20, 30, 40, 30, 20, 27, 20, 33, 40, 27, 40, 33]);
+    const text = tree.find((c): c is TextDrawCommand => c.kind === 'text');
+    expect(text?.runs.map((r) => r.text).join('')).toBe('20');
+  });
+
+  it('gapLabels formats or drops the label', () => {
+    const gaps: SpacingGap[] = [{ axis: 'y', min: 0, max: 12.5, at: 30 }];
+    const text = (opt: boolean | ((n: number) => string)) =>
+      createGuidesLayer({ getGuides: () => [], getGaps: () => gaps, gapLabels: opt })
+        .draw(undefined, view, dims)
+        .filter((c): c is TextDrawCommand => c.kind === 'text')
+        .map((c) => c.runs.map((r) => r.text).join(''));
+    expect(text(false)).toEqual([]);
+    expect(text((n) => `${n.toFixed(1)}px`)).toEqual(['12.5px']);
   });
 
   it('id and label can be overridden', () => {

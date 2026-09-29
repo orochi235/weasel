@@ -1,4 +1,4 @@
-import type { Guide } from '../types';
+import type { Guide, SpacingGap } from '../types';
 import {
   type BoundsConstraint,
   type InsertBehavior,
@@ -16,8 +16,10 @@ import {
 import type {
   AlignAnchor,
   AlignmentBehaviorBase,
+  SpacingEdge,
 } from './types';
-import { MOVE_ANCHORS, matchAlignment } from './match';
+import { MOVE_ANCHORS, matchAlignment, stretchSpan } from './match';
+import { applyEdges, matchSpacing } from './spacing';
 
 /** Options for move and resize — adds the pose descriptor for non-rect poses. */
 export interface AlignMoveArgs<TPose> extends AlignmentBehaviorBase {
@@ -26,6 +28,52 @@ export interface AlignMoveArgs<TPose> extends AlignmentBehaviorBase {
 
 const activeList = (m: { activeX: Guide | null; activeY: Guide | null }): Guide[] =>
   [m.activeX, m.activeY].filter((g): g is Guide => g !== null);
+
+/** Tolerance for re-reading what a settled box touches exactly. */
+const EXACT = { x: 1e-6, y: 1e-6 };
+
+interface Resolved { dx: number; dy: number; guides: Guide[]; gaps: SpacingGap[] }
+
+type Edges = { x: SpacingEdge | null; y: SpacingEdge | null };
+
+/** Snap `b` to alignment lines and, when the caller supplies spacing targets,
+ *  equal gaps; the nearer snap wins on each axis. What is published is read
+ *  back off the settled box, so a line and a gap that both hold show together
+ *  and each is drawn where the box ended up, not where it was dragged. */
+function resolve(
+  b: Bounds,
+  args: AlignmentBehaviorBase,
+  tol: { x: number; y: number },
+  anchors: { x: readonly AlignAnchor[]; y: readonly AlignAnchor[] },
+  edges: Edges,
+): Resolved | null {
+  const candidates = args.getCandidates();
+  const m = matchAlignment(b, candidates, tol, anchors);
+  const targets = args.getSpacingTargets?.();
+  if (targets === undefined) {
+    if (m.activeX === null && m.activeY === null) return null;
+    return { dx: m.dx, dy: m.dy, guides: activeList(m), gaps: [] };
+  }
+  const s = matchSpacing(b, targets, tol, edges);
+  const pick = (hit: boolean, d: number, spaced: boolean, sd: number): number | null =>
+    hit && (!spaced || Math.abs(d) <= Math.abs(sd)) ? d : spaced ? sd : null;
+  const dx = pick(m.activeX !== null, m.dx, s.gapsX.length > 0, s.dx);
+  const dy = pick(m.activeY !== null, m.dy, s.gapsY.length > 0, s.dy);
+  if (dx === null && dy === null) return null;
+  const settled = applyEdges(b, dx ?? 0, dy ?? 0, edges);
+  const shown = matchSpacing(settled, targets, EXACT, edges);
+  return {
+    dx: dx ?? 0,
+    dy: dy ?? 0,
+    guides: activeList(matchAlignment(settled, candidates, EXACT, anchors)),
+    gaps: [...shown.gapsX, ...shown.gapsY],
+  };
+}
+
+function publish(args: AlignmentBehaviorBase, r: Resolved | null): void {
+  args.setActiveGuides(r?.guides ?? []);
+  args.setActiveGaps?.(r?.gaps ?? []);
+}
 
 function worldTol(
   base: AlignmentBehaviorBase,
@@ -43,7 +91,7 @@ export function alignMoveBehavior<TPose>(args: AlignMoveArgs<TPose>): MoveBehavi
   const d = (args.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   return {
     onMove(ctx, transform) {
-      if (args.bypassKey && ctx.modifiers[args.bypassKey]) { args.setActiveGuides([]); return; }
+      if (args.bypassKey && ctx.modifiers[args.bypassKey]) { publish(args, null); return; }
       if (transform.kind !== 'translate') return;
       // Union of every dragged id's visual box at its proposed position.
       const boxes: Bounds[] = [];
@@ -57,13 +105,13 @@ export function alignMoveBehavior<TPose>(args: AlignMoveArgs<TPose>): MoveBehavi
       }
       const union = unionBounds(boxes);
       if (union === null) return;
-      const m = matchAlignment(union, args.getCandidates(), worldTol(args, ctx), MOVE_ANCHORS);
-      if (m.activeX === null && m.activeY === null) { args.setActiveGuides([]); return; }
-      args.setActiveGuides(activeList(m));
-      return { transform: { kind: 'translate', dx: transform.dx + m.dx, dy: transform.dy + m.dy } };
+      const r = resolve(union, args, worldTol(args, ctx), MOVE_ANCHORS, { x: 'both', y: 'both' });
+      publish(args, r);
+      if (r === null) return;
+      return { transform: { kind: 'translate', dx: transform.dx + r.dx, dy: transform.dy + r.dy } };
     },
-    onEnd() { args.setActiveGuides([]); },
-    onCancel() { args.setActiveGuides([]); },
+    onEnd() { publish(args, null); },
+    onCancel() { publish(args, null); },
   };
 }
 
@@ -98,43 +146,46 @@ export function alignResizeBehavior<TPose extends Bounds>(
   const d = (args.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   return {
     onMove(ctx, { pose, anchor }) {
-      if (args.bypassKey && ctx.modifiers[args.bypassKey]) { args.setActiveGuides([]); return; }
+      if (args.bypassKey && ctx.modifiers[args.bypassKey]) { publish(args, null); return; }
       const origin = ctx.origin.get(ctx.draggedIds[0]);
       const rotation = origin === undefined ? 0 : (d.getRotation?.(origin) ?? 0);
       const m = rotation === 0
-        ? matchMovingEdges(pose, anchor, args.getCandidates(), worldTol(args, ctx))
+        ? matchMovingEdges(pose, anchor, args, worldTol(args, ctx))
         : matchRotatedCorners(pose, anchor, d.getBounds(origin!), rotation, args.getCandidates(), worldTol(args, ctx));
-      if (m === null) { args.setActiveGuides([]); return; }
+      if (m === null) { publish(args, null); return; }
 
       let { x, y, width, height } = pose;
       if (anchor.x === 'min') width += m.lx;
       else if (anchor.x === 'max') { x += m.lx; width -= m.lx; }
       if (anchor.y === 'min') height += m.ly;
       else if (anchor.y === 'max') { y += m.ly; height -= m.ly; }
-      args.setActiveGuides(m.guides);
+      publish(args, { dx: 0, dy: 0, guides: m.guides, gaps: m.gaps });
       return { pose: { ...pose, x, y, width, height } };
     },
-    onEnd() { args.setActiveGuides([]); },
-    onCancel() { args.setActiveGuides([]); },
+    onEnd() { publish(args, null); },
+    onCancel() { publish(args, null); },
   };
 }
 
 /** How far to move the dragged corner in the node's local frame, and the
  *  lines that asked for it. */
-interface CornerShift { lx: number; ly: number; guides: Guide[] }
+interface CornerShift { lx: number; ly: number; guides: Guide[]; gaps: SpacingGap[] }
 
 function matchMovingEdges(
   pose: Bounds,
   anchor: ResizeAnchor,
-  candidates: readonly Guide[],
+  args: AlignmentBehaviorBase,
   tol: { x: number; y: number },
 ): CornerShift | null {
   // A 'min' anchor pins the west/north edge, so the max edge moves.
-  const movingX: AlignAnchor[] = anchor.x === 'min' ? ['max'] : anchor.x === 'max' ? ['min'] : [];
-  const movingY: AlignAnchor[] = anchor.y === 'min' ? ['max'] : anchor.y === 'max' ? ['min'] : [];
-  const m = matchAlignment(pose, candidates, tol, { x: movingX, y: movingY });
-  if (m.activeX === null && m.activeY === null) return null;
-  return { lx: m.dx, ly: m.dy, guides: activeList(m) };
+  const moving = (a: ResizeAnchor['x']): SpacingEdge | null => (a === 'min' ? 'max' : a === 'max' ? 'min' : null);
+  const edges = { x: moving(anchor.x), y: moving(anchor.y) };
+  const anchors = {
+    x: edges.x === null ? [] : [edges.x],
+    y: edges.y === null ? [] : [edges.y],
+  } as { x: AlignAnchor[]; y: AlignAnchor[] };
+  const r = resolve(pose, args, tol, anchors, edges);
+  return r === null ? null : { lx: r.dx, ly: r.dy, guides: r.guides, gaps: r.gaps };
 }
 
 /** The rotated case. The resize action pins the fixed corner in world after
@@ -173,7 +224,7 @@ function matchRotatedCorners(
     if (m.activeX === null && m.activeY === null) return null;
     const lx = m.dx * cos + m.dy * sin;
     const ly = -m.dx * sin + m.dy * cos;
-    return { lx, ly, guides: activeList(m) };
+    return { lx, ly, guides: activeList(m), gaps: [] };
   }
   if (anchor.x === 'free' && anchor.y === 'free') return null;
 
@@ -181,7 +232,7 @@ function matchRotatedCorners(
   const along: 'x' | 'y' = anchor.x === 'free' ? 'y' : 'x';
   const dir = along === 'x' ? toWorld(1, 0) : toWorld(0, 1);
   const edge = movingEdge(along)[0];
-  let best: { t: number; guide: Guide } | null = null;
+  let best: { t: number; guide: Guide; at: { x: number; y: number } } | null = null;
   for (const across of movingEdge(along === 'x' ? 'y' : 'x')) {
     const c = along === 'x' ? drawn(edge, across) : drawn(across, edge);
     for (const g of candidates) {
@@ -189,11 +240,13 @@ function matchRotatedCorners(
       if (Math.abs(reach) < 1e-9) continue;
       const t = (g.offset - (g.axis === 'x' ? c.x : c.y)) / reach;
       if (Math.abs(t * dir.x) > tol.x || Math.abs(t * dir.y) > tol.y) continue;
-      if (best === null || Math.abs(t) < Math.abs(best.t)) best = { t, guide: g };
+      if (best === null || Math.abs(t) < Math.abs(best.t)) best = { t, guide: g, at: c };
     }
   }
   if (best === null) return null;
+  const across = best.guide.axis === 'x' ? best.at.y + best.t * dir.y : best.at.x + best.t * dir.x;
+  const guides = [stretchSpan(best.guide, across, across)!];
   return along === 'x'
-    ? { lx: best.t, ly: 0, guides: [best.guide] }
-    : { lx: 0, ly: best.t, guides: [best.guide] };
+    ? { lx: best.t, ly: 0, guides, gaps: [] }
+    : { lx: 0, ly: best.t, guides, gaps: [] };
 }
