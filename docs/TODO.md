@@ -865,13 +865,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P2) `batch-pixels.spec.ts` fails on any machine running wake, until wake's `fix/base-path`
-  merges.** wake injects its client as `/@id/virtual:wake-client` whatever vite's `base` is, and
-  the site serves under `/weasel/`, so every page load 404s on it. That spec is the only visual
-  spec that fails on a console error, so it goes red on a dev machine and stays green in CI,
-  which runs without wake. Fixed in `~/src/wake` on branch `fix/base-path` (61a274a); merge it
-  there and run `npm run build`, then delete this entry.
-
 - **(P3) LayoutDemo clips a child dropped outside its container.** The child stays that
   container's child and is drawn clipped to it, so it vanishes from sight wherever it lands.
   Either the drop should reparent it out, or the demo's containers should not clip. Seen
