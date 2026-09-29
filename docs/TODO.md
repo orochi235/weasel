@@ -590,8 +590,6 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 
   The follow-ups below are what is left.
 
-- **(P3) Inverse kinematics** — a solver that writes poses. Composes with the rig
-  above and needs nothing here changed.
 - **(P3) Skinning** — per-vertex bone weights deforming path geometry. The
   renderer flattens paths to meshes, so weights must reach the vertex shader or
   be applied on the CPU per frame. Needs the hierarchical rig first.

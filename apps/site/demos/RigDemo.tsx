@@ -3,12 +3,14 @@ import {
   asNodeId,
   blendPoses,
   easeInOutSine,
+  effectivePose,
   mat3,
   RECT_POSE_DESCRIPTOR,
   resolveSkeleton,
   rigidRigApply,
   SceneCanvas,
   solid,
+  solveIk,
   useAnimator,
   useRig,
   useScene,
@@ -65,7 +67,7 @@ const POSE_B: Pose = {
   shin: { rotation: 0.6 },
 };
 
-type Layer = 'bones' | 'joints' | 'labels';
+type Layer = 'bones' | 'joints' | 'labels' | 'target';
 type Data = { shape: 'rect'; fill: FillStyle } | { text: string; style: TextStyle; fill: FillStyle };
 interface NodeSpec { id: NodeId; kind: 'leaf'; layer: Layer; pose: RectPose; data: Data }
 
@@ -127,7 +129,17 @@ const caption = (id: string, x: number, text: string, color: string): NodeSpec =
   data: { text, style: CAPTION_STYLE, fill: solid(color) },
 });
 
+const TARGET = asNodeId('slider:target');
+const TARGET_SIZE = 14;
+const ARM = ['upperArm', 'forearm'];
+const HAND = { x: BONES.find((b) => b.name === 'forearm')!.length, y: 0 };
+
 const INITIAL: NodeSpec[] = [
+  {
+    id: TARGET, kind: 'leaf', layer: 'target',
+    pose: { x: 235 - TARGET_SIZE / 2, y: 150 - TARGET_SIZE / 2, width: TARGET_SIZE, height: TARGET_SIZE },
+    data: { shape: 'rect', fill: solid('#e06c75') },
+  },
   ...BY_SLIDER.nodes,
   ...BY_TRACK.nodes,
   caption('caption:slider', 60, 'blendPoses by hand', '#7fb069'),
@@ -145,7 +157,9 @@ const APPLY: RigApply<RectPose> = (world, ctx) => {
 
 export function RigDemo() {
   const scene = useScene<Data, Layer, RectPose>({
-    systemLayers: [{ id: 'bones' }, { id: 'joints' }, { id: 'labels' }],
+    systemLayers: [
+      { id: 'bones', locked: true }, { id: 'joints', locked: true }, { id: 'labels', locked: true }, { id: 'target' },
+    ],
     initial: useMemo(() => INITIAL, []),
   });
   const animator = useAnimator();
@@ -160,9 +174,25 @@ export function RigDemo() {
   const sliderRig = useRig({ scene, skeleton: BY_SLIDER.skeleton, bindings: BY_SLIDER.bindings, apply: APPLY });
   const trackRig = useRig({ scene, skeleton: BY_TRACK.skeleton, bindings: BY_TRACK.bindings, apply: APPLY });
 
+  // The arm reaches for the target wherever the move action has it — its drag
+  // preview lives in the overrides, its drop in the document. Posing the rig
+  // commits overrides too, so only a moved target triggers a solve.
   useEffect(() => {
-    sliderRig.pose(blendPoses([POSE_A, POSE_B], [1 - blend, blend]));
-  }, [sliderRig, blend]);
+    let last = '';
+    const reach = () => {
+      const p = effectivePose(scene, scene.get(TARGET)!);
+      const target = { x: p.x + p.width / 2, y: p.y + p.height / 2 };
+      const key = `${target.x},${target.y}`;
+      if (key === last) return;
+      last = key;
+      const body = blendPoses([POSE_A, POSE_B], [1 - blend, blend]);
+      sliderRig.pose(solveIk(BY_SLIDER.skeleton, body, { joints: ARM, tip: HAND, target }).pose);
+    };
+    reach();
+    const offScene = scene.subscribe(reach);
+    const offOverrides = scene.overrides.subscribe(reach);
+    return () => { offScene(); offOverrides(); };
+  }, [scene, sliderRig, blend]);
 
   useEffect(() => {
     if (!playing) {
@@ -215,7 +245,7 @@ export function RigDemo() {
         height={H}
         className="ckd-canvas"
         scene={scene}
-        selectable={false}
+        features={['pick', 'move']}
         animator={animator}
         layers={{ selectionOverlay: null }}
       />
@@ -229,7 +259,9 @@ export function RigDemo() {
         <code> interpolate</code> is that same call. Set the slider to the track&apos;s
         reported <code>u</code> while it plays and the two silhouettes coincide — pose
         interpolation and pose blending are one operation, which is why the rig needs no
-        timeline integration of its own.
+        timeline integration of its own. Drag the red target: the green figure&apos;s arm
+        follows it through <code>solveIk</code>, which rewrites the arm&apos;s rotations in
+        the blended pose, so body and arm stay one pose.
       </div>
     </div>
   );

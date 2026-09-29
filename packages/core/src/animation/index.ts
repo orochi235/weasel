@@ -65,9 +65,10 @@ export type {
   TimelineTrack,
   Track,
 } from './timeline';
-export { bindRig, blendPoses, mirrorPose, resolveSkeleton, rigidRigApply, useRig, IDENTITY_JOINT } from './rig';
+export { bindRig, blendPoses, mirrorPose, resolveSkeleton, rigidRigApply, solveIk, useRig, IDENTITY_JOINT } from './rig';
 export type {
-  BindRigOptions, Joint, JointTransform, Pose, Rig, RigApply, RigApplyContext, RigScene, Skeleton,
+  BindRigOptions, IkLimit, IkPoint, IkResult, Joint, JointTransform, Pose, Rig, RigApply, RigApplyContext, RigScene,
+  Skeleton, SolveIkOptions,
 } from './rig';
 
 // `createLoop` / `createTweenLoop` / `createStagger` / `createTimeline` are

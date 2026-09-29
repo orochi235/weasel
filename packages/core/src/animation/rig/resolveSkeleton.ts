@@ -2,7 +2,7 @@ import { mat3, type GlMat3 } from '../../renderer/math/mat3';
 import type { JointTransform, Pose, Skeleton } from './types';
 
 /** bind + delta, field by field. Scale is multiplicative, the rest additive. */
-function compose(bind: JointTransform, delta: Partial<JointTransform> | undefined): JointTransform {
+export function compose(bind: JointTransform, delta: Partial<JointTransform> | undefined): JointTransform {
   if (!delta) return bind;
   return {
     x: bind.x + (delta.x ?? 0),
@@ -14,7 +14,7 @@ function compose(bind: JointTransform, delta: Partial<JointTransform> | undefine
 }
 
 /** TRS as a GlMat3: translate * rotate * scale, applied to a column vector. */
-function toMat3(t: JointTransform): GlMat3 {
+export function toMat3(t: JointTransform): GlMat3 {
   const c = Math.cos(t.rotation);
   const s = Math.sin(t.rotation);
   const m = new Float32Array(9) as GlMat3;

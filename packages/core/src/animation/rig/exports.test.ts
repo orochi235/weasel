@@ -9,6 +9,7 @@ describe('rig public surface', () => {
     expect(typeof kit.bindRig).toBe('function');
     expect(typeof kit.useRig).toBe('function');
     expect(typeof kit.rigidRigApply).toBe('function');
+    expect(typeof kit.solveIk).toBe('function');
     expect(kit.IDENTITY_JOINT).toEqual({ x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 });
   });
 
