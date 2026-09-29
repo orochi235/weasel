@@ -270,7 +270,7 @@ is not a guard.
 ## Verifying
 
 ```sh
-npx tsc --noEmit                                   # from the repo root
+npm run typecheck
 npx vitest run --project=draw apps/theme-editor
 npm run lint
 npm run dev:theme-editor                           # port 4713, #/palette

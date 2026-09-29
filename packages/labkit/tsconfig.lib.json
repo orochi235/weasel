@@ -21,5 +21,7 @@
     "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
     "ignoreDeprecations": "6.0"
   },
-  "include": ["src/**/*", "scripts/**/*"]
+  "include": ["src/**/*", "scripts/**/*"],
+  // Owned by packages/tsconfig.json, which says why.
+  "exclude": ["**/*.browser.test.ts", "**/*.browser.test.tsx"]
 }
