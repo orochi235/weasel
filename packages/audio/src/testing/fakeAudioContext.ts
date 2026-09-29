@@ -9,10 +9,13 @@ export interface FakeParam {
   ramps: { value: number; at: number }[];
   /** Every `setValueAtTime`, in call order. */
   holds: { value: number; at: number }[];
+  /** Every `exponentialRampToValueAtTime` target, in call order. */
+  expRamps: { value: number; at: number }[];
   /** Every `cancelScheduledValues` time, in call order. */
   cancels: number[];
   setValueAtTime(value: number, at: number): FakeParam;
   linearRampToValueAtTime(value: number, at: number): FakeParam;
+  exponentialRampToValueAtTime(value: number, at: number): FakeParam;
   cancelScheduledValues(at: number): FakeParam;
 }
 
@@ -23,9 +26,11 @@ const param = (initial: number): FakeParam => {
     value: initial,
     ramps: [],
     holds: [],
+    expRamps: [],
     cancels: [],
     setValueAtTime(value, at) { p.holds.push({ value, at }); p.value = value; return p; },
     linearRampToValueAtTime(value, at) { p.ramps.push({ value, at }); return p; },
+    exponentialRampToValueAtTime(value, at) { p.expRamps.push({ value, at }); return p; },
     cancelScheduledValues(at) { p.cancels.push(at); return p; },
   };
   return p;
@@ -94,6 +99,22 @@ export interface FakeSource extends FakeNode {
   stop(when?: number): void;
 }
 
+export interface FakePeriodicWave { real: Float32Array; imag: Float32Array }
+
+export interface FakeOscillator extends FakeNode {
+  type: string;
+  frequency: FakeParam;
+  detune: FakeParam;
+  periodicWave: FakePeriodicWave | null;
+  started: number[];
+  stopped: number[];
+  ended: boolean;
+  onended: (() => void) | null;
+  setPeriodicWave(wave: FakePeriodicWave): void;
+  start(when?: number): void;
+  stop(when?: number): void;
+}
+
 /** Analyser output: a constant for every bin, or a function of bin index and
  *  window length so index and window-size math is observable. */
 export type FakeAnalyserBytes = number | ((index: number, length: number) => number);
@@ -122,16 +143,20 @@ export interface FakeAudioContext {
   createStereoPanner(): FakePanner;
   createAnalyser(): FakeAnalyser;
   createBufferSource(): FakeSource;
+  createOscillator(): FakeOscillator;
+  createPeriodicWave(real: Float32Array, imag: Float32Array): FakePeriodicWave;
   createBuffer(channels: number, length: number, sampleRate: number): FakeBuffer;
   decodeAudioData(bytes: ArrayBuffer): Promise<unknown>;
   /** Test hook: advance the audio clock, ending any source that comes due. */
   _advance(ms: number): void;
   /** Test hook: end a source now, firing `onended` once. */
-  _end(source: FakeSource): void;
+  _end(source: FakeSource | FakeOscillator): void;
   /** Test hook: change state and notify `statechange` listeners. */
   _setState(state: 'suspended' | 'running' | 'closed'): void;
-  /** Test hook: every source node created, in order. */
+  /** Test hook: every buffer source node created, in order. */
   _sources: FakeSource[];
+  /** Test hook: every oscillator created, in order. */
+  _oscillators: FakeOscillator[];
   /** Test hook: canned analyser output. */
   _analyserBytes: FakeAnalyserBytes;
   /** Test hook: live `statechange` subscriptions. */
@@ -140,6 +165,7 @@ export interface FakeAudioContext {
 
 export function createFakeAudioContext(): FakeAudioContext {
   const sources: FakeSource[] = [];
+  const oscillators: FakeOscillator[] = [];
   const listeners = new Set<() => void>();
 
   // Writes at most `bins` elements, as the specification requires: an oversized
@@ -154,11 +180,13 @@ export function createFakeAudioContext(): FakeAudioContext {
   // `onended` fires from the clock, never from inside `start`/`stop`: a real
   // implementation queues it as a task, and firing it synchronously would
   // re-enter whatever called `stop`.
-  const endIfDue = (s: FakeSource): void => {
+  // The last `stop` wins: the specification lets a later call replace an
+  // earlier one.
+  const endIfDue = (s: FakeSource | FakeOscillator): void => {
     if (s.ended || s.started.length === 0) return;
-    const stopAt = s.stopped.length > 0 ? s.stopped[0] : Infinity;
-    const duration = (s.buffer as { duration?: number } | null)?.duration;
-    const endsAt = !s.loop && duration != null ? s.started[0] + duration : Infinity;
+    const stopAt = s.stopped.length > 0 ? s.stopped[s.stopped.length - 1] : Infinity;
+    const duration = 'buffer' in s ? (s.buffer as { duration?: number } | null)?.duration : undefined;
+    const endsAt = 'buffer' in s && !s.loop && duration != null ? s.started[0] + duration : Infinity;
     if (ctx.currentTime + 1e-9 >= Math.min(stopAt, endsAt)) ctx._end(s);
   };
 
@@ -212,6 +240,34 @@ export function createFakeAudioContext(): FakeAudioContext {
       sources.push(s);
       return s;
     },
+    createOscillator() {
+      const o: FakeOscillator = node('oscillator', {
+        type: 'sine',
+        frequency: param(440),
+        detune: param(0),
+        periodicWave: null as FakePeriodicWave | null,
+        started: [] as number[],
+        stopped: [] as number[],
+        ended: false,
+        onended: null as (() => void) | null,
+        setPeriodicWave(wave: FakePeriodicWave) { o.type = 'custom'; o.periodicWave = wave; },
+        start(when = ctx.currentTime) {
+          if (o.started.length > 0) {
+            throw new Error('InvalidStateError: start may only be called once');
+          }
+          o.started.push(when);
+        },
+        stop(when = ctx.currentTime) {
+          if (o.started.length === 0) {
+            throw new Error('InvalidStateError: stop called before start');
+          }
+          o.stopped.push(when);
+        },
+      });
+      oscillators.push(o);
+      return o;
+    },
+    createPeriodicWave: (real, imag) => ({ real, imag }),
     createBuffer(channels, length, sampleRate) {
       if (channels < 1 || length < 1) {
         throw new Error('NotSupportedError: createBuffer needs a channel and a frame');
@@ -228,7 +284,7 @@ export function createFakeAudioContext(): FakeAudioContext {
     async decodeAudioData() { return { duration: 1 }; },
     _advance(ms) {
       ctx.currentTime += ms / 1000;
-      for (const s of [...sources]) endIfDue(s);
+      for (const s of [...sources, ...oscillators]) endIfDue(s);
     },
     _end(source) {
       if (source.ended) return;
@@ -241,6 +297,7 @@ export function createFakeAudioContext(): FakeAudioContext {
       for (const fn of [...listeners]) fn();
     },
     _sources: sources,
+    _oscillators: oscillators,
     _listenerCount: () => listeners.size,
     _analyserBytes: (i, length) => Math.round((255 * i) / length),
   };

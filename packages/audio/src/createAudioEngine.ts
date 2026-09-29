@@ -5,7 +5,11 @@ import { createScheduler } from './scheduler';
 import { createSoundCache, type SoundHandle } from './soundCache';
 import { spatialize, type SpatialOptions, type Vec2 } from './spatialize';
 import { createTickTimer } from './tickTimer';
-import type { AudioEngineOptions, PlayOptions, VoiceHandle } from './types';
+import { envelopeLevel, envelopePoints, resolveEnvelope } from './envelope';
+import { toFrequency } from './pitch';
+import type {
+  AudioEngineOptions, NoteOptions, PlayOptions, VoiceHandle, Waveform,
+} from './types';
 import { createVoicePool, type VoicePool } from './voicePool';
 
 /** A sound engine: named mix buses, a per-bus voice pool, lookahead
@@ -32,6 +36,15 @@ export interface AudioEngine {
    *  recording. `load` and `decode` both assume encoded bytes. */
   register(buffer: AudioBuffer): SoundHandle;
   play(sound: SoundHandle, opts?: PlayOptions): VoiceHandle;
+  /** Play a synthesized note: an oscillator with harmonic partials under an
+   *  ADSR envelope. It is a voice like any other — same handle, same bus pool
+   *  and stealing, same `cancelKey`. */
+  playNote(note: NoteOptions): VoiceHandle;
+  /** Book a callback against the audio clock through the engine's lookahead
+   *  scheduler; it receives its own `when` to hand on to `play` or `playNote`.
+   *  `stopKey(key)` cancels it. One that came due during a suspension fires
+   *  late on resume, with its original `when`, so compare against `now()`. */
+  schedule(when: number, fire: (when: number) => void, key?: string): void;
   stopKey(key: string): void;
   stopAll(): void;
   bus(name: string): BusHandle;
@@ -53,6 +66,15 @@ interface Slots {
   byToken: Map<number, LiveVoice>;
 }
 
+/** What `play` and `playNote` share apart from the node they make. */
+type VoiceOptions = Omit<PlayOptions, 'loop'>;
+
+interface Starter {
+  /** False drops the voice when it comes due. */
+  ready(): boolean;
+  start(voice: LiveVoice, when: number): AudioScheduledSourceNode;
+}
+
 interface Chain {
   gain: GainNode;
   panner: StereoPannerNode;
@@ -66,7 +88,14 @@ interface LiveVoice {
   slot: number | null;
   token: number;
   key?: string;
-  source: AudioBufferSourceNode | null;
+  source: AudioScheduledSourceNode | null;
+  /** A synth voice's envelope gain, between its oscillator and the chain. */
+  env: GainNode | null;
+  /** Writes `rate` and `detune` to the node, once there is one. */
+  retune: (() => void) | null;
+  /** A synth voice's note-off. Null for a buffer voice, and until it starts. */
+  release: (() => void) | null;
+  releasing: boolean;
   /** Null once torn down, when the chain goes back to be reused: a handle
    *  that outlives its voice must not write to another voice's nodes. */
   chain: Chain | null;
@@ -242,6 +271,10 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       voice.source.disconnect();
     }
     voice.source = null;
+    voice.retune = null;
+    voice.release = null;
+    voice.env?.disconnect();
+    voice.env = null;
     if (voice.chain) {
       voice.chain.gain.disconnect();
       if (idleChains.length < idleChainLimit) idleChains.push(voice.chain);
@@ -258,9 +291,153 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
 
   const dropped = (id: number): VoiceHandle => ({
     id,
-    stop: () => {}, setGain: () => {}, setRate: () => {}, setDetune: () => {},
+    stop: () => {}, release: () => {}, setGain: () => {}, setRate: () => {}, setDetune: () => {},
     setPan: () => {}, setPosition: () => {}, isPlaying: () => false,
   });
+
+  /**
+   * Everything a voice does apart from making its node: the lock and dispose
+   * checks, the chain, the booking, the stale-backlog check, the slot and any
+   * steal, and the handle. `starter.start` builds the node, connects it into
+   * `voice.chain.panner` and starts it at the time it is handed.
+   */
+  const launch = (common: VoiceOptions, starter: Starter): VoiceHandle => {
+    const id = nextVoiceId++;
+
+    if (disposed) {
+      warnDisposed();
+      return dropped(id);
+    }
+    if (ctx.state !== 'running') {
+      warnLocked();
+      return dropped(id);
+    }
+
+    const busName = common.bus ?? busNames[0];
+    const slots = slotsFor(busName);
+    const bookedAt = now();
+    const when = common.when ?? bookedAt;
+    const baseGain = common.gain ?? 1;
+
+    const spatial = common.position
+      ? spatialize(common.position, listener, spatialOpts)
+      : { gain: 1, pan: common.pan ?? 0 };
+
+    const voice: LiveVoice = {
+      id, slots, slot: null, token: 0, key: common.cancelKey,
+      source: null, env: null, retune: null, release: null, releasing: false,
+      chain: takeChain(graph.node(busName), baseGain * spatial.gain, spatial.pan),
+      baseGain, spatialGain: spatial.gain,
+      rate: common.rate ?? 1, detune: common.detune ?? 0,
+      position: common.position,
+      playing: true, cancelled: false,
+    };
+    live.set(id, voice);
+
+    scheduler.schedule(when, (scheduledWhen) => {
+      if (voice.cancelled) return;
+      // Came due while the context was suspended: starting it now would play
+      // a backlog at once, which is what dropping a locked play avoids. A voice
+      // played since the resume is no backlog, however early its `when`.
+      if (bookedAt < staleFloor && scheduledWhen < staleFloor) {
+        teardown(voice);
+        return;
+      }
+      if (!starter.ready()) {
+        teardown(voice);
+        return;
+      }
+
+      // The slot is taken here, not at booking time. A voice booked a bar out
+      // would otherwise hold one while silent — and, its `startedAt` being in
+      // the future, be the last thing the 'oldest' policy evicts, so booking
+      // a bar of events would evict everything currently audible.
+      const acquired = slots.pool.acquire({
+        startedAt: scheduledWhen,
+        gain: voice.baseGain * voice.spatialGain,
+      });
+      voice.slot = acquired.slot;
+      voice.token = acquired.token;
+      slots.byToken.set(acquired.token, voice);
+      if (acquired.stolen !== null) {
+        const victim = slots.byToken.get(acquired.stolen);
+        if (victim) teardown(victim);
+      }
+
+      const source = starter.start(voice, scheduledWhen);
+      source.onended = () => { teardown(voice); common.onDone?.(); };
+      voice.source = source;
+    }, common.cancelKey);
+
+    return {
+      id,
+      stop(fadeMs) {
+        if (fadeMs && fadeMs > 0 && voice.source && voice.chain && !voice.cancelled) {
+          // Cancelled but not torn down: the fade is what ends this voice, and
+          // stopping the source now would cut the ramp scheduled a line above
+          // it — which is the click `fadeMs` exists to avoid. `onended` does
+          // the bookkeeping when the fade reaches the end.
+          voice.cancelled = true;
+          writeParam(ctx, voice.chain.gain.gain, 0, fadeMs);
+          try { voice.source.stop(ctx.currentTime + fadeMs / 1000); } catch { /* ended */ }
+          return;
+        }
+        teardown(voice);
+      },
+      release() {
+        if (voice.releasing) return;
+        if (voice.release && voice.source && !voice.cancelled) {
+          // Like a fade: `onended` tears the voice down once the release is out.
+          voice.releasing = true;
+          voice.cancelled = true;
+          voice.release();
+          return;
+        }
+        teardown(voice);
+      },
+      setGain(value, rampMs) {
+        voice.baseGain = value;
+        if (!voice.chain) return;
+        writeParam(ctx, voice.chain.gain.gain, value * voice.spatialGain, rampMs);
+        poolGain(voice);
+      },
+      setRate(value) {
+        voice.rate = value;
+        voice.retune?.();
+      },
+      setDetune(cents) {
+        voice.detune = cents;
+        voice.retune?.();
+      },
+      setPan(value) {
+        voice.position = undefined;
+        if (voice.chain) voice.chain.panner.pan.value = value;
+      },
+      setPosition(p) {
+        voice.position = p;
+        applySpatial(voice);
+      },
+      isPlaying: () => voice.playing,
+    };
+  };
+
+  const waves = new Map<string, PeriodicWave>();
+  const applyWave = (osc: OscillatorNode, wave: Waveform): void => {
+    if (typeof wave === 'string') {
+      osc.type = wave;
+      return;
+    }
+    const key = wave.join(',');
+    let periodic = waves.get(key);
+    if (!periodic) {
+      // Sine terms only: partial k sits at imag[k], and index 0 is the DC term.
+      const imag = new Float32Array(wave.length + 1);
+      imag.set(wave, 1);
+      periodic = ctx.createPeriodicWave(new Float32Array(wave.length + 1), imag);
+      waves.set(key, periodic);
+    }
+    osc.setPeriodicWave(periodic);
+  };
 
   const engine: AudioEngine = {
     context: ctx,
@@ -276,123 +453,85 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     register: sounds.register,
 
     play(sound, playOpts = {}) {
-      const id = nextVoiceId++;
-
-      if (disposed) {
-        warnDisposed();
-        return dropped(id);
-      }
-      if (ctx.state !== 'running') {
-        warnLocked();
-        return dropped(id);
-      }
-
-      const busName = playOpts.bus ?? busNames[0];
-      const slots = slotsFor(busName);
-      const bookedAt = now();
-      const when = playOpts.when ?? bookedAt;
-      const baseGain = playOpts.gain ?? 1;
-
-      const spatial = playOpts.position
-        ? spatialize(playOpts.position, listener, spatialOpts)
-        : { gain: 1, pan: playOpts.pan ?? 0 };
-
-      const voice: LiveVoice = {
-        id, slots, slot: null, token: 0, key: playOpts.cancelKey,
-        source: null,
-        chain: takeChain(graph.node(busName), baseGain * spatial.gain, spatial.pan),
-        baseGain, spatialGain: spatial.gain,
-        rate: playOpts.rate ?? 1, detune: playOpts.detune ?? 0,
-        position: playOpts.position,
-        playing: true, cancelled: false,
-      };
-      live.set(id, voice);
-
-      scheduler.schedule(when, (scheduledWhen) => {
-        if (voice.cancelled) return;
-        // Came due while the context was suspended: starting it now would play
-        // a backlog at once, which is what dropping a locked play avoids. A voice
-        // played since the resume is no backlog, however early its `when`.
-        if (bookedAt < staleFloor && scheduledWhen < staleFloor) {
-          teardown(voice);
-          return;
-        }
-        const buffer = sounds.buffer(sound);
-        if (!buffer) {
+      return launch(playOpts, {
+        ready() {
+          if (sounds.buffer(sound)) return true;
           warnUnknownSound(sound.id);
-          teardown(voice);
-          return;
-        }
+          return false;
+        },
+        start(voice, when) {
+          // A fresh source per play: AudioBufferSourceNode is single-use by
+          // specification and cannot be restarted once stopped.
+          const source = ctx.createBufferSource();
+          source.buffer = sounds.buffer(sound)!;
+          source.loop = playOpts.loop ?? false;
+          voice.retune = () => {
+            source.playbackRate.value = voice.rate;
+            source.detune.value = voice.detune;
+          };
+          voice.retune();
+          // Still live when this runs, so the voice still holds its chain.
+          source.connect(voice.chain!.panner);
+          source.start(when / 1000);
+          return source;
+        },
+      });
+    },
 
-        // The slot is taken here, not at play() time. A voice booked a bar out
-        // would otherwise hold one while silent — and, its `startedAt` being in
-        // the future, be the last thing the 'oldest' policy evicts, so booking
-        // a bar of events would evict everything currently audible.
-        const acquired = slots.pool.acquire({
-          startedAt: scheduledWhen,
-          gain: voice.baseGain * voice.spatialGain,
-        });
-        voice.slot = acquired.slot;
-        voice.token = acquired.token;
-        slots.byToken.set(acquired.token, voice);
-        if (acquired.stolen !== null) {
-          const victim = slots.byToken.get(acquired.stolen);
-          if (victim) teardown(victim);
-        }
-
-        // A fresh source per play: AudioBufferSourceNode is single-use by
-        // specification and cannot be restarted once stopped.
-        const source = ctx.createBufferSource();
-        source.buffer = buffer;
-        source.loop = playOpts.loop ?? false;
-        source.playbackRate.value = voice.rate;
-        source.detune.value = voice.detune;
-        // Still live past the check above, so the voice still holds its chain.
-        source.connect(voice.chain!.panner);
-        source.onended = () => { teardown(voice); playOpts.onDone?.(); };
-        voice.source = source;
-        source.start(scheduledWhen / 1000);
-      }, playOpts.cancelKey);
-
-      return {
-        id,
-        stop(fadeMs) {
-          if (fadeMs && fadeMs > 0 && voice.source && voice.chain && !voice.cancelled) {
-            // Cancelled but not torn down: the fade is what ends this voice, and
-            // stopping the source now would cut the ramp scheduled a line above
-            // it — which is the click `fadeMs` exists to avoid. `onended` does
-            // the bookkeeping when the fade reaches the end.
-            voice.cancelled = true;
-            writeParam(ctx, voice.chain.gain.gain, 0, fadeMs);
-            try { voice.source.stop(ctx.currentTime + fadeMs / 1000); } catch { /* ended */ }
-            return;
+    playNote(note) {
+      // Resolved at the call rather than when it comes due, so a bad pitch
+      // throws where it was written.
+      const from = toFrequency(note.pitch);
+      const glideTo = note.glide ? toFrequency(note.glide.to) : undefined;
+      const env = resolveEnvelope(note.envelope);
+      const gate = note.duration;
+      return launch(note, {
+        ready: () => true,
+        start(voice, whenMs) {
+          const t0 = whenMs / 1000;
+          const osc = ctx.createOscillator();
+          applyWave(osc, note.wave ?? 'sine');
+          osc.frequency.setValueAtTime(from, t0);
+          if (glideTo !== undefined) {
+            const end = t0 + (note.glide!.ms ?? gate ?? 100) / 1000;
+            if (note.glide!.curve === 'linear') osc.frequency.linearRampToValueAtTime(glideTo, end);
+            else osc.frequency.exponentialRampToValueAtTime(glideTo, end);
           }
-          teardown(voice);
+          voice.retune = () => { osc.detune.value = voice.detune + 1200 * Math.log2(voice.rate); };
+          voice.retune();
+
+          // Its own gain, not the chain's: `setGain` and a fade cancel whatever
+          // is scheduled on the chain's gain, and would take the envelope with it.
+          const shaper = ctx.createGain();
+          const [first, ...rest] = envelopePoints(env, gate);
+          shaper.gain.setValueAtTime(first.value, t0);
+          for (const p of rest) shaper.gain.linearRampToValueAtTime(p.value, t0 + p.at / 1000);
+          osc.connect(shaper);
+          shaper.connect(voice.chain!.panner);
+          voice.env = shaper;
+
+          voice.release = () => {
+            const at = ctx.currentTime;
+            const elapsed = Math.max(0, at * 1000 - whenMs);
+            // Already past its gate: the release is running and the stop is booked.
+            if (gate !== undefined && elapsed >= gate) return;
+            const end = at + env.release / 1000;
+            shaper.gain.cancelScheduledValues(at);
+            shaper.gain.setValueAtTime(envelopeLevel(env, elapsed), at);
+            shaper.gain.linearRampToValueAtTime(0, end);
+            osc.stop(end);
+          };
+
+          osc.start(t0);
+          if (gate !== undefined) osc.stop(t0 + (gate + env.release) / 1000);
+          return osc;
         },
-        setGain(value, rampMs) {
-          voice.baseGain = value;
-          if (!voice.chain) return;
-          writeParam(ctx, voice.chain.gain.gain, value * voice.spatialGain, rampMs);
-          poolGain(voice);
-        },
-        setRate(value) {
-          voice.rate = value;
-          if (voice.source) voice.source.playbackRate.value = value;
-        },
-        setDetune(cents) {
-          voice.detune = cents;
-          if (voice.source) voice.source.detune.value = cents;
-        },
-        setPan(value) {
-          voice.position = undefined;
-          if (voice.chain) voice.chain.panner.pan.value = value;
-        },
-        setPosition(p) {
-          voice.position = p;
-          applySpatial(voice);
-        },
-        isPlaying: () => voice.playing,
-      };
+      });
+    },
+
+    schedule(when, fire, key) {
+      if (disposed) return;
+      scheduler.schedule(when, fire, key);
     },
 
     stopKey(key) {

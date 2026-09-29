@@ -1,3 +1,5 @@
+import type { Envelope } from './envelope';
+import type { Pitch } from './pitch';
 import type { Vec2 } from './spatialize';
 import type { StealPolicy } from './voicePool';
 
@@ -29,6 +31,10 @@ export interface VoiceHandle {
   id: number;
   /** `fadeMs` ramps the voice out and stops it at the end of the ramp. */
   stop(fadeMs?: number): void;
+  /** Note-off: a synth voice runs its envelope's release from whatever level it
+   *  has reached. A buffer voice has no envelope, so this is `stop()`. Either
+   *  one released before it starts is canceled. */
+  release(): void;
   setGain(value: number, rampMs?: number): void;
   /** Playback rate. Applies to a voice booked for a future `when` too. */
   setRate(value: number): void;
@@ -38,6 +44,40 @@ export interface VoiceHandle {
   setPan(value: number): void;
   setPosition(p: Vec2): void;
   isPlaying(): boolean;
+}
+
+/** An oscillator's waveform: one of Web Audio's built-in shapes, or the
+ *  amplitudes of harmonic partials — `[1, 0.5, 0.25]` is the fundamental at
+ *  full level, the second harmonic at half and the third at a quarter. Partials
+ *  are normalized, so only their ratios matter. */
+export type Waveform = 'sine' | 'square' | 'sawtooth' | 'triangle' | readonly number[];
+
+/** A pitch sweep from the note's own pitch. */
+export interface Glide {
+  to: Pitch;
+  /** Default: the note's `duration`, or 100 ms for a held note. */
+  ms?: number;
+  /** Default 'exponential', which moves evenly in pitch; 'linear' moves evenly
+   *  in hertz. */
+  curve?: 'linear' | 'exponential';
+}
+
+/** The timbre of a note, apart from its pitch — spread one into several
+ *  `playNote` calls to reuse it. */
+export interface SynthPatch {
+  /** Default 'sine'. */
+  wave?: Waveform;
+  envelope?: Envelope;
+  glide?: Glide;
+}
+
+/** Options for `AudioEngine.playNote`. Routing, level, position, timing and
+ *  `cancelKey` mean what they mean for `play()`. */
+export interface NoteOptions extends SynthPatch, Omit<PlayOptions, 'rate' | 'loop'> {
+  pitch: Pitch;
+  /** Gate length in ms: how long the note sounds before its release begins.
+   *  Omit to hold it until `release()`. */
+  duration?: number;
 }
 
 /** Options for `createAudioEngine`. */

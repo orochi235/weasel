@@ -10,4 +10,17 @@ export {
   type StealPolicy,
 } from './voicePool';
 export { spatialize, type SpatialOptions, type Vec2 } from './spatialize';
-export type { AudioEngineOptions, PlayOptions, VoiceHandle } from './types';
+export { midiToFrequency, noteToMidi, toFrequency, type Pitch } from './pitch';
+export {
+  envelopeLevel, envelopePoints, resolveEnvelope,
+  type Envelope, type EnvelopePoint, type ResolvedEnvelope,
+} from './envelope';
+export {
+  createPatternPlayer,
+  type PatternPlayer, type PatternPlayerOptions, type PatternEvent, type PatternNote,
+  type PatternHit,
+} from './patternPlayer';
+export type {
+  AudioEngineOptions, PlayOptions, VoiceHandle,
+  NoteOptions, SynthPatch, Waveform, Glide,
+} from './types';

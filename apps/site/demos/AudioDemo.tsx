@@ -10,8 +10,10 @@ import {
   useSelection,
 } from '@weasel-js/core';
 import type { DrawCommand, RenderLayer } from '@weasel-js/core';
-import { createAudioEngine, spatialize } from '@weasel-js/audio';
-import type { AnalyserTap, AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
+import { createAudioEngine, createPatternPlayer, spatialize } from '@weasel-js/audio';
+import type {
+  AnalyserTap, AudioEngine, PatternEvent, PatternPlayer, SoundHandle, SynthPatch, VoiceHandle,
+} from '@weasel-js/audio';
 
 interface Dot { id: string; x: number; y: number; width: number; height: number }
 
@@ -49,7 +51,25 @@ const TONES: Record<string, ToneSpec> = {
   bed: { freq: 196, ms: 1000, decay: 0 },
 };
 
-interface Kit { engine: AudioEngine; sounds: Record<string, SoundHandle>; tap: AnalyserTap }
+const PLUCK: SynthPatch = {
+  wave: [1, 0.5, 0.33, 0.25],
+  envelope: { attack: 4, decay: 140, sustain: 0.25, release: 90 },
+};
+/** Sixteen sixteenths: an arpeggio over two held bass notes. */
+const PATTERN: PatternEvent[] = [
+  ...['C4', 'E4', 'G4', 'B4', 'C5', 'B4', 'G4', 'E4'].map((pitch, i) => ({
+    ...PLUCK, step: i * 2, pitch, bus: 'music', gain: 0.3,
+  })),
+  { step: 0, length: 7, pitch: 'C3', wave: 'triangle', bus: 'music', gain: 0.45 },
+  { step: 8, length: 7, pitch: 'A2', wave: 'triangle', bus: 'music', gain: 0.45 },
+];
+
+interface Kit {
+  engine: AudioEngine;
+  sounds: Record<string, SoundHandle>;
+  tap: AnalyserTap;
+  pattern: PatternPlayer;
+}
 
 export function AudioDemo() {
   const scene = useScene<Dot>({ items: SOURCE });
@@ -63,6 +83,10 @@ export function AudioDemo() {
   const [muted, setMuted] = useState<Record<Bus, boolean>>({ sfx: false, music: false });
   const [soloed, setSoloed] = useState<Record<Bus, boolean>>({ sfx: false, music: false });
   const [sourcePlaying, setSourcePlaying] = useState(false);
+  const [patternOn, setPatternOn] = useState(false);
+  const [tempo, setTempo] = useState(112);
+  const [patternStep, setPatternStep] = useState(0);
+  const step = useRef(0);
   const bands = useRef<Float32Array>(new Float32Array(BARS));
   const sourceVoice = useRef<VoiceHandle | null>(null);
 
@@ -74,7 +98,10 @@ export function AudioDemo() {
         ([name, spec]) => [name, engine.register(makeTone(engine.context, spec))] as const,
       ),
     );
-    setKit({ engine, sounds, tap: engine.analyser() });
+    const pattern = createPatternPlayer(engine, {
+      tempo: 112, length: 16, events: PATTERN, onStep: (s) => { step.current = s; },
+    });
+    setKit({ engine, sounds, tap: engine.analyser(), pattern });
     return () => { engine.dispose(); };
   }, []);
 
@@ -84,6 +111,7 @@ export function AudioDemo() {
     bands.current = kit.tap.bands(BARS);
     setState(kit.engine.state());
     setVoices(kit.engine.activeVoices());
+    setPatternStep(step.current);
   }), [animator, kit]);
 
   const node = scene.get(asNodeId('source'));
@@ -112,6 +140,17 @@ export function AudioDemo() {
       bus: 'music', loop: true, gain: 0.7, position: center,
     });
     setSourcePlaying(true);
+  };
+
+  const togglePattern = (): void => {
+    if (!kit) return;
+    if (kit.pattern.playing()) kit.pattern.stop();
+    else kit.pattern.start();
+    setPatternOn(kit.pattern.playing());
+  };
+  const changeTempo = (bpm: number): void => {
+    setTempo(bpm);
+    kit?.pattern.setTempo(bpm);
   };
 
   const setBusGain = (bus: Bus, value: number): void => {
@@ -247,6 +286,17 @@ export function AudioDemo() {
               </button>
             </div>
           ))}
+          <div className="ckd-panel-title">pattern</div>
+          <div className="ckd-bus">
+            <button className="ckd-btn" onClick={togglePattern} disabled={!kit}>
+              {patternOn ? 'stop' : 'play'}
+            </button>
+            <input
+              className="ckd-range" type="range" min={60} max={200} step={1}
+              value={tempo} onChange={(e) => changeTempo(Number(e.target.value))}
+            />
+            <span className="ckd-readout">{tempo} bpm, step {patternOn ? patternStep + 1 : '–'}/16</span>
+          </div>
         </div>
       </div>
       <div className="ckd-hint">
@@ -256,7 +306,9 @@ export function AudioDemo() {
         to the looping voice through <code>setPosition</code>. The bars are
         <code> analyser().bands(16)</code> on master. <strong>fire 50 one-shots</strong>
         books fifty plays 20 ms apart against the audio clock; the per-bus limit is 8, so the
-        pool steals rather than piling up.
+        pool steals rather than piling up. The <strong>pattern</strong> is
+        <code> createPatternPlayer</code> booking <code>playNote</code> synth voices a step at a
+        time on <code>music</code>; a tempo change lands on the next step.
       </div>
     </div>
   );
