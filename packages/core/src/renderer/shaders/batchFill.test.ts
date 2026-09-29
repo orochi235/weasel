@@ -16,7 +16,7 @@ function declaredUniforms(src: string): Set<string> {
 /** Names declared as `in <type> <name>;` in a vertex shader. */
 function declaredInputs(src: string): Set<string> {
   const names = new Set<string>();
-  for (const m of src.matchAll(/^\s*in\s+\w+\s+(\w+)\s*;/gm)) names.add(m[1]);
+  for (const m of src.matchAll(/^\s*(?:layout\([^)]*\)\s*)?in\s+\w+\s+(\w+)\s*;/gm)) names.add(m[1]);
   return names;
 }
 
@@ -54,7 +54,7 @@ describe('batch program — declaration lists match the sources', () => {
   it('accounts for every float in the vertex', () => {
     const widths: Record<string, number> = { vec2: 2, vec3: 3, vec4: 4, float: 1 };
     let floats = 0;
-    for (const m of BATCH_VERT_SRC.matchAll(/^\s*in\s+(\w+)\s+\w+\s*;/gm)) floats += widths[m[1]] ?? 0;
+    for (const m of BATCH_VERT_SRC.matchAll(/^\s*(?:layout\([^)]*\)\s*)?in\s+(\w+)\s+\w+\s*;/gm)) floats += widths[m[1]] ?? 0;
     expect(floats).toBe(FLOATS_PER_VERTEX);
   });
 });

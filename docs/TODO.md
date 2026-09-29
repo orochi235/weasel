@@ -308,11 +308,15 @@ Core five + Crop shipped. Remaining:
     A user-supplied bitmap needs a payload variant that persists the image
     itself (data URI, or a document-scoped asset table), which is a storage
     question rather than a paint one.
-  - **Patterns on small text.** A text node's paint is its `data.fill`, so the
-    panel already sets a pattern on one, and above the outline-tier threshold
-    a glyph is geometry drawn through `drawPathFillByKind`, so it paints. Below
-    the threshold `drawTextGroup` samples an SDF atlas with one color — the
-    paint's `color`, or black — so the same text shows the pattern flat.
+  - **Registered paint kinds on small text.** Patterns and the three
+    gradients paint on atlas-tier text through a glyph-mask program
+    (`shaders/glyphPaint.ts`) that runs the same `shadePaint` GLSL as their
+    path program. A kind registered through `registerPaintKind` binds its own
+    program, which the kit cannot wrap in a coverage mask, so on the atlas tier
+    `drawTextGroup` still paints it black while the outline tier paints it
+    properly — `mesh-gradient` text changes color across the threshold. A fix
+    needs the kind to supply its paint as a GLSL function the kit composes,
+    rather than a whole program.
 
   The gradient half's own gap is closed: a conic gradient serializes as a
   `<wzl:conicGradient>` def in `urn:weasel-js:svg` and reads back losslessly,
