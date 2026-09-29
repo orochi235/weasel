@@ -16,6 +16,7 @@ import { scopeBindings } from './assemble';
 import { liveScope } from './eligibility';
 import type { Contribution, OverlayPosition } from './types';
 import { isDev } from '../devFlag';
+import { sameList, useStableByContent } from '../useStableByContent';
 import type { KernelOverlay } from '../index';
 
 /** Options for {@link useContributions}. */
@@ -67,16 +68,13 @@ export function useContributions<TOverlay = KernelOverlay>(
   // First-mount sync: if the context's slot is still unseeded and the caller
   // wants a tool, push it. Captured at first render; the setState runs in a
   // post-commit effect so it never updates state during render.
-  const hasInitializedRef = useRef(false);
-  const isFirstRender = !hasInitializedRef.current;
-  const needsFirstMountSyncRef = useRef(false);
-  if (isFirstRender) {
-    hasInitializedRef.current = true;
-    needsFirstMountSyncRef.current = ctx.active === null && opts.focused !== null;
-  }
+  const firstMountRef = useRef<{ sync: boolean } | null>(null);
+  const isFirstRender = firstMountRef.current == null;
+  if (firstMountRef.current == null) firstMountRef.current = { sync: ctx.active === null && opts.focused !== null };
   useEffect(() => {
-    if (!needsFirstMountSyncRef.current) return;
-    needsFirstMountSyncRef.current = false;
+    const first = firstMountRef.current;
+    if (!first?.sync) return;
+    first.sync = false;
     ctx.setActive(opts.focused);
     // First-mount sync only — deliberately runs once after mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,35 +84,30 @@ export function useContributions<TOverlay = KernelOverlay>(
     ? opts.focused
     : ctx.active;
 
-  // Refs so the memoized callbacks below see latest values without
-  // re-creating themselves.
-  const entriesRef = useRef(opts.entries);
-  entriesRef.current = opts.entries;
-  const focusedRef = useRef(focused);
-  focusedRef.current = focused;
-  const engagedRef = useRef<readonly string[]>(ctx.hotkeyStack);
-  engagedRef.current = ctx.hotkeyStack;
+  // Consumers commonly rebuild the entry list every render; identity follows
+  // its contents, so everything keyed on it below changes only when they do.
+  const entries = useStableByContent(opts.entries, sameList);
+  const engaged = ctx.hotkeyStack;
 
   const setFocused = useCallback((id: string | null) => { ctx.setActive(id); }, [ctx]);
 
   /** Live eligibility state, plus the entries ordered so that hotkey-engaged
    *  ones come first — stack order breaks ties within the hotkey tier. */
   const snapshot = useCallback(() => {
-    const engaged = engagedRef.current;
     const engagedIds = new Set(engaged);
     const ordered: Contribution<TOverlay>[] = [];
     for (const id of engaged) {
-      const entry = entriesRef.current.find((e) => e.id === id);
+      const entry = entries.find((e) => e.id === id);
       if (entry && !ordered.includes(entry)) ordered.push(entry);
     }
-    for (const entry of entriesRef.current) {
+    for (const entry of entries) {
       if (!ordered.includes(entry)) ordered.push(entry);
     }
     return {
       ordered,
-      state: { focusedId: focusedRef.current, engagedIds },
+      state: { focusedId: focused, engagedIds },
     };
-  }, []);
+  }, [entries, focused, engaged]);
 
   const scopedBindings = useCallback((): ScopedBinding[] => {
     const { ordered, state } = snapshot();
@@ -138,7 +131,7 @@ export function useContributions<TOverlay = KernelOverlay>(
     return [...active, ...hotkey, ...ambient];
   }, [snapshot]);
 
-  useOffhandAction(opts.entries);
+  useOffhandAction(entries);
 
   // Route-conflict check. Two entries declaring the same (phase, gesture, arg,
   // target, modifiers) tuple in one scope are resolved by declaration order and
@@ -150,7 +143,7 @@ export function useContributions<TOverlay = KernelOverlay>(
   // each render. Actions are read inside the effect, after the registrations
   // that ran in child effects have landed.
   const lastConflictSigRef = useRef<{ sig: string; modes: ModeRegistry | undefined } | null>(null);
-  const entrySig = opts.entries.map((e) => e.id).join(',');
+  const entrySig = entries.map((e) => e.id).join(',');
   const modesRegistry = opts.modes;
   useEffect(() => {
     if (!isDev()) return;
@@ -164,7 +157,7 @@ export function useContributions<TOverlay = KernelOverlay>(
     // take turns in the active slot — so ambient-vs-ambient went unreported.
     const registry: Contribution<TOverlay>[] = [];
     const ambient: Contribution<TOverlay>[] = [];
-    for (const entry of entriesRef.current) {
+    for (const entry of entries) {
       if (entry.eligibility?.focus) registry.push(entry);
       if (entry.eligibility?.always || entry.eligibility?.claimed) ambient.push(entry);
     }
@@ -174,23 +167,14 @@ export function useContributions<TOverlay = KernelOverlay>(
       actions: actionsRegistry?.list() ?? [],
       ...(modesRegistry ? { modes: modesRegistry.list().map(activeModeOf) } : {}),
     });
-  }, [entrySig, actionsRegistry, modesRegistry]);
+  }, [entrySig, entries, actionsRegistry, modesRegistry]);
 
   // Memoized so consumers using the result as an effect dep don't see identity
   // churn every render — which loops infinitely when the consumer setStates
-  // from inside such an effect. `entries` is a getter for that reason: read as
-  // a property it would be captured at memo time, and a consumer that adds an
-  // entry without switching tools would get a live, hittable binding with no
-  // palette entry. The other two members already read the ref, being calls.
+  // from inside such an effect.
   return useMemo(
-    () => ({
-      get entries() { return entriesRef.current; },
-      focused,
-      setFocused,
-      scopedBindings,
-      overlays,
-    }),
-    [focused, setFocused, scopedBindings, overlays],
+    () => ({ entries, focused, setFocused, scopedBindings, overlays }),
+    [entries, focused, setFocused, scopedBindings, overlays],
   );
 }
 

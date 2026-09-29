@@ -1,5 +1,5 @@
 // src/tools/useTools.ts
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { ModeRegistry } from '@weasel-js/modes';
 import { dlog } from '../dlog';
 import type { AnyTool, AnyToolOf } from './types';
@@ -8,6 +8,8 @@ import { useActiveToolContext } from '../interactions/actions/activeToolContext'
 import { useContributions } from '../contributions/useContributions';
 import type { Contribution, Eligibility, OverlayPosition } from '../contributions/types';
 import type { KernelOverlay } from '../index';
+import { useLatest } from '../useLatest';
+import { sameList, useStableByContent } from '../useStableByContent';
 
 /** Options for `useTools`: which tools exist, which one starts active, and
  *  which run continuously regardless of the active one. */
@@ -78,23 +80,16 @@ function useStableSources<T extends AnyTool, A extends Contribution<unknown>>(
   registry: Record<string, T>,
   ambient: readonly A[] | undefined,
 ): { registry: Record<string, T>; ambient: readonly A[] } {
-  const next = { registry, ambient: ambient ?? NO_AMBIENT };
-  const ref = useRef(next);
-  const prev = ref.current;
-  if (prev !== next && !(sameRecord(prev.registry, next.registry) && sameList(prev.ambient, next.ambient))) {
-    ref.current = next;
-  }
-  return ref.current;
+  return useStableByContent(
+    { registry, ambient: ambient ?? NO_AMBIENT },
+    (a, b) => sameRecord(a.registry, b.registry) && sameList(a.ambient, b.ambient),
+  );
 }
 
 function sameRecord<T>(a: Record<string, T>, b: Record<string, T>): boolean {
   const ak = Object.keys(a);
   if (ak.length !== Object.keys(b).length) return false;
   return ak.every((k) => k in b && a[k] === b[k]);
-}
-
-function sameList<T>(a: readonly T[], b: readonly T[]): boolean {
-  return a.length === b.length && a.every((t, i) => t === b[i]);
 }
 
 function sameEligibility(a: Eligibility | undefined, b: Eligibility): boolean {
@@ -160,12 +155,9 @@ export function useTools<TOverlay = KernelOverlay>(
 
   // Refs so the memoized callbacks below see latest values without
   // re-creating themselves.
-  const slottedRef = useRef(slotted);
-  slottedRef.current = slotted;
-  const activeRef = useRef(contributions.focused);
-  activeRef.current = contributions.focused;
-  const hotkeyRef = useRef(hotkeyEngaged);
-  hotkeyRef.current = hotkeyEngaged;
+  const slottedRef = useLatest(slotted);
+  const activeRef = useLatest(contributions.focused);
+  const hotkeyRef = useLatest(hotkeyEngaged);
 
   const setFocused = contributions.setFocused;
   const setActive = useCallback(
@@ -176,7 +168,7 @@ export function useTools<TOverlay = KernelOverlay>(
       dlog('tools', 'active:', activeRef.current, '→', id);
       setFocused(id);
     },
-    [setFocused],
+    [setFocused, slottedRef, activeRef],
   );
 
   const engageHotkey = useCallback(
@@ -187,19 +179,20 @@ export function useTools<TOverlay = KernelOverlay>(
       dlog('tools', 'hotkey engaged:', id);
       ctx.pushHotkey(id);
     },
-    [ctx],
+    [ctx, slottedRef],
   );
 
   const disengageHotkey = useCallback(() => {
     if (hotkeyRef.current) dlog('tools', 'hotkey disengaged:', hotkeyRef.current);
     ctx.popHotkey();
-  }, [ctx]);
+  }, [ctx, hotkeyRef]);
 
+  // May be called while rendering, so it reads this render's tools, not a ref.
   const has = useCallback(
     (id: string): boolean =>
-      id in slottedRef.current.registry
-      || slottedRef.current.ambient.some((t) => t.id === id),
-    [],
+      id in slotted.registry
+      || slotted.ambient.some((t) => t.id === id),
+    [slotted],
   );
 
   // Memoize the returned ToolsApi so consumers using `tools` as a dep (e.g.

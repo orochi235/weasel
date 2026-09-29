@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   AUTO_POSE_DESCRIPTOR,
+  useLatest,
   usePoseRun,
   type EasingFn,
   type NodeId,
@@ -244,8 +245,7 @@ function shapeOf(graph: Graph): string {
  * that as a pin.
  */
 export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLayout {
-  const optsRef = useRef(opts);
-  optsRef.current = opts;
+  const optsRef = useLatest(opts);
 
   const producer = useRef<LiveLayoutProducer<TPose> | null>(null);
   const producerFrame = useRef(0);
@@ -273,7 +273,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
       ...(o.frames === undefined ? {} : { frames: o.frames }),
       ...(o.easing ? { easing: o.easing } : {}),
     });
-  }, []);
+  }, [optsRef]);
 
   const step = useCallback((ctx: PoseRunCtx<TPose>): PoseRunStep<TPose> => {
     const o = optsRef.current;
@@ -294,7 +294,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     }
     const poses = layoutPoses(o.scene, placed, o.geometry);
     return { poses: [...poses] as [NodeId, TPose][], done };
-  }, []);
+  }, [optsRef]);
 
   const run = usePoseRun<TPose>({
     scene: opts.scene,
@@ -319,7 +319,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
       if (shapeOf(graph) === shape.current) return;
       build();
     });
-  }, [opts.scene, opts.reheatOnGraphChange, run, build]);
+  }, [opts.scene, opts.reheatOnGraphChange, run, build, optsRef]);
 
   return useMemo<LiveLayout>(() => ({
     start() {

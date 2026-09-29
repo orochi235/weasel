@@ -2,6 +2,7 @@ import { Lab } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
+import { renderOutsideAct, renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';
@@ -153,5 +154,60 @@ describe('StoryTrial', () => {
     });
     expect(screen.getByRole('button', { name: 'on' })).toBe(button);
     expect(renders.mock.calls.length).toBe(before);
+  });
+
+  it("writes the story's setState and setConfig to the committed trial, not an abandoned render's", async () => {
+    const trial = () => ({ setConfig: vi.fn(), setState: vi.fn() });
+    const committed = trial();
+    const abandoned = trial();
+    const config = { label: 'clicks' };
+    const state = { n: 1 };
+    renderThenAbandon(committed, abandoned, (fns) => (
+      <StoryGlobalsContext.Provider value={{}}>
+        <StoryTrial story={counter!} setup={{}} ctx={{ config, state, ...fns }} />
+      </StoryGlobalsContext.Provider>
+    ));
+    fireEvent.click(await screen.findByRole('button', { name: 'clicks: 1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'rename' }));
+    expect(abandoned.setState).not.toHaveBeenCalled();
+    expect(abandoned.setConfig).not.toHaveBeenCalled();
+    expect(committed.setState).toHaveBeenCalledWith({ n: 2 });
+    expect(committed.setConfig).toHaveBeenCalledWith('label', 'taps');
+  });
+
+  it('does not retry a caught render for input a render React threw away', () => {
+    const failures = vi.fn();
+    const [bad] = loadNativeModule(
+      {
+        default: meta({ title: 'Test/Bad' }),
+        Bad: story({
+          config: f.schema({ ok: f.boolean(false) }),
+          render: ({ config }) => {
+            if (!config.ok) {
+              failures();
+              throw new Error('not yet');
+            }
+            return <p>fine</p>;
+          },
+        }),
+      },
+      'Test/Bad',
+    );
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let bump!: () => void;
+    function Trial({ config }: { config: { ok: boolean } }) {
+      const [, set] = useState(0);
+      bump = () => set((n) => n + 1);
+      return <StoryTrial story={bad!} setup={{}} ctx={{ config, state: null, setConfig: () => {}, setState: () => {} }} />;
+    }
+    try {
+      renderThenAbandon({ ok: false }, { ok: true }, (config) => <Trial config={config} />);
+      const before = failures.mock.calls.length;
+      // A re-render with the committed config, which has not changed.
+      renderOutsideAct(bump);
+      expect(failures.mock.calls.length).toBe(before);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

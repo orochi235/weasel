@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from 'react';
-import type { Keyframe } from '@weasel-js/core';
+import { useLatest, type Keyframe } from '@weasel-js/core';
 import { LayeredCurveEditor } from '../CurveEditor/LayeredCurveEditor';
 import {
   applyKeyframeDrag, createKeyframeLayer, type KeyframeLayerState,
@@ -86,8 +86,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   // back through `keys` cannot move the keys out from under the drag.
   const [live, setLive] = useState<KeyframeLayerState | null>(null);
   const state = live ?? committed;
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  const stateRef = useLatest(state);
 
   const layers = useMemo(() => [{ layer, state: state as unknown }], [layer, state]);
 

@@ -1,4 +1,4 @@
-import { useSyncExternalStore, type ReactNode } from 'react';
+import { useLayoutEffect, useReducer, useSyncExternalStore, type ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
 import {
   useActionsRegistry,
@@ -76,6 +76,17 @@ export function ActionBar(props: ActionBarProps) {
     registry ? registry.list : () => EMPTY_LIST,
   );
   const items = all.filter((a) => a.group === group).flatMap(actionItems);
+  const isEnabled = (item: ActionItem): boolean => {
+    const deps = depReg ? buildDepsFromRequires(item.action, depReg) : undefined;
+    return evaluateEnabled(item.action, deps).enabled;
+  };
+  // Dep sources publish on commit, so a render reads the previous commit's
+  // deps. Once this one commits, re-render if what they say now differs.
+  const shown = items.map(isEnabled);
+  const [, recheck] = useReducer((n: number) => n + 1, 0);
+  useLayoutEffect(() => {
+    if (items.some((item, i) => isEnabled(item) !== shown[i])) recheck();
+  });
 
   const cls = [s.bar, orientation === 'vertical' && s.vertical, className]
     .filter(Boolean)
@@ -83,14 +94,10 @@ export function ActionBar(props: ActionBarProps) {
 
   return (
     <div className={cls} role="toolbar" aria-label={`${group} actions`}>
-      {items.map((item) => {
+      {items.map((item, i) => {
         const label = labels?.[item.key] ?? item.label;
         const icon = resolveIcon(item, icons?.[item.key]);
-        // Read at render: `enabled` reflects whatever the deps hold now, so
-        // the bar is current as long as its parent re-renders on changes.
-        const deps = depReg ? buildDepsFromRequires(item.action, depReg) : undefined;
-        const { enabled } = evaluateEnabled(item.action, deps);
-        const disabled = !enabled;
+        const disabled = !shown[i];
         const title = resolveTitle(label, item);
         return (
           <TooltipTrigger key={item.key} isDisabled={disabled}>

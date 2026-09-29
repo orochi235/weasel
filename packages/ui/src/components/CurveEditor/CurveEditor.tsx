@@ -5,7 +5,7 @@
  * directly.
  */
 import {
-  useCallback, useEffect, useMemo, useRef, useState,
+  useCallback, useEffect, useMemo, useState,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
@@ -28,6 +28,7 @@ import {
   type FunctionLayerState,
 } from './createFunctionLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
+import { useLatest } from '@weasel-js/core';
 
 export type { GridSettings, AxesSettings, TickSettings };
 export type {
@@ -106,8 +107,7 @@ export function CurveEditor(props: CurveEditorProps) {
   );
   // Ref mirror so the layerChange callback can compare against the
   // freshest state without re-binding on every render.
-  const layerStateRef = useRef(layerState);
-  layerStateRef.current = layerState;
+  const layerStateRef = useLatest(layerState);
 
   // Sync from controlled `value` when the consumer updates it externally
   // and we're idle. Skip the update during a gesture so drag-in-flight
@@ -116,7 +116,7 @@ export function CurveEditor(props: CurveEditorProps) {
     if (layerStateRef.current.activeIndex !== null) return;
     if (layerStateRef.current.points === value) return;
     setLayerState({ points: value, activeIndex: null });
-  }, [value]);
+  }, [value, layerStateRef]);
 
   const handleLayerChange = useCallback((_id: string, nextUnknown: unknown) => {
     const next = nextUnknown as FunctionLayerState;
@@ -125,7 +125,7 @@ export function CurveEditor(props: CurveEditorProps) {
     if (next.points !== prevPoints) {
       onInput(next.points as ControlPoint[]);
     }
-  }, [onInput]);
+  }, [onInput, layerStateRef]);
 
   const handleLayerCommit = useCallback((_id: string, nextUnknown: unknown, prevUnknown: unknown) => {
     if (!onChange) return;
@@ -158,7 +158,7 @@ export function CurveEditor(props: CurveEditorProps) {
     setLayerState({ points: next, activeIndex: null });
     onInput(next as ControlPoint[]);
     onChange?.(next as ControlPoint[], points);
-  }, [endpoints, minPoints, onInput, onChange]);
+  }, [endpoints, minPoints, onInput, onChange, layerStateRef]);
 
   const layers = useMemo(() => [{ layer, state: layerState }], [layer, layerState]);
 

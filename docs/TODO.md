@@ -322,38 +322,6 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P3) Refs read by event paths are still assigned during render across the kit.**
-  A ref written in a render body keeps what an abandoned concurrent render (a
-  `startTransition` that suspends) computed, and the next event reads it. The
-  paint paths are fixed. What is left is every site
-  `weasel/no-render-ref-write` reports (`scripts/eslint/no-render-ref-write.mjs`,
-  at `warn` in `eslint.config.js` until this is done; flip it to `error` then).
-  `npm run lint:ref-writes [-- <dir>]` lists them with a count per package.
-
-  The fix for a mirror is `useLatest(value)` from `@weasel-js/routing/react`
-  (re-exported by core), which publishes committed renders only, ahead of every
-  layout effect. `exhaustive-deps` only knows `useRef` is stable, so the ref it
-  returns has to be listed in dependency arrays. Before moving a site, check its
-  readers for a read during render — the function-form tool cursor was one, and
-  now takes its view explicitly — since `.current` then holds the previous
-  commit's value. A lazy initializer is allowed only as
-  `if (r.current == null) r.current = make();`; the multi-statement one
-  (`useScene`) is reported until reshaped into that.
-  `renderThenAbandon` in `@weasel-js/routing/testing/abandonRender` is the test
-  shape.
-
-  | Package | Sites | Files |
-  |---|---:|---:|
-  | `packages/routing` | 21 | 6 |
-  | `packages/ui` | 14 | 9 |
-  | `packages/forge` | 7 | 4 |
-  | `packages/diagram` | 1 | 1 |
-
-  - `packages/routing` — `interactions/dispatcher/useGestureDispatcher.tsx` (8), `contributions/useContributions.ts` (5), `tools/useTools.ts` (4), `interactions/actions/useOngoingAction.ts` (2), `interactions/actions/ActionsProvider.tsx`, `interactions/actions/depRegistry.tsx`.
-  - `packages/ui` — `components/CurveEditor/LayeredCurveEditor.tsx` (6), `components/Callout/Callout.tsx`, `components/CurveEditor/CurveEditor.tsx`, `components/LayerList/LayerList.tsx`, `components/ResizeHandle/ResizeHandle.tsx`, `components/Timeline/AnimatedTimeline.tsx`, `components/Timeline/LaneGraph.tsx`, `useAsyncOptions.ts`, `useReorderDragList.ts`.
-  - `packages/forge` — `shell/StoryTrial.tsx` (3), `shell/FrameView.tsx` (2), `shell/TrialHost.tsx`, `shell/useStoryRegistry.ts`.
-  - `packages/diagram` — `live.ts`.
-
 - **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner
   colors and the blend space; a patch's twelve control points are only reachable
   by writing the paint by hand, which is where gradients were before
@@ -1064,7 +1032,7 @@ Deferred, with the rationale in `eslint.config.js` next to each:
 
 - **(P3) eslint-plugin-react-hooks v7 compiler rules** — `refs` (387 findings
   across 103 files; it has no writes-only mode, so render-time *writes* are
-  covered by `weasel/no-render-ref-write` instead — see "Rendering & paint"), `immutability` (18), `set-state-in-effect` (21),
+  enforced by the local `weasel/no-render-ref-write` instead), `immutability` (18), `set-state-in-effect` (21),
   `use-memo` (7), `globals` (6), `static-components` (3),
   `preserve-manual-memoization` (2). `refs` dominates because reading a ref
   during render is how a canvas library reaches mutable frame state, so a large

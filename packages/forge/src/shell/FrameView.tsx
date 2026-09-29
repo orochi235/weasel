@@ -1,7 +1,8 @@
 import { breadcrumb } from './breadcrumb';
 import './shell.css';
+import { useLatest } from '@weasel-js/core';
 import { type RenderContext, TrialIdContext, useLabContext } from '@weasel-js/labkit';
-import { type RefObject, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { type RefObject, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { type Channel, type Mismatch, openChannel } from '../protocol/channel';
 import {
   type FaultPhase,
@@ -133,19 +134,18 @@ export function FrameView(props: FrameViewProps) {
   const slotRef = useRef<HTMLDivElement>(null);
   const inView = useInView(hostRef);
   const link = useRef<Link | null>(null);
-  const latest = useRef({ ...props, globals, overrides, pool, lab, title });
-  latest.current = { ...props, globals, overrides, pool, lab, title };
+  const latest = useLatest({ ...props, globals, overrides, pool, lab, title });
   const [fault, setFault] = useState<Fault | null>(null);
   // A loaded document stays hidden until its story has rendered, so a new trial never shows the blank page.
   const [pending, setPending] = useState(true);
 
-  const init = (current: Link): void => {
+  const init = useCallback((current: Link): void => {
     const { ctx: live, globals: liveGlobals } = latest.current;
     current.awaiting = null;
     current.sent = { config: storyConfig(live.config), state: live.state, globals: liveGlobals };
     current.inputs += 1;
     current.channel.send({ type: 'init', ...current.sent });
-  };
+  }, [latest]);
 
   const receive = (current: Link, msg: FromFrame): void => {
     const { ctx: live, answers, onReady } = latest.current;
@@ -271,8 +271,7 @@ export function FrameView(props: FrameViewProps) {
     ]);
   };
 
-  const connectRef = useRef(connect);
-  connectRef.current = connect;
+  const connectRef = useLatest(connect);
 
   // A trial out of view drops its frame, and with it any WebGL contexts the story held; the config and state
   // live in the trial, so a return brings up a new frame and `init` carries them back.
@@ -314,7 +313,7 @@ export function FrameView(props: FrameViewProps) {
       setPending(true);
       setFault(null);
     };
-  }, [inView, src]);
+  }, [inView, src, connectRef, latest]);
 
   useEffect(() => {
     iframeRef.current?.toggleAttribute('data-pending', pending && !fault);
@@ -357,7 +356,7 @@ export function FrameView(props: FrameViewProps) {
     }
     // The frame retries its render on new input and faults again if it still throws.
     if (input) setFault((shown) => (shown?.phase === 'render' ? null : shown));
-  }, [ctx.config, ctx.state, globals, descriptionKey]);
+  }, [ctx.config, ctx.state, globals, descriptionKey, init]);
 
   return (
     <div

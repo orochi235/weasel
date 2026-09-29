@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import type { RefCallback } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { useReorderDragList, type ReorderItem, type PressModifiers, type ReorderDragState } from './useReorderDragList';
 
 const ITEMS: ReorderItem[] = [
@@ -393,5 +394,25 @@ describe('useReorderDragList nudge', () => {
     setup();
     expect(handlers!.nudge('a', 0, -1)).toBe(false);
     expect(handlers!.nudge('a', 0, 1)).toBe(true);
+  });
+
+  it('reports to the committed callbacks, not an abandoned render\'s', () => {
+    const committed = { onReorder: vi.fn(), onPress: vi.fn() };
+    const abandoned = { onReorder: vi.fn(), onPress: vi.fn() };
+    renderThenAbandon(committed, abandoned, (cbs) => <Harness items={ITEMS} selectedIds={[]} {...cbs} />);
+    const list = document.querySelector<HTMLElement>('[data-testid="list"]')!;
+    list.setPointerCapture = vi.fn();
+    list.releasePointerCapture = vi.fn();
+    stubGeometry(list);
+    const row = (id: string) => document.querySelector<HTMLElement>(`[data-testid="row-${id}"]`)!;
+    press(row('c'), 80);
+    move(20);
+    release(20);
+    press(row('b'), 48);
+    release(48);
+    expect(abandoned.onReorder).not.toHaveBeenCalled();
+    expect(abandoned.onPress).not.toHaveBeenCalled();
+    expect(committed.onReorder).toHaveBeenCalledWith(['c'], 0);
+    expect(committed.onPress).toHaveBeenCalledWith('b', expect.anything());
   });
 });

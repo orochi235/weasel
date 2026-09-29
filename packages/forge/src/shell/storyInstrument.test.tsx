@@ -3,6 +3,7 @@ import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type Channel, openChannel } from '../protocol/channel';
 import { FRAME_HELLO, type FromFrame, type Globals, PORT_HANDOFF, stableStringify, type ToFrame } from '../protocol/messages';
@@ -11,6 +12,7 @@ import { sayHello } from './labHarness';
 import { describeSchema } from '../protocol/schema';
 import type { IndexEntry } from '../story/types';
 import { createAnswerBook } from './answers';
+import { FrameView } from './FrameView';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { storyInstrument } from './storyInstrument';
 import { useStoryRegistry } from './useStoryRegistry';
@@ -166,6 +168,24 @@ describe('FrameView', () => {
     await flush();
     expect(onReady).toHaveBeenCalledWith(entry, ready);
     expect(received).toEqual([{ type: 'init', config: { label: 'clicks' }, state: null, globals }]);
+  });
+
+  it('reports ready to the committed onReady, not an abandoned render\'s', async () => {
+    const committed = vi.fn();
+    const abandoned = vi.fn();
+    const trial = { config: { label: 'clicks' }, state: null, setConfig: () => {}, setState: () => {} } as unknown as RenderContext<unknown, unknown>;
+    const answers = createAnswerBook();
+    renderThenAbandon(committed, abandoned, (onReady) => (
+      <LabContext.Provider value={{} as LabContextValue}>
+        <FrameView entry={entry} frameUrl="/frame.html" answers={answers} onReady={onReady} descriptionKey={null} ctx={trial} />
+      </LabContext.Provider>
+    ));
+    const { frame } = connect(document.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
+    frame.send(ready);
+    // No act: the suspended transition would hold its flush open.
+    await new Promise((r) => realSetTimeout(r, 0));
+    expect(abandoned).not.toHaveBeenCalled();
+    expect(committed).toHaveBeenCalledWith(entry, ready);
   });
 
   it('holds init until its instrument describes the frame, then sends the real defaults', async () => {

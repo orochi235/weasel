@@ -1,6 +1,8 @@
 import { createMemoryAdapter, type RenderContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { useLayoutEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ShellConfig } from '../config';
 import { meta, story } from '../story/define';
@@ -8,7 +10,7 @@ import { indexId } from '../story/indexPages';
 import type { IndexEntry } from '../story/types';
 import { FOLLOW_APP } from './globals';
 import { installResizeObserver } from './labHarness';
-import { useStoryRegistry } from './useStoryRegistry';
+import { type StoryRegistry, useStoryRegistry } from './useStoryRegistry';
 import { Workshop } from './Workshop';
 
 installResizeObserver();
@@ -54,6 +56,21 @@ describe('useStoryRegistry in the document', () => {
     expect(loadedB).not.toBe(pendingB);
     expect(result.current.isReady('x--b')).toBe(true);
     expect(loadedB?.stage?.size).toEqual({ width: 320, height: 480 });
+  });
+
+  it('loads through the committed importers, not an abandoned render\'s', async () => {
+    const committed = importers();
+    const abandoned = importers();
+    let registry!: StoryRegistry;
+    function Probe({ imports }: { imports: ReturnType<typeof importers> }): null {
+      const r = useStoryRegistry([a, b], { frameUrl: '/frame.html', importers: imports });
+      useLayoutEffect(() => { registry = r; });
+      return null;
+    }
+    renderThenAbandon(committed, abandoned, (imports) => <Probe imports={imports} />);
+    render(<>{registry.instruments[0]!.render(ctx)}</>);
+    await waitFor(() => expect(committed['/x.stories.tsx']).toHaveBeenCalledTimes(1));
+    expect(abandoned['/x.stories.tsx']).not.toHaveBeenCalled();
   });
 
   it('renders the fault in place of a story whose module fails to load', async () => {

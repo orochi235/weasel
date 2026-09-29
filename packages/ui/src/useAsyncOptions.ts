@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLatest } from '@weasel-js/core';
 import type { ComboBoxOption } from './components/ComboBox/ComboBox';
 
 type Key = string | number;
@@ -49,8 +50,7 @@ export function useAsyncOptions<T extends Key = string>({
 
   // Read through a ref: a consumer passing an inline arrow re-creates `load`
   // every render, and depending on it directly would refire the request.
-  const loadRef = useRef(load);
-  loadRef.current = load;
+  const loadRef = useLatest(load);
 
   // A monotonic id per request, and the highest one whose result has been
   // applied. A liveness flag cannot do this job: two requests from adjacent
@@ -96,7 +96,7 @@ export function useAsyncOptions<T extends Key = string>({
     }, debounceMs);
 
     return () => clearTimeout(timer);
-  }, [inputValue, debounceMs, minLength]);
+  }, [inputValue, debounceMs, minLength, loadRef]);
 
   useEffect(() => () => inFlight.current?.abort(), []);
 

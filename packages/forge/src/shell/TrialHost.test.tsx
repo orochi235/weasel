@@ -1,5 +1,6 @@
 import { TrialIdContext } from '@weasel-js/labkit';
 import { act, render, waitFor } from '@testing-library/react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FrameSetup } from '../frame/FrameController';
 import type { Globals } from '../protocol/messages';
@@ -126,5 +127,26 @@ describe('TrialHost', () => {
     );
     await waitFor(() => expect(onRendered).toHaveBeenCalledTimes(1));
     expect(container.querySelector('.fg-story')?.hasAttribute('data-pending')).toBe(false);
+  });
+
+  it('announces its first render to the committed onRendered, not an abandoned render\'s', async () => {
+    // Fonts that settle only once the abandoned render has come and gone.
+    let settle!: () => void;
+    const ready = new Promise<void>((resolve) => { settle = resolve; });
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { ready } });
+    const committed = vi.fn();
+    const abandoned = vi.fn();
+    try {
+      renderThenAbandon(committed, abandoned, (onRendered) => (
+        <TrialHost layout="padded" setup={{}} config={{}} onRendered={onRendered}>
+          {() => <span>x</span>}
+        </TrialHost>
+      ));
+      settle();
+      await waitFor(() => expect(committed).toHaveBeenCalledTimes(1));
+      expect(abandoned).not.toHaveBeenCalled();
+    } finally {
+      delete (document as { fonts?: unknown }).fonts;
+    }
   });
 });

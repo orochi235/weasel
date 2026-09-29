@@ -1,5 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { createElement, useEffect } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { useAsyncOptions } from './useAsyncOptions';
 
 /** A promise plus the handles to settle it, so a test can order two responses. */
@@ -210,5 +212,21 @@ describe('useAsyncOptions', () => {
     expect(result.current.inputValue).toBe('');
     act(() => result.current.onInputChange('re'));
     expect(result.current.inputValue).toBe('re');
+  });
+
+  // The request's timer is set by a committed render and fires later, after
+  // whatever render came last — here, one React threw away.
+  it('calls the committed load, not an abandoned render\'s', () => {
+    const committed = vi.fn().mockResolvedValue([]);
+    const abandoned = vi.fn().mockResolvedValue([]);
+    function Probe({ load }: { load: typeof committed }): null {
+      const { onInputChange } = useAsyncOptions({ load, debounceMs: 1000 });
+      useEffect(() => { onInputChange('re'); }, [onInputChange]);
+      return null;
+    }
+    renderThenAbandon(committed, abandoned, (load) => createElement(Probe, { load }));
+    act(() => void vi.advanceTimersByTime(1000));
+    expect(abandoned).not.toHaveBeenCalled();
+    expect(committed).toHaveBeenCalledWith('re', expect.any(AbortSignal));
   });
 });

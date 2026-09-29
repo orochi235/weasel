@@ -2,7 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import {
   ActionsProvider,
+  DepRegistryProvider,
   useAction,
+  useDepSource,
+  type DepName,
   clipboardCutAction,
   clipboardCopyAction,
   clipboardPasteAction,
@@ -99,6 +102,34 @@ describe('ActionBar', () => {
     expect(on.disabled).toBe(false);
     expect(off.disabled).toBe(true);
     expect(off.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  // Dep sources publish on commit, so the render that changes one reads the
+  // one before it; the bar has to catch up once it commits.
+  it('follows a dep that changes in the same render as the bar', () => {
+    const action = makeAction({
+      id: 'gated',
+      requires: ['gate' as DepName],
+      enabled: (deps) => ((deps as Record<string, unknown> | undefined)?.gate ? true : 'not-applicable'),
+    });
+    function Gate({ open }: { open: boolean }) {
+      useDepSource('gate' as DepName, () => open as never);
+      return null;
+    }
+    const view = (open: boolean) => (
+      <DepRegistryProvider>
+        <ActionsProvider>
+          <Register action={action} />
+          <Gate open={open} />
+          <ActionBar group="demo" />
+        </ActionsProvider>
+      </DepRegistryProvider>
+    );
+    const { rerender } = render(view(false));
+    const button = () => screen.getByTestId('action-bar-item-gated') as HTMLButtonElement;
+    expect(button().disabled).toBe(true);
+    rerender(view(true));
+    expect(button().disabled).toBe(false);
   });
 
   it('clicking a disabled button does not invoke run', () => {

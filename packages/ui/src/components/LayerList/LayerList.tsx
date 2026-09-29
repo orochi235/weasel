@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useLatest } from '@weasel-js/core';
 import { dlog } from '../../dlog';
 import { LockIcon } from '../../icons';
 import { type PressModifiers, useReorderDragList } from '../../useReorderDragList';
@@ -180,8 +181,7 @@ export function LayerList(props: LayerListProps) {
 
   // The press arrives after the drag session ends, which can be after a render
   // the closure did not see, so it reads the selection from here.
-  const live = useRef(props);
-  live.current = props;
+  const live = useLatest(props);
   const press = (item: LayerListItem, mods: PressModifiers) => {
     const { selectedIds = [], onSelect } = live.current;
     if (!onSelect) return;

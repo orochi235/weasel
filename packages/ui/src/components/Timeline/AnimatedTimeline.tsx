@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useReducer, useRef, type ReactElement } from 'react';
-import { useVisibleRaf, type TimelineHandle, type Track } from '@weasel-js/core';
+import { useCallback, useEffect, useReducer, type ReactElement } from 'react';
+import { useLatest, useVisibleRaf, type TimelineHandle, type Track } from '@weasel-js/core';
 import { Timeline, type TimelineProps } from './Timeline';
 
 /** Props for {@link AnimatedTimeline}: `<Timeline>`'s, less what it reads off `handle`. */
@@ -26,12 +26,11 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
   // inside its own frame, and nothing runs until something calls `request`.
   // No `onResume` here: this loop measures no elapsed time of its own, it only
   // reads the playhead the animator already advanced.
-  const rafRef = useRef<{ request(): void } | null>(null);
   const raf = useVisibleRaf(() => {
     bump();
-    if (!handle.isPaused()) rafRef.current?.request();
+    if (!handle.isPaused()) rafRef.current.request();
   });
-  rafRef.current = raf;
+  const rafRef = useLatest(raf);
   useEffect(() => {
     if (!handle.isPaused()) raf.request();
     return () => raf.cancel();

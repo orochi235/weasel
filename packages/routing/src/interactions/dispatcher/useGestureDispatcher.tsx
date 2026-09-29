@@ -12,9 +12,10 @@
  *
  * See `docs/superpowers/specs/2026-05-16-registry-unification-design.md` § Q4.
  */
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { isEditableTarget } from '../keyHelpers';
+import { useLatest } from '../../useLatest';
 import { useActiveToolContext } from '../actions/activeToolContext';
 import { useDepRegistry, type DepRegistry } from '../actions/depRegistry';
 import type { DepName, DepSchema } from '../../index';
@@ -432,8 +433,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const pinchChannel = channels?.pinch !== false;
   const contextMenuChannel = channels?.contextMenu !== false;
   const ingestChannel = channels?.ingest !== false;
-  const onDoubleClickRef = useRef(onDoubleClick);
-  onDoubleClickRef.current = onDoubleClick;
+  const onDoubleClickRef = useLatest(onDoubleClick);
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
 
@@ -448,9 +448,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   // current state without needing to re-register on every render.
   // No `getRuleCtx` here: eligibility is a per-view answer, so it rides on the
   // dispatch record and `ctxNow` installs the routed view's.
-  const registryRef = useRef(actions);
-  registryRef.current = actions;
-  const ctxRef = useRef<DispatcherContext>({
+  const registryRef = useLatest(actions);
+  const ctxRef = useLatest<DispatcherContext>({
     actions,
     depRegistry,
     activeToolId: activeTool.active,
@@ -458,36 +457,21 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     entriesById,
     isMac: IS_MAC,
   });
-  ctxRef.current = {
-    actions,
-    depRegistry,
-    activeToolId: activeTool.active,
-    hotkeyStack: activeTool.hotkeyStack,
-    entriesById,
-    isMac: IS_MAC,
-  };
 
   // The flat options are view zero.
-  const rootTargetRef = useRef<DispatcherViewTarget>({
+  const rootTargetRef = useLatest<DispatcherViewTarget>({
     id: null, dispatcher: dispatcherRef.current, affordanceAt, classifyTarget, clientToWorld,
     getRuleCtx,
   });
-  rootTargetRef.current = {
-    id: null, dispatcher: dispatcherRef.current, affordanceAt, classifyTarget, clientToWorld,
-    getRuleCtx,
-  };
-  const viewsRef = useRef(views);
-  viewsRef.current = views;
+  const viewsRef = useLatest(views);
 
   /** Every live dispatcher — what a cancel-everything has to reach. */
-  const allDispatchers = (): Dispatcher[] => [
+  const allDispatchers = useCallback((): Dispatcher[] => [
     rootTargetRef.current.dispatcher,
     ...(viewsRef.current?.targets() ?? []).map((t) => t.dispatcher),
-  ];
-  const requestRedrawRef = useRef(requestRedraw);
-  requestRedrawRef.current = requestRedraw;
-  const paintedCursorRef = useRef(paintedCursor);
-  paintedCursorRef.current = paintedCursor;
+  ], [rootTargetRef, viewsRef]);
+  const requestRedrawRef = useLatest(requestRedraw);
+  const paintedCursorRef = useLatest(paintedCursor);
 
   // Double-click synthesis state. Lives at hook level (not inside the effect)
   // so it survives effect re-runs — otherwise HMR / StrictMode / a transient
@@ -503,9 +487,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   // tools' setup.
   const liveToolsRef = useRef<ReadonlySet<string>>(new Set());
   const prevActiveRef = useRef(activeTool.active);
-  const entriesByIdRef = useRef(entriesById);
-  entriesByIdRef.current = entriesById;
-  const fireLifecycle = (id: string, hook: 'onActivate' | 'onDeactivate'): void => {
+  const entriesByIdRef = useLatest(entriesById);
+  const fireLifecycle = useCallback((id: string, hook: 'onActivate' | 'onDeactivate'): void => {
     const tool = entriesByIdRef.current.get(id);
     if (!tool || !isTool(tool)) return;
     const fn = tool[hook];
@@ -515,7 +498,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     } catch (err) {
       console.error(`weasel: tool "${id}".${hook} threw`, err);
     }
-  };
+  }, [entriesByIdRef]);
   useEffect(() => {
     const prev = liveToolsRef.current;
     const next = new Set<string>(
@@ -533,7 +516,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const live = liveToolsRef.current;
     liveToolsRef.current = new Set();
     for (const id of live) fireLifecycle(id, 'onDeactivate');
-  }, []);
+  }, [fireLifecycle]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -1176,7 +1159,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // pointer movement (a held Space re-routes the drag to the hand tool).
     // That refresh is deferred a tick so React can commit the hotkey-stack /
     // active-tool state the key event just changed — `ctxRef` is only
-    // rewritten on render.
+    // rewritten on commit.
     let lastHover: {
       clientX: number; clientY: number;
       altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean;
@@ -1678,5 +1661,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       held.clear();
       for (const d of allDispatchers()) d.cancelAll('cancel');
     };
-  }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel]);
+  }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel,
+    allDispatchers, ctxRef, onDoubleClickRef, paintedCursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }
