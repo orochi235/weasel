@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
+import noRenderRefWrite from './scripts/eslint/no-render-ref-write.mjs';
 
 /**
  * Core's internal path aliases, read off the root tsconfig rather than
@@ -29,7 +30,9 @@ const CORE_ALIASES = (() => {
  *     `set-state-in-effect`, `use-memo`, `globals`, `static-components`).
  *     `refs` alone reports 387 times across 103 files, because reading a ref
  *     during render is how a canvas library gets at mutable frame state. Worth
- *     revisiting per rule; not worth adopting as a block.
+ *     revisiting per rule; not worth adopting as a block. `refs` cannot be
+ *     narrowed to writes, so render-time ref writes are the local
+ *     `weasel/no-render-ref-write` instead.
  */
 
 const languageOptions = {
@@ -39,7 +42,11 @@ const languageOptions = {
   parserOptions: { ecmaFeatures: { jsx: true } },
 };
 
-const plugins = { '@typescript-eslint': tsPlugin, 'react-hooks': reactHooks };
+const plugins = {
+  '@typescript-eslint': tsPlugin,
+  'react-hooks': reactHooks,
+  weasel: { rules: { 'no-render-ref-write': noRenderRefWrite } },
+};
 
 export default [
   {
@@ -205,6 +212,9 @@ export default [
     rules: {
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'error',
+      // `warn` while the sites listed in docs/TODO.md ("Refs read by event
+      // paths are still assigned during render") are swept; `error` after.
+      'weasel/no-render-ref-write': 'warn',
 
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'error',
@@ -241,9 +251,12 @@ export default [
      * `any` in a test is usually the point: reaching past a type to build a
      * malformed input, or asserting on a private field. The rule earns its
      * keep on shipped surface, where an `any` is a hole in the contract.
+     *
+     * A probe component writing what it rendered into a ref is how a test
+     * observes a render, so render-time ref writes are the point here too.
      */
     files: ['**/*.{test,spec}.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}', '**/testing/**/*.{ts,tsx}'],
-    rules: { '@typescript-eslint/no-explicit-any': 'off' },
+    rules: { '@typescript-eslint/no-explicit-any': 'off', 'weasel/no-render-ref-write': 'off' },
   },
   {
     /**
