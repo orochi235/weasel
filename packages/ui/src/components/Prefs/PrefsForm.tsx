@@ -54,6 +54,14 @@ export interface PrefsFormProps {
    *  Defaults to the first in the schema. */
   defaultSection?: string;
   onSectionChange?: (path: string) => void;
+  /**
+   * Rail layout: a nested entry opens a page of its own group instead of
+   * scrolling the open one to it, and a top-level entry's page holds only its
+   * own leaves (or opens its first nested entry when it has none). For a
+   * top-level group whose subgroups are long enough that one page of all of
+   * them reads as a wall. Default false.
+   */
+  subPages?: boolean;
   className?: string;
 }
 
@@ -145,18 +153,25 @@ function RailLayout(props: PrefsFormProps & {
   const [uncontrolled, setUncontrolled] = useState(
     () => props.defaultSection ?? '',
   );
+  const subPages = props.subPages === true;
   const requested = props.section ?? uncontrolled;
   // A filter can take the open group out of the rail entirely, and a section
   // the schema never had can arrive from a consumer's stale state. Either way
   // the first surviving entry is what the reader should be looking at.
-  const open = items.some((i) => i.path === requested && i.depth === 0)
+  let open = items.some((i) => i.path === requested && (i.depth === 0 || subPages))
     ? requested
     : (items.find((i) => i.depth === 0)?.path ?? '');
+  if (subPages && root !== null && !hasLeaves(paneGroup(root, open, schema.name))) {
+    open = items.find((i) => i.depth === 1 && i.section === open)?.path ?? open;
+  }
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const sectionIds = useMemo(
-    () => items.filter((i) => i.depth === 1 && i.section === open).map((i) => i.path),
-    [items, open],
+    () =>
+      subPages
+        ? []
+        : items.filter((i) => i.depth === 1 && i.section === open).map((i) => i.path),
+    [items, open, subPages],
   );
   const spy = useScrollSpy({ rootRef: scrollRef, ids: sectionIds });
 
@@ -168,16 +183,18 @@ function RailLayout(props: PrefsFormProps & {
     scrollRef.current?.scrollTo?.({ top: 0 });
   };
 
-  const group = root === null ? null : paneGroup(root, open, schema.name);
+  const whole = root === null ? null : paneGroup(root, open, schema.name);
+  const opensTop = items.some((i) => i.path === open && i.depth === 0);
+  const group = subPages && opensTop && whole !== null ? leavesOf(whole) : whole;
 
   return (
     <div className={[s.railLayout, className].filter(Boolean).join(' ')}>
       <PrefsRail
         items={items}
         section={open}
-        current={spy.active}
+        current={subPages ? null : spy.active}
         onOpen={setOpen}
-        onScrollTo={spy.scrollTo}
+        onScrollTo={subPages ? setOpen : spy.scrollTo}
         ariaLabel={schema.name}
         header={filterField}
         showCounts={query.trim() !== ''}
@@ -216,6 +233,21 @@ function paneGroup(root: PrefGroup, path: string, rootName: string): PrefGroup |
     cursor = next;
   }
   return node ?? null;
+}
+
+/** Whether a group holds any leaf directly, not counting its subgroups. */
+function hasLeaves(group: PrefGroup | null): boolean {
+  return group !== null && Object.values(group.children).some(isPrefLeaf);
+}
+
+/** A group cut down to its direct leaves, for a page its subgroups each get their own of. */
+function leavesOf(group: PrefGroup): PrefGroup {
+  return {
+    ...group,
+    children: Object.fromEntries(
+      Object.entries(group.children).filter(([, child]) => isPrefLeaf(child)),
+    ),
+  };
 }
 
 /** What a filter matching nothing leaves behind. */
