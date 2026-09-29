@@ -19,16 +19,8 @@ import {
   MINIMAP_CENTER, MINIMAP_PAN, minimapCenterAction, minimapPanAction,
 } from './actions';
 import { createIndicatorLayer, createLinkedCursorLayer } from './layers';
+import { accentColorOf, FALLBACK_ACCENT } from '../../canvas/accentColor';
 
-/** The crosshair's color when the canvas sits under no theme. */
-const FALLBACK_CURSOR_COLOR = '#4c8dff';
-
-/** Read `--wzl-accent` off the canvas element, where the theme cascade lands. */
-function accentOf(api: CanvasExtensionApi): string {
-  const el = api.element;
-  if (!el || typeof getComputedStyle !== 'function') return FALLBACK_CURSOR_COLOR;
-  return getComputedStyle(el).getPropertyValue('--wzl-accent').trim() || FALLBACK_CURSOR_COLOR;
-}
 
 /**
  * The linked crosshair's live half: follows the pointer store, and asks the
@@ -38,14 +30,14 @@ function accentOf(api: CanvasExtensionApi): string {
  */
 function linkedCursor(id: string, ownViews: readonly (string | null)[]) {
   let pointer: PointerWorldPos = null;
-  let color = FALLBACK_CURSOR_COLOR;
+  let color = FALLBACK_ACCENT;
   const visible = (p: PointerWorldPos): boolean =>
     p !== null && ownViews.some((v) => v !== p.viewId);
   const layer = createLinkedCursorLayer({ id, pointer: () => pointer, color: () => color, views: ownViews });
   const attach = (api: CanvasExtensionApi, deps: ContributionDepReader): (() => void) => {
     const store = deps.get('pointer');
     if (!store) return () => {};
-    color = accentOf(api);
+    color = accentColorOf(api.element);
     pointer = store.get();
     const off = store.subscribe(() => {
       const prev = pointer;

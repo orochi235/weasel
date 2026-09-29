@@ -31,6 +31,7 @@ import { openPointerSession, type PointerSession } from '../pointerSession';
 import { clientToCanvasRect } from '../../viewport/clientToCanvas';
 import { itemsFromDataTransfer, itemsFromClipboardData } from '../../ingestion/ingestItems';
 import type { InputEvent } from './matcher';
+import { LONG_PRESS_MS, type LongPressOptions } from './longPressState';
 import type { BodyTarget, BodyClassification } from '@weasel-js/gestures';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { PaintedCursorState } from '@weasel-js/cursor';
@@ -305,6 +306,9 @@ export interface UseGestureDispatcherOptions {
    */
   paintedCursor?: () => PaintedCursorState | undefined;
 
+  /** How touch and pen long-presses are timed, published and felt. */
+  longPress?: LongPressOptions;
+
   /**
    * Thunk returning the live `RuleCtx` for the current frame. When supplied,
    * the dispatcher filters matched candidates by their declared
@@ -424,7 +428,7 @@ function computeMultiTouchGeometry(
  * providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onDoubleClick, views, channels } = opts;
+  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onDoubleClick, views, channels, longPress } = opts;
   // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
@@ -472,6 +476,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   ], [rootTargetRef, viewsRef]);
   const requestRedrawRef = useLatest(requestRedraw);
   const paintedCursorRef = useLatest(paintedCursor);
+  const longPressRef = useLatest(longPress);
 
   // Double-click synthesis state. Lives at hook level (not inside the effect)
   // so it survives effect re-runs — otherwise HMR / StrictMode / a transient
@@ -641,8 +646,13 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // Long-press synthesis. Armed on pointerdown for touch/pen, cancelled by
     // movement past `DRAG_THRESHOLD_PX`, by release, by cancel, or by a second
     // pointer landing (so it can never fire mid-pinch).
-    const LONG_PRESS_MS = 500;
     const longPressTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
+    const clearPending = (pointerId?: number): void => {
+      const store = longPressRef.current?.state;
+      const p = store?.get();
+      if (p && (pointerId === undefined || p.pointerId === pointerId)) store!.set(null);
+    };
 
     const cancelLongPress = (pointerId: number): void => {
       const t = longPressTimers.get(pointerId);
@@ -650,20 +660,21 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         clearTimeout(t);
         longPressTimers.delete(pointerId);
       }
+      clearPending(pointerId);
     };
 
     const cancelAllLongPress = (): void => {
       for (const t of longPressTimers.values()) clearTimeout(t);
       longPressTimers.clear();
+      clearPending();
     };
+
+    const HAPTIC_MS = 15;
 
     /** Fire a synthesized long-press, falling back to contextmenu when the
      *  long-press matched nothing. The fallback is what makes existing
      *  `contextMenu` bindings reachable by touch with no consumer change. */
-    const fireLongPress = (pointerId: number): void => {
-      const down = held.get(pointerId)?.down;
-      if (!down) return;
-
+    const longPressEvents = (down: HeldPointer['down']): { longpress: InputEvent; contextmenu: InputEvent } => {
       const shared = {
         target: down.target,
         altKey: down.altKey,
@@ -675,24 +686,33 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ...(down.bodyKind !== undefined ? { bodyKind: down.bodyKind } : {}),
       };
 
-      const result = dispatch({
-        kind: 'longpress',
-        x: down.worldX,
-        y: down.worldY,
-        clientX: down.clientX,
-        clientY: down.clientY,
-        ...shared,
-      } as InputEvent);
+      const at = { x: down.worldX, y: down.worldY, clientX: down.clientX, clientY: down.clientY };
+      return {
+        longpress: { kind: 'longpress', ...at, ...shared } as InputEvent,
+        contextmenu: { kind: 'contextmenu', ...at, ...shared } as InputEvent,
+      };
+    };
 
-      if (result === 'unhandled') {
-        dispatch({
-          kind: 'contextmenu',
-          x: down.worldX,
-          y: down.worldY,
-          clientX: down.clientX,
-          clientY: down.clientY,
-          ...shared,
-        } as InputEvent);
+    /** Whether holding `down` to the end would fire anything: the same two
+     *  dispatches `fireLongPress` makes, predicted without invoking. */
+    const longPressWouldFire = (down: HeldPointer['down']): boolean => {
+      const evs = longPressEvents(down);
+      const d = dispatcherNow();
+      return d.resolveOnly(evs.longpress, ctxNow()) !== null
+        || d.resolveOnly(evs.contextmenu, ctxNow()) !== null;
+    };
+
+    const fireLongPress = (pointerId: number, pointerType: string): void => {
+      const down = held.get(pointerId)?.down;
+      clearPending(pointerId);
+      if (!down) return;
+      const evs = longPressEvents(down);
+      let result = dispatch(evs.longpress);
+      if (result === 'unhandled') result = dispatch(evs.contextmenu);
+      if (result === 'handled' && longPressRef.current?.haptics !== false
+          && (pointerType === 'touch' || pointerType === 'pen')
+          && typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(HAPTIC_MS);
       }
     };
 
@@ -1011,14 +1031,30 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       if ((e.pointerType === 'touch' || e.pointerType === 'pen')
           && held.size === 1) {
         cancelLongPress(e.pointerId);
+        const duration = longPressRef.current?.duration ?? LONG_PRESS_MS;
         longPressTimers.set(
           e.pointerId,
           setTimeout(() => {
             longPressTimers.delete(e.pointerId);
             if (disposed) return;
-            fireLongPress(e.pointerId);
-          }, LONG_PRESS_MS),
+            fireLongPress(e.pointerId, e.pointerType);
+          }, duration),
         );
+        const store = longPressRef.current?.state;
+        const rec = held.get(e.pointerId);
+        if (store && rec) {
+          store.set({
+            pointerId: e.pointerId,
+            pointerType: e.pointerType as 'touch' | 'pen',
+            client: { x: e.clientX, y: e.clientY },
+            local: toCanvasLocal({ x: e.clientX, y: e.clientY }),
+            world: { x: w.x, y: w.y },
+            viewId: target().id,
+            startedAt: performance.now(),
+            duration,
+            armed: longPressWouldFire(rec.down),
+          });
+        }
       }
 
       // Synthesize a multi-touch event when >= 2 pointers are active.
@@ -1662,5 +1698,5 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       for (const d of allDispatchers()) d.cancelAll('cancel');
     };
   }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel,
-    allDispatchers, ctxRef, onDoubleClickRef, paintedCursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+    allDispatchers, ctxRef, longPressRef, onDoubleClickRef, paintedCursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

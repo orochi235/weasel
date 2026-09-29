@@ -40,11 +40,6 @@ Priority tags:
   - **`edit` cannot paste from the keyboard alone.** Cmd/Ctrl+V arrives as a DOM `paste`,
     which only `ingest` binds; `clipboard.paste` is the button-and-menu half.
 
-- **(P3) Long-press has no feedback.** No haptic, no visual "press is
-  registering" affordance during the 500ms hold. Users get no signal that
-  holding will do something. Recorded 2026-08-02, alongside the `longPress`
-  gesture kind landing.
-
 - **(P3) `Widget.claims` is static.** A widget that is decoration in one mode
   and interactive in another can't change what it consumes without being
   swapped out. `claimsPointer` folded into `claims` on 2026-08-12, so this is

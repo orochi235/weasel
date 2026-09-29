@@ -114,6 +114,10 @@ export type {
 export * from './interactions/dispatcher/dispatchRecord';
 export * from './interactions/dispatcher/matcher';
 export * from './interactions/dispatcher/predicates';
+export { createLongPressStore, LONG_PRESS_MS } from './interactions/dispatcher/longPressState';
+export type {
+  PendingLongPress, LongPressState, LongPressStore, LongPressOptions,
+} from './interactions/dispatcher/longPressState';
 export { DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/gestures';
 export { openPointerSession } from './interactions/pointerSession';
 export type {
