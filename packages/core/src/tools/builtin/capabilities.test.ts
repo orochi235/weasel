@@ -33,6 +33,7 @@ describe('built-in tool capabilities', () => {
       return builtins.usePenTool(minOpts as never) as unknown as { eligibility?: { capabilities?: readonly string[] } };
     }, ['creates-paths']],
     ['pencil', () => builtins.usePencilTool(), ['creates-paths']],
+    ['slice', () => builtins.useSliceTool(), ['edits-page']],
     ['text', () => builtins.useTextTool(), ['creates-text']],
     ['eyedropper', () => builtins.useEyedropperTool({} as never), ['samples-color']],
   ];

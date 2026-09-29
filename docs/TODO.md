@@ -200,11 +200,12 @@ Priority tags:
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
 
-- **(P3) The slice tool cannot place a cut click by click.** `sliceAction` cuts along a
-  drag — straight, or its whole trail with `cut: 'freehand'` — and `splitPathByPolyline`
-  / `snipPathByPolyline` take any polyline, but no gesture builds one vertex per click
-  the way the pen tool does. Separately, a loop the cut draws inside the fill is
-  dropped rather than cutting out the region it encloses.
+- **(P3) `<SceneCanvas>` has no default `slice` dep.** `useSliceTool` publishes every cut
+  to the `slice` dep and does nothing without one, and the only implementation is
+  WeaselDraw's (`apps/draw/src/tools/slice/sliceCommit.ts` and `SliceDepPublisher.tsx`):
+  bake each leaf's path to world space, knife or snip it, swap it for its pieces in one
+  undoable batch, and carry the selection over. Every other consumer has to write that
+  again, which is also why no site demo shows slicing.
 
 ### Cursor package follow-ups
 
