@@ -16,7 +16,7 @@
  */
 
 import type { View } from 'core/viewport/view';
-import { pxExtent, standoff, withinPxBox } from 'core/viewport/pxExtent';
+import { pxExtent, scaleDelta, screenAngleOf, standoff } from 'core/viewport/pxExtent';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import { poseRotationOf } from 'core/geometry/poseRotation';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
@@ -172,8 +172,37 @@ function worldToLocal(xf: TargetTransform, wx: number, wy: number): { x: number;
 
 type PointShape = Extract<AffordanceRegion['shape'], { kind: 'point' }>;
 
-/** A point region's anchor in world coords, its `standoff` applied. Hit-test,
- *  ranking, paint and the debug hitbox all read it from here. */
+/** Where a point region's hit square sits: its center in world coords, its
+ *  turn on screen, and its screen half-extent. Hit-test, paint, the debug
+ *  hitbox and the slops overlay all read it from here. */
+export function pointRegionFrame(
+  shape: PointShape,
+  xf: TargetTransform,
+  view: View,
+): { x: number; y: number; angle: number; half: number } {
+  const a = pointRegionAnchor(shape, xf, view);
+  const angle = shape.turned ? screenAngleOf(angleOf(xf), view.scale) : 0;
+  return { x: a.x, y: a.y, angle, half: shape.hitRadiusPx };
+}
+
+/** A point region's hit square as four screen-space corners, relative to its
+ *  world center carried to the screen by `toScreen`. */
+export function pointRegionScreenQuad(
+  shape: PointShape,
+  xf: TargetTransform,
+  view: View,
+  toScreen: (x: number, y: number) => [number, number],
+): { x: number; y: number }[] {
+  const f = pointRegionFrame(shape, xf, view);
+  const [cx, cy] = toScreen(f.x, f.y);
+  const c = Math.cos(f.angle) * f.half, sn = Math.sin(f.angle) * f.half;
+  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => ({
+    x: cx + c * u - sn * v,
+    y: cy + sn * u + c * v,
+  }));
+}
+
+/** A point region's anchor in world coords, its `standoff` applied. */
 export function pointRegionAnchor(
   shape: PointShape,
   xf: TargetTransform,
@@ -232,8 +261,11 @@ function hitRegion(
     // Compared in screen space, where that square is axis-aligned. Testing it
     // in the target's local frame instead would tilt it under a rotated
     // target and stretch it under non-uniform zoom.
-    const anchor = pointRegionAnchor(region.shape, xf, view);
-    return withinPxBox(anchor.x - wx, anchor.y - wy, region.shape.hitRadiusPx, view.scale);
+    const f = pointRegionFrame(region.shape, xf, view);
+    const d = scaleDelta(wx - f.x, wy - f.y, view.scale);
+    const c = Math.cos(f.angle), sn = Math.sin(f.angle);
+    const u = c * d.x + sn * d.y, v = -sn * d.x + c * d.y;
+    return Math.abs(u) <= f.half && Math.abs(v) <= f.half;
   }
   if (region.shape.kind === 'annulus') {
     const s = region.shape;

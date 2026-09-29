@@ -38,13 +38,9 @@ export type { AnchorState };
 // Public API
 // ---------------------------------------------------------------------------
 
-export interface BuildAffordanceAtOptions {
-  /** Live ChromeState at call time — current selection plus effective bounds,
-   *  including in-flight move/resize ghost poses. */
-  getChromeState: () => ChromeState;
-  /** Live view. Needed because region hit radii and the rotate band are
-   *  declared in screen pixels and resolved against the current scale. */
-  getView: () => View;
+/** What decides the kit's chrome affordances — their sizes and which ones
+ *  exist. Shared by the hit-test and the slops overlay, which draws them. */
+export interface ChromeAffordanceOptions {
   /** Pointer-size multiplier from the live `DeviceProfile`. Every default
    *  below is resolved through {@link targetSizesPx} at this scale, so the
    *  grab zone tracks the painted chrome on a coarse pointer. Default 1. */
@@ -62,11 +58,52 @@ export interface BuildAffordanceAtOptions {
   rotationBadge?: { distancePx: number; sizePx: number } | null;
   /** Anchor-editing state. When omitted, anchors aren't hit-tested. */
   getAnchorState?: () => AnchorState | null;
+}
+
+export interface BuildAffordanceAtOptions extends ChromeAffordanceOptions {
+  /** Live ChromeState at call time — current selection plus effective bounds,
+   *  including in-flight move/resize ghost poses. */
+  getChromeState: () => ChromeState;
+  /** Live view. Needed because region hit radii and the rotate band are
+   *  declared in screen pixels and resolved against the current scale. */
+  getView: () => View;
+  /** The affordances to walk, when the caller built them itself to share
+   *  them (`chromeAffordances`). Otherwise built from these options. */
+  affordances?: readonly Affordance[];
   /** Chrome-caps resolver. Keeps the hit-test and the renderer agreeing on
    *  which chrome is live (resize handles gated by
    *  `'selection.resize-handles'`, rotation by `'selection.rotation-handle'`,
    *  anchors by `'path-edit.anchors'`). Omitting defaults to always-visible. */
   getIsVisible?: () => (id: string) => boolean;
+}
+
+/**
+ * The kit's selection chrome as affordances, bottom → top: rotate ring (and
+ * badge), corner handles, then anchors and their controls — a corner handle
+ * beats the rotate band it sits inside, and a control handle beats everything.
+ */
+export function chromeAffordances(opts: ChromeAffordanceOptions = {}): Affordance[] {
+  const sizes = targetSizesPx(opts.targetScale);
+  const {
+    handleHitRadius = sizes.handle,
+    anchorHitRadius = sizes.anchor,
+    rotateBandPx = sizes.rotationDistance,
+    getAnchorState,
+    rotationBadge,
+  } = opts;
+  return [
+    createRotationAffordance({
+      bandPx: rotateBandPx,
+      paint: null,
+      ...(rotationBadge
+        ? { handle: { distancePx: rotationBadge.distancePx, hitRadiusPx: rotationBadge.sizePx } }
+        : {}),
+    }),
+    createCornerResizeAffordance({ handleHitRadius }),
+    ...(getAnchorState
+      ? createPathAnchorAffordances(getAnchorState, { hitRadius: anchorHitRadius })
+      : []),
+  ];
 }
 
 /**
@@ -104,34 +141,8 @@ export function anchorStateFrom(
 export function buildAffordanceAt(
   opts: BuildAffordanceAtOptions,
 ): (worldPoint: { x: number; y: number }) => AffordanceHit | null {
-  const sizes = targetSizesPx(opts.targetScale);
-  const {
-    getChromeState,
-    getView,
-    handleHitRadius = sizes.handle,
-    anchorHitRadius = sizes.anchor,
-    rotateBandPx = sizes.rotationDistance,
-    getAnchorState,
-    getIsVisible,
-    rotationBadge,
-  } = opts;
-
-  // Bottom → top. The rotate ring wraps the whole selection, so it sits under
-  // the corner handles that punctuate it; anchors and their controls ride on
-  // top of both, because in anchor-edit mode they're what the pointer is for.
-  const affordances: Affordance[] = [
-    createRotationAffordance({
-      bandPx: rotateBandPx,
-      paint: null,
-      ...(rotationBadge
-        ? { handle: { distancePx: rotationBadge.distancePx, hitRadiusPx: rotationBadge.sizePx } }
-        : {}),
-    }),
-    createCornerResizeAffordance({ handleHitRadius }),
-    ...(getAnchorState
-      ? createPathAnchorAffordances(getAnchorState, { hitRadius: anchorHitRadius })
-      : []),
-  ];
+  const { getChromeState, getView, getIsVisible } = opts;
+  const affordances = opts.affordances ?? chromeAffordances(opts);
 
   return function affordanceAt({ x: wx, y: wy }) {
     const hit = hitAffordanceRegions(

@@ -88,3 +88,9 @@ export function standoff(
   ny /= l;
   return { x: anchor.x + (nx * px) / scale.x, y: anchor.y + (ny * px) / scale.y, nx, ny };
 }
+
+/** The screen angle a frame turned `rotation` from world lands its x axis at.
+ *  Equals `rotation` under uniform zoom; non-uniform zoom bends it. */
+export function screenAngleOf(rotation: number, scale: Scale2): number {
+  return Math.atan2(Math.sin(rotation) * scale.y, Math.cos(rotation) * scale.x);
+}

@@ -265,20 +265,6 @@ have shipped. What remains:
   stencil-aligned polygon path. Picking reads ink widths through the same mean
   (`useSceneSelectTool`) and has to move with it.
 
-- **(P3) Resize handles on a turned target paint turned but hit square on
-  screen.** `handleCommandsFor` (`features/selection/overlay.ts`) turns each
-  handle square to the target's screen angle; `hitAffordanceRegions` tests a
-  `point` region as a screen-axis square (`withinPxBox`). At 45° the painted
-  diamond's corners fall outside the hit square and the square's corners grab
-  where nothing is painted. One of them has to give — paint axis-aligned, or
-  hit the turned square.
-
-- **(P3) `slopsDebugLayer` restates the affordance geometry by hand.** Corner
-  and anchor halos recompute where `cornerResize` / `pathAnchors` put their
-  regions instead of reading the regions, so the overlay whose job is to show
-  the real hit zones can drift from them again. Reading
-  `buildAffordanceAt`'s affordance list would make it one pathway.
-
 ---
 
 ## Paths & booleans

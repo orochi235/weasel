@@ -11,6 +11,7 @@ import { createSelectionOverlayLayer } from './overlay';
 import { createRotationAffordance } from 'affordances/rotationHandle';
 import { hitAffordanceRegions } from 'affordances/hitAffordanceRegions';
 import { createSlopsDebugLayer } from 'canvas/slopsDebugLayer';
+import { chromeAffordances } from 'canvas/affordanceAt';
 import { rotationHandle } from 'interactions/actions/rotate/handle';
 import { rotatePoint } from 'interactions/actions/rotate/geometry';
 import { viewToTransform } from 'core/viewport/view';
@@ -104,17 +105,17 @@ describe('rotate badge under 4:1 zoom on a rotated selection', () => {
 
   it('shows its slop where it is grabbable', () => {
     const layer = createSlopsDebugLayer({
-      getEditingId: () => null,
-      getPose: () => null,
-      rotationBadge: { distancePx: DIST, sizePx: SIZE },
+      getAffordances: () => chromeAffordances({ rotationBadge: { distancePx: DIST, sizePx: SIZE } }),
     });
     const tree = layer.draw(envelope, VIEW, DIMS);
-    const slop = tree[tree.length - 1] as PathDrawCommand;
-    const c = slop.path.kind === 'rect'
-      ? { x: slop.path.x + slop.path.width / 2, y: slop.path.y + slop.path.height / 2 }
-      : null;
-    expect(c).not.toBeNull();
-    expect(c!.x).toBeCloseTo(H.x, 4);
+    // The rotation affordance walks first, so its badge is the first halo; its
+    // center is the mean of its corners.
+    const q = (tree[0] as PathDrawCommand).path as { coords: ArrayLike<number> };
+    const c = {
+      x: (q.coords[0] + q.coords[2] + q.coords[4] + q.coords[6]) / 4,
+      y: (q.coords[1] + q.coords[3] + q.coords[5] + q.coords[7]) / 4,
+    };
+    expect(c.x).toBeCloseTo(H.x, 4);
     expect(c!.y).toBeCloseTo(H.y, 4);
   });
 });

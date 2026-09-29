@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
+import { chromeAffordances } from './affordanceAt';
 import { targetSizesPx } from 'core/device/targets';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ChromeState } from 'core/selection/chromeState';
@@ -8,9 +9,7 @@ import { COARSE_TARGET_SCALE } from '@weasel-js/routing';
 
 function layerFor(targetScale?: number) {
   return createSlopsDebugLayer({
-    getEditingId: () => null,
-    getPose: () => null,
-    ...(targetScale !== undefined ? { targetScale } : {}),
+    getAffordances: () => chromeAffordances(targetScale !== undefined ? { targetScale } : {}),
   });
 }
 
@@ -37,10 +36,10 @@ function drawAt(
 }
 
 /** Half-extent of the first drawn slop square — the square a point region
- *  hit-tests. */
+ *  hit-tests, axis-aligned here because the target is not turned. */
 function firstSlopRadius(cmds: readonly unknown[]): number {
-  const cmd = cmds[0] as { path: { kind: 'rect'; width: number } };
-  return cmd.path.width / 2;
+  const c = (cmds[0] as { path: { coords: ArrayLike<number> } }).path.coords;
+  return (c[2] - c[0]) / 2;
 }
 
 describe('slopsDebugLayer', () => {

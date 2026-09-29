@@ -54,8 +54,8 @@ export interface AffordanceRegion<TScratch = unknown> {
 
   /** Region geometry, expressed in the target's local frame.
    *
-   *  - `point` — square hit, axis-aligned on screen, of half-extent
-   *    `hitRadiusPx` screen pixels. `standoff` pushes the anchor `px`
+   *  - `point` — square hit of half-extent `hitRadiusPx` screen pixels,
+   *    axis-aligned on screen unless `turned`. `standoff` pushes the anchor `px`
    *    screen pixels off the edge whose outward normal (target-local) is
    *    `normal`, measured along that normal as it lands on screen — for
    *    chrome that floats a fixed distance off an edge at any zoom.
@@ -72,6 +72,9 @@ export interface AffordanceRegion<TScratch = unknown> {
         x: number; y: number;
         hitRadiusPx: number;
         standoff?: { px: number; normal: { x: number; y: number } };
+        /** Turn the square to the target, at the angle the target's x axis
+         *  lands on screen (`screenAngleOf`) — for handles painted turned. */
+        turned?: boolean;
       }
     | { kind: 'rect';    x: number; y: number; width: number; height: number }
     | {

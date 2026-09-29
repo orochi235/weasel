@@ -173,6 +173,18 @@ function emitHitboxes(
       const rx = h.shape.r * Math.abs(view.scale.x);
       const ry = h.shape.r * Math.abs(view.scale.y);
       out.push({ kind: 'path', path: approxEllipseScreen(cx, cy, rx, ry), fill, stroke });
+    } else if (h.shape.kind === 'polygon' && h.shape.points.length > 2) {
+      const pts = h.shape.points;
+      const coords = new Float32Array(pts.length * 2);
+      pts.forEach((p, i) => {
+        const [sx, sy] = worldToScreen(p.x, p.y, t);
+        coords[i * 2] = sx;
+        coords[i * 2 + 1] = sy;
+      });
+      const commands = new Uint8Array(pts.length + 1).fill(PATH_L);
+      commands[0] = PATH_M;
+      commands[pts.length] = PATH_Z;
+      out.push({ kind: 'path', path: { kind: 'polygon', commands, coords, fillRule: 'nonzero' }, fill, stroke });
     }
     // 'path' kind: v1 punt — matches 2D behavior.
   }

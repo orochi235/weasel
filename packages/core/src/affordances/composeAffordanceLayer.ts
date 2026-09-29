@@ -14,6 +14,8 @@ import {
   hitAffordanceRegions,
   localToWorld,
   pointRegionAnchor,
+  pointRegionFrame,
+  pointRegionScreenQuad,
   transformOf,
   type TargetTransform,
 } from './hitAffordanceRegions';
@@ -133,18 +135,16 @@ function recordRegionHitbox(
   view: View,
 ): void {
   if (region.shape.kind === 'point') {
-    const w = pointRegionAnchor(region.shape, xf, view);
-    const e = pxExtent(region.shape.hitRadiusPx, view.scale);
-    // Square hit, but a square on *screen* — so the world-space rect is
-    // per-axis and carries no rotation, however the target is rotated. The
-    // kit's only HitShape primitive for a square hit centered on a point is
-    // rect; this keeps the visualization faithful to `hitRegion`.
+    // The hit square is a square on *screen* — turned with the target when the
+    // region asks — so in world it is a parallelogram, recorded as one.
+    const f = pointRegionFrame(region.shape, xf, view);
+    const quad = pointRegionScreenQuad(region.shape, xf, view, (x, y) => [x, y]);
     debug.recordHitbox(affordanceId, 'handle', {
-      kind: 'rect',
-      x: w.x - e.x,
-      y: w.y - e.y,
-      width: e.x * 2,
-      height: e.y * 2,
+      kind: 'polygon',
+      points: quad.map((q) => ({
+        x: f.x + (q.x - f.x) / view.scale.x,
+        y: f.y + (q.y - f.y) / view.scale.y,
+      })),
     });
     return;
   }
@@ -207,16 +207,31 @@ function paintRegion(
       // future paint variant can cover rect outlines.
       return;
     }
-    const world = localToWorld(xf, region.shape.x, region.shape.y);
-    const [sx, sy] = worldToScreen(world.x, world.y, viewT);
+    // Same frame the hit-test reads, at the paint's own size.
+    const f = pointRegionFrame(region.shape, xf, view);
+    const [sx, sy] = worldToScreen(f.x, f.y, viewT);
     const half = paint.sizePx / 2;
-    const cmd: DrawCommand = {
+    const fill = paint.fill ? { fill: paint.fill } : {};
+    const stroke = paint.stroke ? { stroke: paint.stroke } : {};
+    if (f.angle === 0) {
+      out.push({
+        kind: 'path',
+        path: { kind: 'rect', x: sx - half, y: sy - half, width: paint.sizePx, height: paint.sizePx },
+        ...fill, ...stroke,
+      });
+      return;
+    }
+    const c = Math.cos(f.angle) * half, sn = Math.sin(f.angle) * half;
+    const coords = new Float32Array(8);
+    [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([u, v], i) => {
+      coords[i * 2] = sx + c * u - sn * v;
+      coords[i * 2 + 1] = sy + sn * u + c * v;
+    });
+    out.push({
       kind: 'path',
-      path: { kind: 'rect', x: sx - half, y: sy - half, width: paint.sizePx, height: paint.sizePx },
-      ...(paint.fill ? { fill: paint.fill } : {}),
-      ...(paint.stroke ? { stroke: paint.stroke } : {}),
-    };
-    out.push(cmd);
+      path: { kind: 'polygon', commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]), coords, fillRule: 'nonzero' },
+      ...fill, ...stroke,
+    });
     return;
   }
   if (paint.kind === 'annulus') {

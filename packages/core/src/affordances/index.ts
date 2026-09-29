@@ -10,6 +10,7 @@ export { composeAffordanceLayer } from './composeAffordanceLayer';
 export {
   hitAffordanceRegions,
   annulusSemiAxes,
+  pointRegionFrame,
   type AffordanceRegionHit,
 } from './hitAffordanceRegions';
 export {

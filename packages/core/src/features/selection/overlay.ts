@@ -45,6 +45,7 @@ import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
+import { screenAngleOf } from 'core/viewport/pxExtent';
 import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '../paths/types';
 import { HANDLE_BASE_PX } from 'core/device/targets';
 
@@ -400,12 +401,6 @@ function outlineCommandsFor(
   return out;
 }
 
-/** The screen angle a target-local x axis lands at: the target's rotation,
- *  bent by a non-uniform zoom. */
-function screenAngle(rotation: number, view: View): number {
-  return Math.atan2(Math.sin(rotation) * view.scale.y, Math.cos(rotation) * view.scale.x);
-}
-
 /**
  * A turned target's corners on screen, TL/TR/BR/BL, each pushed `pad` screen
  * pixels out from both edges that meet there.
@@ -460,7 +455,7 @@ function handleCommandsFor(
     // under non-uniform zoom.
     const r = poseRotationOf(worldB);
     const t = viewToTransform(view);
-    const angle = r ? screenAngle(r.rotation, view) : 0;
+    const angle = r ? screenAngleOf(r.rotation, view.scale) : 0;
     for (const hLocal of handlesOf(worldB)) {
       const hWorld = r ? rotatePoint(hLocal.x, hLocal.y, r.cx, r.cy, r.rotation) : hLocal;
       const [hsx, hsy] = worldToScreen(hWorld.x, hWorld.y, t);

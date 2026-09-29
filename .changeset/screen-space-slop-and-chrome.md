@@ -1,6 +1,7 @@
 ---
 "@weasel-js/core": patch
 "@weasel-js/geom": patch
+"@weasel-js/routing": patch
 ---
 
 Picking and selection chrome now hold their screen-pixel sizes exactly under
@@ -28,5 +29,16 @@ node actually painted.
 - The rotate ring's minimum band, and its paint inset, are measured on screen
   for a turned target (`pxExtent` and `annulusSemiAxes` take a rotation).
 - Grid lines stay 1px on screen on both axes.
-- The slops and hitbox debug overlays draw the shapes that are actually hit:
-  turned corners, screen squares, and a world circle as the ellipse it lands as.
+- Resize handles on a turned target are grabbable across the turned square
+  they are painted as, not a screen-aligned one. A `point` region takes
+  `turned: true` for this; `pointRegionFrame` is the one placement the
+  hit-test, the region's square paint and the debug hitbox all read, and
+  `screenAngleOf` the one angle the overlay turns its handles by.
+- The `debug.slops` overlay draws the regions the hit-test walks — the same
+  affordance list, each region's square from `pointRegionFrame` — instead of
+  recomputing corner and anchor positions, so it now shows a custom
+  `selectTool.handleHitRadius`, turned handles, and anchors on every selected
+  path the hit-test offers them on.
+- The hitbox debug overlay draws a world circle as the ellipse it lands as, a
+  rotated rect turned, and the new `polygon` `HitShape` a point region now
+  records.
