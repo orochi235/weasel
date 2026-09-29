@@ -25,7 +25,7 @@ The tool exposes two things:
 
 Both ship as separate exports for now. A future plugin convention can
 bundle them into a `usePenPlugin()` once 2+ plugin-shaped features
-exist (see `docs/extending.md`, "Frame hooks" and "Version requirements").
+exist (see `docs/extending.md`).
 
 ## Surface
 
