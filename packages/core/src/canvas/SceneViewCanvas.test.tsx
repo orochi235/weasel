@@ -16,6 +16,7 @@ import type { Node, Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
 import { SceneViewCanvas } from './SceneViewCanvas';
+import { registerPaintKind, getPaintKind } from 'core/paintKinds';
 
 // ---------------------------------------------------------------------------
 // Mock WeaselRenderer
@@ -438,5 +439,18 @@ describe('SceneViewCanvas — a render React abandons', () => {
 
     expect(drawB).not.toHaveBeenCalled();
     expect(drawA).toHaveBeenCalled();
+  });
+});
+
+describe('<SceneViewCanvas> — late content', () => {
+  it('repaints when a paint kind registers after the first frame', async () => {
+    const scene = makeScene();
+    render(<SceneViewCanvas scene={scene} view={identityView} width={100} height={100} drawOne={drawOne} />);
+    await act(frame);
+    const before = renderMock.mock.calls.length;
+    const off = registerPaintKind({ ...getPaintKind('solid')!, id: 'scene-view-late' });
+    off();
+    await act(frame);
+    expect(renderMock.mock.calls.length).toBeGreaterThan(before);
   });
 });

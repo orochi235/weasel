@@ -136,6 +136,12 @@ inset lives and whether it's interactive:
 Detached variants are the right default when the minimap belongs in a
 panel; `createViewportLayer` stays as the canonical superimposed primitive.
 
+With no scene at all, **`<DrawCanvas>`** paints a `DrawCommand` list (or a
+function returning one) onto the same kind of detached surface: sized in CSS
+pixels, DPR-correct, repainting behind the visibility gate. It is for drawing
+something that has no scene, like a package that knows nothing of scenes. Where
+a scene exists, render it with one of the components above.
+
 ```tsx
 import { MinimapCanvas, SceneCanvas, useScene, useSelection } from '@weasel-js/core';
 import { useState } from 'react';

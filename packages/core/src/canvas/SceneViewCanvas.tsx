@@ -34,6 +34,7 @@ import {
 import type { Ref } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { useFrameLoop } from './useFrameLoop';
+import { useLateContentRedraw } from './useLateContentRedraw';
 import { renderSceneToCanvas } from './sceneViewRender';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
@@ -164,6 +165,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   // above cannot see them.
   useEffect(() => scene.overrides.subscribe(requestRedraw), [scene, requestRedraw]);
   useEffect(() => animator?.onTick(requestRedraw), [animator, requestRedraw]);
+  useLateContentRedraw(requestRedraw);
 
   return (
     <canvas

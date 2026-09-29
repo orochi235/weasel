@@ -24,11 +24,9 @@ import type { ActionsProp } from '@weasel-js/routing';
 import type { Action } from '@weasel-js/routing';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
-import { subscribeImageReady } from 'features/images/imageCache';
-import { subscribeGlyphReady } from '@weasel-js/font';
-import { paintKindRegistry } from 'core/paintKinds';
 import { defaultDrawOne, defaultPaintBounds, paintBoundsFor } from './defaultDrawOne';
 import type { FillStyle } from '@weasel-js/paint';
+import { useLateContentRedraw } from './useLateContentRedraw';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
 import { wireSceneSlotToScene, composeAlphaFor } from './sceneSlotWiring';
@@ -1095,25 +1093,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return unsubscribe;
   }, [animator]);
 
-  // Image-ready subscription: the `kit:image` painter reads decoded bitmaps
-  // synchronously from `imageCache`, but loads resolve asynchronously. When
-  // any image finishes decoding, request a redraw so the painter re-runs and
-  // swaps its placeholder for the real bitmap.
-  useEffect(() => subscribeImageReady(() => {
-    canvasApiRef.current?.requestRedraw?.();
-  }), []);
-
-  // Deferred dynamic-glyph bakes (over-budget frames) redraw exactly like
-  // late image decodes: bake lands → notify → repaint with the new quads.
-  useEffect(() => subscribeGlyphReady(() => {
-    canvasApiRef.current?.requestRedraw?.();
-  }), []);
-
-  // A paint kind that registers late — a lazily loaded built-in landing, or a
-  // consumer's kind — can now draw fills that painted nothing.
-  useEffect(() => paintKindRegistry.subscribe(() => {
-    canvasApiRef.current?.requestRedraw?.();
-  }), []);
+  // Late decodes, deferred glyph bakes and late paint kinds each drew nothing
+  // on the frame that asked for them.
+  useLateContentRedraw(useCallback(() => { canvasApiRef.current?.requestRedraw?.(); }, []));
 
   // Override writes deliberately don't bump the scene version — that fanout is
   // what a frame loop is trying to avoid — so the repaint has to come from
