@@ -440,11 +440,7 @@ intercepting the press that drags the body.
   `scene.setLayout` / `createSetLayoutOp`. Still open: a declared layout is measured by
   `UseSceneOptions.layoutFrame` unless a canvas installs its handler, so a scene whose
   canvas composes poses or uses a custom descriptor states that twice — folds away once
-  composition is a scene property (see the cascade entry below); a `createSetLayoutOp`
-  applied through `applyBatch` to a scene that has never had a layout sets it but does
-  not arrange the container until its next change, because the arrival window is only
-  opened once the scene holds a layout (the bare `scene.setLayout` call does arrange);
-  and whether the `layouts` prop, now a second way to name a container's layout, should
+  composition is a scene property (see the cascade entry below); and whether the `layouts` prop, now a second way to name a container's layout, should
   be retired in favor of the node declaration.
 - **(P3) Full tier unification** (collapse inline-props/explicit-adapter onto Scene). Same effort as the P2 "`arrayAdapter` as the default Canvas adapter — full unification" above — track there.
 - **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is
