@@ -350,8 +350,6 @@ Core five + Crop shipped. Remaining:
     a glyph is geometry drawn through `drawPathFillByKind`, so it paints. Below
     the threshold `drawTextGroup` samples an SDF atlas with one color — the
     paint's `color`, or black — so the same text shows the pattern flat.
-  - **Tile rotation / skew.** SVG has `patternTransform`; the paint has only an
-    origin. Rotating a hatch is the obvious first ask.
 
   The gradient half's own gap is closed: a conic gradient serializes as a
   `<wzl:conicGradient>` def in `urn:weasel-js:svg` and reads back losslessly,

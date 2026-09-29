@@ -1,7 +1,13 @@
 import type { ReactElement } from 'react';
 import type { CSSProperties } from 'react';
-import type { FillStyle, TilePatternSpec } from '@weasel-js/core';
+import {
+  composePatternTransform,
+  decomposePatternTransform,
+  type FillStyle,
+  type TilePatternSpec,
+} from '@weasel-js/core';
 import { tilePreviewCssUrl } from '@weasel-js/svg';
+import { NumberField } from '../NumberField';
 import { ToggleBar } from '../ToggleBar';
 import s from './PatternPicker.module.css';
 
@@ -23,6 +29,25 @@ const DEFAULT_TILE_SIZE = 8;
 
 /** Every swatch previews at one size so the grid compares tiles, not scales. */
 const PREVIEW_SIZE = 16;
+
+const DEGREES: Intl.NumberFormatOptions = { style: 'unit', unit: 'degree', unitDisplay: 'narrow', maximumFractionDigits: 1 };
+
+/** Rotation in degrees, folded into (-180, 180]. */
+function toDegrees(rad: number): number {
+  const deg = (rad * 180) / Math.PI;
+  const folded = ((((deg + 180) % 360) + 360) % 360) - 180;
+  return folded === -180 ? 180 : folded;
+}
+
+/** `value` with its transform's rotation replaced, the transform dropped when
+ *  nothing is left of it. */
+function withRotation(value: PatternFill, degrees: number): PatternFill {
+  const parts = decomposePatternTransform(value.transform);
+  const [a, b, c, d] = composePatternTransform({ ...parts, rotation: (degrees * Math.PI) / 180 });
+  const { transform: _drop, ...rest } = value;
+  const identity = Math.abs(a - 1) < 1e-9 && Math.abs(b) < 1e-9 && Math.abs(c) < 1e-9 && Math.abs(d - 1) < 1e-9;
+  return identity ? rest : { ...rest, transform: [a, b, c, d] };
+}
 
 /** The spec a pattern paint carries, if it carries one. A consumer-built
  *  `TextureHandle` has no spec, so the picker shows no tile selected and
@@ -53,15 +78,16 @@ export interface PatternPickerProps {
   value: PatternFill;
   /** The color new tiles are seeded with — the paint's own, normally. */
   color: string;
-  /** Committed value: one call per click. A tile pick and a size change are
-   *  each a complete gesture, so there is no `onInput`. */
+  /** Committed value: one call per click. A tile pick, a size change and a
+   *  committed rotation are each a complete gesture, so there is no `onInput`. */
   onChange: (next: PatternFill) => void;
   className?: string;
 }
 
 /**
- * Grid of tile swatches over a size switch, each swatch previewing the real
- * tile at the current color.
+ * Grid of tile swatches over a size switch and a rotation field, each swatch
+ * previewing the real tile at the current color. Rotation edits only the
+ * rotation part of the paint's `transform`; scale and skew survive it.
  *
  * The preview shares its shape mapper with what the renderer paints, so a
  * swatch cannot drift from the texture it selects.
@@ -72,7 +98,8 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
   const size = spec?.size ?? DEFAULT_TILE_SIZE;
 
   const pick = (tile: TilePatternSpec['tile']): void => {
-    onChange(seedPattern(tile, color, size));
+    const seeded = seedPattern(tile, color, size);
+    onChange(value.transform ? { ...seeded, transform: value.transform } : seeded);
   };
 
   const resize = (nextSize: number): void => {
@@ -107,6 +134,15 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
         size="sm"
         ariaLabel="Tile size"
         onChange={(v) => v != null && resize(v)}
+      />
+      <NumberField
+        label="Rotation"
+        orientation="row"
+        width="fit"
+        value={toDegrees(decomposePatternTransform(value.transform).rotation)}
+        step={15}
+        formatOptions={DEGREES}
+        onChange={(deg) => Number.isFinite(deg) && onChange(withRotation(value, deg))}
       />
     </div>
   );

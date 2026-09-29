@@ -656,8 +656,10 @@ export {
 // ─── Paint types: FillStyle, Stroke, gradients ──────────────────────────────
 export {
   alignedStrokeRect,
+  composePatternTransform,
   contrastLineColor,
   dashForStrokeStyle,
+  decomposePatternTransform,
   resolveScreenLength,
   strokeDashStyleOf,
   STROKE_DASH_RATIOS,
@@ -671,6 +673,8 @@ export type {
   GradientKind,
   GradientUnits,
   TilePatternSpec,
+  PatternTransform,
+  PatternTransformParts,
   Stroke,
   StrokeAlign,
   StrokeDashStyle,
