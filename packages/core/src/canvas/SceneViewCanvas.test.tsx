@@ -10,6 +10,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { createRef, useRef } from 'react';
+import { renderThenAbandon } from '../test-utils/abandonRender';
 import { createScene } from 'core/scene/scene';
 import type { Node, Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
@@ -415,5 +416,27 @@ describe('<SceneViewCanvas> — pose overrides', () => {
     });
 
     expect(renderMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('SceneViewCanvas — a render React abandons', () => {
+  it('repaints with the committed props, not the abandoned ones', async () => {
+    const scene = makeScene();
+    const first = scene.roots[0]!;
+    const drawA = vi.fn(drawOne);
+    const drawB = vi.fn(drawOne);
+    renderThenAbandon(drawA, drawB, (draw) => (
+      <SceneViewCanvas scene={scene} view={identityView} width={100} height={80} drawOne={draw} />
+    ));
+    drawA.mockClear();
+
+    await act(async () => {
+      scene.overrides.set(first, { pose: { x: 500, y: 20, width: 30, height: 40 } });
+      scene.overrides.commit();
+      await frame();
+    });
+
+    expect(drawB).not.toHaveBeenCalled();
+    expect(drawA).toHaveBeenCalled();
   });
 });

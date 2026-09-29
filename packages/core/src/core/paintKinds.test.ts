@@ -132,6 +132,14 @@ describe('paint-kind registry', () => {
     }
   });
 
+  it('hands back the same list until the registry changes', () => {
+    const before = listPaintKinds();
+    expect(listPaintKinds()).toBe(before);
+    dispose = registerPaintKind(washEntry());
+    expect(listPaintKinds()).not.toBe(before);
+    expect(listPaintKinds()).toBe(listPaintKinds());
+  });
+
   it('adds a sixth kind to the list and removes it on dispose', () => {
     dispose = registerPaintKind(washEntry());
     expect(getPaintKind('test-wash')?.label).toBe('Wash');

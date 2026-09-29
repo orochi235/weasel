@@ -20,7 +20,7 @@
  * then both run side-by-side; the visuals overlap exactly so the
  * user-visible result is identical.
  */
-import { useEffect, useMemo, useReducer, useRef } from 'react';
+import { useEffect, useInsertionEffect, useMemo, useReducer, useRef } from 'react';
 import type { DrawCommand, PathDrawCommand } from '../../renderer';
 import type { Stroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
@@ -82,7 +82,7 @@ export function useDispatcherOverlayLayer(args: {
   const { dispatcher, style } = args;
 
   const styleRef = useRef(style);
-  styleRef.current = style;
+  useInsertionEffect(() => { styleRef.current = style; });
 
   // Re-render on every dispatcher pump so live overlay (marquee, lasso
   // polyline) tracks pointermove instead of freezing on the first frame.

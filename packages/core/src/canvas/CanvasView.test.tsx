@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useEffect } from 'react';
+import { renderThenAbandon } from '../test-utils/abandonRender';
 import { SceneCanvas } from './SceneCanvas';
 import { CanvasView } from './CanvasView';
 import { createScene } from 'core/scene/scene';
@@ -568,5 +569,73 @@ describe('<CanvasView> zoom invariant', () => {
     const next = panel.mock.calls.at(-1)?.[0] as View;
     expect(Number.isFinite(next.y)).toBe(true);
     expect(next.scale.y > 0 && Number.isFinite(next.scale.y)).toBe(true);
+  });
+});
+
+describe('<CanvasView> state a render abandons', () => {
+  type Props = { view: View; selection: readonly NodeId[]; ruleCtx: object };
+  const A: Props = { view: { x: 1, y: 2, scale: { x: 1, y: 1 } }, selection: ['a' as NodeId], ruleCtx: { from: 'a' } };
+  const B: Props = { view: { x: 9, y: 9, scale: { x: 3, y: 3 } }, selection: ['b' as NodeId], ruleCtx: { from: 'b' } };
+
+  function fixedSelection(ids: readonly NodeId[]): SelectionApi {
+    return {
+      current: ids,
+      get: () => [...ids],
+      set: () => {}, add: () => {}, remove: () => {}, toggle: () => {}, clear: () => {},
+      contains: (id: NodeId) => ids.includes(id),
+      applyClick: () => {},
+      adapterMethods: { getSelection: () => [...ids], setSelection: () => {} },
+    } as unknown as SelectionApi;
+  }
+  const SELECTIONS = new Map([[A, fixedSelection(A.selection)], [B, fixedSelection(B.selection)]]);
+  const inputsFor = (p: Props) => ({
+    adapter: undefined,
+    geometry: AUTO_POSE_DESCRIPTOR,
+    boundsOf: () => null,
+    tools: undefined,
+    selectionApi: SELECTIONS.get(p)!,
+    chromeCaps: { ruleCtx: () => p.ruleCtx as never, isVisible: () => () => true },
+  });
+  const INPUTS = new Map([[A, inputsFor(A)], [B, inputsFor(B)]]);
+
+  /** Mounts on `A`, then a transition to `B` that suspends: the render
+   *  carrying `B` runs and is thrown away. */
+  function abandonB() {
+    const drawn: { view: View; data: unknown }[] = [];
+    const probe: RenderLayer<unknown> = {
+      id: 'probe', label: 'probe', draw: (data, view) => { drawn.push({ view, data }); return []; },
+    };
+    const layers = [probe];
+    let registry!: ViewRegistry;
+    const onReady = (r: ViewRegistry) => { registry = r; };
+    renderThenAbandon(A, B, (p) => (
+      <ViewRegistryProvider>
+        <ViewInputsProvider value={INPUTS.get(p)!}>
+          <Harness layers={layers} onReady={onReady} />
+          <CanvasView id="panel" bounds={PANEL} view={p.view} selection={SELECTIONS.get(p)!} />
+        </ViewInputsProvider>
+      </ViewRegistryProvider>
+    ));
+    const reg = registry.list()[0]!;
+    reg.layer.draw({}, OUTER, DIMS);
+    return { reg, drawn: drawn.at(-1)! };
+  }
+
+  it('paints through the committed camera', () => {
+    expect(abandonB().drawn.view).toEqual(A.view);
+  });
+
+  it('paints the committed chrome', () => {
+    const data = abandonB().drawn.data as { getChromeState(): { selection: readonly NodeId[] } };
+    expect(data.getChromeState().selection).toEqual(A.selection);
+  });
+
+  it('routes against the committed surface inputs', () => {
+    expect(abandonB().reg.target!.getRuleCtx!()).toBe(A.ruleCtx);
+  });
+
+  it('hands the committed selection to routing', () => {
+    const deps = abandonB().reg.target!.deps!() as { selection?: SelectionApi };
+    expect(deps.selection?.get()).toEqual(A.selection);
   });
 });

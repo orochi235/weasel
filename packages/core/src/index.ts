@@ -837,6 +837,7 @@ export {
   switchGradientKind,
   paintKindRegistry,
 } from './core/paintKinds';
+export { usePaintKinds, useGradientKinds, usePaintKind } from './core/usePaintKinds';
 export type {
   PaintKind,
   PaintKindEntry,

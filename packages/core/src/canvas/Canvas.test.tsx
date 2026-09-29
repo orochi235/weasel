@@ -242,6 +242,34 @@ describe('Canvas tools mode', () => {
     expect(canvas.style.cursor).toBe('crosshair');
   });
 
+  it('resolves a function tool cursor against the view this render carries', () => {
+    const seen: number[] = [];
+    function Test({ scale }: { scale: number }) {
+      const tools = useTools({
+        active: 't',
+        registry: {
+          t: defineTool({
+            id: 't',
+            cursor: (ctx) => {
+              seen.push(ctx.view.scale.x);
+              return 'crosshair';
+            },
+          }),
+        },
+      });
+      return (
+        <Canvas
+          width={100} height={100} adapter={{} as never} layers={{}} tools={tools}
+          view={{ x: 0, y: 0, scale: { x: scale, y: scale } }}
+        />
+      );
+    }
+
+    const { rerender } = render(<WeaselProvider><Test scale={1} /></WeaselProvider>);
+    rerender(<WeaselProvider><Test scale={3} /></WeaselProvider>);
+    expect(seen.at(-1)).toBe(3);
+  });
+
   it('hands a world-sized tool cursor to the painted layer and hides the native one', () => {
     // The escalation handoff, end to end through `<Canvas>`: a brush radius is
     // a world quantity, so no CSS cursor can express it at every zoom. jsdom

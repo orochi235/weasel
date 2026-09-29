@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import type { FillStyle } from '@weasel-js/core';
+import { act, render, screen, fireEvent } from '@testing-library/react';
+import { asPaint, registerPaintKind, type FillStyle } from '@weasel-js/core';
 import { PaintField } from './PaintField';
 
 const GRADIENT: FillStyle = {
@@ -18,6 +18,27 @@ describe('PaintField', () => {
   it('names the kind it is holding, so a closed field still says what it is', () => {
     render(<PaintField value={GRADIENT} onChange={() => {}} aria-label="Fill" />);
     expect(screen.getByRole('button', { name: /Fill/ })).toHaveTextContent('Linear');
+  });
+
+  it('labels a kind registered after it mounted', () => {
+    render(
+      <PaintField value={asPaint({ fill: 'noise', color: '#112233ff' })} onChange={() => {}} aria-label="Fill" />,
+    );
+    expect(screen.getByRole('button', { name: /Fill/ })).toHaveTextContent('noise');
+    let dispose = (): void => {};
+    act(() => {
+      dispose = registerPaintKind({
+        id: 'noise',
+        label: 'Noise',
+        seed: (color) => asPaint({ fill: 'noise', color }),
+        colorOf: (paint) => (paint as unknown as { color?: string }).color,
+      });
+    });
+    try {
+      expect(screen.getByRole('button', { name: /Fill/ })).toHaveTextContent('Noise');
+    } finally {
+      act(() => { dispose(); });
+    }
   });
 
   it('opens the whole paint editor, not a color input', () => {

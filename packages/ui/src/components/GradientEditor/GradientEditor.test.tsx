@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import {
   asPaint,
   registerPaintKind,
@@ -154,6 +154,27 @@ describe('GradientEditor', () => {
         expect(kindNames()).toContain('Diamond');
       } finally {
         dispose();
+      }
+    });
+
+    it('picks up a gradient kind registered after it mounted', () => {
+      render(<GradientEditor value={LINEAR} onChange={() => {}} />);
+      expect(kindNames()).not.toContain('Diamond');
+      let dispose = (): void => {};
+      act(() => {
+        dispose = registerPaintKind({
+          id: 'diamond-gradient',
+          label: 'Diamond',
+          seed: (color) => asPaint({ fill: 'diamond-gradient', stops: [{ offset: 0, color }] }),
+          colorOf: () => undefined,
+          stopsOf: (paint) => (paint as unknown as { stops: GradStop[] }).stops,
+          fromStops: (stops) => asPaint({ fill: 'diamond-gradient', stops }),
+        });
+      });
+      try {
+        expect(kindNames()).toContain('Diamond');
+      } finally {
+        act(() => { dispose(); });
       }
     });
 

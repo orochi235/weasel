@@ -26,6 +26,7 @@
  */
 import {
   useCallback,
+  useInsertionEffect,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -120,10 +121,10 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   };
 
   // The frame loop paints, not React — so an override commit can repaint
-  // without a render. The thunk defers to `paintRef`, rewritten every render
-  // so the loop always reads this render's props.
-  const paintRef = useRef<() => boolean>(() => false);
-  paintRef.current = () => {
+  // without a render. The thunk defers to `paintRef`, which every committed
+  // render republishes from an insertion effect — ahead of the layout effect
+  // below, and never from a render React abandoned.
+  const paint = (): boolean => {
     const canvas = localRef.current;
     if (!canvas) return false;
     renderSceneToCanvas({
@@ -143,6 +144,8 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
     });
     return true;
   };
+  const paintRef = useRef<() => boolean>(() => false);
+  useInsertionEffect(() => { paintRef.current = paint; });
 
   const { requestRedraw } = useFrameLoop(useCallback(() => paintRef.current(), []));
 

@@ -313,12 +313,6 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P3) The paint controls read the kind registry without subscribing to it.** `PaintInput`,
-  `GradientEditor` and `PaintField` (`packages/ui/src/components/`) call `listPaintKinds` /
-  `getPaintKind` during render, so a kind registered after they mount — a consumer's own, or one
-  arriving through `registerPaintKindLoader` — is missing from the kind bar and unlabeled until
-  something else re-renders them. `paintKindRegistry` is shaped for `useSyncExternalStore`.
-
 - **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
   `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
   still derives framing from document poses, so a node overridden outside the
@@ -327,16 +321,21 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P3) `paintInputsRef` is written during render.** `Canvas.tsx` assigns
-  it in the render body, so a concurrent render React starts and abandons still
-  leaves its inputs in the ref, and the next `requestRedraw` from any source —
-  a gesture, a HUD, the view — paints inputs that were never committed. This is
-  a second `startTransition` hazard, distinct from the one `docs/concepts.md`
-  documents (that one is about DOM lagging the canvas; this one is about the
-  canvas painting a render that does not exist), and only the comment above
-  the assignment records it. Writing the ref from a layout effect instead would
-  fix it and cost the ordering `syncPaint` exists for — pixels landing before
-  the surrounding layout effects read the DOM.
+- **(P3) Refs read by event paths are still assigned during render across the kit.**
+  A ref written in a render body keeps what an abandoned concurrent render (a
+  `startTransition` that suspends) computed, and the next event reads it. The
+  paint paths are fixed — `<Canvas>`, `<CanvasView>`, `<SceneViewCanvas>`, the
+  preview-ghost and dispatcher-overlay layers, and `<SceneCanvas>`'s controlled
+  view publish from `useInsertionEffect`. What is left is the event side: about
+  170 assignments in some 80 files, `<SceneCanvas>`'s other mirrors, the
+  `canvas/deps/*` sources, tools, actions, gestures, `<MinimapCanvas>`, and the
+  ui and labkit components with their own loops (`CameraInput`,
+  `AnnotationOverlay`, `useLoupe`, `CurveEditor`). Each needs its readers
+  checked for a read during render — the function-form tool cursor was one,
+  and now takes its view explicitly — before it moves. List them with
+  `grep -rEn "^  (if \(.*\) )?[a-zA-Z_]+\.current(\.[a-zA-Z]+)? = " packages/{core,ui,labkit}/src`
+  (misses writes nested deeper in a render body). `test-utils/abandonRender.tsx`
+  is the test shape.
 
 
 - **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner

@@ -10,12 +10,15 @@
 
 import { describe, it, expect, beforeAll, afterEach, onTestFinished, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
-import { Profiler, StrictMode, useLayoutEffect, useMemo } from 'react';
+import { Profiler, StrictMode, Suspense, startTransition, use, useLayoutEffect, useMemo, useState } from 'react';
 import type React from 'react';
 import { Canvas } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { RenderLayer } from '../core/layers/render';
+import type { View } from '../core/viewport/view';
+import type { CanvasHelpers } from './useViewHelpers';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { renderThenAbandon } from '../test-utils/abandonRender';
 
 beforeAll(() => {
   const recorder = makeGLRecorder();
@@ -506,5 +509,164 @@ describe('Canvas syncPaint', () => {
     await frame();
     await frame();
     expect(draw).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('Canvas paint inputs', () => {
+  it('never paints the inputs of a render React abandoned', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const drawA = vi.fn();
+    const drawB = vi.fn();
+    const layerA = probeLayer(drawA);
+    const layerB = probeLayer(drawB);
+    renderThenAbandon(layerA, layerB, (layer) => <SyncHost apiRef={apiRef} layer={layer} />);
+    act(() => { apiRef.current!.requestRedraw(); });
+    await frame();
+    await frame();
+
+    expect(drawB).not.toHaveBeenCalled();
+    expect(drawA).toHaveBeenCalled();
+  });
+
+  it('hands a sync paint requested from an earlier sibling\'s layout effect this commit\'s inputs', () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const drawA = vi.fn();
+    const drawB = vi.fn();
+    const layerA = probeLayer(drawA);
+    const layerB = probeLayer(drawB);
+    let requestRedraw: (() => void) | undefined;
+    let drawnInSibling: number | undefined;
+
+    // Layout effects run child before parent and in sibling order, so this one
+    // runs ahead of every layout effect Canvas owns.
+    function Reader({ layer }: { layer: RenderLayer<unknown> }) {
+      useLayoutEffect(() => {
+        if (!requestRedraw) return;
+        requestRedraw();
+        drawnInSibling = drawB.mock.calls.length;
+      }, [layer]);
+      return null;
+    }
+    function Parent({ layer }: { layer: RenderLayer<unknown> }) {
+      return (
+        <>
+          <Reader layer={layer} />
+          <SyncHost apiRef={apiRef} layer={layer} syncPaint />
+        </>
+      );
+    }
+
+    const { rerender } = render(<Parent layer={layerA} />);
+    requestRedraw = apiRef.current!.requestRedraw;
+    act(() => { rerender(<Parent layer={layerB} />); });
+
+    expect(drawnInSibling).toBe(1);
+  });
+});
+
+describe('Canvas state a render abandons', () => {
+  type Props = {
+    width: number;
+    view: View;
+    getIsVisible: () => (id: string) => boolean;
+    previewPoseExtra: (id: string) => unknown;
+    onViewChange: (v: View) => void;
+  };
+  const A: Props = {
+    width: 100,
+    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
+    getIsVisible: () => () => true,
+    previewPoseExtra: () => 'pose-a',
+    onViewChange: vi.fn(),
+  };
+  const B: Props = {
+    width: 200,
+    view: { x: 50, y: 60, scale: { x: 2, y: 2 } },
+    getIsVisible: () => () => false,
+    previewPoseExtra: () => 'pose-b',
+    onViewChange: vi.fn(),
+  };
+
+  /** Mounts on `A`, then starts a transition to `B` that suspends, so the
+   *  render carrying `B` runs and is thrown away. Returns what later paints
+   *  and handle reads see. */
+  async function abandonB() {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const helpersRef = { current: null as CanvasHelpers<unknown> | null };
+    const seen: { data: unknown; view: View }[] = [];
+    const layer: RenderLayer<unknown> = {
+      id: 'probe',
+      label: 'Probe',
+      space: 'screen',
+      draw: (data, view) => {
+        seen.push({ data, view });
+        return [];
+      },
+    };
+    const layers = { probe: { layer } };
+    const never = new Promise<never>(() => {});
+    let setProps!: (p: Props) => void;
+
+    function Hang({ hang }: { hang: boolean }) {
+      if (hang) use(never);
+      return null;
+    }
+    function Parent() {
+      const [props, set] = useState(A);
+      setProps = set;
+      return (
+        <Suspense fallback={null}>
+          <Canvas
+            ref={apiRef}
+            helpersRef={helpersRef}
+            height={80}
+            layers={layers}
+            width={props.width}
+            view={props.view}
+            getIsVisible={props.getIsVisible}
+            previewPoseExtra={props.previewPoseExtra}
+            onViewChange={props.onViewChange}
+          />
+          <Hang hang={props === B} />
+        </Suspense>
+      );
+    }
+
+    render(<Parent />);
+    await frame();
+    const committedHelpers = helpersRef.current;
+    const before = seen.at(-1)!;
+
+    act(() => { startTransition(() => { setProps(B); }); });
+    act(() => { apiRef.current!.requestRedraw(); });
+    await frame();
+    await frame();
+    return { api: apiRef.current!, helpersRef, committedHelpers, before, after: seen.at(-1)! };
+  }
+
+  it('keeps the committed size', async () => {
+    const { api } = await abandonB();
+    expect(api.getSurfaceRect().width).toBe(100);
+  });
+
+  it('keeps and paints the committed controlled view', async () => {
+    const { api, after } = await abandonB();
+    expect(api.getView()).toEqual(A.view);
+    expect(after.view).toEqual(A.view);
+  });
+
+  it('forwards a view write to the committed onViewChange', async () => {
+    const { api } = await abandonB();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    act(() => { api.setView({ x: 1, y: 2, scale: { x: 1, y: 1 } }); });
+    expect(A.onViewChange).toHaveBeenCalled();
+    expect(B.onViewChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps and paints the committed layer helpers', async () => {
+    const { before, after, helpersRef, committedHelpers } = await abandonB();
+    expect(after.data).toBe(before.data);
+    expect(helpersRef.current).toBe(committedHelpers);
+    expect((after.data as CanvasHelpers<unknown>).getEffectivePose('n')).toBe('pose-a');
   });
 });

@@ -16,7 +16,7 @@
  * action walks `scene.childrenOf` for both — see `cascadeIds` in
  * `interactions/actions/defaults/move.ts`.
  */
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from 'react';
 import { dwarn } from '../debug';
 import type React from 'react';
 import type { ReactNode } from 'react';
@@ -1126,7 +1126,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const currentViewRef = useRef<View>(
     normalizeView(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } }),
   );
-  if (viewProp !== undefined) currentViewRef.current = normalizeView(viewProp);
+  // Committed renders only, so an abandoned transition's view never reaches
+  // the `view` dep, picks or the camera animator.
+  useInsertionEffect(() => {
+    if (viewProp !== undefined) currentViewRef.current = normalizeView(viewProp);
+  });
 
   useEffect(() => {
     const api = canvasApiRef.current;

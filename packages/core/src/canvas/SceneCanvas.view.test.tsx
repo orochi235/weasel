@@ -11,6 +11,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import { Profiler, StrictMode, useEffect } from 'react';
+import { renderThenAbandon } from '../test-utils/abandonRender';
 import { SceneCanvas, type SceneCanvasProps } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { SceneCanvasApi } from './canvasExtension';
@@ -273,5 +274,21 @@ describe('SceneCanvas view zoom invariant', () => {
     await frame();
     const mirrored = depsRef.current!.get('view')!.get();
     expect(finitePositive(mirrored.scale.x) && finitePositive(mirrored.scale.y)).toBe(true);
+  });
+});
+
+describe('SceneCanvas view a render abandons', () => {
+  it('keeps the committed controlled view in the view dep', () => {
+    const scene = newScene();
+    const depsRef = { current: null as DepRegistry | null };
+    const A: View = { x: 1, y: 2, scale: { x: 1, y: 1 } };
+    const B: View = { x: 9, y: 9, scale: { x: 3, y: 3 } };
+    renderThenAbandon(A, B, (view) => (
+      <SceneCanvas<D, L, P> scene={scene} width={200} height={150} view={view}>
+        <DepGrabber out={depsRef} />
+      </SceneCanvas>
+    ));
+
+    expect(depsRef.current!.get('view')!.get()).toEqual(A);
   });
 });
