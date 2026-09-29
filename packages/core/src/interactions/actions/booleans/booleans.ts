@@ -22,6 +22,7 @@ import { createSetSelectionOp } from 'core/ops/select';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
+import { textToPath, TextOutlinesError, type TextNodeSource } from 'features/text/textToPath';
 
 /** Boolean op identifiers — five Pathfinder primaries plus Crop. */
 export type BooleanOp = 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide' | 'crop';
@@ -42,6 +43,12 @@ export interface BooleanZOrder {
 export interface BooleansAdapter {
   getSelection(): NodeId[];
   getWorldPath(id: NodeId): Path | undefined;
+  /**
+   * Optional: the text node behind `id`, for an id `getWorldPath` has no path
+   * for. Its glyph outlines (`textToPath`) become the operand, so text can be
+   * cut, united or intersected like any shape.
+   */
+  getTextSource?(id: NodeId): TextNodeSource | undefined;
   compareZ(a: NodeId, b: NodeId): number;
   /**
    * Mint a new node from a boolean-op result `Path`. `producedBy` names the
@@ -76,7 +83,20 @@ export interface BooleansAdapter {
 /** Outcome reported back to callers (lets the hook surface no-op signals). */
 export type BooleanOpResult =
   | { kind: 'applied'; resultIds: string[] }
-  | { kind: 'noop'; reason: 'no-paths' | 'too-few-for-subtract' | 'empty-result' };
+  | { kind: 'noop'; reason: 'no-paths' | 'too-few-for-subtract' | 'empty-result' }
+  /** A text operand had no outline geometry. Nothing was changed: an op that
+   *  quietly dropped the operand would commit a different shape than asked. */
+  | { kind: 'failed'; reason: 'text-outlines'; error: TextOutlinesError };
+
+function operandPath(adapter: BooleansAdapter, id: NodeId): Path | undefined {
+  const path = adapter.getWorldPath(id);
+  if (path) return path;
+  const text = adapter.getTextSource?.(id);
+  if (!text) return undefined;
+  // Blank text has no geometry, and is no more an operand than a group is.
+  const glyphs = textToPath(text.data, text.pose);
+  return glyphs.commands.length > 0 ? glyphs : undefined;
+}
 
 const LABEL: Record<BooleanOp, string> = {
   union: 'Union',
@@ -109,8 +129,14 @@ export function applyBooleanOp(
   // the bottommost (back) member. `subtract` relies on this: it computes
   // `back − union(rest)`, which is Illustrator's "Minus Front." Keep this
   // convention in sync if compareZ semantics ever flip.
-  const entries = sel
-    .map((id) => ({ id, path: adapter.getWorldPath(id) }))
+  let resolved: { id: NodeId; path: Path | undefined }[];
+  try {
+    resolved = sel.map((id) => ({ id, path: operandPath(adapter, id) }));
+  } catch (err) {
+    if (err instanceof TextOutlinesError) return { kind: 'failed', reason: 'text-outlines', error: err };
+    throw err;
+  }
+  const entries = resolved
     .filter((e): e is { id: NodeId; path: Path } => e.path != null)
     .sort((a, b) => adapter.compareZ(a.id, b.id));
 

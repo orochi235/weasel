@@ -1,9 +1,9 @@
 /** Top action bar for WeaselDraw — buttons that aren't tools.
  *
  *  Every editing command (history, clipboard, reorder, group, align,
- *  distribute, flip, booleans) is a kit action, rendered by the kit's
- *  `<ActionBar group=…/>` from the registry `<SceneCanvas>` fills, glyphs
- *  included. The buttons built here are the app's own: file, view toggles,
+ *  distribute, flip, booleans, create outlines) is a kit action, rendered by
+ *  the kit's `<ActionBar group=…/>` from the registry `<SceneCanvas>` fills,
+ *  glyphs included. The buttons built here are the app's own: file, view toggles,
  *  recording, preferences. */
 import { useRef } from 'react';
 import {
@@ -123,6 +123,7 @@ export function CommandBar(p: CommandBarProps) {
         }}
       />
       <KitActionBar group="pathfinder" />
+      <KitActionBar group="text" />
       <Button
         variant="ghost"
         iconOnly

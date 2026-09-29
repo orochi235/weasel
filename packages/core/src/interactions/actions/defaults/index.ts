@@ -15,6 +15,7 @@ export {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
 } from './booleans';
+export { createOutlinesAction } from './createOutlines';
 export { deleteAction } from './delete';
 export { groupAction, ungroupAction } from './group';
 export {

@@ -587,6 +587,13 @@ declare module '@weasel-js/routing' {
      */
     booleansAdapter?: import('./booleans/booleans').BooleansAdapter;
     /**
+     * Create Outlines adapter — read selection ids, resolve text nodes, and
+     * mint the path nodes that replace them. Consumers wire it with
+     * `useCreateOutlinesAdapter(adapter)`; the `createOutlines` action reads it
+     * in both its `enabled` predicate and its invoker.
+     */
+    createOutlinesAdapter?: import('./outlines/createOutlines').CreateOutlinesAdapter;
+    /**
      * Gesture dispatcher control surface — exposes `cancelAll(reason)` so
      * actions that need to abort an in-flight handle (Escape cancels a
      * drag, etc.) can do so. Sourced by `<SceneCanvas>` from the
