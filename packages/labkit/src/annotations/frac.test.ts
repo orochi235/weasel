@@ -80,8 +80,13 @@ describe('a shape', () => {
     { x: 0.6, y: 0.2 },
   ];
 
+  it('has no bounds without points', () => {
+    expect(boundsOf([])).toBeNull();
+  });
+
   it('round-trips through the box that bounds it', () => {
     const box = boundsOf(pts);
+    if (!box) throw new Error('no bounds');
     const back = fromShape(toShape(pts, box), box);
     back.forEach((p, i) => {
       expect(p.x).toBeCloseTo(pts[i]?.x ?? Number.NaN, 9);
@@ -94,7 +99,9 @@ describe('a shape', () => {
       { x: 0.1, y: 0.5 },
       { x: 0.4, y: 0.5 },
     ];
-    expect(toShape(flat, boundsOf(flat))).toEqual([
+    const box = boundsOf(flat);
+    if (!box) throw new Error('no bounds');
+    expect(toShape(flat, box)).toEqual([
       { x: 0, y: 0 },
       { x: 1, y: 0 },
     ]);

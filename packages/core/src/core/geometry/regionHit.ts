@@ -7,7 +7,7 @@
  * bounds cannot decide. A pose that is itself a polygon path is its own
  * outline and never asks.
  */
-import { pointInPolygon, polygonContainsPath, polygonIntersectsPath } from '@weasel-js/geom';
+import { boxContainsBox, pointInPolygon, polygonContainsPath, polygonIntersectsPath } from '@weasel-js/geom';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { LassoHitMode } from 'core/adapters/types';
 import { nodeMemo } from 'core/scene/nodeMemo';
@@ -136,10 +136,10 @@ export function regionTakes(
   if (mode === 'centers') {
     return pointInPolygon(region.coords, b.x + b.width / 2, b.y + b.height / 2);
   }
-  const inBox =
-    b.x >= ab.x && b.y >= ab.y &&
-    b.x + b.width <= ab.x + ab.width &&
-    b.y + b.height <= ab.y + ab.height;
+  const inBox = boxContainsBox(
+    [ab.x, ab.y, ab.x + ab.width, ab.y + ab.height],
+    [b.x, b.y, b.x + b.width, b.y + b.height],
+  );
   const silhouette = isSilhouettePose(pose);
   if (mode === 'enclosed') {
     // A node sticking out of the region's box cannot be inside the region.

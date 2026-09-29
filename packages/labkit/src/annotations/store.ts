@@ -338,7 +338,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       const { frac: fracPatch, points, ...meaning } = patch;
       const nid = asNodeId(found.node.id);
       const content = contentOf(found.target);
-      const frac = fracPatch ?? (points && points.length > 0 ? boundsOf(points) : undefined);
+      const frac = fracPatch ?? (points ? boundsOf(points) : null);
       const bounds = roundFrac(frac ?? worldToFrac(found.node.pose as MarkPose, content));
       const shape = points ? shapeFor(found.node.data.kind, points, bounds) : undefined;
       if (Object.keys(meaning).length > 0 || shape) {
