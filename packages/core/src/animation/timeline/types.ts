@@ -104,6 +104,8 @@ export interface TimelineOptions extends NestedTimeline {
   onDone?: () => void;
   /** Any new animation passed the same `cancelKey` cancels this one. */
   cancelKey?: string;
+  /** Names this timeline in `animator.watch` events and `animator.live()`. */
+  label?: string;
   /** Books each event's `book` against a clock the timeline does not own, so a
    *  consumer on that clock lands it at its true sub-frame time. The frame
    *  clock's mapping onto it is smoothed each frame and resynced on a jump. */

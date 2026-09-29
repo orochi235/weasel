@@ -1,7 +1,7 @@
 import type { AnimationHandle } from '../types';
 import { createBooker, firstAfter } from './booking';
 import { sampleTrack } from './sampleTrack';
-import type { SampledTrack, TimelineHandle, TimelineOptions, Track } from './types';
+import type { EventTrack, SampledTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
 
 /** The animator's internal `register`, narrowed to what a timeline needs. */
 export type TimelineRegister = (seed: {
@@ -14,7 +14,19 @@ export type TimelineRegister = (seed: {
    *  paused at any level. */
   tick: (virtualNow: number, scale?: number) => boolean;
   onCancel?: () => void;
+  kind: 'timeline';
+  label?: string;
+  progress?: () => number;
 }) => AnimationHandle;
+
+/** Where a timeline reports its crossings and laps to `animator.watch`. Each
+ *  call site checks `watched` first, so an unwatched timeline builds nothing. */
+export interface TimelineReport {
+  readonly watched: boolean;
+  /** `path` is a scratch stack the timeline goes on mutating; copy it to keep it. */
+  fire(track: EventTrack, path: readonly number[], event: TimelineEvent, lateBy: number): void;
+  lap(lap: number): void;
+}
 
 /** End time of a track: its last key/event, or a nested timeline's own end. */
 function trackEnd(track: Track): number {
@@ -48,6 +60,7 @@ export function createTimeline(
   register: TimelineRegister,
   id: number,
   opts: TimelineOptions,
+  report?: TimelineReport,
 ): TimelineHandle {
   let duration = tracksEnd(opts.tracks, opts.duration);
   let offset = 0;
@@ -97,20 +110,30 @@ export function createTimeline(
     }
   };
 
+  // Track indexes from the root down to the track being fired, for `report`.
+  const path: number[] = [];
   const fireEvents = (tracks: Track[], from: number, to: number): void => {
-    for (const track of tracks) {
+    for (let k = 0; k < tracks.length; k += 1) {
+      const track = tracks[k];
       if (track.kind === 'event') {
         const end = firstAfter(track.events, to);
         for (let i = firstAfter(track.events, from); i < end; i += 1) {
           const ev = track.events[i];
           ev.fire?.(to - ev.t);
+          if (report?.watched) {
+            path.push(k);
+            report.fire(track, path, ev, to - ev.t);
+            path.pop();
+          }
           if (ev.book && !booker && !warnedUnbooked) {
             warnedUnbooked = true;
             console.warn('timeline: an event has `book` but the timeline has no `booking` clock; it never books.');
           }
         }
       } else if (track.kind === 'timeline') {
+        path.push(k);
         fireEvents(track.timeline.tracks, from - track.at, to - track.at);
+        path.pop();
       }
     }
   };
@@ -120,6 +143,7 @@ export function createTimeline(
   const onWrap = (): void => {
     fireEvents(opts.tracks, prevPlayhead, duration);
     prevPlayhead = -Infinity;
+    if (report?.watched) report.lap(lap);
   };
 
   const tick = (virtualNow: number, scale?: number): boolean => {
@@ -167,7 +191,9 @@ export function createTimeline(
   // cancelled by key or by `cancelAll` is as dead as one cancelled by hand.
   const onCancel = (): void => { cancelled = true; live = false; booker?.retract(); };
 
-  const base = register({ id, cancelKey: opts.cancelKey, tick, onCancel });
+  const progress = (): number => (duration > 0 ? playhead / duration : 1);
+  const seed = { id, cancelKey: opts.cancelKey, tick, onCancel, kind: 'timeline' as const, label: opts.label, progress };
+  const base = register(seed);
 
   // A paused entry's scale is zero, so `virtualNow` never advances and the
   // playhead holds at 0 until the consumer resumes.
@@ -183,7 +209,7 @@ export function createTimeline(
     lastVirtual = 0;
     offset = playhead;
     live = true;
-    register({ id, cancelKey: opts.cancelKey, keepExisting: true, tick, onCancel });
+    register({ ...seed, keepExisting: true });
     if (wantPaused) base.pause();
     base.setTimeScale(wantScale);
   };

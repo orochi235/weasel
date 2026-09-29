@@ -66,7 +66,7 @@ class CompositeHandle implements AnimationHandle {
   }
 
   /** Invoked when the supervisor is cancelled externally (animator.cancel /
-   *  cancelKey) OR via this composite's own cancel/natural-completion path. */
+   *  cancelKey) OR via this composite's own `cancel`. */
   private handleSupervisorCancel(): void {
     if (this.cancelled) return;
     this.cancelled = true;
@@ -87,7 +87,8 @@ class CompositeHandle implements AnimationHandle {
     this.outstanding -= 1;
     if (this.outstanding <= 0) {
       this.finished = true;
-      this.supervisor.cancel();
+      this.children = [];
+      this.supervisor.finish();
     }
   }
 
@@ -224,10 +225,10 @@ function runStagger<TItem>(
   factory: StaggerFactory<TItem>,
   opts?: StaggerOptions,
 ): AnimationHandle {
-  const supervisor = createSupervisor(opts?.cancelKey);
+  const supervisor = createSupervisor({ kind: 'stagger', cancelKey: opts?.cancelKey, label: opts?.label });
   const composite = new CompositeHandle(timers, supervisor, items.length);
   if (items.length === 0) {
-    supervisor.cancel();
+    supervisor.finish();
     return composite;
   }
   items.forEach((item, i) => {
