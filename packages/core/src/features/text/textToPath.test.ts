@@ -173,7 +173,10 @@ describe('textToPath', () => {
     const { laid, x, y } = layoutTextPose(tp);
     const [rule] = laid.decorations;
     expect(rule).toBeDefined();
-    const ry = y + (rule.y0 + rule.y1) / 2;
+    // Probe inside the band where rule and glyph overlap: the font's own rule
+    // can straddle the descender's tip, which a probe at the rule's center misses.
+    const glyph = boundsOfPath(plain);
+    const ry = (y + rule.y0 + Math.min(y + rule.y1, glyph.y + glyph.height)) / 2;
     // Somewhere along the rule the descender crosses it: inside both, and
     // inside the union — a rule wound against the glyph would cut a hole.
     let crossed = false;
