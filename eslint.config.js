@@ -246,6 +246,18 @@ export default [
     rules: { '@typescript-eslint/no-explicit-any': 'off' },
   },
   {
+    files: ['**/*.{ts,tsx}'],
+    ignores: ['**/*.browser.test.{ts,tsx}'],
+    rules: {
+      // Its matcher types clash with jest-dom's; only browser tests, typechecked
+      // on their own by `packages/tsconfig.json`, may load them.
+      'no-restricted-imports': ['error', {
+        paths: [{ name: 'vitest/browser', message: 'Only *.browser.test files may import vitest/browser.' }],
+        patterns: [{ group: ['@vitest/browser', '@vitest/browser/*'], message: 'Only *.browser.test files may import @vitest/browser.' }],
+      }],
+    },
+  },
+  {
     /**
      * A CSF story's `render` is not a component, so every hook it calls reads
      * as a violation. The 27 reports here were all that shape.
