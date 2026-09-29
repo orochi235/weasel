@@ -1,0 +1,2395 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "hud-vs-dom-static",
+  "git": {
+    "sha": "888e8af2c747500c953fe3b69c7b84159068f57f",
+    "dirty": true
+  },
+  "timestamp": "2026-09-29T06:30:34.538Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M1 Max",
+    "cores": 10,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.8.1",
+    "loadavg": [
+      6.99,
+      8.11,
+      9.67
+    ]
+  },
+  "params": {
+    "viewport": "1280x800",
+    "dpr": 1,
+    "glyphs": [
+      100,
+      1000,
+      2500,
+      5000
+    ],
+    "glyphsPerLabel": 10,
+    "updates": [
+      "static"
+    ],
+    "cameras": [
+      "fixed",
+      "moving"
+    ],
+    "frames": 120,
+    "warmup": 30,
+    "passes": 1,
+    "order": "ABBA per configuration, reversed on alternate passes",
+    "backgroundRects": 200,
+    "gpuTimer": true
+  },
+  "items": [
+    {
+      "id": "none",
+      "params": {
+        "approach": "none",
+        "glyphs": 0,
+        "update": "static",
+        "camera": "fixed"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.5029,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.5477,
+            0.4581
+          ]
+        },
+        "script": {
+          "value": 0.2324,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.2727,
+            0.1921
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.08235,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0767,
+            0.088
+          ]
+        },
+        "otherMain": {
+          "value": 0.1872,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.197,
+            0.1774
+          ]
+        },
+        "compositor": {
+          "value": 0.6875,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            1.109,
+            0.266
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 2.2981499999999997,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.5572,
+            2.0391
+          ]
+        },
+        "total": {
+          "value": 3.4886,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            4.214,
+            2.7632
+          ]
+        },
+        "totalSpread": {
+          "value": 1.4507750000000001,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 43.486000000000004,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            46.077,
+            40.895
+          ]
+        },
+        "longFrames": {
+          "value": 43.5,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.25595915853658535,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.25192932520325195,
+            0.25998899186991875
+          ]
+        },
+        "load1": {
+          "value": 9.7,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            8.6,
+            10.8
+          ]
+        }
+      }
+    },
+    {
+      "id": "hud 100 static fixed",
+      "params": {
+        "glyphs": 100,
+        "update": "static",
+        "camera": "fixed",
+        "approach": "hud"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.5589500000000001,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.5748,
+            0.5431
+          ]
+        },
+        "script": {
+          "value": 0.30500000000000005,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.3164,
+            0.2936
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.0881,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0895,
+            0.0867
+          ]
+        },
+        "otherMain": {
+          "value": 0.16515,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1682,
+            0.1621
+          ]
+        },
+        "compositor": {
+          "value": 0.58895,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.8532,
+            0.3247
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 2.592,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.6648,
+            2.5192
+          ]
+        },
+        "total": {
+          "value": 3.7399500000000003,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            4.0929,
+            3.387
+          ]
+        },
+        "totalSpread": {
+          "value": 0.7059083333333334,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 44.955,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            48.176,
+            41.734
+          ]
+        },
+        "longFrames": {
+          "value": 48.5,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.24397985159269625,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.24651449180327872,
+            0.24144521138211375
+          ]
+        },
+        "load1": {
+          "value": 10.78,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            9.53,
+            12.03
+          ]
+        }
+      }
+    },
+    {
+      "id": "dom 100 static fixed",
+      "params": {
+        "glyphs": 100,
+        "update": "static",
+        "camera": "fixed",
+        "approach": "dom"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.4526,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.4981,
+            0.4071
+          ]
+        },
+        "script": {
+          "value": 0.2021,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.2221,
+            0.1821
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.0923,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.101,
+            0.0836
+          ]
+        },
+        "otherMain": {
+          "value": 0.15715,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1739,
+            0.1404
+          ]
+        },
+        "compositor": {
+          "value": 0.39440000000000003,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.273,
+            0.5158
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 2.3565,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.0678,
+            2.6452
+          ]
+        },
+        "total": {
+          "value": 3.20355,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.839,
+            3.5681
+          ]
+        },
+        "totalSpread": {
+          "value": 0.7291000000000003,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 34.873,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            39.775,
+            29.971
+          ]
+        },
+        "longFrames": {
+          "value": 32,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.2638312601626016,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.2612907317073171,
+            0.2663717886178862
+          ]
+        },
+        "load1": {
+          "value": 10.515,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            10.29,
+            10.74
+          ]
+        }
+      }
+    },
+    {
+      "id": "hud 1000 static fixed",
+      "params": {
+        "glyphs": 1000,
+        "update": "static",
+        "camera": "fixed",
+        "approach": "hud"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.975,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.9607,
+            0.9893
+          ]
+        },
+        "script": {
+          "value": 0.70265,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.6942,
+            0.7111
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.0878,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0883,
+            0.0873
+          ]
+        },
+        "otherMain": {
+          "value": 0.18365,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1776,
+            0.1897
+          ]
+        },
+        "compositor": {
+          "value": 0.5059,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.3603,
+            0.6515
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 3.0109500000000002,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.951,
+            3.0709
+          ]
+        },
+        "total": {
+          "value": 4.4918,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            4.272,
+            4.7116
+          ]
+        },
+        "totalSpread": {
+          "value": 0.43960833333333316,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 39.354,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            40.194,
+            38.514
+          ]
+        },
+        "longFrames": {
+          "value": 41,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.2730552235772358,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.28490667479674797,
+            0.2612037723577236
+          ]
+        },
+        "load1": {
+          "value": 14.785,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            12.51,
+            17.06
+          ]
+        }
+      }
+    },
+    {
+      "id": "dom 1000 static fixed",
+      "params": {
+        "glyphs": 1000,
+        "update": "static",
+        "camera": "fixed",
+        "approach": "dom"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.50845,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.4277,
+            0.5892
+          ]
+        },
+        "script": {
+          "value": 0.24375000000000002,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1828,
+            0.3047
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.09359999999999999,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0875,
+            0.0997
+          ]
+        },
+        "otherMain": {
+          "value": 0.1704,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1566,
+            0.1842
+          ]
+        },
+        "compositor": {
+          "value": 0.3284,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.3028,
+            0.354
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 2.27445,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.1979,
+            2.351
+          ]
+        },
+        "total": {
+          "value": 3.11135,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.9284,
+            3.2943
+          ]
+        },
+        "totalSpread": {
+          "value": 0.3658916666666663,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 43.906,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            45.937,
+            41.875
+          ]
+        },
+        "longFrames": {
+          "value": 45.5,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.2878938333333332,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.26680881300813003,
+            0.3089788536585364
+          ]
+        },
+        "load1": {
+          "value": 15.215,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            14.85,
+            15.58
+          ]
+        }
+      }
+    },
+    {
+      "id": "hud 2500 static fixed",
+      "params": {
+        "glyphs": 2500,
+        "update": "static",
+        "camera": "fixed",
+        "approach": "hud"
+      },
+      "metrics": {
+        "main": {
+          "value": 1.1980499999999998,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            1.1497,
+            1.2464
+          ]
+        },
+        "script": {
+          "value": 0.894,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.865,
+            0.923
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.10335,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0882,
+            0.1185
+          ]
+        },
+        "otherMain": {
+          "value": 0.1997,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1955,
+            0.2039
+          ]
+        },
+        "compositor": {
+          "value": 0.7359,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.3777,
+            1.0941
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 2.8144,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.8961,
+            2.7327
+          ]
+        },
+        "total": {
+          "value": 4.7484,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            4.4236,
+            5.0732
+          ]
+        },
+        "totalSpread": {
+          "value": 0.6495833333333341,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 41.805,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            42.155,
+            41.455
+          ]
+        },
+        "longFrames": {
+          "value": 45,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.29531700969612157,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.29673863414634144,
+            0.2938953852459017
+          ]
+        },
+        "load1": {
+          "value": 17.525,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            17.46,
+            17.59
+          ]
+        }
+      }
+    },
+    {
+      "id": "dom 2500 static fixed",
+      "params": {
+        "glyphs": 2500,
+        "update": "static",
+        "camera": "fixed",
+        "approach": "dom"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.5666,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.5651,
+            0.5681
+          ]
+        },
+        "script": {
+          "value": 0.23914999999999997,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1948,
+            0.2835
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.14045,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1903,
+            0.0906
+          ]
+        },
+        "otherMain": {
+          "value": 0.18595,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1791,
+            0.1928
+          ]
+        },
+        "compositor": {
+          "value": 0.3318,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.3593,
+            0.3043
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 2.56455,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.8978,
+            2.2313
+          ]
+        },
+        "total": {
+          "value": 3.46295,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            3.8222,
+            3.1037
+          ]
+        },
+        "totalSpread": {
+          "value": 0.7185166666666669,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 40.055,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            37.814,
+            42.296
+          ]
+        },
+        "longFrames": {
+          "value": 39,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.26777048373983736,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.27645678048780487,
+            0.2590841869918699
+          ]
+        },
+        "load1": {
+          "value": 18.605,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            18.7,
+            18.51
+          ]
+        }
+      }
+    },
+    {
+      "id": "hud 5000 static fixed",
+      "params": {
+        "glyphs": 5000,
+        "update": "static",
+        "camera": "fixed",
+        "approach": "hud"
+      },
+      "metrics": {
+        "main": {
+          "value": 1.6423,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            1.562,
+            1.7226
+          ]
+        },
+        "script": {
+          "value": 1.3927,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            1.3189,
+            1.4665
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.08,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0742,
+            0.0858
+          ]
+        },
+        "otherMain": {
+          "value": 0.16849999999999998,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1678,
+            0.1692
+          ]
+        },
+        "compositor": {
+          "value": 0.5398000000000001,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.7902,
+            0.2894
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 2.4273,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.5315,
+            2.3231
+          ]
+        },
+        "total": {
+          "value": 4.6094,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            4.8837,
+            4.3351
+          ]
+        },
+        "totalSpread": {
+          "value": 0.5485666666666669,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 47.267,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            50.697,
+            43.837
+          ]
+        },
+        "longFrames": {
+          "value": 48.5,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.3295473983739837,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.3291783333333333,
+            0.32991646341463415
+          ]
+        },
+        "load1": {
+          "value": 16.62,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            15.88,
+            17.36
+          ]
+        }
+      }
+    },
+    {
+      "id": "dom 5000 static fixed",
+      "params": {
+        "glyphs": 5000,
+        "update": "static",
+        "camera": "fixed",
+        "approach": "dom"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.45355,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.4454,
+            0.4617
+          ]
+        },
+        "script": {
+          "value": 0.18475,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.183,
+            0.1865
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.0939,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0919,
+            0.0959
+          ]
+        },
+        "otherMain": {
+          "value": 0.1743,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.17,
+            0.1786
+          ]
+        },
+        "compositor": {
+          "value": 0.3056,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.268,
+            0.3432
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 2.11935,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.1091,
+            2.1296
+          ]
+        },
+        "total": {
+          "value": 2.8785499999999997,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.8226,
+            2.9345
+          ]
+        },
+        "totalSpread": {
+          "value": 0.11186666666666634,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 45.5155,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            43.555,
+            47.476
+          ]
+        },
+        "longFrames": {
+          "value": 49.5,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.2568531154538185,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.2551034016393443,
+            0.25860282926829264
+          ]
+        },
+        "load1": {
+          "value": 16.635,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            15.97,
+            17.3
+          ]
+        }
+      }
+    },
+    {
+      "id": "hud 100 static moving",
+      "params": {
+        "glyphs": 100,
+        "update": "static",
+        "camera": "moving",
+        "approach": "hud"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.46265,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.5359,
+            0.3894
+          ]
+        },
+        "script": {
+          "value": 0.2341,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.27,
+            0.1982
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.07780000000000001,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0897,
+            0.0659
+          ]
+        },
+        "otherMain": {
+          "value": 0.15005000000000002,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1754,
+            0.1247
+          ]
+        },
+        "compositor": {
+          "value": 0.25315,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.295,
+            0.2113
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 1.8693,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.3416,
+            1.397
+          ]
+        },
+        "total": {
+          "value": 2.585,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            3.1724,
+            1.9976
+          ]
+        },
+        "totalSpread": {
+          "value": 1.1748249999999998,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 35.8525,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            47.197,
+            24.508
+          ]
+        },
+        "longFrames": {
+          "value": 29.5,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.2584532276422764,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.30623687804878047,
+            0.21066957723577234
+          ]
+        },
+        "load1": {
+          "value": 16.259999999999998,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            17.22,
+            15.3
+          ]
+        }
+      }
+    },
+    {
+      "id": "dom 100 static moving",
+      "params": {
+        "glyphs": 100,
+        "update": "static",
+        "camera": "moving",
+        "approach": "dom"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.47385,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.5002,
+            0.4475
+          ]
+        },
+        "script": {
+          "value": 0.19014999999999999,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.2109,
+            0.1694
+          ]
+        },
+        "style": {
+          "value": 0.03885,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0398,
+            0.0379
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.10955000000000001,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.11,
+            0.1091
+          ]
+        },
+        "otherMain": {
+          "value": 0.1347,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.139,
+            0.1304
+          ]
+        },
+        "compositor": {
+          "value": 0.4707,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.5137,
+            0.4277
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 1.6171000000000002,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            1.6483,
+            1.5859
+          ]
+        },
+        "total": {
+          "value": 2.56165,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.6622,
+            2.4611
+          ]
+        },
+        "totalSpread": {
+          "value": 0.20118333333333327,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 35.5025,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            34.732,
+            36.273
+          ]
+        },
+        "longFrames": {
+          "value": 32,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.239266256097561,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.24420239837398378,
+            0.23433011382113822
+          ]
+        },
+        "load1": {
+          "value": 16.415,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            16.72,
+            16.11
+          ]
+        }
+      }
+    },
+    {
+      "id": "hud 1000 static moving",
+      "params": {
+        "glyphs": 1000,
+        "update": "static",
+        "camera": "moving",
+        "approach": "hud"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.6093999999999999,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.6097,
+            0.6091
+          ]
+        },
+        "script": {
+          "value": 0.4212,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.4153,
+            0.4271
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.06145,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0652,
+            0.0577
+          ]
+        },
+        "otherMain": {
+          "value": 0.126,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1284,
+            0.1236
+          ]
+        },
+        "compositor": {
+          "value": 0.20715,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.2189,
+            0.1954
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 1.4106,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            1.4781,
+            1.3431
+          ]
+        },
+        "total": {
+          "value": 2.22715,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.3067,
+            2.1476
+          ]
+        },
+        "totalSpread": {
+          "value": 0.15909999999999958,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 34.733000000000004,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            34.033,
+            35.433
+          ]
+        },
+        "longFrames": {
+          "value": 32,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.23077777235772362,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.23676470731707316,
+            0.22479083739837405
+          ]
+        },
+        "load1": {
+          "value": 13.34,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            14.71,
+            11.97
+          ]
+        }
+      }
+    },
+    {
+      "id": "dom 1000 static moving",
+      "params": {
+        "glyphs": 1000,
+        "update": "static",
+        "camera": "moving",
+        "approach": "dom"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.7402,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.7652,
+            0.7152
+          ]
+        },
+        "script": {
+          "value": 0.25015,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.26,
+            0.2403
+          ]
+        },
+        "style": {
+          "value": 0.0988,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1001,
+            0.0975
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.24385,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.2525,
+            0.2352
+          ]
+        },
+        "otherMain": {
+          "value": 0.14650000000000002,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1516,
+            0.1414
+          ]
+        },
+        "compositor": {
+          "value": 0.44095,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.4766,
+            0.4053
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 1.7161499999999998,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            1.785,
+            1.6473
+          ]
+        },
+        "total": {
+          "value": 2.8973,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            3.0268,
+            2.7678
+          ]
+        },
+        "totalSpread": {
+          "value": 0.2590083333333335,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 40.0545,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            43.416,
+            36.693
+          ]
+        },
+        "longFrames": {
+          "value": 37,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.22829658536585376,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.23551982926829276,
+            0.22107334146341476
+          ]
+        },
+        "load1": {
+          "value": 12.815000000000001,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            13.14,
+            12.49
+          ]
+        }
+      }
+    },
+    {
+      "id": "hud 2500 static moving",
+      "params": {
+        "glyphs": 2500,
+        "update": "static",
+        "camera": "moving",
+        "approach": "hud"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.95355,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.974,
+            0.9331
+          ]
+        },
+        "script": {
+          "value": 0.73705,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.7448,
+            0.7293
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.0674,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0732,
+            0.0616
+          ]
+        },
+        "otherMain": {
+          "value": 0.14855000000000002,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1554,
+            0.1417
+          ]
+        },
+        "compositor": {
+          "value": 0.23720000000000002,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.2555,
+            0.2189
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 1.6550500000000001,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            1.7453,
+            1.5648
+          ]
+        },
+        "total": {
+          "value": 2.84585,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.9749,
+            2.7168
+          ]
+        },
+        "totalSpread": {
+          "value": 0.2580333333333331,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 38.794,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            40.895,
+            36.693
+          ]
+        },
+        "longFrames": {
+          "value": 39,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.27499917886178865,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.27960788617886184,
+            0.27039047154471546
+          ]
+        },
+        "load1": {
+          "value": 10.705,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            11.49,
+            9.92
+          ]
+        }
+      }
+    },
+    {
+      "id": "dom 2500 static moving",
+      "params": {
+        "glyphs": 2500,
+        "update": "static",
+        "camera": "moving",
+        "approach": "dom"
+      },
+      "metrics": {
+        "main": {
+          "value": 1.09795,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            1.085,
+            1.1109
+          ]
+        },
+        "script": {
+          "value": 0.4112,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.4014,
+            0.421
+          ]
+        },
+        "style": {
+          "value": 0.20429999999999998,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.2075,
+            0.2011
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.27865,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.274,
+            0.2833
+          ]
+        },
+        "otherMain": {
+          "value": 0.20285,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.2013,
+            0.2044
+          ]
+        },
+        "compositor": {
+          "value": 0.6595500000000001,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.6629,
+            0.6562
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 2.20675,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.0799,
+            2.3336
+          ]
+        },
+        "total": {
+          "value": 3.9642,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            3.8278,
+            4.1006
+          ]
+        },
+        "totalSpread": {
+          "value": 0.2728916666666663,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 42.435500000000005,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            40.195,
+            44.676
+          ]
+        },
+        "longFrames": {
+          "value": 44,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.24301034146341466,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.23678851219512195,
+            0.24923217073170734
+          ]
+        },
+        "load1": {
+          "value": 10.49,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            10.72,
+            10.26
+          ]
+        }
+      }
+    },
+    {
+      "id": "hud 5000 static moving",
+      "params": {
+        "glyphs": 5000,
+        "update": "static",
+        "camera": "moving",
+        "approach": "hud"
+      },
+      "metrics": {
+        "main": {
+          "value": 1.67425,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            1.6919,
+            1.6566
+          ]
+        },
+        "script": {
+          "value": 1.40235,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            1.4334,
+            1.3713
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.08095,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.085,
+            0.0769
+          ]
+        },
+        "otherMain": {
+          "value": 0.19019999999999998,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.173,
+            0.2074
+          ]
+        },
+        "compositor": {
+          "value": 0.42805000000000004,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.5532,
+            0.3029
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 2.2212,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.325,
+            2.1174
+          ]
+        },
+        "total": {
+          "value": 4.32345,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            4.57,
+            4.0769
+          ]
+        },
+        "totalSpread": {
+          "value": 0.4931083333333328,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 39.914500000000004,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            41.455,
+            38.374
+          ]
+        },
+        "longFrames": {
+          "value": 39,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.3354963223140496,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.3322956446280992,
+            0.338697
+          ]
+        },
+        "load1": {
+          "value": 10.535,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            10.2,
+            10.87
+          ]
+        }
+      }
+    },
+    {
+      "id": "dom 5000 static moving",
+      "params": {
+        "glyphs": 5000,
+        "update": "static",
+        "camera": "moving",
+        "approach": "dom"
+      },
+      "metrics": {
+        "main": {
+          "value": 2.0715,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            2.1191,
+            2.0239
+          ]
+        },
+        "script": {
+          "value": 0.7375,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.7451,
+            0.7299
+          ]
+        },
+        "style": {
+          "value": 0.4561,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.482,
+            0.4302
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.5881000000000001,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.5895,
+            0.5867
+          ]
+        },
+        "otherMain": {
+          "value": 0.2889,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0.3016,
+            0.2762
+          ]
+        },
+        "compositor": {
+          "value": 1.1364,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            1.1589,
+            1.1139
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 3.2772,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            3.2101,
+            3.3443
+          ]
+        },
+        "total": {
+          "value": 6.48515,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, per frame",
+          "samples": [
+            6.4882,
+            6.4821
+          ]
+        },
+        "totalSpread": {
+          "value": 0.006124999999999936,
+          "unit": "ms",
+          "stat": "max - min of total across 2 samples"
+        },
+        "frameInterval": {
+          "value": 46.9175,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, mean rAF interval",
+          "samples": [
+            45.797,
+            48.038
+          ]
+        },
+        "longFrames": {
+          "value": 48.5,
+          "unit": "count",
+          "stat": "median of 2 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.25437622357723566,
+          "unit": "ms",
+          "stat": "median of 2 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.25181490243902427,
+            0.2569375447154471
+          ]
+        },
+        "load1": {
+          "value": 10.03,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            9.78,
+            10.28
+          ]
+        }
+      }
+    }
+  ]
+}
