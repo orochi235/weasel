@@ -1,3 +1,4 @@
+import { createPaintResources, type OwnedPaintResources } from './paintResources';
 import { ShaderProgram } from './shaders/ShaderProgram';
 import {
   VERT_SRC,
@@ -203,6 +204,9 @@ export class WeaselRenderer {
   /** True after `dispose()`. A disposed renderer ignores further `render()`
    *  calls and `registerProgram()` calls. */
   private disposed = false;
+  /** What registered paint kinds hang their GPU state on. One per context
+   *  generation: a restore releases it and opens the next. */
+  private paintResources: OwnedPaintResources = createPaintResources();
 
   constructor(opts: WeaselRendererOptions) {
     if (!opts.gl && !opts.canvas) {
@@ -410,6 +414,8 @@ export class WeaselRenderer {
     // no-op, and drops the bookkeeping that would otherwise hand a dead FBO to
     // the next group with effects.
     this.effectTargets.releaseAll();
+    this.paintResources.release();
+    this.paintResources = createPaintResources();
     this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
     this.pathFill.lookupUniforms(PATH_FILL_UNIFORMS);
     this.pathFill.lookupAttributes(PATH_FILL_ATTRIBUTES);
@@ -477,6 +483,7 @@ export class WeaselRenderer {
       this.canvas.removeEventListener('webglcontextrestored', this.boundOnRestored);
     }
     this.meshCache.dispose();
+    this.paintResources.release();
     for (const prog of [this.pathFill, this.pathFillVColor, this.imageFill, this.batchFill, this.gradFill, this.patternFill]) {
       gl.deleteProgram(prog.handle);
     }
@@ -556,6 +563,7 @@ export class WeaselRenderer {
       deviceWidth: Math.round(this.widthCss * this.dpr),
       deviceHeight: Math.round(this.heightCss * this.dpr),
       restoreTargetRect: () => this.applyTarget(),
+      paintResources: this.paintResources,
       stats: counters,
     };
     const spans = opts?.spans ?? [];

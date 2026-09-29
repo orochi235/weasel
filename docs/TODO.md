@@ -320,14 +320,6 @@ Core five + Crop shipped. Remaining:
   onto the family is a visual call that wants a browser — it shrinks every
   gradient handle.
 
-- **(P3) A mesh paint bakes at a fixed 256 texels.** Enough for a smooth field at
-  shape size, but a mesh filling a poster is resolution-bound in a way the three
-  gradients are not (their ramp is 1-D, so 256 covers any size). The bake is
-  keyed by paint identity in a `WeakMap` (`BAKES` in
-  `packages/core/src/features/meshPaint/meshPaint.ts`), so a size-aware bake
-  would need the draw scale in the key; the size itself is `MESH_BAKE_SIZE` in
-  `bake.ts`.
-
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
   `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in

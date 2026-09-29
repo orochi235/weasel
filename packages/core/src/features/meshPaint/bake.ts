@@ -17,15 +17,19 @@ import { resolveColor } from '../../renderer/math/color';
 import { lerpColorArray, type ColorSpace } from '@weasel-js/paint';
 import { evalPatch, isValidPatch, patchBounds, type MeshPatch } from './surface';
 
-/** Texels on a side of a baked mesh. A mesh gradient is smooth by
- *  construction, so this is about how large it is drawn, not how detailed it
- *  is; 256 covers a paint at typical shape sizes without a visible step. */
+/** Texels on a side of a bake when the caller names no size. The renderer
+ *  sizes each bake from how large the paint draws — see `meshBakeSize`. */
 export const MESH_BAKE_SIZE = 256;
 
-/** Quads per patch on a side. The rasterizer interpolates color linearly
- *  inside a cell, so this is what keeps a perceptual blend perceptual: at 24
- *  a cell spans ~10 texels of the bake. */
-const GRID = 24;
+/** Texels a rasterized cell spans at most. The rasterizer interpolates color
+ *  linearly inside a cell and draws a curved edge as its chord, so this is
+ *  what keeps a perceptual blend perceptual and an edge curved at any size. */
+const TEXELS_PER_CELL = 10;
+
+/** Quads per patch on a side, never fewer than 24. */
+function gridFor(size: number): number {
+  return Math.max(24, Math.ceil(size / TEXELS_PER_CELL));
+}
 
 /** The box a bake covers, in the paint's own space. */
 export interface MeshBox {
@@ -94,6 +98,7 @@ export function bakeMesh(
   if (!box) return null;
 
   const pixels = new Uint8ClampedArray(size * size * 4);
+  const grid = gridFor(size);
   // The box maps onto texel *centers*, not texel edges: a corner of the mesh
   // lands at the center of the corner texel, so the outermost row and column
   // are covered rather than half-missed by a rasterizer testing centers.
@@ -106,12 +111,12 @@ export function bakeMesh(
     if (!isValidPatch(patch)) continue;
     const corners = patch.colors.map((c) => resolveColor(c)) as Rgba[];
 
-    for (let i = 0; i < GRID; i++) {
-      for (let j = 0; j < GRID; j++) {
-        const u0 = i / GRID;
-        const u1 = (i + 1) / GRID;
-        const v0 = j / GRID;
-        const v1 = (j + 1) / GRID;
+    for (let i = 0; i < grid; i++) {
+      for (let j = 0; j < grid; j++) {
+        const u0 = i / grid;
+        const u1 = (i + 1) / grid;
+        const v0 = j / grid;
+        const v1 = (j + 1) / grid;
         const quad = [
           { at: toTexel(evalPatch(patch, u0, v0)), color: colorAt(corners, u0, v0, space) },
           { at: toTexel(evalPatch(patch, u1, v0)), color: colorAt(corners, u1, v0, space) },

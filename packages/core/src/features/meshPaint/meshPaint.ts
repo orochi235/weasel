@@ -17,12 +17,13 @@
  */
 
 import type { GradStop } from '@weasel-js/paint';
-import type { PaintBindContext, PaintKindEntry, PaintProgram } from '../../core/paintKinds';
+import type { PaintBindContext, PaintKindEntry, PaintProgram, PaintResources } from '../../core/paintKinds';
 import { resolveColor, rgbaToHex } from '../../renderer/math/color';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import type { ColorSpace, FillStyle, GradientUnits } from '@weasel-js/paint';
 import type { FillPoseBox } from '../../core/fillInPoseFrame';
-import { bakeMesh, type BakedMesh } from './bake';
+import { bakeMesh, meshBounds, type BakedMesh, type MeshBox } from './bake';
+import { MeshBakeCache, meshBakeSize } from './bakeCache';
 import { isValidPatch, type MeshPatch, type MeshPoint } from './surface';
 import { MESH_FRAG_SRC, MESH_PROGRAM_ID, MESH_VERT_SRC } from './meshShader';
 
@@ -182,30 +183,52 @@ function mapPatches(mesh: MeshGradientFill, move: (p: MeshPoint) => MeshPoint): 
 
 // ─── The bake cache ─────────────────────────────────────────────────────────
 //
-// A kind owns its own GPU state; the registry hands it a `gl` and nothing
-// else. Keyed by the paint object so a cache entry dies with the paint it
-// belongs to, and by context so two renderers — or one renderer past a context
-// loss — never trade textures.
+// A kind owns its own GPU state; the registry hands it a `gl` and a resource
+// lifetime. One cache per lifetime, so two renderers — or one renderer past a
+// context restore — never trade textures, and the lifetime's end frees them.
 
 interface CachedBake {
   texture: WebGLTexture;
   baked: BakedMesh;
 }
 
-const BAKES = new WeakMap<WebGL2RenderingContext, WeakMap<object, CachedBake>>();
+const CACHES = new WeakMap<PaintResources, MeshBakeCache<CachedBake>>();
 
-function bakeFor(gl: WebGL2RenderingContext, mesh: MeshGradientFill): CachedBake | null {
-  let perContext = BAKES.get(gl);
-  if (!perContext) {
-    perContext = new WeakMap();
-    BAKES.set(gl, perContext);
+function cacheFor(ctx: PaintBindContext): MeshBakeCache<CachedBake> {
+  let cache = CACHES.get(ctx.resources);
+  if (!cache) {
+    const gl = ctx.gl;
+    const made = new MeshBakeCache<CachedBake>((entry) => gl.deleteTexture(entry.texture));
+    ctx.resources.onRelease(() => {
+      made.clear();
+      CACHES.delete(ctx.resources);
+    });
+    CACHES.set(ctx.resources, made);
+    cache = made;
   }
-  const hit = perContext.get(mesh as unknown as object);
+  return cache;
+}
+
+/** Device pixels the larger side of `box` covers when drawn in `units`. */
+function devicePixelsOf(ctx: PaintBindContext, mesh: MeshGradientFill, box: MeshBox): number {
+  const m = ctx.spaceToDevice(mesh.units);
+  if (!m) return Number.NaN;
+  return Math.max(box.width * Math.hypot(m[0], m[1]), box.height * Math.hypot(m[3], m[4]));
+}
+
+function bakeFor(ctx: PaintBindContext, mesh: MeshGradientFill): CachedBake | null {
+  const box = meshBounds(mesh.patches);
+  if (!box) return null;
+  const size = meshBakeSize(devicePixelsOf(ctx, mesh, box), ctx.maxTextureSize);
+
+  const cache = cacheFor(ctx);
+  const hit = cache.get(mesh, size);
   if (hit) return hit;
 
-  const baked = bakeMesh(mesh.patches, mesh.interpolate ?? 'rgb');
+  const baked = bakeMesh(mesh.patches, mesh.interpolate ?? 'rgb', size);
   if (!baked) return null;
 
+  const gl = ctx.gl;
   const texture = gl.createTexture();
   if (!texture) return null;
   gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -221,7 +244,7 @@ function bakeFor(gl: WebGL2RenderingContext, mesh: MeshGradientFill): CachedBake
   gl.bindTexture(gl.TEXTURE_2D, null);
 
   const entry = { texture, baked };
-  perContext.set(mesh as unknown as object, entry);
+  cache.set(mesh, size, entry);
   return entry;
 }
 
@@ -235,7 +258,7 @@ function bindMesh(ctx: PaintBindContext, fill: FillStyle): PaintProgram | null {
   const program = ctx.program(MESH_PROGRAM_ID);
   if (!program) return null;
 
-  const entry = bakeFor(ctx.gl, mesh);
+  const entry = bakeFor(ctx, mesh);
   if (!entry) return null;
 
   const gl = ctx.gl;

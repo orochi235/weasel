@@ -1,7 +1,8 @@
 import type { ColorSpace, Stroke, FillStyle, GradientUnits, GradStop, MarkerRef } from '@weasel-js/paint';
 import type { Path } from '@weasel-js/core';
 import { getPaintKind } from 'core/paintKinds';
-import type { PaintBindContext } from 'core/paintKinds';
+import type { PaintBindContext, PaintResources } from 'core/paintKinds';
+import { createPaintResources } from './paintResources';
 import { resolveTextStyle } from '@weasel-js/text';
 import type {
   DrawCommand,
@@ -121,6 +122,10 @@ export interface DrawContext {
    *  owns that rect — see `WeaselRenderer.applyTarget` — and a second copy of
    *  its y-flip here would be a second thing to keep in step. */
   restoreTargetRect?(): void;
+  /** The lifetime a registered paint kind's GPU state belongs to. Absent
+   *  when a caller drives `dispatch` without a renderer behind it, in which
+   *  case one per context stands in and is never released. */
+  paintResources?: PaintResources;
   /** Per-frame counters the renderer reads back after the stream ends.
    *  Absent, nothing is counted. */
   stats?: { drawCalls: number };
@@ -1355,6 +1360,9 @@ function paintBindContext(ctx: DrawContext): PaintBindContext {
     program: (id) => ctx.ensureProgram?.(id) ?? ctx.programRegistry.get(id) ?? null,
     setProjAndModel: (prog) => setProjAndModel(ctx, prog),
     spaceInverse: (units) => gradientSpaceInverse(ctx, units),
+    spaceToDevice: (units) => spaceToDevice(ctx, units),
+    get maxTextureSize() { return ctx.imageCache.maxTextureSide; },
+    resources: ctx.paintResources ?? unownedPaintResources(ctx.gl),
     bindRamp: (stops, unit, space) => {
       const row = ctx.gradRamps.upload(stops, space);
       ctx.gradRamps.bind(unit);
@@ -1366,6 +1374,17 @@ function paintBindContext(ctx: DrawContext): PaintBindContext {
 }
 
 const BIND_CONTEXTS = new WeakMap<DrawContext, PaintBindContext>();
+
+const UNOWNED_RESOURCES = new WeakMap<WebGL2RenderingContext, PaintResources>();
+
+function unownedPaintResources(gl: WebGL2RenderingContext): PaintResources {
+  let made = UNOWNED_RESOURCES.get(gl);
+  if (!made) {
+    made = createPaintResources();
+    UNOWNED_RESOURCES.set(gl, made);
+  }
+  return made;
+}
 
 function drawPathFillByKind(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
   const prog = bindPathFillByKind(ctx, fill);
@@ -1446,6 +1465,16 @@ function gradientSpaceInverse(ctx: DrawContext, units: GradientUnits | undefined
   if (units === 'local') return mat3.invert(ctx.state.transform);
   if (units === 'world' && ctx.viewMatrix) return mat3.invert(ctx.viewMatrix);
   return mat3.identity();
+}
+
+/** The paint space `units` names → device pixels: the forward transform
+ *  `gradientSpaceInverse` undoes, scaled by the target's pixel ratio. */
+function spaceToDevice(ctx: DrawContext, units: GradientUnits | undefined): GlMat3 | null {
+  const inverse = gradientSpaceInverse(ctx, units);
+  const toScreen = inverse && mat3.invert(inverse);
+  if (!toScreen) return null;
+  const ratio = ctx.deviceWidth && ctx.widthCss > 0 ? ctx.deviceWidth / ctx.widthCss : 1;
+  return mat3.multiply(mat3.scaled(mat3.identity(), ratio, ratio), toScreen);
 }
 
 function bindPathFillGradient(
