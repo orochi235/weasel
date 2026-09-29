@@ -29,6 +29,25 @@
    * applied to `.trackInner` instead, which lets thumbs spill freely. */
 }
 
+/* Invisible hit area past the track and each thumb. The thumbs come later in
+ * the tree, so a thumb's slop wins where the two overlap. */
+.track::before,
+.thumb::before {
+  content: '';
+  position: absolute;
+  /* Measured from the padding box, so each 1px border comes back out. */
+  inset: calc(-1px - var(--wzl-slider-track-slop));
+}
+
+.thumb::before {
+  inset: calc(-1px - var(--wzl-slider-thumb-slop));
+}
+
+.slim .thumb::before,
+.notched::before {
+  inset: calc(-1 * var(--wzl-slider-thumb-slop));
+}
+
 .overhang {
   --rp-thumb-inset: 0px;
 }

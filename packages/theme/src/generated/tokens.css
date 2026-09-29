@@ -162,6 +162,10 @@
   --wzl-slider-track-h: 4px;
   /* Diameter of a linear range thumb. */
   --wzl-slider-thumb-size: 8px;
+  /* How far past a range track's edge a press still lands on it. Invisible, and overlaps whatever sits beside the track rather than taking layout space. */
+  --wzl-slider-track-slop: 6px;
+  /* How far past a range thumb's edge a press still grabs the thumb rather than landing on the track. Sits over the track's own slop. */
+  --wzl-slider-thumb-slop: 6px;
   /* Accent proportion in a range track, as a color-mix percentage — not a color. Mixed into a real property, never into another custom property. */
   --wzl-slider-track-mix: 18%;
   /* Accent proportion in a range thumb, as a color-mix percentage — not a color. */

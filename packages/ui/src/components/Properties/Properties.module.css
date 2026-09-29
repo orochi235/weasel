@@ -1162,8 +1162,6 @@
 .rowColor > .colorField > input[type='range'] {
   grid-column: 1;
   grid-row: 2;
-  width: 100%;
-  margin: 0;
 }
 
 .rowColor > .colorField > :last-child:not(:first-child):not(input) {

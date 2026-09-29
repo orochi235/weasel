@@ -807,6 +807,16 @@
       "type": "dimension",
       "description": "Diameter of a linear range thumb."
     },
+    "slider-track-slop": {
+      "value": "6px",
+      "type": "dimension",
+      "description": "How far past a range track's edge a press still lands on it. Invisible, and overlaps whatever sits beside the track rather than taking layout space."
+    },
+    "slider-thumb-slop": {
+      "value": "6px",
+      "type": "dimension",
+      "description": "How far past a range thumb's edge a press still grabs the thumb rather than landing on the track. Sits over the track's own slop."
+    },
     "slider-track-mix": {
       "value": "18%",
       "type": "dimension",

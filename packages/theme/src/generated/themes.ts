@@ -106,8 +106,10 @@ export type TokenName =
   | '--wzl-shadow'
   | '--wzl-slider-thumb-mix'
   | '--wzl-slider-thumb-size'
+  | '--wzl-slider-thumb-slop'
   | '--wzl-slider-track-h'
   | '--wzl-slider-track-mix'
+  | '--wzl-slider-track-slop'
   | '--wzl-space-1'
   | '--wzl-space-2'
   | '--wzl-space-3'
@@ -317,6 +319,8 @@ export const THEMES = {
         '--wzl-icon-button-size': "22px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
+        '--wzl-slider-track-slop': "6px",
+        '--wzl-slider-thumb-slop': "6px",
         '--wzl-slider-track-mix': "18%",
         '--wzl-slider-thumb-mix': "70%",
         '--wzl-handle-size': "9px",
@@ -484,6 +488,8 @@ export const THEMES = {
         '--wzl-icon-button-size': "26px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
+        '--wzl-slider-track-slop': "6px",
+        '--wzl-slider-thumb-slop': "6px",
         '--wzl-slider-track-mix': "18%",
         '--wzl-slider-thumb-mix': "70%",
         '--wzl-handle-size': "9px",
@@ -651,6 +657,8 @@ export const THEMES = {
         '--wzl-icon-button-size': "32px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
+        '--wzl-slider-track-slop': "6px",
+        '--wzl-slider-thumb-slop': "6px",
         '--wzl-slider-track-mix': "18%",
         '--wzl-slider-thumb-mix': "70%",
         '--wzl-handle-size': "9px",
@@ -818,6 +826,8 @@ export const THEMES = {
         '--wzl-icon-button-size': "22px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
+        '--wzl-slider-track-slop': "6px",
+        '--wzl-slider-thumb-slop': "6px",
         '--wzl-slider-track-mix': "18%",
         '--wzl-slider-thumb-mix': "70%",
         '--wzl-handle-size': "9px",
@@ -985,6 +995,8 @@ export const THEMES = {
         '--wzl-icon-button-size': "26px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
+        '--wzl-slider-track-slop': "6px",
+        '--wzl-slider-thumb-slop': "6px",
         '--wzl-slider-track-mix': "18%",
         '--wzl-slider-thumb-mix': "70%",
         '--wzl-handle-size': "9px",
@@ -1152,6 +1164,8 @@ export const THEMES = {
         '--wzl-icon-button-size': "32px",
         '--wzl-slider-track-h': "4px",
         '--wzl-slider-thumb-size': "8px",
+        '--wzl-slider-track-slop': "6px",
+        '--wzl-slider-thumb-slop': "6px",
         '--wzl-slider-track-mix': "18%",
         '--wzl-slider-thumb-mix': "70%",
         '--wzl-handle-size': "9px",
@@ -2005,6 +2019,16 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "value": "8px",
         "type": "dimension",
         "description": "Diameter of a linear range thumb."
+      },
+      "slider-track-slop": {
+        "value": "6px",
+        "type": "dimension",
+        "description": "How far past a range track's edge a press still lands on it. Invisible, and overlaps whatever sits beside the track rather than taking layout space."
+      },
+      "slider-thumb-slop": {
+        "value": "6px",
+        "type": "dimension",
+        "description": "How far past a range thumb's edge a press still grabs the thumb rather than landing on the track. Sits over the track's own slop."
       },
       "slider-track-mix": {
         "value": "18%",
@@ -3084,6 +3108,16 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "type": "dimension",
         "value": "8px",
         "description": "Diameter of a linear range thumb."
+      },
+      "slider-track-slop": {
+        "type": "dimension",
+        "value": "6px",
+        "description": "How far past a range track's edge a press still lands on it. Invisible, and overlaps whatever sits beside the track rather than taking layout space."
+      },
+      "slider-thumb-slop": {
+        "type": "dimension",
+        "value": "6px",
+        "description": "How far past a range thumb's edge a press still grabs the thumb rather than landing on the track. Sits over the track's own slop."
       },
       "slider-track-mix": {
         "type": "dimension",

@@ -10,15 +10,20 @@
 .range {
   appearance: none;
   -webkit-appearance: none;
-  width: 100%;
-  min-inline-size: 48px;
+  /* The slop: padding widens the hit box and the negative margin gives the space
+     back. Border-box because the property rows and labkit set it on every descendant.
+     No thumb slop: a native thumb re-centers on the pointer wherever a press lands. */
+  box-sizing: border-box;
+  width: calc(100% + 2 * var(--wzl-slider-track-slop));
+  min-inline-size: calc(48px + 2 * var(--wzl-slider-track-slop));
   /* The box is taller than the track so the thumb has room to spill; a surface
      where the element itself IS the track overrides this. */
-  height: var(--wzl-range-box-h, 12px);
-  margin: 0;
-  padding: 0;
+  height: calc(var(--wzl-range-box-h, 12px) + 2 * var(--wzl-slider-track-slop));
+  padding: var(--wzl-slider-track-slop);
+  margin: calc(-1 * var(--wzl-slider-track-slop));
   /* Transparent so the track pseudo-element shows; a surface that paints the element itself overrides it. */
   background: var(--wzl-range-bg, transparent);
+  background-clip: content-box;
   cursor: pointer;
 }
 
@@ -66,7 +71,7 @@
    labkit range extending this skin needs to stay at zero. */
 .range:where(:focus-visible) {
   outline: 2px solid var(--wzl-focus-ring);
-  outline-offset: 2px;
+  outline-offset: calc(2px - var(--wzl-slider-track-slop));
 }
 
 .range:where(:disabled) {

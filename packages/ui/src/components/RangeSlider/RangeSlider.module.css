@@ -42,6 +42,19 @@
   border-radius: var(--wzl-radius-sm);
 }
 
+/* Invisible hit area past the track and each thumb, as on Slider. Both are
+   measured from the padding box, so each 1px border comes back out. */
+.track::before,
+.thumb::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1px - var(--wzl-slider-track-slop));
+}
+
+.thumb::before {
+  inset: calc(-1px - var(--wzl-slider-thumb-slop));
+}
+
 .slider[data-orientation="vertical"] .track {
   width: 6px;
   height: 100%;
