@@ -3,7 +3,8 @@
  *  run-level decoration + tracking. Every node declares `wrap`, so resizing
  *  one re-wraps it. */
 import { solid } from '@weasel-js/core';
-import type { RectPose, TextPose } from '@weasel-js/core';
+import type { RectPose } from '@weasel-js/core';
+import type { TextPose } from '@weasel-js/text';
 
 /** Paint is node data, not typography: `TextPose` carries `fill`/`stroke`
  *  beside `text`, the same slots a shape node uses. */
