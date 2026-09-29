@@ -17,6 +17,9 @@ decision rather than a layout one: the TTF reports `hhea.ascender / unitsPerEm
 31 / 32`, the same number. Advances and kerning in the atlas are the TTF's own
 at full precision, so a line laid out from the atlas ends where a browser
 setting `inter.ttf` ends it.
+The atlas's `faceMetrics` block — underline, strikeout and script metrics —
+is derived from the TTF's `post` and `OS/2` tables by the same function the
+outline tier reads them with, so both tiers place rules and scripts alike.
 
 ## Provenance
 

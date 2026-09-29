@@ -6,9 +6,13 @@
 export { parseBmFont, FIXTURE_FONT } from './FontAtlas';
 export type { BmFont, BmFontChar, BmFontInfo, BmFontCommon, BmFontKerning } from './FontAtlas';
 
+export { faceMetricsFromTables, faceMetricsOf } from './faceMetrics';
+export type { FaceMetrics, FaceRuleMetrics, FaceScriptMetrics, FaceMetricTables } from './faceMetrics';
+
 export {
   registerFont,
   getFont,
+  faceMetricsFor,
   ensureFontTexture,
   textureCacheKey,
   markAllFontsNotUploaded,

@@ -22,6 +22,7 @@ import {
 } from './fallback';
 import { listFontOutlines, outlineMetrics, outlineStatus } from './outline/outlineRegistry';
 import type { OutlineFace } from './outline/OutlineFace';
+import type { FaceMetrics } from './faceMetrics';
 
 /** A registered face: its parsed metrics and the atlas image to sample. */
 export interface FontEntry {
@@ -96,6 +97,23 @@ export function getFont(
   style: FontStyle = 'normal',
 ): FontEntry | null {
   return registry.get(family)?.get(variantKey(weight, style)) ?? null;
+}
+
+/**
+ * The decoration and script metrics of an exact `(family, weight, style)` —
+ * the atlas's when one is registered, else a loaded outline face's. Like
+ * {@link getFont}, it walks no fallback chain and enrolls no canvas font,
+ * which suits a caller holding a CSS font name rather than a layout result.
+ * An idle outline face starts loading, as it would for layout.
+ * A run already resolved for layout reads `faceMetricsOf(result)` instead.
+ */
+export function faceMetricsFor(
+  family: string,
+  weight: number = 400,
+  style: FontStyle = 'normal',
+): FaceMetrics | undefined {
+  return getFont(family, weight, style)?.font.faceMetrics
+    ?? outlineMetrics(family, weight, style === 'italic' ? 'italic' : 'normal')?.faceMetrics;
 }
 
 /** One family in the registry and the variants registered for it — what a
@@ -692,7 +710,10 @@ function resolveFontVariantInternal(
   wakeDeclared(family, weight, style);
   // An atlas on its way outranks every stand-in: laying out in a fallback's
   // metrics now would reflow the text when the real face lands.
-  if (loads.has(`${family}|${variantKey(weight, style)}`)) {
+  // A landed variant is not on its way, even before its load promise settles:
+  // `fetchVariant` wakes subscribers first, and they resolve synchronously.
+  const exactKey = variantKey(weight, style);
+  if (loads.has(`${family}|${exactKey}`) && !registry.get(family)?.has(exactKey)) {
     return pendingMiss(family, weight, style);
   }
   const familyMap = registry.get(family);
@@ -702,7 +723,7 @@ function resolveFontVariantInternal(
   }
 
   // 1. Exact match
-  const exact = familyMap.get(variantKey(weight, style));
+  const exact = familyMap.get(exactKey);
   if (exact) {
     return {
       entry: exact,

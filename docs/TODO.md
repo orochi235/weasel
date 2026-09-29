@@ -394,24 +394,6 @@ Core five + Crop shipped. Remaining:
   canvas-font tier or at DPR 2. The `super`/`sub` 12px rows of `npx vitest run
   -c scripts/measure-overlay-alignment.config.ts` show it.
 
-- **(P3) Decoration and script metrics are derived, not read from the font.**
-  The underline / strikethrough / overline offsets and weight are the fixed
-  `0.10` / `-0.30` / `-0.90` / `0.05` em constants in
-  `packages/text/src/layout/decorationMetrics.ts` (shared by the GL tier and
-  `createMarkdownRenderer`'s 2D path), and
-  `SCRIPT_METRICS` (58.3% size, ±33.3% position) is Adobe's default rather
-  than the font's. Real fonts ship `post.underlinePosition` /
-  `underlineThickness` and `OS/2.ySuperscript*` / `ySubscript*`, and
-  `opentype.js` already parses both — `faceFor()` in
-  `packages/font/src/outline/opentypeParser.ts` reads only `unitsPerEm` and
-  `ascender` and discards the rest, so extending `OutlineFace` is the whole
-  change on that tier. The BmFont atlas format has no slot for any of it, so
-  the outline tier would honor the font and the SDF tiers would not — and a
-  metric that applied on one tier and not the other would reflow text as it
-  crossed the size threshold, which the tier is built never to do. Fixing this
-  properly means baking the metrics into the atlas JSON in
-  `packages/font/scripts/gen-font.ts`, not just reading them at runtime.
-
 - **(P3) `ToggleBar.module.css` is a drifted copy of the segmented-control
   styles.** The `ButtonBar` / `OptionsBar` duplication closed 2026-08-15 —
   both now import `components/segmentedControl.module.css`. `ToggleBar` was the

@@ -13,7 +13,9 @@
  * own indeterminate presentation: a `Mixed` placeholder over an empty field,
  * a checkered color chip, `aria-pressed="mixed"` on a flag.
  */
-import { MIXED, resolveScreenLength, SCRIPT_METRICS, useTextTool } from '@weasel-js/core';
+import {
+  MIXED, numericWeight, resolveScreenLength, SCRIPT_METRICS, scriptMetricsFor, useTextTool,
+} from '@weasel-js/core';
 import type { ScreenLength } from '@weasel-js/core';
 import type { RangeStyle, RunStylePatch, StyledRun } from '@weasel-js/core';
 import { ToolOptionsBar } from '@weasel-js/ui';
@@ -70,7 +72,7 @@ export function characterPatch(path: string, value: unknown): RunStylePatch {
  */
 export function characterValues(style: RangeStyle): Record<string, unknown> {
   const script = style.script;
-  const preset = script === 'super' || script === 'sub' ? SCRIPT_METRICS[script] : undefined;
+  const preset = script === 'super' || script === 'sub' ? scriptPresets(style)[script] : undefined;
   return {
     ...pick(style),
     fontSize: worldSize(style.fontSize),
@@ -79,6 +81,16 @@ export function characterValues(style: RangeStyle): Record<string, unknown> {
     fontScale: style.fontScale ?? preset?.size,
     fill: solidFill(style.fill),
   };
+}
+
+/** The presets the range's face gives `script` — the kit defaults when the
+ *  range spans more than one family, since no single face then applies. */
+function scriptPresets(style: RangeStyle): typeof SCRIPT_METRICS {
+  if (typeof style.fontFamily !== 'string') return SCRIPT_METRICS;
+  const weight = style.fontWeight !== undefined && style.fontWeight !== MIXED
+    ? numericWeight(style.fontWeight)
+    : style.bold === true ? 700 : 400;
+  return scriptMetricsFor(style.fontFamily, weight, style.italic === true ? 'italic' : 'normal');
 }
 
 /** The paths whose sources disagree — every `MIXED` key, plus a fill with no

@@ -4,6 +4,8 @@
  * for O(1) glyph and kerning lookup during layout.
  */
 
+import { parseFaceMetrics, type FaceMetrics } from './faceMetrics';
+
 export interface BmFontInfo {
   face: string;
   size: number;
@@ -49,6 +51,11 @@ export interface BmFont {
   kernings: BmFontKerning[];
   charMap: Map<number, BmFontChar>;
   kerningMap: Map<number, Map<number, number>>;
+  /** The font's own decoration and script metrics, when the bake recorded
+   *  them. Not part of the BMFont format: `gen-font` adds it as a top-level
+   *  `faceMetrics` block, and an atlas without one leaves layout on its
+   *  defaults. */
+  faceMetrics?: FaceMetrics;
 }
 
 /** Two-glyph fixture for unit tests. */
@@ -91,5 +98,6 @@ export function parseBmFont(raw: unknown): BmFont {
     inner.set(k.second, k.amount);
   }
 
-  return { info, common, chars, kernings, charMap, kerningMap };
+  const faceMetrics = parseFaceMetrics(r.faceMetrics);
+  return { info, common, chars, kernings, charMap, kerningMap, ...(faceMetrics ? { faceMetrics } : {}) };
 }

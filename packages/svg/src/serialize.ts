@@ -6,7 +6,9 @@
  */
 
 import type { Path, Stroke, StrokeAlign } from '@weasel-js/core';
-import { boundsOfPath, resolveScreenLength, SCRIPT_METRICS } from '@weasel-js/core';
+import {
+  boundsOfPath, resolveRuns, resolveScreenLength, resolveTextStyle, scriptMetricsFor,
+} from '@weasel-js/core';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
@@ -553,14 +555,27 @@ function textXml(
   }
 
   const body = node.runs && node.runs.length > 0
-    ? node.runs.map((r) => runXml(r, registry, warn)).join('')
+    ? node.runs.map((r) => runXml(r, style, registry, warn)).join('')
     : escapeText(node.text);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const metaEls = metaElementsXml(node.meta, namespaces);
   return `<text ${attrs.join(' ')}${metaAttrs}>${body}${metaEls}</text>`;
 }
 
-function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerRegistry, warn: Warn): string {
+/** The size `script` gives `run` in its resolved face — the one it renders at. */
+function presetSize(
+  run: import('@weasel-js/core').StyledRun, script: 'super' | 'sub', style: SvgTextNode['style'],
+): number {
+  const r = resolveRuns([run], resolveTextStyle(style))[0];
+  return scriptMetricsFor(r.fontFamily, r.fontWeight, r.fontStyle)[script].size;
+}
+
+function runXml(
+  run: import('@weasel-js/core').StyledRun,
+  style: SvgTextNode['style'],
+  registry: PaintServerRegistry,
+  warn: Warn,
+): string {
   const attrs: string[] = [];
   if (run.fontWeight != null) attrs.push(`font-weight="${run.fontWeight}"`);
   else if (run.bold) attrs.push(`font-weight="700"`);
@@ -575,7 +590,7 @@ function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerR
   // with and must spell it out — without this the superscript comes back
   // full-size at a raised baseline.
   const presetScale = run.script != null && run.baselineShift != null
-    ? SCRIPT_METRICS[run.script].size
+    ? presetSize(run, run.script, style)
     : undefined;
   const scale = run.fontScale ?? presetScale;
   if (run.fontSize != null) attrs.push(`font-size="${trimNumber(resolveScreenLength(run.fontSize, 1))}"`);

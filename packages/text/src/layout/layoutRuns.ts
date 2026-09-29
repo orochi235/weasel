@@ -52,8 +52,8 @@
 
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import {
-  resolveFontVariant, resolveGlyphFallback, glyphOutline, fontPending,
-  type ResolveResult, type BmFontChar, type BmFont, type FontStyle,
+  resolveFontVariant, resolveGlyphFallback, glyphOutline, fontPending, faceMetricsOf,
+  type ResolveResult, type BmFontChar, type BmFont, type FontStyle, type FaceMetrics,
 } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
@@ -626,6 +626,9 @@ export function layoutRuns(
   // 1. Flatten all runs into entries with per-glyph data, computing
   //    kerning using the left glyph's atlas+scale across run boundaries.
   const entries: Entry[] = [];
+  /** Each run's own face, which places its rules. Kept per run rather than
+   *  read off an entry, whose `resolved` may be a per-glyph fallback. */
+  const runFaces = new Map<ResolvedRun, FaceMetrics | undefined>();
   let prevCp: number | undefined;
   let prevMetrics: MetricsSource | undefined;
   let prevFontSize: number | undefined;
@@ -633,6 +636,7 @@ export function layoutRuns(
 
   for (const run of runs) {
     const resolved = resolveFontVariant(run.fontFamily, run.fontWeight, run.fontStyle);
+    runFaces.set(run, faceMetricsOf(resolved));
     const outlineFace = resolved.outlineFace;
     const font = resolved.entry?.font ?? resolved.dynamicFace?.font ?? null;
     // Em space is unit-scale, so a parsed face divides by 1 and its advances
@@ -912,6 +916,7 @@ export function layoutRuns(
     overline: boolean;
     fill: FillStyle;
     fontSize: number;
+    face: FaceMetrics | undefined;
     baselineY: number;
     x0: number;
     x1: number;
@@ -924,7 +929,7 @@ export function layoutRuns(
     if (!s || s.x1 <= s.x0) return;
     for (const kind of DECORATION_KINDS) {
       if (!s[kind]) continue;
-      const { y0, y1 } = decorationRule(kind, s.baselineY, s.fontSize);
+      const { y0, y1 } = decorationRule(kind, s.baselineY, s.fontSize, s.face);
       decorations.push({ kind, x0: s.x0, y0, x1: s.x1, y1, fill: s.fill });
     }
   }
@@ -1082,12 +1087,14 @@ export function layoutRuns(
       // rect with only a fill to paint it, and no stroked counterpart.
       const decoFill = e.run.fill;
       if (decoFill !== null && (e.run.underline || e.run.strikethrough || e.run.overline)) {
+        const face = runFaces.get(e.run);
         if (
           span !== null
           && span.underline === e.run.underline
           && span.strikethrough === e.run.strikethrough
           && span.overline === e.run.overline
           && span.fontSize === e.fontSize
+          && span.face === face
           && span.baselineY === baselineY
           && sameFill(span.fill, e.run.fill)
         ) {
@@ -1102,6 +1109,7 @@ export function layoutRuns(
             overline: e.run.overline,
             fill: decoFill,
             fontSize: e.fontSize,
+            face,
             baselineY,
             x0: penX,
             x1: penX + step,

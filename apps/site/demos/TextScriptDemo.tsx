@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { SceneCanvas, useScene, textCommandFromRuns, solid } from '@weasel-js/core';
 import type { FillStyle, SceneViewDrawOne } from '@weasel-js/core';
-import { SCRIPT_METRICS } from '@weasel-js/text';
+import { glyphGeneration, subscribeGlyphReady } from '@weasel-js/font';
+import { DEFAULT_TEXT_STYLE, scriptMetricsFor } from '@weasel-js/text';
 import type { StyledRun, TextStyle } from '@weasel-js/text';
 import styles from './TextScriptDemo.module.css';
 
@@ -24,10 +25,14 @@ const row = (id: string, y: number, fontSize: number, runs: StyledRun[]) => ({
   data: { runs, style: { fontSize } as TextStyle, fill: INK },
 });
 
-/** The row the sliders drive, built from the current shift and scale. */
-const liveRuns = (shift: number, scale: number): StyledRun[] => [
+/** The row the sliders drive: the bare preset until a slider overrides a half. */
+const liveRuns = (shift?: number, scale?: number): StyledRun[] => [
   { text: 'live ' },
-  { text: 'shifted', script: 'super', baselineShift: shift, fontScale: scale, fill: ACCENT },
+  {
+    text: 'shifted', script: 'super', fill: ACCENT,
+    ...(shift !== undefined ? { baselineShift: shift } : {}),
+    ...(scale !== undefined ? { fontScale: scale } : {}),
+  },
   { text: ' run' },
 ];
 
@@ -77,7 +82,7 @@ const ROWS = [
     { text: 'medium', fontScale: 0.7 },
   ]),
 
-  row('live', 252, 34, liveRuns(SCRIPT_METRICS.super.shift, SCRIPT_METRICS.super.size)),
+  row('live', 252, 34, liveRuns()),
 ];
 
 const drawOne: SceneViewDrawOne<NodeData, LayerId, Pose> = (node, pose) => [
@@ -100,8 +105,14 @@ const drawOne: SceneViewDrawOne<NodeData, LayerId, Pose> = (node, pose) => [
  * its height, so a superscript rides the line rather than reflowing it.
  */
 export function TextScriptDemo() {
-  const [shift, setShift] = useState(SCRIPT_METRICS.super.shift);
-  const [scale, setScale] = useState(SCRIPT_METRICS.super.size);
+  // The preset is the face's own OS/2 metrics once its atlas has loaded, and
+  // the kit defaults before then, so read it again when a face lands.
+  useSyncExternalStore(subscribeGlyphReady, glyphGeneration);
+  const preset = scriptMetricsFor(DEFAULT_TEXT_STYLE.fontFamily, 400, 'normal').super;
+  const [shiftOverride, setShift] = useState<number>();
+  const [scaleOverride, setScale] = useState<number>();
+  const shift = shiftOverride ?? preset.shift;
+  const scale = scaleOverride ?? preset.size;
 
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
@@ -114,9 +125,9 @@ export function TextScriptDemo() {
     const node = scene.get('live' as never);
     if (!node) return;
     scene.update('live' as never, {
-      data: { ...node.data, runs: liveRuns(shift, scale) },
+      data: { ...node.data, runs: liveRuns(shiftOverride, scaleOverride) },
     });
-  }, [scene, shift, scale]);
+  }, [scene, shiftOverride, scaleOverride]);
 
   return (
     <div className={styles.demo}>
@@ -144,8 +155,9 @@ export function TextScriptDemo() {
       </div>
       <p className={styles.hint}>
         Both start at the <code>script: &apos;super&apos;</code> preset —{' '}
-        {(SCRIPT_METRICS.super.size * 100).toFixed(1)}% size,{' '}
-        {(SCRIPT_METRICS.super.shift * 100).toFixed(1)}% rise.
+        {(preset.size * 100).toFixed(1)}% size,{' '}
+        {(preset.shift * 100).toFixed(1)}% rise, read from the font&apos;s{' '}
+        <code>OS/2</code> table.
       </p>
       <SceneCanvas
         width={W}

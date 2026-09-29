@@ -594,6 +594,10 @@ export {
   fontString,
   resolveRuns,
   SCRIPT_METRICS,
+  scriptMetrics,
+  scriptMetricsFor,
+  DEFAULT_DECORATION_METRICS,
+  decorationMetrics,
   numericWeight,
   isBoldWeight,
   transformRunTexts,
@@ -620,6 +624,9 @@ export type {
   TextPaint,
   ResolvedTextStyle,
   ResolvedRun,
+  ScriptPreset,
+  DecorationKind,
+  FaceMetricsFn,
   TextTransform,
   RunSourceMap,
   TransformedRunText,
@@ -1343,6 +1350,9 @@ export type {
   OutlineStatus,
   FontStyle,
   LocalFontOutlinesResult,
+  FaceMetrics,
+  FaceRuleMetrics,
+  FaceScriptMetrics,
 } from '@weasel-js/font';
 export type { TextureHandle } from '@weasel-js/paint';
 
