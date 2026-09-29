@@ -54,7 +54,11 @@ export interface AffordanceRegion<TScratch = unknown> {
 
   /** Region geometry, expressed in the target's local frame.
    *
-   *  - `point` — circular hit (`hitRadiusPx` is screen-space).
+   *  - `point` — square hit of half-extent `hitRadiusPx` screen pixels,
+   *    axis-aligned on screen unless `turned`. `standoff` pushes the anchor `px`
+   *    screen pixels off the edge whose outward normal (target-local) is
+   *    `normal`, measured along that normal as it lands on screen — for
+   *    chrome that floats a fixed distance off an edge at any zoom.
    *  - `rect`  — axis-aligned rect (target rotation applies).
    *  - `annulus` — outer ellipse minus inner rect cutout. Used for
    *    invisible zones that sit *around* the AABB (e.g. rotate-on-
@@ -63,7 +67,15 @@ export interface AffordanceRegion<TScratch = unknown> {
    *    same target-local rect that defines the AABB. Hit-test:
    *    inside outer ellipse AND outside inner rect. */
   shape:
-    | { kind: 'point';   x: number; y: number; hitRadiusPx: number }
+    | {
+        kind: 'point';
+        x: number; y: number;
+        hitRadiusPx: number;
+        standoff?: { px: number; normal: { x: number; y: number } };
+        /** Turn the square to the target, at the angle the target's x axis
+         *  lands on screen (`screenAngleOf`) — for handles painted turned. */
+        turned?: boolean;
+      }
     | { kind: 'rect';    x: number; y: number; width: number; height: number }
     | {
         kind: 'annulus';
@@ -76,8 +88,8 @@ export interface AffordanceRegion<TScratch = unknown> {
         innerX: number; innerY: number; innerWidth: number; innerHeight: number;
         /** Minimum band thickness outside the inner rect, in **screen**
          *  pixels. The framework widens `rx`/`ry` to at least
-         *  `innerHalfExtent + minBandPx / meanScale(view.scale)` for both
-         *  paint and hit-test.
+         *  `innerHalfExtent + pxExtent(minBandPx, view.scale)` on each axis
+         *  for both paint and hit-test.
          *
          *  This exists because the clamp has to know the view and the
          *  affordance doesn't: `ChromeState` carries no scale. Expressing the

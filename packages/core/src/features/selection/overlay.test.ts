@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GroupDrawCommand, PathDrawCommand } from '../../renderer';
+import type { PathDrawCommand } from '../../renderer';
 import {
   composeSelectionPose,
   createSelectionOverlayLayer,
@@ -451,7 +451,7 @@ describe('createSelectionOverlayLayer.draw', () => {
     expect(tree).toHaveLength(1);
   });
 
-  it('wraps rotated outlines in a kind:group with a transform', () => {
+  it('traces a rotated outline through its turned corners, padded off each edge', () => {
     interface RotPose extends Pose {
       rotation: number;
     }
@@ -462,10 +462,32 @@ describe('createSelectionOverlayLayer.draw', () => {
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     expect(tree).toHaveLength(1);
-    expect(tree[0].kind).toBe('group');
-    const group = tree[0] as GroupDrawCommand;
-    expect(group.transform).toBeDefined();
-    expect(group.children[0].kind).toBe('path');
+    const cmd = tree[0] as PathDrawCommand;
+    expect(cmd.path.kind).toBe('polygon');
+    const c = (cmd.path as { coords: ArrayLike<number> }).coords;
+    const ys = [c[1], c[3], c[5], c[7]];
+    // Turned 45° the square's top corner sits 50·√2 above its center, and the
+    // default 1px pad pushes a right-angle corner out by √2 more.
+    expect(Math.min(...ys)).toBeCloseTo(50 - 50 * Math.SQRT2 - Math.SQRT2, 3);
+  });
+
+  it('traces the parallelogram a rotated target lands as under non-uniform zoom', () => {
+    interface RotPose extends Pose {
+      rotation: number;
+    }
+    const layer = createSelectionOverlayLayer<RotPose>({
+      getSelection: () => [asNodeId('a')],
+      getPose: () => ({ x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 4 }),
+      handles: false,
+      outline: { paint: { fill: 'solid', color: '#000' }, width: 2, pad: 0 },
+    });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 4, y: 1 } }, DIMS);
+    const c = ((tree[0] as PathDrawCommand).path as { coords: ArrayLike<number> }).coords;
+    const xs = [c[0], c[2], c[4], c[6]];
+    const ys = [c[1], c[3], c[5], c[7]];
+    // Corners land at 4× the world x and 1× the world y.
+    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(4 * 100 * Math.SQRT2, 3);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeCloseTo(100 * Math.SQRT2, 3);
   });
 });
 

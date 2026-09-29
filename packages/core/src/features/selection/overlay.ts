@@ -37,7 +37,7 @@ import {
   rotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
 } from 'interactions/actions/rotate/handle';
-import { rotatePoint } from 'interactions/actions/rotate/geometry';
+import { rectCorners, rotatePoint } from 'interactions/actions/rotate/geometry';
 import { poseRotationOf } from 'core/geometry/poseRotation';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ChromeState } from 'core/selection/chromeState';
@@ -45,8 +45,8 @@ import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
-import { meanScale } from 'core/viewport/meanScale';
-import { PATH_L, PATH_M, type PolygonPath } from '../paths/types';
+import { screenAngleOf } from 'core/viewport/pxExtent';
+import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '../paths/types';
 import { HANDLE_BASE_PX } from 'core/device/targets';
 
 /** Project world AABB into screen-space AABB using the active view. */
@@ -375,28 +375,64 @@ function outlineCommandsFor(
       width: b.width + pad * 2,
       height: b.height + pad * 2,
     };
-    const r = alignedStrokeRect(padded, align, width);
-    const cmd: DrawCommand = {
-      kind: 'path',
-      path: rectPathFor(r.x, r.y, r.width, r.height),
-      stroke,
-    };
-    // Rotation gate + angle from the kit's one convention; pivot is the
-    // selection center in SCREEN space (the chrome is drawn post-projection).
     const rot = poseRotationOf(worldB);
     if (!rot) {
-      out.push(cmd);
-    } else {
-      const cx = b.x + b.width / 2;
-      const cy = b.y + b.height / 2;
-      out.push({
-        kind: 'group',
-        transform: rotateAroundMat3(cx, cy, rot.rotation),
-        children: [cmd],
-      });
+      const r = alignedStrokeRect(padded, align, width);
+      out.push({ kind: 'path', path: rectPathFor(r.x, r.y, r.width, r.height), stroke });
+      continue;
     }
+    // Turned, the target lands on screen as a parallelogram whenever the zoom
+    // is non-uniform, so the outline is traced through its projected corners
+    // rather than drawn as a screen rect and turned. `alignedStrokeRect`'s
+    // shift is folded into the offset so the ribbon lands where it would.
+    const shift = align === 'outer' ? width / 2 : align === 'inner' ? -width / 2 : 0;
+    const q = screenCorners(worldB, rot, view, pad + shift);
+    out.push({
+      kind: 'path',
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+        coords: new Float32Array([q[0].x, q[0].y, q[1].x, q[1].y, q[2].x, q[2].y, q[3].x, q[3].y]),
+        fillRule: 'nonzero',
+      },
+      stroke: { ...stroke, align: 'center' },
+    });
   }
   return out;
+}
+
+/**
+ * A turned target's corners on screen, TL/TR/BR/BL, each pushed `pad` screen
+ * pixels out from both edges that meet there.
+ */
+function screenCorners(
+  worldB: Bounds,
+  rot: { cx: number; cy: number; rotation: number },
+  view: View,
+  pad: number,
+): { x: number; y: number }[] {
+  const t = viewToTransform(view);
+  const q = rectCorners(worldB).map((c) => {
+    const w = rotatePoint(c.x, c.y, rot.cx, rot.cy, rot.rotation);
+    const [x, y] = worldToScreen(w.x, w.y, t);
+    return { x, y };
+  });
+  if (pad === 0) return q;
+  const [ccx, ccy] = worldToScreen(rot.cx, rot.cy, t);
+  const normal = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+    let nx = -(b.y - a.y), ny = b.x - a.x;
+    const l = Math.hypot(nx, ny) || 1;
+    nx /= l; ny /= l;
+    const mx = (a.x + b.x) / 2 - ccx, my = (a.y + b.y) / 2 - ccy;
+    return nx * mx + ny * my < 0 ? { x: -nx, y: -ny } : { x: nx, y: ny };
+  };
+  return q.map((c, i) => {
+    const n1 = normal(q[(i + 3) % 4], c);
+    const n2 = normal(c, q[(i + 1) % 4]);
+    // The point `pad` off both edge lines.
+    const k = pad / (1 + n1.x * n2.x + n1.y * n2.y);
+    return { x: c.x + (n1.x + n2.x) * k, y: c.y + (n1.y + n2.y) * k };
+  });
 }
 
 /** GL helper: emit handle fill+stroke commands for one bounds entry. */
@@ -414,16 +450,16 @@ function handleCommandsFor(
   for (const id of ids) {
     const worldB = resolveBounds(id);
     if (!worldB) continue;
-    const b = projectBounds(worldB, view);
-    // Rotation gate + angle from the kit's one convention; pivot is the
-    // selection center in SCREEN space (handles are placed post-projection).
+    // Rotation gate + angle from the kit's one convention. Turned in world,
+    // then projected: turning the projected point instead lands somewhere else
+    // under non-uniform zoom.
     const r = poseRotationOf(worldB);
-    const cx = b.x + b.width / 2;
-    const cy = b.y + b.height / 2;
-    for (const hWorld of handlesOf(worldB)) {
-      const t = viewToTransform(view);
+    const t = viewToTransform(view);
+    const angle = r ? screenAngleOf(r.rotation, view.scale) : 0;
+    for (const hLocal of handlesOf(worldB)) {
+      const hWorld = r ? rotatePoint(hLocal.x, hLocal.y, r.cx, r.cy, r.rotation) : hLocal;
       const [hsx, hsy] = worldToScreen(hWorld.x, hWorld.y, t);
-      const center = r ? rotatePoint(hsx, hsy, cx, cy, r.rotation) : { x: hsx, y: hsy };
+      const center = { x: hsx, y: hsy };
       const baseRect = {
         x: center.x - half,
         y: center.y - half,
@@ -446,7 +482,7 @@ function handleCommandsFor(
       } else {
         out.push({
           kind: 'group',
-          transform: rotateAroundMat3(center.x, center.y, r.rotation),
+          transform: rotateAroundMat3(center.x, center.y, angle),
           children: [fillCmd, strokeCmd],
         });
       }
@@ -466,8 +502,8 @@ function rotationHandleCommands(
   distance: number,
   view: View,
 ): DrawCommand[] {
-  const rotation = worldB.rotation ?? 0;
-  const hWorld = rotationHandle({ ...worldB, rotation }, distance / meanScale(view.scale));
+  const hWorld = rotationHandle(worldB, distance, view.scale);
+  const rotation = hWorld.angle;
   const t = viewToTransform(view);
   const [scx, scy] = worldToScreen(hWorld.cx, hWorld.cy, t);
   const size = handles.size;
@@ -599,7 +635,7 @@ function buildSelectionLayer<TPose>(
     ? makeContainerAwareBoundsResolver(getPose, d, opts.getChildren, opts.isContainer)
     : null;
   const rotationHandleDistance = passes.handles
-    ? resolveRotationHandleDistance(opts.rotationHandle)
+    ? rotationBadgeOf(opts)?.distancePx ?? null
     : null;
 
   return {
@@ -669,12 +705,18 @@ function buildSelectionLayer<TPose>(
   };
 }
 
-function resolveRotationHandleDistance(
-  opt: boolean | { distance?: number } | undefined,
-): number | null {
-  if (!opt) return null;
-  if (opt === true) return DEFAULT_ROTATION_HANDLE_DISTANCE;
-  return opt.distance ?? DEFAULT_ROTATION_HANDLE_DISTANCE;
+/** Where the overlay paints its rotate badge and how big it is, in screen
+ *  pixels, or `null` when it paints none. The badge's grab region and its
+ *  slops halo read this too, so all three agree on it. */
+export function rotationBadgeOf(
+  opts: Pick<SelectionOverlayLayerOpts<unknown>, 'handles' | 'rotationHandle'>,
+): { distancePx: number; sizePx: number } | null {
+  const r = opts.rotationHandle;
+  if (!r || opts.handles === false) return null;
+  return {
+    distancePx: r === true ? DEFAULT_ROTATION_HANDLE_DISTANCE : r.distance ?? DEFAULT_ROTATION_HANDLE_DISTANCE,
+    sizePx: resolveHandles(opts.handles || undefined).size,
+  };
 }
 /**
  * `RenderLayer` that draws selection outlines only. Stack alongside

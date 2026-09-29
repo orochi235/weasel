@@ -79,7 +79,7 @@ export function createCornerResizeAffordance(
         return {
           id: `corner-${c.tag}`,
           targetId: target.id,
-          shape: { kind: 'point' as const, x: corner.x, y: corner.y, hitRadiusPx: handleHitRadius },
+          shape: { kind: 'point' as const, x: corner.x, y: corner.y, hitRadiusPx: handleHitRadius, turned: true },
           paint,
           hitKind: c.kind,
           // Diagonal by fixed-corner parity: a matched-axis anchor (min-min /

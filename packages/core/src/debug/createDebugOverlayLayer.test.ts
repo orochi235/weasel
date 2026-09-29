@@ -118,3 +118,36 @@ function texts(tree: readonly DrawCommand[]): string[] {
     .filter((c): c is TextDrawCommand => c.kind === 'text')
     .map((c) => c.runs.map((r) => r.text).join(''));
 }
+
+describe('hitboxes under non-uniform zoom', () => {
+  const SQUISH = { x: 0, y: 0, scale: { x: 4, y: 1 } };
+  const extents = (cmd: PathDrawCommand) => {
+    const c = (cmd.path as { coords: ArrayLike<number> }).coords;
+    const xs: number[] = [], ys: number[] = [];
+    for (let i = 0; i < c.length; i += 2) { xs.push(c[i]); ys.push(c[i + 1]); }
+    return { w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) };
+  };
+
+  it('draws a world circle as the ellipse it lands on screen as', () => {
+    const sink = createDebugSink({ hitboxes: true });
+    sink.recordHitbox('a', 'handle', { kind: 'circle', cx: 10, cy: 10, r: 2 });
+    const [cmd] = createDebugOverlayLayer({ sink, config: { hitboxes: true } })
+      .draw(null, SQUISH, DIMS) as PathDrawCommand[];
+    const e = extents(cmd);
+    expect(e.w).toBeCloseTo(16, 4);
+    expect(e.h).toBeCloseTo(4, 4);
+  });
+
+  it('draws a rotated rect turned, not as its unrotated box', () => {
+    const sink = createDebugSink({ hitboxes: true });
+    sink.recordHitbox('a', 'handle', {
+      kind: 'rect', x: 0, y: 0, width: 10, height: 10, rotation: Math.PI / 4,
+    });
+    const [cmd] = createDebugOverlayLayer({ sink, config: { hitboxes: true } })
+      .draw(null, SQUISH, DIMS) as PathDrawCommand[];
+    const e = extents(cmd);
+    // A 10-square turned 45° spans 10·√2 on each world axis.
+    expect(e.w).toBeCloseTo(4 * 10 * Math.SQRT2, 3);
+    expect(e.h).toBeCloseTo(10 * Math.SQRT2, 3);
+  });
+});

@@ -255,28 +255,19 @@ have shipped. What remains:
   Composing would mean a view's camera derived from the view under its aim, and
   a resolver that descends rather than picking one rect.
 
-- **(P3) Two `meanScale` residuals under non-uniform zoom.** The hit-test half
-  shipped 2026-08-12: `core/viewport/pxExtent` (`pxExtent` / `withinPxBox` /
-  `withinPxRadius`), affordance `point` regions compared in screen space, the
-  annulus band floor and paint inset per-axis, the pen close-hit a screen-space
-  circle, and every snap-guide tolerance per-axis. Two sites deliberately did
-  not move:
-
-  (a) **`useSceneSelectTool`'s pick tolerance** still divides by `meanScale`.
-  It is a forgiveness margin around an outline rather than a hit target, and
-  per-axis would mean widening `poseContainsRotated`, `poseContains` and
-  `shapeCoversPoint` to a `{x,y}` tolerance — for a result that stays
-  approximate under rotation anyway, since a screen-axis ellipse pulled back
-  through a rotation is not axis-separable in the local frame.
-
-  (b) **Painted chrome placement** — `rotationHandleCommands` in
-  `features/selection/overlay.ts`, and the matching positions in
-  `slopsDebugLayer` / `createDebugOverlayLayer`. Same rotation coupling, and
-  they must move together with each other or the visible handle and the
-  grabbable ring diverge. Wants someone looking at the render.
-
-  Grid hairline strokes (`1 / meanScale`) have no per-axis analog at all — the
-  renderer takes one width.
+- **(P3) A `{ px }` stroke on a line that is not axis-aligned has no exact
+  width under non-uniform zoom.** A ribbon is tessellated in world with one
+  width, and `withResolvedStrokeLengths` (`renderer/draw.ts`) resolves `{ px }`
+  through `meanScaleOf`, so at 4:1 a 1px hairline paints 2px wide vertically
+  and 0.5px horizontally. Axis-aligned lines have an exact answer — the grid
+  layer takes `pxExtent` on each line's cross axis — but a rect outline, an
+  ellipse or a diagonal does not: `PanZoomDemo`, `ForceGraphDemo`,
+  `ViewportDemo` and labkit's annotation point ring all divide by `meanScale`.
+  The fix is the ribbon built after the view's linear part (path coords carried
+  through it, stroked at `px`, drawn under the transform with that part
+  removed), which touches the ribbon cache key, dashes, markers and the
+  stencil-aligned polygon path. Picking reads ink widths through the same mean
+  (`useSceneSelectTool`) and has to move with it.
 
 ---
 

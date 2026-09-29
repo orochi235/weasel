@@ -18,6 +18,7 @@ import type { GesturePreviewSource } from './gestureBounds';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
+import { chromeAffordances } from './affordanceAt';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
 import { polygonFromPoints } from 'features/paths/builder';
 import type { PolygonPath } from 'features/paths/types';
@@ -119,7 +120,9 @@ describe('dispatcher-overlay layer answers for the view it is drawn for', () => 
 function minX(cmds: DrawCommand[]): number {
   let min = Infinity;
   for (const c of cmds) {
-    if (c.kind !== 'path' || c.path.kind !== 'polygon') continue;
+    if (c.kind !== 'path') continue;
+    if (c.path.kind === 'rect') { min = Math.min(min, c.path.x); continue; }
+    if (c.path.kind !== 'polygon') continue;
     const { coords } = c.path;
     for (let i = 0; i < coords.length; i += 2) min = Math.min(min, coords[i]!);
   }
@@ -155,7 +158,7 @@ describe('path-editing overlay resolves its path through the drawn view', () => 
 
 describe('slops-debug overlay answers for the view it is drawn for', () => {
   it('halos each view\'s own selection at that view\'s bounds', () => {
-    const layer = createSlopsDebugLayer({ getEditingId: () => null, getPose: () => null });
+    const layer = createSlopsDebugLayer({ getAffordances: () => chromeAffordances() });
 
     const chrome = (x: number, ids: string[]): ChromeState => ({
       selection: ids.map(asNodeId),

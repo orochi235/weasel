@@ -3,7 +3,7 @@ import type { Dims, RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
-import { meanScale } from 'core/viewport/meanScale';
+import { rotatePoint } from 'interactions/actions/rotate/geometry';
 import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'features/paths/types';
 import { textCommandFromRuns } from 'features/text/textCommand';
 import type {
@@ -91,21 +91,48 @@ export function buildDebugOverlayCommands(
 // --- emitters (screen-space) ---
 
 function approxCircleScreen(cx: number, cy: number, r: number, segments = 24): PolygonPath {
+  return approxEllipseScreen(cx, cy, r, r, segments);
+}
+
+function approxEllipseScreen(cx: number, cy: number, rx: number, ry: number, segments = 24): PolygonPath {
   // Commands: M + (segments-1) L + Z. Coords: (segments) × 2 — pairs for
   // the moveTo and the (segments-1) lineTos. PATH_Z consumes no coords.
   const cmds = new Uint8Array(segments + 1);
   const coords = new Float32Array(segments * 2);
   cmds[0] = PATH_M;
-  coords[0] = cx + r;
+  coords[0] = cx + rx;
   coords[1] = cy;
   for (let i = 1; i < segments; i++) {
     cmds[i] = PATH_L;
     const theta = (i / segments) * Math.PI * 2;
-    coords[i * 2] = cx + r * Math.cos(theta);
-    coords[i * 2 + 1] = cy + r * Math.sin(theta);
+    coords[i * 2] = cx + rx * Math.cos(theta);
+    coords[i * 2 + 1] = cy + ry * Math.sin(theta);
   }
   cmds[segments] = PATH_Z;
   return { kind: 'polygon', commands: cmds, coords, fillRule: 'nonzero' };
+}
+
+/** A world rect turned `rotation` about its center, as the screen quad it
+ *  lands on. */
+function rotatedRectScreen(
+  r: { x: number; y: number; width: number; height: number; rotation: number },
+  t: ReturnType<typeof viewToTransform>,
+): PolygonPath {
+  const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+  const coords = new Float32Array(8);
+  const corners = [[r.x, r.y], [r.x + r.width, r.y], [r.x + r.width, r.y + r.height], [r.x, r.y + r.height]];
+  corners.forEach(([x, y], i) => {
+    const w = rotatePoint(x, y, cx, cy, r.rotation);
+    const [sx, sy] = worldToScreen(w.x, w.y, t);
+    coords[i * 2] = sx;
+    coords[i * 2 + 1] = sy;
+  });
+  return {
+    kind: 'polygon',
+    commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+    coords,
+    fillRule: 'nonzero',
+  };
 }
 
 function rectPath(x: number, y: number, w: number, h: number): { kind: 'rect'; x: number; y: number; width: number; height: number } {
@@ -133,15 +160,31 @@ function emitHitboxes(
   const fill = { fill: 'solid' as const, color: theme.hitboxFill };
   const stroke = strokeOf(strokes.hitbox, theme.hitboxStroke);
   for (const h of s.hitboxes) {
-    if (h.shape.kind === 'rect') {
+    if (h.shape.kind === 'rect' && h.shape.rotation) {
+      const path = rotatedRectScreen({ ...h.shape, rotation: h.shape.rotation }, t);
+      out.push({ kind: 'path', path, fill, stroke });
+    } else if (h.shape.kind === 'rect') {
       const [sx, sy] = worldToScreen(h.shape.x, h.shape.y, t);
       const sw = h.shape.width * view.scale.x;
       const sh = h.shape.height * view.scale.y;
       out.push({ kind: 'path', path: rectPath(sx, sy, sw, sh), fill, stroke });
     } else if (h.shape.kind === 'circle') {
       const [cx, cy] = worldToScreen(h.shape.cx, h.shape.cy, t);
-      const r = h.shape.r * meanScale(view.scale);
-      out.push({ kind: 'path', path: approxCircleScreen(cx, cy, r), fill, stroke });
+      const rx = h.shape.r * Math.abs(view.scale.x);
+      const ry = h.shape.r * Math.abs(view.scale.y);
+      out.push({ kind: 'path', path: approxEllipseScreen(cx, cy, rx, ry), fill, stroke });
+    } else if (h.shape.kind === 'polygon' && h.shape.points.length > 2) {
+      const pts = h.shape.points;
+      const coords = new Float32Array(pts.length * 2);
+      pts.forEach((p, i) => {
+        const [sx, sy] = worldToScreen(p.x, p.y, t);
+        coords[i * 2] = sx;
+        coords[i * 2 + 1] = sy;
+      });
+      const commands = new Uint8Array(pts.length + 1).fill(PATH_L);
+      commands[0] = PATH_M;
+      commands[pts.length] = PATH_Z;
+      out.push({ kind: 'path', path: { kind: 'polygon', commands, coords, fillRule: 'nonzero' }, fill, stroke });
     }
     // 'path' kind: v1 punt — matches 2D behavior.
   }

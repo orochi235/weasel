@@ -13,7 +13,7 @@ import type { RenderLayer } from 'core/layers/render';
 import { type Stroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { resolveUnit, type UnitSystem, type UnitValue } from '@weasel-js/quantity';
-import { meanScale } from 'core/viewport/meanScale';
+import { pxExtent } from 'core/viewport/pxExtent';
 import { PATH_L, PATH_M, type PolygonPath } from '../paths/types';
 
 /** Options for `createGridLayer`. */
@@ -76,7 +76,9 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       const y0 = b.y;
       const x1 = b.x + b.width;
       const y1 = b.y + b.height;
-      const px = 1 / Math.max(0.0001, meanScale(view.scale));
+      // Every line is axis-aligned, so its width runs along one screen axis
+      // and one pixel of it is exactly that axis's extent.
+      const px = pxExtent(1, view.scale);
 
       const children: DrawCommand[] = [];
 
@@ -87,10 +89,11 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
           coords: new Float32Array([sx, sy, ex, ey]),
           fillRule: 'nonzero',
         };
+        const across = sx === ex ? px.x : px.y;
         children.push({
           kind: 'path',
           path,
-          stroke: { ...s, width: resolveStrokeWidth(s.width ?? 1, 1) * px },
+          stroke: { ...s, width: resolveStrokeWidth(s.width ?? 1, 1) * across },
         });
       };
 

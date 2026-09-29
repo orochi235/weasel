@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
+import { chromeAffordances } from './affordanceAt';
 import { targetSizesPx } from 'core/device/targets';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ChromeState } from 'core/selection/chromeState';
@@ -8,9 +9,7 @@ import { COARSE_TARGET_SCALE } from '@weasel-js/routing';
 
 function layerFor(targetScale?: number) {
   return createSlopsDebugLayer({
-    getEditingId: () => null,
-    getPose: () => null,
-    ...(targetScale !== undefined ? { targetScale } : {}),
+    getAffordances: () => chromeAffordances(targetScale !== undefined ? { targetScale } : {}),
   });
 }
 
@@ -36,14 +35,11 @@ function drawAt(
   } as never);
 }
 
-/** Radius of the first drawn slop circle. `circlePath` emits a 4-arc
- *  approximation whose x-extent is the diameter, so half the coord span is
- *  the radius regardless of how the curve is discretized. */
+/** Half-extent of the first drawn slop square — the square a point region
+ *  hit-tests, axis-aligned here because the target is not turned. */
 function firstSlopRadius(cmds: readonly unknown[]): number {
-  const cmd = cmds[0] as { path: { coords: ArrayLike<number> } };
-  const xs: number[] = [];
-  for (let i = 0; i < cmd.path.coords.length; i += 2) xs.push(cmd.path.coords[i]);
-  return (Math.max(...xs) - Math.min(...xs)) / 2;
+  const c = (cmds[0] as { path: { coords: ArrayLike<number> } }).path.coords;
+  return (c[2] - c[0]) / 2;
 }
 
 describe('slopsDebugLayer', () => {

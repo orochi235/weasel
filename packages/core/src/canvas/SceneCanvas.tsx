@@ -136,7 +136,8 @@ import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
 import type { ActionsRegistry } from '@weasel-js/routing';
 import { useActionsRegistry } from '@weasel-js/routing/react';
-import { buildAffordanceAt, buildClassifyTarget, anchorStateFrom } from './affordanceAt';
+import { buildAffordanceAt, buildClassifyTarget, anchorStateFrom, chromeAffordances } from './affordanceAt';
+import type { Affordance } from 'affordances/types';
 import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import type { Op } from 'core/ops/types';
@@ -147,6 +148,7 @@ import { installTestHookIfRequested } from '../test-hook/install';
 import type { WeaselTestHook } from '../test-hook/types';
 import {
   createSelectionOverlayLayer,
+  rotationBadgeOf,
 } from 'features/selection/overlay';
 import { getActiveModeFor, type ModeRegistry } from '@weasel-js/modes';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
@@ -1925,21 +1927,23 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const sceneRefForOverlay = useRef(scene);
   sceneRefForOverlay.current = scene;
   const slopsOn = debug !== undefined && debug !== false && debug.slops === true;
-  // Debug: slops viz layer (off by default). Builds the affordance halos
-  // once and reads live state through refs every frame — the same pattern
-  // the chrome layers use. Identity stays stable so wiredLayers below
-  // doesn't churn.
-  const slopsLayer = useMemo(
-    () => createSlopsDebugLayer({
-      getEditingId: () => effectivePathEditingId() || null,
-      // Halos follow the live (preview-aware) polygon so they sit on
-      // top of the rendered anchors during anchor-edit drags AND when
-      // the whole path is being moved.
-      getPose: (id, previews) => livePathFor(id, previews) as never,
-      targetScale: deviceProfile.targetScale,
-    }),
+  const selectionOverlayCfg = mergedLayers.selectionOverlay as
+    | SelectionOverlaySlotConfig<TPose> | null | undefined;
+  const badgeOf = selectionOverlayCfg ? rotationBadgeOf(selectionOverlayCfg) : null;
+  // Kept by value so the layers and hit-testers keyed on it don't rebuild
+  // every render.
+  const rotationBadge = useMemo(
+    () => badgeOf,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [deviceProfile.targetScale],
+    [badgeOf?.distancePx, badgeOf?.sizePx],
+  );
+  // Debug: slops viz layer (off by default). Draws the affordances the
+  // gesture mounter hit-tests, which it publishes here, so the halos are the
+  // hit regions rather than a copy of them.
+  const chromeAffordancesRef = useRef<readonly Affordance[]>([]);
+  const slopsLayer = useMemo(
+    () => createSlopsDebugLayer({ getAffordances: () => chromeAffordancesRef.current }),
+    [],
   );
 
   // Resolve the live (preview-aware) world polygon for `id`. Reads from
@@ -2142,8 +2146,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     kindOfNode,
     chromeCaps,
     selectionApi: selection,
+    rotationBadge,
   }), [adapter, descriptor, internalBoundsOf, tools, internalPickEvery, internalPickBest, kindOfNode,
-       chromeCaps, selection]);
+       chromeCaps, selection, rotationBadge]);
 
   const canvas = (
     <Canvas<Node<TData, TLayer, TPose>, TPose>
@@ -2275,6 +2280,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
                 targetScale={deviceProfile.targetScale}
                 handleHitRadius={selectToolOpts?.handleHitRadius}
+                rotationBadge={rotationBadge}
+                chromeAffordancesRef={chromeAffordancesRef}
                 onDoubleClick={onDoubleClickObserver}
               />
               <ToolKeybindingsMounter
@@ -2364,6 +2371,8 @@ function GestureDispatcherMounter({
   getRuleCtx,
   targetScale,
   handleHitRadius,
+  rotationBadge,
+  chromeAffordancesRef,
   onDoubleClick,
 }: {
   canvasRef: React.RefObject<HTMLElement | null>;
@@ -2410,6 +2419,10 @@ function GestureDispatcherMounter({
   /** Consumer override for the corner-handle grab radius
    *  (`selectTool.handleHitRadius`). Undefined takes the device-scaled size. */
   handleHitRadius?: number;
+  /** The rotate badge the selection overlay paints, grabbable where drawn. */
+  rotationBadge?: { distancePx: number; sizePx: number } | null;
+  /** Receives the affordances this mounter hit-tests, for the slops overlay. */
+  chromeAffordancesRef?: React.MutableRefObject<readonly Affordance[]>;
   /** Fires on every synthesized double click, in world coords. Backs the
    *  `onDoubleClick` prop — see the option's doc on
    *  `UseGestureDispatcherOptions` for why it's an observer, not a binding. */
@@ -2450,6 +2463,13 @@ function GestureDispatcherMounter({
 
   // Build the `affordanceAt` thunk. Takes world coords and delegates to
   // `buildAffordanceAt` for handle hit-testing.
+  const affordances = useMemo(() => chromeAffordances({
+    ...(targetScale !== undefined ? { targetScale } : {}),
+    ...(handleHitRadius !== undefined ? { handleHitRadius } : {}),
+    rotationBadge,
+    getAnchorState,
+  }), [targetScale, handleHitRadius, rotationBadge, getAnchorState]);
+  if (chromeAffordancesRef) chromeAffordancesRef.current = affordances;
   const affordanceAt = useMemo(() => {
     if (!selectionRef || !boundsOf || !viewRef) return undefined;
     return buildAffordanceAt({
@@ -2457,12 +2477,8 @@ function GestureDispatcherMounter({
       // second construction here that has to agree with the painted one.
       getChromeState: () => viewRegistry?.surface()?.chromeState() ?? EMPTY_CHROME_STATE,
       // Radii are declared in screen pixels and converted against this view.
-      // The caller used to do that division itself (`8 / meanScale(scale)`),
-      // in two places, with a comment explaining what breaks if you forget.
       getView: () => viewRef.current ?? { x: 0, y: 0, scale: { x: 1, y: 1 } },
-      ...(targetScale !== undefined ? { targetScale } : {}),
-      ...(handleHitRadius !== undefined ? { handleHitRadius } : {}),
-      getAnchorState,
+      affordances,
       // Chrome-caps resolver: keep the affordance hit-test in sync with what
       // the renderer is actually painting. Without this, a click on a (no
       // longer visible) resize handle position still classifies as a resize
@@ -2470,8 +2486,7 @@ function GestureDispatcherMounter({
       // bounding box instead of moving the anchor.
       ...(getIsVisibleForCanvas ? { getIsVisible: () => getIsVisibleForCanvas() } : {}),
     });
-  }, [selectionRef, boundsOf, viewRef, getAnchorState, getIsVisibleForCanvas, viewRegistry,
-      targetScale, handleHitRadius]);
+  }, [selectionRef, boundsOf, viewRef, affordances, getIsVisibleForCanvas, viewRegistry]);
 
   // Build the `classifyTarget` thunk. Takes world coords and delegates to
   // `buildClassifyTarget`.

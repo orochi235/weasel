@@ -60,6 +60,9 @@ export interface SurfaceViewInputs
   /** The surface's selection, which a view shares unless it was given one of
    *  its own. */
   selectionApi: SelectionApi;
+  /** The rotate badge the surface's selection overlay paints, which every
+   *  view drawing that overlay has to make grabbable where it is drawn. */
+  rotationBadge?: { distancePx: number; sizePx: number } | null;
 }
 
 const ViewInputsContext = createContext<SurfaceViewInputs | null>(null);

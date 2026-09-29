@@ -14,6 +14,8 @@ import { DEFAULT_FLATTEN_TOLERANCE, flattenCubic, flattenQuadratic } from './fla
 import { pointInPolygon, pointSegmentDist2, segmentsCross } from './polyline';
 import type { Rect } from './box';
 import type { GeomPath } from './path';
+import type { Mat3 } from './mat3';
+import { capsuleWithinPx, isSimilarity, stretchOf, type Linear2 } from './screenBand';
 
 type PolygonGeomPath = Extract<GeomPath, { kind: 'polygon' }>;
 type XY = { x: number; y: number };
@@ -28,6 +30,12 @@ export interface PointInPathOptions {
 export interface StrokeHitTestOptions {
   /** Bezier flattening tolerance in world units. Default 0.5. */
   tolerance?: number;
+  /** Extra reach past the band measured in screen pixels rather than world
+   *  units: `px` pixels, after `transform` carries the path's frame to the
+   *  screen (only its linear part matters). A pointer's forgiveness is a
+   *  screen distance, and under a non-uniform or rotated-then-squished
+   *  transform no world distance equals it. */
+  slop?: { px: number; transform: Mat3 };
 }
 
 // ─── Flattening ─────────────────────────────────────────────────────────────
@@ -133,27 +141,46 @@ export function strokeHitTest(
   threshold: number,
   opts: StrokeHitTestOptions = {},
 ): boolean {
+  const slop = opts.slop;
+  if (slop && slop.px > 0) {
+    const [a, b, c, d] = slop.transform;
+    const m: Linear2 = { a, b, c, d };
+    const st = stretchOf(m);
+    if (isSimilarity(st)) {
+      return strokeHitTest(path, x, y, threshold + slop.px / st.s1, { tolerance: opts.tolerance });
+    }
+    const sx = a * x + c * y, sy = b * x + d * y;
+    return someSegment(path, opts.tolerance, (ax, ay, bx, by) =>
+      capsuleWithinPx(sx, sy, ax, ay, bx, by, threshold, slop.px, m, st));
+  }
   const t2 = threshold * threshold;
+  return someSegment(path, opts.tolerance, (ax, ay, bx, by) =>
+    pointSegmentDist2(x, y, ax, ay, bx, by) <= t2);
+}
+
+/** Does `visit` answer true for any outline segment — every edge of a rect,
+ *  closing edges of closed subpaths included? */
+function someSegment(
+  path: GeomPath,
+  tolerance: number | undefined,
+  visit: (ax: number, ay: number, bx: number, by: number) => boolean,
+): boolean {
   if (path.kind === 'rect') {
     const { x: rx, y: ry, width: w, height: h } = path;
-    return (
-      pointSegmentDist2(x, y, rx, ry, rx + w, ry) <= t2
-      || pointSegmentDist2(x, y, rx + w, ry, rx + w, ry + h) <= t2
-      || pointSegmentDist2(x, y, rx + w, ry + h, rx, ry + h) <= t2
-      || pointSegmentDist2(x, y, rx, ry + h, rx, ry) <= t2
-    );
+    return visit(rx, ry, rx + w, ry) || visit(rx + w, ry, rx + w, ry + h)
+      || visit(rx + w, ry + h, rx, ry + h) || visit(rx, ry + h, rx, ry);
   }
-  const { closed, open } = flatSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE);
-  const near = (run: readonly number[], wrap: boolean): boolean => {
-    const n = run.length;
+  const { closed, open } = flatSubpaths(path, tolerance ?? DEFAULT_FLATTEN_TOLERANCE);
+  const run = (sub: readonly number[], wrap: boolean): boolean => {
+    const n = sub.length;
     const last = wrap ? n : n - 2;
     for (let i = 0; i < last; i += 2) {
       const j = (i + 2) % n;
-      if (pointSegmentDist2(x, y, run[i], run[i + 1], run[j], run[j + 1]) <= t2) return true;
+      if (visit(sub[i], sub[i + 1], sub[j], sub[j + 1])) return true;
     }
     return false;
   };
-  return closed.some((run) => near(run, true)) || open.some((run) => near(run, false));
+  return closed.some((sub) => run(sub, true)) || open.some((sub) => run(sub, false));
 }
 
 // ─── Region vs path ─────────────────────────────────────────────────────────

@@ -110,6 +110,9 @@ export type HandleKind = 'corner' | 'rotation' | 'anchor';
 export type HitShape =
   | { kind: 'rect'; x: number; y: number; width: number; height: number; rotation?: number }
   | { kind: 'circle'; cx: number; cy: number; r: number }
+  /** A world-space polygon — for a region that is a turned square on screen,
+   *  which under non-uniform zoom is no rotated rect in world. */
+  | { kind: 'polygon'; points: readonly { x: number; y: number }[] }
   | { kind: 'path'; d: Path2D };
 
 /** What a recorded viewport change was: a translation or a scale change. */
