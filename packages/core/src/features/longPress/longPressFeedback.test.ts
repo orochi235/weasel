@@ -21,16 +21,13 @@ function setup(opts: LongPressFeedbackOptions = {}) {
   const store = createLongPressStore();
   const entry = createLongPressFeedbackContribution({ reducedMotion: false, ...opts });
   const layer = entry.overlay as RenderLayer<unknown>;
-  const frames = new Set<() => void>();
   const requestRedraw = vi.fn();
-  const api = {
-    element: null,
-    requestRedraw,
-    subscribeFrame: (fn: () => void) => { frames.add(fn); return () => { frames.delete(fn); }; },
-  } as unknown as CanvasExtensionApi;
-  const detach = entry.attach!(api, { get: ((name: string) => (name === 'longPress' ? store : undefined)) as never });
+  const api = { element: null, requestRedraw } as unknown as CanvasExtensionApi;
+  const deps = { get: ((name: string) => (name === 'longPress' ? store : undefined)) as never };
+  const detach = entry.attach!(api, deps);
   const draw = (viewId: string | null = null): DrawCommand[] => layer.draw({ viewId }, VIEW, DIMS);
-  const frame = () => { for (const fn of [...frames]) fn(); };
+  // What the surface's frame loop hands `afterPaint` once a frame has landed.
+  const frame = () => { entry.afterPaint!({ time: performance.now(), view: VIEW, requestFrame: requestRedraw, deps }); };
   return { store, layer, draw, frame, requestRedraw, detach };
 }
 

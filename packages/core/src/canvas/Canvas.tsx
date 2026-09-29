@@ -888,7 +888,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // React does not drive the paint; the frame loop does. The thunk defers to
   // `paint` below, which needs inputs this render has not computed yet.
   const paintRef = useRef<() => boolean>(() => false);
-  const { requestRedraw, subscribeFrame } = useFrameLoop(
+  const { requestRedraw, subscribeFrame, subscribeBeforePaint } = useFrameLoop(
     useCallback(() => paintRef.current(), []),
     { syncPaint, target: canvasRef },
   );
@@ -1023,6 +1023,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     getSurfaceRect,
     requestRedraw,
     subscribeFrame,
+    subscribeBeforePaint,
     registerLayer,
     hitTestExtras,
     getView,
@@ -1032,7 +1033,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     paintedCursor,
     getDebug,
   }), [canvasRef, ownCanvasRef, detached, inputElement, paintInto?.canvas,
-       getSurfaceRect, requestRedraw, subscribeFrame, registerLayer,
+       getSurfaceRect, requestRedraw, subscribeFrame, subscribeBeforePaint, registerLayer,
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
        paintedCursor, getDebug]);
 

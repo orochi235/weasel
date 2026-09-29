@@ -16,8 +16,12 @@ export interface FrameLoop {
   /** Mark the surface dirty and schedule a frame. Identity is stable for the
    *  lifetime of the component — consumers capture it. */
   requestRedraw(): void;
-  /** Run `fn` after every landed paint. Returns an unsubscribe. */
-  subscribeFrame(fn: () => void): () => void;
+  /** Run `fn` after every landed paint, with the frame's time. Returns an
+   *  unsubscribe. */
+  subscribeFrame(fn: (time: number) => void): () => void;
+  /** Run `fn` on every frame just before its paint, with the frame's time.
+   *  Returns an unsubscribe. */
+  subscribeBeforePaint(fn: (time: number) => void): () => void;
 }
 
 export interface FrameLoopOptions {
@@ -40,7 +44,8 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   const paintingRef = useRef(false);
   const paintRef = useLatest(paint);
   const syncRef = useLatest(options.syncPaint ?? false);
-  const subsRef = useRef<Set<() => void>>(new Set());
+  const subsRef = useRef<Set<(time: number) => void>>(new Set());
+  const beforeRef = useRef<Set<(time: number) => void>>(new Set());
 
   /** Set while recovering from a paint that threw, so one bad frame is retried
    *  and a permanently throwing one still doesn't spin at frame rate. */
@@ -48,11 +53,12 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   /** `frame.request`, which doesn't exist until after `runPaint` is built. */
   const rearmRef = useRef<(() => void) | null>(null);
 
-  const runPaint = useCallback(() => {
+  const runPaint = useCallback((time: number) => {
     dirtyRef.current = false;
     paintingRef.current = true;
     let landed = false;
     try {
+      for (const fn of beforeRef.current) fn(time);
       landed = paintRef.current();
       if (!landed) {
         dirtyRef.current = true;
@@ -61,7 +67,7 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
       retriedRef.current = false;
       // Notified inside the guard: a subscriber calling `requestRedraw` under
       // `syncPaint` would otherwise re-enter this synchronously, without bound.
-      for (const fn of subsRef.current) fn();
+      for (const fn of subsRef.current) fn(time);
     } catch (err) {
       // A throw skips the `!landed` branch above, so without this the surface
       // is left clean but unpainted — the pixels on screen are whatever the
@@ -80,9 +86,9 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   }, [paintRef]);
 
   const frame = useVisibleRaf(
-    useCallback(() => {
+    useCallback((time: number) => {
       if (!aliveRef.current || !dirtyRef.current) return;
-      runPaint();
+      runPaint(time);
     }, [runPaint]),
     { target: options.target },
   );
@@ -97,15 +103,19 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
     // A request made from inside a draw or a frame subscriber would recurse
     // forever if it painted here, so re-entrant ones fall through to a frame.
     if (syncRef.current && aliveRef.current && !paintingRef.current && frame.isVisible()) {
-      runPaint();
+      runPaint(performance.now());
       return;
     }
     frame.request();
   }, [frame, runPaint, syncRef]);
 
-  const subscribeFrame = useCallback((fn: () => void) => {
+  const subscribeFrame = useCallback((fn: (time: number) => void) => {
     subsRef.current.add(fn);
     return () => { subsRef.current.delete(fn); };
+  }, []);
+  const subscribeBeforePaint = useCallback((fn: (time: number) => void) => {
+    beforeRef.current.add(fn);
+    return () => { beforeRef.current.delete(fn); };
   }, []);
 
   // `requestRedraw` outlives the component: `@weasel-js/hud` calls it from a
@@ -116,11 +126,13 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   useLayoutEffect(() => {
     aliveRef.current = true;
     const subs = subsRef.current;
+    const before = beforeRef.current;
     return () => {
       aliveRef.current = false;
       subs.clear();
+      before.clear();
     };
   }, []);
 
-  return { requestRedraw, subscribeFrame };
+  return { requestRedraw, subscribeFrame, subscribeBeforePaint };
 }

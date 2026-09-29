@@ -16,6 +16,38 @@ import type { DepName } from 'interactions/actions/depSchema';
 import type { ToolsApi } from '../../tools/overlayBinding';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import type { SurfaceContribution } from '../surfaceContribution';
+import { checkRequirements, type RequirementMismatch } from '../kitRequirements';
+import { useContributionFrameHooks } from './contributionFrameHooks';
+
+/** How a surface treats an entry whose `requires` the running kit does not
+ *  meet: warn in development (the default), throw, or not check. */
+export type VersionCheck = 'warn' | 'strict' | 'off';
+
+const NO_DEPS = { get: () => undefined };
+const warnedRequirements = new WeakSet<object>();
+
+function describeMismatch(m: RequirementMismatch): string {
+  switch (m.reason) {
+    case 'unsatisfied': return `${m.package} ${m.range} (running ${m.running})`;
+    case 'invalid-range': return `${m.package} "${m.range}", which is not a range this check reads`;
+    case 'unknown-package': return `${m.package} ${m.range}, but ${m.package} reports no version`;
+  }
+}
+
+function checkEntryRequirements(entries: readonly SurfaceContribution[], mode: VersionCheck): void {
+  if (mode === 'off') return;
+  for (const entry of entries) {
+    const requires = entry.requires;
+    if (!requires) continue;
+    if (mode === 'warn' && warnedRequirements.has(requires)) continue;
+    const mismatches = checkRequirements(requires);
+    if (mismatches.length === 0) continue;
+    const message = `[weasel] contribution "${entry.id}" requires ${mismatches.map(describeMismatch).join('; ')}.`;
+    if (mode === 'strict') throw new Error(message);
+    warnedRequirements.add(requires);
+    console.warn(message);
+  }
+}
 
 /** Every entry the registry holds, registry and ambient alike. */
 export function contributionEntries(tools: Pick<ToolsApi, 'registry' | 'ambient'>): SurfaceContribution[] {
@@ -52,6 +84,7 @@ function useKeyedInstall(
 export function useContributionRoles(
   tools: ToolsApi,
   api: CanvasExtensionApi | null,
+  versionCheck: VersionCheck = 'warn',
 ): void {
   const registry = useActionsRegistry();
   const depRegistry = useOptionalDepRegistry();
@@ -72,17 +105,23 @@ export function useContributionRoles(
     return () => { for (const u of unregisters) u(); };
   }, [registry, toolRegistry, ambient]);
 
+  const entries = contributionEntries(tools);
+  // Development only for a warning; a strict surface asked to be stopped, so
+  // it throws in every build.
+  if (versionCheck === 'strict' || (versionCheck === 'warn' && process.env.NODE_ENV !== 'production')) {
+    checkEntryRequirements(entries, versionCheck);
+  }
+
+  const reader = depRegistry ?? NO_DEPS;
   const installs = new Map<object, () => () => void>();
-  for (const entry of contributionEntries(tools)) {
+  for (const entry of entries) {
     const deps = entry.deps;
     if (deps && depRegistry) installs.set(deps, () => registerDeps(depRegistry, deps));
     const attach = entry.attach;
-    if (attach && api) {
-      const reader = depRegistry ?? { get: () => undefined };
-      installs.set(attach, () => attach(api, reader));
-    }
+    if (attach && api) installs.set(attach, () => attach(api, reader));
   }
   useKeyedInstall(installs);
+  useContributionFrameHooks(entries, api, reader);
 
   // Tool assembly runs above the provider too, so its own registration of
   // held-key engagement finds no registry unless the consumer mounted one.

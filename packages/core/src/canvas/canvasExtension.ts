@@ -70,10 +70,17 @@ export interface CanvasExtensionApi {
   requestRedraw(): void;
   /**
    * Run `fn` after every paint, on the frame that painted — for chrome that
-   * must observe landed pixels (a loupe readback, a frame counter). Returns
-   * an unsubscribe.
+   * must observe landed pixels (a loupe readback, a frame counter). `time` is
+   * the frame's timestamp, on `performance.now()`'s clock. Returns an
+   * unsubscribe.
    */
-  subscribeFrame(fn: () => void): () => void;
+  subscribeFrame(fn: (time: number) => void): () => void;
+  /**
+   * Run `fn` on every frame just before it paints, with the same `time` the
+   * frame's {@link subscribeFrame} subscribers get. For state a frame's layers
+   * read, advanced once per frame. Returns an unsubscribe.
+   */
+  subscribeBeforePaint(fn: (time: number) => void): () => void;
   /** The current view. Readable mid-frame — this is the value the next paint
    *  will use, not a value from the last React commit. */
   getView(): View;

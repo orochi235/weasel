@@ -129,3 +129,47 @@ describe('useFrameLoop after an abandoned render', () => {
     expect(b).not.toHaveBeenCalled();
   });
 });
+
+describe('useFrameLoop — before-paint subscribers', () => {
+  it('runs before the paint and hands both phases the same frame time', async () => {
+    const loopRef = { current: null as FrameLoop | null };
+    const order: string[] = [];
+    const times: number[] = [];
+    const paint = vi.fn(() => { order.push('paint'); return true; });
+    render(<Host loopRef={loopRef} paint={paint} />);
+    const loop = loopRef.current!;
+    loop.subscribeBeforePaint((t) => { order.push('before'); times.push(t); });
+    loop.subscribeFrame((t) => { order.push('after'); times.push(t); });
+
+    await act(async () => { loop.requestRedraw(); await frame(); await frame(); });
+    expect(order).toEqual(['before', 'paint', 'after']);
+    expect(times[0]).toBeTypeOf('number');
+    expect(times[1]).toBe(times[0]);
+  });
+
+  it('hands a sync paint the current time', () => {
+    const loopRef = { current: null as FrameLoop | null };
+    render(<Host loopRef={loopRef} paint={() => true} syncPaint />);
+    const loop = loopRef.current!;
+    const seen = vi.fn();
+    loop.subscribeBeforePaint(seen);
+    const now = vi.spyOn(performance, 'now').mockReturnValue(1234);
+    try {
+      act(() => { loop.requestRedraw(); });
+    } finally {
+      now.mockRestore();
+    }
+    expect(seen).toHaveBeenCalledWith(1234);
+  });
+
+  it('stops calling an unsubscribed before-paint subscriber', async () => {
+    const loopRef = { current: null as FrameLoop | null };
+    render(<Host loopRef={loopRef} paint={() => true} />);
+    const loop = loopRef.current!;
+    const seen = vi.fn();
+    const off = loop.subscribeBeforePaint(seen);
+    off();
+    await act(async () => { loop.requestRedraw(); await frame(); await frame(); });
+    expect(seen).not.toHaveBeenCalled();
+  });
+});

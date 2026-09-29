@@ -741,18 +741,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ---
 
-### Plugin/bundling convention
-
-A feature ships as one `SurfaceContribution` — bindings, actions, deps,
-overlay, views and an `attach` for mount/unmount — installed through
-`<SceneCanvas ambient>`. `docs/extending.md` opens with the map; the minimap and
-the HUD are built on it.
-
-- **(P3) Per-frame hooks and version negotiation.** `attach` covers mount and
-  unmount; a contribution cannot yet run before or after a paint, or declare
-  the kit versions it was written against.
-
-
 ### weasel-den deferrals
 
 From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.md` first** — the spec's `{ registry, alwaysOn, keybindings }` pack shape was superseded by core's `Contribution` + `mergeContributions`, and its convenience layer shipped inside core as the `features` presets plus `defaultTools` / `toolOptions` on `SceneCanvas`. The items below are what survives that.

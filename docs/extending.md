@@ -16,7 +16,7 @@ actions — and mounting tools in a host of your own.
 | **Dep** | A named live source actions read (`view`, `scene`, `rootView`, `pointer`, …) | A contribution's `deps`, or `useDepSource` |
 | **View** | A second camera over a rect of the surface, with input routed to it | A contribution's `views`, the `views` prop, or `<CanvasView>` |
 | **Tool** | A contribution the user switches into (`eligibility.focus`), with scratch and previews | `useTools` / the `tools` prop |
-| **Contribution** | A whole feature: any of the roles above, plus `attach` | `<SceneCanvas ambient>` |
+| **Contribution** | A whole feature: any of the roles above, plus `attach`, frame hooks and `requires` | `<SceneCanvas ambient>` |
 
 `SurfaceContribution` is the unit a feature ships as. Every role is optional,
 installing the entry installs every role it declares, and removing the entry
@@ -32,11 +32,57 @@ interface SurfaceContribution {
   overlay?: RenderLayer | RenderLayer[];
   views?: CanvasViewProps[];
   attach?: (api, deps) => () => void; // anything the roles cannot say
+  beforePaint?: (ctx) => void;        // every frame, before it paints
+  afterPaint?: (ctx) => void;         // every frame, once its pixels land
+  requires?: { core?: string };       // semver ranges it was written against
 }
 ```
 
 `mergeContributions(...bundles)` concatenates several features' entries and
 throws on a duplicate entry id, dep name or view id.
+
+### Frame hooks
+
+`beforePaint` and `afterPaint` run on the surface's own frame loop, so they
+stop with it while the canvas is hidden or scrolled away. Neither asks for a
+frame: the loop runs when something requested a redraw, and a hook that
+animates keeps it running by calling `ctx.requestFrame()` each frame it still
+has work for. The context carries:
+
+| Field | What it is |
+|---|---|
+| `time` | The frame's timestamp, on `performance.now()`'s clock; both hooks of one frame see the same value |
+| `view` | The surface camera the frame paints with |
+| `requestFrame()` | Ask for another frame |
+| `deps` | The surface's deps, as `attach` reads them |
+
+- **Order is the order the surface lists its entries** — registered tools
+  first, then `ambient` in array order — for both hooks.
+- **A hook that throws is skipped, not fatal.** The other hooks and the paint
+  go on, and the throw is reported through `console.error` the first time,
+  naming the entry.
+- **`afterPaint` runs only on a frame whose pixels landed.** A frame the
+  renderer could not paint runs `beforePaint` and nothing after.
+- **An entry without hooks costs nothing.** The surface subscribes to each
+  phase only while some entry declares it.
+
+The default long-press feedback is the small example: its `afterPaint` asks
+for the next frame while the ring is filling, and stops asking when the press
+ends.
+
+### Version requirements
+
+`requires` names the kit versions an entry was written against, as npm-style
+ranges: `{ core: '^1.7' }`. The surface checks it when the entry installs. A
+mismatch warns in development; `<SceneCanvas versionCheck="strict">` throws
+instead, and `"off"` skips the check. Only core reports its version today, so
+`core` is the only key.
+
+The matcher reads `^`, `~`, the comparison operators, partial versions (`1.7`,
+`1.x`, `*`), space for "and" and `||` for "or", but not hyphen ranges. A
+prerelease sorts below its release. `satisfiesRange(version, range)` and
+`checkRequirements(requires)` are the same check, exported for a host that
+installs entries itself.
 
 ### Eligibility
 
