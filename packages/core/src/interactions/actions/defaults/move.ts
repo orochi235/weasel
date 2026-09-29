@@ -118,11 +118,12 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   // The LayoutStrategy contract is world-framed, so every pose handed to it
   // below is composed to world; reflow results are rebased back to local.
   const d = scratch.projection;
+  const grabAdapter = grabbedPoseAdapter(scratch, poseAdapter);
   const dragged: DraggedChild[] = [];
   for (const id of scratch.ids) {
     const node = scene.get(id);
     if (!node) continue;
-    const startWorld = composeWorldPose(poseAdapter, id as string, pc.compose);
+    const startWorld = composeWorldPose(grabAdapter, id as string, pc.compose);
     const g = poseDescriptorForNode(d, node);
     const world = translatePoseViaDescriptor(startWorld, dx, dy, g);
     const b = g.getBounds(world);
@@ -359,6 +360,8 @@ function translateCommitOps(
     const node = scratch.scene.get(id);
     if (!node) continue;
     const l = localDelta(scratch, id, dx, dy);
+    const c = scratch.caught.get(id);
+    if (c) { l.dx += c.dx; l.dy += c.dy; }
     const m: Mat3 = [1, 0, 0, 1, l.dx, l.dy];
     // The authored pose, not the captured one: a derived node's captured pose
     // is its derivation, and writing that back would lose the placeholder undo
@@ -445,6 +448,68 @@ function scenePoseAdapter(
   };
 }
 
+/** `adapter`, except that an id caught mid-glide answers with the pose it was
+ *  grabbed at — where the drag measures it from. */
+function grabbedPoseAdapter(
+  scratch: MoveScratch,
+  adapter: PoseAdapter<unknown>,
+): PoseAdapter<unknown> {
+  if (scratch.caught.size === 0) return adapter;
+  return {
+    ...adapter,
+    getPose: (id) => (scratch.caught.has(id as NodeId)
+      ? scratch.startPoses.get(id as NodeId)
+      : adapter.getPose(id)),
+  };
+}
+
+/** Where a dragged id was shown when the gesture ended: its stored pose then,
+ *  the parent that pose was stored under, and the same pose in world. */
+interface Released {
+  local: unknown;
+  parent: NodeId | null;
+  world: unknown;
+}
+
+function releasedPoses(scratch: MoveScratch): Map<NodeId, Released> {
+  const out = new Map<NodeId, Released>();
+  const { scene, pc } = scratch;
+  const adapter = scenePoseAdapter(scene);
+  for (const id of scratch.startPoses.keys()) {
+    const local = scratch.previews.get(id);
+    if (local === undefined) continue;
+    const parent = scene.get(id)?.parent ?? null;
+    const frame = frameAtOrAbove(adapter, parent);
+    const world = frame === null ? local : pc.compose(composeWorldPose(adapter, frame, pc.compose), local);
+    out.set(id, { local, parent, world });
+  }
+  return out;
+}
+
+/** Hand every dragged id to the reflow transition to glide from where it was
+ *  let go onto the pose the document now holds. An id caught mid-glide that
+ *  never moved resumes settling from where it was held. */
+function landReleased(
+  scratch: MoveScratch,
+  reflow: NonNullable<LayoutDep['reflow']>,
+  released: Map<NodeId, Released>,
+): void {
+  const { scene, pc } = scratch;
+  const adapter = scenePoseAdapter(scene);
+  for (const id of scratch.startPoses.keys()) {
+    const r = released.get(id);
+    if (!r) {
+      if (scratch.caught.has(id)) reflow.settle(id as string);
+      continue;
+    }
+    const parent = scene.get(id)?.parent ?? null;
+    const from = parent === r.parent
+      ? r.local
+      : rebaseLocalPose(adapter, r.world, parent, pc.compose, pc.decompose);
+    reflow.settle(id as string, { from });
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Internal scratch
 // ---------------------------------------------------------------------------
@@ -505,6 +570,9 @@ interface MoveScratch {
   reflowTargets: Map<NodeId, unknown>;
   /** Every id handed to `layout.reflow` this gesture and not yet settled. */
   gliding: Set<NodeId>;
+  /** Ids grabbed mid-glide, with how far (stored frame) the pose shown at the
+   *  grab stood from the document's. The drag starts from what was shown. */
+  caught: Map<NodeId, { dx: number; dy: number }>;
   /** Pose descriptor captured at drag start. */
   projection: PoseDescriptor<unknown>;
   /** Behaviors from `opts.behaviors`; empty array when none supplied. */
@@ -710,13 +778,22 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       const cascadeIds: NodeId[] = [];
       const seen = new Set<NodeId>();
       const queue: NodeId[] = [];
-      // A node still gliding from an earlier reflow is picked up where its
-      // document says it is, not mid-glide.
+      // A node still gliding from an earlier reflow is held where it is
+      // shown, and the drag starts from there.
       const reflow = layout?.reflow ?? null;
+      const caught = new Map<NodeId, { dx: number; dy: number }>();
+      const hold = (id: NodeId, node: NonNullable<ReturnType<typeof scene.get>>): void => {
+        const shown = reflow?.poseOf(id as string);
+        if (!reflow || shown === undefined) return;
+        reflow.glide(id as string, shown, { from: shown });
+        const at = projection.getBounds(shown);
+        const home = projection.getBounds(documentPose(scene, node));
+        caught.set(id, { dx: at.x - home.x, dy: at.y - home.y });
+      };
       for (const id of ids) {
         const node = scene.get(id);
         if (!node) continue;
-        reflow?.stop(id as string);
+        hold(id, node);
         startPoses.set(id, effectivePose(scene, node));
         seen.add(id);
         queue.push(id);
@@ -728,7 +805,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           seen.add(childId);
           const childNode = scene.get(childId);
           if (!childNode) continue;
-          reflow?.stop(childId as string);
+          hold(childId, childNode);
           startPoses.set(childId, effectivePose(scene, childNode));
           cascadeIds.push(childId);
           queue.push(childId);
@@ -789,6 +866,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         overrideEntries: new Map<NodeId, { pose: unknown }>(),
         reflowTargets: new Map<NodeId, unknown>(),
         gliding: new Set<NodeId>(),
+        caught,
         projection,
         behaviors,
         gestureCtx,
@@ -949,7 +1027,9 @@ export const moveAction: Action & { requires: string[] } = inPlane({
                   pose: composeWorldPose(commitAdapter, cid as string, pc.compose),
                 }));
             for (const id of leaving) {
-              const startWorld = composeWorldPose(commitAdapter, id as string, pc.compose);
+              const startWorld = composeWorldPose(
+                grabbedPoseAdapter(scratch, commitAdapter), id as string, pc.compose,
+              );
               const ops = srcLayout.releaseDrop!(srcContainer, srcChildren, {
                 id: id as string,
                 originPose: startWorld,
@@ -1095,6 +1175,8 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
+          const reflow = scratch.layout?.reflow ?? null;
+          const released = reflow ? releasedPoses(scratch) : null;
           try {
             // On cancel the document was never mutated — dropping the
             // ephemeral overrides below restores the committed poses.
@@ -1106,9 +1188,12 @@ export const moveAction: Action & { requires: string[] } = inPlane({
             dropPreviewOverrides(scratch);
             scratch.previews.clear();
             // Also after the commit: each glide settles onto the pose the
-            // document now holds, or back home on a cancel.
-            const reflow = scratch.layout?.reflow;
-            if (reflow) for (const id of scratch.gliding) reflow.settle(id as string);
+            // document now holds, or back home on a cancel — the dragged ids
+            // from where they were let go.
+            if (reflow && released) {
+              for (const id of scratch.gliding) reflow.settle(id as string);
+              landReleased(scratch, reflow, released);
+            }
             scratch.gliding.clear();
             lifecycle.end(committed);
           }

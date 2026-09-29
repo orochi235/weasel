@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../core/geometry/poseDescriptor';
-import { documentPose, effectivePose, type PoseSource } from '../core/scene/effectivePose';
+import { documentPose, effectivePose, type PosedNode, type PoseSource } from '../core/scene/effectivePose';
 import type { NodeId, PoseOverride, PoseOverrides } from '../core/scene/types';
 import type { ReflowTransition } from '../layout/types';
 import type { AnimationHandle, Animator, EasingSpec, SpringPresetName } from './types';
@@ -140,27 +140,47 @@ function makeReflow<TPose>(
     unsubscribeIfIdle();
   };
 
+  // The glide for `id`, created if absent, starting from `from` when given,
+  // and published over whatever override is showing the node.
+  const claim = (
+    id: string,
+    node: PosedNode<TPose>,
+    g: Glide<TPose> | undefined,
+    from: TPose | undefined,
+  ): Glide<TPose> => {
+    if (!g) {
+      const start = from ?? effectivePose(scene, node);
+      g = { entry: { pose: start }, target: start, settling: false, handle: null };
+      glides.set(id, g);
+    } else if (from !== undefined) {
+      g.entry.pose = from;
+    }
+    if (scene.overrides.get(id as NodeId) !== g.entry) scene.overrides.set(id as NodeId, g.entry);
+    return g;
+  };
+
   return {
-    glide(id, pose) {
+    glide(id, pose, opts) {
       const node = scene.get(id as NodeId);
       if (!node) return;
-      let g = glides.get(id);
-      if (g && !g.settling && samePose(g.target, pose)) return;
-      if (!g) {
-        g = { entry: { pose: effectivePose(scene, node) }, target: pose, settling: false, handle: null };
-        glides.set(id, g);
-      }
-      if (scene.overrides.get(id as NodeId) !== g.entry) scene.overrides.set(id as NodeId, g.entry);
-      run(id, g, pose, false);
-    },
-    settle(id) {
+      const from = opts?.from;
       const g = glides.get(id);
-      if (!g) return;
+      if (g && from === undefined && !g.settling && samePose(g.target, pose)) return;
+      run(id, claim(id, node, g, from), pose, false);
+    },
+    settle(id, opts) {
+      const from = opts?.from;
+      const g = glides.get(id);
+      if (!g && from === undefined) return;
       const node = scene.get(id as NodeId);
       if (!node) { stop(id); return; }
       const home = documentPose(scene, node);
-      if (g.settling && samePose(g.target, home)) return;
-      run(id, g, home, true);
+      if (g && from === undefined) {
+        if (g.settling && samePose(g.target, home)) return;
+        run(id, g, home, true);
+        return;
+      }
+      run(id, claim(id, node, g, from), home, true);
     },
     stop,
     poseOf: (id) => glides.get(id)?.entry.pose,

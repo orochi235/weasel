@@ -66,7 +66,9 @@ export type LayoutDropTargetMode = 'innermost' | 'topmost' | 'region';
  * Carries a layout's sibling reflow to its targets over time rather than in
  * one frame. `moveAction` hands every sibling a drag displaces to `glide`
  * instead of snapping it, and `settle`s each one when it stops reflowing or
- * the gesture ends. What the node shows meanwhile is published through the
+ * the gesture ends; the dragged nodes themselves settle from where they were
+ * let go, and a node grabbed mid-glide is held where it is shown and dragged
+ * from there. What the node shows meanwhile is published through the
  * scene's pose overrides; the document is never written.
  *
  * `useAnimatedReflow` builds one over the animator. Supply it through
@@ -75,14 +77,25 @@ export type LayoutDropTargetMode = 'innermost' | 'topmost' | 'region';
 export interface ReflowTransition<TPose = unknown> {
   /** Move what `id` shows toward `pose`, in the node's stored frame. A glide
    *  already running is retargeted from where it is now; naming the pose it
-   *  is already heading for changes nothing. */
-  glide(id: string, pose: TPose): void;
-  /** Glide `id` onto its document pose, then stop overriding it. */
-  settle(id: string): void;
+   *  is already heading for changes nothing. With `from`, the glide starts
+   *  over from that pose instead. */
+  glide(id: string, pose: TPose, opts?: ReflowGlideOptions<TPose>): void;
+  /** Glide `id` onto its document pose, then stop overriding it. Without
+   *  `from` this only touches a node it is already moving; with `from` it
+   *  takes the node over from that pose, whatever is showing it. */
+  settle(id: string, opts?: ReflowGlideOptions<TPose>): void;
   /** Stop overriding `id` now, wherever it is. */
   stop(id: string): void;
   /** What `id` is being shown at, or `undefined` when this is not moving it. */
   poseOf(id: string): TPose | undefined;
+}
+
+/** Where a {@link ReflowTransition} glide starts. */
+export interface ReflowGlideOptions<TPose = unknown> {
+  /** The pose to start from, in the node's stored frame — where something
+   *  else was last showing it, such as a drag at its release. Default:
+   *  wherever the node is shown now. */
+  from?: TPose;
 }
 
 /** The container a layout strategy is arranging children within. */
