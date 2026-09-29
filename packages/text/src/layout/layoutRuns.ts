@@ -16,8 +16,9 @@
  * are tracked like any other character; a newline is not (it consumes no
  * advance).
  *
- * Word wrap is applied when `maxWidth` is finite: words are committed to
- * a new line when they would exceed the current line width. Forced line
+ * Word wrap is applied when `maxWidth` is finite: words — the text between
+ * UAX #14 break opportunities — are committed to a new line when they would
+ * exceed the current line width. Forced line
  * breaks are emitted for `\n` codepoints. Every run on a line shares one
  * baseline, sunk to clear the tallest run's ascent, so mixing sizes or faces
  * aligns them the way inline text aligns everywhere else; line height is
@@ -60,6 +61,7 @@ import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 import type { BidiResolver } from './bidiSeam';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorationMetrics';
 import { graphemeEnds } from '../measure/graphemes';
+import { lineBreakOpportunities } from './lineBreak/lineBreaks';
 
 /** One textured glyph quad, origin-relative — see the header. */
 export interface LaidOutQuad {
@@ -792,9 +794,12 @@ export function layoutRuns(
     warnLogicalRtlOnce();
   }
 
+  const breaks = Number.isFinite(opts.maxWidth) ? lineBreakOpportunities(entries.map((e) => e.cp)) : null;
+
   // 2. Walk entries, accumulating lines bounded by maxWidth when finite.
-  //    A "word" is a maximal run of non-space, non-newline entries; after
-  //    each word, decide whether it fits on the current line.
+  //    A "word" runs from a non-space entry to the next UAX #14 break
+  //    opportunity, spaces after it included; after each word, decide
+  //    whether it fits on the current line.
   interface Line {
     entries: Entry[];
     width: number;
@@ -843,15 +848,18 @@ export function layoutRuns(
       i++;
       continue;
     }
-    // Accumulate the upcoming word: entries up to next space/newline/EOR.
+    // Accumulate the upcoming word. Only its ink has to fit: the spaces
+    // closing it hang.
     let j = i;
     let wordWidth = 0;
-    while (j < entries.length && !entries[j].isSpace && !entries[j].isNewline) {
+    let inkWidth = 0;
+    while (j < entries.length && !entries[j].isNewline && (j === i || !breaks || breaks[j] === 0)) {
       const w = entries[j];
       wordWidth += w.kerningBefore + w.advance + w.tracking;
+      if (!w.isSpace) inkWidth = wordWidth;
       j++;
     }
-    if (Number.isFinite(opts.maxWidth) && cur.width + wordWidth > opts.maxWidth && cur.entries.length > 0) {
+    if (breaks && cur.width + inkWidth > opts.maxWidth && cur.entries.length > 0) {
       cur.wrapped = true;
       commitLine();
     }

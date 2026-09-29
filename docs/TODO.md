@@ -908,7 +908,9 @@ only story runner in the repo.
   Either the drop should reparent it out, or the demo's containers should not clip. Seen
   in headless Chromium 2026-09-29; predates the reflow glide work.
 
-- **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
+- **(P3) `layoutMarkdown` wraps only at spaces.** `packages/text/src/markdownText.ts` finds its break points with `text.split(/ /)`, while `layoutRuns` breaks at UAX #14 opportunities, so a markdown line never breaks after a hyphen or between CJK characters and wraps differently from the same text in a plain text node. Its word loop should take its breaks from `lineBreakOpportunities`, the way `layoutRuns` does.
+
+- **(P3) `layoutRuns` forces a line break only at `\n`.** UAX #14 also makes CR, VT, FF, NEL, U+2028 and U+2029 hard breaks, and `lineBreakOpportunities` reports them as `BREAK_MANDATORY`, but the wrap starts a new line only at a newline entry, so none of them ends a line on the canvas. Whether the edit overlay breaks at them is unchecked.
 
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 

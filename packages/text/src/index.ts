@@ -34,6 +34,9 @@ export type { TextTransform, RunSourceMap, TransformedRunText } from './runs/tex
 
 export { layoutRuns } from './layout/layoutRuns';
 export {
+  lineBreakOpportunities, NO_BREAK, BREAK_ALLOWED, BREAK_MANDATORY,
+} from './layout/lineBreak/lineBreaks';
+export {
   cachedLayoutRuns,
   LAYOUT_CACHE_VARIANT_LIMIT,
   LAYOUT_CACHE_STRUCTURAL_LIMIT,
