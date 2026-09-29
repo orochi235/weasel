@@ -69,13 +69,6 @@ const penPlus = {
   ],
 };
 
-// ── bucket ───────────────────────────────────────────────────────────────
-// Parked. Three attempts failed to read at 24px: a plain tapered pail is a
-// pencil silhouette, and the handle that would fix it needs geometry worth
-// sketching rather than guessing. No fill tool consumes it yet, so it is not
-// holding anything up. The `stroke` role it drove is kept — the rotate cursor
-// needs it.
-
 // ── eyedropper ───────────────────────────────────────────────────────────
 // Bulb upper-right, narrow stem to a tip at lower-left. The bulb is a real
 // disc, not a squared cap: with a cap it reads as a pencil ferrule and the

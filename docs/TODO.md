@@ -211,10 +211,6 @@ Priority tags:
 All four arcs of `docs/superpowers/specs/2026-09-03-cursor-system-design.md`
 have shipped. What remains:
 
-- **(P3) The `bucket` glyph is parked.** Three attempts failed to read at 24px —
-  a tapered pail with a spout is a pencil silhouette, and the handle that would
-  fix it wants a sketch rather than another guess. Nothing is blocked: no fill
-  tool consumes it. See the note in `packages/cursor/scripts/glyphs/draw.mjs`.
 - **(P3) Cursor rasterization is measured only in Chrome.** Headless WebKit
   and Firefox parse, fetch and pick `image-set()` candidates exactly as Chrome
   does (spec, "WebKit and Firefox, headless"), but whether they rasterize an
