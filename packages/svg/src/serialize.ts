@@ -5,9 +5,9 @@
  * label. Gradient paints are gathered into a single `<defs>` block.
  */
 
-import type { Path, Stroke, StrokeAlign } from '@weasel-js/core';
+import type { FontRequest, Path, Stroke, StrokeAlign } from '@weasel-js/core';
 import {
-  boundsOfPath, resolveRuns, resolveScreenLength, resolveTextStyle, scriptMetricsFor,
+  boundsOfPath, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor,
 } from '@weasel-js/core';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
@@ -132,7 +132,7 @@ function metaElementsXml(meta: NamespaceMeta | undefined, namespaces: Record<str
   return out;
 }
 
-function registerPaintServers(nodes: SvgNode[], registry: PaintServerRegistry): void {
+export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintServerRegistry): void {
   for (const n of nodes) {
     if (n.kind === 'group') {
       if (n.clip) registry.clipId(n.clip);
@@ -563,12 +563,18 @@ function textXml(
   return `<text ${attrs.join(' ')}${metaAttrs}>${body}${metaEls}</text>`;
 }
 
-/** The size `script` gives `run` in its resolved face — the one it renders at. */
-function presetSize(
-  run: import('@weasel-js/core').StyledRun, script: 'super' | 'sub', style: SvgTextNode['style'],
-): number {
-  const r = resolveRuns([run], resolveTextStyle(style))[0];
-  return scriptMetricsFor(r.fontFamily, r.fontWeight, r.fontStyle)[script].size;
+/**
+ * The face whose metrics size `run`'s script, when the writer reads them: a
+ * run that overrode only the rise has no `baseline-shift` keyword left to
+ * carry the preset's size, so the size is spelled out from the face it
+ * renders in. `undefined` for every other run.
+ */
+export function scriptSizeFace(
+  run: import('@weasel-js/core').StyledRun, style: SvgTextNode['style'],
+): Required<FontRequest> | undefined {
+  if (run.script == null || run.baselineShift == null) return undefined;
+  const face = resolveRunFace(run, resolveTextStyle(style));
+  return { family: face.fontFamily, weight: face.fontWeight, style: face.fontStyle };
 }
 
 function runXml(
@@ -592,8 +598,9 @@ function runXml(
   // so a run that overrode only the rise has no keyword left to say the size
   // with and must spell it out — without this the superscript comes back
   // full-size at a raised baseline.
-  const presetScale = run.script != null && run.baselineShift != null
-    ? presetSize(run, run.script, style)
+  const face = scriptSizeFace(run, style);
+  const presetScale = face && run.script
+    ? scriptMetricsFor(face.family, face.weight, face.style)[run.script].size
     : undefined;
   const scale = run.fontScale ?? presetScale;
   if (run.fontSize != null) attrs.push(`font-size="${trimNumber(resolveScreenLength(run.fontSize, 1))}"`);

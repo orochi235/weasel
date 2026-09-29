@@ -157,6 +157,19 @@ export function isBoldWeight(w: number | string): boolean {
   return numericWeight(w) >= 600;
 }
 
+/** The face a run is set in — its family, weight and style, each falling
+ *  back to the node's. Reads no font registry, so asking loads nothing. */
+export function resolveRunFace(
+  run: StyledRun,
+  style: Pick<ResolvedTextStyle, 'fontFamily' | 'fontWeight' | 'fontStyle'>,
+): { fontFamily: string; fontWeight: number; fontStyle: FontStyle } {
+  return {
+    fontFamily: run.fontFamily ?? style.fontFamily,
+    fontWeight: run.fontWeight ?? (run.bold ? 700 : numericWeight(style.fontWeight)),
+    fontStyle: run.italic ? 'italic' : style.fontStyle,
+  };
+}
+
 /** Resolve each run's styling against the node's text style, filling in
  *  everything the run left inherited. `viewScale` resolves a run's own
  *  `{ px }` size or spacing; the inherited ones arrived already resolved on
@@ -167,7 +180,6 @@ export function resolveRuns(
   viewScale = 1,
 ): ResolvedRun[] {
   const out: ResolvedRun[] = [];
-  const baseWeight = numericWeight(style.fontWeight);
   const shown = transformRunTexts(
     runs.map((r) => r.text),
     runs.map((r) => r.textTransform ?? style.textTransform),
@@ -176,9 +188,7 @@ export function resolveRuns(
     const run = runs[i];
     let { text, srcMap } = shown[i];
     const scriptKey = run.script ?? style.script;
-    const fontFamily = run.fontFamily ?? style.fontFamily;
-    const fontWeight = run.fontWeight ?? (run.bold ? 700 : baseWeight);
-    const fontStyle = run.italic ? 'italic' : style.fontStyle;
+    const { fontFamily, fontWeight, fontStyle } = resolveRunFace(run, style);
     const script = scriptKey ? scriptMetricsFor(fontFamily, fontWeight, fontStyle)[scriptKey] : undefined;
     // Against the inherited size, not the run's own: a superscript that also
     // shrank its rise would climb less the smaller it got.
