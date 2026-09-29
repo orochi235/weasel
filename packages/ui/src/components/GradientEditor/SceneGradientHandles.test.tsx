@@ -13,6 +13,7 @@ import {
   type RectPose,
   type Stroke,
 } from '@weasel-js/core';
+import { seedMeshPatch, type MeshGradientFill } from '@weasel-js/core/mesh';
 import { SceneGradientHandles } from './SceneGradientHandles';
 
 const STOPS = [
@@ -180,5 +181,25 @@ describe('SceneGradientHandles', () => {
       action: 'setStroke',
       paint: { to: { x: 0.5, y: 0.5 }, units: 'bounds' },
     });
+  });
+
+  it('puts mesh handles on the node box for a mesh fill', () => {
+    const scene = sceneWith(BOX, { fill: seedMeshPatch('#3366ccff') as unknown as FillStyle });
+    render(<Overlay scene={scene} slot="fill" seen={[]} />);
+    expectAt('Patch 1 corner 3', 200, 100);
+    expect(screen.queryByLabelText('Gradient start')).toBeNull();
+  });
+
+  it('commits a dragged mesh corner through setFill in the bounds frame', () => {
+    const seen: Record<string, unknown>[] = [];
+    const scene = sceneWith(BOX, { fill: seedMeshPatch('#3366ccff') as unknown as FillStyle });
+    render(<Overlay scene={scene} slot="fill" seen={seen} />);
+    drag('Patch 1 corner 3', { x: 100, y: 50 });
+
+    const last = seen.at(-1) as { action: string; paint: MeshGradientFill };
+    expect(last.action).toBe('setFill');
+    expect(last.paint.fill).toBe('mesh-gradient');
+    expect(last.paint.units).toBe('bounds');
+    expect(last.paint.patches[0].points[6]).toEqual({ x: 0.5, y: 0.5 });
   });
 });

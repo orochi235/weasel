@@ -24,3 +24,12 @@ export {
   type MeshPoint,
 } from './surface';
 export { bakeMesh, meshBounds, MESH_BAKE_SIZE, type BakedMesh, type MeshBox } from './bake';
+export {
+  meshGuides,
+  meshHandles,
+  moveMeshHandle,
+  type MeshGuides,
+  type MeshHandle,
+  type MeshHandleKind,
+  type MeshPointRef,
+} from './handles';

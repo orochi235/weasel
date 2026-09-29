@@ -1,14 +1,7 @@
-import { useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
-import { useHandleDrag, gradientGeometry, type GradientFill } from '@weasel-js/core';
-import s from './GradientHandles.module.css';
-
-/** Structural, and deliberately not exported — `Plot2D` and `CurveEditor`
- *  each publish their own `Point`, and a third would only be ambiguous at
- *  the package barrel. Consumers pass any `{ x, y }`. */
-interface Point {
-  x: number;
-  y: number;
-}
+import { type ReactElement, type ReactNode } from 'react';
+import { gradientGeometry, type GradientFill } from '@weasel-js/core';
+import { DragPoint, Guide, HandleOverlay, type EditPhase, type OverlayPoint as Point } from './handleOverlay';
+import s from './handleOverlay.module.css';
 
 /**
  * Props for {@link GradientHandles}. `onInput` fires throughout a drag and
@@ -60,13 +53,9 @@ export function GradientHandles(props: GradientHandlesProps): ReactElement {
   const { value, toScreen, toLocal, onInput, onChange, width, height, className } = props;
 
   return (
-    <svg
-      className={[s.overlay, className].filter(Boolean).join(' ')}
-      width={width}
-      height={height}
-    >
+    <HandleOverlay width={width} height={height} className={className}>
       {renderForKind(value, toScreen, toLocal, onInput, onChange)}
-    </svg>
+    </HandleOverlay>
   );
 }
 
@@ -77,7 +66,7 @@ function renderForKind(
   onInput: ((next: GradientFill) => void) | undefined,
   onChange: (next: GradientFill) => void,
 ): ReactNode {
-  const emit = (next: GradientFill, phase: 'input' | 'commit'): void => {
+  const emit = (next: GradientFill, phase: EditPhase): void => {
     if (phase === 'input') onInput?.(next);
     else onChange(next);
   };
@@ -89,11 +78,13 @@ function renderForKind(
       <>
         <Guide x1={from.x} y1={from.y} x2={to.x} y2={to.y} />
         <DragPoint
+          radius={HANDLE_RADIUS}
           at={from}
           label="Gradient start"
           onDrag={(p, phase) => emit({ ...value, from: toLocal(p) }, phase)}
         />
         <DragPoint
+          radius={HANDLE_RADIUS}
           at={to}
           label="Gradient end"
           onDrag={(p, phase) => emit({ ...value, to: toLocal(p) }, phase)}
@@ -112,11 +103,13 @@ function renderForKind(
       <>
         <circle className={s.guide} cx={center.x} cy={center.y} r={screenRadius} />
         <DragPoint
+          radius={HANDLE_RADIUS}
           at={center}
           label="Gradient center"
           onDrag={(p, phase) => emit({ ...value, center: toLocal(p) }, phase)}
         />
         <DragPoint
+          radius={HANDLE_RADIUS}
           at={edge}
           label="Gradient radius"
           onDrag={(p, phase) => {
@@ -139,11 +132,13 @@ function renderForKind(
     <>
       <Guide x1={center.x} y1={center.y} x2={tip.x} y2={tip.y} />
       <DragPoint
+        radius={HANDLE_RADIUS}
         at={center}
         label="Gradient center"
         onDrag={(p, phase) => emit({ ...value, center: toLocal(p) }, phase)}
       />
       <DragPoint
+        radius={HANDLE_RADIUS}
         at={tip}
         label="Gradient angle"
         onDrag={(p, phase) => {
@@ -159,63 +154,4 @@ function renderForKind(
 /** A radius of zero divides by zero in the shader's `t`; keep it off the floor. */
 const MIN_RADIUS = 1;
 
-function Guide(props: { x1: number; y1: number; x2: number; y2: number }): ReactElement {
-  return <line className={s.guide} {...props} />;
-}
-
-function DragPoint({
-  at,
-  label,
-  onDrag,
-}: {
-  at: Point;
-  label: string;
-  onDrag: (p: Point, phase: 'input' | 'commit') => void;
-}): ReactElement {
-  const start = useRef<Point>(at);
-  const drag = useHandleDrag<SVGCircleElement>({
-    onStart: () => { start.current = at; },
-    onMove: (p) => { onDrag(p, 'input'); },
-    onEnd: ({ point, moved }) => {
-      // A press that never moved is not an edit and must not write anything.
-      if (moved) onDrag(point, 'commit');
-    },
-    // An abandoned gesture is not an edit either — put the live preview back
-    // where it started rather than committing where it was left.
-    onCancel: () => { onDrag(start.current, 'input'); },
-  });
-  const onKeyDown = (e: ReactKeyboardEvent<SVGCircleElement>): void => {
-    const amount = e.shiftKey ? KEY_STEP * 10 : KEY_STEP;
-    let dx = 0;
-    let dy = 0;
-    if (e.key === 'ArrowLeft') dx = -amount;
-    else if (e.key === 'ArrowRight') dx = amount;
-    else if (e.key === 'ArrowUp') dy = -amount;
-    else if (e.key === 'ArrowDown') dy = amount;
-    else return;
-    e.preventDefault();
-    const next = { x: at.x + dx, y: at.y + dy };
-    onDrag(next, 'input');
-    onDrag(next, 'commit');
-  };
-  return (
-    <circle
-      className={s.handle}
-      cx={at.x}
-      cy={at.y}
-      r={HANDLE_RADIUS}
-      // Not `slider`: the handle carries a 2-D position, not one value, so
-      // it has no `aria-valuenow` to honor the role's contract with.
-      role="button"
-      aria-label={label}
-      tabIndex={0}
-      onKeyDown={onKeyDown}
-      {...drag}
-    />
-  );
-}
-
 const HANDLE_RADIUS = 7;
-
-/** One arrow-key step, in overlay pixels. */
-const KEY_STEP = 1;

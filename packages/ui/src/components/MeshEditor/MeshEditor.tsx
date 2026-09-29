@@ -30,8 +30,8 @@ export interface MeshEditorProps {
  * Editor for a mesh gradient's colors.
  *
  * Geometry is absent for the same reason it is absent from `GradientEditor`:
- * a patch's twelve control points are a thing to drag on the artwork, not a
- * column of numbers in a panel. What is left is what a panel is good at — the
+ * a patch's twelve control points are a thing to drag on the artwork
+ * (`MeshHandles`), not a column of numbers in a panel. What is left is what a panel is good at — the
  * color at each corner, and the space the four of them blend through.
  *
  * Corners are numbered in the patch's own walk order, which is the order the

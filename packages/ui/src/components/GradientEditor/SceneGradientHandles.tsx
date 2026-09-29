@@ -12,6 +12,8 @@ import {
   type Stroke,
   type View,
 } from '@weasel-js/core';
+import { isMeshGradientFill, type MeshGradientFill } from '@weasel-js/core/mesh';
+import { MeshHandles } from '../MeshEditor/MeshHandles';
 import { GradientHandles } from './GradientHandles';
 
 /** The paint slots a node carries. Either may hold a gradient, and each has
@@ -46,12 +48,13 @@ export interface SceneGradientHandlesProps<
 }
 
 /**
- * Scene-aware `GradientHandles`: on-canvas geometry handles for the gradient
- * in one node's `fill` or `stroke`, committed through the `setFill` /
- * `setStroke` actions as a single undo entry per drag.
+ * Scene-aware paint handles: on-canvas geometry handles for the gradient in
+ * one node's `fill` or `stroke` — `GradientHandles` for the three ramps,
+ * `MeshHandles` for a mesh — committed through the `setFill` / `setStroke`
+ * actions as a single undo entry per drag.
  *
- * Renders nothing unless the targeted slot holds a gradient. The node stores
- * its gradient in `units: 'bounds'` — fractions of its own box, so the paint
+ * Renders nothing unless the targeted slot holds a gradient or a mesh. The
+ * node stores its gradient in `units: 'bounds'` — fractions of its own box, so the paint
  * survives pan, zoom and resize — which is not a frame polar math can work
  * in; the handles get it resolved onto the box and every edit is normalized
  * back on the way out.
@@ -68,27 +71,35 @@ export function SceneGradientHandles<
   const frame = useNodeOverlayFrame(scene, containerRef, nodeId, { view });
   const edit = useOngoingAction(slot === 'fill' ? 'setFill' : 'setStroke');
 
-  const gradient = frame ? gradientInSlot(paintOf(scene, nodeId, slot)) : null;
-  if (!frame || !gradient) return null;
+  const paint = frame ? paintOf(scene, nodeId, slot) : null;
+  if (!frame || !paint) return null;
 
-  const dispatch = (next: GradientFill, phase: 'input' | 'commit'): void => {
-    const paint = fillToBoundsFrame(next, frame.box);
-    if (phase === 'commit') edit.commit({ paint });
-    else edit.input({ paint });
+  const dispatch = (next: FillStyle, phase: 'input' | 'commit'): void => {
+    const normalized = fillToBoundsFrame(next, frame.box);
+    if (phase === 'commit') edit.commit({ paint: normalized });
+    else edit.input({ paint: normalized });
+  };
+  const common = {
+    toScreen: frame.toScreen,
+    toLocal: frame.toLocal,
+    width: frame.width,
+    height: frame.height,
+    className,
+    onInput: (next: FillStyle) => dispatch(next, 'input'),
+    onChange: (next: FillStyle) => dispatch(next, 'commit'),
   };
 
-  return (
-    <GradientHandles
-      value={fillInPoseFrame(gradient, frame.box) as GradientFill}
-      toScreen={frame.toScreen}
-      toLocal={frame.toLocal}
-      width={frame.width}
-      height={frame.height}
-      className={className}
-      onInput={(next) => dispatch(next, 'input')}
-      onChange={(next) => dispatch(next, 'commit')}
-    />
-  );
+  if (isGradientFill(paint)) {
+    return <GradientHandles value={fillInPoseFrame(paint, frame.box) as GradientFill} {...common} />;
+  }
+  if (isMeshGradientFill(paint)) {
+    const resolved = fillInPoseFrame(paint, frame.box) as unknown as MeshGradientFill;
+    // Still in the bounds frame means the mesh kind has not loaded, and
+    // handles drawn now would sit in fractions of the box.
+    if (resolved.units === 'bounds') return null;
+    return <MeshHandles value={resolved} {...common} />;
+  }
+  return null;
 }
 
 function paintOf<TData extends PaintedNodeData, TLayer extends string, TPose extends RectPose>(
@@ -100,8 +111,4 @@ function paintOf<TData extends PaintedNodeData, TLayer extends string, TPose ext
   const data = (scene.nodes as ReadonlyMap<string, { data: TData }>).get(nodeId)?.data;
   if (!data) return undefined;
   return slot === 'fill' ? data.fill : data.stroke?.paint;
-}
-
-function gradientInSlot(paint: FillStyle | null | undefined): GradientFill | null {
-  return isGradientFill(paint) ? paint : null;
 }

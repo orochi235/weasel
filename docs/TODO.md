@@ -322,11 +322,12 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner
-  colors and the blend space; a patch's twelve control points are only reachable
-  by writing the paint by hand, which is where gradients were before
-  `GradientHandles`. `SceneGradientHandles` is the shape to copy — it already
-  resolves the bounds frame and commits through the `setFill` action.
+- **(P3) `GradientHandles` still draws its handles at a literal radius.**
+  `MeshHandles` sizes its corners and controls from `--wzl-handle-size-lg` and
+  `--wzl-handle-size`; `GradientHandles` keeps `HANDLE_RADIUS = 7`, so a ramp's
+  endpoints are 14px across while a mesh corner beside them is 10px. Moving it
+  onto the family is a visual call that wants a browser — it shrinks every
+  gradient handle.
 
 - **(P3) A mesh paint bakes at a fixed 256 texels.** Enough for a smooth field at
   shape size, but a mesh filling a poster is resolution-bound in a way the three
