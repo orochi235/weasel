@@ -1215,15 +1215,17 @@ one dead `const` and four stale disable directives.
   benchmarks on both revisions and posts the `npm run perf:compare` table as a
   comment without failing the build. Mike's call.
 
-- **(P3) Two microbenchmarks time their own setup, and vitest 5 no longer
-  forces them to.** `tessellate.bench.ts`'s `getMesh miss` resets the cache
-  inside the timed body, and `scene-ops.bench.ts`'s cold `renderOrder` walk is
-  recovered by subtracting a separately-timed layer reorder. vitest 4 gave
-  `bench()` no per-iteration hook; vitest 5 passes tinybench's `beforeEach`
-  through the options argument, and it runs untimed before every iteration.
-  Moving both setups into it measures the thing directly, but renames or drops
-  benchmarks, so it goes with a re-record of `tests/perf/bench/baseline.json`
-  on an idle machine — which also moves that file off vitest 4's shape.
+- **(P3) `tests/perf/bench/baseline.json` needs a re-record on an idle
+  machine.** It is still the 2026-08-14 run, in vitest 4's `--outputJson`
+  shape, so `lib/vitest-bench.ts` keeps a reader for that shape only for it.
+  It also predates the move of `getMesh miss`'s cache reset and the cold
+  `renderOrder` walk's layer reorder into tinybench's untimed `beforeEach`:
+  its `getMesh miss` row times the reset too, and its cold-walk group still
+  has the old row names, including `layer reorder only`, which the suite no
+  longer has. Run `npm run perf:bench:baseline` on a fleet node with no other
+  work on it (never orochi), commit both files, and delete the vitest 4 branch
+  of `readBenchReport` and its test in the same change. The 2026-09-29 attempt
+  found every node running census renders all night.
 
 - **(P2) A clipped group costs ~10 us to enter, and the stencil is now the
   larger half.** `tests/perf/clip-cost.spec.ts` separates entry's two costs by
