@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   SceneCanvas, useScene, renderSceneToPixels, defaultDrawOne, textCommand,
-  registerCanvasFont, warmFonts,
+  registerCanvasFont, warmRender,
   solid,
 } from '@weasel-js/core';
 import type { FillStyle, TextStyle, TextVerticalAlign, SceneViewDrawOne } from '@weasel-js/core';
@@ -94,8 +94,8 @@ export function RenderToPixelsDemo() {
       alphaFor: ALPHA_FOR,
     } as const;
     let live = true;
-    // The render is synchronous, so a font still fetching would draw nothing.
-    void warmFonts().catch(() => {}).then(() => {
+    // The render is synchronous, so a font or paint kind still loading would draw nothing.
+    void warmRender().catch(() => {}).then(() => {
       if (!live) return;
       const first = renderSceneToPixels(opts);
       const second = renderSceneToPixels(opts);

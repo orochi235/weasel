@@ -5,6 +5,7 @@ import {
   renderDebugSnapshot,
   SceneCanvas,
   useScene,
+  warmRender,
 } from '@weasel-js/core';
 import { gridSnapStrategy } from '@weasel-js/guides';
 import type {
@@ -82,6 +83,7 @@ export function DebugOverlayDemo() {
     const api = canvasRef.current;
     const sink = api?.getDebug();
     if (!api || !sink || !debug) return;
+    await warmRender().catch(() => {});
     const image = renderDebugSnapshot({
       scene,
       drawOne: drawBox,

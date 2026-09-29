@@ -343,13 +343,6 @@ Core five + Crop shipped. Remaining:
 
 ## Text
 
-- **(P3) labkit's annotation capture can drop a text mark's glyphs.** `stackRaster` in
-  `packages/labkit/src/annotations/capture.ts` calls the synchronous
-  `renderSceneToPixels` without `await warmFonts()`, so a capture taken before a lazily
-  registered atlas lands paints text marks as nothing. Unobserved: the overlay on screen
-  normally started that load long before. Needs a browser check that captures a text mark
-  with its font still fetching, watched failing before the one-line fix.
-
 - **(P3) `.dfont` machine faces still can't reach the outline tier.** The
   *silence* closed 2026-08-16 — `isDataForkFont` recognizes a Macintosh
   resource fork by its header offsets and `sfntFromCollection` throws by name,

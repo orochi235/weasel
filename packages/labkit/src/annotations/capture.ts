@@ -1,4 +1,4 @@
-import { asNodeId, renderSceneToPixels } from '@weasel-js/core';
+import { asNodeId, renderSceneToPixels, warmRender } from '@weasel-js/core';
 import { serializeSvg } from '@weasel-js/svg';
 import { createMarkDrawOne, type MarkDrawOptions, resolveMarkStyle } from './drawOne';
 import type { MarkScene } from './store';
@@ -174,6 +174,7 @@ async function stackRaster(
   if (base?.kind === 'image') ctx.drawImage(await loadImage(base.src), 0, 0, width, height);
   else if (base?.kind === 'canvas') ctx.drawImage(base.canvas, 0, 0, width, height);
 
+  await warmRender();
   const raster = renderSceneToPixels({
     scene,
     sourceRect: { x: 0, y: 0, width: draw.content.w, height: draw.content.h },
