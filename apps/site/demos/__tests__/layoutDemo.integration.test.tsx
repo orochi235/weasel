@@ -88,11 +88,12 @@ describe('LayoutDemo', () => {
     expect(f1After.text).not.toBe(f1Before.text);
   });
 
-  it('packs an added tile into the next free grid cell', () => {
+  it('places an added tile in the free grid cell nearest where it starts', () => {
     const { container, getByText } = render(<LayoutDemo />);
     act(() => { fireEvent.click(getByText('add tile')); });
     const tile = container.querySelector('[data-parent="G"]:not([data-testid="ld-pose-g1"])')!;
-    // g1 holds the top-left cell, so the new tile takes the top-right one.
-    expect(tile.textContent).toMatch(/:300,40$/);
+    // It starts just below the grid, level with the column split; of the two
+    // bottom cells at equal distance, the first in fill order wins.
+    expect(tile.textContent).toMatch(/:210,130$/);
   });
 });

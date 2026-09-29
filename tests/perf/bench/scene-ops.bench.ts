@@ -165,12 +165,10 @@ group('renderOrder — 1000 leaves under a container chain', (bench) => {
 
 /**
  * Both walks are cached until something structural moves, so the three groups
- * above now report a **cached** read — the array is built once and the timed
- * body only drains it. This group is what separates the two costs: both benches
- * iterate the same 10,000 ids, and only the second rebuilds first.
- *
- * The rebuild is forced by a layer reorder inside the timed body. On four
- * layers that is a two-element splice, nothing next to a 10,000-node walk.
+ * above report a **cached** read — the array is built once and the timed body
+ * only drains it. This group separates the two costs: both benches iterate the
+ * same 10,000 ids, and the second has its cache invalidated by an untimed layer
+ * reorder before every iteration.
  */
 group('renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)', (bench) => {
   const scene = layeredScene(10000, 4);
@@ -189,15 +187,8 @@ group('renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)', (be
     scene.moveLayer('L0', slot);
   };
 
-  // The invalidation is measured on its own so the walk can be recovered by
-  // subtraction:
-  //   cold walk = (reorder + drain) - reorder - drain
-  bench('drain only — cached', drain);
-  bench('layer reorder only — the invalidation', reorderLayers);
-  bench('layer reorder + drain — cold walk', () => {
-    reorderLayers();
-    drain();
-  });
+  bench('drain — cached', drain);
+  bench('drain — cold, after a layer reorder', { beforeEach: reorderLayers }, drain);
 });
 
 // Resolving ids back to nodes is what `renderOrderNodes()` exists to avoid.

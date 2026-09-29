@@ -191,16 +191,17 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
    *  renderer rasterizes the returned path into the stencil buffer and
    *  paints descendants only where it covers. */
   clipFromPose?: (pose: TPose) => Path | null;
-  /** How this container arranges its children. The scene re-applies the
-   *  strategy's `childPoses` whenever the container's child set or order
-   *  changes, or its bounds change size, and records the poses it writes in
-   *  the same undo entry as the change that caused them. A drag reads it
-   *  too — it is the layout `move` reflows and drops against. */
+  /** How this container arranges its children. Whenever the container's
+   *  child set or order changes, or its bounds change size, the scene hands
+   *  the change to the strategy — `arrive` for children that joined it,
+   *  `childPoses` otherwise — and records the poses it writes in the same
+   *  undo entry as the change. A drag reads it too: it is the layout `move`
+   *  reflows and drops against. */
   layout?: LayoutStrategy<TPose>;
 }
 
-/** A child pose a container's layout wrote — reported by
- *  {@link Scene.onReflow} — in the node's stored frame. */
+/** A pose a container's layout wrote — reported by {@link Scene.onReflow} —
+ *  in the node's stored frame. */
 export interface LayoutMove<TPose> {
   id: NodeId;
   from: TPose;
@@ -213,6 +214,9 @@ export interface LayoutFrame<TPose> {
   /** The container's bounds, from its world pose. Default: the pose's own
    *  `x`/`y`/`width`/`height`; a pose without them is not laid out. */
   bounds?(pose: TPose): ContainerBounds | null;
+  /** `pose` resized from bounds `from` to `to`, for a layout that grows its
+   *  container. Default: `to`'s fields written over the pose. */
+  remap?(pose: TPose, from: ContainerBounds, to: ContainerBounds): TPose;
   /** Omit for the absolute-pose model. A scene whose canvas composes poses
    *  (`<SceneCanvas poseComposition>`) passes the same strategy here. */
   composition?: PoseComposition<TPose>;
@@ -376,6 +380,28 @@ export interface SceneRegistry<TPose> {
   // A new function field is a row in `NODE_FN_FIELDS` (core/scene/nodeFnFields.ts)
   // plus its entry here; the field name is the registry key by construction.
 }
+
+/**
+ * Decides what one edit's changes to containers do to their children.
+ * `arrivals` maps each container to the ids that joined it — by an `add`
+ * under it or a `move` into it, whatever op or call made them — in the order
+ * they arrived. `changed` names every container whose child set or order
+ * changed, or whose pose changed size, arrivals included. Both are read once
+ * the edit's other mutations have landed.
+ *
+ * Return the poses to write, in each node's stored frame; they become part of
+ * the same edit, and so of the same undo step. An empty map writes nothing.
+ * Return `null` to refuse: the whole edit is reverted (see
+ * `SceneArrivalRefused`).
+ *
+ * Runs only for live edits. Undo, redo and a restored history replay the
+ * arrangement that was decided the first time. With none installed, a scene
+ * holding declared layouts (`ContainerNode.layout`) runs its own.
+ */
+export type SceneArrivalHandler<TPose> = (
+  arrivals: ReadonlyMap<NodeId, readonly NodeId[]>,
+  changed: ReadonlySet<NodeId>,
+) => ReadonlyMap<NodeId, TPose> | null;
 
 /** Options for `useScene` — the layers the scene has, what it starts out
  *  holding, and how its history behaves. */
@@ -622,6 +648,12 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
     fn: (() => import('@weasel-js/history').Journal | null) | null,
   ): void;
 
+  /** Install what the scene does when nodes join a container, replacing any
+   *  handler installed before; `null` removes it. Returns a function that
+   *  removes this handler, and does nothing once another has replaced it.
+   *  See {@link SceneArrivalHandler}. */
+  setArrivalHandler(handler: SceneArrivalHandler<TPose> | null): () => void;
+
   /** Apply a batch of ops with journal-aware routing.
    *
    *  - **Without active journal** (or no `getActiveJournal` in options):
@@ -676,13 +708,9 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   /** The layout container `id` declares, or `null` for a leaf or a
    *  container that declares none. */
   layoutOf(id: NodeId): LayoutStrategy<TPose> | null;
-  /** Run `fn` without re-applying the named containers' layouts: whatever
-   *  arrangement it leaves them in is taken as their resting one. For a
-   *  change a layout itself decided, such as a drop its `commitDrop` placed. */
-  holdLayout<T>(containerIds: readonly NodeId[], fn: () => T): T;
-  /** Called with the child poses each recorded change's layout pass wrote,
-   *  after the change lands — never for an undo or redo, which restore poses
-   *  rather than arrange them. What a reflow animation glides from. */
+  /** Called with the poses each live edit's layout pass wrote, after the
+   *  edit lands — never for an undo or redo, which restore poses rather than
+   *  arrange them. What a reflow animation glides from. */
   onReflow(listener: (moves: readonly LayoutMove<TPose>[]) => void): () => void;
   /** Run `fn` with every mutation applied but none recorded — for writes
    *  that are not edits, such as a simulation stepping poses each frame.

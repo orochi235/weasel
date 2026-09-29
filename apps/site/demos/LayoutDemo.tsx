@@ -17,7 +17,7 @@ import sceneJson from './data/layout.scene.json';
 // Three side-by-side container nodes (F = freeform, G = tileGrid, S = snapPoint),
 // each holding a single child rect. Each container declares its layout in the
 // scene (the JSON's `layoutKey`, resolved through the registry), so the scene
-// keeps it arranged: a tile added to G packs into the next free cell. Dragging
+// keeps it arranged: a tile added to G lands in the nearest free cell. Dragging
 // a child into a different container runs the layout-aware move pass: the
 // destination strategy places it, the source strategy reflows its leftovers,
 // and the commit reparents the dragged child in one undo step.

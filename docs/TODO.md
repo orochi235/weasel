@@ -308,11 +308,6 @@ Core five + Crop shipped. Remaining:
     A user-supplied bitmap needs a payload variant that persists the image
     itself (data URI, or a document-scoped asset table), which is a storage
     question rather than a paint one.
-  - **Patterns on small text.** A text node's paint is its `data.fill`, so the
-    panel already sets a pattern on one, and above the outline-tier threshold
-    a glyph is geometry drawn through `drawPathFillByKind`, so it paints. Below
-    the threshold `drawTextGroup` samples an SDF atlas with one color — the
-    paint's `color`, or black — so the same text shows the pattern flat.
 
   The gradient half's own gap is closed: a conic gradient serializes as a
   `<wzl:conicGradient>` def in `urn:weasel-js:svg` and reads back losslessly,
@@ -332,6 +327,14 @@ Core five + Crop shipped. Remaining:
 ---
 
 ## Text
+
+- **(P3) The first edit of a session can open in the fallback font.** The edit overlay's
+  face (`weasel-face-*`, built from the outline font's bytes) is added only when an edit
+  starts and loads with `font-display: swap`, so until it lands the overlay lays out in a
+  fallback font, and a wrapped line breaks differently from the canvas and then reflows.
+  Found by the overlay line-break test flaking on exactly this (2026-09-29); the test now
+  waits for the face. Loading the face when the outline font registers, rather than when
+  an edit opens, would close it for users.
 
 - **(P3) `.dfont` machine faces still can't reach the outline tier.** The
   *silence* closed 2026-08-16 — `isDataForkFont` recognizes a Macintosh
@@ -366,24 +369,19 @@ Core five + Crop shipped. Remaining:
   `fill: null` through `resolveRuns`, the DOM overlay, the range algebra and
   `@weasel-js/svg`'s `<tspan>` output.
 
-- **(P3) At 12px with a script, the atlas tier's ink sits ~1.9px left of the
-  overlay's at DPR 1.** Every engine, `x` on a whole pixel only; the right ink
-  edge agrees within 0.1px, so the centroid is being pulled by something faint
-  on the left rather than the glyph being misplaced. Not seen on the
-  canvas-font tier or at DPR 2. The `super`/`sub` 12px rows of `npx vitest run
-  -c scripts/measure-overlay-alignment.config.ts` show it.
+- **(P3) At 12px with a script, the atlas tier's ink still sits ~0.55px off
+  the overlay's at DPR 1, and the sign follows the sub-pixel phase.** `dx` is
+  −0.5 at `x` 20 and +0.5 at 20.5 in every engine; DPR 2 agrees within 0.06.
+  The stems of a 7.2px `H` are ~0.65px wide, and the shader reads coverage from
+  the distance at each pixel's center, so a stem centered on a pixel carries
+  about twice the ink of one straddling two, and the centroid leans toward
+  whichever stem is on the grid. Center-sampled coverage cannot do better; area
+  coverage would need several field taps per fragment on small glyphs. The same
+  rows show `dy` of ±0.45, which predates this and is unexplained. The
+  `super`/`sub` 12px rows of `npx vitest run -c
+  scripts/measure-overlay-alignment.config.ts` show both.
 
-- **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs.
-
-- **(P3) Small caps has no run spelling.** The last gap in the run style
-  model. Synthetic small caps needs a *per-character* size within one run
-  (lowercase rendered as scaled-down uppercase), where the run is the unit
-  that carries a size today; the honest version splits the entry walk's size
-  off the run, or reads the `smcp` OpenType feature, which needs shaping. Real
-  small caps is a face, not a synthesis, and would fall out of the HarfBuzz
-  entry above. The case half is there to build on: `textTransform` already
-  maps drawn characters back to source ones through `ResolvedRun.srcMap`, so
-  the uppercase glyphs a synthesis draws need no new caret bookkeeping.
+- **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Shaping is also what real small caps needs: `fontVariantCaps: 'small-caps'` is synthesized today (capitals scaled by x-height over cap height), and a face with an `smcp` feature should get its own small-cap glyphs instead.
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 
@@ -448,13 +446,15 @@ intercepting the press that drags the body.
 ### `useScene` follow-ups
 
 - **(P3) Scene layout: what the first cut left.** A container declares its layout
-  on its node (`ContainerNode.layout`) and the scene re-applies it on every change to
-  its children. Still open: a layout is fixed at `add` time — there is no
-  `scene.setLayout(id, strategy)` op to change one undoably; a scene whose canvas
-  composes poses has to pass the same strategy twice (`layoutFrame.composition` on the
-  scene, `poseComposition` on `<SceneCanvas>`), which folds away once composition is a
-  scene property (see the cascade entry below); and the deprecated `layouts` prop /
-  `sceneToAdapter({ layouts })` still drive drags only, pending removal.
+  on its node (`ContainerNode.layout`), and the scene's one layout pass
+  (`core/scene/layoutPass.ts`, run through the arrival window) applies it to every
+  arrival, departure, reorder and resize. Still open: a layout is fixed at `add` time,
+  with no undoable `scene.setLayout(id, strategy)`; a declared layout is measured by
+  `UseSceneOptions.layoutFrame` unless a canvas installs its handler, so a scene whose
+  canvas composes poses or uses a custom descriptor states that twice — folds away once
+  composition is a scene property (see the cascade entry below); and whether the
+  `layouts` prop, now a second way to name a container's layout, should be retired in
+  favor of the node declaration.
 - **(P3) Full tier unification** (collapse inline-props/explicit-adapter onto Scene). Same effort as the P2 "`arrayAdapter` as the default Canvas adapter — full unification" above — track there.
 - **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is
   adapter-level configuration, two mutually exclusive ways:
@@ -468,7 +468,7 @@ intercepting the press that drags the body.
 ### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
 
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only), as does choosing the destination container (`<SceneCanvas layoutDropTarget>`, `LayoutStrategy.dropRegion`). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-- **(P3) Tile-grid overflow policy.** A drop into a full `tileGrid` is rejected, but a child that arrives any other way (an insert or reparent op) past `cols * rows` is skipped from `childPoses` and left unplaced. Scroll, grow-grid, and rejection-at-the-op are the policies worth designing between.
+- **(P3) Tile-grid overflow: a `'grow'` grid never shrinks, and nothing scrolls a `'scroll'` one.** `tileGrid({ overflow })` holds for every arrival through the scene's layout pass. A departure re-runs `childPoses` over the container as it stands, so when a child leaves a grown grid the remaining rows spread over the grown container and the cells stretch. No kit host reads `LayoutStrategy.contentExtent` yet either: a `'scroll'` grid's overflow just sits past its bounds.
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
 - **(P3) Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle.
@@ -884,7 +884,9 @@ only story runner in the repo.
   Either the drop should reparent it out, or the demo's containers should not clip. Seen
   in headless Chromium 2026-09-29; predates the reflow glide work.
 
-- **(P3) The edit overlay can break a wrapped line where the canvas does not.** Under `TextStyle.wrap`, `layoutRuns` breaks only at spaces, while the overlay's `white-space: pre-wrap` follows the browser's line-breaking rules — after a hyphen, between CJK characters. Such a line reflows when an edit opens. Nothing in CSS limits break opportunities to spaces, so this is a layout change (UAX #14 in `layoutRuns`) or a DOM one (each word in a `nowrap` span).
+- **(P3) `layoutMarkdown` wraps only at spaces.** `packages/text/src/markdownText.ts` finds its break points with `text.split(/ /)`, while `layoutRuns` breaks at UAX #14 opportunities, so a markdown line never breaks after a hyphen or between CJK characters and wraps differently from the same text in a plain text node. Its word loop should take its breaks from `lineBreakOpportunities`, the way `layoutRuns` does.
+
+- **(P3) `layoutRuns` forces a line break only at `\n`.** UAX #14 also makes CR, VT, FF, NEL, U+2028 and U+2029 hard breaks, and `lineBreakOpportunities` reports them as `BREAK_MANDATORY`, but the wrap starts a new line only at a newline entry, so none of them ends a line on the canvas. Whether the edit overlay breaks at them is unchecked.
 
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 
@@ -1216,15 +1218,17 @@ one dead `const` and four stale disable directives.
   benchmarks on both revisions and posts the `npm run perf:compare` table as a
   comment without failing the build. Mike's call.
 
-- **(P3) Two microbenchmarks time their own setup, and vitest 5 no longer
-  forces them to.** `tessellate.bench.ts`'s `getMesh miss` resets the cache
-  inside the timed body, and `scene-ops.bench.ts`'s cold `renderOrder` walk is
-  recovered by subtracting a separately-timed layer reorder. vitest 4 gave
-  `bench()` no per-iteration hook; vitest 5 passes tinybench's `beforeEach`
-  through the options argument, and it runs untimed before every iteration.
-  Moving both setups into it measures the thing directly, but renames or drops
-  benchmarks, so it goes with a re-record of `tests/perf/bench/baseline.json`
-  on an idle machine — which also moves that file off vitest 4's shape.
+- **(P3) `tests/perf/bench/baseline.json` needs a re-record on an idle
+  machine.** It is still the 2026-08-14 run, in vitest 4's `--outputJson`
+  shape, so `lib/vitest-bench.ts` keeps a reader for that shape only for it.
+  It also predates the move of `getMesh miss`'s cache reset and the cold
+  `renderOrder` walk's layer reorder into tinybench's untimed `beforeEach`:
+  its `getMesh miss` row times the reset too, and its cold-walk group still
+  has the old row names, including `layer reorder only`, which the suite no
+  longer has. Run `npm run perf:bench:baseline` on a fleet node with no other
+  work on it (never orochi), commit both files, and delete the vitest 4 branch
+  of `readBenchReport` and its test in the same change. The 2026-09-29 attempt
+  found every node running census renders all night.
 
 - **(P2) A clipped group costs ~10 us to enter, and the stencil is now the
   larger half.** `tests/perf/clip-cost.spec.ts` separates entry's two costs by

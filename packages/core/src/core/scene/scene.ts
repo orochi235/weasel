@@ -2,6 +2,8 @@ import { createHistory, type History, type HistorySelection, type Journal, type 
 import type { Op } from 'core/ops/types';
 import type { ParallaxOpts } from 'core/viewport/parallax';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
+import { createArrangeOp, type ArrangeArgs, type ArrangedPose } from 'core/ops/arrange';
+import { SceneArrivalRefused } from './arrivals';
 import { dwarn } from 'debug/flag';
 import { createDependentsIndex, sameDependsOn } from './dependents';
 import { withKitRegistry } from './kitRegistry';
@@ -16,7 +18,7 @@ import {
   type NodeFnField,
 } from './nodeFnFields';
 import { createPoseOverrides } from './poseOverrides';
-import { arrange, resized, resolveLayoutFrame } from './layoutReflow';
+import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
 import {
   asNodeId,
   type LayoutMove,
@@ -28,6 +30,7 @@ import {
   type NodeId,
   type RegisteredOp,
   type Scene,
+  type SceneArrivalHandler,
   type SceneRegistry,
   type SerializedNode,
   type SerializedScene,
@@ -112,15 +115,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   const fnField = (name: 'clipFromPose' | 'derivePath' | 'derivePose' | 'layout'): NodeFnField =>
     fnFields.find((f) => f.spec.field === name)!;
 
-  // ── Container layout ───────────────────────────────────────────────────
-  // A recorded change opens a collection (`recordingLayouts`); the kit ops it
-  // applies mark the laid-out containers whose child set, order or size they
-  // changed, and the change's last op (`reflowTail`, or the batch close)
-  // arranges them. Undo and redo never open one: they restore poses the
-  // collection already wrote into the entry.
+  /** How declared layouts are measured; see `LayoutFrame`. */
   const layoutFrame = resolveLayoutFrame(options.layoutFrame);
-  /** Latched on the first layout written, so a scene that never declares one
-   *  records exactly the entries it did before layouts existed. */
+  /** Latched on the first layout a container is given, so a scene that never
+   *  declares one records exactly the entries it did before layouts existed. */
   let hasLayouts = false;
   {
     const field = fnField('layout');
@@ -130,124 +128,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       write(node, fn);
     };
   }
-  let reflowDirty: Set<NodeId> | null = null;
-  let reflowMoves: LayoutMove<TPose>[] | null = null;
-  const heldLayouts = new Map<NodeId, number>();
-  const reflowListeners = new Set<(moves: readonly LayoutMove<TPose>[]) => void>();
-  /** How many times one change may re-arrange a container before the scene
-   *  gives up on it — only nested layouts that resize each other get close. */
-  const MAX_ARRANGE_PASSES = 16;
 
-  function layoutOfInternal(id: NodeId | null) {
-    if (id === null) return null;
+  function layoutOfInternal(id: NodeId) {
     const node = state.nodes.get(id);
     return node?.kind === 'container' ? (node.layout ?? null) : null;
-  }
-
-  function markLayout(id: NodeId | null): void {
-    if (reflowDirty === null || id === null || heldLayouts.has(id)) return;
-    if (layoutOfInternal(id) !== null) reflowDirty.add(id);
-  }
-
-  /** Arrange every marked container, applying the pose writes as they are
-   *  computed so a nested container its parent resized is marked in turn. */
-  function settleLayouts(): LayoutMove<TPose>[] {
-    const dirty = reflowDirty;
-    if (dirty === null || dirty.size === 0) return [];
-    const out: LayoutMove<TPose>[] = [];
-    const passes = new Map<NodeId, number>();
-    while (dirty.size > 0) {
-      const id: NodeId = dirty.values().next().value!;
-      dirty.delete(id);
-      const n = (passes.get(id) ?? 0) + 1;
-      passes.set(id, n);
-      if (n > MAX_ARRANGE_PASSES) {
-        dwarn('scene', `layout of "${id}" did not settle after ${MAX_ARRANGE_PASSES} passes — leaving it`);
-        continue;
-      }
-      if (!state.nodes.has(id)) continue;
-      for (const move of arrange(scene, id, layoutFrame)) {
-        runOp('kit:setPose', move);
-        appliedLog?.push({ kind: 'kit:setPose', payload: move });
-        out.push(move);
-      }
-    }
-    if (out.length > 0) {
-      reflowMoves?.push(...out);
-      // Every caller notifies once its change lands; a dispatch from here
-      // would reach listeners before the entry holding these writes exists.
-      if (batchDepth > 0) notify();
-      else version++;
-    }
-    return out;
-  }
-
-  /** Run one recorded change with a layout collection open. `owner` is false
-   *  when an enclosing change already opened one, which then arranges. */
-  function recordingLayouts<T>(fn: (owner: boolean) => T): T {
-    if (reflowDirty !== null || !hasLayouts) return fn(false);
-    reflowDirty = new Set();
-    reflowMoves = [];
-    let landed = false;
-    try {
-      const result = fn(true);
-      landed = true;
-      return result;
-    } finally {
-      const moves = reflowMoves;
-      reflowDirty = null;
-      reflowMoves = null;
-      if (landed && moves.length > 0) {
-        for (const listener of [...reflowListeners]) listener(moves);
-      }
-    }
-  }
-
-  /** The op that closes a change handed to a history engine: its first apply
-   *  arranges what the change marked and keeps the writes, so redo replays
-   *  them and undo reverts them without asking the layout again. Reports a
-   *  no-op when nothing moved, so an otherwise-empty batch still records
-   *  nothing; its coalesce key names what it moved, so a coalesced entry
-   *  never undoes to a pose only a later push wrote. */
-  function reflowTail(): Op {
-    const payload: { moves: LayoutMove<TPose>[] | null } = { moves: null };
-    const inner = makeOp('kit:reflow', payload);
-    return {
-      name: inner.name,
-      args: payload,
-      get coalesceKey() {
-        if (payload.moves === null) return undefined;
-        return `kit:reflow:${payload.moves.map((m) => m.id).sort().join(',')}`;
-      },
-      apply: () => {
-        inner.apply(undefined);
-        return payload.moves!.length === 0 ? 'noop' : undefined;
-      },
-      invert: () => inner.invert(),
-    };
-  }
-
-  /** `ops` closed by a reflow tail when this change owns the collection. */
-  function withReflowTail(ops: Op[], owner: boolean): Op[] {
-    return owner ? [...ops, reflowTail()] : ops;
-  }
-
-  /** Whether a single kit op can leave a laid-out container to arrange. */
-  function touchesLayout(kind: string, payload: unknown): boolean {
-    const p = payload as Record<string, unknown>;
-    switch (kind) {
-      case 'kit:add':
-        return layoutOfInternal(p.parent as NodeId | null) !== null;
-      case 'kit:move':
-        return layoutOfInternal(p.fromParent as NodeId | null) !== null
-          || layoutOfInternal(p.toParent as NodeId | null) !== null;
-      case 'kit:remove':
-        return (p.detached as { parent: NodeId | null }[]).some((d) => layoutOfInternal(d.parent) !== null);
-      case 'kit:setPose':
-        return layoutOfInternal(p.id as NodeId) !== null;
-      default:
-        return false;
-    }
   }
 
   /** Maintained from `kit:add` / `kit:remove` — the only two places a node is
@@ -416,6 +300,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     // consulted it.)
     rebuildOp: (name, args) => {
       if (registered.has(name)) return makeOp(name, args);
+      // Its writes are the scene's own, so it replays without an adapter.
+      if (name === 'arrange') return createArrangeOp(args as ArrangeArgs, undefined, writePose);
       const rebuilt = rebuildGlobalOp(name, args);
       return rebuilt === null ? null : bindOpToHistoryAdapter(rebuilt);
     },
@@ -455,6 +341,118 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   // depend on `scene.history` can wire it after construction.
   let activeJournalAccessor: (() => Journal | null) | null =
     options.getActiveJournal ?? null;
+
+  // Container layout. `arrivals` is open (non-null) while a live edit is
+  // collecting the nodes that joined a container, and `changed` every
+  // container whose children or size it changed; whoever opened the window
+  // settles it before the edit closes. Undo, redo and journal replays never
+  // open it: they restore an arrangement that was already decided.
+  let arrivalHandler: SceneArrivalHandler<TPose> | null = null;
+  let arrivals: Map<NodeId, NodeId[]> | null = null;
+  let changed = new Set<NodeId>();
+  /** What the last settle wrote, reported to `onReflow` once its edit lands. */
+  let reflowDue: LayoutMove<TPose>[] | null = null;
+  const reflowListeners = new Set<(moves: readonly LayoutMove<TPose>[]) => void>();
+
+  /** The pass a scene runs over its declared layouts when nothing else is
+   *  installed. */
+  const declaredLayouts: SceneArrivalHandler<TPose> = (arrived, touched) =>
+    runLayoutPass(scene, layoutOfInternal, arrived, touched, layoutFrame);
+
+  function activeHandler(): SceneArrivalHandler<TPose> | null {
+    return arrivalHandler ?? (hasLayouts ? declaredLayouts : null);
+  }
+
+  function noteArrival(id: NodeId, parent: NodeId | null, from: NodeId | null): void {
+    if (arrivals === null || parent === null || parent === from) return;
+    changed.add(parent);
+    const list = arrivals.get(parent);
+    if (list === undefined) arrivals.set(parent, [id]);
+    else if (!list.includes(id)) list.push(id);
+  }
+
+  /** A container's child set or order changed, or it changed size. */
+  function noteChange(id: NodeId | null): void {
+    if (arrivals !== null && id !== null) changed.add(id);
+  }
+
+  /** Whether a bare scene call has to run as a batch of its own, so the
+   *  layout pass it triggers lands in its undo step. */
+  function bareLayoutEdit(): boolean {
+    return activeHandler() !== null && arrivals === null && batchDepth === 0 && !suppressRecording;
+  }
+
+  /** Open the arrival window when a handler wants one and no enclosing edit
+   *  holds it already; true when this caller now owns it. */
+  function openArrivals(): boolean {
+    if (activeHandler() === null || arrivals !== null) return false;
+    arrivals = new Map();
+    changed = new Set();
+    reflowDue = null;
+    return true;
+  }
+
+  /** Report what the settled edit wrote, now that it has landed. */
+  function emitReflow(): void {
+    const moves = reflowDue;
+    reflowDue = null;
+    if (moves === null || moves.length === 0) return;
+    for (const listener of [...reflowListeners]) listener(moves);
+  }
+
+  /** Close the window and ask the handler what the arrivals get. Throws
+   *  `SceneArrivalRefused` when it refuses, which reverts the edit. */
+  function settleArrivals(): ArrangedPose[] {
+    const pending = arrivals;
+    arrivals = null;
+    const handler = activeHandler();
+    if (pending === null || handler === null) return [];
+    // Only what is still there once the edit's other mutations have landed.
+    const landed = new Map<NodeId, NodeId[]>();
+    for (const [parent, ids] of pending) {
+      const still = ids.filter((id) => state.nodes.get(id)?.parent === parent);
+      if (still.length > 0 && state.nodes.has(parent)) landed.set(parent, still);
+    }
+    const touched = new Set([...changed].filter((id) => state.nodes.get(id)?.kind === 'container'));
+    if (landed.size === 0 && touched.size === 0) return [];
+    const poses = handler(landed, touched);
+    if (poses === null) throw new SceneArrivalRefused(landed);
+    const out: ArrangedPose[] = [];
+    for (const [id, to] of poses) {
+      const node = state.nodes.get(id);
+      if (node) out.push({ id, from: node.pose, to });
+    }
+    reflowDue = out as LayoutMove<TPose>[];
+    return out;
+  }
+
+  function writePose(id: string, pose: unknown): void {
+    scene.setPose(asNodeId(id), pose as TPose);
+  }
+
+  /** `ops` plus the op that settles their arrivals, when this call owns the
+   *  window; `ops` unchanged otherwise. */
+  function withArrivalOps(ops: Op[]): { ops: Op[]; owned: boolean } {
+    if (!openArrivals()) return { ops, owned: false };
+    return { ops: [...ops, createArrangeOp({}, settleArrivals, writePose)], owned: true };
+  }
+
+  /** Run an op-driven edit that may carry arrivals: a refusal reverts it and
+   *  is swallowed, the way a drop onto a full container is — nothing lands. */
+  function runArrivalEdit(ops: Op[], run: (ops: Op[]) => void): void {
+    const { ops: all, owned } = withArrivalOps(ops);
+    try {
+      run(all);
+      if (owned) emitReflow();
+    } catch (err) {
+      if (!(err instanceof SceneArrivalRefused)) throw err;
+    } finally {
+      if (owned) {
+        arrivals = null;
+        reflowDue = null;
+      }
+    }
+  }
 
   function isLockedInternal(id: NodeId): boolean {
     if (!state.layers.some((l) => l.locked)) return false;
@@ -758,10 +756,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         if (key !== undefined) restoreFn(field, target, key, 'kit:add', dwarn);
       }
       invalidateDependents(p.id);
-      markLayout(p.parent);
     },
     revert: (p) => {
-      markLayout(p.parent);
       detach(p.id);
       state.nodes.delete(p.id);
       dependents.remove(p.id);
@@ -803,7 +799,6 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // A `dependsOn: 'children'` container the removal did not take is now
       // hugging a smaller set.
       for (const d of p.detached) invalidateChildDerivedFrom(d.parent);
-      for (const d of p.detached) markLayout(d.parent);
     },
     revert: (p) => {
       const keys = new Map((p.fnKeys ?? []).map((k) => [k.id, k]));
@@ -819,7 +814,6 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       }
       for (const d of p.detached) attach(d.id, d.parent, d.index);
       for (const d of p.detached) invalidateChildDerivedFrom(d.parent);
-      for (const d of p.detached) markLayout(d.parent);
     },
   });
 
@@ -827,28 +821,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     apply: (p) => {
       (requireNode(p.id) as { pose: TPose }).pose = p.to;
       invalidateDependents(p.id);
-      if (reflowDirty !== null && resized(layoutFrame, p.from, p.to)) markLayout(p.id);
     },
     revert: (p) => {
       (requireNode(p.id) as { pose: TPose }).pose = p.from;
       invalidateDependents(p.id);
-      if (reflowDirty !== null && resized(layoutFrame, p.to, p.from)) markLayout(p.id);
-    },
-  });
-
-  registerKitOp<{ moves: LayoutMove<TPose>[] | null }>('kit:reflow', {
-    apply: (p) => {
-      if (p.moves === null) {
-        p.moves = settleLayouts();
-        return;
-      }
-      const setPose = registered.get('kit:setPose')!;
-      for (const m of p.moves) setPose.apply(m);
-    },
-    revert: (p) => {
-      const setPose = registered.get('kit:setPose')!;
-      const moves = p.moves ?? [];
-      for (let i = moves.length - 1; i >= 0; i--) setPose.revert(moves[i]);
     },
   });
 
@@ -900,16 +876,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // joined now does.
       invalidateChildDerivedFrom(p.fromParent);
       invalidateDependents(p.id);
-      markLayout(p.fromParent);
-      markLayout(p.toParent);
     },
     revert: (p) => {
       detach(p.id);
       attach(p.id, p.fromParent, p.fromIndex);
       invalidateChildDerivedFrom(p.toParent);
       invalidateDependents(p.id);
-      markLayout(p.fromParent);
-      markLayout(p.toParent);
     },
   });
 
@@ -1074,11 +1046,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     }
     // The engine applies the op itself (inside applyOps) — no separate
     // runOp call, or the mutation would run twice.
-    recordingLayouts((owner) => {
-      const ops = [makeOp(kind, payload)];
-      if (owner && touchesLayout(kind, payload)) ops.push(reflowTail());
-      history.applyOps(ops, label);
-    });
+    history.applyOps([makeOp(kind, payload)], label);
     notify();
   }
 
@@ -1247,11 +1215,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       targetId: raw.targetId,
       forkedAtEntryId: raw.forkedAtEntryId,
       applyBatch(ops, label) {
-        recordingLayouts((owner) => atomically(
-          () => withRecordingSuppressed(() => raw.applyBatch(withReflowTail(ops, owner), label)),
-          () => true,
-        ));
-        notify();
+        runArrivalEdit(ops, (all) => {
+          atomically(() => withRecordingSuppressed(() => raw.applyBatch(all, label)), () => true);
+          notify();
+        });
       },
       undo() {
         withLocksLifted(() => withRecordingSuppressed(() => raw.undo()));
@@ -1288,19 +1255,20 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     // Mutating: applied ops re-enter the scene's own mutation methods.
     apply(op, label) {
       refuseUntracked('history.apply');
-      recordingLayouts((owner) => atomically(
-        () => withRecordingSuppressed(() => history.applyOps(withReflowTail([op], owner), label ?? op.label ?? '')),
-        () => true,
-      ));
-      notify();
+      runArrivalEdit([op], (all) => {
+        const run = () => (all.length === 1
+          ? history.apply(op, label)
+          : history.applyOps(all, label ?? op.label ?? ''));
+        atomically(() => withRecordingSuppressed(run), () => true);
+        notify();
+      });
     },
     applyOps(ops, label) {
       refuseUntracked('history.applyOps');
-      recordingLayouts((owner) => atomically(
-        () => withRecordingSuppressed(() => history.applyOps(withReflowTail(ops, owner), label)),
-        () => true,
-      ));
-      notify();
+      runArrivalEdit(ops, (all) => {
+        atomically(() => withRecordingSuppressed(() => history.applyOps(all, label)), () => true);
+        notify();
+      });
     },
     undo: () => { scene.undo(); },
     redo: () => { scene.redo(); },
@@ -1331,6 +1299,48 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     beginJournal: (opts) => wrapJournal(history.beginJournal(opts)),
     resumeJournal: (journal) => history.resumeJournal(rawJournals.get(journal) ?? journal),
   };
+
+  function applyBatchNow(ops: Op[], label: string, adapter: unknown): void {
+    const journal: Journal | null = (activeJournalAccessor ?? (() => null))();
+    // Either route drives mutations from a history engine (the journal's
+    // inner history, or the scene's own), so scene-side recording is
+    // suppressed for the duration: op applies that re-enter scene
+    // mutation methods via the adapter must mutate without re-recording.
+    // batchDepth coalesces the per-op notify() calls (same as
+    // scene.batch); exactly one listener dispatch fires at the end —
+    // mirroring the single-notification semantics callers expect.
+    const prevSuppress = suppressRecording;
+    const prevDirty = batchDirty;
+    suppressRecording = true;
+    batchDepth++;
+    batchDirty = false;
+    try {
+      atomically(() => {
+        if (journal) {
+          journal.applyBatch(ops, label);
+        } else {
+          // Native path: record the external ops themselves as one engine
+          // entry — coalescible across applyBatch calls via their own
+          // coalesceKeys — rebound to this call's adapter.
+          history.applyOps(ops.map((op) => bindOpToAdapter(op, adapter)), label);
+        }
+      }, () => true);
+    } finally {
+      batchDepth--;
+      suppressRecording = prevSuppress;
+      // Re-merge any outer batch's pending dirt so a nested call can't
+      // swallow it; at true top level prevDirty is always false.
+      batchDirty = batchDirty || prevDirty;
+      // Flush inside finally so a throwing op can't strand subscribers
+      // after earlier ops in the batch already mutated state (mirrors
+      // scene.batch). Depth-guarded: a nested context defers to the
+      // outermost flush.
+      if (batchDepth === 0 && batchDirty) {
+        batchDirty = false;
+        for (const listener of listeners) listener();
+      }
+    }
+  }
 
   const scene: Scene<TData, TLayer, TPose> = {
     get nodes() { return state.nodes; },
@@ -1406,8 +1416,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         assertSubtreeLayer(spec.id, spec.layer, parent, p.layer);
         refuseLocked(parent, 'add under');
       }
+      if (parent !== null && bareLayoutEdit()) {
+        // A bare add under a container is an edit of its own, so it settles
+        // its arrival like one — as a batch, which is what makes the
+        // arrangement part of the same undo step.
+        return scene.batch(`add ${spec.kind}`, () => scene.add(spec));
+      }
       const sibs = siblingsOf(parent);
       const index = spec.index ?? sibs.length;
+      noteArrival(id, parent, null);
       executeAndLog('kit:add', {
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
@@ -1457,6 +1474,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         nodes: snapshot, detached,
         ...(fnKeys.length > 0 ? { fnKeys } : {}),
       };
+      if (detached.some((d) => d.parent !== null) && bareLayoutEdit()) {
+        scene.batch('remove', () => scene.removeMany(rootIds));
+        return;
+      }
+      for (const d of detached) noteChange(d.parent);
       executeAndLog('kit:remove', payload, 'remove');
     },
 
@@ -1469,6 +1491,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     setPose(id, pose) {
       const node = requireNode(id);
       refuseLocked(id, 'set the pose of');
+      if (node.kind === 'container' && resized(layoutFrame, id, node.pose, pose)) {
+        if (bareLayoutEdit()) {
+          scene.batch('setPose', () => scene.setPose(id, pose));
+          return;
+        }
+        noteChange(id);
+      }
       executeAndLog('kit:setPose', { id, from: node.pose, to: pose }, 'setPose');
     },
 
@@ -1540,10 +1569,16 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           throw new Error('Scene: cannot parent a node to its own descendant');
         }
       }
+      if ((parent !== null || node.parent !== null) && bareLayoutEdit()) {
+        scene.batch('move', () => scene.move(id, parent, index));
+        return;
+      }
       const fromSibs = siblingsOf(node.parent);
       const fromIndex = fromSibs.indexOf(id);
       const toSibs = parent === node.parent ? fromSibs : siblingsOf(parent);
       const toIndex = index ?? toSibs.length;
+      noteArrival(id, parent, node.parent);
+      noteChange(node.parent);
       executeAndLog('kit:move', {
         id, fromParent: node.parent, fromIndex, toParent: parent, toIndex,
       }, 'move');
@@ -1552,6 +1587,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     reorder(id, index) {
       const node = requireNode(id);
       refuseLocked(id, 'reorder');
+      if (node.parent !== null && bareLayoutEdit()) {
+        scene.batch('reorder', () => scene.reorder(id, index));
+        return;
+      }
+      noteChange(node.parent);
       const sibs = siblingsOf(node.parent);
       const fromIndex = sibs.indexOf(id);
       executeAndLog('kit:move', {
@@ -1667,45 +1707,23 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     applyBatch(ops, label, adapter) {
       refuseUntracked('applyBatch');
-      const journal: Journal | null = (activeJournalAccessor ?? (() => null))();
-      // Either route drives mutations from a history engine (the journal's
-      // inner history, or the scene's own), so scene-side recording is
-      // suppressed for the duration: op applies that re-enter scene
-      // mutation methods via the adapter must mutate without re-recording.
-      // batchDepth coalesces the per-op notify() calls (same as
-      // scene.batch); exactly one listener dispatch fires at the end —
-      // mirroring the single-notification semantics callers expect.
-      const prevSuppress = suppressRecording;
-      const prevDirty = batchDirty;
-      suppressRecording = true;
-      batchDepth++;
-      batchDirty = false;
-      try {
-        recordingLayouts((owner) => atomically(() => {
-          if (journal) {
-            journal.applyBatch(withReflowTail(ops, owner), label);
-          } else {
-            // Native path: record the external ops themselves as one engine
-            // entry — coalescible across applyBatch calls via their own
-            // coalesceKeys — rebound to this call's adapter.
-            history.applyOps(withReflowTail(ops.map((op) => bindOpToAdapter(op, adapter)), owner), label);
-          }
-        }, () => true));
-      } finally {
-        batchDepth--;
-        suppressRecording = prevSuppress;
-        // Re-merge any outer batch's pending dirt so a nested call can't
-        // swallow it; at true top level prevDirty is always false.
-        batchDirty = batchDirty || prevDirty;
-        // Flush inside finally so a throwing op can't strand subscribers
-        // after earlier ops in the batch already mutated state (mirrors
-        // scene.batch). Depth-guarded: a nested context defers to the
-        // outermost flush.
-        if (batchDepth === 0 && batchDirty) {
-          batchDirty = false;
-          for (const listener of listeners) listener();
-        }
-      }
+      runArrivalEdit(ops, (all) => applyBatchNow(all, label, adapter));
+    },
+
+    setArrivalHandler(handler) {
+      arrivalHandler = handler;
+      return () => {
+        if (arrivalHandler === handler) arrivalHandler = null;
+      };
+    },
+
+    layoutOf(id) {
+      return layoutOfInternal(id);
+    },
+
+    onReflow(listener) {
+      reflowListeners.add(listener);
+      return () => { reflowListeners.delete(listener); };
     },
 
     overrides,
@@ -1779,44 +1797,83 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
 
     batch(label, fn) {
-      if (batchDepth > 0) {
-        batchDepth++;
-        try {
-          return fn();
-        } finally {
-          batchDepth--;
-        }
-      }
-      return recordingLayouts((owner) => runBatch(label, fn, owner));
-    },
-
-    layoutOf(id) {
-      return layoutOfInternal(id);
-    },
-
-    holdLayout(containerIds, fn) {
-      for (const id of containerIds) {
-        heldLayouts.set(id, (heldLayouts.get(id) ?? 0) + 1);
-        reflowDirty?.delete(id);
-      }
+      // Captured at open, not at recordEntry: by the time the batch closes
+      // the selection has already moved to wherever the batch put it.
+      const outermost = batchDepth === 0;
+      if (outermost) currentBatch = { label, ops: [], selectionBefore: selection };
+      const ownsArrivals = outermost && openArrivals();
+      batchDepth++;
       try {
-        return fn();
+        if (!outermost) return fn();
+        try {
+          const result = atomically(() => {
+            const r = fn();
+            if (ownsArrivals) for (const p of settleArrivals()) scene.setPose(asNodeId(p.id), p.to as TPose);
+            return r;
+          }, () => (currentBatch?.ops.length ?? 0) > 0);
+          if (ownsArrivals) emitReflow();
+          return result;
+        } catch (err) {
+          // Reverted already; the half-built entry must not reach history.
+          currentBatch = null;
+          throw err;
+        }
       } finally {
-        for (const id of containerIds) {
-          const n = heldLayouts.get(id)! - 1;
-          if (n === 0) heldLayouts.delete(id);
-          else heldLayouts.set(id, n);
+        batchDepth--;
+        if (ownsArrivals) {
+          arrivals = null;
+          reflowDue = null;
+        }
+        if (batchDepth === 0) {
+          if (currentBatch) {
+            const finished = currentBatch;
+            currentBatch = null;
+            // Ops were applied live as they were issued (state stays
+            // readable mid-batch); recordEntry pushes without re-applying.
+            if (finished.ops.length > 0) {
+              history.recordEntry(finished.ops, finished.label, { selectionBefore: finished.selectionBefore });
+            }
+          }
+          // Fire one coalesced notify if any op inside the batch dirtied
+          // state. Nested batches contribute to the same flush — only the
+          // outermost emits.
+          if (batchDirty) {
+            batchDirty = false;
+            for (const listener of listeners) listener();
+          }
         }
       }
-    },
-
-    onReflow(listener) {
-      reflowListeners.add(listener);
-      return () => { reflowListeners.delete(listener); };
     },
 
     untracked(fn) {
-      return recordingLayouts((owner) => runUntracked(fn, owner));
+      const prevSuppress = suppressRecording;
+      const versionBefore = version;
+      suppressRecording = true;
+      untrackedDepth++;
+      const ownsArrivals = openArrivals();
+      batchDepth++;
+      try {
+        const result = atomically(() => {
+          const r = fn();
+          if (ownsArrivals) for (const p of settleArrivals()) scene.setPose(asNodeId(p.id), p.to as TPose);
+          return r;
+        }, () => false);
+        if (ownsArrivals) emitReflow();
+        return result;
+      } finally {
+        batchDepth--;
+        if (ownsArrivals) {
+          arrivals = null;
+          reflowDue = null;
+        }
+        untrackedDepth--;
+        suppressRecording = prevSuppress;
+        if (version !== versionBefore) history.seal();
+        if (batchDepth === 0 && batchDirty) {
+          batchDirty = false;
+          for (const listener of listeners) listener();
+        }
+      }
     },
 
     toJSON(): SerializedScene<TData, TLayer, TPose> {
@@ -1896,74 +1953,6 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     getVersion: () => version,
   };
-
-  /** The outermost `scene.batch`. Its selection is captured at open, not at
-   *  recordEntry: by the time the batch closes the selection has already
-   *  moved to wherever the batch put it. */
-  function runBatch<T>(label: string, fn: () => T, arrangeAtClose: boolean): T {
-    currentBatch = { label, ops: [], selectionBefore: selection };
-    batchDepth++;
-    try {
-      try {
-        return atomically(() => {
-          const result = fn();
-          // Still inside the batch, so each write joins its entry.
-          if (arrangeAtClose) {
-            for (const move of settleLayouts()) currentBatch?.ops.push(makeOp('kit:setPose', move));
-          }
-          return result;
-        }, () => (currentBatch?.ops.length ?? 0) > 0);
-      } catch (err) {
-        // Reverted already; the half-built entry must not reach history.
-        currentBatch = null;
-        throw err;
-      }
-    } finally {
-      batchDepth--;
-      if (batchDepth === 0) {
-        if (currentBatch) {
-          const finished = currentBatch;
-          currentBatch = null;
-          // Ops were applied live as they were issued (state stays
-          // readable mid-batch); recordEntry pushes without re-applying.
-          if (finished.ops.length > 0) {
-            history.recordEntry(finished.ops, finished.label, { selectionBefore: finished.selectionBefore });
-          }
-        }
-        // Fire one coalesced notify if any op inside the batch dirtied
-        // state. Nested batches contribute to the same flush — only the
-        // outermost emits.
-        if (batchDirty) {
-          batchDirty = false;
-          for (const listener of listeners) listener();
-        }
-      }
-    }
-  }
-
-  function runUntracked<T>(fn: () => T, arrangeAtClose: boolean): T {
-    const prevSuppress = suppressRecording;
-    const versionBefore = version;
-    suppressRecording = true;
-    untrackedDepth++;
-    batchDepth++;
-    try {
-      return atomically(() => {
-        const result = fn();
-        if (arrangeAtClose) settleLayouts();
-        return result;
-      }, () => false);
-    } finally {
-      batchDepth--;
-      untrackedDepth--;
-      suppressRecording = prevSuppress;
-      if (version !== versionBefore) history.seal();
-      if (batchDepth === 0 && batchDirty) {
-        batchDirty = false;
-        for (const listener of listeners) listener();
-      }
-    }
-  }
 
   /** Insert nodes without writing to the undo log — used by construction
    *  (`options.initial`) and by `loadState`. Specs must list parents before

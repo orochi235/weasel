@@ -117,6 +117,17 @@ describe('face metrics across tiers', () => {
     expect(sub.baselineShift).toBeCloseTo(-40 * 154 / 2048, 9);
   });
 
+  it("sizes small caps identically on both tiers, at the face's x-height over its cap height", () => {
+    const sizes = (fontFamily: string) =>
+      resolveRuns([{ text: 'Hx', fontVariantCaps: 'small-caps' }], resolveTextStyle({ fontFamily, fontSize: 40 }))[0].sizeMap;
+    expect(sizes('inter-outline')).toEqual(sizes('inter-atlas'));
+    // Inter: OS/2.sxHeight 1118 and sCapHeight 1490.
+    const [cap, small] = sizes('inter-atlas')!;
+    expect(cap).toBe(40);
+    expect(small).toBeCloseTo(40 * 1118 / 1490, 9);
+    expect(sizes('no-metrics')![1]).toBeCloseTo(40 * 0.7, 9);
+  });
+
   it('falls back to the derived constants for an atlas with no metrics block', () => {
     const { runs, laid } = lay('no-metrics');
     const underline = laid.decorations.find((d) => d.kind === 'underline')!;

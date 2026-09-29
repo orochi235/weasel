@@ -129,14 +129,10 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   /** How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
   /** Layout strategies keyed by container node id, for containers whose
-   *  scene node declares none. A layout supplied here drives only a drag's
-   *  pass (reflow on enter, reflow leftovers on exit, reparent + write
-   *  reflowed poses on commit); an insert, delete or resize leaves its
-   *  children alone. Pass either a static map, or a `getLayout(id)` function
-   *  for dynamic resolution.
-   *  @deprecated Declare the layout on the container instead
-   *  (`scene.add({ kind: 'container', layout })`), which the scene re-applies
-   *  on every change to its children. */
+   *  scene node declares none (`ContainerNode.layout` wins). `move` runs its
+   *  layout-aware pass on them; for inserts, deletes and resizes to reach
+   *  them too, install them with `useLayoutArrivals`. Pass either a static
+   *  map, or a `getLayout(id)` function for dynamic resolution. */
   layouts?:
     | Record<string, LayoutStrategy<TPose>>
     | ((containerId: string) => LayoutStrategy<TPose> | null);

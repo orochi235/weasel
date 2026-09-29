@@ -117,6 +117,7 @@ import {
   useIngestionDepSource,
   type InsertNodeFactory,
 } from './deps';
+import { useLayoutArrivals } from '../layout/arrivals';
 import {
   acquireKitContentHandlers,
   registerContentHandler,
@@ -384,11 +385,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     layers?: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose>;
 
     /** Layout strategies keyed by container node id (or a resolver), for
-     *  containers whose scene node declares none. These drive only a drag's
-     *  layout pass (reflow on enter, reparent + reflow on commit).
-     *  @deprecated Declare the layout on the container
-     *  (`scene.add({ kind: 'container', layout })`), which the scene
-     *  re-applies on every change to its children. */
+     *  containers whose scene node declares none (`ContainerNode.layout`
+     *  wins). Applied to a drag and to every other change to their children,
+     *  through the scene's layout pass. */
     layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
 
     /** Which layout container a drag lands in when several contain the drop
@@ -2854,6 +2853,7 @@ function StandardActionsRegistrar({
   useAreaSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, layouts, layoutDropTarget, reflowTransition);
+  useLayoutArrivals(scene, { layouts, poseDescriptor, poseComposition });
   useInsertDepSource(scene, adapter, insertNodeFactories);
   useSliceDepSource(scene, selection, adapter, poseComposition, poseDescriptor);
   useSnapDepSource(snapPoint);

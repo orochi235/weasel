@@ -54,10 +54,7 @@ group('mesh cache — hit vs miss (64 cubics)', (bench) => {
   bench('getMesh hit', () => {
     getMesh(path);
   });
-  // The reset is a `new WeakMap()` — nanoseconds against a tessellation, and
-  // inside the timed region.
-  bench('getMesh miss', () => {
-    _resetCacheForTests();
+  bench('getMesh miss', { beforeEach: _resetCacheForTests }, () => {
     getMesh(path);
   });
 });

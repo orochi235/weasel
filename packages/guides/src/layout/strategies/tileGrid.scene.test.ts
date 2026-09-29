@@ -1,6 +1,7 @@
 /**
- * `tileGrid` declared on a scene container: the scene keeps the grid packed
- * through inserts and deletes, and a drag still lands in the cell it picked.
+ * `tileGrid` declared on a scene container: the scene places inserts, packs
+ * the grid after a delete or resize, and a drag still lands in the cell it
+ * picked.
  */
 import { describe, expect, it } from 'vitest';
 import {
@@ -29,15 +30,26 @@ function setup() {
 }
 
 describe('tileGrid as a scene layout', () => {
-  it('packs an inserted child into the next cell, as one undo step', () => {
+  it('places an inserted child in the free cell nearest it, as one undo step', () => {
     const { scene, leaf } = setup();
-    const a = leaf(box(400, 400, 5, 5));
+    leaf(box(0));
     const b = leaf(box(400, 400, 5, 5));
-    expect(scene.get(a)!.pose).toEqual(box(0));
-    expect(scene.get(b)!.pose).toEqual(box(50));
+    expect(scene.get(b)!.pose).toEqual(box(100));
     scene.undo();
     expect(scene.get(b)).toBeUndefined();
+  });
+
+  it('packs the grid again when a child is reordered', () => {
+    const { scene, G, leaf } = setup();
+    const a = leaf(box(0));
+    const b = leaf(box(50));
+    scene.reorder(b, 0);
+    // childPoses keeps each child's cell order, so a reorder alone moves nothing.
     expect(scene.get(a)!.pose).toEqual(box(0));
+    scene.setPose(G, box(0, 0, 300, 50));
+    expect(scene.get(b)!.pose).toEqual(box(100, 0, 100, 50));
+    scene.undo();
+    expect(scene.get(b)!.pose).toEqual(box(50));
   });
 
   it('closes the gap a deleted child leaves, as one undo step', () => {

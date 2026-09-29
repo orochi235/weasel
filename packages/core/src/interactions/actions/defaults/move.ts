@@ -49,6 +49,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 import { asNodeId } from 'core/scene/types';
+import { SceneArrivalRefused } from 'core/scene/arrivals';
 import type { Op } from 'core/ops/types';
 import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
@@ -975,9 +976,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
             }));
           }
           const ops = [...reparentOps, ...dropOps, ...reflowOps];
-          // `commitDrop` placed the drop, so the scene takes that as the
-          // destination's arrangement rather than re-applying its layout.
-          if (ops.length > 0) scratch.scene.holdLayout([asNodeId(destId)], () => commitOps(ops));
+          if (ops.length > 0) commitOps(ops);
           return committed;
         }
 
@@ -1073,9 +1072,15 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           // Reparent-on-drop still commits directly to the scene. Routing
           // this path through `commitOps` is a separate later task.
           const reparent = () => applyReparent(scratch, dropTarget, reparentMode, dx, dy, scratch.pc);
-          if (lifecycle.transient) scratch.scene.untracked(reparent);
-          else scratch.scene.batch(lifecycle.label, reparent);
-          committed = true;
+          try {
+            if (lifecycle.transient) scratch.scene.untracked(reparent);
+            else scratch.scene.batch(lifecycle.label, reparent);
+            committed = true;
+          } catch (err) {
+            // The container refused what was dropped into it; like a layout
+            // drop with no target, the drag lands nothing.
+            if (!(err instanceof SceneArrivalRefused)) throw err;
+          }
         } else {
           // No reparent — translate-only commit, emitted as transform ops so
           // it routes through the consumer `applyOps` hook (consumer history)

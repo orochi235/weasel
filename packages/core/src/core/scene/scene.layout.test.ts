@@ -177,15 +177,6 @@ describe('scene container layout', () => {
     expect(scene.get(asNodeId('b'))!.pose.width).toBe(50);
   });
 
-  it('takes the arrangement a holdLayout call leaves as the resting one', () => {
-    const scene = makeScene();
-    add(scene, 'a');
-    scene.holdLayout([C], () => {
-      scene.add({ id: asNodeId('b'), kind: 'leaf', layer: 'l', pose: LOOSE, data: null, parent: C });
-    });
-    expect(posOf(scene, 'b')).toEqual([0, 0]);
-  });
-
   it('reports each forward reflow with where the child was, and never an undo', () => {
     const scene = makeScene();
     const seen: { id: string; from: RectPose; to: RectPose }[][] = [];

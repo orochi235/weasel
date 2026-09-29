@@ -25,7 +25,7 @@ export {
   warmFonts,
 } from './registerFont';
 export type {
-  FontEntry, FontFamilyFaces, FontVariant, ResolveResult, RegisteredFont, RegisterFontOptions,
+  FontEntry, FontFamilyFaces, FontVariant, FontRequest, ResolveResult, RegisteredFont, RegisterFontOptions,
 } from './registerFont';
 
 export {
@@ -88,4 +88,5 @@ export {
   GLYPH_COVERAGE_GLSL,
   GLYPH_MODE_MSDF,
   GLYPH_MODE_R8,
+  glyphFieldScale,
 } from './textSdf';
