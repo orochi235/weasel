@@ -81,6 +81,19 @@ describe('attachHud: widget command cache', () => {
     expect(after).toMatchObject({ x: 50 });
   });
 
+  // A label pinned to the camera moves every frame; only its position changed,
+  // so its runs must keep their identity for the layout cache to hold.
+  it('keeps a moved text widget\'s runs array', () => {
+    const { hud, paint } = attached();
+    const label = hud.text({ id: 't', x: 10, y: 10, text: 'one', fontSize: 14 });
+    const before = paint()[0] as { runs: unknown };
+    label.setBounds({ x: 50, y: 10, w: 0, h: 14 });
+    const after = paint()[0] as { runs: unknown };
+    expect(after.runs).toBe(before.runs);
+    label.setText('two');
+    expect((paint()[0] as { runs: unknown }).runs).not.toBe(before.runs);
+  });
+
   it('invalidates a bare-factory widget that has no onChange', () => {
     const { hud, paint } = attached();
     const label = createText({ id: 't', x: 0, y: 0, text: 'one', fontSize: 14 });

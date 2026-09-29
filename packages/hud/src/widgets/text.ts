@@ -34,6 +34,7 @@ export function createText(opts: TextOptions): TextWidget {
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: 0, h: opts.fontSize };
   let text = opts.text;
   let hidden = false;
+  let placed: { text: string; color: string; fontFamily: string; cmd: DrawCommand } | null = null;
 
   const assertNotDisposed = () => {
     if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');
@@ -50,15 +51,18 @@ export function createText(opts: TextOptions): TextWidget {
     setText(t) { assertNotDisposed(); text = t; rev.changed(); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       const color = opts.color ?? ctx.tokens['--wzl-fg'];
-      return [textCommandFromRuns(
-        bounds.x,
-        bounds.y,
-        [{ text, fill: { fill: 'solid', color } }],
-        {
-          fontFamily: opts.fontFamily ?? ctx.defaultFont,
-          fontSize: opts.fontSize,
-        },
-      )];
+      const fontFamily = opts.fontFamily ?? ctx.defaultFont;
+      // The renderer's layout cache is keyed on the runs array, so a move
+      // reuses the placed command rather than resolving fresh runs.
+      if (!placed || placed.text !== text || placed.color !== color || placed.fontFamily !== fontFamily) {
+        placed = {
+          text, color, fontFamily,
+          cmd: textCommandFromRuns(0, 0, [{ text, fill: { fill: 'solid', color } }], {
+            fontFamily, fontSize: opts.fontSize,
+          }),
+        };
+      }
+      return [{ ...placed.cmd, x: bounds.x, y: bounds.y } as DrawCommand];
     },
     hitTest() { return false; },
     claims: [],
