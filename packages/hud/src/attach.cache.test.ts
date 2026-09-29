@@ -17,6 +17,7 @@ function attached() {
     getSurfaceRect: () => ({ x: 0, y: 0, width: 0, height: 0 }),
     requestRedraw: vi.fn(),
     subscribeFrame: vi.fn(() => () => {}),
+    subscribeBeforePaint: vi.fn(() => () => {}),
     hitTestExtras: vi.fn(() => null),
     registerLayer: vi.fn((l: RenderLayer<unknown>) => { layer = l; return () => {}; }),
     getView: vi.fn(() => VIEW),
