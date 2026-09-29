@@ -343,18 +343,19 @@ Core five + Crop shipped. Remaining:
   keeping container unpacking in `sfnt.ts` rather than upstreaming it or
   adopting fontkit is in that file's own header.
 
-- **(P3) The two tiers still read different ascender tables.** Untouched by
-  the outline work and unchanged in urgency. Chrome reports Inter at 0.896 em
-  (`sTypoAscender`) where `msdf-bmfont-xml` baked 0.969 em (`hhea.ascender`),
-  and `emHeightAscent` is undefined in Chrome, so no browser API recovers the
-  hhea value — a DOM baseline probe returns exactly
-  `fontBoundingBoxAscent`. Measured at a 48px em: Inter 43/43 (0.896), Impact
-  48/48.5 (1.01), Georgia 44/44 (0.917), Comic Sans MS 53/53 (1.104), Papyrus
-  45 with descent 29 (0.938). Decide one convention and normalize both tiers
-  onto it. Papyrus's ascent+descent of 1.54 em cannot fit the default 1.2 line
-  box under any convention and needs a rule of its own. The outline tier makes
-  this *easier*: reading font bytes gives access to both tables directly
-  instead of to whichever one Chrome chose to expose. Recorded 2026-07-31.
+- **(P3) The edit overlay's text lands on whole CSS pixels; the canvas's does
+  not.** Every tier now hangs its baseline where CSS does, so the overlay's
+  measured `baselineDrop` is only rounding, but the overlay still cannot
+  follow a fractional canvas baseline: moving its `top` by 0.4px moved its
+  ink by exactly 1px in Chromium at DPR 1, and the matrix rows show the same
+  jump in WebKit, Firefox and at DPR 2. On top of that sits a steady ink bias,
+  overlay above canvas, of about -0.35px at DPR 1 and -0.17px at DPR 2
+  (derived from Chromium's rows), of unknown origin. Together they are the whole of
+  `dy` in `scripts/measure-overlay-alignment.config.ts` (mean |dy| about
+  0.2px, max 0.75), and why `overlayAlignment.browser.test.tsx` allows
+  `DY_TOLERANCE = 0.85`. Candidates: carry the fraction on a transform, snap
+  the canvas's text baseline to device pixels as browsers do, or find the
+  bias first. Recorded 2026-09-29.
 
 - **(P3) The character strip has no "no fill" chip.** WeaselDraw's text
   objects carry `fill: null` through its SVG export and import, and the

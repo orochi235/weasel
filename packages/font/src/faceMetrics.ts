@@ -1,6 +1,6 @@
 /**
- * The decoration and script metrics a font states for itself, in the kit's
- * units: em fractions, with a rule's `offset` measured *down* from the
+ * The line, decoration and script metrics a font states for itself, in the
+ * kit's units: em fractions, with a rule's `offset` measured *down* from the
  * baseline to its top edge (y grows down) and a script's `shift` positive
  * for a rise.
  *
@@ -24,9 +24,15 @@ export interface FaceScriptMetrics {
   readonly shift: number;
 }
 
-/** What a face says about its rules and scripts. Every field is optional:
- *  a font may carry some of these tables and not others. */
+/** What a face says about its line, rules and scripts. Every field is
+ *  optional: a font may carry some of these tables and not others. */
 export interface FaceMetrics {
+  /** Baseline to the top of the face's line box, in ems — the ascent a
+   *  browser sets this face with. See {@link verticalMetricsFromTables}. */
+  readonly ascent?: number;
+  /** Baseline to the bottom of the face's line box, in ems, positive
+   *  downward. Present exactly when `ascent` is. */
+  readonly descent?: number;
   readonly underline?: FaceRuleMetrics;
   readonly strikethrough?: FaceRuleMetrics;
   readonly superscript?: FaceScriptMetrics;
@@ -37,8 +43,14 @@ export interface FaceMetrics {
  *  the OpenType `post` and `OS/2` tables state them. */
 export interface FaceMetricTables {
   unitsPerEm: number;
+  hhea?: { ascender?: number; descender?: number };
   post?: { underlinePosition?: number; underlineThickness?: number };
   os2?: {
+    fsSelection?: number;
+    sTypoAscender?: number;
+    sTypoDescender?: number;
+    usWinAscent?: number;
+    usWinDescent?: number;
     yStrikeoutPosition?: number;
     yStrikeoutSize?: number;
     ySuperscriptYSize?: number;
@@ -49,6 +61,39 @@ export interface FaceMetricTables {
 }
 
 const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
+
+/** `OS/2.fsSelection` bit 7: the font asks to be set by its typo metrics. */
+const USE_TYPO_METRICS = 1 << 7;
+
+/**
+ * The ascent and descent a browser sets this face with, in ems, descent
+ * positive downward.
+ *
+ * The OpenType rule: `OS/2` `sTypoAscender`/`sTypoDescender` when the font
+ * sets `USE_TYPO_METRICS`, otherwise `hhea`. It is the browser's rule rather
+ * than a typographer's because the DOM edit overlay stands in for the canvas
+ * and can only ever get the browser's numbers. Firefox, and every engine on
+ * Linux, follow it; Chromium and WebKit on macOS read `hhea` even when the
+ * flag is set, and the overlay's measured baseline correction absorbs the
+ * difference there. `verticalMetrics.browser.test.ts` pins both.
+ *
+ * Falls back to the typo pair, then the win pair, when `hhea` is absent or
+ * zero.
+ */
+export function verticalMetricsFromTables(t: FaceMetricTables): { ascent: number; descent: number } | undefined {
+  const upem = t.unitsPerEm;
+  if (!finite(upem) || upem <= 0) return undefined;
+  const os2 = t.os2;
+  const pair = (a: unknown, d: unknown, down: boolean) =>
+    finite(a) && finite(d) && a + (down ? d : -d) > 0
+      ? { ascent: a / upem, descent: (down ? d : -d) / upem }
+      : undefined;
+  const typo = pair(os2?.sTypoAscender, os2?.sTypoDescender, false);
+  const hhea = pair(t.hhea?.ascender, t.hhea?.descender, false);
+  const win = pair(os2?.usWinAscent, os2?.usWinDescent, true);
+  const useTypo = finite(os2?.fsSelection) && (os2.fsSelection & USE_TYPO_METRICS) !== 0;
+  return (useTypo ? typo : undefined) ?? hhea ?? typo ?? win;
+}
 
 /**
  * Convert raw table values to {@link FaceMetrics}.
@@ -63,6 +108,7 @@ export function faceMetricsFromTables(t: FaceMetricTables): FaceMetrics | undefi
   const upem = t.unitsPerEm;
   if (!finite(upem) || upem <= 0) return undefined;
   const out: {
+    ascent?: number; descent?: number;
     underline?: FaceRuleMetrics; strikethrough?: FaceRuleMetrics;
     superscript?: FaceScriptMetrics; subscript?: FaceScriptMetrics;
   } = {};
@@ -79,6 +125,8 @@ export function faceMetricsFromTables(t: FaceMetricTables): FaceMetrics | undefi
   const superscript = script(t.os2?.ySuperscriptYSize, t.os2?.ySuperscriptYOffset);
   const sub = t.os2?.ySubscriptYOffset;
   const subscript = script(t.os2?.ySubscriptYSize, finite(sub) ? -sub : sub);
+  const vertical = verticalMetricsFromTables(t);
+  if (vertical) { out.ascent = vertical.ascent; out.descent = vertical.descent; }
   if (underline) out.underline = underline;
   if (strikethrough) out.strikethrough = strikethrough;
   if (superscript) out.superscript = superscript;
@@ -95,7 +143,14 @@ export function parseFaceMetrics(raw: unknown): FaceMetrics | undefined {
   if (raw === undefined) return undefined;
   if (typeof raw !== 'object' || raw === null) throw new Error('parseBmFont: faceMetrics must be an object');
   const r = raw as Record<string, unknown>;
-  const out: Record<string, FaceRuleMetrics | FaceScriptMetrics> = {};
+  const out: Record<string, FaceRuleMetrics | FaceScriptMetrics | number> = {};
+  if (r.ascent !== undefined || r.descent !== undefined) {
+    if (!finite(r.ascent) || !finite(r.descent) || r.ascent + r.descent <= 0) {
+      throw new Error('parseBmFont: malformed faceMetrics.ascent/descent');
+    }
+    out.ascent = r.ascent;
+    out.descent = r.descent;
+  }
   const pair = (key: string, a: string, b: string, positive: string): void => {
     const v = r[key];
     if (v === undefined) return;

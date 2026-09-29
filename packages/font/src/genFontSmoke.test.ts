@@ -42,9 +42,9 @@ describe.skipIf(!existsSync(FONT_PATH))('gen-font.ts smoke test', () => {
 
         const font = parseBmFont(raw);
         expect(font.chars.length).toBeGreaterThanOrEqual(95);
-        // Arial ships post and OS/2 values for every entry the block carries.
+        // Arial ships hhea, post and OS/2 values for every entry the block carries.
         expect(Object.keys(font.faceMetrics ?? {}).sort())
-          .toEqual(['strikethrough', 'subscript', 'superscript', 'underline']);
+          .toEqual(['ascent', 'descent', 'strikethrough', 'subscript', 'superscript', 'underline']);
 
         expect(existsSync(pngPath)).toBe(true);
         const pngHead = readFileSync(pngPath).subarray(0, 8);

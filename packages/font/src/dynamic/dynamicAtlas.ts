@@ -204,6 +204,8 @@ export function getDynamicFace(
     kernings: [], // no kerning in v1 (measured-pair kerning is future work)
     charMap: new Map(),
     kerningMap: new Map(),
+    // Unrounded, unlike `common`: layout places the baseline from these.
+    faceMetrics: { ascent: metrics.ascent / BAKE_SIZE, descent: metrics.descent / BAKE_SIZE },
   };
 
   const face: DynamicFace = {

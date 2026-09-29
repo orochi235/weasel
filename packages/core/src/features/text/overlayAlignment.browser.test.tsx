@@ -13,11 +13,11 @@ import { createElement, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { registerFont, registerCanvasFont, registerFontOutlines } from '@weasel-js/font';
-import type { TextStyle } from '@weasel-js/text';
+import { resolveTextStyle, type TextStyle } from '@weasel-js/text';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'features/groups/composePose';
 import { renderSceneToPixels, type RasterImage } from '../../canvas/renderSceneToPixels';
-import { useTextEdit, type TextEditScreenPose } from './useTextEdit';
+import { baselineDrop, useTextEdit, type TextEditScreenPose } from './useTextEdit';
 import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../../assets/fonts/inter/inter.ttf?url';
@@ -26,6 +26,14 @@ const W = 360;
 const H = 160;
 /** One glyph, so the centroid measures placement alone; cases with `text` measure advances. */
 const TEXT = 'H';
+
+/**
+ * The overlay's text lands on whole CSS pixels — moving its `top` by 0.4px
+ * moves its ink by 0 or 1px — while the canvas places a baseline anywhere, so
+ * `dy` carries up to half a pixel of snapping on top of a steady ink bias,
+ * measured at about -0.35px at DPR 1 across all three engines.
+ */
+const DY_TOLERANCE = 0.85;
 
 interface Ink { cx: number; cy: number; mass: number; right: number }
 
@@ -118,15 +126,17 @@ async function settledCanvas(c: Case, dpr: number): Promise<RasterImage> {
 let host: HTMLDivElement;
 let root: Root;
 
+const poseOf = (c: Case): TextEditScreenPose => ({
+  x: c.x, y: c.y, width: 200, height: boxHeight(c), fontSize: c.fontSize, zoom: 1,
+});
+
 function Editor({ c }: { c: Case }) {
   const edit = useTextEdit({
     container: host,
     getText: () => c.text ?? TEXT,
     getStyle: () => ({ ...styleOf(c), caretColor: 'transparent' }),
     getPaint: () => ({ fill: WHITE }),
-    getScreenPose: (): TextEditScreenPose => ({
-      x: c.x, y: c.y, width: 200, height: boxHeight(c), fontSize: c.fontSize, zoom: 1,
-    }),
+    getScreenPose: () => poseOf(c),
     setText: () => {},
   });
   const { startEdit } = edit;
@@ -212,8 +222,29 @@ describe('edit overlay alignment', () => {
       const d = await offset(c);
       const at = `dx ${d.dx.toFixed(2)} dy ${d.dy.toFixed(2)} dRight ${d.dRight.toFixed(2)}`;
       expect(Math.abs(d.dx), at).toBeLessThan(0.75);
-      expect(Math.abs(d.dy), at).toBeLessThan(0.75);
+      expect(Math.abs(d.dy), at).toBeLessThan(DY_TOLERANCE);
       expect(Math.abs(d.dRight), at).toBeLessThan(0.75);
+    });
+  }
+
+  // Tier agreement: every tier hangs its baseline where CSS sets the
+  // overlay's, so the correction the overlay measures is only each engine
+  // rounding the face's ascent and descent to whole pixels — at most half a
+  // pixel, split between the two.
+  const UNCORRECTED: Case[] = [
+    { family: 'Inter', fontSize: 16, x: 20, y: 20 },
+    { family: 'Inter', fontSize: 72, x: 20, y: 20 },
+    { family: 'sans-serif', fontSize: 72, x: 20, y: 20 },
+    { family: 'Georgia', fontSize: 40, x: 20, y: 20 },
+    { family: 'Arial', fontSize: 40, x: 20, y: 20 },
+  ];
+  for (const c of UNCORRECTED) {
+    it(`${c.family} ${c.fontSize}px needs no baseline correction beyond rounding`, async () => {
+      await settledCanvas(c, window.devicePixelRatio);
+      await renderOverlay(c);
+      const el = host.querySelector<HTMLElement>('[contenteditable]')!;
+      const drop = baselineDrop(el, resolveTextStyle(styleOf(c)), poseOf(c), 1.2);
+      expect(Math.abs(drop), `drop ${drop.toFixed(3)}`).toBeLessThanOrEqual(0.5 + 1 / 64);
     });
   }
 

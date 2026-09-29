@@ -67,11 +67,11 @@ export function parserOf(ns: OpenType): OpenType['parse'] {
 function faceFor(font: import('opentype.js').Font, gpos: PairKerning | null): OutlineFace {
   const upem = font.unitsPerEm;
   // Typed `any` by the 1.x typings; read through the narrow shape instead.
-  const { post, os2 } = font.tables as Pick<FaceMetricTables, 'post' | 'os2'>;
-  const faceMetrics = faceMetricsFromTables({ unitsPerEm: upem, post, os2 });
+  const { hhea, post, os2 } = font.tables as Pick<FaceMetricTables, 'hhea' | 'post' | 'os2'>;
+  const faceMetrics = faceMetricsFromTables({ unitsPerEm: upem, hhea, post, os2 });
   return {
     unitsPerEm: upem,
-    ascender: font.ascender / upem,
+    ascender: faceMetrics?.ascent ?? font.ascender / upem,
     ...(faceMetrics ? { faceMetrics } : {}),
     advanceOf(cp: number): number | null {
       const index = font.charToGlyphIndex(String.fromCodePoint(cp));
