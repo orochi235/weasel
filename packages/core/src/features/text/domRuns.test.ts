@@ -569,6 +569,42 @@ describe('domPositionToCharOffset', () => {
   });
 });
 
+describe('hard line breaks in the overlay', () => {
+  const TEXT = 'a\u2028b\u2029c\rd\r\ne\u000bf\u000cg\u0085h\ni';
+  let parent: HTMLDivElement;
+  beforeEach(() => {
+    parent = document.createElement('div');
+    document.body.appendChild(parent);
+  });
+
+  it('stands a newline in for each break the browser would not break at', () => {
+    runsToDom([{ text: TEXT }], parent);
+    // LF breaks as it is, and so does a CRLF, whose CR draws nothing.
+    expect(parent.textContent).toBe('a\nb\nc\nd\r\ne\nf\ng\nh\ni');
+    expect([...parent.querySelectorAll('[data-break]')].map((el) => el.getAttribute('data-break')))
+      .toEqual(['2028', '2029', 'd', 'b', 'c', '85']);
+    expect(domToRuns(parent)).toEqual([{ text: TEXT }]);
+  });
+
+  it('keeps one DOM character per source character, so caret offsets carry over', () => {
+    runsToDom([{ text: TEXT }], parent);
+    const at = TEXT.indexOf('c');
+    const pos = charOffsetToDomPosition(parent, at)!;
+    expect(domPositionToCharOffset(parent, pos.node, pos.offset)).toBe(at);
+    expect(parent.textContent!.length).toBe(TEXT.length);
+  });
+
+  it('keeps text typed into a stand-in, and drops a deleted one', () => {
+    const para = document.createElement('span');
+    para.setAttribute('data-break', '2029');
+    para.textContent = '\nX';
+    const gone = document.createElement('span');
+    gone.setAttribute('data-break', '2028');
+    parent.append('a', para, 'b', gone, 'c');
+    expect(domToRuns(parent)).toEqual([{ text: 'a\u2029Xbc' }]);
+  });
+});
+
 describe('domRuns — small caps', () => {
   let parent: HTMLDivElement;
   beforeEach(() => {
@@ -636,5 +672,22 @@ describe('domRuns — small caps', () => {
     span.style.fontVariant = 'normal';
     expect(normalizeSmallCaps(parent)).toBe(true);
     expect(pieces(span)).toEqual([['Ab', false]]);
+  });
+
+  it('keeps a hard break through its pieces, a re-split and a flatten', () => {
+    const text = 'ab\u2028Cd';
+    runsToDom([{ text, fontVariantCaps: 'small-caps' }], parent);
+    const span = parent.querySelector<HTMLElement>('span[data-run]')!;
+    expect(pieces(span)).toEqual([['ab', true], ['\n', false], ['C', false], ['d', true]]);
+    expect(normalizeSmallCaps(parent)).toBe(false);
+    expect(domToRuns(parent)).toEqual([{ text, fontVariantCaps: 'small-caps' }]);
+    // Typed: a lowercase x after the C, outside the small piece.
+    (span.lastChild!.previousSibling as Text).data = 'Cx';
+    expect(normalizeSmallCaps(parent)).toBe(true);
+    expect(domToRuns(parent)).toEqual([{ text: 'ab\u2028Cxd', fontVariantCaps: 'small-caps' }]);
+    span.style.fontVariant = 'normal';
+    expect(normalizeSmallCaps(parent)).toBe(true);
+    expect(span.querySelector('[data-break]')?.getAttribute('data-break')).toBe('2028');
+    expect(domToRuns(parent)).toEqual([{ text: 'ab\u2028Cxd', fontVariantCaps: 'normal' }]);
   });
 });
