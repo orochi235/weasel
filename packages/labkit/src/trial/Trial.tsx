@@ -248,6 +248,7 @@ function TrialRuntime({
         meaning: () => capRef.current?.meaning,
         config: () => configRef.current,
         onCapture: (result) => capRef.current?.onCapture?.(result),
+        selection: () => capRef.current?.selection,
       },
     );
   }
