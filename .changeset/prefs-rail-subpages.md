@@ -1,5 +1,5 @@
 ---
-"@weasel-js/ui": minor
+"@weasel-js/ui": patch
 ---
 
 `PrefsForm` (and so `PrefsDialog`) takes `subPages` in the rail layout. A nested
