@@ -249,6 +249,7 @@ export function CanvasView(props: CanvasViewProps): null {
   // same adapter, same tools — but everything gesture-shaped is read off this
   // view's own dispatcher, which is where a gesture inside this view lands.
   const inputs = useOptionalViewInputs();
+  const rotationBadge = inputs?.rotationBadge ?? null;
   const own = useMemo(() => ({
     gestureSource: createGestureSource(() => dispatcherRef.current),
     ...createDispatcherPreviewSources(() => dispatcherRef.current),
@@ -301,6 +302,7 @@ export function CanvasView(props: CanvasViewProps): null {
       getChromeState: () => helpersRef.current.getChromeState(),
       getView: camera,
       targetScale,
+      rotationBadge,
       getAnchorState,
       getIsVisible: () => helpersRef.current.getIsVisible(),
     });
@@ -327,7 +329,7 @@ export function CanvasView(props: CanvasViewProps): null {
       }
       return inner(world);
     };
-  }, [getAnchorState, rectNow, registry, targetScale, camera, drawnLayers]);
+  }, [getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge]);
 
   const classifyTarget = useMemo(() => {
     const inner = buildClassifyTarget(

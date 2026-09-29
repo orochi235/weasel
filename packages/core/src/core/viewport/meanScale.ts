@@ -8,10 +8,15 @@
  * for a per-axis world length, or `withinPxBox` / `withinPxRadius` to compare
  * in screen space directly. Chrome hit-tests moved off this in 2026-08.
  *
- * What legitimately remains: hairline stroke widths (`1 / meanScale`), where
- * a single width is all the renderer accepts and no per-axis answer exists,
- * and painted chrome placement, whose per-axis form doesn't separate under a
- * rotated target.
+ * Nor for placing chrome or measuring a pick slop: `standoff` and
+ * `strokeHitTest`'s `slop` work on screen, which stays exact under a rotated
+ * target where no per-axis world answer exists.
+ *
+ * What legitimately remains is a stroke width for a line that is not
+ * axis-aligned. A ribbon takes one world width, and the renderer resolves a
+ * `{ px }` width through this same mean, so a picker reading ink widths must
+ * too. An axis-aligned line has an exact answer — `pxExtent` on its cross
+ * axis, as the grid layer does.
  */
 export function meanScale(s: { x: number; y: number }): number {
   return Math.sqrt(s.x * s.y);

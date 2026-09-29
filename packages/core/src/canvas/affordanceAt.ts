@@ -56,6 +56,10 @@ export interface BuildAffordanceAtOptions {
   /** Minimum rotate-band thickness outside the selection AABB, in screen px.
    *  Overrides the device-scaled default. */
   rotateBandPx?: number;
+  /** The rotate badge the selection overlay paints (`rotationBadgeOf`), so
+   *  it can be grabbed where it is drawn. Omitted or null, only the rotate
+   *  ring is hit-tested. */
+  rotationBadge?: { distancePx: number; sizePx: number } | null;
   /** Anchor-editing state. When omitted, anchors aren't hit-tested. */
   getAnchorState?: () => AnchorState | null;
   /** Chrome-caps resolver. Keeps the hit-test and the renderer agreeing on
@@ -109,13 +113,20 @@ export function buildAffordanceAt(
     rotateBandPx = sizes.rotationDistance,
     getAnchorState,
     getIsVisible,
+    rotationBadge,
   } = opts;
 
   // Bottom → top. The rotate ring wraps the whole selection, so it sits under
   // the corner handles that punctuate it; anchors and their controls ride on
   // top of both, because in anchor-edit mode they're what the pointer is for.
   const affordances: Affordance[] = [
-    createRotationAffordance({ bandPx: rotateBandPx, paint: null }),
+    createRotationAffordance({
+      bandPx: rotateBandPx,
+      paint: null,
+      ...(rotationBadge
+        ? { handle: { distancePx: rotationBadge.distancePx, hitRadiusPx: rotationBadge.sizePx } }
+        : {}),
+    }),
     createCornerResizeAffordance({ handleHitRadius }),
     ...(getAnchorState
       ? createPathAnchorAffordances(getAnchorState, { hitRadius: anchorHitRadius })

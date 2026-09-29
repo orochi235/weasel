@@ -100,3 +100,23 @@ describe('AffordanceHit carries its owner and claim strength', () => {
     expect(affordanceAt({ x: 0, y: 0 })?.strength).toBe('shared');
   });
 });
+
+describe('a painted rotate badge is grabbable', () => {
+  // A 10-box: the ring reaches 24px above the top edge, and the badge centered
+  // there pokes 8px past it.
+  const state = () => makeState({ x: 0, y: 0, width: 10, height: 10 });
+
+  it('rotates from the badge where it pokes past the ring', () => {
+    const at = buildAffordanceAt({
+      getChromeState: state,
+      getView: () => VIEW,
+      rotationBadge: { distancePx: 24, sizePx: 8 },
+    });
+    expect(at({ x: 5, y: -30 })?.kind).toBe('rotate-handle');
+  });
+
+  it('leaves that spot alone when no badge is painted', () => {
+    const at = buildAffordanceAt({ getChromeState: state, getView: () => VIEW });
+    expect(at({ x: 5, y: -30 })).toBeNull();
+  });
+});

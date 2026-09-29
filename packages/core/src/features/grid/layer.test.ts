@@ -33,6 +33,23 @@ describe('createGridLayer', () => {
     expect(tree).toEqual([]);
   });
 
+  it('keeps every line 1px on screen under non-uniform zoom', () => {
+    // A vertical line's width runs along x and a horizontal one's along y, so
+    // each divides by its own axis's scale.
+    const layer = createGridLayer({
+      spacing: 10,
+      bounds: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+    });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 4, y: 1 } }, { width: 100, height: 100 });
+    const paths = tree as PathDrawCommand[];
+    for (const p of paths) {
+      const c = (p.path as { coords: ArrayLike<number> }).coords;
+      const vertical = c[0] === c[2];
+      expect(p.stroke?.width).toBeCloseTo(vertical ? 1 / 4 : 1, 6);
+    }
+    expect(paths.length).toBe(4);
+  });
+
   it('draw divides stroke width by view.scale so hairlines stay 1px on screen', () => {
     const layer = createGridLayer({
       spacing: 10,

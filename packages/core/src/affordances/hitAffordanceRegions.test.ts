@@ -170,6 +170,20 @@ describe('hitAffordanceRegions', () => {
       // 24px is 6 world units across and 24 down, not 12 on both.
       expect(annulusSemiAxes(shape, SQUISHED)).toEqual({ rx: 56, ry: 74 });
     });
+
+    it('measures the annulus floor on screen for a turned target', () => {
+      const shape = {
+        kind: 'annulus' as const,
+        cx: 50, cy: 50, rx: 10, ry: 10,
+        innerX: 0, innerY: 0, innerWidth: 100, innerHeight: 100,
+        minBandPx: 24,
+      };
+      // A quarter turn lays the local y axis along screen x, where 24px is 6
+      // world units; local x lands along screen y, where it is 24.
+      const r = annulusSemiAxes(shape, SQUISHED, Math.PI / 2);
+      expect(r.rx).toBeCloseTo(74, 6);
+      expect(r.ry).toBeCloseTo(56, 6);
+    });
   });
 
   it('hits a point region square, matching the square handle it paints', () => {

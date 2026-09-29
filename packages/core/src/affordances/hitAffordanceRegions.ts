@@ -16,7 +16,7 @@
  */
 
 import type { View } from 'core/viewport/view';
-import { pxExtent, withinPxBox } from 'core/viewport/pxExtent';
+import { pxExtent, standoff, withinPxBox } from 'core/viewport/pxExtent';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import { poseRotationOf } from 'core/geometry/poseRotation';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
@@ -69,7 +69,7 @@ export function hitAffordanceRegions(
       const region = regions[j];
       const xf = transformOf(state, region.targetId);
       if (!hitRegion(region, wx, wy, xf, view)) continue;
-      const d2 = regionDistance2(region, wx, wy, xf);
+      const d2 = regionDistance2(region, wx, wy, xf, view);
       // `<=` so a later-declared region wins an exact tie, preserving the
       // "later is on top" reading of declaration order.
       if (best === null || d2 <= best.d2) best = { region, d2 };
@@ -93,14 +93,14 @@ function regionDistance2(
   wx: number,
   wy: number,
   xf: TargetTransform,
+  view: View,
 ): number {
   const s = region.shape;
-  const local = s.kind === 'point'
-    ? { x: s.x, y: s.y }
+  const w = s.kind === 'point'
+    ? pointRegionAnchor(s, xf, view)
     : s.kind === 'annulus'
-      ? { x: s.cx, y: s.cy }
-      : { x: s.x + s.width / 2, y: s.y + s.height / 2 };
-  const w = localToWorld(xf, local.x, local.y);
+      ? localToWorld(xf, s.cx, s.cy)
+      : localToWorld(xf, s.x + s.width / 2, s.y + s.height / 2);
   const dx = w.x - wx;
   const dy = w.y - wy;
   return dx * dx + dy * dy;
@@ -170,6 +170,24 @@ function worldToLocal(xf: TargetTransform, wx: number, wy: number): { x: number;
 
 // ─── Shape resolution ───────────────────────────────────────────────────────
 
+type PointShape = Extract<AffordanceRegion['shape'], { kind: 'point' }>;
+
+/** A point region's anchor in world coords, its `standoff` applied. Hit-test,
+ *  ranking, paint and the debug hitbox all read it from here. */
+export function pointRegionAnchor(
+  shape: PointShape,
+  xf: TargetTransform,
+  view: View,
+): { x: number; y: number } {
+  const a = localToWorld(xf, shape.x, shape.y);
+  if (!shape.standoff) return a;
+  const n = shape.standoff.normal;
+  const wn = xf.identity
+    ? n
+    : { x: xf.cos * n.x - xf.sin * n.y, y: xf.sin * n.x + xf.cos * n.y };
+  return standoff(a, wn, shape.standoff.px, view.scale);
+}
+
 /**
  * An annulus region's effective outer semi-axes, with `minBandPx` applied.
  *
@@ -182,10 +200,13 @@ function worldToLocal(xf: TargetTransform, wx: number, wy: number): { x: number;
 export function annulusSemiAxes(
   shape: Extract<AffordanceRegion['shape'], { kind: 'annulus' }>,
   view: View,
+  /** The target's rotation, which decides what a screen pixel is along each
+   *  of its axes. */
+  rotation = 0,
 ): { rx: number; ry: number } {
   const bandPx = shape.minBandPx ?? 0;
   if (bandPx === 0) return { rx: shape.rx, ry: shape.ry };
-  const band = pxExtent(bandPx, view.scale);
+  const band = pxExtent(bandPx, view.scale, rotation);
   return {
     rx: Math.max(shape.rx, shape.innerWidth / 2 + band.x),
     ry: Math.max(shape.ry, shape.innerHeight / 2 + band.y),
@@ -211,7 +232,7 @@ function hitRegion(
     // Compared in screen space, where that square is axis-aligned. Testing it
     // in the target's local frame instead would tilt it under a rotated
     // target and stretch it under non-uniform zoom.
-    const anchor = localToWorld(xf, region.shape.x, region.shape.y);
+    const anchor = pointRegionAnchor(region.shape, xf, view);
     return withinPxBox(anchor.x - wx, anchor.y - wy, region.shape.hitRadiusPx, view.scale);
   }
   if (region.shape.kind === 'annulus') {
@@ -222,7 +243,7 @@ function hitRegion(
       local.y >= s.innerY && local.y <= s.innerY + s.innerHeight;
     if (insideInner) return false;
     // Inside the outer ellipse? `((x-cx)/rx)² + ((y-cy)/ry)² ≤ 1`.
-    const { rx, ry } = annulusSemiAxes(s, view);
+    const { rx, ry } = annulusSemiAxes(s, view, angleOf(xf));
     if (rx <= 0 || ry <= 0) return false;
     const ex = (local.x - s.cx) / rx;
     const ey = (local.y - s.cy) / ry;

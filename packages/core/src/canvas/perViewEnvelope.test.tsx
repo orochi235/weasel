@@ -119,7 +119,9 @@ describe('dispatcher-overlay layer answers for the view it is drawn for', () => 
 function minX(cmds: DrawCommand[]): number {
   let min = Infinity;
   for (const c of cmds) {
-    if (c.kind !== 'path' || c.path.kind !== 'polygon') continue;
+    if (c.kind !== 'path') continue;
+    if (c.path.kind === 'rect') { min = Math.min(min, c.path.x); continue; }
+    if (c.path.kind !== 'polygon') continue;
     const { coords } = c.path;
     for (let i = 0; i < coords.length; i += 2) min = Math.min(min, coords[i]!);
   }

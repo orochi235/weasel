@@ -9,9 +9,11 @@ import type { DebugSink } from '../debug/types';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
 import {
+  angleOf,
   annulusSemiAxes,
   hitAffordanceRegions,
   localToWorld,
+  pointRegionAnchor,
   transformOf,
   type TargetTransform,
 } from './hitAffordanceRegions';
@@ -131,7 +133,7 @@ function recordRegionHitbox(
   view: View,
 ): void {
   if (region.shape.kind === 'point') {
-    const w = localToWorld(xf, region.shape.x, region.shape.y);
+    const w = pointRegionAnchor(region.shape, xf, view);
     const e = pxExtent(region.shape.hitRadiusPx, view.scale);
     // Square hit, but a square on *screen* — so the world-space rect is
     // per-axis and carries no rotation, however the target is rotated. The
@@ -153,7 +155,7 @@ function recordRegionHitbox(
     // actual ring. Consumers that want a precise debug overlay can match
     // against the affordance id and render the annulus themselves.
     const s = region.shape;
-    const { rx, ry } = annulusSemiAxes(s, view);
+    const { rx, ry } = annulusSemiAxes(s, view, angleOf(xf));
     const pts = [
       localToWorld(xf, s.cx + rx, s.cy),
       localToWorld(xf, s.cx - rx, s.cy),
@@ -223,10 +225,10 @@ function paintRegion(
     // Convert the screen-px inset to target-local units so it visually
     // matches at any zoom. `localToWorld` is rotation+translation (no
     // scale), so target-local units equal world units for ring math.
-    const insetLocal = pxExtent(paint.insetPx ?? 0, view.scale);
+    const insetLocal = pxExtent(paint.insetPx ?? 0, view.scale, angleOf(xf));
     // Same `minBandPx` clamp the hit-test applies, so the ring you can see is
     // the ring you can grab.
-    const cmd = annulusCommand(s, annulusSemiAxes(s, view), insetLocal, xf, viewT, paint.fill, paint.stroke);
+    const cmd = annulusCommand(s, annulusSemiAxes(s, view, angleOf(xf)), insetLocal, xf, viewT, paint.fill, paint.stroke);
     if (cmd) out.push(cmd);
     return;
   }
@@ -340,7 +342,7 @@ function annulusCommand(
 
 function worldOf(region: AffordanceRegion, xf: TargetTransform, view: View): CustomPaintContext['world'] {
   if (region.shape.kind === 'point') {
-    const w = localToWorld(xf, region.shape.x, region.shape.y);
+    const w = pointRegionAnchor(region.shape, xf, view);
     return { x: w.x, y: w.y };
   }
   if (region.shape.kind === 'annulus') {
@@ -348,7 +350,7 @@ function worldOf(region: AffordanceRegion, xf: TargetTransform, view: View): Cus
     // extrema through the target transform and AABB the result. (Rotated
     // ellipses are still ellipses; their AABB needs all four points.)
     const s = region.shape;
-    const { rx, ry } = annulusSemiAxes(s, view);
+    const { rx, ry } = annulusSemiAxes(s, view, angleOf(xf));
     const pts = [
       localToWorld(xf, s.cx + rx, s.cy),
       localToWorld(xf, s.cx - rx, s.cy),

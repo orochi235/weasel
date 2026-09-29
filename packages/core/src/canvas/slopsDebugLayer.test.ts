@@ -36,14 +36,11 @@ function drawAt(
   } as never);
 }
 
-/** Radius of the first drawn slop circle. `circlePath` emits a 4-arc
- *  approximation whose x-extent is the diameter, so half the coord span is
- *  the radius regardless of how the curve is discretized. */
+/** Half-extent of the first drawn slop square — the square a point region
+ *  hit-tests. */
 function firstSlopRadius(cmds: readonly unknown[]): number {
-  const cmd = cmds[0] as { path: { coords: ArrayLike<number> } };
-  const xs: number[] = [];
-  for (let i = 0; i < cmd.path.coords.length; i += 2) xs.push(cmd.path.coords[i]);
-  return (Math.max(...xs) - Math.min(...xs)) / 2;
+  const cmd = cmds[0] as { path: { kind: 'rect'; width: number } };
+  return cmd.path.width / 2;
 }
 
 describe('slopsDebugLayer', () => {

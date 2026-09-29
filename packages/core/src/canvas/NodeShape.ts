@@ -59,6 +59,7 @@ import { boundsOfPath } from 'features/paths/bounds';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { markerReach } from 'features/paths/markerCommands';
 import { strokeReachAt } from '../renderer/cullDrawCommands';
+import { hasSlop, slopForStrokeHit, type PickSlop } from 'core/viewport/screenSlop';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { poseRotationOf, rotatePathAround } from 'core/geometry/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
@@ -376,15 +377,15 @@ function poseBoxBounds(pose: unknown, stroke: Stroke | null, scale: number | und
 
 /** Options for {@link shapeCoversPoint}. */
 export interface ShapeCoversPointOptions {
-  /** Extra grab distance around the outline, in **world** units. Callers
-   *  derive it from a screen-pixel slop and the view scale, the same way
-   *  affordance hit radii work.
+  /** Extra grab distance around the outline: **world** units as a number,
+   *  or screen pixels under a view scale (`{ px, scale }`), which is measured
+   *  on screen and so stays exact under non-uniform zoom.
    *
    *  Without slop a hairline is a mathematically zero-width target: the
    *  stroke of a 1px outline is half a world unit wide at scale 1, which no
    *  one can hit. Defaults to `0` so a caller that hasn't thought about the
    *  view still gets exact geometry rather than a wrong guess. */
-  tolerance?: number;
+  tolerance?: PickSlop;
   /** View scale, passed to the painter's `ink` so a `{ px }` stroke width
    *  resolves to world units. Defaults to 1. */
   scale?: number;
@@ -437,8 +438,9 @@ export function shapeCoversPoint<TData, TPose>(
   // can actually land on, and also makes a filled shape grabbable a few pixels
   // outside its edge — which is what every editor does and what makes
   // edge-dragging feel possible.
-  const reach = (inside ? ink.inset : ink.outset) + (opts.tolerance ?? 0);
-  return reach > 0 && strokeHitTest(sil, x, y, reach);
+  const { extra, opts: hit } = slopForStrokeHit(opts.tolerance);
+  const reach = (inside ? ink.inset : ink.outset) + extra;
+  return (reach > 0 || hasSlop(opts.tolerance)) && strokeHitTest(sil, x, y, reach, hit);
 }
 
 /** Snapshot of the current painters in evaluation order — `'high'` tier

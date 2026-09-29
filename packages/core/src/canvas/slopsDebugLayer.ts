@@ -4,7 +4,7 @@
  * rotation handle, anchor / control-handle markers). Off by default;
  * gated by SceneCanvas's `debug.slops` prop.
  *
- * Each slop is drawn as a translucent filled circle in the same world
+ * Each slop is drawn as a translucent screen-axis square in the same world
  * position the affordance hit-test would accept. Lets developers see
  * exactly how forgiving the click targets are without instrumenting
  * the affordance pipeline.
@@ -15,10 +15,10 @@ import type { RenderLayer } from 'core/layers/render';
 import type { Path, PolygonPath } from 'features/paths/types';
 import type { GesturePreviewSource } from './gestureBounds';
 import { chromeStateFrom, previewSourcesFrom } from './drawEnvelope';
-import { circlePath } from 'features/paths/markers';
+import { rectCorners, rotatePoint } from 'interactions/actions/rotate/geometry';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
 import { targetSizesPx } from 'core/device/targets';
-import { meanScale } from 'core/viewport/meanScale';
+import { rotationHandle } from 'interactions/actions/rotate/handle';
 
 interface View { x: number; y: number; scale: { x: number; y: number } }
 
@@ -33,6 +33,10 @@ export interface CreateSlopsDebugLayerOptions {
   /** Pointer-size multiplier from the live `DeviceProfile`. Resolves the same
    *  sizes `buildAffordanceAt` hit-tests with. Default 1. */
   targetScale?: number;
+  /** The rotate badge the selection overlay paints (`rotationBadgeOf`), which
+   *  is grabbable where it is drawn. Omitted or null, there is no badge and no
+   *  halo for one. */
+  rotationBadge?: { distancePx: number; sizePx: number } | null;
 }
 
 function w2s(wx: number, wy: number, view: View): [number, number] {
@@ -41,6 +45,17 @@ function w2s(wx: number, wy: number, view: View): [number, number] {
 
 const SLOP_FILL = 'rgba(255, 80, 140, 0.18)';
 const SLOP_STROKE = 'rgba(255, 80, 140, 0.55)';
+
+/** A halo for a point region: a screen-axis square of half-extent `r`, which
+ *  is the shape `hitAffordanceRegions` tests. */
+function slop(sx: number, sy: number, r: number): DrawCommand {
+  return {
+    kind: 'path',
+    path: { kind: 'rect', x: sx - r, y: sy - r, width: 2 * r, height: 2 * r },
+    fill: { fill: 'solid', color: SLOP_FILL },
+    stroke: { paint: { fill: 'solid', color: SLOP_STROKE }, width: 1 },
+  };
+}
 
 export function createSlopsDebugLayer(
   opts: CreateSlopsDebugLayerOptions,
@@ -66,44 +81,27 @@ export function createSlopsDebugLayer(
       const sizes = targetSizesPx(opts.targetScale);
       const r = sizes.handle;
 
-      // Corner resize handles + rotation handle, per selected id.
-      // Affordance pipeline only fires rotation when selection.length === 1;
-      // mirror that here so the slop overlay matches reality.
+      // Corner resize handles, per selected id, at the corners as the target's
+      // rotation puts them.
       for (const id of sel) {
         const b = boundsOf(id);
         if (!b) continue;
-        const corners: [number, number][] = [
-          [b.x, b.y],
-          [b.x + b.width, b.y],
-          [b.x, b.y + b.height],
-          [b.x + b.width, b.y + b.height],
-        ];
-        for (const [wx, wy] of corners) {
-          const [sx, sy] = w2s(wx, wy, view);
-          out.push({
-            kind: 'path',
-            path: circlePath(sx, sy, r),
-            fill: { fill: 'solid', color: SLOP_FILL },
-            stroke: { paint: { fill: 'solid', color: SLOP_STROKE }, width: 1 },
-          });
+        const cx = b.x + b.width / 2, cy = b.y + b.height / 2;
+        for (const c of rectCorners(b)) {
+          const w = rotatePoint(c.x, c.y, cx, cy, b.rotation ?? 0);
+          const [sx, sy] = w2s(w.x, w.y, view);
+          out.push(slop(sx, sy, r));
         }
       }
-      if (sel.length === 1) {
-        const id = sel[0] as string;
-        const b = boundsOf(id);
+      const badge = opts.rotationBadge;
+      if (badge && sel.length === 1) {
+        const b = boundsOf(sel[0] as string);
         if (b) {
-          // Rotation handle: top-center, offset upward by the rotate
-          // distance (a screen-px length; dividing by meanScale puts it back
-          // in the world units these bounds are in).
-          const cx = b.x + b.width / 2;
-          const cy = b.y - sizes.rotationDistance / meanScale(view.scale);
-          const [sx, sy] = w2s(cx, cy, view);
-          out.push({
-            kind: 'path',
-            path: circlePath(sx, sy, r),
-            fill: { fill: 'solid', color: SLOP_FILL },
-            stroke: { paint: { fill: 'solid', color: SLOP_STROKE }, width: 1 },
-          });
+          // Square, and placed by the same function the painted badge and its
+          // grab region are.
+          const h = rotationHandle(b, badge.distancePx, view.scale);
+          const [sx, sy] = w2s(h.cx, h.cy, view);
+          out.push(slop(sx, sy, badge.sizePx));
         }
       }
 
@@ -116,29 +114,14 @@ export function createSlopsDebugLayer(
           const anchors = enumerateAnchors(pose as PolygonPath);
           for (const a of anchors) {
             const [sx, sy] = w2s(a.x, a.y, view);
-            out.push({
-              kind: 'path',
-              path: circlePath(sx, sy, anchorR),
-              fill: { fill: 'solid', color: SLOP_FILL },
-              stroke: { paint: { fill: 'solid', color: SLOP_STROKE }, width: 1 },
-            });
+            out.push(slop(sx, sy, anchorR));
             if (a.controlIn) {
               const [csx, csy] = w2s(a.controlIn.x, a.controlIn.y, view);
-              out.push({
-                kind: 'path',
-                path: circlePath(csx, csy, anchorR),
-                fill: { fill: 'solid', color: SLOP_FILL },
-                stroke: { paint: { fill: 'solid', color: SLOP_STROKE }, width: 1 },
-              });
+              out.push(slop(csx, csy, anchorR));
             }
             if (a.controlOut) {
               const [csx, csy] = w2s(a.controlOut.x, a.controlOut.y, view);
-              out.push({
-                kind: 'path',
-                path: circlePath(csx, csy, anchorR),
-                fill: { fill: 'solid', color: SLOP_FILL },
-                stroke: { paint: { fill: 'solid', color: SLOP_STROKE }, width: 1 },
-              });
+              out.push(slop(csx, csy, anchorR));
             }
           }
         }

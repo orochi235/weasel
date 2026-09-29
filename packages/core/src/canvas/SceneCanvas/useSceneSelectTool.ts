@@ -179,12 +179,13 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         ...(viewLayers ? { layerIsPainted: viewLayers } : {}),
         ...(camera ? { camera } : {}),
       });
-      // `s` converts the screen-pixel slop, so the grab zone stays the same
-      // apparent thickness at any zoom, and a stroke's `{px}` width, which
-      // would otherwise be read as a world width.
+      // `s` makes the slop a screen distance, so the grab zone stays the same
+      // apparent thickness at any zoom and on every axis. A stroke's `{px}`
+      // width resolves through the mean scale because that is what the
+      // renderer paints it at.
       const pointQuery = (px: number, py: number, s: { x: number; y: number }): PickQuery<TPose> => {
         const scale = meanScale(s);
-        const tolerance = pickTolerancePx / scale;
+        const tolerance = { px: pickTolerancePx, scale: s };
         return {
           hits: (n, pose, derived) => {
             // The pre-filter has to be at least as generous as the refinement
@@ -198,9 +199,10 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
             // the origin — so its own box rejects every point the path covers.
             // The path is the region to test instead, and `poseContains` already
             // reads a path-like pose as one.
+            const slop = { ...tolerance, reach: outset };
             const admitted = derived
-              ? poseContains(derived as never, px, py, tolerance + outset, d as PoseDescriptor<unknown>)
-              : poseContainsRotated(pose, px, py, tolerance + outset, d as PoseDescriptor<unknown>);
+              ? poseContains(derived as never, px, py, slop, d as PoseDescriptor<unknown>)
+              : poseContainsRotated(pose, px, py, slop, d as PoseDescriptor<unknown>);
             if (!admitted) return false;
             // `shapeCoversPoint` narrows the rect to the ink the painter actually
             // lays down (and answers `true` for painters that have no silhouette,

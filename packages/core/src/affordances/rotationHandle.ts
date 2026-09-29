@@ -27,6 +27,12 @@ export interface RotationAffordanceOptions {
    *  with the target, falling back to `'grab'` if the browser rejects the
    *  image. */
   cursor?: CursorSpec;
+  /** A grab region for a rotate badge painted off the top edge — the one
+   *  the selection overlay's `rotationHandle` draws. `distancePx` is how far
+   *  off the edge it sits and `hitRadiusPx` the half-extent of its square,
+   *  both in screen pixels. Placed by the same `standoff` the painted badge
+   *  is, so the two cannot drift apart. Omitted, only the ring rotates. */
+  handle?: { distancePx: number; hitRadiusPx: number };
 }
 
 /** What a rotation-handle hit hands to the rotate action: what is being
@@ -69,7 +75,7 @@ const DEFAULT_PAINT: AnnulusPaintForm = {
 export function createRotationAffordance(
   opts: RotationAffordanceOptions = {},
 ): Affordance {
-  const { bandPx = 24, paint = DEFAULT_PAINT, cursor } = opts;
+  const { bandPx = 24, paint = DEFAULT_PAINT, cursor, handle } = opts;
 
   // Normalize `paint` into the AnnulusPaint shape understood by
   // `composeAffordanceLayer`. Three input forms are accepted: a bare
@@ -109,6 +115,23 @@ export function createRotationAffordance(
       const halfW = b.width / 2;
       const halfH = b.height / 2;
 
+      // Turned with the target, so the arc follows the selection it rotates.
+      // Resolved per region rather than defaulted in the option list because
+      // the angle is only known once a target is picked.
+      const regionCursor: CursorSpec = cursor ?? {
+        glyph: 'rotate',
+        angle: angleOf(transformOf(state, target.id)),
+        fallback: 'grab',
+      };
+      const bind = (): AffordanceBinding => ({
+        initialScratch: {
+          targetId: target.id,
+          // Pivot. `rotateAction` recomputes its own union pivot for
+          // multi-selection, but the single-target case reads this.
+          fixedPoint: { x: b.x + halfW, y: b.y + halfH },
+        } satisfies RotationScratch,
+      });
+
       const region: AffordanceRegion = {
         id: 'selection.rotation-handle',
         targetId: target.id,
@@ -126,24 +149,25 @@ export function createRotationAffordance(
         },
         ...(annulusPaint ? { paint: annulusPaint } : {}),
         hitKind: 'rotate-handle',
-        // Turned with the target, so the arc follows the selection it rotates.
-        // Resolved per region rather than defaulted in the option list because
-        // the angle is only known once a target is picked.
-        cursor: cursor ?? {
-          glyph: 'rotate',
-          angle: angleOf(transformOf(state, target.id)),
-          fallback: 'grab',
-        },
-        bind: (): AffordanceBinding => ({
-          initialScratch: {
-            targetId: target.id,
-            // Pivot. `rotateAction` recomputes its own union pivot for
-            // multi-selection, but the single-target case reads this.
-            fixedPoint: { x: b.x + halfW, y: b.y + halfH },
-          } satisfies RotationScratch,
-        }),
+        cursor: regionCursor,
+        bind,
       };
-      return [region];
+      if (!handle) return [region];
+      const badge: AffordanceRegion = {
+        id: 'rotation-badge',
+        targetId: target.id,
+        shape: {
+          kind: 'point',
+          x: b.x + halfW,
+          y: b.y,
+          hitRadiusPx: handle.hitRadiusPx,
+          standoff: { px: handle.distancePx, normal: { x: 0, y: -1 } },
+        },
+        hitKind: 'rotate-handle',
+        cursor: regionCursor,
+        bind,
+      };
+      return [region, badge];
     },
   };
 }

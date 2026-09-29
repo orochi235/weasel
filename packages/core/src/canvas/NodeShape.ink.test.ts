@@ -313,3 +313,17 @@ describe('painter precedence', () => {
     expect(findNodeShape(node)?.id).toBe('kit:derived');
   });
 });
+
+describe('shapeCoversPoint — screen slop under non-uniform zoom', () => {
+  // A 2-wide stroke reaches 1 world unit past the outline; at 4:1 a 4px slop
+  // is 1 more unit across x and 4 more down y.
+  const node = pathNode({ stroke: strokeOf('#000', 2) });
+  const tolerance = { px: 4, scale: { x: 4, y: 1 } };
+
+  it('grows the ink by the slop measured on screen', () => {
+    expect(shapeCoversPoint(node, POSE, 101.9, 50, { tolerance })).toBe(true);
+    expect(shapeCoversPoint(node, POSE, 102.1, 50, { tolerance })).toBe(false);
+    expect(shapeCoversPoint(node, POSE, 50, 104.9, { tolerance })).toBe(true);
+    expect(shapeCoversPoint(node, POSE, 50, 105.1, { tolerance })).toBe(false);
+  });
+});

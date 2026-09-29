@@ -147,6 +147,7 @@ import { installTestHookIfRequested } from '../test-hook/install';
 import type { WeaselTestHook } from '../test-hook/types';
 import {
   createSelectionOverlayLayer,
+  rotationBadgeOf,
 } from 'features/selection/overlay';
 import { getActiveModeFor, type ModeRegistry } from '@weasel-js/modes';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
@@ -1921,6 +1922,16 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const sceneRefForOverlay = useRef(scene);
   sceneRefForOverlay.current = scene;
   const slopsOn = debug !== undefined && debug !== false && debug.slops === true;
+  const selectionOverlayCfg = mergedLayers.selectionOverlay as
+    | SelectionOverlaySlotConfig<TPose> | null | undefined;
+  const badgeOf = selectionOverlayCfg ? rotationBadgeOf(selectionOverlayCfg) : null;
+  // Kept by value so the layers and hit-testers keyed on it don't rebuild
+  // every render.
+  const rotationBadge = useMemo(
+    () => badgeOf,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [badgeOf?.distancePx, badgeOf?.sizePx],
+  );
   // Debug: slops viz layer (off by default). Builds the affordance halos
   // once and reads live state through refs every frame — the same pattern
   // the chrome layers use. Identity stays stable so wiredLayers below
@@ -1933,9 +1944,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       // the whole path is being moved.
       getPose: (id, previews) => livePathFor(id, previews) as never,
       targetScale: deviceProfile.targetScale,
+      rotationBadge,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [deviceProfile.targetScale],
+    [deviceProfile.targetScale, rotationBadge],
   );
 
   // Resolve the live (preview-aware) world polygon for `id`. Reads from
@@ -2138,8 +2150,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     kindOfNode,
     chromeCaps,
     selectionApi: selection,
+    rotationBadge,
   }), [adapter, descriptor, internalBoundsOf, tools, internalPickEvery, internalPickBest, kindOfNode,
-       chromeCaps, selection]);
+       chromeCaps, selection, rotationBadge]);
 
   const canvas = (
     <Canvas<Node<TData, TLayer, TPose>, TPose>
@@ -2271,6 +2284,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
                 targetScale={deviceProfile.targetScale}
                 handleHitRadius={selectToolOpts?.handleHitRadius}
+                rotationBadge={rotationBadge}
                 onDoubleClick={onDoubleClickObserver}
               />
               <ToolKeybindingsMounter
@@ -2360,6 +2374,7 @@ function GestureDispatcherMounter({
   getRuleCtx,
   targetScale,
   handleHitRadius,
+  rotationBadge,
   onDoubleClick,
 }: {
   canvasRef: React.RefObject<HTMLElement | null>;
@@ -2406,6 +2421,8 @@ function GestureDispatcherMounter({
   /** Consumer override for the corner-handle grab radius
    *  (`selectTool.handleHitRadius`). Undefined takes the device-scaled size. */
   handleHitRadius?: number;
+  /** The rotate badge the selection overlay paints, grabbable where drawn. */
+  rotationBadge?: { distancePx: number; sizePx: number } | null;
   /** Fires on every synthesized double click, in world coords. Backs the
    *  `onDoubleClick` prop — see the option's doc on
    *  `UseGestureDispatcherOptions` for why it's an observer, not a binding. */
@@ -2458,6 +2475,7 @@ function GestureDispatcherMounter({
       getView: () => viewRef.current ?? { x: 0, y: 0, scale: { x: 1, y: 1 } },
       ...(targetScale !== undefined ? { targetScale } : {}),
       ...(handleHitRadius !== undefined ? { handleHitRadius } : {}),
+      rotationBadge,
       getAnchorState,
       // Chrome-caps resolver: keep the affordance hit-test in sync with what
       // the renderer is actually painting. Without this, a click on a (no
@@ -2467,7 +2485,7 @@ function GestureDispatcherMounter({
       ...(getIsVisibleForCanvas ? { getIsVisible: () => getIsVisibleForCanvas() } : {}),
     });
   }, [selectionRef, boundsOf, viewRef, getAnchorState, getIsVisibleForCanvas, viewRegistry,
-      targetScale, handleHitRadius]);
+      targetScale, handleHitRadius, rotationBadge]);
 
   // Build the `classifyTarget` thunk. Takes world coords and delegates to
   // `buildClassifyTarget`.
