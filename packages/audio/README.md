@@ -46,9 +46,30 @@ engine.playNote({ ...pluck, pitch: 'E4', duration: 150, bus: 'music' });
 engine.playNote({ pitch: 260, duration: 80, glide: { to: 660 } });
 ```
 
+A `wave` of `{ partials }` sums sine oscillators at any ratios of the pitch,
+each with its own level and an optional exponential `decay` (a time constant in
+ms) — the partials of a bell, a bar or struck metal, which sit off the harmonic
+series where a `PeriodicWave` cannot reach. Levels are scaled to sum to 1.
+`partialPresets` holds a `bell`, `marimba` and `metal` to start from.
+
+`playNoise` is the same kind of voice with white, pink or brown noise as its
+source, looped from a buffer made once per color per context. Either voice takes
+a `filter`: a biquad ahead of the envelope, whose cutoff can follow an envelope
+of its own, at `frequency + amount × level`.
+
+```ts
+engine.playNote({ pitch: 'C5', wave: partialPresets.bell, duration: 1500, envelope: { release: 800 } });
+engine.playNote({ pitch: 310, wave: { partials: [{ ratio: 1, decay: 110 }, { ratio: 1.71, gain: 0.5, decay: 80 }] } });
+// A thump: lowpassed noise whose cutoff falls from 4 kHz to 80 Hz.
+engine.playNoise({
+  noise: 'white', duration: 20, envelope: { release: 120 },
+  filter: { frequency: 80, amount: 4000, envelope: { attack: 0, decay: 60, sustain: 0 } },
+});
+```
+
 `createPatternPlayer` is a step sequencer on top. Events sit on steps — a note
-with a `length` in steps, or a buffer `sound` — and each step is booked through
-`engine.schedule` only when the lookahead window reaches it, so `setTempo` and
+or a noise with a `length` in steps, or a buffer `sound` — and each step is
+booked through `engine.schedule` only when the lookahead window reaches it, so `setTempo` and
 `setEvents` take effect from the next step. A step that fires more than a step
 late skips ahead in phase instead of playing what it missed in a burst.
 

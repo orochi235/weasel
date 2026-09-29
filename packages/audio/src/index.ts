@@ -27,9 +27,11 @@ export {
 export {
   createPatternPlayer,
   type PatternPlayer, type PatternPlayerOptions, type PatternEvent, type PatternNote,
-  type PatternHit,
+  type PatternHit, type PatternNoise,
 } from './patternPlayer';
+export { noiseSamples, partialPresets } from './synthVoice';
 export type {
   AudioEngineOptions, PlayOptions, StreamOptions, VoiceHandle,
-  NoteOptions, SynthPatch, Waveform, Glide,
+  NoteOptions, SynthPatch, Waveform, Glide, Inharmonic, SynthPartial, VoiceFilter,
+  NoiseColor, NoiseOptions, NoisePatch,
 } from './types';

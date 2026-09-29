@@ -6,10 +6,14 @@ import { createScheduler } from './scheduler';
 import { createSoundCache, type SoundHandle } from './soundCache';
 import { spatialize, type SpatialOptions, type Vec2 } from './spatialize';
 import { createTickTimer } from './tickTimer';
-import { envelopeLevel, envelopePoints, resolveEnvelope } from './envelope';
+import { resolveEnvelope, type Envelope } from './envelope';
 import { toFrequency } from './pitch';
+import {
+  envelopeOnParam, isInharmonic, noiseBuffer, resolvePartials, voiceFilter,
+} from './synthVoice';
 import type {
-  AudioEngineOptions, NoteOptions, PlayOptions, StreamOptions, VoiceHandle, Waveform,
+  AudioEngineOptions, Inharmonic, NoiseOptions, NoteOptions, PlayOptions, StreamOptions,
+  VoiceFilter, VoiceHandle, Waveform,
 } from './types';
 import { createVoicePool, type VoicePool } from './voicePool';
 
@@ -37,10 +41,14 @@ export interface AudioEngine {
    *  recording. `load` and `decode` both assume encoded bytes. */
   register(buffer: AudioBuffer): SoundHandle;
   play(sound: SoundHandle, opts?: PlayOptions): VoiceHandle;
-  /** Play a synthesized note: an oscillator with harmonic partials under an
-   *  ADSR envelope. It is a voice like any other — same handle, same bus pool
+  /** Play a synthesized note: an oscillator with harmonic partials, or summed
+   *  sines at any ratios, under an ADSR envelope and an optional filter. It is a voice like any other — same handle, same bus pool
    *  and stealing, same `cancelKey`. */
   playNote(note: NoteOptions): VoiceHandle;
+  /** Play noise — white, pink or brown, from a looping buffer made once per
+   *  context — under an envelope and an optional filter with its own cutoff
+   *  envelope. A voice like `playNote`'s in every other respect. */
+  playNoise(noise: NoiseOptions): VoiceHandle;
   /** Stream long audio — music, ambience — from a media element or a URL
    *  through a `MediaElementAudioSourceNode`, instead of decoding it whole. It
    *  is a voice on a bus like any other, with the exceptions `StreamOptions`
@@ -80,6 +88,18 @@ type VoiceOptions = Omit<PlayOptions, 'loop'>;
  *  the same end-of-life contract — `onended` fires asynchronously, once. */
 type SourceLike = Pick<AudioScheduledSourceNode, 'onended' | 'stop' | 'disconnect'>;
 
+/** Several sources stopped together, as one: the first carries `onended`. */
+const sourceGroup = (nodes: AudioScheduledSourceNode[]): SourceLike => ({
+  get onended() { return nodes[0].onended; },
+  set onended(fn) { nodes[0].onended = fn; },
+  stop(when?: number) {
+    for (const n of nodes) {
+      try { n.stop(when); } catch { /* not started, or already stopped */ }
+    }
+  },
+  disconnect() { for (const n of nodes) n.disconnect(); },
+});
+
 interface Starter {
   /** False drops the voice when it comes due. */
   ready(): boolean;
@@ -100,7 +120,7 @@ interface LiveVoice {
   token: number;
   key?: string;
   source: SourceLike | null;
-  /** A synth voice's envelope gain, between its oscillator and the chain. */
+  /** A synth voice's envelope gain, between its sources and the chain. */
   env: GainNode | null;
   /** Writes `rate` and `detune` to the node, once there is one. */
   retune: (() => void) | null;
@@ -434,8 +454,48 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     };
   };
 
+  /**
+   * What every synth voice shares once its sources exist: sources → optional
+   * filter → envelope gain → the voice's chain, the envelopes on both, the stop
+   * at the end of the release, and the note-off. `make` builds and starts the
+   * sources at `t0`, connected into the node it is handed.
+   */
+  const synthStart = (
+    voice: LiveVoice,
+    whenMs: number,
+    patch: { envelope?: Envelope; filter?: VoiceFilter; duration?: number },
+    make: (t0: number, into: AudioNode) => { nodes: AudioScheduledSourceNode[]; retune: () => void },
+  ): SourceLike => {
+    const t0 = whenMs / 1000;
+    const env = resolveEnvelope(patch.envelope);
+    const gate = patch.duration;
+    // Its own gain, not the chain's: `setGain` and a fade cancel whatever is
+    // scheduled on the chain's gain, and would take the envelope with it.
+    const shaper = ctx.createGain();
+    const amp = envelopeOnParam(shaper.gain, env, gate, t0, (v) => v);
+    const filter = patch.filter ? voiceFilter(ctx, patch.filter, gate, t0) : null;
+    filter?.node.connect(shaper);
+    shaper.connect(voice.chain!.panner);
+    voice.env = shaper;
+
+    const { nodes, retune } = make(t0, filter?.node ?? shaper);
+    voice.retune = retune;
+    retune();
+    const stopAll = (at: number): void => { for (const n of nodes) n.stop(at); };
+    voice.release = () => {
+      const at = ctx.currentTime;
+      // Already past its gate: the release is running and the stop is booked.
+      if (gate !== undefined && at * 1000 - whenMs >= gate) return;
+      amp.release(at);
+      filter?.release(at);
+      stopAll(at + env.release / 1000);
+    };
+    if (gate !== undefined) stopAll(t0 + (gate + env.release) / 1000);
+    return nodes.length === 1 ? nodes[0] : sourceGroup(nodes);
+  };
+
   const waves = new Map<string, PeriodicWave>();
-  const applyWave = (osc: OscillatorNode, wave: Waveform): void => {
+  const applyWave = (osc: OscillatorNode, wave: Exclude<Waveform, Inharmonic>): void => {
     if (typeof wave === 'string') {
       osc.type = wave;
       return;
@@ -545,53 +605,72 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     },
 
     playNote(note) {
-      // Resolved at the call rather than when it comes due, so a bad pitch
-      // throws where it was written.
+      // Resolved at the call rather than when it comes due, so a bad pitch or
+      // partial throws where it was written.
       const from = toFrequency(note.pitch);
       const glideTo = note.glide ? toFrequency(note.glide.to) : undefined;
-      const env = resolveEnvelope(note.envelope);
-      const gate = note.duration;
+      const wave = note.wave ?? 'sine';
+      const partials = isInharmonic(wave) ? resolvePartials(wave) : null;
       return launch(note, {
         ready: () => true,
-        start(voice, whenMs) {
-          const t0 = whenMs / 1000;
-          const osc = ctx.createOscillator();
-          applyWave(osc, note.wave ?? 'sine');
-          osc.frequency.setValueAtTime(from, t0);
-          if (glideTo !== undefined) {
-            const end = t0 + (note.glide!.ms ?? gate ?? 100) / 1000;
-            if (note.glide!.curve === 'linear') osc.frequency.linearRampToValueAtTime(glideTo, end);
-            else osc.frequency.exponentialRampToValueAtTime(glideTo, end);
-          }
-          voice.retune = () => { osc.detune.value = voice.detune + 1200 * Math.log2(voice.rate); };
-          voice.retune();
-
-          // Its own gain, not the chain's: `setGain` and a fade cancel whatever
-          // is scheduled on the chain's gain, and would take the envelope with it.
-          const shaper = ctx.createGain();
-          const [first, ...rest] = envelopePoints(env, gate);
-          shaper.gain.setValueAtTime(first.value, t0);
-          for (const p of rest) shaper.gain.linearRampToValueAtTime(p.value, t0 + p.at / 1000);
-          osc.connect(shaper);
-          shaper.connect(voice.chain!.panner);
-          voice.env = shaper;
-
-          voice.release = () => {
-            const at = ctx.currentTime;
-            const elapsed = Math.max(0, at * 1000 - whenMs);
-            // Already past its gate: the release is running and the stop is booked.
-            if (gate !== undefined && elapsed >= gate) return;
-            const end = at + env.release / 1000;
-            shaper.gain.cancelScheduledValues(at);
-            shaper.gain.setValueAtTime(envelopeLevel(env, elapsed), at);
-            shaper.gain.linearRampToValueAtTime(0, end);
-            osc.stop(end);
+        start: (voice, whenMs) => synthStart(voice, whenMs, note, (t0, into) => {
+          const tone = (ratio: number): OscillatorNode => {
+            const osc = ctx.createOscillator();
+            osc.frequency.setValueAtTime(from * ratio, t0);
+            if (glideTo !== undefined) {
+              const end = t0 + (note.glide!.ms ?? note.duration ?? 100) / 1000;
+              if (note.glide!.curve === 'linear') osc.frequency.linearRampToValueAtTime(glideTo * ratio, end);
+              else osc.frequency.exponentialRampToValueAtTime(glideTo * ratio, end);
+            }
+            return osc;
           };
+          let oscs: OscillatorNode[];
+          if (partials) {
+            // Sines summed by hand: a PeriodicWave can only hold whole-number partials.
+            oscs = partials.map((p) => {
+              const osc = tone(p.ratio);
+              const level = ctx.createGain();
+              level.gain.setValueAtTime(p.gain, t0);
+              if (p.decay !== undefined) level.gain.setTargetAtTime(0, t0, p.decay / 1000);
+              osc.connect(level);
+              level.connect(into);
+              return osc;
+            });
+          } else {
+            const osc = tone(1);
+            applyWave(osc, wave as Exclude<Waveform, Inharmonic>);
+            osc.connect(into);
+            oscs = [osc];
+          }
+          for (const osc of oscs) osc.start(t0);
+          return {
+            nodes: oscs,
+            retune: () => {
+              for (const osc of oscs) osc.detune.value = voice.detune + 1200 * Math.log2(voice.rate);
+            },
+          };
+        }),
+      });
+    },
 
-          osc.start(t0);
-          if (gate !== undefined) osc.stop(t0 + (gate + env.release) / 1000);
-          return osc;
-        },
+    playNoise(noise) {
+      return launch(noise, {
+        ready: () => true,
+        start: (voice, whenMs) => synthStart(voice, whenMs, noise, (t0, into) => {
+          const source = ctx.createBufferSource();
+          source.buffer = noiseBuffer(ctx, noise.noise);
+          source.loop = true;
+          source.connect(into);
+          // A random point in the loop, so two hits in a row are not the same hit.
+          source.start(t0, Math.random() * source.buffer.duration);
+          return {
+            nodes: [source],
+            retune: () => {
+              source.playbackRate.value = voice.rate;
+              source.detune.value = voice.detune;
+            },
+          };
+        }),
       });
     },
 

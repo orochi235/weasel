@@ -116,12 +116,12 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
           const prev = { lastAt: s.lastAt, lastScale: s.lastScale };
           s.lastAt = when;
           s.lastScale = scale;
-          const voice = a.engine.play(a.sounds.step, { bus: 'sfx', gain: 0.35, when });
+          const voices = playSound(a.engine, a.sounds, 'step', { bus: 'sfx', gain: 0.35, when });
           // A jump or a change of run speed retracts a step that has not
           // sounded; it is booked again wherever the cycle next reaches it.
           return {
             stop: () => {
-              voice.stop();
+              for (const v of voices) v.stop();
               s.count--;
               Object.assign(s, prev);
             },

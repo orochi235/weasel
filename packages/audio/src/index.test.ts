@@ -24,6 +24,16 @@ describe('@weasel-js/audio public surface', () => {
     expect(event.step).toBe(0);
   });
 
+  it('exports the noise and inharmonic voice surface', () => {
+    expect(audio.noiseSamples('pink', 64)).toHaveLength(64);
+    const bell: audio.Inharmonic = audio.partialPresets.bell;
+    const filter: audio.VoiceFilter = { frequency: 200, amount: 800, envelope: { decay: 40, sustain: 0 } };
+    const hiss: audio.NoiseOptions = { noise: 'white', filter };
+    const hat: audio.PatternEvent = { step: 2, ...hiss, length: 1 };
+    const partial: audio.SynthPartial = bell.partials[0];
+    expect([hat.step, partial.ratio > 0]).toEqual([2, true]);
+  });
+
   it('exports the built-in insert effects', () => {
     expect(typeof audio.createFilterEffect).toBe('function');
     expect(typeof audio.createReverbEffect).toBe('function');

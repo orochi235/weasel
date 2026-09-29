@@ -77,6 +77,7 @@
       "@weasel-js/modes": ["./packages/modes/src/index.ts"],
       "@weasel-js/modes/presets/default": ["./packages/modes/src/presets/default.ts"],
       "@weasel-js/audio": ["./packages/audio/src/index.ts"],
+      "@weasel-js/audio/testing/*": ["./packages/audio/src/testing/*"],
       "@weasel-js/kernel3d": ["./packages/kernel3d/src/index.ts"],
       "@weasel-js/labkit": ["./packages/labkit/src/index.ts"],
       // The two passthrough entries don't sit where their specifier says, so
