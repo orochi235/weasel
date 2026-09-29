@@ -53,7 +53,7 @@ describe('Scene — arrival handler', () => {
   it('places an inserted child as part of the insert, undone in one step', () => {
     const { scene, spy, adapter } = setup(placeAll);
     scene.applyBatch([createInsertOp({ node: leaf('kid', 'box') })], 'Insert', adapter);
-    expect(spy).toHaveBeenCalledWith(new Map([[asNodeId('box'), [asNodeId('kid')]]]), new Set([asNodeId('box')]));
+    expect(spy).toHaveBeenCalledWith(new Map([[asNodeId('box'), [asNodeId('kid')]]]), new Set([asNodeId('box')]), new Map());
     expect(scene.get(asNodeId('kid'))?.pose).toEqual(PLACED);
     scene.undo();
     expect(scene.get(asNodeId('kid'))).toBeUndefined();
@@ -119,7 +119,7 @@ describe('Scene — arrival handler', () => {
     scene.add(leaf('b', 'box'));
     spy.mockClear();
     scene.move(asNodeId('b'), asNodeId('box'), 0);
-    expect(spy).toHaveBeenCalledWith(new Map(), new Set([asNodeId('box')]));
+    expect(spy).toHaveBeenCalledWith(new Map(), new Set([asNodeId('box')]), new Map());
   });
 
   it('reports only nodes still in the container when the edit ends', () => {
@@ -128,7 +128,18 @@ describe('Scene — arrival handler', () => {
       createReparentOp({ id: 'loose', fromParentId: null, toParentId: 'box' }),
       createReparentOp({ id: 'loose', fromParentId: 'box', toParentId: null }),
     ], 'Through', adapter);
-    expect(spy).toHaveBeenCalledWith(new Map(), new Set([asNodeId('box')]));
+    expect(spy).toHaveBeenCalledWith(new Map(), new Set([asNodeId('box')]), new Map());
+  });
+
+  it('reports the nodes a removal or a move out took from a container', () => {
+    const { scene, spy } = setup(placeAll);
+    scene.add(leaf('a', 'box'));
+    scene.add(leaf('b', 'box'));
+    spy.mockClear();
+    scene.remove(asNodeId('a'));
+    expect(spy).toHaveBeenLastCalledWith(new Map(), new Set([asNodeId('box')]), new Map([[asNodeId('box'), [asNodeId('a')]]]));
+    scene.move(asNodeId('b'), null);
+    expect(spy).toHaveBeenLastCalledWith(new Map(), new Set([asNodeId('box')]), new Map([[asNodeId('box'), [asNodeId('b')]]]));
   });
 
   it('a removed handler no longer runs, and a stale disposer leaves its successor', () => {

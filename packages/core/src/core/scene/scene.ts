@@ -19,6 +19,7 @@ import {
 } from './nodeFnFields';
 import { createPoseOverrides } from './poseOverrides';
 import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
+import type { LayoutStrategy } from '../../layout/types';
 import {
   asNodeId,
   type LayoutMove,
@@ -349,6 +350,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   // open it: they restore an arrangement that was already decided.
   let arrivalHandler: SceneArrivalHandler<TPose> | null = null;
   let arrivals: Map<NodeId, NodeId[]> | null = null;
+  let departures = new Map<NodeId, NodeId[]>();
   let changed = new Set<NodeId>();
   /** What the last settle wrote, reported to `onReflow` once its edit lands. */
   let reflowDue: LayoutMove<TPose>[] | null = null;
@@ -356,8 +358,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
   /** The pass a scene runs over its declared layouts when nothing else is
    *  installed. */
-  const declaredLayouts: SceneArrivalHandler<TPose> = (arrived, touched) =>
-    runLayoutPass(scene, layoutOfInternal, arrived, touched, layoutFrame);
+  const declaredLayouts: SceneArrivalHandler<TPose> = (arrived, touched, departed) =>
+    runLayoutPass(scene, layoutOfInternal, arrived, touched, layoutFrame, departed);
 
   function activeHandler(): SceneArrivalHandler<TPose> | null {
     return arrivalHandler ?? (hasLayouts ? declaredLayouts : null);
@@ -368,6 +370,16 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     changed.add(parent);
     const list = arrivals.get(parent);
     if (list === undefined) arrivals.set(parent, [id]);
+    else if (!list.includes(id)) list.push(id);
+  }
+
+  function noteDeparture(id: NodeId, from: NodeId | null, to: NodeId | null): void {
+    if (arrivals === null || from === null || from === to) return;
+    changed.add(from);
+    // One that joined earlier in this edit was never there to leave.
+    if (arrivals.get(from)?.includes(id)) return;
+    const list = departures.get(from);
+    if (list === undefined) departures.set(from, [id]);
     else if (!list.includes(id)) list.push(id);
   }
 
@@ -387,6 +399,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   function openArrivals(): boolean {
     if (activeHandler() === null || arrivals !== null) return false;
     arrivals = new Map();
+    departures = new Map();
     changed = new Set();
     reflowDue = null;
     return true;
@@ -413,9 +426,17 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const still = ids.filter((id) => state.nodes.get(id)?.parent === parent);
       if (still.length > 0 && state.nodes.has(parent)) landed.set(parent, still);
     }
+    // Only what is gone from the container once the edit has landed: a child
+    // that left and came back did not depart.
+    const left = new Map<NodeId, NodeId[]>();
+    for (const [parent, ids] of departures) {
+      const gone = ids.filter((id) => state.nodes.get(id)?.parent !== parent);
+      if (gone.length > 0 && state.nodes.has(parent)) left.set(parent, gone);
+    }
+    departures = new Map();
     const touched = new Set([...changed].filter((id) => state.nodes.get(id)?.kind === 'container'));
     if (landed.size === 0 && touched.size === 0) return [];
-    const poses = handler(landed, touched);
+    const poses = handler(landed, touched, left);
     if (poses === null) throw new SceneArrivalRefused(landed);
     const out: ArrangedPose[] = [];
     for (const [id, to] of poses) {
@@ -863,6 +884,29 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   }>('kit:setDependsOn', {
     apply: (p) => { retarget(p.id, p.to); },
     revert: (p) => { retarget(p.id, p.from); },
+  });
+
+  /** The strategies each live `kit:setLayout` payload swaps between. A payload
+   *  replayed from a persisted history has none, and resolves its keys. */
+  const layoutRefs = new WeakMap<object, { from: LayoutStrategy<TPose> | null; to: LayoutStrategy<TPose> | null }>();
+  interface SetLayoutPayload { id: NodeId; fromKey?: string; toKey?: string }
+  function placeLayout(p: SetLayoutPayload, side: 'from' | 'to'): void {
+    const node = requireNode(p.id) as unknown as FnBearingNode;
+    const field = fnField('layout');
+    const live = layoutRefs.get(p);
+    const key = side === 'from' ? p.fromKey : p.toKey;
+    if (live === undefined && key !== undefined) {
+      delete node.layout;
+      restoreFn(field, node, key, 'kit:setLayout', dwarn);
+      return;
+    }
+    const layout = live?.[side] ?? null;
+    if (layout === null) delete node.layout;
+    else field.write(node, layout);
+  }
+  registerKitOp<SetLayoutPayload>('kit:setLayout', {
+    apply: (p) => { placeLayout(p, 'to'); },
+    revert: (p) => { placeLayout(p, 'from'); },
   });
 
   registerKitOp<{
@@ -1478,7 +1522,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         scene.batch('remove', () => scene.removeMany(rootIds));
         return;
       }
-      for (const d of detached) noteChange(d.parent);
+      for (const d of detached) noteDeparture(d.id, d.parent, null);
       executeAndLog('kit:remove', payload, 'remove');
     },
 
@@ -1551,6 +1595,37 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       );
     },
 
+    setLayout(id, layout) {
+      const node = requireNode(id);
+      if (node.kind !== 'container') throw new Error(`Scene: "${id}" is not a container`);
+      refuseLocked(id, 'set the layout of');
+      const field = fnField('layout');
+      let to: LayoutStrategy<TPose> | null;
+      if (typeof layout === 'string') {
+        to = (field.fnOf(layout) as LayoutStrategy<TPose> | undefined) ?? null;
+        if (to === null) throw new Error(`Scene: no layout "${layout}" in this scene's registry`);
+      } else {
+        to = layout;
+      }
+      const from = node.layout ?? null;
+      if (from === to) return;
+      if (to !== null) hasLayouts = true;
+      if (bareLayoutEdit()) {
+        scene.batch('setLayout', () => scene.setLayout(id, to));
+        return;
+      }
+      noteChange(id);
+      const fromKey = from === null ? undefined : field.keyOf(from);
+      const toKey = to === null ? undefined : field.keyOf(to);
+      const payload: SetLayoutPayload = {
+        id,
+        ...(fromKey !== undefined ? { fromKey } : {}),
+        ...(toKey !== undefined ? { toKey } : {}),
+      };
+      layoutRefs.set(payload, { from, to });
+      executeAndLog('kit:setLayout', payload, 'setLayout');
+    },
+
     move(id, parent, index) {
       const node = requireNode(id);
       refuseLocked(id, 'move');
@@ -1578,6 +1653,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const toSibs = parent === node.parent ? fromSibs : siblingsOf(parent);
       const toIndex = index ?? toSibs.length;
       noteArrival(id, parent, node.parent);
+      noteDeparture(id, node.parent, parent);
       noteChange(node.parent);
       executeAndLog('kit:move', {
         id, fromParent: node.parent, fromIndex, toParent: parent, toIndex,

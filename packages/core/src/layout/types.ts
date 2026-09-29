@@ -108,8 +108,8 @@ export interface LayoutContainer {
   bounds: ContainerBounds;
 }
 
-/** What a container does with children that joined it by an edit rather than
- *  a drag: see {@link LayoutStrategy.arrive}. */
+/** What a container does about an edit to its children: see
+ *  {@link LayoutStrategy.arrive} and {@link LayoutStrategy.depart}. */
 export interface LayoutArrival<TPose> {
   /** World poses to write — the arrivals', and any sibling the strategy moves
    *  to make room. A child left out keeps its pose. */
@@ -209,6 +209,21 @@ export interface LayoutStrategy<TPose> {
     children: ReadonlyArray<LayoutChild<TPose>>,
     arrivals: ReadonlySet<string>,
   ): LayoutArrival<TPose> | null;
+
+  /** Optional: rearrange a container that children left by an edit — a
+   *  delete, or a reparent or drag out of it. `children` is what stays, in
+   *  world poses, still where they were; `departed` is who went, so
+   *  `children.length + departed.size` is how many it held before. A
+   *  container that sizes itself to its children shrinks here, from the pitch
+   *  it had at that count. The edit's arrivals are placed afterward, by
+   *  `arrive`, or with `childPoses` when there is none. Absent, `childPoses`
+   *  arranges what stays like any other change. Applied by the scene's layout
+   *  pass, in the same undo step as the departure. */
+  depart?(
+    container: LayoutContainer,
+    children: ReadonlyArray<LayoutChild<TPose>>,
+    departed: ReadonlySet<string>,
+  ): LayoutArrival<TPose>;
 
   /** Optional: the world region the arrangement of `children` covers. Larger
    *  than `container.bounds` when children sit past it — a grid whose

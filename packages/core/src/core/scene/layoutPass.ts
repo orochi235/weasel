@@ -2,10 +2,12 @@
  * The one computation behind a scene's container layouts: given the
  * containers one edit changed, the pose writes their layouts ask for.
  *
- * A container that gained children and whose strategy has `arrive` places
- * them through it (and may refuse, or grow). Any other changed container —
- * one that lost or reordered children, was resized, or gained children with
- * no `arrive` — is put back in its resting arrangement, `childPoses`.
+ * A container that lost children and whose strategy has `depart` rearranges
+ * the rest through it (and may shrink). One that gained children and whose
+ * strategy has `arrive` then places them through it (and may refuse, or
+ * grow). Any other changed container — one that reordered children, was
+ * resized, or gained or lost children with neither hook — is put back in its
+ * resting arrangement, `childPoses`.
  *
  * `LayoutStrategy` is world-framed, so each pose is composed to world before
  * a strategy sees it and each result is rebased into its node's parent frame
@@ -20,7 +22,7 @@ import {
   type PoseAdapter,
   type PoseComposition,
 } from './composeFrame';
-import type { ContainerBounds, LayoutChild, LayoutStrategy } from '../../layout/types';
+import type { ContainerBounds, LayoutArrival, LayoutChild, LayoutStrategy } from '../../layout/types';
 import { definesFrame, documentPose, type PoseSource, type PosedNode } from './effectivePose';
 import { asRectPose } from './kitRegistry';
 import { samePoseValue } from './poseSnapshot';
@@ -71,6 +73,7 @@ export function runLayoutPass<TPose>(
   arrivals: ReadonlyMap<NodeId, readonly NodeId[]>,
   changed: ReadonlySet<NodeId>,
   frame: ResolvedLayoutFrame<TPose>,
+  departures: ReadonlyMap<NodeId, readonly NodeId[]> = new Map(),
 ): LayoutPassResult<TPose> {
   // Poses already decided in this pass, so a container resized here is the
   // frame its children are rebased into.
@@ -94,11 +97,40 @@ export function runLayoutPass<TPose>(
     const before = poseOf(id);
     if (samePoseValue(before, pose)) return;
     out.set(id, pose);
-    // A container its own `arrive` grew is arranged already.
+    // A container its own `depart` or `arrive` resized is arranged already.
     if (id !== current && node.kind === 'container' && layoutOf(id) !== null
       && resized(frame, id, before, pose)) queue.push(id);
   };
   let current: NodeId | null = null;
+
+  /** The container and its children as the strategy sees them, in world,
+   *  with every write this pass has made so far folded in. */
+  const frameOf = (containerId: NodeId) => {
+    const pose = world(containerId);
+    const bounds = frame.bounds(pose, containerId);
+    if (bounds === null) return null;
+    const children: LayoutChild<TPose>[] = source.childrenOf(containerId).map((cid) => ({
+      id: cid as string,
+      pose: world(cid),
+    }));
+    return { world: pose, container: { id: containerId as string, bounds }, children };
+  };
+  const apply = (
+    containerId: NodeId,
+    at: NonNullable<ReturnType<typeof frameOf>>,
+    result: LayoutArrival<TPose>,
+  ): void => {
+    if (result.bounds) {
+      const node = source.get(containerId)!;
+      const sized = frame.remap(at.world, at.container.bounds, result.bounds, containerId);
+      write(containerId, rebaseLocalPose(pa, sized, node.parent, compose, decompose));
+    }
+    for (const [cid, pose] of result.poses) {
+      const id = cid as NodeId;
+      if (source.get(id)?.parent !== containerId) continue;
+      write(id, rebaseLocalPose(pa, pose, containerId, compose, decompose));
+    }
+  };
 
   while (queue.length > 0) {
     const containerId = queue.shift()!;
@@ -108,32 +140,27 @@ export function runLayoutPass<TPose>(
     if (n > MAX_PASSES) continue;
     const layout = layoutOf(containerId);
     if (layout === null || source.get(containerId) === undefined) continue;
-    const containerWorld = world(containerId);
-    const bounds = frame.bounds(containerWorld, containerId);
-    if (bounds === null) continue;
-    const container = { id: containerId as string, bounds };
-    const children: LayoutChild<TPose>[] = source.childrenOf(containerId).map((cid) => ({
-      id: cid as string,
-      pose: world(cid),
-    }));
     const joined = n === 1 ? arrivals.get(containerId) : undefined;
-    let poses: Map<string, TPose>;
-    if (joined !== undefined && layout.arrive) {
-      const result = layout.arrive(container, children, new Set<string>(joined));
-      if (result === null) return null;
-      if (result.bounds) {
-        const node = source.get(containerId)!;
-        const grown = frame.remap(containerWorld, bounds, result.bounds, containerId);
-        write(containerId, rebaseLocalPose(pa, grown, node.parent, compose, decompose));
-      }
-      poses = result.poses;
-    } else {
-      poses = layout.childPoses(container, children);
+    const left = n === 1 ? departures.get(containerId) : undefined;
+    let arranged = false;
+    if (left !== undefined && layout.depart) {
+      const at = frameOf(containerId);
+      if (at === null) continue;
+      const joinedSet = new Set<string>(joined ?? []);
+      const staying = at.children.filter((c) => !joinedSet.has(c.id));
+      apply(containerId, at, layout.depart(at.container, staying, new Set<string>(left)));
+      arranged = true;
     }
-    for (const [cid, pose] of poses) {
-      const id = cid as NodeId;
-      if (source.get(id)?.parent !== containerId) continue;
-      write(id, rebaseLocalPose(pa, pose, containerId, compose, decompose));
+    if (joined !== undefined && layout.arrive) {
+      const at = frameOf(containerId);
+      if (at === null) continue;
+      const result = layout.arrive(at.container, at.children, new Set<string>(joined));
+      if (result === null) return null;
+      apply(containerId, at, result);
+    } else if (!arranged || joined !== undefined) {
+      const at = frameOf(containerId);
+      if (at === null) continue;
+      apply(containerId, at, { poses: layout.childPoses(at.container, at.children) });
     }
   }
   return out;

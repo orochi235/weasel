@@ -436,13 +436,16 @@ intercepting the press that drags the body.
 - **(P3) Scene layout: what the first cut left.** A container declares its layout
   on its node (`ContainerNode.layout`), and the scene's one layout pass
   (`core/scene/layoutPass.ts`, run through the arrival window) applies it to every
-  arrival, departure, reorder and resize. Still open: a layout is fixed at `add` time,
-  with no undoable `scene.setLayout(id, strategy)`; a declared layout is measured by
+  arrival, departure, reorder and resize, and to a layout swapped in by
+  `scene.setLayout` / `createSetLayoutOp`. Still open: a declared layout is measured by
   `UseSceneOptions.layoutFrame` unless a canvas installs its handler, so a scene whose
   canvas composes poses or uses a custom descriptor states that twice — folds away once
-  composition is a scene property (see the cascade entry below); and whether the
-  `layouts` prop, now a second way to name a container's layout, should be retired in
-  favor of the node declaration.
+  composition is a scene property (see the cascade entry below); a `createSetLayoutOp`
+  applied through `applyBatch` to a scene that has never had a layout sets it but does
+  not arrange the container until its next change, because the arrival window is only
+  opened once the scene holds a layout (the bare `scene.setLayout` call does arrange);
+  and whether the `layouts` prop, now a second way to name a container's layout, should
+  be retired in favor of the node declaration.
 - **(P3) Full tier unification** (collapse inline-props/explicit-adapter onto Scene). Same effort as the P2 "`arrayAdapter` as the default Canvas adapter — full unification" above — track there.
 - **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is
   adapter-level configuration, two mutually exclusive ways:
@@ -453,10 +456,18 @@ intercepting the press that drags the body.
   of these natively, which needs a decision on where the descriptor or
   composition is supplied to the `useScene` constructor.
 
-### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
+### Container layout strategies
 
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only), as does choosing the destination container (`<SceneCanvas layoutDropTarget>`, `LayoutStrategy.dropRegion`). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-- **(P3) Tile-grid overflow: a `'grow'` grid never shrinks, and nothing scrolls a `'scroll'` one.** `tileGrid({ overflow })` holds for every arrival through the scene's layout pass. A departure re-runs `childPoses` over the container as it stands, so when a child leaves a grown grid the remaining rows spread over the grown container and the cells stretch. No kit host reads `LayoutStrategy.contentExtent` yet either: a `'scroll'` grid's overflow just sits past its bounds.
+- **(P3) Nothing scrolls a `'scroll'` tile grid.** `tileGrid({ overflow: 'scroll' })` places its overflow past the container's last visible line and reports the region through `LayoutStrategy.contentExtent`, but no kit host reads it: the overflow just sits past the container's bounds.
+  Undecided before building it: whether a container's scroll offset is document state or
+  view state. As document state, the layout pass lays the children out shifted by the
+  offset, and picking, dragging and selection chrome need nothing new — but every wheel
+  tick rewrites every child's stored pose and is an undo step. As view state, the offset
+  is part of the frame the container gives its children and the document never moves —
+  but an absolute-pose scene has no container frame today, so painting, picking,
+  selection chrome, move, resize and snapping each have to fold it in, the way the
+  readers that honor `poseComposition` do under a composing scene.
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
 - **(P3) Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle.

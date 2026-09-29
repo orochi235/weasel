@@ -28,7 +28,8 @@ interface TileMeta {
  *   overfill it is reverted whole.
  * - `'grow'` — the grid adds a line of cells whenever the last one fills
  *   (a row, or a column for `flow: 'column'`) and the container grows by its
- *   pitch to hold it. `rows` (or `cols`) is the minimum.
+ *   pitch to hold it, and gives the line back when children leave and it
+ *   empties. `rows` (or `cols`) is the minimum.
  * - `'scroll'` — the container keeps its size, and the extra children take
  *   cells past its last visible line, at the same pitch. `contentExtent`
  *   reports the region they cover, for a host to scroll over.
@@ -188,32 +189,42 @@ export function tileGrid<TPose>(
     return { occupant: occupant.id, from: occupant.pose, newPose: cellToPose(grid.rectAt(fromIdx), occupant.pose) };
   }
 
+  /**
+   * Every child a cell of `into`, in the order of the cells they sit in on
+   * `from`, so a reflow compacts the survivors rather than re-sorting them —
+   * an earlier swap among them has to outlive a sibling leaving the grid.
+   * Children sitting in no cell (a gap, or off the grid) sort last; ties break
+   * by id so an arrangement with no cells yet is still deterministic. Past
+   * the declared grid they run on at the same pitch.
+   */
+  function pack(
+    from: ReturnType<typeof gridOf>,
+    into: ReturnType<typeof gridOf>,
+    children: ReadonlyArray<LayoutChild<TPose>>,
+  ): Map<string, TPose> {
+    const ordered = children
+      .map((c) => ({ c, cell: from.indexOf(c.pose) }))
+      .sort((a, b) => {
+        if (a.cell !== b.cell) {
+          if (a.cell === null) return 1;
+          if (b.cell === null) return -1;
+          return a.cell - b.cell;
+        }
+        return a.c.id < b.c.id ? -1 : a.c.id > b.c.id ? 1 : 0;
+      });
+    const out = new Map<string, TPose>();
+    for (let i = 0; i < ordered.length; i++) {
+      out.set(ordered[i].c.id, cellToPose(into.rectAt(i), ordered[i].c.pose));
+    }
+    return out;
+  }
+
   return {
     snap,
 
     childPoses(container, children) {
       const grid = gridOf(container.bounds, children.length);
-      const out = new Map<string, TPose>();
-      // Order by the cell each child already sits in, so a reflow compacts
-      // the survivors rather than re-sorting them — an earlier swap among
-      // them has to outlive a sibling leaving the grid. Children sitting in
-      // no cell (a gap, or off the grid) sort last; ties break by id so an
-      // arrangement with no cells yet is still deterministic. Every child
-      // gets a cell: past the declared grid they run on at the same pitch.
-      const ordered = children
-        .map((c) => ({ c, cell: grid.indexOf(c.pose) }))
-        .sort((a, b) => {
-          if (a.cell !== b.cell) {
-            if (a.cell === null) return 1;
-            if (b.cell === null) return -1;
-            return a.cell - b.cell;
-          }
-          return a.c.id < b.c.id ? -1 : a.c.id > b.c.id ? 1 : 0;
-        });
-      for (let i = 0; i < ordered.length; i++) {
-        out.set(ordered[i].c.id, cellToPose(grid.rectAt(i), ordered[i].c.pose));
-      }
-      return out;
+      return pack(grid, grid, children);
     },
 
     getDropTargets(container, children, dragged) {
@@ -326,6 +337,19 @@ export function tileGrid<TPose>(
       const lines = linesFor(n);
       if (lines === linesFor(n - arrivals.size)) return { poses };
       return { poses, bounds: grid.boundsFor(lines) };
+    },
+
+    depart(container, children, departed): LayoutArrival<TPose> {
+      const n = children.length;
+      // The grid as it stood with the departed still in it: a grown grid
+      // gives back whole lines at that pitch, down to its declared count.
+      const before = gridOf(container.bounds, n + departed.size);
+      const lines = linesFor(n);
+      if (overflow !== 'grow' || lines === linesFor(n + departed.size)) {
+        return { poses: pack(before, before, children) };
+      }
+      const bounds = before.boundsFor(lines);
+      return { poses: pack(before, gridOf(bounds, n), children), bounds };
     },
 
     contentExtent(container, children) {

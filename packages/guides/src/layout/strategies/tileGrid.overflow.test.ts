@@ -180,6 +180,53 @@ describe('tileGrid overflow — grow', () => {
     expect(s.pose('G')).toEqual(rect(0, 0, 100, 155));
   });
 
+  it('a delete from a grown grid shrinks it back, in the same undo step', () => {
+    const s = setup({ overflow: 'grow' });
+    s.insert();
+    const depth = s.scene.historyIndex();
+    s.scene.remove('n' as NodeId);
+    expect(s.pose('G')).toEqual(rect(0, 0, 100, 100));
+    // The pitch holds: the survivors keep their 50×50 cells.
+    expect(s.pose('k3')).toEqual(rect(50, 50));
+    expect(s.scene.historyIndex()).toBe(depth + 1);
+    s.scene.undo();
+    expect(s.pose('G')).toEqual(rect(0, 0, 100, 150));
+    expect(s.pose('n')).toEqual(rect(0, 100));
+  });
+
+  it('a reparent out of a grown grid shrinks it back', () => {
+    const s = setup({ overflow: 'grow' });
+    s.insert();
+    s.scene.move('n' as NodeId, null);
+    expect(s.pose('G')).toEqual(rect(0, 0, 100, 100));
+    expect(s.pose('k0')).toEqual(rect(0, 0));
+  });
+
+  it('shrinks by whole lines, and never below the declared rows', () => {
+    const s = setup({ overflow: 'grow', gap: 10 }, 0);
+    // 2×2 over 100×100 with a 10 gap: 45×45 cells, grown to three rows.
+    for (let i = 0; i < 5; i++) {
+      s.scene.applyBatch([createInsertOp({
+        node: { kind: 'leaf', id: `g${i}` as NodeId, layer: 'main', data: {}, pose: rect(0, 0), parent: 'G' as NodeId },
+      })], 'Insert', defaultCommitAdapter(s.scene as never));
+    }
+    expect(s.pose('G')).toEqual(rect(0, 0, 100, 155));
+    s.scene.remove('g0' as NodeId);
+    // Four left fill two rows: the third goes, and the rest pack up.
+    expect(s.pose('G')).toEqual(rect(0, 0, 100, 100));
+    expect(s.pose('g4')).toEqual(rect(55, 55, 45, 45));
+    s.scene.removeMany(['g1', 'g2', 'g3'] as NodeId[]);
+    expect(s.pose('G')).toEqual(rect(0, 0, 100, 100));
+    expect(s.pose('g4')).toEqual(rect(0, 0, 45, 45));
+  });
+
+  it('a column-major grid narrows back', () => {
+    const s = setup({ overflow: 'grow', flow: 'column' });
+    s.insert();
+    s.scene.remove('k0' as NodeId);
+    expect(s.pose('G')).toEqual(rect(0, 0, 100, 100));
+  });
+
   it('does not grow while a free cell remains', () => {
     const s = setup({ overflow: 'grow' }, 3);
     s.insert();

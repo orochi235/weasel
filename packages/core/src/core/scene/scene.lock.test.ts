@@ -59,6 +59,7 @@ describe('Scene — mutation guard', () => {
       ['setLayer', () => scene.setLayer(art, 'art')],
       ['setLayer onto a locked layer', () => scene.setLayer(free, 'art')],
       ['setDependsOn', () => scene.setDependsOn(art, [free])],
+      ['setLayout', () => scene.setLayout(box, null)],
       ['move', () => scene.move(kid, null)],
       ['move into a locked container', () => scene.move(free, box)],
       ['reorder', () => scene.reorder(kid, 0)],
