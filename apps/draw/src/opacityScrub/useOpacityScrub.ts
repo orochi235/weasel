@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { ActionDisabledReason, asNodeId, defineTool, paintAlpha } from '@weasel-js/core';
+import { ActionDisabledReason, asNodeId, defineTool, paintAlpha, useLatest } from '@weasel-js/core';
 import type { Action, FillStyle, Stroke } from '@weasel-js/core';
 import {
   computeScrubbedPaints,
@@ -43,10 +43,8 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
   const sessionRef = useRef<ScrubSession | null>(null);
   const [percent, setPercent] = useState<number | null>(null);
 
-  const sceneRef = useRef(scene);
-  const selectionRef = useRef(selection);
-  sceneRef.current = scene;
-  selectionRef.current = selection;
+  const sceneRef = useLatest(scene);
+  const selectionRef = useLatest(selection);
 
   const tool = useMemo(() => {
     function readSnapshot(id: string): PaintSnapshot | null {
@@ -144,7 +142,7 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
       onActivate: startSession,
       onDeactivate: commitSession,
     });
-  }, []);
+  }, [sceneRef, selectionRef]);
 
   return { tool, percent };
 }

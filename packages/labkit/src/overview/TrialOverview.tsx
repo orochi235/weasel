@@ -20,6 +20,7 @@ import {
   useActionsRegistry,
   useDepSource,
   useGestureDispatcher,
+  useLatest,
   usePointerPosition,
   type View,
   type ViewApi,
@@ -314,8 +315,7 @@ function OverviewDispatch({
   camera: CameraContextValue;
 }) {
   const registry = useActionsRegistry();
-  const fitRef = useRef(fit);
-  fitRef.current = fit;
+  const fitRef = useLatest(fit);
   const root = camera.view;
   useDepSource('rootView', () => root as ViewApi);
 
@@ -336,7 +336,7 @@ function OverviewDispatch({
         y: (cy - (r?.top ?? 0)) / f.scale.y + f.y,
       };
     },
-    [boxRef],
+    [boxRef, fitRef],
   );
 
   useGestureDispatcher({

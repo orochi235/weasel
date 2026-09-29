@@ -128,13 +128,16 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   const lastGood = useRef<DerivedDraft | null>(null);
   const { derived, error } = useMemo(() => {
     try {
-      const next = deriveDraft(draft, lookup, axisValues);
-      lastGood.current = next;
-      return { derived: next, error: null };
+      return { derived: deriveDraft(draft, lookup, axisValues), error: null };
     } catch (e) {
       return { derived: lastGood.current, error: (e as Error).message };
     }
   }, [draft, lookup, axisValues]);
+  // Kept from a committed render only, so a draft that derived in a render
+  // React threw away is never shown as the last good one.
+  useEffect(() => {
+    if (error === null) lastGood.current = derived;
+  }, [derived, error]);
 
   const contributions = useMemo<readonly LabContribution<LabHistory<ThemeDefinition>>[]>(
     () => [

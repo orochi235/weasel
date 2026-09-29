@@ -1,7 +1,16 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  PATH_L, PATH_M, PATH_Z, SceneCanvas, solid, useScene,
-  type DrawCommand, type RenderLayer, type SurfaceContribution, type ToolsApi,
+  type DrawCommand,
+  PATH_L,
+  PATH_M,
+  PATH_Z,
+  type RenderLayer,
+  SceneCanvas,
+  solid,
+  type SurfaceContribution,
+  type ToolsApi,
+  useLatest,
+  useScene,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui';
 import { multiply, quatFromAxisAngle, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
@@ -121,13 +130,12 @@ export function Kernel3dDemo() {
   const [camera, setCamera] = useState(() =>
     createCamera({ distance: 11, pitch: 0.45, yaw: 0.6, target: { x: 0, y: 0.5, z: 0 } }));
   const [tools, setTools] = useState<ToolsApi | null>(null);
-  const cameraRef = useRef(camera);
-  cameraRef.current = camera;
+  const cameraRef = useLatest(camera);
 
   const world = useMemo(() => ({
     scene,
     viewport: (): Viewport3d => ({ camera: cameraRef.current, width: W, height: H }),
-  }), [scene]);
+  }), [cameraRef, scene]);
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
   const pickEvery = useMemo(() => {
     const nodeAtPoint = createNodeAtPoint(world);
@@ -146,7 +154,7 @@ export function Kernel3dDemo() {
       actions: [orbitAction, dollyAction],
       deps: { camera3d: () => camera3d },
     };
-  }, []);
+  }, [cameraRef]);
   const orbit = useOrbitTool();
 
   const layer = useMemo(() => solidsLayer(camera, scene), [camera, scene]);

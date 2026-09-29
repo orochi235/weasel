@@ -10,6 +10,13 @@ interface Entry<T> {
   mounts: number;
 }
 
+function openEntry<T>(open: () => T | Promise<T>): Entry<T> {
+  const result = open();
+  return result instanceof Promise
+    ? { value: null, pending: result, mounts: 0 }
+    : { value: result, pending: null, mounts: 0 };
+}
+
 /**
  * Open something once for a component's lifetime: at once when `open` returns
  * a value, after it settles when it returns a promise. Closed on unmount — but
@@ -18,13 +25,7 @@ interface Entry<T> {
  */
 export function useOpenOnce<T extends Closable>(open: () => T | Promise<T>): T | null {
   const entry = useRef<Entry<T> | null>(null);
-  if (entry.current === null) {
-    const result = open();
-    entry.current =
-      result instanceof Promise
-        ? { value: null, pending: result, mounts: 0 }
-        : { value: result, pending: null, mounts: 0 };
-  }
+  if (entry.current === null) entry.current = openEntry(open);
   const [value, setValue] = useState<T | null>(entry.current.value);
 
   useEffect(() => {
@@ -56,13 +57,16 @@ export function useOpenOnce<T extends Closable>(open: () => T | Promise<T>): T |
 export function useWarnIgnoredChange(component: string, props: Record<string, unknown>): void {
   const first = useRef(props);
   const warned = useRef(false);
-  if (process.env.NODE_ENV === 'production' || warned.current) return;
-  for (const key of Object.keys(props)) {
-    if (Object.is(first.current[key], props[key])) continue;
-    warned.current = true;
-    console.warn(
-      `[labkit] ${component} reads \`${key}\` once, at mount; a later change is ignored`,
-    );
-    return;
-  }
+  // In an effect, so only props that committed are compared.
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production' || warned.current) return;
+    for (const key of Object.keys(props)) {
+      if (Object.is(first.current[key], props[key])) continue;
+      warned.current = true;
+      console.warn(
+        `[labkit] ${component} reads \`${key}\` once, at mount; a later change is ignored`,
+      );
+      return;
+    }
+  });
 }

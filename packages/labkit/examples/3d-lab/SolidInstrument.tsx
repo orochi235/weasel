@@ -18,6 +18,7 @@ import {
   useActiveToolContext,
   useDepSource,
   useGestureDispatcher,
+  useLatest,
   useSelectTool,
   selectionMoveContribution,
   useStandardActions,
@@ -96,14 +97,11 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   );
   const [selection, setSelection] = useState<readonly NodeId[]>([]);
 
-  const cameraRef = useRef(camera);
-  cameraRef.current = camera;
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
+  const cameraRef = useLatest(camera);
+  const selectionRef = useLatest(selection);
   const sizeRef = useRef({ width: 1, height: 1 });
   const originRef = useRef({ x: 0, y: 0 });
-  const showChromeRef = useRef(config.showChrome);
-  showChromeRef.current = config.showChrome;
+  const showChromeRef = useLatest(config.showChrome);
   /** One draw record per node, kept across frames and patched from the feed. */
   const drawsRef = useRef(new Map<NodeId, SolidRecord>());
 
@@ -114,7 +112,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       originX: originRef.current.x,
       originY: originRef.current.y,
     }),
-    [],
+    [cameraRef],
   );
 
   const repaint = useCallback(() => surface.invalidate(tileId), [surface, tileId]);
@@ -217,7 +215,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [glCanvas, surface, tileId, scene, dispatcher, feed, world]);
+  }, [glCanvas, surface, tileId, scene, dispatcher, feed, world, selectionRef, cameraRef, showChromeRef]);
 
   // ── Deps ───────────────────────────────────────────────────────────────
   const selectionApi = useMemo(
@@ -243,7 +241,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
         setSelection: (ids: NodeId[]) => setSelection(ids),
       },
     }),
-    [],
+    [selectionRef],
   );
 
   const nodeAtPoint = useMemo(() => createNodeAtPoint(world), [world]);
@@ -279,7 +277,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       set: (next: Camera3d) => setCamera(next),
       size: () => sizeRef.current,
     }),
-    [],
+    [cameraRef],
   );
 
   // `scene.history` is the same handle `<SceneCanvas>` registers, so Cmd+Z
@@ -319,7 +317,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       getSelection: () => [...selectionRef.current] as string[],
       setSelection: (ids: string[]) => setSelection(ids as NodeId[]),
     }),
-    [scene, areaSelect],
+    [scene, areaSelect, selectionRef],
   );
 
   const select = useSelectTool(selectAdapter, { pickEvery, pickBest, poseDescriptor });
@@ -372,7 +370,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
           | 'unselected-body',
       };
     },
-    [nodeAtPoint],
+    [nodeAtPoint, selectionRef],
   );
 
   /**
@@ -404,7 +402,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     hover: null,
     mode: 'normal',
     allowedCapabilities: DEFAULT_ALLOWED_CAPABILITIES,
-  }), [dispatcher]);
+  }), [dispatcher, selectionRef]);
 
   useGestureDispatcher({
     canvasRef: paneRef,

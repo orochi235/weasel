@@ -5,6 +5,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useInsertionEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -418,7 +419,10 @@ function LabRuntime({
   }, []);
 
   const ownSurface = useTiledSurface({ onFrame });
-  surfaceRef.current = ownSurface;
+  // Not `useLatest`: `onFrame` reads it, and is needed before the surface exists.
+  useInsertionEffect(() => {
+    surfaceRef.current = ownSurface;
+  }, [ownSurface]);
   const [labBody, setLabBody] = useState<HTMLDivElement | null>(null);
   const attachOwnSurface = ownSurface.containerRef;
   const labBodyRef = useCallback(

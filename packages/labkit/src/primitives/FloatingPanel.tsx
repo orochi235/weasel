@@ -1,4 +1,9 @@
-import { openPointerSession, type PointerSession, pastDragThreshold } from '@weasel-js/core';
+import {
+  openPointerSession,
+  type PointerSession,
+  pastDragThreshold,
+  useLatest,
+} from '@weasel-js/core';
 import type React from 'react';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -119,8 +124,7 @@ export function FloatingPanel({
   // A drag outlives the render that started it, so the reducer's inputs are
   // read here and not from that render's closure — a container resized
   // mid-drag would otherwise place the panel against its old box.
-  const layout = useRef({ container, options, item });
-  layout.current = { container, options, item };
+  const layout = useLatest({ container, options, item });
 
   useEffect(() => () => session.current?.cancel(), []);
 

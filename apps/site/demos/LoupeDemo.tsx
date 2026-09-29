@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, useScene } from '@weasel-js/core';
+import { SceneCanvas, useLatest, useScene } from '@weasel-js/core';
 import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
@@ -93,8 +93,7 @@ export function LoupeDemo() {
   const [picked, setPicked] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   // Read when a loupe is built, so rebuilding for `editing` keeps these.
-  const settings = useRef({ mode, factor });
-  settings.current = { mode, factor };
+  const settings = useLatest({ mode, factor });
 
   const scene = useScene<Block, 'default', Pose>({
     systemLayers: [{ id: 'default' }],
@@ -128,7 +127,7 @@ export function LoupeDemo() {
     loupeRef.current = loupe;
     api.requestRedraw();
     return () => { loupe.dispose(); loupeRef.current = null; };
-  }, [hud, editing]);
+  }, [hud, editing, settings]);
 
   return (
     <div className="ckd-canvas-wrap">

@@ -1,11 +1,24 @@
-import { createPointerStore, PointerContextProvider, WeaselProvider } from '@weasel-js/core';
-import { type ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createPointerStore,
+  PointerContextProvider,
+  useLatest,
+  WeaselProvider,
+} from '@weasel-js/core';
+import {
+  type ReactNode,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { AnnotationTargets } from '../annotations/AnnotationTargets';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { annotationsFromJSON } from '../annotations/store';
-import type { AnnotationStorage, AnnotationTargetInfo } from '../annotations/types';
+import type { AnnotationStorage, AnnotationsApi, AnnotationTargetInfo } from '../annotations/types';
 import type { CameraView } from '../canvas/CameraInput';
 import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
@@ -207,43 +220,68 @@ function TrialRuntime({
   // resizing or gaining a dependency must not need the store rebuilt. Held in
   // a ref because the store is built once and closes over it.
   const annotationsCap = instrument.annotations;
-  const targetsRef = useRef<() => readonly AnnotationTargetInfo[]>(() => []);
-  targetsRef.current = () =>
+  const targetsRef = useLatest((): readonly AnnotationTargetInfo[] =>
     annotationsCap
       ? annotationsCap.targets(record.state, config, { id: record.id, view: record.view })
-      : [];
+      : [],
+  );
 
   // One store for the trial's lifetime.
   const annotationsRef = useRef<ReturnType<typeof annotationsFromJSON> | null>(null);
   // Read through refs for the same reason `targets` is: the store is built
   // once, and an export must draw against the config the trial holds now.
-  const configRef = useRef<unknown>(config);
-  configRef.current = config;
+  const configRef = useLatest(config);
   // The instrument can be swapped under a live trial, so the capability is read at use too.
-  const capRef = useRef(annotationsCap);
-  capRef.current = annotationsCap;
+  const capRef = useLatest(annotationsCap);
   if (annotationsRef.current === null) {
     // Seeded from wherever the marks were kept: the instrument's own store if
     // it declared one, else this trial's slot.
-    const kept = annotationsCap?.storage ? keptMarks : record.annotations;
-    annotationsRef.current = annotationsFromJSON(kept, () => targetsRef.current(), {
-      meaning: () => capRef.current?.meaning,
-      config: () => configRef.current,
-      onCapture: (result) => capRef.current?.onCapture?.(result),
-    });
+    annotationsRef.current = annotationsFromJSON(
+      annotationsCap?.storage ? keptMarks : record.annotations,
+      () => targetsRef.current(),
+      {
+        meaning: () => capRef.current?.meaning,
+        config: () => configRef.current,
+        onCapture: (result) => capRef.current?.onCapture?.(result),
+      },
+    );
   }
   const annotations = annotationsRef.current;
+
+  // Chrome reads the store while it renders — a mark list, the export menu,
+  // the overview — and the store reads the refs above, which hold the last
+  // commit. So once a change to them commits, those readers are told to read
+  // again. Through the context's `subscribe` alone: the store's own would have
+  // the debounce below save marks that did not change.
+  const inputsCommitted = useRef(new Set<() => void>());
+  // biome-ignore lint/correctness/useExhaustiveDependencies: these are what `targets` and `config` answer from — the signal, not values this reads
+  useLayoutEffect(() => {
+    for (const fn of inputsCommitted.current) fn();
+  }, [record.state, record.view, config, annotationsCap]);
+  const provided = useMemo<AnnotationsApi>(
+    () => ({
+      ...annotations,
+      subscribe: (fn) => {
+        const off = annotations.subscribe(fn);
+        inputsCommitted.current.add(fn);
+        return () => {
+          off();
+          inputsCommitted.current.delete(fn);
+        };
+      },
+    }),
+    [annotations],
+  );
 
   // Written on a trailing debounce rather than per notification: a scene
   // mutates every frame of a drag, and a zustand write per frame re-renders
   // every trial in the lab. The unmount flush is not an optimization — the
   // last mark before a trial closes is otherwise lost.
   const saveCap = annotationsCap?.storage;
-  const saveRef = useRef<(doc: unknown) => void>(() => {});
-  saveRef.current = (doc) => {
+  const saveRef = useLatest((doc: unknown): void => {
     if (saveCap) saveCap.save(doc as never);
     else updateTrialAnnotations(record.id, doc);
-  };
+  });
   // Only when the pair flips, which is rare: bumping React state on every
   // scene notification would re-render the trial on every frame of a drag,
   // which is the thing the debounce below exists to avoid.
@@ -280,7 +318,7 @@ function TrialRuntime({
       if (timer) clearTimeout(timer);
       flush();
     };
-  }, [annotations, annotationsCap]);
+  }, [annotations, annotationsCap, saveRef]);
 
   // A trial gets its own slot when its instrument declares tools; otherwise it
   // reads the lab's. Which slot a change writes follows from the same thing.
@@ -613,7 +651,7 @@ function TrialRuntime({
 
   return (
     <TrialIdProvider trialId={record.id}>
-      <AnnotationsContext.Provider value={annotationsCap ? annotations : null}>
+      <AnnotationsContext.Provider value={annotationsCap ? provided : null}>
         <CameraWheelContext.Provider value={wheelSlot}>
           <TrialChrome
             job={jobCap ? job : undefined}

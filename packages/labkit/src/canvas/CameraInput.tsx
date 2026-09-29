@@ -14,6 +14,7 @@ import {
   useActionsRegistry,
   useDepSource,
   useGestureDispatcher,
+  useLatest,
   usePointerContext,
   type View,
   type ViewApi,
@@ -26,6 +27,7 @@ import {
   type RefObject,
   useContext,
   useEffect,
+  useInsertionEffect,
   useMemo,
   useRef,
 } from 'react';
@@ -111,15 +113,18 @@ export function useCameraView({
   minZoom = 0.1,
   maxZoom = 32,
 }: CameraViewOptions): CameraView {
+  // Written by each commit and by `set`, ahead of the render it asks for —
+  // two writers, so not `useLatest`.
   const live = useRef({ view: normalize2DView(view), onViewChange, frame });
-  live.current = { view: normalize2DView(view), onViewChange, frame };
+  useInsertionEffect(() => {
+    live.current = { view: normalize2DView(view), onViewChange, frame };
+  });
   const initialZoom = useRef(isPositiveFinite(view.zoom) ? view.zoom : null);
-  const bounds = useRef({ min: minZoom, max: maxZoom });
   const opening = initialZoom.current;
-  bounds.current = {
+  const bounds = useLatest({
     min: opening == null ? minZoom : Math.min(minZoom, opening),
     max: opening == null ? maxZoom : Math.max(maxZoom, opening),
-  };
+  });
 
   return useMemo<CameraView>(() => {
     const get = (): View => toCameraView(live.current.view, live.current.frame);
@@ -140,7 +145,7 @@ export function useCameraView({
       },
       zoomRange: () => ({ ...bounds.current }),
     };
-  }, [hostRef]);
+  }, [bounds, hostRef]);
 }
 
 const TAP_ID = 'camera.tap';
@@ -177,10 +182,8 @@ function CameraDispatch({
   onTap,
   registry,
 }: CameraInputProps & { registry: ActionsRegistry }) {
-  const frameRef = useRef(frame);
-  frameRef.current = frame;
-  const onTapRef = useRef(onTap);
-  onTapRef.current = onTap;
+  const frameRef = useLatest(frame);
+  const onTapRef = useLatest(onTap);
 
   useDepSource('view', () => camera);
   useDepSource('rootView', () => camera);
@@ -217,7 +220,7 @@ function CameraDispatch({
       { ...zoom, defaultBinding: wheelOnly as Action['defaultBinding'] },
       tap,
     ];
-  }, []);
+  }, [frameRef, onTapRef]);
 
   useEffect(() => {
     const offs = actions.map((a) => registry.register(a));
@@ -284,10 +287,8 @@ export function usePublishPointer(
   viewId: string,
 ): void {
   const store = usePointerContext();
-  const frameRef = useRef(frame);
-  frameRef.current = frame;
-  const toLocal = useRef(clientToLocal);
-  toLocal.current = clientToLocal;
+  const frameRef = useLatest(frame);
+  const toLocal = useLatest(clientToLocal);
   useEffect(() => {
     const el = hostRef.current;
     if (!el || !store) return;
@@ -305,7 +306,7 @@ export function usePublishPointer(
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerleave', onLeave);
     };
-  }, [hostRef, store, viewId]);
+  }, [frameRef, hostRef, store, toLocal, viewId]);
 }
 
 /** The pointer as a frame-local point, or `null` when there is none or it is

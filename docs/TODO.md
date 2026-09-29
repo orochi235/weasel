@@ -337,29 +337,21 @@ Core five + Crop shipped. Remaining:
   readers for a read during render — the function-form tool cursor was one, and
   now takes its view explicitly — since `.current` then holds the previous
   commit's value. A lazy initializer is allowed only as
-  `if (r.current == null) r.current = make();`; the multi-statement ones
-  (`useScene`, labkit's `useOpenOnce`) are reported until reshaped into that.
+  `if (r.current == null) r.current = make();`; the multi-statement one
+  (`useScene`) is reported until reshaped into that.
   `renderThenAbandon` in `@weasel-js/routing/testing/abandonRender` is the test
   shape.
 
   | Package | Sites | Files |
   |---|---:|---:|
-  | `packages/labkit` | 45 | 18 |
   | `packages/routing` | 21 | 6 |
   | `packages/ui` | 14 | 9 |
-  | `apps/site` | 13 | 8 |
-  | `apps/draw` | 10 | 5 |
   | `packages/forge` | 7 | 4 |
-  | `apps/theme-editor` | 1 | 1 |
   | `packages/diagram` | 1 | 1 |
 
-  - `packages/labkit` — `canvas/CameraInput.tsx` (6), `lab/Workspace.tsx` (5), `trial/Trial.tsx` (5), `annotations/AnnotationOverlay.tsx` (4), `job/useJob.ts` (4), `loupe/useLoupe.ts` (4), `examples/3d-lab/SolidInstrument.tsx` (3), `dragdrop/DragDropRuntime.tsx` (2), `primitives/Split.tsx` (2), `state/useOpenOnce.ts` (2), `canvas/CanvasStack.tsx`, `canvas/Stage.tsx`, `lab/Lab.tsx`, `lab/LabZoom.tsx`, `loupe/CanvasLoupe.tsx`, `overview/TrialOverview.tsx`, `primitives/FloatingPanel.tsx`, `surface/useTiledSurface.ts`.
   - `packages/routing` — `interactions/dispatcher/useGestureDispatcher.tsx` (8), `contributions/useContributions.ts` (5), `tools/useTools.ts` (4), `interactions/actions/useOngoingAction.ts` (2), `interactions/actions/ActionsProvider.tsx`, `interactions/actions/depRegistry.tsx`.
   - `packages/ui` — `components/CurveEditor/LayeredCurveEditor.tsx` (6), `components/Callout/Callout.tsx`, `components/CurveEditor/CurveEditor.tsx`, `components/LayerList/LayerList.tsx`, `components/ResizeHandle/ResizeHandle.tsx`, `components/Timeline/AnimatedTimeline.tsx`, `components/Timeline/LaneGraph.tsx`, `useAsyncOptions.ts`, `useReorderDragList.ts`.
-  - `apps/site` — `demos/BooleanOpsDemo.tsx` (2), `demos/curveLab/RepresentationPanel.tsx` (2), `demos/CustomShaderDemo.tsx` (2), `demos/GestureGrammarDemo.tsx` (2), `demos/TimelineDemo.tsx` (2), `demos/Kernel3dDemo.tsx`, `demos/LoupeDemo.tsx`, `demos/platformer/usePlatformerAudio.ts`.
-  - `apps/draw` — `App.tsx` (2), `opacityScrub/useOpacityScrub.ts` (2), `tools/colorContext/ColorContextProvider.tsx` (2), `ui/CharacterOptions/TextEditDepPublisher.tsx` (2), `useLoupe.ts` (2).
   - `packages/forge` — `shell/StoryTrial.tsx` (3), `shell/FrameView.tsx` (2), `shell/TrialHost.tsx`, `shell/useStoryRegistry.ts`.
-  - `apps/theme-editor` — `ThemeWorkbench.tsx`.
   - `packages/diagram` — `live.ts`.
 
 - **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner

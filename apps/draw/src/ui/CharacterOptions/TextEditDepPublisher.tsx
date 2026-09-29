@@ -14,8 +14,7 @@
  * outside the canvas and needs the same `editingId` / `selection` this dep
  * exposes.
  */
-import { useRef } from 'react';
-import { useDepSource, type Scene, type NodeId, type UseSceneTextEditReturn } from '@weasel-js/core';
+import { type NodeId, type Scene, useDepSource, useLatest, type UseSceneTextEditReturn } from '@weasel-js/core';
 
 export function TextEditDepPublisher({
   edit,
@@ -24,10 +23,8 @@ export function TextEditDepPublisher({
   edit: UseSceneTextEditReturn;
   scene: Scene<unknown, string, unknown>;
 }): null {
-  const editRef = useRef(edit);
-  editRef.current = edit;
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
+  const editRef = useLatest(edit);
+  const sceneRef = useLatest(scene);
 
   useDepSource('textEdit', () => ({
     startEdit: (id, opts) => editRef.current.startEdit(id, opts),

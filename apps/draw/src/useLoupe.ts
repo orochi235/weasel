@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { drawOneLayer } from '@weasel-js/core';
+import { drawOneLayer, useLatest } from '@weasel-js/core';
 import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { Hud } from '@weasel-js/hud';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '@weasel-js/hud';
@@ -36,13 +36,11 @@ export function useLoupe(
   // One stable layer delegating to the current `source`. Depending on
   // `source` directly would rebuild the loupe — losing position, size and
   // visibility — whenever the app re-memoizes a layer.
-  const sourceRef = useRef(source);
-  sourceRef.current = source;
+  const sourceRef = useLatest(source);
 
   // Same reason as `source`: a fresh handler each render must not rebuild the
   // loupe and lose its position, size and visibility.
-  const onPickRef = useRef(opts.onPick);
-  onPickRef.current = opts.onPick;
+  const onPickRef = useLatest(opts.onPick);
   const stableSource = useRef<RenderLayer<unknown>[]>([{
     id: 'loupe-source',
     label: 'Loupe source',
@@ -70,7 +68,7 @@ export function useLoupe(
     loupe.window.setHidden(true);
     handle.current = loupe;
     return () => { loupe.dispose(); handle.current = null; };
-  }, [hud, ref, stableSource]);
+  }, [hud, onPickRef, ref, stableSource]);
 
   return {
     visible, mode, factor, color,

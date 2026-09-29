@@ -1,20 +1,21 @@
 import { useCallback, useMemo, useRef } from 'react';
 import {
-  pathUnion,
+  asNodeId,
+  PATH_L,
+  PATH_M,
+  PATH_Z,
+  pathDivide,
+  pathExclude,
   pathIntersect,
   pathSubtract,
-  pathExclude,
-  pathDivide,
-  useBooleansAdapter,
-  useStandardActions,
-  useSelection,
-  WeaselProvider,
-  PATH_M,
-  PATH_L,
-  PATH_Z,
+  pathUnion,
   SceneCanvas,
+  useBooleansAdapter,
+  useLatest,
   useScene,
-  asNodeId,
+  useSelection,
+  useStandardActions,
+  WeaselProvider,
 } from '@weasel-js/core';
 import type { BooleansAdapter, NodeId, Op, PolygonPath } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui';
@@ -116,10 +117,8 @@ function InteractivePanel() {
   const pendingPathsRef = useRef<Map<string, PolygonPath>>(new Map());
 
   // All mutable state accessed through refs so adapter is constructed once.
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
+  const sceneRef = useLatest(scene);
+  const selectionRef = useLatest(selection);
 
   const adapterRef = useRef<BooleansAdapter | null>(null);
   if (adapterRef.current === null) {

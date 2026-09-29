@@ -15,10 +15,10 @@
  * Consume anywhere below:
  *   const color = useColorContext();
  */
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { ActivePaint } from '../../ActiveSwatches';
 import { DEFAULT_FILL, DEFAULT_STROKE } from '../../ActiveSwatches';
-import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, getAlpha01, mergeAlphaFromPrev, toHex8, withAlpha01 } from '@weasel-js/core';
+import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, getAlpha01, mergeAlphaFromPrev, toHex8, useLatest, withAlpha01 } from '@weasel-js/core';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -89,8 +89,7 @@ export function ColorContextProvider({
 
   const { fill, stroke } = paints;
 
-  const paintsRef = useRef(paints); paintsRef.current = paints;
-  const focusedRef = useRef(focused); focusedRef.current = focused;
+  const focusedRef = useLatest(focused);
 
   const setFill = useCallback((p: ActivePaint) => {
     setPaints((cur) => ({ ...cur, fill: p }));
@@ -102,7 +101,7 @@ export function ColorContextProvider({
   const setFocused = useCallback((p: ActivePaint) => {
     if (focusedRef.current === 'fill') setPaints((cur) => ({ ...cur, fill: p }));
     else setPaints((cur) => ({ ...cur, stroke: p }));
-  }, []);
+  }, [focusedRef]);
 
   // Normalize incoming color strings to `#rrggbbaa`. 6-char inputs
   // inherit the previous swatch's alpha (the native picker round-trip)
@@ -130,7 +129,7 @@ export function ColorContextProvider({
         return { ...cur, stroke: { kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) } };
       }
     });
-  }, []);
+  }, [focusedRef]);
 
   const focusedPaint = focused === 'fill' ? fill : stroke;
   const focusedAlpha = focusedPaint.kind === 'solid' ? getAlpha01(focusedPaint.color) : 1;
@@ -142,7 +141,7 @@ export function ColorContextProvider({
       const next: ActivePaint = { kind: 'solid', color: withAlpha01(toHex8(paint.color), alpha01) };
       return which === 'fill' ? { ...cur, fill: next } : { ...cur, stroke: next };
     });
-  }, []);
+  }, [focusedRef]);
 
   const swap = useCallback(() => {
     setPaints((cur) => ({ fill: cur.stroke, stroke: cur.fill }));
@@ -159,7 +158,7 @@ export function ColorContextProvider({
         : { kind: 'none' };
       return which === 'fill' ? { ...cur, fill: next } : { ...cur, stroke: next };
     });
-  }, []);
+  }, [focusedRef]);
   const toggleFocusedTransparent = useCallback(() => {
     setPaints((cur) => {
       const which = focusedRef.current;
@@ -169,7 +168,7 @@ export function ColorContextProvider({
         : { kind: 'transparent' };
       return which === 'fill' ? { ...cur, fill: next } : { ...cur, stroke: next };
     });
-  }, []);
+  }, [focusedRef]);
   const reset = useCallback(() => {
     setPaints({ fill: DEFAULT_FILL, stroke: DEFAULT_STROKE });
   }, []);

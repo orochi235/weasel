@@ -180,6 +180,45 @@ describe('the trial undo chrome over marks', () => {
   });
 });
 
+function GrowingPane({ n, grow }: { n: number; grow: () => void }) {
+  const api = useAnnotations();
+  return (
+    <button type="button" data-testid="growing" data-targets={api.targets().length} onClick={grow}>
+      {n}
+    </button>
+  );
+}
+
+describe('targets that follow the trial state', () => {
+  it('reach a reader of the store once the change commits', () => {
+    // The store reads the committed state, so a reader rendering in the same
+    // pass as the change sees the one before; the trial tells it to read again.
+    const growing = defineInstrument<{ n: number }, Record<string, never>>({
+      name: 'Growing',
+      defaultConfig: () => ({}),
+      initialState: () => ({ n: 1 }),
+      render: (ctx) => (
+        <GrowingPane n={ctx.state.n} grow={() => ctx.setState((s) => ({ n: s.n + 1 }))} />
+      ),
+      annotations: {
+        targets: (state) =>
+          Array.from({ length: state.n }, (_, i) => ({
+            id: `t${i}`,
+            ref: { current: null },
+            content: { w: 10, h: 10 },
+          })),
+      },
+    });
+    render(<Lab instruments={[growing]} defaultInstrument="Growing" />);
+    expect(screen.getByTestId('growing').dataset.targets).toBe('1');
+    act(() => {
+      fireEvent.click(screen.getByTestId('growing'));
+    });
+    expect(screen.getByTestId('growing').textContent).toBe('2');
+    expect(screen.getByTestId('growing').dataset.targets).toBe('2');
+  });
+});
+
 describe('an instrument that declares none', () => {
   it('gets no store and no palette', () => {
     render(<Lab instruments={[plain]} defaultInstrument="Plain" />);

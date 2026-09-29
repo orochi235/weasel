@@ -10,10 +10,11 @@ import {
   useActionsRegistry,
   useDepSource,
   useGestureDispatcher,
+  useLatest,
   type ViewApi,
 } from '@weasel-js/core';
 import { ZoomInIcon, ZoomOutIcon } from '@weasel-js/ui';
-import { useContext, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import type { CameraView } from '../canvas/CameraInput';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
@@ -96,8 +97,7 @@ function LabZoomControls() {
 
   const live = zoom !== null && camera !== null;
   const view = useMemo(() => (camera ? forZoom(camera) : null), [camera]);
-  const viewRef = useRef(view);
-  viewRef.current = live ? view : null;
+  const viewRef = useLatest(live ? view : null);
 
   useDepSource('view', () => viewRef.current as ViewApi);
 
@@ -108,7 +108,7 @@ function LabZoomControls() {
       enabled: () => (viewRef.current ? true : ActionDisabledReason.NotApplicable),
     };
     return registry.register(action);
-  }, [registry]);
+  }, [registry, viewRef]);
 
   // First, so a story's own zoom keys do not also fire over a trial with a
   // camera; over one without, the action is disabled and the keys pass on.

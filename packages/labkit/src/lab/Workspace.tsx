@@ -1,3 +1,4 @@
+import { useLatest } from '@weasel-js/core';
 import {
   Children,
   type ReactNode,
@@ -73,6 +74,26 @@ export interface WorkspaceProps {
   viewport?: { w: number; h: number };
 }
 
+/** The layout store a workspace keeps for its lifetime: the tile grid, and the zone floating panels live in. */
+function createWorkspaceStore(grid: { resizable: boolean; gap: number; padding: number }): Store {
+  const store = new Store();
+  store.registerNode(
+    createNode({
+      kind: 'zone',
+      id: ZONE_ID,
+      container: { strategyId: 'grid', config: grid },
+    }),
+  );
+  store.registerNode(
+    createNode({
+      kind: 'zone',
+      id: FLOAT_ZONE_ID,
+      container: { strategyId: 'floating', config: {} },
+    }),
+  );
+  return store;
+}
+
 function extentOf(store: Store, id: NodeId): TrialLayout[string] | null {
   const p = store.getNode(id)?.membership?.placement as TrialLayout[string] | undefined;
   if (!p) return null;
@@ -134,50 +155,25 @@ export function Workspace({
   const floatPanels = useMemo(() => (panels ?? []).filter((p) => p.as === 'floating'), [panels]);
   // Identity has to be stable while the id *contents* are unchanged: the sync
   // effect below keys off it, and a fresh array every render would re-register
-  // every tile forever. A ref keyed on the joined ids says that directly, where
-  // a `useMemo` on the same key can only say it by suppressing both linters.
-  const wantedIds = [
+  // every tile forever. So the ids are memoized on a serialized key, and read
+  // back from it.
+  const idKey = JSON.stringify([
     ...items.map((_, i) => ids?.[i] ?? `lk-ws-${i}`),
     ...tilePanels.map((p) => `lk-panel-${p.key}`),
-  ];
-  const idKey = wantedIds.join(',');
-  const idKeyRef = useRef<string | null>(null);
-  const nodeIdsRef = useRef<NodeId[]>([]);
-  if (idKeyRef.current !== idKey) {
-    idKeyRef.current = idKey;
-    nodeIdsRef.current = wantedIds.map(asNodeId);
-  }
-  const nodeIds = nodeIdsRef.current;
+  ]);
+  const nodeIds = useMemo(() => (JSON.parse(idKey) as string[]).map(asNodeId), [idKey]);
 
   // Held in refs rather than depended on: a fresh object each render would
   // re-run the sync effect, and only a newly registered tile reads `layout`.
-  const layoutRef = useRef(layout);
-  layoutRef.current = layout;
-  const onLayoutChangeRef = useRef(onLayoutChange);
-  onLayoutChangeRef.current = onLayoutChange;
+  const layoutRef = useLatest(layout);
+  const onLayoutChangeRef = useLatest(onLayoutChange);
 
   // One store for the component's lifetime: a tile's dragged extent lives in
   // its node, so rebuilding the store on every add or close would silently
   // reset every pane.
   const storeRef = useRef<Store | null>(null);
-  if (storeRef.current === null) {
-    const store = new Store();
-    store.registerNode(
-      createNode({
-        kind: 'zone',
-        id: ZONE_ID,
-        container: { strategyId: 'grid', config: { resizable, gap, padding } },
-      }),
-    );
-    store.registerNode(
-      createNode({
-        kind: 'zone',
-        id: FLOAT_ZONE_ID,
-        container: { strategyId: 'floating', config: {} },
-      }),
-    );
-    storeRef.current = store;
-  }
+  if (storeRef.current === null)
+    storeRef.current = createWorkspaceStore({ resizable, gap, padding });
   const store = storeRef.current;
 
   // A tile that only moves reports nothing to a ResizeObserver, and only this
@@ -203,7 +199,7 @@ export function Workspace({
       if (saved) store.patchPlacement(id, saved);
     }
     store.setChildOrder(ZONE_ID, [...nodeIds]);
-  }, [store, nodeIds]);
+  }, [store, nodeIds, layoutRef]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: nodeIds is the signal that the tile set changed — a re-tile moves tiles without resizing any — not a value this reads
   useEffect(() => {
@@ -222,7 +218,7 @@ export function Workspace({
       }
       onLayoutChangeRef.current?.(next);
     });
-  }, [store, onLayoutChange]);
+  }, [store, onLayoutChange, onLayoutChangeRef]);
 
   const commitOrder = useCallback(
     (nextIds: NodeId[]) => onReorder?.(nextIds.map(String)),

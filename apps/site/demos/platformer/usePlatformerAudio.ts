@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLatest } from '@weasel-js/core';
 import type { Animator, TimelineHandle } from '@weasel-js/core';
 import { createAudioEngine } from '@weasel-js/audio';
 import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
@@ -159,8 +160,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
     window.setTimeout(() => a.engine.bus('music').setGain(0.5, 400), 260);
   };
 
-  const hooks = useRef<WorldHooks>(null!);
-  hooks.current = {
+  const hooks = useLatest<WorldHooks>({
     sound: fire,
     soundAt: (name, at, gain) => fireAt(name, at, gain),
     duck: duckMusic,
@@ -171,7 +171,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
       // Cut the bed a couple of frames later, so the thwack lands into silence.
       cutMusicIn.current = 2;
     },
-  };
+  });
 
   const beginFrame = useCallback((g: GameRefs) => {
     audio.current?.engine.setListener({ x: g.player.body.x, y: g.player.body.y });
