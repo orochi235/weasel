@@ -36,7 +36,7 @@
     "build:theme-editor": "vite build --config apps/theme-editor/vite.config.ts",
     "build:api": "typedoc && npm run build:api:gestures",
     "build:api:gestures": "typedoc --options packages/gestures/typedoc.json",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p packages",
     "test": "vitest run --project=core --project=site --project=weasel-ui --project=draw --project=labkit --project=forge --project=forge-node --project=smoke --project=browser",
     "test:unit": "vitest run --project=core --project=site --project=weasel-ui --project=draw --project=labkit --project=forge --project=forge-node",
     "test:core": "vitest run --project=core",

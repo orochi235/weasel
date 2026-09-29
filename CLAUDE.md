@@ -180,7 +180,11 @@ A check that needs a real browser — layout, real IndexedDB, CSS jsdom can't re
 `*.browser.test.{ts,tsx}` file, not a story `play`: the `browser` project runs it in headless
 Chromium (`npm run test:browser`, part of `npm test` and CI).
 
-Typecheck is `npx tsc --noEmit` **from the repo root**. `tsc -p packages/core/tsconfig.json`
+Typecheck is `npm run typecheck`. It runs two programs: the root `tsconfig.json`, and
+`packages/tsconfig.json` for every `*.browser.test.*` file, which the root one excludes because
+those use `@vitest/browser`'s matchers and the rest use jest-dom's — the two declare
+`toHaveTextContent` incompatibly, and in one program load order picks the winner. A bare
+`npx tsc --noEmit` checks only the first. `tsc -p packages/core/tsconfig.json`
 exits 1 with 31 pre-existing `TS6059` errors on a clean tree — core's `outDir` pins `rootDir` to
 `packages/core` while its `paths` reach into sibling packages. Those errors are not yours.
 

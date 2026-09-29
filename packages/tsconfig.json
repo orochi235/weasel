@@ -1,0 +1,29 @@
+{
+  // Typechecks every `*.browser.test.*` file, which the root config excludes.
+  // These run in the vitest `browser` project: real Chromium, no globals, no
+  // setup file, and `@vitest/browser`'s matchers (`expect.element`) rather than
+  // jest-dom's. Both sets augment vitest's `Assertion` with incompatible
+  // `toHaveTextContent` signatures, and in one program whichever loads first
+  // wins, so each world gets its own program.
+  //
+  // It sits here, not beside the root config, because the editor only finds
+  // configs named tsconfig.json: a browser test excluded by its package's
+  // config falls through to this one on the way up.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "@vitest/browser/matchers"],
+    "rootDir": "..",
+    "tsBuildInfoFile": "../.tsbuildinfo/browser-tests.tsbuildinfo"
+  },
+  // The .d.ts files are the ambient declarations (CSS modules, `?url`
+  // imports) the root program gets from its include.
+  "include": [
+    "**/*.browser.test.ts",
+    "**/*.browser.test.tsx",
+    "../apps/**/*.browser.test.ts",
+    "../apps/**/*.browser.test.tsx",
+    "*/src/**/*.d.ts",
+    "../apps/**/*.d.ts"
+  ],
+  "exclude": ["**/node_modules", "**/dist"]
+}
