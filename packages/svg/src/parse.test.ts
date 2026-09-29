@@ -391,3 +391,27 @@ describe('conditional at-rules', () => {
     expect(warnings).toEqual(['@import url("theme.css") screen is not fetched; its rules do not apply']);
   });
 });
+
+describe('values read through the property table', () => {
+  const parse = (body: string) => parseSvg(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`);
+  it('reads a percentage opacity as a ratio', () => {
+    const p = parse('<rect width="1" height="1" opacity="50%" fill-opacity="25%"/>').nodes[0] as SvgPathNode;
+    expect(p.opacity).toBe(0.5);
+    expect(p.fill).toMatchObject({ opacity: 0.25 });
+  });
+  it('resolves a percentage font-size on <text> against the default, and says so', () => {
+    const { nodes, warnings } = parse('<text font-size="150%">hi</text>');
+    expect(nodes[0]).toMatchObject({ style: { fontSize: 24 } });
+    expect(warnings).toEqual(['font-size "150%" on <text> is resolved against the 16px default']);
+  });
+  it('paints nothing for context-fill on a shape outside a marker', () => {
+    const { nodes, warnings } = parse('<rect width="1" height="1" fill="context-fill"/>');
+    expect((nodes[0] as SvgPathNode).fill).toEqual({ kind: 'none' });
+    expect(warnings).toEqual([]);
+  });
+  it('lets color: currentColor inherit', () => {
+    const g = parse('<g color="red"><rect width="1" height="1" color="currentColor" fill="currentColor"/></g>')
+      .nodes[0] as { children: SvgPathNode[] };
+    expect(g.children[0].fill).toMatchObject({ color: '#ff0000' });
+  });
+});

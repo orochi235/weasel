@@ -10,8 +10,8 @@ import { getPaintKind, getMarker, resolveMarkerSize } from '@weasel-js/core';
 import type {
   FillStyle, GradStop, GradientUnits, MarkerEntry, MarkerPaint, MarkerRef, Path, ScreenLength,
 } from '@weasel-js/core';
-import { ownProp } from './cascade';
-import { parsePaintAttr } from './color';
+import { ownProp, ownValue } from './cascade';
+import { readProperty } from './properties';
 import { trimNumber } from './transform';
 import { patternXml } from './patterns';
 import { collectElementsByTag, type ElementTable } from './elements';
@@ -190,11 +190,9 @@ function readStops(el: Element, onWarn?: (m: string) => void): GradStop[] {
     const offsetRaw = parseRatio(c.getAttribute('offset') ?? '0');
     const offset = Number.isFinite(offsetRaw) ? offsetRaw : 0;
     const colorAttr = ownProp(c, 'stop-color') ?? '#000000';
-    const parsed = parsePaintAttr(colorAttr);
-    if (parsed && parsed.kind === 'solid') {
-      const opacityAttr = ownProp(c, 'stop-opacity');
-      const own = opacityAttr != null ? parseRatio(opacityAttr) : NaN;
-      const alpha = Number.isFinite(own) ? own : parsed.alpha;
+    const parsed = readProperty('stop-color', colorAttr, onWarn);
+    if (parsed) {
+      const alpha = ownValue(c, 'stop-opacity') ?? parsed.alpha;
       stops.push({ offset, color: alpha < 1 ? applyAlpha(parsed.color, alpha) : parsed.color });
     } else {
       onWarn?.(`gradient stop has unrecognized stop-color: ${colorAttr}`);

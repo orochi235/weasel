@@ -14,7 +14,9 @@ import {
 import {
   DEFAULT_MEDIA_ENVIRONMENT, evaluateMediaQuery, mediaEnvironmentFor, type SvgMediaEnvironment,
 } from './media';
-import { PROPERTIES } from './properties';
+import {
+  INHERITED_PROPERTIES, readProperty, type InheritedPropertyName, type PropertyName, type PropertyValue, type Warn,
+} from './properties';
 import { evaluateSupports } from './supports';
 
 export { parseDeclarations, type Declaration };
@@ -26,17 +28,10 @@ export { parseDeclarations, type Declaration };
  * `readInheritedAttr` → null contract). Values are raw SVG strings; callers
  * parse them (color, number, keyword, …).
  */
-export type StyleContext = Readonly<Record<string, string>>;
+export type StyleContext = Readonly<Partial<Record<InheritedPropertyName, string>>>;
 
 /** The empty cascade — seeds the root. */
 export const EMPTY_STYLE: StyleContext = {};
-
-/**
- * Inheritable presentation properties the leaf/text parsers consume. Add one
- * to `PROPERTIES` (and teach the consuming leaf to read the new key) to
- * inherit a new property — no per-attribute DOM walk required.
- */
-const INHERITABLE = Object.keys(PROPERTIES).filter((p) => PROPERTIES[p].inherits);
 
 /** One selector from a style rule; a comma list becomes one rule per selector. */
 export interface StyleRule {
@@ -297,7 +292,7 @@ function authorDeclarations(el: Element): ReadonlyMap<string, string> {
  * stylesheet rules and `style=""` by CSS precedence, then the presentation
  * attribute, which ranks below any author rule (SVG2).
  */
-export function ownProp(el: Element, prop: string): string | null {
+export function ownProp(el: Element, prop: PropertyName): string | null {
   return authorDeclarations(el).get(prop) ?? el.getAttribute(prop);
 }
 
@@ -308,10 +303,11 @@ export function ownProp(el: Element, prop: string): string | null {
  * when the element sets no inheritable property, avoiding a needless clone.
  */
 export function deriveStyle(parent: StyleContext, el: Element): StyleContext {
-  let next: Record<string, string> | null = null;
-  for (const prop of INHERITABLE) {
+  let next: Partial<Record<InheritedPropertyName, string>> | null = null;
+  for (const prop of INHERITED_PROPERTIES) {
     const own = ownProp(el, prop);
-    if (own == null || own === 'inherit') continue;
+    // `color: currentColor` is `inherit` by another name (CSS Color 4).
+    if (own == null || own === 'inherit' || (prop === 'color' && own.trim().toLowerCase() === 'currentcolor')) continue;
     if (!next) next = { ...parent };
     next[prop] = own;
   }
@@ -325,6 +321,19 @@ export function deriveStyle(parent: StyleContext, el: Element): StyleContext {
  */
 export function resolveCurrentColor(raw: string | null, style: StyleContext): string | null {
   if (raw == null) return null;
-  if (raw.trim().toLowerCase() === 'currentcolor') return style['color'] ?? '#000000';
-  return raw;
+  if (raw.trim().toLowerCase() !== 'currentcolor') return raw;
+  const color = readProperty('color', style['color']);
+  return color == null || color.toLowerCase() === 'currentcolor' ? '#000000' : color;
+}
+
+/** An element's own value of `prop`, read by the property's one reader. */
+export function ownValue<K extends PropertyName>(el: Element, prop: K, warn?: Warn): PropertyValue<K> | undefined {
+  return readProperty(prop, ownProp(el, prop), warn);
+}
+
+/** The inherited value of `prop` in effect at `style`, read by the property's one reader. */
+export function styleValue<K extends InheritedPropertyName>(
+  style: StyleContext, prop: K, warn?: Warn,
+): PropertyValue<K> | undefined {
+  return readProperty(prop, style[prop], warn);
 }
