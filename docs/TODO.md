@@ -313,12 +313,6 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P3) The paint controls read the kind registry without subscribing to it.** `PaintInput`,
-  `GradientEditor` and `PaintField` (`packages/ui/src/components/`) call `listPaintKinds` /
-  `getPaintKind` during render, so a kind registered after they mount — a consumer's own, or one
-  arriving through `registerPaintKindLoader` — is missing from the kind bar and unlabeled until
-  something else re-renders them. `paintKindRegistry` is shaped for `useSyncExternalStore`.
-
 - **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
   `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
   still derives framing from document poses, so a node overridden outside the
@@ -327,16 +321,16 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P3) `paintInputsRef` is written during render.** `Canvas.tsx` assigns
-  it in the render body, so a concurrent render React starts and abandons still
-  leaves its inputs in the ref, and the next `requestRedraw` from any source —
-  a gesture, a HUD, the view — paints inputs that were never committed. This is
-  a second `startTransition` hazard, distinct from the one `docs/concepts.md`
-  documents (that one is about DOM lagging the canvas; this one is about the
-  canvas painting a render that does not exist), and only the comment above
-  the assignment records it. Writing the ref from a layout effect instead would
-  fix it and cost the ordering `syncPaint` exists for — pixels landing before
-  the surrounding layout effects read the DOM.
+- **(P3) `<Canvas>` still hands the paint some refs written during render.**
+  The paint's own inputs (`paintInputsRef`, the `paintInto` target and rect,
+  `contentVersion`) are published from an insertion effect, so an abandoned
+  concurrent render never paints. Three refs the paint reads alongside them are
+  still assigned in the render body of `Canvas.tsx`: `viewRef` under a
+  controlled `view` prop, `helpersForLayersRef`, and `dimsRef`. A render React
+  starts and abandons — a `startTransition` that suspends — leaves its view,
+  size and chrome helpers there, and the next `requestRedraw` paints them. The
+  same refs also feed hit-testing and the view registry, so moving them to the
+  insertion effect needs those readers checked for a same-render read first.
 
 
 - **(P3) Mesh gradients have no on-canvas handles.** `MeshEditor` edits corner

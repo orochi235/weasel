@@ -2,12 +2,13 @@ import { useCallback, useRef, type ReactElement } from 'react';
 import {
   getAlpha01,
   getPaintKind,
-  listPaintKinds,
   paintAlpha,
   paintWithAlpha,
   solid,
   switchGradientKind,
   toHex8,
+  usePaintKind,
+  usePaintKinds,
   withAlpha01,
   type FillStyle,
   type PaintKind,
@@ -110,7 +111,8 @@ export function PaintInput(props: PaintInputProps): ReactElement {
   const active = mixed ? null : kindOf(value);
   if (value != null && active !== null) remembered.current.set(active, value);
 
-  const entries = listPaintKinds().filter(
+  const valueKind = usePaintKind(value?.fill);
+  const entries = usePaintKinds().filter(
     (entry) => kinds === undefined || kinds.includes(entry.id),
   );
   const segment = (id: string, label: string, icon: string | undefined): ToggleBarItem<PaintKind> =>
@@ -130,8 +132,8 @@ export function PaintInput(props: PaintInputProps): ReactElement {
   /** The color a switch seeds from: whatever the current paint shows. */
   const currentColor = useCallback((): string => {
     if (value == null) return FALLBACK_COLOR;
-    return getPaintKind(kindOf(value) ?? 'solid')?.colorOf(value) ?? FALLBACK_COLOR;
-  }, [value]);
+    return valueKind?.colorOf(value) ?? FALLBACK_COLOR;
+  }, [value, valueKind]);
 
   const switchKind = (kind: PaintKind): void => {
     if (kind === active) return;
@@ -202,12 +204,11 @@ export function PaintInput(props: PaintInputProps): ReactElement {
     // A registered `Editor` wins even for a built-in id: re-registering one is
     // how a consumer replaces a kit control, and the built-in branches below
     // are the fallback for the ids that ship without an entry editor.
-    const entry = getPaintKind(kindOf(value) ?? 'solid');
-    if (entry?.Editor) {
-      const Editor = entry.Editor;
+    if (valueKind?.Editor) {
+      const Editor = valueKind.Editor;
       return withOpacity(value, <Editor value={value} onInput={onInput} onChange={onChange} />);
     }
-    if (entry?.stopsOf) {
+    if (valueKind?.stopsOf) {
       return withOpacity(value, (
         <GradientEditor
           value={value}
@@ -227,7 +228,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
     if (kind !== 'solid') {
       // Editing a paint this control cannot represent would overwrite it, so
       // a kind with no editor is shown and left alone.
-      return <div className={s.noEditor}>{entry?.label ?? kind}: no editor</div>;
+      return <div className={s.noEditor}>{valueKind?.label ?? kind}: no editor</div>;
     }
     return (
       <ColorField

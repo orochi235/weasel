@@ -19,7 +19,7 @@ import type {
 import { gradientForBounds, isGradientFill, withGradientKind } from './gradient';
 import { bumpNodeMemoGeneration } from './scene/nodeMemo';
 import type { ComponentType } from 'react';
-import { createReflectable, type Reflection } from '@weasel-js/registry';
+import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
 import type { FillPoseBox } from './fillInPoseFrame';
 import type { GlMat3 } from '../renderer/math/mat3';
 import type { ShaderProgram } from '../renderer/shaders/ShaderProgram';
@@ -347,16 +347,39 @@ export function warmPaintKinds(kinds?: readonly string[]): Promise<void> {
   return Promise.all(loads).then(() => undefined);
 }
 
-/** Every registered kind, built-ins first, in registration order. */
-export function listPaintKinds(): readonly PaintKindEntry[] {
-  return KINDS.entries().map((e) => e.value);
+/** A list derived from the registry, recomputed only when it changes — so
+ *  its identity is a `useSyncExternalStore` snapshot. */
+function derivedList(
+  derive: (all: readonly ReflectedEntry<PaintKindEntry>[]) => readonly PaintKindEntry[],
+): () => readonly PaintKindEntry[] {
+  let from: readonly ReflectedEntry<PaintKindEntry>[] | undefined;
+  let list: readonly PaintKindEntry[] = [];
+  return () => {
+    const entries = KINDS.entries();
+    if (entries !== from) {
+      from = entries;
+      list = Object.freeze(derive(entries));
+    }
+    return list;
+  };
 }
 
-/** Every registered gradient kind — the ones that read as and build from a
- *  stop list — in registration order. */
-export function listGradientKinds(): readonly PaintKindEntry[] {
-  return listPaintKinds().filter((entry) => entry.stopsOf && entry.fromStops);
+/** Every registered kind, built-ins first, in registration order. The same
+ *  array until the registry changes. */
+export function listPaintKinds(): readonly PaintKindEntry[] {
+  return allKinds();
 }
+const allKinds = derivedList((all) => all.map((e) => e.value));
+
+/** Every registered gradient kind — the ones that read as and build from a
+ *  stop list — in registration order. The same array until the registry
+ *  changes. */
+export function listGradientKinds(): readonly PaintKindEntry[] {
+  return gradientKinds();
+}
+const gradientKinds = derivedList(
+  (all) => all.map((e) => e.value).filter((entry) => entry.stopsOf && entry.fromStops),
+);
 
 /**
  * `paint` retargeted to gradient kind `kind`, or `undefined` when either side

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { useState } from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import {
   asPaint,
   registerPaintKind,
@@ -188,6 +188,23 @@ describe('PaintInput — a registered kind', () => {
     }));
 
     render(<PaintInput value={asPaint({ fill: 'noise', color: '#112233ff' })} onChange={() => {}} />);
+    expect(screen.getByRole('radio', { name: 'Noise' })).toBeInTheDocument();
+    expect(screen.getByTestId('noise-editor')).toBeInTheDocument();
+  });
+
+  it('picks up a kind registered after it mounted', () => {
+    render(<PaintInput value={asPaint({ fill: 'noise', color: '#112233ff' })} onChange={() => {}} />);
+    expect(screen.queryByRole('radio', { name: 'Noise' })).toBeNull();
+
+    act(() => {
+      disposers.push(registerPaintKind({
+        id: 'noise',
+        label: 'Noise',
+        seed: (color) => asPaint({ fill: 'noise', color }),
+        colorOf: (paint) => (paint as unknown as { color?: string }).color,
+        Editor: () => <div data-testid="noise-editor" />,
+      }));
+    });
     expect(screen.getByRole('radio', { name: 'Noise' })).toBeInTheDocument();
     expect(screen.getByTestId('noise-editor')).toBeInTheDocument();
   });

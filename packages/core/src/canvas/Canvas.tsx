@@ -19,7 +19,7 @@
  *   `docs/TODO.md`.
  */
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
 import type { FillStyle } from '@weasel-js/paint';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
@@ -877,15 +877,22 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // The `<canvas>` this component rendered, if it rendered one. `paint` is the
   // only thing that needs a real canvas, for `getContext`.
   const ownCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  // Stable, so a commit does not detach the element: an inline ref is nulled
+  // until the layout phase reaches it, and a sync paint asked for before that
+  // finds no canvas.
+  const setOwnCanvas = useCallback((el: HTMLCanvasElement | null) => {
+    ownCanvasRef.current = el;
+    canvasRef.current = el;
+  }, []);
   const detached = !!paintInto;
   if (detached) {
     canvasRef.current = inputElement ?? null;
   }
   // Where pixels go. Split from `canvasRef` only when detached.
-  const paintTargetRef = useRef<HTMLCanvasElement | null>(null);
-  paintTargetRef.current = detached ? (paintInto.canvas ?? null) : null;
-  const paintRectRef = useRef<{ x: number; y: number } | null>(null);
-  paintRectRef.current = detached ? { x: paintInto.x, y: paintInto.y } : null;
+  const paintTarget = detached ? (paintInto.canvas ?? null) : null;
+  const paintTargetRef = useRef(paintTarget);
+  const paintRect = detached ? { x: paintInto.x, y: paintInto.y } : null;
+  const paintRectRef = useRef(paintRect);
 
   // Read by `hitTestExtras`, which is built once and must see live values.
   const helpersForLayersRef = useRef<CanvasHelpers<TPose> | null>(null);
@@ -907,7 +914,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   );
 
   const contentVersionRef = useRef(contentVersion);
-  contentVersionRef.current = contentVersion;
   const paintedVersionRef = useRef(0);
   const getPaintedVersion = useCallback(() => paintedVersionRef.current, []);
 
@@ -1421,20 +1427,22 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
 
-  // Everything the paint reads that a React render owns. Written during
-  // render, not commit: an abandoned render still leaves its inputs here.
-  const paintInputsRef = useRef({
-    layers: layersWithDebug, width, height, debugSink,
-    frameStats: resolvedDebugConfig?.fps === true,
-    dpr: dprProp, layerVisibility, layerOrder, layerGroups, shaders,
-    flattenTolerance,
-  });
-  paintInputsRef.current = {
+  // Everything the paint reads that a React render owns. Published from an
+  // insertion effect: only a committed render reaches it, and it runs ahead
+  // of every layout effect in the commit, any of which may ask for a sync paint.
+  const paintInputs = {
     layers: layersWithDebug, width, height, debugSink,
     frameStats: resolvedDebugConfig?.fps === true,
     dpr: dprProp, layerVisibility, layerOrder, layerGroups, shaders,
     flattenTolerance,
   };
+  const paintInputsRef = useRef(paintInputs);
+  useInsertionEffect(() => {
+    paintInputsRef.current = paintInputs;
+    paintTargetRef.current = paintTarget;
+    paintRectRef.current = paintRect;
+    contentVersionRef.current = contentVersion;
+  });
 
   const paint = useCallback((): boolean => {
     const c = paintTargetRef.current ?? ownCanvasRef.current;
@@ -1671,7 +1679,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   return (
     <>
       <canvas
-        ref={(el) => { ownCanvasRef.current = el; canvasRef.current = el; }}
+        ref={setOwnCanvas}
         width={width}
         height={height}
         tabIndex={tabIndex}

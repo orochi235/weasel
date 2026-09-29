@@ -1,10 +1,10 @@
 import { type ReactElement, type ReactNode } from 'react';
 import {
-  getPaintKind,
   isGradientFill,
-  listGradientKinds,
   sampleGradientStops,
   switchGradientKind,
+  useGradientKinds,
+  usePaintKind,
   type ColorSpace,
   type FillStyle,
   type GradStop,
@@ -87,7 +87,8 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
   const kind: PaintKind = value.fill ?? 'solid';
   const space: ColorSpace = (value as { interpolate?: ColorSpace }).interpolate ?? 'rgb';
 
-  const kinds: readonly ToggleBarItem<PaintKind>[] = listGradientKinds()
+  const entry = usePaintKind(kind);
+  const kinds: readonly ToggleBarItem<PaintKind>[] = useGradientKinds()
     .filter((entry) => !svg || nativeSvgKind(entry.id) || entry.id === kind)
     .map((entry) => ({ value: entry.id, label: entry.label }));
   const spaces = SPACES.filter((item) => !svg || nativeSvgSpace(item.value) || item.value === space);
@@ -124,7 +125,6 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
       />
     );
     // A registered `Editor` wins even for a built-in id, as it does in `PaintInput`.
-    const entry = getPaintKind(kind);
     if (entry?.Editor) {
       const Editor = entry.Editor;
       return <><Editor value={value} onInput={onInput} onChange={onChange} />{spaceBar}</>;

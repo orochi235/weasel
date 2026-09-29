@@ -5,7 +5,7 @@ import {
   DialogTrigger,
   Popover as RACPopover,
 } from 'react-aria-components';
-import { getPaintKind, type FillStyle, type PaintKind } from '@weasel-js/core';
+import { usePaintKind, type FillStyle, type PaintKind } from '@weasel-js/core';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { paintPreviewCss } from '../../paintPreview';
 import { PaintInput } from '../PaintInput';
@@ -35,11 +35,11 @@ export interface PaintFieldProps extends OverlayPortalProps {
 }
 
 /** What the trigger says it is holding. */
-function kindLabel(paint: FillStyle | null | undefined, mixed: boolean): string {
+function kindLabel(paint: FillStyle | null | undefined, mixed: boolean, label: string | undefined): string {
   if (mixed) return 'Mixed';
   if (paint === null) return 'None';
   if (paint === undefined) return '—';
-  return getPaintKind(paint.fill ?? 'solid')?.label ?? (paint.fill ?? 'solid');
+  return label ?? (paint.fill ?? 'solid');
 }
 
 /**
@@ -60,6 +60,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
   const ariaLabel = props['aria-label'];
   const { anchor, portalProps } = useOverlayPortal(portalContainer);
   const preview = mixed ? undefined : paintPreviewCss(value);
+  const label = usePaintKind(value?.fill)?.label;
 
   return (
     <DialogTrigger>
@@ -75,7 +76,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
           aria-hidden="true"
           {...(preview ? { style: { background: preview } } : { 'data-empty': '' })}
         />
-        <span className={s.label}>{kindLabel(value, mixed)}</span>
+        <span className={s.label}>{kindLabel(value, mixed, label)}</span>
       </RACButton>
       {/* `data-weasel-overlay`: see Select — the popover renders in a portal,
           outside the subtree the trigger sits in. */}

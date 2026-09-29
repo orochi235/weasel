@@ -10,7 +10,7 @@
 
 import { describe, it, expect, beforeAll, afterEach, onTestFinished, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
-import { Profiler, StrictMode, useLayoutEffect, useMemo } from 'react';
+import { Profiler, StrictMode, Suspense, startTransition, use, useLayoutEffect, useMemo, useState } from 'react';
 import type React from 'react';
 import { Canvas } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
@@ -506,5 +506,81 @@ describe('Canvas syncPaint', () => {
     await frame();
     await frame();
     expect(draw).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('Canvas paint inputs', () => {
+  it('never paints the inputs of a render React abandoned', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const drawA = vi.fn();
+    const drawB = vi.fn();
+    const layerA = probeLayer(drawA);
+    const layerB = probeLayer(drawB);
+    const never = new Promise<never>(() => {});
+    let setLayer!: (layer: RenderLayer<unknown>) => void;
+
+    function Hang({ hang }: { hang: boolean }) {
+      if (hang) use(never);
+      return null;
+    }
+    function Parent() {
+      const [layer, set] = useState(layerA);
+      setLayer = set;
+      return (
+        <Suspense fallback={null}>
+          <SyncHost apiRef={apiRef} layer={layer} />
+          <Hang hang={layer === layerB} />
+        </Suspense>
+      );
+    }
+
+    render(<Parent />);
+    await frame();
+    expect(drawA).toHaveBeenCalledTimes(1);
+
+    // A transition that suspends keeps the committed UI: Canvas renders with
+    // `layerB`, and that render is thrown away.
+    act(() => { startTransition(() => { setLayer(layerB); }); });
+    act(() => { apiRef.current!.requestRedraw(); });
+    await frame();
+    await frame();
+
+    expect(drawB).not.toHaveBeenCalled();
+    expect(drawA).toHaveBeenCalledTimes(2);
+  });
+
+  it('hands a sync paint requested from an earlier sibling\'s layout effect this commit\'s inputs', () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const drawA = vi.fn();
+    const drawB = vi.fn();
+    const layerA = probeLayer(drawA);
+    const layerB = probeLayer(drawB);
+    let requestRedraw: (() => void) | undefined;
+    let drawnInSibling: number | undefined;
+
+    // Layout effects run child before parent and in sibling order, so this one
+    // runs ahead of every layout effect Canvas owns.
+    function Reader({ layer }: { layer: RenderLayer<unknown> }) {
+      useLayoutEffect(() => {
+        if (!requestRedraw) return;
+        requestRedraw();
+        drawnInSibling = drawB.mock.calls.length;
+      }, [layer]);
+      return null;
+    }
+    function Parent({ layer }: { layer: RenderLayer<unknown> }) {
+      return (
+        <>
+          <Reader layer={layer} />
+          <SyncHost apiRef={apiRef} layer={layer} syncPaint />
+        </>
+      );
+    }
+
+    const { rerender } = render(<Parent layer={layerA} />);
+    requestRedraw = apiRef.current!.requestRedraw;
+    act(() => { rerender(<Parent layer={layerB} />); });
+
+    expect(drawnInSibling).toBe(1);
   });
 });
