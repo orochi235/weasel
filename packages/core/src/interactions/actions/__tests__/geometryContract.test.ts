@@ -40,8 +40,8 @@ import {
   pathSubtract,
   transformPath,
 } from 'features/paths';
-import type { Path } from 'features/paths/types';
-import { splitPathBySegment } from 'features/paths/splitBySegment';
+import type { Path } from '@weasel-js/geom';
+import { splitPathBySegment } from '@weasel-js/geom/booleans';
 
 import { resizeAction } from '../defaults/resize';
 import { moveAction } from '../defaults/move';

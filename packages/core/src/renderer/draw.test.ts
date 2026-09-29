@@ -718,7 +718,7 @@ describe('pushClip / popClip', () => {
   });
 });
 
-import type { Mesh } from './cache/mesh';
+import type { Mesh } from '@weasel-js/geom/tessellate';
 
 /**
  * The chokepoint that makes a forgotten flush unexpressible: an emitter only

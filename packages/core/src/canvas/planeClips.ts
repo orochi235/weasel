@@ -1,5 +1,4 @@
-import type { Path } from 'features/paths/types';
-import { transformPath } from 'features/paths/transformPath';
+import { type Path, transformPath } from '@weasel-js/geom';
 import { planeMatrix, planeToPlane, type PlaneMap } from 'core/viewport/parallax';
 import { mat3, type GlMat3 } from '../renderer/math/mat3';
 

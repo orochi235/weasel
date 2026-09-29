@@ -1,0 +1,71 @@
+import { cubicEvalAt, splitCubicAt, type CubicCoords } from '../curve';
+
+/** A 2D point, the shape the point-taking path helpers read and return. */
+export interface Point { x: number; y: number; }
+
+/** Point on the cubic Bezier (p0, p1, p2, p3) at parameter t. The point-shaped
+ *  face of geom's `cubicEvalAt`. */
+export function cubicPointAt(p0: Point, p1: Point, p2: Point, p3: Point, t: number): Point {
+  const [x, y] = cubicEvalAt(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, t);
+  return { x, y };
+}
+
+interface AnchorRef {
+  x: number; y: number;
+  inHandle?: Point;
+  outHandle?: Point;
+}
+
+/** De Casteljau subdivision of a cubic at parameter t. The point-shaped face
+ *  of geom's `splitCubicAt`; `left[3]` and `right[0]` are the point at t. */
+export function splitCubicAtT(
+  p0: Point, p1: Point, p2: Point, p3: Point,
+  t: number,
+): { left: [Point, Point, Point, Point]; right: [Point, Point, Point, Point] } {
+  const [l, r] = splitCubicAt(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, t);
+  const quad = (c: CubicCoords): [Point, Point, Point, Point] =>
+    [{ x: c[0], y: c[1] }, { x: c[2], y: c[3] }, { x: c[4], y: c[5] }, { x: c[6], y: c[7] }];
+  return { left: quad(l), right: quad(r) };
+}
+
+/**
+ * When an interior anchor is deleted, the two flanking segments fuse into one
+ * cubic. We pick controls c1 and c2 that:
+ *   - lie along prev's outHandle direction (if present)
+ *   - lie along next's inHandle direction (if present)
+ *   - are placed at roughly 1/3 and 2/3 of the prev→next distance
+ * Fallbacks: missing handles use prev→next as the direction.
+ *
+ * This is an approximate fit — the new curve will shift slightly from the
+ * original two-segment path. Acceptable per spec.
+ */
+export function fitCubicThroughDeletion(
+  prev: AnchorRef,
+  next: AnchorRef,
+): { c1: Point; c2: Point } {
+  const dx = next.x - prev.x;
+  const dy = next.y - prev.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  // c1: project along outHandle direction (or prev→next fallback) at 1/3 of dist.
+  const c1DirX = prev.outHandle ? prev.outHandle.x - prev.x : dx;
+  const c1DirY = prev.outHandle ? prev.outHandle.y - prev.y : dy;
+  const c1 = controlOnSide(prev, c1DirX, c1DirY, dist, 1 / 3);
+  // c2: project along inHandle direction (or next→prev fallback) at 1/3 of dist.
+  const c2DirX = next.inHandle ? next.inHandle.x - next.x : -dx;
+  const c2DirY = next.inHandle ? next.inHandle.y - next.y : -dy;
+  const c2 = controlOnSide(next, c2DirX, c2DirY, dist, 1 / 3);
+  return { c1, c2 };
+}
+
+function controlOnSide(
+  anchor: AnchorRef,
+  dirX: number,
+  dirY: number,
+  dist: number,
+  fraction: number,
+): Point {
+  const targetDist = dist * fraction;
+  const len = Math.hypot(dirX, dirY) || 1;
+  const ux = dirX / len, uy = dirY / len;
+  return { x: anchor.x + ux * targetDist, y: anchor.y + uy * targetDist };
+}

@@ -12,8 +12,15 @@
  *
  * Lives in `core/geometry` so `core/`'s own adapters can bake rotation too.
  */
-import { forEachSegment, pathCommandCoordCount } from '@weasel-js/geom';
-import { PATH_L, PATH_M, PATH_Z, type Path, type PolygonPath } from './path';
+import {
+  forEachSegment,
+  pathCommandCoordCount,
+  PATH_L,
+  PATH_M,
+  PATH_Z,
+  type Path,
+  type PolygonPath,
+} from '@weasel-js/geom';
 
 /** Pivot (`cx`, `cy`) and angle resolved from a pose's rotation convention. */
 export interface PoseRotation {

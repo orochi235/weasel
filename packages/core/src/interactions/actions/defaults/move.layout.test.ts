@@ -9,7 +9,7 @@ import type { LayoutDep } from '../depSchema';
 import type { LayoutStrategy } from '../../../layout/types';
 import type { NodeId } from 'core/scene/types';
 import { composeRectPose, decomposeRectPose } from 'features/groups/composePose';
-import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from 'features/paths/types';
+import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 
 /** Axis-aligned square as a PolygonPath — a container pose that carries NO
  *  direct `x/y/width/height`, so the layout hit-test must derive its AABB via

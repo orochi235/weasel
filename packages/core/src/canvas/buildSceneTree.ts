@@ -2,7 +2,7 @@ import type { DrawCommand, GroupDrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
 import { findShapeSilhouette } from './NodeShape';
 import type { Node } from 'core/scene/types';
-import type { Path } from 'features/paths/types';
+import type { Path } from '@weasel-js/geom';
 import { definesFrame } from 'core/scene/effectivePose';
 import { deriveParallaxView, planeMap, type ParallaxOpts } from 'core/viewport/parallax';
 import { scenePlaneOf } from './pickWalk';

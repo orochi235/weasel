@@ -1,8 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { pathUnion } from './booleans';
-import { pointInPath } from '@weasel-js/geom';
-import type { RectPath, PolygonPath } from './types';
-import { PATH_M, PATH_L, PATH_C, PATH_Z } from './types';
+import {
+  pointInPath,
+  type RectPath,
+  type PolygonPath,
+  PATH_M,
+  PATH_L,
+  PATH_C,
+  PATH_Z,
+} from '@weasel-js/geom';
 
 const r = (x: number, y: number, w: number, h: number): RectPath => ({
   kind: 'rect', x, y, width: w, height: h,

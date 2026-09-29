@@ -11,7 +11,7 @@
  */
 
 import type { FillStyle, MarkerKey, Stroke } from '@weasel-js/paint';
-import type { Path } from './geometry/path';
+import type { Path } from '@weasel-js/geom';
 import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { BUILTIN_MARKERS } from './strokeMarkerShapes';
 

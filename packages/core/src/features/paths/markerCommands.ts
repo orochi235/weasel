@@ -8,12 +8,11 @@
  */
 
 import type { MarkerRef, Stroke } from '@weasel-js/paint';
-import type { Path, PolygonPath } from '../../core/geometry/path';
+import { type Path, type PolygonPath, boundsOfPath } from '@weasel-js/geom';
 import type { PathDrawCommand } from '../../renderer/DrawCommand';
 import { getMarker, type MarkerEntry, type MarkerPaint } from '../../core/strokeMarkers';
 import { markerKeyOf, resolveMarkerSize } from '../../core/markerInset';
-import { boundsOfPath } from './bounds';
-import { extractPolylines } from './tessellate/polyline';
+import { extractPolylines } from '@weasel-js/geom/tessellate';
 import { markerSites, type MarkerSite } from './markerSites';
 
 /** Rotate + translate a marker's geometry onto its site. */

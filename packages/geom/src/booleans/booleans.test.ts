@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { pathUnion, pathIntersect, pathSubtract, type GeomPath } from './index';
+import { pathUnion, pathIntersect, pathSubtract } from './index';
+import type { Path } from '../path';
 import { pointInPolygon } from '../polyline';
 import { PATH_M, PATH_L, PATH_Z } from '../commands';
 
-const rect = (x: number, y: number, w: number, h: number): GeomPath => ({ kind: 'rect', x, y, width: w, height: h });
+const rect = (x: number, y: number, w: number, h: number): Path => ({ kind: 'rect', x, y, width: w, height: h });
 
 // Collect every contour vertex of a polygon result into one interleaved ring
 // for a coarse coverage check (results here are single-contour).
-const ring = (p: GeomPath): number[] => {
+const ring = (p: Path): number[] => {
   if (p.kind === 'rect') throw new Error('expected polygon');
   const out: number[] = [];
   for (let i = 0, ci = 0; i < p.commands.length; i++) {
@@ -40,14 +41,14 @@ describe('pathIntersect', () => {
 
 describe('paths with holes', () => {
   // Outer square 0..100 with an opposite-wound 40..60 ring inside it.
-  const donut: GeomPath = {
+  const donut: Path = {
     kind: 'polygon',
     commands: Uint8Array.of(PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z, PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z),
-    coords: Float64Array.of(0, 0, 100, 0, 100, 100, 0, 100, 40, 40, 40, 60, 60, 60, 60, 40),
+    coords: Float32Array.of(0, 0, 100, 0, 100, 100, 0, 100, 40, 40, 40, 60, 60, 60, 60, 40),
     fillRule: 'nonzero',
   };
 
-  const contours = (p: GeomPath): number[][] => {
+  const contours = (p: Path): number[][] => {
     if (p.kind === 'rect') throw new Error('expected polygon');
     const out: number[][] = [];
     let cur: number[] = [];

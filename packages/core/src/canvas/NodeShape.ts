@@ -51,11 +51,20 @@ import type { StyledRun, TextVerticalAlign } from '@weasel-js/text';
 import { textLineBoxes } from '@weasel-js/text';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { DEFAULT_SHAPE_FILL } from '../util/paint';
-import type { Path, PolygonPath } from 'features/paths/types';
-import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
-import { ellipsePath, regularPolygonPath, starPath, linePath } from 'features/paths/builder';
-import { pathContainsPoint, strokeHitTest } from '@weasel-js/geom';
-import { boundsOfPath } from 'features/paths/bounds';
+import {
+  type Path,
+  type PolygonPath,
+  PATH_M,
+  PATH_L,
+  PATH_Z,
+  ellipsePath,
+  regularPolygonPath,
+  starPath,
+  linePath,
+  pathContainsPoint,
+  strokeHitTest,
+  boundsOfPath,
+} from '@weasel-js/geom';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { markerReach } from 'features/paths/markerCommands';
 import { strokeReachAt } from '../renderer/cullDrawCommands';

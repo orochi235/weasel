@@ -9,7 +9,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { resolveDerivedPath } from './derivedPath';
-import { PATH_L, PATH_M, type Path, type PolygonPath } from '../geometry/path';
+import { PATH_L, PATH_M, type Path, type PolygonPath } from '@weasel-js/geom';
 import type { DerivedDep, Node, NodeId, RectPose } from './types';
 
 const box = (x: number, y: number, w = 10, h = 10): RectPose => ({ x, y, width: w, height: h });

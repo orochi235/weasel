@@ -4,7 +4,7 @@ import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { renderHook, act } from '@testing-library/react';
 import { useViewAnimation, type ViewAnimationApi, type ViewChannel } from './useViewAnimation';
 import { useAnimator } from '../../animation/useAnimator';
-import { linear } from '../../animation/easings';
+import { linear } from '@weasel-js/geom';
 import { zoomAt } from './zoomAt';
 import type { View } from './view';
 

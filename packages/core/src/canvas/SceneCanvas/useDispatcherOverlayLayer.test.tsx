@@ -12,8 +12,7 @@ import type {
   ImageDrawCommand,
   PathDrawCommand,
 } from '../../renderer';
-import { polylineFromPoints } from 'features/paths/builder';
-import { PATH_L, PATH_M, PATH_Z } from 'features/paths/types';
+import { polylineFromPoints, PATH_L, PATH_M, PATH_Z } from '@weasel-js/geom';
 import {
   __setImageLoaderForTests,
   _resetImageCacheForTests,

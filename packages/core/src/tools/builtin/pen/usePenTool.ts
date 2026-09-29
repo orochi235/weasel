@@ -9,7 +9,7 @@ import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import type { AreaSelectDep, EditAnchorsDep, ViewApi } from 'interactions/actions/depSchema';
 import { pxExtent, withinPxRadius } from 'core/viewport/pxExtent';
 import { PenIcon } from '../../../icons';
-import type { PolygonPath } from 'features/paths/types';
+import type { PolygonPath } from '@weasel-js/geom';
 import { anchorsToPath, pathToAnchors } from 'features/paths/anchors';
 import { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from 'features/paths/nearestAnchor';
 import type { Op } from 'core/ops/types';

@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { pathFromD } from './pathFromD';
+import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { anchorsToPath, pathToAnchors } from './anchors';
 import { nearestPathAnchor, reverseAnchors } from './nearestAnchor';
-import type { PolygonPath } from './types';
 
 const poly = (d: string) => pathFromD(d) as PolygonPath;
 const ONE = { x: 1, y: 1 };

@@ -2,9 +2,7 @@ import type { SnapStrategy } from '../../types';
 import { resolveUnit, type UnitSystem, type UnitValue } from '@weasel-js/quantity';
 import type { DebugSink } from '../../../../debug/types';
 import { isPathLike } from 'interactions/actions/resize/autoPoseDescriptor';
-import { boundsOfPath } from 'features/paths/bounds';
-import { translatePath } from 'features/paths/transform';
-import type { Path } from 'features/paths/types';
+import { boundsOfPath, translatePath, type Path } from '@weasel-js/geom';
 import { fromPlane, toPlane } from 'core/viewport/parallax';
 
 /**

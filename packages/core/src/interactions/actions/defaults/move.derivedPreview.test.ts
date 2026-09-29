@@ -13,8 +13,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { resolveDerivedPath, sceneDepLookup } from 'canvas/derivedPath';
-import { linePath } from 'features/paths/builder';
-import type { Path } from 'features/paths/types';
+import { linePath, type Path } from '@weasel-js/geom';
 
 interface D { color?: string }
 type L = 'main';

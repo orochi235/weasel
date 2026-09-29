@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { pathPoseDescriptor } from './poseDescriptor';
-import { polygonFromPoints } from './builder';
+import { polygonFromPoints } from '@weasel-js/geom';
 
 describe('pathPoseDescriptor.lerp', () => {
   it('interpolates rect paths linearly', () => {

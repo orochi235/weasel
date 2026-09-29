@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { pathToMultiPolygon, multiPolygonToPath, type GeomPath, type Ring } from './adapter';
+import { pathToMultiPolygon, multiPolygonToPath, type Ring } from './adapter';
+import type { Path } from '../path';
 import { PATH_M, PATH_L, PATH_Z } from '../commands';
 
 /** Outer square 0..100 with a 40..60 square ring inside it. */
-const donut = (fillRule: 'nonzero' | 'evenodd', reverseInner: boolean): GeomPath => ({
+const donut = (fillRule: 'nonzero' | 'evenodd', reverseInner: boolean): Path => ({
   kind: 'polygon',
   commands: Uint8Array.of(PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z, PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z),
-  coords: Float64Array.of(
+  coords: Float32Array.of(
     0, 0, 100, 0, 100, 100, 0, 100,
     ...(reverseInner
       ? [40, 40, 40, 60, 60, 60, 60, 40]
@@ -47,17 +48,13 @@ describe('pathToMultiPolygon ring nesting', () => {
     }
   });
 
-  it('defaults to nonzero when fillRule is omitted', () => {
-    const p = donut('nonzero', true);
-    const noRule: GeomPath = { kind: 'polygon', commands: (p as { commands: ArrayLike<number> }).commands, coords: (p as { coords: ArrayLike<number> }).coords };
-    expect(pathToMultiPolygon(noRule)).toEqual(pathToMultiPolygon(p));
-  });
 
   it('leaves two disjoint rings as two polygons', () => {
-    const two: GeomPath = {
+    const two: Path = {
       kind: 'polygon',
       commands: Uint8Array.of(PATH_M, PATH_L, PATH_L, PATH_Z, PATH_M, PATH_L, PATH_L, PATH_Z),
-      coords: Float64Array.of(0, 0, 10, 0, 0, 10, 100, 100, 110, 100, 100, 110),
+      coords: Float32Array.of(0, 0, 10, 0, 0, 10, 100, 100, 110, 100, 100, 110),
+      fillRule: 'nonzero',
     };
     const mp = pathToMultiPolygon(two);
     expect(mp).toHaveLength(2);
@@ -86,10 +83,10 @@ describe('multiPolygonToPath', () => {
 
 describe('pathToMultiPolygon unknown commands', () => {
   it('throws rather than misreading the coord stream', () => {
-    const bogus: GeomPath = {
+    const bogus: Path = {
       kind: 'polygon',
       commands: Uint8Array.of(PATH_M, 99, PATH_L, PATH_Z),
-      coords: Float64Array.of(0, 0, 10, 0, 5, 10),
+      coords: Float32Array.of(0, 0, 10, 0, 5, 10),
       fillRule: 'nonzero',
     };
     expect(() => pathToMultiPolygon(bogus)).toThrow(/pathToMultiPolygon: unknown command 99/);

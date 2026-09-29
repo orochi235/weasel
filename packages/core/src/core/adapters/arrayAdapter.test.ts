@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { boundsOfCoords } from '@weasel-js/geom';
+import { boundsOfCoords, PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { arrayAdapter, type ArrayAdapterConfig } from './arrayAdapter';
-import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'core/geometry/path';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import {
   circle,

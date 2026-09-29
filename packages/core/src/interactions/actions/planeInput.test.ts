@@ -24,7 +24,7 @@ import { pointSnapToGrid } from './resize/behaviors/pointSnapToGrid';
 import { editAnchorsAction } from './defaults/editAnchors';
 import { selectAnchorAction, marqueeAnchorsAction } from './defaults/anchorEditing';
 import { makeEditAnchorsDep } from './testUtils';
-import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'features/paths/types';
+import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { inPlane, selectionLayer } from './planeInput';
 import type { InsertDep, ViewApi } from './depSchema';
 

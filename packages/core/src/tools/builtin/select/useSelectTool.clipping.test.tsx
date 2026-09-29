@@ -25,7 +25,7 @@ import { useScene } from 'core/scene/useScene';
 import type { UseSceneOptions } from 'core/scene/types';
 import { useSelection } from 'core/selection/useSelection';
 import { useSelectTool } from './useSelectTool';
-import { rectPath } from 'features/paths/builder';
+import { rectPath } from '@weasel-js/geom';
 import { asNodeId } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';

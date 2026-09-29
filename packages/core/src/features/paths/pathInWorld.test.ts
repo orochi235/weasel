@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PathBuilder, polygonFromPoints, rectPath } from './builder';
-import { boundsOfPath } from './bounds';
+import { PathBuilder, polygonFromPoints, rectPath, boundsOfPath } from '@weasel-js/geom';
 import { pathInWorld } from './pathInWorld';
 
 describe('pathInWorld', () => {

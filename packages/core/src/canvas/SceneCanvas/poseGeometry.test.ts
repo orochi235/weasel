@@ -10,7 +10,7 @@ import {
   PATH_L,
   PATH_Z,
   type PolygonPath,
-} from 'features/paths/types';
+} from '@weasel-js/geom';
 import type { RotatedPose } from 'interactions/gestures/types';
 
 const tri: PolygonPath = {

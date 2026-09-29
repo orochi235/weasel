@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { markerSites } from './markerSites';
-import type { Polyline } from './tessellate/polyline';
+import type { Polyline } from '@weasel-js/geom/tessellate';
 
 const ALL = { start: true, mid: true, end: true };
 

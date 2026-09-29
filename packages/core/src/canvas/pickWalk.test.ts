@@ -13,7 +13,7 @@ import { pickWalk, scenePickSource, hiddenLayerIds, type ScenePickSourceOptions 
 import { hitTestArea } from './deps/hitTestArea';
 import { sceneToAdapter } from './sceneAdapter';
 import type { RectPose } from 'features/groups/composePose';
-import type { Path } from 'features/paths/types';
+import type { Path } from '@weasel-js/geom';
 
 function rectScene() {
   const scene = createScene<{ kind: string }, 'main' | 'top', RectPose>({

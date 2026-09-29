@@ -1,4 +1,4 @@
-import { resolveEasing } from '../easingSpec';
+import { resolveEasing } from '@weasel-js/geom';
 import type { SampledTrack } from './types';
 
 /** Index of the last key at or before `t`, or -1 when `t` precedes all keys.

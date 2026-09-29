@@ -7,13 +7,14 @@
 import { describe, expect, it } from 'vitest';
 import { strokeHitTest } from './pathHitTest';
 import { multiply, rotate, scale, type Mat3 } from './mat3';
-import type { GeomPath } from './path';
+import type { Path } from './path';
 import { PATH_L, PATH_M } from './commands';
 
-const line = (ax: number, ay: number, bx: number, by: number): GeomPath => ({
+const line = (ax: number, ay: number, bx: number, by: number): Path => ({
   kind: 'polygon',
-  commands: [PATH_M, PATH_L],
-  coords: [ax, ay, bx, by],
+  commands: Uint8Array.of(PATH_M, PATH_L),
+  coords: Float32Array.of(ax, ay, bx, by),
+  fillRule: 'nonzero',
 });
 
 const SQUISH = scale(4, 1);
@@ -88,7 +89,7 @@ describe('strokeHitTest — screen slop', () => {
   });
 
   it('handles a rect path', () => {
-    const rect: GeomPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
+    const rect: Path = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
     const slop = { px: 8, transform: SQUISH };
     expect(strokeHitTest(rect, 11.9, 5, 0, { slop })).toBe(true);
     expect(strokeHitTest(rect, 12.1, 5, 0, { slop })).toBe(false);

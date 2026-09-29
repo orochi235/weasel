@@ -1,4 +1,4 @@
-import type { Path } from 'features/paths/types';
+import type { Path } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
 import { SPRITE_STRIDE, type DrawCommand } from './DrawCommand';
 import { mat3, type GlMat3 } from './math/mat3';

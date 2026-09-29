@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from './scene';
 import { documentPose, effectivePose } from './effectivePose';
-import { PATH_L, PATH_M, type Path, type PolygonPath } from '../geometry/path';
+import { PATH_L, PATH_M, type Path, type PolygonPath } from '@weasel-js/geom';
 import type { DerivedDep, NodeId, RectPose } from './types';
 
 /** An open two-point polyline, written out because the path builder lives above `core/`. */

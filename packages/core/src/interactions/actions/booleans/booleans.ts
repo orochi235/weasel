@@ -14,7 +14,7 @@ import {
   pathDivide,
   pathCrop,
 } from 'features/paths/booleans';
-import type { Path, PolygonPath } from 'features/paths/types';
+import type { Path, PolygonPath } from '@weasel-js/geom';
 import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
 import { createMoveToIndexOp } from 'core/ops/reorder';

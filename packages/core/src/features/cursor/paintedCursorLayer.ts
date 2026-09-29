@@ -23,8 +23,7 @@ import {
 import type { CursorPaintOp } from '@weasel-js/cursor';
 import type { DrawCommand, PathDrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { pathFromD } from 'features/paths/pathFromD';
-import type { Path } from 'features/paths/types';
+import { pathFromD, type Path } from '@weasel-js/geom';
 import type { PaintedCursorState } from '@weasel-js/cursor';
 
 /** Layer id, so a consumer can order or hide it like any other. */

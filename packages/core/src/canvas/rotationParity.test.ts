@@ -15,7 +15,7 @@ import { pathInWorld } from 'features/paths/pathInWorld';
 import { poseRotationOf } from 'core/geometry/poseRotation';
 import { poseContainsRotated } from './SceneCanvas/poseGeometry';
 import { rotatedRectCorners, rotatePoint } from 'interactions/actions/rotate/geometry';
-import type { PolygonPath } from 'features/paths/types';
+import type { PolygonPath } from '@weasel-js/geom';
 
 const pose = { x: 10, y: 20, width: 40, height: 20, rotation: Math.PI / 6 };
 const cx = pose.x + pose.width / 2; // 30

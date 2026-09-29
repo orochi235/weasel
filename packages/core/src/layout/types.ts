@@ -1,5 +1,5 @@
 import type { Op } from 'core/ops/types';
-import type { Path } from 'core/geometry/path';
+import type { Path } from '@weasel-js/geom';
 
 /** A layout container's extent in world units. */
 export type ContainerBounds = {

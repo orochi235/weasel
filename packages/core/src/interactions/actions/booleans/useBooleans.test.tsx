@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useBooleans } from './useBooleans';
 import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import type { BooleansAdapter } from './booleans';
-import type { Path } from 'features/paths/types';
+import type { Path } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { tessellateStroke } from './stroke';
-import { PATH_M, PATH_L, type PolygonPath } from '../../../core/geometry/path';
+import { PATH_M, PATH_L, type PolygonPath } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
 
 const LINE: PolygonPath = {

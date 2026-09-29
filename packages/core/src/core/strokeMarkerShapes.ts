@@ -10,7 +10,7 @@
  * decorative chrome shapes and is unrelated.
  */
 
-import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from './geometry/path';
+import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import type { MarkerCtx, MarkerEntry } from './strokeMarkers';
 
 function poly(pts: readonly number[], size: number, close = true): PolygonPath {

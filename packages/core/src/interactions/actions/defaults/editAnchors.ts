@@ -50,7 +50,7 @@ import { worldEditToStorage } from 'features/paths/pathInWorld';
 // Commit goes through dep.applyEdit (routes setPose or setPose+update
 // based on the node's path-storage shape); no direct op or dispatch
 // helpers needed here.
-import type { PolygonPath } from 'features/paths/types';
+import type { PolygonPath } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
 
 // ---------------------------------------------------------------------------

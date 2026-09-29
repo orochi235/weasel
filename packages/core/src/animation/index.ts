@@ -15,12 +15,12 @@ export {
   EASINGS,
   type EasingName,
   SPRING_PRESETS,
-} from './easings';
+} from '@weasel-js/geom';
 export {
   cubicBezierEasing,
   resolveEasing,
-} from './easingSpec';
-export type { BezierEasing, EasingSpec } from './easingSpec';
+} from '@weasel-js/geom';
+export type { BezierEasing, EasingSpec } from '@weasel-js/geom';
 export { useAnimator } from './useAnimator';
 export {
   tweenPose, springPose,

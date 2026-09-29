@@ -43,7 +43,7 @@ import {
   type AnchorSet,
 } from 'features/paths/anchorEdits';
 import { pathToAnchors } from 'features/paths/anchors';
-import type { PolygonPath } from 'features/paths/types';
+import type { PolygonPath } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from './editAnchors';
 import { inPlane, editingLayer } from '../planeInput';
 

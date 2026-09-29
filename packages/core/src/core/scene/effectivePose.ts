@@ -11,7 +11,7 @@ import { recordDeps, sameDeps, type DepRecord } from './depMemo';
 import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
-import type { Path } from '../geometry/path';
+import type { Path } from '@weasel-js/geom';
 import type { DerivedDep, Node, NodeId, PoseOverrides } from './types';
 
 /**

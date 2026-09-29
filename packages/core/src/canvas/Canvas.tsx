@@ -44,7 +44,7 @@ import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 import type { ToolCtx } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/routing/react';
 import type { Op } from 'core/ops/types';
-import type { Path } from 'features/paths/types';
+import type { Path } from '@weasel-js/geom';
 import { dispatchApplyBatch } from 'core/applyOps';
 import { normalizeView, type View } from 'core/viewport/view';
 import type { NodePaintCtx } from './NodeShape';

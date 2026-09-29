@@ -1,0 +1,181 @@
+import { describe, it, expect } from 'vitest';
+import { PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z } from '../commands';
+import type { PolygonPath, RectPath } from '../path';
+import { PathBuilder, polygonFromPoints, rectPath } from '../paths/builder';
+import { extractPolylines } from './polyline';
+
+describe('extractPolylines', () => {
+  it('emits a closed 4-point polyline for a RectPath', () => {
+    const r: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
+    const out = extractPolylines(r);
+    expect(out).toHaveLength(1);
+    expect(out[0].closed).toBe(true);
+    expect(out[0].points).toEqual([0, 0, 10, 0, 10, 10, 0, 10]);
+  });
+
+  it('emits a closed polyline for a M/L/L/L/Z polygon', () => {
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+      fillRule: 'nonzero',
+    };
+    const out = extractPolylines(p);
+    expect(out).toHaveLength(1);
+    expect(out[0].closed).toBe(true);
+    expect(out[0].points).toEqual([0, 0, 10, 0, 10, 10, 0, 10]);
+  });
+
+  // Every font outline serialized by opentype.js ends each contour back at
+  // its start point AND emits Z, and hand-written SVG does it constantly
+  // ("…L0 0Z"). Keeping the duplicate leaves a zero-length closing segment,
+  // which the stroker drops — taking the wrap-around join with it and
+  // notching the ribbon at every contour's start.
+  it('drops a closed contour\'s duplicate final point', () => {
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 0]),
+      fillRule: 'nonzero',
+    };
+    const out = extractPolylines(p);
+    expect(out[0].closed).toBe(true);
+    expect(out[0].points).toEqual([0, 0, 10, 0, 10, 10]);
+    // The anchor arrays are indexed by point, so they have to shrink with it.
+    expect(out[0].anchorA).toHaveLength(3);
+    expect(out[0].anchorB).toHaveLength(3);
+    expect(out[0].anchorT).toHaveLength(3);
+  });
+
+  it('keeps a repeated point that is not the closing one', () => {
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 0, 0, 10]),
+      fillRule: 'nonzero',
+    };
+    expect(extractPolylines(p)[0].points).toEqual([0, 0, 10, 0, 10, 0, 0, 10]);
+  });
+
+  it('leaves an open contour\'s repeated endpoint alone', () => {
+    // Without Z the two coincident endpoints are the caller's business — the
+    // path is a line that returns to its start, not a closed loop.
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
+      coords: new Float32Array([0, 0, 10, 0, 0, 0]),
+      fillRule: 'nonzero',
+    };
+    expect(extractPolylines(p)[0].points).toEqual([0, 0, 10, 0, 0, 0]);
+  });
+
+  it('emits an open polyline for a polygon without Z', () => {
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
+      coords: new Float32Array([0, 0, 10, 0, 20, 0]),
+      fillRule: 'nonzero',
+    };
+    const out = extractPolylines(p);
+    expect(out[0].closed).toBe(false);
+  });
+
+  it('flattens curves into polyline points', () => {
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_Q, PATH_Z]),
+      coords: new Float32Array([0, 0, 5, 10, 10, 0]),
+      fillRule: 'nonzero',
+    };
+    const out = extractPolylines(p);
+    expect(out[0].points.length).toBeGreaterThan(4);
+    expect(out[0].closed).toBe(true);
+  });
+
+  it('emits one polyline per contour for multi-contour paths', () => {
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([
+        PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,
+        PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,
+      ]),
+      coords: new Float32Array([
+        0, 0, 10, 0, 10, 10, 0, 10,
+        3, 3, 7, 3, 7, 7, 3, 7,
+      ]),
+      fillRule: 'nonzero',
+    };
+    const out = extractPolylines(p);
+    expect(out).toHaveLength(2);
+    expect(out[0].points.length).toBe(8);
+    expect(out[1].points.length).toBe(8);
+  });
+});
+
+describe('extractPolylines — anchor parameterization', () => {
+  it('a triangle polygon emits one anchor index per output point', () => {
+    const p = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);
+    const [pl] = extractPolylines(p);
+    expect(pl.points.length / 2).toBe(3);
+    expect(Array.from(pl.anchorA!)).toEqual([0, 1, 2]);
+    expect(Array.from(pl.anchorB!)).toEqual([0, 1, 2]);
+    expect(Array.from(pl.anchorT!)).toEqual([0, 0, 0]);
+  });
+
+  it('a rect emits 4 anchor indices in CW order', () => {
+    const [pl] = extractPolylines(rectPath(0, 0, 10, 10));
+    expect(pl.points.length / 2).toBe(4);
+    expect(Array.from(pl.anchorA!)).toEqual([0, 1, 2, 3]);
+    expect(Array.from(pl.anchorB!)).toEqual([0, 1, 2, 3]);
+  });
+
+  it('interior cubic-bezier points get (A, B, t in 0..1) interpolation', () => {
+    // Single cubic from anchor 0 to anchor 1 — anchor 1 is the C destination.
+    const p = new PathBuilder()
+      .moveTo(0, 0)
+      .curveTo(0, 100, 100, 100, 100, 0)
+      .build();
+    const [pl] = extractPolylines(p);
+    const n = pl.points.length / 2;
+    // First point is anchor 0 (the M); last point is anchor 1 (the C destination).
+    expect(pl.anchorA![0]).toBe(0);
+    expect(pl.anchorB![0]).toBe(0);
+    expect(pl.anchorT![0]).toBe(0);
+    expect(pl.anchorA![n - 1]).toBe(1);
+    expect(pl.anchorB![n - 1]).toBe(1);
+    expect(pl.anchorT![n - 1]).toBe(0);
+    // Interior points: anchorA === 0, anchorB === 1, t strictly increasing in (0, 1)
+    for (let i = 1; i < n - 1; i++) {
+      expect(pl.anchorA![i]).toBe(0);
+      expect(pl.anchorB![i]).toBe(1);
+      expect(pl.anchorT![i]).toBeGreaterThan(0);
+      expect(pl.anchorT![i]).toBeLessThan(1);
+    }
+  });
+
+  it('anchor index continues across multi-contour paths', () => {
+    const p = new PathBuilder()
+      .moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).close()
+      .moveTo(20, 20).lineTo(30, 20).close()
+      .build();
+    const [pl1, pl2] = extractPolylines(p);
+    expect(Array.from(pl1.anchorA!)).toEqual([0, 1, 2]);
+    expect(Array.from(pl2.anchorA!)).toEqual([3, 4]);
+  });
+});
+
+describe('extractPolylines pen bookkeeping', () => {
+  it('starts a curve after Z from the subpath start, not the last point drawn', () => {
+    // M 0,0  L 0,100  Z  C 50,0 50,0 100,0. From (0,0) the cubic is a straight
+    // run along y=0 and flattens to its endpoint alone; from (0,100) it is not.
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: Uint8Array.of(PATH_M, PATH_L, PATH_Z, PATH_C),
+      coords: Float32Array.of(0, 0, 0, 100, 50, 0, 50, 0, 100, 0),
+      fillRule: 'nonzero',
+    };
+    const out = extractPolylines(p);
+    expect(out).toHaveLength(1);
+    expect(out[0].points).toEqual([0, 0, 0, 100, 100, 0]);
+  });
+});

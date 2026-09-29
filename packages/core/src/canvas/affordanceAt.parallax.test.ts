@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { anchorStateFrom, buildAffordanceAt } from './affordanceAt';
 import { makeEditAnchorsDep } from 'interactions/actions/testUtils';
-import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'features/paths/types';
+import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { pathFromPlane } from './planeClips';
 import type { ChromeState } from 'core/selection/chromeState';
 

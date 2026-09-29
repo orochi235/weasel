@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/routing/react';
 import { useAnimator } from '../../animation/useAnimator';
-import { easeOutCubic } from '../../animation/easings';
+import { easeOutCubic } from '@weasel-js/geom';
 import type { Animator, EasingSpec, InterpolatorFactory } from '../../animation/types';
 import { interpolateView } from './interpolateView';
 import { fitViewToBounds } from './fitViewToBounds';

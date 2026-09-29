@@ -3,8 +3,15 @@ import { renderHook, act, render } from '@testing-library/react';
 import { usePenTool, type PenScratch } from './usePenTool';
 import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import type { Tool } from '../../overlayBinding';
-import { PATH_C, PATH_CMD_LENGTHS, PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'features/paths/types';
-import { pathFromD } from 'features/paths/pathFromD';
+import {
+  PATH_C,
+  PATH_CMD_LENGTHS,
+  PATH_L,
+  PATH_M,
+  PATH_Z,
+  type PolygonPath,
+  pathFromD,
+} from '@weasel-js/geom';
 import { pathToAnchors } from 'features/paths/anchors';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
 import { resolveEditablePathOf, useEditAnchorsDepSource } from 'canvas/deps/editAnchors';

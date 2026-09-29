@@ -1,8 +1,7 @@
 /**
- * Adapter between geom's path input shape and `polygon-clipping`'s
- * `MultiPolygon` format. Kept in a dedicated module so the dep is one
- * import away from being swappable. Ported from
- * `src/features/paths/booleans.adapter.ts`.
+ * Adapter between `Path` and `polygon-clipping`'s `MultiPolygon` format.
+ * Kept in a dedicated module so the dep is one import away from being
+ * swappable.
  *
  * `polygon-clipping` expects:
  *   MultiPolygon = Polygon[]
@@ -20,9 +19,7 @@
 import { PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z } from '../commands';
 import { elevateQuadraticToCubic } from '../curve';
 import { DEFAULT_FLATTEN_TOLERANCE, flattenCubic } from '../flatten';
-import type { GeomPath } from '../path';
-
-export type { GeomPath };
+import type { Path, PolygonPath } from '../path';
 
 /** A `[x, y]` 2-tuple. */
 export type Pair = [number, number];
@@ -39,12 +36,9 @@ export interface PathToMultiPolygonOptions {
   tolerance?: number;
 }
 
-/** Polygon result shape emitted by `multiPolygonToPath`. */
-export type GeomPolygonPath = { kind: 'polygon'; commands: Uint8Array; coords: Float32Array; fillRule: 'nonzero' };
-
-/** Convert a `GeomPath` to a `MultiPolygon` suitable for `polygon-clipping`. */
+/** Convert a `Path` to a `MultiPolygon` suitable for `polygon-clipping`. */
 export function pathToMultiPolygon(
-  path: GeomPath,
+  path: Path,
   opts: PathToMultiPolygonOptions = {},
 ): MultiPolygon {
   if (path.kind === 'rect') {
@@ -127,7 +121,7 @@ export function pathToMultiPolygon(
   finalizeCurrent();
 
   if (rings.length === 0) return [];
-  return groupRings(rings, path.fillRule ?? 'nonzero');
+  return groupRings(rings, path.fillRule);
 }
 
 /** Shoelace area of a closed ring. Sign gives the winding direction. */
@@ -242,7 +236,7 @@ function groupRings(rings: Ring[], fillRule: 'nonzero' | 'evenodd'): MultiPolygo
 }
 
 /** Convert a `MultiPolygon` to a polygon path with `fillRule: 'nonzero'`. */
-export function multiPolygonToPath(mp: MultiPolygon): GeomPolygonPath {
+export function multiPolygonToPath(mp: MultiPolygon): PolygonPath {
   // First pass: count total commands and coord floats.
   let nCmds = 0;
   let nCoords = 0;

@@ -14,7 +14,7 @@ import type { UseSceneOptions } from 'core/scene/types';
 import { useSceneAdapter } from 'canvas/sceneAdapter';
 import { asNodeId } from 'core/scene/types';
 import { useSceneSelectTool } from './useSceneSelectTool';
-import { rectPath, linePath } from 'features/paths/builder';
+import { rectPath, linePath } from '@weasel-js/geom';
 
 interface Item { shape?: string; fill?: string; color?: string; stroke?: unknown }
 type Pose = { x: number; y: number; width: number; height: number };

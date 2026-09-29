@@ -17,7 +17,7 @@ import {
   RECT_POSE_DESCRIPTOR,
   type PoseDescriptor,
 } from 'core/geometry/poseDescriptor';
-import type { Path } from 'core/geometry/path';
+import type { Path } from '@weasel-js/geom';
 import {
   polygonRegion,
   poseOutline,

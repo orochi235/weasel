@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { poseRotationOf, rotatePathAround } from './poseRotation';
-import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from './path';
+import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 
 describe('poseRotationOf', () => {
   it('returns pivot + angle for a pose with nonzero rotation and AABB', () => {

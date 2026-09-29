@@ -14,7 +14,7 @@ import { type Stroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { resolveUnit, type UnitSystem, type UnitValue } from '@weasel-js/quantity';
 import { pxExtent } from 'core/viewport/pxExtent';
-import { PATH_L, PATH_M, type PolygonPath } from '../paths/types';
+import { PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
 
 /** Options for `createGridLayer`. */
 export interface GridLayerOpts {

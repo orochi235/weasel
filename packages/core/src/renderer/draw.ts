@@ -23,7 +23,7 @@ import type { GradientRampAtlas } from './cache/GradientRampAtlas';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { mat3, type GlMat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
-import { tessellate } from 'features/paths/tessellate/tessellate';
+import { tessellate, type Mesh } from '@weasel-js/geom/tessellate';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { resolveColor } from './math/color';
 import {
@@ -38,7 +38,6 @@ import {
   type LaidOutGroup, type LaidOutDecoration, type LaidOutOutlineGlyph,
 } from '@weasel-js/text';
 import { verticalAlignOffset, cachedLayoutRuns } from '@weasel-js/text';
-import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
 import { strokeMesh, quantizeStrokeScale } from './cache/strokeMeshCache';

@@ -110,7 +110,7 @@ describe('buildSceneTree', () => {
 
   it('container with clipFromPose returning a path → group has clip field set', () => {
     const scene = makeScene();
-    const clipPath: import('../features/paths/types').Path = {
+    const clipPath: import('@weasel-js/geom').Path = {
       kind: 'rect', x: 0, y: 0, width: 50, height: 50,
     };
     const bed = scene.add({

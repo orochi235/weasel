@@ -1,8 +1,11 @@
-import { boxToBox, pointInPath } from '@weasel-js/geom';
-import { boundsOfPath } from './bounds';
-import { translatePath } from './transform';
-import { transformPath } from './transformPath';
-import type { Path } from './types';
+import {
+  boxToBox,
+  pointInPath,
+  boundsOfPath,
+  translatePath,
+  transformPath,
+  type Path,
+} from '@weasel-js/geom';
 import { aabbIntersectsRect, type PoseDescriptor } from 'interactions/actions/resize/geometry';
 
 /**

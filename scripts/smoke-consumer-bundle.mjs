@@ -398,6 +398,8 @@ await writeFile(
   `import * as weasel from '@weasel-js/core';\n` +
     `import * as geom from '@weasel-js/geom';\n` +
     `import * as booleans from '@weasel-js/geom/booleans';\n` +
+    `import * as curves from '@weasel-js/geom/curves';\n` +
+    `import * as tessellate from '@weasel-js/geom/tessellate';\n` +
     `import * as history from '@weasel-js/history';\n` +
     `import * as svg from '@weasel-js/svg';\n` +
     `import * as theme from '@weasel-js/theme';\n` +
@@ -429,7 +431,7 @@ await writeFile(
     `import { registerFont as coreFont } from '@weasel-js/core/renderer';\n` +
     `import { registerFont as directFont } from '@weasel-js/font';\n` +
     `void coreFont; void directFont;\n` +
-    `const mods = { weasel, geom, booleans, history, svg, theme, ui, hud,\n` +
+    `const mods = { weasel, geom, booleans, curves, tessellate, history, svg, theme, ui, hud,\n` +
     `  toolPalette, prefs, callout, toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +

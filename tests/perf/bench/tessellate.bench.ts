@@ -8,7 +8,7 @@
  * pays the miss for every path on screen.
  */
 import { group } from './group';
-import { tessellate } from 'features/paths/tessellate/tessellate';
+import { tessellate } from '@weasel-js/geom/tessellate';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
 // Relative: core's `renderer/` tree has no bare path mapping (nothing inside
 // core imports it by one), so there is no alias to lean on here.

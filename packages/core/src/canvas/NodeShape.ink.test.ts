@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { shapeCoversPoint, findShapeInk, registerNodeShape, findNodeShape } from './NodeShape';
 import { solid, strokeOf } from '../util/paint';
-import { linePath } from 'features/paths/builder';
+import { linePath } from '@weasel-js/geom';
 import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 

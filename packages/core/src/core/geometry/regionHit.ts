@@ -7,11 +7,17 @@
  * bounds cannot decide. A pose that is itself a polygon path is its own
  * outline and never asks.
  */
-import { boxContainsBox, pointInPolygon, polygonContainsPath, polygonIntersectsPath } from '@weasel-js/geom';
+import {
+  boxContainsBox,
+  pointInPolygon,
+  polygonContainsPath,
+  polygonIntersectsPath,
+  type Path,
+  type PolygonPath,
+} from '@weasel-js/geom';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { LassoHitMode } from 'core/adapters/types';
 import { nodeMemo } from 'core/scene/nodeMemo';
-import type { Path, PolygonPath } from './path';
 import type { Vec2 } from './vec2';
 import { poseRotationOf, rotatePathAround } from './poseRotation';
 import { visualBoundsViaDescriptor, type PoseDescriptor } from './poseDescriptor';

@@ -13,7 +13,7 @@ import type { DrawCommand } from '../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { Affordance } from 'affordances/types';
 import { pointRegionScreenQuad, transformOf } from 'affordances/hitAffordanceRegions';
-import { PATH_L, PATH_M, PATH_Z } from 'features/paths/types';
+import { PATH_L, PATH_M, PATH_Z } from '@weasel-js/geom';
 import { chromeStateFrom, isVisibleFrom } from './drawEnvelope';
 
 export interface CreateSlopsDebugLayerOptions {

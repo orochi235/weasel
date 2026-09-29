@@ -17,7 +17,7 @@ import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { EditAnchorsDep, ViewApi } from '../depSchema';
-import type { PolygonPath } from 'features/paths/types';
+import type { PolygonPath } from '@weasel-js/geom';
 import { pathToAnchors } from 'features/paths/anchors';
 import {
   editAnchorSet,

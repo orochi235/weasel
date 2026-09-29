@@ -6,7 +6,7 @@ import {
   type Stroke,
 } from '@weasel-js/core';
 import { tessellateStroke } from './stroke';
-import { PathBuilder } from '../builder';
+import { PathBuilder } from '@weasel-js/geom';
 
 describe('tessellateStroke (straight, butt, no joins)', () => {
   it('expands a rect outline into a ribbon mesh', () => {

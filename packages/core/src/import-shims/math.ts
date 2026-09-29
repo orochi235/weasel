@@ -8,48 +8,40 @@
 // half and must not need the other.
 //
 // Named rather than `export *`: esbuild cannot enumerate a star re-export
-// across a package boundary and emits no binding for it. These re-export from
-// leaf modules rather than from `features/paths`, whose own barrel reaches the
-// pen preview and the path-editing overlay layers.
+// across a package boundary and emits no binding for it. The path math comes
+// from `@weasel-js/geom`; the rest re-exports from leaf modules rather than
+// from core's own barrels, which reach the canvas.
 //
-// One leaf reaching this package's own barrel is enough to undo all of it:
-// `pointAlongPath` alone pulled nine chunks and a megabyte of canvas here
-// until `tessellate/polyline` stopped doing that (a6eb682b). `npm run
-// check:react-free` is what notices, and it reads the built closure — no
-// arrangement of these lines can be trusted on its own.
+// One leaf reaching this package's own barrel is enough to undo all of it.
+// `npm run check:react-free` is what notices, and it reads the built closure —
+// no arrangement of these lines can be trusted on its own.
 
-export type {
-  Path,
-  PathFillRule,
-  PolygonPath,
-  RectPath,
-} from 'core/geometry/path';
 export {
+  DEFAULT_FLATTEN_TOLERANCE,
   PATH_C,
   PATH_CMD_LENGTHS,
   PATH_L,
   PATH_M,
   PATH_Q,
   PATH_Z,
-  pathCommandCoordCount,
-} from 'core/geometry/path';
-export type { Vec2 } from 'core/geometry/vec2';
-export type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-export { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
-export {
   PathBuilder,
-  polygonFromPoints,
-  polylineFromPoints,
-  rectPath,
-} from 'features/paths/builder';
-export {
-  DEFAULT_FLATTEN_TOLERANCE,
   flattenCubic,
   flattenCubicWithArcLen,
   flattenQuadratic,
   flattenQuadraticWithArcLen,
-} from 'features/paths/flatten';
-export { pointAlongPath } from 'features/paths/pathAt';
+  pathCommandCoordCount,
+  pointAlongPath,
+  polygonFromPoints,
+  polylineFromPoints,
+  rectPath,
+  type Path,
+  type PathFillRule,
+  type PolygonPath,
+  type RectPath,
+} from '@weasel-js/geom';
+export type { Vec2 } from 'core/geometry/vec2';
+export type { PoseDescriptor } from 'core/geometry/poseDescriptor';
+export { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 export { createSimulation } from 'features/simulation/createSimulation';
 export type {
   Simulation,

@@ -7,7 +7,7 @@
 import {
   PATH_M, PATH_L, PATH_C, PATH_Z,
   type PolygonPath, type RectPath,
-} from 'core/geometry/path';
+} from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
 import type { ResolvedRun } from '@weasel-js/text';

@@ -1,13 +1,8 @@
 import type { ColorOverrideRegistry } from './colorRegistry';
 import type { TimelineHandle, TimelineOptions } from './timeline/types';
-import type { EasingSpec } from './easingSpec';
+import type { EasingSpec, SpringPresetName } from '@weasel-js/geom';
 
-/** An easing curve: maps normalized progress `t ∈ [0, 1]` to eased progress.
- *  Curves may leave the 0–1 range in the middle (back, elastic) but should
- *  pass through 0 at 0 and 1 at 1. */
-export type EasingFn = (t: number) => number;
-
-export type { BezierEasing, EasingSpec } from './easingSpec';
+export type { BezierEasing, EasingFn, EasingSpec, SpringPreset, SpringPresetName } from '@weasel-js/geom';
 
 /** Blends two `T` values at eased progress `t`. Called once per frame; see
  *  {@link InterpolatorFactory} when the blend has setup worth hoisting. */
@@ -20,16 +15,6 @@ export type Interpolate<T> = (from: T, to: T, t: number) => T;
  *  fine; this is the escape hatch when setup-per-tick is wasteful. */
 export type InterpolatorFactory<T> = (from: T, to: T) => (t: number) => T;
 
-/** A spring's physical parameters. Higher stiffness settles faster, higher
- *  damping overshoots less, higher mass makes both sluggish. */
-export interface SpringPreset {
-  stiffness: number;
-  damping: number;
-  mass: number;
-}
-
-/** One of the tunings in `SPRING_PRESETS`. */
-export type SpringPresetName = 'gentle' | 'wobbly' | 'stiff' | 'slow';
 
 /** A running animation. Cancel it, or bend its time — pausing and time-scaling
  *  act on this animation's own virtual clock, independent of the animator's. */

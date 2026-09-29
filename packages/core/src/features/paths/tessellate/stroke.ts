@@ -1,9 +1,7 @@
 import type { Path } from '@weasel-js/core';
 import type { ScreenLength, Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
-import type { Mesh } from '../../../renderer/cache/mesh';
-import { extractPolylines, type Polyline } from './polyline';
-import { trimPolyline } from './trim';
+import { type Mesh, extractPolylines, type Polyline, trimPolyline } from '@weasel-js/geom/tessellate';
 
 /** Options for stroke tessellation. */
 export interface StrokeOptions {

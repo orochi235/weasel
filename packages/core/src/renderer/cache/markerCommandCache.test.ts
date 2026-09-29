@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { Stroke } from '@weasel-js/paint';
-import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '../../core/geometry/path';
+import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { registerMarker, getMarker, type MarkerEntry } from '../../core/strokeMarkers';
 import { cachedMarkerCommands, _resetMarkerCommandCacheForTests } from './markerCommandCache';
 

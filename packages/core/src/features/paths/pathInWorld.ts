@@ -18,11 +18,15 @@
  * where operating on the unrotated source path produces wrong shapes.
  */
 
-import { boxToBox, rotateAboutPoint } from '@weasel-js/geom';
-import { boundsOfPath } from './bounds';
-import { type Path, type PolygonPath } from './types';
-import { translatePath } from './transform';
-import { transformPath } from './transformPath';
+import {
+  boxToBox,
+  rotateAboutPoint,
+  boundsOfPath,
+  type Path,
+  type PolygonPath,
+  translatePath,
+  transformPath,
+} from '@weasel-js/geom';
 import { poseRotationOf } from 'core/geometry/poseRotation';
 
 /** Subset of pose fields this helper consumes. Matches the kit's auto-rotate

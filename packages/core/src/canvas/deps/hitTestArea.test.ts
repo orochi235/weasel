@@ -9,7 +9,7 @@
  * the silhouette via the kernel, so it must NOT.
  */
 import { describe, it, expect } from 'vitest';
-import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from 'features/paths/types';
+import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { hitTestArea, hitTestLassoPolygon } from './hitTestArea';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';

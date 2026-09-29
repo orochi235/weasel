@@ -27,7 +27,7 @@ import { computeFitView } from './minimapMath';
 import { defaultDrawOne } from './defaultDrawOne';
 import { ColorOverrideRegistry } from '../animation/colorRegistry';
 import type { Animator } from '../animation/types';
-import { pathFromD } from 'features/paths/pathFromD';
+import { pathFromD } from '@weasel-js/geom';
 import { strokeOf } from '../util/paint';
 import { PointerContextProvider, usePointerContext, type PointerContextValue } from 'features/pointer/PointerContext';
 

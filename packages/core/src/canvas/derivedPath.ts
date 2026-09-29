@@ -7,7 +7,7 @@
  * `effectivePose` has to be able to reach it.
  */
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
-import type { Path } from 'core/geometry/path';
+import type { Path } from '@weasel-js/geom';
 import { derivedDepOf } from 'core/scene/effectivePose';
 import { resolveDerivedPath } from 'core/scene/derivedPath';
 import type { SceneViewDrawOne } from './NodeShape';

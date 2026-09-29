@@ -817,7 +817,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   scale, and Powerline carries its own normals. paint's `lerpHueDeg` is CSS Color 4
   hue interpolation, not angle geometry. CurveEditor's Catmull-Rom and monotone
   splines are curves geom does not have, and its bezier easing already goes through
-  core's `cubicBezierEasing`. The scalar `Math.max(lo, Math.min(hi, v))` clamps
+  geom's `cubicBezierEasing` (via core). The scalar `Math.max(lo, Math.min(hi, v))` clamps
   scattered through ui and labkit are not geometry; geom has no scalar clamp. d3
   and modes do no geometry at all.
 

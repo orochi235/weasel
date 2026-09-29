@@ -12,7 +12,7 @@ import type { Path } from '@weasel-js/core';
 import type { Stroke } from '@weasel-js/paint';
 import { tessellateStroke, resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { strokeInsets } from '../../core/markerInset';
-import type { Mesh } from './mesh';
+import type { Mesh } from '@weasel-js/geom/tessellate';
 
 /**
  * Distinct stroke configurations kept per path before that path's map is
