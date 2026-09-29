@@ -119,7 +119,7 @@ test(`${DEMO_ID} — the DOM lens re-renders the instrument bigger`, async ({ pa
   await page.getByRole('menuitem', { name: 'Written detail' }).click();
   const trial = page.locator('.lk-trial').filter({ hasText: 'Written detail' }).first();
   await trial.getByRole('button', { name: 'Loupe' }).click();
-  const host = await trial.locator('.lk-trial__loupe-host').boundingBox();
+  const host = await trial.locator('.lk-loupe-host').boundingBox();
   if (!host) throw new Error('no loupe host');
 
   const plain = await trial.locator('.lab-loupe-line').first().boundingBox();
