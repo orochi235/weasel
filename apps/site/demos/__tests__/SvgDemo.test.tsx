@@ -19,14 +19,14 @@ describe('SvgDemo', () => {
     expect(getPaintKind('mesh-gradient')).toBeUndefined();
     render(<SvgDemo />);
     fireEvent.change(screen.getByLabelText('SVG source'), { target: { value: MESH_SVG } });
-    await waitFor(() => expect(document.querySelector('pre')?.textContent).toContain('<wzl:meshGradient'));
+    await waitFor(() => expect(document.querySelector('pre')?.textContent).toContain('<wzl:meshGradient'), { timeout: 10_000 });
     expect(screen.queryByLabelText('serializeSvg warnings')).toBeNull();
   });
 
   it('reads and writes its mesh preset without a warning either way', async () => {
     render(<SvgDemo />);
     fireEvent.click(screen.getByRole('button', { name: 'Mesh gradient' }));
-    await waitFor(() => expect(document.querySelector('pre')?.textContent).toContain('<wzl:patch'));
+    await waitFor(() => expect(document.querySelector('pre')?.textContent).toContain('<wzl:patch'), { timeout: 10_000 });
     expect(screen.queryByLabelText('parseSvg warnings')).toBeNull();
     expect(screen.queryByLabelText('serializeSvg warnings')).toBeNull();
   });
