@@ -33,7 +33,6 @@ import {
   ActiveToolContextProvider,
   type AddNodeSpec,
   asNodeId,
-  type BooleansAdapter,
   boundsOfPath,
   buildSceneViewCommands,
   buildWeaselClipboardText,
@@ -42,7 +41,6 @@ import {
   type ClipboardSnapshot,
   contrastLineColor,
   type CreateOutlinesAdapter,
-  DEFAULT_SHAPE_FILL,
   DEFAULT_STROKE_COLOR,
   DEFAULT_TEXT_STYLE,
   defaultCommitAdapter,
@@ -73,7 +71,6 @@ import {
   type Stroke,
   strokeOf,
   type StyledRun,
-  type TextNodeSource,
   type TextStyle,
   type TextVerticalAlign,
   toHex8,
@@ -148,6 +145,7 @@ import { useSceneAdapter, effectiveRangeStyle, patchRangeStyle } from '@weasel-j
 import type { SerializedHistory } from '@weasel-js/history';
 import { serializeReplacer, reviveSnapshot, clipboardJsonReviver, nodeSpecsFromSnapshot } from './persistence';
 import { useSliceTool } from '@weasel-js/core';
+import { drawBooleansAdapter, textSourceOf, type DrawScene } from './booleansAdapter';
 import { parseSvg, unpackSvgFiles } from '@weasel-js/svg';
 import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { useModality } from './modality/useModality';
@@ -173,7 +171,7 @@ const DispatchTracePanel = import.meta.env.DEV
  *  (radians, pivot = unrotated AABB center). Matches the auto-rotation
  *  hook `SceneCanvas.defaultDrawOne` applies for any pose carrying a
  *  non-zero `rotation` field. */
-interface WeaselDrawPose {
+export interface WeaselDrawPose {
   x: number; y: number; width: number; height: number; rotation?: number;
 }
 
@@ -185,7 +183,7 @@ const DRAW_POSE_COMPOSITION: PoseComposition<WeaselDrawPose> | undefined = undef
  *  and the text painter. Tools synthesized by `defaultTools={BUILTIN_TOOL_IDS}`
  *  already produce this shape, so no per-tool `create` overrides are
  *  required. `text` is present on text-tool leaves only. */
-interface WeaselDrawData {
+export interface WeaselDrawData {
   path?: Path;
   text?: string;
   /** Node-level typography. What the sidebar's Character / Paragraph groups
@@ -209,7 +207,7 @@ interface WeaselDrawData {
   label?: string;
 }
 
-type WeaselDrawLayer = 'default';
+export type WeaselDrawLayer = 'default';
 
 /** Paper sizes — the canvas fills the workspace; the page is drawn as a
  *  world-space layer at `{0,0,paper.width,paper.height}` (see `paperLayer`
@@ -1011,94 +1009,15 @@ function BooleansAdapterPublisher({
   scene,
   selection,
 }: {
-  scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
+  scene: DrawScene;
   selection: ReturnType<typeof useSelection>;
 }): null {
-  const idCounterRef = useRef(0);
-  const adapter = useMemo<BooleansAdapter>(() => {
-    const a: BooleansAdapter = {
-      getSelection: () => selection.get(),
-      getWorldPath: (id) => {
-        const node = scene.get(asNodeId(id));
-        if (!node || node.kind !== 'leaf') return undefined;
-        const data = node.data;
-        if (!data.path) return undefined;
-        return pathInWorld(data.path, node.pose);
-      },
-      getTextSource: (id) => textSourceOf(scene, id),
-      compareZ: (x, y) => {
-        const order = [...scene.renderOrder()];
-        return order.indexOf(asNodeId(x)) - order.indexOf(asNodeId(y));
-      },
-      createPathNode: (path) => {
-        // Mint convention: pose = boundsOfPath(path); geometry lives in data.path.
-        // Booleans, the kit slice dep, and release-compound (onReleaseCompound)
-        // all follow this same convention — the data payload that varies per site
-        // is too context-specific (style inheritance source) to share a helper.
-        // Inherit the topmost selected leaf's paint so the result reads as a
-        // continuation of the source style. Falls back to a neutral fill if
-        // no leaf is selected (shouldn't happen — `enabled` gates the op).
-        const sel = selection.get();
-        let template: WeaselDrawData | undefined;
-        for (let i = sel.length - 1; i >= 0; i--) {
-          const n = scene.get(asNodeId(sel[i]));
-          if (n && n.kind === 'leaf') { template = n.data; break; }
-        }
-        const b = boundsOfPath(path);
-        const id = `b-${idCounterRef.current++}`;
-        const node: { id: string; kind: 'leaf'; layer: WeaselDrawLayer; pose: WeaselDrawPose; data: WeaselDrawData; parent: NodeId | null } = {
-          id,
-          kind: 'leaf',
-          layer: 'default',
-          pose: { x: b.x, y: b.y, width: b.width, height: b.height },
-          data: {
-            path,
-            fill: template?.fill ?? DEFAULT_SHAPE_FILL,
-            ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),
-          },
-          parent: null,
-        };
-        return node;
-      },
-      getNode: (id) => {
-        const n = scene.get(asNodeId(id));
-        return n ?? undefined;
-      },
-      getZOrder: (id) => {
-        const order = [...scene.renderOrder()];
-        const idx = order.indexOf(asNodeId(id));
-        if (idx < 0) return undefined;
-        const node = scene.get(asNodeId(id));
-        return { parentId: node?.parent ?? null, index: idx };
-      },
-      setSelection: (ids) => selection.set(ids),
-      // No `insertNode` here on purpose: `applyOps` below spreads
-      // `defaultCommitAdapter`, whose own is what the ops reach, and a copy
-      // here would shadow it — silently dropping whatever the kit's learns to
-      // carry next. The booleans hook never calls it directly.
-      removeNode: (id) => { scene.remove(asNodeId(id)); },
-      // Hand the batch to the scene rather than re-applying it here: the
-      // entry then holds the real ops, so undo replays the reorder and the
-      // selection change instead of only the inserts and deletes.
-      applyOps: (ops, label) => {
-        scene.applyBatch(ops, label ?? 'Booleans', { ...defaultCommitAdapter(scene), ...a });
-      },
-    };
-    return a;
-  }, [scene, selection]);
+  const adapter = useMemo(
+    () => drawBooleansAdapter(scene, selection.adapterMethods),
+    [scene, selection],
+  );
   useBooleansAdapter(adapter);
   return null;
-}
-
-type DrawScene = ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
-
-/** A text leaf as the kit's outline extraction reads it. */
-function textSourceOf(scene: DrawScene, id: string): TextNodeSource | undefined {
-  const node = scene.get(asNodeId(id));
-  if (!node || node.kind !== 'leaf') return undefined;
-  const { text, runs, style, verticalAlign, path } = node.data;
-  if (text === undefined || path) return undefined;
-  return { data: { text, runs, style, verticalAlign }, pose: node.pose };
 }
 
 /** Publishes the adapter the kit's `createOutlines` action converts text

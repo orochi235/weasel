@@ -7,7 +7,9 @@ import { registerFontOutlines, loadFontOutlines } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { TextOutlinesError, type TextNodeSource } from 'features/text/textToPath';
 import type { Op } from 'core/ops/types';
-import type { NodeId } from 'core/scene/types';
+import { asNodeId, type NodeId } from 'core/scene/types';
+import { createScene } from 'core/scene/scene';
+import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 
 function rect(id: string, x: number, y: number, w: number, h: number) {
   return {
@@ -317,6 +319,68 @@ describe('applyBooleanOp — z-position via getZOrder', () => {
     // Confirm the batch doesn't include a MoveToIndex op (just delete +
     // insert + setSelection = 4 ops total).
     expect(h.state.batches[0].ops).toHaveLength(4);
+  });
+});
+
+describe('applyBooleanOp — z-position from getParent / getChildren', () => {
+  // Render order and sibling order disagree inside `g`: `top` and `g0`'s child
+  // come first in render order, so a render index is never a sibling index.
+  function nested() {
+    const scene = createScene<{ path?: Path }, 'default', Path>({ systemLayers: [{ id: 'default' }] });
+    const add = (id: string, x: number, parent?: string) => scene.add({
+      id: asNodeId(id), kind: 'leaf', layer: 'default',
+      pose: { kind: 'rect', x, y: 0, width: 10, height: 10 },
+      data: { path: { kind: 'rect', x, y: 0, width: 10, height: 10 } },
+      ...(parent ? { parent: asNodeId(parent) } : {}),
+    });
+    const box = { kind: 'rect', x: 0, y: 0, width: 0, height: 0 } as Path;
+    add('top', 100);
+    scene.add({ id: asNodeId('g0'), kind: 'container', layer: 'default', pose: box, data: {} });
+    add('g0a', 200, 'g0');
+    scene.add({ id: asNodeId('g'), kind: 'container', layer: 'default', pose: box, data: {} });
+    add('below', 300, 'g');
+    add('a', 0, 'g');
+    add('b', 5, 'g');
+    add('above', 400, 'g');
+    const sources: string[] = [];
+    let n = 0;
+    const adapter: BooleansAdapter = {
+      ...defaultCommitAdapter(scene),
+      getWorldPath: (id) => scene.get(asNodeId(id))?.data.path,
+      compareZ: (x, y) => {
+        const order = [...scene.renderOrder()];
+        return order.indexOf(asNodeId(x)) - order.indexOf(asNodeId(y));
+      },
+      createPathNode: (path, _op, sourceId) => {
+        sources.push(sourceId);
+        const parent = scene.get(asNodeId(sourceId))?.parent;
+        return { id: `r${n++}`, kind: 'leaf', layer: 'default', pose: path, data: { path }, parent } as { id: string };
+      },
+      applyOps: (ops, label) => { scene.applyBatch(ops, label ?? 'Booleans', adapter); },
+    };
+    scene.setSelection([asNodeId('a'), asNodeId('b')]);
+    return { scene, adapter, sources };
+  }
+
+  it('hands createPathNode the topmost source, whose slot the result takes', () => {
+    const { adapter, sources } = nested();
+    applyBooleanOp(adapter, 'union');
+    expect(sources).toEqual(['b']);
+  });
+
+  it('places the result at the topmost source\'s sibling index', () => {
+    const { scene, adapter } = nested();
+    const result = applyBooleanOp(adapter, 'union');
+    const ids = result.kind === 'applied' ? result.resultIds : [];
+    expect([...scene.childrenOf(asNodeId('g'))]).toEqual(['below', ...ids, 'above']);
+    expect([...scene.roots]).toEqual(['top', 'g0', 'g']);
+  });
+
+  it('restores each source to its sibling index on undo', () => {
+    const { scene, adapter } = nested();
+    applyBooleanOp(adapter, 'union');
+    scene.undo();
+    expect([...scene.childrenOf(asNodeId('g'))]).toEqual(['below', 'a', 'b', 'above']);
   });
 });
 
