@@ -198,8 +198,8 @@ is where it will show up first.
 
 ## Explicitly out of scope
 
-- **Inverse kinematics.** A solver that writes poses; it composes with everything
-  here and needs none of it changed. Its own arc.
+- **Inverse kinematics.** Landed as `solveIk` (`packages/core/src/animation/rig/solveIk.ts`):
+  a solver that writes poses, composing with everything here and changing none of it.
 - **Skinning.** Per-vertex bone weights deforming path geometry. The renderer
   flattens paths to meshes, so weights have to reach the vertex shader or be
   applied on the CPU every frame. Much the largest of the three, and it needs the
