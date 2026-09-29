@@ -200,6 +200,11 @@ Priority tags:
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
 
+- **(P3) The default `slice` dep cuts rect-posed nodes only.** `useSliceDepSource`
+  (`packages/core/src/canvas/deps/slice.ts`) skips any node whose pose is not
+  `{ x, y, width, height }`, so a path under a rotated or custom pose is never cut. Found by
+  reading the code; no test covers it.
+
 ### Cursor package follow-ups
 
 All four arcs of `docs/superpowers/specs/2026-09-03-cursor-system-design.md`
