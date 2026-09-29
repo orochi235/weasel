@@ -1,5 +1,191 @@
 # @weasel-js/text
 
+## 1.7.1
+
+### Patch Changes
+
+- 8635031: Every text tier now places its baseline from the ascent and descent a browser
+  sets the face with, and centers the face in its line the way CSS does: half
+  the leading above the ascent. A face taller than its line box, such as Papyrus
+  at `lineHeight: 1.2`, gets negative leading and overflows the box, which keeps
+  its height. Before, a line hung its baseline one ascent below the line top
+  with no leading, so glyphs sat half the leading away from where CSS puts
+  them: high in a roomy line, low in a tight one, where a tall face overflowed
+  only at the bottom.
+  
+  The ascent rule is `verticalMetricsFromTables` (new, additive, in
+  `@weasel-js/font`): `OS/2` typo metrics when the font sets
+  `USE_TYPO_METRICS`, otherwise `hhea`. Firefox and every Linux engine follow it;
+  Chromium and WebKit on macOS read `hhea` regardless, and the edit overlay's
+  measured correction covers the difference there. `gen-font` bakes the result
+  into the atlas's `faceMetrics` block as `ascent` / `descent`, the outline
+  parser reads the same values (and reports them as `OutlineFace.ascender`), and
+  the canvas tier records the browser's own, measured at a 1000px em rather than
+  at the 48px bake size. An atlas or custom parser that states no ascent and
+  descent keeps the previous placement.
+  
+  Rendering changes: text in the bundled Inter at `lineHeight: 1.2` moves up by
+  0.005 em. Canvas-tier faces move down by half their leading: Georgia by 1.3px
+  and Arial by 1.7px at 40px. The committed Inter atlases are rebaked; the PNG is
+  byte-identical.
+- a7f2103: Underline, strikethrough and super/subscript now follow the font's own metrics
+  instead of fixed constants. `gen-font` bakes `post.underlinePosition` /
+  `underlineThickness`, `OS/2.yStrikeoutPosition` / `yStrikeoutSize` and the
+  `OS/2` super/subscript size and offset into a new optional `faceMetrics` block
+  in the atlas JSON, and the outline parser reads the same values onto
+  `OutlineFace.faceMetrics`, through one shared function, so an atlas and a TTF
+  of one font place rules and scripts identically. The overline keeps its
+  default offset and takes the underline's weight. A face with no metrics
+  (older atlases, the canvas tier, custom parsers) keeps the previous constants.
+  
+  This changes rendering for the bundled Inter: its underline sits lower
+  (0.170 em, was 0.10) and heavier (0.068 em, was 0.05), and `script: 'sub'`
+  drops by 0.075 em instead of 0.333 em, with scripts at 60.0% size. The
+  committed atlases are rebaked; the PNG is byte-identical.
+  
+  Additive API: `faceMetricsFromTables`, `faceMetricsOf`, `faceMetricsFor` and
+  the `FaceMetrics` types in `@weasel-js/font`; `scriptMetrics`,
+  `scriptMetricsFor`, `decorationMetrics` and `DEFAULT_DECORATION_METRICS` in
+  `@weasel-js/text` (re-exported from core); an optional `faceOf` argument to
+  `layoutMarkdown` and an optional `face` on `PositionedRun`. `SCRIPT_METRICS`
+  remains, now documented as the fallback rather than what every run gets.
+  
+  Fix: `resolveFontVariant` called from inside the glyph-ready notification of
+  an atlas that just landed returned a pending miss, because the load was still
+  marked in flight. A subscriber that re-resolves synchronously, as
+  `useSyncExternalStore` does, now sees the face.
+- edabd62: `layoutRuns` no longer warns "no metrics for …" about a face whose registration is still loading — an un-awaited `registerFont`, or an outline face whose bytes have not arrived. It warns once that registration settles and the face still resolves to nothing. New `fontPending(family, weight?, style?)` answers whether a registration in flight could still serve a request. A failed `registerFont` or outline load now fires `subscribeGlyphReady`, so text laid out while it was pending gets laid out again.
+- 1524403: Text now ends a line at every UAX #14 hard break, not only at `\n`: CR, CRLF
+  (one break, not two), VT, FF, NEL, U+2028 LINE SEPARATOR and U+2029 PARAGRAPH
+  SEPARATOR. This applies to `layoutRuns`, `layoutMarkdown` and the edit overlay,
+  wrapped or not. None of them lays out a cell, and a caret offset on either side
+  of a CRLF stays exact. As with `\n`, and as with a forced break in CSS, the
+  line a hard break ends is never spread by `justify`; U+2028 and U+2029 behave
+  the same way here. This is a behavior change: text holding those characters
+  lays out on more lines than before.
+  
+  The edit overlay writes each hard break the browser would not break at as a
+  `<span data-break>` holding a newline, and reads the original character back
+  on commit, so an edit no longer turns U+2028 into a space or a lone CR into a
+  newline. A node without runs is now seeded with text nodes instead of through
+  `innerText`, which also puts the caret at the right offset on any line after
+  the first.
+  
+  Additive: `isHardLineBreak(codePoint)` in `@weasel-js/text`.
+- b94d2ca: `layoutMarkdown`, and so `createMarkdownRenderer`, wraps at the same UAX #14
+  break opportunities as `layoutRuns` instead of only at spaces: after a hyphen,
+  between CJK characters, and never before `!`, `?` or a closing bracket. The
+  opportunities are found across run boundaries, so a word split between two
+  styled runs no longer breaks at the seam. As in `layoutRuns`, only a word's
+  ink has to fit on the line, and the spaces after it hang. This is a behavior
+  change with no API change: markdown text may wrap differently than before.
+- 8d0493a: `measureText` wraps where `layoutRuns` does. It used to break only at
+  whitespace and at `\n`; it now breaks at the same UAX #14 opportunities —
+  after a hyphen, between CJK characters, never before `!`, `?` or a closing
+  bracket — and ends a line at every hard break (CR, CRLF as one, VT, FF, NEL,
+  U+2028, U+2029), none of which appears in `lines`. Only a word's ink has to
+  fit, and trailing spaces hang.
+  
+  Its return shape is unchanged, but this is a behavior change: the same text
+  may wrap into different lines. Three edges move with `layoutRuns` too: empty
+  text returns no lines rather than one empty line, a trailing hard break opens
+  no empty line after it, and a trailing tab stays in its line, since only
+  spaces hang.
+  
+  `layoutRuns`, `layoutMarkdown` and `measureText` now share one wrap loop, so
+  the three cannot drift apart again.
+- 16a0476: Text runs carry a numeric weight. `StyledRun.fontWeight` (100–900) overrides the node's weight and the `bold` flag, which is now a preset over it: writing either one to a range drops the other. `numericWeight` and `isBoldWeight` (600 and up) are exported as the one reading of a weight.
+  
+  Taking bold off part of a bold node now writes `fontWeight: 400` over that part and leaves the node alone, instead of lowering the node and re-bolding the rest — so it works at any node weight, including 900, where it used to be refused. `SetFlagResult.applied` is gone, since the edit can no longer be declined. `effectiveRangeStyle` reports the `fontWeight` that renders and reads `bold` off it; `patchRangeStyle` lays an armed style over a range the way a write would.
+  
+  `listFontWeights(family)` in `@weasel-js/font` reports the weights a family has on the atlas and outline tiers. A new `font-weight` pref kind draws `FontWeightSelect`, which lists those weights (the nine CSS weights for a family with none on file) and reads the family from the `fontFamily` leaf beside it. The text tool's character options and the node panel's Weight field both use it. The overlay and SVG round-trip a run's weight; a tspan `font-weight` other than 700 now reads as the run's weight rather than being dropped.
+- 4cb55b7: Text can be set in small caps. `StyledRun` and `TextStyle` take
+  `fontVariantCaps: 'normal' | 'small-caps'`. A run overrides the node, and
+  `'normal'` on a run turns off small caps it would inherit. Lowercase letters
+  are drawn as capitals at a smaller size. The run's `text` is not rewritten, so
+  carets, selections and hit tests address what was typed. The small-caps
+  reading is applied after `textTransform`, as CSS does it.
+  
+  This is a synthesis, not the font's `smcp` feature. The small size is the
+  face's x-height over its cap height (`smallCapsScaleFor`). A face that states
+  neither height gets `SMALL_CAPS_SCALE`, 0.7, which is the factor Chromium and
+  WebKit use. `FaceMetrics` gains `xHeight` and `capHeight`, read from `OS/2`
+  on both tiers. The bundled Inter atlas carries them now.
+  
+  `ResolvedRun` gains an optional `sizeMap`, which holds the size each unit of
+  its text is drawn at. `fontSize` still sets the line height and the rules, so
+  a small-caps word keeps its line and gets one underline. The layout cache keys
+  on the size map. The outline-tier size gate reads the run's size, so one word
+  is never split across tiers.
+  
+  The edit overlay sets the lowercase letters of a small-caps run in
+  `<span data-small-caps>` pieces. It sizes them at the canvas scale, because a
+  browser's own synthesis uses a fixed factor. It re-splits the pieces as you
+  type. A plain-text edit now commits the overlay's DOM text instead of
+  `innerText`. `innerText` applies `text-transform`, so a node shown in capitals
+  committed the capitals as its text. `@weasel-js/svg` writes
+  `font-variant="small-caps"`, and `normal` on a tspan, and reads either back.
+  
+  All of this is additive.
+- fe9a91e: Add `warmSvg(nodes)` and `svgNeeds(nodes)` to `@weasel-js/svg`. `serializeSvg` is synchronous, and its missing-def warning used to point at `warmPaintKinds()`, which loads every lazily registered kind and fails when any unrelated one does. `svgNeeds` reads the serializer's own paint pre-pass, so it lists exactly the paint kinds the export writes as paint servers — fills and strokes, text and run paints, through nested groups — plus the faces whose font metrics size a sub- or superscript run with its own `baselineShift`. `warmSvg` loads only those. Core now exports `isPaintKindKnown`, and `@weasel-js/text` (re-exported by core) adds `resolveRunFace(run, style)`, the family, weight and style a run is set in, read without touching the font registry. Additive.
+- 3a68365: Add justified text. `TextAlign` gains `'justify'`: every line that wraps is
+  spread across the box by widening its word gaps equally, and a paragraph's last
+  line, or a line with no gap, sits at the start edge. `resolveAlign` maps
+  `justify` to that start edge. `LayoutRunsOpts.justify` and
+  `TextDrawCommand.justify` carry justification apart from the edge, so
+  `justify: true` with `align: 'center'` centers the last lines instead (CSS
+  `text-align-last`). The edit overlay sets `text-align: justify` and pins
+  `text-align-last` to the same edge, and the property panel's Align bar gets a
+  Justify segment with a new `textAlignJustify` icon. SVG export writes a
+  justified node at its start edge and records `data-weasel-align="justify"`,
+  which the reader turns back into `align: 'justify'`.
+  
+  This is additive. Code that switches over `TextAlign` exhaustively has a new
+  value to handle.
+- 351271a: `letterSpacing` is now added once per grapheme cluster on every path, which is
+  how CSS `letter-spacing` counts and so how the DOM edit overlay already
+  tracked. `layoutRuns` used to track per code point and `measuredWidth` per
+  UTF-16 unit, so text with combining marks, ZWJ emoji sequences or (on the 2D
+  path) astral characters measured wider than the overlay showed it, and the 2D
+  and GL paths could wrap such a line differently. This is a behavior change:
+  tracked text containing those characters is narrower than before and may wrap
+  at a different word. Untracked text is unaffected.
+- 59f4365: `layoutRuns` wraps at the break opportunities of the Unicode Line Breaking
+  Algorithm (UAX #14, Unicode 16.0) instead of only at spaces, so a wrapped line
+  breaks after a hyphen or between CJK characters where the browser does, and the
+  edit overlay no longer reflows such a line when an edit opens. It also stops
+  breaking where UAX #14 forbids a break even after a space, such as before `!`,
+  `?`, `,` or a closing bracket. This is a behavior change: text with those
+  characters may wrap differently than before. Text of words, spaces and
+  word-final punctuation wraps exactly as it did. A word wider than the line
+  still overflows rather than breaking inside itself.
+  
+  Additive: `lineBreakOpportunities(codePoints)` returns, for each position, one
+  of `NO_BREAK`, `BREAK_ALLOWED` or `BREAK_MANDATORY`, for a consumer running its
+  own line fitting. It passes all of Unicode's `LineBreakTest.txt`.
+- Updated dependencies [f457e7c]
+- Updated dependencies [8635031]
+- Updated dependencies [3d80c9f]
+- Updated dependencies [a7f2103]
+- Updated dependencies [edabd62]
+- Updated dependencies [7be3713]
+- Updated dependencies [b2fd89a]
+- Updated dependencies [4212d2d]
+- Updated dependencies [b5cc59f]
+- Updated dependencies [3c1def2]
+- Updated dependencies [9cad63b]
+- Updated dependencies [b228015]
+- Updated dependencies [365c762]
+- Updated dependencies [16a0476]
+- Updated dependencies [63d0ece]
+- Updated dependencies [dde2315]
+- Updated dependencies [4cb55b7]
+- Updated dependencies [09ff2c1]
+- Updated dependencies [637945e]
+  - @weasel-js/geom@1.7.1
+  - @weasel-js/font@1.7.1
+  - @weasel-js/paint@1.7.1
+
 ## 1.7.0
 
 ### Patch Changes

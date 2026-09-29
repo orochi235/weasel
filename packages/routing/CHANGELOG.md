@@ -1,5 +1,125 @@
 # @weasel-js/routing
 
+## 1.7.1
+
+### Patch Changes
+
+- 276bad1: Types that public exports already referenced can now be imported by name from `@weasel-js/core`: `Overlay`, `SHAPE_KINDS`, `ShapeKindDescriptor`, `ShapeKindsWhere`, `KitInsertShape`, `ShaderProgram`, `ToolPrefBase`, `BaseFeature`, `MeshBox`, `PenContinuation`, `SerializedLayer`, `SelectionStore`, `Polyline`, `Scale2`, `WeaselProviderProps`, `HitTestView`, `StyleToggle`, `DEFAULT_INK`, `CURSOR_ANGLE_STEPS`, `CURSOR_MAX_CSS_PX`, and the dispatch-record types `Dispatcher.explain` returns (`DispatchRecord` and its parts, also still on `@weasel-js/core/routing`). A node's `derivePath` / `derivePose` now have named types, `DerivePathFn` and `DerivePoseFn`, which `unionOfChildrenVia` returns.
+  
+  Breaking for test code: `_resetPaintKindsForTests` and `_resetMarkersForTests` moved off core's barrel to a new `@weasel-js/core/test-seams` entry, and `@weasel-js/routing` no longer exports its internal dispatcher helpers `publishLiveDispatch`, `filterEligible` and `preferContextual`.
+- 886fefd: `<SceneCanvas debug>` now reaches the overlay. It had been swallowed, so only the `?debug=` URL flag ever turned the overlay on through `SceneCanvas`; the prop takes `<Canvas debug>`'s `DebugConfig` plus SceneCanvas's own `slops`. `<Canvas>` also keys its debug sink on the config's content, so an inline `debug={{ … }}` no longer throws away what the sink recorded on every render.
+  
+  New `viewport` debug feature: the last pan or zoom, drawn as the viewport it started from (outlined in the current view), the world point it held fixed, and a readout of the pan delta or zoom factor. `DebugSink` gains `recordViewport(kind, from, to, anchor?)`; a hand-written sink must add it. Actions reach the sink through a new `debug` dep that `<SceneCanvas>` provides, and `viewport.dragPan`, `viewport.wheelPan`, `viewport.zoom` and `viewport.pinchZoom` record into it. `SceneCanvasApi` / `CanvasExtensionApi` gain `getDebug()`, which returns the sink, or null while `debug` is off.
+  
+  The `fps` panel now shows the frame interval and, per paint, CPU time and GL draw calls in total and per render layer, in decimal-aligned columns. The numbers come from new renderer seams: `WeaselRenderer.render(commands, viewMatrix, { spans })` and `lastFrameStats()`, and a `spans` out-parameter on `drawLayers`. `?debug=` now parses `ids`, `fps` and `viewport`, and `?debug=all` turns them on.
+  
+  `renderDebugSnapshot({ scene, view, size, pixelRatio, debug, config, … })` rasterizes the scene and the debug overlay into one image, the way the canvas showed them, for a bug report; `rasterToPng(image)` encodes any `RasterImage` as a PNG `Blob`. It is built on `renderSceneToPixels`, which gains an `overlay` option: commands drawn over the scene in output-pixel space. `buildDebugOverlayCommands` exposes the overlay's commands for a snapshot.
+- 27bcf57: Every op factory's argument type can now be imported by name from `@weasel-js/core`: `InsertArgs`, `DeleteArgs`, `TransformArgs`, `ReparentArgs`, `SetDataArgs`, `SetLayerArgs`, `SetPathArgs`, `SetTextArgs`, `SetSelectionArgs`, `ReorderArgs` and `MoveToIndexArgs`, with the shapes they reference, `SiblingSlot`, `PlacedNode` and `ReorderRestoreEntry`. Core also exports `KeyBinding` (the parameter of `matchesKeyBinding`), `rangeWeight` and `unboldPatch`. `@weasel-js/diagram` exports `ForceBody`, the element type of `ForceRelaxation.bodies`.
+  
+  The default align, distribute, boolean and edit icons are now marked `@experimental` on each component; the tag had sat on a file header where it marked nothing.
+  
+  Breaking: `DispatcherViewTarget` and `ViewIdResolver` are off `@weasel-js/routing/react`. They moved to `@weasel-js/routing/internal`, which is not public API. `rectsEqual` is off `@weasel-js/labkit/surface`.
+- ae6e8ac: A touch or pen long-press now shows that it is registering. While a press is
+  held and some binding would fire on it — a `longPress` binding, or a
+  `contextMenu` one through the fallback — `<SceneCanvas>` draws a ring in the
+  theme accent that fills around the press point over the hold. It appears
+  after 120ms, so a tap shows nothing, and disappears when the press fires,
+  moves past the drag threshold, lifts or is canceled. Under
+  `prefers-reduced-motion` it is a static ring. A press nothing is bound to
+  shows nothing. When the long-press fires and a binding handles it, touch and
+  pen pointers get a short `navigator.vibrate` pulse where the API exists.
+  
+  Additive. `<SceneCanvas longPress={{ feedback, haptics, duration }}>` controls
+  it: `feedback: false` turns the ring off, a `SurfaceContribution` replaces it,
+  `haptics: false` turns off the pulse, and `duration` sets the hold time
+  (default `LONG_PRESS_MS`, 500ms). Under a `tools` takeover, add
+  `createLongPressFeedbackContribution()` to your own ambient entries.
+  
+  The press being held is observable state: the `longPress` dep is a
+  `LongPressState` whose `get()` returns where the press landed (client,
+  canvas-local and world), the view it routed to, when it started, its duration
+  and whether it is `armed`, and whose `progress()` returns 0→1.
+  `useGestureDispatcher` takes the same controls as `longPress: { state,
+  haptics, duration }`, with `createLongPressStore()` making the state. New
+  exports: `createLongPressStore`, `LONG_PRESS_MS`, `PendingLongPress`,
+  `LongPressState`, `LongPressStore`, `LongPressOptions`,
+  `createLongPressFeedbackContribution`, `LongPressFeedbackOptions`,
+  `LONG_PRESS_FEEDBACK_ID`, `SceneCanvasLongPress`.
+- d175c0c: New package `@weasel-js/react`: generic React hooks with no weasel domain in
+  them, at the bottom of the package stack so every React-using package can reach
+  them. It holds `useLatest` and `useStableByContent` (with its `sameList`
+  comparator), which keeps one identity for a value rebuilt equal every render,
+  compared only against what last committed.
+  
+  `@weasel-js/routing/react` no longer exports `useLatest`; import it from
+  `@weasel-js/react`, or from `@weasel-js/core` as before. No released version of
+  routing carried it, so nothing published breaks. `react` is an optional peer
+  of `@weasel-js/react`, as it is of routing and theme, so installing routing for
+  its React-free main entry still brings no React.
+- 3755e17: Refs that event handlers, timers and message listeners read no longer hold
+  what an abandoned concurrent render computed. The gesture dispatcher,
+  `useDepSource`, `useOngoingAction`, `ActionsProvider`, `useTools`,
+  `useContributions`, the ui components with drag or dismissal handlers
+  (`Callout`, `CurveEditor`, `LayerList`, `ResizeHandle`, `Timeline`'s graph
+  lane), `useAsyncOptions`, `useReorderDragList`, forge's trial shell and
+  `useLiveLayout` now publish their latest props on commit only.
+  
+  `ContributionsApi` is now rebuilt from each render's entries instead of reading
+  them through a ref, so its `entries`, `overlays()` and `scopedBindings()` answer
+  correctly when read during render. Its identity is kept while the entry list
+  holds the same entries, and changes when an entry is added, removed or
+  replaced — a consumer building its entry objects inline every render now gets a
+  new API object each render.
+  
+  Because a dep source now publishes on commit, `ActionBar` re-checks each
+  action's `enabled` after it commits and re-renders if a dep changed in the same
+  render.
+- 63d0ece: Picking and selection chrome now hold their screen-pixel sizes exactly under
+  non-uniform zoom, rotated nodes included. Before, both divided by the mean of
+  the two axis scales, so at 4:1 a 4px pick slop was 8px on one axis and 2px on
+  the other, and on a turned node the selection outline, handles and rotate
+  badge were drawn as a rotated screen rectangle beside the parallelogram the
+  node actually painted.
+  
+  - `<SceneCanvas>` picks within `pickTolerancePx` of a node measured on screen.
+    `strokeHitTest` takes a `slop: { px, transform }` for this, and
+    `shapeCoversPoint`'s `tolerance` accepts `{ px, scale }` alongside a world
+    number.
+  - The selection outline traces the node's projected corners, handles sit on
+    them, and the rotate badge sits its `distance` in pixels off the top edge,
+    along that edge's normal as it lands on screen. `rotationHandle` takes the
+    view's `scale` to do this and now also returns the badge's screen `angle`;
+    `standoff` (exported) is the placement both it and the grab
+    region use.
+  - A painted rotate badge is grabbable where it is drawn:
+    `createRotationAffordance` takes `handle: { distancePx, hitRadiusPx }`, and
+    `<SceneCanvas>` / `<CanvasView>` turn it on when the selection overlay
+    paints one. An affordance `point` region takes a `standoff` for chrome that
+    floats a fixed distance off an edge.
+  - The rotate ring's minimum band, and its paint inset, are measured on screen
+    for a turned target (`pxExtent` and `annulusSemiAxes` take a rotation).
+  - Grid lines stay 1px on screen on both axes.
+  - Resize handles on a turned target are grabbable across the turned square
+    they are painted as, not a screen-aligned one. A `point` region takes
+    `turned: true` for this; `pointRegionFrame` is the one placement the
+    hit-test, the region's square paint and the debug hitbox all read, and
+    `screenAngleOf` the one angle the overlay turns its handles by.
+  - The `debug.slops` overlay draws the regions the hit-test walks — the same
+    affordance list, each region's square from `pointRegionFrame` — instead of
+    recomputing corner and anchor positions, so it now shows a custom
+    `selectTool.handleHitRadius`, turned handles, and anchors on every selected
+    path the hit-test offers them on.
+  - The hitbox debug overlay draws a world circle as the ellipse it lands as, a
+    rotated rect turned, and the new `polygon` `HitShape` a point region now
+    records.
+- Updated dependencies [d175c0c]
+- Updated dependencies [4cef954]
+  - @weasel-js/react@1.7.1
+  - @weasel-js/cursor@1.7.1
+  - @weasel-js/gestures@1.7.1
+  - @weasel-js/history@1.7.1
+  - @weasel-js/modes@1.7.1
+
 ## 1.7.0
 
 ### Patch Changes

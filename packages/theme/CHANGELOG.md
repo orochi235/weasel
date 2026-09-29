@@ -1,5 +1,17 @@
 # @weasel-js/theme
 
+## 1.7.1
+
+### Patch Changes
+
+- e54ff4f: Every density is larger. The UI base size is 13px under `compact`, 15px under `comfortable` (the default) and 18px under `roomy`, up from 11, 13 and 15, so the small step a sidebar row reads goes from 11px to 13px by default. Control, toolbar and icon-button heights moved with the text: `compact` takes the old `comfortable` sizes, `comfortable` the old `roomy` ones, and `roomy` grows to match its 18px base. Any consumer that sized chrome against the old defaults gets bigger chrome.
+- 1291788: `TOKEN_MANIFEST` lists `--wzl-detail-figure-min-width`, the override hook that sets the least width of a figures `DetailList`'s value column.
+- e775a12: Add `--wzl-font-numeric` and the `Oswald Tabular` face behind it. Oswald has no tabular figures, so `font-variant-numeric: tabular-nums` aligned nothing in the UI face. `Oswald Tabular` is Oswald's ten digits alone, each centered in the widest digit's width at every weight from 200 to 700, plus a figure space (U+2007) of that width; the token puts it in front of `--wzl-font-ui`, so an element set in `--wzl-font-numeric` gets equal-width digits and every other character from the UI face unchanged. `faces.css` declares the new face, and labkit's `dist/fonts` picks up the file.
+  
+  The readouts, counts and tick labels in Slider, RangeSlider, Jog, Timeline, Plot2D, Prefs and TokenPanel, labkit's zoom readout and job count, and forge's a11y and info panels now use it. `DetailList`'s figures mode moves from `--wzl-font-mono` to it, keeping the list in the UI face.
+- Updated dependencies [365c762]
+  - @weasel-js/paint@1.7.1
+
 ## 1.7.0
 
 ### Patch Changes

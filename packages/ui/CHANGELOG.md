@@ -1,5 +1,258 @@
 # @weasel-js/ui
 
+## 1.7.1
+
+### Patch Changes
+
+- e54ff4f: Every density is larger. The UI base size is 13px under `compact`, 15px under `comfortable` (the default) and 18px under `roomy`, up from 11, 13 and 15, so the small step a sidebar row reads goes from 11px to 13px by default. Control, toolbar and icon-button heights moved with the text: `compact` takes the old `comfortable` sizes, `comfortable` the old `roomy` ones, and `roomy` grows to match its 18px base. Any consumer that sized chrome against the old defaults gets bigger chrome.
+- db79658: `SelectionPanel` reads and writes an encoded field of an object leaf against each node's own object. Two strokes at different widths that are both dashed now show Dashed, and choosing Dotted writes each one an array scaled by its own width, where before the panel showed no style and wrote one array computed for no width into both.
+  
+  `PropertyRenderContext` gains `each` (the value each selected node holds at the path) and, for a field of an object leaf, `eachSiblings` (each node's own object); `update`'s callback now also receives that node's object. A consumer that builds a `PropertyRenderContext` by hand must now supply `each`.
+- b2fd89a: geom adds `boxContainsBox(outer, inner)`, the edge-inclusive test for one box
+  wholly holding another. Core's region hit test, labkit's `fracEncloses`,
+  `fracContains` and drop-over-canvas check, and labkit's internal point bounds now
+  go through geom's box functions instead of their own copies. labkit's `WorldRect`
+  is now an alias of geom's `Rect`, which has the same shape. Badge's
+  `ChamferedRect` base uses the shared `polygonSampler` rather than a copy of it.
+- 251fb64: Mesh gradients get on-canvas handles. `MeshHandles` (`@weasel-js/ui`) draws every patch corner, edge control and tensor interior point over the patch outlines, previews through `onInput` and commits once per drag; dragging a corner carries its controls, and points two patches share move as one handle so the seam does not tear. `SceneGradientHandles` now shows them for a node whose slot holds a mesh, committing through `setFill` / `setStroke` in the bounds frame like the three gradients. The geometry is public on `@weasel-js/core/mesh` as `meshHandles`, `moveMeshHandle` and `meshGuides`. Additive; `GradientHandles`' behavior is unchanged.
+- 9bfdda9: **Breaking:** the mesh-gradient exports moved off `@weasel-js/core` onto a new
+  subpath, `@weasel-js/core/mesh`: `MESH_GRADIENT_KIND`, `MESH_BAKE_SIZE`,
+  `bakeMesh`, `cornerWeights`, `evalPatch`, `isMeshGradientFill`,
+  `isTensorPatch`, `isValidPatch`, `meshBounds`, `meshFromStops`,
+  `meshGradientXml`, `meshStops`, `patchBounds`, `patchCorner`, `seedMeshPatch`,
+  and the types `BakedMesh`, `MeshBox`, `MeshGradientFill`, `MeshPatch` and
+  `MeshPoint`. Change the import path; nothing else about them changed. Any
+  import from the subpath registers the kind, as importing them from the root
+  did.
+  
+  With esbuild and code splitting on, importing one symbol from
+  `@weasel-js/core` no longer ships the mesh paint: `import { asNodeId }`
+  bundled to 19,814 B and now bundles to 133 B. The lazily loaded mesh kind now
+  ships as one self-contained file that shares no module with the root barrel,
+  which is what esbuild needed.
+  
+  New: a `PaintKindEntry` can declare its shader programs as `programs`, keyed
+  by program id; registering the kind registers them, and re-registering the
+  same source is not a duplicate. New root type export: `ProgramSource`.
+- e775a12: Add `--wzl-font-numeric` and the `Oswald Tabular` face behind it. Oswald has no tabular figures, so `font-variant-numeric: tabular-nums` aligned nothing in the UI face. `Oswald Tabular` is Oswald's ten digits alone, each centered in the widest digit's width at every weight from 200 to 700, plus a figure space (U+2007) of that width; the token puts it in front of `--wzl-font-ui`, so an element set in `--wzl-font-numeric` gets equal-width digits and every other character from the UI face unchanged. `faces.css` declares the new face, and labkit's `dist/fonts` picks up the file.
+  
+  The readouts, counts and tick labels in Slider, RangeSlider, Jog, Timeline, Plot2D, Prefs and TokenPanel, labkit's zoom readout and job count, and forge's a11y and info panels now use it. `DetailList`'s figures mode moves from `--wzl-font-mono` to it, keeping the list in the UI face.
+- 53cdd41: New hooks `usePaintKinds()`, `useGradientKinds()` and `usePaintKind(id)` read
+  the paint-kind registry and re-render when a kind is registered or removed.
+  `PaintInput`, `GradientEditor` and `PaintField` use them, so a kind registered
+  after they mount — a consumer's own, or one arriving through
+  `registerPaintKindLoader` such as the lazily loaded mesh gradient — shows in the
+  kind bar and gets its label and editor without waiting for an unrelated
+  re-render. `listPaintKinds()` and `listGradientKinds()` now return the same
+  array until the registry changes.
+  
+  `<Canvas>` no longer acts on a render React abandoned: a `startTransition`
+  that suspends used to leave its layers, size, controlled `view`, paint target,
+  layer helpers (and the consumer's `helpersRef`), preview extras and event
+  callbacks such as `onViewChange` behind, for the next redraw, hit test or
+  pointer event to use. `<CanvasView>`, `<SceneViewCanvas>`, the preview-ghost
+  and dispatcher-overlay layers, and `<SceneCanvas>`'s `view` dep under a
+  controlled `view` get the same treatment. A `syncPaint` redraw requested from a layout
+  effect that runs before the canvas's own — an earlier sibling's — now paints
+  that commit's inputs rather than bailing until the canvas's effect ran.
+- 30b7fd3: `PaintInput` now shows an opacity slider under a gradient, mesh, pattern or registered kind's editor, writing the paint's `opacity`. It is the same slider a solid's swatch carries, so an opacity set anywhere else on a non-solid paint now shows in the panel and can be edited back.
+- 365c762: A pattern paint takes a `transform`: the tile's rotation, scale and skew about
+  its `origin`, as a `PatternTransform` `[a, b, c, d]` in SVG `matrix()` order.
+  `composePatternTransform({ rotation, scaleX, scaleY, skewX })` builds one and
+  `decomposePatternTransform` reads one back into those parts; both are exported
+  from `@weasel-js/paint` and `@weasel-js/core`. The GL renderer samples the tile
+  through it, and a transform with no inverse draws nothing.
+  
+  `@weasel-js/svg` writes the transform as `patternTransform="matrix(…)"`, with
+  the origin as its translation, and reads any `patternTransform` list back into
+  `origin` and `transform`.
+  
+  `PatternPicker` (and so `PaintInput`'s pattern mode) has a Rotation field that
+  edits the rotation and leaves scale and skew alone; picking another tile keeps
+  the rotation.
+  
+  Additive: a paint without `transform` paints and serializes as before.
+- d30a675: `PrefsDialog` in `layout="rail"` now scrolls its pane with no height from the
+  consumer. The pane is held to the modal's `max-height` and scrolls inside it,
+  and clicking a rail subentry scrolls the pane to that section. Before this fix
+  the pane grew to fit every row, the dialog cut it off, and subentry clicks did
+  nothing. A consumer height on `dialogClassName` still sets the size, so a
+  workaround like `block-size: min(88vh, 44rem)` can stay or go. This is a fix
+  only: no API changes.
+- 0a9b769: `PrefsForm` (and so `PrefsDialog`) takes `subPages` in the rail layout. A nested
+  rail entry then opens a page of its own group instead of scrolling the open one
+  to it, and a top-level entry's page holds only its own leaves, or opens its
+  first nested entry when it has none. Off by default.
+- 3755e17: Refs that event handlers, timers and message listeners read no longer hold
+  what an abandoned concurrent render computed. The gesture dispatcher,
+  `useDepSource`, `useOngoingAction`, `ActionsProvider`, `useTools`,
+  `useContributions`, the ui components with drag or dismissal handlers
+  (`Callout`, `CurveEditor`, `LayerList`, `ResizeHandle`, `Timeline`'s graph
+  lane), `useAsyncOptions`, `useReorderDragList`, forge's trial shell and
+  `useLiveLayout` now publish their latest props on commit only.
+  
+  `ContributionsApi` is now rebuilt from each render's entries instead of reading
+  them through a ref, so its `entries`, `overlays()` and `scopedBindings()` answer
+  correctly when read during render. Its identity is kept while the entry list
+  holds the same entries, and changes when an entry is added, removed or
+  replaced — a consumer building its entry objects inline every render now gets a
+  new API object each render.
+  
+  Because a dep source now publishes on commit, `ActionBar` re-checks each
+  action's `enabled` after it commits and re-renders if a dep changed in the same
+  render.
+- 7b7ca3c: `useRovingTabIndex` now finds its items in the DOM and writes their `tabIndex` itself, so it serves a container of arbitrary children as well as a data-driven bar, and labkit's `Toolbar`, `PaletteRegion` and `ViewportRegion` use it in place of labkit's private copy. Attach `rootRef` and `onKeyDown` to the container; the items take neither. Options: `itemSelector` (default `'button, [role="button"]'`), `orientation` (`'horizontal'`, `'vertical'` or the default `'both'`; a one-axis bar leaves the cross-axis arrows to the page), `tabStopIndex`, `onNavigate`, `onActivate`. The tab stop now follows focus, so Shift+Tab leaves a bar instead of landing back on its stop, and a bar with `tabStopIndex` returns the stop there once focus leaves. `aria-disabled="true"` items are skipped like `disabled` ones, an arrow pressed in a non-item control inside the container (a slider, a field) is left to that control, and a roving container nested in another keeps its own items. Breaking: `items`, `itemClassName`, `tabIndexFor` and the per-item `onKeyDown(index)` are gone, and `RovingItem` is replaced by `RovingOrientation`.
+  
+  `ToolButton` drops its `tabbable` and `onKeyDown` props: the toolbar's roving
+  hook sets `tabIndex` and handles the keys, and a `ToolButton` outside a
+  toolbar is now an ordinary focusable button instead of one left out of the tab
+  order by default.
+- 16a0476: Text runs carry a numeric weight. `StyledRun.fontWeight` (100–900) overrides the node's weight and the `bold` flag, which is now a preset over it: writing either one to a range drops the other. `numericWeight` and `isBoldWeight` (600 and up) are exported as the one reading of a weight.
+  
+  Taking bold off part of a bold node now writes `fontWeight: 400` over that part and leaves the node alone, instead of lowering the node and re-bolding the rest — so it works at any node weight, including 900, where it used to be refused. `SetFlagResult.applied` is gone, since the edit can no longer be declined. `effectiveRangeStyle` reports the `fontWeight` that renders and reads `bold` off it; `patchRangeStyle` lays an armed style over a range the way a write would.
+  
+  `listFontWeights(family)` in `@weasel-js/font` reports the weights a family has on the atlas and outline tiers. A new `font-weight` pref kind draws `FontWeightSelect`, which lists those weights (the nine CSS weights for a family with none on file) and reads the family from the `fontFamily` leaf beside it. The text tool's character options and the node panel's Weight field both use it. The overlay and SVG round-trip a run's weight; a tspan `font-weight` other than 700 now reads as the run's weight rather than being dropped.
+- 56d1ffb: `ButtonBar` and `OptionsBar` pick up three layout fixes `ToggleBar` already
+  had. Segments no longer collapse or clip their labels in a squeezed row, or
+  when one label is longer than the others; a tooltip on an end segment no longer
+  squares off its end cap; and an icon-only segment pads its glyph by 5px a side
+  (3px at `size="sm"`) instead of the text padding. Their `height` prop, which
+  had no effect, now sets the bar's height the way it does on `ToggleBar`.
+  Not breaking, but bars with a long label or an icon now render at a different
+  width than before.
+- c2935fa: A select draws an option's icon beside its label, in the trigger and in the list.
+  `SelectOption` and `SelectItem` take a new `icon`, and an enum field drawn as a
+  select passes it the option's `glyph` when that is drawn rather than a letter —
+  so a labkit `ConfigOption` with an `icon` now shows it in a select as a
+  segmented row already did.
+- ee93ce5: `Checkbox` now draws its box from a native `<input type="checkbox">`, skinned by the same stylesheet as `PropertyField`'s checkbox rows, instead of a React Aria checkbox with a painted `<span>`. It keeps the props callers use (`isSelected`, `defaultSelected`, `onChange`, `isIndeterminate`, `isDisabled`, `isReadOnly`, `isInvalid`, `isRequired`, `name`, `value`, `id`, `aria-*`), but no longer accepts React Aria-only ones such as `validate`, `slot` or `inputRef`. The property-row checkmark now matches `Checkbox`'s, a slightly thinner stroke than before, and an invalid box shows the danger border in both places.
+- 6010b5a: `Input`, `Select`, `NumberField`, `UnitField`, `ComboBox`, `MenuButton`'s trigger and `ListEditor`'s inputs now draw their box and form-row layout from one shared stylesheet, which `Field` and `fieldClasses` also use, instead of six copies. `ComboBox` gains `orientation="row"`, setting its label beside the field as the others do.
+  
+  Where the copies had drifted, they now agree: `Select` and `MenuButton` follow a container's `--wzl-field-h` like the other fields (`--wzl-select-h` still wins on a `Select`), `ListEditor`'s inputs animate their focus ring and set `line-height: 1`, and `NumberField` colors its placeholder like the others.
+- ad143ec: `MenuButton`, `Select`, `ComboBox` and `PaintField` now draw their popover surface from one shared stylesheet instead of four copies. Computed styles are unchanged.
+- 897fb47: Add `SwatchStrip`, a recently-used row over a preset palette, and the recent-colors store behind it. Additive: nothing changes outside a provider.
+  
+  - `createRecentColorsStore({ limit, storage, key })` keeps the colors most recent first, deduped by color rather than spelling and capped at 12 by default. It persists to `localStorage` unless given another `storage` or `null`, and every storage access is guarded, so a blocked or full storage leaves a working in-memory list.
+  - `<RecentColorsProvider store>` turns recording on for the pickers beneath it: `ColorField` (and so `PaintInput`, `PaintField`, `GradientEditor` stops and `MeshEditor` corners), `SwatchGrid` and `FillStrokeSwatch` record what they commit. `useRecentColors` reads the list; `useRecordRecentColor` lets a custom picker join in.
+  - `<SwatchStrip>` shows the recents and one of its `palettes`, with a picker when there is more than one. `BUILTIN_PALETTES` holds `STANDARD_PALETTE` and `BASIC_PALETTE`; a consumer passes its own list. Recent swatches are named by their color, for example "#ff0000, 50% opacity" (`describeColor`).
+- 3a68365: Add justified text. `TextAlign` gains `'justify'`: every line that wraps is
+  spread across the box by widening its word gaps equally, and a paragraph's last
+  line, or a line with no gap, sits at the start edge. `resolveAlign` maps
+  `justify` to that start edge. `LayoutRunsOpts.justify` and
+  `TextDrawCommand.justify` carry justification apart from the edge, so
+  `justify: true` with `align: 'center'` centers the last lines instead (CSS
+  `text-align-last`). The edit overlay sets `text-align: justify` and pins
+  `text-align-last` to the same edge, and the property panel's Align bar gets a
+  Justify segment with a new `textAlignJustify` icon. SVG export writes a
+  justified node at its start edge and records `data-weasel-align="justify"`,
+  which the reader turns back into `align: 'justify'`.
+  
+  This is additive. Code that switches over `TextAlign` exhaustively has a new
+  value to handle.
+- 21c21dc: `ToastRegion` takes a `portalContainer`, and follows an `OverlayPortalProvider`,
+  like the other overlays. Given a container, the stack renders inside it,
+  absolutely positioned in the container's corner, so a toast raised in a forge
+  trial stays in that trial; the container must be a containing block. With
+  neither, the region is fixed to the viewport corner exactly as before — it does
+  not follow the nearest themed ancestor, since that is usually a page-tall app
+  root. A contained region is not an F6 landmark; its toasts announce, dismiss,
+  pause on hover and focus, and return focus the same way. Additive.
+  
+  forge's Toast story no longer renders in its own frame, and
+  `check:forge-isolate` now allows one isolated story.
+- Updated dependencies [6f59206]
+- Updated dependencies [716ea36]
+- Updated dependencies [2d7003a]
+- Updated dependencies [e17fe2c]
+- Updated dependencies [f457e7c]
+- Updated dependencies [8635031]
+- Updated dependencies [276bad1]
+- Updated dependencies [efc5727]
+- Updated dependencies [108551d]
+- Updated dependencies [a5bc201]
+- Updated dependencies [4e18c9f]
+- Updated dependencies [112c781]
+- Updated dependencies [ac2e76e]
+- Updated dependencies [9c164e2]
+- Updated dependencies [85d62a7]
+- Updated dependencies [dfd926f]
+- Updated dependencies [3d80c9f]
+- Updated dependencies [a1ecaac]
+- Updated dependencies [886fefd]
+- Updated dependencies [04b0b96]
+- Updated dependencies [e54ff4f]
+- Updated dependencies [1291788]
+- Updated dependencies [27bcf57]
+- Updated dependencies [a7f2103]
+- Updated dependencies [edabd62]
+- Updated dependencies [7be3713]
+- Updated dependencies [b2fd89a]
+- Updated dependencies [4212d2d]
+- Updated dependencies [12263bc]
+- Updated dependencies [b5cc59f]
+- Updated dependencies [e2f1968]
+- Updated dependencies [1524403]
+- Updated dependencies [bfc4b21]
+- Updated dependencies [f046160]
+- Updated dependencies [9f83b33]
+- Updated dependencies [3c1def2]
+- Updated dependencies [ae6e8ac]
+- Updated dependencies [4b570e5]
+- Updated dependencies [251fb64]
+- Updated dependencies [9bfdda9]
+- Updated dependencies [e775a12]
+- Updated dependencies [b554ee0]
+- Updated dependencies [702829d]
+- Updated dependencies [9cad63b]
+- Updated dependencies [b228015]
+- Updated dependencies [53cdd41]
+- Updated dependencies [33b7ac2]
+- Updated dependencies [fa67cbf]
+- Updated dependencies [8f68fa8]
+- Updated dependencies [25448ee]
+- Updated dependencies [88c1ae3]
+- Updated dependencies [dcc9834]
+- Updated dependencies [365c762]
+- Updated dependencies [51eb721]
+- Updated dependencies [941e941]
+- Updated dependencies [b20df31]
+- Updated dependencies [55ef61f]
+- Updated dependencies [712de19]
+- Updated dependencies [67d95c8]
+- Updated dependencies [8a68b6c]
+- Updated dependencies [16a0476]
+- Updated dependencies [6f03bf7]
+- Updated dependencies [72379f6]
+- Updated dependencies [7f7d153]
+- Updated dependencies [d9cdff1]
+- Updated dependencies [63d0ece]
+- Updated dependencies [f8bde12]
+- Updated dependencies [685a086]
+- Updated dependencies [90a4686]
+- Updated dependencies [7e08265]
+- Updated dependencies [d60a422]
+- Updated dependencies [dde2315]
+- Updated dependencies [4cb55b7]
+- Updated dependencies [fb21799]
+- Updated dependencies [2399cd2]
+- Updated dependencies [513c5a7]
+- Updated dependencies [8e5bcae]
+- Updated dependencies [fe9a91e]
+- Updated dependencies [3a68365]
+- Updated dependencies [43ad590]
+- Updated dependencies [4cef954]
+- Updated dependencies [c4cc60f]
+- Updated dependencies [6df279e]
+- Updated dependencies [09ff2c1]
+- Updated dependencies [637945e]
+- Updated dependencies [5308126]
+  - @weasel-js/core@1.7.1
+  - @weasel-js/font@1.7.1
+  - @weasel-js/theme@1.7.1
+  - @weasel-js/svg@1.7.1
+  - @weasel-js/quantity@1.7.1
+  - @weasel-js/modes@1.7.1
+
 ## 1.7.0
 
 ### Patch Changes

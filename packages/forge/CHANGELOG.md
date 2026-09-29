@@ -1,5 +1,149 @@
 # @weasel-js/forge
 
+## 1.7.1
+
+### Patch Changes
+
+- 011dd4d: A story in the workshop no longer loses its state on the first press. That press focuses the trial, which re-renders the lab, and forge called the story's `render` again each time; a story declaring a component inside `render` got a new component type and remounted, so the Dialog story's "Open dialog" opened nothing and the first edit in a story was dropped. `render` now runs again only when the story's config, state or globals change, as in Storybook.
+- 58a2eac: `forgeTest` now points vite's dependency scan at the story files, the frame config and forge's own test runtime, as the workshop plugin already did. The imports it appends to each story file are invisible to the scan, so on a cold cache vite discovered `react-dom/client` mid-run, re-optimized and reloaded the test page, and every story in the first file failed with "Invalid hook call".
+- e775a12: Add `--wzl-font-numeric` and the `Oswald Tabular` face behind it. Oswald has no tabular figures, so `font-variant-numeric: tabular-nums` aligned nothing in the UI face. `Oswald Tabular` is Oswald's ten digits alone, each centered in the widest digit's width at every weight from 200 to 700, plus a figure space (U+2007) of that width; the token puts it in front of `--wzl-font-ui`, so an element set in `--wzl-font-numeric` gets equal-width digits and every other character from the UI face unchanged. `faces.css` declares the new face, and labkit's `dist/fonts` picks up the file.
+  
+  The readouts, counts and tick labels in Slider, RangeSlider, Jog, Timeline, Plot2D, Prefs and TokenPanel, labkit's zoom readout and job count, and forge's a11y and info panels now use it. `DetailList`'s figures mode moves from `--wzl-font-mono` to it, keeping the list in the UI face.
+- 3755e17: Refs that event handlers, timers and message listeners read no longer hold
+  what an abandoned concurrent render computed. The gesture dispatcher,
+  `useDepSource`, `useOngoingAction`, `ActionsProvider`, `useTools`,
+  `useContributions`, the ui components with drag or dismissal handlers
+  (`Callout`, `CurveEditor`, `LayerList`, `ResizeHandle`, `Timeline`'s graph
+  lane), `useAsyncOptions`, `useReorderDragList`, forge's trial shell and
+  `useLiveLayout` now publish their latest props on commit only.
+  
+  `ContributionsApi` is now rebuilt from each render's entries instead of reading
+  them through a ref, so its `entries`, `overlays()` and `scopedBindings()` answer
+  correctly when read during render. Its identity is kept while the entry list
+  holds the same entries, and changes when an entry is added, removed or
+  replaced — a consumer building its entry objects inline every render now gets a
+  new API object each render.
+  
+  Because a dep source now publishes on commit, `ActionBar` re-checks each
+  action's `enabled` after it commits and re-renders if a dep changed in the same
+  render.
+- 21c21dc: `ToastRegion` takes a `portalContainer`, and follows an `OverlayPortalProvider`,
+  like the other overlays. Given a container, the stack renders inside it,
+  absolutely positioned in the container's corner, so a toast raised in a forge
+  trial stays in that trial; the container must be a containing block. With
+  neither, the region is fixed to the viewport corner exactly as before — it does
+  not follow the nearest themed ancestor, since that is usually a page-tall app
+  root. A contained region is not an F6 landmark; its toasts announce, dismiss,
+  pause on hover and focus, and return focus the same way. Additive.
+  
+  forge's Toast story no longer renders in its own frame, and
+  `check:forge-isolate` now allows one isolated story.
+- Updated dependencies [6f59206]
+- Updated dependencies [716ea36]
+- Updated dependencies [2d7003a]
+- Updated dependencies [e17fe2c]
+- Updated dependencies [3cfb09a]
+- Updated dependencies [f457e7c]
+- Updated dependencies [8635031]
+- Updated dependencies [276bad1]
+- Updated dependencies [efc5727]
+- Updated dependencies [108551d]
+- Updated dependencies [a5bc201]
+- Updated dependencies [4e18c9f]
+- Updated dependencies [112c781]
+- Updated dependencies [ac2e76e]
+- Updated dependencies [9c164e2]
+- Updated dependencies [85d62a7]
+- Updated dependencies [dfd926f]
+- Updated dependencies [3d80c9f]
+- Updated dependencies [a1ecaac]
+- Updated dependencies [886fefd]
+- Updated dependencies [04b0b96]
+- Updated dependencies [e54ff4f]
+- Updated dependencies [1291788]
+- Updated dependencies [27bcf57]
+- Updated dependencies [db79658]
+- Updated dependencies [a7f2103]
+- Updated dependencies [b2fd89a]
+- Updated dependencies [4212d2d]
+- Updated dependencies [12263bc]
+- Updated dependencies [b5cc59f]
+- Updated dependencies [e2f1968]
+- Updated dependencies [1524403]
+- Updated dependencies [bfc4b21]
+- Updated dependencies [f046160]
+- Updated dependencies [9404457]
+- Updated dependencies [dcba7ff]
+- Updated dependencies [3af4a23]
+- Updated dependencies [1ffa044]
+- Updated dependencies [65d6278]
+- Updated dependencies [27350a1]
+- Updated dependencies [9f83b33]
+- Updated dependencies [3c1def2]
+- Updated dependencies [ae6e8ac]
+- Updated dependencies [4b570e5]
+- Updated dependencies [251fb64]
+- Updated dependencies [9bfdda9]
+- Updated dependencies [e775a12]
+- Updated dependencies [b554ee0]
+- Updated dependencies [702829d]
+- Updated dependencies [9cad63b]
+- Updated dependencies [b228015]
+- Updated dependencies [53cdd41]
+- Updated dependencies [33b7ac2]
+- Updated dependencies [30b7fd3]
+- Updated dependencies [fa67cbf]
+- Updated dependencies [8f68fa8]
+- Updated dependencies [25448ee]
+- Updated dependencies [88c1ae3]
+- Updated dependencies [dcc9834]
+- Updated dependencies [365c762]
+- Updated dependencies [d30a675]
+- Updated dependencies [0a9b769]
+- Updated dependencies [941e941]
+- Updated dependencies [b20df31]
+- Updated dependencies [55ef61f]
+- Updated dependencies [3755e17]
+- Updated dependencies [712de19]
+- Updated dependencies [67d95c8]
+- Updated dependencies [8a68b6c]
+- Updated dependencies [7b7ca3c]
+- Updated dependencies [16a0476]
+- Updated dependencies [6f03bf7]
+- Updated dependencies [72379f6]
+- Updated dependencies [7f7d153]
+- Updated dependencies [d9cdff1]
+- Updated dependencies [63d0ece]
+- Updated dependencies [56d1ffb]
+- Updated dependencies [c2935fa]
+- Updated dependencies [f8bde12]
+- Updated dependencies [685a086]
+- Updated dependencies [ee93ce5]
+- Updated dependencies [6010b5a]
+- Updated dependencies [ad143ec]
+- Updated dependencies [90a4686]
+- Updated dependencies [7e08265]
+- Updated dependencies [d60a422]
+- Updated dependencies [dde2315]
+- Updated dependencies [4cb55b7]
+- Updated dependencies [fb21799]
+- Updated dependencies [fe9a91e]
+- Updated dependencies [897fb47]
+- Updated dependencies [3a68365]
+- Updated dependencies [43ad590]
+- Updated dependencies [21c21dc]
+- Updated dependencies [4cef954]
+- Updated dependencies [c4cc60f]
+- Updated dependencies [6df279e]
+- Updated dependencies [70a058f]
+- Updated dependencies [09ff2c1]
+- Updated dependencies [637945e]
+- Updated dependencies [5308126]
+  - @weasel-js/core@1.7.1
+  - @weasel-js/labkit@1.7.1
+  - @weasel-js/theme@1.7.1
+  - @weasel-js/ui@1.7.1
+
 ## 1.7.0
 
 ### Patch Changes

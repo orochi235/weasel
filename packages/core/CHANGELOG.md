@@ -1,5 +1,769 @@
 # Changelog
 
+## 1.7.1
+
+### Patch Changes
+
+- 6f59206: The `align.*` actions take a `to` param and `flip` takes new `pivot` values,
+  naming what the selection lines up against: `'union'` (the selection itself —
+  align's default), `'pointer'` (the click's world point, else the `pointer`
+  dep's latest position), a world point or rect `{ x, y, width?, height? }`, or a
+  key node `{ node: id }`. Bind `{ to: 'pointer' }` to a key and the selection
+  aligns to wherever the cursor is. `useAlign`'s `align(edge, to?)` takes the same
+  reference. New exports: `AlignReference`, `alignTargetBounds`,
+  `SpatialReference`, `SpatialReferenceSources`, `resolveSpatialReference`,
+  `FlipAxis`, `FlipPivot`.
+  
+  The align actions are now enabled with one item selected, since any reference
+  but `'union'` can align a single item; with `'union'` and one item they do
+  nothing, as before.
+- 716ea36: `alignResizeBehavior` now snaps a rotated node by where its corners are drawn.
+  Before, it matched the node's unrotated box, so on a rotated node it snapped to
+  lines nothing visible was near and missed the ones the handle was on. A corner
+  handle now snaps the dragged corner to guides on both world axes; an edge
+  handle slides its edge along the node until one of its two corners meets a
+  guide. Unrotated nodes snap exactly as before.
+  
+  It takes an optional `poseDescriptor` (its options are now `AlignMoveArgs`),
+  used to read the node's box and rotation; pass the same one the resize action
+  uses when your poses are not rect-shaped.
+- 2d7003a: Layout reflow can animate. `useAnimatedReflow(scene, animator, { ms, easing } | { spring })` returns a `ReflowTransition`; pass it to `<SceneCanvas reflowTransition>` (or set `LayoutDep.reflow`) and the siblings a drag's layout reflow displaces glide to their slots through the animator instead of snapping. Each node's glide runs under the cancel-key `reflow:<id>`, so a new target mid-glide interrupts the old one and continues from the pose on screen; when a sibling stops reflowing, or the drag commits or cancels, it glides onto its document pose and its override is dropped. Glides are published through the scene's pose overrides, so the document and undo history are untouched. `null` turns it off. `createReflowTransition` is the non-hook form. Additive.
+- e17fe2c: Add animator observability. `animator.watch(listener)` delivers a lifecycle event for every animation the animator runs — `start`, `end`, `cancel`, and `interrupt` when a new animation claims a `cancelKey` — plus a timeline's `lap`s and its event-track crossings at any nesting depth, each carrying the animation's id, kind, cancel-key and label. `animator.live()` returns a snapshot of what is running, with each animation's pause state, time scale, elapsed virtual time and, for tweens and timelines, progress. Every animation option set, timelines included, takes an optional `label`. With no listener attached nothing is built or delivered. Additive.
+- f457e7c: `arrayAdapter`'s marquee and lasso now take a node by its outline, as `sceneToAdapter`'s do, instead of by its bounding box. A marquee over the empty corner of a triangle, or past the tip of a rotated rect, no longer selects it, and `enclosed` lasso mode takes a shape the lasso fits around even when its box pokes out. A polygon pose is its own outline; any other pose is its rect, rotated by `rotation`. The new `silhouette` option supplies what the painters draw — pass `findShapeSilhouette` when the items are scene nodes. The descriptor's `intersectsRect` is no longer consulted.
+  
+  `@weasel-js/geom` now holds path hit-testing: `pointInPath`, `strokeHitTest`, `pathContainsPoint`, `pathContainsRect`, `pathIntersectsRect`, `pathContainsPolygon`, `pathIntersectsPolygon`, `polygonContainsPath` and `polygonIntersectsPath`. Core's exports of the same names are unchanged.
+- 8635031: Every text tier now places its baseline from the ascent and descent a browser
+  sets the face with, and centers the face in its line the way CSS does: half
+  the leading above the ascent. A face taller than its line box, such as Papyrus
+  at `lineHeight: 1.2`, gets negative leading and overflows the box, which keeps
+  its height. Before, a line hung its baseline one ascent below the line top
+  with no leading, so glyphs sat half the leading away from where CSS puts
+  them: high in a roomy line, low in a tight one, where a tall face overflowed
+  only at the bottom.
+  
+  The ascent rule is `verticalMetricsFromTables` (new, additive, in
+  `@weasel-js/font`): `OS/2` typo metrics when the font sets
+  `USE_TYPO_METRICS`, otherwise `hhea`. Firefox and every Linux engine follow it;
+  Chromium and WebKit on macOS read `hhea` regardless, and the edit overlay's
+  measured correction covers the difference there. `gen-font` bakes the result
+  into the atlas's `faceMetrics` block as `ascent` / `descent`, the outline
+  parser reads the same values (and reports them as `OutlineFace.ascender`), and
+  the canvas tier records the browser's own, measured at a 1000px em rather than
+  at the 48px bake size. An atlas or custom parser that states no ascent and
+  descent keeps the previous placement.
+  
+  Rendering changes: text in the bundled Inter at `lineHeight: 1.2` moves up by
+  0.005 em. Canvas-tier faces move down by half their leading: Georgia by 1.3px
+  and Arial by 1.7px at 40px. The committed Inter atlases are rebaked; the PNG is
+  byte-identical.
+- 276bad1: Types that public exports already referenced can now be imported by name from `@weasel-js/core`: `Overlay`, `SHAPE_KINDS`, `ShapeKindDescriptor`, `ShapeKindsWhere`, `KitInsertShape`, `ShaderProgram`, `ToolPrefBase`, `BaseFeature`, `MeshBox`, `PenContinuation`, `SerializedLayer`, `SelectionStore`, `Polyline`, `Scale2`, `WeaselProviderProps`, `HitTestView`, `StyleToggle`, `DEFAULT_INK`, `CURSOR_ANGLE_STEPS`, `CURSOR_MAX_CSS_PX`, and the dispatch-record types `Dispatcher.explain` returns (`DispatchRecord` and its parts, also still on `@weasel-js/core/routing`). A node's `derivePath` / `derivePose` now have named types, `DerivePathFn` and `DerivePoseFn`, which `unionOfChildrenVia` returns.
+  
+  Breaking for test code: `_resetPaintKindsForTests` and `_resetMarkersForTests` moved off core's barrel to a new `@weasel-js/core/test-seams` entry, and `@weasel-js/routing` no longer exports its internal dispatcher helpers `publishLiveDispatch`, `filterEligible` and `preferContextual`.
+- efc5727: Action behaviors get an `onCancel` hook. When a move, resize, rotate, insert or lasso gesture is canceled (Esc, pointercancel), every behavior's `onCancel` runs in place of `onEnd`, which still runs only on commit. `alignMoveBehavior`, `alignInsertBehavior` and `alignResizeBehavior` clear their published guides there, so Esc mid-drag no longer leaves the last matched alignment line on screen, and `snapToContainer` drops its pending dwell timer.
+- 108551d: On a committed move, resize, rotate, insert or lasso gesture, every behavior's `onEnd` now runs, in order; the first one to answer still decides the commit and later answers are ignored. Previously the behaviors after the one that answered never ran, so `[snapBackOrDelete(…), alignMoveBehavior(…)]` left its alignment guides on screen after a snap-back release.
+  
+  `onEnd` takes a second argument, `BehaviorEnd`, whose `answered` flag says an earlier behavior already decided. A behavior that acts on the scene itself from `onEnd` should only clean up when it is set: `momentum` now does, so `[snapBackOrDelete(…), momentum(…)]` no longer flings a node that snapped back. Code calling a behavior's `onEnd` directly must pass the second argument.
+- a5bc201: A boolean op's result takes its topmost source's slot among that source's siblings, read through the reorder contract. `BooleansAdapter` gains optional `getParent`, `getChildren` and `setChildOrder` — `defaultCommitAdapter(scene)` supplies all three — and the kit derives each source's sibling index from them, the same read Create Outlines uses. `createPathNode` now receives a third argument, the topmost source's id: give the new node that source's parent. `getZOrder` still works as an override but is deprecated; an implementation returning a render-order index (as WeaselDraw's did) put results in the wrong slot inside a container. `getSelection` may return `string[]`. Additive.
+- 4e18c9f: `<Canvas paintInto>` now follows its target: when `paintInto.canvas` moves to another element, the next frame paints there and the old element's renderer, with every GL program, buffer and texture it made, is freed. Before, every later frame went to the first element it painted and that renderer lived until unmount; a change of `paintInto.x`/`y` alone also did not repaint. `<Canvas>` now holds its renderer through the same lease as `<SceneViewCanvas>`, `<MinimapCanvas>` and `<DrawCanvas>`, so every surface in core has one renderer setup and teardown. No public API changed.
+- 112c781: `<SceneCanvas>` no longer takes `selectionMode`, and `CanvasSelectionMode` is gone. Its `'multi'` only reached the selection the canvas built for itself, so a canvas handed `useSelection()` still replaced on shift-click. Click policy now has one home, the selection: `useSelection({ mode: 'multi' })`, or `selectionOptions={{ mode: 'multi' }}` for the canvas's own. `selectionMode="none"` is now `selectable={false}`, with the same meaning. Breaking: drop `selectionMode="single"`, move `"multi"` to the selection, and rename `"none"`.
+- ac2e76e: A labkit annotation capture of a text mark no longer comes out without its
+  glyphs when the default font was registered `{ lazy: true }` and nothing had
+  drawn text yet: the raster route now waits for fonts and paint kinds to load
+  before it renders.
+  
+  Additive: core exports `warmRender(opts?)`, which runs `warmFonts` and
+  `warmPaintKinds` together — the one call to await before a synchronous
+  `renderSceneToPixels`, `RasterSession.render` or `renderDebugSnapshot`.
+  `opts.families` and `opts.paintKinds` narrow each half.
+- 9c164e2: A promised `produceFlavors` flavor that rejects now costs only itself. Chromium writes nothing when any flavor in a `ClipboardItem` rejects, and `useClipboardOps` then fell back to the well-known types alone, so a failed SVG export also lost the `application/x-weasel-clipboard+json` flavor, and a rejected `text/plain` lost everything. The copy now retries without the rejected flavors before falling back. Behavior fix, not breaking: a copy whose flavors all resolve writes exactly what it did before.
+- 85d62a7: A `SurfaceContribution` can run on the surface's frame loop and say which kit versions it was written against. `beforePaint(ctx)` runs on every frame before it paints and `afterPaint(ctx)` once its pixels land, each handed the frame's `time`, the surface `view`, `requestFrame()` and the surface's `deps`. Hooks run in the order the surface lists its entries, and one that throws is reported once and skipped without stopping the frame; a surface whose entries declare no hooks subscribes to nothing. `requires: { core: '^1.7' }` is checked on install: a mismatch warns in development, and `<SceneCanvas versionCheck="strict">` throws instead (`"off"` skips it). The matcher is exported as `satisfiesRange` and `checkRequirements`, with `KIT_VERSIONS`. The default long-press feedback now animates from `afterPaint`.
+  
+  `CanvasExtensionApi` gains `subscribeBeforePaint(fn)`, and `subscribeFrame` subscribers now receive the frame time. Additive for callers; breaking for code that implements `CanvasExtensionApi` by hand, which must add `subscribeBeforePaint`.
+- dfd926f: `@weasel-js/core` now tree-shakes for consumers. Its `dist` is now one file
+  per source module instead of shared chunks, so importing one symbol ships that
+  symbol's modules rather than the whole kit: `import { asNodeId }` goes from
+  about 620 kB minified to under 100 bytes with vite's production bundler.
+- 3d80c9f: Text can become path geometry. `textToPath(data, pose)` returns a text node's
+  glyph outlines and decoration rules in world space, as one `'nonzero'`
+  compound path whose filled region is their union. Glyphs keep the font's
+  curves, and each glyph is re-wound so faces that disagree on winding still
+  fill their overlaps. It works at any size, not only above the outline-tier
+  threshold, and applies synthetic italic the way the renderer does. When some
+  run has no outline geometry it throws a `TextOutlinesError` whose `reason` is
+  `'no-outlines'`, `'outlines-loading'`, `'outlines-failed'` or
+  `'synthetic-bold'`. Faux bold is refused rather than drawn at the regular
+  weight, because a path has no distance field to thicken.
+  `loadTextOutlines(data)` waits for the faces a text is set in.
+  
+  The new `createOutlines` action (Shift+Mod+O, group `'text'`, under the
+  `paths` feature) replaces each selected text node with a path node in one
+  undoable batch. Each path takes its text node's slot in the stacking order.
+  Consumers publish a `CreateOutlinesAdapter` with `useCreateOutlinesAdapter`;
+  its `createPathNode(path, sourceId)` carries the text's fill and stroke. The
+  pure core is `applyCreateOutlines`, and the icon is `CreateOutlinesIcon`.
+  
+  Boolean ops take text operands: `BooleansAdapter` gains an optional
+  `getTextSource(id)`, consulted when `getWorldPath` has no path. This change is
+  additive, with one exception: `BooleanOpResult` has a new
+  `{ kind: 'failed', reason: 'text-outlines' }` variant, and a text operand
+  without outlines now leaves the scene untouched. Code that switches
+  exhaustively over `BooleanOpResult` needs a case for it.
+  
+  Also new: `loadFontOutlines(family, variant?)` in `@weasel-js/font` (also
+  re-exported from core) resolves once a registered face has loaded or failed.
+  `@weasel-js/geom` adds `pathSignedArea` and `reversePath`.
+- a1ecaac: The scene slot's `cull` option now skips painting nodes the view cannot see, rather than painting every node and dropping the off-screen commands afterward. It decides from the new scene-slot `paintBounds(node, pose, view)`, which `<SceneCanvas>` fills in with the new `defaultPaintBounds` whenever `drawOne` is `defaultDrawOne`. With any other `drawOne`, pass a `paintBounds` that encloses everything it paints — stroke spikes and markers included — or culling still only trims commands after painting. Nodes with no cheap bound are always painted: text, derived-path nodes, nodes with a `data.label` overlay, and any painter that does not declare one. `postProcess` now sees an empty group where a culled node would have painted.
+  
+  A painter registered with `registerNodeShape` can declare `bounds(node, pose, ctx)`, the box its paint fits in before pose rotation; `findShapeBounds` reads it. The built-in shape, path, image and rect-fallback painters declare one.
+  
+  `<SceneViewCanvas>` and `renderSceneToCanvas` take `cull` and `paintBounds` to do the same for a detached view, and `buildSceneViewCommands` takes a trailing `SceneViewCull`. `<MinimapCanvas>` shows the whole scene and does not cull.
+- 886fefd: `<SceneCanvas debug>` now reaches the overlay. It had been swallowed, so only the `?debug=` URL flag ever turned the overlay on through `SceneCanvas`; the prop takes `<Canvas debug>`'s `DebugConfig` plus SceneCanvas's own `slops`. `<Canvas>` also keys its debug sink on the config's content, so an inline `debug={{ … }}` no longer throws away what the sink recorded on every render.
+  
+  New `viewport` debug feature: the last pan or zoom, drawn as the viewport it started from (outlined in the current view), the world point it held fixed, and a readout of the pan delta or zoom factor. `DebugSink` gains `recordViewport(kind, from, to, anchor?)`; a hand-written sink must add it. Actions reach the sink through a new `debug` dep that `<SceneCanvas>` provides, and `viewport.dragPan`, `viewport.wheelPan`, `viewport.zoom` and `viewport.pinchZoom` record into it. `SceneCanvasApi` / `CanvasExtensionApi` gain `getDebug()`, which returns the sink, or null while `debug` is off.
+  
+  The `fps` panel now shows the frame interval and, per paint, CPU time and GL draw calls in total and per render layer, in decimal-aligned columns. The numbers come from new renderer seams: `WeaselRenderer.render(commands, viewMatrix, { spans })` and `lastFrameStats()`, and a `spans` out-parameter on `drawLayers`. `?debug=` now parses `ids`, `fps` and `viewport`, and `?debug=all` turns them on.
+  
+  `renderDebugSnapshot({ scene, view, size, pixelRatio, debug, config, … })` rasterizes the scene and the debug overlay into one image, the way the canvas showed them, for a bug report; `rasterToPng(image)` encodes any `RasterImage` as a PNG `Blob`. It is built on `renderSceneToPixels`, which gains an `overlay` option: commands drawn over the scene in output-pixel space. `buildDebugOverlayCommands` exposes the overlay's commands for a snapshot.
+- 04b0b96: `<DrawCanvas>`, additive: a sized, DPR-correct WebGL2 canvas that paints a `DrawCommand` list with no scene, tools or dispatcher behind it.
+  
+  `draw` takes a command array, which repaints on the next frame when it changes, or a function called on every paint with the surface's CSS size. `view` sets a camera over the commands (identity by default), `background` fills the surface beneath them, `redrawOn` repaints on external sources as it does on `<SceneCanvas>`, and `dpr`, `className` and `canvasRef` behave as they do on `<SceneViewCanvas>`. It paints through the same per-canvas renderer as `<SceneViewCanvas>`, runs its frames behind the visibility gate, and frees its GL objects on unmount.
+  
+  `<SceneViewCanvas>` and `<MinimapCanvas>` now repaint when an image finishes decoding, a deferred glyph bake or font load lands, or a paint kind registers late, as `<SceneCanvas>` already did. Before, text or images that were not ready on a detached view's first frame stayed blank until something else repainted it.
+- 27bcf57: Every op factory's argument type can now be imported by name from `@weasel-js/core`: `InsertArgs`, `DeleteArgs`, `TransformArgs`, `ReparentArgs`, `SetDataArgs`, `SetLayerArgs`, `SetPathArgs`, `SetTextArgs`, `SetSelectionArgs`, `ReorderArgs` and `MoveToIndexArgs`, with the shapes they reference, `SiblingSlot`, `PlacedNode` and `ReorderRestoreEntry`. Core also exports `KeyBinding` (the parameter of `matchesKeyBinding`), `rangeWeight` and `unboldPatch`. `@weasel-js/diagram` exports `ForceBody`, the element type of `ForceRelaxation.bodies`.
+  
+  The default align, distribute, boolean and edit icons are now marked `@experimental` on each component; the tag had sat on a file header where it marked nothing.
+  
+  Breaking: `DispatcherViewTarget` and `ViewIdResolver` are off `@weasel-js/routing/react`. They moved to `@weasel-js/routing/internal`, which is not public API. `rectsEqual` is off `@weasel-js/labkit/surface`.
+- a7f2103: Underline, strikethrough and super/subscript now follow the font's own metrics
+  instead of fixed constants. `gen-font` bakes `post.underlinePosition` /
+  `underlineThickness`, `OS/2.yStrikeoutPosition` / `yStrikeoutSize` and the
+  `OS/2` super/subscript size and offset into a new optional `faceMetrics` block
+  in the atlas JSON, and the outline parser reads the same values onto
+  `OutlineFace.faceMetrics`, through one shared function, so an atlas and a TTF
+  of one font place rules and scripts identically. The overline keeps its
+  default offset and takes the underline's weight. A face with no metrics
+  (older atlases, the canvas tier, custom parsers) keeps the previous constants.
+  
+  This changes rendering for the bundled Inter: its underline sits lower
+  (0.170 em, was 0.10) and heavier (0.068 em, was 0.05), and `script: 'sub'`
+  drops by 0.075 em instead of 0.333 em, with scripts at 60.0% size. The
+  committed atlases are rebaked; the PNG is byte-identical.
+  
+  Additive API: `faceMetricsFromTables`, `faceMetricsOf`, `faceMetricsFor` and
+  the `FaceMetrics` types in `@weasel-js/font`; `scriptMetrics`,
+  `scriptMetricsFor`, `decorationMetrics` and `DEFAULT_DECORATION_METRICS` in
+  `@weasel-js/text` (re-exported from core); an optional `faceOf` argument to
+  `layoutMarkdown` and an optional `face` on `PositionedRun`. `SCRIPT_METRICS`
+  remains, now documented as the fallback rather than what every run gets.
+  
+  Fix: `resolveFontVariant` called from inside the glyph-ready notification of
+  an atlas that just landed returned a pending miss, because the load was still
+  marked in flight. A subscriber that re-resolves synchronously, as
+  `useSyncExternalStore` does, now sees the face.
+- b2fd89a: geom adds `boxContainsBox(outer, inner)`, the edge-inclusive test for one box
+  wholly holding another. Core's region hit test, labkit's `fracEncloses`,
+  `fracContains` and drop-over-canvas check, and labkit's internal point bounds now
+  go through geom's box functions instead of their own copies. labkit's `WorldRect`
+  is now an alias of geom's `Rect`, which has the same shape. Badge's
+  `ChamferedRect` base uses the shared `polygonSampler` rather than a copy of it.
+- 4212d2d: The path data model, the pure math over it, and the easing curves moved from `@weasel-js/core` into `@weasel-js/geom`. Core re-exports every name it exported before, so code importing from `@weasel-js/core` or `@weasel-js/core/math` needs no change.
+  
+  `@weasel-js/geom` now exports `Path`, `PolygonPath`, `RectPath` and `PathFillRule`; the builders (`PathBuilder`, `rectPath`, `ellipsePath`, `polygonFromPoints` and the rest); `pathFromD`, `boundsOfPath`, `unionBoundsPath`, `translatePath`, `scalePathToBounds`, `transformPath`, `composePath`, `decomposePath`, `splitSubpaths`, `pointAlongPath`, `pathDistanceToPoint`, `splitCubicAtT`, `fitCubicThroughDeletion`, `cubicPointAt`, `schneiderFit` and the `Point` type; and every easing curve with `EASINGS`, `SPRING_PRESETS`, `cubicBezierEasing` and `resolveEasing`. Three subpaths are new or grow: `@weasel-js/geom/curves` (Bezier, NURBS and Spiro representations, `CURVE_REPS`), `@weasel-js/geom/tessellate` (`tessellate`, `extractPolylines`, `trimPolyline`, the `Mesh` type), and `@weasel-js/geom/booleans`, which adds `splitPathBySegment`, `splitPathByPolyline` and `snipPathByPolyline`. `earcut` is a new optional peer of geom, needed only by `./tessellate`.
+  
+  Breaking for direct `@weasel-js/geom` users: `GeomPath` and `GeomPolygonPath` are gone, replaced by `Path` and `PolygonPath`. Hit-testing and booleans now take the typed-array `Path` — `commands` a `Uint8Array`, `coords` a `Float32Array`, `fillRule` required — rather than any array-like.
+- 12263bc: Guide and alignment snapping reads its tolerance in screen pixels at every zoom,
+  through the camera of the view the drag landed in — a `<CanvasView>`'s own when the
+  drag started in one. `GestureContext` now carries that camera as `view` (`null` where
+  no view dep answers), refreshed each frame for move, resize, rotate and lasso-select
+  behaviors.
+  
+  Breaking: the `getView` option is gone from `alignMoveBehavior`,
+  `alignInsertBehavior`, `alignResizeBehavior`, the move, resize and insert
+  `snapToGuides`, and `guideSnapStrategy`. Drop it; `tolerance` is always screen
+  pixels. Code that builds a `GestureContext` by hand must now supply `view`.
+- b5cc59f: Small atlas text no longer loses stems narrower than a pixel. The shader used
+  to size its antialiasing band from the derivative of the distance field. That
+  derivative reads flat when a 2x2 pixel quad straddles a thin stem, so the band
+  collapsed and the stem disappeared. A 12px superscript `H` in Inter rendered at
+  DPR 1 without its left stem. The band now comes from the screen derivatives of
+  the texture coordinate, scaled by each atlas's page size and field range.
+  
+  Additive: `glyphFieldScale(source, family, weight, style)` is exported from
+  `@weasel-js/font`, and `BmFont` gains an optional `distanceRange` read from
+  msdf-bmfont-xml's `distanceField.distanceRange`. `GLYPH_COVERAGE_GLSL`'s
+  `glyphCoverage` now takes two more arguments, `uv` and `fieldPerUv`. That breaks
+  any custom program that pastes the snippet in and calls it.
+- e2f1968: New package `@weasel-js/guides`: placement aids, built on top of core. It holds what used to be core's grid, guide and layout-strategy code:
+  
+  - the grid: `createGridLayer`, `createCellHighlightLayer`, `useGridCellHover`, `roundToCell`, `gridSnapStrategy`, `pointToGridCell`;
+  - guides and alignment: `useGuides`, `createGuidesLayer`, `guideSnapStrategy`, `DEFAULT_GUIDE_TOLERANCE_PX`, `deriveAlignmentGuides`, `matchAlignment`, `MOVE_ANCHORS`, `alignMoveBehavior`, `alignResizeBehavior`, `alignInsertBehavior`, and the `Guide` type;
+  - snap behaviors: `snapToGrid` and `snapToGuides` from `@weasel-js/guides/move`, `/resize` and `/insert`, and `pointSnapToGrid` from the root or `/resize`;
+  - layout strategies: `freeform`, `tileGrid`, `snapPoint`, and the drop-target pickers `none`, `nearest`, `nearestWithin`, `containedThenNearest` and `cellAt`.
+  
+  Breaking for `@weasel-js/core`. Core no longer exports any of those names, and does not re-export them, so import them from `@weasel-js/guides` instead. The `@weasel-js/core/insert` subpath is gone, since everything it held moved. `@weasel-js/core/move` keeps `snapToContainer` and `snapBackOrDelete`, and `@weasel-js/core/resize` keeps `clampMinSize` and `lockAspectWithModifier`.
+  
+  The canvas's `grid` layer slot now takes a pre-built layer, like `cellHighlight` and any custom slot, instead of grid options. `GridSlotConfig` and the `grid.highlight` sub-option are gone. Write `layers={{ grid: { layer: createGridLayer({ spacing: 20, bounds }) } }}`, and pass a cell highlight as `cellHighlight: { layer: createCellHighlightLayer(...) }`.
+  
+  Core keeps the seams the package plugs into: the `SnapStrategy`, `MoveBehavior`, `BoundsConstraint`, `InsertBehavior` and `PointSnap*` types, `snap()`, `OriginProjection` with `RECT_ORIGIN_PROJECTION`, the `snap` dep, `selectTool.snap`, `toolOptions.snapPoint`, and the `LayoutStrategy` contract. It now also exports `AUTO_ORIGIN_PROJECTION`, the default projection for rects and paths, and three helpers for writing a snap behavior: `screenTolerance`, which converts a screen-pixel tolerance to world units through the gesture's camera; `gestureViewReader`, which reads that camera; and `gesturePlaneReader`, which reads the parallax plane being edited.
+- 1524403: Text now ends a line at every UAX #14 hard break, not only at `\n`: CR, CRLF
+  (one break, not two), VT, FF, NEL, U+2028 LINE SEPARATOR and U+2029 PARAGRAPH
+  SEPARATOR. This applies to `layoutRuns`, `layoutMarkdown` and the edit overlay,
+  wrapped or not. None of them lays out a cell, and a caret offset on either side
+  of a CRLF stays exact. As with `\n`, and as with a forced break in CSS, the
+  line a hard break ends is never spread by `justify`; U+2028 and U+2029 behave
+  the same way here. This is a behavior change: text holding those characters
+  lays out on more lines than before.
+  
+  The edit overlay writes each hard break the browser would not break at as a
+  `<span data-break>` holding a newline, and reads the original character back
+  on commit, so an edit no longer turns U+2028 into a space or a lone CR into a
+  newline. A node without runs is now seeded with text nodes instead of through
+  `innerText`, which also puts the caret at the right offset on any line after
+  the first.
+  
+  Additive: `isHardLineBreak(codePoint)` in `@weasel-js/text`.
+- bfc4b21: `attachHud` reuses a widget's draw commands across repaints until something
+  it draws from changes, instead of asking every widget for fresh commands on
+  every repaint. A static 10-glyph text widget used to rebuild its command, and so
+  re-lay out its glyphs, on every frame.
+  
+  Additive. A widget opts in with the new `Widget.deps(ctx)`, which works like
+  `RenderLayer.deps`: the HUD reuses the previous commands while every entry is
+  `Object.is`-equal to the last call's, and also rebuilds when the widget's
+  bounds, the theme, the default font, the canvas size or the widget's focus
+  change. Every kit widget declares it, invalidated by its own setters and
+  pointer state. A hand-written widget without `deps` is drawn on every repaint,
+  as before; a widget declaring it must treat the commands it returned as
+  immutable. A window's `content` painter is still called on every repaint.
+  A text widget that only moved keeps its runs array, so its layout stays cached.
+  
+  `@weasel-js/core` exports `depsUnchanged`, the comparison `RenderLayer.deps`
+  uses.
+- f046160: `insertAction` now runs `InsertBehavior`s, so `snapToGrid`, `snapToGuides` and `alignInsertBehavior` finally reach a drag. They ride the insert binding's `opts.behaviors`: pass `behaviors` to any drag-to-insert tool hook (`useRectTool({ behaviors })`, and the same on ellipse, line, polygon, star, pencil, text and image), or `toolOptions={{ insert: { behaviors } }}` on `<SceneCanvas>` for all of its built-in ones. Each behavior shapes the start and current point after Shift-constrain and the `snap` dep, and the live preview draws what it returns. On release the first `onEnd` to answer wins, as for move: `null` aborts the insert, `Op[]` commits in its place.
+- 9f83b33: A grown `tileGrid({ overflow: 'grow' })` shrinks back when children leave it. Deleting a child, or moving or dragging one out, gives back each line of cells that empties — never below the declared `rows` (or `cols` for `flow: 'column'`) — and the rest keep their cell size instead of stretching over the grown container. The shrink lands in the same undo step as the departure.
+  
+  This rides on a new optional `LayoutStrategy.depart(container, children, departed)`: the scene's layout pass hands it the children that stay and the ids that left, and it returns poses plus optional new container bounds, as `arrive` does. An edit that both removes and adds children runs `depart` first, then `arrive`. `SceneArrivalHandler` gains a third argument, `departures`, the nodes each container lost in the edit; `layoutArrivalHandler` and `useLayoutArrivals` pass it through. Additive: a strategy without `depart` is rearranged by `childPoses`, as before.
+- 3c1def2: `registerFont` takes a fifth argument, `{ lazy: true }`, which fetches nothing
+  until text first lays out in that family — so a scene with no text never
+  downloads the atlas. Until the atlas lands, a run set in the family lays out as
+  nothing rather than in a fallback face's metrics, and `<SceneCanvas>` repaints
+  it when the atlas arrives. The returned promise settles with that load, so it
+  never settles for a face no text uses; don't `await` it at startup. New type:
+  `RegisterFontOptions`.
+  
+  A family whose atlas is still fetching, eagerly or lazily, now outranks the
+  outline tier and the `'substitute'` fallback while it loads: text waits for the
+  real face instead of laying out in another one and reflowing when it arrives.
+  The same holds for a registered-but-unloaded exact variant, which is no longer
+  faked from a sibling weight in the meantime. `listFonts` and `listFontWeights`
+  report lazily registered faces before they load.
+  
+  `@weasel-js/hud` registers its bundled Inter lazily, so attaching a HUD whose
+  widgets draw no text no longer downloads it. `registerDefaultFont`'s promise now
+  settles when a widget first lays out text.
+- ae6e8ac: A touch or pen long-press now shows that it is registering. While a press is
+  held and some binding would fire on it — a `longPress` binding, or a
+  `contextMenu` one through the fallback — `<SceneCanvas>` draws a ring in the
+  theme accent that fills around the press point over the hold. It appears
+  after 120ms, so a tap shows nothing, and disappears when the press fires,
+  moves past the drag threshold, lifts or is canceled. Under
+  `prefers-reduced-motion` it is a static ring. A press nothing is bound to
+  shows nothing. When the long-press fires and a binding handles it, touch and
+  pen pointers get a short `navigator.vibrate` pulse where the API exists.
+  
+  Additive. `<SceneCanvas longPress={{ feedback, haptics, duration }}>` controls
+  it: `feedback: false` turns the ring off, a `SurfaceContribution` replaces it,
+  `haptics: false` turns off the pulse, and `duration` sets the hold time
+  (default `LONG_PRESS_MS`, 500ms). Under a `tools` takeover, add
+  `createLongPressFeedbackContribution()` to your own ambient entries.
+  
+  The press being held is observable state: the `longPress` dep is a
+  `LongPressState` whose `get()` returns where the press landed (client,
+  canvas-local and world), the view it routed to, when it started, its duration
+  and whether it is `armed`, and whose `progress()` returns 0→1.
+  `useGestureDispatcher` takes the same controls as `longPress: { state,
+  haptics, duration }`, with `createLongPressStore()` making the state. New
+  exports: `createLongPressStore`, `LONG_PRESS_MS`, `PendingLongPress`,
+  `LongPressState`, `LongPressStore`, `LongPressOptions`,
+  `createLongPressFeedbackContribution`, `LongPressFeedbackOptions`,
+  `LONG_PRESS_FEEDBACK_ID`, `SceneCanvasLongPress`.
+- 4b570e5: A mesh-gradient paint now bakes at a resolution fitting the device pixels it covers, in power-of-two buckets from 32 to 2048 texels (and never above the context's `MAX_TEXTURE_SIZE`), instead of a fixed 256. A mesh filling a poster, zoomed in on screen, or printed through `renderSceneToPixels` at a high scale no longer shows its texels. Bakes are cached per paint and bucket in a bounded least-recently-used cache (64 MiB or 256 bakes per renderer), and their textures are freed on eviction, on `WeaselRenderer.dispose()`, and on a context restore.
+  
+  Additive: `PaintBindContext` gains `spaceToDevice(units)`, `maxTextureSize` and `resources`, a `PaintResources` lifetime a registered paint kind keys its GPU caches on and frees them through `onRelease`. `PaintResources` is exported from `@weasel-js/core`; `meshBakeSize`, `MESH_BAKE_MIN` and `MESH_BAKE_MAX` from `@weasel-js/core/mesh`. Code that constructs a `PaintBindContext` itself, such as a test double, has to supply the three new members.
+- 251fb64: Mesh gradients get on-canvas handles. `MeshHandles` (`@weasel-js/ui`) draws every patch corner, edge control and tensor interior point over the patch outlines, previews through `onInput` and commits once per drag; dragging a corner carries its controls, and points two patches share move as one handle so the seam does not tear. `SceneGradientHandles` now shows them for a node whose slot holds a mesh, committing through `setFill` / `setStroke` in the bounds frame like the three gradients. The geometry is public on `@weasel-js/core/mesh` as `meshHandles`, `moveMeshHandle` and `meshGuides`. Additive; `GradientHandles`' behavior is unchanged.
+- 9bfdda9: **Breaking:** the mesh-gradient exports moved off `@weasel-js/core` onto a new
+  subpath, `@weasel-js/core/mesh`: `MESH_GRADIENT_KIND`, `MESH_BAKE_SIZE`,
+  `bakeMesh`, `cornerWeights`, `evalPatch`, `isMeshGradientFill`,
+  `isTensorPatch`, `isValidPatch`, `meshBounds`, `meshFromStops`,
+  `meshGradientXml`, `meshStops`, `patchBounds`, `patchCorner`, `seedMeshPatch`,
+  and the types `BakedMesh`, `MeshBox`, `MeshGradientFill`, `MeshPatch` and
+  `MeshPoint`. Change the import path; nothing else about them changed. Any
+  import from the subpath registers the kind, as importing them from the root
+  did.
+  
+  With esbuild and code splitting on, importing one symbol from
+  `@weasel-js/core` no longer ships the mesh paint: `import { asNodeId }`
+  bundled to 19,814 B and now bundles to 133 B. The lazily loaded mesh kind now
+  ships as one self-contained file that shares no module with the root barrel,
+  which is what esbuild needed.
+  
+  New: a `PaintKindEntry` can declare its shader programs as `programs`, keyed
+  by program id; registering the kind registers them, and re-registering the
+  same source is not a duplicate. New root type export: `ProgramSource`.
+- b554ee0: Create Outlines keeps every run's paint. A text node whose runs wear different
+  fills or strokes now becomes one path per paint, each gathering the glyphs and
+  decoration rules that share it, instead of one path in the node's color.
+  
+  Additive API: `textToPathsByPaint(data, pose)` returns `{ fill, stroke?, path }`
+  per distinct resolved paint, built on the same glyph walk as `textToPath`, and
+  their union is `textToPath`'s outline. `TextOutlineSource` takes optional
+  `fill` / `stroke` (the node's own), which only `textToPathsByPaint` reads.
+  `CreateOutlinesAdapter.createPathNode` receives a third argument,
+  `OutlinePathSpec` `{ fill, stroke?, parent }`: the paint the path must wear and
+  the parent it goes under. The new optional `createContainerNode(sourceId,
+  { parent, bounds })` mints a container that takes the text's slot and holds its
+  paths; without it the paths are laid flat in that slot. Either way it is one
+  undo step, and the replacement is what ends up selected.
+  
+  Behavior change for existing adapters: one that ignores the new argument still
+  works, but a multi-paint text now yields several flat paths painted however that
+  adapter paints them, and `resultIds` can hold more than one id per text node.
+- 702829d: The text edit overlay now lands on the glyphs the canvas drew, in Chromium,
+  WebKit and Firefox at any device pixel ratio. It used to shift itself by a fixed
+  1px right and 1px up, tuned by eye on one machine; the real offset is that the
+  canvas hangs its baseline one ascent below the line top while CSS adds half the
+  leading first, which varies with the face, the size and each engine's rounding.
+  The overlay now measures both baselines and closes the gap: across Inter,
+  Georgia and Arial at 12–72px the mean offset is under 0.2px, and the worst is
+  under 1px at DPR 2 and about 1px at DPR 1 (2px for the 7px glyphs of a
+  12px superscript). Text with a node-level `script` was
+  several pixels off (13px at 72px) and now matches like the rest; its rise is
+  applied to the overlay's `top` rather than a `translate`.
+- 9cad63b: The text edit overlay now sets its glyphs in the face the canvas draws. A family
+  the canvas draws from a baked atlas or from outlines — `sans-serif` registered
+  to Inter, say — used to reach the overlay as a bare CSS name, which the browser
+  resolved to its own face (Helvetica on macOS), so "Hxgd" at 72px ended 12px
+  short of the canvas. New `cssFontFamily(family, variant)` answers the CSS
+  `font-family` for whatever the canvas draws: a private `FontFace` built from the
+  family's `registerFontOutlines` file, with the family name as fallback. A family
+  drawn through the browser (`registerCanvasFont`) comes back unchanged. An atlas
+  with no font file cannot give the DOM its face, and says so once in the console;
+  register the file it was baked from with `registerFontOutlines`.
+  `OutlineFontOptions.cssSrc` names the `@font-face` source where the bytes won't
+  do, and `enableLocalFontOutlines` sets it to `local(<PostScript name>)`.
+  
+  The bundled Inter atlas carries the font's own advances and kerning. It used to
+  lay out on whole-pixel advances at its 32px bake size with no kerning at all, so
+  "Hxgd" at 72px set 182.25px wide against the 179.44px every browser gives the
+  same face, and "AVATAR" 22px wide of it. `gen:font` now writes advances at full
+  precision and kerning pairs read from the font's GPOS table, and the atlas is
+  rebaked from `inter.ttf`. Text set in it changes width slightly.
+  
+  Outline faces kern like a browser too. opentype.js skips GPOS extension
+  lookups, which is where Inter keeps nearly all its kerning; the outline tier now
+  reads pair kerning from GPOS itself.
+- b228015: The text edit overlay no longer opens in the fallback font and then reflows. `@weasel-js/font` builds the overlay's DOM face as soon as the outline file's bytes are in hand: at `registerFontOutlines` for an `ArrayBuffer` source, and when the canvas first reads a URL or thunk source, reusing those bytes instead of fetching again. Registering a URL or thunk still fetches nothing. New `cssFontFamilyLoading(family, variant)` returns the load still in flight for the face `cssFontFamily` names, or `null` when there is nothing to wait for. An edit whose face is still loading keeps the overlay hidden until the face lands or for at most `fontHold` ms (new option on `useTextEdit` and `useSceneTextEdit`; default `TEXT_EDIT_FONT_HOLD`, 100ms), then shows the fallback. `0` restores the old behavior. Additive.
+- 53cdd41: New hooks `usePaintKinds()`, `useGradientKinds()` and `usePaintKind(id)` read
+  the paint-kind registry and re-render when a kind is registered or removed.
+  `PaintInput`, `GradientEditor` and `PaintField` use them, so a kind registered
+  after they mount — a consumer's own, or one arriving through
+  `registerPaintKindLoader` such as the lazily loaded mesh gradient — shows in the
+  kind bar and gets its label and editor without waiting for an unrelated
+  re-render. `listPaintKinds()` and `listGradientKinds()` now return the same
+  array until the registry changes.
+  
+  `<Canvas>` no longer acts on a render React abandoned: a `startTransition`
+  that suspends used to leave its layers, size, controlled `view`, paint target,
+  layer helpers (and the consumer's `helpersRef`), preview extras and event
+  callbacks such as `onViewChange` behind, for the next redraw, hit test or
+  pointer event to use. `<CanvasView>`, `<SceneViewCanvas>`, the preview-ghost
+  and dispatcher-overlay layers, and `<SceneCanvas>`'s `view` dep under a
+  controlled `view` get the same treatment. A `syncPaint` redraw requested from a layout
+  effect that runs before the canvas's own — an earlier sibling's — now paints
+  that commit's inputs rather than bailing until the canvas's effect ran.
+- 33b7ac2: The `mesh-gradient` paint kind now loads on demand instead of shipping with
+  every import of `@weasel-js/core` (about 19 kB minified). A mesh fill that
+  arrives as data — a loaded document, an SVG import — draws nothing on the
+  first frame that meets it, starts the load, and `<SceneCanvas>` repaints it
+  when it lands. Importing anything from `@weasel-js/core/mesh` (`seedMeshPatch`,
+  `isMeshGradientFill`, `MeshEditor` in `@weasel-js/ui`, …) still registers it
+  at once.
+  
+  New: `warmPaintKinds(kinds?)` loads kinds ahead of their first use and
+  resolves once they are registered; with no list it loads every kind that has
+  a loader. Await it before `renderSceneToPixels` or `serializeSvg` on a
+  document that may hold a mesh paint — both are synchronous and cannot wait for
+  a load. `registerPaintKindLoader(id, load)` declares a kind of your own the
+  same way: `load` resolves with its `PaintKindEntry`, and it runs the first
+  time the kind is looked up. New type: `PaintKindLoader`.
+  
+  `<SceneCanvas>` now repaints whenever a paint kind registers, so a kind
+  registered after the canvas mounts draws without other help.
+  `serializeSvg` warns that an unregistered kind may only need loading, rather
+  than that it has no vector form.
+- fa67cbf: Paint kinds registered through `registerPaintKind`, `mesh-gradient` among
+  them, now paint on text below the outline-tier threshold instead of drawing
+  it black. The kind's own `bind` renders its paint over the glyphs' screen box
+  into an offscreen buffer the renderer keeps, and the glyphs sample that buffer
+  with their distance-field coverage as the mask, so the same world point reads
+  the same color on either side of the threshold. Underline, strikethrough and
+  overline rules under such a paint take it too. A kind needs nothing new to get
+  this, which covers kinds registered outside the kit. A fix; nothing is
+  removed.
+  
+  One behavior change: atlas-tier text under a kind that is not registered, or
+  whose `bind` declines the paint, now draws nothing rather than black, which
+  is what the outline tier already did.
+- 8f68fa8: `<SceneCanvas>` draws the selection box for a node on a parallax scene layer where the plane draws the node. It used to land offset by the plane's lead or lag once the camera had panned. The chrome now reads the same bounds the picker does, so a `geometry.boundsOf` override also reaches the selection box, which it did not before.
+- 25448ee: Nodes on a parallax scene layer can be edited where they are drawn, zooming planes included.
+  
+  - Move, resize, rotate, clone, insert and path-anchor editing (drag, click, marquee, cut, insert anchor) pair the pointer with the node's pose in its plane's world: the kit's descriptors are wrapped by the new `inPlane(action, layerOf)` (with `selectionLayer`, `insertLayer` and `editingLayer`), which carries the drag, the trail, a click's `worldX` / `worldY`, a handle's pivot and the camera the action reads screen pixels through into the plane, converts the `nodeAtPoint` and `snap` deps at its boundary, and returns overlays in the camera's world. A custom editing action takes the same wrapper. `EditedLayerOf` receives the deps and the grabbed affordance. Nudge and align move a node in its own world's units, as they always have.
+  - Snapping on a plane compares like with like. Guides and the grid are the camera's, so `guideSnapStrategy` carries each guide line into the plane and `gridSnapStrategy` rounds the pose's origin on the camera's lattice and carries it back; `GestureContext.plane` (read from the new `ViewApi.plane`) is the map they use. A resize's point snaps (`pointSnapToGrid`) see their points in the camera's world.
+  - Path-edit chrome — the anchor and handle markers, the anchor marquee, the slops overlay — and the anchor hit-test read a plane node's path in the drawing camera's world. `createPathEditingOverlayLayer`'s `getPose` and `getMarquee` receive the drawing view; `anchorStateFrom` takes an optional path carrier.
+  - `InsertDep` gains an optional `layer()`, the layer `commit` puts a node on; the default dep reports its first layer.
+  - The preview ghost, and the selection box mid-gesture, follow a plane node through its plane.
+  - A second `<CanvasView>` boxes a plane node through its own camera: the surface's bounds resolver takes the asking view.
+  - A container's clip reaches a child on another plane in that child's world, in both painting and picking. New `planeToPlane` and `planeMatrix` helpers compose plane maps.
+  - `useSelectTool` takes `getView`, and `sceneToAdapter`'s `hitTestArea` / `hitTestLasso` take the asking view, so a bare adapter picks plane nodes too. `AreaSelectAdapter.hitTestArea` and `LassoSelectAdapter.hitTestLasso` accept that view (`RegionPickView`, which `HitTestView` now aliases).
+  
+  Still open: a selection spanning planes that scale differently — see "Interactive parallax planes" in `docs/TODO.md`.
+- 88c1ae3: Scene layers can be parallax planes, and every plane can be animated.
+  
+  - A scene layer takes `parallax` (`systemLayers`, `addLayer`, and the new undoable `scene.setLayerParallax(layer, opts | undefined)`), and it round-trips through `toJSON`. `<SceneCanvas>`, `SceneViewCanvas` and `renderSceneToPixels` draw that layer's nodes through the derived view, with no wiring by the consumer.
+  - Nodes on such a layer are picked where they are drawn: a click, a marquee, a lasso and the selection box all go through the plane.
+  - **Breaking:** `createParallaxLayer` takes its factors as `parallax: { pan, zoom, anchor }` instead of top-level `pan` / `zoom` / `anchor`. `parallax` also accepts a `ParallaxPlane` from `createParallaxPlane(opts)`, whose `set(patch)` repaints the layer — write it from an animator's `onTick` to tween a plane.
+  - New pure helpers for crossing between the camera and a plane: `planeMap(camera, opts)`, `toPlane`, `fromPlane`, `rectToPlane`, `rectFromPlane`, and the `PlaneMap` type.
+  - `HitTestView` gains an optional `get`: a custom `areaSelect` / `lassoSelect` dep reads the asking view's camera from it.
+- dcc9834: Patterns and gradients now paint on text below the outline-tier threshold.
+  Atlas glyphs under a texture paint draw through a program of their own that
+  uses the distance-field coverage as a mask over the paint, sampled at the same
+  paint-space point the outline tier's path program uses, so text no longer
+  changes color when zoom carries it across the threshold. Underline,
+  strikethrough and overline rules under such a paint take it too, rather than
+  drawing black. Solid text is unchanged and still batches; each atlas-tier
+  group under a texture paint is its own draw, as a pattern-filled path is.
+  
+  `textCommandFromPose` — and so `kit:text` nodes and `createTextLayer` — now
+  resolves each run's fill and stroke paint against the pose box the way every
+  other node's paint is resolved: a `units: 'bounds'` paint is mapped onto the
+  box, and a `TilePatternSpec` is swapped for its texture. Before this, a
+  pattern set on a text node from the paint panel drew nothing at either tier,
+  and a `'bounds'` gradient was measured in screen space. A fix; nothing is
+  removed.
+- 365c762: A pattern paint takes a `transform`: the tile's rotation, scale and skew about
+  its `origin`, as a `PatternTransform` `[a, b, c, d]` in SVG `matrix()` order.
+  `composePatternTransform({ rotation, scaleX, scaleY, skewX })` builds one and
+  `decomposePatternTransform` reads one back into those parts; both are exported
+  from `@weasel-js/paint` and `@weasel-js/core`. The GL renderer samples the tile
+  through it, and a transform with no inverse draws nothing.
+  
+  `@weasel-js/svg` writes the transform as `patternTransform="matrix(…)"`, with
+  the origin as its translation, and reads any `patternTransform` list back into
+  `origin` and `transform`.
+  
+  `PatternPicker` (and so `PaintInput`'s pattern mode) has a Rotation field that
+  edits the rotation and leaves scale and skew alone; picking another tile keeps
+  the rotation.
+  
+  Additive: a paint without `transform` paints and serializes as before.
+- 941e941: New `createRasterSession()` keeps one renderer and its GPU caches across any
+  number of headless renders, for rendering thumbnails or pages in bulk: shader
+  programs compile once and a bitmap uploads once for the whole batch rather than
+  per render. `session.render(args)` takes what `renderSceneToPixels` takes minus
+  `gl`/`createCanvas`, which go to `createRasterSession({ gl?, createCanvas? })`;
+  scenes, source rects and scales may differ per render, and a session that owns
+  its canvas grows it to the largest render so far. `session.dispose()` frees
+  every GL object the session created and leaves a caller-owned context open.
+  Additive; new exports `createRasterSession`, `RasterSession`,
+  `RasterSessionOptions`, `RasterRenderArgs`.
+  
+  `renderSceneToPixels` is now a session opened for one render. Behavior is
+  unchanged, except that it no longer leaks on a caller-owned context: each call
+  used to leave 12 shader objects and every uploaded bitmap texture behind.
+  `WeaselRenderer.dispose()` now frees bitmap and pattern textures and persistent
+  meshes too, and compiled shaders are freed with their program.
+- b20df31: `<SceneCanvas>`, `<Canvas>`, `<MinimapCanvas>`, `useHostAnchor` and the
+  canvas's dep sources (`areaSelect`, `editAnchors`, `insert`, `view` and the
+  rest) no longer act on a render React abandoned. A `startTransition` that
+  suspends used to leave its props behind for the next event, dep read or frame:
+  a double click could reach the abandoned `onDoubleClick`, chrome could resolve
+  against the abandoned `chromeVisibility`, `selection`, `getFocused` or
+  `selectTool.resize.resizable`, and a dep could hand an action the abandoned
+  scene, adapter or selection. They now see the last committed render's values.
+  
+  A function-form tool cursor's `ToolCtx` carries the selection, adapter,
+  `setView` and debug sink of the render resolving it; its `applyOps` writes
+  through the committed adapter.
+- 55ef61f: Core's hooks outside the canvas no longer write refs during render, so a render
+  React abandons (a transition that suspends) can no longer leave its options,
+  adapter or callbacks behind for the next event or frame to use. Mirrors now go
+  through `useLatest`. A few hooks change shape where something read the ref
+  during render:
+  
+  - `useSelection` keeps a local selection in an internal store, so writes are
+    synchronous and no longer deferred inside a transition. The returned object
+    is now stable only for as long as `scene` is the same store.
+  - `useDragRect` and `useDragRadial` return `overlay` and `isActive` as values,
+    so the controller gets a new identity when the overlay changes; its methods
+    stay stable.
+  - `useArrayAdapter` builds its adapter over that render's `items` instead of a
+    ref.
+  - `useSimulation` starts its loop in a layout effect on mount rather than during
+    render, and restarts it after StrictMode's simulated remount.
+  - `useCanvasFocus` returns a `focusProps` object that is stable until `tabIndex`
+    changes; it used to be new every render.
+- 712de19: A drag under a `reflowTransition` now lands the dragged node the way its siblings move: on release it glides from where it was let go onto its committed slot (or back home on a cancel) instead of jumping there. A node grabbed while still gliding is held where it is shown, and the drag starts from there rather than from its document pose; a free drop of it commits where it was shown under the pointer. The drop is still one undo step. To support this, `ReflowTransition.glide` and `settle` take an optional `{ from }` (`ReflowGlideOptions`): `glide` restarts from that pose, and `settle` with `from` takes over a node the transition was not moving. Additive; a custom `ReflowTransition` that ignores the new argument still type-checks, and its dragged nodes snap as before.
+- 67d95c8: Add `solveIk`, a 2D inverse-kinematics solver for the rig. Given a skeleton, a pose, a chain of joints and a target, it returns the pose with the chain's rotations replaced so the chain's tip reaches the target — an ordinary `Pose`, so it blends with `blendPoses`, samples on a `SampledTrack<Pose>` and drives `Rig.pose`. It solves by cyclic coordinate descent, with per-joint angle limits, an iteration cap and a tolerance; a two-joint chain is solved analytically first, bending toward an optional `pole`. A target out of reach leaves the chain pointing straight at it, and the result says whether the target was reached. New types: `SolveIkOptions`, `IkResult`, `IkLimit`, `IkPoint`. Additive.
+- 8a68b6c: New `mirrorPose(skeleton, pose)` reflects a rig pose across the rig's y axis and returns it as ordinary deltas against the same skeleton, so a character can face the other way without a negative scale — which a scene pose such as `RectPose` cannot hold. Every joint resolves to exactly the reflection of the original, including joints the pose leaves at their bind, and mirroring twice returns the original pose.
+- 16a0476: Text runs carry a numeric weight. `StyledRun.fontWeight` (100–900) overrides the node's weight and the `bold` flag, which is now a preset over it: writing either one to a range drops the other. `numericWeight` and `isBoldWeight` (600 and up) are exported as the one reading of a weight.
+  
+  Taking bold off part of a bold node now writes `fontWeight: 400` over that part and leaves the node alone, instead of lowering the node and re-bolding the rest — so it works at any node weight, including 900, where it used to be refused. `SetFlagResult.applied` is gone, since the edit can no longer be declined. `effectiveRangeStyle` reports the `fontWeight` that renders and reads `bold` off it; `patchRangeStyle` lays an armed style over a range the way a write would.
+  
+  `listFontWeights(family)` in `@weasel-js/font` reports the weights a family has on the atlas and outline tiers. A new `font-weight` pref kind draws `FontWeightSelect`, which lists those weights (the nine CSS weights for a family with none on file) and reads the family from the `fontFamily` leaf beside it. The text tool's character options and the node panel's Weight field both use it. The overlay and SVG round-trip a run's weight; a tspan `font-weight` other than 700 now reads as the run's weight rather than being dropped.
+- 6f03bf7: A container can declare its layout on the scene: `scene.add({ kind: 'container',
+  layout: tileGrid(...) })`, or `layoutKey` in a snapshot, resolved through the new
+  `SceneRegistry.layout`. Layouts now answer to every change to a container's
+  children, not only arrivals: a delete, reorder or resize re-runs the strategy's
+  `childPoses`, and the writes land in the same undo step as the change, so undo
+  restores the whole arrangement at once. A child that joins goes to `arrive` as
+  before, and to `childPoses` when the strategy has no `arrive`.
+  
+  This runs through the scene's existing arrival window and `arrange` op; there is
+  one layout pass (`core/scene/layoutPass.ts`) whether the layout is declared on
+  the node or supplied by `<SceneCanvas layouts>` / `useLayoutArrivals`, and a
+  declared layout wins. With no handler installed, a scene holding declared
+  layouts runs that pass itself, measured by the new
+  `UseSceneOptions.layoutFrame` (also a `sceneFromJSON` option).
+  
+  Breaking edges: `SceneArrivalHandler` gains a second argument, `changed`, and is
+  now also called for edits with no arrivals. While layouts are active, a bare
+  `scene.remove`, `scene.reorder`, or a `setPose` that resizes a container is
+  recorded as a one-mutation batch, like `add` and `move` already were. The
+  `arrange` op's coalesce key now names the nodes it moved.
+  
+  Also new: `scene.layoutOf(id)` and `scene.onReflow(listener)`, which reports each
+  live edit's layout writes; `<SceneCanvas reflowTransition>` uses it to glide
+  those reflows as it does a drag's. New exports: `LayoutFrame`, `LayoutMove`.
+- 72379f6: `Scene.incarnation(id)` returns a token for the node an id names right now. It
+  holds through every edit to that node and changes whenever the id enters the
+  scene again — a fresh `add`, an undo or redo that brings it back, or
+  `loadState` — so something holding an id across frames can tell whether it
+  still names the same node.
+  
+  `@weasel-js/d3` transitions use it: a node removed and re-added under the same
+  id between two frames is now treated like a removed node. Its transition stops
+  for that node, the node taking the id is left alone, and a `.remove()` no longer
+  deletes it.
+- 7f7d153: A container's layout can be changed after `add`, undoably. `scene.setLayout(id, layout)` takes a `LayoutStrategy`, its key in `SceneRegistry.layout`, or `null` for none, and re-arranges the container's children under the new layout in the same undo step. A registered layout is recorded by its key, so a serialized history restores it. `createSetLayoutOp({ id, from, to })` is the same change as an op, applied through the new `setLayout` method on `sceneToAdapter`'s and `defaultCommitAdapter`'s adapters; name the layouts by key for an op that has to survive a persisted history. Additive.
+- d9cdff1: `<SceneViewCanvas>` and `<MinimapCanvas>` now free their renderer and every GL program, buffer and texture it made when they unmount; before, each mount leaked them. All three detached canvas surfaces (those two and `<DrawCanvas>`) now share one renderer lifetime, so their setup and teardown cannot drift apart. Additive: `releaseCanvasRenderer(canvas)` is exported, freeing the renderer `renderSceneToCanvas` created for a canvas.
+- 63d0ece: Picking and selection chrome now hold their screen-pixel sizes exactly under
+  non-uniform zoom, rotated nodes included. Before, both divided by the mean of
+  the two axis scales, so at 4:1 a 4px pick slop was 8px on one axis and 2px on
+  the other, and on a turned node the selection outline, handles and rotate
+  badge were drawn as a rotated screen rectangle beside the parallelogram the
+  node actually painted.
+  
+  - `<SceneCanvas>` picks within `pickTolerancePx` of a node measured on screen.
+    `strokeHitTest` takes a `slop: { px, transform }` for this, and
+    `shapeCoversPoint`'s `tolerance` accepts `{ px, scale }` alongside a world
+    number.
+  - The selection outline traces the node's projected corners, handles sit on
+    them, and the rotate badge sits its `distance` in pixels off the top edge,
+    along that edge's normal as it lands on screen. `rotationHandle` takes the
+    view's `scale` to do this and now also returns the badge's screen `angle`;
+    `standoff` (exported) is the placement both it and the grab
+    region use.
+  - A painted rotate badge is grabbable where it is drawn:
+    `createRotationAffordance` takes `handle: { distancePx, hitRadiusPx }`, and
+    `<SceneCanvas>` / `<CanvasView>` turn it on when the selection overlay
+    paints one. An affordance `point` region takes a `standoff` for chrome that
+    floats a fixed distance off an edge.
+  - The rotate ring's minimum band, and its paint inset, are measured on screen
+    for a turned target (`pxExtent` and `annulusSemiAxes` take a rotation).
+  - Grid lines stay 1px on screen on both axes.
+  - Resize handles on a turned target are grabbable across the turned square
+    they are painted as, not a screen-aligned one. A `point` region takes
+    `turned: true` for this; `pointRegionFrame` is the one placement the
+    hit-test, the region's square paint and the debug hitbox all read, and
+    `screenAngleOf` the one angle the overlay turns its handles by.
+  - The `debug.slops` overlay draws the regions the hit-test walks — the same
+    affordance list, each region's square from `pointRegionFrame` — instead of
+    recomputing corner and anchor positions, so it now shows a custom
+    `selectTool.handleHitRadius`, turned handles, and anchors on every selected
+    path the hit-test offers them on.
+  - The hitbox debug overlay draws a world circle as the ellipse it lands as, a
+    rotated rect turned, and the new `polygon` `HitShape` a point region now
+    records.
+- f8bde12: A scene that has never had a layout now arranges a container as soon as it is given one, whichever way the layout arrives: a `createSetLayoutOp` run through `applyBatch` (or `scene.history.apply` / a journal), and a `scene.setLayout` call inside `scene.batch` or `scene.untracked`, each lay the children out in the same undo step, as a bare `scene.setLayout` call already did. Before, they set the layout and left the children where they were until the container's next change. Undo, redo and a restored history replay the arrangement. A bug fix; no API changes.
+- 685a086: Additive. A `ShaderDrawCommand` can fill an array uniform from one value: key
+  it by the array's bare name and pass a flat `number[]`, `Float32Array`,
+  `Int32Array` or `Uint32Array` — `u_ripples: [x, y, t, x, y, t]` fills
+  `uniform vec3 u_ripples[8]` from slot 0 in one `uniform3fv` call. The call is
+  picked from the declared element type (`float`/`vecN`, `int`/`ivecN`,
+  `bool`/`bvecN`, `uint`/`uvecN`, and every `matN`/`matNxM`). A value that is not
+  a whole number of elements, or is longer than the declaration, throws in dev; a
+  shorter one leaves the remaining slots as they were. Per-slot keys
+  (`u_ripples[2]`) keep working. Effects passes take the same values.
+  `ShaderUniform` widens to include those array types.
+  
+  Re-registering a program id with new source in dev now reaches every renderer
+  that compiled it: the renderer recompiles on its next frame, deletes the
+  program it replaces and looks its uniforms up again. If the new source fails to
+  compile, it logs the error once and keeps drawing the previous program. A
+  `<Canvas shaders>` naming the id repaints when its source changes, so the edit
+  shows up without anything else asking for a frame.
+- 90a4686: The default `slice` dep now cuts a path under any pose the pose descriptor can read, not only one with top-level `x`/`y`/`width`/`height`: `useSliceDepSource` takes the canvas's `poseDescriptor` as a new optional last argument, and `<SceneCanvas>` passes it. A rotated shape's pieces keep its rotation in their own poses instead of having it baked into their paths, when the descriptor can write a rotation (`withRotation`); otherwise the rotation is baked in as before. `computeSliceOps`'s `placePiece` now receives the world-space piece and returns `{ pose, path }` (the new `SlicePiece` type) rather than mapping a pose alone, and `SliceBounds` is no longer exported — breaking for callers of that hook, which has not yet been released.
+  
+  `worldEditToStorage` now places a rotated pose's box so the edited path stays where it was drawn when its bounds change. Before, the rotation pivot moved with the box, so dragging an anchor of a rotated shape past its bounds shifted the whole shape. It also accepts any `Path`, not only a polygon.
+- 7e08265: `<SceneCanvas>` now publishes a default `slice` dep, so `useSliceTool` cuts with nothing else wired. Each cut swaps every path it crosses for its pieces in one undo step: an open path is snipped, a closed one is knifed, and a closed loop cuts the region it encloses out as its own piece. The pieces of a selected shape stay selected. Paths are cut where they are drawn and the pieces are stored in their parent's frame under `poseComposition`. Nodes on locked layers and nodes with derived geometry are skipped. Additive: `useSliceDepSource` and the pure `computeSliceOps` are new exports, and a consumer's own `useSliceDep` still replaces the default. The WeaselDraw copy is gone.
+- d60a422: Cuts along a polyline, and scissors. `splitPathByPolyline(path, cut)` is the knife along an open polyline: the new edges follow the cut through every bend, a loop the cut draws inside the fill is dropped, and chords that cross each other are all cut. `splitPathBySegment` is now the two-point case of it. `snipPathByPolyline(path, cut)` splits a path's stroke wherever the cut crosses it, leaving every piece open instead of closing it the way a fill does; curves keep their segment types in both. `sliceAction` takes the binding param `cut: 'freehand'` to cut along the whole drag trail rather than a straight line. Breaking: `SliceDep.commit` now receives the cut as one polyline, `commit(cut)`, instead of `commit(a, b)`; a straight cut arrives as `[a, b]`.
+- dde2315: The slice tool moves into the kit as `useSliceTool`, and cuts click by click. Clicks place the cut one point at a time, with a live preview trailing to the pointer; Enter or a double-click cuts, Escape discards, Backspace takes back the last point, and a click on the first point closes the cut into a loop and cuts. A drag still cuts straight, and an Alt-drag along its trail. The tool registers `sliceAction` itself, so a consumer passes it `tools={{ slice }}` and publishes a `slice` dep, and no longer needs `actions={{ slice: sliceAction }}`. Additive.
+  
+  `splitPathByPolyline` now cuts out the region a loop in the cut encloses, instead of dropping the loop: a loop inside the fill becomes its own piece, taking any hole it surrounds, and leaves a hole in the piece around it. A closed cut counts as a loop, or, where it crosses the boundary, is cut as the chords it makes. A cut with a loop in it now returns one more piece than it did.
+- 4cb55b7: Text can be set in small caps. `StyledRun` and `TextStyle` take
+  `fontVariantCaps: 'normal' | 'small-caps'`. A run overrides the node, and
+  `'normal'` on a run turns off small caps it would inherit. Lowercase letters
+  are drawn as capitals at a smaller size. The run's `text` is not rewritten, so
+  carets, selections and hit tests address what was typed. The small-caps
+  reading is applied after `textTransform`, as CSS does it.
+  
+  This is a synthesis, not the font's `smcp` feature. The small size is the
+  face's x-height over its cap height (`smallCapsScaleFor`). A face that states
+  neither height gets `SMALL_CAPS_SCALE`, 0.7, which is the factor Chromium and
+  WebKit use. `FaceMetrics` gains `xHeight` and `capHeight`, read from `OS/2`
+  on both tiers. The bundled Inter atlas carries them now.
+  
+  `ResolvedRun` gains an optional `sizeMap`, which holds the size each unit of
+  its text is drawn at. `fontSize` still sets the line height and the rules, so
+  a small-caps word keeps its line and gets one underline. The layout cache keys
+  on the size map. The outline-tier size gate reads the run's size, so one word
+  is never split across tiers.
+  
+  The edit overlay sets the lowercase letters of a small-caps run in
+  `<span data-small-caps>` pieces. It sizes them at the canvas scale, because a
+  browser's own synthesis uses a fixed factor. It re-splits the pieces as you
+  type. A plain-text edit now commits the overlay's DOM text instead of
+  `innerText`. `innerText` applies `text-transform`, so a node shown in capitals
+  committed the capitals as its text. `@weasel-js/svg` writes
+  `font-variant="small-caps"`, and `normal` on a tspan, and reads either back.
+  
+  All of this is additive.
+- fb21799: The fluent stagger form takes a `cancelKey` and a `label`, as the factory form already did. `.tween` and `.springPose` accept both in their options, and `.each` takes a `StaggerOptions` second argument. The label names the stagger's `start`, `end`, `cancel` and `interrupt` events and its `animator.live()` row; the cancel-key lets `animator.cancelKey` and `isActive` reach a fluent run, and a second run under the same key interrupts the first. Additive.
+- fe9a91e: Add `warmSvg(nodes)` and `svgNeeds(nodes)` to `@weasel-js/svg`. `serializeSvg` is synchronous, and its missing-def warning used to point at `warmPaintKinds()`, which loads every lazily registered kind and fails when any unrelated one does. `svgNeeds` reads the serializer's own paint pre-pass, so it lists exactly the paint kinds the export writes as paint servers — fills and strokes, text and run paints, through nested groups — plus the faces whose font metrics size a sub- or superscript run with its own `baselineShift`. `warmSvg` loads only those. Core now exports `isPaintKindKnown`, and `@weasel-js/text` (re-exported by core) adds `resolveRunFace(run, style)`, the family, weight and style a run is set in, read without touching the font registry. Additive.
+- 3a68365: Add justified text. `TextAlign` gains `'justify'`: every line that wraps is
+  spread across the box by widening its word gaps equally, and a paragraph's last
+  line, or a line with no gap, sits at the start edge. `resolveAlign` maps
+  `justify` to that start edge. `LayoutRunsOpts.justify` and
+  `TextDrawCommand.justify` carry justification apart from the edge, so
+  `justify: true` with `align: 'center'` centers the last lines instead (CSS
+  `text-align-last`). The edit overlay sets `text-align: justify` and pins
+  `text-align-last` to the same edge, and the property panel's Align bar gets a
+  Justify segment with a new `textAlignJustify` icon. SVG export writes a
+  justified node at its start edge and records `data-weasel-align="justify"`,
+  which the reader turns back into `align: 'justify'`.
+  
+  This is additive. Code that switches over `TextAlign` exhaustively has a new
+  value to handle.
+- 43ad590: `tileGrid` takes an `overflow` policy, and it holds however a child arrives — dragged in, inserted, reparented, duplicated or grouped inside the grid. Before, only a drop was checked: a child that arrived by an op past `cols * rows` was skipped by the layout and left wherever its pose put it.
+  
+  - `'reject'` (the default) refuses the child by every route. A drop finds no free cell, as before. An insert or reparent that would overfill the grid is now reverted whole, so nothing lands and no undo entry is recorded. **This is a behavior change:** such an op used to add the child and leave it unplaced.
+  - `'grow'` adds a row when the last one fills (a column, under `flow: 'column'`), and the container grows by one cell pitch to hold it, in the same undo step.
+  - `'scroll'` keeps the container's size and runs the extra children on past its last visible row at the same pitch. `LayoutStrategy.contentExtent` reports the region they cover.
+  
+  Also new on `tileGrid`: `flow: 'row' | 'column'` sets the fill order. Every child now gets a cell from `childPoses`; one past the grid is placed past it rather than skipped. A child that joins a non-full grid by an op is placed in the free cell nearest to where it was put. Before, it stayed where its pose put it.
+  
+  Underneath, the scene has an arrival hook. `scene.setArrivalHandler(fn)` hears every node that joins a container during one live edit. It returns poses to write as part of that edit, or `null` to refuse the edit. A refused `applyBatch` (or `history.applyOps`, or a journal's `applyBatch`) is reverted and does not throw. A refused `scene.batch`, `untracked`, or bare `add` / `move` is reverted and throws `SceneArrivalRefused`. Redo and a restored history replay the arrangement recorded the first time, through the new `'arrange'` op (`createArrangeOp`). `LayoutStrategy` gains the optional `arrive` and `contentExtent`. `layoutArrivalHandler(scene, { layouts })` connects a scene's layouts to the hook, and `<SceneCanvas layouts>` installs it. A canvas wired by hand through `sceneToAdapter({ layouts })` calls `useLayoutArrivals`. A reparent-on-drop the container refuses now leaves the drag uncommitted instead of throwing.
+  
+  Mostly additive, with these breaking edges. The default-policy change above. `Scene` gains a required `setArrivalHandler`, so a hand-written `Scene` implementation has to add it. While a handler is installed, a bare `scene.add` / `scene.move` into a container is recorded as a one-mutation batch.
+- 4cef954: New `useLatest(value)` (`@weasel-js/react`, re-exported by
+  `@weasel-js/core`): a ref holding the value of the last committed render, for
+  event handlers and frame loops that must not re-subscribe when it changes.
+  Unlike writing `ref.current = value` in the render body, a render React throws
+  away never lands, and the value is in place before any layout effect of the
+  commit runs. List the returned ref in dependency arrays; `exhaustive-deps` only
+  treats `useRef` as stable.
+- c4cc60f: `useSelection` now returns the same object for the life of the component. A memo or effect keyed on `selection` used to rerun every render, so tools built from it were rebuilt every render, and with `onToolsCreated={setTools}` that looped ("Maximum update depth exceeded"). `current` still reads the live selection and the calling component still re-renders when it changes, but anything derived from the ids must now be keyed on `selection.current`, not `selection`: a memo keyed only on the api no longer reruns when the selection changes. A changed `mode` or `extend` takes effect without a new object.
+- 6df279e: `ViewportLayer.reproject` and `viewportsAt` are gone. They were the click-probe prototype from before views; a viewport that takes input is now a `<CanvasView>` (or a `views` entry, or `SceneCanvasApi.addView`), and the canvas routes pointer events into its camera through the gesture dispatcher. `createViewportLayer` stays as the paint primitive, and `layer.resolvable(outer, dims)` fed to `createViewResolver` is the seam for routing a raw viewport yourself — `clientToWorld(x, y, target.origin, target.view)` then lands where `reproject` did. Breaking: replace `reproject`/`viewportsAt` calls with a `<CanvasView>`, or with `createViewResolver` over the layers' `resolvable`.
+- 09ff2c1: New `warmFonts(families?)`, additive: loads registered MSDF atlases ahead of their
+  first use and resolves once they land, the font counterpart of `warmPaintKinds`.
+  With no list it loads every family passed to `registerFont`, starting lazily
+  declared variants and joining fetches already running. It rejects when a load
+  fails, or for a family that was never registered.
+  
+  `renderSceneToPixels` and a `RasterSession` render synchronously, so text set in
+  a face registered `{ lazy: true }` draws nothing until its atlas has been
+  fetched — and nothing fetches it until text first asks. `await warmFonts()`
+  before a headless render that contains text.
+- 637945e: `warmRender` can load just what one render needs. Pass it the render,
+  `warmRender({ render: args })` with the args `renderSceneToPixels` or
+  `RasterSession.render` will take, or `{ commands }` already built. It builds
+  the commands the way the render does and loads only the font faces their text
+  is set in and the paint kinds they name. A capture no longer loads the mesh
+  chunk when it draws no mesh, and no longer fails because some unrelated lazy
+  font failed to load. It still rejects when a face the render needs fails.
+  `families` and `paintKinds` still override, and `warmRender()` with no render
+  still loads everything.
+  
+  labkit's raster capture and the RenderToPixels and DebugOverlay demos now warm
+  only what they are about to render.
+  
+  Additive: core exports `renderNeeds(commands)`, which returns the fonts and
+  paint kinds a command list draws with, and `debugSnapshotArgs(args)`, which
+  returns the `renderSceneToPixels` args behind `renderDebugSnapshot`.
+  `warmFonts` also takes a `FontRequest` (`{ family, weight?, style? }`, exported
+  from `@weasel-js/font` and core). A request loads what resolving that one
+  variant draws with: the exact variant, or the whole family when that variant
+  was never registered, the substitute family when the policy would swap one in,
+  and the variant's outline face. Unlike a bare family name, a request for a
+  family nothing registered resolves instead of rejecting.
+- 5308126: `useClipboardOps`'s `produceFlavors` may now return a promise for any flavor's text (the new `ClipboardFlavors` type). The OS write is still issued inside the copy, and the clipboard takes the text once it resolves, so an SVG flavor can `await warmSvg(nodes)` before it serializes without the copy losing its gesture. Additive: a producer returning plain strings behaves as before.
+- Updated dependencies [f457e7c]
+- Updated dependencies [8635031]
+- Updated dependencies [276bad1]
+- Updated dependencies [3d80c9f]
+- Updated dependencies [886fefd]
+- Updated dependencies [27bcf57]
+- Updated dependencies [a7f2103]
+- Updated dependencies [edabd62]
+- Updated dependencies [7be3713]
+- Updated dependencies [b2fd89a]
+- Updated dependencies [4212d2d]
+- Updated dependencies [b5cc59f]
+- Updated dependencies [1524403]
+- Updated dependencies [3c1def2]
+- Updated dependencies [ae6e8ac]
+- Updated dependencies [b94d2ca]
+- Updated dependencies [8d0493a]
+- Updated dependencies [9cad63b]
+- Updated dependencies [b228015]
+- Updated dependencies [365c762]
+- Updated dependencies [51eb721]
+- Updated dependencies [d175c0c]
+- Updated dependencies [3755e17]
+- Updated dependencies [16a0476]
+- Updated dependencies [63d0ece]
+- Updated dependencies [dde2315]
+- Updated dependencies [4cb55b7]
+- Updated dependencies [fe9a91e]
+- Updated dependencies [3a68365]
+- Updated dependencies [351271a]
+- Updated dependencies [59f4365]
+- Updated dependencies [4cef954]
+- Updated dependencies [09ff2c1]
+- Updated dependencies [637945e]
+  - @weasel-js/geom@1.7.1
+  - @weasel-js/font@1.7.1
+  - @weasel-js/text@1.7.1
+  - @weasel-js/routing@1.7.1
+  - @weasel-js/paint@1.7.1
+  - @weasel-js/quantity@1.7.1
+  - @weasel-js/react@1.7.1
+  - @weasel-js/cursor@1.7.1
+  - @weasel-js/gestures@1.7.1
+  - @weasel-js/history@1.7.1
+  - @weasel-js/modes@1.7.1
+  - @weasel-js/registry@1.7.1
+
 ## 1.7.0
 
 ### Patch Changes

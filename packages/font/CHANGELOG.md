@@ -1,5 +1,211 @@
 # @weasel-js/font
 
+## 1.7.1
+
+### Patch Changes
+
+- 8635031: Every text tier now places its baseline from the ascent and descent a browser
+  sets the face with, and centers the face in its line the way CSS does: half
+  the leading above the ascent. A face taller than its line box, such as Papyrus
+  at `lineHeight: 1.2`, gets negative leading and overflows the box, which keeps
+  its height. Before, a line hung its baseline one ascent below the line top
+  with no leading, so glyphs sat half the leading away from where CSS puts
+  them: high in a roomy line, low in a tight one, where a tall face overflowed
+  only at the bottom.
+  
+  The ascent rule is `verticalMetricsFromTables` (new, additive, in
+  `@weasel-js/font`): `OS/2` typo metrics when the font sets
+  `USE_TYPO_METRICS`, otherwise `hhea`. Firefox and every Linux engine follow it;
+  Chromium and WebKit on macOS read `hhea` regardless, and the edit overlay's
+  measured correction covers the difference there. `gen-font` bakes the result
+  into the atlas's `faceMetrics` block as `ascent` / `descent`, the outline
+  parser reads the same values (and reports them as `OutlineFace.ascender`), and
+  the canvas tier records the browser's own, measured at a 1000px em rather than
+  at the 48px bake size. An atlas or custom parser that states no ascent and
+  descent keeps the previous placement.
+  
+  Rendering changes: text in the bundled Inter at `lineHeight: 1.2` moves up by
+  0.005 em. Canvas-tier faces move down by half their leading: Georgia by 1.3px
+  and Arial by 1.7px at 40px. The committed Inter atlases are rebaked; the PNG is
+  byte-identical.
+- 3d80c9f: Text can become path geometry. `textToPath(data, pose)` returns a text node's
+  glyph outlines and decoration rules in world space, as one `'nonzero'`
+  compound path whose filled region is their union. Glyphs keep the font's
+  curves, and each glyph is re-wound so faces that disagree on winding still
+  fill their overlaps. It works at any size, not only above the outline-tier
+  threshold, and applies synthetic italic the way the renderer does. When some
+  run has no outline geometry it throws a `TextOutlinesError` whose `reason` is
+  `'no-outlines'`, `'outlines-loading'`, `'outlines-failed'` or
+  `'synthetic-bold'`. Faux bold is refused rather than drawn at the regular
+  weight, because a path has no distance field to thicken.
+  `loadTextOutlines(data)` waits for the faces a text is set in.
+  
+  The new `createOutlines` action (Shift+Mod+O, group `'text'`, under the
+  `paths` feature) replaces each selected text node with a path node in one
+  undoable batch. Each path takes its text node's slot in the stacking order.
+  Consumers publish a `CreateOutlinesAdapter` with `useCreateOutlinesAdapter`;
+  its `createPathNode(path, sourceId)` carries the text's fill and stroke. The
+  pure core is `applyCreateOutlines`, and the icon is `CreateOutlinesIcon`.
+  
+  Boolean ops take text operands: `BooleansAdapter` gains an optional
+  `getTextSource(id)`, consulted when `getWorldPath` has no path. This change is
+  additive, with one exception: `BooleanOpResult` has a new
+  `{ kind: 'failed', reason: 'text-outlines' }` variant, and a text operand
+  without outlines now leaves the scene untouched. Code that switches
+  exhaustively over `BooleanOpResult` needs a case for it.
+  
+  Also new: `loadFontOutlines(family, variant?)` in `@weasel-js/font` (also
+  re-exported from core) resolves once a registered face has loaded or failed.
+  `@weasel-js/geom` adds `pathSignedArea` and `reversePath`.
+- a7f2103: Underline, strikethrough and super/subscript now follow the font's own metrics
+  instead of fixed constants. `gen-font` bakes `post.underlinePosition` /
+  `underlineThickness`, `OS/2.yStrikeoutPosition` / `yStrikeoutSize` and the
+  `OS/2` super/subscript size and offset into a new optional `faceMetrics` block
+  in the atlas JSON, and the outline parser reads the same values onto
+  `OutlineFace.faceMetrics`, through one shared function, so an atlas and a TTF
+  of one font place rules and scripts identically. The overline keeps its
+  default offset and takes the underline's weight. A face with no metrics
+  (older atlases, the canvas tier, custom parsers) keeps the previous constants.
+  
+  This changes rendering for the bundled Inter: its underline sits lower
+  (0.170 em, was 0.10) and heavier (0.068 em, was 0.05), and `script: 'sub'`
+  drops by 0.075 em instead of 0.333 em, with scripts at 60.0% size. The
+  committed atlases are rebaked; the PNG is byte-identical.
+  
+  Additive API: `faceMetricsFromTables`, `faceMetricsOf`, `faceMetricsFor` and
+  the `FaceMetrics` types in `@weasel-js/font`; `scriptMetrics`,
+  `scriptMetricsFor`, `decorationMetrics` and `DEFAULT_DECORATION_METRICS` in
+  `@weasel-js/text` (re-exported from core); an optional `faceOf` argument to
+  `layoutMarkdown` and an optional `face` on `PositionedRun`. `SCRIPT_METRICS`
+  remains, now documented as the fallback rather than what every run gets.
+  
+  Fix: `resolveFontVariant` called from inside the glyph-ready notification of
+  an atlas that just landed returned a pending miss, because the load was still
+  marked in flight. A subscriber that re-resolves synchronously, as
+  `useSyncExternalStore` does, now sees the face.
+- edabd62: `layoutRuns` no longer warns "no metrics for …" about a face whose registration is still loading — an un-awaited `registerFont`, or an outline face whose bytes have not arrived. It warns once that registration settles and the face still resolves to nothing. New `fontPending(family, weight?, style?)` answers whether a registration in flight could still serve a request. A failed `registerFont` or outline load now fires `subscribeGlyphReady`, so text laid out while it was pending gets laid out again.
+- 7be3713: Changing what a family resolves to now repaints the text drawn in it. `setFontFallbackPolicy`, `setDefaultFontFamily`, `registerCanvasFont` and `unregisterCanvasFont` each advance `glyphGeneration()` and notify `subscribeGlyphReady` when they change something. Before, text already on a canvas kept its cached layout from before the change: switching to `'none'` left a substituted line visible, and enrolling a family at runtime did not redraw it. A call that changes nothing still notifies nobody.
+- b5cc59f: Small atlas text no longer loses stems narrower than a pixel. The shader used
+  to size its antialiasing band from the derivative of the distance field. That
+  derivative reads flat when a 2x2 pixel quad straddles a thin stem, so the band
+  collapsed and the stem disappeared. A 12px superscript `H` in Inter rendered at
+  DPR 1 without its left stem. The band now comes from the screen derivatives of
+  the texture coordinate, scaled by each atlas's page size and field range.
+  
+  Additive: `glyphFieldScale(source, family, weight, style)` is exported from
+  `@weasel-js/font`, and `BmFont` gains an optional `distanceRange` read from
+  msdf-bmfont-xml's `distanceField.distanceRange`. `GLYPH_COVERAGE_GLSL`'s
+  `glyphCoverage` now takes two more arguments, `uv` and `fieldPerUv`. That breaks
+  any custom program that pastes the snippet in and calls it.
+- 3c1def2: `registerFont` takes a fifth argument, `{ lazy: true }`, which fetches nothing
+  until text first lays out in that family — so a scene with no text never
+  downloads the atlas. Until the atlas lands, a run set in the family lays out as
+  nothing rather than in a fallback face's metrics, and `<SceneCanvas>` repaints
+  it when the atlas arrives. The returned promise settles with that load, so it
+  never settles for a face no text uses; don't `await` it at startup. New type:
+  `RegisterFontOptions`.
+  
+  A family whose atlas is still fetching, eagerly or lazily, now outranks the
+  outline tier and the `'substitute'` fallback while it loads: text waits for the
+  real face instead of laying out in another one and reflowing when it arrives.
+  The same holds for a registered-but-unloaded exact variant, which is no longer
+  faked from a sibling weight in the meantime. `listFonts` and `listFontWeights`
+  report lazily registered faces before they load.
+  
+  `@weasel-js/hud` registers its bundled Inter lazily, so attaching a HUD whose
+  widgets draw no text no longer downloads it. `registerDefaultFont`'s promise now
+  settles when a widget first lays out text.
+- 9cad63b: The text edit overlay now sets its glyphs in the face the canvas draws. A family
+  the canvas draws from a baked atlas or from outlines — `sans-serif` registered
+  to Inter, say — used to reach the overlay as a bare CSS name, which the browser
+  resolved to its own face (Helvetica on macOS), so "Hxgd" at 72px ended 12px
+  short of the canvas. New `cssFontFamily(family, variant)` answers the CSS
+  `font-family` for whatever the canvas draws: a private `FontFace` built from the
+  family's `registerFontOutlines` file, with the family name as fallback. A family
+  drawn through the browser (`registerCanvasFont`) comes back unchanged. An atlas
+  with no font file cannot give the DOM its face, and says so once in the console;
+  register the file it was baked from with `registerFontOutlines`.
+  `OutlineFontOptions.cssSrc` names the `@font-face` source where the bytes won't
+  do, and `enableLocalFontOutlines` sets it to `local(<PostScript name>)`.
+  
+  The bundled Inter atlas carries the font's own advances and kerning. It used to
+  lay out on whole-pixel advances at its 32px bake size with no kerning at all, so
+  "Hxgd" at 72px set 182.25px wide against the 179.44px every browser gives the
+  same face, and "AVATAR" 22px wide of it. `gen:font` now writes advances at full
+  precision and kerning pairs read from the font's GPOS table, and the atlas is
+  rebaked from `inter.ttf`. Text set in it changes width slightly.
+  
+  Outline faces kern like a browser too. opentype.js skips GPOS extension
+  lookups, which is where Inter keeps nearly all its kerning; the outline tier now
+  reads pair kerning from GPOS itself.
+- b228015: The text edit overlay no longer opens in the fallback font and then reflows. `@weasel-js/font` builds the overlay's DOM face as soon as the outline file's bytes are in hand: at `registerFontOutlines` for an `ArrayBuffer` source, and when the canvas first reads a URL or thunk source, reusing those bytes instead of fetching again. Registering a URL or thunk still fetches nothing. New `cssFontFamilyLoading(family, variant)` returns the load still in flight for the face `cssFontFamily` names, or `null` when there is nothing to wait for. An edit whose face is still loading keeps the overlay hidden until the face lands or for at most `fontHold` ms (new option on `useTextEdit` and `useSceneTextEdit`; default `TEXT_EDIT_FONT_HOLD`, 100ms), then shows the fallback. `0` restores the old behavior. Additive.
+- 16a0476: Text runs carry a numeric weight. `StyledRun.fontWeight` (100–900) overrides the node's weight and the `bold` flag, which is now a preset over it: writing either one to a range drops the other. `numericWeight` and `isBoldWeight` (600 and up) are exported as the one reading of a weight.
+  
+  Taking bold off part of a bold node now writes `fontWeight: 400` over that part and leaves the node alone, instead of lowering the node and re-bolding the rest — so it works at any node weight, including 900, where it used to be refused. `SetFlagResult.applied` is gone, since the edit can no longer be declined. `effectiveRangeStyle` reports the `fontWeight` that renders and reads `bold` off it; `patchRangeStyle` lays an armed style over a range the way a write would.
+  
+  `listFontWeights(family)` in `@weasel-js/font` reports the weights a family has on the atlas and outline tiers. A new `font-weight` pref kind draws `FontWeightSelect`, which lists those weights (the nine CSS weights for a family with none on file) and reads the family from the `fontFamily` leaf beside it. The text tool's character options and the node panel's Weight field both use it. The overlay and SVG round-trip a run's weight; a tspan `font-weight` other than 700 now reads as the run's weight rather than being dropped.
+- 4cb55b7: Text can be set in small caps. `StyledRun` and `TextStyle` take
+  `fontVariantCaps: 'normal' | 'small-caps'`. A run overrides the node, and
+  `'normal'` on a run turns off small caps it would inherit. Lowercase letters
+  are drawn as capitals at a smaller size. The run's `text` is not rewritten, so
+  carets, selections and hit tests address what was typed. The small-caps
+  reading is applied after `textTransform`, as CSS does it.
+  
+  This is a synthesis, not the font's `smcp` feature. The small size is the
+  face's x-height over its cap height (`smallCapsScaleFor`). A face that states
+  neither height gets `SMALL_CAPS_SCALE`, 0.7, which is the factor Chromium and
+  WebKit use. `FaceMetrics` gains `xHeight` and `capHeight`, read from `OS/2`
+  on both tiers. The bundled Inter atlas carries them now.
+  
+  `ResolvedRun` gains an optional `sizeMap`, which holds the size each unit of
+  its text is drawn at. `fontSize` still sets the line height and the rules, so
+  a small-caps word keeps its line and gets one underline. The layout cache keys
+  on the size map. The outline-tier size gate reads the run's size, so one word
+  is never split across tiers.
+  
+  The edit overlay sets the lowercase letters of a small-caps run in
+  `<span data-small-caps>` pieces. It sizes them at the canvas scale, because a
+  browser's own synthesis uses a fixed factor. It re-splits the pieces as you
+  type. A plain-text edit now commits the overlay's DOM text instead of
+  `innerText`. `innerText` applies `text-transform`, so a node shown in capitals
+  committed the capitals as its text. `@weasel-js/svg` writes
+  `font-variant="small-caps"`, and `normal` on a tspan, and reads either back.
+  
+  All of this is additive.
+- 09ff2c1: New `warmFonts(families?)`, additive: loads registered MSDF atlases ahead of their
+  first use and resolves once they land, the font counterpart of `warmPaintKinds`.
+  With no list it loads every family passed to `registerFont`, starting lazily
+  declared variants and joining fetches already running. It rejects when a load
+  fails, or for a family that was never registered.
+  
+  `renderSceneToPixels` and a `RasterSession` render synchronously, so text set in
+  a face registered `{ lazy: true }` draws nothing until its atlas has been
+  fetched — and nothing fetches it until text first asks. `await warmFonts()`
+  before a headless render that contains text.
+- 637945e: `warmRender` can load just what one render needs. Pass it the render,
+  `warmRender({ render: args })` with the args `renderSceneToPixels` or
+  `RasterSession.render` will take, or `{ commands }` already built. It builds
+  the commands the way the render does and loads only the font faces their text
+  is set in and the paint kinds they name. A capture no longer loads the mesh
+  chunk when it draws no mesh, and no longer fails because some unrelated lazy
+  font failed to load. It still rejects when a face the render needs fails.
+  `families` and `paintKinds` still override, and `warmRender()` with no render
+  still loads everything.
+  
+  labkit's raster capture and the RenderToPixels and DebugOverlay demos now warm
+  only what they are about to render.
+  
+  Additive: core exports `renderNeeds(commands)`, which returns the fonts and
+  paint kinds a command list draws with, and `debugSnapshotArgs(args)`, which
+  returns the `renderSceneToPixels` args behind `renderDebugSnapshot`.
+  `warmFonts` also takes a `FontRequest` (`{ family, weight?, style? }`, exported
+  from `@weasel-js/font` and core). A request loads what resolving that one
+  variant draws with: the exact variant, or the whole family when that variant
+  was never registered, the substitute family when the policy would swap one in,
+  and the variant's outline face. Unlike a bare family name, a request for a
+  family nothing registered resolves instead of rejecting.
+- @weasel-js/registry@1.7.1
+
 ## 1.7.0
 
 ### Patch Changes
