@@ -263,17 +263,12 @@ the entry chunk's hash against the build you mean before believing a grep over i
 ### The committed baseline
 
 `bench/baseline.json` and `bench/BASELINE.md` are one run of the whole suite on
-an Apple M2 Max (12 threads, Node v26.1.0), measured 2026-08-14. They are
-committed so a change can be measured against something and a reviewer can
-see numbers in a diff. They are one machine's numbers, not a threshold, and
-nothing fails when they are exceeded. `baseline.json` is a vitest report, not
-`weasel-perf-result/1`; `BASELINE.md` is rendered from it by `bench-report.mjs`.
-The committed one predates vitest 5 and is in vitest 4's `--outputJson` shape;
-a re-record writes vitest 5's JSON reporter instead, and
-`lib/vitest-bench.ts` reads both. It also predates `beforeEach`, so its
-`getMesh miss` row includes a cache reset and its cold `renderOrder` group
-has the old row names, including a `layer reorder only` row the suite no
-longer has.
+an Apple M1 Max (10 threads, Node v26.8.1), measured 2026-09-29 on an otherwise
+idle fleet node. They are committed so a change can be measured against
+something and a reviewer can see numbers in a diff. They are one machine's
+numbers, not a threshold, and nothing fails when they are exceeded.
+`baseline.json` is vitest's JSON reporter output, not `weasel-perf-result/1`;
+`BASELINE.md` is rendered from it by `bench-report.mjs`.
 
 ```sh
 npm run perf:bench:baseline   # re-measure, overwrite both files

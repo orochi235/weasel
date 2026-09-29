@@ -2,7 +2,7 @@
 import { relative } from 'node:path';
 import { REPO_ROOT, metric, type PerfRun } from './result.ts';
 
-/** One benchmark, flattened out of either report shape. Times in ms. */
+/** One benchmark, flattened out of the report. Times in ms. */
 export interface BenchRow {
   /** Repo-relative path of the `.bench.ts` file. */
   suite: string;
@@ -34,44 +34,14 @@ export interface VitestJsonReport {
   }>;
 }
 
-/** vitest 4's `vitest bench --outputJson`, which `bench/baseline.json` was recorded in. */
-export interface LegacyBenchReport {
-  files: Array<{
-    filepath: string;
-    groups: Array<{
-      fullName: string;
-      benchmarks: Array<{
-        name: string; median: number; min: number; mean: number; rme: number; hz?: number; sampleCount: number;
-      }>;
-    }>;
-  }>;
-}
-
-export type VitestBenchReport = VitestJsonReport | LegacyBenchReport;
-
 // A path absolute to another checkout keeps its repo-relative tail.
 function suiteOf(filepath: string): string {
   const rel = relative(REPO_ROOT, filepath);
   return rel.startsWith('..') ? rel.replace(/^.*?(tests\/)/, '$1') : rel;
 }
 
-export function readBenchReport(report: VitestBenchReport): BenchRow[] {
+export function readBenchReport(report: VitestJsonReport): BenchRow[] {
   const rows: BenchRow[] = [];
-  if ('files' in report) {
-    for (const file of report.files) {
-      const suite = suiteOf(file.filepath);
-      for (const g of file.groups) {
-        const group = g.fullName.replace(/^.*?\.bench\.ts > /, '');
-        for (const b of g.benchmarks) {
-          rows.push({
-            suite, group, name: b.name, median: b.median, min: b.min, mean: b.mean,
-            rme: b.rme, hz: b.hz ?? 1000 / b.mean, samples: b.sampleCount,
-          });
-        }
-      }
-    }
-    return rows;
-  }
   for (const file of report.testResults) {
     const suite = suiteOf(file.name);
     for (const t of file.assertionResults) {
@@ -89,7 +59,7 @@ export function readBenchReport(report: VitestBenchReport): BenchRow[] {
   return rows;
 }
 
-export function addVitestBench(run: PerfRun, report: VitestBenchReport): void {
+export function addVitestBench(run: PerfRun, report: VitestJsonReport): void {
   for (const b of readBenchReport(report)) {
     const n = b.samples;
     run.item(`${b.suite} > ${b.group} > ${b.name}`, {
