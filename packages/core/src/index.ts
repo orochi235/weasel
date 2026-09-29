@@ -776,6 +776,8 @@ export {
   decomposePath,
   splitSubpaths,
   unionBoundsPath,
+  pathSignedArea,
+  reversePath,
   pathPoseDescriptor,
   pathOriginProjection,
   createPenPreviewLayer,
@@ -1165,6 +1167,16 @@ export type {
   UseBooleansReturn,
 } from './interactions/actions/booleans';
 
+// ─── Create Outlines: text nodes to path geometry ───────────────────────────
+export {
+  applyCreateOutlines,
+  useCreateOutlinesAdapter,
+} from './interactions/actions/outlines';
+export type {
+  CreateOutlinesAdapter,
+  CreateOutlinesResult,
+} from './interactions/actions/outlines';
+
 // ─── Debug overlay subsystem (URL-flagged tree-shakeable) ───────────────────
 export * from './debug';
 
@@ -1222,6 +1234,7 @@ export {
   DivideIcon,
   CropIcon,
 } from './interactions/actions/defaults/icons/booleanIcons';
+export { CreateOutlinesIcon } from './interactions/actions/defaults/icons/outlineIcons';
 
 // ─── Default edit-action icons ──────────────────────────────────────────────
 // Shipped on the clipboard, duplicate, group, reorder and flip actions.
@@ -1336,6 +1349,7 @@ export {
   unregisterFontOutlines,
   hasFontOutlines,
   outlineStatus,
+  loadFontOutlines,
   listFontOutlines,
   fontRegistry,
   fontOutlineRegistry,

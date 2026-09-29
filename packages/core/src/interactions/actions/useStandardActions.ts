@@ -46,6 +46,7 @@ import {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
 } from './defaults/booleans';
+import { createOutlinesAction } from './defaults/createOutlines';
 import { moveAction } from './defaults/move';
 import { resizeAction } from './defaults/resize';
 import { rotateAction } from './defaults/rotate';
@@ -141,6 +142,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   pathfinderExcludeAction,
   pathfinderDivideAction,
   pathfinderCropAction,
+  createOutlinesAction,
   moveAction,
   resizeAction,
   rotateAction,

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   registerFontOutlines, unregisterFontOutlines, hasFontOutlines,
-  outlineStatus, listFontOutlines, fontOutlineRegistry, glyphOutline, _resetFontOutlinesForTests,
+  outlineStatus, listFontOutlines, fontOutlineRegistry, glyphOutline, loadFontOutlines,
+  _resetFontOutlinesForTests,
 } from './outlineRegistry';
 import type { OutlineFace, OutlineParser } from './OutlineFace';
 import { subscribeGlyphReady, glyphGeneration, _clearGlyphReadySubscribers } from '../glyphReady';
@@ -270,6 +271,36 @@ describe('outline registry', () => {
       const before = glyphGeneration();
       unregisterFontOutlines('Never Registered', { weight: 400 });
       expect(glyphGeneration()).toBe(before);
+    });
+  });
+
+  describe('loadFontOutlines', () => {
+    it('starts an idle face loading and resolves once it is ready', async () => {
+      registerFontOutlines('Fake', {}, new ArrayBuffer(4), { parser: stubParser });
+      const pending = loadFontOutlines('Fake');
+      expect(outlineStatus('Fake', 400, 'normal')).toBe('loading');
+      await expect(pending).resolves.toBe('ready');
+      expect(glyphOutline('Fake', 400, 'normal', 65)).toBe('M0 0L0.5 -0.7L1 0Z');
+    });
+
+    it('joins a load a glyph request already started instead of parsing twice', async () => {
+      const parser = vi.fn(stubParser);
+      registerFontOutlines('Fake', {}, new ArrayBuffer(4), { parser });
+      glyphOutline('Fake', 400, 'normal', 65);
+      await expect(loadFontOutlines('Fake')).resolves.toBe('ready');
+      expect(parser).toHaveBeenCalledTimes(1);
+    });
+
+    it('resolves to failed rather than rejecting when the bytes do not parse', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      registerFontOutlines('Fake', {}, new ArrayBuffer(4), {
+        parser: () => { throw new Error('bad font'); },
+      });
+      await expect(loadFontOutlines('Fake')).resolves.toBe('failed');
+    });
+
+    it('resolves to null for a face nobody registered', async () => {
+      await expect(loadFontOutlines('Nobody', { weight: 700 })).resolves.toBeNull();
     });
   });
 });

@@ -41,8 +41,10 @@ import {
   type ClipboardDep,
   type ClipboardSnapshot,
   contrastLineColor,
+  type CreateOutlinesAdapter,
   DEFAULT_SHAPE_FILL,
   DEFAULT_STROKE_COLOR,
+  DEFAULT_TEXT_STYLE,
   defaultCommitAdapter,
   defaultDrawOne,
   type FillStyle,
@@ -71,6 +73,7 @@ import {
   type Stroke,
   strokeOf,
   type StyledRun,
+  type TextNodeSource,
   type TextStyle,
   type TextVerticalAlign,
   toHex8,
@@ -81,6 +84,7 @@ import {
   useBooleansAdapter,
   useCanvasSize,
   useClipboardOps,
+  useCreateOutlinesAdapter,
   useDepSource,
   useLatest,
   useOngoingAction,
@@ -1022,6 +1026,7 @@ function BooleansAdapterPublisher({
         if (!data.path) return undefined;
         return pathInWorld(data.path, node.pose);
       },
+      getTextSource: (id) => textSourceOf(scene, id),
       compareZ: (x, y) => {
         const order = [...scene.renderOrder()];
         return order.indexOf(asNodeId(x)) - order.indexOf(asNodeId(y));
@@ -1083,6 +1088,60 @@ function BooleansAdapterPublisher({
     return a;
   }, [scene, selection]);
   useBooleansAdapter(adapter);
+  return null;
+}
+
+type DrawScene = ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
+
+/** A text leaf as the kit's outline extraction reads it. */
+function textSourceOf(scene: DrawScene, id: string): TextNodeSource | undefined {
+  const node = scene.get(asNodeId(id));
+  if (!node || node.kind !== 'leaf') return undefined;
+  const { text, runs, style, verticalAlign, path } = node.data;
+  if (text === undefined || path) return undefined;
+  return { data: { text, runs, style, verticalAlign }, pose: node.pose };
+}
+
+/** Publishes the adapter the kit's `createOutlines` action converts text
+ *  through. Each path takes its text node's parent, paint and slot. */
+function CreateOutlinesAdapterPublisher({
+  scene,
+  selection,
+}: {
+  scene: DrawScene;
+  selection: ReturnType<typeof useSelection>;
+}): null {
+  const idCounterRef = useRef(0);
+  const adapter = useMemo<CreateOutlinesAdapter>(() => {
+    const a: CreateOutlinesAdapter = {
+      ...defaultCommitAdapter(scene, selection.adapterMethods),
+      getTextSource: (id) => textSourceOf(scene, id),
+      createPathNode: (path, sourceId) => {
+        const src = scene.get(sourceId);
+        const data = src?.kind === 'leaf' ? src.data : undefined;
+        const b = boundsOfPath(path);
+        return {
+          id: `o-${Date.now().toString(36)}-${idCounterRef.current++}`,
+          kind: 'leaf',
+          layer: src?.layer ?? 'default',
+          parent: src?.parent ?? null,
+          pose: { x: b.x, y: b.y, width: b.width, height: b.height },
+          data: {
+            path,
+            // An absent text fill means the text painter's default, which is
+            // not the path painter's: state it.
+            fill: data?.fill !== undefined ? data.fill : DEFAULT_TEXT_STYLE.fill,
+            ...(data?.stroke !== undefined ? { stroke: data.stroke } : {}),
+          },
+        } as { id: string };
+      },
+      applyOps: (ops, label) => {
+        scene.applyBatch(ops, label ?? 'Create Outlines', a);
+      },
+    };
+    return a;
+  }, [scene, selection]);
+  useCreateOutlinesAdapter(adapter);
   return null;
 }
 
@@ -1608,6 +1667,7 @@ function EditorWithSharedScene({
             }}
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
+            <CreateOutlinesAdapterPublisher scene={scene} selection={selection} />
             <SliceDepPublisher scene={scene} selection={selection} />
             <TextEditDepPublisher
               edit={textEdit}

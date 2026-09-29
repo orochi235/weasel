@@ -51,6 +51,7 @@ import {
 } from './shaders/batchFill';
 import type { EffectTarget, EffectTargets } from './effects/EffectTargets';
 import { COMPOSITE_PROGRAM_ID } from './effects/composite';
+import { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -1969,16 +1970,6 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
 
   drawTextDecorations(ctx, laid.decorations, dx, dy);
 }
-
-/**
- * Synthetic-oblique angle, in radians — 12°, the conventional CSS
- * `font-style: oblique`. Shared by the two tiers that fake an italic: the SDF
- * shader takes it as `u_synthItalic` and skews in the vertex stage, the
- * outline tier applies the same shear on the CPU while placing glyph
- * geometry. One constant so a face that falls back to the upright atlas leans
- * the same amount however it ends up being drawn.
- */
-const SYNTHETIC_ITALIC_RADIANS = 0.2094;
 
 /**
  * Paint one group of tessellated glyph outlines.

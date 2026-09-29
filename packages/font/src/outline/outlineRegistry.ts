@@ -111,6 +111,8 @@ interface FaceSlot extends OutlineFaceInfo {
    *  face lacks is asked for on every frame that draws it, and re-deriving
    *  the miss means re-running the cmap lookup forever. */
   glyphs: Map<number, string | null>;
+  /** The in-flight or settled load, so every caller waiting on it shares one parse. */
+  load: Promise<void> | null;
 }
 
 const slots = createReflectable<FaceSlot>();
@@ -154,6 +156,7 @@ export function registerFontOutlines(
     status: 'idle',
     face: null,
     glyphs: new Map(),
+    load: null,
   });
   // Layouts cache which tier each run resolved to and poll `glyphGeneration()`
   // to know when to drop it; a registration that leaves it still is invisible.
@@ -311,7 +314,32 @@ export function outlineMetrics(
   return slot.status === 'ready' ? slot.face! : null;
 }
 
-async function beginLoad(slot: FaceSlot): Promise<void> {
+/**
+ * Load a registered face's bytes now and resolve with its settled status:
+ * `'ready'`, `'failed'`, or `null` when nothing is registered for the
+ * variant. Never rejects — a failed load is a status, the same one
+ * `outlineStatus` reports.
+ *
+ * The per-frame readers start a load and answer `null` until it lands, which
+ * suits a renderer and nothing that needs the geometry in one go: converting
+ * text to paths awaits this first.
+ */
+export async function loadFontOutlines(
+  family: string, variant: OutlineVariant = {},
+): Promise<OutlineStatus | null> {
+  const { weight, style } = normalize(variant);
+  const slot = slots.get(slotKey(family, weight, style));
+  if (!slot) return null;
+  await beginLoad(slot);
+  return slot.status;
+}
+
+function beginLoad(slot: FaceSlot): Promise<void> {
+  slot.load ??= runLoad(slot);
+  return slot.load;
+}
+
+async function runLoad(slot: FaceSlot): Promise<void> {
   slot.status = 'loading';
   slots.bump();
   try {

@@ -72,6 +72,7 @@ const KIT_IDS = [
   'distribute.horizontal', 'distribute.vertical',
   'pathfinder.union', 'pathfinder.subtract', 'pathfinder.intersect',
   'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop',
+  'createOutlines',
   'move',
   'resize', 'rotate', 'areaSelect', 'insert', 'insert.adjustRotation', 'clone',
   'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor',

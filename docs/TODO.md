@@ -280,26 +280,17 @@ have shipped. What remains:
 
 Core five + Crop shipped. Remaining:
 
-- **(P3) Outline.** Stroke-to-fill silhouette — needs proper offsetting with joins/caps/self-intersection cleanup. No lightweight JS lib without major deps.
+- **(P3) Outline.** Stroke-to-fill silhouette — needs proper offsetting with joins/caps/self-intersection cleanup. No lightweight JS lib without major deps. The same offsetting would let `textToPath` embolden synthetic-bold text, which it refuses today with `reason: 'synthetic-bold'`.
 - **(P3) Trim and Merge.** Remove hidden portions / Trim + same-color reunion — need per-path style awareness, which the kit deliberately doesn't have since `data` is opaque. Wait on a compound-path-with-styles model.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
 - **(P3) Boolean ops on stroked paths.** Treat a stroke as a filled region, then clip. Blocked on stroke-to-fill (round/bevel/miter joins, end caps — its own design problem).
-- **(P3) Pathfinder against text glyphs.** The boolean ops take a `Path`, and
-  `layoutRuns` (`packages/text/src/layout/layoutRuns.ts`) already does the run
-  walk for the outline tier: each `LaidOutOutlineGlyph` carries the glyph's
-  em-space `d` from `glyphOutline`, its pen `x`, `baselineY` and `scale`, so
-  `pathFromD` covers the extraction. What is left is getting that geometry for
-  any text node — layout emits it only for a face with registered outlines,
-  above `outlineMinSize` or for a stroked run, and never for synthetic bold —
-  then placing each glyph in world space through the node's transform and
-  unioning the result before the op.
-- **(P3) "Create Outlines".** The destructive text→path conversion every
-  vector editor has: replace a text node with the path geometry of its
-  glyphs, giving up editability. Same glyph extraction as the pathfinder
-  entry above, plus the scene surgery — one undoable batch that deletes the
-  text node and inserts a path node carrying the union.
+- **(P3) Create Outlines drops per-run paint.** `applyCreateOutlines` makes
+  one path per text node, and WeaselDraw's `createPathNode` gives it the node's
+  `data.fill` / `data.stroke`. A run with its own `fill` loses its color. To
+  keep it, `textToPath` would return one path per paint group
+  (`LaidOutGroup.fill`), and the action would insert a group of paths.
 
 ---
 

@@ -57,6 +57,8 @@ export {
   decomposePath,
   splitSubpaths,
   unionBoundsPath,
+  pathSignedArea,
+  reversePath,
 } from '@weasel-js/geom';
 export {
   splitPathBySegment,

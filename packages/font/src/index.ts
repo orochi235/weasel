@@ -61,6 +61,7 @@ export {
   fontOutlineRegistry,
   glyphOutline,
   outlineMetrics,
+  loadFontOutlines,
 } from './outline/outlineRegistry';
 export type {
   OutlineSource,

@@ -39,6 +39,7 @@ export {
   unregisterFontOutlines,
   hasFontOutlines,
   outlineStatus,
+  loadFontOutlines,
   listFontOutlines,
   fontRegistry,
   fontOutlineRegistry,

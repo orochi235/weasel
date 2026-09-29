@@ -59,7 +59,8 @@ function makePathfinderAction(op: BooleanOp): Action {
       run: (deps) => {
         const adapter = deps.booleansAdapter as BooleansAdapter | undefined;
         if (!adapter) return;
-        applyBooleanOp(adapter, op);
+        const result = applyBooleanOp(adapter, op);
+        if (result.kind === 'failed') console.warn(`[pathfinder] ${result.error.message}`);
       },
     } satisfies ImmediateInvoker,
     enabled: (deps) => {
