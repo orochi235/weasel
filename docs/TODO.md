@@ -45,16 +45,6 @@ Priority tags:
   holding will do something. Recorded 2026-08-02, alongside the `longPress`
   gesture kind landing.
 
-- **(P3) HUD widgets have no keyboard focus.** The pointer family shipped
-  2026-08-12 (spec
-  `docs/superpowers/specs/2026-08-12-hud-gesture-dispatch-design.md`): a widget
-  declares `claims` over `ClaimableGesture`, an exclusive claim bars only the
-  gestures it names, and double-click / right-click / long-press / wheel all
-  reach widgets — wheel opt-in so scroll-to-zoom over a panel is unchanged.
-  What is left is focus: a focused-widget model on `Hud`, tab order, a key arm
-  on the widget protocol, focus-ring painting, and a precedence rule against
-  the canvas's window-level key listeners.
-
 - **(P3) `Widget.claims` is static.** A widget that is decoration in one mode
   and interactive in another can't change what it consumes without being
   swapped out. `claimsPointer` folded into `claims` on 2026-08-12, so this is

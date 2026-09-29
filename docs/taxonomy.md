@@ -404,6 +404,17 @@ them (`reportRouteConflicts`). Two actions gated by different rules count as
 tied unless the rules exclude each other, or, when the check is given the
 canvas's modes, no mode lets both hold.
 
+**A focused HUD widget hears a key before the canvas's key bindings do.** The
+dispatcher listens for keys on `window`; `@weasel-js/hud` listens on the canvas
+element, where the key is targeted while the canvas holds DOM focus, so it
+runs first. A key the focused widget's `onKey` handles is `preventDefault`ed,
+and the dispatcher skips every key that arrives that way, so no binding sees
+it. A key the widget declines — or any key with nothing focused — reaches the
+bindings unchanged, ranked as above. Tab and Shift+Tab not taken by the
+widget move HUD focus instead of reaching a binding, until focus steps off the
+HUD. The one listener ahead of the widget is a dispatcher mounted with
+`keyboard: 'first'`, which listens on `window` in the capture phase.
+
 ### Behavior
 
 A pluggable extension to a drag-based [Action](#action)'s per-frame proposed-pose

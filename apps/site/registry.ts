@@ -563,7 +563,7 @@ const DEMO_META: DemoMeta[] = [
     title: 'HUD widgets',
     package: 'hud',
     description: 'A button widget rendered by @weasel-js/hud in screen space over a WebGL canvas. useHud attaches a HUD layer to the canvas; hud.button() creates a click-counter button. Press events fire in the HUD dispatcher before the active tool sees the pointer down, so tool interactions are never disrupted by HUD clicks.',
-    hint: 'Click the "Click me" button — the label updates with the click count.',
+    hint: 'Click the "Click me" button — the label updates with the click count. Tab moves focus between the buttons; Enter or Space presses.',
     load: () => import('./demos/HudDemo').then((m) => m.HudDemo),
     path: 'apps/site/demos/HudDemo.tsx',
   },

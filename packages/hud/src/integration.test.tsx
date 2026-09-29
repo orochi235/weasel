@@ -459,3 +459,73 @@ describe('chrome opacity is per gesture', () => {
     expect(seen.map((e) => e.type)).toContain('doubleclick');
   });
 });
+
+/**
+ * A focused widget sits ahead of the canvas's window-level key bindings: what
+ * it handles stops there, and what it doesn't reaches them unchanged.
+ */
+describe('key precedence', () => {
+  function sceneKey(key: string, run: () => void): Contribution {
+    return {
+      id: `scene-key-${key}`,
+      eligibility: { always: true },
+      actions: [{ id: `scene.key.${key}`, label: key, invoker: { timing: 'immediate' as const, run } }],
+      bindings: [{ spec: { kind: 'key', key }, actionId: `scene.key.${key}` }],
+    };
+  }
+
+  function field(handles: readonly string[]): Widget {
+    return {
+      id: 'field', bounds: { x: 10, y: 10, w: 60, h: 24 }, hidden: false, focusable: true,
+      draw: () => [],
+      hitTest: (x, y) => x >= 10 && x < 70 && y >= 10 && y < 34,
+      onPointer: () => {},
+      onKey: (e) => handles.includes(e.key),
+      dispose: () => {},
+    };
+  }
+
+  async function focusedField(handles: readonly string[], sceneRun: () => void) {
+    const api: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
+    const { container } = await mount(api, {
+      extraAmbient: [sceneKey('Delete', sceneRun), sceneKey('x', sceneRun)],
+    });
+    act(() => { api.hudRef.current!.add(field(handles)); });
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 30, clientY: 20 }));
+      canvas.dispatchEvent(makePointerEvent('pointerup', { clientX: 30, clientY: 20 }));
+    });
+    expect(api.hudRef.current!.focused?.id).toBe('field');
+    return canvas;
+  }
+
+  const keydown = (el: Element, key: string) => act(() => {
+    el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+  });
+
+  it('a key the focused widget handles never reaches the canvas binding', async () => {
+    const sceneRun = vi.fn();
+    const canvas = await focusedField(['Delete'], sceneRun);
+    keydown(canvas, 'Delete');
+    expect(sceneRun).not.toHaveBeenCalled();
+  });
+
+  it('a key it does not handle falls through to the canvas binding', async () => {
+    const sceneRun = vi.fn();
+    const canvas = await focusedField(['Delete'], sceneRun);
+    keydown(canvas, 'x');
+    expect(sceneRun).toHaveBeenCalledTimes(1);
+  });
+
+  it('with the widget blurred, the key it handled reaches the canvas again', async () => {
+    const sceneRun = vi.fn();
+    const canvas = await focusedField(['Delete'], sceneRun);
+    act(() => {
+      canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 150, clientY: 150 }));
+      canvas.dispatchEvent(makePointerEvent('pointerup', { clientX: 150, clientY: 150 }));
+    });
+    keydown(canvas, 'Delete');
+    expect(sceneRun).toHaveBeenCalledTimes(1);
+  });
+});

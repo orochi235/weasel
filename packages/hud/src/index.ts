@@ -1,4 +1,4 @@
-export { createHud, type Hud } from './hud';
+export { createHud, type Hud, type HudFocusOptions } from './hud';
 export { attachHud } from './attach';
 export { createHudContribution, HUD_AFFORDANCE_KIND, type HudHitPayload } from './tool';
 export type {
@@ -6,8 +6,9 @@ export type {
   WidgetBounds,
   HudDrawCtx,
   HudPointerEvent,
+  HudKeyEvent,
 } from './widget';
-export { DEFAULT_WIDGET_CLAIMS, claimsOf } from './widget';
+export { DEFAULT_WIDGET_CLAIMS, claimsOf, isFocusable } from './widget';
 export type { HudHost } from './host';
 export { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaultFont';
 export type { FontAtlasUrls } from './fonts/registerDefaultFont';
