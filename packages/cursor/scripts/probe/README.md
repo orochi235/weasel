@@ -12,12 +12,24 @@ declaration whether or not the image was used.
 swiftc -O -o warp warp.swift                   # once
 node build-probe-page.mjs <dir>                # writes the pages and assets/
 node probe.mjs <dir>                           # captures into <dir>/shots-chromium/
-node probe.mjs <dir> --browser firefox         # or webkit
+node probe.mjs <dir> --browser firefox         # or webkit, or safari
 node probe.mjs <dir> --browser webkit --headless
 ```
 
 Use a scratch `<dir>`: the probe writes assets, pages, captures and result
 JSON there, and nothing cleans it up.
+
+Headful mode first runs `warp check` and stops if the screen is locked or the
+app running the probe lacks **Screen Recording** or **Accessibility** (System
+Settings > Privacy & Security). The grants belong to whatever launched it —
+Terminal, or the `onto` agent on a fleet node — and without them nothing
+errors: captures come back blank and posted moves vanish.
+
+The first two cases are controls, the default arrow and a bare `crosshair`.
+The run aborts unless they capture differently, and again unless the crosshair
+captures the same at the end as at the start; a browser that is not frontmost
+leaves macOS drawing its own arrow over the page, which reads as "declaration
+rejected" for every case.
 
 Compare captures by hash: a declaration the browser rejected produces a capture
 byte-identical to the fallback keyword's. That is how the size cap was found —
@@ -29,9 +41,10 @@ engine fetches — enough to check parsing and `image-set()` selection, never
 rasterization scale, size caps or the hotspot.
 
 The headful mode is macOS only and steals focus for the duration; it has only
-ever been run with Chrome. Playwright's WebKit is not Safari, and Playwright
-cannot drive Safari: for Safari, open `cursor-probe.html` in it and step the
-cases with `__setCase(n)` from the console. Findings are recorded in the spec's
+ever completed with Chrome. Playwright's WebKit is not Safari, and Playwright
+cannot drive Safari, so `--browser safari` opens the page with `open -a Safari`
+and steps it by setting the tab URL's `#case=<n>` from AppleScript. Safari
+reports nothing back, so its results carry no `accepted`. Findings are recorded in the spec's
 "Measured browser behavior"
 (`docs/superpowers/specs/2026-09-03-cursor-system-design.md`).
 
