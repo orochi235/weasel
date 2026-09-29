@@ -935,6 +935,16 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
+- **(P2) `test:smoke:registry` fails on a tarball npm has not served yet.**
+  The 1.7.1 release run went red at "Install the release from the registry"
+  with `E404 … paint-1.7.1.tgz`, one step after `check:published --wait` had
+  passed for all 26 packages: the packument listed the version while the
+  tarball URL still returned 404. Ten minutes later `curl` saw it flip from 404
+  to 200 between two requests, and a re-run of the job was green. The smoke
+  step needs the same patience as `check:published` — retry an E404 on a
+  tarball of a version the packument lists, for up to the staging window —
+  or `check:published` should probe `dist.tarball` rather than the packument.
+
 - **(P2) jsdom is pinned to exactly 29.0.1.** From 29.0.2 through 30.1.1
   (the latest), reading an inherited property that no ancestor sets — an unset
   custom property is enough — costs twice as much for every level of DOM depth:
