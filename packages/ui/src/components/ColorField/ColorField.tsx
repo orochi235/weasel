@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toHex8, getAlpha01, withAlpha01 } from '@weasel-js/core';
+import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import { OpacityRange } from './OpacityRange';
 import s from './ColorField.module.css';
 
@@ -62,9 +63,12 @@ export function ColorField(props: ColorFieldProps) {
 
   // Commit only when a gesture actually changed something — blur with no
   // preceding input must not emit (it would create a no-op undo entry).
+  const record = useRecordRecentColor();
   const commit = (rgb: string, a01: number): void => {
     if (colorDraft === null && alphaDraft === null) return;
-    onChange(compose(rgb, a01));
+    const next = compose(rgb, a01);
+    onChange(next);
+    record(next);
     setColorDraft(null);
     setAlphaDraft(null);
   };

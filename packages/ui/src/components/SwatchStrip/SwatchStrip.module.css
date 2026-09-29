@@ -1,0 +1,29 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-3);
+  min-inline-size: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-1);
+  min-inline-size: 0;
+}
+
+.heading {
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-xs);
+  font-weight: var(--wzl-font-weight-medium);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+  color: var(--wzl-fg-muted);
+}
+
+.empty {
+  margin: 0;
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
