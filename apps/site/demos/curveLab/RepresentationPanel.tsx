@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   ANCHOR_HIT_BASE_PX,
-  SceneCanvas,
   asNodeId,
   composeAffordanceLayer,
+  SceneCanvas,
+  useLatest,
   useScene,
   useSelection,
 } from '@weasel-js/core';
@@ -80,11 +81,9 @@ export function RepresentationPanel({
 
   const selection = useSelection({ initial: [nodeId], lock: true });
 
-  const anchorsRef = useRef(anchors);
-  anchorsRef.current = anchors;
-  const onAnchorsChangeRef = useRef(onAnchorsChange);
-  onAnchorsChangeRef.current = onAnchorsChange;
-  const getAnchors = useCallback(() => anchorsRef.current, []);
+  const anchorsRef = useLatest(anchors);
+  const onAnchorsChangeRef = useLatest(onAnchorsChange);
+  const getAnchors = useCallback(() => anchorsRef.current, [anchorsRef]);
 
   const anchorsLayer = useMemo(() => createAnchorsLayer(rep, getAnchors), [rep, getAnchors]);
   const combLayer = useMemo(() => createCurvatureCombLayer(rep, getAnchors), [rep, getAnchors]);
@@ -122,7 +121,7 @@ export function RepresentationPanel({
       claimedKinds: ['pointer'],
       bind: () => ({ initialScratch: { anchorIndex: i } satisfies AnchorScratch }),
     })),
-  }), [layerId]);
+  }), [anchorsRef, layerId]);
 
   // `composeAffordanceLayer` types its data slot as `ChromeState`; the layer
   // registry takes `RenderLayer<unknown>`. Both receive the same live
@@ -161,7 +160,7 @@ export function RepresentationPanel({
         };
       },
     },
-  }), [actionId, layerId]);
+  }), [actionId, anchorsRef, layerId, onAnchorsChangeRef]);
 
   const actions = useMemo<ActionsProp>(() => ({
     [actionId]: dragAnchor,

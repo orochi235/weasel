@@ -8,6 +8,7 @@ import {
   SceneCanvas,
   srgbU8ToOklab,
   useAnimator,
+  useLatest,
   useScene,
 } from '@weasel-js/core';
 import type {
@@ -52,8 +53,7 @@ export function TimelineDemo() {
   const [now, setNow] = useState(0);
   const [duration, setDuration] = useState(0);
   const [timeScale, setTimeScale] = useState(1);
-  const scaleRef = useRef(1);
-  scaleRef.current = timeScale;
+  const scaleRef = useLatest(timeScale);
 
   const move = (id: string, patch: Partial<Rect>): void => {
     const nodeId = asNodeId(id);
@@ -63,8 +63,7 @@ export function TimelineDemo() {
 
   // Built once and mutated only through `timeline.edit`, so keys added at
   // runtime survive the rebuild a loop-toggle forces.
-  const tracksRef = useRef<Track[] | null>(null);
-  if (!tracksRef.current) {
+  const [tracks] = useState((): Track[] => {
     const x: SampledTrack<number> = {
       kind: 'sampled', label: 'x',
       keys: [
@@ -108,19 +107,19 @@ export function TimelineDemo() {
       kind: 'timeline', label: 'child @ 500 ms', at: 500,
       timeline: { tracks: [child], duration: 2000 },
     };
-    tracksRef.current = [x, y, tintTrack, beats, nested];
-  }
+    return [x, y, tintTrack, beats, nested];
+  });
 
   const handle = useRef<TimelineHandle | null>(null);
   useEffect(() => {
-    const tl = animator.timeline({ tracks: tracksRef.current as Track[], loop });
+    const tl = animator.timeline({ tracks, loop });
     tl.setTimeScale(scaleRef.current);
     handle.current = tl;
     setDuration(tl.duration());
     setPlaying(true);
     const unsubscribe = tl.subscribe(() => setDuration(tl.duration()));
     return () => { unsubscribe(); tl.cancel(); handle.current = null; };
-  }, [animator, loop]);
+  }, [animator, loop, scaleRef, tracks]);
 
   useEffect(() => animator.onTick(() => setNow(handle.current?.time() ?? 0)), [animator]);
 
@@ -149,7 +148,7 @@ export function TimelineDemo() {
   const addKey = (): void => {
     const tl = handle.current;
     if (!tl) return;
-    const track = (tracksRef.current as Track[])[0] as SampledTrack<number>;
+    const track = tracks[0] as SampledTrack<number>;
     tl.edit(() => {
       const last = track.keys[track.keys.length - 1];
       track.keys.push({

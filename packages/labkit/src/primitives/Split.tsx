@@ -1,3 +1,4 @@
+import { useLatest } from '@weasel-js/core';
 import { type ReactNode, useEffect, useMemo, useRef } from 'react';
 import { asNodeId, createNode, Store, stripStrategy } from 'windease';
 import { type ChromeMap, Container, Provider, StrategyRegistryProvider } from 'windease/react';
@@ -42,6 +43,65 @@ export interface SplitProps {
   viewport?: { w: number; h: number };
 }
 
+interface SplitInit {
+  side: 'start' | 'end';
+  label: string;
+  sidebarWidth: number;
+  minWidth: number;
+  maxWidth: number;
+  contentMinWidth: number;
+}
+
+/** A strip holding the sidebar and the content pane, sized as the first render asks. */
+function createSplitStore({
+  side,
+  label,
+  sidebarWidth,
+  minWidth,
+  maxWidth,
+  contentMinWidth,
+}: SplitInit): Store {
+  const store = new Store();
+  store.registerNode(
+    createNode({
+      kind: 'zone',
+      id: ZONE_ID,
+      // A strip's seam resizes the pane before it, which on the end side is the
+      // content; 'neighbor' has the seam size the sidebar after it too.
+      container: {
+        strategyId: 'strip',
+        config: {
+          axis: 'x',
+          resizable: true,
+          ...(side === 'end' ? { resizeMode: 'neighbor' } : {}),
+        },
+      },
+    }),
+  );
+  const sidebarNode = createNode({
+    kind: 'sidebar',
+    id: SIDEBAR_ID,
+    parentId: ZONE_ID,
+    meta: { title: label },
+    placement: { size: { w: sidebarWidth } },
+    hints: { minSize: { w: minWidth, h: 0 }, maxSize: { w: maxWidth, h: 0 } },
+  });
+  const contentNode = createNode({
+    kind: 'content',
+    id: CONTENT_ID,
+    parentId: ZONE_ID,
+    meta: { title: 'Content' },
+    hints: { minSize: { w: contentMinWidth, h: 0 } },
+  });
+  // A strip lays its children out in registration order.
+  for (const node of side === 'end' ? [contentNode, sidebarNode] : [sidebarNode, contentNode]) {
+    store.registerNode(node);
+  }
+  store.showNode(SIDEBAR_ID);
+  store.showNode(CONTENT_ID);
+  return store;
+}
+
 /**
  * A sidebar and a content pane as a two-pane strip with a draggable seam.
  *
@@ -70,45 +130,14 @@ export function Split({
   // stretches its panes to the container's height and never reads `h`.
   const storeRef = useRef<Store | null>(null);
   if (storeRef.current === null) {
-    const store = new Store();
-    store.registerNode(
-      createNode({
-        kind: 'zone',
-        id: ZONE_ID,
-        // A strip's seam resizes the pane before it, which on the end side is the
-        // content; 'neighbor' has the seam size the sidebar after it too.
-        container: {
-          strategyId: 'strip',
-          config: {
-            axis: 'x',
-            resizable: true,
-            ...(side === 'end' ? { resizeMode: 'neighbor' } : {}),
-          },
-        },
-      }),
-    );
-    const sidebarNode = createNode({
-      kind: 'sidebar',
-      id: SIDEBAR_ID,
-      parentId: ZONE_ID,
-      meta: { title: label },
-      placement: { size: { w: width ?? defaultWidth } },
-      hints: { minSize: { w: minWidth, h: 0 }, maxSize: { w: maxWidth, h: 0 } },
+    storeRef.current = createSplitStore({
+      side,
+      label,
+      sidebarWidth: width ?? defaultWidth,
+      minWidth,
+      maxWidth,
+      contentMinWidth,
     });
-    const contentNode = createNode({
-      kind: 'content',
-      id: CONTENT_ID,
-      parentId: ZONE_ID,
-      meta: { title: 'Content' },
-      hints: { minSize: { w: contentMinWidth, h: 0 } },
-    });
-    // A strip lays its children out in registration order.
-    for (const node of side === 'end' ? [contentNode, sidebarNode] : [sidebarNode, contentNode]) {
-      store.registerNode(node);
-    }
-    store.showNode(SIDEBAR_ID);
-    store.showNode(CONTENT_ID);
-    storeRef.current = store;
   }
   const store = storeRef.current;
 
@@ -134,8 +163,7 @@ export function Split({
     store.patchPlacement(SIDEBAR_ID, { size: { w: width } });
   }, [store, width]);
 
-  const onWidthChangeRef = useRef(onWidthChange);
-  onWidthChangeRef.current = onWidthChange;
+  const onWidthChangeRef = useLatest(onWidthChange);
   useEffect(
     () =>
       store.events.on('node.placementChanged', () => {
@@ -148,7 +176,7 @@ export function Split({
         widthRef.current = next;
         onWidthChangeRef.current?.(next);
       }),
-    [store],
+    [onWidthChangeRef, store],
   );
 
   const chrome = useMemo<ChromeMap>(

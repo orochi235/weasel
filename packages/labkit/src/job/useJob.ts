@@ -1,3 +1,4 @@
+import { useLatest } from '@weasel-js/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JobCapability, JobFailure, JobHandle, JobStatus } from './types';
 
@@ -46,14 +47,10 @@ export function useJob<TS, TC, TItem>({
 
   // Read through refs: `run` is called once per run and must see the values as of
   // that moment rather than re-subscribing on every render.
-  const capRef = useRef(capability);
-  capRef.current = capability;
-  const configRef = useRef(config);
-  configRef.current = config;
-  const stateRef = useRef(state);
-  stateRef.current = state;
-  const setStateRef = useRef(setState);
-  setStateRef.current = setState;
+  const capRef = useLatest(capability);
+  const configRef = useLatest(config);
+  const stateRef = useLatest(state);
+  const setStateRef = useLatest(setState);
 
   const cancel = useCallback(() => {
     token.current += 1;
@@ -104,7 +101,7 @@ export function useJob<TS, TC, TItem>({
         }));
       }
     })();
-  }, []);
+  }, [capRef, configRef, setStateRef, stateRef]);
 
   // Re-run when the declared key changes. `auto` covers the first mount too.
   const lastKey = useRef<readonly unknown[] | null>(null);

@@ -1,4 +1,4 @@
-import { openPointerSession, type PointerSession, useVisibleRaf } from '@weasel-js/core';
+import { openPointerSession, type PointerSession, useLatest, useVisibleRaf } from '@weasel-js/core';
 import { boxContainsPoint } from '@weasel-js/geom';
 import {
   type PointerEvent as ReactPointerEvent,
@@ -65,8 +65,8 @@ export function useDragDrop<TS, TC>({
   worldSpec,
 }: UseDragDropArgs<TS, TC>): UseDragDropResult {
   const [drag, setDrag] = useState<DragState | null>(null);
+  // Owned by the handlers below, which write it alongside every `setDrag`.
   const dragRef = useRef<DragState | null>(null);
-  dragRef.current = drag;
   /** The move the next frame will resolve. Doubles as the throttle's flag:
    *  non-null means a frame is already queued. */
   const pendingPos = useRef<Point | null>(null);
@@ -74,8 +74,7 @@ export function useDragDrop<TS, TC>({
 
   /** A session keeps the closure it was opened with, so everything the drop
    *  reads has to come from here rather than from that closure. */
-  const liveRef = useRef({ capability, state, config, setState, emit, view, worldSpec });
-  liveRef.current = { capability, state, config, setState, emit, view, worldSpec };
+  const liveRef = useLatest({ capability, state, config, setState, emit, view, worldSpec });
 
   const isOverCanvas = useCallback(
     (screenPos: Point): boolean => {
@@ -99,7 +98,7 @@ export function useDragDrop<TS, TC>({
         frame,
       );
     },
-    [canvasContainerRef],
+    [canvasContainerRef, liveRef],
   );
 
   const frameLoop = useVisibleRaf(() => {
@@ -113,7 +112,8 @@ export function useDragDrop<TS, TC>({
       const world = screenToWorldFromContainer(screenPos);
       if (world) feedback = live.capability.onDragOver(world, active.item, live.state, live.config);
     }
-    setDrag({ ...active, screenPos, feedback });
+    dragRef.current = { ...active, screenPos, feedback };
+    setDrag(dragRef.current);
   });
 
   const clearDrag = useCallback(() => {
@@ -161,7 +161,7 @@ export function useDragDrop<TS, TC>({
         onCancel: clearDrag,
       });
     },
-    [clearDrag, frameLoop, isOverCanvas, screenToWorldFromContainer],
+    [clearDrag, frameLoop, isOverCanvas, liveRef, screenToWorldFromContainer],
   );
 
   useEffect(() => () => sessionRef.current?.cancel(), []);

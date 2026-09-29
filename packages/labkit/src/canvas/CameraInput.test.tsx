@@ -6,11 +6,14 @@
 
 import { act, render } from '@testing-library/react';
 import { createPointerStore, PointerContextProvider } from '@weasel-js/core';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { useState } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ViewTransform } from '../instrument/types';
+import { type CameraView, useCameraView } from './CameraInput';
 import { CanvasStack } from './CanvasStack';
 import { Stage } from './Stage';
+import { DEFAULT_FRAME } from './worldSpec';
 
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = vi.fn(
@@ -132,5 +135,32 @@ describe('camera input', () => {
     const host = container.querySelector('.lk-canvas-stack') as HTMLElement;
     act(() => pointer(host, 'pointermove', 40, 30, 0));
     expect(store.get()).toEqual({ worldX: 20, worldY: -15, viewId: 'stage' });
+  });
+
+  it('reads, writes and clamps through the committed props, never an abandoned render', () => {
+    let camera: CameraView | null = null;
+    const hostRef = { current: null };
+    const committed = vi.fn();
+    const abandoned = vi.fn();
+    interface ProbeProps {
+      view: ViewTransform;
+      onViewChange: (v: ViewTransform) => void;
+      maxZoom: number;
+    }
+    function Probe(props: ProbeProps) {
+      camera = useCameraView({ ...props, frame: DEFAULT_FRAME, hostRef });
+      return null;
+    }
+    renderThenAbandon<ProbeProps>(
+      { view: { zoom: 1, pan: { x: 0, y: 0 } }, onViewChange: committed, maxZoom: 4 },
+      { view: { zoom: 2, pan: { x: 50, y: 50 } }, onViewChange: abandoned, maxZoom: 8 },
+      (p) => <Probe {...p} />,
+    );
+    const cam = camera as unknown as CameraView;
+    expect(cam.get().scale.x).toBe(1);
+    expect(cam.zoomRange().max).toBe(4);
+    act(() => cam.set(cam.get()));
+    expect(abandoned).not.toHaveBeenCalled();
+    expect(committed).toHaveBeenCalledTimes(1);
   });
 });

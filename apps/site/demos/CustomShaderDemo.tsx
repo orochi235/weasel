@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, useHandleDrag, useScene, useVisibleRaf } from '@weasel-js/core';
+import { SceneCanvas, useHandleDrag, useLatest, useScene, useVisibleRaf } from '@weasel-js/core';
 import type { Action, RenderLayer } from '@weasel-js/core';
 import {
   registerProgram, registerTexture,
@@ -150,8 +150,7 @@ function Panel({
   overlay?: React.ReactNode;
   disabled?: boolean;
 }) {
-  const uniformsRef = useRef(uniforms);
-  uniformsRef.current = uniforms;
+  const uniformsRef = useLatest(uniforms);
 
   const layer: RenderLayer<unknown> = useMemo(() => ({
     id: `shader-${title.toLowerCase()}`,
@@ -162,13 +161,12 @@ function Panel({
       bounds: { x: 0, y: 0, w: PANEL_W, h: PANEL_H },
       uniforms: uniformsRef.current,
     }],
-  }), [program, disabled, title]);
+  }), [program, disabled, title, uniformsRef]);
 
   // Press routes through an ambient binding: a bare canvas has no active tool
   // ahead of it to claim the press. Hover has no gesture yet, so the move
   // handler below stays raw.
-  const onPressRef = useRef(onPress);
-  onPressRef.current = onPress;
+  const onPressRef = useLatest(onPress);
   const ambient = useMemo(() => {
     const press: Action = {
       id: 'shader.press',
@@ -187,7 +185,7 @@ function Panel({
       actions: [press],
       bindings: [{ spec: { kind: 'pointerDown' as const }, actionId: press.id }],
     }];
-  }, []);
+  }, [onPressRef]);
 
   const scene = useScene<never, 'default'>({
     systemLayers: [{ id: 'default' }],

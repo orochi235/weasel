@@ -1,3 +1,4 @@
+import { useLatest } from '@weasel-js/core';
 import {
   createLoupeModel,
   type LoupeMode,
@@ -39,6 +40,11 @@ export interface LoupeState {
   input: LoupeInputApi;
 }
 
+/** Whether the lens is up: the pointer is over the host, and the loupe is on or peeked. */
+function lensShown(over: boolean, enabled: boolean, peeking: boolean): boolean {
+  return over && (enabled || peeking);
+}
+
 /**
  * Binds `@weasel-js/loupe`'s model to a host element and tracks the pointer
  * across it.
@@ -55,17 +61,14 @@ export function useLoupe({ capability, hostRef, enabled, sample }: UseLoupeOptio
 
   const overRef = useRef(false);
   const peekingRef = useRef(false);
-  const enabledRef = useRef(enabled);
-  enabledRef.current = enabled;
-  const sampleRef = useRef(sample);
-  sampleRef.current = sample;
-  const onColorChangeRef = useRef(capability.onColorChange);
-  onColorChangeRef.current = capability.onColorChange;
+  const enabledRef = useLatest(enabled);
+  const sampleRef = useLatest(sample);
+  const onColorChangeRef = useLatest(capability.onColorChange);
 
   // Reads nothing but refs, so it is stable and an effect may depend on it.
   const shown = useCallback(
-    (): boolean => overRef.current && (enabledRef.current || peekingRef.current),
-    [],
+    (): boolean => lensShown(overRef.current, enabledRef.current, peekingRef.current),
+    [enabledRef],
   );
 
   const modelRef = useRef<LoupeModel | null>(null);
@@ -94,8 +97,7 @@ export function useLoupe({ capability, hostRef, enabled, sample }: UseLoupeOptio
   }
   const model = modelRef.current;
 
-  const diameterRef = useRef(capability.diameter);
-  diameterRef.current = capability.diameter;
+  const diameterRef = useLatest(capability.diameter);
   const goneRef = useRef(false);
 
   // The model holds no resources, and `dispose` is one-way — so unmounting only
@@ -156,7 +158,8 @@ export function useLoupe({ capability, hostRef, enabled, sample }: UseLoupeOptio
   }
 
   return {
-    visible: shown(),
+    // This render's `enabled`: `enabledRef` holds the last committed one.
+    visible: lensShown(overRef.current, enabled, peekingRef.current),
     aim: model.aim,
     factor: model.factor,
     mode: model.mode,

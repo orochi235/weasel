@@ -1,4 +1,4 @@
-import { useVisibleRaf } from '@weasel-js/core';
+import { useLatest, useVisibleRaf } from '@weasel-js/core';
 import type { LoupeMode, LoupePoint } from '@weasel-js/loupe';
 import { useEffect, useRef } from 'react';
 import type { CanvasStackSurface } from '../canvas/CanvasStackContext';
@@ -40,8 +40,7 @@ export function CanvasLoupe({
   // Whatever the stack redraws every frame, the lens has to redraw too — an
   // instrument that animates from its own loop never re-renders this component.
   const args = { aim, factor, mode, diameter, dpr, view, frame, worldSpec, surface };
-  const argsRef = useRef(args);
-  argsRef.current = args;
+  const argsRef = useLatest(args);
 
   const loop = useVisibleRaf(
     () => {

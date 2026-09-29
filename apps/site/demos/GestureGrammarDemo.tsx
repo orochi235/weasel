@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLatest } from '@weasel-js/core';
 import {
   describeRouteParts,
   formatPhaseAtom,
@@ -106,8 +107,7 @@ export function GestureGrammarDemo() {
   const result = attempt(() => parseRoute(route));
   const typed = 'ok' in result ? attempt(() => routeToSpec(result.ok)) : undefined;
   const specs = typed && 'ok' in typed ? [typed.ok, ...SPECS] : SPECS;
-  const specsRef = useRef(specs);
-  specsRef.current = specs;
+  const specsRef = useLatest(specs);
 
   const [log, setLog] = useState<Logged[]>([]);
   const [engaged, setEngaged] = useState(false);
@@ -122,8 +122,7 @@ export function GestureGrammarDemo() {
     const entry = { n: ++counter.current, event, engaged: engagedRef.current, matched };
     setLog((prev) => [entry, ...prev].slice(0, 8));
   };
-  const emitRef = useRef(emit);
-  emitRef.current = emit;
+  const emitRef = useLatest(emit);
 
   const setEngagedBoth = (v: boolean) => {
     engagedRef.current = v;
@@ -143,7 +142,7 @@ export function GestureGrammarDemo() {
     };
     pad.addEventListener('wheel', onWheel, { passive: false });
     return () => pad.removeEventListener('wheel', onWheel);
-  }, []);
+  }, [emitRef]);
 
   const latest = log[0];
 

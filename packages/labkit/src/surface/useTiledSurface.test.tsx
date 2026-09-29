@@ -1,4 +1,5 @@
 import { act, render, renderHook } from '@testing-library/react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SurfaceFrame, SurfaceHandle } from './useTiledSurface';
@@ -504,6 +505,19 @@ describe('useTiledSurface', () => {
       flushFrames();
       expect(clear).toHaveBeenCalledTimes(1);
     });
+  });
+  it("hands a frame to the committed owner, never an abandoned render's", () => {
+    const committed: SurfaceFrame[] = [];
+    const abandoned: SurfaceFrame[] = [];
+    const onHandle = (): void => {};
+    renderThenAbandon<HarnessProps>(
+      { frames: committed, onHandle },
+      { frames: abandoned, onHandle },
+      (p) => <Harness {...p} />,
+    );
+    flushFrames();
+    expect(abandoned).toHaveLength(0);
+    expect(committed.length).toBeGreaterThan(0);
   });
 });
 

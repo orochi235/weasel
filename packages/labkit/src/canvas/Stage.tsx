@@ -1,4 +1,5 @@
 import type { Yoke } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/core';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import type { ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
@@ -85,8 +86,7 @@ export function Stage({
     [camera, size.width, size.height],
   );
 
-  const onResizeRef = useRef(onResize);
-  onResizeRef.current = onResize;
+  const onResizeRef = useLatest(onResize);
   useEffect(() => {
     const el = host.current;
     if (!el) return;
@@ -101,7 +101,7 @@ export function Stage({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [onResizeRef]);
 
   // A transform moves every tile inside the content without resizing anything,
   // and a ResizeObserver reports only resizes.

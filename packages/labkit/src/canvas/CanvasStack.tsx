@@ -1,4 +1,5 @@
 import type { Yoke } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/core';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import type { Point, ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
@@ -80,12 +81,11 @@ export function CanvasStack({
     return () => ro.disconnect();
   }, []);
 
-  const onResizeRef = useRef(onResize);
-  onResizeRef.current = onResize;
+  const onResizeRef = useLatest(onResize);
   useEffect(() => {
     if (size.width === 0 && size.height === 0) return;
     onResizeRef.current?.({ width: size.width, height: size.height });
-  }, [size.width, size.height]);
+  }, [size.width, size.height, onResizeRef]);
 
   const frame = useMemo(() => resolveFrame(worldSpec, size), [worldSpec, size]);
 

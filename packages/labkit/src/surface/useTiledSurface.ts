@@ -1,4 +1,4 @@
-import { useVisibleRaf } from '@weasel-js/core';
+import { useLatest, useVisibleRaf } from '@weasel-js/core';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { composeRects, rectsEqual } from './composeRects';
 import type { Box, Rect } from './rect';
@@ -81,8 +81,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
 
   // Held in a ref so a caller passing an inline closure does not re-create every
   // callback below on each render.
-  const onFrameRef = useRef(onFrame);
-  onFrameRef.current = onFrame;
+  const onFrameRef = useLatest(onFrame);
 
   const measure = useCallback((): boolean => {
     const el = container.current;

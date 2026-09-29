@@ -4,10 +4,19 @@ import {
   SceneCanvas,
   type SceneCanvasApi,
   useActiveToolContext,
+  useLatest,
   type View,
   WeaselProvider,
 } from '@weasel-js/core';
-import { type CSSProperties, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  useCallback,
+  useContext,
+  useEffect,
+  useInsertionEffect,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { CameraWheelContext } from '../canvas/CameraWheelContext';
 import type { Rect } from '../surface/rect';
@@ -107,10 +116,8 @@ export function AnnotationOverlay({
   // Read in the insert factory, which is built once and must see the tool the
   // pane is holding now — `arrow` and `stroke` are indistinguishable from
   // `line` and `pencil` at the weasel end.
-  const toolRef = useRef(activeToolId);
-  toolRef.current = activeToolId;
-  const configRef = useRef(config);
-  configRef.current = config;
+  const toolRef = useLatest(activeToolId);
+  const configRef = useLatest(config);
 
   const id = target.id;
   // The surface's tile namespace is the whole lab's, and every trial of an
@@ -143,9 +150,13 @@ export function AnnotationOverlay({
   // renderer has opened creates the context without the stencil buffer marks
   // need, and every later request gets that context back.
   const painted = useRef(false);
-  const canvasRef = useRef(canvas);
-  if (canvasRef.current !== canvas) painted.current = false;
-  canvasRef.current = canvas;
+  const canvasRef = useLatest(canvas);
+  // A new buffer has not been painted into, whatever the old one had. Reset
+  // with the commit that brings it, ahead of any paint that commit triggers.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `canvas` is the signal, not a value this reads
+  useInsertionEffect(() => {
+    painted.current = false;
+  }, [canvas]);
   const unsubscribeFrame = useRef<(() => void) | null>(null);
   const attachSceneCanvas = useCallback((api: SceneCanvasApi | null) => {
     sceneCanvas.current = api;
@@ -167,7 +178,7 @@ export function AnnotationOverlay({
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
     });
-  }, [surface, tileId]);
+  }, [canvasRef, surface, tileId]);
 
   // The box is portalled out of whatever the picture sits in, so a wheel over
   // a mark would never reach the trial's camera without being handed to it.

@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { WeaselProvider } from '@weasel-js/core';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { type RefObject, StrictMode, useRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { LoupeGestures } from './LoupeGestures';
@@ -250,5 +251,29 @@ describe('useLoupe', () => {
       seen[seen.length - 1].setMode('pixel');
     });
     expect(read('mode')).toBe('pixel');
+  });
+
+  it('aims as the committed `enabled` allows, not an abandoned render', () => {
+    const seen: LoupeState[] = [];
+    // Reads the aim back through the model: the DOM is not re-rendered while
+    // the abandoned transition is still pending.
+    const aimOf = (p: { x: number; y: number }) => `${p.x},${p.y}`;
+    renderThenAbandon({ enabled: false }, { enabled: true }, (p) => (
+      <Harness enabled={p.enabled} sample={aimOf} seen={(l) => seen.push(l)} />
+    ));
+    const before = seen[0]?.pick();
+    move(40, 25);
+    expect(seen[0]?.pick()).toBe(before);
+  });
+
+  it('samples through the committed `sample`, not an abandoned render', () => {
+    const seen: LoupeState[] = [];
+    const committed = vi.fn(() => '#111111');
+    const abandoned = vi.fn(() => '#222222');
+    renderThenAbandon({ sample: committed }, { sample: abandoned }, (p) => (
+      <Harness sample={p.sample} seen={(l) => seen.push(l)} />
+    ));
+    expect(seen[0]?.pick()).toBe('#111111');
+    expect(abandoned).not.toHaveBeenCalled();
   });
 });
