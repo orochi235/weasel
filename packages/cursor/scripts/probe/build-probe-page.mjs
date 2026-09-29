@@ -55,6 +55,10 @@ const iset = (a, b) => ({ data: `image-set(${a.data} 1x, ${b.data} 2x)`,
 // fallback, hotspotPx, fallback]. hotspotPx is the size (CSS px) the hotspot
 // is computed against. An empty fallback omits the comma and keyword.
 const CASES = [
+  // The two controls come first: headful mode refuses to trust any capture
+  // until these two differ, which proves the browser is driving the cursor.
+  ['arrow',      'bare default keyword (control)',            null, 0, 'default'],
+  ['keyword',    'bare crosshair keyword (control)',          null, 0],
   ['svg24',      'SVG, width/height=24',                      svgRef(24), 24],
   ['svg48',      'SVG, width/height=48',                      svgRef(48), 48],
   ['png24',      'PNG 24x24',                                 pngRef(24), 24],
@@ -69,6 +73,7 @@ const CASES = [
 ];
 
 const decls = (form) => CASES.map(([id, label, val, hp, fb = 'crosshair']) => {
+  if (!val) return { id, label, css: fb };
   const [hx, hy] = hotspot(hp);
   // Tag each fetch with its case so the headless run can attribute requests.
   const v = form === 'http' ? val.http.replace(/(url\("assets\/[^"]+)"\)/g, `$1?${id}")`) : val.data;
@@ -102,7 +107,13 @@ window.__geom = () => ({
   innerW: window.innerWidth, dpr: devicePixelRatio,
 });
 window.__cases = CASES.map(c => c.id);
+// Safari cannot be driven by Playwright; the probe steps it through #case=<n>.
+const fromHash = () => { const m = /case=(\d+)/.exec(location.hash); if (m) __setCase(+m[1]); };
+addEventListener('hashchange', fromHash);
+fromHash();
 </script>`;
 writeFileSync(`${DIR}/cursor-probe.html`, page('data'));
 writeFileSync(`${DIR}/cursor-probe-http.html`, page('http'));
+// Safari runs no probe script in the page, so it reads the case list from here.
+writeFileSync(`${DIR}/cases.json`, JSON.stringify(decls('data').map(({ id, label }) => ({ id, label }))));
 console.log(`wrote cursor-probe.html and cursor-probe-http.html with ${CASES.length} cases`);

@@ -213,13 +213,17 @@ have shipped. What remains:
 
 - **(P3) Cursor rasterization is measured only in Chrome.** Headless WebKit
   and Firefox parse, fetch and pick `image-set()` candidates exactly as Chrome
-  does (spec, "WebKit and Firefox, headless"), but whether they rasterize an
-  SVG cursor at 1× or cap below 128 px needs a real window. Firefox: run
-  `node probe.mjs <dir> --browser firefox` from `packages/cursor/scripts/probe/`
-  (the headful path is written but has never been run for anything but
-  Chrome). Safari: Playwright cannot drive it, so open `cursor-probe.html` in
-  it, step the cases with `__setCase(n)` from the Web Inspector console, and
-  capture with `screencapture -C`. A finding lands in `bake.ts`.
+  does (spec, "WebKit and Firefox, headless"), but whether headed Firefox and
+  Safari rasterize an SVG cursor at 1× or cap below 128 px needs a real window.
+  `node probe.mjs <dir> --browser firefox` and `--browser safari` in
+  `packages/cursor/scripts/probe/` do it (README). Not runnable on the fleet as
+  of 2026-09-28: keiei, msb-uai and studio all sit at a locked screen, and the
+  `onto` agent (`~/.local/bin/onto`) has neither Screen Recording nor
+  Accessibility on any of them — `warp check` reports all three. Headed
+  Playwright Firefox also captured the bare-`crosshair` control as the arrow
+  on orochi; the probe now refuses to report until that control passes, so
+  the first run on a granted node answers whether that was focus. A finding
+  lands in `bake.ts`.
 
 ---
 
