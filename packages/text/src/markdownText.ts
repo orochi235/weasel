@@ -4,7 +4,7 @@ import { faceMetricsFor, type FaceMetrics } from '@weasel-js/font';
 import { numericWeight, scriptMetrics } from './runs/resolveRuns';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
 import { transformRunTexts } from './runs/textTransform';
-import { lineBreakOpportunities, NO_BREAK } from './layout/lineBreak/lineBreaks';
+import { isHardLineBreak, lineBreakOpportunities, NO_BREAK } from './layout/lineBreak/lineBreaks';
 
 export type { StyledRun };
 
@@ -168,13 +168,13 @@ export function layoutMarkdown(
   // included; only its ink has to fit.
   let i = 0;
   while (i < cps.length) {
-    if (cps[i] === 10) {
+    if (isHardLineBreak(cps[i])) {
       commitLine(cur);
-      i++;
+      i += cps[i] === 13 && cps[i + 1] === 10 ? 2 : 1;
       continue;
     }
     let j = i + 1;
-    while (j < cps.length && cps[j] !== 10 && (!breaks || breaks[j] === NO_BREAK)) j++;
+    while (j < cps.length && !isHardLineBreak(cps[j]) && (!breaks || breaks[j] === NO_BREAK)) j++;
     const next = extend(cur, i, j);
     if (breaks && cur.length > 0 && inkWidth(next) > maxWidth && cps.slice(i, j).some((c) => c !== 32)) {
       commitLine(trimmed(cur));

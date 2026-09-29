@@ -14,6 +14,7 @@ const PARAGRAPHS: Record<string, string> = {
   hyphenated: 'a well-known, hand-made, state-of-the-art text for every-day, run-of-the-mill use',
   CJK: '漢字仮名交じり文は、漢字と仮名で書く日本語の文章です。「括弧」も句読点も行頭に来ない。',
   'punctuation-heavy': '"Wait—what?!" she said (quietly); then: «no…» [really] {ok} 50% $20/h, e.g. 3.14.',
+  'hard-broken': 'one two\u2028three four\u2029five\r\nsix\u000bseven\u000ceight\u0085nine\rten\n\r\neleven',
 };
 
 const SIZE = 32;
@@ -76,4 +77,11 @@ describe('layoutMarkdown and layoutRuns wrap at the same places', () => {
       });
     }
   }
+
+  it('ends a line at every UAX #14 hard break, CRLF counting once', () => {
+    const want = ['one two', 'three four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', '', 'eleven'];
+    const texts = [PARAGRAPHS['hard-broken']];
+    expect(canvasLines(texts, Infinity)).toEqual(want);
+    expect(markdownLines(texts, Infinity)).toEqual(want);
+  });
 });

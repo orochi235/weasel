@@ -3,11 +3,14 @@
  * used by `useTextEdit`. The overlay's children are a flat sequence of
  * `<span data-run>` elements, each carrying one run's text and inline
  * styles. Newlines inside a run are literal `\n` characters; the overlay
- * has `white-space: pre-wrap` so they render as line breaks.
+ * has `white-space: pre-wrap` so they render as line breaks. The browser
+ * breaks at no other UAX #14 hard break, so each of those is written as a
+ * `<span data-break>` holding a `\n` in its place — one character for one,
+ * which keeps DOM offsets equal to source offsets.
  */
 
 import type { FillStyle } from '@weasel-js/paint';
-import type { StyledRun, TextTransform } from '@weasel-js/text';
+import { isHardLineBreak, type StyledRun, type TextTransform } from '@weasel-js/text';
 import { cssFontFamily } from '@weasel-js/font';
 
 function solidColor(p: FillStyle | undefined): string | null {
@@ -192,6 +195,29 @@ function toRun(text: string, style: StyleState): StyledRun {
   return run;
 }
 
+const BREAK_ATTR = 'data-break';
+
+/**
+ * Append `text` to `parent` as the overlay sets it: a hard break the browser
+ * would not break at becomes a `<span data-break>` holding a `\n`, carrying
+ * the original's code as hex for `domToRuns` to restore. A CR that opens a
+ * CRLF is left as it is — the LF breaks, and the CR draws nothing.
+ */
+export function appendOverlayText(parent: Node, text: string): void {
+  let from = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (c === 10 || !isHardLineBreak(c) || (c === 13 && text.charCodeAt(i + 1) === 10)) continue;
+    if (i > from) parent.appendChild(document.createTextNode(text.slice(from, i)));
+    const span = document.createElement('span');
+    span.setAttribute(BREAK_ATTR, c.toString(16));
+    span.textContent = '\n';
+    parent.appendChild(span);
+    from = i + 1;
+  }
+  if (from < text.length) parent.appendChild(document.createTextNode(text.slice(from)));
+}
+
 /** Walk an overlay tree and emit a coalesced `StyledRun[]`. */
 export function domToRuns(parent: HTMLElement): StyledRun[] {
   const fragments: Array<{ text: string; style: StyleState }> = [];
@@ -206,6 +232,14 @@ export function domToRuns(parent: HTMLElement): StyledRun[] {
     const el = node as Element;
     if (el.tagName === 'BR') {
       fragments.push({ text: '\n', style });
+      return;
+    }
+    const brk = el.getAttribute(BREAK_ATTR);
+    if (brk !== null) {
+      // Anything typed into the span after its stand-in is kept.
+      const text = el.textContent ?? '';
+      const restored = text.startsWith('\n') ? String.fromCharCode(parseInt(brk, 16)) + text.slice(1) : text;
+      if (restored.length > 0) fragments.push({ text: restored, style });
       return;
     }
     if (el.tagName === 'DIV' && fragments.length > 0) {
@@ -242,7 +276,7 @@ export function runsToDom(runs: readonly StyledRun[], parent: HTMLElement): void
   for (const run of runs) {
     const span = document.createElement('span');
     span.setAttribute('data-run', '');
-    span.textContent = run.text;
+    appendOverlayText(span, run.text);
     if (run.fontWeight != null) {
       span.style.fontWeight = String(run.fontWeight);
       span.setAttribute('data-font-weight', String(run.fontWeight));

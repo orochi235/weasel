@@ -19,7 +19,7 @@ import type { TextPaint, TextVerticalAlign } from '@weasel-js/text';
 import { layoutTextPose, verticalAlignOffset } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import { runsToPlainText } from '@weasel-js/text';
-import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
+import { runsToDom, domToRuns, appendOverlayText, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
 import { applyStyleToRange, patchRangeStyle, runsCarryStyling, styleAtRange, supersededKey } from './runs/rangeStyle';
 import { nodeHasFlag, setFlagOverRange, unboldPatch, type FlagKey } from './runs/flagRange';
 import { rangeWeight } from './runs/effectiveRangeStyle';
@@ -307,11 +307,9 @@ function writeRunsPreservingSelection(
 
 /**
  * Drop the one trailing newline a contenteditable keeps so the caret has
- * somewhere to sit on the last line. `innerText` reports it too, and the
- * plain-text commit path has always stripped it; `domToRuns` maps the `<br>`
- * to a literal `'\n'`, so without this the same edit commits a byte more
- * text through the rich path than through the plain one. Exactly one, so a
- * newline the user actually typed survives — the holder is never doubled.
+ * somewhere to sit on the last line: `domToRuns` maps its `<br>` to a literal
+ * `'\n'`, which the edit never typed. Exactly one, so a newline the user
+ * actually typed survives — the holder is never doubled.
  *
  * An empty run left behind is dropped: it carries no text and would otherwise
  * defeat `runsCarryStyling`'s "did this edit produce styling" question by
@@ -644,20 +642,15 @@ export function useTextEdit(
     //   turned it off; or
     // - the edit produced styling, whatever the node started as.
     //
-    // A plain-text edit of a plain-text node satisfies neither and keeps the
-    // cheap path, so a node that has no `runs` doesn't grow a single-run
+    // A plain-text edit of a plain-text node satisfies neither and commits
+    // text alone, so a node that has no `runs` doesn't grow a single-run
     // array just for being edited.
     const priorRuns = optsRef.current.getRuns?.(id);
     const setRuns = optsRef.current.setRuns;
-    const runs = setRuns ? trimCaretHolder(domToRuns(overlay)) : [];
+    const runs = trimCaretHolder(domToRuns(overlay));
     const hadRuns = priorRuns != null && priorRuns.length > 0;
-    if (setRuns && (hadRuns || runsCarryStyling(runs))) {
-      optsRef.current.setText(id, runsToPlainText(runs));
-      setRuns(id, runs);
-    } else {
-      const text = overlay.innerText.replace(/\n$/, '');
-      optsRef.current.setText(id, text);
-    }
+    optsRef.current.setText(id, runsToPlainText(runs));
+    if (setRuns && (hadRuns || runsCarryStyling(runs))) setRuns(id, runs);
     setEditingId(null);
   }, [editingId, optsRef]);
 
@@ -771,7 +764,9 @@ export function useTextEdit(
     if (initialRuns && initialRuns.length > 0) {
       runsToDom(initialRuns, overlay);
     } else {
-      overlay.innerText = getText(editingId);
+      // Not `innerText`, which turns each newline into a `<br>` the caret
+      // walkers cannot count and U+2028 into a space.
+      appendOverlayText(overlay, getText(editingId));
     }
     applyOverlayStyle(overlay, style);
     const styleEl = installSelectionStyle(overlayClass, style);
@@ -932,11 +927,8 @@ export function useTextEdit(
 let OVERLAY_SEQ = 0;
 
 /**
- * Place a collapsed caret `offset` characters into the overlay's text. Walks
- * the overlay's child nodes (the overlay's `innerText` was set from the
- * source string, so the DOM should be a single text node — but be defensive
- * in case the browser normalized whitespace into a slightly different shape).
- * Out-of-range offsets clamp to the end.
+ * Place a collapsed caret `offset` characters into the overlay's text,
+ * walking its text nodes. Out-of-range offsets clamp to the end.
  */
 function placeCaretAt(root: HTMLElement, range: Range, offset: number): void {
   let remaining = offset;

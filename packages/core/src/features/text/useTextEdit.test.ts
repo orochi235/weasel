@@ -166,7 +166,7 @@ describe('useTextEdit', () => {
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container);
     expect(overlay).not.toBeNull();
-    expect(overlay?.innerText).toBe('hello');
+    expect(overlay?.textContent).toBe('hello');
     expect(result.current.isEditing('a')).toBe(true);
   });
 
@@ -175,7 +175,7 @@ describe('useTextEdit', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    overlay.innerText = 'goodbye';
+    seedPlainOverlay(overlay, 'goodbye');
     act(() => result.current.commit());
     expect(h.commits).toEqual([{ id: 'a', text: 'goodbye' }]);
     expect(result.current.editingId).toBeNull();
@@ -187,7 +187,7 @@ describe('useTextEdit', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    overlay.innerText = 'goodbye';
+    seedPlainOverlay(overlay, 'goodbye');
     act(() => result.current.cancelEdit());
     expect(h.commits).toEqual([]);
     expect(getOverlay(h.container)).toBeNull();
@@ -198,7 +198,7 @@ describe('useTextEdit', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    overlay.innerText = 'edited';
+    seedPlainOverlay(overlay, 'edited');
     act(() => {
       overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
     });
@@ -222,7 +222,7 @@ describe('useTextEdit', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    overlay.innerText = 'edited';
+    seedPlainOverlay(overlay, 'edited');
     act(() => {
       overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     });
@@ -235,7 +235,7 @@ describe('useTextEdit', () => {
     const { result } = renderHook(() => useTextEdit({ ...h.opts, escape: 'commit' }));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    overlay.innerText = 'edited';
+    seedPlainOverlay(overlay, 'edited');
     act(() => {
       overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     });
@@ -248,7 +248,7 @@ describe('useTextEdit', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    overlay.innerText = 'on blur';
+    seedPlainOverlay(overlay, 'on blur');
     act(() => {
       overlay.dispatchEvent(new FocusEvent('blur'));
     });
@@ -371,7 +371,7 @@ describe('useTextEdit', () => {
       const { result } = renderHook(() => useTextEdit(h.opts));
       act(() => result.current.startEdit('a'));
       const overlay = getOverlay(h.container)!;
-      expect(overlay.innerText).toBe('first line\nsecond line\nthird line');
+      expect(overlay.textContent).toBe('first line\nsecond line\nthird line');
       act(() => result.current.commit());
       expect(h.commits).toEqual([{ id: 'a', text: 'first line\nsecond line\nthird line' }]);
     });
@@ -426,12 +426,12 @@ describe('useTextEdit', () => {
       expect(h.commits).toEqual([{ id: 'a', text: 'alpha\nbeta\ngamma' }]);
     });
 
-    it('strips a single trailing newline from innerText on commit', () => {
+    it('strips a single trailing newline on commit', () => {
       const h = makeHarness({ a: 'x' });
       const { result } = renderHook(() => useTextEdit(h.opts));
       act(() => result.current.startEdit('a'));
       const overlay = getOverlay(h.container)!;
-      overlay.innerText = 'edited\n';
+      seedPlainOverlay(overlay, 'edited\n');
       act(() => result.current.commit());
       expect(h.commits).toEqual([{ id: 'a', text: 'edited' }]);
     });
@@ -441,7 +441,7 @@ describe('useTextEdit', () => {
       const { result } = renderHook(() => useTextEdit(h.opts));
       act(() => result.current.startEdit('a'));
       const overlay = getOverlay(h.container)!;
-      expect(overlay.innerText).toBe('top\n\nbottom');
+      expect(overlay.textContent).toBe('top\n\nbottom');
       act(() => result.current.commit());
       expect(h.commits).toEqual([{ id: 'a', text: 'top\n\nbottom' }]);
     });
@@ -489,13 +489,13 @@ describe('useTextEdit — rich-text init and commit', () => {
     expect((spans[1] as HTMLSpanElement).style.fontWeight).toBe('700');
   });
 
-  it('falls back to plain innerText when getRuns is omitted or returns nothing', () => {
+  it('falls back to plain text when getRuns is omitted or returns nothing', () => {
     const h = makeHarness({ a: 'hello' });
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
     expect(overlay.querySelectorAll('span[data-run]')).toHaveLength(0);
-    expect(overlay.innerText).toBe('hello');
+    expect(overlay.textContent).toBe('hello');
   });
 
   it('commit walks DOM via domToRuns and calls setRuns + setText', () => {
@@ -522,7 +522,7 @@ describe('useTextEdit — rich-text init and commit', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    overlay.innerText = 'edited';
+    seedPlainOverlay(overlay, 'edited');
     act(() => result.current.commit());
     expect(h.commits).toEqual([{ id: 'a', text: 'edited' }]);
   });
@@ -1557,13 +1557,7 @@ describe('useTextEdit — editing chrome', () => {
   });
 });
 
-/**
- * `startEdit` seeds a runs-less node's overlay with `overlay.innerText = …`,
- * which jsdom does not implement — the assignment lands on an expando and
- * creates no text nodes. Build the text node a browser would have built, so
- * the styling and commit paths run against a real DOM rather than against
- * the gap. Only the seeding is substituted; nothing downstream is faked.
- */
+/** Replace a plain-text overlay's contents with `text`, standing in for an edit. */
 function seedPlainOverlay(overlay: HTMLElement, text: string): void {
   overlay.replaceChildren(document.createTextNode(text));
 }
@@ -1596,11 +1590,9 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     seedPlainOverlay(overlay, 'one two');
     await selectCharsAndSettle(overlay, 0, 3);
     act(() => result.current.commit());
-    // The committed *text* isn't asserted here: the plain path reads
-    // `innerText`, which jsdom doesn't implement. What this pins is the
-    // routing — no pointless single-run array written back to the node.
+    // No pointless single-run array written back to the node.
     expect(h.runCommits).toEqual([]);
-    expect(h.textCommits.map((c) => c.id)).toEqual(['a']);
+    expect(h.textCommits).toEqual([{ id: 'a', text: 'one two' }]);
   });
 
   it('still writes runs when an edit strips the styling a node already had', () => {
@@ -1616,14 +1608,11 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     expect(h.runCommits).toEqual([{ id: 'a', runs: [{ text: 'ab' }] }]);
   });
 
-  it('trims the caret-holder newline the way the plain path does', async () => {
+  it('trims the caret-holder newline on the rich path too', async () => {
     // A contenteditable keeps a trailing `<br>` so the caret has somewhere to
-    // sit on the last line. `innerText` reports it as a trailing newline and
-    // the plain-text path strips one; `domToRuns` maps it to a literal '\n'
-    // and did not. The divergence was unreachable while only nodes that
-    // already had runs took the rich path — styling a previously-plain node
-    // reaches it, and one edit would commit text a byte longer than the same
-    // edit without the styling.
+    // sit on the last line, and `domToRuns` maps it to a literal '\n'.
+    // Styling a previously-plain node takes the rich path, where one edit
+    // would otherwise commit text a byte longer than the same edit unstyled.
     const h = makeRichHarness({ a: { text: 'one' } });
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));

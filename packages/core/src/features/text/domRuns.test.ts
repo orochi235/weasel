@@ -565,3 +565,39 @@ describe('domPositionToCharOffset', () => {
     expect(domPositionToCharOffset(parent, second, 1)).toBe(6);
   });
 });
+
+describe('hard line breaks in the overlay', () => {
+  const TEXT = 'a\u2028b\u2029c\rd\r\ne\u000bf\u000cg\u0085h\ni';
+  let parent: HTMLDivElement;
+  beforeEach(() => {
+    parent = document.createElement('div');
+    document.body.appendChild(parent);
+  });
+
+  it('stands a newline in for each break the browser would not break at', () => {
+    runsToDom([{ text: TEXT }], parent);
+    // LF breaks as it is, and so does a CRLF, whose CR draws nothing.
+    expect(parent.textContent).toBe('a\nb\nc\nd\r\ne\nf\ng\nh\ni');
+    expect([...parent.querySelectorAll('[data-break]')].map((el) => el.getAttribute('data-break')))
+      .toEqual(['2028', '2029', 'd', 'b', 'c', '85']);
+    expect(domToRuns(parent)).toEqual([{ text: TEXT }]);
+  });
+
+  it('keeps one DOM character per source character, so caret offsets carry over', () => {
+    runsToDom([{ text: TEXT }], parent);
+    const at = TEXT.indexOf('c');
+    const pos = charOffsetToDomPosition(parent, at)!;
+    expect(domPositionToCharOffset(parent, pos.node, pos.offset)).toBe(at);
+    expect(parent.textContent!.length).toBe(TEXT.length);
+  });
+
+  it('keeps text typed into a stand-in, and drops a deleted one', () => {
+    const para = document.createElement('span');
+    para.setAttribute('data-break', '2029');
+    para.textContent = '\nX';
+    const gone = document.createElement('span');
+    gone.setAttribute('data-break', '2028');
+    parent.append('a', para, 'b', gone, 'c');
+    expect(domToRuns(parent)).toEqual([{ text: 'a\u2029Xbc' }]);
+  });
+});

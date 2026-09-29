@@ -437,7 +437,6 @@ describe('useSceneTextEdit — a line longer than its box', () => {
   }
   const long = (style: Partial<LongItem['style']> = {}): LongItem => ({
     id: 'a', x: 100, y: 50, width: 50, height: 200, text: 'AB AB AB',
-    // Runs, because jsdom has no `innerText` to seed a plain-text overlay with.
     runs: [{ text: 'AB AB AB' }],
     style: { fontFamily: 'inter', fontSize: SIZE, ...style },
   });
