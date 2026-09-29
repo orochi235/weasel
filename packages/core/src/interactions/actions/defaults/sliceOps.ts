@@ -23,8 +23,7 @@ export interface SliceLeaf<TNode extends SliceableNode = SliceableNode> {
   worldPath: Path;
 }
 
-/** World-space bounds of one piece. */
-export interface SliceBounds {
+interface SliceBounds {
   x: number;
   y: number;
   width: number;
@@ -42,11 +41,18 @@ export interface ComputeSliceOpsArgs<TNode extends SliceableNode = SliceableNode
   /** The selection before the cut. Given, the result carries the selection
    *  after it; omitted, `nextSelection` is `null`. */
   selection?: readonly string[];
-  /** The pose a piece is stored at. It is handed the piece's world pose —
-   *  the source's pose with the piece's bounds and no rotation, since the
-   *  path already carries it — which is also the default. A scene whose
-   *  parents are frames rebases it here. */
-  placePiece?: (leaf: SliceLeaf<TNode>, worldPose: SliceBounds) => unknown;
+  /** How a piece, cut in world space, is stored on its node. By default the
+   *  pose is the source's with the piece's bounds and no rotation, and the
+   *  path is the world piece itself, so any rotation is baked into it. A
+   *  scene with rotated poses or parent frames maps the piece back into the
+   *  node's own frame here. */
+  placePiece?: (leaf: SliceLeaf<TNode>, piece: Path) => SlicePiece;
+}
+
+/** One piece as it is stored: the node's pose and its `data.path`. */
+export interface SlicePiece {
+  pose: unknown;
+  path: Path;
 }
 
 /** Result of {@link computeSliceOps}. */
@@ -76,7 +82,8 @@ export function computeSliceOps<TNode extends SliceableNode>(
   args: ComputeSliceOpsArgs<TNode>,
 ): ComputeSliceResult {
   const { cut, nextId, selection } = args;
-  const placePiece = args.placePiece ?? ((_leaf: SliceLeaf<TNode>, pose: SliceBounds) => pose);
+  const placePiece = args.placePiece
+    ?? ((leaf: SliceLeaf<TNode>, piece: Path): SlicePiece => ({ pose: piecePose(leaf.node.pose, boundsOfPath(piece)), path: piece }));
   const ops: Op[] = [];
   const selected = new Set(selection ?? []);
   const cutIds = new Set<string>();
@@ -96,12 +103,12 @@ export function computeSliceOps<TNode extends SliceableNode>(
     cutIds.add(sourceId);
     ops.push(createDeleteOp({ node: leaf.node, index: leaf.index, label: 'Slice' }));
     for (const piece of pieces) {
-      const b = boundsOfPath(piece);
+      const stored = placePiece(leaf, piece);
       const node = {
         ...leaf.node,
         id: nextId(),
-        pose: placePiece(leaf, piecePose(leaf.node.pose, b)),
-        data: { ...(leaf.node.data as object), path: piece },
+        pose: stored.pose,
+        data: { ...(leaf.node.data as object), path: stored.path },
       };
       ops.push(createInsertOp({ node, index: leaf.index, label: 'Slice' }));
       if (selected.has(sourceId)) inherited.push(node.id);

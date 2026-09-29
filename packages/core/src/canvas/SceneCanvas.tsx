@@ -2806,7 +2806,7 @@ function StandardActionsRegistrar({
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts, layoutDropTarget, reflowTransition);
   useInsertDepSource(scene, adapter, insertNodeFactories);
-  useSliceDepSource(scene, selection, adapter, poseComposition);
+  useSliceDepSource(scene, selection, adapter, poseComposition, poseDescriptor);
   useSnapDepSource(snapPoint);
   useDebugDepSource(canvasApiRef);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);

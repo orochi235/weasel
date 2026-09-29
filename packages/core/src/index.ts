@@ -227,8 +227,8 @@ export {
   type ComputeSliceOpsArgs,
   type ComputeSliceResult,
   type SliceableNode,
-  type SliceBounds,
   type SliceLeaf,
+  type SlicePiece,
 } from './interactions/actions/defaults/sliceOps';
 
 // ─── Gesture dispatcher ───

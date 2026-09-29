@@ -43,4 +43,19 @@ describe('worldEditToStorage — round-trip', () => {
     const world2 = pathInWorld(stored, newPose) as PolygonPath;
     for (let i = 0; i < world.coords.length; i++) expect(world2.coords[i]).toBeCloseTo(world.coords[i]);
   });
+
+  it('keeps an edit that changes the bounds where it was drawn', () => {
+    const pose = { x: 0, y: 0, width: 10, height: 10, rotation: Math.PI / 3 };
+    const world = resolveEditablePathOf({ pose, data: { path: square() } })!;
+    const edited: PolygonPath = { ...world, coords: Float32Array.from(world.coords) };
+    // Drag the first anchor well outside the box, so the stored bounds grow.
+    edited.coords[0] = (edited.coords[0] ?? 0) - 8;
+    edited.coords[1] = (edited.coords[1] ?? 0) - 5;
+
+    const { pose: newPose, path: stored } = worldEditToStorage(pose, edited);
+
+    expect(newPose.rotation).toBeCloseTo(Math.PI / 3);
+    const again = pathInWorld(stored, newPose) as PolygonPath;
+    for (let i = 0; i < edited.coords.length; i++) expect(again.coords[i]).toBeCloseTo(edited.coords[i]!, 4);
+  });
 });

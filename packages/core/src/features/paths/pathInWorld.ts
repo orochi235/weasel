@@ -19,6 +19,7 @@
  */
 
 import {
+  applyToPoint,
   boxToBox,
   rotateAboutPoint,
   boundsOfPath,
@@ -98,36 +99,43 @@ export function pathInWorld(path: Path, pose: PathInWorldPose): Path {
 }
 
 /**
- * Inverse of `pathInWorld` for an editable polygon: given a polygon edited in
- * **world** space and the node's current pose, produce the unrotated stored
- * path plus an updated pose. Inverse-rotates about the pose's AABB center (so
- * the stored path stays unrotated and the pose's `rotation` is preserved),
- * then realigns the result to its own AABB origin and updates the pose's AABB
- * fields. The invariant `pathInWorld(result.path, result.pose) === worldPath`
- * holds (up to the AABB-center pivot), so anchor edits round-trip.
+ * Inverse of `pathInWorld` for a path in **world** space: the unrotated
+ * stored path plus the pose that draws it there. Inverse-rotates about the
+ * pose's AABB center, so the stored path is unrotated and the pose's
+ * `rotation` is preserved, then fits the pose's AABB fields to the result.
+ * The new box's center is placed where the old rotation carries it, since
+ * the pivot moves with the box: `pathInWorld(result.path, result.pose)`
+ * reproduces `worldPath` whether or not its bounds changed.
  *
  * Generic in the pose type so consumer-defined pose fields (including
- * `rotation`) survive the round-trip. Used by both the edit-commit seam and the
- * live anchor-drag preview so they share one world→local inversion.
+ * `rotation`) survive the round-trip. Used by the anchor-edit commit, its
+ * live preview, and the default slice dep.
  */
 export function worldEditToStorage<P extends PathInWorldPose>(
   pose: P,
   worldPath: PolygonPath,
-): { pose: P; path: PolygonPath } {
+): { pose: P; path: PolygonPath };
+export function worldEditToStorage<P extends PathInWorldPose>(pose: P, worldPath: Path): { pose: P; path: Path };
+export function worldEditToStorage<P extends PathInWorldPose>(
+  pose: P,
+  worldPath: Path,
+): { pose: P; path: Path } {
   const r = poseRotationOf(pose);
-  // Inverse of `pathInWorld`'s forward rotation, composed on the kernel. The
-  // exact inverse of `rotateAboutPoint(cx, cy, θ)` is `rotateAboutPoint(cx, cy,
-  // -θ)` (same pivot, negated angle) — preferred over `invert(...)` here because
-  // it's exact by construction, mirrors the forward seam symmetrically, and
-  // avoids the `Mat3|null` (a rotation is always invertible). The ≈0 gate and
-  // AABB-center pivot come from `poseRotationOf`, shared with the forward bake.
-  const unrotated = r
-    ? (transformPath(worldPath, rotateAboutPoint(r.cx, r.cy, -r.rotation)) as PolygonPath)
-    : worldPath;
-  const bounds = boundsOfPath(unrotated);
-  const aligned = translatePath(unrotated, -bounds.x, -bounds.y) as PolygonPath;
+  // The exact inverse of `rotateAboutPoint(cx, cy, θ)` is the same pivot at
+  // -θ — exact by construction, and never `null` the way `invert` can be.
+  const unrotated = r ? transformPath(worldPath, rotateAboutPoint(r.cx, r.cy, -r.rotation)) : worldPath;
+  const b = boundsOfPath(unrotated);
+  const aligned = translatePath(unrotated, -b.x, -b.y);
+  let x = b.x, y = b.y;
+  if (r) {
+    const [cx, cy] = applyToPoint(
+      rotateAboutPoint(r.cx, r.cy, r.rotation), b.x + b.width / 2, b.y + b.height / 2,
+    );
+    x = cx - b.width / 2;
+    y = cy - b.height / 2;
+  }
   return {
-    pose: { ...pose, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+    pose: { ...pose, x, y, width: b.width, height: b.height },
     path: aligned,
   };
 }

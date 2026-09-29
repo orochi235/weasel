@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { rectPath, polylineFromPoints, PATH_Z, type Path, type PolygonPath } from '@weasel-js/geom';
+import { boundsOfPath, rectPath, polylineFromPoints, PATH_Z, type Path, type PolygonPath } from '@weasel-js/geom';
 import { computeSliceOps, type SliceLeaf } from './sliceOps';
 
 interface Data { path?: Path; fill?: string }
@@ -62,12 +62,15 @@ describe('computeSliceOps', () => {
     for (const p of poses) expect(p).not.toHaveProperty('rotation');
   });
 
-  it('hands the piece pose to `placePiece` when one is given', () => {
+  it('stores each piece as `placePiece` says when one is given', () => {
+    const marker = rectPath(0, 0, 1, 1);
     const { ops } = computeSliceOps({
       leaves: [leafOf()], cut: across, nextId,
-      placePiece: (_leaf, pose) => ({ ...pose, x: pose.x - 7 }),
+      placePiece: (_leaf, piece) => ({ pose: { x: boundsOfPath(piece).y, y: 0, width: 1, height: 1 }, path: marker }),
     });
-    expect(inserted(ops).map((p) => p.pose.x)).toEqual([-7, -7]);
+    const pieces = inserted(ops);
+    expect(pieces.map((p) => p.pose.x).sort((a, b) => a - b)).toEqual([0, 50]);
+    for (const p of pieces) expect(p.data.path).toBe(marker);
   });
 
   it('snips an open path into open runs, and knifes a closed one into closed pieces', () => {
