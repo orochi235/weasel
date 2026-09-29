@@ -1,3 +1,4 @@
+import { createRevision } from '../../widget';
 import type {
   Widget, WidgetBounds, HudDrawCtx, HudContentCtx, HudPointerEvent,
 } from '../../widget';
@@ -130,6 +131,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   };
 
   let disposed = false;
+  const rev = createRevision(opts.onChange);
   let hidden = false;
   let title = opts.title;
   let stance = opts.stance;
@@ -163,6 +165,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
   return {
     id: opts.id,
+    deps: rev.deps,
     get bounds() { return bounds; },
     get hidden() { return hidden; },
     get disposed() { return disposed; },
@@ -172,11 +175,11 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
     // Ends any drag in flight: `dragStart` would otherwise still hold the
     // pre-call bounds, so the next move would rebase from stale origin.
-    setBounds(b) { assertNotDisposed(); bounds = clampOnHost(clampSize(b)); dragZone = null; pressZone = null; opts.onChange?.(); },
-    setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
-    setTitle(t) { assertNotDisposed(); title = t; opts.onChange?.(); },
-    setStance(st) { assertNotDisposed(); stance = st; opts.onChange?.(); },
-    setTone(t) { assertNotDisposed(); tone = t; opts.onChange?.(); },
+    setBounds(b) { assertNotDisposed(); bounds = clampOnHost(clampSize(b)); dragZone = null; pressZone = null; rev.changed(); },
+    setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
+    setTitle(t) { assertNotDisposed(); title = t; rev.changed(); },
+    setStance(st) { assertNotDisposed(); stance = st; rev.changed(); },
+    setTone(t) { assertNotDisposed(); tone = t; rev.changed(); },
 
     draw(ctx: HudDrawCtx): DrawCommand[] {
       hostDims = ctx.dims;
@@ -295,7 +298,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
           if (next.x !== bounds.x || next.y !== bounds.y || next.w !== bounds.w || next.h !== bounds.h) {
             bounds = next;
             (dragZone === 'title' ? opts.onMove : opts.onResize)?.(bounds);
-            opts.onChange?.();
+            rev.changed();
           }
           break;
         }
@@ -313,7 +316,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
           if (dragZone) {
             bounds = dragStart;
             dragZone = null;
-            opts.onChange?.();
+            rev.changed();
           }
           pressZone = null;
           break;

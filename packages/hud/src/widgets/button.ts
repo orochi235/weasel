@@ -1,3 +1,4 @@
+import { createRevision } from '../widget';
 import type { Widget, WidgetBounds, HudDrawCtx, HudKeyEvent, HudPointerEvent } from '../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { textCommandFromRuns } from '@weasel-js/core';
@@ -49,6 +50,7 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
     throw new Error(`createButton: bounds must have positive w/h`);
   }
   let disposed = false;
+  const rev = createRevision(opts.onChange);
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: opts.w, h: opts.h };
   let hidden = false;
   let label = opts.label;
@@ -72,6 +74,7 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
 
   return {
     id: opts.id,
+    deps: rev.deps,
     get bounds() { return bounds; },
     get hidden() { return hidden; },
     get disposed() { return disposed; },
@@ -83,9 +86,9 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
       emit('press');
       return true;
     },
-    setBounds(b) { assertNotDisposed(); bounds = { ...b }; opts.onChange?.(); },
-    setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
-    setLabel(l) { assertNotDisposed(); label = l; opts.onChange?.(); },
+    setBounds(b) { assertNotDisposed(); bounds = { ...b }; rev.changed(); },
+    setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
+    setLabel(l) { assertNotDisposed(); label = l; rev.changed(); },
     on(event, handler) { assertNotDisposed(); handlers[event].add(handler); },
     off(event, handler) { assertNotDisposed(); handlers[event].delete(handler); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
@@ -126,25 +129,25 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
       switch (evt.type) {
         case 'down':
           pressed = true;
-          opts.onChange?.();
+          rev.changed();
           break;
         case 'move': {
           const next = isInside(evt.x, evt.y);
-          if (next !== pressed) { pressed = next; opts.onChange?.(); }
+          if (next !== pressed) { pressed = next; rev.changed(); }
           break;
         }
         case 'up':
           if (pressed && isInside(evt.x, evt.y)) emit('press');
-          if (pressed) { pressed = false; opts.onChange?.(); }
+          if (pressed) { pressed = false; rev.changed(); }
           break;
         case 'cancel':
-          if (pressed) { pressed = false; opts.onChange?.(); }
+          if (pressed) { pressed = false; rev.changed(); }
           break;
         case 'hovermove':
-          if (!hovering) { hovering = true; emit('hover'); opts.onChange?.(); }
+          if (!hovering) { hovering = true; emit('hover'); rev.changed(); }
           break;
         case 'hoverleave':
-          if (hovering) { hovering = false; emit('leave'); opts.onChange?.(); }
+          if (hovering) { hovering = false; emit('leave'); rev.changed(); }
           break;
         // A double-click already fired two presses; the rest are claimed so
         // they don't reach the scene, not because a button reacts to them.

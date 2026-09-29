@@ -1,3 +1,4 @@
+import { createRevision } from '../widget';
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand, ImageDrawCommand } from '@weasel-js/core/renderer';
 
@@ -44,6 +45,7 @@ export function createImage(opts: ImageOptions): ImageWidget {
     throw new Error(`createImage: bounds must have positive w/h (got ${opts.w}x${opts.h})`);
   }
   let disposed = false;
+  const rev = createRevision(opts.onChange);
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: opts.w, h: opts.h };
   let image = opts.image;
   let hidden = false;
@@ -57,18 +59,19 @@ export function createImage(opts: ImageOptions): ImageWidget {
 
   return {
     id: opts.id,
+    deps: rev.deps,
     get bounds() { return bounds; },
     get hidden() { return hidden; },
     get disposed() { return disposed; },
-    setBounds(b) { assertNotDisposed(); bounds = { ...b }; opts.onChange?.(); },
-    setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
-    setImage(img) { assertNotDisposed(); image = img; opts.onChange?.(); },
-    setSource(s) { assertNotDisposed(); source = s ? { ...s } : undefined; opts.onChange?.(); },
+    setBounds(b) { assertNotDisposed(); bounds = { ...b }; rev.changed(); },
+    setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
+    setImage(img) { assertNotDisposed(); image = img; rev.changed(); },
+    setSource(s) { assertNotDisposed(); source = s ? { ...s } : undefined; rev.changed(); },
     setFlip(flip) {
       assertNotDisposed();
       if (flip.x !== undefined) flipX = flip.x;
       if (flip.y !== undefined) flipY = flip.y;
-      opts.onChange?.();
+      rev.changed();
     },
     draw(_ctx: HudDrawCtx): DrawCommand[] {
       const cmd: ImageDrawCommand = {

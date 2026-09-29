@@ -151,13 +151,13 @@ What the numbers say:
 
 - **Under about 500 glyphs it does not matter.** Every difference is under
   0.4 ms per frame and most sit inside the spread.
-- **A static label is cheaper in the DOM from about 1,000 glyphs.** Once laid
+- **A static label was cheaper in the DOM from about 1,000 glyphs.** Once laid
   out, DOM text costs nothing per frame (0.44 ms at 5,000 glyphs, the same as
-  the empty scene). The HUD costs about 1 µs of script per glyph per frame
-  whether the text changed or not, because its layer asks every widget for a
-  fresh command on every repaint. When the camera moves, the DOM still wins,
-  by less, and the ranges only separate from 2,500: 2.13 against 5.67 at
-  5,000.
+  the empty scene). The HUD cost about 1 µs of script per glyph per frame
+  whether the text changed or not. Its layer asked every widget for a fresh
+  command on every repaint, and the fresh runs arrays missed the renderer's
+  text layout cache, so every glyph was laid out again. Widget command caching
+  has since cut this to about 0.2 µs per glyph; see below.
 - **A readout that changes every frame is a tie on the main thread with the
   camera fixed.** The DOM spends it on layout and paint (1.79 + 1.76 ms at
   5,000) where the HUD spends it on script (4.43).
@@ -175,7 +175,36 @@ canvas at 0.30 ms with 5,000 glyphs against 0.25 without. The raster column
 reads zero throughout because Chromium rasterizes on the GPU here, so that work
 lands in the GPU-process figure.
 
-The two result files are in `recorded/`. `HVD_UPDATES=static` or
+### After widget command caching
+
+`attachHud` now reuses a widget's commands until something it draws from
+changes, and a moved text widget keeps its runs array. The static-label cells
+were rerun on studio on 2026-09-29, in two trees built on `02c5e108d`. Both
+drive `attachHud`'s own layer: the base tree has the old layer and the new tree
+has the cache. The trees ran in ABBA order (base new new base, then new base
+base new), with one hud/dom ABBA pass inside each run, for 8 samples per HUD
+cell and 16 per DOM cell. The 1-minute load average ran from 7 to 17. The
+figures are renderer main thread in ms per frame, median [min–max]. The
+background scene alone costs 0.46.
+
+| Glyphs | Fixed: HUD before | HUD after | DOM | Camera moves: HUD before | HUD after | DOM |
+|---:|---:|---:|---:|---:|---:|---:|
+|   100 | 0.46 [0.33–0.64] | 0.48 [0.43–0.57] | 0.38 [0.31–0.52] | 0.40 [0.35–0.47] | 0.48 [0.35–0.54] | 0.49 [0.42–0.67] |
+| 1,000 | 1.49 [1.39–2.17] | 0.67 [0.57–0.99] | 0.39 [0.33–0.59] | 1.46 [1.33–1.95] | 0.61 [0.58–1.00] | 0.78 [0.66–1.27] |
+| 2,500 | 2.70 [2.58–2.93] | 1.05 [0.78–1.25] | 0.40 [0.33–0.58] | 2.96 [2.62–4.19] | 0.91 [0.85–1.42] | 1.13 [0.93–1.57] |
+| 5,000 | 5.02 [4.80–5.37] | 1.43 [1.18–1.77] | 0.35 [0.30–0.49] | 5.14 [4.95–6.86] | 1.63 [1.22–1.95] | 1.72 [1.49–2.40] |
+
+The DOM column pools both trees, because the change does not touch that side.
+From 1,000 glyphs up, the before and after ranges no longer overlap. With the
+camera fixed, a static label still costs the HUD about 0.2 µs of script per
+glyph per frame (1.20 ms at 5,000, against 0.20 for the scene), so the DOM
+still wins that cell. With the camera moving, the HUD and DOM ranges overlap at
+every size. The every-frame cells were not rerun. A readout rebuilds on every
+frame either way, and there the cache adds only a deps comparison per widget:
+an inference from the code, not a measurement. The eight result files are in
+`recorded/hud-command-cache/`.
+
+The two result files from the first run are in `recorded/`. `HVD_UPDATES=static` or
 `every-frame` runs half the sweep, which is how it was run: each half took
 about 13 minutes on studio.
 

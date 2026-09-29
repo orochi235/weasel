@@ -1,7 +1,7 @@
 import type { Hud } from './hud';
 import type { CanvasExtensionApi, RenderLayer, LayerHit, View } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { viewToTransform } from '@weasel-js/core';
+import { depsUnchanged, viewToTransform } from '@weasel-js/core';
 import { worldToScreen } from '@weasel-js/core';
 import {
   DEFAULT_FONT_FAMILY,
@@ -10,7 +10,7 @@ import {
 } from './fonts/registerDefaultFont';
 import {
   claimsOf, cursorOf, isFocusable,
-  type Widget, type HudKeyEvent, type HudPointerEvent,
+  type Widget, type HudDrawCtx, type HudKeyEvent, type HudPointerEvent,
 } from './widget';
 import type { HudHitPayload } from './tool';
 import {
@@ -91,6 +91,27 @@ export function attachHud(
     return null;
   };
 
+  // Keyed weakly, so a widget removed from the HUD takes its entry with it.
+  const cache = new WeakMap<Widget, CachedFrame>();
+  const frameCommands = (w: Widget, ctx: HudDrawCtx, focus: number): DrawCommand[] => {
+    if (!w.deps) return w.draw(ctx);
+    const deps = w.deps(ctx);
+    const b = w.bounds;
+    const hit = cache.get(w);
+    if (hit && hit.focus === focus && hit.tokens === ctx.tokens && hit.font === ctx.defaultFont
+      && hit.width === ctx.dims.width && hit.height === ctx.dims.height
+      && hit.x === b.x && hit.y === b.y && hit.w === b.w && hit.h === b.h
+      && depsUnchanged(hit.deps, deps)) {
+      return hit.cmds;
+    }
+    const cmds = w.draw(ctx);
+    cache.set(w, {
+      deps, cmds, focus, tokens: ctx.tokens, font: ctx.defaultFont,
+      width: ctx.dims.width, height: ctx.dims.height, x: b.x, y: b.y, w: b.w, h: b.h,
+    });
+    return cmds;
+  };
+
   const layer: RenderLayer<unknown> = {
     id: 'weasel-hud',
     label: 'HUD',
@@ -115,12 +136,13 @@ export function attachHud(
         });
       }
       // Pass 2: frames.
+      const f = hud.focused;
       for (const w of hud.widgets()) {
         if (w.hidden) continue;
-        for (const cmd of w.draw(ctx)) out.push(cmd);
+        const focus = f !== w ? 0 : hud.focusVisible ? 2 : 1;
+        for (const cmd of frameCommands(w, ctx, focus)) out.push(cmd);
       }
       // Pass 3: the focus ring, over every frame so a neighbor can't hide it.
-      const f = hud.focused;
       if (f && hud.focusVisible && !f.hidden) out.push(focusRing(f, theme['--wzl-focus-ring']));
       return out;
     },
@@ -196,6 +218,18 @@ export function attachHud(
     detachLayer();
     hud.unbind();
   };
+}
+
+/** One widget's last frame commands and every input they were built from. */
+interface CachedFrame {
+  deps: readonly unknown[];
+  cmds: DrawCommand[];
+  /** 0 unfocused, 1 focused, 2 focused with the ring showing. */
+  focus: number;
+  tokens: ResolvedTheme;
+  font: string;
+  width: number; height: number;
+  x: number; y: number; w: number; h: number;
 }
 
 const RING_WIDTH = 2;

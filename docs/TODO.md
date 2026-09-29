@@ -953,10 +953,14 @@ one dead `const` and four stale disable directives.
   off-main-thread totals, whose spread on studio at load 8–21 swamped a 2–3 ms
   lean toward the HUD — rerun on an idle node; a React-rendered overlay, which
   adds reconciliation the plain-DOM side does not pay; and a pure pan that moves
-  the whole DOM layer as one element. Separately, the HUD's static-label cost
-  (~1 µs of script per glyph per frame) comes from `attachHud`'s layer asking
-  every widget for a fresh command on every repaint; caching an unchanged
-  widget's commands would remove the one axis where the DOM wins outright.
+  the whole DOM layer as one element. Widget command caching cut the HUD's
+  static-label cost from ~1 µs to ~0.2 µs of script per glyph per frame (the
+  README's "After widget command caching"). A static label on a fixed camera
+  still favors the DOM (1.43 ms against 0.35 at 5,000 glyphs), because the
+  renderer re-walks every unchanged text command each frame. A layer-level
+  skip for a HUD whose widgets are all unchanged would need `content` painters
+  kept out of it. The every-frame cells have not been rerun since the cache
+  landed.
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op factories, shape kinds and the `features` presets; public exports remain uncovered.
 
