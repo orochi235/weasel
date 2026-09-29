@@ -666,7 +666,6 @@ function ToolChrome() {
               label={id}
               shortcut={id.slice(0, 1).toUpperCase()}
               active={tool === id}
-              tabbable={tool === id}
               onClick={() => setTool(id)}
             />
           ))}

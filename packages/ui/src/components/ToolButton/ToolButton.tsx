@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './ToolButton.module.css';
@@ -22,17 +22,8 @@ export interface ToolButtonProps {
    * to screen readers. The caller is responsible for making `onClick` a no-op.
    */
   ariaDisabled?: boolean;
-  /**
-   * Whether this button is the currently tabbable member of its toolbar.
-   * Toolbars use roving tabindex: exactly one button has `tabIndex=0` at
-   * a time; the rest are `-1`. Caller manages which.
-   */
-  tabbable?: boolean;
   /** Click handler. */
   onClick(): void;
-  /** Key handler for the underlying button — a toolbar's roving-tabindex
-   *  navigation attaches here. */
-  onKeyDown?(e: KeyboardEvent<HTMLElement>): void;
   /**
    * Tooltip content. Defaults to `label` (plus `shortcut` if provided).
    */
@@ -48,8 +39,8 @@ export interface ToolButtonProps {
  */
 export function ToolButton(props: ToolButtonProps) {
   const {
-    icon, label, shortcut, active, disabled, ariaDisabled, tabbable,
-    onClick, onKeyDown, title, className,
+    icon, label, shortcut, active, disabled, ariaDisabled,
+    onClick, title, className,
   } = props;
   const resolvedTitle = title ?? (shortcut ? `${label} (${shortcut})` : label);
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
@@ -58,13 +49,11 @@ export function ToolButton(props: ToolButtonProps) {
       <Focusable isDisabled={disabled}>
         <button
           type="button"
-          tabIndex={tabbable ? 0 : -1}
           className={cls}
           aria-current={active ? 'true' : undefined}
           aria-disabled={ariaDisabled ? 'true' : undefined}
           disabled={disabled}
           onClick={onClick}
-          onKeyDown={onKeyDown}
         >
           <span className={s.icon} aria-hidden="true">{icon}</span>
           <span className={s.label}>{label}</span>

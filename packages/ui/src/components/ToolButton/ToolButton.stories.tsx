@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { ToolButton, type ToolButtonProps } from './ToolButton';
 import { ToolGroup } from '../ToolGroup';
+import { useRovingTabIndex } from '../../useRovingTabIndex';
 
 // Inline placeholder icons keep the story free of cross-package imports
 // and focus the visual on the button chrome itself, not specific glyphs.
@@ -27,14 +28,13 @@ function CircleGlyph() {
   );
 }
 
-// Each story's button sits beside two plain neighbors for comparison: one
-// tabbable, one left out of the tab order, so Tab shows which buttons take focus.
+// Each story's button sits beside two plain neighbors for comparison.
 function WithNeighbors(args: ToolButtonProps) {
   return (
     <ToolGroup>
       <ToolButton {...args} />
-      <ToolButton icon={<SquareGlyph />} label="Tabbable" shortcut="R" tabbable onClick={() => {}} />
-      <ToolButton icon={<CircleGlyph />} label="Untabbable" shortcut="O" tabbable={false} onClick={() => {}} />
+      <ToolButton icon={<SquareGlyph />} label="Rectangle" shortcut="R" onClick={() => {}} />
+      <ToolButton icon={<CircleGlyph />} label="Ellipse" shortcut="O" onClick={() => {}} />
     </ToolGroup>
   );
 }
@@ -47,7 +47,6 @@ const meta: Meta<typeof ToolButton> = {
     icon: <CursorGlyph />,
     label: 'Select',
     shortcut: 'V',
-    tabbable: true,
     onClick: () => {},
   },
 };
@@ -59,11 +58,11 @@ export const Default: Story = {};
 export const Active: Story = { args: { active: true } };
 export const Disabled: Story = { args: { disabled: true } };
 export const NoShortcut: Story = { args: { shortcut: undefined } };
-export const NotTabbable: Story = { args: { tabbable: false } };
 
-// Renders the button as toolbar consumers would: inside a ToolGroup with
-// roving tabindex managed by the parent.
+// Renders the button as toolbar consumers would: inside a ToolGroup, in a
+// toolbar that owns the roving tabindex.
 function InGroupExample() {
+  const roving = useRovingTabIndex<HTMLDivElement>({ orientation: 'vertical' });
   const [active, setActive] = useState<'select' | 'rect' | 'ellipse'>('select');
   const tools: Array<{ id: 'select' | 'rect' | 'ellipse'; label: string; icon: React.ReactNode; shortcut: string }> = [
     { id: 'select', label: 'Select', icon: <CursorGlyph />, shortcut: 'V' },
@@ -71,19 +70,20 @@ function InGroupExample() {
     { id: 'ellipse', label: 'Ellipse', icon: <CircleGlyph />, shortcut: 'O' },
   ];
   return (
-    <ToolGroup>
-      {tools.map((t) => (
-        <ToolButton
-          key={t.id}
-          icon={t.icon}
-          label={t.label}
-          shortcut={t.shortcut}
-          active={active === t.id}
-          tabbable={active === t.id}
-          onClick={() => setActive(t.id)}
-        />
-      ))}
-    </ToolGroup>
+    <div role="toolbar" aria-orientation="vertical" ref={roving.rootRef} onKeyDown={roving.onKeyDown}>
+      <ToolGroup>
+        {tools.map((t) => (
+          <ToolButton
+            key={t.id}
+            icon={t.icon}
+            label={t.label}
+            shortcut={t.shortcut}
+            active={active === t.id}
+            onClick={() => setActive(t.id)}
+          />
+        ))}
+      </ToolGroup>
+    </div>
   );
 }
 
