@@ -163,6 +163,18 @@ describe('inferredNodeProperties', () => {
     expect(fields.sort()).toEqual(Object.keys(offered).sort());
   });
 
+  it('offers justify as a fourth Align segment, lit by justify alone', () => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
+    const style = ((entry.schema.children.text as ToolPrefGroup).children['data.style']) as ToolPrefObject;
+    const align = (style.children.paragraph as ToolPrefGroup).children.align as ToolPrefEnum;
+    expect(align.options.map((o) => [o.value, o.icon])).toEqual([
+      ['left', 'textAlignLeft'], ['center', 'textAlignCenter'], ['right', 'textAlignRight'],
+      ['justify', 'textAlignJustify'],
+    ]);
+    expect(align.encoding!.read('justify', { direction: 'rtl' })).toBe('justify');
+    expect(align.encoding!.read('start', { direction: 'rtl' })).toBe('right');
+  });
+
   it('offers the box alignment beside the style, as a field of the node', () => {
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
     const text = entry.schema.children.text as ToolPrefGroup;

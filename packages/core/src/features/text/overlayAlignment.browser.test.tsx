@@ -69,11 +69,21 @@ async function decodePng(base64: string): Promise<RasterImage> {
   return ctx.getImageData(0, 0, c.width, c.height);
 }
 
-interface Case { family: string; fontSize: number; script?: 'super' | 'sub'; x: number; y: number; text?: string }
+interface Case {
+  family: string; fontSize: number; script?: 'super' | 'sub'; x: number; y: number; text?: string;
+  /** Justified and wrapped at the 200px box, over this many lines. */
+  justifyLines?: number;
+}
 
 function styleOf(c: Case): TextStyle {
-  return { fontFamily: c.family, fontSize: c.fontSize, lineHeight: 1.2, ...(c.script ? { script: c.script } : {}) };
+  return {
+    fontFamily: c.family, fontSize: c.fontSize, lineHeight: 1.2,
+    ...(c.script ? { script: c.script } : {}),
+    ...(c.justifyLines ? { align: 'justify' as const, wrap: true } : {}),
+  };
 }
+
+const boxHeight = (c: Case): number => c.fontSize * 1.2 * (c.justifyLines ?? 1);
 
 const WHITE = { fill: 'solid' as const, color: '#ffffff' };
 
@@ -81,7 +91,7 @@ function renderCanvas(c: Case, dpr: number): RasterImage {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
     kind: 'leaf', layer: 'main',
-    pose: { x: c.x, y: c.y, width: 200, height: c.fontSize * 1.2 },
+    pose: { x: c.x, y: c.y, width: 200, height: boxHeight(c) },
     data: { text: c.text ?? TEXT, style: styleOf(c), fill: WHITE },
   });
   return renderSceneToPixels({
@@ -115,7 +125,7 @@ function Editor({ c }: { c: Case }) {
     getStyle: () => ({ ...styleOf(c), caretColor: 'transparent' }),
     getPaint: () => ({ fill: WHITE }),
     getScreenPose: (): TextEditScreenPose => ({
-      x: c.x, y: c.y, width: 200, height: c.fontSize * 1.2, fontSize: c.fontSize, zoom: 1,
+      x: c.x, y: c.y, width: 200, height: boxHeight(c), fontSize: c.fontSize, zoom: 1,
     }),
     setText: () => {},
   });
@@ -190,10 +200,14 @@ describe('edit overlay alignment', () => {
     { family: 'Inter', fontSize: 72, x: 20, y: 20, text: 'AVATAR' },
     { family: 'sans-serif', fontSize: 72, x: 20, y: 20, text: 'Hxgd' },
     { family: 'sans-serif', fontSize: 16, x: 20, y: 20 },
+    // Justified: the wrapped lines reach the box's right edge, so `dRight`
+    // checks the spread and the centroid checks where the gaps opened.
+    { family: 'Inter', fontSize: 24, x: 20, y: 20, text: 'Hxgd Hxgd Hxgd Hxgd', justifyLines: 2 },
   ];
 
   for (const c of CASES) {
-    const label = `${c.text ? `"${c.text}" ` : ''}${c.family} ${c.fontSize}px${c.script ? ` ${c.script}` : ''}`;
+    const label = `${c.text ? `"${c.text}" ` : ''}${c.family} ${c.fontSize}px${c.script ? ` ${c.script}` : ''}`
+      + (c.justifyLines ? ' justified' : '');
     it(`${label} lands on the canvas glyphs`, async () => {
       const d = await offset(c);
       const at = `dx ${d.dx.toFixed(2)} dy ${d.dy.toFixed(2)} dRight ${d.dRight.toFixed(2)}`;

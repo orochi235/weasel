@@ -105,7 +105,8 @@ function outlineBucket(runs: readonly ResolvedRun[], min: number | undefined): n
 
 function variantKey(runs: readonly ResolvedRun[], opts: LayoutRunsOpts): string {
   const alignWidth = opts.alignWidth ?? opts.maxWidth;
-  return `${opts.maxWidth}|${alignWidth}|${opts.lineHeight}|${opts.align}|${outlineBucket(runs, opts.outlineMinSize)}`;
+  const justify = opts.justify === true || opts.align === 'justify';
+  return `${opts.maxWidth}|${alignWidth}|${opts.lineHeight}|${opts.align}|${justify ? 'j' : ''}|${outlineBucket(runs, opts.outlineMinSize)}`;
 }
 
 let nextRefId = 1;

@@ -16,10 +16,11 @@ import type { TextTransform } from './runs/textTransform';
 
 /**
  * Horizontal alignment. `start` / `end` resolve against the reading direction;
- * `left` / `right` are absolute. Same five values as CSS `text-align`, with
- * the same split between the relative pair and the absolute pair.
+ * `left` / `right` are absolute. `justify` spreads every wrapped line across
+ * the box by widening its word gaps, and sets a paragraph's last line at the
+ * start edge. The same values as CSS `text-align`, with the same meanings.
  */
-export type TextAlign = 'left' | 'center' | 'right' | 'start' | 'end';
+export type TextAlign = 'left' | 'center' | 'right' | 'start' | 'end' | 'justify';
 
 /** Reading direction, which is what gives `start` / `end` their meaning. */
 export type TextDirection = 'ltr' | 'rtl';
@@ -28,13 +29,15 @@ export type TextDirection = 'ltr' | 'rtl';
  * Collapse a possibly reading-order-relative alignment to an absolute edge.
  *
  * Layout works in absolute edges, so this runs once at its entry and `start` /
- * `end` never reach the geometry.
+ * `end` never reach the geometry. `justify` collapses to the start edge, which
+ * is where it sets every line it does not spread; whether to spread is carried
+ * separately, as `LayoutRunsOpts.justify`.
  */
 export function resolveAlign(
   align: TextAlign,
   direction: TextDirection,
 ): 'left' | 'center' | 'right' {
-  if (align === 'start') return direction === 'rtl' ? 'right' : 'left';
+  if (align === 'start' || align === 'justify') return direction === 'rtl' ? 'right' : 'left';
   if (align === 'end') return direction === 'rtl' ? 'left' : 'right';
   return align;
 }

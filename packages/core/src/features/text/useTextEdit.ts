@@ -988,7 +988,11 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   });
   el.style.font = fontString({ ...style, fontFamily });
   el.style.lineHeight = String(style.lineHeight);
-  el.style.textAlign = resolveAlign(style.align, style.direction);
+  // The overlay sets no `direction`, so a justified paragraph's last line is
+  // pinned to the edge the canvas puts it at rather than left to `start`.
+  const edge = resolveAlign(style.align, style.direction);
+  el.style.textAlign = style.align === 'justify' ? 'justify' : edge;
+  el.style.setProperty('text-align-last', style.align === 'justify' ? edge : '');
   // Node-level decoration, so the overlay looks like the canvas the moment
   // editing starts. Runs are additive over the node style (a run can't un-set
   // a flag), which is exactly how CSS decoration propagates to descendants —
