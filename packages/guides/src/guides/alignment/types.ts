@@ -1,5 +1,5 @@
 import type { ModifierState, Bounds, PoseDescriptor } from '@weasel-js/core';
-import type { Guide } from '../types';
+import type { Guide, SpacingGap } from '../types';
 
 /** Which feature of a box to test against candidates, per axis.
  *  'min' = left/top edge, 'center' = centerline, 'max' = right/bottom edge. */
@@ -13,6 +13,19 @@ export interface AlignMatchResult {
   dy: number;
   activeX: Guide | null;
   activeY: Guide | null;
+}
+
+/** Which edges of a box move on one axis during a spacing match: `'both'`
+ *  for a translate, `'min'`/`'max'` for a resize dragging that edge. */
+export type SpacingEdge = 'both' | 'min' | 'max';
+
+/** The correction an equal-spacing match asks for, and the gaps to draw. */
+export interface SpacingMatchResult {
+  dx: number;
+  dy: number;
+  /** Every x gap equal to the one snapped to, the box's own included. */
+  gapsX: SpacingGap[];
+  gapsY: SpacingGap[];
 }
 
 /** Which candidate lines to derive from a set of poses — edges, centers, or
@@ -40,4 +53,12 @@ export interface AlignmentBehaviorBase {
   tolerance?: number;
   /** Modifier key that bypasses snapping while held. */
   bypassKey?: keyof ModifierState;
+  /** Boxes to measure gaps between for equal-spacing snaps (`matchSpacing`):
+   *  the siblings' visual bounds, without the dragged ones. Omit to snap to
+   *  alignment lines only. On each axis the nearer of the two snaps wins.
+   *  Move and unrotated resize use it; insert does not. */
+  getSpacingTargets?: () => readonly Bounds[];
+  /** Publish the equal-gap markers. Called with the guides; cleared (`[]`) on
+   *  a miss and on onEnd. */
+  setActiveGaps?: (gaps: readonly SpacingGap[]) => void;
 }

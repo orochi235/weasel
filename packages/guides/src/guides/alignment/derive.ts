@@ -11,7 +11,8 @@ const EPS = 1e-3;
 
 /** Derive candidate alignment lines from a set of sibling poses plus an
  *  optional page box. Each box contributes up to 3 guides per axis: the two
- *  edges and the center. Overlapping offsets collapse to one candidate.
+ *  edges and the center. Overlapping offsets collapse to one candidate, whose
+ *  `span` covers every box that produced it.
  *  Poses go through the same descriptor `alignMoveBehavior` matches with, so
  *  a rotated sibling advertises its ink edges rather than its stored box. */
 export function deriveAlignmentGuides<TPose = Bounds>(
@@ -25,23 +26,29 @@ export function deriveAlignmentGuides<TPose = Bounds>(
   const seenX = new Map<number, Guide>();
   const seenY = new Map<number, Guide>();
 
-  const add = (axis: 'x' | 'y', offset: number): void => {
+  const add = (axis: 'x' | 'y', offset: number, b: Bounds): void => {
     const seen = axis === 'x' ? seenX : seenY;
     const key = Math.round(offset / EPS);
-    if (seen.has(key)) return;
-    seen.set(key, { id: `align:${axis}:${offset.toFixed(3)}`, axis, offset });
+    const min = axis === 'x' ? b.y : b.x;
+    const max = min + (axis === 'x' ? b.height : b.width);
+    const prev = seen.get(key);
+    if (prev) {
+      prev.span = { min: Math.min(prev.span!.min, min), max: Math.max(prev.span!.max, max) };
+      return;
+    }
+    seen.set(key, { id: `align:${axis}:${offset.toFixed(3)}`, axis, offset, span: { min, max } });
   };
 
   const emit = (b: Bounds): void => {
     if (edges) {
-      add('x', b.x);
-      add('x', b.x + b.width);
-      add('y', b.y);
-      add('y', b.y + b.height);
+      add('x', b.x, b);
+      add('x', b.x + b.width, b);
+      add('y', b.y, b);
+      add('y', b.y + b.height, b);
     }
     if (centers) {
-      add('x', b.x + b.width / 2);
-      add('y', b.y + b.height / 2);
+      add('x', b.x + b.width / 2, b);
+      add('y', b.y + b.height / 2, b);
     }
   };
 

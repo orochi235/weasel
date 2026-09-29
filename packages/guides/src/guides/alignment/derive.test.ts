@@ -56,6 +56,17 @@ describe('deriveAlignmentGuides', () => {
     expect(xs).toEqual([55, 60, 65]);
   });
 
+  it('each guide spans its box on the other axis', () => {
+    const g = deriveAlignmentGuides([box]);
+    expect(g.find((q) => q.axis === 'x' && q.offset === 10)!.span).toEqual({ min: 20, max: 60 });
+    expect(g.find((q) => q.axis === 'y' && q.offset === 40)!.span).toEqual({ min: 10, max: 110 });
+  });
+
+  it('a guide shared by several boxes spans all of them', () => {
+    const g = deriveAlignmentGuides([box, { x: 10, y: 300, width: 50, height: 50 }]);
+    expect(g.find((q) => q.axis === 'x' && q.offset === 10)!.span).toEqual({ min: 20, max: 350 });
+  });
+
   it('ids are stable and offset-derived', () => {
     const g = deriveAlignmentGuides([box]);
     const left = g.find((q) => q.axis === 'x' && q.offset === 10)!;

@@ -7,7 +7,7 @@ import {
   solid,
 } from '@weasel-js/core';
 import { alignInsertBehavior, alignMoveBehavior, createGuidesLayer, deriveAlignmentGuides } from '@weasel-js/guides';
-import type { Guide } from '@weasel-js/guides';
+import type { Guide, SpacingGap } from '@weasel-js/guides';
 import type { FillStyle, NodeId, Path, ToolsApi } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui';
 
@@ -29,10 +29,11 @@ export function AlignmentGuidesDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      rect('a', { x: 60, y: 50, width: 90, height: 60 }, '#7fb069'),
+      rect('a', { x: 30, y: 50, width: 70, height: 60 }, '#7fb069'),
+      rect('d', { x: 140, y: 40, width: 50, height: 60 }, '#d9c36f'),
       rect('b', { x: 300, y: 130, width: 80, height: 80 }, '#d98f6f'),
       rect('c', { x: 150, y: 230, width: 120, height: 50 }, '#6f9fd9'),
-      rect('drag', { x: 200, y: 60, width: 70, height: 70 }, '#b07fd0'),
+      rect('drag', { x: 240, y: 60, width: 70, height: 70 }, '#b07fd0'),
     ],
   });
   // Multi-select so shift-clicking several rects and dragging snaps the
@@ -43,19 +44,23 @@ export function AlignmentGuidesDemo() {
   // Active guides live in a ref so the layer reads them each draw without a
   // React re-render per pointer-move.
   const activeRef = useRef<readonly Guide[]>([]);
+  const gapsRef = useRef<readonly SpacingGap[]>([]);
 
   const { selectTool, toolOptions } = useMemo(() => {
     const setActiveGuides = (g: readonly Guide[]) => { activeRef.current = g; };
+    const setActiveGaps = (g: readonly SpacingGap[]) => { gapsRef.current = g; };
+    const poses = (exclude: ReadonlySet<NodeId>) =>
+      [...scene.nodes.values()].filter((n) => !exclude.has(n.id)).map((n) => n.pose as Pose);
     // Candidates come from every node not in `exclude`, plus the page.
-    const candidates = (exclude: ReadonlySet<NodeId>) => deriveAlignmentGuides(
-      [...scene.nodes.values()].filter((n) => !exclude.has(n.id)).map((n) => n.pose as Pose),
-      { page: PAGE },
-    );
+    const candidates = (exclude: ReadonlySet<NodeId>) => deriveAlignmentGuides(poses(exclude), { page: PAGE });
     return {
       selectTool: { move: { behaviors: [alignMoveBehavior<Pose>({
         tolerance: 6,
         getCandidates: () => candidates(new Set(selection.get())),
         setActiveGuides,
+        // Equal-spacing snaps measure the gaps between the same siblings.
+        getSpacingTargets: () => poses(new Set(selection.get())),
+        setActiveGaps,
       })] } },
       // The rect being drawn is not in the scene yet, so every node counts.
       toolOptions: { insert: { behaviors: [alignInsertBehavior({
@@ -67,7 +72,7 @@ export function AlignmentGuidesDemo() {
   }, [scene, selection]);
 
   const guidesLayer = useMemo(
-    () => createGuidesLayer({ getGuides: () => activeRef.current, color: '#e0397f' }),
+    () => createGuidesLayer({ getGuides: () => activeRef.current, getGaps: () => gapsRef.current, color: '#e0397f' }),
     [],
   );
 

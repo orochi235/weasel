@@ -673,7 +673,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'alignment-guides',
     title: 'Alignment guides',
     package: 'guides',
-    description: 'Drag the purple rect: its edges and center snap to the other rects and the page, drawing a full-length guide line. With the rect tool, the corner being drawn snaps the same way. Candidates are derived from sibling bounds via deriveAlignmentGuides; alignMoveBehavior shapes the move and alignInsertBehavior the insert (through toolOptions.insert.behaviors), and both publish the matched line to a ref the createGuidesLayer overlay reads each frame.',
+    description: 'Drag the purple rect: its edges and center snap to the other rects and the page, drawing a segment from the aligned rects to it. Drag it level with the green and yellow rects and it also snaps to their gap, marking each equal gap with its size. With the rect tool, the corner being drawn snaps to alignment lines too. Candidates are derived from sibling bounds via deriveAlignmentGuides; alignMoveBehavior shapes the move (getSpacingTargets turns on the equal-gap snap) and alignInsertBehavior the insert, and both publish what matched to refs the createGuidesLayer overlay reads each frame.',
     hint: 'Drag the purple rectangle near another rect’s edge or center, or pick the rect tool and draw one beside them.',
     load: () => import('./demos/AlignmentGuidesDemo').then((m) => m.AlignmentGuidesDemo),
     path: 'apps/site/demos/AlignmentGuidesDemo.tsx',
