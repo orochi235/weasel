@@ -1,5 +1,5 @@
 // src/tools/useKeybindings.test.ts
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { useTools } from './overlayBinding';
@@ -11,6 +11,7 @@ import { useActionsRegistry } from '@weasel-js/routing/react';
 import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { useRef } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 
 function press(key: string, type: 'keydown' | 'keyup' = 'keydown'): void {
   document.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
@@ -345,5 +346,26 @@ describe('useKeybindings', () => {
       act(() => press('p'));
       expect(result.current.active).toBe('pen');
     });
+  });
+
+  it('gates on the committed isToolEligible, not an abandoned render\'s', () => {
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
+    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
+    const Wrapper = makeWrapper('select', true);
+    const committed = vi.fn(() => true);
+    const abandoned = vi.fn(() => true);
+    function Probe({ isToolEligible }: { isToolEligible: (id: string) => boolean }) {
+      const tools = useTools({ active: 'select', registry: { select, pen } });
+      useKeybindings(tools, { isToolEligible });
+      return null;
+    }
+    renderThenAbandon<(id: string) => boolean>(
+      committed,
+      abandoned,
+      (isToolEligible) => createElement(Wrapper, null, createElement(Probe, { isToolEligible })),
+    );
+    act(() => press('p'));
+    expect(abandoned).not.toHaveBeenCalled();
+    expect(committed).toHaveBeenCalledWith('pen');
   });
 });

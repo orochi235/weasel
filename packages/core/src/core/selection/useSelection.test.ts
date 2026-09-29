@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { useSelection } from './useSelection';
+import { createElement } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import { useSelection, type SelectionApi, type SelectionStore } from './useSelection';
 import { asNodeId } from 'core/scene/types';
 import { createScene } from 'core/scene/scene';
 
@@ -227,5 +229,31 @@ describe('useSelection — identity', () => {
 
     expect(result.current).toBe(first);
     expect(first.current).toEqual([a, b]);
+  });
+
+  it('an abandoned render\'s lock does not stick', () => {
+    let api = null as SelectionApi | null;
+    function Probe({ lock }: { lock: boolean }) {
+      api = useSelection({ lock });
+      return null;
+    }
+    renderThenAbandon(false, true, (lock) => createElement(Probe, { lock }));
+    act(() => api!.set([a]));
+    expect(api!.get()).toEqual([a]);
+  });
+
+  it('an abandoned render\'s scene does not redirect the committed selection', () => {
+    const sceneA = createScene({ systemLayers: [{ id: 'main' }] });
+    const sceneB = createScene({ systemLayers: [{ id: 'main' }] });
+    sceneA.setSelection([a]);
+    sceneB.setSelection([b]);
+    const committed: SelectionApi[] = [];
+    function Probe({ scene }: { scene: SelectionStore }) {
+      const api = useSelection({ scene });
+      if (scene === sceneA) committed.push(api);
+      return null;
+    }
+    renderThenAbandon<SelectionStore>(sceneA, sceneB, (scene) => createElement(Probe, { scene }));
+    expect(committed.at(-1)!.get()).toEqual([a]);
   });
 });

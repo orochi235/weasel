@@ -1,4 +1,5 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
@@ -89,13 +90,10 @@ export function useAlign<TPose>(
   adapter: AlignAdapter<TPose>,
   options: UseAlignOptions<TPose> = {},
 ): UseAlignReturn {
-  const adapterRef = useRef(adapter);
-  adapterRef.current = adapter;
-  const optsRef = useRef(options);
-  optsRef.current = options;
+  const adapterRef = useLatest(adapter);
+  const optsRef = useLatest(options);
   const pointer = usePointerContext();
-  const pointerRef = useRef(pointer);
-  pointerRef.current = pointer;
+  const pointerRef = useLatest(pointer);
 
   const align = useCallback((edge: AlignEdge, to?: AlignReference): void => {
     const a = adapterRef.current;
@@ -134,7 +132,7 @@ export function useAlign<TPose>(
     }
     if (ops.length === 0) return;
     dispatchApplyBatch(a, ops, o.label ?? 'Align');
-  }, []);
+  }, [adapterRef, optsRef, pointerRef]);
 
   return { align };
 }

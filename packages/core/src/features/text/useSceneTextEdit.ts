@@ -22,6 +22,7 @@
  * supply their own `getScreenPose`.
  */
 import { useCallback, useRef, type MouseEvent } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { asNodeId } from '../../core/scene/types';
 import { effectivePose } from '../../core/scene/effectivePose';
 import type { Scene } from '../../core/scene/types';
@@ -135,12 +136,9 @@ export function useSceneTextEdit<
   // Stash scene + options in refs so the useTextEdit callbacks always see
   // the current values without re-binding (the underlying hook also reads
   // its options through a ref, so any re-creation would be churn).
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
-  const optsRef = useRef(options);
-  optsRef.current = options;
-  const containerRef = useRef(container);
-  containerRef.current = container;
+  const sceneRef = useLatest(scene);
+  const optsRef = useLatest(options);
+  const containerRef = useLatest(container);
   // The last double-click's target, so the overlay projects through the
   // canvas the edit was opened on.
   const openedOnRef = useRef<EventTarget | null>(null);
@@ -299,7 +297,7 @@ export function useSceneTextEdit<
       edit.startEdit(String(node.id), { caret: caretIndexAt(cx, cy, pose) });
       return;
     }
-  }, [edit]);
+  }, [edit, containerRef, optsRef, sceneRef]);
 
   return { ...edit, onDoubleClick };
 }

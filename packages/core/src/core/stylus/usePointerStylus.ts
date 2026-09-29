@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { getStylusData, type StylusData } from './stylus';
 
 /** State exposed by `usePointerStylus` — the most recent stylus snapshot
@@ -59,8 +60,7 @@ export function usePointerStylus(
   // Track the last commit time to throttle. A ref avoids re-creating the
   // listener every render and avoids stale-closure read of an outer `let`.
   const lastCommit = useRef(-Infinity);
-  const optsRef = useRef({ maxFps, stylusOnly });
-  optsRef.current = { maxFps, stylusOnly };
+  const optsRef = useLatest({ maxFps, stylusOnly });
 
   useEffect(() => {
     const el: EventTarget =
@@ -99,7 +99,7 @@ export function usePointerStylus(
       el.removeEventListener('pointerenter', onEnter);
       el.removeEventListener('pointerleave', onLeave);
     };
-  }, [target]);
+  }, [target, optsRef]);
 
   return state;
 }

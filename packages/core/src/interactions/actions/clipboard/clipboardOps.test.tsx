@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClipboardOps } from './clipboardOps';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import type { InsertAdapter, Op } from '../../..';
 import { asNodeId } from 'core/scene/types';
 import { PointerContextProvider, usePointerContext } from 'features/pointer/PointerContext';
@@ -505,5 +506,22 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
     expect(write).not.toHaveBeenCalled();
     act(() => { result.current.paste(); });
     expect(helpers.batches).toHaveLength(1);
+  });
+});
+
+describe('useClipboardOps — abandoned render', () => {
+  it('pastes with the committed options, not ones from a render React threw away', () => {
+    const h = makeAdapter();
+    h.seed({ id: 'o1', x: 0, y: 0 });
+    let api: ReturnType<typeof useClipboardOps> | undefined;
+    function Probe({ label }: { label: string }) {
+      const r = useClipboardOps(h.adapter, { getSelection: () => h.getSelection().map(asNodeId), pasteLabel: label });
+      if (label === 'A') api = r;
+      return null;
+    }
+    renderThenAbandon('A', 'B', (label) => <Probe label={label} />);
+    act(() => { api!.copy(); });
+    act(() => { api!.paste(); });
+    expect(h.batches.map((b) => b.label)).toEqual(['A']);
   });
 });

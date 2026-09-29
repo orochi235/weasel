@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { usePointerStylus } from './usePointerStylus';
 
 function dispatchMove(target: EventTarget, init: Partial<PointerEvent>) {
@@ -93,5 +94,23 @@ describe('usePointerStylus', () => {
       window.dispatchEvent(e);
     });
     expect(result.current.hovering).toBe(false);
+  });
+
+  it('filters by the committed options, not an abandoned render\'s', () => {
+    function Probe({ stylusOnly }: { stylusOnly: boolean }) {
+      usePointerStylus(undefined, { maxFps: Infinity, stylusOnly });
+      return null;
+    }
+    renderThenAbandon(false, true, (stylusOnly) => <Probe stylusOnly={stylusOnly} />);
+    // A proxy: the abandoned transition holds the root, so the state this move
+    // sets never renders. The throttle clock is read only by a move that
+    // passed the `stylusOnly` filter.
+    const now = vi.spyOn(performance, 'now');
+    try {
+      act(() => { dispatchMove(window, { pointerType: 'mouse', pressure: 0.4 }); });
+      expect(now).toHaveBeenCalled();
+    } finally {
+      now.mockRestore();
+    }
   });
 });

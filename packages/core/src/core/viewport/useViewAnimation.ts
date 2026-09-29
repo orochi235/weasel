@@ -1,4 +1,5 @@
 import { useId, useMemo, useRef } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { useAnimator } from '../../animation/useAnimator';
 import { easeOutCubic } from '../../animation/easings';
 import type { Animator, EasingSpec, InterpolatorFactory } from '../../animation/types';
@@ -72,10 +73,8 @@ export function useViewAnimation(view: ViewChannel, animator?: Animator): ViewAn
  *  animator of its own, so the camera runs on exactly the one passed. */
 export function useViewAnimationOn(view: ViewChannel, animator: Animator): ViewAnimationApi {
   const key = `${VIEW_ANIMATION_KEY}:${useId()}`;
-  const viewRef = useRef(view);
-  viewRef.current = view;
-  const animatorRef = useRef<Animator>(animator);
-  animatorRef.current = animator;
+  const viewRef = useLatest(view);
+  const animatorRef = useLatest(animator);
   const targetRef = useRef<View | null>(null);
   const writingRef = useRef(false);
 
@@ -123,5 +122,5 @@ export function useViewAnimationOn(view: ViewChannel, animator: Animator): ViewA
       target,
       stopIfExternal: () => { if (!writingRef.current) stop(); },
     };
-  }, [key]);
+  }, [key, viewRef, animatorRef]);
 }

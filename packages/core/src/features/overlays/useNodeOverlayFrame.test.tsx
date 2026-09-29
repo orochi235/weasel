@@ -5,6 +5,7 @@ import { createScene } from '../../core/scene';
 import { asNodeId, type NodeId, type RectPose } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
 import { useNodeOverlayFrame, type NodeOverlayFrame } from './useNodeOverlayFrame';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 
 beforeAll(() => {
   if (typeof (globalThis as { ResizeObserver?: unknown }).ResizeObserver === 'undefined') {
@@ -140,5 +141,28 @@ describe('useNodeOverlayFrame', () => {
     expect(frameFor(scene, null)).toBeNull();
     expect(frameFor(scene, 'nope')).toBeNull();
     expect(frameFor(scene, 'a', IDENTITY, container(0, 0))).toBeNull();
+  });
+});
+
+describe('useNodeOverlayFrame — abandoned renders', () => {
+  it('falls back to the committed inverse, not one an abandoned render computed', () => {
+    const scene = sceneWith([{ id: 'a', pose: { x: 10, y: 20, width: 100, height: 50 } }]);
+    const el = container();
+    let live: View = IDENTITY;
+    const views = {
+      a: (): View => live,
+      b: (): View => ({ x: 0, y: 0, scale: { x: 2, y: 2 } }),
+    };
+    let committed: NodeOverlayFrame | null = null;
+    function Probe({ which }: { which: 'a' | 'b' }) {
+      const ref = useRef<HTMLDivElement>(el);
+      const frame = useNodeOverlayFrame(scene, ref, 'a' as NodeId, { view: views[which] });
+      if (which === 'a') committed = frame;
+      return null;
+    }
+    renderThenAbandon<'a' | 'b'>('a', 'b', (which) => <Probe which={which} />);
+    // The live view collapses an axis, so toLocal has no inverse of its own.
+    live = { x: 0, y: 0, scale: { x: 0, y: 0 } };
+    near(committed!.toLocal({ x: 10, y: 20 }), 10, 20);
   });
 });

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useBooleans } from './useBooleans';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import type { BooleansAdapter } from './booleans';
 import type { Path } from 'features/paths/types';
 import type { Op } from 'core/ops/types';
@@ -53,5 +54,22 @@ describe('useBooleans', () => {
     expect(h.state.batches).toHaveLength(1);
     expect(h.state.inserted).toHaveLength(1);
     expect(h.state.removed.sort()).toEqual(['a', 'b']);
+  });
+});
+
+describe('useBooleans — abandoned render', () => {
+  it('runs against the committed adapter, not one from a render React threw away', () => {
+    const A = makeAdapter();
+    const B = makeAdapter();
+    let api: ReturnType<typeof useBooleans> | undefined;
+    function Probe({ adapter }: { adapter: BooleansAdapter }) {
+      const r = useBooleans(adapter);
+      if (adapter === A.adapter) api = r;
+      return null;
+    }
+    renderThenAbandon(A.adapter, B.adapter, (adapter) => <Probe adapter={adapter} />);
+    act(() => { api!.union(); });
+    expect(A.state.batches).toHaveLength(1);
+    expect(B.state.batches).toHaveLength(0);
   });
 });

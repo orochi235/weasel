@@ -73,4 +73,16 @@ describe('useCanvasFocus', () => {
     // Same getter reference, but reads new state.
     expect(getter()).toBe(true);
   });
+
+  it('keeps focusProps identity across renders until tabIndex changes', () => {
+    const { result, rerender } = renderHook(({ tabIndex }) => useCanvasFocus({ tabIndex }), {
+      initialProps: { tabIndex: 0 },
+    });
+    const first = result.current.focusProps;
+    rerender({ tabIndex: 0 });
+    expect(result.current.focusProps).toBe(first);
+    rerender({ tabIndex: -1 });
+    expect(result.current.focusProps).not.toBe(first);
+    expect(result.current.focusProps.tabIndex).toBe(-1);
+  });
 });

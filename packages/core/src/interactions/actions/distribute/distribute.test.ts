@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDistribute } from './distribute';
+import { createElement } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import type { DistributeAdapter } from './distribute';
 import type { Op } from 'core/ops/types';
 import { type NodeId } from 'core/scene/types';
@@ -246,5 +248,27 @@ describe('useDistribute with a rotated member', () => {
     // Endpoints stay put; the rotated member's own width never enters the sum.
     expect(ink[0].x).toBeCloseTo(0, 9);
     expect(ink[3].x + ink[3].width).toBeCloseTo(100, 9);
+  });
+});
+
+describe('useDistribute — abandoned render', () => {
+  it('distributes through the committed adapter, not one from a render React threw away', () => {
+    const poses = {
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 30, y: 0, width: 10, height: 10 },
+      c: { x: 90, y: 0, width: 10, height: 10 },
+    };
+    const A = makeRectAdapter(['a', 'b', 'c'], poses);
+    const B = makeRectAdapter(['a', 'b', 'c'], poses);
+    let api: ReturnType<typeof useDistribute> | undefined;
+    function Probe({ adapter }: { adapter: DistributeAdapter<RectPose> }) {
+      const r = useDistribute(adapter);
+      if (adapter === A.adapter) api = r;
+      return null;
+    }
+    renderThenAbandon(A.adapter, B.adapter, (adapter) => createElement(Probe, { adapter }));
+    act(() => { api!.distribute('x'); });
+    expect(A.batches).toHaveLength(1);
+    expect(B.batches).toHaveLength(0);
   });
 });

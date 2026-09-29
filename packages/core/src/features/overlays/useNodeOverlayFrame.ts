@@ -14,7 +14,7 @@
  * one `pathInPoseFrame` projects geometry into. Rotation lives in this hook,
  * not in those: a node's stored geometry is pre-rotation by definition.
  */
-import { useCallback, useRef, type RefObject } from 'react';
+import { useCallback, useInsertionEffect, useRef, type RefObject } from 'react';
 import { applyToPoint, invert, multiply, type Mat3 } from '@weasel-js/geom';
 import type { Node, RectPose, Scene } from '../../core/scene/types';
 import { useCanvasSize } from '../../core/viewport/useCanvasSize';
@@ -97,18 +97,19 @@ export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends 
     const m = project();
     const inverse = m && invert(m);
     if (inverse) lastInverse.current = inverse;
-    // Set before any frame is returned, so a handed-out toLocal always has one.
+    // Published by the commit that handed this toLocal out, so there is one.
     const [x, y] = applyToPoint(inverse ?? lastInverse.current!, p.x, p.y);
     return { x, y };
   }, [project]);
 
   const box = worldBoxOf(scene, nodeId, compose);
-  if (!box || width === 0 || height === 0) return null;
-  const m = project();
+  const m = box && width !== 0 && height !== 0 ? project() : null;
   const inverse = m && invert(m);
-  if (!inverse) return null;
-  lastInverse.current = inverse;
+  useInsertionEffect(() => {
+    if (inverse) lastInverse.current = inverse;
+  });
 
+  if (!box || !inverse) return null;
   return { box: { x: box.x, y: box.y, width: box.width, height: box.height }, toScreen, toLocal, width, height };
 }
 

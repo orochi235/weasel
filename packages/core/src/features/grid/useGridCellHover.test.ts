@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { createRef } from 'react';
+import { createElement, createRef } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { useGridCellHover } from './useGridCellHover';
 import type { ViewTransform } from 'core/viewport/viewTransform';
 
@@ -112,5 +113,21 @@ describe('useGridCellHover', () => {
     );
     act(() => { fire(el, 'pointermove', { clientX: 50, clientY: 50 }); });
     expect(result.current.cell).toBeNull();
+  });
+});
+
+describe('useGridCellHover — abandoned renders', () => {
+  it('maps the pointer with the committed options, not an abandoned render\'s', () => {
+    const el = makeEl();
+    const ref = createRef<HTMLElement>();
+    (ref as { current: HTMLElement }).current = el;
+    let getCell: (() => { col: number; row: number } | null) | null = null;
+    function Probe({ spacing }: { spacing: number }): null {
+      getCell = useGridCellHover({ ref, view: () => identityView, spacing }).getCell;
+      return null;
+    }
+    renderThenAbandon(10, 100, (spacing) => createElement(Probe, { spacing }));
+    act(() => { fire(el, 'pointermove', { clientX: 25, clientY: 7 }); });
+    expect(getCell!()).toEqual({ col: 2, row: 0 });
   });
 });

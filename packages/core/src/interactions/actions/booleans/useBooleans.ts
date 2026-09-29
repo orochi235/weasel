@@ -13,7 +13,8 @@
  * No-ops are silent in production; in dev, `subtract` with < 2 selected
  * paths emits a `console.warn`.
  */
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { applyBooleanOp, type BooleansAdapter, type BooleanOp } from './booleans';
 
 /** The six Boolean path operations, each acting on the current selection and
@@ -43,15 +44,14 @@ export function useBooleans(
   adapter: BooleansAdapter,
   _options: UseBooleansOptions = {},
 ): UseBooleansReturn {
-  const adapterRef = useRef(adapter);
-  adapterRef.current = adapter;
+  const adapterRef = useLatest(adapter);
 
   const run = useCallback((op: BooleanOp) => {
     const result = applyBooleanOp(adapterRef.current, op);
     if (isDev && result.kind === 'noop' && result.reason === 'too-few-for-subtract') {
       console.warn('[useBooleans] subtract requires at least 2 selected paths');
     }
-  }, []);
+  }, [adapterRef]);
 
   return {
     union: useCallback(() => run('union'), [run]),

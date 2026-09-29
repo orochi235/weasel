@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import type { ModifierState } from '../types';
 
 /** Pointer position in both world (gesture-coord) and client (CSS-px) space. */
@@ -81,8 +82,7 @@ interface InternalState<TScratch> {
 export function useDragGesture<TScratch = unknown>(
   options: UseDragGestureOptions<TScratch> = {},
 ): DragGestureController {
-  const optsRef = useRef(options);
-  optsRef.current = options;
+  const optsRef = useLatest(options);
   const stateRef = useRef<InternalState<TScratch> | null>(null);
   const [, setPhaseTick] = useState(0);
   const phaseRef = useRef<DragGesturePhase>('idle');
@@ -116,7 +116,7 @@ export function useDragGesture<TScratch = unknown>(
     bumpPhase(initialPhase);
     opts.onGestureStart?.();
     opts.onStart?.(buildCtx());
-  }, [buildCtx, bumpPhase]);
+  }, [buildCtx, bumpPhase, optsRef]);
 
   const move = useCallback((point: DragGesturePoint, modifiers: ModifierState): boolean => {
     const s = stateRef.current;
@@ -134,7 +134,7 @@ export function useDragGesture<TScratch = unknown>(
     }
     opts.onMove?.(buildCtx());
     return true;
-  }, [buildCtx, bumpPhase]);
+  }, [buildCtx, bumpPhase, optsRef]);
 
   const end = useCallback(() => {
     const s = stateRef.current;
@@ -161,7 +161,7 @@ export function useDragGesture<TScratch = unknown>(
       bumpPhase('idle');
       opts.onGestureEnd?.(committed);
     }
-  }, [bumpPhase]);
+  }, [bumpPhase, optsRef]);
 
   const cancel = useCallback(() => {
     const s = stateRef.current;
@@ -170,7 +170,7 @@ export function useDragGesture<TScratch = unknown>(
     stateRef.current = null;
     bumpPhase('idle');
     opts.onGestureEnd?.(false);
-  }, [buildCtx, bumpPhase]);
+  }, [buildCtx, bumpPhase, optsRef]);
 
   return useMemo<DragGestureController>(() => ({
     start, move, end, cancel,

@@ -10,9 +10,9 @@
  * Falls back silently to a no-op when no `<ActionsProvider>` or
  * `<DepRegistryProvider>` is in scope.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import type { Action } from '@weasel-js/routing';
-import { useActionsRegistry } from '@weasel-js/routing/react';
+import { useActionsRegistry, useLatest } from '@weasel-js/routing/react';
 import { type DepName, type DepSchema } from '@weasel-js/routing';
 import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 // Reaches depSchema.ts so tsup's per-entry dts compiler resolves `DepSchema['selection']`
@@ -195,47 +195,40 @@ export const KIT_STANDARD_ACTION_IDS: readonly string[] =
  */
 export function useStandardActions(opts: UseStandardActionsOptions): void {
   // --- Stabilize opts via ref ---
-  const optsRef = useRef(opts);
-  optsRef.current = opts;
+  const optsRef = useLatest(opts);
 
   // --- activeTool fallback: read from context when not supplied in opts ---
   // Falls back to null when no <ActiveToolContextProvider> is in scope
   // (preserves silent-no-op contract for consumers that mount without SceneCanvas).
   const activeToolCtx = useOptionalActiveToolContext();
-  const activeToolCtxRef = useRef(activeToolCtx);
-  activeToolCtxRef.current = activeToolCtx;
+  const activeToolCtxRef = useLatest(activeToolCtx);
 
   // --- Dep source registration ---
   // Must be unconditional (rules of hooks). Each effect only registers when a
   // provider is present (depReg !== null guard is inside the effect body).
   const depReg = useOptionalDepRegistry();
-  const depRegRef = useRef(depReg);
-  depRegRef.current = depReg;
 
   useEffect(() => {
-    const r = depRegRef.current;
-    if (!r) return;
+    if (!depReg) return;
     const unregisters: Array<() => void> = [];
     const keys = ['selection', 'view', 'scene', 'history'] as const;
     for (const key of keys) {
       unregisters.push(
-        r.register(key as DepName, () => optsRef.current[key] as DepSchema[DepName]),
+        depReg.register(key as DepName, () => optsRef.current[key] as DepSchema[DepName]),
       );
     }
     // activeTool: prefer the explicit opt; fall back to the context value so
     // SceneCanvas doesn't need to thread it through StandardActionsRegistrar.
     unregisters.push(
-      r.register('activeTool' as DepName, () =>
+      depReg.register('activeTool' as DepName, () =>
         (optsRef.current.activeTool ?? activeToolCtxRef.current) as DepSchema[DepName],
       ),
     );
     return () => { for (const u of unregisters) u(); };
-  }, [depReg]);
+  }, [depReg, optsRef, activeToolCtxRef]);
 
   // --- Action descriptor registration with legacy run bridge ---
   const reg = useActionsRegistry();
-  const regRef = useRef(reg);
-  regRef.current = reg;
 
   // Joined so a fresh array of the same ids does not re-register every render.
   const excludeKey = opts.exclude ? [...opts.exclude].join('\u0000') : '';

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import { createSimulation } from './createSimulation';
 import {
@@ -21,8 +22,7 @@ import {
 export function useSimulation<TNode extends SimulationNode>(
   opts: UseSimulationOptions<TNode>,
 ): Simulation<TNode> {
-  const optsRef = useRef(opts);
-  optsRef.current = opts;
+  const optsRef = useLatest(opts);
 
   const coreRef = useRef<SimulationCore<TNode> | null>(null);
   coreRef.current ??= createSimulation(opts);
@@ -70,18 +70,12 @@ export function useSimulation<TNode extends SimulationNode>(
     frameLoop.request();
   };
 
-  // The loop starts on first render rather than in an effect, so the handle's
-  // methods see consistent state from the first imperative call rather than
-  // after a paint round-trip. `createSimulation` has already primed the nodes.
-  const startedRef = useRef(false);
-  if (!startedRef.current) {
-    startedRef.current = true;
-    startRaf();
-  }
-
-  // StrictMode-safe mount/unmount.
-  useEffect(() => {
+  // Starts on every mount, StrictMode's simulated remount included, and in a
+  // layout effect so a host's own layout effects can already `stop()` it.
+  // `createSimulation` has already primed the nodes.
+  useLayoutEffect(() => {
     mountedRef.current = true;
+    frameLoop.request();
     return () => {
       mountedRef.current = false;
       frameLoop.cancel();

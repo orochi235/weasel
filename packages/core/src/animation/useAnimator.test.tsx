@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
 import { linear, SPRING_PRESETS } from './easings';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import type { Animator, UseAnimatorOptions } from './types';
 
 /** Minimal manual rAF driver for deterministic tests. */
 function makeClock() {
@@ -688,5 +690,28 @@ describe('useAnimator visibility', () => {
     act(() => clock.advance(300));
     expect(ticks.at(-1)).toBeCloseTo(50, 6);
     expect(result.current.isActive()).toBe(true);
+  });
+});
+
+describe('useAnimator — abandoned renders', () => {
+  it('schedules with the committed options, not an abandoned render\'s', () => {
+    const clock = makeClock();
+    const setA = vi.fn((cb: () => void, ms: number) => setTimeout(cb, ms));
+    const setB = vi.fn((cb: () => void, ms: number) => setTimeout(cb, ms));
+    const a: UseAnimatorOptions = { ...clock, setTimer: setA };
+    const b: UseAnimatorOptions = { ...clock, setTimer: setB };
+    let animator: Animator | null = null;
+    function Probe({ opts }: { opts: UseAnimatorOptions }) {
+      animator = useAnimator(opts);
+      return null;
+    }
+    renderThenAbandon(a, b, (opts) => <Probe opts={opts} />);
+    act(() => {
+      animator!.stagger([0, 1, 2], 100, () =>
+        animator!.tween<number>({ from: 0, to: 1, ms: 10, onTick: () => {} }));
+    });
+    expect(setA).toHaveBeenCalled();
+    expect(setB).not.toHaveBeenCalled();
+    act(() => { animator!.cancelAll(); });
   });
 });

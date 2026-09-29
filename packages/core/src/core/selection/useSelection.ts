@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import type { NodeId } from 'core/scene/types';
 import { dlog } from 'debug/flag';
 
@@ -39,9 +40,23 @@ export interface UseSelectionOptions {
   lock?: boolean;
 }
 
-const EMPTY: readonly NodeId[] = [];
-const EMPTY_SNAPSHOT = (): readonly NodeId[] => EMPTY;
-const NEVER_CHANGES = (): (() => void) => () => {};
+/** Where a hook with no `scene` keeps its selection, so `get()` reads one
+ *  store either way and a write is visible before the re-render it causes. */
+function createLocalStore(initial: readonly NodeId[]): SelectionStore {
+  let ids: readonly NodeId[] = initial;
+  const listeners = new Set<() => void>();
+  return {
+    getSelection: () => ids,
+    setSelection: (next) => {
+      ids = next;
+      for (const l of listeners) l();
+    },
+    subscribe: (l) => {
+      listeners.add(l);
+      return () => { listeners.delete(l); };
+    },
+  };
+}
 
 /**
  * Default implementation of the `getSelection` / `setSelection` adapter
@@ -56,21 +71,18 @@ const NEVER_CHANGES = (): (() => void) => () => {};
  * const adapter = { ...arrayAdapter({...}), ...selection.adapterMethods };
  * ```
  *
- * Returns the same object for the life of the component, so it is safe as a
- * memo or effect dependency. The calling component re-renders when the
- * selection changes; key anything derived from the ids on `selection.current`.
+ * Returns the same object for as long as `scene` is the same store, so it is
+ * safe as a memo or effect dependency. The calling component re-renders when
+ * the selection changes; key anything derived from the ids on
+ * `selection.current`.
  */
 export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
   const { mode = 'single', extend = 'shift', initial = [], lock = false, scene } = opts;
-  const [local, setLocal] = useState<NodeId[]>(() => [...initial]);
-  const storeRef = useRef<SelectionStore | undefined>(scene);
-  storeRef.current = scene;
+  const [local] = useState(() => createLocalStore([...initial]));
+  const store = scene ?? local;
   const initialRef = useRef(initial);
 
-  const fromStore = useSyncExternalStore(
-    scene ? scene.subscribe : NEVER_CHANGES,
-    scene ? () => scene.getSelection() : EMPTY_SNAPSHOT,
-  );
+  useSyncExternalStore(store.subscribe, () => store.getSelection());
 
   // A store that already holds a selection wins: the hook is joining it, not
   // resetting it. In an effect, not during render — the store has other
@@ -84,21 +96,14 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
     }
   }, [scene]);
 
-  const ref = useRef<NodeId[]>(local);
-  ref.current = (scene ? fromStore : local) as NodeId[];
-  const optsRef = useRef({ mode, extend, lock });
-  optsRef.current = { mode, extend, lock };
+  const optsRef = useLatest({ mode, extend, lock });
 
-  const [api] = useState<SelectionApi>(() => {
-    const get = (): NodeId[] =>
-      storeRef.current ? (storeRef.current.getSelection() as NodeId[]) : ref.current;
+  return useMemo<SelectionApi>(() => {
+    const get = (): NodeId[] => store.getSelection() as NodeId[];
     const set = (ids: NodeId[]): void => {
       if (optsRef.current.lock) return;
-      dlog('selection', 'set', { from: ref.current.length, to: ids.length, ids });
-      ref.current = ids;
-      const store = storeRef.current;
-      if (store) store.setSelection(ids);
-      else setLocal(ids);
+      dlog('selection', 'set', { from: get().length, to: ids.length, ids });
+      store.setSelection(ids);
     };
     const without = (id: NodeId) => get().filter((x) => x !== id);
     return {
@@ -128,6 +133,5 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
         setSelection: (ids: NodeId[]) => set(ids),
       },
     };
-  });
-  return api;
+  }, [store, optsRef]);
 }

@@ -27,6 +27,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import type { NodeId } from 'core/scene/types';
 
 /** @experimental */
@@ -130,10 +131,8 @@ export function usePublishSelection(
   const ctx = useContext(SelectionContext);
   // Track latest values via refs so the effect's deps array can use a stable
   // serialization — avoids re-firing on identity-only changes.
-  const idsRef = useRef(ids);
-  idsRef.current = ids;
-  const kindsRef = useRef(kinds);
-  kindsRef.current = kinds;
+  const idsRef = useLatest(ids);
+  const kindsRef = useLatest(kinds);
   const serialized = JSON.stringify([ids, kinds]);
   // Depend on `publishSelection` rather than `ctx`: the provider mints a new
   // context value on every publish, so keying on `ctx` refires this effect for
@@ -142,5 +141,5 @@ export function usePublishSelection(
   useEffect(() => {
     if (!publish) return;
     publish(idsRef.current, kindsRef.current);
-  }, [publish, serialized]);
+  }, [publish, serialized, idsRef, kindsRef]);
 }

@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useRef, type RefObject } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import type { NodeId } from '../../core/scene/types';
 
 /** Options for `useHoverTracking`. */
@@ -32,8 +33,7 @@ export interface UseHoverTrackingArgs {
 export function useHoverTracking(args: UseHoverTrackingArgs): () => NodeId | null {
   const { canvasRef, nodeAtClientPoint, enabled = true } = args;
   const hoverRef = useRef<NodeId | null>(null);
-  const nodeAtRef = useRef(nodeAtClientPoint);
-  nodeAtRef.current = nodeAtClientPoint;
+  const nodeAtRef = useLatest(nodeAtClientPoint);
 
   useEffect(() => {
     if (!enabled) return;
@@ -49,7 +49,7 @@ export function useHoverTracking(args: UseHoverTrackingArgs): () => NodeId | nul
       c.removeEventListener('pointermove', onMove);
       c.removeEventListener('pointerleave', onLeave);
     };
-  }, [canvasRef, enabled]);
+  }, [canvasRef, enabled, nodeAtRef]);
 
   return () => hoverRef.current;
 }

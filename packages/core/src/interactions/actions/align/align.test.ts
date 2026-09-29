@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { PointerContextProvider, createPointerStore } from 'features/pointer/PointerContext';
 import { useAlign, alignDeltaFor, translatePoseViaDescriptor } from './align';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import type { AlignAdapter } from './align';
 import { unionBounds } from 'core/geometry/unionBounds';
 import type { Op } from 'core/ops/types';
@@ -289,5 +290,23 @@ describe('useAlign reference', () => {
     const { result } = renderHook(() => useAlign(helpers.adapter));
     act(() => { result.current.align('left', 'pointer'); });
     expect(helpers.batches).toEqual([]);
+  });
+});
+
+describe('useAlign — abandoned render', () => {
+  it('aligns through the committed adapter, not one from a render React threw away', () => {
+    const poses = { a: { x: 0, y: 0, width: 10, height: 10 }, b: { x: 30, y: 0, width: 10, height: 10 } };
+    const A = makeRectAdapter(['a', 'b'], poses);
+    const B = makeRectAdapter(['a', 'b'], poses);
+    let api: ReturnType<typeof useAlign> | undefined;
+    function Probe({ adapter }: { adapter: AlignAdapter<RectPose> }) {
+      const r = useAlign(adapter);
+      if (adapter === A.adapter) api = r;
+      return null;
+    }
+    renderThenAbandon(A.adapter, B.adapter, (adapter) => createElement(Probe, { adapter }));
+    act(() => { api!.align('left'); });
+    expect(A.batches).toHaveLength(1);
+    expect(B.batches).toHaveLength(0);
   });
 });

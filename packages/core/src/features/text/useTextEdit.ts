@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
 import { fontString, numericWeight, resolveAlign, resolveTextStyle, SCRIPT_METRICS } from '@weasel-js/text';
@@ -531,14 +532,12 @@ export interface UseTextEditReturn {
 export function useTextEdit(
   opts: UseTextEditOptions,
 ): UseTextEditReturn {
-  const optsRef = useRef(opts);
-  optsRef.current = opts;
+  const optsRef = useLatest(opts);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   // `applyStyleToSelection` needs the node being edited to reach its
   // `TextStyle`, and is called from event handlers rather than from render.
-  const editingIdRef = useRef<string | null>(null);
-  editingIdRef.current = editingId;
+  const editingIdRef = useLatest(editingId);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   // The overlay-follow loop is built inside the editing effect; the gate's
   // frame callback reaches it through this ref.
@@ -660,7 +659,7 @@ export function useTextEdit(
       optsRef.current.setText(id, text);
     }
     setEditingId(null);
-  }, [editingId]);
+  }, [editingId, optsRef]);
 
   const startEdit = useCallback((id: string, opts?: StartEditOptions) => {
     initialCaretRef.current = opts?.caret ?? 'all';
@@ -738,7 +737,7 @@ export function useTextEdit(
     // when the patch came from chrome the selection is in that control, and
     // re-reading it would leave a consumer showing the pre-patch styling.
     publishRange(overlay, range);
-  }, [publishRange, armPending]);
+  }, [publishRange, armPending, editingIdRef, optsRef]);
 
   const toggleStyle = useCallback((toggle: StyleToggle) => {
     const overlay = overlayRef.current;
@@ -755,7 +754,7 @@ export function useTextEdit(
       ? patchRangeStyle(styleAtCaret(runs, range.start), pendingRef.current)
       : styleAtRange(runs, range.start, range.end);
     applyStyleToSelection(patchForToggle(current, toggle, nodeStyle));
-  }, [applyStyleToSelection]);
+  }, [applyStyleToSelection, editingIdRef, optsRef]);
 
   useEffect(() => {
     if (editingId == null) return;
@@ -921,7 +920,7 @@ export function useTextEdit(
       overlayRef.current = null;
       clearSelection();
     };
-  }, [editingId, commit, cancelEdit, syncSelection, clearSelection, frameLoop,
+  }, [editingId, optsRef, commit, cancelEdit, syncSelection, clearSelection, frameLoop,
       toggleStyle, dropPending, publishRange]);
 
   return {

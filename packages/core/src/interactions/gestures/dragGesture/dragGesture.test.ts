@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDragGesture, type DragGestureCtx, type DragGestureEndCtx } from './dragGesture';
+import { createElement } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import type { ModifierState } from '../types';
 
 const NO_MODS: ModifierState = { shift: false, alt: false, meta: false, ctrl: false };
@@ -288,5 +290,22 @@ describe('useDragGesture', () => {
       rerender();
       expect(result.current.move).toBe(move1);
     });
+  });
+});
+
+describe('useDragGesture — abandoned render', () => {
+  it('fires the committed callbacks, not ones from a render React threw away', () => {
+    const onStartA = vi.fn();
+    const onStartB = vi.fn();
+    let api: ReturnType<typeof useDragGesture> | undefined;
+    function Probe({ onStart }: { onStart: () => void }) {
+      const r = useDragGesture({ onStart });
+      if (onStart === onStartA) api = r;
+      return null;
+    }
+    renderThenAbandon(onStartA, onStartB, (onStart) => createElement(Probe, { onStart }));
+    act(() => api!.start(P(0, 0), NO_MODS));
+    expect(onStartA).toHaveBeenCalledOnce();
+    expect(onStartB).not.toHaveBeenCalled();
   });
 });

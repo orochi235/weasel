@@ -1,4 +1,5 @@
-import { useMemo, useRef, createElement } from 'react';
+import { useMemo, createElement } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { HotkeyTrigger } from '@weasel-js/routing';
@@ -42,10 +43,8 @@ export interface UseEyedropperToolOptions {
  * `<SceneCanvas>` sources it from the same picker the rest of the kit hits.
  */
 export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool<null> {
-  const onPickRef = useRef(opts.onPick);
-  onPickRef.current = opts.onPick;
-  const colorOfRef = useRef(opts.colorOf);
-  colorOfRef.current = opts.colorOf;
+  const onPickRef = useLatest(opts.onPick);
+  const colorOfRef = useLatest(opts.colorOf);
 
   // Registered by `useToolActions` from inside the ActionsProvider — see
   // `ToolDef.actions`. Closing over the option refs here is what lets the
@@ -73,7 +72,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool<null> {
         },
       },
     }),
-    [],
+    [onPickRef, colorOfRef],
   );
 
   return useMemo(() => {

@@ -16,7 +16,8 @@
  * and hands it to `step` as pinned so the producer can hold its neighbors
  * against it.
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import {
   dropPreviewOverrides,
@@ -78,8 +79,7 @@ const EMPTY: ReadonlyMap<NodeId, unknown> = new Map<NodeId, unknown>();
  * `start`; unmounting abandons the run without writing.
  */
 export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
-  const optsRef = useRef(opts);
-  optsRef.current = opts;
+  const optsRef = useLatest(opts);
 
   /** This frame's poses, and the entries published for them. Held by
    *  reference so a frame mutates in place rather than re-notifying per node. */
@@ -99,7 +99,7 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
   });
 
   /** The scene as the previous frame left it, for `syncPreviewOverrides`. */
-  const syncState = (): {
+  const syncState = useCallback((): {
     scene: Scene<unknown, string, unknown>;
     previews: Map<NodeId, unknown>;
     overrideEntries: Map<NodeId, { pose: unknown }>;
@@ -107,7 +107,7 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     scene: optsRef.current.scene as Scene<unknown, string, unknown>,
     previews: state.current.previews,
     overrideEntries: state.current.overrideEntries,
-  });
+  }), [optsRef]);
 
   /** Overrides somebody else published, and the pose each carries. */
   const pinnedNow = (): ReadonlyMap<NodeId, TPose> => {
@@ -181,7 +181,7 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
       dropPreviewOverrides(syncState());
       previews.clear();
     };
-  }, [loop]);
+  }, [loop, syncState]);
 
   return useMemo<PoseRun>(() => ({
     start() {

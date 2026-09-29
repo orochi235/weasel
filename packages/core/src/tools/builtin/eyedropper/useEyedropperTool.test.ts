@@ -4,6 +4,9 @@ import { useEyedropperTool } from './useEyedropperTool';
 import type { Action } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
+import { createElement } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
+import type { Tool } from '../../overlayBinding';
 
 /** Pull the tool's own `eyedropper.pick` action off `ToolDef.actions`. */
 function pickActionOf(tool: { actions?: readonly Action[] }): Action {
@@ -137,5 +140,19 @@ describe('useEyedropperTool', () => {
     run(result.current, depsHitting('r1'), { pressX: 0, pressY: 0 });
     expect(onPick1).not.toHaveBeenCalled();
     expect(onPick2).toHaveBeenCalledWith('#222');
+  });
+
+  it('picks through the committed callbacks, not an abandoned render\'s', () => {
+    const committed = vi.fn();
+    const abandoned = vi.fn();
+    let tool = null as Tool<null> | null;
+    function Probe({ onPick }: { onPick: (c: string | null) => void }) {
+      tool = useEyedropperTool({ onPick, colorOf: () => '#abc' });
+      return null;
+    }
+    renderThenAbandon(committed, abandoned, (onPick) => createElement(Probe, { onPick }));
+    run(tool!, depsHitting('r1'), { pressX: 1, pressY: 1 });
+    expect(abandoned).not.toHaveBeenCalled();
+    expect(committed).toHaveBeenCalledExactlyOnceWith('#abc');
   });
 });

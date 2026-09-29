@@ -1,4 +1,5 @@
-import { useMemo, useRef, createElement } from 'react';
+import { useMemo, createElement } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { HandIcon } from '../../../icons';
@@ -49,8 +50,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
   // Read through a ref from a params thunk rather than closing over the
   // values: a consumer passing `inertia={{ friction: 0.9 }}` inline would
   // otherwise mint a new tool identity on every render.
-  const optsRef = useRef(opts);
-  optsRef.current = opts;
+  const optsRef = useLatest(opts);
   return useMemo(
     () =>
       Object.assign(defineTool<HandScratch>({
@@ -80,6 +80,6 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
           },
         }],
       }) as Tool<HandScratch | null>,
-    [],
+    [optsRef],
   );
 }

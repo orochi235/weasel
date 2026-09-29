@@ -37,6 +37,24 @@ function isTrivialOptions<TItem extends { id: string }>(
   );
 }
 
+function buildScene(options: unknown): Scene<unknown, string, unknown> {
+  if (!isTrivialOptions(options)) {
+    return createScene(options as UseSceneOptions<unknown, string, unknown>) as Scene<unknown, string, unknown>;
+  }
+  return createScene<unknown, DefaultLayer, unknown>({
+    systemLayers: [{ id: DEFAULT_LAYER }],
+    historyLimit: options.historyLimit,
+    generateId: options.generateId,
+    initial: options.items.map((item) => ({
+      kind: 'leaf',
+      layer: DEFAULT_LAYER,
+      pose: item,
+      data: item,
+      id: asNodeId(item.id),
+    })),
+  }) as Scene<unknown, string, unknown>;
+}
+
 /** React hook returning a kit-owned `Scene`. The Scene is constructed once
  *  per host component and tracked via `useSyncExternalStore`, so React re-
  *  renders on every Scene mutation (including undo/redo) unless
@@ -59,27 +77,7 @@ export function useScene<TData, TLayer extends string, TPose = import('../../fea
 /** Create and subscribe to a scene. */
 export function useScene(options: unknown): unknown {
   const sceneRef = useRef<Scene<unknown, string, unknown> | null>(null);
-  if (sceneRef.current === null) {
-    if (isTrivialOptions(options)) {
-      const scene = createScene<unknown, DefaultLayer, unknown>({
-        systemLayers: [{ id: DEFAULT_LAYER }],
-        historyLimit: options.historyLimit,
-        generateId: options.generateId,
-        initial: options.items.map((item) => ({
-          kind: 'leaf',
-          layer: DEFAULT_LAYER,
-          pose: item,
-          data: item,
-          id: asNodeId(item.id),
-        })),
-      });
-      sceneRef.current = scene as Scene<unknown, string, unknown>;
-    } else {
-      sceneRef.current = createScene(
-        options as UseSceneOptions<unknown, string, unknown>,
-      ) as Scene<unknown, string, unknown>;
-    }
-  }
+  if (sceneRef.current === null) sceneRef.current = buildScene(options);
   const scene = sceneRef.current;
   const subscribed = (options as { subscribe?: boolean } | null)?.subscribe !== false;
   useSyncExternalStore(

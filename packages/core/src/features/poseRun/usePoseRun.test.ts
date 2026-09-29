@@ -9,6 +9,8 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { createElement } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { createScene } from '../../core/scene/scene';
 import type { NodeId, RectPose } from '../../core/scene/types';
 import { effectivePose } from '../../core/scene/effectivePose';
@@ -183,5 +185,28 @@ describe('a node another gesture owns', () => {
     act(() => { clock.frames(1); });
     expect(seen[1]!.has(a)).toBe(false);
     expect(drawnAt(a)).toEqual(box(99, 99));
+  });
+});
+
+describe('usePoseRun — abandoned renders', () => {
+  it('steps with the committed options, not an abandoned render\'s', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
+    scene.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: {} });
+    const clock = makeClock();
+    const stepA = vi.fn((): PoseRunStep<RectPose> => ({ poses: new Map(), done: true }));
+    const stepB = vi.fn((): PoseRunStep<RectPose> => ({ poses: new Map(), done: true }));
+    let run: PoseRun | null = null;
+    function Probe({ step }: { step: typeof stepA }): null {
+      const r = usePoseRun<RectPose>({
+        scene, step, requestFrame: clock.requestFrame, cancelFrame: clock.cancelFrame,
+      });
+      if (step === stepA) run = r;
+      return null;
+    }
+    renderThenAbandon<'a' | 'b'>('a', 'b', (w) => createElement(Probe, { step: w === 'a' ? stepA : stepB }));
+    act(() => { run!.start(); });
+    act(() => { clock.frame(); });
+    expect(stepA).toHaveBeenCalled();
+    expect(stepB).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import type { Guide } from './types';
 
 /** Return shape for `useGuides`. */
@@ -27,10 +28,9 @@ export interface UseGuidesReturn {
  */
 export function useGuides(initial: Guide[] = []): UseGuidesReturn {
   const [guides, setGuides] = useState<Guide[]>(initial);
-  const ref = useRef<Guide[]>(initial);
-  ref.current = guides;
+  const ref = useLatest(guides);
 
-  const getGuides = useCallback(() => ref.current, []);
+  const getGuides = useCallback(() => ref.current, [ref]);
 
   const addGuide = useCallback((guide: Guide) => {
     setGuides((prev) => {

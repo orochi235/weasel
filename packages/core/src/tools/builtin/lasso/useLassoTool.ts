@@ -1,4 +1,5 @@
-import { useMemo, useRef, createElement } from 'react';
+import { useMemo, createElement } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { defineTool } from '../../overlayBinding';
 import { LassoIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
@@ -30,11 +31,10 @@ export function useLassoTool(
   _adapter: LassoSelectAdapter,
   options: UseLassoToolOptions = {},
 ): Tool<undefined> {
-  const paramsRef = useRef<{ mode: LassoHitMode; minVertexSpacing?: number }>({ mode: 'intersect' });
-  paramsRef.current = {
+  const paramsRef = useLatest<{ mode: LassoHitMode; minVertexSpacing?: number }>({
     mode: options.mode ?? 'intersect',
     ...(options.minVertexSpacing !== undefined ? { minVertexSpacing: options.minVertexSpacing } : {}),
-  };
+  });
   const { behaviors } = options;
 
   return useMemo(() => {
@@ -65,5 +65,5 @@ export function useLassoTool(
         },
       ],
     });
-  }, [options.keybinding, behaviors]);
+  }, [options.keybinding, behaviors, paramsRef]);
 }

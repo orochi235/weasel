@@ -7,7 +7,7 @@
  * Pure feature module — no Canvas/SceneCanvas integration. Consumers compose
  * the hook + `gateLayer` (or their own gate) to hide affordances when blurred.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 /** Options for `useCanvasFocus`. */
 export interface UseCanvasFocusOptions {
@@ -45,8 +45,8 @@ export interface CanvasFocusReturn {
 export function useCanvasFocus(options: UseCanvasFocusOptions = {}): CanvasFocusReturn {
   const { initial = false, tabIndex = 0 } = options;
   const [focused, setFocusedState] = useState<boolean>(initial);
+  // Every state change goes through a handler below that writes this first.
   const focusedRef = useRef<boolean>(initial);
-  focusedRef.current = focused;
 
   const onFocus = useCallback(() => {
     if (!focusedRef.current) {
@@ -67,23 +67,13 @@ export function useCanvasFocus(options: UseCanvasFocusOptions = {}): CanvasFocus
     setFocusedState(next);
   }, []);
 
-  // Latest tabIndex without re-creating focusProps every render.
-  const tabIndexRef = useRef(tabIndex);
-  tabIndexRef.current = tabIndex;
-
-  // focusProps must remain referentially stable so it can be spread onto
-  // memoized elements without retriggering downstream effects.
-  const focusPropsRef = useRef({ tabIndex, onFocus, onBlur });
-  focusPropsRef.current = { tabIndex, onFocus, onBlur };
-  // The object reference can change when tabIndex changes; that's fine —
-  // the canvas's tabIndex updates accordingly.
-  useEffect(() => {
-    focusPropsRef.current = { tabIndex, onFocus, onBlur };
-  }, [tabIndex, onFocus, onBlur]);
+  // Stable until tabIndex changes, so it can be spread onto memoized elements
+  // without retriggering downstream effects.
+  const focusProps = useMemo(() => ({ tabIndex, onFocus, onBlur }), [tabIndex, onFocus, onBlur]);
 
   return {
     focused,
-    focusProps: focusPropsRef.current,
+    focusProps,
     getFocused,
     setFocused,
   };

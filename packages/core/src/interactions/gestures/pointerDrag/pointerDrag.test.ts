@@ -2,6 +2,8 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { DRAG_THRESHOLD_PX } from '@weasel-js/routing';
 import { useDragHandle, useDropZone } from './pointerDrag';
+import { createElement } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 
 beforeAll(() => {
   // jsdom doesn't implement elementFromPoint; default to null so findZone returns null
@@ -257,6 +259,7 @@ describe('useDragHandle', () => {
     expect(document.body.children.length).toBe(ghostsMidDrag);
     firePointer('pointercancel', {});
 
+    zoneRef.current(null);
     consoleError.mockRestore();
     fromPoint.mockRestore();
     document.body.removeChild(source);
@@ -362,6 +365,74 @@ describe('useDragHandle', () => {
     firePointer('pointerup', { clientX: 30, clientY: 0 });
     expect(onDrop).not.toHaveBeenCalled();
 
+    fromPoint.mockRestore();
+    document.body.removeChild(source);
+    document.body.removeChild(zoneEl);
+  });
+});
+
+describe('pointerDrag — abandoned render', () => {
+  function makeSource(): HTMLElement {
+    const source = document.createElement('div');
+    Object.defineProperty(source, 'getBoundingClientRect', {
+      value: () => ({ width: 20, height: 20, x: 0, y: 0, left: 0, top: 0, right: 20, bottom: 20, toJSON() {} }),
+    });
+    document.body.appendChild(source);
+    return source;
+  }
+  function press(onPointerDown: (e: React.PointerEvent<HTMLElement>) => void, source: HTMLElement) {
+    onPointerDown({
+      pointerType: 'mouse', button: 0, pointerId: 1, clientX: 0, clientY: 0,
+      currentTarget: source, target: source,
+    } as unknown as React.PointerEvent<HTMLElement>);
+  }
+
+  it('useDragHandle builds its ghost with the committed options', () => {
+    const ghostA = vi.fn(() => document.createElement('div'));
+    const ghostB = vi.fn(() => document.createElement('div'));
+    const getPayload = () => ({ kind: 'item', ids: ['x'] });
+    let api: ReturnType<typeof useDragHandle> | undefined;
+    function Probe({ createGhost }: { createGhost: () => HTMLElement }) {
+      const r = useDragHandle(getPayload, { createGhost });
+      if (createGhost === ghostA) api = r;
+      return null;
+    }
+    renderThenAbandon(ghostA, ghostB, (createGhost) => createElement(Probe, { createGhost }));
+    const source = makeSource();
+    press(api!.onPointerDown, source);
+    firePointer('pointermove', { clientX: 30, clientY: 0 });
+    firePointer('pointerup', { clientX: 30, clientY: 0 });
+    expect(ghostA).toHaveBeenCalledOnce();
+    expect(ghostB).not.toHaveBeenCalled();
+    document.body.removeChild(source);
+  });
+
+  it('useDropZone drops into the committed callbacks', () => {
+    const dropA = vi.fn();
+    const dropB = vi.fn();
+    let zone: ((el: HTMLDivElement | null) => void) | undefined;
+    let handle: ReturnType<typeof useDragHandle> | undefined;
+    const getPayload = () => ({ kind: 'item', ids: ['x'] });
+    function Probe({ onDrop }: { onDrop: () => void }) {
+      const r = useDropZone<HTMLDivElement>({ accepts: () => true, onDrop });
+      const h = useDragHandle(getPayload);
+      if (onDrop === dropA) { zone = r; handle = h; }
+      return null;
+    }
+    renderThenAbandon(dropA, dropB, (onDrop) => createElement(Probe, { onDrop }));
+    const zoneEl = document.createElement('div');
+    document.body.appendChild(zoneEl);
+    zone!(zoneEl);
+    const fromPoint = vi.spyOn(document, 'elementFromPoint').mockReturnValue(zoneEl);
+    zoneEl.contains = ((other: Node | null) => other === zoneEl) as Node['contains'];
+    const source = makeSource();
+    press(handle!.onPointerDown, source);
+    firePointer('pointermove', { clientX: 30, clientY: 0 });
+    firePointer('pointermove', { clientX: 50, clientY: 50 });
+    firePointer('pointerup', { clientX: 60, clientY: 60 });
+    expect(dropA).toHaveBeenCalledOnce();
+    expect(dropB).not.toHaveBeenCalled();
+    zone!(null);
     fromPoint.mockRestore();
     document.body.removeChild(source);
     document.body.removeChild(zoneEl);

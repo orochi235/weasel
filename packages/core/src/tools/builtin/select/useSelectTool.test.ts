@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import { createElement } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { useSelectTool } from './useSelectTool';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Action } from '@weasel-js/routing';
@@ -291,3 +293,17 @@ it('binds nothing that moves or transforms the selection', () => {
 // useSelectTool no longer publishes its own overlay layer. Marquee paint moved
 // to the dispatcher overlay layer (`useDispatcherOverlayLayer`); move ghosts
 // moved to the preview-ghost layer (`usePreviewGhostLayer`).
+
+describe('useSelectTool — abandoned renders', () => {
+  it('picks through the committed pickEvery, not an abandoned render\'s', () => {
+    let tool = null as { actions?: readonly Action[] } | null;
+    function Probe({ hit }: { hit: string }) {
+      tool = useSelectTool(minimalAdapter, { pickEvery: () => [hit] } as any);
+      return null;
+    }
+    renderThenAbandon('a', 'b', (hit) => createElement(Probe, { hit }));
+    const sel = selectionStub([]);
+    press(tool!, sel.api);
+    expect(sel.applyClick).toHaveBeenCalledExactlyOnceWith('a', NO_MODS);
+  });
+});

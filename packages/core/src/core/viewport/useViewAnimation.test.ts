@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { StrictMode } from 'react';
+import { StrictMode, createElement } from 'react';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { renderHook, act } from '@testing-library/react';
-import { useViewAnimation, type ViewChannel } from './useViewAnimation';
+import { useViewAnimation, type ViewAnimationApi, type ViewChannel } from './useViewAnimation';
 import { useAnimator } from '../../animation/useAnimator';
 import { linear } from '../../animation/easings';
 import { zoomAt } from './zoomAt';
@@ -211,5 +212,22 @@ describe('useViewAnimation zoom invariant', () => {
     act(() => { clock.advance(100); });
     expect(current().scale.x > 0 && Number.isFinite(current().scale.x)).toBe(true);
     expect(Number.isFinite(current().x)).toBe(true);
+  });
+
+  it('animates the committed channel, not one an abandoned render passed', () => {
+    const clock = makeClock();
+    const a = makeChannel(HOME);
+    const b = makeChannel(HOME);
+    let api = null as ViewAnimationApi | null;
+    function Probe({ channel }: { channel: ViewChannel }) {
+      api = useViewAnimation(channel, useAnimator(clock));
+      return null;
+    }
+    renderThenAbandon(a.channel, b.channel, (channel) => createElement(Probe, { channel }));
+
+    act(() => { api!.animate(zoomAt(HOME, { x: 0, y: 0 }, 2), { ms: 100, easing: linear }); });
+    act(() => { clock.advance(100); });
+    expect(b.writes).toEqual([]);
+    expect(a.current().scale.x).toBeCloseTo(2, 10);
   });
 });
