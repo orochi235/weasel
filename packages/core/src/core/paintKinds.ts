@@ -148,6 +148,12 @@ export interface PaintKindEntry {
    * state (an inner/outer-aligned stroke, an even-odd fill) must issue its own
    * draw call, and the kit's draw wrapper would clobber that state. Shader
    * output must be premultiplied: `outColor = vec4(rgb * a, a)`.
+   *
+   * The geometry is not always the node's own. Text below the outline tier
+   * paints by drawing a quad over its glyphs' screen box into an offscreen
+   * buffer and masking that with glyph coverage, so a paint must come from
+   * `v_world` through `spaceInverse`, not from where `a_position` happens to
+   * lie.
    */
   bind?(ctx: PaintBindContext, fill: FillStyle): PaintProgram | null;
   /** Bounds frame → the frame the node is painted in. */

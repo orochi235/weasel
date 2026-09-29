@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  GLYPH_PAINT_VERT_SRC, GLYPH_PATTERN_FRAG_SRC, GLYPH_GRAD_FRAG_SRC,
-  GLYPH_PATTERN_UNIFORMS, GLYPH_GRAD_UNIFORMS, GLYPH_PAINT_ATTRIBUTES,
+  GLYPH_PAINT_VERT_SRC, GLYPH_PATTERN_FRAG_SRC, GLYPH_GRAD_FRAG_SRC, GLYPH_TEXTURE_FRAG_SRC,
+  GLYPH_PATTERN_UNIFORMS, GLYPH_GRAD_UNIFORMS, GLYPH_TEXTURE_UNIFORMS, GLYPH_PAINT_ATTRIBUTES,
 } from './glyphPaint';
 import { BATCH_ATTRIBUTE_LOCATIONS } from './batchFill';
 
@@ -28,6 +28,7 @@ function pinnedInputs(src: string): Map<string, number> {
 describe.each([
   ['pattern', GLYPH_PATTERN_FRAG_SRC, GLYPH_PATTERN_UNIFORMS],
   ['gradient', GLYPH_GRAD_FRAG_SRC, GLYPH_GRAD_UNIFORMS],
+  ['texture', GLYPH_TEXTURE_FRAG_SRC, GLYPH_TEXTURE_UNIFORMS],
 ] as const)('glyph %s program', (_kind, frag, uniforms) => {
   it('looks up exactly the uniforms its stages declare', () => {
     const declared = new Set([...declaredUniforms(GLYPH_PAINT_VERT_SRC), ...declaredUniforms(frag)]);
