@@ -8,7 +8,8 @@
  *   produce `warnings[]` entries instead of throwing.
  * - `serializeSvg(nodes, opts?)` emits an SVG document string. Every
  *   leaf serializes as a `<path>`; gradients are gathered into a single
- *   `<defs>` block with stable ids.
+ *   `<defs>` block with stable ids. It is synchronous: `await warmSvg(nodes)`
+ *   first to load the paint kinds and faces it reads on demand.
  *
  * `svgNodesToKitDrafts` lowers a parsed tree to scene nodes the kit's own
  * painters draw, and `svgNodesFromKit` walks a scene back to `SvgNode`s.
@@ -23,6 +24,7 @@
 
 export { parseSvg } from './parse';
 export { serializeSvg } from './serialize';
+export { svgNeeds, warmSvg } from './warm';
 export { tilePreviewSvg, tilePreviewCssUrl } from './patterns';
 export { nativeSvgKind, nativeSvgSpace } from './gradients';
 export { evaluateMediaQuery, DEFAULT_MEDIA_ENVIRONMENT, type SvgMediaEnvironment } from './media';
