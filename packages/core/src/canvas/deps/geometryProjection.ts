@@ -10,14 +10,12 @@
  *
  * @see GeometryProjection — the dep schema entry.
  */
-import { useRef } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useDepSource, useLatest } from '@weasel-js/routing/react';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
 
 export function useGeometryProjection(
   projection: GeometryProjection | undefined,
 ): void {
-  const ref = useRef(projection);
-  ref.current = projection;
+  const ref = useLatest(projection);
   useDepSource('geometryProjection', () => ref.current);
 }

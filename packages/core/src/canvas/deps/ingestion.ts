@@ -4,8 +4,8 @@
  * from the canvas's client rect + current view, and forwards the consumer's
  * optional `resolveSrc`. A `<CanvasView>` overlays this dep with its own rect.
  */
-import { useRef, type RefObject } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import type { RefObject } from 'react';
+import { useDepSource, useLatest } from '@weasel-js/routing/react';
 import type { ClipboardIngestCtx, IngestionDep, SvgIngestOptions } from 'interactions/actions/depSchema';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import type { View } from 'core/viewport/view';
@@ -17,14 +17,10 @@ export function useIngestionDepSource(
   svg?: SvgIngestOptions,
   clipboard?: ClipboardIngestCtx,
 ): void {
-  const getViewRef = useRef(getView);
-  getViewRef.current = getView;
-  const resolveSrcRef = useRef(resolveSrc);
-  resolveSrcRef.current = resolveSrc;
-  const svgRef = useRef(svg);
-  svgRef.current = svg;
-  const clipboardRef = useRef(clipboard);
-  clipboardRef.current = clipboard;
+  const getViewRef = useLatest(getView);
+  const resolveSrcRef = useLatest(resolveSrc);
+  const svgRef = useLatest(svg);
+  const clipboardRef = useLatest(clipboard);
 
   useDepSource('ingestion', (): IngestionDep => ({
     viewportWorldRect() {

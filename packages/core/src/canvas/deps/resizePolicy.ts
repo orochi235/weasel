@@ -18,8 +18,7 @@
  *
  * @see ResizePolicy — the dep schema entry.
  */
-import { useRef } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useDepSource, useLatest } from '@weasel-js/routing/react';
 import type { ResizePolicy } from 'interactions/actions/depSchema';
 import type {
   PointSnapBehavior,
@@ -46,8 +45,7 @@ const EMPTY: readonly unknown[] = Object.freeze([]);
 export function useResizePolicy<TPose>(
   options: UseResizePolicyOptions<TPose>,
 ): void {
-  const optsRef = useRef(options);
-  optsRef.current = options;
+  const optsRef = useLatest(options);
 
   useDepSource('resizePolicy', (): ResizePolicy<unknown> => {
     const o = optsRef.current;

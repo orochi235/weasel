@@ -867,9 +867,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (resolvedDebugConfig === null) return null;
     return createDebugSink(resolvedDebugConfig);
   }, [resolvedDebugConfig]);
-  const debugSinkRefForCtx = useRef<CanvasDebugSink | null>(null);
-  debugSinkRefForCtx.current = debugSink;
-  const getDebug = useCallback(() => debugSinkRefForCtx.current, []);
+  const committedDebugSinkRef = useLatest(debugSink);
+  const getDebug = useCallback(() => committedDebugSinkRef.current, [committedDebugSinkRef]);
 
   const adapter = adapterProp;
 
@@ -889,9 +888,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     canvasRef.current = el;
   }, []);
   const detached = !!paintInto;
-  if (detached) {
-    canvasRef.current = inputElement ?? null;
-  }
+  // The detached input element reaches `canvasRef` at commit; the own canvas
+  // arrives through `setOwnCanvas`, React's ref callback.
+  useInsertionEffect(() => {
+    if (detached) canvasRef.current = inputElement ?? null;
+  });
   // Where pixels go. Split from `canvasRef` only when detached.
   const paintTarget = detached ? (paintInto.canvas ?? null) : null;
   const paintTargetRef = useLatest(paintTarget);
@@ -1003,8 +1004,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     onViewChangeRef.current?.(clamped);
     requestRedraw();
   }, [requestRedraw, dimsRef, isControlledRef, onViewChangeRef, viewBoundsRef]);
-  const setViewRef = useRef(setView);
-  setViewRef.current = setView;
 
   const getView = useCallback(() => viewRef.current, []);
   const subscribeView = useCallback((fn: (v: View) => void) => {
@@ -1109,50 +1108,30 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const effectiveSelection: SelectionApi = selection ?? noopSelection;
 
   // Base ctx for the function form of `Tool.cursor` — the last consumer of
-  // `ToolCtx` now that the tool-routing dispatcher is gone. Refs so identity
-  // stays stable while the underlying values update.
-  const effectiveSelectionRefForCtx = useRef(effectiveSelection);
-  effectiveSelectionRefForCtx.current = effectiveSelection;
-  const effectiveAdapterRefForCtx = useRef(effectiveAdapter);
-  effectiveAdapterRefForCtx.current = effectiveAdapter;
-
+  // `ToolCtx` now that the tool-routing dispatcher is gone. The cursor is
+  // resolved during render, so the ctx carries this render's values; only
+  // `applyOps`, which a cursor function could call later, reads a ref.
+  const effectiveAdapterRef = useLatest(effectiveAdapter);
   const clientToWorldRef = useLatest(clientToWorld);
-  const toolsCtxBase = useMemo(
-    () => (overrides?: {
-      clientX?: number;
-      clientY?: number;
-      modifiers?: { alt: boolean; shift: boolean; meta: boolean; ctrl: boolean };
-    }) => {
-      const view = viewRef.current;
-      let worldX = 0;
-      let worldY = 0;
-      const c = canvasRef.current;
-      if (overrides && (overrides.clientX !== undefined || overrides.clientY !== undefined) && c) {
-        const cx = overrides.clientX ?? 0;
-        const cy = overrides.clientY ?? 0;
-        [worldX, worldY] = toWorld(c, cx, cy, view, clientToWorldRef.current);
-      }
-      const rect = c ? c.getBoundingClientRect() : (typeof DOMRect !== 'undefined' ? new DOMRect() : ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 } as DOMRect));
-      const m = overrides?.modifiers;
-      return {
-        worldX,
-        worldY,
-        modifiers: m
-          ? { alt: m.alt, shift: m.shift, meta: m.meta, ctrl: m.ctrl }
-          : { alt: false, shift: false, meta: false, ctrl: false },
-        selection: effectiveSelectionRefForCtx.current,
-        adapter: effectiveAdapterRefForCtx.current,
-        applyOps: (ops: Op[], label: string) => {
-          dispatchApplyBatch(effectiveAdapterRefForCtx.current, ops, label);
-        },
-        view,
-        setView: setViewRef.current,
-        canvasRect: rect,
-        debug: debugSinkRefForCtx.current ?? undefined,
-      };
-    },
-    [clientToWorldRef],
-  );
+  const toolsCtxBase = () => {
+    const view = controlledView ?? viewRef.current;
+    const c = detached ? inputElement ?? null : canvasRef.current;
+    const rect = c ? c.getBoundingClientRect() : (typeof DOMRect !== 'undefined' ? new DOMRect() : ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 } as DOMRect));
+    return {
+      worldX: 0,
+      worldY: 0,
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      selection: effectiveSelection,
+      adapter: effectiveAdapter,
+      applyOps: (ops: Op[], label: string) => {
+        dispatchApplyBatch(effectiveAdapterRef.current, ops, label);
+      },
+      view,
+      setView,
+      canvasRect: rect,
+      debug: debugSink ?? undefined,
+    };
+  };
 
   // Stable wrappers for HUD props — read the ref at call time so the HUDs
   // don't reinstall their useEffect on every render when the prop identity
@@ -1519,7 +1498,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
     return true;
   }, [contentVersionRef, paintInputsRef, paintRectRef, paintTargetRef]);
-  paintRef.current = paint;
+  useInsertionEffect(() => {
+    paintRef.current = paint;
+  });
 
   // A tripwire, not a list of values this effect uses: every paint input that
   // arrives on a render must appear here, or changing it paints stale.
@@ -1562,7 +1543,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // Resolved during render, so it reads this render's view, not the ref's
   // last committed one.
   const toolsCursorTier = tools
-    ? resolveToolsCursor(tools, controlledView ? () => ({ ...toolsCtxBase(), view: controlledView }) : toolsCtxBase)
+    ? resolveToolsCursor(tools, toolsCtxBase)
     : undefined;
   // A painted tool cursor gets `none` here and the layer draws it instead.
   const toolsCursor =
@@ -1717,10 +1698,12 @@ export const Canvas = forwardRef(CanvasInner) as <
 /** `list` as last passed, kept by identity while it holds the same elements —
  *  so an inline array prop does not read as a change every render. */
 function useSameElements<T>(list: readonly T[] | undefined): readonly T[] | undefined {
-  const ref = useRef(list);
-  const prev = ref.current;
-  if (prev !== list && !(prev && list && prev.length === list.length && prev.every((x, i) => x === list[i]))) {
-    ref.current = list;
+  // Derived state rather than a ref, so a render React throws away can't
+  // leave its list behind as the one the next render compares against.
+  const [kept, setKept] = useState(list);
+  if (kept !== list && !(kept && list && kept.length === list.length && kept.every((x, i) => x === list[i]))) {
+    setKept(list);
+    return list;
   }
-  return ref.current;
+  return kept;
 }

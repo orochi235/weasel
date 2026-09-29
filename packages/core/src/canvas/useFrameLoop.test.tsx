@@ -9,6 +9,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import { useFrameLoop } from './useFrameLoop';
 import type { FrameLoop } from './useFrameLoop';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 
 afterEach(() => { cleanup(); });
 
@@ -104,5 +105,27 @@ describe('useFrameLoop — a paint that throws', () => {
     // every frame on a failure that isn't going to clear on its own.
     expect(paint).toHaveBeenCalledTimes(2);
     window.removeEventListener('error', onError);
+  });
+});
+
+describe('useFrameLoop after an abandoned render', () => {
+  it('keeps the committed syncPaint', () => {
+    const loopRef = { current: null as FrameLoop | null };
+    const paint = vi.fn(() => true);
+    renderThenAbandon(false, true, (syncPaint) => (
+      <Host loopRef={loopRef} paint={paint} syncPaint={syncPaint} />
+    ));
+    act(() => { loopRef.current!.requestRedraw(); });
+    expect(paint).not.toHaveBeenCalled();
+  });
+
+  it('paints with the committed paint', () => {
+    const loopRef = { current: null as FrameLoop | null };
+    const a = vi.fn(() => true);
+    const b = vi.fn(() => true);
+    renderThenAbandon(a, b, (paint) => <Host loopRef={loopRef} paint={paint} syncPaint />);
+    act(() => { loopRef.current!.requestRedraw(); });
+    expect(a).toHaveBeenCalledTimes(1);
+    expect(b).not.toHaveBeenCalled();
   });
 });

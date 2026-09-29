@@ -29,8 +29,8 @@
  * Live previews ride the standard `OngoingHandle.previewIds/Pose/Data`
  * triple — this dep doesn't own preview state.
  */
-import { useCallback, useRef, useState } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useCallback, useState } from 'react';
+import { useDepSource, useLatest } from '@weasel-js/routing/react';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId, RectPose } from 'core/scene/types';
 import { isRectPose } from 'interactions/actions/resize/autoPoseDescriptor';
@@ -133,23 +133,17 @@ export function useEditAnchorsDepSource(
   externalState?: EditAnchorsStateRef,
   options?: EditAnchorsDepOptions,
 ): void {
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
-  const adapterRef = useRef(adapter);
-  adapterRef.current = adapter;
-  const allowedRef = useRef(options?.anchorEditingAllowed);
-  allowedRef.current = options?.anchorEditingAllowed;
+  const sceneRef = useLatest(scene);
+  const selectionRef = useLatest(selection);
+  const adapterRef = useLatest(adapter);
+  const allowedRef = useLatest(options?.anchorEditingAllowed);
 
   const [localEditingId, setLocalEditingIdState] = useState<string>('');
   const setLocalEditingId = useCallback((id: string | null) => {
     setLocalEditingIdState(id ?? '');
   }, []);
-  const externalRef = useRef(externalState);
-  externalRef.current = externalState;
-  const setLocalEditingIdRef = useRef(setLocalEditingId);
-  setLocalEditingIdRef.current = setLocalEditingId;
+  const externalRef = useLatest(externalState);
+  const setLocalEditingIdRef = useLatest(setLocalEditingId);
 
   const readEditingId = (): string => {
     return externalRef.current ? externalRef.current.getEditingId() : localEditingId;

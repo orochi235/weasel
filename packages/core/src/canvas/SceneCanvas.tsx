@@ -143,7 +143,7 @@ import type { Affordance } from 'affordances/types';
 import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import type { Op } from 'core/ops/types';
-import { useDepRegistry } from '@weasel-js/routing/react';
+import { useDepRegistry, useLatest } from '@weasel-js/routing/react';
 import { createNodeRouting, type NodeRoutingEntry } from '../core/scene/NodeRouting';
 import { inferredNodeRouting } from './SceneCanvas/defaultNodeRouting';
 import { installTestHookIfRequested } from '../test-hook/install';
@@ -1251,8 +1251,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Until then, the chrome doesn't draw and the gesture doesn't route to
   // `editAnchorsAction` — both gate on `editingId !== ''`.
   const [pathEditingId, setPathEditingId] = useState<string>('');
-  const pathEditingIdRef = useRef(pathEditingId);
-  pathEditingIdRef.current = pathEditingId;
+  const pathEditingIdRef = useLatest(pathEditingId);
   // `anchorEditingAllowed` is declared below (it needs `getActiveModeRef`);
   // hold it in a ref so `effectivePathEditingId` — used by consumers
   // declared both above and below that point — can read it lazily.
@@ -1279,7 +1278,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     const allowed = anchorEditingAllowedRef.current;
     if (allowed && !allowed()) return '';
     return pathEditingIdRef.current;
-  }, []);
+  }, [pathEditingIdRef]);
   // Anchor selection + in-flight marquee. Both are per-frame inputs to
   // the overlay's draw(), never to a React render, so they live in refs
   // and request a repaint directly. Holding them in state would re-render
@@ -1319,8 +1318,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Stable ref to the live selection; updated every render so the affordanceAt
   // and classifyTarget thunks (which live in an effect closure) always read
   // the latest selection without causing re-renders.
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
+  const selectionRef = useLatest(selection);
 
   // Build a per-instance NodeRouting registry. When `routing` is unset, fall
   // back to `inferredNodeRouting` (data-shape inference: `data.text` →
@@ -1362,12 +1360,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // `<Canvas>` composed and read at pick time — so a consumer slot anchored
   // between scene layers is weighed the way paint weighs it.
   const surfaceViewRegistry = useOptionalViewRegistry();
-  const layerPaintRef = useRef<ViewLayerPaint>({ layerVisibility, layerOrder });
-  layerPaintRef.current = { layerVisibility, layerOrder };
+  const layerPaintRef = useLatest<ViewLayerPaint>({ layerVisibility, layerOrder });
   const [sceneLayerGate] = useState(createSceneLayerGate);
   const layerIsPainted = useCallback((layerId: string): boolean => (
     sceneLayerGate(surfaceViewRegistry?.surface()?.layers() ?? [], layerPaintRef.current)(layerId)
-  ), [surfaceViewRegistry, sceneLayerGate]);
+  ), [surfaceViewRegistry, sceneLayerGate, layerPaintRef]);
   // Absent when this view hides nothing, so the walk skips the gate.
   const viewLayerGate = layerVisibility !== undefined || layerOrder !== undefined
     ? layerIsPainted
@@ -1406,8 +1403,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectTool: selectToolWithDefaults,
   });
   // Read through a ref by the chrome layers, which are built once.
-  const planeOfNodeRef = useRef(internalPlaneOfNode);
-  planeOfNodeRef.current = internalPlaneOfNode;
+  const planeOfNodeRef = useLatest(internalPlaneOfNode);
 
   // Build getNodeAtPoint from the adapter + internalPickEvery. Canvas no longer
   // synthesizes this itself — it accepts it as a prop (seam refactor).
@@ -1568,8 +1564,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // to the second call when `toolsProp` is absent is a render-stable empty
   // stand-in just to keep the call site valid; it never actually fires
   // because `disable` is true on that branch.
-  const liveToolsRef = useRef<ToolsApi | null>(null);
-  liveToolsRef.current = toolsTakeover ?? internalTools;
+  const liveToolsRef = useLatest<ToolsApi | null>(toolsTakeover ?? internalTools);
+  const getActiveModeRef = useLatest(getActiveMode);
   //
   // `isToolEligible` mirrors `eligibleForMode` (packages/modes) — the same
   // predicate `ToolPalette` uses to grey a button out. Without a mode
@@ -1583,7 +1579,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     const allowed = getMode().allowedCapabilities;
     for (const c of caps) if (allowed.has(c)) return true;
     return false;
-  }, []);
+  }, [getActiveModeRef, liveToolsRef]);
 
 
   const tools = toolsTakeover ?? internalTools;
@@ -1622,9 +1618,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // toolkit-builder dev surface uses this to walk `tools.registry` for
   // its live route table). Fires whenever the `tools` identity changes,
   // which is stable across most renders thanks to useTools' useMemo.
-  const onToolsCreatedRef = useRef(onToolsCreated);
-  onToolsCreatedRef.current = onToolsCreated;
-  useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools]);
+  const onToolsCreatedRef = useLatest(onToolsCreated);
+  useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools, onToolsCreatedRef]);
 
   // `onDoubleClick` used to be backed by a native `dblclick` listener on the
   // canvas, which made it a THIRD independent definition of "double click"
@@ -1639,10 +1634,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // because the prop is a notification, not a behavior: as a binding it would
   // lose first-match-wins to `enterPathEdit` on every body hit and silently
   // stop firing.
-  const onDoubleClickRef = useRef(onDoubleClick);
-  onDoubleClickRef.current = onDoubleClick;
-  const getNodeAtPointRef = useRef(getNodeAtPoint);
-  getNodeAtPointRef.current = getNodeAtPoint;
+  const onDoubleClickRef = useLatest(onDoubleClick);
+  const getNodeAtPointRef = useLatest(getNodeAtPoint);
   const onDoubleClickObserver = useMemo(() => {
     if (!onDoubleClick) return undefined;
     return (world: { x: number; y: number }): void => {
@@ -1739,8 +1732,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // The hook attaches its own pointermove/leave listeners on the canvas and
   // caches the topmost-id from `getNodeAtPoint` on a ref. No re-renders.
 
-  const getNodeAtPointRefForHover = useRef(getNodeAtPoint);
-  getNodeAtPointRefForHover.current = getNodeAtPoint;
+  const getNodeAtPointRefForHover = useLatest(getNodeAtPoint);
   const getHover = useHoverTracking({
     canvasRef: internalCanvasRef,
     // One lookup, not a client→world thunk beside a picker: the point and the
@@ -1769,9 +1761,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Stable refs for the live selection / view / focus / suppression sources
   // that feed `buildChromeCtx`. The resolver factory below closes over these
   // and is called per draw / per hitTest from Canvas.
-  const selectionForCapsRef = useRef<readonly NodeId[]>([]);
-  const getFocusedPropRef = useRef(getFocusedProp);
-  getFocusedPropRef.current = getFocusedProp;
+  const selectionForCapsRef = useLatest(selection.current as readonly NodeId[]);
+  const getFocusedPropRef = useLatest(getFocusedProp);
   // Selection chrome belongs to the presets that act on it: the outline to
   // `pick`, the handles to `transform`. `never` also takes a handle out of
   // hit-testing, so a hidden handle cannot be grabbed.
@@ -1799,19 +1790,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     if (Object.keys(defaults).length === 0) return chromeVisibility;
     return { ...defaults, ...chromeVisibility };
   }, [chromeVisibility, selectable, selectToolOpts?.rotate, enabled]);
-  const chromeVisibilityRef = useRef(effectiveChromeVisibility);
-  chromeVisibilityRef.current = effectiveChromeVisibility;
-  const getActiveModeRef = useRef(getActiveMode);
-  getActiveModeRef.current = getActiveMode;
+  const chromeVisibilityRef = useLatest(effectiveChromeVisibility);
   // Read through a ref for the same reason as the others here:
   // `buildCurrentRuleCtx` is a stable `useCallback`, and adding the profile to
   // its deps would rebuild it whenever a media query changes.
-  const deviceProfileRef = useRef(deviceProfile);
-  deviceProfileRef.current = deviceProfile;
+  const deviceProfileRef = useLatest(deviceProfile);
   // Per-node resizability predicate from `selectTool.resize.resizable`, folded
   // over the live selection into the `selectionResizable` rule-ctx flag below.
-  const resizablePredRef = useRef(selectToolOpts?.resize?.resizable);
-  resizablePredRef.current = selectToolOpts?.resize?.resizable;
+  const resizablePredRef = useLatest(selectToolOpts?.resize?.resizable);
 
   // The visibility predicate factory passed to <Canvas>. Called fresh per
   // draw / hitTest; builds ChromeCtx from the live refs and resolves
@@ -1858,14 +1844,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       editingAnchors: effectivePathEditingId() !== '',
       device: deviceProfileRef.current,
     };
-  }, [getHover, effectivePathEditingId]);
+  }, [getHover, effectivePathEditingId, getActiveModeRef, getFocusedPropRef, resizablePredRef, deviceProfileRef]);
 
   /** The surface's own view zero. */
   const currentRuleInputs = useCallback((): ViewRuleInputs => ({
     selection: selectionForCapsRef.current,
     view: currentViewRef.current,
     action: dispatcher.getActiveAction(),
-  }), [dispatcher]);
+  }), [dispatcher, selectionForCapsRef]);
   const buildCurrentRuleCtx = useCallback(
     () => buildRuleCtxFor(currentRuleInputs()),
     [buildRuleCtxFor, currentRuleInputs],
@@ -1881,9 +1867,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       getActiveMode
         ? () => getActiveModeRef.current!().allowedCapabilities.has('edits-anchors')
         : undefined,
-    [getActiveMode],
+    [getActiveMode, getActiveModeRef],
   );
-  anchorEditingAllowedRef.current = anchorEditingAllowed;
+  useInsertionEffect(() => {
+    anchorEditingAllowedRef.current = anchorEditingAllowed;
+  });
 
   /** The chrome-caps answers for one view: the surface's rule table evaluated
    *  against that view's selection, camera and in-flight action. */
@@ -1894,7 +1882,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       chromeVisibilityRef.current,
       buildRuleCtxFor(inputs) as Parameters<typeof resolveVisibility>[1],
     ),
-  }), [buildRuleCtxFor]);
+  }), [buildRuleCtxFor, getActiveModeRef, chromeVisibilityRef]);
 
   const getIsVisibleForCanvas = useCallback(
     (): ((id: string) => boolean) => chromeCaps.isVisible(currentRuleInputs()),
@@ -1930,8 +1918,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // falls back to the committed scene pose between gestures. This is what
   // makes the dragged anchor / handle move under the cursor instead of
   // staying pinned to its committed position until the drag commits.
-  const sceneRefForOverlay = useRef(scene);
-  sceneRefForOverlay.current = scene;
+  const sceneRefForOverlay = useLatest(scene);
   const slopsOn = debug !== undefined && debug !== false && debug.slops === true;
   const selectionOverlayCfg = mergedLayers.selectionOverlay as
     | SelectionOverlaySlotConfig<TPose> | null | undefined;
@@ -2017,10 +2004,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   // Selection overlay — constructed here (scene-aware) per main's seam refactor.
   // Layered on top: path-edit suppression from HEAD's branch.
-  const selectedIds = selection.current;
-
-  // Keep chrome-caps live selection source in sync; updates each relevant render.
-  selectionForCapsRef.current = selectedIds as readonly NodeId[];
   const selectionOverlayLayer = useMemo(() => {
     const selCfg = mergedLayers.selectionOverlay as
       | SelectionOverlaySlotConfig<TPose>
@@ -2213,10 +2196,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   );
 
   // Test hook: opt-in via ?test=1, never in production builds. See src/test-hook.
-  const testHookSceneRef = useRef(scene);
-  const testHookSelectionRef = useRef(selection);
-  testHookSceneRef.current = scene;
-  testHookSelectionRef.current = selection;
+  const testHookSceneRef = useLatest(scene);
+  const testHookSelectionRef = useLatest(selection);
 
   const testHookRef = useRef<WeaselTestHook | null>(null);
   useEffect(() => {
@@ -2236,7 +2217,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       });
       testHookRef.current?._markReady();
     }
-  }, []);
+  }, [testHookSceneRef, testHookSelectionRef, liveToolsRef]);
 
   return (
     <DeviceProfileProvider value={device}>
@@ -2471,25 +2452,18 @@ function GestureDispatcherMounter({
 
   // Stable refs for the optional thunk inputs so the thunks themselves are
   // stable function identities across renders (no need to pass them as deps).
-  const boundsOfRef = useRef(boundsOf);
-  boundsOfRef.current = boundsOf;
-  const pickEveryRef = useRef(pickEvery);
-  pickEveryRef.current = pickEvery;
-  const pickBestRef = useRef(pickBest);
-  pickBestRef.current = pickBest;
-  const kindOfNodeRef = useRef(kindOfNode);
-  kindOfNodeRef.current = kindOfNode;
+  const pickEveryRef = useLatest(pickEvery);
+  const pickBestRef = useLatest(pickBest);
+  const kindOfNodeRef = useLatest(kindOfNode);
 
   // `getAnchorState` thunk for `buildAffordanceAt` — reads the live
   // `editAnchors` dep from the registry at call time.
-  const depRegistryRef = useRef(depRegistry);
-  depRegistryRef.current = depRegistry;
-  const planeOfNodeRef = useRef(planeOfNode);
-  planeOfNodeRef.current = planeOfNode;
+  const depRegistryRef = useLatest(depRegistry);
+  const planeOfNodeRef = useLatest(planeOfNode);
   const getAnchorState = useMemo(() => anchorStateFrom(
     () => depRegistryRef.current,
     (id, path) => pathFromPlane(path, planeOfNodeRef.current?.(id) ?? null),
-  ), []);
+  ), [depRegistryRef, planeOfNodeRef]);
 
   // Build the `affordanceAt` thunk. Takes world coords and delegates to
   // `buildAffordanceAt` for handle hit-testing.
@@ -2499,7 +2473,9 @@ function GestureDispatcherMounter({
     rotationBadge,
     getAnchorState,
   }), [targetScale, handleHitRadius, rotationBadge, getAnchorState]);
-  if (chromeAffordancesRef) chromeAffordancesRef.current = affordances;
+  useInsertionEffect(() => {
+    if (chromeAffordancesRef) chromeAffordancesRef.current = affordances;
+  });
   const affordanceAt = useMemo(() => {
     if (!selectionRef || !boundsOf || !viewRef) return undefined;
     return buildAffordanceAt({
@@ -2541,7 +2517,7 @@ function GestureDispatcherMounter({
       // every `kind:` target unmatchable.
       (id: string) => kindOfNodeRef.current?.(id),
     );
-  }, [selectionRef, pickEvery, viewRef]);
+  }, [selectionRef, pickEvery, viewRef, pickBestRef, pickEveryRef, kindOfNodeRef]);
 
   // The canvas rect is read on every call (not cached) so it stays correct
   // after layout changes.

@@ -344,7 +344,6 @@ Core five + Crop shipped. Remaining:
 
   | Package | Sites | Files |
   |---|---:|---:|
-  | `packages/core` | 139 | 56 |
   | `packages/labkit` | 45 | 18 |
   | `packages/routing` | 21 | 6 |
   | `packages/ui` | 14 | 9 |
@@ -354,7 +353,6 @@ Core five + Crop shipped. Remaining:
   | `apps/theme-editor` | 1 | 1 |
   | `packages/diagram` | 1 | 1 |
 
-  - `packages/core` — `canvas/SceneCanvas.tsx` (24), `canvas/Canvas.tsx` (7), `canvas/deps/editAnchors.ts` (6), `canvas/deps/areaSelect.ts` (4), `canvas/deps/ingestion.ts` (4), `canvas/deps/lassoSelect.ts` (4), `canvas/MinimapCanvas.tsx` (4), `canvas/deps/insert.ts` (3), `canvas/deps/view.ts` (3), `canvas/useFrameLoop.ts` (3), `canvas/deps/dispatcher.ts`, `canvas/deps/geometryProjection.ts`, `canvas/deps/layout.ts`, `canvas/deps/nodeAtPoint.ts`, `canvas/deps/poseComposition.ts`, `canvas/deps/poseDescriptor.ts`, `canvas/deps/resizePolicy.ts`, `canvas/deps/slice.ts`, `canvas/deps/snap.ts`, `canvas/deps/textEdit.ts`, `canvas/SceneCanvas/useActionsPropResolver.ts`, `canvas/SceneCanvas/useSceneSelectTool.ts`, `canvas/SceneCanvas/useViewportActions.ts`, `canvas/useHostAnchor.ts`.
   - `packages/labkit` — `canvas/CameraInput.tsx` (6), `lab/Workspace.tsx` (5), `trial/Trial.tsx` (5), `annotations/AnnotationOverlay.tsx` (4), `job/useJob.ts` (4), `loupe/useLoupe.ts` (4), `examples/3d-lab/SolidInstrument.tsx` (3), `dragdrop/DragDropRuntime.tsx` (2), `primitives/Split.tsx` (2), `state/useOpenOnce.ts` (2), `canvas/CanvasStack.tsx`, `canvas/Stage.tsx`, `lab/Lab.tsx`, `lab/LabZoom.tsx`, `loupe/CanvasLoupe.tsx`, `overview/TrialOverview.tsx`, `primitives/FloatingPanel.tsx`, `surface/useTiledSurface.ts`.
   - `packages/routing` — `interactions/dispatcher/useGestureDispatcher.tsx` (8), `contributions/useContributions.ts` (5), `tools/useTools.ts` (4), `interactions/actions/useOngoingAction.ts` (2), `interactions/actions/ActionsProvider.tsx`, `interactions/actions/depRegistry.tsx`.
   - `packages/ui` — `components/CurveEditor/LayeredCurveEditor.tsx` (6), `components/Callout/Callout.tsx`, `components/CurveEditor/CurveEditor.tsx`, `components/LayerList/LayerList.tsx`, `components/ResizeHandle/ResizeHandle.tsx`, `components/Timeline/AnimatedTimeline.tsx`, `components/Timeline/LaneGraph.tsx`, `useAsyncOptions.ts`, `useReorderDragList.ts`.

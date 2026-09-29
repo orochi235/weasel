@@ -15,8 +15,8 @@
  * Runs after `useStandardActions` in the same component, so the registry's
  * last-writer-wins ordering resolves the `pinchZoom` overlap.
  */
-import { useEffect, useRef } from 'react';
-import { useActionsRegistry } from '@weasel-js/routing/react';
+import { useEffect } from 'react';
+import { useActionsRegistry, useLatest } from '@weasel-js/routing/react';
 import {
   makeViewportWheelPanAction,
   type WheelPanOptions,
@@ -43,8 +43,7 @@ export function useViewportActions(args: {
 }): void {
   const { pan, zoom, pinchZoom } = args;
   const reg = useActionsRegistry();
-  const regRef = useRef(reg);
-  regRef.current = reg;
+  const regRef = useLatest(reg);
 
   // Serialize the object configs so the effect re-runs when their fields change
   // (object identity isn't stable across renders for inline literals).

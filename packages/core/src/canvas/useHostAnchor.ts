@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import {
   hostAnchorCss, hostAnchorRect,
@@ -36,8 +37,7 @@ export function useHostAnchor(
 
   // Held in a ref so a caller passing an inline arrow doesn't re-subscribe
   // every render.
-  const resolve = useRef(resolveHost);
-  resolve.current = resolveHost;
+  const resolve = useLatest(resolveHost);
 
   const { align, offset, padding = 0 } = options;
   const { x: alignX, y: alignY } = align;
@@ -62,7 +62,7 @@ export function useHostAnchor(
       padding,
     });
     setStyle(hostAnchorCss(rect, align, viewport));
-  }, [panel, alignX, alignY, offsetX, offsetY, padding]);
+  }, [resolve, panel, alignX, alignY, offsetX, offsetY, padding]);
 
   // Coalesces bursts of scroll/resize into one frame, and holds the work while
   // the tab is hidden rather than dropping it.
@@ -85,7 +85,7 @@ export function useHostAnchor(
       raf.cancel();
       observer?.disconnect();
     };
-  }, [recompute, raf, panel]);
+  }, [recompute, raf, panel, resolve]);
 
   return { ref, style };
 }

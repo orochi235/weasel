@@ -1,5 +1,4 @@
-import { useRef } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useDepSource, useLatest } from '@weasel-js/routing/react';
 import type { PoseComposition } from 'features/groups/composePose';
 
 /** Publish the scene's pose-composition strategy to the built-in actions.
@@ -8,7 +7,6 @@ import type { PoseComposition } from 'features/groups/composePose';
 export function usePoseCompositionDepSource(
   composition: PoseComposition<unknown> | undefined,
 ): void {
-  const ref = useRef(composition);
-  ref.current = composition;
+  const ref = useLatest(composition);
   useDepSource('poseComposition', () => ref.current);
 }

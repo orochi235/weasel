@@ -4,7 +4,8 @@
  * boundsOf derived from pose shape. Caller-supplied `pickEvery` / `boundsOf`
  * overrides via the `geometry` arg take precedence.
  */
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import { pickWalk, scenePickSource, scenePlaneOf, type PickQuery, type ViewPickGates } from 'canvas/pickWalk';
 import { rectFromPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
@@ -238,8 +239,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   // Read through a ref: this is the chrome's bounds source, and a caller's
   // inline `getView` would otherwise rebuild it, and everything keyed on it,
   // every render.
-  const getViewRef = useRef(getView);
-  getViewRef.current = getView;
+  const getViewRef = useLatest(getView);
   const wiredPlaneOfNode = useMemo(() => {
     return (id: string, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null): PlaneMap | null => {
       const n = scene.get(asNodeId(id));
@@ -247,7 +247,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       if (!n || !camera) return null;
       return scenePlaneOf(scene.layers, camera)?.(n.layer) ?? null;
     };
-  }, [scene]);
+  }, [scene, getViewRef]);
 
   const wiredBoundsOfPose = useMemo(() => {
     return (id: string, pose: TPose, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null): Bounds | null => {
