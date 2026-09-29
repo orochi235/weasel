@@ -1,5 +1,5 @@
 import type { ColorOverrideRegistry } from './colorRegistry';
-import type { TimelineHandle, TimelineOptions } from './timeline/types';
+import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions } from './timeline/types';
 import type { EasingSpec, SpringPresetName } from '@weasel-js/geom';
 
 export type { BezierEasing, EasingFn, EasingSpec, SpringPreset, SpringPresetName } from '@weasel-js/geom';
@@ -56,6 +56,8 @@ export interface TweenOptions<T> {
   onDone?: () => void;
   /** Any new animation passed the same cancelKey cancels the prior one in flight. */
   cancelKey?: string;
+  /** Names this animation in {@link AnimatorEvent}s and `animator.live()`. */
+  label?: string;
 }
 
 /** A spring animation: runs until the value settles on `to` rather than for a
@@ -81,6 +83,8 @@ export interface SpringOptions<T> {
   onTick: (value: T) => void;
   onDone?: () => void;
   cancelKey?: string;
+  /** Names this animation in {@link AnimatorEvent}s and `animator.live()`. */
+  label?: string;
 }
 
 /** Spring and decay as one animation. With a `to`, a spring pulls toward it;
@@ -105,6 +109,8 @@ export interface PhysicsOptions<T> {
   onTick: (value: T) => void;
   onDone?: () => void;
   cancelKey?: string;
+  /** Names this animation in {@link AnimatorEvent}s and `animator.live()`. */
+  label?: string;
 }
 
 /** An `AnimationHandle` that can also be steered while it runs — the point of
@@ -131,6 +137,8 @@ export interface DecayOptions<T> {
   onTick: (value: T) => void;
   onDone?: () => void;
   cancelKey?: string;
+  /** Names this animation in {@link AnimatorEvent}s and `animator.live()`. */
+  label?: string;
 }
 
 /** Options for `useAnimator`. Everything here is an injection seam for tests;
@@ -272,7 +280,82 @@ export interface Animator {
    * stop firing even though the override is still installed.
    */
   keepAlive(): () => void;
+  /**
+   * Subscribe to the lifecycle of every animation this animator runs, the
+   * composites and timelines included. Returns an unsubscribe. Events arrive
+   * synchronously, as each thing happens — see {@link AnimatorEvent} for the
+   * order. With no listener attached nothing is built or delivered, so an
+   * unwatched animator pays nothing for this.
+   */
+  watch(listener: AnimatorListener): () => void;
+  /** What is running right now, in registration order: a fresh snapshot per
+   *  call, for a debug overlay to draw. */
+  live(): LiveAnimation[];
 }
+
+/** Which animator call started an animation. A loop, tween loop or stagger is
+ *  an entry of its own beside the children it runs; `keepAlive` holds the
+ *  frame loop open and animates nothing. */
+export type AnimationKind =
+  | 'tween' | 'spring' | 'decay' | 'physics' | 'timeline'
+  | 'loop' | 'tweenLoop' | 'stagger' | 'keepAlive';
+
+/** Who an {@link AnimatorEvent} is about. One object per registration, so the
+ *  same animation's events share it by identity. */
+export interface AnimationInfo {
+  /** The id on the animation's handle. */
+  readonly id: number;
+  readonly kind: AnimationKind;
+  /** The animation's `cancelKey`. Pose helpers key by node, as `pose:<id>`. */
+  readonly key?: string;
+  /** The animation's `label` option. */
+  readonly label?: string;
+}
+
+/** One row of `animator.live()`. */
+export interface LiveAnimation extends AnimationInfo {
+  /** Paused on its own handle. The animator-wide pause is `animator.isPaused()`. */
+  readonly paused: boolean;
+  /** Its own time scale; the animator's multiplies on top. */
+  readonly timeScale: number;
+  /** Virtual ms its clock has advanced since it started. */
+  readonly elapsed: number;
+  /** 0 to 1, for a tween or a timeline (the playhead over its duration).
+   *  Absent where there is no end to measure against: physics, composites. */
+  readonly progress?: number;
+}
+
+/**
+ * One thing happening to an animation, as `animator.watch` delivers it.
+ *
+ * - `start` — registered. A finished timeline that `seek` or `edit` revives
+ *   starts again, under the same id.
+ * - `end` — finished on its own. Delivered once every animation has ticked
+ *   that frame, in registration order.
+ * - `cancel` — stopped by its handle, `cancel`, `cancelKey` or `cancelAll`.
+ * - `interrupt` — stopped because `by` claimed its `cancelKey`. Delivered
+ *   before `by`'s `start`.
+ * - `lap` — a looping timeline wrapped; `lap` counts wraps since it started.
+ * - `fire` — an event on a timeline's event track was crossed, at any depth.
+ *   `path` indexes from the root timeline's `tracks()` down through each
+ *   nested timeline to the event track. Delivered after the event's own `fire`.
+ */
+export type AnimatorEvent =
+  | { readonly type: 'start' | 'end' | 'cancel'; readonly animation: AnimationInfo }
+  | { readonly type: 'interrupt'; readonly animation: AnimationInfo; readonly by: AnimationInfo }
+  | { readonly type: 'lap'; readonly animation: AnimationInfo; readonly lap: number }
+  | {
+    readonly type: 'fire';
+    readonly animation: AnimationInfo;
+    readonly track: EventTrack;
+    readonly path: readonly number[];
+    readonly event: TimelineEvent;
+    /** As the event's own `fire` is told: ms behind the frame it was crossed. */
+    readonly lateBy: number;
+  };
+
+/** Receives what `animator.watch` delivers. */
+export type AnimatorListener = (event: AnimatorEvent) => void;
 
 /** Options for `Animator.loop`. */
 export interface LoopOptions {
@@ -283,6 +366,8 @@ export interface LoopOptions {
   /** Any new animation passed the same cancelKey cancels the prior one in flight.
    *  Also enables `animator.cancelKey` / `animator.isActive(key)` for this loop. */
   cancelKey?: string;
+  /** Names this loop in {@link AnimatorEvent}s and `animator.live()`. */
+  label?: string;
 }
 
 /** Options for the top-level `Animator.stagger` factory form (third overload). */
@@ -291,6 +376,8 @@ export interface StaggerOptions {
    *  cancels the whole stagger; `animator.isActive(key)` returns true while
    *  any timer or child is alive. */
   cancelKey?: string;
+  /** Names this stagger in {@link AnimatorEvent}s and `animator.live()`. */
+  label?: string;
 }
 
 /** Produces one iteration of a loop. Must arrange for `next` to be called when
@@ -368,4 +455,6 @@ export interface TweenLoopOptions<T> {
   onTick: (value: T) => void;
   onDone?: () => void;
   cancelKey?: string;
+  /** Names this animation in {@link AnimatorEvent}s and `animator.live()`. */
+  label?: string;
 }

@@ -6,9 +6,12 @@ import { createLoop, createTweenLoop } from './loop';
 import { createStagger, type StaggerTimers } from './stagger';
 import { createTimeline } from './timeline/createTimeline';
 import { ColorOverrideRegistry } from './colorRegistry';
-import type { Supervisor, WatchCompletion } from './supervisor';
+import { AnimatorEventHub } from './observe';
+import type { Supervisor, SupervisorOptions, WatchCompletion } from './supervisor';
 import type {
   AnimationHandle,
+  AnimationInfo,
+  AnimationKind,
   Animator,
   TweenOptions,
   SpringOptions,
@@ -16,12 +19,22 @@ import type {
   PhysicsOptions,
   PhysicsHandle,
   UseAnimatorOptions,
+  LiveAnimation,
 } from './types';
 import type { TimelineOptions } from './timeline/types';
 
 interface ActiveAnimation {
   id: number;
+  kind: AnimationKind;
   cancelKey?: string;
+  label?: string;
+  /** Built the first time something reports on this entry, then shared. */
+  info?: AnimationInfo;
+  /** 0–1 where the animation has an end to measure against. */
+  progress?(virtualNow: number): number;
+  /** Its `end` is reported, though the entry stays on the table until the
+   *  frame's ticks are done. */
+  ended?: boolean;
   paused: boolean;
   timeScale: number;
   virtualNow: number;
@@ -152,8 +165,43 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       };
     };
 
+    const hub = new AnimatorEventHub();
+    const infoOf = (a: ActiveAnimation): AnimationInfo => {
+      if (!a.info) {
+        const info: { -readonly [K in keyof AnimationInfo]: AnimationInfo[K] } = { id: a.id, kind: a.kind };
+        if (a.cancelKey != null) info.key = a.cancelKey;
+        if (a.label != null) info.label = a.label;
+        a.info = info;
+      }
+      return a.info;
+    };
+
+    /** Report `id` as finished, ahead of its `onDone`, so whatever that
+     *  handler starts is heard after it. Nothing revives a primitive; a
+     *  timeline, which can be revived, is reported as it leaves the table. */
+    const reportEnd = (id: number): void => {
+      const a = animations.current.get(id);
+      if (!a || a.ended) return;
+      a.ended = true;
+      if (hub.watched) hub.emit({ type: 'end', animation: infoOf(a) });
+    };
+
+    /** Take `id` off the table as canceled — or, given `by`, as interrupted by
+     *  the animation claiming its key. */
+    const retire = (id: number, by?: ActiveAnimation): void => {
+      const a = animations.current.get(id);
+      if (!a) return;
+      a.onCancel?.();
+      animations.current.delete(id);
+      fireCompletion(id);
+      if (!hub.watched || a.ended) return;
+      hub.emit(by
+        ? { type: 'interrupt', animation: infoOf(a), by: infoOf(by) }
+        : { type: 'cancel', animation: infoOf(a) });
+    };
+
     const tickAll = (t: number): void => {
-      const finished: number[] = [];
+      const finished: ActiveAnimation[] = [];
       for (const anim of animations.current.values()) {
         // `t` comes from the frame clock; `lastRealNow` is seeded at register()
         // from `now()`. The two share a time origin in a browser, where the rAF
@@ -174,14 +222,18 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         // skip scheduling a new wrap-tween that would fight the caller.
         tickDepth.current += 1;
         try {
-          if (anim.tick(anim.virtualNow, scale)) finished.push(anim.id);
+          if (anim.tick(anim.virtualNow, scale)) finished.push(anim);
         } finally {
           tickDepth.current -= 1;
         }
       }
-      for (const id of finished) {
-        animations.current.delete(id);
-        fireCompletion(id);
+      for (const anim of finished) {
+        // Gone already if its own tick canceled it; replaced if something
+        // revived it under the same id since.
+        if (animations.current.get(anim.id) !== anim) continue;
+        reportEnd(anim.id);
+        animations.current.delete(anim.id);
+        fireCompletion(anim.id);
       }
       // Notify every onTick subscriber AFTER the tick batch so they
       // see the latest `colorOverrides` / pose values. Errors in one
@@ -197,17 +249,12 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       frameLoopRef.current.request();
     };
 
-    const cancelByKey = (key: string): void => {
+    const cancelByKey = (key: string, by?: ActiveAnimation): void => {
       const ids: number[] = [];
       for (const anim of animations.current.values()) {
         if (anim.cancelKey === key) ids.push(anim.id);
       }
-      for (const id of ids) {
-        const anim = animations.current.get(id);
-        anim?.onCancel?.();
-        animations.current.delete(id);
-        fireCompletion(id);
-      }
+      for (const id of ids) retire(id, by);
     };
 
     type AnimationSeed =
@@ -219,8 +266,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         keepExisting?: boolean;
       };
     const register = (seed: AnimationSeed): AnimationHandle => {
-      if (seed.cancelKey != null && !seed.keepExisting) cancelByKey(seed.cancelKey);
       const anim = seed as ActiveAnimation;
+      if (seed.cancelKey != null && !seed.keepExisting) cancelByKey(seed.cancelKey, anim);
       anim.paused = false;
       anim.timeScale = 1;
       anim.virtualNow = 0;
@@ -230,16 +277,11 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       // non-zero first dt sample matching the pre-virtual-clock code.
       anim.lastRealNow = now();
       animations.current.set(anim.id, anim);
+      if (hub.watched) hub.emit({ type: 'start', animation: infoOf(anim) });
       ensureLoop();
       return {
         id: anim.id,
-        cancel: () => {
-          const a = animations.current.get(anim.id);
-          if (!a) return;
-          a.onCancel?.();
-          animations.current.delete(anim.id);
-          fireCompletion(anim.id);
-        },
+        cancel: () => retire(anim.id),
         pause: () => { const a = animations.current.get(anim.id); if (a) a.paused = true; },
         resume: () => { const a = animations.current.get(anim.id); if (a) a.paused = false; },
         setTimeScale: (s) => { const a = animations.current.get(anim.id); if (a) a.timeScale = s; },
@@ -252,12 +294,14 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     // finishes naturally) so loop/stagger can sit in the animator's id table
     // and benefit from `cancel`/`cancelKey`/`isActive`. The owning composite
     // (loop/stagger) installs an onCancel to actually tear down its children.
-    const createSupervisor = (cancelKey?: string): Supervisor => {
+    const createSupervisor = ({ kind, cancelKey, label }: SupervisorOptions): Supervisor => {
       const id = nextId.current++;
       let onCancelCb: (() => void) | undefined;
       const base = register({
         id,
+        kind,
         cancelKey,
+        label,
         // tick is a no-op: the supervisor only ends when the owner calls
         // `cancel()` (either via animator.cancel, animator.cancelKey, or the
         // composite's natural-completion path which forwards to `cancel`).
@@ -273,6 +317,12 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         timeScale: base.timeScale,
         isPaused: base.isPaused,
         setOnCancel: (cb) => { onCancelCb = cb; },
+        finish: () => {
+          if (!animations.current.has(id)) return;
+          reportEnd(id);
+          animations.current.delete(id);
+          fireCompletion(id);
+        },
         cancelKey,
       };
     };
@@ -302,7 +352,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       let lastValueEmitted = false;
       return register({
         id,
+        kind: 'tween',
         cancelKey: o.cancelKey,
+        label: o.label,
+        progress: (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, virtualNow / o.ms)),
         tick(nowMs) {
           if (tripwire()) return true;
           const elapsed = nowMs - start;
@@ -314,7 +367,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
             lastValueEmitted = true;
             // That last onTick may have cancelled us — deregistering the id.
             // A cancelled tween never completes, whenever the cancel landed.
-            if (animations.current.has(id)) o.onDone?.();
+            if (animations.current.has(id)) {
+              reportEnd(id);
+              o.onDone?.();
+            }
             return true;
           }
           return false;
@@ -322,7 +378,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       });
     };
 
-    const physics = <T,>(o: PhysicsOptions<T>): PhysicsHandle<T> => {
+    const physics = <T,>(o: PhysicsOptions<T>, kind: AnimationKind = 'physics'): PhysicsHandle<T> => {
       const id = nextId.current++;
       const isNumeric = typeof o.from === 'number';
       if (!isNumeric && (!o.add || !o.subtract || !o.scale || !o.magnitude)) {
@@ -343,7 +399,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
       const baseHandle = register({
         id,
+        kind,
         cancelKey: o.cancelKey,
+        label: o.label,
         tick(nowMs) {
           if (tripwire()) return true;
           if (lastTime == null) {
@@ -352,6 +410,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
             // with starting velocity below threshold should complete
             // immediately rather than emit a tick and wait a frame.
             if (target == null && magnitude(velocity) < restThreshold) {
+              reportEnd(id);
               o.onDone?.();
               return true;
             }
@@ -376,6 +435,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
             : magnitude(subtract(value, target)) < restThreshold;
           if (velRested && posRested) {
             if (target != null) o.onTick(target);
+            reportEnd(id);
             o.onDone?.();
             return true;
           }
@@ -391,7 +451,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       return handle;
     };
 
-    const spring = <T,>(o: SpringOptions<T>): AnimationHandle => physics<T>(o);
+    const spring = <T,>(o: SpringOptions<T>): AnimationHandle => physics<T>(o, 'spring');
 
     const decay = <T,>(o: DecayOptions<T>): AnimationHandle => {
       const friction = o.friction ?? 0.95;
@@ -414,17 +474,19 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         onTick: o.onTick,
         onDone: o.onDone,
         cancelKey: o.cancelKey,
-      });
+        label: o.label,
+      }, 'decay');
     };
 
     const cancelAll = (): void => {
-      const ids: number[] = [];
+      const retired: ActiveAnimation[] = [];
       for (const a of animations.current.values()) {
         a.onCancel?.();
-        ids.push(a.id);
+        retired.push(a);
       }
       animations.current.clear();
-      for (const id of ids) fireCompletion(id);
+      for (const a of retired) fireCompletion(a.id);
+      if (hub.watched) for (const a of retired) hub.emit({ type: 'cancel', animation: infoOf(a) });
       frameLoopRef.current.cancel();
     };
     const api: Animator = {
@@ -432,14 +494,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       spring,
       decay,
       physics,
-      cancel: (handle) => {
-        const a = animations.current.get(handle.id);
-        if (!a) return;
-        a.onCancel?.();
-        animations.current.delete(handle.id);
-        fireCompletion(handle.id);
-      },
-      cancelKey: cancelByKey,
+      cancel: (handle) => retire(handle.id),
+      cancelKey: (key) => cancelByKey(key),
       cancelAll,
       isActive: (key) => {
         if (key == null) return animations.current.size > 0;
@@ -477,15 +533,47 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           factory as never,
           staggerOpts,
         )) as Animator['stagger'],
-      timeline: (o: TimelineOptions) => createTimeline(register, nextId.current++, o),
+      timeline: (o: TimelineOptions) => {
+        const id = nextId.current++;
+        const info = (): AnimationInfo | undefined => {
+          const a = animations.current.get(id);
+          return a && infoOf(a);
+        };
+        return createTimeline(register, id, o, {
+          get watched() { return hub.watched; },
+          fire: (track, path, event, lateBy) => {
+            const animation = info();
+            if (animation) hub.emit({ type: 'fire', animation, track, path: path.slice(), event, lateBy });
+          },
+          lap: (lap) => {
+            const animation = info();
+            if (animation) hub.emit({ type: 'lap', animation, lap });
+          },
+        });
+      },
       colorOverrides: colorOverrides.current,
       onTick: (cb) => {
         tickSubscribers.current.add(cb);
         return () => { tickSubscribers.current.delete(cb); };
       },
       keepAlive: () => {
-        const sup = createSupervisor();
+        const sup = createSupervisor({ kind: 'keepAlive' });
         return () => sup.cancel();
+      },
+      watch: (listener) => hub.add(listener),
+      live: () => {
+        const rows: LiveAnimation[] = [];
+        for (const a of animations.current.values()) {
+          const row: LiveAnimation = {
+            ...infoOf(a),
+            paused: a.paused,
+            timeScale: a.timeScale,
+            elapsed: a.virtualNow,
+            ...(a.progress ? { progress: a.progress(a.virtualNow) } : {}),
+          };
+          rows.push(row);
+        }
+        return rows;
       },
     };
     return { api, tickAll };

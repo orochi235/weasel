@@ -28,7 +28,7 @@ export function createLoop(
   let cancelled = false;
   let current: AnimationHandle | null = null;
 
-  const supervisor = createSupervisor(opts.cancelKey);
+  const supervisor = createSupervisor({ kind: 'loop', cancelKey: opts.cancelKey, label: opts.label });
   supervisor.setOnCancel(() => {
     // External cancel path (animator.cancel/cancelKey or handle.cancel).
     // Mark cancelled so `next` short-circuits; tear down the current child.
@@ -42,10 +42,9 @@ export function createLoop(
     if (iteration >= max) {
       current = null;
       // Natural completion: deregister the supervisor so isActive() goes
-      // false. Mark cancelled first so onCancel is a no-op (no children to
-      // tear down; child already finished naturally and called next).
+      // false. `cancelled` makes a late `next` a no-op.
       cancelled = true;
-      supervisor.cancel();
+      supervisor.finish();
       opts.onDone?.();
       return;
     }
@@ -89,7 +88,7 @@ export function createTweenLoop<T>(
 ): AnimationHandle {
   const direction = opts.direction ?? 'restart';
   return createLoop(
-    createSupervisor,
+    (o) => createSupervisor({ ...o, kind: 'tweenLoop' }),
     (i, next) => {
       const flipped = direction === 'reverse' || (direction === 'alternate' && i % 2 === 1);
       const from = flipped ? opts.to : opts.from;
@@ -104,6 +103,6 @@ export function createTweenLoop<T>(
         onDone: next,
       });
     },
-    { count: opts.count, onDone: opts.onDone, cancelKey: opts.cancelKey },
+    { count: opts.count, onDone: opts.onDone, cancelKey: opts.cancelKey, label: opts.label },
   );
 }

@@ -224,7 +224,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'animation',
     title: 'Animation',
     category: 'Animation',
-    description: 'useAnimator + animateOnSetPose + animateLifecycle + momentum behavior. Programmatic setPose tweens (click "Tween A"/"Tween B"); inserts scale up from zero (click "Add card"); flicking a card releases with momentum decay. The grid panel below runs a second scene whose move behavior hands the release velocity to `animator.physics` in decay mode, then calls `setTarget` mid-flight so the same animation springs into the nearest cell.',
+    description: 'useAnimator + animateOnSetPose + animateLifecycle + momentum behavior. Programmatic setPose tweens (click "Tween A"/"Tween B"); inserts scale up from zero (click "Add card"); flicking a card releases with momentum decay. The grid panel below runs a second scene whose move behavior hands the release velocity to `animator.physics` in decay mode, then calls `setTarget` mid-flight so the same animation springs into the nearest cell. The panel at the bottom lists `animator.live()` — each running animation\'s id, kind, label or cancel-key, and progress — beside the lifecycle events `animator.watch()` delivers.',
     hint: 'Click a Tween button, click Add card, drag-and-flick a card, or flick the block on the grid.',
     load: () => import('./demos/AnimationDemo').then((m) => m.AnimationDemo),
     path: 'apps/site/demos/AnimationDemo.tsx',

@@ -599,9 +599,8 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 ### Earlier deferrals
 
 All from `docs/specs/2026-05-04-animation-primitive-design.md`. The timeline arc's
-decomposition meant to absorb the first two; neither has landed:
+decomposition meant to absorb the first; it has not landed:
 
-- **(P3) Animation events / observability** — global subscribe API for debug overlays / analytics.
 - **(P3) Animation-aware undo** — "rewind the animation" instead of cancel + jump.
 - **(P3) GPU / Web Animations API bridge** — offload to compositor for very large concurrent counts.
 - **(P3) Layout-strategy reflow integration** — explicit hookup; today consumers compose `animateOnSetPose` over a layout-driven adapter.

@@ -19,10 +19,20 @@ export interface Supervisor {
   timeScale(): number;
   isPaused(): boolean;
   setOnCancel(cb: () => void): void;
+  /** Retire the entry because the composite completed on its own. Unlike
+   *  `cancel`, skips the `setOnCancel` callback and reports an `end`. */
+  finish(): void;
   cancelKey?: string;
 }
 
-export type SupervisorFactory = (cancelKey?: string) => Supervisor;
+/** What names a supervisor's entry in the animator's table and its events. */
+export interface SupervisorOptions {
+  kind: 'loop' | 'tweenLoop' | 'stagger' | 'keepAlive';
+  cancelKey?: string;
+  label?: string;
+}
+
+export type SupervisorFactory = (opts: SupervisorOptions) => Supervisor;
 
 /**
  * Subscribe to "this animation id finished or was cancelled and is no longer

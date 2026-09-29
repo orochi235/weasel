@@ -55,7 +55,7 @@ function harness() {
     claim(key: string) {
       const seen = { cancelled: false };
       register({
-        id: 99, cancelKey: key, tick: () => false, onCancel: () => { seen.cancelled = true; },
+        id: 99, kind: 'timeline', cancelKey: key, tick: () => false, onCancel: () => { seen.cancelled = true; },
       });
       return seen;
     },

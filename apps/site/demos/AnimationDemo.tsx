@@ -17,8 +17,9 @@ import {
   useVelocityTracker,
 } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
-import type { Animator, MoveBehavior, PhysicsHandle } from '@weasel-js/core';
+import type { AnimationInfo, Animator, LiveAnimation, MoveBehavior, PhysicsHandle } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import styles from './AnimationDemo.module.css';
 
 interface Card { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -173,6 +174,7 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
       ms: 800,
       direction: 'alternate',
       easing: easeInOutSine,
+      label: 'breathe',
       onTick: (v) => {
         const e = getEffect(id);
         e.scale = v;
@@ -389,11 +391,54 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
   );
 }
 
+const nameOf = (a: AnimationInfo): string => `#${a.id} ${a.kind} ${a.label ?? a.key ?? ''}`;
+
+/** What the animator is running, from `live()`, and its last few lifecycle
+ *  events, from `watch()`. Refreshed on the animator's own frames. */
+function AnimatorWatch({ animator }: { animator: Animator }) {
+  const [rows, setRows] = useState<LiveAnimation[]>([]);
+  const [log, setLog] = useState<string[]>([]);
+  useEffect(() => {
+    const refresh = () => setRows(animator.live());
+    const stopTick = animator.onTick(refresh);
+    const stopWatch = animator.watch((e) => {
+      if (e.type === 'fire' || e.type === 'lap') return;
+      setLog((l) => [`${e.type.padEnd(9)} ${nameOf(e.animation)}`, ...l].slice(0, 8));
+      refresh();
+    });
+    refresh();
+    return () => { stopTick(); stopWatch(); };
+  }, [animator]);
+  return (
+    <div className={styles.watch}>
+      <div>
+        <h4>live ({rows.length})</h4>
+        <table>
+          <tbody>
+            {rows.map((a) => (
+              <tr key={a.id}>
+                <td>{nameOf(a)}</td>
+                <td className={styles.num}>{a.progress == null ? '' : `${(a.progress * 100).toFixed(0)}%`}</td>
+                <td>{a.paused ? 'paused' : ''}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h4>events</h4>
+        <ul className={styles.log}>{log.map((line, i) => <li key={i}>{line}</li>)}</ul>
+      </div>
+    </div>
+  );
+}
+
 export function AnimationDemo() {
   const animator = useAnimator();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <WeaselProvider isolate><AnimationDemoInner animator={animator} /></WeaselProvider>
+      <AnimatorWatch animator={animator} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <span style={{ opacity: 0.7 }}>
           Flick-snap: drag the block, release with velocity. Decay first, then snaps to nearest 60-px grid cell.

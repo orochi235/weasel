@@ -351,7 +351,7 @@ function MyScene() {
 
 - **Ambient / looping animations.** Use case (b) from brainstorming. The primitive supports it (a tween with `onDone` that retriggers itself; or a custom animation that ignores `to`/`ms` and reads time). No first-class API in v1; ship `loop({...})` if a real consumer wants the convenience.
 - **Spring "no destination" mode.** Currently `spring` requires `to`; `decay` exists for the no-target case. Some libraries unify these — defer until the seam pinches.
-- **Animation events / observability.** No global "animation started" / "animation ended" event stream. Consumers subscribe via per-animation `onDone`. Add a `subscribe` API if a debug overlay or analytics consumer wants it.
+- **Animation events / observability.** Since shipped as `animator.watch` (lifecycle events) and `animator.live()` (a snapshot of what is running).
 - **Synchronized animations / staggers.** "Animate these N objects with a 50ms stagger" as a one-liner. Easy to build on the primitive; defer the convenience helper.
 - **Animation-aware undo.** Today, mid-animation undo cancels the animation and jumps to pre-animation state. A "rewind the animation" undo (run it backwards) is interesting but not requested. Defer.
 - **GPU/web-animations bridge.** `useAnimator` ticks in JS and writes through `setPose`. For very large concurrent counts (100+), a `Web Animations API` bridge could offload to compositor. Defer until the use case appears.
