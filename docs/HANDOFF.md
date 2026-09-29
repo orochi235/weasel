@@ -90,8 +90,9 @@ in core, because that is where the shader registry is.
 
 **The mesh renders as a bake, not as geometry.** A patch maps `(u,v)` to a
 position; a paint has to answer the inverse. Rather than invert a bicubic per
-fragment, the kind rasterizes forward into a 256-texel bitmap the shader samples,
-which also makes it compose with clipping like any other texture paint.
+fragment, the kind rasterizes forward into a bitmap the shader samples, sized
+to the device pixels the paint covers, which also makes it compose with
+clipping like any other texture paint.
 
 **Corner colors blend as three lerps, not four weights.** OKLCh hue is an arc, and
 an arc is defined by two endpoints — there is no meaningful four-way mix.

@@ -4,6 +4,7 @@ import { getPaintKind, listGradientKinds, listPaintKinds, switchGradientKind } f
 import { fillInPoseFrame, fillToBoundsFrame } from '../../core/fillInPoseFrame';
 import { seedMeshPatch, isMeshGradientFill, meshGradientXml, MESH_GRADIENT_KIND } from './meshPaint';
 import type { MeshGradientFill } from './meshPaint';
+import { MESH_BAKE_SIZE } from './bake';
 import './register';
 import type { FillStyle } from '@weasel-js/paint';
 import type { PaintBindContext, PaintProgram } from '../../core/paintKinds';
@@ -12,14 +13,20 @@ const BOX = { x: 10, y: 20, width: 200, height: 100 };
 
 const entry = () => getPaintKind(MESH_GRADIENT_KIND)!;
 
-function bindContext(): {
+function scaling(k: number) {
+  return new Float32Array([k, 0, 0, 0, k, 0, 0, 0, 1]) as unknown as ReturnType<PaintBindContext['spaceInverse']>;
+}
+
+function bindContext(deviceScale = 1): {
   ctx: PaintBindContext;
+  release: () => void;
   gl: WebGL2RenderingContext;
   calls: () => string[];
   argsOf: (name: string) => readonly unknown[][];
   program: PaintProgram;
 } {
   const rec = makeGLRecorder();
+  const releases: Array<() => void> = [];
   const uniforms = new Map<string, object>();
   const program = {
     handle: {} as WebGLProgram,
@@ -33,11 +40,15 @@ function bindContext(): {
     alpha: 1,
     program: () => program,
     setProjAndModel: vi.fn(),
-    spaceInverse: () => new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) as unknown as ReturnType<PaintBindContext['spaceInverse']>,
+    spaceInverse: () => scaling(1),
+    spaceToDevice: () => scaling(deviceScale),
+    maxTextureSize: 16384,
+    resources: { onRelease: (fn) => { releases.push(fn); } },
     bindRamp: () => 0,
   };
   return {
     ctx,
+    release: () => { for (const fn of releases.splice(0)) fn(); },
     gl: rec.gl,
     calls: () => rec.calls.map((c) => c.name),
     argsOf: (name) => rec.calls.filter((c) => c.name === name).map((c) => [...c.args]),
@@ -126,6 +137,57 @@ describe('binding a mesh paint', () => {
 
     entry().bind!(ctx, mesh);
     expect(calls().filter((n) => n === 'texImage2D').length).toBe(1);
+  });
+
+  const posedMesh = () => fillInPoseFrame(seedMeshPatch('#ff0000ff') as unknown as FillStyle, BOX);
+  const uploadedSides = (argsOf: (name: string) => readonly unknown[][]) =>
+    argsOf('texImage2D').map((args) => args[3]);
+
+  it('sizes the bake from the device pixels the paint covers', () => {
+    // The seed bows past its box, so the mesh is a little over 200 wide.
+    const small = bindContext(1);
+    entry().bind!(small.ctx, posedMesh());
+    expect(uploadedSides(small.argsOf)).toEqual([256]);
+
+    const large = bindContext(4);
+    entry().bind!(large.ctx, posedMesh());
+    expect(uploadedSides(large.argsOf)).toEqual([1024]);
+  });
+
+  it('bakes the same paint again at a new bucket, and reuses each bucket after', () => {
+    let scale = 1;
+    const { ctx, argsOf } = bindContext();
+    const zooming: PaintBindContext = { ...ctx, spaceToDevice: () => scaling(scale) };
+    const mesh = posedMesh();
+    entry().bind!(zooming, mesh);
+    scale = 1.05;
+    entry().bind!(zooming, mesh);
+    scale = 4;
+    entry().bind!(zooming, mesh);
+    scale = 1;
+    entry().bind!(zooming, mesh);
+    expect(uploadedSides(argsOf)).toEqual([256, 1024]);
+  });
+
+  it('frees every bake texture when the renderer releases its resources', () => {
+    const { ctx, release, argsOf } = bindContext();
+    const zooming = (k: number): PaintBindContext => ({ ...ctx, spaceToDevice: () => scaling(k) });
+    const mesh = posedMesh();
+    entry().bind!(zooming(1), mesh);
+    entry().bind!(zooming(4), mesh);
+    expect(argsOf('deleteTexture')).toHaveLength(0);
+    release();
+    expect(argsOf('deleteTexture')).toHaveLength(2);
+    // A later draw bakes afresh rather than binding a freed texture.
+    entry().bind!(zooming(1), mesh);
+    expect(argsOf('texImage2D')).toHaveLength(3);
+  });
+
+  it('bakes at the default size when the paint cannot be measured on the device', () => {
+    const { ctx, argsOf } = bindContext();
+    const unmeasured: PaintBindContext = { ...ctx, spaceToDevice: () => null };
+    entry().bind!(unmeasured, posedMesh());
+    expect(uploadedSides(argsOf)).toEqual([MESH_BAKE_SIZE]);
   });
 
   it('clamps the bake, since a mesh is not a tile', () => {

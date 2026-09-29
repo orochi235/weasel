@@ -153,7 +153,7 @@ def writes each patch whole and the reader infers nothing.
 
 **A paint answers "what color is this fragment", which is the inverse of what a
 patch computes.** Inverting a bicubic per fragment is Newton iteration, so the
-kind subdivides forward into a 256-texel bake — the same thing every renderer
+kind subdivides forward into a bake sized to the drawn paint — the same thing every renderer
 that draws these does — and the shader reads the bake. That is also why the kind
 needs no clipping of its own: it is a texture lookup like a pattern, so it
 composes with every fill the renderer already draws.

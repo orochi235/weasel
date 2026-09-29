@@ -850,6 +850,7 @@ export type {
   PaintKindLoader,
   PaintBindContext,
   PaintProgram,
+  PaintResources,
 } from './core/paintKinds';
 export type { ProgramSource } from './renderer/shaders/registerProgram';
 export type { ShaderProgram } from './renderer/shaders/ShaderProgram';

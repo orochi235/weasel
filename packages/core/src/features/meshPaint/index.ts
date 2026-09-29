@@ -24,6 +24,7 @@ export {
   type MeshPoint,
 } from './surface';
 export { bakeMesh, meshBounds, MESH_BAKE_SIZE, type BakedMesh, type MeshBox } from './bake';
+export { meshBakeSize, MESH_BAKE_MAX, MESH_BAKE_MIN } from './bakeCache';
 export {
   meshGuides,
   meshHandles,

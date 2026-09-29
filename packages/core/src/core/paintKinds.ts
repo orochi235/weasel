@@ -44,6 +44,19 @@ export interface PaintKindEditorProps {
 }
 
 /**
+ * The lifetime a paint kind's GPU state belongs to: one renderer on one live
+ * context. The object itself is the key — a kind caches textures in a
+ * `WeakMap` on it, so two renderers sharing a context never trade them — and
+ * `onRelease` is where it frees them.
+ */
+export interface PaintResources {
+  /** Run `release` once, when this lifetime ends: the renderer is disposed, or
+   *  its context was lost and restored. Free every GL object made under it
+   *  there. */
+  onRelease(release: () => void): void;
+}
+
+/**
  * The renderer surface a paint kind binds against, narrowed to what a paint
  * needs. The full `DrawContext` is not consumer surface.
  */
@@ -70,6 +83,18 @@ export interface PaintBindContext {
    * return `null` and draw nothing.
    */
   spaceInverse(units: GradientUnits | undefined): GlMat3 | null;
+  /**
+   * The transform from the space `units` names to device pixels of the target
+   * this draw lands in — screen pixels times the pixel ratio on screen, output
+   * pixels in a headless render. It is what a paint baking a texture measures
+   * its resolution against. `null` where `spaceInverse` is.
+   */
+  spaceToDevice(units: GradientUnits | undefined): GlMat3 | null;
+  /** The largest texture side this context accepts, `MAX_TEXTURE_SIZE`. */
+  readonly maxTextureSize: number;
+  /** The lifetime GPU state made for this draw belongs to. Stable across the
+   *  frames of one renderer, so it is the key for a kind's texture cache. */
+  readonly resources: PaintResources;
   /**
    * Bake a stop ramp into the frame's ramp atlas, bind that atlas to a texture
    * unit, and return the `v` the ramp's own row sits at — every ramp in a
