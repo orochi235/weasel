@@ -456,10 +456,18 @@ intercepting the press that drags the body.
   of these natively, which needs a decision on where the descriptor or
   composition is supplied to the `useScene` constructor.
 
-### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
+### Container layout strategies
 
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only), as does choosing the destination container (`<SceneCanvas layoutDropTarget>`, `LayoutStrategy.dropRegion`). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
 - **(P3) Nothing scrolls a `'scroll'` tile grid.** `tileGrid({ overflow: 'scroll' })` places its overflow past the container's last visible line and reports the region through `LayoutStrategy.contentExtent`, but no kit host reads it: the overflow just sits past the container's bounds.
+  Undecided before building it: whether a container's scroll offset is document state or
+  view state. As document state, the layout pass lays the children out shifted by the
+  offset, and picking, dragging and selection chrome need nothing new — but every wheel
+  tick rewrites every child's stored pose and is an undo step. As view state, the offset
+  is part of the frame the container gives its children and the document never moves —
+  but an absolute-pose scene has no container frame today, so painting, picking,
+  selection chrome, move, resize and snapping each have to fold it in, the way the
+  readers that honor `poseComposition` do under a composing scene.
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
 - **(P3) Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle.
