@@ -10,9 +10,13 @@ import {
   useSelection,
 } from '@weasel-js/core';
 import type { DrawCommand, RenderLayer } from '@weasel-js/core';
-import { createAudioEngine, createPatternPlayer, spatialize } from '@weasel-js/audio';
+import {
+  createAudioEngine, createDelayEffect, createFilterEffect, createPatternPlayer,
+  createReverbEffect, spatialize,
+} from '@weasel-js/audio';
 import type {
-  AnalyserTap, AudioEngine, PatternEvent, PatternPlayer, SoundHandle, SynthPatch, VoiceHandle,
+  AnalyserTap, AudioEngine, InsertSlot, PatternEvent, PatternPlayer, SoundHandle, SynthPatch,
+  VoiceHandle,
 } from '@weasel-js/audio';
 
 interface Dot { id: string; x: number; y: number; width: number; height: number }
@@ -44,6 +48,22 @@ function makeTone(ctx: AudioContext, { freq, ms, decay }: ToneSpec): AudioBuffer
   return buffer;
 }
 
+/** A stereo impulse of decaying noise: a small room, with no file to load. */
+function makeImpulse(ctx: AudioContext, seconds: number): AudioBuffer {
+  const frames = Math.floor(ctx.sampleRate * seconds);
+  const buffer = ctx.createBuffer(2, frames, ctx.sampleRate);
+  for (let c = 0; c < 2; c += 1) {
+    const data = buffer.getChannelData(c);
+    for (let i = 0; i < frames; i += 1) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / frames) ** 3;
+    }
+  }
+  return buffer;
+}
+
+const EFFECTS = ['lowpass', 'echo', 'reverb'] as const;
+type EffectName = typeof EFFECTS[number];
+
 const TONES: Record<string, ToneSpec> = {
   pluck: { freq: 523, ms: 400, decay: 9 },
   thud: { freq: 98, ms: 600, decay: 7 },
@@ -69,6 +89,7 @@ interface Kit {
   sounds: Record<string, SoundHandle>;
   tap: AnalyserTap;
   pattern: PatternPlayer;
+  inserts: Record<EffectName, InsertSlot>;
 }
 
 export function AudioDemo() {
@@ -86,6 +107,9 @@ export function AudioDemo() {
   const [patternOn, setPatternOn] = useState(false);
   const [tempo, setTempo] = useState(112);
   const [patternStep, setPatternStep] = useState(0);
+  const [effectsOn, setEffectsOn] = useState<Record<EffectName, boolean>>(
+    { lowpass: false, echo: false, reverb: false },
+  );
   const step = useRef(0);
   const bands = useRef<Float32Array>(new Float32Array(BARS));
   const sourceVoice = useRef<VoiceHandle | null>(null);
@@ -101,7 +125,17 @@ export function AudioDemo() {
     const pattern = createPatternPlayer(engine, {
       tempo: 112, length: 16, events: PATTERN, onStep: (s) => { step.current = s; },
     });
-    setKit({ engine, sounds, tap: engine.analyser(), pattern });
+    // Added bypassed, so each toggle is a click-free crossfade of one slot.
+    const chain = engine.bus('music').inserts;
+    const inserts = {
+      lowpass: chain.add(createFilterEffect(engine.context, { frequency: 700, Q: 4 }), { bypassed: true }),
+      echo: chain.add(createDelayEffect(engine.context, { time: 201, feedback: 0.4 }), { bypassed: true }),
+      reverb: chain.add(
+        createReverbEffect(engine.context, { impulse: makeImpulse(engine.context, 1.8), mix: 0.4 }),
+        { bypassed: true },
+      ),
+    };
+    setKit({ engine, sounds, tap: engine.analyser(), pattern, inserts });
     return () => { engine.dispose(); };
   }, []);
 
@@ -164,6 +198,11 @@ export function AudioDemo() {
   const setBusSolo = (bus: Bus, on: boolean): void => {
     setSoloed((s) => ({ ...s, [bus]: on }));
     kit?.engine.bus(bus).solo(on);
+  };
+
+  const toggleEffect = (name: EffectName, on: boolean): void => {
+    setEffectsOn((e) => ({ ...e, [name]: on }));
+    kit?.inserts[name].bypass(!on);
   };
 
   const trigger = (bus: Bus): void => {
@@ -297,6 +336,18 @@ export function AudioDemo() {
             />
             <span className="ckd-readout">{tempo} bpm, step {patternOn ? patternStep + 1 : '–'}/16</span>
           </div>
+          <div className="ckd-panel-title">music inserts</div>
+          <div className="ckd-bus">
+            {EFFECTS.map((name) => (
+              <label className="ckd-field" key={name}>
+                <input
+                  type="checkbox" checked={effectsOn[name]} disabled={!kit}
+                  onChange={(e) => toggleEffect(name, e.target.checked)}
+                />
+                {name}
+              </label>
+            ))}
+          </div>
         </div>
       </div>
       <div className="ckd-hint">
@@ -308,7 +359,10 @@ export function AudioDemo() {
         books fifty plays 20 ms apart against the audio clock; the per-bus limit is 8, so the
         pool steals rather than piling up. The <strong>pattern</strong> is
         <code> createPatternPlayer</code> booking <code>playNote</code> synth voices a step at a
-        time on <code>music</code>; a tempo change lands on the next step.
+        time on <code>music</code>; a tempo change lands on the next step. The
+        <strong> music inserts</strong> are a filter, a delay and a convolution reverb in the bus's
+        <code> inserts</code> chain; each checkbox is <code>bypass()</code>, a crossfade rather
+        than a rewire.
       </div>
     </div>
   );

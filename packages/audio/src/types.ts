@@ -80,6 +80,27 @@ export interface NoteOptions extends SynthPatch, Omit<PlayOptions, 'rate' | 'loo
   duration?: number;
 }
 
+/**
+ * Options for `AudioEngine.stream`. Routing, level, position, `rate`, `loop`,
+ * `cancelKey` and `onDone` mean what they mean for `play()`, with these
+ * differences, all from playing through a media element rather than a buffer:
+ *
+ * - No `when`: the element starts once it has buffered enough, which is not
+ *   sample-accurate and cannot be booked against the audio clock.
+ * - No `detune`, and `setDetune` does nothing. `rate` is the element's
+ *   `playbackRate`, which keeps pitch unless the element's `preservesPitch`
+ *   is false.
+ * - The stream counts toward its bus's voice limit and can be stolen like any
+ *   voice — give music a bus of its own.
+ */
+export interface StreamOptions extends Omit<PlayOptions, 'when' | 'detune'> {
+  /** Where to start, in ms into the media. Default: wherever the element is. */
+  offset?: number;
+  /** Set on an element made from a URL. A cross-origin URL needs CORS and
+   *  `'anonymous'`, or the graph receives silence. */
+  crossOrigin?: '' | 'anonymous' | 'use-credentials';
+}
+
 /** Options for `createAudioEngine`. */
 export interface AudioEngineOptions {
   /** Injectable for tests and for consumers that own the context. */
@@ -100,4 +121,6 @@ export interface AudioEngineOptions {
    *  replaces the default, and the missing half falls back to `setTimeout`'s. */
   setTimer?: (cb: () => void, ms: number) => unknown;
   clearTimer?: (handle: unknown) => void;
+  /** Crossfade for every insert-chain edit and bypass, in ms. Default 15. */
+  insertFadeMs?: number;
 }
