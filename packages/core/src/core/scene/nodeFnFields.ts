@@ -15,8 +15,10 @@
 import type { NodeId, SceneRegistry } from './types';
 
 /** A node's function field, opaque here: the table moves these around by
- *  reference and never calls one. Each field's real signature lives on `Node`. */
-export type NodeFn = (...args: never[]) => unknown;
+ *  reference and never calls one. Each field's real signature lives on `Node`.
+ *  A container's `layout` is an object rather than a function, and rides the
+ *  same table for the same reason — it travels by reference, not as data. */
+export type NodeFn = ((...args: never[]) => unknown) | object;
 
 /** A node as this module reads it — a bag with the three fields on it. The
  *  full `Node` type would make the table generic in `TData`/`TLayer` for no
@@ -25,7 +27,7 @@ export type FnBearingNode = { id: NodeId; kind: 'leaf' | 'container' } & {
   [K in NodeFnFieldName]?: NodeFn;
 };
 
-export type NodeFnFieldName = 'clipFromPose' | 'derivePath' | 'derivePose';
+export type NodeFnFieldName = 'clipFromPose' | 'derivePath' | 'derivePose' | 'layout';
 
 export interface NodeFnFieldSpec {
   /** The field's name on `Node` — and, deliberately, its name in
@@ -63,6 +65,13 @@ export const NODE_FN_FIELDS: readonly NodeFnFieldSpec[] = [
     jsonKey: 'derivePoseKey',
     containersOnly: false,
     lost: 'derived pose',
+  },
+  {
+    field: 'layout',
+    opKey: 'layoutKey',
+    jsonKey: 'layoutKey',
+    containersOnly: true,
+    lost: 'layout',
   },
 ];
 

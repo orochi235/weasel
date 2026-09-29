@@ -71,6 +71,10 @@ export type LayoutDropTargetMode = 'innermost' | 'topmost' | 'region';
  * from there. What the node shows meanwhile is published through the
  * scene's pose overrides; the document is never written.
  *
+ * The scene's own reflows — the arrangement it re-applies after an insert,
+ * delete, reorder or resize inside a laid-out container — are `settle`d from
+ * the pose each child had before.
+ *
  * `useAnimatedReflow` builds one over the animator. Supply it through
  * `<SceneCanvas reflowTransition>` or `LayoutDep.reflow`.
  */
@@ -119,8 +123,10 @@ export interface LayoutDragged<TPose> {
  * How a container arranges its children, and what happens when one is dragged
  * into or around it.
  *
- * The four required methods cover the whole cycle: `childPoses` is the resting
- * arrangement, `getDropTargets` enumerates where a drag could land,
+ * Declared on a container node (`ContainerNode.layout`). The four required
+ * methods cover the whole cycle: `childPoses` is the resting arrangement,
+ * which the scene re-applies whenever the container's children or size
+ * change, `getDropTargets` enumerates where a drag could land,
  * `reflowPoses` is the live preview once a target is picked, and `commitDrop`
  * turns the result into ops so the drop is undoable.
  */

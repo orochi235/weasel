@@ -975,7 +975,9 @@ export const moveAction: Action & { requires: string[] } = inPlane({
             }));
           }
           const ops = [...reparentOps, ...dropOps, ...reflowOps];
-          if (ops.length > 0) commitOps(ops);
+          // `commitDrop` placed the drop, so the scene takes that as the
+          // destination's arrangement rather than re-applying its layout.
+          if (ops.length > 0) scratch.scene.holdLayout([asNodeId(destId)], () => commitOps(ops));
           return committed;
         }
 

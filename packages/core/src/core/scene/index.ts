@@ -9,6 +9,8 @@ export type {
   AddNodeSpec,
   ContainerNode,
   LayerRecord,
+  LayoutFrame,
+  LayoutMove,
   LeafNode,
   Node,
   NodeId,

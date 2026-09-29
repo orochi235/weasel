@@ -446,10 +446,13 @@ nearest guide line.
 ### Layout strategy
 
 `LayoutStrategy<TPose>` — a pluggable container-layout policy. Implements
-`getChildPositions`, `getDropTargets`, `reflowFor`, `commitDrop`, `snap`, and
-an optional `contains` predicate. When a container in the scene exposes a layout
-strategy via the `layout` dep, `moveAction` runs a layout pass on
-drag: reflows siblings live and calls `commitDrop` on release. The contract is
+`childPoses`, `getDropTargets`, `reflowPoses`, `commitDrop`, `snap`, and
+optional hooks (`contains`, `dropRegion`, `acceptsDrop`, `releaseDrop`). A
+container declares one on its scene node (`ContainerNode.layout`), and the
+scene re-applies `childPoses` whenever that container's child set, order or
+size changes, recording the writes in the same undo entry as the change.
+`moveAction` reads the same layout through the `layout` dep: it reflows
+siblings live on drag and calls `commitDrop` on release. The contract is
 in `packages/core/src/layout/types.ts`; the strategies are in `@weasel-js/guides`:
 `freeform` (absolute positioning), `tileGrid` (row/column grid), `snapPoint`
 (named anchor positions), under `packages/guides/src/layout/strategies/`.

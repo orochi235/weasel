@@ -55,7 +55,9 @@ const dep = (reg: DepRegistry, name: string): any => (reg.get as (n: string) => 
 
 const selectionOf = (ids: string[]) => ({ current: ids, set: vi.fn() }) as unknown as SelectionApi;
 const sceneWith = (get: (id: string) => unknown = () => undefined) =>
-  ({ layers: [{ id: 'default' }], get, renderOrderNodes: () => [] }) as unknown as Scene<unknown, string, unknown>;
+  ({
+    layers: [{ id: 'default' }], get, renderOrderNodes: () => [], layoutOf: () => null, onReflow: () => () => {},
+  }) as unknown as Scene<unknown, string, unknown>;
 
 describe('dep sources after an abandoned render', () => {
   it('areaSelect reads the committed selection', () => {
@@ -142,12 +144,13 @@ describe('dep sources after an abandoned render', () => {
   });
 
   it('layout reads the committed layouts and drop target', () => {
+    const scene = sceneWith();
     const layoutA = { kind: 'a' };
     const layoutB = { kind: 'b' };
     const reg = registryAfterAbandon(
       { layouts: { c: layoutA }, drop: 'innermost' as const },
       { layouts: { c: layoutB }, drop: 'topmost' as const },
-      (p) => { useLayoutDepSource(p.layouts as never, p.drop); },
+      (p) => { useLayoutDepSource(scene as never, p.layouts as never, p.drop); },
     );
     expect(dep(reg, 'layout').getLayout('c')).toBe(layoutA);
     expect(dep(reg, 'layout').dropTarget).toBe('innermost');

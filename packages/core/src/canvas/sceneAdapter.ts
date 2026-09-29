@@ -128,12 +128,15 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   selection?: SceneAdapterSelection;
   /** How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
-  /** Layout strategies keyed by container node id. When a container is
-   *  configured here, `move` runs its layout-aware pass on drag (reflow on
-   *  enter, reflow leftovers on exit, reparent + write reflowed poses on
-   *  commit). Containers without an entry behave as plain parents. Pass
-   *  either a static map, or a `getLayout(id)` function for dynamic
-   *  resolution. */
+  /** Layout strategies keyed by container node id, for containers whose
+   *  scene node declares none. A layout supplied here drives only a drag's
+   *  pass (reflow on enter, reflow leftovers on exit, reparent + write
+   *  reflowed poses on commit); an insert, delete or resize leaves its
+   *  children alone. Pass either a static map, or a `getLayout(id)` function
+   *  for dynamic resolution.
+   *  @deprecated Declare the layout on the container instead
+   *  (`scene.add({ kind: 'container', layout })`), which the scene re-applies
+   *  on every change to its children. */
   layouts?:
     | Record<string, LayoutStrategy<TPose>>
     | ((containerId: string) => LayoutStrategy<TPose> | null);
@@ -317,14 +320,13 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     getLayers() {
       return scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax }));
     },
-    ...(options.layouts
-      ? {
-          getLayout: typeof options.layouts === 'function'
-            ? options.layouts
-            : (id: string) =>
-                (options.layouts as Record<string, LayoutStrategy<TPose>>)[id] ?? null,
-        }
-      : {}),
+    getLayout(id) {
+      const declared = scene.layoutOf(asNodeId(id));
+      if (declared !== null || !options.layouts) return declared;
+      return typeof options.layouts === 'function'
+        ? options.layouts(id)
+        : options.layouts[id] ?? null;
+    },
     // Unified applyOps: when a label is supplied the ops are wrapped in a
     // batch checkpoint (history-aware path used by Move/Resize/Rotate/Insert/
     // Delete tools). When a journal is active (via scene's getActiveJournal

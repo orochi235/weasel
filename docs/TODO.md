@@ -447,13 +447,14 @@ intercepting the press that drags the body.
 
 ### `useScene` follow-ups
 
-- **(P3) Container layout as a scene semantic.** Layout strategies exist
-  (`freeform` / `snapPoint` / `tileGrid` in `@weasel-js/guides`, wired per container through
-  `sceneToAdapter({ layouts })`), but only `move` applies them — the resting
-  arrangement (`childPoses`) runs during a drag's reflow and nowhere else, so an
-  insert, delete or resize inside a laid-out container leaves its children where
-  they were. The deeper move is the scene holding a container's layout and
-  applying it on any change to its children.
+- **(P3) Scene layout: what the first cut left.** A container declares its layout
+  on its node (`ContainerNode.layout`) and the scene re-applies it on every change to
+  its children. Still open: a layout is fixed at `add` time — there is no
+  `scene.setLayout(id, strategy)` op to change one undoably; a scene whose canvas
+  composes poses has to pass the same strategy twice (`layoutFrame.composition` on the
+  scene, `poseComposition` on `<SceneCanvas>`), which folds away once composition is a
+  scene property (see the cascade entry below); and the deprecated `layouts` prop /
+  `sceneToAdapter({ layouts })` still drive drags only, pending removal.
 - **(P3) Full tier unification** (collapse inline-props/explicit-adapter onto Scene). Same effort as the P2 "`arrayAdapter` as the default Canvas adapter — full unification" above — track there.
 - **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is
   adapter-level configuration, two mutually exclusive ways:

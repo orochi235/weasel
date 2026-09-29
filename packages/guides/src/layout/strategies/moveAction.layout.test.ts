@@ -50,6 +50,7 @@ interface StubScene {
   childrenOf(id: NodeId): readonly NodeId[];
   applyBatch(ops: unknown[], label: string, adapter: unknown): void;
   batch(label: string, fn: () => void): void;
+  holdLayout<T>(ids: readonly NodeId[], fn: () => T): T;
   setPose(id: NodeId, pose: P): void;
 }
 
@@ -77,6 +78,7 @@ function makeScene(
       appliedBatches.push({ ops: ops as { id?: string; label?: string }[], label });
     },
     batch(_label, fn) { fn(); },
+    holdLayout(_ids, fn) { return fn(); },
     setPose(id, pose) { p.set(id as string, pose); },
   };
 }

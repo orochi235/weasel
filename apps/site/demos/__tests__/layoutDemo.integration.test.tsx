@@ -1,4 +1,4 @@
-import { render, act } from '@testing-library/react';
+import { render, act, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { LayoutDemo } from '../LayoutDemo';
 
@@ -86,5 +86,13 @@ describe('LayoutDemo', () => {
     // would have produced (330,70); the grid snap is layout-specific.
     expect(f1After.text).toBe('f1:300,40');
     expect(f1After.text).not.toBe(f1Before.text);
+  });
+
+  it('packs an added tile into the next free grid cell', () => {
+    const { container, getByText } = render(<LayoutDemo />);
+    act(() => { fireEvent.click(getByText('add tile')); });
+    const tile = container.querySelector('[data-parent="G"]:not([data-testid="ld-pose-g1"])')!;
+    // g1 holds the top-left cell, so the new tile takes the top-right one.
+    expect(tile.textContent).toMatch(/:300,40$/);
   });
 });

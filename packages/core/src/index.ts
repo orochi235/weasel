@@ -947,6 +947,8 @@ export type {
   FeedDelta,
   FeedNode,
   LayerRecord,
+  LayoutFrame,
+  LayoutMove,
   LeafNode,
   Node as SceneNode,
   NodeId,
