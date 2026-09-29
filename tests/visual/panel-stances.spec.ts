@@ -56,6 +56,10 @@ const looks = (page: Page) =>
       probe.style.color = expr;
       return getComputedStyle(probe).color;
     };
+    const size = (expr: string) => {
+      probe.style.fontSize = expr;
+      return getComputedStyle(probe).fontSize;
+    };
     const out: Record<string, Record<string, string>> = {};
     for (const el of document.querySelectorAll<HTMLElement>('[data-k]')) {
       const cs = getComputedStyle(el);
@@ -83,6 +87,7 @@ const looks = (page: Page) =>
       green: color('var(--wzl-swatch-green)'),
       greenFg: color('color-mix(in oklab, var(--wzl-swatch-green) 70%, var(--wzl-fg))'),
       danger: color('var(--wzl-danger)'),
+      titleSize: size('var(--wzl-panel-title-size)'),
     };
     return out;
   });
@@ -92,7 +97,7 @@ for (const mode of ['dark', 'light'] as const) {
     test('an unstanced panel draws as it always has', async ({ page }) => {
       await mount(page, mode);
       const { none, ref } = await looks(page);
-      expect(none).toMatchObject({ bg: ref.raised, borderWidth: '1px', borderStyle: 'solid', borderColor: ref.border, radius: '14px', titleSize: '16px', titleCase: 'none', readout: ref.accentFg });
+      expect(none).toMatchObject({ bg: ref.raised, borderWidth: '1px', borderStyle: 'solid', borderColor: ref.border, radius: '14px', titleSize: ref.titleSize, titleCase: 'none', readout: ref.accentFg });
     });
 
     test('each stance draws its own look, and a stanced title takes the row-label recipe', async ({ page }) => {
