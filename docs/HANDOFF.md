@@ -21,8 +21,8 @@ was the consumer-gating the root CLAUDE.md bans.
 labkit binding engine pieces under its own `usePanZoom`, which is now deleted.
 
 **The overview ships outside labkit's main bundle** (`@weasel-js/labkit/overview`).
-Mike's "d3dx sense": optional helpers on the core API, not in it. The loupe's
-move onto the same shape is filed in `docs/TODO.md`.
+Mike's "d3dx sense": optional helpers on the core API, not in it. The loupe
+has since moved onto the same shape (`@weasel-js/labkit/loupe`).
 
 **The requester is levar's session `levar-0b`**, told on completion how an
 instrument declares the overview; it moves its eye marks lab onto it and

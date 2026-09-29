@@ -1,7 +1,7 @@
 import { createContext, type RefObject } from 'react';
 import type { ViewTransform } from '../instrument/types';
 import type { CanvasLayerDescriptor } from './useLayerScheduler';
-import type { WorldFrame } from './worldSpec';
+import type { WorldFrame, WorldSpec } from './worldSpec';
 
 /** The stack's own drawing surface, for an overlay that has to re-draw it at
  *  another camera or read back what it presented — a loupe. */
@@ -14,6 +14,9 @@ export interface CanvasStackSurface {
   canvases: RefObject<Map<string, HTMLCanvasElement>>;
   /** The layers as the stack is drawing them, bottom first. */
   layers: readonly CanvasLayerDescriptor[];
+  /** The coordinate system the stack was given, which `frame` resolves at
+   *  its size — for a re-draw at another size. */
+  worldSpec?: WorldSpec;
 }
 
 /** What a canvas stack publishes to its children: the view, and the resolved

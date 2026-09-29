@@ -12,7 +12,7 @@ import type { ResolvedLoupe } from './types';
 
 /** Options for {@link useLoupe}. */
 export interface UseLoupeOptions {
-  capability: ResolvedLoupe;
+  options: ResolvedLoupe;
   /** The element the lens tracks the pointer across. */
   hostRef: RefObject<HTMLElement | null>;
   /** Whether the loupe is turned on. Hold-to-peek shows it regardless. */
@@ -56,14 +56,14 @@ function lensShown(over: boolean, enabled: boolean, peeking: boolean): boolean {
  * has no continuous-motion entry, and inventing one to carry the lens' aim
  * would be an input taxonomy change, not a loupe change.
  */
-export function useLoupe({ capability, hostRef, enabled, sample }: UseLoupeOptions): LoupeState {
+export function useLoupe({ options, hostRef, enabled, sample }: UseLoupeOptions): LoupeState {
   const [, bump] = useReducer((n: number) => n + 1, 0);
 
   const overRef = useRef(false);
   const peekingRef = useRef(false);
   const enabledRef = useLatest(enabled);
   const sampleRef = useLatest(sample);
-  const onColorChangeRef = useLatest(capability.onColorChange);
+  const onColorChangeRef = useLatest(options.onColorChange);
 
   // Reads nothing but refs, so it is stable and an effect may depend on it.
   const shown = useCallback(
@@ -74,10 +74,10 @@ export function useLoupe({ capability, hostRef, enabled, sample }: UseLoupeOptio
   const modelRef = useRef<LoupeModel | null>(null);
   if (modelRef.current === null) {
     modelRef.current = createLoupeModel({
-      mode: capability.mode,
-      factor: capability.factor,
-      minFactor: capability.minFactor,
-      maxFactor: capability.maxFactor,
+      mode: options.mode,
+      factor: options.factor,
+      minFactor: options.minFactor,
+      maxFactor: options.maxFactor,
       onColorChange: (hex) => onColorChangeRef.current?.(hex),
       surface: {
         lens: () => {
@@ -97,7 +97,7 @@ export function useLoupe({ capability, hostRef, enabled, sample }: UseLoupeOptio
   }
   const model = modelRef.current;
 
-  const diameterRef = useLatest(capability.diameter);
+  const diameterRef = useLatest(options.diameter);
   const goneRef = useRef(false);
 
   // The model holds no resources, and `dispose` is one-way — so unmounting only

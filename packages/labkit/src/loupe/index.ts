@@ -13,12 +13,7 @@ export type { LoupeInputApi } from './loupeActions';
 export { createLoupeActions, LOUPE_MAGNIFY_ID, LOUPE_PEEK_ID } from './loupeActions';
 export type { TrialLoupeProps } from './TrialLoupe';
 export { TrialLoupe } from './TrialLoupe';
-export type {
-  LoupeCapability,
-  LoupeDeclaration,
-  LoupeRenderArgs,
-  ResolvedLoupe,
-} from './types';
+export type { LoupeOptions, LoupeRenderArgs, ResolvedLoupe } from './types';
 export { LOUPE_DEFAULTS, resolveLoupe } from './types';
 export type { LoupeState, UseLoupeOptions } from './useLoupe';
 export { useLoupe } from './useLoupe';

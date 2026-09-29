@@ -1,53 +1,97 @@
-import { type RefObject, useContext, useMemo } from 'react';
-import { CameraScope } from '../canvas/CameraInput';
+import { type ReactNode, type RefObject, useContext, useEffect, useMemo, useRef } from 'react';
+import { CameraContext, CameraScope } from '../canvas/CameraInput';
 import { CanvasStackContext } from '../canvas/CanvasStackContext';
-import type { WorldSpec } from '../canvas/worldSpec';
+import { fromCameraView } from '../canvas/cameraView';
 import type { ViewTransform } from '../instrument/types';
+import { LoupeSwitchContext } from '../trial/loupeSwitch';
 import { CanvasLoupe } from './CanvasLoupe';
 import { sampleStack } from './canvasLens';
 import { DomLoupe } from './DomLoupe';
 import { LoupeBubble } from './LoupeBubble';
 import { LoupeGestures } from './LoupeGestures';
-import type { ResolvedLoupe } from './types';
+import { type LoupeOptions, resolveLoupe } from './types';
 import { useHostSize } from './useHostSize';
 import { useLoupe } from './useLoupe';
 
 /** Props for `<TrialLoupe>`. */
-export interface TrialLoupeProps {
-  capability: ResolvedLoupe;
-  /** Whether the trial's loupe is turned on. Hold-to-peek shows it anyway. */
-  enabled: boolean;
-  state: unknown;
-  config: unknown;
-  /** The trial's own camera. */
-  view: ViewTransform;
-  worldSpec?: WorldSpec;
-  /** The element the lens tracks. A loupe mounted inside a `<CanvasStack>`
-   *  takes the stack's own element instead, and this goes unused. */
+export interface TrialLoupeProps extends LoupeOptions {
+  /** Whether the lens is turned on. Omitted, it follows the trial's toolbar
+   *  toggle, which the trial offers while a lens like this is mounted — and is
+   *  off outside a trial. Hold-to-peek shows it either way. */
+  enabled?: boolean;
+  /** The camera a `render` lens composes its magnification onto. Defaults to
+   *  the camera around it, and to the identity outside one. */
+  view?: ViewTransform;
+  /** The element the lens tracks. Defaults to the canvas stack or stage around
+   *  it, and outside both to a box wrapped around `children`. */
   hostRef?: RefObject<HTMLElement | null>;
+  /** Content for the lens to sit over. Wrapped in a box of the lens's own only
+   *  when nothing around it gives the lens an element to track. */
+  children?: ReactNode;
 }
 
-/** Stable stand-in, so a loupe with nothing to track does not re-bind its
- *  listeners on every render. */
-const NO_HOST: RefObject<HTMLElement | null> = { current: null };
+const IDENTITY: ViewTransform = { zoom: 1, pan: { x: 0, y: 0 } };
 
 /**
- * A trial's loupe, painted by whichever painter suits its content: the canvas
- * stack it is mounted inside, or the instrument's own `render` at a magnified
- * camera.
+ * A trial's magnifier, mounted by the instrument wherever its content is: in
+ * a canvas instrument's `render`, a stage's `overlay`, or around DOM content.
+ *
+ * With no `render` inside a `<CanvasStack>`, it re-draws the stack's own
+ * layers through a zoomed camera. With `render`, it asks for the content again
+ * at a magnified camera.
  */
 export function TrialLoupe({
-  capability,
   enabled,
-  state,
-  config,
   view,
-  worldSpec,
   hostRef,
+  children,
+  render,
+  factor,
+  minFactor,
+  maxFactor,
+  mode,
+  diameter,
+  peekKey,
+  onColorChange,
 }: TrialLoupeProps) {
+  const options = useMemo(
+    () =>
+      resolveLoupe({
+        render,
+        factor,
+        minFactor,
+        maxFactor,
+        mode,
+        diameter,
+        peekKey,
+        onColorChange,
+      }),
+    [render, factor, minFactor, maxFactor, mode, diameter, peekKey, onColorChange],
+  );
+
   const stack = useContext(CanvasStackContext);
-  const surface = capability.render ? undefined : stack?.surface;
-  const host = surface?.element ?? hostRef ?? NO_HOST;
+  const camera = useContext(CameraContext);
+  const loupeSwitch = useContext(LoupeSwitchContext);
+  const surface = options.render ? undefined : stack?.surface;
+
+  const ownHost = useRef<HTMLDivElement | null>(null);
+  const cameraHost = useMemo<RefObject<HTMLElement | null> | null>(
+    () =>
+      camera
+        ? {
+            get current() {
+              return camera.element();
+            },
+          }
+        : null,
+    [camera],
+  );
+  const host = surface?.element ?? hostRef ?? cameraHost ?? ownHost;
+  const wraps = host === ownHost;
+
+  // A lens told whether it is on has no use for the trial's toggle.
+  const mount = enabled === undefined ? loupeSwitch?.mount : undefined;
+  useEffect(() => mount?.(), [mount]);
 
   const sample = useMemo(() => {
     if (!surface) return undefined;
@@ -57,7 +101,12 @@ export function TrialLoupe({
     };
   }, [surface]);
 
-  const loupe = useLoupe({ capability, hostRef: host, enabled, sample });
+  const loupe = useLoupe({
+    options,
+    hostRef: host,
+    enabled: enabled ?? loupeSwitch?.on ?? false,
+    sample,
+  });
   const measured = useHostSize(host);
   const size = surface?.size ?? measured;
 
@@ -67,42 +116,56 @@ export function TrialLoupe({
   // dispatcher; outside one, `<CameraScope>` gives them an isolated scope.
   const gestures = (
     <CameraScope>
-      <LoupeGestures hostRef={host} input={loupe.input} peekKey={capability.peekKey ?? null} />
+      <LoupeGestures hostRef={host} input={loupe.input} peekKey={options.peekKey ?? null} />
     </CameraScope>
   );
 
-  if (!loupe.visible) return gestures;
+  const lens = loupe.visible ? (
+    <LoupeBubble aim={loupe.aim} diameter={options.diameter}>
+      {options.render ? (
+        <DomLoupe
+          aim={loupe.aim}
+          factor={loupe.factor}
+          mode={loupe.mode}
+          diameter={options.diameter}
+          size={size}
+          view={
+            view ??
+            stack?.view ??
+            (camera ? fromCameraView(camera.view.get(), camera.frame) : IDENTITY)
+          }
+          frame={stack?.frame ?? camera?.frame}
+          render={options.render}
+        />
+      ) : surface && stack ? (
+        <CanvasLoupe
+          aim={loupe.aim}
+          factor={loupe.factor}
+          mode={loupe.mode}
+          diameter={options.diameter}
+          surface={surface}
+          view={stack.view}
+          frame={stack.frame}
+          worldSpec={surface.worldSpec}
+        />
+      ) : null}
+    </LoupeBubble>
+  ) : null;
 
+  if (wraps) {
+    return (
+      <div ref={ownHost} className="lk-loupe-host">
+        {children}
+        {gestures}
+        {lens}
+      </div>
+    );
+  }
   return (
     <>
+      {children}
       {gestures}
-      <LoupeBubble aim={loupe.aim} diameter={capability.diameter}>
-        {capability.render ? (
-          <DomLoupe
-            aim={loupe.aim}
-            factor={loupe.factor}
-            mode={loupe.mode}
-            diameter={capability.diameter}
-            size={size}
-            view={view}
-            frame={stack?.frame}
-            state={state}
-            config={config}
-            render={capability.render}
-          />
-        ) : surface && stack ? (
-          <CanvasLoupe
-            aim={loupe.aim}
-            factor={loupe.factor}
-            mode={loupe.mode}
-            diameter={capability.diameter}
-            surface={surface}
-            view={stack.view}
-            frame={stack.frame}
-            worldSpec={worldSpec}
-          />
-        ) : null}
-      </LoupeBubble>
+      {lens}
     </>
   );
 }

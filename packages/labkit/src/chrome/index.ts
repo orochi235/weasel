@@ -1,4 +1,4 @@
-export { builtinContributions } from './builtins';
+export { builtinContributions, TRANSIENT_BUILTINS } from './builtins';
 export type { LabRegionProps } from './LabChrome';
 export {
   contributionsIn,

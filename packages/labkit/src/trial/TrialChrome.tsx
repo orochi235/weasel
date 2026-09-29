@@ -8,7 +8,7 @@ import {
 import { useStore } from 'zustand/react';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { zoomCameraTo } from '../canvas/cameraZoom';
-import { builtinContributions } from '../chrome/builtins';
+import { builtinContributions, TRANSIENT_BUILTINS } from '../chrome/builtins';
 import { mergeContributions, suppressContributions } from '../chrome/merge';
 import { PaletteRegion } from '../chrome/regions/PaletteRegion';
 import { SidebarRegion } from '../chrome/regions/SidebarRegion';
@@ -55,8 +55,8 @@ export interface TrialChromeProps {
   undoBindings?: UndoBindings;
   /** Supplied when the instrument declares a `job`. */
   job?: JobHandle;
-  /** Supplied when the instrument declares a `loupe`. The lens itself is the
-   *  trial's to mount; the chrome only offers the switch. */
+  /** Supplied while a lens is mounted in the trial. The lens itself is the
+   *  instrument's to mount; the chrome only offers the switch. */
   loupe?: LoupeBindings;
   /** Contributions the trial runtime itself adds — the drag palette and the
    *  layer list, which depend on runtime state the instrument cannot reach. */
@@ -158,6 +158,7 @@ export function TrialChrome({
       canRedo: undoBindings?.canRedo ?? false,
       undo: undoBindings?.undo ?? NO_OP,
       redo: undoBindings?.redo ?? NO_OP,
+      hasLoupe: loupe != null,
       loupeOn: loupe?.on ?? false,
       toggleLoupe: loupe?.toggle ?? NO_OP,
       configSchema,
@@ -234,6 +235,7 @@ export function TrialChrome({
           [...(chrome ?? [])],
         ),
         suppress ?? [],
+        TRANSIENT_BUILTINS,
       ),
     [instrument, ctx, trialChrome, chrome, suppress, lab.controls],
   );

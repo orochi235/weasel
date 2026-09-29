@@ -36,3 +36,19 @@
   left: 0;
   transform-origin: 0 0;
 }
+
+// The box a lens wraps around DOM content when nothing around it has one to
+// track. Reproduces the content well's column so the content still stretches
+// to it rather than collapsing to its intrinsic height.
+.lk-loupe-host {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+
+  > * {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}

@@ -24,12 +24,12 @@ interface HarnessProps {
  *  cases below exercise the real dispatcher route rather than a stand-in. */
 function Harness({ enabled = true, seen, sample, ...rest }: HarnessProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const capability = resolveLoupe(rest);
+  const options = resolveLoupe(rest);
   const loupe = useLoupe({
     hostRef: hostRef as RefObject<HTMLElement | null>,
     enabled,
     sample,
-    capability,
+    options,
   });
   seen?.(loupe);
   return (
@@ -38,7 +38,7 @@ function Harness({ enabled = true, seen, sample, ...rest }: HarnessProps) {
         <LoupeGestures
           hostRef={hostRef as RefObject<HTMLElement | null>}
           input={loupe.input}
-          peekKey={capability.peekKey ?? null}
+          peekKey={options.peekKey ?? null}
         />
       </WeaselProvider>
       <span data-testid="visible">{String(loupe.visible)}</span>
@@ -93,7 +93,7 @@ describe('useLoupe', () => {
     expect(read('visible')).toBe('false');
   });
 
-  it('does not peek when the capability turned the key off', () => {
+  it('does not peek when its options turned the key off', () => {
     render(<Harness enabled={false} peekKey={null} />);
     move(40, 25);
     act(() => {

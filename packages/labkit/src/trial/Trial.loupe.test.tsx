@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
+import { TrialLoupe } from '../loupe';
 
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
@@ -21,17 +22,19 @@ const canvasInstrument = defineInstrument<Record<string, never>, Record<string, 
   name: 'Drawn',
   defaultConfig: () => ({}),
   initialState: () => ({}),
-  render: () => null,
+  render: () => <TrialLoupe />,
   canvas: { layers: [{ id: 'main', draw: () => undefined }] },
-  loupe: true,
 });
 
 const domInstrument = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Written',
   defaultConfig: () => ({}),
   initialState: () => ({}),
-  render: () => <p data-testid="body">the content</p>,
-  loupe: { render: ({ view }) => <p data-testid="lens-body">zoom {view.zoom}</p> },
+  render: () => (
+    <TrialLoupe render={({ view }) => <p data-testid="lens-body">zoom {view.zoom}</p>}>
+      <p data-testid="body">the content</p>
+    </TrialLoupe>
+  ),
 });
 
 const noLoupe = defineInstrument<Record<string, never>, Record<string, never>>({
@@ -49,7 +52,7 @@ function pointAt(host: Element, x: number, y: number): void {
   fireEvent.pointerMove(host, { clientX: x, clientY: y });
 }
 
-describe('the loupe capability', () => {
+describe('a lens the instrument mounts', () => {
   it('gives a trial a toolbar toggle, and no lens until it is on', () => {
     const { container } = render(
       <Lab instruments={[canvasInstrument]} defaultInstrument="Drawn" />,
@@ -58,7 +61,7 @@ describe('the loupe capability', () => {
     expect(lens(container)).toBeNull();
   });
 
-  it('offers nothing to an instrument that declares none', () => {
+  it('offers nothing to an instrument that mounts none', () => {
     render(<Lab instruments={[noLoupe]} defaultInstrument="Plain" />);
     expect(screen.queryByRole('button', { name: 'Loupe' })).toBeNull();
   });
@@ -95,7 +98,7 @@ describe('the loupe capability', () => {
     const { container } = render(<Lab instruments={[domInstrument]} defaultInstrument="Written" />);
     await user.click(screen.getByRole('button', { name: 'Loupe' }));
 
-    const host = container.querySelector('.lk-trial__loupe-host');
+    const host = container.querySelector('.lk-loupe-host');
     if (!host) throw new Error('no loupe host');
     pointAt(host, 60, 40);
 
@@ -105,9 +108,24 @@ describe('the loupe capability', () => {
     expect(screen.getByTestId('body')).toBeInTheDocument();
   });
 
-  it('wraps a DOM instrument only when it declares a loupe', () => {
+  it('wraps nothing for an instrument that mounts no lens', () => {
     const { container } = render(<Lab instruments={[noLoupe]} defaultInstrument="Plain" />);
-    expect(container.querySelector('.lk-trial__loupe-host')).toBeNull();
+    expect(container.querySelector('.lk-loupe-host')).toBeNull();
+  });
+
+  it('raises a lens told `enabled` without the trial toggle', () => {
+    const always = defineInstrument<Record<string, never>, Record<string, never>>({
+      name: 'Always',
+      defaultConfig: () => ({}),
+      initialState: () => ({}),
+      render: () => <TrialLoupe enabled />,
+      canvas: { layers: [{ id: 'main', draw: () => undefined }] },
+    });
+    const { container } = render(<Lab instruments={[always]} defaultInstrument="Always" />);
+    const stack = container.querySelector('.lk-canvas-stack');
+    if (!stack) throw new Error('no canvas stack');
+    pointAt(stack, 60, 40);
+    expect(lens(container)).not.toBeNull();
   });
 
   it('puts the lens away again when the toggle goes off', async () => {
@@ -136,7 +154,7 @@ describe('the loupe and the trial camera share one dispatcher', () => {
       name: 'Zoomed',
       defaultConfig: () => ({}),
       initialState: () => ({}),
-      render: () => null,
+      render: () => <TrialLoupe />,
       canvas: {
         layers: [
           {
@@ -147,7 +165,6 @@ describe('the loupe and the trial camera share one dispatcher', () => {
           },
         ],
       },
-      loupe: true,
     });
     const r = render(<Lab instruments={[drawn]} defaultInstrument="Zoomed" />);
     const stack = r.container.querySelector('.lk-canvas-stack');

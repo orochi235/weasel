@@ -162,8 +162,10 @@ export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext 
   undo: () => void;
   redo: () => void;
 
-  /** Whether the trial's loupe is turned on. False for an instrument that
-   *  declares none, whose chrome offers no way to turn one on. */
+  /** Whether a `<TrialLoupe>` following the trial's toggle is mounted in it.
+   *  The loupe toggle is offered only while one is. */
+  hasLoupe: boolean;
+  /** Whether the trial's loupe is turned on. */
   loupeOn: boolean;
   toggleLoupe: () => void;
 

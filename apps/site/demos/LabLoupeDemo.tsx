@@ -1,4 +1,5 @@
 import { defineInstrument, f, Lab, type ViewTransform } from '@weasel-js/labkit';
+import { TrialLoupe } from '@weasel-js/labkit/loupe';
 // In-repo, so the source stylesheet: a consumer imports the built
 // `@weasel-js/labkit/styles.css` instead.
 import '@weasel-js/labkit/styles.less';
@@ -49,15 +50,13 @@ const drawn = defineInstrument({
       .describe('vector re-draws the layers magnified; pixel enlarges what was presented'),
   }),
   initialState: () => ({}),
-  render: () => null,
+  // Inside the canvas stack, so the lens re-draws the stack's own layers.
+  render: ({ config }) => <TrialLoupe mode={config.mode} />,
   canvas: {
     initialView: { zoom: 1, pan: { x: 24, y: 24 } },
     layers: [{ id: 'detail', draw: (ctx, { zoom }) => drawDetail(ctx, zoom) }],
   },
   layers: { ids: [{ id: 'detail', label: 'Detail' }] },
-  // Read per trial, so the Lens setting reaches the lens without the demo
-  // owning any loupe state of its own.
-  loupe: (config) => ({ mode: config.mode }),
 });
 
 interface CardProps {
@@ -91,11 +90,11 @@ const written = defineInstrument({
   name: 'Written detail',
   config: f.schema({ lines: f.number(20).range(4, 60).slider().label('Lines') }),
   initialState: () => ({}),
-  render: ({ config }) => <Card view={IDENTITY} lines={config.lines} />,
-  loupe: {
-    diameter: 220,
-    render: ({ config, view }) => <Card view={view} lines={(config as { lines: number }).lines} />,
-  },
+  render: ({ config }) => (
+    <TrialLoupe diameter={220} render={({ view }) => <Card view={view} lines={config.lines} />}>
+      <Card view={IDENTITY} lines={config.lines} />
+    </TrialLoupe>
+  ),
 });
 
 export function LabLoupeDemo() {
