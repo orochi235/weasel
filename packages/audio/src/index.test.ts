@@ -24,6 +24,15 @@ describe('@weasel-js/audio public surface', () => {
     expect(event.step).toBe(0);
   });
 
+  it('exports the built-in insert effects', () => {
+    expect(typeof audio.createFilterEffect).toBe('function');
+    expect(typeof audio.createReverbEffect).toBe('function');
+    expect(typeof audio.createDelayEffect).toBe('function');
+    expect(typeof audio.createCompressorEffect).toBe('function');
+    const opts: audio.StreamOptions = { bus: 'music', offset: 0 };
+    expect(opts.offset).toBe(0);
+  });
+
   it('names the option and record types a pool consumer has to write down', () => {
     // Types erase, so this is a compile-time assertion: the names must resolve.
     const opts: audio.VoicePoolOptions = { limit: 2, steal: 'quietest' };

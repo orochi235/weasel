@@ -115,6 +115,73 @@ export interface FakeOscillator extends FakeNode {
   stop(when?: number): void;
 }
 
+export interface FakeBiquad extends FakeNode {
+  type: string;
+  frequency: FakeParam;
+  Q: FakeParam;
+  gain: FakeParam;
+  detune: FakeParam;
+}
+
+export interface FakeConvolver extends FakeNode { buffer: unknown; normalize: boolean }
+
+export interface FakeDelay extends FakeNode { delayTime: FakeParam; maxDelayTime: number }
+
+export interface FakeCompressor extends FakeNode {
+  threshold: FakeParam;
+  knee: FakeParam;
+  ratio: FakeParam;
+  attack: FakeParam;
+  release: FakeParam;
+}
+
+export interface FakeMediaSource extends FakeNode { mediaElement: FakeMediaElement }
+
+/** Enough of an `HTMLMediaElement` for a streaming voice. `play()` resolves
+ *  unless `_rejectPlay` is set; `_fire` dispatches a media event. */
+export interface FakeMediaElement {
+  src: string;
+  loop: boolean;
+  currentTime: number;
+  playbackRate: number;
+  paused: boolean;
+  crossOrigin: string | null;
+  preload: string;
+  play(): Promise<void>;
+  pause(): void;
+  addEventListener(type: string, fn: () => void): void;
+  removeEventListener(type: string, fn: () => void): void;
+  _fire(type: string): void;
+  _rejectPlay: Error | null;
+  _listenerCount(): number;
+}
+
+export function createFakeMediaElement(src = ''): FakeMediaElement {
+  const listeners = new Map<string, Set<() => void>>();
+  const el: FakeMediaElement = {
+    src, loop: false, currentTime: 0, playbackRate: 1, paused: true,
+    crossOrigin: null, preload: 'auto',
+    play() {
+      if (el._rejectPlay) return Promise.reject(el._rejectPlay);
+      el.paused = false;
+      return Promise.resolve();
+    },
+    pause() { el.paused = true; },
+    addEventListener(type, fn) {
+      if (!listeners.has(type)) listeners.set(type, new Set());
+      listeners.get(type)!.add(fn);
+    },
+    removeEventListener(type, fn) { listeners.get(type)?.delete(fn); },
+    _fire(type) {
+      if (type === 'ended') el.paused = true;
+      for (const fn of [...(listeners.get(type) ?? [])]) fn();
+    },
+    _rejectPlay: null,
+    _listenerCount: () => [...listeners.values()].reduce((n, s) => n + s.size, 0),
+  };
+  return el;
+}
+
 /** Analyser output: a constant for every bin, or a function of bin index and
  *  window length so index and window-size math is observable. */
 export type FakeAnalyserBytes = number | ((index: number, length: number) => number);
@@ -145,6 +212,13 @@ export interface FakeAudioContext {
   createBufferSource(): FakeSource;
   createOscillator(): FakeOscillator;
   createPeriodicWave(real: Float32Array, imag: Float32Array): FakePeriodicWave;
+  createBiquadFilter(): FakeBiquad;
+  createConvolver(): FakeConvolver;
+  createDelay(maxDelayTime?: number): FakeDelay;
+  createDynamicsCompressor(): FakeCompressor;
+  /** Throws for an element that already has a source, as the specification
+   *  requires: an element can be routed into a graph once. */
+  createMediaElementSource(element: FakeMediaElement): FakeMediaSource;
   createBuffer(channels: number, length: number, sampleRate: number): FakeBuffer;
   decodeAudioData(bytes: ArrayBuffer): Promise<unknown>;
   /** Test hook: advance the audio clock, ending any source that comes due. */
@@ -167,6 +241,7 @@ export function createFakeAudioContext(): FakeAudioContext {
   const sources: FakeSource[] = [];
   const oscillators: FakeOscillator[] = [];
   const listeners = new Set<() => void>();
+  const routed = new WeakSet<FakeMediaElement>();
 
   // Writes at most `bins` elements, as the specification requires: an oversized
   // array keeps whatever was in the tail, it does not get more data.
@@ -268,6 +343,22 @@ export function createFakeAudioContext(): FakeAudioContext {
       return o;
     },
     createPeriodicWave: (real, imag) => ({ real, imag }),
+    createBiquadFilter: () => node('biquad', {
+      type: 'lowpass', frequency: param(350), Q: param(1), gain: param(0), detune: param(0),
+    }),
+    createConvolver: () => node('convolver', { buffer: null as unknown, normalize: true }),
+    createDelay: (maxDelayTime = 1) => node('delay', { delayTime: param(0), maxDelayTime }),
+    createDynamicsCompressor: () => node('compressor', {
+      threshold: param(-24), knee: param(30), ratio: param(12),
+      attack: param(0.003), release: param(0.25),
+    }),
+    createMediaElementSource(element) {
+      if (routed.has(element)) {
+        throw new Error('InvalidStateError: the element already has a MediaElementAudioSourceNode');
+      }
+      routed.add(element);
+      return node('mediaSource', { mediaElement: element });
+    },
     createBuffer(channels, length, sampleRate) {
       if (channels < 1 || length < 1) {
         throw new Error('NotSupportedError: createBuffer needs a channel and a frame');

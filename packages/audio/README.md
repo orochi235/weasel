@@ -63,3 +63,57 @@ const player = createPatternPlayer(engine, {
 player.start();
 player.setTempo(140);
 ```
+
+## Insert effects
+
+Each bus has an ordered insert chain, `engine.bus(name).inserts`, between where
+its voices connect and its fader, so mute, solo and the bus gain act on the
+processed signal. An effect is anything with an `input` and an `output` node.
+The built-ins are `createFilterEffect` (a biquad), `createReverbEffect`
+(convolution from an impulse buffer, with a wet/dry mix), `createDelayEffect`
+(a feedback delay with a mix) and `createCompressorEffect` (with a makeup gain).
+Your own nodes go in the same way: `{ input: shaper, output: shaper }`.
+
+```ts
+const music = engine.bus('music').inserts;
+const lowpass = music.add(createFilterEffect(engine.context, { frequency: 800 }));
+const room = music.add(createReverbEffect(engine.context, { impulse, mix: 0.3 }), { bypassed: true });
+room.bypass(false);
+room.moveTo(0);
+lowpass.remove();
+```
+
+Edits never click. `bypass` crossfades the slot's wet and dry routes. `add`,
+`remove` and `moveTo` build the new route beside the old one and crossfade
+between them, one splice at a time, so `slots()` shows an edit at once while the
+audio follows over a few fades; `settled()` resolves when it has caught up. The
+fade is `insertFadeMs`, default 15. A move is a splice out and a splice back in,
+so the moved effect drops out for one fade. A removed effect's `dispose` runs
+once it has left the graph.
+
+## Streaming
+
+`load` and `decode` hold a whole sound in memory, which is wrong for a long
+music track. `engine.stream` plays one from an `HTMLMediaElement`, or a URL it
+makes one for, through a `MediaElementAudioSourceNode`:
+
+```ts
+const bed = engine.stream('/music/theme.ogg', { bus: 'music', loop: true, gain: 0.6 });
+bed.stop(800);
+```
+
+It is a voice like the others: a `VoiceHandle`, the bus's inserts and voice
+pool, `cancelKey`, `onDone`, position and pan. What does not carry over:
+
+- **No `when`.** The element starts once it has buffered enough; the start is
+  not sample-accurate and cannot be booked ahead on the audio clock.
+- **No `detune`.** `rate` is the element's `playbackRate`, which keeps pitch
+  unless you set the element's `preservesPitch` to false.
+- **One stream per element.** An element can be routed into a graph once, and
+  has one playhead, so streaming an element that is already playing stops the
+  earlier voice.
+- **Cross-origin media needs CORS.** Pass `crossOrigin: 'anonymous'` for a URL
+  on another origin, or the graph receives silence.
+
+A stream counts toward its bus's voice limit and can be stolen, so give music a
+bus of its own.

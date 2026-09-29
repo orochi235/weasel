@@ -1,6 +1,15 @@
 export { createAudioEngine, type AudioEngine } from './createAudioEngine';
 export { createAnalyserTap, type AnalyserTap, type AnalyserTapOptions } from './analyser';
-export { createBusGraph, type BusGraph, type BusHandle } from './buses';
+export { createBusGraph, type BusGraph, type BusGraphOptions, type BusHandle } from './buses';
+export type {
+  InsertAddOptions, InsertChain, InsertChainOptions, InsertEffect, InsertSlot,
+} from './inserts';
+export {
+  createCompressorEffect, createDelayEffect, createFilterEffect, createReverbEffect,
+  type CompressorEffect, type CompressorEffectOptions, type DelayEffect, type DelayEffectOptions,
+  type FilterEffect, type FilterEffectOptions, type WetDryMix, type ReverbEffect,
+  type ReverbEffectOptions,
+} from './effects';
 export { createScheduler, type Scheduler, type SchedulerOptions } from './scheduler';
 export { createTickTimer, type TickTimer } from './tickTimer';
 export { createSoundCache, type SoundCache, type SoundHandle } from './soundCache';
@@ -21,6 +30,6 @@ export {
   type PatternHit,
 } from './patternPlayer';
 export type {
-  AudioEngineOptions, PlayOptions, VoiceHandle,
+  AudioEngineOptions, PlayOptions, StreamOptions, VoiceHandle,
   NoteOptions, SynthPatch, Waveform, Glide,
 } from './types';

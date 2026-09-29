@@ -635,10 +635,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) AudioWorklet scheduling** — immune to main-thread jank; costs a worklet
   module, cross-thread messaging and a bundling story. Revisit if jank proves
   audible.
-- **(P3) Insert effects** — per-bus effect slot (convolution reverb, filters).
-  Nothing in the v1 graph forecloses it.
-- **(P3) Streaming sources** — `MediaElementAudioSourceNode` for long music.
-  Everything in v1 decodes fully into an `AudioBuffer`.
 
 ---
 

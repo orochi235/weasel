@@ -1,4 +1,5 @@
 import { createAnalyserTap, type AnalyserTap, type AnalyserTapOptions } from './analyser';
+import { atAudioTime, defaultTimers, type Timers } from './audioTime';
 import { createBusGraph, type BusHandle } from './buses';
 import { writeParam } from './param';
 import { createScheduler } from './scheduler';
@@ -8,7 +9,7 @@ import { createTickTimer } from './tickTimer';
 import { envelopeLevel, envelopePoints, resolveEnvelope } from './envelope';
 import { toFrequency } from './pitch';
 import type {
-  AudioEngineOptions, NoteOptions, PlayOptions, VoiceHandle, Waveform,
+  AudioEngineOptions, NoteOptions, PlayOptions, StreamOptions, VoiceHandle, Waveform,
 } from './types';
 import { createVoicePool, type VoicePool } from './voicePool';
 
@@ -40,6 +41,12 @@ export interface AudioEngine {
    *  ADSR envelope. It is a voice like any other — same handle, same bus pool
    *  and stealing, same `cancelKey`. */
   playNote(note: NoteOptions): VoiceHandle;
+  /** Stream long audio — music, ambience — from a media element or a URL
+   *  through a `MediaElementAudioSourceNode`, instead of decoding it whole. It
+   *  is a voice on a bus like any other, with the exceptions `StreamOptions`
+   *  lists. An element has one playhead, so streaming one that is already
+   *  streaming stops the earlier voice. */
+  stream(media: HTMLMediaElement | string, opts?: StreamOptions): VoiceHandle;
   /** Book a callback against the audio clock through the engine's lookahead
    *  scheduler; it receives its own `when` to hand on to `play` or `playNote`.
    *  `stopKey(key)` cancels it. One that came due during a suspension fires
@@ -69,10 +76,14 @@ interface Slots {
 /** What `play` and `playNote` share apart from the node they make. */
 type VoiceOptions = Omit<PlayOptions, 'loop'>;
 
+/** What a voice plays through: a scheduled source node, or a stand-in with
+ *  the same end-of-life contract — `onended` fires asynchronously, once. */
+type SourceLike = Pick<AudioScheduledSourceNode, 'onended' | 'stop' | 'disconnect'>;
+
 interface Starter {
   /** False drops the voice when it comes due. */
   ready(): boolean;
-  start(voice: LiveVoice, when: number): AudioScheduledSourceNode;
+  start(voice: LiveVoice, when: number): SourceLike;
 }
 
 interface Chain {
@@ -88,7 +99,7 @@ interface LiveVoice {
   slot: number | null;
   token: number;
   key?: string;
-  source: AudioScheduledSourceNode | null;
+  source: SourceLike | null;
   /** A synth voice's envelope gain, between its oscillator and the chain. */
   env: GainNode | null;
   /** Writes `rate` and `detune` to the node, once there is one. */
@@ -124,7 +135,6 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   if (busNames.length === 0) {
     throw new Error('@weasel-js/audio: an engine needs at least one bus');
   }
-  const graph = createBusGraph(ctx, busNames);
   const sounds = createSoundCache(ctx, opts.fetchFn);
   // One pool PER BUS, not one global pool: the spec's limit is per-bus, and a
   // shared pool lets a burst of one-shots on `sfx` steal the music bed.
@@ -145,19 +155,22 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   const tickTimer = opts.setTimer === undefined && opts.clearTimer === undefined
     ? createTickTimer()
     : null;
+  const timers: Timers = {
+    setTimer: tickTimer?.setTimer ?? opts.setTimer ?? defaultTimers.setTimer,
+    clearTimer: tickTimer?.clearTimer ?? opts.clearTimer ?? defaultTimers.clearTimer,
+  };
   const scheduler = createScheduler({
     now,
     // One-shot, not repeating: the scheduler re-arms at the end of every pass,
     // so an interval would leave the previous one running and double the live
     // timer count per tick.
-    setTimer: tickTimer?.setTimer ?? opts.setTimer ?? ((cb, ms) => setTimeout(cb, ms)),
-    clearTimer: tickTimer?.clearTimer
-      ?? opts.clearTimer
-      ?? ((h) => clearTimeout(h as ReturnType<typeof setTimeout>)),
+    setTimer: timers.setTimer,
+    clearTimer: timers.clearTimer,
     lookahead: opts.lookahead,
     interval: opts.tickInterval,
   });
   scheduler.start();
+  const graph = createBusGraph(ctx, busNames, { ...timers, fadeMs: opts.insertFadeMs });
 
   let listener: Vec2 = { x: 0, y: 0 };
   let spatialOpts: SpatialOptions = {};
@@ -326,7 +339,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     const voice: LiveVoice = {
       id, slots, slot: null, token: 0, key: common.cancelKey,
       source: null, env: null, retune: null, release: null, releasing: false,
-      chain: takeChain(graph.node(busName), baseGain * spatial.gain, spatial.pan),
+      chain: takeChain(graph.input(busName), baseGain * spatial.gain, spatial.pan),
       baseGain, spatialGain: spatial.gain,
       rate: common.rate ?? 1, detune: common.detune ?? 0,
       position: common.position,
@@ -439,6 +452,59 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     osc.setPeriodicWave(periodic);
   };
 
+  // An element can be routed into a graph once, ever: the node is kept for the
+  // element's lifetime and handed from voice to voice.
+  const mediaSources = new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>();
+  const streaming = new WeakMap<HTMLMediaElement, VoiceHandle>();
+
+  const openMedia = (url: string, crossOrigin: StreamOptions['crossOrigin']): HTMLMediaElement => {
+    const el = new Audio();
+    if (crossOrigin !== undefined) el.crossOrigin = crossOrigin;
+    el.preload = 'auto';
+    el.src = url;
+    return el;
+  };
+
+  /** A media element's playback as a voice source: `stop(when)` pauses once
+   *  the audio clock reaches `when`, and the element ending ends the voice. */
+  const mediaSource = (el: HTMLMediaElement, node: AudioNode, into: AudioNode): SourceLike => {
+    let ended = false;
+    let cancelWait: (() => void) | null = null;
+    const finish = (): void => {
+      if (ended) return;
+      ended = true;
+      cancelWait?.();
+      el.pause();
+      el.removeEventListener('ended', finish);
+      el.removeEventListener('error', finish);
+      // Queued, as a source node's `onended` is: the engine may be inside the
+      // teardown that called `stop()`.
+      queueMicrotask(() => (shim.onended as (() => void) | null)?.());
+    };
+    const shim: SourceLike = {
+      onended: null,
+      stop(when?: number) {
+        if (ended) return;
+        cancelWait?.();
+        cancelWait = when !== undefined && when > ctx.currentTime
+          ? atAudioTime(ctx, timers, when, finish)
+          : null;
+        if (!cancelWait) finish();
+      },
+      disconnect() {
+        try { node.disconnect(into); } catch { /* not wired */ }
+      },
+    };
+    el.addEventListener('ended', finish);
+    el.addEventListener('error', finish);
+    el.play().catch((err: unknown) => {
+      if (ended) return;
+      console.warn(`@weasel-js/audio: a stream would not start — ${String(err)}`);
+      finish();
+    });
+    return shim;
+  };
+
   const engine: AudioEngine = {
     context: ctx,
     state: () => ctx.state,
@@ -529,6 +595,30 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       });
     },
 
+    stream(media, streamOpts = {}) {
+      const el = typeof media === 'string' ? openMedia(media, streamOpts.crossOrigin) : media;
+      streaming.get(el)?.stop();
+      const handle = launch(streamOpts, {
+        ready: () => true,
+        start(voice) {
+          let node = mediaSources.get(el);
+          if (!node) {
+            node = ctx.createMediaElementSource(el);
+            mediaSources.set(el, node);
+          }
+          el.loop = streamOpts.loop ?? false;
+          if (streamOpts.offset !== undefined) el.currentTime = streamOpts.offset / 1000;
+          voice.retune = () => { el.playbackRate = voice.rate; };
+          voice.retune();
+          const into = voice.chain!.panner;
+          node.connect(into);
+          return mediaSource(el, node, into);
+        },
+      });
+      streaming.set(el, handle);
+      return handle;
+    },
+
     schedule(when, fire, key) {
       if (disposed) return;
       scheduler.schedule(when, fire, key);
@@ -582,6 +672,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       taps.clear();
       disarmGestures();
       ctx.removeEventListener('statechange', onStateChange);
+      graph.dispose();
       graph.master.disconnect();
       if (ownsContext) void ctx.close().catch(() => undefined);
     },

@@ -1,3 +1,6 @@
+import {
+  createInsertChain, type InsertChain, type InsertChainOptions, type OwnedInsertChain,
+} from './inserts';
 import { writeParam } from './param';
 
 /** Controls for one named bus. `rampMs` slews a gain change over that many
@@ -15,18 +18,34 @@ export interface BusHandle {
   /** Whether the bus is being heard: unmuted, and soloed if any bus is soloed.
    *  Not derivable from `muted()` and `soloed()` alone. */
   audible(): boolean;
+  /** Effects between where the bus's voices connect and its fader. */
+  readonly inserts: InsertChain;
 }
 
-/** The mix graph built by `createBusGraph`. `node(name)` is where a voice
- *  connects; `master` feeds the destination. Unknown bus names throw. */
+/** The mix graph built by `createBusGraph`. `input(name)` is where a voice
+ *  connects; it runs through the bus's inserts to `node(name)`, the fader,
+ *  which feeds `master`, which feeds the destination. Unknown bus names throw. */
 export interface BusGraph {
   master: GainNode;
+  input(name: string): GainNode;
   node(name: string): GainNode;
   bus(name: string): BusHandle;
   names(): string[];
+  /** Cancel every insert transition in flight. The nodes stay wired. */
+  dispose(): void;
 }
 
-interface BusState { node: GainNode; gain: number; muted: boolean; soloed: boolean }
+/** Options for `createBusGraph`: the insert chains' crossfade and timer. */
+export type BusGraphOptions = InsertChainOptions;
+
+interface BusState {
+  input: GainNode;
+  node: GainNode;
+  inserts: OwnedInsertChain;
+  gain: number;
+  muted: boolean;
+  soloed: boolean;
+}
 
 /**
  * The mix graph: one `GainNode` per named bus, all routed to a master that
@@ -38,15 +57,21 @@ interface BusState { node: GainNode; gain: number; muted: boolean; soloed: boole
  * `writeParam`, so `rampMs` survives instead of being overwritten by the
  * recomputation that follows it.
  */
-export function createBusGraph(ctx: AudioContext, names: string[]): BusGraph {
+export function createBusGraph(
+  ctx: AudioContext,
+  names: string[],
+  opts: BusGraphOptions = {},
+): BusGraph {
   const master = ctx.createGain();
   master.connect(ctx.destination);
 
   const states = new Map<string, BusState>();
   for (const name of names) {
+    const input = ctx.createGain();
     const node = ctx.createGain();
     node.connect(master);
-    states.set(name, { node, gain: 1, muted: false, soloed: false });
+    const inserts = createInsertChain(ctx, input, node, opts);
+    states.set(name, { input, node, inserts, gain: 1, muted: false, soloed: false });
   }
 
   const anySoloed = (): boolean => {
@@ -75,8 +100,12 @@ export function createBusGraph(ctx: AudioContext, names: string[]): BusGraph {
 
   return {
     master,
+    input: (name) => get(name).input,
     node: (name) => get(name).node,
     names: () => [...states.keys()],
+    dispose() {
+      for (const s of states.values()) s.inserts.dispose();
+    },
     bus(name) {
       const s = get(name);
       return {
@@ -90,6 +119,7 @@ export function createBusGraph(ctx: AudioContext, names: string[]): BusGraph {
         muted: () => s.muted,
         soloed: () => s.soloed,
         audible: () => audibleUnder(s, anySoloed()),
+        inserts: s.inserts.chain,
       };
     },
   };

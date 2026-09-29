@@ -218,8 +218,6 @@ they meet at a number.
 - **AudioWorklet scheduling.** More accurate than a 25 ms lookahead and immune to
   main-thread jank, at the cost of a worklet module, cross-thread messaging, and
   a bundling story. Revisit if main-thread jank proves audible.
-- **Convolution reverb, filters, effect chains.** A per-bus insert-effect slot is
-  the natural shape when it happens; nothing here forecloses it.
-- **Streaming / `MediaElementAudioSourceNode`.** Everything here decodes fully
-  into an `AudioBuffer`, which is wrong for long music tracks and right for
-  everything else.
+- ~~Convolution reverb, filters, effect chains~~ and ~~streaming through
+  `MediaElementAudioSourceNode`~~ have since shipped: `BusHandle.inserts` and
+  `engine.stream`. The package README describes both.
