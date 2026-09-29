@@ -1458,7 +1458,10 @@ export type { ContributionDeps } from '@weasel-js/routing';
 export { liveScope, scopeBindings, modeShortcuts, modeShortcutSpec } from '@weasel-js/routing';
 export type { ModeShortcutHandlers } from '@weasel-js/routing';
 export { mergeContributions } from './canvas/surfaceContribution';
-export type { SurfaceContribution, ContributionDepReader } from './canvas/surfaceContribution';
+export type { SurfaceContribution, ContributionDepReader, ContributionFrameCtx } from './canvas/surfaceContribution';
+export { KIT_VERSIONS, checkRequirements, satisfiesRange } from './canvas/kitRequirements';
+export type { KitVersions, KitRequirements, RequirementMismatch } from './canvas/kitRequirements';
+export type { VersionCheck } from './canvas/SceneCanvas/useContributionRoles';
 export type { InsertOverlayStyle } from './tools/builtin/marquee';
 export type { InsertPoint } from './interactions/gestures/types';
 export type {

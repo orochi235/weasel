@@ -64,7 +64,7 @@ import { CanvasView, type CanvasViewProps } from './CanvasView';
 import type { DeviceProfile } from '../core/device/types';
 import { HANDLE_BASE_PX, targetSizesPx } from '../core/device/targets';
 import { InputScope, type Yoke } from '@weasel-js/routing/react';
-import { useContributionRoles, contributionEntries } from './SceneCanvas/useContributionRoles';
+import { useContributionRoles, contributionEntries, type VersionCheck } from './SceneCanvas/useContributionRoles';
 import type { SurfaceContribution } from './surfaceContribution';
 import { useDepSource } from '@weasel-js/routing/react';
 import { usePointerContext } from 'features/pointer/PointerContext';
@@ -695,6 +695,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  through your own `useTools` call instead. */
     ambient?: readonly SurfaceContribution[];
 
+    /** What an entry's `requires` does when the running kit does not meet
+     *  it: `'warn'` (the default) logs in development, `'strict'` throws,
+     *  `'off'` skips the check. */
+    versionCheck?: VersionCheck;
+
     /** Touch and pen long-press: its hold time, its haptic, and the
      *  feedback shown while it is held. */
     longPress?: SceneCanvasLongPress;
@@ -1010,6 +1015,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     toolOptions,
     initialActiveTool,
     ambient,
+    versionCheck,
     longPress,
     viewport,
     layers,
@@ -2318,6 +2324,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 enableKeybindings={enableKeybindings}
                 isToolEligible={isToolEligible}
                 canvasApi={canvasReady ? canvasApiRef.current : null}
+                versionCheck={versionCheck}
               />
               {viewDescriptors?.map((v, i) => (
                 <CanvasView key={v.id} {...v} order={v.order ?? i} />
@@ -2358,12 +2365,14 @@ function ToolKeybindingsMounter({
   enableKeybindings,
   isToolEligible,
   canvasApi,
+  versionCheck,
 }: {
   internalTools: ToolsApi;
   toolsTakeover?: ToolsApi;
   enableKeybindings: boolean;
   isToolEligible: (toolId: string) => boolean;
   canvasApi: CanvasExtensionApi | null;
+  versionCheck?: VersionCheck;
 }) {
   useKeybindings(internalTools, {
     disable: !!toolsTakeover || !enableKeybindings,
@@ -2377,7 +2386,7 @@ function ToolKeybindingsMounter({
   // Same reason this lives here and not in the tool hooks: the hooks run above
   // the provider. Not gated on `enableKeybindings` — these back wheel and
   // pointer bindings too, not just keys.
-  useContributionRoles(toolsTakeover ?? internalTools, canvasApi);
+  useContributionRoles(toolsTakeover ?? internalTools, canvasApi, versionCheck);
   return null;
 }
 

@@ -134,20 +134,23 @@ export function createLongPressFeedbackContribution(
     };
 
     const offStore = store.subscribe(onChange);
-    // The filling ring is a frame loop riding the canvas's own, which runs
-    // behind `useVisibleRaf`: each painted frame asks for the next while it shows.
-    const offFrame = api.subscribeFrame(() => {
-      if (!reduced && showing()) api.requestRedraw();
-    });
     onChange();
     return () => {
       offStore();
-      offFrame();
       clearTimeout(appear);
       state = undefined;
       api.requestRedraw();
     };
   };
 
-  return { id, eligibility: { always: true }, overlay: layer, attach };
+  return {
+    id,
+    eligibility: { always: true },
+    overlay: layer,
+    attach,
+    // The filling ring asks for the next frame from each painted one while it shows.
+    afterPaint: (ctx) => {
+      if (!reduced && showing()) ctx.requestFrame();
+    },
+  };
 }

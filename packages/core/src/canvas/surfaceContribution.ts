@@ -8,16 +8,32 @@ import type { DepName, DepSchema } from 'interactions/actions/depSchema';
 import type { Contribution } from '../tools/overlayBinding';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { CanvasViewProps } from './CanvasView';
+import type { View } from '../core/viewport/view';
+import type { KitRequirements } from './kitRequirements';
 
 /** Reads the surface's deps from inside `SurfaceContribution.attach`. */
 export interface ContributionDepReader {
   get<K extends DepName>(name: K): DepSchema[K] | undefined;
 }
 
+/** What {@link SurfaceContribution.beforePaint} and `afterPaint` are handed. */
+export interface ContributionFrameCtx {
+  /** The frame's timestamp, on `performance.now()`'s clock. Both phases of one
+   *  frame see the same value. */
+  readonly time: number;
+  /** The surface camera this frame paints with. */
+  readonly view: View;
+  /** Ask for another frame. A hook animating something calls this every frame
+   *  it still has work for, and stops calling it to let the loop go idle. */
+  requestFrame(): void;
+  /** The surface's deps, as `attach` reads them. */
+  readonly deps: ContributionDepReader;
+}
+
 /**
  * A feature a surface installs in one step. Every role is optional: `bindings`,
  * `actions`, `deps`, `overlay` and `presentation` from `Contribution`, plus
- * the two below. Installing it installs every role it declares, and removing
+ * the ones below. Installing it installs every role it declares, and removing
  * it removes them.
  */
 export interface SurfaceContribution extends Contribution {
@@ -32,6 +48,23 @@ export interface SurfaceContribution extends Contribution {
    * re-renders.
    */
   attach?: (api: CanvasExtensionApi, deps: ContributionDepReader) => () => void;
+  /**
+   * Runs on every frame the surface paints, before the paint — for state the
+   * entry's layers read, advanced once per frame. Hooks run in the order the
+   * surface lists its entries (registered tools, then `ambient` in array
+   * order), and one that throws is reported and skipped without stopping the
+   * frame.
+   */
+  beforePaint?: (ctx: ContributionFrameCtx) => void;
+  /** Runs after a frame's pixels have landed, in the same order as
+   *  {@link beforePaint}. A frame that painted nothing runs no `afterPaint`. */
+  afterPaint?: (ctx: ContributionFrameCtx) => void;
+  /**
+   * The kit versions this entry was written against, as semver ranges:
+   * `{ core: '^1.7' }`. A mismatch warns in development, or throws where the
+   * surface is set to `versionCheck="strict"`.
+   */
+  requires?: KitRequirements;
 }
 
 /**

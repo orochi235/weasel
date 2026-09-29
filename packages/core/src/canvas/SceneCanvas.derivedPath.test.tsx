@@ -59,6 +59,7 @@ vi.mock('./Canvas', async (importOriginal) => {
         getSurfaceRect: () => ({ x: 0, y: 0, width: 0, height: 0 }),
         requestRedraw: () => {},
         subscribeFrame: () => () => {},
+        subscribeBeforePaint: () => () => {},
         getView: () => VIEW,
         setView: () => {},
         subscribeView: () => () => {},
