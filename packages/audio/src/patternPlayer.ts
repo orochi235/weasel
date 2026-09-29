@@ -1,9 +1,16 @@
 import type { AudioEngine } from './createAudioEngine';
 import type { SoundHandle } from './soundCache';
-import type { NoteOptions, PlayOptions, VoiceHandle } from './types';
+import type { NoiseOptions, NoteOptions, PlayOptions, VoiceHandle } from './types';
 
 /** A synth note on a step. `length` is its gate in steps, default 1. */
 export interface PatternNote extends Omit<NoteOptions, 'when' | 'duration'> {
+  step: number;
+  length?: number;
+}
+
+/** Noise on a step: a hi-hat, a snare's rattle. `length` is its gate in steps,
+ *  default 1. */
+export interface PatternNoise extends Omit<NoiseOptions, 'when' | 'duration'> {
   step: number;
   length?: number;
 }
@@ -14,7 +21,7 @@ export interface PatternHit extends Omit<PlayOptions, 'when'> {
   sound: SoundHandle;
 }
 
-export type PatternEvent = PatternNote | PatternHit;
+export type PatternEvent = PatternNote | PatternNoise | PatternHit;
 
 /** Options for `createPatternPlayer`. */
 export interface PatternPlayerOptions {
@@ -118,6 +125,9 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       if ('sound' in e) {
         const { step: _s, sound, ...play } = e;
         voices.add(engine.play(sound, { ...play, when }));
+      } else if ('noise' in e) {
+        const { step: _s, length: steps = 1, ...noise } = e;
+        voices.add(engine.playNoise({ ...noise, when, duration: steps * stepMs() }));
       } else {
         const { step: _s, length: steps = 1, ...note } = e;
         voices.add(engine.playNote({ ...note, when, duration: steps * stepMs() }));

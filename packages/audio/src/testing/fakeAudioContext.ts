@@ -13,10 +13,13 @@ export interface FakeParam {
   expRamps: { value: number; at: number }[];
   /** Every `cancelScheduledValues` time, in call order. */
   cancels: number[];
+  /** Every `setTargetAtTime`, in call order. */
+  targets: { value: number; at: number; timeConstant: number }[];
   setValueAtTime(value: number, at: number): FakeParam;
   linearRampToValueAtTime(value: number, at: number): FakeParam;
   exponentialRampToValueAtTime(value: number, at: number): FakeParam;
   cancelScheduledValues(at: number): FakeParam;
+  setTargetAtTime(value: number, at: number, timeConstant: number): FakeParam;
 }
 
 // A ramp does not move `value`: the point of the double is that a test can see
@@ -28,10 +31,12 @@ const param = (initial: number): FakeParam => {
     holds: [],
     expRamps: [],
     cancels: [],
+    targets: [],
     setValueAtTime(value, at) { p.holds.push({ value, at }); p.value = value; return p; },
     linearRampToValueAtTime(value, at) { p.ramps.push({ value, at }); return p; },
     exponentialRampToValueAtTime(value, at) { p.expRamps.push({ value, at }); return p; },
     cancelScheduledValues(at) { p.cancels.push(at); return p; },
+    setTargetAtTime(value, at, timeConstant) { p.targets.push({ value, at, timeConstant }); return p; },
   };
   return p;
 };
@@ -92,10 +97,12 @@ export interface FakeSource extends FakeNode {
   playbackRate: FakeParam;
   detune: FakeParam;
   started: number[];
+  /** The `offset` of each `start`, 0 when none was given. */
+  offsets: number[];
   stopped: number[];
   ended: boolean;
   onended: (() => void) | null;
-  start(when?: number): void;
+  start(when?: number, offset?: number): void;
   stop(when?: number): void;
 }
 
@@ -231,6 +238,10 @@ export interface FakeAudioContext {
   _sources: FakeSource[];
   /** Test hook: every oscillator created, in order. */
   _oscillators: FakeOscillator[];
+  /** Test hook: every biquad filter created, in order. */
+  _filters: FakeBiquad[];
+  /** Test hook: every buffer created, in order. */
+  _buffers: FakeBuffer[];
   /** Test hook: canned analyser output. */
   _analyserBytes: FakeAnalyserBytes;
   /** Test hook: live `statechange` subscriptions. */
@@ -240,6 +251,8 @@ export interface FakeAudioContext {
 export function createFakeAudioContext(): FakeAudioContext {
   const sources: FakeSource[] = [];
   const oscillators: FakeOscillator[] = [];
+  const filters: FakeBiquad[] = [];
+  const buffers: FakeBuffer[] = [];
   const listeners = new Set<() => void>();
   const routed = new WeakSet<FakeMediaElement>();
 
@@ -296,14 +309,16 @@ export function createFakeAudioContext(): FakeAudioContext {
         playbackRate: param(1),
         detune: param(0),
         started: [] as number[],
+        offsets: [] as number[],
         stopped: [] as number[],
         ended: false,
         onended: null as (() => void) | null,
-        start(when = ctx.currentTime) {
+        start(when = ctx.currentTime, offset = 0) {
           if (s.started.length > 0) {
             throw new Error('InvalidStateError: start may only be called once');
           }
           s.started.push(when);
+          s.offsets.push(offset);
         },
         stop(when = ctx.currentTime) {
           if (s.started.length === 0) {
@@ -343,9 +358,13 @@ export function createFakeAudioContext(): FakeAudioContext {
       return o;
     },
     createPeriodicWave: (real, imag) => ({ real, imag }),
-    createBiquadFilter: () => node('biquad', {
-      type: 'lowpass', frequency: param(350), Q: param(1), gain: param(0), detune: param(0),
-    }),
+    createBiquadFilter() {
+      const f = node('biquad', {
+        type: 'lowpass', frequency: param(350), Q: param(1), gain: param(0), detune: param(0),
+      });
+      filters.push(f);
+      return f;
+    },
     createConvolver: () => node('convolver', { buffer: null as unknown, normalize: true }),
     createDelay: (maxDelayTime = 1) => node('delay', { delayTime: param(0), maxDelayTime }),
     createDynamicsCompressor: () => node('compressor', {
@@ -364,13 +383,15 @@ export function createFakeAudioContext(): FakeAudioContext {
         throw new Error('NotSupportedError: createBuffer needs a channel and a frame');
       }
       const data = Array.from({ length: channels }, () => new Float32Array(length));
-      return {
+      const buffer: FakeBuffer = {
         duration: length / sampleRate,
         length,
         numberOfChannels: channels,
         sampleRate,
         getChannelData: (channel) => data[channel],
       };
+      buffers.push(buffer);
+      return buffer;
     },
     async decodeAudioData() { return { duration: 1 }; },
     _advance(ms) {
@@ -389,6 +410,8 @@ export function createFakeAudioContext(): FakeAudioContext {
     },
     _sources: sources,
     _oscillators: oscillators,
+    _filters: filters,
+    _buffers: buffers,
     _listenerCount: () => listeners.size,
     _analyserBytes: (i, length) => Math.round((255 * i) / length),
   };

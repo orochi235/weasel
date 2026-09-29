@@ -523,14 +523,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
   Its plan file has every box unchecked too; the CHANGELOG and registry are the
   record. The follow-ups below are what is left.
-- **(P3) Noise and inharmonic synth voices.** `playNote` covers anything an
-  `OscillatorNode` can make: harmonic partials under an ADSR envelope, with a
-  pitch glide. The side-scroller's footsteps and landings are filtered noise,
-  and its music bed is struck metal whose partials sit off the harmonic series
-  (`platformer/sfx.ts`, `CLANK_RATIOS`), so all three are still hand-written
-  PCM. What is missing is a noise source voice (a looped noise buffer through a
-  `BiquadFilterNode`, under the same envelope) and a voice summing detuned
-  oscillators at arbitrary ratios.
+- **(P3) The side-scroller's music bed as engine voices.** Its footsteps and
+  landings are `playNoise` voices now; the bed is still hand-written PCM
+  (`platformer/sfx.ts`, `bed`). Its struck metal is expressible as `{ partials }`
+  and its chugs and bass as harmonic partials with a `decay`, but the bed is an
+  arrangement as much as a timbre: every hit lands late by its own amount, the
+  whole loop drifts sharp and back, and the four bars are peak-normalized
+  together. `createPatternPlayer` has no per-event timing offset or pitch drift,
+  so a port needs those first, and a check that its busiest moments fit the
+  music bus's voice limit — a lid, a lead note and a drum each ring for five or
+  six sixteenths, and each metal hit is seven sources.
 
 - **(P3) Trope-aware generative scoring.** Builds on `playNote` and `createPatternPlayer`.
   Screen scoring for factual content — news packages, documentaries — runs on a

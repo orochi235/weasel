@@ -1,12 +1,15 @@
-import type { AudioEngine, NoteOptions, PlayOptions, SoundHandle } from '@weasel-js/audio';
+import type {
+  AudioEngine, NoiseOptions, NoteOptions, PlayOptions, SoundHandle, VoiceHandle,
+} from '@weasel-js/audio';
 
-/** Sounds rendered to PCM: noise, and the bed's struck metal, whose partials sit
- *  off the harmonic series where an oscillator cannot reach. */
-export const PCM_SOUND_NAMES = ['step', 'land', 'bed'] as const;
+/** Sounds rendered to PCM. The bed is an arrangement, not a voice: four bars of
+ *  hits nudged late by their own amounts, detuned across the loop and
+ *  normalized as a whole, which a sequence of engine voices does not reproduce. */
+export const PCM_SOUND_NAMES = ['bed'] as const;
 export type PcmSoundName = (typeof PCM_SOUND_NAMES)[number];
 
-/** A synth note `at` ms after the sound is triggered. */
-type TimedNote = NoteOptions & { at?: number };
+/** A synth voice `at` ms after the sound is triggered: a note, or noise. */
+type TimedVoice = (NoteOptions | NoiseOptions) & { at?: number };
 
 /** A pitch sweep with an optional second harmonic: a 1% attack, full level to
  *  the midpoint, then a linear release over the back half. */
@@ -19,22 +22,38 @@ const sweep = (ms: number, from: number, to: number, gain: number, harmonic = 0)
   ...(from !== to ? { glide: { to, ms, curve: 'linear' as const } } : {}),
 });
 
+/** A burst of brown noise `ms` long: `attack` and `release` are fractions of
+ *  it, held at full level between. Brown falls 6 dB an octave, which is the
+ *  slope of the lowpassed white noise these sounds used to be rendered from. */
+const scuff = (
+  ms: number, gain: number, attack: number, release: number, filter?: NoiseOptions['filter'],
+): NoiseOptions => ({
+  noise: 'brown',
+  duration: ms * (1 - release),
+  gain,
+  envelope: { attack: ms * attack, release: ms * release },
+  ...(filter ? { filter } : {}),
+});
+
 /** Sounds that are synth voices. */
-export const NOTE_SOUNDS = {
+export const SYNTH_SOUNDS = {
+  /** The shelf flattens brown noise below 500 Hz, so the step scuffs rather than booms. */
+  step: [scuff(70, 0.66, 0.02, 0.8, { type: 'lowshelf', frequency: 500, gain: -14 })],
+  land: [sweep(140, 180, 60, 0.3), scuff(140, 0.1, 0.01, 0.9)],
   jump: [sweep(160, 260, 660, 0.32, 0.25)],
   stomp: [sweep(180, 420, 90, 0.3, 0.4)],
   hurt: [sweep(300, 400, 120, 0.34, 0.5)],
   coin: [sweep(73, 988, 988, 0.28, 0.3), { at: 73, ...sweep(147, 1319, 1319, 0.24, 0.3) }],
   /** C major arpeggio, each note ringing on under the next. */
   goal: [523.25, 659.25, 783.99, 1046.5].map(
-    (f, k): TimedNote => ({ at: k * 225, ...sweep(900 - k * 225, f, f, 0.16, 0.3) }),
+    (f, k): TimedVoice => ({ at: k * 225, ...sweep(900 - k * 225, f, f, 0.16, 0.3) }),
   ),
-} satisfies Record<string, readonly TimedNote[]>;
-export type NoteSoundName = keyof typeof NOTE_SOUNDS;
+} satisfies Record<string, readonly TimedVoice[]>;
+export type SynthSoundName = keyof typeof SYNTH_SOUNDS;
 
-export type SoundName = PcmSoundName | NoteSoundName;
+export type SoundName = PcmSoundName | SynthSoundName;
 export const SOUND_NAMES: readonly SoundName[] = [
-  ...PCM_SOUND_NAMES, ...(Object.keys(NOTE_SOUNDS) as NoteSoundName[]),
+  ...PCM_SOUND_NAMES, ...(Object.keys(SYNTH_SOUNDS) as SynthSoundName[]),
 ];
 
 /** Deterministic noise — `Math.random` would make the tests unrepeatable. */
@@ -46,34 +65,13 @@ function noise(seed: number): () => number {
   };
 }
 
-const env = (i: number, n: number, attack: number, release: number): number => {
-  const a = Math.max(1, Math.floor(n * attack));
-  const r = Math.max(1, Math.floor(n * release));
-  if (i < a) return i / a;
-  if (i > n - r) return Math.max(0, (n - i) / r);
-  return 1;
-};
-
-/** A one-pole lowpass, for turning white noise into something footstep-shaped. */
+/** A one-pole lowpass. */
 function lowpass(buf: Float32Array, alpha: number): void {
   let prev = 0;
   for (let i = 0; i < buf.length; i++) {
     prev += alpha * (buf[i] - prev);
     buf[i] = prev;
   }
-}
-
-function tone(n: number, rate: number, from: number, to: number, gain: number, harmonic = 0): Float32Array {
-  const out = new Float32Array(n);
-  let phase = 0;
-  for (let i = 0; i < n; i++) {
-    const u = i / n;
-    const f = from + (to - from) * u;
-    phase += (2 * Math.PI * f) / rate;
-    const base = Math.sin(phase) + (harmonic ? harmonic * Math.sin(phase * 2) : 0);
-    out[i] = base * gain * env(i, n, 0.01, 0.5);
-  }
-  return out;
 }
 
 /** Sum of the first few harmonics at 1/k — a rough saw, which is what makes a
@@ -261,31 +259,8 @@ function bed(rate: number): Float32Array {
 
 /** Pure PCM for one sound. Mono, in [-1, 1]. */
 export function renderSound(name: PcmSoundName, rate: number): Float32Array {
-  switch (name) {
-    case 'step': {
-      const n = Math.floor(rate * 0.07);
-      const rnd = noise(0x51ed11);
-      const out = new Float32Array(n);
-      for (let i = 0; i < n; i++) out[i] = rnd();
-      lowpass(out, 0.09);
-      for (let i = 0; i < n; i++) out[i] *= 0.55 * env(i, n, 0.02, 0.8);
-      return out;
-    }
-    case 'land': {
-      const n = Math.floor(rate * 0.14);
-      const rnd = noise(0x0dd1e5);
-      const out = tone(n, rate, 180, 60, 0.3);
-      const thump = new Float32Array(n);
-      for (let i = 0; i < n; i++) thump[i] = rnd();
-      lowpass(thump, 0.04);
-      for (let i = 0; i < n; i++) out[i] = out[i] + thump[i] * 0.25 * env(i, n, 0.01, 0.9);
-      return out;
-    }
-    case 'bed':
-      return bed(rate);
-    default:
-      throw new Error(`renderSound: unknown sound "${name}"`);
-  }
+  if (name === 'bed') return bed(rate);
+  throw new Error(`renderSound: unknown sound "${name}"`);
 }
 
 /**
@@ -304,21 +279,21 @@ export function registerSounds(engine: AudioEngine): Record<PcmSoundName, SoundH
   return out;
 }
 
-/** Play a sound by name: its notes if it is a synth sound, else its buffer.
- *  `opts` applies to every note, with `gain` scaling each note's own. */
+/** Play a sound by name: its voices if it is a synth sound, else its buffer.
+ *  `opts` applies to every voice, with `gain` scaling each voice's own. */
 export function playSound(
   engine: AudioEngine,
   buffers: Record<PcmSoundName, SoundHandle>,
   name: SoundName,
   opts: PlayOptions = {},
-): void {
-  if (!(name in NOTE_SOUNDS)) {
-    engine.play(buffers[name as PcmSoundName], opts);
-    return;
-  }
+): VoiceHandle[] {
+  if (!(name in SYNTH_SOUNDS)) return [engine.play(buffers[name as PcmSoundName], opts)];
   const t0 = opts.when ?? engine.now();
-  const { loop: _loop, rate: _rate, ...shared } = opts;
-  for (const { at = 0, ...note } of NOTE_SOUNDS[name as NoteSoundName] as readonly TimedNote[]) {
-    engine.playNote({ ...note, ...shared, gain: (note.gain ?? 1) * (opts.gain ?? 1), when: t0 + at });
-  }
+  const { loop: _loop, ...shared } = opts;
+  return (SYNTH_SOUNDS[name as SynthSoundName] as readonly TimedVoice[]).map(({ at = 0, ...voice }) => {
+    const booked = { ...shared, gain: (voice.gain ?? 1) * (opts.gain ?? 1), when: t0 + at };
+    if ('noise' in voice) return engine.playNoise({ ...voice, ...booked });
+    const { rate: _rate, ...note } = booked;
+    return engine.playNote({ ...voice, ...note });
+  });
 }
