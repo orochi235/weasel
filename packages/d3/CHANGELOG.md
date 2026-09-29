@@ -1,5 +1,102 @@
 # @weasel-js/d3
 
+## 1.7.1
+
+### Patch Changes
+
+- 8966297: Transitions chain: `.transition().duration(500).transition().pose(fn)` runs the second on each item as soon as the first finishes that item, so a staggered chain stays staggered. A chained transition keeps the name and inherits the duration and ease of the one before it unless you override them; its `.delay()` counts from when that item's previous transition ended. Starting any transition in a chain starts all of it, and interrupting one interrupts everything chained after it. Transitions also take `.pose(fn)` for a per-item target pose, which is how a chained transition moves nodes; on the first transition it overrides the pose `.join()` set.
+- 1efdffc: Exiting nodes can animate out. `d3Bind(...).exit((exit) => exit.transition().pose(fn).remove().end())` keeps the nodes a join would have removed and hands them to your callback as a selection; the new `transition.remove()` deletes each node, as an undoable scene removal, when its transition ends. An interrupted node is not removed, and a key that comes back in a later join while its node is still exiting stops that exit and rebinds the node as an update. Without `.exit()`, a join removes exiting nodes at once, as before.
+- 61ad379: A transition no longer throws when the scene loses a node it is tweening — an undo that takes back the node an enter transition created, or any outside `scene.remove`. On the next frame the transition stops that node, along with every transition chained after it, and the rest of the selection carries on; `end()` still resolves and `on('end')` still fires. An exit transition whose node was removed this way no longer deletes it at its end, so a node added again under the same id survives.
+- 9a33a00: `d3Bind` now takes its payload type from the scene: `.data(fn)` on a binding over a `Scene<{ label: string }, …>` must return `{ label: string }`, so the editor completes the fields and flags a wrong or missing one. `D3Binding` gains a third type parameter, `TPayload`, defaulting to the old `Record<string, unknown>`. A scene typed with `unknown` data accepts anything, as before.
+- 72379f6: `Scene.incarnation(id)` returns a token for the node an id names right now. It
+  holds through every edit to that node and changes whenever the id enters the
+  scene again — a fresh `add`, an undo or redo that brings it back, or
+  `loadState` — so something holding an id across frames can tell whether it
+  still names the same node.
+  
+  `@weasel-js/d3` transitions use it: a node removed and re-added under the same
+  id between two frames is now treated like a removed node. Its transition stops
+  for that node, the node taking the id is left alone, and a `.remove()` no longer
+  deletes it.
+- Updated dependencies [6f59206]
+- Updated dependencies [716ea36]
+- Updated dependencies [2d7003a]
+- Updated dependencies [e17fe2c]
+- Updated dependencies [f457e7c]
+- Updated dependencies [8635031]
+- Updated dependencies [276bad1]
+- Updated dependencies [efc5727]
+- Updated dependencies [108551d]
+- Updated dependencies [a5bc201]
+- Updated dependencies [4e18c9f]
+- Updated dependencies [112c781]
+- Updated dependencies [ac2e76e]
+- Updated dependencies [9c164e2]
+- Updated dependencies [85d62a7]
+- Updated dependencies [dfd926f]
+- Updated dependencies [3d80c9f]
+- Updated dependencies [a1ecaac]
+- Updated dependencies [886fefd]
+- Updated dependencies [04b0b96]
+- Updated dependencies [27bcf57]
+- Updated dependencies [a7f2103]
+- Updated dependencies [b2fd89a]
+- Updated dependencies [4212d2d]
+- Updated dependencies [12263bc]
+- Updated dependencies [b5cc59f]
+- Updated dependencies [e2f1968]
+- Updated dependencies [1524403]
+- Updated dependencies [bfc4b21]
+- Updated dependencies [f046160]
+- Updated dependencies [9f83b33]
+- Updated dependencies [3c1def2]
+- Updated dependencies [ae6e8ac]
+- Updated dependencies [4b570e5]
+- Updated dependencies [251fb64]
+- Updated dependencies [9bfdda9]
+- Updated dependencies [b554ee0]
+- Updated dependencies [702829d]
+- Updated dependencies [9cad63b]
+- Updated dependencies [b228015]
+- Updated dependencies [53cdd41]
+- Updated dependencies [33b7ac2]
+- Updated dependencies [fa67cbf]
+- Updated dependencies [8f68fa8]
+- Updated dependencies [25448ee]
+- Updated dependencies [88c1ae3]
+- Updated dependencies [dcc9834]
+- Updated dependencies [365c762]
+- Updated dependencies [941e941]
+- Updated dependencies [b20df31]
+- Updated dependencies [55ef61f]
+- Updated dependencies [712de19]
+- Updated dependencies [67d95c8]
+- Updated dependencies [8a68b6c]
+- Updated dependencies [16a0476]
+- Updated dependencies [6f03bf7]
+- Updated dependencies [72379f6]
+- Updated dependencies [7f7d153]
+- Updated dependencies [d9cdff1]
+- Updated dependencies [63d0ece]
+- Updated dependencies [f8bde12]
+- Updated dependencies [685a086]
+- Updated dependencies [90a4686]
+- Updated dependencies [7e08265]
+- Updated dependencies [d60a422]
+- Updated dependencies [dde2315]
+- Updated dependencies [4cb55b7]
+- Updated dependencies [fb21799]
+- Updated dependencies [fe9a91e]
+- Updated dependencies [3a68365]
+- Updated dependencies [43ad590]
+- Updated dependencies [4cef954]
+- Updated dependencies [c4cc60f]
+- Updated dependencies [6df279e]
+- Updated dependencies [09ff2c1]
+- Updated dependencies [637945e]
+- Updated dependencies [5308126]
+  - @weasel-js/core@1.7.1
+
 ## 1.7.0
 
 ### Patch Changes

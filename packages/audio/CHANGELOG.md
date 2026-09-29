@@ -1,5 +1,23 @@
 # @weasel-js/audio
 
+## 1.7.1
+
+### Patch Changes
+
+- 7987ce7: Insert effects and streaming sources, both additive.
+  
+  Every bus has an ordered insert chain, `engine.bus(name).inserts`, between where its voices connect and its fader. `inserts.add(effect, { index, bypassed })` returns a slot with `bypass(on)`, `moveTo(index)`, `remove()` and `index()`; `slots()`, `clear()` and `settled()` cover the chain. Every edit is click-free: a bypass crossfades the slot's wet and dry, and an add, remove or move crossfades the old route into the new one, one splice at a time (`insertFadeMs`, default 15). An effect is anything with `input` and `output` nodes, so a consumer's own node pair works as well as the built-ins: `createFilterEffect` (biquad), `createReverbEffect` (convolution from an impulse buffer, with a wet/dry mix), `createDelayEffect` (feedback delay with a mix) and `createCompressorEffect` (with makeup gain).
+  
+  `engine.stream(elementOrUrl, opts)` plays long audio through a `MediaElementAudioSourceNode` instead of decoding it whole. It returns an ordinary `VoiceHandle` on a bus — `stop(fadeMs)`, `cancelKey`, gain, pan, position and `rate` all apply — but it takes no `when` (a media element's start is not sample-accurate) and no `detune`.
+  
+  `createBusGraph` gains `input(name)`, the node voices now connect to, and `dispose()`. `node(name)` is still the bus fader, now after the inserts.
+- f8c3aa2: Noise and inharmonic synth voices, all additive. `engine.playNoise({ noise: 'white' | 'pink' | 'brown', duration, envelope, filter, ...playOptions })` plays noise looped from a seeded buffer made once per color per context, under the same ADSR envelope as `playNote`, and returns an ordinary `VoiceHandle` sharing the bus's voice pool, stealing and `cancelKey`. `playNote`'s `wave` also takes `{ partials: [{ ratio, gain, decay }] }`: sine oscillators at any ratio of the pitch, each with its own level and exponential decay, for bells, bars and struck metal. `partialPresets` holds `bell`, `marimba` and `metal`.
+  
+  Both voices take a `filter`: a biquad ahead of the envelope, with `type`, `frequency`, `Q`, `gain`, and an optional cutoff `envelope` whose level moves the cutoff by `amount` Hz. Pattern players accept noise events (`{ step, noise, length, … }`). Also exported: `noiseSamples`, and the types `NoiseOptions`, `NoisePatch`, `NoiseColor`, `Inharmonic`, `SynthPartial`, `VoiceFilter` and `PatternNoise`.
+- 81eadc7: Synth voices and a pattern player, both additive. `engine.playNote({ pitch, duration, wave, envelope, glide, ...playOptions })` plays an `OscillatorNode` under an ADSR envelope, with pitch as hertz, a note name or `{ midi }` and `wave` as a built-in shape or harmonic partial amplitudes (built into a cached `PeriodicWave`). It returns an ordinary `VoiceHandle` and shares the bus's voice pool, stealing and `cancelKey` with buffer voices. `VoiceHandle` gains `release()`: a note-off that runs the envelope's release from its current level, and is `stop()` for a buffer voice. `engine.schedule(when, fire, key?)` exposes the lookahead scheduler for booking callbacks against the audio clock.
+  
+  `createPatternPlayer(engine, { tempo, stepsPerBeat, events, length, loop, onStep })` is a step sequencer over notes and buffer hits, booking each step through `engine.schedule` so `setTempo` and `setEvents` land on the next step; a step that fires late skips ahead in phase rather than playing the missed steps at once. Also exported: `toFrequency`, `midiToFrequency`, `noteToMidi`, and the pure envelope helpers `resolveEnvelope`, `envelopeLevel` and `envelopePoints`.
+
 ## 1.7.0
 
 No changes in this release.

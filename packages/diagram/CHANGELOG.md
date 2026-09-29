@@ -1,5 +1,113 @@
 # @weasel-js/diagram
 
+## 1.7.1
+
+### Patch Changes
+
+- 3712d90: A live `force` run now finishes when the graph stops moving rather than when alpha cools. It ends once no node has moved `restDistance` world units (default 0.1) for `restTicks` ticks in a row (default 5), which on a small graph is a few dozen frames instead of three hundred. Nothing rests while a node is being dragged. `restDistance: 0` restores the old behavior. Both options, and `dragAlpha`, are now accepted through `useLiveLayout`'s `force` option.
+- 27bcf57: Every op factory's argument type can now be imported by name from `@weasel-js/core`: `InsertArgs`, `DeleteArgs`, `TransformArgs`, `ReparentArgs`, `SetDataArgs`, `SetLayerArgs`, `SetPathArgs`, `SetTextArgs`, `SetSelectionArgs`, `ReorderArgs` and `MoveToIndexArgs`, with the shapes they reference, `SiblingSlot`, `PlacedNode` and `ReorderRestoreEntry`. Core also exports `KeyBinding` (the parameter of `matchesKeyBinding`), `rangeWeight` and `unboldPatch`. `@weasel-js/diagram` exports `ForceBody`, the element type of `ForceRelaxation.bodies`.
+  
+  The default align, distribute, boolean and edit icons are now marked `@experimental` on each component; the tag had sat on a file header where it marked nothing.
+  
+  Breaking: `DispatcherViewTarget` and `ViewIdResolver` are off `@weasel-js/routing/react`. They moved to `@weasel-js/routing/internal`, which is not public API. `rectsEqual` is off `@weasel-js/labkit/surface`.
+- 3755e17: Refs that event handlers, timers and message listeners read no longer hold
+  what an abandoned concurrent render computed. The gesture dispatcher,
+  `useDepSource`, `useOngoingAction`, `ActionsProvider`, `useTools`,
+  `useContributions`, the ui components with drag or dismissal handlers
+  (`Callout`, `CurveEditor`, `LayerList`, `ResizeHandle`, `Timeline`'s graph
+  lane), `useAsyncOptions`, `useReorderDragList`, forge's trial shell and
+  `useLiveLayout` now publish their latest props on commit only.
+  
+  `ContributionsApi` is now rebuilt from each render's entries instead of reading
+  them through a ref, so its `entries`, `overlays()` and `scopedBindings()` answer
+  correctly when read during render. Its identity is kept while the entry list
+  holds the same entries, and changes when an entry is added, removed or
+  replaced — a consumer building its entry objects inline every render now gets a
+  new API object each render.
+  
+  Because a dep source now publishes on commit, `ActionBar` re-checks each
+  action's `enabled` after it commits and re-renders if a dep changed in the same
+  render.
+- Updated dependencies [6f59206]
+- Updated dependencies [716ea36]
+- Updated dependencies [2d7003a]
+- Updated dependencies [e17fe2c]
+- Updated dependencies [f457e7c]
+- Updated dependencies [8635031]
+- Updated dependencies [276bad1]
+- Updated dependencies [efc5727]
+- Updated dependencies [108551d]
+- Updated dependencies [a5bc201]
+- Updated dependencies [4e18c9f]
+- Updated dependencies [112c781]
+- Updated dependencies [ac2e76e]
+- Updated dependencies [9c164e2]
+- Updated dependencies [85d62a7]
+- Updated dependencies [dfd926f]
+- Updated dependencies [3d80c9f]
+- Updated dependencies [a1ecaac]
+- Updated dependencies [886fefd]
+- Updated dependencies [04b0b96]
+- Updated dependencies [27bcf57]
+- Updated dependencies [a7f2103]
+- Updated dependencies [b2fd89a]
+- Updated dependencies [4212d2d]
+- Updated dependencies [12263bc]
+- Updated dependencies [b5cc59f]
+- Updated dependencies [e2f1968]
+- Updated dependencies [1524403]
+- Updated dependencies [bfc4b21]
+- Updated dependencies [f046160]
+- Updated dependencies [9f83b33]
+- Updated dependencies [3c1def2]
+- Updated dependencies [ae6e8ac]
+- Updated dependencies [4b570e5]
+- Updated dependencies [251fb64]
+- Updated dependencies [9bfdda9]
+- Updated dependencies [b554ee0]
+- Updated dependencies [702829d]
+- Updated dependencies [9cad63b]
+- Updated dependencies [b228015]
+- Updated dependencies [53cdd41]
+- Updated dependencies [33b7ac2]
+- Updated dependencies [fa67cbf]
+- Updated dependencies [8f68fa8]
+- Updated dependencies [25448ee]
+- Updated dependencies [88c1ae3]
+- Updated dependencies [dcc9834]
+- Updated dependencies [365c762]
+- Updated dependencies [941e941]
+- Updated dependencies [b20df31]
+- Updated dependencies [55ef61f]
+- Updated dependencies [712de19]
+- Updated dependencies [67d95c8]
+- Updated dependencies [8a68b6c]
+- Updated dependencies [16a0476]
+- Updated dependencies [6f03bf7]
+- Updated dependencies [72379f6]
+- Updated dependencies [7f7d153]
+- Updated dependencies [d9cdff1]
+- Updated dependencies [63d0ece]
+- Updated dependencies [f8bde12]
+- Updated dependencies [685a086]
+- Updated dependencies [90a4686]
+- Updated dependencies [7e08265]
+- Updated dependencies [d60a422]
+- Updated dependencies [dde2315]
+- Updated dependencies [4cb55b7]
+- Updated dependencies [fb21799]
+- Updated dependencies [fe9a91e]
+- Updated dependencies [3a68365]
+- Updated dependencies [43ad590]
+- Updated dependencies [4cef954]
+- Updated dependencies [c4cc60f]
+- Updated dependencies [6df279e]
+- Updated dependencies [09ff2c1]
+- Updated dependencies [637945e]
+- Updated dependencies [5308126]
+  - @weasel-js/core@1.7.1
+  - @weasel-js/geom@1.7.1
+
 ## 1.7.0
 
 ### Patch Changes

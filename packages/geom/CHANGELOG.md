@@ -1,5 +1,94 @@
 # @weasel-js/geom
 
+## 1.7.1
+
+### Patch Changes
+
+- f457e7c: `arrayAdapter`'s marquee and lasso now take a node by its outline, as `sceneToAdapter`'s do, instead of by its bounding box. A marquee over the empty corner of a triangle, or past the tip of a rotated rect, no longer selects it, and `enclosed` lasso mode takes a shape the lasso fits around even when its box pokes out. A polygon pose is its own outline; any other pose is its rect, rotated by `rotation`. The new `silhouette` option supplies what the painters draw — pass `findShapeSilhouette` when the items are scene nodes. The descriptor's `intersectsRect` is no longer consulted.
+  
+  `@weasel-js/geom` now holds path hit-testing: `pointInPath`, `strokeHitTest`, `pathContainsPoint`, `pathContainsRect`, `pathIntersectsRect`, `pathContainsPolygon`, `pathIntersectsPolygon`, `polygonContainsPath` and `polygonIntersectsPath`. Core's exports of the same names are unchanged.
+- 3d80c9f: Text can become path geometry. `textToPath(data, pose)` returns a text node's
+  glyph outlines and decoration rules in world space, as one `'nonzero'`
+  compound path whose filled region is their union. Glyphs keep the font's
+  curves, and each glyph is re-wound so faces that disagree on winding still
+  fill their overlaps. It works at any size, not only above the outline-tier
+  threshold, and applies synthetic italic the way the renderer does. When some
+  run has no outline geometry it throws a `TextOutlinesError` whose `reason` is
+  `'no-outlines'`, `'outlines-loading'`, `'outlines-failed'` or
+  `'synthetic-bold'`. Faux bold is refused rather than drawn at the regular
+  weight, because a path has no distance field to thicken.
+  `loadTextOutlines(data)` waits for the faces a text is set in.
+  
+  The new `createOutlines` action (Shift+Mod+O, group `'text'`, under the
+  `paths` feature) replaces each selected text node with a path node in one
+  undoable batch. Each path takes its text node's slot in the stacking order.
+  Consumers publish a `CreateOutlinesAdapter` with `useCreateOutlinesAdapter`;
+  its `createPathNode(path, sourceId)` carries the text's fill and stroke. The
+  pure core is `applyCreateOutlines`, and the icon is `CreateOutlinesIcon`.
+  
+  Boolean ops take text operands: `BooleansAdapter` gains an optional
+  `getTextSource(id)`, consulted when `getWorldPath` has no path. This change is
+  additive, with one exception: `BooleanOpResult` has a new
+  `{ kind: 'failed', reason: 'text-outlines' }` variant, and a text operand
+  without outlines now leaves the scene untouched. Code that switches
+  exhaustively over `BooleanOpResult` needs a case for it.
+  
+  Also new: `loadFontOutlines(family, variant?)` in `@weasel-js/font` (also
+  re-exported from core) resolves once a registered face has loaded or failed.
+  `@weasel-js/geom` adds `pathSignedArea` and `reversePath`.
+- b2fd89a: geom adds `boxContainsBox(outer, inner)`, the edge-inclusive test for one box
+  wholly holding another. Core's region hit test, labkit's `fracEncloses`,
+  `fracContains` and drop-over-canvas check, and labkit's internal point bounds now
+  go through geom's box functions instead of their own copies. labkit's `WorldRect`
+  is now an alias of geom's `Rect`, which has the same shape. Badge's
+  `ChamferedRect` base uses the shared `polygonSampler` rather than a copy of it.
+- 4212d2d: The path data model, the pure math over it, and the easing curves moved from `@weasel-js/core` into `@weasel-js/geom`. Core re-exports every name it exported before, so code importing from `@weasel-js/core` or `@weasel-js/core/math` needs no change.
+  
+  `@weasel-js/geom` now exports `Path`, `PolygonPath`, `RectPath` and `PathFillRule`; the builders (`PathBuilder`, `rectPath`, `ellipsePath`, `polygonFromPoints` and the rest); `pathFromD`, `boundsOfPath`, `unionBoundsPath`, `translatePath`, `scalePathToBounds`, `transformPath`, `composePath`, `decomposePath`, `splitSubpaths`, `pointAlongPath`, `pathDistanceToPoint`, `splitCubicAtT`, `fitCubicThroughDeletion`, `cubicPointAt`, `schneiderFit` and the `Point` type; and every easing curve with `EASINGS`, `SPRING_PRESETS`, `cubicBezierEasing` and `resolveEasing`. Three subpaths are new or grow: `@weasel-js/geom/curves` (Bezier, NURBS and Spiro representations, `CURVE_REPS`), `@weasel-js/geom/tessellate` (`tessellate`, `extractPolylines`, `trimPolyline`, the `Mesh` type), and `@weasel-js/geom/booleans`, which adds `splitPathBySegment`, `splitPathByPolyline` and `snipPathByPolyline`. `earcut` is a new optional peer of geom, needed only by `./tessellate`.
+  
+  Breaking for direct `@weasel-js/geom` users: `GeomPath` and `GeomPolygonPath` are gone, replaced by `Path` and `PolygonPath`. Hit-testing and booleans now take the typed-array `Path` — `commands` a `Uint8Array`, `coords` a `Float32Array`, `fillRule` required — rather than any array-like.
+- 63d0ece: Picking and selection chrome now hold their screen-pixel sizes exactly under
+  non-uniform zoom, rotated nodes included. Before, both divided by the mean of
+  the two axis scales, so at 4:1 a 4px pick slop was 8px on one axis and 2px on
+  the other, and on a turned node the selection outline, handles and rotate
+  badge were drawn as a rotated screen rectangle beside the parallelogram the
+  node actually painted.
+  
+  - `<SceneCanvas>` picks within `pickTolerancePx` of a node measured on screen.
+    `strokeHitTest` takes a `slop: { px, transform }` for this, and
+    `shapeCoversPoint`'s `tolerance` accepts `{ px, scale }` alongside a world
+    number.
+  - The selection outline traces the node's projected corners, handles sit on
+    them, and the rotate badge sits its `distance` in pixels off the top edge,
+    along that edge's normal as it lands on screen. `rotationHandle` takes the
+    view's `scale` to do this and now also returns the badge's screen `angle`;
+    `standoff` (exported) is the placement both it and the grab
+    region use.
+  - A painted rotate badge is grabbable where it is drawn:
+    `createRotationAffordance` takes `handle: { distancePx, hitRadiusPx }`, and
+    `<SceneCanvas>` / `<CanvasView>` turn it on when the selection overlay
+    paints one. An affordance `point` region takes a `standoff` for chrome that
+    floats a fixed distance off an edge.
+  - The rotate ring's minimum band, and its paint inset, are measured on screen
+    for a turned target (`pxExtent` and `annulusSemiAxes` take a rotation).
+  - Grid lines stay 1px on screen on both axes.
+  - Resize handles on a turned target are grabbable across the turned square
+    they are painted as, not a screen-aligned one. A `point` region takes
+    `turned: true` for this; `pointRegionFrame` is the one placement the
+    hit-test, the region's square paint and the debug hitbox all read, and
+    `screenAngleOf` the one angle the overlay turns its handles by.
+  - The `debug.slops` overlay draws the regions the hit-test walks — the same
+    affordance list, each region's square from `pointRegionFrame` — instead of
+    recomputing corner and anchor positions, so it now shows a custom
+    `selectTool.handleHitRadius`, turned handles, and anchors on every selected
+    path the hit-test offers them on.
+  - The hitbox debug overlay draws a world circle as the ellipse it lands as, a
+    rotated rect turned, and the new `polygon` `HitShape` a point region now
+    records.
+- dde2315: The slice tool moves into the kit as `useSliceTool`, and cuts click by click. Clicks place the cut one point at a time, with a live preview trailing to the pointer; Enter or a double-click cuts, Escape discards, Backspace takes back the last point, and a click on the first point closes the cut into a loop and cuts. A drag still cuts straight, and an Alt-drag along its trail. The tool registers `sliceAction` itself, so a consumer passes it `tools={{ slice }}` and publishes a `slice` dep, and no longer needs `actions={{ slice: sliceAction }}`. Additive.
+  
+  `splitPathByPolyline` now cuts out the region a loop in the cut encloses, instead of dropping the loop: a loop inside the fill becomes its own piece, taking any hole it surrounds, and leaves a hole in the piece around it. A closed cut counts as a loop, or, where it crosses the boundary, is cut as the chords it makes. A cut with a loop in it now returns one more piece than it did.
+
 ## 1.7.0
 
 ### Patch Changes

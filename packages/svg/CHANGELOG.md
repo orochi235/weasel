@@ -1,5 +1,267 @@
 # @weasel-js/svg
 
+## 1.7.1
+
+### Patch Changes
+
+- a7f2103: Underline, strikethrough and super/subscript now follow the font's own metrics
+  instead of fixed constants. `gen-font` bakes `post.underlinePosition` /
+  `underlineThickness`, `OS/2.yStrikeoutPosition` / `yStrikeoutSize` and the
+  `OS/2` super/subscript size and offset into a new optional `faceMetrics` block
+  in the atlas JSON, and the outline parser reads the same values onto
+  `OutlineFace.faceMetrics`, through one shared function, so an atlas and a TTF
+  of one font place rules and scripts identically. The overline keeps its
+  default offset and takes the underline's weight. A face with no metrics
+  (older atlases, the canvas tier, custom parsers) keeps the previous constants.
+  
+  This changes rendering for the bundled Inter: its underline sits lower
+  (0.170 em, was 0.10) and heavier (0.068 em, was 0.05), and `script: 'sub'`
+  drops by 0.075 em instead of 0.333 em, with scripts at 60.0% size. The
+  committed atlases are rebaked; the PNG is byte-identical.
+  
+  Additive API: `faceMetricsFromTables`, `faceMetricsOf`, `faceMetricsFor` and
+  the `FaceMetrics` types in `@weasel-js/font`; `scriptMetrics`,
+  `scriptMetricsFor`, `decorationMetrics` and `DEFAULT_DECORATION_METRICS` in
+  `@weasel-js/text` (re-exported from core); an optional `faceOf` argument to
+  `layoutMarkdown` and an optional `face` on `PositionedRun`. `SCRIPT_METRICS`
+  remains, now documented as the fallback rather than what every run gets.
+  
+  Fix: `resolveFontVariant` called from inside the glyph-ready notification of
+  an atlas that just landed returned a pending miss, because the load was still
+  marked in flight. A subscriber that re-resolves synchronously, as
+  `useSyncExternalStore` does, now sees the face.
+- 9bfdda9: **Breaking:** the mesh-gradient exports moved off `@weasel-js/core` onto a new
+  subpath, `@weasel-js/core/mesh`: `MESH_GRADIENT_KIND`, `MESH_BAKE_SIZE`,
+  `bakeMesh`, `cornerWeights`, `evalPatch`, `isMeshGradientFill`,
+  `isTensorPatch`, `isValidPatch`, `meshBounds`, `meshFromStops`,
+  `meshGradientXml`, `meshStops`, `patchBounds`, `patchCorner`, `seedMeshPatch`,
+  and the types `BakedMesh`, `MeshBox`, `MeshGradientFill`, `MeshPatch` and
+  `MeshPoint`. Change the import path; nothing else about them changed. Any
+  import from the subpath registers the kind, as importing them from the root
+  did.
+  
+  With esbuild and code splitting on, importing one symbol from
+  `@weasel-js/core` no longer ships the mesh paint: `import { asNodeId }`
+  bundled to 19,814 B and now bundles to 133 B. The lazily loaded mesh kind now
+  ships as one self-contained file that shares no module with the root barrel,
+  which is what esbuild needed.
+  
+  New: a `PaintKindEntry` can declare its shader programs as `programs`, keyed
+  by program id; registering the kind registers them, and re-registering the
+  same source is not a duplicate. New root type export: `ProgramSource`.
+- 33b7ac2: The `mesh-gradient` paint kind now loads on demand instead of shipping with
+  every import of `@weasel-js/core` (about 19 kB minified). A mesh fill that
+  arrives as data — a loaded document, an SVG import — draws nothing on the
+  first frame that meets it, starts the load, and `<SceneCanvas>` repaints it
+  when it lands. Importing anything from `@weasel-js/core/mesh` (`seedMeshPatch`,
+  `isMeshGradientFill`, `MeshEditor` in `@weasel-js/ui`, …) still registers it
+  at once.
+  
+  New: `warmPaintKinds(kinds?)` loads kinds ahead of their first use and
+  resolves once they are registered; with no list it loads every kind that has
+  a loader. Await it before `renderSceneToPixels` or `serializeSvg` on a
+  document that may hold a mesh paint — both are synchronous and cannot wait for
+  a load. `registerPaintKindLoader(id, load)` declares a kind of your own the
+  same way: `load` resolves with its `PaintKindEntry`, and it runs the first
+  time the kind is looked up. New type: `PaintKindLoader`.
+  
+  `<SceneCanvas>` now repaints whenever a paint kind registers, so a kind
+  registered after the canvas mounts draws without other help.
+  `serializeSvg` warns that an unregistered kind may only need loading, rather
+  than that it has no vector form.
+- 365c762: A pattern paint takes a `transform`: the tile's rotation, scale and skew about
+  its `origin`, as a `PatternTransform` `[a, b, c, d]` in SVG `matrix()` order.
+  `composePatternTransform({ rotation, scaleX, scaleY, skewX })` builds one and
+  `decomposePatternTransform` reads one back into those parts; both are exported
+  from `@weasel-js/paint` and `@weasel-js/core`. The GL renderer samples the tile
+  through it, and a transform with no inverse draws nothing.
+  
+  `@weasel-js/svg` writes the transform as `patternTransform="matrix(…)"`, with
+  the origin as its translation, and reads any `patternTransform` list back into
+  `origin` and `transform`.
+  
+  `PatternPicker` (and so `PaintInput`'s pattern mode) has a Rotation field that
+  edits the rotation and leaves scale and skew alone; picking another tile keeps
+  the rotation.
+  
+  Additive: a paint without `transform` paints and serializes as before.
+- 16a0476: Text runs carry a numeric weight. `StyledRun.fontWeight` (100–900) overrides the node's weight and the `bold` flag, which is now a preset over it: writing either one to a range drops the other. `numericWeight` and `isBoldWeight` (600 and up) are exported as the one reading of a weight.
+  
+  Taking bold off part of a bold node now writes `fontWeight: 400` over that part and leaves the node alone, instead of lowering the node and re-bolding the rest — so it works at any node weight, including 900, where it used to be refused. `SetFlagResult.applied` is gone, since the edit can no longer be declined. `effectiveRangeStyle` reports the `fontWeight` that renders and reads `bold` off it; `patchRangeStyle` lays an armed style over a range the way a write would.
+  
+  `listFontWeights(family)` in `@weasel-js/font` reports the weights a family has on the atlas and outline tiers. A new `font-weight` pref kind draws `FontWeightSelect`, which lists those weights (the nine CSS weights for a family with none on file) and reads the family from the `fontFamily` leaf beside it. The text tool's character options and the node panel's Weight field both use it. The overlay and SVG round-trip a run's weight; a tspan `font-weight` other than 700 now reads as the run's weight rather than being dropped.
+- 4cb55b7: Text can be set in small caps. `StyledRun` and `TextStyle` take
+  `fontVariantCaps: 'normal' | 'small-caps'`. A run overrides the node, and
+  `'normal'` on a run turns off small caps it would inherit. Lowercase letters
+  are drawn as capitals at a smaller size. The run's `text` is not rewritten, so
+  carets, selections and hit tests address what was typed. The small-caps
+  reading is applied after `textTransform`, as CSS does it.
+  
+  This is a synthesis, not the font's `smcp` feature. The small size is the
+  face's x-height over its cap height (`smallCapsScaleFor`). A face that states
+  neither height gets `SMALL_CAPS_SCALE`, 0.7, which is the factor Chromium and
+  WebKit use. `FaceMetrics` gains `xHeight` and `capHeight`, read from `OS/2`
+  on both tiers. The bundled Inter atlas carries them now.
+  
+  `ResolvedRun` gains an optional `sizeMap`, which holds the size each unit of
+  its text is drawn at. `fontSize` still sets the line height and the rules, so
+  a small-caps word keeps its line and gets one underline. The layout cache keys
+  on the size map. The outline-tier size gate reads the run's size, so one word
+  is never split across tiers.
+  
+  The edit overlay sets the lowercase letters of a small-caps run in
+  `<span data-small-caps>` pieces. It sizes them at the canvas scale, because a
+  browser's own synthesis uses a fixed factor. It re-splits the pieces as you
+  type. A plain-text edit now commits the overlay's DOM text instead of
+  `innerText`. `innerText` applies `text-transform`, so a node shown in capitals
+  committed the capitals as its text. `@weasel-js/svg` writes
+  `font-variant="small-caps"`, and `normal` on a tspan, and reads either back.
+  
+  All of this is additive.
+- 2399cd2: `<style>` rules inside `@media` and `@supports` now apply when their condition
+  holds, nested to any depth, where before every at-rule was skipped. A parse is
+  evaluated as one static render: by default a `screen` whose viewport is the
+  root's `width`/`height` (else its `viewBox`, else 300 × 150), with a light color
+  scheme and no hover or pointer. The new `ParseOptions.media` overrides any part
+  of that. Media queries follow Media Queries 4, including the range syntax
+  (`(400px < width <= 800px)`); an unknown feature never matches. `@supports`
+  holds only for declarations this parser honors. `<style media>` goes through
+  the same evaluator, so `media="screen and (min-width: 500px)"` works now too.
+  `@import` is still not fetched, and each one now adds an entry to `warnings`.
+  
+  This is additive. One behavior change: an SVG whose stylesheet has a matching
+  `@media`/`@supports` block now renders those rules. New exports:
+  `evaluateMediaQuery`, `DEFAULT_MEDIA_ENVIRONMENT`, `SvgMediaEnvironment`,
+  `evaluateSupports`, `SupportsOptions`.
+- 513c5a7: `<style>` rules inside `@layer` now apply, ranked as CSS Cascade 5 says,
+  where before the whole block was skipped. Named, anonymous and nested layers
+  work, as do dotted names (`@layer base.shapes`), the `@layer a, b;` statement
+  for fixing their order, and reopening a layer, which keeps its first position.
+  Layered rules rank below unlayered ones and a later layer beats an earlier one;
+  for `!important` the order reverses. Layer order is shared across every
+  `<style>` in the document, and a layer declared inside an `@media` or
+  `@supports` block that does not hold is not declared at all. `@container` is
+  still skipped, since a static parse has no containers.
+  
+  This is additive. One behavior change: an SVG whose styles sit in a layer now
+  renders them.
+- 8e5bcae: Every presentation property the SVG parser reads now goes through one reader,
+  and `@supports` asks that same reader, so a declaration `@supports` calls
+  honored is exactly one the parser applies without a warning. No public API
+  changes. Values the parser used to misread quietly are now read correctly or
+  reported in `warnings`:
+  
+  - `opacity`, `fill-opacity` and `stroke-opacity` accept percentages
+    (`50%` was read as fully opaque).
+  - `stroke-width`, `stroke-dasharray` and a `<text>`'s `font-size` no longer
+    take the number out of an unconverted unit silently: `stroke-width: 2em` is
+    still read as 2 but warns, a dash list with such a unit is dropped with a
+    warning, and `font-size: 150%` on `<text>` becomes 24 against the 16px
+    default instead of 150, with a warning.
+  - `font-style: oblique` is read as italic on `<text>` as well as `<tspan>`,
+    with a warning; `font-weight: lighter` on `<text>` is dropped instead of
+    kept as a string.
+  - `text-decoration` reports a token it does not model (`wavy`, a color);
+    `blink` is still dropped silently.
+  - `fill`/`stroke: context-fill | context-stroke` on a shape outside a marker paints
+    nothing, as SVG says, instead of black with a warning.
+  - `color: currentColor` inherits, and `stop-color: currentColor`, still black,
+    now warns.
+- fe9a91e: Add `warmSvg(nodes)` and `svgNeeds(nodes)` to `@weasel-js/svg`. `serializeSvg` is synchronous, and its missing-def warning used to point at `warmPaintKinds()`, which loads every lazily registered kind and fails when any unrelated one does. `svgNeeds` reads the serializer's own paint pre-pass, so it lists exactly the paint kinds the export writes as paint servers — fills and strokes, text and run paints, through nested groups — plus the faces whose font metrics size a sub- or superscript run with its own `baselineShift`. `warmSvg` loads only those. Core now exports `isPaintKindKnown`, and `@weasel-js/text` (re-exported by core) adds `resolveRunFace(run, style)`, the family, weight and style a run is set in, read without touching the font registry. Additive.
+- 3a68365: Add justified text. `TextAlign` gains `'justify'`: every line that wraps is
+  spread across the box by widening its word gaps equally, and a paragraph's last
+  line, or a line with no gap, sits at the start edge. `resolveAlign` maps
+  `justify` to that start edge. `LayoutRunsOpts.justify` and
+  `TextDrawCommand.justify` carry justification apart from the edge, so
+  `justify: true` with `align: 'center'` centers the last lines instead (CSS
+  `text-align-last`). The edit overlay sets `text-align: justify` and pins
+  `text-align-last` to the same edge, and the property panel's Align bar gets a
+  Justify segment with a new `textAlignJustify` icon. SVG export writes a
+  justified node at its start edge and records `data-weasel-align="justify"`,
+  which the reader turns back into `align: 'justify'`.
+  
+  This is additive. Code that switches over `TextAlign` exhaustively has a new
+  value to handle.
+- Updated dependencies [6f59206]
+- Updated dependencies [716ea36]
+- Updated dependencies [2d7003a]
+- Updated dependencies [e17fe2c]
+- Updated dependencies [f457e7c]
+- Updated dependencies [8635031]
+- Updated dependencies [276bad1]
+- Updated dependencies [efc5727]
+- Updated dependencies [108551d]
+- Updated dependencies [a5bc201]
+- Updated dependencies [4e18c9f]
+- Updated dependencies [112c781]
+- Updated dependencies [ac2e76e]
+- Updated dependencies [9c164e2]
+- Updated dependencies [85d62a7]
+- Updated dependencies [dfd926f]
+- Updated dependencies [3d80c9f]
+- Updated dependencies [a1ecaac]
+- Updated dependencies [886fefd]
+- Updated dependencies [04b0b96]
+- Updated dependencies [27bcf57]
+- Updated dependencies [a7f2103]
+- Updated dependencies [b2fd89a]
+- Updated dependencies [4212d2d]
+- Updated dependencies [12263bc]
+- Updated dependencies [b5cc59f]
+- Updated dependencies [e2f1968]
+- Updated dependencies [1524403]
+- Updated dependencies [bfc4b21]
+- Updated dependencies [f046160]
+- Updated dependencies [9f83b33]
+- Updated dependencies [3c1def2]
+- Updated dependencies [ae6e8ac]
+- Updated dependencies [4b570e5]
+- Updated dependencies [251fb64]
+- Updated dependencies [9bfdda9]
+- Updated dependencies [b554ee0]
+- Updated dependencies [702829d]
+- Updated dependencies [9cad63b]
+- Updated dependencies [b228015]
+- Updated dependencies [53cdd41]
+- Updated dependencies [33b7ac2]
+- Updated dependencies [fa67cbf]
+- Updated dependencies [8f68fa8]
+- Updated dependencies [25448ee]
+- Updated dependencies [88c1ae3]
+- Updated dependencies [dcc9834]
+- Updated dependencies [365c762]
+- Updated dependencies [941e941]
+- Updated dependencies [b20df31]
+- Updated dependencies [55ef61f]
+- Updated dependencies [712de19]
+- Updated dependencies [67d95c8]
+- Updated dependencies [8a68b6c]
+- Updated dependencies [16a0476]
+- Updated dependencies [6f03bf7]
+- Updated dependencies [72379f6]
+- Updated dependencies [7f7d153]
+- Updated dependencies [d9cdff1]
+- Updated dependencies [63d0ece]
+- Updated dependencies [f8bde12]
+- Updated dependencies [685a086]
+- Updated dependencies [90a4686]
+- Updated dependencies [7e08265]
+- Updated dependencies [d60a422]
+- Updated dependencies [dde2315]
+- Updated dependencies [4cb55b7]
+- Updated dependencies [fb21799]
+- Updated dependencies [fe9a91e]
+- Updated dependencies [3a68365]
+- Updated dependencies [43ad590]
+- Updated dependencies [4cef954]
+- Updated dependencies [c4cc60f]
+- Updated dependencies [6df279e]
+- Updated dependencies [09ff2c1]
+- Updated dependencies [637945e]
+- Updated dependencies [5308126]
+  - @weasel-js/core@1.7.1
+  - @weasel-js/geom@1.7.1
+
 ## 1.7.0
 
 ### Patch Changes

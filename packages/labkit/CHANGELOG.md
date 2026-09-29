@@ -1,5 +1,188 @@
 # @weasel-js/labkit
 
+## 1.7.1
+
+### Patch Changes
+
+- 3cfb09a: Selecting a mark in one annotation target now clears the selection in the trial's other targets. This changes the default: before, each target kept its own selection, so clicking in one left a selection standing in another and `selection()` reported both. An instrument wanting the old behavior declares `annotations: { selection: 'per-target' }` (also accepted by `createAnnotationStore`, as a value or a thunk); the new `AnnotationSelectionMode` type names the two modes. Under the default, `setSelection` keeps only the ids in the first id's target. A selection change that touches several targets — a click that clears another, or a `setSelection` spanning several — now reaches `subscribe` as one event, fired once every target has its final selection.
+- ac2e76e: A labkit annotation capture of a text mark no longer comes out without its
+  glyphs when the default font was registered `{ lazy: true }` and nothing had
+  drawn text yet: the raster route now waits for fonts and paint kinds to load
+  before it renders.
+  
+  Additive: core exports `warmRender(opts?)`, which runs `warmFonts` and
+  `warmPaintKinds` together — the one call to await before a synchronous
+  `renderSceneToPixels`, `RasterSession.render` or `renderDebugSnapshot`.
+  `opts.families` and `opts.paintKinds` narrow each half.
+- 27bcf57: Every op factory's argument type can now be imported by name from `@weasel-js/core`: `InsertArgs`, `DeleteArgs`, `TransformArgs`, `ReparentArgs`, `SetDataArgs`, `SetLayerArgs`, `SetPathArgs`, `SetTextArgs`, `SetSelectionArgs`, `ReorderArgs` and `MoveToIndexArgs`, with the shapes they reference, `SiblingSlot`, `PlacedNode` and `ReorderRestoreEntry`. Core also exports `KeyBinding` (the parameter of `matchesKeyBinding`), `rangeWeight` and `unboldPatch`. `@weasel-js/diagram` exports `ForceBody`, the element type of `ForceRelaxation.bodies`.
+  
+  The default align, distribute, boolean and edit icons are now marked `@experimental` on each component; the tag had sat on a file header where it marked nothing.
+  
+  Breaking: `DispatcherViewTarget` and `ViewIdResolver` are off `@weasel-js/routing/react`. They moved to `@weasel-js/routing/internal`, which is not public API. `rectsEqual` is off `@weasel-js/labkit/surface`.
+- b2fd89a: geom adds `boxContainsBox(outer, inner)`, the edge-inclusive test for one box
+  wholly holding another. Core's region hit test, labkit's `fracEncloses`,
+  `fracContains` and drop-over-canvas check, and labkit's internal point bounds now
+  go through geom's box functions instead of their own copies. labkit's `WorldRect`
+  is now an alias of geom's `Rect`, which has the same shape. Badge's
+  `ChamferedRect` base uses the shared `polygonSampler` rather than a copy of it.
+- 9404457: The lab switcher's menu no longer renders every page in the header title's bold weight, so the open page is the only bold entry again.
+- dcba7ff: Values labkit reads outside render — in event handlers, frame loops, the surface's clears and painters, and an annotation store's `targets` and `config` — now come only from renders that committed. A render React started and then threw away (a transition that suspended, or one interrupted by a more urgent update) used to leave its props behind for the next event to read. For example, a camera could report and set the abandoned render's view, a loupe could aim or sample while it was turned off, and an annotation pane could open the WebGL context of a buffer it never committed to. Chrome that reads a trial's annotation store while it renders now renders again once a change to the trial's state, view or config has committed.
+- 3af4a23: labkit's declarations now import the weasel packages it depends on (`@weasel-js/ui`,
+  `@weasel-js/quantity`, `@weasel-js/loupe`, `@weasel-js/svg`) instead of inlining copies of
+  their types. The inlined copies included quantity's `Display` and `UnitTable`, which labkit never
+  re-exported, so a consumer whose inferred types reached them could get TS2742. The JavaScript
+  still bundles those packages; only the `.d.ts` files changed, and the types they name are the
+  same ones those packages publish.
+- 1ffa044: The loupe moves out of labkit's main bundle and onto the shape the overview already has: `<TrialLoupe>` comes from `@weasel-js/labkit/loupe`, and the instrument mounts it in its own content — in a canvas instrument's `render` (inside the stack, so the lens re-draws its layers), in a stage's `overlay`, or wrapped around DOM content with a `render` of its own. It reads the trial through context: the canvas stack or stage around it, and the trial's new `LoupeSwitchContext`, which offers the Loupe toolbar toggle while any lens is mounted. `enabled` takes a lens off that switch, `view` overrides the camera a DOM lens composes onto, and `hostRef` names the element to track.
+  
+  Breaking: the `loupe` field on an instrument is gone, and nothing loupe-related is exported from the root `@weasel-js/labkit` any more. `LoupeCapability` is now `LoupeOptions` (the props `<TrialLoupe>` spreads), `LoupeDeclaration` is removed, `resolveLoupe` takes options rather than `true`, `LoupeRenderArgs` no longer carries `state` / `config` (the instrument closes over its own), `useLoupe` takes `options` rather than `capability`, and the DOM host class is `.lk-loupe-host` rather than `.lk-trial__loupe-host`. Additive: `TrialChromeContext.hasLoupe`, `CanvasStackSurface.worldSpec`, a `transient` set on `suppressContributions`, and `TRANSIENT_BUILTINS` from `/chrome`, so `suppress={['loupe']}` still works before the lens has mounted.
+- 65d6278: Moving or resizing an annotation now carries its drawn geometry with it. A point, line, arrow or freehand mark used to keep drawing at its original place after `update({ frac })` or a drag in the pane moved its bounds, while clicks were picked at the new place. A mark's vertices are now stored in `AnnotationData.shape` as fractions of its own bounds, so there is one position to move; `Annotation.points` still reads back in the target's content box, and a point mark's position is its bounds. `update({ points })` without `frac` now moves the bounds to enclose the new points. Saved documents that stored `points` are converted when they load.
+  
+  Breaking: `markCommands` and `markSvgNodes` no longer take a content box, since geometry is placed from the pose alone — drop the second argument. `AnnotationData.points` is now `AnnotationData.shape`.
+- 27350a1: A `point` annotation's ring now holds a fixed screen size, like a selection handle, instead of growing and shrinking with the picture, and clicking anywhere in the ring picks it at every zoom. `markCommands` and `markSvgNodes` take an optional view scale for this; without one the ring is drawn as though a world unit were a pixel. Captures size the ring in the export's own pixels.
+- e775a12: Add `--wzl-font-numeric` and the `Oswald Tabular` face behind it. Oswald has no tabular figures, so `font-variant-numeric: tabular-nums` aligned nothing in the UI face. `Oswald Tabular` is Oswald's ten digits alone, each centered in the widest digit's width at every weight from 200 to 700, plus a figure space (U+2007) of that width; the token puts it in front of `--wzl-font-ui`, so an element set in `--wzl-font-numeric` gets equal-width digits and every other character from the UI face unchanged. `faces.css` declares the new face, and labkit's `dist/fonts` picks up the file.
+  
+  The readouts, counts and tick labels in Slider, RangeSlider, Jog, Timeline, Plot2D, Prefs and TokenPanel, labkit's zoom readout and job count, and forge's a11y and info panels now use it. `DetailList`'s figures mode moves from `--wzl-font-mono` to it, keeping the list in the UI face.
+- 7b7ca3c: `useRovingTabIndex` now finds its items in the DOM and writes their `tabIndex` itself, so it serves a container of arbitrary children as well as a data-driven bar, and labkit's `Toolbar`, `PaletteRegion` and `ViewportRegion` use it in place of labkit's private copy. Attach `rootRef` and `onKeyDown` to the container; the items take neither. Options: `itemSelector` (default `'button, [role="button"]'`), `orientation` (`'horizontal'`, `'vertical'` or the default `'both'`; a one-axis bar leaves the cross-axis arrows to the page), `tabStopIndex`, `onNavigate`, `onActivate`. The tab stop now follows focus, so Shift+Tab leaves a bar instead of landing back on its stop, and a bar with `tabStopIndex` returns the stop there once focus leaves. `aria-disabled="true"` items are skipped like `disabled` ones, an arrow pressed in a non-item control inside the container (a slider, a field) is left to that control, and a roving container nested in another keeps its own items. Breaking: `items`, `itemClassName`, `tabIndexFor` and the per-item `onKeyDown(index)` are gone, and `RovingItem` is replaced by `RovingOrientation`.
+  
+  `ToolButton` drops its `tabbable` and `onKeyDown` props: the toolbar's roving
+  hook sets `tabIndex` and handles the keys, and a `ToolButton` outside a
+  toolbar is now an ordinary focusable button instead of one left out of the tab
+  order by default.
+- c2935fa: A select draws an option's icon beside its label, in the trigger and in the list.
+  `SelectOption` and `SelectItem` take a new `icon`, and an enum field drawn as a
+  select passes it the option's `glyph` when that is drawn rather than a letter —
+  so a labkit `ConfigOption` with an `icon` now shows it in a select as a
+  segmented row already did.
+- 70a058f: A trial's zoom control no longer runs out past the viewport cluster in a narrow trial: once it has wrapped onto its own row, its slider shrinks toward its 64px floor instead of holding 108px.
+- 637945e: `warmRender` can load just what one render needs. Pass it the render,
+  `warmRender({ render: args })` with the args `renderSceneToPixels` or
+  `RasterSession.render` will take, or `{ commands }` already built. It builds
+  the commands the way the render does and loads only the font faces their text
+  is set in and the paint kinds they name. A capture no longer loads the mesh
+  chunk when it draws no mesh, and no longer fails because some unrelated lazy
+  font failed to load. It still rejects when a face the render needs fails.
+  `families` and `paintKinds` still override, and `warmRender()` with no render
+  still loads everything.
+  
+  labkit's raster capture and the RenderToPixels and DebugOverlay demos now warm
+  only what they are about to render.
+  
+  Additive: core exports `renderNeeds(commands)`, which returns the fonts and
+  paint kinds a command list draws with, and `debugSnapshotArgs(args)`, which
+  returns the `renderSceneToPixels` args behind `renderDebugSnapshot`.
+  `warmFonts` also takes a `FontRequest` (`{ family, weight?, style? }`, exported
+  from `@weasel-js/font` and core). A request loads what resolving that one
+  variant draws with: the exact variant, or the whole family when that variant
+  was never registered, the substitute family when the policy would swap one in,
+  and the variant's outline face. Unlike a bare family name, a request for a
+  family nothing registered resolves instead of rejecting.
+- Updated dependencies [6f59206]
+- Updated dependencies [716ea36]
+- Updated dependencies [2d7003a]
+- Updated dependencies [e17fe2c]
+- Updated dependencies [f457e7c]
+- Updated dependencies [8635031]
+- Updated dependencies [276bad1]
+- Updated dependencies [efc5727]
+- Updated dependencies [108551d]
+- Updated dependencies [a5bc201]
+- Updated dependencies [4e18c9f]
+- Updated dependencies [112c781]
+- Updated dependencies [ac2e76e]
+- Updated dependencies [9c164e2]
+- Updated dependencies [85d62a7]
+- Updated dependencies [dfd926f]
+- Updated dependencies [3d80c9f]
+- Updated dependencies [a1ecaac]
+- Updated dependencies [886fefd]
+- Updated dependencies [04b0b96]
+- Updated dependencies [e54ff4f]
+- Updated dependencies [1291788]
+- Updated dependencies [27bcf57]
+- Updated dependencies [db79658]
+- Updated dependencies [a7f2103]
+- Updated dependencies [b2fd89a]
+- Updated dependencies [4212d2d]
+- Updated dependencies [12263bc]
+- Updated dependencies [b5cc59f]
+- Updated dependencies [e2f1968]
+- Updated dependencies [1524403]
+- Updated dependencies [bfc4b21]
+- Updated dependencies [f046160]
+- Updated dependencies [9f83b33]
+- Updated dependencies [3c1def2]
+- Updated dependencies [ae6e8ac]
+- Updated dependencies [4b570e5]
+- Updated dependencies [251fb64]
+- Updated dependencies [9bfdda9]
+- Updated dependencies [e775a12]
+- Updated dependencies [b554ee0]
+- Updated dependencies [702829d]
+- Updated dependencies [9cad63b]
+- Updated dependencies [b228015]
+- Updated dependencies [53cdd41]
+- Updated dependencies [33b7ac2]
+- Updated dependencies [30b7fd3]
+- Updated dependencies [fa67cbf]
+- Updated dependencies [8f68fa8]
+- Updated dependencies [25448ee]
+- Updated dependencies [88c1ae3]
+- Updated dependencies [dcc9834]
+- Updated dependencies [365c762]
+- Updated dependencies [d30a675]
+- Updated dependencies [0a9b769]
+- Updated dependencies [51eb721]
+- Updated dependencies [941e941]
+- Updated dependencies [b20df31]
+- Updated dependencies [55ef61f]
+- Updated dependencies [3755e17]
+- Updated dependencies [712de19]
+- Updated dependencies [67d95c8]
+- Updated dependencies [8a68b6c]
+- Updated dependencies [7b7ca3c]
+- Updated dependencies [16a0476]
+- Updated dependencies [6f03bf7]
+- Updated dependencies [72379f6]
+- Updated dependencies [7f7d153]
+- Updated dependencies [d9cdff1]
+- Updated dependencies [63d0ece]
+- Updated dependencies [56d1ffb]
+- Updated dependencies [c2935fa]
+- Updated dependencies [f8bde12]
+- Updated dependencies [685a086]
+- Updated dependencies [ee93ce5]
+- Updated dependencies [6010b5a]
+- Updated dependencies [ad143ec]
+- Updated dependencies [90a4686]
+- Updated dependencies [7e08265]
+- Updated dependencies [d60a422]
+- Updated dependencies [dde2315]
+- Updated dependencies [4cb55b7]
+- Updated dependencies [fb21799]
+- Updated dependencies [2399cd2]
+- Updated dependencies [513c5a7]
+- Updated dependencies [8e5bcae]
+- Updated dependencies [fe9a91e]
+- Updated dependencies [897fb47]
+- Updated dependencies [3a68365]
+- Updated dependencies [43ad590]
+- Updated dependencies [21c21dc]
+- Updated dependencies [4cef954]
+- Updated dependencies [c4cc60f]
+- Updated dependencies [6df279e]
+- Updated dependencies [09ff2c1]
+- Updated dependencies [637945e]
+- Updated dependencies [5308126]
+  - @weasel-js/core@1.7.1
+  - @weasel-js/geom@1.7.1
+  - @weasel-js/theme@1.7.1
+  - @weasel-js/ui@1.7.1
+  - @weasel-js/svg@1.7.1
+  - @weasel-js/quantity@1.7.1
+  - @weasel-js/kernel3d@1.7.1
+  - @weasel-js/loupe@1.7.1
+
 ## 1.7.0
 
 ### Patch Changes

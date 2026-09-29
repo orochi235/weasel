@@ -1,5 +1,222 @@
 # @weasel-js/hud
 
+## 1.7.1
+
+### Patch Changes
+
+- 8635031: Every text tier now places its baseline from the ascent and descent a browser
+  sets the face with, and centers the face in its line the way CSS does: half
+  the leading above the ascent. A face taller than its line box, such as Papyrus
+  at `lineHeight: 1.2`, gets negative leading and overflows the box, which keeps
+  its height. Before, a line hung its baseline one ascent below the line top
+  with no leading, so glyphs sat half the leading away from where CSS puts
+  them: high in a roomy line, low in a tight one, where a tall face overflowed
+  only at the bottom.
+  
+  The ascent rule is `verticalMetricsFromTables` (new, additive, in
+  `@weasel-js/font`): `OS/2` typo metrics when the font sets
+  `USE_TYPO_METRICS`, otherwise `hhea`. Firefox and every Linux engine follow it;
+  Chromium and WebKit on macOS read `hhea` regardless, and the edit overlay's
+  measured correction covers the difference there. `gen-font` bakes the result
+  into the atlas's `faceMetrics` block as `ascent` / `descent`, the outline
+  parser reads the same values (and reports them as `OutlineFace.ascender`), and
+  the canvas tier records the browser's own, measured at a 1000px em rather than
+  at the 48px bake size. An atlas or custom parser that states no ascent and
+  descent keeps the previous placement.
+  
+  Rendering changes: text in the bundled Inter at `lineHeight: 1.2` moves up by
+  0.005 em. Canvas-tier faces move down by half their leading: Georgia by 1.3px
+  and Arial by 1.7px at 40px. The committed Inter atlases are rebaked; the PNG is
+  byte-identical.
+- 40a418d: A bare HUD window whose interior passes (`titlebar: false, interior: 'pass'`) can be moved again: it grows a dotted grip strip across its top, sized by the new `metrics.grip` (14 CSS px by default), and dragging it translates the window. The interior still passes input, and the content rect now starts below the strip.
+- 3ba513c: A HUD button's label now sits centered in the button. It used to be placed as though the text's `y` were a baseline, but a text command's `y` is the top of the line, so the label hung from just below center and its descenders reached the bottom edge. The button now centers the laid-out line box in its height, the way a window's title bar already did.
+- bfc4b21: `attachHud` reuses a widget's draw commands across repaints until something
+  it draws from changes, instead of asking every widget for fresh commands on
+  every repaint. A static 10-glyph text widget used to rebuild its command, and so
+  re-lay out its glyphs, on every frame.
+  
+  Additive. A widget opts in with the new `Widget.deps(ctx)`, which works like
+  `RenderLayer.deps`: the HUD reuses the previous commands while every entry is
+  `Object.is`-equal to the last call's, and also rebuilds when the widget's
+  bounds, the theme, the default font, the canvas size or the widget's focus
+  change. Every kit widget declares it, invalidated by its own setters and
+  pointer state. A hand-written widget without `deps` is drawn on every repaint,
+  as before; a widget declaring it must treat the commands it returned as
+  immutable. A window's `content` painter is still called on every repaint.
+  A text widget that only moved keeps its runs array, so its layout stays cached.
+  
+  `@weasel-js/core` exports `depsUnchanged`, the comparison `RenderLayer.deps`
+  uses.
+- bef8aec: HUD widgets take keyboard focus. Additive: a `Hud` now holds one focused
+  widget (`focused`, `focus()`, `moveFocus()`, `tabOrder()`, `subscribeFocus()`),
+  and a widget opts in with `focusable`, orders itself with `tabOrder`, names
+  itself with `accessibleName`, and receives keys through `onKey`, returning
+  whether it handled each one. A press on a focusable widget focuses it, a press
+  anywhere else blurs, and Tab / Shift+Tab walk the focusable widgets while the
+  canvas holds DOM focus. A key the focused widget handles never reaches the
+  canvas's key bindings; one it declines falls through to them. Keyboard focus
+  paints a ring in `--wzl-focus-ring`, and a polite live region announces the
+  focused widget's name. Buttons are focusable by default and press on Enter or
+  Space; pass `focusable: false` to opt one out.
+- 6fe0a4d: The README now says when HUD text is cheaper than a DOM overlay and when it is not, from a new benchmark (`tests/perf/hud-vs-dom.spec.ts`). Documentation only; no API change.
+- 3c1def2: `registerFont` takes a fifth argument, `{ lazy: true }`, which fetches nothing
+  until text first lays out in that family — so a scene with no text never
+  downloads the atlas. Until the atlas lands, a run set in the family lays out as
+  nothing rather than in a fallback face's metrics, and `<SceneCanvas>` repaints
+  it when the atlas arrives. The returned promise settles with that load, so it
+  never settles for a face no text uses; don't `await` it at startup. New type:
+  `RegisterFontOptions`.
+  
+  A family whose atlas is still fetching, eagerly or lazily, now outranks the
+  outline tier and the `'substitute'` fallback while it loads: text waits for the
+  real face instead of laying out in another one and reflowing when it arrives.
+  The same holds for a registered-but-unloaded exact variant, which is no longer
+  faked from a sibling weight in the meantime. `listFonts` and `listFontWeights`
+  report lazily registered faces before they load.
+  
+  `@weasel-js/hud` registers its bundled Inter lazily, so attaching a HUD whose
+  widgets draw no text no longer downloads it. `registerDefaultFont`'s promise now
+  settles when a widget first lays out text.
+- 9cad63b: The text edit overlay now sets its glyphs in the face the canvas draws. A family
+  the canvas draws from a baked atlas or from outlines — `sans-serif` registered
+  to Inter, say — used to reach the overlay as a bare CSS name, which the browser
+  resolved to its own face (Helvetica on macOS), so "Hxgd" at 72px ended 12px
+  short of the canvas. New `cssFontFamily(family, variant)` answers the CSS
+  `font-family` for whatever the canvas draws: a private `FontFace` built from the
+  family's `registerFontOutlines` file, with the family name as fallback. A family
+  drawn through the browser (`registerCanvasFont`) comes back unchanged. An atlas
+  with no font file cannot give the DOM its face, and says so once in the console;
+  register the file it was baked from with `registerFontOutlines`.
+  `OutlineFontOptions.cssSrc` names the `@font-face` source where the bytes won't
+  do, and `enableLocalFontOutlines` sets it to `local(<PostScript name>)`.
+  
+  The bundled Inter atlas carries the font's own advances and kerning. It used to
+  lay out on whole-pixel advances at its 32px bake size with no kerning at all, so
+  "Hxgd" at 72px set 182.25px wide against the 179.44px every browser gives the
+  same face, and "AVATAR" 22px wide of it. `gen:font` now writes advances at full
+  precision and kerning pairs read from the font's GPOS table, and the atlas is
+  rebaked from `inter.ttf`. Text set in it changes width slightly.
+  
+  Outline faces kern like a browser too. opentype.js skips GPOS extension
+  lookups, which is where Inter keeps nearly all its kerning; the outline tier now
+  reads pair kerning from GPOS itself.
+- 4cb55b7: Text can be set in small caps. `StyledRun` and `TextStyle` take
+  `fontVariantCaps: 'normal' | 'small-caps'`. A run overrides the node, and
+  `'normal'` on a run turns off small caps it would inherit. Lowercase letters
+  are drawn as capitals at a smaller size. The run's `text` is not rewritten, so
+  carets, selections and hit tests address what was typed. The small-caps
+  reading is applied after `textTransform`, as CSS does it.
+  
+  This is a synthesis, not the font's `smcp` feature. The small size is the
+  face's x-height over its cap height (`smallCapsScaleFor`). A face that states
+  neither height gets `SMALL_CAPS_SCALE`, 0.7, which is the factor Chromium and
+  WebKit use. `FaceMetrics` gains `xHeight` and `capHeight`, read from `OS/2`
+  on both tiers. The bundled Inter atlas carries them now.
+  
+  `ResolvedRun` gains an optional `sizeMap`, which holds the size each unit of
+  its text is drawn at. `fontSize` still sets the line height and the rules, so
+  a small-caps word keeps its line and gets one underline. The layout cache keys
+  on the size map. The outline-tier size gate reads the run's size, so one word
+  is never split across tiers.
+  
+  The edit overlay sets the lowercase letters of a small-caps run in
+  `<span data-small-caps>` pieces. It sizes them at the canvas scale, because a
+  browser's own synthesis uses a fixed factor. It re-splits the pieces as you
+  type. A plain-text edit now commits the overlay's DOM text instead of
+  `innerText`. `innerText` applies `text-transform`, so a node shown in capitals
+  committed the capitals as its text. `@weasel-js/svg` writes
+  `font-variant="small-caps"`, and `normal` on a tspan, and reads either back.
+  
+  All of this is additive.
+- Updated dependencies [6f59206]
+- Updated dependencies [716ea36]
+- Updated dependencies [2d7003a]
+- Updated dependencies [e17fe2c]
+- Updated dependencies [f457e7c]
+- Updated dependencies [8635031]
+- Updated dependencies [276bad1]
+- Updated dependencies [efc5727]
+- Updated dependencies [108551d]
+- Updated dependencies [a5bc201]
+- Updated dependencies [4e18c9f]
+- Updated dependencies [112c781]
+- Updated dependencies [ac2e76e]
+- Updated dependencies [9c164e2]
+- Updated dependencies [85d62a7]
+- Updated dependencies [dfd926f]
+- Updated dependencies [3d80c9f]
+- Updated dependencies [a1ecaac]
+- Updated dependencies [886fefd]
+- Updated dependencies [04b0b96]
+- Updated dependencies [e54ff4f]
+- Updated dependencies [1291788]
+- Updated dependencies [27bcf57]
+- Updated dependencies [a7f2103]
+- Updated dependencies [edabd62]
+- Updated dependencies [7be3713]
+- Updated dependencies [b2fd89a]
+- Updated dependencies [4212d2d]
+- Updated dependencies [12263bc]
+- Updated dependencies [b5cc59f]
+- Updated dependencies [e2f1968]
+- Updated dependencies [1524403]
+- Updated dependencies [bfc4b21]
+- Updated dependencies [f046160]
+- Updated dependencies [9f83b33]
+- Updated dependencies [3c1def2]
+- Updated dependencies [ae6e8ac]
+- Updated dependencies [4b570e5]
+- Updated dependencies [251fb64]
+- Updated dependencies [9bfdda9]
+- Updated dependencies [e775a12]
+- Updated dependencies [b554ee0]
+- Updated dependencies [702829d]
+- Updated dependencies [9cad63b]
+- Updated dependencies [b228015]
+- Updated dependencies [53cdd41]
+- Updated dependencies [33b7ac2]
+- Updated dependencies [fa67cbf]
+- Updated dependencies [8f68fa8]
+- Updated dependencies [25448ee]
+- Updated dependencies [88c1ae3]
+- Updated dependencies [dcc9834]
+- Updated dependencies [365c762]
+- Updated dependencies [941e941]
+- Updated dependencies [b20df31]
+- Updated dependencies [55ef61f]
+- Updated dependencies [712de19]
+- Updated dependencies [67d95c8]
+- Updated dependencies [8a68b6c]
+- Updated dependencies [16a0476]
+- Updated dependencies [6f03bf7]
+- Updated dependencies [72379f6]
+- Updated dependencies [7f7d153]
+- Updated dependencies [d9cdff1]
+- Updated dependencies [63d0ece]
+- Updated dependencies [f8bde12]
+- Updated dependencies [685a086]
+- Updated dependencies [90a4686]
+- Updated dependencies [7e08265]
+- Updated dependencies [d60a422]
+- Updated dependencies [dde2315]
+- Updated dependencies [4cb55b7]
+- Updated dependencies [fb21799]
+- Updated dependencies [fe9a91e]
+- Updated dependencies [3a68365]
+- Updated dependencies [43ad590]
+- Updated dependencies [4cef954]
+- Updated dependencies [c4cc60f]
+- Updated dependencies [6df279e]
+- Updated dependencies [09ff2c1]
+- Updated dependencies [637945e]
+- Updated dependencies [5308126]
+  - @weasel-js/core@1.7.1
+  - @weasel-js/geom@1.7.1
+  - @weasel-js/font@1.7.1
+  - @weasel-js/theme@1.7.1
+  - @weasel-js/paint@1.7.1
+  - @weasel-js/loupe@1.7.1
+
 ## 1.7.0
 
 ### Patch Changes
