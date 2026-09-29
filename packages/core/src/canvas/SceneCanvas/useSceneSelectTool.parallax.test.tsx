@@ -115,3 +115,12 @@ describe('useSceneSelectTool — a container and its child on different planes',
     expect(result.current.pickEvery(70, 70)).toEqual([]);
   });
 });
+
+describe('useSceneSelectTool — boxing a pose on a plane', () => {
+  it('boxes a pose the node is not yet at where the plane would draw it', () => {
+    const r = harness();
+    // An in-flight pose 100 right of the stored one, carried the plane's 300.
+    expect(r.current.boundsOfPose('hill', { x: 100, y: 0, width: 50, height: 50 }))
+      .toEqual({ x: 400, y: 0, width: 50, height: 50 });
+  });
+});

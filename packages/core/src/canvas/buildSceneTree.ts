@@ -6,8 +6,7 @@ import type { Path } from 'features/paths/types';
 import { definesFrame } from 'core/scene/effectivePose';
 import { deriveParallaxView, planeMap, type ParallaxOpts } from 'core/viewport/parallax';
 import { scenePlaneOf } from './pickWalk';
-import { clipCarrier } from './planeClips';
-import { mat3 } from '../renderer/math/mat3';
+import { clipCarrier, planeTransform } from './planeClips';
 
 /**
  * The scene-tree reading surface `buildSceneTree` walks. A `SceneCanvasAdapter`
@@ -162,19 +161,8 @@ export function buildSceneTree<
     if (!layer.visible) continue;
     if (forLayer !== undefined && layer.id !== forLayer) continue;
     const children = buckets.get(layer.id) ?? [];
-    out.push(layer.parallax
-      ? { kind: 'group', transform: planeToCamera(view, layer.parallax), children }
-      : { kind: 'group', children });
+    const transform = layer.parallax ? planeTransform(planeMap(view, layer.parallax), null) : undefined;
+    out.push(transform ? { kind: 'group', transform, children } : { kind: 'group', children });
   }
   return out;
-}
-
-/** The plane's world expressed in the camera's: the inverse of `planeMap`. */
-function planeToCamera(camera: View, parallax: ParallaxOpts) {
-  const m = planeMap(camera, parallax);
-  return mat3.translated(
-    mat3.scaled(mat3.identity(), 1 / m.scale.x, 1 / m.scale.y),
-    -m.offset.x,
-    -m.offset.y,
-  );
 }

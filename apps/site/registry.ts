@@ -362,7 +362,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'parallax',
     title: 'Parallax',
     category: 'Viewport',
-    description: 'Four planes move at their own rate under one camera. Sky and ground are paint: tiled render layers wrapped by createParallaxLayer. Hills and trees are scene nodes on layers declaring `parallax`, so SceneCanvas draws them through their plane and a click or marquee picks them where they are drawn. Play intro tweens every plane\'s anchor with the animator — through a ParallaxPlane for the paint, and scene.setLayerParallax inside scene.untracked for the scene layers.',
+    description: 'Four planes move at their own rate under one camera. Sky and ground are paint: tiled render layers wrapped by createParallaxLayer. Hills and trees are scene nodes on layers declaring `parallax`, so SceneCanvas draws them through their plane, and picking and editing — a click, a marquee, a drag, a resize or rotate handle — land on them where they are drawn, zooming planes included. Play intro tweens every plane\'s anchor with the animator — through a ParallaxPlane for the paint, and scene.setLayerParallax inside scene.untracked for the scene layers.',
     hint: 'scroll to pan · click or marquee a hill or tree · sky 0.1× · hills 0.4× · ground 1:1 · trees 1.3×',
     load: () => import('./demos/ParallaxDemo').then((m) => m.ParallaxDemo),
     path: 'apps/site/demos/ParallaxDemo.tsx',

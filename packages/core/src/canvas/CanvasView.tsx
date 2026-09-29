@@ -273,10 +273,18 @@ export function CanvasView(props: CanvasViewProps): null {
     () => (surfaceBoundsOf ? (id: string) => surfaceBoundsOf(id, camera()) : undefined),
     [surfaceBoundsOf, camera],
   );
+  const surfaceBoundsOfPose = inputs?.boundsOfPose;
+  const boundsOfPose = useMemo(
+    () => (surfaceBoundsOfPose
+      ? (id: string, pose: unknown) => surfaceBoundsOfPose(id, pose, camera())
+      : undefined),
+    [surfaceBoundsOfPose, camera],
+  );
 
   const { helpers } = useViewHelpers<unknown>({
     ...(inputs ?? NO_INPUTS),
     boundsOf,
+    boundsOfPose,
     ...own,
     selection: selection.current,
     getIsVisible: () =>

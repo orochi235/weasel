@@ -349,6 +349,9 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * scene-slot layer config rather than this prop.
    */
   boundsOf?: (id: string) => Bounds | null;
+  /** Bounds of `id` drawn at an in-flight pose — how chrome boxes a preview.
+   *  Defaults to the `poseDescriptor`'s box of that pose. */
+  boundsOfPose?: (id: string, pose: TPose) => Bounds | null;
   /**
    * Custom pointer-to-world coordinate transform. When supplied, overrides the
    * default `(clientX - canvasRect.left) / scale + pan` calculation. Useful
@@ -812,6 +815,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     layers: layersMap,
     selection,
     boundsOf,
+    boundsOfPose,
     pickEvery,
     clientToWorld,
     paintInto,
@@ -1192,6 +1196,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     adapter,
     geometry,
     boundsOf,
+    boundsOfPose,
     selection: selectedIdsForWiring,
     tools,
     gestureSource,

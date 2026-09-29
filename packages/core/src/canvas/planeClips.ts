@@ -1,6 +1,7 @@
 import type { Path } from 'features/paths/types';
 import { transformPath } from 'features/paths/transformPath';
 import { planeMatrix, planeToPlane, type PlaneMap } from 'core/viewport/parallax';
+import { mat3, type GlMat3 } from '../renderer/math/mat3';
 
 /**
  * Carries a container's clip into the world a descendant is drawn or picked
@@ -27,4 +28,11 @@ export function clipCarrier(
     if (out === undefined) byTarget.set(to, out = transformPath(clip, planeMatrix(m)));
     return out;
   };
+}
+
+/** The group transform that draws `from`'s world inside `to`'s, where `null`
+ *  is the camera's. Undefined when they are the same world. */
+export function planeTransform(from: PlaneMap | null, to: PlaneMap | null): GlMat3 | undefined {
+  const m = planeToPlane(from, to);
+  return m === null ? undefined : mat3.fromAffine(planeMatrix(m));
 }

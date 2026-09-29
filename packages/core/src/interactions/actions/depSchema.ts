@@ -358,6 +358,10 @@ export interface InsertDep {
     bounds: { x: number; y: number; width: number; height: number },
     extras: InsertExtras,
   ): NodeId | null;
+  /** The scene layer `commit` puts the node on. An insert on a layer carrying
+   *  `parallax` is dragged out in that plane's world, so `bounds` arrive
+   *  there too. Omitted: the camera's world. */
+  layer?(): string;
 }
 
 /**

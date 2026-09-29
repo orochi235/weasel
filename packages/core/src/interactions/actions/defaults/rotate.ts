@@ -52,6 +52,7 @@ import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 import { moveGestureAdapter } from '../move/gestureAdapter';
 import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestures/types';
+import { inPlane, selectionLayer } from '../planeInput';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -132,7 +133,7 @@ interface RotateScratch {
  *
  * @see useRotate — the React hook this descriptor mirrors for the rect case.
  */
-export const rotateAction: Action & { requires: string[] } = {
+export const rotateAction: Action & { requires: string[] } = inPlane({
   id: 'rotate',
   label: 'Rotate',
   // No default binding. It used to be a bare `{ kind: 'drag' }`, which made
@@ -347,4 +348,4 @@ export const rotateAction: Action & { requires: string[] } = {
     },
   },
   enabled: () => true,
-};
+}, selectionLayer);

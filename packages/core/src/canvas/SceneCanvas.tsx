@@ -1381,7 +1381,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const {
     selectTool: internalSelect, pickEvery: internalPickEvery, pickBest: internalPickBest,
-    boundsOf: internalBoundsOf, moveOptions: internalMoveOptions,
+    boundsOf: internalBoundsOf, boundsOfPose: internalBoundsOfPose, moveOptions: internalMoveOptions,
   } = useSceneSelectTool({
     scene,
     adapter,
@@ -2132,14 +2132,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     adapter: adapter as unknown as { getPose(id: string): unknown },
     geometry: descriptor,
     boundsOf: internalBoundsOf,
+    boundsOfPose: internalBoundsOfPose as SurfaceViewInputs['boundsOfPose'],
     tools,
     pickEvery: internalPickEvery,
     pickBest: internalPickBest,
     kindOfNode,
     chromeCaps,
     selectionApi: selection,
-  }), [adapter, descriptor, internalBoundsOf, tools, internalPickEvery, internalPickBest, kindOfNode,
-       chromeCaps, selection]);
+  }), [adapter, descriptor, internalBoundsOf, internalBoundsOfPose, tools, internalPickEvery,
+       internalPickBest, kindOfNode, chromeCaps, selection]);
 
   const canvas = (
     <Canvas<Node<TData, TLayer, TPose>, TPose>
@@ -2153,6 +2154,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       // The chrome's bounds are the picker's: a node on a parallax plane is
       // boxed where the plane draws it, and a `geometry.boundsOf` reaches both.
       boundsOf={internalBoundsOf}
+      boundsOfPose={internalBoundsOfPose}
       getIsVisible={getIsVisibleForCanvas}
       previewIdsExtra={previewIdsExtra}
       // The gesture surface behind `helpersRef.getGestureBounds()` /

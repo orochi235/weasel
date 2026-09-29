@@ -230,3 +230,44 @@ describe('usePreviewGhostLayer — previewOpaqueIds', () => {
     expect(cmds.map((c) => c.alpha)).toEqual([0.85]);
   });
 });
+
+describe('usePreviewGhostLayer — parallax layers', () => {
+  /** Leaf rects as the camera's world sees them, through every group transform. */
+  function rectsInCamera(cmds: DrawCommand[]): Array<{ x: number; y: number; width: number }> {
+    const out: Array<{ x: number; y: number; width: number }> = [];
+    const visit = (cmd: DrawCommand, s: number, tx: number, ty: number) => {
+      if (cmd.kind === 'group') {
+        const t = (cmd as GroupDrawCommand).transform;
+        const [ns, nx, ny] = t ? [s * t[0], s * t[6] + tx, s * t[7] + ty] : [s, tx, ty];
+        for (const child of (cmd as GroupDrawCommand).children) visit(child, ns, nx, ny);
+      } else if (cmd.kind === 'path' && cmd.path.kind === 'rect') {
+        out.push({ x: s * cmd.path.x + tx, y: s * cmd.path.y + ty, width: s * cmd.path.width });
+      }
+    };
+    for (const c of cmds) visit(c, 1, 0, 0);
+    return out;
+  }
+
+  it('ghosts a plane node where its plane draws it', () => {
+    // The sky does not zoom; under a 2x camera its world is the camera's
+    // doubled, so a sky rect at (100,200) 10 wide paints at camera (50,100) 5 wide.
+    const scene = createScene<Data, 'sky', Pose>({ systemLayers: [{ id: 'sky', parallax: { pan: 1, zoom: 0 } }] });
+    const a = scene.add({ kind: 'leaf', layer: 'sky', pose: COMMITTED_POSE, data: { label: 'a' } });
+    const handle: OngoingHandle = {
+      previewIds: () => [a],
+      previewPose: (id) => (id === a ? PREVIEW_POSE : null),
+    };
+    const views: View[] = [];
+    const { result } = renderHook(() =>
+      usePreviewGhostLayer<Data, 'sky', Pose>({
+        scene,
+        sceneSlot: { drawOne: (n, p, v) => { views.push(v); return drawOne(n as never, p, v); } },
+        dispatcher: makeDispatcher([handle]),
+      }),
+    );
+    const camera: View = { x: 0, y: 0, scale: { x: 2, y: 2 } };
+    const cmds = result.current.draw(env(makeToolsApi(), [handle]), camera, DIMS);
+    expect(rectsInCamera(cmds)).toEqual([{ x: 50, y: 100, width: 5 }]);
+    expect(views[0]).toEqual({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  });
+});

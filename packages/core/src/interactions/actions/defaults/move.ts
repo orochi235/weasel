@@ -82,6 +82,7 @@ import {
   type PoseAdapter,
   type PoseComposition,
 } from 'features/groups/composePose';
+import { inPlane, selectionLayer } from '../planeInput';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -646,7 +647,7 @@ function applyReparent(
  *
  * @see useMove — the React hook this descriptor mirrors for the simple case.
  */
-export const moveAction: Action & { requires: string[] } = {
+export const moveAction: Action & { requires: string[] } = inPlane({
   id: 'move',
   label: 'Move',
   // No hover `cursor`: pointing at a node shouldn't preemptively promise a
@@ -1097,4 +1098,4 @@ export const moveAction: Action & { requires: string[] } = {
    * without breaking dispatcher routing.
    */
   enabled: () => true,
-};
+}, selectionLayer);

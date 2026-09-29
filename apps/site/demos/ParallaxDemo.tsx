@@ -74,8 +74,9 @@ const GROUND: Shape[] = [
 ];
 
 // Hills and trees are scene nodes on layers that carry `parallax`, so they
-// paint through their plane and a click or marquee lands on them where they
-// are drawn. Sky and ground stay paint: tiled render layers under planes.
+// paint through their plane, and a click, marquee, drag, resize or rotate
+// lands on them where they are drawn. Sky and ground stay paint: tiled render
+// layers under planes.
 type LayerId = 'hills' | 'trees';
 const leaf = (id: string, layer: LayerId, pose: Pose, path: Path, color: string, parent?: string) =>
   ({ id: asNodeId(id), kind: 'leaf' as const, layer, pose, parent: parent ? asNodeId(parent) : null, data: { path, fill: solid(color) } });
@@ -87,8 +88,8 @@ const hill = (id: string, x: number, y: number, w: number, h: number, color: str
   return leaf(id, 'hills', { x, y, width: w, height: h }, polygonFromPoints([...top, { x: w, y: h }, { x: 0, y: h }]), color);
 };
 
-// A tree is a group, so a click selects the whole tree; `fill: null` keeps the
-// rect fallback from painting the group's box. Foliage over the top
+// A tree is a group of its foliage and trunk, clipped to its box; `fill: null`
+// keeps the rect fallback from painting that box. Foliage over the top
 // three quarters of the box, trunk centered below it.
 const TRUNK_COLOR = '#5a3a1f';
 const tree = (id: string, x: number, y: number, w: number, h: number) => {
@@ -196,7 +197,7 @@ function ParallaxDemoInner() {
         </label>
       </div>
       <SceneCanvas
-        features={['view', 'pick']}
+        features={['view', 'pick', 'move', 'transform', 'edit']}
         width={W}
         height={H}
         className="ckd-canvas"

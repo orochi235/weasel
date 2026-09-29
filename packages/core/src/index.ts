@@ -147,6 +147,8 @@ export { areaSelectAction } from './interactions/actions/defaults/areaSelect';
 export { insertAction } from './interactions/actions/defaults/insert';
 export { clearSelectionAction } from './interactions/actions/defaults/clearSelection';
 export { cloneAction } from './interactions/actions/defaults/clone';
+export { inPlane, selectionLayer, insertLayer } from './interactions/actions/planeInput';
+export type { EditedLayerOf } from './interactions/actions/planeInput';
 export { viewportDragPanAction } from './interactions/actions/defaults/viewportDragPan';
 export type { DragPanParams } from './interactions/actions/defaults/viewportDragPan';
 export {

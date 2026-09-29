@@ -78,6 +78,7 @@ import type { TextEditDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { shapeKindInfo } from 'core/shapeKinds';
 import type { KitInsertShape } from 'core/shapeKinds';
+import { inPlane, insertLayer } from '../planeInput';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -364,7 +365,7 @@ function buildExtras(
  *
  * @see useInsert — the React hook this descriptor mirrors for the simple case.
  */
-export const insertAction: Action & { requires: string[] } = {
+export const insertAction: Action & { requires: string[] } = inPlane({
   id: 'insert',
   label: 'Insert',
   group: 'insert',
@@ -568,7 +569,7 @@ export const insertAction: Action & { requires: string[] } = {
    * placeholder that was silently blocking all dispatcher-routed inserts.
    */
   enabled: () => true as const,
-};
+}, insertLayer);
 
 /** Whether a drag produced enough extent to be worth committing, per kind.
  *  See the call site in `onEnd` for why this isn't one uniform test. */

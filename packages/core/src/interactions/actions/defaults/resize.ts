@@ -71,6 +71,7 @@ import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { unionBounds } from 'core/geometry/unionBounds';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
+import { inPlane, selectionLayer } from '../planeInput';
 
 // ---------------------------------------------------------------------------
 // Defaults applied when `resizePolicy` dep is absent. Mirrors the
@@ -281,7 +282,7 @@ interface ResizeScratch {
  * Reads optional `resizePolicy` dep when present.
  * Requires `InvocationCtx.drag.affordance` with a `handle:*` kind.
  */
-export const resizeAction: Action & { requires: string[] } = {
+export const resizeAction: Action & { requires: string[] } = inPlane({
   id: 'resize',
   label: 'Resize',
   // No default binding: a bare `{ kind: 'drag' }` claimed every drag at ambient
@@ -627,4 +628,4 @@ export const resizeAction: Action & { requires: string[] } = {
    * — that broke every dispatcher-routed resize. See git blame.
    */
   enabled: () => true,
-};
+}, selectionLayer);
