@@ -212,9 +212,7 @@ export default [
     rules: {
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'error',
-      // `warn` while the sites listed in docs/TODO.md ("Refs read by event
-      // paths are still assigned during render") are swept; `error` after.
-      'weasel/no-render-ref-write': 'warn',
+      'weasel/no-render-ref-write': 'error',
 
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'error',
