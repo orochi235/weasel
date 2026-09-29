@@ -402,6 +402,12 @@ await writeFile(
     `import * as tessellate from '@weasel-js/geom/tessellate';\n` +
     `import * as history from '@weasel-js/history';\n` +
     `import * as svg from '@weasel-js/svg';\n` +
+    // guides and its per-action subpaths, built on core. Whether core still
+    // exports every name they import is Phase 4's sibling-import check.
+    `import * as guides from '@weasel-js/guides';\n` +
+    `import * as guidesMove from '@weasel-js/guides/move';\n` +
+    `import * as guidesResize from '@weasel-js/guides/resize';\n` +
+    `import * as guidesInsert from '@weasel-js/guides/insert';\n` +
     `import * as theme from '@weasel-js/theme';\n` +
     // Tier C — built with Vite library mode rather than tsup because they ship
     // assets. ui pulls in its bundled stylesheet and hud its data-URI font
@@ -432,6 +438,7 @@ await writeFile(
     `import { registerFont as directFont } from '@weasel-js/font';\n` +
     `void coreFont; void directFont;\n` +
     `const mods = { weasel, geom, booleans, curves, tessellate, history, svg, theme, ui, hud,\n` +
+    `  guides, guidesMove, guidesResize, guidesInsert,\n` +
     `  toolPalette, prefs, callout, toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +
@@ -471,6 +478,36 @@ console.log('[smoke] consumer bundle OK — all cross-package specifiers resolve
 // esbuild strips types, so it cannot see a .d.ts whose cross-package type
 // imports don't resolve, nor an empty DepSchema. A real tsc pass — bundler
 // resolution, no weasel tsconfig — does.
+// Every name a package's built JS imports from a sibling must be a real export
+// of that sibling. Phase 3 cannot say so: core's dist re-exports external
+// packages with `export *`, so esbuild cannot rule a name out and bundles a
+// missing one without complaint. Nor can a .d.ts import under skipLibCheck,
+// which resolves a missing name to `any`. Importing each name here, in the
+// consumer's own code, makes a missing one TS2305.
+const siblingImports = new Map();
+for (const pkg of PACKAGES) {
+  const dist = join(repoRoot, 'packages', pkg, 'dist');
+  if (!existsSync(dist)) continue;
+  for (const f of await readdir(dist, { recursive: true })) {
+    if (!f.endsWith('.js')) continue;
+    const src = await readFile(join(dist, f), 'utf8');
+    for (const m of src.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"](@weasel-js\/[^'"]+)['"]/g)) {
+      const names = siblingImports.get(m[2]) ?? new Set();
+      for (const part of m[1].split(',')) {
+        const name = part.trim().split(/\s+as\s+/)[0];
+        if (name) names.add(name);
+      }
+      siblingImports.set(m[2], names);
+    }
+  }
+}
+let siblingIndex = 0;
+const siblingLines = [...siblingImports].map(([spec, names]) =>
+  `import { ${[...names].map((n) => `${n} as _sib${siblingIndex++}`).join(', ')} } from '${spec}';\n`,
+);
+const siblingUse =
+  `export const _siblings = [${Array.from({ length: siblingIndex }, (_, i) => `_sib${i}`).join(', ')}];\n`;
+
 const typeConsumer = join(workDir, 'consumer.ts');
 await writeFile(
   typeConsumer,
@@ -554,7 +591,9 @@ await writeFile(
     `export const _key = _k;\n` +
     `export const _augK = _augKey;\n` +
     `export const _augR = _augRequires;\n` +
-    `export const _h = _viaDirect;\n`,
+    `export const _h = _viaDirect;\n` +
+    siblingLines.join('') +
+    siblingUse,
 );
 await writeFile(
   join(workDir, 'tsconfig.json'),
