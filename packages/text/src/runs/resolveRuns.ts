@@ -25,6 +25,10 @@
  * `textTransform` is applied here too, so `text` is what gets drawn. When a
  * transform changes a length, `srcMap` says which source characters each
  * drawn one came from; see `textTransform.ts`.
+ *
+ * `fontVariantCaps: 'small-caps'` is applied after it, over the transformed
+ * text: lowercase becomes capitals, and `sizeMap` gives those their smaller
+ * size. See `smallCaps.ts`.
  */
 
 import type { FillStyle, Stroke } from '@weasel-js/paint';
@@ -33,6 +37,7 @@ import { faceMetricsOf, resolveFontVariant, type FaceMetrics, type FontStyle } f
 import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 import { transformRunTexts, type RunSourceMap } from './textTransform';
+import { smallCapsScaleFor, smallCapsText } from './smallCaps';
 
 /** A run with every style resolved against the node's text style — no
  *  optional inheritance left. This is what layout and painting consume. */
@@ -45,7 +50,12 @@ export interface ResolvedRun {
    *  means `text`'s offsets are the source's. */
   srcMap?: RunSourceMap;
   fontFamily: string;
+  /** The run's size — what its line and its rules are set at, and what
+   *  every glyph is drawn at unless `sizeMap` says otherwise. */
   fontSize: number;
+  /** Present when not every glyph is drawn at `fontSize`: the size each
+   *  UTF-16 unit of `text` is drawn at. Small caps is what produces one. */
+  sizeMap?: readonly number[];
   fontWeight: number;
   fontStyle: 'normal' | 'italic';
   /** `null` is an explicit no-fill: the glyphs are painted by `stroke` alone,
@@ -164,7 +174,7 @@ export function resolveRuns(
   );
   for (let i = 0; i < runs.length; i++) {
     const run = runs[i];
-    const { text, srcMap } = shown[i];
+    let { text, srcMap } = shown[i];
     const scriptKey = run.script ?? style.script;
     const fontFamily = run.fontFamily ?? style.fontFamily;
     const fontWeight = run.fontWeight ?? (run.bold ? 700 : baseWeight);
@@ -175,15 +185,27 @@ export function resolveRuns(
     const shiftEm = run.baselineShift ?? script?.shift ?? 0;
     const scale = run.fontScale ?? script?.size ?? 1;
     const relative = run.fontSize === undefined && scale !== 1;
+    // An absolute size wins over a relative one; naming both is a consumer
+    // saying "this size exactly", which a multiplier cannot improve on.
+    const fontSize = run.fontSize !== undefined
+      ? resolveScreenLength(run.fontSize, viewScale)
+      : style.fontSize * scale;
+    let sizeMap: number[] | undefined;
+    if ((run.fontVariantCaps ?? style.fontVariantCaps) === 'small-caps') {
+      const caps = smallCapsText(text, srcMap);
+      text = caps.text;
+      srcMap = caps.srcMap;
+      if (caps.small) {
+        const small = fontSize * smallCapsScaleFor(fontFamily, fontWeight, fontStyle);
+        sizeMap = caps.small.map((s) => (s ? small : fontSize));
+      }
+    }
     out.push({
       text,
       ...(srcMap ? { srcMap } : {}),
       fontFamily,
-      // An absolute size wins over a relative one; naming both is a consumer
-      // saying "this size exactly", which a multiplier cannot improve on.
-      fontSize: run.fontSize !== undefined
-        ? resolveScreenLength(run.fontSize, viewScale)
-        : style.fontSize * scale,
+      fontSize,
+      ...(sizeMap ? { sizeMap } : {}),
       fontWeight,
       fontStyle,
       fill: run.fill ?? style.fill,

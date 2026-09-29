@@ -1035,6 +1035,8 @@ function readTspanRun(
   if (decoration?.overline) run.overline = true;
   const transform = ownValue(el, 'text-transform', onWarn);
   if (transform) run.textTransform = transform;
+  const variant = ownValue(el, 'font-variant', onWarn);
+  if (variant) run.fontVariantCaps = variant;
   const tspanStyle = deriveStyle(style, el);
   const fillAttr = resolveCurrentColor(ownProp(el, 'fill'), tspanStyle);
   if (fillAttr) {
@@ -1093,6 +1095,8 @@ function readTextStyle(
   if (decoration?.overline) out.overline = true;
   const transform = styleValue(style, 'text-transform', onWarn);
   if (transform && transform !== 'none') out.textTransform = transform;
+  const variant = styleValue(style, 'font-variant', onWarn);
+  if (variant === 'small-caps') out.fontVariantCaps = variant;
   // Note: `lineHeight` is no longer read from a `data-weasel-line-height`
   // attribute. WeaselDraw carries it through the generic namespace bag
   // as `meta.wd.attrs['line-height']`; svgInterop lifts it into / out of

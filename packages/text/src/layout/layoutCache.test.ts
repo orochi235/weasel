@@ -213,4 +213,12 @@ describe('cachedLayoutRuns', () => {
     expect(mapped).not.toBe(plain);
     expect(mapped.lines[0].cells.map((c) => c.srcEnd)).toEqual([1, 1]);
   });
+
+  it('does not share a layout between runs that size their glyphs differently', () => {
+    const r = run('AB');
+    const full = cachedLayoutRuns([r], OPTS);
+    const small = cachedLayoutRuns([{ ...r, sizeMap: [r.fontSize, r.fontSize * 0.7] }], OPTS);
+    expect(small).not.toBe(full);
+    expect(small.lines[0].cells[1].advance).toBeLessThan(full.lines[0].cells[1].advance);
+  });
 });
