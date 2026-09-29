@@ -193,8 +193,8 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
   clipFromPose?: (pose: TPose) => Path | null;
   /** How this container arranges its children. Whenever the container's
    *  child set or order changes, or its bounds change size, the scene hands
-   *  the change to the strategy — `arrive` for children that joined it,
-   *  `childPoses` otherwise — and records the poses it writes in the same
+   *  the change to the strategy — `depart` for children that left it,
+   *  `arrive` for children that joined it, `childPoses` otherwise — and records the poses it writes in the same
    *  undo entry as the change. A drag reads it too: it is the layout `move`
    *  reflows and drops against. */
   layout?: LayoutStrategy<TPose>;
@@ -401,6 +401,9 @@ export interface SceneRegistry<TPose> {
 export type SceneArrivalHandler<TPose> = (
   arrivals: ReadonlyMap<NodeId, readonly NodeId[]>,
   changed: ReadonlySet<NodeId>,
+  /** The nodes that left each container in the edit, by the container they
+   *  left — removed, or moved out. */
+  departures: ReadonlyMap<NodeId, readonly NodeId[]>,
 ) => ReadonlyMap<NodeId, TPose> | null;
 
 /** Options for `useScene` — the layers the scene has, what it starts out

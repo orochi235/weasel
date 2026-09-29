@@ -25,8 +25,9 @@ export interface LayoutArrivalOptions<TPose> {
 
 /**
  * A scene arrival handler over `layouts`: the scene's own layout pass
- * (`arrive` for children that joined a container, `childPoses` for any other
- * change to its children or size), measured through the canvas's pose
+ * (`depart` for children that left a container, `arrive` for children that
+ * joined it, `childPoses` for any other change to its children or size),
+ * measured through the canvas's pose
  * descriptor and composition. A container that declares its own layout
  * (`ContainerNode.layout`) is arranged by that one; `layouts` fills in for
  * the rest.
@@ -47,7 +48,8 @@ export function layoutArrivalHandler<TData, TLayer extends string, TPose>(
     remap: (pose, from, to, id) => descriptorOf(id).remapBounds(pose, from, to),
     composition: (opts.poseComposition ?? IDENTITY_POSE_COMPOSITION) as PoseComposition<TPose>,
   };
-  return (arrivals, changed) => runLayoutPass(scene, layoutOf, arrivals, changed, frame);
+  return (arrivals, changed, departures) =>
+    runLayoutPass(scene, layoutOf, arrivals, changed, frame, departures);
 }
 
 /**
@@ -63,10 +65,10 @@ export function useLayoutArrivals<TData, TLayer extends string, TPose>(
   const wired = opts.layouts !== undefined;
   useEffect(() => {
     if (!wired) return;
-    return scene.setArrivalHandler((arrivals, changed) => {
+    return scene.setArrivalHandler((arrivals, changed, departures) => {
       const { layouts, poseDescriptor, poseComposition } = latest.current;
       if (!layouts) return new Map();
-      return layoutArrivalHandler(scene, { layouts, poseDescriptor, poseComposition })(arrivals, changed);
+      return layoutArrivalHandler(scene, { layouts, poseDescriptor, poseComposition })(arrivals, changed, departures);
     });
   }, [scene, wired, latest]);
 }

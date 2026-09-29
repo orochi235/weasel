@@ -349,6 +349,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   // open it: they restore an arrangement that was already decided.
   let arrivalHandler: SceneArrivalHandler<TPose> | null = null;
   let arrivals: Map<NodeId, NodeId[]> | null = null;
+  let departures = new Map<NodeId, NodeId[]>();
   let changed = new Set<NodeId>();
   /** What the last settle wrote, reported to `onReflow` once its edit lands. */
   let reflowDue: LayoutMove<TPose>[] | null = null;
@@ -356,8 +357,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
   /** The pass a scene runs over its declared layouts when nothing else is
    *  installed. */
-  const declaredLayouts: SceneArrivalHandler<TPose> = (arrived, touched) =>
-    runLayoutPass(scene, layoutOfInternal, arrived, touched, layoutFrame);
+  const declaredLayouts: SceneArrivalHandler<TPose> = (arrived, touched, departed) =>
+    runLayoutPass(scene, layoutOfInternal, arrived, touched, layoutFrame, departed);
 
   function activeHandler(): SceneArrivalHandler<TPose> | null {
     return arrivalHandler ?? (hasLayouts ? declaredLayouts : null);
@@ -368,6 +369,16 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     changed.add(parent);
     const list = arrivals.get(parent);
     if (list === undefined) arrivals.set(parent, [id]);
+    else if (!list.includes(id)) list.push(id);
+  }
+
+  function noteDeparture(id: NodeId, from: NodeId | null, to: NodeId | null): void {
+    if (arrivals === null || from === null || from === to) return;
+    changed.add(from);
+    // One that joined earlier in this edit was never there to leave.
+    if (arrivals.get(from)?.includes(id)) return;
+    const list = departures.get(from);
+    if (list === undefined) departures.set(from, [id]);
     else if (!list.includes(id)) list.push(id);
   }
 
@@ -387,6 +398,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   function openArrivals(): boolean {
     if (activeHandler() === null || arrivals !== null) return false;
     arrivals = new Map();
+    departures = new Map();
     changed = new Set();
     reflowDue = null;
     return true;
@@ -413,9 +425,17 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const still = ids.filter((id) => state.nodes.get(id)?.parent === parent);
       if (still.length > 0 && state.nodes.has(parent)) landed.set(parent, still);
     }
+    // Only what is gone from the container once the edit has landed: a child
+    // that left and came back did not depart.
+    const left = new Map<NodeId, NodeId[]>();
+    for (const [parent, ids] of departures) {
+      const gone = ids.filter((id) => state.nodes.get(id)?.parent !== parent);
+      if (gone.length > 0 && state.nodes.has(parent)) left.set(parent, gone);
+    }
+    departures = new Map();
     const touched = new Set([...changed].filter((id) => state.nodes.get(id)?.kind === 'container'));
     if (landed.size === 0 && touched.size === 0) return [];
-    const poses = handler(landed, touched);
+    const poses = handler(landed, touched, left);
     if (poses === null) throw new SceneArrivalRefused(landed);
     const out: ArrangedPose[] = [];
     for (const [id, to] of poses) {
@@ -1478,7 +1498,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         scene.batch('remove', () => scene.removeMany(rootIds));
         return;
       }
-      for (const d of detached) noteChange(d.parent);
+      for (const d of detached) noteDeparture(d.id, d.parent, null);
       executeAndLog('kit:remove', payload, 'remove');
     },
 
@@ -1578,6 +1598,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const toSibs = parent === node.parent ? fromSibs : siblingsOf(parent);
       const toIndex = index ?? toSibs.length;
       noteArrival(id, parent, node.parent);
+      noteDeparture(id, node.parent, parent);
       noteChange(node.parent);
       executeAndLog('kit:move', {
         id, fromParent: node.parent, fromIndex, toParent: parent, toIndex,

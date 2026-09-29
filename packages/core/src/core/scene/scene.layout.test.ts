@@ -139,6 +139,79 @@ describe('scene container layout', () => {
     expect(scene.get(asNodeId('a'))!.pose.width).toBe(50);
   });
 
+  it('hands children that left to depart, which may resize the container in the same step', () => {
+    const seen: string[][] = [];
+    const base = stack();
+    const hugging: LayoutStrategy<RectPose> = {
+      ...base,
+      depart(container, children, departed) {
+        seen.push([...departed]);
+        return {
+          poses: base.childPoses(container, children),
+          bounds: { ...container.bounds, height: children.length * 10 },
+        };
+      },
+    };
+    const scene = makeScene(hugging);
+    add(scene, 'a');
+    add(scene, 'b');
+    add(scene, 'c');
+    const depth = scene.historyIndex();
+
+    scene.remove(asNodeId('a'));
+    expect(seen).toEqual([['a']]);
+    expect(scene.get(C)!.pose.height).toBe(20);
+    expect(posOf(scene, 'b')).toEqual([100, 100]);
+    expect(scene.historyIndex()).toBe(depth + 1);
+
+    scene.move(asNodeId('b'), null);
+    expect(seen).toEqual([['a'], ['b']]);
+    expect(scene.get(C)!.pose.height).toBe(10);
+    expect(posOf(scene, 'c')).toEqual([100, 100]);
+
+    scene.undo();
+    scene.undo();
+    expect(scene.get(C)!.pose.height).toBe(200);
+    expect(posOf(scene, 'c')).toEqual([100, 120]);
+  });
+
+  it('does not count a child that left and came back in one edit as departed', () => {
+    const depart = vi.fn();
+    const scene = makeScene({ ...stack(), depart });
+    add(scene, 'a');
+    add(scene, 'b');
+    scene.batch('round trip', () => {
+      scene.move(asNodeId('a'), null);
+      scene.move(asNodeId('a'), C);
+    });
+    expect(depart).not.toHaveBeenCalled();
+  });
+
+  it('arranges the arrivals of an edit after its departures', () => {
+    const order: string[] = [];
+    const base = stack();
+    const scene = makeScene({
+      ...base,
+      depart(container, children) {
+        order.push(`depart:${children.map((c) => c.id).join(',')}`);
+        return { poses: base.childPoses(container, children) };
+      },
+      arrive(container, children) {
+        order.push(`arrive:${children.map((c) => c.id).join(',')}`);
+        return { poses: base.childPoses(container, children) };
+      },
+    });
+    add(scene, 'a');
+    add(scene, 'b');
+    order.length = 0;
+    scene.batch('swap', () => {
+      scene.remove(asNodeId('a'));
+      add(scene, 'c');
+    });
+    expect(order).toEqual(['depart:b', 'arrive:b,c']);
+    expect(posOf(scene, 'c')).toEqual([100, 110]);
+  });
+
   it('leaves the children alone when the container only moves', () => {
     const scene = makeScene();
     add(scene, 'a');
