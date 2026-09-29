@@ -42,10 +42,13 @@ import {
   GLYPH_PAINT_VERT_SRC,
   GLYPH_PATTERN_FRAG_SRC,
   GLYPH_GRAD_FRAG_SRC,
+  GLYPH_TEXTURE_FRAG_SRC,
   GLYPH_PATTERN_UNIFORMS,
   GLYPH_GRAD_UNIFORMS,
+  GLYPH_TEXTURE_UNIFORMS,
   GLYPH_PAINT_ATTRIBUTES,
 } from './shaders/glyphPaint';
+import { PaintScratch } from './paintScratch';
 import { GLMeshCache } from './cache/GLMeshCache';
 import { GLTextureCache } from './cache/GLTextureCache';
 import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
@@ -176,6 +179,13 @@ export interface RenderTarget {
   clear?: boolean;
 }
 
+/** Each glyph-paint program's fragment stage and the uniforms it looks up. */
+const GLYPH_PAINT_SOURCES: Record<GlyphPaintKind, readonly [string, readonly string[]]> = {
+  pattern: [GLYPH_PATTERN_FRAG_SRC, GLYPH_PATTERN_UNIFORMS],
+  gradient: [GLYPH_GRAD_FRAG_SRC, GLYPH_GRAD_UNIFORMS],
+  texture: [GLYPH_TEXTURE_FRAG_SRC, GLYPH_TEXTURE_UNIFORMS],
+};
+
 /**
  * The WebGL2 renderer: takes a list of draw commands and paints them.
  *
@@ -218,6 +228,7 @@ export class WeaselRenderer {
   /** Offscreen buffers for group effects. Allocates nothing until a group
    *  with effects asks, so a canvas without them pays no memory. */
   private readonly effectTargets: EffectTargets;
+  private readonly paintScratch: PaintScratch;
   private readonly imageMinification: ImageMinification;
   private flattenTolerance?: number;
   private readonly bakeBudget: number;
@@ -240,6 +251,7 @@ export class WeaselRenderer {
     if (!gl) throw new Error('WeaselRenderer: WebGL2 not available');
     this.gl = gl as WebGL2RenderingContext;
     this.effectTargets = new EffectTargets(this.gl);
+    this.paintScratch = new PaintScratch(this.gl);
 
     // Bits 0-7 are load-bearing: bit 0 for even-odd fills and stenciled
     // strokes, bits 1-7 for clip depth (`renderer/draw.ts`). Without a stencil
@@ -401,10 +413,9 @@ export class WeaselRenderer {
   private glyphPaintProgram(kind: GlyphPaintKind): ShaderProgram {
     const existing = this.glyphPaintPrograms.get(kind);
     if (existing) return existing;
-    const program = kind === 'pattern'
-      ? new ShaderProgram(this.gl, GLYPH_PAINT_VERT_SRC, GLYPH_PATTERN_FRAG_SRC)
-      : new ShaderProgram(this.gl, GLYPH_PAINT_VERT_SRC, GLYPH_GRAD_FRAG_SRC);
-    program.lookupUniforms(kind === 'pattern' ? GLYPH_PATTERN_UNIFORMS : GLYPH_GRAD_UNIFORMS);
+    const [frag, uniforms] = GLYPH_PAINT_SOURCES[kind];
+    const program = new ShaderProgram(this.gl, GLYPH_PAINT_VERT_SRC, frag);
+    program.lookupUniforms(uniforms);
     program.lookupAttributes(GLYPH_PAINT_ATTRIBUTES);
     this.glyphPaintPrograms.set(kind, program);
     return program;
@@ -469,6 +480,7 @@ export class WeaselRenderer {
     // no-op, and drops the bookkeeping that would otherwise hand a dead FBO to
     // the next group with effects.
     this.effectTargets.releaseAll();
+    this.paintScratch.release();
     this.paintResources.release();
     this.paintResources = createPaintResources();
     this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
@@ -558,6 +570,7 @@ export class WeaselRenderer {
     if (this.whiteTexture) gl.deleteTexture(this.whiteTexture);
     this.whiteTexture = null;
     this.effectTargets.releaseAll();
+    this.paintScratch.release();
   }
 
   /**
@@ -619,6 +632,7 @@ export class WeaselRenderer {
       textOutlineMinScreenSize: this.textOutlineMinScreenSize,
       viewMatrix,
       effectTargets: this.effectTargets,
+      paintScratch: this.paintScratch,
       renderTarget: null,
       deviceWidth: Math.round(this.widthCss * this.dpr),
       deviceHeight: Math.round(this.heightCss * this.dpr),
