@@ -25,7 +25,7 @@
  * A glyph vertex names a font atlas whose texel is a distance field rather than
  * a color, so its coverage comes from `glyphCoverage` and its color comes from
  * the vertex alone. That coverage is computed on every fragment, glyph or not,
- * because `fwidth` in non-uniform control flow is undefined and the derivative
+ * because a derivative in non-uniform control flow is undefined and it
  * has to be taken before anything selects on the mode — see
  * `GLYPH_COVERAGE_GLSL`. Priced head to head at 432M fragments a frame
  * (`tests/perf/fill-rate.spec.ts`), that roughly doubles a fragment that is not
@@ -177,6 +177,7 @@ uniform sampler2D u_samplers[${BATCH_TEXTURE_SLOTS}];
 uniform vec4 u_color;
 uniform float u_alpha;
 uniform float u_synthBold;
+uniform vec2 u_fieldScale[${BATCH_TEXTURE_SLOTS}];
 uniform mat4 u_colorMatrix;
 uniform vec4 u_colorBias;
 out vec4 outColor;
@@ -211,7 +212,7 @@ void main() {
   float isGlyph = step(0.5, v_paintMode) * step(v_paintMode, 2.5);
   // Unconditional, and multiplied out afterwards rather than branched around:
   // see the file header.
-  float coverage = glyphCoverage(texel, v_paintMode, u_synthBold);
+  float coverage = glyphCoverage(texel, v_paintMode, u_synthBold, v_uv, u_fieldScale[v_texSlot]);
   // A glyph's texel is a distance field, so it takes no part in the color; a
   // plain vertex multiplies its texel in as it always did.
   vec4 src = mix(texel, vec4(1.0), isGlyph) * u_color * v_vertexColor;
@@ -222,7 +223,7 @@ void main() {
 `;
 
 export const BATCH_FILL_UNIFORMS = [
-  'u_proj', 'u_model', 'u_samplers', 'u_color', 'u_alpha', 'u_synthBold',
+  'u_proj', 'u_model', 'u_samplers', 'u_color', 'u_alpha', 'u_synthBold', 'u_fieldScale',
   'u_colorMatrix', 'u_colorBias',
 ] as const;
 

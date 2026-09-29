@@ -370,12 +370,17 @@ Core five + Crop shipped. Remaining:
   `fill: null` through `resolveRuns`, the DOM overlay, the range algebra and
   `@weasel-js/svg`'s `<tspan>` output.
 
-- **(P3) At 12px with a script, the atlas tier's ink sits ~1.9px left of the
-  overlay's at DPR 1.** Every engine, `x` on a whole pixel only; the right ink
-  edge agrees within 0.1px, so the centroid is being pulled by something faint
-  on the left rather than the glyph being misplaced. Not seen on the
-  canvas-font tier or at DPR 2. The `super`/`sub` 12px rows of `npx vitest run
-  -c scripts/measure-overlay-alignment.config.ts` show it.
+- **(P3) At 12px with a script, the atlas tier's ink still sits ~0.55px off
+  the overlay's at DPR 1, and the sign follows the sub-pixel phase.** `dx` is
+  −0.5 at `x` 20 and +0.5 at 20.5 in every engine; DPR 2 agrees within 0.06.
+  The stems of a 7.2px `H` are ~0.65px wide, and the shader reads coverage from
+  the distance at each pixel's center, so a stem centered on a pixel carries
+  about twice the ink of one straddling two, and the centroid leans toward
+  whichever stem is on the grid. Center-sampled coverage cannot do better; area
+  coverage would need several field taps per fragment on small glyphs. The same
+  rows show `dy` of ±0.45, which predates this and is unexplained. The
+  `super`/`sub` 12px rows of `npx vitest run -c
+  scripts/measure-overlay-alignment.config.ts` show both.
 
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs.
 

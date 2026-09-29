@@ -20,6 +20,10 @@
  * larger bake nor extra taps would improve the small-text end.
  */
 
+import type { FontStyle } from './fontStyle';
+import { getFont } from './registerFont';
+import { PAGE_SIZE, SDF_RADIUS } from './dynamic/dynamicAtlas';
+
 /** `a_paintMode` value for glyphs off an MSDF atlas — the median of R,G,B. */
 export const GLYPH_MODE_MSDF = 1;
 /** `a_paintMode` value for glyphs off a runtime canvas bake — `.r` alone. */
@@ -32,19 +36,24 @@ export const GLYPH_MODE_R8 = 2;
  * median of R,G,B, `GLYPH_MODE_R8` reads `.r` alone. A caller whose fragment
  * is not a glyph at all still calls this and discards the result — see below.
  *
- * The antialiasing band has to be one *screen* pixel wide, so it comes from
- * `fwidth` of the field rather than from a constant: that single quantity
- * folds in font size, zoom and DPR at once. Minify the glyph and the field
- * changes faster between neighboring fragments, so the band widens in field
- * units to stay one pixel on screen; magnify it and the band narrows. A
- * constant band cannot be right at more than one scale, and this was one
- * (0.05) until 2026-07-29 — at 16px it fell well under a pixel and edges
- * quantized to stair-steps, while display sizes read mushy. The `max()` floor
- * keeps a degenerate derivative — a flat field, or a driver answering 0 — from
- * collapsing the band back to that.
+ * The antialiasing band has to be one *screen* pixel wide, so it is measured
+ * from how fast the atlas moves under the fragment: `fieldPerUv` is how far
+ * the field runs per unit of texture coordinate on each axis (see
+ * `glyphFieldScale`), and the screen derivatives of `uv` turn that into field
+ * units per screen pixel — one quantity folding in font size, zoom and DPR.
+ *
+ * Not `fwidth(field)`, which it was until 2026-09-29: that is the field's
+ * slope only where the field is a straight ramp. Across a stem narrower than a
+ * pixel — a 12px superscript's, minified 4x off the atlas — the two columns of
+ * a 2x2 quad sample either side of the ridge at equal values, the derivative
+ * reads flat, the band collapses to the floor, and the stem is thresholded
+ * away. The derivative of `uv` is constant across a glyph quad, so it cannot
+ * do that. Nor a constant band, which was 0.05 until 2026-07-29 and right at
+ * one scale only. The `max()` floor keeps a degenerate derivative from
+ * collapsing the band.
  *
  * **Nothing here branches, and the caller must not branch around it.**
- * `fwidth` in non-uniform control flow is undefined, so the derivative has to
+ * A derivative in non-uniform control flow is undefined, so it has to
  * be taken before anything selects on paint mode. That is why a merged program
  * runs the glyph math on fragments that are not glyphs, and it is why the two
  * fields are selected with a `mix` rather than an `if`.
@@ -57,10 +66,34 @@ float median(float r, float g, float b) {
   return max(min(r, g), min(max(r, g), b));
 }
 
-float glyphCoverage(vec4 texel, float mode, float synthBold) {
+float glyphCoverage(vec4 texel, float mode, float synthBold, vec2 uv, vec2 fieldPerUv) {
   float field = mix(median(texel.r, texel.g, texel.b), texel.r, step(1.5, mode));
-  float aaW = max(0.5 * fwidth(field), 0.0005);
+  float fieldPerPx = 0.5 * (length(dFdx(uv) * fieldPerUv) + length(dFdy(uv) * fieldPerUv));
+  float aaW = max(0.5 * fieldPerPx, 0.0005);
   float threshold = 0.5 - synthBold;
   return smoothstep(threshold - aaW, threshold + aaW, field);
 }
 `;
+
+/** msdf-bmfont-xml's default `distanceRange`, for an atlas that records none. */
+const DEFAULT_MSDF_RANGE = 4;
+
+/** A runtime canvas page: `PAGE_SIZE` texels, field 0 to 1 over `SDF_RADIUS` of them. */
+const CANVAS_FIELD_SCALE = [PAGE_SIZE / SDF_RADIUS, PAGE_SIZE / SDF_RADIUS] as const;
+
+/**
+ * Field units per unit of texture coordinate along u and v for the atlas a
+ * glyph group samples — the `fieldPerUv` that `glyphCoverage` takes. A baked
+ * MSDF atlas answers from its page size and `distanceRange`, a runtime canvas
+ * page from the dynamic tier's page size and bake radius. `undefined` for an
+ * atlas that is not registered.
+ */
+export function glyphFieldScale(
+  source: 'atlas' | 'canvas', family: string, weight: number, style: FontStyle,
+): readonly [number, number] | undefined {
+  if (source === 'canvas') return CANVAS_FIELD_SCALE;
+  const font = getFont(family, weight, style)?.font;
+  if (!font) return undefined;
+  const range = font.distanceRange ?? DEFAULT_MSDF_RANGE;
+  return [font.common.scaleW / range, font.common.scaleH / range];
+}
