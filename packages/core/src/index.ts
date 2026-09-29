@@ -1370,7 +1370,7 @@ export {
 
 // The CSS font-family that sets DOM text in the face the canvas draws for a
 // family — from its registered font file when the canvas draws an atlas.
-export { cssFontFamily } from '@weasel-js/font';
+export { cssFontFamily, cssFontFamilyLoading } from '@weasel-js/font';
 
 // Outline text tier — real glyph geometry, tessellated by the path renderer,
 // for text above `OUTLINE_MIN_SCREEN_PX` on screen. Exact at any zoom where a

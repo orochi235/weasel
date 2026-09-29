@@ -104,6 +104,8 @@ export interface UseSceneTextEditOptions<TData> {
   isEditorChrome?: (el: Element) => boolean;
   /** Forwarded to `useTextEdit`: what Escape does to the edit. */
   escape?: 'cancel' | 'commit';
+  /** Forwarded to `useTextEdit`: how long an edit waits for its face. */
+  fontHold?: number;
 }
 
 function resolveView(view: View | (() => View) | undefined): View | undefined {
@@ -166,6 +168,7 @@ export function useSceneTextEdit<
     container,
     isEditorChrome: (el) => optsRef.current.isEditorChrome?.(el) ?? false,
     escape: options.escape,
+    fontHold: options.fontHold,
     getText: (id) => {
       const node = sceneRef.current.get(asNodeId(id));
       if (!node) return '';

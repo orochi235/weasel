@@ -328,14 +328,6 @@ Core five + Crop shipped. Remaining:
 
 ## Text
 
-- **(P3) The first edit of a session can open in the fallback font.** The edit overlay's
-  face (`weasel-face-*`, built from the outline font's bytes) is added only when an edit
-  starts and loads with `font-display: swap`, so until it lands the overlay lays out in a
-  fallback font, and a wrapped line breaks differently from the canvas and then reflows.
-  Found by the overlay line-break test flaking on exactly this (2026-09-29); the test now
-  waits for the face. Loading the face when the outline font registers, rather than when
-  an edit opens, would close it for users.
-
 - **(P3) `.dfont` machine faces still can't reach the outline tier.** The
   *silence* closed 2026-08-16 — `isDataForkFont` recognizes a Macintosh
   resource fork by its header offsets and `sfntFromCollection` throws by name,
@@ -346,18 +338,19 @@ Core five + Crop shipped. Remaining:
   keeping container unpacking in `sfnt.ts` rather than upstreaming it or
   adopting fontkit is in that file's own header.
 
-- **(P3) The two tiers still read different ascender tables.** Untouched by
-  the outline work and unchanged in urgency. Chrome reports Inter at 0.896 em
-  (`sTypoAscender`) where `msdf-bmfont-xml` baked 0.969 em (`hhea.ascender`),
-  and `emHeightAscent` is undefined in Chrome, so no browser API recovers the
-  hhea value — a DOM baseline probe returns exactly
-  `fontBoundingBoxAscent`. Measured at a 48px em: Inter 43/43 (0.896), Impact
-  48/48.5 (1.01), Georgia 44/44 (0.917), Comic Sans MS 53/53 (1.104), Papyrus
-  45 with descent 29 (0.938). Decide one convention and normalize both tiers
-  onto it. Papyrus's ascent+descent of 1.54 em cannot fit the default 1.2 line
-  box under any convention and needs a rule of its own. The outline tier makes
-  this *easier*: reading font bytes gives access to both tables directly
-  instead of to whichever one Chrome chose to expose. Recorded 2026-07-31.
+- **(P3) The edit overlay's text lands on whole CSS pixels; the canvas's does
+  not.** Every tier now hangs its baseline where CSS does, so the overlay's
+  measured `baselineDrop` is only rounding, but the overlay still cannot
+  follow a fractional canvas baseline: moving its `top` by 0.4px moved its
+  ink by exactly 1px in Chromium at DPR 1, and the matrix rows show the same
+  jump in WebKit, Firefox and at DPR 2. On top of that sits a steady ink bias,
+  overlay above canvas, of about -0.35px at DPR 1 and -0.17px at DPR 2
+  (derived from Chromium's rows), of unknown origin. Together they are the whole of
+  `dy` in `scripts/measure-overlay-alignment.config.ts` (mean |dy| about
+  0.2px, max 0.75), and why `overlayAlignment.browser.test.tsx` allows
+  `DY_TOLERANCE = 0.85`. Candidates: carry the fraction on a transform, snap
+  the canvas's text baseline to device pixels as browsers do, or find the
+  bias first. Recorded 2026-09-29.
 
 - **(P3) The character strip has no "no fill" chip.** WeaselDraw's text
   objects carry `fill: null` through its SVG export and import, and the
@@ -950,14 +943,17 @@ one dead `const` and four stale disable directives.
   ~150s. A depth-sweep repro is a dozen lines against `new JSDOM()`; move off the pin once
   a jsdom release is flat on it.
 
-- **(P2) Benchmark HUD text against a transparent DOM overlay.** Two ways to
-  put text over the canvas: `@weasel-js/hud` draws it as canvas commands, or a
-  transparent `@weasel-js/ui` layer sits above the canvas and lets the browser
-  lay it out. Nobody has measured which is cheaper, or where the crossover is —
-  candidate axes are glyph count, update rate (a per-frame readout versus a
-  static label), and whether the text moves with the camera. The answer decides
-  what the kit recommends for HUDs, inspectors and labels, so it wants numbers
-  rather than an argument.
+- **(P2) HUD vs DOM text: what the first measurement left open.**
+  `tests/perf/hud-vs-dom.spec.ts` answered the main-thread question (findings
+  and crossovers in `tests/perf/README.md`, "HUD text against a DOM overlay"),
+  but only on a contended node. Still unanswered: frame rate and the
+  off-main-thread totals, whose spread on studio at load 8–21 swamped a 2–3 ms
+  lean toward the HUD — rerun on an idle node; a React-rendered overlay, which
+  adds reconciliation the plain-DOM side does not pay; and a pure pan that moves
+  the whole DOM layer as one element. Separately, the HUD's static-label cost
+  (~1 µs of script per glyph per frame) comes from `attachHud`'s layer asking
+  every widget for a fresh command on every repaint; caching an unchanged
+  widget's commands would remove the one axis where the DOM wins outright.
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op factories, shape kinds and the `features` presets; public exports remain uncovered.
 

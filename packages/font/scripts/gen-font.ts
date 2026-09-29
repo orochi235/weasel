@@ -11,9 +11,9 @@
  * extension lookups, so text laid out from its numbers drifts from the same
  * face set by a browser — 2.8px over "Hxgd" at 72px for Inter.
  *
- * The font's underline, strikeout and script metrics go in a top-level
- * `faceMetrics` block, which BMFont has no slot for, derived by the same
- * function the outline tier reads them with.
+ * The font's ascent and descent, underline, strikeout and script metrics go
+ * in a top-level `faceMetrics` block, which BMFont has no slot for, derived
+ * by the same function the outline tier reads them with.
  */
 import generateBMFont from 'msdf-bmfont-xml';
 import * as opentype from 'opentype.js';
@@ -75,8 +75,8 @@ function exactMetrics(data: Baked, file: string): void {
   data.info.face = font.getEnglishName('postScriptName') ?? data.info.face;
   // Unrounded: an em fraction the outline tier recomputes at runtime must
   // come out bit-identical, or the two tiers place rules differently.
-  const { post, os2 } = font.tables as Pick<FaceMetricTables, 'post' | 'os2'>;
-  const faceMetrics = faceMetricsFromTables({ unitsPerEm: font.unitsPerEm, post, os2 });
+  const { hhea, post, os2 } = font.tables as Pick<FaceMetricTables, 'hhea' | 'post' | 'os2'>;
+  const faceMetrics = faceMetricsFromTables({ unitsPerEm: font.unitsPerEm, hhea, post, os2 });
   if (faceMetrics) data.faceMetrics = faceMetrics;
 }
 

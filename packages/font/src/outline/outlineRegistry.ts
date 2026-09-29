@@ -161,6 +161,7 @@ export function registerFontOutlines(
   // Layouts cache which tier each run resolved to and poll `glyphGeneration()`
   // to know when to drop it; a registration that leaves it still is invisible.
   notifyGlyphReady();
+  if (source instanceof ArrayBuffer) announceBytes(slots.get(slotKey(family, weight, style))!, source);
 }
 
 /** Drop a registration. Glyphs already handed out stay valid — they are
@@ -343,7 +344,9 @@ async function runLoad(slot: FaceSlot): Promise<void> {
   slot.status = 'loading';
   slots.bump();
   try {
-    slot.face = await slot.parser(await readSource(slot.source));
+    const bytes = await readSource(slot.source);
+    announceBytes(slot, bytes);
+    slot.face = await slot.parser(bytes);
     slot.status = 'ready';
     slots.bump();
     // The frame that asked for these glyphs has long since drawn. Without
@@ -364,18 +367,53 @@ async function runLoad(slot: FaceSlot): Promise<void> {
 }
 
 /**
- * Where DOM text gets this face: the registration's `cssSrc`, a URL source as
- * `url(…)`, or the bytes. `null` when nothing is registered. In-package only.
+ * Where DOM text gets one face, from {@link outlineCssSource}. `registration`
+ * is the same object until the face is registered again.
+ */
+export type OutlineCssSource =
+  /** The registration's `cssSrc`, which names what the bytes cannot. */
+  | { registration: OutlineFaceInfo; src: string }
+  /** A URL source, as `url(…)`: interchangeable with its bytes. */
+  | { registration: OutlineFaceInfo; url: string }
+  | { registration: OutlineFaceInfo; bytes: () => Promise<ArrayBuffer> };
+
+/**
+ * Where DOM text gets this face. `null` when nothing is registered.
+ * In-package only.
  */
 export function outlineCssSource(
   family: string, weight: number, style: FontStyle,
-): { src: string } | { source: OutlineSource; bytes: () => Promise<ArrayBuffer> } | null {
+): OutlineCssSource | null {
   const slot = slots.get(slotKey(family, weight, style));
   if (!slot) return null;
-  if (slot.cssSrc !== undefined) return { src: slot.cssSrc };
-  if (typeof slot.source === 'string') return { src: `url(${JSON.stringify(slot.source)})` };
+  if (slot.cssSrc !== undefined) return { registration: slot, src: slot.cssSrc };
+  if (typeof slot.source === 'string') {
+    return { registration: slot, url: `url(${JSON.stringify(slot.source)})` };
+  }
   const source = slot.source;
-  return { source, bytes: () => readSource(source) };
+  return { registration: slot, bytes: () => readSource(source) };
+}
+
+/** `registration` is the one {@link outlineCssSource} names. */
+type BytesListener = (registration: OutlineFaceInfo, bytes: ArrayBuffer) => void;
+let bytesListener: BytesListener | null = null;
+
+/**
+ * Hear about a face's bytes the moment they are in hand — handed to
+ * `registerFontOutlines` directly, or read because the canvas asked for the
+ * face. Never earlier: a URL or thunk registration fetches nothing until then.
+ * One listener; in-package only.
+ */
+export function onOutlineBytes(listener: BytesListener): void {
+  bytesListener = listener;
+}
+
+function announceBytes(slot: FaceSlot, bytes: ArrayBuffer): void {
+  try {
+    bytesListener?.(slot, bytes);
+  } catch {
+    // DOM text falling behind must not cost the canvas its outlines.
+  }
 }
 
 async function readSource(source: OutlineSource): Promise<ArrayBuffer> {

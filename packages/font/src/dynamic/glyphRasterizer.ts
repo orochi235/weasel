@@ -62,8 +62,12 @@ export interface GlyphRasterizer {
 
 type Canvas2D = OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
 
-function cssFontString(weight: number, style: FontStyle, family: string): string {
-  return `${style === 'italic' ? 'italic ' : ''}${weight} ${BAKE_SIZE}px ${JSON.stringify(family)}`;
+/** Engines report font-box metrics in whole pixels, so they are read at a
+ *  size where that rounding is a thousandth of an em, not a fiftieth. */
+const METRICS_SIZE = 1000;
+
+function cssFontString(weight: number, style: FontStyle, family: string, size = BAKE_SIZE): string {
+  return `${style === 'italic' ? 'italic ' : ''}${weight} ${size}px ${JSON.stringify(family)}`;
 }
 
 export function createCanvasRasterizer(): GlyphRasterizer {
@@ -80,19 +84,20 @@ export function createCanvasRasterizer(): GlyphRasterizer {
   const ctx = canvas.getContext('2d', { willReadFrequently: true }) as Canvas2D | null;
   if (!ctx) throw new Error('weasel DynamicGlyphAtlas: 2D context unavailable');
 
-  function setFont(family: string, weight: number, style: FontStyle): void {
-    ctx!.font = cssFontString(weight, style, family);
+  function setFont(family: string, weight: number, style: FontStyle, size = BAKE_SIZE): void {
+    ctx!.font = cssFontString(weight, style, family, size);
     ctx!.textBaseline = 'alphabetic';
     ctx!.textAlign = 'left';
   }
 
   return {
     faceMetrics(family, weight, style) {
-      setFont(family, weight, style);
+      setFont(family, weight, style, METRICS_SIZE);
       const m = ctx!.measureText('Hg');
+      const k = BAKE_SIZE / METRICS_SIZE;
       return {
-        ascent: m.fontBoundingBoxAscent ?? BAKE_SIZE * 0.8,
-        descent: m.fontBoundingBoxDescent ?? BAKE_SIZE * 0.2,
+        ascent: (m.fontBoundingBoxAscent ?? METRICS_SIZE * 0.8) * k,
+        descent: (m.fontBoundingBoxDescent ?? METRICS_SIZE * 0.2) * k,
       };
     },
 

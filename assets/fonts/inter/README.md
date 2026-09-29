@@ -12,14 +12,15 @@ lands on can never be the reason it fails to render. `inter.json`'s
 `info.charset` is the authority on that list.
 
 They also agree on metrics, which is what lets the threshold be a rendering
-decision rather than a layout one: the TTF reports `hhea.ascender / unitsPerEm
-= 1984 / 2048 = 0.96875`, and the atlas records `common.base / info.size =
-31 / 32`, the same number. Advances and kerning in the atlas are the TTF's own
-at full precision, so a line laid out from the atlas ends where a browser
-setting `inter.ttf` ends it.
-The atlas's `faceMetrics` block — underline, strikeout and script metrics —
-is derived from the TTF's `post` and `OS/2` tables by the same function the
-outline tier reads them with, so both tiers place rules and scripts alike.
+decision rather than a layout one: both tiers place the baseline from the
+ascent and descent in the atlas's `faceMetrics` block, which the outline tier
+recomputes from the TTF's tables — `1984 / 2048 = 0.96875` and `494 / 2048`,
+where Inter's `hhea` and typo values coincide. Advances and kerning in the
+atlas are the TTF's own at full precision, so a line laid out from the atlas
+ends where a browser setting `inter.ttf` ends it.
+The rest of that block — underline, strikeout, script metrics, x-height and
+cap height — is derived from the TTF's `post` and `OS/2` tables by the same
+function, so both tiers place rules, scripts and small caps alike too.
 
 ## Provenance
 
