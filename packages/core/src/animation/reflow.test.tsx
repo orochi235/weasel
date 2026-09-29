@@ -162,6 +162,81 @@ describe('createReflowTransition', () => {
     expect(where(a).x).toBe(300);
   });
 
+  it('glides from a given pose rather than the one on screen', () => {
+    const { animator, frame, scene, a, where } = setup();
+    const reflow = createReflowTransition(scene, animator(), TWEEN);
+    act(() => { reflow.glide(a, at(100), { from: at(200) }); });
+    expect(where(a).x).toBe(200);
+    frame(0);
+    frame(50);
+    expect(where(a).x).toBeCloseTo(150);
+    frame(100);
+    expect(where(a).x).toBe(100);
+  });
+
+  it('restarts a running glide from a given pose, even toward the same target', () => {
+    const { animator, frame, scene, a, where } = setup();
+    const reflow = createReflowTransition(scene, animator(), TWEEN);
+    act(() => { reflow.glide(a, at(100)); });
+    frame(0);
+    frame(50);
+    act(() => { reflow.glide(a, at(100), { from: at(300) }); });
+    expect(where(a).x).toBe(300);
+    frame(100);
+    expect(where(a).x).toBeCloseTo(200);
+  });
+
+  it('holds a node in place when the given pose is its target', () => {
+    const { animator, frame, scene, a, where } = setup();
+    const reflow = createReflowTransition(scene, animator(), TWEEN);
+    act(() => { reflow.glide(a, at(100)); });
+    frame(0);
+    frame(50);
+    const shown = reflow.poseOf(a)!;
+    act(() => { reflow.glide(a, shown, { from: shown }); });
+    expect(animator().isActive(`reflow:${a}`)).toBe(false);
+    frame(100);
+    expect(where(a).x).toBeCloseTo(50);
+    expect(scene.overrides.has(a)).toBe(true);
+  });
+
+  it('settles a node it was not moving from a given pose onto its document pose', () => {
+    const { animator, frame, scene, a, where } = setup();
+    const reflow = createReflowTransition(scene, animator(), TWEEN);
+    act(() => { reflow.settle(a, { from: at(80) }); });
+    expect(where(a).x).toBe(80);
+    frame(0);
+    frame(50);
+    expect(where(a).x).toBeCloseTo(40);
+    frame(100);
+    expect(where(a).x).toBe(0);
+    expect(scene.overrides.has(a)).toBe(false);
+  });
+
+  it('settling from a given pose takes the node back from an override laid over its own', () => {
+    const { animator, frame, scene, a, where } = setup();
+    const reflow = createReflowTransition(scene, animator(), TWEEN);
+    act(() => { reflow.glide(a, at(100)); });
+    frame(0);
+    frame(50);
+    scene.overrides.set(a, { pose: at(300) });
+    act(() => { reflow.settle(a, { from: at(300) }); });
+    frame(100);
+    expect(where(a).x).toBeCloseTo(150);
+    frame(150);
+    expect(where(a).x).toBe(0);
+    expect(scene.overrides.has(a)).toBe(false);
+  });
+
+  it('settling from the document pose itself leaves nothing behind', () => {
+    const { animator, scene, a } = setup();
+    const reflow = createReflowTransition(scene, animator(), TWEEN);
+    act(() => { reflow.settle(a, { from: at(0) }); });
+    expect(scene.overrides.has(a)).toBe(false);
+    expect(reflow.poseOf(a)).toBeUndefined();
+    expect(animator().isActive(`reflow:${a}`)).toBe(false);
+  });
+
   it('springs to the target when given a spring', () => {
     const { animator, frame, scene, a, where } = setup();
     const reflow = createReflowTransition(scene, animator(), { spring: { preset: 'stiff' } });

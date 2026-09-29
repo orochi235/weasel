@@ -960,7 +960,10 @@ describe('moveAction with a reflow transition', () => {
     const calls: string[] = [];
     const reflow: ReflowTransition<unknown> = {
       glide: (id, pose) => { calls.push(`glide:${id}:${(pose as P).x}`); },
-      settle: (id) => { calls.push(`settle:${id}:after${scene.appliedBatches.length}`); },
+      settle: (id, opts) => {
+        const from = opts?.from === undefined ? '' : `:from${(opts.from as P).x}`;
+        calls.push(`settle:${id}:after${scene.appliedBatches.length}${from}`);
+      },
       stop: (id) => { calls.push(`stop:${id}`); },
       poseOf: () => undefined,
     };
@@ -992,9 +995,9 @@ describe('moveAction with a reflow transition', () => {
     const scene = twoCells();
     const { calls, reflow } = recorder(scene);
     const handle = start(scene, reflow);
-    expect(calls).toEqual(['stop:a']);
+    expect(calls).toEqual([]);
     handle.onMove!(makeCtx(scene, ['a'], into));
-    expect(calls).toEqual(['stop:a', 'glide:b:0']);
+    expect(calls).toEqual(['glide:b:0']);
     expect([...(handle.previewIds!() as Iterable<string>)]).not.toContain('b');
     expect(scene.overrides.has('b' as NodeId)).toBe(false);
   });
@@ -1005,24 +1008,24 @@ describe('moveAction with a reflow transition', () => {
     const handle = start(scene, reflow);
     handle.onMove!(makeCtx(scene, ['a'], into));
     handle.onMove!(makeCtx(scene, ['a'], outside));
-    expect(calls.slice(1)).toEqual(['glide:b:0', 'settle:b:after0']);
+    expect(calls).toEqual(['glide:b:0', 'settle:b:after0']);
     handle.onEnd!(makeCtx(scene, ['a'], outside), 'cancel');
-    expect(calls).toHaveLength(3);
+    expect(calls.slice(2)).toEqual(['settle:a:after0:from375']);
   });
 
-  it('settles every glide after the drop commits, and on a cancel', () => {
+  it('settles every glide after the drop commits, and on a cancel — the dragged child from its release', () => {
     const committed = twoCells();
     const c = recorder(committed);
     const h1 = start(committed, c.reflow);
     h1.onMove!(makeCtx(committed, ['a'], into));
     h1.onEnd!(makeCtx(committed, ['a'], into), 'commit');
-    expect(c.calls.at(-1)).toBe('settle:b:after1');
+    expect(c.calls.slice(-2)).toEqual(['settle:b:after1', 'settle:a:after1:from50']);
 
     const canceled = twoCells();
     const k = recorder(canceled);
     const h2 = start(canceled, k.reflow);
     h2.onMove!(makeCtx(canceled, ['a'], into));
     h2.onEnd!(makeCtx(canceled, ['a'], into), 'cancel');
-    expect(k.calls.at(-1)).toBe('settle:b:after0');
+    expect(k.calls.slice(-2)).toEqual(['settle:b:after0', 'settle:a:after0:from50']);
   });
 });
