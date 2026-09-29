@@ -38,7 +38,7 @@ export type { FontFallbackPolicy } from './fallback';
 
 export { subscribeGlyphReady, glyphGeneration } from './glyphReady';
 
-export { cssFontFamily } from './domFace';
+export { cssFontFamily, cssFontFamilyLoading } from './domFace';
 
 export {
   registerCanvasFont,
