@@ -104,6 +104,17 @@ export interface LayoutContainer {
   bounds: ContainerBounds;
 }
 
+/** What a container does with children that joined it by an edit rather than
+ *  a drag: see {@link LayoutStrategy.arrive}. */
+export interface LayoutArrival<TPose> {
+  /** World poses to write — the arrivals', and any sibling the strategy moves
+   *  to make room. A child left out keeps its pose. */
+  poses: Map<string, TPose>;
+  /** The container's new world bounds, when the arrangement needs a
+   *  different extent. Absent keeps the container as it is. */
+  bounds?: ContainerBounds;
+}
+
 /** The child currently being dragged: where it started, where the pointer
  *  currently proposes it goes, and which container it came from. */
 export interface LayoutDragged<TPose> {
@@ -175,6 +186,32 @@ export interface LayoutStrategy<TPose> {
     container: LayoutContainer,
     dragged: LayoutDragged<TPose>,
   ): boolean;
+
+  /** Optional: place children that joined this container by an edit — an
+   *  insert, a reparent, a duplicate or group landing inside it — rather than
+   *  by a drag onto one of its targets. `children` is the container as the
+   *  edit left it, `arrivals` included, all in world poses. Return `null` to
+   *  refuse: the whole edit is reverted and nothing lands, as with a drop
+   *  that finds no target. A drag onto the container arrives here too, after
+   *  `commitDrop` has placed it, so a strategy leaves a child that already
+   *  sits where it belongs alone. Absent, arrivals stay where their poses put
+   *  them. Applied by the scene's arrival handler — `<SceneCanvas layouts>`
+   *  installs one, or `useLayoutArrivals` for a hand-built canvas. */
+  arrive?(
+    container: LayoutContainer,
+    children: ReadonlyArray<LayoutChild<TPose>>,
+    arrivals: ReadonlySet<string>,
+  ): LayoutArrival<TPose> | null;
+
+  /** Optional: the world region the arrangement of `children` covers. Larger
+   *  than `container.bounds` when children sit past it — a grid whose
+   *  overflow runs on below its last visible row — and that difference is
+   *  what a host scrolling the container's content scrolls over. Absent means
+   *  the container's own bounds. */
+  contentExtent?(
+    container: LayoutContainer,
+    children: ReadonlyArray<LayoutChild<TPose>>,
+  ): ContainerBounds;
 
   /** Optional: what this container does about a child of its own that was
    *  released outside every layout container. Returning ops replaces the

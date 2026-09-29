@@ -16,6 +16,7 @@ export type {
   PoseOverrides,
   RegisteredOp,
   Scene,
+  SceneArrivalHandler,
   SceneRegistry,
   SerializedNode,
   SerializedLayer,
@@ -26,6 +27,7 @@ export type {
   UseSceneOptions,
 } from './types';
 export { createPoseOverrides } from './poseOverrides';
+export { SceneArrivalRefused } from './arrivals';
 export { definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose } from './effectivePose';
 export { createPoseFeed } from './poseFeed';
 export type { FeedDelta, FeedNode, PoseFeed } from './poseFeed';
