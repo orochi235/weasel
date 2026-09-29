@@ -654,7 +654,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   directly risks a second copy whose context the overlays never read — which
   fails silently, as an unthemed overlay. Switch `useOverlayPortal`
   (`packages/ui/src/overlays/portalHost.tsx`) to the provider once RAC exports it.
-  Still absent from RAC's index at 1.21.1, checked 2026-09-08.
+  The same switch lets a contained `ToastRegion` drop its own region for RAC's,
+  which would make it an F6 landmark again. Still absent from RAC's index at
+  1.21.1, checked 2026-09-29.
 
 - **(P3) The grammar names no hover gesture.** The loupe now routes its peek key
   and its wheel through the dispatcher, but aiming the lens is still a plain
@@ -836,15 +838,6 @@ only story runner in the repo.
   no Marks section and the tool rail holds only Info. The removed wiring — the
   story as the one annotation target, sized and captured through the trial's
   frame registry — is in `git log --grep 'take marks out of forge'`.
-
-- **(P3) `ToastRegion` portals to `document.body` and cannot be told otherwise.**
-  React Aria's `UNSTABLE_ToastRegion` takes its container from
-  `UNSAFE_PortalProvider` only, which `@weasel-js/ui` avoids
-  (`packages/ui/src/overlays/portalHost.tsx` says why), so a toast raised inside
-  a forge trial lands on the page's corner. The Toast story is the one isolated
-  story for it. Either give `ToastRegion` a `portalContainer` through a
-  provider import that is proven to share React Aria's instance, or render the
-  region inline with `position: absolute` under the nearest portal host.
 
 - **(P3) The CSS Vars panel saves scale edits only.** A single token edited by
   hand — a color, a step changed after its scale — stays a per-trial override,
