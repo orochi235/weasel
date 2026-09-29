@@ -205,14 +205,13 @@ have shipped. What remains:
   does (spec, "WebKit and Firefox, headless"), but whether headed Firefox and
   Safari rasterize an SVG cursor at 1× or cap below 128 px needs a real window.
   `node probe.mjs <dir> --browser firefox` and `--browser safari` in
-  `packages/cursor/scripts/probe/` do it (README). Not runnable on the fleet as
-  of 2026-09-28: keiei, msb-uai and studio all sit at a locked screen, and the
-  `onto` agent (`~/.local/bin/onto`) has neither Screen Recording nor
-  Accessibility on any of them — `warp check` reports all three. Headed
-  Playwright Firefox also captured the bare-`crosshair` control as the arrow
-  on orochi; the probe now refuses to report until that control passes, so
-  the first run on a granted node answers whether that was focus. A finding
-  lands in `bake.ts`.
+  `packages/cursor/scripts/probe/` do it (README). studio has the grants as
+  of 2026-09-29 — Screen Recording, and Accessibility, which macOS 27 calls
+  "Device Control and Data Access" — and `warp check` passes there, but both
+  browsers then failed the control: each capture is the bare page with no
+  pointer drawn at all, so the arrow and the `crosshair` hash the same. What
+  is missing is the cursor in the capture, not the browser's focus; that is
+  the next thing to find. A finding lands in `bake.ts`.
 
 ---
 

@@ -21,7 +21,8 @@ JSON there, and nothing cleans it up.
 
 Headful mode first runs `warp check` and stops if the screen is locked or the
 app running the probe lacks **Screen Recording** or **Accessibility** (System
-Settings > Privacy & Security). The grants belong to whatever launched it —
+Settings > Privacy & Security; macOS 27 names Accessibility "Device Control
+and Data Access"). The grants belong to whatever launched it —
 Terminal, or the `onto` agent on a fleet node — and without them nothing
 errors: captures come back blank and posted moves vanish.
 

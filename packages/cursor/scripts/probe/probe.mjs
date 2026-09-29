@@ -21,6 +21,7 @@ import { createHash } from 'node:crypto';
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const DIR = process.argv[2];
 const arg = (name) => process.argv.includes(name);
@@ -32,6 +33,8 @@ const ENGINE = opt('--browser', 'chromium');
 const TYPES = { chromium, webkit, firefox };
 if (!TYPES[ENGINE] && ENGINE !== 'safari') throw new Error('--browser must be one of chromium, webkit, firefox, safari');
 if (ENGINE === 'safari' && arg('--headless')) throw new Error('Safari has no headless mode');
+// Built beside this script (README), not in the scratch <dir>.
+const WARP = fileURLToPath(new URL('./warp', import.meta.url));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 if (arg('--headless')) await headless();
@@ -94,14 +97,14 @@ async function headful() {
   // Nothing fails loudly without these: captures come back blank and posted
   // moves vanish. Check before taking the screen.
   try {
-    execFileSync(`${DIR}/warp`, ['check'], { stdio: 'inherit' });
+    execFileSync(WARP, ['check'], { stdio: 'inherit' });
   } catch {
     console.error('headful probe needs an unlocked screen, and Screen Recording and Accessibility for the app running it');
     process.exit(2);
   }
   const SHOTS = `${DIR}/shots-${ENGINE}`;
   mkdirSync(SHOTS, { recursive: true });
-  const warp = (x, y) => execFileSync(`${DIR}/warp`, [String(x), String(y)]);
+  const warp = (x, y) => execFileSync(WARP, [String(x), String(y)]);
   const grab = (x, y, w, h, out) =>
     execFileSync('screencapture', ['-x', '-C', '-R', `${x},${y},${w},${h}`, out]);
   const md5 = (f) => createHash('md5').update(readFileSync(f)).digest('hex');
