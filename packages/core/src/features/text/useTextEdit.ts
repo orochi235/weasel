@@ -12,7 +12,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
-import { fontString, resolveAlign, resolveTextStyle, SCRIPT_METRICS } from '@weasel-js/text';
+import { fontString, numericWeight, resolveAlign, resolveTextStyle, SCRIPT_METRICS } from '@weasel-js/text';
+import { cssFontFamily } from '@weasel-js/font';
 import type { TextPaint, TextVerticalAlign } from '@weasel-js/text';
 import { layoutTextPose, verticalAlignOffset } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
@@ -982,7 +983,11 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   // there is no CSS spelling of "no fill" that leaves the glyphs visible.
   el.style.color = style.fill !== null && 'color' in style.fill ? style.fill.color : '#000';
   el.style.caretColor = style.caretColor;
-  el.style.font = fontString(style);
+  // The canvas's face, not the browser's reading of the family name.
+  const fontFamily = cssFontFamily(style.fontFamily, {
+    weight: numericWeight(style.fontWeight), style: style.fontStyle,
+  });
+  el.style.font = fontString({ ...style, fontFamily });
   el.style.lineHeight = String(style.lineHeight);
   el.style.textAlign = resolveAlign(style.align, style.direction);
   // Node-level decoration, so the overlay looks like the canvas the moment

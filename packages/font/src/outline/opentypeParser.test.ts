@@ -88,6 +88,23 @@ describe.skipIf(!existsSync(INTER_TTF))('opentype parser, bundled Inter subset',
       if (d) expect(d).not.toMatch(/[eE]/);
     }
   });
+
+  it('kerns as a browser does, extension lookups included', () => {
+    // Chromium, WebKit and Firefox set these at 72px within 0.02px of each
+    // other, `font-kerning: normal`, from this same file.
+    const width = (s: string) => {
+      const cps = [...s].map((ch) => ch.codePointAt(0)!);
+      let em = 0;
+      cps.forEach((cp, i) => {
+        em += face.advanceOf(cp)!;
+        if (i + 1 < cps.length) em += face.kernOf(cp, cps[i + 1]);
+      });
+      return em * 72;
+    };
+    expect(width('Hxgd')).toBeCloseTo(179.44, 1);
+    expect(width('AVATAR')).toBeCloseTo(269.44, 1);
+    expect(width('Wavy Type')).toBeCloseTo(376.35, 1);
+  });
 });
 
 describe('parserOf — module interop', () => {

@@ -26,6 +26,7 @@
 
 import { OUTLINE_PRECISION, type OutlineFace, type OutlineParser } from './OutlineFace';
 import { sfntFromCollection } from './sfnt';
+import { gposPairKerning, type PairKerning } from './gposKerning';
 
 type OpenType = typeof import('opentype.js');
 
@@ -62,7 +63,7 @@ export function parserOf(ns: OpenType): OpenType['parse'] {
  * might have been able to serve. Report the miss instead and let the caller's
  * fallback ladder run.
  */
-function faceFor(font: import('opentype.js').Font): OutlineFace {
+function faceFor(font: import('opentype.js').Font, gpos: PairKerning | null): OutlineFace {
   const upem = font.unitsPerEm;
   return {
     unitsPerEm: upem,
@@ -76,6 +77,7 @@ function faceFor(font: import('opentype.js').Font): OutlineFace {
       const l = font.charToGlyphIndex(String.fromCodePoint(left));
       const r = font.charToGlyphIndex(String.fromCodePoint(right));
       if (!l || !r) return 0;
+      if (gpos) return gpos(l, r) / upem;
       return font.getKerningValue(font.glyphs.get(l), font.glyphs.get(r)) / upem;
     },
     glyphD(cp: number): string | null {
@@ -99,7 +101,7 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
   return async (bytes: ArrayBuffer): Promise<OutlineFace> => {
     const parse = parserOf(await loadOpenType());
     const { bytes: single } = sfntFromCollection(bytes, postScriptName);
-    return faceFor(parse(single));
+    return faceFor(parse(single), gposPairKerning(single));
   };
 }
 
