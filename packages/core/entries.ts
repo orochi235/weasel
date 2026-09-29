@@ -4,7 +4,6 @@ const shims = [
   'mesh',
   'move',
   'resize',
-  'insert',
   'clipboard',
   'clone',
   'patterns-builtin',

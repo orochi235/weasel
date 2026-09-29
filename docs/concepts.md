@@ -375,9 +375,11 @@ through. `ctx.scratch` is per-gesture mutable state. `defaultTransient`
 makes a move, resize or rotate commit without a history entry unless
 `transient` is set explicitly. See [extending.md](./extending.md) for writing one.
 
-Built-in behaviors: `snap(gridSnapStrategy(...))`, `snapToContainer(...)`,
-`snapBackOrDelete(...)` for move; `snapToGrid`, `clampMinSize` for resize;
-`cloneByAltDrag()` for clone. Marquee area-select is unconditional — it is
+Built-in behaviors: `snap(strategy)`, `snapToContainer(...)`,
+`snapBackOrDelete(...)` for move; `clampMinSize` and `lockAspectWithModifier`
+for resize; `cloneByAltDrag()` for clone. Grid and guide snapping —
+`snapToGrid`, `snapToGuides`, `gridSnapStrategy`, the alignment behaviors —
+are in `@weasel-js/guides`. Marquee area-select is unconditional — it is
 `areaSelectAction`'s built-in behavior, not an opt-in one.
 
 ## Action

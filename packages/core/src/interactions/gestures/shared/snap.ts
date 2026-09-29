@@ -2,7 +2,7 @@ import type { MoveBehavior, ModifierState, SnapStrategy } from '../types';
 import {
   AUTO_ORIGIN_PROJECTION,
   type OriginProjection,
-} from './strategies/grid';
+} from './originProjection';
 
 type ModKey = keyof ModifierState;
 
@@ -20,7 +20,7 @@ type ModKey = keyof ModifierState;
  *
  * The pose-shape-aware delta extraction lives here — gestures stay pose-shape
  * agnostic. Default projection reads a rect's `{x, y}` or a Path's bounds
- * origin, matching `gridSnapStrategy`'s own default.
+ * origin, the same default the snap strategies use.
  * Pass `origin` for exotic poses.
  */
 export function snap<TPose>(

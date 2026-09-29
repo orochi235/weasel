@@ -1,0 +1,60 @@
+{
+  "name": "@weasel-js/guides",
+  "version": "1.7.0",
+  "description": "Placement aids for weasel: grids, alignment guides, snapping to them, and container layout strategies, built on core's snap and behavior seams.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./move": {
+      "import": "./dist/move.js",
+      "types": "./dist/move.d.ts"
+    },
+    "./resize": {
+      "import": "./dist/resize.js",
+      "types": "./dist/resize.d.ts"
+    },
+    "./insert": {
+      "import": "./dist/insert.js",
+      "types": "./dist/insert.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "@weasel-js/core": "1.7.0",
+    "@weasel-js/geom": "1.7.0"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/guides"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

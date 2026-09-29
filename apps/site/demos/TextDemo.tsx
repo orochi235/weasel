@@ -2,12 +2,12 @@ import { useRef } from 'react';
 import {
   SceneCanvas,
   createTextLayer,
-  gridSnapStrategy,
   useScene,
   useSceneTextEdit,
   type CanvasHelpers,
   type RenderLayer,
 } from '@weasel-js/core';
+import { gridSnapStrategy } from '@weasel-js/guides';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { INITIAL_TEXT_NODES, type TextNode, type Pose } from './textDemoScene';
 

@@ -1,9 +1,9 @@
 import {
   asNodeId,
-  gridSnapStrategy,
   ROTATED_POSE_DESCRIPTOR,
   SceneCanvas,
 } from '@weasel-js/core';
+import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
 import type { PoseDescriptor, RotatedPose, UnitSystem } from '@weasel-js/core';
 import sceneJson from './data/transform.scene.json';
 
@@ -11,6 +11,12 @@ const W = 400, H = 300;
 // Demo unit system: base is the pixel, but the demo speaks in "tiles" worth 20px.
 const UNITS: UnitSystem = { base: 'px', units: { px: 1, tile: 20 } };
 const CELL = { value: 1, unit: 'tile' } as const;
+const GRID_LAYER = createGridLayer({
+  spacing: CELL,
+  unitSystem: UNITS,
+  bounds: () => ({ x: 0, y: 0, width: W, height: H }),
+  accentEvery: 5,
+});
 
 /**
  * The select tool's full transform surface on one canvas — no per-gesture
@@ -37,12 +43,7 @@ export function TransformDemo() {
       }}
       selectionOptions={{ mode: 'multi', initial: [asNodeId('b')] }}
       layers={{
-        grid: {
-          spacing: CELL,
-          unitSystem: UNITS,
-          bounds: () => ({ x: 0, y: 0, width: W, height: H }),
-          accentEvery: 5,
-        },
+        grid: { layer: GRID_LAYER },
         selectionOverlay: { rotationHandle: true },
       }}
     />

@@ -8,10 +8,10 @@ import {
   useSelection,
   useSelectTool,
   useTools,
-  pointSnapToGrid,
   ROTATED_POSE_DESCRIPTOR,
   useResizePolicy,
 } from '@weasel-js/core';
+import { createGridLayer, pointSnapToGrid } from '@weasel-js/guides';
 import type { RotatedPose, PoseDescriptor, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
@@ -22,6 +22,11 @@ interface Rect extends RotatedPose {
 
 const W = 400, H = 300;
 const SNAP_GRID = 20;
+const GRID_LAYER = createGridLayer({
+  spacing: SNAP_GRID,
+  bounds: () => ({ x: 0, y: 0, width: W, height: H }),
+  style: { line: { paint: { fill: 'solid', color: '#3a3020' }, width: 1 } },
+});
 
 const INITIAL: Rect[] = [
   { id: 'a', x: 160, y: 100, width: 100, height: 60, rotation: Math.PI / 6, color: '#7fb069' },
@@ -69,13 +74,7 @@ function PointSnapDemoInner() {
       poseDescriptor={ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect>}
       tools={tools}
       layers={{
-        grid: {
-          spacing: SNAP_GRID,
-          bounds: () => ({ x: 0, y: 0, width: W, height: H }),
-          style: {
-            line: { paint: { fill: 'solid', color: '#3a3020' }, width: 1 },
-          },
-        },
+        grid: { layer: GRID_LAYER },
         scene: {
           // drawOne returns unrotated geometry; SceneCanvas wraps the
           // output in a rotation transform when `pose.rotation` is set

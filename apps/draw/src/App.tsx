@@ -48,7 +48,6 @@ import {
   type FillStyle,
   fitViewToBounds,
   getAlpha01,
-  gridSnapStrategy,
   type ImageNodeData,
   inferredNodeProperties,
   inferredNodeRouting,
@@ -93,6 +92,7 @@ import {
   withAlpha01,
   workspaceTintLayer,
 } from '@weasel-js/core';
+import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
 import { useHudContribution } from '@weasel-js/hud/react';
 import { qty, zoom } from '@weasel-js/quantity';
 import {
@@ -1482,6 +1482,16 @@ function EditorWithSharedScene({
     intensity: 0.4,
   }), [modality.machine, paper.width, paper.height]);
 
+  const gridLayer = useMemo(() => createGridLayer({
+    spacing: 20,
+    bounds: () => ({ x: 0, y: 0, width: paper.width, height: paper.height }),
+    accentEvery: 5,
+    style: {
+      line:   { paint: { fill: 'solid', color: contrastLineColor(backgroundColor, 0.06) }, width: 1 },
+      accent: { paint: { fill: 'solid', color: contrastLineColor(backgroundColor, 0.14) }, width: 1 },
+    },
+  }), [paper.width, paper.height, backgroundColor]);
+
   const redrawOnScoping = useMemo(() => [modality.scopingDim], [modality.scopingDim]);
 
   return (
@@ -1582,17 +1592,7 @@ function EditorWithSharedScene({
             } : undefined}
             layers={{
               paper: { layer: paperLayer, before: 'grid' },
-              ...(gridVisible ? {
-                grid: {
-                  spacing: 20,
-                  bounds: () => ({ x: 0, y: 0, width: paper.width, height: paper.height }),
-                  accentEvery: 5,
-                  style: {
-                    line:   { paint: { fill: 'solid', color: contrastLineColor(backgroundColor, 0.06) }, width: 1 },
-                    accent: { paint: { fill: 'solid', color: contrastLineColor(backgroundColor, 0.14) }, width: 1 },
-                  },
-                },
-              } : {}),
+              ...(gridVisible ? { grid: { layer: gridLayer } } : {}),
               modeTint: { layer: workspaceTint, after: 'grid' },
             }}
             decorationLayer={modality.decorationLayer}

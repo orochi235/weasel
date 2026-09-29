@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import * as builtins from '../index';
-import { snapToGrid } from 'interactions/actions/insert/behaviors/snapToGrid';
 import type { InsertToolOptions } from './insertToolOptions';
 
 type InsertTool = { bindings?: readonly { actionId: string; opts?: { behaviors?: unknown[] } }[] };
@@ -18,7 +17,8 @@ const tools: Array<[string, (o: InsertToolOptions) => unknown]> = [
 ];
 
 describe('drag-to-insert tools carry their behaviors onto the insert binding', () => {
-  const behaviors = [snapToGrid({ spacing: 10 })];
+  // Only identity is under test, so any object stands in for a behavior.
+  const behaviors = [{}] as NonNullable<InsertToolOptions['behaviors']>;
   for (const [name, hook] of tools) {
     it(name, () => {
       const { result } = renderHook(() => hook({ behaviors }));

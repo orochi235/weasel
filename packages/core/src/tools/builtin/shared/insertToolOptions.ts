@@ -4,7 +4,7 @@ import type { InsertBehavior } from 'interactions/gestures/types';
 /** Options every drag-to-insert tool takes. */
 export interface InsertToolOptions {
   /** Behaviors `insertAction` runs over the drag's start and current point
-   *  (`snapToGrid`, `snapToGuides`, `alignInsertBehavior`), in order. Keep
+   *  (e.g. `@weasel-js/guides`' `snapToGrid`, `alignInsertBehavior`), in order. Keep
    *  the array stable across renders: a new one rebuilds the tool. */
   behaviors?: readonly InsertBehavior<unknown>[];
 }

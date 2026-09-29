@@ -128,9 +128,13 @@ the iteration order of the `layers` map.
 
 A `RenderLayer<TData>` is just `{ id, draw(ctx, data?, vis?), label?,
 defaultVisible?, alwaysOn?, deps? }`. Build them with the helpers the kit
-exports: `createGridLayer`, `createCellHighlightLayer`, `createTextLayer`,
-`createPathLayer`, `createChildrenLayer`, `createSelectionOverlayLayer`,
-`createTilePattern`. Or write your own — it's a function.
+exports: `createTextLayer`, `createPathLayer`, `createChildrenLayer`,
+`createSelectionOverlayLayer`, `createTilePattern` — and, from
+`@weasel-js/guides`, `createGridLayer`, `createCellHighlightLayer` and
+`createGuidesLayer`. Or write your own — it's a function.
+
+The `grid` and `cellHighlight` slots take a pre-built layer, like any custom
+entry: `layers={{ grid: { layer: createGridLayer({ spacing: 20, bounds }) } }}`.
 
 `deps` opts a layer into command caching — see [concepts.md](./concepts.md#layer).
 
@@ -251,7 +255,7 @@ Each action pins the proposed/result shape; pick the matching alias
 
 **Reference behaviors in the source:**
 
-- `packages/core/src/interactions/actions/move/behaviors/snapToGrid.ts` — pure pose refinement.
+- `packages/guides/src/behaviors/move/snapToGrid.ts` — pure pose refinement.
 - `packages/core/src/interactions/actions/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd`.
 - `packages/core/src/interactions/actions/resize/behaviors/clampMinSize.ts` — width/height clamp.
 - `packages/core/src/interactions/actions/clone/behaviors/cloneByAltDrag.ts` — modifier activation + paste flow.
@@ -298,7 +302,8 @@ The kit ships:
 For grid snapping on a non-rect pose, also pass an `OriginProjection`:
 
 ```tsx
-import { gridSnapStrategy, pathOriginProjection } from '@weasel-js/core';
+import { pathOriginProjection } from '@weasel-js/core';
+import { gridSnapStrategy } from '@weasel-js/guides';
 
 <SceneCanvas
   selectTool={{ snap: gridSnapStrategy(20, { origin: pathOriginProjection }) }}

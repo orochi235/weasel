@@ -375,7 +375,7 @@ export interface InsertDep {
  * Carries the behavior-shaping options the legacy `useResize` hook
  * exposed through `UseResizeOptions`: bounds-frame behaviors (e.g.
  * `lockAspectWithModifier`), world-space anchor-point snap behaviors (e.g.
- * `pointSnapToGrid`), and group-expansion (`expandIds`).
+ * `@weasel-js/guides`' `pointSnapToGrid`), and group-expansion (`expandIds`).
  *
  * Optional in `DepSchema`: when absent, `resizeAction` falls back to
  * identity defaults (no behaviors, identity expandIds). Consumers wire the

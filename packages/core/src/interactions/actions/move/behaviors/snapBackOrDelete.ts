@@ -4,7 +4,7 @@ import type { MoveBehavior } from '../../../gestures/types';
 import {
   AUTO_ORIGIN_PROJECTION,
   type OriginProjection,
-} from '../../../gestures/shared/strategies';
+} from '../../../gestures/shared/originProjection';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
 
 const SNAPSHOTS = scratchKey<Map<string, { id: string }>>('snapBackOrDelete.snapshots');

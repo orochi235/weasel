@@ -63,11 +63,6 @@ import type {
   ResizeAdapter,
   RotateAdapter,
 } from 'core/adapters/types';
-import { createGridLayer, type GridLayerOpts } from 'features/grid/layer';
-import {
-  createCellHighlightLayer,
-  type CellHighlightLayerOpts,
-} from 'features/grid/cellHighlight';
 import {
   createSelectionOverlayLayer,
   type SelectionOverlayLayerOpts,
@@ -112,14 +107,6 @@ import { PickHud } from './PickHud';
 import { ModalityHud } from './ModalityHud';
 
 
-
-/** Grid slot config — extends raw grid layer opts with an optional nested
- *  `highlight` sub-config. The cell-highlight layer is rendered immediately
- *  after the grid in the canonical stack. */
-export type GridSlotConfig = GridLayerOpts & {
-  /** Cell-highlight overlay; omit or set to `null` to skip. */
-  highlight?: CellHighlightLayerOpts | null;
-};
 
 /** Scene slot config — describes how to draw one object with its effective pose. */
 export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
@@ -203,7 +190,6 @@ export type SelectionOverlaySlotConfig<TPose> = Omit<
 
 /** Per-slot config union. The key narrows it in practice. */
 export type StandardSlotConfig<TNode extends { id: string }, TPose> =
-  | GridSlotConfig
   | SceneSlotConfig<TNode, TPose>
   | SelectionOverlaySlotConfig<TPose>;
 
@@ -216,8 +202,9 @@ export type LayerSlotValue<TNode extends { id: string }, TPose> =
   | null;
 
 /** The canvas's render stack, as named slots. The standard slots (grid,
- *  scene, selection overlay, cell highlight) can be configured, replaced with
- *  a layer of your own, or switched off; further keys add custom layers.
+ *  scene, selection overlay, cell highlight) fix where a layer sits in the
+ *  stack; scene and selection overlay can be configured, and every one can be
+ *  given a layer of your own or switched off. Further keys add custom layers.
  *  `TSceneSlot` is what the scene slot accepts: `<SceneCanvas>` takes a
  *  partial config and fills the rest from its defaults. */
 export type LayersMap<
@@ -225,16 +212,17 @@ export type LayersMap<
   TPose,
   TSceneSlot = SceneSlotConfig<TNode, TPose>,
 > = {
-  grid?: GridSlotConfig | null;
+  /** Grid slot, beneath the scene. Takes a pre-built layer (`{ layer }`) —
+   *  e.g. `createGridLayer` from `@weasel-js/guides` — or `null`. */
+  grid?: CustomLayerEntry | null;
   scene?: TSceneSlot | null;
   /** Selection-overlay slot. Canvas constructs the layer from a
    *  `SelectionOverlaySlotConfig`; pass a `CustomLayerEntry` (`{ layer }`) to
    *  supply a pre-built layer (e.g. from `<SceneCanvas>`). */
   selectionOverlay?: SelectionOverlaySlotConfig<TPose> | CustomLayerEntry | null;
-  /** Cell-highlight overlay slot. Canvas falls back to `grid.highlight` when
-   *  this slot is absent. Pass a `CustomLayerEntry` (`{ layer }`) to supply a
-   *  pre-built layer directly, or `null` to suppress even when `grid.highlight`
-   *  is set. */
+  /** Cell-highlight overlay slot, drawn immediately after the grid. Takes a
+   *  pre-built layer (`{ layer }`) — e.g. `createCellHighlightLayer` from
+   *  `@weasel-js/guides` — or `null`. */
   cellHighlight?: CustomLayerEntry | null;
 } & {
   [customKey: string]: LayerSlotValue<TNode, TPose> | TSceneSlot | undefined;
@@ -1246,30 +1234,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     > = {};
 
     const grid = layersMap.grid;
-    if (grid && !isCustomEntry(grid)) {
-      const gridCfg = grid as GridSlotConfig;
-      const { highlight, ...gridOpts } = gridCfg;
-      standardLayers.grid = createGridLayer(gridOpts as GridLayerOpts);
-      if (highlight) {
-        standardLayers.cellHighlight = createCellHighlightLayer(highlight);
-      }
-    }
-
-    // Top-level `cellHighlight` slot: a pre-built CustomLayerEntry wins over
-    // the `grid.highlight` sub-config constructed above. Explicit `null`
-    // suppresses the slot (even when grid.highlight was set).
-    const cellHighlightSlot = layersMap.cellHighlight;
-    if (cellHighlightSlot !== undefined) {
-      if (cellHighlightSlot === null) {
-        standardLayers.cellHighlight = undefined;
-      } else {
-        // isCustomEntry check is redundant since the slot only accepts
-        // CustomLayerEntry | null, but kept for runtime safety.
-        standardLayers.cellHighlight = isCustomEntry(cellHighlightSlot)
-          ? cellHighlightSlot.layer
-          : undefined;
-      }
-    }
+    if (isCustomEntry(grid)) standardLayers.grid = grid.layer;
+    const cellHighlight = layersMap.cellHighlight;
+    if (isCustomEntry(cellHighlight)) standardLayers.cellHighlight = cellHighlight.layer;
 
     const sceneCfg = layersMap.scene as SceneSlotConfig<TNode, TPose> | null | undefined;
     let sceneLayers: Array<{ key: string; layer: RenderLayer<unknown> }> | undefined;

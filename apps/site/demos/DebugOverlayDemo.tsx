@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   DEFAULT_HANDLE_SIZE,
-  gridSnapStrategy,
   rasterToPng,
   renderDebugSnapshot,
   SceneCanvas,
   useScene,
 } from '@weasel-js/core';
+import { gridSnapStrategy } from '@weasel-js/guides';
 import type {
   DebugConfig,
   DebugFeature,

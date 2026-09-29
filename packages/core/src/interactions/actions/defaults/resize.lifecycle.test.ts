@@ -4,8 +4,6 @@ import { resizeAction } from './resize';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { ResizePolicy } from '../depSchema';
-import { alignResizeBehavior } from 'features/guides/alignment/behaviors';
-import type { Guide } from 'features/guides/types';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -51,16 +49,18 @@ function resize(s: ReturnType<typeof setup>, reason: 'commit' | 'cancel' = 'comm
 }
 
 describe('resizeAction — cancel', () => {
-  it('Esc mid-drag clears the alignment guides a constraint published', () => {
-    let active: readonly Guide[] = [];
-    const align = alignResizeBehavior({
-      getCandidates: () => [{ id: 'R', axis: 'x', offset: 152 }],
-      setActiveGuides: (g) => { active = g; },
-    });
-    const s = setup({ constraints: [align] as never });
+  it('Esc mid-drag lets a constraint withdraw what it published', () => {
+    // The shape of an alignment-guide overlay: publish on move, withdraw on end.
+    let active: string[] = [];
+    const constraint = {
+      onMove: () => { active = ['R']; return undefined; },
+      onEnd: () => { active = []; return undefined; },
+      onCancel: () => { active = []; },
+    };
+    const s = setup({ constraints: [constraint] as never });
     const handle = invoker().start(s.base, undefined);
     handle.onMove?.(s.grown);
-    expect(active.map((g) => g.id)).toEqual(['R']);
+    expect(active).toEqual(['R']);
     handle.onEnd?.(s.grown, 'cancel');
     expect(active).toEqual([]);
   });

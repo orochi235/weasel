@@ -243,7 +243,7 @@ not routed by the dispatcher — you own the pointer events.
   builds none of its own.
 - `useVelocityTracker()`, `useDecayLoop(config)` — inertial-pan building
   blocks.
-- `useGridCellHover(...)` — pointer→cell mapping.
+- `useGridCellHover(...)` — pointer→cell mapping (in `@weasel-js/guides`).
 - `usePointerStylus(...)` — pressure/tilt from `PointerEvent`.
 - `useSceneAdapter(...)`, `useArrayAdapter(...)` — adapter construction.
 - `useScene(...)` — the kit-owned scene tree. See
