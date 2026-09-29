@@ -50,7 +50,7 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
   const roving = useRovingTabIndex({ itemSelector: `.${s.segment}`, onActivate: fire });
 
   const style: CSSProperties | undefined = height !== undefined
-    ? ({ ['--wzl-tb-height' as string]: `${height}px` } as CSSProperties)
+    ? ({ ['--tb-h' as string]: `${height}px` } as CSSProperties)
     : undefined;
 
   const rootCls = [
