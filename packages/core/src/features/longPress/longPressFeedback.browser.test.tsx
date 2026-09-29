@@ -17,8 +17,11 @@ const W = 320;
 const H = 240;
 const PRESS = { x: 160, y: 120 };
 const RADIUS = 22;
-/** Long enough that the press cannot fire, and the ring go, before the capture lands. */
-const DURATION = 5000;
+/** Long enough that the press cannot fire, and the ring go, before the capture lands —
+ *  a screenshot on a loaded machine has taken several seconds. */
+const DURATION = 15_000;
+/** A fifth of the way through the hold. */
+const HOLD = DURATION / 5;
 const EDGE = 6;
 
 const bound: SurfaceContribution = {
@@ -89,14 +92,14 @@ function accentPixels(img: ImageData, dpr: number): { ring: number; elsewhere: n
 
 describe('long-press feedback ring', () => {
   it('paints an accent ring around a touch held mid-progress', async () => {
-    const { data, dpr } = await holdAndCapture([bound], 1000);
+    const { data, dpr } = await holdAndCapture([bound], HOLD);
     const px = accentPixels(data, dpr);
     expect(px.ring).toBeGreaterThan(40);
     expect(px.elsewhere).toBe(0);
   });
 
   it('paints nothing when no binding would fire on the press', async () => {
-    const { data, dpr } = await holdAndCapture([], 1000);
+    const { data, dpr } = await holdAndCapture([], HOLD);
     expect(accentPixels(data, dpr).ring).toBe(0);
   });
 });
