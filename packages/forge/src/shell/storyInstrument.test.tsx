@@ -182,8 +182,11 @@ describe('FrameView', () => {
     ));
     const { frame } = connect(document.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
     frame.send(ready);
-    // No act: the suspended transition would hold its flush open.
-    await new Promise((r) => realSetTimeout(r, 0));
+    // No act: the suspended transition would hold its flush open. The port can take more
+    // than one tick to deliver under load, so poll rather than wait exactly one.
+    for (let i = 0; i < 50 && committed.mock.calls.length === 0 && abandoned.mock.calls.length === 0; i++) {
+      await new Promise((r) => realSetTimeout(r, 0));
+    }
     expect(abandoned).not.toHaveBeenCalled();
     expect(committed).toHaveBeenCalledWith(entry, ready);
   });
