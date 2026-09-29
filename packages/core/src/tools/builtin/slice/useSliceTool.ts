@@ -39,8 +39,8 @@ const VERTEX_RADIUS_PX = 3;
  * loop and commits. While points are placed, a drag places one more where it
  * is released instead of cutting on its own.
  *
- * Every cut goes to the `slice` dep, which decides what it does to the scene;
- * with none published the tool does nothing. The pending cut paints through
+ * Every cut goes to the `slice` dep, which decides what it does to the scene.
+ * `<SceneCanvas>` publishes one that cuts every path the cut crosses. The pending cut paints through
  * `Tool.overlay`, trailing to the pointer when the host publishes one.
  */
 export function useSliceTool(options: UseSliceToolOptions = {}): Tool<null> {

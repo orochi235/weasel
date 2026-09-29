@@ -12,6 +12,7 @@ export { useTextEditDepSource } from './textEdit';
 export { useEditAnchorsDepSource } from './editAnchors';
 export { useInsertDepSource, type InsertNodeFactory } from './insert';
 export { useSnapDepSource } from './snap';
+export { useSliceDep, useSliceDepSource } from './slice';
 export { useDebugDepSource } from './debug';
 export { useDispatcherDepSource } from './dispatcher';
 export {

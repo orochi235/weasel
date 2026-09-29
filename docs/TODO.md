@@ -200,13 +200,6 @@ Priority tags:
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
 
-- **(P3) `<SceneCanvas>` has no default `slice` dep.** `useSliceTool` publishes every cut
-  to the `slice` dep and does nothing without one, and the only implementation is
-  WeaselDraw's (`apps/draw/src/tools/slice/sliceCommit.ts` and `SliceDepPublisher.tsx`):
-  bake each leaf's path to world space, knife or snip it, swap it for its pieces in one
-  undoable batch, and carry the selection over. Every other consumer has to write that
-  again, which is also why no site demo shows slicing.
-
 ### Cursor package follow-ups
 
 All four arcs of `docs/superpowers/specs/2026-09-03-cursor-system-design.md`

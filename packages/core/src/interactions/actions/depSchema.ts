@@ -455,12 +455,12 @@ export interface ClipboardDep {
 }
 
 /**
- * Consumer-supplied commit for the Slice action. `commit` receives the cut as
- * an open polyline of at least two points (world coords): the drag's two ends
- * for a straight cut, its whole trail for a freehand one. The consumer scans
- * the scene, splits crossed paths via `splitPathByPolyline` (knife) or
- * `snipPathByPolyline` (scissors), and applies the result as one undoable
- * batch.
+ * The commit behind the Slice action. `commit` receives the cut as a polyline
+ * of at least two points (world coords): the drag's two ends for a straight
+ * cut, its whole trail for a freehand one, the placed points for a
+ * click-by-click one, whose last point equals its first when it closes into
+ * a loop. `<SceneCanvas>` publishes one over its scene (`useSliceDepSource`);
+ * a consumer replaces it with `useSliceDep`.
  */
 export interface SliceDep {
   commit(cut: ReadonlyArray<Point2>): void;
@@ -599,12 +599,8 @@ declare module '@weasel-js/routing' {
      */
     layout?: LayoutDep;
     /**
-     * Slice dep — consumer-supplied commit for the Slice action.
-     *
-     * Receives the cut as an open polyline in world coordinates; the consumer
-     * scans the scene, splits crossed paths via `splitPathByPolyline` (knife)
-     * or `snipPathByPolyline` (scissors), and applies the result as one
-     * undoable batch.
+     * Slice dep — the commit for the Slice action. `<SceneCanvas>` publishes
+     * `useSliceDepSource`; a consumer overrides it with `useSliceDep`.
      *
      * Optional: when absent, `sliceAction` is a no-op.
      */

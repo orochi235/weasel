@@ -8,7 +8,7 @@
  * is whichever effect runs last. `{children}` is the final slot in
  * SceneCanvas's tree, after the internal component that registers the stub —
  * so a child registration overrides it, and a *parent* one would not. This is
- * the same seat `SliceDepPublisher` and `BooleansAdapterPublisher` take.
+ * the same seat `BooleansAdapterPublisher` takes.
  *
  * The session itself lives in `App`, not here: the options bar is rendered
  * outside the canvas and needs the same `editingId` / `selection` this dep
