@@ -128,7 +128,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   // without a render. The thunk defers to `paintRef`, which every committed
   // render republishes from an insertion effect — ahead of the layout effect
   // below, and never from a render React abandoned.
-  const paintCanvas = useCanvasRenderer();
+  const { paint: paintCanvas } = useCanvasRenderer();
   const paint = (): boolean => {
     const canvas = localRef.current;
     if (!canvas) return false;

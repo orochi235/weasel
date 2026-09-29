@@ -55,7 +55,8 @@ import {
   drawLayers, isLayerPainted,
   type Dims, type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
-import { WeaselRenderer, viewToMat3, cullDrawCommands, type DrawCommand, type ShaderProgramHandle } from '../renderer';
+import { viewToMat3, cullDrawCommands, type DrawCommand, type ShaderProgramHandle } from '../renderer';
+import { useCanvasRenderer } from './useCanvasRenderer';
 import { getProgramSource, programSourceRegistry } from '../renderer/shaders/registerProgram';
 import {
   type SelectionApi,
@@ -594,20 +595,6 @@ export type {
 } from './useViewHelpers';
 
 // Walks every registered + ambient tool: resize/rotate will register as
-function registerShadersOnRenderer(
-  renderer: WeaselRenderer,
-  shaders: ShaderProgramHandle[] | undefined,
-): void {
-  if (!shaders) return;
-  for (const handle of shaders) {
-    try {
-      renderer.registerProgram(handle);
-    } catch (e) {
-      console.warn(`Canvas: failed to register shader "${handle.id}":`, e);
-    }
-  }
-}
-
 /**
  * Build the scene layer. Tool ghosts (in-flight drag/resize/rotate poses) are
  * published via the active tool's `previewPose`/`previewIds` and rendered on
@@ -1049,10 +1036,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
        paintedCursor, getDebug]);
 
-  // GL renderer (lazy-instantiated on first paint).
-  const glRendererRef = useRef<WeaselRenderer | null>(null);
+  // Created on the first paint, rebuilt when the paint target moves, and
+  // freed on unmount.
+  const lease = useCanvasRenderer();
   const layerCacheRef = useRef<LayerCommandCache>(new Map());
-  const lastResizeRef = useRef<{ w: number; h: number; dpr: number } | null>(null);
 
   // Views registered on this surface — declared as `views` descriptors or
   // mounted as `<CanvasView>` children. Null outside a surface that mounts a
@@ -1403,46 +1390,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       }
     }
 
-    let renderer = glRendererRef.current;
-    if (!renderer) {
-      const dpr = dprIn ?? (window.devicePixelRatio || 1);
-      const gl = c.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
-      if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') {
-        // jsdom or unsupported environment — bail silently (test envs hit
-        // this; jsdom returns a non-null stub but lacks WebGL2 methods).
-        return false;
-      }
-      try {
-        renderer = new WeaselRenderer({
-          gl: gl as WebGL2RenderingContext,
-          // A shared buffer is the caller's to size. Handing the renderer the
-          // element would have every co-tenant resize it to its own pane.
-          ...(rect ? {} : { canvas: c }),
-          width: w,
-          height: h,
-          dpr,
-          flattenTolerance: paintFlattenTolerance,
-        });
-      } catch {
-        // Test env or context creation failure — bail silently.
-        return false;
-      }
-      glRendererRef.current = renderer;
-      lastResizeRef.current = { w, h, dpr };
-      // The renderer is born on a frame, after every effect on the mounting
-      // commit, so only this branch can register the shaders it mounted with.
-      registerShadersOnRenderer(renderer, paintShaders);
-    } else {
-      const dpr = dprIn ?? (window.devicePixelRatio || 1);
-      const last = lastResizeRef.current;
-      if (!last || last.w !== w || last.h !== h || last.dpr !== dpr) {
-        renderer.resize({ width: w, height: h, dpr });
-        lastResizeRef.current = { w, h, dpr };
-      }
-      renderer.setFlattenTolerance(paintFlattenTolerance);
-    }
-
-    renderer.setTarget(rect ? { origin: { x: rect.x, y: rect.y } } : null);
+    const renderer = lease.bind(c, { width: w, height: h, dpr: dprIn }, {
+      tile: rect,
+      flattenTolerance: paintFlattenTolerance,
+      shaders: paintShaders,
+    });
+    // jsdom or unsupported environment: no WebGL2, nothing to paint.
+    if (!renderer) return false;
 
     const view = viewRef.current;
     const spans: LayerDrawSpan[] | undefined = sink && frameStats ? [] : undefined;
@@ -1463,7 +1417,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (sink && spans) sink.recordFrame(frameStatsOf(spans, renderer.lastFrameStats(), performance.now() - paintT0));
     paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
     return true;
-  }, [contentVersionRef, paintInputsRef, paintRectRef, paintTargetRef]);
+  }, [contentVersionRef, lease, paintInputsRef, paintRectRef, paintTargetRef]);
   useInsertionEffect(() => {
     paintRef.current = paint;
   });
@@ -1480,19 +1434,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     requestRedraw();
   }, [layersWithDebug, width, height, viewProp, debugSink, dprProp, flattenTolerance,
       layerVisibility, layerOrder, layerGroups, shaderIdKey, syncPaint,
-      viewChromeState, getIsVisible, requestRedraw]);
+      viewChromeState, getIsVisible, paintTarget, paintRect?.x, paintRect?.y, requestRedraw]);
 
-  // The GL context and everything it owns (programs, texture caches, VBOs)
-  // outlive React state, so unmount has to free them explicitly or a
-  // remounting host walks into the browser's live-context cap.
   useEffect(() => {
     const layerCache = layerCacheRef.current;
     const viewSubs = viewSubsRef.current;
     return () => {
-      glRendererRef.current?.dispose();
-      glRendererRef.current = null;
       layerCache.clear();
-      lastResizeRef.current = null;
       viewSubs.clear();
     };
   }, []);
@@ -1508,15 +1456,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (changed) requestRedraw();
     });
   }, [shaderIdKey, requestRedraw]);
-
-  useEffect(() => {
-    const renderer = glRendererRef.current;
-    if (!renderer) return;
-    registerShadersOnRenderer(renderer, shaders);
-    // shaderIdKey is a stable string derived from handle ids — avoids
-    // recompiling when the parent passes a new array literal each render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shaderIdKey]);
 
   // Resolved during render, so it reads this render's view, not the ref's
   // last committed one.
