@@ -748,38 +748,13 @@ From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.m
 
 ### d3 integration plugin
 
-**Shipped.** `useSimulation` + d3-force compat (2026-05-16), then the data-join and transition chain in `@weasel-js/d3`: `d3Bind(scene, data, { key, animator }).pose().data().join()` and `.transition().duration().ease().delay().pose().tween().end()`, chainable with a further `.transition()`. `join()` takes no arguments — enter/update/exit is a diff it performs; `.exit(fn)` on the binding takes over the exit set, and `transition.remove()` deletes each node when its transition ends. Demos: `ForceGraphDemo`, `D3SortableDemo`.
-
-Nothing open; one item parked:
+`@weasel-js/d3` shipped; one item is parked:
 
 - **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
   (the `viewport.zoom` / `viewport.pan` actions, `useHandTool`, `useViewAnimation`;
   `useDragGesture`).
   Worth building only for d3 semantics the kit genuinely lacks, not for parity —
   none identified yet.
-
-### Interactive parallax planes
-
-A scene layer carrying `parallax` paints through its plane. Picking, chrome,
-snapping and the editing actions cross into it: `inPlane`
-(`interactions/actions/planeInput.ts`) carries a move, resize, rotate, clone,
-insert or anchor edit into the plane of the layer it edits. What does not
-cross yet:
-
-- **(P3) A selection spanning planes that scale differently.** `inPlane` edits
-  the whole invocation in one plane — a handle's target's, else the first
-  selected node's — so a move carries every node by that plane's delta, and a
-  node on a plane that scales differently drifts off the pointer. The same
-  holds for a container dragged with a child on another plane, and for
-  reparent-on-drop or a layout drop onto a container on another plane.
-  The fix is a delta per node rather than per invocation: leave the action's
-  input in the camera's world and hand it a `planeOf(id)` dep instead, so move
-  translates each node by `toPlane(own map, current) − toPlane(own map, start)`
-  and resize / rotate map the pivot into each node's plane before applying the
-  per-node transform. Snapping keeps using the primary node's plane and
-  shifts the rest by the snapped camera-world delta. A reparent across planes
-  carries the pose through `planeToPlane(source, destination)` with the pose
-  descriptor's box-to-box rescale, so the node lands where it was drawn.
 
 ---
 

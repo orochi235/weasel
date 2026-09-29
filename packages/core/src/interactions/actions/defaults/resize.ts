@@ -71,7 +71,7 @@ import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { unionBounds } from 'core/geometry/unionBounds';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
-import { inPlane, selectionLayer } from '../planeInput';
+import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
 import { fromPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
 // ---------------------------------------------------------------------------
@@ -351,9 +351,16 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
       const writeIds = (isGroupPath ? expanded : (ids as unknown as string[])) as NodeId[];
 
       // Capture start poses + per-leaf bounds. The drag delta is world, so
-      // the anchor math runs on world poses; each frame's result is stored
-      // back in the node's own parent frame.
+      // the anchor math runs on world poses — carried into the plane the edit
+      // is measured in — and each result is carried back to its node's plane
+      // and stored in the node's own parent frame.
       const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
+      const view = ctx.deps.view;
+      /** A world result for `id`, as stored. */
+      const stored = (id: NodeId, world: unknown): unknown => {
+        const layer = scene.get(id)?.layer;
+        return frame.local(id, carryPose(geometry, world, layer === undefined ? null : planeOf(view, layer)));
+      };
       const startPoses = new Map<NodeId, unknown>();
       const startWorlds = new Map<NodeId, unknown>();
       const leafBounds: Bounds[] = [];
@@ -361,7 +368,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
         const node = scene.get(id);
         if (!node) continue;
         startPoses.set(id, node.pose);
-        const world = frame.world(id);
+        const world = carryPose(geometry, frame.world(id), invertPlane(planeOf(view, node.layer)));
         startWorlds.set(id, world);
         leafBounds.push(geometry.getBounds(world));
       }
@@ -622,14 +629,14 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
               }
             }
 
-            scratch.previews.set(id, scratch.frame.local(id, proposedPose));
+            scratch.previews.set(id, stored(id, proposedPose));
             scratch.gestureCtx.current = new Map<string, unknown>([[id as string, proposedPose]]);
           } else {
             // Group / multi path: remap each leaf and store.
             for (const id of scratch.writeIds) {
               const next = computePose(id);
               if (next === undefined) continue;
-              scratch.previews.set(id, scratch.frame.local(id, next));
+              scratch.previews.set(id, stored(id, next));
             }
           }
 

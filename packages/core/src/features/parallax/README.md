@@ -41,8 +41,10 @@ box crosses between the camera and a plane.
 | Clickable | no | yes — picking, marquee, lasso and selection chrome go through the plane |
 | Changed live by | a `ParallaxPlane` (`createParallaxPlane`) passed as `parallax` | `scene.setLayerParallax`, inside `scene.untracked` when animating |
 
-Editing a node on a plane — move, resize, snapping — does not cross into the
-plane yet; see "Interactive parallax planes" in `docs/TODO.md`.
+Editing a node on a plane — move, resize, rotate, clone, insert, anchor edits,
+snapping — goes through the plane too (`inPlane`,
+`interactions/actions/planeInput.ts`), including a selection that spans planes
+and a drop into a container on another plane.
 
 ## Animating a plane
 

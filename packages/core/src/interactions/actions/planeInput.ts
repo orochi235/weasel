@@ -15,6 +15,11 @@
  * The action sees the plane only as `view.plane()`, which it hands its snap
  * behaviors so they can bring the camera's guides and grid into the plane.
  *
+ * A selection can span planes. The edit is measured in one of them, and a
+ * node on another is carried into it as the gesture starts
+ * (`planeOf` at press, inverted) and back out through `planeOf` as it is now,
+ * so each node ends where it was drawn relative to the pointer.
+ *
  * The map is read afresh on every call: a camera panning under a held drag, or
  * a plane whose factors are being animated, moves the node with the pointer.
  */
@@ -26,10 +31,11 @@ import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import {
-  deriveParallaxView, fromPlane, planeMap, rectFromPlane, toPlane,
+  deriveParallaxView, fromPlane, planeMap, planeToPlane, rectFromPlane, rectToPlane, toPlane,
   type ParallaxOpts, type PlaneMap,
 } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { EditAnchorsDep, InsertDep, NodeAtPointDep, SnapDep, ViewApi } from './depSchema';
 
 type Point = { x: number; y: number };
@@ -62,9 +68,28 @@ export const insertLayer: EditedLayerOf = (deps) =>
 export const editingLayer: EditedLayerOf = (deps) =>
   layerOfNode(deps, (deps.editAnchors as EditAnchorsDep | undefined)?.editingId);
 
+/** How the world an invocation edits in maps into the world `layer`'s nodes
+ *  are stored in, read now. Null when they are the same world. */
+export function planeOf(view: unknown, layer: string): PlaneMap | null {
+  return (view as ViewApi | undefined)?.planeOf?.(layer) ?? null;
+}
+
+/** `m` run backwards; null stays null. */
+export function invertPlane(m: PlaneMap | null): PlaneMap | null {
+  return m && planeToPlane(m, null);
+}
+
+/** `pose` carried through `m`. The map is axis-aligned, so remapping the
+ *  pose's bounds carries it exactly when the map scales both axes alike. */
+export function carryPose<P>(d: PoseDescriptor<P>, pose: P, m: PlaneMap | null): P {
+  if (m === null) return pose;
+  const b = d.getBounds(pose);
+  return d.remapBounds(pose, b, rectToPlane(m, b));
+}
+
 /** `action`, with its input carried into the plane of the layer `layerOf`
- *  names. An action on a layer with no `parallax`, or invoked with no scene or
- *  view to read the plane from, runs exactly as it would unwrapped.
+ *  names. An action in a scene with no `parallax` layer, or invoked with no
+ *  scene or view to read a plane from, runs exactly as it would unwrapped.
  *
  *  An ongoing action's drag is carried as a whole. An immediate one's world
  *  point is `params.worldX` / `params.worldY`, the dispatcher's convention for
@@ -129,8 +154,9 @@ function livePlane(
   const scene = bag.scene as Scene<unknown, string, unknown> | undefined;
   const viewApi = bag.view as ViewApi | undefined;
   if (layer === undefined || !scene || !viewApi) return null;
-  const parallax = (): ParallaxOpts | undefined => scene.layers.find((l) => l.id === layer)?.parallax;
-  if (parallax() === undefined) return null;
+  if (!scene.layers.some((l) => l.parallax !== undefined)) return null;
+  const parallaxOf = (id: string): ParallaxOpts | undefined => scene.layers.find((l) => l.id === id)?.parallax;
+  const parallax = (): ParallaxOpts | undefined => parallaxOf(layer);
 
   const IDENTITY: PlaneMap = { scale: { x: 1, y: 1 }, offset: { x: 0, y: 0 } };
   const map = (): PlaneMap => {
@@ -149,6 +175,14 @@ function livePlane(
       },
     },
     plane: { value: map },
+    planeOf: {
+      value: (id: string): PlaneMap | null => {
+        const edited = parallax();
+        const own = parallaxOf(id);
+        const camera = viewApi.get();
+        return planeToPlane(edited ? planeMap(camera, edited) : null, own ? planeMap(camera, own) : null);
+      },
+    },
   }) as ViewApi;
 
   // Over the dispatcher's bag rather than a copy of it, so every other read

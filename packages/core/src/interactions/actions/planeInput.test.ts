@@ -222,6 +222,112 @@ describe('editing a node on a parallax plane', () => {
   });
 });
 
+/** The sun on the 2x sky and the moon on the camera's own layer, side by side
+ *  on screen: the moon paints over camera (60,50) 20x20, the sun over
+ *  (100,50) 20x20. */
+function twoPlaneScene(): S {
+  return createScene<unknown, 'sky' | 'main', RectPose>({
+    systemLayers: [{ id: 'main' }, { id: 'sky', parallax: SKY }],
+    initial: [
+      { id: asNodeId('sun'), kind: 'leaf', layer: 'sky', pose: { x: 100, y: 100, width: 40, height: 40 }, data: {} },
+      { id: asNodeId('moon'), kind: 'leaf', layer: 'main', pose: { x: 60, y: 50, width: 20, height: 20 }, data: {} },
+      { id: asNodeId('box'), kind: 'container', layer: 'main', pose: { x: 200, y: 0, width: 100, height: 100 }, data: {} },
+    ],
+  }) as unknown as S;
+}
+
+const selecting = (ids: string[]) => ({
+  selection: { get: () => ids, clear: () => {} } as unknown as SelectionApi,
+});
+
+const centerOf = (p: RectPose) => ({ x: p.x + p.width / 2, y: p.y + p.height / 2 });
+
+describe('editing a selection that spans planes', () => {
+  // Each case runs with either node leading the selection: the plane the edit
+  // is measured in must not decide where anything lands.
+  for (const order of [['sun', 'moon'], ['moon', 'sun']]) {
+    describe(`led by the ${order[0]}`, () => {
+      it('moves each node as far as the pointer went over it', () => {
+        const scene = twoPlaneScene();
+        drag(moveAction, scene, { x: 110, y: 60 }, { x: 120, y: 60 }, { deps: selecting(order) });
+        expect(poseOf(scene, 'sun')).toMatchObject({ x: 120, y: 100 });
+        expect(poseOf(scene, 'moon')).toMatchObject({ x: 70, y: 50 });
+      });
+
+      it('resizes both about the corner of the box drawn around them', () => {
+        const scene = twoPlaneScene();
+        // The pair spans camera (60,50)-(120,70); dragging its bottom-right
+        // corner 60 right doubles it across.
+        drag(resizeAction, scene, { x: 120, y: 70 }, { x: 180, y: 70 }, {
+          deps: selecting(order),
+          affordance: { kind: 'handle:bottom-right', targetIds: [order[0]], anchor: { x: 'min', y: 'min' } },
+        });
+        expect(poseOf(scene, 'moon')).toMatchObject({ x: 60, y: 50, width: 40, height: 20 });
+        // Camera (140,50) 40x20, in the sky.
+        expect(poseOf(scene, 'sun')).toMatchObject({ x: 180, y: 100, width: 80, height: 40 });
+      });
+
+      it('turns both about the center of the box drawn around them', () => {
+        const scene = twoPlaneScene();
+        // The pair's center paints at camera (90,60): east of it to south is a
+        // quarter turn.
+        drag(rotateAction, scene, { x: 140, y: 60 }, { x: 90, y: 110 }, { deps: selecting(order) });
+        const moon = poseOf(scene, 'moon');
+        const sun = poseOf(scene, 'sun');
+        expect(moon.rotation).toBeCloseTo(Math.PI / 2, 6);
+        expect(sun.rotation).toBeCloseTo(Math.PI / 2, 6);
+        expect(centerOf(moon).x).toBeCloseTo(90, 6);
+        expect(centerOf(moon).y).toBeCloseTo(40, 6);
+        // Camera (90,80), in the sky.
+        expect(centerOf(sun).x).toBeCloseTo(80, 6);
+        expect(centerOf(sun).y).toBeCloseTo(160, 6);
+      });
+
+      it('clones each node to where the pointer let go', () => {
+        const scene = twoPlaneScene();
+        drag(cloneAction, scene, { x: 110, y: 60 }, { x: 120, y: 60 }, { deps: selecting(order) });
+        const copies = scene.renderOrderNodes().filter((n) => !['sun', 'moon', 'box'].includes(n.id));
+        expect(copies.find((n) => n.layer === 'sky')!.pose).toMatchObject({ x: 120, y: 100 });
+        expect(copies.find((n) => n.layer === 'main')!.pose).toMatchObject({ x: 70, y: 50 });
+      });
+    });
+  }
+
+  it('lands a node dropped into a container on another plane where it was drawn', () => {
+    const scene = twoPlaneScene();
+    // 130 camera right puts the sun over camera (230,50), inside the box.
+    drag(moveAction, scene, { x: 110, y: 60 }, { x: 240, y: 60 }, {
+      deps: { ...selecting(['sun']), nodeAtPoint: () => asNodeId('box') },
+    }, { params: { reparentOnDrop: 'top' } });
+    const sun = scene.get(asNodeId('sun'))!;
+    expect(sun.layer).toBe('main');
+    expect(sun.parent).toBe('box');
+    expect(sun.pose).toMatchObject({ x: 230, y: 50, width: 20, height: 20 });
+  });
+
+  it('hands a layout on another plane the dragged node in that plane', () => {
+    const scene = twoPlaneScene();
+    const handed: unknown[] = [];
+    const probes: { x: number; y: number }[] = [];
+    const layout = {
+      snap: { pickTarget: (t: unknown[], p: { x: number; y: number }) => { probes.push(p); return t[0] ?? null; } },
+      childPoses: () => new Map(),
+      getDropTargets: (_c: unknown, _k: unknown, dragged: { pose: unknown }) => {
+        handed.push(dragged.pose);
+        return [{ pose: dragged.pose, origin: { x: 0, y: 0 } }];
+      },
+      reflowPoses: () => new Map(),
+      commitDrop: () => [],
+    };
+    const handle = (moveAction.invoker as OngoingInvoker).start(ctxOf(scene, { x: 110, y: 60 }, { x: 110, y: 60 }, {
+      deps: { ...selecting(['sun']), layout: { getLayout: (id: string) => (id === 'box' ? layout : null) } },
+    }));
+    handle.onMove!(ctxOf(scene, { x: 110, y: 60 }, { x: 240, y: 60 }));
+    expect(handed.at(-1)).toMatchObject({ x: 230, y: 50, width: 20, height: 20 });
+    expect(probes.at(-1)).toEqual({ x: 240, y: 60 });
+  });
+});
+
 describe('inPlane', () => {
   /** An action that records what it was handed. */
   function probe() {

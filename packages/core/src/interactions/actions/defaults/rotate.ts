@@ -52,7 +52,7 @@ import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 import { moveGestureAdapter } from '../move/gestureAdapter';
 import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestures/types';
-import { inPlane, selectionLayer } from '../planeInput';
+import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -173,8 +173,9 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
         if (!g.withRotation || g.supportsRotation?.(node.pose) === false) continue;
         originPoses.set(id, node.pose);
         // The pivot is a world point, so every measurement the gesture orbits
-        // is taken from the world pose, not the stored one.
-        const world = frame.world(id);
+        // is taken from the world pose, not the stored one — carried into the
+        // plane the edit is measured in, where the pointer's angle is read.
+        const world = carryPose(g, frame.world(id), invertPlane(planeOf(ctx.deps.view, node.layer)));
         originWorlds.set(id, world);
         const b = g.getBounds(world);
         originCenters.set(id, { x: b.x + b.width / 2, y: b.y + b.height / 2 });
@@ -192,6 +193,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
       );
 
       const readView = gestureViewReader(ctx.deps);
+      const view = ctx.deps.view;
 
       const readPlane = gesturePlaneReader(ctx.deps);
       const scratch: RotateScratch = {
@@ -315,7 +317,9 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
         scratch.previews.clear();
         if (delta !== 0) {
           for (const [id, turned] of turnedWorlds(delta)) {
-            scratch.previews.set(id, scratch.frame.local(id, turned));
+            const layer = scratch.scene.get(id)?.layer;
+            const own = layer === undefined ? null : planeOf(view, layer);
+            scratch.previews.set(id, scratch.frame.local(id, carryPose(scratch.descriptor, turned, own)));
           }
         }
         syncPreviewOverrides(scratch);

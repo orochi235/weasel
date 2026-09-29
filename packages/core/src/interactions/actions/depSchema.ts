@@ -50,6 +50,10 @@ export interface ViewApi {
    *  when that is a parallax plane — set by `inPlane` on the view it hands a
    *  wrapped action. Absent or null: the camera's own world. */
   plane?(): PlaneMap | null;
+  /** How the world the invocation edits in maps into the world `layer`'s
+   *  nodes are stored in, read now — set by `inPlane` alongside `plane`.
+   *  Absent or null: the same world. */
+  planeOf?(layer: string): PlaneMap | null;
   /** Optional recenter callback. When wired, `viewportZoomAction`'s `reset`
    *  branch (Cmd-0) calls this instead of resetting to identity — letting
    *  consumers re-fit the page (or other reference bounds) into the workspace.

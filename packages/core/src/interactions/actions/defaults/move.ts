@@ -83,7 +83,8 @@ import {
   type PoseAdapter,
   type PoseComposition,
 } from 'features/groups/composePose';
-import { inPlane, selectionLayer } from '../planeInput';
+import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
+import { planeToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -118,6 +119,8 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   // parent chain, then add the world drag delta (same math as `applyReparent`).
   // The LayoutStrategy contract is world-framed, so every pose handed to it
   // below is composed to world; reflow results are rebased back to local.
+  // A selection spanning planes is gathered in the edited plane, and handed
+  // to each container carried into the plane that container is stored in.
   const d = scratch.projection;
   const grabAdapter = grabbedPoseAdapter(scratch, poseAdapter);
   const dragged: DraggedChild[] = [];
@@ -126,19 +129,30 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     if (!node) continue;
     const startWorld = composeWorldPose(grabAdapter, id as string, pc.compose);
     const g = poseDescriptorForNode(d, node);
-    const world = translatePoseViaDescriptor(startWorld, dx, dy, g);
+    const own = planeDelta(scratch, id, dx, dy);
+    const toEdited = invertPlane(planeOf(scratch.view, node.layer));
+    const world = carryPose(g, translatePoseViaDescriptor(startWorld, own.dx, own.dy, g), toEdited);
     const b = g.getBounds(world);
     dragged.push({
       id,
       arg: {
         id: id as string,
-        originPose: startWorld,
+        originPose: carryPose(g, startWorld, toEdited),
         pose: world,
         sourceContainerId: (node.parent ?? null) as string | null,
       },
       center: { x: b.x + b.width / 2, y: b.y + b.height / 2 },
     });
   }
+  const carryDragged = (c: DraggedChild, m: PlaneMap | null): DraggedChild => {
+    if (m === null) return c;
+    const g = poseDescriptorForNode(d, scene.get(c.id)!);
+    return {
+      id: c.id,
+      arg: { ...c.arg, originPose: carryPose(g, c.arg.originPose, m), pose: carryPose(g, c.arg.pose, m) },
+      center: toPlane(m, c.center),
+    };
+  };
   if (dragged.length === 0) return;
   const draggedIds = new Set<NodeId>(dragged.map((c) => c.id));
 
@@ -172,16 +186,20 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     layout: Layout;
     zPath: number[];
     depth: number;
+    /** The edited plane into this container's. */
+    plane: PlaneMap | null;
   }
   const candidates: Candidate[] = [];
   const mode = layoutDep.dropTarget ?? 'innermost';
-  const testInside = (id: NodeId, cPose: unknown, aabb: AABB, layout: Layout): boolean => {
+  const testInside = (
+    id: NodeId, cPose: unknown, aabb: AABB, layout: Layout, at: { x: number; y: number },
+  ): boolean => {
     const region = layout.dropRegion?.({ id: id as string, bounds: aabb }) ?? null;
-    if (region) return regionContains(region, aabb, selectionCenter);
+    if (region) return regionContains(region, aabb, at);
     if (mode === 'region') return false;
-    if (layout.contains) return layout.contains(cPose, selectionCenter);
-    return selectionCenter.x >= aabb.x && selectionCenter.x < aabb.x + aabb.width
-      && selectionCenter.y >= aabb.y && selectionCenter.y < aabb.y + aabb.height;
+    if (layout.contains) return layout.contains(cPose, at);
+    return at.x >= aabb.x && at.x < aabb.x + aabb.width
+      && at.y >= aabb.y && at.y < aabb.y + aabb.height;
   };
   const consider = (id: NodeId, zPath: number[]): void => {
     if (draggedIds.has(id)) return;
@@ -191,10 +209,12 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     if (!node) return;
     const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
     const worldAABB = poseDescriptorForNode(d, node).getBounds(worldPose);
-    if (!testInside(id, worldPose, worldAABB, layout)) return;
+    const plane = planeOf(scratch.view, node.layer);
+    const at = plane ? toPlane(plane, selectionCenter) : selectionCenter;
+    if (!testInside(id, worldPose, worldAABB, layout, at)) return;
     if (layout.acceptsDrop) {
       const arg: LayoutContainer = { id: id as string, bounds: worldAABB };
-      for (const c of dragged) if (!layout.acceptsDrop(arg, c.arg)) return;
+      for (const c of dragged) if (!layout.acceptsDrop(arg, carryDragged(c, plane).arg)) return;
     }
     candidates.push({
       id,
@@ -202,6 +222,7 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
       layout,
       zPath,
       depth: zPath.length,
+      plane,
     });
   };
   const walk = (parentId: NodeId | null, parentPath: number[]): void => {
@@ -251,13 +272,13 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
 
   const placements: LayoutPlacement[] = [];
   const destReflow = new Map<NodeId, unknown>();
-  for (const dc of dragged) {
+  const destPlane = dest.plane;
+  for (const edited of dragged) {
+    const dc = carryDragged(edited, destPlane);
     const children = working.map((c) => ({ ...c }));
     const targets = layout.getDropTargets(container, children, dc.arg);
-    const target = layout.snap.pickTarget(targets, {
-      x: dc.center.x + probeOffset.x,
-      y: dc.center.y + probeOffset.y,
-    });
+    const probe = { x: edited.center.x + probeOffset.x, y: edited.center.y + probeOffset.y };
+    const target = layout.snap.pickTarget(targets, destPlane ? toPlane(destPlane, probe) : probe);
     // All-or-nothing: a container that cannot take every member takes none
     // rather than splitting the selection between two homes.
     if (!target) return;
@@ -394,9 +415,10 @@ function translateCommitOps(
 function localDelta(
   scratch: MoveScratch,
   id: NodeId,
-  dx: number,
-  dy: number,
+  dx0: number,
+  dy0: number,
 ): { dx: number; dy: number } {
+  const { dx, dy } = planeDelta(scratch, id, dx0, dy0);
   const f = scratch.frames.get(id);
   if (f === undefined) return { dx, dy };
   const { pc, projection: d } = scratch;
@@ -405,6 +427,23 @@ function localDelta(
     pc.decompose(f.frameWorld, translatePoseViaDescriptor(f.world, dx, dy, d)),
   );
   return { dx: to.x - from.x, dy: to.y - from.y };
+}
+
+/** The drag `(dx, dy)`, measured in the edited plane, as the drag of `id` in
+ *  the world its own layer stores it in. */
+function planeDelta(
+  scratch: MoveScratch,
+  id: NodeId,
+  dx: number,
+  dy: number,
+): { dx: number; dy: number } {
+  const layer = scratch.scene.get(id)?.layer;
+  const ref = layer === undefined ? undefined : scratch.planeRefs.get(layer);
+  if (!ref) return { dx, dy };
+  const out = planeOf(scratch.view, layer!);
+  const at = { x: ref.edited.x + dx, y: ref.edited.y + dy };
+  const p = out ? toPlane(out, at) : at;
+  return { dx: p.x - ref.own.x, dy: p.y - ref.own.y };
 }
 
 /** Selected roots no source layout claimed on release, plus the descendants
@@ -558,8 +597,15 @@ interface MoveScratch {
    *  both at drag start — what `localDelta` rotates the drag through. */
   frames: Map<NodeId, { world: unknown; frameWorld: unknown }>;
   scene: Scene<unknown, string, unknown>;
-  /** Running drag delta — updated each onMove, applied once at commit. */
+  /** Running drag delta — updated each onMove, applied once at commit. It is
+   *  in the plane the edit is measured in; `planeDelta` carries it to others. */
   currentDelta: { dx: number; dy: number };
+  /** The view the invocation started with, read for `planeOf`. */
+  view: unknown;
+  /** For each layer on another plane than the edited one: a point of the
+   *  first dragged root on it, in its own world and in the edited one, at
+   *  press. What `planeDelta` measures that layer's drag from. */
+  planeRefs: Map<string, { own: { x: number; y: number }; edited: { x: number; y: number } }>;
   /** In-flight preview poses keyed by node id (roots + cascaded children).
    *  Populated on onMove; cleared on onEnd. Read by `previewIds`/`previewPose`. */
   previews: Map<NodeId, unknown>;
@@ -670,7 +716,16 @@ function applyReparent(
     // unchanged from drag start because `moveAction` doesn't write
     // during `onMove`.
     const startWorld = composeWorldPose(poseAdapter, id, pc.compose);
-    const draggedWorld = translatePoseViaDescriptor(startWorld, dx, dy, scratch.projection);
+    const own = planeDelta(scratch, id, dx, dy);
+    const layer = scene.get(id)!.layer;
+    // Landing on another plane's layer, the pose crosses into that plane.
+    const draggedWorld = carryPose(
+      scratch.projection,
+      translatePoseViaDescriptor(startWorld, own.dx, own.dy, scratch.projection),
+      layer === target.newLayer
+        ? null
+        : planeToPlane(planeOf(scratch.view, layer), planeOf(scratch.view, target.newLayer)),
+    );
     const newLocal = rebaseLocalPose(
       poseAdapter,
       draggedWorld,
@@ -863,6 +918,8 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         frames,
         scene,
         currentDelta: { dx: 0, dy: 0 },
+        view: ctx.deps.view,
+        planeRefs: new Map(),
         previews: new Map<NodeId, unknown>(),
         overrideEntries: new Map<NodeId, { pose: unknown }>(),
         reflowTargets: new Map<NodeId, unknown>(),
@@ -880,6 +937,18 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         lifecycle,
       };
 
+      for (const id of ids) {
+        const layer = scene.get(id)?.layer;
+        if (layer === undefined || scratch.planeRefs.has(layer)) continue;
+        const m = planeOf(scratch.view, layer);
+        if (m === null) continue;
+        const world = frames.get(id)?.world ?? startPoses.get(id);
+        if (world === undefined) continue;
+        const b = projection.getBounds(world);
+        const own = { x: b.x, y: b.y };
+        scratch.planeRefs.set(layer, { own, edited: toPlane(invertPlane(m)!, own) });
+      }
+
       // Returns whether anything reached the document.
       const commitMove = (endCtx: InvocationCtx): boolean => {
         // Apply the final delta as a single batch → one undo entry.
@@ -894,7 +963,8 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         if (scratch.behaviors.length > 0) {
           const gctx = scratch.gestureCtx;
           for (const [id, ori] of scratch.startPoses) {
-            gctx.current.set(id as string, translatePoseViaDescriptor(ori, dx, dy, scratch.projection));
+            const own = planeDelta(scratch, id, dx, dy);
+            gctx.current.set(id as string, translatePoseViaDescriptor(ori, own.dx, own.dy, scratch.projection));
           }
           const r = reduceBehaviorEnd(scratch.behaviors, gctx);
           if (r === null) return false;           // abort (e.g. snap-back)
@@ -1031,10 +1101,11 @@ export const moveAction: Action & { requires: string[] } = inPlane({
               const startWorld = composeWorldPose(
                 grabbedPoseAdapter(scratch, commitAdapter), id as string, pc.compose,
               );
+              const own = planeDelta(scratch, id, dx, dy);
               const ops = srcLayout.releaseDrop!(srcContainer, srcChildren, {
                 id: id as string,
                 originPose: startWorld,
-                pose: translatePoseViaDescriptor(startWorld, dx, dy, scratch.projection),
+                pose: translatePoseViaDescriptor(startWorld, own.dx, own.dy, scratch.projection),
                 sourceContainerId: srcId,
               });
               if (ops === null) continue;
@@ -1124,7 +1195,8 @@ export const moveAction: Action & { requires: string[] } = inPlane({
             // GroupTransform arg, NOT from `ctx.current` (which reflects
             // the unmodified delta at this frame's start).
             for (const [id, ori] of scratch.startPoses) {
-              gctx.current.set(id as string, translatePoseViaDescriptor(ori, dx, dy, scratch.projection));
+              const own = planeDelta(scratch, id, dx, dy);
+              gctx.current.set(id as string, translatePoseViaDescriptor(ori, own.dx, own.dy, scratch.projection));
             }
             let transform: GroupTransform = { kind: 'translate', dx, dy };
             const primary = scratch.ids[0] as NodeId | undefined;

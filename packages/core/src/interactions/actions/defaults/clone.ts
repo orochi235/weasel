@@ -46,7 +46,7 @@ import { freshNodeId } from './freshNodeId';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
-import { inPlane, selectionLayer } from '../planeInput';
+import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -59,9 +59,12 @@ interface CloneScratch {
   /** World reads and local writes over the scene's composition strategy. */
   frame: PoseFrame<unknown>;
   /** Origin poses captured at drag start, in world — the frame the drag
-   *  delta is expressed in. The copy keeps its source's parent, so each
-   *  translated result is stored back in that same frame. */
+   *  delta is expressed in, and the plane the edit is measured in. The copy
+   *  keeps its source's parent and layer, so each translated result is
+   *  carried back to that layer's plane and stored in that same frame. */
   originPoses: Map<NodeId, unknown>;
+  /** The view the invocation started with, read for `planeOf`. */
+  view: unknown;
   /** Running drag delta — updated each onMove, applied once at commit. */
   currentDelta: { dx: number; dy: number };
   /** Preview poses keyed by ORIGINAL node id (the clone targets don't have
@@ -119,8 +122,12 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       // Capture origin poses once at drag start.
       const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
       const originPoses = new Map<NodeId, unknown>();
+      const descriptor = poseDescriptorOf(ctx.deps.poseDescriptor);
       for (const id of ids) {
-        if (scene.get(id) !== undefined) originPoses.set(id, frame.world(id));
+        const node = scene.get(id);
+        if (node === undefined) continue;
+        const toEdited = invertPlane(planeOf(ctx.deps.view, node.layer));
+        originPoses.set(id, carryPose(descriptor, frame.world(id), toEdited));
       }
 
       if (originPoses.size === 0) return {};
@@ -128,12 +135,22 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       const scratch: CloneScratch = {
         ids,
         scene,
-        descriptor: poseDescriptorOf(ctx.deps.poseDescriptor),
+        descriptor,
         frame,
         originPoses,
+        view: ctx.deps.view,
         currentDelta: { dx: 0, dy: 0 },
         previews: new Map<NodeId, unknown>(),
         applyOps,
+      };
+
+      /** Where the copy of `id` lands for a drag of `(dx, dy)`, as stored. */
+      const landed = (id: NodeId, dx: number, dy: number): unknown => {
+        const origin = scratch.originPoses.get(id);
+        const node = scratch.scene.get(id);
+        if (origin === undefined || !node) return undefined;
+        const moved = translatePoseViaDescriptor(origin, dx, dy, scratch.descriptor);
+        return scratch.frame.local(id, carryPose(scratch.descriptor, moved, planeOf(scratch.view, node.layer)));
       };
 
       return {
@@ -155,12 +172,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
           scratch.previews.clear();
           const { dx, dy } = scratch.currentDelta;
           if (dx === 0 && dy === 0) return;
-          for (const [id, origin] of scratch.originPoses) {
-            scratch.previews.set(
-              id,
-              scratch.frame.local(id, translatePoseViaDescriptor(origin, dx, dy, scratch.descriptor)),
-            );
-          }
+          for (const id of scratch.originPoses.keys()) scratch.previews.set(id, landed(id, dx, dy)!);
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           if (reason === 'cancel') {
@@ -183,13 +195,9 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
           // one undo entry, matching the prior single `scene.batch('Clone', …)`.
           const ops: Op[] = [];
           for (const id of scratch.ids) {
-            const origin = scratch.originPoses.get(id);
             const originNode = scratch.scene.get(id);
-            if (origin === undefined || !originNode) continue;
-            const newPose = scratch.frame.local(
-              id,
-              translatePoseViaDescriptor(origin, dx, dy, scratch.descriptor),
-            );
+            const newPose = landed(id, dx, dy);
+            if (newPose === undefined || !originNode) continue;
             // The old `scene.add` (no explicit id) minted a random id; we
             // pre-generate one so the insert op carries a full node. Id value
             // was never observable, so behavior is preserved.
