@@ -56,6 +56,29 @@ export function resolveSlot(
   return slot.index >= 0 ? slot.index : undefined;
 }
 
+/** The reads that locate a live node: its parent, and that parent's children. */
+export interface ParentedReader {
+  getParent?(id: string): string | null;
+  getChildren?(parentId: string | null): readonly string[];
+}
+
+/** A node's parent (`null` at the top level) and its ordinal among that
+ *  parent's children — the position a replacement takes to keep its z-order. */
+export interface ChildPosition {
+  parentId: string | null;
+  index: number;
+}
+
+/** Where `id` sits under its parent. An adapter with no `getParent` is flat,
+ *  as the reorder ops read it. `null` when there is no `getChildren` or it
+ *  does not list `id`. */
+export function locateChild(a: ParentedReader, id: string): ChildPosition | null {
+  if (!a.getChildren) return null;
+  const parentId = a.getParent ? a.getParent(id) : null;
+  const index = a.getChildren(parentId).indexOf(id);
+  return index < 0 ? null : { parentId, index };
+}
+
 /** Normalize the `index` sugar every op factory accepts into a slot. */
 export function slotFromIndex(index: number | undefined): SiblingSlot {
   return { index: index ?? -1 };

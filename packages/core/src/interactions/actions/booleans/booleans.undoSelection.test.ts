@@ -47,12 +47,8 @@ function setup(commit: 'batch' | 'applyBatch') {
       } as { id: string };
     },
     getNode: (id) => scene.get(asNodeId(id)) ?? undefined,
-    getZOrder: (id) => {
-      const order = [...scene.renderOrder()];
-      const idx = order.indexOf(asNodeId(id));
-      if (idx < 0) return undefined;
-      return { parentId: scene.get(asNodeId(id))?.parent ?? null, index: idx };
-    },
+    getParent: (id) => scene.get(asNodeId(id))?.parent ?? null,
+    getChildren: defaultCommitAdapter(scene).getChildren,
     insertNode: (node, index?: number) => {
       const n = node as { id: string; kind: 'leaf'; layer: Layer; pose: Pose; data: Data };
       scene.add({

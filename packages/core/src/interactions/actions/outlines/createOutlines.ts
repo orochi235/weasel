@@ -8,6 +8,7 @@ import type { PolygonPath } from '@weasel-js/geom';
 import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
 import { createSetSelectionOp } from 'core/ops/select';
+import { locateChild } from 'core/ops/slot';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
@@ -72,8 +73,7 @@ export function applyCreateOutlines(adapter: CreateOutlinesAdapter): CreateOutli
   const replaced = new Map<NodeId, string>();
   for (const { id, path } of converted) {
     const node = adapter.getNode?.(id) ?? { id };
-    const siblings = adapter.getChildren?.(adapter.getParent?.(id) ?? null);
-    const index = siblings ? siblings.indexOf(id) : -1;
+    const index = locateChild(adapter, id)?.index ?? -1;
     const created = adapter.createPathNode(path, id);
     replaced.set(id, created.id);
     // Delete then insert at the same index: the sibling list is the same

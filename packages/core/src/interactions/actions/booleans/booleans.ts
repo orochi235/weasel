@@ -19,6 +19,7 @@ import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
 import { createMoveToIndexOp } from 'core/ops/reorder';
 import { createSetSelectionOp } from 'core/ops/select';
+import { locateChild } from 'core/ops/slot';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
@@ -30,8 +31,7 @@ export type BooleanOp = 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide
 /**
  * z-position descriptor for a path node. `parentId` is the direct parent
  * (or `null` for a top-level node); `index` is the position within that
- * parent's child order. Used by the optional `getZOrder` hook below to
- * reposition the result of a boolean op at the topmost source's slot.
+ * parent's child order — never a global render index.
  */
 /** @internal */
 export interface BooleanZOrder {
@@ -41,7 +41,7 @@ export interface BooleanZOrder {
 
 /** Adapter the hook and the pure core both consume. */
 export interface BooleansAdapter {
-  getSelection(): NodeId[];
+  getSelection(): readonly NodeId[] | readonly string[];
   getWorldPath(id: NodeId): Path | undefined;
   /**
    * Optional: the text node behind `id`, for an id `getWorldPath` has no path
@@ -53,9 +53,11 @@ export interface BooleansAdapter {
   /**
    * Mint a new node from a boolean-op result `Path`. `producedBy` names the
    * op that synthesized it — adapters that store provenance (e.g. for a
-   * layer-panel icon) record it; others ignore the arg.
+   * layer-panel icon) record it; others ignore the arg. `sourceId` is the
+   * topmost source, whose slot the result takes: give the node that source's
+   * parent, or the kit's reorder cannot find it there.
    */
-  createPathNode(path: Path, producedBy: BooleanOp): { id: string };
+  createPathNode(path: Path, producedBy: BooleanOp, sourceId: NodeId): { id: string };
   /**
    * Optional: return the full object for an id, used by the delete ops so
    * their `invert` (an insert) can restore the complete object on undo.
@@ -66,12 +68,22 @@ export interface BooleansAdapter {
    */
   getNode?(id: NodeId): { id: string } | undefined | null;
   /**
-   * Optional: return the parent + child-index of `id` so the result of a
-   * boolean op can be placed in the topmost source's z-slot. Adapters that
-   * also expose `getChildren`/`setChildOrder` (the `ReorderAdapter`
-   * contract) will have the kit emit a `createMoveToIndexOp` after the
-   * inserts. Adapters that omit this method get v1 behavior — the result
-   * lands wherever the adapter's plain `insertNode` defaults to.
+   * Optional: the reorder contract. With `getChildren` (and `getParent`, or
+   * every node reads as top-level) the kit reads each source's slot among its
+   * siblings, and with `setChildOrder` as well it moves the result into the
+   * topmost source's slot. Without them the result lands wherever
+   * `insertNode` defaults to. `defaultCommitAdapter` supplies all three.
+   */
+  getParent?(id: string): string | null;
+  getChildren?(parentId: string | null): readonly string[];
+  setChildOrder?(parentId: string | null, ids: string[]): void;
+  /**
+   * Optional override for the slot the kit otherwise reads through
+   * `getParent` / `getChildren`: `id`'s parent and its index in that
+   * parent's child order.
+   *
+   * @deprecated Supply `getParent` and `getChildren` instead, and the kit
+   * derives this.
    */
   getZOrder?(id: NodeId): BooleanZOrder | undefined;
   applyOps?(ops: Op[], label?: string): void;
@@ -124,7 +136,9 @@ export function applyBooleanOp(
   adapter: BooleansAdapter,
   op: BooleanOp,
 ): BooleanOpResult {
-  const sel = adapter.getSelection();
+  const sel = [...adapter.getSelection()] as NodeId[];
+  const zOrder = (id: NodeId): BooleanZOrder | undefined =>
+    adapter.getZOrder ? adapter.getZOrder(id) : locateChild(adapter, id) ?? undefined;
   // Resolve path nodes only, sorted ascending by `compareZ` so paths[0] is
   // the bottommost (back) member. `subtract` relies on this: it computes
   // `back − union(rest)`, which is Illustrator's "Minus Front." Keep this
@@ -184,12 +198,12 @@ export function applyBooleanOp(
   // index after the deletes. Members in a different parent don't affect
   // this parent's indexing.
   const topmostId = entries[entries.length - 1].id;
-  const topAnchor = adapter.getZOrder?.(topmostId);
+  const topAnchor = zOrder(topmostId);
   let targetIndex = topAnchor?.index;
-  if (topAnchor && adapter.getZOrder) {
+  if (topAnchor) {
     let shift = 0;
     for (let i = 0; i < entries.length - 1; i++) {
-      const z = adapter.getZOrder(entries[i].id);
+      const z = zOrder(entries[i].id);
       if (z && z.parentId === topAnchor.parentId && z.index < topAnchor.index) {
         shift++;
       }
@@ -197,17 +211,17 @@ export function applyBooleanOp(
     targetIndex = topAnchor.index - shift;
   }
 
-  const newNodes = results.map((p) => adapter.createPathNode(p, op));
+  const newNodes = results.map((p) => adapter.createPathNode(p, op, topmostId));
   const ops: Op[] = [];
   const captured: { node: { id: string }; index: number }[] = [];
   for (const e of entries) {
     // Capture the full node so the delete's `invert()` (an insert) restores
     // every field on undo. Fallback to a `{ id }` stub matches the legacy
     // behavior for adapters that haven't opted in yet. Index comes from
-    // the same `getZOrder` already used for slot anchoring; -1 when the
-    // adapter doesn't expose order.
+    // the same slot read used for anchoring; -1 when the adapter doesn't
+    // expose order.
     const node = adapter.getNode?.(e.id) ?? { id: e.id };
-    const index = adapter.getZOrder?.(e.id)?.index ?? -1;
+    const index = zOrder(e.id)?.index ?? -1;
     captured.push({ node, index });
   }
   // Order by index DESC so reverse-then-invert (history's undo path)
