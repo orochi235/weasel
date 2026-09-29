@@ -491,6 +491,7 @@ function textXml(
   if (style?.fontFamily) attrs.push(`font-family="${escapeAttr(style.fontFamily)}"`);
   if (style?.fontWeight != null) attrs.push(`font-weight="${String(style.fontWeight)}"`);
   if (style?.fontStyle && style.fontStyle !== 'normal') attrs.push(`font-style="${style.fontStyle}"`);
+  if (style?.fontVariantCaps === 'small-caps') attrs.push('font-variant="small-caps"');
   const direction = style?.direction ?? 'ltr';
   if (direction === 'rtl') attrs.push('direction="rtl"');
   if (style?.align != null || direction === 'rtl') {
@@ -580,6 +581,8 @@ function runXml(
   if (run.fontWeight != null) attrs.push(`font-weight="${run.fontWeight}"`);
   else if (run.bold) attrs.push(`font-weight="700"`);
   if (run.italic) attrs.push(`font-style="italic"`);
+  // `normal` included: on a run it overrides small caps the node passes down.
+  if (run.fontVariantCaps) attrs.push(`font-variant="${run.fontVariantCaps}"`);
   if (run.fontFamily) attrs.push(`font-family="${escapeAttr(run.fontFamily)}"`);
   // A percentage `font-size` is relative to the parent's, which is what
   // `fontScale` means; an absolute `fontSize` wins over it here as it does in

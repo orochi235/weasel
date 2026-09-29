@@ -200,6 +200,7 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                         script: { kind: 'enum', name: 'Script', description: 'Set the text smaller and raised or lowered, on the line it would otherwise hold.', default: undefined, control: 'toggle', clearable: true, pair: 'Style', options: [{ value: 'super', label: 'Superscript', icon: 'superscript' }, { value: 'sub', label: 'Subscript', icon: 'subscript' }] },
                         letterSpacing: { kind: 'number', name: 'Tracking', description: 'Extra advance per glyph, world units.', default: 0, step: 0.1 },
                         textTransform: { kind: 'enum', name: 'Case', description: 'Draw the text in capitals, lowercase or title case. The text itself is unchanged.', default: 'none', control: 'toggle', options: [{ value: 'none', label: 'None', short: '–' }, { value: 'uppercase', label: 'Uppercase', short: 'AA' }, { value: 'lowercase', label: 'Lowercase', short: 'aa' }, { value: 'capitalize', label: 'Capitalize', short: 'Aa' }] },
+                        fontVariantCaps: { kind: 'enum', name: 'Small caps', description: 'Draw lowercase letters as smaller capitals. The text itself is unchanged.', default: 'normal', control: 'toggle', options: [{ value: 'normal', label: 'Normal', short: '–' }, { value: 'small-caps', label: 'Small caps', short: 'Sc' }] },
                       },
                     },
                     paragraph: {

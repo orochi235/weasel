@@ -4,6 +4,7 @@ import { faceMetricsFor, type FaceMetrics } from '@weasel-js/font';
 import { numericWeight, scriptMetrics } from './runs/resolveRuns';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
 import { transformRunTexts } from './runs/textTransform';
+import { smallCapsScale, smallCapsText } from './runs/smallCaps';
 
 export type { StyledRun };
 
@@ -51,6 +52,10 @@ function runMetrics(run: StyledRun, fontSize: number, face: FaceMetrics | undefi
   };
 }
 
+/** A run as `layoutMarkdown` walks it: small caps has split it where its
+ *  size changes, and marked the pieces drawn at the small size. */
+type Segment = StyledRun & { smallCaps?: true; source?: StyledRun };
+
 /** A single laid-out line of text: its positioned runs, total width, and computed line height. */
 export interface LayoutLine {
   runs: PositionedRun[];
@@ -77,7 +82,22 @@ export function layoutMarkdown(
   if (runs.length === 0) return { lines: [], width: 0, height: 0 };
   // No caret reads this layout, so the transformed text simply replaces the source.
   const shown = transformRunTexts(runs.map((r) => r.text), runs.map((r) => r.textTransform ?? 'none'));
-  runs = runs.map((r, i) => (shown[i].text === r.text ? r : { ...r, text: shown[i].text }));
+  // Small caps splits a run where its size changes, marking the small pieces.
+  const segs: Segment[] = [];
+  runs.forEach((r, i) => {
+    const text = shown[i].text;
+    if (r.fontVariantCaps !== 'small-caps') { segs.push(text === r.text ? r : { ...r, text }); return; }
+    const caps = smallCapsText(text);
+    if (!caps.small) { segs.push({ ...r, text: caps.text }); return; }
+    let at = 0;
+    for (const piece of caps.text) {
+      const small = caps.small[at];
+      at += piece.length;
+      const prev = segs[segs.length - 1];
+      if (prev?.source === r && (prev.smallCaps === true) === small) prev.text += piece;
+      else segs.push({ ...r, text: piece, source: r, ...(small ? { smallCaps: true as const } : {}) });
+    }
+  });
 
   const lines: LayoutLine[] = [];
   let currentRuns: PositionedRun[] = [];
@@ -93,12 +113,15 @@ export function layoutMarkdown(
     lineMaxSize = 0;
   }
 
-  function processSegment(segRun: StyledRun) {
+  function processSegment(seg: Segment) {
+    const { smallCaps, source: _source, ...segRun } = seg;
     // Already a screen-pixel layout, so a run's `{ px }` size is its size.
     const face = faceOf?.(segRun.bold ?? false, segRun.italic ?? false);
-    const { size: effectiveSize, y: runY } = runMetrics(segRun, fontSize, face);
+    const { size: runSize, y: runY } = runMetrics(segRun, fontSize, face);
+    const effectiveSize = smallCaps ? runSize * smallCapsScale(face) : runSize;
     const at = face ? { face } : {};
-    lineMaxSize = Math.max(lineMaxSize, effectiveSize);
+    // The run's size holds the line, as on the GL tier, however small its capitals.
+    lineMaxSize = Math.max(lineMaxSize, runSize);
 
     if (maxWidth === Infinity) {
       const w = measure(segRun.text, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
@@ -140,7 +163,7 @@ export function layoutMarkdown(
     }
   }
 
-  for (const run of runs) {
+  for (const run of segs) {
     // markdownToRuns embeds newlines inside runs; split on '\n' so each
     // segment becomes its own line via commitLine().
     const segments = run.text.split('\n');

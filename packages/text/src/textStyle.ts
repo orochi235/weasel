@@ -13,6 +13,7 @@
 import type { FillStyle, ScreenLength, Stroke } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
 import type { TextTransform } from './runs/textTransform';
+import type { FontVariantCaps } from './runs/smallCaps';
 
 /**
  * Horizontal alignment. `start` / `end` resolve against the reading direction;
@@ -93,6 +94,9 @@ export interface TextStyle {
   /** CSS `text-transform` for display; the text itself is not rewritten.
    *  Default `'none'`. */
   textTransform?: TextTransform;
+  /** `'small-caps'` draws lowercase as smaller capitals; the text itself is
+   *  not rewritten. Default `'normal'`. */
+  fontVariantCaps?: FontVariantCaps;
   /**
    * Set the node's text as a superscript or subscript — the default every run
    * inherits, exactly as a run's own `StyledRun.script` is for that run. The
@@ -124,6 +128,7 @@ export interface ResolvedTextStyle {
   strikethrough: boolean;
   overline: boolean;
   textTransform: TextTransform;
+  fontVariantCaps: FontVariantCaps;
   /** Absent is ordinary text. */
   script?: 'super' | 'sub';
   /** Absent means no outline — unlike the other fields, this one has no
@@ -164,6 +169,7 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   strikethrough: false,
   overline: false,
   textTransform: 'none',
+  fontVariantCaps: 'normal',
 };
 
 /**
@@ -246,6 +252,7 @@ export function resolveTextStyle(
     strikethrough: style.strikethrough ?? DEFAULT_TEXT_STYLE.strikethrough,
     overline: style.overline ?? DEFAULT_TEXT_STYLE.overline,
     textTransform: style.textTransform ?? DEFAULT_TEXT_STYLE.textTransform,
+    fontVariantCaps: style.fontVariantCaps ?? DEFAULT_TEXT_STYLE.fontVariantCaps,
     ...(style.script !== undefined ? { script: style.script } : {}),
     ...(stroke !== undefined ? { stroke } : {}),
   };

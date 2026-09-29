@@ -76,6 +76,13 @@ describe('effectiveRangeStyle', () => {
       .toBe('none');
   });
 
+  it("reads the node's variant, and lets a run's override it", () => {
+    expect(effectiveRangeStyle(null, {}).fontVariantCaps).toBe('normal');
+    expect(effectiveRangeStyle(null, { fontVariantCaps: 'small-caps' }).fontVariantCaps).toBe('small-caps');
+    expect(effectiveRangeStyle({ fontVariantCaps: 'normal' }, { fontVariantCaps: 'small-caps' }).fontVariantCaps)
+      .toBe('normal');
+  });
+
   it('reports no script where the range sets none', () => {
     expect(effectiveRangeStyle({}, { fontSize: 24 }).script).toBeUndefined();
   });

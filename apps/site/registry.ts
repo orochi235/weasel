@@ -487,6 +487,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/TextScriptDemo.tsx',
   },
   {
+    id: 'small-caps',
+    title: 'Small caps',
+    package: 'text',
+    description: "`fontVariantCaps: 'small-caps'` on a `StyledRun` or a node's `TextStyle` draws lowercase letters as capitals at a smaller size, synthesized rather than read from a font's `smcp` feature. The size is the face's x-height over its cap height, from its `OS/2` table, so a small capital stands as tall as the lowercase it replaces; a face that states neither height gets 70%. Small caps reads the text after `textTransform`, as CSS does: `capitalize` raises each first letter to a full capital and small caps sets the rest. The text is never rewritten — carets, selection and the edit overlay all address what was typed, and the overlay sets its capitals at the canvas's size, not the browser's own.",
+    hint: 'Double-click a line to edit it: the overlay shows the same capitals, and commits the letters you typed.',
+    load: () => import('./demos/SmallCapsDemo').then((m) => m.SmallCapsDemo),
+    path: 'apps/site/demos/SmallCapsDemo.tsx',
+  },
+  {
     id: 'text-nodes',
     title: 'Text nodes',
     package: 'text',
