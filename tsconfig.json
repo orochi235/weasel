@@ -51,6 +51,7 @@
       "@weasel-js/routing": ["./packages/routing/src/index.ts"],
       "@weasel-js/routing/react": ["./packages/routing/src/react.ts"],
       "@weasel-js/routing/internal": ["./packages/routing/src/internal.ts"],
+      "@weasel-js/routing/testing/*": ["./packages/routing/src/testing/*"],
       "@weasel-js/geom": ["./packages/geom/src/index.ts"],
       "@weasel-js/geom/booleans": ["./packages/geom/src/booleans/index.ts"],
       "@weasel-js/geom/*": ["./packages/geom/src/*"],

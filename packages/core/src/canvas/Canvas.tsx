@@ -42,6 +42,7 @@ import { useFrameLoop } from './useFrameLoop';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
 import type { ToolCtx } from '@weasel-js/routing';
+import { useLatest } from '@weasel-js/routing/react';
 import type { Op } from 'core/ops/types';
 import type { Path } from 'features/paths/types';
 import { dispatchApplyBatch } from 'core/applyOps';
@@ -889,16 +890,16 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   }
   // Where pixels go. Split from `canvasRef` only when detached.
   const paintTarget = detached ? (paintInto.canvas ?? null) : null;
-  const paintTargetRef = useRef(paintTarget);
+  const paintTargetRef = useLatest(paintTarget);
   const paintRect = detached ? { x: paintInto.x, y: paintInto.y } : null;
-  const paintRectRef = useRef(paintRect);
+  const paintRectRef = useLatest(paintRect);
 
   // Read by `hitTestExtras`, which is built once and must see live values.
   const helpersForLayersRef = useRef<CanvasHelpers<TPose> | null>(null);
-  const dimsRef = useRef({ width, height });
-  const getIsVisibleRef = useRef(getIsVisible);
-  const layerVisibilityRef = useRef(layerVisibility);
-  const layerOrderRef = useRef(layerOrder);
+  const dimsRef = useLatest({ width, height });
+  const getIsVisibleRef = useLatest(getIsVisible);
+  const layerVisibilityRef = useLatest(layerVisibility);
+  const layerOrderRef = useLatest(layerOrder);
 
   // React does not drive the paint; the frame loop does. The thunk defers to
   // `paint` below, which needs inputs this render has not computed yet.
@@ -908,7 +909,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     { syncPaint, target: canvasRef },
   );
 
-  const contentVersionRef = useRef(contentVersion);
+  const contentVersionRef = useLatest(contentVersion);
   const paintedVersionRef = useRef(0);
   const getPaintedVersion = useCallback(() => paintedVersionRef.current, []);
 
@@ -951,7 +952,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (hit) return { layerId: layer.id, hit };
     }
     return null;
-  }, []);
+  }, [getIsVisibleRef, layerOrderRef, layerVisibilityRef]);
 
   const hitTestExtras = useCallback((
     worldX: number,
@@ -963,7 +964,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     frame?.view ?? viewRef.current,
     frame?.dims ?? dimsRef.current,
     helpersForLayersRef.current,
-  ), [hitTestExtrasIn]);
+  ), [hitTestExtrasIn, dimsRef]);
 
   // The uncontrolled view lives in a ref, not `useState`, so a camera moving
   // at 60 Hz costs no React render; DOM that mirrors it subscribes instead.
@@ -971,9 +972,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const isControlled = viewProp !== undefined;
   const controlledView = isControlled ? normalizeView(viewProp) : undefined;
   const viewSubsRef = useRef<Set<(v: View) => void>>(new Set());
-  const onViewChangeRef = useRef(onViewChange);
-  const viewBoundsRef = useRef(viewBounds);
-  const isControlledRef = useRef(isControlled);
+  const onViewChangeRef = useLatest(onViewChange);
+  const viewBoundsRef = useLatest(viewBounds);
+  const isControlledRef = useLatest(isControlled);
   const controlledWarnedRef = useRef(false);
 
   const setView = useCallback((next: View | ((current: View) => View)) => {
@@ -997,7 +998,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     for (const fn of viewSubsRef.current) fn(clamped);
     onViewChangeRef.current?.(clamped);
     requestRedraw();
-  }, [requestRedraw]);
+  }, [requestRedraw, dimsRef, isControlledRef, onViewChangeRef, viewBoundsRef]);
   const setViewRef = useRef(setView);
   setViewRef.current = setView;
 
@@ -1030,7 +1031,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const origin = paintRectRef.current;
     const { width: w, height: h } = dimsRef.current;
     return { x: origin?.x ?? 0, y: origin?.y ?? 0, width: w, height: h };
-  }, []);
+  }, [dimsRef, paintRectRef]);
 
   useImperativeHandle(ref, () => ({
     // Named rather than read off `canvasRef` so the handle rebuilds when a
@@ -1111,7 +1112,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const effectiveAdapterRefForCtx = useRef(effectiveAdapter);
   effectiveAdapterRefForCtx.current = effectiveAdapter;
 
-  const clientToWorldRef = useRef(clientToWorld);
+  const clientToWorldRef = useLatest(clientToWorld);
   const toolsCtxBase = useMemo(
     () => (overrides?: {
       clientX?: number;
@@ -1146,15 +1147,15 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         debug: debugSinkRefForCtx.current ?? undefined,
       };
     },
-    [],
+    [clientToWorldRef],
   );
 
   // Stable wrappers for HUD props — read the ref at call time so the HUDs
   // don't reinstall their useEffect on every render when the prop identity
   // changes (e.g. when SceneCanvas re-renders with a new lambda reference).
   // pickEvery and pickBest are HUD-only.
-  const pickEveryRef = useRef(pickEvery);
-  const pickBestRef = useRef(pickBest);
+  const pickEveryRef = useLatest(pickEvery);
+  const pickBestRef = useLatest(pickBest);
   const stablePickEveryForHud = useCallback(
     (wx: number, wy: number): readonly string[] => {
       const pe = pickEveryRef.current;
@@ -1163,11 +1164,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (!raw) return [];
       return Array.isArray(raw) ? raw : [raw];
     },
-    [],
+    [pickEveryRef],
   );
   const stablePickBestForHud = useCallback(
     (wx: number, wy: number): string | null => pickBestRef.current?.(wx, wy) ?? null,
-    [],
+    [pickBestRef],
   );
   // Selection-driven action gestures (delete/nudge/undoRedo/duplicate) used
   // to be wired here via legacy hooks. They now go through the Actions
@@ -1351,7 +1352,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // The stack a view paints through its own camera is this canvas's, before
   // the views themselves are folded in — otherwise a view would contain
   // itself. Published by reference and read at draw time.
-  const surfaceLayersRef = useRef<readonly RenderLayer<unknown>[]>(layers);
+  const surfaceLayersRef = useLatest<readonly RenderLayer<unknown>[]>(layers);
   useEffect(() => {
     viewRegistry?.attachSurface({
       origin: () => {
@@ -1374,7 +1375,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         ) !== null;
       },
     });
-  }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn]);
+  }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn, dimsRef, surfaceLayersRef]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
@@ -1414,35 +1415,20 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
 
   // Everything the paint, hit-testing and the view registry read that a React
-  // render owns. Published from an insertion effect: only a committed render
-  // reaches it, and it runs ahead of every layout effect in the commit, any of
-  // which may ask for a sync paint.
+  // render owns. `useLatest` and the insertion effect below publish committed
+  // renders only, ahead of every layout effect in the commit, any of which may
+  // ask for a sync paint.
   const paintInputs = {
     layers: layersWithDebug, width, height, debugSink,
     frameStats: resolvedDebugConfig?.fps === true,
     dpr: dprProp, layerVisibility, layerOrder, layerGroups, shaders,
     flattenTolerance,
   };
-  const paintInputsRef = useRef(paintInputs);
+  const paintInputsRef = useLatest(paintInputs);
   useInsertionEffect(() => {
-    paintInputsRef.current = paintInputs;
-    paintTargetRef.current = paintTarget;
-    paintRectRef.current = paintRect;
-    contentVersionRef.current = contentVersion;
-    dimsRef.current = { width, height };
     if (controlledView) viewRef.current = controlledView;
-    getIsVisibleRef.current = getIsVisible;
-    layerVisibilityRef.current = layerVisibility;
-    layerOrderRef.current = layerOrder;
     helpersForLayersRef.current = helpersForLayers;
     if (helpersRef) helpersRef.current = helpersForLayers;
-    surfaceLayersRef.current = layers;
-    onViewChangeRef.current = onViewChange;
-    viewBoundsRef.current = viewBounds;
-    isControlledRef.current = isControlled;
-    clientToWorldRef.current = clientToWorld;
-    pickEveryRef.current = pickEvery;
-    pickBestRef.current = pickBest;
     if (debugSinkRef) debugSinkRef.current = debugSink;
   });
 
@@ -1527,7 +1513,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (sink && spans) sink.recordFrame(frameStatsOf(spans, renderer.lastFrameStats(), performance.now() - paintT0));
     paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
     return true;
-  }, []);
+  }, [contentVersionRef, paintInputsRef, paintRectRef, paintTargetRef]);
   paintRef.current = paint;
 
   // A tripwire, not a list of values this effect uses: every paint input that
@@ -1600,8 +1586,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // this component no longer renders, so attach them to the caller's instead.
   // Everything else about pointer input already attaches to `canvasRef`, which
   // is that same element.
-  const layersForMoveRef = useRef(layersWithDebug);
-  useInsertionEffect(() => { layersForMoveRef.current = layersWithDebug; });
+  const layersForMoveRef = useLatest(layersWithDebug);
   useEffect(() => {
     if (!detached || !inputElement) return;
     const el = inputElement;
@@ -1638,7 +1623,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       el.removeEventListener('pointerleave', onLeave);
       el.removeEventListener('contextmenu', onMenu);
     };
-  }, [detached, inputElement, autoFocusOnPointerDown]);
+  }, [detached, inputElement, autoFocusOnPointerDown, clientToWorldRef, dimsRef, layersForMoveRef]);
 
   // The cursor is a tool's, but under `paintInto` it has no element of ours to
   // sit on. Written imperatively rather than by the caller, so a tool's cursor

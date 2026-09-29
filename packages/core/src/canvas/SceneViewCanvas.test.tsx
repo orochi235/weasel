@@ -10,7 +10,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { createRef, useRef } from 'react';
-import { renderThenAbandon } from '../test-utils/abandonRender';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { createScene } from 'core/scene/scene';
 import type { Node, Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
