@@ -390,29 +390,6 @@ Core five + Crop shipped. Remaining:
   canvas-font tier or at DPR 2. The `super`/`sub` 12px rows of `npx vitest run
   -c scripts/measure-overlay-alignment.config.ts` show it.
 
-- **(P3) `ToggleBar.module.css` is a drifted copy of the segmented-control
-  styles.** The `ButtonBar` / `OptionsBar` duplication closed 2026-08-15 —
-  both now import `components/segmentedControl.module.css`. `ToggleBar` was the
-  third copy nobody had counted: the shared rules plus a `.segmentMixed` third
-  state (`aria-pressed="mixed"`), a `.variant_minimal` that genuinely diverges —
-  bordered box, square corners, inner dividers, `gap: 0` — and a
-  `.variant_flat`, where the shared one uses rounded gapped segments.
-
-  It has since drifted: fixes landed on `ToggleBar` alone — `min-width:
-  max-content` so segments don't collapse in a squeezed row (the shared
-  `.segment` still has `min-width: 0`), `:first-of-type` / `:last-of-type` so
-  tooltip markers don't break the end caps, and icon-segment padding. Check
-  whether `ButtonBar` and `OptionsBar` need the same fixes.
-
-  Folding them in means the shared module becomes a base that `ToggleBar`
-  overrides through descendant selectors (`.variant_minimal .segment`), which
-  `composes` handles badly. Do it alongside a decision about whether the three
-  bars are one component with different affordances.
-
-  Note the dedup was a source win, not a payload one: the merged stylesheet is
-  the same size either way (52933 → 52934 bytes), since identical content
-  already collapsed to one scoped hash.
-
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs.
 
 - **(P3) Small caps has no run spelling.** The last gap in the run style
@@ -603,6 +580,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
+
+- **(P3) Are `ToggleBar`, `ButtonBar` and `OptionsBar` one component?** They
+  differ only in what a segment does, yet `ToggleBar` keeps its own copy of the
+  segmented-control styles (`ToggleBar.module.css`) while the other two share
+  `components/segmentedControl.module.css`. The two files agree again on
+  every rule they share (`segmentedControl.browser.test.tsx` measures the
+  shared one), but a fix made in one still has to be made in the other.
+  What `ToggleBar` adds is a `.segmentMixed` state, a `.variant_minimal` that
+  genuinely diverges (bordered box, square corners, inner dividers, `gap: 0`)
+  and a `.variant_flat`. Folding the files makes the shared module a base that
+  `ToggleBar` overrides through descendant selectors, which `composes` handles
+  badly, so decide the component question first.
 
 - **(P3) `@weasel-js/quantity` has no composites and no styling.** A value is one number, so a
   range (`1/64–1/2`, which `BandEditor`'s bands would want to report) or a vector readout has no
