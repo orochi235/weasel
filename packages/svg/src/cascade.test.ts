@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   deriveStyle, EMPTY_STYLE, ownProp, parseDeclarations, parseStylesheet, resolveCurrentColor, specificity,
 } from './cascade';
+import { DEFAULT_MEDIA_ENVIRONMENT } from './media';
 
 /** Parse an SVG string and return a lookup by element id. */
 function els(svg: string): (id: string) => Element {
@@ -249,5 +250,27 @@ describe('resolveCurrentColor', () => {
   });
   it('returns null for null input', () => {
     expect(resolveCurrentColor(null, EMPTY_STYLE)).toBeNull();
+  });
+});
+
+describe('parseStylesheet conditional at-rules', () => {
+  it('evaluates @media against the context environment', () => {
+    const css = '@media (prefers-color-scheme: dark) { .d { fill: red } } .x { fill: blue }';
+    expect(parseStylesheet(css).map((r) => r.selector)).toEqual(['.x']);
+    const dark = parseStylesheet(css, 0, { media: { ...DEFAULT_MEDIA_ENVIRONMENT, prefersColorScheme: 'dark' } });
+    expect(dark.map((r) => r.selector)).toEqual(['.d', '.x']);
+    expect(dark.map((r) => r.order)).toEqual([0, 1]);
+  });
+  it('reports a leading @import and ignores one after a rule, as CSS does', () => {
+    const warnings: string[] = [];
+    parseStylesheet('@charset "utf-8"; @import "a.css"; .x { fill: red } @import "b.css";', 0, {
+      onWarn: (m) => warnings.push(m),
+    });
+    expect(warnings).toEqual(['@import "a.css" is not fetched; its rules do not apply']);
+  });
+  it('answers @supports selector() only through the context', () => {
+    const css = '@supports selector(a > b) { .s { fill: red } }';
+    expect(parseStylesheet(css)).toEqual([]);
+    expect(parseStylesheet(css, 0, { selector: () => true }).map((r) => r.selector)).toEqual(['.s']);
   });
 });

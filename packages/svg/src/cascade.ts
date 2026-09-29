@@ -8,6 +8,17 @@
  * the inherited cascade once, and leaves read resolved values directly.
  */
 
+import {
+  parenEnd, parseDeclarations, skipBlock, skipString, splitTopLevel, stripComments, type Declaration,
+} from './cssScan';
+import {
+  DEFAULT_MEDIA_ENVIRONMENT, evaluateMediaQuery, mediaEnvironmentFor, type SvgMediaEnvironment,
+} from './media';
+import { PROPERTIES } from './properties';
+import { evaluateSupports } from './supports';
+
+export { parseDeclarations, type Declaration };
+
 /**
  * Raw resolved value of each inheritable presentation property in effect at a
  * point in the tree. An absent key means the property is unset all the way up,
@@ -21,26 +32,11 @@ export type StyleContext = Readonly<Record<string, string>>;
 export const EMPTY_STYLE: StyleContext = {};
 
 /**
- * Inheritable presentation properties the leaf/text parsers consume. Extend
- * this list (and teach the consuming leaf to read the new key) to inherit a
- * new property — no per-attribute DOM walk required.
+ * Inheritable presentation properties the leaf/text parsers consume. Add one
+ * to `PROPERTIES` (and teach the consuming leaf to read the new key) to
+ * inherit a new property — no per-attribute DOM walk required.
  */
-const INHERITABLE = [
-  'fill', 'fill-opacity', 'fill-rule',
-  'stroke', 'stroke-width', 'stroke-opacity',
-  'stroke-linecap', 'stroke-linejoin', 'stroke-dasharray', 'stroke-miterlimit',
-  'marker-start', 'marker-mid', 'marker-end',
-  'color',
-  'font-size', 'font-family', 'font-weight', 'font-style', 'text-anchor',
-  'letter-spacing', 'text-decoration', 'direction', 'text-transform',
-] as const;
-
-/** One `prop: value [!important]` declaration. */
-export interface Declaration {
-  readonly prop: string;
-  readonly value: string;
-  readonly important: boolean;
-}
+const INHERITABLE = Object.keys(PROPERTIES).filter((p) => PROPERTIES[p].inherits);
 
 /** One selector from a style rule; a comma list becomes one rule per selector. */
 export interface StyleRule {
@@ -54,107 +50,6 @@ export interface StyleRule {
 
 export type Specificity = readonly [number, number, number];
 
-/**
- * Advance past a quoted string starting at `i` (which holds the quote).
- * Returns the index just after the closing quote, or the end of input.
- */
-function skipString(s: string, i: number): number {
-  const q = s[i];
-  for (let j = i + 1; j < s.length; j++) {
-    if (s[j] === '\\') j++;
-    else if (s[j] === q) return j + 1;
-  }
-  return s.length;
-}
-
-/** Remove `/* … *\/` comments, leaving quoted strings intact. */
-function stripComments(s: string): string {
-  if (!s.includes('/*')) return s;
-  let out = '';
-  let i = 0;
-  while (i < s.length) {
-    const ch = s[i];
-    if (ch === '"' || ch === "'") {
-      const end = skipString(s, i);
-      out += s.slice(i, end);
-      i = end;
-    } else if (ch === '/' && s[i + 1] === '*') {
-      const end = s.indexOf('*/', i + 2);
-      i = end < 0 ? s.length : end + 2;
-      out += ' ';
-    } else {
-      out += ch;
-      i++;
-    }
-  }
-  return out;
-}
-
-/**
- * Split `s` on `sep` wherever it sits outside strings and (), [] nesting.
- * With `dropBlocks`, a `{…}` block at depth zero is discarded along with the
- * prelude before it, back to the previous separator.
- */
-function splitTopLevel(s: string, sep: string, dropBlocks = false): string[] {
-  const parts: string[] = [];
-  let depth = 0;
-  let start = 0;
-  let i = 0;
-  while (i < s.length) {
-    const ch = s[i];
-    if (ch === '"' || ch === "'") { i = skipString(s, i); continue; }
-    if (ch === '(' || ch === '[') depth++;
-    else if ((ch === ')' || ch === ']') && depth > 0) depth--;
-    else if (depth === 0 && ch === sep) {
-      parts.push(s.slice(start, i));
-      start = i + 1;
-    } else if (depth === 0 && dropBlocks && ch === '{') {
-      i = skipBlock(s, i);
-      start = i;
-      continue;
-    }
-    i++;
-  }
-  parts.push(s.slice(start));
-  return parts;
-}
-
-/** Given `s[i] === '{'`, return the index just after its matching `}`. */
-function skipBlock(s: string, i: number): number {
-  let depth = 0;
-  while (i < s.length) {
-    const ch = s[i];
-    if (ch === '"' || ch === "'") { i = skipString(s, i); continue; }
-    if (ch === '{') depth++;
-    else if (ch === '}' && --depth === 0) return i + 1;
-    i++;
-  }
-  return s.length;
-}
-
-const PROP_NAME = /^-?[a-z_][a-z0-9_-]*$/;
-const IMPORTANT = /!\s*important\s*$/i;
-
-/**
- * Parse a CSS declaration block — a `style=""` value or a rule body — in
- * source order. Malformed declarations are dropped, as CSS does.
- */
-export function parseDeclarations(block: string): Declaration[] {
-  const out: Declaration[] = [];
-  for (const part of splitTopLevel(stripComments(block), ';', true)) {
-    const colon = part.indexOf(':');
-    if (colon < 0) continue;
-    const prop = part.slice(0, colon).trim().toLowerCase();
-    if (!PROP_NAME.test(prop)) continue;
-    let value = part.slice(colon + 1).trim();
-    const important = IMPORTANT.test(value);
-    if (important) value = value.replace(IMPORTANT, '').trim();
-    if (!value) continue;
-    out.push({ prop, value, important });
-  }
-  return out;
-}
-
 /** Read an identifier (with escapes) starting at `i`; returns its end index. */
 function identEnd(s: string, i: number): number {
   while (i < s.length) {
@@ -164,19 +59,6 @@ function identEnd(s: string, i: number): number {
     else break;
   }
   return i;
-}
-
-/** Given `s[i] === '('`, return the index just after its matching `)`. */
-function parenEnd(s: string, i: number): number {
-  let depth = 0;
-  while (i < s.length) {
-    const ch = s[i];
-    if (ch === '"' || ch === "'") { i = skipString(s, i); continue; }
-    if (ch === '(') depth++;
-    else if (ch === ')' && --depth === 0) return i + 1;
-    i++;
-  }
-  return s.length;
 }
 
 const LEGACY_PSEUDO_ELEMENTS = new Set(['before', 'after', 'first-line', 'first-letter']);
@@ -242,67 +124,139 @@ export function specificity(selector: string): Specificity {
   return [a, b, c];
 }
 
+/** What a stylesheet's conditional at-rules are evaluated against. */
+export interface StylesheetContext {
+  /** The environment `@media` answers to; {@link DEFAULT_MEDIA_ENVIRONMENT} when omitted. */
+  readonly media?: SvgMediaEnvironment;
+  /** Answers `@supports selector(…)`; every selector test is false without it. */
+  readonly selector?: (selector: string) => boolean;
+  /** Receives a notice for each `@import`, which is never fetched. */
+  readonly onWarn?: (message: string) => void;
+}
+
 /**
- * Parse stylesheet text into rules. Every at-rule (`@media`, `@import`,
- * `@font-face`, `@supports`, …) is skipped whole, as are nested blocks inside
- * a rule body. `order` continues from `firstOrder` so several sheets share one
- * source order.
+ * Parse stylesheet text into rules. `@media` and `@supports` blocks
+ * contribute their rules when their condition holds against `ctx`, nested to
+ * any depth; `@import` is reported and not fetched; every other at-rule
+ * (`@font-face`, `@layer`, `@keyframes`, …) is skipped whole, as are nested
+ * blocks inside a rule body. `order` continues from `firstOrder` so several
+ * sheets share one source order.
  */
-export function parseStylesheet(text: string, firstOrder = 0): StyleRule[] {
+export function parseStylesheet(text: string, firstOrder = 0, ctx: StylesheetContext = {}): StyleRule[] {
   const src = stripComments(text).replace(/<!\[CDATA\[|\]\]>|<!--|-->/g, ' ');
   const rules: StyleRule[] = [];
-  let order = firstOrder;
-  let i = 0;
-  let preludeStart = 0;
-  while (i < src.length) {
+  parseRuleList(src, 0, src.length, ctx, rules, { order: firstOrder, importsAllowed: true });
+  return rules;
+}
+
+const AT_RULE = /^@([\w-]+)\s*([\s\S]*)$/;
+
+interface ListState {
+  order: number;
+  /** `@import` is valid only at the top of a sheet, ahead of every rule but `@charset` and `@layer`. */
+  importsAllowed: boolean;
+}
+
+function parseRuleList(
+  src: string, from: number, to: number, ctx: StylesheetContext, rules: StyleRule[], state: ListState,
+): void {
+  let i = from;
+  let preludeStart = from;
+  while (i < to) {
     const ch = src[i];
     if (ch === '"' || ch === "'") { i = skipString(src, i); continue; }
     if (ch === ';') {
+      const text = src.slice(preludeStart, i).trim();
+      const statement = AT_RULE.exec(text);
+      const name = statement?.[1].toLowerCase();
+      if (name === 'import' && state.importsAllowed) {
+        ctx.onWarn?.(`@import ${statement?.[2]} is not fetched; its rules do not apply`);
+      } else if (text && name !== 'charset' && name !== 'layer') {
+        state.importsAllowed = false;
+      }
       i++;
       preludeStart = i;
       continue;
     }
     if (ch !== '{') { i++; continue; }
     const prelude = src.slice(preludeStart, i).trim();
-    const end = skipBlock(src, i);
-    if (!prelude.startsWith('@') && prelude) {
+    const end = Math.min(skipBlock(src, i), to);
+    const at = AT_RULE.exec(prelude);
+    state.importsAllowed = false;
+    if (at) {
+      if (conditionHolds(at[1].toLowerCase(), at[2], ctx)) parseRuleList(src, i + 1, end - 1, ctx, rules, state);
+    } else if (prelude) {
       const declarations = parseDeclarations(src.slice(i + 1, end - 1));
       for (const raw of splitTopLevel(prelude, ',')) {
         const selector = raw.trim();
         if (selector) {
-          rules.push({ selector, declarations, specificity: specificity(selector), order: order++ });
+          rules.push({ selector, declarations, specificity: specificity(selector), order: state.order++ });
         }
       }
     }
     i = end;
     preludeStart = end;
   }
-  return rules;
 }
 
-function appliesAsCss(style: Element): boolean {
+function conditionHolds(name: string, condition: string, ctx: StylesheetContext): boolean {
+  if (name === 'media') return evaluateMediaQuery(condition, ctx.media ?? DEFAULT_MEDIA_ENVIRONMENT);
+  if (name === 'supports') return evaluateSupports(condition, { selector: ctx.selector });
+  return false;
+}
+
+function appliesAsCss(style: Element, ctx: StylesheetContext): boolean {
   const type = style.getAttribute('type')?.trim().toLowerCase();
   if (type && type !== 'text/css') return false;
-  const media = style.getAttribute('media')?.trim().toLowerCase();
-  if (!media) return true;
-  return media.split(',').some((m) => m.trim() === 'all' || m.trim() === 'screen');
+  return evaluateMediaQuery(style.getAttribute('media') ?? '', ctx.media ?? DEFAULT_MEDIA_ENVIRONMENT);
 }
 
 /** Rules sorted ascending by (specificity, source order) — the cascade's order. */
 const sheetCache = new WeakMap<Document, readonly StyleRule[]>();
 
+/**
+ * Evaluate `doc`'s stylesheets against `media` now, reporting to `onWarn`.
+ * A document never bound is read on first use against the environment its
+ * root implies, with nothing reported.
+ */
+export function bindStylesheets(
+  doc: Document, media: SvgMediaEnvironment, onWarn?: (message: string) => void,
+): void {
+  sheetCache.set(doc, collectRules(doc, media, onWarn));
+}
+
 function documentRules(doc: Document): readonly StyleRule[] {
   const cached = sheetCache.get(doc);
   if (cached) return cached;
+  const root = doc.documentElement;
+  const rules = collectRules(doc, root ? mediaEnvironmentFor(root) : DEFAULT_MEDIA_ENVIRONMENT);
+  sheetCache.set(doc, rules);
+  return rules;
+}
+
+function collectRules(
+  doc: Document, media: SvgMediaEnvironment, onWarn?: (message: string) => void,
+): readonly StyleRule[] {
+  const ctx: StylesheetContext = { media, onWarn, selector: (s) => isValidSelector(doc, s) };
   const rules: StyleRule[] = [];
   const styles = doc.getElementsByTagNameNS('*', 'style');
   for (let i = 0; i < styles.length; i++) {
-    if (!appliesAsCss(styles[i])) continue;
-    rules.push(...parseStylesheet(styles[i].textContent ?? '', rules.length));
+    if (!appliesAsCss(styles[i], ctx)) continue;
+    rules.push(...parseStylesheet(styles[i].textContent ?? '', rules.length, ctx));
   }
   rules.sort((x, y) => compareSpecificity(x.specificity, y.specificity) || x.order - y.order);
-  sheetCache.set(doc, rules);
   return rules;
+}
+
+function isValidSelector(doc: Document, selector: string): boolean {
+  const root = doc.documentElement;
+  if (!root || !selector.trim()) return false;
+  try {
+    root.matches(selector);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function matches(el: Element, selector: string): boolean {

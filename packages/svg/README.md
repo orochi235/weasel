@@ -130,6 +130,22 @@ def, because a `userSpaceOnUse` size and an `orient="auto"` start both depend on
 the referencing stroke. `wzl:inset` restores the inset; without it the inset is
 0. A reference to a marker neither registered nor defined warns and is dropped.
 
+## Stylesheets
+
+`<style>` rules cascade with the presentation attributes and `style=""`. A parse
+is one static render, so `@media` and `<style media>` are answered once, against
+a fixed environment: a `screen` whose viewport is the root's `width`/`height`
+(else its `viewBox`, else 300 × 150), `prefers-color-scheme: light`, and no
+hover or pointer. Pass `parseSvg(svg, { media: { prefersColorScheme: 'dark',
+width: 1200 } })` to render for different media; `evaluateMediaQuery` answers a
+query against the same environment.
+
+`@supports` asks whether this parser honors a declaration, not whether a browser
+parses it: `(fill: red)` holds, `(display: grid)` and `(clip-path: url(#c))` do
+not, because nothing reads them from a stylesheet. `@import` is not fetched, and
+each one is reported in `warnings`. Rules inside `@layer`, `@container` and
+other at-rules are skipped.
+
 ## Raster images
 
 `<image>` parses to an `SvgImageNode` holding the `href` verbatim — an

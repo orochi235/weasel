@@ -12,6 +12,7 @@
  */
 
 import { identity, type Mat3 } from '@weasel-js/geom';
+import type { SvgMediaEnvironment } from './media';
 import type {
   Path, FillStyle, MarkerEntry, MarkerRef, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
   TextVerticalAlign,
@@ -261,6 +262,14 @@ export interface ParseOptions {
    * the structured `meta` bag; they are silently dropped at serialize time.
    */
   namespaces?: Record<string, string>;
+  /**
+   * The media `@media` rules and `<style media>` are evaluated against. A
+   * parse is one static render: by default a `screen` whose viewport is the
+   * root's `width` / `height` (else its `viewBox`, else 300 × 150), with a
+   * light color scheme and no hover or pointer. Fields given here replace
+   * those defaults.
+   */
+  media?: Partial<SvgMediaEnvironment>;
 }
 
 /** Output of {@link parseSvg}. */

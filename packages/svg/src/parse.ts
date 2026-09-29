@@ -30,7 +30,11 @@ import { parsePaintAttr } from './color';
 import { collectGradients, WEASEL_NS, WEASEL_NS_PREFIX, type GradientTable } from './gradients';
 import { collectPatterns } from './patterns';
 import { collectElementsByTag } from './elements';
-import { deriveStyle, EMPTY_STYLE, ownProp, resolveCurrentColor, type StyleContext } from './cascade';
+import {
+  bindStylesheets, deriveStyle, EMPTY_STYLE, ownProp, resolveCurrentColor, type StyleContext,
+} from './cascade';
+import { mediaEnvironmentFor } from './media';
+import { TEXT_TRANSFORMS } from './properties';
 
 // Every tag set here is compared against a lowercased `tagName`.
 /** Element tags we accept and lower; anything else triggers a warning. */
@@ -68,6 +72,8 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   if (!root || root.tagName.toLowerCase() !== 'svg') {
     return { nodes: [], warnings: ['root element is not <svg>'] };
   }
+
+  bindStylesheets(doc, mediaEnvironmentFor(root, opts.media), onWarn);
 
   const namespaces = opts.namespaces ?? {};
   // Build a URI → prefix index for fast lookup during traversal.
@@ -1144,8 +1150,6 @@ function parseTextElement(
   }
   return node;
 }
-
-const TEXT_TRANSFORMS: ReadonlySet<string> = new Set(['none', 'uppercase', 'lowercase', 'capitalize']);
 
 /** A CSS `text-transform` keyword the runs model carries, or undefined for
  *  anything else — `full-width` and friends included. */
