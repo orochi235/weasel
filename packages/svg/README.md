@@ -66,6 +66,14 @@ That cuts both ways on import: a `fill="url(#mesh1) #c04a3f"` from Inkscape,
 whose mesh gradients this package does not model, imports as flat `#c04a3f`
 rather than as a dropped fill.
 
+`serializeSvg` is synchronous, so a kind loaded on demand (`mesh-gradient`, or
+one declared with `registerPaintKindLoader`) that has not landed yet has no
+`toSvg` to call, and its def is left out with a warning. `await warmSvg(nodes)`
+first loads the kinds those nodes paint with, and the faces a sub- or
+superscript run with its own `baselineShift` takes its size from — nothing
+else, so an unrelated kind that fails to load cannot fail the export.
+`svgNeeds(nodes)` lists the same things without loading them.
+
 ### A gradient's blend space
 
 A gradient's `interpolate` — `'oklab'` or `'oklch'` — has no SVG spelling

@@ -404,7 +404,7 @@ function groupKey(
 /**
  * `source` overrides the tier the resolver picked. Passed for outline glyphs,
  * which are served by a face the *resolver* still reports as atlas or canvas
- * — the tier decision for a glyph is made per glyph, at its size, not per run
+ * — the tier decision for a glyph is made per glyph, not per run
  * — and which must not share a draw call with the quads around them.
  */
 function getOrCreateGroup(
@@ -621,9 +621,10 @@ export function layoutRuns(
      *  Survives the wrap's copies, unlike object identity. */
     flat: number;
   }
-  /** The size an entry holds its line at — its own, or the larger size a
-   *  shrunken run inherited. Glyphs are drawn at `fontSize` regardless. */
-  const lineSize = (e: Entry): number => Math.max(e.fontSize, e.run.strutSize ?? 0);
+  /** The size an entry holds its line at — its run's, or the larger size a
+   *  shrunken run inherited. Glyphs are drawn at their own `fontSize`
+   *  regardless, which small caps sets below the run's. */
+  const lineSize = (e: Entry): number => Math.max(e.run.fontSize, e.run.strutSize ?? 0);
 
   // 1. Flatten all runs into entries with per-glyph data, computing
   //    kerning using the left glyph's atlas+scale across run boundaries.
@@ -661,8 +662,8 @@ export function layoutRuns(
     }
     const runBase = srcIndex;
     const map = run.srcMap;
+    const sizes = run.sizeMap;
     let at = 0;
-    const scale = run.fontSize / metrics.size;
     // World units — deliberately not scaled by fontSize, so the same tracking
     // opens the same visual gap whatever size the run is set at.
     const runTracking = run.letterSpacing;
@@ -670,6 +671,9 @@ export function layoutRuns(
 
     for (const ch of [...run.text]) {
       const cp = ch.codePointAt(0)!;
+      // Small caps sizes glyphs within the run, so the size is the glyph's.
+      const fontSize = sizes ? sizes[at] : run.fontSize;
+      const scale = fontSize / metrics.size;
       const tracking = clusterEnds === null || clusterEnds.has(at + ch.length) ? runTracking : 0;
       const isNewline = isHardLineBreak(cp);
       const isSpace = cp === 32;
@@ -687,7 +691,7 @@ export function layoutRuns(
           // A newline consumes no advance, so it takes no tracking either.
           cp, advance: 0, tracking: 0, kerningBefore: 0, isSpace: false, isNewline: true,
           drawsInk: false,
-          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd, flat: 0,
+          resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
         });
         prevCp = undefined; prevMetrics = undefined; prevFontSize = undefined;
         continue;
@@ -700,7 +704,7 @@ export function layoutRuns(
         const spaceAdvance = spaceGlyph ? spaceGlyph.xadvance : metrics.advanceOf(32);
         const advance = spaceAdvance !== null
           ? spaceAdvance * scale
-          : run.fontSize * 0.25;
+          : fontSize * 0.25;
         let kerningBefore = 0;
         if (prevCp !== undefined && prevMetrics !== undefined && prevFontSize !== undefined) {
           kerningBefore = prevMetrics.kernOf(prevCp, cp) * (prevFontSize / prevMetrics.size);
@@ -710,9 +714,9 @@ export function layoutRuns(
           glyph: spaceGlyph ?? { id: 32, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
           cp, advance, tracking, kerningBefore, isSpace: true, isNewline: false,
           drawsInk: false,
-          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd, flat: 0,
+          resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
         });
-        prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
+        prevCp = cp; prevMetrics = metrics; prevFontSize = fontSize;
         continue;
       }
 
@@ -726,9 +730,9 @@ export function layoutRuns(
             run, font: null, metrics, glyph: null, cp,
             advance: 0, tracking: 0, kerningBefore: 0, isSpace, isNewline: false,
             drawsInk: false,
-            resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd, flat: 0,
+            resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
           });
-          prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
+          prevCp = cp; prevMetrics = metrics; prevFontSize = fontSize;
           continue;
         }
         let kerningBefore = 0;
@@ -739,9 +743,9 @@ export function layoutRuns(
           run, font: null, metrics, glyph: null, cp,
           advance: adv * scale,
           tracking, kerningBefore, isSpace, isNewline: false, drawsInk: !isSpace,
-          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd, flat: 0,
+          resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
         });
-        prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
+        prevCp = cp; prevMetrics = metrics; prevFontSize = fontSize;
         continue;
       }
 
@@ -753,16 +757,16 @@ export function layoutRuns(
           run, font: null, metrics, glyph: null, cp,
           advance: 0, tracking: 0, kerningBefore: 0, isSpace, isNewline: false,
           drawsInk: false,
-          resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd, flat: 0,
+          resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
         });
-        prevCp = cp; prevMetrics = metrics; prevFontSize = run.fontSize;
+        prevCp = cp; prevMetrics = metrics; prevFontSize = fontSize;
         continue;
       }
       // An escalated codepoint is served by a different atlas with its own
       // bake size, so its scale — and the group it lands in — are its own.
       const glyphFont = hit.font;
       const glyphMetrics = glyphFont === font ? metrics : atlasMetrics(glyphFont);
-      const glyphScale = run.fontSize / glyphFont.info.size;
+      const glyphScale = fontSize / glyphFont.info.size;
 
       let kerningBefore = 0;
       if (prevCp !== undefined && prevMetrics !== undefined && prevFontSize !== undefined) {
@@ -775,10 +779,10 @@ export function layoutRuns(
         tracking,
         kerningBefore,
         isSpace, isNewline: false, drawsInk: !isSpace,
-        resolved: hit.resolved, fontSize: run.fontSize, srcIndex: srcStart, srcEnd, flat: 0,
+        resolved: hit.resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
       });
 
-      prevCp = cp; prevMetrics = glyphMetrics; prevFontSize = run.fontSize;
+      prevCp = cp; prevMetrics = glyphMetrics; prevFontSize = fontSize;
     }
   }
 
@@ -900,7 +904,8 @@ export function layoutRuns(
     // but they have no geometry to stroke, so leaving a stroked run below the
     // threshold drops the outline the consumer asked for rather than trading
     // one correct rendering for another.
-    if (e.fontSize < min && !strokePaints(e.run.stroke)) return null;
+    // Gated on the run's size, so a small-caps word is not split across tiers.
+    if (e.run.fontSize < min && !strokePaints(e.run.stroke)) return null;
     // Synthetic bold is an SDF threshold shift, and a path has no threshold.
     // Emboldening geometry properly means offsetting the outline — the same
     // problem as stroke-to-fill, which the kit does not solve yet — and
@@ -1103,7 +1108,7 @@ export function layoutRuns(
           && span.underline === e.run.underline
           && span.strikethrough === e.run.strikethrough
           && span.overline === e.run.overline
-          && span.fontSize === e.fontSize
+          && span.fontSize === e.run.fontSize
           && span.face === face
           && span.baselineY === baselineY
           && sameFill(span.fill, e.run.fill)
@@ -1118,7 +1123,8 @@ export function layoutRuns(
             strikethrough: e.run.strikethrough,
             overline: e.run.overline,
             fill: decoFill,
-            fontSize: e.fontSize,
+            // The run's size, not the glyph's: a small-caps word is one rule.
+            fontSize: e.run.fontSize,
             face,
             baselineY,
             x0: penX,
@@ -1129,7 +1135,7 @@ export function layoutRuns(
         flushSpan();
       }
 
-      // Outline tier, decided per glyph at its own size. Checked before the
+      // Outline tier, decided per glyph at its run's size. Checked before the
       // no-ink bail-out below, not after: a dynamic-tier glyph still waiting
       // for its bake has `page < 0` and no atlas rect, but its outline is
       // available right now — there is no reason to draw nothing while the

@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
-import type { StyledRun } from '@weasel-js/text';
+import {
+  runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset, normalizeSmallCaps,
+  SMALL_CAPS_SCALE_PROPERTY,
+} from './domRuns';
+import { DEFAULT_TEXT_STYLE, SMALL_CAPS_SCALE, type StyledRun } from '@weasel-js/text';
 
 describe('runsToDom', () => {
   let parent: HTMLDivElement;
@@ -599,5 +602,92 @@ describe('hard line breaks in the overlay', () => {
     gone.setAttribute('data-break', '2028');
     parent.append('a', para, 'b', gone, 'c');
     expect(domToRuns(parent)).toEqual([{ text: 'a\u2029Xbc' }]);
+  });
+});
+
+describe('domRuns — small caps', () => {
+  let parent: HTMLDivElement;
+  beforeEach(() => {
+    parent = document.createElement('div');
+    document.body.appendChild(parent);
+  });
+
+  /** Each child of a run span, as `[text, drawn small]`. */
+  const pieces = (span: Element) => [...span.childNodes].map((n) =>
+    [n.textContent, n instanceof HTMLElement && n.hasAttribute('data-small-caps')]);
+
+  it('sets lowercase in uppercased pieces at the canvas scale, leaving the text the source', () => {
+    runsToDom([{ text: 'Hello World', fontVariantCaps: 'small-caps' }], parent);
+    const span = parent.querySelector<HTMLElement>('span[data-run]')!;
+    expect(pieces(span)).toEqual([['H', false], ['ello', true], [' W', false], ['orld', true]]);
+    expect(span.style.fontVariant).toBe('small-caps');
+    // No face is registered, so the run takes the default scale.
+    expect(span.style.getPropertyValue(SMALL_CAPS_SCALE_PROPERTY)).toBe(String(SMALL_CAPS_SCALE));
+    const small = span.querySelector<HTMLElement>('[data-small-caps]')!;
+    expect(small.style.textTransform).toBe('uppercase');
+    expect(span.textContent).toBe('Hello World');
+  });
+
+  it('round-trips the variant, normal included, and never reads a piece as run styling', () => {
+    const runs: StyledRun[] = [
+      { text: 'Ab', fontVariantCaps: 'small-caps' },
+      { text: 'cd', fontVariantCaps: 'normal' },
+    ];
+    runsToDom(runs, parent);
+    expect(domToRuns(parent)).toEqual(runs);
+  });
+
+  it("splits a run that inherits the node variant, without making it the run's own", () => {
+    runsToDom([{ text: 'ab' }], parent, { ...DEFAULT_TEXT_STYLE, fontVariantCaps: 'small-caps' });
+    const span = parent.querySelector('span[data-run]')!;
+    expect(pieces(span)).toEqual([['ab', true]]);
+    expect(domToRuns(parent)).toEqual([{ text: 'ab' }]);
+  });
+
+  it("shrinks only what the run's transform leaves lowercase", () => {
+    runsToDom([{ text: 'ab', fontVariantCaps: 'small-caps', textTransform: 'uppercase' }], parent);
+    expect(pieces(parent.querySelector('span[data-run]')!)).toEqual([['ab', false]]);
+  });
+
+  it('reads CSS small caps on pasted markup as the run variant', () => {
+    parent.innerHTML = '<span style="font-variant: small-caps">a</span><span>b</span>';
+    expect(domToRuns(parent)).toEqual([{ text: 'a', fontVariantCaps: 'small-caps' }, { text: 'b' }]);
+  });
+
+  it('re-splits a run after typing leaves a letter in the wrong piece, and only then', () => {
+    runsToDom([{ text: 'Ab', fontVariantCaps: 'small-caps' }], parent);
+    expect(normalizeSmallCaps(parent)).toBe(false);
+    const span = parent.querySelector('span[data-run]')!;
+    // Typed: a lowercase x after the A, and a capital Y inside the small piece.
+    (span.firstChild as Text).data = 'Ax';
+    (span.querySelector('[data-small-caps]')!.firstChild as Text).data = 'bY';
+    expect(normalizeSmallCaps(parent)).toBe(true);
+    expect(pieces(span)).toEqual([['A', false], ['xb', true], ['Y', false]]);
+    expect(domToRuns(parent)).toEqual([{ text: 'AxbY', fontVariantCaps: 'small-caps' }]);
+  });
+
+  it('flattens the pieces of a run that is no longer small caps', () => {
+    runsToDom([{ text: 'Ab', fontVariantCaps: 'small-caps' }], parent);
+    const span = parent.querySelector<HTMLElement>('span[data-run]')!;
+    span.style.fontVariant = 'normal';
+    expect(normalizeSmallCaps(parent)).toBe(true);
+    expect(pieces(span)).toEqual([['Ab', false]]);
+  });
+
+  it('keeps a hard break through its pieces, a re-split and a flatten', () => {
+    const text = 'ab\u2028Cd';
+    runsToDom([{ text, fontVariantCaps: 'small-caps' }], parent);
+    const span = parent.querySelector<HTMLElement>('span[data-run]')!;
+    expect(pieces(span)).toEqual([['ab', true], ['\n', false], ['C', false], ['d', true]]);
+    expect(normalizeSmallCaps(parent)).toBe(false);
+    expect(domToRuns(parent)).toEqual([{ text, fontVariantCaps: 'small-caps' }]);
+    // Typed: a lowercase x after the C, outside the small piece.
+    (span.lastChild!.previousSibling as Text).data = 'Cx';
+    expect(normalizeSmallCaps(parent)).toBe(true);
+    expect(domToRuns(parent)).toEqual([{ text: 'ab\u2028Cxd', fontVariantCaps: 'small-caps' }]);
+    span.style.fontVariant = 'normal';
+    expect(normalizeSmallCaps(parent)).toBe(true);
+    expect(span.querySelector('[data-break]')?.getAttribute('data-break')).toBe('2028');
+    expect(domToRuns(parent)).toEqual([{ text: 'ab\u2028Cxd', fontVariantCaps: 'normal' }]);
   });
 });

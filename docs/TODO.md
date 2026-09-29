@@ -308,11 +308,6 @@ Core five + Crop shipped. Remaining:
     A user-supplied bitmap needs a payload variant that persists the image
     itself (data URI, or a document-scoped asset table), which is a storage
     question rather than a paint one.
-  - **Patterns on small text.** A text node's paint is its `data.fill`, so the
-    panel already sets a pattern on one, and above the outline-tier threshold
-    a glyph is geometry drawn through `drawPathFillByKind`, so it paints. Below
-    the threshold `drawTextGroup` samples an SDF atlas with one color — the
-    paint's `color`, or black — so the same text shows the pattern flat.
 
   The gradient half's own gap is closed: a conic gradient serializes as a
   `<wzl:conicGradient>` def in `urn:weasel-js:svg` and reads back losslessly,
@@ -332,6 +327,14 @@ Core five + Crop shipped. Remaining:
 ---
 
 ## Text
+
+- **(P3) The first edit of a session can open in the fallback font.** The edit overlay's
+  face (`weasel-face-*`, built from the outline font's bytes) is added only when an edit
+  starts and loads with `font-display: swap`, so until it lands the overlay lays out in a
+  fallback font, and a wrapped line breaks differently from the canvas and then reflows.
+  Found by the overlay line-break test flaking on exactly this (2026-09-29); the test now
+  waits for the face. Loading the face when the outline font registers, rather than when
+  an edit opens, would close it for users.
 
 - **(P3) `.dfont` machine faces still can't reach the outline tier.** The
   *silence* closed 2026-08-16 — `isDataForkFont` recognizes a Macintosh
@@ -366,24 +369,19 @@ Core five + Crop shipped. Remaining:
   `fill: null` through `resolveRuns`, the DOM overlay, the range algebra and
   `@weasel-js/svg`'s `<tspan>` output.
 
-- **(P3) At 12px with a script, the atlas tier's ink sits ~1.9px left of the
-  overlay's at DPR 1.** Every engine, `x` on a whole pixel only; the right ink
-  edge agrees within 0.1px, so the centroid is being pulled by something faint
-  on the left rather than the glyph being misplaced. Not seen on the
-  canvas-font tier or at DPR 2. The `super`/`sub` 12px rows of `npx vitest run
-  -c scripts/measure-overlay-alignment.config.ts` show it.
+- **(P3) At 12px with a script, the atlas tier's ink still sits ~0.55px off
+  the overlay's at DPR 1, and the sign follows the sub-pixel phase.** `dx` is
+  −0.5 at `x` 20 and +0.5 at 20.5 in every engine; DPR 2 agrees within 0.06.
+  The stems of a 7.2px `H` are ~0.65px wide, and the shader reads coverage from
+  the distance at each pixel's center, so a stem centered on a pixel carries
+  about twice the ink of one straddling two, and the centroid leans toward
+  whichever stem is on the grid. Center-sampled coverage cannot do better; area
+  coverage would need several field taps per fragment on small glyphs. The same
+  rows show `dy` of ±0.45, which predates this and is unexplained. The
+  `super`/`sub` 12px rows of `npx vitest run -c
+  scripts/measure-overlay-alignment.config.ts` show both.
 
-- **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs.
-
-- **(P3) Small caps has no run spelling.** The last gap in the run style
-  model. Synthetic small caps needs a *per-character* size within one run
-  (lowercase rendered as scaled-down uppercase), where the run is the unit
-  that carries a size today; the honest version splits the entry walk's size
-  off the run, or reads the `smcp` OpenType feature, which needs shaping. Real
-  small caps is a face, not a synthesis, and would fall out of the HarfBuzz
-  entry above. The case half is there to build on: `textTransform` already
-  maps drawn characters back to source ones through `ResolvedRun.srcMap`, so
-  the uppercase glyphs a synthesis draws need no new caret bookkeeping.
+- **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Shaping is also what real small caps needs: `fontVariantCaps: 'small-caps'` is synthesized today (capitals scaled by x-height over cap height), and a face with an `smcp` feature should get its own small-cap glyphs instead.
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 
@@ -467,7 +465,7 @@ intercepting the press that drags the body.
 ### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
 
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only), as does choosing the destination container (`<SceneCanvas layoutDropTarget>`, `LayoutStrategy.dropRegion`). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-- **(P3) Tile-grid overflow policy.** A drop into a full `tileGrid` is rejected, but a child that arrives any other way (an insert or reparent op) past `cols * rows` is skipped from `childPoses` and left unplaced. Scroll, grow-grid, and rejection-at-the-op are the policies worth designing between.
+- **(P3) Tile-grid overflow: a `'grow'` grid never shrinks, and nothing scrolls a `'scroll'` one.** `tileGrid({ overflow })` holds for every arrival through the scene's arrival handler (`scene.setArrivalHandler`, installed by `<SceneCanvas layouts>`). Removals never reach a layout (see "Container layout as a scene semantic"). So when a child leaves a grown grid, the source reflow spreads the remaining rows over the grown container and the cells stretch. No kit host reads `LayoutStrategy.contentExtent` yet either: a `'scroll'` grid's overflow just sits past its bounds.
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
 - **(P3) Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle.

@@ -151,7 +151,7 @@ describe('gradient serialization', () => {
       path: { kind: 'rect', x: 0, y: 0, width: 100, height: 50 },
       fill: { kind: 'gradient', paint: asPaint({ fill: 'test-unloaded' }) },
     }], { onWarn: (m) => warnings.push(m) });
-    expect(warnings.join(' ')).toMatch(/test-unloaded.*not registered.*warmPaintKinds/);
+    expect(warnings.join(' ')).toMatch(/test-unloaded.*not registered.*warmSvg/);
   });
 
   it('writes a registered kind\'s own def and a fallback from its color', () => {

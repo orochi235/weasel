@@ -22,7 +22,10 @@ import type { TextPaint, TextPose, TextStyle } from '@weasel-js/text';
 import { resolveAlign, resolveTextStyle, textPoseLayoutInput } from '@weasel-js/text';
 import { resolveRuns } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
-import type { TextVerticalAlign } from '@weasel-js/text';
+import type { TextVerticalAlign, ResolvedRun } from '@weasel-js/text';
+import type { FillStyle } from '@weasel-js/paint';
+import { fillInPoseFrame, type FillPoseBox } from '../../core/fillInPoseFrame';
+import { resolveFillPattern } from '../patterns/resolveSpec';
 
 /** Build a draw command from styled runs, for text with no pose. `style`
  *  supplies the defaults each run inherits; the rest match `textCommand`. */
@@ -79,6 +82,10 @@ export function textCommand(
  * The draw command for a text pose. Its wrap width, alignment box and runs
  * come from `textPoseLayoutInput`, so the renderer lays it out into exactly
  * the lines `layoutTextPose` reports for the same pose.
+ *
+ * Each run's paints are resolved against the pose box the way every other
+ * node's are — a `'bounds'` paint mapped onto it, a pattern spec swapped for
+ * its texture — since the renderer can do neither.
  */
 export function textCommandFromPose(pose: TextPose, scale = 1): TextDrawCommand {
   const { runs, opts } = textPoseLayoutInput(pose, scale);
@@ -86,7 +93,7 @@ export function textCommandFromPose(pose: TextPose, scale = 1): TextDrawCommand 
     kind: 'text',
     x: pose.x,
     y: pose.y,
-    runs,
+    runs: runsInPoseFrame(runs, pose),
     align: opts.align,
     justify: opts.justify,
     maxWidth: opts.maxWidth,
@@ -95,4 +102,17 @@ export function textCommandFromPose(pose: TextPose, scale = 1): TextDrawCommand 
     height: pose.height,
     verticalAlign: pose.verticalAlign,
   };
+}
+
+function runsInPoseFrame(runs: ResolvedRun[], box: FillPoseBox): ResolvedRun[] {
+  if (runs.every((r) => isSolid(r.fill) && isSolid(r.stroke?.paint))) return runs;
+  return runs.map((r) => {
+    const fill = r.fill && resolveFillPattern(fillInPoseFrame(r.fill, box));
+    const paint = r.stroke?.paint && resolveFillPattern(fillInPoseFrame(r.stroke.paint, box));
+    return { ...r, fill, stroke: r.stroke && { ...r.stroke, paint: paint || undefined } };
+  });
+}
+
+function isSolid(paint: FillStyle | null | undefined): boolean {
+  return paint == null || (paint.fill ?? 'solid') === 'solid';
 }

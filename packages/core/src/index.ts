@@ -617,6 +617,7 @@ export {
   resolveAlign,
   fontString,
   resolveRuns,
+  resolveRunFace,
   SCRIPT_METRICS,
   scriptMetrics,
   scriptMetricsFor,
@@ -625,6 +626,11 @@ export {
   numericWeight,
   isBoldWeight,
   transformRunTexts,
+  SMALL_CAPS_SCALE,
+  smallCapsScale,
+  smallCapsScaleFor,
+  smallCapsText,
+  isSmallCapsLetter,
   layoutRuns,
   cachedLayoutRuns,
   layoutTextPose,
@@ -652,6 +658,8 @@ export type {
   DecorationKind,
   FaceMetricsFn,
   TextTransform,
+  FontVariantCaps,
+  SmallCapsText,
   RunSourceMap,
   TransformedRunText,
   TextPose,
@@ -867,6 +875,7 @@ export {
   registerPaintKind,
   registerPaintKindLoader,
   warmPaintKinds,
+  isPaintKindKnown,
   asPaint,
   getPaintKind,
   listGradientKinds,
@@ -936,7 +945,7 @@ export type { UseArrayAdapterOptions } from './core/adapters/useArrayAdapter';
 export {
   createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId,
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose,
-  UNION_OF_CHILDREN, unionOfChildren,
+  UNION_OF_CHILDREN, unionOfChildren, SceneArrivalRefused,
 } from './core/scene';
 export type { PoseSource, PosedNode } from './core/scene';
 export type {
@@ -957,6 +966,7 @@ export type {
   PoseOverrides,
   RegisteredOp,
   Scene,
+  SceneArrivalHandler,
   SceneRegistry,
   SerializedLayer,
   SerializedNode,

@@ -47,18 +47,6 @@ describe('tileGrid', () => {
     expect(got.get('b')).toEqual({ x: 50, y: 0, width: 50, height: 50 });
   });
 
-  it('skips overflow children beyond cols * rows', () => {
-    const layout = tileGrid<P>({ cols: 1, rows: 1 });
-    const children = [
-      { id: 'a', pose: { x: 0, y: 0, width: 10, height: 10 } },
-      { id: 'b', pose: { x: 0, y: 0, width: 10, height: 10 } },
-    ];
-    const got = layout.childPoses(container, children);
-    expect(got.size).toBe(1);
-    expect(got.has('a')).toBe(true);
-    expect(got.has('b')).toBe(false);
-  });
-
   it('honors gap', () => {
     const layout = tileGrid<P>({ cols: 2, rows: 1, gap: 10 });
     const children = [

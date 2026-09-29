@@ -4,6 +4,7 @@ import { faceMetricsFor, type FaceMetrics } from '@weasel-js/font';
 import { numericWeight, scriptMetrics } from './runs/resolveRuns';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
 import { transformRunTexts } from './runs/textTransform';
+import { smallCapsScale, smallCapsText } from './runs/smallCaps';
 import { isHardLineBreak, lineBreakOpportunities, NO_BREAK } from './layout/lineBreak/lineBreaks';
 
 export type { StyledRun };
@@ -52,6 +53,10 @@ function runMetrics(run: StyledRun, fontSize: number, face: FaceMetrics | undefi
   };
 }
 
+/** A run as `layoutMarkdown` walks it: small caps has split it where its
+ *  size changes, and marked the pieces drawn at the small size. */
+type Segment = StyledRun & { smallCaps?: true; source?: StyledRun };
+
 /** A single laid-out line of text: its positioned runs, total width, and computed line height. */
 export interface LayoutLine {
   runs: PositionedRun[];
@@ -82,7 +87,22 @@ export function layoutMarkdown(
   if (runs.length === 0) return { lines: [], width: 0, height: 0 };
   // No caret reads this layout, so the transformed text simply replaces the source.
   const shown = transformRunTexts(runs.map((r) => r.text), runs.map((r) => r.textTransform ?? 'none'));
-  runs = runs.map((r, i) => (shown[i].text === r.text ? r : { ...r, text: shown[i].text }));
+  // Small caps splits a run where its size changes, marking the small pieces.
+  const segs: Segment[] = [];
+  runs.forEach((r, i) => {
+    const text = shown[i].text;
+    if (r.fontVariantCaps !== 'small-caps') { segs.push(text === r.text ? r : { ...r, text }); return; }
+    const caps = smallCapsText(text);
+    if (!caps.small) { segs.push({ ...r, text: caps.text }); return; }
+    let at = 0;
+    for (const piece of caps.text) {
+      const small = caps.small[at];
+      at += piece.length;
+      const prev = segs[segs.length - 1];
+      if (prev?.source === r && (prev.smallCaps === true) === small) prev.text += piece;
+      else segs.push({ ...r, text: piece, source: r, ...(small ? { smallCaps: true as const } : {}) });
+    }
+  });
 
   // One sequence across every run, so a break opportunity that depends on a
   // neighbor in the next run is found the way `layoutRuns` finds it.
@@ -91,7 +111,7 @@ export function layoutMarkdown(
   const runOf: number[] = [];
   const startOf: number[] = [];
   const endOf: number[] = [];
-  runs.forEach((r, ri) => {
+  segs.forEach((r, ri) => {
     let at = 0;
     for (const ch of r.text) {
       cps.push(ch.codePointAt(0)!);
@@ -104,13 +124,15 @@ export function layoutMarkdown(
   const breaks = Number.isFinite(maxWidth) ? lineBreakOpportunities(cps) : null;
 
   // Already a screen-pixel layout, so a run's `{ px }` size is its size.
-  const placed = runs.map((r) => {
-    const face = faceOf?.(r.bold ?? false, r.italic ?? false);
-    return { face, ...runMetrics(r, fontSize, face) };
+  const placed = segs.map(({ smallCaps, source: _source, ...run }) => {
+    const face = faceOf?.(run.bold ?? false, run.italic ?? false);
+    const { size: runSize, y } = runMetrics(run, fontSize, face);
+    // The run's size holds the line, as on the GL tier, however small its capitals.
+    return { run, face, y, runSize, size: smallCaps ? runSize * smallCapsScale(face) : runSize };
   });
   const widthOf = (p: Piece): number => {
-    const r = runs[p.run];
-    return measure(r.text.slice(p.start, p.end), placed[p.run].size, r.bold ?? false, r.italic ?? false);
+    const { run, size } = placed[p.run];
+    return measure(run.text.slice(p.start, p.end), size, run.bold ?? false, run.italic ?? false);
   };
 
   /** A UTF-16 span of one run's text, set on the current line. */
@@ -135,7 +157,7 @@ export function layoutMarkdown(
     const out = line.slice();
     while (out.length > 0) {
       const p = out[out.length - 1];
-      const text = runs[p.run].text;
+      const text = segs[p.run].text;
       let end = p.end;
       while (end > p.start && text.charCodeAt(end - 1) === 32) end--;
       if (end > p.start) { out[out.length - 1] = { ...p, end }; break; }
@@ -154,11 +176,11 @@ export function layoutMarkdown(
     let maxSize = 0;
     const positioned: PositionedRun[] = [];
     for (const p of line) {
-      const { face, size, y } = placed[p.run];
+      const { run, face, size, y, runSize } = placed[p.run];
       const width = widthOf(p);
-      positioned.push({ ...runs[p.run], text: runs[p.run].text.slice(p.start, p.end), x, width, y, size, ...(face ? { face } : {}) });
+      positioned.push({ ...run, text: run.text.slice(p.start, p.end), x, width, y, size, ...(face ? { face } : {}) });
       x += width;
-      maxSize = Math.max(maxSize, size);
+      maxSize = Math.max(maxSize, runSize);
     }
     lines.push({ runs: positioned, width: x, height: (maxSize > 0 ? maxSize : fontSize) * lineHeightFactor });
     cur = [];

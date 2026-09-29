@@ -116,7 +116,7 @@ Behavior:
 | Layout | `getChildPositions` | `getDropTargets` | `reflowFor` | Commit ops |
 |---|---|---|---|---|
 | `freeform` | identity over stored poses | empty (snap is `none`, ghost follows pointer) | empty (no reflow) | `setPose(dragged)` (+ `setParent`) |
-| `tileGrid` | assigns children to cells in id-stable order; overflow children skipped (deferral) | cell centers as `DropTarget` with `meta: { col, row }` | swap-on-occupied: returns `Map(occupant → dragged's previous slot)` | `setPose(dragged)` + swap `setPose` (+ `setParent`) |
+| `tileGrid` | assigns children to cells in id-stable order; past `cols * rows` per its `overflow` option (`reject` / `grow` / `scroll`) | cell centers as `DropTarget` with `meta: { col, row }` | swap-on-occupied: returns `Map(occupant → dragged's previous slot)` | `setPose(dragged)` + swap `setPose` (+ `setParent`) |
 | `snapPoint` | identity over stored poses | generated points per pattern | empty (snap-point doesn't reposition siblings) | `setPose(dragged → snapped point)` (+ `setParent`) |
 
 ### Built-in snap policies
@@ -225,7 +225,7 @@ const layout = freeform({
 **Tests:**
 
 - `src/layout/strategies/freeform.test.ts` — `getChildPositions` returns identity; `getDropTargets` empty; `commitDrop` emits single `setPose`.
-- `src/layout/strategies/tileGrid.test.ts` — cell math, swap-on-occupied, overflow skip behavior, default `cellAt` snap, override snap.
+- `src/layout/strategies/tileGrid.test.ts` — cell math, swap-on-occupied, default `cellAt` snap, override snap.
 - `src/layout/strategies/snapPoint.test.ts` — pattern generation per pattern type, `nearestWithin` rejection.
 - `src/layout/snaps.test.ts` — each snap policy in isolation against canned target arrays.
 - `src/interactions/actions/move/move.layout.test.ts` — gesture integration: drag inside a layout container, drag across two layouts, drag to free space, rejection fall-through, source reflow on cross-container exit, commit ops shape (batched, source + dest).
@@ -240,7 +240,6 @@ const layout = freeform({
 Tracked in `docs/TODO.md`:
 
 - **Drop rejection signal.** v1 commits a free-space `setPose` when no container accepts. Needs a cleaner semantic — candidates: a dedicated cancel op, a snap-back-to-source-pose path, or having the source layout's `commitDrop` re-place the child at its origin slot.
-- **Tile-grid overflow policy.** Children beyond `cols * rows`: currently skipped from `getChildPositions`. Real apps may want scroll, grow-grid, or rejection — pick once a consumer asks.
 - **Strategy-aware drop regions.** Today the move gesture hit-tests against container body bounds. A strategy could expose a `dropRegion(container) → Bounds` that extends beyond visible bounds for forgiveness (e.g. row layouts catching pointers slightly past the row's end).
 - **Stateful strategy factories.** All v1 strategies are pure functions over their inputs; no caching. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
 - **Animated reflow transitions.** Sibling reflow is snap-to-target in v1. Smooth interpolated movement during the preview is a layer above (likely a `useAnimatedReflow` hook) — not in v1.

@@ -103,6 +103,14 @@ useTextTool.options = {
       default: 'none',
       options: [{ value: 'none', label: 'None', short: '–' }, { value: 'uppercase', label: 'Uppercase', short: 'AA' }, { value: 'lowercase', label: 'Lowercase', short: 'aa' }, { value: 'capitalize', label: 'Capitalize', short: 'Aa' }],
     },
+    fontVariantCaps: {
+      kind: 'enum',
+      name: 'Small caps',
+      description: 'Draw lowercase letters in the range as smaller capitals. The text itself is unchanged.',
+      control: 'toggle',
+      default: 'normal',
+      options: [{ value: 'normal', label: 'Normal', short: '–' }, { value: 'small-caps', label: 'Small caps', short: 'Sc' }],
+    },
     fontFamily: {
       kind: 'font-family',
       name: 'Font',

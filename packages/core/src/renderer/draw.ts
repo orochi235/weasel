@@ -35,6 +35,7 @@ import {
   dynamicPageTextureId,
   GLYPH_MODE_MSDF,
   GLYPH_MODE_R8,
+  glyphFieldScale,
 } from '@weasel-js/font';
 import {
   type LaidOutGroup, type LaidOutDecoration, type LaidOutOutlineGlyph,
@@ -50,6 +51,7 @@ import {
   BATCH_TEXTURE_SLOTS, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL, PAINT_MODE_CONIC,
 } from './shaders/batchFill';
 import type { EffectTarget, EffectTargets } from './effects/EffectTargets';
+import type { PaintScratch } from './paintScratch';
 import { COMPOSITE_PROGRAM_ID } from './effects/composite';
 import { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
 
@@ -70,6 +72,10 @@ export interface DrawContext {
   /** Compile-on-first-use for a registered paint kind's program. Absent when
    *  a caller drives `dispatch` without a renderer behind it. */
   ensureProgram?(id: string): ShaderProgram | null;
+  /** The program atlas glyphs under a texture paint draw with, compiled on
+   *  first use. Absent without a renderer behind the context, and then such
+   *  glyphs draw nothing. */
+  glyphPaintProgram?(kind: GlyphPaintKind): ShaderProgram;
   quadVbo: WebGLBuffer | null;
   quadIbo: WebGLBuffer | null;
   /** Staging for the batch. Draws are deferred into it, so a caller driving
@@ -123,6 +129,10 @@ export interface DrawContext {
    *  owns that rect — see `WeaselRenderer.applyTarget` — and a second copy of
    *  its y-flip here would be a second thing to keep in step. */
   restoreTargetRect?(): void;
+  /** Where a registered paint kind renders for atlas glyphs to sample. Absent
+   *  without a renderer behind the context, and then such glyphs draw
+   *  nothing. */
+  paintScratch?: PaintScratch;
   /** The lifetime a registered paint kind's GPU state belongs to. Absent
    *  when a caller drives `dispatch` without a renderer behind it, in which
    *  case one per context stands in and is never released. */
@@ -131,6 +141,11 @@ export interface DrawContext {
    *  Absent, nothing is counted. */
   stats?: { drawCalls: number };
 }
+
+/** The paints atlas glyphs draw through a program of their own: `texture` is
+ *  a registered kind, which renders into `paintScratch` for the glyphs to
+ *  sample. */
+export type GlyphPaintKind = 'pattern' | 'gradient' | 'texture';
 
 /** Every GL draw the renderer issues goes through here, so the frame's
  *  draw-call count cannot miss one. */
@@ -605,13 +620,7 @@ function drawGroupWithEffects(
   ctx.state.pop();
   ctx.clipDepth = parentClipDepth;
   ctx.renderTarget = parentTarget;
-  gl.bindFramebuffer(gl.FRAMEBUFFER, parentTarget ? parentTarget.fbo : null);
-  if (parentTarget) {
-    gl.viewport(0, 0, width, height);
-  } else {
-    ctx.restoreTargetRect?.();
-    if (scissorWasOn) gl.enable(gl.SCISSOR_TEST);
-  }
+  returnToRenderTarget(ctx, width, height, scissorWasOn);
 
   const composite = ctx.ensureProgram?.(COMPOSITE_PROGRAM_ID) ?? null;
   if (composite) {
@@ -622,6 +631,23 @@ function drawGroupWithEffects(
     });
   }
   targets.release(front);
+}
+
+/** Rebind `ctx.renderTarget` after an offscreen pass: a pooled target takes
+ *  the whole `width` × `height` buffer, the default framebuffer the renderer's
+ *  own rect and the scissor it had. */
+function returnToRenderTarget(
+  ctx: DrawContext, width: number, height: number, scissorWasOn: boolean,
+): void {
+  const gl = ctx.gl;
+  const target = ctx.renderTarget ?? null;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, target ? target.fbo : null);
+  if (target) {
+    gl.viewport(0, 0, width, height);
+  } else {
+    ctx.restoreTargetRect?.();
+    if (scissorWasOn) gl.enable(gl.SCISSOR_TEST);
+  }
 }
 
 /** One pass: the kit quad, `u_source` bound to `texture`, and whatever else
@@ -760,6 +786,10 @@ const SAMPLER_UNITS = new Int32Array(
   Array.from({ length: BATCH_TEXTURE_SLOTS }, (_, i) => i),
 );
 
+/** `u_fieldScale`, per slot: an atlas slot's `glyphFieldScale`. Slots that are
+ *  not atlases keep whatever a previous flush wrote, which nothing reads. */
+const FIELD_SCALES = new Float32Array(2 * BATCH_TEXTURE_SLOTS);
+
 /**
  * The group state a staged run was built under.
  *
@@ -808,7 +838,7 @@ interface StagedBatchState {
 /** One entry in a run's slot list. */
 type BatchTexture =
   | { kind: 'bitmap'; image: ImageBitmap; sampling: 'linear' | 'nearest' }
-  | { kind: 'atlas'; id: string }
+  | { kind: 'atlas'; id: string; fieldScale: readonly [number, number] }
   | { kind: 'ramps' };
 
 /** Identity in row-major 4×5 leaves `src` untouched *and* leaves the shader's
@@ -972,7 +1002,7 @@ function stageImage(
  * a flush per word.
  */
 function stageGlyphs(
-  ctx: DrawContext, atlasId: string, synthBold: number,
+  ctx: DrawContext, atlasId: string, fieldScale: readonly [number, number], synthBold: number,
 ): { staged: StagedBatchState; slot: number } {
   if (ctx.batchState !== undefined
       && (!stagedStateIsLive(ctx, ctx.batchState, undefined, undefined, synthBold)
@@ -986,7 +1016,7 @@ function stageGlyphs(
   staged.synthBold = synthBold;
   let slot = slotForAtlas(staged, atlasId);
   if (slot > staged.textures.length) {
-    staged.textures.push({ kind: 'atlas', id: atlasId });
+    staged.textures.push({ kind: 'atlas', id: atlasId, fieldScale });
     slot = staged.textures.length;
   }
   return { staged, slot };
@@ -1287,6 +1317,8 @@ export function flushBatch(ctx: DrawContext): void {
     const entry = staged.textures[i];
     if (entry.kind === 'atlas') {
       ctx.textureCache.bind(entry.id, i + 1);
+      FIELD_SCALES[2 * (i + 1)] = entry.fieldScale[0];
+      FIELD_SCALES[2 * (i + 1) + 1] = entry.fieldScale[1];
       continue;
     }
     if (entry.kind === 'ramps') {
@@ -1303,6 +1335,7 @@ export function flushBatch(ctx: DrawContext): void {
     );
   }
   gl.uniform1iv(prog.uniform('u_samplers')!, SAMPLER_UNITS);
+  gl.uniform2fv(prog.uniform('u_fieldScale')!, FIELD_SCALES);
   applyClipTest(ctx, staged.clipDepth);
   drawTriangles(ctx, indexCount, ctx.gl.UNSIGNED_INT);
   // Everything else in the renderer binds its texture to unit 0 and some of it
@@ -1375,11 +1408,11 @@ function drawPathFillVColor(
 function setProjAndModel(
   ctx: DrawContext, prog: ShaderProgram,
   model: GlMat3 = ctx.state.transform,
+  proj: GlMat3 = projFor(ctx),
 ): void {
   const gl = ctx.gl;
   const uploaded = uploadedFor(ctx, prog);
 
-  const proj = projFor(ctx);
   if (!sameValues(uploaded.proj, proj)) {
     gl.uniformMatrix3fv(prog.uniform('u_proj')!, false, proj);
     uploaded.proj = Float32Array.from(proj);
@@ -1482,6 +1515,17 @@ function bindPathFillPattern(
   ctx: DrawContext,
   fill: Extract<FillStyle, { fill: 'pattern' }>,
 ): ShaderProgram | null {
+  return bindPattern(ctx, ctx.patternFill, fill, ctx.state.transform);
+}
+
+/** Bind `prog` — the path program or the glyph one, which share every paint
+ *  uniform — to draw `fill` under `model`. */
+function bindPattern(
+  ctx: DrawContext,
+  prog: ShaderProgram,
+  fill: Extract<FillStyle, { fill: 'pattern' }>,
+  model: GlMat3,
+): ShaderProgram | null {
   const tex = fill.pattern as TextureHandle;
   const entry = getTexture(tex.id);
   if (!entry) {
@@ -1500,17 +1544,17 @@ function bindPathFillPattern(
   // gradients take through `u_worldInv`, and the reason this can't reuse
   // the image-fill shader, whose a_uv such a mesh leaves unbound.
   const gl = ctx.gl;
-  gl.useProgram(ctx.patternFill.handle);
-  setProjAndModel(ctx, ctx.patternFill);
-  setColorMatrixUniforms(ctx, ctx.patternFill);
-  gl.uniformMatrix3fv(ctx.patternFill.uniform('u_worldInv')!, false, tileSpace);
+  gl.useProgram(prog.handle);
+  setProjAndModel(ctx, prog, model);
+  setColorMatrixUniforms(ctx, prog);
+  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, tileSpace);
   const [tw, th] = textureSize(entry.source);
-  gl.uniform2f(ctx.patternFill.uniform('u_tileSize')!, tw, th);
+  gl.uniform2f(prog.uniform('u_tileSize')!, tw, th);
   ctx.textureCache.bind(tex.id, 0);
-  gl.uniform1i(ctx.patternFill.uniform('u_sampler')!, 0);
-  gl.uniform1f(ctx.patternFill.uniform('u_opacity')!, fill.opacity ?? 1);
-  setAlphaUniform(ctx, ctx.patternFill, ctx.state.alpha);
-  return ctx.patternFill;
+  gl.uniform1i(prog.uniform('u_sampler')!, 0);
+  gl.uniform1f(prog.uniform('u_opacity')!, fill.opacity ?? 1);
+  setAlphaUniform(ctx, prog, ctx.state.alpha);
+  return prog;
 }
 
 /** Tile extent in paint-space units — one tile spans this many units of
@@ -1551,51 +1595,61 @@ function bindPathFillGradient(
   ctx: DrawContext,
   fill: Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
 ): ShaderProgram | null {
+  return bindGradient(ctx, ctx.gradFill, fill, ctx.state.transform);
+}
+
+/** The gradient counterpart of `bindPattern`. */
+function bindGradient(
+  ctx: DrawContext,
+  prog: ShaderProgram,
+  fill: Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
+  model: GlMat3,
+): ShaderProgram | null {
   const inverse = gradientSpaceInverse(ctx, fill.units);
   if (!inverse) return null;
   const gl = ctx.gl;
   const row = ctx.gradRamps.upload(fill.stops, fill.interpolate ?? 'rgb');
 
-  gl.useProgram(ctx.gradFill.handle);
-  setProjAndModel(ctx, ctx.gradFill);
+  gl.useProgram(prog.handle);
+  setProjAndModel(ctx, prog, model);
 
-  gl.uniformMatrix3fv(ctx.gradFill.uniform('u_worldInv')!, false, inverse);
-  setColorMatrixUniforms(ctx, ctx.gradFill);
+  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, inverse);
+  setColorMatrixUniforms(ctx, prog);
 
   ctx.gradRamps.bind(0);
-  gl.uniform1i(ctx.gradFill.uniform('u_ramp')!, 0);
-  gl.uniform1f(ctx.gradFill.uniform('u_rampV')!, ctx.gradRamps.rowV(row));
-  setAlphaUniform(ctx, ctx.gradFill, ctx.state.alpha);
-  gl.uniform1f(ctx.gradFill.uniform('u_opacity')!, fill.opacity ?? 1);
+  gl.uniform1i(prog.uniform('u_ramp')!, 0);
+  gl.uniform1f(prog.uniform('u_rampV')!, ctx.gradRamps.rowV(row));
+  setAlphaUniform(ctx, prog, ctx.state.alpha);
+  gl.uniform1f(prog.uniform('u_opacity')!, fill.opacity ?? 1);
 
   if (fill.fill === 'linear-gradient') {
-    gl.uniform1i(ctx.gradFill.uniform('u_gradKind')!, 0);
+    gl.uniform1i(prog.uniform('u_gradKind')!, 0);
     const dx = fill.to.x - fill.from.x;
     const dy = fill.to.y - fill.from.y;
     const len = Math.hypot(dx, dy) || 1;
-    gl.uniform2f(ctx.gradFill.uniform('u_gradP0')!, fill.from.x, fill.from.y);
-    gl.uniform2f(ctx.gradFill.uniform('u_gradDir')!, dx / len, dy / len);
-    gl.uniform1f(ctx.gradFill.uniform('u_gradLen')!, len);
-    gl.uniform1f(ctx.gradFill.uniform('u_gradRadius')!, 0);
-    gl.uniform1f(ctx.gradFill.uniform('u_gradAngle')!, 0);
+    gl.uniform2f(prog.uniform('u_gradP0')!, fill.from.x, fill.from.y);
+    gl.uniform2f(prog.uniform('u_gradDir')!, dx / len, dy / len);
+    gl.uniform1f(prog.uniform('u_gradLen')!, len);
+    gl.uniform1f(prog.uniform('u_gradRadius')!, 0);
+    gl.uniform1f(prog.uniform('u_gradAngle')!, 0);
   } else if (fill.fill === 'radial-gradient') {
-    gl.uniform1i(ctx.gradFill.uniform('u_gradKind')!, 1);
-    gl.uniform2f(ctx.gradFill.uniform('u_gradP0')!, fill.center.x, fill.center.y);
-    gl.uniform2f(ctx.gradFill.uniform('u_gradDir')!, 0, 0);
-    gl.uniform1f(ctx.gradFill.uniform('u_gradLen')!, 0);
-    gl.uniform1f(ctx.gradFill.uniform('u_gradRadius')!, fill.radius);
-    gl.uniform1f(ctx.gradFill.uniform('u_gradAngle')!, 0);
+    gl.uniform1i(prog.uniform('u_gradKind')!, 1);
+    gl.uniform2f(prog.uniform('u_gradP0')!, fill.center.x, fill.center.y);
+    gl.uniform2f(prog.uniform('u_gradDir')!, 0, 0);
+    gl.uniform1f(prog.uniform('u_gradLen')!, 0);
+    gl.uniform1f(prog.uniform('u_gradRadius')!, fill.radius);
+    gl.uniform1f(prog.uniform('u_gradAngle')!, 0);
   } else {
     // conic
-    gl.uniform1i(ctx.gradFill.uniform('u_gradKind')!, 2);
-    gl.uniform2f(ctx.gradFill.uniform('u_gradP0')!, fill.center.x, fill.center.y);
-    gl.uniform2f(ctx.gradFill.uniform('u_gradDir')!, 0, 0);
-    gl.uniform1f(ctx.gradFill.uniform('u_gradLen')!, 0);
-    gl.uniform1f(ctx.gradFill.uniform('u_gradRadius')!, 0);
-    gl.uniform1f(ctx.gradFill.uniform('u_gradAngle')!, fill.angle);
+    gl.uniform1i(prog.uniform('u_gradKind')!, 2);
+    gl.uniform2f(prog.uniform('u_gradP0')!, fill.center.x, fill.center.y);
+    gl.uniform2f(prog.uniform('u_gradDir')!, 0, 0);
+    gl.uniform1f(prog.uniform('u_gradLen')!, 0);
+    gl.uniform1f(prog.uniform('u_gradRadius')!, 0);
+    gl.uniform1f(prog.uniform('u_gradAngle')!, fill.angle);
   }
 
-  return ctx.gradFill;
+  return prog;
 }
 
 // ─── Per-fragment clip test ───────────────────────────────────────────────────
@@ -2195,12 +2249,17 @@ function mergeGlyphMeshes(
  * Color resolution matches `drawTextGroup` exactly — including its ignoring
  * of `fill.opacity` — so a rule can never disagree with the glyphs it
  * underlines. They stage as ordinary rects, which is what keeps them in the
- * run their glyphs are in.
+ * run their glyphs are in. A rule under a texture paint is geometry under it,
+ * the way an outline glyph is.
  */
 function drawTextDecorations(
   ctx: DrawContext, decorations: readonly LaidOutDecoration[], dx: number, dy: number,
 ): void {
   for (const d of decorations) {
+    if (glyphPaintKindOf(d.fill) !== null) {
+      drawOutlineMesh(ctx, d.fill, ruleMesh(d.x0 + dx, d.y0 + dy, d.x1 + dx, d.y1 + dy));
+      continue;
+    }
     const [r, g, b, a] = 'color' in d.fill ? resolveColor(d.fill.color) : [0, 0, 0, 1];
     const staged = stageSolid(ctx, 4);
     ctx.drawBatch.pushRect(
@@ -2208,6 +2267,13 @@ function drawTextDecorations(
       r, g, b, a * (staged.foldsAlpha ? ctx.state.alpha : 1),
     );
   }
+}
+
+function ruleMesh(x0: number, y0: number, x1: number, y1: number): Mesh {
+  return {
+    vertices: new Float32Array([x0, y0, x1, y0, x1, y1, x0, y1]),
+    indices: new Uint32Array([0, 1, 2, 0, 2, 3]),
+  };
 }
 
 /**
@@ -2245,21 +2311,30 @@ function drawTextGroup(
     ? dynamicPageTextureId(group.page)
     : textureCacheKey(group.family, group.weight, group.style);
   const mode = group.source === 'canvas' ? GLYPH_MODE_R8 : GLYPH_MODE_MSDF;
+  const fieldScale = glyphFieldScale(
+    group.source === 'canvas' ? 'canvas' : 'atlas', group.family, group.weight, group.style,
+  );
+  if (!fieldScale) return;
   const bold = group.synthetic.bold ? SYNTH_BOLD_AMOUNT : 0;
   const tanItalic = group.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
+  const paintKind = glyphPaintKindOf(group.fill);
+  if (paintKind !== null) {
+    drawPaintedGlyphs(ctx, group, dx, dy, paintKind, atlasId, mode, bold, tanItalic, fieldScale);
+    return;
+  }
   const color = group.fill !== null && 'color' in group.fill
     ? resolveColor(group.fill.color)
     : [0, 0, 0, 1];
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
-  let { staged, slot } = stageGlyphs(ctx, atlasId, bold);
+  let { staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold);
   let alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
 
   for (const q of group.quads) {
     if (batch.wouldOverflow(4)) {
       flushBatch(ctx);
-      ({ staged, slot } = stageGlyphs(ctx, atlasId, bold));
+      ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
       alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
     }
     batch.pushGlyph(
@@ -2269,6 +2344,210 @@ function drawTextGroup(
       slot, mode,
     );
   }
+}
+
+/** Which glyph-paint program `fill` needs, or `null` for a paint the batch
+ *  draws as one color. */
+function glyphPaintKindOf(fill: FillStyle | null): GlyphPaintKind | null {
+  const kind = fill?.fill ?? 'solid';
+  if (kind === 'pattern') return 'pattern';
+  if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
+    return 'gradient';
+  }
+  return kind === 'solid' ? null : 'texture';
+}
+
+/** The atlas's unit while a glyph-paint run draws; the paint has unit 0. */
+const GLYPH_PAINT_ATLAS_UNIT = 1;
+
+/**
+ * Draw one group of atlas glyphs with a texture paint, its coverage masking
+ * the paint — see `shaders/glyphPaint.ts`.
+ *
+ * Its own draw, as a pattern-filled path is: the glyph vertex has no room for
+ * a paint coordinate beside its atlas one, and widening it would cost every
+ * vertex in every run. The quads still stage through `DrawBatch`, drained
+ * first, and are drawn from it here before anything else can stage behind
+ * them, so no run ever holds them and nothing outside this function has to
+ * know they exist.
+ */
+function drawPaintedGlyphs(
+  ctx: DrawContext, group: LaidOutGroup, dx: number, dy: number,
+  kind: GlyphPaintKind, atlasId: string, mode: number, bold: number, tanItalic: number,
+  fieldScale: readonly [number, number],
+): void {
+  const prog = ctx.glyphPaintProgram?.(kind);
+  if (!prog) return;
+  flushBatch(ctx);
+  const fill = group.fill!;
+  const m = ctx.state.transform;
+  let bound: ShaderProgram | null;
+  if (kind === 'pattern') {
+    bound = bindPattern(ctx, prog, fill as Extract<FillStyle, { fill: 'pattern' }>, BATCH_MODEL);
+  } else if (kind === 'gradient') {
+    bound = bindGradient(ctx, prog, fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>, BATCH_MODEL);
+  } else {
+    const painted = renderPaintToScratch(ctx, fill, glyphScreenBounds(group, dx, dy, tanItalic, m));
+    bound = painted && bindScratchPaint(ctx, prog, painted);
+  }
+  if (!bound) return;
+  const gl = ctx.gl;
+  ctx.textureCache.bind(atlasId, GLYPH_PAINT_ATLAS_UNIT);
+  gl.uniform1i(prog.uniform('u_atlas')!, GLYPH_PAINT_ATLAS_UNIT);
+  gl.uniform1f(prog.uniform('u_synthBold')!, bold);
+  gl.uniform2f(prog.uniform('u_fieldScale')!, fieldScale[0], fieldScale[1]);
+  applyClipTest(ctx);
+
+  const batch = ctx.drawBatch;
+  for (const q of group.quads) {
+    if (batch.wouldOverflow(4)) drawStagedGlyphs(ctx);
+    batch.pushGlyph(
+      q.x0 + dx, q.y0 + dy, q.x1 + dx, q.y1 + dy, q.baselineY + dy, tanItalic, m,
+      q.u0, q.v0, q.u1, q.v1,
+      1, 1, 1, 1,
+      GLYPH_PAINT_ATLAS_UNIT, mode,
+    );
+  }
+  drawStagedGlyphs(ctx);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindVertexArray(null);
+}
+
+function drawStagedGlyphs(ctx: DrawContext): void {
+  const batch = ctx.drawBatch;
+  if (batch.length === 0) return;
+  drawTriangles(ctx, batch.uploadAndBind(), ctx.gl.UNSIGNED_INT);
+  batch.reset();
+}
+
+interface ScreenRect { x0: number; y0: number; x1: number; y1: number }
+
+/** The screen-space box of a group's glyph quads, corner for corner as
+ *  `DrawBatch.pushGlyph` places them. */
+function glyphScreenBounds(
+  group: LaidOutGroup, dx: number, dy: number, tanItalic: number, m: GlMat3,
+): ScreenRect {
+  const b = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+  const add = (x: number, y: number) => {
+    const sx = m[0] * x + m[3] * y + m[6];
+    const sy = m[1] * x + m[4] * y + m[7];
+    if (sx < b.x0) b.x0 = sx;
+    if (sx > b.x1) b.x1 = sx;
+    if (sy < b.y0) b.y0 = sy;
+    if (sy > b.y1) b.y1 = sy;
+  };
+  for (const q of group.quads) {
+    const x0 = q.x0 + dx, x1 = q.x1 + dx, y0 = q.y0 + dy, y1 = q.y1 + dy;
+    const base = q.baselineY + dy;
+    const top = (base - y0) * tanItalic;
+    const bottom = (base - y1) * tanItalic;
+    add(x0 + top, y0);
+    add(x1 + top, y0);
+    add(x1 + bottom, y1);
+    add(x0 + bottom, y1);
+  }
+  return b;
+}
+
+/** The unit square, stretched over the region a scratch paint covers. */
+const UNIT_QUAD: Mesh = {
+  vertices: new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]),
+  indices: new Uint32Array([0, 1, 2, 0, 2, 3]),
+};
+
+interface ScratchPaint {
+  texture: WebGLTexture;
+  /** Screen position → the texture coordinate the paint landed at there. */
+  uvFromScreen: GlMat3;
+}
+
+/**
+ * Render a registered kind's paint over `rect` (screen px) into the renderer's
+ * scratch buffer, through the kind's own `bind` — so any kind that paints a
+ * path paints this, with nothing asked of it beyond what a path asks.
+ *
+ * The region is snapped out to the device-pixel grid and clamped to the
+ * drawing buffer, so each texel is one device pixel of the target and a glyph
+ * fragment reads its own. The kind sees the same transform, alpha and paint
+ * space it would for a path here; only the projection differs, aimed at the
+ * scratch buffer instead of the target. No clip and no scissor apply inside:
+ * the glyphs that sample the result are drawn under both.
+ *
+ * `null` when there is no scratch buffer, the region is empty, or the kind
+ * declines the paint — and the glyphs then draw nothing, as the outline tier
+ * does for a paint no kind binds.
+ */
+function renderPaintToScratch(ctx: DrawContext, fill: FillStyle, rect: ScreenRect): ScratchPaint | null {
+  const scratch = ctx.paintScratch;
+  const bind = getPaintKind(fill.fill)?.bind;
+  if (!scratch || !bind) return null;
+  const ratio = ctx.deviceWidth && ctx.widthCss > 0 ? ctx.deviceWidth / ctx.widthCss : 1;
+  const deviceW = ctx.deviceWidth ?? Math.round(ctx.widthCss);
+  const deviceH = ctx.deviceHeight ?? Math.round(ctx.heightCss);
+  const px0 = Math.max(0, Math.floor(rect.x0 * ratio));
+  const py0 = Math.max(0, Math.floor(rect.y0 * ratio));
+  const maxSide = ctx.imageCache.maxTextureSide;
+  const pw = Math.min(maxSide, Math.min(deviceW, Math.ceil(rect.x1 * ratio)) - px0);
+  const ph = Math.min(maxSide, Math.min(deviceH, Math.ceil(rect.y1 * ratio)) - py0);
+  if (!(pw > 0 && ph > 0)) return null;
+
+  // The region in screen px, and the two matrices a kind's vertex stage
+  // multiplies: the unit quad onto it, and it onto the whole of clip space.
+  const x0 = px0 / ratio, y0 = py0 / ratio, w = pw / ratio, h = ph / ratio;
+  const model = new Float32Array([w, 0, 0, 0, h, 0, x0, y0, 1]);
+  const proj = new Float32Array([2 / w, 0, 0, 0, 2 / h, 0, -1 - (2 * x0) / w, -1 - (2 * y0) / h, 1]);
+  const base = paintBindContext(ctx);
+  const bindCtx: PaintBindContext = {
+    ...base,
+    alpha: ctx.state.alpha,
+    maxTextureSize: base.maxTextureSize,
+    setProjAndModel: (prog) => setProjAndModel(ctx, prog, model, proj),
+  };
+
+  const gl = ctx.gl;
+  const target = scratch.acquire(pw, ph);
+  const scissorWasOn = gl.isEnabled(gl.SCISSOR_TEST);
+  // The last glyph pass left this texture bound to unit 0; a kind sampling a
+  // unit it never binds would read the buffer it is drawing into.
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, target.fbo);
+  gl.viewport(0, 0, pw, ph);
+  gl.disable(gl.SCISSOR_TEST);
+  gl.disable(gl.STENCIL_TEST);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.disable(gl.BLEND);
+
+  const prog = bind(bindCtx, fill);
+  if (prog) {
+    gl.bindVertexArray(ctx.meshCache.uploadRecurring(UNIT_QUAD).vao);
+    drawTriangles(ctx, UNIT_QUAD.indices.length, gl.UNSIGNED_INT);
+    gl.bindVertexArray(null);
+  }
+
+  gl.enable(gl.BLEND);
+  returnToRenderTarget(ctx, deviceW, deviceH, scissorWasOn);
+  if (!prog) return null;
+  return {
+    texture: target.texture,
+    uvFromScreen: new Float32Array([
+      ratio / target.width, 0, 0,
+      0, ratio / target.height, 0,
+      -px0 / target.width, -py0 / target.height, 1,
+    ]),
+  };
+}
+
+/** Bind the glyph program to sample `painted` as its paint. */
+function bindScratchPaint(ctx: DrawContext, prog: ShaderProgram, painted: ScratchPaint): ShaderProgram {
+  const gl = ctx.gl;
+  gl.useProgram(prog.handle);
+  setProjAndModel(ctx, prog, BATCH_MODEL);
+  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, painted.uvFromScreen);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, painted.texture);
+  gl.uniform1i(prog.uniform('u_sampler')!, 0);
+  return prog;
 }
 
 /**

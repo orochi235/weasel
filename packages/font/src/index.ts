@@ -88,4 +88,5 @@ export {
   GLYPH_COVERAGE_GLSL,
   GLYPH_MODE_MSDF,
   GLYPH_MODE_R8,
+  glyphFieldScale,
 } from './textSdf';

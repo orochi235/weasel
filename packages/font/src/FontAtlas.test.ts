@@ -30,6 +30,12 @@ describe('parseBmFont', () => {
     expect(() => parseBmFont({ info: {}, common: {}, chars: 'not-array' })).toThrow();
   });
 
+  it('reads the field range msdf-bmfont-xml records', () => {
+    const font = parseBmFont({ ...FIXTURE_FONT, distanceField: { fieldType: 'msdf', distanceRange: 4 } });
+    expect(font.distanceRange).toBe(4);
+    expect(parseBmFont(FIXTURE_FONT).distanceRange).toBeUndefined();
+  });
+
   it('accepts JSON with no kernings array (defaults to [])', () => {
     const noKern = { ...FIXTURE_FONT, kernings: undefined };
     const font = parseBmFont(noKern);

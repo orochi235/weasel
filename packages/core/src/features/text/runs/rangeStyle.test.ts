@@ -339,3 +339,12 @@ describe('fontWeight and bold', () => {
       .toEqual([{ text: 'a', fontWeight: 400 }]);
   });
 });
+
+describe('fontVariantCaps over a range', () => {
+  it('splits the run, keeps runs that differ only in variant apart, and reports MIXED across them', () => {
+    const out = applyStyleToRange([{ text: 'abc' }], 1, 2, { fontVariantCaps: 'small-caps' });
+    expect(out).toEqual([{ text: 'a' }, { text: 'b', fontVariantCaps: 'small-caps' }, { text: 'c' }]);
+    expect(styleAtRange(out, 0, 2).fontVariantCaps).toBe(MIXED);
+    expect(runsCarryStyling([{ text: 'a', fontVariantCaps: 'small-caps' }])).toBe(true);
+  });
+});

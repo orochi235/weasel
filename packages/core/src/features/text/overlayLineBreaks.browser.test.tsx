@@ -14,6 +14,7 @@ import { flushSync } from 'react-dom';
 import { registerFont, registerFontOutlines, registerCanvasFont } from '@weasel-js/font';
 import { layoutTextPose, type TextStyle } from '@weasel-js/text';
 import { useTextEdit, type TextEditScreenPose } from './useTextEdit';
+import { overlayReady } from './test-utils/overlayReady';
 import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../../assets/fonts/inter/inter.ttf?url';
@@ -77,15 +78,7 @@ function Editor({ c, caret }: { c: Case; caret: number }) {
 
 async function openOverlay(c: Case, caret = 0): Promise<HTMLElement> {
   flushSync(() => root.render(createElement(Editor, { key: `${c.name}@${caret}`, c, caret })));
-  const frames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  await frames();
-  const overlay = host.querySelector<HTMLElement>('[contenteditable]')!;
-  // `fonts.ready` alone can resolve before the first overlay has asked for
-  // its face, and the first case then measures the fallback.
-  await document.fonts.load(getComputedStyle(overlay).font, c.text);
-  await document.fonts.ready;
-  await frames();
-  return overlay;
+  return overlayReady(host);
 }
 
 beforeAll(async () => {

@@ -13,13 +13,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
-import { fontString, numericWeight, resolveAlign, resolveTextStyle, scriptMetricsFor } from '@weasel-js/text';
+import {
+  fontString, numericWeight, resolveAlign, resolveTextStyle, scriptMetricsFor, smallCapsScaleFor,
+} from '@weasel-js/text';
 import { cssFontFamily } from '@weasel-js/font';
 import type { TextPaint, TextVerticalAlign } from '@weasel-js/text';
 import { layoutTextPose, verticalAlignOffset } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import { runsToPlainText } from '@weasel-js/text';
-import { runsToDom, domToRuns, appendOverlayText, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
+import {
+  runsToDom, domToRuns, appendOverlayText, charOffsetToDomPosition, domPositionToCharOffset, normalizeSmallCaps,
+  SMALL_CAPS_SCALE_PROPERTY, type OverlayRunBase,
+} from './domRuns';
 import { applyStyleToRange, patchRangeStyle, runsCarryStyling, styleAtRange, supersededKey } from './runs/rangeStyle';
 import { nodeHasFlag, setFlagOverRange, unboldPatch, type FlagKey } from './runs/flagRange';
 import { rangeWeight } from './runs/effectiveRangeStyle';
@@ -284,6 +289,7 @@ function writeRunsPreservingSelection(
   runs: readonly StyledRun[],
   start: number,
   end: number,
+  base: OverlayRunBase,
 ): void {
   const active = document.activeElement;
   const inTextEntry =
@@ -292,7 +298,7 @@ function writeRunsPreservingSelection(
     (active instanceof HTMLInputElement ||
       active instanceof HTMLTextAreaElement ||
       (active instanceof HTMLElement && active.isContentEditable));
-  runsToDom(runs, overlay);
+  runsToDom(runs, overlay, base);
   if (inTextEntry) return;
   const a = charOffsetToDomPosition(overlay, start);
   const b = charOffsetToDomPosition(overlay, end);
@@ -307,9 +313,9 @@ function writeRunsPreservingSelection(
 
 /**
  * Drop the one trailing newline a contenteditable keeps so the caret has
- * somewhere to sit on the last line: `domToRuns` maps its `<br>` to a literal
- * `'\n'`, which the edit never typed. Exactly one, so a newline the user
- * actually typed survives — the holder is never doubled.
+ * somewhere to sit on the last line. `domToRuns` maps the `<br>` to a
+ * literal `'\n'`, which the edit never typed. Exactly one, so a newline
+ * the user actually typed survives — the holder is never doubled.
  *
  * An empty run left behind is dropped: it carries no text and would otherwise
  * defeat `runsCarryStyling`'s "did this edit produce styling" question by
@@ -537,6 +543,9 @@ export function useTextEdit(
   // `TextStyle`, and is called from event handlers rather than from render.
   const editingIdRef = useLatest(editingId);
   const overlayRef = useRef<HTMLDivElement | null>(null);
+  /** The editing node's resolved style, which run spans inheriting small caps
+   *  are split by whenever the runs are rewritten. */
+  const baseRef = useRef<OverlayRunBase>(resolveTextStyle(undefined));
   // The overlay-follow loop is built inside the editing effect; the gate's
   // frame callback reaches it through this ref.
   const tickRef = useRef<() => void>(() => {});
@@ -649,6 +658,8 @@ export function useTextEdit(
     const setRuns = optsRef.current.setRuns;
     const runs = trimCaretHolder(domToRuns(overlay));
     const hadRuns = priorRuns != null && priorRuns.length > 0;
+    // Read from the DOM, not `innerText`: a browser applies `text-transform`
+    // to what that reports, and a break stand-in reads back as its `\n`.
     optsRef.current.setText(id, runsToPlainText(runs));
     if (setRuns && (hadRuns || runsCarryStyling(runs))) setRuns(id, runs);
     setEditingId(null);
@@ -697,7 +708,7 @@ export function useTextEdit(
       const nodeStyle = optsRef.current.getStyle(id) ?? {};
       const r = setFlagOverRange(runs, nodeStyle, range.start, range.end, unsetFlag, false);
       setStyle(id, r.style);
-      writeRunsPreservingSelection(overlay, r.runs, range.start, range.end);
+      writeRunsPreservingSelection(overlay, r.runs, range.start, range.end, baseRef.current);
       publishRange(overlay, range);
       // The rewrite raised the flag on every existing run, so a caret sitting
       // at the end of one is now *inside* a flagged span and the next
@@ -724,7 +735,7 @@ export function useTextEdit(
     }
 
     const next = applyStyleToRange(runs, range.start, range.end, patch);
-    writeRunsPreservingSelection(overlay, next, range.start, range.end);
+    writeRunsPreservingSelection(overlay, next, range.start, range.end, baseRef.current);
     restoreOverlayFocus(overlay, range);
     // Republish from the range we just styled, not from the DOM selection:
     // when the patch came from chrome the selection is in that control, and
@@ -760,9 +771,13 @@ export function useTextEdit(
     overlay.classList.add(overlayClass);
     overlay.setAttribute('contenteditable', 'true');
     overlay.spellcheck = false;
+    baseRef.current = style;
     const initialRuns = optsRef.current.getRuns?.(editingId);
     if (initialRuns && initialRuns.length > 0) {
-      runsToDom(initialRuns, overlay);
+      runsToDom(initialRuns, overlay, style);
+    } else if (style.fontVariantCaps === 'small-caps') {
+      // Small caps needs its lowercase in pieces, which only a run span holds.
+      runsToDom([{ text: getText(editingId) }], overlay, style);
     } else {
       // Not `innerText`, which turns each newline into a `<br>` the caret
       // walkers cannot count and U+2028 into a space.
@@ -843,7 +858,7 @@ export function useTextEdit(
           ...pending, text: ie.data,
         } as StyledRun);
         const after = at.start + ie.data.length;
-        writeRunsPreservingSelection(overlay, next, after, after);
+        writeRunsPreservingSelection(overlay, next, after, after, baseRef.current);
         placeCaretBetweenRuns(overlay, next, after);
         dropPending();
         publishRange(overlay, { start: after, end: after });
@@ -865,6 +880,29 @@ export function useTextEdit(
         sel.removeAllRanges();
         sel.addRange(after);
       }
+      resplitSmallCaps();
+    };
+
+    /** Put small-caps letters back in the pieces their case belongs in after
+     *  an edit, keeping the caret. Never mid-composition: rewriting the DOM
+     *  under an IME ends the composition. */
+    const resplitSmallCaps = (e?: Event) => {
+      if (e instanceof InputEvent && e.isComposing) return;
+      const at = readSelectionOffsets(overlay);
+      if (!normalizeSmallCaps(overlay) || !at) return;
+      const a = charOffsetToDomPosition(overlay, at.start);
+      const b = charOffsetToDomPosition(overlay, at.end);
+      const sel = window.getSelection();
+      if (!a || !b || !sel) return;
+      const r = document.createRange();
+      r.setStart(a.node, a.offset);
+      r.setEnd(b.node, b.offset);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    };
+    const onInput = (e: Event) => {
+      resplitSmallCaps(e);
+      place();
     };
 
     // Blur can't be the only way out. Once focus has moved into editing
@@ -885,7 +923,7 @@ export function useTextEdit(
     overlay.addEventListener('blur', onBlur);
     // Typing can change the line count; re-placing here rather than on the
     // next frame keeps a center/bottom-aligned overlay from jumping a frame late.
-    overlay.addEventListener('input', place);
+    overlay.addEventListener('input', onInput);
     overlay.addEventListener('beforeinput', onBeforeInput);
     document.addEventListener('pointerdown', onPointerDownOutside, true);
     // `selectionchange` only exists on the document — there is no per-element
@@ -906,7 +944,7 @@ export function useTextEdit(
       tickRef.current = () => {};
       overlay.removeEventListener('keydown', onKeyDown);
       overlay.removeEventListener('blur', onBlur);
-      overlay.removeEventListener('input', place);
+      overlay.removeEventListener('input', onInput);
       overlay.removeEventListener('beforeinput', onBeforeInput);
       document.removeEventListener('pointerdown', onPointerDownOutside, true);
       document.removeEventListener('selectionchange', syncSelection);
@@ -995,6 +1033,15 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   if (style.overline) decorations.push('overline');
   el.style.textDecoration = decorations.length > 0 ? decorations.join(' ') : 'none';
   el.style.textTransform = style.textTransform;
+  // The CSS spelling for what a browser reads; the scale for the pieces
+  // `runsToDom` splits inheriting runs into, so they match the canvas.
+  el.style.fontVariant = style.fontVariantCaps;
+  el.style.setProperty(
+    SMALL_CAPS_SCALE_PROPERTY,
+    style.fontVariantCaps === 'small-caps'
+      ? String(smallCapsScaleFor(style.fontFamily, numericWeight(style.fontWeight), style.fontStyle))
+      : '',
+  );
   // Line breaks follow the node's declared `wrap`, as the canvas's do. Layout
   // breaks only between words, never inside one.
   el.style.whiteSpace = style.wrap ? 'pre-wrap' : 'pre';

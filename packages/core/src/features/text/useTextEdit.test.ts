@@ -3,7 +3,7 @@ import { act, render, renderHook } from '@testing-library/react';
 import { Suspense, createElement, startTransition, use, useState } from 'react';
 import { overlayTop, useTextEdit } from './useTextEdit';
 import type { UseTextEditOptions } from './useTextEdit';
-import type { StyledRun } from '@weasel-js/text';
+import { SMALL_CAPS_SCALE, type StyledRun } from '@weasel-js/text';
 import { resolveScreenLength } from '@weasel-js/paint';
 import { MIXED } from './runs/rangeStyle';
 import type { TextStyle } from '@weasel-js/text';
@@ -1066,6 +1066,41 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     // Inherited by every run span, so it must not come back as run styling.
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'abc' }]);
+  });
+
+  it("sets the node's small caps in pieces at the canvas scale, and commits the source text", () => {
+    const h = makeTrackingHarness([{ text: 'Abc' }], { fontSize: 16, fontVariantCaps: 'small-caps' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.fontVariant).toBe('small-caps');
+    expect(overlay.style.getPropertyValue('--weasel-small-caps')).toBe(String(SMALL_CAPS_SCALE));
+    expect(overlay.querySelector('[data-small-caps]')?.textContent).toBe('bc');
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'Abc' }]);
+  });
+
+  it('splits a plain node with small caps too, so its lowercase is sized', () => {
+    const h = makeHarness({ a: 'Abc' });
+    h.opts.getStyle = () => ({ fontSize: 16, fontVariantCaps: 'small-caps' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.querySelector('[data-small-caps]')?.textContent).toBe('bc');
+  });
+
+  it('moves a typed letter into the piece its case belongs in, keeping the caret after it', () => {
+    const h = makeTrackingHarness([{ text: 'ab', fontVariantCaps: 'small-caps' }], { fontSize: 16 });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    placeCaretAtChar(overlay, 1);
+    act(() => dispatchBeforeInput(overlay, 'X'));
+    const span = overlay.querySelector('span[data-run]')!;
+    expect([...span.childNodes].map((n) => n.textContent)).toEqual(['a', 'X', 'b']);
+    act(() => dispatchBeforeInput(overlay, 'Y'));
+    expect(span.textContent).toBe('aXYb');
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'aXYb', fontVariantCaps: 'small-caps' }]);
   });
 
   it('sets text-decoration: none on an undecorated node', () => {

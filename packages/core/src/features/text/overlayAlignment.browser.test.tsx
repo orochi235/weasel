@@ -8,7 +8,7 @@
  * and writes one TSV per browser to `node_modules/.cache/overlay-alignment/`.
  */
 import { describe, it, expect, beforeAll, afterAll, inject } from 'vitest';
-import { page, commands } from 'vitest/browser';
+import { page, commands, userEvent } from 'vitest/browser';
 import { createElement, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
@@ -18,6 +18,7 @@ import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'features/groups/composePose';
 import { renderSceneToPixels, type RasterImage } from '../../canvas/renderSceneToPixels';
 import { useTextEdit, type TextEditScreenPose } from './useTextEdit';
+import { overlayReady } from './test-utils/overlayReady';
 import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../../assets/fonts/inter/inter.ttf?url';
@@ -27,15 +28,19 @@ const H = 160;
 /** One glyph, so the centroid measures placement alone; cases with `text` measure advances. */
 const TEXT = 'H';
 
-interface Ink { cx: number; cy: number; mass: number; right: number }
+interface Ink { cx: number; cy: number; mass: number; right: number; spans: Array<[number, number]> }
 
 /** Share of the ink `right` leaves beyond it: deep enough in the last glyph to be subpixel-smooth. */
 const TAIL = 0.03;
 
+/** Ink a column needs, in fully lit pixels, to count toward a span. */
+const SPAN_INK = 0.5;
+
 /**
  * Intensity-weighted centroid of light ink on black and its mass, plus where
  * the line's ink ends: the column all but {@link TAIL} of the ink lies left
- * of, interpolated within the column. CSS px.
+ * of, interpolated within the column. `spans` are the runs of inked columns,
+ * one per glyph where glyphs do not touch. CSS px.
  */
 function inkOf(img: RasterImage, dpr: number): Ink {
   let mass = 0, sx = 0, sy = 0;
@@ -54,7 +59,14 @@ function inkOf(img: RasterImage, dpr: number): Ink {
     if (acc + cols[x] >= goal) { right = x + (goal - acc) / cols[x]; break; }
     acc += cols[x];
   }
-  return { cx: sx / mass / dpr, cy: sy / mass / dpr, mass, right: right / dpr };
+  const spans: Array<[number, number]> = [];
+  for (let x = 0; x < img.width; x++) {
+    if (cols[x] < SPAN_INK) continue;
+    const last = spans[spans.length - 1];
+    if (last && last[1] === x / dpr) last[1] = (x + 1) / dpr;
+    else spans.push([x / dpr, (x + 1) / dpr]);
+  }
+  return { cx: sx / mass / dpr, cy: sy / mass / dpr, mass, right: right / dpr, spans };
 }
 
 async function decodePng(base64: string): Promise<RasterImage> {
@@ -73,6 +85,7 @@ interface Case {
   family: string; fontSize: number; script?: 'super' | 'sub'; x: number; y: number; text?: string;
   /** Justified and wrapped at the 200px box, over this many lines. */
   justifyLines?: number;
+  smallCaps?: boolean;
 }
 
 function styleOf(c: Case): TextStyle {
@@ -80,6 +93,7 @@ function styleOf(c: Case): TextStyle {
     fontFamily: c.family, fontSize: c.fontSize, lineHeight: 1.2,
     ...(c.script ? { script: c.script } : {}),
     ...(c.justifyLines ? { align: 'justify' as const, wrap: true } : {}),
+    ...(c.smallCaps ? { fontVariantCaps: 'small-caps' as const } : {}),
   };
 }
 
@@ -137,8 +151,7 @@ function Editor({ c }: { c: Case }) {
 
 async function renderOverlay(c: Case): Promise<RasterImage> {
   flushSync(() => root.render(createElement(Editor, { key: JSON.stringify(c), c })));
-  await document.fonts.ready;
-  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  await overlayReady(host);
   // Unsaved, it answers with the base64 PNG.
   return decodePng(await page.screenshot({ element: host, save: false }));
 }
@@ -173,11 +186,13 @@ function browserName(): string {
 }
 
 /** Overlay ink minus canvas ink, in CSS px: centroid, and where the ink ends. */
-async function offset(c: Case): Promise<{ dx: number; dy: number; dRight: number }> {
+async function offset(c: Case): Promise<{
+  dx: number; dy: number; dRight: number; spans: [Array<[number, number]>, Array<[number, number]>];
+}> {
   const dpr = window.devicePixelRatio;
   const a = inkOf(await settledCanvas(c, dpr), dpr);
   const b = inkOf(await renderOverlay(c), dpr);
-  return { dx: b.cx - a.cx, dy: b.cy - a.cy, dRight: b.right - a.right };
+  return { dx: b.cx - a.cx, dy: b.cy - a.cy, dRight: b.right - a.right, spans: [a.spans, b.spans] };
 }
 
 declare module 'vitest' {
@@ -193,6 +208,8 @@ describe('edit overlay alignment', () => {
     { family: 'Inter', fontSize: 16, x: 20, y: 20 },
     { family: 'Inter', fontSize: 24, script: 'super', x: 20, y: 20 },
     { family: 'Inter', fontSize: 24, script: 'sub', x: 20, y: 20 },
+    // Stems under a pixel wide, where the atlas once thresholded one away.
+    { family: 'Inter', fontSize: 12, script: 'super', x: 20, y: 20 },
     { family: 'Inter', fontSize: 72, x: 20, y: 20 },
     { family: 'Georgia', fontSize: 40, script: 'sub', x: 20, y: 20 },
     { family: 'Arial', fontSize: 40, x: 20, y: 20 },
@@ -207,20 +224,62 @@ describe('edit overlay alignment', () => {
     // the line it ends is not spread.
     { family: 'Inter', fontSize: 24, x: 20, y: 20, text: 'Hxgd Hxgd Hxgd Hxgd\u2028Hxgd Hxgd', justifyLines: 3 },
     { family: 'Inter', fontSize: 24, x: 20, y: 20, text: 'Hxgd Hxgd Hxgd Hxgd\u2029Hxgd Hxgd', justifyLines: 3 },
+    // Small caps, sized by the face's own heights on the canvas, which no
+    // browser synthesis matches — the overlay has to set the same size.
+    { family: 'Inter', fontSize: 72, x: 20, y: 20, text: 'Hgd', smallCaps: true },
+    { family: 'Inter', fontSize: 24, x: 20, y: 20, text: 'Small Caps', smallCaps: true },
+    { family: 'Arial', fontSize: 40, x: 20, y: 20, text: 'Hgd', smallCaps: true },
   ];
 
   for (const c of CASES) {
     const shown = c.text?.replace(/[\u2028\u2029]/g, (ch) => `\\u${ch.charCodeAt(0).toString(16)}`);
     const label = `${shown ? `"${shown}" ` : ''}${c.family} ${c.fontSize}px${c.script ? ` ${c.script}` : ''}`
-      + (c.justifyLines ? ' justified' : '');
+      + (c.justifyLines ? ' justified' : '') + (c.smallCaps ? ' small caps' : '');
     it(`${label} lands on the canvas glyphs`, async () => {
       const d = await offset(c);
       const at = `dx ${d.dx.toFixed(2)} dy ${d.dy.toFixed(2)} dRight ${d.dRight.toFixed(2)}`;
-      expect(Math.abs(d.dx), at).toBeLessThan(0.75);
+      if (c.smallCaps) {
+        // Mixed sizes make the centroid a weight test, not a placement one:
+        // the browser inks a small glyph heavier against a large one than the
+        // canvas does. So each glyph's own extent is compared instead.
+        const [canvas, overlay] = d.spans;
+        const spans = `canvas ${JSON.stringify(canvas)} overlay ${JSON.stringify(overlay)}`;
+        expect(overlay.length, spans).toBe(canvas.length);
+        overlay.forEach(([x0, x1], i) => {
+          expect(Math.abs(x0 - canvas[i][0]), spans).toBeLessThanOrEqual(1);
+          expect(Math.abs(x1 - canvas[i][1]), spans).toBeLessThanOrEqual(1);
+        });
+      } else {
+        expect(Math.abs(d.dx), at).toBeLessThan(0.75);
+      }
       expect(Math.abs(d.dy), at).toBeLessThan(0.75);
       expect(Math.abs(d.dRight), at).toBeLessThan(0.75);
     });
   }
+
+  it('types into small caps in the right pieces, and commits the source text, not the capitals', async () => {
+    let committed: string | null = null;
+    function PlainEditor() {
+      const edit = useTextEdit({
+        container: host,
+        getText: () => 'Hgd',
+        getStyle: () => ({ fontFamily: 'Inter', fontSize: 24, fontVariantCaps: 'small-caps' }),
+        getScreenPose: (): TextEditScreenPose => ({ x: 20, y: 20, width: 200, height: 30, fontSize: 24, zoom: 1 }),
+        setText: (_id, text) => { committed = text; },
+      });
+      const { startEdit } = edit;
+      useEffect(() => { startEdit('n', { caret: 3 }); }, [startEdit]);
+      return null;
+    }
+    flushSync(() => root.render(createElement(PlainEditor)));
+    await new Promise((r) => requestAnimationFrame(r));
+    await userEvent.keyboard('xY');
+    const overlay = host.querySelector<HTMLElement>('[contenteditable]')!;
+    const pieces = [...overlay.querySelectorAll('[data-small-caps]')].map((p) => p.textContent);
+    expect(pieces).toEqual(['gdx']);
+    overlay.blur();
+    expect(committed).toBe('HgdxY');
+  });
 
   it.runIf(inject('overlayAlignmentMatrix'))('measures the full matrix', async () => {
     const rows = ['browser\tdpr\ttext\tfamily\tsize\tscript\tx,y\tdx\tdy\tdRight'];

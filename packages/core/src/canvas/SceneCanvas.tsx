@@ -117,6 +117,7 @@ import {
   useIngestionDepSource,
   type InsertNodeFactory,
 } from './deps';
+import { useLayoutArrivals } from '../layout/arrivals';
 import {
   acquireKitContentHandlers,
   registerContentHandler,
@@ -2849,6 +2850,7 @@ function StandardActionsRegistrar({
   useAreaSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts, layoutDropTarget, reflowTransition);
+  useLayoutArrivals(scene, { layouts, poseDescriptor, poseComposition });
   useInsertDepSource(scene, adapter, insertNodeFactories);
   useSliceDepSource(scene, selection, adapter, poseComposition, poseDescriptor);
   useSnapDepSource(snapPoint);

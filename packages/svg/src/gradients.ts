@@ -375,6 +375,11 @@ export class PaintServerRegistry {
     return `url(#${id}) ${paintFallback(paint)}`;
   }
 
+  /** The paint kind of each registered paint, once, in first-use order. */
+  paintKinds(): string[] {
+    return [...new Set(this.order.map((paint) => paint.fill ?? 'solid'))];
+  }
+
   /** Whether any registered paint serializes outside SVG's own vocabulary, so
    *  the root has to declare {@link WEASEL_NS}. */
   usesPrivateNamespace(): boolean {
@@ -514,7 +519,7 @@ function paintServerXml(id: string, paint: FillStyle, onWarn?: (m: string) => vo
   if (custom) return custom;
   onWarn?.(kind
     ? `${paint.fill} fill has no vector form — omitted from <defs>`
-    : `${paint.fill} fill is not registered — omitted from <defs>; a kind loaded on demand needs \`await warmPaintKinds()\` before a synchronous export`);
+    : `${paint.fill} fill is not registered — omitted from <defs>; a kind loaded on demand needs \`await warmSvg(nodes)\` before a synchronous export`);
   return '';
 }
 

@@ -24,13 +24,19 @@ export interface FaceScriptMetrics {
   readonly shift: number;
 }
 
-/** What a face says about its rules and scripts. Every field is optional:
- *  a font may carry some of these tables and not others. */
+/** What a face says about its rules, scripts and letter heights. Every
+ *  field is optional: a font may carry some of these tables and not others. */
 export interface FaceMetrics {
   readonly underline?: FaceRuleMetrics;
   readonly strikethrough?: FaceRuleMetrics;
   readonly superscript?: FaceScriptMetrics;
   readonly subscript?: FaceScriptMetrics;
+  /** Height of a flat lowercase letter above the baseline, in ems
+   *  (`OS/2.sxHeight`). */
+  readonly xHeight?: number;
+  /** Height of a flat capital above the baseline, in ems
+   *  (`OS/2.sCapHeight`). */
+  readonly capHeight?: number;
 }
 
 /** The table fields {@link faceMetricsFromTables} reads, in font units, as
@@ -45,6 +51,8 @@ export interface FaceMetricTables {
     ySuperscriptYOffset?: number;
     ySubscriptYSize?: number;
     ySubscriptYOffset?: number;
+    sxHeight?: number;
+    sCapHeight?: number;
   };
 }
 
@@ -57,7 +65,8 @@ const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFi
  * edge, positive above the baseline. `ySubscriptYOffset` is positive
  * *downward*, unlike its superscript twin. A zero weight or size is a font
  * that left the field blank, not one asking for an invisible rule, so that
- * entry is dropped and the caller's default applies.
+ * entry is dropped and the caller's default applies — which is also how an
+ * `OS/2` table older than version 2 reads, since it has no heights at all.
  */
 export function faceMetricsFromTables(t: FaceMetricTables): FaceMetrics | undefined {
   const upem = t.unitsPerEm;
@@ -65,6 +74,7 @@ export function faceMetricsFromTables(t: FaceMetricTables): FaceMetrics | undefi
   const out: {
     underline?: FaceRuleMetrics; strikethrough?: FaceRuleMetrics;
     superscript?: FaceScriptMetrics; subscript?: FaceScriptMetrics;
+    xHeight?: number; capHeight?: number;
   } = {};
   const rule = (position: unknown, thickness: unknown): FaceRuleMetrics | undefined =>
     finite(position) && finite(thickness) && thickness > 0
@@ -83,6 +93,10 @@ export function faceMetricsFromTables(t: FaceMetricTables): FaceMetrics | undefi
   if (strikethrough) out.strikethrough = strikethrough;
   if (superscript) out.superscript = superscript;
   if (subscript) out.subscript = subscript;
+  const xHeight = t.os2?.sxHeight;
+  const capHeight = t.os2?.sCapHeight;
+  if (finite(xHeight) && xHeight > 0) out.xHeight = xHeight / upem;
+  if (finite(capHeight) && capHeight > 0) out.capHeight = capHeight / upem;
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
@@ -95,7 +109,7 @@ export function parseFaceMetrics(raw: unknown): FaceMetrics | undefined {
   if (raw === undefined) return undefined;
   if (typeof raw !== 'object' || raw === null) throw new Error('parseBmFont: faceMetrics must be an object');
   const r = raw as Record<string, unknown>;
-  const out: Record<string, FaceRuleMetrics | FaceScriptMetrics> = {};
+  const out: Record<string, FaceRuleMetrics | FaceScriptMetrics | number> = {};
   const pair = (key: string, a: string, b: string, positive: string): void => {
     const v = r[key];
     if (v === undefined) return;
@@ -109,6 +123,12 @@ export function parseFaceMetrics(raw: unknown): FaceMetrics | undefined {
   pair('strikethrough', 'offset', 'thickness', 'thickness');
   pair('superscript', 'size', 'shift', 'size');
   pair('subscript', 'size', 'shift', 'size');
+  for (const key of ['xHeight', 'capHeight'] as const) {
+    const v = r[key];
+    if (v === undefined) continue;
+    if (!finite(v) || v <= 0) throw new Error(`parseBmFont: malformed faceMetrics.${key}`);
+    out[key] = v;
+  }
   return Object.keys(out).length > 0 ? (out as FaceMetrics) : undefined;
 }
 
