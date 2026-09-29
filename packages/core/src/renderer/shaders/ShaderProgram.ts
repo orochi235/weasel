@@ -30,14 +30,29 @@ export class ShaderProgram {
     fragSrc: string,
   ) {
     const vs = this.compile(gl.VERTEX_SHADER, vertSrc, 'vertex');
-    const fs = this.compile(gl.FRAGMENT_SHADER, fragSrc, 'fragment');
+    let fs: WebGLShader;
+    try {
+      fs = this.compile(gl.FRAGMENT_SHADER, fragSrc, 'fragment');
+    } catch (e) {
+      gl.deleteShader(vs);
+      throw e;
+    }
     const program = gl.createProgram();
-    if (!program) throw new Error('createProgram returned null');
+    if (!program) {
+      gl.deleteShader(vs);
+      gl.deleteShader(fs);
+      throw new Error('createProgram returned null');
+    }
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
     gl.linkProgram(program);
+    // Flagged for deletion, attached shaders live exactly as long as the
+    // program, so `deleteProgram` frees them too.
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       const log = gl.getProgramInfoLog(program) ?? '';
+      gl.deleteProgram(program);
       throw new ShaderCompileError('link', log);
     }
     this.handle = program;
@@ -51,6 +66,7 @@ export class ShaderProgram {
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       const log = gl.getShaderInfoLog(shader) ?? '';
+      gl.deleteShader(shader);
       throw new ShaderCompileError(stage, log);
     }
     return shader;

@@ -17,14 +17,17 @@
  *   rightmost/bottom sub-pixel band of scene content is cropped; when it
  *   rounds up, that band is instead padded (the `background` fill, or
  *   transparent, covers the pad).
- * - Context lifetime: a `WeaselRenderer` is constructed per call and
- *   `dispose()`d before returning (per-call shader compilation is the
- *   accepted v1 cost — see docs/TODO.md "raster session" follow-up).
+ * - Context lifetime: each call opens a `RasterSession` — one
+ *   `WeaselRenderer` — and disposes it before returning, freeing every GL
+ *   object it created, caches included. Rendering in bulk, open one session
+ *   with `createRasterSession` and render through it: programs compile once
+ *   and bitmaps upload once for the whole batch, and `dispose()` frees them.
  *   With a caller-supplied `gl`, the context itself is caller-owned: it is
  *   never disposed here, and its drawing buffer must be at least
  *   width × height pixels (the render targets the bottom-left region).
  *   Auto-created canvases (`OffscreenCanvas` when available, else a detached
- *   DOM canvas) are discarded after readback.
+ *   DOM canvas) are discarded with the session; a session grows its own
+ *   canvas to the largest render so far.
  * - Context loss: throws — a lost context cannot produce pixels, and the
  *   silent-noop convention of the screen path would return all-zero bytes.
  * - Output: top-down row order, NON-premultiplied ("straight") RGBA. The GL
@@ -202,6 +205,124 @@ function unpremultiply(data: Uint8ClampedArray): void {
   }
 }
 
+/** Where a {@link RasterSession} draws. Pass `gl` or `createCanvas`, or
+ *  neither for the default canvas source. */
+export interface RasterSessionOptions {
+  /** Caller-owned WebGL2 context. The session never disposes it. Its drawing
+   *  buffer must be at least as large as every render the session does. */
+  gl?: WebGL2RenderingContext;
+  /** Canvas factory, called once, at the size of the first render. The
+   *  session grows the canvas when a later render needs more room and never
+   *  shrinks it. Default: `OffscreenCanvas` when available, else a detached
+   *  DOM canvas. */
+  createCanvas?: (widthPx: number, heightPx: number) => HeadlessCanvasLike;
+}
+
+/** One render through a {@link RasterSession}: everything
+ *  `renderSceneToPixels` takes except where to draw. */
+export type RasterRenderArgs<TData, TLayer extends string, TPose> =
+  Omit<RenderSceneToPixelsArgs<TData, TLayer, TPose>, 'gl' | 'createCanvas'>;
+
+/** One renderer and its GPU caches, kept across any number of headless
+ *  renders. Scenes, source rects and scales may differ per render. */
+export interface RasterSession {
+  /** Same contract as `renderSceneToPixels`. Throws once disposed. */
+  render<TData, TLayer extends string, TPose>(args: RasterRenderArgs<TData, TLayer, TPose>): RasterImage;
+  /** Free every GL resource the session created — programs, geometry, and
+   *  the texture and mesh caches — and drop its own canvas. A caller-owned
+   *  context stays open. Idempotent. */
+  dispose(): void;
+}
+
+/**
+ * Open a raster session: one `WeaselRenderer` that many headless renders
+ * share, for a consumer producing thumbnails or pages in bulk. Programs
+ * compile once, and a bitmap or recurring mesh uploads once, rather than per
+ * render. `renderSceneToPixels` is a session opened for one render.
+ *
+ * The renderer is created on the first render, so opening a session costs
+ * nothing and fails nothing. Each render draws into the bottom-left
+ * `width × height` of the buffer and reads that region back.
+ */
+export function createRasterSession(options: RasterSessionOptions = {}): RasterSession {
+  if (options.gl && options.createCanvas) {
+    throw new Error('raster session: `gl` and `createCanvas` are mutually exclusive');
+  }
+  let canvas: HeadlessCanvasLike | null = null;
+  let gl: WebGL2RenderingContext | undefined = options.gl;
+  let renderer: WeaselRenderer | null = null;
+  let disposed = false;
+
+  function contextFor(width: number, height: number): WebGL2RenderingContext {
+    if (!options.gl) {
+      if (!canvas) {
+        canvas = (options.createCanvas ?? defaultCreateCanvas)(width, height);
+        canvas.width = width;
+        canvas.height = height;
+        // Same context attributes as the screen path (Canvas.tsx).
+        gl = (canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true }) as WebGL2RenderingContext | null) ?? undefined;
+      } else {
+        if (canvas.width < width) canvas.width = width;
+        if (canvas.height < height) canvas.height = height;
+      }
+    }
+    if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') {
+      throw new Error('raster session: WebGL2 is unavailable — supply `gl` or a WebGL2-capable `createCanvas`');
+    }
+    if (isLost(gl)) {
+      throw new Error('raster session: the WebGL2 context is lost — dispose this session and open another');
+    }
+    return gl;
+  }
+
+  return {
+    render(args) {
+      if (disposed) throw new Error('raster session: render() on a disposed session');
+      const plan = planPixelRender(args);
+      const { width, height } = plan;
+      const ctx = contextFor(width, height);
+      const flattenTolerance = (args.flattenTolerancePx ?? 0.25) / Math.max(args.scale.x, args.scale.y);
+      if (!renderer) {
+        renderer = new WeaselRenderer({
+          gl: ctx,
+          width,
+          height,
+          dpr: 1,
+          imageMinification: 'mipmap',
+          flattenTolerance,
+          // Dynamic canvas-SDF glyphs must all bake inline — this path is
+          // synchronous with no notify-and-redraw, and print must be complete.
+          bakeBudget: Infinity,
+        });
+      } else {
+        renderer.resize({ width, height, dpr: 1 });
+        renderer.setFlattenTolerance(flattenTolerance);
+      }
+      renderer.render(plan.commands, viewToMat3(plan.view));
+      if (isLost(ctx)) {
+        throw new Error('raster session: the WebGL2 context was lost during render');
+      }
+      const raw = new Uint8Array(width * height * 4);
+      ctx.readPixels(0, 0, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, raw);
+      const data = flipRows(raw, width, height);
+      unpremultiply(data);
+      return { width, height, data };
+    },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      renderer?.dispose();
+      renderer = null;
+      canvas = null;
+      gl = undefined;
+    },
+  };
+}
+
+function isLost(gl: WebGL2RenderingContext): boolean {
+  return typeof gl.isContextLost === 'function' && gl.isContextLost() === true;
+}
+
 /**
  * Render part of a scene to raw pixels, with no canvas mounted and no React
  * involved — for export, thumbnails, print, and pixel-diff tests.
@@ -214,54 +335,18 @@ function unpremultiply(data: Uint8ClampedArray): void {
  * Synchronous, so nothing lands mid-render: a paint kind loaded on demand
  * (`mesh-gradient`, or one declared with `registerPaintKindLoader`) that has
  * not loaded yet draws nothing. `await warmPaintKinds()` first.
+ *
+ * Each call opens a {@link RasterSession} and disposes it before returning.
+ * Rendering many scenes, open one with `createRasterSession` instead.
  */
 export function renderSceneToPixels<TData, TLayer extends string, TPose>(
   args: RenderSceneToPixelsArgs<TData, TLayer, TPose>,
 ): RasterImage {
-  if (args.gl && args.createCanvas) {
-    throw new Error('renderSceneToPixels: `gl` and `createCanvas` are mutually exclusive');
-  }
-  const plan = planPixelRender(args);
-  const { width, height } = plan;
-
-  let gl = args.gl;
-  if (!gl) {
-    const canvas = (args.createCanvas ?? defaultCreateCanvas)(width, height);
-    canvas.width = width;
-    canvas.height = height;
-    // Same context attributes as the screen path (Canvas.tsx).
-    gl = (canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true }) as WebGL2RenderingContext | null) ?? undefined;
-  }
-  if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') {
-    throw new Error('renderSceneToPixels: WebGL2 is unavailable — supply `gl` or a WebGL2-capable `createCanvas`');
-  }
-  if (typeof gl.isContextLost === 'function' && gl.isContextLost()) {
-    throw new Error('renderSceneToPixels: the supplied WebGL2 context is lost');
-  }
-
-  const flattenTolerancePx = args.flattenTolerancePx ?? 0.25;
-  const renderer = new WeaselRenderer({
-    gl,
-    width,
-    height,
-    dpr: 1,
-    imageMinification: 'mipmap',
-    flattenTolerance: flattenTolerancePx / Math.max(args.scale.x, args.scale.y),
-    // Dynamic canvas-SDF glyphs must all bake inline — this path is
-    // synchronous with no notify-and-redraw, and print must be complete.
-    bakeBudget: Infinity,
-  });
+  const { gl, createCanvas, ...renderArgs } = args;
+  const session = createRasterSession({ gl, createCanvas });
   try {
-    renderer.render(plan.commands, viewToMat3(plan.view));
-    if (typeof gl.isContextLost === 'function' && gl.isContextLost()) {
-      throw new Error('renderSceneToPixels: WebGL2 context was lost during render');
-    }
-    const raw = new Uint8Array(width * height * 4);
-    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, raw);
-    const data = flipRows(raw, width, height);
-    unpremultiply(data);
-    return { width, height, data };
+    return session.render(renderArgs);
   } finally {
-    renderer.dispose();
+    session.dispose();
   }
 }

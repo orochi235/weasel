@@ -4,7 +4,7 @@
  * Key: ImageBitmap (or pattern source object) identity (WeakMap) — lets GC
  * reclaim unreferenced bitmaps. The GL textures are NOT freed when the source
  * is gc'd; a source's owner that knows it will never be drawn again frees them
- * with {@link releaseImageSource}.
+ * with {@link releaseImageSource}, and `dispose` frees them all.
  *
  * Wrapping is set once at upload time per the `repetition` parameter:
  *   - undefined / 'no-repeat' → CLAMP_TO_EDGE
@@ -48,6 +48,9 @@ export class GLImageCache {
   readonly maxTextureSide: number;
 
   private readonly map = new WeakMap<object, WebGLTexture>();
+  /** Every texture `map` holds, so `dispose` can reach them — a WeakMap
+   *  cannot be enumerated. */
+  private readonly textures = new Set<WebGLTexture>();
   /**
    * MAG_FILTER each texture currently carries, so a redundant write can be
    * skipped.
@@ -88,13 +91,22 @@ export class GLImageCache {
     const tex = this.map.get(key);
     if (!tex) return;
     this.gl.deleteTexture(tex);
+    this.textures.delete(tex);
     this.map.delete(key);
     this.magFilters.delete(key);
   }
 
-  /** Stop answering {@link releaseImageSource} and {@link maxImageTextureSide}.
-   *  Call when the context is disposed or lost. */
+  /** Delete every texture this cache uploaded and stop answering
+   *  {@link releaseImageSource} and {@link maxImageTextureSide}. Idempotent. */
   dispose(): void {
+    for (const tex of this.textures) this.gl.deleteTexture(tex);
+    this.abandon();
+  }
+
+  /** {@link dispose} without the deletes, for a cache whose context was lost:
+   *  its textures died with it. */
+  abandon(): void {
+    this.textures.clear();
     live.delete(this);
   }
 
@@ -127,6 +139,7 @@ export class GLImageCache {
     gl.bindTexture(gl.TEXTURE_2D, null);
 
     this.map.set(key, tex);
+    this.textures.add(tex);
     return tex;
   }
 

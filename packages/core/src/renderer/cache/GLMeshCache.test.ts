@@ -180,4 +180,16 @@ describe('GLMeshCache', () => {
       expect(lostCache._pendingDeleteCount()).toBe(0);
     });
   });
+
+  it('dispose() frees persistent and transient uploads without waiting on GC', () => {
+    const a = cache.handleFor(sampleMesh);
+    const t = cache.uploadTransient({ vertices: new Float32Array([0, 0, 1, 0, 1, 1]), indices: new Uint32Array([0, 1, 2]) });
+    recorder.reset();
+    cache.dispose();
+    cache.dispose();
+    const deletedVaos = recorder.calls.filter((c) => c.name === 'deleteVertexArray').map((c) => c.args[0]);
+    expect(deletedVaos).toHaveLength(2);
+    expect(deletedVaos).toEqual(expect.arrayContaining([a.vao, t.vao]));
+    expect(recorder.calls.filter((c) => c.name === 'deleteBuffer')).toHaveLength(4);
+  });
 });
