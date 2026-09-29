@@ -974,14 +974,17 @@ one dead `const` and four stale disable directives.
   ~150s. A depth-sweep repro is a dozen lines against `new JSDOM()`; move off the pin once
   a jsdom release is flat on it.
 
-- **(P2) Benchmark HUD text against a transparent DOM overlay.** Two ways to
-  put text over the canvas: `@weasel-js/hud` draws it as canvas commands, or a
-  transparent `@weasel-js/ui` layer sits above the canvas and lets the browser
-  lay it out. Nobody has measured which is cheaper, or where the crossover is —
-  candidate axes are glyph count, update rate (a per-frame readout versus a
-  static label), and whether the text moves with the camera. The answer decides
-  what the kit recommends for HUDs, inspectors and labels, so it wants numbers
-  rather than an argument.
+- **(P2) HUD vs DOM text: what the first measurement left open.**
+  `tests/perf/hud-vs-dom.spec.ts` answered the main-thread question (findings
+  and crossovers in `tests/perf/README.md`, "HUD text against a DOM overlay"),
+  but only on a contended node. Still unanswered: frame rate and the
+  off-main-thread totals, whose spread on studio at load 8–21 swamped a 2–3 ms
+  lean toward the HUD — rerun on an idle node; a React-rendered overlay, which
+  adds reconciliation the plain-DOM side does not pay; and a pure pan that moves
+  the whole DOM layer as one element. Separately, the HUD's static-label cost
+  (~1 µs of script per glyph per frame) comes from `attachHud`'s layer asking
+  every widget for a fresh command on every repaint; caching an unchanged
+  widget's commands would remove the one axis where the DOM wins outright.
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op factories, shape kinds and the `features` presets; public exports remain uncovered.
 
