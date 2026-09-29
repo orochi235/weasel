@@ -1,3 +1,4 @@
+import { createRevision } from '../widget';
 import type { Widget, HudDrawCtx, HudPointerEvent, WidgetBounds } from '../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import type { RectPath } from '@weasel-js/core';
@@ -33,6 +34,7 @@ export function createRect(opts: RectOptions): RectWidget {
     throw new Error(`createRect: bounds must have positive w/h (got ${opts.w}x${opts.h})`);
   }
   let disposed = false;
+  const rev = createRevision(opts.onChange);
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: opts.w, h: opts.h };
   let hidden = false;
   let fill = opts.fill;
@@ -43,12 +45,13 @@ export function createRect(opts: RectOptions): RectWidget {
 
   return {
     id: opts.id,
+    deps: rev.deps,
     get bounds() { return bounds; },
     get hidden() { return hidden; },
     get disposed() { return disposed; },
-    setBounds(b) { assertNotDisposed(); bounds = { ...b }; opts.onChange?.(); },
-    setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
-    setFill(c) { assertNotDisposed(); fill = c; opts.onChange?.(); },
+    setBounds(b) { assertNotDisposed(); bounds = { ...b }; rev.changed(); },
+    setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
+    setFill(c) { assertNotDisposed(); fill = c; rev.changed(); },
     draw(_ctx: HudDrawCtx): DrawCommand[] {
       const { x, y, w, h } = bounds;
       const path: RectPath = { kind: 'rect', x, y, width: w, height: h };

@@ -523,14 +523,16 @@ function layerCommands<TData>(
 
   const deps = layer.deps(data, view, dims);
   const entry = cache.get(layer.id);
-  if (entry && sameDeps(entry.deps, deps)) return entry.cmds;
+  if (entry && depsUnchanged(entry.deps, deps)) return entry.cmds;
 
   const cmds = layer.draw(data, view, dims);
   cache.set(layer.id, { deps, cmds });
   return cmds;
 }
 
-function sameDeps(a: readonly unknown[], b: readonly unknown[]): boolean {
+/** Whether `b` matches `a` entry for entry under `Object.is` — how
+ *  `RenderLayer.deps` is compared, and any cache keyed the same way. */
+export function depsUnchanged(a: readonly unknown[], b: readonly unknown[]): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
     if (!Object.is(a[i], b[i])) return false;

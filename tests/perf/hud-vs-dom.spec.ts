@@ -230,7 +230,7 @@ async function install(
   // One import of the renderer barrel, so the font registry the renderer reads
   // is the one written here; a second specifier can load a second copy.
   const { WeaselRenderer, registerFont } = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
-  const { createHud } = await import(/* @vite-ignore */ `${base}/packages/hud/src/index.ts`);
+  const { createHud, attachHud } = await import(/* @vite-ignore */ `${base}/packages/hud/src/index.ts`);
 
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
   canvas.width = w;
@@ -333,17 +333,19 @@ async function install(
           const p = home(i);
           return hud.text({ id: `l${i}`, x: p.x, y: p.y, text: label(i, 0), fontSize: 14, color: '#e8e8e8' });
         });
-        const ctx = { dims: { width: w, height: h }, defaultFont: 'sans-serif', tokens: {}, toneAt: () => '#000' };
-        // What `attachHud`'s layer does on every repaint: ask each widget for
-        // its commands, after the scene underneath.
-        const frameCommands = () => {
-          const out = [...background];
-          for (const wd of hud.widgets()) {
-            if (wd.hidden) continue;
-            for (const c of wd.draw(ctx as never)) out.push(c);
-          }
-          return out;
-        };
+        // `attachHud`'s own layer, drawn after the scene underneath, so the
+        // cell pays whatever the real layer does per repaint — its widget
+        // command cache included.
+        let layer: { draw(data: unknown, view: unknown, dims: unknown): unknown[] } | null = null;
+        const detach = attachHud({
+          element: null,
+          requestRedraw: () => {},
+          subscribeFrame: () => () => {},
+          registerLayer: (l: typeof layer) => { layer = l; return () => {}; },
+        }, hud, { font: 'sans-serif' });
+        const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+        const dims = { width: w, height: h };
+        const frameCommands = () => [...background, ...layer!.draw(null, view, dims)];
         step = (f) => {
           const c = moving ? camera(f) : null;
           for (let i = 0; i < n; i++) {
@@ -357,12 +359,12 @@ async function install(
         };
         // Text alone, read back in the same task: a HUD that draws nothing
         // measures free.
-        renderer.render(hud.widgets().flatMap((wd) => wd.draw(ctx as never)), identity);
+        renderer.render(layer!.draw(null, view, dims), identity);
         const px = new Uint8Array(w * h * 4);
         gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
         paints = false;
         for (let p = 3; p < px.length; p += 4) if (px[p] !== 0) { paints = true; break; }
-        teardown = () => { for (const wd of widgets) wd.dispose(); };
+        teardown = () => { detach(); for (const wd of widgets) wd.dispose(); };
       } else {
         const nodes: Text[] = [];
         const spans: HTMLSpanElement[] = [];

@@ -93,6 +93,23 @@ export interface HudKeyEvent {
   native: KeyboardEvent | null;
 }
 
+/**
+ * A kit widget's change counter. Every setter calls `changed`, which is also
+ * what schedules the redraw, so a mutation cannot repaint without
+ * invalidating the widget's cached commands. `deps` is the widget's
+ * {@link Widget.deps}.
+ */
+export function createRevision(onChange: (() => void) | undefined): {
+  changed(): void;
+  deps(): readonly unknown[];
+} {
+  let revision = 0;
+  return {
+    changed() { revision++; onChange?.(); },
+    deps: () => [revision],
+  };
+}
+
 /** True when `w` can take keyboard focus right now: it declares `focusable`,
  *  is showing, and has not been disposed. */
 export function isFocusable(w: Widget): boolean {
@@ -130,6 +147,17 @@ export interface Widget {
   readonly bounds: WidgetBounds;
   readonly hidden: boolean;
   draw(ctx: HudDrawCtx): DrawCommand[];
+  /**
+   * What `draw` reads besides `ctx`, `bounds` and focus, which the HUD
+   * already watches. Declared, the HUD reuses the widget's previous commands
+   * for as long as every entry is `Object.is`-equal to the last call's — the
+   * same contract as `RenderLayer.deps`. Absent, `draw` runs on every repaint,
+   * which is right for a readout that changes every frame anyway.
+   *
+   * The commands `draw` returns must then be treated as immutable: a cached
+   * tree is handed to the renderer again on later frames.
+   */
+  deps?(ctx: HudDrawCtx): readonly unknown[];
   /** Optional interior painter, drawn beneath every widget frame and
    *  clipped to `contentRect`. See {@link HudContentCtx}. */
   content?(ctx: HudContentCtx): DrawCommand[];

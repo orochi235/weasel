@@ -1,3 +1,4 @@
+import { createRevision } from '../widget';
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { textCommandFromRuns } from '@weasel-js/core';
@@ -29,6 +30,7 @@ export interface TextWidget extends Widget {
 
 export function createText(opts: TextOptions): TextWidget {
   let disposed = false;
+  const rev = createRevision(opts.onChange);
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: 0, h: opts.fontSize };
   let text = opts.text;
   let hidden = false;
@@ -39,12 +41,13 @@ export function createText(opts: TextOptions): TextWidget {
 
   return {
     id: opts.id,
+    deps: rev.deps,
     get bounds() { return bounds; },
     get hidden() { return hidden; },
     get disposed() { return disposed; },
-    setBounds(b) { assertNotDisposed(); bounds = { ...b }; opts.onChange?.(); },
-    setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
-    setText(t) { assertNotDisposed(); text = t; opts.onChange?.(); },
+    setBounds(b) { assertNotDisposed(); bounds = { ...b }; rev.changed(); },
+    setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
+    setText(t) { assertNotDisposed(); text = t; rev.changed(); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       const color = opts.color ?? ctx.tokens['--wzl-fg'];
       return [textCommandFromRuns(
