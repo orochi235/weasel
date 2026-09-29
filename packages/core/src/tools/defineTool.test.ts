@@ -93,7 +93,8 @@ describe('defineTool — one definition across routing and core', () => {
     const routing = await import('@weasel-js/routing');
     const core = await import('../index');
     expect(core.defineTool).toBe(routing.defineTool);
-  });
+    // Importing core's whole barrel can pass 5s on a loaded machine.
+  }, 30_000);
 
   it('builds tools the canvas accepts, with or without explicit scratch', async () => {
     const { defineTool: routingDefineTool } = await import('@weasel-js/routing');
