@@ -13,17 +13,16 @@
  * a sibling sharing the registry keeps the action and this canvas's unmount
  * gives it back.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import type { ActionsProp } from '@weasel-js/routing';
-import { useActionsRegistry } from '@weasel-js/routing/react';
+import { useActionsRegistry, useLatest } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 
 /** `rev` re-applies the overrides when it changes — pass whatever changes when
  *  the set they sit on is re-registered. */
 export function useActionsPropResolver(actions: ActionsProp | undefined, rev?: string): void {
   const reg = useActionsRegistry();
-  const actionsRef = useRef(actions);
-  actionsRef.current = actions;
+  const actionsRef = useLatest(actions);
 
   useEffect(() => {
     if (!reg) return;
@@ -80,5 +79,5 @@ export function useActionsPropResolver(actions: ActionsProp | undefined, rev?: s
     }
 
     return () => { for (const u of unregisters) u(); };
-  }, [reg, actions, rev]);
+  }, [reg, actions, actionsRef, rev]);
 }

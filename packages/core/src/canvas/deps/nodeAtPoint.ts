@@ -9,16 +9,14 @@
  * topmost id that isn't in `exclude`, which lets callers ignore the
  * node(s) they're currently manipulating without separate plumbing.
  */
-import { useRef } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useDepSource, useLatest } from '@weasel-js/routing/react';
 import type { NodeAtPointDep } from 'interactions/actions/depSchema';
 import { asNodeId } from 'core/scene/types';
 
 export function useNodeAtPointDepSource(
   pickEvery: (worldX: number, worldY: number) => string[],
 ): void {
-  const pickRef = useRef(pickEvery);
-  pickRef.current = pickEvery;
+  const pickRef = useLatest(pickEvery);
 
   useDepSource('nodeAtPoint', (): NodeAtPointDep => {
     return (point, exclude) => {

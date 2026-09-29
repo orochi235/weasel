@@ -8,7 +8,8 @@
  *   `subscribeFrame` on its ref handle; this is how they are implemented.
  */
 
-import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useCallback, useInsertionEffect, useLayoutEffect, useRef } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import { useVisibleRaf, type VisibleRafTarget } from '../scheduling/useVisibleRaf';
 
 export interface FrameLoop {
@@ -37,10 +38,8 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   const dirtyRef = useRef(true);
   const aliveRef = useRef(true);
   const paintingRef = useRef(false);
-  const paintRef = useRef(paint);
-  paintRef.current = paint;
-  const syncRef = useRef(false);
-  syncRef.current = options.syncPaint ?? false;
+  const paintRef = useLatest(paint);
+  const syncRef = useLatest(options.syncPaint ?? false);
   const subsRef = useRef<Set<() => void>>(new Set());
 
   /** Set while recovering from a paint that threw, so one bad frame is retried
@@ -78,7 +77,7 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
     } finally {
       paintingRef.current = false;
     }
-  }, []);
+  }, [paintRef]);
 
   const frame = useVisibleRaf(
     useCallback(() => {
@@ -87,7 +86,9 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
     }, [runPaint]),
     { target: options.target },
   );
-  rearmRef.current = () => { frame.request(); };
+  useInsertionEffect(() => {
+    rearmRef.current = () => { frame.request(); };
+  });
 
   const requestRedraw = useCallback(() => {
     dirtyRef.current = true;
@@ -100,7 +101,7 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
       return;
     }
     frame.request();
-  }, [frame, runPaint]);
+  }, [frame, runPaint, syncRef]);
 
   const subscribeFrame = useCallback((fn: () => void) => {
     subsRef.current.add(fn);

@@ -9,8 +9,7 @@
  * ref internally), so callers can pass fresh selection/scene refs without
  * triggering re-registration.
  */
-import { useRef } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useDepSource, useLatest } from '@weasel-js/routing/react';
 import type { AreaSelectDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -26,14 +25,10 @@ export function useAreaSelectDepSource(
   /** The painted alpha the surface's layers apply, which every view shares. */
   alphaOf?: (id: string) => number,
 ): void {
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
-  const descriptorRef = useRef(descriptor);
-  descriptorRef.current = descriptor;
-  const alphaOfRef = useRef(alphaOf);
-  alphaOfRef.current = alphaOf;
+  const sceneRef = useLatest(scene);
+  const selectionRef = useLatest(selection);
+  const descriptorRef = useLatest(descriptor);
+  const alphaOfRef = useLatest(alphaOf);
 
   useDepSource('areaSelect', (): AreaSelectDep => {
     const sc = sceneRef.current;

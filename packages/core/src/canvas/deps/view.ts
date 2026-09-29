@@ -12,7 +12,8 @@
  * Kept as a per-dep module so the construction logic (closure refresh, ref
  * stability, etc.) has a single home next to the other dep modules.
  */
-import { useRef } from 'react';
+import { useMemo } from 'react';
+import { useLatest } from '@weasel-js/routing/react';
 import type React from 'react';
 import type { ViewApi } from 'interactions/actions/depSchema';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
@@ -46,48 +47,44 @@ export function useViewDepSource(
 ): ViewApi {
   // Every method reads through this, so the latest onViewChange / recenter /
   // runner is captured without the API object itself changing identity.
-  const wiring = useRef<Wiring>({
+  const wiring = useLatest<Wiring>({
     currentViewRef, onViewChange, recenter, hostSize, animation, decay, layerIsPainted,
   });
-  wiring.current = { currentViewRef, onViewChange, recenter, hostSize, animation, decay, layerIsPainted };
 
   // An unwired optional member must read falsy — `viewportZoomAction` branches
   // on `view.recenter`, and a forwarder is truthy — so the identity-stable API
   // is rebuilt whenever that presence set changes.
-  const shape = `${recenter ? 'r' : ''}${hostSize ? 'h' : ''}${animation ? 'a' : ''}${decay ? 'd' : ''}${layerIsPainted ? 'l' : ''}`;
-  const shapeRef = useRef<string | null>(null);
-  const viewApiRef = useRef<ViewApi | null>(null);
-
-  if (viewApiRef.current === null || shapeRef.current !== shape) {
-    shapeRef.current = shape;
-    viewApiRef.current = {
-      get: () => wiring.current.currentViewRef.current,
-      // Not the canvas's only cancel feed (`onViewChange` is), but a `view` dep
-      // wired to something other than a `<SceneCanvas>` has only this one.
-      set: (v: View) => {
-        wiring.current.animation?.stopIfExternal();
-        wiring.current.onViewChange(v);
-      },
-      ...(recenter ? { recenter: () => wiring.current.recenter!() } : {}),
-      ...(hostSize ? { hostSize: () => wiring.current.hostSize!() } : {}),
-      ...(animation
-        ? {
-            animate: (to: View, opts?: Parameters<ViewAnimationApi['animate']>[1]) =>
-              wiring.current.animation!.animate(to, opts),
-            stopAnimation: () => wiring.current.animation!.stop(),
-            animationTarget: () => wiring.current.animation!.target(),
-          }
-        : {}),
-      ...(decay
-        ? {
-            decay: (config: DecayLoopConfig) => wiring.current.decay!.start(config),
-            stopDecay: () => wiring.current.decay!.cancel(),
-          }
-        : {}),
-      ...(layerIsPainted
-        ? { layerIsPainted: (layerId: string) => wiring.current.layerIsPainted!(layerId) }
-        : {}),
-    };
-  }
-  return viewApiRef.current;
+  const hasRecenter = !!recenter;
+  const hasHostSize = !!hostSize;
+  const hasAnimation = !!animation;
+  const hasDecay = !!decay;
+  const hasLayerIsPainted = !!layerIsPainted;
+  return useMemo((): ViewApi => ({
+    get: () => wiring.current.currentViewRef.current,
+    // Not the canvas's only cancel feed (`onViewChange` is), but a `view` dep
+    // wired to something other than a `<SceneCanvas>` has only this one.
+    set: (v: View) => {
+      wiring.current.animation?.stopIfExternal();
+      wiring.current.onViewChange(v);
+    },
+    ...(hasRecenter ? { recenter: () => wiring.current.recenter!() } : {}),
+    ...(hasHostSize ? { hostSize: () => wiring.current.hostSize!() } : {}),
+    ...(hasAnimation
+      ? {
+          animate: (to: View, opts?: Parameters<ViewAnimationApi['animate']>[1]) =>
+            wiring.current.animation!.animate(to, opts),
+          stopAnimation: () => wiring.current.animation!.stop(),
+          animationTarget: () => wiring.current.animation!.target(),
+        }
+      : {}),
+    ...(hasDecay
+      ? {
+          decay: (config: DecayLoopConfig) => wiring.current.decay!.start(config),
+          stopDecay: () => wiring.current.decay!.cancel(),
+        }
+      : {}),
+    ...(hasLayerIsPainted
+      ? { layerIsPainted: (layerId: string) => wiring.current.layerIsPainted!(layerId) }
+      : {}),
+  }), [wiring, hasRecenter, hasHostSize, hasAnimation, hasDecay, hasLayerIsPainted]);
 }

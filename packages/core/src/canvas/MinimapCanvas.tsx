@@ -29,6 +29,7 @@ import {
   useActionsRegistry,
   useDepSource,
   useGestureDispatcher,
+  useLatest,
 } from '@weasel-js/routing/react';
 import type { Tool } from '@weasel-js/routing';
 import { PointerProviderIfRoot } from './SceneCanvas/PointerProviderIfRoot';
@@ -177,21 +178,17 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   // re-binding every frame.
 
   const localCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const mainViewRef = useRef(mainView);
-  const mainViewDimsRef = useRef(mainViewDims);
-  const onMainViewChangeRef = useRef(onMainViewChange);
-  const fitViewRef = useRef(fitView);
-  mainViewRef.current = mainView;
-  mainViewDimsRef.current = mainViewDims;
-  onMainViewChangeRef.current = onMainViewChange;
-  fitViewRef.current = fitView;
+  const mainViewRef = useLatest(mainView);
+  const mainViewDimsRef = useLatest(mainViewDims);
+  const onMainViewChangeRef = useLatest(onMainViewChange);
+  const fitViewRef = useLatest(fitView);
 
   // The main canvas's camera, which is what the minimap's actions move.
   const rootView = useMemo<ViewApi>(() => ({
     get: () => mainViewRef.current,
     set: (v) => onMainViewChangeRef.current(v),
     hostSize: () => mainViewDimsRef.current,
-  }), []);
+  }), [mainViewRef, onMainViewChangeRef, mainViewDimsRef]);
   useDepSource('rootView', () => rootView);
 
   const actions = useActionsRegistry();
@@ -209,7 +206,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
       x: fv.x + (cx - (rect?.left ?? 0)) / fv.scale.x,
       y: fv.y + (cy - (rect?.top ?? 0)) / fv.scale.y,
     };
-  }, []);
+  }, [fitViewRef]);
 
   useGestureDispatcher({
     canvasRef: localCanvasRef,

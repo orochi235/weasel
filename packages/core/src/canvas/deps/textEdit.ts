@@ -6,16 +6,14 @@
  * dep via their own `useDepSource('textEdit', ...)` sourced from a
  * `useSceneTextEdit` instance.
  */
-import { useRef } from 'react';
-import { useDepSource } from '@weasel-js/routing/react';
+import { useDepSource, useLatest } from '@weasel-js/routing/react';
 import type { TextEditDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 
 export function useTextEditDepSource(
   scene: Scene<unknown, string, unknown>,
 ): void {
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
+  const sceneRef = useLatest(scene);
 
   useDepSource('textEdit', (): TextEditDep => {
     const sc = sceneRef.current;

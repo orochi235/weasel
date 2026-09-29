@@ -10,7 +10,7 @@
  * PointerEvent constructor drops `clientX` / `clientY` from the init dict.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { act, createEvent, fireEvent, render } from '@testing-library/react';
+import { act, cleanup, createEvent, fireEvent, render } from '@testing-library/react';
 import { createRef } from 'react';
 import { createScene } from 'core/scene/scene';
 import type { Node, Scene } from 'core/scene/types';
@@ -22,6 +22,7 @@ import type {
   PathDrawCommand,
 } from '../renderer/DrawCommand';
 import { MinimapCanvas } from './MinimapCanvas';
+import { renderThenAbandon } from '@weasel-js/routing/testing/abandonRender';
 import { computeFitView } from './minimapMath';
 import { defaultDrawOne } from './defaultDrawOne';
 import { ColorOverrideRegistry } from '../animation/colorRegistry';
@@ -560,5 +561,38 @@ describe('<MinimapCanvas> — linked cursor', () => {
     expect(lastRoot().children.length).toBe(idle + 8);
     await act(async () => { h.store().set({ worldX: 50, worldY: 50, viewId: 'minimap' }); await frame(); });
     expect(lastRoot().children.length).toBe(idle);
+  });
+});
+
+describe('<MinimapCanvas> after an abandoned render', () => {
+  it('recenters through the committed main view, dims and onMainViewChange', () => {
+    cleanup();
+    const scene = makeScene();
+    const a = { onChange: vi.fn(), view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, dims: { width: 400, height: 300 } };
+    const b = { onChange: vi.fn(), view: { x: 0, y: 0, scale: { x: 2, y: 2 } }, dims: { width: 800, height: 600 } };
+    renderThenAbandon(a, b, (p) => (
+      <MinimapCanvas
+        scene={scene}
+        mainView={p.view}
+        mainViewDims={p.dims}
+        onMainViewChange={p.onChange}
+        width={100}
+        height={100}
+        drawOne={drawOne}
+      />
+    ));
+    const canvas = document.querySelector('canvas')!;
+    canvas.setPointerCapture = vi.fn();
+    canvas.releasePointerCapture = vi.fn();
+    canvas.hasPointerCapture = vi.fn().mockReturnValue(true);
+
+    fireEvent(canvas, pointerEvent(canvas, 'pointerDown', { x: 30, y: 40 }));
+
+    expect(b.onChange).not.toHaveBeenCalled();
+    expect(a.onChange).toHaveBeenCalledTimes(1);
+    const fitView = computeFitView(scene, { width: 100, height: 100 }, 'scene', identityPoseBounds);
+    const got = a.onChange.mock.calls[0][0] as View;
+    expect(got.x).toBeCloseTo(fitView.x + 30 / fitView.scale.x - 200, 6);
+    expect(got.scale.x).toBe(1);
   });
 });
