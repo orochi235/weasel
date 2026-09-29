@@ -10,6 +10,7 @@ import { weaselDefines } from './scripts/vite-build-info.ts';
 import { demoTimestamps } from './scripts/vite-demo-timestamps.ts';
 import { demoSources } from './scripts/vite-demo-sources.ts';
 import { changelogs } from './scripts/vite-changelogs.ts';
+import { browserCommands } from './scripts/vitest-browser-commands.ts';
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
@@ -211,6 +212,7 @@ export default defineConfig({
           browser: {
             enabled: true,
             provider: playwright(),
+            commands: browserCommands,
             headless: true,
             instances: [{ browser: 'chromium' }],
           },
