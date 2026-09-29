@@ -193,6 +193,8 @@ describe('edit overlay alignment', () => {
     { family: 'Inter', fontSize: 16, x: 20, y: 20 },
     { family: 'Inter', fontSize: 24, script: 'super', x: 20, y: 20 },
     { family: 'Inter', fontSize: 24, script: 'sub', x: 20, y: 20 },
+    // Stems under a pixel wide, where the atlas once thresholded one away.
+    { family: 'Inter', fontSize: 12, script: 'super', x: 20, y: 20 },
     { family: 'Inter', fontSize: 72, x: 20, y: 20 },
     { family: 'Georgia', fontSize: 40, script: 'sub', x: 20, y: 20 },
     { family: 'Arial', fontSize: 40, x: 20, y: 20 },

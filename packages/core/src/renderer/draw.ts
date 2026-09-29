@@ -35,6 +35,7 @@ import {
   dynamicPageTextureId,
   GLYPH_MODE_MSDF,
   GLYPH_MODE_R8,
+  glyphFieldScale,
 } from '@weasel-js/font';
 import {
   type LaidOutGroup, type LaidOutDecoration, type LaidOutOutlineGlyph,
@@ -760,6 +761,10 @@ const SAMPLER_UNITS = new Int32Array(
   Array.from({ length: BATCH_TEXTURE_SLOTS }, (_, i) => i),
 );
 
+/** `u_fieldScale`, per slot: an atlas slot's `glyphFieldScale`. Slots that are
+ *  not atlases keep whatever a previous flush wrote, which nothing reads. */
+const FIELD_SCALES = new Float32Array(2 * BATCH_TEXTURE_SLOTS);
+
 /**
  * The group state a staged run was built under.
  *
@@ -808,7 +813,7 @@ interface StagedBatchState {
 /** One entry in a run's slot list. */
 type BatchTexture =
   | { kind: 'bitmap'; image: ImageBitmap; sampling: 'linear' | 'nearest' }
-  | { kind: 'atlas'; id: string }
+  | { kind: 'atlas'; id: string; fieldScale: readonly [number, number] }
   | { kind: 'ramps' };
 
 /** Identity in row-major 4×5 leaves `src` untouched *and* leaves the shader's
@@ -972,7 +977,7 @@ function stageImage(
  * a flush per word.
  */
 function stageGlyphs(
-  ctx: DrawContext, atlasId: string, synthBold: number,
+  ctx: DrawContext, atlasId: string, fieldScale: readonly [number, number], synthBold: number,
 ): { staged: StagedBatchState; slot: number } {
   if (ctx.batchState !== undefined
       && (!stagedStateIsLive(ctx, ctx.batchState, undefined, undefined, synthBold)
@@ -986,7 +991,7 @@ function stageGlyphs(
   staged.synthBold = synthBold;
   let slot = slotForAtlas(staged, atlasId);
   if (slot > staged.textures.length) {
-    staged.textures.push({ kind: 'atlas', id: atlasId });
+    staged.textures.push({ kind: 'atlas', id: atlasId, fieldScale });
     slot = staged.textures.length;
   }
   return { staged, slot };
@@ -1287,6 +1292,8 @@ export function flushBatch(ctx: DrawContext): void {
     const entry = staged.textures[i];
     if (entry.kind === 'atlas') {
       ctx.textureCache.bind(entry.id, i + 1);
+      FIELD_SCALES[2 * (i + 1)] = entry.fieldScale[0];
+      FIELD_SCALES[2 * (i + 1) + 1] = entry.fieldScale[1];
       continue;
     }
     if (entry.kind === 'ramps') {
@@ -1303,6 +1310,7 @@ export function flushBatch(ctx: DrawContext): void {
     );
   }
   gl.uniform1iv(prog.uniform('u_samplers')!, SAMPLER_UNITS);
+  gl.uniform2fv(prog.uniform('u_fieldScale')!, FIELD_SCALES);
   applyClipTest(ctx, staged.clipDepth);
   drawTriangles(ctx, indexCount, ctx.gl.UNSIGNED_INT);
   // Everything else in the renderer binds its texture to unit 0 and some of it
@@ -2245,6 +2253,10 @@ function drawTextGroup(
     ? dynamicPageTextureId(group.page)
     : textureCacheKey(group.family, group.weight, group.style);
   const mode = group.source === 'canvas' ? GLYPH_MODE_R8 : GLYPH_MODE_MSDF;
+  const fieldScale = glyphFieldScale(
+    group.source === 'canvas' ? 'canvas' : 'atlas', group.family, group.weight, group.style,
+  );
+  if (!fieldScale) return;
   const bold = group.synthetic.bold ? SYNTH_BOLD_AMOUNT : 0;
   const tanItalic = group.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
   const color = group.fill !== null && 'color' in group.fill
@@ -2253,13 +2265,13 @@ function drawTextGroup(
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
-  let { staged, slot } = stageGlyphs(ctx, atlasId, bold);
+  let { staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold);
   let alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
 
   for (const q of group.quads) {
     if (batch.wouldOverflow(4)) {
       flushBatch(ctx);
-      ({ staged, slot } = stageGlyphs(ctx, atlasId, bold));
+      ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
       alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
     }
     batch.pushGlyph(

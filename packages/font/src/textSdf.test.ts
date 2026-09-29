@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GLYPH_COVERAGE_GLSL, GLYPH_MODE_MSDF, GLYPH_MODE_R8 } from './textSdf';
+import { GLYPH_COVERAGE_GLSL, GLYPH_MODE_MSDF, GLYPH_MODE_R8, glyphFieldScale } from './textSdf';
 
 /**
  * Source-level assertions, because what this GLSL does needs a GL context and
@@ -10,8 +10,12 @@ import { GLYPH_COVERAGE_GLSL, GLYPH_MODE_MSDF, GLYPH_MODE_R8 } from './textSdf';
  * around the derivative.
  */
 describe('glyph coverage — antialiasing', () => {
-  it('derives its AA band from fwidth()', () => {
-    expect(GLYPH_COVERAGE_GLSL).toMatch(/aaW\s*=\s*max\(\s*0\.5\s*\*\s*fwidth\(field\)/);
+  it('derives its AA band from the screen derivatives of uv, not of the field', () => {
+    // fwidth(field) reads flat across a stem narrower than a pixel and
+    // thresholds it away; the browser half of this is glyphCoverage.browser.test.ts.
+    expect(GLYPH_COVERAGE_GLSL).toMatch(/dFdx\(uv\)\s*\*\s*fieldPerUv/);
+    expect(GLYPH_COVERAGE_GLSL).toMatch(/dFdy\(uv\)\s*\*\s*fieldPerUv/);
+    expect(GLYPH_COVERAGE_GLSL).not.toMatch(/fwidth\(field\)/);
   });
 
   it('centers the smoothstep on the threshold', () => {
@@ -22,9 +26,9 @@ describe('glyph coverage — antialiasing', () => {
 
   it('floors the band so a zero derivative cannot alias', () => {
     // The floor is the whole reason `max()` is there. Without it a flat field
-    // (or a driver returning fwidth === 0) collapses the smoothstep to a step,
+    // (or a driver returning a zero derivative) collapses the smoothstep to a step,
     // which is exactly the hard-edged aliasing this exists to avoid.
-    const floor = /max\([^)]*fwidth\(field\)\s*,\s*([0-9.]+)\)/.exec(GLYPH_COVERAGE_GLSL);
+    const floor = /aaW\s*=\s*max\([^,]*,\s*([0-9.]+)\)/.exec(GLYPH_COVERAGE_GLSL);
     expect(floor).not.toBeNull();
     expect(Number(floor![1])).toBeGreaterThan(0);
   });
@@ -55,5 +59,15 @@ describe('glyph coverage — no branch around the derivative', () => {
     const at = Number(step![1]);
     expect(at).toBeGreaterThan(GLYPH_MODE_MSDF);
     expect(at).toBeLessThan(GLYPH_MODE_R8);
+  });
+});
+
+describe('glyphFieldScale', () => {
+  it('scales a runtime canvas page by its size over the bake radius', () => {
+    expect(glyphFieldScale('canvas', 'Anything', 400, 'normal')).toEqual([128, 128]);
+  });
+
+  it('answers undefined for an atlas nobody registered', () => {
+    expect(glyphFieldScale('atlas', 'never-registered', 400, 'normal')).toBeUndefined();
   });
 });
