@@ -372,7 +372,12 @@ describe('conditional at-rules', () => {
   });
   it('still skips other block at-rules, and resumes after them', () => {
     expect(fillOf('@font-face { font-family: X } @keyframes k { from { fill: blue } } rect { fill: red }')).toEqual(RED);
-    expect(fillOf('@layer base { rect { fill: red } }')).toEqual(BLACK);
+    expect(fillOf('@container (min-width: 1px) { rect { fill: red } }')).toEqual(BLACK);
+    expect(fillOf('@container (min-width: 1px) { rect { fill: blue } } rect { fill: red }')).toEqual(RED);
+  });
+  it('applies rules inside @layer, below unlayered ones', () => {
+    expect(fillOf('@layer base { rect { fill: red } }')).toEqual(RED);
+    expect(fillOf('rect { fill: red } @layer base { rect { fill: blue } }')).toEqual(RED);
   });
   it('routes <style media> through the same evaluator', () => {
     const svg = (media: string): string => `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">

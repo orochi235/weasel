@@ -41,6 +41,8 @@ export interface StyleRule {
   readonly specificity: Specificity;
   /** Source position across every `<style>` in the document. */
   readonly order: number;
+  /** The cascade layer's full dotted name; `''` is unlayered. An anonymous layer's segment starts with U+0000. */
+  readonly layer: string;
 }
 
 export type Specificity = readonly [number, number, number];
@@ -130,18 +132,76 @@ export interface StylesheetContext {
 }
 
 /**
+ * The cascade layers a document declares, in the order CSS Cascade 5 ranks
+ * them. Several sheets share one, since a layer's position is fixed by its
+ * first declaration anywhere in the document.
+ */
+export class CascadeLayers {
+  private readonly children = new Map<string, string[]>();
+  private anonymous = 0;
+
+  /** Declare `name` (possibly dotted) inside `parent`, keeping any earlier position; returns its full name. */
+  declare(parent: string, name: string): string {
+    let full = parent;
+    for (const segment of name.split('.')) {
+      const child = full ? `${full}.${segment}` : segment;
+      const siblings = this.children.get(full) ?? [];
+      if (!siblings.includes(child)) {
+        siblings.push(child);
+        this.children.set(full, siblings);
+      }
+      full = child;
+    }
+    return full;
+  }
+
+  /** A fresh layer inside `parent` that nothing can reopen. */
+  declareAnonymous(parent: string): string {
+    return this.declare(parent, `\u0000${this.anonymous++}`);
+  }
+
+  /**
+   * Each layer's rank for normal declarations, higher winning: a layer's
+   * sublayers rank below its own rules, in declaration order, and unlayered
+   * rules (`''`) rank above every layer.
+   */
+  ranks(): ReadonlyMap<string, number> {
+    const out = new Map<string, number>();
+    const visit = (name: string): void => {
+      for (const child of this.children.get(name) ?? []) visit(child);
+      out.set(name, out.size);
+    };
+    visit('');
+    return out;
+  }
+}
+
+/**
  * Parse stylesheet text into rules. `@media` and `@supports` blocks
  * contribute their rules when their condition holds against `ctx`, nested to
- * any depth; `@import` is reported and not fetched; every other at-rule
- * (`@font-face`, `@layer`, `@keyframes`, …) is skipped whole, as are nested
- * blocks inside a rule body. `order` continues from `firstOrder` so several
- * sheets share one source order.
+ * any depth, and `@layer` blocks contribute theirs tagged with the layer,
+ * which is declared into `layers`. `@import` is reported and not fetched;
+ * every other at-rule (`@font-face`, `@container`, `@keyframes`, …) is
+ * skipped whole, as are nested blocks inside a rule body. `order` continues
+ * from `firstOrder` so several sheets share one source order.
  */
-export function parseStylesheet(text: string, firstOrder = 0, ctx: StylesheetContext = {}): StyleRule[] {
+export function parseStylesheet(
+  text: string, firstOrder = 0, ctx: StylesheetContext = {}, layers = new CascadeLayers(),
+): StyleRule[] {
   const src = stripComments(text).replace(/<!\[CDATA\[|\]\]>|<!--|-->/g, ' ');
   const rules: StyleRule[] = [];
-  parseRuleList(src, 0, src.length, ctx, rules, { order: firstOrder, importsAllowed: true });
+  parseRuleList(src, 0, src.length, '', ctx, rules, { order: firstOrder, importsAllowed: true, layers });
   return rules;
+}
+
+const IDENT = '-?[a-zA-Z_\\u0080-\\uffff][\\w\\u0080-\\uffff-]*';
+const LAYER_NAME = new RegExp(`^${IDENT}(?:\\.${IDENT})*$`);
+
+/** The names in a `@layer` prelude, or null when any is malformed. */
+function layerNames(prelude: string): string[] | null {
+  if (!prelude.trim()) return [];
+  const names = splitTopLevel(prelude, ',').map((n) => n.trim());
+  return names.every((n) => LAYER_NAME.test(n)) ? names : null;
 }
 
 const AT_RULE = /^@([\w-]+)\s*([\s\S]*)$/;
@@ -150,10 +210,11 @@ interface ListState {
   order: number;
   /** `@import` is valid only at the top of a sheet, ahead of every rule but `@charset` and `@layer`. */
   importsAllowed: boolean;
+  readonly layers: CascadeLayers;
 }
 
 function parseRuleList(
-  src: string, from: number, to: number, ctx: StylesheetContext, rules: StyleRule[], state: ListState,
+  src: string, from: number, to: number, layer: string, ctx: StylesheetContext, rules: StyleRule[], state: ListState,
 ): void {
   let i = from;
   let preludeStart = from;
@@ -166,7 +227,9 @@ function parseRuleList(
       const name = statement?.[1].toLowerCase();
       if (name === 'import' && state.importsAllowed) {
         ctx.onWarn?.(`@import ${statement?.[2]} is not fetched; its rules do not apply`);
-      } else if (text && name !== 'charset' && name !== 'layer') {
+      } else if (name === 'layer') {
+        for (const n of layerNames(statement?.[2] ?? '') ?? []) state.layers.declare(layer, n);
+      } else if (text && name !== 'charset') {
         state.importsAllowed = false;
       }
       i++;
@@ -179,13 +242,20 @@ function parseRuleList(
     const at = AT_RULE.exec(prelude);
     state.importsAllowed = false;
     if (at) {
-      if (conditionHolds(at[1].toLowerCase(), at[2], ctx)) parseRuleList(src, i + 1, end - 1, ctx, rules, state);
+      const name = at[1].toLowerCase();
+      const names = name === 'layer' ? layerNames(at[2]) : null;
+      if (names && names.length <= 1) {
+        const inner = names.length ? state.layers.declare(layer, names[0]) : state.layers.declareAnonymous(layer);
+        parseRuleList(src, i + 1, end - 1, inner, ctx, rules, state);
+      } else if (conditionHolds(name, at[2], ctx)) {
+        parseRuleList(src, i + 1, end - 1, layer, ctx, rules, state);
+      }
     } else if (prelude) {
       const declarations = parseDeclarations(src.slice(i + 1, end - 1));
       for (const raw of splitTopLevel(prelude, ',')) {
         const selector = raw.trim();
         if (selector) {
-          rules.push({ selector, declarations, specificity: specificity(selector), order: state.order++ });
+          rules.push({ selector, declarations, specificity: specificity(selector), order: state.order++, layer });
         }
       }
     }
@@ -206,8 +276,13 @@ function appliesAsCss(style: Element, ctx: StylesheetContext): boolean {
   return evaluateMediaQuery(style.getAttribute('media') ?? '', ctx.media ?? DEFAULT_MEDIA_ENVIRONMENT);
 }
 
-/** Rules sorted ascending by (specificity, source order) — the cascade's order. */
-const sheetCache = new WeakMap<Document, readonly StyleRule[]>();
+/** A rule with its layer's rank for normal declarations; `!important` reverses it. */
+interface RankedRule extends StyleRule {
+  readonly rank: number;
+}
+
+/** Rules sorted ascending by (layer rank, specificity, source order): the cascade's order for normal declarations. */
+const sheetCache = new WeakMap<Document, readonly RankedRule[]>();
 
 /**
  * Evaluate `doc`'s stylesheets against `media` now, reporting to `onWarn`.
@@ -220,7 +295,7 @@ export function bindStylesheets(
   sheetCache.set(doc, collectRules(doc, media, onWarn));
 }
 
-function documentRules(doc: Document): readonly StyleRule[] {
+function documentRules(doc: Document): readonly RankedRule[] {
   const cached = sheetCache.get(doc);
   if (cached) return cached;
   const root = doc.documentElement;
@@ -231,16 +306,23 @@ function documentRules(doc: Document): readonly StyleRule[] {
 
 function collectRules(
   doc: Document, media: SvgMediaEnvironment, onWarn?: (message: string) => void,
-): readonly StyleRule[] {
+): readonly RankedRule[] {
   const ctx: StylesheetContext = { media, onWarn, selector: (s) => isValidSelector(doc, s) };
+  const layers = new CascadeLayers();
   const rules: StyleRule[] = [];
   const styles = doc.getElementsByTagNameNS('*', 'style');
   for (let i = 0; i < styles.length; i++) {
     if (!appliesAsCss(styles[i], ctx)) continue;
-    rules.push(...parseStylesheet(styles[i].textContent ?? '', rules.length, ctx));
+    rules.push(...parseStylesheet(styles[i].textContent ?? '', rules.length, ctx, layers));
   }
-  rules.sort((x, y) => compareSpecificity(x.specificity, y.specificity) || x.order - y.order);
-  return rules;
+  const ranks = layers.ranks();
+  return rules
+    .map((r) => ({ ...r, rank: ranks.get(r.layer) ?? 0 }))
+    .sort((x, y) => x.rank - y.rank || compareCascade(x, y));
+}
+
+function compareCascade(x: StyleRule, y: StyleRule): number {
+  return compareSpecificity(x.specificity, y.specificity) || x.order - y.order;
 }
 
 function isValidSelector(doc: Document, selector: string): boolean {
@@ -267,8 +349,9 @@ const elementCache = new WeakMap<Element, ReadonlyMap<string, string>>();
 /**
  * The cascaded value of every property an author rule or `style=""` sets on
  * `el`. Lowest to highest: normal rules, normal inline, `!important` rules,
- * `!important` inline (CSS Cascade 4). Presentation attributes sit below all
- * of these and are left to {@link ownProp}.
+ * `!important` inline (CSS Cascade 5). Layers order the rules within each
+ * importance, reversed for `!important`. Presentation attributes sit below
+ * all of these and are left to {@link ownProp}.
  */
 function authorDeclarations(el: Element): ReadonlyMap<string, string> {
   const cached = elementCache.get(el);
@@ -277,8 +360,9 @@ function authorDeclarations(el: Element): ReadonlyMap<string, string> {
   const matched = rules.filter((r) => matches(el, r.selector));
   const inline = parseDeclarations(el.getAttribute('style') ?? '');
   const out = new Map<string, string>();
-  for (const important of [false, true]) {
-    for (const r of matched) {
+  const importantOrder = [...matched].sort((x, y) => y.rank - x.rank || compareCascade(x, y));
+  for (const [important, ordered] of [[false, matched], [true, importantOrder]] as const) {
+    for (const r of ordered) {
       for (const d of r.declarations) if (d.important === important) out.set(d.prop, d.value);
     }
     for (const d of inline) if (d.important === important) out.set(d.prop, d.value);
