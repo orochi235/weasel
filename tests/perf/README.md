@@ -31,8 +31,9 @@ in one go, so point `WEASEL_PERF_OUT` at a directory there. A run whose own
 sanity checks fail writes nothing.
 
 Result files are not committed. When a number goes into a commit message or a
-doc, quote the machine it came from. The one exception is the vitest
-microbenchmarks' baseline, below.
+doc, quote the machine it came from. The exceptions are the vitest
+microbenchmarks' baseline, below, and `recorded/`, which holds the result files
+behind a finding this page quotes, so the quote can be checked against them.
 
 The shape is `weasel-perf-result/1`, and `lib/result.ts` is the only thing that
 writes it:
@@ -109,6 +110,74 @@ When a bundle looks too big, divide its bytes by its module count first. A
 ratio far above normal points at data compiled in as code rather than at
 dependency bloat — how both apps were found embedding their own source as
 strings for a viewer panel.
+
+## HUD text against a DOM overlay
+
+`hud-vs-dom.spec.ts` asks whether text over the canvas is cheaper drawn by
+`@weasel-js/hud` as canvas commands or laid out by the browser in a transparent
+DOM layer above it. Text comes in 10-glyph labels. The DOM side is plain DOM,
+with each label moved by `transform`; a React-rendered layer would add
+reconciliation on top, and that is not measured.
+
+Measured on studio (Apple M1 Max, Metal ANGLE, Chromium headless), 2026-09-29,
+at `759c10f85`. **The node was contended**: other jobs held its 1-minute load
+average between 8 and 21 on 10 cores throughout, and frames arrived every 30–70
+ms instead of every 16.7. The figures below are thread busy time from a
+Chromium trace, which excludes time spent waiting for a core, so they still
+describe the work each approach does; they say nothing about frame rate.
+
+Renderer main thread, ms per frame, median of 4 samples with [min–max]. The
+background scene alone costs 0.47 (static run) and 0.42 (every-frame run).
+
+| Glyphs | Static label, fixed: HUD | DOM | Static, camera moves: HUD | DOM |
+|---:|---:|---:|---:|---:|
+| 10 | 0.54 [0.49–0.60] | 0.49 [0.47–0.56] | 0.49 [0.36–0.56] | 0.60 [0.46–0.62] |
+| 100 | 0.53 [0.44–0.91] | 0.42 [0.39–0.52] | 0.50 [0.39–0.62] | 0.56 [0.43–0.77] |
+| 500 | 0.78 [0.50–0.90] | 0.40 [0.33–0.48] | 0.74 [0.52–0.88] | 0.75 [0.60–0.77] |
+| 1,000 | 1.64 [1.21–2.31] | 0.40 [0.31–0.60] | 1.68 [1.25–2.12] | 1.10 [0.70–1.31] |
+| 2,500 | 2.99 [2.58–3.40] | 0.45 [0.33–0.51] | 2.56 [2.36–3.17] | 1.10 [1.03–1.34] |
+| 5,000 | 4.97 [4.56–6.30] | 0.44 [0.33–0.56] | 5.67 [4.75–5.95] | 2.13 [1.68–2.60] |
+
+| Glyphs | Readout every frame, fixed: HUD | DOM | Every frame, camera moves: HUD | DOM |
+|---:|---:|---:|---:|---:|
+| 10 | 0.39 [0.32–0.64] | 0.57 [0.50–0.74] | 0.52 [0.39–0.68] | 0.75 [0.54–1.04] |
+| 100 | 0.49 [0.46–0.62] | 0.54 [0.53–0.66] | 0.68 [0.50–0.78] | 0.79 [0.72–1.16] |
+| 500 | 0.92 [0.83–1.10] | 1.00 [0.88–1.14] | 1.16 [0.88–1.27] | 1.44 [1.07–1.55] |
+| 1,000 | 1.37 [1.15–1.55] | 1.42 [1.29–1.73] | 1.73 [1.71–1.79] | 2.24 [2.18–2.49] |
+| 2,500 | 2.46 [2.36–2.55] | 2.58 [2.34–3.02] | 3.53 [2.97–3.79] | 3.95 [3.81–4.33] |
+| 5,000 | 4.71 [3.97–7.05] | 4.80 [4.13–6.32] | 5.77 [4.98–6.52] | 6.92 [6.77–6.99] |
+
+What the numbers say:
+
+- **Under about 500 glyphs it does not matter.** Every difference is under
+  0.4 ms per frame and most sit inside the spread.
+- **A static label is cheaper in the DOM from about 1,000 glyphs.** Once laid
+  out, DOM text costs nothing per frame (0.44 ms at 5,000 glyphs, the same as
+  the empty scene). The HUD costs about 1 µs of script per glyph per frame
+  whether the text changed or not, because its layer asks every widget for a
+  fresh command on every repaint. When the camera moves, the DOM still wins,
+  by less, and the ranges only separate from 2,500: 2.13 against 5.67 at
+  5,000.
+- **A readout that changes every frame is a tie on the main thread with the
+  camera fixed.** The DOM spends it on layout and paint (1.79 + 1.76 ms at
+  5,000) where the HUD spends it on script (4.43).
+- **A readout that also follows the camera is cheaper on the HUD from about
+  1,000 glyphs** — the one cell where the ranges separate in its favor (1.73
+  [1.71–1.79] against 2.24 [2.18–2.49]).
+
+Off the main thread the DOM side costs more in every every-frame cell: its
+compositor thread runs 0.5–2.1 ms per frame against the HUD's 0.2–0.8, and the
+GPU process more as well. The all-thread totals put the HUD ahead by 2–3 ms at
+5,000 glyphs in both every-frame cells, but the spread on those totals reaches
+several ms on this node, so read that as a lean, not a result. The HUD's text
+adds almost nothing on the GPU: `EXT_disjoint_timer_query_webgl2` timed the
+canvas at 0.30 ms with 5,000 glyphs against 0.25 without. The raster column
+reads zero throughout because Chromium rasterizes on the GPU here, so that work
+lands in the GPU-process figure.
+
+The two result files are in `recorded/`. `HVD_UPDATES=static` or
+`every-frame` runs half the sweep, which is how it was run: each half took
+about 13 minutes on studio.
 
 ## Comparing two runs
 

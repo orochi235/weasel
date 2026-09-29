@@ -31,6 +31,14 @@ Widgets draw from a data-free context (`{ dims, defaultFont, tokens }`), which
 is what lets a HUD render headlessly and identically. A window's `content`
 painter is the single, explicit exception.
 
+## HUD or DOM text?
+
+Measured in `tests/perf/README.md` ("HUD text against a DOM overlay"): below
+about 500 glyphs the choice costs nothing either way. Past that, static labels
+are cheaper in a DOM layer over the canvas, because a HUD re-emits every
+widget's text on each repaint; readouts that change every frame *and* follow the
+camera are cheaper here.
+
 ## License
 
 MIT
