@@ -141,10 +141,9 @@ import { useColorContext } from './tools/colorContext';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useSceneAdapter, effectiveRangeStyle, patchRangeStyle } from '@weasel-js/core';
-import { sliceAction } from '@weasel-js/core';
 import type { SerializedHistory } from '@weasel-js/history';
 import { serializeReplacer, reviveSnapshot, clipboardJsonReviver, nodeSpecsFromSnapshot } from './persistence';
-import { useSliceTool } from './tools/slice/useSliceTool';
+import { useSliceTool } from '@weasel-js/core';
 import { SliceDepPublisher } from './tools/slice/SliceDepPublisher';
 import { parseSvg, unpackSvgFiles } from '@weasel-js/svg';
 import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
@@ -1571,7 +1570,6 @@ function EditorWithSharedScene({
             selection={selection}
             defaultTools={BUILTIN_TOOL_IDS}
             tools={{ slice: sliceTool, opacityScrub: opacityScrubTool }}
-            actions={{ slice: sliceAction }}
             ingestion={DRAW_INGESTION}
             // Pick on the drawn shape, not the bounding box. In a drawing app
             // the pose rect is an implementation detail: clicking the blank

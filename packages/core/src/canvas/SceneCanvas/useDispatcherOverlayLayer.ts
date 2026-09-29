@@ -40,6 +40,7 @@ import {
 import { getImageBitmap } from 'features/images/imageCache';
 import { resolveOverlays } from 'interactions/actions/resolveOverlays';
 import { gestureOverlaysFrom, isVisibleFrom } from '../drawEnvelope';
+import { OVERLAY_ROLE_STROKES } from '../overlayRoleStrokes';
 
 /** Style knobs for the dispatcher-overlay layer's marquee + lasso paints.
  *  Defaults match the legacy `useSelectTool` `areaSelectOverlayStyle`
@@ -67,12 +68,6 @@ const DEFAULT_STYLE: Required<Omit<DispatcherOverlayStyle, 'roles'>> = {
  *  equally provisional. */
 const PREVIEW_CONTENT_OPACITY = 0.85;
 
-/** How each `polyline` overlay role reads. The action publishes the run and
- *  the word; this table is the whole of the paint. */
-const ROLE_STROKES: Readonly<Record<string, Stroke>> = {
-  cut: { paint: { color: '#e23b3b' }, width: 1, dash: [6, 4] },
-  connector: { paint: { color: '#7ba7c7' }, width: 2, dash: [4, 4] },
-};
 
 export function useDispatcherOverlayLayer(args: {
   /** The surface's dispatcher, subscribed to only so a pump repaints. What
@@ -101,7 +96,7 @@ export function useDispatcherOverlayLayer(args: {
         const cfg = { ...DEFAULT_STYLE, ...(styleRef.current ?? {}) };
         // Merged rather than replaced: naming one role must not delete the
         // kit's others.
-        const roles = { ...ROLE_STROKES, ...(styleRef.current?.roles ?? {}) };
+        const roles = { ...OVERLAY_ROLE_STROKES, ...(styleRef.current?.roles ?? {}) };
         const t = viewToTransform(view);
         const out: DrawCommand[] = [];
 

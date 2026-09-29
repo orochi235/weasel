@@ -16,6 +16,7 @@ const HOOK_NAMES = [
   'useStarTool',
   'usePenTool',
   'usePencilTool',
+  'useSliceTool',
   'useLassoTool',
   'useTextTool',
   'useEyedropperTool',
