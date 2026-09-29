@@ -1333,7 +1333,7 @@ export { mat3 } from './renderer';
 
 // MSDF font registration — consumers register (family, variant, metrics
 // JSON URL, atlas PNG URL) at startup so TextDrawCommand can resolve glyphs.
-export { registerFont, type FontVariant, type RegisterFontOptions } from '@weasel-js/font';
+export { registerFont, warmFonts, type FontVariant, type RegisterFontOptions } from '@weasel-js/font';
 
 // Canvas-sourced dynamic SDF fonts — render any installed machine font with
 // no baked atlas (canvas fillText → distance transform → R8 glyph pages).

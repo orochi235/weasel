@@ -334,7 +334,9 @@ function isLost(gl: WebGL2RenderingContext): boolean {
  *
  * Synchronous, so nothing lands mid-render: a paint kind loaded on demand
  * (`mesh-gradient`, or one declared with `registerPaintKindLoader`) that has
- * not loaded yet draws nothing. `await warmPaintKinds()` first.
+ * not loaded yet draws nothing, and neither does text set in a font atlas
+ * still fetching — one registered `{ lazy: true }` is not fetched until text
+ * first asks for it. `await warmPaintKinds()` and `await warmFonts()` first.
  *
  * Each call opens a {@link RasterSession} and disposes it before returning.
  * Rendering many scenes, open one with `createRasterSession` instead.

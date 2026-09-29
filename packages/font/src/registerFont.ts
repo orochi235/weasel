@@ -78,7 +78,7 @@ const declared = new Map<string, Map<string, Declared>>();
 
 /** Every family `registerFont` was called for, eager or lazy, in call order —
  *  what "the first registered family" means to the substitute policy. */
-const families = new Set<string>();
+const registeredFamilies = new Set<string>();
 
 /** Test helper. Do not call from product code. */
 export function _resetFontRegistryForTests(): void {
@@ -86,7 +86,7 @@ export function _resetFontRegistryForTests(): void {
   inFlight.clear();
   loads.clear();
   declared.clear();
-  families.clear();
+  registeredFamilies.clear();
   _clearFallbackWarnings();
 }
 
@@ -130,7 +130,7 @@ export interface RegisteredFont {
  */
 export function listFonts(): readonly RegisteredFont[] {
   const out: RegisteredFont[] = [];
-  for (const family of families) {
+  for (const family of registeredFamilies) {
     const keys = new Set([
       ...(registry.get(family)?.keys() ?? []),
       ...(declared.get(family)?.keys() ?? []),
@@ -194,7 +194,7 @@ export function registerFont(
 ): Promise<void> {
   const { weight, style } = normalizeVariant(variant);
   const key = variantKey(weight, style);
-  families.add(family);
+  registeredFamilies.add(family);
 
   if (registry.get(family)?.has(key)) return Promise.resolve();
   if (!opts.lazy) return loadVariant(family, key, metricsUrl, atlasUrl);
@@ -300,6 +300,30 @@ function wakeDeclared(family: string, weight: number, style: FontStyle): void {
     // The declaration's own promise carries the failure to its caller.
     loadVariant(family, key, metricsUrl, atlasUrl).catch(() => {});
   }
+}
+
+/**
+ * Load registered atlases ahead of their first use, so a synchronous render —
+ * `renderSceneToPixels`, an export, a print — draws text set in a lazily
+ * registered face rather than nothing. With no list, loads every family
+ * `registerFont` was called for.
+ *
+ * Starts each lazily declared variant and joins any fetch already running.
+ * Resolves once they have all landed; a registered variant counts as loaded.
+ * Rejects when a load fails, or for a family `registerFont` never saw.
+ */
+export function warmFonts(families?: readonly string[]): Promise<void> {
+  const names = new Set(families ?? registeredFamilies);
+  for (const family of names) {
+    if (!registeredFamilies.has(family)) {
+      return Promise.reject(new Error(`weasel warmFonts: "${family}" was never registered.`));
+    }
+    for (const [key, { metricsUrl, atlasUrl }] of [...(declared.get(family) ?? [])]) {
+      loadVariant(family, key, metricsUrl, atlasUrl);
+    }
+  }
+  const pending = [...loads].filter(([id]) => [...names].some((f) => id.startsWith(`${f}|`)));
+  return Promise.all(pending.map(([, load]) => load)).then(() => undefined);
 }
 
 /** Is an atlas for this family on its way — declared lazily or fetching? */
@@ -512,7 +536,7 @@ function missResolveResult(
 
 /** The first family an app registered that has, or will have, an atlas. */
 function firstRegisteredFamily(): string | null {
-  for (const family of families) {
+  for (const family of registeredFamilies) {
     if (registry.has(family) || atlasPending(family)) return family;
   }
   return null;

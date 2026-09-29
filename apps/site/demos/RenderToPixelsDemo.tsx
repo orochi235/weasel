@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   SceneCanvas, useScene, renderSceneToPixels, defaultDrawOne, textCommand,
-  registerCanvasFont,
+  registerCanvasFont, warmFonts,
   solid,
 } from '@weasel-js/core';
 import type { FillStyle, TextStyle, TextVerticalAlign, SceneViewDrawOne } from '@weasel-js/core';
@@ -93,20 +93,26 @@ export function RenderToPixelsDemo() {
       drawOne,
       alphaFor: ALPHA_FOR,
     } as const;
-    const first = renderSceneToPixels(opts);
-    const second = renderSceneToPixels(opts);
-    const identical =
-      first.data.length === second.data.length &&
-      first.data.every((v, i) => v === second.data[i]);
+    let live = true;
+    // The render is synchronous, so a font still fetching would draw nothing.
+    void warmFonts().catch(() => {}).then(() => {
+      if (!live) return;
+      const first = renderSceneToPixels(opts);
+      const second = renderSceneToPixels(opts);
+      const identical =
+        first.data.length === second.data.length &&
+        first.data.every((v, i) => v === second.data[i]);
 
-    const out = outRef.current;
-    if (out) {
-      out.width = first.width;
-      out.height = first.height;
-      out.getContext('2d')?.putImageData(
-        new ImageData(Uint8ClampedArray.from(first.data), first.width, first.height), 0, 0);
-    }
-    setReadout(`headless ${first.width}×${first.height} px · identical: ${identical ? 'yes' : 'no'}`);
+      const out = outRef.current;
+      if (out) {
+        out.width = first.width;
+        out.height = first.height;
+        out.getContext('2d')?.putImageData(
+          new ImageData(Uint8ClampedArray.from(first.data), first.width, first.height), 0, 0);
+      }
+      setReadout(`headless ${first.width}×${first.height} px · identical: ${identical ? 'yes' : 'no'}`);
+    });
+    return () => { live = false; };
   }, [scene]);
 
   return (
