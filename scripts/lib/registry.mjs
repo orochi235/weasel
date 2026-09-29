@@ -15,41 +15,52 @@ export function registryBase() {
 const encodeName = (name) => name.replace('/', '%2f');
 
 /**
- * Poll `url` until it answers 200 or 404 runs out of attempts.
+ * Poll until `probe` answers 200 or 404 runs out of attempts.
  *
  * A publish takes a minute or two to reach every read replica, so a 404
  * immediately after one is indistinguishable from a publish that never
  * happened. Retrying is what separates them; anything other than 200/404 is a
  * registry problem and throws rather than being read as absence.
  */
-async function existsWithRetry(url, label, { attempts, delayMs }) {
+async function existsWithRetry(probe, label, { attempts, delayMs }) {
   for (let attempt = 1; ; attempt++) {
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: { accept: 'application/json' },
-    });
-    if (res.status === 200) return true;
-    if (res.status !== 404) {
-      throw new Error(`${label}: registry answered ${res.status} ${res.statusText}`);
+    const status = await probe();
+    if (status === 200) return true;
+    if (status !== 404) {
+      throw new Error(`${label}: registry answered ${status}`);
     }
     if (attempt >= attempts) return false;
     await new Promise((r) => setTimeout(r, delayMs));
   }
 }
 
+const getStatus = async (url) => (await fetch(url, { method: 'GET', headers: { accept: 'application/json' } })).status;
+
 /** Whether the registry has heard of a package at all. */
 export function isPublished(name, { attempts = 3, delayMs = 4000 } = {}) {
-  return existsWithRetry(`${registryBase()}/${encodeName(name)}`, name, { attempts, delayMs });
+  return existsWithRetry(() => getStatus(`${registryBase()}/${encodeName(name)}`), name, { attempts, delayMs });
 }
 
 /**
- * Whether one exact version of a package is on the registry.
+ * Whether one exact version of a package is on the registry and installable.
  *
  * Asks for the version manifest directly instead of reading the packument's
  * `versions` map, so a stale packument cannot answer for a version published
- * seconds ago.
+ * seconds ago. A listed manifest is not enough: 1.7.1's `paint` manifest was
+ * served while its `dist.tarball` still answered 404, and `npm install` failed
+ * on it with E404. So the tarball has to answer too.
  */
 export function hasVersion(name, version, { attempts = 5, delayMs = 6000 } = {}) {
   const url = `${registryBase()}/${encodeName(name)}/${encodeURIComponent(version)}`;
-  return existsWithRetry(url, `${name}@${version}`, { attempts, delayMs });
+  return existsWithRetry(
+    async () => {
+      const res = await fetch(url, { method: 'GET', headers: { accept: 'application/json' } });
+      if (res.status !== 200) return res.status;
+      const tarball = (await res.json())?.dist?.tarball;
+      if (!tarball) throw new Error(`${name}@${version}: manifest has no dist.tarball`);
+      return (await fetch(tarball, { method: 'HEAD' })).status;
+    },
+    `${name}@${version}`,
+    { attempts, delayMs },
+  );
 }

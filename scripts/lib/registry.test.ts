@@ -2,28 +2,60 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 // @ts-expect-error — plain .mjs with no typings; `scripts/` is outside tsconfig's include.
 import { hasVersion, isPublished } from './registry.mjs';
 
-const reply = (status: number) => ({ status, statusText: `status ${status}` });
+const TARBALL = 'https://registry.npmjs.org/@weasel-js/hud/-/hud-1.4.3.tgz';
 
-/** A fetch that answers the given statuses in order, then repeats the last one. */
-function fetchReturning(...statuses: number[]) {
+const reply = (status: number) => ({
+  status,
+  statusText: `status ${status}`,
+  json: async () => ({ dist: { tarball: TARBALL } }),
+});
+
+/**
+ * A fetch whose manifest and tarball URLs each answer their statuses in order,
+ * then repeat the last one.
+ */
+function fetchServing({ manifest, tarball }: { manifest: number[]; tarball: number[] }) {
   const calls: string[] = [];
+  const seen = { manifest: 0, tarball: 0 };
   const fake = vi.fn(async (url: string) => {
     calls.push(url);
-    return reply(statuses[Math.min(calls.length - 1, statuses.length - 1)]);
+    const which = url === TARBALL ? 'tarball' : 'manifest';
+    const statuses = which === 'tarball' ? tarball : manifest;
+    return reply(statuses[Math.min(seen[which]++, statuses.length - 1)]);
   });
   vi.stubGlobal('fetch', fake);
   return calls;
 }
+
+/** The manifest answers `statuses`; the tarball is always served. */
+const fetchReturning = (...statuses: number[]) => fetchServing({ manifest: statuses, tarball: [200] });
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
 describe('hasVersion', () => {
-  it('asks for the version manifest directly, with the scope escaped', async () => {
+  it('asks for the version manifest directly, with the scope escaped, then its tarball', async () => {
     const calls = fetchReturning(200);
     await hasVersion('@weasel-js/hud', '1.4.3');
-    expect(calls).toEqual(['https://registry.npmjs.org/@weasel-js%2fhud/1.4.3']);
+    expect(calls).toEqual(['https://registry.npmjs.org/@weasel-js%2fhud/1.4.3', TARBALL]);
+  });
+
+  // 1.7.1: the manifest listed while the tarball still answered 404, and the
+  // registry smoke install failed on it with E404.
+  it('retries a listed version whose tarball is not served yet', async () => {
+    const calls = fetchServing({ manifest: [200], tarball: [404, 200] });
+    await expect(hasVersion('@weasel-js/hud', '1.4.3', { attempts: 5, delayMs: 0 })).resolves.toBe(
+      true,
+    );
+    expect(calls.filter((u) => u === TARBALL)).toHaveLength(2);
+  });
+
+  it('reports a version missing while its tarball never serves', async () => {
+    fetchServing({ manifest: [200], tarball: [404] });
+    await expect(hasVersion('@weasel-js/hud', '1.4.3', { attempts: 3, delayMs: 0 })).resolves.toBe(
+      false,
+    );
   });
 
   it('is true when the registry serves that version', async () => {
@@ -38,7 +70,7 @@ describe('hasVersion', () => {
     await expect(hasVersion('@weasel-js/hud', '1.4.3', { attempts: 5, delayMs: 0 })).resolves.toBe(
       true,
     );
-    expect(calls).toHaveLength(3);
+    expect(calls.filter((u) => u !== TARBALL)).toHaveLength(3);
   });
 
   it('gives up after the last attempt and reports the version missing', async () => {
