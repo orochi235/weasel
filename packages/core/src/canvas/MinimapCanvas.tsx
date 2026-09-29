@@ -52,6 +52,7 @@ import type { Scene } from '../core/scene/types';
 import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
 import type { Animator } from '../animation/types';
 import { AUTO_POSE_DESCRIPTOR } from '../interactions/actions/resize/autoPoseDescriptor';
+import { accentColorOf } from './accentColor';
 
 /** Props for `<MinimapCanvas>`. */
 export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
@@ -121,7 +122,6 @@ const MINIMAP_INPUT: Tool = {
 };
 const TOOLS_BY_ID: ReadonlyMap<string, Tool> = new Map([[MINIMAP_INPUT.id, MINIMAP_INPUT]]);
 const CHANNELS = { wheel: false, pinch: false, contextMenu: false, ingest: false } as const;
-const FALLBACK_CURSOR_COLOR = '#4c8dff';
 
 function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   props: MinimapCanvasProps<TData, TLayer, TPose>,
@@ -245,10 +245,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   const cursorLayer = useMemo(() => createLinkedCursorLayer({
     id: `${id}.cursor`,
     pointer: () => pointer,
-    color: () => {
-      const el = localCanvasRef.current;
-      return (el && getComputedStyle(el).getPropertyValue('--wzl-accent').trim()) || FALLBACK_CURSOR_COLOR;
-    },
+    color: () => accentColorOf(localCanvasRef.current),
   }), [id, pointer]);
 
   const extraCommands = useMemo<DrawCommand[]>(() => [

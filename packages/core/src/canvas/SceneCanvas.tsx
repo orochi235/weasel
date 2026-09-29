@@ -135,7 +135,8 @@ import { useViewportActions } from './SceneCanvas/useViewportActions';
 import type { ViewportZoomAnimateOptions, ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
 import type { PinchZoomOptions } from 'interactions/actions/defaults/pinchZoom';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
-import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
+import { createDispatcher, createLongPressStore, type Dispatcher } from '@weasel-js/routing';
+import { createLongPressFeedbackContribution } from '../features/longPress/longPressFeedback';
 import type { ActionsRegistry } from '@weasel-js/routing';
 import { useActionsRegistry } from '@weasel-js/routing/react';
 import { buildAffordanceAt, buildClassifyTarget, anchorStateFrom, chromeAffordances } from './affordanceAt';
@@ -218,6 +219,24 @@ export interface CoordTraceEntry {
  * into the shared root-tsconfig program. Isolating core's build surfaced it.
  * Mirrors the same cast in dispatcher.ts and buildDeps.ts.
  */
+/** `<SceneCanvas longPress>`. */
+export interface SceneCanvasLongPress {
+  /**
+   * Shown while a long-press is held and some binding would fire on it.
+   * Default: a ring that fills around the press point
+   * (`createLongPressFeedbackContribution()`), static under
+   * `prefers-reduced-motion`. `false` shows nothing; a contribution replaces
+   * it, reading the `longPress` dep. Installed beside `ambient`, so under a
+   * `tools` takeover add it to your own `useTools` call instead.
+   */
+  feedback?: boolean | SurfaceContribution;
+  /** Default true. A long-press some binding handled pulses
+   *  `navigator.vibrate` briefly, for touch and pen, where the API exists. */
+  haptics?: boolean;
+  /** Hold time in ms. Default `LONG_PRESS_MS` (500). */
+  duration?: number;
+}
+
 const IS_DEV: boolean = (() => {
   try {
     return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
@@ -668,6 +687,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  through your own `useTools` call instead. */
     ambient?: readonly SurfaceContribution[];
 
+    /** Touch and pen long-press: its hold time, its haptic, and the
+     *  feedback shown while it is held. */
+    longPress?: SceneCanvasLongPress;
+
     /** Configures the `view` preset, and implies it: passing this turns
      *  `view` on.
      *
@@ -978,6 +1001,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     toolOptions,
     initialActiveTool,
     ambient,
+    longPress,
     viewport,
     layers,
     actions,
@@ -1500,7 +1524,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // (lasso mode, clone-selection) thread through `toolOptions`.
   const shapeTools = useBuiltinShapeTools({ scene, adapter, options: toolOptions });
 
-  const mergedAmbient = ambient ?? [];
+  const defaultLongPressFeedback = useMemo(() => createLongPressFeedbackContribution(), []);
+  const feedbackOpt = longPress?.feedback ?? true;
+  const pressFeedback = feedbackOpt === true ? defaultLongPressFeedback : feedbackOpt || null;
+  const mergedAmbient = useMemo(
+    () => (pressFeedback ? [...(ambient ?? []), pressFeedback] : (ambient ?? [])),
+    [ambient, pressFeedback],
+  );
 
   const internalRegistry: Record<string, AnyTool> = {};
   if (wants('select')) internalRegistry.select = internalSelect;
@@ -2286,6 +2316,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 rotationBadge={rotationBadge}
                 chromeAffordancesRef={chromeAffordancesRef}
                 onDoubleClick={onDoubleClickObserver}
+                longPress={longPress}
               />
               <ToolKeybindingsMounter
                 internalTools={internalTools}
@@ -2378,6 +2409,7 @@ function GestureDispatcherMounter({
   rotationBadge,
   chromeAffordancesRef,
   onDoubleClick,
+  longPress: longPressOpts,
 }: {
   canvasRef: React.RefObject<HTMLElement | null>;
   /** Holds the full `CanvasExtensionApi` so the gesture dispatcher can call
@@ -2434,6 +2466,8 @@ function GestureDispatcherMounter({
    *  `onDoubleClick` prop — see the option's doc on
    *  `UseGestureDispatcherOptions` for why it's an observer, not a binding. */
   onDoubleClick?: (world: { x: number; y: number }) => void;
+  /** Backs `<SceneCanvas longPress>`. */
+  longPress?: SceneCanvasLongPress;
 }) {
   const registry = useActionsRegistry();
   const depRegistry = useDepRegistry();
@@ -2580,6 +2614,14 @@ function GestureDispatcherMounter({
     [canvasApiRef],
   );
 
+  // The pending long-press, published as the `longPress` dep for feedback.
+  const [longPressState] = useState(createLongPressStore);
+  const longPress = useMemo(() => ({
+    state: longPressState,
+    ...(longPressOpts?.duration !== undefined ? { duration: longPressOpts.duration } : {}),
+    ...(longPressOpts?.haptics !== undefined ? { haptics: longPressOpts.haptics } : {}),
+  }), [longPressState, longPressOpts?.duration, longPressOpts?.haptics]);
+
   // Input routing to registered views. Rebuilt per event from the registry, so
   // a view that mounts or moves mid-session is routable on the next event; with
   // nothing registered every point resolves to the canvas, as before.
@@ -2609,8 +2651,10 @@ function GestureDispatcherMounter({
     paintedCursor,
     getRuleCtx,
     onDoubleClick,
+    longPress,
     ...(views ? { views } : {}),
   });
+  useDepSource('longPress', () => longPressState);
   return null;
 }
 

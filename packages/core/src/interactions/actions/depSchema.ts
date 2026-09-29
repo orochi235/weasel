@@ -40,7 +40,7 @@ import type {
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
-import type { Point2, DragSample, DebugSink } from '@weasel-js/routing';
+import type { Point2, DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
@@ -472,7 +472,7 @@ export interface SliceDep {
  * This is the whole vocabulary of things an action can reach — selection,
  * scene, view, history, and the rest. The interface itself is declared empty
  * in `@weasel-js/routing`, which knows that an action names its dependencies
- * but not what any of them are; these 24 entries are the kit's, merged in from
+ * but not what any of them are; these entries are the kit's, merged in from
  * outside exactly the way a consumer merges its own
  * (`declare module '@weasel-js/core'`).
  */
@@ -667,6 +667,12 @@ declare module '@weasel-js/routing' {
      * by every surface under one `<PointerContextProvider>`.
      */
     pointer?: import('../../features/pointer/PointerContext').PointerContextValue;
+    /**
+     * The touch or pen long-press being held, if any: where, since when, how
+     * far through, and whether any binding would fire on it. Sourced by
+     * `<SceneCanvas>` from its gesture dispatcher; press feedback reads it.
+     */
+    longPress?: LongPressState;
   }
 }
 

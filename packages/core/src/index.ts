@@ -265,7 +265,7 @@ export * from './tools';
 export { SceneCanvas, DEFAULT_HANDLE_SIZE } from './canvas/SceneCanvas';
 export { defaultDrawOne, defaultPaintBounds } from './canvas/defaultDrawOne';
 export type { PaintBoundsFn } from './canvas/paintCull';
-export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers } from './canvas/SceneCanvas';
+export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress } from './canvas/SceneCanvas';
 export { hostAnchorRect, hostAnchorCss } from './canvas/hostAnchor';
 export type { HostAnchorInput, HostAnchorAlign, HostAnchorOffset } from './canvas/hostAnchor';
 export { useHostAnchor } from './canvas/useHostAnchor';
@@ -385,6 +385,14 @@ export {
   CROSSHAIR_HALO,
 } from './features/minimap';
 export type { MinimapContributionOptions, LinkedCursorOptions, CrosshairRect } from './features/minimap';
+
+// ─── Long-press feedback: the pending press as state, and the default ring ──
+export { createLongPressStore, LONG_PRESS_MS } from '@weasel-js/routing';
+export type { PendingLongPress, LongPressState, LongPressStore, LongPressOptions } from '@weasel-js/routing';
+export {
+  createLongPressFeedbackContribution, LONG_PRESS_FEEDBACK_ID,
+} from './features/longPress/longPressFeedback';
+export type { LongPressFeedbackOptions } from './features/longPress/longPressFeedback';
 export type { MinimapCanvasProps } from './canvas/MinimapCanvas';
 export {
   buildSceneViewCommands,
