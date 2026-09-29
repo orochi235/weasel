@@ -56,11 +56,12 @@ in vec2 v_uv;
 flat in float v_glyphMode;
 uniform sampler2D u_atlas;
 uniform float u_synthBold;
+uniform vec2 u_fieldScale;
 ${paintGlsl}
 ${GLYPH_COVERAGE_GLSL}
 out vec4 outColor;
 void main() {
-  float coverage = glyphCoverage(texture(u_atlas, v_uv), v_glyphMode, u_synthBold);
+  float coverage = glyphCoverage(texture(u_atlas, v_uv), v_glyphMode, u_synthBold, v_uv, u_fieldScale);
   outColor = shadePaint(v_world) * coverage;
 }
 `;
@@ -69,7 +70,7 @@ void main() {
 export const GLYPH_PATTERN_FRAG_SRC = fragSrc(PATTERN_PAINT_GLSL);
 export const GLYPH_GRAD_FRAG_SRC = fragSrc(GRAD_PAINT_GLSL);
 
-const GLYPH_UNIFORMS = ['u_atlas', 'u_synthBold'] as const;
+const GLYPH_UNIFORMS = ['u_atlas', 'u_synthBold', 'u_fieldScale'] as const;
 export const GLYPH_PATTERN_UNIFORMS = [...PATTERN_FILL_UNIFORMS, ...GLYPH_UNIFORMS] as const;
 export const GLYPH_GRAD_UNIFORMS = [...GRAD_FILL_UNIFORMS, ...GLYPH_UNIFORMS] as const;
 export const GLYPH_PAINT_ATTRIBUTES = ['a_position', 'a_uv', 'a_texSlot'] as const;

@@ -2301,7 +2301,7 @@ function drawTextGroup(
   const tanItalic = group.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
   const paintKind = glyphPaintKindOf(group.fill);
   if (paintKind !== null) {
-    drawPaintedGlyphs(ctx, group, dx, dy, paintKind, atlasId, mode, bold, tanItalic);
+    drawPaintedGlyphs(ctx, group, dx, dy, paintKind, atlasId, mode, bold, tanItalic, fieldScale);
     return;
   }
   const color = group.fill !== null && 'color' in group.fill
@@ -2356,6 +2356,7 @@ const GLYPH_PAINT_ATLAS_UNIT = 1;
 function drawPaintedGlyphs(
   ctx: DrawContext, group: LaidOutGroup, dx: number, dy: number,
   kind: GlyphPaintKind, atlasId: string, mode: number, bold: number, tanItalic: number,
+  fieldScale: readonly [number, number],
 ): void {
   const prog = ctx.glyphPaintProgram?.(kind);
   if (!prog) return;
@@ -2369,6 +2370,7 @@ function drawPaintedGlyphs(
   ctx.textureCache.bind(atlasId, GLYPH_PAINT_ATLAS_UNIT);
   gl.uniform1i(prog.uniform('u_atlas')!, GLYPH_PAINT_ATLAS_UNIT);
   gl.uniform1f(prog.uniform('u_synthBold')!, bold);
+  gl.uniform2f(prog.uniform('u_fieldScale')!, fieldScale[0], fieldScale[1]);
   applyClipTest(ctx);
 
   const batch = ctx.drawBatch;
