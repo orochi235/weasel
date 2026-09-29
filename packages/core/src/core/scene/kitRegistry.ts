@@ -53,7 +53,7 @@ export function unionOfChildren<TPose>(
 }
 
 /** `pose` as a rect, or `null` when it is some other shape entirely. */
-function asRectPose(pose: unknown): RectPose | null {
+export function asRectPose(pose: unknown): RectPose | null {
   if (pose === null || typeof pose !== 'object') return null;
   const p = pose as Partial<RectPose>;
   const rect = typeof p.x === 'number' && typeof p.y === 'number'

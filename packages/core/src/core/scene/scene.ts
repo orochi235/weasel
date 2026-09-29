@@ -2,7 +2,7 @@ import { createHistory, type History, type HistorySelection, type Journal, type 
 import type { Op } from 'core/ops/types';
 import type { ParallaxOpts } from 'core/viewport/parallax';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
-import { createArrangeOp, type ArrangedPose } from 'core/ops/arrange';
+import { createArrangeOp, type ArrangeArgs, type ArrangedPose } from 'core/ops/arrange';
 import { SceneArrivalRefused } from './arrivals';
 import { dwarn } from 'debug/flag';
 import { createDependentsIndex, sameDependsOn } from './dependents';
@@ -18,8 +18,10 @@ import {
   type NodeFnField,
 } from './nodeFnFields';
 import { createPoseOverrides } from './poseOverrides';
+import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
 import {
   asNodeId,
+  type LayoutMove,
   type AddNodeSpec,
   type ContainerNode,
   type LayerRecord,
@@ -110,8 +112,27 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    * from `state.nodes` AND unreachable via any remaining undo/redo log entry.
    */
   const fnFields = createNodeFnFields<TPose>(registry);
-  const fnField = (name: 'clipFromPose' | 'derivePath' | 'derivePose'): NodeFnField =>
+  const fnField = (name: 'clipFromPose' | 'derivePath' | 'derivePose' | 'layout'): NodeFnField =>
     fnFields.find((f) => f.spec.field === name)!;
+
+  /** How declared layouts are measured; see `LayoutFrame`. */
+  const layoutFrame = resolveLayoutFrame(options.layoutFrame);
+  /** Latched on the first layout a container is given, so a scene that never
+   *  declares one records exactly the entries it did before layouts existed. */
+  let hasLayouts = false;
+  {
+    const field = fnField('layout');
+    const write = field.write;
+    (field as { write: NodeFnField['write'] }).write = (node, fn) => {
+      if (node.kind === 'container') hasLayouts = true;
+      write(node, fn);
+    };
+  }
+
+  function layoutOfInternal(id: NodeId) {
+    const node = state.nodes.get(id);
+    return node?.kind === 'container' ? (node.layout ?? null) : null;
+  }
 
   /** Maintained from `kit:add` / `kit:remove` — the only two places a node is
    *  created or destroyed, and unlike `add`/`remove` they replay on undo/redo.
@@ -279,6 +300,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     // consulted it.)
     rebuildOp: (name, args) => {
       if (registered.has(name)) return makeOp(name, args);
+      // Its writes are the scene's own, so it replays without an adapter.
+      if (name === 'arrange') return createArrangeOp(args as ArrangeArgs, undefined, writePose);
       const rebuilt = rebuildGlobalOp(name, args);
       return rebuilt === null ? null : bindOpToHistoryAdapter(rebuilt);
     },
@@ -319,26 +342,62 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   let activeJournalAccessor: (() => Journal | null) | null =
     options.getActiveJournal ?? null;
 
-  // Arrival handling. `arrivals` is open (non-null) while a live edit is
-  // collecting the nodes that joined a container, and whoever opened it
+  // Container layout. `arrivals` is open (non-null) while a live edit is
+  // collecting the nodes that joined a container, and `changed` every
+  // container whose children or size it changed; whoever opened the window
   // settles it before the edit closes. Undo, redo and journal replays never
   // open it: they restore an arrangement that was already decided.
   let arrivalHandler: SceneArrivalHandler<TPose> | null = null;
   let arrivals: Map<NodeId, NodeId[]> | null = null;
+  let changed = new Set<NodeId>();
+  /** What the last settle wrote, reported to `onReflow` once its edit lands. */
+  let reflowDue: LayoutMove<TPose>[] | null = null;
+  const reflowListeners = new Set<(moves: readonly LayoutMove<TPose>[]) => void>();
+
+  /** The pass a scene runs over its declared layouts when nothing else is
+   *  installed. */
+  const declaredLayouts: SceneArrivalHandler<TPose> = (arrived, touched) =>
+    runLayoutPass(scene, layoutOfInternal, arrived, touched, layoutFrame);
+
+  function activeHandler(): SceneArrivalHandler<TPose> | null {
+    return arrivalHandler ?? (hasLayouts ? declaredLayouts : null);
+  }
 
   function noteArrival(id: NodeId, parent: NodeId | null, from: NodeId | null): void {
     if (arrivals === null || parent === null || parent === from) return;
+    changed.add(parent);
     const list = arrivals.get(parent);
     if (list === undefined) arrivals.set(parent, [id]);
     else if (!list.includes(id)) list.push(id);
   }
 
+  /** A container's child set or order changed, or it changed size. */
+  function noteChange(id: NodeId | null): void {
+    if (arrivals !== null && id !== null) changed.add(id);
+  }
+
+  /** Whether a bare scene call has to run as a batch of its own, so the
+   *  layout pass it triggers lands in its undo step. */
+  function bareLayoutEdit(): boolean {
+    return activeHandler() !== null && arrivals === null && batchDepth === 0 && !suppressRecording;
+  }
+
   /** Open the arrival window when a handler wants one and no enclosing edit
    *  holds it already; true when this caller now owns it. */
   function openArrivals(): boolean {
-    if (arrivalHandler === null || arrivals !== null) return false;
+    if (activeHandler() === null || arrivals !== null) return false;
     arrivals = new Map();
+    changed = new Set();
+    reflowDue = null;
     return true;
+  }
+
+  /** Report what the settled edit wrote, now that it has landed. */
+  function emitReflow(): void {
+    const moves = reflowDue;
+    reflowDue = null;
+    if (moves === null || moves.length === 0) return;
+    for (const listener of [...reflowListeners]) listener(moves);
   }
 
   /** Close the window and ask the handler what the arrivals get. Throws
@@ -346,30 +405,36 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   function settleArrivals(): ArrangedPose[] {
     const pending = arrivals;
     arrivals = null;
-    if (pending === null || arrivalHandler === null) return [];
+    const handler = activeHandler();
+    if (pending === null || handler === null) return [];
     // Only what is still there once the edit's other mutations have landed.
     const landed = new Map<NodeId, NodeId[]>();
     for (const [parent, ids] of pending) {
       const still = ids.filter((id) => state.nodes.get(id)?.parent === parent);
       if (still.length > 0 && state.nodes.has(parent)) landed.set(parent, still);
     }
-    if (landed.size === 0) return [];
-    const poses = arrivalHandler(landed);
+    const touched = new Set([...changed].filter((id) => state.nodes.get(id)?.kind === 'container'));
+    if (landed.size === 0 && touched.size === 0) return [];
+    const poses = handler(landed, touched);
     if (poses === null) throw new SceneArrivalRefused(landed);
     const out: ArrangedPose[] = [];
     for (const [id, to] of poses) {
       const node = state.nodes.get(id);
       if (node) out.push({ id, from: node.pose, to });
     }
+    reflowDue = out as LayoutMove<TPose>[];
     return out;
+  }
+
+  function writePose(id: string, pose: unknown): void {
+    scene.setPose(asNodeId(id), pose as TPose);
   }
 
   /** `ops` plus the op that settles their arrivals, when this call owns the
    *  window; `ops` unchanged otherwise. */
   function withArrivalOps(ops: Op[]): { ops: Op[]; owned: boolean } {
     if (!openArrivals()) return { ops, owned: false };
-    const write = (id: string, pose: unknown): void => scene.setPose(asNodeId(id), pose as TPose);
-    return { ops: [...ops, createArrangeOp({}, settleArrivals, write)], owned: true };
+    return { ops: [...ops, createArrangeOp({}, settleArrivals, writePose)], owned: true };
   }
 
   /** Run an op-driven edit that may carry arrivals: a refusal reverts it and
@@ -378,10 +443,14 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     const { ops: all, owned } = withArrivalOps(ops);
     try {
       run(all);
+      if (owned) emitReflow();
     } catch (err) {
       if (!(err instanceof SceneArrivalRefused)) throw err;
     } finally {
-      if (owned) arrivals = null;
+      if (owned) {
+        arrivals = null;
+        reflowDue = null;
+      }
     }
   }
 
@@ -1347,7 +1416,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         assertSubtreeLayer(spec.id, spec.layer, parent, p.layer);
         refuseLocked(parent, 'add under');
       }
-      if (parent !== null && arrivalHandler !== null && arrivals === null && batchDepth === 0 && !suppressRecording) {
+      if (parent !== null && bareLayoutEdit()) {
         // A bare add under a container is an edit of its own, so it settles
         // its arrival like one — as a batch, which is what makes the
         // arrangement part of the same undo step.
@@ -1405,6 +1474,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         nodes: snapshot, detached,
         ...(fnKeys.length > 0 ? { fnKeys } : {}),
       };
+      if (detached.some((d) => d.parent !== null) && bareLayoutEdit()) {
+        scene.batch('remove', () => scene.removeMany(rootIds));
+        return;
+      }
+      for (const d of detached) noteChange(d.parent);
       executeAndLog('kit:remove', payload, 'remove');
     },
 
@@ -1417,6 +1491,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     setPose(id, pose) {
       const node = requireNode(id);
       refuseLocked(id, 'set the pose of');
+      if (node.kind === 'container' && resized(layoutFrame, id, node.pose, pose)) {
+        if (bareLayoutEdit()) {
+          scene.batch('setPose', () => scene.setPose(id, pose));
+          return;
+        }
+        noteChange(id);
+      }
       executeAndLog('kit:setPose', { id, from: node.pose, to: pose }, 'setPose');
     },
 
@@ -1488,8 +1569,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           throw new Error('Scene: cannot parent a node to its own descendant');
         }
       }
-      if (parent !== null && parent !== node.parent && arrivalHandler !== null
-        && arrivals === null && batchDepth === 0 && !suppressRecording) {
+      if ((parent !== null || node.parent !== null) && bareLayoutEdit()) {
         scene.batch('move', () => scene.move(id, parent, index));
         return;
       }
@@ -1498,6 +1578,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const toSibs = parent === node.parent ? fromSibs : siblingsOf(parent);
       const toIndex = index ?? toSibs.length;
       noteArrival(id, parent, node.parent);
+      noteChange(node.parent);
       executeAndLog('kit:move', {
         id, fromParent: node.parent, fromIndex, toParent: parent, toIndex,
       }, 'move');
@@ -1506,6 +1587,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     reorder(id, index) {
       const node = requireNode(id);
       refuseLocked(id, 'reorder');
+      if (node.parent !== null && bareLayoutEdit()) {
+        scene.batch('reorder', () => scene.reorder(id, index));
+        return;
+      }
+      noteChange(node.parent);
       const sibs = siblingsOf(node.parent);
       const fromIndex = sibs.indexOf(id);
       executeAndLog('kit:move', {
@@ -1631,6 +1717,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       };
     },
 
+    layoutOf(id) {
+      return layoutOfInternal(id);
+    },
+
+    onReflow(listener) {
+      reflowListeners.add(listener);
+      return () => { reflowListeners.delete(listener); };
+    },
+
     overrides,
 
     getSelection: () => selection,
@@ -1711,11 +1806,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       try {
         if (!outermost) return fn();
         try {
-          return atomically(() => {
-            const result = fn();
+          const result = atomically(() => {
+            const r = fn();
             if (ownsArrivals) for (const p of settleArrivals()) scene.setPose(asNodeId(p.id), p.to as TPose);
-            return result;
+            return r;
           }, () => (currentBatch?.ops.length ?? 0) > 0);
+          if (ownsArrivals) emitReflow();
+          return result;
         } catch (err) {
           // Reverted already; the half-built entry must not reach history.
           currentBatch = null;
@@ -1723,7 +1820,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         }
       } finally {
         batchDepth--;
-        if (ownsArrivals) arrivals = null;
+        if (ownsArrivals) {
+          arrivals = null;
+          reflowDue = null;
+        }
         if (batchDepth === 0) {
           if (currentBatch) {
             const finished = currentBatch;
@@ -1753,14 +1853,19 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const ownsArrivals = openArrivals();
       batchDepth++;
       try {
-        return atomically(() => {
-          const result = fn();
+        const result = atomically(() => {
+          const r = fn();
           if (ownsArrivals) for (const p of settleArrivals()) scene.setPose(asNodeId(p.id), p.to as TPose);
-          return result;
+          return r;
         }, () => false);
+        if (ownsArrivals) emitReflow();
+        return result;
       } finally {
         batchDepth--;
-        if (ownsArrivals) arrivals = null;
+        if (ownsArrivals) {
+          arrivals = null;
+          reflowDue = null;
+        }
         untrackedDepth--;
         suppressRecording = prevSuppress;
         if (version !== versionBefore) history.seal();
@@ -1976,6 +2081,7 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     coalesceWindowMs?: number;
     generateId?: () => NodeId;
     ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
+    layoutFrame?: UseSceneOptions<TData, TLayer, TPose>['layoutFrame'];
   } = {},
 ): Scene<TData, TLayer, TPose> {
   const registry = options.registry ?? {};
@@ -1988,6 +2094,7 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     ...(options.coalesceWindowMs !== undefined ? { coalesceWindowMs: options.coalesceWindowMs } : {}),
     ...(options.generateId !== undefined ? { generateId: options.generateId } : {}),
     ...(options.ops !== undefined ? { ops: options.ops } : {}),
+    ...(options.layoutFrame !== undefined ? { layoutFrame: options.layoutFrame } : {}),
   });
   scene.loadState(json);
   return scene;

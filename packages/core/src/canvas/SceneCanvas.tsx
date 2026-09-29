@@ -384,9 +384,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  default explicitly. */
     layers?: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose>;
 
-    /** Layout strategies keyed by container node id (or a resolver). Forwarded
-     *  to `sceneToAdapter` so `useMove`'s layout pass runs on configured
-     *  containers (reflow on enter, reparent + reflow on commit). */
+    /** Layout strategies keyed by container node id (or a resolver), for
+     *  containers whose scene node declares none (`ContainerNode.layout`
+     *  wins). Applied to a drag and to every other change to their children,
+     *  through the scene's layout pass. */
     layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
 
     /** Which layout container a drag lands in when several contain the drop
@@ -395,9 +396,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  drag-time reflow preview and the commit. */
     layoutDropTarget?: LayoutDropTargetMode;
 
-    /** Carries the siblings a drag's layout reflow displaces to their slots
-     *  over time instead of snapping them — `useAnimatedReflow` builds one.
-     *  Absent or `null`, they snap. */
+    /** Carries the siblings a layout reflow displaces to their slots over time
+     *  instead of snapping them — `useAnimatedReflow` builds one. Covers a
+     *  drag's reflow and every one the scene records (an insert, delete,
+     *  reorder or resize inside a laid-out container). Absent or `null`,
+     *  they snap. */
     reflowTransition?: ReflowTransition<TPose> | null;
 
     /** How a child's stored pose folds into its parent's frame. Omit for the
@@ -2849,7 +2852,7 @@ function StandardActionsRegistrar({
   // dep's contract and trade-offs.
   useAreaSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
   useNodeAtPointDepSource(pickEvery);
-  useLayoutDepSource(layouts, layoutDropTarget, reflowTransition);
+  useLayoutDepSource(scene, layouts, layoutDropTarget, reflowTransition);
   useLayoutArrivals(scene, { layouts, poseDescriptor, poseComposition });
   useInsertDepSource(scene, adapter, insertNodeFactories);
   useSliceDepSource(scene, selection, adapter, poseComposition, poseDescriptor);

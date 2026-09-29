@@ -438,13 +438,16 @@ intercepting the press that drags the body.
 
 ### `useScene` follow-ups
 
-- **(P3) Container layout as a scene semantic.** Layout strategies exist
-  (`freeform` / `snapPoint` / `tileGrid` in `@weasel-js/guides`, wired per container through
-  `sceneToAdapter({ layouts })`), but only `move` applies them — the resting
-  arrangement (`childPoses`) runs during a drag's reflow and nowhere else, so an
-  insert, delete or resize inside a laid-out container leaves its children where
-  they were. The deeper move is the scene holding a container's layout and
-  applying it on any change to its children.
+- **(P3) Scene layout: what the first cut left.** A container declares its layout
+  on its node (`ContainerNode.layout`), and the scene's one layout pass
+  (`core/scene/layoutPass.ts`, run through the arrival window) applies it to every
+  arrival, departure, reorder and resize. Still open: a layout is fixed at `add` time,
+  with no undoable `scene.setLayout(id, strategy)`; a declared layout is measured by
+  `UseSceneOptions.layoutFrame` unless a canvas installs its handler, so a scene whose
+  canvas composes poses or uses a custom descriptor states that twice — folds away once
+  composition is a scene property (see the cascade entry below); and whether the
+  `layouts` prop, now a second way to name a container's layout, should be retired in
+  favor of the node declaration.
 - **(P3) Full tier unification** (collapse inline-props/explicit-adapter onto Scene). Same effort as the P2 "`arrayAdapter` as the default Canvas adapter — full unification" above — track there.
 - **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is
   adapter-level configuration, two mutually exclusive ways:
@@ -458,7 +461,7 @@ intercepting the press that drags the body.
 ### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
 
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only), as does choosing the destination container (`<SceneCanvas layoutDropTarget>`, `LayoutStrategy.dropRegion`). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-- **(P3) Tile-grid overflow: a `'grow'` grid never shrinks, and nothing scrolls a `'scroll'` one.** `tileGrid({ overflow })` holds for every arrival through the scene's arrival handler (`scene.setArrivalHandler`, installed by `<SceneCanvas layouts>`). Removals never reach a layout (see "Container layout as a scene semantic"). So when a child leaves a grown grid, the source reflow spreads the remaining rows over the grown container and the cells stretch. No kit host reads `LayoutStrategy.contentExtent` yet either: a `'scroll'` grid's overflow just sits past its bounds.
+- **(P3) Tile-grid overflow: a `'grow'` grid never shrinks, and nothing scrolls a `'scroll'` one.** `tileGrid({ overflow })` holds for every arrival through the scene's layout pass. A departure re-runs `childPoses` over the container as it stands, so when a child leaves a grown grid the remaining rows spread over the grown container and the cells stretch. No kit host reads `LayoutStrategy.contentExtent` yet either: a `'scroll'` grid's overflow just sits past its bounds.
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
 - **(P3) Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle.

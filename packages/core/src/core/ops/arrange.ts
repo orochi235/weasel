@@ -38,7 +38,11 @@ export function createArrangeOp(
     name: 'arrange',
     args: self,
     label: 'Arrange',
-    coalesceKey: 'arrange',
+    // Names what it moved, so a coalesced entry never undoes to a pose only
+    // a later push wrote.
+    get coalesceKey() {
+      return self.placed === undefined ? undefined : `arrange:${self.placed.map((p) => p.id).sort().join(',')}`;
+    },
     apply(adapter) {
       if (self.placed === undefined) self.placed = compute?.() ?? [];
       const set = write ?? ((id: string, pose: unknown) => (adapter as ArrangeAdapter).setPose(id, pose));

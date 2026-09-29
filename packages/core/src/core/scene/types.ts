@@ -1,6 +1,8 @@
 import type { Path } from '@weasel-js/geom';
 import type { History, SerializedHistory } from '@weasel-js/history';
 import type { ParallaxOpts } from '../viewport/parallax';
+import type { ContainerBounds, LayoutStrategy } from '../../layout/types';
+import type { PoseComposition } from './composeFrame';
 
 /**
  * Axis-aligned rectangle pose with optional rotation. The canonical pose
@@ -189,6 +191,35 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
    *  renderer rasterizes the returned path into the stencil buffer and
    *  paints descendants only where it covers. */
   clipFromPose?: (pose: TPose) => Path | null;
+  /** How this container arranges its children. Whenever the container's
+   *  child set or order changes, or its bounds change size, the scene hands
+   *  the change to the strategy — `arrive` for children that joined it,
+   *  `childPoses` otherwise — and records the poses it writes in the same
+   *  undo entry as the change. A drag reads it too: it is the layout `move`
+   *  reflows and drops against. */
+  layout?: LayoutStrategy<TPose>;
+}
+
+/** A pose a container's layout wrote — reported by {@link Scene.onReflow} —
+ *  in the node's stored frame. */
+export interface LayoutMove<TPose> {
+  id: NodeId;
+  from: TPose;
+  to: TPose;
+}
+
+/** How a scene reads a laid-out container's bounds and folds poses to the
+ *  world frame a {@link LayoutStrategy} works in. */
+export interface LayoutFrame<TPose> {
+  /** The container's bounds, from its world pose. Default: the pose's own
+   *  `x`/`y`/`width`/`height`; a pose without them is not laid out. */
+  bounds?(pose: TPose): ContainerBounds | null;
+  /** `pose` resized from bounds `from` to `to`, for a layout that grows its
+   *  container. Default: `to`'s fields written over the pose. */
+  remap?(pose: TPose, from: ContainerBounds, to: ContainerBounds): TPose;
+  /** Omit for the absolute-pose model. A scene whose canvas composes poses
+   *  (`<SceneCanvas poseComposition>`) passes the same strategy here. */
+  composition?: PoseComposition<TPose>;
 }
 
 /** A node in the scene tree: either a leaf or a container. Re-exported
@@ -251,6 +282,8 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   derivePath?: DerivePathFn<TPose>;
   /** Mirrors `SceneNode.derivePose`, on the same terms as `derivePath`. */
   derivePose?: DerivePoseFn<TPose>;
+  /** Mirrors `ContainerNode.layout`; ignored for leaves. */
+  layout?: LayoutStrategy<TPose>;
 }
 
 /** A custom scene mutation registered with `Scene.registerOp`: how to apply
@@ -328,6 +361,8 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   derivePathKey?: string;
   /** Registry key for the node's `derivePose` function. Omitted when it has none. */
   derivePoseKey?: string;
+  /** Registry key for the container's layout strategy. Omitted when it has none. */
+  layoutKey?: string;
 }
 
 /** Per-scene registry mapping string keys to live function references.
@@ -340,17 +375,19 @@ export interface SceneRegistry<TPose> {
   derivePath?: Readonly<Record<string, DerivePathFn<TPose>>>;
   /** Maps registry keys to `derivePose` functions for nodes with `dependsOn`. */
   derivePose?: Readonly<Record<string, DerivePoseFn<TPose>>>;
+  /** Maps registry keys to container layout strategies. */
+  layout?: Readonly<Record<string, LayoutStrategy<TPose>>>;
   // A new function field is a row in `NODE_FN_FIELDS` (core/scene/nodeFnFields.ts)
   // plus its entry here; the field name is the registry key by construction.
 }
 
-/** Options for `useScene` — the layers the scene has, what it starts out
- *  holding, and how its history behaves. */
 /**
- * Decides what happens to the nodes that joined a container during one edit —
- * by an `add` under it or a `move` into it, whatever op or call made them.
- * `arrivals` maps each container to the ids that joined it, in the order they
- * arrived, read once the edit's other mutations have landed.
+ * Decides what one edit's changes to containers do to their children.
+ * `arrivals` maps each container to the ids that joined it — by an `add`
+ * under it or a `move` into it, whatever op or call made them — in the order
+ * they arrived. `changed` names every container whose child set or order
+ * changed, or whose pose changed size, arrivals included. Both are read once
+ * the edit's other mutations have landed.
  *
  * Return the poses to write, in each node's stored frame; they become part of
  * the same edit, and so of the same undo step. An empty map writes nothing.
@@ -358,12 +395,16 @@ export interface SceneRegistry<TPose> {
  * `SceneArrivalRefused`).
  *
  * Runs only for live edits. Undo, redo and a restored history replay the
- * arrangement that was decided the first time.
+ * arrangement that was decided the first time. With none installed, a scene
+ * holding declared layouts (`ContainerNode.layout`) runs its own.
  */
 export type SceneArrivalHandler<TPose> = (
   arrivals: ReadonlyMap<NodeId, readonly NodeId[]>,
+  changed: ReadonlySet<NodeId>,
 ) => ReadonlyMap<NodeId, TPose> | null;
 
+/** Options for `useScene` — the layers the scene has, what it starts out
+ *  holding, and how its history behaves. */
 export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose> {
   systemLayers: readonly SystemLayerSpec<TLayer>[];
   initial?: readonly AddNodeSpec<TData, TLayer, TPose>[];
@@ -381,6 +422,8 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
   /** Per-scene registry for non-serializable function fields (clipFromPose, etc.).
    *  Required only when serializing/deserializing scenes that use function fields. */
   registry?: SceneRegistry<TPose>;
+  /** How laid-out containers are measured. See {@link LayoutFrame}. */
+  layoutFrame?: LayoutFrame<TPose>;
   /** When supplied, `scene.applyOps(ops, label)` consults this on every call.
    *  If it returns a non-null `Journal`, ops are routed to the journal's
    *  `applyBatch` instead of recording a new parent-history entry. The journal
@@ -662,6 +705,13 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   canUndo(): boolean;
   canRedo(): boolean;
   batch<T>(label: string, fn: () => T): T;
+  /** The layout container `id` declares, or `null` for a leaf or a
+   *  container that declares none. */
+  layoutOf(id: NodeId): LayoutStrategy<TPose> | null;
+  /** Called with the poses each live edit's layout pass wrote, after the
+   *  edit lands — never for an undo or redo, which restore poses rather than
+   *  arrange them. What a reflow animation glides from. */
+  onReflow(listener: (moves: readonly LayoutMove<TPose>[]) => void): () => void;
   /** Run `fn` with every mutation applied but none recorded — for writes
    *  that are not edits, such as a simulation stepping poses each frame.
    *  Undo and redo move between recorded states and never restore an
