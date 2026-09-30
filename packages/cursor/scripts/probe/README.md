@@ -14,13 +14,15 @@ node build-probe-page.mjs <dir>                # writes the pages and assets/
 node probe.mjs <dir>                           # captures into <dir>/shots-chromium/
 node probe.mjs <dir> --browser firefox         # or webkit, or safari
 node probe.mjs <dir> --browser webkit --headless
+node probe.mjs <dir> --browser safari --page http   # url() cursors over HTTP, not data:
 ```
 
 Use a scratch `<dir>`: the probe writes assets, pages, captures and result
 JSON there, and nothing cleans it up.
 
-Headful mode first runs `warp check` and stops if the screen is locked or the
-app running the probe lacks **Screen Recording** or **Accessibility** (System
+Headful mode holds the display awake with `caffeinate -u -d` for the run: on
+an idle Mac a sleeping display captures black. It first runs `warp check` and
+stops if the screen is locked or the app running the probe lacks **Screen Recording** or **Accessibility** (System
 Settings > Privacy & Security; macOS 27 names Accessibility "Device Control
 and Data Access"). The grants belong to whatever launched it —
 Terminal, or the `onto` agent on a fleet node — and without them nothing

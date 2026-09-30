@@ -200,18 +200,16 @@ Priority tags:
 All four arcs of `docs/superpowers/specs/2026-09-03-cursor-system-design.md`
 have shipped. What remains:
 
-- **(P3) Cursor rasterization is measured only in Chrome.** Headless WebKit
-  and Firefox parse, fetch and pick `image-set()` candidates exactly as Chrome
-  does (spec, "WebKit and Firefox, headless"), but whether headed Firefox and
-  Safari rasterize an SVG cursor at 1× or cap below 128 px needs a real window.
-  `node probe.mjs <dir> --browser firefox` and `--browser safari` in
-  `packages/cursor/scripts/probe/` do it (README). studio has the grants as
-  of 2026-09-29 — Screen Recording, and Accessibility, which macOS 27 calls
-  "Device Control and Data Access" — and `warp check` passes there, but both
-  browsers then failed the control: each capture is the bare page with no
-  pointer drawn at all, so the arrow and the `crosshair` hash the same. What
-  is missing is the cursor in the capture, not the browser's focus; that is
-  the next thing to find. A finding lands in `bake.ts`.
+- **(P3) Cursor rasterization is unmeasured in Safari.** Chrome and headed
+  Firefox are measured (spec, "Measured browser behavior"); the baker's plain
+  SVG `url()` is right for both. `node probe.mjs <dir> --browser safari` in
+  `packages/cursor/scripts/probe/` is the instrument, and on studio on
+  2026-09-30 it could not be trusted: its first run drew the arrow control
+  and then the crosshair for every case after it, and every later run drew
+  the crosshair even for the arrow — with the page frontmost, over HTTP
+  (`--page http`) as well as `data:`, stepping by reload as well as by hash.
+  Safari's cursor is not following the page under this driver, and why is
+  the open question. A finding lands in `bake.ts`.
 
 ---
 

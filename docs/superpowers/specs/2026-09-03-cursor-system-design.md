@@ -238,7 +238,24 @@ does before the image reaches the OS:
 All three fetch a 256 px image, so none of them applies a size cap at parse or
 fetch time; wherever a cap lives, it is downstream of what headless can see.
 
-**Not measured in WebKit or Firefox:** the scale an SVG cursor is rasterized at,
+### Firefox, headful
+
+Measured on 2026-09-30 in Playwright's Firefox 155.0 on studio, macOS 27.0,
+DPR 2, with the headful probe. For the plain SVG `url()` the baker emits, it
+behaves as Chrome does:
+
+- **An SVG cursor is rasterized at device scale.** Its edges are as fine as the
+  2x PNG `image-set()` candidate's; the 1x PNG is visibly softer.
+- **1 image px = 1 CSS px.** A 48 px asset draws twice the size of a 24 px one.
+- **The cap is between 128 and 160 px.** A 128 px PNG draws; a 160 px PNG or
+  SVG and a 256 px PNG are dropped for the keyword fallback, silently.
+- **An SVG candidate inside `image-set()` ignores its resolution.**
+  `image-set(svg24 1x, svg48 2x)` draws the 48 px SVG at 48 CSS px — twice
+  the intended size — with its hotspot moved. The baker never emits this.
+
+Hotspot placement was not checked.
+
+**Not measured in WebKit or Safari:** the scale an SVG cursor is rasterized at,
 the size cap, and hotspot placement. Those need the headful probe. Playwright's
 Firefox is a Firefox Nightly build, so its headful results should carry over to
 release Firefox; Playwright's WebKit is not Safari, and Playwright cannot drive

@@ -16,7 +16,7 @@
 // which image it fetches, at DPR 1 and DPR 2. It cannot see size caps, the
 // rasterization scale, or the hotspot.
 import { chromium, webkit, firefox } from 'playwright';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -40,7 +40,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 if (arg('--headless')) await headless();
 else await headful();
 
-async function headless() {
+/** `<dir>` over HTTP on a free port, for a page whose cursors are `url()`s. */
+async function serve() {
   const MIME = { '.html': 'text/html', '.svg': 'image/svg+xml', '.png': 'image/png' };
   const server = createServer((req, res) => {
     const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -53,7 +54,12 @@ async function headless() {
     }
   });
   await new Promise((r) => server.listen(0, '::', r));
-  const base = `http://localhost:${server.address().port}`;
+  return { base: `http://localhost:${server.address().port}`, close: () => server.close() };
+}
+
+async function headless() {
+  const server = await serve();
+  const { base } = server;
   const browser = await TYPES[ENGINE].launch({ headless: true });
   const version = browser.version();
   const results = [];
@@ -94,6 +100,13 @@ async function headless() {
 }
 
 async function headful() {
+  // An idle Mac's display sleeps, and a sleeping display captures black — or,
+  // dimmed, captures the page with no pointer drawn. Declaring user activity
+  // wakes it and holds it for the run.
+  const awake = spawn('caffeinate', ['-u', '-d'], { stdio: 'ignore' });
+  awake.unref();
+  process.on('exit', () => awake.kill());
+  await sleep(1000);
   // Nothing fails loudly without these: captures come back blank and posted
   // moves vanish. Check before taking the screen.
   try {
@@ -102,14 +115,19 @@ async function headful() {
     console.error('headful probe needs an unlocked screen, and Screen Recording and Accessibility for the app running it');
     process.exit(2);
   }
-  const SHOTS = `${DIR}/shots-${ENGINE}`;
+  // `--page http` serves the `url()` form of the page instead of opening the
+  // `data:` one from disk, to tell a refused data URI from a refused image.
+  const server = opt('--page', 'data') === 'http' ? await serve() : null;
+  const tag = server ? `${ENGINE}-http` : ENGINE;
+  const SHOTS = `${DIR}/shots-${tag}`;
   mkdirSync(SHOTS, { recursive: true });
   const warp = (x, y) => execFileSync(WARP, [String(x), String(y)]);
   const grab = (x, y, w, h, out) =>
     execFileSync('screencapture', ['-x', '-C', '-R', `${x},${y},${w},${h}`, out]);
   const md5 = (f) => createHash('md5').update(readFileSync(f)).digest('hex');
 
-  const driver = ENGINE === 'safari' ? await safariDriver() : await playwrightDriver();
+  const pageUrl = server ? `${server.base}/cursor-probe-http.html` : `file://${DIR}/cursor-probe.html`;
+  const driver = ENGINE === 'safari' ? await safariDriver(pageUrl) : await playwrightDriver(pageUrl);
   const { ids, geom, originX, originY, PX, PY } = driver;
   console.log('geom', JSON.stringify(geom));
   if (geom.dpr != null && geom.dpr < 2) console.warn(`devicePixelRatio is ${geom.dpr}: this is not a 2x measurement`);
@@ -148,13 +166,14 @@ async function headful() {
     const again = await capture(1, `zz-${ids[1]}-again`);
     if (again.md5 !== results[1].md5) throw new Error('control failed: the crosshair changed between the start and the end of the run');
   } finally {
-    writeFileSync(`${DIR}/probe-results-${ENGINE}.json`, JSON.stringify({ geom, results }, null, 2));
+    writeFileSync(`${DIR}/probe-results-${tag}.json`, JSON.stringify({ geom, results }, null, 2));
     await driver.close();
+    server?.close();
   }
-  console.log('done ->', `${DIR}/probe-results-${ENGINE}.json`);
+  console.log('done ->', `${DIR}/probe-results-${tag}.json`);
 }
 
-async function playwrightDriver() {
+async function playwrightDriver(pageUrl) {
   // Activated by pid: activating Playwright's Firefox by its app name (`Nightly`)
   // leaves it in the background, and macOS then draws its own arrow over the page.
   const PROCESS = {
@@ -170,7 +189,7 @@ async function playwrightDriver() {
   });
   // A fixed viewport pins devicePixelRatio to 1 whatever the screen is.
   const page = await browser.newPage({ viewport: null });
-  await page.goto(`file://${DIR}/cursor-probe.html`);
+  await page.goto(pageUrl);
   await sleep(700);
   await page.bringToFront();
   const pid = execFileSync('pgrep', ['-n', '-f', PROCESS[ENGINE]], { encoding: 'utf8' }).trim();
@@ -190,12 +209,16 @@ async function playwrightDriver() {
   };
 }
 
-async function safariDriver() {
+async function safariDriver(pageUrl) {
   const osa = (script) => execFileSync('osascript', ['-e', script], { encoding: 'utf8' }).trim();
   const cases = JSON.parse(readFileSync(`${DIR}/cases.json`, 'utf8'));
-  const url = (i) => `file://${DIR}/cursor-probe.html#case=${i}`;
+  const url = (i) => `${pageUrl}#case=${i}`;
   let wasRunning = true;
   try { execFileSync('pgrep', ['-x', 'Safari']); } catch { wasRunning = false; }
+  // A window left by an interrupted run would be the one stepped and measured.
+  if (wasRunning) {
+    try { osa('tell application "Safari" to close (every window whose name is "cursor probe")'); } catch { /* none open */ }
+  }
   execFileSync('open', ['-a', 'Safari', url(0)]);
   await sleep(1500);
   osa('tell application "Safari" to set bounds of front window to {60, 60, 960, 760}');
