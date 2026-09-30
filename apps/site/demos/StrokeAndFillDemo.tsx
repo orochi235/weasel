@@ -32,6 +32,7 @@ import {
   ToolPalette,
   type PaintSlot,
 } from '@weasel-js/ui';
+import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 600, H = 420;
 
@@ -305,7 +306,7 @@ function PaintPanel({
                 stroke: { ...data.stroke!, width: Number(e.target.value) },
               })}
             />
-            <output>{width.toFixed(0)}</output>
+            <output className={num.numeric}>{width.toFixed(0)}</output>
           </div>
         )}
 
@@ -324,7 +325,7 @@ function PaintPanel({
                 stroke: { ...data.stroke!, vertexWidths: taperWidths(Number(e.target.value)) },
               })}
             />
-            <output>{taper.toFixed(0)}</output>
+            <output className={num.numeric}>{taper.toFixed(0)}</output>
           </div>
         )}
       </div>

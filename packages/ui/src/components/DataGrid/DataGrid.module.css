@@ -15,6 +15,12 @@
   padding: 3px var(--wzl-space-3);
   vertical-align: middle;
 }
+.numeric {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+}
+.table .numeric {
+  text-align: end;
+}
 .table tbody tr {
   border-bottom: 1px solid var(--wzl-line-subtle);
 }

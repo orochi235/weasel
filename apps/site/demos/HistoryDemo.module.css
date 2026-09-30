@@ -43,9 +43,9 @@
 }
 
 .readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   min-width: 3ch;
   text-align: end;
-  font-variant-numeric: tabular-nums;
 }
 
 .hint {
@@ -102,12 +102,12 @@
 }
 
 .id {
-  font-variant-numeric: tabular-nums;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   color: var(--ckd-faint);
 }
 
 .pushes {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   margin-inline-start: auto;
-  font-variant-numeric: tabular-nums;
   color: var(--ckd-accent);
 }

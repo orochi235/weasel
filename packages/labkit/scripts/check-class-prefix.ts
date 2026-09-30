@@ -162,7 +162,9 @@ function checkLessFile(file: string): void {
       .replace(/"[^"]*"/g, '""')
       // An :extend() target names a class some imported stylesheet defines;
       // labkit emits only its own selector with that class's rules.
-      .replace(/:extend\([^)]*\)/g, '');
+      .replace(/:extend\([^)]*\)/g, '')
+      // A mixin call (`.numeric();`) emits the mixin's declarations, never its class.
+      .replace(/^\s*\.[\w-]+\([^)]*\);/, '');
     if (/^\s*@import\b/.test(code)) continue;
     for (const match of code.matchAll(LESS_CLASS_RE)) {
       const cls = match[1] ?? '';

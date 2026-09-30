@@ -562,6 +562,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P2) Oswald Tabular has no tabular minus or plus.** The face covers the
+  digits and U+2007 only, so a sign comes from Oswald at its own width. A column
+  mixing negative and positive figures, padded with figure spaces, is off by the
+  difference between a digit and a minus. The site's geom, loupe-model and
+  kernel3d readouts do this; they were in mono before the numeric-helper branch
+  and lined up. Fix is in `packages/theme/scripts/oswald-tabular.py`: give
+  U+2212, U+002D and U+002B the digit advance, centered, as it does the digits.
+- **(P2) apps/draw and apps/site never load the kit's faces.** Neither imports
+  `@weasel-js/theme/faces.css` (or `fonts.css`), so `--wzl-font-ui`'s Oswald and
+  `--wzl-font-numeric`'s Oswald Tabular both fall back to system faces there,
+  and numeric text in draw is whatever the fallback's figures are. Loading
+  them changes each app's whole UI face, so it needs a call on whether those
+  apps are meant to wear the kit's type.
+
 - **(P3) Are `ToggleBar`, `ButtonBar` and `OptionsBar` one component?** They
   differ only in what a segment does, yet `ToggleBar` keeps its own copy of the
   segmented-control styles (`ToggleBar.module.css`) while the other two share

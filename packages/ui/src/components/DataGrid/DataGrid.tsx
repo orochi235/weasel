@@ -31,6 +31,9 @@ export interface DataGridColumn<Row> {
   sortable?: boolean;
   /** Optional CSS class on every <td> in this column. */
   className?: string;
+  /** A column of figures: equal-width digits, aligned to the end so the column
+   *  reads down. Header included, so its label sits over the numbers. */
+  numeric?: boolean;
 }
 
 /** Props for {@link DataGrid}. */
@@ -162,7 +165,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
               return (
                 <th
                   key={col.id}
-                  className={[col.className, active ? s.sortActive : ''].filter(Boolean).join(' ')}
+                  className={[col.className, col.numeric && s.numeric, active && s.sortActive].filter(Boolean).join(' ') || undefined}
                   aria-sort={sortable ? (active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
                 >
                   {sortable ? (
@@ -236,7 +239,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
                     const get = col.accessor ?? ((r: Row) => (r as unknown as Record<string, unknown>)[col.id] as string | number | null | undefined);
                     const content = col.render ? col.render(row) : String(get(row) ?? '');
                     return (
-                      <td key={col.id} className={col.className}>
+                      <td key={col.id} className={[col.className, col.numeric && s.numeric].filter(Boolean).join(' ') || undefined}>
                         {content}
                       </td>
                     );

@@ -1,0 +1,7 @@
+/* Numeric text: equal-width digits in the UI face. This is the one definition —
+ * compose it, mix it into Less, or put its class on the element; never restate
+ * the pair. `npm run check:numeric` holds every stylesheet to that. */
+.numeric {
+  font-family: var(--wzl-font-numeric);
+  font-variant-numeric: tabular-nums;
+}

@@ -11,7 +11,7 @@
 }
 
 .viewLabel {
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
 }
 
 .hint {

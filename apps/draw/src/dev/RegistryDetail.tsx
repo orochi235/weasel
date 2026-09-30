@@ -367,7 +367,7 @@ function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavi
         <DetailRow label="factory"><code>{factoryId}</code></DetailRow>
         <DetailRow label="runtime"><Code>{typeof fn}</Code></DetailRow>
         {arity !== undefined && (
-          <DetailRow label="parameters">{arity}</DetailRow>
+          <DetailRow label="parameters" values="figures">{arity}</DetailRow>
         )}
         {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
       </DetailList>
@@ -1290,7 +1290,7 @@ function BundleDetail({
       <h2 className={s.detailHeading}><BundleBadge id={entry.id} label={entry.label} /></h2>
       <DetailList>
         <DetailRow label="id"><Code>{entry.id}</Code></DetailRow>
-        <DetailRow label="tool count">{entry.tools.length}</DetailRow>
+        <DetailRow label="tool count" values="figures">{entry.tools.length}</DetailRow>
         <DetailRow label="by group">
           {[...groupCounts.entries()].map(([g, n]) => (
             <Code key={g}>{g} <Badge shape="pill" size="sm" status="neutral" variant="subtle">{n}</Badge></Code>
@@ -1470,7 +1470,7 @@ function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {
         <DetailRow label="kind"><KindBadge label="op factory" /></DetailRow>
         <DetailRow label="runtime"><Code>{typeof fn}</Code></DetailRow>
         {arity !== undefined && (
-          <DetailRow label="parameters">{arity}</DetailRow>
+          <DetailRow label="parameters" values="figures">{arity}</DetailRow>
         )}
         {match?.path && <DetailRow label="source"><SourceLink match={match} /></DetailRow>}
       </DetailList>

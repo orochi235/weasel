@@ -59,6 +59,7 @@ import type {
   Bounds,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import num from '@weasel-js/theme/numeric.module.css';
 
 type PanelId = 'green' | 'orange' | 'purple' | 'teal';
 
@@ -212,7 +213,7 @@ function LedgerCaption({
 }) {
   const w = fixedCornerWorld(pose, anchor);
   return (
-    <div className="rrmd-caption">
+    <div className={`rrmd-caption ${num.numeric}`}>
       <div className="rrmd-caption-title">{title}</div>
       <div className="rrmd-caption-body">fixed corner: ({w.x.toFixed(1)}, {w.y.toFixed(1)})</div>
     </div>
@@ -221,7 +222,7 @@ function LedgerCaption({
 
 function OverlayLabel({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="rrmd-caption">
+    <div className={`rrmd-caption ${num.numeric}`}>
       <div className="rrmd-caption-title">{title}</div>
       {subtitle && <div className="rrmd-caption-body">{subtitle}</div>}
     </div>
@@ -619,7 +620,7 @@ export function RotatedResizeMathDemo() {
         .rrmd-overlay-svg { display: block; pointer-events: none; overflow: visible; }
         .rrmd-caption {
           position: absolute; left: 6px; bottom: 6px;
-          padding: 4px 6px; font-size: 11px; font-family: monospace;
+          padding: 4px 6px; font-size: 11px;
           color: #e8e8e8; background: rgba(0,0,0,0.55);
           border-radius: 3px; pointer-events: none; line-height: 1.3;
         }

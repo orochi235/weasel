@@ -188,7 +188,6 @@
 
 .wd-loupe-readout code {
   font-family: var(--wzl-font-mono);
-  font-variant-numeric: tabular-nums;
   min-inline-size: 8ch;
 }
 

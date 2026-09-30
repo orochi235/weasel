@@ -261,10 +261,9 @@
 /* Last in the row: a count that changes as the reader types would otherwise
    shove the name on every keystroke. */
 .railCount {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   margin-left: auto;
   font-size: var(--wzl-font-size-xs);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
   opacity: 0.6;
 }
 

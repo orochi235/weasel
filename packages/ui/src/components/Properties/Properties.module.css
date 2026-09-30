@@ -657,7 +657,7 @@
 }
 
 .readout {
-  font-family: var(--wzl-font-display);
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: var(--wzl-font-size-sm);
   line-height: var(--wzl-leading-snug);
   font-style: normal;
@@ -683,6 +683,7 @@
    did that for 3.5px on every pin toggle. Both states have to be the same box
    *and* the same nesting, because the group's own strut is 5px of the height. */
 .readoutText {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: inline-block;
   /* The input's content box, not its line-height: a text input's inner editor
      will not shrink to a line-height below the font's own content area, so it
@@ -754,7 +755,9 @@
 
 /* Single always-rendered <input> styled to read as a text label until focused. */
 .readoutInput {
-  font: inherit;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  font-size: inherit;
+  font-style: inherit;
   font-weight: var(--wzl-font-weight-medium);
   /* Force leading-tight — the label parent inherits 1.2, which would make the
      input box ~3px taller than the speech-balloons reference. */

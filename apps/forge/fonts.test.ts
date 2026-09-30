@@ -15,6 +15,11 @@ describe('fontRule', () => {
     for (const face of ['display', 'body', 'mono']) expect(rule).not.toContain(`--wzl-font-${face}:`);
   });
 
+  it('sets numeric text in the chosen UI face, whose own figures replace Oswald Tabular', () => {
+    expect(fontRule({ fontFamily: 'helvetica' })).toContain('--wzl-font-numeric: var(--wzl-font-ui);');
+    expect(fontRule({})).not.toContain('--wzl-font-numeric');
+  });
+
   it('points each other slot at the family its own global picks', () => {
     const rule = fontRule({ fontDisplay: 'lato', fontBody: 'inter', fontMono: 'jetbrains' });
     expect(rule).toContain('--wzl-font-display: Lato, system-ui, sans-serif;');
@@ -96,6 +101,12 @@ describe('fontTheme', () => {
     expect(tokens['--wzl-font-ui']).toMatch(/^Inter\b/);
     expect(tokens['--wzl-font-mono']).toMatch(/^['"]?JetBrains Mono/);
     for (const name of ['--wzl-font-display', '--wzl-font-body'] as const) expect(tokens[name]).toBe(base[name]);
+  });
+
+  it('sets numeric text in the chosen UI face, and keeps Oswald Tabular under Oswald', () => {
+    const light = (globals: Record<string, string>) => resolveTheme(fontTheme(weaselTheme, globals), { mode: 'light' });
+    expect(light({ fontFamily: 'inter' })['--wzl-font-numeric']).toMatch(/^Inter\b/);
+    expect(light({ fontFamily: 'oswald' })['--wzl-font-numeric']).toMatch(/Oswald Tabular/);
   });
 
   it('keeps one theme per combination, so the lab is not handed a new theme for the same choice', () => {

@@ -1,3 +1,4 @@
+import num from '@weasel-js/theme/numeric.module.css';
 import type { Dossier, DossierArg } from './dossier';
 
 /** A value as the dossier prints it: quoted strings, `—` for nothing. */
@@ -37,8 +38,8 @@ function ArgRows({ args }: { args: readonly DossierArg[] }) {
               {arg.description ? <span className="fg-info__arg-doc">{arg.description}</span> : null}
             </th>
             <td className="fg-info__arg-kind">{arg.kind ?? '—'}</td>
-            <td className="fg-info__value-cell">{printed(arg.value)}</td>
-            <td className="fg-info__value-cell">{printed(arg.default)}</td>
+            <td className={`fg-info__value-cell ${num.numeric}`}>{printed(arg.value)}</td>
+            <td className={`fg-info__value-cell ${num.numeric}`}>{printed(arg.default)}</td>
           </tr>
         ))}
       </tbody>

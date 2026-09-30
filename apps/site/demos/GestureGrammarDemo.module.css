@@ -51,7 +51,6 @@
 
 .table {
   border-collapse: collapse;
-  font-variant-numeric: tabular-nums;
 }
 
 .table th {
@@ -148,10 +147,10 @@
 }
 
 .log {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   margin: 0;
   padding: 0;
   list-style: none;
-  font-variant-numeric: tabular-nums;
 }
 
 .log li {
@@ -160,7 +159,6 @@
 }
 
 .num {
-  font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 12px;
   white-space: pre;
   color: var(--ckd-faint);

@@ -92,9 +92,9 @@
 }
 
 .table {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   border-collapse: collapse;
   font-size: 12px;
-  font-variant-numeric: tabular-nums;
 }
 
 .table th {

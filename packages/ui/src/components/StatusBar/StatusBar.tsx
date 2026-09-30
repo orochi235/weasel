@@ -40,7 +40,7 @@ export interface StatusBarItemProps {
    */
   title?: string;
   /**
-   * Dim the item and use tabular figures. For reference material that
+   * Dim the item. For reference material that
    * shouldn't compete with live readouts — build stamps, hints, units.
    */
   muted?: boolean;

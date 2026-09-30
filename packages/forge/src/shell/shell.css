@@ -406,8 +406,6 @@
   margin: 0;
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-sm);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
 }
 
 .fg-a11y__group {
@@ -419,8 +417,6 @@
 .fg-a11y__group-title {
   margin: 0;
   font-size: var(--wzl-font-size-sm);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
 }
 
 .fg-a11y__findings,
@@ -533,8 +529,6 @@
   inline-size: 100%;
   border-collapse: collapse;
   font-size: var(--wzl-font-size-sm);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
   text-align: start;
 }
 

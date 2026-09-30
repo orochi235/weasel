@@ -1,3 +1,5 @@
+@import (reference, less) '@weasel-js/theme/numeric.module.css';
+
 .td-root {
   display: flex;
   flex-direction: column;
@@ -32,8 +34,7 @@
   margin-inline: auto;
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-sm);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
+  .numeric();
 }
 
 // The viewport paints into the under-buffer, so the pane must stay transparent

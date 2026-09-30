@@ -135,6 +135,10 @@ function chosenSlots(globals: StoryContext['globals']): ChosenSlot[] {
   });
 }
 
+/** Oswald Tabular carries Oswald's digits alone, so under any other UI face numeric text takes that face's own figures. */
+const numericLeavesOswald = (chosen: ChosenSlot[]): boolean =>
+  chosen.some(({ token, key }) => token === 'font-ui' && key !== 'oswald');
+
 const themes = new Map<string, Theme>();
 
 /** `base` with each slot's chosen family; one theme per combination, named for it. */
@@ -143,12 +147,13 @@ export function fontTheme(base: Theme, globals: StoryContext['globals']): Theme 
   const name = [base.name, ...chosen.map(({ token, key }) => `${token.slice('font-'.length)}-${key}`)].join('-');
   let theme = themes.get(name);
   if (!theme) {
-    const pins = Object.fromEntries(
-      chosen.map(({ token, font }) => [
+    const pins = Object.fromEntries([
+      ...chosen.map(({ token, font }) => [
         token,
         { value: font.family.split(',').map((face) => face.trim().replace(/^"|"$/g, '')), type: 'fontFamily' },
       ]),
-    );
+      ...(numericLeavesOswald(chosen) ? [['font-numeric', '{font-ui}']] : []),
+    ]);
     theme = defineTheme({ name, extends: base, pins });
     themes.set(name, theme);
   }
@@ -207,12 +212,14 @@ export function fontRule(globals: StoryContext['globals'], scope = ':root'): str
   const weight = nearest(Number(globals.fontWeight ?? 500), font.weights);
   const stretch = nearestStretch(String(globals.fontStretch ?? 'normal'), font.stretches);
   const italic = globals.fontStyle === 'italic' && font.italics.includes(true);
-  const tokens = chosenSlots(globals)
-    .flatMap((slot) => [
+  const chosen = chosenSlots(globals);
+  const tokens = [
+    ...chosen.flatMap((slot) => [
       `--wzl-${slot.token}: ${slot.font.family};`,
       ...(ALIASES.get(slot.token) ?? []).map((alias) => `--wzl-${alias}: var(--wzl-${slot.token});`),
-    ])
-    .join(' ');
+    ]),
+    ...(numericLeavesOswald(chosen) ? ['--wzl-font-numeric: var(--wzl-font-ui);'] : []),
+  ].join(' ');
   return [
     `${scope} { font-family: var(--wzl-font-ui); font-weight: ${weight}; font-stretch: ${stretch}; font-style: ${italic ? 'italic' : 'normal'}; }`,
     // applyTheme declares the tokens at [data-wzl-theme][data-wzl-mode] (0,3,0), on the root and on any nested

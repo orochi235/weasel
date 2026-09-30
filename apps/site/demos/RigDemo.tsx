@@ -25,6 +25,7 @@ import type {
   Skeleton,
   TextStyle,
 } from '@weasel-js/core';
+import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 600, H = 340;
 const BONES: { name: string; parent: string | null; x: number; y: number; rotation: number; length: number }[] = [
@@ -229,7 +230,7 @@ export function RigDemo() {
             className="ckd-range" type="range" min={0} max={1} step={0.01}
             value={blend} onChange={(e) => setBlend(Number(e.target.value))}
           />
-          <span className="ckd-readout">{blend.toFixed(2)}</span>
+          <span className={`ckd-readout ${num.numeric}`}>{blend.toFixed(2)}</span>
         </label>
         <button className="ckd-btn" onClick={() => setPlaying((p) => !p)}>
           {playing ? 'stop track' : 'play track'}
@@ -238,7 +239,7 @@ export function RigDemo() {
           <input type="checkbox" checked={labels} onChange={(e) => setLabels(e.target.checked)} />
           joint labels
         </label>
-        <span className="ckd-readout">track u {shownTrackBlend.toFixed(2)}</span>
+        <span className={`ckd-readout ${num.numeric}`}>track u {shownTrackBlend.toFixed(2)}</span>
       </div>
       <SceneCanvas
         width={W}

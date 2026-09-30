@@ -29,9 +29,8 @@
 }
 
 .readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   border-collapse: collapse;
-  font-family: ui-monospace, SFMono-Regular, monospace;
-  font-variant-numeric: tabular-nums;
   white-space: pre;
 }
 

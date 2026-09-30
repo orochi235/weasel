@@ -15,8 +15,7 @@
 }
 
 .readout {
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
   white-space: pre;

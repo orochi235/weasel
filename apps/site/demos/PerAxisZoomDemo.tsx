@@ -6,6 +6,7 @@ import {
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View } from '@weasel-js/core';
+import s from './PerAxisZoomDemo.module.css';
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -33,7 +34,7 @@ export function PerAxisZoomDemo() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <label style={{ fontFamily: 'monospace' }}>
+        <label className={s.axis}>
           scale.x:{' '}
           <input
             type="range" min={0.25} max={4} step={0.05}
@@ -42,7 +43,7 @@ export function PerAxisZoomDemo() {
           />{' '}
           {view.scale.x.toFixed(2)}
         </label>
-        <label style={{ fontFamily: 'monospace' }}>
+        <label className={s.axis}>
           scale.y:{' '}
           <input
             type="range" min={0.25} max={4} step={0.05}

@@ -252,7 +252,7 @@ export function GestureGrammarDemo() {
         <ol className={s.log}>
           {log.map((l) => (
             <li key={l.n}>
-              <span className={s.num}>{String(l.n).padStart(3)}</span>
+              <span className={s.num}>{String(l.n).padStart(3, '\u2007')}</span>
               <span className={s.code}>{summarize(l.event)}</span>
               <span className={s.muted}>
                 {l.engaged ? ' · engaged' : ''} · {l.matched} matched

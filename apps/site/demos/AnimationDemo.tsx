@@ -20,6 +20,7 @@ import { createGridLayer } from '@weasel-js/guides';
 import type { AnimationInfo, Animator, LiveAnimation, MoveBehavior, PhysicsHandle } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import styles from './AnimationDemo.module.css';
+import num from '@weasel-js/theme/numeric.module.css';
 
 interface Card { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -231,7 +232,7 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <button onClick={onTogglePause}>{paused ? 'Resume' : 'Pause'} animations</button>
         <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          time-scale: {timeScale.toFixed(2)}×
+          time-scale: <span className={num.numeric}>{timeScale.toFixed(2)}×</span>
           <input
             type="range"
             min={0}

@@ -10,6 +10,7 @@ import {
 import type { RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Slider } from '@weasel-js/ui';
+import styles from './EasingsDemo.module.css';
 
 interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; color: string }
 
@@ -162,7 +163,7 @@ export function EasingsDemo() {
               readoutPlacement="none"
             />
           </div>
-          <span style={{ fontVariantNumeric: 'tabular-nums', minWidth: 48 }}>{duration} ms</span>
+          <span className={styles.duration}>{duration} ms</span>
         </label>
       </div>
       <SceneCanvas

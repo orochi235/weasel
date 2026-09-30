@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { CurveRepresentation, SharedAnchor } from '@weasel-js/geom/curves';
+import num from '@weasel-js/theme/numeric.module.css';
 
 interface ReadoutHudProps {
   rep: CurveRepresentation;
@@ -51,7 +52,7 @@ function computeStats(rep: CurveRepresentation, anchors: SharedAnchor[]): CurveS
 export function ReadoutHud({ rep, anchors }: ReadoutHudProps) {
   const stats = useMemo(() => computeStats(rep, anchors), [rep, anchors]);
   return (
-    <div className="curve-lab-readout">
+    <div className={`curve-lab-readout ${num.numeric}`}>
       <span>anchors</span><span>{stats.anchorCount}</span>
       <span>segments</span><span>{stats.segmentCount}</span>
       <span>max |κ|</span><span>{stats.maxAbsCurvature.toFixed(4)}</span>

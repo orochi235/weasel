@@ -4,7 +4,6 @@
   gap: 12px;
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 12px;
-  font-variant-numeric: tabular-nums;
   color: var(--ckd-muted);
 }
 
@@ -23,6 +22,7 @@
 }
 
 .num {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   text-align: end;
 }
 

@@ -41,10 +41,9 @@
 }
 
 .count {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   color: var(--wzl-fg-muted);
   margin-left: auto;
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
 }
 
 .handledIcon { color: var(--wzl-success); }

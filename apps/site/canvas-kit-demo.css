@@ -310,7 +310,6 @@ a:hover { text-decoration: underline; }
 }
 
 .ckd-control output {
-  font-variant-numeric: tabular-nums;
   min-width: 2ch;
   text-align: right;
   color: var(--ckd-text);
@@ -527,8 +526,10 @@ a:hover { text-decoration: underline; }
 
 .ckd-readout {
   font-size: calc(var(--wzl-font-size-sm) + 1px);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   color: var(--ckd-text);
+}
+.ckd-readout.is-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 .ckd-toolbar-note {
@@ -629,7 +630,6 @@ a:hover { text-decoration: underline; }
 
 .ckd-gestures-readout {
   font-size: calc(var(--wzl-font-size-sm) + 1px);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   color: var(--ckd-text);
   min-height: 1.4em;
 }
@@ -688,7 +688,6 @@ a:hover { text-decoration: underline; }
 
 .curve-lab-readout {
   font-size: var(--wzl-font-size-sm);
-  font-family: ui-monospace, monospace;
   color: #d4c4a8;
   padding: 4px 8px;
   border-top: 1px solid #4a3c2e;
@@ -782,13 +781,11 @@ a:hover { text-decoration: underline; }
 .ckd-release-version {
   margin: 0;
   font-size: calc(var(--wzl-font-size-lg) + 1px);
-  font-variant-numeric: tabular-nums;
   color: var(--ckd-accent);
 }
 .ckd-release-date {
   color: var(--ckd-muted);
   font-size: calc(var(--wzl-font-size-sm) + 1px);
-  font-variant-numeric: tabular-nums;
 }
 .ckd-release-count {
   margin-left: auto;
@@ -844,9 +841,7 @@ a:hover { text-decoration: underline; }
   background: var(--ckd-accent);
   color: var(--ckd-surface);
 }
-/* Digits sit in a proportional face here, so the counts jitter without this. */
 .ckd-release-pkg-n {
-  font-variant-numeric: tabular-nums;
   opacity: 0.66;
 }
 
@@ -860,7 +855,6 @@ a:hover { text-decoration: underline; }
   margin: 8px 0 0;
   color: var(--ckd-muted);
   font-size: calc(var(--wzl-font-size-md) - 0.5px);
-  font-variant-numeric: tabular-nums;
 }
 
 .ckd-release-title {
@@ -1022,7 +1016,6 @@ a:hover { text-decoration: underline; }
 }
 .ckd-meters dd {
   margin: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   color: var(--ckd-text);
 }
 
@@ -1110,7 +1103,6 @@ a:hover { text-decoration: underline; }
   padding: 8px;
 }
 .ckd-paint-rows output {
-  font-variant-numeric: tabular-nums;
   min-width: 2ch;
   text-align: right;
   color: var(--ckd-text);

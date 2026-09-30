@@ -54,12 +54,12 @@
   grid-template-columns: var(--wzl-params-label-width, auto) minmax(min-content, 1fr);
 }
 
-.list[data-values='figures'] .row:not([data-values='text']) .value,
-.row[data-values='figures'] .value {
+/* Set by the row from its own `values` or its list's. Declared after `.value`,
+   which it overrides at equal specificity. */
+.figures {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   justify-content: flex-end;
   text-align: end;
-  font-family: var(--wzl-font-numeric);
-  font-variant-numeric: tabular-nums;
   /* On the cell, not the track, so ch measures the figures' own face. */
   min-width: var(--wzl-detail-figure-min-width, 8ch);
   white-space: pre;

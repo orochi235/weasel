@@ -9,6 +9,7 @@ import {
   startThresholdDrag,
 } from '@weasel-js/core';
 import type { ModifierState, DragGesturePoint } from '@weasel-js/core';
+import num from '@weasel-js/theme/numeric.module.css';
 
 /**
  * Gestures showcase — every gesture *form* in `src/interactions/gestures` on one
@@ -394,7 +395,7 @@ export function GesturesDemo() {
         )}
       </div>
 
-      <div className="ckd-gestures-readout">{readout}</div>
+      <div className={`ckd-gestures-readout ${num.numeric}`}>{readout}</div>
 
       <div className="ckd-gestures-mods" aria-label="Live modifier state">
         {(['shift', 'alt', 'meta', 'ctrl'] as const).map((k) => (

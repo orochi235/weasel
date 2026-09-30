@@ -1,10 +1,9 @@
 /* Age is live, variable-length text in the leading column: fix its width so
    ticking values never shift the columns after it. */
 .age {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   width: 7ch;
   min-width: 7ch;
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
   text-align: end;
   white-space: nowrap;
 }
@@ -18,8 +17,7 @@ tr.mode { color: var(--wzl-fg-muted); cursor: default; }
 .modeDetail { font-style: italic; }
 
 .count {
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   text-align: end;
 }
 

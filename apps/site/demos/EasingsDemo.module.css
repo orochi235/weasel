@@ -1,0 +1,4 @@
+.duration {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  min-width: 48px;
+}
