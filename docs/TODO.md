@@ -569,12 +569,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   kernel3d readouts do this; they were in mono before the numeric-helper branch
   and lined up. Fix is in `packages/theme/scripts/oswald-tabular.py`: give
   U+2212, U+002D and U+002B the digit advance, centered, as it does the digits.
-- **(P2) apps/draw and apps/site never load the kit's faces.** Neither imports
-  `@weasel-js/theme/faces.css` (or `fonts.css`), so `--wzl-font-ui`'s Oswald and
-  `--wzl-font-numeric`'s Oswald Tabular both fall back to system faces there,
-  and numeric text in draw is whatever the fallback's figures are. Loading
-  them changes each app's whole UI face, so it needs a call on whether those
-  apps are meant to wear the kit's type.
+- **(P3) apps/site never loads the kit's faces.** It imports no
+  `@weasel-js/theme/faces.css` or `fonts.css`, so `--wzl-font-ui`'s Oswald and
+  `--wzl-font-numeric`'s Oswald Tabular fall back to system faces in every demo.
+  Left as is for now by decision; draw loads `fonts.css` since the
+  numeric-helper branch.
 
 - **(P3) Are `ToggleBar`, `ButtonBar` and `OptionsBar` one component?** They
   differ only in what a segment does, yet `ToggleBar` keeps its own copy of the
