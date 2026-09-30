@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import RELEASES from 'virtual:changelogs';
+import num from '@weasel-js/theme/numeric.module.css';
 
 /** Matches the `UNRELEASED` label the changelogs plugin stamps on pending
  *  changesets. */
@@ -112,13 +113,13 @@ export function Releases() {
               onClick={() => toggle(name)}
             >
               {name}
-              <span className="ckd-release-pkg-n">{count}</span>
+              <span className={`ckd-release-pkg-n ${num.numeric}`}>{count}</span>
             </button>
           ))}
         </div>
 
         {selected.length > 0 ? (
-          <p className="ckd-release-matched" aria-live="polite">
+          <p className={`ckd-release-matched ${num.numeric}`} aria-live="polite">
             {matched} {matched === 1 ? 'change' : 'changes'} in {selected.join(', ')}
           </p>
         ) : null}
@@ -134,9 +135,9 @@ export function Releases() {
             open={i === 0}
           >
             <summary className="ckd-release-summary">
-              <h3 className="ckd-release-version">{release.version}</h3>
+              <h3 className={`ckd-release-version ${num.numeric}`}>{release.version}</h3>
               {release.date ? (
-                <time className="ckd-release-date" dateTime={release.date}>
+                <time className={`ckd-release-date ${num.numeric}`} dateTime={release.date}>
                   {formatDate(release.date)}
                 </time>
               ) : release.version === UNRELEASED ? (

@@ -57,18 +57,20 @@
   letter-spacing: var(--wzl-tracking-wide);
 }
 
-.statValue,
-.statOk,
-.statBad {
+.statValue {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: var(--wzl-font-size-lg);
-  font-variant-numeric: tabular-nums;
 }
 
 .statOk {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  font-size: var(--wzl-font-size-lg);
   color: var(--wzl-success);
 }
 
 .statBad {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  font-size: var(--wzl-font-size-lg);
   color: var(--wzl-danger);
 }
 
@@ -292,13 +294,12 @@
 }
 
 .anchorNumber {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   width: 4.4em;
   appearance: textfield;
   height: var(--wzl-control-h);
   padding: 0 var(--wzl-space-xs);
-  font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-sm);
-  font-variant-numeric: tabular-nums;
   background: var(--wzl-surface-sunken);
   color: var(--wzl-fg);
   border: var(--wzl-border-w) solid var(--wzl-border-strong);
@@ -531,8 +532,8 @@
   width: 110px;
 }
 
-.bandControl output {
-  font-variant-numeric: tabular-nums;
+.bandValue {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   min-width: 2.2em;
 }
 

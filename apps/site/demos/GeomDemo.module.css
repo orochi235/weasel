@@ -16,8 +16,7 @@
 }
 
 .readout {
-  font-family: ui-monospace, SFMono-Regular, monospace;
-  font-variant-numeric: tabular-nums;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   color: var(--ckd-muted);
 }
 
@@ -36,10 +35,9 @@
 }
 
 .num {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   text-align: end;
   white-space: pre;
-  font-family: ui-monospace, SFMono-Regular, monospace;
-  font-variant-numeric: tabular-nums;
 }
 
 .swatch {

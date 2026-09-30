@@ -30,7 +30,7 @@ const COLUMNS: DataGridColumn<Route>[] = [
   { id: 'action', header: 'Action' },
   { id: 'scope', header: 'Scope' },
   { id: 'verdict', header: 'Verdict' },
-  { id: 'cands', header: 'Cands', accessor: (r) => r.candidates.length },
+  { id: 'cands', header: 'Cands', accessor: (r) => r.candidates.length, numeric: true },
 ];
 
 const VERDICT_CLASS: Record<Route['verdict'], string | undefined> = {

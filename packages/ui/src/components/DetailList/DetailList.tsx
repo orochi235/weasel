@@ -1,4 +1,4 @@
-import { type ReactNode, useId } from 'react';
+import { createContext, type ReactNode, useContext, useId } from 'react';
 import s from './DetailList.module.css';
 
 /** Whether a row's label sits beside its value or above it. */
@@ -7,11 +7,13 @@ export type DetailListLayout = 'inline' | 'block';
 /**
  * How a list sets its values. `text` starts each value at the column's edge
  * and wraps it; `figures` right-aligns it in a column at least
- * `--wzl-detail-figure-min-width` (default `8ch`) wide, in the mono face,
+ * `--wzl-detail-figure-min-width` (default `8ch`) wide, in equal-width digits,
  * with spaces kept, so figure-space padding lines a column up on its decimal
  * point.
  */
 export type DetailListValues = 'text' | 'figures';
+
+const ListValues = createContext<DetailListValues>('text');
 
 /** The state a row's status dot reports, painted from `--wzl-success`,
  *  `--wzl-warning` or `--wzl-danger`. */
@@ -72,7 +74,7 @@ export function DetailList({ children, title, layout = 'inline', values = 'text'
       data-values={values}
       aria-labelledby={title != null ? titleId : undefined}
     >
-      {children}
+      <ListValues.Provider value={values}>{children}</ListValues.Provider>
     </dl>
   );
   if (title == null) return list;
@@ -87,10 +89,12 @@ export function DetailList({ children, title, layout = 'inline', values = 'text'
 /** One label and its value in a {@link DetailList}. */
 export function DetailRow({ label, children, placeholder = '–', status, values, className }: DetailRowProps) {
   const empty = children == null;
+  const listValues = useContext(ListValues);
+  const figures = (values ?? listValues) === 'figures';
   return (
     <div className={className ? `${s.row} ${className}` : s.row} data-status={status} data-values={values}>
       <dt className={s.label}>{label}</dt>
-      <dd className={s.value} data-empty={empty || undefined}>
+      <dd className={figures ? `${s.value} ${s.figures}` : s.value} data-empty={empty || undefined}>
         {status && <span className={s.dot} aria-hidden="true" />}
         {empty ? placeholder : children}
       </dd>

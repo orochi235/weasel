@@ -1,10 +1,10 @@
 .bar {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: flex;
   align-items: center;
   gap: var(--wzl-space-8);
   flex-shrink: 0;
   padding: var(--wzl-space-2) var(--wzl-space-6);
-  font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
   background: var(--wzl-surface);
@@ -17,7 +17,6 @@
 
 .muted {
   opacity: 0.6;
-  font-variant-numeric: tabular-nums;
 }
 
 .hasTitle {

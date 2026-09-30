@@ -97,9 +97,14 @@
   flex: 1;
 }
 
-.railCount,
+.railCount {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  color: var(--wzl-fg-muted);
+  font-size: calc(var(--wzl-font-size-sm) + 1px);
+}
+
 .railPinned {
-  font-variant-numeric: tabular-nums;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   color: var(--wzl-fg-muted);
   font-size: calc(var(--wzl-font-size-sm) + 1px);
 }
@@ -180,7 +185,7 @@
 }
 
 .overridden {
-  font-variant-numeric: tabular-nums;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   color: var(--wzl-fg-muted);
   font-size: calc(var(--wzl-font-size-sm) + 1px);
 }
@@ -267,9 +272,9 @@
 }
 
 .metric {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   color: var(--wzl-fg-muted);
   font-size: calc(var(--wzl-font-size-sm) + 1px);
-  font-variant-numeric: tabular-nums;
 }
 
 .strip {
@@ -291,7 +296,7 @@
 }
 
 .num {
-  font-variant-numeric: tabular-nums;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
 }
 
 .swatchCell {

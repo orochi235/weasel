@@ -12,8 +12,7 @@
 }
 
 .readout {
-  font-family: ui-monospace, SFMono-Regular, monospace;
-  font-variant-numeric: tabular-nums;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   white-space: pre;
   color: var(--ckd-muted);
 }

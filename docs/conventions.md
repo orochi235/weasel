@@ -208,6 +208,30 @@ boundary: labkit's Less cannot name `PropertyPanel`'s label class, and before
 this it restated the recipe by hand. `npm run check:labels` fails on a label in
 those three surfaces that sets its case or tracking any other way.
 
+### Numeric text
+
+Figures read as values — readouts, counters, number inputs, a column of
+numbers, axis ticks — are set in equal-width digits. Oswald has no tabular
+figures, so `tabular-nums` alone aligns nothing; the numeric face
+(`--wzl-font-numeric`, Oswald's digits re-spaced to one width) is what does.
+Both declarations live in one class, `.numeric` in
+`@weasel-js/theme/numeric.module.css`, and everything takes it from there:
+
+| Where | How |
+|---|---|
+| a CSS module, single-class rule | `composes: numeric from '@weasel-js/theme/numeric.module.css';` |
+| Less (labkit) | `.numeric();` — `styles.less` imports the module as a reference |
+| a global stylesheet or TSX | `import num from '@weasel-js/theme/numeric.module.css'`, then `num.numeric` on the element |
+| a table | `DataGrid` column `numeric: true`; `DetailList values="figures"` |
+
+`NumberField` and `UnitField` carry it on their frame, so a number input needs
+nothing. A rule that takes the helper must not also set `font`, `font-family`
+or `font-variant-numeric`: the composed class is declared first, so any of them
+replaces it — split a `font:` shorthand into longhands. Prose that happens to
+hold a number stays proportional, and code or hex stays in the mono face.
+`npm run check:numeric` fails on `tabular-nums` or a read of the token anywhere
+else, and on a font property beside the helper.
+
 ### Stance and tone
 
 A surface that holds a class of content says which with `stance` —

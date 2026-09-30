@@ -1,4 +1,5 @@
 .hud {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   position: absolute;
   top: var(--wzl-space-6);
   left: 50%;
@@ -8,10 +9,8 @@
   background: color-mix(in srgb, var(--wzl-surface-raised) 78%, transparent);
   backdrop-filter: blur(var(--wzl-glass-blur));
   color: var(--wzl-fg);
-  font-family: var(--wzl-font-numeric);
   font-size: var(--wzl-font-size-sm);
   font-weight: var(--wzl-font-weight-bold);
-  font-variant-numeric: tabular-nums;
   pointer-events: none;
   z-index: var(--wzl-z-overlay);
   transition: opacity var(--wzl-motion-fast) var(--wzl-ease-out-cubic);

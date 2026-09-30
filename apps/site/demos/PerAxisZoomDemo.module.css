@@ -1,0 +1,3 @@
+.axis {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+}

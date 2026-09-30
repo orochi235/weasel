@@ -5,6 +5,7 @@ import {
   useLabContext,
   useTrialId,
 } from '@weasel-js/labkit';
+import num from '@weasel-js/theme/numeric.module.css';
 import { useEffect, useRef, useState } from 'react';
 import type { A11yFinding } from '../../protocol/messages';
 import { useTrialFrame } from '../trialFrames';
@@ -33,7 +34,7 @@ function Findings({ title, findings }: { title: string; findings: readonly A11yF
   if (findings.length === 0) return null;
   return (
     <section className="fg-a11y__group">
-      <h3 className="fg-a11y__group-title">
+      <h3 className={`fg-a11y__group-title ${num.numeric}`}>
         {title} ({findings.length})
       </h3>
       <ul className="fg-a11y__findings">
@@ -84,7 +85,7 @@ export function A11yPanel() {
       ) : null}
       {outcome?.ok ? (
         <>
-          <p className="fg-a11y__tally">
+          <p className={`fg-a11y__tally ${num.numeric}`}>
             {outcome.report.violations.length} violations · {outcome.report.incomplete.length} to review ·{' '}
             {outcome.report.passes} passes
           </p>

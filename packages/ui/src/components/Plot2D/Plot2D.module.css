@@ -50,10 +50,9 @@
 .tickLabels { pointer-events: none; }
 
 .tickLabel {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   fill: var(--plot-tick-label);
   font-size: var(--wzl-font-size-xs);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
 }
 
 .tickLabel[data-placement='inside'] {

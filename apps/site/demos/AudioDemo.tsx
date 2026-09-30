@@ -18,6 +18,7 @@ import type {
   AnalyserTap, AudioEngine, InsertSlot, PatternEvent, PatternPlayer, SoundHandle, SynthPatch,
   VoiceHandle,
 } from '@weasel-js/audio';
+import num from '@weasel-js/theme/numeric.module.css';
 
 interface Dot { id: string; x: number; y: number; width: number; height: number }
 
@@ -264,12 +265,12 @@ export function AudioDemo() {
         <button className="ckd-btn" onClick={enable} disabled={!kit || state === 'running'}>
           enable audio
         </button>
-        <span className="ckd-readout">engine.state() = {state}</span>
+        <span className="ckd-readout is-code">engine.state() = {state}</span>
         <button className="ckd-btn" onClick={toggleSource} disabled={!kit}>
           {sourcePlaying ? 'stop source' : 'play source'}
         </button>
         <button className="ckd-btn" onClick={burst} disabled={!kit}>fire 50 one-shots</button>
-        <span className="ckd-readout">activeVoices {voices} / 8 per bus</span>
+        <span className={`ckd-readout ${num.numeric}`}>activeVoices {voices} / 8 per bus</span>
       </div>
       <div className="ckd-row">
         <SceneCanvas features={['pick', 'move']}
@@ -294,14 +295,14 @@ export function AudioDemo() {
         <div className="ckd-panel ckd-panel-wide">
           <div className="ckd-panel-title">spatial</div>
           <dl className="ckd-meters">
-            <dt>gain</dt><dd>{spatial.gain.toFixed(3)}</dd>
-            <dt>pan</dt><dd>{spatial.pan.toFixed(3)}</dd>
-            <dt>distance</dt><dd>{Math.hypot(center.x - LISTENER.x, center.y - LISTENER.y).toFixed(0)}</dd>
+            <dt>gain</dt><dd className={num.numeric}>{spatial.gain.toFixed(3)}</dd>
+            <dt>pan</dt><dd className={num.numeric}>{spatial.pan.toFixed(3)}</dd>
+            <dt>distance</dt><dd className={num.numeric}>{Math.hypot(center.x - LISTENER.x, center.y - LISTENER.y).toFixed(0)}</dd>
           </dl>
           <div className="ckd-panel-title">buses</div>
           {BUSES.map((bus) => (
             <div className="ckd-bus" key={bus}>
-              <span className="ckd-readout">{bus}</span>
+              <span className="ckd-readout is-code">{bus}</span>
               <input
                 className="ckd-range" type="range" min={0} max={1} step={0.01}
                 value={gains[bus]} onChange={(e) => setBusGain(bus, Number(e.target.value))}
@@ -334,7 +335,7 @@ export function AudioDemo() {
               className="ckd-range" type="range" min={60} max={200} step={1}
               value={tempo} onChange={(e) => changeTempo(Number(e.target.value))}
             />
-            <span className="ckd-readout">{tempo} bpm, step {patternOn ? patternStep + 1 : '–'}/16</span>
+            <span className={`ckd-readout ${num.numeric}`}>{tempo} bpm, step {patternOn ? patternStep + 1 : '–'}/16</span>
           </div>
           <div className="ckd-panel-title">music inserts</div>
           <div className="ckd-bus">

@@ -19,6 +19,7 @@ import type {
   TimelineTrack,
   Track,
 } from '@weasel-js/core';
+import num from '@weasel-js/theme/numeric.module.css';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number }
 
@@ -170,7 +171,7 @@ export function TimelineDemo() {
             value={Math.round(now)} onChange={(e) => scrub(Number(e.target.value))}
           />
         </label>
-        <span className="ckd-readout">{Math.round(now)} / {duration} ms</span>
+        <span className={`ckd-readout ${num.numeric}`}>{Math.round(now)} / {duration} ms</span>
         <label className="ckd-field">
           <input type="checkbox" checked={loop} onChange={(e) => setLoop(e.target.checked)} />
           loop
@@ -181,7 +182,7 @@ export function TimelineDemo() {
             className="ckd-range" type="range" min={0.1} max={3} step={0.1}
             value={timeScale} onChange={(e) => onTimeScale(Number(e.target.value))}
           />
-          <span className="ckd-readout">{timeScale.toFixed(1)}×</span>
+          <span className={`ckd-readout ${num.numeric}`}>{timeScale.toFixed(1)}×</span>
         </label>
         <button className="ckd-btn" onClick={addKey}>add x keyframe</button>
       </div>

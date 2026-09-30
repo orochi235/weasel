@@ -46,9 +46,9 @@
 }
 
 .coords {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: 11px;
   color: var(--ckd-muted);
-  font-variant-numeric: tabular-nums;
 }
 
 .controls {
@@ -68,9 +68,8 @@
 }
 
 .readout {
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   color: var(--ckd-muted);
-  font-variant-numeric: tabular-nums;
   white-space: pre;
 }
 

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { SceneCanvas, useScene, blur, vignette } from '@weasel-js/core';
 import type { Effect, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 720;
 const H = 360;
@@ -97,7 +98,7 @@ export function EffectsDemo() {
             value={radius}
             onChange={(e) => setRadius(Number(e.target.value))}
           />
-          <output>{radius}</output>
+          <output className={num.numeric}>{radius}</output>
         </label>
         <label className="ckd-control">
           <input

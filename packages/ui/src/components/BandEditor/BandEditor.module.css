@@ -33,11 +33,14 @@
 }
 
 .tickLabel {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   position: absolute;
   bottom: 7px;
   left: 0;
   transform: translateX(-50%);
-  font: var(--wzl-font-weight-medium) var(--wzl-font-size-xs) / var(--wzl-leading-tight) var(--wzl-font-mono);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size-xs);
+  line-height: var(--wzl-leading-tight);
   color: var(--wzl-fg-muted);
   white-space: nowrap;
 }

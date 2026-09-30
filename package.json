@@ -56,6 +56,7 @@
     "check:frame-loops": "node scripts/check-frame-loops.mjs",
     "check:token-reads": "tsx scripts/check-token-reads.ts",
     "check:spacing": "tsx scripts/check-spacing.ts",
+    "check:numeric": "tsx scripts/check-numeric.ts",
     "check:controls": "tsx scripts/check-controls.ts",
     "check:labels": "tsx scripts/check-labels.ts",
     "check:test-projects": "node scripts/check-test-projects.mjs",

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { DataGrid } from './DataGrid';
@@ -29,6 +31,22 @@ function stubGeometry(container: HTMLElement): void {
 function pointer(type: string, y: number): PointerEvent {
   return new PointerEvent(type, { clientX: 20, clientY: y, bubbles: true, cancelable: true, pointerId: 1 });
 }
+
+describe('DataGrid numeric columns', () => {
+  // The proxy class names prove the grid asked for `numeric`; the stylesheet check proves the rule.
+  it('sets a numeric column, header and cells, in the numeric class', () => {
+    const { container } = render(<DataGrid rows={ROWS} columns={[COLUMNS[0], { ...COLUMNS[1], numeric: true }]} />);
+    const cells = (i: number) => [...container.querySelectorAll(`tr > :nth-child(${i})`)];
+    expect(cells(2).every((c) => /_numeric_/.test(c.className))).toBe(true);
+    expect(cells(1).some((c) => /_numeric_/.test(c.className))).toBe(false);
+  });
+
+  it('composes the numeric face and ends the column', () => {
+    const css = readFileSync(resolve(__dirname, 'DataGrid.module.css'), 'utf8');
+    expect(css).toMatch(/\.numeric \{\s*composes: numeric from '@weasel-js\/theme\/numeric\.module\.css';/);
+    expect(css).toMatch(/\.table \.numeric \{\s*text-align: end;/);
+  });
+});
 
 describe('DataGrid sorting', () => {
   it('cycles a sortable header asc → desc → none from the keyboard', () => {

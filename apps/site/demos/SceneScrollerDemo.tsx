@@ -38,6 +38,7 @@ import {
   stepEnding,
   type GameRefs,
 } from './platformer/world';
+import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 720;
 const H = 405;
@@ -278,7 +279,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
           {sound.musicOn ? 'music off' : 'music on'}
         </button>
         <button className="ckd-btn" onClick={onRestart}>restart</button>
-        <span className="ckd-readout">zoom {CAM_SCALE}x</span>
+        <span className={`ckd-readout ${num.numeric}`}>zoom {CAM_SCALE}x</span>
       </div>
       <SceneCanvas
         width={W}
@@ -317,12 +318,12 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
           collision boxes
         </label>
         <button className="ckd-btn" onClick={swarm}>swarm +40</button>
-        <span className="ckd-readout">frame {stats.frame.toFixed(1)} ms</span>
-        <span className="ckd-readout">nodes {stats.nodes}</span>
-        <span className="ckd-readout">frames committed {stats.writes}</span>
-        <span className="ckd-readout">voices {stats.voices}</span>
-        <span className="ckd-readout">footsteps {stats.steps}</span>
-        <span className="ckd-readout">steady-state jitter {stats.spread.toFixed(1)} ms</span>
+        <span className={`ckd-readout ${num.numeric}`}>frame {stats.frame.toFixed(1)} ms</span>
+        <span className={`ckd-readout ${num.numeric}`}>nodes {stats.nodes}</span>
+        <span className={`ckd-readout ${num.numeric}`}>frames committed {stats.writes}</span>
+        <span className={`ckd-readout ${num.numeric}`}>voices {stats.voices}</span>
+        <span className={`ckd-readout ${num.numeric}`}>footsteps {stats.steps}</span>
+        <span className={`ckd-readout ${num.numeric}`}>steady-state jitter {stats.spread.toFixed(1)} ms</span>
       </div>
       <div className="ckd-hint">
         A platformer built as a load test for the animation timeline, the audio

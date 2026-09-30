@@ -3,6 +3,7 @@ import { Slider, chromaAt, oklchToHex, paintGradientTrack, type ChromaCurve, typ
 import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import s from './PerceptualColorSlidersDemo.module.css';
 
 type CThumb = Thumb & { key: 'cTop' | 'cPeak' | 'cBot' };
 
@@ -106,18 +107,8 @@ function OutputSwatchRow({ indices, params }: { indices: number[]; params: RampP
         return (
           <div
             key={i}
-            style={{
-              background: color,
-              aspectRatio: '1 / 1.4',
-              display: 'flex',
-              alignItems: 'flex-end',
-              justifyContent: 'flex-end',
-              padding: '4px 6px',
-              fontSize: 10,
-              fontFamily: 'ui-monospace, monospace',
-              color: labelColor,
-              fontVariantNumeric: 'tabular-nums',
-            }}
+            className={s.swatch}
+            style={{ background: color, color: labelColor }}
           >
             {idx}
           </div>
@@ -351,7 +342,7 @@ export function PerceptualColorSlidersDemo() {
               },
             })}
           />
-          <div style={{ fontFamily: 'monospace', fontSize: 12, marginTop: 8 }}>{indices.join(', ')}</div>
+          <div className={s.indices}>{indices.join(', ')}</div>
         </section>
       </div>
 

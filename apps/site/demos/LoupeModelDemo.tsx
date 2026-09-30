@@ -39,7 +39,7 @@ function gridSurface(changed: () => void): LoupeSurface {
   };
 }
 
-const fmt = (n: number) => n.toFixed(2).padStart(7);
+const fmt = (n: number) => n.toFixed(2).padStart(7, '\u2007');
 
 function Swatch({ color }: { color: string | null }) {
   if (!color) return <>—</>;

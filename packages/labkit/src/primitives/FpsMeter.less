@@ -1,9 +1,9 @@
 .lk-fps-meter {
+  .numeric();
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
   gap: var(--wzl-space-xs);
-  font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
 }
@@ -14,6 +14,5 @@
      a 240Hz display reads three digits, and a readout that grows into them
      pushes whatever shares its row. */
   min-width: 3ch;
-  font-variant-numeric: tabular-nums;
   text-align: right;
 }

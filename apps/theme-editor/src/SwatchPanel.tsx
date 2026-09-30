@@ -131,7 +131,7 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
             onChange={(e) => setBands(Number(e.target.value))}
             aria-label="Number of chroma bands to group into"
           />
-          <output>{bands === 1 ? 'off' : bands}</output>
+          <output className={styles.bandValue}>{bands === 1 ? 'off' : bands}</output>
         </label>
         <span className={styles.swatchHover}>{hovered ?? ''}</span>
         <label className={styles.anchorFromHex}>

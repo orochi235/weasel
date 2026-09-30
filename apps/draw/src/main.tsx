@@ -1,4 +1,5 @@
 import '@weasel-js/theme/tokens.css';
+import '@weasel-js/theme/fonts.css';
 import { StrictMode, Suspense, lazy, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerFont, registerFontOutlines } from '@weasel-js/core/renderer';

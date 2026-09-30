@@ -24,6 +24,7 @@ import type {
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { bakeGraphPoses, syncGraphPoses } from './forceGraph/overrides';
+import s from './ForceGraphDemo.module.css';
 
 const W = 600, H = 400;
 const NODE_R = 8;
@@ -271,7 +272,7 @@ export function ForceGraphDemo() {
         <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>
           Reset view
         </button>
-        <span style={{ fontFamily: 'monospace', color: '#555' }}>
+        <span className={s.zoom}>
           zoom {view.scale.x.toFixed(2)}× {settled ? '· settled' : ''}
         </span>
         <span style={{ color: '#888' }}>

@@ -64,8 +64,7 @@
 .routes { display: inline-flex; flex-direction: column; align-items: flex-start; gap: var(--wzl-space-1); }
 
 .num {
-  font-family: var(--wzl-font-mono);
-  font-variant-numeric: tabular-nums;
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   text-align: end;
   white-space: nowrap;
 }

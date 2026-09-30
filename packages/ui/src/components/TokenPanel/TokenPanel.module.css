@@ -61,14 +61,12 @@
 }
 
 .number {
-  --wzl-font-ui: var(--wzl-font-mono);
   flex: 1;
   min-width: 0;
 }
 
 .unit {
   color: var(--wzl-fg-muted);
-  font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-sm);
 }
 
@@ -170,8 +168,6 @@
 
 .rule .number {
   flex: 0 1 5ch;
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
   text-align: end;
 }
 
@@ -207,8 +203,6 @@
 }
 
 .stepEdit .number {
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
   text-align: end;
 }
 
@@ -237,13 +231,6 @@
 .tight .field,
 .tight .number {
   flex: 0 1 16rem;
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
-}
-
-.tight .unit {
-  font-variant-numeric: tabular-nums;
-  font-family: var(--wzl-font-numeric);
 }
 
 .tight .scale {

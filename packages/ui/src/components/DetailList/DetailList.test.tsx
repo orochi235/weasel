@@ -145,6 +145,24 @@ describe('DetailRow values', () => {
     expect(a.hasAttribute('data-values')).toBe(false);
     expect(b.getAttribute('data-values')).toBe('text');
   });
+
+  // The proxy class names only prove the component asked for `figures`; the style test below proves the rule.
+  it("sets a row's value as figures from its own values or its list's", () => {
+    const { container } = render(
+      <>
+        <DetailList values="figures">
+          <DetailRow label="a">1</DetailRow>
+          <DetailRow label="b" values="text">a sentence</DetailRow>
+        </DetailList>
+        <DetailList>
+          <DetailRow label="c" values="figures">2</DetailRow>
+          <DetailRow label="d">prose</DetailRow>
+        </DetailList>
+      </>,
+    );
+    const figures = [...container.querySelectorAll('dd')].map((dd) => /_figures_/.test(dd.className));
+    expect(figures).toEqual([true, false, true, false]);
+  });
 });
 
 describe('DetailList styles', () => {
@@ -152,13 +170,10 @@ describe('DetailList styles', () => {
     expect(css).toMatch(
       /\.list\[data-values='figures'\]\s*\{\s*grid-template-columns:\s*var\(--wzl-params-label-width,\s*auto\)\s+minmax\(min-content,\s*1fr\)/,
     );
-    expect(css).toMatch(
-      /\.list\[data-values='figures'\] \.row:not\(\[data-values='text'\]\) \.value,\s*\.row\[data-values='figures'\] \.value\s*\{/,
-    );
-    const body = rule(".row[data-values='figures'] .value");
+    const body = rule('.figures');
+    expect(body).toMatch(/composes:\s*numeric from '@weasel-js\/theme\/numeric\.module\.css'/);
     expect(body).toMatch(/justify-content:\s*flex-end/);
     expect(body).toMatch(/text-align:\s*end/);
-    expect(body).toMatch(/font-family:\s*var\(--wzl-font-numeric\)/);
     expect(body).toMatch(/min-width:\s*var\(--wzl-detail-figure-min-width,\s*8ch\)/);
     expect(body).toMatch(/white-space:\s*pre/);
   });

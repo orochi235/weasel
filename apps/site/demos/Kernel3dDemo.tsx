@@ -116,7 +116,7 @@ function solidsLayer(camera: Camera3d, scene: Scene3d<Solid, 'solids'>): RenderL
   };
 }
 
-const deg = (r: number) => ((Math.atan2(Math.sin(r), Math.cos(r)) * 180) / Math.PI).toFixed(1).padStart(6, ' ');
+const deg = (r: number) => ((Math.atan2(Math.sin(r), Math.cos(r)) * 180) / Math.PI).toFixed(1).padStart(6, '\u2007');
 
 /**
  * Three boxes on a `<SceneCanvas>` whose scene holds `Pose3`s. The kit's own
@@ -164,7 +164,7 @@ export function Kernel3dDemo() {
       <div className={styles.toolbar}>
         {tools && <ToolPalette tools={tools} orientation="horizontal" />}
         <span className={styles.readout}>
-          yaw {deg(camera.yaw)}°  pitch {deg(camera.pitch)}°  distance {camera.distance.toFixed(2).padStart(6, ' ')}
+          yaw {deg(camera.yaw)}°  pitch {deg(camera.pitch)}°  distance {camera.distance.toFixed(2).padStart(6, '\u2007')}
         </span>
       </div>
       <SceneCanvas

@@ -2,6 +2,8 @@
 // Left as a CSS @import for the consumer's bundler to resolve; build-css.mjs
 // swaps it for the faces themselves, pointed at dist/fonts/.
 @import (css) '@weasel-js/theme/faces.css';
+// The numeric face's one definition, taken as a mixin: `.numeric();`.
+@import (reference, less) '@weasel-js/theme/numeric.module.css';
 @import './theme/base.less';
 @import './lab/Workspace.less';
 @import './lab/LabShell.less';

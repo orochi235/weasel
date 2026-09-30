@@ -4,6 +4,7 @@
 }
 
 .readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   min-inline-size: 3ch;
   text-align: end;
   font-size: var(--wzl-font-size-sm);
