@@ -475,7 +475,7 @@
 .list {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: var(--wzl-prop-column-gap, 10px);
+  column-gap: var(--wzl-prop-column-gap, 16px);
   row-gap: var(--wzl-prop-row-gap, 4px);
   align-items: stretch;
   /* A property panel is dense: its fields are shorter and tighter than a
@@ -536,7 +536,7 @@
 .densityNormal {
   --wzl-prop-row-gap: 4px;
   --wzl-prop-subpanel-row-gap: 3px;
-  --wzl-prop-column-gap: 10px;
+  --wzl-prop-column-gap: 16px;
   --wzl-prop-panel-pad: 14px 16px;
   --wzl-prop-panel-title-gap: 12px;
   --wzl-prop-group-pad: 6px 10px 8px;
@@ -548,7 +548,7 @@
 .densityRoomy {
   --wzl-prop-row-gap: 8px;
   --wzl-prop-subpanel-row-gap: 7px;
-  --wzl-prop-column-gap: 14px;
+  --wzl-prop-column-gap: 20px;
   --wzl-prop-panel-pad: 18px 20px;
   --wzl-prop-panel-title-gap: 16px;
   --wzl-prop-group-pad: 10px 14px 12px;
@@ -1544,7 +1544,7 @@
 .groupBody {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: var(--wzl-prop-column-gap, 10px);
+  column-gap: var(--wzl-prop-column-gap, 16px);
   row-gap: var(--wzl-prop-row-gap, 4px);
   /* Stretch so paired rows match in height — slider rows then bottom-align
      their tracks (via `margin-top: auto`) and stay lined up even when one
@@ -1575,7 +1575,7 @@
 .subpanel {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: var(--wzl-prop-column-gap, 10px);
+  column-gap: var(--wzl-prop-column-gap, 16px);
   row-gap: var(--wzl-prop-subpanel-row-gap, 3px);
   align-items: stretch;
   background: transparent;
