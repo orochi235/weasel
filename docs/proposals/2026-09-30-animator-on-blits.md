@@ -1,8 +1,8 @@
 # The animator on blits
 
-**Status: a proposal. Nothing in weasel is built. blits now has everything step 1 asks for**
-(published as `@msb235/blits` 0.1.1, fixed-interval stepping, and springs that keep velocity), so
-step 2 can start. Delete it once it is built or turned down.
+**Status: steps 1 and 2 are built; steps 3–6 are not.** Pose overrides fold through a blits mix,
+and the paint walk's cost is measured (below). Nothing animates through blits yet. Delete this once
+it is built or turned down.
 
 For whoever picks up weasel's animation work. It answers: how weasel gets a model for combining
 several animations on one property, without keeping a second copy of the arithmetic that blits
@@ -80,8 +80,8 @@ Each of these is blits work.
   were alternated four times on that row and read 6.0–7.6 ms each, so the 27.8 was a loaded
   machine. That is still a third to a half of a 60 Hz frame for 10k nodes before painting. The paint walk would probe only the nodes some voice
   reaches. blits now walks only the voices that reach a subject (`1b1d841`), but nothing yet lists
-  which subjects any voice reaches. That list is weasel's to supply: its control layer knows every
-  node it cued a voice on.
+  which subjects any voice reaches. weasel supplies that list, as step 2 measured
+  below.
 
 ## What weasel has to design
 
@@ -127,9 +127,46 @@ Each of these is blits work.
 
 1. blits: fixed-interval stepping, exact springs with velocity, publish. Done 2026-09-30.
 2. weasel: pose overrides as a mix, behind the existing `PoseOverrides` interface, with the reach
-   list supplied by the control layer. Benchmark the paint walk before going further.
+   list supplied by the control layer. Benchmark the paint walk before going further. Done
+   2026-10-01; see "What step 2 built".
 3. weasel: tween, spring and keyframe sampling reimplemented on blits patches under the same
    signatures.
 4. weasel: `cancelKey` interrupts with momentum; global pause through the mix clock.
 5. weasel: color overrides and the camera as mixes.
 6. weasel: event tracks reading mix time.
+
+## What step 2 built
+
+`createPoseOverrides` (`packages/core/src/core/scene/poseOverrides.ts`) keeps its entries table and
+adds a mix over `{ pose: last(), alpha: mul() }`. The table is **one voice**, whose patch looks a
+node's entry up by id. A voice per node would be quadratic: blits works out which voices reach a
+subject by asking every voice, and keeps a record per voice per subject it asked about. The nodes
+holding an entry are the reach list; `read` never probes a node outside it.
+
+`PoseOverrides` gained `read(id)`, the folded value, and `get(id)` keeps returning the entry a
+writer stored, because writers check that by identity (`reflow.ts`). Everything that paints or
+picks reads `read`. Step 3 cues the animator's voices on the same mix, and `read` folds them in.
+
+`tests/perf/bench/pose-overrides.bench.ts` measures one animated frame: mutate every entry, commit,
+build the draw commands. Means in ms per frame, two runs each, alternated, on an Apple M2 Max
+under Node 26:
+
+| Nodes  | Overridden | Before      | After       |
+|-------:|-----------:|------------:|------------:|
+|  1,000 |       100% | 0.36 / 0.35 | 0.54 / 0.56 |
+| 10,000 |       100% | 4.38 / 3.93 | 7.15 / 6.67 |
+
+With nothing overridden the walk does not change. A probe alone, outside weasel, costs 0.12 µs:
+1.2 ms a frame for 10k subjects against 0.15 ms for a `Map` lookup. Garbage collection is about 1%
+of its profile. The rest of the walk's added time is an inference, not a measurement: `read` adds a
+lookup and a generation check per node. Of the probe's self time, blits' `apply` takes 24%,
+`folded` 19% and `Store.get` 14%.
+
+So a select-all drag of 10k nodes spends about 2.7 ms more of a 16.7 ms frame. That is blits'
+cost for folding one voice, which the next steps pay as well. Two places it could shrink: a blits
+fast path for a subject only one voice reaches, and fewer per-voice lookups in `Store.get`.
+
+`@msb235/blits` 0.2.1's published manifest still carries `"workspaces": ["site"]`, which is blits'
+own dev setup leaking into the package. It does no harm in weasel's install, but blits should drop
+it from what it publishes.
+

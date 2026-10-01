@@ -14,7 +14,7 @@ function makeScene(): Scene<unknown, string, unknown> {
     renderOrderNodes: () => [...nodes.values()],
     get: (id: NodeId) => nodes.get(id as string) as never,
     // A real `Scene` always carries this; `hitTestArea` resolves poses through it.
-    overrides: { get: () => undefined },
+    overrides: { read: () => undefined },
   } as unknown as Scene<unknown, string, unknown>;
 }
 

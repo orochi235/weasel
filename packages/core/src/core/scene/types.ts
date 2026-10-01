@@ -483,7 +483,13 @@ export interface PoseOverride<TPose> {
 export interface PoseOverrides<TPose> {
   /** Store `entry` for `id` **by reference**; the caller keeps mutating it. */
   set(id: NodeId, entry: PoseOverride<TPose>): void;
+  /** The entry `set` stored, by reference — what a writer checks to know
+   *  whether its own entry is still installed. Painting reads `read`. */
   get(id: NodeId): PoseOverride<TPose> | undefined;
+  /** What the node is drawn and picked with: every source of overrides for
+   *  it folded into one, as of the last write or `commit()`. `undefined` for
+   *  a node nothing overrides. The object is reused per node. */
+  read(id: NodeId): PoseOverride<TPose> | undefined;
   has(id: NodeId): boolean;
   /** The overridden ids, as a snapshot array. */
   ids(): readonly NodeId[];

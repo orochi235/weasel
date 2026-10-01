@@ -54,7 +54,7 @@ export interface PosedNode<TPose> {
 /** What resolving a pose needs: the overrides, and enough of the scene to
  *  reach a node's dependencies. A `Scene` satisfies it. */
 export interface PoseSource<TPose> {
-  readonly overrides: Pick<PoseOverrides<TPose>, 'get'>;
+  readonly overrides: Pick<PoseOverrides<TPose>, 'read'>;
   get(id: NodeId): PosedNode<TPose> | undefined;
   childrenOf(id: NodeId): readonly NodeId[];
 }
@@ -201,7 +201,7 @@ function poseIn<TPose>(
   reading: Reading,
 ): TPose {
   if (reading === 'effective') {
-    const override = source.overrides.get(node.id)?.pose;
+    const override = source.overrides.read(node.id)?.pose;
     if (override !== undefined) return override;
   }
   return derivedPoseIn(source, node, reading) ?? node.pose;

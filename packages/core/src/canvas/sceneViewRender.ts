@@ -189,7 +189,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     pose: TPose,
     v: View,
   ): DrawCommand[] => {
-    const overrideAlpha = scene.overrides.get(node.id as NodeId)?.alpha ?? 1;
+    const overrideAlpha = scene.overrides.read(node.id as NodeId)?.alpha ?? 1;
     return wrapNodeOutput(
       derived(node, pose, v),
       pose,

@@ -301,19 +301,19 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   // nothing faded has nothing to say about alpha, and asking it per node is a
   // Map lookup on a linear scan that has no other reason to touch the
   // override table. Needs enumeration — a partial scene stand-in carrying
-  // only `get` falls back to reading per node.
+  // only `read` falls back to reading per node.
   let faded: Set<string> | null = null;
   const enumerable = typeof scene.overrides?.ids === 'function';
   if (!alphaOf && enumerable) {
     for (const id of scene.overrides.ids()) {
-      const a = scene.overrides.get(id)?.alpha;
+      const a = scene.overrides.read(id)?.alpha;
       if (a !== undefined && a <= 0) (faded ??= new Set()).add(id);
     }
   }
   const readAlpha = alphaOf
     ?? (enumerable
       ? (faded ? (id: string) => (faded.has(id) ? 0 : 1) : undefined)
-      : (id: string) => scene.overrides.get(asNodeId(id))?.alpha ?? 1);
+      : (id: string) => scene.overrides.read(asNodeId(id))?.alpha ?? 1);
 
   // A composing strategy makes a node's own pose local, so picking has to fold
   // the parent chain the same way the render walk does or it tests where the

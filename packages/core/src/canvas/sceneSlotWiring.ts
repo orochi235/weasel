@@ -25,7 +25,7 @@ export function composeAlphaFor<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   alphaFor?: (id: string) => number,
 ): (id: string) => number {
-  const overrideAlphaFor = (id: string) => scene.overrides.get(id as NodeId)?.alpha ?? 1;
+  const overrideAlphaFor = (id: string) => scene.overrides.read(id as NodeId)?.alpha ?? 1;
   return alphaFor ? (id: string) => alphaFor(id) * overrideAlphaFor(id) : overrideAlphaFor;
 }
 

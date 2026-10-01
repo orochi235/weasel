@@ -17,7 +17,7 @@ import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/c
 
 /** The hand-rolled scenes below stand in for a real `Scene`, which always
  *  carries an overrides map; `hitTestArea` resolves poses through it. */
-const NO_OVERRIDES = { get: () => undefined };
+const NO_OVERRIDES = { read: () => undefined };
 
 /** Right triangle: (0,0) -> (100,0) -> (0,100), closed. AABB = [0,0,100,100].
  *  Hypotenuse from (100,0) to (0,100); the upper-right corner of the AABB

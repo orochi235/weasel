@@ -31,7 +31,7 @@ function midpointOver(nodes: Map<string, PosedNode<RectPose>>) {
     },
   };
   const source: PoseSource<RectPose> = {
-    overrides: { get: () => undefined },
+    overrides: { read: () => undefined },
     get: (id) => (id === 'mid' ? node : nodes.get(id)),
     childrenOf: () => [],
   };

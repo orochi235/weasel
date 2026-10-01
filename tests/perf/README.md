@@ -258,6 +258,7 @@ the entry chunk's hash against the build you mean before believing a grep over i
 | `text-layout.bench.ts` | `layoutRuns` over glyph count, wrapped and unwrapped, and over run count at fixed glyph count; `cachedLayoutRuns` hit vs miss vs moving origin |
 | `scene-ops.bench.ts` | `add` / `add`+`remove` / `setPose` over container-chain depth; `renderOrder()` over node count, over depth, and over layer count at 10k nodes |
 | `hit-test.bench.ts` | `hitTestArea` over node count and query-rect size, for rect poses and for 24-gon silhouettes; `aabbOfPose`; `pointInPath` over vertex count |
+| `pose-overrides.bench.ts` | a frame of the paint walk (`buildSceneViewCommands`), and of `effectivePose` alone, at 1k and 10k nodes with 0%, 10% and 100% of them carrying a pose override |
 | `derived-path.bench.ts` | a frame of `resolveDerivedPath` over diagram size, as it runs now (memo hit) and with the resolve-and-value-compare pass a pull-invalidation scheme would need |
 
 ### The committed baseline

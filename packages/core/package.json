@@ -89,13 +89,14 @@
     "react": ">=18"
   },
   "dependencies": {
+    "@msb235/blits": "0.2.1",
     "@weasel-js/cursor": "1.7.1",
     "@weasel-js/geom": "1.7.1",
     "@weasel-js/gestures": "1.7.1",
     "@weasel-js/history": "1.7.1",
     "@weasel-js/modes": "1.7.1",
-    "@weasel-js/quantity": "1.7.1",
     "@weasel-js/paint": "1.7.1",
+    "@weasel-js/quantity": "1.7.1",
     "@weasel-js/react": "1.7.1",
     "@weasel-js/registry": "1.7.1",
     "@weasel-js/routing": "1.7.1",

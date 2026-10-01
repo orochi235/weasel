@@ -765,7 +765,7 @@ describe('usePenTool', () => {
         renderOrder: () => ['k'],
         renderOrderNodes: () => [node],
         get: (id: string) => (id === 'k' ? node : undefined),
-        overrides: { get: () => undefined },
+        overrides: { read: () => undefined },
       } as unknown as Scene<unknown, string, unknown>;
       const applyEdit = vi.fn();
       const p = setup({

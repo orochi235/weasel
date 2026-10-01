@@ -100,6 +100,7 @@ function stubOverrides(): PoseOverrides<unknown> {
   return {
     set: (id, entry) => { entries.set(id as string, entry); generation++; },
     get: (id) => entries.get(id as string),
+    read: (id) => entries.get(id as string),
     has: (id) => entries.has(id as string),
     ids: () => [...entries.keys()] as never,
     clear: (id) => { entries.delete(id as string); generation++; },

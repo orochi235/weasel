@@ -27,7 +27,7 @@ export interface ParticipantScene<TPose> {
     pose: TPose;
     dependsOn?: readonly string[] | 'children';
   }[];
-  readonly overrides: { get(id: string): { pose?: TPose } | undefined };
+  readonly overrides: { read(id: string): { pose?: TPose } | undefined };
   get(id: string): unknown;
   childrenOf(id: string): readonly string[];
 }
