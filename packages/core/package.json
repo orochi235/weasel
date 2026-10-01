@@ -100,7 +100,6 @@
     "@weasel-js/registry": "1.7.1",
     "@weasel-js/routing": "1.7.1",
     "@weasel-js/text": "1.7.1",
-    "@weasel-js/theme": "1.7.1",
     "earcut": "3.2.3",
     "polygon-clipping": "^0.15.7"
   },
@@ -118,6 +117,7 @@
     "2d"
   ],
   "devDependencies": {
-    "@weasel-js/modes": "1.7.1"
+    "@weasel-js/modes": "1.7.1",
+    "@weasel-js/theme": "1.7.1"
   }
 }
