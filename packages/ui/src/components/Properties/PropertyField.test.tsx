@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { rotationDegreesUnit } from '@weasel-js/core';
 import { prefFieldProps } from '../Prefs/prefField';
 import type { PrefLeaf } from '../Prefs/schema';
-import { PropertyControl, PropertyField } from './PropertyField';
+import { PropertyControl, PropertyField, type PropertyNumberFieldProps } from './PropertyField';
+
+type SliderProps = Omit<PropertyNumberFieldProps, 'name'>;
 
 const OPTIONS = [
   { value: 'a', label: 'Alpha' },
@@ -294,6 +296,21 @@ describe('PropertyControl', () => {
     fireEvent.change(readout, { target: { value: '70' } });
     fireEvent.blur(readout);
     expect(onChange).toHaveBeenCalledWith(70);
+  });
+
+  it.each([
+    ['PropertyControl', (p: SliderProps) => <PropertyControl {...p} name="Size" />],
+    ['PropertyField', (p: SliderProps) => <PropertyField {...p} label="Size" />],
+  ])('lets a settled-only %s slider move, then commits where it stopped', (_, draw) => {
+    const onChange = vi.fn();
+    render(draw({ kind: 'number', control: 'slider', value: 40, min: 0, max: 100, onInput: () => {}, onChange }));
+    const track = screen.getByRole('slider', { name: 'Size' }) as HTMLInputElement;
+    fireEvent.input(track, { target: { value: '60' } });
+    expect(track.value).toBe('60');
+    expect(screen.getByRole('spinbutton', { name: 'Size' })).toHaveValue('60');
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.change(track);
+    expect(onChange).toHaveBeenCalledWith(60);
   });
 
   it('steps a slider from its readout, which is the tab stop the track is not', () => {

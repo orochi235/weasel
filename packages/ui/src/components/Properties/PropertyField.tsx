@@ -1,4 +1,5 @@
 import {
+  type ComponentProps,
   type CSSProperties,
   type ReactNode,
   type RefObject,
@@ -325,11 +326,7 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
   };
 
   if (control.kind === 'number' && control.control === 'slider') {
-    return (
-      <PropertyRow {...row} readout={boxedReadout(readout) ?? <SliderReadout {...control} />}>
-        <SliderTrack {...control} />
-      </PropertyRow>
-    );
+    return <SliderRow row={row} readout={readout} control={control} />;
   }
   return (
     <PropertyRow {...row} readout={readout}>
@@ -348,17 +345,56 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
  */
 export function PropertyControl<T extends string = string>(typed: PropertyControlProps<T>) {
   const props = typed as unknown as PropertyControlProps;
-  if (props.kind === 'number' && props.control === 'slider') {
-    return (
-      <>
-        <SliderTrack {...props} />
-        <span className={s.cellReadout}>
-          <SliderReadout {...props} />
-        </span>
-      </>
-    );
-  }
+  if (props.kind === 'number' && props.control === 'slider') return <SliderCell {...props} />;
   return <ControlBody {...props} />;
+}
+
+/**
+ * A slider's props with its drag held locally. A caller taking settled values
+ * only ignores `onInput`, so `value` stands still through the drag; without the
+ * draft the controlled track snaps back on every move and commits from there.
+ */
+function useSliderDraft(p: PropertyNumberFieldProps): PropertyNumberFieldProps {
+  const [draft, setDraft] = useState<number>();
+  const { onInput, onChange } = p;
+  if (!onInput) return p;
+  return {
+    ...p,
+    value: draft ?? p.value,
+    onInput: (next) => {
+      setDraft(next);
+      onInput(next);
+    },
+    onChange: (next) => {
+      setDraft(undefined);
+      onChange(next);
+    },
+  };
+}
+
+function SliderRow({ row, readout, control }: {
+  row: Omit<ComponentProps<typeof PropertyRow>, 'children'>;
+  readout: ReactNode;
+  control: PropertyNumberFieldProps;
+}) {
+  const p = useSliderDraft(control);
+  return (
+    <PropertyRow {...row} readout={boxedReadout(readout) ?? <SliderReadout {...p} />}>
+      <SliderTrack {...p} />
+    </PropertyRow>
+  );
+}
+
+function SliderCell(props: PropertyNumberFieldProps) {
+  const p = useSliderDraft(props);
+  return (
+    <>
+      <SliderTrack {...p} />
+      <span className={s.cellReadout}>
+        <SliderReadout {...p} />
+      </span>
+    </>
+  );
 }
 
 /** How a row holds a field's control. */
