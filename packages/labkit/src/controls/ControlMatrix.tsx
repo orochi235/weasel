@@ -15,6 +15,7 @@ import {
   useOverlayPortal,
 } from '@weasel-js/ui';
 import {
+  type CSSProperties,
   type DOMAttributes,
   type MouseEvent,
   type ReactElement,
@@ -222,6 +223,18 @@ export function ControlMatrix({
                 setRowAuto={noop}
               />
             </PropertyList>
+            {clearable(open.leaf) ? (
+              <div className="lk-control-matrix__editor-actions">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={!valueAtPath(config, open.path) || auto.has(open.path)}
+                  onClick={() => setConfig(open.path, null)}
+                >
+                  Clear
+                </Button>
+              </div>
+            ) : null}
             {open.first ? null : (
               <div className="lk-control-matrix__editor-actions">
                 <Button
@@ -282,6 +295,9 @@ function ColumnHeader({
     </TooltipTrigger>
   );
 }
+
+/** A color leaf whose default is empty: unset is a value of its own, not black. */
+const clearable = (leaf: PrefLeaf): boolean => leaf.kind === 'color' && leaf.default === '';
 
 /** The number of decimals a step implies: `0.05` shows two, `1` none. */
 function decimalsOf(step: number | undefined): number {
@@ -364,8 +380,9 @@ function Cell({
         </span>
       </button>
     );
-  } else if (field?.kind === 'color') {
-    const stored = typeof field.value === 'string' ? toHex8(field.value) : '#000000ff';
+  } else if (field?.kind === 'color' && !clearable(leaf)) {
+    const stored =
+      typeof field.value === 'string' && field.value !== '' ? toHex8(field.value) : '#000000ff';
     control = (
       <input
         type="color"
@@ -380,6 +397,26 @@ function Cell({
           field.onChange(field.alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb);
         }}
       />
+    );
+  } else if (field?.kind === 'color') {
+    // A color that may be unset opens the popover, which is the only place it can be cleared.
+    const set = typeof field.value === 'string' && field.value !== '';
+    control = (
+      <button
+        type="button"
+        aria-label={set ? label : `${label}, unset`}
+        aria-haspopup="dialog"
+        className="lk-control-matrix__value"
+        onClick={(e) => {
+          if (!unpinned(e)) onOpen(e.currentTarget);
+        }}
+      >
+        <span
+          className={set ? 'lk-control-matrix__chip' : 'lk-control-matrix__chip is-unset'}
+          style={set ? ({ '--lk-chip': field.value } as CSSProperties) : undefined}
+          aria-hidden="true"
+        />
+      </button>
     );
   } else {
     const valueClass =

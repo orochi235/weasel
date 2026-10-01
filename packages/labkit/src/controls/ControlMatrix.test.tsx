@@ -122,6 +122,34 @@ describe('<ControlMatrix>', () => {
     expect(setConfig).toHaveBeenCalledWith('looks.window.fill', '#ff0000');
   });
 
+  it('draws an unset color as unset, and clears a set one from its popover', () => {
+    const edge = resolveConfigSchema(
+      f.schema({
+        a: f.group({ edge: f.color('').label('Edge') }),
+        b: f.group({ edge: f.color('').label('Edge') }),
+      }),
+      [],
+    );
+    const setConfig = vi.fn();
+    render(
+      <ControlMatrix
+        schema={edge}
+        columns={[
+          { key: 'a', label: 'A', title: 'Alpha' },
+          { key: 'b', label: 'B', title: 'Beta' },
+        ]}
+        rows={[{ key: 'edge' }]}
+        config={{ a: { edge: null }, b: { edge: '#ff0000' } }}
+        auto={new Set()}
+        setConfig={setConfig}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Alpha Edge, unset' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Beta Edge' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(setConfig).toHaveBeenCalledWith('b.edge', null);
+  });
+
   it('edits any other cell in a popover holding the panel control, which pins it', () => {
     const { setConfig } = setup();
     fireEvent.click(cell('Window Glow'));
