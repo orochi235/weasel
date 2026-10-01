@@ -249,8 +249,6 @@ rect-driven machinery:
 - `getBounds(pose) → { x, y, width, height }` — AABB.
 - `remapBounds(pose, src, dst) → pose` — affine remap on resize.
 - `translate(pose, dx, dy)` — optional, used by move and snap.
-- `intersectsRect(pose, rect)` — optional; marquee and lasso do not read it,
-  they test the node's drawn outline.
 
 `RECT_POSE_DESCRIPTOR` is the identity for rect poses; `pathPoseDescriptor`
 is the implementation for `Path`. `<SceneCanvas geometry={{ pickEvery,

@@ -318,7 +318,6 @@ export interface PoseDescriptor<TPose> {
   remapBounds(pose: TPose, src: Bounds, dst: Bounds): TPose;
   fromBounds(bounds: Bounds, template: TPose): TPose;
   translate?(pose: TPose, dx: number, dy: number): TPose;
-  intersectsRect?(pose: TPose, rect: Bounds): boolean;
   getRotation?(pose: TPose): number;
   withRotation?(pose: TPose, rotation: number): TPose;
 }

@@ -659,7 +659,7 @@ See `packages/core/src/interactions/gestures/types.ts:108` (`ResizePose`, `Rotat
 `PoseDescriptor<TPose>` — a small projection that bridges an arbitrary `TPose` into
 the kit's rect-driven machinery. Required methods: `getBounds(pose) → ResizePose`
 (AABB), `remapBounds(pose, src, dst) → TPose` (affine remap on resize or group
-scale). Optional: `translate`, `intersectsRect`, `lerp`, `getRotation`. Used by
+scale). Optional: `translate`, `lerp`, `getRotation`. Used by
 `resizeAction`, area-select, snap, and animation helpers. Built-ins:
 `RECT_POSE_DESCRIPTOR` (identity for `ResizePose`), `ROTATED_POSE_DESCRIPTOR`,
 `pathPoseDescriptor`. Distinct from [OriginProjection](#snap-strategy) which handles

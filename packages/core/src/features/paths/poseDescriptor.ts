@@ -1,12 +1,11 @@
 import {
   boxToBox,
-  pointInPath,
   boundsOfPath,
   translatePath,
   transformPath,
   type Path,
 } from '@weasel-js/geom';
-import { aabbIntersectsRect, type PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 
 /**
  * `PoseDescriptor` for `Path` poses — wires `useResize` to operate
@@ -26,23 +25,6 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
   ),
   fromBounds: (b) => ({ kind: 'rect', x: b.x, y: b.y, width: b.width, height: b.height }),
   translate: (path, dx, dy) => translatePath(path, dx, dy),
-  // WHY: AABB pre-test is cheap; only fall through to per-corner pointInPath
-  //      when the rect is fully inside the AABB (silhouette test).
-  intersectsRect: (path, rect) => {
-    const b = boundsOfPath(path);
-    if (!aabbIntersectsRect(b, rect)) return false;
-    if (path.kind === 'rect') return true;
-    // Sample the rect's four corners; any inside the polygon ⇒ overlap.
-    if (
-      pointInPath(path, rect.x, rect.y) ||
-      pointInPath(path, rect.x + rect.width, rect.y) ||
-      pointInPath(path, rect.x, rect.y + rect.height) ||
-      pointInPath(path, rect.x + rect.width, rect.y + rect.height)
-    ) return true;
-    // Conservative fallback: AABB overlap counts. Tighter edge-vs-edge test
-    // would be the next step; defer until a demo demands it.
-    return true;
-  },
   lerp: (a, b, t) => {
     if (a.kind === 'rect' && b.kind === 'rect') {
       return {

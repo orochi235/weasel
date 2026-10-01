@@ -29,10 +29,6 @@ export interface PoseDescriptor<TPose, TNode = unknown> {
    *  back to a translation derived from `remapBounds` (origin shifted, no
    *  scale). Path-shaped poses should provide this for performance. */
   translate?(pose: TPose, dx: number, dy: number): TPose;
-  /** True iff any portion of the pose's geometry intersects `rect`. Optional.
-   *  Marquee and lasso do not read it: both test the node's drawn outline
-   *  (`core/geometry/regionHit`). */
-  intersectsRect?(pose: TPose, rect: Bounds): boolean;
   /** Interpolate between two poses. Optional — animation helpers fall back to
    *  rect-shape lerp when omitted (which fails for non-rect poses). */
   lerp?(a: TPose, b: TPose, t: number): TPose;
@@ -77,12 +73,6 @@ export function poseDescriptorForNode<TPose, TNode>(
   return descriptor.forNode?.(node) ?? descriptor;
 }
 
-/** AABB-vs-AABB overlap. Exported for callers building a default
- *  `intersectsRect` from `getBounds`. */
-export function aabbIntersectsRect(b: Bounds, r: Bounds): boolean {
-  return b.x < r.x + r.width && b.x + b.width > r.x && b.y < r.y + r.height && b.y + b.height > r.y;
-}
-
 /** Identity geometry for `TPose extends Bounds`. Treats the pose as its
  *  own bounds and remaps via affine scale against `src`/`dst`. */
 export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
@@ -100,7 +90,6 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
   },
   fromBounds: (b) => ({ x: b.x, y: b.y, width: b.width, height: b.height }),
   translate: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
-  intersectsRect: (p, r) => aabbIntersectsRect(p, r),
   lerp: (a, b, t) => ({
     ...a,
     x: a.x + (b.x - a.x) * t,
@@ -125,7 +114,6 @@ export const ROTATED_POSE_DESCRIPTOR: PoseDescriptor<RotatedPose> = {
   getBounds: RECT_POSE_DESCRIPTOR.getBounds as PoseDescriptor<RotatedPose>['getBounds'],
   remapBounds: RECT_POSE_DESCRIPTOR.remapBounds as PoseDescriptor<RotatedPose>['remapBounds'],
   translate: RECT_POSE_DESCRIPTOR.translate as PoseDescriptor<RotatedPose>['translate'],
-  intersectsRect: RECT_POSE_DESCRIPTOR.intersectsRect as PoseDescriptor<RotatedPose>['intersectsRect'],
   lerp: RECT_POSE_DESCRIPTOR.lerp as PoseDescriptor<RotatedPose>['lerp'],
   fromBounds: (b) => ({ x: b.x, y: b.y, width: b.width, height: b.height, rotation: 0 }),
   getRotation: (p) => p.rotation,

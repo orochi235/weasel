@@ -39,8 +39,8 @@ One thing does not, and the kernel says so rather than guessing:
 ## The depth a screen rectangle does not name
 
 `PoseDescriptor` reads `Bounds` as the screen box a solid covers. `getBounds`
-and `intersectsRect` run that way and need nothing else — they are what drive
-selection chrome through an orbit. `remapBounds` and `fromBounds` run the other
+runs that way and needs nothing else — it is what drives selection chrome
+through an orbit. `remapBounds` and `fromBounds` run the other
 way, and a rectangle on screen names a pose only once something says how far
 away it is.
 

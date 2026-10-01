@@ -490,11 +490,6 @@ export function createPoseDescriptor<TData, TLayer extends string>(
         return { ...pose, position };
       },
 
-      intersectsRect(pose, rect) {
-        const box = boundsOf(pose);
-        return box ? overlaps(box, rect) : false;
-      },
-
       supportsRotation() {
         return false;
       },

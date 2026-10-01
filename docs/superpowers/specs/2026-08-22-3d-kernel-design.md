@@ -199,7 +199,7 @@ plane determines a box: the depth the 2D contract cannot express comes from the
 scene, not the caller.
 
 **`PoseDescriptor` fits, once a depth is chosen.** Read `Bounds` as the screen box
-a solid covers and `getBounds` and `intersectsRect` work — that is what drives the
+a solid covers and `getBounds` works — that is what drives the
 lab's chrome, and it tracks the camera through an orbit. `remapBounds` and
 `fromBounds` run the other way and named no depth, so they threw. **Decided
 2026-09-13: the depth is the pose's own** — both resolve the rectangle on the

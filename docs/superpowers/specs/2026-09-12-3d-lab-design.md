@@ -136,7 +136,7 @@ fight goes in the log and the lab supplies its own.
 `poseDescriptor` is the interesting half-fit. Its whole interface is expressed in
 `Bounds`, so a pose can be any shape but the interchange currency is a 2D rect.
 Read as a *screen-projected* AABB that is meaningful — it is what chrome needs —
-and `getBounds`/`intersectsRect` work. Going the other way takes a depth the
+and `getBounds` works. Going the other way takes a depth the
 rectangle does not carry; the kernel's answer, decided 2026-09-13, is the depth
 the pose already has, so `remapBounds` and `fromBounds` resolve the rectangle on
 a camera-facing plane through it and nothing they produce moves nearer or

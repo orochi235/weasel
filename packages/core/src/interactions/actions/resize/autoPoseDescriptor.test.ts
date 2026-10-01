@@ -82,24 +82,6 @@ describe('AUTO_POSE_DESCRIPTOR', () => {
     // x doubled, y unchanged.
     expect(Array.from(remapped.coords)).toEqual([0, 0, 20, 0, 10, 10]);
   });
-
-  it('intersectsRect path: hit-tests a path against a rect', () => {
-    expect(AUTO_POSE_DESCRIPTOR.intersectsRect!(
-      polyTriangle,
-      { x: 4, y: 4, width: 2, height: 2 },
-    )).toBe(true);
-    expect(AUTO_POSE_DESCRIPTOR.intersectsRect!(
-      polyTriangle,
-      { x: 50, y: 50, width: 1, height: 1 },
-    )).toBe(false);
-  });
-
-  it('intersectsRect plain rect: overlap check', () => {
-    expect(AUTO_POSE_DESCRIPTOR.intersectsRect!(
-      { x: 0, y: 0, width: 10, height: 10 } as never,
-      { x: 5, y: 5, width: 10, height: 10 },
-    )).toBe(true);
-  });
 });
 
 describe('AUTO fromBounds / withRotation', () => {

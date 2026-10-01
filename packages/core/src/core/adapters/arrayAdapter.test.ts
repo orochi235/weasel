@@ -196,7 +196,7 @@ describe('arrayAdapter — silhouette hit-test', () => {
     fillRule: 'nonzero',
   };
 
-  /** Reads a polygon pose's box from its coords; no `intersectsRect`. */
+  /** Reads a polygon pose's box from its coords. */
   const PATH_DESCRIPTOR: PoseDescriptor<PolygonPath> = {
     getBounds: (p) => {
       const b = boundsOfCoords(p.coords)!;

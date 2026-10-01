@@ -41,9 +41,6 @@ export const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
   translate: (p, dx, dy) => isPathLike(p)
     ? pathPoseDescriptor.translate!(p, dx, dy)
     : RECT_POSE_DESCRIPTOR.translate!(p as { x: number; y: number; width: number; height: number }, dx, dy),
-  intersectsRect: (p, rect) => isPathLike(p)
-    ? pathPoseDescriptor.intersectsRect!(p, rect)
-    : RECT_POSE_DESCRIPTOR.intersectsRect!(p as { x: number; y: number; width: number; height: number }, rect),
   getRotation: (p) => {
     if (isPathLike(p)) return 0;
     const r = (p as { rotation?: unknown }).rotation;

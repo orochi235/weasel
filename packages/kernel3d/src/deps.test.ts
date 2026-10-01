@@ -411,17 +411,4 @@ describe('createPoseDescriptor', () => {
     expect(descriptor.forNode!(node).getBounds(node.pose)).toEqual(descriptor.getBounds(node.pose));
     expect(descriptor.getBounds(node.pose)).toEqual(screenBoxOf(world(scene, () => vp), id, vp));
   });
-
-  it('intersects a rectangle drawn over the solid, and not one beside it', () => {
-    const scene = createTestScene();
-    const vp = viewport();
-    const descriptor = createPoseDescriptor(world(scene, () => vp));
-    const pose = scene.get(idsOf(scene)[1])!.pose;
-    const box = screenBoxOf(world(scene, () => vp), idsOf(scene)[1], vp)!;
-
-    expect(descriptor.intersectsRect!(pose, box)).toBe(true);
-    expect(
-      descriptor.intersectsRect!(pose, { x: box.x + box.width + 50, y: box.y, width: 10, height: 10 }),
-    ).toBe(false);
-  });
 });
