@@ -1,7 +1,8 @@
 # The animator on blits
 
-**Status: a proposal. Nothing in it is built, and it waits on blits being published.** Delete it
-once it is built or turned down.
+**Status: a proposal. Nothing in weasel is built. blits now has everything step 1 asks for**
+(published as `@msb235/blits` 0.1.1, fixed-interval stepping, and springs that keep velocity), so
+step 2 can start. Delete it once it is built or turned down.
 
 For whoever picks up weasel's animation work. It answers: how weasel gets a model for combining
 several animations on one property, without keeping a second copy of the arithmetic that blits
@@ -22,7 +23,7 @@ specs that hit this each set it aside:
 
 The only blending in the kit is the rig's `blendPoses`.
 
-blits (`~/src/blits`, `orochi235/blits`, not yet on npm) is that combining model. Each voice is an
+blits (`~/src/blits`, `orochi235/blits`, on npm as `@msb235/blits`) is that combining model. Each voice is an
 effect with its own clock and weight, and a mix folds every voice reaching a subject into one value
 per frame. The rules belong to the value being written, declared once per channel: `sum`, `mul`,
 `max`, `last`, or a channel's own. klieg runs all three of its animation systems on it, and
@@ -37,7 +38,7 @@ the second part to blits, and keep the first.
 | Job | Today | After |
 |---|---|---|
 | Interpolation, easing, keyframe sampling | `useAnimator`, `timeline/sampleTrack.ts`, pose helpers | blits `keys` patches |
-| Springs, decay | `physics` in `useAnimator.ts` | blits patches (exact springs, below) |
+| Springs, decay | `physics` in `useAnimator.ts` | blits `spring` and `glide` |
 | Combining several writers | None: last writer wins | A blits mix per target |
 | Pose overrides, color overrides, camera | Written directly | Each a mix. The paint walk probes it per node; the camera is a mix with one subject |
 | `cancelKey` slots and interrupts | Animator | Stays. An interrupt fades the old voice and cues the new one from the current value |
@@ -56,23 +57,28 @@ not a migration. `onTick` keeps working by probing a one-subject mix and handing
 
 ## What blits has to have first
 
-Each of these is blits work. The ones marked open are proposed in `~/src/blits` but not built.
+Each of these is blits work.
 
-- **Published on npm.** `@weasel-js/core` can't take a `file:` dependency. Open: blits' handoff
-  says magicsmoke waits on the publish too.
+- **Published on npm.** `@weasel-js/core` can't take a `file:` dependency. Done 2026-09-30:
+  `@msb235/blits` 0.1.1, released from a tag with provenance. Pin it exactly.
 - **A frozen vocabulary.** weasel's types would follow blits' names. blits renamed across its API
-  the week of 2026-09-28, so the type surface in its `docs/schema.html` wants to settle first. Open.
-- **Fixed-interval stepping.** A stateful patch now steps by the whole gap between samples, so the
-  same spring cue lands in different places at different frame rates: 116.9 at 144 fps against
-  109.0 at 30 fps, read at 300 ms. Open: proposed in blits' `NOTES-ON-SCRUBBING.md`.
+  the week of 2026-09-28. It follows semver from 0.1.1, so a break bumps the minor version, and it
+  is still below 1.0. Keeping blits' types out of core's public surface (below) is what makes that
+  safe.
+- **Fixed-interval stepping.** A stateful patch stepped by the whole gap between samples lands in
+  different places at different frame rates: 116.9 at 144 fps against 109.0 at 30 fps, read at
+  300 ms. Done: `mix(kit, { stepMs })` runs `step` once per fixed interval.
 - **Exact springs and decay, carrying velocity across a retarget.** `spring` and `physics` here
-  retarget mid-flight through `setTarget` and `setVelocity`. In blits a retarget is a new voice,
-  which today starts from zero velocity. Open: proposed in the same note, as piecewise closed forms
-  with velocity recorded at each segment.
-- **Speed at scene sizes.** Measured 2026-09-30 with blits' own `npm run bench`, one run on this
-  machine: 1000 subjects × 3 voices at 1.18 ms per frame, 10k × 3 at 27.8 ms for `fn` patches and
-  14.6 ms for `keys`. blits reported about 10.5 ms for the `fn` row the day before, so take one run
-  as rough. Either way, 10k is over budget. The paint walk would probe only the nodes some voice
+  retarget mid-flight through `setTarget` and `setVelocity`. Done: blits' `spring` and `glide` are
+  closed forms per subject; `spring.to` and `push` stand in for `setTarget` and `setVelocity`, and
+  start the next stretch from the current position and velocity; `read` returns both, for handing
+  motion to another patch. Two limits: each keeps one stretch per subject, so a read earlier than
+  the latest retarget does not recall history, and a spring's state is its own, so each is cued on
+  one voice.
+- **Speed at scene sizes.** One run of blits' `npm run bench` on 2026-09-30 read 27.8 ms per frame
+  for 10k subjects × 3 `fn` voices. The same day, builds from before and after blits' reach change
+  were alternated four times on that row and read 6.0–7.6 ms each, so the 27.8 was a loaded
+  machine. That is still a third to a half of a 60 Hz frame for 10k nodes before painting. The paint walk would probe only the nodes some voice
   reaches. blits now walks only the voices that reach a subject (`1b1d841`), but nothing yet lists
   which subjects any voice reaches. That list is weasel's to supply: its control layer knows every
   node it cued a voice on.
@@ -119,7 +125,7 @@ Each of these is blits work. The ones marked open are proposed in `~/src/blits` 
 
 ## Order
 
-1. blits: fixed-interval stepping, exact springs with velocity, publish.
+1. blits: fixed-interval stepping, exact springs with velocity, publish. Done 2026-09-30.
 2. weasel: pose overrides as a mix, behind the existing `PoseOverrides` interface, with the reach
    list supplied by the control layer. Benchmark the paint walk before going further.
 3. weasel: tween, spring and keyframe sampling reimplemented on blits patches under the same
