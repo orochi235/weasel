@@ -499,6 +499,13 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 - **(P3) Serializable clips** — follows from tracks being typed callbacks rather
   than data. Revisit with the editor's experience in hand.
 
+### Combining animations
+
+- **(P3) The animator on blits** — weasel has no model for two animations on one property; every
+  case is last-writer-wins. Proposal: `docs/proposals/2026-09-30-animator-on-blits.md`, which keeps
+  the animator's control surface and moves every value computation onto blits. Waits on blits being
+  published, fixed-interval stepping and exact springs in blits.
+
 ### Earlier deferrals
 
 All from `docs/specs/2026-05-04-animation-primitive-design.md`. The timeline arc's
