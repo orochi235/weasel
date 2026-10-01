@@ -7,6 +7,7 @@ import {
   type LoupeSurface,
 } from '@weasel-js/loupe';
 import s from './LoupeModelDemo.module.css';
+import { decimal, qty } from '@weasel-js/quantity';
 
 const CELL = 8, COLS = 48, ROWS = 32;
 const GRID_W = CELL * COLS, GRID_H = CELL * ROWS;
@@ -39,7 +40,7 @@ function gridSurface(changed: () => void): LoupeSurface {
   };
 }
 
-const fmt = (n: number) => n.toFixed(2).padStart(7, '\u2007');
+const fmt = (n: number) => qty(n, decimal({ places: 2, grouping: false })).text.padStart(7, '\u2007');
 
 function Swatch({ color }: { color: string | null }) {
   if (!color) return <>—</>;

@@ -13,6 +13,7 @@ import {
   type CurveNearest,
 } from '@weasel-js/geom';
 import s from './GeomDemo.module.css';
+import { decimal, qty } from '@weasel-js/quantity';
 
 const W = 620, H = 360;
 const R = 7;
@@ -112,7 +113,7 @@ function centersOf(helpers: CanvasHelpers<Dot> | null, scene: { get(id: never): 
   return out;
 }
 
-const fmt = (n: number, w = 6, p = 1) => n.toFixed(p).padStart(w, ' ');
+const fmt = (n: number, w = 6, p = 1) => qty(n, decimal({ places: p, grouping: false })).text.padStart(w, '\u2007');
 
 /**
  * A cubic Bézier and what `@weasel-js/geom` computes about it. The four
