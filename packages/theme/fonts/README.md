@@ -6,7 +6,7 @@ third-party host at runtime.
 | file | token | role |
 |---|---|---|
 | `oswald-latin-variable.woff2` | `--wzl-font-ui`, `--wzl-font-display` | condensed UI/display face, variable `wght 200–700` |
-| `oswald-tabular-digits.woff2` | `--wzl-font-numeric` | Oswald's digits 0–9, each centered in the widest digit's advance at every weight, and a figure space (U+2007) that wide, as family `Oswald Tabular` |
+| `oswald-tabular-digits.woff2` | `--wzl-font-numeric` | Oswald's digits 0–9, plus (U+002B) and minus (U+2212), each centered in the widest digit's advance at every weight, and a figure space (U+2007) that wide, as family `Oswald Tabular` |
 | `inter-latin.woff2` | `--wzl-font-body` | body/prose face, weight 400 |
 
 Loading them is opt-in: `import '@weasel-js/theme/fonts.css'`, or
@@ -57,10 +57,13 @@ family name.
 ## Provenance — Oswald Tabular
 
 Built from `oswald-latin-variable.woff2` by `scripts/oswald-tabular.py` (same
-venv): subset to U+0030–0039 with no layout features, then every digit gets the
-widest digit's advance at the default weight and at each `wght` master, its
-outline shifted by half the difference so it stays centered, and `HVAR` is
-rebuilt from the patched `gvar`. A blank U+2007 of the same width is added, because
+venv): subset to U+0030–0039, U+002B and U+2212 with no layout features, then
+every digit and sign gets the widest digit's advance at the default weight and
+at each `wght` master, its outline shifted by half the difference so it stays
+centered, and `HVAR` is rebuilt from the patched `gvar`. The minus is rebuilt
+from the plus's crossbar first: Oswald draws it shorter than that arm, which a
+column of signed figures would show. U+2212 rather than the hyphen, so a hyphen
+in a date stays a hyphen; `@weasel-js/quantity` writes negatives with U+2212. A blank U+2007 of the same width is added, because
 Oswald has none and `Jog` and `DetailList` pad numbers with it. Oswald ships no `tnum` feature, so this is the
 only way its figures line up in a column. The widest digit is `0` at every
 weight, so no digit is padded past Oswald's own widest.
@@ -71,7 +74,7 @@ weight, so no digit is padded past Oswald's own widest.
 
 It is a separate family rather than a patched Oswald so that only text asking
 for `--wzl-font-numeric` gets tabular digits; running text keeps Oswald's
-proportional ones. The face covers digits and the figure space alone, so the browser takes every
+proportional ones. The face covers digits, the two signs and the figure space alone, so the browser takes every
 other character from the next family in the stack.
 
 ## Provenance — Inter

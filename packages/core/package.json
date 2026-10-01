@@ -37,6 +37,7 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
+    "./style.css": "./dist/style.css",
     "./math": {
       "import": "./dist/math.js",
       "types": "./dist/math.d.ts"
@@ -99,6 +100,7 @@
     "@weasel-js/registry": "1.7.1",
     "@weasel-js/routing": "1.7.1",
     "@weasel-js/text": "1.7.1",
+    "@weasel-js/theme": "1.7.1",
     "earcut": "3.2.3",
     "polygon-clipping": "^0.15.7"
   },

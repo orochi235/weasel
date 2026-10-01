@@ -84,7 +84,7 @@ export default defineConfig({
         Object.entries(entries).map(([name, path]) => [name, resolve(import.meta.dirname, path)]),
       ),
       formats: ['es'],
-      cssFileName: 'index',
+      cssFileName: 'style',
     },
     target: 'es2022',
     cssCodeSplit: false,

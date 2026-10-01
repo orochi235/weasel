@@ -188,11 +188,12 @@
   background: transparent;
 }
 
-/* Last in the row, and growing leftward into the slack `margin-inline-start`
-   leaves it: the playhead rewrites this every frame and gains a digit at 10s,
-   so anything laid out after it would vibrate. */
+/* The playhead rewrites this every frame and gains a digit at 10s. Its sizer
+   holds the cell at the duration's width, so a transport sized to its content
+   does not widen; last in the row, it also takes whatever slack the row has. */
 .time {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
+  display: inline-grid;
   margin-inline-start: auto;
   text-align: end;
   color: var(--wzl-fg-muted);
@@ -201,11 +202,21 @@
 .rateSlider { width: 88px; }
 
 /* The detents carry no labels in a bar this dense, so the chosen rate is said
-   once, here, in a fixed-width cell so the controls beside it never shift. */
+   once, here, in a cell as wide as the widest rate on offer. */
 .rateReadout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  min-width: 3ch;
+  display: inline-grid;
+  text-align: end;
   color: var(--wzl-fg);
+}
+
+.time > *,
+.rateReadout > * {
+  grid-area: 1 / 1;
+}
+
+.sizer {
+  composes: sizer from '../sizer.module.css';
 }
 
 .root {

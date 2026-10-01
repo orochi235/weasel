@@ -24,6 +24,13 @@ npm install @weasel-js/core react
 
 `react` is a peer dependency (>=18).
 
+The canvas's debug overlays (`cursorCoordsHud`, `pickHud`, `modalityHud`) are
+styled by core's stylesheet. Import it once if you turn any of them on:
+
+```ts
+import '@weasel-js/core/style.css';
+```
+
 ## How it fits together
 
 `useScene` holds the scene: a tree of leaf and container nodes, each carrying your data and a pose. Every change to it is an **op**, which is what makes it undoable. `<SceneCanvas>` renders a scene and routes input to it.

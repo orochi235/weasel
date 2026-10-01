@@ -415,6 +415,9 @@ await writeFile(
     // something a consumer can actually load.
     `import * as ui from '@weasel-js/ui';\n` +
     `import '@weasel-js/ui/style.css';\n` +
+    // Core's debug HUDs are CSS modules too; their stylesheet shipped unexported
+    // through 1.7.1, so a consumer's HUD had class names and no rules.
+    `import '@weasel-js/core/style.css';\n` +
     // The `./components/*` wildcard subpath — what lets a consumer pull one
     // component instead of the whole barrel, and what the multi-entry Vite
     // build exists to back. check:manifests cannot cover this: a wildcard
