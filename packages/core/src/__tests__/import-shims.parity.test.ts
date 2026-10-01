@@ -44,7 +44,8 @@ describe('subpath parity: entries.ts ↔ package.json exports ↔ src/import-shi
   const entrySubpaths = new Set(entryKeys.filter((k) => k !== 'index'));
   const exportSubpaths = new Set(
     exportKeys
-      .filter((k) => k !== '.' && k !== './package.json')
+      // A stylesheet is a file, not a module: it has no entry and no shim.
+      .filter((k) => k !== '.' && k !== './package.json' && !k.endsWith('.css'))
       .map((k) => k.replace(/^\.\//, '')),
   );
   const shimSubpaths = new Set(shimFiles);
