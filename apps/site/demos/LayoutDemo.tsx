@@ -20,7 +20,8 @@ import sceneJson from './data/layout.scene.json';
 // keeps it arranged: a tile added to G lands in the nearest free cell. Dragging
 // a child into a different container runs the layout-aware move pass: the
 // destination strategy places it, the source strategy reflows its leftovers,
-// and the commit reparents the dragged child in one undo step.
+// and the commit reparents the dragged child in one undo step. Dropped outside
+// every container, a child leaves its own and lands at the top level.
 
 type P = { x: number; y: number; width: number; height: number };
 type Data = { color: string; isContainer: boolean };
@@ -62,12 +63,14 @@ export function LayoutDemo() {
     });
   };
 
-  // Committed-pose ledger: walk each container's leaf children and surface
-  // their live pose + parent. Because the demo re-renders on scene version
-  // change, these rows update the instant a drag commits — letting you watch
-  // a child reparent and reflow into its destination container.
-  const rows = scene.roots.flatMap((containerId) =>
-    scene.childrenOf(containerId).map((childId) => {
+  // Committed-pose ledger: every tile's live pose + parent, whether it sits in
+  // a container or was dropped outside them all. Because the demo re-renders
+  // on scene version change, these rows update the instant a drag commits —
+  // letting you watch a child reparent and reflow into its destination.
+  const rows = scene.roots
+    .flatMap((rootId) => [rootId, ...scene.childrenOf(rootId)])
+    .filter((id) => !scene.get(id)!.data.isContainer)
+    .map((childId) => {
       const child = scene.get(childId)!;
       const pose = child.pose as P;
       return {
@@ -75,8 +78,7 @@ export function LayoutDemo() {
         parent: child.parent as string | null,
         text: `${childId}:${Math.round(pose.x)},${Math.round(pose.y)}`,
       };
-    }),
-  );
+    });
 
   return (
     <div>

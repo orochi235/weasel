@@ -293,9 +293,10 @@ describe('moveAction layout reflow', () => {
     handle.onMove!(makeCtx(scene, ['a'], drag, { C: letGo }) as InvocationCtx);
     handle.onEnd!(makeCtx(scene, ['a'], drag, { C: letGo }) as InvocationCtx, 'commit');
 
-    // Today's behavior: the child stays where the pointer left it.
+    // The child stays where the pointer left it, out of the container it left.
     const ops = scene.appliedBatches[0].ops;
     expect(ops.some((o) => o.args?.id === 'a' && o.args?.to?.x === 500 && o.args?.to?.y === 500)).toBe(true);
+    expect(ops.find((o) => o.name === 'reparent' && o.args?.id === 'a')?.args?.toParentId).toBeNull();
   });
 
   it('emits a reparent op before the drop on a cross-container grid drag', () => {

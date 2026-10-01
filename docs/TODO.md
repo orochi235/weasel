@@ -845,12 +845,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) LayoutDemo clips a child dropped outside its container.** The child stays that
-  container's child and is drawn clipped to it, so it vanishes from sight wherever it lands.
-  Either the drop should reparent it out, or the demo's containers should not clip. Seen
-  in headless Chromium 2026-09-29; predates the reflow glide work.
-
-
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 
 ---
