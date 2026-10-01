@@ -72,22 +72,6 @@ Priority tags:
   the declaration, or have `TargetSpec` carry the answer instead of the
   predicate.
 
-- **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
-  Reported 2026-07-28 against **lbx-editor**, then on `@weasel-js/core@0.6.0` from
-  npm — a build that still ran the **phase-table pipeline deleted on main**
-  (`adc17bec`), where affordance hits reached actions through `composeAffordanceLayer`'s layer
-  `hitTest` rather than through `affordanceAt`. lbx-editor also passes
-  `selectTool={{ rotate: false }}`, and that older mechanism needed the rotate tool
-  mounted as `ambient` to see selection chrome at all — a plausible mechanism for
-  the report, and one that no longer exists.
-  **Not reproducible on main.** Five configurations in apps/draw — overlapping node
-  above the handle, rotated selection, click-without-drag, multi-select union
-  handle, several zooms — all dispatch `resize` against the selected node with the
-  selection intact. `select.pick` declines chrome in its *spec*, so a press carrying
-  an affordance never reaches it, and the hit radius is scale-corrected.
-  lbx-editor has since taken the bump: it pins `^0.7.2` (lbx-editor `87a6242`,
-  2026-08-01), which contains `adc17bec`. Re-test there; close if it's gone.
-
 - **(P3) SVG-file ingestion — follow-ups.** Shipped 2026-07-04: `kit:svg`
   content handler (`packages/core/src/features/ingestion/svgHandler.ts`, priority -90 —
   ahead of `kit:image`, behind consumer handlers) matching `image/svg+xml`
