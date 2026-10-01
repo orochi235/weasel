@@ -36,18 +36,27 @@ export interface WalkCtx {
   values: unknown;
   onChange: (path: string, value: unknown) => void;
   renderers?: Record<string, PrefRenderer>;
+  auto?: ReadonlySet<string>;
+  onAutoChange?: (path: string, next: boolean) => void;
+  inheritHint?: (path: string) => string | undefined;
+  canInherit?: (path: string) => boolean;
 }
 
 export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {
   const stored = prefValueAtPath(ctx.values, path);
+  const inherited = ctx.auto?.has(path) ?? false;
+  const { onAutoChange } = ctx;
+  const toggles = onAutoChange !== undefined && (ctx.canInherit?.(path) ?? true);
+  const setAuto = (next: boolean): void => {
+    if (toggles) onAutoChange(path, next);
+  };
   const renderCtx: PrefRenderContext = {
     path,
     pref,
     value: stored !== undefined ? stored : pref.default,
     setValue: (v) => ctx.onChange(path, v),
-    // A prefs form pins every leaf: it has no computed state to hand back.
-    auto: false,
-    setAuto: () => {},
+    auto: inherited,
+    setAuto,
   };
 
   const custom = ctx.renderers?.[pref.kind];
@@ -64,6 +73,12 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
       description={pref.description}
       layout="inline"
       className={s.row}
+      // The owner passes an inherited leaf's value already resolved, so the
+      // control keeps drawing it; editing it pins, through `onChange`.
+      auto={inherited}
+      autoControl="dimmed"
+      onAutoChange={toggles ? setAuto : undefined}
+      hint={inherited ? ctx.inheritHint?.(path) : undefined}
     >
       <span className={s.rowControl}>{control}</span>
     </PropertyRow>

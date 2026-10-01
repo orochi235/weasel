@@ -880,6 +880,32 @@
   flex: 0 0 auto;
 }
 
+/* A row past one line — a textarea or list editor beside the label, or a label
+   that wrapped — reads from the top: centering puts the label's first line
+   halfway down the control, level with nothing. First baseline sets the label's
+   first line on the control's first line of text, and a control with no text
+   (a switch, a box) sits on that line the way it does in running text. Outranks
+   `align` and the select row's text alignment, which place a one-line row.
+   `data-multiline` is measured by the row. */
+.row.rowInline:has(textarea, [role='group'] > ul),
+.row.rowInline[data-multiline],
+.row.rowCheckbox:not(.rowBlock)[data-multiline] {
+  align-items: first baseline;
+}
+
+.row.rowColor:not(.rowBlock)[data-multiline] > .rowLabel,
+.row.rowColor:not(.rowBlock)[data-multiline] > input[type='color'],
+.row.rowColor:not(.rowBlock)[data-multiline] > .colorField > :first-child {
+  align-self: first baseline;
+}
+
+/* A textarea's baseline is its last line in some engines, so beside one the
+   label goes to the top and steps down to the textarea's first line instead. */
+.rowInline:has(textarea) > .rowLabel {
+  align-self: flex-start;
+  padding-block-start: calc(var(--wzl-space-2) + 1px);
+}
+
 .rowInline > input,
 .rowInline > select,
 .rowInline > .toggleBar {
@@ -1751,6 +1777,22 @@
 
 .rowAuto > .rowLabel {
   color: var(--wzl-fg-subtle);
+}
+
+/* An auto row that keeps drawing its control: the value is the one it inherits,
+   shown faded so it reads as not chosen here. */
+.rowAutoDimmed > :not(.rowLabel) {
+  opacity: 0.55;
+}
+
+/* Where an inherited value comes from, after the label. Not uppercased: it is a
+   note about the label, not part of it. */
+.rowHint {
+  font-size: var(--wzl-font-size-2xs);
+  color: var(--wzl-fg-subtle);
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: nowrap;
 }
 
 /* A stacked row's readout sits inside the label and an inline row's sits after

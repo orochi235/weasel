@@ -1,4 +1,14 @@
-import { createContext, forwardRef, type ReactNode, type Ref, useContext } from 'react';
+import {
+  createContext,
+  forwardRef,
+  type ReactNode,
+  type Ref,
+  type RefObject,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Focusable } from 'react-aria-components';
 import { type StanceProps, useStance } from '../stance';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
@@ -229,6 +239,12 @@ export interface PropertyRowProps extends PropertyMetricProps {
    *  The label then names that toggle, so a control passed as `children` has to
    *  carry its own accessible name — every `<PropertyField>` does. */
   onAutoChange?: (next: boolean) => void;
+  /** What an auto row does with its control. `'hidden'` (the default) keeps its
+   *  box and reads out the word instead; `'dimmed'` keeps drawing it, faded, for
+   *  an owner that passes the value the row inherits and pins on any edit. */
+  autoControl?: 'hidden' | 'dimmed';
+  /** Small muted text after the label — where an inherited value comes from. */
+  hint?: ReactNode;
 }
 
 /** The label-plus-control frame `<PropertyField>` draws its rows in. Use it
@@ -248,6 +264,8 @@ export function PropertyRow({
   align,
   auto,
   onAutoChange,
+  autoControl = 'hidden',
+  hint,
 }: PropertyRowProps) {
   const variantClass = variant === 'color' ? s.rowColor : variant === 'checkbox' ? s.rowCheckbox : '';
   // Each variant already lays out one way; a class is only needed for the
@@ -258,7 +276,13 @@ export function PropertyRow({
   const layoutClass =
     resolved === intrinsic ? '' : resolved === 'inline' ? s.rowInline : s.rowBlock;
   const cls = propertyMetricClass(
-    [s.row, variantClass, layoutClass, span && s.span, auto && s.rowAuto]
+    [
+      s.row,
+      variantClass,
+      layoutClass,
+      span && s.span,
+      auto && (autoControl === 'dimmed' ? s.rowAutoDimmed : s.rowAuto),
+    ]
       .filter(Boolean)
       .join(' '),
     { density, align },
@@ -268,31 +292,81 @@ export function PropertyRow({
   // belongs on the label line. An inline row would put a value of changing width
   // in front of the control, which then moves under the pointer as it changes.
   const trailing = resolved === 'inline' && readout != null;
+  const rowRef = useRef<HTMLElement | null>(null);
+  const labelRef = useRef<HTMLSpanElement | null>(null);
+  const multiline = useMultiline(rowRef, labelRef, resolved === 'inline');
   const head = (
-    <span className={s.rowLabel}>
+    <span className={s.rowLabel} ref={labelRef}>
       {onAutoChange ? (
         <AutoToggle auto={auto ?? false} label={label} onChange={onAutoChange} />
       ) : (
         label
       )}
-      {description ? <PropertyRowHelp label={label} description={description} /> : null}
+      {hint != null && <span className={s.rowHint}>{hint}</span>}
+      {description ? <PropertyHelp label={label} description={description} /> : null}
       {readout != null && !trailing && <em className={s.readout}>{readout}</em>}
     </span>
   );
   const tail = trailing ? <em className={`${s.readout} ${s.readoutAfter}`}>{readout}</em> : null;
+  const multi = multiline ? { 'data-multiline': '' } : {};
   return group ? (
-    <div className={cls}>
+    <div className={cls} ref={rowRef as RefObject<HTMLDivElement>} {...multi}>
       {head}
       {children}
       {tail}
     </div>
   ) : (
-    <label className={cls} htmlFor={htmlFor}>
+    <label
+      className={cls}
+      htmlFor={htmlFor}
+      ref={rowRef as RefObject<HTMLLabelElement>}
+      {...multi}
+    >
       {head}
       {children}
       {tail}
     </label>
   );
+}
+
+/**
+ * Whether an inline row runs past one line — its label wraps, or a child is
+ * taller than a field. CSS can name the tall controls it knows (`:has()`), but
+ * not a label that wrapped at this width, so the row measures. Never set
+ * without layout, so jsdom always reads single-line.
+ */
+function useMultiline(
+  rowRef: RefObject<HTMLElement | null>,
+  labelRef: RefObject<HTMLElement | null>,
+  enabled: boolean,
+): boolean {
+  const [multiline, setMultiline] = useState(false);
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    const label = labelRef.current;
+    if (!enabled || !row || !label || typeof ResizeObserver === 'undefined') {
+      setMultiline(false);
+      return;
+    }
+    const measure = (): void => {
+      const labelStyle = getComputedStyle(label);
+      const lineHeight =
+        Number.parseFloat(labelStyle.lineHeight) ||
+        Number.parseFloat(labelStyle.fontSize) * 1.2;
+      const floor = Number.parseFloat(getComputedStyle(row).minHeight) || lineHeight;
+      const labelWraps = label.getBoundingClientRect().height > lineHeight * 1.5;
+      const tallChild = Array.from(row.children).some(
+        (child) => child !== label && child.getBoundingClientRect().height > floor * 1.5,
+      );
+      setMultiline(labelWraps || tallChild);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(row);
+    observer.observe(label);
+    for (const child of Array.from(row.children)) observer.observe(child);
+    return () => observer.disconnect();
+  }, [rowRef, labelRef, enabled]);
+  return multiline;
 }
 
 /**
@@ -339,9 +413,18 @@ function AutoToggle({
   );
 }
 
-/** Tooltip trigger for a row's `description`. A tooltip trigger has to be
- *  interactive to be keyboard-reachable, so this is a real button. */
-function PropertyRowHelp({ label, description }: { label: ReactNode; description: string }) {
+/** Props for `<PropertyHelp>`. */
+export interface PropertyHelpProps {
+  /** What the help is about; a string names the button `About <label>`. */
+  label: ReactNode;
+  description: string;
+}
+
+/** The ⓘ beside a row label that shows its `description` in a tooltip. Exported
+ *  for surfaces that draw a params label outside a `<PropertyRow>`. A tooltip
+ *  trigger has to be interactive to be keyboard-reachable, so this is a real
+ *  button. */
+export function PropertyHelp({ label, description }: PropertyHelpProps) {
   const name = typeof label === 'string' ? label : 'this setting';
   return (
     <TooltipTrigger>
