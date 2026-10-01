@@ -221,13 +221,5 @@
 }
 
 .sizer {
-  display: grid;
-  height: 0;
-  overflow: hidden;
-  visibility: hidden;
-  white-space: nowrap;
-}
-
-.sizer > * {
-  grid-area: 1 / 1;
+  composes: sizer from '../sizer.module.css';
 }

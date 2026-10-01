@@ -127,14 +127,6 @@
 }
 
 .sizer {
-  display: grid;
-  height: 0;
-  overflow: hidden;
-  visibility: hidden;
-  white-space: nowrap;
+  composes: sizer from '../sizer.module.css';
   padding: 0 var(--wzl-field-pad-x);
-}
-
-.sizer > * {
-  grid-area: 1 / 1;
 }

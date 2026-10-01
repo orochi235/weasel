@@ -26,6 +26,7 @@ export interface TransportProps {
 }
 
 const seconds = (ms: number): string => `${(ms / 1000).toFixed(2)}s`;
+const rateText = (r: number): string => qty(r, RATE).text;
 
 /** Play/pause, a loop switch, a rate slider, and the playhead over the
  *  duration in seconds. Holds no state: every control reports through a callback. */
@@ -68,15 +69,25 @@ export function Transport(props: TransportProps): ReactElement {
           items={rates.map((r) => ({ value: r, ariaLabel: qty(r, RATE).spoken }))}
           value={rate}
           onChange={onRateChange}
-          formatLabel={(r) => qty(r, RATE).text}
+          formatLabel={rateText}
           labels="none"
           className={s.rateSlider}
         />
-        <span className={s.rateReadout}>{qty(rate, RATE).text}</span>
+        <span className={s.rateReadout}>
+          <span>{rateText(rate)}</span>
+          <span className={s.sizer} aria-hidden="true">
+            {rates.map((r) => <span key={r}>{rateText(r)}</span>)}
+          </span>
+        </span>
       </div>
 
-      <span className={s.time} data-testid="timeline-time">
-        {seconds(playhead)} / {seconds(duration)}
+      <span className={s.time}>
+        <span data-testid="timeline-time">
+          {seconds(Math.min(Math.max(playhead, 0), duration))} / {seconds(duration)}
+        </span>
+        <span className={s.sizer} aria-hidden="true">
+          <span>{seconds(duration)} / {seconds(duration)}</span>
+        </span>
       </span>
     </div>
   );

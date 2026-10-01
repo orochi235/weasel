@@ -1,0 +1,14 @@
+/* Holds a box at the width of the widest of several strings: each child of the
+   sizer is one candidate, stacked in a single cell, invisible and zero-height.
+   Set it in the same grid cell as the visible value. */
+.sizer {
+  display: grid;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+.sizer > * {
+  grid-area: 1 / 1;
+}
