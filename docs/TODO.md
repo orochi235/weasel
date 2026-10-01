@@ -553,6 +553,19 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P2) Text emphasis is a fixed gray, not a step down from the text it sits beside.**
+  `--wzl-fg-muted` and `--wzl-fg-subtle` are fixed grays per mode (`gray-300`/`gray-400`
+  dark, `gray-600`/`gray-500` light), used about 700 times. A fixed gray only reads as
+  "less" against the surface it was picked on. On an accent fill, a raised row or a
+  sunken rail it can't follow the text color in effect there, and it lands close enough
+  to a disabled control that the Prefs rail's nested entries read as disabled (fixed
+  there by dropping the color). Look at expressing emphasis as a coefficient on the
+  current text color instead, e.g. `color-mix(in oklab, currentColor <n>%, transparent)` or
+  relative color on `--wzl-fg`, with the steps as theme tokens. Open questions: whether
+  disabled gets its own distinct signal once emphasis is relative; contrast at each step
+  on every surface; and the `var()`-in-a-custom-property trap in CLAUDE.md, which a
+  token built on `currentColor` or `--wzl-fg` must avoid.
+
 - **(P3) apps/site never loads the kit's faces.** It imports no
   `@weasel-js/theme/faces.css` or `fonts.css`, so `--wzl-font-ui`'s Oswald and
   `--wzl-font-numeric`'s Oswald Tabular fall back to system faces in every demo.
