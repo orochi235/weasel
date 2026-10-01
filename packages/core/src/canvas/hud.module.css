@@ -1,4 +1,6 @@
-/* The debug HUDs <Canvas> can draw: CursorCoordsHud, PickHud, ModalityHud. */
+/* The debug HUDs <Canvas> can draw: CursorCoordsHud, PickHud, ModalityHud. The
+   mono face is for the ids the pick and modality HUDs list; figures take the
+   numeric face, on a child so `.hud`'s own font cannot override it. */
 .hud {
   position: fixed;
   z-index: 10000;
@@ -17,8 +19,21 @@
   max-width: 260px;
 }
 
-.pre {
-  white-space: pre;
+.readings {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 8px;
+  margin: 0;
+}
+
+.readings dt {
+  text-align: left;
+}
+
+.readings dd {
+  margin: 0;
+  white-space: nowrap;
 }
 
 .muted {

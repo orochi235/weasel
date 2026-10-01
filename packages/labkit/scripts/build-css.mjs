@@ -7,10 +7,11 @@
 //      URLs rewritten to the dist/fonts/ copies.
 //   1. @weasel-js/theme tokens: the `--wzl-*` custom properties every weasel-ui
 //      rule reads. Omit them and those rules paint with nothing.
-//   2. @weasel-js/ui: the CSS modules behind the components labkit passes
-//      through. Scoped class names are minted by ui's own build, so this comes
-//      from its `dist` — the same build tsup bundles the JS out of. Take it from
-//      anywhere else and the names stop matching.
+//   2. @weasel-js/core and @weasel-js/ui: the CSS modules behind the canvas's
+//      debug HUDs and the components labkit passes through. Scoped class names
+//      are minted by each package's own build, so each comes from its `dist` —
+//      the build whose JS the consumer runs. Take it from anywhere else and the
+//      names stop matching.
 //   3. windease: the structural rules its absolutely-positioned tiles depend
 //      on. Workspace renders a windease zone, and without `.windease-window`
 //      every tile stacks at the origin at zero size.
@@ -44,10 +45,11 @@ if (!labkit.includes(facesImport))
 const layers = [
   facesInDist,
   readFileSync(join(packages, 'theme/dist/tokens.css'), 'utf8'),
+  readFileSync(join(packages, 'core/dist/style.css'), 'utf8'),
   readFileSync(join(packages, 'ui/dist/style.css'), 'utf8'),
   readFileSync(createRequire(import.meta.url).resolve('windease/styles.css'), 'utf8'),
   labkit.replace(facesImport, ''),
 ];
 
 writeFileSync(join(pkgRoot, 'dist/styles.css'), layers.join('\n'));
-console.log('[css] dist/styles.css — theme faces + theme tokens + weasel-ui + windease + labkit');
+console.log('[css] dist/styles.css — theme faces + theme tokens + core + weasel-ui + windease + labkit');

@@ -9,6 +9,7 @@
  * debugging.
  */
 import { useEffect, useRef, useState } from 'react';
+import { decimal, qty } from '@weasel-js/quantity';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import s from './hud.module.css';
 import { useHostAnchor } from './useHostAnchor';
@@ -107,18 +108,28 @@ export function CursorCoordsHud({ canvasRef, anchorRef, viewRef, offset }: Curso
   if (!anchorStyle) return null;
 
   return (
-    <div
-      ref={ref}
-      className={`${s.hud} ${s.pre}`}
-      style={anchorStyle}
-    >
-      {`fps    ${fps.toString().padStart(3)}`}
-      {'\n'}
-      {`client (${state.client.x.toFixed(0)}, ${state.client.y.toFixed(0)})`}
-      {'\n'}
-      {state.world
-        ? `world  (${state.world.x.toFixed(1)}, ${state.world.y.toFixed(1)})${state.inCanvas ? '' : '  (off-canvas)'}`
-        : 'world  — (no canvas/view yet)'}
+    <div ref={ref} className={s.hud} style={anchorStyle}>
+      <dl className={s.readings}>
+        <dt className={s.muted}>fps</dt>
+        <dd>{fps}</dd>
+        <dt className={s.muted}>client</dt>
+        <dd>{point(state.client, 0)}</dd>
+        <dt className={s.muted}>world</dt>
+        {state.world ? (
+          <dd>
+            {point(state.world, 1)}
+            {state.inCanvas ? null : <span className={s.absent}> off-canvas</span>}
+          </dd>
+        ) : (
+          <dd className={s.absent}>— no canvas or view yet</dd>
+        )}
+      </dl>
     </div>
   );
+}
+
+/** `(x, y)` at `places` decimals, its negatives written with U+2212. */
+function point({ x, y }: { x: number; y: number }, places: number): string {
+  const at = decimal({ places, grouping: false });
+  return `(${qty(x, at).text}, ${qty(y, at).text})`;
 }
