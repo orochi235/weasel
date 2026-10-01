@@ -241,8 +241,10 @@ export interface LayoutStrategy<TPose> {
    *  closed — and an empty array leaves the container unchanged, which snaps
    *  the child home because the drag only ever wrote previews. `null` lets
    *  the drop stand where the pointer left it, which is also what a strategy
-   *  without this method gets. The drag preview follows the pointer either
-   *  way; this decides the release. */
+   *  without this method gets; dropped outside the container's body, the
+   *  child then leaves it for the plain container under the drop, or the top
+   *  level. The drag preview follows the pointer either way; this decides the
+   *  release. */
   releaseDrop?(
     container: LayoutContainer,
     children: ReadonlyArray<LayoutChild<TPose>>,

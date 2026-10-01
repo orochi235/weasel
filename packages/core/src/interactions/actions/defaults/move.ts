@@ -171,6 +171,7 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     maxY = Math.max(maxY, b.y + b.height);
   }
   const selectionCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+  scratch.dropCenter = selectionCenter;
   // Each child is snapped at its own position, displaced by however far the
   // pointer sits from that center — the group keeps its shape, and a lone
   // child is still probed at the pointer itself.
@@ -364,6 +365,63 @@ function groupBySourceContainer(
     let set = out.get(src);
     if (!set) { set = new Set<NodeId>(); out.set(src, set); }
     set.add(d.id);
+  }
+  return out;
+}
+
+/** Where each dragged root that leaves its layout container on release lands.
+ *  A root leaves when the drop center falls outside the body of the layout
+ *  container holding it, and lands under the innermost plain container beneath
+ *  the drop — a layout container there has already declined it — or at the top
+ *  level of its layer. A root whose parent has no layout is not this pass's to
+ *  move; `reparentOnDrop` decides for those. */
+function resolveLayoutExits(scratch: MoveScratch, ids: Iterable<NodeId>): Map<NodeId, NodeId | null> {
+  const out = new Map<NodeId, NodeId | null>();
+  const layoutDep = scratch.layout;
+  const center = scratch.dropCenter;
+  if (!layoutDep || !center) return out;
+  const { scene, pc, projection: d } = scratch;
+  const poseAdapter = scenePoseAdapter(scene);
+  const excluded = new Set<NodeId>([...scratch.ids, ...scratch.cascadeIds]);
+  const holds = (id: NodeId, layout: LayoutStrategy<unknown> | null): boolean => {
+    const node = scene.get(id)!;
+    const plane = planeOf(scratch.view, node.layer);
+    const at = plane ? toPlane(plane, center) : center;
+    const pose = composeWorldPose(poseAdapter, id as string, pc.compose);
+    if (layout?.contains) return layout.contains(pose, at);
+    const b = poseDescriptorForNode(d, node).getBounds(pose);
+    return at.x >= b.x && at.x < b.x + b.width && at.y >= b.y && at.y < b.y + b.height;
+  };
+  const landings = new Map<string, NodeId | null>();
+  const landingOn = (layer: string): NodeId | null => {
+    if (landings.has(layer)) return landings.get(layer)!;
+    // Deepest wins; among equals, the later sibling (painted over the other).
+    let best: NodeId | null = null;
+    let bestDepth = -1;
+    const walk = (parentId: NodeId | null, depth: number): void => {
+      for (const id of parentId === null ? scene.roots : scene.childrenOf(parentId)) {
+        if (excluded.has(id)) continue;
+        const node = scene.get(id);
+        if (!node || node.kind !== 'container') continue;
+        if (node.layer === layer && depth >= bestDepth
+          && layoutDep.getLayout(id as string) === null && holds(id, null)) {
+          best = id;
+          bestDepth = depth;
+        }
+        walk(id, depth + 1);
+      }
+    };
+    walk(null, 0);
+    landings.set(layer, best);
+    return best;
+  };
+  for (const id of ids) {
+    const node = scene.get(id);
+    const parent = node?.parent ?? null;
+    if (!node || parent === null) continue;
+    const layout = layoutDep.getLayout(parent as string);
+    if (!layout || holds(parent, layout)) continue;
+    out.set(id, landingOn(node.layer));
   }
   return out;
 }
@@ -632,6 +690,9 @@ interface MoveScratch {
   layout: LayoutDep | undefined;
   /** Latest resolved layout pass, or null when no container accepted. */
   layoutPass: LayoutPass | null;
+  /** The point the latest layout pass decided containers by (the dragged
+   *  selection's center, in the edited plane's world); null before one ran. */
+  dropCenter: { x: number; y: number } | null;
   /** Pose-composition strategy captured at gesture start. Defaults to
    *  IDENTITY (absolute-pose) when the `poseComposition` dep is absent;
    *  local-pose consumers supply composeRectPose/decomposeRectPose. */
@@ -931,6 +992,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         adapter,
         layout,
         layoutPass: null,
+        dropCenter: null,
         pc,
         applyOps,
         geometryProjection,
@@ -1055,6 +1117,8 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         // stopped; the rest of the selection falls through to the translate.
         const released = new Set<NodeId>();
         const releasedOps: Op[] = [];
+        let exits = new Map<NodeId, NodeId | null>();
+        const exitOps: Op[] = [];
         if (scratch.layout && !scratch.layoutPass) {
           const pc = scratch.pc;
           const commitAdapter = scenePoseAdapter(scratch.scene);
@@ -1119,11 +1183,40 @@ export const moveAction: Action & { requires: string[] } = inPlane({
               srcChildren = [...srcChildren, { id: id as string, pose: landed }];
             }
           }
+          // A child its container let go of outside that container leaves it,
+          // keeping the world pose it was dropped at.
+          exits = resolveLayoutExits(scratch, scratch.ids.filter((id) => !released.has(id)));
+          for (const [id, toParent] of exits) {
+            const node = scratch.scene.get(id)!;
+            const startWorld = composeWorldPose(
+              grabbedPoseAdapter(scratch, commitAdapter), id as string, pc.compose,
+            );
+            const own = planeDelta(scratch, id, dx, dy);
+            const world = translatePoseViaDescriptor(startWorld, own.dx, own.dy, scratch.projection);
+            exitOps.push(createReparentOp({
+              id: id as string,
+              fromParentId: node.parent as string | null,
+              toParentId: toParent as string | null,
+              label: 'Reparent',
+            }));
+            exitOps.push(createTransformOp<unknown>({
+              id: id as string,
+              from: node.pose,
+              to: rebaseLocalPose(commitAdapter, world, toParent as string | null, pc.compose, pc.decompose),
+              label: lifecycle.label,
+            }));
+          }
         }
-        if (released.size > 0) {
+        if (released.size > 0 || exits.size > 0) {
           const ops = [
             ...releasedOps,
-            ...translateCommitOps(scratch, unreleasedIds(scratch, released), dx, dy),
+            ...exitOps,
+            ...translateCommitOps(
+              scratch,
+              unreleasedIds(scratch, released).filter((id) => !exits.has(id)),
+              dx,
+              dy,
+            ),
           ];
           if (ops.length > 0) commitOps(ops);
           return committed;
@@ -1234,6 +1327,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
 
           // Layout reflow pass — no-op without a layout dep.
           scratch.layoutPass = null;
+          scratch.dropCenter = null;
           scratch.reflowTargets.clear();
           runLayoutPass(scratch, moveCtx);
           const reflow = scratch.layout?.reflow;
