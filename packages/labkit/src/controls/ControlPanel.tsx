@@ -399,7 +399,7 @@ function sectionKey(section: SectionSpec): string {
   return section.at === '' ? section.label : `${section.at}.${section.label}`;
 }
 
-interface ControlRowProps<TC extends Record<string, unknown>> {
+export interface ControlRowProps<TC extends Record<string, unknown>> {
   path: string;
   leaf: PrefLeaf;
   resolved: ResolvedConfig;
@@ -432,7 +432,9 @@ function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 
-function ControlRow<TC extends Record<string, unknown>>({
+/** One leaf's row, as the panel draws it. Shared with `ControlMatrix`, whose
+ *  popover edits one cell with exactly this row. */
+export function ControlRow<TC extends Record<string, unknown>>({
   path,
   leaf,
   resolved,

@@ -1,0 +1,230 @@
+// A settings-by-scopes grid. Built to sit beside a ControlPanel in a ~360px
+// sidebar: the label column takes what seven value columns leave, and every cell
+// is a fixed-height button so the rows rule up evenly.
+.lk-control-matrix {
+  min-width: 0;
+}
+
+.lk-control-matrix__table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-xs);
+  color: var(--wzl-fg);
+}
+
+.lk-control-matrix__corner {
+  width: var(--lk-control-matrix-label-width, 30%);
+}
+
+.lk-control-matrix__head,
+.lk-control-matrix__label {
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-snug);
+  color: var(--wzl-fg-muted);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+}
+
+.lk-control-matrix__head {
+  padding: 0 0 var(--wzl-space-2);
+  text-align: center;
+  font-size: var(--wzl-font-size-2xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// The fallback scope every other column inherits from.
+.lk-control-matrix__head.is-first {
+  color: var(--wzl-fg);
+  font-weight: var(--wzl-font-weight-medium);
+}
+
+.lk-control-matrix__head-text {
+  text-decoration: none;
+  cursor: default;
+}
+
+.lk-control-matrix__head-button {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lk-control-matrix__head-button:hover {
+  color: var(--wzl-fg);
+  background: var(--wzl-surface-hover);
+}
+
+.lk-control-matrix__label {
+  padding: 0 var(--wzl-space-2) 0 0;
+  text-align: start;
+  white-space: nowrap;
+}
+
+// The text truncates; the help glyph after it never does.
+.lk-control-matrix__label-text {
+  display: inline-block;
+  max-width: calc(100% - 1.4em);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.lk-control-matrix__cell {
+  padding: 1px;
+  height: var(--wzl-field-h, var(--wzl-control-h-sm));
+  text-align: center;
+  vertical-align: middle;
+}
+
+.lk-control-matrix__cell.is-missing {
+  color: var(--wzl-fg-subtle);
+}
+
+// Inherited: the value in effect, but not chosen here.
+.lk-control-matrix__cell.is-inherited > * {
+  opacity: 0.4;
+}
+
+// Every cell control fills its cell, so the cell is the click target.
+.lk-control-matrix__value,
+.lk-control-matrix__switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: var(--wzl-field-h, var(--wzl-control-h-sm));
+  padding: 0 var(--wzl-space-1);
+  border: 1px solid transparent;
+  border-radius: var(--wzl-radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lk-control-matrix__value {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: calc(var(--wzl-field-h, var(--wzl-control-h-sm)) - 2px);
+}
+
+.lk-control-matrix__value.is-number {
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  // A column of numbers is read down, so it keeps every digit: a glow of
+  // 0.35 cut to `0…` says nothing.
+  text-overflow: clip;
+}
+
+.lk-control-matrix__value:hover,
+.lk-control-matrix__switch:hover {
+  border-color: var(--wzl-border);
+  background: var(--wzl-surface-hover);
+}
+
+.lk-control-matrix__value:focus-visible,
+.lk-control-matrix__switch:focus-visible,
+.lk-control-matrix__swatch:focus-visible,
+.lk-control-matrix__head-button:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -1px;
+}
+
+// A small switch, drawn with the same parts as weasel-ui's.
+.lk-control-matrix__track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 12px;
+  background: var(--wzl-surface-sunken);
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-pill);
+  transition: background-color var(--wzl-motion-fast), border-color var(--wzl-motion-fast);
+}
+
+.lk-control-matrix__thumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 8px;
+  height: 8px;
+  background: var(--wzl-fg);
+  border-radius: 50%;
+  transition: transform var(--wzl-motion-fast);
+}
+
+.lk-control-matrix__switch[aria-checked='true'] .lk-control-matrix__track {
+  background: var(--wzl-accent-strong);
+  border-color: var(--wzl-accent-strong);
+}
+
+.lk-control-matrix__switch[aria-checked='true'] .lk-control-matrix__thumb {
+  transform: translateX(8px);
+  background: var(--wzl-fg-on-accent);
+}
+
+.lk-control-matrix__swatch {
+  display: block;
+  width: 100%;
+  height: var(--wzl-control-h-xs);
+  padding: 0;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  background: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.lk-control-matrix__swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.lk-control-matrix__swatch::-webkit-color-swatch {
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+}
+
+.lk-control-matrix__swatch::-moz-color-swatch {
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+}
+
+.lk-control-matrix__popover {
+  outline: none;
+}
+
+.lk-control-matrix__editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-3);
+  inline-size: 240px;
+  padding: var(--wzl-space-4);
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  outline: none;
+}
+
+.lk-control-matrix__editor-actions {
+  display: flex;
+  justify-content: flex-end;
+}
