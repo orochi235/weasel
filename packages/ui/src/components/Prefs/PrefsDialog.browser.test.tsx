@@ -84,3 +84,17 @@ test('a consumer height on the modal still decides the pane', () => {
     sheet.remove();
   }
 });
+
+test('a nested rail entry reads in its parent’s color, not a dimmed one', () => {
+  const schema: PrefGroup = {
+    name: 'Preferences',
+    children: { ...SCHEMA.children, text: { name: 'Text', children: rows('text', 2) } },
+  };
+  render(
+    <PrefsDialog isOpen onOpenChange={() => {}} schema={schema} values={{}} onChange={() => {}} layout="rail" />,
+  );
+  const color = (name: string) => getComputedStyle(screen.getByRole('button', { name })).color;
+  expect(screen.getByRole('button', { name: 'Snapping' })).not.toHaveAttribute('aria-current');
+  expect(screen.getByRole('button', { name: 'Text' })).not.toHaveAttribute('aria-current');
+  expect(color('Snapping')).toBe(color('Text'));
+});

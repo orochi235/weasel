@@ -237,7 +237,6 @@
 
 .railSub {
   padding-left: var(--wzl-space-7);
-  color: var(--wzl-fg-subtle);
 }
 
 .railOpen,
@@ -247,7 +246,6 @@
 }
 
 .railInView {
-  color: var(--wzl-fg);
   box-shadow: inset 2px 0 0 var(--wzl-accent);
 }
 
