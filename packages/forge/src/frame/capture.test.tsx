@@ -9,8 +9,9 @@ import { captureElement } from './capture';
 import { startFrame } from './FrameController';
 
 async function flush() {
-  await new Promise((r) => setTimeout(r, 0));
-  await act(async () => {});
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 0));
+  });
 }
 
 const parse = (markup: string) => new DOMParser().parseFromString(markup, 'image/svg+xml');

@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, it } from 'vitest';
 import { auto } from '../config/auto';
 import { f } from '../config/builder';
@@ -27,19 +28,19 @@ const legacyInstrument = defineInstrument({
 });
 
 describe('a trial renders its instrument config', () => {
-  it('renders a builder schema into the settings sidebar', () => {
-    render(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />);
+  it('renders a builder schema into the settings sidebar', async () => {
+    await renderSettled(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />);
     expect(screen.getByLabelText('Show grid')).toBeInTheDocument();
     expect(screen.getByText('Grid spacing')).toBeInTheDocument();
   });
 
-  it('renders a legacy ConfigField list through the same path', () => {
-    render(<Lab instruments={[legacyInstrument]} defaultInstrument="Legacy" />);
+  it('renders a legacy ConfigField list through the same path', async () => {
+    await renderSettled(<Lab instruments={[legacyInstrument]} defaultInstrument="Legacy" />);
     expect(screen.getByLabelText('Show grid')).toBeInTheDocument();
   });
 
-  it('writes a config change back to the trial', () => {
-    render(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />);
+  it('writes a config change back to the trial', async () => {
+    await renderSettled(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />);
     const checkbox = screen.getByLabelText('Show grid') as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
     fireEvent.click(checkbox);
@@ -48,7 +49,7 @@ describe('a trial renders its instrument config', () => {
 });
 
 describe('lab-wide config seams', () => {
-  it('applies a lab-wide rule before labkit inference', () => {
+  it('applies a lab-wide rule before labkit inference', async () => {
     const inst = defineInstrument({
       name: 'Ruled',
       config: f.schema({ tintColor: f.value('#ffffff') }),
@@ -56,22 +57,22 @@ describe('lab-wide config seams', () => {
       render: () => null,
     });
     const colorByName: ConfigRule = (ctx) => (ctx.key.endsWith('Color') ? { kind: 'color' } : null);
-    render(<Lab instruments={[inst]} defaultInstrument="Ruled" configRules={[colorByName]} />);
+    await renderSettled(<Lab instruments={[inst]} defaultInstrument="Ruled" configRules={[colorByName]} />);
     expect(screen.getByLabelText('Tint color')).toHaveAttribute('type', 'color');
   });
 
-  it('without the rule the same leaf falls back to a text input', () => {
+  it('without the rule the same leaf falls back to a text input', async () => {
     const inst = defineInstrument({
       name: 'Unruled',
       config: f.schema({ tintColor: f.value('#ffffff') }),
       initialState: () => ({}),
       render: () => null,
     });
-    render(<Lab instruments={[inst]} defaultInstrument="Unruled" />);
+    await renderSettled(<Lab instruments={[inst]} defaultInstrument="Unruled" />);
     expect(screen.getByLabelText('Tint color')).toHaveAttribute('type', 'text');
   });
 
-  it('supplies a lab-wide control for a kind labkit does not ship', () => {
+  it('supplies a lab-wide control for a kind labkit does not ship', async () => {
     const inst = defineInstrument({
       name: 'Custom',
       config: f.schema({ offset: f.custom('vector2', { x: 3 }) }),
@@ -81,29 +82,29 @@ describe('lab-wide config seams', () => {
     const vector2: ControlRenderer = (ctx) => (
       <span>vec:{String((ctx.value as { x: number }).x)}</span>
     );
-    render(<Lab instruments={[inst]} defaultInstrument="Custom" controls={{ vector2 }} />);
+    await renderSettled(<Lab instruments={[inst]} defaultInstrument="Custom" controls={{ vector2 }} />);
     expect(screen.getByText('vec:3')).toBeInTheDocument();
   });
 
-  it('shows the placeholder when no control is supplied for that kind', () => {
+  it('shows the placeholder when no control is supplied for that kind', async () => {
     const inst = defineInstrument({
       name: 'Unwired',
       config: f.schema({ offset: f.custom('vector2', { x: 3 }) }),
       initialState: () => ({}),
       render: () => null,
     });
-    render(<Lab instruments={[inst]} defaultInstrument="Unwired" />);
+    await renderSettled(<Lab instruments={[inst]} defaultInstrument="Unwired" />);
     expect(screen.getByText(/vector2/)).toBeInTheDocument();
   });
 
-  it('omits the settings section for an instrument with no config', () => {
+  it('omits the settings section for an instrument with no config', async () => {
     const inst = defineInstrument({
       name: 'Bare',
       defaultConfig: () => ({}),
       initialState: () => ({}),
       render: () => null,
     });
-    render(<Lab instruments={[inst]} defaultInstrument="Bare" />);
+    await renderSettled(<Lab instruments={[inst]} defaultInstrument="Bare" />);
     expect(screen.queryByText('Settings')).not.toBeInTheDocument();
   });
 });
@@ -129,9 +130,9 @@ describe('a nested config value, end to end', () => {
     return { instrument, seen };
   };
 
-  it('renders a nested leaf and writes the change back into the tree', () => {
+  it('renders a nested leaf and writes the change back into the tree', async () => {
     const { instrument } = nestedInstrument();
-    render(<Lab instruments={[instrument]} defaultInstrument="Nested" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Nested" />);
     expect(screen.getByText('20')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Cell size'), {
       target: { value: '40' },
@@ -139,9 +140,9 @@ describe('a nested config value, end to end', () => {
     expect(screen.getByText('40')).toBeInTheDocument();
   });
 
-  it('hands onConfigChange the whole tree, with the sibling branch intact', () => {
+  it('hands onConfigChange the whole tree, with the sibling branch intact', async () => {
     const { instrument, seen } = nestedInstrument();
-    render(<Lab instruments={[instrument]} defaultInstrument="Nested" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Nested" />);
     fireEvent.change(screen.getByLabelText('Cell size'), {
       target: { value: '40' },
     });
@@ -186,22 +187,22 @@ describe('a config written as auto', () => {
     return { instrument, seen };
   };
 
-  it('hands onConfigChange the resolved config, never the sentinel', () => {
+  it('hands onConfigChange the resolved config, never the sentinel', async () => {
     const { instrument, seen } = unpinnable();
-    render(<Lab instruments={[instrument]} defaultInstrument="Unpinnable" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Unpinnable" />);
     fireEvent.click(screen.getByText('unpin gap'));
     expect(seen.at(-1)?.config).toEqual({ width: 432, gap: 18 });
     expect(seen.at(-1)?.prev).toEqual({ width: 432, gap: 12 });
   });
 
-  it('keeps the state that write derived free of the sentinel', () => {
+  it('keeps the state that write derived free of the sentinel', async () => {
     const { instrument } = unpinnable();
-    render(<Lab instruments={[instrument]} defaultInstrument="Unpinnable" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Unpinnable" />);
     fireEvent.click(screen.getByText('unpin gap'));
     expect(screen.getByText('18')).toBeInTheDocument();
   });
 
-  it("shows the trial's unpinned path in the settings panel", () => {
+  it("shows the trial's unpinned path in the settings panel", async () => {
     const instrument = defineInstrument({
       name: 'Ghosted',
       config: f.schema({
@@ -215,7 +216,7 @@ describe('a config written as auto', () => {
       initialState: () => ({}),
       render: () => null,
     });
-    const { container } = render(<Lab instruments={[instrument]} defaultInstrument="Ghosted" />);
+    const { container } = await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Ghosted" />);
     expect(screen.getByRole('button', { name: /Gap/ })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByRole('button', { name: /Width/ })).toHaveAttribute('aria-pressed', 'true');
     // 432 / 24. An auto row holds what the resolver decided rather than

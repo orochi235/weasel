@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
@@ -12,13 +13,13 @@ const Stub: Instrument = {
 const Other: Instrument = { ...Stub, name: 'Other' };
 
 describe('<LabHeader>', () => {
-  it('offers an add-trial button when the lab has one instrument', () => {
-    render(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
+  it('offers an add-trial button when the lab has one instrument', async () => {
+    await renderSettled(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
     expect(screen.getByRole('button', { name: /add trial/i })).toBeInTheDocument();
   });
 
-  it('offers a menu instead when the lab has several', () => {
-    render(<Lab instruments={[Stub, Other]} defaultInstrument="Stub" />);
+  it('offers a menu instead when the lab has several', async () => {
+    await renderSettled(<Lab instruments={[Stub, Other]} defaultInstrument="Stub" />);
     // Which instrument to add is now a choice, so the button opens a list.
     expect(screen.getByRole('button', { name: 'Add trial' })).toHaveAttribute('aria-haspopup');
   });
@@ -26,7 +27,7 @@ describe('<LabHeader>', () => {
   it('adds a trial of the instrument chosen from the menu', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
-    render(<Lab instruments={[Stub, Other]} defaultInstrument="Stub" />);
+    await renderSettled(<Lab instruments={[Stub, Other]} defaultInstrument="Stub" />);
     expect(screen.queryAllByLabelText(/^Trial Other$/)).toHaveLength(0);
     await user.click(screen.getByRole('button', { name: 'Add trial' }));
     await user.click(screen.getByRole('menuitem', { name: 'Other' }));
@@ -37,7 +38,7 @@ describe('<LabHeader>', () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
     const titled: Instrument = { ...Other, title: 'Other / Titled' };
-    render(<Lab instruments={[Stub, titled]} defaultInstrument="Stub" />);
+    await renderSettled(<Lab instruments={[Stub, titled]} defaultInstrument="Stub" />);
     await user.click(screen.getByRole('button', { name: 'Add trial' }));
     expect(screen.getByRole('menuitem', { name: 'Stub' })).toBeInTheDocument();
     await user.click(screen.getByRole('menuitem', { name: 'Other / Titled' }));
@@ -47,27 +48,27 @@ describe('<LabHeader>', () => {
   it('adds a trial when the button is used', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
-    render(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
+    await renderSettled(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
     expect(screen.getAllByLabelText(/^Trial Stub$/)).toHaveLength(1);
     await user.click(screen.getByRole('button', { name: /add trial/i }));
     expect(screen.getAllByLabelText(/^Trial Stub$/)).toHaveLength(2);
   });
 
-  it('leaves the add-trial control out when the lab says so', () => {
-    const { unmount } = render(
+  it('leaves the add-trial control out when the lab says so', async () => {
+    const { unmount } = await renderSettled(
       <Lab instruments={[Stub, Other]} defaultInstrument="Stub" addTrial={false} />,
     );
     expect(screen.queryByRole('button', { name: /add trial/i })).toBeNull();
     expect(screen.getByRole('button', { name: /^Theme: Auto/ })).toBeInTheDocument();
     unmount();
-    render(<Lab instruments={[Stub]} defaultInstrument="Stub" addTrial={false} />);
+    await renderSettled(<Lab instruments={[Stub]} defaultInstrument="Stub" addTrial={false} />);
     expect(screen.queryByRole('button', { name: /add trial/i })).toBeNull();
   });
 
   it('rotates the color mode from one button', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
-    render(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
+    await renderSettled(<Lab instruments={[Stub]} defaultInstrument="Stub" />);
     expect(screen.queryByRole('radiogroup')).toBeNull();
     for (const [now, next] of [
       ['Auto', 'Light'],
@@ -82,8 +83,8 @@ describe('<LabHeader>', () => {
     expect(screen.getByRole('button', { name: /^Theme: Auto/ })).toBeInTheDocument();
   });
 
-  it('puts the theme switch after the header content a consumer passes', () => {
-    render(
+  it('puts the theme switch after the header content a consumer passes', async () => {
+    await renderSettled(
       <Lab instruments={[Stub]} defaultInstrument="Stub">
         <button type="button">Consumer</button>
       </Lab>,

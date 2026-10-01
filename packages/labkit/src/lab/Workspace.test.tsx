@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, test, vi } from 'vitest';
 import { useTrialDrag } from '../trial/TrialDragContext';
 import { Workspace } from './Workspace';
@@ -13,8 +14,8 @@ function DragProbe({ label }: { label: string }) {
 const VIEWPORT = { w: 800, h: 600 };
 
 describe('Workspace', () => {
-  test('renders all children', () => {
-    render(
+  test('renders all children', async () => {
+    await renderSettled(
       <Workspace viewport={VIEWPORT}>
         <div>one</div>
         <div>two</div>
@@ -26,9 +27,9 @@ describe('Workspace', () => {
     expect(screen.getByText('three')).toBeInTheDocument();
   });
 
-  test('keeps a child with the tile its id names when an earlier one closes', () => {
+  test('keeps a child with the tile its id names when an earlier one closes', async () => {
     const ids = ['a', 'b', 'c'];
-    const { rerender, container } = render(
+    const { rerender, container } = await renderSettled(
       <Workspace ids={ids} viewport={VIEWPORT}>
         <div>a</div>
         <div>b</div>
@@ -37,18 +38,20 @@ describe('Workspace', () => {
     );
     expect(container.querySelector('[data-node="c"]')).toHaveTextContent('c');
 
-    rerender(
-      <Workspace ids={['b', 'c']} viewport={VIEWPORT}>
-        <div>b</div>
-        <div>c</div>
-      </Workspace>,
-    );
+    await act(async () => {
+      rerender(
+        <Workspace ids={['b', 'c']} viewport={VIEWPORT}>
+          <div>b</div>
+          <div>c</div>
+        </Workspace>,
+      );
+    });
     expect(container.querySelector('[data-node="c"]')).toHaveTextContent('c');
     expect(container.querySelector('[data-node="a"]')).toBeNull();
   });
 
-  test('uses lk-workspace class', () => {
-    const { container } = render(
+  test('uses lk-workspace class', async () => {
+    const { container } = await renderSettled(
       <Workspace viewport={VIEWPORT}>
         <div />
       </Workspace>,
@@ -56,8 +59,8 @@ describe('Workspace', () => {
     expect((container.firstChild as HTMLElement).className).toContain('lk-workspace');
   });
 
-  test('renders resize affordances only when resizable', () => {
-    const { container, rerender } = render(
+  test('renders resize affordances only when resizable', async () => {
+    const { container, rerender } = await renderSettled(
       <Workspace ids={['a', 'b']} viewport={VIEWPORT}>
         <div>a</div>
         <div>b</div>
@@ -65,17 +68,19 @@ describe('Workspace', () => {
     );
     expect(container.querySelectorAll('[role="separator"]')).toHaveLength(0);
 
-    rerender(
-      <Workspace ids={['a', 'b']} resizable viewport={VIEWPORT}>
-        <div>a</div>
-        <div>b</div>
-      </Workspace>,
-    );
+    await act(async () => {
+      rerender(
+        <Workspace ids={['a', 'b']} resizable viewport={VIEWPORT}>
+          <div>a</div>
+          <div>b</div>
+        </Workspace>,
+      );
+    });
     expect(container.querySelectorAll('[role="separator"]').length).toBeGreaterThan(0);
   });
 
-  test('applies a saved extent to a tile as it registers', () => {
-    const { container } = render(
+  test('applies a saved extent to a tile as it registers', async () => {
+    const { container } = await renderSettled(
       <Workspace
         ids={['a', 'b']}
         resizable
@@ -92,9 +97,9 @@ describe('Workspace', () => {
     expect(Number.parseFloat(a.style.width)).toBeGreaterThan(Number.parseFloat(b.style.width));
   });
 
-  test('reports the order a drop would produce instead of applying it', () => {
+  test('reports the order a drop would produce instead of applying it', async () => {
     const onReorder = vi.fn();
-    const { container } = render(
+    const { container } = await renderSettled(
       <Workspace ids={['a', 'b']} reorderable onReorder={onReorder} viewport={VIEWPORT}>
         <DragProbe label="a" />
         <DragProbe label="b" />
@@ -111,8 +116,8 @@ describe('Workspace', () => {
     expect(nodes).toEqual(['a', 'b']);
   });
 
-  test('offers no drag source unless reorderable', () => {
-    render(
+  test('offers no drag source unless reorderable', async () => {
+    await renderSettled(
       <Workspace ids={['a', 'b']} viewport={VIEWPORT}>
         <DragProbe label="a" />
         <DragProbe label="b" />

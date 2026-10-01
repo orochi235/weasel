@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { type ReactNode, useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
@@ -32,9 +33,9 @@ function CaptureLab({ children }: { children?: ReactNode }) {
   );
 }
 
-function mountLab(props: Partial<Record<keyof LabProps, unknown>> = {}) {
+async function mountLab(props: Partial<Record<keyof LabProps, unknown>> = {}) {
   labRef = null;
-  return render(
+  return renderSettled(
     <Lab {...({ instruments: [stub, stubB], defaultInstrument: 'Stub', ...props } as LabProps)}>
       <CaptureLab />
     </Lab>,
@@ -42,86 +43,86 @@ function mountLab(props: Partial<Record<keyof LabProps, unknown>> = {}) {
 }
 
 describe('<Lab>', () => {
-  it('renders one trial by default', () => {
-    mountLab();
+  it('renders one trial by default', async () => {
+    await mountLab();
     expect(screen.getAllByRole('region', { name: /trial/i })).toHaveLength(1);
   });
 
-  it('addTrial adds a second trial', () => {
-    mountLab();
-    act(() => labRef?.addTrial('Stub'));
+  it('addTrial adds a second trial', async () => {
+    await mountLab();
+    await act(async () => labRef?.addTrial('Stub'));
     expect(screen.getAllByRole('region', { name: /trial/i })).toHaveLength(2);
   });
 
-  it('addTrial opens each trial on the config it was given', () => {
-    mountLab();
-    act(() => labRef?.addTrial('Stub', { config: { count: 7 } }));
+  it('addTrial opens each trial on the config it was given', async () => {
+    await mountLab();
+    await act(async () => labRef?.addTrial('Stub', { config: { count: 7 } }));
     expect(labRef?.trials.map((t) => (t.config as { count: number }).count)).toEqual([0, 7]);
     expect(labRef?.trials.map((t) => (t.state as { value: number }).value)).toEqual([0, 7]);
   });
 
-  it('closeTrial removes one when more than one exists', () => {
-    mountLab();
-    act(() => labRef?.addTrial('Stub'));
+  it('closeTrial removes one when more than one exists', async () => {
+    await mountLab();
+    await act(async () => labRef?.addTrial('Stub'));
     const first = labRef?.trials[0];
-    act(() => labRef?.closeTrial(first?.id ?? ''));
+    await act(async () => labRef?.closeTrial(first?.id ?? ''));
     expect(screen.getAllByRole('region', { name: /trial/i })).toHaveLength(1);
   });
 
-  it('closeTrial is a no-op on the last trial', () => {
-    mountLab();
+  it('closeTrial is a no-op on the last trial', async () => {
+    await mountLab();
     const only = labRef?.trials[0];
-    act(() => labRef?.closeTrial(only?.id ?? ''));
+    await act(async () => labRef?.closeTrial(only?.id ?? ''));
     expect(screen.getAllByRole('region', { name: /trial/i })).toHaveLength(1);
   });
 
-  it('cloneTrial inserts immediately after source', () => {
-    mountLab();
-    act(() => labRef?.addTrial('StubB'));
+  it('cloneTrial inserts immediately after source', async () => {
+    await mountLab();
+    await act(async () => labRef?.addTrial('StubB'));
     const ws0 = labRef?.trials[0];
     const ws1 = labRef?.trials[1];
-    act(() => labRef?.cloneTrial(ws0?.id ?? ''));
+    await act(async () => labRef?.cloneTrial(ws0?.id ?? ''));
     const ids = labRef?.trials.map((w) => w.id) ?? [];
     expect(ids).toHaveLength(3);
     expect(ids[0]).toBe(ws0?.id);
     expect(ids[2]).toBe(ws1?.id);
   });
 
-  it('resetTrial restores defaults', () => {
-    mountLab();
+  it('resetTrial restores defaults', async () => {
+    await mountLab();
     const ws = labRef?.trials[0];
     if (!ws) throw new Error('no trial');
-    act(() => labRef?.resetTrial(ws.id));
+    await act(async () => labRef?.resetTrial(ws.id));
     const reset = labRef?.trials[0];
     expect(reset?.config).toEqual({ count: 0 });
     expect(reset?.state).toEqual({ value: 0 });
   });
 
-  it('mode="light" stamps light on the lab root', () => {
-    const { container } = mountLab({ mode: 'light' });
+  it('mode="light" stamps light on the lab root', async () => {
+    const { container } = await mountLab({ mode: 'light' });
     expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-mode')).toBe('light');
   });
 
-  it('mode="dark" stamps dark on the lab root', () => {
-    const { container } = mountLab({ mode: 'dark' });
+  it('mode="dark" stamps dark on the lab root', async () => {
+    const { container } = await mountLab({ mode: 'dark' });
     expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-mode')).toBe('dark');
   });
 
-  it('mode="auto" resolves to a concrete mode', () => {
-    const { container } = mountLab({ mode: 'auto' });
+  it('mode="auto" resolves to a concrete mode', async () => {
+    const { container } = await mountLab({ mode: 'auto' });
     expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-mode')).toMatch(
       /^(light|dark)$/,
     );
   });
 
-  it('applies the interstellar theme in every mode', () => {
-    const { container } = mountLab({ mode: 'light' });
+  it('applies the interstellar theme in every mode', async () => {
+    const { container } = await mountLab({ mode: 'light' });
     expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-theme')).toBe('interstellar');
   });
 
-  it('setMode updates the stamped mode at runtime', () => {
-    const { container } = mountLab({ mode: 'auto' });
-    act(() => labRef?.setMode('light'));
+  it('setMode updates the stamped mode at runtime', async () => {
+    const { container } = await mountLab({ mode: 'auto' });
+    await act(async () => labRef?.setMode('light'));
     expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-mode')).toBe('light');
   });
 
@@ -152,13 +153,13 @@ describe('<Lab>', () => {
     };
     const storage = () => createMemoryAdapter(backing);
 
-    const first = render(
+    const first = await renderSettled(
       <Lab instruments={[mapped]} defaultInstrument="Mapped" storage={storage()} storageKey="s" />,
     );
     await waitFor(() => expect(JSON.stringify([...backing.values()])).toContain('"seen":["a"]'));
     first.unmount();
 
-    mountLab({
+    await mountLab({
       instruments: [mapped],
       defaultInstrument: 'Mapped',
       storage: storage(),
@@ -172,7 +173,7 @@ describe('<Lab>', () => {
 });
 
 describe('instruments that change while mounted', () => {
-  it('fills an open trial’s config before its replaced instrument renders', () => {
+  it('fills an open trial’s config before its replaced instrument renders', async () => {
     const v1: Instrument = {
       name: 'Grow',
       defaultConfig: () => ({ size: 1 }),
@@ -188,7 +189,7 @@ describe('instruments that change while mounted', () => {
         return null;
       },
     };
-    const view = render(
+    const view = await renderSettled(
       <Lab instruments={[v1]} defaultInstrument="Grow">
         <CaptureLab />
       </Lab>,
@@ -203,9 +204,9 @@ describe('instruments that change while mounted', () => {
     expect(seenByV2.every((c) => c.color === 'red')).toBe(true);
   });
 
-  it('opens a trial of an instrument added after mount', () => {
+  it('opens a trial of an instrument added after mount', async () => {
     const later: Instrument = { ...stub, name: 'Later' };
-    const view = render(
+    const view = await renderSettled(
       <Lab instruments={[stub]} defaultInstrument="Stub">
         <CaptureLab />
       </Lab>,
@@ -215,12 +216,12 @@ describe('instruments that change while mounted', () => {
         <CaptureLab />
       </Lab>,
     );
-    act(() => labRef?.addTrial('Later'));
+    await act(async () => labRef?.addTrial('Later'));
     expect(labRef?.trials.map((t) => t.instrumentName)).toEqual(['Stub', 'Later']);
     expect(screen.queryByText(/Unknown instrument/)).toBeNull();
   });
 
-  it('keeps a trial’s content mounted across an instrument swap', () => {
+  it('keeps a trial’s content mounted across an instrument swap', async () => {
     let mounts = 0;
     function Probe() {
       useEffect(() => {
@@ -235,7 +236,7 @@ describe('instruments that change while mounted', () => {
       render: () => <Probe />,
     };
     const v2: Instrument = { ...v1, defaultConfig: () => ({ extra: 1 }) };
-    const view = render(<Lab instruments={[v1]} defaultInstrument="Keep" />);
+    const view = await renderSettled(<Lab instruments={[v1]} defaultInstrument="Keep" />);
     view.rerender(<Lab instruments={[v2]} defaultInstrument="Keep" />);
     expect(mounts).toBe(1);
   });
@@ -249,72 +250,72 @@ describe('focused trial', () => {
     render: () => <iframe title="story frame" />,
   };
 
-  it('is the only trial until another opens, then the one that opened', () => {
-    mountLab();
+  it('is the only trial until another opens, then the one that opened', async () => {
+    await mountLab();
     expect(labRef?.focusedTrialId).toBe(labRef?.trials[0]?.id);
-    act(() => labRef?.addTrial('StubB'));
+    await act(async () => labRef?.addTrial('StubB'));
     expect(labRef?.focusedTrialId).toBe(labRef?.trials[1]?.id);
-    act(() => labRef?.cloneTrial(labRef?.trials[0]?.id ?? ''));
+    await act(async () => labRef?.cloneTrial(labRef?.trials[0]?.id ?? ''));
     expect(labRef?.focusedTrialId).toBe(labRef?.trials[1]?.id);
     expect(labRef?.trials.map((t) => t.instrumentName)).toEqual(['Stub', 'Stub', 'StubB']);
   });
 
-  it('moves to a trial a pointer goes down in', () => {
-    mountLab();
-    act(() => labRef?.addTrial('StubB'));
+  it('moves to a trial a pointer goes down in', async () => {
+    await mountLab();
+    await act(async () => labRef?.addTrial('StubB'));
     fireEvent.pointerDown(within(regions()[0] as HTMLElement).getByTestId('stub-content'));
     expect(labRef?.focusedTrialId).toBe(labRef?.trials[0]?.id);
   });
 
-  it('moves to a trial focus moves into', () => {
-    mountLab();
-    act(() => labRef?.addTrial('StubB'));
-    act(() => (regions()[0] as HTMLElement).focus());
+  it('moves to a trial focus moves into', async () => {
+    await mountLab();
+    await act(async () => labRef?.addTrial('StubB'));
+    await act(async () => (regions()[0] as HTMLElement).focus());
     expect(labRef?.focusedTrialId).toBe(labRef?.trials[0]?.id);
   });
 
   it('moves to a trial whose frame takes focus, which fires nothing in the lab’s document', async () => {
-    mountLab({ instruments: [framed, stubB], defaultInstrument: 'Framed' });
-    act(() => labRef?.addTrial('StubB'));
-    act(() => screen.getByTitle('story frame').focus());
+    await mountLab({ instruments: [framed, stubB], defaultInstrument: 'Framed' });
+    await act(async () => labRef?.addTrial('StubB'));
+    await act(async () => screen.getByTitle('story frame').focus());
     fireEvent.blur(window);
     await waitFor(() => expect(labRef?.focusedTrialId).toBe(labRef?.trials[0]?.id));
   });
 
-  it('falls back to the first trial when the focused one closes', () => {
-    mountLab();
-    act(() => labRef?.addTrial('StubB'));
-    act(() => labRef?.closeTrial(labRef?.trials[1]?.id ?? ''));
+  it('falls back to the first trial when the focused one closes', async () => {
+    await mountLab();
+    await act(async () => labRef?.addTrial('StubB'));
+    await act(async () => labRef?.closeTrial(labRef?.trials[1]?.id ?? ''));
     expect(labRef?.focusedTrialId).toBe(labRef?.trials[0]?.id);
   });
 
-  it('is marked on its trial only when there is more than one', () => {
-    mountLab();
+  it('is marked on its trial only when there is more than one', async () => {
+    await mountLab();
     expect(regions()[0]).not.toHaveAttribute('data-focused');
-    act(() => labRef?.addTrial('StubB'));
+    await act(async () => labRef?.addTrial('StubB'));
     expect(regions()[1]).toHaveAttribute('data-focused', 'true');
     expect(regions()[0]).not.toHaveAttribute('data-focused');
   });
 });
 
 describe('swapTrial', () => {
-  it('runs another instrument in the trial’s place, and keeps focus on that place', () => {
-    mountLab();
-    act(() => labRef?.addTrial('Stub'));
+  it('runs another instrument in the trial’s place, and keeps focus on that place', async () => {
+    await mountLab();
+    await act(async () => labRef?.addTrial('Stub'));
     const second = labRef?.trials[1]?.id;
-    act(() => labRef?.focusTrial(labRef?.trials[0]?.id ?? ''));
-    act(() => labRef?.swapTrial(labRef?.trials[0]?.id ?? '', 'StubB'));
+    await act(async () => labRef?.focusTrial(labRef?.trials[0]?.id ?? ''));
+    await act(async () => labRef?.swapTrial(labRef?.trials[0]?.id ?? '', 'StubB'));
     expect(labRef?.trials.map((t) => t.instrumentName)).toEqual(['StubB', 'Stub']);
     expect(labRef?.trials[1]?.id).toBe(second);
     expect(labRef?.focusedTrialId).toBe(labRef?.trials[0]?.id);
     expect(screen.getByTestId('stub-b-content')).toBeInTheDocument();
   });
 
-  it('leaves focus where it was when the swapped trial did not have it', () => {
-    mountLab();
-    act(() => labRef?.addTrial('Stub'));
+  it('leaves focus where it was when the swapped trial did not have it', async () => {
+    await mountLab();
+    await act(async () => labRef?.addTrial('Stub'));
     const focused = labRef?.focusedTrialId;
-    act(() => labRef?.swapTrial(labRef?.trials[0]?.id ?? '', 'StubB'));
+    await act(async () => labRef?.swapTrial(labRef?.trials[0]?.id ?? '', 'StubB'));
     expect(labRef?.focusedTrialId).toBe(focused);
   });
 });

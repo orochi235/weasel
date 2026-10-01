@@ -237,7 +237,7 @@ describe('SceneCanvasApi.ingest', () => {
     expect(leafData.path?.kind).toBeDefined();
     expect(leafData.fill).toEqual({ color: '#ff0000' });
     // Undoable: one batch → a single undo removes the whole import.
-    scene.undo();
+    act(() => scene.undo());
     expect(scene.roots).toHaveLength(0);
   });
 

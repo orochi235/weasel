@@ -4,7 +4,8 @@
  * trial open, a `targets` that ignored the trial it was asked about would look
  * identical.
  */
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnnotationTarget } from '../annotations/types';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -63,13 +64,13 @@ function CaptureLab() {
   );
 }
 
-function mountTwoTrials(): [string, string] {
-  render(
+async function mountTwoTrials(): Promise<[string, string]> {
+  await renderSettled(
     <Lab instruments={[subject]} defaultInstrument="Subject">
       <CaptureLab />
     </Lab>,
   );
-  act(() => labRef?.addTrial('Subject'));
+  await act(async () => labRef?.addTrial('Subject'));
   const ids = labRef?.trials.map((t) => t.id) ?? [];
   const [a, b] = ids;
   if (!a || !b) throw new Error('expected two trials');
@@ -82,13 +83,13 @@ describe('annotations.targets', () => {
     labRef = null;
   });
 
-  it('is told which trial is asking', () => {
-    const [a, b] = mountTwoTrials();
+  it('is told which trial is asking', async () => {
+    const [a, b] = await mountTwoTrials();
     expect(new Set(asked.map((t) => t.id))).toEqual(new Set([a, b]));
   });
 
-  it("is told that trial's own view, not the other's", () => {
-    const [a, b] = mountTwoTrials();
+  it("is told that trial's own view, not the other's", async () => {
+    const [a, b] = await mountTwoTrials();
     fireEvent.click(screen.getByTestId(`zoom-${a}`));
     expect(lastAsk(a).view).toEqual({ zoom: 3, pan: { x: 0, y: 0 } });
     expect(lastAsk(b).view).toEqual({ zoom: 1, pan: { x: 0, y: 0 } });

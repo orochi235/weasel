@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { RegionContribution, ToolSlotContext } from '../types';
 import { PaletteRegion } from './PaletteRegion';
@@ -65,7 +65,7 @@ describe('PaletteRegion', () => {
     const brush = screen.getByRole('button', { name: 'brush' });
     const eraser = screen.getByRole('button', { name: 'eraser' });
 
-    brush.focus();
+    act(() => brush.focus());
     fireEvent.keyDown(brush, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(eraser);
     expect(eraser).toHaveAttribute('tabindex', '0');

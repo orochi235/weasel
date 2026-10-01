@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import { RegistryTree } from './RegistryTree';
 import type { ToolSurface, TreeCategoryNode } from './registryData';
 
@@ -54,7 +54,7 @@ describe('RegistryTree', () => {
   it('expands a category from the keyboard', () => {
     render(<RegistryTree nodes={NODES} selected={null} onSelect={() => {}} />);
     const tools = item(/^Tools/);
-    tools.focus();
+    act(() => tools.focus());
     fireEvent.keyDown(tools, { key: 'ArrowRight' });
     expect(tools).toHaveAttribute('aria-expanded', 'true');
     expect(item('useRectTool')).toBeTruthy();

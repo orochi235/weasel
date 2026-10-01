@@ -4,7 +4,8 @@
  * follow. The overlay's own geometry is covered in
  * `annotations/Annotations.overlay.test.tsx`.
  */
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useAnnotations, useAnnotationsOptional } from '../annotations/AnnotationsContext';
 import type { AnnotationsApi } from '../annotations/types';
@@ -53,8 +54,8 @@ const plain = defineInstrument<Record<string, never>, Record<string, never>>({
 });
 
 describe('an instrument that declares annotations', () => {
-  it('gets a drawing palette', () => {
-    render(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+  it('gets a drawing palette', async () => {
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
     for (const label of [
       'Interact',
       'Select',
@@ -69,7 +70,7 @@ describe('an instrument that declares annotations', () => {
     }
   });
 
-  it('gets only the tools it names', () => {
+  it('gets only the tools it names', async () => {
     const narrow = defineInstrument<Record<string, never>, Record<string, never>>({
       ...annotating,
       name: 'Narrow',
@@ -78,20 +79,20 @@ describe('an instrument that declares annotations', () => {
         tools: ['pointer', 'select'],
       },
     });
-    render(<Lab instruments={[narrow]} defaultInstrument="Narrow" />);
+    await renderSettled(<Lab instruments={[narrow]} defaultInstrument="Narrow" />);
     expect(screen.getByRole('button', { name: 'Interact' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Select' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Freehand' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Rectangle' })).toBeNull();
   });
 
-  it('puts the store in reach of its own render', () => {
-    render(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+  it('puts the store in reach of its own render', async () => {
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
     expect(screen.getByTestId('pane').dataset.marks).toBe('0');
   });
 
-  it('starts in interact, so a first click reaches the instrument', () => {
-    render(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+  it('starts in interact, so a first click reaches the instrument', async () => {
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
     expect(screen.getByRole('button', { name: 'Interact' }).getAttribute('aria-current')).toBe(
       'true',
     );
@@ -112,28 +113,28 @@ function CaptureLab() {
 }
 
 describe('the annotation tool', () => {
-  it("is offered in the lab's rail, not in a trial's", () => {
-    render(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+  it("is offered in the lab's rail, not in a trial's", async () => {
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
     expect(screen.getAllByRole('button', { name: 'Rectangle' })).toHaveLength(1);
     const trial = screen.getByRole('region', { name: /trial/i });
     expect(within(trial).queryByRole('button', { name: 'Rectangle' })).toBeNull();
   });
 
-  it('is one tool across every trial', () => {
+  it('is one tool across every trial', async () => {
     // A tool is what the hand is holding, not a property of a picture: picking
     // Rectangle once has to arm it wherever the next mark is drawn.
     labRef = null;
-    render(
+    await renderSettled(
       <Lab instruments={[annotating]} defaultInstrument="Annotating">
         <CaptureLab />
       </Lab>,
     );
-    act(() => labRef?.addTrial('Annotating'));
+    await act(async () => labRef?.addTrial('Annotating'));
     const panes = screen.getAllByTestId('pane');
     expect(panes).toHaveLength(2);
     for (const p of panes) expect(p.dataset.tool).toBe('pointer');
 
-    act(() => {
+    await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Rectangle' }));
     });
     for (const p of screen.getAllByTestId('pane')) expect(p.dataset.tool).toBe('rect');
@@ -141,39 +142,39 @@ describe('the annotation tool', () => {
 });
 
 describe('the trial undo chrome over marks', () => {
-  it('gets undo and redo without the instrument declaring `undo`', () => {
+  it('gets undo and redo without the instrument declaring `undo`', async () => {
     // Weasel history is the authority for marks, so the capability that
     // creates them is what earns the buttons.
-    render(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
     expect(screen.getByRole('button', { name: 'Undo' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Redo' })).toBeTruthy();
   });
 
-  it('takes back a mark, and puts it back', () => {
-    render(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+  it('takes back a mark, and puts it back', async () => {
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
     const undo = screen.getByRole('button', { name: 'Undo' });
     expect(undo.getAttribute('aria-disabled') ?? undo.getAttribute('disabled')).not.toBeNull();
 
-    act(() => {
+    await act(async () => {
       marks().add({ target: 'pane', kind: 'rect', frac: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 } });
     });
     expect(screen.getByTestId('pane').dataset.marks).toBe('1');
 
-    act(() => {
+    await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     });
     expect(screen.getByTestId('pane').dataset.marks).toBe('0');
 
-    act(() => {
+    await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
     });
     expect(screen.getByTestId('pane').dataset.marks).toBe('1');
   });
 
-  it('lists the marks in a sidebar panel', () => {
-    render(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
+  it('lists the marks in a sidebar panel', async () => {
+    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />);
     expect(screen.getByText('Marks')).toBeTruthy();
-    act(() => {
+    await act(async () => {
       marks().add({ target: 'pane', kind: 'line', frac: { x: 0, y: 0, w: 0.5, h: 0 } });
     });
     expect(screen.getAllByRole('listitem')).toHaveLength(1);
@@ -190,7 +191,7 @@ function GrowingPane({ n, grow }: { n: number; grow: () => void }) {
 }
 
 describe('targets that follow the trial state', () => {
-  it('reach a reader of the store once the change commits', () => {
+  it('reach a reader of the store once the change commits', async () => {
     // The store reads the committed state, so a reader rendering in the same
     // pass as the change sees the one before; the trial tells it to read again.
     const growing = defineInstrument<{ n: number }, Record<string, never>>({
@@ -209,9 +210,9 @@ describe('targets that follow the trial state', () => {
           })),
       },
     });
-    render(<Lab instruments={[growing]} defaultInstrument="Growing" />);
+    await renderSettled(<Lab instruments={[growing]} defaultInstrument="Growing" />);
     expect(screen.getByTestId('growing').dataset.targets).toBe('1');
-    act(() => {
+    await act(async () => {
       fireEvent.click(screen.getByTestId('growing'));
     });
     expect(screen.getByTestId('growing').textContent).toBe('2');
@@ -232,30 +233,34 @@ describe("the capability's selection mode", () => {
         ...(selection ? { selection } : {}),
       },
     });
-  const selectBoth = (): readonly string[] => {
-    const onA = marks().add({ target: 'a', kind: 'rect', frac: { x: 0, y: 0, w: 0.1, h: 0.1 } });
-    const onB = marks().add({ target: 'b', kind: 'rect', frac: { x: 0, y: 0, w: 0.1, h: 0.1 } });
-    act(() => marks().setSelection([onA, onB]));
-    return [onA, onB];
+  const selectBoth = async (): Promise<readonly string[]> => {
+    let both: [string, string] = ['', ''];
+    await act(async () => {
+      const onA = marks().add({ target: 'a', kind: 'rect', frac: { x: 0, y: 0, w: 0.1, h: 0.1 } });
+      const onB = marks().add({ target: 'b', kind: 'rect', frac: { x: 0, y: 0, w: 0.1, h: 0.1 } });
+      marks().setSelection([onA, onB]);
+      both = [onA, onB];
+    });
+    return both;
   };
 
-  it('keeps the selection to one target by default', () => {
-    render(<Lab instruments={[twoTargets()]} defaultInstrument="Two" />);
-    const [onA] = selectBoth();
+  it('keeps the selection to one target by default', async () => {
+    await renderSettled(<Lab instruments={[twoTargets()]} defaultInstrument="Two" />);
+    const [onA] = await selectBoth();
     expect(marks().selection()).toEqual([onA]);
   });
 
-  it("reaches the trial's store when the instrument asks for per-target", () => {
-    render(<Lab instruments={[twoTargets('per-target')]} defaultInstrument="Two" />);
+  it("reaches the trial's store when the instrument asks for per-target", async () => {
+    await renderSettled(<Lab instruments={[twoTargets('per-target')]} defaultInstrument="Two" />);
     expect(marks().selection()).toEqual([]);
-    const both = selectBoth();
+    const both = await selectBoth();
     expect(marks().selection()).toEqual(both);
   });
 });
 
 describe('an instrument that declares none', () => {
-  it('gets no store and no palette', () => {
-    render(<Lab instruments={[plain]} defaultInstrument="Plain" />);
+  it('gets no store and no palette', async () => {
+    await renderSettled(<Lab instruments={[plain]} defaultInstrument="Plain" />);
     expect(screen.getByTestId('plain').dataset.hasApi).toBe('false');
     expect(screen.queryByRole('button', { name: 'Rectangle' })).toBeNull();
   });

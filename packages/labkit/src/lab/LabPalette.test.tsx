@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
@@ -16,19 +17,19 @@ const tools = [
 ];
 
 describe('the lab palette', () => {
-  it('does not render when the lab declares no tools', () => {
-    render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" />);
+  it('does not render when the lab declares no tools', async () => {
+    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" />);
     expect(screen.queryByRole('toolbar', { name: 'Tools' })).toBeNull();
   });
 
-  it('renders one button per declared tool', () => {
-    render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" tools={tools} />);
+  it('renders one button per declared tool', async () => {
+    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" tools={tools} />);
     expect(screen.getByRole('button', { name: 'Pick' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Pan' })).toBeInTheDocument();
   });
 
-  it('marks the chosen tool current after a click', () => {
-    render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" tools={tools} />);
+  it('marks the chosen tool current after a click', async () => {
+    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" tools={tools} />);
     fireEvent.click(screen.getByRole('button', { name: 'Pan' }));
     expect(screen.getByRole('button', { name: 'Pan' })).toHaveAttribute('aria-current', 'true');
   });

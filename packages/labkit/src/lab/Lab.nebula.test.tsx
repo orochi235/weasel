@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { resolveTheme } from '@weasel-js/theme';
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
@@ -18,8 +18,8 @@ const backdrop = (container: HTMLElement) =>
     .find(Boolean) ?? '';
 
 describe('<Lab nebula>', () => {
-  it('draws one blob per literal color', () => {
-    const { container } = render(
+  it('draws one blob per literal color', async () => {
+    const { container } = await renderSettled(
       <Lab
         instruments={[bare]}
         defaultInstrument="Bare"
@@ -30,8 +30,8 @@ describe('<Lab nebula>', () => {
     expect(backdrop(container).match(/radial-gradient/g)).toHaveLength(3);
   });
 
-  it('resolves a theme ramp against the lab’s theme', () => {
-    const { container } = render(
+  it('resolves a theme ramp against the lab’s theme', async () => {
+    const { container } = await renderSettled(
       <Lab instruments={[bare]} defaultInstrument="Bare" mode="dark" nebula={{ ramp: 'swatch' }} />,
     );
     const sky = resolveTheme(interstellarTheme, { mode: 'dark' })['--wzl-swatch-sky'];

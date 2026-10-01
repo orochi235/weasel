@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { useState } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -47,8 +48,8 @@ describe('fitStage', () => {
 });
 
 describe('<Stage>', () => {
-  it('draws its content through the camera', () => {
-    const { container } = render(
+  it('draws its content through the camera', async () => {
+    const { container } = await renderSettled(
       <Stage
         size={{ width: 300, height: 100 }}
         view={{ zoom: 2, pan: { x: 10, y: 20 } }}
@@ -66,7 +67,7 @@ describe('<Stage>', () => {
     expect(el.style.getPropertyValue('--lk-stage-h')).toBe('100px');
   });
 
-  it('zooms on the wheel', () => {
+  it('zooms on the wheel', async () => {
     function Host() {
       const [view, setView] = useState<ViewTransform>({ zoom: 1, pan: { x: 0, y: 0 } });
       return (
@@ -75,14 +76,14 @@ describe('<Stage>', () => {
         </Stage>
       );
     }
-    const { container } = render(<Host />);
+    const { container } = await renderSettled(<Host />);
     const host = container.querySelector('.lk-stage');
     if (!host) throw new Error('no stage');
     fireEvent.wheel(host, { deltaY: -200, clientX: 0, clientY: 0 });
     expect(zoomOf(content(container))).toBeGreaterThan(1);
   });
 
-  it('zooms on a wheel handed to its camera from outside the stage', () => {
+  it('zooms on a wheel handed to its camera from outside the stage', async () => {
     // What an annotation target's input box does: it is portalled out of the
     // stage, so its wheel never bubbles here.
     const slot: CameraWheelSlot = { current: null };
@@ -96,19 +97,19 @@ describe('<Stage>', () => {
         </CameraWheelContext.Provider>
       );
     }
-    const { container } = render(<Host />);
-    act(() => {
+    const { container } = await renderSettled(<Host />);
+    await act(async () => {
       slot.current?.(new WheelEvent('wheel', { deltaY: -200, cancelable: true }));
     });
     expect(zoomOf(content(container))).toBeGreaterThan(1);
   });
 
-  it('listens for the wheel actively, so it can keep the page from scrolling', () => {
+  it('listens for the wheel actively, so it can keep the page from scrolling', async () => {
     // A proxy: jsdom does not enforce passive listeners, so a preventDefault in
     // a passive one succeeds here and fails in a browser. React registers its
     // wheel listeners passive; asserting the registration is what can fail.
     const add = vi.spyOn(HTMLElement.prototype, 'addEventListener');
-    const { container } = render(
+    const { container } = await renderSettled(
       <Stage
         size={{ width: 100, height: 100 }}
         view={{ zoom: 1, pan: { x: 0, y: 0 } }}
@@ -127,7 +128,7 @@ describe('<Stage>', () => {
     add.mockRestore();
   });
 
-  it('tells the surface its tiles moved when the camera does', () => {
+  it('tells the surface its tiles moved when the camera does', async () => {
     // A transform moves a tile without resizing anything, which is the one
     // kind of move a ResizeObserver never reports.
     const invalidateRects = vi.fn();
@@ -139,7 +140,7 @@ describe('<Stage>', () => {
         </Stage>
       </SurfaceContext.Provider>
     );
-    const { rerender } = render(at({ zoom: 1, pan: { x: 0, y: 0 } }));
+    const { rerender } = await renderSettled(at({ zoom: 1, pan: { x: 0, y: 0 } }));
     invalidateRects.mockClear();
     rerender(at({ zoom: 1.5, pan: { x: 0, y: 0 } }));
     expect(invalidateRects).toHaveBeenCalled();
@@ -162,25 +163,25 @@ const plain = defineInstrument<Record<string, never>, Record<string, never>>({
 });
 
 describe('an instrument that declares a stage', () => {
-  it('renders its DOM on the stage', () => {
-    const { container } = render(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+  it('renders its DOM on the stage', async () => {
+    const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
     expect(content(container)).toContainElement(screen.getByTestId('art'));
   });
 
-  it('gets the zoom controls, and they move the stage', () => {
-    const { container } = render(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+  it('gets the zoom controls, and they move the stage', async () => {
+    const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
     const trialView = within(screen.getByRole('toolbar', { name: 'View' }));
-    act(() => {
+    await act(async () => {
       fireEvent.click(trialView.getByRole('button', { name: 'Zoom in' }));
     });
     expect(zoomOf(content(container))).toBeCloseTo(1.25);
-    act(() => {
+    await act(async () => {
       fireEvent.click(trialView.getByRole('button', { name: 'Actual size' }));
     });
     expect(zoomOf(content(container))).toBe(1);
   });
 
-  it('zooms about the middle of the view, not the stage origin', () => {
+  it('zooms about the middle of the view, not the stage origin', async () => {
     const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
       x: 0,
       y: 0,
@@ -193,9 +194,9 @@ describe('an instrument that declares a stage', () => {
       toJSON: () => ({}),
     });
     try {
-      const { container } = render(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+      const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
       const trialView = within(screen.getByRole('toolbar', { name: 'View' }));
-      act(() => {
+      await act(async () => {
         fireEvent.click(trialView.getByRole('button', { name: 'Zoom in' }));
       });
       const el = content(container);
@@ -208,12 +209,12 @@ describe('an instrument that declares a stage', () => {
     }
   });
 
-  it('is what earns them: DOM content without one gets none', () => {
-    render(<Lab instruments={[plain]} defaultInstrument="Plain" />);
+  it('is what earns them: DOM content without one gets none', async () => {
+    await renderSettled(<Lab instruments={[plain]} defaultInstrument="Plain" />);
     expect(screen.queryByRole('toolbar', { name: 'View' })).toBeNull();
   });
 
-  it('draws its overlay on the stage, outside the camera', () => {
+  it('draws its overlay on the stage, outside the camera', async () => {
     const overlaid = defineInstrument<{ n: number }, Record<string, never>>({
       name: 'Overlaid',
       defaultConfig: () => ({}),
@@ -224,7 +225,7 @@ describe('an instrument that declares a stage', () => {
         overlay: ({ state }) => <div data-testid="legend">{state.n}</div>,
       },
     });
-    const { container } = render(<Lab instruments={[overlaid]} defaultInstrument="Overlaid" />);
+    const { container } = await renderSettled(<Lab instruments={[overlaid]} defaultInstrument="Overlaid" />);
     const legend = screen.getByTestId('legend');
     expect(legend).toHaveTextContent('7');
     expect(container.querySelector('.lk-stage')).toContainElement(legend);

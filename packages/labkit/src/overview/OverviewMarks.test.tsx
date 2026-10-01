@@ -3,7 +3,8 @@
  * and redraws when one is added. jsdom lays nothing out, so the target's rect
  * and the stage's are mocked; the stage's camera is the identity there.
  */
-import { act, render } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { useAnnotations } from '../annotations/AnnotationsContext';
 import type { AnnotationsApi } from '../annotations/types';
@@ -33,7 +34,7 @@ let restore: (() => void) | null = null;
 afterEach(() => restore?.());
 
 /** Stage 400×300, the pane at stage (50, 20) and 200×100. */
-function mount() {
+async function mount() {
   const pane = { current: null as HTMLDivElement | null };
   let api: AnnotationsApi | null = null;
   function Body() {
@@ -68,21 +69,21 @@ function mount() {
   restore = () => {
     HTMLElement.prototype.getBoundingClientRect = original;
   };
-  const r = render(<Lab instruments={[marked]} defaultInstrument="Marked" />);
+  const r = await renderSettled(<Lab instruments={[marked]} defaultInstrument="Marked" />);
   return { ...r, api: () => api as AnnotationsApi };
 }
 
 const px = (el: HTMLElement, name: string) => Number.parseFloat(el.style.getPropertyValue(name));
 
 describe('marks on the overview', () => {
-  it('draws nothing for a target with no marks', () => {
-    const h = mount();
+  it('draws nothing for a target with no marks', async () => {
+    const h = await mount();
     expect(h.container.querySelector('.lk-overview__marks')).toBeNull();
   });
 
-  it("places a target's marks at the target's rect, through the fit", () => {
-    const h = mount();
-    act(() => {
+  it("places a target's marks at the target's rect, through the fit", async () => {
+    const h = await mount();
+    await act(async () => {
       h.api().add({ target: 'pane', kind: 'rect', frac: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 } });
     });
     const marks = h.container.querySelector<HTMLElement>('.lk-overview__marks[data-target="pane"]');

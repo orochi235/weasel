@@ -371,6 +371,17 @@ change.** Bisecting with the file in isolation at one end and the whole suite at
 other produced a clean, entirely false "both parents green, merge red" — the two ends
 were different experiments. Use one probe across the whole range.
 
+**Run vitest with `--reporter=default` to see a passing test's console output.** The
+reporter vitest picks on its own when an agent runs it drops stderr from passing tests, so
+React's "not wrapped in act(...)" warnings looked like they only happened in CI. They
+reproduce locally once the reporter prints them.
+
+**A windease store notifies its subscribers on a microtask, so a sync `act` ends before
+they re-render.** That covers every lab: `Workspace` and `Split` register nodes while they
+mount, and every `addTrial`, `rerender` or mark added does the same. Mount through
+`renderSettled` (`@weasel-js/react/testing/renderSettled`), and make a store-changing
+`act` async, so the notify lands inside it.
+
 **`useScene` builds its scene once into a ref and never rebuilds it.** Editing a demo's
 `initial` nodes and saving leaves the previous scene live under HMR, so the canvas paints
 the old data with no error and no warning. A hard reload is the only way to trust a

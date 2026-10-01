@@ -34,7 +34,7 @@ describe('useAsyncOptions', () => {
     act(() => void vi.advanceTimersByTime(149));
     expect(load).not.toHaveBeenCalled();
 
-    act(() => void vi.advanceTimersByTime(1));
+    await act(async () => void vi.advanceTimersByTime(1));
     expect(load).toHaveBeenCalledWith('re', expect.any(AbortSignal));
   });
 
@@ -47,7 +47,7 @@ describe('useAsyncOptions', () => {
     act(() => result.current.onInputChange('re'));
     act(() => void vi.advanceTimersByTime(100));
     act(() => result.current.onInputChange('red'));
-    act(() => void vi.advanceTimersByTime(150));
+    await act(async () => void vi.advanceTimersByTime(150));
 
     expect(load).toHaveBeenCalledTimes(1);
     expect(load).toHaveBeenCalledWith('red', expect.any(AbortSignal));
@@ -216,7 +216,7 @@ describe('useAsyncOptions', () => {
 
   // The request's timer is set by a committed render and fires later, after
   // whatever render came last — here, one React threw away.
-  it('calls the committed load, not an abandoned render\'s', () => {
+  it('calls the committed load, not an abandoned render\'s', async () => {
     const committed = vi.fn().mockResolvedValue([]);
     const abandoned = vi.fn().mockResolvedValue([]);
     function Probe({ load }: { load: typeof committed }): null {
@@ -225,7 +225,7 @@ describe('useAsyncOptions', () => {
       return null;
     }
     renderThenAbandon(committed, abandoned, (load) => createElement(Probe, { load }));
-    act(() => void vi.advanceTimersByTime(1000));
+    await act(async () => void vi.advanceTimersByTime(1000));
     expect(abandoned).not.toHaveBeenCalled();
     expect(committed).toHaveBeenCalledWith('re', expect.any(AbortSignal));
   });

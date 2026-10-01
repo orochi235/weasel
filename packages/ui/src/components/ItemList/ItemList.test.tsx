@@ -190,7 +190,7 @@ describe('ItemList', () => {
 
     it('moves focus with the arrows and stops at the ends', () => {
       render(<ItemList rows={ROWS} selection="single" />);
-      opt('B').focus();
+      act(() => { opt('B').focus(); });
       fireEvent.keyDown(opt('B'), { key: 'ArrowDown' });
       expect(opt('C')).toHaveFocus();
       fireEvent.keyDown(opt('C'), { key: 'ArrowUp' });
@@ -202,7 +202,7 @@ describe('ItemList', () => {
 
     it('goes to either end with Home and End', () => {
       render(<ItemList rows={ROWS} selection="single" />);
-      opt('B').focus();
+      act(() => { opt('B').focus(); });
       fireEvent.keyDown(opt('B'), { key: 'End' });
       expect(opt('D')).toHaveFocus();
       fireEvent.keyDown(opt('D'), { key: 'Home' });
@@ -235,7 +235,7 @@ describe('ItemList', () => {
     it('nudges the row with Alt+Arrow and keeps focus on it', () => {
       const onNudge = vi.fn();
       render(<ItemList rows={ROWS} selection="single" onNudge={onNudge} />);
-      opt('B').focus();
+      act(() => { opt('B').focus(); });
       fireEvent.keyDown(opt('B'), { key: 'ArrowDown', altKey: true });
       expect(onNudge).toHaveBeenCalledWith('b', 1, 1);
       expect(opt('B')).toHaveFocus();
@@ -243,7 +243,7 @@ describe('ItemList', () => {
 
     it('refocuses a nudged row after the list reorders around it', () => {
       const { rerender } = render(<ItemList rows={ROWS} selection="single" onNudge={() => {}} />);
-      opt('B').focus();
+      act(() => { opt('B').focus(); });
       fireEvent.keyDown(opt('B'), { key: 'ArrowUp', altKey: true });
       (document.activeElement as HTMLElement).blur();
       const [a, b, ...rest] = ROWS;
@@ -303,7 +303,7 @@ describe('ItemList', () => {
 
     it('walks into and across the controls with the arrows, and back out', () => {
       render(<ItemList selection="single" rows={rows(() => {})} />);
-      cell('A').focus();
+      act(() => { cell('A').focus(); });
       fireEvent.keyDown(cell('A'), { key: 'ArrowRight' });
       expect(btn('eye a')).toHaveFocus();
       fireEvent.keyDown(btn('eye a'), { key: 'ArrowRight' });
@@ -318,7 +318,7 @@ describe('ItemList', () => {
 
     it('moves between rows from a control too', () => {
       render(<ItemList selection="single" rows={rows(() => {})} />);
-      btn('eye a').focus();
+      act(() => { btn('eye a').focus(); });
       fireEvent.keyDown(btn('eye a'), { key: 'ArrowDown' });
       expect(cell('B')).toHaveFocus();
     });

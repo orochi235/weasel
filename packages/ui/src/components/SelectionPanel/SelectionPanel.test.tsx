@@ -117,7 +117,7 @@ describe('SelectionPanel', () => {
     fireEvent.blur(y);
     expect((scene.get(asNodeId('a')) as { pose: Pose }).pose.y).toBe(99);
     expect((scene.get(asNodeId('b')) as { pose: Pose }).pose.y).toBe(99);
-    scene.undo();
+    act(() => scene.undo());
     expect((scene.get(asNodeId('a')) as { pose: Pose }).pose.y).toBe(20);
     expect((scene.get(asNodeId('b')) as { pose: Pose }).pose.y).toBe(20);
   });
@@ -286,7 +286,7 @@ describe('SelectionPanel', () => {
     );
     const before = scene.historyIndex();
     const label = screen.getByLabelText('Label');
-    label.focus();
+    act(() => label.focus());
     fireEvent.change(label, { target: { value: 'world' } });
     fireEvent.keyDown(label, { key: 'Enter' });
     fireEvent.blur(label); // must be a no-op: Enter already committed
@@ -306,7 +306,7 @@ describe('SelectionPanel', () => {
     );
     const before = scene.historyIndex();
     const label = screen.getByLabelText('Label');
-    label.focus();
+    act(() => label.focus());
     fireEvent.blur(label);
     expect((scene.get(asNodeId('a')) as { data: Data }).data.label).toBe('hello');
     expect(scene.historyIndex()).toBe(before);

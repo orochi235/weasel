@@ -4,7 +4,8 @@
  * `SingletonExperiment` — so `useTrialState()` threw everywhere else, which
  * made the documented hook pattern unreachable from an instrument's `render`.
  */
-import { act, render, screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
@@ -30,16 +31,16 @@ const reader = defineInstrument<{ hits: number }, Record<string, never>>({
 });
 
 describe('<Trial> trial-scoped hooks', () => {
-  it('lets an instrument read its own trial state through useTrialState', () => {
-    render(<Lab instruments={[reader]} defaultInstrument="Reader" />);
+  it('lets an instrument read its own trial state through useTrialState', async () => {
+    await renderSettled(<Lab instruments={[reader]} defaultInstrument="Reader" />);
     expect(screen.getByTestId('probe')).toHaveTextContent('hits:7');
   });
 });
 
 describe('<Trial> root element', () => {
-  it('carries its trial id, so a lab can find a trial from outside', () => {
+  it('carries its trial id, so a lab can find a trial from outside', async () => {
     let labRef: LabContextValue | null = null;
-    const { container } = render(
+    const { container } = await renderSettled(
       <Lab instruments={[reader]} defaultInstrument="Reader">
         <LabContext.Consumer>
           {(value) => {
@@ -49,7 +50,7 @@ describe('<Trial> root element', () => {
         </LabContext.Consumer>
       </Lab>,
     );
-    act(() => (labRef as LabContextValue | null)?.addTrial('Reader'));
+    await act(async () => (labRef as LabContextValue | null)?.addTrial('Reader'));
     const ids = (labRef as LabContextValue | null)?.trials.map((t) => t.id) ?? [];
     expect(ids).toHaveLength(2);
     const roots = container.querySelectorAll<HTMLElement>('.lk-trial[data-trial-id]');

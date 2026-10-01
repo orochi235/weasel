@@ -11,8 +11,9 @@ import type { FrameSetup } from '../FrameController';
 import { startIndex } from './startIndex';
 
 async function flush() {
-  await new Promise((r) => setTimeout(r, 0));
-  await act(async () => {});
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 0));
+  });
 }
 
 const stories = loadNativeModule(
