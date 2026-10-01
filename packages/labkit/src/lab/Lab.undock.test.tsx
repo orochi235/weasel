@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type { TrialContribution } from '../chrome/types';
@@ -34,19 +35,19 @@ const pinned: TrialContribution = {
   item: { title: 'Pinned', undockable: false, body: <p>stay</p> },
 };
 
-function renderLab() {
-  return render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[notes]} />);
+async function renderLab() {
+  return renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[notes]} />);
 }
 
 describe('undocking a sidebar section', () => {
-  it('starts docked inside the trial sidebar', () => {
-    const { container } = renderLab();
+  it('starts docked inside the trial sidebar', async () => {
+    const { container } = await renderLab();
     const sidebar = container.querySelector('.lk-trial__sidebar');
     expect(sidebar).toContainElement(screen.getByTestId('notes-body'));
   });
 
   it('moves the section out of the sidebar and into a workspace panel', async () => {
-    const { container } = renderLab();
+    const { container } = await renderLab();
     await userEvent.click(screen.getByRole('button', { name: 'Undock Notes' }));
 
     expect(container.querySelector('.lk-trial__sidebar')).not.toContainElement(
@@ -57,7 +58,7 @@ describe('undocking a sidebar section', () => {
   });
 
   it('docks it back', async () => {
-    const { container } = renderLab();
+    const { container } = await renderLab();
     await userEvent.click(screen.getByRole('button', { name: 'Undock Notes' }));
     await userEvent.click(screen.getByRole('button', { name: 'Dock Notes' }));
 
@@ -68,7 +69,7 @@ describe('undocking a sidebar section', () => {
   });
 
   it('sends a section declaring undockAs floating to the floating layer', async () => {
-    const { container } = render(
+    const { container } = await renderSettled(
       <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[floater]} />,
     );
     await userEvent.click(screen.getByRole('button', { name: 'Undock Floater' }));
@@ -78,8 +79,8 @@ describe('undocking a sidebar section', () => {
     expect(container.querySelector('.lk-panel-tile--floating')).not.toBeNull();
   });
 
-  it('offers no tear-out control on a section that opts out', () => {
-    render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[pinned]} />);
+  it('offers no tear-out control on a section that opts out', async () => {
+    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[pinned]} />);
     expect(screen.queryByRole('button', { name: 'Undock Pinned' })).toBeNull();
   });
 });

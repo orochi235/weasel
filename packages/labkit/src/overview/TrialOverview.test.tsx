@@ -7,7 +7,8 @@
  * centering puts the pressed world point at the stage's origin instead.
  */
 
-import { act, render } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import type { PointerContextValue } from '@weasel-js/core';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -40,7 +41,7 @@ function pointer(el: Element, type: string, x: number, y: number, buttons = 1) {
 
 /** Content 400×300 in a 200×150 box, 6px in: scale 0.46, so box (100, 75)
  *  is content (200, 150). */
-function mount() {
+async function mount() {
   let store: PointerContextValue | null = null;
   const pictured = defineInstrument<Record<string, never>, Record<string, never>>({
     name: 'Pictured',
@@ -57,7 +58,7 @@ function mount() {
       ),
     },
   });
-  const r = render(<Lab instruments={[pictured]} defaultInstrument="Pictured" />);
+  const r = await renderSettled(<Lab instruments={[pictured]} defaultInstrument="Pictured" />);
   const box = r.container.querySelector('.lk-overview__box');
   const content = r.container.querySelector('.lk-stage__content') as HTMLElement | null;
   if (!box || !content) throw new Error('no overview or stage');
@@ -67,15 +68,15 @@ function mount() {
 const px = (el: HTMLElement, name: string) => Number.parseFloat(el.style.getPropertyValue(name));
 
 describe('<TrialOverview>', () => {
-  it('draws the instrument-supplied content, not the instrument itself', () => {
-    const h = mount();
+  it('draws the instrument-supplied content, not the instrument itself', async () => {
+    const h = await mount();
     expect(h.box.querySelector('[data-testid="thumb"]')).not.toBeNull();
     expect(h.box.querySelector('[data-testid="picture"]')).toBeNull();
   });
 
-  it('moves the stage camera to the pressed point', () => {
-    const h = mount();
-    act(() => {
+  it('moves the stage camera to the pressed point', async () => {
+    const h = await mount();
+    await act(async () => {
       pointer(h.box, 'pointerdown', 100, 75);
       pointer(h.box, 'pointerup', 100, 75, 0);
     });
@@ -83,9 +84,9 @@ describe('<TrialOverview>', () => {
     expect(px(h.content, '--lk-stage-y')).toBeCloseTo(-150);
   });
 
-  it('follows a drag with the camera, and never pans the stage by it', () => {
-    const h = mount();
-    act(() => {
+  it('follows a drag with the camera, and never pans the stage by it', async () => {
+    const h = await mount();
+    await act(async () => {
       pointer(h.box, 'pointerdown', 100, 75);
       pointer(h.box, 'pointermove', 110, 75);
       pointer(h.box, 'pointermove', 123, 75);
@@ -96,9 +97,9 @@ describe('<TrialOverview>', () => {
     expect(px(h.content, '--lk-stage-x')).toBeCloseTo(-250);
   });
 
-  it("publishes the pointer over it as the overview's, and the stage draws it", () => {
-    const h = mount();
-    act(() => pointer(h.box, 'pointermove', 100, 75, 0));
+  it("publishes the pointer over it as the overview's, and the stage draws it", async () => {
+    const h = await mount();
+    await act(async () => pointer(h.box, 'pointermove', 100, 75, 0));
     const p = h.store()?.get();
     expect(p?.viewId).toBe('overview');
     expect(p?.worldX).toBeCloseTo(200);
@@ -106,10 +107,10 @@ describe('<TrialOverview>', () => {
     expect(h.container.querySelector('.lk-stage .lk-linked-cursor')).not.toBeNull();
   });
 
-  it("publishes the stage's pointer as the stage's, so the stage draws none", () => {
-    const h = mount();
+  it("publishes the stage's pointer as the stage's, so the stage draws none", async () => {
+    const h = await mount();
     const host = h.container.querySelector('.lk-stage') as HTMLElement;
-    act(() => pointer(host, 'pointermove', 10, 10, 0));
+    await act(async () => pointer(host, 'pointermove', 10, 10, 0));
     expect(h.store()?.get()?.viewId).toBe('stage');
     expect(h.container.querySelector('.lk-stage .lk-linked-cursor')).toBeNull();
   });

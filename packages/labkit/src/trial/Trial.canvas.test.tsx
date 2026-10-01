@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { auto } from '../config/auto';
@@ -6,6 +7,9 @@ import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
+
+/** Waits one animation frame inside act, so what the frame loop sets commits there. */
+const nextFrame = () => act(() => new Promise((r) => requestAnimationFrame(() => r(null))));
 
 interface St {
   n: number;
@@ -44,8 +48,8 @@ function makeInstrument(
 }
 
 describe('an instrument that draws', () => {
-  it('still renders its own DOM, as an overlay over the canvas', () => {
-    const { container } = render(
+  it('still renders its own DOM, as an overlay over the canvas', async () => {
+    const { container } = await renderSettled(
       <Lab instruments={[makeInstrument(() => undefined)]} defaultInstrument="Probe" />,
     );
     expect(screen.getByTestId('readout')).toHaveTextContent('n = 7');
@@ -57,8 +61,8 @@ describe('an instrument that draws', () => {
 
   it('draws with the camera applied, so world geometry lands where the view says', async () => {
     const draw = vi.fn();
-    render(<Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe" />);
-    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    await renderSettled(<Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe" />);
+    await nextFrame();
 
     expect(draw).toHaveBeenCalled();
     expect(ctxSpies.translate).toHaveBeenCalledWith(30, 40);
@@ -67,8 +71,8 @@ describe('an instrument that draws', () => {
 
   it('passes zoom in the args so a layer can keep line widths unscaled', async () => {
     const draw = vi.fn();
-    render(<Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe" />);
-    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    await renderSettled(<Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe" />);
+    await nextFrame();
 
     expect(draw).toHaveBeenCalledWith(
       expect.anything(),
@@ -93,10 +97,10 @@ describe('an auto config path', () => {
       render: () => null,
       canvas: { layers: [{ id: 'main', draw }] },
     });
-    const { container } = render(
+    const { container } = await renderSettled(
       <Lab instruments={[instrument as Instrument]} defaultInstrument="Auto" />,
     );
-    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    await nextFrame();
 
     expect(draw).toHaveBeenCalledWith(
       expect.anything(),
@@ -111,11 +115,11 @@ describe('an auto config path', () => {
 });
 
 describe('LabProps.instruments', () => {
-  it('accepts a typed instrument with no cast', () => {
+  it('accepts a typed instrument with no cast', async () => {
     // The assignment is the assertion: this file fails to compile if
     // `defineInstrument<St, ...>`'s result stops being assignable.
     const typed = makeInstrument(() => undefined);
-    render(<Lab instruments={[typed]} defaultInstrument="Probe" />);
+    await renderSettled(<Lab instruments={[typed]} defaultInstrument="Probe" />);
     expect(screen.getByTestId('readout')).toBeInTheDocument();
   });
 
@@ -132,8 +136,8 @@ describe('LabProps.instruments', () => {
     const instrument = makeInstrument(vi.fn(), {
       worldSpec: { origin: { x: 0.5, y: 0.5 }, yAxis: 'up' },
     });
-    render(<Lab instruments={[instrument]} defaultInstrument="Probe" />);
-    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />);
+    await nextFrame();
 
     // Origin (400,300) plus the instrument's pan (30,40); y runs up.
     expect(ctxSpies.translate).toHaveBeenCalledWith(430, 340);
@@ -156,9 +160,9 @@ describe('LabProps.instruments', () => {
         pan: { x: width / 4, y: height / 4 },
       }),
     });
-    render(<Lab instruments={[instrument]} defaultInstrument="Probe" />);
-    await new Promise((r) => requestAnimationFrame(() => r(null)));
-    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />);
+    await nextFrame();
+    await nextFrame();
 
     expect(ctxSpies.translate).toHaveBeenCalledWith(200, 150);
     vi.restoreAllMocks();
@@ -182,7 +186,7 @@ describe('LabProps.instruments', () => {
       },
       layers: { ids: ['grid', 'glyph'] },
     });
-    render(<Lab instruments={[instrument]} defaultInstrument="Probe" />);
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />);
     expect([...seen]).toEqual(['grid', 'glyph']);
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Show grid' }));

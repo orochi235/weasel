@@ -7,7 +7,8 @@
  * workspace: `.lk-lab__body > .lk-workspace { min-width: 0 }` is a direct-child
  * selector, so an extra element between them silently drops that rule.
  */
-import { act, render } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -75,16 +76,16 @@ const probeInstrument = defineInstrument<Record<string, never>, Record<string, n
 });
 
 describe('<Lab> surface provider', () => {
-  it('puts a surface handle in reach of an instrument', () => {
+  it('puts a surface handle in reach of an instrument', async () => {
     seen = 'not-rendered';
-    render(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+    await renderSettled(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
     expect(seen).not.toBe('not-rendered');
     expect(seen).not.toBeNull();
     expect(typeof (seen as unknown as SurfaceHandle).registerTile).toBe('function');
   });
 
-  it('stacks an under and an over buffer inside the lab body', () => {
-    const { container } = render(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+  it('stacks an under and an over buffer inside the lab body', async () => {
+    const { container } = await renderSettled(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
     const canvases = container.querySelectorAll('.lk-lab__body > canvas.lk-lab__surface');
     expect(canvases).toHaveLength(2);
     // Source order, because the z-index that separates them is in a stylesheet
@@ -96,24 +97,24 @@ describe('<Lab> surface provider', () => {
     ]);
   });
 
-  it('hands a tenant whichever of the two it asks for', () => {
-    const { container } = render(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+  it('hands a tenant whichever of the two it asks for', async () => {
+    const { container } = await renderSettled(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
     const [underEl, overEl] = [...container.querySelectorAll('canvas.lk-lab__surface')];
     expect(seenCanvases.over).toBe(overEl);
     expect(seenCanvases.under).toBe(underEl);
     expect(overEl).not.toBe(underEl);
   });
 
-  it('defaults a tenant to the buffer over the trials', () => {
+  it('defaults a tenant to the buffer over the trials', async () => {
     // Every tenant predating the split wants the over one: the surface was
     // built for marks that annotate an instrument.
-    const { container } = render(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+    const { container } = await renderSettled(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
     const [underEl, overEl] = [...container.querySelectorAll('canvas.lk-lab__surface')];
     expect(seenCanvases.byDefault).toBe(overEl);
     expect(seenCanvases.byDefault).not.toBe(underEl);
   });
 
-  it('mounts no buffer of its own when a host already owns the surface', () => {
+  it('mounts no buffer of its own when a host already owns the surface', async () => {
     function Host({ children }: { children: ReactNode }) {
       const surface = useTiledSurface({ onFrame: () => {} });
       return (
@@ -122,7 +123,7 @@ describe('<Lab> surface provider', () => {
         </SurfaceContext.Provider>
       );
     }
-    const { container } = render(
+    const { container } = await renderSettled(
       <Host>
         <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />
       </Host>,
@@ -130,11 +131,11 @@ describe('<Lab> surface provider', () => {
     expect(container.querySelectorAll('canvas.lk-lab__surface')).toHaveLength(0);
   });
 
-  it('keeps the workspace a direct child of the lab body', () => {
+  it('keeps the workspace a direct child of the lab body', async () => {
     // The min-width:0 rule that keeps the flex row from overflowing is
     // `.lk-lab__body > .lk-workspace`. An element inserted between them drops
     // it, and jsdom cannot see the overflow that follows.
-    const { container } = render(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+    const { container } = await renderSettled(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
     const body = container.querySelector('.lk-lab__body');
     expect(body).not.toBeNull();
     expect(body?.querySelector(':scope > .lk-workspace')).not.toBeNull();
@@ -155,7 +156,7 @@ describe('<Lab> tile round trip', () => {
     vi.restoreAllMocks();
   });
 
-  it('publishes a rect for a tile an instrument registered', () => {
+  it('publishes a rect for a tile an instrument registered', async () => {
     const frames: SurfaceFrame[] = [];
     let handle: SurfaceHandle | null = null;
 
@@ -177,7 +178,7 @@ describe('<Lab> tile round trip', () => {
       );
     }
 
-    render(
+    await renderSettled(
       <Host>
         <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />
       </Host>,
@@ -189,11 +190,11 @@ describe('<Lab> tile round trip', () => {
     expect(pane).not.toBeNull();
     stubBox(pane, 240, 100, 320, 200);
 
-    act(() => {
+    await act(async () => {
       handle?.invalidateRects();
       handle?.invalidate(paneTileId);
     });
-    act(() => {
+    await act(async () => {
       vi.advanceTimersByTime(64);
     });
 
@@ -208,8 +209,8 @@ describe('<Lab> tile round trip', () => {
 });
 
 describe('<Lab> pages', () => {
-  it("gives the title a way back to the project's other labs", () => {
-    const { getByRole } = render(
+  it("gives the title a way back to the project's other labs", async () => {
+    const { getByRole } = await renderSettled(
       <Lab
         instruments={[probeInstrument]}
         defaultInstrument="Probe"
@@ -225,8 +226,8 @@ describe('<Lab> pages', () => {
     expect(getByRole('button', { name: /kliegsminister/ })).toBeTruthy();
   });
 
-  it('leaves the title a plain heading when there are no other labs', () => {
-    const { getByRole, queryByRole } = render(
+  it('leaves the title a plain heading when there are no other labs', async () => {
+    const { getByRole, queryByRole } = await renderSettled(
       <Lab instruments={[probeInstrument]} defaultInstrument="Probe" title="solo" />,
     );
     expect(getByRole('heading', { name: 'solo' })).toBeTruthy();

@@ -22,10 +22,11 @@ export function installResizeObserver(): void {
 
 const realSetTimeout = globalThis.setTimeout;
 
-/** Yields to the message ports, then lets React commit what they caused. */
+/** Yields to the message ports inside act, so React commits what they caused rather than warning about it. */
 export async function flush(): Promise<void> {
-  await new Promise((r) => realSetTimeout(r, 0));
-  await act(async () => {});
+  await act(async () => {
+    await new Promise((r) => realSetTimeout(r, 0));
+  });
 }
 
 /** Plays a frame document's hello, as its entry would once it runs. */

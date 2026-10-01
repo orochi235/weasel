@@ -192,6 +192,7 @@ describe('Workshop', () => {
 
     connectFrame(iframe);
     expect(iframe).toHaveAttribute('data-pending');
+    await flush();
     frame.close();
   });
 

@@ -20,8 +20,9 @@ vi.mock('./cssVars', async (importOriginal) => {
 const barriers = new Set<() => Promise<void>>();
 
 async function flush() {
-  await Promise.all([...barriers].map((barrier) => barrier()));
-  await act(async () => {});
+  await act(async () => {
+    await Promise.all([...barriers].map((barrier) => barrier()));
+  });
 }
 
 const counter = loadNativeModule(
@@ -322,7 +323,9 @@ describe('startFrame', () => {
     const rootStyle = document.createElement('style');
     rootStyle.textContent = ':root { --fg-t-ink: red; }';
     const settle = async (ms: number) => {
-      await new Promise((r) => setTimeout(r, ms));
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, ms));
+      });
       await flush();
     };
     const empty = { type: 'init', config: {}, state: null, globals: {} } as const;

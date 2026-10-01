@@ -10,8 +10,9 @@ import { runAxe } from './a11y';
 import { startFrame } from './FrameController';
 
 async function flush() {
-  await new Promise((r) => setTimeout(r, 0));
-  await act(async () => {});
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 0));
+  });
 }
 
 /** axe takes tens of milliseconds, so its answer needs waiting for rather than a fixed number of flushes. */

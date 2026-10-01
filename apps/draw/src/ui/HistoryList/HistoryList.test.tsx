@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { HistoryList } from './HistoryList';
 
 afterEach(() => { cleanup(); });
@@ -30,7 +30,7 @@ describe('HistoryList', () => {
     render(<HistoryList items={ITEMS} currentIndex={2} onJump={onJump} />);
     const fill = screen.getByRole('option', { name: 'Fill' });
     expect(fill.tabIndex).toBe(0);
-    fill.focus();
+    act(() => fill.focus());
     fireEvent.keyDown(fill, { key: 'ArrowUp' });
     expect(onJump).not.toHaveBeenCalled();
     const draw = screen.getByRole('option', { name: 'Draw rect' });

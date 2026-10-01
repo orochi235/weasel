@@ -4,7 +4,8 @@
  * is written on a trailing debounce: a write per scene notification re-renders
  * every trial on every frame of a drag.
  */
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAnnotations } from '../annotations/AnnotationsContext';
 import type { AnnotationsApi, SerializedAnnotations } from '../annotations/types';
@@ -83,7 +84,7 @@ const selfStoring = defineInstrument<Record<string, never>, Record<string, never
 
 async function mount(backing: Map<string, unknown>, which: InstrumentList[number] = inspector) {
   api = null;
-  const view = render(
+  const view = await renderSettled(
     <Lab
       instruments={[which]}
       defaultInstrument={which.name}
@@ -121,7 +122,10 @@ describe('a trial that persists its marks', () => {
   it('brings them back on a remount from the same storage', async () => {
     const backing = new Map<string, unknown>();
     const first = await mount(backing);
-    const id = marks().add(MARK, { angle: 12 });
+    let id = '';
+    act(() => {
+      id = marks().add(MARK, { angle: 12 });
+    });
     first.unmount();
     await waitFor(() => expect(storedTrial(backing)?.annotations).toBeDefined());
 
@@ -139,7 +143,9 @@ describe('a trial that persists its marks', () => {
     const backing = new Map<string, unknown>();
     await mount(backing);
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
-    marks().add(MARK);
+    act(() => {
+      marks().add(MARK);
+    });
     await act(() => vi.advanceTimersByTimeAsync(20));
     // Not a claim about either interval — a claim that a store write is not
     // synchronous with a scene notification.
@@ -151,8 +157,11 @@ describe('a trial that persists its marks', () => {
   it('flushes on unmount, so the last mark before a close is not lost', async () => {
     const backing = new Map<string, unknown>();
     const first = await mount(backing);
-    const id = marks().add(MARK);
-    marks().add({ ...MARK, frac: { x: 0.6, y: 0.6, w: 0.1, h: 0.1 } });
+    let id = '';
+    act(() => {
+      id = marks().add(MARK);
+      marks().add({ ...MARK, frac: { x: 0.6, y: 0.6, w: 0.1, h: 0.1 } });
+    });
     first.unmount();
     // Nothing was written before the unmount: neither debounce had elapsed.
     await waitFor(() => expect(storedTrial(backing)?.annotations).toBeDefined());
@@ -165,7 +174,9 @@ describe('a trial that persists its marks', () => {
   it('leaves the slot alone when the instrument owns the storage', async () => {
     const backing = new Map<string, unknown>();
     const first = await mount(backing, selfStoring);
-    marks().add(MARK);
+    act(() => {
+      marks().add(MARK);
+    });
     first.unmount();
     await waitFor(() => expect(owned?.version).toBe(1));
     await waitFor(() => expect(storedTrial(backing)).toBeDefined());
@@ -181,7 +192,7 @@ describe('a trial that persists its marks', () => {
     gate = new Promise((resolve) => {
       release = resolve;
     });
-    render(
+    await renderSettled(
       <Lab
         instruments={[selfStoring]}
         defaultInstrument="SelfStoring"
@@ -199,7 +210,7 @@ describe('a trial that persists its marks', () => {
     gate = new Promise((resolve) => {
       release = resolve;
     });
-    act(() => lab?.addTrial('SelfStoring'));
+    await act(async () => lab?.addTrial('SelfStoring'));
     expect(document.querySelectorAll('.lk-trial--loading')).toHaveLength(1);
     await act(async () => release());
     await waitFor(() => expect(screen.getAllByTestId('pane')).toHaveLength(2));

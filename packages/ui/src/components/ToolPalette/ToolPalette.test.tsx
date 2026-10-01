@@ -216,7 +216,7 @@ describe('ToolPalette — keyboard nav', () => {
     render(<ToolPalette tools={tools} />);
     const a = screen.getByRole('button', { name: /^A/ });
     const b = screen.getByRole('button', { name: /^B/ });
-    a.focus();
+    act(() => a.focus());
     fireEvent.keyDown(a, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(b);
   });
@@ -226,7 +226,7 @@ describe('ToolPalette — keyboard nav', () => {
     render(<ToolPalette tools={tools} />);
     const a = screen.getByRole('button', { name: /^A/ });
     const b = screen.getByRole('button', { name: /^B/ });
-    b.focus();
+    act(() => b.focus());
     fireEvent.keyDown(b, { key: 'ArrowUp' });
     expect(document.activeElement).toBe(a);
   });
@@ -237,7 +237,7 @@ describe('ToolPalette — keyboard nav', () => {
     const a = screen.getByRole('button', { name: /^A/ });
     const c = screen.getByRole('button', { name: /^C/ });
     const e = screen.getByRole('button', { name: /^E/ });
-    c.focus();
+    act(() => c.focus());
     fireEvent.keyDown(c, { key: 'End' });
     expect(document.activeElement).toBe(e);
     fireEvent.keyDown(e, { key: 'Home' });
@@ -249,10 +249,10 @@ describe('ToolPalette — keyboard nav', () => {
     render(<ToolPalette tools={tools} />);
     const a = screen.getByRole('button', { name: /^A/ });
     const e = screen.getByRole('button', { name: /^E/ });
-    e.focus();
+    act(() => e.focus());
     fireEvent.keyDown(e, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(a);
-    a.focus();
+    act(() => a.focus());
     fireEvent.keyDown(a, { key: 'ArrowUp' });
     expect(document.activeElement).toBe(e);
   });
@@ -324,7 +324,7 @@ describe('ToolPalette — mode eligibility', () => {
     const anchorBtn = screen.getByRole('button', { name: /anchor/i });
     const handBtn = screen.getByRole('button', { name: /hand/i });
 
-    anchorBtn.focus();
+    act(() => anchorBtn.focus());
     fireEvent.keyDown(anchorBtn, { key: 'ArrowUp' });
     expect(document.activeElement).toBe(handBtn);
 
@@ -339,7 +339,7 @@ describe('ToolPalette — mode eligibility', () => {
     const anchorBtn = screen.getByRole('button', { name: /anchor/i });
     const handBtn = screen.getByRole('button', { name: /hand/i });
 
-    handBtn.focus();
+    act(() => handBtn.focus());
     fireEvent.keyDown(handBtn, { key: 'Home' });
     expect(document.activeElement).toBe(anchorBtn);
     fireEvent.keyDown(anchorBtn, { key: 'End' });

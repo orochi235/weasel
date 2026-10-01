@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { type ReactNode, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { useStore } from 'zustand/react';
@@ -102,19 +103,19 @@ function ChromeFromStore({
 }
 
 describe('<TrialChrome>', () => {
-  it('renders children in the content area', () => {
-    render(<ChromeHarness />);
+  it('renders children in the content area', async () => {
+    await renderSettled(<ChromeHarness />);
     expect(screen.getByTestId('content')).toBeInTheDocument();
   });
 
-  it('renders the built-in trial actions', () => {
-    render(<ChromeHarness />);
+  it('renders the built-in trial actions', async () => {
+    await renderSettled(<ChromeHarness />);
     expect(screen.getByRole('button', { name: 'Close trial' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Clone trial' })).toBeInTheDocument();
   });
 
-  it('puts clone, reset and snapshot at the end of the title bar, beside close', () => {
-    const { container } = render(<ChromeHarness />);
+  it('puts clone, reset and snapshot at the end of the title bar, beside close', async () => {
+    const { container } = await renderSettled(<ChromeHarness />);
     const titlebar = container.querySelector('.lk-trial__titlebar');
     if (!titlebar) throw new Error('no title bar');
     expect(titlebar).toContainElement(screen.getByRole('button', { name: 'Clone trial' }));
@@ -125,15 +126,15 @@ describe('<TrialChrome>', () => {
     expect(labels).toEqual(['Clone trial', 'Reset trial', 'Save snapshot', 'Close trial']);
   });
 
-  it('disables close on the last trial', () => {
-    render(<ChromeHarness isLastTrial />);
+  it('disables close on the last trial', async () => {
+    await renderSettled(<ChromeHarness isLastTrial />);
     expect(screen.getByRole('button', { name: /close/i })).toBeDisabled();
   });
 
-  it('omits undo and redo unless the instrument declares undo', () => {
-    render(<ChromeHarness />);
+  it('omits undo and redo unless the instrument declares undo', async () => {
+    await renderSettled(<ChromeHarness />);
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
-    render(
+    await renderSettled(
       <ChromeHarness
         instrument={{ ...stubInstrument, undo: {} }}
         undoBindings={{ canUndo: true, canRedo: false, undo: vi.fn(), redo: vi.fn() }}
@@ -143,7 +144,7 @@ describe('<TrialChrome>', () => {
     expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled();
   });
 
-  it('offers the snapshot loader once a snapshot exists', () => {
+  it('offers the snapshot loader once a snapshot exists', async () => {
     const snapshot: SavedSnapshot = {
       id: 's1',
       name: 'First',
@@ -153,17 +154,17 @@ describe('<TrialChrome>', () => {
       state: {},
       savedAt: 1,
     };
-    render(<ChromeHarness labOverrides={{ savedSnapshots: [snapshot] }} />);
+    await renderSettled(<ChromeHarness labOverrides={{ savedSnapshots: [snapshot] }} />);
     expect(screen.getByRole('button', { name: /load snapshot/i })).toBeInTheDocument();
   });
 
-  it('renders a consumer contribution alongside the built-ins', () => {
-    render(<ChromeHarness chrome={[{ id: 'mine', region: 'status', item: { text: 'ready' } }]} />);
+  it('renders a consumer contribution alongside the built-ins', async () => {
+    await renderSettled(<ChromeHarness chrome={[{ id: 'mine', region: 'status', item: { text: 'ready' } }]} />);
     expect(screen.getByText('ready')).toBeInTheDocument();
   });
 
-  it('leads the title bar with a contribution that does not set `end`', () => {
-    const { container } = render(
+  it('leads the title bar with a contribution that does not set `end`', async () => {
+    const { container } = await renderSettled(
       <ChromeHarness
         chrome={[
           {
@@ -183,8 +184,8 @@ describe('<TrialChrome>', () => {
     expect(lead.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('reads the instrument name until a contribution calls setTitle', () => {
-    render(
+  it('reads the instrument name until a contribution calls setTitle', async () => {
+    await renderSettled(
       <ChromeHarness
         chrome={[
           {
@@ -205,9 +206,9 @@ describe('<TrialChrome>', () => {
     expect(screen.getByRole('region', { name: 'Trial Sprocket 7' })).toBeInTheDocument();
   });
 
-  it("reads the instrument's title over its name, and returns to it on setTitle(null)", () => {
+  it("reads the instrument's title over its name, and returns to it on setTitle(null)", async () => {
     const titled: Instrument = { ...stubInstrument, title: 'Stub / Default' };
-    render(
+    await renderSettled(
       <ChromeHarness
         instrument={titled}
         chrome={[
@@ -232,9 +233,9 @@ describe('<TrialChrome>', () => {
     expect(screen.getByRole('region', { name: 'Trial Stub / Default' })).toBeInTheDocument();
   });
 
-  it('Cmd+S triggers saveSnapshot', () => {
+  it('Cmd+S triggers saveSnapshot', async () => {
     const saveSnapshot = vi.fn();
-    render(<ChromeHarness labOverrides={{ saveSnapshot }} />);
+    await renderSettled(<ChromeHarness labOverrides={{ saveSnapshot }} />);
     const region = screen.getByRole('region', { name: /trial/i });
     fireEvent.keyDown(region, { key: 's', metaKey: true });
     expect(saveSnapshot).toHaveBeenCalledWith('ws-1', undefined);
@@ -242,30 +243,30 @@ describe('<TrialChrome>', () => {
 });
 
 describe('chrome regions in a mounted lab', () => {
-  function renderLabWith(instrument: Instrument) {
-    return render(<Lab title="T" instruments={[instrument]} defaultInstrument={instrument.name} />);
+  async function renderLabWith(instrument: Instrument) {
+    return renderSettled(<Lab title="T" instruments={[instrument]} defaultInstrument={instrument.name} />);
   }
 
-  it('puts zoom in the viewport region and not in the toolbar', () => {
-    renderLabWith({ ...stubInstrument, canvas: { layers: [] }, undo: {} });
+  it('puts zoom in the viewport region and not in the toolbar', async () => {
+    await renderLabWith({ ...stubInstrument, canvas: { layers: [] }, undo: {} });
     const toolbar = document.querySelector('.lk-trial__toolbar') as HTMLElement;
     const viewport = document.querySelector('.lk-viewport-controls') as HTMLElement;
     expect(within(viewport).getByRole('button', { name: 'Zoom in' })).toBeInTheDocument();
     expect(within(toolbar).queryByRole('button', { name: 'Zoom in' })).toBeNull();
   });
 
-  it('renders no undo group for an instrument that does not declare undo', () => {
-    renderLabWith({ ...stubInstrument, canvas: { layers: [] } });
+  it('renders no undo group for an instrument that does not declare undo', async () => {
+    await renderLabWith({ ...stubInstrument, canvas: { layers: [] } });
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
   });
 
-  it('renders no viewport region for an instrument with no canvas', () => {
-    renderLabWith(stubInstrument);
+  it('renders no viewport region for an instrument with no canvas', async () => {
+    await renderLabWith(stubInstrument);
     expect(document.querySelector('.lk-viewport-controls')).toBeNull();
   });
 
-  it('Lab provides context for nested TrialChrome', () => {
-    renderLabWith(stubInstrument);
+  it('Lab provides context for nested TrialChrome', async () => {
+    await renderLabWith(stubInstrument);
     expect(document.querySelector('.lk-lab')).toBeTruthy();
   });
 });
@@ -291,46 +292,46 @@ describe('<TrialChrome> — state that outlives a mount', () => {
     },
   ];
 
-  it('keeps a title across a remount', () => {
+  it('keeps a title across a remount', async () => {
     const store = makeChromeStore();
-    const first = render(<ChromeHarness store={store} chrome={renameChrome} />);
+    const first = await renderSettled(<ChromeHarness store={store} chrome={renameChrome} />);
     fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
     first.unmount();
 
-    render(<ChromeHarness store={store} chrome={renameChrome} />);
+    await renderSettled(<ChromeHarness store={store} chrome={renameChrome} />);
     expect(screen.getByRole('region', { name: 'Trial Sprocket 7' })).toBeInTheDocument();
   });
 
-  it('keeps a folded sidebar section across a remount', () => {
+  it('keeps a folded sidebar section across a remount', async () => {
     const store = makeChromeStore();
-    const first = render(<ChromeHarness store={store} chrome={sectionChrome} />);
+    const first = await renderSettled(<ChromeHarness store={store} chrome={sectionChrome} />);
     expect(screen.getByTestId('notes-body')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
     expect(screen.queryByTestId('notes-body')).toBeNull();
     first.unmount();
 
-    render(<ChromeHarness store={store} chrome={sectionChrome} />);
+    await renderSettled(<ChromeHarness store={store} chrome={sectionChrome} />);
     expect(screen.getByRole('button', { name: 'Notes' })).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByTestId('notes-body')).toBeNull();
   });
 
-  it('keeps a folded settings group across a remount', () => {
+  it('keeps a folded settings group across a remount', async () => {
     const sectioned: Instrument = {
       ...stubInstrument,
       config: f.schema({ size: f.number(1).section('Shape') }),
     };
     const store = makeChromeStore();
-    const first = render(<ChromeHarness store={store} instrument={sectioned} />);
+    const first = await renderSettled(<ChromeHarness store={store} instrument={sectioned} />);
     const twisty = screen.getByRole('button', { name: 'Shape' });
     expect(twisty).toHaveAttribute('aria-expanded', 'true');
     fireEvent.click(twisty);
     first.unmount();
 
-    render(<ChromeHarness store={store} instrument={sectioned} />);
+    await renderSettled(<ChromeHarness store={store} instrument={sectioned} />);
     expect(screen.getByRole('button', { name: 'Shape' })).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('reopens a section that starts collapsed, and keeps it open across a remount', () => {
+  it('reopens a section that starts collapsed, and keeps it open across a remount', async () => {
     const collapsedChrome: ChromeProps['chrome'] = [
       {
         id: 'notes',
@@ -343,12 +344,12 @@ describe('<TrialChrome> — state that outlives a mount', () => {
       },
     ];
     const store = makeChromeStore();
-    const first = render(<ChromeHarness store={store} chrome={collapsedChrome} />);
+    const first = await renderSettled(<ChromeHarness store={store} chrome={collapsedChrome} />);
     expect(screen.queryByTestId('notes-body')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
     first.unmount();
 
-    render(<ChromeHarness store={store} chrome={collapsedChrome} />);
+    await renderSettled(<ChromeHarness store={store} chrome={collapsedChrome} />);
     expect(screen.getByTestId('notes-body')).toBeInTheDocument();
   });
 });

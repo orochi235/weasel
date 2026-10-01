@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, it, vi } from 'vitest';
 import type { TrialContribution } from '../chrome/types';
 import type { Instrument } from '../instrument/types';
@@ -19,23 +20,23 @@ function silenceRenderError(): void {
 }
 
 describe('<Lab> chrome', () => {
-  it('renders a consumer contribution', () => {
+  it('renders a consumer contribution', async () => {
     const extra: TrialContribution = {
       id: 'export',
       region: 'toolbar',
       item: { icon: Glyph, label: 'Export', onActivate: () => {} },
     };
-    render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[extra]} />);
+    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[extra]} />);
     expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
   });
 
-  it('suppresses a built-in by id', () => {
-    render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" suppress={['snapshot']} />);
+  it('suppresses a built-in by id', async () => {
+    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" suppress={['snapshot']} />);
     expect(screen.queryByRole('button', { name: 'Save snapshot' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Clone trial' })).toBeInTheDocument();
   });
 
-  it('throws when a consumer id collides with a built-in', () => {
+  it('throws when a consumer id collides with a built-in', async () => {
     silenceRenderError();
     const clash: TrialContribution = {
       id: 'clone',
@@ -47,24 +48,24 @@ describe('<Lab> chrome', () => {
     ).toThrow(/duplicate contribution id "clone"/);
   });
 
-  it('throws when suppressing an id that is not there', () => {
+  it('throws when suppressing an id that is not there', async () => {
     silenceRenderError();
     expect(() =>
       render(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" suppress={['nope']} />),
     ).toThrow(/cannot suppress "nope"/);
   });
 
-  it('renders an instrument-declared contribution', () => {
+  it('renders an instrument-declared contribution', async () => {
     const withChrome: Instrument = {
       ...bare,
       chrome: [{ id: 'mine', region: 'status', item: { text: 'ready' } }],
     };
-    render(<Lab title="T" instruments={[withChrome]} defaultInstrument="Bare" />);
+    await renderSettled(<Lab title="T" instruments={[withChrome]} defaultInstrument="Bare" />);
     expect(screen.getByText('ready')).toBeInTheDocument();
   });
 
-  it('renders an aside contribution in its own pane, after the workspace', () => {
-    render(
+  it('renders an aside contribution in its own pane, after the workspace', async () => {
+    await renderSettled(
       <Lab
         title="T"
         instruments={[bare]}

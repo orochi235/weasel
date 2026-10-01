@@ -1,6 +1,7 @@
 import { Lab, LabContext, type LabContextValue, type InstrumentList, type RenderContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
-import { act, fireEvent, render } from '@testing-library/react';
+import { act, fireEvent } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
@@ -8,7 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type Channel, openChannel } from '../protocol/channel';
 import { FRAME_HELLO, type FromFrame, type Globals, PORT_HANDOFF, stableStringify, type ToFrame } from '../protocol/messages';
 import { type FramePool, FramePoolContext } from './framePool';
-import { sayHello } from './labHarness';
+import { flush, sayHello } from './labHarness';
 import { describeSchema } from '../protocol/schema';
 import type { IndexEntry } from '../story/types';
 import { createAnswerBook } from './answers';
@@ -33,12 +34,8 @@ const ready: Ready = {
 };
 const globals = { theme: 'dark' };
 
-// Captured before any test fakes timers, so a flush still yields to the port.
+// Captured before any test fakes timers, so a poll still yields to the port.
 const realSetTimeout = globalThis.setTimeout;
-async function flush() {
-  await new Promise((r) => realSetTimeout(r, 0));
-  await act(async () => {});
-}
 
 describe('storyInstrument', () => {
   const base = { entry, answers: createAnswerBook(), frameUrl: '/frame.html', onReady: () => {} };
@@ -139,10 +136,10 @@ function connect(iframe: HTMLIFrameElement) {
   return { frame, received, port };
 }
 
-function mountWith(instrumentReady: Ready | undefined, onReady = vi.fn(), answers = createAnswerBook()) {
+async function mountWith(instrumentReady: Ready | undefined, onReady = vi.fn(), answers = createAnswerBook()) {
   lab = null;
   ctx = null;
-  const view = render(labWith(instrumentReady, onReady, answers));
+  const view = await renderSettled(labWith(instrumentReady, onReady, answers));
   const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
   return { view, iframe, onReady, answers, ...connect(iframe) };
 }
@@ -154,14 +151,14 @@ const state = () => lab?.trials[0]?.state;
 const faultText = (container: HTMLElement) => container.querySelector('.fg-fault')?.textContent ?? null;
 
 describe('FrameView', () => {
-  it('points the iframe at the story', () => {
-    const { iframe } = mount();
+  it('points the iframe at the story', async () => {
+    const { iframe } = await mount();
     expect(iframe.getAttribute('src')).toBe(`/frame.html#${entry.id}`);
     expect(iframe.title).toBe('Test > Counter > Counter');
   });
 
   it('sends nothing before ready, then init with the trial’s config, state and globals', async () => {
-    const { frame, received, onReady } = mount();
+    const { frame, received, onReady } = await mount();
     await flush();
     expect(received).toEqual([]);
     frame.send(ready);
@@ -193,7 +190,7 @@ describe('FrameView', () => {
 
   it('holds init until its instrument describes the frame, then sends the real defaults', async () => {
     const grid: Ready = { ...ready, schema: describeSchema(f.schema({ grid: f.group({ size: f.number(4) }) })) };
-    const { view, frame, received, onReady } = mountWith(undefined);
+    const { view, frame, received, onReady } = await mountWith(undefined);
     frame.send(grid);
     await flush();
     expect(onReady).toHaveBeenCalledWith(entry, grid);
@@ -204,7 +201,7 @@ describe('FrameView', () => {
   });
 
   it('applies a frame setConfig to the trial and sends the config back', async () => {
-    const { frame, received } = mount();
+    const { frame, received } = await mount();
     frame.send(ready);
     await flush();
     frame.send({ type: 'setConfig', path: 'label', value: 'renamed' });
@@ -214,7 +211,7 @@ describe('FrameView', () => {
   });
 
   it('applies a frame setState without echoing it back', async () => {
-    const { frame, received } = mount();
+    const { frame, received } = await mount();
     frame.send(ready);
     await flush();
     frame.send({ type: 'setState', state: { n: 3 } });
@@ -224,7 +221,7 @@ describe('FrameView', () => {
   });
 
   it('sends a state the trial set itself', async () => {
-    const { frame, received } = mount();
+    const { frame, received } = await mount();
     frame.send(ready);
     await flush();
     frame.send({ type: 'setState', state: { n: 1 } });
@@ -235,7 +232,7 @@ describe('FrameView', () => {
   });
 
   it('sends the frame’s own earlier state when the trial returns to it', async () => {
-    const { frame, received } = mount();
+    const { frame, received } = await mount();
     frame.send(ready);
     await flush();
     frame.send({ type: 'setState', state: { n: 1 } });
@@ -253,7 +250,7 @@ describe('FrameView', () => {
   });
 
   it('records answers in the story’s answer book', async () => {
-    const { frame, answers } = mount();
+    const { frame, answers } = await mount();
     frame.send(ready);
     await flush();
     frame.send({ type: 'answers', answers: { configKey: stableStringify({ label: 'clicks' }), hidden: ['label'], errors: {} } });
@@ -262,7 +259,7 @@ describe('FrameView', () => {
   });
 
   it('shows a fault over the iframe until the next ready', async () => {
-    const { view, iframe, frame } = mount();
+    const { view, iframe, frame } = await mount();
     frame.send(ready);
     await flush();
     frame.send({ type: 'fault', phase: 'render', message: 'bad config' });
@@ -277,7 +274,7 @@ describe('FrameView', () => {
   });
 
   it('clears a render fault when new input goes to the frame, until the frame faults again', async () => {
-    const { view, frame, received } = mount();
+    const { view, frame, received } = await mount();
     frame.send(ready);
     await flush();
     frame.send({ type: 'fault', phase: 'render', message: 'bad config' });
@@ -293,7 +290,7 @@ describe('FrameView', () => {
   });
 
   it('ignores a render fault from before the latest input, and shows one from the latest', async () => {
-    const { view, frame, received } = mount();
+    const { view, frame, received } = await mount();
     frame.send(ready);
     await flush();
     act(() => ctx?.setConfig('label', 'one'));
@@ -317,7 +314,7 @@ describe('FrameView', () => {
         vi.fn((_entry: IndexEntry, next: Ready) => flushSync(() => setHeld(next))),
       );
     }
-    const view = render(<SyncReady />);
+    const view = await renderSettled(<SyncReady />);
     const { frame, received } = connect(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
     frame.send(ready);
     await flush();
@@ -325,7 +322,7 @@ describe('FrameView', () => {
   });
 
   it('keeps an import fault when new input goes to the frame', async () => {
-    const { view, frame } = mount();
+    const { view, frame } = await mount();
     frame.send(ready);
     await flush();
     frame.send({ type: 'fault', phase: 'import', message: 'no module' });
@@ -335,16 +332,16 @@ describe('FrameView', () => {
     expect(faultText(view.container)).toContain('no module');
   });
 
-  it('faults when the frame never says ready', () => {
+  it('faults when the frame never says ready', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    const { view } = mount();
+    const { view } = await mount();
     act(() => vi.advanceTimersByTime(10_000));
     expect(faultText(view.container)).toContain(`Frame did not start: /frame.html#${entry.id}`);
   });
 
   it('keeps a fault that arrived before ready past the start timeout', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    const { view, frame } = mount();
+    const { view, frame } = await mount();
     frame.send({ type: 'fault', phase: 'import', message: 'no module' });
     await flush();
     act(() => vi.advanceTimersByTime(10_000));
@@ -356,7 +353,7 @@ describe('FrameView', () => {
 
   it('keeps a protocol mismatch past the start timeout', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    const { view, port } = mount();
+    const { view, port } = await mount();
     port.postMessage({ v: 2, msg: ready });
     await flush();
     act(() => vi.advanceTimersByTime(10_000));
@@ -364,7 +361,7 @@ describe('FrameView', () => {
   });
 
   it('names the protocol version a mismatched frame speaks', async () => {
-    const { view, port } = mount();
+    const { view, port } = await mount();
     port.postMessage({ v: 2, msg: ready });
     await flush();
     const fault = view.container.querySelector('.fg-fault');
@@ -373,14 +370,14 @@ describe('FrameView', () => {
   });
 
   it('says when a frame sends something that is not an envelope', async () => {
-    const { view, port } = mount();
+    const { view, port } = await mount();
     port.postMessage({ type: 'ready' });
     await flush();
     expect(faultText(view.container)).toContain('Frame sent a message that is not a forge envelope');
   });
 
   it('hands off a fresh port and re-sends init after the frame reloads', async () => {
-    const { iframe, frame } = mount();
+    const { iframe, frame } = await mount();
     frame.send(ready);
     await flush();
     const again = connect(iframe);
@@ -390,7 +387,7 @@ describe('FrameView', () => {
   });
 
   it('ignores the old port after the frame reloads', async () => {
-    const { iframe, frame } = mount();
+    const { iframe, frame } = await mount();
     frame.send(ready);
     await flush();
     const again = connect(iframe);
@@ -402,7 +399,7 @@ describe('FrameView', () => {
   });
 
   it('keeps the same iframe when the instrument is replaced', async () => {
-    const { view, iframe } = mount();
+    const { view, iframe } = await mount();
     view.rerender(labWith({ ...ready, schema: describeSchema(f.schema({ label: f.string('clicks'), n: f.number(1) })) }));
     await flush();
     expect(view.container.querySelector('iframe')).toBe(iframe);
@@ -414,7 +411,7 @@ describe('FrameView', () => {
     const instrument = (e: IndexEntry) =>
       storyInstrument({ entry: e, ready, answers: createAnswerBook(), frameUrl: '/frame.html', onReady: vi.fn() });
     lab = null;
-    const view = render(
+    const view = await renderSettled(
       <StoryGlobalsContext.Provider value={globals}>
         <Lab instruments={[instrument(entry), instrument(other)]} defaultInstrument={entry.id}>
           {captureLab()}
@@ -438,8 +435,8 @@ const handoffs = (post: { mock: { calls: unknown[][] } }) =>
   post.mock.calls.filter((c) => (c[0] as { type?: unknown } | null)?.type === PORT_HANDOFF);
 
 describe('FrameView handshake', () => {
-  it('hands off a port on each hello and never on load, which a browser fires before the hello', () => {
-    const view = render(labWith(ready));
+  it('hands off a port on each hello and never on load, which a browser fires before the hello', async () => {
+    const view = await renderSettled(labWith(ready));
     const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
     const post = vi.spyOn(iframe.contentWindow as Window, 'postMessage').mockImplementation(() => {});
     fireEvent.load(iframe);
@@ -450,17 +447,17 @@ describe('FrameView handshake', () => {
     expect(handoffs(post)).toHaveLength(2);
   });
 
-  it('faults when the frame document never says hello', () => {
+  it('faults when the frame document never says hello', async () => {
     vi.useFakeTimers();
-    const view = render(labWith(ready));
+    const view = await renderSettled(labWith(ready));
     act(() => {
       vi.advanceTimersByTime(30_000);
     });
     expect(faultText(view.container)).toBe('Frame did not start: /frame.html#test-counter--counter');
   });
 
-  it('ignores a hello from a window other than its frame', () => {
-    const view = render(labWith(ready));
+  it('ignores a hello from a window other than its frame', async () => {
+    const view = await renderSettled(labWith(ready));
     const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
     const post = vi.spyOn(iframe.contentWindow as Window, 'postMessage').mockImplementation(() => {});
     const stray = new MessageEvent('message', { data: { type: FRAME_HELLO }, origin: location.origin });
@@ -473,7 +470,7 @@ describe('FrameView handshake', () => {
 
   // Proxy: jsdom has no `moveBefore`, and moving an iframe any other way gives it a new window. So this asserts
   // the call that keeps the document alive, not that it stayed alive; the browser is what shows that.
-  it('moves a claimed frame into place and hands it a port at once, without loading it again', () => {
+  it('moves a claimed frame into place and hands it a port at once, without loading it again', async () => {
     const proto = Element.prototype as Element & { moveBefore?: (node: Node, child: Node | null) => void };
     const moveBefore = vi.fn();
     proto.moveBefore = moveBefore;
@@ -483,7 +480,7 @@ describe('FrameView handshake', () => {
     cleanups.push(() => warm.remove());
     const post = vi.spyOn(warm.contentWindow as Window, 'postMessage').mockImplementation(() => {});
     const pool: FramePool = { claim: vi.fn(() => warm), dispose: () => {} };
-    const view = render(<FramePoolContext.Provider value={pool}>{labWith(ready)}</FramePoolContext.Provider>);
+    const view = await renderSettled(<FramePoolContext.Provider value={pool}>{labWith(ready)}</FramePoolContext.Provider>);
     expect(moveBefore).toHaveBeenCalledWith(warm, null);
     expect(moveBefore.mock.contexts[0]).toBe(view.container.querySelector('.fg-frame-slot'));
     expect(warm.className).toBe('fg-frame-view');
@@ -504,7 +501,7 @@ describe('FrameView with declared globals', () => {
     },
   };
 
-  function mountGlobals() {
+  async function mountGlobals() {
     lab = null;
     ctx = null;
     const instrument = storyInstrument({
@@ -522,7 +519,7 @@ describe('FrameView with declared globals', () => {
         return instrument.render(renderCtx);
       },
     };
-    const view = render(
+    const view = await renderSettled(
       <StoryGlobalsContext.Provider value={globals}>
         <Lab instruments={[capturing]} defaultInstrument={entry.id}>
           {captureLab()}
@@ -533,7 +530,7 @@ describe('FrameView with declared globals', () => {
   }
 
   it('sends init with the story’s config alone and the lab’s globals', async () => {
-    const { frame, received } = mountGlobals();
+    const { frame, received } = await mountGlobals();
     frame.send(ready);
     await flush();
     expect(config()).toEqual({ label: 'clicks', $globals: { theme: 'lab' } });
@@ -541,7 +538,7 @@ describe('FrameView with declared globals', () => {
   });
 
   it('sends a pinned global as globals, and no config, until the pin follows the lab again', async () => {
-    const { frame, received } = mountGlobals();
+    const { frame, received } = await mountGlobals();
     frame.send(ready);
     await flush();
     act(() => ctx?.setConfig('$globals.theme', 'light'));
@@ -557,7 +554,7 @@ describe('FrameView with declared globals', () => {
   });
 
   it('drops a frame setConfig aimed at the pins', async () => {
-    const { frame, received } = mountGlobals();
+    const { frame, received } = await mountGlobals();
     frame.send(ready);
     await flush();
     frame.send({ type: 'setConfig', path: '$globals.theme', value: 'light' });
@@ -583,7 +580,7 @@ describe('FrameView under a story registry', () => {
 
   it('sends new globals to the frame without replacing the instruments', async () => {
     const lists: InstrumentList[] = [];
-    const view = render(<RegistryLab labGlobals={globals} lists={lists} />);
+    const view = await renderSettled(<RegistryLab labGlobals={globals} lists={lists} />);
     const { frame, received } = connect(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
     frame.send(ready);
     await flush();
@@ -639,7 +636,7 @@ describe('FrameView out of view', () => {
 
   it('unmounts the frame while its trial is out of view and resumes it with the trial’s config and state', async () => {
     stubIntersectionObserver();
-    const { view, frame } = mount();
+    const { view, frame } = await mount();
     frame.send(ready);
     await flush();
     frame.send({ type: 'setConfig', path: 'label', value: 'renamed' });
@@ -659,9 +656,9 @@ describe('FrameView out of view', () => {
     expect(back.received).toEqual([{ type: 'init', config: { label: 'renamed' }, state: { n: 3 }, globals }]);
   });
 
-  it('keeps the frame mounted where the browser has no IntersectionObserver', () => {
+  it('keeps the frame mounted where the browser has no IntersectionObserver', async () => {
     vi.stubGlobal('IntersectionObserver', undefined);
-    const { view } = mount();
+    const { view } = await mount();
     expect(view.container.querySelector('iframe.fg-frame-view')).not.toBeNull();
   });
 });

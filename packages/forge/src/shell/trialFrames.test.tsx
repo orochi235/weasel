@@ -10,7 +10,7 @@ import { A11yPanel } from './a11y/A11yPanel';
 import { createAnswerBook } from './answers';
 import { storyInstrument } from './storyInstrument';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
-import { sayHello } from './labHarness';
+import { flush, installResizeObserver, sayHello } from './labHarness';
 
 const entry: IndexEntry = {
   id: 'test-counter--counter',
@@ -44,26 +44,7 @@ const report: A11yReport = {
 
 const picture = { kind: 'svg', markup: '<svg xmlns="http://www.w3.org/2000/svg"/>' } as const;
 
-const realSetTimeout = globalThis.setTimeout;
-async function flush() {
-  await new Promise((r) => realSetTimeout(r, 0));
-  await act(async () => {});
-}
-
-if (typeof globalThis.ResizeObserver === 'undefined') {
-  globalThis.ResizeObserver = class {
-    #cb: ResizeObserverCallback;
-    constructor(cb: ResizeObserverCallback) {
-      this.#cb = cb;
-    }
-    observe(target: Element) {
-      const contentRect = { width: 1024, height: 768, x: 0, y: 0, top: 0, left: 0 };
-      this.#cb([{ target, contentRect } as ResizeObserverEntry], this as unknown as ResizeObserver);
-    }
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver;
-}
+installResizeObserver();
 
 const noCapture = async () => picture;
 

@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import {
   ActionsProvider,
   type ActionsRegistry,
@@ -54,16 +55,16 @@ function Capture({ children }: { children?: ReactNode }) {
 const zoomBar = () => within(screen.getByRole('toolbar', { name: 'Zoom' }));
 const readout = () => zoomBar().getByRole('button', { name: /^Zoom \d+%|^Zoom unavailable/ });
 const press = (name: string) =>
-  act(() => {
+  act(async () => {
     fireEvent.click(zoomBar().getByRole('button', { name }));
   });
 
 const MOD = /mac/i.test(navigator.platform || navigator.userAgent)
   ? { metaKey: true }
   : { ctrlKey: true };
-function key(k: string): boolean {
+async function key(k: string): Promise<boolean> {
   let prevented = false;
-  act(() => {
+  await act(async () => {
     prevented = !fireEvent.keyDown(window, { key: k, ...MOD });
   });
   return prevented;
@@ -111,113 +112,113 @@ function stageZoom(container: HTMLElement, index = 0): number {
 }
 
 describe("the lab header's zoom controls", () => {
-  it('step the focused trial through its camera and read its zoom back', () => {
-    const { container } = render(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+  it('step the focused trial through its camera and read its zoom back', async () => {
+    const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
     expect(readout()).toHaveTextContent('100%');
-    press('Zoom in');
+    await press('Zoom in');
     expect(stageZoom(container)).toBeCloseTo(1.25);
     expect(readout()).toHaveTextContent('125%');
-    press('Zoom out');
+    await press('Zoom out');
     expect(stageZoom(container)).toBeCloseTo(1);
-    press('Zoom out');
+    await press('Zoom out');
     expect(readout()).toHaveTextContent('80%');
   });
 
-  it('reset to actual size from the readout', () => {
-    const { container } = render(<Lab instruments={[staged]} defaultInstrument="Staged" />);
-    press('Zoom out');
-    press('Zoom out');
-    act(() => {
+  it('reset to actual size from the readout', async () => {
+    const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+    await press('Zoom out');
+    await press('Zoom out');
+    await act(async () => {
       fireEvent.click(readout());
     });
     expect(stageZoom(container)).toBe(1);
     expect(readout()).toHaveTextContent('100%');
   });
 
-  it("stop at the camera's own limit, and say so", () => {
-    const { container } = render(<Lab instruments={[staged]} defaultInstrument="Staged" />);
-    press('Zoom in');
-    press('Zoom in');
+  it("stop at the camera's own limit, and say so", async () => {
+    const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+    await press('Zoom in');
+    await press('Zoom in');
     expect(stageZoom(container)).toBe(1.5);
     expect(zoomBar().getByRole('button', { name: 'Zoom in' })).toBeDisabled();
     expect(zoomBar().getByRole('button', { name: 'Zoom out' })).toBeEnabled();
   });
 
-  it('answer Mod+=, Mod+- and Mod+0, claiming the key from the browser', () => {
-    const { container } = render(<Lab instruments={[staged]} defaultInstrument="Staged" />);
-    expect(key('=')).toBe(true);
+  it('answer Mod+=, Mod+- and Mod+0, claiming the key from the browser', async () => {
+    const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+    expect(await key('=')).toBe(true);
     expect(stageZoom(container)).toBeCloseTo(1.25);
-    key('-');
-    key('-');
+    await key('-');
+    await key('-');
     expect(stageZoom(container)).toBeCloseTo(0.8);
-    key('0');
+    await key('0');
     expect(stageZoom(container)).toBe(1);
   });
 
-  it('go inert over a trial with no camera, and leave its keys to the browser', () => {
-    render(<Lab instruments={[plain]} defaultInstrument="Plain" />);
+  it('go inert over a trial with no camera, and leave its keys to the browser', async () => {
+    await renderSettled(<Lab instruments={[plain]} defaultInstrument="Plain" />);
     for (const name of ['Zoom out', 'Zoom in']) {
       expect(zoomBar().getByRole('button', { name })).toBeDisabled();
     }
     expect(readout()).toBeDisabled();
     expect(readout()).toHaveTextContent('–');
-    expect(key('=')).toBe(false);
+    expect(await key('=')).toBe(false);
   });
 
-  it("take the key ahead of a story's own binding in a trial with a camera", () => {
+  it("take the key ahead of a story's own binding in a trial with a camera", async () => {
     const story = vi.fn();
     const zooming = defineInstrument<Record<string, never>, Record<string, never>>({
       ...staged,
       name: 'Zooming',
       render: () => <StoryZoomKey run={story} />,
     });
-    const { container } = render(<Lab instruments={[zooming]} defaultInstrument="Zooming" />);
-    key('=');
+    const { container } = await renderSettled(<Lab instruments={[zooming]} defaultInstrument="Zooming" />);
+    await key('=');
     expect(stageZoom(container)).toBeCloseTo(1.25);
     expect(story).not.toHaveBeenCalled();
   });
 
-  it("leave the key to a story's own binding in a trial with no camera", () => {
+  it("leave the key to a story's own binding in a trial with no camera", async () => {
     const story = vi.fn();
     const zooming = defineInstrument<Record<string, never>, Record<string, never>>({
       ...plain,
       name: 'ZoomingPlain',
       render: () => <StoryZoomKey run={story} />,
     });
-    render(<Lab instruments={[zooming]} defaultInstrument="ZoomingPlain" />);
-    key('=');
+    await renderSettled(<Lab instruments={[zooming]} defaultInstrument="ZoomingPlain" />);
+    await key('=');
     expect(story).toHaveBeenCalledTimes(1);
   });
 
-  it('follow the focus from trial to trial', () => {
-    const { container } = render(
+  it('follow the focus from trial to trial', async () => {
+    const { container } = await renderSettled(
       <Lab instruments={[staged, plain]} defaultInstrument="Staged">
         <Capture />
       </Lab>,
     );
-    act(() => lab?.addTrial('Staged'));
-    act(() => lab?.addTrial('Plain'));
+    await act(async () => lab?.addTrial('Staged'));
+    await act(async () => lab?.addTrial('Plain'));
     const [first, second, third] = lab?.trials.map((t) => t.id) ?? [];
     expect(zoomBar().getByRole('button', { name: 'Zoom in' })).toBeDisabled();
 
-    act(() => lab?.focusTrial(second ?? ''));
-    press('Zoom out');
+    await act(async () => lab?.focusTrial(second ?? ''));
+    await press('Zoom out');
     expect(stageZoom(container, 1)).toBeCloseTo(0.8);
     expect(stageZoom(container, 0)).toBe(1);
     expect(readout()).toHaveTextContent('80%');
 
-    act(() => lab?.focusTrial(first ?? ''));
+    await act(async () => lab?.focusTrial(first ?? ''));
     expect(readout()).toHaveTextContent('100%');
-    key('=');
+    await key('=');
     expect(stageZoom(container, 0)).toBeCloseTo(1.25);
     expect(stageZoom(container, 1)).toBeCloseTo(0.8);
 
-    act(() => lab?.focusTrial(third ?? ''));
+    await act(async () => lab?.focusTrial(third ?? ''));
     expect(readout()).toBeDisabled();
   });
 
-  it('are left out when the lab says so', () => {
-    render(<Lab instruments={[staged]} defaultInstrument="Staged" zoom={false} />);
+  it('are left out when the lab says so', async () => {
+    await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" zoom={false} />);
     expect(screen.queryByRole('toolbar', { name: 'Zoom' })).toBeNull();
   });
 });

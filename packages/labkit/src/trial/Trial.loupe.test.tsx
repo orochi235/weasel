@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -53,27 +54,27 @@ function pointAt(host: Element, x: number, y: number): void {
 }
 
 describe('a lens the instrument mounts', () => {
-  it('gives a trial a toolbar toggle, and no lens until it is on', () => {
-    const { container } = render(
+  it('gives a trial a toolbar toggle, and no lens until it is on', async () => {
+    const { container } = await renderSettled(
       <Lab instruments={[canvasInstrument]} defaultInstrument="Drawn" />,
     );
     expect(screen.getByRole('button', { name: 'Loupe' })).toHaveAttribute('aria-pressed', 'false');
     expect(lens(container)).toBeNull();
   });
 
-  it('offers nothing to an instrument that mounts none', () => {
-    render(<Lab instruments={[noLoupe]} defaultInstrument="Plain" />);
+  it('offers nothing to an instrument that mounts none', async () => {
+    await renderSettled(<Lab instruments={[noLoupe]} defaultInstrument="Plain" />);
     expect(screen.queryByRole('button', { name: 'Loupe' })).toBeNull();
   });
 
-  it('drops out of a trial that suppresses it', () => {
-    render(<Lab instruments={[canvasInstrument]} defaultInstrument="Drawn" suppress={['loupe']} />);
+  it('drops out of a trial that suppresses it', async () => {
+    await renderSettled(<Lab instruments={[canvasInstrument]} defaultInstrument="Drawn" suppress={['loupe']} />);
     expect(screen.queryByRole('button', { name: 'Loupe' })).toBeNull();
   });
 
   it('raises the lens over a canvas stack once it is on and aimed', async () => {
     const user = userEvent.setup();
-    const { container } = render(
+    const { container } = await renderSettled(
       <Lab instruments={[canvasInstrument]} defaultInstrument="Drawn" />,
     );
     await user.click(screen.getByRole('button', { name: 'Loupe' }));
@@ -95,7 +96,7 @@ describe('a lens the instrument mounts', () => {
 
   it('asks a DOM instrument to draw itself again at the magnified camera', async () => {
     const user = userEvent.setup();
-    const { container } = render(<Lab instruments={[domInstrument]} defaultInstrument="Written" />);
+    const { container } = await renderSettled(<Lab instruments={[domInstrument]} defaultInstrument="Written" />);
     await user.click(screen.getByRole('button', { name: 'Loupe' }));
 
     const host = container.querySelector('.lk-loupe-host');
@@ -108,12 +109,12 @@ describe('a lens the instrument mounts', () => {
     expect(screen.getByTestId('body')).toBeInTheDocument();
   });
 
-  it('wraps nothing for an instrument that mounts no lens', () => {
-    const { container } = render(<Lab instruments={[noLoupe]} defaultInstrument="Plain" />);
+  it('wraps nothing for an instrument that mounts no lens', async () => {
+    const { container } = await renderSettled(<Lab instruments={[noLoupe]} defaultInstrument="Plain" />);
     expect(container.querySelector('.lk-loupe-host')).toBeNull();
   });
 
-  it('raises a lens told `enabled` without the trial toggle', () => {
+  it('raises a lens told `enabled` without the trial toggle', async () => {
     const always = defineInstrument<Record<string, never>, Record<string, never>>({
       name: 'Always',
       defaultConfig: () => ({}),
@@ -121,7 +122,7 @@ describe('a lens the instrument mounts', () => {
       render: () => <TrialLoupe enabled />,
       canvas: { layers: [{ id: 'main', draw: () => undefined }] },
     });
-    const { container } = render(<Lab instruments={[always]} defaultInstrument="Always" />);
+    const { container } = await renderSettled(<Lab instruments={[always]} defaultInstrument="Always" />);
     const stack = container.querySelector('.lk-canvas-stack');
     if (!stack) throw new Error('no canvas stack');
     pointAt(stack, 60, 40);
@@ -130,7 +131,7 @@ describe('a lens the instrument mounts', () => {
 
   it('puts the lens away again when the toggle goes off', async () => {
     const user = userEvent.setup();
-    const { container } = render(
+    const { container } = await renderSettled(
       <Lab instruments={[canvasInstrument]} defaultInstrument="Drawn" />,
     );
     const toggle = screen.getByRole('button', { name: 'Loupe' });
@@ -148,7 +149,7 @@ describe('a lens the instrument mounts', () => {
 describe('the loupe and the trial camera share one dispatcher', () => {
   const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 
-  function mountDrawn() {
+  async function mountDrawn() {
     const zooms: number[] = [];
     const drawn = defineInstrument<Record<string, never>, Record<string, never>>({
       name: 'Zoomed',
@@ -166,7 +167,7 @@ describe('the loupe and the trial camera share one dispatcher', () => {
         ],
       },
     });
-    const r = render(<Lab instruments={[drawn]} defaultInstrument="Zoomed" />);
+    const r = await renderSettled(<Lab instruments={[drawn]} defaultInstrument="Zoomed" />);
     const stack = r.container.querySelector('.lk-canvas-stack');
     if (!stack) throw new Error('no canvas stack');
     return { ...r, stack, zooms };
@@ -185,7 +186,7 @@ describe('the loupe and the trial camera share one dispatcher', () => {
   };
 
   it('zooms the camera while the lens is down', async () => {
-    const h = mountDrawn();
+    const h = await mountDrawn();
     await act(async () => {
       await frame();
     });
@@ -198,7 +199,7 @@ describe('the loupe and the trial camera share one dispatcher', () => {
 
   it('gives the wheel to the lens while it is up, and leaves the camera alone', async () => {
     const user = userEvent.setup();
-    const h = mountDrawn();
+    const h = await mountDrawn();
     await user.click(screen.getByRole('button', { name: 'Loupe' }));
     pointAt(h.stack, 60, 40);
     expect(lens(h.container)).not.toBeNull();

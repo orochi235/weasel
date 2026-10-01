@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { useContext } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { useStore } from 'zustand/react';
@@ -51,8 +52,8 @@ const centredInstrument = defineInstrument<DropState, Record<string, never>>({
   },
 });
 
-function renderLab(probe?: (state: DropState) => void, instrument = testInstrument) {
-  return render(
+async function renderLab(probe?: (state: DropState) => void, instrument = testInstrument) {
+  return renderSettled(
     <Lab instruments={[instrument]} defaultInstrument={instrument.name}>
       {probe ? <StateProbe onState={probe} /> : null}
     </Lab>,
@@ -88,104 +89,104 @@ function pointerDown(el: Element, x: number, y: number) {
 
 /** The session listens on the document, so that is where the rest of the
  *  gesture has to arrive — a dispatch on `window` reaches nothing. */
-function dispatchOnDocument(type: string, init: PointerEventInit) {
-  act(() => {
+async function dispatchOnDocument(type: string, init: PointerEventInit) {
+  await act(async () => {
     document.dispatchEvent(new PointerEvent(type, { pointerId: 1, bubbles: true, ...init }));
   });
 }
 
-function pointerMove(x: number, y: number) {
-  dispatchOnDocument('pointermove', { buttons: 1, clientX: x, clientY: y });
+async function pointerMove(x: number, y: number) {
+  await dispatchOnDocument('pointermove', { buttons: 1, clientX: x, clientY: y });
 }
 
-function pointerUp(x: number, y: number) {
-  dispatchOnDocument('pointerup', { clientX: x, clientY: y });
+async function pointerUp(x: number, y: number) {
+  await dispatchOnDocument('pointerup', { clientX: x, clientY: y });
 }
 
 describe('DragDrop integration', () => {
-  it('renders palette item in the sidebar', () => {
-    renderLab();
+  it('renders palette item in the sidebar', async () => {
+    await renderLab();
     expect(screen.getByRole('button', { name: 'Item A' })).toBeInTheDocument();
   });
 
-  it('drops an item onto the canvas and appends it to state', () => {
+  it('drops an item onto the canvas and appends it to state', async () => {
     let latest: DropState = { items: [] };
-    renderLab((s) => {
+    await renderLab((s) => {
       latest = s;
     });
     const palette = screen.getByRole('button', { name: 'Item A' });
 
-    act(() => {
+    await act(async () => {
       pointerDown(palette, 0, 0);
     });
-    pointerUp(250, 250);
+    await pointerUp(250, 250);
 
     expect(latest.items).toHaveLength(1);
     expect(latest.items[0]?.id).toBe('a');
   });
 
-  it('drop outside the canvas leaves state unchanged', () => {
+  it('drop outside the canvas leaves state unchanged', async () => {
     let latest: DropState = { items: [] };
-    renderLab((s) => {
+    await renderLab((s) => {
       latest = s;
     });
     const palette = screen.getByRole('button', { name: 'Item A' });
 
-    act(() => {
+    await act(async () => {
       pointerDown(palette, 0, 0);
     });
-    pointerMove(10, 10);
-    pointerUp(10, 10);
+    await pointerMove(10, 10);
+    await pointerUp(10, 10);
 
     expect(latest.items).toHaveLength(0);
     expect(document.querySelector('.lk-drag-ghost')).toBeNull();
   });
 
-  it('shows drag ghost during drag and clears on drop', () => {
-    renderLab();
+  it('shows drag ghost during drag and clears on drop', async () => {
+    await renderLab();
     const palette = screen.getByRole('button', { name: 'Item A' });
 
-    act(() => {
+    await act(async () => {
       pointerDown(palette, 5, 5);
     });
     expect(document.querySelector('.lk-drag-ghost')).not.toBeNull();
 
-    pointerUp(250, 250);
+    await pointerUp(250, 250);
     expect(document.querySelector('.lk-drag-ghost')).toBeNull();
   });
 
-  it('a cancelled gesture drops nothing and clears the ghost', () => {
+  it('a cancelled gesture drops nothing and clears the ghost', async () => {
     let latest: DropState = { items: [] };
-    renderLab((s) => {
+    await renderLab((s) => {
       latest = s;
     });
     const palette = screen.getByRole('button', { name: 'Item A' });
 
-    act(() => {
+    await act(async () => {
       pointerDown(palette, 0, 0);
     });
-    pointerMove(250, 250);
+    await pointerMove(250, 250);
     expect(document.querySelector('.lk-drag-ghost')).not.toBeNull();
 
-    dispatchOnDocument('pointercancel', {});
+    await dispatchOnDocument('pointercancel', {});
 
     expect(latest.items).toHaveLength(0);
     expect(document.querySelector('.lk-drag-ghost')).toBeNull();
   });
 
-  it('drops through the instrument world spec, not the canvas top-left', () => {
+  it('drops through the instrument world spec, not the canvas top-left', async () => {
     let latest: DropState = { items: [] };
-    renderLab((s) => {
+    await renderLab((s) => {
       latest = s;
     }, centredInstrument);
     const palette = screen.getByRole('button', { name: 'Item A' });
 
-    act(() => {
+    await act(async () => {
       pointerDown(palette, 0, 0);
     });
     // The host spans (100,100)-(500,500), so its centre is at (300,300).
     // Dropping 50px right of centre and 50px above it, at zoom 1, y up.
-    pointerUp(350, 250);
+    await pointerUp(350, 250);
 
     expect(latest.items[0]).toMatchObject({ x: 50, y: 50 });
   });
